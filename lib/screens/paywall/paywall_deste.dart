@@ -18,11 +18,21 @@ part of '../paywall_screen.dart';
 //    bir servis yok).
 
 /// Destedeki Premium kartları, varsayılan sırasıyla.
+///
+/// Sıra (2026-10-10, olgun Premium seti): araştırmada para ödenen işler
+/// önde — sınır, rapor/vergi, temettü — sonra alışkanlık ve analiz.
+/// Fon X-Ray (2026-10-10) temettünün hemen ardında: o da "param gerçekte
+/// ne yapıyor" sorusunun ücretli cevabı (getquin/Parqet'te ücretli).
 enum PaywallKarti {
   varlik,
+  rapor,
+  temettu,
+  xray,
   sinyal,
   karsilastir,
   ortak,
+  // Çoklu portföy (0133): yalnız `coklu_portfoy` açıkken destede.
+  portfoy,
   akis,
   hacim,
   not,
@@ -37,12 +47,22 @@ PaywallKarti? kaynaktanKart(String source) {
       source == 'watchlist_limit') {
     return PaywallKarti.varlik;
   }
-  if (source.startsWith('signal_') || source == 'sinyal_varlik') {
+  if (source.startsWith('signal_') ||
+      source == 'sinyal_varlik' ||
+      source == 'sinyal_kilit') {
     return PaywallKarti.sinyal;
   }
   return switch (source) {
+    'yillik_rapor' ||
+    'portfoy_disa_aktar' ||
+    'masraf_dokumu' =>
+      PaywallKarti.rapor,
+    'temettu_tahmini' => PaywallKarti.temettu,
+    'fon_xray' || 'portfoy_xray' => PaywallKarti.xray,
+    'aylik_rapor' => PaywallKarti.not,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
+    'portfoy_limit' => PaywallKarti.portfoy,
     'para_akisi_karti' => PaywallKarti.akis,
     'hacim_radari' || 'kripto_baski' => PaywallKarti.hacim,
     'analiz_notu' => PaywallKarti.not,
@@ -57,12 +77,15 @@ List<PaywallKarti> desteSirasi(
   String source, {
   required bool radar,
   required bool ekstreAi,
+  // Varsayılan kapalı: bayrak açılmadan satılmaz (açılmamış şey satılmaz).
+  bool portfoy = false,
 }) {
   final acik = [
     for (final k in PaywallKarti.values)
       if (switch (k) {
         PaywallKarti.akis || PaywallKarti.hacim || PaywallKarti.not => radar,
         PaywallKarti.ekstre => ekstreAi,
+        PaywallKarti.portfoy => portfoy,
         _ => true,
       })
         k,
@@ -153,7 +176,9 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
     _dil = dil;
     final rc = RemoteConfigService.instance;
     final sira = desteSirasi(widget.source,
-        radar: rc.balinaRadariAcik, ekstreAi: rc.ekstreAiEsleme);
+        radar: rc.balinaRadariAcik,
+        ekstreAi: rc.ekstreAiEsleme,
+        portfoy: rc.cokluPortfoy);
     return _kartlar = [for (final k in sira) _kart(context, k)];
   }
 
@@ -171,15 +196,47 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           l.pwdVarlikUcretsiz(rc.freeAssetLimit, rc.paywallWatchlistLimit),
           l.prmSinirsiz,
         ),
+      PaywallKarti.rapor => (
+          _KartRengi.krem,
+          l.pwdRaporEtiket,
+          l.pwdRaporBaslik,
+          'PDF · Excel',
+          _BelgeGorseli(renk: _KartRengi.krem),
+          null,
+          l.pwdRaporPremium,
+        ),
+      PaywallKarti.temettu => (
+          _KartRengi.yesil,
+          l.pwdTemettuEtiket,
+          l.pwdTemettuBaslik,
+          null,
+          _Cubuklar(
+              degerler: const [8, 18, 8, 64, 8, 8, 22, 8, 40, 8, 30, 92],
+              vurgulu: 1,
+              aralik: SandikSpace.xs,
+              renk: _KartRengi.yesil),
+          null,
+          l.pwdTemettuPremium,
+        ),
+      // Fon X-Ray bütünüyle Premium: ücretsiz satırı yok.
+      PaywallKarti.xray => (
+          _KartRengi.koyu,
+          l.pwdXrayEtiket,
+          l.pwdXrayBaslik,
+          null,
+          _YiginGorseli(renk: _KartRengi.koyu),
+          null,
+          l.pwdXrayPremium,
+        ),
+      // Sinyal paywall açıkken bütünüyle Premium (2026-10-10): ücretsiz
+      // satırı yok.
       PaywallKarti.sinyal => (
           _KartRengi.amber,
           l.pwdSinyalEtiket,
           l.pwdSinyalBaslik,
-          'ADX · W%R · CCI',
+          l.pwdSinyalRozet,
           _SaatGorseli(renk: _KartRengi.amber),
-          rc.freeSignalAssets > 0
-              ? l.pwdSinyalUcretsizTek(rc.freeSignalSlotsPerDay)
-              : l.pwdSinyalUcretsiz(rc.freeSignalSlotsPerDay),
+          null,
           l.pwdSinyalPremium,
         ),
       PaywallKarti.karsilastir => (
@@ -198,6 +255,21 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           null,
           _OrtakGorseli(renk: _KartRengi.yesil),
           l.pwdOrtakSayi(rc.freePartnerLimit),
+          l.prmSinirsiz,
+        ),
+      // Çoklu portföy: ücretsizde 1 (Ana), Premium sınırsız
+      // (`portfoyLimitProvider`).
+      PaywallKarti.portfoy => (
+          _KartRengi.koyu,
+          l.pwdPortfoyEtiket,
+          l.pwdPortfoyBaslik,
+          null,
+          _Cubuklar(
+              degerler: const [34, 58, 82, 46],
+              vurgulu: 1,
+              aralik: SandikSpace.sm,
+              renk: _KartRengi.koyu),
+          l.pwdPortfoySayi(1),
           l.prmSinirsiz,
         ),
       PaywallKarti.akis => (
@@ -966,6 +1038,87 @@ class _NotGorseli extends StatelessWidget {
         ]),
         overflow: TextOverflow.fade,
       ),
+    );
+  }
+}
+
+/// Yıllık rapor kartı: üç satırlık belge — sol etiket, sağ tutar sütunu.
+class _BelgeGorseli extends StatelessWidget {
+  const _BelgeGorseli({required this.renk});
+
+  final _KartRengi renk;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget cubuk(double oran, Color c) => FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: oran,
+          child: Container(
+            height: 10,
+            decoration: BoxDecoration(
+              color: c,
+              borderRadius: BorderRadius.circular(SandikSpace.xs),
+            ),
+          ),
+        );
+    Widget satir(double sol, double sag) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+          child: Row(
+            children: [
+              Expanded(flex: 3, child: cubuk(sol, renk.soluk)),
+              const SizedBox(width: SandikSpace.sm2),
+              Expanded(flex: 2, child: cubuk(sag, renk.vurgu)),
+            ],
+          ),
+        );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [satir(0.9, 0.7), satir(0.6, 0.5), satir(0.8, 0.9)],
+    );
+  }
+}
+
+/// Fon X-Ray kartı: üç yığılmış çubuk (iki fonun içi ve portföyün
+/// toplamı). Oranlar temsilîdir, gerçek veri değil — öteki kart
+/// görselleri gibi yalnız biçimi anlatır.
+class _YiginGorseli extends StatelessWidget {
+  const _YiginGorseli({required this.renk});
+
+  final _KartRengi renk;
+
+  @override
+  Widget build(BuildContext context) {
+    final tonlar = [
+      renk.vurgu,
+      renk.vurgu.withValues(alpha: 0.6),
+      renk.vurgu.withValues(alpha: 0.3),
+      renk.soluk,
+    ];
+    Widget satir(List<int> paylar) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(SandikSpace.xs),
+            child: SizedBox(
+              height: SandikSpace.smd,
+              child: Row(
+                children: [
+                  for (var i = 0; i < paylar.length; i++)
+                    Expanded(
+                      flex: paylar[i],
+                      child: ColoredBox(color: tonlar[i % tonlar.length]),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        satir(const [62, 18, 12, 8]),
+        satir(const [20, 45, 25, 10]),
+        satir(const [38, 30, 20, 12]),
+      ],
     );
   }
 }

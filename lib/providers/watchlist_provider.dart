@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
+import '../models/gorunum_kapsami.dart';
 import '../models/watchlist_item.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
@@ -217,16 +218,14 @@ List<Asset> kiyasVarliklari({
   required Map<String, List<Asset>> partnerAssets,
   required Set<String> activePartnerIds,
 }) {
-  List<Asset> aktif(String id) => activePartnerIds.contains(id)
-      ? (partnerAssets[id] ?? const [])
-      : const [];
-
-  if (view == '') return myAssets;
-  if (view != null) return aktif(view);
-  return <Asset>[
-    ...myAssets,
-    for (final id in activePartnerIds) ...aktif(id),
-  ];
+  // Kapsam tek kaynaktan (`gorunum_kapsami.dart`, 2026-10-10); pasif
+  // ortak kuralı `aktifOrtaklar` ile aynen taşındı.
+  return kapsamDefteri(
+    kisi: view,
+    benim: myAssets,
+    ortaklar: partnerAssets,
+    aktifOrtaklar: activePartnerIds,
+  );
 }
 
 /// Bu ekleme limite takılır mı?

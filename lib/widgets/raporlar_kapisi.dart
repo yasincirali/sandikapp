@@ -6,12 +6,17 @@ import 'package:intl/intl.dart';
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
+import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../providers/raporlar_provider.dart';
 import '../screens/aylik_rapor_screen.dart';
 import '../screens/hafta_ozeti_screen.dart';
+import '../screens/portfoy_xray_screen.dart';
 import '../screens/recap_screen.dart';
 import '../screens/siralama_screen.dart' show yarisGirisEkrani;
+import '../screens/temettu_tahmini_screen.dart';
+import '../screens/yillik_rapor_screen.dart';
 import '../services/recap_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 
 /// Performans başlığındaki "Raporlar" kapısı (bayrak `raporlar_kapisi`,
@@ -29,7 +34,9 @@ import '../theme/sandik.dart';
 /// ## Satır kuralı
 /// Bir satır yalnızca o rapor BUGÜN başka bir yerden açılabiliyorsa görünür
 /// (koşullar `raporlar_provider.dart` ve [yilOzetiProvider] notlarında);
-/// kapı yeni bir erişim icat etmez. Hiç satır yoksa düğme de yok. Demoda
+/// kapı yeni bir erişim icat etmez. İstisna Yıllık rapor, Temettü
+/// tahmini ve Portföy X-Ray (Premium, 2026-10-10): yalnız bu kapıdan
+/// açılır ve Premium özellikleri görünürken hep vardır. Hiç satır yoksa düğme de yok. Demoda
 /// düğme hiç çizilmez: kupa da demoda yoktu (yarış sunucu havuzudur) ve
 /// öteki üç rapor da sunucu notlarından/anlık görüntülerden okunur.
 class RaporlarDugmesi extends ConsumerWidget {
@@ -44,9 +51,13 @@ class RaporlarDugmesi extends ConsumerWidget {
     if (DemoModu.aktif) return const SizedBox.shrink();
     final hafta = ref.watch(balinaRadariAcikProvider);
     final yil = ref.watch(yilOzetiProvider).valueOrNull;
+    // Yıllık rapor ve temettü tahmini (Premium, 2026-10-10) Premium
+    // özellikleri görünürken (tek anahtar `paywall_enabled` ya da admin)
+    // her zaman vardır; kilitliyse satır paywall'a götürür.
+    final premium = RemoteConfigService.instance.premiumOzellikleriGorunur;
     // Aylık rapor haftanın özetinin alt kümesi (aynı bayrak): ayrıca
     // sorulmaz, düğmenin görünürlüğünü değiştirmez.
-    if (!siralamaAcik && !hafta && yil == null) {
+    if (!siralamaAcik && !hafta && yil == null && !premium) {
       return const SizedBox.shrink();
     }
     final l = context.l10n;
@@ -110,6 +121,9 @@ class _RaporlarSayfasi extends ConsumerWidget {
     final aylik = ref.watch(aylikRaporDonemiProvider);
     final yil = ref.watch(yilOzetiProvider).valueOrNull;
     final dil = Localizations.localeOf(context).toString();
+    // Premium satırları kilitliyken de görünür (satış anı); ok yerine
+    // kilit simgesi taşır, ekran açılınca kilit kartı karşılar.
+    final kilitli = ref.watch(premiumKilitliProvider);
 
     final satirlar = <Widget>[
       if (hafta)
@@ -120,12 +134,47 @@ class _RaporlarSayfasi extends ConsumerWidget {
           onTap: () => ac((ekran) => pushGuarded(ekran,
               adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()))),
         ),
+      // Tek anahtar: paywall kapalıyken (Console'da `raporlar_kapisi`
+      // açık olsa da) yalnız admin görür.
+      if (RemoteConfigService.instance.premiumOzellikleriGorunur) ...[
+        _RaporSatiri(
+          ikon: Icons.receipt_long_rounded,
+          baslik: l.yrBaslik,
+          alt: l.yrSatirAlt,
+          kilitli: kilitli,
+          onTap: () => ac((ekran) => pushGuarded(ekran,
+              adaptiveRoute<void>(builder: (_) => const YillikRaporScreen()))),
+        ),
+        _RaporSatiri(
+          ikon: Icons.event_repeat_rounded,
+          baslik: l.ttBaslik,
+          alt: l.ttRaporAlt,
+          kilitli: kilitli,
+          onTap: () => ac((ekran) => pushGuarded(
+              ekran,
+              adaptiveRoute<void>(
+                  builder: (_) => const TemettuTahminiScreen()))),
+        ),
+        // Portföy X-Ray (Premium, 2026-10-10): aynı kural — yalnız bu
+        // kapıdan açılır, kilitliyken satır var, ekran kilit kartı çizer.
+        _RaporSatiri(
+          ikon: Icons.donut_large_rounded,
+          baslik: l.xrEkranBaslik,
+          alt: l.xrRaporAlt,
+          kilitli: kilitli,
+          onTap: () => ac((ekran) => pushGuarded(
+              ekran,
+              adaptiveRoute<void>(builder: (_) => const PortfoyXrayScreen()))),
+        ),
+      ],
       if (aylik != null)
         _RaporSatiri(
           ikon: Icons.summarize_rounded,
           baslik: l.s6AylikRapor,
           alt: l.anzAylikBaslik(DateFormat('MMMM y', dil).format(aylik)),
-          onTap: () => ac((ekran) => pushGuarded(ekran,
+          kilitli: kilitli,
+          onTap: () => ac((ekran) => pushGuarded(
+              ekran,
               adaptiveRoute<void>(
                   builder: (_) => AylikRaporScreen(donem: aylik)))),
         ),
@@ -145,8 +194,8 @@ class _RaporlarSayfasi extends ConsumerWidget {
           baslik: l.s6Siralama,
           alt: l.s6SiralamaAlt,
           // Kupayla aynı hedef: Sıralama › Ortaklarım.
-          onTap: () => ac((ekran) => pushGuarded(ekran,
-              adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()))),
+          onTap: () => ac((ekran) => pushGuarded(
+              ekran, adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()))),
         ),
     ];
 
@@ -184,12 +233,16 @@ class _RaporSatiri extends StatelessWidget {
     required this.baslik,
     required this.alt,
     required this.onTap,
+    this.kilitli = false,
   });
 
   final IconData ikon;
   final String baslik;
   final String alt;
   final VoidCallback onTap;
+
+  /// Premium satırı kilitli: sağda ok yerine kehribar kilit.
+  final bool kilitli;
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +277,10 @@ class _RaporSatiri extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: c.text36),
+              kilitli
+                  ? Icon(Icons.lock_outline_rounded,
+                      color: c.amberText, size: SandikSpace.md)
+                  : Icon(Icons.chevron_right_rounded, color: c.text36),
             ],
           ),
         ),

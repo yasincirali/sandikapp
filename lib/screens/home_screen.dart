@@ -54,6 +54,7 @@ import '../widgets/tour_anchor.dart';
 import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../l10n/l10n.dart';
+import '../models/gorunum_kapsami.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -493,16 +494,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Görünüme göre gösterilecek varlıklar ('' Ben, id ortak, null Birlikte).
     // Yardımcı: kaydırma sırasında KOMŞU görünümün kartı da aynı hesapla
     // kurulur (`KaydirmaliGecis.komsu`), iki yol ayrışmasın.
-    List<Asset> gorunumVarliklari(String? view) {
-      if (view == '') return positionedAssets(myState.assets);
-      if (view != null && view.isNotEmpty) {
-        return positionedAssets(allPartnerAssets[view] ?? const []);
-      }
-      return [
-        ...positionedAssets(myState.assets),
-        for (final list in allPartnerAssets.values) ...positionedAssets(list),
-      ];
-    }
+    // Kapsamın defterleri tek kaynaktan (`gorunum_kapsami.dart`); her sahip
+    // AYRI indirgenir. Ana sayfa portföy süzgeci TAŞIMAZ: toplam kartı,
+    // Bugün kartı, widget ve kilit ekranıyla aynı kullanıcı toplamıdır.
+    List<Asset> gorunumVarliklari(String? view) => [
+          for (final lots in kapsamSahipDefterleri(
+              kisi: view, benim: myState.assets, ortaklar: allPartnerAssets))
+            ...positionedAssets(lots),
+        ];
 
     final displayedAssets = gorunumVarliklari(_view);
 
@@ -525,17 +524,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // "Silindi · N kayıt" mezar taşı burada, son üç kaydın arasındaydı:
     // bir silme işlemi ana sayfanın üç satırını birden artık portföyde
     // olmayan şeylere ayırabiliyordu.
-    final List<Asset> ledgerAssets;
-    if (_view == '') {
-      ledgerAssets = myState.assets;
-    } else if (_view != null && _view!.isNotEmpty) {
-      ledgerAssets = allPartnerAssets[_view!] ?? const [];
-    } else {
-      ledgerAssets = [
-        ...myState.assets,
-        for (final list in allPartnerAssets.values) ...list,
-      ];
-    }
+    final ledgerAssets = kapsamDefteri(
+        kisi: _view, benim: myState.assets, ortaklar: allPartnerAssets);
 
     // "Ben" mini card'ı — kendi net pozisyon toplamı (satışlar düşülmüş).
     final myBuyTotal = positionedAssets(myState.assets)

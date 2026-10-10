@@ -15,6 +15,7 @@ import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/review_prompt_service.dart';
 import '../services/temettu_gecmisi.dart';
+import 'portfoy_secim_sayfasi.dart';
 import 'sandik_async_button.dart';
 import 'review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
@@ -51,6 +52,13 @@ Future<void> showDividendDialog(
   double? Function()? stopajKaynagi,
 }) async {
   if (DemoModu.yazmaKapisi('temettu')) return; // Demo: kaydetmek hesap ister (F1).
+  // Çoklu portföy (0133): karışık pozisyonda temettü hangi portföyün
+  // getirisi? Önce sorulur; karışık değilse (bayrak kapalıyken hep) aynen.
+  if (asset.portfoyKarisik) {
+    final pozisyon = await islemIcinPozisyon(context, asset);
+    if (pozisyon == null || !context.mounted) return;
+    asset = pozisyon;
+  }
   final stopaj = oneri == null
       ? null
       : (stopajKaynagi ??

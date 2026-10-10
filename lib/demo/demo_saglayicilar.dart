@@ -271,6 +271,7 @@ class DemoPortfolioNotifier extends PortfolioNotifier {
     double? initialCurrentPrice,
     double commission = 0,
     String? sozlesmeId,
+    String? portfoyId,
   }) async =>
       DemoModu.yazmaEngeli('varlik_ekle');
 

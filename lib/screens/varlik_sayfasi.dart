@@ -7,7 +7,8 @@ import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
-import '../providers/preferences_provider.dart' show seviyeGorunurlukProvider;
+import '../providers/preferences_provider.dart'
+    show SinyalYuzeyi, sinyalYuzeyiProvider;
 import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
@@ -30,6 +31,7 @@ import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/sinyal_kilit_karti.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
@@ -259,7 +261,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       // panelin serisi de istenmez (varlık detayıyla aynı).
       if (widget.seriYukleyici == null &&
           widget.kimlik.ticker.isNotEmpty &&
-          ref.read(seviyeGorunurlukProvider).teknikSinyaller)
+          ref.read(sinyalYuzeyiProvider) == SinyalYuzeyi.acik)
         HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
             periodDays: kSinyalPenceresiGun),
     ]);
@@ -540,12 +542,17 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       // `seviyeGorunurlugu(...).teknikSinyaller` ile gizliyordu, bu sayfa
       // gizlemiyordu — Başlangıç kullanıcısı sinyali Takip'ten ya da
       // aramadan açınca görüyordu. Aynı kapı burada da.
-      if (ref.watch(seviyeGorunurlukProvider).teknikSinyaller)
+      //
+      // Paywall açıkken sinyal Premium'da (`sinyalYuzeyiProvider`): panelin
+      // yerine kilit kartı.
+      if (ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik)
         TechnicalSignalPanel(
           ticker: k.ticker,
           type: k.type,
           subCategory: k.subCategory,
-        ),
+        )
+      else if (ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.kilitli)
+        const SinyalKilitKarti(),
       // AL/SAT sinyali gösteren her yüzey yasal ibareyi de taşır.
       const SizedBox(height: SandikSpace.sm),
       const DisclaimerWidget(),

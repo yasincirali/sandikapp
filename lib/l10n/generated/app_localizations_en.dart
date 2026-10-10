@@ -2297,7 +2297,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallSubhead =>
-      'Unlimited assets and advanced indicators. Portfolio tracking stays free.';
+      'Unlimited assets, annual report, dividend forecast and technical signals. Portfolio tracking stays free.';
 
   @override
   String get restorePurchase => 'Restore purchase';
@@ -6674,13 +6674,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSinirsiz => 'unlimited';
 
   @override
-  String get prmSatirSinyal => 'Signal alerts';
+  String get prmSatirSinyal => 'Technical signals';
 
   @override
   String get prmSinyalUcretsiz => '1 asset';
 
   @override
-  String get prmSinyalPremium => 'all assets';
+  String get prmSinyalPremium => '8 indicators, all assets';
 
   @override
   String get prmSatirTakip => 'Watchlist';
@@ -7459,7 +7459,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdSinyalBaslik =>
-      'Get alerts at the hours you pick, plus three more indicators.';
+      'Eight indicators and alerts on every asset, at the hours you pick.';
 
   @override
   String pwdSinyalUcretsiz(int sayi) {
@@ -7472,7 +7472,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdSinyalPremium => 'any frequency';
+  String get pwdSinyalPremium => '8 indicators, all assets';
 
   @override
   String get pwdKarsEtiket => 'COMPARE';
@@ -7638,4 +7638,534 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositNoteHint => 'e.g. campaign rate, goal, branch';
+
+  @override
+  String get sgnKilitBaslik => 'Technical signals';
+
+  @override
+  String get sgnKilitGovde =>
+      'RSI, MACD, Bollinger, EMA, Stochastic, ADX, Williams %R and CCI: eight indicators, alerts on every asset you hold at the frequency you choose, and the full indicator panel on the asset screen.';
+
+  @override
+  String get sgnKilitSatir => 'Technical signals are part of Premium';
+
+  @override
+  String get prmAylikKilitBaslik => 'Monthly report';
+
+  @override
+  String get prmAylikKilitGovde =>
+      'Every asset\'s note for the month in one report: which assets moved, the month\'s story and the full notes. The weekly summary stays free.';
+
+  @override
+  String get prmAylikKilitSatir => 'The monthly report is part of Premium';
+
+  @override
+  String costsBreakdownLocked(int count) {
+    return 'The $count-item breakdown is part of Premium';
+  }
+
+  @override
+  String get yrBaslik => 'Annual report';
+
+  @override
+  String get yrSatirAlt =>
+      'Gains, dividends, withholding and fees; PDF or Excel';
+
+  @override
+  String get yrKilitBaslik => 'Annual gains, dividends and fees report';
+
+  @override
+  String get yrKilitGovde =>
+      'Realized gains from the year\'s sales, net and gross dividends, withholding tax and commissions in one report. Send it to your accountant as PDF or Excel.';
+
+  @override
+  String get yrKilitSatir => 'The annual report is part of Premium';
+
+  @override
+  String get yrBos => 'Nothing to report yet';
+
+  @override
+  String get yrBosAlt =>
+      'Once you record a sale, a dividend or a purchase with commission, that year\'s report appears here.';
+
+  @override
+  String get yrGerceklesen => 'Realized gain/loss';
+
+  @override
+  String get yrYurtDisi => 'Foreign (US) stocks part';
+
+  @override
+  String get yrYurtDisiEtiket => 'Foreign';
+
+  @override
+  String get yrTemettuNet => 'Dividends (net)';
+
+  @override
+  String get yrStopaj => 'Dividend withholding';
+
+  @override
+  String get yrStopajBilinmiyor => 'rate unknown';
+
+  @override
+  String yrStopajSatir(String tutar) {
+    return 'withholding $tutar';
+  }
+
+  @override
+  String get yrMasraf => 'Transaction fees';
+
+  @override
+  String get yrPdf => 'PDF';
+
+  @override
+  String get yrExcel => 'Excel';
+
+  @override
+  String get yrSatislarUpper => 'SALES';
+
+  @override
+  String get yrTemettulerUpper => 'DIVIDENDS';
+
+  @override
+  String yrFiyatsiz(int count) {
+    return '$count older sales without a recorded sale price are not included.';
+  }
+
+  @override
+  String get yrDipnot =>
+      'Prepared from your records; not a tax return or tax advice. Ask your accountant about filing. Your partner\'s transactions are not included.';
+
+  @override
+  String get dsBicimBaslik => 'Which format?';
+
+  @override
+  String get dsPdf => 'PDF';
+
+  @override
+  String get dsPdfAlt => 'To read and send';
+
+  @override
+  String get dsExcel => 'Excel';
+
+  @override
+  String get dsExcelAlt => 'Amounts as numbers; ready to sum and filter';
+
+  @override
+  String get dsPortfoyBaslik => 'Export portfolio';
+
+  @override
+  String get dsPortfoyAlt =>
+      'Your assets and transaction history; PDF or Excel';
+
+  @override
+  String get ttBaslik => 'Dividend forecast';
+
+  @override
+  String get ttRaporAlt =>
+      'Expected dividends over the next 12 months, month by month';
+
+  @override
+  String get ttKilitGovde =>
+      'What your BIST stocks\' dividends from the last 12 months would add up to next year at today\'s holdings: monthly bars, per-asset list, net after withholding.';
+
+  @override
+  String get ttKilitSatir => 'The dividend forecast is part of Premium';
+
+  @override
+  String get ttBos => 'No dividends to forecast';
+
+  @override
+  String get ttBosAlt =>
+      'The forecast appears once you hold a BIST stock that paid dividends in the last 12 months.';
+
+  @override
+  String get ttToplamEtiket => 'Next 12 months, estimated';
+
+  @override
+  String get ttBrutNot =>
+      'Gross; net not calculated because the withholding rate is unknown.';
+
+  @override
+  String ttNetNot(String brut) {
+    return 'Net after withholding · gross $brut';
+  }
+
+  @override
+  String get ttVarliklarUpper => 'ASSETS';
+
+  @override
+  String ttSatirAlt(String pay, String aylar) {
+    return '$pay per share · $aylar';
+  }
+
+  @override
+  String get ttKural =>
+      'The forecast follows one rule: the dividends paid over the last 12 months, repeated in the same months at today\'s holdings. Company decisions, splits and bonus issues are not taken into account. BIST stocks only; not investment advice.';
+
+  @override
+  String get pwOzRapor =>
+      'Annual gains, dividends and withholding report; export your portfolio as PDF or Excel';
+
+  @override
+  String get pwOzTemettu =>
+      'Dividend forecast for the next 12 months, month by month';
+
+  @override
+  String get pwOzSinyalTam =>
+      'Technical signals: 8 indicators, alerts on every asset at the frequency you choose';
+
+  @override
+  String get pwOzMasraf => 'Item-by-item fee breakdown per asset';
+
+  @override
+  String get prmSatirAlarm => 'Price alerts';
+
+  @override
+  String get prmSatirYillik => 'Annual report';
+
+  @override
+  String get prmSatirDisaAktar => 'Export';
+
+  @override
+  String get prmDisaAktarUcretsiz => 'JSON';
+
+  @override
+  String get prmDisaAktarPremium => 'PDF + Excel';
+
+  @override
+  String get prmSatirTemettu => 'Dividend forecast';
+
+  @override
+  String get prmSatirMasraf => 'Fees';
+
+  @override
+  String get prmMasrafUcretsiz => 'totals';
+
+  @override
+  String get prmMasrafPremium => 'itemized';
+
+  @override
+  String get prmSatirKars => 'Compare';
+
+  @override
+  String get prmSatirOrtak => 'Partners';
+
+  @override
+  String get pwdRaporEtiket => 'ANNUAL REPORT';
+
+  @override
+  String get pwdRaporBaslik =>
+      'The year\'s gains, dividends and withholding in one document; send it to your accountant.';
+
+  @override
+  String get pwdRaporPremium => 'PDF and Excel';
+
+  @override
+  String get pwdTemettuEtiket => 'DIVIDEND FORECAST';
+
+  @override
+  String get pwdTemettuBaslik =>
+      'See how much dividend income the next 12 months bring, month by month.';
+
+  @override
+  String get pwdTemettuPremium => '12-month forecast';
+
+  @override
+  String get pwdSinyalRozet => '8 indicators';
+
+  @override
+  String get xrKartBaslikUpper => 'WHAT\'S INSIDE THE FUND';
+
+  @override
+  String get xrSatirFonunIci => 'Inside the fund';
+
+  @override
+  String xrKaynakTefas(String tarih) {
+    return 'TEFAS · $tarih';
+  }
+
+  @override
+  String xrToplamSapiyor(String toplam) {
+    return 'The source\'s classes add up to $toplam; the gap isn\'t assigned to any class.';
+  }
+
+  @override
+  String get xrKilitBaslik => 'Fund X-Ray';
+
+  @override
+  String get xrKilitGovde =>
+      'Where the fund\'s money sits: stocks, government bonds, deposits, gold, FX… From TEFAS\'s daily allocation, with date and source.';
+
+  @override
+  String get xrKilitSatir => 'What\'s inside the fund is in Premium';
+
+  @override
+  String xrKalemlerBaslik(int n) {
+    return 'Top $n holdings';
+  }
+
+  @override
+  String xrKaynakKap(String donem) {
+    return 'KAP Portfolio Allocation Report · end of $donem';
+  }
+
+  @override
+  String get xrKapAc => 'Open the report on KAP';
+
+  @override
+  String get xrKovaBistHisse => 'BIST stocks';
+
+  @override
+  String get xrKovaYabanciHisse => 'Foreign stocks';
+
+  @override
+  String get xrKovaDevlet => 'Government debt (TRY)';
+
+  @override
+  String get xrKovaOzel => 'Corporate debt';
+
+  @override
+  String get xrKovaDovizBorc => 'FX & external debt';
+
+  @override
+  String get xrKovaParaPiyasasi => 'Money market / repo';
+
+  @override
+  String get xrKovaMevduat => 'Deposits';
+
+  @override
+  String get xrKovaMaden => 'Precious metals';
+
+  @override
+  String get xrKovaFon => 'Fund / ETF units';
+
+  @override
+  String get xrKovaGayrimenkul => 'Real estate / venture';
+
+  @override
+  String get xrKovaDiger => 'Other';
+
+  @override
+  String get xrKovaEtiketsiz => 'Unlabelled class';
+
+  @override
+  String get xrKovaDoviz => 'Foreign currency';
+
+  @override
+  String get xrKovaKripto => 'Crypto';
+
+  @override
+  String get xrKovaEmtia => 'Commodities';
+
+  @override
+  String get xrEkranBaslik => 'Portfolio X-Ray';
+
+  @override
+  String get xrRaporAlt => 'Where your money really is, inside your funds too';
+
+  @override
+  String get xrToplamEtiket => 'Your portfolio today';
+
+  @override
+  String get xrDagilimUpper => 'LOOK-THROUGH ALLOCATION';
+
+  @override
+  String get xrDisi => 'Not covered';
+
+  @override
+  String get xrDisiAciklama =>
+      'Funds with no allocation data, and the gap in funds whose source doesn\'t add up to 100%. Not spread over other classes.';
+
+  @override
+  String xrDisiFonlar(String fonlar) {
+    return 'No allocation data: $fonlar';
+  }
+
+  @override
+  String xrKaynakFonlar(String tarih) {
+    return 'Funds: TEFAS daily allocation · $tarih';
+  }
+
+  @override
+  String get xrKaynakDogrudan =>
+      'Direct holdings at today\'s prices; partners\' holdings aren\'t included.';
+
+  @override
+  String get xrBos => 'Nothing to X-ray yet';
+
+  @override
+  String get xrBosAlt =>
+      'Add a holding and your real allocation, inside funds too, shows up here.';
+
+  @override
+  String get xrEkranKilitGovde =>
+      'The stocks, bonds, deposits and gold inside your funds, together with what you hold directly: where your money really is. From TEFAS\'s daily allocation, with date and source.';
+
+  @override
+  String get xrEkranKilitSatir => 'Portfolio X-Ray is in Premium';
+
+  @override
+  String get xrOrtusmeUpper => 'HELD IN MORE THAN ONE PLACE';
+
+  @override
+  String get xrOrtusmeAciklama =>
+      'If you hold the same stock through several funds (or a fund and directly), your total exposure.';
+
+  @override
+  String xrOrtusmeKaynak(int n) {
+    return 'via $n holdings';
+  }
+
+  @override
+  String get xrDogrudan => 'directly';
+
+  @override
+  String xrKaynakKalemler(String donem) {
+    return 'Holdings: KAP Portfolio Allocation Reports · end of $donem';
+  }
+
+  @override
+  String get pwOzXray =>
+      'Fund X-Ray: inside your funds and your real allocation';
+
+  @override
+  String get prmSatirXray => 'Fund X-Ray';
+
+  @override
+  String get pwdXrayEtiket => 'FUND X-RAY';
+
+  @override
+  String get pwdXrayBaslik =>
+      'See what\'s inside your funds and where your money really is.';
+
+  @override
+  String get pwdXrayPremium => 'Fund and portfolio X-Ray';
+
+  @override
+  String get portfoyTumu => 'All';
+
+  @override
+  String get portfoyAna => 'Main';
+
+  @override
+  String get portfoyAnaUzun => 'Main portfolio';
+
+  @override
+  String get portfoyYeni => 'New portfolio';
+
+  @override
+  String get portfoyYonet => 'Manage portfolios';
+
+  @override
+  String get portfoySeciciEtiketi => 'Portfolio';
+
+  @override
+  String get portfoyAdi => 'Portfolio name';
+
+  @override
+  String get portfoyAdiIpucu => 'e.g. Retirement, For my kid';
+
+  @override
+  String get portfoyAdiGecersiz => 'The name must be 1 to 40 characters.';
+
+  @override
+  String get portfoyAdiKullaniliyor =>
+      'You already have a portfolio with this name.';
+
+  @override
+  String get portfoyOlustur => 'Create';
+
+  @override
+  String get portfoyYenidenAdlandir => 'Rename';
+
+  @override
+  String get portfoySil => 'Delete portfolio';
+
+  @override
+  String portfoySilBaslik(String ad) {
+    return 'Delete $ad?';
+  }
+
+  @override
+  String portfoySilAciklama(int sayi) {
+    return 'Your assets are not deleted. The $sayi records in this portfolio move back to the main portfolio; your total stays the same.';
+  }
+
+  @override
+  String portfoySilindi(String ad) {
+    return '$ad deleted; its assets are in the main portfolio.';
+  }
+
+  @override
+  String get portfoySilinemedi => 'Couldn\'t delete the portfolio';
+
+  @override
+  String get portfoyKaydedilemedi => 'Couldn\'t save the portfolio';
+
+  @override
+  String get portfoyYonetimiBaslik => 'Portfolios';
+
+  @override
+  String get portfoyYonetimiAciklama =>
+      'Split your assets by goal: retirement, for your kid, experiments. The All view and the home total stay the same; the widget and lock screen also show the total.';
+
+  @override
+  String get portfoyAnaAciklama =>
+      'Anything you add without choosing a portfolio lives here.';
+
+  @override
+  String get portfoySiralaIpucu => 'Press and hold, then drag to reorder.';
+
+  @override
+  String get portfoyIslemSec => 'Which portfolio\'s position?';
+
+  @override
+  String get portfoyIslemSecAciklama =>
+      'This asset is in more than one portfolio. The transaction goes to the position in the portfolio you pick, at its cost.';
+
+  @override
+  String get portfoyTasi => 'Move';
+
+  @override
+  String get portfoyTasiBaslik => 'Move to which portfolio?';
+
+  @override
+  String get portfoyTasiAciklama =>
+      'The whole position moves with its history: buys, sells and dividends. Your total stays the same.';
+
+  @override
+  String portfoyTasindi(String ad) {
+    return 'Moved to $ad.';
+  }
+
+  @override
+  String get portfoyTasinamadi => 'Couldn\'t move';
+
+  @override
+  String get portfoyKaynakSec => 'Move the position from which portfolio?';
+
+  @override
+  String get pwOzPortfoy =>
+      'Unlimited portfolios: retirement, your kid, experiments kept apart';
+
+  @override
+  String get prmSatirPortfoy => 'Portfolios';
+
+  @override
+  String get pwdPortfoyEtiket => 'PORTFOLIOS';
+
+  @override
+  String get pwdPortfoyBaslik =>
+      'A portfolio for every goal; your total stays in view.';
+
+  @override
+  String pwdPortfoySayi(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi portfolios',
+      one: '1 portfolio',
+    );
+    return '$_temp0';
+  }
 }

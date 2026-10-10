@@ -365,9 +365,43 @@ final seviyeGorunurlukProvider = Provider<SeviyeGorunurluk>(
 // seviyede görünür oldu; bayrak kalkınca sağlayıcı hep `true` dönüyordu.
 // Başlangıç'ta yalnızca sinyal satırları süzülür ↓.
 
-/// Zil sayfası ve rozeti teknik sinyalleri saysın mı (Başlangıç'ta hayır).
-final zilSinyalleriGosterProvider = Provider<bool>((ref) =>
-    seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller);
+/// Zil sayfası ve rozeti teknik sinyalleri saysın mı (Başlangıç'ta hayır;
+/// paywall açıkken Premium olmayanda da hayır — bkz. [sinyalYuzeyiProvider]).
+final zilSinyalleriGosterProvider =
+    Provider<bool>((ref) => ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik);
+
+/// Teknik sinyal yüzeylerinin (varlık paneli, sinyal kartı, zildeki sinyal
+/// satırları, sinyal ayarları) bu kullanıcıdaki hâli.
+///
+/// ## Neden tek karar (yasin, 2026-10-10: "varlık gösterge sinyali özelliği
+/// tamamen premiuma geçsin")
+/// Sinyal eskiden ücretsizde 1 varlıkta ve 5 göstergeyle açıktı; artık
+/// paywall açıkken bütünüyle Premium. Seviye kapısı (Başlangıç'ta gizli)
+/// önce gelir: sinyal görmek istemeyen kullanıcıya kilit de gösterilmez.
+/// Seviye izin verip kullanıcı Premium değilse yüzeylerin YERİNE tek kilit
+/// satırı çizilir — özellik görünmez olursa satış anı da kaybolur.
+/// Paywall kapalıyken davranış birebir eski (canlıdaki kullanıcı etkilenmez).
+/// Sunucu aynı kararı `analyze-signals`'ta `premium_ayar.kapi_acik` ile verir.
+final sinyalYuzeyiProvider = Provider<SinyalYuzeyi>((ref) {
+  if (!seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller) {
+    return SinyalYuzeyi.gizli;
+  }
+  return ref.watch(premiumKilitliProvider)
+      ? SinyalYuzeyi.kilitli
+      : SinyalYuzeyi.acik;
+});
+
+/// [sinyalYuzeyiProvider] değerleri.
+enum SinyalYuzeyi {
+  /// Seviye kapısı: hiç çizilmez.
+  gizli,
+
+  /// Paywall açık, Premium değil: yüzeyin yerine kilit satırı.
+  kilitli,
+
+  /// Bugünkü davranış.
+  acik,
+}
 
 /// Biyometrik / cihaz kilidi — uygulama öne dönünce ve soğuk açılışta
 /// kimlik doğrulaması ister. Varsayılan KAPALI; açarken cihaz destekliyor mu
@@ -549,6 +583,16 @@ final rcEtkinlesmeProvider = Provider<int>((ref) {
 ///
 /// Kaynaklar: mağaza (RevenueCat, anlık), sunucu hakkı (abonelik/hediye/
 /// manuel), admin, ve yalnız debug'da geliştirici anahtarı.
+/// Premium'a özgü bir yüzey bu kullanıcıda kilitli mi: paywall açık VE
+/// Premium değil. Bütün Premium kilitlerinin TEK kaynağı (radar, notlar,
+/// aylık rapor, sinyaller, masraf dökümü, yıllık rapor, dışa aktarma,
+/// temettü tahmini, fon dağılımı, portföyler). Paywall kapalıyken hiçbir
+/// şey kilitlenmez; "kim görür" sorusu ayrıca
+/// `RemoteConfigService.premiumOzellikleriGorunur`'dadır (tek anahtar
+/// `paywall_enabled`, yasin 2026-10-09).
+final premiumKilitliProvider = Provider<bool>((ref) =>
+    ref.watch(paywallVisibleProvider) && !ref.watch(effectivePremiumProvider));
+
 final effectivePremiumProvider = Provider<bool>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return false;
@@ -1211,6 +1255,47 @@ final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final bildirimSonGorulenProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.bildirimSonGorulen, 0, perUser: true));
 
+/// Portföy ve Performans'ta seçili portföy (çoklu portföy, 0133).
+///
+/// Kodlama `PortfoySecimi` ile aynı: `''` Tümü (varsayılan), `ana` Ana,
+/// uuid adlandırılmış portföy. İki ekran AYNI seçimi okur: Portföy'de
+/// "Emeklilik"e bakıp Performans'a geçen kullanıcı aynı kümenin grafiğini
+/// görür. Kişiye özel ve kullanıcı değişiminde düşer (liste aşağıda):
+/// portföy kimliği hesaba aittir. Geçerlilik (bayrak, görünürlük, portföy
+/// hâlâ var mı) burada DEĞİL, `etkinPortfoySecimiProvider`'da — kayıtlı
+/// değer silinmez, koşul dönünce seçim geri gelir.
+class SeciliPortfoyNotifier extends Notifier<String> {
+  String get _key => _userKey(PrefKeys.seciliPortfoy);
+
+  @override
+  String build() {
+    final prefs = _prefsSync;
+    if (prefs != null) return prefs.getString(_key) ?? '';
+    _loadAsync();
+    return '';
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getString(_key);
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(String value) async {
+    state = value;
+    if (DemoModu.aktif) return; // Demo (F1): yalnızca bellekte.
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setString(_key, value);
+    } catch (_) {}
+  }
+}
+
+final seciliPortfoyProvider =
+    NotifierProvider<SeciliPortfoyNotifier, String>(SeciliPortfoyNotifier.new);
+
 // ─── Kullanıcıya özel tercihlerin TAM listesi ─────────────────────────────────
 //
 // `setPreferencesUser` yalnızca anahtar ÖN EKİNİ değiştirir; provider'ın
@@ -1248,4 +1333,5 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   radarKocuGorulduProvider,
   haftaSakinGosterProvider,
   premiumHediyeGosterildiProvider,
+  seciliPortfoyProvider,
 ];

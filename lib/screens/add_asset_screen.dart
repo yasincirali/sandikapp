@@ -18,6 +18,8 @@ import '../providers/bulk_cart_provider.dart';
 import '../providers/eurobond_provider.dart';
 import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/portfoy_provider.dart';
+import '../widgets/portfoy_secici.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -195,6 +197,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   /// Kayıt bayrağı genel formunkiyle aynı (`addAssetFormProvider.saving`):
   /// ekran durum alanı taşımaz (Faz 3.10 ratchet).
+  /// Formda seçilen portföy (0133, `formPortfoyuProvider`); seçilmediyse o
+  /// an seçili portföy, o da yoksa Ana (`null`). Bayrak kapalıyken notifier
+  /// zaten yok sayar.
+  String? get _hedefPortfoy {
+    final secim = ref.read(formPortfoyuProvider);
+    return secim != null ? secim.id : ref.read(varsayilanYeniPortfoyProvider);
+  }
+
   Future<void> _sozlesmeKaydet() async {
     if (_saving) return;
     final SozlesmeFormu? form = _type == AssetType.mevduat
@@ -202,7 +212,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         : _besFormu.currentState;
     if (form == null) return;
     _n.setSaving(true);
-    final tamam = await form.kaydet();
+    final tamam = await form.kaydet(portfoyId: _hedefPortfoy);
     if (!mounted) return;
     if (tamam) {
       // Bayrak açık kalır: kapanış animasyonunda buton yeniden basılmasın
@@ -557,6 +567,28 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     // ── Notlar (collapsible) ─────────────────────────────
                     _notesCollapsible(cs, komisyonDahil: _kolay),
                     ],
+                    // ── Portföy (çoklu portföy, 0133) ─────────────────────
+                    // Yeni kayıt (genel form ya da yeni sözleşme) hangi
+                    // portföye: varsayılan o an seçili portföy, yoksa Ana.
+                    // Düzenlemede yok (portföy değiştirmek bütün pozisyonu
+                    // taşımaktır, Portföy'deki "Taşı"). Özellik görünmüyorsa
+                    // ya da adlandırılmış portföy yoksa sıfır boy.
+                    // Sepet modunda da yok: toplu eklemede portföy sepet
+                    // düzeyinde TEK seçimdir (`BulkAddAssetScreen`).
+                    if (!_isEditing &&
+                        !widget.cartMode &&
+                        !_s.turIzgarasiAcik &&
+                        (!_type.sozlesmeli || _sozlesmeFormuAcik))
+                      PortfoyFormSecici(
+                        secili: switch (ref.watch(formPortfoyuProvider)) {
+                          final s? => s.id,
+                          null => ref.watch(varsayilanYeniPortfoyProvider),
+                        },
+                        onSec: (v) => ref
+                            .read(formPortfoyuProvider.notifier)
+                            .state = (id: v),
+                        bosluk: const EdgeInsets.only(top: SandikSpace.lgs),
+                      ),
                   ],
                   ),
                 ),
@@ -2449,6 +2481,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               subCategory:
                   entry.type == AssetType.kripto ? null : entry.subCategory,
               unitType: entry.type == AssetType.altin ? 'gram' : 'piece',
+              portfoyId: _hedefPortfoy,
             );
       }
     } finally {
@@ -2627,6 +2660,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             // böyle kaybolurdu).
             dividendAmount: a.dividendAmount,
             deletedCount: a.deletedCount,
+            // Sözleşme bağı, giriş anı ve portföy de taşınır (2026-10-10):
+            // eksik kopya düzenlemede lotu bellekte sözleşmesiz/Ana'da
+            // bırakıyordu (sunucuda gövdede yoklar, değişmezlerdi).
+            sozlesmeId: a.sozlesmeId,
+            createdAt: a.createdAt,
+            portfoyId: a.portfoyId,
           );
           await ref.read(portfolioProvider.notifier).updateAsset(updated);
         } else {
@@ -2655,6 +2694,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               unitType: _unitType,
               addedDate: _addedDate,
               commission: _parse(_commission.text) ?? 0,
+              portfoyId: _hedefPortfoy,
             );
       }
     } on AssetLimitExceededException catch (e) {

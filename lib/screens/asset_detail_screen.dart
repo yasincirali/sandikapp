@@ -9,7 +9,10 @@ import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/gorunum_kapsami.dart';
+import '../models/portfoy.dart';
 import '../models/position.dart';
+import '../providers/portfoy_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -57,7 +60,9 @@ import '../utils/acilis_kapisi.dart';
 import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
+import '../widgets/fon_dagilimi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
+import '../widgets/sinyal_kilit_karti.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
@@ -229,14 +234,21 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   final GlobalKey _sinyalPaneliKey = GlobalKey();
 
   /// Teknik sinyal yüzeyleri (kart + gösterge paneli) çizilsin mi?
-  /// Yatırımcı seviyesi Başlangıç ise hayır — bkz. `seviyeGorunurlugu`.
+  /// Yatırımcı seviyesi Başlangıç ise ya da paywall açıkken Premium değilse
+  /// hayır — bkz. `sinyalYuzeyiProvider`.
   bool get _sinyalYuzeyleri =>
-      seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller &&
+      ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
       // Mevduatın piyasa serisi yok; eğrisi sözleşmenin tahakkukudur ve
       // teknik sinyal anlamsızdır (sunucu da analiz etmez, ANALYZABLE).
       // BES de öyle (2026-10-01 emülatör testi): katılımcı fonu alıp
       // satamaz, yalnız dağılımı değiştirir; devlet katkısı fonunda o da
       // yok. AL/SAT göstergesi orada yanıltıcıdır.
+      !widget.asset.type.sozlesmeli;
+
+  /// Sinyal Premium'da (paywall açık, Premium değil): panelin yerine tek
+  /// kilit kartı. Sözleşmeli türlerde sinyal hiç olmadığı için kilit de yok.
+  bool get _sinyalKilidi =>
+      ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.kilitli &&
       !widget.asset.type.sozlesmeli;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
@@ -307,8 +319,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // ve paneli aynı sembol serisini okur; burada aynı anda istenir,
     // `HistoryService` önbelleği onlara ağa çıkmadan verir.
     final sinyalSerisi =
-        seviyeGorunurlugu(ref.read(yatirimciSeviyesiProvider))
-                    .teknikSinyaller &&
+        ref.read(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
                 widget.asset.ticker.trim().isNotEmpty
             ? HistoryService.instance.getSymbolHistory(widget.asset.ticker,
                 periodDays: kSinyalPenceresiGun)
@@ -465,13 +476,33 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       return _canliOnbellek!;
     }
     final sahip = widget.asset.userId;
-    final sahipLotlari = <Asset>[
+    var sahipLotlari = <Asset>[
       for (final a in kendi ?? const <Asset>[])
         if (a.userId == sahip) a,
       for (final lots in (ortaklar ?? const <String, List<Asset>>{}).values)
         for (final a in lots)
           if (a.userId == sahip) a,
     ];
+    // Çoklu portföy (0133): ekran bir PORTFÖYÜN pozisyonundan açıldıysa
+    // (görünüm karışık değil) canlı pozisyon da o portföyün lotlarından
+    // kurulur — yoksa "Emeklilik"teki ASELS'e girip Al/Sat'a basan kullanıcı
+    // bütün portföylerin havuzunu görür ve satış yanlış maliyetle yazılırdı.
+    // Yalnız KENDİ lotlarında (ortağın portföy kimliği bu kullanıcıda
+    // anlamsız) ve bayrak açıkken; kapalıyken bu blok hiç koşmaz.
+    if (RemoteConfigService.instance.cokluPortfoy &&
+        !widget.asset.portfoyKarisik &&
+        sahip == pState?.ownerId) {
+      final bilinen = {
+        for (final p in ref.read(portfoylerProvider).valueOrNull ??
+            const <Portfoy>[])
+          p.id,
+      };
+      final hedef = lotunPortfoyu(widget.asset, bilinen);
+      sahipLotlari = [
+        for (final a in sahipLotlari)
+          if (lotunPortfoyu(a, bilinen) == hedef) a,
+      ];
+    }
     final p = _positionOf(sahipLotlari);
     // `acik`: sahibin bu üründe BUGÜN açık pozisyonu var mı
     // (`aggregatePositions` kapanmışı döndürmez, CLAUDE.md "Kapanmış
@@ -1749,6 +1780,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 _fonKarnesi(),
+                _fonDagilimi(),
                 _paraAkisi(),
                 _hacimRadari(),
                 _kriptoBaski(),
@@ -1770,6 +1802,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // tekrarlanıyordu).
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
+                ] else if (_sinyalKilidi) ...[
+                  const SizedBox(height: 24),
+                  const SinyalKilitKarti(),
                 ],
                 ], // eski yığın (katmanlı değil)
                 ],

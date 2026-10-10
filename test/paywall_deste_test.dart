@@ -35,6 +35,16 @@ void main() {
         'kripto_baski': PaywallKarti.hacim,
         'analiz_notu': PaywallKarti.not,
         'ekstre_ai': PaywallKarti.ekstre,
+        'sinyal_kilit': PaywallKarti.sinyal,
+        'yillik_rapor': PaywallKarti.rapor,
+        'portfoy_disa_aktar': PaywallKarti.rapor,
+        'masraf_dokumu': PaywallKarti.rapor,
+        'temettu_tahmini': PaywallKarti.temettu,
+        'aylik_rapor': PaywallKarti.not,
+        // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
+        'fon_xray': PaywallKarti.xray,
+        'portfoy_xray': PaywallKarti.xray,
+        'portfoy_limit': PaywallKarti.portfoy,
       };
       beklenen.forEach((kaynak, kart) {
         expect(kaynaktanKart(kaynak), kart, reason: kaynak);
@@ -59,6 +69,20 @@ void main() {
         'lib/widgets/para_akisi_karti.dart',
         'lib/widgets/hacim_radari_karti.dart',
         'lib/screens/asset_detail/sinyal_widgetlari.dart',
+        // Olgun Premium seti (2026-10-10).
+        'lib/widgets/sinyal_kilit_karti.dart',
+        'lib/widgets/masraf_karti.dart',
+        'lib/screens/yillik_rapor_screen.dart',
+        'lib/screens/temettu_tahmini_screen.dart',
+        'lib/screens/aylik_rapor_screen.dart',
+        'lib/screens/settings_screen.dart',
+        // Fon X-Ray (2026-10-10).
+        'lib/widgets/fon_dagilimi_karti.dart',
+        'lib/screens/portfoy_xray_screen.dart',
+        // Çoklu portföy (2026-10-10).
+        'lib/widgets/portfoy_secici.dart',
+        'lib/widgets/portfoy_secim_sayfasi.dart',
+        'lib/screens/portfoy_yonetimi_screen.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -73,9 +97,24 @@ void main() {
       }
     });
 
-    test('varsayılan sıra, radar ve ekstre açıkken tüm kartlar', () {
-      expect(desteSirasi('profile_banner', radar: true, ekstreAi: true),
+    test('varsayılan sıra, radar, ekstre ve portföy açıkken tüm kartlar', () {
+      expect(
+          desteSirasi('profile_banner',
+              radar: true, ekstreAi: true, portfoy: true),
           PaywallKarti.values);
+    });
+
+    test('portföy kartı yalnız coklu_portfoy açıkken (varsayılan yok)', () {
+      expect(desteSirasi('profile_banner', radar: true, ekstreAi: true),
+          isNot(contains(PaywallKarti.portfoy)));
+      expect(desteSirasi('portfoy_limit', radar: false, ekstreAi: false).first,
+          PaywallKarti.varlik,
+          reason: 'bayrak kapalıyken kaynak varsayılan sıraya düşer');
+      expect(
+          desteSirasi('portfoy_limit',
+                  radar: false, ekstreAi: false, portfoy: true)
+              .first,
+          PaywallKarti.portfoy);
     });
 
     test('kaynağın kartı başa alınır, gerisi sırasını korur', () {
@@ -84,6 +123,9 @@ void main() {
         [
           PaywallKarti.karsilastir,
           PaywallKarti.varlik,
+          PaywallKarti.rapor,
+          PaywallKarti.temettu,
+          PaywallKarti.xray,
           PaywallKarti.sinyal,
           PaywallKarti.ortak,
         ],

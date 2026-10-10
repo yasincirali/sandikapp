@@ -2281,7 +2281,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get paywallSubhead =>
-      'Sınırsız varlık ve gelişmiş göstergeler. Portföy takibi her zaman ücretsiz.';
+      'Sınırsız varlık, yıllık rapor, temettü tahmini ve teknik sinyaller. Portföy takibi her zaman ücretsiz.';
 
   @override
   String get restorePurchase => 'Satın alımı geri yükle';
@@ -6611,13 +6611,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSinirsiz => 'sınırsız';
 
   @override
-  String get prmSatirSinyal => 'Sinyal bildirimi';
+  String get prmSatirSinyal => 'Teknik sinyaller';
 
   @override
   String get prmSinyalUcretsiz => '1 varlık';
 
   @override
-  String get prmSinyalPremium => 'tüm varlıklar';
+  String get prmSinyalPremium => '8 gösterge, tüm varlıklar';
 
   @override
   String get prmSatirTakip => 'Takip listesi';
@@ -7396,7 +7396,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdSinyalBaslik =>
-      'Seçtiğin saatlerde haber al, üç göstergeyi daha kat.';
+      'Sekiz gösterge ve her varlığında, seçtiğin saatte bildirim.';
 
   @override
   String pwdSinyalUcretsiz(int sayi) {
@@ -7409,7 +7409,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get pwdSinyalPremium => 'istediğin sıklık';
+  String get pwdSinyalPremium => '8 gösterge, tüm varlıklar';
 
   @override
   String get pwdKarsEtiket => 'KARŞILAŞTIR';
@@ -7566,4 +7566,523 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositNoteHint => 'Örn. kampanya faizi, hedef, şube';
+
+  @override
+  String get sgnKilitBaslik => 'Teknik sinyaller';
+
+  @override
+  String get sgnKilitGovde =>
+      'RSI, MACD, Bollinger, EMA, Stokastik, ADX, Williams %R ve CCI: sekiz gösterge, tuttuğun her varlıkta seçtiğin sıklıkta bildirim ve varlık ekranında tam gösterge paneli.';
+
+  @override
+  String get sgnKilitSatir => 'Teknik sinyaller Premium\'da';
+
+  @override
+  String get prmAylikKilitBaslik => 'Aylık rapor';
+
+  @override
+  String get prmAylikKilitGovde =>
+      'Tuttuğun her varlığın o ayki notu tek raporda: hangi varlıkta belirgin hareket oldu, ayın hikâyesi ve notların tamamı. Haftanın özeti ücretsiz kalır.';
+
+  @override
+  String get prmAylikKilitSatir => 'Aylık rapor Premium\'da';
+
+  @override
+  String costsBreakdownLocked(int count) {
+    return '$count kalemlik döküm Premium\'da';
+  }
+
+  @override
+  String get yrBaslik => 'Yıllık rapor';
+
+  @override
+  String get yrSatirAlt => 'Kâr, temettü, stopaj ve masraf; PDF ya da Excel';
+
+  @override
+  String get yrKilitBaslik => 'Yıllık kâr, temettü ve masraf raporu';
+
+  @override
+  String get yrKilitGovde =>
+      'Seçtiğin yılın satışlarından gerçekleşen kâr/zarar, temettülerin net ve brüt tutarı, stopaj ve komisyonlar tek raporda. Mali müşavirine PDF ya da Excel olarak gönderebilirsin.';
+
+  @override
+  String get yrKilitSatir => 'Yıllık rapor Premium\'da';
+
+  @override
+  String get yrBos => 'Raporlanacak kayıt yok';
+
+  @override
+  String get yrBosAlt =>
+      'Satış, temettü ya da komisyonlu alım girdiğinde o yılın raporu burada çıkar.';
+
+  @override
+  String get yrGerceklesen => 'Gerçekleşen kâr/zarar';
+
+  @override
+  String get yrYurtDisi => 'Yurt dışı (ABD) hisse kısmı';
+
+  @override
+  String get yrYurtDisiEtiket => 'Yurt dışı';
+
+  @override
+  String get yrTemettuNet => 'Temettü (net)';
+
+  @override
+  String get yrStopaj => 'Temettü stopajı';
+
+  @override
+  String get yrStopajBilinmiyor => 'oran bilinmiyor';
+
+  @override
+  String yrStopajSatir(String tutar) {
+    return 'stopaj $tutar';
+  }
+
+  @override
+  String get yrMasraf => 'İşlem masrafları';
+
+  @override
+  String get yrPdf => 'PDF';
+
+  @override
+  String get yrExcel => 'Excel';
+
+  @override
+  String get yrSatislarUpper => 'SATIŞLAR';
+
+  @override
+  String get yrTemettulerUpper => 'TEMETTÜLER';
+
+  @override
+  String yrFiyatsiz(int count) {
+    return 'Satış fiyatı kayıtlı olmayan $count eski satış rapora alınmadı.';
+  }
+
+  @override
+  String get yrDipnot =>
+      'Kayıtlarından hazırlanır; vergi beyannamesi ya da vergi tavsiyesi değildir. Beyan için mali müşavirine danış. Ortağının işlemleri dahil değildir.';
+
+  @override
+  String get dsBicimBaslik => 'Hangi biçimde?';
+
+  @override
+  String get dsPdf => 'PDF';
+
+  @override
+  String get dsPdfAlt => 'Okumak ve göndermek için';
+
+  @override
+  String get dsExcel => 'Excel';
+
+  @override
+  String get dsExcelAlt => 'Tutarlar sayı olarak; toplanabilir, süzülebilir';
+
+  @override
+  String get dsPortfoyBaslik => 'Portföyü dışa aktar';
+
+  @override
+  String get dsPortfoyAlt => 'Varlıkların ve işlem geçmişin; PDF ya da Excel';
+
+  @override
+  String get ttBaslik => 'Temettü tahmini';
+
+  @override
+  String get ttRaporAlt => 'Önümüzdeki 12 ayda beklenen temettü, ay ay';
+
+  @override
+  String get ttKilitGovde =>
+      'BIST hisselerinin son 12 ayda dağıttığı temettü, bugünkü lotunla tekrarlansa önümüzdeki yıl ne kadar eder: ay ay çubuklar, varlık varlık liste, stopaj sonrası net.';
+
+  @override
+  String get ttKilitSatir => 'Temettü tahmini Premium\'da';
+
+  @override
+  String get ttBos => 'Tahmin edilecek temettü yok';
+
+  @override
+  String get ttBosAlt =>
+      'Son 12 ayda temettü dağıtmış bir BIST hissen olduğunda tahmin burada çıkar.';
+
+  @override
+  String get ttToplamEtiket => 'Önümüzdeki 12 ay, tahmini';
+
+  @override
+  String get ttBrutNot =>
+      'Brüt; stopaj oranı bilinmediği için net hesaplanmadı.';
+
+  @override
+  String ttNetNot(String brut) {
+    return 'Stopaj sonrası net · brüt $brut';
+  }
+
+  @override
+  String get ttVarliklarUpper => 'VARLIKLAR';
+
+  @override
+  String ttSatirAlt(String pay, String aylar) {
+    return 'pay başına $pay · $aylar';
+  }
+
+  @override
+  String get ttKural =>
+      'Tahmin tek bir kurala dayanır: son 12 ayda gerçekleşen temettü, bugünkü lotunla aynı aylarda tekrarlansa. Şirket kararları, bölünme ve bedelsiz hesaba katılmaz. Yalnız BIST hisseleri; yatırım tavsiyesi değildir.';
+
+  @override
+  String get pwOzRapor =>
+      'Yıllık kâr, temettü ve stopaj raporu; portföyünü PDF ya da Excel olarak dışa aktar';
+
+  @override
+  String get pwOzTemettu => 'Önümüzdeki 12 ayın temettü tahmini, ay ay';
+
+  @override
+  String get pwOzSinyalTam =>
+      'Teknik sinyaller: 8 gösterge, her varlığında seçtiğin sıklıkta bildirim';
+
+  @override
+  String get pwOzMasraf => 'Varlık başına kalem kalem masraf dökümü';
+
+  @override
+  String get prmSatirAlarm => 'Fiyat alarmı';
+
+  @override
+  String get prmSatirYillik => 'Yıllık rapor';
+
+  @override
+  String get prmSatirDisaAktar => 'Dışa aktarma';
+
+  @override
+  String get prmDisaAktarUcretsiz => 'JSON';
+
+  @override
+  String get prmDisaAktarPremium => 'PDF + Excel';
+
+  @override
+  String get prmSatirTemettu => 'Temettü tahmini';
+
+  @override
+  String get prmSatirMasraf => 'Masraflar';
+
+  @override
+  String get prmMasrafUcretsiz => 'toplam';
+
+  @override
+  String get prmMasrafPremium => 'kalem kalem';
+
+  @override
+  String get prmSatirKars => 'Karşılaştır';
+
+  @override
+  String get prmSatirOrtak => 'Ortak';
+
+  @override
+  String get pwdRaporEtiket => 'YILLIK RAPOR';
+
+  @override
+  String get pwdRaporBaslik =>
+      'Yılın kârı, temettüsü ve stopajı tek belgede; müşavirine gönder.';
+
+  @override
+  String get pwdRaporPremium => 'PDF ve Excel';
+
+  @override
+  String get pwdTemettuEtiket => 'TEMETTÜ TAHMİNİ';
+
+  @override
+  String get pwdTemettuBaslik =>
+      'Önümüzdeki 12 ayda ne kadar temettü gelir, ay ay gör.';
+
+  @override
+  String get pwdTemettuPremium => '12 aylık tahmin';
+
+  @override
+  String get pwdSinyalRozet => '8 gösterge';
+
+  @override
+  String get xrKartBaslikUpper => 'FONUN İÇİNDE NE VAR';
+
+  @override
+  String get xrSatirFonunIci => 'Fonun içi';
+
+  @override
+  String xrKaynakTefas(String tarih) {
+    return 'TEFAS · $tarih';
+  }
+
+  @override
+  String xrToplamSapiyor(String toplam) {
+    return 'Kaynaktaki sınıfların toplamı $toplam; fark hiçbir sınıfa eklenmedi.';
+  }
+
+  @override
+  String get xrKilitBaslik => 'Fon X-Ray';
+
+  @override
+  String get xrKilitGovde =>
+      'Fonun parası nerede duruyor: hisse, devlet tahvili, mevduat, altın, döviz… TEFAS\'ın günlük dağılımından, tarih ve kaynakla.';
+
+  @override
+  String get xrKilitSatir => 'Fonun içinde ne var Premium\'da';
+
+  @override
+  String xrKalemlerBaslik(int n) {
+    return 'En büyük $n kalem';
+  }
+
+  @override
+  String xrKaynakKap(String donem) {
+    return 'KAP Portföy Dağılım Raporu · $donem sonu';
+  }
+
+  @override
+  String get xrKapAc => 'Raporu KAP\'ta aç';
+
+  @override
+  String get xrKovaBistHisse => 'BIST hisse';
+
+  @override
+  String get xrKovaYabanciHisse => 'Yabancı hisse';
+
+  @override
+  String get xrKovaDevlet => 'Devlet borçlanması (TL)';
+
+  @override
+  String get xrKovaOzel => 'Özel sektör borçlanması';
+
+  @override
+  String get xrKovaDovizBorc => 'Döviz / dış borçlanma';
+
+  @override
+  String get xrKovaParaPiyasasi => 'Para piyasası / repo';
+
+  @override
+  String get xrKovaMevduat => 'Mevduat / katılma hesabı';
+
+  @override
+  String get xrKovaMaden => 'Kıymetli maden';
+
+  @override
+  String get xrKovaFon => 'Fon / BYF payı';
+
+  @override
+  String get xrKovaGayrimenkul => 'Gayrimenkul / girişim';
+
+  @override
+  String get xrKovaDiger => 'Diğer';
+
+  @override
+  String get xrKovaEtiketsiz => 'Etiketsiz sınıf';
+
+  @override
+  String get xrKovaDoviz => 'Döviz';
+
+  @override
+  String get xrKovaKripto => 'Kripto';
+
+  @override
+  String get xrKovaEmtia => 'Emtia';
+
+  @override
+  String get xrEkranBaslik => 'Portföy X-Ray';
+
+  @override
+  String get xrRaporAlt => 'Fonlarının içi dahil, paran gerçekte nerede';
+
+  @override
+  String get xrToplamEtiket => 'Bugünkü portföyün';
+
+  @override
+  String get xrDagilimUpper => 'GERÇEK DAĞILIM';
+
+  @override
+  String get xrDisi => 'X-Ray dışı';
+
+  @override
+  String get xrDisiAciklama =>
+      'Dağılımı bulunamayan fonlar ve kaynak toplamının %100\'ü tutmadığı fonlardaki fark. Başka sınıflara dağıtılmadı.';
+
+  @override
+  String xrDisiFonlar(String fonlar) {
+    return 'Dağılımı bulunamayan: $fonlar';
+  }
+
+  @override
+  String xrKaynakFonlar(String tarih) {
+    return 'Fonlar: TEFAS günlük dağılımı · $tarih';
+  }
+
+  @override
+  String get xrKaynakDogrudan =>
+      'Doğrudan tuttukların bugünkü fiyatla; ortaklarının varlıkları dahil değil.';
+
+  @override
+  String get xrBos => 'X-Ray\'lenecek bir varlığın yok';
+
+  @override
+  String get xrBosAlt =>
+      'Varlık ekleyince fonlarının içi dahil gerçek dağılımın burada görünür.';
+
+  @override
+  String get xrEkranKilitGovde =>
+      'Fonlarının içindeki hisse, tahvil, mevduat ve altın, doğrudan tuttuklarınla birlikte: paran gerçekte nerede. TEFAS\'ın günlük dağılımından, tarih ve kaynakla.';
+
+  @override
+  String get xrEkranKilitSatir => 'Portföy X-Ray Premium\'da';
+
+  @override
+  String get xrOrtusmeUpper => 'BİRDEN ÇOK YERDEN TUTTUKLARIN';
+
+  @override
+  String get xrOrtusmeAciklama =>
+      'Aynı hisseyi birden çok fonunda (ya da hem fonunda hem doğrudan) tutuyorsan toplam payın.';
+
+  @override
+  String xrOrtusmeKaynak(int n) {
+    return '$n yerden';
+  }
+
+  @override
+  String get xrDogrudan => 'doğrudan';
+
+  @override
+  String xrKaynakKalemler(String donem) {
+    return 'Kalemler: KAP Portföy Dağılım Raporları · $donem sonu';
+  }
+
+  @override
+  String get pwOzXray =>
+      'Fon X-Ray: fonlarının içi ve portföyünün gerçek dağılımı';
+
+  @override
+  String get prmSatirXray => 'Fon X-Ray';
+
+  @override
+  String get pwdXrayEtiket => 'FON X-RAY';
+
+  @override
+  String get pwdXrayBaslik =>
+      'Fonlarının içinde ne var, paran gerçekte nerede gör.';
+
+  @override
+  String get pwdXrayPremium => 'Fon ve portföy X-Ray';
+
+  @override
+  String get portfoyTumu => 'Tümü';
+
+  @override
+  String get portfoyAna => 'Ana';
+
+  @override
+  String get portfoyAnaUzun => 'Ana portföy';
+
+  @override
+  String get portfoyYeni => 'Yeni portföy';
+
+  @override
+  String get portfoyYonet => 'Portföyleri yönet';
+
+  @override
+  String get portfoySeciciEtiketi => 'Portföy';
+
+  @override
+  String get portfoyAdi => 'Portföy adı';
+
+  @override
+  String get portfoyAdiIpucu => 'ör. Emeklilik, Çocuğum için';
+
+  @override
+  String get portfoyAdiGecersiz => 'Ad 1 ile 40 karakter arasında olmalı.';
+
+  @override
+  String get portfoyAdiKullaniliyor => 'Bu adda bir portföyün zaten var.';
+
+  @override
+  String get portfoyOlustur => 'Oluştur';
+
+  @override
+  String get portfoyYenidenAdlandir => 'Yeniden adlandır';
+
+  @override
+  String get portfoySil => 'Portföyü sil';
+
+  @override
+  String portfoySilBaslik(String ad) {
+    return '$ad silinsin mi?';
+  }
+
+  @override
+  String portfoySilAciklama(int sayi) {
+    return 'Varlıkların silinmez. Bu portföydeki $sayi kayıt Ana portföye döner; toplamın değişmez.';
+  }
+
+  @override
+  String portfoySilindi(String ad) {
+    return '$ad silindi, varlıkları Ana portföyde.';
+  }
+
+  @override
+  String get portfoySilinemedi => 'Portföy silinemedi';
+
+  @override
+  String get portfoyKaydedilemedi => 'Portföy kaydedilemedi';
+
+  @override
+  String get portfoyYonetimiBaslik => 'Portföyler';
+
+  @override
+  String get portfoyYonetimiAciklama =>
+      'Varlıklarını amacına göre ayır: emeklilik, çocuğun için, deneme. Tümü görünümü ve ana sayfa toplamı değişmez; widget ve kilit ekranı da toplamı gösterir.';
+
+  @override
+  String get portfoyAnaAciklama => 'Portföy seçmeden eklediklerin burada.';
+
+  @override
+  String get portfoySiralaIpucu =>
+      'Sırayı değiştirmek için basılı tutup sürükle.';
+
+  @override
+  String get portfoyIslemSec => 'Hangi portföydeki pozisyon?';
+
+  @override
+  String get portfoyIslemSecAciklama =>
+      'Bu varlık birden çok portföyde. İşlem seçtiğin portföyün pozisyonuna, onun maliyetiyle yazılır.';
+
+  @override
+  String get portfoyTasi => 'Taşı';
+
+  @override
+  String get portfoyTasiBaslik => 'Hangi portföye taşınsın?';
+
+  @override
+  String get portfoyTasiAciklama =>
+      'Pozisyonun tamamı geçmişiyle taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.';
+
+  @override
+  String portfoyTasindi(String ad) {
+    return '$ad portföyüne taşındı.';
+  }
+
+  @override
+  String get portfoyTasinamadi => 'Taşınamadı';
+
+  @override
+  String get portfoyKaynakSec => 'Hangi portföydeki pozisyon taşınsın?';
+
+  @override
+  String get pwOzPortfoy =>
+      'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı';
+
+  @override
+  String get prmSatirPortfoy => 'Portföy';
+
+  @override
+  String get pwdPortfoyEtiket => 'PORTFÖY';
+
+  @override
+  String get pwdPortfoyBaslik =>
+      'Her amaca ayrı portföy; toplamın hep yerinde.';
+
+  @override
+  String pwdPortfoySayi(int sayi) {
+    return '$sayi portföy';
+  }
 }

@@ -20,6 +20,7 @@ import '../widgets/alarm_kur_sheet.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
+import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/varlik_monogrami.dart';
@@ -50,6 +51,11 @@ import 'watchlist_screen.dart';
 import '../providers/watchlist_provider.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../providers/portfoy_provider.dart';
+import '../services/crash_reporter.dart';
+import '../providers/preferences_provider.dart' show seciliPortfoyProvider;
+import '../widgets/portfoy_secici.dart';
+import '../widgets/portfoy_secim_sayfasi.dart';
 import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../widgets/fon_karnesi_karti.dart';
@@ -96,6 +102,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   Set<String>? _gorulenAnahtarlar;
   String? _gorulenGorunum;
 
+  /// Son görülen portföy seçimi (0133). Portföy değişimi de bir görünüm
+  /// değişimidir: yoksa Ana'dan Emeklilik'e geçişte listede beliren tek
+  /// satır "yeni eklendi" diye parlıyordu.
+  String _gorulenPortfoy = PortfoySecimi.tumu;
+
   /// Parlatılacak satır ve onu görünür kılmak için anahtarı.
   String? _vurgulanan;
   final _vurguAnahtari = GlobalKey();
@@ -104,12 +115,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// pozisyona art arda alış) parlama yeniden oynasın.
   int _vurguNo = 0;
 
-  void _yeniSatiriBul(List<Position> positions) {
+  void _yeniSatiriBul(List<Position> positions, String portfoy) {
     final anahtarlar = {for (final p in positions) p.key};
     final onceki = _gorulenAnahtarlar;
-    final ayniGorunum = _gorulenGorunum == _view;
+    final ayniGorunum =
+        _gorulenGorunum == _view && _gorulenPortfoy == portfoy;
     _gorulenAnahtarlar = anahtarlar;
     _gorulenGorunum = _view;
+    _gorulenPortfoy = portfoy;
     // Görünüm değişince eski parlama bir daha oynamasın.
     if (!ayniGorunum) _vurgulanan = null;
     if (onceki == null || !ayniGorunum) return;
@@ -158,9 +171,19 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final olay = VarlikEklendi.kanal.value;
     if (!mounted || olay == null) return;
     final ortakGorunumu = _view != null && _view != '';
+    // Portföy seçiliyse (0133) yeni lot başka portföye gitmiş olabilir:
+    // "tüm portföy görünür" kuralı portföy seçimini de Tümü'ye çeker.
+    // Seçim yalnız özellik görünürken Tümü dışında olabilir; kapalıyken
+    // bu dal hiç çalışmaz.
+    if (ref.read(portfoyKapsamiProvider).secim != PortfoySecimi.tumu) {
+      CrashReporter.arkaPlan(
+          ref.read(seciliPortfoyProvider.notifier).set(PortfoySecimi.tumu),
+          reason: 'Portfoy.varlikEklendi.tumu');
+    }
     setState(() {
       _filteredType = null;
       if (ortakGorunumu) _view = '';
+      _gorulenPortfoy = PortfoySecimi.tumu;
       // Görünüm değişimini `_yeniSatiriBul` "kullanıcı geçti" sanıp
       // vurguyu silmesin.
       _gorulenGorunum = _view;
@@ -340,6 +363,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     });
 
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
+    final portfoyKapsami = ref.watch(portfoyKapsamiProvider);
+    // Portföyler arası taşıma yalnız özellik görünürken (bayrak + Premium
+    // görünürlüğü); kapalıyken kaydırma paneli birebir eski.
+    final tasimaAcik = ref.watch(cokluPortfoyGorunurProvider);
 
     return CupertinoPageScaffold(
       backgroundColor: context.c.background,
@@ -479,6 +506,19 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                               _filteredType = null;
                             }),
                           ),
+                        // Çoklu portföy (0133): yalnız "Ben" kapsamında,
+                        // kişi seçicinin ALTINDA. Ortağın lotları hiçbir
+                        // portföye girmez; Birlikte kullanıcı toplamıdır.
+                        // Bayrak kapalıyken sıfır boy (yerleşim birebir).
+                        if (_view == '')
+                          PortfoySecici(
+                            bosluk: EdgeInsets.only(
+                                top: activePartners.isNotEmpty
+                                    ? SandikSpace.sm
+                                    : 0),
+                            onDegisti: () =>
+                                setState(() => _filteredType = null),
+                          ),
                         const SizedBox(height: 24),
 
                         // Verileri birleştir. NOT: burada iç Scaffold koymayız —
@@ -517,18 +557,16 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 // iki kişi tek pozisyonda birleşir ve kâr/zarar
                                 // tekil sekmelerin toplamıyla tutarsız çıkar.
                                 // Ayrıntı: aggregatePositionsByOwner dökümantasyonu.
-                                final List<List<Asset>> ownerLots;
-                                if (_view == '') {
-                                  ownerLots = [pState.assets];
-                                } else if (_view != null) {
-                                  ownerLots = [partnerMap[_view] ?? const []];
-                                } else {
-                                  // Birlikte
-                                  ownerLots = [
-                                    pState.assets,
-                                    ...partnerMap.values,
-                                  ];
-                                }
+                                // Kapsam tek kaynaktan (`gorunum_kapsami`);
+                                // portföy süzgeci yalnız "Ben"de uygulanır,
+                                // görünmüyorsa HEP Tümü (bugünkü liste).
+                                final ownerLots = kapsamSahipDefterleri(
+                                  kisi: _view,
+                                  benim: pState.assets,
+                                  ortaklar: partnerMap,
+                                  portfoy: portfoyKapsami.secim,
+                                  bilinenPortfoyler: portfoyKapsami.bilinen,
+                                );
 
                                 // Birlikte'de aynı varlık TEK satır: hesap
                                 // sahip başına kalır, satır parçaların
@@ -536,7 +574,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 // "KCHOL iki kez görünüyor", 2026-10-01).
                                 final positions = sahiplerArasiBirlestir(
                                     aggregatePositionsByOwner(ownerLots));
-                                _yeniSatiriBul(positions);
+                                _yeniSatiriBul(
+                                    positions, portfoyKapsami.secim);
 
                                 if (positions.isEmpty) {
                                   return const <Widget>[_EmptyState()];
@@ -655,6 +694,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                           context, ref,
                                           varlik: p.asDisplayAsset(),
                                           islem: PozisyonIslemi.temettu),
+                                      onTasi: tasimaAcik
+                                          ? (p) => pozisyonuTasiAkisi(
+                                              context, ref, p.asDisplayAsset())
+                                          : null,
                                     ).kartlar(),
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
@@ -1862,6 +1905,9 @@ class _AssetList {
   final FutureOr<void> Function(Position) onRemove;
   final FutureOr<void> Function(Position) onDividend;
 
+  /// Portföyler arası taşıma (0133); `null` → eylem yok (bayrak kapalı).
+  final FutureOr<void> Function(Position)? onTasi;
+
   /// Bir kez parlayacak yeni satırın anahtarı (bkz. `_yeniSatiriBul`).
   final String? vurgulanan;
   final int vurguNo;
@@ -1880,6 +1926,7 @@ class _AssetList {
     required this.onAdd,
     required this.onRemove,
     required this.onDividend,
+    this.onTasi,
     this.heroAcik = false,
   });
 
@@ -1922,6 +1969,7 @@ class _AssetList {
           onAdd: (_) => onAdd(kendi!),
           onRemove: (_) => onRemove(kendi!),
           onDividend: (_) => onDividend(kendi!),
+          onTasi: onTasi == null ? null : (_) => onTasi!(kendi!),
         ),
       );
   }
@@ -2322,6 +2370,9 @@ class _AssetCard extends StatefulWidget {
   final FutureOr<void> Function(Position) onRemove;
   final FutureOr<void> Function(Position) onDividend;
 
+  /// Portföyler arası taşıma (0133); `null` → eylem yok, panel birebir eski.
+  final FutureOr<void> Function(Position)? onTasi;
+
   const _AssetCard({
     super.key,
     required this.position,
@@ -2334,6 +2385,7 @@ class _AssetCard extends StatefulWidget {
     required this.onAdd,
     required this.onRemove,
     required this.onDividend,
+    this.onTasi,
   });
 
   @override
@@ -2354,6 +2406,7 @@ class _AssetCardState extends State<_AssetCard>
     final onRemove = widget.onRemove;
     final onDelete = widget.onDelete;
     final onDividend = widget.onDividend;
+    final onTasi = widget.onTasi;
 
     final a = position.asDisplayAsset();
     final tryFmt = widget.baz.formatter(digits: 0);
@@ -2579,8 +2632,19 @@ class _AssetCardState extends State<_AssetCard>
           ),
           endActionPane: ActionPane(
             motion: const DrawerMotion(),
-            extentRatio: 0.28,
+            // Taşı eylemi (çoklu portföy) yalnız özellik görünürken; yoksa
+            // pane eskisi gibi tek düğme, 0.28.
+            extentRatio: onTasi != null ? 0.5 : 0.28,
             children: [
+              if (onTasi != null)
+                _rowAction(
+                  context,
+                  onPressed: () => onTasi(position),
+                  background: context.c.surface2,
+                  foreground: context.c.text90,
+                  icon: Icons.drive_file_move_outline,
+                  label: context.l10n.portfoyTasi,
+                ),
               _rowAction(
                 context,
                 onPressed: () => onDelete(position),

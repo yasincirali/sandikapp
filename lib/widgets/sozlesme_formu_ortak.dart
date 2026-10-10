@@ -18,7 +18,9 @@ import '../theme/sandik.dart';
 /// [SozlesmeFormu.kaydet]'i çağırır.
 abstract class SozlesmeFormu {
   /// Doğrular ve kaydeder; başarılıysa `true`. Hata mesajını form gösterir.
-  Future<bool> kaydet();
+  /// [portfoyId]: yeni sözleşmenin portföyü (0133; `null` = Ana). Formun
+  /// kendisi seçmez — ekranın portföy seçicisi verir.
+  Future<bool> kaydet({String? portfoyId});
 }
 
 /// Alan etiketi — genel formun `_fieldLabel`'ıyla aynı stil.

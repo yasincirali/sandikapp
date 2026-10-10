@@ -4,6 +4,7 @@ import '../l10n/l10n.dart';
 import '../services/varlik_masraflari.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'para_akisi_karti.dart' show KilitSatiri;
 import 'radar_ortak.dart' show RozetCipi;
 
 /// Varlık ekranının "Masraflar" kartı (bayrak `varlik_masraflari`,
@@ -20,10 +21,18 @@ import 'radar_ortak.dart' show RozetCipi;
 /// hissesinde altıya çıkar; kart varsayılan KAPALI açılır, ilk üç kalem
 /// görünür (önce tutarlı olanlar — servis sırası öyle), gerisi "Tümünü
 /// gör" ile. Rozet ortak [RozetCipi]: radar kartlarıyla aynı görünüş.
+///
+/// ## Premium (yasin, 2026-10-10)
+/// [kilitli] iken (paywall açık, Premium değil) iki toplam görünür, kalem
+/// kalem döküm yerine tek kilit satırı çizilir: "ne ödedim" sorusunun
+/// cevabı ücretsiz, "nereye ödedim" Premium. Yıllık toplam Yıllık rapor'da.
 class MasrafKarti extends StatefulWidget {
-  const MasrafKarti({super.key, required this.ozet});
+  const MasrafKarti({super.key, required this.ozet, this.kilitli = false});
 
   final MasrafOzeti ozet;
+
+  /// Döküm Premium'da mı (çağıran `premiumKilitliProvider`'dan verir).
+  final bool kilitli;
 
   /// Kapalıyken görünen kalem sayısı.
   static const kapaliKalem = 3;
@@ -80,11 +89,19 @@ class _MasrafKartiState extends State<MasrafKarti> {
                   const SizedBox(height: SandikSpace.smd),
                   Divider(height: 1, color: context.c.hairline),
                 ],
-                for (var i = 0; i < gorunen.length; i++) ...[
-                  if (i > 0) Divider(height: 1, color: context.c.hairline),
-                  _Satir(kalem: gorunen[i]),
-                ],
-                if (fazla)
+                if (widget.kilitli)
+                  Padding(
+                    padding: const EdgeInsets.only(top: SandikSpace.xs),
+                    child: KilitSatiri(
+                        metin: l.costsBreakdownLocked(ozet.kalemler.length),
+                        kaynak: 'masraf_dokumu'),
+                  )
+                else
+                  for (var i = 0; i < gorunen.length; i++) ...[
+                    if (i > 0) Divider(height: 1, color: context.c.hairline),
+                    _Satir(kalem: gorunen[i]),
+                  ],
+                if (fazla && !widget.kilitli)
                   Semantics(
                     button: true,
                     expanded: _acik,

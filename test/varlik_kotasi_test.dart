@@ -9,7 +9,7 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 /// Kota ham defteri sayıyordu: tamamen satılmış pozisyonlar ve Birlikte
 /// görünümündeki ortak lot'ları da kotaya giriyordu.
 Asset _lot(String id, String ticker, AssetKind kind, double qty,
-        {String userId = 'u1', DateTime? silindi}) =>
+        {String userId = 'u1', DateTime? silindi, String? sozlesme}) =>
     Asset(
       id: id,
       userId: userId,
@@ -24,6 +24,7 @@ Asset _lot(String id, String ticker, AssetKind kind, double qty,
       kind: kind,
       addedDate: DateTime(2026, 1, 1),
       deletedAt: silindi,
+      sozlesmeId: sozlesme,
     );
 
 void main() {
@@ -60,5 +61,20 @@ void main() {
       _lot('b2', 'A.IS', AssetKind.buy, 3),
     ];
     expect(kotaAnahtarlari(defter, 'u1'), hasLength(1));
+  });
+
+  test('BES sözleşmesinin üç fonu kotada TEK varlık (2026-10-10)', () {
+    final defter = [
+      _lot('f1', 'TEFAS:AAA', AssetKind.buy, 10, sozlesme: 'bes1'),
+      _lot('f2', 'TEFAS:BBB', AssetKind.buy, 10, sozlesme: 'bes1'),
+      _lot('f3', 'TEFAS:CCC', AssetKind.buy, 10, sozlesme: 'bes1'),
+      _lot('h', 'A.IS', AssetKind.buy, 10),
+    ];
+    expect(kotaAnahtarlari(defter, 'u1'), hasLength(2));
+    expect(
+        kotaAnahtari(AssetType.hisse, 'X', 'TRY', sozlesmeId: 'bes1'),
+        'sozlesme|bes1');
+    // Sözleşmesiz anahtar eski biçimde kalır.
+    expect(kotaAnahtari(AssetType.hisse, 'A.IS', 'TRY'), 'hisse|A.IS|TRY');
   });
 }

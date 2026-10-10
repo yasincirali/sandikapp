@@ -292,6 +292,23 @@ export function ucretsizVarlikFiltresi<
   );
 }
 
+/// Sinyal yalnız Premium'da (yasin, 2026-10-10: "varlık gösterge sinyali
+/// özelliği tamamen premiuma geçsin").
+///
+/// `kapiAcik` = `premium_ayar.kapi_acik` (0116), paywall'la birlikte açılan
+/// SUNUCU kapısı; Premium notlarını koruyan anahtarla aynısı, ayrı secret
+/// yok. Kapalıyken dizi olduğu gibi döner: davranış birebir eskisi. Açıkken
+/// yalnız Premium (geçerli hak ya da admin) kullanıcıların lotları kalır.
+/// İstemcideki eşi `sinyalYuzeyiProvider`.
+export function yalnizPremiumFiltresi<T extends { user_id: string }>(
+  lotlar: readonly T[],
+  kapiAcik: boolean,
+  premium: ReadonlySet<string>,
+): T[] {
+  if (!kapiAcik) return [...lotlar];
+  return lotlar.filter((a) => premium.has(a.user_id));
+}
+
 /// Şu anki TR saati (0-23). Sunucu UTC çalışır; TR sabit UTC+3
 /// (2016'dan beri yaz saati uygulaması yok, bu yüzden ofset sabit).
 function istanbulHour(now: Date): number {
@@ -715,9 +732,20 @@ Deno.serve(async (request) => {
     // 3c'deki tek varlık kapısı da aynı premium kümesini kullanır; okuma iki
     // kapıdan biri açıksa yapılır, ikisi de kapalıyken hiç sorgu atılmaz.
     const ucretsizVarlik = Number(Deno.env.get('SINYAL_UCRETSIZ_VARLIK') ?? '0') || 0;
+    // Sinyal yalnız Premium kapısı: `premium_ayar.kapi_acik` (0116).
+    // Okunamazsa kapı uygulanmaz (aşağıdaki gerekçeyle aynı yön).
+    const { data: ayarSatiri, error: ayarHatasi } = await admin
+      .from('premium_ayar')
+      .select('kapi_acik')
+      .eq('tek', true)
+      .maybeSingle();
+    if (ayarHatasi) {
+      console.error('[analyze-signals] premium_ayar okunamadi, yalniz-premium kapisi bu tur atlandi');
+    }
+    const yalnizPremium = !ayarHatasi && ayarSatiri?.kapi_acik === true;
     const premiumKullanicilar = new Set<string>();
     let premiumOkundu = false;
-    if (ucretsizSlot > 0 || ucretsizVarlik > 0) {
+    if (ucretsizSlot > 0 || ucretsizVarlik > 0 || yalnizPremium) {
       const simdi = Date.now();
       const [haklar, adminler] = await Promise.all([
         admin.from('premium_haklari').select('user_id, bitis').in('user_id', userIds),
@@ -752,9 +780,14 @@ Deno.serve(async (request) => {
     // Premium okunamadıysa ya da seçimler okunamadıysa kapı bu tur atlanır —
     // slot kapısıyla aynı gerekçe: abonenin bildirimini yanlışlıkla kesmek,
     // ücretsiz birine bir tur fazla göndermekten pahalıdır.
-    let kapiliAssets = assets;
+    // Yalnız Premium kapısı açıksa ücretsiz kullanıcının hiç lotu kalmaz;
+    // tek varlık kapısı o zaman yalnız Premium'a dokunmayan bir no-op olur.
+    let kapiliAssets = yalnizPremium && premiumOkundu
+      ? yalnizPremiumFiltresi(assets, true, premiumKullanicilar)
+      : assets;
+    const skippedByPremiumGate = assets.length - kapiliAssets.length;
     let skippedByAssetGate = 0;
-    if (ucretsizVarlik > 0 && premiumOkundu) {
+    if (ucretsizVarlik > 0 && premiumOkundu && !yalnizPremium) {
       const { data: secimRows, error: secimError } = await admin
         .from('sinyal_varlik_secimi')
         .select('user_id, asset_type, ticker')
@@ -763,12 +796,12 @@ Deno.serve(async (request) => {
         console.error('[analyze-signals] sinyal varlik secimi okunamadi, varlik kapisi bu tur atlandi');
       } else {
         kapiliAssets = ucretsizVarlikFiltresi(
-          assets,
+          kapiliAssets,
           ucretsizVarlik,
           premiumKullanicilar,
           (secimRows ?? []) as SinyalVarlikSecimi[],
         );
-        skippedByAssetGate = assets.length - kapiliAssets.length;
+        skippedByAssetGate = assets.length - skippedByPremiumGate - kapiliAssets.length;
       }
     }
 
@@ -1063,6 +1096,8 @@ Deno.serve(async (request) => {
       // Ücretsiz tek varlık kapısının eldiği lotlar (`SINYAL_UCRETSIZ_VARLIK`).
       // Kapı kapalıyken hep 0.
       skipped_by_asset_gate: skippedByAssetGate,
+      // Yalnız Premium kapısının eldiği lotlar (`premium_ayar.kapi_acik`).
+      skipped_by_premium_gate: skippedByPremiumGate,
       users: userIds.length,
       assets: assets.length,
       // Satış ya da silme ile kapanmış pozisyonların elenen alım lot'ları.

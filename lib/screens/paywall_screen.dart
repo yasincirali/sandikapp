@@ -191,7 +191,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     _KarsilastirmaTablosu(
                       varlikSiniri: rc.freeAssetLimit,
                       takipSiniri: rc.paywallWatchlistLimit,
-                      sinyalTekVarlik: rc.freeSignalAssets > 0,
+                      alarmSiniri: rc.freePriceAlertLimit,
+                      seriSiniri: rc.freeCompareSeries
+                          .clamp(1, kKarsilastirmaEnFazla),
+                      ortakSiniri: rc.freePartnerLimit,
                     ),
                   ],
                   const SizedBox(height: 24),
@@ -494,15 +497,29 @@ class _FeatureList extends StatelessWidget {
   // Günde birden fazla sinyal bildirimi, Karşılaştır'da 5 seri ve birden
   // fazla ortak, kapıları yazılınca (2026-10-08, `sinyalSlotSiniriProvider`,
   // `karsilastirmaSeriSiniriProvider`, `ortakSiniriDoluProvider`) listeye girdi.
+  // Olgun Premium seti (2026-10-10): yıllık rapor + dışa aktarma
+  // (`YillikRaporScreen`, Ayarlar › Portföyü dışa aktar), temettü tahmini
+  // (`TemettuTahminiScreen`), masraf dökümü (`MasrafKarti.kilitli`) ve
+  // sinyalin tamamı (`sinyalYuzeyiProvider`) kilitleriyle birlikte girdi;
+  // iki sinyal satırı tek satırda birleşti. Sıra araştırmaya göre: para
+  // ödenen işler (sınır, rapor, temettü) önde.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final features = <(IconData, String)>[
       (Icons.all_inclusive_rounded, l.pwOzSinirsiz),
-      (Icons.trending_up_rounded, l.pwOzGosterge),
-      (Icons.notifications_active_outlined, l.pwOzSiklik),
+      (Icons.receipt_long_rounded, l.pwOzRapor),
+      (Icons.event_repeat_rounded, l.pwOzTemettu),
+      // Fon X-Ray (2026-10-10): kilit `FonDagilimiKarti` + `PortfoyXrayScreen`.
+      (Icons.donut_large_rounded, l.pwOzXray),
+      (Icons.insights_rounded, l.pwOzSinyalTam),
+      (Icons.payments_outlined, l.pwOzMasraf),
       (Icons.stacked_line_chart_rounded, l.pwOzKarsilastir),
       (Icons.group_outlined, l.pwOzOrtak),
+      // Çoklu portföy (0133): kilidi `portfoyLimitProvider`; yalnız bayrak
+      // açıkken satılır.
+      if (RemoteConfigService.instance.cokluPortfoy)
+        (Icons.folder_copy_outlined, l.pwOzPortfoy),
       if (radar) (Icons.radar_rounded, l.pwOzRadar),
     ];
     return Column(
@@ -550,16 +567,24 @@ class _KarsilastirmaTablosu extends StatelessWidget {
   const _KarsilastirmaTablosu({
     required this.varlikSiniri,
     required this.takipSiniri,
-    required this.sinyalTekVarlik,
+    required this.alarmSiniri,
+    required this.seriSiniri,
+    required this.ortakSiniri,
   });
 
   final int varlikSiniri;
 
-  /// Ücretsiz takip listesi (paywall açıkken 3; 2026-10-08).
+  /// Ücretsiz takip listesi (paywall açıkken 10; 2026-10-10).
   final int takipSiniri;
 
-  /// Sinyal bildirimi ücretsizde tek varlıkta mı (`free_signal_assets`).
-  final bool sinyalTekVarlik;
+  /// Ücretsiz fiyat alarmı (20; 2026-10-10).
+  final int alarmSiniri;
+
+  /// Ücretsiz Karşılaştır seri sayısı.
+  final int seriSiniri;
+
+  /// Ücretsiz ortak sayısı.
+  final int ortakSiniri;
 
   @override
   Widget build(BuildContext context) {
@@ -568,11 +593,24 @@ class _KarsilastirmaTablosu extends StatelessWidget {
     final t = context.t;
     // Aylık rapor satırı metin değil simge: '✓'/'-' karakterleri DM Sans'ta
     // yok, web'de kutu çiziyordu; ekran okuyucu da "Var/Yok" duysun.
+    // Satır sırası ödeme sebebine göre (2026-10-10): sınırlar, rapor ve
+    // vergi işi, temettü, sinyal, sonra radar. `null` hücre = simge
+    // (yok / var). Ücretsizde ne KALDIĞI da yazar.
     final satirlar = <(String, String?, String?)>[
       (l.prmSatirVarlik, '$varlikSiniri', l.prmSinirsiz),
       (l.prmSatirTakip, '$takipSiniri', l.prmSinirsiz),
-      if (sinyalTekVarlik)
-        (l.prmSatirSinyal, l.prmSinyalUcretsiz, l.prmSinyalPremium),
+      (l.prmSatirAlarm, '$alarmSiniri', l.prmSinirsiz),
+      (l.prmSatirYillik, null, null),
+      (l.prmSatirDisaAktar, l.prmDisaAktarUcretsiz, l.prmDisaAktarPremium),
+      (l.prmSatirTemettu, null, null),
+      (l.prmSatirXray, null, null),
+      (l.prmSatirMasraf, l.prmMasrafUcretsiz, l.prmMasrafPremium),
+      (l.prmSatirSinyal, null, l.prmSinyalPremium),
+      (l.prmSatirKars, l.pwdSeri(seriSiniri), l.pwdSeri(kKarsilastirmaEnFazla)),
+      (l.prmSatirOrtak, '$ortakSiniri', l.prmSinirsiz),
+      // Çoklu portföy (0133): ücretsiz 1 (Ana), yalnız bayrak açıkken.
+      if (RemoteConfigService.instance.cokluPortfoy)
+        (l.prmSatirPortfoy, '1', l.prmSinirsiz),
       (l.prmSatirAkis, l.prmAkisUcretsiz, l.prmAkisPremium),
       (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
       (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),

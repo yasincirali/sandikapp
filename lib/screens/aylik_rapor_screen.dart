@@ -6,8 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/l10n.dart';
 import '../providers/analiz_provider.dart';
 import '../providers/hafta_ozeti_provider.dart';
+import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../services/varlik_analizi.dart';
 import '../widgets/hikaye_akisi.dart';
+import '../widgets/premium_kilit_karti.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../widgets/sandik_cizimi.dart';
 import '../widgets/sandik_error_view.dart';
@@ -40,6 +42,25 @@ class AylikRaporScreen extends ConsumerWidget {
     final t = context.t;
     final ay = DateFormat('MMMM y', Localizations.localeOf(context).toString())
         .format(donem);
+    // Aylık rapor Premium (yasin, 2026-10-10). Haftanın özeti ücretsiz
+    // kalır (alışkanlık döngüsü); ay sonu derlemesi ücret ödeyenin. Raporun
+    // girişleri (haftanın özeti satırı, Raporlar kapısı) görünür kalır ve
+    // buraya düşer: kilit ekranda, satış anı korunur. Paywall kapalıyken
+    // birebir eski.
+    if (ref.watch(premiumKilitliProvider)) {
+      return Scaffold(
+        appBar: SandikAppBar(title: l10n.anzAylikBaslik(ay)),
+        body: PremiumKilitGovdesi(
+          kart: PremiumKilitKarti(
+            ikon: Icons.summarize_rounded,
+            baslik: l10n.prmAylikKilitBaslik,
+            govde: l10n.prmAylikKilitGovde,
+            kilitMetni: l10n.prmAylikKilitSatir,
+            kaynak: 'aylik_rapor',
+          ),
+        ),
+      );
+    }
     final anahtarlar = ref.watch(tutulanNotAnahtarlariProvider);
     final notlar =
         ref.watch(notOzetleriProvider(notKumesi(anahtarlar, 'aylik')));

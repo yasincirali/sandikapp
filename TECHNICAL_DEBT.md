@@ -5,9 +5,88 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-09 (yıllık özet ortak hikâye kabuğuna taşınmadı); 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-10 (Fon X-Ray uygulandı; kalan dört borç maddesi Olgun Premium 1. bentte); 2026-10-09 (yıllık özet ortak hikâye kabuğuna taşınmadı); 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
 
 ---
+
+## 🟡 AÇIK — Olgun Premium setinde ertelenenler (2026-10-10, dal `feat/premium-olgun`)
+
+**1. Fon içerik dağılımı (X-Ray).** Araştırmada güçlü ödeme sebebi
+(Fintables şikâyeti, Parqet X-Ray ücretli). İlk denemede yapılmadı çünkü
+eski uç (`BindHistoryAllocation`) kapalıydı. Derin araştırma (2026-10-10,
+tmp/arastirma/reports/Fon XRay veri kaynakları.md) ucun yeniden
+adlandırıldığını buldu: `POST /api/funds/dagilimSiraliGetirT`, günlük 57
+varlık sınıfı yüzdesi (YAT/EMK/BYF), tek fon süzgeci `fonKod` (yalnız
+`fonKodu` tüm evreni döndürür), istek başına ≤1 ay, geriye ≤5 yıl,
+~6 istek/dk, belgesiz. Kalem bazlı veri yalnız KAP Portföy Dağılım Raporu
+PDF'lerinde (aylık, T+~6 iş günü, kurucuya göre değişen düzen). Tahmin
+(stil analizi) yazılmaz.
+**UYGULANDI (2026-10-10, dal `feat/fon-xray`):** Katman B — 0131
+`fon_dagilimlari` + `fon-dagilim` cron'u, varlık kartı
+(`FonDagilimiKarti`) ve Performans › Raporlar › Portföy X-Ray
+(`PortfoyXrayScreen`), Premium tek anahtarına bağlı. Katman A — 0132
+`fon_kalemleri` + `fon-kalem-raporu` (KAP PDF → pdfjs metni → model →
+beş kontrol, biri düşerse belge reddedilir), sunucuda `FON_KALEM_ACIK`,
+istemcide `fon_xray_kalem` ile varsayılan KAPALI. Kalan borç:
+(a) KAP liste ucu günü 2.000 satırda kesiyor, süzgeç yok — yoğun günün
+erken raporları kaçabilir (`fon_kalem_taramasi.kesik`); fon başına ayrı
+bir liste ucu bulunursa oraya geçilmeli. (b) Fon sepeti/hisse fonunun
+tuttuğu fon payları özyinelemeli açılmıyor ("Fon / BYF payı" kovasında
+kalır); kalem katmanı açılınca alt fonun kendi raporu ile açılabilir.
+(c) Yasal bant (Katman C) ayrı bir gösterim olarak yok; yalnız Katman A
+kontrolünde kullanılıyor. (d) TEFAS/KAP kullanım koşulları hâlâ birebir
+okunmadı (YAPMAN_GEREKENLER "Fon X-Ray"); Katman A bu yüzden kapalı.
+
+**2. Çoklu portföy (sepetler).** ~~Yapılmadı~~ → 2026-10-10 dal
+`feat/coklu-portfoy` (0133, bayrak `coklu_portfoy`, kapalı doğar). Önce
+kapsam tek kaynağa toplandı (`lib/models/gorunum_kapsami.dart`; ana sayfa,
+Portföy, Performans, hareketler, kıyas — davranış birebir,
+`gorunum_kapsami_test`), sonra portföy süzgeci LOT düzeyinde ona eklendi:
+seri motoru, gün içi önbellek (kapsam anahtarı zaten lot kimlikleri),
+özet ve XIRR değişmeden alt kümeyi hesaplar. Widget ve kilit ekranı
+BİLİNÇLİ olarak kullanıcı toplamında kaldı (aşağıdaki v1 sınırları).
+Bayrak açılıp TestFlight'ta doğrulanınca bu madde KAPANDI tablosuna taşınır.
+
+**3. Tek varlık sinyal kapısı artık ölü yol.** Sinyal paywall açıkken
+bütünüyle Premium olduğu için `sinyalVarlikKapisiAcikProvider`,
+`SinyalVarlikSeridi`, `sinyal_varlik_secimi` (0126), sunucuda
+`ucretsizVarlikFiltresi` ve slot kapısı (`SINYAL_UCRETSIZ_*`,
+`free_signal_slots_per_day`, `free_signal_assets`) hiçbir kullanıcıda
+devreye girmez. Bilerek bırakıldı: karar geri alınırsa ("1 varlık ücretsiz")
+tek satırla döner. Maliyet: okunmayan kod + test. Ne zaman: paywall açıldıktan
+bir sürüm sonra karar kesinleşince kaldırılır (0126 tablosu ayrı migration).
+
+**4. Çoklu portföy v1 sınırları (2026-10-10, bilinçli).**
+- *Kısmi taşıma yok.* Portföyler arası taşıma bütün pozisyonu geçmişiyle
+  (alım, satış, temettü, silinmiş kayıtlar) taşır. Kısmi taşıma ya alım
+  lotlarını bölmek (satışların hangi lottan düştüğü belirsiz, ağırlıklı
+  maliyet uydurulur) ya da kaynakta satış + hedefte alım yazmak demekti;
+  ikincisi taşıma gününde sahte çıkış/giriş üretir, dönem getirisi ve XIRR
+  para hareketi olmayan bir olayı nakit akışı sayar. Maliyet: "yarısını
+  emekliliğe ayır" isteyen kullanıcı satıp yeniden almak zorunda. Ne
+  zaman: talep gelirse, "taşıma" kind'ı (nakit akışı sayılmayan) ile.
+- *Ortak portföy görmez.* Ortağın lotları hiçbir portföye girmez; ortak
+  görünümü ve Birlikte kullanıcı toplamıdır (0133 `portfoyler_partner_read`
+  hazır, istemci okumuyor). Ne zaman: ortak tarafında portföy isteği olursa.
+- *Portföy başına yıl özeti / widget / kilit ekranı yok.* Hepsi kullanıcı
+  toplamı; widget sözleşmesi ve Live Activity tek defter taşır. Ne zaman:
+  widget'ta portföy seçimi istenirse (sözleşme değişikliği, iki platform).
+- *Eski sürümün pozisyondan satışı Ana'ya düşer.* Eski istemci satışı
+  `pos:` görünümünden yazar (`ref_asset_id` NULL); 0133 tetikleyicisi
+  yalnız lot bazlı satışı referanstan miras alır. Sembol bir adlandırılmış
+  portföydeyse o satış Ana'da eksi pozisyon olur (`aggregatePositions`
+  eler) ve portföyde fazla miktar kalır — Tümü doğru, portföy kırılımı
+  yanlış. Ne zaman: eski sürümler kullanımdan düşünce kendiliğinden kapanır;
+  gerekirse tetikleyiciye "sembolün tek portföyü varsa ona" kuralı eklenir.
+- *Aynı sembol iki portföyde + birinden satış: Tümü'nün açık maliyeti havuz
+  ortalaması.* Tümü bugünkü kullanıcı toplamıyla BİREBİR (kullanıcı kuralı);
+  değer, temettü ve gerçekleşen kâr Σ portföy == Tümü, ama açık pozisyonun
+  maliyeti portföylerin toplamından ayrışabilir (`coklu_portfoy_test`
+  "bilinen v1 farkı"). Ne zaman: Tümü'yü portföy başına toplamak bayrak
+  açıldıktan sonra ayrı bir karar.
+- *Hedef (Bugün kartı) portföy taşımaz.* Hedef yalnız ana sayfada, ana sayfa
+  kullanıcı toplamı; kapsam anahtarına portföy gerekmedi.
+
 
 ## ✅ KAPANDI — Yıllık özet (`RecapScreen`) ortak hikâye kabuğunu kullanmıyor (2026-10-09 → aynı gün; görüntü piksel piksel aynı, `goz_alicilik_kalanlar_test`)
 

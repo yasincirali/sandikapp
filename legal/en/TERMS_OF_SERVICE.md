@@ -1,10 +1,10 @@
 # Terms of Service — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 8, 2026
-**Version:** 1.6
+**Last updated:** October 10, 2026
+**Version:** 1.8
 **Consent version:** 1.6
-**Source:** TR 1.6 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.8 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -34,7 +34,7 @@ sandık is a personal portfolio tracking tool that lets users track the followin
 - Time deposits and private pension (BES) contracts
 - Other assets you define manually
 
-The App shows portfolio value, allocation and performance and, optionally, technical-analysis signals, price alerts and periodic summaries. You can enter assets manually, in bulk, or by importing a bank / brokerage statement. With the partnership feature two users can share their portfolios.
+The App shows portfolio value, allocation and performance and, optionally, technical-analysis signals (Premium), price alerts and periodic summaries. You can enter assets manually, in bulk, or by importing a bank / brokerage statement. With the partnership feature two users can share their portfolios.
 
 **Top Portfolios (optional):** If you give explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); for the best-performing portfolios only the rank, return, type shares and TEFAS fund codes with their shares are shown to other participants, without identity or amounts; in return you see the same anonymous information about participants (details: Privacy Policy §5.1). You can leave at any time; not participating affects no other feature.
 
@@ -48,7 +48,7 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 
 This section applies once Premium is offered for sale in the App.
 
-**Scope.** Portfolio tracking is free. Premium includes features that are limited in the free tier or available only to subscribers (e.g. additional technical indicators, the full asset notes and monthly report, reading statements with AI). Which features are Premium is shown on the purchase screen before you buy. Some Premium features may appear in limited form in the free tier (e.g. the first sentence of a note).
+**Scope.** Portfolio tracking is free. Premium includes features that are limited in the free tier or available only to subscribers (e.g. technical analysis signals and alerts, the annual gains, dividends and fees report, PDF and Excel export, the dividend forecast, fund content breakdown (X-Ray), the itemized fee breakdown, the full asset notes and monthly report, reading statements with AI). Which features are Premium is shown on the purchase screen before you buy. Some Premium features may appear in limited form in the free tier (e.g. the first sentence of a note).
 
 **Price and payment.** The subscription is monthly or yearly. The price is the amount shown by the App Store or Google Play on the purchase screen (taxes included). Payment is collected by your device's store (Apple or Google), not by the Company; your card details never reach the Company.
 

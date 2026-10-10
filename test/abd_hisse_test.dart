@@ -56,6 +56,7 @@ class _KaydedenPortfoy extends PortfolioNotifier {
     double? initialCurrentPrice,
     double commission = 0,
     String? sozlesmeId,
+    String? portfoyId,
   }) async {
     kayitlar.add({
       'ticker': ticker,

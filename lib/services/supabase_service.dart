@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../demo/demo_modu.dart';
+import '../models/portfoy.dart';
 import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
 import '../models/asset.dart';
@@ -18,6 +19,7 @@ import '../models/watchlist_item.dart';
 import 'crash_reporter.dart';
 import 'db_logger.dart';
 import 'ekstre/ekstre_tablosu.dart' show EkstreAiHatasi;
+import 'fon_dagilimi.dart' show FonDagilimi, FonKalemleri;
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
 /// RLS kuralları Supabase tarafında uygulandığı için burada
@@ -935,6 +937,95 @@ class SupabaseService {
     );
   }
 
+  // ── Portföyler (çoklu portföy, 0133) ──────────────────────────────────────
+  //
+  // Yalnız `coklu_portfoy` bayrağı açıkken çağrılır (tablo iki sunucuya
+  // ulaşmadan bayrak açılmaz). Okuma hatası yukarı çıkar: sağlayıcı hata
+  // durumunda seçiciyi çizmez ve kapsam "Tümü"de kalır — portföyü
+  // bilinmeyen bir defteri yanlış parçada göstermek yerine.
+
+  Future<List<Portfoy>> fetchPortfoyler(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchPortfoyler',
+      table: 'portfoyler',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('portfoyler')
+          .select('id, user_id, ad, sira, created_at')
+          .eq('user_id', userId),
+    );
+    return [for (final r in rows) Portfoy.fromSupabase(r)]
+      ..sort(Portfoy.karsilastir);
+  }
+
+  Future<void> insertPortfoy(Portfoy p) async {
+    await _log.log<void>(
+      source: 'SupabaseService.insertPortfoy',
+      table: 'portfoyler',
+      op: 'INSERT',
+      request: {'id': p.id},
+      call: () => _db.from('portfoyler').insert(p.toSupabase()),
+    );
+  }
+
+  /// Ad ve sıra. Dönen satırla doğrulanır: RLS eşleşmeyen UPDATE'i hata
+  /// vermeden 0 satırla geçer, kullanıcı "kaydedildi" sanardı.
+  Future<void> updatePortfoy(Portfoy p) async {
+    final body = p.toSupabase()
+      ..remove('id')
+      ..remove('user_id');
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.updatePortfoy',
+      table: 'portfoyler',
+      op: 'UPDATE',
+      request: {'id': p.id},
+      call: () =>
+          _db.from('portfoyler').update(body).eq('id', p.id).select('id'),
+    );
+    if (rows.isEmpty) throw StateError('Portföy güncellenemedi.');
+  }
+
+  /// Portföyü siler; lotları SİLİNMEZ, FK `on delete set null (portfoy_id)`
+  /// ile Ana'ya döner (0133).
+  Future<void> deletePortfoy(String id) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.deletePortfoy',
+      table: 'portfoyler',
+      op: 'DELETE',
+      request: {'id': id},
+      call: () => _db.from('portfoyler').delete().eq('id', id).select('id'),
+    );
+    if (rows.isEmpty) throw StateError('Portföy silinemedi.');
+  }
+
+  /// Lotların portföyünü yazar (pozisyon taşıma). YALNIZ bu sütun:
+  /// [updateAsset] bütün gövdeyi yazar ve bayat bir fiyat/miktarı geri
+  /// alabilirdi. `null` → Ana. Dönen satır sayısı istenenle tutmazsa atar
+  /// (yarım taşıma portföyün defterini kapatmaz; çağıran yeniden yükler).
+  Future<void> lotlarinPortfoyunuYaz(
+      List<String> ids, String? portfoyId) async {
+    if (ids.isEmpty) return;
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.lotlarinPortfoyunuYaz',
+      table: 'assets',
+      op: 'UPDATE',
+      request: {
+        'ids': ids.length,
+        'portfoy': portfoyId == null ? 'ana' : 'id',
+      },
+      call: () => _db
+          .from('assets')
+          .update({'portfoy_id': portfoyId})
+          .inFilter('id', ids)
+          .select('id'),
+    );
+    if (rows.length != ids.length) {
+      throw StateError(
+          'Taşıma yarım kaldı (${rows.length}/${ids.length} kayıt).');
+    }
+  }
+
   // ── Sözleşmeler (mevduat / BES, 0088) ─────────────────────────────────────
 
   /// Sözleşmeleri id ile okur — kendi ya da ortağın (RLS iki politikayla
@@ -1789,6 +1880,63 @@ class SupabaseService {
         if (MevduatFaizOrtalamasi.fromMap(r, simdi: simdi) case final o?)
           o.dilim: o,
     };
+  }
+
+  // ── Fon X-Ray (0131, 0132) ───────────────────────────────────────────────
+  // Sunucu TEFAS'tan günlük sınıf dağılımını (`fon-dagilim`) ve KAP'tan aylık
+  // kalemleri (`fon-kalem-raporu`, bayraklı) yazar; telefon yalnız kendi
+  // fonlarının satırlarını okur. Okuma RLS'te `premium_icerik_gorebilir()`:
+  // sunucu kapısı açık + Premium değilse boş liste döner (hata değil).
+
+  /// [kodlar] fonlarının en yeni TEFAS dağılımı. Okunamayan satır atlanır.
+  Future<List<FonDagilimi>> fonDagilimlari(Iterable<String> kodlar) async {
+    final liste = kodlar.toSet().toList()..sort();
+    if (liste.isEmpty) return const [];
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fonDagilimlari',
+      table: 'fon_dagilimlari',
+      op: 'SELECT',
+      request: {'fon_kodu_in': liste.length},
+      call: () => _db
+          .from('fon_dagilimlari')
+          .select('fon_kodu, fon_tipi, tarih, dagilim')
+          .inFilter('fon_kodu', liste)
+          .limit(liste.length),
+    );
+    return [
+      for (final r in rows)
+        if (FonDagilimi.satirdan(r) case final d?) d,
+    ];
+  }
+
+  /// [kodlar] fonlarının en yeni (beş kontrolden geçmiş) KAP kalem listesi.
+  /// Son iki ay okunur: rapor ay sonundan ~6 iş günü sonra geldiği için
+  /// ayın ilk haftasında en yeni geçerli rapor iki ay öncesinindir.
+  Future<List<FonKalemleri>> fonKalemleri(Iterable<String> kodlar) async {
+    final liste = kodlar.toSet().toList()..sort();
+    if (liste.isEmpty) return const [];
+    final simdi = DateTime.now();
+    final esik = _isoGun(DateTime(simdi.year, simdi.month - 2, 1));
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fonKalemleri',
+      table: 'fon_kalemleri',
+      op: 'SELECT',
+      request: {'fon_kodu_in': liste.length, 'donem_gte': esik},
+      call: () => _db
+          .from('fon_kalemleri')
+          .select('fon_kodu, donem, kalemler, kaynak_url')
+          .inFilter('fon_kodu', liste)
+          .eq('durum', 'gecti')
+          .gte('donem', esik)
+          .order('donem', ascending: false)
+          .limit(liste.length * 3),
+    );
+    final enYeni = <String, FonKalemleri>{};
+    for (final r in rows) {
+      final k = FonKalemleri.satirdan(r);
+      if (k != null) enYeni.putIfAbsent(k.fonKodu, () => k);
+    }
+    return enYeni.values.toList();
   }
 
   // ── Eurobond (0124) ──────────────────────────────────────────────────────
