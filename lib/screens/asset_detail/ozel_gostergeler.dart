@@ -27,6 +27,9 @@ part of '../asset_detail_screen.dart';
 /// yeni kayıt açar. Sınırlı: 20 gösterge × birkaç sürüm.
 final Map<String, Object> _betikOnbellegi = {};
 
+/// Kod + veri parmak izi → sonuç (bkz. `_ozelGostergeleriCalistir`).
+final Map<String, BetikSonucu> _sonucOnbellegi = {};
+
 DerlenmisBetik? _derlenmisBetik(String kod) {
   final v = _betikOnbellegi[kod] ??= () {
     if (_betikOnbellegi.length > 64) _betikOnbellegi.clear();
@@ -54,8 +57,11 @@ extension _OzelGostergeler on _AssetDetailScreenState {
   }
 
   /// Grafiğin çubukları → betik girdisi. [onSeri] dönem öncesi ısınma
-  /// noktaları (yalnız `hamSeri.first.x`'ten öncekiler).
-  BetikVerisi _betikVerisi(List<FlSpot> hamSeri, List<FlSpot> onSeri) {
+  /// noktaları (yalnız `hamSeri.first.x`'ten öncekiler). Grafiğin X'i
+  /// [baslangic]'tan beri GÜN; Pine'ın `time`'ı epoch ms ister, ayrıca
+  /// çevrilir. Aralık (`timeframe.period`) çubuk sıklığından okunur.
+  BetikVerisi _betikVerisi(
+      List<FlSpot> hamSeri, List<FlSpot> onSeri, DateTime baslangic) {
     final ilkX = hamSeri.isEmpty ? double.infinity : hamSeri.first.x;
     final noktalar = <FlSpot>[
       for (final s in onSeri)
@@ -63,23 +69,43 @@ extension _OzelGostergeler on _AssetDetailScreenState {
       for (final s in hamSeri)
         if (s.y.isFinite) s,
     ];
+    final bas = baslangic.millisecondsSinceEpoch.toDouble();
+    final zaman = [
+      for (final s in noktalar) bas + s.x * Duration.millisecondsPerDay,
+    ];
     return BetikVerisi.yalnizKapanis(
       [for (final s in noktalar) s.x],
       [for (final s in noktalar) s.y],
+      zaman: zaman,
+      zamanDilimi: BetikVerisi.aralikTahmini(zaman),
+      sembol: _kimlik.kisaEtiket,
     );
   }
 
   /// Açık göstergeleri çalıştırır. Çalışma hatası (bütçe aşımı) o
   /// göstergeyi atlar; düzenleyici aynı hatayı satırıyla gösterir.
+  /// Sonuç kod + veri parmak izine göre saklanır: Pine betiği çubuk çubuk
+  /// çalışır ve her build'de (crosshair, zoom) yeniden koşmasın.
   List<_OzelSonuc> _ozelGostergeleriCalistir(
       List<OzelGosterge> acik, BetikVerisi veri) {
     if (acik.isEmpty || veri.uzunluk == 0) return const [];
+    final iz = Object.hash(veri.uzunluk, veri.x.first, veri.x.last,
+        veri.kapanis.last, veri.kapanis[veri.uzunluk ~/ 2]);
     final out = <_OzelSonuc>[];
     for (final g in acik) {
       final d = _derlenmisBetik(g.kod);
       if (d == null) continue;
+      final anahtar = '${g.kod.hashCode}|$iz';
+      final hazir = _sonucOnbellegi[anahtar];
+      if (hazir != null) {
+        out.add((g: g, s: hazir, v: veri));
+        continue;
+      }
       try {
-        out.add((g: g, s: d.calistir(veri), v: veri));
+        final s = d.calistir(veri);
+        if (_sonucOnbellegi.length > 32) _sonucOnbellegi.clear();
+        _sonucOnbellegi[anahtar] = s;
+        out.add((g: g, s: s, v: veri));
       } on BetikHatasi {
         continue;
       }
@@ -87,40 +113,42 @@ extension _OzelGostergeler on _AssetDetailScreenState {
     return out;
   }
 
-  /// Fiyatın üstündeki göstergelerin çizgileri ve işaretleri (grafiğin Y
+  /// Fiyatın üstündeki göstergelerin çubukları ve dolguları (grafiğin Y
   /// uzayında; LOG açıkken [toY] ile taşınır — EMA ile aynı kural).
-  List<LineChartBarData> _ozelCubuklar(
-      List<_OzelSonuc> sonuclar, double Function(double) toY) {
-    final out = <LineChartBarData>[];
+  /// [ofset]: bu çubuklardan önce ana grafikte kaç çubuk var (dolgu
+  /// dizinleri ona göre kayar).
+  ({List<LineChartBarData> bars, List<BetweenBarsData> dolgular})
+      _ozelCubuklar(List<_OzelSonuc> sonuclar, double Function(double) toY,
+          {required int ofset}) {
+    final bars = <LineChartBarData>[];
+    final dolgular = <BetweenBarsData>[];
     for (final r in sonuclar) {
       if (!r.s.fiyatUstunde) continue;
-      for (final (i, c) in r.s.cizgiler.indexed) {
-        out.add(betikCubugu(context, c, r.s.x, i, toY: toY));
-      }
-      if (r.s.isaretler.isNotEmpty) {
-        final kayma = r.v.uzunluk - r.s.x.length;
-        final fiyatY = [
-          for (var i = kayma; i < r.v.uzunluk; i++) toY(r.v.kapanis[i])
-        ];
-        for (final m in r.s.isaretler) {
-          out.add(betikIsaretCubugu(context, m, r.s.x, fiyatY));
-        }
-      }
+      final kayma = r.v.uzunluk - r.s.x.length;
+      final fiyatY = [
+        for (var i = kayma; i < r.v.uzunluk; i++) toY(r.v.kapanis[i])
+      ];
+      final c = betikCizimleri(context, r.s,
+          toY: toY, fiyatY: fiyatY, ofset: ofset + bars.length);
+      bars.addAll(c.bars);
+      dolgular.addAll(c.dolgular);
     }
-    return out;
+    return (bars: bars, dolgular: dolgular);
   }
 
-  /// Y bandına girecek noktalar (fiyatın üstündeki çizgiler) — EMA gibi:
-  /// banda girmeyen çizgi kartın dışında kalır ve "çalışmıyor" diye okunur.
+  /// Y bandına girecek noktalar (fiyatın üstündeki görünür çizgiler) — EMA
+  /// gibi: banda girmeyen çizgi kartın dışında kalır ve "çalışmıyor" diye
+  /// okunur.
   List<FlSpot> _ozelBantNoktalari(
           List<_OzelSonuc> sonuclar, double Function(double) toY) =>
       [
         for (final r in sonuclar)
           if (r.s.fiyatUstunde)
             for (final c in r.s.cizgiler)
-              for (var i = 0; i < r.s.x.length; i++)
-                if (c.degerler[i].isFinite)
-                  FlSpot(r.s.x[i], toY(c.degerler[i])),
+              if (!c.gizli)
+                for (var i = 0; i < r.s.x.length; i++)
+                  if (c.degerler[i].isFinite)
+                    FlSpot(r.s.x[i], toY(c.degerler[i])),
       ];
 
   /// Ana grafiğin odak penceresi değişti (dönem, veri). Build içinden

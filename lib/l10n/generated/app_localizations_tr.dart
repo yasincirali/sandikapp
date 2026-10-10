@@ -8288,7 +8288,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ozgAciklama =>
-      'Kendi formülünü yaz. Grafikte seçili aralığın çubuklarında çalışır.';
+      'TradingView\'deki Pine Script kodunu olduğu gibi yapıştır ya da kendin yaz. Grafikte seçili aralığın çubuklarında çalışır.';
 
   @override
   String get ozgBos => 'Henüz gösterge yazmadın. Bir şablonla başlayabilirsin.';
@@ -8321,7 +8321,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get ozgAdIpucu => 'Ör. Hızlı EMA kesişimi';
 
   @override
-  String get ozgKodEtiket => 'Formül';
+  String get ozgKodEtiket => 'Pine Script kodu';
 
   @override
   String ozgGecerli(int sayi, String yer) {
@@ -8350,7 +8350,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ozgGuvenlik =>
-      'Formülün yalnız telefonunda, kapalı bir dilde çalışır. İnternete, dosyalara ya da hesabına erişemez.';
+      'Kod yalnız telefonunda, kapalı bir yorumlayıcıda çalışır. İnternete, dosyalara ya da hesabına erişemez.';
 
   @override
   String get ozgKaydet => 'Kaydet';
@@ -8401,6 +8401,26 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ozgKaydedildi => 'Gösterge kaydedildi';
+
+  @override
+  String get ozgNotCizimNesnesi =>
+      'label, line, box ve table çizimleri gösterilmez; kodun geri kalanı çalışır.';
+
+  @override
+  String get ozgNotBoyama => 'bgcolor ve barcolor boyamaları gösterilmez.';
+
+  @override
+  String get ozgNotStrateji =>
+      'Strateji emirleri (strategy.entry …) yürütülmez; yalnız çizimler gösterilir.';
+
+  @override
+  String ozgNotFazlaCizgi(int sayi) {
+    return 'İlk $sayi çizgi gösterilir.';
+  }
+
+  @override
+  String get ozgNotPaneldeIsaret =>
+      'Ayrı paneldeki işaretler (plotshape) gösterilmez.';
 
   @override
   String get pwOzOzelGosterge =>

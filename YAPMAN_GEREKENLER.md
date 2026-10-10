@@ -16,10 +16,13 @@
 
 Senin isteğin: "traderlar TradingView'e kendi kodlarını ekleyerek kendi
 göstergelerini kullanabiliyorlar; zaman aralığıyla kombine, paywall
-arkasında." Varlık grafiğinde `ƒx` çipi → "Göstergelerim": formül yaz,
-şablondan başla (EMA kesişimi, RSI, Bollinger, MACD, Momentum), grafikte
-aç/kapa. Dil Python değil, Pine benzeri kapalı bir dil; betik telefonda
-çalışır, sunucu yalnız metni saklar. Görünürlük EMA/Mum ile aynı:
+arkasında." + "benzeri değil, birebir Pine olsun." Varlık grafiğinde `ƒx`
+çipi → "Göstergelerim": TradingView'deki Pine Script kodunu (v4/v5/v6)
+olduğu gibi yapıştır ya da şablondan başla (EMA kesişimi, RSI, Bollinger,
+MACD, Yükseliş serisi), grafikte aç/kapa. Betik telefonda kendi
+yorumlayıcımızda çalışır, sunucu yalnız metni saklar (en fazla 20.000
+karakter). Bilerek çalışmayan: başka sembol/aralıktan veri, diziler,
+import; label/line/box/table ve bgcolor çalışır ama çizilmez. Görünürlük EMA/Mum ile aynı:
 `paywall_enabled` kapalıyken yalnız admin, açıkken herkes (ücretsizde kilitli).
 
 - [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration

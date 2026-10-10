@@ -473,6 +473,23 @@ class _OzelGostergeEditorScreenState
                         style: context.t.bodySmall
                             ?.copyWith(color: context.c.text58)),
                   ],
+                  // Kodun çalışıp ekranda karşılığı olmayan kısımları
+                  // (Pine'dan gelen label/bgcolor/strateji) sessizce
+                  // yutulmaz.
+                  for (final not in sonuc?.notlar ?? const <BetikNotu>{}) ...[
+                    const SizedBox(height: SandikSpace.xs),
+                    Text(
+                        switch (not) {
+                          BetikNotu.cizimNesnesi => l.ozgNotCizimNesnesi,
+                          BetikNotu.boyama => l.ozgNotBoyama,
+                          BetikNotu.strateji => l.ozgNotStrateji,
+                          BetikNotu.fazlaCizgi =>
+                            l.ozgNotFazlaCizgi(kBetikAzamiCizgi),
+                          BetikNotu.paneldeIsaret => l.ozgNotPaneldeIsaret,
+                        },
+                        style: context.t.bodySmall
+                            ?.copyWith(color: context.c.text58)),
+                  ],
                   const SizedBox(height: SandikSpace.md),
                   _OnizlemeKarti(
                     sonuc: sonuc,

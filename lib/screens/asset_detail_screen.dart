@@ -1086,8 +1086,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         : const <OzelGosterge>[];
                     if (ozelAcik.isNotEmpty) _emaOnSeriniIste(seciliGun);
                     if (katmanAcik && !compareOn) {
-                      _ozelVeri = _betikVerisi(
-                          hamAktif, _emaOnNoktalari(seciliGun, startDate));
+                      _ozelVeri = _betikVerisi(hamAktif,
+                          _emaOnNoktalari(seciliGun, startDate), startDate);
                     }
                     final ozelVeri = _ozelVeri;
                     final ozelSonuclar = ozelVeri == null
@@ -1467,7 +1467,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   if (lastSpot != null) lastSpot.x,
                                 },
                               );
+                              // Kendi göstergelerinin dolguları ana listede
+                              // kendilerinden önceki çubuk sayısı kadar kayar.
+                              final ozelCizim = _ozelCubuklar(
+                                ozelSonuclar,
+                                toY,
+                                ofset: (ma20Spots != null &&
+                                            ma20Spots.length >= 2
+                                        ? 1
+                                        : 0) +
+                                    (compareBar != null ? 1 : 0) +
+                                    emaCizgileri.length,
+                              );
                               return LineChartData(
+                          betweenBarsData: ozelCizim.dolgular,
                           minX: viewMinX,
                           maxX: viewMaxX,
                           minY: viewMinY,
@@ -1630,7 +1643,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               ),
                             if (compareBar != null) compareBar,
                             for (final e in emaCizgileri) _emaCubugu(e),
-                            ..._ozelCubuklar(ozelSonuclar, toY),
+                            ...ozelCizim.bars,
                             // Mum: aktif (açık piyasa) çizginin yerine;
                             // kapalı piyasa kesikli çizgisi aynen kalır.
                             if (mumOn)

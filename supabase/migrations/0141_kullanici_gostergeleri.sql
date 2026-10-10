@@ -3,7 +3,7 @@
 -- ## Neden
 -- yasin (2026-10-10): "traderlar TradingView'e kendi kodlarını ekleyerek kendi
 -- generic göstergelerini kullanabiliyorlar … bunu paywall arkasına ekleyelim."
--- Kullanıcı Pine benzeri küçük bir dilde gösterge yazar
+-- Kullanıcı Pine Script (TradingView) kodunu yapıştırır ya da yazar
 -- (`lib/services/gosterge_betigi/betik.dart`); betik CİHAZDA çalışır. Sunucu
 -- yalnız METNİ saklar ki gösterge kullanıcının bütün cihazlarında aynı olsun.
 -- Sunucuda kod ÇALIŞTIRILMAZ: `kod` sütunu düz metindir, hiçbir fonksiyon onu
@@ -25,7 +25,8 @@
 -- `premiumOzellikleriGorunur` (paywall kapalıyken yalnız admin).
 --
 -- ## Sınırlar
--- Kod 4000 karakter (istemcideki `kBetikAzamiKarakter` ile aynı), ad 40,
+-- Kod 20000 karakter (istemcideki `kBetikAzamiKarakter` ile aynı; TradingView
+-- topluluk göstergeleri çoğunlukla 2-15 bin karakter), ad 40,
 -- kullanıcı başına 20 gösterge. Sayı sınırı tetikleyiciyle: RLS satır sayamaz.
 --
 -- ## Eski istemciler
@@ -36,7 +37,7 @@ create table if not exists public.kullanici_gostergeleri (
   user_id     uuid not null default auth.uid()
               references auth.users(id) on delete cascade,
   ad          text not null check (char_length(btrim(ad)) between 1 and 40),
-  kod         text not null check (char_length(kod) between 1 and 4000),
+  kod         text not null check (char_length(kod) between 1 and 20000),
   -- Grafikte açık mı (çip sayfasındaki anahtar). Cihazlar arası aynı kalsın
   -- diye sunucuda.
   grafikte    boolean not null default true,

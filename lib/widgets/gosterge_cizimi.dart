@@ -39,30 +39,149 @@ Color betikRengi(BuildContext context, String? ad, int sira) {
   return sirali[sira % sirali.length];
 }
 
-/// Betik çizgisinin fl_chart çubuğu. NaN noktalar atlanır; [toY] LOG ölçek
-/// dönüşümü (fiyatın üstündeki çizgide), [xMin]/[xMax] dışı kesilmez —
-/// fl_chart kırpar.
-LineChartBarData betikCubugu(
+/// Bir sonucun bütün fl_chart çubukları ve dolguları.
+///
+/// Dizin sözleşmesi: `bars[i]` = `sonuc.cizgiler[i]` (gizli çizgi saydam bir
+/// çubuk olarak yine yer tutar — `fill` ona bağlanabilsin). Histogramın eksi
+/// tarafı ve işaretler bunlardan SONRA gelir. [dolgular] dizinleri bu listeye
+/// görelidir; listeyi başka çubuklarla birleştiren [ofset] verir.
+({List<LineChartBarData> bars, List<BetweenBarsData> dolgular}) betikCizimleri(
   BuildContext context,
-  BetikCizgi cizgi,
-  List<double> x,
-  int sira, {
+  BetikSonucu sonuc, {
   double Function(double)? toY,
+  List<double>? fiyatY,
+  int ofset = 0,
 }) {
-  final spots = <FlSpot>[
-    for (var i = 0; i < x.length; i++)
-      if (cizgi.degerler[i].isFinite)
-        FlSpot(x[i], toY == null ? cizgi.degerler[i] : toY(cizgi.degerler[i])),
+  final x = sonuc.x;
+  final ana = <LineChartBarData>[];
+  final ek = <LineChartBarData>[];
+  for (final (i, c) in sonuc.cizgiler.indexed) {
+    final cubuklar = _cizgiCubuklari(context, c, x, i, toY);
+    ana.add(cubuklar.first);
+    ek.addAll(cubuklar.skip(1));
+  }
+  if (fiyatY != null && sonuc.fiyatUstunde) {
+    for (final m in sonuc.isaretler) {
+      ek.add(betikIsaretCubugu(context, m, x, fiyatY));
+    }
+  }
+  final dolgular = <BetweenBarsData>[
+    for (final d in sonuc.dolgular)
+      if (d.a != null && d.b != null)
+        BetweenBarsData(
+          fromIndex: ofset + d.a!,
+          toIndex: ofset + d.b!,
+          color: betikRengi(context, d.renk ?? sonuc.cizgiler[d.a!].renk,
+                  d.a!)
+              .withValues(alpha: 0.12),
+        ),
   ];
-  return LineChartBarData(
-    spots: spots,
-    isCurved: false,
-    color: betikRengi(context, cizgi.renk, sira),
-    barWidth: cizgi.kalinlik,
-    isStrokeCapRound: true,
-    dotData: const FlDotData(show: false),
-    belowBarData: BarAreaData(show: false),
-  );
+  return (bars: [...ana, ...ek], dolgular: dolgular);
+}
+
+/// Bir `plot`un çubukları; ilki her zaman "ana" çubuk (dolgu dizini).
+List<LineChartBarData> _cizgiCubuklari(BuildContext context, BetikCizgi c,
+    List<double> x, int sira, double Function(double)? toY) {
+  double y(double v) => toY == null ? v : toY(v);
+  final renk = betikRengi(context, c.renk, sira);
+  if (c.gizli) {
+    return [
+      LineChartBarData(
+        spots: [
+          for (var i = 0; i < x.length; i++)
+            if (c.degerler[i].isFinite) FlSpot(x[i], y(c.degerler[i])),
+        ],
+        barWidth: 0,
+        color: renk.withValues(alpha: 0),
+        dotData: const FlDotData(show: false),
+        belowBarData: BarAreaData(show: false),
+      ),
+    ];
+  }
+  switch (c.stil) {
+    case BetikCizgiStili.histogram:
+      // Sütunlar: her çubuk sıfırdan değere dikey bir parça; parçalar
+      // `nullSpot` ile ayrılır. Artı ve eksi taraf ayrı renk (MACD).
+      final eksi = betikRengi(context, c.eksiRenk ?? c.renk, sira);
+      final sifir = y(0);
+      List<FlSpot> parcalar(bool arti) => [
+            for (var i = 0; i < x.length; i++)
+              if (c.degerler[i].isFinite && (c.degerler[i] >= 0) == arti) ...[
+                FlSpot(x[i], sifir),
+                FlSpot(x[i], y(c.degerler[i])),
+                FlSpot.nullSpot,
+              ],
+          ];
+      LineChartBarData sutun(List<FlSpot> sp, Color r) => LineChartBarData(
+            spots: sp,
+            isCurved: false,
+            color: r.withValues(alpha: 0.8),
+            barWidth: c.kalinlik + 0.6,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(show: false),
+          );
+      return [sutun(parcalar(true), renk), sutun(parcalar(false), eksi)];
+    case BetikCizgiStili.nokta:
+      return [
+        LineChartBarData(
+          spots: [
+            for (var i = 0; i < x.length; i++)
+              if (c.degerler[i].isFinite) FlSpot(x[i], y(c.degerler[i])),
+          ],
+          barWidth: 0,
+          color: renk.withValues(alpha: 0),
+          belowBarData: BarAreaData(show: false),
+          dotData: FlDotData(
+            show: true,
+            getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
+              radius: c.kalinlik,
+              color: renk,
+              strokeWidth: 0,
+              strokeColor: renk,
+            ),
+          ),
+        ),
+      ];
+    case BetikCizgiStili.cizgi || BetikCizgiStili.alan:
+      final alan = c.stil == BetikCizgiStili.alan;
+      return [
+        LineChartBarData(
+          // Pine `na` çizgiyi böler (plot.style_linebr ve Supertrend gibi
+          // iki çizgili göstergeler): boşluk nullSpot.
+          spots: _bolunmus(c.degerler, x, y),
+          isCurved: false,
+          color: renk,
+          barWidth: c.kalinlik,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(
+            show: alan,
+            color: renk.withValues(alpha: 0.14),
+            cutOffY: y(0),
+            applyCutOffY: alan,
+          ),
+        ),
+      ];
+  }
+}
+
+/// NaN aralıkları `nullSpot` ile böler; baştaki ve sondaki boşluk atılır.
+List<FlSpot> _bolunmus(
+    List<double> d, List<double> x, double Function(double) y) {
+  final out = <FlSpot>[];
+  var bosluk = false;
+  for (var i = 0; i < x.length; i++) {
+    if (!d[i].isFinite) {
+      bosluk = out.isNotEmpty;
+      continue;
+    }
+    if (bosluk) {
+      out.add(FlSpot.nullSpot);
+      bosluk = false;
+    }
+    out.add(FlSpot(x[i], y(d[i])));
+  }
+  return out;
 }
 
 /// `plotshape` işaretleri: koşulun doğru olduğu çubukta, FİYATIN üstünde
@@ -134,6 +253,7 @@ class BetikLejandi extends StatelessWidget {
             style: context.t.labelSmall?.copyWith(
                 color: context.c.text90, fontWeight: FontWeight.w700)),
         for (final (i, c) in sonuc.cizgiler.indexed)
+          if (!c.gizli)
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -234,6 +354,7 @@ class BetikPaneli extends StatelessWidget {
 LineChartData _panelVerisi(BuildContext context, BetikSonucu s, double minX,
     double maxX, ({double min, double max}) bant) {
   final eksen = GrafikStili.eksenYazisi(context);
+  final cizim = betikCizimleri(context, s);
   return LineChartData(
     minX: minX,
     maxX: maxX,
@@ -285,11 +406,19 @@ LineChartData _panelVerisi(BuildContext context, BetikSonucu s, double minX,
           ),
         ),
     ]),
+    // fill(hline1, hline2): RSI'nin 30-70 bandı gibi.
+    rangeAnnotations: RangeAnnotations(horizontalRangeAnnotations: [
+      for (final d in s.dolgular)
+        if (d.yatayA != null && d.yatayB != null)
+          HorizontalRangeAnnotation(
+            y1: math.min(d.yatayA!, d.yatayB!),
+            y2: math.max(d.yatayA!, d.yatayB!),
+            color: betikRengi(context, d.renk, 0).withValues(alpha: 0.08),
+          ),
+    ]),
     lineTouchData: const LineTouchData(enabled: false),
-    lineBarsData: [
-      for (final (i, c) in s.cizgiler.indexed)
-        betikCubugu(context, c, s.x, i),
-    ],
+    lineBarsData: cizim.bars,
+    betweenBarsData: cizim.dolgular,
   );
 }
 
@@ -342,6 +471,8 @@ class BetikOnizleme extends StatelessWidget {
     if (!lo.isFinite) return SizedBox(height: yukseklik);
     final pay = math.max((hi - lo) * 0.08, hi.abs() * 0.005 + 1e-9);
     final eksen = GrafikStili.eksenYazisi(context);
+    // Fiyat çizgisi listede ilk; göstergenin dolgu dizinleri 1 kayar.
+    final cizim = betikCizimleri(context, sonuc, fiyatY: fiyat, ofset: 1);
     return SizedBox(
       height: yukseklik,
       child: ExcludeSemantics(
@@ -392,11 +523,9 @@ class BetikOnizleme extends StatelessWidget {
                 dotData: const FlDotData(show: false),
                 belowBarData: BarAreaData(show: false),
               ),
-              for (final (i, c) in sonuc.cizgiler.indexed)
-                betikCubugu(context, c, sonuc.x, i),
-              for (final m in sonuc.isaretler)
-                betikIsaretCubugu(context, m, sonuc.x, fiyat),
+              ...cizim.bars,
             ],
+            betweenBarsData: cizim.dolgular,
           ),
           duration: Duration.zero,
         ),

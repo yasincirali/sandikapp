@@ -8371,7 +8371,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ozgAciklama =>
-      'Write your own formula. It runs on the bars of the interval shown on the chart.';
+      'Paste Pine Script code from TradingView as is, or write your own. It runs on the bars of the interval shown on the chart.';
 
   @override
   String get ozgBos =>
@@ -8405,7 +8405,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ozgAdIpucu => 'e.g. Fast EMA crossover';
 
   @override
-  String get ozgKodEtiket => 'Formula';
+  String get ozgKodEtiket => 'Pine Script code';
 
   @override
   String ozgGecerli(int sayi, String yer) {
@@ -8434,7 +8434,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ozgGuvenlik =>
-      'Your formula runs only on your phone, in a closed language. It cannot reach the internet, files or your account.';
+      'The code runs only on your phone, in a closed interpreter. It cannot reach the internet, your files or your account.';
 
   @override
   String get ozgKaydet => 'Save';
@@ -8485,6 +8485,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ozgKaydedildi => 'Indicator saved';
+
+  @override
+  String get ozgNotCizimNesnesi =>
+      'label, line, box and table drawings are not shown; the rest of the code runs.';
+
+  @override
+  String get ozgNotBoyama => 'bgcolor and barcolor painting is not shown.';
+
+  @override
+  String get ozgNotStrateji =>
+      'Strategy orders (strategy.entry …) are not executed; only the drawings are shown.';
+
+  @override
+  String ozgNotFazlaCizgi(int sayi) {
+    return 'The first $sayi plots are shown.';
+  }
+
+  @override
+  String get ozgNotPaneldeIsaret =>
+      'Markers (plotshape) in a separate pane are not shown.';
 
   @override
   String get pwOzOzelGosterge =>

@@ -13861,7 +13861,7 @@ abstract class AppLocalizations {
   /// No description provided for @ozgAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Kendi formülünü yaz. Grafikte seçili aralığın çubuklarında çalışır.'**
+  /// **'TradingView\'deki Pine Script kodunu olduğu gibi yapıştır ya da kendin yaz. Grafikte seçili aralığın çubuklarında çalışır.'**
   String get ozgAciklama;
 
   /// No description provided for @ozgBos.
@@ -13927,7 +13927,7 @@ abstract class AppLocalizations {
   /// No description provided for @ozgKodEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'Formül'**
+  /// **'Pine Script kodu'**
   String get ozgKodEtiket;
 
   /// No description provided for @ozgGecerli.
@@ -13969,7 +13969,7 @@ abstract class AppLocalizations {
   /// No description provided for @ozgGuvenlik.
   ///
   /// In tr, this message translates to:
-  /// **'Formülün yalnız telefonunda, kapalı bir dilde çalışır. İnternete, dosyalara ya da hesabına erişemez.'**
+  /// **'Kod yalnız telefonunda, kapalı bir yorumlayıcıda çalışır. İnternete, dosyalara ya da hesabına erişemez.'**
   String get ozgGuvenlik;
 
   /// No description provided for @ozgKaydet.
@@ -14055,6 +14055,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gösterge kaydedildi'**
   String get ozgKaydedildi;
+
+  /// No description provided for @ozgNotCizimNesnesi.
+  ///
+  /// In tr, this message translates to:
+  /// **'label, line, box ve table çizimleri gösterilmez; kodun geri kalanı çalışır.'**
+  String get ozgNotCizimNesnesi;
+
+  /// No description provided for @ozgNotBoyama.
+  ///
+  /// In tr, this message translates to:
+  /// **'bgcolor ve barcolor boyamaları gösterilmez.'**
+  String get ozgNotBoyama;
+
+  /// No description provided for @ozgNotStrateji.
+  ///
+  /// In tr, this message translates to:
+  /// **'Strateji emirleri (strategy.entry …) yürütülmez; yalnız çizimler gösterilir.'**
+  String get ozgNotStrateji;
+
+  /// No description provided for @ozgNotFazlaCizgi.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlk {sayi} çizgi gösterilir.'**
+  String ozgNotFazlaCizgi(int sayi);
+
+  /// No description provided for @ozgNotPaneldeIsaret.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrı paneldeki işaretler (plotshape) gösterilmez.'**
+  String get ozgNotPaneldeIsaret;
 
   /// No description provided for @pwOzOzelGosterge.
   ///
