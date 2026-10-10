@@ -24,17 +24,57 @@ import 'tablo_anlama.dart';
 ///   düzeni) görünür kalır.
 ///
 /// Saf fonksiyon; ağ yok, kayıt yok. Ekranda bayrak `ekstre_tanilama`.
+///
+/// ## Uzunluk sınırı (2026-10-10)
+/// İskelet `ekstre-esle`ye de gider ve sunucu [iskeletAzamiUzunluk]'tan
+/// uzununu 400 `uzun` ile reddeder (`_shared/ekstre_esleme.ts`
+/// `AZAMI_UZUNLUK`). Çok sayfalı PDF'te her sayfa ayrı tablo olduğundan
+/// 60 satırlık kesim 12 sayfada ~51.000 karaktere çıkıyordu; kullanıcı
+/// yalnız "şu an yapılamadı" görüyordu (TestFlight). Sığana kadar tablo
+/// başına satır azaltılır — sütun tanımak için başlık + birkaç satır
+/// yeter. O da yetmezse sondaki tablolar düşer; numaralar değişmez, çünkü
+/// model yanıtı tablo NUMARASIYLA döner (`aiEslemesiyle`).
 String ekstreIskeleti(
   EkstreOkumaSonucu sonuc, {
   int tabloBasinaSatir = 60,
+  int azamiUzunluk = iskeletAzamiUzunluk,
 }) {
+  for (final satir in [tabloBasinaSatir, 40, 25, 15, 10, 6, 3]) {
+    if (satir > tabloBasinaSatir) continue;
+    final s = _iskeletKur(sonuc, satir, sonuc.tablolar.length);
+    if (s.length <= azamiUzunluk) return s;
+  }
+  var tablo = sonuc.tablolar.length;
+  var s = _iskeletKur(sonuc, 3, tablo);
+  while (s.length > azamiUzunluk && tablo > 1) {
+    s = _iskeletKur(sonuc, 3, --tablo);
+  }
+  return s;
+}
+
+/// `ekstre-esle`nin kabul ettiği en uzun iskelet. Sunucudaki
+/// `AZAMI_UZUNLUK` ile aynı olmalı (`ekstre_iskeleti_test` iki dosyayı
+/// karşılaştırır).
+const iskeletAzamiUzunluk = 40000;
+
+String _iskeletKur(
+  EkstreOkumaSonucu sonuc,
+  int tabloBasinaSatir,
+  int tabloSayisi,
+) {
   final b = StringBuffer()
     ..writeln('sandık ekstre iskeleti v1')
     ..writeln('biçim: ${sonuc.bicim.name}')
     ..writeln('belge tarihi: ${sonuc.belgeTarihi != null ? 'var' : 'yok'}'
         ' · kurum adı: ${sonuc.kurum != null ? 'bulundu' : 'yok'}'
         ' · vadeli mevduat: ${sonuc.mevduatlar.length}');
-  for (final (i, a) in sonuc.anlamlar.indexed) {
+  // Anlam satırları da tablo sayısıyla sınırlı: yüzlerce tabloda yalnız
+  // bunlar sınırı aşıyordu (test "sondaki tablolar düşer").
+  final anlamlar = sonuc.anlamlar.take(tabloSayisi).toList();
+  if (anlamlar.length < sonuc.anlamlar.length) {
+    b.writeln('sığmayan anlam: ${sonuc.anlamlar.length - anlamlar.length}');
+  }
+  for (final (i, a) in anlamlar.indexed) {
     final roller = [
       for (final r in EkstreRol.values)
         if (a.roller[r] case final s?) '${r.name}=$s',
@@ -48,7 +88,10 @@ String ekstreIskeleti(
   if (sonuc.cozulemeyenFonlar.isNotEmpty) {
     b.writeln('tanınmayan fon: ${sonuc.cozulemeyenFonlar.length}');
   }
-  for (final (i, t) in sonuc.tablolar.indexed) {
+  if (tabloSayisi < sonuc.tablolar.length) {
+    b.writeln('sığmayan tablo: ${sonuc.tablolar.length - tabloSayisi}');
+  }
+  for (final (i, t) in sonuc.tablolar.take(tabloSayisi).indexed) {
     final sutun = t.satirlar.fold<int>(0, (m, s) => s.length > m ? s.length : m);
     b
       ..writeln()
