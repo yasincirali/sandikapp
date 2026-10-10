@@ -1,0 +1,20 @@
+# BIST hisse evreni ölçümü (2026-10-10) — tool/bist_evren_olc.py. Salt okunur,
+# anahtarsız, secret yok (public repo: log herkese açık). Yalnız elle: halka
+# arz ya da kod değişikliğinden sonra `lib/models/bist_hisseleri.dart`'ı
+# tazelemek için. Bulut kabı eseri indiremediği için döküm logda da var.
+name: BIST hisse evreni
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  olcum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tool/bist_evren_olc.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bist-evren
+          path: bist_evren.json

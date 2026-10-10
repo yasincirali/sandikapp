@@ -130,7 +130,7 @@ bool _korunur(String cekirdek) {
   // (Kanada doları) değildir.
   final u = cekirdek;
   if (RegExp(r'^[A-Z]{3,6}$').hasMatch(u) &&
-      (bist100StocksMap.containsKey('$u.IS') || _dovizKodlari.contains(u))) {
+      (bistKoduMu(u) || _dovizKodlari.contains(u))) {
     return true;
   }
   final n = ekstreNormal(cekirdek);

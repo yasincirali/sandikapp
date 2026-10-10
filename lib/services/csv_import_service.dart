@@ -311,7 +311,7 @@ class CsvImportService {
       final ilk = t.substring(0, bosluk);
       final kuyruk = t.substring(bosluk + 1).trim();
       final u = ilk.toUpperCase();
-      final kesin = bist100StocksMap.containsKey('$u.IS') ||
+      final kesin = bistKoduMu(u) ||
           RegExp(r'^TR[A-Z0-9]{10}$').hasMatch(u) ||
           _dovizKodlari.contains(u);
       final kodGibi = RegExp(r'^[A-Z][A-Z0-9]{2,5}$').hasMatch(ilk) &&
