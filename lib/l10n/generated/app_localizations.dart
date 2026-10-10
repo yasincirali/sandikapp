@@ -12106,11 +12106,11 @@ abstract class AppLocalizations {
   /// **'Dağılımı büyük halkada aç'**
   String get s3HalkayiAc;
 
-  /// No description provided for @s3DigerTurler.
+  /// No description provided for @s3DigerKatlanan.
   ///
   /// In tr, this message translates to:
-  /// **'+{n} tür'**
-  String s3DigerTurler(int n);
+  /// **'Diğer ({n})'**
+  String s3DigerKatlanan(int n);
 
   /// No description provided for @s5OnAyarSoru.
   ///

@@ -415,6 +415,25 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 if (val <= meta.min + edge || val >= meta.max - edge) {
                   return const SizedBox.shrink();
                 }
+                // Ekran genişliğine sığmayan ara etiketler atlanır
+                // (`xEtiketiAtlanir`, TestFlight bulgusu 2026-10-10). Taban
+                // 0: bu grafik `baselineX` vermez, tick'ler 0'ın katında.
+                final etiketGenisligi =
+                    intraday && span > 1440 ? 88.0 : 74.0;
+                final spanGunEtiket = intraday ? span / 1440.0 : span;
+                if (xEtiketiAtlanir(val,
+                    aralik: meta.max - meta.min,
+                    tickAraligi: meta.appliedInterval,
+                    eksenPx: meta.parentAxisSize,
+                    etiketPx: GrafikStili.xEtiketAraligi(
+                      zamanEtiketiOrnegi(
+                          spanGun: spanGunEtiket, gunIci: intraday),
+                      stil: GrafikStili.eksenYazisi(context),
+                      olcek: MediaQuery.textScalerOf(context),
+                      genislik: etiketGenisligi,
+                    ))) {
+                  return const SizedBox.shrink();
+                }
                 // Dinamik format — dar viewport'ta gün+ay, geniş
                 // viewport'ta (365+ gün) sadece ay ve yıl ("Oca '26"). Çok dar (<3 gün)
                 // görünümde saat de göster.
@@ -448,9 +467,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 return GrafikStili.xEtiketi(
                   label,
                   stil: GrafikStili.eksenYazisi(context),
-                  genislik: intraday && (meta.max - meta.min).abs() > 1440
-                      ? 88
-                      : 74,
+                  genislik: etiketGenisligi,
                 );
               },
             ),

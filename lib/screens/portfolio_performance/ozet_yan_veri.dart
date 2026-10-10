@@ -5,8 +5,9 @@ part of '../portfolio_performance_screen.dart';
 /// `positionKey` → insan-okunur etiket. Gövde `lib/utils/pozisyon_etiketi.dart`
 /// (2026-10-04): Bugün kartının "en çok oynayan"ı da aynı adı yazsın diye
 /// ortak dosyaya taşındı; buradaki ad part'ın çağıranları değişmesin diye kaldı.
-String _positionLabel(String key, AssetType type, AppLocalizations l) =>
-    pozisyonEtiketi(key, type, l);
+String _positionLabel(String key, AssetType type, AppLocalizations l,
+        {String? ad}) =>
+    pozisyonEtiketi(key, type, l, ad: ad);
 
 /// Özet'in ağa çıkan yan verilerinin TEK ölçümü — [_yanVeriYukle] üretir,
 /// `_OzetBellek` saklar, `_OzetYanVeriState` çizer.

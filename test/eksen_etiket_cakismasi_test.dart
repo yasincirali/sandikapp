@@ -68,7 +68,9 @@ void main() {
     });
 
     test('tek günlük eksende 74 KALIR', () {
-      expect(kaynak.contains(': 74,'), isTrue,
+      // 2026-10-10: genişlik seyreltme ölçümüyle (`xEtiketiAtlanir`) aynı
+      // değeri paylaşsın diye `etiketGenisligi` değişkenine alındı.
+      expect(kaynak.contains('? 88.0 : 74.0;'), isTrue,
           reason: 'Dar etiket gereksiz yer kaplar.');
     });
 

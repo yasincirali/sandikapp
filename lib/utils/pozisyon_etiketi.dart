@@ -14,9 +14,21 @@ import '../models/position.dart';
 /// satırları okuyordu. Bugün kartının "en çok oynayan"ı da aynı adı yazmalı
 /// (Özet GÜNLÜK'te "THYAO" diyen, kartta "THYAO.IS" demesin). Kopyalamak bu
 /// projede ons→gram formülünü beş yere dağıtan sınıf hatanın aynısıydı.
-String pozisyonEtiketi(String key, AssetType type, AppLocalizations l) {
+///
+/// **Mevduat (TestFlight bulgusu 2026-10-10):** mevduatın sembolü
+/// `MEVDUAT:<sözleşme id>`; aşağıdaki `pozisyonKodu` öneki atınca geriye
+/// UUID kalıyor ve tür dökümünde "906B9769-6846-…" yazıyordu. Sözleşme
+/// kimliği kullanıcıya hiçbir şey söylemez — etiket varlığın adıdır
+/// ([ad], ör. "Ziraat · Vadeli"); ad bilinmiyorsa tür adı ("Mevduat").
+/// Kimlik hiçbir durumda ekrana çıkmaz.
+String pozisyonEtiketi(String key, AssetType type, AppLocalizations l,
+    {String? ad}) {
   final parts = key.split('|');
   var core = parts.length > 1 ? parts[1] : key;
+  if (type == AssetType.mevduat || mevduatSozlesmeId(core) != null) {
+    final temiz = ad?.trim() ?? '';
+    return temiz.isNotEmpty ? temiz : AssetType.mevduat.labelOf(l);
+  }
   if (core.startsWith('sub:')) {
     core = core.substring(4);
   } else if (core.startsWith('name:')) {

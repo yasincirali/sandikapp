@@ -22,6 +22,7 @@ import '../services/notification_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/review_prompt_service.dart';
 import '../l10n/l10n.dart';
+import '../services/varlik_eklendi.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -87,6 +88,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // okuyoruz. Yalnızca dinleseydik, uygulama kapalıyken yapılan dokunuş
     // sessizce kaybolurdu.
     MainNavigationScreen.sekmeIstegi.addListener(_sekmeIstegiGeldi);
+    VarlikEklendi.kanal.addListener(_varlikEklendi);
     if (MainNavigationScreen.sekmeIstegi.value != null) {
       Future.microtask(_sekmeIstegiGeldi);
     }
@@ -147,6 +149,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // yeniden kurulduğunda (tema/dil değişimi, hot restart) üst üste
     // birikir ve tek dokunuş birden çok kez işlenir.
     MainNavigationScreen.sekmeIstegi.removeListener(_sekmeIstegiGeldi);
+    VarlikEklendi.kanal.removeListener(_varlikEklendi);
     _fiyatTuruBagi?.call();
     super.dispose();
   }
@@ -191,6 +194,24 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         reason: 'MainNavigation.sekmeIstegi.refreshPrices',
       );
     }
+  }
+
+  /// Ekleme NEREDEN yapıldıysa (arama, takip listesi, Karşılaştır, halka
+  /// arz, boş ana ekran, FAB) bitince Portföy sekmesi açılır — bkz.
+  /// [VarlikEklendi]. Araya açılmış rotalar (varlık sayfası alt sayfası,
+  /// arama ekranı, takip listesi…) kapatılır ki kullanıcı yeni satırı
+  /// görsün. Kapatma bir sonraki karede: ekleme formu kendi `pop`'unu
+  /// duyurudan HEMEN sonra yapar; aynı karede `popUntil` formu da sayıp
+  /// formun kendi `pop`'u bir rota fazla kapatırdı. Bu ekranın kendi
+  /// rotasında durulur — oturum kapısının altına inilmez.
+  void _varlikEklendi() {
+    if (!mounted || VarlikEklendi.kanal.value == null) return;
+    _sekmeyeGec(_portfolioTab);
+    final rota = ModalRoute.of(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).popUntil((r) => r == rota || r.isFirst);
+    });
   }
 
   void _sekmeyeGec(int i) {

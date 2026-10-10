@@ -224,7 +224,10 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
         final pep = _endpoints(p.value, pozLot);
         if (pep == null) continue;
         kids.add(_BreakdownRow(
-          label: _positionLabel(p.key, e.key, context.l10n),
+          // Ad, sembolü anlamsız olan pozisyonlar için (mevduat: sözleşme
+          // UUID'si) — bkz. `pozisyonEtiketi`.
+          label: _positionLabel(p.key, e.key, context.l10n,
+              ad: pozLot.firstOrNull?.name),
           first: pep.first,
           last: pep.last,
           flow: _flowOf(pozLot),
