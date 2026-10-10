@@ -25,6 +25,8 @@ import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
 import 'screens/otp_verification_screen.dart';
+import 'services/hesap_gecisi.dart';
+import 'widgets/uygulama_kabugu.dart';
 import 'services/cihaz_oturumu_service.dart' show CihazKapisi;
 import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
@@ -299,7 +301,18 @@ void main() async {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
-    runApp(const ProviderScope(child: SandikApp()));
+    // Çoklu hesap (bayrak `coklu_hesap`): oturum kasasının yenileme
+    // dinleyicisi ve hesap listesi. Kapalıyken kasa hiç yazılmaz.
+    CrashReporter.arkaPlan(HesapGecisi.instance.baslat(),
+        reason: 'main.HesapGecisi.baslat');
+    // Kök kapsam `UygulamaKabugu` içinde: hesap değişince BAŞTAN kurulur
+    // (önceki hesabın sağlayıcı durumu yeni hesaba ulaşmasın). Bayrak
+    // kapalıyken ağaç birebir `ProviderScope(child: SandikApp())`.
+    runApp(UygulamaKabugu(
+      uygulama: const SandikApp(),
+      tema: (b) => SandikApp.buildTheme(
+          b == Brightness.dark ? SandikPalette.dark : SandikPalette.light, b),
+    ));
   }, (error, stack) {
     // Zone-level: yakalanmayan async hataları.
     // `CrashReporter` Firebase kurulu değilse sessizce no-op'tur; ağ hatası
@@ -1247,6 +1260,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // abone olunca fetch splash ile paralel başlar; splash sona erdiğinde
         // veri çoğunlukla hazırdır ve tek loading görünür.
         _warmUpData();
+        // Çoklu hesap: kasadaki hesabın bilgisi/oturumu tazelenir, "hesap
+        // ekle" bekliyorsa yeni hesap kasaya girer. Bayrak kapalıyken no-op.
+        CrashReporter.arkaPlan(HesapGecisi.instance.aktifHesapGirdi(user),
+            reason: 'main.HesapGecisi.aktifHesapGirdi');
         AnalyticsService.instance.setUserId(user.id);
         // Mağaza aboneliği (RevenueCat): yalnız `paywall_enabled` açıkken ve
         // anahtar build'e girmişken bağlanır; değilse hiçbir şey yapmaz.

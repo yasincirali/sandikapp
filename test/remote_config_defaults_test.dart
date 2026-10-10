@@ -132,6 +132,11 @@ void main() {
       expect(varsayilan('mevduat_banka_secici'), 'false');
     });
 
+    // Çoklu hesap: kapalıyken hesap kasası hiç yazılmaz, giriş/çıkış eski.
+    test('çoklu hesap KAPALI doğar', () {
+      expect(varsayilan('coklu_hesap'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

@@ -8237,4 +8237,26 @@ class AppLocalizationsTr extends AppLocalizations {
   String chartAssetSemantics(String name) {
     return '$name fiyat grafiği';
   }
+
+  @override
+  String cihazHesapAcikKalir(String ad) {
+    return '$ad açık kalır. Yeni hesaba giriş yap ya da kayıt ol; sonra Profil\'den hesaplar arasında geçebilirsin.';
+  }
+
+  @override
+  String get cihazHesaplari => 'Bu cihazdaki hesaplar';
+
+  @override
+  String get cihazHesapGeriDon => 'Geri dön';
+
+  @override
+  String get cihazHesapDevamEt => 'Devam et';
+
+  @override
+  String cihazHesapTekrarGiris(String eposta) {
+    return 'Tekrar giriş gerekli · $eposta';
+  }
+
+  @override
+  String get cihazHesapBaskaHesapla => 'ya da başka bir hesapla giriş yap';
 }

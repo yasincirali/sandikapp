@@ -34,7 +34,7 @@ import {
   recordAppNotification,
 } from '../_shared/app_notifications.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
+import { collapseTokens, ekHesap, ekHesapSatirlari, TokenRow } from '../_shared/push_tokens.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -241,7 +241,8 @@ async function yilSonuAni(p: {
     .from('user_push_tokens')
     .select('token, user_id, device_id, platform, updated_at');
   const hedefler = yilSonuHedefleri(
-    collapseTokens((tokenRows ?? []) as TokenRow[]),
+    // 0137: cihazın pasif hesaplarının satırları da (başlıkta hesap adı).
+    collapseTokens([...((tokenRows ?? []) as TokenRow[]), ...await ekHesapSatirlari(admin)]),
     await kayitliKullanicilar(admin),
   );
   if (hedefler.length === 0) {
@@ -280,6 +281,7 @@ async function yilSonuAni(p: {
       accessToken,
       projectId: p.fcmProjectId,
       token: t.token,
+      hesap: ekHesap(t),
       title: mesaj.title,
       body: mesaj.body,
       channelId: CHANNEL_ID,
@@ -456,6 +458,7 @@ async function birikimAni(p: {
       .select('token, user_id, device_id, platform, updated_at')
       .in('user_id', parca);
     tokenRows.push(...((data ?? []) as TokenRow[]));
+    tokenRows.push(...await ekHesapSatirlari(admin, parca));
   }
   const hedefler = collapseTokens(tokenRows);
   const mesaj = birikimMesaji();
@@ -501,6 +504,7 @@ async function birikimAni(p: {
       accessToken,
       projectId: p.fcmProjectId,
       token: t.token,
+      hesap: ekHesap(t),
       title: mesaj.title,
       body: mesaj.body,
       channelId: CHANNEL_ID,
@@ -698,7 +702,10 @@ Deno.serve(async (request) => {
     const { data: tokenRows } = await admin
       .from('user_push_tokens')
       .select('token, user_id, device_id, platform, updated_at');
-    const tokens = collapseTokens((tokenRows ?? []) as TokenRow[]);
+    const tokens = collapseTokens([
+      ...((tokenRows ?? []) as TokenRow[]),
+      ...await ekHesapSatirlari(admin),
+    ]);
     if (tokens.length === 0) {
       return jsonResponse({ ok: true, reason: 'Token yok.', sent: 0 });
     }
@@ -743,6 +750,7 @@ Deno.serve(async (request) => {
         accessToken,
         projectId: fcmProjectId,
         token: t.token,
+        hesap: ekHesap(t),
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,

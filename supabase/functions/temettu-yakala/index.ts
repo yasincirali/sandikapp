@@ -42,7 +42,7 @@ import {
   pozisyonAnahtari,
   PozisyonLot,
 } from '../_shared/positions.ts';
-import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
+import { collapseTokens, ekHesap, ekHesapSatirlari, TokenRow } from '../_shared/push_tokens.ts';
 import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 
 const corsHeaders = {
@@ -510,10 +510,16 @@ Deno.serve(async (request) => {
       .from('user_push_tokens')
       .select('token, user_id, device_id, platform, updated_at')
       .in('user_id', kullanicilar);
-    const tokenlar = new Map<string, string[]>();
-    for (const t of collapseTokens((tokenRows ?? []) as TokenRow[])) {
+    // 0137: cihazın pasif hesaplarının satırları da (başlıkta hesap adı).
+    const tokenlar = new Map<string, TokenRow[]>();
+    for (
+      const t of collapseTokens([
+        ...((tokenRows ?? []) as TokenRow[]),
+        ...await ekHesapSatirlari(admin, kullanicilar),
+      ])
+    ) {
       const l = tokenlar.get(t.user_id) ?? [];
-      l.push(t.token);
+      l.push(t);
       tokenlar.set(t.user_id, l);
     }
     const sessiz = await sessizKullanicilar(admin, kullanicilar);
@@ -572,7 +578,8 @@ Deno.serve(async (request) => {
       accessToken ??= await createAccessToken(
         JSON.parse(fcmServiceAccountJson) as ServiceAccount,
       );
-      for (const token of hedefler) {
+      for (const hedef of hedefler) {
+        const token = hedef.token;
         const r = await sendFcmNotification({
           accessToken,
           projectId: fcmProjectId,
@@ -581,6 +588,7 @@ Deno.serve(async (request) => {
           body: mesaj.body,
           channelId: CHANNEL_ID,
           data: veri,
+          hesap: ekHesap(hedef),
         });
         if (r.ok) {
           sent += 1;

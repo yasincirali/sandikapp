@@ -12,6 +12,7 @@ import {
   appNotificationRow,
   recordAppNotification,
 } from '../_shared/app_notifications.ts';
+import { ekHesap, ekHesapSatirlari, TokenRow } from '../_shared/push_tokens.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -108,14 +109,20 @@ Deno.serve(async (request) => {
       }),
     );
 
-    const { data: tokens, error: tokenError } = await adminClient
+    const { data: birincil, error: tokenError } = await adminClient
       .from('user_push_tokens')
-      .select('token')
+      .select('token, user_id')
       .eq('user_id', invite.from_user_id);
 
     if (tokenError) {
       throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
     }
+    // 0137: kod sahibinin hesabı bir cihazda PASİFSE o cihaza da gider
+    // (başlıkta hesap adı).
+    const tokens: TokenRow[] = [
+      ...((birincil ?? []) as TokenRow[]),
+      ...await ekHesapSatirlari(adminClient, [invite.from_user_id]),
+    ];
 
     if (!tokens || tokens.length === 0) {
       return jsonResponse({
@@ -132,11 +139,13 @@ Deno.serve(async (request) => {
       String(invite.requester_name ?? '').trim() || 'Bir kullanici';
 
     const deliveryResults = await Promise.all(
-      tokens.map(async ({ token }) => {
+      tokens.map(async (satir) => {
+        const token = satir.token;
         const result = await sendFcmNotification({
           accessToken,
           projectId: fcmProjectId,
           token,
+          hesap: ekHesap(satir),
           title: 'Yeni ortaklik istegi',
           body: `${requesterName} ortaklik kodunuzu girdi.`,
           channelId: 'partner_invite_channel',

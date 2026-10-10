@@ -135,6 +135,7 @@ export async function sendFcmNotification({
   priority = 'normal',
   badge,
   gorselUrl,
+  hesap,
 }: {
   accessToken: string;
   projectId: string;
@@ -158,7 +159,16 @@ export async function sendFcmNotification({
   /// birebir eskisi gibi kurulur — eski sürümler hiçbir yeni alan görmez
   /// (kullanıcı kuralı 2026-10-01: store kullanıcıları etkilenmesin).
   gorselUrl?: string;
+  /// Çoklu hesap (0137): bildirim cihazın o an AÇIK OLMAYAN hesabına ait.
+  /// Başlığa hesap adı eklenir ("ayse · THYAO alım sinyali") ki kullanıcı
+  /// hangi hesabın bildirimi olduğunu görsün; `data.hesap_uid` istemciye
+  /// dokununca o hesaba geçmesini söyler. Verilmezse gövde birebir eskisi.
+  hesap?: { uid: string; etiket: string };
 }): Promise<SendResult> {
+  if (hesap) {
+    title = hesapliBaslik(hesap.etiket, title);
+    data = { ...data, hesap_uid: hesap.uid };
+  }
   const acil = priority === 'high';
   const aps: Record<string, unknown> = badge === undefined
     ? { sound: 'default' }
@@ -222,6 +232,15 @@ export async function sendFcmNotification({
       rawText.includes('INVALID_ARGUMENT') ||
       rawText.includes('registration-token-not-registered'),
   };
+}
+
+/// Pasif hesap bildiriminin başlığı — saf, test edilir. Etiket 24
+/// karakterde kesilir: uzun bir kullanıcı adı asıl başlığı ekrandan itmesin.
+export function hesapliBaslik(etiket: string, title: string): string {
+  const e = etiket.trim();
+  if (!e) return title;
+  const kisa = e.length > 24 ? `${e.slice(0, 23)}…` : e;
+  return `${kisa} · ${title}`;
 }
 
 /// Bildirim başlığındaki kısa varlık etiketi.

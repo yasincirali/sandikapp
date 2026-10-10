@@ -8320,4 +8320,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String chartAssetSemantics(String name) {
     return '$name price chart';
   }
+
+  @override
+  String cihazHesapAcikKalir(String ad) {
+    return '$ad stays signed in. Sign in or sign up with the new account; then switch between accounts from Profile.';
+  }
+
+  @override
+  String get cihazHesaplari => 'Accounts on this device';
+
+  @override
+  String get cihazHesapGeriDon => 'Go back';
+
+  @override
+  String get cihazHesapDevamEt => 'Continue';
+
+  @override
+  String cihazHesapTekrarGiris(String eposta) {
+    return 'Sign in again · $eposta';
+  }
+
+  @override
+  String get cihazHesapBaskaHesapla => 'or sign in with another account';
 }

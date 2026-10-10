@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (ortak hangi portföyleri görür, 0135; çoklu portföy, 0133, bayrak `coklu_portfoy`; Fon X-Ray, 0131/0132, Koşullar 1.8, 0134; olgun Premium seti, Koşullar 1.7, 0130; video anlatım kuralları + EMA Lightning + HeyGen MCP); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (çoklu hesap + hesaplar arası geçiş, 0137, bayrak `coklu_hesap`; ortak hangi portföyleri görür, 0135; çoklu portföy, 0133, bayrak `coklu_portfoy`; Fon X-Ray, 0131/0132, Koşullar 1.8, 0134; olgun Premium seti, Koşullar 1.7, 0130; video anlatım kuralları + EMA Lightning + HeyGen MCP); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 
 > **Dağıtım durumu 2026-10-10:** 0130–0134 ve `analyze-signals`, `fon-dagilim`, `fon-kalem-raporu` iki sunucuda BEKLİYOR (dry_run 38020117037 planı; bkz. "Tek PR … ORTAK SIRA"). Aşağıdaki 2026-10-09 notu o günün durumudur.
 >
@@ -11,6 +11,40 @@
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-10 Çoklu hesap ve hesaplar arası geçiş (migration 0137, bayrak `coklu_hesap`, Premium)
+
+Senin isteğin: "hesap ekleme ve aralarında session switch, Instagram'daki
+gibi". Profil başlığı hesap adına döner ("yasin ⌄"); dokununca (ya da
+Profil sekmesine uzun basınca) "Hesaplar" sayfası: aktif hesap ✓, diğerleri
+tek dokunuşla geçiş, "Hesap ekle" (mevcut hesap açık kalır, en fazla 5).
+Çıkışta "X hesabından çık / Tüm hesaplardan çık". Giriş ekranında "Bu
+cihazdaki hesaplar". Hesap değişince uygulamanın bütün durumu baştan kurulur
+— bir hesabın verisi ötekine geçmez (`test/coklu_hesap_test.dart` bekçisi).
+`paywall_enabled` açıkken hesap EKLEMEK Premium; geçiş ve çıkış her zaman
+serbest. Pasif hesabın bildirimi de gelir, başlıkta hesap adıyla
+("cirali_holding · THYAO alım sinyali"); dokununca o hesaba geçer.
+
+- [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration
+      **0137** + fonksiyonlar `analyze-signals`, `check-price-alerts`,
+      `daily-brief`, `weekly-summary`, `calendar-nudge`, `temettu-yakala`,
+      `send-partner-invite-push` (paylaşılan `_shared`
+      değişti → fonksiyonların tümünü dağıtmak en güvenlisi).
+      0137 yalnız ekler (yeni tablo + 3 RPC); `user_push_tokens`'a
+      dokunmaz. Sıra önemsiz: fonksiyon RPC'yi bulamazsa ek satır boş döner.
+      Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] Firebase Remote Config: **`coklu_hesap`** (Boolean, varsayılan
+      `false`), TestFlight koşulunda `true`. Kapalıyken uygulama birebir
+      bugünkü.
+- [ ] TestFlight'ta dene: Profil › başlık › Hesap ekle → ikinci hesapla gir
+      → başlıktan geri geç (ağ açıkken ~1 sn). Diğer hesabın sinyal/alarm
+      bildirimi başlıkta hesap adıyla gelmeli. Tek aktif cihaz kuralı
+      (0098) korunur: hesabı başka telefonda açarsan bu cihazdaki satırı
+      "Tekrar giriş gerekli" olur.
+- [ ] Bilgi: RevenueCat Premium'u Apple/Google hesabına bağlı; bir hesapta
+      alınan Premium "satın alımı geri yükle" ile öteki hesaba
+      taşınabilir (RevenueCat "transfer" davranışı). Kurulumda
+      "Restore behavior" ayarını seçerken bunu göz önüne al.
 
 ## ⏳ 2026-10-10 Ortak hangi portföyleri görür (migration 0135, bayrak `coklu_portfoy`, Premium)
 

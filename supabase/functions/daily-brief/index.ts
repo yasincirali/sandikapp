@@ -56,7 +56,12 @@ import {
 import { loadPriceHistories, resolveSymbol } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { collapseTokens, tokenSatirlariniOku } from '../_shared/push_tokens.ts';
+import {
+  collapseTokens,
+  ekHesap,
+  ekHesapSatirlari,
+  tokenSatirlariniOku,
+} from '../_shared/push_tokens.ts';
 import { degisimKarti, kartGorseli, KartAyari } from '../_shared/bildirim_karti.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
@@ -298,7 +303,8 @@ Deno.serve(async (request) => {
     if (tokenError) {
       throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
     }
-    const tokens = collapseTokens(tokenRows ?? []);
+    // 0137: cihazın pasif hesaplarının satırları da (başlıkta hesap adı).
+    const tokens = collapseTokens([...(tokenRows ?? []), ...await ekHesapSatirlari(admin)]);
     // Bildirim kartı (0092, yalnız yeni sürüm cihazlar) — bkz. bildirim_karti.ts.
     const kart: KartAyari = { supabaseUrl, anahtar: serviceRoleKey };
     if (tokens.length === 0) {
@@ -587,6 +593,7 @@ Deno.serve(async (request) => {
         accessToken,
         projectId: fcmProjectId,
         token: tokenRow.token,
+        hesap: ekHesap(tokenRow),
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
