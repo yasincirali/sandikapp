@@ -123,7 +123,7 @@ RaporBelgesi yillikRaporBelgesi(
       'Temettünün net tutarı kayıtlıdır. Brüt ve stopaj geri hesaplanır: '
           'BIST hisselerinde ${bistStopajOrani == null ? 'oran bilinmiyor' : fmtPct(bistStopajOrani * 100, digits: 0)}, '
           'ABD hisselerinde ${fmtPct(abdTemettuStopajOrani * 100, digits: 0)} '
-          '(W-8BEN, Türkiye–ABD anlaşması).',
+          '(W-8BEN, Türkiye-ABD anlaşması).',
       if (r.yurtDisiVar)
         'Yurt dışı hisse kazançlarının beyanı Türkiye\'deki hisse '
             'kazançlarından farklı kurallara bağlıdır.',

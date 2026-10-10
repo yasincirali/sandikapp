@@ -183,10 +183,11 @@ void main() {
 
   test('free_price_alert_limit sayısal ve makul', () {
     // Alarm kullanıcının KENDİ istediği bildirim; sınır cömert olmalı ama
-    // premium kancası kalmalı.
+    // premium kancası kalmalı. 3 → 20 (yasin, 2026-10-10: "pinti
+    // görünmeyelim"; rakiplerin hiçbiri alarmı kilitlemiyor).
     final v = int.tryParse(varsayilan('free_price_alert_limit') ?? '');
     expect(v, isNotNull);
     expect(v, greaterThanOrEqualTo(1));
-    expect(v, lessThanOrEqualTo(10));
+    expect(v, lessThanOrEqualTo(20));
   });
 }
