@@ -813,8 +813,10 @@ List<_Adim> _adimlariKur() {
           ? 'Dönem seçicinin sağındaki Filtre çipi neye baktığını belirler; '
               'dokununca bir sayfa açılır: ortağın varsa kimin portföyü, '
               '${_cokluPortfoyGorunur ? 'hangi portföyün, ' : ''}'
-              'hangi varlık türü ve "Bugünkü portföyle". Varsayılan dışında '
-              'bir seçim varsa çip sayısını yazar ("Filtre · 1").\n\n'
+              'hangi varlık türü ve "Bugünkü portföyle". '
+              // `goz_alici` (2026-10-09): çip sayıyı değil seçilen türü
+              // gösterir.
+              '${RemoteConfigService.instance.gozAlici ? 'Tür seçince çip onun adını yazar ("Fon").' : 'Varsayılan dışında bir seçim varsa çip sayısını yazar ("Filtre · 1").'}\n\n'
               'Grafik dönem içindeki her alım ve satımla gerçek geçmişini '
               'çizer. "Bugünkü portföyümü baştan elimde tutsaydım ne '
               'olurdu?" diye merak edersen aynı sayfada "Bugünkü portföyle '

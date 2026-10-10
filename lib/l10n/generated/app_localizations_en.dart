@@ -7377,6 +7377,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s2FiltreKategori => 'Category';
 
   @override
+  String get s2FiltreSifirla => 'Reset';
+
+  @override
+  String s2FiltreVarlikSayisi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n assets',
+      one: '1 asset',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get s2FiltreYok => 'None';
+
+  @override
+  String s2FiltreGoster(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Show $n assets',
+      one: 'Show 1 asset',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get s2FiltreTamam => 'Done';
+
+  @override
   String s2BakiyeArttiAlim(String tutar, String alim) {
     return 'Balance up $tutar; $alim of that is new buys.';
   }

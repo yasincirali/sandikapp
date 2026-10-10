@@ -327,9 +327,19 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     // ikon (+ sayı) olur ki dönem seçicinin payı kırpılmasın. Etiket ekran
     // okuyucuda her genişlikte tam.
     final dar = MediaQuery.sizeOf(context).width < 360;
-    final metin = filtreli
-        ? (dar ? '$n' : l.s2FiltreSayili(n))
-        : (dar ? null : l.s2Filtre);
+    // `goz_alici` (2026-10-09): yalnız kategori süzülüyse çip SAYIYI değil
+    // NEYİ yazar — "Fon" + tür renginde nokta. "Filtre · 1" bir şeyin açık
+    // olduğunu söylüyordu ama ne olduğunu ancak sayfayı açınca; kategori en
+    // sık değişen filtre. Birden çok filtrede "Fon +1". Dar ekranda sayı.
+    final yeni = RemoteConfigService.instance.gozAlici;
+    final tur = _typeFilter;
+    final turEtiketi = yeni && tur != null && !dar
+        ? (n > 1 ? '${tur.labelOf(l)} +${n - 1}' : tur.labelOf(l))
+        : null;
+    final metin = turEtiketi ??
+        (filtreli
+            ? (dar ? '$n' : l.s2FiltreSayili(n))
+            : (dar ? null : l.s2Filtre));
     // Tur hedefi: tek akışta kapsam adımı bu çipi gösterir (eski düzende
     // kapsam çipi). Aynı hedef iki yerde aynı anda kurulmaz — dallar ayrık.
     return TourAnchor(
@@ -368,7 +378,15 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.tune_rounded, size: 15, color: ton),
+                      if (turEtiketi != null)
+                        Container(
+                          width: SandikSpace.sm,
+                          height: SandikSpace.sm,
+                          decoration: BoxDecoration(
+                              color: tur!.color, shape: BoxShape.circle),
+                        )
+                      else
+                        Icon(Icons.tune_rounded, size: 15, color: ton),
                       if (metin != null) ...[
                         const SizedBox(width: SandikSpace.xs2),
                         Text(
@@ -426,7 +444,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+                  children: RemoteConfigService.instance.gozAlici
+                      ? _filtreSayfasiYeni(sayfaCtx, sayfaRef, ortaklar,
+                          araclar, bugunku, tazele)
+                      : [
                     const Center(child: SandikTutamac()),
                     const SizedBox(height: SandikSpace.md),
                     Text(
@@ -514,6 +535,165 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         ),
       ),
     );
+  }
+
+  /// Filtre alt sayfasının yeni gövdesi (bayrak `goz_alici`, 2026-10-09).
+  ///
+  /// Kullanıcı isteği: "basitlik ve anlaşılırlık ön planda, göze hitap
+  /// eden". Denetimler AYNI (kişi, kategori, bugünkü portföyle); değişen
+  /// okunuş:
+  ///   · Kategori metin çipi değil, 3×3 eşit ikonlu kare ızgara
+  ///     ([TurFiltreIzgarasi]); renk yalnız seçili karede. Gerekçe ve üç
+  ///     turluk tasarım geçmişi widget'ın notunda.
+  ///   · Başlıkta "Sıfırla": varsayılana tek dokunuş (yalnız filtre varken).
+  ///   · "Bugünkü portföyle" ince bir çizgiyle ayrılmış düz satır (kart ve
+  ///     çizim "göz yoruyor" geri bildirimiyle kalktı).
+  ///   · Dipte tek ana eylem "N varlığı göster": seçim yine ANINDA uygulanır
+  ///     (grafik arkada yenilenir); düğme yalnız sayfayı kapatır ve sonucun
+  ///     kaç varlık olduğunu önceden söyler. Aşağı çekip kapatmak da olur.
+  List<Widget> _filtreSayfasiYeni(
+    BuildContext sayfaCtx,
+    WidgetRef sayfaRef,
+    List<AppUser> ortaklar,
+    bool araclar,
+    bool bugunku,
+    VoidCallback tazele,
+  ) {
+    final l = context.l10n;
+    // Sayı ekranın grafiğiyle aynı kapsamdan: seçili kişinin sahip grupları.
+    final pState = sayfaRef.watch(portfolioProvider).valueOrNull;
+    final ortakVarliklari =
+        sayfaRef.watch(allPartnerAssetsProvider).valueOrNull ?? const {};
+    final List<List<Asset>> sahipLotlari = pState == null
+        ? const []
+        : _view == ''
+            ? [pState.assets]
+            : _view != null
+                ? [ortakVarliklari[_view] ?? const []]
+                : [pState.assets, ...ortakVarliklari.values];
+    final ozet = TurFiltreOzeti.hesapla(
+        sahipLotlari, pState?.toTRY ?? (t, _) => t);
+    final turlar = [
+      for (final t in AssetType.values)
+        // Bayrakla kapalı tür gizlenir — elde varsa ya da seçiliyse kalır
+        // (seçimi görünmeyen filtre olmasın).
+        if (RemoteConfigService.instance.turSecenegi(t) ||
+            (ozet.adet[t] ?? 0) > 0 ||
+            _typeFilter == t)
+          t,
+    ];
+    final n = _filtreSayisi(ortaklar);
+    final sonuc = _typeFilter == null
+        ? ozet.toplamAdet
+        : (ozet.adet[_typeFilter!] ?? 0);
+
+    return [
+      const Center(child: SandikTutamac()),
+      const SizedBox(height: SandikSpace.md),
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              l.s2Filtre,
+              style: context.t.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700, color: context.c.text90),
+            ),
+          ),
+          // Yer tutar (görünmezken de): başlık satırı filtre açılıp
+          // kapanınca zıplamasın.
+          AnimatedOpacity(
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.enter,
+            opacity: n > 0 ? 1 : 0,
+            child: IgnorePointer(
+              ignoring: n == 0,
+              child: TextButton(
+                onPressed: () {
+                  _guncelle(() {
+                    _view = GorunumCipi.gecerli(ortaklar, '');
+                    _typeFilter = null;
+                    _gunIciTohumuAt();
+                  });
+                  sayfaRef.read(bugunkuPortfoyleProvider.notifier).set(false);
+                  tazele();
+                },
+                child: Text(l.s2FiltreSifirla),
+              ),
+            ),
+          ),
+        ],
+      ),
+      if (ortaklar.isNotEmpty) ...[
+        const SizedBox(height: SandikSpace.sm),
+        SandikSectionHeader(title: l.s2FiltreKisi),
+        const SizedBox(height: SandikSpace.sm),
+        OrtakSecici(
+          partners: ortaklar,
+          selectedId: _view,
+          onChanged: (v) {
+            _guncelle(() {
+              _view = v;
+              _gunIciTohumuAt();
+            });
+            tazele();
+          },
+        ),
+      ],
+      const SizedBox(height: SandikSpace.md),
+      SandikSectionHeader(title: l.s2FiltreKategori),
+      const SizedBox(height: SandikSpace.sm),
+      TurFiltreIzgarasi(
+        secili: _typeFilter,
+        ozet: ozet,
+        turlar: turlar,
+        onSec: (t) {
+          _guncelle(() {
+            _typeFilter = t;
+            _gunIciTohumuAt();
+          });
+          tazele();
+        },
+      ),
+      if (araclar) ...[
+        const SizedBox(height: SandikSpace.md),
+        Divider(height: 1, thickness: 1, color: context.c.hairline),
+        const SizedBox(height: SandikSpace.smd),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.todaysPortfolioSettingTitle,
+                    style: context.t.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600, color: context.c.text90),
+                  ),
+                  const SizedBox(height: SandikSpace.xxs),
+                  Text(
+                    l.todaysPortfolioSettingSubtitle,
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text58),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: SandikSpace.smd),
+            Switch.adaptive(
+              value: bugunku,
+              activeTrackColor: context.c.amberText,
+              onChanged: (v) =>
+                  sayfaRef.read(bugunkuPortfoyleProvider.notifier).set(v),
+            ),
+          ],
+        ),
+      ],
+      const SizedBox(height: SandikSpace.lg),
+      FilledButton(
+        onPressed: () => Navigator.of(sayfaCtx).pop(),
+        child: Text(sonuc > 0 ? l.s2FiltreGoster(sonuc) : l.s2FiltreTamam),
+      ),
+    ];
   }
 
   /// Grafik | Özet yüzey anahtarı.

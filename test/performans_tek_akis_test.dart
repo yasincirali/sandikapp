@@ -18,6 +18,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/ortak_secici.dart';
 import 'package:portfoy_takip/widgets/period_summary_view.dart';
 import 'package:portfoy_takip/widgets/raporlar_kapisi.dart';
+import 'package:portfoy_takip/widgets/tur_filtre_izgarasi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -233,6 +234,89 @@ void main() {
       await _pump(tester, width: 320);
       expect(find.text(_tr.s2Filtre), findsNothing);
       expect(find.bySemanticsLabel(_tr.s2Filtre), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Filtre sayfası — goz_alici açık: 3×3 tür ızgarası', () {
+    setUp(() => RemoteConfigService.testAcik = {
+          'performans_tek_akis',
+          'goz_alici',
+        });
+
+    testWidgets('ızgara: tüm türler eşit kare, elde olmayan seçilebilir',
+        (tester) async {
+      await _pump(tester);
+      await tester.tap(find.text(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      expect(find.byType(TurFiltreIzgarasi), findsOneWidget);
+      // Kareler simetrik: Hisse/Fon/Döviz aynı satırda, aynı genişlikte.
+      final kare = find.descendant(
+          of: find.byType(TurFiltreIzgarasi),
+          matching: find.text(AssetType.fon.labelOf(_tr)));
+      final hisse = find.descendant(
+          of: find.byType(TurFiltreIzgarasi),
+          matching: find.text(AssetType.hisse.labelOf(_tr)));
+      expect((tester.getCenter(kare).dy - tester.getCenter(hisse).dy).abs(),
+          lessThan(1));
+      // Filtre yokken Sıfırla tıklanamaz; dip düğmesi sonucu söyler.
+      expect(find.text(_tr.s2FiltreGoster(1)), findsOneWidget);
+
+      await tester.tap(find.text(AssetType.fon.labelOf(_tr)));
+      await _bekle(tester);
+      // Fon elde yok → sonuç 0 → düğme "Tamam".
+      expect(find.text(_tr.s2FiltreTamam), findsOneWidget);
+      await tester.tap(find.text(_tr.s2FiltreTamam));
+      await _bekle(tester);
+      // Çip sayıyı değil NEYİ yazar.
+      expect(find.text(AssetType.fon.labelOf(_tr)), findsOneWidget);
+      expect(find.bySemanticsLabel(_tr.s2FiltreEtkin(1)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Sıfırla kategoriyi ve "bugünkü portföyle"yi varsayılana alır',
+        (tester) async {
+      final c = await _pump(tester);
+      await tester.tap(find.text(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AssetType.hisse.labelOf(_tr)).last);
+      await _bekle(tester);
+      await tester.tap(find.byType(Switch));
+      await _bekle(tester);
+      expect(c.read(bugunkuPortfoyleProvider), isTrue);
+      await tester.tap(find.text(_tr.s2FiltreSifirla));
+      await _bekle(tester);
+      expect(c.read(bugunkuPortfoyleProvider), isFalse);
+      Navigator.of(tester.element(find.text(_tr.s2FiltreKategori))).pop();
+      await _bekle(tester);
+      expect(find.text(_tr.s2Filtre), findsOneWidget);
+    });
+
+    testWidgets('eurobond açık (10 tür): artan kare Tümü satırına geçer',
+        (tester) async {
+      RemoteConfigService.testAcik = {
+        'performans_tek_akis',
+        'goz_alici',
+        'eurobond',
+      };
+      await _pump(tester);
+      await tester.tap(find.text(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      final izgara = find.byType(TurFiltreIzgarasi);
+      Offset merkez(String t) => tester.getCenter(
+          find.descendant(of: izgara, matching: find.text(t)));
+      final tumu = merkez(_tr.allTypes);
+      // Artan kare listenin SONUNDAKİ tür (Diğer); Eurobond ızgarada.
+      final euro = merkez(AssetType.diger.labelOf(_tr));
+      expect((tumu.dy - euro.dy).abs(), lessThan(2));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('320pt: sayfa taşmaz', (tester) async {
+      await _pump(tester, width: 320);
+      await tester.tap(find.bySemanticsLabel(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      expect(find.byType(TurFiltreIzgarasi), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
