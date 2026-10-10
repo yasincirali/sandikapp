@@ -469,9 +469,14 @@ void main() {
     for (final m in [gizlilik, kvkk, riza]) {
       expect(m, contains('RevenueCat'), reason: 'yurt dışı alıcı');
     }
-    // Hesap silme RevenueCat kaydını silmiyor: metin bunu söylemeli.
+    // 1.9 (0137): hesap silme RevenueCat kaydının silinmesini ister
+    // (`delete-account` → revenueCatKaydiniSil); metin bunu ve mağaza
+    // aboneliğinin kendiliğinden bitmediğini söyler. Eski "saklama
+    // süresince kalır" cümlesi artık gerçek değil.
     for (final m in [gizlilik, kvkk]) {
-      expect(m, contains("RevenueCat'in saklama süresince"));
+      expect(m, contains("RevenueCat'teki abone kaydınızın silinmesi"));
+      expect(m, contains('mağaza aboneliğini iptal etmez'));
+      expect(m, isNot(contains("RevenueCat'in saklama süresince")));
     }
   });
 

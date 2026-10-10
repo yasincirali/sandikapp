@@ -45,6 +45,12 @@ void main() {
         'fon_xray': PaywallKarti.xray,
         'portfoy_xray': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
+        // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
+        // göreceği portföy → portföy kartı; mum/EMA → grafik kartı.
+        'portfoy_kismi_aktar': PaywallKarti.portfoy,
+        'ortak_paylasim': PaywallKarti.portfoy,
+        'grafik_mum': PaywallKarti.grafik,
+        'grafik_ema': PaywallKarti.grafik,
       };
       beklenen.forEach((kaynak, kart) {
         expect(kaynaktanKart(kaynak), kart, reason: kaynak);
@@ -83,13 +89,22 @@ void main() {
         'lib/widgets/portfoy_secici.dart',
         'lib/widgets/portfoy_secim_sayfasi.dart',
         'lib/screens/portfoy_yonetimi_screen.dart',
+        'lib/widgets/kismi_aktarim_sayfasi.dart',
+        'lib/widgets/ortak_paylasim_sayfasi.dart',
+        // Grafik katmanları (#150): kaynak `dokun(..., 'grafik_mum')`
+        // konumsal argümanla geçer; ikinci desen onu yakalar.
+        'lib/screens/asset_detail/grafik_katmanlari.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
             in RegExp(r"(?:source|kaynak): '([a-z_]+)").allMatches(src)) {
           kaynaklar.add(m.group(1)!);
         }
+        for (final m in RegExp(r"'(grafik_[a-z]+)'").allMatches(src)) {
+          kaynaklar.add(m.group(1)!);
+        }
       }
+      expect(kaynaklar, containsAll(['grafik_mum', 'grafik_ema']));
       kaynaklar.remove('invite'); // mağaza bağlantısı kaynağı, paywall değil
       for (final k in kaynaklar) {
         if (bilerekGenel.contains(k)) continue;
@@ -127,6 +142,7 @@ void main() {
           PaywallKarti.temettu,
           PaywallKarti.xray,
           PaywallKarti.sinyal,
+          PaywallKarti.grafik,
           PaywallKarti.ortak,
         ],
       );

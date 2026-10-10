@@ -9,7 +9,12 @@
 //   deno test --allow-all supabase/tests/premium_test.ts
 
 import { assertEquals } from 'jsr:@std/assert@1';
-import { etkilenenKullanicilar, revenueCatHakki, uuidMi } from '../functions/_shared/premium.ts';
+import {
+  etkilenenKullanicilar,
+  revenueCatHakki,
+  revenueCatKaydiniSil,
+  uuidMi,
+} from '../functions/_shared/premium.ts';
 
 const A = '11111111-2222-3333-4444-555555555555';
 const B = 'AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE';
@@ -73,4 +78,43 @@ Deno.test('revenueCatHakki: hak yok / süresiz / bozuk → null (uydurma yok)', 
   assertEquals(revenueCatHakki(yanit({ expires_date: null, product_identifier: 'x' })), null);
   assertEquals(revenueCatHakki(yanit({ expires_date: 'dün', product_identifier: 'x' })), null);
   assertEquals(revenueCatHakki('bozuk'), null);
+});
+
+// ── Hesap silinince RevenueCat kaydı ────────────────────────────────────────
+
+function sahteFetch(status: number | 'ag_hatasi', kayit: { url?: string; init?: RequestInit }) {
+  return ((url: string, init?: RequestInit) => {
+    kayit.url = url;
+    kayit.init = init;
+    if (status === 'ag_hatasi') return Promise.reject(new TypeError('ag'));
+    return Promise.resolve(new Response(null, { status }));
+  }) as unknown as typeof fetch;
+}
+
+Deno.test('revenueCatKaydiniSil: anahtar yoksa istek atılmaz', async () => {
+  const k: { url?: string } = {};
+  assertEquals(await revenueCatKaydiniSil(A, undefined, sahteFetch(200, k)), 'anahtar_yok');
+  assertEquals(await revenueCatKaydiniSil(A, '', sahteFetch(200, k)), 'anahtar_yok');
+  assertEquals(k.url, undefined);
+});
+
+Deno.test('revenueCatKaydiniSil: UUID olmayan kimlik gönderilmez', async () => {
+  const k: { url?: string } = {};
+  assertEquals(await revenueCatKaydiniSil('$RCAnonymousID:x', 'sk', sahteFetch(200, k)), 'gecersiz_kimlik');
+  assertEquals(k.url, undefined);
+});
+
+Deno.test('revenueCatKaydiniSil: DELETE + Bearer; 200 silindi, 404 kayıt yok', async () => {
+  const k: { url?: string; init?: RequestInit } = {};
+  assertEquals(await revenueCatKaydiniSil(A, 'sk_x', sahteFetch(200, k)), 'silindi');
+  assertEquals(k.url, `https://api.revenuecat.com/v1/subscribers/${A}`);
+  assertEquals(k.init?.method, 'DELETE');
+  assertEquals((k.init?.headers as Record<string, string>).Authorization, 'Bearer sk_x');
+  assertEquals(await revenueCatKaydiniSil(A, 'sk_x', sahteFetch(404, k)), 'kayit_yok');
+});
+
+Deno.test('revenueCatKaydiniSil: 5xx ve ağ hatası fırlatmaz, hata döner', async () => {
+  const k = {};
+  assertEquals(await revenueCatKaydiniSil(A, 'sk_x', sahteFetch(500, k)), 'hata');
+  assertEquals(await revenueCatKaydiniSil(A, 'sk_x', sahteFetch('ag_hatasi', k)), 'hata');
 });

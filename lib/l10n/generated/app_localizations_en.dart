@@ -1179,6 +1179,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'For your security you need to confirm with your password.';
 
   @override
+  String get deleteAccountSubscriptionNote =>
+      'Note: your App Store / Google Play subscription is not cancelled when the account is deleted. Turn off renewal from the store\'s subscriptions page.';
+
+  @override
   String get deleteAccountUpper => 'DELETE ACCOUNT';
 
   @override
@@ -5661,7 +5665,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
+      'Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -8158,10 +8162,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzPortfoy =>
-      'Unlimited portfolios: retirement, your kid, experiments kept apart';
+      'Unlimited portfolios: retirement, your kid, experiments kept apart; partial transfers between them and choosing what your partner sees';
 
   @override
   String get prmSatirPortfoy => 'Portfolios';
+
+  @override
+  String get pwdGrafikEtiket => 'CHART';
+
+  @override
+  String get pwdGrafikBaslik =>
+      'Candlesticks, EMA50 and EMA200; see the trend at a glance.';
+
+  @override
+  String get pwdGrafikPremium => 'candles, EMA50, EMA200';
+
+  @override
+  String get pwdPortfoyPremium => 'unlimited, partial transfer';
+
+  @override
+  String get pwOzGrafik => 'Candlestick view, EMA50 and EMA200 lines on charts';
+
+  @override
+  String get pwOzEkstre => 'AI matching for your bank and brokerage statements';
+
+  @override
+  String get prmSatirGrafik => 'Candles · EMA50 · EMA200';
 
   @override
   String get pwdPortfoyEtiket => 'PORTFOLIOS';

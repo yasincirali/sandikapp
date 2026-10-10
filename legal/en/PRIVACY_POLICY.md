@@ -1,10 +1,10 @@
 # Privacy Policy — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 8, 2026
-**Version:** 1.8
+**Last updated:** October 10, 2026
+**Version:** 1.9
 **Consent version:** 1.8
-**Source:** TR 1.8 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.9 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -183,7 +183,7 @@ The destination countries (Supabase: {SUPABASE_ULKE}; Firebase and RevenueCat: U
 | Race measurements (return %, type share %) | Last 365 days rolling; immediately on account deletion |
 | Registered devices | Until you remove the device from the list or delete your account |
 | Feedback on asset notes | Until account deletion |
-| Premium entitlement and subscription records | Until account deletion; deleted immediately when you delete your account. The transaction record at RevenueCat stays for RevenueCat's retention period, and payment and invoice records stay with Apple or Google for their own periods |
+| Premium entitlement and subscription records | Until account deletion; deleted immediately when you delete your account. At the same time RevenueCat is asked to delete your subscriber record; payment and invoice records stay with Apple or Google for their own periods. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play |
 | Statement column mapping request records (time, model and cost only; the skeleton and the answer are not stored) | 40 days |
 | Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer) | **3 years** after account deletion (Turkish Code of Obligations Art. 146 limitation period) |
 | Push token | Deleted on sign-out; if the App is uninstalled, found invalid and deleted at the next send |

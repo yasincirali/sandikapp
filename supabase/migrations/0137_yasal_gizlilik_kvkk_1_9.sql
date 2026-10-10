@@ -1,280 +1,38 @@
-// ÜRETİLDİ — elle düzenleme. Kaynak: legal/tr/*.md; üreten:
-// `python docs/_build_legal.py`. Kayma kilidi: test/yasal_web_esleme_test.dart.
-//
-// Değerler md'nin KANONİK hâlidir (BOM yok, LF, sondaki boşluk kırpılmış;
-// yer tutucular doldurulmamış). Veritabanındaki `govde` ve `govde_hash`
-// bu metinlerdir (`YasalMetinKatalogu`).
-
-/// Uygulamada gösterilen yasal belgelerin kanonik md metni — anahtar
-/// depo köküne göre kaynak yolu.
-const yasalBelgeKaynaklari = <String, String>{
-  'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
-
-**Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 10 Ekim 2026
-**Sürüm:** 1.8
-**Onay sürümü:** 1.6
-
----
-
-## 1. Taraflar ve Kabul
-
-Bu Kullanım Koşulları ("Koşullar"), `Yasin Çıralı` ("Şirket", "biz") tarafından sunulan **sandık** mobil uygulaması ("Uygulama", "Hizmet") ile uygulamayı kullanan gerçek kişi ("Kullanıcı", "siz") arasındaki sözleşmedir.
-
-Hesap oluştururken bu Koşulları kabul edersiniz. **Gizlilik Politikası** ve **KVKK Aydınlatma Metni** kişisel verilerinizin nasıl işlendiğini anlatan bilgilendirme belgeleridir; kabulünüze bağlı değildir. Yurt dışına veri aktarımı için açık rızanız bu Koşulların kabulünden ayrıdır ve yalnız **Açık Rıza Metni** ile alınır.
-
-Kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da):
-- Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni bağlantı olarak sunulur; dokunduğunuzda tam metni açılır. Bu Koşulları tek bir onay kutusunu işaretleyerek kabul edersiniz; aynı kutuyla 18 yaşından büyük olduğunuzu beyan eder, Gizlilik Politikası ve KVKK Aydınlatma Metni ile bilgilendirildiğinizi belirtirsiniz. Onay kutusu açık rıza içermez.
-- Açık Rıza Metni size tam metniyle gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz.
-- Yatırım uyarısı (§3) tam metniyle gösterilir; sonuna kadar okuduktan sonra en altta onaylarsınız.
-
----
-
-## 2. Hizmetin Tanımı
-
-sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bir kişisel portföy izleme aracıdır:
-
-- Hisse senetleri (Borsa İstanbul ve yurt dışı borsalar)
-- Tahviller (eurobond)
-- TEFAS yatırım fonları
-- Döviz (USD, EUR, GBP, vb.)
-- Altın ve diğer emtialar
-- Kripto paralar
-- Vadeli mevduat ve bireysel emeklilik (BES) sözleşmeleri
-- Elle tanımladığınız diğer varlıklar
-
-Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz sinyallerini (Premium), fiyat alarmlarını ve dönemsel özetleri gösterir. Varlıklarınızı elle, toplu olarak ya da banka/aracı kurum ekstresinden içe aktararak girebilirsiniz. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.
-
-**Zirvedeki Portföyler (isteğe bağlı):** Uygulama içinde açık rıza verirseniz dönemsel getiriniz ve varlık türü paylarınız anonim bir karşılaştırma havuzunda değerlendirilir (portföy 5 günden eski, en az 2 farklı varlık); en çok kazanan portföylerin yalnızca sırası, getirisi, tür payları ve fonların TEFAS kodu ile payları, kimlik ve tutar olmadan diğer katılımcılara gösterilir; karşılığında siz de katılımcıların aynı anonim bilgilerini görürsünüz (ayrıntı: Gizlilik Politikası §5.1). İstediğiniz an ayrılabilirsiniz; katılmamak başka hiçbir özelliği etkilemez.
-
-**Yarış (isteğe bağlı):** Yarış'a katılırsanız dönemsel getiriniz ve varlık türü paylarınız günlük olarak sunucuda hesaplanır; katılımcılar arasındaki yeriniz size yüzdelik dilim olarak gösterilir, ortağınızla getirinizi karşılaştırabilirsiniz. Diğer katılımcılara kimliğiniz ve tutarlarınız gösterilmez. Yarış'tan istediğiniz an ayrılabilirsiniz.
-
-**Piyasa hareketi ve varlık notları:** Uygulama, kamuya açık piyasa verisinden fonlara giren ve çıkan parayı (para akışı), hisselerde olağandışı işlem hacmini (hacim radarı) ve kriptoda alıcı baskısını gösterir. Portföyündeki varlıklar için haftalık varlık notları ve aylık rapor, yapay zekâ ile otomatik hazırlanır (ayrıntı: Gizlilik Politikası §5.3). Notların tamamı ve aylık rapor Premium üyelere açık olabilir; ücretsiz katmanda notun ilk cümlesi gösterilir.
-
----
-
-## 2A. Premium Abonelik
-
-Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
-
-**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. teknik analiz sinyalleri ve bildirimleri, yıllık kâr, temettü ve masraf raporu, PDF ve Excel dışa aktarma, temettü tahmini, fon içerik dağılımı (X-Ray), kalem kalem masraf dökümü, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
-
-**Fiyat ve ödeme.** Abonelik aylık ya da yıllık dönemlidir. Fiyat, satın alma ekranında App Store ya da Google Play'in gösterdiği tutardır (vergiler dahil). Ödemeyi Şirket değil, cihazınızın mağazası (Apple ya da Google) tahsil eder; kart bilgileriniz Şirket'e ulaşmaz.
-
-**Otomatik yenileme.** Abonelik, dönem bitmeden iptal edilmezse (Apple'da dönem bitmeden en az 24 saat önce) aynı süre ve o anki fiyatla kendiliğinden yenilenir. Fiyat artarsa mağaza sizi önceden bilgilendirir ve gerekirse onayınızı ister.
-
-**Ücretsiz deneme.** Mağazada deneme tanımlıysa süresi satın alma ekranında yazar; tanımlı değilse deneme vaat edilmez. Deneme bitmeden iptal etmezseniz deneme sonunda ilk dönem ücreti alınır. Deneme hakkı mağazanın kurallarına göre hesap başına bir kez kullanılabilir.
-
-**İptal.** Aboneliği istediğiniz zaman mağazadan iptal edebilirsiniz (iPhone: Ayarlar › Apple Kimliği › Abonelikler; Android: Google Play › Ödemeler ve abonelikler › Abonelikler). İptal, ödenmiş dönemin sonunda geçerli olur; Premium o güne kadar açık kalır. Uygulamayı silmek ya da hesabınızı silmek aboneliği iptal **etmez**; önce mağazadan iptal edin.
-
-**İade ve cayma hakkı.** İade talepleri mağazanın kendi süreciyle değerlendirilir (Apple: reportaproblem.apple.com; Google: Google Play'deki sipariş geçmişi). Mesafeli Sözleşmeler Yönetmeliği Madde 15(1)(ğ) uyarınca, elektronik ortamda anında ifa edilen hizmetlerde ve tüketiciye anında teslim edilen gayrimaddi mallarda, ifaya onayınızla başlandığında cayma hakkı kullanılamaz; satın alma ekranında aboneliği başlatmanız bu onay sayılır. TKHK'dan doğan devredilemez haklarınız saklıdır (bkz. Madde 12).
-
-**Hakkın tanınması.** Satın alma tamamlandığında mağaza işlemi abonelik altyapı sağlayıcımız RevenueCat üzerinden doğrulanır ve Premium hesabınıza bağlanır. Aynı hesapla girdiğiniz başka cihazda da açılır; cihaz değiştirdiyseniz satın alma ekranındaki "Satın alımı geri yükle" ile yeniden bağlayabilirsiniz.
-
-**Hediye Premium.** Şirket, belirli kullanıcılara (ör. belirli bir tarihten önce kayıt olanlara) bir defaya mahsus, ücretsiz ve otomatik yenilenmeyen süreli Premium tanıyabilir. Süre bitince ödeme alınmaz; Premium kendiliğinden kapanır.
-
-**Değişiklik.** Premium kapsamı değişirse içinde bulunulan dönem için ödediğiniz özellikler dönem sonuna kadar korunur. Fiyat değişikliği yalnızca sonraki dönemlere uygulanır.
-
----
-
-## 3. ÖNEMLİ UYARI — Yatırım Tavsiyesi Reddi
-
-**sandık BİR YATIRIM DANIŞMANI, ARACI KURUM VEYA PORTFÖY YÖNETİM ŞİRKETİ DEĞİLDİR.**
-
-- Şirket, Sermaye Piyasası Kurulu (SPK) tarafından lisanslı bir kurum değildir.
-- Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler **yalnızca bilgilendirme** amaçlıdır.
-- Hiçbir içerik **yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık** niteliği taşımaz.
-- Piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı) ve **yapay zekâ ile hazırlanan varlık notları** geçmiş piyasa verisini anlatır, geleceği öngörmez. Notlar otomatik üretilir ve bir insan tarafından tek tek kontrol edilmez; sayılar kaynak veriyle otomatik karşılaştırılsa da hata içerebilir. Bir notu yatırım kararının tek dayanağı yapmayınız.
-- Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf piyasa verisi sağlayıcılarının verileri olduğu gibi sunulur.
-- Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
-- Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
-
-Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.
-
----
-
-## 4. Hesap
-
-### 4.1 Hesap Açma
-- 18 yaşından büyük olmalısınız.
-- Geçerli bir e-posta adresi sağlamalı ya da Apple veya Google hesabınızla giriş yapmalısınız.
-- Benzersiz bir kullanıcı adı seçmelisiniz; kullanıcı adınız ortağınıza ve bildirimlerde görünür, uygunsuz ifade içeremez.
-- Doğru ve güncel bilgi vermelisiniz.
-
-### 4.2 Hesap Güvenliği
-- Şifrenizi kimseyle paylaşmayın.
-- Şifrenizin güvenliğinden siz sorumlusunuz.
-- Hesabınız aynı anda yalnızca bir cihazda açık kalır. Yeni bir cihazda giriş yaptığınızda e-posta adresinize gelen kod istenir ve önceki cihazdaki oturum kapanır. Kayıtlı cihazlarınızı Ayarlar'dan görebilir ve silebilirsiniz.
-- Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi `sandikapp.destek@gmail.com` adresinden bilgilendirin.
-- Hesap üzerinden gerçekleştirilen tüm işlemler size ait sayılır.
-
-### 4.3 Tek Hesap
-- Bir kişi yalnızca bir hesap oluşturabilir.
-- Hesabınızı başkalarına devredemez veya satamazsınız.
-
----
-
-## 5. Ortaklık Özelliği
-
-Uygulamada bir başka kullanıcıyı "ortak" olarak ekleyebilirsiniz. Bu özellik aktive edildiğinde:
-
-- Ortağınız sizin portföyünüzdeki varlıkları, miktarları ve performansı görebilir.
-- Siz de ortağınızın portföyünü görebilirsiniz.
-- Bu paylaşım **iki tarafın da onayıyla** başlar (davet kodu sistemi).
-- İstediğiniz zaman ortaklığı sonlandırabilirsiniz.
-
-**Sorumluluk:**
-- Davet kodunuzu yalnızca güvendiğiniz kişiyle paylaşın.
-- Ortaklık aktifken paylaşılan veriden Şirket sorumlu değildir.
-- Ortaklığı sonlandırdığınızda karşı tarafın daha önce gördüğü veri kendisinde kalmış olabilir.
-
----
-
-## 6. Kabul Edilebilir Kullanım
-
-Uygulamayı kullanırken **YAPMAYACAĞINIZ** şeyler:
-
-1. Yasalara aykırı amaçlarla kullanmak
-2. Başkasının hesabına yetkisiz erişim sağlamaya çalışmak
-3. Uygulamayı tersine mühendislik, decompile veya hack etmek
-4. Otomatik scraping, bot veya zararlı yazılım kullanmak
-5. Şirketin altyapısına aşırı yük bindiren talepler göndermek (DoS)
-6. Sahte veya yanıltıcı bilgi girmek
-7. Diğer kullanıcılara taciz, tehdit veya spam göndermek
-8. Uygulamayı kara para aklama veya terör finansmanı amacıyla kullanmak
-9. Uygulamayı modifiye edilmiş APK / jailbreak'li cihaz / emülatör tespit edilmemesi için yamayla kullanmak
-10. Telif hakkı veya marka ihlali yapmak
-
-Bu kuralların ihlali halinde **hesabınız bildirimsiz kapatılabilir**.
-
----
-
-## 7. Üçüncü Taraf Servisleri
-
-Uygulama; Supabase (sunucu, veritabanı ve kimlik doğrulama), Google Firebase (bildirim, hata raporu, kullanım istatistiği, uzaktan ayar), Apple (iOS bildirimleri ve kilit ekranı canlı etkinliği), Apple ile Giriş ve Google ile Giriş (seçerseniz), Google'ın e-posta altyapısı (doğrulama kodları), Anthropic (varlık notlarının yapay zekâ ile yazımı; kişisel veri gönderilmez), RevenueCat (Premium abonelik doğrulaması), App Store ve Google Play (Premium ödemesi) ve kamuya açık piyasa verisi sağlayıcıları (borsalar, bankalar, fon platformları, resmî kurumlar ile kur ve fiyat veri servisleri) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
-
-Piyasa verisi kaynaklarının sağladığı bilgiler dahil olmak üzere üçüncü taraf veri sağlayıcılarının kendi kullanım koşulları geçerlidir. Veri çekiminin geçici olarak engellenmesi durumunda, alternatif kaynaklar veya manuel veri girişi seçenekleri sunulabilir.
-
----
-
-## 8. Fikri Mülkiyet
-
-- Uygulamanın tasarımı, kodu, logosu, marka ismi ve içeriği `Yasin Çıralı`'na aittir.
-- "sandık" markası, logo ve görsel kimliği telif hakkı ve marka koruması altındadır.
-- Uygulamayı kişisel kullanım için indirme ve kullanma haklarınız vardır; bu haklar **devredilemez, alt-lisanslanamaz, münhasır olmayan** bir lisans niteliğindedir.
-- Kendi girdiğiniz veriler (varlık kayıtlarınız) size aittir; Şirket bu veriler üzerinde yalnızca size hizmet sunmak için işleme yetkisine sahiptir.
-
----
-
-## 9. Hizmet Değişiklikleri ve Sona Erdirme
-
-### 9.1 Şirketin Hakları
-- Uygulamayı önceden bildirimde bulunarak veya bulunmayarak güncelleyebiliriz.
-- Belirli özellikleri kaldırabilir veya yenilerini ekleyebiliriz.
-- Hizmeti tamamen sonlandırma kararı alırsak en az **30 gün önceden** bildirim yaparız ve verilerinizi indirme imkanı sunarız.
-
-### 9.2 Kullanıcının Hakları
-- İstediğiniz zaman hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil). Uygulamadan yapılan silme anında gerçekleşir: hesabınız ve girdiğiniz veriler canlı veritabanından hemen silinir; yasal saklama süresi olan kayıtlar istisnadır (bkz. Gizlilik Politikası §7).
-- E-postayla iletilen silme talepleri 30 gün içinde işleme alınır.
-- Verilerinizin bir kopyasını istediğiniz zaman alabilirsiniz (Profil → Ayarlar → Verilerimi İndir, JSON dosyası).
-
-### 9.3 Şirketin Sona Erdirme Hakkı
-Bu Koşulları ihlal ettiğiniz tespit edilirse hesabınızı bildirimsiz askıya alabilir veya silebiliriz. Yasal mevzuat gereği zorunlu durumlarda yetkili mercilere bildirim yaparız.
-
----
-
-## 10. Sorumluluğun Sınırlandırılması
-
-Yürürlükteki kanunların izin verdiği azami ölçüde:
-
-- Uygulama "olduğu gibi" (as-is) sunulur; her türlü açık veya zımni garanti reddedilir.
-- Şirket, uygulamanın kesintisiz, hatasız veya güvenli çalışacağını garanti etmez.
-- Şirketin toplam sorumluluğu, sizin son 12 ayda Şirket'e ödediğiniz toplam tutarla sınırlıdır (ücretsiz kullanımda **sıfır TL**).
-- Dolaylı, arızi, özel veya cezai zararlardan (kâr kaybı, veri kaybı, iş kesintisi) sorumlu tutulamayız.
-
-**İstisnalar:** Şirketin kasıtlı kusurundan veya ağır ihmalinden doğan zararlar; tüketici hukuku kapsamındaki devredilemez haklar bu sınırlamadan etkilenmez.
-
----
-
-## 11. Tazminat
-
-Uygulamayı ihlal ederek (Madde 6) Şirkete veya üçüncü taraflara verdiğiniz zararlardan, açılan davaların masraf ve avukat ücretleri dahil tüm sonuçlardan **siz sorumlusunuz** ve Şirketi tazmin etmeyi kabul edersiniz.
-
----
-
-## 12. Tüketici Hakları
-
-6502 sayılı Tüketicinin Korunması Hakkında Kanun (TKHK) kapsamındaki devredilemez haklarınız bu Koşullarla sınırlandırılamaz. Tüketici Hakem Heyeti veya Tüketici Mahkemesi'ne başvuru hakkınız saklıdır.
-
-AB üyesi tüketicileri için: GDPR ve EU tüketici mevzuatından doğan haklar saklıdır. Online uyuşmazlık çözüm platformu: https://ec.europa.eu/consumers/odr
-
----
-
-## 13. Mücbir Sebep
-
-Doğal afet, savaş, terör, salgın hastalık, hükümet kararı, internet altyapısı kesintisi, üçüncü taraf servis kesintisi gibi Şirketin kontrolü dışındaki sebeplerden doğan hizmet aksaklıklarından sorumlu değiliz.
-
----
-
-## 14. Bildirimler
-
-Bize yapılacak tüm bildirimler `sandikapp.destek@gmail.com` adresine gönderilmelidir.
-
-Size yapılacak bildirimler:
-- Uygulama içi bildirim
-- Hesap e-postanıza e-posta
-- Push bildirimi (izin verdiyseniz)
-
-ile gönderilebilir ve gönderim tarihinde tebliğ edilmiş sayılır.
-
----
-
-## 15. Devir
-
-- Siz haklarınızı/yükümlülüklerinizi başkasına devredemezsiniz.
-- Şirket, birleşme, devralma veya yeniden yapılanma durumunda haklarını ve yükümlülüklerini halefine devredebilir; bu durumda 30 gün önceden bildirim yapılır.
-
----
-
-## 16. Bölünebilirlik
-
-Bu Koşulların herhangi bir maddesi geçersiz sayılırsa, geri kalan maddeler yürürlükte kalmaya devam eder.
-
----
-
-## 17. Uygulanacak Hukuk ve Yetkili Mahkeme
-
-- **Uygulanacak hukuk:** Türkiye Cumhuriyeti hukuku
-- **Yetkili mahkeme:** Bu Koşullardan doğan uyuşmazlıklarda Türkiye Cumhuriyeti mahkemeleri ve icra daireleri yetkilidir.
-
-Tüketici işlemlerinde 6502 sayılı Tüketicinin Korunması Hakkında Kanun uyarınca, parasal sınırlar dahilinde tüketicinin yerleşim yerindeki tüketici hakem heyetleri, bu sınırların üzerinde tüketicinin yerleşim yerindeki tüketici mahkemeleri yetkilidir.
-
-AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesinin zorunlu tüketici koruma hükümleri saklıdır.
-
----
-
-## 18. Koşullarda Değişiklik
-
-Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
-- Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır.
-- Esaslı değişiklikler ("Onay sürümü" de yeni sürüme çekilir) uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız metnin sonunda yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
-- Hak ve yükümlülüklerinizi ya da kişisel veri işleyişini değiştirmeyen düzeltmelerde yalnızca "Sürüm" değişir; yeniden onay istenmez.
-- Esaslı bir değişikliği onaylamadan uygulamayı kullanmaya devam edemezsiniz; değişikliği kabul etmiyorsanız hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
-- Hangi sürümü ne zaman kabul ettiğiniz ya da hangi sürümün size ne zaman sunulduğu kayıt altında tutulur.
-
----
-
-## 19. İletişim
-
-`Yasin Çıralı`
-`İstanbul, Türkiye`
-E-posta: `sandikapp.destek@gmail.com`
-Web: `https://yasincirali.github.io/sandikapp`
-
----
-
-*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
+-- 0137 — Yasal metin: Gizlilik Politikası + KVKK Aydınlatma 1.9 (2026-10-10)
+--
+-- ## Neden
+-- Hesap silme (`delete-account`) artık RevenueCat'teki abone kaydının
+-- silinmesini de ister (`_shared/premium.ts` → revenueCatKaydiniSil). 1.8
+-- "RevenueCat'teki işlem kaydı RevenueCat'in saklama süresince kalır"
+-- diyordu; metin gerçek davranışı yazar (CLAUDE.md "Yasal metin tek
+-- kaynak"). Ayrıca hesap silmenin mağaza aboneliğini iptal etmediği yazıldı
+-- (silme diyaloğu da Premium aboneye bunu söyler).
+--
+-- Saklama KISALDI, yeni veri/alıcı/amaç yok → ESASLI DEĞİL: yalnız "Sürüm"
+-- 1.8 → 1.9; "Onay sürümü" 1.8 kalır, kimseye yeniden onay sorulmaz.
+--
+-- ## Eski istemciler
+-- Yalnız EKLER: iki metin satırı. Fonksiyon, tablo, RLS ve GRANT'a
+-- DOKUNULMAZ. Onay sürümü değişmediği için eski ve yeni istemcide kapı
+-- açılmaz.
+--
+-- ## Dağıtım sırası
+-- İKİ sunucuya (Frankfurt → Tokyo) → `python tool/sema_esitlik.py`.
+-- `delete-account` fonksiyonu da aynı dağıtımda gider; `REVENUECAT_API_KEY`
+-- yoksa RevenueCat adımı atlanır, silme yine çalışır.
+--
+-- ## Metin ekleme
+-- INSERT `tool/yasal_metin_uret_test.dart` çıktısıdır; gövdeye elle
+-- dokunma (hash check'i tutmaz).
+
+-- ── 1) Metin (tool/yasal_metin_uret_test.dart çıktısı)
+
+-- gizlilik_politikasi/1.9/tr  (Gizlilik Politikası)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('gizlilik_politikasi', '1.9', 'tr', 'Gizlilik Politikası', date '2026-10-08',
+  '71f33490ff95af12354e52b1dad5d19869fa5ec66d58cd4213db688ff1fe8816',
+  replace($yasal$# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 10 Ekim 2026
@@ -571,8 +329,15 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
 ---
 
-*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
+*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- kvkk_aydinlatma/1.9/tr  (KVKK Aydınlatma Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kvkk_aydinlatma', '1.9', 'tr', 'KVKK Aydınlatma Metni', date '2026-10-08',
+  'd9347c58b39a5ab645f8878a2e0d0b7e5e1d6d2ffe4f1b48f118a476fde17a6d',
+  replace($yasal$# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 10 Ekim 2026
@@ -828,113 +593,30 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**''',
-  'legal/tr/ACIK_RIZA_METNI.md': r'''# Açık Rıza Metni — sandık
+**`sandikapp.destek@gmail.com`**$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
 
-**Yürürlük tarihi:** 8 Ekim 2026
-**Sürüm:** 1.5
-
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz. Rıza yalnız bu düğmeyle verilir: kayıt ekranındaki onay kutusu Kullanım Koşulları'nın kabulü içindir ve açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
-
----
-
-## 1. Açık Rıza Veriyorum
-
-`Yasin Çıralı` ("Şirket") tarafından sunulan **sandık** mobil uygulamasını kullanmak amacıyla:
-
-### A) Yurt Dışına Veri Aktarımı
-
-KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPABASE_ULKEDE}** bulunan **Supabase Inc.**'e, **Amerika Birleşik Devletleri'nde (ABD)** ve küresel altyapıda çalışan **Google LLC (Firebase: bildirim, hata raporu, kullanım istatistiği, uzaktan ayar; Gmail e-posta altyapısı)** ile **Apple Inc. (iOS bildirimleri ve kilit ekranı canlı etkinliği)** servislerine; Premium satın alırsam ayrıca abonelik doğrulaması için **ABD'deki RevenueCat, Inc.**'e;
-
-- E-posta adresim
-- Kullanıcı adım (görünen adım)
-- Şifremin hash hâli
-- Portföy varlık kayıtlarım (sembol, tür, miktar, alış fiyatı, tarih, not) ile vadeli mevduat ve BES sözleşme bilgilerim
-- Performans anlık görüntü geçmişim
-- Ortaklık bağlantı kayıtlarım
-- Push bildirim token'ım ve bildirimlerin içeriği
-- Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm ve kayıtlı cihazlarım
-- Hata raporlarım ve uygulama kullanım istatistiklerim (tutar, miktar ve e-posta içermeden)
-- Premium satın alırsam abonelik ve mağaza işlem kayıtlarım (kart ve ödeme bilgisi hariç)
-- Yasal metin onay ve bilgilendirme kayıtlarım (kabul ettiğim ya da bana sunulan metin ve sürümü, zaman, platform, uygulama sürümü, dil)
-
-aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
-
-Bu rıza kayıt için zorunludur; metin sonuna kadar okunduktan sonra metnin sonundaki düğmeyle verilir (kayıt ekranında ya da Apple veya Google ile ilk girişte açılan onay ekranında).
-
----
-
-### B) Push Bildirimleri
-
-Bildirim izni bu metinle değil, **işletim sisteminin izin penceresiyle** verilir; uygulama bu pencereyi bildirimin işe yarayacağı bir anda (ör. ilk varlığınızı ekledikten sonra) gösterir. İzin verirseniz cihaz bildirim token'ınız sunucuya kaydedilir ve bildirimler Firebase Cloud Messaging (iPhone'da ayrıca Apple Push Notification service) üzerinden iletilir:
-
-- Fiyat alarmları ve teknik analiz sinyalleri (açtıysanız)
-- Günlük brifing, haftalık ve aylık özet
-- Ortaklık daveti ve ortak etkinliği bildirimleri
-- Temettü ve takvim hatırlatmaları
-
-İzni istediğiniz zaman cihaz ayarlarından kapatabilirsiniz; bildirim türlerini uygulamada Ayarlar → Bildirimler'den yönetebilirsiniz.
-
----
-
-### C) Hata Raporları ve Kullanım İstatistikleri
-
-Uygulamada teknik bir çökme ya da hata yaşandığında hata kaydı, cihaz modeli, OS sürümü ve uygulama sürümü **Firebase Crashlytics** üzerinden; uygulamanın nasıl kullanıldığına dair olaylar (görüntülenen ekranlar, kullanılan özellikler) **Firebase Analytics** üzerinden Google'a gönderilir. Bu kayıtlar e-posta, parola, tutar ve miktar içermez; rastgele kurulum kimliği ve hesap numaranız (rastgele kullanıcı kimliği) ile ilişkilendirilir. Bu verilerin yurt dışına aktarımı yukarıdaki A bölümündeki açık rızanız kapsamındadır. Uygulamada bunlar için ayrı bir kapatma seçeneği yoktur.
-
----
-
-### D) Pazarlama İletişimi
-
-Uygulama size **pazarlama e-postası veya reklam iletisi göndermez**. Size gönderilen e-postalar yalnızca hesap e-postalarıdır (kayıt, giriş ve yeni cihaz doğrulama kodları, şifre sıfırlama). İleride pazarlama iletişimi eklenirse bunun için ayrıca onayınız istenir.
-
----
-
-### E) Zirvedeki Portföyler (uygulama içinde ayrıca istenir)
-
-Bu rıza kayıt sırasında DEĞİL, Zirvedeki Portföyler ekranını ilk açtığımda ayrı bir kartla istenir. Dönemsel getiri yüzdemin, varlık türü paylarımın ve fonlarda TEFAS fon kodu ile portföy içindeki payının anonim bir karşılaştırma havuzunda işlenmesine ve havuza katılan diğer kullanıcılara kimliğim, tutarlarım ve miktarlarım olmadan gösterilmesine; karşılığında katılımcıların aynı anonim bilgilerini görmeye **AÇIK RIZA VERİYORUM** (ayrıntı: Gizlilik Politikası §5.1, KVKK Aydınlatma Metni §5.3). Rıza vermezsem getirim bu amaçla hesaplanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanın verildiği tarih ve gösterilen metnin sürümü ispat için kaydedilir.
-
-Bu rıza ekrandaki "Katılıyorum" düğmesiyle verilir; isteğe bağlıdır.
-
----
-
-## 2. Açık Rızamın Geri Alınması
-
-Vermiş olduğum açık rızayı, KVKK Madde 7 ve 11 uyarınca **istediğim zaman geri alabileceğimi** biliyorum:
-
-- **Zirvedeki Portföyler rızası:** Performans → Zirvedeki Portföyler → "Zirvedeki Portföyler'den ayrıl" (havuzdaki ölçümler anında silinir)
-- **Yurt dışı aktarım rızası:** Açık rızamın geri çekilmesi, hizmetin sunulamaması anlamına gelir; bu durumda hesabımı silmem gerekir (Profil → Ayarlar → Hesabımı Sil).
-- **Bildirim izni:** Cihaz ayarlarından kapatılır (B bölümü).
-
-Rızamı geri çektiğim tarihten önceki işleme faaliyetleri hukuka uygun sayılmaya devam eder.
-
----
-
-## 3. Açık Rızanın Geri Alınmasının Sonuçları
-
-| Geri çekilen rıza ya da izin | Sonuç |
-|---|---|
-| Yurt dışı aktarım (A) | Hizmet sunulamaz; hesabınızı silerek rızanızı geri çekersiniz |
-| Bildirim izni (B) | Bildirim alamazsınız; ortaklık davetlerini ve bildirimleri uygulama içinden kontrol edersiniz |
-| Zirvedeki Portföyler (E) | Havuzdaki ölçümleriniz silinir; zirve listesini göremezsiniz, diğer özellikler etkilenmez |
-
----
-
-## 4. Beyan
-
-- Bu Açık Rıza Metni'ni okuduğumu,
-- Kişisel verilerimin nasıl işleneceğini, hangi amaçlarla kullanılacağını, kimlere aktarılacağını ve haklarımı **KVKK Aydınlatma Metni**'nden ayrıntılı olarak öğrendiğimi,
-- Verdiğim açık rızanın **özgür iradem ile, belirli ve bilgilendirilmiş** şekilde verildiğini,
-- 18 yaşından büyük olduğumu ve bu rızayı verme ehliyetinin bulunduğunu
-
-beyan ve kabul ederim.
-
----
-
-**Tarih:** Onay anında otomatik kaydedilir
-**Sürüm:** 1.5
-**Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
-
----
-
-*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*''',
-};
+-- ── 2) Doğrulama ────────────────────────────────────────────────────────────
+do $$
+begin
+  if not exists (select 1 from pg_class
+                  where oid = 'public.yasal_metinler'::regclass
+                    and relrowsecurity and relforcerowsecurity) then
+    raise exception '0137: yasal_metinler RLS (enable + force) kapali';
+  end if;
+  if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
+    raise exception '0137: yasal_metinler istemciden yazilabilir';
+  end if;
+  if (select count(*) from public.yasal_metinler
+       where tur in ('gizlilik_politikasi', 'kvkk_aydinlatma')
+         and surum = '1.9' and dil = 'tr') <> 2 then
+    raise exception '0137: gizlilik/kvkk 1.9 metni eksik';
+  end if;
+  if exists (select 1 from public.yasal_metinler
+              where tur in ('gizlilik_politikasi', 'kvkk_aydinlatma')
+                and surum = '1.9'
+                and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
+    raise exception '0137: govde_hash tutmuyor';
+  end if;
+  raise notice '0137 tamam: Gizlilik + KVKK 1.9 (onay surumu 1.8).';
+end $$;

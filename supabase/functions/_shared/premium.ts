@@ -83,3 +83,41 @@ export function revenueCatHakki(yanit: unknown): RevenueCatHakki | null {
 
   return { urun, magaza, bitis: bitisIso, iptal_edildi: iptal, sandbox };
 }
+
+// ── Hesap silinince RevenueCat kaydı (2026-10-10) ───────────────────────────
+// Hesap silme Supabase'deki her şeyi CASCADE ile siler; RevenueCat'teki abone
+// kaydı (kullanıcı kimliği + satın alma geçmişi) ise orada kalıyordu
+// (KVKK/Gizlilik metni 1.8 bunu "saklama süresince kalır" diye yazıyordu).
+// `DELETE /v1/subscribers/{id}` o kaydı siler. Mağaza aboneliğini İPTAL
+// ETMEZ — yenilemeyi kullanıcı App Store / Google Play'den kapatır; uygulama
+// silme ekranı bunu zaten söyler.
+//
+// En iyi çaba: anahtar yoksa (RevenueCat henüz kurulmadı) ya da istek
+// başarısızsa hesap silme YİNE tamamlanır — kullanıcının silme hakkı bir
+// üçüncü tarafın yanıtına bağlanmaz. Sonuç yalnız sunucu günlüğüne düşer,
+// istemciye dönmez. 404 = kayıt hiç yoktu (hiç satın alma yapmamış) → başarı.
+// UUID olmayan kimlik gönderilmez (yanlış kaydı silmeyi önler).
+
+export type RevenueCatSilmeSonucu = 'silindi' | 'kayit_yok' | 'anahtar_yok' | 'gecersiz_kimlik' | 'hata';
+
+export async function revenueCatKaydiniSil(
+  kullaniciId: string,
+  apiKey: string | undefined,
+  fetchFn: typeof fetch = fetch,
+): Promise<RevenueCatSilmeSonucu> {
+  if (!apiKey) return 'anahtar_yok';
+  if (!uuidMi(kullaniciId)) return 'gecersiz_kimlik';
+  try {
+    const r = await fetchFn(
+      'https://api.revenuecat.com/v1/subscribers/' + encodeURIComponent(kullaniciId),
+      { method: 'DELETE', headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    // Gövde okunmaz; bağlantı serbest kalsın.
+    await r.body?.cancel();
+    if (r.ok) return 'silindi';
+    if (r.status === 404) return 'kayit_yok';
+    return 'hata';
+  } catch {
+    return 'hata';
+  }
+}
