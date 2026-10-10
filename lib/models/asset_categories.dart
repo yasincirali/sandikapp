@@ -1,3 +1,9 @@
+// BIST hisse listesi 2026-10-10'da kendi dosyasına taşındı; bu dosyayı
+// içe aktaranlar `bist100StocksMap`'i görmeye devam etsin diye dışa aktarılır.
+import 'bist_hisseleri.dart';
+
+export 'bist_hisseleri.dart';
+
 /// Birim türleri
 enum UnitType {
   piece('Adet', 'adet'),
@@ -31,7 +37,8 @@ enum UnitType {
 /// kotasyonla gelir (`PriceService._truncgilGoldKeys`). Var olan
 /// `gr22` → `ALTIN_GRAM` eşlemesi KORUNDU: eski kayıtlar o sembolle durur.
 enum GoldSubCategory {
-  gr24('Gram Altın (24 Ayar)', 'gr', '24 ayar (995) gram altın; bankada ve kuyumcuda "gram altın"'),
+  gr24('Gram Altın (24 Ayar)', 'gr',
+      '24 ayar (995) gram altın; bankada ve kuyumcuda "gram altın"'),
   gr22('22 Ayar Gram Altın', 'gr', '22 ayar altın, gram olarak alınır'),
   gr18('18 Ayar Altın', 'gr', '18 ayar altın, gram olarak'),
   gr14('14 Ayar Altın', 'gr', '14 ayar altın, gram olarak'),
@@ -150,395 +157,6 @@ const bankFunds = {
   ],
 };
 
-/// Tüm BIST hisseleri — Yahoo Finance sembolü → şirket adı
-///
-/// Not: İsim geriye dönük uyumluluk için `bist100StocksMap` kaldı, ancak
-/// kapsam BIST 100 ile SINIRLI DEĞİLDİR — BIST'te işlem gören tüm pazarlar
-/// (Yıldız, Ana, Alt, Yakın İzleme) dahildir. Kullanıcı GSDHO gibi BIST 100
-/// dışı hisseleri de ekleyebilmeli; liste 91 sembolle sınırlıyken bunlar
-/// seçicide hiç görünmüyordu.
-const bist100StocksMap = <String, String>{
-  // Bankacılık & Finans
-  'GARAN.IS': 'Garanti BBVA',
-  'AKBNK.IS': 'Akbank',
-  'ISCTR.IS': 'İş Bankası (C)',
-  'VAKBN.IS': 'Vakıfbank',
-  'YKBNK.IS': 'Yapı Kredi Bankası',
-  'HALKB.IS': 'Halkbank',
-  'SKBNK.IS': 'Şekerbank',
-  'ALBRK.IS': 'Albaraka Türk',
-  'KLNMA.IS': 'Kalkınma ve Yatırım Bankası',
-  // Holding
-  'KCHOL.IS': 'Koç Holding',
-  'SAHOL.IS': 'Sabancı Holding',
-  'DOHOL.IS': 'Doğan Holding',
-  'GLYHO.IS': 'Global Yatırım Holding',
-  'AGHOL.IS': 'AG Anadolu Grubu Holding',
-  'BERA.IS': 'Bera Holding',
-  'ALARK.IS': 'Alarko Holding',
-  // Ulaşım & Havacılık
-  'THYAO.IS': 'Türk Hava Yolları',
-  'PGSUS.IS': 'Pegasus Hava Yolları',
-  'TAVHL.IS': 'TAV Havalimanları',
-  'CLEBI.IS': 'Çelebi Havacılık',
-  // Teknoloji & Telekomünikasyon
-  'TCELL.IS': 'Turkcell',
-  'TTKOM.IS': 'Türk Telekom',
-  'LOGO.IS': 'Logo Yazılım',
-  'NETAS.IS': 'Netaş Telekomünikasyon',
-  'KAREL.IS': 'Karel Elektronik',
-  'KONTR.IS': 'Kontrolmatik Teknoloji',
-  'SMART.IS': 'Smart Güneş Enerji',
-  // Enerji & Petrokimya
-  'TUPRS.IS': 'Tüpraş',
-  'PETKM.IS': 'Petkim',
-  'SASA.IS': 'SASA Polyester',
-  'AKSEN.IS': 'Aksa Enerji',
-  'AYDEM.IS': 'Aydem Yenilenebilir Enerji',
-  'AYEN.IS': 'Ayen Enerji',
-  'ODAS.IS': 'Odaş Elektrik',
-  'ENJSA.IS': 'Enerjisa Enerji',
-  'ZOREN.IS': 'Zorlu Enerji',
-  'IPEKE.IS': 'İpek Doğal Enerji',
-  'PRKME.IS': 'Park Elektrik',
-  'GEREL.IS': 'Gersan Elektrik',
-  // Savunma & Sanayi
-  'ASELS.IS': 'Aselsan',
-  'TKFEN.IS': 'Tekfen Holding',
-  'OTKAR.IS': 'Otokar Otobüs',
-  // Otomotiv
-  'FROTO.IS': 'Ford Otosan',
-  'TOASO.IS': 'Tofaş Oto Fab.',
-  'TTRAK.IS': 'Türk Traktör',
-  'DOAS.IS': 'Doğuş Otomotiv',
-  'ASUZU.IS': 'Anadolu Isuzu',
-  'KARSN.IS': 'Karsan Otomotiv',
-  // Beyaz Eşya & Elektronik
-  'ARCLK.IS': 'Arçelik',
-  'VESTL.IS': 'Vestel Elektronik',
-  'VESBE.IS': 'Vestel Beyaz Eşya',
-  // Cam & İnşaat Malzeme
-  'SISE.IS': 'Şişe Cam',
-  'ENKA.IS': 'ENKA İnşaat',
-  'CIMSA.IS': 'Çimsa Çimento',
-  'NUHCM.IS': 'Nuh Çimento',
-  'BUCIM.IS': 'Bursa Çimento',
-  'OYAKC.IS': 'Oyak Çimento',
-  'UNYEC.IS': 'Ünye Çimento',
-  // Demir & Çelik & Metal
-  'EREGL.IS': 'Ereğli Demir Çelik',
-  'KRDMD.IS': 'Kardemir (D)',
-  'ERBOS.IS': 'Erbosan',
-  'SARKY.IS': 'Sarkuysan',
-  'EGEEN.IS': 'Ege Endüstri',
-  'PARSN.IS': 'Parsan',
-  'TMSN.IS': 'Tümosan Motor',
-  // Lastik & Plastik
-  'BRISA.IS': 'Brisa Bridgestone',
-  'KORDS.IS': 'Kordsa Teknik',
-  // GYO
-  'EKGYO.IS': 'Emlak Konut GYO',
-  'ISGYO.IS': 'İş GYO',
-  'TRGYO.IS': 'Torunlar GYO',
-  'ZRGYO.IS': 'Ziraat GYO',
-  'HLGYO.IS': 'Halk GYO',
-  // Madencilik
-  'KOZAL.IS': 'Koza Altın',
-  'KOZAA.IS': 'Koza Madencilik',
-  // Perakende & Gıda
-  'MGROS.IS': 'Migros Ticaret',
-  'CARFA.IS': 'CarrefourSA',
-  'SOKM.IS': 'Şok Marketler',
-  'BIMAS.IS': 'BİM Mağazalar',
-  'ULKER.IS': 'Ülker Bisküvi',
-  'BANVT.IS': 'Banvit',
-  'CCOLA.IS': 'Coca-Cola İçecek',
-  // Tekstil & Moda
-  'MAVI.IS': 'Mavi Giyim',
-  // Kimya & Tarım
-  'GUBRF.IS': 'Gübre Fabrikaları',
-  'SODA.IS': 'Soda Sanayii',
-  'HEKTS.IS': 'Hektaş Ticaret',
-  // İlaç & Sağlık
-  'DEVA.IS': 'Deva Holding',
-  'ECILC.IS': 'Eczacıbaşı İlaç',
-  'SELEC.IS': 'Selçuk Ecza Deposu',
-  'MPARK.IS': 'Medical Park',
-  // Sigorta
-  'TURSG.IS': 'Türkiye Sigorta',
-  // Diğer
-  'TKNSA.IS': 'Teknosa',
-
-  // ─── BIST 100 dışı hisseler ───────────────────────────────────────────────
-  // Aşağıdakiler BIST 100 endeksinde olmayan ama borsada işlem gören
-  // hisselerdir. Kullanıcı bunları da portföyüne ekleyebilmelidir.
-
-  // Bankacılık, Finans & Aracı Kurumlar
-  'TSKB.IS': 'T.S.K.B.',
-  'ICBCT.IS': 'ICBC Turkey Bank',
-  'QNBFB.IS': 'QNB Finansbank',
-  'GLBMD.IS': 'Global Menkul Değerler',
-  'ISMEN.IS': 'İş Yatırım Menkul Değerler',
-  'GEDIK.IS': 'Gedik Yatırım Menkul Değerler',
-  'INFO.IS': 'İnfo Yatırım Menkul Değerler',
-  'OSMEN.IS': 'Osmanlı Yatırım Menkul Değerler',
-  'AGYO.IS': 'Atakule GYO',
-  'GARFA.IS': 'Garanti Faktoring',
-  'LIDFA.IS': 'Lider Faktoring',
-  'SEKFK.IS': 'Şeker Finansal Kiralama',
-  'ISFIN.IS': 'İş Finansal Kiralama',
-  'CRDFA.IS': 'Creditwest Faktoring',
-  'VAKFN.IS': 'Vakıf Finansal Kiralama',
-
-  // Holding & Yatırım
-  'GSDHO.IS': 'GSD Holding',
-  'GSDDE.IS': 'GSD Denizcilik Gayrimenkul',
-  'ECZYT.IS': 'Eczacıbaşı Yatırım',
-  'IHLAS.IS': 'İhlas Holding',
-  'IHGZT.IS': 'İhlas Gazetecilik',
-  'IEYHO.IS': 'Işıklar Enerji ve Yapı Holding',
-  'ITTFH.IS': 'İttifak Holding',
-  'ATAGY.IS': 'Ata GYO',
-  'BRKO.IS': 'Birko Mensucat',
-  'METRO.IS': 'Metro Holding',
-  'NTHOL.IS': 'Net Holding',
-  'TKURU.IS': 'Taze Kuru Gıda',
-  'EUHOL.IS': 'Euro Yatırım Holding',
-  'MZHLD.IS': 'Mazhar Zorlu Holding',
-  'POLHO.IS': 'Polisan Holding',
-  'ORGE.IS': 'Orge Enerji Elektrik',
-  'BOSSA.IS': 'Bossa Ticaret',
-
-  // Teknoloji, Yazılım & Bilişim
-  'ARENA.IS': 'Arena Bilgisayar',
-  'ARDYZ.IS': 'ARD Bilişim Teknolojileri',
-  'DGATE.IS': 'Datagate Bilgisayar',
-  'DESPC.IS': 'Despec Bilgisayar',
-  'INDES.IS': 'İndeks Bilgisayar',
-  'ESCOM.IS': 'Escort Teknoloji',
-  'FONET.IS': 'Fonet Bilgi Teknolojileri',
-  'MIATK.IS': 'Mia Teknoloji',
-  'MOBTL.IS': 'Mobiltel İletişim',
-  'PKART.IS': 'Plastikkart',
-  'ALCTL.IS': 'Alcatel Lucent Teleteknik',
-  'ANELE.IS': 'Anel Elektrik',
-  'PENTA.IS': 'Penta Teknoloji',
-  'REEDR.IS': 'Reeder Teknoloji',
-  'VBTYZ.IS': 'VBT Yazılım',
-  'LINK.IS': 'Link Bilgisayar',
-  'KFEIN.IS': 'Kafein Yazılım',
-  'SMRTG.IS': 'Smart Güneş Enerjisi',
-  'ISATR.IS': 'İş Bankası (A)',
-  'ISBTR.IS': 'İş Bankası (B)',
-
-  // Enerji & Elektrik
-  'AKSA.IS': 'Aksa Akrilik',
-  'AKFYE.IS': 'Akfen Yenilenebilir Enerji',
-  'ALFAS.IS': 'Alfa Solar Enerji',
-  'BIOEN.IS': 'Biotrend Enerji',
-  'CANTE.IS': 'Çan2 Termik',
-  'CONSE.IS': 'Consus Enerji',
-  'ESEN.IS': 'Esenboğa Elektrik',
-  'GWIND.IS': 'Galata Wind Enerji',
-  'HUNER.IS': 'Hun Yenilenebilir Enerji',
-  'MAGEN.IS': 'Margün Enerji',
-  'NATEN.IS': 'Naturel Yenilenebilir Enerji',
-  'PAMEL.IS': 'Pamel Yenilenebilir Elektrik',
-  'ZEDUR.IS': 'Zedur Enerji',
-  'ARASE.IS': 'Aras Elektrik Dağıtım',
-  'ENERY.IS': 'Enerya Enerji',
-  'AHGZT.IS': 'Ahlatcı Doğalgaz',
-  'BASGZ.IS': 'Başkent Doğalgaz',
-  'AKENR.IS': 'Ak Enerji',
-
-  // Sanayi, Makine & Metal
-  'ALKA.IS': 'Alkim Kağıt',
-  'ALKIM.IS': 'Alkim Alkali Kimya',
-  'BFREN.IS': 'Bosch Fren Sistemleri',
-  'CEMTS.IS': 'Çemtaş Çelik',
-  'DITAS.IS': 'Ditaş Doğan',
-  'DOKTA.IS': 'Döktaş Dökümcülük',
-  'FMIZP.IS': 'Federal-Mogul İzmit Piston',
-  'JANTS.IS': 'Jantsa Jant Sanayi',
-  'KATMR.IS': 'Katmerciler Ekipman',
-  'MAKTK.IS': 'Makina Takım Endüstrisi',
-  'ORMA.IS': 'Orma Orman Mahsulleri',
-  'SILVR.IS': 'Silverline Endüstri',
-  'ISDMR.IS': 'İskenderun Demir Çelik',
-  'CUSAN.IS': 'Çuhadaroğlu Metal',
-  'BURCE.IS': 'Burçelik',
-  'BURVA.IS': 'Burçelik Vana',
-  'DMSAS.IS': 'Demisaş Döküm',
-  'EMKEL.IS': 'Emek Elektrik',
-  'GEDZA.IS': 'Gediz Ambalaj',
-  'IZMDC.IS': 'İzmir Demir Çelik',
-  'KLMSN.IS': 'Klimasan Klima',
-  'SAYAS.IS': 'Say Reklamcılık',
-  'SANFM.IS': 'Sanifoam Sünger',
-  'ULUSE.IS': 'Ulusoy Elektrik',
-  'YUNSA.IS': 'Yünsa Yünlü Sanayi',
-  'ARSAN.IS': 'Arsan Tekstil',
-
-  // Gıda, Tarım & İçecek
-  'AEFES.IS': 'Anadolu Efes',
-  'TATGD.IS': 'Tat Gıda',
-  'PNSUT.IS': 'Pınar Süt',
-  'PETUN.IS': 'Pınar Et ve Un',
-  'KERVT.IS': 'Kerevitaş Gıda',
-  'TUKAS.IS': 'Tukaş Gıda',
-  'KNFRT.IS': 'Konfrut Gıda',
-  'FRIGO.IS': 'Frigo Pak Gıda',
-  'SELVA.IS': 'Selva Gıda',
-  'AVOD.IS': 'A.V.O.D. Gıda',
-  'ATAKP.IS': 'Atakey Patates',
-  'CEMAS.IS': 'Çemaş Döküm',
-  'GENTS.IS': 'Gentaş Genel Metal',
-  'KTSKR.IS': 'Kütahya Şeker',
-  'OFSYM.IS': 'Ofis Yem Gıda',
-  'PENGD.IS': 'Penguen Gıda',
-  'ULUUN.IS': 'Ulusoy Un',
-  'YAYLA.IS': 'Yayla Agro Gıda',
-  'ORCAY.IS': 'Orçay Ortaköy Çay',
-  'DARDL.IS': 'Dardanel Önentaş',
-  'MERKO.IS': 'Merko Gıda',
-  'VANGD.IS': 'Van Et Entegre',
-
-  // Perakende & Ticaret
-  'BIZIM.IS': 'Bizim Toptan Satış',
-  'VAKKO.IS': 'Vakko Tekstil',
-  'DESA.IS': 'Desa Deri',
-  'DAGI.IS': 'Dagi Yatırım Holding',
-  'KIMMR.IS': 'Kim Mağazacılık',
-  'MEPET.IS': 'Mepet Metro Petrol',
-  'MARTI.IS': 'Martı Otel İşletmeleri',
-  'MIPAZ.IS': 'Milpa Ticari',
-  'SANKO.IS': 'Sanko Pazarlama',
-  'SUWEN.IS': 'Suwen Tekstil',
-  'YATAS.IS': 'Yataş Yatak',
-  'YONGA.IS': 'Yonga Mobilya',
-  'INTEM.IS': 'İntema İnşaat',
-  'BRKSN.IS': 'Berkosan Yalıtım',
-
-  // İnşaat, Çimento & Gayrimenkul
-  'AKCNS.IS': 'Akçansa Çimento',
-  'AFYON.IS': 'Afyon Çimento',
-  'BASCM.IS': 'Baştaş Çimento',
-  'BSOKE.IS': 'Batısöke Çimento',
-  'CMBTN.IS': 'Çimbeton',
-  'CMENT.IS': 'Çimentaş',
-  'GOLTS.IS': 'Göltaş Çimento',
-  'KONYA.IS': 'Konya Çimento',
-  'MRDIN.IS': 'Mardin Çimento',
-  'USAK.IS': 'Uşak Seramik',
-  'YBTAS.IS': 'Yibitaş Yozgat',
-  'EDIP.IS': 'Edip Gayrimenkul',
-  'ALGYO.IS': 'Alarko GYO',
-  'AVGYO.IS': 'Avrasya GYO',
-  'DZGYO.IS': 'Deniz GYO',
-  'IDGYO.IS': 'İdealist GYO',
-  'KLGYO.IS': 'Kiler GYO',
-  'MRGYO.IS': 'Martı GYO',
-  'NUGYO.IS': 'Nurol GYO',
-  'OZGYO.IS': 'Özderici GYO',
-  'PAGYO.IS': 'Panora GYO',
-  'PEKGY.IS': 'Peker GYO',
-  'RYGYO.IS': 'Reysaş GYO',
-  'SNGYO.IS': 'Sinpaş GYO',
-  'SRVGY.IS': 'Servet GYO',
-  'TDGYO.IS': 'Trend GYO',
-  'VKGYO.IS': 'Vakıf GYO',
-  'YGYO.IS': 'Yeşil GYO',
-  'YKGYO.IS': 'Yapı Kredi Koray GYO',
-  'BAYRK.IS': 'Bayrak EBT',
-
-  // Sağlık & İlaç & Kimya
-  'LKMNH.IS': 'Lokman Hekim Sağlık',
-  'RTALB.IS': 'RTA Laboratuvarları',
-  'SEYKM.IS': 'Seyitler Kimya',
-  'BAGFS.IS': 'Bagfaş Bandırma Gübre',
-  'EGGUB.IS': 'Ege Gübre',
-  'ACSEL.IS': 'Acıselsan Acıpayam Selüloz',
-  'ATATP.IS': 'ATA Teknoloji Platformu',
-  'DYOBY.IS': 'DYO Boya',
-  'MRSHL.IS': 'Marshall Boya',
-  'SANEL.IS': 'Sanel Mühendislik',
-  'BIOTK.IS': 'Biotek Tarım',
-
-  // Ulaştırma & Lojistik & Turizm
-  'RYSAS.IS': 'Reysaş Taşımacılık',
-  'BEYAZ.IS': 'Beyaz Filo',
-  'AVTUR.IS': 'Avrasya Petrol Turistik',
-  'AYCES.IS': 'Altınyunus Çeşme',
-  'MAALT.IS': 'Marmaris Altınyunus',
-  'METUR.IS': 'Metemtur Otelcilik',
-  'PKENT.IS': 'Petrokent Turizm',
-  'TEKTU.IS': 'Tek-Art Turizm',
-  'ULAS.IS': 'Ulaşlar Turizm',
-  'UTPYA.IS': 'Utopya Turizm',
-  'SNPAM.IS': 'Sönmez Pamuklu',
-  'TLMAN.IS': 'Trabzon Liman İşletmeciliği',
-
-  // Sigorta
-  'AKGRT.IS': 'Aksigorta',
-  'ANHYT.IS': 'Anadolu Hayat Emeklilik',
-  'ANSGR.IS': 'Anadolu Sigorta',
-  'RAYSG.IS': 'Ray Sigorta',
-  'AGESA.IS': 'Agesa Hayat ve Emeklilik',
-
-  // Medya, Eğitim & Hizmet
-  'HURGZ.IS': 'Hürriyet Gazetecilik',
-  'DGNMO.IS': 'Doğan Trend Otomotiv',
-  'PRDGS.IS': 'Pardus Girişim',
-  'ADESE.IS': 'Adese Gayrimenkul',
-  'BLCYT.IS': 'Bilici Yatırım',
-  'EGEPO.IS': 'Ege Profil',
-  'KRSTL.IS': 'Kristal Kola',
-  'PSDTC.IS': 'Pergamon Dış Ticaret',
-  'SEKUR.IS': 'Sekuro Plastik',
-  'UFUK.IS': 'Ufuk Yatırım',
-  'IZFAS.IS': 'İzmir Fırça',
-  'BNTAS.IS': 'Bantaş Ambalaj',
-  'KAPLM.IS': 'Kaplamin Ambalaj',
-  'VKING.IS': 'Viking Kağıt',
-  'DURDO.IS': 'Duran Doğan Basım',
-  'IZINV.IS': 'İz Yatırım Holding',
-  'TRILC.IS': 'Turk İlaç ve Serum',
-  'EUPWR.IS': 'Europower Enerji',
-  'CWENE.IS': 'CW Enerji',
-  'KZBGY.IS': 'Kızılbük GYO',
-  'OBASE.IS': 'Obase Bilgisayar',
-  'BINHO.IS': 'Bin Holding',
-
-  // 2026 Haziran sonu–Eylül halka arzları (işlem görmeye başlamış olanlar).
-  // Liste "BIST'te işlem gören tüm hisseler" olduğundan bu ekleme kapsamın
-  // gereğidir, davranış değişikliği değil: yeni kodlar seçicide aranabilir
-  // olur, var olan hiçbir girdi değişmez. Ayrıca halka arz takvimindeki
-  // "Katıldım" akışı ekleme formunu `KOD.IS` ile açar; sembol burada yoksa
-  // kayıt şirket adını kaybedip yalnızca kodu yazar
-  // (`AddAssetFormState.resolveIdentity`). Kaynak: docs/data/halka_arz.json;
-  // işlem görmeye başlamış her kaydın burada olduğunu
-  // test/halka_arz_veri_test.dart kilitler.
-  'NETGL.IS': 'Net Global Endüstriyel',
-  'BKRGY.IS': 'Bakırcı GYO',
-  'INTET.IS': 'İntetra Teknoloji',
-  'KPEKS.IS': 'Kapeks Kimya',
-  'VEYAS.IS': 'Türker Vangölü Enerji',
-  'TKNKA.IS': 'Teknika Plast',
-  'CITAS.IS': 'Çitlekçi Mağazacılık',
-  'QUICK.IS': 'Quick Sigorta',
-  'KARCL.IS': 'Kardemir Çelik',
-  'MASFN.IS': 'Masfen Enerji',
-  'ALBTN.IS': 'Albayrak Hazır Beton',
-  'METEN.IS': 'Metgün Enerji',
-  'SARAE.IS': 'Şa-Ra Enerji',
-  'SSAAT.IS': 'Saat ve Saat',
-  'EKIM.IS': 'Ekim Turizm (Intercity)',
-  'ISVEA.IS': 'İsvea Seramik',
-  'GOLDA.IS': 'Golda Gıda',
-  'SOHOE.IS': 'Soho Giyim ve Enerji',
-  'ORZAX.IS': 'Orzaks İlaç',
-};
-
 /// Geriye dönük uyumluluk için liste hali
 List<String> get bist100Stocks => bist100StocksMap.keys.toList();
 
@@ -547,20 +165,20 @@ List<String> get bist100Stocks => bist100StocksMap.keys.toList();
 const goldTickerMap = <String, String>{
   'Gram Altın (24 Ayar)': 'ALTIN_GRAM24',
   '22 Ayar Gram Altın': 'ALTIN_GRAM',
-  '18 Ayar Altın':      'ALTIN_18AYAR',
-  '14 Ayar Altın':      'ALTIN_14AYAR',
-  'Has Altın':          'ALTIN_HAS',
-  'Çeyrek Altın':       'ALTIN_CEYREK',
-  'Yarım Altın':        'ALTIN_YARIM',
-  'Tam Altın':          'ALTIN_TAM',
-  'Cumhuriyet Altını':  'ALTIN_CUMHURIYET',
-  'Ata Altını':         'ALTIN_ATA',
-  'Reşat Altını':       'ALTIN_RESAT',
-  'Hamit Altını':       'ALTIN_HAMIT',
-  'İkibuçuk Altın':     'ALTIN_IKIBUCUK',
-  'Gremse Altın':       'ALTIN_GREMSE',
-  'Beşli Altın':        'ALTIN_BESLI',
-  'Altın (Ons)':        'XAUUSD=X', // USD - Yahoo Finance sembolü
+  '18 Ayar Altın': 'ALTIN_18AYAR',
+  '14 Ayar Altın': 'ALTIN_14AYAR',
+  'Has Altın': 'ALTIN_HAS',
+  'Çeyrek Altın': 'ALTIN_CEYREK',
+  'Yarım Altın': 'ALTIN_YARIM',
+  'Tam Altın': 'ALTIN_TAM',
+  'Cumhuriyet Altını': 'ALTIN_CUMHURIYET',
+  'Ata Altını': 'ALTIN_ATA',
+  'Reşat Altını': 'ALTIN_RESAT',
+  'Hamit Altını': 'ALTIN_HAMIT',
+  'İkibuçuk Altın': 'ALTIN_IKIBUCUK',
+  'Gremse Altın': 'ALTIN_GREMSE',
+  'Beşli Altın': 'ALTIN_BESLI',
+  'Altın (Ons)': 'XAUUSD=X', // USD - Yahoo Finance sembolü
 };
 
 /// Emtia türleri
