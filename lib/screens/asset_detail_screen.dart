@@ -91,6 +91,11 @@ import '../providers/secili_donem_provider.dart';
 import '../services/sozlesme_deposu.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
+import 'paywall_screen.dart';
+import '../providers/premium_provider.dart'
+    show premiumOzellikleriGorunurProvider;
+import '../utils/hareketli_ortalama.dart';
+import '../utils/mum_turetici.dart' show mumlariGrafikUzayinda;
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -98,6 +103,7 @@ part 'asset_detail/seritler.dart';
 part 'asset_detail/karsilastirma_secici.dart';
 part 'asset_detail/ozet.dart';
 part 'asset_detail/katmanlar.dart';
+part 'asset_detail/grafik_katmanlari.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -651,6 +657,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// extension içinden çağrılamaz; bu ince sarmalayıcı tek geçiş noktasıdır.
   void _guncelle(VoidCallback fn) => setState(fn);
 
+  /// EMA ısınma serisi (dönem öncesi çubuklar) ve hangi dönem için istendiği
+  /// — `asset_detail/grafik_katmanlari.dart`.
+  ({int gun, Map<int, double> seri})? _emaOnSeri;
+  int? _emaOnSeriGun;
+
+  /// Mumun GÜNLÜK seri kaynağı (grafik haftalık çizerken) — aynı dosya.
+  ({int gun, Map<int, double> seri})? _mumSerisi;
+  int? _mumSerisiGun;
+
   @override
   Widget build(BuildContext context) {
     // Baz para birimi BİR KEZ burada okunur: alt widget'lara parametre
@@ -936,7 +951,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // formatı için ayrıca handle edilir).
                     double toY(double y) {
                       if (compareOn) return (y / (normBase.abs() < 1e-9 ? 1 : normBase)) * 100.0;
-                      if (logOn) return math.log(y < 1e-6 ? 1e-6 : y) / math.ln10;
+                      if (logOn) return log10Fiyat(y);
                       return y;
                     }
                     double fromY(double v) {
@@ -1010,6 +1025,47 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
+                    // EMA50 / EMA200 ve mum — Premium katmanlar
+                    // (`asset_detail/grafik_katmanlari.dart`). Görünmüyorsa
+                    // ya da kilitliyse hiçbiri çizilmez; eski grafik birebir.
+                    // Karşılaştırmada mum yok (çizgi % ölçeğinde, iki seri
+                    // aynı eksende kıyaslanır); EMA da yok — ikinci serinin
+                    // ortalaması çizilmediği için yalnız birine ait olurdu.
+                    final katmanAcik = araclar &&
+                        _katmanlarGorunur &&
+                        !_katmanlarKilitli;
+                    final mumOn = katmanAcik &&
+                        !compareOn &&
+                        ref.watch(chartCandleProvider);
+                    final ema50On = katmanAcik &&
+                        !compareOn &&
+                        ref.watch(chartEma50Provider);
+                    final ema200On = katmanAcik &&
+                        !compareOn &&
+                        ref.watch(chartEma200Provider);
+                    final hamAktif = rawSegments
+                        .firstWhere(
+                          (s) => !s.piyasaKapali && s.spots.isNotEmpty,
+                          orElse: () => rawActiveForBase,
+                        )
+                        .spots;
+                    final seciliGun = _periods[_selectedPeriodIdx].days;
+                    if (ema50On || ema200On) _emaOnSeriniIste(seciliGun);
+                    if (mumOn) _mumSerisiniIste(seciliGun);
+                    final mumHam = mumOn
+                        ? _mumNoktalari(seciliGun, startDate, endDate,
+                                currentUnitTRY) ??
+                            hamAktif
+                        : hamAktif;
+                    final emaCizgileri = (ema50On || ema200On)
+                        ? _emaCizgileri(
+                            hamSeri: hamAktif,
+                            onSeri: _emaOnNoktalari(seciliGun, startDate),
+                            toY: toY,
+                            ema50: ema50On,
+                            ema200: ema200On,
+                          )
+                        : const <({List<FlSpot> spots, Color renk})>[];
                     final anchorY = anchorSpot?.y ?? 0.0;
 
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
@@ -1086,6 +1142,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         asgariBantOrani: isIntraday
                             ? gunIciAsgariBantOrani
                             : (compareOn || logOn ? 0.0 : 0.02),
+                        // LOG bandı (log10 biriminde) — eskiden ₺ için olan
+                        // 1'lik taban bütün bir onluk demekti; mum ve EMA
+                        // düz çizgiye eziliyordu. Şimdilik yalnız Premium
+                        // katmanları gören hesapta (paywall_enabled/admin):
+                        // ücretsiz LOG kullanıcısının ekranı birebir kalır.
+                        asgariAralik: logOn && _katmanlarGorunur ? 1e-3 : 1.0,
                       );
                     }
 
@@ -1118,10 +1180,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         // Sade Başlangıç'ta (`seviye_anketi`) gizli.
                         if (araclar)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            _OverlayChip(
+                          Builder(builder: (_) {
+                            final ma20Cip = _OverlayChip(
                               label: 'MA20',
                               active: ma20On,
                               onTap: () {
@@ -1129,9 +1189,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     .read(chartMA20Provider.notifier)
                                     .set(!ma20On);
                               },
-                            ),
-                            const SizedBox(width: 6),
-                            _OverlayChip(
+                            );
+                            final logCip = _OverlayChip(
                               label: 'LOG',
                               active: logOn,
                               onTap: () {
@@ -1139,14 +1198,58 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     .read(chartLogScaleProvider.notifier)
                                     .set(!logOn);
                               },
-                            ),
+                            );
                             // Tam ekran çipi KALDIRILDI (kullanıcı kararı,
                             // 2026-09-17): "çok da bir avantajı yok gibi,
                             // ilerde talep edilirse yaparız." Geçmiş
                             // uygulama ve yön davranışı git geçmişinde
                             // (ea7bc0a).
-                          ],
-                        ),
+                            if (!_katmanlarGorunur) {
+                              // Premium katmanlar görünmüyor: satır BİREBİR
+                              // eskisi (canlıdaki kullanıcı etkilenmez).
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ma20Cip,
+                                  const SizedBox(width: 6),
+                                  logCip,
+                                ],
+                              );
+                            }
+                            // Beş çip 375pt'ye tek satırda sığmıyor (Wrap
+                            // LOG'u tek başına alta düşürüyordu). İki
+                            // anlamlı satır: üstte GÖRÜNÜM (mum, ölçek),
+                            // altta ORTALAMALAR (MA20, EMA50, EMA200).
+                            final k = _katmanCipleri(
+                              mumOn: mumOn,
+                              ema50On: ema50On,
+                              ema200On: ema200On,
+                            );
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    k.mum,
+                                    const SizedBox(width: 6),
+                                    logCip,
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    ma20Cip,
+                                    const SizedBox(width: 6),
+                                    k.ema50,
+                                    const SizedBox(width: 6),
+                                    k.ema200,
+                                  ],
+                                ),
+                              ],
+                            );
+                          }),
                         const SizedBox(height: 8),
                         // Karşılaştırma gün içinde de açık — seri
                         // `_karsilastirmaSerisi` ile ana varlıkla aynı
@@ -1275,9 +1378,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 // çizginin üstündeler (2026-09-24), yani
                                 // aralığı genişletmezler; güvence olarak
                                 // kalır.
+                                // EMA de banda girer: uzun ortalama fiyatın
+                                // çok altında/üstünde kalabilir; banda
+                                // girmezse açılan çizgi kartın dışında kalır
+                                // ve "EMA200 çalışmıyor" diye okunur.
                                 extraSpots: [
                                   ...?compareBar?.spots,
                                   ...islemSpots,
+                                  for (final e in emaCizgileri) ...e.spots,
                                 ],
                               );
                               final viewMinY = yBounds.minY;
@@ -1485,7 +1593,23 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 belowBarData: BarAreaData(show: false),
                               ),
                             if (compareBar != null) compareBar,
+                            for (final e in emaCizgileri) _emaCubugu(e),
+                            // Mum: aktif (açık piyasa) çizginin yerine;
+                            // kapalı piyasa kesikli çizgisi aynen kalır.
+                            if (mumOn)
+                              ..._mumCubuklari(
+                                hamSeri: mumHam,
+                                startDate: startDate,
+                                toY: toY,
+                                viewMinX: viewMinX,
+                                viewMaxX: viewMaxX,
+                                genislik: (MediaQuery.of(context).size.width -
+                                        60 -
+                                        40)
+                                    .clamp(120.0, 2000.0),
+                              ),
                             ...segments
+                              .where((seg) => !mumOn || seg.piyasaKapali)
                               .map((seg) {
                                 // Trading estetiği: dönem uzadıkça ince
                                 // çizgi, kısa dönemde biraz belirgin.

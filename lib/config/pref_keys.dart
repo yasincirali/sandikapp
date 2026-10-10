@@ -36,6 +36,10 @@ class PrefKeys {
   static const indicatorsByType = 'pref_indicators_by_type_v1';
   static const chartOverlayMa20 = 'pref_chart_overlay_ma20';
   static const chartLogScale = 'pref_chart_log_scale';
+  // EMA50/EMA200 ve mum (varlık detayı, 2026-10-10; Premium).
+  static const chartEma50 = 'pref_chart_ema50';
+  static const chartEma200 = 'pref_chart_ema200';
+  static const chartCandle = 'pref_chart_candle';
   static const leaderboardOptIn = 'pref_leaderboard_opt_in';
   static const biometricLock = 'pref_biometric_lock';
 

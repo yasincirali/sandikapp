@@ -168,11 +168,16 @@ const double gunIciAsgariBantOrani = 0.005;
   required double dataMaxY,
   required double avgY,
   required double asgariBantOrani,
+  double asgariAralik = 1.0,
 }) {
+  // [asgariAralik]: Y biriminde en dar bant. Fiyat/TL için 1 (₺1'den dar
+  // bant anlamsız); LOG ölçekte Y log10(fiyat)'tır ve 1 = on kat — %10'luk
+  // bir hareket bütün bir onluğa yayılıp düz çizgiye dönüyordu (varlık
+  // detayı, 2026-10-10). Log çağıran çok daha küçük değer verir.
   final dataRange =
-      (dataMaxY - dataMinY).clamp(1.0, double.infinity).toDouble();
+      (dataMaxY - dataMinY).clamp(asgariAralik, double.infinity).toDouble();
   final minSpread =
-      (avgY * asgariBantOrani).clamp(1.0, double.infinity).toDouble();
+      (avgY * asgariBantOrani).clamp(asgariAralik, double.infinity).toDouble();
   final effectiveRange = dataRange < minSpread ? minSpread : dataRange;
   final yPadding = effectiveRange * 0.15;
 
