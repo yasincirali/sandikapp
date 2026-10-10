@@ -292,10 +292,9 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   }
 
-  Map<String, Object> mum(MumAraligi? a) => {
-        'pref_chart_candle': true,
-        if (a != null) 'pref_chart_mum_araligi': a.index,
-      };
+  // Aralık artık dönemin TradingView varsayılanıyla açılır (2026-10-10
+  // gece); kalıcı aralık tercihi yok, [a] yalnız dosya adındaki beklenti.
+  Map<String, Object> mum(MumAraligi? a) => {'pref_chart_candle': true};
 
   testWidgets('önce: kapanıştan türetilmiş mum (1 yıl)', (tester) async {
     await ciz(tester, 'mum_once_1yil',
@@ -310,11 +309,11 @@ void main() {
         varlik: _thy, donem: '1 ay', tercih: mum(null), premium: false);
   });
   for (final (donem, aralik) in [
-    ('1 hf', MumAraligi.saat1),
-    ('1 ay', MumAraligi.saat4),
-    ('3 ay', MumAraligi.gun1),
-    ('1 yıl', MumAraligi.hafta1),
-    ('5 yıl', MumAraligi.ay1),
+    ('1 hf', MumAraligi.dk5),
+    ('1 ay', MumAraligi.dk30),
+    ('3 ay', MumAraligi.saat1),
+    ('1 yıl', MumAraligi.gun1),
+    ('5 yıl', MumAraligi.hafta1),
   ]) {
     testWidgets('sonra: THYAO $donem · ${aralik.name}', (tester) async {
       final d = donem.replaceAll(' ', '').replaceAll('ı', 'i').replaceAll('ü', 'u');

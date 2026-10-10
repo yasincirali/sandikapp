@@ -264,6 +264,9 @@ export const ARALIK: Record<string, { binance: string; ms: number }> = {
   '1m': { binance: '1m', ms: 60_000 },
   '5m': { binance: '5m', ms: 5 * 60_000 },
   '15m': { binance: '15m', ms: 15 * 60_000 },
+  // 30 dk (2026-10-10 gece): TradingView'in 1 ay varsayılanı. Yalnız
+  // ekler; eski istemci bu değeri hiç istemez.
+  '30m': { binance: '30m', ms: 30 * 60_000 },
   '1h': { binance: '1h', ms: 60 * 60_000 },
   '1d': { binance: '1d', ms: 24 * 60 * 60_000 },
   '1wk': { binance: '1w', ms: 7 * 24 * 60 * 60_000 },

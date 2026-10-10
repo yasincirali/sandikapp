@@ -177,7 +177,7 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
     final span = gunIci
         ? 1440.0
         : son.difference(bas).inMinutes.toDouble();
-    final secim = MumAraligi.sirayla(ref.watch(chartMumAraligiProvider));
+    final secim = secilenMumAraligi(ref, span);
     final aralik = mumOn ? etkinAralik(a, span, secim) : null;
     final gecerli =
         mumOn ? gecerliAraliklar(a, span) : const <MumAraligi>[];
@@ -256,6 +256,7 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
           ),
           aralik: aralik,
           gecerliAraliklar: gecerli,
+          pencereDakika: span,
           kapanistan: !kaynak.gercekOhlc,
         ),
         const SizedBox(height: SandikSpace.sm),

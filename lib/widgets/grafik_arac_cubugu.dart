@@ -5,10 +5,9 @@ import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart';
 import '../models/ohlc.dart';
 import '../theme/sandik.dart';
-import 'sandik_segment.dart';
 
-/// Fiyat grafiğinin araç çubuğu — MUM · LOG · ƒx / MA20 · EMA50 · EMA200 ve
-/// Mum açıkken aralık seçicisi (1 dk … ay).
+/// Fiyat grafiğinin araç çubuğu — [aralık ⌄] · MUM · LOG · ƒx / MA20 · EMA50 ·
+/// EMA200. Aralık açılır menüsü (1 dk … ay) Mum açıkken görünür.
 ///
 /// ## Neden ortak (yasin, 2026-10-10)
 /// *"ana sayfa aramadan gidilen varlık kartı, portföyden varlık performans
@@ -34,8 +33,13 @@ class GrafikAracCubugu extends ConsumerWidget {
     this.ozel,
     this.aralik,
     this.gecerliAraliklar = const [],
+    this.pencereDakika,
     this.kapanistan = false,
   });
+
+  /// Grafiğin penceresi (dk): kullanıcının seçimi bu döneme yazılır
+  /// (`mumAraligiSecimiProvider`); başka dönemde varsayılan açılır.
+  final double? pencereDakika;
 
   /// Mum, EMA ve ƒx bu kullanıcıda görünür mü (`premiumOzellikleriGorunurProvider`;
   /// paywall kapalıyken yalnız admin). `false` → satır BİREBİR eskisi:
@@ -111,12 +115,33 @@ class GrafikAracCubugu extends ConsumerWidget {
         ),
     ];
     final ar = aralik;
+    final pencere = pencereDakika;
+    final secici = mumAcik && ar != null && gecerliAraliklar.length >= 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        // Aralık menüsü sol başta (TradingView'de de zaman dilimi araç
+        // çubuğunun başında); çipler sağda kalır, yerleri değişmez.
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            if (secici)
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MumAraligiMenusu(
+                    aralik: ar,
+                    gecerli: gecerliAraliklar,
+                    onSec: (yeni) {
+                      if (pencere == null) return;
+                      ref
+                          .read(mumAraligiSecimiProvider.notifier)
+                          .sec(pencere, yeni);
+                    },
+                  ),
+                ),
+              )
+            else
+              const Spacer(),
             for (var i = 0; i < ustSatir.length; i++) ...[
               if (i > 0) const SizedBox(width: 6),
               ustSatir[i],
@@ -147,11 +172,13 @@ class GrafikAracCubugu extends ConsumerWidget {
             ),
           ],
         ),
-        if (mumAcik && ar != null && gecerliAraliklar.length >= 2)
-          MumAraligiSecici(
-            aralik: ar,
-            gecerli: gecerliAraliklar,
-            kapanistan: kapanistan,
+        if (mumAcik && kapanistan)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              context.l10n.chartCandleFromCloses,
+              style: context.t.labelSmall?.copyWith(color: context.c.text58),
+            ),
           ),
       ],
     );
@@ -171,49 +198,123 @@ class GrafikOzelCipi {
   final VoidCallback onTap;
 }
 
-/// Aralık seçicisi — tek seçim, ortak [SandikSegment] (kayan zemin, 44 pt
-/// dokunma, hareketi azalt). Kapanıştan kurulan mumlarda altında tek satır
-/// açıklama: mumun ne olduğunu söyler.
-class MumAraligiSecici extends ConsumerWidget {
-  const MumAraligiSecici({
+/// Aralık açılır menüsü — "15 dk ⌄" (yasin 2026-10-10 gece: "grafik
+/// çizdirme sıklığı bir dropdown ile seçtirilebilir").
+///
+/// İlk sürüm sekiz düğmelik bir segment şeridiydi: 375 pt'de "15 dk"
+/// sığmıyor, grafiğin üstünde tam bir satır kaplıyordu. Menü tek çip yer
+/// tutar ve TradingView'in zaman dilimi menüsüyle aynı kalıp. Neden
+/// `PopupMenuButton` (sheet değil): [GrafikTipiSecici] ile aynı gerekçe —
+/// liste çipin altında açılır, grafik görünür kalır, seçimin etkisi hemen
+/// görülür. Satırlar 48 pt, seçilide tik (yalnız renkle değil).
+class MumAraligiMenusu extends StatelessWidget {
+  const MumAraligiMenusu({
     super.key,
     required this.aralik,
     required this.gecerli,
-    this.kapanistan = false,
+    required this.onSec,
   });
 
   final MumAraligi aralik;
   final List<MumAraligi> gecerli;
-  final bool kapanistan;
+  final ValueChanged<MumAraligi> onSec;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SandikSegment(
-          adet: gecerli.length,
-          secili: gecerli.indexOf(aralik),
-          yukseklik: 32,
-          metinStili: context.t.labelLarge,
-          onSec: (i) =>
-              ref.read(chartMumAraligiProvider.notifier).set(gecerli[i].index),
-          oge: (_, i, __) => Text(gecerli[i].etiketi(context),
-              maxLines: 1, overflow: TextOverflow.ellipsis),
-          semantik: (i) => context.l10n
-              .chartIntervalSemantics(gecerli[i].uzunAdi(context)),
-        ),
-        if (kapanistan) ...[
-          const SizedBox(height: SandikSpace.xs),
-          Text(
-            context.l10n.chartCandleFromCloses,
-            style: context.t.labelSmall?.copyWith(color: context.c.text58),
+  Widget build(BuildContext context) {
+    // Ata `Material` POPUP'IN DIŞINDA (CupertinoPageScaffold altında
+    // `PopupMenuButton`'ın InkWell'i Material arar; [GrafikTipiSecici]).
+    return Material(
+      type: MaterialType.transparency,
+      child: Semantics(
+        button: true,
+        label: context.l10n.chartIntervalSemantics(aralik.uzunAdi(context)),
+        excludeSemantics: true,
+        child: PopupMenuButton<MumAraligi>(
+          tooltip: context.l10n.chartIntervalSemantics(aralik.uzunAdi(context)),
+          position: PopupMenuPosition.under,
+          color: context.c.surface2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            side: BorderSide(color: context.c.hairline),
           ),
-        ],
-      ],
+          initialValue: aralik,
+          onSelected: onSec,
+          itemBuilder: (_) => [
+            for (final g in gecerli)
+              PopupMenuItem<MumAraligi>(
+                value: g,
+                height: 48,
+                child: Row(
+                  children: [
+                    Expanded(
+                      // Uzun ad cümle içi için küçük harfli ("günlük");
+                      // menü satırı başlık gibi okunur.
+                      child: Text(
+                        _basHarfBuyuk(g.uzunAdi(context)),
+                        style: context.t.bodyMedium?.copyWith(
+                          color: context.c.text90,
+                          fontWeight:
+                              g == aralik ? FontWeight.w700 : FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 20,
+                      child: g == aralik
+                          ? Icon(Icons.check_rounded,
+                              size: 16, color: context.c.amberText)
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+          // Görsel çip GrafikCipi ile aynı ölçüde; dokunma alanı 44 pt.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+                minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+            child: Center(
+              widthFactor: 1,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: context.c.amberFill.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
+                  border: Border.all(
+                      color: context.c.amberFill.withValues(alpha: 0.55)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        aralik.etiketi(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: context.c.amberText,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(Icons.expand_more_rounded,
+                        size: 14, color: context.c.amberText),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
+
+String _basHarfBuyuk(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 /// Aralığın kısa ve uzun adı (seçici ve ekran okuyucu).
 extension MumAraligiAdi on MumAraligi {
@@ -221,6 +322,7 @@ extension MumAraligiAdi on MumAraligi {
         MumAraligi.dk1 => context.l10n.chartIntervalM1,
         MumAraligi.dk5 => context.l10n.chartIntervalM5,
         MumAraligi.dk15 => context.l10n.chartIntervalM15,
+        MumAraligi.dk30 => context.l10n.chartIntervalM30,
         MumAraligi.saat1 => context.l10n.chartIntervalH1,
         MumAraligi.saat4 => context.l10n.chartIntervalH4,
         MumAraligi.gun1 => context.l10n.chartIntervalD1,
@@ -232,6 +334,7 @@ extension MumAraligiAdi on MumAraligi {
         MumAraligi.dk1 => context.l10n.chartIntervalM1Long,
         MumAraligi.dk5 => context.l10n.chartIntervalM5Long,
         MumAraligi.dk15 => context.l10n.chartIntervalM15Long,
+        MumAraligi.dk30 => context.l10n.chartIntervalM30Long,
         MumAraligi.saat1 => context.l10n.chartIntervalH1Long,
         MumAraligi.saat4 => context.l10n.chartIntervalH4Long,
         MumAraligi.gun1 => context.l10n.chartIntervalD1Long,

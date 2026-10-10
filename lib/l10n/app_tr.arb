@@ -5680,5 +5680,9 @@
   "cmpKatmanHedefi": "Mum ve ortalamalar: {ad}. Başka seriye dokunarak değiştir.",
   "@cmpKatmanHedefi": {"description": "Karşılaştır: araç çubuğu katmanlarının uygulandığı seri.", "placeholders": {"ad": {"type": "String"}}},
   "pwdOzelUcretsiz": "mum, 1 dk ile 1 ay arası aralık, EMA",
-  "@pwdOzelUcretsiz": {"description": "Paywall destesi, kendi göstergen kartı: ücretsiz kalan grafik araçları (başına 'Ücretsiz:' eklenir)."}
+  "@pwdOzelUcretsiz": {"description": "Paywall destesi, kendi göstergen kartı: ücretsiz kalan grafik araçları (başına 'Ücretsiz:' eklenir)."},
+  "chartIntervalM30": "30 dk",
+  "@chartIntervalM30": {"description": "Mum aralığı kısa adı: 30 dakika."},
+  "chartIntervalM30Long": "30 dakikalık",
+  "@chartIntervalM30Long": {"description": "Mum aralığı uzun adı (menü, ekran okuyucu)."}
 }

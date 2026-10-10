@@ -8542,4 +8542,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdOzelUcretsiz => 'mum, 1 dk ile 1 ay arası aralık, EMA';
+
+  @override
+  String get chartIntervalM30 => '30 dk';
+
+  @override
+  String get chartIntervalM30Long => '30 dakikalık';
 }

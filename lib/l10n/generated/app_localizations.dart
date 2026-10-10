@@ -14242,6 +14242,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'mum, 1 dk ile 1 ay arası aralık, EMA'**
   String get pwdOzelUcretsiz;
+
+  /// Mum aralığı kısa adı: 30 dakika.
+  ///
+  /// In tr, this message translates to:
+  /// **'30 dk'**
+  String get chartIntervalM30;
+
+  /// Mum aralığı uzun adı (menü, ekran okuyucu).
+  ///
+  /// In tr, this message translates to:
+  /// **'30 dakikalık'**
+  String get chartIntervalM30Long;
 }
 
 class _AppLocalizationsDelegate

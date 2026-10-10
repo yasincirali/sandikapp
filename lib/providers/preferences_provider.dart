@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset_type.dart';
+import '../models/ohlc.dart' show MumAraligi;
 import '../models/signal_frequency.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
@@ -1390,13 +1391,49 @@ final chartEma200Provider = NotifierProvider<_BoolPrefNotifier, bool>(
 final chartCandleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.chartCandle, false));
 
-/// Mumun aralığı (TradingView'in zaman dilimi; yasin 2026-10-10) —
-/// `MumAraligi.index`, `-1` = otomatik (dönemde ~80 muma en yakın aralık,
-/// `etkinAralik`). Kalıcı, Mum çipiyle aynı gerekçe. Seçim o dönemde
-/// geçerli değilse (1 dk × 5Y) ekran otomatiğe düşer, tercih SİLİNMEZ:
-/// kullanıcı GÜNLÜK'e dönünce 1 dk geri gelir.
-final chartMumAraligiProvider = NotifierProvider<_IntPrefNotifier, int>(
-    () => _IntPrefNotifier(PrefKeys.chartMumAraligi, -1));
+/// Mumun aralığı (TradingView'in zaman dilimi) — kullanıcının açılır
+/// menüden seçtiği aralık ve seçtiği DÖNEM.
+///
+/// 2026-10-10 gece, yasin: "defaultta da tradingviewdeki time-interval ve
+/// default frequency ile açılsın ekranlarda". Önceki hâli kalıcı bir
+/// tercihti (`pref_chart_mum_araligi`, PR #161): bir kez 15 dk seçen her
+/// ekranı her dönemde 15 dk açıyordu. Artık TradingView gibi: dönem
+/// değişince ya da uygulama yeniden açılınca dönemin varsayılanına
+/// (`tradingViewVarsayilani`) döner; seçim yalnız seçildiği dönemde, bu
+/// oturum boyunca geçerli (aynı dönemde başka varlığa geçince korunur —
+/// TradingView sembol değişince aralığı korur). Eski anahtar okunmuyor,
+/// silinmiyor da (veri kaybı yok; davranış kasıtlı değişti).
+class MumAraligiSecimi {
+  const MumAraligiSecimi(this.donemGunu, this.aralik);
+  final int donemGunu;
+  final MumAraligi aralik;
+}
+
+/// Seçimin hangi döneme ait olduğunu söyleyen anahtar: pencere gün olarak.
+/// 1H penceresi ekrana göre 7–7,9 gün sürebilir; yuvarlama aynı ekranda
+/// sabit kalır, ekranlar arası farkta yalnız varsayılan açılır.
+int mumDonemAnahtari(double spanDakika) => (spanDakika / 1440).round();
+
+class _MumAraligiSecimiNotifier extends Notifier<MumAraligiSecimi?> {
+  @override
+  MumAraligiSecimi? build() => null;
+
+  void sec(double spanDakika, MumAraligi aralik) =>
+      state = MumAraligiSecimi(mumDonemAnahtari(spanDakika), aralik);
+}
+
+final mumAraligiSecimiProvider =
+    NotifierProvider<_MumAraligiSecimiNotifier, MumAraligiSecimi?>(
+        _MumAraligiSecimiNotifier.new);
+
+/// Bu penceredeki seçim; başka dönemin seçimi ya da seçim yoksa null
+/// (çağıran `etkinAralik` ile TradingView varsayılanına düşer).
+MumAraligi? secilenMumAraligi(WidgetRef ref, double spanDakika) {
+  final s = ref.watch(mumAraligiSecimiProvider);
+  return s != null && s.donemGunu == mumDonemAnahtari(spanDakika)
+      ? s.aralik
+      : null;
+}
 
 /// Performans "Bugünkü portföyle" görünümü (simülasyon: bugünkü net
 /// portföy tüm dönem boyunca elde tutulmuş gibi). TEK KAYNAK — Ayarlar ›

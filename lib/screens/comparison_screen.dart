@@ -594,6 +594,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     final norm = hedef == null ? null : _series[hedef.ticker];
     final kimlik = hedef == null ? null : VarlikKimligi.fromSymbolHit(hedef);
     MumAraligi? aralik;
+    double? pencere;
     var gecerli = const <MumAraligi>[];
     var kapanistan = false;
     YuzdeKatmani? katman;
@@ -640,8 +641,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         final son = DateTime.now();
         final span =
             gunIci ? 1440.0 : son.difference(bas).inMinutes.toDouble();
-        aralik = etkinAralik(
-            a, span, MumAraligi.sirayla(ref.watch(chartMumAraligiProvider)));
+        pencere = span;
+        aralik = etkinAralik(a, span, secilenMumAraligi(ref, span));
         gecerli = gecerliAraliklar(a, span);
         final barlar = aralik == null
             ? null
@@ -681,6 +682,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         ema200Acik: ema200On,
         aralik: aralik,
         gecerliAraliklar: gecerli,
+        pencereDakika: pencere,
         kapanistan: kapanistan,
       ),
       katman: katman,

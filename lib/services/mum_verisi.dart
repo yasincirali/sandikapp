@@ -286,10 +286,6 @@ const int azamiMum = 3000;
 /// En az mum: iki mum "grafik" değil.
 const int asgariMum = 3;
 
-/// Varsayılan aralık bu kadar muma en yakın olandır — TradingView'in ilk
-/// açılışta ekrana sığdırdığı yoğunluk.
-const int hedefMum = 80;
-
 /// Varlığın işlem gördüğü süre — beklenen mum sayısı için. Gün içi
 /// seans uzunluğu (dk) ve haftanın kaç günü.
 ({int gunDakika, int haftaGunu}) _seans(Asset a) {
@@ -341,18 +337,39 @@ List<MumAraligi> gecerliAraliklar(Asset a, double spanDakika) {
   ];
 }
 
-/// Seçimden çizilecek aralık: seçim geçerliyse o, değilse [hedefMum]'a
-/// (logaritmik) en yakın geçerli aralık. Geçerli aralık yoksa null — çağıran
-/// kapanıştan türetilen eski muma düşer.
+/// TradingView'in dönem düğmelerinin varsayılan aralığı (yasin 2026-10-10
+/// gece: "defaultta da tradingviewdeki time-interval ve default frequency
+/// ile açılsın"): 1G → 1 dk, 5G → 5 dk, 1A → 30 dk, 3A → 1 sa, 6A → 2 sa,
+/// 1Y → Gün, 5Y → Hafta, daha uzun → Ay. 2 sa yok (Yahoo vermiyor): 6A'da
+/// 4 sa — telefonda 1 sa ~1.000 mum olur, okunmaz. Önceki kural "~80 muma
+/// en yakın" idi; TradingView ile aynı açılsın diye bu tabloya döndü.
+MumAraligi tradingViewVarsayilani(double spanDakika) {
+  final gun = spanDakika / 1440;
+  if (gun <= 1.5) return MumAraligi.dk1;
+  if (gun <= 10) return MumAraligi.dk5;
+  if (gun <= 45) return MumAraligi.dk30;
+  if (gun <= 120) return MumAraligi.saat1;
+  if (gun <= 220) return MumAraligi.saat4;
+  if (gun <= 400) return MumAraligi.gun1;
+  if (gun <= 6 * 365) return MumAraligi.hafta1;
+  return MumAraligi.ay1;
+}
+
+/// Seçimden çizilecek aralık: seçim geçerliyse o, değilse
+/// [tradingViewVarsayilani]; o da bu varlıkta/pencerede sunulmuyorsa
+/// (fon yalnız Gün/Hafta, Yahoo geçmiş sınırı, mum tavanı) dakikaca
+/// (logaritmik) en yakın geçerli aralık. Geçerli aralık yoksa null —
+/// çağıran kapanıştan türetilen eski muma düşer.
 MumAraligi? etkinAralik(Asset a, double spanDakika, MumAraligi? secim) {
   final gecerli = gecerliAraliklar(a, spanDakika);
   if (gecerli.isEmpty) return null;
   if (secim != null && gecerli.contains(secim)) return secim;
+  final hedef = tradingViewVarsayilani(spanDakika);
+  if (gecerli.contains(hedef)) return hedef;
   MumAraligi? en;
   var fark = double.infinity;
   for (final ar in gecerli) {
-    final n = beklenenMumSayisi(a, ar, spanDakika);
-    final f = (math.log(n) - math.log(hedefMum)).abs();
+    final f = (math.log(ar.dakika) - math.log(hedef.dakika)).abs();
     if (f < fark) {
       fark = f;
       en = ar;

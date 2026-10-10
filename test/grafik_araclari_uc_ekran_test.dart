@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/models/ozel_gosterge.dart';
 import 'package:portfoy_takip/providers/ozel_gosterge_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
@@ -134,6 +135,69 @@ void main() {
       for (final c in cipler) {
         expect(c.kilitli, c.label.startsWith('ƒx'), reason: c.label);
       }
+    });
+  });
+
+  // yasin 2026-10-10 gece: "grafik çizdirme sıklığı bir dropdown ile
+  // seçtirilebilir. defaultta da tradingviewdeki time-interval ve default
+  // frequency ile açılsın ekranlarda".
+  group('aralık menüsü', () {
+    testWidgets('açılır menü: seçim yalnız seçildiği dönemde geçerli',
+        (t) async {
+      late WidgetRef r;
+      await t.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Consumer(builder: (context, ref, _) {
+              r = ref;
+              const hafta = 7 * 1440.0;
+              final secim = secilenMumAraligi(ref, hafta);
+              return GrafikAracCubugu(
+                katmanlar: true,
+                ma20Acik: false,
+                mumAcik: true,
+                aralik: secim ?? MumAraligi.dk5,
+                gecerliAraliklar: const [
+                  MumAraligi.dk1,
+                  MumAraligi.dk5,
+                  MumAraligi.dk15,
+                  MumAraligi.saat1,
+                ],
+                pencereDakika: hafta,
+              );
+            }),
+          ),
+        ),
+      ));
+      // Segment şeridi yok; tek çip "5 dk ⌄".
+      expect(find.byType(MumAraligiMenusu), findsOneWidget);
+      expect(find.text('5 dk'), findsOneWidget);
+      expect(find.text('15 dk'), findsNothing);
+      await t.tap(find.byType(MumAraligiMenusu));
+      await t.pumpAndSettle();
+      await t.tap(find.text('15 dakikalık').last);
+      await t.pumpAndSettle();
+      expect(find.text('15 dk'), findsOneWidget);
+      // Başka dönemde seçim yok sayılır → varsayılan.
+      expect(secilenMumAraligi(r, 30 * 1440.0), isNull);
+      expect(secilenMumAraligi(r, 7 * 1440.0), MumAraligi.dk15);
+    });
+
+    testWidgets('dokunma alanı 44 pt', (t) async {
+      await t.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: MumAraligiMenusu(
+              aralik: MumAraligi.dk5,
+              gecerli: const [MumAraligi.dk1, MumAraligi.dk5],
+              onSec: (_) {},
+            ),
+          ),
+        ),
+      ));
+      final boy = t.getSize(find.byType(MumAraligiMenusu));
+      expect(boy.height, greaterThanOrEqualTo(44));
+      expect(boy.width, greaterThanOrEqualTo(44));
     });
   });
 }

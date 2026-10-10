@@ -5092,5 +5092,7 @@
   "chartIntervalM5Long": "5-minute",
   "chartIntervalM15Long": "15-minute",
   "cmpKatmanHedefi": "Candles and averages: {ad}. Tap another line to switch.",
-  "pwdOzelUcretsiz": "candles, 1m to 1M intervals, EMA"
+  "pwdOzelUcretsiz": "candles, 1m to 1M intervals, EMA",
+  "chartIntervalM30": "30m",
+  "chartIntervalM30Long": "30-minute"
 }

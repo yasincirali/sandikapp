@@ -8626,4 +8626,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdOzelUcretsiz => 'candles, 1m to 1M intervals, EMA';
+
+  @override
+  String get chartIntervalM30 => '30m';
+
+  @override
+  String get chartIntervalM30Long => '30-minute';
 }

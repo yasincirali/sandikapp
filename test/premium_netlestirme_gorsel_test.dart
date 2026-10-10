@@ -37,6 +37,7 @@ import 'package:portfoy_takip/providers/premium_provider.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/models/varlik_kimligi.dart';
 import 'package:portfoy_takip/screens/comparison_screen.dart';
+import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/screens/varlik_sayfasi.dart';
 import 'package:portfoy_takip/services/mum_verisi.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart' show SummaryPeriod;
@@ -391,15 +392,32 @@ void main() {
     });
   }
 
-  testWidgets('varlık detayı 1H, mum: 1 dk dahil aralıklar', (t) async {
+  testWidgets('varlık detayı 1H, mum: varsayılan 5 dk, menü', (t) async {
     yapayMum();
     await ciz(t, 'pn_varlik_1h_mum',
         AssetDetailScreen(asset: _lot(), showBackButton: true),
         ek: _ucretsiz(),
         boy: 1100,
-        tercih: {
-          'pref_chart_candle': true,
-          'pref_chart_mum_araligi': MumAraligi.dk15.index,
+        tercih: {'pref_chart_candle': true});
+  });
+
+  testWidgets('varlık detayı 1A: aralık menüsü açık (varsayılan 30 dk)',
+      (t) async {
+    yapayMum();
+    await ciz(t, 'pn_aralik_menusu',
+        AssetDetailScreen(asset: _lot(), showBackButton: true),
+        ek: _ucretsiz(),
+        boy: 1100,
+        tercih: {'pref_chart_candle': true},
+        sonra: (t) async {
+          await t.tap(find.text('1 ay').first);
+          for (var i = 0; i < 20; i++) {
+            await t.pump(const Duration(milliseconds: 50));
+          }
+          await t.tap(find.byType(MumAraligiMenusu));
+          for (var i = 0; i < 20; i++) {
+            await t.pump(const Duration(milliseconds: 50));
+          }
         });
   });
 

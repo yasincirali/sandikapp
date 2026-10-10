@@ -98,7 +98,11 @@ enum MumAraligi {
   // Ekranda sıra [sirali]'dan gelir. Binance ikisini de doğrudan verir
   // (`_shared/kripto.ts` › ARALIK), Yahoo `5m`/`15m` son ~60 günü.
   dk5(5, '5m', '5m'),
-  dk15(15, '15m', '15m');
+  dk15(15, '15m', '15m'),
+  // 30 dk: TradingView'in 1 ay düğmesinin varsayılan aralığı (yasin
+  // 2026-10-10 gece: "defaultta tradingviewdeki time-interval ve default
+  // frequency ile açılsın"). Yine SONA; Binance `30m`, Yahoo `30m` ~60 gün.
+  dk30(30, '30m', '30m');
 
   const MumAraligi(this.dakika, this.yahooInterval, this.kriptoAraligi);
 
@@ -116,7 +120,7 @@ enum MumAraligi {
   /// döner ve seçici boşuna bir aralık sunmuş olurdu.
   int? get yahooGecmisGun => switch (this) {
         dk1 => 8,
-        dk5 || dk15 => 60,
+        dk5 || dk15 || dk30 => 60,
         saat1 || saat4 => 730,
         _ => null,
       };
@@ -138,6 +142,7 @@ enum MumAraligi {
         dk1 => '1',
         dk5 => '5',
         dk15 => '15',
+        dk30 => '30',
         saat1 => '60',
         saat4 => '240',
         gun1 => 'D',

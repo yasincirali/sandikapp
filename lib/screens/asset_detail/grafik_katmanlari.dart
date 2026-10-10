@@ -213,14 +213,15 @@ extension _GrafikKatmanlari on _AssetDetailScreenState {
       gunIci ? 1440.0 : son.difference(bas).inMinutes.toDouble();
 
   /// Bu pencerede çizilecek aralık ve seçicinin sunacağı aralıklar.
-  ({MumAraligi? aralik, List<MumAraligi> gecerli}) _mumAraligi(
+  ({MumAraligi? aralik, List<MumAraligi> gecerli, double span}) _mumAraligi(
       bool gunIci, DateTime bas, DateTime son) {
     final span = _mumPenceresi(gunIci, bas, son);
-    final secim = MumAraligi.sirayla(ref.watch(chartMumAraligiProvider));
+    final secim = secilenMumAraligi(ref, span);
     final a = _canli.asset;
     return (
       aralik: etkinAralik(a, span, secim),
       gecerli: gecerliAraliklar(a, span),
+      span: span,
     );
   }
 

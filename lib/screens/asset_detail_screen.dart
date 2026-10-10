@@ -1258,6 +1258,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             aralik: mumAr?.aralik,
                             gecerliAraliklar:
                                 mumAr?.gecerli ?? const <MumAraligi>[],
+                            pencereDakika: mumAr?.span,
                             kapanistan:
                                 !FiyatKaynagi.mumKaynagi(_canli.asset)
                                     .gercekOhlc,
