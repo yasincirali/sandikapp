@@ -11,6 +11,8 @@ import 'supabase_service.dart';
 import '../demo/demo_modu.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
+import '../models/ohlc.dart';
+import 'mum_verisi.dart' show yahooOhlcCoz;
 import 'tefas_service.dart';
 import 'mevduat_hesabi.dart';
 import 'sozlesme_deposu.dart';
@@ -1600,6 +1602,30 @@ class PriceService {
       }
     }
     return points;
+  }
+
+  /// Gerçek mumlar (OHLC) — Yahoo `v8/finance/chart`, [bas, son] penceresi
+  /// (`period1`/`period2`), sembolün KOTASYON para biriminde. TL çevrimi
+  /// ve hiza `MumVerisi`'nde; sembol kararı `FiyatKaynagi.mumKaynagi`'nda.
+  ///
+  /// Ölçüm (2026-10-10, GitHub Actions): altı aralığın altısı da gerçek
+  /// açılış/en yüksek/en düşük taşıyor; `4h` belgelenmemiş ama çalışıyor.
+  /// 1 dk yalnız son ~7 gün, saatlikler ~730 gün geriye gider — dışında
+  /// Yahoo boş döner, boş liste "mum yok" demektir.
+  Future<List<OhlcBar>> fetchOhlc(
+      String symbol, MumAraligi aralik, DateTime bas, DateTime son) async {
+    final uri = Uri.https('query1.finance.yahoo.com',
+        '/v8/finance/chart/$symbol', {
+      'interval': aralik.yahooInterval,
+      'period1': '${bas.millisecondsSinceEpoch ~/ 1000}',
+      'period2': '${son.millisecondsSinceEpoch ~/ 1000}',
+      'includePrePost': 'false',
+    });
+    final res = await _client
+        .get(uri, headers: {'User-Agent': _ua, 'Accept': 'application/json'})
+        .timeout(const Duration(seconds: 15));
+    if (res.statusCode != 200) return const [];
+    return yahooOhlcCoz(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   /// Range'e uygun varsayılan interval.

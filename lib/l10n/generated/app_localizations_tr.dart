@@ -3630,6 +3630,57 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chartCandleChip => 'MUM';
 
   @override
+  String get chartIntervalM1 => '1 dk';
+
+  @override
+  String get chartIntervalH1 => '1 sa';
+
+  @override
+  String get chartIntervalH4 => '4 sa';
+
+  @override
+  String get chartIntervalD1 => 'Gün';
+
+  @override
+  String get chartIntervalW1 => 'Hafta';
+
+  @override
+  String get chartIntervalMo1 => 'Ay';
+
+  @override
+  String get chartIntervalM1Long => '1 dakikalık';
+
+  @override
+  String get chartIntervalH1Long => '1 saatlik';
+
+  @override
+  String get chartIntervalH4Long => '4 saatlik';
+
+  @override
+  String get chartIntervalD1Long => 'günlük';
+
+  @override
+  String get chartIntervalW1Long => 'haftalık';
+
+  @override
+  String get chartIntervalMo1Long => 'aylık';
+
+  @override
+  String chartIntervalSemantics(String aralik) {
+    return 'Mum aralığı: $aralik mumlar';
+  }
+
+  @override
+  String get chartCandleFromCloses =>
+      'Bu varlık günde tek fiyat yayımlar; mumlar günlük fiyatlardan kurulur.';
+
+  @override
+  String chartOhlcLine(
+      String acilis, String yuksek, String dusuk, String kapanis) {
+    return 'A $acilis · Y $yuksek · D $dusuk · K $kapanis';
+  }
+
+  @override
   String get fullscreenChart => 'Grafiği tam ekran aç';
 
   @override

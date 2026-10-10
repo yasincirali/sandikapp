@@ -18,13 +18,19 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
   LOG ekranı canlıda birebir kalsın. Maliyet: ücretsiz LOG kullanıcısı düz
   grafik görmeye devam ediyor. Ne zaman: paywall açılınca koşulu kaldır
   (hata düzeltmesi, bayrak gerekmez).
-- **Gerçek OHLC yok.** Mum, kapanışlardan kova bazında türetiliyor
-  (`mum_turetici.dart`); fitil gün içi uçları değil, örneklenmiş kapanışların
-  uçlarını gösterir. Yahoo `indicators.quote` içinde open/high/low da geliyor;
-  `HistoryService` yalnız close saklıyor. Ne zaman: kullanıcı "fitil yanlış"
-  derse ya da gerçek OHLC başka bir ihtiyaçla gelirse.
-- **1A/3A'da az mum.** Günlük seriden haftalık mum: 1A'da 4–5, 3A'da ~13 mum.
-  Daha ince katman (saatlik) motorda 1A için yok.
+- ~~**Gerçek OHLC yok.**~~ KAPANDI (2026-10-10, mum aralığı seçicisi):
+  `services/mum_verisi.dart` Yahoo ve `kripto-seri` (`ohlc: true`) gerçek
+  OHLC'sini çeker; türetilmiş mum yalnız yedek.
+- ~~**1A/3A'da az mum.**~~ KAPANDI (aynı gün): aralık seçicisi 1A'da 1 sa /
+  4 sa / gün sunar.
+- **1 dk'da yoğun mum (GÜNLÜK kripto 1.440 mum).** Gövde 1 px'e iner,
+  mumlar birbirine değer; ayrıntı yakınlaştırınca görünür. TradingView ilk
+  açılışta son ~150 mumu gösterir. Maliyet: ilk bakışta "kalın şerit".
+  Ne zaman: kullanıcı yoğunluktan şikâyet ederse ZoomableChart'a başlangıç
+  görünümü (son N mum) ekle.
+- **Hacim çizilmiyor.** `OhlcBar.hacim` Yahoo hisse/emtia ve Binance'te
+  dolu, endeks ve döviz paritesinde boş. Ne zaman: hacim paneli istenirse;
+  özel gösterge katmanı (PR #160) aynı alanı okur.
 
 ## 🟡 AÇIK — Olgun Premium setinde ertelenenler (2026-10-10, dal `feat/premium-olgun`)
 

@@ -21,6 +21,12 @@
 // Yanıt `{ noktalar: [[ms, fiyat_try], …], bayat? }`. Sağlayıcı hatası,
 // ham yanıt DÖNMEZ.
 //
+// ── Gerçek mum (2026-10-10) ─────────────────────────────────────────────────
+// Gövdede `ohlc: true` varsa yanıt `{ mumlar: [[ms, o, h, l, c, hacim], …] }`
+// (TL). Mum aralığı seçicisi (1 dk … 1 ay) içindir. Eski istemci alanı
+// göndermez; onun yanıtı, önbellek anahtarı ve satırı birebir aynı kalır.
+// OHLC satırı aynı tabloda `|ohlc` ekli anahtarla durur.
+//
 // ── Yanıt süresi sınırı (2026-10-03) ────────────────────────────────────────
 // "Kripto varlık fiyatı her zaman çekilemiyor … düz çizgiye dönüyor"
 // (yasin). İstemci grafik çekiminden 8 sn'de vazgeçer
@@ -37,6 +43,8 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import {
   mumlariCek,
+  ohlcCek,
+  tlMumlari,
   seriAnahtari,
   seriBaslangici,
   seriIstegiCoz,
@@ -52,7 +60,7 @@ const YANIT_SURESI_MS = 5_000;
 /// değil): iki taban × 4 sn, yanıt sınırını tek başına tüketmesin.
 const SERI_ZAMAN_ASIMI_MS = 4_000;
 
-type Seri = [number, number][];
+type Seri = number[][];
 
 /// Yanıt döndükten sonra işi sürdürür (Supabase Edge Runtime). Yerel
 /// Deno'da yoksa söz yine koşar, yalnızca beklenmez.
@@ -108,6 +116,9 @@ Deno.serve(async (request) => {
       auth: { persistSession: false },
     });
     const anahtar = seriAnahtari(istek);
+    // Yanıt alanı isteğin biçimine göre: eski istemci `noktalar` bekler.
+    const yanit = (seri: unknown, ek: Record<string, unknown> = {}, status = 200) =>
+      jsonResponse({ [istek.ohlc ? 'mumlar' : 'noktalar']: seri, ...ek }, status);
     const simdi = Date.now();
 
     const { data: kayit } = await admin
@@ -124,7 +135,7 @@ Deno.serve(async (request) => {
       onbellek &&
       simdi - new Date(onbellek.guncellendi as string).getTime() < seriTtlMs(istek.aralik)
     ) {
-      return jsonResponse({ noktalar: onbellek.noktalar });
+      return yanit(onbellek.noktalar);
     }
 
     const { data: coin } = await admin
@@ -136,23 +147,22 @@ Deno.serve(async (request) => {
 
     const baslangic = seriBaslangici(istek.donem, simdi);
     const tazele = (async (): Promise<Seri | null> => {
+      const cek = (sembol: string) =>
+        istek.ohlc
+          ? ohlcCek(sembol, istek.aralik, baslangic, simdi, fetch, SERI_ZAMAN_ASIMI_MS)
+          : mumlariCek(sembol, istek.aralik, baslangic, simdi, fetch, SERI_ZAMAN_ASIMI_MS);
       const [ham, kur] = await Promise.all([
-        mumlariCek(
-          String(coin.binance_sembol),
-          istek.aralik,
-          baslangic,
-          simdi,
-          fetch,
-          SERI_ZAMAN_ASIMI_MS,
-        ),
-        coin.parite === 'USDT'
-          ? mumlariCek('USDTTRY', istek.aralik, baslangic, simdi, fetch, SERI_ZAMAN_ASIMI_MS)
-          : Promise.resolve(null),
+        cek(String(coin.binance_sembol)),
+        coin.parite === 'USDT' ? cek('USDTTRY') : Promise.resolve(null),
       ]);
+      const tl = (h: number[][], k: number[][]): Seri =>
+        istek.ohlc
+          ? tlMumlari(h as Parameters<typeof tlMumlari>[0], k as Parameters<typeof tlMumlari>[1])
+          : tlSerisi(h as [number, number][], k as [number, number][]);
       const noktalar = ham === null
         ? null
         : coin.parite === 'USDT'
-        ? (kur === null ? null : tlSerisi(ham, kur))
+        ? (kur === null ? null : tl(ham, kur))
         : ham;
       // Boş seri (kur mumlarıyla hiç eşleşmeyen an, sağlayıcının boş
       // sayfası) ölçüm değil; iyi önbelleğin üstüne yazılmaz.
@@ -169,8 +179,8 @@ Deno.serve(async (request) => {
 
     if (!onbellek) {
       const noktalar = await tazele;
-      if (noktalar === null) return jsonResponse({ noktalar: [] }, 503);
-      return jsonResponse({ noktalar });
+      if (noktalar === null) return yanit([], {}, 503);
+      return yanit(noktalar);
     }
 
     let zamanlayici: ReturnType<typeof setTimeout> | undefined;
@@ -181,11 +191,11 @@ Deno.serve(async (request) => {
     clearTimeout(zamanlayici);
     if (sonuc === 'gec') {
       arkaPlanda(tazele);
-      return jsonResponse({ noktalar: onbellek.noktalar, bayat: true });
+      return yanit(onbellek.noktalar, { bayat: true });
     }
     // Sağlayıcı yanıtsız: bayat önbellek (ölçülmüş veri).
-    if (sonuc === null) return jsonResponse({ noktalar: onbellek.noktalar, bayat: true });
-    return jsonResponse({ noktalar: sonuc });
+    if (sonuc === null) return yanit(onbellek.noktalar, { bayat: true });
+    return yanit(sonuc);
   } catch (e) {
     console.error('kripto-seri hatasi', e);
     return jsonResponse({ error: 'sunucu' }, 500);

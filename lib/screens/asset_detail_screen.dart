@@ -96,7 +96,10 @@ import 'paywall_screen.dart';
 import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../utils/hareketli_ortalama.dart';
-import '../utils/mum_turetici.dart' show mumlariGrafikUzayinda;
+import '../utils/mum_turetici.dart' show Mum, mumlariGrafikUzayinda;
+import '../models/ohlc.dart';
+import '../widgets/sandik_segment.dart';
+import '../services/mum_verisi.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -667,6 +670,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   ({int gun, Map<int, double> seri})? _mumSerisi;
   int? _mumSerisiGun;
 
+  /// Gerçek mumlar (OHLC, aralık seçicisi) ve hangi istek için geldikleri
+  /// — aynı dosya. [_ohlcIstenen] aynı isteği ikinci kez başlatmamak için.
+  ({MumAraligi aralik, int basMs, List<OhlcBar> barlar})? _ohlc;
+  String? _ohlcIstenen;
+
   @override
   Widget build(BuildContext context) {
     // Baz para birimi BİR KEZ burada okunur: alt widget'lara parametre
@@ -1058,6 +1066,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     final seciliGun = _periods[_selectedPeriodIdx].days;
                     if (ema50On || ema200On) _emaOnSeriniIste(seciliGun);
                     if (mumOn) _mumSerisiniIste(seciliGun);
+                    // Gerçek mumlar (aralık seçicisi, 2026-10-10). Gelene
+                    // kadar ya da bu dönemde geçerli aralık yoksa aşağıdaki
+                    // türetilmiş mum çizilir.
+                    final mumAr = mumOn
+                        ? _mumAraligi(isIntraday, startDate, endDate)
+                        : null;
+                    final ohlcAr = mumAr?.aralik;
+                    final ohlcBarlar = ohlcAr == null
+                        ? null
+                        : _ohlcBarlari(ohlcAr, isIntraday, startDate,
+                            endDate, currentUnitTRY);
+                    final ohlcMumlar = (ohlcAr == null || ohlcBarlar == null)
+                        ? const <Mum>[]
+                        : _ohlcMumlari(ohlcBarlar, ohlcAr, startDate);
                     final mumHam = mumOn
                         ? _mumNoktalari(seciliGun, startDate, endDate,
                                 currentUnitTRY) ??
@@ -1255,6 +1277,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     k.ema200,
                                   ],
                                 ),
+                                // Mum açıkken aralık seçicisi (1 dk … ay).
+                                if (mumAr != null &&
+                                    mumAr.aralik != null &&
+                                    mumAr.gecerli.length >= 2)
+                                  _aralikSecici(
+                                    aralik: mumAr.aralik!,
+                                    gecerli: mumAr.gecerli,
+                                  ),
                               ],
                             );
                           }),
@@ -1396,6 +1426,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   ...?compareBar?.spots,
                                   ...islemSpots,
                                   for (final e in emaCizgileri) ...e.spots,
+                                  ..._ohlcUclari(ohlcMumlar, toY),
                                 ],
                               );
                               final viewMinY = yBounds.minY;
@@ -1606,7 +1637,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             for (final e in emaCizgileri) _emaCubugu(e),
                             // Mum: aktif (açık piyasa) çizginin yerine;
                             // kapalı piyasa kesikli çizgisi aynen kalır.
-                            if (mumOn)
+                            if (mumOn && ohlcMumlar.isNotEmpty)
+                              ..._ohlcCubuklari(
+                                mumlar: ohlcMumlar,
+                                toY: toY,
+                                viewMinX: viewMinX,
+                                viewMaxX: viewMaxX,
+                                genislik: (MediaQuery.of(context).size.width -
+                                        60 -
+                                        40)
+                                    .clamp(120.0, 2000.0),
+                              )
+                            else if (mumOn)
                               ..._mumCubuklari(
                                 hamSeri: mumHam,
                                 startDate: startDate,
@@ -1753,6 +1795,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         );
                             },
                             crosshairSnapX: (x) {
+                              // Gerçek mumda imleç mumun ORTASINA oturur
+                              // (TradingView): başlık o mumun kapanışını,
+                              // satır dört fiyatını yazar.
+                              if (_imlectekiMum(ohlcMumlar, x) case final m?) {
+                                return m.merkezX;
+                              }
                               final spots = activeSeg.spots;
                               if (spots.isEmpty) return x;
                               final clamped =
@@ -1766,6 +1814,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // grafik etiketi iki hanede kalır.
                             imlecEtiketiBuilder: imlecAcik
                                 ? (x) {
+                                    if (_imlectekiMum(ohlcMumlar, x)
+                                        case final m?) {
+                                      return (
+                                        _birimBicimi(currentUnitTRY)
+                                            .format(m.kapanis),
+                                        _mumZamani(m, startDate, isIntraday),
+                                      );
+                                    }
                                     final spots = activeSeg.spots;
                                     if (spots.isEmpty) return null;
                                     final snapped =
@@ -1788,6 +1844,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 ? donemUclariX(activeSeg.spots)
                                 : const {},
                             crosshairLabelBuilder: (x) {
+                              if (_imlectekiMum(ohlcMumlar, x) case final m?) {
+                                return (
+                                  tryFormatter(digits: 2).format(m.kapanis),
+                                  _mumZamani(m, startDate, isIntraday),
+                                );
+                              }
                               // x zaten snap edildi — spot'u bul.
                               final spots = activeSeg.spots;
                               if (spots.isEmpty) return null;
@@ -1820,17 +1882,29 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // andaki değeri alış fiyatı değildir (bkz.
                             // `islemler`). Eşleşme "en yakın nokta" ile:
                             // işaretin yanına gelen nokta onu gösterir.
-                            crosshairDetailsBuilder: islemler.isEmpty
+                            // Gerçek mumda imlecin altındaki mumun dört fiyatı
+                            // da yazılır (TradingView'in A/Y/D/K satırı).
+                            crosshairDetailsBuilder: islemler.isEmpty &&
+                                    ohlcMumlar.isEmpty
                                 ? null
                                 : (x) {
+                                    final mum =
+                                        _imlectekiMum(ohlcMumlar, x);
                                     final spots = activeSeg.spots;
-                                    if (spots.isEmpty) return const [];
+                                    if (spots.isEmpty) {
+                                      return [
+                                        if (mum != null)
+                                          _ohlcSatiri(mum, currentUnitTRY),
+                                      ];
+                                    }
                                     final i = nearestSpotIndex(spots, x);
                                     // İşlemin birim fiyatı da ekrandaki
                                     // birim fiyatla aynı hassasiyette.
                                     final fiyatFmt =
                                         _birimBicimi(currentUnitTRY);
                                     return [
+                                      if (mum != null)
+                                        _ohlcSatiri(mum, currentUnitTRY),
                                       for (final t in islemler)
                                         if (nearestSpotIndex(spots, t.x) == i)
                                           (

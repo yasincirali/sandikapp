@@ -267,6 +267,10 @@ export const ARALIK: Record<string, { binance: string; ms: number }> = {
   '1h': { binance: '1h', ms: 60 * 60_000 },
   '1d': { binance: '1d', ms: 24 * 60 * 60_000 },
   '1wk': { binance: '1w', ms: 7 * 24 * 60 * 60_000 },
+  // Mum aralığı seçicisi (2026-10-10): TradingView'in 4 sa ve aylık mumu.
+  // Ay için 30 gün yalnız TTL ve sayfalama adımı; Binance ayı takvimden açar.
+  '4h': { binance: '4h', ms: 4 * 60 * 60_000 },
+  '1mo': { binance: '1M', ms: 30 * 24 * 60 * 60_000 },
 };
 
 const GUN = 24 * 60 * 60_000;
@@ -296,6 +300,10 @@ export interface SeriIstegi {
   kod: string;
   aralik: string;
   donem: string;
+  /// Gerçek mum (açılış/en yüksek/en düşük/kapanış + hacim) istendi mi
+  /// (2026-10-10). Yoksa eski biçim: `[ms, kapanış]`. Eski istemci bu alanı
+  /// hiç göndermez; yanıtı birebir aynı kalır.
+  ohlc?: true;
 }
 
 /// İstek doğrulaması — biçim dışı istek sağlayıcıya hiç gitmez.
@@ -308,13 +316,14 @@ export function seriIstegiCoz(body: unknown): SeriIstegi | null {
   if (!kodGecerliMi(kod)) return null;
   if (!(aralik in ARALIK)) return null;
   if (!(donem in DONEM_MS)) return null;
-  return { kod, aralik, donem };
+  return b.ohlc === true ? { kod, aralik, donem, ohlc: true } : { kod, aralik, donem };
 }
 
 /// Önbellek anahtarı: kullanıcıya DEĞİL isteğe bağlı. BTC'nin 1G grafiğini
 /// açan her kullanıcı aynı satırı paylaşır.
 export function seriAnahtari(i: SeriIstegi): string {
-  return `${i.kod}|${i.aralik}|${i.donem}`;
+  // OHLC satırı ayrı anahtarda: aynı tabloda iki biçim karışmasın.
+  return `${i.kod}|${i.aralik}|${i.donem}${i.ohlc ? '|ohlc' : ''}`;
 }
 
 /// Önbellek ömrü = bir bar (en az 60 sn, en çok 1 saat). Bardan sık
@@ -339,6 +348,38 @@ export function mumlariCoz(rows: unknown): [number, number][] {
     const t = Number(r[0]);
     const c = pozitif(r[4]);
     if (Number.isFinite(t) && c !== null) out.push([t, c]);
+  }
+  return out;
+}
+
+/// Gerçek mum: `[açılış ms, açılış, en yüksek, en düşük, kapanış, hacim]`.
+export type OhlcSatiri = [number, number, number, number, number, number];
+
+/// Binance kline satırı → [OhlcSatiri]. Dört fiyatından biri bozuk satır
+/// atlanır; hacim yoksa 0.
+export function ohlcCoz(rows: unknown): OhlcSatiri[] {
+  if (!Array.isArray(rows)) return [];
+  const out: OhlcSatiri[] = [];
+  for (const r of rows) {
+    if (!Array.isArray(r)) continue;
+    const t = Number(r[0]);
+    const o = pozitif(r[1]), h = pozitif(r[2]), l = pozitif(r[3]), c = pozitif(r[4]);
+    if (!Number.isFinite(t) || o === null || h === null || l === null || c === null) continue;
+    const v = Number(r[5]);
+    out.push([t, o, h, l, c, Number.isFinite(v) && v >= 0 ? v : 0]);
+  }
+  return out;
+}
+
+/// USDT mumlarını TL'ye çevirir: dört fiyat, AYNI açılış anlı USDTTRY
+/// mumunun KAPANIŞIYLA çarpılır ([tlSerisi] ile aynı kur kuralı). Kuru
+/// olmayan mum düşer (madde 3). Hacim adettir, çarpılmaz.
+export function tlMumlari(coin: OhlcSatiri[], kur: OhlcSatiri[]): OhlcSatiri[] {
+  const k = new Map(kur.map((m) => [m[0], m[4]] as [number, number]));
+  const out: OhlcSatiri[] = [];
+  for (const [t, o, h, l, c, v] of coin) {
+    const r = k.get(t);
+    if (r !== undefined) out.push([t, o * r, h * r, l * r, c * r, v]);
   }
   return out;
 }
@@ -468,7 +509,7 @@ export async function gunSatirlariniCek(
 /// gittiği için bu, son haftaları EKSİK bir seriydi ve bir saat boyunca
 /// önbellekte herkese dağıtılıyordu — grafik geçmişte bitip bugüne düz
 /// çizgiyle bağlanıyordu. Eksik seri yerine bayat-ama-tam seri doğrudur.
-export async function mumlariCek(
+export function mumlariCek(
   sembol: string,
   aralik: string,
   baslangicMs: number,
@@ -476,9 +517,34 @@ export async function mumlariCek(
   f: typeof fetch = fetch,
   zamanAsimiMs = ZAMAN_ASIMI,
 ): Promise<[number, number][] | null> {
+  return sayfalaCek(sembol, aralik, baslangicMs, simdiMs, mumlariCoz, f, zamanAsimiMs);
+}
+
+/// [mumlariCek]'in tam mum hâli (2026-10-10): aynı sayfalama, aynı "bir
+/// sayfa düşerse null" kuralı; dört fiyat + hacim.
+export function ohlcCek(
+  sembol: string,
+  aralik: string,
+  baslangicMs: number,
+  simdiMs: number,
+  f: typeof fetch = fetch,
+  zamanAsimiMs = ZAMAN_ASIMI,
+): Promise<OhlcSatiri[] | null> {
+  return sayfalaCek(sembol, aralik, baslangicMs, simdiMs, ohlcCoz, f, zamanAsimiMs);
+}
+
+async function sayfalaCek<T extends [number, ...number[]]>(
+  sembol: string,
+  aralik: string,
+  baslangicMs: number,
+  simdiMs: number,
+  coz: (rows: unknown) => T[],
+  f: typeof fetch,
+  zamanAsimiMs: number,
+): Promise<T[] | null> {
   const a = ARALIK[aralik];
   if (!a) return null;
-  const out: [number, number][] = [];
+  const out: T[] = [];
   let imlec = baslangicMs;
   for (let sayfa = 0; sayfa < AZAMI_SAYFA && imlec <= simdiMs; sayfa++) {
     const rows = await binanceGet('/api/v3/klines', {
@@ -491,10 +557,12 @@ export async function mumlariCek(
       timeZone: '3',
     }, f, zamanAsimiMs);
     if (rows === null) return null;
-    const mumlar = mumlariCoz(rows);
+    const mumlar = coz(rows);
     out.push(...mumlar);
     if (mumlar.length < SAYFA_MUM) break;
-    imlec = mumlar[mumlar.length - 1][0] + a.ms;
+    // Aylık mumun uzunluğu sabit değil: sonraki sayfa son mumun hemen
+    // ardından (Binance startTime'dan sonraki ilk mumu verir).
+    imlec = mumlar[mumlar.length - 1][0] + (aralik === '1mo' ? 1 : a.ms);
   }
   return out;
 }

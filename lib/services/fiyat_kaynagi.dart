@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
+import '../models/ohlc.dart';
 import 'price_service.dart';
 import 'crash_reporter.dart';
 import '../utils/tr_format.dart';
@@ -169,6 +170,85 @@ class FiyatKaynagi {
     final gerekli = <String>[t];
     if (usdKote(a)) gerekli.add(usdTry);
     return gerekli;
+  }
+
+  /// Sembol TL kote mi? `HistoryService` geçmiş yollarının kuralı — mum
+  /// verisi de aynı kuralı sorsun diye TEK EVDE (madde 1).
+  ///
+  /// BIST sembolleri `.IS` ile biter, TEFAS fonları `TEFAS:` önekli, TRY
+  /// pariteleri `TRY=X` ile biter, kripto `KRIPTO:` önekli (sunucu TL
+  /// verir), mevduat birim değeri sözleşmeden TL. Kalan her şey (ABD
+  /// hisseleri, emtia) USD kabul edilir — Yahoo'nun varsayılanı budur.
+  static bool tlKote(String sym) =>
+      sym.endsWith('.IS') ||
+      sym.startsWith('TEFAS:') ||
+      kriptoMu(sym) ||
+      sym.startsWith(mevduatOneki) ||
+      sym.endsWith('TRY=X') ||
+      sym.startsWith('ALTIN_');
+
+  /// [a]'nın GERÇEK mumlarının (OHLC) nereden çekileceği — mum aralığı
+  /// seçicisi (yasin, 2026-10-10: "TradingView'deki gibi 1 dk, 1 saat,
+  /// 4 saat, günlük, haftalık, aylık").
+  ///
+  /// Kaynak çizginin kaynağıyla AYNI aile (madde 1): BIST/ABD hissesi, döviz
+  /// ve emtia Yahoo; kripto sunucu (`kripto-seri`, Binance); altın, gram
+  /// serisinin merdiveniyle (spot `XAUTRY=X`, yoksa vadeli `GC=F × USDTRY`).
+  /// Ölçüldü (2026-10-10, GitHub Actions): `XAUTRY=X` Yahoo'da 404 dönüyor,
+  /// pratikte altın mumu vadeli yoldan gelir — çizgiyle aynı.
+  ///
+  /// Fon, BES ve eurobond hiçbir sağlayıcıdan OHLC vermez: günde TEK fiyat
+  /// (TEFAS NAV, Frankfurt kapanışı). Onlarda mum kapanışlardan kurulur
+  /// ve yalnız gün/hafta/ay aralıkları sunulur — gün içi mum uydurulmaz
+  /// (madde 3). Elle fiyatlanan, mevduat ve "diğer" varlıkların mumu yok.
+  static MumKaynagi mumKaynagi(Asset a) {
+    if (a.isManualPrice) return MumKaynagi.yok;
+    switch (a.type.fiyatlamaTuru) {
+      case AssetType.fon:
+        // Mevduat da fon yolundan fiyatlanır ama çizgisi faiz birikimidir.
+        if (a.type == AssetType.mevduat) return MumKaynagi.yok;
+        return MumKaynagi.kapanis;
+      case AssetType.eurobond:
+        return eurobondSerili(a) ? MumKaynagi.kapanis : MumKaynagi.yok;
+      case AssetType.mevduat:
+      case AssetType.bes:
+        // `fiyatlamaTuru` ikisini de fon'a eşler; buraya düşmez.
+        return MumKaynagi.yok;
+      case AssetType.diger:
+        return MumKaynagi.yok;
+      case AssetType.kripto:
+        final kod = kriptoKodu(a.ticker);
+        return kod == null
+            ? MumKaynagi.yok
+            : MumKaynagi(MumKaynakTuru.kripto, sembol: kod);
+      case AssetType.altin:
+        return MumKaynagi(
+          MumKaynakTuru.yahoo,
+          sembol: xauTry,
+          yedekSembol: xauUsd,
+          altinAgirligi: PriceService.goldWeightFactor(a.ticker.trim()),
+          olcekAlt: altinKalibreAltSinir,
+          olcekUst: altinKalibreUstSinir,
+        );
+      case AssetType.hisse:
+      case AssetType.emtia:
+      case AssetType.doviz:
+        final t = kanonikTicker(
+                type: a.type, ticker: a.ticker, isManualPrice: a.isManualPrice)
+            .trim();
+        if (t.isEmpty) return MumKaynagi.yok;
+        // TL dövizi ekranda yurt içi kotasyonla (truncgil) fiyatlanır, seri
+        // Yahoo'dan gelir: kur bandında ölçek hizası (madde 2). Hisse ve
+        // emtianın kotasyonu da Yahoo — hiza gerekmez.
+        final kur = a.type == AssetType.doviz && t.endsWith('TRY=X');
+        return MumKaynagi(
+          MumKaynakTuru.yahoo,
+          sembol: t,
+          usdCevir: !tlKote(t),
+          olcekAlt: kur ? kurKalibreAltSinir : null,
+          olcekUst: kur ? kurKalibreUstSinir : null,
+        );
+    }
   }
 
   /// Varlığın kotasyonu USD mi — TL'ye çevrilmesi gerekir mi?
@@ -918,4 +998,72 @@ Map<int, double> kurSerisiniHizala(Map<int, double> seri, double? canliKur) {
   );
   if (k == 1.0) return seri;
   return {for (final e in seri.entries) e.key: e.value * k};
+}
+
+
+/// [FiyatKaynagi.mumKaynagi]'nın türü.
+enum MumKaynakTuru {
+  /// Yahoo `v8/finance/chart` — gerçek OHLC, altı aralık.
+  yahoo,
+
+  /// Sunucu `kripto-seri` (`ohlc: true`) — Binance, gerçek OHLC, altı aralık.
+  kripto,
+
+  /// Yalnız günlük kapanış var (TEFAS, eurobond): mum kapanışlardan.
+  kapanis,
+
+  /// Mum yok.
+  yok,
+}
+
+/// Bir varlığın mum kaynağı. Değer nesnesi; çekimi `MumVerisi` yapar.
+class MumKaynagi {
+  const MumKaynagi(
+    this.tur, {
+    this.sembol = '',
+    this.yedekSembol,
+    this.usdCevir = false,
+    this.altinAgirligi,
+    this.olcekAlt,
+    this.olcekUst,
+  });
+
+  static const yok = MumKaynagi(MumKaynakTuru.yok);
+  static const kapanis = MumKaynagi(MumKaynakTuru.kapanis);
+
+  final MumKaynakTuru tur;
+
+  /// Yahoo sembolü ya da kripto kodu (`BTC`).
+  final String sembol;
+
+  /// [sembol] boş dönerse denenecek ikinci sembol (altında vadeli `GC=F`,
+  /// USD kote — kurla çevrilir). Karışım yok: biri ya da öteki.
+  final String? yedekSembol;
+
+  /// Barlar `USDTRY=X` ile TL'ye çevrilsin mi?
+  final bool usdCevir;
+
+  /// Altın: ons → gram22k → ürün (çeyrek, ata…) çarpanı. Null: altın değil.
+  final double? altinAgirligi;
+
+  /// Ölçek hizası bandı (madde 2): son kapanış canlı kotasyona bu bant
+  /// içinde oranlanır; bant dışı oran yok sayılır (`olcekCarpani`). Null:
+  /// kaynak ekranla aynı, hiza yok.
+  final double? olcekAlt;
+  final double? olcekUst;
+
+  /// Bu kaynağın verebildiği aralıklar. Kapanış kaynağı gün içi vermez.
+  List<MumAraligi> get araliklar => switch (tur) {
+        MumKaynakTuru.yahoo || MumKaynakTuru.kripto => MumAraligi.values,
+        MumKaynakTuru.kapanis => const [
+            MumAraligi.gun1,
+            MumAraligi.hafta1,
+            MumAraligi.ay1,
+          ],
+        MumKaynakTuru.yok => const [],
+      };
+
+  /// Mumlar sağlayıcının gerçek OHLC'si mi (yoksa kapanışlardan mı)?
+  bool get gercekOhlc =>
+      tur == MumKaynakTuru.yahoo || tur == MumKaynakTuru.kripto;
 }

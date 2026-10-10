@@ -91,6 +91,15 @@ void main() {
       final oran = t.difference(bas).inMinutes / (gun * 24 * 60);
       out.add((t.millisecondsSinceEpoch, ilk + (son - ilk) * oran));
     }
+    // Yahoo `range=1d` seans dışında boş dönmez, SON seansı verir. Sahte
+    // sağlayıcı bunu taklit etmezse test hafta sonu akşamı (son 24 saat
+    // Frankfurt seansına değmeyince) kırılıyordu — saate bağlı sahte kırmızı.
+    if (out.isEmpty && a < const Duration(days: 1) && gun <= 1) {
+      for (var geri = 1; geri <= 4 && out.isEmpty; geri++) {
+        out.addAll(uret(sym, range, interval,
+            simdi.subtract(Duration(days: geri))));
+      }
+    }
     return out;
   }
 

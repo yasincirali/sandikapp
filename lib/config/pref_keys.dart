@@ -40,6 +40,9 @@ class PrefKeys {
   static const chartEma50 = 'pref_chart_ema50';
   static const chartEma200 = 'pref_chart_ema200';
   static const chartCandle = 'pref_chart_candle';
+  // Mum aralığı (1 dk … 1 ay; `MumAraligi` sırası, -1 = otomatik).
+  // 2026-10-10, Premium mumla birlikte.
+  static const chartMumAraligi = 'pref_chart_mum_araligi';
   static const leaderboardOptIn = 'pref_leaderboard_opt_in';
   static const biometricLock = 'pref_biometric_lock';
 
