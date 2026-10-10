@@ -12,6 +12,24 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-10 Borsadaki tüm hisseler, liste her gün sunucudan (migration 0139)
+
+Senin isteğin: "eksik varlık olmasını istemiyorum, borsada işlem gören tüm
+hisseler olmalı". #155 gömülü listeyi borsanın tamamına (628) çıkardı; bu
+değişiklikle liste sunucuda tutulur ve `bist-hisse-katalog` her sabah TR
+07:40'ta borsadan tazeler (yeni halka arz ertesi sabah seçilebilir,
+uygulama güncellemesi beklemez). Uygulama listeyi açılışta okur, telefonda
+saklar; sunucuya ulaşamazsa gömülü listeye düşer. Bayrak yok: eski
+sürümler tabloyu hiç okumaz.
+
+- [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration
+      **0139** + fonksiyon `bist-hisse-katalog`. Yeni secret YOK
+      (`INFLATION_FETCH_CRON_SECRET` paylaşılır). Frankfurt'ta cron kapalı
+      kurulur (0119 kuralı).
+- [ ] İlk tur (Tokyo): `select public.trigger_bist_hisse_katalog();` →
+      kontrol: `select count(*) filter (where aktif), count(*) filter (where xu100), max(guncellendi) from public.bist_hisse;`
+      (≈630 / 100 / bugün).
+
 ## ⏳ 2026-10-10 Çoklu hesap ve hesaplar arası geçiş (migration 0137, bayrak `coklu_hesap`, Premium)
 
 Senin isteğin: "hesap ekleme ve aralarında session switch, Instagram'daki
