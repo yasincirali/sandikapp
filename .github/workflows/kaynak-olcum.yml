@@ -3,7 +3,7 @@
 # Neden: bulut geliştirme kabı finans hostlarını reddediyor; karşılaştırma
 # gerçek bir sunucudan yapılmalı. Salt okunur, anahtarsız, secret kullanmaz
 # (public repo: log herkese açık). Sonuç tablosu iş özetinde.
-name: Kaynak ölçümü (ABD / eurobond)
+name: Kaynak ölçümü (ABD / eurobond / mum)
 
 # Yalnız elle: kaynak biçimi değiştiğinde ayrıştırıcıyı canlı yanıtla dener.
 # Ölçüm dalında push'ta da koşuyordu; main'de her push'ta dış hostlara
@@ -20,6 +20,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      # Mum aralıkları (1 dk … 1 ay) için gerçek OHLC veren kaynaklar
+      # (2026-10-10, `tool/ohlc_olcum.py`).
+      - name: Mum (OHLC) kaynakları
+        continue-on-error: true
+        run: python3 tool/ohlc_olcum.py
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
