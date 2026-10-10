@@ -1,4 +1,4 @@
--- 0137 — Yasal metin: Gizlilik Politikası + KVKK Aydınlatma 1.9 (2026-10-10)
+-- 0138 — Yasal metin: Gizlilik Politikası + KVKK Aydınlatma 1.9 (2026-10-10)
 --
 -- ## Neden
 -- Hesap silme (`delete-account`) artık RevenueCat'teki abone kaydının
@@ -602,21 +602,21 @@ begin
   if not exists (select 1 from pg_class
                   where oid = 'public.yasal_metinler'::regclass
                     and relrowsecurity and relforcerowsecurity) then
-    raise exception '0137: yasal_metinler RLS (enable + force) kapali';
+    raise exception '0138: yasal_metinler RLS (enable + force) kapali';
   end if;
   if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
-    raise exception '0137: yasal_metinler istemciden yazilabilir';
+    raise exception '0138: yasal_metinler istemciden yazilabilir';
   end if;
   if (select count(*) from public.yasal_metinler
        where tur in ('gizlilik_politikasi', 'kvkk_aydinlatma')
          and surum = '1.9' and dil = 'tr') <> 2 then
-    raise exception '0137: gizlilik/kvkk 1.9 metni eksik';
+    raise exception '0138: gizlilik/kvkk 1.9 metni eksik';
   end if;
   if exists (select 1 from public.yasal_metinler
               where tur in ('gizlilik_politikasi', 'kvkk_aydinlatma')
                 and surum = '1.9'
                 and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
-    raise exception '0137: govde_hash tutmuyor';
+    raise exception '0138: govde_hash tutmuyor';
   end if;
-  raise notice '0137 tamam: Gizlilik + KVKK 1.9 (onay surumu 1.8).';
+  raise notice '0138 tamam: Gizlilik + KVKK 1.9 (onay surumu 1.8).';
 end $$;

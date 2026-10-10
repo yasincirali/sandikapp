@@ -494,7 +494,7 @@ artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
       0127 birlikte, sırayla gider.
 - [x] Hesap silmede RevenueCat kaydı (2026-10-10): `delete-account` artık
       `REVENUECAT_API_KEY` varsa RevenueCat abone kaydını da siler; metin
-      Gizlilik/KVKK 1.9 (0137, esaslı değil, yeniden onay yok).
+      Gizlilik/KVKK 1.9 (0138, esaslı değil, yeniden onay yok).
 ## ⏳ 2026-10-08 Ücretsiz sınırlar: 10 varlık, 5 takip, sinyal tek varlıkta (0126)
 
 Senin kararın: ücretsizde 10 varlık (11.'si Premium ister), takip listesi 5
@@ -620,7 +620,7 @@ Paywall'u açmadan önce sırayla:
 - [x] Yasal metin: 2026-10-08 1.8 / Koşullar 1.6 / Açık Rıza 1.5 ile metne girdi (0127). Eski not: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
       (Koşullar §2A, Gizlilik §3.6/§5/§6/§7). Açılış yayınında md'ye girer,
       sürüm artar, migration. Hesap silmede RevenueCat kaydını silen çağrı
-      2026-10-10'da eklendi (Gizlilik/KVKK 1.9, 0137); `REVENUECAT_API_KEY`
+      2026-10-10'da eklendi (Gizlilik/KVKK 1.9, 0138); `REVENUECAT_API_KEY`
       secret'ı aynı zamanda bu silmeyi de açar.
 - [ ] Sandbox testi: TestFlight'ta kendi cihazında `paywall_enabled` (koşullu)
       aç → satın al, geri yükle, iptal; `premium_haklari`'nda satır `sandbox=true`.

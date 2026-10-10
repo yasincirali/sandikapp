@@ -469,7 +469,7 @@ void main() {
     for (final m in [gizlilik, kvkk, riza]) {
       expect(m, contains('RevenueCat'), reason: 'yurt dışı alıcı');
     }
-    // 1.9 (0137): hesap silme RevenueCat kaydının silinmesini ister
+    // 1.9 (0138): hesap silme RevenueCat kaydının silinmesini ister
     // (`delete-account` → revenueCatKaydiniSil); metin bunu ve mağaza
     // aboneliğinin kendiliğinden bitmediğini söyler. Eski "saklama
     // süresince kalır" cümlesi artık gerçek değil.
