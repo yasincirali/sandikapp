@@ -13,6 +13,65 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
         araclar: ref.read(seviyeGorunurlukProvider).grafikAraclari,
       );
 
+  /// Mum sıklığı (yasin 2026-10-11: "Performans ekranında da tasarımı
+  /// bozmayacak şekilde benzer deneyimi yaşatalım"). Mum seçiliyken
+  /// varlık ekranlarıyla AYNI sıklık menüsü ([MumAraligiMenusu]) ve aynı
+  /// seçim (`mumAraligiSecimiProvider`, dönem başına; bir ekranda seçilen
+  /// sıklık aynı dönemde ötekinde de geçerli). Portföy değerinin
+  /// sağlayıcıdan OHLC'si yok: mumlar yine değer noktalarından türetilir,
+  /// yalnız kova artık seçilen sıklık ([turetilmisAraliklar]). Ortalama
+  /// (MA/EMA) bu grafiğe gelmedi: portföy değeri para girişi/çıkışıyla
+  /// sıçrar, ortalaması yanıltır (karar kartı, önerilen seçenek).
+  ///
+  /// Kim görür: varlık ekranlarındaki araç çubuğuyla aynı kapı
+  /// (`premiumOzellikleriGorunurProvider`; paywall kapalıyken yalnız admin).
+  /// Kapalıyken `null` → mum kovası BİREBİR eskisi (otomatik).
+  ({MumAraligi aralik, List<MumAraligi> gecerli, double span})?
+      _performansMumAraligi(List<TransactionSegment> segments, DateTime start,
+          DateTime end, bool intraday) {
+    if (_etkinGrafikTipi != GrafikTipi.candle) return null;
+    if (!ref.watch(premiumOzellikleriGorunurProvider)) return null;
+    final span =
+        intraday ? 1440.0 : end.difference(start).inMinutes.toDouble();
+    var adet = 0;
+    for (final seg in segments) {
+      if (!seg.piyasaKapali) adet += seg.spots.length;
+    }
+    // Nokta aralığı görünen seriden: gün içinde seri günün başından şimdiye.
+    final kapsam = intraday
+        ? math.max(1.0, DateTime.now().difference(start).inMinutes.toDouble())
+        : span;
+    final gecerli = turetilmisAraliklar(
+            spanDakika: kapsam, noktaSayisi: adet)
+        .where((a) => span / a.dakika >= asgariMum)
+        .toList();
+    final secim = secilenMumAraligi(ref, span);
+    final aralik = gecerliIcindenAralik(gecerli, span, secim);
+    if (aralik == null) return null;
+    return (aralik: aralik, gecerli: gecerli, span: span);
+  }
+
+  /// Grafik tipi seçicisi + (mumda) sıklık menüsü, aynı satırda.
+  Widget _grafikAraclari(
+      ({MumAraligi aralik, List<MumAraligi> gecerli, double span})? mumSec) {
+    const tip = GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz);
+    if (mumSec == null || mumSec.gecerli.length < 2) return tip;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MumAraligiMenusu(
+          aralik: mumSec.aralik,
+          gecerli: mumSec.gecerli,
+          onSec: (yeni) => ref
+              .read(mumAraligiSecimiProvider.notifier)
+              .sec(mumSec.span, yeni),
+        ),
+        const SizedBox(width: SandikSpace.xs),
+        tip,
+      ],
+    );
+  }
+
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets,
       {bool intraday = false, List<Asset>? allTargetAssets}) {
@@ -44,6 +103,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     // clipData ile alta düşer.
     final primarySeg =
         segments.reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
+    final mumSec = _performansMumAraligi(segments, start, end, intraday);
 
     // ── Crosshair'in tarayacağı noktalar ────────────────────────────────
     //
@@ -486,6 +546,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 viewMaxX,
                 start: start,
                 intraday: intraday,
+                kovaMs: mumSec?.aralik.ms.toDouble(),
               )
             : segments.map((seg) {
                 final isActive = seg.thickness > 2.0;
@@ -768,8 +829,10 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     // atılıyordu (animasyon denetimi 2026-10-01). Gün içinde uzayan aralık
     // `updateFullRange` yolundan geçer ve yakınlaştırma korunur.
     final viewport = _ensureViewport(
+      // Sıklık da anahtarda: değişince yakınlaştırma sıfırlanır (varlık
+      // ekranlarıyla aynı, yasin 2026-10-11).
       key:
-          '${_zoomKey ?? "n/a"}|${start.millisecondsSinceEpoch}|${dayKey(end).millisecondsSinceEpoch}|$intraday',
+          '${_zoomKey ?? "n/a"}|${start.millisecondsSinceEpoch}|${dayKey(end).millisecondsSinceEpoch}|$intraday|${mumSec?.aralik.name}',
       fullMinX: minX,
       fullMaxX: maxX,
     );
@@ -801,9 +864,9 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           // kararı korunur), yalnız köşesi değişti. Seviye kapısı aynı.
           if (_tekAkis &&
               ref.watch(seviyeGorunurlukProvider).grafikAraclari)
-            const Align(
+            Align(
               alignment: Alignment.centerRight,
-              child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
+              child: _grafikAraclari(mumSec),
             ),
           ZoomableChart(
             // Ekran okuyucu: portföy grafiği "fiyat grafiği" değildir.
@@ -1042,9 +1105,9 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           // çizgide kalır (bkz. `seviyeGorunurlugu`, grafikAraclari).
           if (!_tekAkis &&
               ref.watch(seviyeGorunurlukProvider).grafikAraclari)
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
-              child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
+              child: _grafikAraclari(mumSec),
             ),
         ],
           ),
@@ -1100,6 +1163,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     double viewMaxX, {
     required DateTime start,
     required bool intraday,
+    double? kovaMs,
   }) {
     final genislik = grafikGenisligi.isFinite && grafikGenisligi > 0
         ? grafikGenisligi
@@ -1129,7 +1193,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     final out = <LineChartBarData>[];
     for (final (spots, kapali) in [(acikSpots, false), (kapaliSpots, true)]) {
       final mumlar = mumlariGrafikUzayinda(spots,
-          baslangicMs: baslangicMs, birimMs: birimMs);
+          baslangicMs: baslangicMs, birimMs: birimMs, kovaMs: kovaMs);
       // Gövde/fitil oranları ortak çizimde (`GrafikStili.mumCubuklari`) —
       // varlık detayının mumu da aynı fonksiyondan çizilir.
       out.addAll(GrafikStili.mumCubuklari(context, mumlar,

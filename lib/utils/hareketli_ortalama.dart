@@ -10,6 +10,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 
+import '../models/ohlc.dart';
 import '../services/history_service.dart' show ResolutionTier;
 import '../services/technical_analysis_service.dart';
 import 'mum_turetici.dart';
@@ -91,3 +92,64 @@ List<Mum> mumlariDonustur(List<Mum> mumlar, double Function(double) toY) => [
 /// Log ölçek dönüşümü — varlık detayındaki `toY` ile aynı taban (log10) ve
 /// aynı alt sınır (sıfır/negatif fiyat log'da tanımsız).
 double log10Fiyat(double y) => math.log(y < 1e-6 ? 1e-6 : y) / math.ln10;
+
+/// Bir ortalamanın türü: MA20 basit (SMA), EMA50/EMA200 üstel.
+enum OrtalamaTuru { basit, ustel }
+
+/// Grafiğin çubuklarından ortalama (2026-10-11).
+///
+/// ## Neden çubuktan (yasin, 2026-10-11 TestFlight)
+/// *"EMA50 EMA200 ya yanlış çiziliyor ya hiç çizilmiyor."* EMA o güne kadar
+/// çizginin noktalarından hesaplanıyordu: çizginin sıklığı dönemden geliyor
+/// (GÜNLÜK 5 dk, 1Y haftalık…), ısınma ise yalnız AYNI sıklıkta bir dönem
+/// öncesi seri bulunursa ekleniyordu. Sonuç: GÜNLÜK'te ısınma hiç yoktu
+/// (EMA200 çizilmiyordu), 1Y'de ısınma haftalık seriden geldiği için
+/// atlanıyor ve EMA200 dönemin son çeyreğinde başlıyordu; mum açıkken ise
+/// ortalama mumun değil çizginin sıklığındaydı. TradingView'de gösterge
+/// grafiğin ZAMAN DİLİMİNİN çubuklarıyla hesaplanır. Artık öyle: seçili
+/// sıklığın gerçek çubukları [periyot] kadar ısınmayla istenir
+/// (`MumYukleyici`, `isinma`), ortalama kapanışlardan hesaplanır ve
+/// dönemin ilk çubuğundan itibaren çizilir.
+///
+/// X her çubuğun ORTASI ([grafikMumlari]'nın `merkezX`'iyle aynı): ortalama
+/// mumun gövdesinden geçer. Dönen Y HAM fiyattır; LOG/yüzde dönüşümünü
+/// çağıran yapar (ortalama doğrusal olmayan dönüşümden önce alınır).
+/// Yeterli çubuk yoksa boş liste — uydurma yok.
+List<FlSpot> cubukOrtalamasi(
+  List<OhlcBar> barlar, {
+  required MumAraligi aralik,
+  required int periyot,
+  required OrtalamaTuru tur,
+  required int gorunurBasMs,
+  double baslangicMs = 0,
+  double birimMs = 1,
+}) {
+  final temiz = [
+    for (final b in barlar)
+      if (b.kapanis.isFinite && b.kapanis > 0) b
+  ];
+  if (temiz.length < periyot) return const [];
+  final kapanislar = [for (final b in temiz) b.kapanis];
+  final seri = tur == OrtalamaTuru.ustel
+      ? TechnicalAnalysisService.emaSeries(kapanislar, periyot)
+      : TechnicalAnalysisService.smaSeries(kapanislar, periyot);
+  return [
+    for (var i = 0; i < temiz.length; i++)
+      if (!seri[i].isNaN &&
+          temiz[i].t + barUzunluguMs(temiz[i].t, aralik) > gorunurBasMs)
+        FlSpot(
+          (temiz[i].t + barUzunluguMs(temiz[i].t, aralik) / 2 - baslangicMs) /
+              birimMs,
+          seri[i],
+        ),
+  ];
+}
+
+/// Isınma için dönem öncesinden istenen çubukları ayıklar: yalnız dönemin
+/// içine düşen (bitişi dönem başından sonra olan) çubuklar çizilir.
+List<OhlcBar> donemCubuklari(
+        List<OhlcBar> barlar, MumAraligi aralik, int gorunurBasMs) =>
+    [
+      for (final b in barlar)
+        if (b.t + barUzunluguMs(b.t, aralik) > gorunurBasMs) b
+    ];

@@ -225,55 +225,51 @@ extension _GrafikKatmanlari on _AssetDetailScreenState {
     );
   }
 
-  /// [aralik] mumlarını ister ve eldekini döndürür; bu aralığın ve bu
-  /// pencerenin mumları henüz yoksa null (çağıran türetilmiş muma düşer).
-  ///
-  /// Build sırasında çağrılır, setState'i senkron yapmaz. İstek anahtarı
-  /// zamanla da değişir (gün içi aralıkta dakikada, diğerlerinde on
-  /// dakikada bir): açık ekran oluşan mumu tazeler, aradaki çağrılar
-  /// `MumVerisi` önbelleğinden döner. Yeni yanıt gelene kadar eski mumlar
-  /// ekranda kalır.
+  /// [aralik] çubuklarını ([kEmaUzun] kadar ısınmayla) ister ve eldekini
+  /// döndürür; henüz yoksa null. Isınma, ortalamaların dönemin ilk
+  /// çubuğundan çizilmesi için (`cubukOrtalamasi`); mumu çizerken
+  /// [donemCubuklari] ile ayıklanır. Ortak yükleyici: varlık sayfası ve
+  /// Karşılaştır aynı kuralla ister (yasin 2026-10-11, dört yüzey tutarlı).
   List<OhlcBar>? _ohlcBarlari(MumAraligi aralik, bool gunIci, DateTime bas,
-      DateTime son, double canliBirim) {
-    final basMs = bas.millisecondsSinceEpoch;
-    final adim = aralik.gunIci ? 60000 : 600000;
-    final anahtar = '${aralik.name}|$basMs|'
-        '${DateTime.now().millisecondsSinceEpoch ~/ adim}';
-    if (_ohlcIstenen != anahtar) {
-      _ohlcIstenen = anahtar;
-      final pencereSonu = gunIci ? bas.add(const Duration(days: 1)) : son;
-      final simdi = DateTime.now();
-      final yukleme = MumVerisi.instance
-          .mumlar(
-            a: _canli.asset,
-            aralik: aralik,
-            bas: bas,
-            son: pencereSonu.isAfter(simdi) ? simdi : pencereSonu,
-            canliBirim: canliBirim,
-          )
-          .then<void>((barlar) {
-        if (!mounted || _ohlcIstenen != anahtar) return;
-        // Boş yanıt eldeki iyi mumları silmez (bayat ama ölçülmüş veri).
-        if (barlar.isEmpty &&
-            _ohlc?.aralik == aralik &&
-            _ohlc?.basMs == basMs) {
-          return;
-        }
-        _guncelle(
-            () => _ohlc = (aralik: aralik, basMs: basMs, barlar: barlar));
-      });
-      CrashReporter.arkaPlan(yukleme, reason: 'AssetDetail.ohlc');
-    }
-    final o = _ohlc;
-    if (o == null || o.aralik != aralik || o.basMs != basMs) return null;
-    return o.barlar.length >= 2 ? o.barlar : null;
+          DateTime son, double canliBirim) =>
+      _ohlcYukleyici.mumlar(
+        a: _canli.asset,
+        aralik: aralik,
+        bas: bas,
+        son: son,
+        canliBirim: canliBirim,
+        gunIci: gunIci,
+        isinma: kEmaUzun,
+      );
+
+  /// Çubuklar yolda mı (yoldayken ortalama çizilmez, gelince belirir).
+  bool get _ohlcYolda => _ohlcYukleyici.bekliyor;
+
+  /// Ortalama çizgisi gerçek çubuklardan (grafiğin X'inde, kesirli gün),
+  /// [toY] ile taşınmış. Gerekçe `cubukOrtalamasi`.
+  List<FlSpot> _cubukOrtalamasi(List<OhlcBar> barlar, MumAraligi aralik,
+      DateTime startDate, double Function(double) toY,
+      {required int periyot, required OrtalamaTuru tur}) {
+    final basMs = startDate.millisecondsSinceEpoch;
+    return [
+      for (final p in cubukOrtalamasi(barlar,
+          aralik: aralik,
+          periyot: periyot,
+          tur: tur,
+          gorunurBasMs: basMs,
+          baslangicMs: basMs.toDouble(),
+          birimMs: 24 * 60 * 60 * 1000.0))
+        FlSpot(p.x, toY(p.y)),
+    ];
   }
 
-  /// Gerçek mumlar grafiğin X uzayında (kesirli gün), HAM fiyatla.
+  /// Gerçek mumlar grafiğin X uzayında (kesirli gün), HAM fiyatla. Isınma
+  /// çubukları (dönem başından önce biten) çizilmez.
   List<Mum> _ohlcMumlari(
           List<OhlcBar> barlar, MumAraligi aralik, DateTime startDate) =>
       grafikMumlari(
-        barlar,
+        donemCubuklari(
+            barlar, aralik, startDate.millisecondsSinceEpoch),
         aralik: aralik,
         baslangicMs: startDate.millisecondsSinceEpoch.toDouble(),
         birimMs: 24 * 60 * 60 * 1000.0,

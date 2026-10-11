@@ -211,6 +211,7 @@ List<Mum> mumlariGrafikUzayinda(
   required double baslangicMs,
   required double birimMs,
   int hedefAdet = 40,
+  double? kovaMs,
 }) {
   if (spots.length < 2 || !birimMs.isFinite || birimMs <= 0) return const [];
   final epoch = [
@@ -220,11 +221,14 @@ List<Mum> mumlariGrafikUzayinda(
   ]..sort((a, b) => a.x.compareTo(b.x));
   if (epoch.length < 2) return const [];
 
-  final kova = mumKovasiSec(
-    spanMs: epoch.last.x - epoch.first.x,
-    noktaSayisi: epoch.length,
-    hedefAdet: hedefAdet,
-  );
+  // Kova verildiyse (kullanıcının seçtiği sıklık, Performans 2026-10-11)
+  // o; yoksa görünen aralığa göre otomatik.
+  final kova = kovaMs ??
+      mumKovasiSec(
+        spanMs: epoch.last.x - epoch.first.x,
+        noktaSayisi: epoch.length,
+        hedefAdet: hedefAdet,
+      );
   return [
     for (final m in mumlariTuret(epoch, kovaMs: kova))
       Mum(
