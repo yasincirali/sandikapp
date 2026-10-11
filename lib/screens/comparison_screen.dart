@@ -30,7 +30,6 @@ import '../widgets/sandik_skeleton.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
 import '../models/ohlc.dart';
-import '../providers/premium_provider.dart' show premiumOzellikleriGorunurProvider;
 import '../services/mum_verisi.dart';
 import '../services/mum_yukleyici.dart';
 import '../services/technical_analysis_service.dart';
@@ -582,12 +581,11 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   ///  · Mumlar ve ortalamalar yüzde uzayında: aynı seri, aynı taban
   ///    (dönemin ilk fiyatı) — çizgiyle birebir hizalı.
   ///
-  /// Görünürlük varlık detayıyla aynı kapı (paywall kapalıyken yalnız
-  /// admin, sade Başlangıç'ta yok); görünmüyorsa ekran BİREBİR eskisi.
+  /// Görünürlük varlık detayıyla aynı: herkese (yasin 2026-10-11, bayraksız),
+  /// sade Başlangıç'ta yok; görünmüyorsa ekran BİREBİR eskisi.
   ({Widget cubuk, YuzdeKatmani? katman, String? hedefAdi, MumAraligi? aralik})?
       _katman() {
-    final gorunur = ref.watch(seviyeGorunurlukProvider).grafikAraclari &&
-        ref.watch(premiumOzellikleriGorunurProvider);
+    final gorunur = ref.watch(seviyeGorunurlukProvider).grafikAraclari;
     if (!gorunur) return null;
     final ma20On = ref.watch(chartMA20Provider);
     final mumOn = ref.watch(chartCandleProvider);

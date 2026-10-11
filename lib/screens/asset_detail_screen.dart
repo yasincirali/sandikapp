@@ -1340,7 +1340,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             mumAcik: mumOn,
                             ema50Acik: ema50On,
                             ema200Acik: ema200On,
-                            ozel: _ozelGostergeCipi(ozelAcik.length),
+                            ozel: _ozelGostergeGorunur
+                                ? _ozelGostergeCipi(ozelAcik.length)
+                                : null,
                             aralik: mumAr?.aralik,
                             gecerliAraliklar:
                                 mumAr?.gecerli ?? const <MumAraligi>[],

@@ -101,14 +101,17 @@ void main() {
     await initPreferencesCache();
   });
 
-  testWidgets('paywall kapalı, admin değil: araç çubuğu eskisi gibi',
+  // yasin 2026-10-11: mum ve EMA herkese, bayraksız; ƒx yalnız Premium
+  // görünürlüğünde (paywall açık ya da admin).
+  testWidgets('paywall kapalı, admin değil: mum ve EMA var, ƒx yok',
       (tester) async {
     await _pump(tester);
     expect(find.text('MA20'), findsWidgets);
     expect(find.text('LOG'), findsWidgets);
-    expect(find.text('MUM'), findsNothing);
-    expect(find.text('EMA50'), findsNothing);
-    expect(find.text('EMA200'), findsNothing);
+    expect(find.text('MUM'), findsOneWidget);
+    expect(find.text('EMA50'), findsOneWidget);
+    expect(find.text('EMA200'), findsOneWidget);
+    expect(find.textContaining('ƒx'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

@@ -7,9 +7,9 @@ part of '../asset_detail_screen.dart';
 /// `screens/ozel_gosterge_screen.dart`. Burada yalnız grafiğe bağlama.
 ///
 /// ## Kim görür
-/// Görünürlük EMA/Mum ile AYNI (`_katmanlarGorunur`): tek anahtar
-/// `paywall_enabled`, yeni bayrak yok. Görünmüyorsa çip yok, liste okunmaz,
-/// grafik birebir eskisi (canlıdaki kullanıcı etkilenmez).
+/// `_ozelGostergeGorunur`: tek anahtar `paywall_enabled` (ya da admin),
+/// yeni bayrak yok. 2026-10-11'den beri Mum/EMA herkese açık; bu kapı
+/// yalnız `ƒx`'te kaldı. Görünmüyorsa çip yok, liste okunmaz.
 ///
 /// Kilit yalnız burada (`_ozelGostergeKilitli`): yasin 2026-10-10 — *"pine
 /// kodu girip kendi göstergesini çalıştırmak ücretli olmalı"*; Mum ve EMA
@@ -43,7 +43,7 @@ extension _OzelGostergeler on _AssetDetailScreenState {
   /// Grafikte açık, derlenebilen göstergeler. Kapı kapalıysa ya da
   /// kilitliyse boş — sağlayıcı hiç izlenmez.
   List<OzelGosterge> get _acikOzelGostergeler {
-    if (!_katmanlarGorunur || _ozelGostergeKilitli) return const [];
+    if (!_ozelGostergeGorunur || _ozelGostergeKilitli) return const [];
     final liste = ref.watch(ozelGostergelerProvider).valueOrNull ?? const [];
     return grafiktekiGostergeler(liste);
   }

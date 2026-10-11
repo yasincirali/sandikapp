@@ -36,13 +36,13 @@ import 'grafik_arac_cubugu.dart';
 /// ([FiyatKaynagi.mumKaynagi] — sembol [FiyatKaynagi.gozlemVarligi] ile),
 /// aynı Pine çalıştırıcısı ve çizimi.
 ///
-/// ## Kim görür (yeni bayrak YOK)
-/// Varlık detayıyla aynı kapı: `premiumOzellikleriGorunurProvider`
-/// (paywall kapalıyken yalnız admin) + seviye (`grafikAraclari`, sade
-/// Başlangıç'ta yok) + mevduat değil. Görünmüyorsa grafik BİREBİR eskisi:
-/// araç çubuğu yok, düz [FiyatGrafigi] (canlıdaki kullanıcı etkilenmez).
-/// `ƒx` ücretsizde kilitli (paywall, kaynak `grafik_ozel_gosterge`); mum,
-/// aralık, MA20, EMA50/200 ve LOG ücretsiz.
+/// ## Kim görür
+/// Herkes (yasin, 2026-10-11: *"mum grafik ve ema herkeste
+/// gösterilebilsin flag arkasında olmasın"*), seviye (`grafikAraclari`,
+/// sade Başlangıç'ta yok) ve mevduat değilse. Görünmüyorsa düz
+/// [FiyatGrafigi]. `ƒx` yalnız `premiumOzellikleriGorunurProvider`'da
+/// (paywall açık ya da admin) çıkar, ücretsizde kilitli (kaynak
+/// `grafik_ozel_gosterge`); mum, aralık, MA20, EMA50/200 ve LOG ücretsiz.
 ///
 /// ## Veri
 ///  · Çizgi, MA20 ve EMA sayfanın sembol serisinden (`getSymbolHistory`) —
@@ -118,9 +118,8 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
   @override
   Widget build(BuildContext context) {
     final araclar = ref.watch(seviyeGorunurlukProvider).grafikAraclari;
-    final gorunur = araclar &&
-        ref.watch(premiumOzellikleriGorunurProvider) &&
-        widget.type != AssetType.mevduat;
+    final gorunur = araclar && widget.type != AssetType.mevduat;
+    final ozelGorunur = ref.watch(premiumOzellikleriGorunurProvider);
     if (!gorunur) return _duz();
 
     final spots = [
@@ -156,9 +155,9 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
     final span = gunIci
         ? 1440.0
         : son.difference(bas).inMinutes.toDouble();
-    // Kendi göstergen: kilitliyse hiç çalışmaz.
+    // Kendi göstergen: görünmüyor ya da kilitliyse hiç çalışmaz.
     final kilitli = ref.watch(premiumKilitliProvider);
-    final acik = kilitli
+    final acik = kilitli || !ozelGorunur
         ? const <OzelGosterge>[]
         : grafiktekiGostergeler(
             ref.watch(ozelGostergelerProvider).valueOrNull ?? const []);
@@ -276,18 +275,21 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
           mumAcik: mumOn,
           ema50Acik: ema50On,
           ema200Acik: ema200On,
-          ozel: GrafikOzelCipi(
-            acikSayi: sonuclar.length,
-            kilitli: kilitli,
-            onTap: () {
-              if (kilitli) {
-                PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
-                return;
-              }
-              showOzelGostergeSayfasi(context,
-                  onizleme: _ozelVeri, varlikAdi: widget.sembolEtiketi);
-            },
-          ),
+          ozel: !ozelGorunur
+              ? null
+              : GrafikOzelCipi(
+                  acikSayi: sonuclar.length,
+                  kilitli: kilitli,
+                  onTap: () {
+                    if (kilitli) {
+                      PaywallScreen.show(context,
+                          source: 'grafik_ozel_gosterge');
+                      return;
+                    }
+                    showOzelGostergeSayfasi(context,
+                        onizleme: _ozelVeri, varlikAdi: widget.sembolEtiketi);
+                  },
+                ),
           aralik: aralik,
           gecerliAraliklar: gecerli,
           pencereDakika: span,

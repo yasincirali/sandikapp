@@ -76,7 +76,6 @@ import '../widgets/grafik_tipi_secici.dart';
 import '../widgets/grafik_arac_cubugu.dart' show MumAraligiMenusu;
 import '../services/mum_verisi.dart'
     show asgariMum, gecerliIcindenAralik, turetilmisAraliklar;
-import '../providers/premium_provider.dart' show premiumOzellikleriGorunurProvider;
 import '../models/ohlc.dart';
 import '../providers/preferences_provider.dart'
     show
