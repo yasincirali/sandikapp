@@ -100,9 +100,17 @@ TAB_GREY = (108, 120, 115)
 # (genişlik, yükseklik, hangi mağaza) — mağaza etiketi çıktının hangi
 # klasöre yazılacağını belirler. Boyutu mağazasından ayırmak eski bir
 # hata kaynağıydı: 2,16:1 App Store kareleri Play'e yüklenince reddedilir.
+#
+# 2026-10-11: ASC ekran bölümlerini ayırıyor ve her bölüm yalnız kendi
+# boyutlarını kabul ediyor — 6.1"/6.3" bölümü 1284x2778'i reddetti
+# ("supported sizes: 1179x2556, 1206x2622"). 6.3" ve en büyük 6.9" eklendi;
+# ASC küçük ekranları büyükten ölçekleyebilir ama bölüm boş kalınca
+# hangisinin istendiği sürüme göre değişiyor, hepsi hazır dursun.
 TARGETS = [
-    (1242, 2688, "ios"),
-    (1284, 2778, "ios"),
+    (1320, 2868, "ios"),   # 6.9"
+    (1206, 2622, "ios"),   # 6.3" (6.1"/6.3" bölümü)
+    (1242, 2688, "ios"),   # 6.5"
+    (1284, 2778, "ios"),   # 6.5" (eski 6.7")
     (1080, 1920, "android"),
 ]
 
@@ -573,8 +581,12 @@ FINAL_HEDEFLER = [
     # (kaynak, final altındaki klasör)
     (os.path.join(ANDROID_OUT, "set_d", "1080x1920"),
      os.path.join("google_play", "telefon_1080x1920")),
+    (os.path.join(IOS_OUT, "set_d", "1320x2868"),
+     os.path.join("app_store", "iphone_6.9_1320x2868")),
+    (os.path.join(IOS_OUT, "set_d", "1206x2622"),
+     os.path.join("app_store", "iphone_6.3_1206x2622")),
     (os.path.join(IOS_OUT, "set_d", "1284x2778"),
-     os.path.join("app_store", "iphone_6.7_1284x2778")),
+     os.path.join("app_store", "iphone_6.5_1284x2778")),
     (os.path.join(IOS_OUT, "set_d", "1242x2688"),
      os.path.join("app_store", "iphone_6.5_1242x2688")),
 ]
