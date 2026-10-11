@@ -141,6 +141,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                     // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
                     // çökme); düğme artık bekliyor, ret sebebi söylenir.
                     onRearm: () async {
+                      if (alarmSiniriDoluysaUyar(context, ref)) return;
                       try {
                         await ref
                             .read(priceAlertsProvider.notifier)

@@ -35,7 +35,6 @@ class SignalSettingsScreen extends ConsumerWidget {
     // Gerçek hak (mağaza/sunucu/admin). Eskiden cihazdaki geliştirici
     // anahtarıydı ve aşağıdaki kartın "Aç" düğmesi onu açıyordu: paywall
     // açıkken herkes ödemesiz Premium alırdı (2026-10-06 bulgusu).
-    final premium = ref.watch(premiumErisimProvider);
     final paywallOn = ref.watch(paywallVisibleProvider);
     final gelistirici = ref.watch(gelistiriciAnahtariSayilirProvider);
     final thresholds = ref.watch(signalThresholdProvider);
@@ -137,7 +136,10 @@ class SignalSettingsScreen extends ConsumerWidget {
           // Ücretsizde kilitler satırlarda (Premium gösterge, sıklık,
           // periyot); bu kart Premium'daki hâli ("açık") ya da debug
           // anahtarını taşır.
-          if (paywallOn && premium) ...[
+          // "Premium aktif" GERÇEK hakkı söyler (`effectivePremiumProvider`,
+          // Profil rozetiyle aynı): kilitleri yalnız askıda olana
+          // (`premium_enabled=false`, hediye güvencesi) Premium yazılmaz.
+          if (paywallOn && ref.watch(effectivePremiumProvider)) ...[
             _PremiumCard(
               unlocked: true,
               onUpgrade: () {},

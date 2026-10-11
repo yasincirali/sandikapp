@@ -71,10 +71,46 @@ void main() {
       _lot('h', 'A.IS', AssetKind.buy, 10),
     ];
     expect(kotaAnahtarlari(defter, 'u1'), hasLength(2));
-    expect(
-        kotaAnahtari(AssetType.hisse, 'X', 'TRY', sozlesmeId: 'bes1'),
+    expect(kotaAnahtari(AssetType.hisse, 'X', 'TRY', sozlesmeId: 'bes1'),
         'sozlesme|bes1');
     // Sözleşmesiz anahtar eski biçimde kalır.
     expect(kotaAnahtari(AssetType.hisse, 'A.IS', 'TRY'), 'hisse|A.IS|TRY');
+  });
+
+  // Toplu Ekle alımları paralel yazar; yazımı süren eklemeler kotaya
+  // sayılmazsa 8/10 doluyken 6 varlık eklenip 14'e çıkılıyordu (2026-10-11).
+  test('paralel eklemede yazımı süren anahtarlar kotaya sayılır', () {
+    final kayitli = {for (var i = 0; i < 8; i++) 'hisse|K$i|TRY'};
+    final yazilan = <String>{};
+    final gecen = <String>[];
+    for (var i = 0; i < 6; i++) {
+      final yeni = 'hisse|Y$i|TRY';
+      if (kotaDolu(kayitli: kayitli, yazilan: yazilan, yeni: yeni, sinir: 10) ==
+          null) {
+        yazilan.add(yeni);
+        gecen.add(yeni);
+      }
+    }
+    expect(gecen, hasLength(2));
+    expect(
+        kotaDolu(
+            kayitli: kayitli,
+            yazilan: yazilan,
+            yeni: 'hisse|Y9|TRY',
+            sinir: 10),
+        10);
+  });
+
+  test('sahip olunan ya da yazımı süren pozisyona ek lot kotaya takılmaz', () {
+    final kayitli = {for (var i = 0; i < 10; i++) 'hisse|K$i|TRY'};
+    expect(
+        kotaDolu(
+            kayitli: kayitli,
+            yazilan: const {},
+            yeni: 'hisse|K3|TRY',
+            sinir: 10),
+        isNull);
+    expect(
+        kotaDolu(kayitli: {'a'}, yazilan: {'b'}, yeni: 'b', sinir: 2), isNull);
   });
 }
