@@ -89,7 +89,6 @@ Asset _varlik(AssetType tur, String ticker, String ad, double fiyat) => Asset(
 final _thy = _varlik(AssetType.hisse, 'THYAO.IS', 'Türk Hava Yolları', 287.5);
 final _btc =
     _varlik(AssetType.kripto, 'KRIPTO:BTC', 'Bitcoin', 4091802);
-final _fon = _varlik(AssetType.fon, 'TEFAS:AFT', 'Ak Portföy Yeni Teknolojiler', 2.4815);
 
 /// Yahoo `interval` → adım.
 Duration _adim(String interval) => switch (interval) {
