@@ -60,11 +60,16 @@ class PercentComparisonChart extends StatelessWidget {
     this.height = 210,
     this.steppedKeys = const {},
     this.katman,
+    this.sifirlamaAnahtari,
   });
 
   /// Bir serinin araç çubuğu katmanları (Karşılaştır, yasin 2026-10-10
   /// gece: "bu 3 ekran tutarlı olmalı"). `null` → grafik BİREBİR eskisi.
   final YuzdeKatmani? katman;
+
+  /// Bkz. [ZoomableChart.sifirlamaAnahtari]; `null` → dönem ([periodDays]):
+  /// dönem değişince yakınlaştırma sıfırlanır (yasin 2026-10-11).
+  final Object? sifirlamaAnahtari;
 
   /// BASAMAKLI çizilecek seriler. Aylık yayımlanan bir gösterge (TÜFE) iki
   /// nokta arasında doğrusal çizilirse ara günler için var olmayan bir değer
@@ -133,6 +138,7 @@ class PercentComparisonChart extends StatelessWidget {
       height: height,
       fullMinX: ciz.minX,
       fullMaxX: ciz.maxX,
+      sifirlamaAnahtari: sifirlamaAnahtari ?? periodDays,
       bottomAxisHeight: _bottomAxisHeight,
       // Sol Y ekseni rezervi — crosshair'in etiket bandına girmemesi için
       // `leftTitles.reservedSize` ile AYNI olmak zorunda.
@@ -361,19 +367,15 @@ class PercentComparisonChart extends StatelessWidget {
 
     if (bars.isEmpty) return null;
 
-    // Ortalamalar ve mum fitilleri de banda girer (girmezse kartın dışında
-    // kalır ve "çalışmıyor" diye okunur — varlık detayıyla aynı kural).
+    // Mum fitilleri banda girer (fiyattır). Ortalamalar GİRMEZ (2026-10-11,
+    // yasin TestFlight: "gösterge değiştiyse grafik sabit kalmalı") —
+    // varlık detayı ve varlık sayfasıyla aynı kural (`FiyatGrafigi._data`).
     final k = katman;
     if (k != null && cizilenler.contains(k.anahtar)) {
       void kat(double y) {
         if (!y.isFinite) return;
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
-      }
-      for (final o in k.ortalamalar) {
-        for (final s in o.spots) {
-          kat(s.y);
-        }
       }
       for (final m in k.mumlar) {
         kat(m.enYuksek);

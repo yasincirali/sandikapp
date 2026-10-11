@@ -148,10 +148,52 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
     final ema50On = ref.watch(chartEma50Provider);
     final ema200On = ref.watch(chartEma200Provider);
 
-    // Isınma: daha uzun dönemin dönem öncesi noktaları. Yalnız AYNI
-    // çözünürlükteyse (ortanca nokta aralığı ±%50): saatlik serinin önüne
-    // günlük noktalar eklemek EMA'yı iki ayrı çubuk sıklığında hesaplardı.
-    // GÜNLÜK'te istenmez — varlık detayında olduğu gibi tek seans.
+    // Sıklık ve çubuklar — üç ekranla aynı karar (`etkinAralik`). Mum ya da
+    // bir ortalama açıkken seçili sıklığın GERÇEK çubukları ısınmayla
+    // istenir; ortalamalar o çubuklardan hesaplanır (`cubukOrtalamasi`,
+    // gerekçe orada). Isınma her zaman istenir (yalnız açık olanınki değil):
+    // EMA açıp kapamak yeni istek başlatmasın, grafik kımıldamasın.
+    final span = gunIci
+        ? 1440.0
+        : son.difference(bas).inMinutes.toDouble();
+    // Kendi göstergen: kilitliyse hiç çalışmaz.
+    final kilitli = ref.watch(premiumKilitliProvider);
+    final acik = kilitli
+        ? const <OzelGosterge>[]
+        : grafiktekiGostergeler(
+            ref.watch(ozelGostergelerProvider).valueOrNull ?? const []);
+    final secim = secilenMumAraligi(ref, span);
+    final gerekli = aralikGerekli(
+        mum: mumOn,
+        ma20: ma20On,
+        ema50: ema50On,
+        ema200: ema200On,
+        ozel: acik.isNotEmpty);
+    final aralik = gerekli ? etkinAralik(a, span, secim) : null;
+    final gecerli =
+        gerekli ? gecerliAraliklar(a, span) : const <MumAraligi>[];
+    final tumBarlar = aralik == null
+        ? null
+        : _mum.mumlar(
+            a: a,
+            aralik: aralik,
+            bas: bas,
+            son: son,
+            canliBirim: canli,
+            gunIci: gunIci,
+            isinma: kEmaUzun,
+          );
+    final basMs = bas.millisecondsSinceEpoch;
+    final barlar = (tumBarlar == null || aralik == null)
+        ? null
+        : donemCubuklari(tumBarlar, aralik, basMs);
+
+    // Çubuklar yoksa (kaynak yok, sıklık yok, istek boş döndü) eski yol:
+    // çizginin noktaları + aynı sıklıktaki dönem öncesi seri. Çubuklar
+    // YOLDAYKEN ortalama çizilmez — gelince bir kez belirir (yoldayken
+    // çizgiden çizip sonra çubuğa atlamak "grafik yeniden çiziliyor" diye
+    // okunuyordu).
+    final cubuklaYolda = tumBarlar == null && aralik != null && _mum.bekliyor;
     final ilkX = spots.first.x;
     final onAday = <FlSpot>[
       if (!gunIci && widget.onSeri != null)
@@ -160,51 +202,43 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
     ];
     final onSpots = _ayniSiklik(onAday, spots) ? onAday : const <FlSpot>[];
 
+    List<FlSpot> ortalama(int periyot, OrtalamaTuru tur) {
+      if (tumBarlar != null && aralik != null) {
+        return cubukOrtalamasi(tumBarlar,
+            aralik: aralik, periyot: periyot, tur: tur, gorunurBasMs: basMs);
+      }
+      if (cubuklaYolda) return const [];
+      return tur == OrtalamaTuru.ustel
+          ? emaNoktalari(spots, periyot: periyot, onSeri: onSpots)
+          : _ma20(spots);
+    }
+
     final ortalamalar = <FiyatOrtalamasi>[
-      if (ma20On && spots.length >= 20) _ma20(spots, context.c.text58),
+      if (ma20On)
+        FiyatOrtalamasi(
+          spots: ortalama(20, OrtalamaTuru.basit),
+          cizgiRengi: context.c.text58,
+          kesikli: true,
+        ),
       for (final (acik, periyot, renk) in [
         (ema50On, kEmaKisa, context.c.gain),
         (ema200On, kEmaUzun, context.c.loss),
       ])
         if (acik)
           FiyatOrtalamasi(
-            spots: emaNoktalari(spots, periyot: periyot, onSeri: onSpots),
+            spots: ortalama(periyot, OrtalamaTuru.ustel),
             cizgiRengi: renk,
           ),
     ];
 
-    // Mum ve aralık — varlık detayıyla aynı karar (`etkinAralik`).
-    final span = gunIci
-        ? 1440.0
-        : son.difference(bas).inMinutes.toDouble();
-    final secim = secilenMumAraligi(ref, span);
-    final aralik = mumOn ? etkinAralik(a, span, secim) : null;
-    final gecerli =
-        mumOn ? gecerliAraliklar(a, span) : const <MumAraligi>[];
     var mumlar = const <Mum>[];
     if (mumOn) {
-      final barlar = aralik == null
-          ? null
-          : _mum.mumlar(
-              a: a,
-              aralik: aralik,
-              bas: bas,
-              son: son,
-              canliBirim: canli,
-              gunIci: gunIci,
-            );
-      mumlar = (barlar != null && aralik != null)
+      mumlar = (barlar != null && barlar.length >= 2 && aralik != null)
           ? grafikMumlari(barlar,
               aralik: aralik, baslangicMs: 0, birimMs: 1)
           : mumlariGrafikUzayinda(spots, baslangicMs: 0, birimMs: 1);
     }
 
-    // Kendi göstergen: kilitliyse hiç çalışmaz.
-    final kilitli = ref.watch(premiumKilitliProvider);
-    final acik = kilitli
-        ? const <OzelGosterge>[]
-        : grafiktekiGostergeler(
-            ref.watch(ozelGostergelerProvider).valueOrNull ?? const []);
     final betikAr = acik.isEmpty || !kaynak.gercekOhlc
         ? null
         : (aralik ?? etkinAralik(a, span, secim));
@@ -268,6 +302,8 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
           ucTitresimi: widget.ucTitresimi,
           semanticLabel: widget.semanticLabel,
           onViewportChanged: (mn, mx) => _gorunum.value = (min: mn, max: mx),
+          // Dönem ya da sıklık değişince yakınlaştırma sıfırlanır.
+          sifirlamaAnahtari: '${widget.periodDays}|${aralik?.name}',
           katmanlar: FiyatKatmanlari(
             log: logOn,
             mumlar: mumlar,
@@ -276,9 +312,6 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
                 ? null
                 : (toY, ofset) =>
                     fiyatUstuCizimleri(context, sonuclar, toY, ofset: ofset),
-            ozelBant: sonuclar.isEmpty
-                ? null
-                : (toY) => fiyatUstuBantNoktalari(sonuclar, toY, enAzX: ilkX),
           ),
         ),
         OzelGostergeAltBolumu(sonuclar: sonuclar, gorunum: _gorunum),
@@ -308,17 +341,13 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
         semanticLabel: widget.semanticLabel,
       );
 
-  FiyatOrtalamasi _ma20(List<FlSpot> spots, Color renk) {
+  List<FlSpot> _ma20(List<FlSpot> spots) {
     final sma = TechnicalAnalysisService.smaSeries(
         [for (final s in spots) s.y], 20);
-    return FiyatOrtalamasi(
-      spots: [
-        for (var i = 0; i < sma.length; i++)
-          if (!sma[i].isNaN) FlSpot(spots[i].x, sma[i]),
-      ],
-      cizgiRengi: renk,
-      kesikli: true,
-    );
+    return [
+      for (var i = 0; i < sma.length; i++)
+        if (!sma[i].isNaN) FlSpot(spots[i].x, sma[i]),
+    ];
   }
 
   /// Gerçek mum yoksa betik çizginin noktalarında çalışır (açılış/yüksek/

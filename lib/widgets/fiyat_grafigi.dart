@@ -43,7 +43,11 @@ class FiyatGrafigi extends StatelessWidget {
     this.ucTitresimi = false,
     this.katmanlar,
     this.onViewportChanged,
+    this.sifirlamaAnahtari,
   });
+
+  /// Bkz. [ZoomableChart.sifirlamaAnahtari]; `null` → dönem ([periodDays]).
+  final Object? sifirlamaAnahtari;
 
   /// Araç çubuğunun katmanları (LOG, mum, MA20/EMA, kendi göstergen) —
   /// varlık detayıyla aynı çizim (yasin 2026-10-10 gece, üç ekran
@@ -125,6 +129,8 @@ class FiyatGrafigi extends StatelessWidget {
         return i < 0 ? clamped : spots[i].x;
       },
       onViewportChanged: onViewportChanged,
+      // Dönem değişince yakınlaştırma sıfırlanır (yasin 2026-10-11).
+      sifirlamaAnahtari: sifirlamaAnahtari ?? periodDays,
       crosshairLabelBuilder: (x) {
         if (_imlectekiMum(x) case final m?) {
           final t = DateTime.fromMillisecondsSinceEpoch(m.x.round());
@@ -209,7 +215,6 @@ class FiyatGrafigi extends StatelessWidget {
     final mumlar = log
         ? mumlariDonustur(k?.mumlar ?? const [], toY)
         : (k?.mumlar ?? const <Mum>[]);
-    final ozelBant = k?.ozelBant?.call(toY) ?? const <FlSpot>[];
 
     var mn = gorunur.first.y, mx = gorunur.first.y, top = 0.0;
     var adet = 0;
@@ -228,20 +233,17 @@ class FiyatGrafigi extends StatelessWidget {
       top += s.y;
       adet++;
     }
-    // EMA, mum fitilleri ve kendi göstergen de banda girer: girmezse açılan
-    // çizgi kartın dışında kalır ve "çalışmıyor" diye okunur (varlık
-    // detayıyla aynı kural).
-    for (final o in ortalamalar) {
-      for (final p in o.spots) {
-        kat(p.x, p.y);
-      }
-    }
+    // Bant FİYATTAN kurulur: çizgi ya da mum fitilleri. Ortalamalar ve
+    // kendi göstergen banda GİRMEZ (2026-10-11, yasin TestFlight: "sadece
+    // gösterge değiştiyse grafik sabit kalıp EMA ya da diğer göstergeler
+    // grafiğe eklenip çıkarılmalı"). Eskiden girerdi; EMA200 fiyattan
+    // uzaktayken açılınca eksen yeniden ölçeklenip grafik zıplıyordu.
+    // Ortalama artık dönem öncesi çubuklarla ısınıyor ve fiyatın yakınından
+    // geçiyor; bandın dışına taşan kısmı kenarda kırpılır, yakınlaştırınca
+    // ya da kaydırınca görünür (TradingView'in "yalnız fiyatı ölçekle"si).
     for (final m in mumlar) {
       kat(m.merkezX, m.enYuksek);
       kat(m.merkezX, m.enDusuk);
-    }
-    for (final p in ozelBant) {
-      kat(p.x, p.y);
     }
     final bant = gorunurYBandi(
       dataMinY: mn,
@@ -464,7 +466,6 @@ class FiyatKatmanlari {
     this.mumlar = const [],
     this.ortalamalar = const [],
     this.ozelCizim,
-    this.ozelBant,
   });
 
   final bool log;
@@ -479,8 +480,6 @@ class FiyatKatmanlari {
   final ({List<LineChartBarData> bars, List<BetweenBarsData> dolgular})
       Function(double Function(double) toY, int ofset)? ozelCizim;
 
-  /// Kendi göstergenin Y bandına girecek noktaları.
-  final List<FlSpot> Function(double Function(double) toY)? ozelBant;
 }
 
 /// Hareketli ortalama çizgisi (MA20 kesikli gri; EMA50 yeşil, EMA200

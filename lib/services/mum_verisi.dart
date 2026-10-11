@@ -360,8 +360,41 @@ MumAraligi tradingViewVarsayilani(double spanDakika) {
 /// (fon yalnız Gün/Hafta, Yahoo geçmiş sınırı, mum tavanı) dakikaca
 /// (logaritmik) en yakın geçerli aralık. Geçerli aralık yoksa null —
 /// çağıran kapanıştan türetilen eski muma düşer.
-MumAraligi? etkinAralik(Asset a, double spanDakika, MumAraligi? secim) {
-  final gecerli = gecerliAraliklar(a, spanDakika);
+MumAraligi? etkinAralik(Asset a, double spanDakika, MumAraligi? secim) =>
+    gecerliIcindenAralik(gecerliAraliklar(a, spanDakika), spanDakika, secim);
+
+/// Kapanış noktalarından TÜRETİLEN mumda sunulabilecek sıklıklar (Performans
+/// grafiği: portföy değerinin sağlayıcıdan OHLC'si yok).
+///
+/// Kural (yasin 2026-10-11, "Performans'ta da benzer deneyim"): mum en az iki
+/// noktayı kapsamalı (tek noktalı mum düz çizgidir, `mumKovasiSec` ile aynı
+/// eşik) ve pencerede [asgariMum]–[azamiTuretilmisMum] mum çıkmalı. Sıra
+/// küçükten büyüğe; aylık mum takvim ayına oturur (`mumlariTuret`).
+List<MumAraligi> turetilmisAraliklar({
+  required double spanDakika,
+  required int noktaSayisi,
+}) {
+  if (!spanDakika.isFinite || spanDakika <= 0 || noktaSayisi < 2) {
+    return const [];
+  }
+  final ortalamaAralik = spanDakika / noktaSayisi;
+  return [
+    for (final ar in MumAraligi.sirali)
+      if (ar.dakika >= 2 * ortalamaAralik &&
+          spanDakika / ar.dakika >= asgariMum &&
+          spanDakika / ar.dakika <= azamiTuretilmisMum)
+        ar,
+  ];
+}
+
+/// Türetilmiş mumun tavanı: her mum iki çubukla çizilir
+/// (`GrafikStili.mumCubuklari`), toplu çizimin 3.000'i burada ağır kalır.
+const int azamiTuretilmisMum = 400;
+
+/// [gecerli] içinden çizilecek sıklık: seçim, yoksa TradingView varsayılanı,
+/// o da yoksa dakikaca (logaritmik) en yakını — [etkinAralik] ile aynı kural.
+MumAraligi? gecerliIcindenAralik(
+    List<MumAraligi> gecerli, double spanDakika, MumAraligi? secim) {
   if (gecerli.isEmpty) return null;
   if (secim != null && gecerli.contains(secim)) return secim;
   final hedef = tradingViewVarsayilani(spanDakika);

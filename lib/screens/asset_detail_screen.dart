@@ -102,6 +102,7 @@ import '../utils/mum_turetici.dart' show Mum, mumlariGrafikUzayinda;
 import '../models/ohlc.dart';
 import '../widgets/grafik_arac_cubugu.dart';
 import '../services/mum_verisi.dart';
+import '../services/mum_yukleyici.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -561,6 +562,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   void dispose() {
     _imlec.dispose();
     _ozelGorunum.dispose();
+    _ohlcYukleyici.kapat();
     _nabziBirak?.call();
     _scrollController.dispose();
     super.dispose();
@@ -678,10 +680,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Göstergelerin gerçek mumları (ısınmalı) ve istek anahtarı — aynı part.
   ({MumAraligi aralik, int basMs, List<OhlcBar> barlar})? _betikOhlc;
   String? _betikOhlcIstenen;
-  /// Gerçek mumlar (OHLC, aralık seçicisi) ve hangi istek için geldikleri
-  /// — aynı dosya. [_ohlcIstenen] aynı isteği ikinci kez başlatmamak için.
-  ({MumAraligi aralik, int basMs, List<OhlcBar> barlar})? _ohlc;
-  String? _ohlcIstenen;
+  /// Gerçek çubuklar (mum ve göstergeler, ısınmalı) — varlık sayfası ve
+  /// Karşılaştır'la aynı yükleyici (`MumYukleyici`, 2026-10-11).
+  late final _ohlcYukleyici = MumYukleyici(
+      onDegisti: () {
+        if (mounted) setState(() {});
+      },
+      neden: 'AssetDetail.ohlc');
 
   @override
   Widget build(BuildContext context) {
@@ -1020,31 +1025,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // hesaplanır. İlk 19 nokta NaN olur (yetersiz veri) →
                     // atlanır. Kullanıcı chip ile açıp kapatır.
                     final ma20On = araclar && ref.watch(chartMA20Provider);
-                    List<FlSpot>? ma20Spots;
-                    if (ma20On && activeSeg.spots.length >= 20) {
-                      // MA20 her zaman ham fiyat serisinden hesaplanır;
-                      // sonra grafiğe koyulurken log domain'e alınır.
-                      final rawActive = rawSegments.firstWhere(
-                        (s) => !s.piyasaKapali && s.spots.isNotEmpty,
-                        orElse: () => TransactionSegment(
-                          spots: const [],
-                          lineColor: context.c.amberText,
-                          areaGradientStart: Colors.transparent,
-                          areaGradientEnd: Colors.transparent,
-                          thickness: 3.5,
-                        ),
-                      );
-                      final prices =
-                          rawActive.spots.map((s) => s.y).toList();
-                      final sma = TechnicalAnalysisService.smaSeries(
-                          prices, 20);
-                      ma20Spots = <FlSpot>[];
-                      for (int i = 0; i < sma.length; i++) {
-                        if (sma[i].isNaN) continue;
-                        ma20Spots
-                            .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
-                      }
-                    }
                     // EMA50 / EMA200 ve mum — ücretsiz katmanlar
                     // (`asset_detail/grafik_katmanlari.dart`). Görünmüyorsa
                     // (paywall kapalı, admin değil) hiçbiri çizilmez; eski
@@ -1070,12 +1050,28 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         )
                         .spots;
                     final seciliGun = _periods[_selectedPeriodIdx].days;
-                    if (ema50On || ema200On) _emaOnSeriniIste(seciliGun);
+                    // Kendi göstergeni yaz: EMA ile aynı seri ve ısınma.
+                    final ozelAcik = katmanAcik && !compareOn
+                        ? _acikOzelGostergeler
+                        : const <OzelGosterge>[];
                     if (mumOn) _mumSerisiniIste(seciliGun);
-                    // Gerçek mumlar (aralık seçicisi, 2026-10-10). Gelene
-                    // kadar ya da bu dönemde geçerli aralık yoksa aşağıdaki
-                    // türetilmiş mum çizilir.
-                    final mumAr = mumOn
+                    // Sıklık ve gerçek çubuklar (2026-10-11): mum YA DA bir
+                    // ortalama açıkken seçili sıklığın çubukları ısınmayla
+                    // istenir; MA20/EMA o çubuklardan hesaplanır (TradingView;
+                    // gerekçe `cubukOrtalamasi`). Varlık sayfası ve
+                    // Karşılaştır'la aynı kural (`aralikGerekli`). Çubuk
+                    // yoksa (kaynak yok, sıklık yok, boş yanıt) eski yol:
+                    // çizginin noktaları + dönem öncesi seri.
+                    final cubukGerekli = katmanAcik &&
+                        !compareOn &&
+                        aralikGerekli(
+                          mum: mumOn,
+                          ma20: ma20On,
+                          ema50: ema50On,
+                          ema200: ema200On,
+                          ozel: ozelAcik.isNotEmpty,
+                        );
+                    final mumAr = cubukGerekli
                         ? _mumAraligi(isIntraday, startDate, endDate)
                         : null;
                     final ohlcAr = mumAr?.aralik;
@@ -1083,27 +1079,89 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         ? null
                         : _ohlcBarlari(ohlcAr, isIntraday, startDate,
                             endDate, currentUnitTRY);
-                    final ohlcMumlar = (ohlcAr == null || ohlcBarlar == null)
+                    final cubuklar = ohlcAr != null && ohlcBarlar != null
+                        ? (aralik: ohlcAr, barlar: ohlcBarlar)
+                        : null;
+                    // Çubuklar YOLDAYKEN ortalama çizilmez, gelince bir kez
+                    // belirir (yoldayken çizgiden çizip sonra çubuğa atlamak
+                    // "grafik yeniden çiziliyor" diye okunuyordu).
+                    final cubukYolda =
+                        cubuklar == null && ohlcAr != null && _ohlcYolda;
+                    final ohlcMumlar = (!mumOn || cubuklar == null)
                         ? const <Mum>[]
-                        : _ohlcMumlari(ohlcBarlar, ohlcAr, startDate);
+                        : _ohlcMumlari(
+                            cubuklar.barlar, cubuklar.aralik, startDate);
+
+                    // MA20 overlay. Katmanları gören hesapta çubuklardan
+                    // (yukarıda); görmeyen hesapta BİREBİR eskisi: aktif
+                    // segmentin fiyat serisi, ilk 19 nokta NaN → atlanır.
+                    List<FlSpot>? ma20Spots;
+                    if (ma20On && cubuklar != null && !compareOn) {
+                      ma20Spots = _cubukOrtalamasi(cubuklar.barlar,
+                          cubuklar.aralik, startDate, toY,
+                          periyot: 20, tur: OrtalamaTuru.basit);
+                    } else if (ma20On &&
+                        !cubukYolda &&
+                        activeSeg.spots.length >= 20) {
+                      // MA20 her zaman ham fiyat serisinden hesaplanır;
+                      // sonra grafiğe koyulurken log domain'e alınır.
+                      final rawActive = rawSegments.firstWhere(
+                        (s) => !s.piyasaKapali && s.spots.isNotEmpty,
+                        orElse: () => TransactionSegment(
+                          spots: const [],
+                          lineColor: context.c.amberText,
+                          areaGradientStart: Colors.transparent,
+                          areaGradientEnd: Colors.transparent,
+                          thickness: 3.5,
+                        ),
+                      );
+                      final prices =
+                          rawActive.spots.map((s) => s.y).toList();
+                      final sma = TechnicalAnalysisService.smaSeries(
+                          prices, 20);
+                      ma20Spots = <FlSpot>[];
+                      for (int i = 0; i < sma.length; i++) {
+                        if (sma[i].isNaN) continue;
+                        ma20Spots
+                            .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
+                      }
+                    }
                     final mumHam = mumOn
                         ? _mumNoktalari(seciliGun, startDate, endDate,
                                 currentUnitTRY) ??
                             hamAktif
                         : hamAktif;
-                    final emaCizgileri = (ema50On || ema200On)
-                        ? _emaCizgileri(
-                            hamSeri: hamAktif,
-                            onSeri: _emaOnNoktalari(seciliGun, startDate),
-                            toY: toY,
-                            ema50: ema50On,
-                            ema200: ema200On,
-                          )
-                        : const <({List<FlSpot> spots, Color renk})>[];
-                    // Kendi göstergeni yaz: EMA ile aynı seri ve ısınma.
-                    final ozelAcik = katmanAcik && !compareOn
-                        ? _acikOzelGostergeler
-                        : const <OzelGosterge>[];
+                    final emaCizgileri = !(ema50On || ema200On) || cubukYolda
+                        ? const <({List<FlSpot> spots, Color renk})>[]
+                        : cubuklar != null
+                            ? [
+                                for (final (acik, periyot, renk) in [
+                                  (ema50On, kEmaKisa, context.c.gain),
+                                  (ema200On, kEmaUzun, context.c.loss),
+                                ])
+                                  if (acik)
+                                    (
+                                      spots: _cubukOrtalamasi(
+                                          cubuklar.barlar,
+                                          cubuklar.aralik,
+                                          startDate,
+                                          toY,
+                                          periyot: periyot,
+                                          tur: OrtalamaTuru.ustel),
+                                      renk: renk,
+                                    ),
+                              ]
+                            : () {
+                                _emaOnSeriniIste(seciliGun);
+                                return _emaCizgileri(
+                                  hamSeri: hamAktif,
+                                  onSeri:
+                                      _emaOnNoktalari(seciliGun, startDate),
+                                  toY: toY,
+                                  ema50: ema50On,
+                                  ema200: ema200On,
+                                );
+                              }();
                     if (ozelAcik.isNotEmpty) _emaOnSeriniIste(seciliGun);
                     // Gerçek mum varsa betik onda çalışır (OHLCV); aralık
                     // mum grafiğininki. Gelene kadar kapanış çizgisi.
@@ -1387,6 +1445,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             height: GrafikStili.grafikYuksekligi,
                             plotPaddingRight: GrafikStili.yEkseniGenisligi,
                             onViewportChanged: _ozelGorunumuYaz,
+                            // Dönem ya da sıklık değişince yakınlaştırma
+                            // sıfırlanır (yasin 2026-10-11).
+                            sifirlamaAnahtari:
+                                '$seciliGun|${ohlcAr?.name}',
                             builder: (viewMinX, viewMaxX) {
                               final yBounds = computeY(
                                 viewMinX,
@@ -1395,15 +1457,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 // çizginin üstündeler (2026-09-24), yani
                                 // aralığı genişletmezler; güvence olarak
                                 // kalır.
-                                // EMA de banda girer: uzun ortalama fiyatın
-                                // çok altında/üstünde kalabilir; banda
-                                // girmezse açılan çizgi kartın dışında kalır
-                                // ve "EMA200 çalışmıyor" diye okunur.
+                                // Ortalamalar ve kendi göstergen banda
+                                // GİRMEZ (2026-10-11, yasin TestFlight:
+                                // "gösterge değiştiyse grafik sabit
+                                // kalmalı"); bant fiyattan — çizgi ya da
+                                // mum fitilleri. Gerekçe `FiyatGrafigi._data`.
                                 extraSpots: [
                                   ...?compareBar?.spots,
                                   ...islemSpots,
-                                  for (final e in emaCizgileri) ...e.spots,
-                                  ..._ozelBantNoktalari(ozelSonuclar, toY),
                                   ..._ohlcUclari(ohlcMumlar, toY),
                                 ],
                               );

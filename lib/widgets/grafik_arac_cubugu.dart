@@ -7,7 +7,17 @@ import '../models/ohlc.dart';
 import '../theme/sandik.dart';
 
 /// Fiyat grafiğinin araç çubuğu — [aralık ⌄] · MUM · LOG · ƒx / MA20 · EMA50 ·
-/// EMA200. Aralık açılır menüsü (1 dk … ay) Mum açıkken görünür.
+/// EMA200. Aralık açılır menüsü (1 dk … ay) mum YA DA bir gösterge açıkken
+/// görünür ([aralikGerekli]).
+///
+/// ## Sıklık neden yalnız mumda değil (yasin, 2026-10-11 TestFlight)
+/// *"mum seçili değilken sıklık gelmiyor bu olması gereken mi?"* İlk sürümde
+/// sıklık yalnız mumların aralığıydı. Artık MA20/EMA50/EMA200 ve kendi
+/// göstergen de o sıklığın çubuklarıyla hesaplanıyor (TradingView:
+/// gösterge grafiğin zaman diliminde; `cubukOrtalamasi`). Yani sıklık
+/// göstergenin de ayarı: gösterge açıkken seçici görünür. Hiçbiri açık
+/// değilken (yalnız fiyat çizgisi) seçicinin değiştireceği bir şey yok,
+/// gizli kalır — işe yaramayan kontrol göstermeyiz.
 ///
 /// ## Neden ortak (yasin, 2026-10-10)
 /// *"ana sayfa aramadan gidilen varlık kartı, portföyden varlık performans
@@ -116,7 +126,15 @@ class GrafikAracCubugu extends ConsumerWidget {
     ];
     final ar = aralik;
     final pencere = pencereDakika;
-    final secici = mumAcik && ar != null && gecerliAraliklar.length >= 2;
+    final secici = aralikGerekli(
+          mum: mumAcik,
+          ma20: ma20Acik,
+          ema50: ema50Acik,
+          ema200: ema200Acik,
+          ozel: (o?.acikSayi ?? 0) > 0,
+        ) &&
+        ar != null &&
+        gecerliAraliklar.length >= 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -184,6 +202,18 @@ class GrafikAracCubugu extends ConsumerWidget {
     );
   }
 }
+
+/// Sıklık seçicisi (ve onun çubukları) gerekiyor mu: mum ya da çubuklardan
+/// hesaplanan bir gösterge açık. Üç ekran aynı kuralı buradan okur —
+/// çubuk isteği de seçicinin görünürlüğü de aynı soruya bağlı.
+bool aralikGerekli({
+  required bool mum,
+  required bool ma20,
+  required bool ema50,
+  required bool ema200,
+  bool ozel = false,
+}) =>
+    mum || ma20 || ema50 || ema200 || ozel;
 
 /// `ƒx` çipinin durumu. Kilitliyse [onTap] paywall'u açar (çağıran karar
 /// verir, kaynak `grafik_ozel_gosterge`).
@@ -270,6 +300,14 @@ class MumAraligiMenusu extends StatelessWidget {
               ),
           ],
           // Görsel çip GrafikCipi ile aynı ölçüde; dokunma alanı 44 pt.
+          //
+          // Görünüm (yasin 2026-10-11: "sıklık komponentini gözden geçir,
+          // uygulama geneli tasarıma uygun olmalı"): ilk sürüm AÇIK çiple
+          // aynı amber dolguyu taşıyordu ve bir aç/kapa anahtarı gibi
+          // okunuyordu (dokununca kapanacak sanılıyordu). Artık uygulamanın
+          // açılır seçicisi gibi ([GrafikTipiSecici]): nötr zemin, saat
+          // simgesi + değer + aşağı ok. Amber yalnız AÇIK katmanların rengi
+          // kalır; seçicinin değeri bir durum değil, bir ayar.
           child: ConstrainedBox(
             constraints: const BoxConstraints(
                 minWidth: SandikTouch.min, minHeight: SandikTouch.min),
@@ -279,14 +317,16 @@ class MumAraligiMenusu extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: context.c.amberFill.withValues(alpha: 0.18),
+                  color: context.c.overlay,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(
-                      color: context.c.amberFill.withValues(alpha: 0.55)),
+                  border: Border.all(color: context.c.hairline),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    Icon(Icons.schedule_rounded,
+                        size: 12, color: context.c.text58),
+                    const SizedBox(width: SandikSpace.xs),
                     Flexible(
                       child: Text(
                         aralik.etiketi(context),
@@ -294,14 +334,14 @@ class MumAraligiMenusu extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: context.t.labelLarge?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: context.c.amberText,
+                          color: context.c.text90,
                           letterSpacing: 0.4,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 2),
+                    const SizedBox(width: SandikSpace.xxs),
                     Icon(Icons.expand_more_rounded,
-                        size: 14, color: context.c.amberText),
+                        size: 14, color: context.c.text58),
                   ],
                 ),
               ),

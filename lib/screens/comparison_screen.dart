@@ -541,6 +541,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
             if (TufeSeries.isTufe(s.ticker)) s.ticker,
         },
         katman: kat?.katman,
+        // Dönem ya da sıklık değişince yakınlaştırma sıfırlanır.
+        sifirlamaAnahtari:
+            '${_periods[_cizilenDonemIdx].days}|${kat?.aralik?.name}',
       ),
       ),
     ),
@@ -581,7 +584,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   ///
   /// Görünürlük varlık detayıyla aynı kapı (paywall kapalıyken yalnız
   /// admin, sade Başlangıç'ta yok); görünmüyorsa ekran BİREBİR eskisi.
-  ({Widget cubuk, YuzdeKatmani? katman, String? hedefAdi})? _katman() {
+  ({Widget cubuk, YuzdeKatmani? katman, String? hedefAdi, MumAraligi? aralik})?
+      _katman() {
     final gorunur = ref.watch(seviyeGorunurlukProvider).grafikAraclari &&
         ref.watch(premiumOzellikleriGorunurProvider);
     if (!gorunur) return null;
@@ -603,60 +607,96 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       final spots = [
         for (final k in keys) FlSpot(k.toDouble(), norm.points[k]!),
       ];
-      final ortalamalar = <FiyatOrtalamasi>[
-        if (ma20On && spots.length >= 20)
-          () {
-            final sma = TechnicalAnalysisService.smaSeries(
-                [for (final s in spots) s.y], 20);
-            return FiyatOrtalamasi(
-              spots: [
-                for (var i = 0; i < sma.length; i++)
-                  if (!sma[i].isNaN) FlSpot(spots[i].x, sma[i]),
-              ],
-              cizgiRengi: context.c.text58,
-              kesikli: true,
+      final a = FiyatKaynagi.gozlemVarligi(
+        ticker: kimlik.ticker,
+        type: kimlik.type,
+        currency: kimlik.currency,
+        subCategory: kimlik.subCategory,
+        name: kimlik.name,
+      );
+      kapanistan = !FiyatKaynagi.mumKaynagi(a).gercekOhlc;
+      final gun = _periods[_cizilenDonemIdx].days;
+      final gunIci = gun <= 1;
+      final bas = keys.isEmpty
+          ? DateTime.now()
+          : DateTime.fromMillisecondsSinceEpoch(keys.first);
+      final son = DateTime.now();
+      final span =
+          gunIci ? 1440.0 : son.difference(bas).inMinutes.toDouble();
+      pencere = span;
+      // Sıklık ve çubuklar — varlık detayı ve varlık sayfasıyla aynı kural
+      // (`aralikGerekli`, 2026-10-11): mum ya da bir ortalama açıkken seçili
+      // sıklığın gerçek çubukları ısınmayla istenir, ortalamalar onlardan.
+      final gerekli = spots.length >= 2 &&
+          aralikGerekli(
+              mum: mumOn, ma20: ma20On, ema50: ema50On, ema200: ema200On);
+      if (gerekli) {
+        aralik = etkinAralik(a, span, secilenMumAraligi(ref, span));
+        gecerli = gecerliAraliklar(a, span);
+      }
+      final ar = aralik;
+      final tumBarlar = ar == null
+          ? null
+          : _mum.mumlar(
+              a: a,
+              aralik: ar,
+              bas: bas,
+              son: son,
+              canliBirim: norm.lastPrice,
+              gunIci: gunIci,
+              isinma: kEmaUzun,
             );
-          }(),
+      final yolda = tumBarlar == null && ar != null && _mum.bekliyor;
+      final basMs = bas.millisecondsSinceEpoch;
+      // Yüzde uzayı: aynı seri, aynı taban (dönemin ilk fiyatı) — çizgiyle
+      // birebir hizalı. Ortalama HAM fiyattan alınır, sonra yüzdeye taşınır
+      // (doğrusal dönüşüm, sonuç aynı; ısınma çubukları tabana göre de doğru).
+      final taban = norm.firstPrice;
+      double yuzde(double v) => (v / taban - 1) * 100;
+
+      List<FlSpot> ortalama(int periyot, OrtalamaTuru tur) {
+        if (tumBarlar != null && ar != null && taban > 0) {
+          return [
+            for (final p in cubukOrtalamasi(tumBarlar,
+                aralik: ar, periyot: periyot, tur: tur, gorunurBasMs: basMs))
+              FlSpot(p.x, yuzde(p.y)),
+          ];
+        }
+        if (yolda) return const [];
+        if (tur == OrtalamaTuru.ustel) {
+          return emaNoktalari(spots, periyot: periyot);
+        }
+        if (spots.length < periyot) return const [];
+        final sma = TechnicalAnalysisService.smaSeries(
+            [for (final s in spots) s.y], periyot);
+        return [
+          for (var i = 0; i < sma.length; i++)
+            if (!sma[i].isNaN) FlSpot(spots[i].x, sma[i]),
+        ];
+      }
+
+      final ortalamalar = <FiyatOrtalamasi>[
+        if (ma20On)
+          FiyatOrtalamasi(
+            spots: ortalama(20, OrtalamaTuru.basit),
+            cizgiRengi: context.c.text58,
+            kesikli: true,
+          ),
         for (final (acik, periyot, renk) in [
           (ema50On, kEmaKisa, context.c.gain),
           (ema200On, kEmaUzun, context.c.loss),
         ])
           if (acik)
             FiyatOrtalamasi(
-                spots: emaNoktalari(spots, periyot: periyot), cizgiRengi: renk),
+                spots: ortalama(periyot, OrtalamaTuru.ustel),
+                cizgiRengi: renk),
       ];
       var mumlar = const <Mum>[];
       if (mumOn && spots.length >= 2) {
-        final a = FiyatKaynagi.gozlemVarligi(
-          ticker: kimlik.ticker,
-          type: kimlik.type,
-          currency: kimlik.currency,
-          subCategory: kimlik.subCategory,
-          name: kimlik.name,
-        );
-        kapanistan = !FiyatKaynagi.mumKaynagi(a).gercekOhlc;
-        final gun = _periods[_cizilenDonemIdx].days;
-        final gunIci = gun <= 1;
-        final bas = DateTime.fromMillisecondsSinceEpoch(keys.first);
-        final son = DateTime.now();
-        final span =
-            gunIci ? 1440.0 : son.difference(bas).inMinutes.toDouble();
-        pencere = span;
-        aralik = etkinAralik(a, span, secilenMumAraligi(ref, span));
-        gecerli = gecerliAraliklar(a, span);
-        final barlar = aralik == null
+        final barlar = (tumBarlar == null || ar == null)
             ? null
-            : _mum.mumlar(
-                a: a,
-                aralik: aralik,
-                bas: bas,
-                son: son,
-                canliBirim: norm.lastPrice,
-                gunIci: gunIci,
-              );
-        final taban = norm.firstPrice;
-        double yuzde(double v) => (v / taban - 1) * 100;
-        mumlar = (barlar != null && aralik != null && taban > 0)
+            : donemCubuklari(tumBarlar, ar, basMs);
+        mumlar = (barlar != null && barlar.length >= 2 && ar != null && taban > 0)
             ? grafikMumlari([
                 for (final b in barlar)
                   OhlcBar(
@@ -667,7 +707,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                     kapanis: yuzde(b.kapanis),
                     hacim: b.hacim,
                   ),
-              ], aralik: aralik, baslangicMs: 0, birimMs: 1)
+              ], aralik: ar, baslangicMs: 0, birimMs: 1)
             : mumlariGrafikUzayinda(spots, baslangicMs: 0, birimMs: 1);
       }
       katman = YuzdeKatmani(
@@ -687,6 +727,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       ),
       katman: katman,
       hedefAdi: hedef == null ? null : _displayTicker(hedef),
+      aralik: aralik,
     );
   }
 

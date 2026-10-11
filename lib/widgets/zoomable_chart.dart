@@ -113,6 +113,22 @@ class ChartViewport extends ChangeNotifier {
   /// Ertelenmiş bildirimi at — [updateFullRangeSessiz] ile birlikte kullanılır.
   void bildir() => notifyListeners();
 
+  /// Tam aralığı yazar VE pencereyi ona sıfırlar, bildirim atmadan (build
+  /// içinden; bkz. [ZoomableChart.sifirlamaAnahtari]). Değiştiyse `true`.
+  bool sifirlaSessiz(double newMin, double newMax) {
+    if (fullMinX == newMin &&
+        fullMaxX == newMax &&
+        _minX == newMin &&
+        _maxX == newMax) {
+      return false;
+    }
+    fullMinX = newMin;
+    fullMaxX = newMax;
+    _minX = newMin;
+    _maxX = newMax;
+    return true;
+  }
+
   void reset() {
     set(fullMinX, fullMaxX);
   }
@@ -209,6 +225,19 @@ class ZoomableChart extends StatefulWidget {
   /// anlamlı noktalarda — Robinhood/Apple Stocks yaklaşımı.
   final Set<double> titresimNoktalari;
 
+  /// Değişince yakınlaştırma SIFIRLANIR (tam aralık). Çağıran dönemi ve
+  /// mum sıklığını verir.
+  ///
+  /// Neden (yasin, 2026-10-11 TestFlight): *"zoom yapıldığında zaman
+  /// aralığı değişince chartta kalıyor o zoom, zaman değişikliğinde
+  /// defaultunda açılmalı."* Tam aralık değişince pencere korunuyordu
+  /// ([ChartViewport.korunanPencere]): bu, dakika dönümünde uzayan gün içi
+  /// aralık için doğru (parmak ekrandayken geri atılmasın), dönem
+  /// değişiminde yanlış — 1Y'de yakınlaştırılmış pencere 1H'ye taşınıyordu.
+  /// İkisini ayırt edecek tek bilgi çağıranda: dönem değişti mi.
+  /// `null` → eski davranış (yalnız aralık değişimi, pencere korunur).
+  final Object? sifirlamaAnahtari;
+
   const ZoomableChart({
     super.key,
     required this.fullMinX,
@@ -230,6 +259,7 @@ class ZoomableChart extends StatefulWidget {
     this.imlecEtiketi,
     this.imlecEtiketiBuilder,
     this.titresimNoktalari = const {},
+    this.sifirlamaAnahtari,
   });
 
   @override
@@ -307,6 +337,9 @@ class _ZoomableChartState extends State<ZoomableChart> {
   // dokunmadan dört grafik birden düzelir.
   LineChartData? _oncekiCizilen;
 
+  /// Son karşılaştırmada çubuk sayısı değişti mi (bkz. [_gorunurDegisti]).
+  bool _yapiDegisti = false;
+
   ///
   /// Karşılaştırma PİKSEL ALTI toleranslıdır: zaman ekseni "şu an"a bağlı
   /// grafiklerde her tikte son nokta ve eksen sonu biraz kayar (ölçüldü:
@@ -315,8 +348,20 @@ class _ZoomableChartState extends State<ZoomableChart> {
   bool _gorunurDegisti(LineChartData yeni) {
     final eski = _oncekiCizilen;
     _oncekiCizilen = yeni;
+    _yapiDegisti = false;
     if (eski == null) return true;
     if (identical(eski, yeni)) return false;
+    // Çubuk SAYISI değişti (gösterge, mum ya da karşılaştırma eklendi/
+    // çıktı): morf YOK. fl_chart çubukları SIRA NUMARASIYLA eşler; başa
+    // eklenen EMA, eski fiyat çizgisinin noktalarından kendi noktalarına
+    // morf ediyor, fiyat çizgisi de bir sonraki çubuğa kayıyordu — ekranda
+    // "grafik bozulup tekrar çiziliyor" (yasin 2026-10-11 TestFlight:
+    // "sadece gösterge değiştiyse grafik sabit kalıp EMA eklenip
+    // çıkarılmalı"). Katman anında belirir/kaybolur, fiyat çizgisi kımıldamaz.
+    if (eski.lineBarsData.length != yeni.lineBarsData.length) {
+      _yapiDegisti = true;
+      return true;
+    }
     final tx = (yeni.maxX - yeni.minX).abs() / 1000;
     final ty = (yeni.maxY - yeni.minY).abs() / 1000;
     bool yakin(double? a, double? b, double t) =>
@@ -373,6 +418,24 @@ class _ZoomableChartState extends State<ZoomableChart> {
     if (oldWidget.viewportController != widget.viewportController) {
       oldWidget.viewportController?.removeListener(_onControllerChanged);
       widget.viewportController?.addListener(_onControllerChanged);
+    }
+    if (oldWidget.sifirlamaAnahtari != widget.sifirlamaAnahtari) {
+      // Dönem/sıklık değişti: yakınlaştırma taşınmaz (bkz.
+      // [ZoomableChart.sifirlamaAnahtari]). Build sırasında: setState yok,
+      // yerel pencere doğrudan yazılır; controller'ın bildirimi build
+      // sonrasına ertelenir (`updateFullRangeSessiz` ile aynı gerekçe).
+      _localMinX = widget.fullMinX;
+      _localMaxX = widget.fullMaxX;
+      final c = widget.viewportController;
+      if (c != null && c.sifirlaSessiz(widget.fullMinX, widget.fullMaxX)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => c.bildir());
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onViewportChanged?.call(widget.fullMinX, widget.fullMaxX);
+        }
+      });
+      return;
     }
     if (oldWidget.fullMinX != widget.fullMinX ||
         oldWidget.fullMaxX != widget.fullMaxX) {
@@ -640,6 +703,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
                   // değişmediyse de yok (bkz. `_gorunurDegisti`).
                   duration: _interacting ||
                           !gorunurDegisti ||
+                          _yapiDegisti ||
                           MediaQuery.disableAnimationsOf(context)
                       ? Duration.zero
                       : widget.swapDuration,

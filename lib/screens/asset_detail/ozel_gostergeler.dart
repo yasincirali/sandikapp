@@ -133,16 +133,12 @@ extension _OzelGostergeler on _AssetDetailScreenState {
           List<OzelGosterge> acik, BetikVerisi veri) =>
       ozelGostergeleriCalistir(acik, veri);
 
-  /// Fiyatın üstündeki çizimler ve bant noktaları ortak
+  /// Fiyatın üstündeki çizimler ortak
   /// (`widgets/gosterge_cizimi.dart`, varlık sayfasıyla aynı).
   ({List<LineChartBarData> bars, List<BetweenBarsData> dolgular})
       _ozelCubuklar(List<_OzelSonuc> sonuclar, double Function(double) toY,
               {required int ofset}) =>
           fiyatUstuCizimleri(context, sonuclar, toY, ofset: ofset);
-
-  List<FlSpot> _ozelBantNoktalari(
-          List<_OzelSonuc> sonuclar, double Function(double) toY) =>
-      fiyatUstuBantNoktalari(sonuclar, toY);
 
   /// Ana grafiğin odak penceresi değişti (dönem, veri). Build içinden
   /// çağrılır; bildirim kare sonrasına ertelenir (build sırasında dinleyici

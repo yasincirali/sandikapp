@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/asset.dart';
 import '../models/ohlc.dart';
 import 'crash_reporter.dart';
+import 'history_service.dart' show FiyatKaynagi, MumKaynakTuru;
 import 'mum_verisi.dart';
 
 /// Bir ekranın gerçek mum isteği — "build sırasında iste, eldekini döndür".
@@ -29,6 +30,17 @@ class MumYukleyici {
 
   bool _kapali = false;
   String? _istenen;
+
+  /// Son istenen anahtarın yanıtı geldi mi (boş da olsa).
+  String? _tamamlanan;
+
+  /// Son istek hâlâ yolda mı. Çağıran "henüz yok" ile "hiç gelmeyecek"
+  /// (kaynak boş döndü, ağ hatası) arasını ayırır: yoldayken göstergeyi
+  /// çizmez (gelince bir kez çizilir), gelmezse çizginin noktalarına düşer.
+  /// Eskiden yükleme sırasında çizgiden hesaplanan ortalama çiziliyor,
+  /// çubuklar gelince başka bir ortalamaya atlıyordu — "grafik bozulup
+  /// tekrar çiziliyor" (yasin 2026-10-11).
+  bool get bekliyor => _istenen != null && _tamamlanan != _istenen;
   ({MumAraligi aralik, int basMs, List<OhlcBar> barlar})? _veri;
 
   /// Ekran kapanınca: gecikmiş yanıt [onDegisti]'yi çağırmaz.
@@ -53,6 +65,18 @@ class MumYukleyici {
       final carpan = aralik.gunIci ? 4 : 1.5;
       istekBas = bas.subtract(
           Duration(minutes: (aralik.dakika * isinma * carpan).round()));
+      // Yahoo bu aralıkta geriye ancak [MumAraligi.yahooGecmisGun] verir
+      // (1 dk: 8 gün). Isınma bu sınırı aşarsa istek BOŞ döner ve dönemin
+      // kendi mumları da kaybolurdu: ısınma sınırda kırpılır, ortalama o
+      // zaman dönemin biraz içinden başlar (uydurma yok).
+      final sinir = aralik.yahooGecmisGun;
+      if (sinir != null &&
+          FiyatKaynagi.mumKaynagi(a).tur == MumKaynakTuru.yahoo) {
+        final enEski = DateTime.now().subtract(Duration(days: sinir));
+        if (istekBas.isBefore(enEski)) {
+          istekBas = enEski.isBefore(bas) ? enEski : bas;
+        }
+      }
     }
     final basMs = istekBas.millisecondsSinceEpoch;
     final adim = aralik.gunIci ? 60000 : 600000;
@@ -72,9 +96,11 @@ class MumYukleyici {
           )
           .then<void>((barlar) {
         if (_kapali || _istenen != anahtar) return;
+        _tamamlanan = anahtar;
         if (barlar.isEmpty &&
             _veri?.aralik == aralik &&
             _veri?.basMs == basMs) {
+          onDegisti();
           return;
         }
         _veri = (aralik: aralik, basMs: basMs, barlar: barlar);
