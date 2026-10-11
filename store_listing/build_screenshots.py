@@ -288,22 +288,24 @@ REDACTIONS_V3 = {
 #  03 mum       → mum + EMA50/200 + log (#175 ile herkese açık) — "ciddi araç"
 #  04 takip     → sahip olmadığını portföyünle aynı grafikte kıyasla
 #  05 alarm     → hedef fiyat alarmı, kısayollarıyla
-#  06 ana       → gün içi kart + "paran fiyatlara yetişiyor mu". Pazar günü
-#                 çekildi (piyasa kapalı, yalnız BTC oynadı → kırmızı ₺171),
-#                 bu yüzden öne alınmadı; yeşil bir hafta içi günü yeniden
-#                 çekilirse 02'ye yükselebilir.
+#  06 ana       → set C'den taşındı (kullanıcı kararı 2026-10-11): yeni ana
+#                 ekran Pazar çekildi (kırmızı "Geriledi", "100 liran bugün
+#                 100 lira" — TÜFE ile başa baş), eskisi "31,49 puan
+#                 enflasyonun önündesin" diyor. Bedeli: eski arayüz ve başka
+#                 toplam (₺973.501 — 01'de ₺874.835). Sayı yamalanmaz;
+#                 yeşil bir hafta içi günü yeniden çekilince değiştir.
 #  07 paylaşım  → set C'den taşındı: kartta tutar YOK, toplam çelişmez
 #  08 masraf    → komisyon/stopaj/BSMV şeffaflığı (SCREENSHOT_PLAN #3)
 #
-# Set C'nin 01–05 ve 08'i taşınmadı: eski arayüz + başka toplam (₺973.501);
-# yeni karelerle aynı galeride "aynı portföy, aynı toplam" kuralını bozar.
+# Set C'nin 02–05 ve 08'i taşınmadı: eski arayüz + başka toplam (₺973.501);
+# yeni karelerin karşılığını eski hâliyle gösterirlerdi.
 CAPTIONS_V4 = {
     "01": ("Hisse, fon, altın,\ndöviz, kripto", "Hepsi tek toplamda, tek dağılımda"),
     "02": ("Paran gerçekte\nne kazandırdı?", "Yeni alımın getiriye sayılmaz"),
     "03": ("Mum grafik,\nEMA50 ve EMA200", "Log ölçek, istediğin aralıkta mum"),
     "04": ("Almadığın varlığı\nda izle", "Portföyünle aynı grafikte kıyasla"),
     "05": ("Hedef fiyata\ngelince haber al", "Kendi fiyatın ya da %5, %10 kısayolu"),
-    "06": ("Paran fiyatlara\nyetişiyor mu?", "Her gün, enflasyonla yan yana"),
+    "06": CAPTIONS_V3["01"],
     "07": CAPTIONS_V3["07"],
     "08": ("Komisyon, stopaj,\nBSMV açık açık", "Her masraf kalemi açıklamasıyla"),
 }
@@ -317,6 +319,7 @@ REDACTIONS_V4 = {
     # etiket 0.741–0.871 × 0.226–0.236, renk (155,167,165).
     "01": [(0.700, 0.2140, 0.210, 0.0350, "Ayşe", "c", 0.0098,
             (155, 167, 165))],
+    "06": REDACTIONS_V3["01"],   # 9:41 + ortak seçicide "Ayşe"
     "07": REDACTIONS_V3["07"],
 }
 
