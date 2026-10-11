@@ -12,7 +12,8 @@ Kullanım:
 
 Girdi : screenshots/raw/NN_ad.png      (set A — varsayılan)
         screenshots/raw_v2/NN_ad.jpeg  (set B — `--v2`)
-        screenshots/raw_v3/NN_ad.jpg   (set C — `--v3`, GÜNCEL)
+        screenshots/raw_v3/NN_ad.jpg   (set C — `--v3`)
+        screenshots/raw_v4/NN_ad.png   (set D — `--v4`, GÜNCEL)
 
 Çıktı, mağaza başına ayrı klasöre:
     android/screenshots/<set>/1080x1920/   → Play Console
@@ -66,6 +67,15 @@ RAW_V2 = os.path.join(HERE, "screenshots", "raw_v2")
 # Tek kaynak olması şu garantiyi veriyor: galeri ile video AYNI portföyü
 # gösteriyor, rakamlar tutuyor.
 RAW_V3 = os.path.join(HERE, "screenshots", "raw_v3")
+
+# Dördüncü set (2026-10-11): gerçek cihazdan, GÜNCEL arayüzle.
+#
+# Set C'nin kareleri Eylül arayüzünü gösteriyor (Grafik/Özet sekmeli
+# Performans, eski ana ekran, başlıkta çıkış düğmesi); o yüzeyler artık
+# öyle değil. Mağaza görseli uygulamanın bugünkü hâlini göstermeli.
+# Portföy aynı demo portföy (DEMO_PORTFOY.md — Çeyrek Altın 20, DLY 32.000,
+# KCHOL 620) + kripto; tutarlar 11.10.2026 fiyatlarıyla (₺874.835).
+RAW_V4 = os.path.join(HERE, "screenshots", "raw_v4")
 
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")
 FONT_MED = os.path.join(ROOT, "assets", "fonts", "DMSans-Medium.ttf")
@@ -267,6 +277,50 @@ REDACTIONS_V3 = {
 }
 
 
+# ══ DÖRDÜNCÜ SET ═════════════════════════════════════════════════════════
+#
+# Sıra yine EN GÜÇLÜ İDDİA ÖNCE; Play en fazla 8 telefon görseli alır,
+# set bu yüzden 8 karede tutuldu (App Store'da 10'a kadar yer var).
+#
+#  01 portföy   → kategori beklentisi: beş tür (kripto dahil) tek dağılımda
+#  02 getiri    → "paranın getirisi": yeni alımı getiriden ayırıyor —
+#                 set C'deki "katkın mı, piyasa mı" iddiasının güncel yüzü
+#  03 mum       → mum + EMA50/200 + log (#175 ile herkese açık) — "ciddi araç"
+#  04 takip     → sahip olmadığını portföyünle aynı grafikte kıyasla
+#  05 alarm     → hedef fiyat alarmı, kısayollarıyla
+#  06 ana       → gün içi kart + "paran fiyatlara yetişiyor mu". Pazar günü
+#                 çekildi (piyasa kapalı, yalnız BTC oynadı → kırmızı ₺171),
+#                 bu yüzden öne alınmadı; yeşil bir hafta içi günü yeniden
+#                 çekilirse 02'ye yükselebilir.
+#  07 paylaşım  → set C'den taşındı: kartta tutar YOK, toplam çelişmez
+#  08 masraf    → komisyon/stopaj/BSMV şeffaflığı (SCREENSHOT_PLAN #3)
+#
+# Set C'nin 01–05 ve 08'i taşınmadı: eski arayüz + başka toplam (₺973.501);
+# yeni karelerle aynı galeride "aynı portföy, aynı toplam" kuralını bozar.
+CAPTIONS_V4 = {
+    "01": ("Hisse, fon, altın,\ndöviz, kripto", "Hepsi tek toplamda, tek dağılımda"),
+    "02": ("Paran gerçekte\nne kazandırdı?", "Yeni alımın getiriye sayılmaz"),
+    "03": ("Mum grafik,\nEMA50 ve EMA200", "Log ölçek, istediğin aralıkta mum"),
+    "04": ("Almadığın varlığı\nda izle", "Portföyünle aynı grafikte kıyasla"),
+    "05": ("Hedef fiyata\ngelince haber al", "Kendi fiyatın ya da %5, %10 kısayolu"),
+    "06": ("Paran fiyatlara\nyetişiyor mu?", "Her gün, enflasyonla yan yana"),
+    "07": CAPTIONS_V3["07"],
+    "08": ("Komisyon, stopaj,\nBSMV açık açık", "Her masraf kalemi açıklamasıyla"),
+}
+
+# Durum çubuğuna dokunulmuyor: set C'deki kayıt rozeti burada yok, saat
+# (17:27–17:31) gerçek bir telefonun doğal parçası. "9:41" yaması SF Pro
+# yerine DM Sans ile yazılacağı için gözle belli olurdu.
+REDACTIONS_V4 = {
+    # Ortak seçicide gerçek test hesabının adı ("TestUser") — set C'deki
+    # gibi "Ayşe". Ölçüm (1125×2436): segment iç zemini y 0.209–0.254,
+    # etiket 0.741–0.871 × 0.226–0.236, renk (155,167,165).
+    "01": [(0.700, 0.2140, 0.210, 0.0350, "Ayşe", "c", 0.0098,
+            (155, 167, 165))],
+    "07": REDACTIONS_V3["07"],
+}
+
+
 def gradient(size):
     """Dikey degrade zemin."""
     w, h = size
@@ -381,7 +435,8 @@ def write_grid_overlays():
     out_dir = os.path.join(HERE, "screenshots", "grid")
     os.makedirs(out_dir, exist_ok=True)
 
-    src_dir = (RAW_V3 if "--v3" in sys.argv
+    src_dir = (RAW_V4 if "--v4" in sys.argv
+               else RAW_V3 if "--v3" in sys.argv
                else RAW_V2 if "--v2" in sys.argv else RAW)
     for name in sorted(f for f in os.listdir(src_dir)
                        if f.lower().endswith((".png", ".jpg", ".jpeg"))):
@@ -505,7 +560,10 @@ def main():
     # Setler AYRI portföylere ait; tek galeride karıştırmak "aynı portföy
     # tüm karelerde" tutarlılığını bozar. Bu yüzden set adı çıktı yolunda
     # kalır ve Console'a yalnızca biri yüklenir.
-    if "--v3" in sys.argv:
+    if "--v4" in sys.argv:
+        src_dir, set_adi = RAW_V4, "set_d"
+        captions, redactions = CAPTIONS_V4, REDACTIONS_V4
+    elif "--v3" in sys.argv:
         src_dir, set_adi = RAW_V3, "set_c"
         captions, redactions = CAPTIONS_V3, REDACTIONS_V3
     elif "--v2" in sys.argv:
