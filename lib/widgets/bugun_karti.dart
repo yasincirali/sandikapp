@@ -1192,6 +1192,12 @@ class _GunIciEgri extends StatelessWidget {
       );
 }
 
+/// "Bugün" kartı eğrisinin Y bandı — bkz. [_GunIciPainter.paint] notu.
+/// Saf; `bugun_karti_egri_bandi_test` kilitler.
+@visibleForTesting
+({double min, double max}) gunIciEgriBandi(List<double> seri) =>
+    DailySummary.niceAxisBounds(seri);
+
 class _GunIciPainter extends CustomPainter {
   const _GunIciPainter({
     required this.seri,
@@ -1210,21 +1216,23 @@ class _GunIciPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (seri.length < 2) return;
-    var min = seri.first, max = seri.first;
-    for (final v in seri) {
-      if (v < min) min = v;
-      if (v > max) max = v;
-    }
-    // Göreli düz eşik — `DailySummary.isFlat` ile aynı gerekçe: 5 kuruşluk
-    // fark tuvale yayılmasın.
-    final aralik = max - min;
-    final duz = aralik <= max.abs() * 1e-6;
+    // Bant ana ekran widget'ı / Live Activity ile AYNI kuraldan
+    // (`DailySummary.niceAxisBounds`, asgari bant portföyün %0,5'i —
+    // `gunIciAsgariBantOrani`, Performans "Bugün" grafiğinin de tabanı).
+    //
+    // Eskiden bant ham min/max'tı; düz eşiği yalnız `1e-6` idi. ₺1,8M'lik
+    // portföyde ₺30'luk kur oynaması (oran 1,6e-5) eşiği geçip kartın
+    // tamamına yayılıyor, Performans aynı seriyi dümdüz çizerken burada
+    // dağ-tepe bir "gün" görünüyordu (TestFlight bulgusu 2026-10-11, pazar
+    // gecesi +₺20). Üç yüzey aynı günü aynı ölçekte çizer; gerçek hareket
+    // (%0,5 ve üstü) yine kartın yüksekliğine yayılır.
+    final bant = gunIciEgriBandi(seri);
+    final aralik = bant.max - bant.min;
     const kenar = 3.0;
-    double y(double v) => duz
-        ? size.height / 2
-        : size.height -
-            ((v - min) / aralik) * (size.height - 2 * kenar) -
-            kenar;
+    double y(double v) =>
+        size.height -
+        ((v - bant.min) / aralik) * (size.height - 2 * kenar) -
+        kenar;
 
     final tam = Path();
     for (var i = 0; i < seri.length; i++) {
