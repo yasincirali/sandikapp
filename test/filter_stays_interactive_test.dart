@@ -151,14 +151,14 @@ void main() {
       await _pump(tester);
 
       // Ön koşul: ilk yüklemede grafik çizilmiş, spinner yok.
-      expect(find.byType(CustomLoadingView), findsNothing,
+      expect(find.byType(CustomLoadingIndicator), findsNothing,
           reason: 'ön koşul: ilk yükleme bitmiş olmalı');
 
       await tester.tap(find.text('1 yıl').first, warnIfMissed: false);
       await tester.pump(); // periyot değişiminin ilk karesi
 
       // ASIL İDDİA: bu karede spinner OLMAMALI — eski seri soluk çizilir.
-      expect(find.byType(CustomLoadingView), findsNothing,
+      expect(find.byType(CustomLoadingIndicator), findsNothing,
           reason: 'periyot değişiminde loading göstergesi çıktı — '
               'bayat seri çizilmek yerine spinner\'a düşülüyor');
 

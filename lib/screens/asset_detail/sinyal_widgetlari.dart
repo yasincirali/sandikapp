@@ -1,20 +1,8 @@
 part of '../asset_detail_screen.dart';
 
-/// Sinyal kartı, teknik sinyal paneli, sinyal dağılımı ve altın işlem modeli.
+/// Sinyal kartı, teknik sinyal paneli ve sinyal dağılımı.
 /// `asset_detail_screen.dart`'ın part'ı (2026-09-14); dışarıdan
 /// `screens/asset_detail_screen.dart` ile import edilmeye devam eder.
-class GoldTransaction {
-  final DateTime date;
-  final double gramChange;
-  final String label;
-
-  GoldTransaction({
-    required this.date,
-    required this.gramChange,
-    required this.label,
-  });
-}
-
 /// Bu varlık için ÜRETİLMİŞ VE KAYDEDİLMİŞ son sinyal.
 ///
 /// ## Neden ayrı bir kart

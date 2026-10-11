@@ -363,7 +363,7 @@ class _PortfolioPerformanceScreenState
 
   // Ana grafik + volume subchart aynı X viewport'unu paylaşsın diye
   // ortak controller. Grafiğin fullMinX/fullMaxX'i period değiştikçe
-  // güncellenir; ZoomableChart & ZoomableBarChart bunu dinler.
+  // güncellenir; ZoomableChart bunu dinler.
   ChartViewport? _viewport;
   String? _viewportKey;
 
