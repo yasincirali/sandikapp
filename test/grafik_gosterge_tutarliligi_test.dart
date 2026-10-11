@@ -2,11 +2,15 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/services/mum_verisi.dart';
+import 'package:portfoy_takip/utils/chart_axis.dart';
 import 'package:portfoy_takip/utils/hareketli_ortalama.dart';
 import 'package:portfoy_takip/utils/mum_turetici.dart';
+import 'package:portfoy_takip/widgets/fiyat_grafigi.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/widgets/zoomable_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,9 +23,12 @@ import 'helpers/kaynak.dart';
 ///    seçili sıklığın çubuklarından, ısınmayla (`cubukOrtalamasi`).
 ///  · "mum seçili değilken sıklık gelmiyor" → gösterge açıkken de var.
 ///  · "gösterge değişince grafik bozulup tekrar çiziliyor" → çubuk sayısı
-///    değişince morf yok, bant fiyattan.
+///    değişince morf yok, bant fiyattan; gösterge bandın dışına taşarsa
+///    bant onu kapsar ("grafik içindeyse scale etmeyelim, değilse
+///    gösterecek şekilde scale edelim").
 ///  · "zaman değişikliğinde zoom defaultunda açılmalı" → sıfırlama anahtarı.
 void main() {
+  setUpAll(() => initializeDateFormatting('tr_TR'));
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
@@ -261,18 +268,94 @@ void main() {
       expect(cizim.duration, Duration.zero);
     });
 
-    test('bant fiyattan: ortalamalar ve kendi göstergen eksene girmez', () {
-      final fiyat = ekranKaynagiSync('lib/widgets/fiyat_grafigi.dart');
-      expect(fiyat.contains('ozelBant'), isFalse);
-      expect(fiyat.contains('for (final o in ortalamalar) {\n      for (final p in o.spots) {\n        kat('),
-          isFalse);
+    test('bant: içerideki gösterge ekseni oynatmaz, taşan genişletir', () {
+      ({double minY, double maxY, double interval}) kur(double a, double b) =>
+          gorunurYBandi(
+              dataMinY: a,
+              dataMaxY: b,
+              avgY: (a + b) / 2,
+              asgariBantOrani: 0.02);
+      final fiyat = gorunurYBandi(
+          dataMinY: 100, dataMaxY: 110, avgY: 105, asgariBantOrani: 0.02);
+      ({double minY, double maxY, double interval}) uygula(
+              double gMin, double gMax) =>
+          gostergeyiKapsayanBant(fiyat,
+              fiyatMin: 100,
+              fiyatMax: 110,
+              gostergeMin: gMin,
+              gostergeMax: gMax,
+              kur: kur);
+      // Fiyatın içinde ve payın içinde: aynı bant.
+      expect(uygula(102, 108), fiyat);
+      expect(uygula(fiyat.minY, fiyat.maxY), fiyat);
+      // Gösterge yok.
+      expect(uygula(double.infinity, double.negativeInfinity), fiyat);
+      // Aşağı taşan EMA200: bant onu kapsar.
+      final alt = uygula(70, 108);
+      expect(alt.minY, lessThanOrEqualTo(70));
+      expect(alt.maxY, greaterThanOrEqualTo(110));
+      // Yukarı taşan.
+      final ust = uygula(102, 140);
+      expect(ust.maxY, greaterThanOrEqualTo(140));
+      expect(ust.minY, lessThanOrEqualTo(100));
+    });
+
+    testWidgets('FiyatGrafigi: EMA bandın dışındaysa eksen genişler',
+        (t) async {
+      final bas = DateTime(2026, 1, 1).millisecondsSinceEpoch;
+      const gun = 86400000;
+      final seri = <int, double>{
+        for (var i = 0; i < 60; i++) bas + i * gun: 100 + (i % 10).toDouble(),
+      };
+      Future<LineChartData> ciz(double emaY) async {
+        await t.pumpWidget(MaterialApp(
+          home: Scaffold(
+            body: FiyatGrafigi(
+              seri: seri,
+              periodDays: 90,
+              bicim: NumberFormat('#,##0.00', 'tr_TR'),
+              semanticLabel: 'grafik',
+              katmanlar: FiyatKatmanlari(ortalamalar: [
+                FiyatOrtalamasi(
+                  spots: [
+                    for (var i = 0; i < 60; i++)
+                      FlSpot((bas + i * gun).toDouble(), emaY),
+                  ],
+                  cizgiRengi: const Color(0xFF00AA00),
+                ),
+              ]),
+            ),
+          ),
+        ));
+        await t.pump();
+        return t.widget<LineChart>(find.byType(LineChart)).data;
+      }
+
+      final icerde = await ciz(104);
+      final disarda = await ciz(60);
+      expect(icerde.minY, greaterThan(60));
+      expect(disarda.minY, lessThanOrEqualTo(60));
+      final tekrar = await ciz(105);
+      expect(tekrar.minY, icerde.minY);
+      expect(tekrar.maxY, icerde.maxY);
+    });
+
+    test('dört yüzey aynı taşma kuralını kullanır', () {
+      expect(
+          ekranKaynagiSync('lib/widgets/fiyat_grafigi.dart')
+              .contains('gostergeyiKapsayanBant('),
+          isTrue);
       final detay = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
-      expect(detay.contains('for (final e in emaCizgileri) ...e.spots'),
-          isFalse);
-      final yuzde =
-          ekranKaynagiSync('lib/widgets/percent_comparison_chart.dart');
-      expect(yuzde.contains('for (final o in k.ortalamalar) {\n        for'),
-          isFalse);
+      expect(detay.contains('gostergeyiKapsayanBant('), isTrue);
+      expect(detay.contains('gostergeSpots:'), isTrue);
+      expect(
+          ekranKaynagiSync('lib/widgets/katmanli_fiyat_grafigi.dart')
+              .contains('ozelBant:'),
+          isTrue);
+      expect(
+          ekranKaynagiSync('lib/widgets/percent_comparison_chart.dart')
+              .contains('gMin < minY - pad'),
+          isTrue);
     });
 
     test('dört yüzey çubuktan ortalama ve sıfırlama anahtarı kullanır', () {

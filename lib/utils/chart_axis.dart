@@ -206,6 +206,37 @@ const double gunIciAsgariBantOrani = 0.005;
   );
 }
 
+/// Fiyat bandı + göstergeler: gösterge bandın İÇİNDEYSE bant aynen kalır,
+/// DIŞINA taşarsa bant onu da kapsayacak şekilde yeniden kurulur.
+///
+/// yasin 2026-10-11 (TestFlight, #171 sonrası): *"eğer grafik içindeyse
+/// scale etmeyelim ama gösterge aralığımızda değilse gösterecek şekilde
+/// scale edelim"*. #171 bandı yalnız fiyattan kuruyordu (gösterge açıp
+/// kapatınca grafik zıplamasın diye) ve fiyattan uzaklaşmış EMA200 kenarda
+/// kırpılıyordu. İki istek birlikte: fiyatın %15 payı ve yuvarlak sınırları
+/// içinde kalan gösterge ekseni KIPIRDATMAZ (çoğu durum — ısınmalı ortalama
+/// fiyatın yakınından geçer); taşan gösterge bir kez genişletir.
+///
+/// [kur] verilen uç değerlerle bandı kurar (çağıranın kendi
+/// [gorunurYBandi] ayarlarıyla). [gostergeMin]/[gostergeMax] sonsuzsa
+/// (görünür gösterge noktası yok) bant aynen döner.
+({double minY, double maxY, double interval}) gostergeyiKapsayanBant(
+  ({double minY, double maxY, double interval}) fiyatBandi, {
+  required double fiyatMin,
+  required double fiyatMax,
+  required double gostergeMin,
+  required double gostergeMax,
+  required ({double minY, double maxY, double interval}) Function(
+          double dataMin, double dataMax)
+      kur,
+}) {
+  if (!gostergeMin.isFinite || !gostergeMax.isFinite) return fiyatBandi;
+  if (gostergeMin >= fiyatBandi.minY && gostergeMax <= fiyatBandi.maxY) {
+    return fiyatBandi;
+  }
+  return kur(math.min(fiyatMin, gostergeMin), math.max(fiyatMax, gostergeMax));
+}
+
 /// Gün içi ("GÜNLÜK") X ekseninin adımı — dakika.
 ///
 /// 4 saat: 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00. Telefon genişliğinde

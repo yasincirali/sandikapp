@@ -562,9 +562,22 @@ class BetikOnizleme extends StatelessWidget {
   return (bars: bars, dolgular: dolgular);
 }
 
-// Y bandına girecek noktalar (`fiyatUstuBantNoktalari`) 2026-10-11'de
-// kalktı: fiyat ekseni yalnız fiyattan kurulur, gösterge açıp kapamak
-// grafiği yeniden ölçeklemez (yasin, TestFlight; `FiyatGrafigi._data`).
+/// Fiyatın üstündeki görünür gösterge çizgilerinin noktaları — bant
+/// bunlar fiyat bandının DIŞINA taşarsa genişler
+/// ([gostergeyiKapsayanBant], yasin 2026-10-11). Isınma çubukları
+/// ([enAzX]'ten önce) sayılmaz.
+List<FlSpot> fiyatUstuBantNoktalari(
+        List<OzelSonuc> sonuclar, double Function(double) toY,
+        {double enAzX = 0}) =>
+    [
+      for (final r in sonuclar)
+        if (r.s.fiyatUstunde)
+          for (final c in r.s.cizgiler)
+            if (!c.gizli)
+              for (var i = 0; i < r.s.x.length; i++)
+                if (c.degerler[i].isFinite && r.s.x[i] >= enAzX)
+                  FlSpot(r.s.x[i], toY(c.degerler[i])),
+    ];
 
 /// Grafiğin altındaki bölüm: fiyatın üstündeki göstergelerin adları
 /// (lejant) ve ayrı panel göstergeleri. Paneller ana grafiğin görünür

@@ -312,6 +312,9 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
                 ? null
                 : (toY, ofset) =>
                     fiyatUstuCizimleri(context, sonuclar, toY, ofset: ofset),
+            ozelBant: sonuclar.isEmpty
+                ? null
+                : (toY) => fiyatUstuBantNoktalari(sonuclar, toY),
           ),
         ),
         OzelGostergeAltBolumu(sonuclar: sonuclar, gorunum: _gorunum),
