@@ -37,8 +37,8 @@ void main() {
     test('varsayılan sınırlar', () {
       expect(RemoteConfigService.instance.freeAssetLimit, 10);
       expect(kap(paywall: true).read(assetLimitProvider), 10);
-      // 5 → 10 (yasin, 2026-10-10: "pinti görünmeyelim").
-      expect(kap(paywall: true).read(watchlistLimitProvider), 10);
+      // 5 → 10 (2026-10-10) → 5 (yasin, 2026-10-11: "ekran küçük").
+      expect(kap(paywall: true).read(watchlistLimitProvider), 5);
       // Paywall kapalı canlı kullanıcı 7'de kalır (ana kural).
       expect(kap(paywall: false).read(watchlistLimitProvider), 7);
       expect(kap(paywall: false).read(assetLimitProvider), greaterThan(1000));

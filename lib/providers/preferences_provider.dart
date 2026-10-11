@@ -786,7 +786,7 @@ final priceAlertLimitProvider = Provider<int>((ref) {
 ///
 /// **Paywall açıkken ücretsiz sınır 10 (yasin, 2026-10-08: "takip listesini
 /// 3 yapalım"; 2026-10-09 rakip kıyasıyla 5; 2026-10-10 "pinti
-/// görünmeyelim" → 10).** Ayrı anahtar (`paywall_watchlist_limit`): paywall
+/// görünmeyelim" → 10; 2026-10-11 "ekran küçük" → 5).** Ayrı anahtar (`paywall_watchlist_limit`): paywall
 /// kapalı canlı kullanıcılar 7'de kalır; listesi sınırı aşan kimsenin takibi
 /// silinmez, yalnız yeni ekleme Premium ister. Uyarı tek yerde
 /// (`widgets/sinir_uyarisi.dart`).

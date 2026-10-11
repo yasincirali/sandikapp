@@ -585,7 +585,7 @@ class _KarsilastirmaTablosu extends StatelessWidget {
 
   final int varlikSiniri;
 
-  /// Ücretsiz takip listesi (paywall açıkken 10; 2026-10-10).
+  /// Ücretsiz takip listesi (paywall açıkken 5; 2026-10-11).
   final int takipSiniri;
 
   /// Ücretsiz fiyat alarmı (20; 2026-10-10).

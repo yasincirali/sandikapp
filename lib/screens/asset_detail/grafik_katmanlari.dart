@@ -4,10 +4,15 @@ part of '../asset_detail_screen.dart';
 /// (yasin, 2026-10-10). `asset_detail_screen.dart`'ın part'ı; hesaplar
 /// `utils/hareketli_ortalama.dart`'ta.
 ///
-/// ## Kim görür (yeni bayrak YOK)
-/// Tek anahtar `paywall_enabled` (`premiumOzellikleriGorunurProvider`):
-/// kapalıyken yalnız admin hesabı görür — mağazadaki kullanıcının araç
-/// çubuğu birebir eskisi gibi (MA20 · LOG). Açıkken HERKES görür ve kullanır.
+/// ## Kim görür: herkes, bayraksız (yasin, 2026-10-11)
+/// İlk sürümlerde tek anahtar `paywall_enabled`'a bağlıydı
+/// (`premiumOzellikleriGorunurProvider`): kapalıyken yalnız admin görürdü.
+/// Paywall kapıları incelemesi bunun ücretsiz özelliği ödeme anahtarına
+/// bağladığını gösterdi (paywall kapatılırsa ücretsiz kullanıcıdan da
+/// gider). yasin: *"mum grafik ve ema herkeste gösterilebilsin flag
+/// arkasında olmasın"*. Mum, aralık seçicisi, EMA50/EMA200 artık herkese
+/// açık; yalnız `ƒx` (kendi göstergen) eski kapıda kalır
+/// ([_ozelGostergeGorunur]).
 ///
 /// ## Ücretsiz (yasin, 2026-10-10 20:38)
 /// İlk sürümde (#150) Mum ve EMA çipleri Premium'du. yasin aynı akşam:
@@ -15,8 +20,7 @@ part of '../asset_detail_screen.dart';
 /// girmek isteyen traderlar için ücretli olmalı"*, *"ema50 ema200 ücretsiz
 /// olmalı"*. Mum, aralık seçicisi, EMA50, EMA200 (MA20 ve LOG zaten) artık
 /// ücretsiz; kilit yalnız `ƒx` çipinde — kendi göstergeni yaz
-/// (`ozel_gostergeler.dart`, [_ozelGostergeKilitli]). Paywall kapalıyken
-/// görünürlük kararı değişmedi: yeni çipler yine yalnız admin'de.
+/// (`ozel_gostergeler.dart`, [_ozelGostergeKilitli]).
 ///
 /// ## Mumun verisi
 /// 2026-10-10'a kadar uygulama hiçbir sağlayıcıdan açılış/en yüksek/en düşük
@@ -35,13 +39,15 @@ part of '../asset_detail_screen.dart';
 /// GÜNLÜK'ü) eski çizim görünür — ekran boş kalmaz. Mevduatta çipler hiç
 /// çıkmaz (çizgisi fiyat değil faiz birikimi).
 ///
-/// Aralık seçicisinin kendi bayrağı yok: Mum'la aynı görünürlük kararı
-/// (`paywall_enabled`/admin); Mum kapalıyken seçici çıkmaz.
+/// Aralık seçicisinin kendi bayrağı yok: Mum'la aynı görünürlük kararı.
 extension _GrafikKatmanlari on _AssetDetailScreenState {
-  /// EMA/Mum çipleri bu kullanıcıda ve bu varlıkta çizilir mi.
-  bool get _katmanlarGorunur =>
-      ref.watch(premiumOzellikleriGorunurProvider) &&
-      widget.asset.type != AssetType.mevduat;
+  /// EMA/Mum çipleri bu varlıkta çizilir mi (herkese; mevduatta yok).
+  bool get _katmanlarGorunur => widget.asset.type != AssetType.mevduat;
+
+  /// `ƒx` (kendi göstergen) bu kullanıcıda görünür mü: YENİ Premium
+  /// özelliği, paywall kapalıyken yalnız admin (`premiumOzellikleriGorunur`).
+  bool get _ozelGostergeGorunur =>
+      _katmanlarGorunur && ref.watch(premiumOzellikleriGorunurProvider);
 
   /// Kendi göstergeni yaz (`ƒx`) kilitli mi (paywall açık, Premium değil).
   /// Mum/EMA kilitlenmez — yalnız özel gösterge Premium.

@@ -9,7 +9,6 @@ import 'package:portfoy_takip/models/ozel_gosterge.dart';
 import 'package:portfoy_takip/providers/ozel_gosterge_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
-import 'package:portfoy_takip/widgets/fiyat_grafigi.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/widgets/katmanli_fiyat_grafigi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -55,16 +54,22 @@ void main() {
       expect(kars.contains('GrafikAracCubugu('), isTrue);
     });
 
-    test('üç yüzey aynı görünürlük kapısını okur', () {
+    // yasin 2026-10-11: "mum grafik ve ema herkeste gösterilebilsin flag
+    // arkasında olmasın". Mum/EMA kapısız; Premium görünürlüğü yalnız ƒx'te.
+    test('mum/EMA kapısız, ƒx Premium görünürlüğünde', () {
       for (final yol in [
         'lib/screens/asset_detail/grafik_katmanlari.dart',
         'lib/widgets/katmanli_fiyat_grafigi.dart',
-        'lib/screens/comparison_screen.dart',
       ]) {
         expect(ekranKaynagiSync(yol).contains('premiumOzellikleriGorunurProvider'),
             isTrue,
-            reason: yol);
+            reason: '$yol: ƒx kapısı');
       }
+      // Karşılaştır'da ƒx yok; Premium kapısı da kalmadı.
+      expect(
+          ekranKaynagiSync('lib/screens/comparison_screen.dart')
+              .contains('premiumOzellikleriGorunurProvider'),
+          isFalse);
     });
 
     test('mum isteği ve Pine çalıştırıcısı ortak', () {
@@ -117,11 +122,16 @@ void main() {
       await t.pump(const Duration(milliseconds: 100));
     }
 
-    testWidgets('paywall kapalı, admin değil: çubuk yok, düz grafik',
+    testWidgets('paywall kapalı, admin değil: mum ve EMA var, ƒx yok',
         (t) async {
       await kur(t, gorunur: false, kilitli: false);
-      expect(find.byType(GrafikAracCubugu), findsNothing);
-      expect(find.byType(FiyatGrafigi), findsOneWidget);
+      expect(find.byType(GrafikAracCubugu), findsOneWidget);
+      final etiketler = t
+          .widgetList<GrafikCipi>(find.byType(GrafikCipi))
+          .map((c) => c.label)
+          .toList();
+      expect(etiketler, containsAll(['MUM', 'LOG', 'MA20', 'EMA50', 'EMA200']));
+      expect(etiketler.where((e) => e.startsWith('ƒx')), isEmpty);
     });
 
     testWidgets('paywall açık, ücretsiz: çubuk var, yalnız ƒx kilitli',

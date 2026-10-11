@@ -23,14 +23,12 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
   /// (MA/EMA) bu grafiğe gelmedi: portföy değeri para girişi/çıkışıyla
   /// sıçrar, ortalaması yanıltır (karar kartı, önerilen seçenek).
   ///
-  /// Kim görür: varlık ekranlarındaki araç çubuğuyla aynı kapı
-  /// (`premiumOzellikleriGorunurProvider`; paywall kapalıyken yalnız admin).
-  /// Kapalıyken `null` → mum kovası BİREBİR eskisi (otomatik).
+  /// Kim görür: herkes (yasin 2026-10-11, bayraksız; varlık ekranlarındaki
+  /// araç çubuğuyla aynı karar).
   ({MumAraligi aralik, List<MumAraligi> gecerli, double span})?
       _performansMumAraligi(List<TransactionSegment> segments, DateTime start,
           DateTime end, bool intraday) {
     if (_etkinGrafikTipi != GrafikTipi.candle) return null;
-    if (!ref.watch(premiumOzellikleriGorunurProvider)) return null;
     final span =
         intraday ? 1440.0 : end.difference(start).inMinutes.toDouble();
     var adet = 0;
