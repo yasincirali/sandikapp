@@ -85,7 +85,12 @@ class RemoteConfigService {
     // hiçbiri izleme listesini kilitlemiyor; 10, varlık sınırıyla aynı sayı
     // ("10 varlık, 10 takip") ve canlıdaki 7'nin üstünde — paywall açılınca
     // ücretsiz kullanıcı geri adım değil ileri adım görür.
-    'paywall_watchlist_limit': 10,
+    // 10 → 5 (yasin, 2026-10-11: "ekran küçük olduğundan takip için
+    // ücretsiz müşteride 5 adette tutalım"): takip listesi her dönem için
+    // her varlığa bir seri çizer; telefonda 10 seri okunmuyor. Paywall
+    // kapalı canlı kullanıcı yine 7'de (`free_watchlist_limit`); listesi
+    // 5'i aşanın takibi silinmez, yalnız yeni ekleme Premium ister.
+    'paywall_watchlist_limit': 5,
 
     // NOT: `paywall_variant` kaldırıldı (2026-10-04, sadeleştirme C) — hiçbir
     // kod okumuyordu; paywall tek tasarımla çiziliyor. A/B testi yazılınca
