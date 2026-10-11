@@ -580,6 +580,28 @@ FINAL_HEDEFLER = [
 ]
 FINAL_GRAFIKLER = ["feature_graphic_1024x500.png", "icon_512.png"]
 
+# Daha önce üretilmiş, ekran görüntüsü DIŞINDAKİ mağaza varlıkları
+# (2026-10-11). Hepsi kendi hattının çıktısı; burada yalnızca toplanır.
+#
+# Önizleme videosu: açıklamalı mağaza sürümü (preview_video/README.md
+# "GÜNCEL", 886×1920, 28,0 sn). 30 sn'lik `sandik_onizleme_30sn.mp4`
+# ALINMADI: 30,06 sn — Apple'ın 15–30 sn sınırını aşıyor — ve "enflasyonun
+# gerisindesin" mesajı galerideki 06 ("önündesin") ile çelişiyor.
+# Play video dosyası almaz (YouTube bağlantısı ister), yalnız App Store.
+FINAL_EK = [
+    (os.path.join(HERE, "preview_video", "out",
+                  "sandik_preview_iphone_aciklamali.mp4"),
+     os.path.join("app_store", "onizleme_videosu",
+                  "sandik_onizleme_886x1920_28sn.mp4")),
+] + [
+    (os.path.join(HERE, "ios", "in_app_events", f),
+     os.path.join("app_store", "etkinlik_gorselleri", f))
+    for f in ("enflasyon_gunu_kart_1920x1080.png",
+              "enflasyon_gunu_detay_1080x1920.png",
+              "yil_sonu_ozeti_kart_1920x1080.png",
+              "yil_sonu_ozeti_detay_1080x1920.png")
+]
+
 
 def topla_final():
     import shutil
@@ -602,6 +624,19 @@ def topla_final():
             shutil.copy2(src, os.path.join(play_dir, g))
         else:
             print("  ! %s yok — python build_store_graphics.py" % g)
+
+    for src, alt in FINAL_EK:
+        hedef = os.path.join(FINAL_OUT, alt)
+        if not os.path.exists(src):
+            print("  ! %s yok, atlandı" % os.path.relpath(src, HERE))
+            continue
+        os.makedirs(os.path.dirname(hedef), exist_ok=True)
+        # Video ~40 MB: değişmediyse yeniden kopyalama.
+        if (os.path.exists(hedef)
+                and os.path.getsize(hedef) == os.path.getsize(src)
+                and os.path.getmtime(hedef) >= os.path.getmtime(src)):
+            continue
+        shutil.copy2(src, hedef)
     print("  final  -> %s" % FINAL_OUT)
 
 

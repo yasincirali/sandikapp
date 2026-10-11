@@ -20,7 +20,17 @@ betikteki `CAPTIONS_V4` / `REDACTIONS_V4`'e yapılır.
 | iPhone 6.7" (8) | `iphone_6.7_1284x2778/01…08` |
 | iPhone 6.5" (8) — yalnız istenirse | `iphone_6.5_1242x2688/01…08` |
 
+| Uygulama önizlemesi (6.7" ve 6.5" — aynı dosya) | `onizleme_videosu/sandik_onizleme_886x1920_28sn.mp4` |
+| Uygulama içi etkinlik — kart / ayrıntı | `etkinlik_gorselleri/*_kart_1920x1080.png` / `*_detay_1080x1920.png` |
+
 Sırayı koru: arama listesinde yalnızca 01–02 (App Store'da 01–03) görünür.
+Önizleme videosu galeride ilk sıraya geçer ve otomatik oynar; bu yüzden
+arama listesinde 01'in yerini o alır.
+
+Etkinlik görselleri bilerek metinsizdir — ad/açıklamayı App Store üstüne
+yazar. Etkinlikler `tool/asc_in_app_events.py` ile TASLAK kurulur
+(`../ios/in_app_events/etkinlikler.json`); buradaki kopyalar elle yükleme
+gerekirse diye.
 
 ## Seçim (2026-10-11)
 
@@ -42,6 +52,15 @@ Sırayı koru: arama listesinde yalnızca 01–02 (App Store'da 01–03) görün
   ekranı (Live Activity) iddiaları güçlü ama koyu galeride yamalı durur;
   güncel arayüzle yeniden çekilirse App Store'un 9–10. yerine girebilir.
 - **Set C 01–05, 08** — eski arayüz; karşılıkları yukarıda güncel hâliyle var.
+- **`screenshots/raw/` WhatsApp kareleri, `preview_video/public/shots/`** —
+  set A/B'nin ham kaynakları: gerçek portföy ve maskelenmemiş gerçek adlar.
+- **`sandik_onizleme_30sn.mp4`** — 30,06 sn (Apple sınırı 30) ve
+  "enflasyonun gerisindesin" mesajı galerideki 06 ile çelişiyor.
+- **Anlatımlı / sessiz önizleme videoları** — açıklamalı sürümün eski
+  denemeleri; `sandik_tanitim_16x9.mp4` 16:9, iPhone önizlemesi olamaz.
+- **`reklam/out/`** — reklam kreatifleri; HTML ile yeniden çizim, mağaza
+  önizlemesi değil (Apple 2.3.4: yalnız gerçek ekran). Play'in YouTube
+  video alanı için `sandik_tanitim_16x9.mp4` kullanılabilir (yüklemesi sende).
 
 **Bilinen kusurlar** (yeniden çekimle kapanır): 06'da toplam ₺973.501
 (01'de ₺874.835) ve eski başlıktaki çıkış düğmesi; 07'de eski Performans
