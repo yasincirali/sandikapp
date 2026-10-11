@@ -1230,7 +1230,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // tek hissenin haftalık hareketini düzleştirirdi.
                     ({double minY, double maxY, double interval}) computeY(
                         double viewMinX, double viewMaxX,
-                        {List<FlSpot>? extraSpots}) {
+                        {List<FlSpot>? extraSpots,
+                        List<FlSpot> gostergeSpots = const []}) {
                       double minY = double.infinity;
                       double maxY = -double.infinity;
                       double top = 0;
@@ -1253,19 +1254,46 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         top = y;
                         adet = 1;
                       }
-                      return gorunurYBandi(
-                        dataMinY: minY,
-                        dataMaxY: maxY,
-                        avgY: top / adet,
-                        asgariBantOrani: isIntraday
-                            ? gunIciAsgariBantOrani
-                            : (compareOn || logOn ? 0.0 : 0.02),
-                        // LOG bandı (log10 biriminde) — eskiden ₺ için olan
-                        // 1'lik taban bütün bir onluk demekti; mum ve EMA
-                        // düz çizgiye eziliyordu. Şimdilik yalnız Premium
-                        // katmanları gören hesapta (paywall_enabled/admin):
-                        // ücretsiz LOG kullanıcısının ekranı birebir kalır.
-                        asgariAralik: logOn && _katmanlarGorunur ? 1e-3 : 1.0,
+                      final asgariOran = isIntraday
+                          ? gunIciAsgariBantOrani
+                          : (compareOn || logOn ? 0.0 : 0.02);
+                      // LOG bandı (log10 biriminde) — eskiden ₺ için olan
+                      // 1'lik taban bütün bir onluk demekti; mum ve EMA
+                      // düz çizgiye eziliyordu. Şimdilik yalnız Premium
+                      // katmanları gören hesapta (paywall_enabled/admin):
+                      // ücretsiz LOG kullanıcısının ekranı birebir kalır.
+                      final asgariAralik =
+                          logOn && _katmanlarGorunur ? 1e-3 : 1.0;
+                      // Göstergeler yalnız fiyat bandının DIŞINA taşarsa
+                      // bandı genişletir (yasin 2026-10-11) — kural ve
+                      // gerekçe `gostergeyiKapsayanBant`.
+                      var gMin = double.infinity;
+                      var gMax = double.negativeInfinity;
+                      for (final s in gostergeSpots) {
+                        if (s.x < viewMinX || s.x > viewMaxX) continue;
+                        if (!s.y.isFinite) continue;
+                        if (s.y < gMin) gMin = s.y;
+                        if (s.y > gMax) gMax = s.y;
+                      }
+                      return gostergeyiKapsayanBant(
+                        gorunurYBandi(
+                          dataMinY: minY,
+                          dataMaxY: maxY,
+                          avgY: top / adet,
+                          asgariBantOrani: asgariOran,
+                          asgariAralik: asgariAralik,
+                        ),
+                        fiyatMin: minY,
+                        fiyatMax: maxY,
+                        gostergeMin: gMin,
+                        gostergeMax: gMax,
+                        kur: (a, b) => gorunurYBandi(
+                          dataMinY: a,
+                          dataMaxY: b,
+                          avgY: (a + b) / 2,
+                          asgariBantOrani: asgariOran,
+                          asgariAralik: asgariAralik,
+                        ),
                       );
                     }
 
@@ -1457,15 +1485,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 // çizginin üstündeler (2026-09-24), yani
                                 // aralığı genişletmezler; güvence olarak
                                 // kalır.
-                                // Ortalamalar ve kendi göstergen banda
-                                // GİRMEZ (2026-10-11, yasin TestFlight:
-                                // "gösterge değiştiyse grafik sabit
-                                // kalmalı"); bant fiyattan — çizgi ya da
-                                // mum fitilleri. Gerekçe `FiyatGrafigi._data`.
+                                // Ortalamalar ve kendi göstergen bandı
+                                // yalnız DIŞINA taşarlarsa genişletir
+                                // (yasin 2026-10-11); bant fiyattan — çizgi
+                                // ya da mum fitilleri.
                                 extraSpots: [
                                   ...?compareBar?.spots,
                                   ...islemSpots,
                                   ..._ohlcUclari(ohlcMumlar, toY),
+                                ],
+                                gostergeSpots: [
+                                  ...?ma20Spots,
+                                  for (final e in emaCizgileri) ...e.spots,
+                                  ..._ozelBantNoktalari(ozelSonuclar, toY),
                                 ],
                               );
                               final viewMinY = yBounds.minY;

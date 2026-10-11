@@ -140,6 +140,12 @@ extension _OzelGostergeler on _AssetDetailScreenState {
               {required int ofset}) =>
           fiyatUstuCizimleri(context, sonuclar, toY, ofset: ofset);
 
+  /// Fiyat üstü göstergelerin bant noktaları — bandı yalnız dışına
+  /// taşarlarsa genişletirler (`gostergeyiKapsayanBant`).
+  List<FlSpot> _ozelBantNoktalari(
+          List<_OzelSonuc> sonuclar, double Function(double) toY) =>
+      fiyatUstuBantNoktalari(sonuclar, toY);
+
   /// Ana grafiğin odak penceresi değişti (dönem, veri). Build içinden
   /// çağrılır; bildirim kare sonrasına ertelenir (build sırasında dinleyici
   /// setState'i yasak — `ChartViewport.updateFullRangeSessiz` gerekçesi).

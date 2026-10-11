@@ -233,26 +233,49 @@ class FiyatGrafigi extends StatelessWidget {
       top += s.y;
       adet++;
     }
-    // Bant FİYATTAN kurulur: çizgi ya da mum fitilleri. Ortalamalar ve
-    // kendi göstergen banda GİRMEZ (2026-10-11, yasin TestFlight: "sadece
-    // gösterge değiştiyse grafik sabit kalıp EMA ya da diğer göstergeler
-    // grafiğe eklenip çıkarılmalı"). Eskiden girerdi; EMA200 fiyattan
-    // uzaktayken açılınca eksen yeniden ölçeklenip grafik zıplıyordu.
-    // Ortalama artık dönem öncesi çubuklarla ısınıyor ve fiyatın yakınından
-    // geçiyor; bandın dışına taşan kısmı kenarda kırpılır, yakınlaştırınca
-    // ya da kaydırınca görünür (TradingView'in "yalnız fiyatı ölçekle"si).
+    // Bant FİYATTAN kurulur: çizgi ya da mum fitilleri. Göstergeler
+    // (ortalamalar, kendi göstergen) yalnız bu bandın DIŞINA taşarsa
+    // genişletir (yasin 2026-10-11: "grafik içindeyse scale etmeyelim ama
+    // aralığımızda değilse gösterecek şekilde scale edelim"). #171'de hiç
+    // girmiyorlardı ve fiyattan uzak EMA200 kenarda kırpılıyordu; ondan
+    // önce hep giriyorlardı ve gösterge açıp kapatınca grafik zıplıyordu.
     for (final m in mumlar) {
       kat(m.merkezX, m.enYuksek);
       kat(m.merkezX, m.enDusuk);
     }
-    final bant = gorunurYBandi(
-      dataMinY: mn,
-      dataMaxY: mx,
-      avgY: top / math.max(adet, 1),
-      asgariBantOrani: eksenX.gunIci
-          ? gunIciAsgariBantOrani
-          : (log ? 0.0 : 0.02),
-      asgariAralik: log ? 1e-3 : 1.0,
+    final ortY = top / math.max(adet, 1);
+    final asgariOran =
+        eksenX.gunIci ? gunIciAsgariBantOrani : (log ? 0.0 : 0.02);
+    final asgariAralik = log ? 1e-3 : 1.0;
+    var gMin = double.infinity, gMax = double.negativeInfinity;
+    void gKat(FlSpot p) {
+      if (p.x < minX || p.x > maxX || !p.y.isFinite) return;
+      if (p.y < gMin) gMin = p.y;
+      if (p.y > gMax) gMax = p.y;
+    }
+    for (final o in ortalamalar) {
+      o.spots.forEach(gKat);
+    }
+    k?.ozelBant?.call(toY).forEach(gKat);
+    final bant = gostergeyiKapsayanBant(
+      gorunurYBandi(
+        dataMinY: mn,
+        dataMaxY: mx,
+        avgY: ortY,
+        asgariBantOrani: asgariOran,
+        asgariAralik: asgariAralik,
+      ),
+      fiyatMin: mn,
+      fiyatMax: mx,
+      gostergeMin: gMin,
+      gostergeMax: gMax,
+      kur: (a, b) => gorunurYBandi(
+        dataMinY: a,
+        dataMaxY: b,
+        avgY: (a + b) / 2,
+        asgariBantOrani: asgariOran,
+        asgariAralik: asgariAralik,
+      ),
     );
     // Hane adımı TAM gösterir (0,25 → iki hane, 5 → hanesiz): eski merdiven
     // (<1 → 2, <10 → 1) 0,005'lik adımda komşu etiketleri aynı metne
@@ -466,6 +489,7 @@ class FiyatKatmanlari {
     this.mumlar = const [],
     this.ortalamalar = const [],
     this.ozelCizim,
+    this.ozelBant,
   });
 
   final bool log;
@@ -479,6 +503,10 @@ class FiyatKatmanlari {
   /// ikinci argüman bu çubuklardan önceki çubuk sayısı.
   final ({List<LineChartBarData> bars, List<BetweenBarsData> dolgular})
       Function(double Function(double) toY, int ofset)? ozelCizim;
+
+  /// Kendi göstergenin fiyat üstü noktaları (`fiyatUstuBantNoktalari`) —
+  /// bandın dışına taşarsa bant genişler.
+  final List<FlSpot> Function(double Function(double) toY)? ozelBant;
 
 }
 

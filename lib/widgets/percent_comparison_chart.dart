@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -367,9 +369,8 @@ class PercentComparisonChart extends StatelessWidget {
 
     if (bars.isEmpty) return null;
 
-    // Mum fitilleri banda girer (fiyattır). Ortalamalar GİRMEZ (2026-10-11,
-    // yasin TestFlight: "gösterge değiştiyse grafik sabit kalmalı") —
-    // varlık detayı ve varlık sayfasıyla aynı kural (`FiyatGrafigi._data`).
+    // Mum fitilleri banda girer (fiyattır). Ortalamalar yalnız taşarsa
+    // (aşağıda) — varlık detayı ve varlık sayfasıyla aynı kural.
     final k = katman;
     if (k != null && cizilenler.contains(k.anahtar)) {
       void kat(double y) {
@@ -384,8 +385,28 @@ class PercentComparisonChart extends StatelessWidget {
     }
 
     // Y ekseninde nefes payı; düz çizgide (minY == maxY) sıfıra bölme olmasın.
-    final span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
-    final pad = span * 0.12;
+    var span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
+    var pad = span * 0.12;
+
+    // Ortalamalar bandı yalnız DIŞINA taşarlarsa genişletir (yasin
+    // 2026-10-11, kural `gostergeyiKapsayanBant`): payın içinde kalan
+    // gösterge ekseni kıpırdatmaz, taşan gösterge görünür olur.
+    if (k != null && cizilenler.contains(k.anahtar)) {
+      var gMin = double.infinity, gMax = double.negativeInfinity;
+      for (final o in k.ortalamalar) {
+        for (final s in o.spots) {
+          if (!s.y.isFinite) continue;
+          if (s.y < gMin) gMin = s.y;
+          if (s.y > gMax) gMax = s.y;
+        }
+      }
+      if (gMin.isFinite && (gMin < minY - pad || gMax > maxY + pad)) {
+        minY = math.min(minY, gMin);
+        maxY = math.max(maxY, gMax);
+        span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
+        pad = span * 0.12;
+      }
+    }
 
     return _CizimVerisi(
       bars: bars,
