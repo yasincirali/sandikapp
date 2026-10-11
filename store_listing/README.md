@@ -2,8 +2,12 @@
 
 ## Dosya Yapısı
 
+> **Yüklenecek her şey tek yerde: [`final/`](final/README.md)** — set D +
+> Play grafikleri, `python build_screenshots.py --v4` ile tazelenir.
+
 ```
 store_listing/
+  final/                   ← CONSOLE'A YÜKLENECEKLER (türetilmiş)
   tr-TR/ en-US/            ← mağazadan bağımsız metinler
     title.txt              (max 30 karakter)
     short_description.txt  (max 80 karakter)

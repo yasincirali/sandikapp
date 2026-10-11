@@ -540,6 +540,71 @@ def compose(raw_path, caption, target, key=None, redactions=None):
     return canvas
 
 
+def kaydet(img, yol, deneme=8):
+    """PNG'yi geçici dosyaya yazıp yerine koyar; kilitliyse yeniden dener.
+
+    Windows Gezgini/Fotoğraflar açık klasördeki PNG'yi küçük resim için
+    anlık kilitliyor ve doğrudan yazma `OSError 22` ile düşüyordu
+    (2026-10-11) — koşu yarıda kalınca set yarı eski yarı yeni kalır.
+    """
+    import time
+
+    gecici = yol + ".tmp"
+    img.save(gecici, "PNG", optimize=True)
+    for i in range(deneme):
+        try:
+            os.replace(gecici, yol)
+            return
+        except OSError:
+            if i == deneme - 1:
+                raise
+            time.sleep(0.25 * (i + 1))
+
+
+# ── Mağaza final klasörü ─────────────────────────────────────────────────
+#
+# Console'a yüklenecek HER ŞEY tek yerde (kullanıcı isteği 2026-10-11):
+# dört set ve iki mağaza klasörü arasında "hangisi güncel" sorusu her
+# yüklemede yeniden soruluyordu. Klasör set D koşusunun yan ürünüdür —
+# elle kopyalanırsa set yeniden üretildiğinde sessizce eskir; bu yüzden
+# her `--v4` koşusunda silinip baştan yazılır.
+FINAL_OUT = os.path.join(HERE, "final")
+FINAL_HEDEFLER = [
+    # (kaynak, final altındaki klasör)
+    (os.path.join(ANDROID_OUT, "set_d", "1080x1920"),
+     os.path.join("google_play", "telefon_1080x1920")),
+    (os.path.join(IOS_OUT, "set_d", "1284x2778"),
+     os.path.join("app_store", "iphone_6.7_1284x2778")),
+    (os.path.join(IOS_OUT, "set_d", "1242x2688"),
+     os.path.join("app_store", "iphone_6.5_1242x2688")),
+]
+FINAL_GRAFIKLER = ["feature_graphic_1024x500.png", "icon_512.png"]
+
+
+def topla_final():
+    import shutil
+
+    for _, alt in FINAL_HEDEFLER:
+        shutil.rmtree(os.path.join(FINAL_OUT, alt), ignore_errors=True)
+    for kaynak, alt in FINAL_HEDEFLER:
+        hedef = os.path.join(FINAL_OUT, alt)
+        os.makedirs(hedef, exist_ok=True)
+        for f in sorted(os.listdir(kaynak)):
+            shutil.copy2(os.path.join(kaynak, f), os.path.join(hedef, f))
+
+    # Play grafikleri build_store_graphics.py'nin çıktısı; yoksa uyar,
+    # durma — ekran görüntüleri yine de tamamdır.
+    grafik_dir = os.path.join(HERE, "android", "graphics")
+    play_dir = os.path.join(FINAL_OUT, "google_play")
+    for g in FINAL_GRAFIKLER:
+        src = os.path.join(grafik_dir, g)
+        if os.path.exists(src):
+            shutil.copy2(src, os.path.join(play_dir, g))
+        else:
+            print("  ! %s yok — python build_store_graphics.py" % g)
+    print("  final  -> %s" % FINAL_OUT)
+
+
 def main():
     if not os.path.isdir(RAW):
         sys.exit("Ham görüntü klasörü yok: %s" % RAW)
@@ -611,13 +676,15 @@ def main():
             os.makedirs(out_dir, exist_ok=True)
             img = compose(os.path.join(src_dir, name), caption, (tw, th),
                           key=key, redactions=redactions)
-            img.save(os.path.join(out_dir, stem), "PNG", optimize=True)
+            kaydet(img, os.path.join(out_dir, stem))
             made += 1
         print("  + %s" % name)
 
     print("\n%d dosya uretildi (set: %s)" % (made, set_adi))
     print("  android -> %s" % os.path.join(ANDROID_OUT, set_adi))
     print("  ios     -> %s" % os.path.join(IOS_OUT, set_adi))
+    if set_adi == "set_d":
+        topla_final()
 
 
 if __name__ == "__main__":
