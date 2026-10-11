@@ -1,7 +1,7 @@
-• YENİ: Nakit temettü takibi — tarihiyle gir, getirine yansısın
-• YENİ: Alım komisyonu maliyete dahil, kâr artık gerçek rakam
-• Fix: Ortak portföyde "Birlikte" kâr/zararı tekil sekmelerle tutarlı
-• Fix: Varlık isimleri küçük ekranlarda tam okunuyor
-• Fix: Ana ekran, performans ve hareketlerdeki yerleşim taşmaları
-• Fix: İnternet kesildiğinde oturum kapanmıyor, bağlantı gelince devam
-• Hız: Açılış hızlandı, arka plan trafiği azaldı
+• Yeni Bugün kartı: günün özeti ve "Paran fiyatlara yetişiyor mu?"
+• Paranın getirisi: yeni alımların getiri sayılmaz
+• Kripto, ABD hisseleri, Eurobond, mevduat ve BES
+• Mum grafik, EMA50 ve EMA200
+• Ekstreden içe aktar: PDF, Excel, CSV
+• Masraflar kartı, fon karnesi, temettü hatırlatması, halka arz takvimi
+• Zirvedeki portföyler ve hesaplar arası geçiş

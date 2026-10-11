@@ -23,6 +23,15 @@ betikteki `CAPTIONS_V4` / `REDACTIONS_V4`'e yapılır.
 | Uygulama önizlemesi (her bölüm — aynı dosya) | `onizleme_videosu/sandik_onizleme_886x1920_28sn.mp4` |
 | Uygulama içi etkinlik — kart / ayrıntı | `etkinlik_gorselleri/*_kart_1920x1080.png` / `*_detay_1080x1920.png` |
 
+## Metinler — `metinler/`
+
+Promotional Text (en fazla 170, incelemesiz değişir) ve What's New, App
+Store için TR/EN; Play sürüm notu (en fazla 500) TR/EN. Kaynakları
+`../ios/tr|en/` ve `../tr-TR|en-US/`; buradakiler kopya.
+
+⚠️ Promotional Text Eylül TÜFE'sini (%29,73) anıyor — Ekim rakamı
+3 Kasım'da açıklanınca güncelle (Enflasyon günü etkinliğiyle aynı gün).
+
 Sırayı koru: arama listesinde yalnızca 01–02 (App Store'da 01–03) görünür.
 Önizleme videosu galeride ilk sıraya geçer ve otomatik oynar; bu yüzden
 arama listesinde 01'in yerini o alır.

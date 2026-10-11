@@ -137,6 +137,7 @@ store_listing/ios/**/*.png
 # final/ = set D çıktısının kopyası (build_screenshots.py --v4); README izlenir.
 store_listing/final/**/*.png
 store_listing/final/**/*.mp4
+store_listing/final/metinler/
 
 # Geçici çalışma dosyaları — 2026-09 denetiminde canlı bir Vault secret
 # tmp/ altından git'e sızdı. Bu dizin bir daha izlenmez.

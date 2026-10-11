@@ -612,6 +612,17 @@ FINAL_EK = [
               "enflasyon_gunu_detay_1080x1920.png",
               "yil_sonu_ozeti_kart_1920x1080.png",
               "yil_sonu_ozeti_detay_1080x1920.png")
+] + [
+    # Sürüm metinleri: kaynak kendi klasörlerinde, burada kopya.
+    (os.path.join(HERE, kaynak), os.path.join("metinler", hedef))
+    for kaynak, hedef in (
+        ("ios/tr/promotional_text.txt", "app_store_tr_promotional_text.txt"),
+        ("ios/en/promotional_text.txt", "app_store_en_promotional_text.txt"),
+        ("ios/tr/whats_new.txt", "app_store_tr_whats_new.txt"),
+        ("ios/en/whats_new.txt", "app_store_en_whats_new.txt"),
+        ("tr-TR/whats_new.txt", "google_play_tr_whats_new.txt"),
+        ("en-US/whats_new.txt", "google_play_en_whats_new.txt"),
+    )
 ]
 
 
