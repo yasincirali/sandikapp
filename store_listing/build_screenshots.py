@@ -290,32 +290,41 @@ REDACTIONS_V3 = {
 # Sıra yine EN GÜÇLÜ İDDİA ÖNCE; Play en fazla 8 telefon görseli alır,
 # set bu yüzden 8 karede tutuldu (App Store'da 10'a kadar yer var).
 #
-#  01 portföy   → kategori beklentisi: beş tür (kripto dahil) tek dağılımda
-#  02 getiri    → "paranın getirisi": yeni alımı getiriden ayırıyor —
-#                 set C'deki "katkın mı, piyasa mı" iddiasının güncel yüzü
+#  01 ana       → ENFLASYON — ürünün ayırt edici iddiası. Set C'den taşındı
+#                 (kullanıcı kararı 2026-10-11): yeni ana ekran Pazar çekildi
+#                 (kırmızı "Geriledi", "100 liran bugün 100 lira" — TÜFE ile
+#                 başa baş), eskisi "31,49 puan enflasyonun önündesin" diyor.
+#                 Bedeli: eski arayüz ve başka toplam (₺973.501 — 04'te
+#                 ₺874.835). Sayı yamalanmaz; yeşil bir hafta içi günü
+#                 yeniden çekilince değiştir.
+#  02 getiri    → "paranın getirisi": yeni alımı getiriden ayırıyor
 #  03 mum       → mum + EMA50/200 + log (#175 ile herkese açık) — "ciddi araç"
-#  04 takip     → sahip olmadığını portföyünle aynı grafikte kıyasla
-#  05 alarm     → hedef fiyat alarmı, kısayollarıyla
-#  06 ana       → set C'den taşındı (kullanıcı kararı 2026-10-11): yeni ana
-#                 ekran Pazar çekildi (kırmızı "Geriledi", "100 liran bugün
-#                 100 lira" — TÜFE ile başa baş), eskisi "31,49 puan
-#                 enflasyonun önündesin" diyor. Bedeli: eski arayüz ve başka
-#                 toplam (₺973.501 — 01'de ₺874.835). Sayı yamalanmaz;
-#                 yeşil bir hafta içi günü yeniden çekilince değiştir.
-#  07 paylaşım  → set C'den taşındı: kartta tutar YOK, toplam çelişmez
-#  08 masraf    → komisyon/stopaj/BSMV şeffaflığı (SCREENSHOT_PLAN #3)
+#  04 portföy   → kategori beklentisi: beş tür (kripto dahil) tek dağılımda.
+#                 01'in hemen yanına KONMAZ: iki farklı toplam (₺973.501 /
+#                 ₺874.835) aramada yan yana görünürdü. İlk üç karede tek
+#                 toplam rakamı kalsın diye 4'te.
+#  05 takip     → sahip olmadığını portföyünle aynı grafikte kıyasla
+#  06 alarm     → hedef fiyat alarmı, kısayollarıyla
+#  07 masraf    → komisyon/stopaj/BSMV şeffaflığı (SCREENSHOT_PLAN #3)
+#  08 paylaşım  → set C'den taşındı: kartta tutar YOK, toplam çelişmez
+#
+# ASO denetimi (aso skill, 2026-10-11) sırayı değiştirdi: aramada yalnız
+# ilk 3 kare görünür ve kullanıcıların ~%90'ı 3. kareden öteye kaydırmaz;
+# enflasyon 6. sırada gömülüydü. App Store'da video 1. yuvayı alır, aramada
+# video + 01 + 02 görünür. Başlıklar 2025'ten beri Apple'da dizinleniyor —
+# alt satırlara aranan kelimeler (takip listesi, fiyat alarmı) girdi.
 #
 # Set C'nin 02–05 ve 08'i taşınmadı: eski arayüz + başka toplam (₺973.501);
 # yeni karelerin karşılığını eski hâliyle gösterirlerdi.
 CAPTIONS_V4 = {
-    "01": ("Hisse, fon, altın,\ndöviz, kripto", "Hepsi tek toplamda, tek dağılımda"),
+    "01": CAPTIONS_V3["01"],
     "02": ("Paran gerçekte\nne kazandırdı?", "Yeni alımın getiriye sayılmaz"),
     "03": ("Mum grafik,\nEMA50 ve EMA200", "Log ölçek, istediğin aralıkta mum"),
-    "04": ("Almadığın varlığı\nda izle", "Portföyünle aynı grafikte kıyasla"),
-    "05": ("Hedef fiyata\ngelince haber al", "Kendi fiyatın ya da %5, %10 kısayolu"),
-    "06": CAPTIONS_V3["01"],
-    "07": CAPTIONS_V3["07"],
-    "08": ("Komisyon, stopaj,\nBSMV açık açık", "Her masraf kalemi açıklamasıyla"),
+    "04": ("Hisse, fon, altın,\ndöviz, kripto", "Hepsi tek toplamda, tek dağılımda"),
+    "05": ("Almadığın varlığı\nda izle", "Takip listesi, portföyünle aynı grafikte"),
+    "06": ("Hedef fiyata\ngelince haber al", "Fiyat alarmı: kendi hedefin ya da %5, %10"),
+    "07": ("Komisyon, stopaj,\nBSMV açık açık", "Her masraf kalemi açıklamasıyla"),
+    "08": CAPTIONS_V3["07"],
 }
 
 # Durum çubuğuna dokunulmuyor: set C'deki kayıt rozeti burada yok, saat
@@ -325,10 +334,10 @@ REDACTIONS_V4 = {
     # Ortak seçicide gerçek test hesabının adı ("TestUser") — set C'deki
     # gibi "Ayşe". Ölçüm (1125×2436): segment iç zemini y 0.209–0.254,
     # etiket 0.741–0.871 × 0.226–0.236, renk (155,167,165).
-    "01": [(0.700, 0.2140, 0.210, 0.0350, "Ayşe", "c", 0.0098,
+    "04": [(0.700, 0.2140, 0.210, 0.0350, "Ayşe", "c", 0.0098,
             (155, 167, 165))],
-    "06": REDACTIONS_V3["01"],   # 9:41 + ortak seçicide "Ayşe"
-    "07": REDACTIONS_V3["07"],
+    "01": REDACTIONS_V3["01"],   # 9:41 + ortak seçicide "Ayşe"
+    "08": REDACTIONS_V3["07"],
 }
 
 
@@ -598,7 +607,7 @@ FINAL_GRAFIKLER = ["feature_graphic_1024x500.png", "icon_512.png"]
 # Önizleme videosu: açıklamalı mağaza sürümü (preview_video/README.md
 # "GÜNCEL", 886×1920, 28,0 sn). 30 sn'lik `sandik_onizleme_30sn.mp4`
 # ALINMADI: 30,06 sn — Apple'ın 15–30 sn sınırını aşıyor — ve "enflasyonun
-# gerisindesin" mesajı galerideki 06 ("önündesin") ile çelişiyor.
+# gerisindesin" mesajı galerideki 01 ("önündesin") ile çelişiyor.
 # Play video dosyası almaz (YouTube bağlantısı ister), yalnız App Store.
 FINAL_EK = [
     (os.path.join(HERE, "preview_video", "out",

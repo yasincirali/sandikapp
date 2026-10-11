@@ -45,14 +45,18 @@ gerekirse diye.
 
 | # | Kare | Kaynak |
 |---|---|---|
-| 01 | Portföy — beş tür, kripto dahil | yeni çekim |
+| 01 | Ana ekran — enflasyonun önündesin | set C (eski) |
 | 02 | Performans — paranın getirisi | yeni çekim |
 | 03 | KCHOL mum + EMA50/200 | yeni çekim |
-| 04 | Takip listesi kıyası | yeni çekim |
-| 05 | Fiyat alarmı | yeni çekim |
-| 06 | Ana ekran — enflasyonun önündesin | set C (eski) |
-| 07 | Paylaşım kartı | set C (eski) |
-| 08 | Masraflar | yeni çekim |
+| 04 | Portföy — beş tür, kripto dahil | yeni çekim |
+| 05 | Takip listesi kıyası | yeni çekim |
+| 06 | Fiyat alarmı | yeni çekim |
+| 07 | Masraflar | yeni çekim |
+| 08 | Paylaşım kartı | set C (eski) |
+
+Sıra `aso` denetiminden (2026-10-11): aramada yalnız ilk 3 kare görünür,
+ayırt edici iddia (enflasyon) başa alındı. Portföy 4'te, çünkü 01 ile
+yan yana iki farklı toplam (₺973.501 / ₺874.835) göze batıyordu.
 
 **Dışarıda kalanlar ve neden**
 
@@ -64,13 +68,13 @@ gerekirse diye.
 - **`screenshots/raw/` WhatsApp kareleri, `preview_video/public/shots/`** —
   set A/B'nin ham kaynakları: gerçek portföy ve maskelenmemiş gerçek adlar.
 - **`sandik_onizleme_30sn.mp4`** — 30,06 sn (Apple sınırı 30) ve
-  "enflasyonun gerisindesin" mesajı galerideki 06 ile çelişiyor.
+  "enflasyonun gerisindesin" mesajı galerideki 01 ile çelişiyor.
 - **Anlatımlı / sessiz önizleme videoları** — açıklamalı sürümün eski
   denemeleri; `sandik_tanitim_16x9.mp4` 16:9, iPhone önizlemesi olamaz.
 - **`reklam/out/`** — reklam kreatifleri; HTML ile yeniden çizim, mağaza
   önizlemesi değil (Apple 2.3.4: yalnız gerçek ekran). Play'in YouTube
   video alanı için `sandik_tanitim_16x9.mp4` kullanılabilir (yüklemesi sende).
 
-**Bilinen kusurlar** (yeniden çekimle kapanır): 06'da toplam ₺973.501
-(01'de ₺874.835) ve eski başlıktaki çıkış düğmesi; 07'de eski Performans
+**Bilinen kusurlar** (yeniden çekimle kapanır): 01'de toplam ₺973.501
+(04'te ₺874.835) ve eski başlıktaki çıkış düğmesi; 08'de eski Performans
 başlığı ve %33 pil.

@@ -45,6 +45,17 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
       Subscriptions" bölümünü boş bırak**; `sandik_premium_aylik/yillik`
       "Prepare for Submission"da bekler. Paywall kapalıyken inceleyici ürünü
       bulamaz → ret riski.
+- [ ] **Mağaza sayfası (2026-10-11 ASO denetimi):** görseller, video, etkinlik
+      görselleri ve metinler tek yerde: `store_listing/final/` (README orada).
+      1.1.6 sürüm sayfasında Türkçe **Keywords** alanını şununla değiştir
+      (eskisi 104 bayttı, kripto yoktu):
+      `sandik,borsa,bist,yatırım,döviz,dolar,kripto,tefas,kâr,zarar,tüfe,reel,getiri,birikim,varlık`
+      Promotional Text'teki Eylül TÜFE'sini (%29,73) göndermeden TÜİK'le teyit et.
+- [ ] **"Diller: İngilizce" düzeltmesi build ister:** `Info.plist`'e
+      `CFBundleLocalizations` (tr, en) eklendi (`store/set-d-ekran-goruntuleri`
+      dalı). Mağazaya giden 1.1.6 build'i bu değişiklikten ÖNCE alındıysa sayfa
+      bir sonraki build'e kadar "İngilizce" der — mümkünse dalı main'e alıp
+      gönderilecek build'i ondan üret.
 - [ ] Kontrol: admin OLMAYAN hesapta paywall, kilit, "Premium" yazısı, ƒx,
       Raporlar, X-Ray görünmez; mum/EMA/aralık görünür. Admin hesabın
       (`yonetici`) Premium ekranları paywall kapalıyken de görür; kendi

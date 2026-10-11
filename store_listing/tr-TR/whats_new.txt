@@ -1,6 +1,6 @@
-• Yeni Bugün kartı: günün özeti ve "Paran fiyatlara yetişiyor mu?"
-• Paranın getirisi: yeni alımların getiri sayılmaz
-• Kripto, ABD hisseleri, Eurobond, mevduat ve BES
+• Kripto, ABD hisseleri, Eurobond, vadeli mevduat ve BES portföyünde
+• Bugün kartı yenilendi: günün özeti ve "Paran fiyatlara yetişiyor mu?"
+• Paranın getirisi: eklediğin paranın zamanı hesaba katılır, temettü dahil
 • Mum grafik, EMA50 ve EMA200
 • Ekstreden içe aktar: PDF, Excel, CSV
 • Masraflar kartı, fon karnesi, temettü hatırlatması, halka arz takvimi
