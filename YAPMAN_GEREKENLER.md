@@ -12,6 +12,83 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-11 Mağazaya 1.1.6: paywall KAPALI çıkış → sonra açılış → Frankfurt
+
+Senin kararın (11 Ekim): GİB 20/B yazısı ve banka hesabı bitene kadar
+Premium ve paywall mağazada **kapalı**; ücretsiz yenilikler açık. Kod
+değişikliği yok, hepsi Remote Config. TestFlight'ta mağaza görünümünü
+denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
+
+**A. 1.1.6'yı mağazaya göndermeden önce**
+
+- [ ] **Denemeyi geri al:** Conditions › "TestFlight 1.1.6" › Custom signal
+      değeri `kapali` → `testflight` › Save › **Publish changes**. Unutulursa
+      testçiler de mağaza değerlerini alır (zararsız ama TestFlight'ta
+      kilitleri artık denemezsin).
+- [ ] **Varsayılan (koşulsuz) değerler**, Parameters › Default value:
+      · `paywall_enabled` = false · `premium_hediye_kesim` = boş
+      · `raporlar_kapisi`, `fon_xray_kalem`, `paywall_deste`,
+        `ekstre_ai_esleme`, `varlik_hero_gecisi` = false
+      · `paywall_watchlist_limit` = **5** (konsolda 10 duruyordu; paywall
+        kapalıyken okunmaz ama açılışta ücretsize 10 verir)
+- [ ] **Mağazada görünecek ücretsiz bayraklar** varsayılanı true:
+      `coklu_hesap`, `coklu_portfoy`, `abd_hisse`, `eurobond`,
+      `varlik_masraflari`, `goz_alici`, `birikim_serisi`, `tur_secici_izgara`,
+      `mevduat_banka_secici`, `genel_arama`, `performans_tek_akis`,
+      `portfoy_dagilim_cubugu`, `varlik_detay_katmanli`, `donem_hafizasi`,
+      `sinyal_on_ayar`, `ekstre_hareketleri`, `satis_gunu_kuru`,
+      `hafta_sonu_yurt_ici_seri`, `canli_etkinlik_dakikalik`
+      (`kayit_hunisi` senin kararın). TestFlight'ta hiç açık olmamış biri
+      varsa açmadan önce bir dene.
+- [ ] Sunucu `premium_ayar.kapi_acik` **false** kalır (dokunma).
+- [ ] App Store Connect'te sürüm sayfasındaki **"In-App Purchases and
+      Subscriptions" bölümünü boş bırak**; `sandik_premium_aylik/yillik`
+      "Prepare for Submission"da bekler. Paywall kapalıyken inceleyici ürünü
+      bulamaz → ret riski.
+- [ ] Kontrol: admin OLMAYAN hesapta paywall, kilit, "Premium" yazısı, ƒx,
+      Raporlar, X-Ray görünmez; mum/EMA/aralık görünür. Admin hesabın
+      (`yonetici`) Premium ekranları paywall kapalıyken de görür; kendi
+      hesabınla bakıp yanılma.
+
+**B. Paywall'ı açma (GİB yazısı + hesap hazır olunca)**
+
+1. [ ] Yeni bir mağaza sürümü gönder; "In-App Purchases and Subscriptions"
+       bölümüne iki ürünü ekle. İnceleme notu: paywall'a nasıl ulaşılır
+       (ör. bir test hesabı + Profil › Premium). İnceleyicinin paywall'ı
+       görebilmesi gerekir; nasıl açılacağını o gün birlikte planlarız
+       (Claude'a sor).
+2. [ ] Ürünler onaylanınca yukarıdaki **"PAYWALL AÇILIŞ GÜNÜ"** listesi
+       sırasıyla: hediye SQL (iki sunucu) → `premium_hediye_kesim` aynı tarih
+       → `paywall_enabled` önce %20 sonra herkes → en son
+       `update public.premium_ayar set kapi_acik = true;` (iki sunucu).
+3. [ ] Acil kapatma (ilk satıştan sonra): RC `premium_enabled = false` +
+       `kapi_acik = false`. `paywall_enabled = false` ödeyenden de Premium'u
+       alır; yalnız ilk satıştan önce kullanılır.
+4. [ ] TestFlight testçi kesimi (`2020-01-01`, yalnız TestFlight koşulunda)
+       yerine gerçek kesim; `testci_muafiyeti` satırlarına karar ver.
+
+**C. Tokyo → Frankfurt geçişi (1.1.6 mağazaya çıktıktan sonra)**
+
+Plan ve runbook: [`docs/SUPABASE_FRANKFURT_TASIMA.md`](docs/SUPABASE_FRANKFURT_TASIMA.md)
+("Açılış yol haritası", K2–K5). 1.1.6 köprü sürümüdür: iki sunucunun adresini
+taşır, hangisine bağlanacağını RC `sunucu` (`tokyo` | `frankfurt`) söyler;
+geçişte mağaza onayı gerekmez.
+
+- [ ] **K2:** 1.1.6 mağazada; RC `sunucu = tokyo`, `min_build_ios/android = 0`.
+      Geçiş şartı: Analytics'te 1.1.6 payı ≥ %90 **veya** 7 gün; çökmesiz
+      oturum ≥ %99.
+- [ ] **K3 prova:** veri kopyası → Frankfurt; RC koşuluyla yalnız senin
+      cihazın `frankfurt`; rakamlar Tokyo ile birebir mi bak, sonra Frankfurt
+      boşaltılır.
+- [ ] **K4 geçiş gecesi** (hafta sonu 02:00–04:00, ~1 saat): Tokyo cron'ları
+      kapat → Tokyo'yu istemcilere kapat → son veri kopyası → Frankfurt
+      cron'ları aç → RC `sunucu = frankfurt` + `min_build_* = 1.1.6 build` →
+      duman testi (Claude). Geri dönüş 24 saat: `sunucu = tokyo`.
+- [ ] **K5:** GitHub secret'ları Frankfurt'a, varsayılan `frankfurt` derlenir,
+      yasal metinde veri ülkesi, Tokyo silinmez (yedek).
+- Sıra: paywall açılışı ile geçiş aynı haftaya denk gelmesin; geçişte
+  kullanıcı bir kez yeniden giriş yapar.
+
 ## ⏳ 2026-10-10 Premium seti netleşti + PAYWALL AÇILIŞ GÜNÜ (tek liste, migration 0142)
 
 Senin kararların (10 Ekim akşam): varlığı güncelle ücretsiz; mum, aralık
