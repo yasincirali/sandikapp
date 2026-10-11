@@ -13,8 +13,8 @@ import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 
-/// Varlık detayı grafiğinin Premium katmanları (MUM · EMA50 · EMA200,
-/// yasin 2026-10-10) — kim görür, kilit ne yapar.
+/// Varlık detayı grafiğinin katmanları (MUM · EMA50 · EMA200, yasin
+/// 2026-10-10) — kim görür; 20:38 kararıyla ücretsiz, kilit yalnız ƒx'te.
 ///
 /// Ana kural (CLAUDE.md "Canlıdaki kullanıcı etkilenmez"): paywall kapalı
 /// ve admin olmayan kullanıcıda araç çubuğu BİREBİR eskisi (MA20 · LOG).
@@ -134,22 +134,26 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('kilitli (paywall açık, Premium değil): dokunuş tercihi değiştirmez',
+  testWidgets(
+      'paywall açık, Premium değil: Mum/EMA ücretsiz, yalnız ƒx kilitli',
       (tester) async {
     await _pump(tester, gorunur: true, kilitli: true);
-    // MUM · EMA50 · EMA200 + kendi göstergeni yaz (ƒx).
-    expect(find.byIcon(Icons.lock_rounded), findsNWidgets(4));
+    // Tek kilit: kendi göstergeni yaz (ƒx).
+    expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
     final container = ProviderScope.containerOf(
         tester.element(find.byType(AssetDetailScreen)));
     await tester.tap(find.text('EMA50'));
     await tester.pump();
-    expect(container.read(chartEma50Provider), isFalse);
+    expect(container.read(chartEma50Provider), isTrue);
+    await tester.tap(find.text('EMA200'));
+    await tester.pump();
+    expect(container.read(chartEma200Provider), isTrue);
     await tester.tap(find.text('MUM'));
     await tester.pump();
-    expect(container.read(chartCandleProvider), isFalse);
-    // MA20/LOG ücretsiz kalır.
+    expect(container.read(chartCandleProvider), isTrue);
     await tester.tap(find.text('MA20'));
     await tester.pump();
     expect(container.read(chartMA20Provider), isTrue);
+    expect(tester.takeException(), isNull);
   });
 }

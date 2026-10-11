@@ -1,17 +1,22 @@
 part of '../asset_detail_screen.dart';
 
-/// Fiyat grafiğinin Premium katmanları: EMA50 / EMA200 ve logaritmik mum
+/// Fiyat grafiğinin katmanları: EMA50 / EMA200 ve logaritmik mum
 /// (yasin, 2026-10-10). `asset_detail_screen.dart`'ın part'ı; hesaplar
 /// `utils/hareketli_ortalama.dart`'ta.
 ///
 /// ## Kim görür (yeni bayrak YOK)
 /// Tek anahtar `paywall_enabled` (`premiumOzellikleriGorunurProvider`):
 /// kapalıyken yalnız admin hesabı görür — mağazadaki kullanıcının araç
-/// çubuğu birebir eskisi gibi (MA20 · LOG). Açıkken herkes görür; Premium
-/// olmayanda çip kilitlidir ve dokunuş paywall'u açar. Gerekçe: "yeni
-/// özellikler paywall arkasında" (yasin 2026-10-10) ve "bayrak sayısı
-/// artmasın" (2026-10-09). MA20 ve LOG ücretsiz kalır — canlıdaki kullanıcının
-/// kullandığı şey elinden alınmaz.
+/// çubuğu birebir eskisi gibi (MA20 · LOG). Açıkken HERKES görür ve kullanır.
+///
+/// ## Ücretsiz (yasin, 2026-10-10 20:38)
+/// İlk sürümde (#150) Mum ve EMA çipleri Premium'du. yasin aynı akşam:
+/// *"mum görünümü ve preset göstergeler ücretli olmamalı, custom pine kodu
+/// girmek isteyen traderlar için ücretli olmalı"*, *"ema50 ema200 ücretsiz
+/// olmalı"*. Mum, aralık seçicisi, EMA50, EMA200 (MA20 ve LOG zaten) artık
+/// ücretsiz; kilit yalnız `ƒx` çipinde — kendi göstergeni yaz
+/// (`ozel_gostergeler.dart`, [_ozelGostergeKilitli]). Paywall kapalıyken
+/// görünürlük kararı değişmedi: yeni çipler yine yalnız admin'de.
 ///
 /// ## Mumun verisi
 /// 2026-10-10'a kadar uygulama hiçbir sağlayıcıdan açılış/en yüksek/en düşük
@@ -30,16 +35,17 @@ part of '../asset_detail_screen.dart';
 /// GÜNLÜK'ü) eski çizim görünür — ekran boş kalmaz. Mevduatta çipler hiç
 /// çıkmaz (çizgisi fiyat değil faiz birikimi).
 ///
-/// Aralık seçicisinin kendi bayrağı yok: Mum zaten Premium
-/// (`paywall_enabled`/admin) ve kilitliyken Mum açılamaz, seçici de çıkmaz.
+/// Aralık seçicisinin kendi bayrağı yok: Mum'la aynı görünürlük kararı
+/// (`paywall_enabled`/admin); Mum kapalıyken seçici çıkmaz.
 extension _GrafikKatmanlari on _AssetDetailScreenState {
   /// EMA/Mum çipleri bu kullanıcıda ve bu varlıkta çizilir mi.
   bool get _katmanlarGorunur =>
       ref.watch(premiumOzellikleriGorunurProvider) &&
       widget.asset.type != AssetType.mevduat;
 
-  /// Çipler kilitli mi (paywall açık, Premium değil).
-  bool get _katmanlarKilitli => ref.watch(premiumKilitliProvider);
+  /// Kendi göstergeni yaz (`ƒx`) kilitli mi (paywall açık, Premium değil).
+  /// Mum/EMA kilitlenmez — yalnız özel gösterge Premium.
+  bool get _ozelGostergeKilitli => ref.watch(premiumKilitliProvider);
 
   /// Seçili dönemin EMA ısınma serisini (dönem öncesi çubuklar) ister.
   ///
@@ -200,51 +206,6 @@ extension _GrafikKatmanlari on _AssetDetailScreenState {
     );
   }
 
-  /// Araç çubuğunun Premium çipleri (MUM · EMA50 · EMA200). Kilitliyse
-  /// dokunuş seçimi değiştirmez, paywall'u açar.
-  ({Widget mum, Widget ema50, Widget ema200}) _katmanCipleri({
-    required bool mumOn,
-    required bool ema50On,
-    required bool ema200On,
-  }) {
-    final kilitli = _katmanlarKilitli;
-    VoidCallback dokun(void Function() degistir, String kaynak) => () {
-          if (kilitli) {
-            PaywallScreen.show(context, source: kaynak);
-            return;
-          }
-          degistir();
-        };
-    return (
-      mum: _OverlayChip(
-        label: context.l10n.chartCandleChip,
-        active: mumOn,
-        kilitli: kilitli,
-        onTap: dokun(
-            () => ref.read(chartCandleProvider.notifier).set(!mumOn),
-            'grafik_mum'),
-      ),
-      ema50: _OverlayChip(
-        label: 'EMA50',
-        active: ema50On,
-        kilitli: kilitli,
-        renk: context.c.gain,
-        onTap: dokun(
-            () => ref.read(chartEma50Provider.notifier).set(!ema50On),
-            'grafik_ema'),
-      ),
-      ema200: _OverlayChip(
-        label: 'EMA200',
-        active: ema200On,
-        kilitli: kilitli,
-        renk: context.c.loss,
-        onTap: dokun(
-            () => ref.read(chartEma200Provider.notifier).set(!ema200On),
-            'grafik_ema'),
-      ),
-    );
-  }
-
   // ── Gerçek mumlar (aralık seçicisi, 2026-10-10) ─────────────────────────
 
   /// Mumun penceresi dakika cinsinden: GÜNLÜK tam bir takvim günüdür.
@@ -252,14 +213,15 @@ extension _GrafikKatmanlari on _AssetDetailScreenState {
       gunIci ? 1440.0 : son.difference(bas).inMinutes.toDouble();
 
   /// Bu pencerede çizilecek aralık ve seçicinin sunacağı aralıklar.
-  ({MumAraligi? aralik, List<MumAraligi> gecerli}) _mumAraligi(
+  ({MumAraligi? aralik, List<MumAraligi> gecerli, double span}) _mumAraligi(
       bool gunIci, DateTime bas, DateTime son) {
     final span = _mumPenceresi(gunIci, bas, son);
-    final secim = MumAraligi.sirayla(ref.watch(chartMumAraligiProvider));
+    final secim = secilenMumAraligi(ref, span);
     final a = _canli.asset;
     return (
       aralik: etkinAralik(a, span, secim),
       gecerli: gecerliAraliklar(a, span),
+      span: span,
     );
   }
 
@@ -378,56 +340,6 @@ extension _GrafikKatmanlari on _AssetDetailScreenState {
     );
   }
 
-  String _aralikEtiketi(MumAraligi a) => switch (a) {
-        MumAraligi.dk1 => context.l10n.chartIntervalM1,
-        MumAraligi.saat1 => context.l10n.chartIntervalH1,
-        MumAraligi.saat4 => context.l10n.chartIntervalH4,
-        MumAraligi.gun1 => context.l10n.chartIntervalD1,
-        MumAraligi.hafta1 => context.l10n.chartIntervalW1,
-        MumAraligi.ay1 => context.l10n.chartIntervalMo1,
-      };
-
-  String _aralikUzunAdi(MumAraligi a) => switch (a) {
-        MumAraligi.dk1 => context.l10n.chartIntervalM1Long,
-        MumAraligi.saat1 => context.l10n.chartIntervalH1Long,
-        MumAraligi.saat4 => context.l10n.chartIntervalH4Long,
-        MumAraligi.gun1 => context.l10n.chartIntervalD1Long,
-        MumAraligi.hafta1 => context.l10n.chartIntervalW1Long,
-        MumAraligi.ay1 => context.l10n.chartIntervalMo1Long,
-      };
-
-  /// Aralık seçicisi — Mum açıkken araç çubuğunun altında. Tek seçim, ortak
-  /// [SandikSegment] (kayan zemin, 44 pt dokunma, hareketi azalt). Tek
-  /// geçerli aralık varsa çağıran seçiciyi hiç kurmaz. Kapanıştan kurulan
-  /// mumlarda altında tek satır açıklama: mumun ne olduğunu söyler.
-  Widget _aralikSecici({
-    required MumAraligi aralik,
-    required List<MumAraligi> gecerli,
-  }) {
-    final kapanistan = !FiyatKaynagi.mumKaynagi(_canli.asset).gercekOhlc;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SandikSegment(
-          adet: gecerli.length,
-          secili: gecerli.indexOf(aralik),
-          yukseklik: 32,
-          metinStili: context.t.labelLarge,
-          onSec: (i) =>
-              ref.read(chartMumAraligiProvider.notifier).set(gecerli[i].index),
-          oge: (_, i, __) => Text(_aralikEtiketi(gecerli[i]),
-              maxLines: 1, overflow: TextOverflow.ellipsis),
-          semantik: (i) =>
-              context.l10n.chartIntervalSemantics(_aralikUzunAdi(gecerli[i])),
-        ),
-        if (kapanistan) ...[
-          const SizedBox(height: SandikSpace.xs),
-          Text(
-            context.l10n.chartCandleFromCloses,
-            style: context.t.labelSmall?.copyWith(color: context.c.text58),
-          ),
-        ],
-      ],
-    );
-  }
+  // Araç çubuğu (çipler + aralık seçicisi) ortak widget'ta:
+  // `widgets/grafik_arac_cubugu.dart` (üç ekran tutarlılığı, 2026-10-10).
 }

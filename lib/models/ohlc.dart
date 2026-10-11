@@ -89,9 +89,41 @@ enum MumAraligi {
   hafta1(7 * 1440, '1wk', '1wk'),
   // Ay 30 gün sayılır: yalnız SEÇİM ve beklenen mum sayısı için. Çizimde
   // her ayın gerçek uzunluğu kullanılır (`ayUzunluguMs`).
-  ay1(30 * 1440, '1mo', '1mo');
+  ay1(30 * 1440, '1mo', '1mo'),
+  // 5 dk ve 15 dk (yasin 2026-10-10 gece: "1 dk'lık, 5 dk'lık, 1 saatlik
+  // datayı göremiyorum … TradingView'i örnek alabilirsin"). TradingView'in
+  // varsayılan sık kullanılanları 1m · 5m · 15m · 1h · 4h · D · W · M.
+  // SONA eklendi: tercih (`chartMumAraligiProvider`) sıra numarasını
+  // saklar; araya eklemek kayıtlı seçimi başka bir aralığa kaydırırdı.
+  // Ekranda sıra [sirali]'dan gelir. Binance ikisini de doğrudan verir
+  // (`_shared/kripto.ts` › ARALIK), Yahoo `5m`/`15m` son ~60 günü.
+  dk5(5, '5m', '5m'),
+  dk15(15, '15m', '15m'),
+  // 30 dk: TradingView'in 1 ay düğmesinin varsayılan aralığı (yasin
+  // 2026-10-10 gece: "defaultta tradingviewdeki time-interval ve default
+  // frequency ile açılsın"). Yine SONA; Binance `30m`, Yahoo `30m` ~60 gün.
+  dk30(30, '30m', '30m');
 
   const MumAraligi(this.dakika, this.yahooInterval, this.kriptoAraligi);
+
+  /// Küçükten büyüğe — seçicinin ve kaynak listelerinin sırası.
+  static final List<MumAraligi> sirali = [...values]
+    ..sort((a, b) => a.dakika.compareTo(b.dakika));
+
+  /// Yahoo'nun bu aralıkta geriye verdiği en uzun pencere (gün); `null` →
+  /// sınır yok. 1 sa/4 sa ~730 gün ölçüldü (2026-10-10,
+  /// `tool/ohlc_olcum.py`). 1 dk: Yahoo tek istekte 8 güne kadar verir (son
+  /// 30 gün içinde); ilk ölçüm 7 gün dediği için varlık detayının 1H
+  /// penceresi (`_donemBaslangici(7)` ≈ 7,9 gün) 1 dk'yı kaybediyordu
+  /// (yasin 2026-10-10 gece, "1 dk'lık datayı göremiyorum") → 8. 5/15 dk için ~60 gün Yahoo'nun bilinen sınırı
+  /// (ölçülmedi, Actions'ta doğrulanmalı). Pencere bunu aşarsa istek boş
+  /// döner ve seçici boşuna bir aralık sunmuş olurdu.
+  int? get yahooGecmisGun => switch (this) {
+        dk1 => 8,
+        dk5 || dk15 || dk30 => 60,
+        saat1 || saat4 => 730,
+        _ => null,
+      };
 
   /// Bir barın (yaklaşık) süresi, dakika.
   final int dakika;
@@ -104,6 +136,19 @@ enum MumAraligi {
   final String kriptoAraligi;
 
   int get ms => dakika * 60 * 1000;
+
+  /// Pine `timeframe.period` değeri.
+  String get pineDilimi => switch (this) {
+        dk1 => '1',
+        dk5 => '5',
+        dk15 => '15',
+        dk30 => '30',
+        saat1 => '60',
+        saat4 => '240',
+        gun1 => 'D',
+        hafta1 => 'W',
+        ay1 => 'M',
+      };
 
   /// Gün içi (gün altı) aralık mı? Seansı olan piyasada gece boşluğu
   /// bırakır; günlük ve üstü bırakmaz.

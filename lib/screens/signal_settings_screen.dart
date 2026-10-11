@@ -12,7 +12,6 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_segment.dart';
-import '../widgets/sinyal_kilit_karti.dart';
 import 'paywall_screen.dart';
 import '../l10n/l10n.dart';
 
@@ -27,41 +26,38 @@ class SignalSettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Sinyal paywall açıkken bütünüyle Premium (`sinyalYuzeyiProvider`).
-    // Ayarlar'dan ya da aramadan gelen ücretsiz kullanıcı ayar listesi
-    // yerine kilidi görür: ayarlayıp da bildirim alamayacağı bir ekran
-    // vaat eder gibi dururdu. Kayıtlı tercihler silinmez, Premium'da aynen
-    // geri gelir.
-    if (ref.watch(premiumKilitliProvider)) {
-      return Scaffold(
-        backgroundColor: context.c.background,
-        appBar: const SandikAppBar(title: _baslik),
-        body: ListView(
-          padding: EdgeInsets.symmetric(
-              horizontal: SandikSpace.screenH(context), vertical: 12),
-          children: const [SinyalKilitKarti()],
-        ),
-      );
-    }
+    // Premium modeli (yasin 2026-10-10): paywall açıkken ücretsiz kullanıcı
+    // ekranı GÖRÜR — RSI, MACD ve Bollinger'ı seçip ekranda kullanır; kalan
+    // beş gösterge, periyot ayarları ve bütün bildirim ayarları Premium.
+    // Eskiden ekranın tamamı tek kilit kartıydı ("sinyal tamamen Premium").
+    // Kayıtlı tercihler silinmez, Premium'da aynen geri gelir.
     final prefs = ref.watch(indicatorPrefsProvider);
     // Gerçek hak (mağaza/sunucu/admin). Eskiden cihazdaki geliştirici
     // anahtarıydı ve aşağıdaki kartın "Aç" düğmesi onu açıyordu: paywall
     // açıkken herkes ödemesiz Premium alırdı (2026-10-06 bulgusu).
-    final premium = ref.watch(effectivePremiumProvider);
+    final premium = ref.watch(premiumErisimProvider);
     final paywallOn = ref.watch(paywallVisibleProvider);
     final gelistirici = ref.watch(gelistiriciAnahtariSayilirProvider);
     final thresholds = ref.watch(signalThresholdProvider);
     final schedules = ref.watch(signalScheduleProvider);
     final neutralPush = ref.watch(signalNeutralPushProvider);
-    // Ücretsiz günlük bildirim kapısı (paywall kapalıyken sınırsız).
+    final izinli = ref.watch(izinliGostergelerProvider);
+    // Ücretsiz günlük bildirim kapısı (paywall kapalıyken / Premium'da
+    // sınırsız). yasin 2026-10-10 akşam: üç ücretsiz göstergenin bildirimi
+    // ücretsizde de gider, "limitli sayıda".
     final slot = ref.watch(sinyalSlotSiniriProvider);
+    final kilitli = ref.watch(premiumKilitliProvider);
+    final parametreDurumu = ref.watch(gostergeParametreDurumuProvider);
+    final parametreler = ref.watch(gostergeParametreleriProvider);
 
     // Sadeleştirme 2 (bayrak `sinyal_on_ayar`): üstte tek soru + üç ön
     // ayar; kategori başına ayarlar katlanır bölüme taşınır, kaybolmaz.
     final onAyarAcik = RemoteConfigService.instance.sinyalOnAyar;
     final kategoriler = <Widget>[
       Text(
-        'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
+        kilitli
+            ? context.l10n.sgnAyarAciklamaUcretsiz
+            : 'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
         style: context.t.titleSmall
             ?.copyWith(color: context.c.text58, height: 1.5),
       ),
@@ -83,10 +79,10 @@ class SignalSettingsScreen extends ConsumerWidget {
           type: type,
           selected: prefs[type] ??
               TechnicalAnalysisService.defaultEnabledFor(type),
-          // Paywall kapalıyken herkes premium'muş gibi davranır (kilit yok,
-          // "PREMIUM" chip'i yok). Store hazır olunca RC'den açılır.
-          premiumUnlocked: !paywallOn || premium,
+          izinli: izinli,
           paywallVisible: paywallOn,
+          parametreDurumu: parametreDurumu,
+          parametreler: parametreler[type] ?? const {},
           threshold: thresholds[type] ?? kSignalThresholdDefault,
           onToggle: (id) =>
               ref.read(indicatorPrefsProvider.notifier).toggle(type, id),
@@ -118,6 +114,9 @@ class SignalSettingsScreen extends ConsumerWidget {
             }
             await notifier.setHours(type, h);
           },
+          onParametre: (id, ayar) => ref
+              .read(gostergeParametreleriProvider.notifier)
+              .ayarla(type, id, ayar),
         ),
         const SizedBox(height: 20),
       ],
@@ -134,15 +133,14 @@ class SignalSettingsScreen extends ConsumerWidget {
           const DisclaimerWidget(),
           const SizedBox(height: 16),
 
-          // ── Premium banner (paywall kapalıysa hiç gösterilmez) ───────────
-          if (paywallOn) ...[
+          // ── Premium kartı (paywall kapalıysa hiç gösterilmez) ────────────
+          // Ücretsizde kilitler satırlarda (Premium gösterge, sıklık,
+          // periyot); bu kart Premium'daki hâli ("açık") ya da debug
+          // anahtarını taşır.
+          if (paywallOn && premium) ...[
             _PremiumCard(
-              unlocked: premium,
-              onUpgrade: () {
-                AnalyticsService.instance
-                    .logPremiumGateShown(feature: 'signal_settings_card');
-                PaywallScreen.show(context, source: 'signal_settings_card');
-              },
+              unlocked: true,
+              onUpgrade: () {},
               // Yalnız debug: geliştirici anahtarı (release'te çizilmez).
               onDevToggle: gelistirici
                   ? () => ref
@@ -165,7 +163,7 @@ class SignalSettingsScreen extends ConsumerWidget {
             const SizedBox(height: SandikSpace.md),
           ],
 
-          // â”€â”€ Genel bildirim ayarlarÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          // ── Genel bildirim ayarları ──────────────────────────────────────
           SandikCard(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -320,28 +318,38 @@ class _PremiumCard extends StatelessWidget {
 class _CategorySection extends StatelessWidget {
   final AssetType type;
   final Set<String> selected;
-  final bool premiumUnlocked;
+
+  /// Bu kullanıcıda hesaplanan göstergeler (`izinliGostergelerProvider`).
+  final Set<String> izinli;
   final bool paywallVisible;
+
+  /// Ücretsiz günlük bildirim sınırı; bunu aşan sıklıklar kilitli çizilir.
+  final int slot;
+  final OzellikDurumu parametreDurumu;
+  final Map<String, GostergeAyari> parametreler;
   final int threshold;
   final void Function(String id) onToggle;
   final void Function(int threshold) onThresholdChanged;
   final SignalSchedule schedule;
-  final int slot;
   final void Function(SignalFrequency freq) onFrequencyChanged;
   final void Function(List<int> hours) onHoursChanged;
+  final void Function(String id, GostergeAyari? ayar) onParametre;
 
   const _CategorySection({
     required this.type,
     required this.selected,
-    required this.premiumUnlocked,
+    required this.izinli,
     required this.paywallVisible,
+    required this.slot,
+    required this.parametreDurumu,
+    required this.parametreler,
     required this.threshold,
     required this.onToggle,
     required this.onThresholdChanged,
     required this.schedule,
-    required this.slot,
     required this.onFrequencyChanged,
     required this.onHoursChanged,
+    required this.onParametre,
   });
 
   @override
@@ -398,24 +406,243 @@ class _CategorySection extends StatelessWidget {
             height: 1,
             color: context.c.overlay,
           ),
+          // İleri göstergeler (ADX, W%R, CCI) paywall kapalıyken hiç
+          // hesaplanmadığı için listelenmez: anahtar bir şey yapmıyordu
+          // ("ölü anahtar" bulgusu, 2026-10-10). Kayıtlı seçim silinmez.
           for (final id in IndicatorId.all)
-            _IndicatorRow(
-              id: id,
-              checked: selected.contains(id),
-              locked: IndicatorId.premium.contains(id) && !premiumUnlocked,
-              recommended: IndicatorId.recommendedFor(type).contains(id),
-              showPremiumChip: paywallVisible,
-              onTap: () {
-                if (IndicatorId.premium.contains(id) && !premiumUnlocked) {
-                  AnalyticsService.instance
-                      .logPremiumGateShown(feature: 'indicator_$id');
-                  PaywallScreen.show(context, source: 'signal_settings_$id');
-                  return;
-                }
-                onToggle(id);
-              },
-            ),
+            if (paywallVisible || !IndicatorId.ileri.contains(id))
+              _IndicatorRow(
+                id: id,
+                checked: selected.contains(id),
+                locked: !izinli.contains(id),
+                recommended: IndicatorId.recommendedFor(type).contains(id),
+                showPremiumChip: paywallVisible && IndicatorId.premiumMu(id),
+                parametreDurumu: parametreDurumu,
+                ozelAyar: GostergeParametreleri.dogrula(id, parametreler[id]),
+                onTap: () {
+                  if (!izinli.contains(id)) {
+                    AnalyticsService.instance
+                        .logPremiumGateShown(feature: 'indicator_$id');
+                    PaywallScreen.show(context, source: 'signal_settings_$id');
+                    return;
+                  }
+                  onToggle(id);
+                },
+                onParametre: () {
+                  if (parametreDurumu == OzellikDurumu.kilitli) {
+                    AnalyticsService.instance
+                        .logPremiumGateShown(feature: 'gosterge_parametre');
+                    PaywallScreen.show(context, source: 'gosterge_parametre');
+                    return;
+                  }
+                  _parametreSheet(context, id);
+                },
+              ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _parametreSheet(BuildContext context, String id) async {
+    final sonuc = await showSandikSheet<_ParametreSonucu>(
+      context: context,
+      backgroundColor: context.c.surface1,
+      isScrollControlled: true,
+      builder: (_) => _ParametreSayfasi(
+        id: id,
+        type: type,
+        mevcut: GostergeParametreleri.dogrula(id, parametreler[id]),
+      ),
+    );
+    if (sonuc != null) onParametre(id, sonuc.ayar);
+  }
+}
+
+/// Parametre sayfasının dönüşü: [ayar] null = varsayılana dön.
+typedef _ParametreSonucu = ({GostergeAyari? ayar});
+
+/// Bir göstergenin periyot ayarları (Premium, 2026-10-10).
+///
+/// Her parametre bir adımlayıcı: − değer +. Klavye yerine adımlayıcı,
+/// çünkü değerler küçük tam sayılar ve dar aralıkta (bkz.
+/// `GostergeParametreleri.tanimlar`); sayı klavyesi geçersiz değer yazmaya
+/// izin verip sonra hata göstermek demek olurdu. Düğmeler 44 pt.
+class _ParametreSayfasi extends StatefulWidget {
+  const _ParametreSayfasi(
+      {required this.id, required this.type, required this.mevcut});
+
+  final String id;
+  final AssetType type;
+  final GostergeAyari? mevcut;
+
+  @override
+  State<_ParametreSayfasi> createState() => _ParametreSayfasiState();
+}
+
+class _ParametreSayfasiState extends State<_ParametreSayfasi> {
+  late final GostergeAyari _varsayilan =
+      GostergeParametreleri.varsayilan(widget.id, widget.type);
+  late final Map<String, int> _deger = {..._varsayilan, ...?widget.mevcut};
+
+  List<GostergeParametresi> get _tanim =>
+      GostergeParametreleri.tanimlar[widget.id] ?? const [];
+
+  bool get _gecerli =>
+      GostergeParametreleri.dogrula(widget.id, _deger) != null ||
+      _varsayilanMi;
+
+  bool get _varsayilanMi =>
+      _tanim.every((t) => _deger[t.anahtar] == _varsayilan[t.anahtar]);
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+            SandikSpace.smd, SandikSpace.screenH(context), SandikSpace.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Center(child: SandikTutamac()),
+            const SizedBox(height: SandikSpace.md),
+            Text(IndicatorId.labelOf(widget.id),
+                style: context.t.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+            const SizedBox(height: SandikSpace.xs),
+            Text(l.sgnParametreAciklama(widget.type.labelOf(l)),
+                style: context.t.bodySmall
+                    ?.copyWith(color: c.text58, height: 1.4)),
+            const SizedBox(height: SandikSpace.md),
+            for (final t in _tanim)
+              _Adimlayici(
+                etiket: t.etiket,
+                deger: _deger[t.anahtar] ?? t.enAz,
+                varsayilan: _varsayilan[t.anahtar],
+                enAz: t.enAz,
+                enCok: t.enCok,
+                onDegis: (v) => setState(() => _deger[t.anahtar] = v),
+              ),
+            if (!_gecerli) ...[
+              const SizedBox(height: SandikSpace.xs),
+              Text(l.sgnParametreSiraHatasi,
+                  style: context.t.bodySmall?.copyWith(color: c.loss)),
+            ],
+            const SizedBox(height: SandikSpace.md),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: _varsayilanMi
+                        ? null
+                        : () => Navigator.pop<_ParametreSonucu>(
+                            context, (ayar: null)),
+                    child: Text(l.sgnParametreVarsayilan),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.sm),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                        backgroundColor: c.amberFill,
+                        foregroundColor: c.onAmber,
+                        minimumSize: const Size.fromHeight(SandikTouch.min)),
+                    onPressed: _gecerli
+                        ? () => Navigator.pop<_ParametreSonucu>(
+                            context, (ayar: _varsayilanMi ? null : {..._deger}))
+                        : null,
+                    child: Text(l.sgnParametreKaydet),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Adimlayici extends StatelessWidget {
+  const _Adimlayici({
+    required this.etiket,
+    required this.deger,
+    required this.varsayilan,
+    required this.enAz,
+    required this.enCok,
+    required this.onDegis,
+  });
+
+  final String etiket;
+  final int deger;
+  final int? varsayilan;
+  final int enAz;
+  final int enCok;
+  final ValueChanged<int> onDegis;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final l = context.l10n;
+    return Semantics(
+      label: etiket,
+      value: '$deger',
+      increasedValue: deger < enCok ? '${deger + 1}' : null,
+      decreasedValue: deger > enAz ? '${deger - 1}' : null,
+      onIncrease: deger < enCok ? () => onDegis(deger + 1) : null,
+      onDecrease: deger > enAz ? () => onDegis(deger - 1) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(etiket,
+                      style: context.t.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600, color: c.text90)),
+                  if (varsayilan != null)
+                    Text(l.sgnParametreVarsayilanDeger(varsayilan!),
+                        style:
+                            context.t.bodySmall?.copyWith(color: c.text36)),
+                ],
+              ),
+            ),
+            ExcludeSemantics(
+              child: IconButton(
+                tooltip: l.sgnParametreAzalt,
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+                onPressed: deger > enAz ? () => onDegis(deger - 1) : null,
+                icon: const Icon(Icons.remove_rounded),
+              ),
+            ),
+            SizedBox(
+              width: SandikSpace.xl,
+              child: ExcludeSemantics(
+                child: Text('$deger',
+                    textAlign: TextAlign.center,
+                    style: context.t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: c.text90,
+                        fontFeatures: const [FontFeature.tabularFigures()])),
+              ),
+            ),
+            ExcludeSemantics(
+              child: IconButton(
+                tooltip: l.sgnParametreArtir,
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+                onPressed: deger < enCok ? () => onDegis(deger + 1) : null,
+                icon: const Icon(Icons.add_rounded),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -815,7 +1042,12 @@ class _IndicatorRow extends StatelessWidget {
   final bool locked;
   final bool recommended;
   final bool showPremiumChip;
+  final OzellikDurumu parametreDurumu;
+
+  /// Kullanıcının bu göstergedeki geçerli ayarı (null = varsayılan).
+  final GostergeAyari? ozelAyar;
   final VoidCallback onTap;
+  final VoidCallback onParametre;
 
   const _IndicatorRow({
     required this.id,
@@ -823,11 +1055,49 @@ class _IndicatorRow extends StatelessWidget {
     required this.locked,
     required this.recommended,
     required this.showPremiumChip,
+    required this.parametreDurumu,
+    required this.ozelAyar,
     required this.onTap,
+    required this.onParametre,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Ayar düğmesi yalnız seçili ve kilitsiz göstergede: seçilmemiş
+    // göstergenin periyodunu ayarlamak hiçbir şeyi değiştirmez.
+    final ayarGoster =
+        checked && !locked && parametreDurumu != OzellikDurumu.gizli;
+    final ayar = ozelAyar;
+    final ayarMetni = ayar == null
+        ? null
+        : [
+            for (final t in GostergeParametreleri.tanimlar[id] ?? const <GostergeParametresi>[])
+              if (ayar[t.anahtar] != null) '${t.etiket} ${ayar[t.anahtar]}'
+          ].join(' · ');
+    return Row(
+      children: [
+        Expanded(child: _satir(context, ayarMetni)),
+        if (ayarGoster)
+          IconButton(
+            tooltip: parametreDurumu == OzellikDurumu.kilitli
+                ? context.l10n.sgnParametreKilitli
+                : context.l10n.sgnParametreAyarla(IndicatorId.labelOf(id)),
+            constraints: const BoxConstraints(
+                minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+            onPressed: onParametre,
+            icon: Icon(
+              parametreDurumu == OzellikDurumu.kilitli
+                  ? Icons.lock_outline_rounded
+                  : Icons.tune_rounded,
+              size: 20,
+              color: ayar != null ? context.c.amberText : context.c.text58,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _satir(BuildContext context, String? ayarMetni) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -847,12 +1117,21 @@ class _IndicatorRow extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                IndicatorId.labelOf(id),
-                style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: locked ? context.c.text36 : context.c.text90,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    IndicatorId.labelOf(id),
+                    style: context.t.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: locked ? context.c.text36 : context.c.text90,
+                    ),
+                  ),
+                  if (ayarMetni != null && !locked)
+                    Text(ayarMetni,
+                        style: context.t.bodySmall
+                            ?.copyWith(color: context.c.amberText)),
+                ],
               ),
             ),
             // "ÖNERİLEN" çipi premium/normal ayrımından bağımsızdır; iki dal
@@ -882,11 +1161,10 @@ class _IndicatorRow extends StatelessWidget {
                 ),
               ),
             ],
-            if (IndicatorId.premium.contains(id)) ...[
+            if (showPremiumChip) ...[
               // Boşluğu PREMIUM çipi kendi sahiplenir — "ÖNERİLEN" tarafına da
               // koyarsak, ikisi birlikte göründüğünde araya çift boşluk girer.
               if (showPremiumChip && recommended) const SizedBox(width: 6),
-              if (showPremiumChip)
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

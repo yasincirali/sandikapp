@@ -2491,14 +2491,15 @@ class _AssetCardState extends State<_AssetCard>
                   final valueW = m.value;
                   // Büyük yazıda (Dynamic Type > ×1,3) tutar sütunu 108pt'ye
                   // sığmak için FittedBox ile küçülüyor, kullanıcının
-                  // büyüttüğü rakamlar yine ufak kalıyordu. Bayrak
-                  // `goz_alici` açıkken tutar ve kâr/zarar başlığın ALTINA
-                  // dizilir, küçültülmez — lejanttaki `_ikiSutunMetinOlcegi`
-                  // deseninin aynısı (HIG denetimi 2026-10-10). Kapalıyken
-                  // satır birebir eski.
-                  final buyukYazi = RemoteConfigService.instance.gozAlici &&
-                      MediaQuery.textScalerOf(context).scale(1) >
-                          _ikiSutunMetinOlcegi;
+                  // büyüttüğü rakamlar yine ufak kalıyordu. Tutar ve
+                  // kâr/zarar başlığın ALTINA dizilir, küçültülmez —
+                  // lejanttaki `_ikiSutunMetinOlcegi` deseninin aynısı (HIG
+                  // denetimi 2026-10-10). İlk sürümde `goz_alici` arkasındaydı;
+                  // erişilebilirlik düzeltmesi bayrak beklemez (Premium
+                  // netleştirme Y10): yalnız yazıyı ×1,3'ün üstüne büyüten
+                  // kullanıcıyı etkiler, varsayılan boyutta satır birebir eski.
+                  final buyukYazi = MediaQuery.textScalerOf(context).scale(1) >
+                      _ikiSutunMetinOlcegi;
                   final tutarMetni = Text(
                     tryFmt.format(pState.toTRY(a.totalValue, a.currency)),
                     maxLines: 1,

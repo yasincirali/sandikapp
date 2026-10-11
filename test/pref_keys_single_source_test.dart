@@ -35,6 +35,7 @@ void main() {
       PrefKeys.liveActivityWeekend,
       PrefKeys.premiumUnlocked,
       PrefKeys.indicatorsByType,
+      PrefKeys.gostergeParametreleri,
       PrefKeys.chartOverlayMa20,
       PrefKeys.chartLogScale,
       PrefKeys.chartEma50,

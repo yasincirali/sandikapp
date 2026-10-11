@@ -683,7 +683,9 @@ void main() {
     test('premium kullanıcıda limit yok', () {
       final i = prefs.indexOf('watchlistLimitProvider');
       final govde = prefs.substring(i, i + 500);
-      expect(govde.contains('effectivePremiumProvider'), isTrue);
+      // `premiumErisimProvider` = Premium hakkı ya da askıdaki kilitler
+      // (acil durum anahtarı / hediye güvencesi, 2026-10-10).
+      expect(govde.contains('premiumErisimProvider'), isTrue);
       expect(govde.contains('if (premium) return 1 << 30'), isTrue);
     });
 
@@ -785,9 +787,14 @@ void main() {
           await File('lib/screens/add_watchlist_screen.dart').readAsString());
       expect(ekle.contains('on WatchlistLimitException'), isTrue,
           reason: 'limit hatası ayrı yakalanmalı');
-      expect(ekle.contains('PaywallScreen.show'), isTrue,
+      // Mesaj ve Premium yolu ortak uyarıda (`sinir_uyarisi.dart`); varlık
+      // sayfasındaki yıldız da aynısını söyler.
+      expect(ekle.contains('takipSiniriUyarisi('), isTrue,
           reason: 'kullanıcıya ne yapabileceği söylenmeli — '
               '"eklenemedi" deyip bırakmak çıkışsız bırakır');
+      final uyari = _yorumsuz(
+          await File('lib/widgets/sinir_uyarisi.dart').readAsString());
+      expect(uyari.contains('PaywallScreen.show'), isTrue);
     });
   });
 }

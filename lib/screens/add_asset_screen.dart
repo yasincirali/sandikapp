@@ -33,6 +33,7 @@ import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/sandik_segment.dart';
 import 'paywall_screen.dart';
+import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'bulk_add_asset_screen.dart';
 import 'csv_import_screen.dart';
 import 'varlik_sayfasi.dart';
@@ -407,6 +408,41 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // `ustHarf`, düz `toUpperCase` değil: Dart Türkçe bilmez, "Hisse" →
   // "HISSE", "Kripto para" → "KRIPTO PARA" (noktasız) basıyordu
   // (2026-09-27 emülatör turu). Bkz. l10n.dart.
+  /// Ücretsiz varlık kotası satırı (`varlikKotasiProvider`). Yalnız sona
+  /// yaklaşınca (son üç hak) ya da dolunca çıkar: her açılışta sayaç
+  /// göstermek ücretsiz kullanıcıyı sürekli sınırla karşılardı. Dolunca
+  /// satır paywall'u açar; var olan varlığa alım yine serbest (kota yeni
+  /// varlığı sayar).
+  Widget _kotaSatiri() {
+    final kota = ref.watch(varlikKotasiProvider);
+    if (kota == null) return const SizedBox.shrink();
+    final kalan = kota.sinir - kota.kullanilan;
+    if (kalan > 3) return const SizedBox.shrink();
+    final l = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.md),
+      child: kalan <= 0
+          ? KilitSatiri(
+              metin: l.varlikKotasiDolu(kota.sinir),
+              kaynak: 'asset_limit_form',
+            )
+          : Row(
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: SandikSpace.md, color: context.c.text58),
+                const SizedBox(width: SandikSpace.sm),
+                Expanded(
+                  child: Text(
+                    l.varlikKotasiKalan(kalan, kota.sinir),
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
   Widget _sectionLabel(String text) => Text(
         ustHarf(text, context.l10n),
         style: context.t.labelLarge?.copyWith(
@@ -531,6 +567,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                           hareketSayisi: widget.yerineGecenLotlar!.length),
                       const SizedBox(height: SandikSpace.lgs),
                     ],
+                    if (!_isEditing && !_yenidenKur && !widget.cartMode)
+                      _kotaSatiri(),
                     _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
                     if (_izgara) _turIzgarasi() else _typeSelector(cs),

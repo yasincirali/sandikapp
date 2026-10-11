@@ -5,6 +5,29 @@
 
 ---
 
+## ✅ Güncel Premium seti (yasin kararları, 2026-10-10 akşam)
+
+Bu bölüm tek doğruluk kaynağıdır; aşağıdaki Temmuz planı tarihsel kayıttır
+(oradaki "günde 1 sinyal", "ADX/W%R/CCI etiketi" gibi maddeler aşıldı).
+Hepsi `paywall_enabled` açıkken geçerli; kapalıyken canlıdaki kullanıcı
+eskisi gibi her şeyi kullanır. Açılış sırası: `YAPMAN_GEREKENLER.md` →
+"PAYWALL AÇILIŞ GÜNÜ".
+
+| Katman | Ne |
+|---|---|
+| Ücretsiz | Portföy, Performans (tüm dönemler), grafik: mum, mum aralığı, MA20, EMA50, EMA200, LOG; varlığı güncelle; çoklu hesap (≤5); sinyalde RSI, MACD, Bollinger (bildirimi tür başına günde 1) |
+| Ücretsiz, sınırlı | 10 varlık · 10 takip · 20 alarm · karşılaştırmada 2 seri · 1 ortak · 1 portföy |
+| Premium | kalan 5 gösterge (EMA kesişimi, Stokastik, ADX, Williams %R, CCI) · gösterge periyotlarını değiştirmek · sınırsız sinyal bildirimi · kendi göstergeni yaz (Pine) · aylık ve yıllık rapor + PDF/Excel · temettü tahmini · masraf dökümü · Fon/Portföy X-Ray · radar ayrıntısı · haftalık notun tamamı · AI ekstre · çoklu portföy |
+
+Kod karşılıkları: `izinliGostergelerProvider`, `gostergeParametreDurumuProvider`,
+`sinyalSlotSiniriProvider`, `premiumKilitliProvider` (tek kilit kaynağı),
+`premiumErisimProvider` (sınırlar). Acil durum `premium_enabled=false`
+kilitleri KALDIRIR; hediye güvencesi `premium_hediye_kesim`
+(`kilitlerAskidaProvider`). Sunucu: `premium_ayar.kapi_acik`,
+`analyze-signals` → `bildirimKurali` (ücretsiz: 3 gösterge, günde 1).
+
+---
+
 ## 🚧 Master Kill Switch: `paywall_enabled` (2026-07-13)
 
 Kullanıcının göreceği **TÜM** üyelik/ödeme UI'ları tek bir Remote Config bayrağına bağlı:

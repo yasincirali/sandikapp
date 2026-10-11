@@ -94,10 +94,16 @@ void main() {
     // Yahoo `range=1d` seans dışında boş dönmez, SON seansı verir. Sahte
     // sağlayıcı bunu taklit etmezse test hafta sonu akşamı (son 24 saat
     // Frankfurt seansına değmeyince) kırılıyordu — saate bağlı sahte kırmızı.
-    if (out.isEmpty && a < const Duration(days: 1) && gun <= 1) {
-      for (var geri = 1; geri <= 4 && out.isEmpty; geri++) {
-        out.addAll(uret(sym, range, interval,
-            simdi.subtract(Duration(days: geri))));
+    // Tek nokta da "seans yok" sayılır: Cumartesi 22:57'de son 24 saat
+    // Cuma ABD seansının yalnız son dakikasına değiyor, seri 1 noktaydı
+    // (PR #167 CI, 2026-10-10).
+    if (out.length < 2 && a < const Duration(days: 1) && gun <= 1) {
+      out.clear();
+      for (var geri = 1; geri <= 4 && out.length < 2; geri++) {
+        out
+          ..clear()
+          ..addAll(uret(sym, range, interval,
+              simdi.subtract(Duration(days: geri))));
       }
     }
     return out;

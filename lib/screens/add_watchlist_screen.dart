@@ -5,8 +5,7 @@ import 'package:flutter/material.dart'
     show
         Icons,
         Material,
-        Colors,
-        SnackBarAction;
+        Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/arama_gruplari.dart';
@@ -15,7 +14,6 @@ import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../providers/preferences_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/fiyat_kaynagi.dart';
@@ -26,9 +24,9 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_katla.dart';
+import '../widgets/sinir_uyarisi.dart';
 import '../widgets/varlik_rozeti.dart';
 import '../widgets/sandik_async_button.dart';
-import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
@@ -464,27 +462,11 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     } on WatchlistLimitException catch (e) {
       if (!mounted) return;
       // Limit hatası ağ hatasından AYRI ele alınır: kullanıcıya neden
-      // eklenemediğini ve ÇIKIŞ YOLUNU söylemek gerekir. "Eklenemedi" deyip
-      // bırakmak kullanıcıyı çıkışsız bırakırdı.
-      // Paywall kapalıyken limit bir ÜRÜN sınırıdır (2026-09-25, 7 varlık):
-      // "Premium" düğmesi olmayan bir şeyi satar, "ücretsiz plan" sözü de
-      // olmayan bir planı ima ederdi. Çıkış yolu açıkça söylenir: birini çıkar.
-      final paywallOn = ref.read(paywallVisibleProvider);
-      sandikSnack(
-        context,
-        paywallOn
-            ? context.l10n.watchlistLimitFree(e.limit)
-            : context.l10n.watchlistLimitReached(e.limit),
-        kind: SandikSnackKind.warning,
-        action: paywallOn
-            ? SnackBarAction(
-                label: 'Premium',
-                textColor: context.c.onAmber,
-                onPressed: () =>
-                    PaywallScreen.show(context, source: 'watchlist_limit'),
-              )
-            : null,
-      );
+      // eklenemediğini ve ÇIKIŞ YOLUNU söylemek gerekir. Paywall kapalıyken
+      // limit ürün sınırıdır (2026-09-25, 7 varlık): çıkış "birini çıkar";
+      // açıkken Premium. Tek mesaj (`sinir_uyarisi.dart`) — varlık
+      // sayfasındaki yıldız da aynısını söyler.
+      takipSiniriUyarisi(context, ref, e.limit);
     } catch (_) {
       if (!mounted) return;
       // Sunucudaki unique index çakışması da buraya düşer — kullanıcıya

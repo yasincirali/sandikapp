@@ -49,7 +49,7 @@ void main() {
       expect(k.sembol, 'THYAO.IS');
       expect(k.usdCevir, isFalse);
       expect(k.olcekAlt, isNull);
-      expect(k.araliklar, MumAraligi.values);
+      expect(k.araliklar, MumAraligi.sirali);
       expect(k.gercekOhlc, isTrue);
     });
 
@@ -91,7 +91,7 @@ void main() {
           varlik(type: AssetType.kripto, ticker: 'KRIPTO:BTC'));
       expect(k.tur, MumKaynakTuru.kripto);
       expect(k.sembol, 'BTC');
-      expect(k.araliklar, MumAraligi.values);
+      expect(k.araliklar, MumAraligi.sirali);
     });
 
     test('fon, BES, eurobond: yalnız kapanış → gün/hafta/ay, gün içi YOK', () {
@@ -312,13 +312,65 @@ void main() {
     const gunluk = 1440.0, hafta = 7 * 1440.0, ay = 30 * 1440.0;
     const yil = 365 * 1440.0, besYil = 5 * 365 * 1440.0;
 
-    test('BIST GÜNLÜK: 1 dk ve 1 sa var; 4 sa (2 mum) yok', () {
-      expect(gecerliAraliklar(bist, gunluk), [MumAraligi.dk1, MumAraligi.saat1]);
+    test('BIST GÜNLÜK: 1/5/15/30 dk ve 1 sa var; 4 sa (2 mum) yok', () {
+      expect(gecerliAraliklar(bist, gunluk), [
+        MumAraligi.dk1,
+        MumAraligi.dk5,
+        MumAraligi.dk15,
+        MumAraligi.dk30,
+        MumAraligi.saat1,
+      ]);
+    });
+
+    // yasin 2026-10-10 gece: "1 dk'lık, 5 dk'lık, 1 saatlik datayı
+    // göremiyorum … TradingView'i örnek alabilirsin".
+    test('BIST 1H: 1 dk (≈2.400 mum) dahil TradingView aralıkları', () {
+      expect(gecerliAraliklar(bist, hafta), [
+        MumAraligi.dk1,
+        MumAraligi.dk5,
+        MumAraligi.dk15,
+        MumAraligi.dk30,
+        MumAraligi.saat1,
+        MumAraligi.saat4,
+        MumAraligi.gun1,
+      ]);
+    });
+
+    // Varlık detayının 1H penceresi `_donemBaslangici(7)`: 7 gün önceki
+    // günün başından şimdiye ≈ 7,9 gün. 2.500 tavan + 7 günlük Yahoo
+    // sınırı 1 dk'yı burada eliyordu (görselde 1 dk yoktu).
+    test('varlık detayı 1H (≈7,9 gün): 1 dk yine sunulur', () {
+      expect(gecerliAraliklar(bist, 7.9 * 1440).first, MumAraligi.dk1);
+    });
+
+    test('Yahoo geçmiş sınırı: 3A\'da 5/15 dk yok (~60 gün), 1A\'da var', () {
+      expect(gecerliAraliklar(bist, ay),
+          containsAll([MumAraligi.dk5, MumAraligi.dk15]));
+      final ucAy = gecerliAraliklar(bist, 90 * 1440.0);
+      expect(ucAy.contains(MumAraligi.dk5), isFalse);
+      expect(ucAy.contains(MumAraligi.dk15), isFalse);
+      expect(ucAy.contains(MumAraligi.saat1), isTrue);
+    });
+
+    test('seçici sırası küçükten büyüğe; tercih sıra numaraları kaymadı', () {
+      expect(MumAraligi.sirali.map((a) => a.dakika).toList(),
+          [1, 5, 15, 30, 60, 240, 1440, 7 * 1440, 30 * 1440]);
+      // Eski kurulumlarda `pref_chart_mum_araligi` sıra numarası duruyor
+      // (artık okunmuyor); yine de sıra kaydırılmaz, yeni aralık sona.
+      expect(MumAraligi.dk1.index, 0);
+      expect(MumAraligi.ay1.index, 5);
+      expect(MumAraligi.dk30.index, 8);
     });
 
     test('kripto GÜNLÜK: 1 dk (1.440 mum) sığar; 1H × 1 dk (10.080) sığmaz', () {
-      expect(gecerliAraliklar(btc, gunluk),
-          [MumAraligi.dk1, MumAraligi.saat1, MumAraligi.saat4]);
+      expect(gecerliAraliklar(btc, gunluk), [
+        MumAraligi.dk1,
+        MumAraligi.dk5,
+        MumAraligi.dk15,
+        MumAraligi.dk30,
+        MumAraligi.saat1,
+        MumAraligi.saat4,
+      ]);
       expect(gecerliAraliklar(btc, hafta).contains(MumAraligi.dk1), isFalse);
     });
 
@@ -340,12 +392,25 @@ void main() {
       expect(etkinAralik(bist, besYil, MumAraligi.dk1)!.gunIci, isFalse);
     });
 
-    test('otomatik: ~80 muma en yakın', () {
+    // yasin 2026-10-10 gece: "defaultta da tradingviewdeki time-interval
+    // ve default frequency ile açılsın". TradingView: 1G 1m, 5G 5m, 1A 30m,
+    // 3A 1h, 6A 2h (burada 4 sa), 1Y D, 5Y W.
+    test('varsayılan: TradingView dönem düğmelerinin aralığı', () {
       expect(etkinAralik(bist, gunluk, null), MumAraligi.dk1);
-      expect(etkinAralik(btc, gunluk, null), MumAraligi.saat1);
-      expect(etkinAralik(bist, ay, null), MumAraligi.saat4);
-      expect(etkinAralik(bist, yil, null), MumAraligi.hafta1);
-      expect(etkinAralik(bist, besYil, null), MumAraligi.ay1);
+      expect(etkinAralik(btc, gunluk, null), MumAraligi.dk1);
+      expect(etkinAralik(bist, hafta, null), MumAraligi.dk5);
+      expect(etkinAralik(bist, 7.9 * 1440, null), MumAraligi.dk5);
+      expect(etkinAralik(btc, hafta, null), MumAraligi.dk5);
+      expect(etkinAralik(bist, ay, null), MumAraligi.dk30);
+      expect(etkinAralik(bist, 91 * 1440.0, null), MumAraligi.saat1);
+      expect(etkinAralik(bist, 182 * 1440.0, null), MumAraligi.saat4);
+      expect(etkinAralik(bist, yil, null), MumAraligi.gun1);
+      expect(etkinAralik(bist, besYil, null), MumAraligi.hafta1);
+    });
+
+    test('varsayılan sunulmuyorsa dakikaca en yakın geçerli aralık', () {
+      // Fon yalnız Gün/Hafta: 1A'da 30 dk yok → Gün.
+      expect(etkinAralik(fon, ay, null), MumAraligi.gun1);
     });
 
     test('kripto-seri dönemi pencereyi kapsayan en dar dönem', () {

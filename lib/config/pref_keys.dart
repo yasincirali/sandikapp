@@ -34,15 +34,18 @@ class PrefKeys {
   static const liveActivityWeekend = 'pref_live_activity_weekend';
   static const premiumUnlocked = 'pref_premium_unlocked';
   static const indicatorsByType = 'pref_indicators_by_type_v1';
+  // Gösterge parametreleri (periyot vb.), tür başına JSON (2026-10-10; Premium).
+  static const gostergeParametreleri = 'pref_gosterge_parametreleri_v1';
   static const chartOverlayMa20 = 'pref_chart_overlay_ma20';
   static const chartLogScale = 'pref_chart_log_scale';
   // EMA50/EMA200 ve mum (varlık detayı, 2026-10-10; Premium).
   static const chartEma50 = 'pref_chart_ema50';
   static const chartEma200 = 'pref_chart_ema200';
   static const chartCandle = 'pref_chart_candle';
-  // Mum aralığı (1 dk … 1 ay; `MumAraligi` sırası, -1 = otomatik).
-  // 2026-10-10, Premium mumla birlikte.
-  static const chartMumAraligi = 'pref_chart_mum_araligi';
+  // `pref_chart_mum_araligi` (mum aralığı, PR #161) 2026-10-10 gece
+  // okunmuyor: aralık artık dönemin TradingView varsayılanıyla açılır,
+  // seçim oturumluk (`mumAraligiSecimiProvider`). Anahtar başka iş için
+  // yeniden KULLANILMAZ (eski kurulumlarda değer duruyor).
   static const leaderboardOptIn = 'pref_leaderboard_opt_in';
   static const biometricLock = 'pref_biometric_lock';
 

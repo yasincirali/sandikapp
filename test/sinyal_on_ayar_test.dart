@@ -64,9 +64,9 @@ void main() {
       final cok = sinyalOnAyarTanimi(SinyalOnAyar.cok, AssetType.fon);
       expect(cok.esik, 50);
       expect(cok.siklik, SignalFrequency.every2h);
-      expect(cok.gostergeler.intersection(IndicatorId.premium), isEmpty);
+      expect(cok.gostergeler.intersection(IndicatorId.ileri), isEmpty);
       expect(cok.gostergeler,
-          IndicatorId.all.toSet().difference(IndicatorId.premium));
+          IndicatorId.all.toSet().difference(IndicatorId.ileri));
 
       expect(
           _eslesen(

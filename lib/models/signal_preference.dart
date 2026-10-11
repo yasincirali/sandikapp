@@ -18,7 +18,12 @@ class SignalPreferenceRow {
     required this.signalsEnabled,
     this.frequency = SignalFrequency.twiceDaily,
     this.notifyHours = const [11, 15],
+    this.parametreler,
   });
+
+  /// Gösterge parametreleri (0142, Premium): gösterge id → {anahtar: değer}.
+  /// null = kullanıcı hiç ayarlamadı (türün varsayılanları).
+  final Map<String, Map<String, int>>? parametreler;
 
   /// Bildirim sıklığı — sunucu saatbaşı çalışıp bu değere göre karar verir.
   final SignalFrequency frequency;

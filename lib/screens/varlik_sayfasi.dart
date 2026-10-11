@@ -25,13 +25,12 @@ import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
-import '../widgets/fiyat_grafigi.dart';
+import '../widgets/katmanli_fiyat_grafigi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
-import '../widgets/sinyal_kilit_karti.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
@@ -547,16 +546,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       // gizlemiyordu — Başlangıç kullanıcısı sinyali Takip'ten ya da
       // aramadan açınca görüyordu. Aynı kapı burada da.
       //
-      // Paywall açıkken sinyal Premium'da (`sinyalYuzeyiProvider`): panelin
-      // yerine kilit kartı.
+      // Paywall açıkken ücretsizde üç gösterge (2026-10-10); panel kalan
+      // göstergelerin kilidini kendi altında gösterir.
       if (ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik)
         TechnicalSignalPanel(
           ticker: k.ticker,
           type: k.type,
           subCategory: k.subCategory,
-        )
-      else if (ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.kilitli)
-        const SinyalKilitKarti(),
+        ),
       // AL/SAT sinyali gösteren her yüzey yasal ibareyi de taşır.
       const SizedBox(height: SandikSpace.sm),
       const DisclaimerWidget(),
@@ -629,9 +626,18 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       opacity: bayat ? 0.35 : 1.0,
       duration: SandikMotion.of(context, SandikMotion.state),
       curve: SandikMotion.enter,
-      child: FiyatGrafigi(
+      // Araç çubuğu (MUM · LOG · ƒx / MA20 · EMA50 · EMA200, aralık) ve
+      // katmanlar varlık detayıyla ORTAK (yasin 2026-10-10 gece: "bu 3
+      // ekran tutarlı olmalı"). Görünmüyorsa düz grafik, birebir eskisi.
+      child: KatmanliFiyatGrafigi(
+        ticker: widget.kimlik.ticker,
+        type: widget.kimlik.type,
+        currency: widget.kimlik.currency,
+        subCategory: widget.kimlik.subCategory,
+        sembolEtiketi: widget.kimlik.name,
         seri: seri,
-        periodDays: cizilen!,
+        onSeri: _onSeri(cizilen!),
+        periodDays: cizilen,
         bicim: bicim,
         imlecEtiketi: RemoteConfigService.instance.gozAlici ? _imlec : null,
         ucTitresimi: RemoteConfigService.instance.gozAlici,
@@ -639,6 +645,16 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
             .vsChartSemantics(widget.kimlik.name, _donemEtiketi(cizilen)),
       ),
     );
+  }
+
+  /// EMA/Pine ısınması: bu dönemden UZUN, yüklenmiş en kısa dönemin serisi
+  /// (sayfa altı dönemi birlikte ister; ek istek yok). 5Y'nin üstü yok:
+  /// ortalama dönem içinden hesaplanır.
+  Map<int, double>? _onSeri(int gun) {
+    for (final g in [...varlikSayfasiDonemleri]..sort()) {
+      if (g > gun && _seriler[g] != null) return _seriler[g];
+    }
+    return null;
   }
 
   /// Dönem seçici — ortak [DonemSecici]; her segmentin altında o dönemin

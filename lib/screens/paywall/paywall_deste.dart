@@ -29,9 +29,11 @@ enum PaywallKarti {
   temettu,
   xray,
   sinyal,
-  // Mum + EMA50/EMA200 (#150, 2026-10-10): sinyalin yanında — ikisi de
-  // "fiyat nereye gidiyor" sorusunun teknik cevabı.
-  grafik,
+  // Kendi göstergeni yaz (0141, Pine). Eskiden "grafik" kartıydı (mum +
+  // EMA, #150); yasin 2026-10-10 20:38 mum/EMA'yı ücretsiz yaptı, kart
+  // kilitli kalan tek grafik işine döndü. Sinyalin yanında: ikisi de teknik
+  // analiz yapan kullanıcının işi.
+  ozelGosterge,
   karsilastir,
   ortak,
   // Çoklu portföy (0133): yalnız `coklu_portfoy` açıkken destede.
@@ -49,23 +51,29 @@ enum PaywallKarti {
 PaywallKarti? kaynaktanKart(String source) {
   if (source.startsWith('asset_limit') ||
       source == 'bulk_add_asset_limit' ||
-      source == 'watchlist_limit') {
+      source == 'watchlist_limit' ||
+      source == 'alarm_limit') {
     return PaywallKarti.varlik;
   }
-  if (source.startsWith('signal_') ||
-      source == 'sinyal_varlik' ||
-      source == 'sinyal_kilit') {
+  // Sinyal: ayarlardaki kilitli gösterge (`signal_settings_<id>`), kilitli
+  // sıklık ve ön ayar (günde 1 bildirim kapısı), paneldeki "5 gösterge
+  // daha" satırı ve periyot ayarı.
+  if (source.startsWith('signal_settings_') ||
+      source == 'signal_frequency' ||
+      source == 'signal_on_ayar' ||
+      source == 'sinyal_gosterge' ||
+      source == 'gosterge_parametre') {
     return PaywallKarti.sinyal;
   }
   return switch (source) {
-    'yillik_rapor' ||
-    'portfoy_disa_aktar' ||
-    'masraf_dokumu' =>
+    // Aylık rapor da rapor kartında (eskiden radar bayrağına bağlı haftalık
+    // not kartına düşüyordu; radar kapalıyken kart destede yoktu).
+    'yillik_rapor' || 'portfoy_disa_aktar' || 'aylik_rapor' =>
       PaywallKarti.rapor,
     'temettu_tahmini' => PaywallKarti.temettu,
-    'fon_xray' || 'portfoy_xray' => PaywallKarti.xray,
-    'aylik_rapor' => PaywallKarti.not,
-    'grafik_mum' || 'grafik_ema' => PaywallKarti.grafik,
+    // Masraf dökümü "param gerçekte nereye gidiyor" sorusu: X-Ray'in yanı.
+    'fon_xray' || 'portfoy_xray' || 'masraf_dokumu' => PaywallKarti.xray,
+    'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
     // Kısmi aktarım ve ortağın göreceği portföyü seçmek de çoklu portföyün
@@ -239,27 +247,29 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           null,
           l.pwdXrayPremium,
         ),
-      // Sinyal paywall açıkken bütünüyle Premium (2026-10-10): ücretsiz
-      // satırı yok.
+      // Sinyal üç katman (2026-10-10 20:38): ücretsizde üç gösterge ekranda.
       PaywallKarti.sinyal => (
           _KartRengi.amber,
           l.pwdSinyalEtiket,
           l.pwdSinyalBaslik,
           l.pwdSinyalRozet,
           _SaatGorseli(renk: _KartRengi.amber),
-          null,
+          l.prmSinyalUcretsiz,
           l.pwdSinyalPremium,
         ),
-      // Grafik katmanları bütünüyle Premium: ücretsiz satırı yok (çizgi
-      // grafik ücretsizde aynen kalır, yalnız katmanlar kilitli).
-      PaywallKarti.grafik => (
+      // Kendi göstergeni yaz bütünüyle Premium. Ücretsiz satırı grafiğin
+      // ücretsiz kalan yarısını söyler (mum, 1 dk–1 ay aralık, EMA; yasin
+      // 2026-10-10 gece: "paywall desteyi de uygun şekilde değiştir") —
+      // araç çubuğu artık varlık detayı, varlık sayfası ve Karşılaştır'da
+      // aynı. Görsel: göstergenin grafikteki çıktısı (mum + iki çizgi).
+      PaywallKarti.ozelGosterge => (
           _KartRengi.koyu,
-          l.pwdGrafikEtiket,
-          l.pwdGrafikBaslik,
-          'EMA50 · EMA200',
+          l.pwdOzelEtiket,
+          l.pwdOzelBaslik,
+          'Pine v4, v5, v6',
           const _MumGorseli(),
-          null,
-          l.pwdGrafikPremium,
+          l.pwdOzelUcretsiz,
+          l.pwdOzelPremium,
         ),
       PaywallKarti.karsilastir => (
           _KartRengi.krem,

@@ -275,14 +275,16 @@ List<Mum> grafikMumlari(
 /// mum başına iki çubuk değil dört seri toplam çizilir; 1.500 mum (kriptoda
 /// GÜNLÜK × 1 dk: 1.440) akıcı kalır. Üstü (1H × 1 dk = 10.080) hem
 /// okunmaz hem ağır — o aralık o dönemde sunulmaz.
-const int azamiMum = 1500;
+///
+/// 2.500'e çıktı (2026-10-10 gece, yasin: "1 dk'lık datayı göremiyorum"):
+/// BIST'te 1H × 1 dk ≈ 2.400 mum; 1.500'de 1 dk yalnız GÜNLÜK'te
+/// çıkıyordu. TradingView 1 dk'yı bir haftalık pencerede de açar.
+/// 3.000'e çıktı (aynı gece): varlık detayının 1H penceresi ≈ 7,9 gün →
+/// BIST 1 dk ≈ 2.700 mum; 2.500 yine 1 dk'yı eliyordu.
+const int azamiMum = 3000;
 
 /// En az mum: iki mum "grafik" değil.
 const int asgariMum = 3;
-
-/// Varsayılan aralık bu kadar muma en yakın olandır — TradingView'in ilk
-/// açılışta ekrana sığdırdığı yoğunluk.
-const int hedefMum = 80;
 
 /// Varlığın işlem gördüğü süre — beklenen mum sayısı için. Gün içi
 /// seans uzunluğu (dk) ve haftanın kaç günü.
@@ -326,22 +328,48 @@ List<MumAraligi> gecerliAraliklar(Asset a, double spanDakika) {
     for (final ar in k.araliklar)
       if (beklenenMumSayisi(a, ar, spanDakika) case final n
           when n >= asgariMum && n <= azamiMum)
-        ar,
+        // Yahoo'nun geriye verdiği pencere ([MumAraligi.yahooGecmisGun]):
+        // aşan aralık sunulmaz, istek boş dönerdi. Binance'te sınır yok.
+        if (k.tur != MumKaynakTuru.yahoo ||
+            ar.yahooGecmisGun == null ||
+            spanDakika <= ar.yahooGecmisGun! * 1440)
+          ar,
   ];
 }
 
-/// Seçimden çizilecek aralık: seçim geçerliyse o, değilse [hedefMum]'a
-/// (logaritmik) en yakın geçerli aralık. Geçerli aralık yoksa null — çağıran
-/// kapanıştan türetilen eski muma düşer.
+/// TradingView'in dönem düğmelerinin varsayılan aralığı (yasin 2026-10-10
+/// gece: "defaultta da tradingviewdeki time-interval ve default frequency
+/// ile açılsın"): 1G → 1 dk, 5G → 5 dk, 1A → 30 dk, 3A → 1 sa, 6A → 2 sa,
+/// 1Y → Gün, 5Y → Hafta, daha uzun → Ay. 2 sa yok (Yahoo vermiyor): 6A'da
+/// 4 sa — telefonda 1 sa ~1.000 mum olur, okunmaz. Önceki kural "~80 muma
+/// en yakın" idi; TradingView ile aynı açılsın diye bu tabloya döndü.
+MumAraligi tradingViewVarsayilani(double spanDakika) {
+  final gun = spanDakika / 1440;
+  if (gun <= 1.5) return MumAraligi.dk1;
+  if (gun <= 10) return MumAraligi.dk5;
+  if (gun <= 45) return MumAraligi.dk30;
+  if (gun <= 120) return MumAraligi.saat1;
+  if (gun <= 220) return MumAraligi.saat4;
+  if (gun <= 400) return MumAraligi.gun1;
+  if (gun <= 6 * 365) return MumAraligi.hafta1;
+  return MumAraligi.ay1;
+}
+
+/// Seçimden çizilecek aralık: seçim geçerliyse o, değilse
+/// [tradingViewVarsayilani]; o da bu varlıkta/pencerede sunulmuyorsa
+/// (fon yalnız Gün/Hafta, Yahoo geçmiş sınırı, mum tavanı) dakikaca
+/// (logaritmik) en yakın geçerli aralık. Geçerli aralık yoksa null —
+/// çağıran kapanıştan türetilen eski muma düşer.
 MumAraligi? etkinAralik(Asset a, double spanDakika, MumAraligi? secim) {
   final gecerli = gecerliAraliklar(a, spanDakika);
   if (gecerli.isEmpty) return null;
   if (secim != null && gecerli.contains(secim)) return secim;
+  final hedef = tradingViewVarsayilani(spanDakika);
+  if (gecerli.contains(hedef)) return hedef;
   MumAraligi? en;
   var fark = double.infinity;
   for (final ar in gecerli) {
-    final n = beklenenMumSayisi(a, ar, spanDakika);
-    final f = (math.log(n) - math.log(hedefMum)).abs();
+    final f = (math.log(ar.dakika) - math.log(hedef.dakika)).abs();
     if (f < fark) {
       fark = f;
       en = ar;

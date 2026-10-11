@@ -31,9 +31,7 @@ enum SignalFrequency {
 
   /// TR 10:00–18:00 penceresinde günde en fazla kaç bildirim turu.
   ///
-  /// Ücretsiz sürümün günlük bildirim kapısı (`free_signal_slots_per_day`)
-  /// bununla kıyaslar. Sunucudaki `GUNLUK_EN_FAZLA` (analyze-signals) ile
-  /// birebir aynı olmalı; `sinyal_slot_kapisi_test` ikisini karşılaştırır.
+  /// Ücretsiz "günde 1 bildirim" kapısı bununla kıyaslar ([slotaSigdir]).
   int get gunlukEnFazla => switch (this) {
         SignalFrequency.hourly => 9, // 10..18
         SignalFrequency.every2h => 5, // 10, 12, 14, 16, 18
@@ -57,7 +55,9 @@ const kSignalWindowEnd = 18;
 List<int> get signalSelectableHours =>
     [for (var h = kSignalWindowStart; h <= kSignalWindowEnd; h++) h];
 
-/// Ücretsiz sürümün günlük bildirim kapısına sığdırılmış zamanlama.
+/// Ücretsiz sürümün günlük bildirim kapısı (Premium planı, 2026-10-08;
+/// 2026-10-10 akşam yeniden, yasin: üç ücretsiz göstergenin bildirimi
+/// "limitli sayıda"). [slot] = tür başına günde en fazla tur.
 ///
 /// Kayıtlı tercih DEĞİŞMEZ; bu yalnız gösterilen/uygulanan hâldir ve Premium
 /// alınınca kullanıcının kendi seçimi geri gelir. Sığmayan sıklık "günde 1

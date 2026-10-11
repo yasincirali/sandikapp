@@ -1,7 +1,8 @@
 // Ücretsiz sürümün günlük sinyal bildirimi kapısı (Premium planı, 2026-10-08).
 //
 // `slotaSigdir` yalnız bu turun zamanlama kararını kısar; tercih satırı
-// değişmez. Kapı `SINYAL_UCRETSIZ_SLOT` tanımlı değilken yoktur.
+// değişmez. Kapı yalnız `premium_ayar.kapi_acik` açıkken ve ücretsiz kullanıcıda;
+// tur sayısı `SINYAL_UCRETSIZ_SLOT` (yoksa 1).
 //
 // Çalıştır:
 //   deno test supabase/tests/sinyal_slot_kapisi_test.ts

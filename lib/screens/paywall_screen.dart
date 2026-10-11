@@ -495,15 +495,18 @@ class _FeatureList extends StatelessWidget {
   //   - "Yıllık vergi PDF raporu" → yalnızca bu ekranda geçiyordu
   //   - "5 yıl grafik" (2026-10-08)
   //     → Temmuz planından kalmıştı; ücretsizde de açık, kilitli değil.
-  // Günde birden fazla sinyal bildirimi, Karşılaştır'da 5 seri ve birden
-  // fazla ortak, kapıları yazılınca (2026-10-08, `sinyalSlotSiniriProvider`,
-  // `karsilastirmaSeriSiniriProvider`, `ortakSiniriDoluProvider`) listeye girdi.
+  // Karşılaştır'da 5 seri ve birden fazla ortak, kapıları yazılınca
+  // (2026-10-08, `karsilastirmaSeriSiniriProvider`, `ortakSiniriDoluProvider`)
+  // listeye girdi.
   // Olgun Premium seti (2026-10-10): yıllık rapor + dışa aktarma
   // (`YillikRaporScreen`, Ayarlar › Portföyü dışa aktar), temettü tahmini
   // (`TemettuTahminiScreen`), masraf dökümü (`MasrafKarti.kilitli`) ve
-  // sinyalin tamamı (`sinyalYuzeyiProvider`) kilitleriyle birlikte girdi;
-  // iki sinyal satırı tek satırda birleşti. Sıra araştırmaya göre: para
-  // ödenen işler (sınır, rapor, temettü) önde.
+  // sinyal kilitleriyle birlikte girdi. Sinyal 2026-10-10 20:38'de üç
+  // katmana ayrıldı: RSI/MACD/Bollinger ücretsiz (bildirimi günde 1); kalan
+  // beş gösterge, periyot ayarı ve sınırsız bildirim Premium
+  // (`izinliGostergelerProvider`, `gostergeParametreDurumuProvider`,
+  // `sinyalSlotSiniriProvider`).
+  // Sıra araştırmaya göre: para ödenen işler (sınır, rapor, temettü) önde.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -514,11 +517,9 @@ class _FeatureList extends StatelessWidget {
       // Fon X-Ray (2026-10-10): kilit `FonDagilimiKarti` + `PortfoyXrayScreen`.
       (Icons.donut_large_rounded, l.pwOzXray),
       (Icons.insights_rounded, l.pwOzSinyalTam),
-      // Mum + EMA50/EMA200 (#150): kilit `premiumKilitliProvider`
-      // (`grafik_katmanlari.dart`).
-      (Icons.candlestick_chart_rounded, l.pwOzGrafik),
-      // Kendi göstergeni yaz (0141): kilit `premiumKilitliProvider`
-      // (`asset_detail/ozel_gostergeler.dart`).
+      // Mum + EMA50/EMA200 satırı kalktı (yasin 2026-10-10 20:38): grafik
+      // katmanları ücretsiz. Kilitli kalan yalnız kendi göstergeni yaz
+      // (0141): `_ozelGostergeKilitli` (`asset_detail/ozel_gostergeler.dart`).
       (Icons.functions_rounded, l.pwOzOzelGosterge),
       (Icons.payments_outlined, l.pwOzMasraf),
       (Icons.stacked_line_chart_rounded, l.pwOzKarsilastir),
@@ -615,9 +616,10 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       (l.prmSatirTemettu, null, null),
       (l.prmSatirXray, null, null),
       (l.prmSatirMasraf, l.prmMasrafUcretsiz, l.prmMasrafPremium),
-      (l.prmSatirSinyal, null, l.prmSinyalPremium),
-      // Grafik katmanları (#150): çizgi grafik ücretsiz, katmanlar Premium.
-      (l.prmSatirGrafik, null, null),
+      // Sinyal üç katman (2026-10-10 20:38): ücretsizde üç gösterge ekranda.
+      (l.prmSatirSinyal, l.prmSinyalUcretsiz, l.prmSinyalPremium),
+      // Mum/EMA satırı kalktı (ücretsiz); kilitli kalan kendi göstergen.
+      (l.prmSatirOzelGosterge, null, null),
       (l.prmSatirKars, l.pwdSeri(seriSiniri), l.pwdSeri(kKarsilastirmaEnFazla)),
       (l.prmSatirOrtak, '$ortakSiniri', l.prmSinirsiz),
       // Çoklu portföy (0133): ücretsiz 1 (Ana), yalnız bayrak açıkken.

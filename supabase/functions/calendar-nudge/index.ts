@@ -20,6 +20,9 @@
 // · Maaş günü birikim hatırlatması (0119): `occasion: saving_reminder`,
 //   her gün 10:30 TR; kullanıcı başına, yalnız günü seçene ve o ay alımı
 //   olmayana.
+// · Premium hediyesi bitiyor (0142): `occasion: premium_gift_ending`, her
+//   gün 12:15 TR; 90 günlük `erken_kullanici` hediyesinin 80. gününde tek
+//   push, yalnız abone OLMAYANA.
 // Yeni an gövdeden seçilir; TÜFE yolu olduğu gibi kalır.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -555,6 +558,231 @@ async function birikimAni(p: {
   });
 }
 
+// ── Premium hediyesi bitiyor (0142) ─────────────────────────────────────────
+// Paywall açılış günü mevcut kullanıcılara 90 günlük hediye verilir (0116).
+// Sessizce biterse kullanıcı bir sabah kilitlerle karşılaşır; bitişten 10
+// gün önce bir kez söylemek, hem dürüst hem de karar için zaman tanır.
+// Kişiye özel rakam yok; yalnız tarih.
+
+/// Gövdedeki an adı — `trigger_calendar_nudge_premium_hediye()` yollar.
+export const HEDIYE_BITIYOR = 'premium_gift_ending';
+
+/// Hatırlatma penceresi: bitişi [şimdi+9g, şimdi+11g) aralığında olan
+/// hediyeler. İki gün: cron bir gün kaçarsa ertesi gün yakalar; defter
+/// ikinci push'u durdurur.
+export function hediyePenceresi(now: Date): { bas: string; son: string } {
+  const gun = 24 * 60 * 60 * 1000;
+  return {
+    bas: new Date(now.getTime() + 9 * gun).toISOString(),
+    son: new Date(now.getTime() + 11 * gun).toISOString(),
+  };
+}
+
+/// Hedefler: penceredeki hediye satırlarından geçerli aboneliği OLMAYAN ve
+/// bu bitiş için defterde kaydı olmayanlar. Saf — sorgular çağıranda.
+export function hediyeHedefleri(
+  hediyeler: Array<{ user_id: string; bitis: string }>,
+  aboneler: Set<string>,
+  defter: Set<string>,
+): Array<{ user_id: string; bitis: string }> {
+  return hediyeler.filter((h) =>
+    !aboneler.has(h.user_id) && !defter.has(`${h.user_id}|${h.bitis}`)
+  );
+}
+
+/// Bitiş tarihi TR takviminde, "12 Ocak" biçiminde.
+export function hediyeBitisTarihi(bitis: Date): string {
+  const aylar = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  const { ay, gun } = trTarihi(bitis);
+  return `${gun} ${aylar[ay - 1]}`;
+}
+
+export function hediyeMesaji(bitis: Date): { title: string; body: string } {
+  return {
+    title: 'Premium hediyen bitiyor',
+    body: `Hediye Premium'un ${hediyeBitisTarihi(bitis)} tarihinde bitiyor. `
+      + 'Portföyün ve verilerin olduğu gibi kalır; devam etmek istersen '
+      + 'Profil\'den Premium\'a geçebilirsin.',
+  };
+}
+
+async function hediyeAni(p: {
+  admin: SupabaseClient;
+  fcmProjectId: string;
+  fcmServiceAccountJson: string;
+  dryRun: boolean;
+  now: Date;
+}): Promise<Response> {
+  const { admin, now } = p;
+  const { bas, son } = hediyePenceresi(now);
+
+  // 1) Penceredeki hediyeler — sayfalı (max_rows 1000).
+  const hediyeler: Array<{ user_id: string; bitis: string }> = [];
+  const SAYFA = 1000;
+  for (let i = 0;; i += SAYFA) {
+    const { data, error } = await admin
+      .from('premium_haklari')
+      .select('user_id, bitis')
+      .eq('kaynak', 'erken_kullanici')
+      .gte('bitis', bas)
+      .lt('bitis', son)
+      .order('user_id')
+      .range(i, i + SAYFA - 1);
+    if (error) throw new Error(`Hediyeler alinamadi: ${error.message}`);
+    const satirlar = (data ?? []) as Array<{ user_id: string; bitis: string }>;
+    for (const r of satirlar) hediyeler.push({ user_id: String(r.user_id), bitis: String(r.bitis) });
+    if (satirlar.length < SAYFA) break;
+  }
+  if (hediyeler.length === 0) {
+    return jsonResponse({ ok: true, occasion: HEDIYE_BITIYOR, reason: 'Bitecek hediye yok.', sent: 0 });
+  }
+
+  // 2) Aboneler ve defter. Okunamıyorsa DUR: aboneyi okumadan göndermek
+  //    ödeyen kullanıcıya "bitiyor" demek, defteri okumadan çift push.
+  const aboneler = new Set<string>();
+  const defter = new Set<string>();
+  const kimler = [...new Set(hediyeler.map((h) => h.user_id))];
+  for (const parca of parcala(kimler)) {
+    const abone = await admin
+      .from('premium_haklari')
+      .select('user_id')
+      .eq('kaynak', 'revenuecat')
+      .gt('bitis', now.toISOString())
+      .in('user_id', parca);
+    if (abone.error) throw new Error(`Abonelik okunamadi: ${abone.error.message}`);
+    for (const r of (abone.data ?? []) as Array<{ user_id: string }>) aboneler.add(String(r.user_id));
+
+    const kayit = await admin
+      .from('premium_hediye_hatirlatma_log')
+      .select('user_id, bitis')
+      .in('user_id', parca);
+    if (kayit.error) throw new Error(`Defter okunamadi: ${kayit.error.message}`);
+    for (const r of (kayit.data ?? []) as Array<{ user_id: string; bitis: string }>) {
+      // PostgREST zaman damgasını `+00:00` biçiminde döner; iki taraf da
+      // `toISOString()`e indirgenir ki anahtarlar eşleşsin.
+      defter.add(`${r.user_id}|${new Date(r.bitis).toISOString()}`);
+    }
+  }
+  const hedefSatirlar = hediyeHedefleri(
+    hediyeler.map((h) => ({ ...h, bitis: new Date(h.bitis).toISOString() })),
+    aboneler,
+    defter,
+  );
+  if (hedefSatirlar.length === 0) {
+    return jsonResponse({
+      ok: true,
+      occasion: HEDIYE_BITIYOR,
+      reason: 'Hedef yok (abone ya da zaten hatirlatilan).',
+      sent: 0,
+      skipped_subscribed: aboneler.size,
+    });
+  }
+  const bitisi = new Map(hedefSatirlar.map((h) => [h.user_id, h.bitis]));
+  const hedefKullanicilar = [...bitisi.keys()];
+
+  // 3) Token'lar.
+  const tokenRows: TokenRow[] = [];
+  for (const parca of parcala(hedefKullanicilar)) {
+    const { data } = await admin
+      .from('user_push_tokens')
+      .select('token, user_id, device_id, platform, updated_at')
+      .in('user_id', parca);
+    tokenRows.push(...((data ?? []) as TokenRow[]));
+    tokenRows.push(...await ekHesapSatirlari(admin, parca));
+  }
+  const hedefler = collapseTokens(tokenRows);
+  if (p.dryRun) {
+    return jsonResponse({
+      ok: true,
+      dry_run: true,
+      occasion: HEDIYE_BITIYOR,
+      would_send: hedefler.length,
+      users: hedefKullanicilar.length,
+    });
+  }
+  if (hedefler.length === 0) {
+    return jsonResponse({ ok: true, occasion: HEDIYE_BITIYOR, reason: 'Token yok.', sent: 0 });
+  }
+
+  const accessToken = await createAccessToken(
+    JSON.parse(p.fcmServiceAccountJson) as ServiceAccount,
+  );
+  let sent = 0;
+  let skippedQuietHours = 0;
+  const failures: string[] = [];
+  const cankaydi = new Set<string>();
+  const gonderilenKullanicilar = new Set<string>();
+  const sessiz = await sessizKullanicilar(admin, hedefler.map((t) => t.user_id), now);
+  for (const t of hedefler) {
+    if (sessiz.has(t.user_id)) { skippedQuietHours += 1; continue; }
+    // Ek hesap satırı da kendi `user_id`'siyle gelir (o hesabın hediyesi).
+    const bitis = bitisi.get(t.user_id);
+    if (!bitis) continue;
+    const mesaj = hediyeMesaji(new Date(bitis));
+    const kayitHatasi = await recordAppNotification(
+      admin,
+      appNotificationRow({
+        userId: t.user_id,
+        type: 'calendar_nudge',
+        title: mesaj.title,
+        body: mesaj.body,
+        data: { occasion: HEDIYE_BITIYOR },
+      }),
+      cankaydi,
+    );
+    if (kayitHatasi) failures.push(kayitHatasi);
+
+    const r = await sendFcmNotification({
+      accessToken,
+      projectId: p.fcmProjectId,
+      token: t.token,
+      hesap: ekHesap(t),
+      title: mesaj.title,
+      body: mesaj.body,
+      channelId: CHANNEL_ID,
+      data: { type: 'calendar_nudge', occasion: HEDIYE_BITIYOR },
+    });
+    if (r.ok) {
+      sent += 1;
+      gonderilenKullanicilar.add(t.user_id);
+    } else {
+      console.error('[calendar-nudge] hediye FCM basarisiz:', r.rawText.slice(0, 500));
+      failures.push(`fcm: ${r.hataKodu}`);
+      if (r.shouldDeleteToken) {
+        await admin.from('user_push_tokens').delete().eq('token', t.token);
+      }
+    }
+  }
+
+  // Saklama: 120 günden eski kayıtlar (hediye 90 gün; defterin tek işi aynı
+  // bitişin ikinci push'unu durdurmak).
+  try {
+    await admin
+      .from('premium_hediye_hatirlatma_log')
+      .delete()
+      .lt('sent_at', new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000).toISOString());
+  } catch (_) { /* bir sonraki koşuda yeniden denenir */ }
+
+  if (gonderilenKullanicilar.size > 0) {
+    try {
+      await admin.from('premium_hediye_hatirlatma_log').upsert(
+        [...gonderilenKullanicilar].map((u) => ({ user_id: u, bitis: bitisi.get(u)! })),
+        { onConflict: 'user_id,bitis' },
+      );
+    } catch (_) { /* en kötü: ertesi gün ikinci bildirim */ }
+  }
+
+  return jsonResponse({
+    ok: true,
+    occasion: HEDIYE_BITIYOR,
+    sent,
+    users: gonderilenKullanicilar.size,
+    skipped_quiet_hours: skippedQuietHours,
+    failures: failures.slice(0, 5),
+  });
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -596,6 +824,15 @@ Deno.serve(async (request) => {
     // (0048'in `inflation_day` gövdesi dahil — eski davranış korunur).
     if (occasion === BIRIKIM) {
       return await birikimAni({
+        admin,
+        fcmProjectId,
+        fcmServiceAccountJson,
+        dryRun,
+        now: new Date(),
+      });
+    }
+    if (occasion === HEDIYE_BITIYOR) {
+      return await hediyeAni({
         admin,
         fcmProjectId,
         fcmServiceAccountJson,

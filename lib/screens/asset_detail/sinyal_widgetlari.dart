@@ -69,80 +69,6 @@ class AssetSignalCard extends ConsumerStatefulWidget {
   ConsumerState<AssetSignalCard> createState() => _AssetSignalCardState();
 }
 
-/// Ücretsiz planın tek sinyal varlığı şeridi (yasin, 2026-10-08: "sinyal 1
-/// varlıkta ücretsiz, 2. varlık için Premium").
-///
-/// Kapı yalnız BİLDİRİMİ kısar; şerit bunu sinyal kartının hemen altında
-/// söyler. Bu varlık seçiliyse tek sessiz satır; değilse kilit satırı
-/// (Premium'a gider) + "Sinyali buraya taşı". Taşımak serbesttir: plan "bir
-/// varlık" der, "ilk eklediğin varlık" demez. Kapı kapalıyken, ortağın
-/// varlığında ya da sinyal üretilmeyen türde hiç çizilmez.
-class SinyalVarlikSeridi extends ConsumerWidget {
-  const SinyalVarlikSeridi({super.key, required this.asset});
-
-  final Asset asset;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final etkin = ref.watch(etkinSinyalVarligiProvider);
-    final user = ref.watch(authProvider).valueOrNull;
-    if (etkin == null || user == null) return const SizedBox.shrink();
-    if (asset.userId != user.id || !sinyalUretilir(asset)) {
-      return const SizedBox.shrink();
-    }
-    final c = context.c;
-    final l = context.l10n;
-    final anahtar = sinyalVarlikAnahtari(etkin.tur, etkin.ticker);
-    if (sinyalVarlikAnahtari(asset.type, asset.ticker) == anahtar) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
-        child: Row(
-          children: [
-            Icon(Icons.notifications_active_rounded,
-                size: SandikSpace.md, color: c.text58),
-            const SizedBox(width: SandikSpace.sm),
-            Expanded(
-              child: Text(l.sgnVarlikAcik,
-                  style: context.t.bodySmall?.copyWith(color: c.text58)),
-            ),
-          ],
-        ),
-      );
-    }
-    // Seçili varlığın adı portföyden; bulunamazsa ticker.
-    final lotlar =
-        ref.watch(portfolioProvider).valueOrNull?.assets ?? const <Asset>[];
-    final ad = lotlar
-            .where((a) =>
-                a.userId == user.id &&
-                sinyalVarlikAnahtari(a.type, a.ticker) == anahtar)
-            .map((a) => a.name)
-            .firstOrNull ??
-        etkin.ticker;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          KilitSatiri(metin: l.sgnVarlikKilit(ad), kaynak: 'sinyal_varlik'),
-          SandikAsyncButton.kompakt(
-            tur: SandikAsyncTur.cerceve,
-            icon: const Icon(Icons.swap_horiz_rounded),
-            onPressed: () async {
-              try {
-                await ref.read(sinyalVarligiProvider.notifier).tasi(asset);
-              } catch (e) {
-                if (context.mounted) showAppError(context, e);
-              }
-            },
-            child: Text(l.sgnVarlikTasi),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Teknik göstergelerin istediği fiyat penceresi (gün).
 ///
 /// ## Neden 90, neden 180 DEĞİL
@@ -217,7 +143,9 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     final kayit = AssetSignalCard.sonSinyal(alerts, widget.asset);
 
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
+    final izinli = ref.watch(izinliGostergelerProvider);
+    final parametreler =
+        ref.watch(etkinGostergeParametreleriProvider(widget.asset.type));
     final enabledIds = prefs[widget.asset.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
 
@@ -274,7 +202,8 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           prices,
           widget.asset.type,
           enabledIds: enabledIds,
-          premiumUnlocked: premium,
+          izinli: izinli,
+          parametreler: parametreler,
         );
         if (indicators.isEmpty) return const SizedBox.shrink();
 
@@ -638,7 +567,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   Widget build(BuildContext context) {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
+    final izinli = ref.watch(izinliGostergelerProvider);
+    final parametreler = ref.watch(etkinGostergeParametreleriProvider(widget.type));
     final enabledIds = prefs[widget.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.type);
 
@@ -669,7 +599,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         // göstermektense hiç göstermemek doğru. Sunucu da aynısını yapar.
         if (prices.length < 30) return _gecmisYok(context);
 
-        return _buildPanel(context, prices, enabledIds, premium);
+        return _buildPanel(context, prices, enabledIds, izinli, parametreler);
       },
     );
   }
@@ -759,13 +689,15 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
     BuildContext context,
     List<double> prices,
     Set<String> enabledIds,
-    bool premium,
+    Set<String> izinli,
+    Map<String, GostergeAyari>? parametreler,
   ) {
     final indicators = TechnicalAnalysisService.analyzeSeries(
       prices,
       widget.type,
       enabledIds: enabledIds,
-      premiumUnlocked: premium,
+      izinli: izinli,
+      parametreler: parametreler,
     );
 
     final summary = TechnicalAnalysisService.summarize(indicators);
@@ -825,7 +757,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                context.l10n.nOfMIndicators(enabledIds.length, IndicatorId.all.length),
+                context.l10n.nOfMIndicators(indicators.length, IndicatorId.all.length),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.bodySmall?.copyWith(color: context.c.text36),
@@ -1040,6 +972,15 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             }).toList(),
           ),
         ),
+        // Paywall açık, ücretsiz: üç gösterge hesaplandı; kalan beşi ve
+        // bildirimler Premium (yasin 2026-10-10). Kilit listenin hemen
+        // altında, neyin eksik olduğunu adıyla söyleyerek.
+        if (ref.watch(premiumKilitliProvider)) ...[
+          const SizedBox(height: SandikSpace.sm),
+          KilitSatiri(
+              metin: context.l10n.sgnPremiumGostergeSatiri,
+              kaynak: 'sinyal_gosterge'),
+        ],
         // İbare burada da basılmaz — bkz. panelin başındaki not (#20).
       ],
     );

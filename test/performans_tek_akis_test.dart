@@ -437,11 +437,12 @@ void main() {
       expect(find.byType(RaporlarDugmesi), findsNothing);
     });
 
-    testWidgets('açık: kupa yerine Raporlar; sayfada Sıralama satırı',
+    testWidgets('açık: kupa Raporlar\'ın yanında; sayfada Sıralama satırı',
         (tester) async {
       RemoteConfigService.testAcik = {'raporlar_kapisi'};
       await _pump(tester);
-      expect(find.bySemanticsLabel(_tr.raceTitle), findsNothing);
+      // Y9 (2026-10-10): kupa kaybolmaz, Raporlar'ın yanında kalır.
+      expect(find.bySemanticsLabel(_tr.raceTitle), findsOneWidget);
       expect(find.bySemanticsLabel(_tr.s6Raporlar), findsOneWidget);
       // Aynı kabuk: 44pt.
       final kutu = tester.getSize(find.byIcon(Icons.assessment_rounded).first);

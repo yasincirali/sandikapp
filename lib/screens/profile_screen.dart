@@ -405,9 +405,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: ref.watch(cokluHesapGorunurProvider)
                             ? Align(
                                 alignment: Alignment.centerLeft,
-                                child: HesapBasligi(
-                                  stil: context.t.headlineMedium
-                                      ?.copyWith(color: context.c.text90),
+                                child: TourAnchor(
+                                  target: TourTarget.hesapBasligi,
+                                  child: HesapBasligi(
+                                    stil: context.t.headlineMedium
+                                        ?.copyWith(color: context.c.text90),
+                                  ),
                                 ),
                               )
                             : Text(
@@ -1210,6 +1213,12 @@ class _ProfilePremiumBanner extends ConsumerWidget {
           ? const _PremiumActiveBadge()
           : PremiumAbonelikSatiri(hak: hak);
     }
+    // Kilitler askıdaysa (acil anahtar `premium_enabled=false` ya da
+    // hediyesi henüz yazılmamış eski hesap — `kilitlerAskidaProvider`)
+    // kullanıcı her şeyi zaten kullanıyor: "Premium'a geç" bandı satın
+    // alınan şeyin ne olduğunu söyleyemez. Bant yalnız kilit gerçekten
+    // varken çıkar.
+    if (!ref.watch(premiumKilitliProvider)) return const SizedBox.shrink();
     return SandikBasma(
       onTap: () {
         AnalyticsService.instance

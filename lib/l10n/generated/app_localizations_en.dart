@@ -6735,10 +6735,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirSinyal => 'Technical signals';
 
   @override
-  String get prmSinyalUcretsiz => '1 asset';
+  String get prmSinyalUcretsiz => '3 indicators, 1 alert a day';
 
   @override
-  String get prmSinyalPremium => '8 indicators, all assets';
+  String get prmSinyalPremium => '8 indicators, unlimited';
 
   @override
   String get prmSatirTakip => 'Watchlist';
@@ -6926,18 +6926,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get anzOkunamadi => 'The note could not be opened right now.';
 
   @override
-  String get sgnPremiumAktif => 'Premium indicators on';
+  String get sgnPremiumAktif => 'Premium signals on';
 
   @override
   String get sgnPremiumAktifGovde =>
-      'ADX, Williams %R and CCI are part of the signal analysis.';
+      'All eight indicators, period settings and alerts are on.';
 
   @override
   String get sgnPremiumKilitBaslik => 'Premium indicators';
 
   @override
   String get sgnPremiumKilitGovde =>
-      'With Premium, ADX, Williams %R and CCI join the signal analysis.';
+      'EMA Crossover, Stochastic, ADX, Williams %R and CCI join the analysis with Premium. RSI, MACD and Bollinger are free.';
 
   @override
   String get sgnPremiumGec => 'Go Premium';
@@ -6946,38 +6946,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwOzSinirsiz => 'Unlimited assets of every type';
 
   @override
-  String get pwOzGosterge => 'ADX, Williams %R and CCI in signal analysis';
-
-  @override
-  String get pwOzSiklik =>
-      'Signal alerts for all your assets, at the frequency you choose';
-
-  @override
   String get pwOzKarsilastir => 'Up to 5 series in Compare';
 
   @override
   String get pwOzOrtak => 'Share your portfolio with more than one partner';
-
-  @override
-  String get sgnSlotNotu =>
-      'On the free plan signal alerts cover one asset, once a day per type; you pick the asset on its screen. Premium covers all your assets at the frequency you choose.';
-
-  @override
-  String get sgnVarlikAcik =>
-      'Signal alerts are on for this asset. The free plan covers one asset.';
-
-  @override
-  String sgnVarlikKilit(String ad) {
-    return 'On the free plan signal alerts cover one asset: $ad. Premium covers all your assets.';
-  }
-
-  @override
-  String get sgnVarlikTasi => 'Move signals here';
-
-  @override
-  String sgnSlotKilitli(String secenek) {
-    return '$secenek, Premium';
-  }
 
   @override
   String get cmpSinirPremium => 'Up to 5 series with Premium';
@@ -7526,20 +7498,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdSinyalBaslik =>
-      'Eight indicators and alerts on every asset, at the hours you pick.';
+      'Eight indicators, your own periods and alerts on every asset.';
 
   @override
-  String pwdSinyalUcretsiz(int sayi) {
-    return '$sayi a day';
-  }
-
-  @override
-  String pwdSinyalUcretsizTek(int sayi) {
-    return '$sayi a day, one asset';
-  }
-
-  @override
-  String get pwdSinyalPremium => '8 indicators, all assets';
+  String get pwdSinyalPremium => '8 indicators, unlimited alerts';
 
   @override
   String get pwdKarsEtiket => 'COMPARE';
@@ -7707,16 +7669,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get depositNoteHint => 'e.g. campaign rate, goal, branch';
 
   @override
-  String get sgnKilitBaslik => 'Technical signals';
-
-  @override
-  String get sgnKilitGovde =>
-      'RSI, MACD, Bollinger, EMA, Stochastic, ADX, Williams %R and CCI: eight indicators, alerts on every asset you hold at the frequency you choose, and the full indicator panel on the asset screen.';
-
-  @override
-  String get sgnKilitSatir => 'Technical signals are part of Premium';
-
-  @override
   String get prmAylikKilitBaslik => 'Monthly report';
 
   @override
@@ -7879,7 +7831,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzSinyalTam =>
-      'Technical signals: 8 indicators, alerts on every asset at the frequency you choose';
+      'Technical signals: 8 indicators, your own periods and alerts at the frequency you choose';
 
   @override
   String get pwOzMasraf => 'Item-by-item fee breakdown per asset';
@@ -7922,10 +7874,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdRaporBaslik =>
-      'The year\'s gains, dividends and withholding in one document; send it to your accountant.';
+      'Monthly and annual reports: gains, dividends and withholding in one document; send it to your accountant.';
 
   @override
-  String get pwdRaporPremium => 'PDF and Excel';
+  String get pwdRaporPremium => 'monthly, annual, PDF, Excel';
 
   @override
   String get pwdTemettuEtiket => 'DIVIDEND FORECAST';
@@ -8106,7 +8058,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'See what\'s inside your funds and where your money really is.';
 
   @override
-  String get pwdXrayPremium => 'Fund and portfolio X-Ray';
+  String get pwdXrayPremium => 'X-Ray and fee breakdown';
 
   @override
   String get portfoyTumu => 'All';
@@ -8255,26 +8207,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirPortfoy => 'Portfolios';
 
   @override
-  String get pwdGrafikEtiket => 'CHART';
-
-  @override
-  String get pwdGrafikBaslik =>
-      'Candlesticks, EMA50 and EMA200; see the trend at a glance.';
-
-  @override
-  String get pwdGrafikPremium => 'candles, EMA50, EMA200';
-
-  @override
   String get pwdPortfoyPremium => 'unlimited, partial transfer';
 
   @override
-  String get pwOzGrafik => 'Candlestick view, EMA50 and EMA200 lines on charts';
-
-  @override
   String get pwOzEkstre => 'AI matching for your bank and brokerage statements';
-
-  @override
-  String get prmSatirGrafik => 'Candles · EMA50 · EMA200';
 
   @override
   String get pwdPortfoyEtiket => 'PORTFOLIOS';
@@ -8579,7 +8515,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzOzelGosterge =>
-      'Write your own indicators, on any chart interval';
+      'Write your own indicators in Pine Script, on any chart interval';
 
   @override
   String get varlikGuncelleBaslik => 'Update asset';
@@ -8626,4 +8562,114 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get sgnPremiumGostergeSatiri =>
+      'EMA, Stochastic, ADX, Williams %R, CCI and unlimited alerts in Premium';
+
+  @override
+  String get sgnAyarAciklamaUcretsiz =>
+      'Pick which indicators produce signals for each asset type. RSI, MACD and Bollinger are free, with one alert a day.';
+
+  @override
+  String sgnParametreAciklama(String tur) {
+    return 'For $tur. The value you set is used on screen and in alerts.';
+  }
+
+  @override
+  String get sgnParametreSiraHatasi =>
+      'The short/fast value must be smaller than the long/slow value.';
+
+  @override
+  String get sgnParametreVarsayilan => 'Reset to default';
+
+  @override
+  String get sgnParametreKaydet => 'Save';
+
+  @override
+  String sgnParametreVarsayilanDeger(int deger) {
+    return 'Default $deger';
+  }
+
+  @override
+  String get sgnParametreAzalt => 'Decrease';
+
+  @override
+  String get sgnParametreArtir => 'Increase';
+
+  @override
+  String get sgnParametreKilitli => 'Period settings are in Premium';
+
+  @override
+  String sgnParametreAyarla(String ad) {
+    return '$ad settings';
+  }
+
+  @override
+  String get prmSatirOzelGosterge => 'Your own indicators (Pine)';
+
+  @override
+  String get pwdOzelEtiket => 'YOUR INDICATOR';
+
+  @override
+  String get pwdOzelBaslik =>
+      'Write your own indicator in Pine Script and run it on any asset, at the candle interval you pick.';
+
+  @override
+  String get pwdOzelPremium => '20 indicators, any interval';
+
+  @override
+  String alarmLimitReached(int n) {
+    return 'You can have up to $n active alerts. Turn one off to add another.';
+  }
+
+  @override
+  String alarmLimitFree(int n) {
+    return 'On the free plan you can have up to $n active alerts.';
+  }
+
+  @override
+  String varlikKotasiKalan(int kalan, int sinir) {
+    return 'You have $kalan new assets left on the free plan ($sinir assets).';
+  }
+
+  @override
+  String varlikKotasiDolu(int sinir) {
+    return 'You\'ve used all $sinir assets on the free plan. You can still add to assets you hold; new assets need Premium.';
+  }
+
+  @override
+  String get sgnSlotNotu =>
+      'On the free plan RSI, MACD and Bollinger signals are sent once a day per type. Premium covers all eight indicators at the frequency you choose.';
+
+  @override
+  String sgnSlotKilitli(String secenek) {
+    return '$secenek, Premium';
+  }
+
+  @override
+  String get chartIntervalM5 => '5m';
+
+  @override
+  String get chartIntervalM15 => '15m';
+
+  @override
+  String get chartIntervalM5Long => '5-minute';
+
+  @override
+  String get chartIntervalM15Long => '15-minute';
+
+  @override
+  String cmpKatmanHedefi(String ad) {
+    return 'Candles and averages: $ad. Tap another line to switch.';
+  }
+
+  @override
+  String get pwdOzelUcretsiz => 'candles, 1m to 1M intervals, EMA';
+
+  @override
+  String get chartIntervalM30 => '30m';
+
+  @override
+  String get chartIntervalM30Long => '30-minute';
 }

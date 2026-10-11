@@ -11102,13 +11102,13 @@ abstract class AppLocalizations {
   /// No description provided for @prmSinyalUcretsiz.
   ///
   /// In tr, this message translates to:
-  /// **'1 varlık'**
+  /// **'3 gösterge, günde 1 bildirim'**
   String get prmSinyalUcretsiz;
 
   /// No description provided for @prmSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, tüm varlıklar'**
+  /// **'8 gösterge, sınırsız'**
   String get prmSinyalPremium;
 
   /// No description provided for @prmSatirTakip.
@@ -11432,13 +11432,13 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumAktif.
   ///
   /// In tr, this message translates to:
-  /// **'Premium göstergeler açık'**
+  /// **'Premium sinyaller açık'**
   String get sgnPremiumAktif;
 
   /// No description provided for @sgnPremiumAktifGovde.
   ///
   /// In tr, this message translates to:
-  /// **'ADX, Williams %R ve CCI sinyal analizine katılıyor.'**
+  /// **'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.'**
   String get sgnPremiumAktifGovde;
 
   /// No description provided for @sgnPremiumKilitBaslik.
@@ -11450,7 +11450,7 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumKilitGovde.
   ///
   /// In tr, this message translates to:
-  /// **'ADX, Williams %R ve CCI, Premium ile sinyal analizine katılır.'**
+  /// **'EMA Kesişim, Stokastik, ADX, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.'**
   String get sgnPremiumKilitGovde;
 
   /// No description provided for @sgnPremiumGec.
@@ -11465,18 +11465,6 @@ abstract class AppLocalizations {
   /// **'Sınırsız varlık ve tüm varlık türleri'**
   String get pwOzSinirsiz;
 
-  /// No description provided for @pwOzGosterge.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyal analizinde ADX, Williams %R ve CCI'**
-  String get pwOzGosterge;
-
-  /// No description provided for @pwOzSiklik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta'**
-  String get pwOzSiklik;
-
   /// No description provided for @pwOzKarsilastir.
   ///
   /// In tr, this message translates to:
@@ -11488,36 +11476,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Birden fazla ortakla portföy paylaşımı'**
   String get pwOzOrtak;
-
-  /// No description provided for @sgnSlotNotu.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ücretsiz sürümde sinyal bildirimi tek varlıkta ve her tür için günde 1 kez gelir; varlığı, varlığın ekranından seçersin. Premium\'da tüm varlıkların ve seçtiğin sıklık gelir.'**
-  String get sgnSlotNotu;
-
-  /// No description provided for @sgnVarlikAcik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyal bildirimi bu varlıkta açık. Ücretsiz planda tek varlıkta gelir.'**
-  String get sgnVarlikAcik;
-
-  /// No description provided for @sgnVarlikKilit.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ücretsiz planda sinyal bildirimi tek varlıkta: {ad}. Tüm varlıkların için Premium.'**
-  String sgnVarlikKilit(String ad);
-
-  /// No description provided for @sgnVarlikTasi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyali buraya taşı'**
-  String get sgnVarlikTasi;
-
-  /// No description provided for @sgnSlotKilitli.
-  ///
-  /// In tr, this message translates to:
-  /// **'{secenek}, Premium'**
-  String sgnSlotKilitli(String secenek);
 
   /// No description provided for @cmpSinirPremium.
   ///
@@ -12452,25 +12410,13 @@ abstract class AppLocalizations {
   /// No description provided for @pwdSinyalBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Sekiz gösterge ve her varlığında, seçtiğin saatte bildirim.'**
+  /// **'Sekiz gösterge, kendi periyotların ve her varlığında bildirim.'**
   String get pwdSinyalBaslik;
-
-  /// No description provided for @pwdSinyalUcretsiz.
-  ///
-  /// In tr, this message translates to:
-  /// **'günde {sayi}'**
-  String pwdSinyalUcretsiz(int sayi);
-
-  /// No description provided for @pwdSinyalUcretsizTek.
-  ///
-  /// In tr, this message translates to:
-  /// **'günde {sayi}, tek varlık'**
-  String pwdSinyalUcretsizTek(int sayi);
 
   /// No description provided for @pwdSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, tüm varlıklar'**
+  /// **'8 gösterge, sınırsız bildirim'**
   String get pwdSinyalPremium;
 
   /// No description provided for @pwdKarsEtiket.
@@ -12736,24 +12682,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Örn. kampanya faizi, hedef, şube'**
   String get depositNoteHint;
-
-  /// No description provided for @sgnKilitBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Teknik sinyaller'**
-  String get sgnKilitBaslik;
-
-  /// No description provided for @sgnKilitGovde.
-  ///
-  /// In tr, this message translates to:
-  /// **'RSI, MACD, Bollinger, EMA, Stokastik, ADX, Williams %R ve CCI: sekiz gösterge, tuttuğun her varlıkta seçtiğin sıklıkta bildirim ve varlık ekranında tam gösterge paneli.'**
-  String get sgnKilitGovde;
-
-  /// No description provided for @sgnKilitSatir.
-  ///
-  /// In tr, this message translates to:
-  /// **'Teknik sinyaller Premium\'da'**
-  String get sgnKilitSatir;
 
   /// No description provided for @prmAylikKilitBaslik.
   ///
@@ -13034,7 +12962,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzSinyalTam.
   ///
   /// In tr, this message translates to:
-  /// **'Teknik sinyaller: 8 gösterge, her varlığında seçtiğin sıklıkta bildirim'**
+  /// **'Teknik sinyaller: 8 gösterge, kendi periyotların ve seçtiğin sıklıkta bildirim'**
   String get pwOzSinyalTam;
 
   /// No description provided for @pwOzMasraf.
@@ -13118,13 +13046,13 @@ abstract class AppLocalizations {
   /// No description provided for @pwdRaporBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Yılın kârı, temettüsü ve stopajı tek belgede; müşavirine gönder.'**
+  /// **'Aylık ve yıllık rapor: kâr, temettü ve stopaj tek belgede; müşavirine gönder.'**
   String get pwdRaporBaslik;
 
   /// No description provided for @pwdRaporPremium.
   ///
   /// In tr, this message translates to:
-  /// **'PDF ve Excel'**
+  /// **'aylık, yıllık, PDF, Excel'**
   String get pwdRaporPremium;
 
   /// No description provided for @pwdTemettuEtiket.
@@ -13436,7 +13364,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdXrayPremium.
   ///
   /// In tr, this message translates to:
-  /// **'Fon ve portföy X-Ray'**
+  /// **'X-Ray ve masraf dökümü'**
   String get pwdXrayPremium;
 
   /// No description provided for @portfoyTumu.
@@ -13685,47 +13613,17 @@ abstract class AppLocalizations {
   /// **'Portföy'**
   String get prmSatirPortfoy;
 
-  /// No description provided for @pwdGrafikEtiket.
-  ///
-  /// In tr, this message translates to:
-  /// **'GRAFİK'**
-  String get pwdGrafikEtiket;
-
-  /// No description provided for @pwdGrafikBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Mum grafik, EMA50 ve EMA200; trendi tek bakışta gör.'**
-  String get pwdGrafikBaslik;
-
-  /// No description provided for @pwdGrafikPremium.
-  ///
-  /// In tr, this message translates to:
-  /// **'mum, EMA50, EMA200'**
-  String get pwdGrafikPremium;
-
   /// No description provided for @pwdPortfoyPremium.
   ///
   /// In tr, this message translates to:
   /// **'sınırsız, kısmi aktarım'**
   String get pwdPortfoyPremium;
 
-  /// No description provided for @pwOzGrafik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Grafikte mum görünümü, EMA50 ve EMA200 çizgileri'**
-  String get pwOzGrafik;
-
   /// No description provided for @pwOzEkstre.
   ///
   /// In tr, this message translates to:
   /// **'Banka ve aracı kurum ekstreni yapay zekâyla eşleme'**
   String get pwOzEkstre;
-
-  /// No description provided for @prmSatirGrafik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Mum · EMA50 · EMA200'**
-  String get prmSatirGrafik;
 
   /// No description provided for @pwdPortfoyEtiket.
   ///
@@ -14204,7 +14102,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzOzelGosterge.
   ///
   /// In tr, this message translates to:
-  /// **'Kendi göstergeni yaz: formülün, seçtiğin zaman aralığında'**
+  /// **'Kendi göstergeni yaz: Pine Script ile, seçtiğin zaman aralığında'**
   String get pwOzOzelGosterge;
 
   /// No description provided for @varlikGuncelleBaslik.
@@ -14242,6 +14140,180 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{n, plural, =1{\"{name}\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.} other{\"{name}\" için {n} hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.}}'**
   String varlikGuncelleOnayGovde(String name, int n);
+
+  /// No description provided for @sgnPremiumGostergeSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'EMA, Stokastik, ADX, Williams %R, CCI ve sınırsız bildirim Premium\'da'**
+  String get sgnPremiumGostergeSatiri;
+
+  /// No description provided for @sgnAyarAciklamaUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.'**
+  String get sgnAyarAciklamaUcretsiz;
+
+  /// No description provided for @sgnParametreAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tur} için. Değiştirdiğin değer ekranda ve bildirimlerde kullanılır.'**
+  String sgnParametreAciklama(String tur);
+
+  /// No description provided for @sgnParametreSiraHatasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kısa/hızlı değer, uzun/yavaş değerden küçük olmalı.'**
+  String get sgnParametreSiraHatasi;
+
+  /// No description provided for @sgnParametreVarsayilan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varsayılana dön'**
+  String get sgnParametreVarsayilan;
+
+  /// No description provided for @sgnParametreKaydet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get sgnParametreKaydet;
+
+  /// No description provided for @sgnParametreVarsayilanDeger.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varsayılan {deger}'**
+  String sgnParametreVarsayilanDeger(int deger);
+
+  /// No description provided for @sgnParametreAzalt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Azalt'**
+  String get sgnParametreAzalt;
+
+  /// No description provided for @sgnParametreArtir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artır'**
+  String get sgnParametreArtir;
+
+  /// No description provided for @sgnParametreKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Periyot ayarı Premium\'da'**
+  String get sgnParametreKilitli;
+
+  /// No description provided for @sgnParametreAyarla.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} ayarları'**
+  String sgnParametreAyarla(String ad);
+
+  /// No description provided for @prmSatirOzelGosterge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendi göstergen (Pine)'**
+  String get prmSatirOzelGosterge;
+
+  /// No description provided for @pwdOzelEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'KENDİ GÖSTERGEN'**
+  String get pwdOzelEtiket;
+
+  /// No description provided for @pwdOzelBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pine Script ile kendi göstergeni yaz, her varlıkta seçtiğin mum aralığında çalıştır.'**
+  String get pwdOzelBaslik;
+
+  /// No description provided for @pwdOzelPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'20 gösterge, her aralıkta'**
+  String get pwdOzelPremium;
+
+  /// No description provided for @alarmLimitReached.
+  ///
+  /// In tr, this message translates to:
+  /// **'En fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.'**
+  String alarmLimitReached(int n);
+
+  /// No description provided for @alarmLimitFree.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda en fazla {n} aktif alarm kurabilirsin.'**
+  String alarmLimitFree(int n);
+
+  /// No description provided for @varlikKotasiKalan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).'**
+  String varlikKotasiKalan(int kalan, int sinir);
+
+  /// No description provided for @varlikKotasiDolu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz plandaki {sinir} varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium\'da.'**
+  String varlikKotasiDolu(int sinir);
+
+  /// No description provided for @sgnSlotNotu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz sürümde RSI, MACD ve Bollinger sinyalleri her tür için günde 1 kez bildirilir. Premium\'da sekiz göstergenin tamamı, seçtiğin sıklıkta gelir.'**
+  String get sgnSlotNotu;
+
+  /// No description provided for @sgnSlotKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{secenek}, Premium'**
+  String sgnSlotKilitli(String secenek);
+
+  /// No description provided for @chartIntervalM5.
+  ///
+  /// In tr, this message translates to:
+  /// **'5 dk'**
+  String get chartIntervalM5;
+
+  /// No description provided for @chartIntervalM15.
+  ///
+  /// In tr, this message translates to:
+  /// **'15 dk'**
+  String get chartIntervalM15;
+
+  /// No description provided for @chartIntervalM5Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'5 dakikalık'**
+  String get chartIntervalM5Long;
+
+  /// No description provided for @chartIntervalM15Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'15 dakikalık'**
+  String get chartIntervalM15Long;
+
+  /// Karşılaştır: araç çubuğu katmanlarının uygulandığı seri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mum ve ortalamalar: {ad}. Başka seriye dokunarak değiştir.'**
+  String cmpKatmanHedefi(String ad);
+
+  /// Paywall destesi, kendi göstergen kartı: ücretsiz kalan grafik araçları (başına 'Ücretsiz:' eklenir).
+  ///
+  /// In tr, this message translates to:
+  /// **'mum, 1 dk ile 1 ay arası aralık, EMA'**
+  String get pwdOzelUcretsiz;
+
+  /// Mum aralığı kısa adı: 30 dakika.
+  ///
+  /// In tr, this message translates to:
+  /// **'30 dk'**
+  String get chartIntervalM30;
+
+  /// Mum aralığı uzun adı (menü, ekran okuyucu).
+  ///
+  /// In tr, this message translates to:
+  /// **'30 dakikalık'**
+  String get chartIntervalM30Long;
 }
 
 class _AppLocalizationsDelegate

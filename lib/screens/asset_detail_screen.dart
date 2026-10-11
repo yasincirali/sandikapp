@@ -39,8 +39,6 @@ import '../widgets/transaction_segment.dart';
 import 'signal_settings_screen.dart';
 import '../models/signal_alert.dart';
 import '../providers/signal_provider.dart';
-import '../providers/sinyal_varligi_provider.dart';
-import '../utils/friendly_error.dart';
 import '../services/tefas_service.dart';
 import '../services/tazelik_ritmi.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -51,6 +49,7 @@ import '../models/varlik_kimligi.dart';
 import '../models/ozel_gosterge.dart';
 import '../providers/ozel_gosterge_provider.dart';
 import '../services/gosterge_betigi/betik.dart';
+import '../services/ozel_gosterge_calistirici.dart';
 import '../widgets/gosterge_cizimi.dart';
 import 'ozel_gosterge_screen.dart';
 import '../services/crash_reporter.dart';
@@ -67,8 +66,6 @@ import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/fon_dagilimi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
-import '../widgets/sinyal_kilit_karti.dart';
-import '../widgets/sandik_async_button.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
 import '../providers/fon_karnesi_provider.dart'
@@ -103,7 +100,7 @@ import '../providers/premium_provider.dart'
 import '../utils/hareketli_ortalama.dart';
 import '../utils/mum_turetici.dart' show Mum, mumlariGrafikUzayinda;
 import '../models/ohlc.dart';
-import '../widgets/sandik_segment.dart';
+import '../widgets/grafik_arac_cubugu.dart';
 import '../services/mum_verisi.dart';
 
 part 'asset_detail/eylemler.dart';
@@ -250,8 +247,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   final GlobalKey _sinyalPaneliKey = GlobalKey();
 
   /// Teknik sinyal yüzeyleri (kart + gösterge paneli) çizilsin mi?
-  /// Yatırımcı seviyesi Başlangıç ise ya da paywall açıkken Premium değilse
-  /// hayır — bkz. `sinyalYuzeyiProvider`.
+  /// Yatırımcı seviyesi Başlangıç ise hayır — bkz. `sinyalYuzeyiProvider`.
+  /// Paywall açıkken ücretsizde de çizilir (üç gösterge, 2026-10-10).
   bool get _sinyalYuzeyleri =>
       ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
       // Mevduatın piyasa serisi yok; eğrisi sözleşmenin tahakkukudur ve
@@ -259,12 +256,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       // BES de öyle (2026-10-01 emülatör testi): katılımcı fonu alıp
       // satamaz, yalnız dağılımı değiştirir; devlet katkısı fonunda o da
       // yok. AL/SAT göstergesi orada yanıltıcıdır.
-      !widget.asset.type.sozlesmeli;
-
-  /// Sinyal Premium'da (paywall açık, Premium değil): panelin yerine tek
-  /// kilit kartı. Sözleşmeli türlerde sinyal hiç olmadığı için kilit de yok.
-  bool get _sinyalKilidi =>
-      ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.kilitli &&
       !widget.asset.type.sozlesmeli;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
@@ -858,8 +849,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     asset: widget.asset,
                     onTap: _sinyalPaneline,
                   ),
-                if (_sinyalYuzeyleri)
-                  SinyalVarlikSeridi(asset: widget.asset),
                 // Kurulu alarmlar (boşken hiç çizilmez; alt boşluğunu kendi
                 // taşır — bkz. AlarmSeridi).
                 if (_alarmSembolu != null)
@@ -1056,15 +1045,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
-                    // EMA50 / EMA200 ve mum — Premium katmanlar
+                    // EMA50 / EMA200 ve mum — ücretsiz katmanlar
                     // (`asset_detail/grafik_katmanlari.dart`). Görünmüyorsa
-                    // ya da kilitliyse hiçbiri çizilmez; eski grafik birebir.
+                    // (paywall kapalı, admin değil) hiçbiri çizilmez; eski
+                    // grafik birebir. Kendi göstergeni yaz ayrıca kilitli
+                    // (`_acikOzelGostergeler`).
                     // Karşılaştırmada mum yok (çizgi % ölçeğinde, iki seri
                     // aynı eksende kıyaslanır); EMA da yok — ikinci serinin
                     // ortalaması çizilmediği için yalnız birine ait olurdu.
-                    final katmanAcik = araclar &&
-                        _katmanlarGorunur &&
-                        !_katmanlarKilitli;
+                    final katmanAcik = araclar && _katmanlarGorunur;
                     final mumOn = katmanAcik &&
                         !compareOn &&
                         ref.watch(chartCandleProvider);
@@ -1251,88 +1240,29 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         // Sade Başlangıç'ta (`seviye_anketi`) gizli.
                         if (araclar)
-                          Builder(builder: (_) {
-                            final ma20Cip = _OverlayChip(
-                              label: 'MA20',
-                              active: ma20On,
-                              onTap: () {
-                                ref
-                                    .read(chartMA20Provider.notifier)
-                                    .set(!ma20On);
-                              },
-                            );
-                            final logCip = _OverlayChip(
-                              label: 'LOG',
-                              active: logOn,
-                              onTap: () {
-                                ref
-                                    .read(chartLogScaleProvider.notifier)
-                                    .set(!logOn);
-                              },
-                            );
-                            // Tam ekran çipi KALDIRILDI (kullanıcı kararı,
-                            // 2026-09-17): "çok da bir avantajı yok gibi,
-                            // ilerde talep edilirse yaparız." Geçmiş
-                            // uygulama ve yön davranışı git geçmişinde
-                            // (ea7bc0a).
-                            if (!_katmanlarGorunur) {
-                              // Premium katmanlar görünmüyor: satır BİREBİR
-                              // eskisi (canlıdaki kullanıcı etkilenmez).
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  ma20Cip,
-                                  const SizedBox(width: 6),
-                                  logCip,
-                                ],
-                              );
-                            }
-                            // Beş çip 375pt'ye tek satırda sığmıyor (Wrap
-                            // LOG'u tek başına alta düşürüyordu). İki
-                            // anlamlı satır: üstte GÖRÜNÜM (mum, ölçek),
-                            // altta ORTALAMALAR (MA20, EMA50, EMA200).
-                            final k = _katmanCipleri(
-                              mumOn: mumOn,
-                              ema50On: ema50On,
-                              ema200On: ema200On,
-                            );
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    k.mum,
-                                    const SizedBox(width: 6),
-                                    logCip,
-                                    const SizedBox(width: 6),
-                                    _ozelGostergeCipi(ozelAcik.length),
-                                  ],
-                                ),
-                                // Satır arası boşluk yok: çiplerin 44pt
-                                // dokunma payı (HIG, 2026-10-10) zaten
-                                // aralık bırakıyor.
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    ma20Cip,
-                                    const SizedBox(width: 6),
-                                    k.ema50,
-                                    const SizedBox(width: 6),
-                                    k.ema200,
-                                  ],
-                                ),
-                                // Mum açıkken aralık seçicisi (1 dk … ay).
-                                if (mumAr != null &&
-                                    mumAr.aralik != null &&
-                                    mumAr.gecerli.length >= 2)
-                                  _aralikSecici(
-                                    aralik: mumAr.aralik!,
-                                    gecerli: mumAr.gecerli,
-                                  ),
-                              ],
-                            );
-                          }),
+                          // Ortak araç çubuğu (`widgets/grafik_arac_cubugu.dart`):
+                          // varlık sayfası ve Karşılaştır aynı çipleri, aynı
+                          // sırada gösterir (yasin 2026-10-10, üç ekran
+                          // tutarlı). Katmanlar görünmüyorsa satır BİREBİR
+                          // eskisi: MA20 · LOG (canlıdaki kullanıcı etkilenmez).
+                          // Tam ekran çipi KALDIRILDI (kullanıcı kararı,
+                          // 2026-09-17; geçmiş uygulama ea7bc0a).
+                          GrafikAracCubugu(
+                            katmanlar: _katmanlarGorunur,
+                            ma20Acik: ma20On,
+                            logAcik: logOn,
+                            mumAcik: mumOn,
+                            ema50Acik: ema50On,
+                            ema200Acik: ema200On,
+                            ozel: _ozelGostergeCipi(ozelAcik.length),
+                            aralik: mumAr?.aralik,
+                            gecerliAraliklar:
+                                mumAr?.gecerli ?? const <MumAraligi>[],
+                            pencereDakika: mumAr?.span,
+                            kapanistan:
+                                !FiyatKaynagi.mumKaynagi(_canli.asset)
+                                    .gercekOhlc,
+                          ),
                         const SizedBox(height: 8),
                         // Karşılaştırma gün içinde de açık — seri
                         // `_karsilastirmaSerisi` ile ana varlıkla aynı
@@ -2076,9 +2006,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // tekrarlanıyordu).
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
-                ] else if (_sinyalKilidi) ...[
-                  const SizedBox(height: 24),
-                  const SinyalKilitKarti(),
                 ],
                 ], // eski yığın (katmanlı değil)
                 ],

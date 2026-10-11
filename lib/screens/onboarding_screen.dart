@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/position.dart' show aktifLotlar;
 import '../providers/auth_provider.dart' show activePartnersProvider;
+import '../providers/hesap_provider.dart' show cokluHesapGorunurProvider;
 import '../providers/hafta_ozeti_provider.dart'
     show haftaOlagandisiSayisiProvider;
 import '../providers/portfolio_provider.dart';
@@ -221,13 +222,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 // (sekme değiştir, ekranı aç) o zaman tur kendisi yapar. Zorlamak,
 // tanıtımı bir an önce geçmek isteyen kullanıcıyı cezalandırırdı.
 
-/// "Bildirim merkezi" adımının ilk cümlesi. Paywall açıkken teknik sinyaller
-/// Premium'da (2026-10-10, `sinyalYuzeyiProvider`): ücretsiz kullanıcının
-/// zilinde sinyal satırı yok, metin onu vaat etmesin.
+/// "Bildirim merkezi" adımının ilk cümlesi. Paywall açıkken de doğru:
+/// ücretsizde üç göstergenin bildirimi günde 1 kez zile düşer (2026-10-10
+/// akşam, `sinyalSlotSiniriProvider`); ayrı "Premium'da sinyaller" metni
+/// kalktı.
 const _zilBasi = 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
-    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir ';
-const _zilPremiumBasi =
-    'Tetiklenen fiyat alarmların (Premium\'da teknik sinyaller de) burada '
     'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir ';
 
 class _Adim {
@@ -549,7 +548,7 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.bildirimCani,
       rozet: 'YENİ',
       baslik: 'Bildirim merkezi',
-      govde: '${RemoteConfigService.instance.paywallEnabled ? _zilPremiumBasi : _zilBasi}'
+      govde: '$_zilBasi'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
           'uygulama kapalıyken de çalışır.',
@@ -888,6 +887,23 @@ List<_Adim> _adimlariKur() {
       gorevBitti: 'Profil açıldı',
       bitti: (_) => _sekmede(4),
       devam: (_) => _sekmeyeGec(4),
+    ),
+    // Çoklu hesap (yasin 2026-10-10 gece: "session switchi de tanıtım
+    // turuna ekleyelim"). Başlık yalnız bayrak açıkken hesap adı; kapalıyken
+    // "Profil" düz metin ve hedef yok, adım gösterilmez.
+    _Adim(
+      id: 'hesap_gecisi',
+      hedef: TourTarget.hesapBasligi,
+      rozet: 'YENİ',
+      baslik: 'Hesapların arasında geç',
+      govde: 'Üstteki adına dokun: bu telefondaki hesapların listelenir, '
+          'birine dokununca o hesaba geçersin. Öbür hesaplar açık kalır; '
+          'şifre sorulmaz, Face ID ile girdiysen tekrar sorulmaz. "Hesap '
+          'ekle" ile 5 hesaba kadar ekleyebilirsin. Alttaki Profil tuşuna '
+          'uzun basmak da aynı listeyi açar.',
+      giris: (_) => _sekmeyeGec(4),
+      dokunulabilir: false,
+      kosul: (ref) => ref.read(cokluHesapGorunurProvider),
     ),
     _Adim(
       id: 'ortaklik',

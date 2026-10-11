@@ -1,10 +1,15 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
 import '../utils/chart_line_width.dart';
+import '../utils/hareketli_ortalama.dart' show mumlariDonustur;
+import '../utils/mum_turetici.dart' show Mum;
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
 import 'grafik_stili.dart';
@@ -36,7 +41,18 @@ class FiyatGrafigi extends StatelessWidget {
     this.height = GrafikStili.grafikYuksekligi,
     this.imlecEtiketi,
     this.ucTitresimi = false,
+    this.katmanlar,
+    this.onViewportChanged,
   });
+
+  /// Araç çubuğunun katmanları (LOG, mum, MA20/EMA, kendi göstergen) —
+  /// varlık detayıyla aynı çizim (yasin 2026-10-10 gece, üç ekran
+  /// tutarlı). `null` → grafik BİREBİR eskisi.
+  final FiyatKatmanlari? katmanlar;
+
+  /// Kullanıcı yakınlaştırdı/kaydırdı (kendi göstergen panelleri aynı
+  /// pencereye oturur).
+  final void Function(double minX, double maxX)? onViewportChanged;
 
   /// `epoch ms → fiyat`.
   final Map<int, double> seri;
@@ -108,7 +124,17 @@ class FiyatGrafigi extends StatelessWidget {
         final i = coveringSpotIndex(spots, clamped);
         return i < 0 ? clamped : spots[i].x;
       },
+      onViewportChanged: onViewportChanged,
       crosshairLabelBuilder: (x) {
+        if (_imlectekiMum(x) case final m?) {
+          final t = DateTime.fromMillisecondsSinceEpoch(m.x.round());
+          return (
+            bicim.format(m.kapanis),
+            eksenX.gunIci
+                ? DateFormat('d MMM HH:mm', 'tr_TR').format(t)
+                : fmtTarihSaat(t),
+          );
+        }
         final i = coveringSpotIndex(spots, x);
         if (i < 0) return null;
         final s = spots[i];
@@ -123,6 +149,16 @@ class FiyatGrafigi extends StatelessWidget {
       // Dönem başına göre değişim: "buradan bugüne ne oldu" değil, "dönem
       // başından bu ana ne oldu" — başlıktaki yüzdeyle aynı taban.
       crosshairDetailsBuilder: (x) {
+        if (_imlectekiMum(x) case final m?) {
+          return [
+            (
+              context.l10n.chartOhlcLine(bicim.format(m.acilis),
+                  bicim.format(m.enYuksek), bicim.format(m.enDusuk),
+                  bicim.format(m.kapanis)),
+              m.yukselen ? context.c.gain : context.c.loss,
+            ),
+          ];
+        }
         final i = coveringSpotIndex(spots, x);
         if (i < 0 || ilk <= 0) return const [];
         final pct = (spots[i].y - ilk) / ilk * 100;
@@ -147,24 +183,83 @@ class FiyatGrafigi extends StatelessWidget {
     double minX,
     double maxX,
   ) {
-    final gorunur = _gorunur(tam, minX, maxX);
+    final k = katmanlar;
+    // LOG: Y log10(fiyat); etiket ve dönem başı HAM fiyatı yazar.
+    final log = k?.log ?? false;
+    double toY(double v) => log ? math.log(v) / math.ln10 : v;
+    double fromY(double v) => log ? math.pow(10, v).toDouble() : v;
+    final hamGorunur = _gorunur(tam, minX, maxX);
+    final gorunur = log
+        ? [
+            for (final s in hamGorunur)
+              if (s.y > 0) FlSpot(s.x, toY(s.y))
+          ]
+        : hamGorunur;
+    final ortalamalar = [
+      for (final o in k?.ortalamalar ?? const <FiyatOrtalamasi>[])
+        if (o.spots.length >= 2)
+          (
+            spots: [
+              for (final p in o.spots)
+                if (!log || p.y > 0) FlSpot(p.x, toY(p.y))
+            ],
+            o: o,
+          ),
+    ];
+    final mumlar = log
+        ? mumlariDonustur(k?.mumlar ?? const [], toY)
+        : (k?.mumlar ?? const <Mum>[]);
+    final ozelBant = k?.ozelBant?.call(toY) ?? const <FlSpot>[];
 
     var mn = gorunur.first.y, mx = gorunur.first.y, top = 0.0;
+    var adet = 0;
+    void kat(double x, double y) {
+      if (x < minX || x > maxX || !y.isFinite) return;
+      if (y < mn) mn = y;
+      if (y > mx) mx = y;
+      top += y;
+      adet++;
+    }
+    // Çizginin noktaları eskisi gibi kenarın bir dışındakiyle birlikte
+    // (katmansız grafik BİREBİR eskisi).
     for (final s in gorunur) {
       if (s.y < mn) mn = s.y;
       if (s.y > mx) mx = s.y;
       top += s.y;
+      adet++;
+    }
+    // EMA, mum fitilleri ve kendi göstergen de banda girer: girmezse açılan
+    // çizgi kartın dışında kalır ve "çalışmıyor" diye okunur (varlık
+    // detayıyla aynı kural).
+    for (final o in ortalamalar) {
+      for (final p in o.spots) {
+        kat(p.x, p.y);
+      }
+    }
+    for (final m in mumlar) {
+      kat(m.merkezX, m.enYuksek);
+      kat(m.merkezX, m.enDusuk);
+    }
+    for (final p in ozelBant) {
+      kat(p.x, p.y);
     }
     final bant = gorunurYBandi(
       dataMinY: mn,
       dataMaxY: mx,
-      avgY: top / gorunur.length,
-      asgariBantOrani: eksenX.gunIci ? gunIciAsgariBantOrani : 0.02,
+      avgY: top / math.max(adet, 1),
+      asgariBantOrani: eksenX.gunIci
+          ? gunIciAsgariBantOrani
+          : (log ? 0.0 : 0.02),
+      asgariAralik: log ? 1e-3 : 1.0,
     );
     // Hane adımı TAM gösterir (0,25 → iki hane, 5 → hanesiz): eski merdiven
     // (<1 → 2, <10 → 1) 0,005'lik adımda komşu etiketleri aynı metne
-    // düşürebiliyordu (2026-09-29 emülatör testi #7, "₺1 | ₺1").
-    final ondalik = eksenOndaligi(bant.interval);
+    // düşürebiliyordu (2026-09-29 emülatör testi #7, "₺1 | ₺1"). LOG'da
+    // adım log biriminde; hane komşu iki etiketin GERÇEK farkından.
+    final ondalik = log
+        ? eksenOndaligi(
+            (fromY(bant.minY + bant.interval) - fromY(bant.minY)).abs())
+        : eksenOndaligi(bant.interval);
     // Eksende para simgesi var (₺320) — Performans ve varlık detayıyla aynı.
     final eksenBicimi =
         tryFormatter(digits: ondalik, symbol: bicim.currencySymbol);
@@ -178,6 +273,13 @@ class FiyatGrafigi extends StatelessWidget {
       olcek: MediaQuery.textScalerOf(context),
     );
 
+    final ma20 = ortalamalar.where((o) => o.o.kesikli).toList();
+    final ema = ortalamalar.where((o) => !o.o.kesikli).toList();
+    final ozelCizim = k?.ozelCizim?.call(toY, ma20.length + ema.length) ??
+        (bars: const <LineChartBarData>[], dolgular: const <BetweenBarsData>[]);
+    final genislik =
+        (MediaQuery.sizeOf(context).width - 60 - 40).clamp(120.0, 2000.0);
+
     return LineChartData(
       minX: minX,
       maxX: maxX,
@@ -187,7 +289,30 @@ class FiyatGrafigi extends StatelessWidget {
       // — performans ekranları ve ortak yüzde grafiğiyle aynı bayrak.
       clipData: const FlClipData.all(),
       baselineX: eksenX.baseline,
+      betweenBarsData: ozelCizim.dolgular,
       lineBarsData: [
+        // Sıra varlık detayıyla aynı: MA20, EMA'lar, kendi göstergen, mum.
+        for (final o in [...ma20, ...ema])
+          LineChartBarData(
+            spots: o.spots,
+            isCurved: false,
+            color: o.o.cizgiRengi,
+            barWidth: o.o.kesikli ? 1.4 : 1.6,
+            isStrokeCapRound: true,
+            dashArray: o.o.kesikli ? const [3, 3] : null,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(show: false),
+          ),
+        ...ozelCizim.bars,
+        // Mum açıkken çizginin YERİNE mumlar (varlık detayı gibi).
+        if (mumlar.isNotEmpty)
+          ...GrafikStili.mumCubuklariToplu(
+            context,
+            mumlar,
+            genislik: genislik,
+            gorunurAralik: maxX > minX ? maxX - minX : null,
+          )
+        else
         LineChartBarData(
           spots: gorunur,
           color: GrafikStili.cizgi(context),
@@ -211,7 +336,7 @@ class FiyatGrafigi extends StatelessWidget {
         horizontalLines: [
           GrafikStili.donemBasi(
             context,
-            tam.first.y,
+            toY(tam.first.y),
             etiket: GrafikStili.donemBasiEtiketi(
               context,
               an: DateTime.fromMillisecondsSinceEpoch(tam.first.x.round()),
@@ -245,7 +370,8 @@ class FiyatGrafigi extends StatelessWidget {
               if (value <= meta.min || value >= meta.max) {
                 return const SizedBox.shrink();
               }
-              return GrafikStili.yEtiketi(eksenBicimi.format(value).trim(),
+              return GrafikStili.yEtiketi(
+                  eksenBicimi.format(fromY(value)).trim(),
                   stil: GrafikStili.eksenYazisi(context));
             },
           ),
@@ -283,6 +409,24 @@ class FiyatGrafigi extends StatelessWidget {
     );
   }
 
+  /// Crosshair'ın altındaki mum: [x]'i kovasında taşıyan, yoksa merkezi en
+  /// yakın olan (varlık detayıyla aynı kural).
+  Mum? _imlectekiMum(double x) {
+    final mumlar = katmanlar?.mumlar ?? const <Mum>[];
+    if (mumlar.isEmpty) return null;
+    Mum? en;
+    var fark = double.infinity;
+    for (final m in mumlar) {
+      if (x >= m.x && x < m.x + m.kovaMs) return m;
+      final f = (m.merkezX - x).abs();
+      if (f < fark) {
+        fark = f;
+        en = m;
+      }
+    }
+    return en;
+  }
+
   /// Viewport'a düşen noktalar, kenarların bir dışındaki dahil — seyreltme
   /// YOK (sıklık `ResolutionTierMeta.pickForSpan`'den gelir, bkz.
   /// `PercentComparisonChart._gorunurSpots`).
@@ -310,4 +454,41 @@ Set<double> donemUclariX(List<FlSpot> spots) {
     if (s.y < alt.y) alt = s;
   }
   return {ust.x, alt.x};
+}
+
+/// [FiyatGrafigi]'nin katmanları. X her yerde grafiğin X'i (epoch ms), Y
+/// HAM fiyat — LOG dönüşümünü grafik yapar.
+class FiyatKatmanlari {
+  const FiyatKatmanlari({
+    this.log = false,
+    this.mumlar = const [],
+    this.ortalamalar = const [],
+    this.ozelCizim,
+    this.ozelBant,
+  });
+
+  final bool log;
+
+  /// Boş değilse çizginin yerine çizilir.
+  final List<Mum> mumlar;
+
+  final List<FiyatOrtalamasi> ortalamalar;
+
+  /// Kendi göstergenin çubukları ve dolguları (`fiyatUstuCizimleri`);
+  /// ikinci argüman bu çubuklardan önceki çubuk sayısı.
+  final ({List<LineChartBarData> bars, List<BetweenBarsData> dolgular})
+      Function(double Function(double) toY, int ofset)? ozelCizim;
+
+  /// Kendi göstergenin Y bandına girecek noktaları.
+  final List<FlSpot> Function(double Function(double) toY)? ozelBant;
+}
+
+/// Hareketli ortalama çizgisi (MA20 kesikli gri; EMA50 yeşil, EMA200
+/// kırmızı — çipteki renkle aynı, çip lejanttır).
+class FiyatOrtalamasi {
+  const FiyatOrtalamasi(
+      {required this.spots, required this.cizgiRengi, this.kesikli = false});
+  final List<FlSpot> spots;
+  final Color cizgiRengi;
+  final bool kesikli;
 }

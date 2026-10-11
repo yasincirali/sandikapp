@@ -10,6 +10,7 @@ import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import 'sandik_async_button.dart';
+import 'sinir_uyarisi.dart';
 
 /// Takibe al / takipten çıkar — varlık sayfasıyla portföy varlık detayının
 /// ORTAK eylemi.
@@ -62,8 +63,7 @@ Future<void> _takibeAl(BuildContext context, WidgetRef ref,
     await notifier.add(k.toWatchlistItem(userId: user.id));
   } on WatchlistLimitException catch (e) {
     if (!context.mounted) return;
-    sandikSnack(context, context.l10n.watchlistLimitReached(e.limit),
-        kind: SandikSnackKind.warning);
+    takipSiniriUyarisi(context, ref, e.limit);
   }
 }
 

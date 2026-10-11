@@ -168,7 +168,7 @@ void main() {
           _fakeAsset(type),
           entry.value,
           enabledIds: indicatorIds.toSet(),
-          premiumUnlocked: true,
+          izinli: IndicatorId.all.toSet(),
         );
         final s = TechnicalAnalysisService.summarize(inds);
         expect(s.confidence, inRange(0, 100),
