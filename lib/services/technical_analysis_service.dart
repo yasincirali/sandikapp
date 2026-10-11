@@ -3,6 +3,41 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/technical_signal.dart';
 import '../utils/tr_format.dart';
+import 'history_service.dart' show ResolutionTier;
+
+/// Teknik göstergelerin istediği fiyat penceresi (gün).
+///
+/// ## 2026-09-10: neden 90'a inilmişti
+/// 180 gün istemek göstergeleri TAMAMEN devre dışı bırakıyordu — hem
+/// hisselerde hem fonlarda (ölçüldü 2026-09-10: THYAO 26 nokta, TEFAS:DPP
+/// 26 nokta, eşik 30). Sebep pencerenin kendisi değil, `HistoryService`in
+/// çözünürlük merdiveni: 180 gün HAFTALIK katmana düşüyor ve 125 günlük
+/// nokta 26 haftalık kovaya iniyor.
+///
+/// Panel ise GÜNLÜK seri varsayıyor: MACD 26, Bollinger 20, ADX 2×14
+/// nokta ister ve bunlar GÜN cinsinden düşünülmüştür. Haftalık kovalarda
+/// 26 nokta yarım yıl değil, yarım yıllık **6 aylık** bir pencereye
+/// karşılık gelir ve eşiğin altında kalır.
+///
+/// 90 gün günlük katmanda kalır ve 63 nokta verir (ölçüldü) — en uzun
+/// göstergenin (ADX, 28) iki katından fazla.
+///
+/// Şerit ve panel AYNI değeri kullanmak zorunda: ikisi `HistoryService`
+/// önbelleğini paylaşıyor ve farklı pencere isterlerse aynı varlık için
+/// FARKLI sinyal gösterebilirler (bkz. `varlik_sinyal_karti_test.dart`).
+///
+/// ## 2026-10-11: 180 gün, çözünürlük AÇIKÇA günlük
+/// 90 gün ≈ 63 işlem günüydü; sunucu (push) 6 ay ≈ 125 gün görüyordu. EMA
+/// 3×periyot geriye baktığı için EMA50 iki tarafta farklı çıkıyor, ekran ile
+/// bildirim günlerin ~%7'sinde farklı EMA kesişimi söylüyordu ve Premium'da
+/// EMA uzun 64+ hiç hesaplanamıyordu (denetim bulgu 8). Yukarıdaki engel
+/// (180 → haftalık katman) [kSinyalCozunurlugu] ile kalktı: pencere
+/// sunucuyla aynı, katman günlük.
+const int kSinyalPenceresiGun = 180;
+
+/// Sinyal serisinin katmanı — pencere ne olursa olsun GÜNLÜK kapanış.
+/// Göstergeler gün cinsinden düşünülmüştür; push da günlük seriyle çalışır.
+const ResolutionTier kSinyalCozunurlugu = ResolutionTier.daily;
 
 /// Gösterge kimlikleri — per-category seçim ve Premium kapısı için stable key.
 ///
@@ -44,6 +79,13 @@ class IndicatorId {
   /// yapmıyordu, "ölü anahtar" bulgusu). Paywall açıkken Premium'dadır.
   static const ileri = <String>{adx, williamsR, cci};
 
+  /// Ortalamaya dönüş (aşırılık) göstergeleri: "al" oyu "çok düştü",
+  /// "sat" oyu "çok yükseldi" demektir, trend yönü değil. Kalanlar (MACD,
+  /// EMA kesişimi, trend gücü) trend göstergesidir. Özet bu ayrımla
+  /// etiketlenir (denetim 2026-10-11, bulgu 1: sert düşüşte kart "YUKARI
+  /// TREND" diyordu). Sunucu eşi `DONUS_INDICATORS`.
+  static const donus = <String>{rsi, bollinger, stochastic, williamsR, cci};
+
   /// Bu kullanıcıda HESAPLANAN göstergeler.
   ///
   /// * Paywall kapalı: ileri üçü hariç beşi (birebir eski davranış).
@@ -81,7 +123,9 @@ class IndicatorId {
       case stochastic:
         return 'Stokastik Osilatör';
       case adx:
-        return 'ADX (Yön Endeksi)';
+        // Formül gerçek ADX değil (bkz. [TechnicalAnalysisService.adx]);
+        // kimlik kayıtlı ayarlar bozulmasın diye 'adx' kalır.
+        return 'Trend Gücü (verim oranı)';
       case williamsR:
         return 'Williams %R';
       case cci:
@@ -114,8 +158,10 @@ class GostergeParametresi {
 /// Neden yalnız pencere uzunlukları: göstergelerin eşikleri (RSI 70/30,
 /// CCI ±100) yorumun kendisidir ve türüne göre zaten ayarlı; kullanıcıya
 /// açılan şey TradingView'deki "Length" alanının karşılığı. Sınırlar sinyal
-/// penceresine (180 gün) sığacak biçimde dar: 200 günlük RSI'ın seride
-/// tek noktası kalmazdı.
+/// penceresine sığacak biçimde dar: panel ve sunucu ~6 aylık GÜNLÜK seri
+/// görür (≈120 işlem günü). EMA uzun 120 ve MACD 100+50 bu pencerede hiç
+/// hesaplanamıyordu (denetim 2026-10-11, bulgu 8) → uzun ≤100, yavaş ≤80,
+/// sinyal ≤30.
 class GostergeParametreleri {
   GostergeParametreleri._();
 
@@ -123,15 +169,15 @@ class GostergeParametreleri {
     IndicatorId.rsi: [GostergeParametresi('periyot', 'Periyot', enAz: 2, enCok: 50)],
     IndicatorId.macd: [
       GostergeParametresi('hizli', 'Hızlı', enAz: 2, enCok: 50),
-      GostergeParametresi('yavas', 'Yavaş', enAz: 3, enCok: 100),
-      GostergeParametresi('sinyal', 'Sinyal', enAz: 2, enCok: 50),
+      GostergeParametresi('yavas', 'Yavaş', enAz: 3, enCok: 80),
+      GostergeParametresi('sinyal', 'Sinyal', enAz: 2, enCok: 30),
     ],
     IndicatorId.bollinger: [
       GostergeParametresi('periyot', 'Periyot', enAz: 5, enCok: 60)
     ],
     IndicatorId.ema: [
       GostergeParametresi('kisa', 'Kısa', enAz: 2, enCok: 60),
-      GostergeParametresi('uzun', 'Uzun', enAz: 3, enCok: 120),
+      GostergeParametresi('uzun', 'Uzun', enAz: 3, enCok: 100),
     ],
     IndicatorId.stochastic: [
       GostergeParametresi('periyot', 'Periyot', enAz: 3, enCok: 50)
@@ -265,21 +311,39 @@ class TechnicalAnalysisService {
           description: 'Yetersiz veri');
     }
 
-    double gains = 0, losses = 0;
-    for (int i = prices.length - period; i < prices.length; i++) {
+    // Wilder RSI (TradingView `ta.rsi`): ilk [period] değişimin basit
+    // ortalaması tohum, sonra RMA (α = 1/period) bütün seri boyunca.
+    // 2026-10-11 denetimine kadar yalnız son [period] değişimin basit
+    // ortalaması alınıyordu (Cutler RSI): TradingView'den ortalama 6,5 puan
+    // farklıydı ve uygulamanın kendi Pine RSI şablonuyla (`pine_ta.dart`
+    // `ta.rsi`) aynı ekranda çelişiyordu (bulgu 4). TS portu birebir.
+    double avgG = 0, avgL = 0;
+    for (int i = 1; i <= period; i++) {
       final d = prices[i] - prices[i - 1];
       if (d > 0) {
-        gains += d;
+        avgG += d;
       } else {
-        losses -= d;
+        avgL -= d;
       }
     }
-    final avgG = gains / period;
-    final avgL = losses / period;
-    final value = avgL == 0 ? 100.0 : 100 - (100 / (1 + avgG / avgL));
+    avgG /= period;
+    avgL /= period;
+    for (int i = period + 1; i < prices.length; i++) {
+      final d = prices[i] - prices[i - 1];
+      avgG = (avgG * (period - 1) + (d > 0 ? d : 0)) / period;
+      avgL = (avgL * (period - 1) + (d < 0 ? -d : 0)) / period;
+    }
+    final value = avgL == 0
+        ? 100.0
+        : avgG == 0
+            ? 0.0
+            : 100 - (100 / (1 + avgG / avgL));
 
-    final overbought = type == AssetType.hisse ? 70.0 : 72.0;
-    final oversold = type == AssetType.hisse ? 30.0 : 28.0;
+    // Eşik her türde 70/30 (TradingView varsayılanı, RSI şablonunun
+    // çizgileri). Hisse dışı 72/28 basit RSI'ın oynaklığını bastırmak
+    // içindi; Wilder RSI'da gerekmez.
+    const overbought = 70.0;
+    const oversold = 30.0;
 
     final signal = value < oversold
         ? SignalType.buy
@@ -332,10 +396,14 @@ class TechnicalAnalysisService {
             ? SignalType.sell
             : SignalType.neutral;
 
+    // Histogram fiyatın YÜZDESİYLE yazılır: ham fark ₺1'lik fonda
+    // "+0,00", altın push'unda dolar/ons olurdu (denetim bulgu 12).
+    final son = prices.last;
+    final yuzde = son != 0 ? histogram / son * 100 : 0.0;
     final desc = histogram > 0
-        ? 'MACD çizgisi sinyal üzerinde (+${fmtNum(histogram, digits: 2)})'
+        ? 'MACD çizgisi sinyal üzerinde (+%${fmtNum(yuzde, digits: 2)})'
         : histogram < 0
-            ? 'MACD çizgisi sinyal altında (${fmtNum(histogram, digits: 2)})'
+            ? 'MACD çizgisi sinyal altında (-%${fmtNum(-yuzde, digits: 2)})'
             : 'Kesişim noktasında';
 
     return TechnicalIndicator(
@@ -378,9 +446,9 @@ class TechnicalAnalysisService {
             : SignalType.neutral;
 
     final desc = current < lower
-        ? 'Alt bantın altında: potansiyel dönüş'
+        ? 'Alt bandın altında: potansiyel dönüş'
         : current > upper
-            ? 'Üst bantın üzerinde: potansiyel düzeltme'
+            ? 'Üst bandın üzerinde: potansiyel düzeltme'
             : '%B: ${fmtNum(pctB * 100, digits: 0)} (bant içi)';
 
     return TechnicalIndicator(
@@ -492,15 +560,18 @@ class TechnicalAnalysisService {
         name: label, value: k, signal: signal, description: desc);
   }
 
-  // ── 6. ADX — trend gücü (PREMIUM) ─────────────────────────────────────────
+  // ── 6. Trend gücü (kimlik 'adx', PREMIUM) ─────────────────────────────────
   //
-  // Basitleştirilmiş ADX: |ΔP| ortalamasının fiyat range'ine oranı. Klasik ADX
-  // için OHLC gerekli; bizde sadece close var — proxy hesap kullanılır.
+  // |Σyükseliş − Σdüşüş| ÷ Σ|değişim| — Kaufman verim oranı. Gerçek ADX
+  // yüksek/düşük, +DI/−DI ve Wilder yumuşatması ister ve yön VERMEZ; sunucu
+  // yalnız kapanış tuttuğu için bu yaklaşım kalır. "ADX" diye etiketlenince
+  // TradingView'deki ADX ile karıştırılıyordu (denetim 2026-10-11, bulgu 6)
+  // → ad "Trend Gücü". Gerçek ADX'e geçiş TECHNICAL_DEBT.md'de.
 
   static TechnicalIndicator adx(List<double> prices, AssetType type,
       {GostergeAyari? par}) {
     final period = par?['periyot'] ?? 14;
-    final label = 'ADX ($period)';
+    final label = 'Trend Gücü ($period)';
 
     if (prices.length < period + 1) {
       return TechnicalIndicator(
@@ -701,6 +772,18 @@ class TechnicalAnalysisService {
 
   static TechnicalIndicator? _computeById(
       String id, List<double> prices, AssetType type, GostergeAyari? par) {
+    final ind = _hesapla(id, prices, type, par);
+    if (ind == null) return null;
+    return TechnicalIndicator(
+        id: id,
+        name: ind.name,
+        value: ind.value,
+        signal: ind.signal,
+        description: ind.description);
+  }
+
+  static TechnicalIndicator? _hesapla(
+      String id, List<double> prices, AssetType type, GostergeAyari? par) {
     switch (id) {
       case IndicatorId.rsi:
         return rsi(prices, type, par: par);
@@ -785,18 +868,42 @@ class TechnicalAnalysisService {
   /// Not: bu değer önceden 0..1 oranı dönüyordu ve `signal_provider`
   /// içindeki `confidence < threshold` kontrolü her zaman doğru oluyordu —
   /// yani hiçbir sinyal eşiği geçemiyor, push hiç gönderilmiyordu.
-  static ({SignalType signal, int buyCount, int sellCount, double confidence})
-      summarize(List<TechnicalIndicator> indicators) {
-    final buy = indicators.where((i) => i.signal == SignalType.buy).length;
-    final sell = indicators.where((i) => i.signal == SignalType.sell).length;
-    final total = indicators.length;
+  ///
+  /// Williams %R, Stokastik ile birlikte açıksa SAYILMAZ: ikisi de
+  /// kapanıştan aynı pencerenin uçlarına bakar (W%R = %K − 100), aynı bilgi
+  /// iki oy olup güveni şişiriyordu (denetim 2026-10-11, bulgu 5). Panel iki
+  /// satırı da göstermeye devam eder.
+  ///
+  /// [donus]: kazanan yönün oylarının çoğu ortalamaya dönüş göstergelerinden
+  /// ([IndicatorId.donus]) geliyorsa true. O durumda "al" aşırı satım, "sat"
+  /// aşırı alım demektir; ekran ve push bunu trend yönü diye yazmaz (bulgu 1).
+  /// [toplam]: oylamaya giren gösterge sayısı, güven yüzdesinin paydası.
+  /// TS portu (`summarize`) birebir.
+  static ({
+    SignalType signal,
+    int buyCount,
+    int sellCount,
+    double confidence,
+    bool donus,
+    int toplam,
+  }) summarize(List<TechnicalIndicator> indicators) {
+    final stokastikVar =
+        indicators.any((i) => i.id == IndicatorId.stochastic);
+    final sayilan = stokastikVar
+        ? indicators.where((i) => i.id != IndicatorId.williamsR).toList()
+        : indicators;
+    final buy = sayilan.where((i) => i.signal == SignalType.buy).length;
+    final sell = sayilan.where((i) => i.signal == SignalType.sell).length;
+    final total = sayilan.length;
 
     if (total == 0) {
       return (
         signal: SignalType.neutral,
         buyCount: 0,
         sellCount: 0,
-        confidence: 0.0
+        confidence: 0.0,
+        donus: false,
+        toplam: 0,
       );
     }
     final buyRatio = buy / total;
@@ -810,11 +917,22 @@ class TechnicalAnalysisService {
 
     final confidence = max(buyRatio, sellRatio) * 100;
 
+    var donus = false;
+    if (signal != SignalType.neutral) {
+      final lehte = sayilan.where((i) => i.signal == signal).toList();
+      final d = lehte
+          .where((i) => i.id != null && IndicatorId.donus.contains(i.id))
+          .length;
+      donus = d > lehte.length - d;
+    }
+
     return (
       signal: signal,
       buyCount: buy,
       sellCount: sell,
-      confidence: confidence
+      confidence: confidence,
+      donus: donus,
+      toplam: total,
     );
   }
 }

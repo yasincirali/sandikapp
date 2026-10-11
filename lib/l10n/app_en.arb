@@ -1826,7 +1826,11 @@
   "trendUp": "UPTREND",
   "trendDown": "DOWNTREND",
   "trendFlat": "FLAT",
-  "indicatorsConfidence": "{lehte}/{total} directional indicators · {pct}% confidence",
+  "sinyalAsiriSatim": "OVERSOLD",
+  "@sinyalAsiriSatim": {"description": "Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı satım bölgesinde (trend yönü değil)."},
+  "sinyalAsiriAlim": "OVERBOUGHT",
+  "@sinyalAsiriAlim": {"description": "Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı alım bölgesinde (trend yönü değil)."},
+  "indicatorsConfidence": "{lehte}/{total} indicators agree · {pct}% confidence",
   "@indicatorsConfidence": {
     "placeholders": {
       "lehte": {
@@ -1848,7 +1852,7 @@
       }
     }
   },
-  "technicalOutlookUpper": "TECHNICAL OUTLOOK",
+  "technicalOutlookUpper": "TECHNICAL OUTLOOK · DAILY",
   "nowUpper": "NOW",
   "arrowUp": "▲ up",
   "arrowDown": "▼ down",
@@ -1856,7 +1860,7 @@
   "indicatorsCalculating": "Calculating indicators…",
   "indicatorsNoHistory": "This asset's price history could not be fetched, so indicators cannot be calculated.",
   "noIndicatorsSelected": "No indicators are selected for this asset type. Enable them from Profile → Signal Settings.",
-  "technicalAnalysisUpper": "TECHNICAL ANALYSIS",
+  "technicalAnalysisUpper": "TECHNICAL ANALYSIS · DAILY",
   "nOfMIndicators": "· {on}/{all} indicators on",
   "@nOfMIndicators": {
     "placeholders": {
@@ -1869,7 +1873,7 @@
     }
   },
   "configureIndicators": "Configure Indicators",
-  "buySellNeutralCounts": "{buy} BUY · {sell} SELL · {neutral} NEUTRAL",
+  "buySellNeutralCounts": "{buy} up · {sell} down · {neutral} neutral",
   "@buySellNeutralCounts": {
     "placeholders": {
       "buy": {
@@ -4559,7 +4563,7 @@
   "sgnPremiumAktif": "Premium signals on",
   "sgnPremiumAktifGovde": "All eight indicators, period settings and alerts are on.",
   "sgnPremiumKilitBaslik": "Premium indicators",
-  "sgnPremiumKilitGovde": "EMA Crossover, Stochastic, ADX, Williams %R and CCI join the analysis with Premium. RSI, MACD and Bollinger are free.",
+  "sgnPremiumKilitGovde": "EMA Crossover, Stochastic, Trend Strength, Williams %R and CCI join the analysis with Premium. RSI, MACD and Bollinger are free.",
   "sgnPremiumGec": "Go Premium",
   "pwOzSinirsiz": "Unlimited assets of every type",
   "pwOzKarsilastir": "Up to 5 series in Compare",
@@ -5080,7 +5084,7 @@
   "@varlikGuncelleOnayBaslik": {"placeholders": {"n": {"type": "int"}}},
   "varlikGuncelleOnayGovde": "{n, plural, =1{\"{name}\" will be deleted and added again with these details. This can't be undone.} other{{n} transactions of \"{name}\" will be deleted and replaced by a single record with these details. This can't be undone.}}",
   "@varlikGuncelleOnayGovde": {"placeholders": {"name": {"type": "String"}, "n": {"type": "int"}}},
-  "sgnPremiumGostergeSatiri": "EMA, Stochastic, ADX, Williams %R, CCI and unlimited alerts in Premium",
+  "sgnPremiumGostergeSatiri": "EMA, Stochastic, Trend Strength, Williams %R, CCI and unlimited alerts in Premium",
   "sgnAyarAciklamaUcretsiz": "Pick which indicators produce signals for each asset type. RSI, MACD and Bollinger are free, with one alert a day.",
   "sgnParametreAciklama": "For {tur}. The value you set is used on screen and in alerts.",
   "sgnParametreSiraHatasi": "The short/fast value must be smaller than the long/slow value.",

@@ -138,7 +138,7 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -152,7 +152,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": 6.833713,
           "signal": "buy",
-          "description": "EMA20 > EMA50 — yükseliş trendi"
+          "description": "EMA20 > EMA50: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -163,7 +163,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "buy",
           "description": "Güçlü trend (100)"
@@ -184,10 +184,11 @@
         }
       ],
       "summary": {
-        "signal": "sell",
+        "signal": "neutral",
         "buyCount": 2,
-        "sellCount": 5,
-        "confidence": 62.5
+        "sellCount": 4,
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -328,7 +329,7 @@
           "name": "MACD (8,21,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -342,7 +343,7 @@
           "name": "EMA Kesişim (10/30)",
           "value": 4.357298,
           "signal": "buy",
-          "description": "EMA10 > EMA30 — yükseliş trendi"
+          "description": "EMA10 > EMA30: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -353,7 +354,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "buy",
           "description": "Güçlü trend (100)"
@@ -374,10 +375,11 @@
         }
       ],
       "summary": {
-        "signal": "sell",
+        "signal": "neutral",
         "buyCount": 2,
-        "sellCount": 5,
-        "confidence": 62.5
+        "sellCount": 4,
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -518,7 +520,7 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -532,7 +534,7 @@
           "name": "EMA Kesişim (14/40)",
           "value": 5.790646,
           "signal": "buy",
-          "description": "EMA14 > EMA40 — yükseliş trendi"
+          "description": "EMA14 > EMA40: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -543,7 +545,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "buy",
           "description": "Güçlü trend (100)"
@@ -564,10 +566,11 @@
         }
       ],
       "summary": {
-        "signal": "sell",
+        "signal": "neutral",
         "buyCount": 2,
-        "sellCount": 5,
-        "confidence": 62.5
+        "sellCount": 4,
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -708,21 +711,21 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 1.5σ)",
           "value": 104.916965,
           "signal": "sell",
-          "description": "Üst bantın üzerinde — potansiyel düzeltme"
+          "description": "Üst bandın üzerinde: potansiyel düzeltme"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (7/21)",
           "value": 2.991453,
           "signal": "buy",
-          "description": "EMA7 > EMA21 — yükseliş trendi"
+          "description": "EMA7 > EMA21: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -733,7 +736,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "buy",
           "description": "Güçlü trend (100)"
@@ -756,8 +759,9 @@
       "summary": {
         "signal": "sell",
         "buyCount": 2,
-        "sellCount": 6,
-        "confidence": 75.0
+        "sellCount": 5,
+        "confidence": 71.428571,
+        "donus": true
       }
     },
     {
@@ -898,7 +902,7 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -912,7 +916,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": 6.833713,
           "signal": "buy",
-          "description": "EMA20 > EMA50 — yükseliş trendi"
+          "description": "EMA20 > EMA50: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -923,7 +927,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "buy",
           "description": "Güçlü trend (100)"
@@ -944,10 +948,11 @@
         }
       ],
       "summary": {
-        "signal": "sell",
+        "signal": "neutral",
         "buyCount": 2,
-        "sellCount": 5,
-        "confidence": 62.5
+        "sellCount": 4,
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -1088,7 +1093,7 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -1102,7 +1107,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": -11.744237,
           "signal": "sell",
-          "description": "EMA20 < EMA50 — düşüş trendi"
+          "description": "EMA20 < EMA50: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -1113,7 +1118,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "sell",
           "description": "Güçlü trend (100)"
@@ -1135,9 +1140,10 @@
       ],
       "summary": {
         "signal": "neutral",
-        "buyCount": 4,
+        "buyCount": 3,
         "sellCount": 3,
-        "confidence": 50.0
+        "confidence": 42.857143,
+        "donus": false
       }
     },
     {
@@ -1278,7 +1284,7 @@
           "name": "MACD (8,21,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -1292,7 +1298,7 @@
           "name": "EMA Kesişim (10/30)",
           "value": -8.494573,
           "signal": "sell",
-          "description": "EMA10 < EMA30 — düşüş trendi"
+          "description": "EMA10 < EMA30: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -1303,7 +1309,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "sell",
           "description": "Güçlü trend (100)"
@@ -1325,9 +1331,10 @@
       ],
       "summary": {
         "signal": "neutral",
-        "buyCount": 4,
+        "buyCount": 3,
         "sellCount": 3,
-        "confidence": 50.0
+        "confidence": 42.857143,
+        "donus": false
       }
     },
     {
@@ -1468,7 +1475,7 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -1482,7 +1489,7 @@
           "name": "EMA Kesişim (14/40)",
           "value": -10.593029,
           "signal": "sell",
-          "description": "EMA14 < EMA40 — düşüş trendi"
+          "description": "EMA14 < EMA40: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -1493,7 +1500,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "sell",
           "description": "Güçlü trend (100)"
@@ -1515,9 +1522,10 @@
       ],
       "summary": {
         "signal": "neutral",
-        "buyCount": 4,
+        "buyCount": 3,
         "sellCount": 3,
-        "confidence": 50.0
+        "confidence": 42.857143,
+        "donus": false
       }
     },
     {
@@ -1658,21 +1666,21 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 1.5σ)",
           "value": -4.916965,
           "signal": "buy",
-          "description": "Alt bantın altında — potansiyel dönüş"
+          "description": "Alt bandın altında: potansiyel dönüş"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (7/21)",
           "value": -6.182532,
           "signal": "sell",
-          "description": "EMA7 < EMA21 — düşüş trendi"
+          "description": "EMA7 < EMA21: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -1683,7 +1691,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "sell",
           "description": "Güçlü trend (100)"
@@ -1704,10 +1712,11 @@
         }
       ],
       "summary": {
-        "signal": "buy",
-        "buyCount": 5,
+        "signal": "neutral",
+        "buyCount": 4,
         "sellCount": 3,
-        "confidence": 62.5
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -1848,7 +1857,7 @@
           "name": "MACD (12,26,9)",
           "value": -0.0,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,00)"
+          "description": "MACD çizgisi sinyal altında (-%0,00)"
         },
         {
           "id": "bollinger",
@@ -1862,7 +1871,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": -11.744237,
           "signal": "sell",
-          "description": "EMA20 < EMA50 — düşüş trendi"
+          "description": "EMA20 < EMA50: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -1873,7 +1882,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 100.0,
           "signal": "sell",
           "description": "Güçlü trend (100)"
@@ -1895,9 +1904,10 @@
       ],
       "summary": {
         "signal": "neutral",
-        "buyCount": 4,
+        "buyCount": 3,
         "sellCount": 3,
-        "confidence": 50.0
+        "confidence": 42.857143,
+        "donus": false
       }
     },
     {
@@ -2063,7 +2073,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yatay (trend yok)"
@@ -2087,7 +2097,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 1,
-        "confidence": 12.5
+        "confidence": 14.285714,
+        "donus": false
       }
     },
     {
@@ -2242,7 +2253,7 @@
           "name": "EMA Kesişim (10/30)",
           "value": -0.0,
           "signal": "neutral",
-          "description": "EMA10 < EMA30, fiyat EMA10 üstünde — teyit yok"
+          "description": "EMA10 < EMA30, fiyat EMA10 üstünde, teyit yok"
         },
         {
           "id": "stochastic",
@@ -2253,7 +2264,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yatay (trend yok)"
@@ -2277,7 +2288,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 1,
-        "confidence": 12.5
+        "confidence": 14.285714,
+        "donus": false
       }
     },
     {
@@ -2443,7 +2455,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yatay (trend yok)"
@@ -2467,7 +2479,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 1,
-        "confidence": 12.5
+        "confidence": 14.285714,
+        "donus": false
       }
     },
     {
@@ -2622,7 +2635,7 @@
           "name": "EMA Kesişim (7/21)",
           "value": 0.0,
           "signal": "neutral",
-          "description": "EMA7 > EMA21, fiyat EMA7 altında — teyit yok"
+          "description": "EMA7 > EMA21, fiyat EMA7 altında, teyit yok"
         },
         {
           "id": "stochastic",
@@ -2633,7 +2646,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yatay (trend yok)"
@@ -2657,7 +2670,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 1,
-        "confidence": 12.5
+        "confidence": 14.285714,
+        "donus": false
       }
     },
     {
@@ -2823,7 +2837,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yatay (trend yok)"
@@ -2847,7 +2861,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 1,
-        "confidence": 12.5
+        "confidence": 14.285714,
+        "donus": false
       }
     },
     {
@@ -2979,16 +2994,16 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 30.273441,
+          "value": 50.276055,
           "signal": "neutral",
-          "description": "Nötr bölge (30,3)"
+          "description": "Nötr bölge (50,3)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": -0.682385,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,68)"
+          "description": "MACD çizgisi sinyal altında (-%0,72)"
         },
         {
           "id": "bollinger",
@@ -3002,7 +3017,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": -4.362156,
           "signal": "neutral",
-          "description": "EMA20 < EMA50, fiyat EMA20 üstünde — teyit yok"
+          "description": "EMA20 < EMA50, fiyat EMA20 üstünde, teyit yok"
         },
         {
           "id": "stochastic",
@@ -3013,7 +3028,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 39.453117,
           "signal": "sell",
           "description": "Trend başlıyor (39)"
@@ -3037,7 +3052,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 2,
-        "confidence": 25.0
+        "confidence": 28.571429,
+        "donus": false
       }
     },
     {
@@ -3169,16 +3185,16 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 30.273441,
+          "value": 50.276055,
           "signal": "neutral",
-          "description": "Nötr bölge (30,3)"
+          "description": "Nötr bölge (50,3)"
         },
         {
           "id": "macd",
           "name": "MACD (8,21,9)",
           "value": 0.73726,
           "signal": "buy",
-          "description": "MACD çizgisi sinyal üzerinde (+0,74)"
+          "description": "MACD çizgisi sinyal üzerinde (+%0,78)"
         },
         {
           "id": "bollinger",
@@ -3192,7 +3208,7 @@
           "name": "EMA Kesişim (10/30)",
           "value": -6.042543,
           "signal": "neutral",
-          "description": "EMA10 < EMA30, fiyat EMA10 üstünde — teyit yok"
+          "description": "EMA10 < EMA30, fiyat EMA10 üstünde, teyit yok"
         },
         {
           "id": "stochastic",
@@ -3203,7 +3219,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 39.453117,
           "signal": "sell",
           "description": "Trend başlıyor (39)"
@@ -3227,7 +3243,8 @@
         "signal": "neutral",
         "buyCount": 1,
         "sellCount": 1,
-        "confidence": 12.5
+        "confidence": 14.285714,
+        "donus": false
       }
     },
     {
@@ -3359,16 +3376,16 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 30.273441,
+          "value": 50.276055,
           "signal": "neutral",
-          "description": "Nötr bölge (30,3)"
+          "description": "Nötr bölge (50,3)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": -0.682385,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,68)"
+          "description": "MACD çizgisi sinyal altında (-%0,72)"
         },
         {
           "id": "bollinger",
@@ -3382,7 +3399,7 @@
           "name": "EMA Kesişim (14/40)",
           "value": -5.338262,
           "signal": "neutral",
-          "description": "EMA14 < EMA40, fiyat EMA14 üstünde — teyit yok"
+          "description": "EMA14 < EMA40, fiyat EMA14 üstünde, teyit yok"
         },
         {
           "id": "stochastic",
@@ -3393,7 +3410,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 39.453117,
           "signal": "sell",
           "description": "Trend başlıyor (39)"
@@ -3417,7 +3434,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 2,
-        "confidence": 25.0
+        "confidence": 28.571429,
+        "donus": false
       }
     },
     {
@@ -3549,16 +3567,16 @@
         {
           "id": "rsi",
           "name": "RSI (9)",
-          "value": 59.715785,
+          "value": 55.268862,
           "signal": "neutral",
-          "description": "Nötr bölge (59,7)"
+          "description": "Nötr bölge (55,3)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": -0.682385,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,68)"
+          "description": "MACD çizgisi sinyal altında (-%0,72)"
         },
         {
           "id": "bollinger",
@@ -3572,7 +3590,7 @@
           "name": "EMA Kesişim (7/21)",
           "value": -4.895492,
           "signal": "neutral",
-          "description": "EMA7 < EMA21, fiyat EMA7 üstünde — teyit yok"
+          "description": "EMA7 < EMA21, fiyat EMA7 üstünde, teyit yok"
         },
         {
           "id": "stochastic",
@@ -3583,7 +3601,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 39.453117,
           "signal": "sell",
           "description": "Trend başlıyor (39)"
@@ -3607,7 +3625,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 3,
-        "confidence": 37.5
+        "confidence": 42.857143,
+        "donus": false
       }
     },
     {
@@ -3739,16 +3758,16 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 30.273441,
+          "value": 50.276055,
           "signal": "neutral",
-          "description": "Nötr bölge (30,3)"
+          "description": "Nötr bölge (50,3)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": -0.682385,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-0,68)"
+          "description": "MACD çizgisi sinyal altında (-%0,72)"
         },
         {
           "id": "bollinger",
@@ -3762,7 +3781,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": -4.362156,
           "signal": "neutral",
-          "description": "EMA20 < EMA50, fiyat EMA20 üstünde — teyit yok"
+          "description": "EMA20 < EMA50, fiyat EMA20 üstünde, teyit yok"
         },
         {
           "id": "stochastic",
@@ -3773,7 +3792,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 39.453117,
           "signal": "sell",
           "description": "Trend başlıyor (39)"
@@ -3797,7 +3816,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 2,
-        "confidence": 25.0
+        "confidence": 28.571429,
+        "donus": false
       }
     },
     {
@@ -3929,30 +3949,30 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 1.818182,
+          "value": 3.395603,
           "signal": "buy",
-          "description": "Aşırı satım bölgesi (1,8)"
+          "description": "Aşırı satım bölgesi (3,4)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": -5.334894,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-5,33)"
+          "description": "MACD çizgisi sinyal altında (-%7,85)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 2.0σ)",
           "value": -6.151435,
           "signal": "buy",
-          "description": "Alt bantın altında — potansiyel dönüş"
+          "description": "Alt bandın altında: potansiyel dönüş"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (20/50)",
           "value": -7.298146,
           "signal": "sell",
-          "description": "EMA20 < EMA50 — düşüş trendi"
+          "description": "EMA20 < EMA50: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -3963,387 +3983,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
-          "value": 96.363636,
-          "signal": "sell",
-          "description": "Güçlü trend (96)"
-        },
-        {
-          "id": "williams_r",
-          "name": "Williams %R (14)",
-          "value": -100.0,
-          "signal": "buy",
-          "description": "Aşırı satım (-100)"
-        },
-        {
-          "id": "cci",
-          "name": "CCI (20)",
-          "value": -173.337672,
-          "signal": "buy",
-          "description": "Aşırı satım (-173)"
-        }
-      ],
-      "summary": {
-        "signal": "buy",
-        "buyCount": 5,
-        "sellCount": 3,
-        "confidence": 62.5
-      }
-    },
-    {
-      "series": "crash",
-      "type": "fon",
-      "prices": [
-        100.0,
-        100.2,
-        100.4,
-        100.6,
-        100.8,
-        101.0,
-        101.2,
-        101.4,
-        101.6,
-        101.8,
-        102.0,
-        102.2,
-        102.4,
-        102.6,
-        102.8,
-        103.0,
-        103.2,
-        103.4,
-        103.6,
-        103.8,
-        104.0,
-        104.2,
-        104.4,
-        104.6,
-        104.8,
-        105.0,
-        105.2,
-        105.4,
-        105.6,
-        105.8,
-        106.0,
-        106.2,
-        106.4,
-        106.6,
-        106.8,
-        107.0,
-        107.2,
-        107.4,
-        107.6,
-        107.8,
-        108.0,
-        108.2,
-        108.4,
-        108.6,
-        108.8,
-        109.0,
-        109.2,
-        109.4,
-        109.6,
-        109.8,
-        110.0,
-        110.2,
-        110.4,
-        110.6,
-        110.8,
-        111.0,
-        111.2,
-        111.4,
-        111.6,
-        111.8,
-        112.0,
-        112.2,
-        112.4,
-        112.6,
-        112.8,
-        113.0,
-        113.2,
-        113.4,
-        113.6,
-        113.8,
-        114.0,
-        114.2,
-        114.4,
-        114.6,
-        114.8,
-        115.0,
-        115.2,
-        115.4,
-        115.6,
-        115.8,
-        116.0,
-        116.2,
-        116.4,
-        116.6,
-        116.8,
-        117.0,
-        117.2,
-        117.4,
-        117.6,
-        117.8,
-        118.0,
-        118.2,
-        118.4,
-        118.6,
-        118.8,
-        119.0,
-        119.2,
-        119.4,
-        119.6,
-        119.8,
-        120.0,
-        120.2,
-        120.4,
-        120.6,
-        120.8,
-        121.0,
-        121.2,
-        121.4,
-        121.6,
-        121.8,
-        122.0,
-        116.0,
-        110.0,
-        104.0,
-        98.0,
-        92.0,
-        86.0,
-        80.0,
-        74.0,
-        68.0
-      ],
-      "indicators": [
-        {
-          "id": "rsi",
-          "name": "RSI (14)",
-          "value": 1.818182,
-          "signal": "buy",
-          "description": "Aşırı satım bölgesi (1,8)"
-        },
-        {
-          "id": "macd",
-          "name": "MACD (8,21,9)",
-          "value": -6.763631,
-          "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-6,76)"
-        },
-        {
-          "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
-          "value": -6.151435,
-          "signal": "buy",
-          "description": "Alt bantın altında — potansiyel dönüş"
-        },
-        {
-          "id": "ema",
-          "name": "EMA Kesişim (10/30)",
-          "value": -14.437857,
-          "signal": "sell",
-          "description": "EMA10 < EMA30 — düşüş trendi"
-        },
-        {
-          "id": "stochastic",
-          "name": "Stokastik %K (14)",
-          "value": 0.0,
-          "signal": "buy",
-          "description": "Aşırı satım (%K: 0,0)"
-        },
-        {
-          "id": "adx",
-          "name": "ADX (14)",
-          "value": 96.363636,
-          "signal": "sell",
-          "description": "Güçlü trend (96)"
-        },
-        {
-          "id": "williams_r",
-          "name": "Williams %R (14)",
-          "value": -100.0,
-          "signal": "buy",
-          "description": "Aşırı satım (-100)"
-        },
-        {
-          "id": "cci",
-          "name": "CCI (20)",
-          "value": -173.337672,
-          "signal": "buy",
-          "description": "Aşırı satım (-173)"
-        }
-      ],
-      "summary": {
-        "signal": "buy",
-        "buyCount": 5,
-        "sellCount": 3,
-        "confidence": 62.5
-      }
-    },
-    {
-      "series": "crash",
-      "type": "altin",
-      "prices": [
-        100.0,
-        100.2,
-        100.4,
-        100.6,
-        100.8,
-        101.0,
-        101.2,
-        101.4,
-        101.6,
-        101.8,
-        102.0,
-        102.2,
-        102.4,
-        102.6,
-        102.8,
-        103.0,
-        103.2,
-        103.4,
-        103.6,
-        103.8,
-        104.0,
-        104.2,
-        104.4,
-        104.6,
-        104.8,
-        105.0,
-        105.2,
-        105.4,
-        105.6,
-        105.8,
-        106.0,
-        106.2,
-        106.4,
-        106.6,
-        106.8,
-        107.0,
-        107.2,
-        107.4,
-        107.6,
-        107.8,
-        108.0,
-        108.2,
-        108.4,
-        108.6,
-        108.8,
-        109.0,
-        109.2,
-        109.4,
-        109.6,
-        109.8,
-        110.0,
-        110.2,
-        110.4,
-        110.6,
-        110.8,
-        111.0,
-        111.2,
-        111.4,
-        111.6,
-        111.8,
-        112.0,
-        112.2,
-        112.4,
-        112.6,
-        112.8,
-        113.0,
-        113.2,
-        113.4,
-        113.6,
-        113.8,
-        114.0,
-        114.2,
-        114.4,
-        114.6,
-        114.8,
-        115.0,
-        115.2,
-        115.4,
-        115.6,
-        115.8,
-        116.0,
-        116.2,
-        116.4,
-        116.6,
-        116.8,
-        117.0,
-        117.2,
-        117.4,
-        117.6,
-        117.8,
-        118.0,
-        118.2,
-        118.4,
-        118.6,
-        118.8,
-        119.0,
-        119.2,
-        119.4,
-        119.6,
-        119.8,
-        120.0,
-        120.2,
-        120.4,
-        120.6,
-        120.8,
-        121.0,
-        121.2,
-        121.4,
-        121.6,
-        121.8,
-        122.0,
-        116.0,
-        110.0,
-        104.0,
-        98.0,
-        92.0,
-        86.0,
-        80.0,
-        74.0,
-        68.0
-      ],
-      "indicators": [
-        {
-          "id": "rsi",
-          "name": "RSI (14)",
-          "value": 1.818182,
-          "signal": "buy",
-          "description": "Aşırı satım bölgesi (1,8)"
-        },
-        {
-          "id": "macd",
-          "name": "MACD (12,26,9)",
-          "value": -5.334894,
-          "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-5,33)"
-        },
-        {
-          "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
-          "value": 4.159036,
-          "signal": "neutral",
-          "description": "%B: 4 (bant içi)"
-        },
-        {
-          "id": "ema",
-          "name": "EMA Kesişim (14/40)",
-          "value": -11.151649,
-          "signal": "sell",
-          "description": "EMA14 < EMA40 — düşüş trendi"
-        },
-        {
-          "id": "stochastic",
-          "name": "Stokastik %K (14)",
-          "value": 0.0,
-          "signal": "buy",
-          "description": "Aşırı satım (%K: 0,0)"
-        },
-        {
-          "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 96.363636,
           "signal": "sell",
           "description": "Güçlü trend (96)"
@@ -4367,7 +4007,390 @@
         "signal": "neutral",
         "buyCount": 4,
         "sellCount": 3,
-        "confidence": 50.0
+        "confidence": 57.142857,
+        "donus": false
+      }
+    },
+    {
+      "series": "crash",
+      "type": "fon",
+      "prices": [
+        100.0,
+        100.2,
+        100.4,
+        100.6,
+        100.8,
+        101.0,
+        101.2,
+        101.4,
+        101.6,
+        101.8,
+        102.0,
+        102.2,
+        102.4,
+        102.6,
+        102.8,
+        103.0,
+        103.2,
+        103.4,
+        103.6,
+        103.8,
+        104.0,
+        104.2,
+        104.4,
+        104.6,
+        104.8,
+        105.0,
+        105.2,
+        105.4,
+        105.6,
+        105.8,
+        106.0,
+        106.2,
+        106.4,
+        106.6,
+        106.8,
+        107.0,
+        107.2,
+        107.4,
+        107.6,
+        107.8,
+        108.0,
+        108.2,
+        108.4,
+        108.6,
+        108.8,
+        109.0,
+        109.2,
+        109.4,
+        109.6,
+        109.8,
+        110.0,
+        110.2,
+        110.4,
+        110.6,
+        110.8,
+        111.0,
+        111.2,
+        111.4,
+        111.6,
+        111.8,
+        112.0,
+        112.2,
+        112.4,
+        112.6,
+        112.8,
+        113.0,
+        113.2,
+        113.4,
+        113.6,
+        113.8,
+        114.0,
+        114.2,
+        114.4,
+        114.6,
+        114.8,
+        115.0,
+        115.2,
+        115.4,
+        115.6,
+        115.8,
+        116.0,
+        116.2,
+        116.4,
+        116.6,
+        116.8,
+        117.0,
+        117.2,
+        117.4,
+        117.6,
+        117.8,
+        118.0,
+        118.2,
+        118.4,
+        118.6,
+        118.8,
+        119.0,
+        119.2,
+        119.4,
+        119.6,
+        119.8,
+        120.0,
+        120.2,
+        120.4,
+        120.6,
+        120.8,
+        121.0,
+        121.2,
+        121.4,
+        121.6,
+        121.8,
+        122.0,
+        116.0,
+        110.0,
+        104.0,
+        98.0,
+        92.0,
+        86.0,
+        80.0,
+        74.0,
+        68.0
+      ],
+      "indicators": [
+        {
+          "id": "rsi",
+          "name": "RSI (14)",
+          "value": 3.395603,
+          "signal": "buy",
+          "description": "Aşırı satım bölgesi (3,4)"
+        },
+        {
+          "id": "macd",
+          "name": "MACD (8,21,9)",
+          "value": -6.763631,
+          "signal": "sell",
+          "description": "MACD çizgisi sinyal altında (-%9,95)"
+        },
+        {
+          "id": "bollinger",
+          "name": "Bollinger (20, 2.0σ)",
+          "value": -6.151435,
+          "signal": "buy",
+          "description": "Alt bandın altında: potansiyel dönüş"
+        },
+        {
+          "id": "ema",
+          "name": "EMA Kesişim (10/30)",
+          "value": -14.437857,
+          "signal": "sell",
+          "description": "EMA10 < EMA30: düşüş trendi"
+        },
+        {
+          "id": "stochastic",
+          "name": "Stokastik %K (14)",
+          "value": 0.0,
+          "signal": "buy",
+          "description": "Aşırı satım (%K: 0,0)"
+        },
+        {
+          "id": "adx",
+          "name": "Trend Gücü (14)",
+          "value": 96.363636,
+          "signal": "sell",
+          "description": "Güçlü trend (96)"
+        },
+        {
+          "id": "williams_r",
+          "name": "Williams %R (14)",
+          "value": -100.0,
+          "signal": "buy",
+          "description": "Aşırı satım (-100)"
+        },
+        {
+          "id": "cci",
+          "name": "CCI (20)",
+          "value": -173.337672,
+          "signal": "buy",
+          "description": "Aşırı satım (-173)"
+        }
+      ],
+      "summary": {
+        "signal": "neutral",
+        "buyCount": 4,
+        "sellCount": 3,
+        "confidence": 57.142857,
+        "donus": false
+      }
+    },
+    {
+      "series": "crash",
+      "type": "altin",
+      "prices": [
+        100.0,
+        100.2,
+        100.4,
+        100.6,
+        100.8,
+        101.0,
+        101.2,
+        101.4,
+        101.6,
+        101.8,
+        102.0,
+        102.2,
+        102.4,
+        102.6,
+        102.8,
+        103.0,
+        103.2,
+        103.4,
+        103.6,
+        103.8,
+        104.0,
+        104.2,
+        104.4,
+        104.6,
+        104.8,
+        105.0,
+        105.2,
+        105.4,
+        105.6,
+        105.8,
+        106.0,
+        106.2,
+        106.4,
+        106.6,
+        106.8,
+        107.0,
+        107.2,
+        107.4,
+        107.6,
+        107.8,
+        108.0,
+        108.2,
+        108.4,
+        108.6,
+        108.8,
+        109.0,
+        109.2,
+        109.4,
+        109.6,
+        109.8,
+        110.0,
+        110.2,
+        110.4,
+        110.6,
+        110.8,
+        111.0,
+        111.2,
+        111.4,
+        111.6,
+        111.8,
+        112.0,
+        112.2,
+        112.4,
+        112.6,
+        112.8,
+        113.0,
+        113.2,
+        113.4,
+        113.6,
+        113.8,
+        114.0,
+        114.2,
+        114.4,
+        114.6,
+        114.8,
+        115.0,
+        115.2,
+        115.4,
+        115.6,
+        115.8,
+        116.0,
+        116.2,
+        116.4,
+        116.6,
+        116.8,
+        117.0,
+        117.2,
+        117.4,
+        117.6,
+        117.8,
+        118.0,
+        118.2,
+        118.4,
+        118.6,
+        118.8,
+        119.0,
+        119.2,
+        119.4,
+        119.6,
+        119.8,
+        120.0,
+        120.2,
+        120.4,
+        120.6,
+        120.8,
+        121.0,
+        121.2,
+        121.4,
+        121.6,
+        121.8,
+        122.0,
+        116.0,
+        110.0,
+        104.0,
+        98.0,
+        92.0,
+        86.0,
+        80.0,
+        74.0,
+        68.0
+      ],
+      "indicators": [
+        {
+          "id": "rsi",
+          "name": "RSI (14)",
+          "value": 3.395603,
+          "signal": "buy",
+          "description": "Aşırı satım bölgesi (3,4)"
+        },
+        {
+          "id": "macd",
+          "name": "MACD (12,26,9)",
+          "value": -5.334894,
+          "signal": "sell",
+          "description": "MACD çizgisi sinyal altında (-%7,85)"
+        },
+        {
+          "id": "bollinger",
+          "name": "Bollinger (14, 2.0σ)",
+          "value": 4.159036,
+          "signal": "neutral",
+          "description": "%B: 4 (bant içi)"
+        },
+        {
+          "id": "ema",
+          "name": "EMA Kesişim (14/40)",
+          "value": -11.151649,
+          "signal": "sell",
+          "description": "EMA14 < EMA40: düşüş trendi"
+        },
+        {
+          "id": "stochastic",
+          "name": "Stokastik %K (14)",
+          "value": 0.0,
+          "signal": "buy",
+          "description": "Aşırı satım (%K: 0,0)"
+        },
+        {
+          "id": "adx",
+          "name": "Trend Gücü (14)",
+          "value": 96.363636,
+          "signal": "sell",
+          "description": "Güçlü trend (96)"
+        },
+        {
+          "id": "williams_r",
+          "name": "Williams %R (14)",
+          "value": -100.0,
+          "signal": "buy",
+          "description": "Aşırı satım (-100)"
+        },
+        {
+          "id": "cci",
+          "name": "CCI (20)",
+          "value": -173.337672,
+          "signal": "buy",
+          "description": "Aşırı satım (-173)"
+        }
+      ],
+      "summary": {
+        "signal": "neutral",
+        "buyCount": 3,
+        "sellCount": 3,
+        "confidence": 42.857143,
+        "donus": false
       }
     },
     {
@@ -4499,30 +4522,30 @@
         {
           "id": "rsi",
           "name": "RSI (9)",
-          "value": 0.0,
+          "value": 1.736255,
           "signal": "buy",
-          "description": "Aşırı satım bölgesi (0,0)"
+          "description": "Aşırı satım bölgesi (1,7)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": -5.334894,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-5,33)"
+          "description": "MACD çizgisi sinyal altında (-%7,85)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 1.5σ)",
           "value": -24.86858,
           "signal": "buy",
-          "description": "Alt bantın altında — potansiyel dönüş"
+          "description": "Alt bandın altında: potansiyel dönüş"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (7/21)",
           "value": -16.815657,
           "signal": "sell",
-          "description": "EMA7 < EMA21 — düşüş trendi"
+          "description": "EMA7 < EMA21: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -4533,7 +4556,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 96.363636,
           "signal": "sell",
           "description": "Güçlü trend (96)"
@@ -4554,10 +4577,11 @@
         }
       ],
       "summary": {
-        "signal": "buy",
-        "buyCount": 5,
+        "signal": "neutral",
+        "buyCount": 4,
         "sellCount": 3,
-        "confidence": 62.5
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -4689,30 +4713,30 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 1.818182,
+          "value": 3.395603,
           "signal": "buy",
-          "description": "Aşırı satım bölgesi (1,8)"
+          "description": "Aşırı satım bölgesi (3,4)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": -5.334894,
           "signal": "sell",
-          "description": "MACD çizgisi sinyal altında (-5,33)"
+          "description": "MACD çizgisi sinyal altında (-%7,85)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 2.0σ)",
           "value": -6.151435,
           "signal": "buy",
-          "description": "Alt bantın altında — potansiyel dönüş"
+          "description": "Alt bandın altında: potansiyel dönüş"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (20/50)",
           "value": -7.298146,
           "signal": "sell",
-          "description": "EMA20 < EMA50 — düşüş trendi"
+          "description": "EMA20 < EMA50: düşüş trendi"
         },
         {
           "id": "stochastic",
@@ -4723,7 +4747,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 96.363636,
           "signal": "sell",
           "description": "Güçlü trend (96)"
@@ -4744,10 +4768,11 @@
         }
       ],
       "summary": {
-        "signal": "buy",
-        "buyCount": 5,
+        "signal": "neutral",
+        "buyCount": 4,
         "sellCount": 3,
-        "confidence": 62.5
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -4879,30 +4904,30 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 98.901099,
+          "value": 97.934585,
           "signal": "sell",
-          "description": "Aşırı alım bölgesi (98,9)"
+          "description": "Aşırı alım bölgesi (97,9)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": 4.38838,
           "signal": "buy",
-          "description": "MACD çizgisi sinyal üzerinde (+4,39)"
+          "description": "MACD çizgisi sinyal üzerinde (+%3,27)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 2.0σ)",
           "value": 105.963943,
           "signal": "sell",
-          "description": "Üst bantın üzerinde — potansiyel düzeltme"
+          "description": "Üst bandın üzerinde: potansiyel düzeltme"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (20/50)",
           "value": 7.614272,
           "signal": "buy",
-          "description": "EMA20 > EMA50 — yükseliş trendi"
+          "description": "EMA20 > EMA50: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -4913,387 +4938,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
-          "value": 97.802198,
-          "signal": "buy",
-          "description": "Güçlü trend (98)"
-        },
-        {
-          "id": "williams_r",
-          "name": "Williams %R (14)",
-          "value": -0.0,
-          "signal": "sell",
-          "description": "Aşırı alım (-0)"
-        },
-        {
-          "id": "cci",
-          "name": "CCI (20)",
-          "value": 172.562665,
-          "signal": "sell",
-          "description": "Aşırı alım (173)"
-        }
-      ],
-      "summary": {
-        "signal": "sell",
-        "buyCount": 3,
-        "sellCount": 5,
-        "confidence": 62.5
-      }
-    },
-    {
-      "series": "spike",
-      "type": "fon",
-      "prices": [
-        100.0,
-        99.9,
-        99.8,
-        99.7,
-        99.6,
-        99.5,
-        99.4,
-        99.3,
-        99.2,
-        99.1,
-        99.0,
-        98.9,
-        98.8,
-        98.7,
-        98.6,
-        98.5,
-        98.4,
-        98.3,
-        98.2,
-        98.1,
-        98.0,
-        97.9,
-        97.8,
-        97.7,
-        97.6,
-        97.5,
-        97.4,
-        97.3,
-        97.2,
-        97.1,
-        97.0,
-        96.9,
-        96.8,
-        96.7,
-        96.6,
-        96.5,
-        96.4,
-        96.3,
-        96.2,
-        96.1,
-        96.0,
-        95.9,
-        95.8,
-        95.7,
-        95.6,
-        95.5,
-        95.4,
-        95.3,
-        95.2,
-        95.1,
-        95.0,
-        94.9,
-        94.8,
-        94.7,
-        94.6,
-        94.5,
-        94.4,
-        94.3,
-        94.2,
-        94.1,
-        94.0,
-        93.9,
-        93.8,
-        93.7,
-        93.6,
-        93.5,
-        93.4,
-        93.3,
-        93.2,
-        93.1,
-        93.0,
-        92.9,
-        92.8,
-        92.7,
-        92.6,
-        92.5,
-        92.4,
-        92.3,
-        92.2,
-        92.1,
-        92.0,
-        91.9,
-        91.8,
-        91.7,
-        91.6,
-        91.5,
-        91.4,
-        91.3,
-        91.2,
-        91.1,
-        91.0,
-        90.9,
-        90.8,
-        90.7,
-        90.6,
-        90.5,
-        90.4,
-        90.3,
-        90.2,
-        90.1,
-        90.0,
-        89.9,
-        89.8,
-        89.7,
-        89.6,
-        89.5,
-        89.4,
-        89.3,
-        89.2,
-        89.1,
-        89.0,
-        94.0,
-        99.0,
-        104.0,
-        109.0,
-        114.0,
-        119.0,
-        124.0,
-        129.0,
-        134.0
-      ],
-      "indicators": [
-        {
-          "id": "rsi",
-          "name": "RSI (14)",
-          "value": 98.901099,
-          "signal": "sell",
-          "description": "Aşırı alım bölgesi (98,9)"
-        },
-        {
-          "id": "macd",
-          "name": "MACD (8,21,9)",
-          "value": 5.563632,
-          "signal": "buy",
-          "description": "MACD çizgisi sinyal üzerinde (+5,56)"
-        },
-        {
-          "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
-          "value": 105.963943,
-          "signal": "sell",
-          "description": "Üst bantın üzerinde — potansiyel düzeltme"
-        },
-        {
-          "id": "ema",
-          "name": "EMA Kesişim (10/30)",
-          "value": 12.926873,
-          "signal": "buy",
-          "description": "EMA10 > EMA30 — yükseliş trendi"
-        },
-        {
-          "id": "stochastic",
-          "name": "Stokastik %K (14)",
-          "value": 100.0,
-          "signal": "sell",
-          "description": "Aşırı alım (%K: 100,0)"
-        },
-        {
-          "id": "adx",
-          "name": "ADX (14)",
-          "value": 97.802198,
-          "signal": "buy",
-          "description": "Güçlü trend (98)"
-        },
-        {
-          "id": "williams_r",
-          "name": "Williams %R (14)",
-          "value": -0.0,
-          "signal": "sell",
-          "description": "Aşırı alım (-0)"
-        },
-        {
-          "id": "cci",
-          "name": "CCI (20)",
-          "value": 172.562665,
-          "signal": "sell",
-          "description": "Aşırı alım (173)"
-        }
-      ],
-      "summary": {
-        "signal": "sell",
-        "buyCount": 3,
-        "sellCount": 5,
-        "confidence": 62.5
-      }
-    },
-    {
-      "series": "spike",
-      "type": "altin",
-      "prices": [
-        100.0,
-        99.9,
-        99.8,
-        99.7,
-        99.6,
-        99.5,
-        99.4,
-        99.3,
-        99.2,
-        99.1,
-        99.0,
-        98.9,
-        98.8,
-        98.7,
-        98.6,
-        98.5,
-        98.4,
-        98.3,
-        98.2,
-        98.1,
-        98.0,
-        97.9,
-        97.8,
-        97.7,
-        97.6,
-        97.5,
-        97.4,
-        97.3,
-        97.2,
-        97.1,
-        97.0,
-        96.9,
-        96.8,
-        96.7,
-        96.6,
-        96.5,
-        96.4,
-        96.3,
-        96.2,
-        96.1,
-        96.0,
-        95.9,
-        95.8,
-        95.7,
-        95.6,
-        95.5,
-        95.4,
-        95.3,
-        95.2,
-        95.1,
-        95.0,
-        94.9,
-        94.8,
-        94.7,
-        94.6,
-        94.5,
-        94.4,
-        94.3,
-        94.2,
-        94.1,
-        94.0,
-        93.9,
-        93.8,
-        93.7,
-        93.6,
-        93.5,
-        93.4,
-        93.3,
-        93.2,
-        93.1,
-        93.0,
-        92.9,
-        92.8,
-        92.7,
-        92.6,
-        92.5,
-        92.4,
-        92.3,
-        92.2,
-        92.1,
-        92.0,
-        91.9,
-        91.8,
-        91.7,
-        91.6,
-        91.5,
-        91.4,
-        91.3,
-        91.2,
-        91.1,
-        91.0,
-        90.9,
-        90.8,
-        90.7,
-        90.6,
-        90.5,
-        90.4,
-        90.3,
-        90.2,
-        90.1,
-        90.0,
-        89.9,
-        89.8,
-        89.7,
-        89.6,
-        89.5,
-        89.4,
-        89.3,
-        89.2,
-        89.1,
-        89.0,
-        94.0,
-        99.0,
-        104.0,
-        109.0,
-        114.0,
-        119.0,
-        124.0,
-        129.0,
-        134.0
-      ],
-      "indicators": [
-        {
-          "id": "rsi",
-          "name": "RSI (14)",
-          "value": 98.901099,
-          "signal": "sell",
-          "description": "Aşırı alım bölgesi (98,9)"
-        },
-        {
-          "id": "macd",
-          "name": "MACD (12,26,9)",
-          "value": 4.38838,
-          "signal": "buy",
-          "description": "MACD çizgisi sinyal üzerinde (+4,39)"
-        },
-        {
-          "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
-          "value": 95.777716,
-          "signal": "neutral",
-          "description": "%B: 96 (bant içi)"
-        },
-        {
-          "id": "ema",
-          "name": "EMA Kesişim (14/40)",
-          "value": 10.748252,
-          "signal": "buy",
-          "description": "EMA14 > EMA40 — yükseliş trendi"
-        },
-        {
-          "id": "stochastic",
-          "name": "Stokastik %K (14)",
-          "value": 100.0,
-          "signal": "sell",
-          "description": "Aşırı alım (%K: 100,0)"
-        },
-        {
-          "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 97.802198,
           "signal": "buy",
           "description": "Güçlü trend (98)"
@@ -5317,7 +4962,390 @@
         "signal": "neutral",
         "buyCount": 3,
         "sellCount": 4,
-        "confidence": 50.0
+        "confidence": 57.142857,
+        "donus": false
+      }
+    },
+    {
+      "series": "spike",
+      "type": "fon",
+      "prices": [
+        100.0,
+        99.9,
+        99.8,
+        99.7,
+        99.6,
+        99.5,
+        99.4,
+        99.3,
+        99.2,
+        99.1,
+        99.0,
+        98.9,
+        98.8,
+        98.7,
+        98.6,
+        98.5,
+        98.4,
+        98.3,
+        98.2,
+        98.1,
+        98.0,
+        97.9,
+        97.8,
+        97.7,
+        97.6,
+        97.5,
+        97.4,
+        97.3,
+        97.2,
+        97.1,
+        97.0,
+        96.9,
+        96.8,
+        96.7,
+        96.6,
+        96.5,
+        96.4,
+        96.3,
+        96.2,
+        96.1,
+        96.0,
+        95.9,
+        95.8,
+        95.7,
+        95.6,
+        95.5,
+        95.4,
+        95.3,
+        95.2,
+        95.1,
+        95.0,
+        94.9,
+        94.8,
+        94.7,
+        94.6,
+        94.5,
+        94.4,
+        94.3,
+        94.2,
+        94.1,
+        94.0,
+        93.9,
+        93.8,
+        93.7,
+        93.6,
+        93.5,
+        93.4,
+        93.3,
+        93.2,
+        93.1,
+        93.0,
+        92.9,
+        92.8,
+        92.7,
+        92.6,
+        92.5,
+        92.4,
+        92.3,
+        92.2,
+        92.1,
+        92.0,
+        91.9,
+        91.8,
+        91.7,
+        91.6,
+        91.5,
+        91.4,
+        91.3,
+        91.2,
+        91.1,
+        91.0,
+        90.9,
+        90.8,
+        90.7,
+        90.6,
+        90.5,
+        90.4,
+        90.3,
+        90.2,
+        90.1,
+        90.0,
+        89.9,
+        89.8,
+        89.7,
+        89.6,
+        89.5,
+        89.4,
+        89.3,
+        89.2,
+        89.1,
+        89.0,
+        94.0,
+        99.0,
+        104.0,
+        109.0,
+        114.0,
+        119.0,
+        124.0,
+        129.0,
+        134.0
+      ],
+      "indicators": [
+        {
+          "id": "rsi",
+          "name": "RSI (14)",
+          "value": 97.934585,
+          "signal": "sell",
+          "description": "Aşırı alım bölgesi (97,9)"
+        },
+        {
+          "id": "macd",
+          "name": "MACD (8,21,9)",
+          "value": 5.563632,
+          "signal": "buy",
+          "description": "MACD çizgisi sinyal üzerinde (+%4,15)"
+        },
+        {
+          "id": "bollinger",
+          "name": "Bollinger (20, 2.0σ)",
+          "value": 105.963943,
+          "signal": "sell",
+          "description": "Üst bandın üzerinde: potansiyel düzeltme"
+        },
+        {
+          "id": "ema",
+          "name": "EMA Kesişim (10/30)",
+          "value": 12.926873,
+          "signal": "buy",
+          "description": "EMA10 > EMA30: yükseliş trendi"
+        },
+        {
+          "id": "stochastic",
+          "name": "Stokastik %K (14)",
+          "value": 100.0,
+          "signal": "sell",
+          "description": "Aşırı alım (%K: 100,0)"
+        },
+        {
+          "id": "adx",
+          "name": "Trend Gücü (14)",
+          "value": 97.802198,
+          "signal": "buy",
+          "description": "Güçlü trend (98)"
+        },
+        {
+          "id": "williams_r",
+          "name": "Williams %R (14)",
+          "value": -0.0,
+          "signal": "sell",
+          "description": "Aşırı alım (-0)"
+        },
+        {
+          "id": "cci",
+          "name": "CCI (20)",
+          "value": 172.562665,
+          "signal": "sell",
+          "description": "Aşırı alım (173)"
+        }
+      ],
+      "summary": {
+        "signal": "neutral",
+        "buyCount": 3,
+        "sellCount": 4,
+        "confidence": 57.142857,
+        "donus": false
+      }
+    },
+    {
+      "series": "spike",
+      "type": "altin",
+      "prices": [
+        100.0,
+        99.9,
+        99.8,
+        99.7,
+        99.6,
+        99.5,
+        99.4,
+        99.3,
+        99.2,
+        99.1,
+        99.0,
+        98.9,
+        98.8,
+        98.7,
+        98.6,
+        98.5,
+        98.4,
+        98.3,
+        98.2,
+        98.1,
+        98.0,
+        97.9,
+        97.8,
+        97.7,
+        97.6,
+        97.5,
+        97.4,
+        97.3,
+        97.2,
+        97.1,
+        97.0,
+        96.9,
+        96.8,
+        96.7,
+        96.6,
+        96.5,
+        96.4,
+        96.3,
+        96.2,
+        96.1,
+        96.0,
+        95.9,
+        95.8,
+        95.7,
+        95.6,
+        95.5,
+        95.4,
+        95.3,
+        95.2,
+        95.1,
+        95.0,
+        94.9,
+        94.8,
+        94.7,
+        94.6,
+        94.5,
+        94.4,
+        94.3,
+        94.2,
+        94.1,
+        94.0,
+        93.9,
+        93.8,
+        93.7,
+        93.6,
+        93.5,
+        93.4,
+        93.3,
+        93.2,
+        93.1,
+        93.0,
+        92.9,
+        92.8,
+        92.7,
+        92.6,
+        92.5,
+        92.4,
+        92.3,
+        92.2,
+        92.1,
+        92.0,
+        91.9,
+        91.8,
+        91.7,
+        91.6,
+        91.5,
+        91.4,
+        91.3,
+        91.2,
+        91.1,
+        91.0,
+        90.9,
+        90.8,
+        90.7,
+        90.6,
+        90.5,
+        90.4,
+        90.3,
+        90.2,
+        90.1,
+        90.0,
+        89.9,
+        89.8,
+        89.7,
+        89.6,
+        89.5,
+        89.4,
+        89.3,
+        89.2,
+        89.1,
+        89.0,
+        94.0,
+        99.0,
+        104.0,
+        109.0,
+        114.0,
+        119.0,
+        124.0,
+        129.0,
+        134.0
+      ],
+      "indicators": [
+        {
+          "id": "rsi",
+          "name": "RSI (14)",
+          "value": 97.934585,
+          "signal": "sell",
+          "description": "Aşırı alım bölgesi (97,9)"
+        },
+        {
+          "id": "macd",
+          "name": "MACD (12,26,9)",
+          "value": 4.38838,
+          "signal": "buy",
+          "description": "MACD çizgisi sinyal üzerinde (+%3,27)"
+        },
+        {
+          "id": "bollinger",
+          "name": "Bollinger (14, 2.0σ)",
+          "value": 95.777716,
+          "signal": "neutral",
+          "description": "%B: 96 (bant içi)"
+        },
+        {
+          "id": "ema",
+          "name": "EMA Kesişim (14/40)",
+          "value": 10.748252,
+          "signal": "buy",
+          "description": "EMA14 > EMA40: yükseliş trendi"
+        },
+        {
+          "id": "stochastic",
+          "name": "Stokastik %K (14)",
+          "value": 100.0,
+          "signal": "sell",
+          "description": "Aşırı alım (%K: 100,0)"
+        },
+        {
+          "id": "adx",
+          "name": "Trend Gücü (14)",
+          "value": 97.802198,
+          "signal": "buy",
+          "description": "Güçlü trend (98)"
+        },
+        {
+          "id": "williams_r",
+          "name": "Williams %R (14)",
+          "value": -0.0,
+          "signal": "sell",
+          "description": "Aşırı alım (-0)"
+        },
+        {
+          "id": "cci",
+          "name": "CCI (20)",
+          "value": 172.562665,
+          "signal": "sell",
+          "description": "Aşırı alım (173)"
+        }
+      ],
+      "summary": {
+        "signal": "neutral",
+        "buyCount": 3,
+        "sellCount": 3,
+        "confidence": 42.857143,
+        "donus": false
       }
     },
     {
@@ -5449,30 +5477,30 @@
         {
           "id": "rsi",
           "name": "RSI (9)",
-          "value": 100.0,
+          "value": 98.950961,
           "signal": "sell",
-          "description": "Aşırı alım bölgesi (100,0)"
+          "description": "Aşırı alım bölgesi (99,0)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": 4.38838,
           "signal": "buy",
-          "description": "MACD çizgisi sinyal üzerinde (+4,39)"
+          "description": "MACD çizgisi sinyal üzerinde (+%3,27)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 1.5σ)",
           "value": 124.618591,
           "signal": "sell",
-          "description": "Üst bantın üzerinde — potansiyel düzeltme"
+          "description": "Üst bandın üzerinde: potansiyel düzeltme"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (7/21)",
           "value": 13.746055,
           "signal": "buy",
-          "description": "EMA7 > EMA21 — yükseliş trendi"
+          "description": "EMA7 > EMA21: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -5483,7 +5511,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 97.802198,
           "signal": "buy",
           "description": "Güçlü trend (98)"
@@ -5504,10 +5532,11 @@
         }
       ],
       "summary": {
-        "signal": "sell",
+        "signal": "neutral",
         "buyCount": 3,
-        "sellCount": 5,
-        "confidence": 62.5
+        "sellCount": 4,
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -5639,30 +5668,30 @@
         {
           "id": "rsi",
           "name": "RSI (14)",
-          "value": 98.901099,
+          "value": 97.934585,
           "signal": "sell",
-          "description": "Aşırı alım bölgesi (98,9)"
+          "description": "Aşırı alım bölgesi (97,9)"
         },
         {
           "id": "macd",
           "name": "MACD (12,26,9)",
           "value": 4.38838,
           "signal": "buy",
-          "description": "MACD çizgisi sinyal üzerinde (+4,39)"
+          "description": "MACD çizgisi sinyal üzerinde (+%3,27)"
         },
         {
           "id": "bollinger",
           "name": "Bollinger (20, 2.0σ)",
           "value": 105.963943,
           "signal": "sell",
-          "description": "Üst bantın üzerinde — potansiyel düzeltme"
+          "description": "Üst bandın üzerinde: potansiyel düzeltme"
         },
         {
           "id": "ema",
           "name": "EMA Kesişim (20/50)",
           "value": 7.614272,
           "signal": "buy",
-          "description": "EMA20 > EMA50 — yükseliş trendi"
+          "description": "EMA20 > EMA50: yükseliş trendi"
         },
         {
           "id": "stochastic",
@@ -5673,7 +5702,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 97.802198,
           "signal": "buy",
           "description": "Güçlü trend (98)"
@@ -5694,10 +5723,11 @@
         }
       ],
       "summary": {
-        "signal": "sell",
+        "signal": "neutral",
         "buyCount": 3,
-        "sellCount": 5,
-        "confidence": 62.5
+        "sellCount": 4,
+        "confidence": 57.142857,
+        "donus": false
       }
     },
     {
@@ -5748,7 +5778,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -5772,7 +5802,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 0,
-        "confidence": 0.0
+        "confidence": 0.0,
+        "donus": false
       }
     },
     {
@@ -5823,7 +5854,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -5847,7 +5878,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 0,
-        "confidence": 0.0
+        "confidence": 0.0,
+        "donus": false
       }
     },
     {
@@ -5898,7 +5930,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -5922,7 +5954,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 0,
-        "confidence": 0.0
+        "confidence": 0.0,
+        "donus": false
       }
     },
     {
@@ -5973,7 +6006,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -5997,7 +6030,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 0,
-        "confidence": 0.0
+        "confidence": 0.0,
+        "donus": false
       }
     },
     {
@@ -6048,7 +6082,7 @@
         },
         {
           "id": "adx",
-          "name": "ADX (14)",
+          "name": "Trend Gücü (14)",
           "value": 0.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -6072,7 +6106,8 @@
         "signal": "neutral",
         "buyCount": 0,
         "sellCount": 0,
-        "confidence": 0.0
+        "confidence": 0.0,
+        "donus": false
       }
     }
   ]

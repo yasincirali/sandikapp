@@ -182,9 +182,11 @@ void main() {
     });
 
     test('özet ve panel sayaçları farklı şeyi saydığını söyler', () {
-      // Özet: yön veren göstergelerden kaçı lehte; panel: kaç gösterge açık.
-      // İkisi de "x/y gösterge" yazınca "1/2" ile "5/8" çelişki gibi okunuyordu.
-      expect(trMetni('indicatorsConfidence'), contains('yön veren'));
+      // Özet: oylamaya giren göstergelerden kaçı aynı yönde; panel: kaç
+      // gösterge açık. İkisi de "x/y gösterge" yazınca "1/2" ile "5/8"
+      // çelişki gibi okunuyordu. 2026-10-11: payda tüm göstergeler (güven
+      // yüzdesiyle aynı tanım, denetim bulgu 7) → "aynı yönde".
+      expect(trMetni('indicatorsConfidence'), contains('aynı yönde'));
       expect(trMetni('nOfMIndicators'), contains('açık'));
     });
 

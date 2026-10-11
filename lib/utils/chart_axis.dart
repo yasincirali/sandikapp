@@ -174,6 +174,19 @@ const double gunIciAsgariBantOrani = 0.005;
   // bant anlamsız); LOG ölçekte Y log10(fiyat)'tır ve 1 = on kat — %10'luk
   // bir hareket bütün bir onluğa yayılıp düz çizgiye dönüyordu (varlık
   // detayı, 2026-10-10). Log çağıran çok daha küçük değer verir.
+  //
+  // 2026-10-11 (denetim bulgu 9): ₺1 tabanı TEK varlığın fiyat grafiğinde
+  // fiyat seviyesine göre farklı ölçek demekti — %3 hareket ₺250'lik
+  // hissede grafiğin %75'ini, ₺10'lukta %15'ini, ₺1,23'lük fonda %2'sini
+  // dolduruyordu. Fiyat grafikleri artık ortalamayla orantılı taban verir
+  // ([fiyatAsgariAraligi]); bu varsayılan portföy değeri gibi büyük TL
+  // tutarları içindir.
+  //
+  // Alt sınır 0'a yalnız veri negatif değilken kırpılır: LOG'da ₺1 altı
+  // fiyatın log'u, Karşılaştır'da düşüş yüzdesi negatiftir; 0'a kırpmak
+  // "veri her zaman bandın içinde" değişmezini bozuyor, LOG'da bant (0, 0)
+  // çıkıyordu.
+  final taban = dataMinY >= 0 ? 0.0 : double.negativeInfinity;
   final dataRange =
       (dataMaxY - dataMinY).clamp(asgariAralik, double.infinity).toDouble();
   final minSpread =
@@ -183,12 +196,12 @@ const double gunIciAsgariBantOrani = 0.005;
 
   double outMaxY = (avgY + effectiveRange / 2) + yPadding;
   double outMinY =
-      (avgY - effectiveRange / 2 - yPadding).clamp(0.0, double.infinity);
+      (avgY - effectiveRange / 2 - yPadding).clamp(taban, double.infinity);
 
   // Uç noktalar bandın kenarına yapışmasın — dot yarıçapı kırpılır.
   final endpointPad = effectiveRange * 0.10;
   if (dataMinY - endpointPad < outMinY) {
-    outMinY = (dataMinY - endpointPad).clamp(0.0, double.infinity);
+    outMinY = (dataMinY - endpointPad).clamp(taban, double.infinity);
   }
   if (dataMaxY + endpointPad > outMaxY) {
     outMaxY = dataMaxY + endpointPad;
@@ -200,10 +213,22 @@ const double gunIciAsgariBantOrani = 0.005;
   final niceMin = (outMinY / niceInterval).floor() * niceInterval;
   final niceMax = (outMaxY / niceInterval).ceil() * niceInterval;
   return (
-    minY: niceMin.clamp(0.0, double.infinity),
+    minY: niceMin.clamp(taban, double.infinity),
     maxY: niceMax,
     interval: niceInterval,
   );
+}
+
+/// Tek varlığın FİYAT grafiğinde Y bandının asgari genişliği (Y biriminde).
+///
+/// LOG'da log10 biriminde sabit 1e-3; doğrusal fiyatta ortalamanın binde
+/// biri. Asıl taban [gorunurYBandi]'nın `asgariBantOrani`'dır (%2, gün içi
+/// %0,5); bu değer yalnız sıfır genişlikli bandı önler. ₺1 sabiti ucuz
+/// varlıkları düzleştiriyordu (bkz. [gorunurYBandi] notu).
+double fiyatAsgariAraligi({required bool log, required double ortalama}) {
+  if (log) return 1e-3;
+  final o = ortalama.abs();
+  return o > 0 ? o * 1e-3 : 1.0;
 }
 
 /// Fiyat bandı + göstergeler: gösterge bandın İÇİNDEYSE bant aynen kalır,

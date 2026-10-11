@@ -1,12 +1,16 @@
 enum SignalType { buy, sell, neutral }
 
 class TechnicalIndicator {
+  /// Gösterge kimliği (`IndicatorId`); `TechnicalAnalysisService`
+  /// doldurur. Özetin grup kararı ve W%R/Stokastik çift sayımı için.
+  final String? id;
   final String name;
   final double value;
   final SignalType signal;
   final String description;
 
   TechnicalIndicator({
+    this.id,
     required this.name,
     required this.value,
     required this.signal,

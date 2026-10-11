@@ -26,7 +26,19 @@ export const MIN_POINTS = 60;
 /// Cache tazelik süresi. Günlük kapanış verisi gün içinde değişmez;
 /// 12 saat aynı gün içindeki iki cron turunun (11:00 / 15:00) ikinci
 /// turunda ağa çıkmamasını sağlar.
-const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+export const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+
+/// Sinyal turunun önbellek ömrü. `analyze-signals` hafta içi her saat
+/// koşar; 12 saatlik ömürle 09:45'te `daily-brief`in borsa açılmadan
+/// doldurduğu seri (son nokta dünkü kapanış) gün boyu taze sayılıyordu ve
+/// saatlik bildirim gün içi hareketi hiç görmüyordu, ekran ise canlı fiyatla
+/// hesaplıyordu (denetim 2026-10-11, bulgu 2). 50 dk: her saatlik tur bir
+/// kez yeniler, aynı turdaki kullanıcılar seriyi paylaşmaya devam eder.
+export const SINYAL_CACHE_TTL_MS = 50 * 60 * 1000;
+
+/// Gram altının (TL) sinyal serisi için iç sembol. Bkz. [fetchAltinGramTl].
+export const ALTIN_GRAM_TL = 'ALTIN_GRAM_TL';
+const ONS_GRAM = 31.1035;
 
 const TEFAS_PREFIX = 'TEFAS:';
 
@@ -54,12 +66,15 @@ export function isGoldSymbol(symbol: string): boolean {
   return symbol in GOLD_WEIGHTS;
 }
 
-/// Teknik gösterge açısından altın türleri aynı eğriyi izler (hepsi ons
-/// altına bağlı). Çarpan eğrinin ŞEKLİNİ değiştirmediği için — RSI, MACD,
-/// Bollinger hepsi orana duyarlı — tek bir GC=F serisi yeterli.
+/// Teknik gösterge açısından altın türleri aynı eğriyi izler: ağırlık
+/// çarpanı eğrinin ŞEKLİNİ değiştirmez, tek seri yeterli. Ama o seri TL
+/// gram olmalı: 2026-10-11'e kadar `GC=F` (USD/ons) kullanılıyordu ve
+/// arada USD/TRY hareketi eğrinin şeklini değiştiriyordu; ekran gram TL
+/// serisinden (`altinGramSerisi`) hesaplarken bildirim EMA kesişiminde
+/// günlerin ~%37'sinde başka yön söylüyordu (denetim bulgu 3).
 export function resolveSymbol(rawTicker: string, assetType: string): string | null {
   const t = rawTicker.trim();
-  if (assetType === 'altin') return 'GC=F';
+  if (assetType === 'altin') return ALTIN_GRAM_TL;
   if (t.length === 0) return null;
   return t;
 }
@@ -69,12 +84,20 @@ const USER_AGENT =
   '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 /// Yahoo Finance günlük kapanış serisi (6 ay).
-async function fetchYahoo(symbol: string): Promise<number[]> {
+async function fetchYahoo(symbol: string, f: typeof fetch = fetch): Promise<number[]> {
+  return (await fetchYahooNoktalari(symbol, f)).map((p) => p[1]);
+}
+
+/// Yahoo günlük kapanışları zamanıyla ([ms, kapanış]), 6 ay.
+async function fetchYahooNoktalari(
+  symbol: string,
+  f: typeof fetch = fetch,
+): Promise<Array<[number, number]>> {
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
     `?interval=1d&range=6mo&includePrePost=false`;
 
-  const res = await fetch(url, {
+  const res = await f(url, {
     headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
     signal: AbortSignal.timeout(15_000),
   });
@@ -84,11 +107,47 @@ async function fetchYahoo(symbol: string): Promise<number[]> {
   const result = body?.chart?.result?.[0];
   if (!result) return [];
 
+  const zamanlar: (number | null)[] = result?.timestamp ?? [];
   const closes: (number | null)[] =
     result?.indicators?.quote?.[0]?.close ?? [];
 
   // null kapanışlar (tatil/eksik bar) atlanır — Dart tarafı da böyle yapıyor.
-  return closes.filter((c): c is number => typeof c === 'number' && c > 0);
+  const out: Array<[number, number]> = [];
+  for (let i = 0; i < closes.length; i++) {
+    const c = closes[i];
+    const t = zamanlar[i];
+    if (typeof c === 'number' && c > 0) out.push([typeof t === 'number' ? t * 1000 : i, c]);
+  }
+  return out;
+}
+
+/// Gram altın TL günlük serisi: `GC=F` (USD/ons) × aynı günün `USDTRY=X`
+/// kapanışı ÷ 31,1035. Uygulamanın merdiveniyle aynı ölçek (`altinGramSerisi`
+/// vadeli yolu; `XAUTRY=X` Yahoo'da 404 döndüğü için spot basamağı yok).
+/// Kuru bulunmayan gün seriye girmez — uydurma nokta yok.
+export async function fetchAltinGramTl(f: typeof fetch = fetch): Promise<number[]> {
+  const [ons, kur] = await Promise.all([
+    fetchYahooNoktalari('GC=F', f),
+    fetchYahooNoktalari('USDTRY=X', f),
+  ]);
+  return altinGramTlSerisi(ons, kur);
+}
+
+/// Saf kısım (test edilir): iki seriyi UTC takvim gününe göre eşler.
+export function altinGramTlSerisi(
+  ons: Array<[number, number]>,
+  kur: Array<[number, number]>,
+): number[] {
+  const gun = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  const kurGunu = new Map<string, number>();
+  for (const [t, v] of kur) kurGunu.set(gun(t), v);
+  const out: number[] = [];
+  for (const [t, v] of ons) {
+    const k = kurGunu.get(gun(t));
+    if (k === undefined || !(k > 0)) continue;
+    out.push((v * k) / ONS_GRAM);
+  }
+  return out;
 }
 
 /// TEFAS fon NAV serisi (6 ay).
@@ -186,6 +245,7 @@ async function fetchFromSource(
   symbol: string,
 ): Promise<number[]> {
   try {
+    if (symbol === ALTIN_GRAM_TL) return await fetchAltinGramTl();
     if (kriptoKodu(symbol)) return await fetchKripto(client, symbol);
     if (symbol.toUpperCase().startsWith(EUROBOND_ONEKI)) return await fetchEurobond(symbol);
     if (symbol.startsWith(TEFAS_PREFIX)) {
@@ -208,6 +268,7 @@ async function fetchFromSource(
 export async function loadPriceHistories(
   client: SupabaseClient,
   symbols: Set<string>,
+  ttlMs: number = CACHE_TTL_MS,
 ): Promise<Map<string, number[]>> {
   const out = new Map<string, number[]>();
   if (symbols.size === 0) return out;
@@ -233,7 +294,7 @@ export async function loadPriceHistories(
 
   for (const symbol of wanted) {
     const hit = cachedMap.get(symbol);
-    if (hit && now - hit.fetchedAt < CACHE_TTL_MS && hit.closes.length >= MIN_POINTS) {
+    if (hit && now - hit.fetchedAt < ttlMs && hit.closes.length >= MIN_POINTS) {
       out.set(symbol, hit.closes);
     } else {
       stale.push(symbol);

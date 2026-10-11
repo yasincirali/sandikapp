@@ -119,6 +119,7 @@ void main() {
 
         final all = indicators
             .map((m) => TechnicalIndicator(
+                  id: m['id'] as String,
                   name: m['name'] as String,
                   value: m['value'] as double,
                   signal: SignalType.values
@@ -141,6 +142,7 @@ void main() {
             'sellCount': summary.sellCount,
             'confidence':
                 double.parse(summary.confidence.toStringAsFixed(6)),
+            'donus': summary.donus,
           },
         });
       }

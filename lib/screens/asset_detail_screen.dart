@@ -330,7 +330,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         ref.read(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
                 widget.asset.ticker.trim().isNotEmpty
             ? HistoryService.instance.getSymbolHistory(widget.asset.ticker,
-                periodDays: kSinyalPenceresiGun)
+                periodDays: kSinyalPenceresiGun,
+                cozunurluk: kSinyalCozunurlugu)
             : null;
     CrashReporter.arkaPlan(
       acilisKapisi([
@@ -1262,8 +1263,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       // düz çizgiye eziliyordu. Şimdilik yalnız Premium
                       // katmanları gören hesapta (paywall_enabled/admin):
                       // ücretsiz LOG kullanıcısının ekranı birebir kalır.
-                      final asgariAralik =
-                          logOn && _katmanlarGorunur ? 1e-3 : 1.0;
+                      //
+                      // 2026-10-11 (denetim bulgu 9): fiyatta ₺1 sabit taban
+                      // ucuz varlıkları düzleştiriyordu; LOG tabanı da artık
+                      // herkes için log biriminde (ücretsiz LOG'da 1 = bir
+                      // onluk, hareket düz çizgiye eziliyordu — hata
+                      // düzeltmesi). Karşılaştır'da Y yüzdedir; orada eski
+                      // taban (1 puan) kalır.
+                      final asgariAralik = compareOn
+                          ? 1.0
+                          : fiyatAsgariAraligi(
+                              log: logOn, ortalama: top / adet);
                       // Göstergeler yalnız fiyat bandının DIŞINA taşarsa
                       // bandı genişletir (yasin 2026-10-11) — kural ve
                       // gerekçe `gostergeyiKapsayanBant`.

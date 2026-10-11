@@ -17,7 +17,7 @@ import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 /// tasarımda da sırıtmamalı."
 ///
 /// Örnekteki alanlar:
-///   1. "TEKNİK GÖRÜNÜM"  → üst etiket (şeridin ne olduğu)
+///   1. "TEKNİK GÖRÜNÜM · GÜNLÜK" → üst etiket (şeridin ne olduğu; günlük kapanış)
 ///   2. "AŞAĞI TREND"     → yön başlığı
 ///   3. "2/3 gösterge · güven %67" → dayanak
 ///   4. "Son bildirim: ▼ aşağı · 10 dk önce" → kayıt + göreli zaman
@@ -88,9 +88,9 @@ String _ekranMetni(WidgetTester tester) => tester
 void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
 
-  testWidgets('üst etiket ekranda — "TEKNİK GÖRÜNÜM"', (tester) async {
+  testWidgets('üst etiket ekranda — "TEKNİK GÖRÜNÜM · GÜNLÜK"', (tester) async {
     await _bas(tester, DateTime.now().subtract(const Duration(minutes: 10)));
-    expect(find.text('TEKNİK GÖRÜNÜM'), findsOneWidget,
+    expect(find.text('TEKNİK GÖRÜNÜM · GÜNLÜK'), findsOneWidget,
         reason: 'Şeridin ne olduğunu söyleyen üst etiket kayıp.');
   });
 

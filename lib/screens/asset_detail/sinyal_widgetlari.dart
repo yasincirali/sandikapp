@@ -69,27 +69,33 @@ class AssetSignalCard extends ConsumerStatefulWidget {
   ConsumerState<AssetSignalCard> createState() => _AssetSignalCardState();
 }
 
-/// Teknik göstergelerin istediği fiyat penceresi (gün).
+// Sinyal penceresi ve katmanı: `kSinyalPenceresiGun` / `kSinyalCozunurlugu`
+// (`technical_analysis_service.dart`; provider da aynı değeri okur).
+
+/// Özetin ekrandaki görünümü: etiket, ikon, renk.
 ///
-/// ## Neden 90, neden 180 DEĞİL
-/// 180 gün istemek göstergeleri TAMAMEN devre dışı bırakıyordu — hem
-/// hisselerde hem fonlarda (ölçüldü 2026-09-10: THYAO 26 nokta, TEFAS:DPP
-/// 26 nokta, eşik 30). Sebep pencerenin kendisi değil, `HistoryService`in
-/// çözünürlük merdiveni: 180 gün HAFTALIK katmana düşüyor ve 125 günlük
-/// nokta 26 haftalık kovaya iniyor.
-///
-/// Panel ise GÜNLÜK seri varsayıyor: MACD 26, Bollinger 20, ADX 2×14
-/// nokta ister ve bunlar GÜN cinsinden düşünülmüştür. Haftalık kovalarda
-/// 26 nokta yarım yıl değil, yarım yıllık **6 aylık** bir pencereye
-/// karşılık gelir ve eşiğin altında kalır.
-///
-/// 90 gün günlük katmanda kalır ve 63 nokta verir (ölçüldü) — en uzun
-/// göstergenin (ADX, 28) iki katından fazla.
-///
-/// Şerit ve panel AYNI değeri kullanmak zorunda: ikisi `HistoryService`
-/// önbelleğini paylaşıyor ve farklı pencere isterlerse aynı varlık için
-/// FARKLI sinyal gösterebilirler (bkz. `varlik_sinyal_karti_test.dart`).
-const int kSinyalPenceresiGun = 90;
+/// Oyların çoğu ortalamaya dönüş göstergelerinden geliyorsa ([donus]) "al"
+/// aşırı satım, "sat" aşırı alım demektir — fiyat DÜŞMÜŞ/YÜKSELMİŞTİR.
+/// Bunu "YUKARI TREND" diye yazmak sert düşüşte yeşil yukarı oklu kart
+/// gösteriyordu (denetim 2026-10-11, bulgu 1; simülasyonda %18'lik düşüşün
+/// yarısında). Aşırılık durumu amber ve fiyatın son hareketinin oku ile
+/// gösterilir; yön yalnız renkle anlatılmaz, metin her zaman yazılı.
+({String etiket, IconData ikon, Color renk}) sinyalGorunumu(
+    BuildContext context, SignalType signal, bool donus) {
+  final l = context.l10n;
+  final c = context.c;
+  return switch ((signal, donus)) {
+    (SignalType.buy, true) =>
+      (etiket: l.sinyalAsiriSatim, ikon: Icons.trending_down_rounded, renk: c.amberText),
+    (SignalType.sell, true) =>
+      (etiket: l.sinyalAsiriAlim, ikon: Icons.trending_up_rounded, renk: c.amberText),
+    (SignalType.buy, false) =>
+      (etiket: l.trendUp, ikon: Icons.trending_up_rounded, renk: c.gain),
+    (SignalType.sell, false) =>
+      (etiket: l.trendDown, ikon: Icons.trending_down_rounded, renk: c.loss),
+    _ => (etiket: l.trendFlat, ikon: Icons.remove_rounded, renk: c.text58),
+  };
+}
 
 /// Bildirimin ne kadar önce geldiğini insan diliyle söyler ("10 dk önce").
 ///
@@ -128,7 +134,8 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     if (_pricesKey == key && _pricesFuture != null) return _pricesFuture!;
     _pricesKey = key;
     _pricesFuture = HistoryService.instance
-        .getSymbolHistory(widget.asset.ticker, periodDays: kSinyalPenceresiGun)
+        .getSymbolHistory(widget.asset.ticker,
+            periodDays: kSinyalPenceresiGun, cozunurluk: kSinyalCozunurlugu)
         .then((map) {
       final keys = map.keys.toList()..sort();
       return [for (final k in keys) map[k]!];
@@ -212,10 +219,13 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           signal: ozet.signal,
           lehte:
               ozet.signal == SignalType.sell ? ozet.sellCount : ozet.buyCount,
-          toplam: ozet.buyCount + ozet.sellCount,
+          // Payda oylamaya giren TÜM göstergeler — güven yüzdesiyle ve
+          // push metniyle aynı tanım (denetim bulgu 7).
+          toplam: ozet.toplam,
           guven: ozet.confidence,
           canli: true,
           kayit: kayit,
+          donus: ozet.donus,
         );
       },
     );
@@ -296,26 +306,16 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     required double guven,
     required bool canli,
     required SignalAlert? kayit,
+    bool donus = false,
   }) {
-    final isBuy = signal == SignalType.buy;
-    final isSell = signal == SignalType.sell;
-    final renk = isBuy
-        ? context.c.gain
-        : isSell
-            ? context.c.loss
-            : context.c.text58;
-    // Yasal not: kesin "AL/SAT" yerine trend yönü — ekranın geri kalanıyla
-    // aynı dil (bkz. `TechnicalSignalPanel`).
-    final etiket = isBuy
-        ? context.l10n.trendUp
-        : isSell
-            ? context.l10n.trendDown
-            : context.l10n.trendFlat;
-    final ikon = isBuy
-        ? Icons.trending_up_rounded
-        : isSell
-            ? Icons.trending_down_rounded
-            : Icons.remove_rounded;
+    // Yasal not: kesin "AL/SAT" yerine trend yönü ya da aşırılık bölgesi —
+    // ekranın geri kalanıyla aynı dil (bkz. [sinyalGorunumu]). Kayıtlı
+    // bildirim satırı (`donus` bilinmez) eski trend dilinde kalır: o metin
+    // o gün gönderilen push'un kendisidir.
+    final g = sinyalGorunumu(context, signal, donus);
+    final renk = g.renk;
+    final etiket = g.etiket;
+    final ikon = g.ikon;
 
     final detay = toplam > 0
         ? context.l10n.indicatorsConfidence(lehte, toplam, guven.round())
@@ -552,10 +552,10 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         '${widget.subCategory ?? ''}|$_deneme';
     if (_pricesKey == key && _pricesFuture != null) return _pricesFuture!;
     _pricesKey = key;
-    // Göstergelerin çoğu 100+ nokta ister (MACD 26, Bollinger 20, ADX 14×2).
-    // 180 gün hepsini rahatça besler.
+    // Şeritle aynı pencere ve katman (bkz. [kSinyalPenceresiGun]).
     _pricesFuture = HistoryService.instance
-        .getSymbolHistory(widget.ticker, periodDays: kSinyalPenceresiGun)
+        .getSymbolHistory(widget.ticker,
+            periodDays: kSinyalPenceresiGun, cozunurluk: kSinyalCozunurlugu)
         .then((map) {
       final keys = map.keys.toList()..sort();
       return [for (final k in keys) map[k]!];
@@ -723,16 +723,14 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         ),
       );
     }
-    final isBuy = summary.signal == SignalType.buy;
-    final isSell = summary.signal == SignalType.sell;
     final isNeutral = summary.signal == SignalType.neutral;
 
-    final signalColor = isBuy ? context.c.gain : isSell ? context.c.loss : context.c.text58;
-    // Yasal not: kesin "AL/SAT" ifadesi yerine trend yönü kullanıyoruz.
-    final signalLabel = isBuy ? context.l10n.trendUp : isSell ? context.l10n.trendDown : context.l10n.trendFlat;
-    final signalIcon = isBuy ? Icons.trending_up_rounded
-        : isSell ? Icons.trending_down_rounded
-        : Icons.remove_rounded;
+    // Yasal not: kesin "AL/SAT" ifadesi yerine trend yönü ya da aşırılık
+    // bölgesi (bkz. [sinyalGorunumu]).
+    final gorunum = sinyalGorunumu(context, summary.signal, summary.donus);
+    final signalColor = gorunum.renk;
+    final signalLabel = gorunum.etiket;
+    final signalIcon = gorunum.ikon;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -838,7 +836,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                     const SizedBox(height: 2),
                     Text(
                       context.l10n.buySellNeutralCounts(summary.buyCount, summary.sellCount,
-                          indicators.length - summary.buyCount - summary.sellCount),
+                          summary.toplam - summary.buyCount - summary.sellCount),
                       style: context.t.titleSmall?.copyWith(color: context.c.text58),
                     ),
                   ],

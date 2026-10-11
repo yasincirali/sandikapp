@@ -547,6 +547,12 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 start: start,
                 intraday: intraday,
                 kovaMs: mumSec?.aralik.ms.toDouble(),
+                // Para girişi/çıkışı mumun gövdesine yazılmaz (denetim
+                // 2026-10-11, bulgu 13; bkz. `mumlariTuret`).
+                akislar: {
+                  for (final n in noktalar.values)
+                    if (n.net != 0) n.x: n.net,
+                },
               )
             : segments.map((seg) {
                 final isActive = seg.thickness > 2.0;
@@ -1164,6 +1170,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     required DateTime start,
     required bool intraday,
     double? kovaMs,
+    Map<double, double>? akislar,
   }) {
     final genislik = grafikGenisligi.isFinite && grafikGenisligi > 0
         ? grafikGenisligi
@@ -1193,7 +1200,10 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     final out = <LineChartBarData>[];
     for (final (spots, kapali) in [(acikSpots, false), (kapaliSpots, true)]) {
       final mumlar = mumlariGrafikUzayinda(spots,
-          baslangicMs: baslangicMs, birimMs: birimMs, kovaMs: kovaMs);
+          baslangicMs: baslangicMs,
+          birimMs: birimMs,
+          kovaMs: kovaMs,
+          akislar: akislar);
       // Gövde/fitil oranları ortak çizimde (`GrafikStili.mumCubuklari`) —
       // varlık detayının mumu da aynı fonksiyondan çizilir.
       out.addAll(GrafikStili.mumCubuklari(context, mumlar,

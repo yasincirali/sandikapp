@@ -1841,7 +1841,11 @@
   "trendUp": "YUKARI TREND",
   "trendDown": "AŞAĞI TREND",
   "trendFlat": "YATAY",
-  "indicatorsConfidence": "{lehte}/{total} yön veren gösterge · güven %{pct}",
+  "sinyalAsiriSatim": "AŞIRI SATIM",
+  "@sinyalAsiriSatim": {"description": "Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı satım bölgesinde (trend yönü değil)."},
+  "sinyalAsiriAlim": "AŞIRI ALIM",
+  "@sinyalAsiriAlim": {"description": "Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı alım bölgesinde (trend yönü değil)."},
+  "indicatorsConfidence": "{lehte}/{total} gösterge aynı yönde · güven %{pct}",
   "@indicatorsConfidence": {
     "placeholders": {
       "lehte": {
@@ -1863,7 +1867,7 @@
       }
     }
   },
-  "technicalOutlookUpper": "TEKNİK GÖRÜNÜM",
+  "technicalOutlookUpper": "TEKNİK GÖRÜNÜM · GÜNLÜK",
   "nowUpper": "ŞU AN",
   "arrowUp": "▲ yukarı",
   "arrowDown": "▼ aşağı",
@@ -1871,7 +1875,7 @@
   "indicatorsCalculating": "Göstergeler hesaplanıyor…",
   "indicatorsNoHistory": "Bu varlığın fiyat geçmişi şu an çekilemedi, göstergeler hesaplanamıyor.",
   "noIndicatorsSelected": "Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları'ndan aktifleştir.",
-  "technicalAnalysisUpper": "TEKNİK ANALİZ",
+  "technicalAnalysisUpper": "TEKNİK ANALİZ · GÜNLÜK",
   "nOfMIndicators": "· {on}/{all} gösterge açık",
   "@nOfMIndicators": {
     "placeholders": {
@@ -1884,7 +1888,7 @@
     }
   },
   "configureIndicators": "Göstergeleri Ayarla",
-  "buySellNeutralCounts": "{buy} AL · {sell} SAT · {neutral} NÖTR",
+  "buySellNeutralCounts": "{buy} yukarı · {sell} aşağı · {neutral} nötr",
   "@buySellNeutralCounts": {
     "placeholders": {
       "buy": {
@@ -4944,7 +4948,7 @@
   "sgnPremiumAktif": "Premium sinyaller açık",
   "sgnPremiumAktifGovde": "Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.",
   "sgnPremiumKilitBaslik": "Premium göstergeler",
-  "sgnPremiumKilitGovde": "EMA Kesişim, Stokastik, ADX, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.",
+  "sgnPremiumKilitGovde": "EMA Kesişim, Stokastik, Trend Gücü, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.",
   "sgnPremiumGec": "Premium'a geç",
   "pwOzSinirsiz": "Sınırsız varlık ve tüm varlık türleri",
   "pwOzKarsilastir": "Karşılaştır'da 5 seriye kadar",
@@ -5658,7 +5662,7 @@
   "@varlikGuncelleOnayBaslik": {"placeholders": {"n": {"type": "int"}}},
   "varlikGuncelleOnayGovde": "{n, plural, =1{\"{name}\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.} other{\"{name}\" için {n} hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.}}",
   "@varlikGuncelleOnayGovde": {"placeholders": {"name": {"type": "String"}, "n": {"type": "int"}}},
-  "sgnPremiumGostergeSatiri": "EMA, Stokastik, ADX, Williams %R, CCI ve sınırsız bildirim Premium'da",
+  "sgnPremiumGostergeSatiri": "EMA, Stokastik, Trend Gücü, Williams %R, CCI ve sınırsız bildirim Premium'da",
   "sgnAyarAciklamaUcretsiz": "Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.",
   "sgnParametreAciklama": "{tur} için. Değiştirdiğin değer ekranda ve bildirimlerde kullanılır.",
   "@sgnParametreAciklama": {"placeholders": {"tur": {"type": "String"}}},

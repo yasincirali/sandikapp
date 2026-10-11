@@ -2786,8 +2786,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trendFlat => 'FLAT';
 
   @override
+  String get sinyalAsiriSatim => 'OVERSOLD';
+
+  @override
+  String get sinyalAsiriAlim => 'OVERBOUGHT';
+
+  @override
   String indicatorsConfidence(int lehte, int total, int pct) {
-    return '$lehte/$total directional indicators · $pct% confidence';
+    return '$lehte/$total indicators agree · $pct% confidence';
   }
 
   @override
@@ -2796,7 +2802,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get technicalOutlookUpper => 'TECHNICAL OUTLOOK';
+  String get technicalOutlookUpper => 'TECHNICAL OUTLOOK · DAILY';
 
   @override
   String get nowUpper => 'NOW';
@@ -2822,7 +2828,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No indicators are selected for this asset type. Enable them from Profile → Signal Settings.';
 
   @override
-  String get technicalAnalysisUpper => 'TECHNICAL ANALYSIS';
+  String get technicalAnalysisUpper => 'TECHNICAL ANALYSIS · DAILY';
 
   @override
   String nOfMIndicators(int on, int all) {
@@ -2834,7 +2840,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String buySellNeutralCounts(int buy, int sell, int neutral) {
-    return '$buy BUY · $sell SELL · $neutral NEUTRAL';
+    return '$buy up · $sell down · $neutral neutral';
   }
 
   @override
@@ -6937,7 +6943,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnPremiumKilitGovde =>
-      'EMA Crossover, Stochastic, ADX, Williams %R and CCI join the analysis with Premium. RSI, MACD and Bollinger are free.';
+      'EMA Crossover, Stochastic, Trend Strength, Williams %R and CCI join the analysis with Premium. RSI, MACD and Bollinger are free.';
 
   @override
   String get sgnPremiumGec => 'Go Premium';
@@ -8565,7 +8571,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnPremiumGostergeSatiri =>
-      'EMA, Stochastic, ADX, Williams %R, CCI and unlimited alerts in Premium';
+      'EMA, Stochastic, Trend Strength, Williams %R, CCI and unlimited alerts in Premium';
 
   @override
   String get sgnAyarAciklamaUcretsiz =>

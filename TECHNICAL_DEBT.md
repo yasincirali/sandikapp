@@ -9,6 +9,28 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — Gösterge denetiminde (2026-10-11) bilerek bırakılanlar
+
+Rapor: https://claude.ai/artifact/PtmrdPz5fDLBKmnx9SrReC. 17 bulgunun 14'ü aynı
+PR'da kapandı; kalanlar:
+
+- **Bulgu 6, 15 — sinyal motoru yalnız kapanış görür.** Stokastik, Williams %R
+  ve CCI TradingView'de yüksek/düşük (CCI'de hlc3) ister; gerçek ADX +DI/−DI
+  ister. Sunucunun `price_history_cache` tablosu yalnız `closes` tutar, panel
+  de `HistoryService` kapanış serisini okur. Ekran ile push aynı sayıyı
+  göstersin diye ikisi birlikte değişmeli: cache'e `highs`/`lows` kolonu
+  (ekleyerek, eski satır null) + panelin `MumVerisi` günlük barlarına geçmesi.
+  Şimdilik "ADX" etiketi "Trend Gücü" oldu ki TradingView'deki ADX sanılmasın.
+  Maliyet: migration + iki taraf parite testi. Ne zaman: Premium açılmadan önce.
+- **Bulgu 10 — grafikteki MA20 basit, sinyaldeki EMA kesişimi üstel.** Grafik
+  çipleri yasin'in tanımı (MA20 · EMA50 · EMA200, TradingView'de "MA" = SMA);
+  sinyal satırı hesapladığı ortalamaları adıyla yazıyor ("EMA20 > EMA50").
+  Grafikte sinyalin ortalamasını tek dokunuşla açmak ürün kararı; yasin'e
+  sorulmadan değiştirilmedi.
+- **Kayıtlı bildirim satırı** (`AssetSignalCard`, "Son bildirim: ▲") push'un
+  aşırılık mı trend mi olduğunu bilmez; `signal_notifications`'a `donus`
+  kolonu eklenene kadar eski "yukarı/aşağı" dilinde kalır.
+
 ## 🟡 AÇIK — Varlık grafiği EMA/mum v1'de ertelenenler (2026-10-10)
 
 - **LOG bandı düzeltmesi yalnız Premium katmanları gören hesapta.**
