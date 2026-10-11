@@ -164,7 +164,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.byType(CustomLoadingView), findsNothing,
+      expect(find.byType(CustomLoadingIndicator), findsNothing,
           reason: 'portföyde o türden varlık yokken veri ASLA gelmez — '
               'spinner sonsuza kadar döner');
       expect(find.text('Portföyünde döviz yok'), findsOneWidget,
@@ -183,7 +183,7 @@ void main() {
         initialTypeFilter: AssetType.fon,
       );
 
-      expect(find.byType(CustomLoadingView), findsNothing);
+      expect(find.byType(CustomLoadingIndicator), findsNothing);
       expect(find.text('Portföyünde fon yok'), findsOneWidget);
       tester.takeException();
     });
@@ -191,7 +191,7 @@ void main() {
     testWidgets('portföy tamamen boşken yeni kullanıcı mesajı', (tester) async {
       await _pump(tester, assets: const []);
 
-      expect(find.byType(CustomLoadingView), findsNothing,
+      expect(find.byType(CustomLoadingIndicator), findsNothing,
           reason: 'boş portföyde beklenecek veri yok');
       expect(find.text('Henüz varlığın yok'), findsOneWidget);
       tester.takeException();
@@ -209,7 +209,7 @@ void main() {
         initialTypeFilter: AssetType.hisse,
       );
 
-      expect(find.byType(CustomLoadingView), findsNothing);
+      expect(find.byType(CustomLoadingIndicator), findsNothing);
       expect(find.text('Portföyünde hisse yok'), findsOneWidget,
           reason: 'temettü satırı miktara girmez — net pozisyon yok, '
               'yani kullanıcının o türden varlığı YOK');
@@ -234,7 +234,7 @@ void main() {
         initialTypeFilter: AssetType.diger,
       );
 
-      expect(find.byType(CustomLoadingView), findsNothing);
+      expect(find.byType(CustomLoadingIndicator), findsNothing);
       expect(find.text('Grafik verisi yok'), findsOneWidget,
           reason: 'çizilemeyen tür için ayrı mesaj bekleniyor');
       tester.takeException();

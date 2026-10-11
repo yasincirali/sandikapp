@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/sandik.dart';
 import '../theme/yukleme_isareti.dart';
 
 /// Uygulama genelinde tek yükleme göstergesi — açılış işaretini temel alır.
@@ -40,46 +39,6 @@ class CustomLoadingIndicator extends StatelessWidget {
       liveRegion: true,
       // Dış ölçü istenen boyutta kilitli — layout kayması olmaz.
       child: YuklemeIsareti(size: size),
-    );
-  }
-}
-
-/// Ortalanmış tam alan yükleme — `Center(child: CustomLoadingIndicator())`
-/// tekrarını kısaltır.
-///
-/// ## Ne zaman bu, ne zaman iskelet (UX denetimi 2026-09-29)
-/// Bir EYLEM sürerken (kaydet, gönder, giriş) bu gösterge. İÇERİK
-/// yüklenirken (liste, grafik, kart) `SandikSkeletonList` /
-/// `SandikSkeletonChart` / `SandikSkeleton`: içeriğin geleceği yer belli
-/// olur, yerleşim veri gelince zıplamaz; ortada dönen halka finans
-/// panosunda "bozuk" okunur.
-class CustomLoadingView extends StatelessWidget {
-  const CustomLoadingView({
-    super.key,
-    this.size = CustomLoadingIndicator.large,
-    this.message,
-  });
-
-  final double size;
-  final String? message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CustomLoadingIndicator(size: size),
-          if (message != null) ...[
-            const SizedBox(height: SandikSpace.md),
-            Text(
-              message!,
-              textAlign: TextAlign.center,
-              style: context.t.bodyMedium?.copyWith(color: context.c.text58),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

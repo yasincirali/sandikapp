@@ -114,7 +114,6 @@ void main() {
     'lib/screens/portfolio_performance/tur_dokumu_karti.dart': 0,
     'lib/screens/portfolio_performance_screen.dart': 0,
     'lib/screens/portfolio_screen.dart': 0,
-    'lib/widgets/bar_interval_selector.dart': 1,
     'lib/widgets/custom_loading_indicator.dart': 1,
     'lib/widgets/delete_asset_dialog.dart': 0,
     'lib/widgets/dividend_dialog.dart': 1,
