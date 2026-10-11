@@ -167,12 +167,15 @@ class GrafikAracCubugu extends ConsumerWidget {
           ],
         ),
         // Satır arası boşluk yok: çiplerin 44pt dokunma payı (HIG,
-        // 2026-10-10) zaten aralık bırakıyor.
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        // 2026-10-10) zaten aralık bırakıyor. Wrap: 320pt ekranda (iPhone SE)
+        // üç ortalama çipi tek satıra sığmıyor, 22–54 px taşıyordu
+        // (`performance_screen_overflow_test`, 2026-10-11 mum/EMA herkese
+        // açılınca görüldü); sığmayan çip alt satıra iner.
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 6,
           children: [
             ma20,
-            const SizedBox(width: 6),
             GrafikCipi(
               label: 'EMA50',
               active: ema50Acik,
@@ -180,7 +183,6 @@ class GrafikAracCubugu extends ConsumerWidget {
               onTap: () =>
                   ref.read(chartEma50Provider.notifier).set(!ema50Acik),
             ),
-            const SizedBox(width: 6),
             GrafikCipi(
               label: 'EMA200',
               active: ema200Acik,
