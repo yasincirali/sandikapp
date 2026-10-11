@@ -23,6 +23,9 @@ export type AssetType =
   | 'diger';
 
 export interface TechnicalIndicator {
+  /// Gösterge kimliği (`IndicatorId`). Özetin grup kararı ve W%R/Stokastik
+  /// çift sayımı için; `computeById` doldurur. Dart `TechnicalIndicator.id`.
+  id?: string;
   name: string;
   value: number;
   signal: SignalType;
@@ -63,9 +66,9 @@ export type GostergeAyari = Record<string, number>;
 
 const PARAMETRE_TANIMLARI: Record<string, [string, number, number][]> = {
   rsi: [['periyot', 2, 50]],
-  macd: [['hizli', 2, 50], ['yavas', 3, 100], ['sinyal', 2, 50]],
+  macd: [['hizli', 2, 50], ['yavas', 3, 80], ['sinyal', 2, 30]],
   bollinger: [['periyot', 5, 60]],
-  ema: [['kisa', 2, 60], ['uzun', 3, 120]],
+  ema: [['kisa', 2, 60], ['uzun', 3, 100]],
   stochastic: [['periyot', 3, 50]],
   adx: [['periyot', 3, 50]],
   williams_r: [['periyot', 3, 50]],
@@ -130,19 +133,32 @@ export function rsi(prices: number[], type: AssetType, par?: GostergeAyari): Tec
     return { name: label, value: 50, signal: 'neutral', description: 'Yetersiz veri' };
   }
 
-  let gains = 0;
-  let losses = 0;
-  for (let i = prices.length - period; i < prices.length; i++) {
+  // Wilder RSI (TradingView `ta.rsi`): ilk [period] değişimin basit
+  // ortalaması tohumdur, sonra RMA (α = 1/period) ile bütün seri boyunca
+  // yumuşatılır. 2026-10-11 denetimine kadar yalnız son [period] değişimin
+  // basit ortalaması alınıyordu (Cutler RSI): TradingView'den ortalama 6,5
+  // puan farklıydı ve uygulamanın kendi Pine RSI şablonuyla çelişiyordu.
+  let avgG = 0;
+  let avgL = 0;
+  for (let i = 1; i <= period; i++) {
     const d = prices[i] - prices[i - 1];
-    if (d > 0) gains += d;
-    else losses -= d;
+    if (d > 0) avgG += d;
+    else avgL -= d;
   }
-  const avgG = gains / period;
-  const avgL = losses / period;
-  const value = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+  avgG /= period;
+  avgL /= period;
+  for (let i = period + 1; i < prices.length; i++) {
+    const d = prices[i] - prices[i - 1];
+    avgG = (avgG * (period - 1) + (d > 0 ? d : 0)) / period;
+    avgL = (avgL * (period - 1) + (d < 0 ? -d : 0)) / period;
+  }
+  const value = avgL === 0 ? 100 : avgG === 0 ? 0 : 100 - 100 / (1 + avgG / avgL);
 
-  const overbought = type === 'hisse' ? 70 : 72;
-  const oversold = type === 'hisse' ? 30 : 28;
+  // Eşik her türde 70/30 (TradingView varsayılanı; RSI şablonunun
+  // çizgileriyle aynı). Hisse dışı 72/28 basit RSI'ın oynaklığını
+  // bastırmak içindi; Wilder RSI'da gerekmez.
+  const overbought = 70;
+  const oversold = 30;
 
   const signal: SignalType =
     value < oversold ? 'buy' : value > overbought ? 'sell' : 'neutral';
@@ -182,11 +198,15 @@ export function macd(prices: number[], type: AssetType, par?: GostergeAyari): Te
   const signal: SignalType =
     histogram > 0 ? 'buy' : histogram < 0 ? 'sell' : 'neutral';
 
+  // Histogram fiyatın yüzdesiyle yazılır: ham fark ₺1'lik fonda "+0,00",
+  // altında dolar/ons olurdu (denetim 2026-10-11, bulgu 12).
+  const son = prices[prices.length - 1];
+  const yuzde = son !== 0 ? (histogram / son) * 100 : 0;
   const description =
     histogram > 0
-      ? `MACD çizgisi sinyal üzerinde (+${fmtNum(histogram, 2)})`
+      ? `MACD çizgisi sinyal üzerinde (+%${fmtNum(yuzde, 2)})`
       : histogram < 0
-        ? `MACD çizgisi sinyal altında (${fmtNum(histogram, 2)})`
+        ? `MACD çizgisi sinyal altında (-%${fmtNum(-yuzde, 2)})`
         : 'Kesişim noktasında';
 
   return { name: label, value: histogram, signal, description };
@@ -224,9 +244,9 @@ export function bollingerBands(
 
   const description =
     current < lower
-      ? 'Alt bantın altında — potansiyel dönüş'
+      ? 'Alt bandın altında: potansiyel dönüş'
       : current > upper
-        ? 'Üst bantın üzerinde — potansiyel düzeltme'
+        ? 'Üst bandın üzerinde: potansiyel düzeltme'
         : `%B: ${fmtNum(pctB * 100, 0)} (bant içi)`;
 
   return { name: label, value: pctB * 100, signal, description };
@@ -271,13 +291,13 @@ export function movingAverage(
   // testi #31): teyitsiz kesişim "yükseliş trendi" diye yazılmaz.
   const description =
     signal === 'buy'
-      ? `EMA${shortP} > EMA${longP} — yükseliş trendi`
+      ? `EMA${shortP} > EMA${longP}: yükseliş trendi`
       : signal === 'sell'
-        ? `EMA${shortP} < EMA${longP} — düşüş trendi`
+        ? `EMA${shortP} < EMA${longP}: düşüş trendi`
         : shortEma > longEma
-          ? `EMA${shortP} > EMA${longP}, fiyat EMA${shortP} altında — teyit yok`
+          ? `EMA${shortP} > EMA${longP}, fiyat EMA${shortP} altında, teyit yok`
           : shortEma < longEma
-            ? `EMA${shortP} < EMA${longP}, fiyat EMA${shortP} üstünde — teyit yok`
+            ? `EMA${shortP} < EMA${longP}, fiyat EMA${shortP} üstünde, teyit yok`
             : 'Ortalamalarda kesişim bölgesi';
 
   return { name: label, value: diff, signal, description };
@@ -318,10 +338,14 @@ export function stochastic(
   return { name: label, value: k, signal, description };
 }
 
-// ── 6. ADX (proxy — Dart ile aynı basitleştirme) ────────────────────────────
+// ── 6. Trend gücü (kimlik 'adx'; Dart ile aynı) ────────────────────────────
+// Formül |Σyükseliş − Σdüşüş| ÷ Σ|değişim| (Kaufman verim oranı). Gerçek
+// ADX yüksek/düşük ister, yön vermez; sunucu yalnız kapanış tutar. Bu yüzden
+// adı "Trend Gücü" (denetim 2026-10-11, bulgu 6); kimlik ayarlar bozulmasın
+// diye 'adx' kalır.
 export function adx(prices: number[], _type: AssetType, par?: GostergeAyari): TechnicalIndicator {
   const period = par?.periyot ?? 14;
-  const label = `ADX (${period})`;
+  const label = `Trend Gücü (${period})`;
 
   if (prices.length < period + 1) {
     return { name: label, value: 0, signal: 'neutral', description: 'Yetersiz veri' };
@@ -423,6 +447,16 @@ function computeById(
   type: AssetType,
   par?: GostergeAyari,
 ): TechnicalIndicator | null {
+  const ind = hesapla(id, prices, type, par);
+  return ind ? { id, ...ind } : null;
+}
+
+function hesapla(
+  id: string,
+  prices: number[],
+  type: AssetType,
+  par?: GostergeAyari,
+): TechnicalIndicator | null {
   switch (id) {
     case IndicatorId.rsi: return rsi(prices, type, par);
     case IndicatorId.macd: return macd(prices, type, par);
@@ -460,25 +494,50 @@ export function analyze(
   return result;
 }
 
+/// Ortalamaya dönüş (aşırılık) göstergeleri: "al" oyu "çok düştü" demektir,
+/// "yükseliş trendi" değil. Kalanlar (MACD, EMA, trend gücü) trend
+/// göstergesidir. Dart `IndicatorId.donus`.
+export const DONUS_INDICATORS = new Set<string>([
+  IndicatorId.rsi,
+  IndicatorId.bollinger,
+  IndicatorId.stochastic,
+  IndicatorId.williamsR,
+  IndicatorId.cci,
+]);
+
 /**
  * Genel sinyal özeti.
  *
  * [confidence] 0-100 ölçeğindedir — kullanıcının eşiği de yüzdedir.
- * (Dart tarafında bu değer bir dönem 0..1 oranı dönüyordu ve eşik
- * karşılaştırması hiç geçmiyordu; port doğru ölçekle yazıldı.)
+ *
+ * Williams %R, Stokastik ile birlikte açıksa sayılmaz: ikisi de kapanıştan
+ * aynı pencerenin uçlarına bakar (W%R = %K − 100), aynı bilgi iki oy
+ * olurdu (denetim 2026-10-11, bulgu 5).
+ *
+ * [donus]: kazanan yönün oylarının çoğu ortalamaya dönüş göstergelerinden
+ * geliyorsa true — "al" aşırı satım, "sat" aşırı alım demektir; ekran ve
+ * push bunu trend yönü diye yazmaz (bulgu 1).
  */
 export function summarize(indicators: TechnicalIndicator[]): {
   signal: SignalType;
   buyCount: number;
   sellCount: number;
   confidence: number;
+  donus: boolean;
+  /// Oylamaya giren gösterge sayısı (W%R çift sayımı düşülmüş). Güven
+  /// yüzdesinin paydası; push metni de bunu yazar.
+  toplam: number;
 } {
-  const buy = indicators.filter((i) => i.signal === 'buy').length;
-  const sell = indicators.filter((i) => i.signal === 'sell').length;
-  const total = indicators.length;
+  const stokastikVar = indicators.some((i) => i.id === IndicatorId.stochastic);
+  const sayilan = stokastikVar
+    ? indicators.filter((i) => i.id !== IndicatorId.williamsR)
+    : indicators;
+  const buy = sayilan.filter((i) => i.signal === 'buy').length;
+  const sell = sayilan.filter((i) => i.signal === 'sell').length;
+  const total = sayilan.length;
 
   if (total === 0) {
-    return { signal: 'neutral', buyCount: 0, sellCount: 0, confidence: 0 };
+    return { signal: 'neutral', buyCount: 0, sellCount: 0, confidence: 0, donus: false, toplam: 0 };
   }
 
   const buyRatio = buy / total;
@@ -487,10 +546,19 @@ export function summarize(indicators: TechnicalIndicator[]): {
   const signal: SignalType =
     buyRatio >= 0.6 ? 'buy' : sellRatio >= 0.6 ? 'sell' : 'neutral';
 
+  let donus = false;
+  if (signal !== 'neutral') {
+    const lehte = sayilan.filter((i) => i.signal === signal);
+    const d = lehte.filter((i) => i.id !== undefined && DONUS_INDICATORS.has(i.id)).length;
+    donus = d > lehte.length - d;
+  }
+
   return {
     signal,
     buyCount: buy,
     sellCount: sell,
     confidence: Math.max(buyRatio, sellRatio) * 100,
+    donus,
+    toplam: total,
   };
 }

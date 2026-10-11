@@ -4766,10 +4766,22 @@ abstract class AppLocalizations {
   /// **'YATAY'**
   String get trendFlat;
 
+  /// Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı satım bölgesinde (trend yönü değil).
+  ///
+  /// In tr, this message translates to:
+  /// **'AŞIRI SATIM'**
+  String get sinyalAsiriSatim;
+
+  /// Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı alım bölgesinde (trend yönü değil).
+  ///
+  /// In tr, this message translates to:
+  /// **'AŞIRI ALIM'**
+  String get sinyalAsiriAlim;
+
   /// No description provided for @indicatorsConfidence.
   ///
   /// In tr, this message translates to:
-  /// **'{lehte}/{total} yön veren gösterge · güven %{pct}'**
+  /// **'{lehte}/{total} gösterge aynı yönde · güven %{pct}'**
   String indicatorsConfidence(int lehte, int total, int pct);
 
   /// No description provided for @confidenceOnly.
@@ -4781,7 +4793,7 @@ abstract class AppLocalizations {
   /// No description provided for @technicalOutlookUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TEKNİK GÖRÜNÜM'**
+  /// **'TEKNİK GÖRÜNÜM · GÜNLÜK'**
   String get technicalOutlookUpper;
 
   /// No description provided for @nowUpper.
@@ -4829,7 +4841,7 @@ abstract class AppLocalizations {
   /// No description provided for @technicalAnalysisUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TEKNİK ANALİZ'**
+  /// **'TEKNİK ANALİZ · GÜNLÜK'**
   String get technicalAnalysisUpper;
 
   /// No description provided for @nOfMIndicators.
@@ -4847,7 +4859,7 @@ abstract class AppLocalizations {
   /// No description provided for @buySellNeutralCounts.
   ///
   /// In tr, this message translates to:
-  /// **'{buy} AL · {sell} SAT · {neutral} NÖTR'**
+  /// **'{buy} yukarı · {sell} aşağı · {neutral} nötr'**
   String buySellNeutralCounts(int buy, int sell, int neutral);
 
   /// No description provided for @confidenceWord.
@@ -11450,7 +11462,7 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumKilitGovde.
   ///
   /// In tr, this message translates to:
-  /// **'EMA Kesişim, Stokastik, ADX, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.'**
+  /// **'EMA Kesişim, Stokastik, Trend Gücü, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.'**
   String get sgnPremiumKilitGovde;
 
   /// No description provided for @sgnPremiumGec.
@@ -14144,7 +14156,7 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumGostergeSatiri.
   ///
   /// In tr, this message translates to:
-  /// **'EMA, Stokastik, ADX, Williams %R, CCI ve sınırsız bildirim Premium\'da'**
+  /// **'EMA, Stokastik, Trend Gücü, Williams %R, CCI ve sınırsız bildirim Premium\'da'**
   String get sgnPremiumGostergeSatiri;
 
   /// No description provided for @sgnAyarAciklamaUcretsiz.

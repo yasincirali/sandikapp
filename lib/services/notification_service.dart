@@ -403,16 +403,23 @@ class NotificationService {
   ///   * Güven yüzdesi gövdede AÇIKÇA verilir — "çoğunluğu yukarı yönlü"
   ///     ifadesi 4/6 ile 6/6 arasındaki farkı gizliyordu.
   ///   * Yasal ibare her durumda korunur.
+  ///   * Güvenin paydası oylamaya giren TÜM göstergeler ([toplam]); verilmezse
+  ///     eski tanım (yukarı + aşağı). Bkz. sunucu `buildMessage` (bulgu 7).
+  ///   * [donus]: oyların çoğu aşırılık göstergelerinden geliyorsa yön değil
+  ///     bölge yazılır ("aşırı satım bölgesinde"); sert düşüşte "▲ yukarı
+  ///     yönlü" yazmamak için (denetim 2026-10-11, bulgu 1).
   static ({String title, String body}) buildSignalMessage({
     required String assetName,
     required String ticker,
     required SignalType signal,
     required int buyCount,
     required int sellCount,
+    int? toplam,
+    bool donus = false,
   }) {
     const disclaimer = 'Yatırım tavsiyesi değildir.';
     final etiket = shortAssetLabel(assetName, ticker);
-    final total = buyCount + sellCount;
+    final total = toplam ?? buyCount + sellCount;
 
     if (signal == SignalType.neutral) {
       return (
@@ -425,6 +432,17 @@ class NotificationService {
     final isBuy = signal == SignalType.buy;
     final lehte = isBuy ? buyCount : sellCount;
     final yuzde = total > 0 ? ((lehte / total) * 100).round() : 0;
+
+    if (donus) {
+      final bolge = isBuy ? 'aşırı satım' : 'aşırı alım';
+      return (
+        title: isBuy
+            ? '▼ $etiket · aşırı satım bölgesinde'
+            : '▲ $etiket · aşırı alım bölgesinde',
+        body: '$lehte/$total gösterge $bolge gösteriyor · '
+            'güven %$yuzde. $disclaimer',
+      );
+    }
 
     return (
       title: isBuy ? '▲ $etiket · yukarı yönlü' : '▼ $etiket · aşağı yönlü',

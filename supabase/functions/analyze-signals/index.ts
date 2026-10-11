@@ -31,6 +31,7 @@ import {
 } from '../_shared/technical_analysis.ts';
 import {
   loadPriceHistories,
+  SINYAL_CACHE_TTL_MS,
   MIN_POINTS,
   resolveSymbol,
 } from '../_shared/price_history.ts';
@@ -45,7 +46,7 @@ import {
 import { dedupeTokensByDevice, ekHesap, ekHesapSatirlari, TokenRow } from '../_shared/push_tokens.ts';
 
 // Testler (`device_token_dedup_test`) bu modülden okuyor; kaynağı `_shared`.
-export { dedupeTokensByDevice, shortLabel };
+export { buildMessage, dedupeTokensByDevice, shortLabel };
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
@@ -74,8 +75,13 @@ function buildMessage(
   buyCount: number,
   sellCount: number,
   ticker = '',
+  secenek: { toplam?: number; donus?: boolean } = {},
 ): { title: string; body: string } {
-  const total = buyCount + sellCount;
+  // Güvenin paydası OYLAMAYA GİREN TÜM göstergeler (eşik kontrolüyle aynı
+  // tanım). 2026-10-11'e kadar yukarı+aşağı kullanılıyordu: 2 yukarı 1 nötr
+  // durumda push "güven %100", uygulama "%67" diyordu (denetim bulgu 7).
+  // [toplam] verilmeyen eski çağıranlar için eski tanım korunur.
+  const total = secenek.toplam ?? buyCount + sellCount;
   const disclaimer = 'Yatırım tavsiyesi değildir.';
   const etiket = shortLabel(assetName, ticker);
 
@@ -106,6 +112,18 @@ function buildMessage(
   // 4/6 ile 6/6 arasındaki farkı gizliyordu; kullanıcı zayıf bir sinyali
   // güçlü sanabilirdi.
   const yuzde = Math.round((lehte / total2) * 100);
+
+  // Oyların çoğu ortalamaya dönüş göstergelerinden geliyorsa (RSI,
+  // Bollinger…) "al" aşırı satım demektir: fiyat düşmüştür. Bunu "yukarı
+  // yönlü" diye yazmak sert düşüşte "▲ yukarı" bildirimi gönderiyordu
+  // (denetim 2026-10-11, bulgu 1). Ok, fiyatın son hareketini gösterir.
+  if (secenek.donus) {
+    const bolge = isBuy ? 'aşırı satım' : 'aşırı alım';
+    return {
+      title: isBuy ? `▼ ${etiket} · aşırı satım bölgesinde` : `▲ ${etiket} · aşırı alım bölgesinde`,
+      body: `${lehte}/${total} gösterge ${bolge} gösteriyor · güven %${yuzde}. ${disclaimer}`,
+    };
+  }
 
   return {
     title: isBuy ? `▲ ${etiket} · yukarı yönlü` : `▼ ${etiket} · aşağı yönlü`,
@@ -761,7 +779,9 @@ Deno.serve(async (request) => {
     // sorusunun cevabı. Sıfırdan büyükse birleştirme fiilen çalışmıştır.
     const collapsedLots = aktifAssets.length - pozisyonlar.length;
 
-    const histories = await loadPriceHistories(admin, symbols);
+    // Sinyal turu kısa önbellek ömrüyle okur: gün içi hareket görünmeli
+    // (bkz. SINYAL_CACHE_TTL_MS).
+    const histories = await loadPriceHistories(admin, symbols, SINYAL_CACHE_TTL_MS);
 
     // ── 5) Analiz + de-dup ──────────────────────────────────────────────────
     const accessToken = dryRun
@@ -855,6 +875,7 @@ Deno.serve(async (request) => {
         summary.buyCount,
         summary.sellCount,
         asset.ticker,
+        { toplam: summary.toplam, donus: summary.donus },
       );
 
       // dry-run: HİÇBİR yan etki bırakma.

@@ -2760,8 +2760,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get trendFlat => 'YATAY';
 
   @override
+  String get sinyalAsiriSatim => 'AŞIRI SATIM';
+
+  @override
+  String get sinyalAsiriAlim => 'AŞIRI ALIM';
+
+  @override
   String indicatorsConfidence(int lehte, int total, int pct) {
-    return '$lehte/$total yön veren gösterge · güven %$pct';
+    return '$lehte/$total gösterge aynı yönde · güven %$pct';
   }
 
   @override
@@ -2770,7 +2776,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get technicalOutlookUpper => 'TEKNİK GÖRÜNÜM';
+  String get technicalOutlookUpper => 'TEKNİK GÖRÜNÜM · GÜNLÜK';
 
   @override
   String get nowUpper => 'ŞU AN';
@@ -2796,7 +2802,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları\'ndan aktifleştir.';
 
   @override
-  String get technicalAnalysisUpper => 'TEKNİK ANALİZ';
+  String get technicalAnalysisUpper => 'TEKNİK ANALİZ · GÜNLÜK';
 
   @override
   String nOfMIndicators(int on, int all) {
@@ -2808,7 +2814,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String buySellNeutralCounts(int buy, int sell, int neutral) {
-    return '$buy AL · $sell SAT · $neutral NÖTR';
+    return '$buy yukarı · $sell aşağı · $neutral nötr';
   }
 
   @override
@@ -6875,7 +6881,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sgnPremiumKilitGovde =>
-      'EMA Kesişim, Stokastik, ADX, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.';
+      'EMA Kesişim, Stokastik, Trend Gücü, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.';
 
   @override
   String get sgnPremiumGec => 'Premium\'a geç';
@@ -8482,7 +8488,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sgnPremiumGostergeSatiri =>
-      'EMA, Stokastik, ADX, Williams %R, CCI ve sınırsız bildirim Premium\'da';
+      'EMA, Stokastik, Trend Gücü, Williams %R, CCI ve sınırsız bildirim Premium\'da';
 
   @override
   String get sgnAyarAciklamaUcretsiz =>

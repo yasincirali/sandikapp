@@ -46,6 +46,7 @@ interface GoldenCase {
     buyCount: number;
     sellCount: number;
     confidence: number;
+    donus: boolean;
   };
 }
 
@@ -56,6 +57,15 @@ const golden: { cases: GoldenCase[] } = JSON.parse(
 );
 
 function computeById(
+  id: string,
+  prices: number[],
+  type: AssetType,
+): TechnicalIndicator | null {
+  const ind = hesapla(id, prices, type);
+  return ind ? { id, ...ind } : null;
+}
+
+function hesapla(
   id: string,
   prices: number[],
   type: AssetType,
@@ -148,6 +158,7 @@ Deno.test('altın standart: özet (signal/confidence) Dart ile aynı', () => {
       round6(c.summary.confidence),
       `${where} → confidence`,
     );
+    assertEquals(s.donus, c.summary.donus, `${where} → dönüş`);
   }
 });
 

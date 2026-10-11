@@ -35,7 +35,9 @@ import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
 import 'asset_detail_screen.dart'
-    show TechnicalSignalPanel, kSinyalPenceresiGun;
+    show TechnicalSignalPanel;
+import '../services/technical_analysis_service.dart'
+    show kSinyalCozunurlugu, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
 
 /// Varlık sayfası — bir varlığı portföye EKLEMEDEN incelemek.
@@ -262,7 +264,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
           widget.kimlik.ticker.isNotEmpty &&
           ref.read(sinyalYuzeyiProvider) == SinyalYuzeyi.acik)
         HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
-            periodDays: kSinyalPenceresiGun),
+            periodDays: kSinyalPenceresiGun,
+                cozunurluk: kSinyalCozunurlugu),
     ]);
     if (!mounted) return;
     await rotaGecisiniBekle(context);

@@ -140,8 +140,21 @@ DateTime kovaBitisi(DateTime baslangic, double kovaMs) {
 /// noktaların (ilk, maks, min, son) dörtlüsü; boş kova ÜRETİLMEZ (tatil,
 /// piyasa kapalı). Aylık kovada `x` takvim ayının başıdır ve `kovaMs` o
 /// ayın gerçek uzunluğudur (28–31 gün) — mum merkezi ay ortasına düşer.
-List<Mum> mumlariTuret(List<FlSpot> spots, {required double kovaMs}) {
+///
+/// [akislar] (x → o noktada portföye giren NET para, TL): verilirse para
+/// girişi/çıkışı mumun gövdesine yazılmaz (denetim 2026-10-11, bulgu 13).
+/// Portföy değerinden türeyen mumda 50.000 TL'lik alım günü büyük yeşil
+/// mum oluyor, kullanıcı bunu getiri sanıyordu. Akışlı kovada açılış
+/// önceki kapanış + kovanın net akışıdır ve kova içindeki noktalar kendi
+/// noktalarından SONRAKİ akış kadar kaydırılır; kapanış gerçek değerde
+/// kalır (çizginin ucuyla aynı sayı). Gövde = yalnız piyasa hareketi.
+/// Akışsız kovalar birebir eskisi.
+List<Mum> mumlariTuret(List<FlSpot> spots,
+    {required double kovaMs, Map<double, double>? akislar}) {
   if (spots.isEmpty || !kovaMs.isFinite || kovaMs <= 0) return const [];
+  if (akislar != null && akislar.values.any((v) => v != 0)) {
+    return _akissizMumlar(spots, kovaMs, akislar);
+  }
   final sirali = List<FlSpot>.of(spots)..sort((a, b) => a.x.compareTo(b.x));
 
   final out = <Mum>[];
@@ -188,6 +201,63 @@ List<Mum> mumlariTuret(List<FlSpot> spots, {required double kovaMs}) {
   return out;
 }
 
+List<Mum> _akissizMumlar(
+    List<FlSpot> spots, double kovaMs, Map<double, double> akislar) {
+  final sirali = [
+    for (final s in spots)
+      if (s.x.isFinite && s.y.isFinite) s
+  ]..sort((a, b) => a.x.compareTo(b.x));
+  final out = <Mum>[];
+  double? oncekiKapanis;
+  var i = 0;
+  while (i < sirali.length) {
+    final t = DateTime.fromMillisecondsSinceEpoch(sirali[i].x.round());
+    final bas = kovaBaslangici(t, kovaMs);
+    final bit = kovaBitisi(bas, kovaMs);
+    final kova = <FlSpot>[];
+    while (i < sirali.length &&
+        DateTime.fromMillisecondsSinceEpoch(sirali[i].x.round())
+            .isBefore(bit)) {
+      kova.add(sirali[i]);
+      i++;
+    }
+    final f = [for (final s in kova) akislar[s.x] ?? 0.0];
+    final toplam = f.fold<double>(0, (a, b) => a + b);
+    final double acilis;
+    final yollar = <double>[];
+    if (toplam == 0 && f.every((v) => v == 0)) {
+      acilis = kova.first.y;
+      yollar.addAll(kova.map((s) => s.y));
+    } else {
+      var birikim = 0.0;
+      for (var k = 0; k < kova.length; k++) {
+        birikim += f[k];
+        yollar.add(kova[k].y + (toplam - birikim));
+      }
+      // İlk noktadaki akış önceki kapanışla bu nokta arasındaki sıçramadır;
+      // önceki kapanış yoksa (dönemin ilk kovası) ilk noktanın akışsız hâli.
+      acilis = (oncekiKapanis ?? (kova.first.y - f.first)) + toplam;
+    }
+    var enY = acilis, enD = acilis;
+    for (final y in yollar) {
+      if (y > enY) enY = y;
+      if (y < enD) enD = y;
+    }
+    out.add(Mum(
+      x: bas.millisecondsSinceEpoch.toDouble(),
+      kovaMs: (bit.millisecondsSinceEpoch - bas.millisecondsSinceEpoch)
+          .toDouble(),
+      acilis: acilis,
+      enYuksek: enY,
+      enDusuk: enD,
+      kapanis: kova.last.y,
+      noktaSayisi: kova.length,
+    ));
+    oncekiKapanis = kova.last.y;
+  }
+  return out;
+}
+
 /// Performans ekranının KENDİ X uzayından mum türetir.
 ///
 /// Ekran X'i epoch ms DEĞİL, dönem başından itibaren ölçülür: gün içi seride
@@ -206,12 +276,14 @@ List<Mum> mumlariTuret(List<FlSpot> spots, {required double kovaMs}) {
 /// [baslangicMs] ekran X'inin sıfır noktası (dönem başı, epoch ms).
 /// [birimMs] bir ekran biriminin ms karşılığı: gün içi 60 000, diğerleri
 /// 86 400 000.
+/// [akislar] ekran X'inde net para akışı (bkz. [mumlariTuret]).
 List<Mum> mumlariGrafikUzayinda(
   List<FlSpot> spots, {
   required double baslangicMs,
   required double birimMs,
   int hedefAdet = 40,
   double? kovaMs,
+  Map<double, double>? akislar,
 }) {
   if (spots.length < 2 || !birimMs.isFinite || birimMs <= 0) return const [];
   final epoch = [
@@ -230,7 +302,14 @@ List<Mum> mumlariGrafikUzayinda(
         hedefAdet: hedefAdet,
       );
   return [
-    for (final m in mumlariTuret(epoch, kovaMs: kova))
+    for (final m in mumlariTuret(epoch,
+        kovaMs: kova,
+        akislar: akislar == null
+            ? null
+            : {
+                for (final e in akislar.entries)
+                  baslangicMs + e.key * birimMs: e.value,
+              }))
       Mum(
         x: (m.x - baslangicMs) / birimMs,
         kovaMs: m.kovaMs / birimMs,

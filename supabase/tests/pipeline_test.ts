@@ -13,7 +13,14 @@ import {
   DEFAULT_INDICATORS,
   summarize,
 } from '../functions/_shared/technical_analysis.ts';
-import { MIN_POINTS, resolveSymbol } from '../functions/_shared/price_history.ts';
+import { buildMessage } from '../functions/analyze-signals/index.ts';
+import {
+  ALTIN_GRAM_TL,
+  altinGramTlSerisi,
+  MIN_POINTS,
+  resolveSymbol,
+  SINYAL_CACHE_TTL_MS,
+} from '../functions/_shared/price_history.ts';
 
 /// `index.ts`'teki karar zinciriyle aynı sıra.
 function shouldNotify(
@@ -136,9 +143,9 @@ Deno.test('nötr sinyal varsayılan olarak push edilmez', () => {
   assertEquals(r.reason, 'notr_kapali');
 });
 
-Deno.test('sembol çözümü: altın tek eğriye indirgenir', () => {
-  assertEquals(resolveSymbol('ALTIN_CEYREK', 'altin'), 'GC=F');
-  assertEquals(resolveSymbol('ALTIN_GRAM', 'altin'), 'GC=F');
+Deno.test('sembol çözümü: altın tek eğriye indirgenir (gram TL)', () => {
+  assertEquals(resolveSymbol('ALTIN_CEYREK', 'altin'), ALTIN_GRAM_TL);
+  assertEquals(resolveSymbol('ALTIN_GRAM', 'altin'), ALTIN_GRAM_TL);
   // Hisse kendi sembolünü korur.
   assertEquals(resolveSymbol('THYAO.IS', 'hisse'), 'THYAO.IS');
   // Ticker'ı olmayan varlık analiz edilemez.
@@ -153,4 +160,51 @@ Deno.test('MIN_POINTS en uzun göstergeyi (EMA50) karşılar', () => {
 
   // MIN_POINTS bunun üstünde olmalı.
   assertEquals(MIN_POINTS >= 50, true);
+});
+
+Deno.test('altın gram TL serisi: ons × aynı günün kuru ÷ 31,1035; kursuz gün düşer', () => {
+  const gun = (d: number) => Date.UTC(2026, 9, d, 21);
+  const ons: Array<[number, number]> = [[gun(1), 3110.35], [gun(2), 3110.35], [gun(3), 3421.385]];
+  const kur: Array<[number, number]> = [[gun(1), 40], [gun(3), 41]];
+  const seri = altinGramTlSerisi(ons, kur);
+  assertEquals(seri.length, 2);
+  assertEquals(Number(seri[0].toFixed(6)), 4000);
+  assertEquals(Number(seri[1].toFixed(6)), 4510);
+});
+
+Deno.test('sinyal önbelleği saatlik turda yenilenir', () => {
+  // analyze-signals saat başı koşar; ömür bir saatten kısa olmalı ki her
+  // tur gün içi fiyatı görsün (denetim 2026-10-11, bulgu 2).
+  if (!(SINYAL_CACHE_TTL_MS < 60 * 60 * 1000)) throw new Error('ömür ≥ 1 saat');
+});
+
+Deno.test('push metni: güven paydası tüm göstergeler, aşırılık trend diye yazılmaz', () => {
+  // 3 gösterge: 2 yukarı (RSI + Bollinger aşırı satım), 1 nötr.
+  const m = buildMessage('Türk Hava Yolları', 'buy', 2, 0, 'THYAO.IS', {
+    toplam: 3,
+    donus: true,
+  });
+  assertEquals(m.title, '▼ THYAO · aşırı satım bölgesinde');
+  assertEquals(m.body.startsWith('2/3 gösterge aşırı satım gösteriyor · güven %67.'), true);
+  // Trend oyu çoğunluktaysa eski dil.
+  const t = buildMessage('Türk Hava Yolları', 'sell', 0, 2, 'THYAO.IS', { toplam: 3 });
+  assertEquals(t.title, '▼ THYAO · aşağı yönlü');
+  assertEquals(t.body.startsWith('2/3 gösterge aşağı · güven %67.'), true);
+});
+
+Deno.test('özet: sert düşüşte aşırı satım oyu "dönüş" diye işaretlenir', () => {
+  // 60 gün yatay, son 10 gün her gün −%2.
+  const p: number[] = [];
+  for (let i = 0; i < 60; i++) p.push(100 + Math.sin(i / 3));
+  for (let i = 0; i < 10; i++) p.push(p[p.length - 1] * 0.98);
+  const s = summarize(analyze(p, 'hisse', ['rsi', 'macd', 'bollinger'], false));
+  if (s.signal === 'buy') assertEquals(s.donus, true);
+});
+
+Deno.test('özet: Stokastik açıkken Williams %R ikinci oy sayılmaz', () => {
+  const p: number[] = [];
+  for (let i = 0; i < 80; i++) p.push(100 + i);
+  const inds = analyze(p, 'hisse', ['stochastic', 'williams_r'], true);
+  assertEquals(inds.length, 2);
+  assertEquals(summarize(inds).toplam, 1);
 });

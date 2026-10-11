@@ -114,7 +114,11 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
       // kullanıcıya sahte bir "AL/SAT" gösterirdi. Sunucu tarafı bu tuzağı
       // zaten kapatmış durumda (yeterli veri yoksa varlığı atlar).
       final priceMap = await HistoryService.instance
-          .getSymbolHistory(asset.ticker, periodDays: 180)
+          // Panel ve şeritle aynı pencere VE katman. Yalnız `periodDays: 180`
+          // haftalık katmana düşüyor, ~26 nokta 30 eşiğinin altında kalıyor
+          // ve bu yol hiçbir varlıkta sinyal üretmiyordu (denetim bulgu 14).
+          .getSymbolHistory(asset.ticker,
+              periodDays: kSinyalPenceresiGun, cozunurluk: kSinyalCozunurlugu)
           .catchError((_) => <int, double>{});
       final sortedTs = priceMap.keys.toList()..sort();
       final prices = [for (final t in sortedTs) priceMap[t]!];
