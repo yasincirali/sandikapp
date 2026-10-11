@@ -17,10 +17,10 @@ betikteki `CAPTIONS_V4` / `REDACTIONS_V4`'e yapılır.
 
 | ASC alanı | Dosya |
 |---|---|
-| iPhone 6.7" (8) | `iphone_6.7_1284x2778/01…08` |
-| iPhone 6.5" (8) — yalnız istenirse | `iphone_6.5_1242x2688/01…08` |
-
-| Uygulama önizlemesi (6.7" ve 6.5" — aynı dosya) | `onizleme_videosu/sandik_onizleme_886x1920_28sn.mp4` |
+| iPhone 6.9" (8) | `iphone_6.9_1320x2868/01…08` |
+| iPhone 6.1" / 6.3" (8) | `iphone_6.3_1206x2622/01…08` |
+| iPhone 6.5" (8) | `iphone_6.5_1284x2778/01…08` (ya da `iphone_6.5_1242x2688/`) |
+| Uygulama önizlemesi (her bölüm — aynı dosya) | `onizleme_videosu/sandik_onizleme_886x1920_28sn.mp4` |
 | Uygulama içi etkinlik — kart / ayrıntı | `etkinlik_gorselleri/*_kart_1920x1080.png` / `*_detay_1080x1920.png` |
 
 Sırayı koru: arama listesinde yalnızca 01–02 (App Store'da 01–03) görünür.
