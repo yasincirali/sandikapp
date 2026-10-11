@@ -95,13 +95,7 @@ Future<PriceAlert?> alarmKurAkisi(
     return null;
   }
 
-  final mevcut = ref.read(priceAlertsProvider).valueOrNull ?? const [];
-  final limit = ref.read(priceAlertLimitProvider);
-  if (mevcut.where((a) => a.isActive).length >= limit) {
-    // Paywall açıkken sınır satış kapısıdır: Premium yolu da gösterilir.
-    alarmSiniriUyarisi(context, ref, limit);
-    return null;
-  }
+  if (alarmSiniriDoluysaUyar(context, ref)) return null;
 
   // Sunucuya yazma sayfanın "Alarm kur" düğmesinin İÇİNDE koşar (tek
   // yükleniyor davranışı, 2026-10-08): eskiden sayfa kapanıyor, `create`
@@ -389,4 +383,19 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       ),
     );
   }
+}
+
+/// Bir alarm daha AKTİF olursa (yeni kurma ya da tetiklenmişi yeniden kurma)
+/// sınır aşılır mı; aşılırsa uyarıyı gösterip true döner. Paywall açıkken
+/// sınır satış kapısıdır: Premium yolu da gösterilir.
+///
+/// Neden ortak (paywall kapıları incelemesi, 2026-10-11): sınır yalnız bu
+/// sayfada denetleniyordu; Alarmlar ekranı ve alarm şeridindeki "yeniden
+/// kur" tetiklenmiş alarmları aktife döndürerek 20 sınırını aşıyordu.
+bool alarmSiniriDoluysaUyar(BuildContext context, WidgetRef ref) {
+  final mevcut = ref.read(priceAlertsProvider).valueOrNull ?? const [];
+  final limit = ref.read(priceAlertLimitProvider);
+  if (mevcut.where((a) => a.isActive).length < limit) return false;
+  alarmSiniriUyarisi(context, ref, limit);
+  return true;
 }

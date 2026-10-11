@@ -65,6 +65,23 @@ final varlikKotasiProvider = Provider<({int kullanilan, int sinir})?>((ref) {
   return (kullanilan: kotaAnahtarlari(lotlar, uid).length, sinir: sinir);
 });
 
+/// Saf: [yeni] pozisyonu eklemek kotayı aşıyor mu; aşıyorsa kullanılan
+/// sayı, aşmıyorsa null. [yazilan] = yazımı süren (henüz `state`'e girmemiş)
+/// eklemelerin anahtarları. Toplu Ekle alımları paralel başlatır; bunlar
+/// sayılmazsa her çağrı aynı başlangıç durumunu görür ve 8/10 doluyken 6
+/// varlık eklenip 14'e çıkılır (paywall kapıları incelemesi, 2026-10-11).
+/// Sunucuda varlık sınırı yok; kapı yalnız burası.
+int? kotaDolu({
+  required Set<String> kayitli,
+  required Set<String> yazilan,
+  required String yeni,
+  required int sinir,
+}) {
+  final hepsi = {...kayitli, ...yazilan};
+  if (hepsi.contains(yeni) || hepsi.length < sinir) return null;
+  return hepsi.length;
+}
+
 String kotaAnahtari(AssetType type, String ticker, String currency,
         {String? sozlesmeId}) =>
     sozlesmeId != null && sozlesmeId.isNotEmpty
@@ -414,7 +431,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       assets = await SupabaseService.instance.fetchByUser(user.id);
       _sonDefterOkuma = DateTime.now();
       // Başarılı çekim → son bilinen defteri diske yaz (PortfolioCache).
-      CrashReporter.arkaPlan(PortfolioCache.write(user.id, assets), reason: 'portfolio_provider.PortfolioCache.write');
+      CrashReporter.arkaPlan(PortfolioCache.write(user.id, assets),
+          reason: 'portfolio_provider.PortfolioCache.write');
     } catch (e, st) {
       // Ağ yok / sunucu yok: son bilinen defterle aç. Eskiden burada hata
       // fırlıyor ve uçak modunda uygulama boş ekran + "Tekrar dene" ile
@@ -565,6 +583,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     ]));
     _gunIciSeriyiDusur();
   }
+
   /// Pozisyonun [oran] kadarını hedefe aktarır (Premium, 0136). v1'de
   /// olmayan kısmi taşıma, yukarıdaki iki yolun ikisine de düşmeden:
   /// [lotlar]'ın HER satırı aynı oranla bölünür, iki portföyün geçmişi de
@@ -630,21 +649,77 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (limit < (1 << 30)) {
       // Silinmiş, tamamen satılmış ve ortağa ait lot kotayı işgal etmez
       // (gerekçe [kotaAnahtarlari]).
-      final existingKeys = kotaAnahtarlari(currentState.assets, user.id);
-      final newKey =
-          kotaAnahtari(type, ticker, currency, sozlesmeId: sozlesmeId);
-      if (!existingKeys.contains(newKey) && existingKeys.length >= limit) {
+      // Yazımı süren paralel eklemeler de sayılır ([kotaDolu]).
+      final dolu = kotaDolu(
+        kayitli: kotaAnahtarlari(currentState.assets, user.id),
+        yazilan: _yazilanKotaAnahtarlari,
+        yeni: kotaAnahtari(type, ticker, currency, sozlesmeId: sozlesmeId),
+        sinir: limit,
+      );
+      if (dolu != null) {
         unawaited(AnalyticsService.instance
             .logPremiumGateShown(feature: 'asset_limit'));
-        throw AssetLimitExceededException(existingKeys.length, limit);
+        throw AssetLimitExceededException(dolu, limit);
       }
     }
 
+    final ayrilan =
+        kotaAnahtari(type, ticker, currency, sozlesmeId: sozlesmeId);
+    final ayirdim = _yazilanKotaAnahtarlari.add(ayrilan);
+    try {
+      await _addAssetYaz(
+        userId: user.id,
+        currentState: currentState,
+        name: name,
+        ticker: ticker,
+        type: type,
+        quantity: quantity,
+        purchasePrice: purchasePrice,
+        currency: currency,
+        notes: notes,
+        isManualPrice: isManualPrice,
+        subCategory: subCategory,
+        unitType: unitType,
+        addedDate: addedDate,
+        initialCurrentPrice: initialCurrentPrice,
+        commission: commission,
+        sozlesmeId: sozlesmeId,
+        portfoyId: portfoyId,
+      );
+    } finally {
+      // Yazım bitince lot `state`'te; anahtarı oradan sayılır.
+      if (ayirdim) _yazilanKotaAnahtarlari.remove(ayrilan);
+    }
+  }
+
+  /// Ayrılmış ama henüz `state`'e girmemiş pozisyon anahtarları
+  /// ([addAsset] kota kapısı).
+  final Set<String> _yazilanKotaAnahtarlari = {};
+
+  Future<void> _addAssetYaz({
+    required String userId,
+    required PortfolioState currentState,
+    required String name,
+    required String ticker,
+    required AssetType type,
+    required double quantity,
+    required double purchasePrice,
+    required String currency,
+    required String notes,
+    required bool isManualPrice,
+    required String? subCategory,
+    required String unitType,
+    required DateTime? addedDate,
+    required double? initialCurrentPrice,
+    required double commission,
+    required String? sozlesmeId,
+    required String? portfoyId,
+  }) async {
     final fxRate = await _alisKuru(currency, addedDate, currentState);
 
     final asset = Asset(
       id: _uuid.v4(),
-      userId: user.id,
+      userId: userId,
       name: name,
       ticker: ticker,
       type: type,
@@ -698,17 +773,19 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         pozisyonlar.add('${a.type.name}|${a.ticker}|${a.currency}');
       }
     }
-    CrashReporter.arkaPlan(RetentionTracker.instance.recordAssetCount(pozisyonlar.length), reason: 'portfolio_provider.RetentionTracker.recordAssetCount');
+    CrashReporter.arkaPlan(
+        RetentionTracker.instance.recordAssetCount(pozisyonlar.length),
+        reason: 'portfolio_provider.RetentionTracker.recordAssetCount');
 
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
       _gunIciSeriyiDusur();
     } else {
-      final assets = await SupabaseService.instance.fetchByUser(user.id);
+      final assets = await SupabaseService.instance.fetchByUser(userId);
       state = AsyncData(PortfolioState(
         assets: assets,
-        ownerId: user.id,
+        ownerId: userId,
       ));
     }
   }
@@ -741,8 +818,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     ];
     final limit = ref.read(assetLimitProvider);
     if (limit < (1 << 30)) {
-      final userId = ref.read(authProvider).valueOrNull?.id ?? lots.first.userId;
-      final mevcut = kotaAnahtarlari(currentState.assets, userId);
+      final userId =
+          ref.read(authProvider).valueOrNull?.id ?? lots.first.userId;
+      final mevcut = {
+        ...kotaAnahtarlari(currentState.assets, userId),
+        ..._yazilanKotaAnahtarlari,
+      };
       final yeni = {
         for (final a in lots)
           kotaAnahtari(a.type, a.ticker, a.currency, sozlesmeId: a.sozlesmeId),
@@ -832,7 +913,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
     final current = state.valueOrNull;
     if (current != null) {
-      state = AsyncData(current.copyWith(assets: [transaction, ...current.assets]));
+      state =
+          AsyncData(current.copyWith(assets: [transaction, ...current.assets]));
       _gunIciSeriyiDusur();
     }
   }
@@ -888,8 +970,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
     final current = state.valueOrNull;
     if (current != null) {
-      state = AsyncData(
-          current.copyWith(assets: [transaction, ...current.assets]));
+      state =
+          AsyncData(current.copyWith(assets: [transaction, ...current.assets]));
       _gunIciSeriyiDusur();
     }
   }
@@ -961,7 +1043,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         portfoyId: _yazilacakPortfoy(portfoyId: deleted.portfoyId),
       );
       await SupabaseService.instance.insertAsset(transaction);
-      unawaited(AnalyticsService.instance.logAssetDeleted(type: deleted.type.name));
+      unawaited(
+          AnalyticsService.instance.logAssetDeleted(type: deleted.type.name));
     }
     await SupabaseService.instance.deleteAsset(id);
     if (current != null) {
@@ -1051,11 +1134,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // zaten o varlığı tamamen yok sayması gerekiyordu". Artık gösterim
     // satırı yazılamazsa silme yine tamamdır; hata Crashlytics'e gider.
     final stampedAt = DateTime.now();
-    await SupabaseService.instance
-        .softDeleteAssets(ids.toList(), stampedAt);
+    await SupabaseService.instance.softDeleteAssets(ids.toList(), stampedAt);
     if (log != null) {
-      unawaited(
-          AnalyticsService.instance.logAssetDeleted(type: log.type.name));
+      unawaited(AnalyticsService.instance.logAssetDeleted(type: log.type.name));
       try {
         await SupabaseService.instance.insertAsset(log);
       } catch (e, st) {
@@ -1400,7 +1481,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // başarısızlığı "fiyatlar güncellenemedi" mesajına dönüşmeli.
     try {
       for (final partner in activePartners) {
-        final assets = await SupabaseService.instance.fetchOrtakLotlari(partner.id);
+        final assets =
+            await SupabaseService.instance.fetchOrtakLotlari(partner.id);
         partnerAssetsMap[partner.id] = assets;
         for (final a in assets) {
           if (a.ticker.isNotEmpty && !a.isManualPrice) {
@@ -1580,8 +1662,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     CrashReporter.arkaPlan(
       Future.wait(assets.map((asset) async {
         try {
-          await SupabaseService.instance.fiyatYaz(asset,
-              alisFiyatiDa: alisKilitlenen.contains(asset.id));
+          await SupabaseService.instance
+              .fiyatYaz(asset, alisFiyatiDa: alisKilitlenen.contains(asset.id));
         } catch (e, st) {
           basarisiz++;
           ilkHata ??= e;
@@ -1624,7 +1706,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 /// `PortfolioState.totalValue` ile aynı kaynaktan gelir.
 Map<String, double> snapshotKategoriDegerleri(PortfolioState s) {
   final categoryValues = <String, double>{};
-  for (final position in aggregatePositionsByOwner(lotlarSahibeGore(s.assets))) {
+  for (final position
+      in aggregatePositionsByOwner(lotlarSahibeGore(s.assets))) {
     final a = position.asDisplayAsset();
     final val = s.toTRY(a.totalValue, a.currency);
     if (val > 0) {
@@ -1713,8 +1796,8 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     // beklemeden istiyoruz. Süren tur varsa `refreshPrices` onu döndürür,
     // ikinci tur açılmaz. `microtask`: build içinden başka bir notifier'ı
     // senkron dürtmemek için.
-    final fiyatsizVar = map.values.any((lots) => lots.any(
-        (a) => a.currentPrice <= 0 && !a.isManualPrice && a.ticker.trim().isNotEmpty));
+    final fiyatsizVar = map.values.any((lots) => lots.any((a) =>
+        a.currentPrice <= 0 && !a.isManualPrice && a.ticker.trim().isNotEmpty));
     if (fiyatsizVar) {
       scheduleMicrotask(() => CrashReporter.arkaPlan(
             ref.read(portfolioProvider.notifier).refreshPrices(),

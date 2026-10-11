@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../models/asset_type.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
@@ -514,6 +515,48 @@ class RemoteConfigService {
   /// okunmaz (yalnız yerel `RC_ACIK` ve test kancası).
   bool get premiumOzellikleriGorunur => paywallEnabled || yonetici;
 
+  /// Uygulamanın hangi kanaldan kurulduğunu Remote Config'e özel sinyal
+  /// (`dagitim`) olarak bildirir. Console'da "TestFlight" koşulu bu sinyale
+  /// bağlanır: `dagitim` tam olarak `testflight`.
+  ///
+  /// ## Neden (paywall kapıları incelemesi, 2026-10-11)
+  /// Koşul sürüme (1.1.6) bağlıydı. TestFlight'taki build ile mağazaya
+  /// çıkan build AYNI ikili dosyadır; sürüm ya da build numarası koşulu o
+  /// sürüm mağazaya çıktığı an bütün müşterileri de kapsar. O koşulda
+  /// `paywall_enabled` açık ve `premium_hediye_kesim` = 2020 olduğu için
+  /// mağaza kullanıcısının hepsi bir anda kilit görürdü. Ayrımı yalnız
+  /// çalışma anı yapabilir: iOS'ta makbuz adı (`sandboxReceipt` =
+  /// TestFlight), `package_info_plus` bunu `installerStore` olarak verir.
+  /// Android'de kapalı test ile üretim aynı mağazadan (Play) gelir, ayırt
+  /// edilemez; orada test kitlesi kullanıcı/cihaz listesiyle seçilir.
+  ///
+  /// Sinyal yazılamazsa (eski SDK, ağ) sessizce geçilir: koşul eşleşmez,
+  /// varsayılan değerler geçerli olur, yani güvenli taraf.
+  Future<void> _dagitimSinyaliniYaz() async {
+    try {
+      final bilgi = await PackageInfo.fromPlatform();
+      await _rc!.setCustomSignals({
+        'dagitim': dagitimKanali(bilgi.installerStore, debug: kDebugMode),
+      });
+    } catch (e, st) {
+      CrashReporter.report(e, st,
+          reason: 'remote_config_service.dagitimSinyali');
+    }
+  }
+
+  /// Saf: kurulum kaynağından RC `dagitim` sinyali.
+  @visibleForTesting
+  static String dagitimKanali(String? installerStore, {required bool debug}) {
+    if (debug) return 'debug';
+    return switch (installerStore) {
+      'com.apple.testflight' => 'testflight',
+      'com.apple' => 'app_store',
+      'com.apple.simulator' => 'simulator',
+      'com.android.vending' => 'play',
+      _ => 'diger',
+    };
+  }
+
   bool _yerelVeyaTest(String anahtar) =>
       testAcik.contains(anahtar) || _yerelAcik.contains(anahtar);
 
@@ -543,6 +586,7 @@ class RemoteConfigService {
             kDebugMode ? Duration.zero : const Duration(minutes: 15),
       ));
       await _rc!.setDefaults(_defaults);
+      await _dagitimSinyaliniYaz();
       // Fetch başlat ama beklet — offline'da default'lar geçerli olur.
       // Bitince sunucu/güncelleme kararı yeniden değerlendirilir.
       CrashReporter.arkaPlan(
@@ -757,6 +801,7 @@ class RemoteConfigService {
   bool get portfoyDagilimCubugu => _bayrak('portfoy_dagilim_cubugu');
   bool get varlikDetayKatmanli => _bayrak('varlik_detay_katmanli');
   bool get sinyalOnAyar => _bayrak('sinyal_on_ayar');
+
   /// Premium planıyla (2026-10-10) tek anahtara bağlandı: Yıllık rapor
   /// (Premium) bu kapının satırı olduğu için kapı paywall'la birlikte
   /// herkese açılır; kapalıyken yalnız admin. Console değeri de okunur.
@@ -800,6 +845,7 @@ class RemoteConfigService {
 
   /// Fon X-Ray kalemleri ve örtüşme (Katman A). Gerekçe `_defaults`'ta.
   bool get fonXrayKalem => _bayrak('fon_xray_kalem');
+
   /// Çoklu portföy: şema hazır mı (yazım kapısı). Gerekçe `_defaults`'ta.
   /// Kullanıcıya görünürlük ayrıca `premiumOzellikleriGorunur` ister
   /// (`cokluPortfoyGorunurProvider`).

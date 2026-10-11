@@ -15,6 +15,8 @@ import '../../utils/tr_format.dart';
 import 'emeklilik_fonu_secici.dart';
 import '../../widgets/bes_dagilim_editoru.dart';
 import '../../widgets/sozlesme_formu_ortak.dart';
+import '../../providers/portfolio_provider.dart';
+import '../paywall_screen.dart';
 
 /// BES sözleşmesi girişi (seçenek B3).
 ///
@@ -136,6 +138,14 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
       if (mounted) {
         sandikSnack(context, l10n.pensionPriceMissing(e.kod),
             kind: SandikSnackKind.error);
+      }
+      return false;
+    } on AssetLimitExceededException catch (e) {
+      // Sınır dolu: genel hata ("bir şeyler ters gitti") ve Crashlytics
+      // non-fatal'ı değil, Varlık Ekle'deki gibi paywall (paywall kapıları
+      // incelemesi, 2026-10-11). Yalnız `paywall_enabled` açıkken atılır.
+      if (mounted) {
+        await PaywallScreen.show(context, source: 'asset_limit_${e.limit}');
       }
       return false;
     } catch (e, st) {
@@ -307,10 +317,10 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
                       sayi: true,
                       // Otomatik eklemede tutar zorunlu: neyin yazılacağı
                       // bilinmezse katkı yazılmaz (0096 kısıtı da ister).
-                      dogrula: (v) => _otomatik &&
-                              (parseTrNumber(v ?? '') ?? 0) <= 0
-                          ? l10n.pensionAutoNeedsPlan
-                          : null,
+                      dogrula: (v) =>
+                          _otomatik && (parseTrNumber(v ?? '') ?? 0) <= 0
+                              ? l10n.pensionAutoNeedsPlan
+                              : null,
                     ),
                   ],
                 ),

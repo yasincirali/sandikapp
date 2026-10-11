@@ -2472,6 +2472,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           bool kaydedildi;
           try {
             kaydedildi = await _saveBatch(entries);
+          } on AssetLimitExceededException catch (e) {
+            // Sınıra kadar olanlar eklendi; kalanı için paywall (genel hata
+            // değil — paywall kapıları incelemesi, 2026-10-11).
+            if (ctx.mounted) Navigator.pop(ctx);
+            if (mounted) {
+              await PaywallScreen.show(context,
+                  source: 'asset_limit_${e.limit}');
+            }
+            return;
           } catch (e) {
             if (ctx.mounted) Navigator.pop(ctx);
             if (mounted) showAppError(context, e);

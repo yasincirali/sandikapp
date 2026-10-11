@@ -17,6 +17,8 @@ import '../../utils/sandik_snack.dart';
 import '../../utils/tr_format.dart';
 import '../../widgets/sozlesme_formu_ortak.dart';
 import 'mevduat_banka_secici.dart';
+import '../../providers/portfolio_provider.dart';
+import '../paywall_screen.dart';
 
 /// Vadeli / günlük faizli mevduat girişi (seçenek M2 + M3).
 ///
@@ -206,6 +208,14 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
             portfoyId: portfoyId,
           );
       return true;
+    } on AssetLimitExceededException catch (e) {
+      // Sınır dolu: genel hata ("bir şeyler ters gitti") ve Crashlytics
+      // non-fatal'ı değil, Varlık Ekle'deki gibi paywall (paywall kapıları
+      // incelemesi, 2026-10-11). Yalnız `paywall_enabled` açıkken atılır.
+      if (mounted) {
+        await PaywallScreen.show(context, source: 'asset_limit_${e.limit}');
+      }
+      return false;
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'MevduatFormu.kaydet');
       if (mounted) {
