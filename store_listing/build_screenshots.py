@@ -625,6 +625,8 @@ FINAL_EK = [
     # Sürüm metinleri: kaynak kendi klasörlerinde, burada kopya.
     (os.path.join(HERE, kaynak), os.path.join("metinler", hedef))
     for kaynak, hedef in (
+        ("ios/tr/description.txt", "app_store_tr_description.txt"),
+        ("ios/en/description.txt", "app_store_en_description.txt"),
         ("ios/tr/promotional_text.txt", "app_store_tr_promotional_text.txt"),
         ("ios/en/promotional_text.txt", "app_store_en_promotional_text.txt"),
         ("ios/tr/whats_new.txt", "app_store_tr_whats_new.txt"),
