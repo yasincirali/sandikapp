@@ -110,6 +110,15 @@ Future<void> _detay(WidgetTester t, Asset a) async {
   for (var i = 0; i < 6; i++) {
     await t.pump(const Duration(milliseconds: 100));
   }
+  // Ekran seriyi gerçek zamanlı bir çağrıyla dener (testte ağ yok, hata
+  // döner); yük altında (CI, tam paket) o çağrı sahte 600 ms'den uzun
+  // sürünce dönem seçici henüz çizilmemiş oluyordu — ara sıra "No
+  // element" (PR #167 CI, 2026-10-11). Seçici görünene kadar GERÇEK
+  // zamanda bekle; üst sınır 3 sn.
+  for (var i = 0; i < 30 && find.byType(DonemSecici).evaluate().isEmpty; i++) {
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await t.pump(const Duration(milliseconds: 100));
+  }
 }
 
 Future<void> _takip(WidgetTester t) async {
