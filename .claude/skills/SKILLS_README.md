@@ -281,3 +281,66 @@ skills` ile `~/.claude/skills/` altına kuruldu.
   (kısıtlı build). `composition/tools/` altındaki ffmpeg-static'i PATH'e ekle.
 - ⚠️ Müzik lisansı skill README'sinde "yayınlamadan önce doğrula" diyor —
   mağaza yüklemesinden önce `YAPMAN_GEREKENLER.md` maddesine bak.
+
+## marketingskills (kurulum 2026-10-11)
+
+Kaynak: `github.com/coreyhaines31/marketingskills` (MIT, commit `1efedbc`,
+50 skill). **50'nin 20'si kuruldu (1,5 MB).** İçerik okunup tarandı:
+çalıştırılabilir dosya yok; `curl` yalnız başvuru belgelerindeki örneklerde.
+
+Süzgeç: tek geliştiricili, Türkiye'de tüketiciye (B2C) giden mobil uygulama.
+Paket SaaS/web kaynaklı — kural yine **"yargısını al, sözdizimini alma"**.
+
+**Kurulanlar**
+- Mağaza: `aso` (App Store / Play listesi denetimi), `copywriting`,
+  `copy-editing` (mağaza metni, sürüm notu, Promotional Text).
+- Bağlam: `product-marketing` — diğerlerinin okuduğu `.agents/product-marketing.md`
+  dosyasını kurar. Henüz yazılmadı; yazılırsa kaynak CLAUDE.md + `store_listing/`.
+- Lansman ve edinme: `launch`, `public-relations`, `social`, `ads`,
+  `ad-creative` (Apple Search Ads kaldıracı — bkz. memory `app_store_arama_sandik`).
+- Ürün içi: `onboarding`, `signup` (kayıt hunisi paneli var), `paywalls`,
+  `pricing`, `churn-prevention` (Premium açılışına hazırlık), `referrals`.
+- Ölçüm ve araştırma: `analytics`, `ab-testing`, `customer-research`,
+  `competitor-profiling`, `marketing-psychology`.
+
+**Çakışma uyarıları — CLAUDE.md kazanır**
+- **Uydurma sayı yasak, pazarlamada da.** Mağaza görseli ve metnindeki her rakam
+  uygulamanın gerçek çıktısıdır; `ad-creative`/`aso` "örnek rakam koy" derse koyma.
+  Mağaza görseli = gerçek ekran (Apple 2.3.3/2.3.4).
+- **Metinde yalnız açık özellik.** Bayrak arkasındaki (Remote Config kapalı)
+  özellik mağaza metnine, reklama, sürüm notuna girmez.
+- `paywalls` / `churn-prevention` → web/Stripe varsayar. iOS'ta abonelik iptali
+  **Apple'ın** ekranında; uygulama içi "iptal akışı / kurtarma teklifi" kurulamaz,
+  teklif yalnız App Store Promotional/Win-back Offer ile. Fiyat ASC'de.
+- `pricing` → "pricing page" önerileri web içindir; burada karşılığı paywall
+  ekranı + ASC fiyat katmanı.
+- `analytics` → GA4/GTM/UTM web odaklı. Burada Firebase Analytics
+  (`AnalyticsService`); olay adı/parametre kuralları oradan.
+- `ab-testing` → deney aracı **Remote Config** (varsayılanı kapalı bayrak,
+  CLAUDE.md "Riskli yeni davranış bayrakla açılır").
+- `social` / `ad-creative` / `public-relations` → **yatırım tavsiyesi gibi
+  okunabilecek** vaat yazma ("şu hisse kazandırır", "garantili getiri"); sinyal
+  özelliği Play Financial beyanına tabi. Tanıtım dili: takip ve ölçüm.
+- `ad-creative` başvurularındaki üretken görsel/ses API'leri (Gemini,
+  ElevenLabs) anahtar ister; kurulu değil. Video → `remotion-motion-graphics`
+  / `brag` (CLAUDE.md yönlendirmesi).
+- Ses ve üslup: hitap **sen**, Türkçe; CLAUDE.md "Metin tam okunur" ve
+  memory `anlatim_kurallari` geçerli.
+
+**Kurulmadı (30)**
+- Web SEO ve site: `ai-seo`, `seo-audit`, `schema`, `programmatic-seo`,
+  `site-architecture`, `competitors` (vs sayfaları), `cro`, `popups`,
+  `lead-magnets`, `free-tools`, `directory-submissions`, `content-strategy` —
+  web sitesi yalnız yasal belgeler (GitHub Pages).
+- B2B satış: `cold-email`, `prospecting`, `sales-enablement`, `revops`,
+  `events`, `co-marketing`, `attribution`, `offers`.
+- Kanal yok: `emails` (yaşam döngüsü e-postası yok), `sms`.
+- Çakışan: `video` (her video → `remotion-motion-graphics`), `image` (yapay
+  zekâ görseli; mağaza görseli gerçek ekran olmalı).
+- Genel/danışman: `marketing-ideas`, `marketing-plan`, `marketing-council`
+  (`the-fool` örtüşür), `marketing-loops`, `community-marketing`,
+  `influencer-marketing` (SPK'ya göre yatırım tavsiyesi sınırı; gerekirse
+  ayrıca kur).
+
+Tazeleme: `git clone --depth 1 https://github.com/coreyhaines31/marketingskills.git`
+→ yalnız yukarıdaki 20 dizini `.claude/skills/`'e kopyala; bu bölümü koru.
