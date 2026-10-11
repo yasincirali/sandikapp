@@ -115,6 +115,16 @@ const List<SurumNotu> surumNotlari = [
     // kez görüyor.
     baslik: 'Yeni Bugün kartı, paranın getirisi, kripto ve mevduat',
     yenilikler: [
+      // 2026-10-11: mum ve EMA herkese, bayraksız (yasin: "mum grafik ve
+      // ema herkeste gösterilebilsin flag arkasında olmasın").
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Mum grafik ve EMA',
+        aciklama: 'Varlık grafiğinin üstündeki MUM çipiyle fiyatı mum '
+            'olarak gör; 1 dakikadan 1 aya kadar aralığı sen seç. EMA50 ve '
+            'EMA200 çipleri hareketli ortalamaları grafiğe ekler. Mum, '
+            'Karşılaştır ve Performans grafiklerinde de var.',
+      ),
       // 2026-10-10: çoklu hesap (#152) + tek yükleme / tek Face ID geçişi.
       Yenilik(
         ikon: YenilikIkonu.guvenlik,
