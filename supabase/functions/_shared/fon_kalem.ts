@@ -355,6 +355,17 @@ export function dogrula(girdi: {
   return { gecti: true, kalemler: birlestir(ks), ozet };
 }
 
+// ── Aynı belge ──────────────────────────────────────────────────────────────
+
+/// PDF metninin SHA-256 özeti (hex). Boşluk farkı (sayfa kırılımı, satır
+/// sonu) özeti değiştirmesin diye boşluklar teke indirilir; sayılar ve
+/// harfler aynen kalır. Aynı özet = aynı belge, modele yeniden gidilmez.
+export async function metinOzeti(metin: string): Promise<string> {
+  const norm = metin.replace(/\s+/g, ' ').trim();
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(norm));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 // ── Harcama sigortası ───────────────────────────────────────────────────────
 
 /// Sigorta eşiği: bu dönemde modele parası ödenmiş en az bu kadar fon

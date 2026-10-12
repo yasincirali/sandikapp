@@ -61,6 +61,7 @@ import {
   pdfBaytlari,
   PdrSatiri,
   pdrSatirlari,
+  metinOzeti,
   sigortaAtti,
   oncekiAySonu,
   taramaKesinMi,
@@ -68,7 +69,11 @@ import {
 } from '../_shared/fon_kalem.ts';
 import { pdfMetni } from '../_shared/pdf_metin.ts';
 
-const MODEL = 'claude-opus-5-5';
+// Sonnet 5.5 (yasin kararı 2026-10-12, Opus'tan indirildi): ilk ay 14 fonun
+// 13'ü kontrollerden düştü, Opus'un fon başına ~0,26 $'ı karşılık bulmadı.
+// Yanlış ayrıştırmayı model değil beş kontrol yakalar; daha ucuz model en
+// kötü ihtimalle geçen fon sayısını düşürür, yanlış veri yayımlatamaz.
+const MODEL = 'claude-sonnet-5-5';
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -235,6 +240,27 @@ async function fonuIsle(
 
     const tefas = await ayaSonuTefas(kod, donem, bilinenTip);
 
+    // Aynı belge daha önce geçtiyse modele gitme, sonucu kopyala (yasin
+    // 2026-10-12: "portföyde değişiklik yoksa kaydedilebilir"). Ölçüt metnin
+    // özeti: ağırlıklar fiyatla her ay oynadığından yeni ayın raporu çoğu
+    // zaman farklıdır; kopya yalnız birebir aynı belgede (yeniden yayımlanan
+    // ya da değişmeyen rapor) devreye girer. Yalnız `gecti` kopyalanır:
+    // red bir kontrol düzeltmesinden sonra geçebilir.
+    const ozet = await metinOzeti(metin);
+    const { data: onceki } = await client.from('fon_kalemleri')
+      .select('donem, kalemler, dogrulama')
+      .eq('fon_kodu', kod).eq('durum', 'gecti').eq('dogrulama->>metin_ozeti', ozet)
+      .neq('donem', donem).limit(1).maybeSingle();
+    if (onceki) {
+      await yaz('gecti', onceki.kalemler as unknown[], {
+        ...(onceki.dogrulama as Record<string, unknown>),
+        bildirim: index,
+        maliyet_usd: 0,
+        kopya_donem: onceki.donem,
+      });
+      return { kod, sonuc: 'gecti', neden: 'ayni_belge', maliyet: 0 };
+    }
+
     // Ücretli çağrıdan ÖNCE yer tut: fonksiyon model yanıtını beklerken
     // ölürse (zaman aşımı, ağ) satır `red` kalır ve fon bu ay bir daha
     // modele gitmez. Önceden "geçici" sayılıp günde dört tur yeniden
@@ -245,7 +271,7 @@ async function fonuIsle(
     await yaz('red', [], { neden: 'yarida_kaldi', bildirim: index, model: MODEL });
     yerTutuldu = true;
 
-    // Opus 5.5: zorunlu araç seçimi (tool_choice any/tool) bu modelde 400
+    // Sonnet 5.5 (Opus 5.5 gibi): zorunlu araç seçimi (tool_choice any/tool) bu modelde 400
     // döner; yapılandırılmış çıktı (`output_config.format`) kullanılır.
     // Sunucu taraflı yedek (`fallbacks: 'default'`): güvenlik sınıflandırıcısı
     // bir kamu belgesini yanlışlıkla reddederse istek uygun modele yönlenir.
@@ -258,7 +284,9 @@ async function fonuIsle(
     } as any);
     const maliyet = maliyetUsd(String(yanit.model ?? MODEL), yanit.usage ?? {}, false);
     if (yanit.stop_reason === 'refusal' || yanit.stop_reason === 'max_tokens') {
-      await yaz('red', [], { neden: `model_${yanit.stop_reason}`, bildirim: index, maliyet_usd: maliyet, model: MODEL });
+      await yaz('red', [], {
+        neden: `model_${yanit.stop_reason}`, bildirim: index, maliyet_usd: maliyet, model: MODEL, metin_ozeti: ozet,
+      });
       return { kod, sonuc: 'red', neden: `model_${yanit.stop_reason}`, maliyet };
     }
     // deno-lint-ignore no-explicit-any
@@ -282,6 +310,7 @@ async function fonuIsle(
       tefas_tarih: tefas?.tarih ?? null,
       model: MODEL,
       maliyet_usd: maliyet,
+      metin_ozeti: ozet,
     };
     if (!s.gecti) {
       await yaz('red', [], { ...ortak, kontrol: s.kontrol, neden: s.neden });

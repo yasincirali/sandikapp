@@ -60,7 +60,8 @@ function jsonResponse(body: unknown, status = 200) {
 
 const MODEL: Record<NotTuru, string> = {
   haftalik: 'claude-sonnet-5-5',
-  aylik: 'claude-opus-5-5',
+  // Sonnet 5.5 (yasin kararı 2026-10-12): aylık da Sonnet; ilk tasarımda Opus'tu.
+  aylik: 'claude-sonnet-5-5',
 };
 
 /// PostgREST bir yanıtta en çok 1000 satır döner; sayfala.

@@ -24,6 +24,7 @@ import {
   pdrSatirlari,
   sayiOku,
   semaKontrolu,
+  metinOzeti,
   sigortaAtti,
   taramaKesinMi,
   taranacakGunler,
@@ -362,4 +363,11 @@ Deno.test('şema: ağırlık reddi değeri nedene yazar', () => {
   const s = semaKontrolu({ kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: -0.12, agirlik_metni: '-0,12' }] });
   assertEquals(s.ok, false);
   if (!s.ok) assertEquals(s.neden, 'agirlik:-0.12');
+});
+
+Deno.test('metinOzeti: boşluk farkı aynı özet, sayı farkı farklı özet', async () => {
+  const a = await metinOzeti('ASELS  30,00\n THYAO 40,50');
+  assertEquals(a, await metinOzeti('ASELS 30,00 THYAO 40,50'));
+  assert(a !== await metinOzeti('ASELS 30,01 THYAO 40,50'));
+  assertEquals(a.length, 64);
 });
