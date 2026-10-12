@@ -184,7 +184,10 @@ export function semaKontrolu(ham: unknown): { ok: true; kalemler: HamKalem[] } |
     if (kod === null || kod.length > 24) return { ok: false, neden: 'kod' };
     if (!KALEM_TURLERI.includes(tur)) return { ok: false, neden: 'tur' };
     if (typeof agirlik !== 'number' || !Number.isFinite(agirlik) || agirlik <= 0 || agirlik > 100) {
-      return { ok: false, neden: 'agirlik' };
+      // Değer nedene yazılır: Ekim 2026 turunda 14 fonun 8'i yalnız
+      // 'agirlik' ile düştü ve hangi değerin (0, eksi, >100) düşürdüğü
+      // görünmüyordu. Kural gevşetilmedi; önce sebep okunacak.
+      return { ok: false, neden: `agirlik:${String(agirlik).slice(0, 12)}` };
     }
     if (metin.length === 0 || metin.length > 16) return { ok: false, neden: 'agirlik_metni' };
     out.push({ ad, kod, tur, agirlik, agirlik_metni: metin });
@@ -350,6 +353,32 @@ export function dogrula(girdi: {
     if (neden !== null) return { gecti: false, kontrol: ad, neden, ozet };
   }
   return { gecti: true, kalemler: birlestir(ks), ozet };
+}
+
+// ── Harcama sigortası ───────────────────────────────────────────────────────
+
+/// Sigorta eşiği: bu dönemde modele parası ödenmiş en az bu kadar fon
+/// reddedildiyse ve geçen fon sayısı redlerin dörtte birinden azsa dönem durur.
+export const SIGORTA_RED = 4;
+
+/// Dönemin işlenmiş satırlarından "bu ay modele gitmeye devam etme" kararı.
+///
+/// Neden: Ekim 2026'da (Eylül raporları) 14 fonun 13'ü kontrollerden düştü
+/// ve her biri tam ücret ödedi (~3,7 $); düşüş fona değil ayrıştırmaya
+/// bağlı, sistematik. Aynı ay başka fonlara para harcamak aynı sonucu
+/// alır. Bu kuralla o ay dördüncü redde (~0,9 $) durulurdu. Geçme oranı
+/// %20'nin üstündeyse yol çalışıyor demektir, sigorta açılmaz.
+/// Parası ödenmemiş redler (`metin_yok`, `pdf_eki_yok`) sayılmaz.
+export function sigortaAtti(
+  satirlar: { durum: string; dogrulama?: Record<string, unknown> | null }[],
+): boolean {
+  let gecti = 0;
+  let ucretliRed = 0;
+  for (const r of satirlar) {
+    if (r.durum === 'gecti') gecti++;
+    else if (Number(r.dogrulama?.maliyet_usd ?? 0) > 0) ucretliRed++;
+  }
+  return ucretliRed >= SIGORTA_RED && gecti * 4 < ucretliRed;
 }
 
 // ── KAP liste ve dönem ──────────────────────────────────────────────────────

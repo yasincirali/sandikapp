@@ -61,6 +61,7 @@ import {
   pdfBaytlari,
   PdrSatiri,
   pdrSatirlari,
+  sigortaAtti,
   oncekiAySonu,
   taramaKesinMi,
   taranacakGunler,
@@ -205,6 +206,7 @@ async function fonuIsle(
     if (error) throw error;
   };
 
+  let yerTutuldu = false;
   try {
     const ek = await (await kapGet(`/tr/api/notification/attachment-detail/${index}`)).json().catch(() => null);
     const objId = ekPdfNesnesi(ek);
@@ -232,6 +234,16 @@ async function fonuIsle(
     }
 
     const tefas = await ayaSonuTefas(kod, donem, bilinenTip);
+
+    // Ücretli çağrıdan ÖNCE yer tut: fonksiyon model yanıtını beklerken
+    // ölürse (zaman aşımı, ağ) satır `red` kalır ve fon bu ay bir daha
+    // modele gitmez. Önceden "geçici" sayılıp günde dört tur yeniden
+    // deneniyordu; ödenen ama hiçbir yere yazılmayan harcama büyük
+    // olasılıkla buradan geldi (Ekim 2026: Anthropic faturası ~5,5 $,
+    // tabloda kayıtlı ~3,7 $; fark çıkarım, çağrı başına log yok).
+    // Yanıt gelince aşağıdaki yazım bu satırın üstüne yazar.
+    await yaz('red', [], { neden: 'yarida_kaldi', bildirim: index, model: MODEL });
+    yerTutuldu = true;
 
     // Opus 5.5: zorunlu araç seçimi (tool_choice any/tool) bu modelde 400
     // döner; yapılandırılmış çıktı (`output_config.format`) kullanılır.
@@ -278,6 +290,14 @@ async function fonuIsle(
     await yaz('gecti', s.kalemler, { ...ortak, kontroller: ['sema', 'metin', 'toplam', 'tefas', 'bant'] });
     return { kod, sonuc: 'gecti', maliyet };
   } catch (e) {
+    // API isteği durum koduyla reddettiyse (429, 5xx, 400) model çalışmadı,
+    // ücret yok: yer tutucu silinir, sonraki tur yeniden dener. Durum kodu
+    // yoksa (zaman aşımı, bağlantı koptu) yanıt ödenmiş olabilir; satır
+    // `red` kalır.
+    if (yerTutuldu && e instanceof Anthropic.APIError && typeof e.status === 'number') {
+      await client.from('fon_kalemleri').delete()
+        .eq('fon_kodu', kod).eq('donem', donem).eq('durum', 'red').then(() => {}, () => {});
+    }
     // Geçici: yazılmaz, sonraki tur dener. Ham mesaj loga da yazılmaz.
     console.error('[fon-kalem-raporu]', kod, e instanceof GeciciHata ? e.kod : hataOzeti(e));
     return { kod, sonuc: 'gecici', neden: e instanceof GeciciHata ? e.kod : 'sunucu' };
@@ -325,8 +345,11 @@ Deno.serve(async (request) => {
 
     const tutulan = await tutulanFonlar(client);
     const { data: islenmis, error: iErr } = await client.from('fon_kalemleri')
-      .select('fon_kodu').eq('donem', donem).limit(10000);
+      .select('fon_kodu, durum, dogrulama').eq('donem', donem).limit(10000);
     if (iErr) throw iErr;
+    if (sigortaAtti(islenmis ?? [])) {
+      return jsonResponse({ ok: true, donem, atlandi: 'sigorta' });
+    }
     const bitti = new Set((islenmis ?? []).map((r) => String(r.fon_kodu)));
     const bekleyen = [...tutulan].filter((k) => !bitti.has(k)).sort();
     if (bekleyen.length === 0) return jsonResponse({ ok: true, donem, bekleyen: 0, islenen: [] });

@@ -24,6 +24,7 @@ import {
   pdrSatirlari,
   sayiOku,
   semaKontrolu,
+  sigortaAtti,
   taramaKesinMi,
   taranacakGunler,
   tefasKontrolu,
@@ -339,4 +340,26 @@ Deno.test('fon-kalem-raporu/index.ts: cron kapısı → bayrak → iş; ham hata
   assertEquals(src.includes('tool_choice'), false);
   // Kişi bilgisi seçilmez: assets sorgusu yalnız pozisyon kolonları.
   assert(src.includes(".select('id, user_id, type, ticker, sub_category, currency, quantity, kind, added_date, ref_asset_id')"));
+});
+
+// ── Harcama sigortası ───────────────────────────────────────────────────────
+
+Deno.test('sigorta: ücretli redler birikip geçen azsa dönem durur', () => {
+  const red = (usd?: number) => ({ durum: 'red', dogrulama: usd ? { maliyet_usd: usd } : { neden: 'metin_yok' } });
+  const gecti = { durum: 'gecti', dogrulama: { maliyet_usd: 0.3 } };
+  assertEquals(sigortaAtti([]), false);
+  assertEquals(sigortaAtti([red(0.2), red(0.2), red(0.2)]), false);
+  assertEquals(sigortaAtti([red(0.2), red(0.2), red(0.2), red(0.2)]), true);
+  // Ücretsiz redler (model çağrılmadı) sayılmaz.
+  assertEquals(sigortaAtti([red(), red(), red(), red(), red(0.2)]), false);
+  // Ekim 2026 turu: 13 ücretli red, 1 geçen → durur.
+  assertEquals(sigortaAtti([...Array(13)].map(() => red(0.25)).concat([gecti])), true);
+  // Geçme oranı yeterliyse durmaz.
+  assertEquals(sigortaAtti([red(0.2), red(0.2), red(0.2), red(0.2), gecti]), false);
+});
+
+Deno.test('şema: ağırlık reddi değeri nedene yazar', () => {
+  const s = semaKontrolu({ kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: -0.12, agirlik_metni: '-0,12' }] });
+  assertEquals(s.ok, false);
+  if (!s.ok) assertEquals(s.neden, 'agirlik:-0.12');
 });
