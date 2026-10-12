@@ -691,6 +691,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           durum: _durumMetni(birincil, now),
           acik:
               birincil is GunlukDegisimSatiri && BugunService.seansAcikMi(now),
+          // Nokta yeni rakam gelince nefes alır (bkz. `_CanliNokta`).
+          tazelik: birincil is GunlukDegisimSatiri
+              ? (birincil.changeTRY, birincil.changePct)
+              : null,
         ),
         const SizedBox(height: SandikSpace.md2),
         _HukumSatiri(birincil: birincil, gizli: gizli),
@@ -874,6 +878,7 @@ class _KiyasBaslik extends StatelessWidget {
     required this.etiket,
     required this.durum,
     required this.acik,
+    this.tazelik,
   });
 
   final DateTime now;
@@ -881,6 +886,7 @@ class _KiyasBaslik extends StatelessWidget {
   final String? etiket;
   final List<String> durum;
   final bool acik;
+  final Object? tazelik;
 
   @override
   Widget build(BuildContext context) {
@@ -920,7 +926,7 @@ class _KiyasBaslik extends StatelessWidget {
           // Canlı noktası: seans açıkken kazanç renginde ve yumuşak bir
           // nabız (opaklık), kapalıyken sabit gri. Nabız yalnız renk/opaklık;
           // konum oynamaz (günde onlarca kez görülen yüzey).
-          _CanliNokta(acik: acik),
+          _CanliNokta(acik: acik, tazelik: tazelik),
           const SizedBox(width: SandikSpace.xs2),
           SizedBox(
             width: durumW,
@@ -935,9 +941,13 @@ class _KiyasBaslik extends StatelessWidget {
 
 /// Seans açıkken yavaşça nefes alan nokta.
 class _CanliNokta extends StatefulWidget {
-  const _CanliNokta({required this.acik});
+  const _CanliNokta({required this.acik, this.tazelik});
 
   final bool acik;
+
+  /// Ekrandaki rakamın kimliği. Değişince (yeni fiyat turu yeni rakam
+  /// getirdi) nokta yeniden nefes alır.
+  final Object? tazelik;
 
   @override
   State<_CanliNokta> createState() => _CanliNoktaState();
@@ -952,12 +962,26 @@ class _CanliNoktaState extends State<_CanliNokta>
     duration: SandikMotion.flow * 3,
   );
 
+  /// Tek uyarıda kaç nefes (ileri + geri) alınır.
+  ///
+  /// ## Neden sürekli değil (kaynak kullanımı denetimi, 2026-10-12)
+  /// `repeat()` seans boyunca (8 saat) Ana ekranı her karede yeniden
+  /// çizdiriyordu: 2 Ekim'de piyasa şeridi için kapatılan "boşta hiç
+  /// durmayan ekran" sorunu bu noktayla geri gelmişti (şerit akarken
+  /// emülatörde 58 kare/sn, tek çekirdeğin %64'ü; durunca %3,9). Nokta artık
+  /// görünür olduğunda ve her YENİ rakamda birkaç kez nefes alıp tam
+  /// opaklıkta durur. "Canlı" bilgisi rengiyle ve yanındaki "Canlı" metniyle
+  /// sürer; nefes yalnızca rakamın az önce tazelendiğini söyler.
+  static const nefesSayisi = 3;
+
+  bool _nefesiyor = false;
+
   // `_ayarla` MediaQuery okur: initState'te değil, didChangeDependencies'te
   // (ilk kez initState'ten hemen sonra çağrılır) ve widget değişince.
   @override
   void didUpdateWidget(covariant _CanliNokta old) {
     super.didUpdateWidget(old);
-    if (old.acik != widget.acik) _ayarla();
+    if (old.acik != widget.acik || old.tazelik != widget.tazelik) _ayarla();
   }
 
   @override
@@ -972,8 +996,25 @@ class _CanliNoktaState extends State<_CanliNokta>
     if (dur) {
       _c.stop();
       _c.value = 1;
-    } else if (!_c.isAnimating) {
-      _c.repeat(reverse: true);
+    } else {
+      _nefesAl();
+    }
+  }
+
+  /// [nefesSayisi] kez söner-yanar, tam opaklıkta biter. Sürerken gelen
+  /// yeni istek ayrıca başlatılmaz (zaten nefes alıyor).
+  Future<void> _nefesAl() async {
+    if (_nefesiyor) return;
+    _nefesiyor = true;
+    try {
+      for (var i = 0; i < nefesSayisi; i++) {
+        await _c.reverse(from: 1).orCancel;
+        await _c.forward().orCancel;
+      }
+    } on TickerCanceled {
+      // Durduruldu (kapalı seans / hareketi azalt / dispose): sessiz.
+    } finally {
+      _nefesiyor = false;
     }
   }
 

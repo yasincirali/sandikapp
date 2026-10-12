@@ -15,10 +15,35 @@ class MainActivity : FlutterFragmentActivity() {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { !flutterReady }
         super.onCreate(savedInstanceState)
+        firebaseArkaPlanKaydiniSil()
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE
         )
+    }
+
+    /**
+     * Eski sürümün kaydettiği FCM arka plan işleyicisini siler.
+     *
+     * Dart tarafı artık `onBackgroundMessage` kaydetmiyor (main.dart,
+     * 2026-10-12): kayıtlıyken her arka plan push'u başsız bir Flutter
+     * motoru açıyordu, işleyici ise boştu. Ama firebase_messaging kaydı
+     * kendi SharedPreferences dosyasında SAKLAR ve güncellemeden sonra da
+     * kullanmaya devam ederdi. Anahtarlar eklentinin iç adlarıdır
+     * (firebase_messaging 16.2.1, `FlutterFirebaseMessagingUtils
+     * .SHARED_PREFERENCES_KEY`); ileride değişirse bu silme yalnızca etkisiz
+     * kalır, bir şey bozmaz.
+     */
+    private fun firebaseArkaPlanKaydiniSil() {
+        try {
+            getSharedPreferences("io.flutter.firebase.messaging.callback", MODE_PRIVATE)
+                .edit()
+                .remove("callback_handle")
+                .remove("user_callback_handle")
+                .apply()
+        } catch (e: Exception) {
+            // Yalnızca verim: silinemezse eski davranış sürer.
+        }
     }
 
     // onFlutterUiDisplayed() FlutterActivity'nin metodu; FlutterFragmentActivity'de

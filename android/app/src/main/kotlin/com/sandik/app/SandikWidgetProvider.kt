@@ -102,6 +102,16 @@ class SandikWidgetProvider : AppWidgetProvider() {
         // kurulum) bugüne kadarki görünüm korunur.
         val palette = Palette(data.getBoolean("sandik_is_light_theme", false))
 
+        // Grafik PNG'si TEK kez çözülür, bütün widget örnekleri aynı bitmap'i
+        // kullanır (kaynak kullanımı denetimi, 2026-10-12). Önceden döngü
+        // içinde her örnek için ayrı çözülüyordu: 960×180 ARGB ~675 KB'lık
+        // bitmap örnek sayısı kadar. `lazy`: veri yoksa hiç çözülmez.
+        val sparkBitmap: Bitmap? by lazy {
+            val sparkPath = data.getString("sandik_sparkline", null)
+            val sparkPoints = data.readIntCompat("sandik_spark_points")
+            if (sparkPoints >= 2 && sparkPath != null) decodeIfExists(sparkPath) else null
+        }
+
         appWidgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.sandik_widget)
 
@@ -245,13 +255,7 @@ class SandikWidgetProvider : AppWidgetProvider() {
                 // paylaşımlı depoya koyar; iki noktadan az veri varsa çizim
                 // yapılmaz (tek noktalı "çizgi" yanıltıcı olurdu) ve alan
                 // tamamen gizlenir — boş bir kutu bırakmak kartı bozardı.
-                val sparkPath = data.getString("sandik_sparkline", null)
-                val sparkPoints = data.readIntCompat("sandik_spark_points")
-                val bitmap = if (sparkPoints >= 2 && sparkPath != null) {
-                    decodeIfExists(sparkPath)
-                } else {
-                    null
-                }
+                val bitmap = sparkBitmap
                 if (bitmap != null) {
                     views.setImageViewBitmap(R.id.widget_spark, bitmap)
                     views.setViewVisibility(R.id.widget_spark, View.VISIBLE)

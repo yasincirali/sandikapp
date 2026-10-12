@@ -31,10 +31,28 @@ import 'package:path_provider/path_provider.dart';
 ///   silinir. 1m × 5g'lük en büyük seri ~180 KB → üst sınır birkaç MB.
 /// · Hiçbir hata ana akışa sızmaz: disk okunamazsa `null`, yazılamazsa sessiz.
 class SeriDiskDepo {
-  SeriDiskDepo({Future<Directory> Function()? kokDizin})
-      : _kokDizin = kokDizin ?? getApplicationSupportDirectory;
+  SeriDiskDepo({
+    Future<Directory> Function()? kokDizin,
+    Future<Directory?> Function()? eskiKokDizin,
+  })  : _kokDizin = kokDizin ?? getApplicationCacheDirectory,
+        _eskiKokDizin = eskiKokDizin ??
+            (kokDizin == null ? getApplicationSupportDirectory : null);
 
+  /// Önbellek KÖKÜ — `Caches` (iOS) / `cacheDir` (Android).
+  ///
+  /// ## Neden Caches (kaynak kullanımı denetimi, 2026-10-12)
+  /// Önceden `getApplicationSupportDirectory()` idi. iOS o klasörü iCloud
+  /// yedeğine alır ve disk dolduğunda temizleyemez; bu dosyalar ise yeniden
+  /// indirilebilen fiyat serileri. Apple'ın kuralı: yeniden üretilebilen
+  /// veri `Caches`'e. Sistem klasörü boşaltırsa depo yalnızca boş döner,
+  /// grafik ağdan gelir (bu deponun varlık sebebi olan "kaynak yanıt
+  /// vermedi" anı dışında görünür fark yok).
   final Future<Directory> Function() _kokDizin;
+
+  /// Eski kök (Application Support). İlk kullanımda oradaki klasör yeni
+  /// köke TAŞINIR (yeniden adlandırma; aynı uygulama kabı, kopya yok), yani
+  /// güncellemeden sonraki ilk açılışta da son iyi seriler elde olur.
+  final Future<Directory?> Function()? _eskiKokDizin;
   Directory? _dizin;
 
   static const azamiYas = Duration(days: 7);
@@ -46,8 +64,30 @@ class SeriDiskDepo {
     if (d != null) return d;
     final kok = await _kokDizin();
     final yeni = Directory('${kok.path}/seri_onbellek');
+    await _eskiyiTasi(yeni);
     if (!await yeni.exists()) await yeni.create(recursive: true);
     return _dizin = yeni;
+  }
+
+  Future<void> _eskiyiTasi(Directory yeni) async {
+    final eskiKok = _eskiKokDizin;
+    if (eskiKok == null) return;
+    try {
+      final k = await eskiKok();
+      if (k == null) return;
+      final eski = Directory('${k.path}/seri_onbellek');
+      if (eski.path == yeni.path || !await eski.exists()) return;
+      if (await yeni.exists()) {
+        await eski.delete(recursive: true);
+      } else {
+        await yeni.parent.create(recursive: true);
+        await eski.rename(yeni.path);
+      }
+    } catch (e) {
+      // Taşınamazsa yeni depo boş başlar; eski klasör bir sonraki
+      // açılışta yeniden denenir. Ana akışa sızmaz.
+      if (kDebugMode) debugPrint('[SeriDiskDepo] taşınamadı: $e');
+    }
   }
 
   /// Anahtar sembol içerir (`USDTRY=X`, `^XU100`, `TEFAS:AFA`); base64url

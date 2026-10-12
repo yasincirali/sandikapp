@@ -154,3 +154,24 @@ Kullanıcı kararı: akan her animasyon (kaydırma, grafik, slide/click/collapse
 **Gerçek cihazda kalan doğrulama (ProGuard):** Google ile giriş, Apple ile giriş, push
 bildirimi alma, Remote Config bayrağı, yerel bildirim gösterimi. Emülatörde
 oturum açık olduğundan giriş akışları denenmedi.
+
+## Ek: Live Activity, widget, bellek ve önbellek denetimi (12 Ekim 2026)
+
+Rapor: https://claude.ai/artifact/2MhVwPTTsgBc9PcdMNa91b. Uygulananlar (ekrandaki
+rakamın tazeliği ve yüzeyler arası tutarlılık korunarak):
+
+| Bulgu | Ne yapıldı |
+|---|---|
+| Mum önbelleği sınırsız (480 dk seansta +48 MB, test ortamı) | `MumVerisi`: süresi dolan kayıt atılır, en çok 24 kayıt (LRU) |
+| Bugün kartı canlı noktası seans boyunca her karede çizim | `repeat()` yerine görünürken ve her yeni rakamda 3 nefes, sonra tam opaklıkta durur |
+| Widget her yayında baştan yazılıyor (20 kanal çağrısı + PNG) | Yalnız değişen anahtar yazılır; değişiklik yoksa yenileme yok. Saat (`HH:mm`) kıyasta, tazelik aynı. PNG yalnız Android'de ve girdi değişince çizilir; `ui.Image`/`Picture` bırakılır |
+| Live Activity push'ları hep `apns-priority: 10` | 0143 + `_shared/canli_etkinlik_oncelik.ts`: görünen içerik son 10'luk push'la aynıysa 5. Push sayısı ve içeriği aynı |
+| Android'de boş FCM arka plan işleyicisi her push'ta motor açıyor | Kayıt kaldırıldı; eski kaydı `MainActivity` siler |
+| Android widget bitmap'i örnek başına çözülüyor | Tek çözüm, bütün örnekler paylaşır |
+| Seri deposu ve TEFAS kataloğu Application Support'ta | `Caches`'e taşındı (eski dosya yeniden adlandırılır, veri kaybı yok) |
+| Bellek baskısı dinlenmiyor | `BellekBaskisi`: mum ve süreli seri önbelleği bırakılır; gün içi seri (widget/LA/Bugün/Performans ortak yuvası) ve son iyi seri KALIR |
+| Ortaklık yoklaması 30 sn | 60 sn; öne dönüşte ve kullanıcı eyleminde hemen tazelenir |
+
+Bilerek yapılmayan: kilit ekranı widget'ının 5 dakikalık yenilemesi 15'e çekilmedi —
+widget ile hemen altındaki Canlı Etkinlik farklı rakam gösterirdi (2026-10-08 kararı).
+Halka arz listesi Application Support'ta kaldı: çevrimdışı yedeği, küçük.
