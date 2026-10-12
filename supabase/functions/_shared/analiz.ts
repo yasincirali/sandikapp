@@ -427,7 +427,7 @@ export function kullaniciMesaji(p: Paket): string {
 }
 
 /// Batch isteğinin `params` gövdesi. Model ve efor çağırandan: haftalık not
-/// Sonnet 5.5 düşük efor, aylık rapor Opus 5.5 düşük efor; maliyet tavanı
+/// ve aylık rapor Sonnet 5.5 düşük efor (2026-10-12'ye kadar aylık Opus'tu); tavan
 /// aşılınca Haiku 4.5 (efor parametresi yok).
 export function istekGovdesi(p: Paket, model: string): Record<string, unknown> {
   const outputConfig: Record<string, unknown> = {
