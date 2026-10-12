@@ -477,15 +477,15 @@ List<_Adim> _adimlariKur() {
       // dolu renkli tutar rozeti, tam genişlik eğri, dönem çipleri,
       // oynayanlar sırası, "100 liran bugün kaç lira" kutusu, hedef satırı;
       // Getirin/TÜFE çubukları ve yüzde rozeti yok. Metin bunu anlatır.
-      govde: 'Üstte gün ve seans durumu. Altında günün hükmü tek kelimeyle '
-          '(Yükseldi, Geriledi, Yerinde saydı) ve yanında renkli rozette '
-          'tutar: sadece fiyat etkisi, yatırdığın para sayılmaz. Eğri günün '
-          'seyri, kesik çizgi gün başı seviyesi; Hafta, Ay, Yıl çipleri '
-          'Özet\'in o dönemine götürür. Sonra bugün en çok oynayan '
-          'varlıkların; "Paran fiyatlara yetişiyor mu?" kutusunda geçen '
-          'yılki 100 liranın bugün kaç lira ettiği ve dolu çubuk; en altta '
-          'hedefine kalan. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
-          'Birlikte\'ye geçince kart o defterin gününü anlatır.',
+      // 2026-10-12 (kullanıcı bulgusu "garip duruyor"): metin dokuz
+      // cümleydi, açıklama kartı uzun kartın yanına sığmıyordu. Spot artık
+      // kartın üst kısmını alıyor (`turSpotu`); metin o kısmı anlatır,
+      // alttakileri tek cümlede sayar.
+      govde: 'Günün hükmü tek kelimeyle (Yükseldi, Geriledi, Yerinde saydı) '
+          've yanında tutar: yalnız fiyat etkisi, yatırdığın para sayılmaz. '
+          'Eğri günün seyri; Hafta, Ay, Yıl çipleri Özet\'e götürür. '
+          'Aşağıda en çok oynayanlar, 100 liranın bugünkü karşılığı ve '
+          'hedefine kalan var.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
@@ -1110,6 +1110,32 @@ class OnboardingTourHost extends StatelessWidget {
 bool _turBulanik(BuildContext context) =>
     context.isLight && defaultTargetPlatform == TargetPlatform.iOS;
 
+/// Spotun ekranda gerçekten çizileceği dikdörtgen.
+///
+/// ## Neden (kullanıcı bulgusu 2026-10-12, "Bugün ne oldu" adımı)
+/// Hedef olduğu gibi kullanılıyordu. Bugün kartı 2026-10-09 düzeninden beri
+/// ekrandan uzun (hüküm, eğri, oynayanlar, 100 lira kutusu, hedef): oyuk
+/// ekranın tamamını kaplayıp taşıyor, açıklama kartı yer bulamayıp en az
+/// 200 pt'ye zorlanarak spotun üstüne biniyordu. İki kural:
+/// 1. Oyuk görünür alanla (güvenli alan içi) kesişir; ekran dışına taşmaz.
+/// 2. Görünür alanın [_Sahne.uzunHedefOrani] kadarından uzun hedefte spot
+///    hedefin ÜST kısmını alır; kalan alan açıklama kartınındır. Tur
+///    hedefi zaten üst kenarı görünecek şekilde kaydırır (`_hedefiGoster`).
+/// Kısa hedefler birebir eskisi gibi.
+@visibleForTesting
+Rect turSpotu(Rect hedef, MediaQueryData mq) {
+  final ust = mq.padding.top;
+  final alt = mq.size.height - mq.padding.bottom;
+  final gorunur = Rect.fromLTRB(0, ust, mq.size.width, alt);
+  if (!hedef.overlaps(gorunur)) return hedef;
+  var r = hedef.intersect(gorunur);
+  final enFazla = (alt - ust) * _Sahne.uzunHedefOrani;
+  if (r.height > enFazla) {
+    r = Rect.fromLTWH(r.left, r.top, r.width, enFazla);
+  }
+  return r;
+}
+
 /// HIG'in en küçük dokunma hedefi: 44×44pt (Human Interface Guidelines →
 /// Controls). Boşluk ölçeğine ait bir sayı DEĞİL — Apple'ın sabiti; bu
 /// yüzden `SandikSpace` içinden seçilmez.
@@ -1118,6 +1144,10 @@ const double _higHedef = 44;
 /// Uzun süreli hareketler için ölçek — hareket dili sabitlerinin katları,
 /// böylece "hareketi azalt" koruması (`SandikMotion.of`) aynen çalışır.
 abstract final class _Sahne {
+  /// Görünür yüksekliğin bu oranından uzun hedef "uzun" sayılır: spot üst
+  /// kısmı alır, açıklama kartı kalan ~yarıya sığar (bkz. [turSpotu]).
+  static const double uzunHedefOrani = 0.5;
+
   /// Kartın belirişi: 240 ms ([SandikMotion.surface]).
   ///
   /// Eskiden 480 ms'ydi ve her adımda saydamlık SIFIRDAN başlıyordu: hızlı
@@ -1275,9 +1305,19 @@ class _TurKatmaniState extends State<_TurKatmani>
     if (hedef == null) return;
     final c = TourTargets.context(hedef);
     if (c == null) return;
+    // Uzun hedefte (Bugün kartı ekrandan uzun) 0,3 hizası kartın ÜSTÜNÜ
+    // ekranın dışına iterdi: ensureVisible hedefin boyunu da hesaba katar,
+    // görünür alandan uzun kutuyu yukarı kaydırır. Spot zaten kartın üst
+    // kısmını aldığı için (`turSpotu`) üst kenar görünürde kalmalı.
+    final kutu = c.findRenderObject();
+    final gorunum = Scrollable.maybeOf(c)?.position.viewportDimension;
+    final uzun = kutu is RenderBox &&
+        kutu.hasSize &&
+        gorunum != null &&
+        kutu.size.height > gorunum * _Sahne.uzunHedefOrani;
     Scrollable.ensureVisible(
       c,
-      alignment: 0.3,
+      alignment: uzun ? 0.0 : 0.3,
       duration: SandikMotion.surfaceOf(context),
       curve: SandikMotion.enter,
     );
@@ -1395,8 +1435,9 @@ class _TurKatmaniState extends State<_TurKatmani>
     final rect = _rect;
     // Oyuk hedeften biraz geniş: dokunma hedefi görsel kutudan büyük olabilir
     // ve kenar halkası hedefe yapışmamalı.
-    final oyuk = rect?.inflate(SandikSpace.xs2);
     final mq = MediaQuery.of(context);
+    final oyuk =
+        rect == null ? null : turSpotu(rect.inflate(SandikSpace.xs2), mq);
 
     return FadeTransition(
       // Bütün katman (karartma + bulanıklık + kart) birlikte solar — bkz.

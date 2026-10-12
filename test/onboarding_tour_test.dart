@@ -55,6 +55,7 @@ class _EvSahibi extends StatefulWidget {
   const _EvSahibi({
     this.davetKoduVar = true,
     this.bugunVar = true,
+    this.bugunBoyu = 48,
     this.zilVar = true,
   });
 
@@ -64,6 +65,10 @@ class _EvSahibi extends StatefulWidget {
   /// Gerçek ekranda "Bugün" kartı yalnız portföyde aktif lot varken
   /// çizilir (`home_screen.dart`); ilk açılışta (boş portföy) yoktur.
   final bool bugunVar;
+
+  /// Gerçek Bugün kartı ekrandan uzun (2026-10-09 düzeni); uzun hedef testi
+  /// bunu büyütür.
+  final double bugunBoyu;
 
   @override
   State<_EvSahibi> createState() => _EvSahibiState();
@@ -102,11 +107,12 @@ class _EvSahibiState extends State<_EvSahibi> {
     );
   }
 
-  Widget _tus(TourTarget t, String etiket, {VoidCallback? ek}) {
+  Widget _tus(TourTarget t, String etiket,
+      {VoidCallback? ek, double boy = 48}) {
     return TourAnchor(
       target: t,
       child: SizedBox(
-        height: 48,
+        height: boy,
         child: TextButton(
           onPressed: () {
             _dokunus[t] = (_dokunus[t] ?? 0) + 1;
@@ -137,7 +143,8 @@ class _EvSahibiState extends State<_EvSahibi> {
               child: SizedBox(height: 120, child: Text('VİTRİN')),
             ),
           // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
-          if (widget.bugunVar) _tus(TourTarget.bugunKarti, 'bugün'),
+          if (widget.bugunVar)
+            _tus(TourTarget.bugunKarti, 'bugün', boy: widget.bugunBoyu),
           _tus(TourTarget.piyasaSeridi, 'piyasa'),
           // Gerçek ana ekranda hareket kabı yalnız kayıt varken çizilir;
           // "Bugün" kartıyla aynı koşul (dolu portföy).
@@ -281,6 +288,7 @@ Future<void> _pump(
   bool kisa = false,
   bool davetKoduVar = true,
   bool bugunVar = true,
+  double bugunBoyu = 48,
   YatirimciSeviyesi seviye = YatirimciSeviyesi.orta,
   bool seviyeSorusu = false,
 }) async {
@@ -316,6 +324,7 @@ Future<void> _pump(
         home: _EvSahibi(
           davetKoduVar: davetKoduVar,
           bugunVar: bugunVar,
+          bugunBoyu: bugunBoyu,
           // Zil her seviyede (2026-10-04, sade Başlangıç; ana ekranla aynı).
           zilVar: true,
         ),
@@ -771,6 +780,29 @@ void main() {
       expect(find.text('Tutarlar gizlendi'), findsOneWidget);
       await _turuGez(tester);
     });
+  });
+
+  // Kullanıcı bulgusu 2026-10-12: Bugün kartı ekrandan uzun; spot ekranı
+  // kaplıyor, açıklama kartı üstüne biniyordu (`turSpotu`).
+  group('uzun hedef — Bugün kartı', () {
+    for (final (w, h) in const [(375.0, 812.0), (375.0, 667.0)]) {
+      testWidgets('${w.toInt()}×${h.toInt()}: kartın üstü görünür, açıklama '
+          'spotun üstüne binmez', (tester) async {
+        await _pump(tester, width: w, height: h, bugunBoyu: 1400);
+        await _adimaGit(tester, 'Bugün ne oldu?');
+        await _bekle(tester);
+        final hedef = TourTargets.rect(TourTarget.bugunKarti)!;
+        final mq = MediaQueryData(size: Size(w, h));
+        // Hedefin üst kenarı ekranda (0,3 hizası onu yukarı itiyordu).
+        expect(hedef.top, inInclusiveRange(0.0, h / 2));
+        final spot = turSpotu(hedef, mq);
+        expect(spot.bottom, lessThanOrEqualTo(h));
+        final baslik = tester.getRect(find.text('Bugün ne oldu?'));
+        expect(baslik.overlaps(spot), isFalse,
+            reason: 'açıklama kartı spotun üstünde: $baslik / $spot');
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 
   group('akış korundu — kaynak denetimi', _akisTestleri);
