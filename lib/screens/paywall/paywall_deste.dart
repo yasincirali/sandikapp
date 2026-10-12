@@ -615,6 +615,20 @@ class _PlanSekmeleri extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final l = context.l10n;
+    // `goz_alici` (seçici denetimi 2026-10-12): plan seçimi bir mod; tüm
+    // uygulamadaki kayan segment. Dolu amber burada fiyat kartıyla ve
+    // satın al düğmesiyle yarışıyordu; vurgu satın al düğmesinde kalır.
+    if (RemoteConfigService.instance.gozAlici) {
+      return SandikSegment(
+        adet: 2,
+        secili: yillik ? 0 : 1,
+        onSec: (i) => onPlan(i == 0),
+        yukseklik: SandikTouch.min + SandikSpace.sm,
+        icBosluk: SandikSpace.xs,
+        metinStili: context.t.titleSmall,
+        oge: (_, i, __) => Text(i == 0 ? l.planYearly : l.planMonthly),
+      );
+    }
     Widget sekme(String metin, bool secili, bool deger) => Expanded(
           child: Semantics(
             button: true,

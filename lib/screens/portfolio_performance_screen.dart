@@ -98,6 +98,7 @@ import '../widgets/gorunum_cipi.dart';
 import '../widgets/tur_filtre_cipleri.dart';
 import '../services/tur_filtre_ozeti.dart';
 import '../widgets/kiyas_karti.dart';
+import '../widgets/sandik_cam.dart';
 import '../services/kiyas_service.dart';
 import '../providers/kiyas_provider.dart';
 
@@ -665,8 +666,12 @@ class _PortfolioPerformanceScreenState
           color: context.c.text90, decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
         backgroundColor: context.c.background,
-        child: SafeArea(
-          child: Column(
+        // Cam başlık (bayrak `goz_alici`, 2026-10-12); kapalıyken eski
+        // SafeArea > Column birebir.
+        child: SandikKaydirmaBasligi(
+          kimlik: 'performans',
+          baslik: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // ── Header ──────────────────────────────────────────────────
               // Başlık çubuğu 2026-09-15'te iki kez inceldi: 20/12 →
@@ -695,6 +700,7 @@ class _PortfolioPerformanceScreenState
                       ),
                     ],
                     Expanded(
+                      child: SandikKucululenBaslik(
                       child: Text(
                         context.l10n.performanceTitle,
                         // Tek satır, kenarda solar: sarmalasa başlık çubuğu
@@ -704,6 +710,7 @@ class _PortfolioPerformanceScreenState
                         overflow: TextOverflow.fade,
                         style: context.t.headlineMedium
                             ?.copyWith(color: context.c.text90),
+                      ),
                       ),
                     ),
                     // Kişi seçimi 2026-09-15'te bir süre buradaydı (çip,
@@ -770,19 +777,27 @@ class _PortfolioPerformanceScreenState
                   ],
                 ),
               ),
-              // ── Body ────────────────────────────────────────────────────
-              Expanded(
-                child: pStateAsync.when(
+            ],
+          ),
+          // ── Body ────────────────────────────────────────────────────
+          govde: SandikKaydirmaBasligi.payIle((ustPay) => pStateAsync.when(
                   // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
                   // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
                   // bu anda tam ekran yükleme çizip geri dönüyordu: ekran bir kare
                   // boşalıp doluyordu (titreme bulgusu 2026-10-02). Ana ekran aynı
                   // şeyi `valueOrNull` ile baştan beri yapıyor.
                   skipLoadingOnReload: true,
-                  loading: () => const SandikLoadingScreen(),
-                  error: (e, _) => SandikErrorView(
-                      error: e,
-                      onRetry: () => ref.invalidate(portfolioProvider)),
+                  loading: () => Padding(
+                      padding: EdgeInsets.only(
+                          top: ustPay),
+                      child: const SandikLoadingScreen()),
+                  error: (e, _) => Padding(
+                    padding: EdgeInsets.only(
+                        top: ustPay),
+                    child: SandikErrorView(
+                        error: e,
+                        onRetry: () => ref.invalidate(portfolioProvider)),
+                  ),
                   data: (pState) => partnerAssetsAsync.when(
                     // Aynı gerekçe: `activePartnersProvider` her tazelendiğinde
                     // bu sağlayıcı yeniden kurulur (`PartnerAssetsNotifier`).
@@ -1075,11 +1090,8 @@ class _PortfolioPerformanceScreenState
                       );
                     },
                   ),
-                ),
-              ),
-            ],
+                )),
           ),
-        ),
       ),
     );
   }

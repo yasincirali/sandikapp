@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/sandik_cam.dart';
 import '../widgets/hesap_secici.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/cupertino.dart';
@@ -387,8 +388,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // tek yükleniyor davranışı); diğer düğmeler ve geri hareketi serbest.
     return CupertinoPageScaffold(
           backgroundColor: context.c.background,
-          child: SafeArea(
-            child: Column(
+          // Cam başlık (bayrak `goz_alici`, 2026-10-12); kapalıyken eski
+          // SafeArea > Column birebir.
+          child: SandikKaydirmaBasligi(
+            kimlik: 'profil',
+            baslik: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Header — ölçüler Performans ekranıyla BİREBİR
                 // (2026-09-28): dikey xs, `headlineMedium`.
@@ -413,13 +418,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                 ),
                               )
-                            : Text(
+                            : SandikKucululenBaslik(
+                                child: Text(
                                 'Profil',
                                 maxLines: 1,
                                 softWrap: false,
                                 overflow: TextOverflow.fade,
                                 style: context.t.headlineMedium
                                     ?.copyWith(color: context.c.text90),
+                              ),
                               ),
                       ),
                       // Tema hızlı geçişi buradaydı; 2026-10-04 sadeleştirmede
@@ -451,10 +458,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                 ),
+              ],
+            ),
                 // Body
-                Expanded(
-                    child: RefreshIndicator.adaptive(
+            govde: SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
       color: context.c.amberText,
+      edgeOffset: ustPay,
       onRefresh: () async {
         await ref.read(partnersProvider.notifier).refresh();
         CrashReporter.arkaPlan(
@@ -466,7 +475,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       // Üst dolgu 0: ilk kart başlık bloğunun hemen altında,
                       // dört sekmede aynı çizgi (2026-09-28).
                       padding: EdgeInsets.fromLTRB(
-                          SandikSpace.screenH(context), 0,
+                          SandikSpace.screenH(context),
+                          ustPay,
                           SandikSpace.screenH(context), SandikSpace.xs),
                       children: [
                         // Oturum çözülmeden bu ekran kurulmaz; null yalnızca
@@ -526,11 +536,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 40),
                       ],
                     ),
-    ),
-                ),
-              ],
+    )),
             ),
-          ),
         );
   }
 

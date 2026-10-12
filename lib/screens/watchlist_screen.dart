@@ -31,6 +31,7 @@ import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/ortak_secici.dart';
+import '../widgets/sandik_cam.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
 import 'add_asset_screen.dart';
@@ -67,7 +68,11 @@ class WatchlistBody extends ConsumerWidget {
     final async = ref.watch(watchlistProvider);
     final eskiyiGoster = _eskiVeriyiGoster(ref, async);
 
-    return Column(
+    // Cam başlık açıkken (Portföy, `goz_alici`) sabit üst kısım başlığın
+    // altında başlar; kapalıyken pay 0, yerleşim birebir.
+    return Padding(
+      padding: EdgeInsets.only(top: SandikKaydirmaBasligi.ustPay(context)),
+      child: Column(
       children: [
         const _AddHeader(),
         const SizedBox(height: SandikSpace.sm),
@@ -95,6 +100,7 @@ class WatchlistBody extends ConsumerWidget {
         ),
         const _FooterNote(),
       ],
+      ),
     );
   }
 }

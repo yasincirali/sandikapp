@@ -5,6 +5,7 @@ import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart';
 import '../models/ohlc.dart';
 import '../theme/sandik.dart';
+import 'sandik_cam.dart';
 
 /// Fiyat grafiğinin araç çubuğu — [aralık ⌄] · MUM · LOG · ƒx / MA20 · EMA50 ·
 /// EMA200. Aralık açılır menüsü (1 dk … ay) mum YA DA bir gösterge açıkken
@@ -135,6 +136,98 @@ class GrafikAracCubugu extends ConsumerWidget {
         ) &&
         ar != null &&
         gecerliAraliklar.length >= 2;
+    final ortalamalar = <Widget>[
+      ma20,
+      GrafikCipi(
+        label: 'EMA50',
+        active: ema50Acik,
+        renk: context.c.gain,
+        onTap: () => ref.read(chartEma50Provider.notifier).set(!ema50Acik),
+      ),
+      GrafikCipi(
+        label: 'EMA200',
+        active: ema200Acik,
+        renk: context.c.loss,
+        onTap: () => ref.read(chartEma200Provider.notifier).set(!ema200Acik),
+      ),
+    ];
+    final aciklama = mumAcik && kapanistan
+        ? Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              context.l10n.chartCandleFromCloses,
+              style: context.t.labelSmall?.copyWith(color: context.c.text58),
+            ),
+          )
+        : null;
+    // ── Tek sıra (bayrak `goz_alici`, cam/HIG incelemesi 2026-10-12) ──
+    // Telefonda grafikten önce üç sıra kontrol vardı (dönem, görünüm,
+    // ortalamalar); grafik ilk ekranın altına itiliyordu. Çipler AYNI sırada
+    // ve aynı yerde kalır (bilinen kontrol saklanmaz, 9 Ekim kuralı), yalnız
+    // tek satıra iner: sığarsa sağa yaslı, sığmazsa yatay kayar. Aralık
+    // menüsü yine solda.
+    if (SandikCam.acik) {
+      final ayrac = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+        child: SizedBox(
+          width: 1,
+          height: SandikSpace.lg,
+          child: ColoredBox(color: context.c.hairline),
+        ),
+      );
+      final ciplar = <Widget>[
+        for (var i = 0; i < ustSatir.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          ustSatir[i],
+        ],
+        ayrac,
+        for (var i = 0; i < ortalamalar.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          ortalamalar[i],
+        ],
+      ];
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          LayoutBuilder(
+            builder: (context, kutu) => SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              // `min` boyutlu satır en az kutu genişliğinde: artan boşluk
+              // `spaceBetween` ile menü ile çipler arasına gider (sığınca
+              // çipler sağda, menü solda — iki satırlı düzenle aynı kenarlar).
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: kutu.maxWidth),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (secici)
+                      Padding(
+                        padding: const EdgeInsets.only(right: SandikSpace.sm),
+                        child: MumAraligiMenusu(
+                          aralik: ar,
+                          gecerli: gecerliAraliklar,
+                          onSec: (yeni) {
+                            if (pencere == null) return;
+                            ref
+                                .read(mumAraligiSecimiProvider.notifier)
+                                .sec(pencere, yeni);
+                          },
+                        ),
+                      )
+                    else
+                      const SizedBox.shrink(),
+                    Row(mainAxisSize: MainAxisSize.min, children: ciplar),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (aciklama != null) aciklama,
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [

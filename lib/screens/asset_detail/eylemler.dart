@@ -192,6 +192,8 @@ extension _DetayEylemler on _AssetDetailScreenState {
     final canli = _canli;
     if (!canli.acik) return null;
     return PozisyonIslemCubugu(
+      // Yüzen cam kapsül (bayrak `goz_alici`); ekran `extendBody` verir.
+      yuzen: SandikCam.acik,
       islemler: pozisyonIslemleri(canli.asset),
       // Diyalog açıldığı andaki pozisyonu alır; fiyat turu araya girse de
       // kayıt diyaloğun gösterdiği miktar/fiyatla yapılır.

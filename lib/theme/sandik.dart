@@ -1396,8 +1396,12 @@ class Sandik {
   //
   // Cam efekti (BackdropFilter) bir vurgu aracıdır — her yerde kullanılınca
   // vurgu olmaktan çıkar, geriye yalnızca katman kompozisyon maliyeti kalır.
-  // Ana sayfada 7 ayrı blur vardı; artık yalnızca hero kart bulanıklaştırılır,
-  // diğer yüzeyler aşağıdaki opak dekorasyonları kullanır.
+  // Ana sayfada 7 ayrı blur vardı; 2026-09-30'da hepsi kalktı (arkalarında
+  // akan içerik yoktu, hero kart dahil). Cam yalnız İÇERİĞİN ALTINDAN AKTIĞI
+  // çubuklarda geri döndü (2026-10-12, bayrak `goz_alici`): sekme başlığı ve
+  // varlık sayfasındaki yüzen kapsül — `lib/widgets/sandik_cam.dart`. Kart ve
+  // sayı arkasına blur konmaz; diğer yüzeyler aşağıdaki opak dekorasyonları
+  // kullanır.
 
   /// Liste satırı / ikincil kart — düz yüzey, kenarlıksız.
   ///

@@ -338,8 +338,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // `period_summary_enabled` kapalıyken) aşağıdaki eski düzen birebir
     // çizilir.
     if (_tekAkis) {
-      return RefreshIndicator.adaptive(
+      return SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
         color: context.c.amberText,
+        // Cam başlık açıkken (`goz_alici`) pay başlığın boyu; kapalıyken 0.
+        edgeOffset: ustPay,
         onRefresh: () async {
           await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
           if (mounted) _retryChartData();
@@ -347,7 +349,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
-          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), ustPay,
               SandikSpace.screenH(context), SandikSpace.smd),
           children: [
             _buildTekSatirKontroller(activePartners),
@@ -385,11 +387,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             const SizedBox(height: SandikSpace.md),
           ],
         ),
-      );
+      ));
     }
 
-    return RefreshIndicator.adaptive(
+    return SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
       color: context.c.amberText,
+      // Cam başlık açıkken (`goz_alici`) pay başlığın boyu; kapalıyken 0.
+      edgeOffset: ustPay,
       onRefresh: () async {
         // Kullanıcı yenilemesi — fiyat önbelleği atlanır, gün içi future sıfırlanır.
         await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
@@ -406,7 +410,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       // sekmede aynı çizgi (kullanıcı bildirimi 2026-09-28: "Performans
       // biraz daha boşluk bırakıp başlıyor"). Portföy'de ilk kontrol
       // başlığın 4pt alt dolgusundan hemen sonra; burada 12 daha vardı.
-      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), ustPay,
           SandikSpace.screenH(context), SandikSpace.smd),
       children: [
         // ── Kontroller: İKİ satır (+ ortak varsa kişi satırı) ────────────
@@ -544,7 +548,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ].map((w) => _SekmeSolmasi(ozet: false, taze: _sekmeYeniDegisti, child: w)),
       ],
     ),
-    );
+    ));
   }
 
   Widget _buildPeriodChangeCard(

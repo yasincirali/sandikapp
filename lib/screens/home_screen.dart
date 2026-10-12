@@ -23,6 +23,7 @@ import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_cam.dart';
 import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
@@ -644,7 +645,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverAppBar(
             pinned: true,
             floating: false,
-            backgroundColor: context.c.background,
+            // Cam başlık (bayrak `goz_alici`, cam/HIG incelemesi
+            // 2026-10-12): zemin `flexibleSpace`'teki cam/opak katmandan
+            // gelir (kaydırınca çizgi + buzlu cam; Android'de opak ton).
+            // Kapalıyken eski düz zemin birebir.
+            backgroundColor: SandikCam.acik
+                ? Colors.transparent
+                : context.c.background,
+            flexibleSpace: SandikCam.acik
+                ? SandikCamCubukZemini(kontrol: _scrollCtrl)
+                : null,
+            scrolledUnderElevation: SandikCam.acik ? 0 : null,
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             // Yükseklik Performans ekranındaki başlık çubuğuyla BİREBİR:

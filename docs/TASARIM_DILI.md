@@ -118,12 +118,33 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Kart | `SandikCard` (`elevated`, `bordered`, `shadowed`) |
 | Bölüm başlığı | `SandikSectionHeader` |
 | Üst çubuk | `SandikAppBar` |
-| 2–4 seçenekli seçici | `SandikSegment` |
+| Mod değiştiren 2–5 seçenekli seçici (ekranın ne gösterdiği değişir) | `SandikSegment` (ikonlu Ayarlar seçicileri dahil; Material `TabBar`/`ChoiceChip`/elle yazılmış amber hücre yok) |
+| Liste süzen çip ("Tümü" var) | `SandikFiltreCipi` — tam yuvarlak, 44 pt, seçiliyken amber dolgu + onay işareti |
+| Çoklu aç/kapa çip | `GrafikCipi` (çerçeve + onay işareti) |
 | Varlık türü süzgeci (sade çipler; elde olan önde, olmayan sonda pasif) | `TurFiltreCipleri` (Performans › Filtre; bayrak `goz_alici`) |
 | Açma/kapama | `Switch.adaptive` (açık track `amberText`) |
 | Sheet tutamacı | `SandikTutamac` |
 | Tarih seçici | `pickSandikDate` |
 | Giriş alanı | `context.inputDecoration(...)`; dolgu temadan, ekranda `fillColor` yok |
+| Sekme başlığı (içerik altından akar, kaydırınca kenar çizgisi + iOS'ta cam, başlık 0.88'e küçülür) | `SandikKaydirmaBasligi` (Portföy, Performans, Profil; bayrak `goz_alici`). Gövde payı `SandikKaydirmaBasligi.payIle` ile okunur — ekranın kendi `context`'i iskeletin üstündedir, pay 0 çıkar |
+| Ana sayfa `SliverAppBar` zemini (aynı cam) | `SandikCamCubukZemini` |
+| Cam yüzey (iOS blur; Android/yüksek kontrast opak) | `SandikCamYuzey` — yalnız içeriğin altından aktığı çubukta |
+| Varlık sayfası Al/Sat/Temettü | `PozisyonIslemCubugu(yuzen: SandikCam.acik)` — yüzen cam kapsül |
+| Satıra uzun bas kısayolu (iOS sistem bağlam menüsü, Android alt sayfa) | `SandikBaglamMenusu` — aynı eylemler satırda/detayda da durur; yıkıcı eylem en sonda, kırmızı |
+
+**Seçici kuralı (2026-10-12).** "Birini seç" üç işe ayrılır ve her işin tek
+görünümü vardır: mod değiştirmek kayan segment, süzmek süzme çipi, çoklu
+aç/kapa grafik çipi. "Seçili" bilgisi etiketle aynı semantik düğümde okunur
+(dışta ayrı `Semantics(selected:)` yok; etiket verilen çipte metin
+`ExcludeSemantics`). Segmentlere cam konmaz: arkalarında akan içerik yok,
+iOS'ta da segment camın üstünde opak durur. Kilit: `secici_kurali_test`.
+
+**Cam kuralı (2026-10-12).** Cam bir *malzeme*dir, süs değil: yalnız arkasından
+içerik akan çubukta (sekme başlığı, yüzen kapsül) kullanılır. Sayı, toplam kart,
+sheet ve kart arkasına blur konmaz. Bulanıklık yalnız iOS'ta ve içerik başlığın
+altına girdiğinde kurulur; Android ve yüksek kontrastta opak ton geçişi. Efektler
+kaydırma konumunu izler (zamanlayıcı yok), yerleşimi değiştirmez; "hareketi azalt"
+başlık küçülmesini kapatır.
 
 ### Durumlar
 | Durum | Bileşen |

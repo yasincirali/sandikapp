@@ -1,6 +1,8 @@
 import 'dart:async' show FutureOr, unawaited;
 import 'dart:math' as math;
 
+import '../widgets/sandik_baglam_menusu.dart';
+import '../widgets/sandik_cam.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
@@ -380,8 +382,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
       backgroundColor: context.c.background,
       child: Material(
         type: MaterialType.transparency,
-        child: SafeArea(
-          child: Column(
+        // Cam başlık (bayrak `goz_alici`, cam/HIG incelemesi 2026-10-12):
+        // içerik başlığın altından akar; kapalıyken eski SafeArea > Column.
+        child: SandikKaydirmaBasligi(
+          kimlik: 'portfoy',
+          baslik: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // ── Header ────────────────────────────────────────────────────
               // Ölçüler Performans ekranının başlık çubuğuyla BİREBİR
@@ -394,13 +400,15 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
+                      child: SandikKucululenBaslik(
+                        child: Text(
                         context.l10n.portfolio,
                         maxLines: 1,
                         softWrap: false,
                         overflow: TextOverflow.fade,
                         style: context.t.headlineMedium
                             ?.copyWith(color: context.c.text90),
+                      ),
                       ),
                     ),
                     _SortButton(
@@ -465,27 +473,35 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   ),
                 ),
               ),
-              // ── Body ──────────────────────────────────────────────────────
-              if (_bodyTab == 1)
-                // Takip listesi ayrı bir veri kümesi: bu ekranın hiçbir
-                // toplamına girmez. Portföy özeti "Varlıklarım" dalının
-                // içinde kaldığı için değişmez korunuyor.
-                const Expanded(child: WatchlistBody())
-              else
-              Expanded(
-                child: pStateAsync.when(
+            ],
+          ),
+          // ── Body ──────────────────────────────────────────────────────
+          // Takip listesi ayrı bir veri kümesi: bu ekranın hiçbir toplamına
+          // girmez. Portföy özeti "Varlıklarım" dalının içinde kaldığı için
+          // değişmez korunuyor.
+          govde: _bodyTab == 1
+              ? const WatchlistBody()
+              : SandikKaydirmaBasligi.payIle((ustPay) => pStateAsync.when(
                   // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
                   // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
                   // bu anda tam ekran yükleme çizip geri dönüyordu: ekran bir kare
                   // boşalıp doluyordu (titreme bulgusu 2026-10-02). Ana ekran aynı
                   // şeyi `valueOrNull` ile baştan beri yapıyor.
                   skipLoadingOnReload: true,
-                  loading: () => const SandikLoadingScreen(),
-                  error: (e, _) => SandikErrorView(
-                      error: e,
-                      onRetry: () => ref.invalidate(portfolioProvider)),
+                  loading: () => Padding(
+                      padding: EdgeInsets.only(
+                          top: ustPay),
+                      child: const SandikLoadingScreen()),
+                  error: (e, _) => Padding(
+                    padding: EdgeInsets.only(
+                        top: ustPay),
+                    child: SandikErrorView(
+                        error: e,
+                        onRetry: () => ref.invalidate(portfolioProvider)),
+                  ),
                   data: (pState) => RefreshIndicator.adaptive(
                     color: context.c.amberText,
+                    edgeOffset: ustPay,
                     // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
                     onRefresh: () => ref
                         .read(portfolioProvider.notifier)
@@ -503,7 +519,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       controller: _kaydirma,
                       physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics()),
-                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 80),
+                      // Cam başlık açıkken ilk satır başlığın altında başlar (kapalıyken 0).
+                      padding: EdgeInsets.fromLTRB(
+                          SandikSpace.screenH(context),
+                          12 + ustPay,
+                          SandikSpace.screenH(context),
+                          80),
                       children: [
                         if (activePartners.isNotEmpty)
                           OrtakSecici(
@@ -720,10 +741,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
+                )),
         ),
       ),
     );
@@ -2751,6 +2769,49 @@ class _AssetCardState extends State<_AssetCard>
           ),
           child: card,
         ),
+      );
+      // Uzun basma kısayolu (bayrak `goz_alici`, cam/HIG incelemesi
+      // 2026-10-12): kaydırma panelindeki eylemlerin aynısı, aynı sırada;
+      // panel ve açılır ok yerinde kalır. Kapalıyken `card` olduğu gibi.
+      card = SandikBaglamMenusu(
+        baslik: a.name,
+        eylemler: [
+          SandikBaglamEylemi(
+            etiket: context.l10n.buyAction,
+            ikon: Icons.trending_up_rounded,
+            onSec: () => onAdd(position),
+          ),
+          SandikBaglamEylemi(
+            etiket: context.l10n.sellAction,
+            ikon: Icons.trending_down_rounded,
+            onSec: () => onRemove(position),
+          ),
+          if (showsDividend)
+            SandikBaglamEylemi(
+              etiket: context.l10n.dividend,
+              ikon: Icons.savings_outlined,
+              onSec: () => onDividend(position),
+            ),
+          if (onGuncelle != null)
+            SandikBaglamEylemi(
+              etiket: context.l10n.update,
+              ikon: Icons.edit_note_rounded,
+              onSec: () => onGuncelle(position),
+            ),
+          if (onTasi != null)
+            SandikBaglamEylemi(
+              etiket: context.l10n.portfoyTasi,
+              ikon: Icons.drive_file_move_outline,
+              onSec: () => onTasi(position),
+            ),
+          SandikBaglamEylemi(
+            etiket: context.l10n.deleteAction,
+            ikon: Icons.delete_outline_rounded,
+            yikici: true,
+            onSec: () => onDelete(position),
+          ),
+        ],
+        child: card,
       );
     }
 

@@ -1003,7 +1003,10 @@ class _SaatChip extends StatelessWidget {
       selected: secili,
       button: true,
       child: SandikBasma(
-        onTap: onTap,
+        onTap: () {
+          SandikHaptic.selection.perform();
+          onTap();
+        },
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,

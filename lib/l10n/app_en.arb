@@ -5112,5 +5112,9 @@
   "cmpKatmanHedefi": "Candles and averages: {ad}. Tap another line to switch.",
   "pwdOzelUcretsiz": "candles, 1m to 1M intervals, EMA",
   "chartIntervalM30": "30m",
-  "chartIntervalM30Long": "30-minute"
+  "chartIntervalM30Long": "30-minute",
+  "feedbackTypeComplaint": "Complaint",
+  "feedbackTypeSuggestion": "Suggestion",
+  "feedbackTypeOther": "Other",
+  "searchTabAssets": "Assets"
 }

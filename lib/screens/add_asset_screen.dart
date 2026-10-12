@@ -923,8 +923,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       selected: selected,
       label: context.l10n.goldSemantics(g.label),
       child: SandikBasma(
-        onTap: () => _selectGold(g),
-        child: AnimatedContainer(
+        onTap: () {
+          SandikHaptic.selection.perform();
+          _selectGold(g);
+        },
+        child: ConstrainedBox(
+          // HIG 44 pt (seçici denetimi 2026-10-12): görsel çip aynı, dokunma
+          // alanı 44'e tamamlanır.
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Center(widthFactor: 1, heightFactor: 1, child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(
@@ -963,6 +970,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       color: selected ? context.c.text90 : context.c.text58)),
             ],
           ),
+        )),
         ),
       ),
     );
@@ -1822,6 +1830,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               label: context.l10n.assetTypeSemantics(t.labelOf(context.l10n)),
               child: SandikBasma(
               onTap: () async {
+                SandikHaptic.selection.perform();
                 _yaz(_n.selectType(t));
                 _schedulePricePreview();
               },
@@ -1971,6 +1980,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               label: opt.label,
               child: SandikBasma(
               onTap: () {
+                SandikHaptic.selection.perform();
                 _yaz(_n.selectDoviz(opt));
                 _schedulePricePreview();
               },
@@ -2049,8 +2059,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               selected: selected,
               label: context.l10n.quantitySemantics(v),
               child: SandikBasma(
-              onTap: () => _quantity.text = v,
-              child: AnimatedContainer(
+              onTap: () {
+                SandikHaptic.selection.perform();
+                _quantity.text = v;
+              },
+              child: ConstrainedBox(
+          // HIG 44 pt (seçici denetimi 2026-10-12): görsel çip aynı, dokunma
+          // alanı 44'e tamamlanır.
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Center(widthFactor: 1, heightFactor: 1, child: AnimatedContainer(
                 duration:
                     SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
@@ -2092,7 +2109,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     ),
                   ],
                 ),
-              ),
+              )),
+        ),
             )),
           );
         }).toList(),

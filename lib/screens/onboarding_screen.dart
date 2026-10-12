@@ -587,6 +587,12 @@ List<_Adim> _adimlariKur() {
           : 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
           'dokununca detayına inersin; alış, satış ve temettüyü oradaki '
           'alt çubuktan kaydedersin.') +
+          // Bayrak `goz_alici` (cam/HIG, 2026-10-12): satıra uzun basmak
+          // aynı işlemleri kısayol menüsünde açar — yeni etkileşim, tur
+          // söyler. Kapalıyken metin birebir eski.
+          (RemoteConfigService.instance.gozAlici
+              ? ' Varlığa uzun basarsan bu işlemler kısayol olarak da açılır.'
+              : '') +
           // Çoklu portföy (0133): "Ben"in altına portföy şeridi gelir —
           // tur metni arayüzle birlikte değişir (2026-09-21 kuralı). Üç
           // düzenin üçüne de eklenir; özellik görünmüyorsa metin birebir

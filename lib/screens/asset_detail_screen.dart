@@ -68,6 +68,7 @@ import '../widgets/fon_dagilimi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
+import '../widgets/sandik_cam.dart';
 import '../providers/fon_karnesi_provider.dart'
     show fonKarnesiAcikProvider, fonKarnesiProvider;
 import '../providers/fon_akisi_provider.dart'
@@ -81,6 +82,7 @@ import '../providers/analiz_provider.dart'
 import '../services/fon_karnesi.dart' show fonKoduOf;
 import '../services/radar_okuma.dart' show kriptoOkunusu;
 import '../services/remote_config_service.dart';
+import '../widgets/sandik_segment.dart';
 import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
@@ -806,7 +808,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         ],
       ),
       bottomNavigationBar: _islemCubugu(isOwnAsset),
-      body: SafeArea(
+      // Yüzen kapsül (bayrak `goz_alici`): gövde kapsülün altından akar;
+      // Scaffold gövdeye kapsül boyunu alt pay olarak verir, içerik sonuna
+      // o kadar boşluk eklenir (son satır kapsülün altında kalmaz).
+      extendBody: SandikCam.acik,
+      body: Builder(builder: (govdeBaglami) {
+        // Scaffold'un verdiği alt pay (kapsül + ana çubuk); kapalıyken 0,
+        // SafeArea eskisi gibi tüketir.
+        final kapsulPayi =
+            SandikCam.acik ? MediaQuery.paddingOf(govdeBaglami).bottom : 0.0;
+        return SafeArea(
+        bottom: !SandikCam.acik,
         child: RefreshIndicator.adaptive(
       color: context.c.amberText,
       onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(force: true),
@@ -814,7 +826,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12,
+                SandikSpace.screenH(context), 24 + kapsulPayi),
             child: Column(
               children: [
                 // Başlık + güncel fiyat + pozisyon satırı (A tasarımı).
@@ -2119,7 +2132,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           ),
         ),
     ),
-      ),
+      );
+      }),
     );
   }
 }

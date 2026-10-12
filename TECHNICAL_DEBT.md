@@ -9,6 +9,18 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — Cam yüzeyler iOS "Saydamlığı azalt"ı okumuyor (2026-10-12, bayrak `goz_alici`)
+
+**Ne:** `SandikCamYuzey` blur'u iOS'ta ve yüksek kontrast kapalıyken çiziyor.
+iOS'un Ayarlar › Erişilebilirlik › "Saydamlığı azalt" anahtarı Flutter'da
+`MediaQuery`'ye gelmiyor (yalnız `highContrast` geliyor).
+**Neden ertelendi:** okumak için platform kanalı gerekir
+(`UIAccessibility.isReduceTransparencyEnabled` + bildirim); cam ilk sürümde
+bayrak arkasında ve yarı saydam zemin (0.78) blur olmadan da okunur.
+**Maliyet:** anahtarı açık kullanıcı yine cam görür (HIG sapması, küçük).
+**Ne zaman:** `goz_alici` varsayılan açılmadan önce — `SandikCam.bulanik`'a
+kanal sonucu eklenir, opak yol zaten hazır.
+
 ## 🟡 AÇIK — Gösterge denetiminde (2026-10-11) bilerek bırakılanlar
 
 Rapor: https://claude.ai/artifact/PtmrdPz5fDLBKmnx9SrReC. 17 bulgunun 14'ü aynı
