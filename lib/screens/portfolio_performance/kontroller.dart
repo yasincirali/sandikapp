@@ -592,6 +592,15 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     final ozet = TurFiltreOzeti.hesapla(
         sahipLotlari, pState?.toTRY ?? (t, _) => t,
         pazarAyir: pazarAyir);
+    // Çip SIRASI kapsamdan bağımsız: herkesin tüm portföyleri (yasin
+    // 2026-10-12, "filtreler yer değiştiriyor, sabit kalmalı"). Kişi ya da
+    // portföy değişince çipler yerinde kalır, yalnız pasiflik değişir.
+    final siraOzeti = pState == null
+        ? null
+        : TurFiltreOzeti.hesapla(
+            [pState.assets, ...ortakVarliklari.values],
+            pState.toTRY,
+            pazarAyir: pazarAyir);
     final secili = _typeFilter?.uyarla(pazarAyir: pazarAyir);
     final turlar = [
       for (final g in PortfoyGrubu.listesi(AssetType.values,
@@ -671,6 +680,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       TurFiltreCipleri(
         secili: secili,
         ozet: ozet,
+        siraOzeti: siraOzeti,
         turlar: turlar,
         onSec: (t) {
           _guncelle(() {

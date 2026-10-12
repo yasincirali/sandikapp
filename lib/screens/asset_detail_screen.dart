@@ -1268,9 +1268,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         top = y;
                         adet = 1;
                       }
-                      final asgariOran = isIntraday
-                          ? gunIciAsgariBantOrani
-                          : (compareOn || logOn ? 0.0 : 0.02);
+                      // LOG'da oran 0, taban log biriminde
+                      // (`fiyatAsgariBantOrani`, TestFlight 2026-10-12).
+                      final asgariOran = compareOn
+                          ? (isIntraday ? gunIciAsgariBantOrani : 0.0)
+                          : fiyatAsgariBantOrani(
+                              gunIci: isIntraday, log: logOn);
                       // LOG bandı (log10 biriminde) — eskiden ₺ için olan
                       // 1'lik taban bütün bir onluk demekti; mum ve EMA
                       // düz çizgiye eziliyordu. Şimdilik yalnız Premium
@@ -1286,7 +1289,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       final asgariAralik = compareOn
                           ? 1.0
                           : fiyatAsgariAraligi(
-                              log: logOn, ortalama: top / adet);
+                              log: logOn,
+                              ortalama: top / adet,
+                              gunIci: isIntraday);
                       // Göstergeler yalnız fiyat bandının DIŞINA taşarsa
                       // bandı genişletir (yasin 2026-10-11) — kural ve
                       // gerekçe `gostergeyiKapsayanBant`.
@@ -1455,6 +1460,26 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // "ŞİMDİ" etiketi x-tick'lerle çakışmasın.
                             double focusMin = -maxX * 0.03;
                             double focusMax = maxX * 1.08;
+                            // GÜNLÜK: eksen 00:00'da başlar, sağ ucu son
+                            // noktanın ~%82'sinde biter (`gunIciEksenSonuDk`,
+                            // Performans ve Karşılaştır ile AYNI kural).
+                            // TestFlight bulgusu 2026-10-12 (Gram Altın,
+                            // 15:46): bu ekran hâlâ tam gün (24 sa + %8)
+                            // çiziyordu; seans kartın sol %60'ına sıkışıp
+                            // sağı boş kalıyordu. Piyasa kapalıyken seri
+                            // bugüne uzar; son nokta yine o uç olur.
+                            if (isIntraday) {
+                              double sonX = 0;
+                              for (final seg in segments) {
+                                if (seg.spots.isNotEmpty &&
+                                    seg.spots.last.x > sonX) {
+                                  sonX = seg.spots.last.x;
+                                }
+                              }
+                              focusMax =
+                                  gunIciEksenSonuDk(sonX * 24 * 60) / (24 * 60);
+                              focusMin = -focusMax * 0.03;
+                            }
                             // GÜNLÜK sekmesinde daraltma YOK: gün bir
                             // TAKVİM GÜNÜDÜR. Bugün 14:00'te alınan bir
                             // varlık için ekseni alım anının etrafına
@@ -1633,10 +1658,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 reservedSize: 40,
-                                interval: (viewMaxX - viewMinX) > 0
-                                    ? _niceRound(
-                                        (viewMaxX - viewMinX) / 5)
-                                    : 1,
+                                interval: (viewMaxX - viewMinX) <= 0
+                                    ? 1
+                                    : isIntraday
+                                        // Yuvarlak saat adımı (06:00 ·
+                                        // 12:00); `_niceRound` kesirli
+                                        // günde 04:48 üretiyordu.
+                                        ? gunIciTickDk((viewMaxX - viewMinX) *
+                                                24 *
+                                                60) /
+                                            (24 * 60)
+                                        : _niceRound(
+                                            (viewMaxX - viewMinX) / 5),
                                 getTitlesWidget: (value, meta) {
                                   final span =
                                       (meta.max - meta.min).abs();
@@ -1660,11 +1693,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       tickAraligi: meta.appliedInterval,
                                       eksenPx: meta.parentAxisSize,
                                       etiketPx: GrafikStili.xEtiketAraligi(
-                                        isIntraday
-                                            ? '20:48'
-                                            : zamanEtiketiOrnegi(
-                                                spanGun: span,
-                                                gunIci: false),
+                                        zamanEtiketiOrnegi(
+                                            spanGun: span,
+                                            gunIci: isIntraday),
                                         stil: xStil,
                                         olcek:
                                             MediaQuery.textScalerOf(context),
@@ -1682,11 +1713,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   // kuralın kopyasını taşıyordu ve yıl
                                   // düzeltmesini ("Oca '26", 2026-09-29
                                   // emülatör testi #21) kaçırırdı.
-                                  final label = isIntraday
-                                      ? DateFormat('HH:mm', 'tr_TR')
-                                          .format(date)
-                                      : zamanEtiketi(date,
-                                          spanGun: span, gunIci: false);
+                                  // Gün içi de ortak kuraldan: tek gün
+                                  // "HH:mm", piyasa kapalıyken seri
+                                  // birkaç güne uzarsa tarihli.
+                                  final label = zamanEtiketi(date,
+                                      spanGun: span, gunIci: isIntraday);
                                   // Sabit genişlik + ortalama: taşan metin
                                   // ellipsis olur, komşu etiketle çakışmaz.
                                   return GrafikStili.xEtiketi(label,

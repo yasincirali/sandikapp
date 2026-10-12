@@ -244,11 +244,13 @@ class FiyatGrafigi extends StatelessWidget {
       kat(m.merkezX, m.enDusuk);
     }
     final ortY = top / math.max(adet, 1);
+    // LOG'da oran log biriminde anlamsız — bkz. [fiyatAsgariBantOrani].
     final asgariOran =
-        eksenX.gunIci ? gunIciAsgariBantOrani : (log ? 0.0 : 0.02);
+        fiyatAsgariBantOrani(gunIci: eksenX.gunIci, log: log);
     // Fiyatla orantılı taban (denetim 2026-10-11, bulgu 9; bkz.
     // [fiyatAsgariAraligi]).
-    final asgariAralik = fiyatAsgariAraligi(log: log, ortalama: ortY);
+    final asgariAralik = fiyatAsgariAraligi(
+        log: log, ortalama: ortY, gunIci: eksenX.gunIci);
     var gMin = double.infinity, gMax = double.negativeInfinity;
     void gKat(FlSpot p) {
       if (p.x < minX || p.x > maxX || !p.y.isFinite) return;
