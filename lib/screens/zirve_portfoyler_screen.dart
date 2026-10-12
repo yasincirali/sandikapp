@@ -66,6 +66,7 @@ class ZirveGovdesi extends ConsumerStatefulWidget {
     required this.donem,
     required this.onDonem,
     this.rizaYukleyici,
+    this.durumYukleyici,
   });
 
   final ZirveDonem donem;
@@ -74,6 +75,10 @@ class ZirveGovdesi extends ConsumerStatefulWidget {
   /// Test için rıza durumu; null → `LeaderboardService.fetchZirveRizasi`
   /// (`ZirveKarti.rizaYukleyici` ile aynı kalıp).
   final Future<bool?> Function()? rizaYukleyici;
+
+  /// Test için katılım şartları; null → `LeaderboardService
+  /// .fetchZirveKatilimDurumu` (0144).
+  final Future<ZirveKatilimDurumu?> Function(int gun)? durumYukleyici;
 
   @override
   ConsumerState<ZirveGovdesi> createState() => _ZirveGovdesiState();
@@ -93,6 +98,14 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
   String? _kiyasHedefi;
   late Future<List<TopGainerAllocation>> _satirlar = _cek();
   late Future<int?> _havuz = _havuzCek();
+
+  /// Havuzda değilsen hangi şartın eksik olduğu (0144). null → kart yok.
+  late Future<ZirveKatilimDurumu?> _durum = _durumCek();
+
+  Future<ZirveKatilimDurumu?> _durumCek() =>
+      (widget.durumYukleyici ??
+          (gun) => LeaderboardService.instance
+              .fetchZirveKatilimDurumu(periodDays: gun))(_donem.gun);
 
   /// Geçerli zirve rızası (0091). `null` = okunamadı; rıza varsayılmaz.
   late Future<bool?> _riza = _rizaCek();
@@ -156,6 +169,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     if (old.donem == widget.donem) return;
     _satirlar = _cek();
     _havuz = _havuzCek();
+    _durum = _durumCek();
     _senYenile();
   }
 
@@ -235,6 +249,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       _riza = Future.value(true);
       _satirlar = _cek();
       _havuz = _havuzCek();
+      _durum = _durumCek();
     });
     await _senYenile();
   }
@@ -342,6 +357,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
               children: [
                 ZirveDonemSecici(secili: _donem, onSec: _donemSec),
                 const SizedBox(height: SandikSpace.md),
+                _KatilimDurumu(durum: _durum, donem: _donem),
                 if (yukleniyor)
                   const _Iskelet()
                 else if (satirlar.isEmpty)
@@ -933,8 +949,11 @@ class _BosDurum extends StatelessWidget {
                 // Süre sunucudan (0128, varsayılan 30): ilk varlığın edinme
                 // tarihinden sayılır (2026-10-09); havuzun 5 günlük
                 // şartından önce o dolmalı.
-                'Havuzda yalnız katılmayı kabul edenler var; ilk varlığını '
-                'edinmesinin üzerinden en az '
+                // Hesap yaşı 2026-10-12'de eklendi: metin onu söylemiyordu,
+                // eski tarihli varlıkla açılan yeni hesaplar neden
+                // sayılmadığı bilinmeden bekliyordu (0091 şartı).
+                'Havuzda yalnız katılmayı kabul edenler var; hesabı en az 7 '
+                'günlük olan, ilk varlığını edinmesinin üzerinden en az '
                 '${LeaderboardService.instance.asgariGun} gün geçmiş ve en '
                 'az 2 farklı varlığı olan katılımcılar sayılır. Sıralama seçimlerinin getirisidir: her gün '
                 'tutulan varlıklar piyasa fiyatıyla ölçülür, para ekleme '
@@ -952,6 +971,105 @@ class _BosDurum extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Havuzda değilsen: hangi şart eksik, ne zaman dolar (0144, kullanıcı
+/// bulgusu 2026-10-12). Havuzdaysan, sunucu eskiyse ya da okunamazsa hiç
+/// çizilmez — eski ekran birebir kalır. Dokunulmaz, salt bilgi; tamam olan
+/// şart ikon ŞEKLİYLE de ayrılır (yalnız renk değil) ve ekran okuyucuya
+/// "tamam / bekleniyor" diye okunur.
+class _KatilimDurumu extends StatelessWidget {
+  const _KatilimDurumu({required this.durum, required this.donem});
+
+  final Future<ZirveKatilimDurumu?> durum;
+  final ZirveDonem donem;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<ZirveKatilimDurumu?>(
+      future: durum,
+      builder: (context, snap) {
+        final d = snap.data;
+        if (d == null || d.havuzda) return const SizedBox.shrink();
+        final simdi = DateTime.now().toUtc();
+        final sartlar = ZirveKiyas.katilimSartlari(
+          d,
+          simdi: simdi,
+          asgariGun: LeaderboardService.instance.asgariGun,
+          donem: donem,
+        );
+        return Padding(
+          padding: const EdgeInsets.only(bottom: SandikSpace.md),
+          child: SandikCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Neden henüz havuzda değilsin?',
+                    style: context.t.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: context.c.text90,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: SandikSpace.sm),
+                for (final s in sartlar)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: SandikSpace.xs2),
+                    child: MergeSemantics(
+                      child: Semantics(
+                        label: s.tamam ? 'Tamam' : 'Bekleniyor',
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ExcludeSemantics(
+                              child: Icon(
+                                s.tamam
+                                    ? Icons.check_circle_rounded
+                                    : Icons.radio_button_unchecked_rounded,
+                                // Yazıyla büyür (Dynamic Type), satırı
+                                // ezmesin diye en çok 2 katına kadar.
+                                size: MediaQuery.textScalerOf(context)
+                                    .clamp(maxScaleFactor: 2)
+                                    .scale(18),
+                                color: s.tamam ? context.c.gain : context.c.text36,
+                              ),
+                            ),
+                            const SizedBox(width: SandikSpace.sm),
+                            Expanded(
+                              child: Text(
+                                s.metin,
+                                style: context.t.bodyMedium?.copyWith(
+                                  color: s.tamam
+                                      ? context.c.text58
+                                      : context.c.text90,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: SandikSpace.xs2),
+                Text(
+                  ZirveKiyas.girisCumlesi(d, simdi: simdi),
+                  style: context.t.labelMedium?.copyWith(
+                    letterSpacing: 0,
+                    color: context.c.text58,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

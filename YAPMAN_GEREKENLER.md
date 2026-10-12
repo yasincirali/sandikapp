@@ -12,6 +12,12 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-12 Zirve: "Neden henüz havuzda değilsin?" kartı (0144)
+
+Yalnız ekleme; eski uygulama sürümleri etkilenmez, sıra serbest.
+- [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations açık) → **0144** iki sunucuya.
+  Fonksiyon dağıtımı gerekmez. 0144 gitmeden yeni build kartı göstermez (eski ekran kalır).
+
 ## ⏳ 2026-10-12 Perplexity MCP (bulut oturumları)
 
 Kurulum betiği hazır; çalışması için Project settings › Cloud environment › ortamın dişlisi:
