@@ -1286,20 +1286,22 @@ class _SheetTabs extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onChanged;
 
-  static const _labels = ['Varlıklar', 'Ortaklar'];
-
   @override
-  Widget build(BuildContext context) => SandikSegment(
-        adet: _labels.length,
+  Widget build(BuildContext context) {
+    // Çeviriden (seçici denetimi 2026-10-12): İngilizce'de Türkçe kalıyordu.
+    final labels = [context.l10n.searchTabAssets, context.l10n.scopePartners];
+    return SandikSegment(
+        adet: labels.length,
         secili: selected,
         onSec: onChanged,
         oge: (_, i, __) => Text(
-          _labels[i],
+          labels[i],
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
         ),
       );
+  }
 }
 
 // ── Arama sayfası ───────────────────────────────────────────────────────────

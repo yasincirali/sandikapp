@@ -265,7 +265,10 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
       excludeSemantics: true,
       child: SandikBasma(
         olcek: 0.95,
-        onTap: () => widget.onKutu(k),
+        onTap: () {
+          SandikHaptic.selection.perform();
+          widget.onKutu(k);
+        },
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,

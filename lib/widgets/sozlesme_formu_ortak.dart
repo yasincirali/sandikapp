@@ -266,13 +266,15 @@ class SozlesmeCipi extends StatelessWidget {
     return icerigeGore ? IntrinsicWidth(child: cip) : cip;
   }
 
-  Widget _cip(BuildContext context) => Semantics(
-        button: true,
-        selected: secili,
-        child: InkWell(
-          borderRadius: SandikRadius.mdAll,
+  // Dokunuş dili uygulamanın geri kalanıyla aynı (seçici denetimi
+  // 2026-10-12): Android dalgası yerine basınca küçülme, seçimde titreşim,
+  // "seçili" bilgisi etiketle aynı düğümde.
+  Widget _cip(BuildContext context) => SandikTappable(
           onTap: secildi,
-          child: AnimatedContainer(
+          selected: secili,
+          semanticLabel: metin,
+          child: ExcludeSemantics(
+            child: AnimatedContainer(
             duration: SandikMotion.stateOf(context),
             curve: SandikMotion.enter,
             constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -294,7 +296,7 @@ class SozlesmeCipi extends StatelessWidget {
               ),
             ),
           ),
-        ),
+          ),
       );
 }
 

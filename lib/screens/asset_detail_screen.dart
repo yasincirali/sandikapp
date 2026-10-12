@@ -82,6 +82,7 @@ import '../providers/analiz_provider.dart'
 import '../services/fon_karnesi.dart' show fonKoduOf;
 import '../services/radar_okuma.dart' show kriptoOkunusu;
 import '../services/remote_config_service.dart';
+import '../widgets/sandik_segment.dart';
 import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';

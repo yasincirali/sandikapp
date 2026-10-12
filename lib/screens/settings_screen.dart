@@ -35,6 +35,7 @@ import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_config_service.dart';
+import '../widgets/sandik_segment.dart';
 import '../services/supabase_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
@@ -389,6 +390,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _openFeedbackSheet() async {
     String type = 'Şikayet';
+    const turlar = ['Şikayet', 'Tavsiye', 'Diğer'];
+    final etiketler = [
+      context.l10n.feedbackTypeComplaint,
+      context.l10n.feedbackTypeSuggestion,
+      context.l10n.feedbackTypeOther,
+    ];
+    String etiket(String t) => etiketler[turlar.indexOf(t)];
     final controller = TextEditingController();
     final result = await showSandikSheet<Map<String, String>>(
       context: context,
@@ -418,13 +426,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Tür tek seçimli bir mod: `goz_alici` açıkken uygulamanın
+                // segmenti (seçici denetimi 2026-10-12; Material çipi iOS'ta
+                // yabancıydı). Gönderilen değer Türkçe kalır (sunucu bunu
+                // okuyor); yalnız görünen ad çeviriden.
+                if (RemoteConfigService.instance.gozAlici)
+                  SandikSegment(
+                    adet: turlar.length,
+                    secili: turlar.indexOf(type),
+                    onSec: (i) => setLocal(() => type = turlar[i]),
+                    oge: (_, i, __) => Text(etiket(turlar[i])),
+                  )
+                else
                 Row(
                   children: [
-                    for (final t in const ['Şikayet', 'Tavsiye', 'Diğer'])
+                    for (final t in turlar)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(t),
+                          label: Text(etiket(t)),
                           selected: type == t,
                           onSelected: (_) => setLocal(() => type = t),
                           selectedColor:
@@ -1137,6 +1157,83 @@ class _BugunkuPortfoyAnahtari extends ConsumerWidget {
 ///
 /// Bir bölümde ikinci bir kırılım gerektiğinde kullanılır: Android'in ayar
 /// kılavuzu, yakından ilişkili ayarların grup başlığı almasını önerir.
+/// Ayarlar'ın ikonlu tek seçimli seçicileri — `goz_alici` açıkken
+/// uygulamanın kayan segmenti (seçici denetimi 2026-10-12).
+///
+/// Tema, baz para, yatırımcı seviyesi, dil ve yazı boyutu 8 Ekim tek seçici
+/// geçişinde kalmış, yerinde solan amber tonla elle yazılmışlardı: aynı
+/// "birini seç" işi uygulamanın geri kalanından farklı görünüyordu. İkon +
+/// yazı korunur; kabuk yüksekliği yazı boyutuyla büyür (Dynamic Type),
+/// taşacak olursa içerik küçülür ama kırpılmaz.
+class _AyarSegmenti extends StatelessWidget {
+  const _AyarSegmenti({
+    required this.adet,
+    required this.secili,
+    required this.onSec,
+    required this.etiket,
+    required this.ikon,
+    required this.semantik,
+    this.ikonBoyu,
+  });
+
+  final int adet;
+  final int secili;
+  final ValueChanged<int> onSec;
+  final String Function(int i) etiket;
+  final IconData Function(int i) ikon;
+  final String Function(int i) semantik;
+
+  /// Segment başına ikon boyu (yazı boyutu seçicisinde büyüyen ikon).
+  final double Function(int i)? ikonBoyu;
+
+  static const double _ikonKutusu = 25;
+
+  @override
+  Widget build(BuildContext context) {
+    final taban = context.t.labelLarge?.copyWith(letterSpacing: 0);
+    final yaziBoyu =
+        MediaQuery.textScalerOf(context).scale(taban?.fontSize ?? 14) *
+            (taban?.height ?? 1.3);
+    final yukseklik =
+        _ikonKutusu + SandikSpace.xs + yaziBoyu + 2 * SandikSpace.sm2;
+    return SandikSegment(
+      adet: adet,
+      secili: secili,
+      onSec: onSec,
+      yukseklik: yukseklik,
+      icBosluk: SandikSpace.xs,
+      metinStili: taban,
+      semantik: semantik,
+      oge: (ctx, i, sec) => FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: _ikonKutusu,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                // İkon rengi yazıyla aynı sürede geçer (segmentin metni
+                // `AnimatedDefaultTextStyle` ile geçiyor).
+                child: TweenAnimationBuilder<Color?>(
+                  tween:
+                      ColorTween(end: sec ? ctx.c.amberText : ctx.c.text36),
+                  duration: SandikMotion.stateOf(ctx),
+                  curve: SandikMotion.enter,
+                  builder: (_, renk, __) => Icon(ikon(i),
+                      size: ikonBoyu?.call(i) ?? 20, color: renk),
+                ),
+              ),
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            Text(etiket(i), maxLines: 1, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SubSectionTitle extends StatelessWidget {
   final String text;
   const _SubSectionTitle(this.text);
@@ -1186,6 +1283,16 @@ class _ThemeModePicker extends ConsumerWidget {
       (ThemeMode.dark, Icons.dark_mode_rounded, l.themeDark),
     ];
 
+    if (RemoteConfigService.instance.gozAlici) {
+      return _AyarSegmenti(
+        adet: options.length,
+        secili: options.indexWhere((o) => o.$1 == current),
+        onSec: (i) => ref.read(themeModeProvider.notifier).set(options[i].$1),
+        etiket: (i) => options[i].$3,
+        ikon: (i) => options[i].$2,
+        semantik: (i) => context.l10n.themeSemantics(options[i].$3),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(SandikSpace.xs),
       decoration: context.surfaceCard(),
@@ -1290,6 +1397,19 @@ class _BaseCurrencyPicker extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: _options.length,
+            secili: _options.indexWhere((o) => o.$1 == current),
+            onSec: (i) => setBaseCurrency(ref, _options[i].$1),
+            etiket: (i) => _options[i].$1 == BaseCurrency.gold
+                ? context.l10n.assetTypeGold
+                : _options[i].$1.kod,
+            ikon: (i) => _options[i].$2,
+            semantik: (i) => context.l10n
+                .baseCurrencySemantics(bazBirimAdi(context.l10n, _options[i].$1)),
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),
@@ -1378,6 +1498,17 @@ class _InvestorLevelPicker extends ConsumerWidget {
       children: [
         _SubSectionTitle(context.l10n.investorLevel),
         const SizedBox(height: 8),
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: YatirimciSeviyesi.values.length,
+            secili: current.index,
+            onSec: (i) => ref.read(investorLevelIndexProvider.notifier).set(i),
+            etiket: (i) => YatirimciSeviyesi.values[i].etiket(context),
+            ikon: (i) => YatirimciSeviyesi.values[i].ikon,
+            semantik: (i) => context.l10n
+                .levelSemantics(YatirimciSeviyesi.values[i].etiket(context)),
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),
@@ -1481,6 +1612,18 @@ class _LanguagePicker extends ConsumerWidget {
       children: [
         _SubSectionTitle(l.language),
         const SizedBox(height: 8),
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: options.length,
+            secili: options.indexWhere((o) => o.$1 == current),
+            onSec: (i) => ref
+                .read(localeProvider.notifier)
+                .set(LocaleNotifier.parse(options[i].$1)),
+            etiket: (i) => options[i].$3,
+            ikon: (i) => options[i].$2,
+            semantik: (i) => '${options[i].$3} ${l.language}',
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),
@@ -2457,6 +2600,17 @@ class _YaziBoyutuPicker extends ConsumerWidget {
       children: [
         _SubSectionTitle(l.textSize),
         const SizedBox(height: 8),
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: options.length,
+            secili: options.indexWhere((o) => o.$1 == current),
+            onSec: (i) => ref.read(yaziBoyutuIndexProvider.notifier).set(i),
+            etiket: (i) => options[i].$3,
+            ikon: (_) => Icons.text_fields_rounded,
+            ikonBoyu: (i) => options[i].$2,
+            semantik: (i) => l.textSizeSemantics(options[i].$3),
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),

@@ -14326,6 +14326,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'30 dakikalık'**
   String get chartIntervalM30Long;
+
+  /// Geri bildirim türü.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şikayet'**
+  String get feedbackTypeComplaint;
+
+  /// Geri bildirim türü.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tavsiye'**
+  String get feedbackTypeSuggestion;
+
+  /// Geri bildirim türü.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get feedbackTypeOther;
+
+  /// Karşılaştırma arama sayfası sekmesi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıklar'**
+  String get searchTabAssets;
 }
 
 class _AppLocalizationsDelegate

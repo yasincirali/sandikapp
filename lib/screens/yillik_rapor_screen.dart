@@ -87,8 +87,10 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
               adet: yillar.length,
               secili: yillar.indexOf(yil),
               onSec: (i) => setState(() => _yil = yillar[i]),
-              oge: (ctx, i, secili) => Text('${yillar[i]}',
-                  style: SandikSegment.stil(ctx, secili)),
+              // Stil segmentin `AnimatedDefaultTextStyle`'ından gelir; burada
+              // sabit stil vermek rengi zeminle birlikte geçirmiyor, tek
+              // karede atlatıyordu (seçici denetimi 2026-10-12).
+              oge: (ctx, i, secili) => Text('${yillar[i]}'),
             ),
             const SizedBox(height: SandikSpace.md),
           ],

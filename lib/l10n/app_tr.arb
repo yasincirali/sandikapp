@@ -5702,5 +5702,13 @@
   "chartIntervalM30": "30 dk",
   "@chartIntervalM30": {"description": "Mum aralığı kısa adı: 30 dakika."},
   "chartIntervalM30Long": "30 dakikalık",
-  "@chartIntervalM30Long": {"description": "Mum aralığı uzun adı (menü, ekran okuyucu)."}
+  "@chartIntervalM30Long": {"description": "Mum aralığı uzun adı (menü, ekran okuyucu)."},
+  "feedbackTypeComplaint": "Şikayet",
+  "@feedbackTypeComplaint": {"description": "Geri bildirim türü."},
+  "feedbackTypeSuggestion": "Tavsiye",
+  "@feedbackTypeSuggestion": {"description": "Geri bildirim türü."},
+  "feedbackTypeOther": "Diğer",
+  "@feedbackTypeOther": {"description": "Geri bildirim türü."},
+  "searchTabAssets": "Varlıklar",
+  "@searchTabAssets": {"description": "Karşılaştırma arama sayfası sekmesi."}
 }

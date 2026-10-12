@@ -8678,4 +8678,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartIntervalM30Long => '30-minute';
+
+  @override
+  String get feedbackTypeComplaint => 'Complaint';
+
+  @override
+  String get feedbackTypeSuggestion => 'Suggestion';
+
+  @override
+  String get feedbackTypeOther => 'Other';
+
+  @override
+  String get searchTabAssets => 'Assets';
 }

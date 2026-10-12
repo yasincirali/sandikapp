@@ -20,6 +20,7 @@ import '../widgets/ortak_secici.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
+import '../widgets/tur_filtre_cipleri.dart';
 import '../services/islem_notu.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/islem_notu_sheet.dart';
@@ -833,15 +834,17 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     final etiket = sayi > 0
         ? '${context.l10n.deletedFilter} · $sayi'
         : context.l10n.deletedFilter;
-    return Semantics(
-      selected: secili,
-      child: SandikTappable(
+    // "Seçili" etiketle aynı düğümde, metin ikinci kez okunmaz (seçici
+    // denetimi 2026-10-12).
+    return SandikTappable(
         semanticLabel: etiket,
+        selected: secili,
         onTap: () => setState(() {
           _silinenler = !_silinenler;
           _resetPaging();
         }),
-        child: AnimatedContainer(
+        child: ExcludeSemantics(
+          child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(
@@ -865,7 +868,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
             ],
           ),
         ),
-      ),
+        ),
     );
   }
 
@@ -1295,13 +1298,25 @@ class _SecimKutusu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final metinRengi = secili ? renk : context.c.text58;
-    return Semantics(
-      selected: secili,
-      child: SandikTappable(
-        semanticLabel: etiket,
+    // `goz_alici` (seçici denetimi 2026-10-12): uygulamanın tek süzme çipi;
+    // tür ikonu seçili değilken başta, seçilince onay işareti.
+    if (RemoteConfigService.instance.gozAlici) {
+      return SandikFiltreCipi(
+        ad: etiket,
+        secili: secili,
         onTap: onTap,
-        child: AnimatedContainer(
+        ikon: ikon,
+        ikonRengi: ikon == null ? null : renk,
+      );
+    }
+    final metinRengi = secili ? renk : context.c.text58;
+    // "Seçili" bilgisi etiketle AYNI düğümde (HIG, 2026-10-12).
+    return SandikTappable(
+        semanticLabel: etiket,
+        selected: secili,
+        onTap: onTap,
+        child: ExcludeSemantics(
+          child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -1331,7 +1346,7 @@ class _SecimKutusu extends StatelessWidget {
             ],
           ),
         ),
-      ),
+        ),
     );
   }
 }

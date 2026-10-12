@@ -307,6 +307,33 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 ),
               ),
               const SizedBox(height: 8),
+              // `goz_alici` (seçici denetimi 2026-10-12): Material'in alt
+              // çizgili sekmesi yerine uygulamanın kayan segmenti — iOS'ta
+              // yabancı duruyordu ve "hareketi azalt"ı dinlemiyordu. Sayfalar
+              // aynı denetleyicide: yana kaydırmak da çalışır, segment izler.
+              if (RemoteConfigService.instance.gozAlici)
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: SandikSpace.screenH(context)),
+                  child: AnimatedBuilder(
+                    animation: _tabController,
+                    builder: (context, _) => SandikSegment(
+                      adet: 2,
+                      secili: _tabController.index,
+                      onSec: (i) => _tabController.animateTo(i,
+                          duration: SandikMotion.stateOf(context),
+                          curve: SandikMotion.move),
+                      oge: (_, i, __) => Text(
+                        i == 0
+                            ? context.l10n.myPortfolioTab
+                            : context.l10n.otherTab,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                )
+              else
               TabBar(
                 controller: _tabController,
                 indicatorColor: context.c.amberText,

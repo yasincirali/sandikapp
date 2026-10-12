@@ -10,6 +10,7 @@ import '../providers/preferences_provider.dart'
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/remote_config_service.dart';
+import '../widgets/sandik_segment.dart';
 import '../services/satin_alma_service.dart';
 import '../services/yasal_metin_katalogu.dart' show YasalBelge;
 import '../theme/sandik.dart';
@@ -718,8 +719,18 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SandikBasma(
-      onTap: onTap,
+    // VoiceOver hangi planın seçili olduğunu okusun (HIG, seçici denetimi
+    // 2026-10-12): kart tek düğüm, "seçili" + radyo grubu.
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        inMutuallyExclusiveGroup: true,
+        child: SandikBasma(
+      onTap: () {
+        SandikHaptic.selection.perform();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: SandikMotion.stateOf(context),
         curve: SandikMotion.enter,
@@ -805,6 +816,8 @@ class _PlanCard extends StatelessWidget {
                     color: context.c.gold)),
           ],
         ),
+      ),
+    ),
       ),
     );
   }

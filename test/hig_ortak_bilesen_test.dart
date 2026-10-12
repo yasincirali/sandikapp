@@ -14,6 +14,7 @@ import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
+import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 
 /// Apple HIG kontrol listesinin ölçülebilir kısmı (`docs/TASARIM_DILI.md`
 /// §5, yasin 2026-10-10: "bişey değiştirirken bunu standart olarak
@@ -85,6 +86,16 @@ void main() {
                   onSec: (_) {},
                   oge: (c, i, s) => Center(child: Text(['1H', '1A', '1Y'][i])),
                 ),
+                const SizedBox(height: SandikSpace.md),
+                // Uygulamanın tek süzme çipi (seçici denetimi 2026-10-12).
+                Wrap(spacing: SandikSpace.sm, children: [
+                  SandikFiltreCipi(ad: 'Tümü', secili: true, onTap: () {}),
+                  SandikFiltreCipi(
+                      ad: 'Hisse',
+                      secili: false,
+                      onTap: () {},
+                      ikon: Icons.show_chart_rounded),
+                ]),
                 const SizedBox(height: SandikSpace.md),
                 SandikTappable(
                   onTap: () {},

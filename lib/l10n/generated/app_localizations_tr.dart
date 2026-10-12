@@ -8595,4 +8595,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chartIntervalM30Long => '30 dakikalık';
+
+  @override
+  String get feedbackTypeComplaint => 'Şikayet';
+
+  @override
+  String get feedbackTypeSuggestion => 'Tavsiye';
+
+  @override
+  String get feedbackTypeOther => 'Diğer';
+
+  @override
+  String get searchTabAssets => 'Varlıklar';
 }
