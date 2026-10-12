@@ -283,6 +283,10 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   child: DropdownButton<AlarmAdayi>(
                     value: _secili,
                     isExpanded: true,
+                    // null: satır yüksekliği yazıyla büyür (en az 48).
+                    // Varsayılan sabit 48'de büyük yazıda (2×+) varlık adı
+                    // dikeyde kesiliyordu (büyük yazı taraması 2026-10-12).
+                    itemHeight: null,
                     dropdownColor: c.surface2,
                     style: context.t.titleMedium?.copyWith(color: c.text90),
                     icon: Icon(Icons.arrow_drop_down_rounded, color: c.amberText),

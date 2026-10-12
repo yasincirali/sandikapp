@@ -719,6 +719,9 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
                         Expanded(
                           child: DropdownButton<int>(
                             isExpanded: true,
+                            // null: büyük yazıda satır büyür, metin dikeyde
+                            // kesilmez (büyük yazı taraması 2026-10-12).
+                            itemHeight: null,
                             value: _secim[r] ?? -1,
                             items: [
                               DropdownMenuItem(
