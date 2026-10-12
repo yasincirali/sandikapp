@@ -36,6 +36,7 @@ import '../services/biometric_lock_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/sandik_segment.dart';
+import '../widgets/sandik_cam.dart';
 import '../services/supabase_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
@@ -430,7 +431,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // segmenti (seçici denetimi 2026-10-12; Material çipi iOS'ta
                 // yabancıydı). Gönderilen değer Türkçe kalır (sunucu bunu
                 // okuyor); yalnız görünen ad çeviriden.
-                if (RemoteConfigService.instance.gozAlici)
+                if (SandikCam.acik)
                   SandikSegment(
                     adet: turlar.length,
                     secili: turlar.indexOf(type),
