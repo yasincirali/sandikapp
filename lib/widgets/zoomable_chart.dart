@@ -491,6 +491,68 @@ class _ZoomableChartState extends State<ZoomableChart> {
     widget.onViewportChanged?.call(widget.fullMinX, widget.fullMaxX);
   }
 
+  /// Son tek dokunuşun zamanı ve yeri — çift dokunuşu elle saymak için.
+  static final Stopwatch _saat = Stopwatch()..start();
+  Duration? _sonDokunusZamani;
+  Offset? _sonDokunusYeri;
+  double? _ciftDokunusPx;
+
+  void _dokunusBitti(TapUpDetails d) {
+    final simdi = _saat.elapsed;
+    final onceki = _sonDokunusZamani;
+    final oncekiYer = _sonDokunusYeri;
+    if (onceki != null &&
+        oncekiYer != null &&
+        simdi - onceki <= kDoubleTapTimeout &&
+        (d.localPosition - oncekiYer).distance <= kDoubleTapSlop) {
+      _sonDokunusZamani = null;
+      _sonDokunusYeri = null;
+      _ciftDokunusPx = d.localPosition.dx;
+      _ciftDokunus();
+      return;
+    }
+    _sonDokunusZamani = simdi;
+    _sonDokunusYeri = d.localPosition;
+  }
+
+  /// Çift dokunuş: yakın değilse dokunulan yere 2,5× yakınlaşır,
+  /// yakınsa tam aralığa döner.
+  ///
+  /// yasin 2026-10-12 (TestFlight): "zoom featurelarını da iyileştirebiliriz,
+  /// net ve doğru şekilde izlenebilmeli." Yakınlaşmanın tek yolu iki parmak,
+  /// dönmenin tek yolu köşedeki küçük "Sıfırla" idi. Çift dokunuş iOS'un
+  /// sistem kalıbı (Fotoğraflar, Haritalar) ve tek elle yapılır; tek
+  /// dokunuşun bu grafiklerde işi yok (yerleşik dokunuşlar kapalı, imleç
+  /// uzun basışta), yani bekletilen bir şey olmaz. Geçiş grafiğin kendi
+  /// morfuyla akar (hareketi azalt'ta anlık, bkz. build).
+  void _ciftDokunus() {
+    final fullWidth = widget.fullMaxX - widget.fullMinX;
+    if (fullWidth <= 0) return;
+    SandikHaptic.selection.perform();
+    if (_isZoomed) {
+      _reset();
+      return;
+    }
+    final px = _ciftDokunusPx;
+    final rel = px == null
+        ? 1.0
+        : ((px - _plotLeft) / _plotWidth).clamp(0.0, 1.0);
+    final odak = _minX + (_maxX - _minX) * rel;
+    final genislik = fullWidth / 2.5;
+    var lo = odak - genislik * rel;
+    var hi = lo + genislik;
+    if (lo < widget.fullMinX) {
+      lo = widget.fullMinX;
+      hi = lo + genislik;
+    }
+    if (hi > widget.fullMaxX) {
+      hi = widget.fullMaxX;
+      lo = hi - genislik;
+    }
+    _setViewport(lo, hi);
+    widget.onViewportChanged?.call(lo, hi);
+  }
+
   void _onScaleStart(ScaleStartDetails details) {
     _setInteracting(true);
     _startMinX = _minX;
@@ -751,6 +813,17 @@ class _ZoomableChartState extends State<ZoomableChart> {
                         };
                     },
                   ),
+                  // Çift dokunuş elle sayılır (iki tek dokunuş, aralık
+                  // [kDoubleTapTimeout] ve yakınlık [kDoubleTapSlop]):
+                  // `DoubleTapGestureRecognizer` her dokunuşta bekleme
+                  // zamanlayıcısı kurar ve tek parmak kaydırmanın sonunda
+                  // bile asılı kalıyordu. Tek dokunuşun bu grafiklerde başka
+                  // işi yok, beklenecek bir şey de yok.
+                  TapGestureRecognizer: GestureRecognizerFactoryWithHandlers<
+                      TapGestureRecognizer>(
+                    TapGestureRecognizer.new,
+                    (instance) => instance.onTapUp = _dokunusBitti,
+                  ),
                   if (_crosshairEnabled)
                     LongPressGestureRecognizer:
                         GestureRecognizerFactoryWithHandlers<
@@ -793,36 +866,49 @@ class _ZoomableChartState extends State<ZoomableChart> {
                 ),
               ),
 
-            // Reset chip'i sadece zoom'luyken üstte
+            // Reset chip'i sadece zoom'luyken üstte.
+            //
+            // Dokunma alanı 44 pt (HIG, 2026-10-12): görünen kapsül küçük
+            // kalır, çevresindeki saydam pay dokunuşu alır. Eskiden kapsülün
+            // kendisi (~26 pt) tek hedefti. Metin çevrilmiş, yazı tokenından.
             if (_isZoomed)
               Positioned(
-                top: 8,
-                right: 8,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(SandikRadius.lg),
+                top: 0,
+                right: 0,
+                child: Semantics(
+                  button: true,
+                  label: context.l10n.filterReset,
+                  excludeSemantics: true,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: _reset,
-                    onDoubleTap: _reset,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: context.c.golge.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(SandikRadius.lg),
-                        border: Border.all(
-                            color: context.c.text36),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.zoom_out_map_rounded,
-                              size: 14, color: context.c.text58),
-                          const SizedBox(width: 4),
-                          Text('Sıfırla',
-                              style: TextStyle(
-                                  fontSize: 11, color: context.c.text58)),
-                        ],
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                          minWidth: SandikTouch.min,
+                          minHeight: SandikTouch.min),
+                      child: Padding(
+                        padding: const EdgeInsets.all(SandikSpace.sm),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: context.c.golge.withValues(alpha: 0.45),
+                            borderRadius:
+                                BorderRadius.circular(SandikRadius.lg),
+                            border: Border.all(color: context.c.text36),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.zoom_out_map_rounded,
+                                  size: 14, color: context.c.text58),
+                              const SizedBox(width: 4),
+                              Text(context.l10n.filterReset,
+                                  style: context.t.labelSmall
+                                      ?.copyWith(color: context.c.text58)),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),

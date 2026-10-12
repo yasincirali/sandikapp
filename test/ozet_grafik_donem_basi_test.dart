@@ -147,7 +147,7 @@ void main() {
               'intraday: intraday);'),
           isTrue,
           reason: 'çizgi ve çubuk tabanı _periodEndpoints sonucundan okunmalı');
-      expect(tek.contains('GrafikStili.donemBasi( context, taban.first,'), isTrue,
+      expect(tek.contains('GrafikStili.donemBasi(context, taban.first)'), isTrue,
           reason: 'dönem başı çizgisi kartla aynı noktada');
       expect(tek.contains('horizontalLines: taban == null || _simulate'), isTrue,
           reason: 'çizgi ilk spot yerine pencere içi tabana bağlı (1Y)');

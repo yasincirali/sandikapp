@@ -265,6 +265,9 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
         ? const <OzelSonuc>[]
         : ozelGostergeleriCalistir(acik, _ozelVeri!);
 
+    // Paneller ana grafikle aynı seans sıkıştırmasına oturur.
+    final sik = FiyatGrafigi.seansSikistirmasi(
+        seri: widget.seri, periodDays: widget.periodDays, mumlar: mumlar);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -319,7 +322,11 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
                 : (toY) => fiyatUstuBantNoktalari(sonuclar, toY),
           ),
         ),
-        OzelGostergeAltBolumu(sonuclar: sonuclar, gorunum: _gorunum),
+        OzelGostergeAltBolumu(
+          sonuclar: sonuclar,
+          gorunum: _gorunum,
+          sikistirma: () => sik,
+        ),
       ],
     );
   }

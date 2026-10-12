@@ -5,7 +5,9 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
+import '../utils/seans_sikistirma.dart';
 
 /// Fiyat ve değer grafiklerinin ORTAK görünümü — "Performans stili".
 ///
@@ -187,30 +189,68 @@ abstract final class GrafikStili {
         ),
       );
 
-  /// Dönem başı: yatay kesikli çizgi + etiket. Yüzde bu çizgiye göre
-  /// okunur. Etiket dönem başının TARİHİNİ ve DEĞERİNİ birlikte yazar
-  /// (ör. "BAŞLANGIÇ · 21 Eyl · 309,63 ₺"): varlık detayında tarih eskiden
-  /// ayrı bir dikey işaretteydi; dikey işaret kalkınca bilgi kaybolmasın
-  /// diye buraya taşındı (kullanıcı: "grafik üzeri data kaybı olmamalı").
-  static HorizontalLine donemBasi(BuildContext context, double y,
-          {String? etiket}) =>
+  /// Dönem başı: yatay kesikli çizgi. Yüzde bu çizgiye göre okunur.
+  ///
+  /// Etiket ("AÇILIŞ · 00:00 · 6.644,05 ₺") artık çizginin ÜSTÜNDE, çizim
+  /// alanının içinde DEĞİL: yasin 2026-10-12 (TestFlight, Gram Altın):
+  /// "açılış yazısını grafiği engellemeyecek şekilde gösterelim." Çizgi
+  /// verinin ortasından geçtiği için yazı mumların ve EMA'nın üstüne
+  /// biniyordu. Tarih ve değer kaybolmaz ("grafik üzeri data kaybı
+  /// olmamalı", 2026-09-28): kartın üst boşluğunda, çizgiyle aynı kesikli
+  /// işaretle [donemBasiUstte] yazar.
+  static HorizontalLine donemBasi(BuildContext context, double y) =>
       HorizontalLine(
         y: y,
         color: context.c.text36.withValues(alpha: 0.6),
         strokeWidth: 1,
         dashArray: const [4, 4],
-        label: HorizontalLineLabel(
-          show: etiket != null,
-          alignment: Alignment.topLeft,
-          padding: const EdgeInsets.only(left: SandikSpace.sm, bottom: 2),
-          style: context.t.labelSmall?.copyWith(
-            letterSpacing: 0,
-            fontWeight: FontWeight.w700,
-            color: context.c.text90.withValues(alpha: 0.75),
-          ),
-          labelResolver: (_) => etiket ?? '',
-        ),
       );
+
+  /// [grafik]'in üstüne, kartın üst dolgusuna ([kartDolgusu] üstü,
+  /// [SandikSpace.lgs]) dönem başı açıklamasını koyar: kesikli çizgi
+  /// işareti + [etiket]. Çizim alanına girmez; grafiğin boyu değişmez.
+  /// [etiket] boşsa grafik aynen döner.
+  static Widget donemBasiUstte(BuildContext context,
+      {required Widget grafik, String? etiket}) {
+    if (etiket == null || etiket.isEmpty) return grafik;
+    final renk = context.c.text58;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        grafik,
+        Positioned(
+          top: -SandikSpace.lgs,
+          left: SandikSpace.sm,
+          right: yEkseniGenisligi,
+          height: SandikSpace.lgs,
+          child: IgnorePointer(
+            child: Row(
+              children: [
+                CustomPaint(
+                  size: const Size(14, 1),
+                  painter: _KesikliCizgi(context.c.text36),
+                ),
+                const SizedBox(width: SandikSpace.xs2),
+                Flexible(
+                  child: Text(
+                    etiket,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelSmall?.copyWith(
+                      letterSpacing: 0,
+                      fontWeight: FontWeight.w600,
+                      color: renk,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Dönem başı etiketinin metni — üç grafikte AYNI biçim: gün içinde
   /// "AÇILIŞ · 09:55 · değer", diğer dönemlerde "BAŞLANGIÇ · 21 Eyl · değer".
@@ -276,9 +316,8 @@ abstract final class GrafikStili {
   }) {
     final out = <LineChartBarData>[];
     for (final m in mumlar) {
-      final kovaPx = gorunurAralik == null
-          ? 8.0
-          : genislik * (m.kovaMs / gorunurAralik);
+      final kovaPx =
+          gorunurAralik == null ? 8.0 : genislik * (m.kovaMs / gorunurAralik);
       final govde = (kovaPx * 0.65).clamp(2.0, 14.0);
       final fitil = (govde * 0.25).clamp(1.0, 2.0);
       final renk = kapali
@@ -373,4 +412,125 @@ abstract final class GrafikStili {
         seri(dojiler, context.c.gain, govde, yuvarlak: true),
     ];
   }
+
+  /// Seans boşlukları sıkışmış grafik (yasin 2026-10-12, `SeansSikistirma`):
+  /// gerçek X'te kurulmuş [gercek] veriyi sıkışmış [cMin]–[cMax] eksenine
+  /// taşır ve alt ekseni yeniden yazar. Varlık detayı (kesirli gün) ve
+  /// varlık sayfası (epoch ms) AYNI kuralı kullanır; birim [birDakika] ve
+  /// [an] (gerçek X → yerel saat) ile verilir.
+  ///
+  /// Eksen: tick'ler gerçek saatin tam katına oturur ([taban]; kesilen her
+  /// boşluk tam saat olduğundan sıkışmış eksende de öyle kalır). Seans
+  /// başı TARİH ("13 Eki"), arası yuvarlak SAAT yazar; sığmayan yazı
+  /// çizilmez (`SeansSikistirma.eksenYazilari`). Atlanan her boşluğun
+  /// yerinde ince kesikli ayraç: zamanın orada sıçradığını gösterir —
+  /// renksiz okunur, yalnız çizgi biçimi (HIG: anlam yalnız renkte değil).
+  /// Ayraçlar birbirine [_ayracAsgariPx]'ten yakınsa çizilmez (1 ay ·
+  /// 30 dk'da 22 çizgi ızgara gibi okunurdu).
+  static LineChartData seansEkseni(
+    BuildContext context,
+    LineChartData gercek,
+    SeansSikistirma sik, {
+    required double cMin,
+    required double cMax,
+    required double taban,
+    required double birDakika,
+    required DateTime Function(double gercekX) an,
+    required double eksenPx,
+  }) {
+    final aralik = cMax - cMin;
+    final adimDk =
+        aralik <= 0 ? 60.0 : gunIciTickDk(aralik / birDakika).clamp(5.0, 60.0);
+    final adim = adimDk * birDakika;
+    final stil = eksenYazisi(context);
+    final olcek = MediaQuery.textScalerOf(context);
+    final etiketPx = xEtiketAraligi(
+        DateFormat('d MMM', 'tr_TR').format(DateTime(2026, 8, 28)),
+        stil: stil,
+        olcek: olcek);
+    final yazilar = sik.eksenYazilari(
+      cMin: cMin,
+      cMax: cMax,
+      adim: adim,
+      taban: taban,
+      eksenPx: eksenPx,
+      etiketPx: etiketPx,
+      an: an,
+      birDakika: birDakika,
+    );
+    final ayraclar = [
+      for (final s in sik.seansBaslari)
+        if (s > cMin && s < cMax) s,
+    ];
+    final ayracGoster = ayraclar.isNotEmpty &&
+        eksenPx / (ayraclar.length + 1) >= _ayracAsgariPx;
+    final m = sik.uygula(gercek, minX: cMin, maxX: cMax);
+    final b = gercek.titlesData.bottomTitles.sideTitles;
+    return m.copyWith(
+      baselineX: taban,
+      extraLinesData: ExtraLinesData(
+        horizontalLines: m.extraLinesData.horizontalLines,
+        extraLinesOnTop: m.extraLinesData.extraLinesOnTop,
+        // Ekranın kendi çizgileri ("şimdi") ÖNCE: fl_chart çizgileri sıra
+        // ile lerp eder; ayraç başa girince "şimdi"nin etiketi ayracınkiyle
+        // karışıp TextStyle lerp hatası veriyordu.
+        verticalLines: [
+          ...m.extraLinesData.verticalLines,
+          if (ayracGoster)
+            for (final x in ayraclar)
+              VerticalLine(
+                x: x,
+                // OPAK: fl_chart `extraLinesOnTop`ta dikey çizgileri her
+                // çubuktan sonra YENİDEN çizer; mum başına bir çubuk olan
+                // grafikte yarı saydam ayraç onlarca kat üst üste binip
+                // beyaz bir çizgiye dönüyordu (görsel denetim 2026-10-12).
+                color: Color.alphaBlend(context.c.hairline, context.c.surface1),
+                strokeWidth: 1,
+                dashArray: const [2, 4],
+              ),
+        ],
+      ),
+      titlesData: m.titlesData.copyWith(
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: b.showTitles,
+            reservedSize: b.reservedSize,
+            interval: adim,
+            getTitlesWidget: (value, meta) {
+              final k = ((value - taban) / adim).round();
+              final tarih = yazilar[k];
+              if (tarih == null) return const SizedBox.shrink();
+              final t = an(sik.geri(value));
+              return GrafikStili.xEtiketi(
+                  DateFormat(tarih ? 'd MMM' : 'HH:mm', 'tr_TR').format(t),
+                  stil: stil);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Seans ayraçlarının ortalama en az aralığı (piksel).
+  static const _ayracAsgariPx = 24.0;
+}
+
+/// Dönem başı açıklamasının işareti — çizimdeki kesikli çizginin aynısı.
+class _KesikliCizgi extends CustomPainter {
+  const _KesikliCizgi(this.renk);
+  final Color renk;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = renk
+      ..strokeWidth = 1;
+    final y = size.height / 2;
+    for (var x = 0.0; x < size.width; x += 8) {
+      canvas.drawLine(Offset(x, y), Offset((x + 4).clamp(0, size.width), y), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_KesikliCizgi old) => old.renk != renk;
 }

@@ -24,6 +24,7 @@ import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/islem_isaretleri.dart';
+import '../utils/seans_sikistirma.dart';
 import '../utils/spot_lookup.dart';
 import '../services/bist_hisse_katalogu.dart';
 import '../services/history_service.dart';
@@ -677,6 +678,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// panellerin X penceresi (ana grafikle aynı), son bildirilen odak ve
   /// düzenleyici önizlemesine giden son çubuklar.
   final _ozelGorunum = ValueNotifier<({double min, double max})?>(null);
+
+  /// Ana grafiğin seans sıkıştırması (yoksa null) — alt paneller aynı
+  /// eşlemeyle hizalanır. Build'de grafikle birlikte kurulur.
+  SeansSikistirma? _seansSik;
   ({double min, double max})? _ozelOdak;
   BetikVerisi? _ozelVeri;
 
@@ -1268,9 +1273,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         top = y;
                         adet = 1;
                       }
-                      final asgariOran = isIntraday
-                          ? gunIciAsgariBantOrani
-                          : (compareOn || logOn ? 0.0 : 0.02);
+                      // LOG'da oran 0, taban log biriminde
+                      // (`fiyatAsgariBantOrani`, TestFlight 2026-10-12).
+                      final asgariOran = compareOn
+                          ? (isIntraday ? gunIciAsgariBantOrani : 0.0)
+                          : fiyatAsgariBantOrani(
+                              gunIci: isIntraday, log: logOn);
                       // LOG bandı (log10 biriminde) — eskiden ₺ için olan
                       // 1'lik taban bütün bir onluk demekti; mum ve EMA
                       // düz çizgiye eziliyordu. Şimdilik yalnız Premium
@@ -1286,7 +1294,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       final asgariAralik = compareOn
                           ? 1.0
                           : fiyatAsgariAraligi(
-                              log: logOn, ortalama: top / adet);
+                              log: logOn,
+                              ortalama: top / adet,
+                              gunIci: isIntraday);
                       // Göstergeler yalnız fiyat bandının DIŞINA taşarsa
                       // bandı genişletir (yasin 2026-10-11) — kural ve
                       // gerekçe `gostergeyiKapsayanBant`.
@@ -1455,6 +1465,26 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // "ŞİMDİ" etiketi x-tick'lerle çakışmasın.
                             double focusMin = -maxX * 0.03;
                             double focusMax = maxX * 1.08;
+                            // GÜNLÜK: eksen 00:00'da başlar, sağ ucu son
+                            // noktanın ~%82'sinde biter (`gunIciEksenSonuDk`,
+                            // Performans ve Karşılaştır ile AYNI kural).
+                            // TestFlight bulgusu 2026-10-12 (Gram Altın,
+                            // 15:46): bu ekran hâlâ tam gün (24 sa + %8)
+                            // çiziyordu; seans kartın sol %60'ına sıkışıp
+                            // sağı boş kalıyordu. Piyasa kapalıyken seri
+                            // bugüne uzar; son nokta yine o uç olur.
+                            if (isIntraday) {
+                              double sonX = 0;
+                              for (final seg in segments) {
+                                if (seg.spots.isNotEmpty &&
+                                    seg.spots.last.x > sonX) {
+                                  sonX = seg.spots.last.x;
+                                }
+                              }
+                              focusMax =
+                                  gunIciEksenSonuDk(sonX * 24 * 60) / (24 * 60);
+                              focusMin = -focusMax * 0.03;
+                            }
                             // GÜNLÜK sekmesinde daraltma YOK: gün bir
                             // TAKVİM GÜNÜDÜR. Bugün 14:00'te alınan bir
                             // varlık için ekseni alım anının etrafına
@@ -1480,7 +1510,56 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     .clamp(focusMin + 0.5, maxX * 1.08);
                               }
                             }
-                            _ozelOdagiBildir(focusMin, focusMax);
+                            // Seans boşlukları (yasin 2026-10-12): 5 dk ·
+                            // 30 dk gibi gün içi çubuklarda borsanın kapalı
+                            // olduğu gece ve hafta sonu eksenden çıkar
+                            // (`SeansSikistirma`). Takvim varsayımı yok:
+                            // yalnız VERİDE olmayan aralık kesilir; hafta
+                            // sonu da kotasyonu olan varlık aynen çizilir.
+                            // Piyasa kapalı kesikli devamının ucu ("şimdi")
+                            // da veri anıdır: Cuma kapanışından Pazar'a
+                            // uzanan boşluk da kısalır, kart boşa gitmez.
+                            // Gün içi (tek seans) ve karşılaştırma (iki
+                            // varlığın seansı farklı) dokunulmaz.
+                            final sik = (isIntraday || compareOn)
+                                ? null
+                                : SeansSikistirma.kur([
+                                    if (mumOn && ohlcMumlar.isNotEmpty)
+                                      for (final m in ohlcMumlar) m.x
+                                    else
+                                      for (final seg in segments)
+                                        if (!seg.piyasaKapali)
+                                          for (final s in seg.spots) s.x,
+                                    for (final seg in segments)
+                                      if (seg.piyasaKapali)
+                                        for (final s in seg.spots) s.x,
+                                  ], hizalama: 1 / 24, birGun: 1);
+                            _seansSik = sik;
+                            double ileri(double x) => sik?.ileri(x) ?? x;
+                            double geri(double c) => sik?.geri(c) ?? c;
+                            // Sıkışmış eksenin penceresi: gerçek X'teki
+                            // payları (sol %3, sağ %8) sıkışmış uzunluktan
+                            // yeniden kur — gerçek X'te %8 pay 1 haftada
+                            // 13 saatlik boşluk demekti, sıkışmış 40 saatlik
+                            // eksenin üçte biri.
+                            var tamMin = ileri(focusMin);
+                            var tamMax = ileri(focusMax);
+                            if (sik != null) {
+                              double ilkX = double.infinity, sonX = 0;
+                              for (final seg in segments) {
+                                if (seg.spots.isEmpty) continue;
+                                ilkX = math.min(ilkX, seg.spots.first.x);
+                                sonX = math.max(sonX, seg.spots.last.x);
+                              }
+                              if (ilkX.isFinite) {
+                                final cIlk = ileri(ilkX), cSon = ileri(sonX);
+                                final boy = cSon - cIlk;
+                                tamMin = math.max(tamMin, cIlk - boy * 0.03);
+                                tamMax = math.min(tamMax, cSon + boy * 0.08);
+                              }
+                            }
+                            if (tamMax <= tamMin) tamMax = tamMin + 1 / 24;
+                            _ozelOdagiBildir(geri(tamMin), geri(tamMax));
                             // Seyreltme adayları viewport'a bağlı DEĞİL —
                             // yalnızca segment'lere ve lot günlerine bağlı.
                             // Builder içinde bırakılırsa her pinch/pan
@@ -1490,19 +1569,51 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             final dotCandidates = [
                               for (final t in islemler) t.x,
                             ];
-                            return ZoomableChart(
+                            // Dönem başı açıklaması çizim alanının ÜSTÜNDE
+                            // (yasin 2026-10-12; bkz. `donemBasiUstte`).
+                            // Değer HAM fiyattır (`normBase`): LOG ve
+                            // karşılaştırmada çizginin Y'si dönüştürülmüş
+                            // olsa da açıklama fiyatı yazar.
+                            final donemBasiYazisi = anchorSpot == null
+                                ? null
+                                : GrafikStili.donemBasiEtiketi(
+                                    context,
+                                    an: startDate.add(Duration(
+                                        minutes:
+                                            (anchorSpot.x * 1440).round())),
+                                    deger:
+                                        '${fixedFormatter(2).format(normBase)} ₺',
+                                    gunIci: isIntraday,
+                                  );
+                            return GrafikStili.donemBasiUstte(
+                            context,
+                            etiket: donemBasiYazisi,
+                            grafik: ZoomableChart(
                             semanticLabel: context.l10n
                                 .chartAssetSemantics(_kimlik.kisaEtiket),
-                            fullMinX: focusMin,
-                            fullMaxX: focusMax,
+                            fullMinX: tamMin,
+                            fullMaxX: tamMax,
                             height: GrafikStili.grafikYuksekligi,
                             plotPaddingRight: GrafikStili.yEkseniGenisligi,
-                            onViewportChanged: _ozelGorunumuYaz,
+                            // Alt paneller GERÇEK pencereyi alır; kendi
+                            // eksenlerini aynı eşlemeyle sıkıştırırlar.
+                            onViewportChanged: (a, b) =>
+                                _ozelGorunumuYaz(geri(a), geri(b)),
                             // Dönem ya da sıklık değişince yakınlaştırma
                             // sıfırlanır (yasin 2026-10-11).
                             sifirlamaAnahtari:
                                 '$seciliGun|${ohlcAr?.name}',
-                            builder: (viewMinX, viewMaxX) {
+                            builder: (cMin, cMax) {
+                              // Builder'ın kalanı GERÇEK X'te kurar; sonda
+                              // `sik.uygula` sıkışmış eksene taşır.
+                              final viewMinX = geri(cMin);
+                              final viewMaxX = geri(cMax);
+                              final plotGenisligi = (MediaQuery.of(context)
+                                          .size
+                                          .width -
+                                      60 -
+                                      40)
+                                  .clamp(120.0, 2000.0);
                               final yBounds = computeY(
                                 viewMinX,
                                 viewMaxX,
@@ -1580,7 +1691,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     (compareBar != null ? 1 : 0) +
                                     emaCizgileri.length,
                               );
-                              return LineChartData(
+                              final veri = LineChartData(
                           betweenBarsData: ozelCizim.dolgular,
                           minX: viewMinX,
                           maxX: viewMaxX,
@@ -1633,10 +1744,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 reservedSize: 40,
-                                interval: (viewMaxX - viewMinX) > 0
-                                    ? _niceRound(
-                                        (viewMaxX - viewMinX) / 5)
-                                    : 1,
+                                interval: (viewMaxX - viewMinX) <= 0
+                                    ? 1
+                                    : isIntraday
+                                        // Yuvarlak saat adımı (06:00 ·
+                                        // 12:00); `_niceRound` kesirli
+                                        // günde 04:48 üretiyordu.
+                                        ? gunIciTickDk((viewMaxX - viewMinX) *
+                                                24 *
+                                                60) /
+                                            (24 * 60)
+                                        : _niceRound(
+                                            (viewMaxX - viewMinX) / 5),
                                 getTitlesWidget: (value, meta) {
                                   final span =
                                       (meta.max - meta.min).abs();
@@ -1660,11 +1779,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       tickAraligi: meta.appliedInterval,
                                       eksenPx: meta.parentAxisSize,
                                       etiketPx: GrafikStili.xEtiketAraligi(
-                                        isIntraday
-                                            ? '20:48'
-                                            : zamanEtiketiOrnegi(
-                                                spanGun: span,
-                                                gunIci: false),
+                                        zamanEtiketiOrnegi(
+                                            spanGun: span,
+                                            gunIci: isIntraday),
                                         stil: xStil,
                                         olcek:
                                             MediaQuery.textScalerOf(context),
@@ -1682,11 +1799,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   // kuralın kopyasını taşıyordu ve yıl
                                   // düzeltmesini ("Oca '26", 2026-09-29
                                   // emülatör testi #21) kaçırırdı.
-                                  final label = isIntraday
-                                      ? DateFormat('HH:mm', 'tr_TR')
-                                          .format(date)
-                                      : zamanEtiketi(date,
-                                          spanGun: span, gunIci: false);
+                                  // Gün içi de ortak kuraldan: tek gün
+                                  // "HH:mm", piyasa kapalıyken seri
+                                  // birkaç güne uzarsa tarihli.
+                                  final label = zamanEtiketi(date,
+                                      spanGun: span, gunIci: isIntraday);
                                   // Sabit genişlik + ortalama: taşan metin
                                   // ellipsis olur, komşu etiketle çakışmaz.
                                   return GrafikStili.xEtiketi(label,
@@ -1710,18 +1827,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               ? ExtraLinesData(
                                   horizontalLines: [
                                     GrafikStili.donemBasi(
-                                      context,
-                                      anchorY,
-                                      etiket: GrafikStili.donemBasiEtiketi(
-                                        context,
-                                        an: startDate.add(Duration(
-                                            minutes: (anchorSpot.x * 1440)
-                                                .round())),
-                                        deger:
-                                            '${fixedFormatter(2).format(normBase)} ₺',
-                                        gunIci: isIntraday,
-                                      ),
-                                    ),
+                                        context, anchorY),
                                   ],
                                   verticalLines: [
                                     if (lastSpot != null && !isIntraday)
@@ -1751,8 +1857,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               ..._ohlcCubuklari(
                                 mumlar: ohlcMumlar,
                                 toY: toY,
-                                viewMinX: viewMinX,
-                                viewMaxX: viewMaxX,
+                                viewMinX: cMin,
+                                viewMaxX: cMax,
                                 genislik: (MediaQuery.of(context).size.width -
                                         60 -
                                         40)
@@ -1763,8 +1869,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 hamSeri: mumHam,
                                 startDate: startDate,
                                 toY: toY,
-                                viewMinX: viewMinX,
-                                viewMaxX: viewMaxX,
+                                viewMinX: cMin,
+                                viewMaxX: cMax,
                                 genislik: (MediaQuery.of(context).size.width -
                                         60 -
                                         40)
@@ -1903,27 +2009,52 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             ),
                           ),
                         );
+                              if (sik == null) return veri;
+                              return GrafikStili.seansEkseni(
+                                context,
+                                veri,
+                                sik,
+                                cMin: cMin,
+                                cMax: cMax,
+                                // Tick'ler gerçek saatin tam katında.
+                                taban: ileri(DateTime(
+                                            startDate.year,
+                                            startDate.month,
+                                            startDate.day,
+                                            startDate.hour + 1)
+                                        .difference(startDate)
+                                        .inSeconds /
+                                    86400),
+                                birDakika: 1 / 1440,
+                                an: (x) => startDate.add(
+                                    Duration(minutes: (x * 1440).round())),
+                                eksenPx: plotGenisligi,
+                              );
                             },
-                            crosshairSnapX: (x) {
+                            // İmleç sıkışmış X verir; kurallar gerçek X'te
+                            // (mum kovası, en yakın nokta) çalışır.
+                            crosshairSnapX: (c) {
+                              final x = geri(c);
                               // Gerçek mumda imleç mumun ORTASINA oturur
                               // (TradingView): başlık o mumun kapanışını,
                               // satır dört fiyatını yazar.
                               if (_imlectekiMum(ohlcMumlar, x) case final m?) {
-                                return m.merkezX;
+                                return ileri(m.merkezX);
                               }
                               final spots = activeSeg.spots;
-                              if (spots.isEmpty) return x;
+                              if (spots.isEmpty) return c;
                               final clamped =
                                   x.clamp(spots.first.x, spots.last.x);
                               // Sıralı seri → ikili arama. Parmak her
                               // kaydığında çağrılıyor (bkz. nearestSpotIndex).
-                              return spots[nearestSpotIndex(spots, clamped)].x;
+                              return ileri(spots[nearestSpotIndex(spots, clamped)].x);
                             },
                             imlecEtiketi: imlecAcik ? _imlec : null,
                             // Başlıktaki biçimle (varlığın hane sayısı) —
                             // grafik etiketi iki hanede kalır.
                             imlecEtiketiBuilder: imlecAcik
-                                ? (x) {
+                                ? (c) {
+                                    final x = geri(c);
                                     if (_imlectekiMum(ohlcMumlar, x)
                                         case final m?) {
                                       return (
@@ -1951,9 +2082,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // Dönemin zirvesi ve dibinde hafif titreşim (log
                             // ölçek tekdüze: uçlar aynı noktalar).
                             titresimNoktalari: imlecAcik
-                                ? donemUclariX(activeSeg.spots)
+                                ? {
+                                    for (final x
+                                        in donemUclariX(activeSeg.spots))
+                                      ileri(x),
+                                  }
                                 : const {},
-                            crosshairLabelBuilder: (x) {
+                            crosshairLabelBuilder: (c) {
+                              final x = geri(c);
                               if (_imlectekiMum(ohlcMumlar, x) case final m?) {
                                 return (
                                   tryFormatter(digits: 2).format(m.kapanis),
@@ -1997,7 +2133,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             crosshairDetailsBuilder: islemler.isEmpty &&
                                     ohlcMumlar.isEmpty
                                 ? null
-                                : (x) {
+                                : (c) {
+                                    final x = geri(c);
                                     final mum =
                                         _imlectekiMum(ohlcMumlar, x);
                                     final spots = activeSeg.spots;
@@ -2034,7 +2171,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                           ),
                                     ];
                                   },
-                          );
+                          ),
+                            );
                           }),
                         ),
                             ); // AnimatedOpacity (bayat seri solukluğu)

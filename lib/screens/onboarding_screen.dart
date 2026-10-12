@@ -781,14 +781,16 @@ List<_Adim> _adimlariKur() {
                   'geniş pencereler. Seçtiğin dönem üstteki kartı, grafiği '
                   've altındaki özeti birlikte değiştirir. Aynı seçici '
                   'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da '
-                  'var. Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
+                  'var. Grafiği iki parmakla ya da çift dokunarak '
+                  'yakınlaştırabilir, bir noktaya '
                   'basılı tutarak o anın tarihini, saatini ve değerini '
                   'okuyabilirsin.'
               : 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
                   'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
                   'geniş pencereler. Aynı seçici '
                   'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
-                  'Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
+                  'Grafiği iki parmakla ya da çift dokunarak '
+                  'yakınlaştırabilir, bir noktaya '
                   'basılı tutarak o anın tarihini, saatini ve değerini '
                   'okuyabilirsin.') +
           (RemoteConfigService.instance.donemHafizasi

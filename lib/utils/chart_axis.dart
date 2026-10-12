@@ -225,11 +225,34 @@ const double gunIciAsgariBantOrani = 0.005;
 /// biri. Asıl taban [gorunurYBandi]'nın `asgariBantOrani`'dır (%2, gün içi
 /// %0,5); bu değer yalnız sıfır genişlikli bandı önler. ₺1 sabiti ucuz
 /// varlıkları düzleştiriyordu (bkz. [gorunurYBandi] notu).
-double fiyatAsgariAraligi({required bool log, required double ortalama}) {
-  if (log) return 1e-3;
+///
+/// [gunIci] LOG'da gün içi tabanını ([gunIciAsgariBantOrani], %0,5) log
+/// birimine çevirir: log10(1,005). Bkz. [fiyatAsgariBantOrani].
+double fiyatAsgariAraligi({
+  required bool log,
+  required double ortalama,
+  bool gunIci = false,
+}) {
+  if (log) {
+    return gunIci
+        ? math.log(1 + gunIciAsgariBantOrani) / math.ln10
+        : 1e-3;
+  }
   final o = ortalama.abs();
   return o > 0 ? o * 1e-3 : 1.0;
 }
+
+/// Tek varlığın FİYAT grafiğinde [gorunurYBandi]'nın `asgariBantOrani`'sı.
+///
+/// **LOG'da 0 (TestFlight bulgusu 2026-10-12, Gram Altın · Bugün · LOG):**
+/// oran ortalamayla çarpılır; LOG'da ortalama log10(fiyat)'tır (₺6.600 →
+/// 3,82) ve %0,5 × 3,82 = 0,019 log birimi ≈ fiyatın %4,5'i demekti. Gün
+/// içi %1,5'lik hareket kartın beşte birine sıkışıyor, eksen ₺6,61K–₺6,92K
+/// gibi verinin çok üstüne çıkıyordu. LOG'da taban log biriminde
+/// [fiyatAsgariAraligi]'ndan gelir (gün içi log10(1,005) — doğrusalla aynı
+/// %0,5).
+double fiyatAsgariBantOrani({required bool gunIci, required bool log}) =>
+    log ? 0.0 : (gunIci ? gunIciAsgariBantOrani : 0.02);
 
 /// Fiyat bandı + göstergeler: gösterge bandın İÇİNDEYSE bant aynen kalır,
 /// DIŞINA taşarsa bant onu da kapsayacak şekilde yeniden kurulur.
@@ -267,6 +290,23 @@ double fiyatAsgariAraligi({required bool log, required double ortalama}) {
 /// 4 saat: 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00. Telefon genişliğinde
 /// bundan sık etiketler yan yana sıkışıyor.
 const double gunIciEksenAdimiDk = 240.0;
+
+/// Varlık grafiğinde gün içi X tick adımı — dakika; görünür pencereye göre.
+///
+/// Yuvarlak saat adımları (15 dk … 12 sa): tick'ler 06:00 · 12:00 gibi okunur
+/// saatlere düşer. Hedef ~4 bölme; zoom'da pencere daraldıkça adım da
+/// incelir (2 saatlik pencerede 30 dk). Eskiden `span/5` kesirli güne
+/// "yuvarlanıyordu": 0,2 gün = 4 sa 48 dk → 04:48 · 09:36 gibi etiketler
+/// (TestFlight bulgusu 2026-10-12). Sıkışan etiketleri [xEtiketiAtlanir]
+/// ayrıca seyreltir.
+double gunIciTickDk(double gorunurDk) {
+  const adimlar = [15.0, 30.0, 60.0, 120.0, 180.0, 240.0, 360.0, 720.0];
+  final hedef = gorunurDk / 4;
+  for (final a in adimlar) {
+    if (a >= hedef) return a;
+  }
+  return 1440.0 * (hedef / 1440).ceilToDouble();
+}
 
 /// Gün içi ("GÜNLÜK") X ekseninin SAĞ ucu — gün başlangıcından dakika.
 ///

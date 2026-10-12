@@ -8,6 +8,7 @@ import '../l10n/l10n.dart';
 import '../services/gosterge_betigi/betik.dart';
 import '../services/ozel_gosterge_calistirici.dart';
 import '../theme/sandik.dart';
+import '../utils/seans_sikistirma.dart';
 import '../utils/tr_format.dart';
 import 'grafik_stili.dart';
 
@@ -290,6 +291,7 @@ class BetikPaneli extends StatelessWidget {
     required this.minX,
     required this.maxX,
     this.yukseklik = 96,
+    this.sikistirma,
   });
 
   final String baslik;
@@ -297,6 +299,10 @@ class BetikPaneli extends StatelessWidget {
   final double minX;
   final double maxX;
   final double yukseklik;
+
+  /// Ana grafik seans boşluklarını atlıyorsa aynı eşleme: panel çubuğu
+  /// fiyat çubuğunun tam altında kalır. [minX]/[maxX] gerçek X'tir.
+  final SeansSikistirma? sikistirma;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +321,13 @@ class BetikPaneli extends StatelessWidget {
               height: yukseklik,
               child: ExcludeSemantics(
                 child: LineChart(
-                  _panelVerisi(context, sonuc, minX, maxX, bant),
+                  switch (sikistirma) {
+                    final sik? => sik.uygula(
+                        _panelVerisi(context, sonuc, minX, maxX, bant),
+                        minX: sik.ileri(minX),
+                        maxX: sik.ileri(maxX)),
+                    null => _panelVerisi(context, sonuc, minX, maxX, bant),
+                  },
                   duration: Duration.zero,
                 ),
               ),
@@ -587,10 +599,14 @@ class OzelGostergeAltBolumu extends StatelessWidget {
     super.key,
     required this.sonuclar,
     required this.gorunum,
+    this.sikistirma,
   });
 
   final List<OzelSonuc> sonuclar;
   final ValueListenable<({double min, double max})?> gorunum;
+
+  /// Ana grafiğin o anki seans sıkıştırması (bkz. [BetikPaneli.sikistirma]).
+  final SeansSikistirma? Function()? sikistirma;
 
   @override
   Widget build(BuildContext context) {
@@ -631,6 +647,7 @@ class OzelGostergeAltBolumu extends StatelessWidget {
               sonuc: r.s,
               minX: g?.min ?? r.s.x.first,
               maxX: g?.max ?? r.s.x.last,
+              sikistirma: sikistirma?.call(),
             ),
           ),
         ],
