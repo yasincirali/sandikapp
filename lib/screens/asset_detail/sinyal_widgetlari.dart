@@ -648,19 +648,24 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
               onTap: () => setState(() => _deneme++),
               child: Container(
                 // HIG'in en küçük dokunma hedefi 44pt; metin 11pt olduğu
-                // için sarmalayıcı olmadan hedef ~14pt'ye düşerdi.
-                height: 44,
+                // için sarmalayıcı olmadan hedef ~14pt'ye düşerdi. Sabit
+                // yükseklik değil ALT sınır: büyük yazıda (2×–3,1×) satır
+                // büyür, metin kutudan taşmaz; dar kartta etiket alt satıra
+                // iner (büyük yazı taraması 2026-10-12).
+                constraints: const BoxConstraints(minHeight: 44),
                 alignment: Alignment.centerLeft,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.refresh_rounded, size: 16, color: p.amberText),
                     const SizedBox(width: SandikSpace.xs2),
-                    Text(
-                      'Tekrar dene',
-                      style: context.t.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: p.amberText,
+                    Flexible(
+                      child: Text(
+                        'Tekrar dene',
+                        style: context.t.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: p.amberText,
+                        ),
                       ),
                     ),
                   ],

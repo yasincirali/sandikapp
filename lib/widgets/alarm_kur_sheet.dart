@@ -251,7 +251,11 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
             SandikSpace.lg, SandikSpace.sm2, SandikSpace.lg, SandikSpace.lg),
-        child: Column(
+        // Kaydırılabilir: büyük yazıda (3,1×) form sayfa yüksekliğini aşıyor,
+        // "Alarm kur" düğmesi ekranın altında kesiliyordu (büyük yazı
+        // taraması 2026-10-12). Sığınca kaydırma yok, düzen aynı.
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -379,6 +383,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

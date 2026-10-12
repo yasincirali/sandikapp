@@ -121,7 +121,13 @@ class YarisGovdesi extends ConsumerWidget {
         },
       );
     }
-    return Column(
+    // Alt açıklama bloğu (paranın getirisi + teaser + dipnot) en fazla
+    // gövdenin [_altBlokOrani]'na kadar büyür, fazlası kendi içinde kayar.
+    // Neden: dipnot ~210 karakter; cihazda büyük yazı (2×–3,1×) açıkken bu
+    // sabit blok tek başına ekranı aşıyor, sıralama listesini sıfır
+    // yüksekliğe ezip altını kesiyordu (büyük yazı taraması 2026-10-12).
+    // Normal yazıda blok sınırın çok altında kalır; düzen aynıdır.
+    return LayoutBuilder(builder: (context, kisit) => Column(
       children: [
         // Dönem seçici "Herkes" sekmesiyle AYNI bileşen (`ZirveDonemSecici`,
         // 1H · 1A · 1Y, kayan hap) — sekme değişince seçici yerinde kalır,
@@ -168,6 +174,13 @@ class YarisGovdesi extends ConsumerWidget {
                   pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
                 ),
         ),
+        ConstrainedBox(
+          constraints:
+              BoxConstraints(maxHeight: kisit.maxHeight * _altBlokOrani),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
         // Kendi satırının ek bilgisi (R1): paranın getirisi —
         // Performans ile aynı sayı. Sıralama seçimleri ölçer.
         if (me != null && pState != null)
@@ -201,9 +214,16 @@ class YarisGovdesi extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
         ),
+              ],
+            ),
+          ),
+        ),
       ],
-    );
+    ));
   }
+
+  /// Alt açıklama bloğunun gövdeye oranla tavanı (gerekçe `build`'de).
+  static const double _altBlokOrani = 0.4;
 }
 
 /// Yarış dönemleri. Gün sayıları `ZirveDonem` ile BİREBİR (7 · 30 · 365):
@@ -466,11 +486,18 @@ class _OptInPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    // Kaydırılabilir + en az gövde boyu: normal yazıda ortada durur, büyük
+    // yazıda (2×–3,1×) davet metni ve "Yarışa katıl" düğmesi ekranın altında
+    // kesilmek yerine kaydırılarak ulaşılır (büyük yazı taraması 2026-10-12).
+    return LayoutBuilder(builder: (context, kisit) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: kisit.maxHeight),
+        child: Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.emoji_events_outlined,
                 size: 48, color: context.c.amberText),
@@ -506,7 +533,9 @@ class _OptInPrompt extends StatelessWidget {
           ],
         ),
       ),
-    );
+        ),
+      ),
+    ));
   }
 }
 

@@ -10,6 +10,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/alarm_kur_sheet.dart';
 import 'package:portfoy_takip/widgets/alarm_seridi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'helpers/yazi_olcegi.dart';
 
 /// Alarm kurma sayfası ve varlık ekranındaki alarm şeridinin taşma
 /// regresyonu (2026-09-14'te geldiler, taşma testi yoktu).
@@ -56,6 +57,7 @@ List<Map<String, dynamic>> _alarmlar(int n) => [
 Future<void> _pump(WidgetTester tester, Widget body,
     {double width = 375, List<Map<String, dynamic>> rows = const []}) async {
   tester.view.physicalSize = Size(width * 3, 900 * 3);
+  yaziOlceginiUygula(tester);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
@@ -76,7 +78,9 @@ Future<void> _pump(WidgetTester tester, Widget body,
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-void main() {
+void main() => yaziOlcegiEkseni(_govde);
+
+void _govde() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -126,8 +130,8 @@ void main() {
   group('AlarmKurSheet', () {
     final adaylar = [
       const AlarmAdayi('THYAO.IS', 'Türk Hava Yolları Anonim Ortaklığı', 312.4),
-      const AlarmAdayi('TEFAS:YKT', 'Yapı Kredi Portföy Teknoloji Değişken Fon',
-          0.9123),
+      const AlarmAdayi(
+          'TEFAS:YKT', 'Yapı Kredi Portföy Teknoloji Değişken Fon', 0.9123),
       const AlarmAdayi('ALTIN_GRAM', 'Gram altın', 4890.0),
     ];
 

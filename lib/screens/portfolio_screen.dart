@@ -857,8 +857,10 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Sabit 300 değil ALT sınır: büyük yazıda (3,1×) ikon + metin 300'ü
+    // aşıp 28 px taşıyordu (büyük yazı taraması 2026-10-12).
     return Container(
-      height: 300,
+      constraints: const BoxConstraints(minHeight: 300),
       alignment: Alignment.center,
       child: Column(
         mainAxisSize: MainAxisSize.min,
