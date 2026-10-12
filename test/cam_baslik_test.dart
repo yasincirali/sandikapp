@@ -254,6 +254,61 @@ void main() {
     expect(find.byType(CupertinoContextMenuAction), findsNothing);
   });
 
+  // Önizleme kök katmanda: (1) satırın sağlayıcı kabı orada yok, (2) ona
+  // satırın genişliği verilmiyor. Gerçek kart (Expanded'lı satır + sağlayıcı
+  // okuyan rozet) ikisinde de çöküyordu; demo ekran görüntüsü yakaladı.
+  _tw('bağlam menüsü iOS: önizleme sağlayıcıyı okur ve taşmaz', (t) async {
+    RemoteConfigService.testAcik = {'goz_alici'};
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final ad = Provider<String>((_) => 'kaptan');
+    await t.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: ProviderScope(
+            overrides: [ad.overrideWithValue('iç kap')],
+            child: SizedBox(
+              width: 360,
+              height: 68,
+              child: SandikBaglamMenusu(
+                baslik: 'KCHOL',
+                eylemler: [
+                  SandikBaglamEylemi(
+                      etiket: 'Al', ikon: Icons.add_rounded, onSec: () {}),
+                ],
+                child: Row(children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          const Expanded(child: Text('KCHOL')),
+                          Consumer(builder: (_, ref, __) => Text(ref.watch(ad))),
+                        ]),
+                        const Spacer(),
+                        const Text('620 lot'),
+                      ],
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    final basis = await t.startGesture(t.getCenter(find.text('KCHOL')));
+    for (var i = 0; i < 12; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    await basis.up();
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    expect(find.byType(CupertinoContextMenuAction), findsOneWidget);
+    // Önizleme satırın kendi (iç) kabını okur, kökü değil.
+    expect(find.text('iç kap'), findsWidgets);
+    expect(find.text('kaptan'), findsNothing);
+  });
+
   _tw('bağlam menüsü Android: uzun basınca alt sayfa, yıkıcı sonda',
       (t) async {
     RemoteConfigService.testAcik = {'goz_alici'};

@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/sandik.dart';
 import 'sandik_cam.dart';
@@ -60,7 +61,7 @@ class SandikBaglamMenusu extends StatelessWidget {
       ...eylemler.where((e) => e.yikici),
     ];
     final govde = defaultTargetPlatform == TargetPlatform.iOS
-        ? _iosMenusu(sirali)
+        ? _iosMenusu(context, sirali)
         : GestureDetector(
             onLongPress: () => _androidSayfasi(context, sirali),
             child: child,
@@ -73,7 +74,17 @@ class SandikBaglamMenusu extends StatelessWidget {
     );
   }
 
-  Widget _iosMenusu(List<SandikBaglamEylemi> sirali) {
+  Widget _iosMenusu(BuildContext context, List<SandikBaglamEylemi> sirali) {
+    // Önizleme kök katmanda (rota üstünde) çizilir; satırın atası olan
+    // sağlayıcı kabı orada yok. Demo kabuğu kendi kabını iç içe kurar —
+    // kökten okunsa önizleme gerçek veriyi gösterirdi. Satırın kabı taşınır.
+    ProviderContainer? kap;
+    try {
+      kap = ProviderScope.containerOf(context, listen: false);
+    } catch (_) {
+      kap = null;
+    }
+    final kayit = _BoyutKaydi();
     return CupertinoContextMenu.builder(
       enableHapticFeedback: true,
       actions: [
@@ -92,10 +103,25 @@ class SandikBaglamMenusu extends StatelessWidget {
             ),
           ),
       ],
-      // Önizleme kök katmanda çizilir: ekranın `Material` atası orada yok.
-      builder: (context, animasyon) =>
-          Material(type: MaterialType.transparency, child: child),
-    );
+      builder: (ctx, animasyon) {
+        // Önizleme kök katmanda çizilir: ekranın `Material` atası orada yok.
+        Widget onizleme =
+            Material(type: MaterialType.transparency, child: child);
+        if (kap != null) {
+          onizleme = UncontrolledProviderScope(container: kap, child: onizleme);
+        }
+        // Menü açılırken önizlemeye satırın genişliği verilmez (sınırsız
+        // yükseklik, dar genişlik): satır kendi boyunda kurulup ölçeklenir —
+        // sistemdeki önizleme de bir küçültülmüş anlık görüntüdür. İlk
+        // karede boyut henüz yoksa satır yerinde olduğu gibi.
+        final boyut = kayit.boyut;
+        if (boyut == null) return onizleme;
+        return FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox.fromSize(size: boyut, child: onizleme),
+        );
+      },
+    ).boyutuKaydet(kayit);
   }
 
   Future<void> _androidSayfasi(
@@ -120,8 +146,7 @@ class SandikBaglamMenusu extends StatelessWidget {
                   baslik,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: sayfa.t.titleMedium
-                      ?.copyWith(color: sayfa.c.text90),
+                  style: sayfa.t.titleMedium?.copyWith(color: sayfa.c.text90),
                 ),
               ),
               for (final e in sirali)
@@ -144,5 +169,43 @@ class SandikBaglamMenusu extends StatelessWidget {
       ),
     );
     secilen?.onSec();
+  }
+}
+
+/// Satırın yerindeki boyutu (önizleme aynı boyda kurulup ölçeklensin).
+class _BoyutKaydi {
+  Size? boyut;
+}
+
+extension on Widget {
+  Widget boyutuKaydet(_BoyutKaydi kayit) =>
+      _BoyutKaydeden(kayit: kayit, child: this);
+}
+
+class _BoyutKaydeden extends SingleChildRenderObjectWidget {
+  const _BoyutKaydeden({required this.kayit, super.child});
+
+  final _BoyutKaydi kayit;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _BoyutKaydedenRender(kayit);
+
+  @override
+  void updateRenderObject(
+      BuildContext context, _BoyutKaydedenRender renderObject) {
+    renderObject.kayit = kayit;
+  }
+}
+
+class _BoyutKaydedenRender extends RenderProxyBox {
+  _BoyutKaydedenRender(this.kayit);
+
+  _BoyutKaydi kayit;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    kayit.boyut = size;
   }
 }
