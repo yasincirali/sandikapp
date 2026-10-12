@@ -94,7 +94,9 @@ export const SISTEM_TALIMATI = [
   '  eurobond "borclanma"; repo/ters repo/Takasbank veya BİST para piyasası "para_piyasasi"; mevduat/',
   '  katılma hesabı "mevduat"; altın/gümüş ve kıymetli maden cinsinden borçlanma/kira sertifikası',
   '  "kiymetli_maden"; yatırım fonu/BYF payı "fon"; geri kalan (VİOP teminatı, opsiyon, diğer) "diger".',
-  '- kod: hissede borsa kodu (ASELS, AAPL US); tahvil/bonoda ISIN; yoksa boş dizgi.',
+  '- kod: raporda yazdığı gibi AYNEN (hissede borsa kodu, tahvil/bonoda ISIN); kendin ekleme ya da',
+  '  çevirme yapma (rapor "NVDA" diyorsa "NVDA US" yazma). Raporda kod yoksa boş dizgi.',
+  '- Ağırlığı 0,00 olan satırları yazma.',
   '- Metinde olmayan hiçbir sayı ya da kalem yazma. Tablo okunamıyorsa boş liste döndür.',
 ].join('\n');
 
@@ -106,6 +108,23 @@ export function istekGovdesi(metin: string, fonKodu: string, model: string): Rec
     messages: [{ role: 'user', content: `Fon kodu: ${fonKodu}\n\n<rapor>\n${metin}\n</rapor>` }],
     output_config: { effort: 'low', format: { type: 'json_schema', schema: KALEM_SEMASI } },
   };
+}
+
+/// Modele yalnız FON PORTFÖY DEĞERİ TABLOSU bölümü gider: başlıktan ilk
+/// "GENEL TOPLAM" satırının sonuna kadar. Raporun geri kalanı (temettü,
+/// alım-satım işlemleri, FTD tablosu) kalem değildir ve girdi jetonunun
+/// çoğunu oluşturuyordu. Başlık ya da toplam bulunamazsa ya da bölüm
+/// şüpheli kısaysa tüm metin gider (eski davranış). Kontroller yine tüm
+/// metne karşı yapılır.
+export function tabloBolumu(metin: string): string {
+  const bas = metin.search(/FON\s+PORTF[ÖO]Y\s+DE[ĞG]ER[İI]\s+TABLOSU/i);
+  if (bas < 0) return metin;
+  const sonRel = metin.slice(bas).search(/GENEL\s+TOPLAM/i);
+  if (sonRel < 0) return metin;
+  const satirSonu = metin.indexOf('\n', bas + sonRel);
+  const son = satirSonu < 0 ? metin.length : satirSonu;
+  const bolum = metin.slice(bas, son);
+  return metinYeterliMi(bolum) ? bolum : metin;
 }
 
 // ── Sayı ve metin ───────────────────────────────────────────────────────────
@@ -183,6 +202,9 @@ export function semaKontrolu(ham: unknown): { ok: true; kalemler: HamKalem[] } |
     if (ad.length === 0 || ad.length > 160) return { ok: false, neden: 'ad' };
     if (kod === null || kod.length > 24) return { ok: false, neden: 'kod' };
     if (!KALEM_TURLERI.includes(tur)) return { ok: false, neden: 'tur' };
+    // 0,00 ağırlıklı satır (küsurat pozisyon) toplamı değiştirmez; belgenin
+    // tamamını düşürmek yerine atlanır (Ekim 2026: 'agirlik' redleri).
+    if (agirlik === 0) continue;
     if (typeof agirlik !== 'number' || !Number.isFinite(agirlik) || agirlik <= 0 || agirlik > 100) {
       // Değer nedene yazılır: Ekim 2026 turunda 14 fonun 8'i yalnız
       // 'agirlik' ile düştü ve hangi değerin (0, eksi, >100) düşürdüğü
@@ -205,7 +227,10 @@ export function metinKontrolu(kalemler: HamKalem[], pdfMetni: string): string | 
     if (deger === null || Math.abs(deger - k.agirlik) > 0.005) return `deger_uyusmuyor:${k.ad}`;
     if (!sayiGeciyor(metin, k.agirlik_metni, 0, metin.length)) return `metinde_yok:${k.ad}`;
     if (k.kod.length > 0) {
-      const kod = metniNormalle(k.kod);
+      // Model borsa ekini kendisi ekleyebiliyor ("NVDA US", raporda "NVDA"):
+      // tam kod yoksa ilk parçası denenir. Pencere kuralı aynen geçerli.
+      let kod = metniNormalle(k.kod);
+      if (metin.indexOf(kod) < 0 && kod.includes(' ')) kod = kod.split(' ')[0];
       let bulundu = false;
       let i = metin.indexOf(kod);
       if (i < 0) return `kod_metinde_yok:${k.kod}`;

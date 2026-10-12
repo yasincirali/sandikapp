@@ -63,6 +63,7 @@ import {
   pdrSatirlari,
   metinOzeti,
   sigortaAtti,
+  tabloBolumu,
   oncekiAySonu,
   taramaKesinMi,
   taranacakGunler,
@@ -246,6 +247,13 @@ async function fonuIsle(
     // zaman farklıdır; kopya yalnız birebir aynı belgede (yeniden yayımlanan
     // ya da değişmeyen rapor) devreye girer. Yalnız `gecti` kopyalanır:
     // red bir kontrol düzeltmesinden sonra geçebilir.
+    // TEFAS ay sonu satırı yoksa kontrol 3 kesin düşürür: modele para
+    // ödemeden red yaz (sonuç aynı, maliyet sıfır).
+    if (!tefas) {
+      await yaz('red', [], { kontrol: 'tefas', neden: 'tefas_satiri_yok', bildirim: index });
+      return { kod, sonuc: 'red', neden: 'tefas' };
+    }
+
     const ozet = await metinOzeti(metin);
     const { data: onceki } = await client.from('fon_kalemleri')
       .select('donem, kalemler, dogrulama')
@@ -277,7 +285,7 @@ async function fonuIsle(
     // bir kamu belgesini yanlışlıkla reddederse istek uygun modele yönlenir.
     // deno-lint-ignore no-explicit-any
     const yanit: any = await anthropic.beta.messages.create({
-      ...istekGovdesi(metin, kod, MODEL),
+      ...istekGovdesi(tabloBolumu(metin), kod, MODEL),
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       // deno-lint-ignore no-explicit-any
