@@ -107,6 +107,74 @@ void main() {
     });
   });
 
+  // Tasarım B (yasin 2026-10-12): "tuttukların" ile gerçek dağılımın farkı,
+  // sınıfın kaynakları ve hesaplanmış içgörü cümleleri.
+  group('görünen ve gerçek', () {
+    PortfoyXray ornek() => _xray([
+          _lot('THYAO.IS', AssetType.hisse, miktar: 10, fiyat: 100), // 1.000
+          _lot('TEFAS:AAL', AssetType.fon, miktar: 1000, fiyat: 10), // 10.000
+          _lot('ALTIN_GRAM', AssetType.altin, miktar: 1, fiyat: 4000),
+          _lot('USD', AssetType.doviz, miktar: 25, fiyat: 1, para: 'USD'),
+        ], dag: {
+          'AAL': _dag('AAL', {'hs': 20, 'tr': 50, 'vmtl': 30}),
+        });
+
+    test('tuttukların: fon açılmadan, türe göre', () {
+      final x = ornek();
+      expect(x.gorunen, {
+        AssetType.hisse: 1000,
+        AssetType.fon: 10000,
+        AssetType.altin: 4000,
+        AssetType.doviz: 1000,
+      });
+      expect(x.fonVar, isTrue);
+      expect(x.siraliGorunen.first.key, AssetType.fon);
+    });
+
+    test('sınıfın kaynakları: fon kodu ve doğrudan pozisyon; Σ = kova', () {
+      final x = ornek();
+      expect(x.kaynaklar[XrayKova.bistHisse], {'THYAO': 1000, 'AAL': 2000});
+      for (final e in x.kovalar.entries) {
+        final t = x.kaynaklar[e.key]!.values.fold(0.0, (a, b) => a + b);
+        expect(t, closeTo(e.value, 1e-9), reason: '${e.key}');
+      }
+      expect(x.kaynaklariSirali(XrayKova.bistHisse).first.key, 'AAL');
+    });
+
+    test('içgörü: farkı ≥3 puan olanlar, büyükten küçüğe, en çok iki', () {
+      final i = ornek().icgoruler;
+      expect(i.map((e) => e.tur),
+          [XrayIcgoruTuru.faiz, XrayIcgoruTuru.hisse]);
+      // Faiz getiren: görünen mevduat 0 → mevduat 3.000 + repo 5.000.
+      expect(i.first.gorunenPay, 0);
+      expect(i.first.gercekPay, closeTo(50, 1e-9));
+      expect(i.last.gorunenPay, closeTo(6.25, 1e-9));
+      expect(i.last.gercekPay, closeTo(18.75, 1e-9));
+    });
+
+    test('fon yoksa karşılaştırma ve içgörü yok', () {
+      final x = _xray([
+        _lot('THYAO.IS', AssetType.hisse, miktar: 10, fiyat: 100),
+        _lot('ALTIN_GRAM', AssetType.altin, miktar: 1, fiyat: 4000),
+      ]);
+      expect(x.fonVar, isFalse);
+      expect(x.icgoruler, isEmpty);
+    });
+
+    test('X-Ray dışı kaynakları: bulunamayan fon ve Σ < 100 farkı', () {
+      final x = _xray([
+        _lot('YOK', AssetType.fon, miktar: 100, fiyat: 30),
+        _lot('AAA', AssetType.fon, miktar: 10, fiyat: 100),
+      ], dag: {
+        'AAA': _dag('AAA', {'hs': 60, 'dt': 30})
+      });
+      expect(x.disiKaynaklar['YOK'], 3000);
+      expect(x.disiKaynaklar['AAA'], closeTo(100, 1e-9));
+      expect(x.disiKaynaklar.values.fold(0.0, (a, b) => a + b),
+          closeTo(x.xrayDisi, 1e-9));
+    });
+  });
+
   group('fonlar dağılımla bölünür', () {
     test('hisse + fon + altın + döviz: fonun TL değeri × kova yüzdesi', () {
       final x = _xray([

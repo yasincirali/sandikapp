@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../services/remote_config_service.dart';
+import '../services/saydamlik_tercihi.dart';
 import '../theme/sandik.dart';
 
 /// Cam malzeme ve kaydırma kenarı (cam/HIG incelemesi, 2026-10-12; bayrak
@@ -23,8 +24,9 @@ import '../theme/sandik.dart';
 /// - **Android:** aynı yüzey OPAK çizilir; kaydırınca zemin bir ton yükselir
 ///   (Material 3 "scrolled under" davranışı). Eski cihazda blur kaydırmayı
 ///   takıltırdı; Material'de beklenen de bu.
-/// - **Yüksek kontrast açık:** her platformda opak (iOS "Saydamlığı azalt"
-///   Flutter'a gelmiyor; yakın vekili yüksek kontrast).
+/// - **Yüksek kontrast ya da iOS "Saydamlığı azalt" açık:** opak. İkincisi
+///   Flutter'a gelmediği için platform kanalıyla okunur
+///   ([SaydamlikTercihi], 2026-10-12).
 ///
 /// Bayrak kapalıyken hiçbir şey değişmez: [SandikKaydirmaBasligi] eski
 /// `SafeArea > Column` düzenini birebir kurar.
@@ -35,7 +37,8 @@ abstract final class SandikCam {
   /// Bu cihazda gerçek bulanıklık çizilir mi.
   static bool bulanik(BuildContext context) =>
       defaultTargetPlatform == TargetPlatform.iOS &&
-      !MediaQuery.highContrastOf(context);
+      !MediaQuery.highContrastOf(context) &&
+      !SaydamlikTercihi.instance.azalt.value;
 
   /// Bulanıklık gücü — iOS "regular material"a yakın.
   static const double sigma = 20;
@@ -73,6 +76,15 @@ class SandikCamYuzey extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ayar uygulama açıkken değişebilir; yüzey kanaldan gelen değeri dinler
+    // ki kullanıcı Ayarlar'dan dönünce cam hemen opaklaşsın.
+    return ValueListenableBuilder<bool>(
+      valueListenable: SaydamlikTercihi.instance.azalt,
+      builder: (context, azalt, child) => _kur(context),
+    );
+  }
+
+  Widget _kur(BuildContext context) {
     final cam = SandikCam.bulanik(context);
     final zemin = cam
         ? (renk ?? context.c.background.withValues(alpha: SandikCam.ortu))

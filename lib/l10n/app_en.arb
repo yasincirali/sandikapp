@@ -5116,5 +5116,17 @@
   "feedbackTypeComplaint": "Complaint",
   "feedbackTypeSuggestion": "Suggestion",
   "feedbackTypeOther": "Other",
-  "searchTabAssets": "Assets"
+  "searchTabAssets": "Assets",
+  "xrTuttuklarin": "What you hold",
+  "xrTurSayisi": "{n} types",
+  "xrIcAcilinca": "With your funds opened up",
+  "xrSinifSayisi": "{n} classes",
+  "xrIcgoru": "Your {ad} share looks like {gorunen}; with your funds it is {gercek}.",
+  "xrIcgoruHisse": "stock",
+  "xrIcgoruAltin": "gold",
+  "xrIcgoruDoviz": "FX",
+  "xrIcgoruFaiz": "interest-bearing",
+  "xrKaynakBaslik": "Where this money comes from",
+  "xrKaynakNot": "Fund shares from TEFAS allocation. The total matches the amount above.",
+  "xrSinifEtiket": "{ad}, {pay}, {tutar}. Show sources."
 }

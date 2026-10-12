@@ -54,5 +54,36 @@ import UserNotifications
     // Bridge protokolünde doğrudan bir binary messenger özelliği YOKTUR —
     // yalnızca `pluginRegistry` ve `applicationRegistrar` vardır.
     LiveActivityChannel.register(messenger: engineBridge.applicationRegistrar.messenger())
+
+    // "Saydamlığı azalt" köprüsü — Flutter bu ayarı MediaQuery'ye taşımıyor.
+    SaydamlikChannel.register(messenger: engineBridge.applicationRegistrar.messenger())
+  }
+}
+
+/// iOS Ayarlar › Erişilebilirlik › "Saydamlığı azalt" → Dart
+/// (`lib/services/saydamlik_tercihi.dart`). Açıkken cam yüzeyler opak çizilir
+/// (HIG). Ayrı dosya yerine burada: yeni Swift dosyası Xcode projesine
+/// (pbxproj) elle eklenmek zorunda, bu kadar küçük köprü için değmez.
+enum SaydamlikChannel {
+  static let name = "com.sandik.app/saydamlik"
+
+  static func register(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      if call.method == "durum" {
+        result(UIAccessibility.isReduceTransparencyEnabled)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+    // Blok gözlemcisi uygulama ömrü boyunca yaşar; kaldırılmayacağı için
+    // jeton tutulmaz (statik değişken Swift 6 eşzamanlılık denetimine takılır).
+    _ = NotificationCenter.default.addObserver(
+      forName: UIAccessibility.reduceTransparencyStatusDidChangeNotification,
+      object: nil,
+      queue: .main
+    ) { _ in
+      channel.invokeMethod("degisti", arguments: UIAccessibility.isReduceTransparencyEnabled)
+    }
   }
 }

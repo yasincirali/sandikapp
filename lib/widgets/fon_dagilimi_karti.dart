@@ -296,6 +296,9 @@ class XrayCubugu extends StatelessWidget {
             child: toplam <= 0
                 ? ColoredBox(color: c.hairline)
                 : Row(
+                    // Boş ColoredBox en küçük boya iner: dilimler yüksekliği almazsa
+                    // çubuk görünmez (X-Ray ekranında çizilmiyordu, 2026-10-12).
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       for (final (renk, v) in dilimler)
                         Expanded(

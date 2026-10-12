@@ -40,8 +40,13 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(yaziOlcegi)),
+            // Hareketi azalt: story'nin kendiliğinden geçişi kapalı, sayfalar
+            // "Devam" ile tek tek doğrulanır (pumpAndSettle aksi hâlde
+            // süreyi sonuna kadar oynatır). Otomatik geçiş
+            // `hikaye_story_akisi_test`te.
+            data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(yaziOlcegi),
+                disableAnimations: true),
             child: child!,
           ),
           home: AylikRaporScreen(donem: ay),

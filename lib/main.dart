@@ -56,6 +56,7 @@ import 'widgets/sunucu_kapisi.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
+import 'services/saydamlik_tercihi.dart';
 import 'services/satin_alma_service.dart';
 import 'services/daily_summary.dart';
 import 'services/bugun_yukleyici.dart';
@@ -262,6 +263,11 @@ void main() async {
     // son değeriyle, ağ beklemeden; Firebase'den SONRA (RC onu ister),
     // Supabase'den ÖNCE. Adres ve oturum anahtarı buradan gelir; sabitleri
     // doğrudan kullanan başka yer YOK (`sunucu_secimi_test` kilitler).
+    // iOS "Saydamlığı azalt" — cam yüzeyler için; beklenmez, ilk karede
+    // değer gelmemişse yüzey bir an cam görünür, sonra opaklaşır.
+    CrashReporter.arkaPlan(SaydamlikTercihi.instance.baslat(),
+        reason: 'main.SaydamlikTercihi.baslat');
+
     final sunucu = await SunucuSecimi.instance.baslat();
     if (sunucu == null) {
       runApp(_ConfigErrorApp(

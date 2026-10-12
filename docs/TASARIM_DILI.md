@@ -128,7 +128,7 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Giriş alanı | `context.inputDecoration(...)`; dolgu temadan, ekranda `fillColor` yok |
 | Sekme başlığı (içerik altından akar, kaydırınca kenar çizgisi + iOS'ta cam, başlık 0.88'e küçülür) | `SandikKaydirmaBasligi` (Portföy, Performans, Profil; bayrak `goz_alici`). Gövde payı `SandikKaydirmaBasligi.payIle` ile okunur — ekranın kendi `context`'i iskeletin üstündedir, pay 0 çıkar |
 | Ana sayfa `SliverAppBar` zemini (aynı cam) | `SandikCamCubukZemini` |
-| Cam yüzey (iOS blur; Android/yüksek kontrast opak) | `SandikCamYuzey` — yalnız içeriğin altından aktığı çubukta |
+| Cam yüzey (iOS blur; Android, yüksek kontrast ve iOS "Saydamlığı azalt" opak) | `SandikCamYuzey` — yalnız içeriğin altından aktığı çubukta |
 | Varlık sayfası Al/Sat/Temettü | `PozisyonIslemCubugu(yuzen: SandikCam.acik)` — yüzen cam kapsül |
 | Satıra uzun bas kısayolu (iOS sistem bağlam menüsü, Android alt sayfa) | `SandikBaglamMenusu` — aynı eylemler satırda/detayda da durur; yıkıcı eylem en sonda, kırmızı |
 
@@ -142,7 +142,7 @@ iOS'ta da segment camın üstünde opak durur. Kilit: `secici_kurali_test`.
 **Cam kuralı (2026-10-12).** Cam bir *malzeme*dir, süs değil: yalnız arkasından
 içerik akan çubukta (sekme başlığı, yüzen kapsül) kullanılır. Sayı, toplam kart,
 sheet ve kart arkasına blur konmaz. Bulanıklık yalnız iOS'ta ve içerik başlığın
-altına girdiğinde kurulur; Android ve yüksek kontrastta opak ton geçişi. Efektler
+altına girdiğinde kurulur; Android, yüksek kontrast ve iOS "Saydamlığı azalt"ta opak ton geçişi. Efektler
 kaydırma konumunu izler (zamanlayıcı yok), yerleşimi değiştirmez; "hareketi azalt"
 başlık küçülmesini kapatır.
 

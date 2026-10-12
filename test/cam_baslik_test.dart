@@ -7,6 +7,7 @@ import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/main.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
+import 'package:portfoy_takip/services/saydamlik_tercihi.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/pozisyon_islemleri.dart';
 import 'package:portfoy_takip/widgets/sandik_baglam_menusu.dart';
@@ -21,7 +22,8 @@ import 'helpers/kaynak.dart';
 /// - bayrak kapalıyken eski düzen: cam yok, pay 0, menü yok;
 /// - bayrak açıkken içerik başlığın ALTINDA başlar, kaydırınca altından
 ///   akar; bulanıklık yalnız iOS'ta ve yalnız içerik altına girince;
-/// - Android ve yüksek kontrast hiç blur çizmez (opak yol);
+/// - Android, yüksek kontrast ve iOS "Saydamlığı azalt" hiç blur çizmez
+///   (opak yol);
 /// - "Hareketi azalt" açıkken başlık küçülmez;
 /// - bağlam menüsü kısayoldur: satıra dokunmak hâlâ satırı açar.
 /// Platform taklidi test GÖVDESİ içinde geri alınmalı (çerçeve gövde
@@ -152,6 +154,32 @@ void main() {
     await t.drag(find.byType(ListView), const Offset(0, -300));
     await t.pump();
     expect(find.byType(BackdropFilter), findsNothing);
+  });
+
+  // Ayar Flutter'a gelmiyor, kanaldan okunur; uygulama açıkken değişince
+  // yüzey yeniden başlatmadan opaklaşmalı (HIG; mağazaya gitmeden kapandı).
+  _tw('iOS Saydamlığı azalt: cam çizilmez, değişince hemen uyar',
+      (t) async {
+    RemoteConfigService.testAcik = {'goz_alici'};
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final azalt = SaydamlikTercihi.instance.azalt;
+    try {
+      await t.pumpWidget(sekme());
+      await t.pump();
+      await t.drag(find.byType(ListView), const Offset(0, -300));
+      await t.pump();
+      expect(find.byType(BackdropFilter), findsOneWidget);
+
+      azalt.value = true;
+      await t.pump();
+      expect(find.byType(BackdropFilter), findsNothing);
+
+      azalt.value = false;
+      await t.pump();
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    } finally {
+      azalt.value = false;
+    }
   });
 
   _tw('Hareketi azalt: başlık küçülmez', (t) async {

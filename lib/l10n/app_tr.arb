@@ -5710,5 +5710,21 @@
   "feedbackTypeOther": "Diğer",
   "@feedbackTypeOther": {"description": "Geri bildirim türü."},
   "searchTabAssets": "Varlıklar",
-  "@searchTabAssets": {"description": "Karşılaştırma arama sayfası sekmesi."}
+  "@searchTabAssets": {"description": "Karşılaştırma arama sayfası sekmesi."},
+  "xrTuttuklarin": "Tuttukların",
+  "xrTurSayisi": "{n} tür",
+  "@xrTurSayisi": {"placeholders": {"n": {"type": "int"}}},
+  "xrIcAcilinca": "Fonların içi açılınca",
+  "xrSinifSayisi": "{n} sınıf",
+  "@xrSinifSayisi": {"placeholders": {"n": {"type": "int"}}},
+  "xrIcgoru": "{ad} payın {gorunen} görünüyor, fonlarınla birlikte {gercek}.",
+  "@xrIcgoru": {"placeholders": {"ad": {"type": "String"}, "gorunen": {"type": "String"}, "gercek": {"type": "String"}}},
+  "xrIcgoruHisse": "Hisse",
+  "xrIcgoruAltin": "Altın",
+  "xrIcgoruDoviz": "Döviz",
+  "xrIcgoruFaiz": "Faiz getiren",
+  "xrKaynakBaslik": "Bu paranın nereden geldiği",
+  "xrKaynakNot": "Fon payları TEFAS dağılımından. Toplam, yukarıdaki tutarın aynısı.",
+  "xrSinifEtiket": "{ad}, {pay}, {tutar}. Kaynakları göster.",
+  "@xrSinifEtiket": {"placeholders": {"ad": {"type": "String"}, "pay": {"type": "String"}, "tutar": {"type": "String"}}}
 }

@@ -8690,4 +8690,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchTabAssets => 'Assets';
+
+  @override
+  String get xrTuttuklarin => 'What you hold';
+
+  @override
+  String xrTurSayisi(int n) {
+    return '$n types';
+  }
+
+  @override
+  String get xrIcAcilinca => 'With your funds opened up';
+
+  @override
+  String xrSinifSayisi(int n) {
+    return '$n classes';
+  }
+
+  @override
+  String xrIcgoru(String ad, String gorunen, String gercek) {
+    return 'Your $ad share looks like $gorunen; with your funds it is $gercek.';
+  }
+
+  @override
+  String get xrIcgoruHisse => 'stock';
+
+  @override
+  String get xrIcgoruAltin => 'gold';
+
+  @override
+  String get xrIcgoruDoviz => 'FX';
+
+  @override
+  String get xrIcgoruFaiz => 'interest-bearing';
+
+  @override
+  String get xrKaynakBaslik => 'Where this money comes from';
+
+  @override
+  String get xrKaynakNot =>
+      'Fund shares from TEFAS allocation. The total matches the amount above.';
+
+  @override
+  String xrSinifEtiket(String ad, String pay, String tutar) {
+    return '$ad, $pay, $tutar. Show sources.';
+  }
 }
