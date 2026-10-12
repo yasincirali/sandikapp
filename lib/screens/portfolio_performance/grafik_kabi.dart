@@ -406,16 +406,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           horizontalLines: taban == null || _simulate
               ? const []
               : [
-                  GrafikStili.donemBasi(
-                    context,
-                    taban.first,
-                    etiket: GrafikStili.donemBasiEtiketi(
-                      context,
-                      an: DateTime.fromMillisecondsSinceEpoch(taban.firstTs!),
-                      deger: ref.read(gosterimBazParaProvider).fmt(taban.first),
-                      gunIci: intraday,
-                    ),
-                  ),
+                  GrafikStili.donemBasi(context, taban.first),
                 ],
           verticalLines: intraday
             // Gün içi grafikte dikey "ŞİMDİ" çizgisi KALDIRILDI
@@ -872,7 +863,19 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               alignment: Alignment.centerRight,
               child: _grafikAraclari(mumSec),
             ),
-          ZoomableChart(
+          // Dönem başı açıklaması çizim alanının üstünde, kartın üst
+          // dolgusunda (yasin 2026-10-12; bkz. `donemBasiUstte`).
+          GrafikStili.donemBasiUstte(
+            context,
+            etiket: taban == null || _simulate
+                ? null
+                : GrafikStili.donemBasiEtiketi(
+                    context,
+                    an: DateTime.fromMillisecondsSinceEpoch(taban.firstTs!),
+                    deger: ref.read(gosterimBazParaProvider).fmt(taban.first),
+                    gunIci: intraday,
+                  ),
+            grafik: ZoomableChart(
             // Ekran okuyucu: portföy grafiği "fiyat grafiği" değildir.
             semanticLabel: context.l10n.chartPortfolioSemantics,
             fullMinX: minX,
@@ -996,6 +999,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               }
               return out;
             },
+          ),
           ),
           if (showVolume) ...[
             const SizedBox(height: 8),

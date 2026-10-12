@@ -1515,7 +1515,26 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             final dotCandidates = [
                               for (final t in islemler) t.x,
                             ];
-                            return ZoomableChart(
+                            // Dönem başı açıklaması çizim alanının ÜSTÜNDE
+                            // (yasin 2026-10-12; bkz. `donemBasiUstte`).
+                            // Değer HAM fiyattır (`normBase`): LOG ve
+                            // karşılaştırmada çizginin Y'si dönüştürülmüş
+                            // olsa da açıklama fiyatı yazar.
+                            final donemBasiYazisi = anchorSpot == null
+                                ? null
+                                : GrafikStili.donemBasiEtiketi(
+                                    context,
+                                    an: startDate.add(Duration(
+                                        minutes:
+                                            (anchorSpot.x * 1440).round())),
+                                    deger:
+                                        '${fixedFormatter(2).format(normBase)} ₺',
+                                    gunIci: isIntraday,
+                                  );
+                            return GrafikStili.donemBasiUstte(
+                            context,
+                            etiket: donemBasiYazisi,
+                            grafik: ZoomableChart(
                             semanticLabel: context.l10n
                                 .chartAssetSemantics(_kimlik.kisaEtiket),
                             fullMinX: focusMin,
@@ -1741,18 +1760,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               ? ExtraLinesData(
                                   horizontalLines: [
                                     GrafikStili.donemBasi(
-                                      context,
-                                      anchorY,
-                                      etiket: GrafikStili.donemBasiEtiketi(
-                                        context,
-                                        an: startDate.add(Duration(
-                                            minutes: (anchorSpot.x * 1440)
-                                                .round())),
-                                        deger:
-                                            '${fixedFormatter(2).format(normBase)} ₺',
-                                        gunIci: isIntraday,
-                                      ),
-                                    ),
+                                        context, anchorY),
                                   ],
                                   verticalLines: [
                                     if (lastSpot != null && !isIntraday)
@@ -2065,7 +2073,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                           ),
                                     ];
                                   },
-                          );
+                          ),
+                            );
                           }),
                         ),
                             ); // AnimatedOpacity (bayat seri solukluğu)

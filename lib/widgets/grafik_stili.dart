@@ -187,30 +187,68 @@ abstract final class GrafikStili {
         ),
       );
 
-  /// Dönem başı: yatay kesikli çizgi + etiket. Yüzde bu çizgiye göre
-  /// okunur. Etiket dönem başının TARİHİNİ ve DEĞERİNİ birlikte yazar
-  /// (ör. "BAŞLANGIÇ · 21 Eyl · 309,63 ₺"): varlık detayında tarih eskiden
-  /// ayrı bir dikey işaretteydi; dikey işaret kalkınca bilgi kaybolmasın
-  /// diye buraya taşındı (kullanıcı: "grafik üzeri data kaybı olmamalı").
-  static HorizontalLine donemBasi(BuildContext context, double y,
-          {String? etiket}) =>
+  /// Dönem başı: yatay kesikli çizgi. Yüzde bu çizgiye göre okunur.
+  ///
+  /// Etiket ("AÇILIŞ · 00:00 · 6.644,05 ₺") artık çizginin ÜSTÜNDE, çizim
+  /// alanının içinde DEĞİL: yasin 2026-10-12 (TestFlight, Gram Altın):
+  /// "açılış yazısını grafiği engellemeyecek şekilde gösterelim." Çizgi
+  /// verinin ortasından geçtiği için yazı mumların ve EMA'nın üstüne
+  /// biniyordu. Tarih ve değer kaybolmaz ("grafik üzeri data kaybı
+  /// olmamalı", 2026-09-28): kartın üst boşluğunda, çizgiyle aynı kesikli
+  /// işaretle [donemBasiUstte] yazar.
+  static HorizontalLine donemBasi(BuildContext context, double y) =>
       HorizontalLine(
         y: y,
         color: context.c.text36.withValues(alpha: 0.6),
         strokeWidth: 1,
         dashArray: const [4, 4],
-        label: HorizontalLineLabel(
-          show: etiket != null,
-          alignment: Alignment.topLeft,
-          padding: const EdgeInsets.only(left: SandikSpace.sm, bottom: 2),
-          style: context.t.labelSmall?.copyWith(
-            letterSpacing: 0,
-            fontWeight: FontWeight.w700,
-            color: context.c.text90.withValues(alpha: 0.75),
-          ),
-          labelResolver: (_) => etiket ?? '',
-        ),
       );
+
+  /// [grafik]'in üstüne, kartın üst dolgusuna ([kartDolgusu] üstü,
+  /// [SandikSpace.lgs]) dönem başı açıklamasını koyar: kesikli çizgi
+  /// işareti + [etiket]. Çizim alanına girmez; grafiğin boyu değişmez.
+  /// [etiket] boşsa grafik aynen döner.
+  static Widget donemBasiUstte(BuildContext context,
+      {required Widget grafik, String? etiket}) {
+    if (etiket == null || etiket.isEmpty) return grafik;
+    final renk = context.c.text58;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        grafik,
+        Positioned(
+          top: -SandikSpace.lgs,
+          left: SandikSpace.sm,
+          right: yEkseniGenisligi,
+          height: SandikSpace.lgs,
+          child: IgnorePointer(
+            child: Row(
+              children: [
+                CustomPaint(
+                  size: const Size(14, 1),
+                  painter: _KesikliCizgi(context.c.text36),
+                ),
+                const SizedBox(width: SandikSpace.xs2),
+                Flexible(
+                  child: Text(
+                    etiket,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelSmall?.copyWith(
+                      letterSpacing: 0,
+                      fontWeight: FontWeight.w600,
+                      color: renk,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Dönem başı etiketinin metni — üç grafikte AYNI biçim: gün içinde
   /// "AÇILIŞ · 09:55 · değer", diğer dönemlerde "BAŞLANGIÇ · 21 Eyl · değer".
@@ -373,4 +411,24 @@ abstract final class GrafikStili {
         seri(dojiler, context.c.gain, govde, yuvarlak: true),
     ];
   }
+}
+
+/// Dönem başı açıklamasının işareti — çizimdeki kesikli çizginin aynısı.
+class _KesikliCizgi extends CustomPainter {
+  const _KesikliCizgi(this.renk);
+  final Color renk;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = renk
+      ..strokeWidth = 1;
+    final y = size.height / 2;
+    for (var x = 0.0; x < size.width; x += 8) {
+      canvas.drawLine(Offset(x, y), Offset((x + 4).clamp(0, size.width), y), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_KesikliCizgi old) => old.renk != renk;
 }

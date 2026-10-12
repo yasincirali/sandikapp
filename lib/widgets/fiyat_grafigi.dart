@@ -110,7 +110,17 @@ class FiyatGrafigi extends StatelessWidget {
     return Container(
       decoration: GrafikStili.kart(context),
       padding: GrafikStili.kartDolgusu,
-      child: ZoomableChart(
+      // Dönem başı açıklaması çizim alanının üstünde (yasin 2026-10-12;
+      // bkz. `GrafikStili.donemBasiUstte`).
+      child: GrafikStili.donemBasiUstte(
+        context,
+        etiket: GrafikStili.donemBasiEtiketi(
+          context,
+          an: DateTime.fromMillisecondsSinceEpoch(spots.first.x.round()),
+          deger: bicim.format(spots.first.y),
+          gunIci: eksenX.gunIci,
+        ),
+        grafik: ZoomableChart(
       semanticLabel: semanticLabel,
       height: height,
       fullMinX: eksenX.min,
@@ -177,6 +187,7 @@ class FiyatGrafigi extends StatelessWidget {
       },
       builder: (minX, maxX) =>
           _data(context, spots, eksenX, minX, maxX),
+      ),
       ),
     );
   }
@@ -363,16 +374,7 @@ class FiyatGrafigi extends StatelessWidget {
       // "ŞİMDİ" işareti — varlık detayı ve Performans ile aynı.
       extraLinesData: ExtraLinesData(
         horizontalLines: [
-          GrafikStili.donemBasi(
-            context,
-            toY(tam.first.y),
-            etiket: GrafikStili.donemBasiEtiketi(
-              context,
-              an: DateTime.fromMillisecondsSinceEpoch(tam.first.x.round()),
-              deger: bicim.format(tam.first.y),
-              gunIci: eksenX.gunIci,
-            ),
-          ),
+          GrafikStili.donemBasi(context, toY(tam.first.y)),
         ],
         verticalLines: [
           if (!eksenX.gunIci) GrafikStili.simdiCizgisi(context, tam.last.x),
