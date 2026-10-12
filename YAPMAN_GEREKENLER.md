@@ -12,6 +12,13 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-12 Perplexity MCP (bulut oturumları)
+
+Kurulum betiği hazır; çalışması için Project settings › Cloud environment › ortamın dişlisi:
+- [ ] **Ortam değişkeni** `PERPLEXITY_API_KEY` = Perplexity API anahtarın (perplexity.ai › API). Sohbete yapıştırma.
+- [ ] **Ağ erişimi:** Allowed domains'e `api.perplexity.ai` ekle (ya da daha geniş erişim seviyesi).
+- [ ] Sonra açılan yeni thread'de `perplexity` sunucusu ve 4 aracı (`perplexity_ask/_search/_reason/_research`) görünür.
+
 ## ⏳ 2026-10-11 Mağazaya 1.1.6: paywall KAPALI çıkış → sonra açılış → Frankfurt
 
 Senin kararın (11 Ekim): GİB 20/B yazısı ve banka hesabı bitene kadar

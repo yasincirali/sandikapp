@@ -16,13 +16,14 @@
 # hiçbir şey yapmadan çıkar (bkz. adım 0).
 #
 # Sürümler CI ile aynı: Flutter 3.47.2 (`ci.yml`), codebase-memory-mcp 0.9.0
-# (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0.
+# (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0, Perplexity MCP 1.3.0.
 set -uo pipefail
 
 REPO="${REPO:-/home/user/sandikapp}"
 FLUTTER_VER=3.47.2
 CBM_VER=0.9.0
 UIUX_VER=1.5.0
+PPLX_VER=1.3.0
 
 log() { echo "[bulut_kurulum] $*"; }
 
@@ -68,15 +69,33 @@ command -v ui-ux-pro-mcp >/dev/null 2>&1 \
   || npm i -g "ui-ux-pro-mcp@${UIUX_VER}" >/dev/null 2>&1 \
   || log "UYARI: ui-ux-pro-mcp kurulamadı"
 
+# 3b) Perplexity MCP (resmi sunucu, github.com/perplexityai/modelcontextprotocol;
+# kullanıcı isteği 2026-10-12). Web araması/araştırma araçları: perplexity_ask,
+# _search, _reason, _research. Anahtar PERPLEXITY_API_KEY bulut ortam
+# değişkeninden okunur; repoya ve kayda YAZILMAZ (repo herkese açık). Sunucu
+# anahtarsız açılışta çıkıyor (exit 1), bu yüzden anahtar yoksa kayıt atlanır
+# ki her oturumda "failed to connect" gürültüsü olmasın. Ağ politikası
+# api.perplexity.ai'ye izin vermezse araçlar listelenir ama sorgu 403 alır.
+command -v perplexity-mcp >/dev/null 2>&1 \
+  || npm i -g "@perplexity-ai/mcp-server@${PPLX_VER}" >/dev/null 2>&1 \
+  || log "UYARI: Perplexity MCP kurulamadı"
+
 # 4) Kayıt — yalnız bu proje yolu için, local kapsam.
 if command -v claude >/dev/null 2>&1; then
   ( cd "$REPO" 2>/dev/null || cd /
-    for s in codebase-memory-mcp dart ui-ux-pro-mcp; do
+    for s in codebase-memory-mcp dart ui-ux-pro-mcp perplexity; do
       claude mcp remove -s local "$s" >/dev/null 2>&1 || true
     done
     claude mcp add -s local codebase-memory-mcp -- /opt/cbm/codebase-memory-mcp >/dev/null
     claude mcp add -s local dart -- /opt/flutter/bin/dart mcp-server --force-roots-fallback >/dev/null
     claude mcp add -s local ui-ux-pro-mcp -- "$(command -v ui-ux-pro-mcp || echo ui-ux-pro-mcp)" >/dev/null
+    # Anahtar `-e` ile kayda gömülmez; sunucu oturumun ortamından okur.
+    if [ -n "${PERPLEXITY_API_KEY:-}" ] && command -v perplexity-mcp >/dev/null 2>&1; then
+      claude mcp add -s local perplexity -- "$(command -v perplexity-mcp)" >/dev/null \
+        && log "Perplexity MCP kaydedildi"
+    else
+      log "Perplexity MCP atlandı (PERPLEXITY_API_KEY ortamda yok)"
+    fi
   ) && log "MCP sunucuları kaydedildi" || log "UYARI: MCP kaydı başarısız"
 else
   log "UYARI: claude CLI yok, MCP kaydı atlandı"
