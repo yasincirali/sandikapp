@@ -9,7 +9,7 @@ import 'package:portfoy_takip/screens/zirve_portfoyler_screen.dart';
 import 'package:portfoy_takip/services/leaderboard_service.dart';
 import 'package:portfoy_takip/services/zirve_kiyas.dart';
 
-/// Zirve "Neden henüz havuzda değilsin?" kartı (0143, kullanıcı bulgusu
+/// Zirve "Neden henüz havuzda değilsin?" kartı (0144, kullanıcı bulgusu
 /// 2026-10-12): eski tarihli varlıkla açılan yeni hesap 7 gün şartına
 /// takılıyordu ve ekran bunu söylemiyordu.
 ///

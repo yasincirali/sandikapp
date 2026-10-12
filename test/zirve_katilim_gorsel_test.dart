@@ -19,7 +19,7 @@ import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/zirve_kiyas.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 
-/// Zirve "Neden henüz havuzda değilsin?" kartı (0143) — önce/sonra görseli.
+/// Zirve "Neden henüz havuzda değilsin?" kartı (0144) — önce/sonra görseli.
 /// `build/gorsel/` altına PNG; assert etmez, `gorsel` etiketi CI'da atlanır.
 ///   GORSEL_AD=sonra flutter test --run-skipped test/zirve_katilim_gorsel_test.dart
 

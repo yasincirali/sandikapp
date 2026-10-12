@@ -666,9 +666,9 @@ class LeaderboardService {
     }
   }
 
-  /// Çağıranın Zirve şartlarının dolacağı anlar (0143). Hata ya da eski
+  /// Çağıranın Zirve şartlarının dolacağı anlar (0144). Hata ya da eski
   /// sunucu (fonksiyon yok) → null; ekran kartı göstermez, eski hâl kalır.
-  /// Rapor edilmez: 0143 dağıtılmadan önce her açılışta düşerdi.
+  /// Rapor edilmez: 0144 dağıtılmadan önce her açılışta düşerdi.
   Future<ZirveKatilimDurumu?> fetchZirveKatilimDurumu(
       {required int periodDays}) async {
     try {

@@ -84,7 +84,7 @@ class ZirveIsaret {
 }
 
 /// Eksen aralığı: sıfır daima içinde, iki uçta pay var.
-/// Çağıranın Zirve şartlarının dolacağı anlar (0143 `zirve_katilim_durumum`).
+/// Çağıranın Zirve şartlarının dolacağı anlar (0144 `zirve_katilim_durumum`).
 /// Tarihler UTC; null → o şartın verisi yok (ör. hiç varlık yok).
 typedef ZirveKatilimDurumu = ({
   DateTime? hesapHazir,
@@ -442,7 +442,7 @@ abstract final class ZirveKiyas {
     return katlar;
   }
 
-  // ── Katılım şartları (0143, kullanıcı bulgusu 2026-10-12) ─────────────────
+  // ── Katılım şartları (0144, kullanıcı bulgusu 2026-10-12) ─────────────────
   //
   // yasin eski tarihli varlıklarla üç hesap açtı; havuz artmadı çünkü hesap
   // 7 günlük değildi ve ekran bu şartı hiç söylemiyordu. Havuzda olmayan

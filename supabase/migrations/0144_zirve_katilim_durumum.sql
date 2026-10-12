@@ -1,4 +1,4 @@
--- 0143 — Zirve: "neden henüz havuzda değilim?" (kullanıcı bulgusu 2026-10-12)
+-- 0144 — Zirve: "neden henüz havuzda değilim?" (kullanıcı bulgusu 2026-10-12)
 --
 -- yasin eski tarihli varlıklarla üç hesap açtı, rıza verdirdi; "Havuz N/8"
 -- artmadı. Neden: `zirve_havuzu_uygun` (0091) hesabın 7 günlük olmasını
@@ -60,15 +60,15 @@ grant execute on function public.zirve_katilim_durumum(integer) to authenticated
 do $$
 begin
   if not has_function_privilege('authenticated', 'public.zirve_katilim_durumum(integer)', 'execute') then
-    raise exception '0143: zirve_katilim_durumum authenticated EXECUTE eksik';
+    raise exception '0144: zirve_katilim_durumum authenticated EXECUTE eksik';
   end if;
   if has_function_privilege('anon', 'public.zirve_katilim_durumum(integer)', 'execute') then
-    raise exception '0143: zirve_katilim_durumum anon tarafindan cagrilabilir olmamali';
+    raise exception '0144: zirve_katilim_durumum anon tarafindan cagrilabilir olmamali';
   end if;
   if not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
                   where n.nspname = 'public' and p.proname = 'zirve_katilim_durumum'
                     and p.prosecdef
                     and array_to_string(p.proconfig, ',') like '%search_path%') then
-    raise exception '0143: zirve_katilim_durumum security definer + search_path olmali';
+    raise exception '0144: zirve_katilim_durumum security definer + search_path olmali';
   end if;
 end $$;

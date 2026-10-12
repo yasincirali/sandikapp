@@ -77,7 +77,7 @@ class ZirveGovdesi extends ConsumerStatefulWidget {
   final Future<bool?> Function()? rizaYukleyici;
 
   /// Test için katılım şartları; null → `LeaderboardService
-  /// .fetchZirveKatilimDurumu` (0143).
+  /// .fetchZirveKatilimDurumu` (0144).
   final Future<ZirveKatilimDurumu?> Function(int gun)? durumYukleyici;
 
   @override
@@ -99,7 +99,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
   late Future<List<TopGainerAllocation>> _satirlar = _cek();
   late Future<int?> _havuz = _havuzCek();
 
-  /// Havuzda değilsen hangi şartın eksik olduğu (0143). null → kart yok.
+  /// Havuzda değilsen hangi şartın eksik olduğu (0144). null → kart yok.
   late Future<ZirveKatilimDurumu?> _durum = _durumCek();
 
   Future<ZirveKatilimDurumu?> _durumCek() =>
@@ -975,7 +975,7 @@ class _BosDurum extends StatelessWidget {
   }
 }
 
-/// Havuzda değilsen: hangi şart eksik, ne zaman dolar (0143, kullanıcı
+/// Havuzda değilsen: hangi şart eksik, ne zaman dolar (0144, kullanıcı
 /// bulgusu 2026-10-12). Havuzdaysan, sunucu eskiyse ya da okunamazsa hiç
 /// çizilmez — eski ekran birebir kalır. Dokunulmaz, salt bilgi; tamam olan
 /// şart ikon ŞEKLİYLE de ayrılır (yalnız renk değil) ve ekran okuyucuya
