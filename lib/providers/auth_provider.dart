@@ -209,7 +209,13 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
 
   /// Ortaklık değişimi nadir bir olaydır; 8 saniye gereksiz sıktı.
   /// 30 saniyede saatlik istek sayısı 900'den 240'a iner.
-  static const _pollInterval = Duration(seconds: 30);
+  ///
+  /// 60 saniye (kaynak kullanımı denetimi, 2026-10-12): ön planda saatte
+  /// 120 sorgu daha az. Ortaklık kurma/kaldırma kullanıcının kendi
+  /// eylemiyle olur ve o yol listeyi hemen tazeler; yoklama yalnızca KARŞI
+  /// tarafın değişikliğini yakalar, onun için bir dakika yeterli. Öne
+  /// dönüşte ayrıca hemen bir tur atılır.
+  static const _pollInterval = Duration(seconds: 60);
 
   /// Son `_loadPartners` BAŞLANGICI — öne dönüş tazelemesini ayıklamak için.
   ///

@@ -427,6 +427,45 @@ class MumVerisi {
   @visibleForTesting
   void onbellegiTemizle() => _onbellek.clear();
 
+  /// Bellekte tutulan en çok kayıt.
+  ///
+  /// ## Neden sınır var (kaynak kullanımı denetimi, 2026-10-12)
+  /// Anahtar pencere sonunu dakikaya yuvarlı taşır ve yükleyici gün içi
+  /// aralıkta her dakika yeni bir son ister (`MumYukleyici`). Süresi dolan
+  /// kayıt okunmuyordu ama SİLİNMİYORDU da: varlık ekranı seans boyunca açık
+  /// kalınca her dakika ~1.000 mumluk bir liste birikiyordu. Test
+  /// ortamında 480 dakikalık seans +48 MB ölçüldü (kontrol +2 MB).
+  ///
+  /// Süresi dolan kayıt zaten hiç sunulmaz ([_omur]); atılması ekrandaki
+  /// rakamı değiştirmez. Sınır yalnızca aynı anda açık çok sayıda grafiğe
+  /// karşı tavandır: dört yüzey (varlık, arama, karşılaştır, takip) × birkaç
+  /// aralık rahatça sığar. Taşan en eski kayıt yeniden istenirse ağdan gelir.
+  @visibleForTesting
+  static const azamiKayit = 24;
+
+  /// Bellekteki kayıt sayısı — test için.
+  @visibleForTesting
+  int get kayitSayisi => _onbellek.length;
+
+  /// Bellek baskısında (sistem uyarısı) bütün mum önbelleğini bırakır.
+  /// Ekrandaki grafik kendi kopyasını tutar; sonraki istek ağdan gelir.
+  void bellegiBirak() => _onbellek.clear();
+
+  /// Süresi dolanları atar, sonra en eskiden başlayarak [azamiKayit]'a iner.
+  /// Map ekleme sırasını korur; okunan kayıt yeniden eklendiği için sıra
+  /// "en son kullanılan sonda"dır.
+  void _buda(DateTime simdi) {
+    _onbellek.removeWhere(
+        (_, k) => simdi.difference(k.zaman) >= _enUzunOmur);
+    while (_onbellek.length > azamiKayit) {
+      _onbellek.remove(_onbellek.keys.first);
+    }
+  }
+
+  /// [_omur]'un alabileceği en uzun değer — bundan eski kayıt hiçbir
+  /// aralıkta sunulmaz.
+  static const _enUzunOmur = Duration(minutes: 10);
+
   /// Test dikişi: ağ yerine sahte çekim (`HistoryService.seriCekici` gibi).
   /// Dönen barlar ham kabul edilir; hiza yine uygulanır.
   @visibleForTesting
@@ -457,6 +496,9 @@ class MumVerisi {
     final Future<List<OhlcBar>> ham;
     if (eski != null && simdi.difference(eski.zaman) < _omur(aralik)) {
       ham = eski.sonuc;
+      // Son kullanılan sona: sınır taşınca önce kullanılmayan atılsın.
+      _onbellek.remove(anahtar);
+      _onbellek[anahtar] = eski;
     } else {
       final cek = testCekici;
       ham = (cek != null
@@ -467,9 +509,14 @@ class MumVerisi {
         return const <OhlcBar>[];
       });
       _onbellek[anahtar] = (zaman: simdi, sonuc: ham);
+      _buda(simdi);
     }
     return ham.then((barlar) {
-      if (barlar.isEmpty) _onbellek.remove(anahtar); // boş önbelleğe girmez
+      // Boş önbelleğe girmez. Yalnız BU çekimin kaydı silinir: arada aynı
+      // anahtara yeni bir çekim yazıldıysa ona dokunulmaz.
+      if (barlar.isEmpty && identical(_onbellek[anahtar]?.sonuc, ham)) {
+        _onbellek.remove(anahtar);
+      }
       return canliyaHizala(
         barlar,
         canli: canliBirim,
