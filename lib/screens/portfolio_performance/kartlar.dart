@@ -44,8 +44,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // kaldıysa fiyat bilinmiyordur (uç ezilmez). Özet'teki
     // `piyasaEtkisi` ile aynı ayrım (2026-09-24).
     final canliUc = (currentTotal > 0 ||
-            DailySummary.acikPozisyonYok(
-                [for (final l in ownerLots) ...l]))
+            DailySummary.acikPozisyonYok([for (final l in ownerLots) ...l]))
         ? currentTotal
         : null;
 
@@ -68,8 +67,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // Sadece ilk alım, seçili periyot başlangıcından SONRAYSA
         // startDate'i geç kaydır. Aksi halde tam periyodu göster.
         if (firstBuy.isAfter(startDate)) {
-          effectiveStart =
-              dayKey(firstBuy);
+          effectiveStart = dayKey(firstBuy);
         }
       }
     }
@@ -338,213 +336,225 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // `period_summary_enabled` kapalıyken) aşağıdaki eski düzen birebir
     // çizilir.
     if (_tekAkis) {
-      return RefreshIndicator.adaptive(
-        color: context.c.amberText,
-        onRefresh: () async {
-          await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
-          if (mounted) _retryChartData();
-        },
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          controller: _scrollController,
-          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
-              SandikSpace.screenH(context), SandikSpace.smd),
-          children: [
-            _buildTekSatirKontroller(activePartners),
-            if (_simulate && !isIntraday) ...[
-              const SizedBox(height: SandikSpace.xs),
-              _buildBugunkuPortfoyRozeti(),
-            ],
-            const SizedBox(height: SandikSpace.md),
-            yuklemeCubugu(),
-            AnimatedOpacity(
-              opacity: stale ? 0.45 : 1.0,
-              duration: SandikMotion.stateOf(context),
-              curve: SandikMotion.enter,
-              child: _buildPeriodChangeCard(
-                segments,
-                cizimBaslangici,
-                endDate,
-                targetAssets,
-                intraday: isIntraday,
-                tekAkis: true,
-              ),
+      return SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
+            color: context.c.amberText,
+            edgeOffset: ustPay,
+            onRefresh: () async {
+              await ref
+                  .read(portfolioProvider.notifier)
+                  .refreshPrices(force: true);
+              if (mounted) _retryChartData();
+            },
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              controller: _scrollController,
+              // Cam başlık açıkken (`goz_alici`) içerik başlığın altında başlar.
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), ustPay,
+                  SandikSpace.screenH(context), SandikSpace.smd),
+              children: [
+                _buildTekSatirKontroller(activePartners),
+                if (_simulate && !isIntraday) ...[
+                  const SizedBox(height: SandikSpace.xs),
+                  _buildBugunkuPortfoyRozeti(),
+                ],
+                const SizedBox(height: SandikSpace.md),
+                yuklemeCubugu(),
+                AnimatedOpacity(
+                  opacity: stale ? 0.45 : 1.0,
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.enter,
+                  child: _buildPeriodChangeCard(
+                    segments,
+                    cizimBaslangici,
+                    endDate,
+                    targetAssets,
+                    intraday: isIntraday,
+                    tekAkis: true,
+                  ),
+                ),
+                const SizedBox(height: SandikSpace.sm),
+                grafikAlani(),
+                if (isIntraday &&
+                    breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
+                  const SizedBox(height: SandikSpace.sm),
+                  _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
+                ],
+                const SizedBox(height: SandikSpace.lg),
+                ozetGovdesi(tekAkis: true),
+                ...zirveBlogu(),
+                const SizedBox(height: SandikSpace.smd),
+                const DisclaimerWidget(),
+                const SizedBox(height: SandikSpace.md),
+              ],
             ),
-            const SizedBox(height: SandikSpace.sm),
-            grafikAlani(),
-            if (isIntraday &&
-                breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
-              const SizedBox(height: SandikSpace.sm),
-              _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
-            ],
-            const SizedBox(height: SandikSpace.lg),
-            ozetGovdesi(tekAkis: true),
-            ...zirveBlogu(),
-            const SizedBox(height: SandikSpace.smd),
-            const DisclaimerWidget(),
-            const SizedBox(height: SandikSpace.md),
-          ],
-        ),
-      );
+          ));
     }
 
-    return RefreshIndicator.adaptive(
-      color: context.c.amberText,
-      onRefresh: () async {
-        // Kullanıcı yenilemesi — fiyat önbelleği atlanır, gün içi future sıfırlanır.
-        await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
-        if (mounted) _retryChartData();
-      },
-      child: ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      controller: _scrollController,
-      // Yan dolgu başlık çubuğuyla AYNI (`screenH`: 16, dar ekranda 12).
-      // 2026-09-15: 20'den indi — kullanıcı bildirimi, kart kenarındaki
-      // boşluk "sağdan ve soldan azaltılmalı"; başlıkla kart kenarı artık
-      // aynı hizada, grafik 8pt daha geniş.
-      // Üst dolgu 0: içerik başlık bloğunun hemen altında başlar — dört
-      // sekmede aynı çizgi (kullanıcı bildirimi 2026-09-28: "Performans
-      // biraz daha boşluk bırakıp başlıyor"). Portföy'de ilk kontrol
-      // başlığın 4pt alt dolgusundan hemen sonra; burada 12 daha vardı.
-      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
-          SandikSpace.screenH(context), SandikSpace.smd),
-      children: [
-        // ── Kontroller: İKİ satır (+ ortak varsa kişi satırı) ────────────
-        //
-        // Kim: ortak varsa en üstte, tek dokunuşluk segmentler — ekranın
-        // öznesi, sık değiştirilir (gerekçe `OrtakSecici`). Yüzey
-        // anahtarı kapsam çipiyle AYNI satırda: dönem ikisi için de geçerli,
-        // yüzey ise hangi sunumu gördüğünü belirler. Seyrek kullanılan ikili
-        // (hangi tür / hangi mod) çipin arkasında. Gerekçe `_buildScopeBar`.
-        if (activePartners.isNotEmpty) ...[
-          OrtakSecici(
-            partners: activePartners,
-            selectedId: _view,
-            // Kapsam değişiminde gün içi TOHUMU da at.
-            //
-            // **Neden (kullanıcı bildirimi 2026-09-22):** "diğer zaman
-            // aralıklarındaki gibi çalışmalı, sadece günlükte hatalı
-            // gösteriliyor — yanlış dolup sonradan düzeltiliyor."
-            //
-            // Bu ipucu belirleyiciydi: 1H/1A/6A/1Y doğru çalışıyor çünkü o
-            // yol kapsam değişince YENİ BİR CONTROLLER kuruyor
-            // (`_ensureController` anahtarı `_view` taşır). Yeni controller
-            // `_stale = true` ile başlar ve `breakdown`'ı BOŞ döndürür —
-            // tohumda dağılım yoktur. Özet böylece `hasData` kapısına
-            // takılıp iskelete düşer.
-            //
-            // Gün içi yolunda tohum (`_lastIntradayData`) bir STATE ALANI:
-            // controller gibi atılmıyor, ekranın ömrü boyunca yaşıyordu.
-            // Kapsam değişince önceki defterin verisi bir kare boyunca
-            // kullanılabiliyordu. Burada atmak, iki yolu aynı davranışa
-            // getirir.
-            onChanged: (v) => _guncelle(() {
-              _view = v;
-              _gunIciTohumuAt();
-            }),
+    return SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
+          color: context.c.amberText,
+          edgeOffset: ustPay,
+          onRefresh: () async {
+            // Kullanıcı yenilemesi — fiyat önbelleği atlanır, gün içi future sıfırlanır.
+            await ref
+                .read(portfolioProvider.notifier)
+                .refreshPrices(force: true);
+            if (mounted) _retryChartData();
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            controller: _scrollController,
+            // Yan dolgu başlık çubuğuyla AYNI (`screenH`: 16, dar ekranda 12).
+            // 2026-09-15: 20'den indi — kullanıcı bildirimi, kart kenarındaki
+            // boşluk "sağdan ve soldan azaltılmalı"; başlıkla kart kenarı artık
+            // aynı hizada, grafik 8pt daha geniş.
+            // Üst dolgu 0: içerik başlık bloğunun hemen altında başlar — dört
+            // sekmede aynı çizgi (kullanıcı bildirimi 2026-09-28: "Performans
+            // biraz daha boşluk bırakıp başlıyor"). Portföy'de ilk kontrol
+            // başlığın 4pt alt dolgusundan hemen sonra; burada 12 daha vardı.
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), ustPay,
+                SandikSpace.screenH(context), SandikSpace.smd),
+            children: [
+              // ── Kontroller: İKİ satır (+ ortak varsa kişi satırı) ────────────
+              //
+              // Kim: ortak varsa en üstte, tek dokunuşluk segmentler — ekranın
+              // öznesi, sık değiştirilir (gerekçe `OrtakSecici`). Yüzey
+              // anahtarı kapsam çipiyle AYNI satırda: dönem ikisi için de geçerli,
+              // yüzey ise hangi sunumu gördüğünü belirler. Seyrek kullanılan ikili
+              // (hangi tür / hangi mod) çipin arkasında. Gerekçe `_buildScopeBar`.
+              if (activePartners.isNotEmpty) ...[
+                OrtakSecici(
+                  partners: activePartners,
+                  selectedId: _view,
+                  // Kapsam değişiminde gün içi TOHUMU da at.
+                  //
+                  // **Neden (kullanıcı bildirimi 2026-09-22):** "diğer zaman
+                  // aralıklarındaki gibi çalışmalı, sadece günlükte hatalı
+                  // gösteriliyor — yanlış dolup sonradan düzeltiliyor."
+                  //
+                  // Bu ipucu belirleyiciydi: 1H/1A/6A/1Y doğru çalışıyor çünkü o
+                  // yol kapsam değişince YENİ BİR CONTROLLER kuruyor
+                  // (`_ensureController` anahtarı `_view` taşır). Yeni controller
+                  // `_stale = true` ile başlar ve `breakdown`'ı BOŞ döndürür —
+                  // tohumda dağılım yoktur. Özet böylece `hasData` kapısına
+                  // takılıp iskelete düşer.
+                  //
+                  // Gün içi yolunda tohum (`_lastIntradayData`) bir STATE ALANI:
+                  // controller gibi atılmıyor, ekranın ömrü boyunca yaşıyordu.
+                  // Kapsam değişince önceki defterin verisi bir kare boyunca
+                  // kullanılabiliyordu. Burada atmak, iki yolu aynı davranışa
+                  // getirir.
+                  onChanged: (v) => _guncelle(() {
+                    _view = v;
+                    _gunIciTohumuAt();
+                  }),
+                ),
+                const SizedBox(height: SandikSpace.sm),
+              ],
+              // Çoklu portföy (0133): "Ben"in altında portföy seçici. Bayrak
+              // kapalıyken sıfır boy; tohum `build`'deki dinleyiciyle atılır.
+              if (_view == '')
+                const PortfoySecici(
+                    bosluk: EdgeInsets.only(bottom: SandikSpace.sm)),
+              _buildScopeBar(),
+              _buildScopePanel(),
+              // Mod Ayarlar'da (`performans_ayar_sade`, 2026-10-04) olduğu için
+              // etkin olduğu ekranda rozetle görünür kalır. Gün içinde
+              // simülasyonun karşılığı yok — rozet de çizilmez.
+              if (_simulate && !isIntraday) ...[
+                const SizedBox(height: SandikSpace.xs),
+                _buildBugunkuPortfoyRozeti(),
+              ],
+              const SizedBox(height: SandikSpace.sm),
+              // Dönem seçici grafiğin ÜSTÜNDE — üç grafik ekranında da (kullanıcı
+              // kararı 2026-09-28, aynı gün içinde iki adım): önce "üç ekranda
+              // aynı yerde olsun" denince seçici grafiğin altına indirilmişti;
+              // sonra "üstte olsun: GÜNLÜK'ten öteki dönemlere geçerken grafiğin
+              // boyu değişiyor, altındaki seçici zıplıyor, profesyonel durmuyor".
+              // Üstteki seçici grafiğin altındaki hiçbir değişimden etkilenmez.
+              // Varlık sayfası ve varlık detayı da aynı sırayı kullanır:
+              // fiyat → seçici → grafik. Dönem değişince yalnızca grafik ve ona
+              // bağlı kartlar yenilenir (bayat seri soluk kalır, iskelet yok).
+              _buildPeriodRow(),
+              const SizedBox(height: SandikSpace.md),
+              // ── ÖZET sekmesi ──────────────────────────────────────────────────
+              //
+              // Erken `return` YOK: filtre denetimleri (ortak sekmeleri, tür
+              // çipleri, dönem seçici) ağaçta KALMALI, yoksa kullanıcı Özet'e
+              // geçtiğinde dönemini değiştiremez hale gelir. Aynı gerekçe
+              // `_buildChartWithData`'nın koşulsuz çağrılmasının da sebebi.
+              if (_ozetSekmesi)
+                ...<Widget>[
+                  // İskelet kapısı ve kanonik seri: gerekçe `ozetGovdesi` notunda.
+                  ozetGovdesi(),
+                  const SizedBox(height: 12),
+                  const DisclaimerWidget(),
+                  const SizedBox(height: 16),
+                ].map((w) => _SekmeSolmasi(
+                    ozet: true, taze: _sekmeYeniDegisti, child: w))
+              else
+                ...<Widget>[
+                  // Yükleme çubuğu — gerekçe `yuklemeCubugu` notunda.
+                  yuklemeCubugu(),
+                  // ── Akıcı geçiş tasarımı ────────────────────────────────────────
+                  // `LineChart` bir ImplicitlyAnimatedWidget: yeni `LineChartData`
+                  // verildiğinde eski veriden yenisine kendi lerp'liyor (150ms).
+                  // Ama bu ancak widget AĞAÇTA KALIRSA çalışır. Grafiği spinner ile
+                  // değiştirmek (veya sarmalayıcı yapıyı değiştirmek) State'i yok
+                  // eder, tween sıfırlanır ve geçiş "0'dan yeniden çizim" gibi
+                  // görünür. Bu yüzden:
+                  //   • Grafik konteyneri HER ZAMAN aynı konumda kalır.
+                  //   • Özet kartı bayatken gizlenmez — yerini korusun diye
+                  //     opaklığı düşer (layout zıplaması da olmaz).
+                  //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
+                  AnimatedOpacity(
+                    opacity: stale ? 0.45 : 1.0,
+                    duration: SandikMotion.stateOf(context),
+                    curve: SandikMotion.enter,
+                    child: _buildPeriodChangeCard(
+                      segments,
+                      // Segmentlerle AYNI başlangıç: X ekseni bu tarihe göre
+                      // yorumlanıyor, ayrışırsa kart yanlış günü anlatır.
+                      cizimBaslangici,
+                      endDate,
+                      targetAssets,
+                      intraday: isIntraday,
+                    ),
+                  ),
+                  const SizedBox(height: SandikSpace.sm),
+                  // Grafik alanı (boş / hata / iskelet / genç / grafik): `grafikAlani`.
+                  grafikAlani(),
+                  // Gün içi verisi HİÇ alınamayan türler için açık uyarı.
+                  //
+                  // Bu türler grafikte son bilinen fiyatla sabit çizilir; uyarı
+                  // olmadan kullanıcı düz çizgiyi "piyasa durgun" diye okur ve
+                  // uygulamanın bozuk olup olmadığını anlayamaz ("altın değeri mi
+                  // alınamıyor acaba" — 2026-09-07). Fon/mevduat gibi gün içi fiyatı
+                  // ZATEN olmayan türler bu listeye girmez, yoksa uyarı kalıcı
+                  // gürültüye dönerdi.
+                  if (isIntraday &&
+                      breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
+                    const SizedBox(height: SandikSpace.sm),
+                    _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
+                  ],
+                  const SizedBox(height: 24),
+                  // Tür dökümü — gerekçe `turDokumu` notunda.
+                  if (turDokumu() case final tur?) tur,
+                  // Zirvedeki portföyler — gerekçe `zirveBlogu` notunda.
+                  ...zirveBlogu(),
+                  // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
+                  // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
+                  // ekranında gösterilir. Bu panel senkron çalıştığı için gerçek fiyat
+                  // geçmişi çekemiyordu; uydurma seriye düşmesi engellendikten sonra
+                  // (bkz. `analyze(..., allowSimulation)`) zaten kalıcı olarak
+                  // "sinyal yok" gösteriyordu — yer kaplayan ölü bir yüzeydi.
+                  const SizedBox(height: 12),
+                  const DisclaimerWidget(),
+                  const SizedBox(height: 16),
+                ].map((w) => _SekmeSolmasi(
+                    ozet: false, taze: _sekmeYeniDegisti, child: w)),
+            ],
           ),
-          const SizedBox(height: SandikSpace.sm),
-        ],
-        // Çoklu portföy (0133): "Ben"in altında portföy seçici. Bayrak
-        // kapalıyken sıfır boy; tohum `build`'deki dinleyiciyle atılır.
-        if (_view == '')
-          const PortfoySecici(
-              bosluk: EdgeInsets.only(bottom: SandikSpace.sm)),
-        _buildScopeBar(),
-        _buildScopePanel(),
-        // Mod Ayarlar'da (`performans_ayar_sade`, 2026-10-04) olduğu için
-        // etkin olduğu ekranda rozetle görünür kalır. Gün içinde
-        // simülasyonun karşılığı yok — rozet de çizilmez.
-        if (_simulate && !isIntraday) ...[
-          const SizedBox(height: SandikSpace.xs),
-          _buildBugunkuPortfoyRozeti(),
-        ],
-        const SizedBox(height: SandikSpace.sm),
-        // Dönem seçici grafiğin ÜSTÜNDE — üç grafik ekranında da (kullanıcı
-        // kararı 2026-09-28, aynı gün içinde iki adım): önce "üç ekranda
-        // aynı yerde olsun" denince seçici grafiğin altına indirilmişti;
-        // sonra "üstte olsun: GÜNLÜK'ten öteki dönemlere geçerken grafiğin
-        // boyu değişiyor, altındaki seçici zıplıyor, profesyonel durmuyor".
-        // Üstteki seçici grafiğin altındaki hiçbir değişimden etkilenmez.
-        // Varlık sayfası ve varlık detayı da aynı sırayı kullanır:
-        // fiyat → seçici → grafik. Dönem değişince yalnızca grafik ve ona
-        // bağlı kartlar yenilenir (bayat seri soluk kalır, iskelet yok).
-        _buildPeriodRow(),
-        const SizedBox(height: SandikSpace.md),
-        // ── ÖZET sekmesi ──────────────────────────────────────────────────
-        //
-        // Erken `return` YOK: filtre denetimleri (ortak sekmeleri, tür
-        // çipleri, dönem seçici) ağaçta KALMALI, yoksa kullanıcı Özet'e
-        // geçtiğinde dönemini değiştiremez hale gelir. Aynı gerekçe
-        // `_buildChartWithData`'nın koşulsuz çağrılmasının da sebebi.
-        if (_ozetSekmesi) ...<Widget>[
-          // İskelet kapısı ve kanonik seri: gerekçe `ozetGovdesi` notunda.
-          ozetGovdesi(),
-          const SizedBox(height: 12),
-          const DisclaimerWidget(),
-          const SizedBox(height: 16),
-        ].map((w) => _SekmeSolmasi(ozet: true, taze: _sekmeYeniDegisti, child: w))
-        else ...<Widget>[
-          // Yükleme çubuğu — gerekçe `yuklemeCubugu` notunda.
-          yuklemeCubugu(),
-          // ── Akıcı geçiş tasarımı ────────────────────────────────────────
-          // `LineChart` bir ImplicitlyAnimatedWidget: yeni `LineChartData`
-          // verildiğinde eski veriden yenisine kendi lerp'liyor (150ms).
-          // Ama bu ancak widget AĞAÇTA KALIRSA çalışır. Grafiği spinner ile
-          // değiştirmek (veya sarmalayıcı yapıyı değiştirmek) State'i yok
-          // eder, tween sıfırlanır ve geçiş "0'dan yeniden çizim" gibi
-          // görünür. Bu yüzden:
-          //   • Grafik konteyneri HER ZAMAN aynı konumda kalır.
-          //   • Özet kartı bayatken gizlenmez — yerini korusun diye
-          //     opaklığı düşer (layout zıplaması da olmaz).
-          //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
-          AnimatedOpacity(
-            opacity: stale ? 0.45 : 1.0,
-            duration: SandikMotion.stateOf(context),
-            curve: SandikMotion.enter,
-            child: _buildPeriodChangeCard(
-              segments,
-              // Segmentlerle AYNI başlangıç: X ekseni bu tarihe göre
-              // yorumlanıyor, ayrışırsa kart yanlış günü anlatır.
-              cizimBaslangici,
-              endDate,
-              targetAssets,
-              intraday: isIntraday,
-            ),
-          ),
-          const SizedBox(height: SandikSpace.sm),
-          // Grafik alanı (boş / hata / iskelet / genç / grafik): `grafikAlani`.
-          grafikAlani(),
-          // Gün içi verisi HİÇ alınamayan türler için açık uyarı.
-          //
-          // Bu türler grafikte son bilinen fiyatla sabit çizilir; uyarı
-          // olmadan kullanıcı düz çizgiyi "piyasa durgun" diye okur ve
-          // uygulamanın bozuk olup olmadığını anlayamaz ("altın değeri mi
-          // alınamıyor acaba" — 2026-09-07). Fon/mevduat gibi gün içi fiyatı
-          // ZATEN olmayan türler bu listeye girmez, yoksa uyarı kalıcı
-          // gürültüye dönerdi.
-          if (isIntraday && breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
-            const SizedBox(height: SandikSpace.sm),
-            _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
-          ],
-          const SizedBox(height: 24),
-          // Tür dökümü — gerekçe `turDokumu` notunda.
-          if (turDokumu() case final tur?) tur,
-          // Zirvedeki portföyler — gerekçe `zirveBlogu` notunda.
-          ...zirveBlogu(),
-          // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
-          // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
-          // ekranında gösterilir. Bu panel senkron çalıştığı için gerçek fiyat
-          // geçmişi çekemiyordu; uydurma seriye düşmesi engellendikten sonra
-          // (bkz. `analyze(..., allowSimulation)`) zaten kalıcı olarak
-          // "sinyal yok" gösteriyordu — yer kaplayan ölü bir yüzeydi.
-          const SizedBox(height: 12),
-          const DisclaimerWidget(),
-          const SizedBox(height: 16),
-        ].map((w) => _SekmeSolmasi(ozet: false, taze: _sekmeYeniDegisti, child: w)),
-      ],
-    ),
-    );
+        ));
   }
 
   Widget _buildPeriodChangeCard(
@@ -562,8 +572,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // dönem penceresinden geniş olabildiği için taban geriye kayıyordu:
     // ölçüldü ₺2.258.332 yerine ₺2.354.650 olmalıydı (₺96.318 fark,
     // kullanıcı bildirimi 2026-09-23).
-    final ep =
-        _periodEndpoints(segments, start: start, intraday: intraday);
+    final ep = _periodEndpoints(segments, start: start, intraday: intraday);
     if (ep == null) return const SizedBox.shrink();
 
     final firstY = ep.first;
@@ -843,8 +852,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 Text(
                   aralik,
                   maxLines: 1,
-                  style:
-                      context.t.bodySmall?.copyWith(color: context.c.text36),
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ],
             ],
@@ -910,8 +918,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               const SizedBox(height: SandikSpace.sm),
               Text(
                 cumle,
-                style:
-                    context.t.bodySmall?.copyWith(color: context.c.text58),
+                style: context.t.bodySmall?.copyWith(color: context.c.text58),
               ),
             ],
             if (temettu.abs() > 0.5) ...[
@@ -1052,8 +1059,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // Sağ uç CANLI kapsam toplamı — Grafik kartının ucuyla aynı sayı
     // (`currentTotal`); bkz. `compute` [canliSon]. Kıyas kartı da AYNI ucu
     // alır, yoksa "senin portföyün" satırı Özet'in yüzdesiyle ayrışır.
-    final canliSon =
-        pState == null ? null : DailySummary.kapsamToplami(pState, targetAssets);
+    final canliSon = pState == null
+        ? null
+        : DailySummary.kapsamToplami(pState, targetAssets);
 
     // Pozisyon → varlık adı: sembolü anlamsız pozisyon (mevduat: sözleşme
     // UUID'si) en iyi/en zayıf satırında adıyla yazılır (`pozisyonEtiketi`).
@@ -1072,9 +1080,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           : DailySummary.kapsamDagilimi(pState, targetAssets),
       // `_positionLabel` ham `positionKey`'i insan-okunur hale getirir;
       // yoksa ekranda "altin|sub:çeyrek|TRY" görünürdü.
-      etiket: (k) =>
-          _positionLabel(k, breakdown.positionType[k] ?? AssetType.diger,
-              context.l10n, ad: pozisyonAdi[k]),
+      etiket: (k) => _positionLabel(
+          k, breakdown.positionType[k] ?? AssetType.diger, context.l10n,
+          ad: pozisyonAdi[k]),
     );
 
     // Tür dağılımı ve "en sabırlı" AÇIK pozisyonlardan okunur.
@@ -1131,8 +1139,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       bellek: _ozetBellek,
       bellekAnahtari: _ozetYanAnahtari(period, targetAssets),
       iskelet: _ozetIskeleti(context),
-      kiyasKarti:
-          kiyasGirdisi == null ? null : KiyasKarti(girdi: kiyasGirdisi),
+      kiyasKarti: kiyasGirdisi == null ? null : KiyasKarti(girdi: kiyasGirdisi),
       // Karakter/sabır yalnızca 1Y'de gösterilir; başka dönemde
       // hesaplanmış olsa da view onları çizmez.
       karakter: period == SummaryPeriod.birYil

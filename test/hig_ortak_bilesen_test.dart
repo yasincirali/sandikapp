@@ -1,11 +1,15 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/main.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
+import 'package:portfoy_takip/widgets/pozisyon_islemleri.dart';
+import 'package:portfoy_takip/widgets/sandik_baglam_menusu.dart';
 import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
@@ -119,6 +123,41 @@ void main() {
                   kapanistan: false,
                 ),
                 const SizedBox(height: SandikSpace.md),
+                // Varlık sayfasının Al · Sat · Temettü çubuğu: şerit ve
+                // (bayrak `goz_alici`) yüzen cam kapsül.
+                PozisyonIslemCubugu(
+                  islemler: PozisyonIslemi.values,
+                  onIslem: (_) {},
+                ),
+                PozisyonIslemCubugu(
+                  yuzen: true,
+                  islemler: PozisyonIslemi.values,
+                  onIslem: (_) {},
+                ),
+                const SizedBox(height: SandikSpace.md),
+                // Uzun basma kısayolu (bayrak `goz_alici`): satırın kendi
+                // etiketi ve dokunma alanı korunur.
+                SandikBaglamMenusu(
+                  baslik: 'THYAO',
+                  eylemler: [
+                    SandikBaglamEylemi(
+                        etiket: 'Al', ikon: Icons.add_rounded, onSec: () {}),
+                    SandikBaglamEylemi(
+                        etiket: 'Sil',
+                        ikon: Icons.delete_outline_rounded,
+                        yikici: true,
+                        onSec: () {}),
+                  ],
+                  child: SandikTappable(
+                    onTap: () {},
+                    semanticLabel: 'Menülü satır',
+                    child: const SizedBox(
+                      height: SandikTouch.min,
+                      child: Text('ASELS'),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: SandikSpace.md),
                 SandikSectionHeader(title: 'Bölüm'),
                 SizedBox(
                   height: 260,
@@ -156,6 +195,40 @@ void main() {
       handle.dispose();
     });
   }
+
+  // Cam/HIG incelemesi (2026-10-12): bayrak `goz_alici` açıkken aynı
+  // vitrin — tek sıra grafik araçları, yüzen kapsül, bağlam menüsü — iOS ve
+  // Android'de aynı ölçütlerden geçer.
+  group('bayrak goz_alici açık', () {
+    setUp(() => RemoteConfigService.testAcik = {'goz_alici'});
+    tearDown(() {
+      RemoteConfigService.testAcik = {};
+      debugDefaultTargetPlatformOverride = null;
+    });
+    for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+      for (final parlaklik in Brightness.values) {
+        testWidgets('dokunma, etiket, kontrast (${platform.name}, '
+            '${parlaklik.name})', (t) async {
+          debugDefaultTargetPlatformOverride = platform;
+          final handle = t.ensureSemantics();
+          await t.pumpWidget(vitrin(parlaklik: parlaklik));
+          await t.pump();
+          await expectLater(t, meetsGuideline(iOSTapTargetGuideline));
+          await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
+          await expectLater(t, meetsGuideline(textContrastGuideline));
+          handle.dispose();
+          debugDefaultTargetPlatformOverride = null;
+        });
+      }
+      testWidgets('yazı ×2 taşmıyor (${platform.name})', (t) async {
+        debugDefaultTargetPlatformOverride = platform;
+        await t.pumpWidget(vitrin(parlaklik: Brightness.dark, yaziOlcegi: 2));
+        await t.pump();
+        expect(t.takeException(), isNull);
+        debugDefaultTargetPlatformOverride = null;
+      });
+    }
+  });
 
   testWidgets('yazı ×2 (Dynamic Type) ortak bileşenleri taşırmıyor', (t) async {
     await t.pumpWidget(vitrin(parlaklik: Brightness.dark, yaziOlcegi: 2));
