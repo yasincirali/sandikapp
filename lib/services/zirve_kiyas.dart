@@ -84,6 +84,21 @@ class ZirveIsaret {
 }
 
 /// Eksen aralığı: sıfır daima içinde, iki uçta pay var.
+/// Çağıranın Zirve şartlarının dolacağı anlar (0143 `zirve_katilim_durumum`).
+/// Tarihler UTC; null → o şartın verisi yok (ör. hiç varlık yok).
+typedef ZirveKatilimDurumu = ({
+  DateTime? hesapHazir,
+  DateTime? varlikHazir,
+  DateTime? olcumHazir,
+  int? varlikSayisi,
+  bool olculdu,
+  bool havuzda,
+});
+
+/// Ekrandaki bir şart satırı. [tamam] ikon ŞEKLİYLE de söylenir (renk
+/// körlüğü, HIG): yalnız renge yüklenmez.
+typedef ZirveSarti = ({String metin, bool tamam});
+
 typedef ZirveEksen = ({double lo, double hi});
 
 abstract final class ZirveKiyas {
@@ -425,5 +440,142 @@ abstract final class ZirveKiyas {
       yerlesen.add((x: konumlar[i], kat: kat));
     }
     return katlar;
+  }
+
+  // ── Katılım şartları (0143, kullanıcı bulgusu 2026-10-12) ─────────────────
+  //
+  // yasin eski tarihli varlıklarla üç hesap açtı; havuz artmadı çünkü hesap
+  // 7 günlük değildi ve ekran bu şartı hiç söylemiyordu. Havuzda olmayan
+  // katılımcı artık şartlarını ve dolacakları günü görür. Kural sunucuda
+  // (0091 `zirve_havuzu_uygun`, 0085 `zirve_havuz`, leaderboard-snapshot
+  // `donemTwr`); burada yalnız anlatılır.
+
+  /// Türkiye saati (UTC+3, yaz saati yok) — ölçüm saatleri bu saatle yazılır.
+  static const _trFark = Duration(hours: 3);
+
+  static const _aylar = [
+    'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+  ];
+
+  /// Ay adına bulunma eki: "Ekim'de", "Kasım'da", "Mart'ta".
+  static const _aylarDe = [
+    "Ocak'ta", "Şubat'ta", "Mart'ta", "Nisan'da", "Mayıs'ta", "Haziran'da",
+    "Temmuz'da", "Ağustos'ta", "Eylül'de", "Ekim'de", "Kasım'da", "Aralık'ta",
+  ];
+
+  /// "19 Ekim'de" — tarih Türkiye saatine göre.
+  static String gunde(DateTime an) {
+    final tr = an.toUtc().add(_trFark);
+    return '${tr.day} ${_aylarDe[tr.month - 1]}';
+  }
+
+  /// "19 Ekim" — tarih Türkiye saatine göre.
+  static String gun(DateTime an) {
+    final tr = an.toUtc().add(_trFark);
+    return '${tr.day} ${_aylar[tr.month - 1]}';
+  }
+
+  /// Sunucu ölçümü (leaderboard-snapshot cron'u, 0082) 10:00 ve 15:00 TR =
+  /// 07:00 ve 12:00 UTC. [an]'dan SONRAKİ ilk ölçüm.
+  static DateTime sonrakiOlcum(DateTime an) {
+    final u = an.toUtc();
+    for (var g = 0; g < 2; g++) {
+      for (final saat in const [7, 12]) {
+        final t = DateTime.utc(u.year, u.month, u.day + g, saat);
+        if (t.isAfter(u)) return t;
+      }
+    }
+    return DateTime.utc(u.year, u.month, u.day + 2, 7);
+  }
+
+  /// İlk varlık şartı: 5 günlük varlık (0091) ve asgari ölçüm süresi (0128)
+  /// aynı ilk alımdan sayılır; ekranda tek satır, geç dolan tarihle.
+  static DateTime? _varlikTarihi(ZirveKatilimDurumu d) {
+    final a = d.varlikHazir;
+    final b = d.olcumHazir;
+    if (a == null || b == null) return a ?? b;
+    return a.isAfter(b) ? a : b;
+  }
+
+  /// Havuza giriş şartları, kullanıcının okuyacağı sırayla.
+  static List<ZirveSarti> katilimSartlari(
+    ZirveKatilimDurumu d, {
+    required DateTime simdi,
+    required int asgariGun,
+    required ZirveDonem donem,
+  }) {
+    bool doldu(DateTime t) => !t.isAfter(simdi);
+    final hesap = d.hesapHazir;
+    final varlik = _varlikTarihi(d);
+    final n = d.varlikSayisi;
+    return [
+      if (hesap != null)
+        doldu(hesap)
+            ? (metin: 'Hesabın en az 7 günlük', tamam: true)
+            : (
+                metin: 'Hesabın en az 7 günlük olmalı · ${gunde(hesap)} tamam',
+                tamam: false,
+              ),
+      if (varlik == null)
+        (metin: 'Portföyüne en az bir varlık eklemelisin', tamam: false)
+      else if (doldu(varlik))
+        (metin: 'İlk varlığını $asgariGun günden önce edinmişsin', tamam: true)
+      else
+        (
+          metin: 'İlk varlığını edinmenin üzerinden $asgariGun gün geçmeli · '
+              '${gunde(varlik)} tamam',
+          tamam: false,
+        ),
+      if (n != null && n >= 2)
+        (metin: 'En az 2 farklı varlığın var', tamam: true)
+      else if (n != null)
+        (metin: 'En az 2 farklı varlığın olmalı · şu an $n', tamam: false)
+      else
+        (
+          metin: 'En az 2 farklı varlığın olmalı · ilk ölçümde sayılır',
+          tamam: false,
+        ),
+      d.olculdu
+          ? (metin: '${donem.ad} getirin ölçüldü', tamam: true)
+          : (
+              metin: '${donem.ad} getirin henüz ölçülmedi · ölçüm her gün '
+                  '10:00 ve 15:00',
+              tamam: false,
+            ),
+    ];
+  }
+
+  /// Şartlar yolunda giderse havuza en erken ne zaman girilir; bilinemiyorsa
+  /// (varlık yok, 2'den az varlık) null.
+  ///
+  /// Hesap ve 5 gün şartı OKUMA anında bakılır (0091): getiri zaten
+  /// ölçülüyorsa gün dolunca hemen girer. Asgari ölçüm süresi ise ölçümde
+  /// bakılır (`donemTwr`): dolduktan sonraki ilk ölçümde girer.
+  static DateTime? tahminiGiris(ZirveKatilimDurumu d, {required DateTime simdi}) {
+    final hesap = d.hesapHazir;
+    final varlik = d.varlikHazir;
+    final olcum = d.olcumHazir;
+    if (hesap == null || varlik == null || olcum == null) return null;
+    final n = d.varlikSayisi;
+    if (n != null && n < 2) return null;
+    // Süre dolmuş ama bu dönem ölçülemiyor (ör. fiyatı bilinen gün yok):
+    // ne zaman düzeleceği bilinmez, tarih uydurulmaz.
+    if (!olcum.isAfter(simdi) && !d.olculdu) return null;
+    var giris = olcum.isAfter(simdi) ? sonrakiOlcum(olcum) : simdi;
+    for (final t in [hesap, varlik]) {
+      if (t.isAfter(giris)) giris = t;
+    }
+    return giris.isAfter(simdi) ? giris : null;
+  }
+
+  /// Kartın özet cümlesi.
+  static String girisCumlesi(ZirveKatilimDurumu d, {required DateTime simdi}) {
+    final t = tahminiGiris(d, simdi: simdi);
+    if (t == null) {
+      return 'Eksik şartlar tamamlanınca portföyün havuza kendiliğinden girer.';
+    }
+    return 'Başka bir şey değişmezse portföyün ${gunde(t)} havuza '
+        'kendiliğinden girer.';
   }
 }

@@ -666,6 +666,38 @@ class LeaderboardService {
     }
   }
 
+  /// Çağıranın Zirve şartlarının dolacağı anlar (0143). Hata ya da eski
+  /// sunucu (fonksiyon yok) → null; ekran kartı göstermez, eski hâl kalır.
+  /// Rapor edilmez: 0143 dağıtılmadan önce her açılışta düşerdi.
+  Future<ZirveKatilimDurumu?> fetchZirveKatilimDurumu(
+      {required int periodDays}) async {
+    try {
+      final res = await Supabase.instance.client.rpc<dynamic>(
+        'zirve_katilim_durumum',
+        params: {'p_period_days': periodDays},
+      );
+      if (res is! List || res.isEmpty) return null;
+      return zirveKatilimDurumuOku(res.first as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// RPC satırını okur (testte sunucusuz sınanır).
+  @visibleForTesting
+  static ZirveKatilimDurumu zirveKatilimDurumuOku(Map<String, dynamic> row) {
+    DateTime? an(Object? v) =>
+        v is String ? DateTime.tryParse(v)?.toUtc() : null;
+    return (
+      hesapHazir: an(row['hesap_hazir_at']),
+      varlikHazir: an(row['varlik_hazir_at']),
+      olcumHazir: an(row['olcum_hazir_at']),
+      varlikSayisi: (row['varlik_sayisi'] as num?)?.toInt(),
+      olculdu: row['olculdu'] == true,
+      havuzda: row['havuzda'] == true,
+    );
+  }
+
   /// Zirvedeki Portföyler açık rıza metninin sürümü (0091). Metin
   /// (`ZirveRizaKarti`) anlamca değişirse bu da değişir; sunucu hangi
   /// sürüme rıza verildiğini saklar (ispat yükü veri sorumlusunda).
