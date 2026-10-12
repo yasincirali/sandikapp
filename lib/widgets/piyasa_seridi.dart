@@ -323,7 +323,12 @@ class _AramaCipi extends StatelessWidget {
             ? Border(top: cizgi, right: cizgi, bottom: cizgi, left: cizgi)
             : Border.fromBorderSide(cizgi),
       ),
-      child: Row(
+      // scaleDown: çip yüksekliği şeritle eşit ve sabit (yan yana
+      // bitişikler); büyük yazıda (2×+) "Ara" dikeyde kesiliyordu (büyük
+      // yazı taraması 2026-10-12). Sığdığı sürece ölçek 1, görünüm aynı.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.search_rounded, size: 16, color: context.c.amberText),
@@ -337,6 +342,7 @@ class _AramaCipi extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

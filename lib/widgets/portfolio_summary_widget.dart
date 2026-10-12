@@ -211,23 +211,34 @@ class PortfolioSummaryWidget extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            // U14 (2026-09-23 denetimi): 3 hane "%0,000"
-                            // gürültüsüydü; uygulamanın yüzde standardı 2.
-                            fmtPct(state.gainLossPercentage),
-                            style: context.t.numSmall.copyWith(
-                              fontSize: subFontSize,
-                              fontWeight: FontWeight.w500,
-                              color: gainColor,
+                          // Flexible (yüzde ve gizli hâl): cihazda en büyük
+                          // yazı (3,1×) açıkken tutar + yüzde kartı 30–118 px
+                          // aşıyordu (büyük yazı taraması 2026-10-12). Normal
+                          // yazıda sığdığı için kart birebir aynı; yalnız
+                          // sığmayınca kısaltılır.
+                          Flexible(
+                            child: Text(
+                              // U14 (2026-09-23 denetimi): 3 hane "%0,000"
+                              // gürültüsüydü; uygulamanın yüzde standardı 2.
+                              fmtPct(state.gainLossPercentage),
+                              overflow: TextOverflow.ellipsis,
+                              style: context.t.numSmall.copyWith(
+                                fontSize: subFontSize,
+                                fontWeight: FontWeight.w500,
+                                color: gainColor,
+                              ),
                             ),
                           ),
                         ] else
-                          Text(
-                            '•••• / ••••',
-                            style: context.t.numSmall.copyWith(
-                              fontSize: subFontSize,
-                              fontWeight: FontWeight.w500,
-                              color: context.c.text36,
+                          Flexible(
+                            child: Text(
+                              '•••• / ••••',
+                              overflow: TextOverflow.ellipsis,
+                              style: context.t.numSmall.copyWith(
+                                fontSize: subFontSize,
+                                fontWeight: FontWeight.w500,
+                                color: context.c.text36,
+                              ),
                             ),
                           ),
                       ],

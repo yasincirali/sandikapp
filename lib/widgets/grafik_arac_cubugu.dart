@@ -79,6 +79,10 @@ class GrafikAracCubugu extends ConsumerWidget {
   /// tek satır açıklama.
   final bool kapanistan;
 
+  /// Bu ölçeğin üstünde menü + çip satırı `Wrap` olur (gerekçe `build`'de).
+  /// 1,3× = uygulama içi yazı ayarının tavanı (`KullaniciYaziOlcegi`).
+  static const double _buyukYaziEsigi = 1.3;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ma20 = GrafikCipi(
@@ -228,11 +232,37 @@ class GrafikAracCubugu extends ConsumerWidget {
         ],
       );
     }
+    // Cihazda büyük yazı açıkken (> 1,3×; uygulama ayarı bunu geçemez)
+    // menü + çipler tek satıra sığmıyor, 3,1×'te 49 px taşıyordu (büyük
+    // yazı taraması 2026-10-12). Orada satır `Wrap` olur: sığmayan çip alt
+    // satıra iner. Normal yazıda aşağıdaki `Row` birebir korunur.
+    final buyukYazi =
+        MediaQuery.textScalerOf(context).scale(1) > _buyukYaziEsigi;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Aralık menüsü sol başta (TradingView'de de zaman dilimi araç
         // çubuğunun başında); çipler sağda kalır, yerleri değişmez.
+        if (buyukYazi)
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 6,
+            children: [
+              if (secici)
+                MumAraligiMenusu(
+                  aralik: ar,
+                  gecerli: gecerliAraliklar,
+                  onSec: (yeni) {
+                    if (pencere == null) return;
+                    ref
+                        .read(mumAraligiSecimiProvider.notifier)
+                        .sec(pencere, yeni);
+                  },
+                ),
+              ...ustSatir,
+            ],
+          )
+        else
         Row(
           children: [
             if (secici)
@@ -558,12 +588,17 @@ class GrafikCipi extends StatelessWidget {
                   color: active ? context.c.amberText : context.c.text58,
                 ),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: active ? context.c.amberText : context.c.text58,
-                  letterSpacing: 0.4,
+              // Flexible: 3,1× yazıda tek çip satır genişliğini aşabiliyor
+              // (173 px taşma, büyük yazı taraması 2026-10-12); etiket
+              // çipin içinde kırılır, çip kartın dışına çıkmaz.
+              Flexible(
+                child: Text(
+                  label,
+                  style: context.t.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: active ? context.c.amberText : context.c.text58,
+                    letterSpacing: 0.4,
+                  ),
                 ),
               ),
             ],
