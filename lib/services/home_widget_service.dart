@@ -320,17 +320,18 @@ class HomeWidgetService {
   }) async {
     try {
       await _ensureInit();
+      _toplanan = <String, Object?>{};
 
       // Tema, bakiye gizli olsun olmasın YAZILIR: gizli durumda da widget
       // çiziliyor ve o da uygulamanın temasını izlemeli.
-      await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
-      await HomeWidget.saveWidgetData<bool>(_kLockAmounts, lockScreenAmounts);
-      await HomeWidget.saveWidgetData<bool>(
+      await _yaz<bool>(_kIsLightTheme, themeIsLight);
+      await _yaz<bool>(_kLockAmounts, lockScreenAmounts);
+      await _yaz<bool>(
           _kCanliEtkinligiIzle, canliEtkinligiIzle);
       // Gizliyken de yazılır: gizli widget da "Piyasa kapalı" satırı çizer.
       final yalnizBorsa = yalnizcaBorsaVarliklardan(state.assets);
-      await HomeWidget.saveWidgetData<bool>(_kYalnizBorsa, yalnizBorsa);
-      await HomeWidget.saveWidgetData<bool>(
+      await _yaz<bool>(_kYalnizBorsa, yalnizBorsa);
+      await _yaz<bool>(
           _kGozAlici, RemoteConfigService.instance.gozAlici);
 
       if (hideBalance) {
@@ -359,9 +360,9 @@ class HomeWidgetService {
         // Ölçüm yoksa ya da sıfırsa nötr kabul edilir.
         final isPos = (summary.changeTRY ?? 0) >= 0;
 
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
             _kTotal, tryFmt.format(summary.totalTRY));
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
           _kChange,
           // Üç ayrı durum — kilit ekranıyla AYNI kural
           // (bkz. LiveActivityService._payload):
@@ -379,35 +380,35 @@ class HomeWidgetService {
                   : '${isPos ? '+' : '-'}'
                       '${tryFmt.format(summary.changeTRY!.abs())}',
         );
-        await HomeWidget.saveWidgetData<bool>(_kIsPositive, isPos);
+        await _yaz<bool>(_kIsPositive, isPos);
         // Nötr durum: ölçüm yok ya da ölçüm sıfır. İkisinde de kâr/zarar
         // rengi basılmamalı.
-        await HomeWidget.saveWidgetData<bool>(
+        await _yaz<bool>(
             _kIsFlat, !summary.hasChange || summary.isFlat);
         // Yüzde rozeti — tutardan ayrı alan (kilit ekranıyla aynı düzen).
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
           _kChangePct,
           !summary.hasChange || summary.isFlat
               ? ''
               : '${isPos ? '+' : '-'}'
                   '${fmtPct(summary.changePct!.abs(), digits: 2)} Günlük',
         );
-        await HomeWidget.saveWidgetData<bool>(_kHasData, true);
-        await HomeWidget.saveWidgetData<bool>(_kHidden, false);
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<bool>(_kHasData, true);
+        await _yaz<bool>(_kHidden, false);
+        await _yaz<String>(
             _kLockPct,
             summary.hasChange
                 ? fmtPctIsaretli(summary.changePct!, digits: 2)
                 : '—');
         // Tarih — kilit ekranıyla AYNI biçim. Widget günlerce ekranda
         // durur; rakamın hangi güne ait olduğu okunabilmeli.
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
             _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
         // Piyasa durumu — banner "Piyasa kapalı" derse kullanıcı rakamın
         // neden değişmediğini bilir. Kilit ekranıyla AYNI kural.
-        await HomeWidget.saveWidgetData<bool>(
+        await _yaz<bool>(
             _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
             _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
 
         // Gün içi sparkline — grafik PNG olarak çizilip yola yazılır.
@@ -431,10 +432,79 @@ class HomeWidgetService {
         );
       }
 
+      // Yalnız DEĞİŞEN anahtarlar yazılır; hiçbiri değişmediyse widget
+      // yenilenmez (bkz. [_toplanan]).
+      final toplanan = _toplanan!;
+      _toplanan = null;
+      final degisen = <String, Object?>{
+        for (final e in toplanan.entries)
+          if (!_sonYazilan.containsKey(e.key) ||
+              _sonYazilan[e.key] != e.value)
+            e.key: e.value,
+      };
+      if (degisen.isEmpty) return;
+      for (final e in degisen.entries) {
+        await HomeWidget.saveWidgetData(e.key, e.value);
+        _sonYazilan[e.key] = e.value;
+      }
       await _requestUpdate();
     } catch (e) {
+      // Yarım kalan yazımdan sonra cihazdaki değerler bilinmiyor: bir
+      // sonraki tur her anahtarı baştan yazsın.
+      _toplanan = null;
+      _sonYazilan.clear();
       if (kDebugMode) debugPrint('HomeWidget update failed: $e');
     }
+  }
+
+  /// Son çizilen sparkline PNG'sinin girdileri ve yolu.
+  String? _sonPngAnahtari;
+  String? _sonPngYolu;
+
+  /// Sparkline PNG'si çizilsin mi — yalnız Android okur. Test dikişi.
+  @visibleForTesting
+  static bool Function() pngCizilsinMi = () => !Platform.isIOS;
+  bool get _pngCiz => pngCizilsinMi();
+
+  /// Bu turda yazılacak anahtarlar — [_update] süresince dolu.
+  ///
+  /// ## Neden (kaynak kullanımı denetimi, 2026-10-12)
+  /// Portföy dinleyicisi her yayında (ön planda en az 30 sn'de bir) bu
+  /// servisi çağırıyor. Rakam değişmese de her turda 20 kanal çağrısı,
+  /// bir PNG çizimi ve iOS'ta iki zaman çizelgesi yenilemesi yapılıyordu
+  /// (test ortamında tur başına 14–20 ms). Değerler artık önce burada
+  /// toplanır, cihazdaki son değerle kıyaslanır ve yalnız farklı olanlar
+  /// yazılır.
+  ///
+  /// **Tazelik kaybı yok:** güncelleme saati (`HH:mm`) ve tarih de
+  /// kıyaslanan değerler arasında; rakam aynı kalsa bile dakika dönünce
+  /// saat yazılır ve widget yenilenir. Ekranda görünen her alan eskisi
+  /// kadar taze, yalnızca aynı değerin üstüne aynı değer yazılmıyor.
+  Map<String, Object?>? _toplanan;
+
+  /// Cihazın paylaşımlı deposuna bu süreçte en son yazılan değerler.
+  /// Süreç yeniden başlayınca boştur: ilk tur her şeyi yazar.
+  final Map<String, Object?> _sonYazilan = {};
+
+  /// Testler için: her test yeni (boş) bir sahte depo kurar; kıyas belleği
+  /// de sıfırlanmalı ki ilk yazım eksiksiz olsun (gerçekte depo yalnızca
+  /// `clear()` ile boşalır, o da belleği sıfırlıyor).
+  @visibleForTesting
+  void kiyasBelleginiSifirla() {
+    _sonYazilan.clear();
+    _sonPngAnahtari = null;
+    _sonPngYolu = null;
+  }
+
+  /// [_update] içindeki yazım: toplama açıksa biriktirir, değilse yazar.
+  Future<void> _yaz<T>(String id, T? data) async {
+    final t = _toplanan;
+    if (t != null) {
+      t[id] = data;
+      return;
+    }
+    await HomeWidget.saveWidgetData<T>(id, data);
+    _sonYazilan[id] = data;
   }
 
   /// Grafiği de tazeleyen sarmalayıcı — portföy dinleyicisinin çağırdığı yol.
@@ -490,22 +560,48 @@ class HomeWidgetService {
   }) async {
     // İki noktadan az veri çizgi oluşturmaz.
     if (values.length < 2) {
-      await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
+      await _yaz<int>(_kSparkPoints, values.length);
       // Seri de temizlenir: kalsaydı iOS widget'ı bugün ölçüm yokken
       // DÜNÜN eğrisini çizmeye devam ederdi.
-      await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
+      await _yaz<String>(_kSparkSeries, '');
       return;
     }
 
-    final path = await _renderSparkline(
-      values,
-      isPos: isPos,
-      isFlat: isFlat,
-      isMarketOpen: isMarketOpen,
-    );
-    if (path != null) {
-      await HomeWidget.saveWidgetData<String>(_kSparkline, path);
-      await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
+    // PNG yalnız Android içindir: iOS widget'ı eğriyi aşağıdaki sayı
+    // dizisinden kendisi çizer ve PNG'yi hiç okumaz (`SandikHomeWidget
+    // .swift`, kendi kabından uygulamanın dosyasını göremez). iOS'ta her
+    // turda 960×180 çizip kodlamak saf israftı (denetim 2026-10-12).
+    //
+    // Android'de de girdiler aynıysa yeniden çizilmez: çizim yalnızca
+    // seriye, yöne ve temaya bağlı; aynı girdi aynı PNG'yi üretir.
+    if (_pngCiz) {
+      final anahtar = '${values.join(',')}|$isPos|$isFlat|$isMarketOpen|'
+          '$themeIsLight';
+      final onceki = _sonPngYolu;
+      final String? path;
+      if (anahtar == _sonPngAnahtari &&
+          onceki != null &&
+          File(onceki).existsSync()) {
+        path = onceki;
+      } else {
+        path = await _renderSparkline(
+          values,
+          isPos: isPos,
+          isFlat: isFlat,
+          isMarketOpen: isMarketOpen,
+        );
+        _sonPngAnahtari = path == null ? null : anahtar;
+        _sonPngYolu = path;
+        // Dosya adı sabit: yol metni aynı kalsa da içerik değişti. Yol bu
+        // turda yeniden yazılsın ki widget yenilensin.
+        if (path != null) _sonYazilan.remove(_kSparkline);
+      }
+      if (path != null) {
+        await _yaz<String>(_kSparkline, path);
+        await _yaz<int>(_kSparkPoints, values.length);
+      }
+    } else {
+      await _yaz<int>(_kSparkPoints, values.length);
     }
 
     // iOS için ham seri. Normalize ORTAK katmanda yapılır ki kilit ekranı
@@ -513,7 +609,7 @@ class HomeWidgetService {
     // Üç ondalık yeter: seri 0…1 aralığında ve çizim birkaç yüz piksel
     // genişliğinde — daha fazlası yalnızca anahtarı şişirir.
     final seri = DailySummary.normalizeForSparkline(values);
-    await HomeWidget.saveWidgetData<String>(
+    await _yaz<String>(
       _kSparkSeries,
       seri.map((v) => v.toStringAsFixed(3)).join(','),
     );
@@ -722,8 +818,17 @@ class HomeWidgetService {
           isMarketOpen ? _sparkPalette.gain : _sparkPalette.text36;
       canvas.drawCircle(center, coreR, Paint()..color = dotColor);
 
-      final image = await recorder.endRecording().toImage(w.toInt(), h.toInt());
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      // Resim ve kayıt hemen bırakılır: 960×180 RGBA ~675 KB yerel bellek,
+      // çöp toplayıcıya bırakılınca her turda birikebiliyordu.
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(w.toInt(), h.toInt());
+      picture.dispose();
+      final ByteData? bytes;
+      try {
+        bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      } finally {
+        image.dispose();
+      }
       if (bytes == null) return null;
 
       final dir = await getApplicationSupportDirectory();
@@ -740,22 +845,22 @@ class HomeWidgetService {
   Future<void> _writeHidden() async {
     // Seri temizlenir: kalsaydı tutar gizliyken bile eğri portföyün
     // gün içi hareketini ele verirdi.
-    await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
-    await HomeWidget.saveWidgetData<String>(_kTotal, '••••••');
-    await HomeWidget.saveWidgetData<String>(_kChange, '');
-    await HomeWidget.saveWidgetData<bool>(_kIsPositive, true);
-    await HomeWidget.saveWidgetData<bool>(_kIsFlat, true);
-    await HomeWidget.saveWidgetData<String>(_kChangePct, '');
-    await HomeWidget.saveWidgetData<bool>(_kHasData, true);
+    await _yaz<String>(_kSparkSeries, '');
+    await _yaz<String>(_kTotal, '••••••');
+    await _yaz<String>(_kChange, '');
+    await _yaz<bool>(_kIsPositive, true);
+    await _yaz<bool>(_kIsFlat, true);
+    await _yaz<String>(_kChangePct, '');
+    await _yaz<bool>(_kHasData, true);
     // Kilit ekranı: yüzde de gizli (karar 4.5) — değer yazılmaz, bayrak
     // gizli der.
-    await HomeWidget.saveWidgetData<bool>(_kHidden, true);
-    await HomeWidget.saveWidgetData<String>(_kLockPct, '');
-    await HomeWidget.saveWidgetData<String>(
+    await _yaz<bool>(_kHidden, true);
+    await _yaz<String>(_kLockPct, '');
+    await _yaz<String>(
         _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
-    await HomeWidget.saveWidgetData<bool>(
+    await _yaz<bool>(
         _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
-    await HomeWidget.saveWidgetData<String>(
+    await _yaz<String>(
         _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
   }
 
@@ -779,6 +884,7 @@ class HomeWidgetService {
     try {
       await _ensureInit();
       await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
+      _sonYazilan[_kIsLightTheme] = themeIsLight;
       await _requestUpdate();
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget applyTheme failed: $e');
@@ -794,6 +900,10 @@ class HomeWidgetService {
       // hesabın gün içi grafiğini görürdü. Önbellek ORTAK olduğu için
       // Live Activity tarafı da bu temizlikten yararlanır.
       IntradaySeriesCache.instance.clear();
+      // Burada anahtarlar doğrudan siliniyor: kıyas belleği de sıfırlanır
+      // ki sonraki oturumun ilk yazımı eksiksiz olsun.
+      _sonYazilan.clear();
+      _sonPngAnahtari = null;
 
       await HomeWidget.saveWidgetData<String>(_kTotal, '');
       await HomeWidget.saveWidgetData<String>(_kChange, '');

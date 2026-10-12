@@ -74,7 +74,10 @@ void main() {
   late _Kanal kanal;
 
   setUpAll(() async => initializeDateFormatting('tr_TR'));
-  setUp(() => kanal = _Kanal()..kur());
+  setUp(() {
+    HomeWidgetService.instance.kiyasBelleginiSifirla();
+    kanal = _Kanal()..kur();
+  });
   tearDown(() {
     kanal.kaldir();
     HomeWidgetService.instance.lockScreenAmounts = false;

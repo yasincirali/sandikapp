@@ -87,6 +87,7 @@ void main() {
   });
 
   setUp(() {
+    HomeWidgetService.instance.kiyasBelleginiSifirla();
     channel = _FakeHomeWidgetChannel()..install();
   });
 

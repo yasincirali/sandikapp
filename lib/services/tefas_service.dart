@@ -169,14 +169,36 @@ class TefasService {
       _cacheTime != null &&
       DateTime.now().difference(_cacheTime!) < _ramCacheTtl;
 
+  /// Katalog dosyası `Caches` klasöründe (denetim 2026-10-12): yeniden
+  /// indirilebilen veri iCloud yedeğine girmesin, sistem gerekince
+  /// boşaltabilsin. Eski konumdaki (Application Support) dosya bir kez
+  /// yeni yere taşınır; taşınamazsa yerinde kalır, katalog ağdan gelir.
   Future<File?> _katalogDosyasi() async {
     try {
-      final klasor = await getApplicationSupportDirectory();
-      return File('${klasor.path}/$_dosyaAdi');
+      final klasor = await getApplicationCacheDirectory();
+      final dosya = File('${klasor.path}/$_dosyaAdi');
+      if (!_eskiKonumBakildi) {
+        _eskiKonumBakildi = true;
+        try {
+          final eski = File(
+              '${(await getApplicationSupportDirectory()).path}/$_dosyaAdi');
+          if (await eski.exists()) {
+            if (await dosya.exists()) {
+              await eski.delete();
+            } else {
+              await klasor.create(recursive: true);
+              await eski.rename(dosya.path);
+            }
+          }
+        } catch (_) {} // taşıma yalnızca verim
+      }
+      return dosya;
     } catch (_) {
       return null; // test ortamı / eklenti yok → yalnız RAM önbelleği
     }
   }
+
+  bool _eskiKonumBakildi = false;
 
   /// Eski tercih anahtarlarını bir kez sil — içerik taşınmaz (24 saatlik
   /// önbellek, ağdan yeniden gelir); amaç tercih dosyasını küçültmek.

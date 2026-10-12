@@ -33,6 +33,7 @@ import {
   tarifSembolleri,
 } from '../_shared/canli_etkinlik.ts';
 import { fetchLivePrices } from '../_shared/live_prices.ts';
+import { pushImzasi, pushOnceligi } from '../_shared/canli_etkinlik_oncelik.ts';
 
 // ── APNs kimlik bilgileri ───────────────────────────────────────────────
 // Token bazlı kimlik doğrulama (sertifika değil): .p8 anahtarı 1 yıl
@@ -146,6 +147,7 @@ async function pushToSession(
   token: string,
   contentState: Record<string, unknown>,
   staleAtSeconds: number,
+  oncelik: '10' | '5' = '10',
 ): Promise<'ok' | 'gone' | 'error'> {
   const jwt = await apnsJwt();
 
@@ -168,8 +170,10 @@ async function pushToSession(
       'apns-topic': `${APNS_BUNDLE_ID}.push-type.liveactivity`,
       'apns-push-type': 'liveactivity',
       // 10 = hemen gönder. Live Activity için 5 (güç tasarrufu) çok
-      // gecikmeli; "canlı" vaadini bozar.
-      'apns-priority': '10',
+      // gecikmeli; "canlı" vaadini bozar — YENİ rakam bu yüzden hep 10.
+      // Rakam son 10'luk push'takiyle aynıysa 5 (0143, denetim
+      // 2026-10-12): yalnızca saat tazelenir, bütçe yeni rakama kalır.
+      'apns-priority': oncelik,
       'apns-expiration': '0',
       'content-type': 'application/json',
     },
@@ -289,6 +293,8 @@ Deno.serve(async (request) => {
   // uygulamayı hiç açmıyor ve kilit ekranları donmuş demektir.
   let skippedStale = 0;
   const deadTokens: string[] = [];
+  const imzaYazilacak: { token: string; imza: string }[] = [];
+  let dusukOncelik = 0;
 
   for (const s of sessions) {
     // Özet İSTEMCİ tarafından yazılır; sunucu yalnızca push'lar.
@@ -427,15 +433,37 @@ Deno.serve(async (request) => {
         : row.isLightTheme === true,
     };
 
+    // Öncelik: görünen içerik son yüksek öncelikli push'takiyle aynı mı
+    // (bkz. `_shared/canli_etkinlik_oncelik.ts`, 0143). Sütun yoksa
+    // `undefined` gelir (`select('*')`) ve bugünkü davranış (10) sürer.
+    const imza = pushImzasi(contentState);
+    const oncelik = pushOnceligi(imza, s.son_push_imzasi);
+
     const result = await pushToSession(
       s.token,
       contentState,
       Math.floor(new Date(s.expires_at).getTime() / 1000),
+      oncelik,
     );
 
+    if (result === 'ok' && oncelik === '10') imzaYazilacak.push({ token: s.token, imza });
     if (result === 'ok') sent++;
+    if (result === 'ok' && oncelik === '5') dusukOncelik++;
     else if (result === 'gone') deadTokens.push(s.token);
   }
+
+  // Yeni imzalar — yalnız 10'luk ve BAŞARILI push'lar. Sütun yoksa
+  // (0143 koşmamış) güncelleme hata verir ve yutulur: davranış 10'da kalır.
+  // Yazım push'tan SONRA: gönderilemeyen rakam "gönderildi" sayılmasın.
+  let imzaHatasi = 0;
+  for (const { token, imza } of imzaYazilacak) {
+    const { error: imzaErr } = await admin
+      .from('live_activity_sessions')
+      .update({ son_push_imzasi: imza })
+      .eq('token', token);
+    if (imzaErr) imzaHatasi++;
+  }
+  if (imzaHatasi) console.error(`son_push_imzasi yazilamadi: ${imzaHatasi}`);
 
   // Ölü token'ları temizle — bir sonraki turda tekrar denenmesin.
   if (deadTokens.length) {
@@ -447,7 +475,7 @@ Deno.serve(async (request) => {
   }
 
   return new Response(
-    JSON.stringify({ sent, removed, skippedStale, forwarded, total: sessions.length }),
+    JSON.stringify({ sent, dusukOncelik, removed, skippedStale, forwarded, total: sessions.length }),
     { headers: { 'content-type': 'application/json' } },
   );
 });

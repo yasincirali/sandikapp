@@ -408,6 +408,18 @@ class HistoryService {
     _yurtIciCache.clear();
   }
 
+  /// Sistem bellek uyarısında (`didHaveMemoryPressure`) çağrılır.
+  ///
+  /// Yalnızca süreli önbellek bırakılır; son iyi seri (`_sonIyi`), boş yanıt
+  /// kaydı ve uçuştaki istekler KALIR: kaynak yanıt vermezse grafik yine son
+  /// ölçülmüş seriyle çizilir, eşzamanlı istekler ikiye bölünmez. Sonraki
+  /// okuma aynı kaynaktan yeniden çeker; ekrandaki seriler kendi kopyalarını
+  /// tuttuğu için görünen hiçbir rakam değişmez.
+  static void bellekBaskisi() {
+    _cache.clear();
+    _cacheAt.clear();
+  }
+
   /// TTL'in dolmasını taklit eder: taze önbellek ve negatif önbellek
   /// silinir, son iyi seri KALIR. Gerçek saatle 15 dk beklemeden "önbellek
   /// eskidi, ardından çekim düştü" senaryosunu ölçmek için.

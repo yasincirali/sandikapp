@@ -8,7 +8,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,6 +76,7 @@ import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
+import 'services/bellek_baskisi.dart';
 import 'services/birikim_serisi.dart';
 import 'services/milestone_repository.dart';
 import 'services/milestone_service.dart';
@@ -195,6 +195,8 @@ void main() async {
     // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
     // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
     HistoryService.kaliciDepo = SeriDiskDepo();
+    // Sistem bellek uyarısında süreli önbellekleri bırak (bkz. sınıf).
+    BellekBaskisi.instance.baglan();
     // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
     //
     // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
@@ -202,7 +204,15 @@ void main() async {
     // yayınlanana kadar koyu palet görüyordu. Karar diskten okunur —
     // yeniden ÇÖZÜLMEZ (bkz. `SurfaceTheme`).
     await SurfaceTheme.instance.restore();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Arka plan işleyicisi KAYDEDİLMEZ (kaynak kullanımı denetimi,
+    // 2026-10-12). İşleyici yalnızca Firebase'i başlatıp çıkıyordu; ama
+    // kayıtlıyken firebase_messaging Android'de uygulama arka planda ya da
+    // kapalıyken gelen HER push için başsız bir Flutter motoru açar
+    // (`FlutterFirebaseMessagingReceiver`). Sunucu yalnız bildirim içerikli
+    // push gönderiyor (`_shared/fcm.ts`): bildirimi sistem gösterir,
+    // dokunuş `onMessageOpenedApp`/`getInitialMessage` ile gelir — ikisi de
+    // bu kayda bağlı değil. Eski sürümün sakladığı kaydı `MainActivity`
+    // siler. Veri içerikli (data-only) push eklenirse kayıt geri gelmeli.
 
     try {
       await Firebase.initializeApp();
