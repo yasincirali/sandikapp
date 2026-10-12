@@ -14350,6 +14350,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Varlıklar'**
   String get searchTabAssets;
+
+  /// No description provided for @xrTuttuklarin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tuttukların'**
+  String get xrTuttuklarin;
+
+  /// No description provided for @xrTurSayisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} tür'**
+  String xrTurSayisi(int n);
+
+  /// No description provided for @xrIcAcilinca.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonların içi açılınca'**
+  String get xrIcAcilinca;
+
+  /// No description provided for @xrSinifSayisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} sınıf'**
+  String xrSinifSayisi(int n);
+
+  /// No description provided for @xrIcgoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} payın {gorunen} görünüyor, fonlarınla birlikte {gercek}.'**
+  String xrIcgoru(String ad, String gorunen, String gercek);
+
+  /// No description provided for @xrIcgoruHisse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hisse'**
+  String get xrIcgoruHisse;
+
+  /// No description provided for @xrIcgoruAltin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın'**
+  String get xrIcgoruAltin;
+
+  /// No description provided for @xrIcgoruDoviz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz'**
+  String get xrIcgoruDoviz;
+
+  /// No description provided for @xrIcgoruFaiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Faiz getiren'**
+  String get xrIcgoruFaiz;
+
+  /// No description provided for @xrKaynakBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu paranın nereden geldiği'**
+  String get xrKaynakBaslik;
+
+  /// No description provided for @xrKaynakNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon payları TEFAS dağılımından. Toplam, yukarıdaki tutarın aynısı.'**
+  String get xrKaynakNot;
+
+  /// No description provided for @xrSinifEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad}, {pay}, {tutar}. Kaynakları göster.'**
+  String xrSinifEtiket(String ad, String pay, String tutar);
 }
 
 class _AppLocalizationsDelegate

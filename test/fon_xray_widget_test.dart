@@ -368,11 +368,11 @@ void main() {
       await ekran(t);
       expect(find.text('₺20.000'), findsOneWidget);
       expect(find.text('BIST hisse'), findsOneWidget);
-      expect(find.text('%30,0'), findsOneWidget);
-      expect(find.text('₺6.000'), findsOneWidget);
+      expect(find.text('%30,0 · ₺6.000'), findsOneWidget);
       // X-Ray dışı ayrı satır; %25 — diğerlerine dağıtılmadı.
       expect(find.text('X-Ray dışı'), findsOneWidget);
-      expect(find.text('%25,0'), findsWidgets);
+      // Para piyasası da ₺5.000 (%25): iki satır.
+      expect(find.text('%25,0 · ₺5.000'), findsNWidgets(2));
       expect(find.text('Dağılımı bulunamayan: YOK'), findsOneWidget);
       // Örtüşme.
       expect(find.text('THYAO · TÜRK HAVA YOLLARI'), findsOneWidget);
@@ -388,6 +388,72 @@ void main() {
       expect(find.textContaining('ortaklarının varlıkları dahil değil'),
           findsOneWidget);
       expect(t.takeException(), isNull);
+    });
+
+    // Tasarım B: fon varsa iki çubuk ve içgörü; sınıfa dokununca kaynaklar.
+    testWidgets('görünen ve gerçek: iki çubuk, içgörü, kaynak sayfası',
+        (t) async {
+      await ekran(t,
+          deger: AsyncValue.data(PortfoyXray(
+            toplam: 16000,
+            kovalar: const {
+              XrayKova.bistHisse: 3000,
+              XrayKova.paraPiyasasi: 5000,
+              XrayKova.mevduat: 3000,
+              XrayKova.kiymetliMaden: 4000,
+              XrayKova.doviz: 1000,
+            },
+            xrayDisi: 0,
+            xrayDisiFonlar: const [],
+            fonTarihleri: null,
+            ortusmeler: const [],
+            kalemDonemi: null,
+            gorunen: const {
+              AssetType.hisse: 1000,
+              AssetType.fon: 10000,
+              AssetType.altin: 4000,
+              AssetType.doviz: 1000,
+            },
+            kaynaklar: const {
+              XrayKova.bistHisse: {'THYAO': 1000, 'AAL': 2000},
+            },
+          )));
+      expect(find.text('Tuttukların'), findsOneWidget);
+      expect(find.text('4 tür'), findsOneWidget);
+      expect(find.text('Fonların içi açılınca'), findsOneWidget);
+      expect(find.text('5 sınıf'), findsOneWidget);
+      expect(
+          find.text(
+              'Faiz getiren payın %0,0 görünüyor, fonlarınla birlikte %50,0.'),
+          findsOneWidget);
+      expect(
+          find.text(
+              'Hisse payın %6,3 görünüyor, fonlarınla birlikte %18,8.'),
+          findsOneWidget);
+
+      await t.tap(find.text('BIST hisse'));
+      await t.pumpAndSettle();
+      expect(find.text('Bu paranın nereden geldiği'), findsOneWidget);
+      expect(find.text('AAL'), findsOneWidget);
+      expect(find.text('₺2.000'), findsOneWidget);
+      expect(find.text('THYAO'), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('fon yoksa tek çubuk, içgörü yok', (t) async {
+      await ekran(t,
+          deger: AsyncValue.data(PortfoyXray(
+            toplam: 100,
+            kovalar: const {XrayKova.bistHisse: 100},
+            xrayDisi: 0,
+            xrayDisiFonlar: const [],
+            fonTarihleri: null,
+            ortusmeler: const [],
+            kalemDonemi: null,
+            gorunen: const {AssetType.hisse: 100},
+          )));
+      expect(find.text('Tuttukların'), findsNothing);
+      expect(find.textContaining('görünüyor'), findsNothing);
     });
 
     testWidgets('örtüşme yoksa bölüm yok', (t) async {

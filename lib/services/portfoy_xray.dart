@@ -103,6 +103,9 @@ class PortfoyXray {
     required this.fonTarihleri,
     required this.ortusmeler,
     required this.kalemDonemi,
+    this.gorunen = const {},
+    this.kaynaklar = const {},
+    this.disiKaynaklar = const {},
   });
 
   /// X-Ray'e giren pozisyonların TL değeri (fiyatı bilinenler).
@@ -127,7 +130,75 @@ class PortfoyXray {
   /// Örtüşmede kullanılan KAP raporlarının en yeni ay sonu.
   final DateTime? kalemDonemi;
 
+  /// "Tuttukların": fon AÇILMADAN, kullanıcının listesinde gördüğü türlere
+  /// göre TL (fon fon olarak, hisse hisse olarak). X-Ray'in değeri bu
+  /// görünüm ile [kovalar] arasındaki fark (yasin 2026-10-12, tasarım B).
+  final Map<AssetType, double> gorunen;
+
+  /// Kova → kaynak adı → TL: o sınıftaki paranın hangi fondan (fon kodu)
+  /// ya da hangi doğrudan pozisyondan geldiği. Bir kovanın kaynakları
+  /// toplamı o kovanın tutarıdır (sınıfa dokununca açılan sayfa).
+  final Map<XrayKova, Map<String, double>> kaynaklar;
+
+  /// X-Ray dışı payın kaynakları: dağılımı bulunamayan fonun tamamı ya da
+  /// kaynak toplamı 100'ü tutmayan fondaki fark. Toplamı [xrayDisi].
+  final Map<String, double> disiKaynaklar;
+
   bool get bos => toplam <= 0;
+
+  /// Fon (ya da BES) var mı: yoksa "tuttukların" ile gerçek dağılım aynı
+  /// şeydir, karşılaştırma ve içgörü gösterilmez.
+  bool get fonVar =>
+      (gorunen[AssetType.fon] ?? 0) > 0 || (gorunen[AssetType.bes] ?? 0) > 0;
+
+  List<MapEntry<AssetType, double>> get siraliGorunen =>
+      gorunen.entries.where((e) => e.value > 0).toList()
+        ..sort((a, b) {
+          final f = b.value.compareTo(a.value);
+          return f != 0 ? f : a.key.index.compareTo(b.key.index);
+        });
+
+  /// Bir kovanın kaynakları, büyükten küçüğe.
+  List<MapEntry<String, double>> kaynaklariSirali(XrayKova? k) =>
+      (k == null ? disiKaynaklar : (kaynaklar[k] ?? const {}))
+          .entries
+          .where((e) => e.value > 0)
+          .toList()
+        ..sort((a, b) {
+          final f = b.value.compareTo(a.value);
+          return f != 0 ? f : a.key.compareTo(b.key);
+        });
+
+  /// "Sandığın ile gerçeğin farkı" cümleleri: fonların içi açılınca payı
+  /// en az [XrayIcgoru.esik] puan büyüyen gruplar, farka göre, en çok iki.
+  /// Hesaplanır; metin uydurulmaz (bkz. [XrayIcgoru]).
+  List<XrayIcgoru> get icgoruler {
+    if (!fonVar || toplam <= 0) return const [];
+    double g(Iterable<AssetType> t) =>
+        t.fold(0.0, (s, x) => s + (gorunen[x] ?? 0));
+    double r(Iterable<XrayKova> k) =>
+        k.fold(0.0, (s, x) => s + (kovalar[x] ?? 0));
+    final adaylar = [
+      for (final (tur, gor, ger) in [
+        (XrayIcgoruTuru.hisse, g([AssetType.hisse]),
+            r([XrayKova.bistHisse, XrayKova.yabanciHisse])),
+        (XrayIcgoruTuru.altin, g([AssetType.altin]),
+            r([XrayKova.kiymetliMaden])),
+        (XrayIcgoruTuru.doviz, g([AssetType.doviz, AssetType.eurobond]),
+            r([XrayKova.doviz, XrayKova.dovizBorclanma])),
+        (XrayIcgoruTuru.faiz, g([AssetType.mevduat]),
+            r([
+              XrayKova.mevduat,
+              XrayKova.devletBorclanma,
+              XrayKova.ozelBorclanma,
+              XrayKova.paraPiyasasi,
+            ])),
+      ])
+        if (pay(ger) - pay(gor) >= XrayIcgoru.esik)
+          XrayIcgoru(tur: tur, gorunenPay: pay(gor), gercekPay: pay(ger)),
+    ]..sort((a, b) => b.fark.compareTo(a.fark));
+    return adaylar.take(2).toList();
+  }
 
   List<MapEntry<XrayKova, double>> get siraliKovalar =>
       kovalar.entries.where((e) => e.value != 0).toList()
@@ -140,6 +211,27 @@ class PortfoyXray {
   double pay(double tutar) => toplam > 0 ? tutar / toplam * 100 : 0;
 }
 
+enum XrayIcgoruTuru { hisse, altin, doviz, faiz }
+
+/// "Hisse payın %24 görünüyor, fonlarınla birlikte %47,8." Görünen pay
+/// kullanıcının tuttuğu türden ([PortfoyXray.gorunen]), gerçek pay fonlar
+/// açıldıktan sonraki kovalardan. Fon içi para yalnız EKLENİR (doğrudan
+/// tutulan bir şey fonla azalmaz), bu yüzden yalnız büyüyen yön var.
+@immutable
+class XrayIcgoru {
+  const XrayIcgoru(
+      {required this.tur, required this.gorunenPay, required this.gercekPay});
+
+  /// Gösterme eşiği (puan): daha küçük fark "bilgi" değil gürültü.
+  static const double esik = 3;
+
+  final XrayIcgoruTuru tur;
+  final double gorunenPay;
+  final double gercekPay;
+
+  double get fark => gercekPay - gorunenPay;
+}
+
 /// Hesap. [dagilimlar] ve [kalemler] fon koduna göre (`fonKoduOf`).
 PortfoyXray portfoyXray({
   required List<Position> pozisyonlar,
@@ -150,6 +242,9 @@ PortfoyXray portfoyXray({
   var toplam = 0.0;
   var disi = 0.0;
   final kovalar = <XrayKova, double>{};
+  final gorunen = <AssetType, double>{};
+  final kaynaklar = <XrayKova, Map<String, double>>{};
+  final disiKaynaklar = <String, double>{};
   final disiFonlar = <XrayDisiFon>[];
   DateTime? enEski;
   DateTime? enYeni;
@@ -168,16 +263,30 @@ PortfoyXray portfoyXray({
     );
   }
 
-  void ekle(XrayKova k, double tutar) => kovalar[k] = (kovalar[k] ?? 0) + tutar;
+  void ekle(XrayKova k, double tutar, String kaynak) {
+    kovalar[k] = (kovalar[k] ?? 0) + tutar;
+    final m = kaynaklar.putIfAbsent(k, () => <String, double>{});
+    m[kaynak] = (m[kaynak] ?? 0) + tutar;
+  }
+
+  void disiEkle(String kaynak, double tutar) {
+    disi += tutar;
+    disiKaynaklar[kaynak] = (disiKaynaklar[kaynak] ?? 0) + tutar;
+  }
 
   for (final p in pozisyonlar) {
     final d = deger(p);
     if (d == null || !d.isFinite || d <= 0) continue;
     toplam += d;
     final a = p.representative;
+    gorunen[a.type] = (gorunen[a.type] ?? 0) + d;
     final kova = dogrudanKova(p);
     if (kova != null) {
-      ekle(kova, d);
+      // Kaynak adı: hissede kısa kod (THYAO), diğerlerinde pozisyonun adı.
+      final ad = a.type == AssetType.hisse
+          ? a.ticker.trim().toUpperCase().replaceFirst(RegExp(r'\.IS$'), '')
+          : a.name;
+      ekle(kova, d, ad.isEmpty ? a.name : ad);
       if (a.type == AssetType.hisse) {
         // `ASELS.IS` → `ASELS`: KAP raporundaki kodla aynı biçim. ABD
         // hissesi raporda "AAPL US" yazar; doğrudan tutulan Apple ile fon
@@ -191,18 +300,19 @@ PortfoyXray portfoyXray({
     }
     final fonKodu = fonKoduOf(tur: a.type, ticker: a.ticker);
     final dag = fonKodu == null ? null : dagilimlar[fonKodu];
+    final fonAdi = fonKodu ?? a.name;
     if (dag == null) {
-      disi += d;
+      disiEkle(fonAdi, d);
       disiFonlar.add(XrayDisiFon(ad: a.name, kod: fonKodu, tutar: d));
       continue;
     }
     if (enEski == null || dag.tarih.isBefore(enEski)) enEski = dag.tarih;
     if (enYeni == null || dag.tarih.isAfter(enYeni)) enYeni = dag.tarih;
     for (final kp in dag.kovalar) {
-      ekle(kp.kova, d * kp.yuzde / 100);
+      ekle(kp.kova, d * kp.yuzde / 100, fonAdi);
     }
     final eksik = 100 - dag.toplam;
-    if (eksik > 0) disi += d * eksik / 100;
+    if (eksik > 0) disiEkle(fonAdi, d * eksik / 100);
 
     final kl = kalemler[fonKodu];
     if (kl != null) {
@@ -239,5 +349,8 @@ PortfoyXray portfoyXray({
     fonTarihleri: enEski == null ? null : (enEski, enYeni!),
     ortusmeler: List.unmodifiable(ortusmeler),
     kalemDonemi: ortusmeler.isEmpty ? null : kalemDonemi,
+    gorunen: Map.unmodifiable(gorunen),
+    kaynaklar: Map.unmodifiable(kaynaklar),
+    disiKaynaklar: Map.unmodifiable(disiKaynaklar),
   );
 }

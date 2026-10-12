@@ -8607,4 +8607,49 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get searchTabAssets => 'Varlıklar';
+
+  @override
+  String get xrTuttuklarin => 'Tuttukların';
+
+  @override
+  String xrTurSayisi(int n) {
+    return '$n tür';
+  }
+
+  @override
+  String get xrIcAcilinca => 'Fonların içi açılınca';
+
+  @override
+  String xrSinifSayisi(int n) {
+    return '$n sınıf';
+  }
+
+  @override
+  String xrIcgoru(String ad, String gorunen, String gercek) {
+    return '$ad payın $gorunen görünüyor, fonlarınla birlikte $gercek.';
+  }
+
+  @override
+  String get xrIcgoruHisse => 'Hisse';
+
+  @override
+  String get xrIcgoruAltin => 'Altın';
+
+  @override
+  String get xrIcgoruDoviz => 'Döviz';
+
+  @override
+  String get xrIcgoruFaiz => 'Faiz getiren';
+
+  @override
+  String get xrKaynakBaslik => 'Bu paranın nereden geldiği';
+
+  @override
+  String get xrKaynakNot =>
+      'Fon payları TEFAS dağılımından. Toplam, yukarıdaki tutarın aynısı.';
+
+  @override
+  String xrSinifEtiket(String ad, String pay, String tutar) {
+    return '$ad, $pay, $tutar. Kaynakları göster.';
+  }
 }
