@@ -7,8 +7,7 @@ name: Android — Release AAB
 # kendi ABI'sini indirir — arm64'te ~11,9 MB. Debug sembolleri de teslim
 # edilmez.
 #
-# Tetik: elle (Run workflow) ya da `v*` tag'i. 2026-09-28 – 2026-10-12 arası
-# her main push'unda da koşuyordu; neden kalktığı aşağıda `on:` altında.
+# Tetik: main'e push (belge değişikliği hariç), `v*` tag'i ya da elle.
 # Eskiden yalnız elle/tag idi ("her main push'unda imzalı sürüm üretmenin
 # anlamı yok") — o karar Play'de uygulama yokken verilmişti. 2026-09-28:
 # kapalı test başladı, iOS her main push'unda TestFlight'a gidiyor; Android
@@ -31,16 +30,16 @@ on:
         type: choice
         options: [completed, draft]
         default: completed
-  # main push'u artık TETİKLEMEZ (2026-10-12, kullanıcı isteği: "androide her
-  # build gitmesi yerine özellikle belirtirsek gitsin"). 2026-09-28'den beri
-  # her birleşme kapalı teste yeni bir sürüm gönderiyordu; günde birkaç
-  # birleşmede her biri ayrı Play incelemesine giriyor (status: completed) ve
-  # testçiler o sırada linkte uygulamayı bulamadığını bildirdi; inceleme
-  # kuyruğunu seyrekleştirmek en olası nedeni ortadan kaldırır (Play
-  # Console'dan doğrulanamadı, çıkarım). Android'e gönderim artık
-  # bilinçli: Actions → "Android — Release AAB" → Run workflow (main), ya da
-  # `v*` tag'i. iOS (ios-testflight.yml) her birleşmede gitmeye devam eder.
+  # iOS (ios-testflight.yml) ile AYNI tetik (2026-09-28, kullanıcı isteği:
+  # "android için de otomatik build olsun"). Belge değişikliği build istemez.
   push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'legal/**'
+      - 'store_listing/**'
+      - 'tool/tasima/**'
+      - '**/*.md'
     tags:
       - 'v*'
 
