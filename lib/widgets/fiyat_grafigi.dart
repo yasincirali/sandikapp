@@ -10,6 +10,7 @@ import '../utils/chart_axis.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/hareketli_ortalama.dart' show mumlariDonustur;
 import '../utils/mum_turetici.dart' show Mum;
+import '../utils/seans_sikistirma.dart';
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
 import 'grafik_stili.dart';
@@ -102,6 +103,14 @@ class FiyatGrafigi extends StatelessWidget {
       periodDays: periodDays,
     );
     final ilk = spots.first.y;
+    // Seans boşlukları eksenden çıkar (yasin 2026-10-12, bkz.
+    // `SeansSikistirma`); varlık detayıyla aynı kural, birim epoch ms.
+    final sik = seansSikistirmasi(
+        seri: seri, periodDays: periodDays, mumlar: katmanlar?.mumlar);
+    double ileri(double x) => sik?.ileri(x) ?? x;
+    double geri(double c) => sik?.geri(c) ?? c;
+    final tamMin = ileri(eksenX.min);
+    final tamSon = ileri(eksenX.max);
 
     // Kart, çizgi, dolgu, ızgara ve "şimdi" işareti ortak grafik stilinden
     // (Performans stili, kullanıcı kararı 2026-09-28). Eskiden bu grafik
@@ -123,25 +132,35 @@ class FiyatGrafigi extends StatelessWidget {
         grafik: ZoomableChart(
       semanticLabel: semanticLabel,
       height: height,
-      fullMinX: eksenX.min,
+      fullMinX: tamMin,
       // Sağda küçük pay: "şimdi" noktası (r=6) ve ŞİMDİ etiketi eksen
       // ayracına yapışıp kırpılmasın (varlık detayı aynı işi +%8 ile yapar).
-      fullMaxX: eksenX.max + (eksenX.max - eksenX.min) * 0.04,
+      // Pay görünen (sıkışmış) uzunluktan.
+      fullMaxX: tamSon + (tamSon - tamMin) * 0.04,
       bottomAxisHeight: _altEksenYuksekligi,
       plotPaddingRight: _yEkseniGenisligi,
       imlecEtiketi: imlecEtiketi,
-      titresimNoktalari: ucTitresimi ? donemUclariX(spots) : const {},
-      crosshairSnapX: (x) {
+      titresimNoktalari: ucTitresimi
+          ? {for (final x in donemUclariX(spots)) ileri(x)}
+          : const {},
+      // İmleç sıkışmış X verir; arama gerçek X'te.
+      crosshairSnapX: (c) {
+        final x = geri(c);
         // Clamp EKSENE, seriye değil — seans dışı saatler ölü bölge olmasın
         // (bkz. PercentComparisonChart.crosshairSnapX).
         final clamped = x.clamp(eksenX.min, eksenX.max);
         final i = coveringSpotIndex(spots, clamped);
-        return i < 0 ? clamped : spots[i].x;
+        return ileri(i < 0 ? clamped : spots[i].x);
       },
-      onViewportChanged: onViewportChanged,
+      // Dışarıya GERÇEK pencere (kendi göstergen panelleri aynı eşlemeyle
+      // kendisi sıkıştırır).
+      onViewportChanged: onViewportChanged == null
+          ? null
+          : (a, b) => onViewportChanged!(geri(a), geri(b)),
       // Dönem değişince yakınlaştırma sıfırlanır (yasin 2026-10-11).
       sifirlamaAnahtari: sifirlamaAnahtari ?? periodDays,
-      crosshairLabelBuilder: (x) {
+      crosshairLabelBuilder: (c) {
+        final x = geri(c);
         if (_imlectekiMum(x) case final m?) {
           final t = DateTime.fromMillisecondsSinceEpoch(m.x.round());
           return (
@@ -164,7 +183,8 @@ class FiyatGrafigi extends StatelessWidget {
       },
       // Dönem başına göre değişim: "buradan bugüne ne oldu" değil, "dönem
       // başından bu ana ne oldu" — başlıktaki yüzdeyle aynı taban.
-      crosshairDetailsBuilder: (x) {
+      crosshairDetailsBuilder: (c) {
+        final x = geri(c);
         if (_imlectekiMum(x) case final m?) {
           return [
             (
@@ -185,8 +205,24 @@ class FiyatGrafigi extends StatelessWidget {
           ),
         ];
       },
-      builder: (minX, maxX) =>
-          _data(context, spots, eksenX, minX, maxX),
+      builder: (cMin, cMax) {
+        final veri = _data(context, spots, eksenX, geri(cMin), geri(cMax),
+            mumAraligi: cMax - cMin);
+        if (sik == null) return veri;
+        return GrafikStili.seansEkseni(
+          context,
+          veri,
+          sik,
+          cMin: cMin,
+          cMax: cMax,
+          // Epoch 0 tam saat (UTC; TR'de de tam saat) ve ilk boşluktan önce.
+          taban: 0,
+          birDakika: 60 * 1000.0,
+          an: (x) => DateTime.fromMillisecondsSinceEpoch(x.round()),
+          eksenPx: (MediaQuery.sizeOf(context).width - 60 - 40)
+              .clamp(120.0, 2000.0),
+        );
+      },
       ),
       ),
     );
@@ -198,8 +234,9 @@ class FiyatGrafigi extends StatelessWidget {
     ({double min, double max, double interval, double baseline, bool gunIci})
         eksenX,
     double minX,
-    double maxX,
-  ) {
+    double maxX, {
+    required double mumAraligi,
+  }) {
     final k = katmanlar;
     // LOG: Y log10(fiyat); etiket ve dönem başı HAM fiyatı yazar.
     final log = k?.log ?? false;
@@ -350,7 +387,9 @@ class FiyatGrafigi extends StatelessWidget {
             context,
             mumlar,
             genislik: genislik,
-            gorunurAralik: maxX > minX ? maxX - minX : null,
+            // Görünen (seans boşlukları sıkışmış) genişlik: mum gövdesi
+            // ekrandaki kovaya göre.
+            gorunurAralik: mumAraligi > 0 ? mumAraligi : null,
           )
         else
         LineChartBarData(
@@ -437,6 +476,25 @@ class FiyatGrafigi extends StatelessWidget {
         enabled: false,
         handleBuiltInTouches: false,
       ),
+    );
+  }
+
+  /// Bu grafiğin seans sıkıştırması — kendi göstergen panelleri
+  /// (`OzelGostergeAltBolumu`) aynısını kullanır ki çubuklar hizalı kalsın.
+  /// Gün içi (tek seans) sıkıştırılmaz. Mum açıkken anlar mumların
+  /// başlarıdır (çizgi seri farklı sıklıkta olabilir).
+  static SeansSikistirma? seansSikistirmasi({
+    required Map<int, double> seri,
+    required int periodDays,
+    List<Mum>? mumlar,
+  }) {
+    if (periodDays <= 1) return null;
+    return SeansSikistirma.kur(
+      mumlar != null && mumlar.isNotEmpty
+          ? [for (final m in mumlar) m.x]
+          : [for (final k in seri.keys) k.toDouble()],
+      hizalama: 60 * 60 * 1000.0,
+      birGun: 24 * 60 * 60 * 1000.0,
     );
   }
 

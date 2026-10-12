@@ -5,7 +5,9 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
+import '../utils/seans_sikistirma.dart';
 
 /// Fiyat ve değer grafiklerinin ORTAK görünümü — "Performans stili".
 ///
@@ -314,9 +316,8 @@ abstract final class GrafikStili {
   }) {
     final out = <LineChartBarData>[];
     for (final m in mumlar) {
-      final kovaPx = gorunurAralik == null
-          ? 8.0
-          : genislik * (m.kovaMs / gorunurAralik);
+      final kovaPx =
+          gorunurAralik == null ? 8.0 : genislik * (m.kovaMs / gorunurAralik);
       final govde = (kovaPx * 0.65).clamp(2.0, 14.0);
       final fitil = (govde * 0.25).clamp(1.0, 2.0);
       final renk = kapali
@@ -411,6 +412,107 @@ abstract final class GrafikStili {
         seri(dojiler, context.c.gain, govde, yuvarlak: true),
     ];
   }
+
+  /// Seans boşlukları sıkışmış grafik (yasin 2026-10-12, `SeansSikistirma`):
+  /// gerçek X'te kurulmuş [gercek] veriyi sıkışmış [cMin]–[cMax] eksenine
+  /// taşır ve alt ekseni yeniden yazar. Varlık detayı (kesirli gün) ve
+  /// varlık sayfası (epoch ms) AYNI kuralı kullanır; birim [birDakika] ve
+  /// [an] (gerçek X → yerel saat) ile verilir.
+  ///
+  /// Eksen: tick'ler gerçek saatin tam katına oturur ([taban]; kesilen her
+  /// boşluk tam saat olduğundan sıkışmış eksende de öyle kalır). Seans
+  /// başı TARİH ("13 Eki"), arası yuvarlak SAAT yazar; sığmayan yazı
+  /// çizilmez (`SeansSikistirma.eksenYazilari`). Atlanan her boşluğun
+  /// yerinde ince kesikli ayraç: zamanın orada sıçradığını gösterir —
+  /// renksiz okunur, yalnız çizgi biçimi (HIG: anlam yalnız renkte değil).
+  /// Ayraçlar birbirine [_ayracAsgariPx]'ten yakınsa çizilmez (1 ay ·
+  /// 30 dk'da 22 çizgi ızgara gibi okunurdu).
+  static LineChartData seansEkseni(
+    BuildContext context,
+    LineChartData gercek,
+    SeansSikistirma sik, {
+    required double cMin,
+    required double cMax,
+    required double taban,
+    required double birDakika,
+    required DateTime Function(double gercekX) an,
+    required double eksenPx,
+  }) {
+    final aralik = cMax - cMin;
+    final adimDk =
+        aralik <= 0 ? 60.0 : gunIciTickDk(aralik / birDakika).clamp(5.0, 60.0);
+    final adim = adimDk * birDakika;
+    final stil = eksenYazisi(context);
+    final olcek = MediaQuery.textScalerOf(context);
+    final etiketPx = xEtiketAraligi(
+        DateFormat('d MMM', 'tr_TR').format(DateTime(2026, 8, 28)),
+        stil: stil,
+        olcek: olcek);
+    final yazilar = sik.eksenYazilari(
+      cMin: cMin,
+      cMax: cMax,
+      adim: adim,
+      taban: taban,
+      eksenPx: eksenPx,
+      etiketPx: etiketPx,
+      an: an,
+      birDakika: birDakika,
+    );
+    final ayraclar = [
+      for (final s in sik.seansBaslari)
+        if (s > cMin && s < cMax) s,
+    ];
+    final ayracGoster = ayraclar.isNotEmpty &&
+        eksenPx / (ayraclar.length + 1) >= _ayracAsgariPx;
+    final m = sik.uygula(gercek, minX: cMin, maxX: cMax);
+    final b = gercek.titlesData.bottomTitles.sideTitles;
+    return m.copyWith(
+      baselineX: taban,
+      extraLinesData: ExtraLinesData(
+        horizontalLines: m.extraLinesData.horizontalLines,
+        extraLinesOnTop: m.extraLinesData.extraLinesOnTop,
+        // Ekranın kendi çizgileri ("şimdi") ÖNCE: fl_chart çizgileri sıra
+        // ile lerp eder; ayraç başa girince "şimdi"nin etiketi ayracınkiyle
+        // karışıp TextStyle lerp hatası veriyordu.
+        verticalLines: [
+          ...m.extraLinesData.verticalLines,
+          if (ayracGoster)
+            for (final x in ayraclar)
+              VerticalLine(
+                x: x,
+                // OPAK: fl_chart `extraLinesOnTop`ta dikey çizgileri her
+                // çubuktan sonra YENİDEN çizer; mum başına bir çubuk olan
+                // grafikte yarı saydam ayraç onlarca kat üst üste binip
+                // beyaz bir çizgiye dönüyordu (görsel denetim 2026-10-12).
+                color: Color.alphaBlend(context.c.hairline, context.c.surface1),
+                strokeWidth: 1,
+                dashArray: const [2, 4],
+              ),
+        ],
+      ),
+      titlesData: m.titlesData.copyWith(
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: b.showTitles,
+            reservedSize: b.reservedSize,
+            interval: adim,
+            getTitlesWidget: (value, meta) {
+              final k = ((value - taban) / adim).round();
+              final tarih = yazilar[k];
+              if (tarih == null) return const SizedBox.shrink();
+              final t = an(sik.geri(value));
+              return GrafikStili.xEtiketi(
+                  DateFormat(tarih ? 'd MMM' : 'HH:mm', 'tr_TR').format(t),
+                  stil: stil);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Seans ayraçlarının ortalama en az aralığı (piksel).
+  static const _ayracAsgariPx = 24.0;
 }
 
 /// Dönem başı açıklamasının işareti — çizimdeki kesikli çizginin aynısı.
