@@ -2873,6 +2873,30 @@ class AppLocalizationsTr extends AppLocalizations {
       'Tablodaki sütun ve varlık adları yapay zekâya gönderilir; tutar, adet ve hesap/kimlik numaraları gizlenir.';
 
   @override
+  String get importAiRizaBaslik => 'Ekstreni yapay zekâyla oku';
+
+  @override
+  String get importAiRizaMetin =>
+      'Sütunları bulmak için tablodaki kelimeler (sütun ve varlık adları) sunucumuz üzerinden Anthropic\'e (ABD) gönderilir. Tutar, adet, hesap ve kimlik numaraları gönderilmez; ad ve adres gibi etiketli bilgiler gizlenir. Gönderilen metin saklanmaz. Onayını bu ekrandan istediğin zaman geri çekebilirsin.';
+
+  @override
+  String get importAiRizaKabul => 'Onaylıyorum';
+
+  @override
+  String get importAiRizaVazgec => 'Vazgeç';
+
+  @override
+  String get importAiRizaGeriCek => 'Yapay zekâ onayını geri çek';
+
+  @override
+  String get importAiRizaGeriCekildi =>
+      'Onayını geri çektin. Yapay zekâyla eşle\'ye yeniden basarsan tekrar sorarız.';
+
+  @override
+  String get importAiRizaGerekli =>
+      'Yapay zekâyla eşleme için onayın gerekiyor; düğmeye yeniden bas.';
+
+  @override
   String get importAiSuggested =>
       'Sütunları yapay zekâ önerdi; eşlemeyi kontrol et, gerekirse düzelt.';
 

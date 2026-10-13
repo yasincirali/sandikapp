@@ -241,8 +241,12 @@ ve yurt dışı aktarım yükü yüzünden Claude'da kalındı.
 - **Metin (`ekstreMetni`, v2):** iskeletle aynı düzen; kelimeler AÇIK, rakamlar
   9 (tutar, adet, IBAN, TCKN, hesap no cihazda kalır), e-posta ve etiketli
   künye ("Sayın …", "Ad Soyad: …", "Adres" | değer) A/a. Etiketsiz yazılmış ad
-  geçebilir → bayrak Gizlilik/Açık Rıza güncellemesi + yeniden onay olmadan
-  açılmaz. Sunucu v1'deki maske denetimini v2'ye de uygular.
+  geçebilir. Sunucu v1'deki maske denetimini v2'ye de uygular.
+- **Rıza işlemi isteyenden (yasin 2026-10-13: "herkese peşinen değil de işlemi
+  talep ettiklerinde sorsak"):** ilk "Yapay zekâyla eşle"de onay sayfası
+  (`_AiRizaSayfasi`), kayıt `ekstre_ai_rizalari` (metin sürümüyle), sunucu
+  rızasız metni 403 `riza` ile reddeder; kartta "onayı geri çek". Genel
+  "Onay sürümü" ARTMAZ, herkese onay ekranı çıkmaz.
 - **Model:** önce Haiku 5.5; hiç tablo bulamazsa bir kez Sonnet 5.5. v1 iskelet
   eskisi gibi doğrudan Sonnet.
 - **Şablon hafızası (`ekstre_sablonlari`):** modelin eşlediği tablonun başlık

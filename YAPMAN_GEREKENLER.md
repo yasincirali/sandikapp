@@ -19,13 +19,13 @@ okunan banka düzeni şablon olarak saklanır, aynı düzen bir daha modele gitm
 Kapalıyken istek birebir eski (anonim iskelet, Sonnet). Ayrıntı: `docs/EKSTRE_MOTORU.md`.
 
 - [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `ekstre-esle`).
-- [ ] **Bayrağı herkese açmadan ÖNCE yasal metin:** bugün Gizlilik 1.6 "belge
-      telefonundan çıkmaz, yalnız maskeli iskelet gider" diyor. Metin yolunda tablodaki
-      kelimeler (sütun ve varlık adları; etiketsiz yazılmış bir ad da olabilir) Anthropic'e
-      gider. Gizlilik + Açık Rıza güncellenir, "Sürüm" ve "Onay sürümü" artar →
-      `python docs/_build_legal.py` → migration (iki sunucu). ⚠️ "Onay sürümü" artınca
-      herkese yeniden onay kapısı çıkar; AI portföy yorumunun yasal güncellemesiyle
-      birleştirmek tek kapı demek. Claude yapar; senden yalnız "ne zaman".
+- [ ] **Bayrağı herkese açmadan ÖNCE yasal metin (bilgilendirme):** rıza herkesten
+      değil, işlemi isteyenden ilk kullanımda alınıyor (senin kararın, 2026-10-13); bu
+      yüzden genel "Onay sürümü" ARTMAZ, herkese onay ekranı çıkmaz. Yapılacak: Gizlilik
+      + KVKK Aydınlatma'ya "ekstre yapay zekâ eşlemesi: tablo kelimeleri Anthropic'e (ABD),
+      isteğe bağlı, saklanmaz" + Açık Rıza Metni'ne ilgili bölüm; yalnız "Sürüm" artar →
+      `python docs/_build_legal.py` → migration (iki sunucu). Sonra istemcide
+      `ekstreAiRizaSurumu` yeni metin sürümüne güncellenir. Claude yapar; senden "başla".
 - [ ] Önce yalnız kendi cihazında dene: Remote Config `ekstre_metin_yolu` (Boolean,
       varsayılan `false`) → kendi test koşulunda `true`. Varsayılanı değiştirme.
 - [ ] Bakım: Supabase SQL (salt okunur) `select model, count(*), sum(maliyet_usd) from

@@ -2899,6 +2899,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Column and asset names in the table are sent to AI; amounts, quantities and account/ID numbers stay hidden.';
 
   @override
+  String get importAiRizaBaslik => 'Read your statement with AI';
+
+  @override
+  String get importAiRizaMetin =>
+      'To find the columns, the words in the table (column and asset names) are sent through our server to Anthropic (USA). Amounts, quantities, account and ID numbers are not sent; labelled details such as name and address are hidden. The text sent is not stored. You can withdraw your consent from this screen at any time.';
+
+  @override
+  String get importAiRizaKabul => 'I agree';
+
+  @override
+  String get importAiRizaVazgec => 'Cancel';
+
+  @override
+  String get importAiRizaGeriCek => 'Withdraw AI consent';
+
+  @override
+  String get importAiRizaGeriCekildi =>
+      'Consent withdrawn. We\'ll ask again if you tap Map with AI.';
+
+  @override
+  String get importAiRizaGerekli =>
+      'Matching with AI needs your consent; tap the button again.';
+
+  @override
   String get importAiSuggested =>
       'AI suggested the columns; check the mapping and fix it if needed.';
 

@@ -2272,7 +2272,13 @@ class SupabaseService {
       if (e.status != 429 && e.status != 403) {
         CrashReporter.report(e, st, reason: 'ekstre_esle_${e.status}');
       }
-      throw EkstreAiHatasi(kota: e.status == 429, premium: e.status == 403);
+      final d = e.details;
+      final riza = e.status == 403 && d is Map && d['neden'] == 'riza';
+      throw EkstreAiHatasi(
+        kota: e.status == 429,
+        premium: e.status == 403 && !riza,
+        riza: riza,
+      );
     }
     final govde = res.data is Map ? res.data as Map : const <String, dynamic>{};
     final t = govde['tablolar'];
@@ -2283,6 +2289,32 @@ class SupabaseService {
       sablondan: govde['kaynak'] == 'sablon',
     );
   }
+
+  /// Ekstre metin yolu açık rızası (0147 `ekstre_ai_rizalari`). Hata →
+  /// `null` (ekran rıza varsaymaz, sorar).
+  Future<bool?> ekstreAiRizasiVarMi() async {
+    try {
+      final uid = _db.auth.currentUser?.id;
+      if (uid == null) return null;
+      final rows = await _db
+          .from('ekstre_ai_rizalari')
+          .select('geri_cekildi_at, metin_surumu')
+          .eq('user_id', uid);
+      if (rows.isEmpty) return false;
+      return rows.first['geri_cekildi_at'] == null &&
+          rows.first['metin_surumu'] == ekstreAiRizaSurumu;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ekstre_ai_rizasi_okunamadi');
+      return null;
+    }
+  }
+
+  /// Rıza ver / geri çek. Metin değişince [ekstreAiRizaSurumu] artar ve
+  /// kayıtlı sürüm eskiyse ekran yeniden sorar.
+  Future<void> ekstreAiRizasiAyarla(bool ver) => _db.rpc<dynamic>(
+        'ekstre_ai_rizasi_ayarla',
+        params: {'p_ver': ver, 'p_metin_surumu': ekstreAiRizaSurumu},
+      );
 
   Future<void> sendPartnerInvitePush(String inviteId) async {
     final response = await _log.log(
@@ -2871,3 +2903,7 @@ Map<String, Map<String, int>>? gostergeParametreleriniOku(Object? ham) {
   });
   return out.isEmpty ? null : out;
 }
+
+/// Ekstre metin yolu rıza metninin sürümü (`importAiRizaMetin`). Yasal metin
+/// yayımlanınca onun sürümüne güncellenir.
+const ekstreAiRizaSurumu = '2026-10-13-taslak';

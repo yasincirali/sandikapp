@@ -21,7 +21,8 @@
 // Tutmazsa önce Haiku 5.5, hiç tablo bulamazsa bir kez Sonnet 5.5; bulunan
 // eşlemeler şablon olarak saklanır. `sablonsuz: true` = cihaz şablonun
 // verdiği eşlemeyi sağlamada reddetti: şablonun hata sayacı artar, model
-// sorulur. v1 iskelet birebir eskisi gibi (Sonnet, şablon yok).
+// sorulur. Metin yolu açık rıza ister (`ekstre_ai_rizalari`; yoksa 403
+// `riza`). v1 iskelet birebir eskisi gibi (Sonnet, şablon yok, rıza yok).
 //
 // Yanıt: { ok: true, tablolar: Esleme[], kaynak: 'ai' | 'sablon' } ya da
 // { ok: false, neden }.
@@ -107,6 +108,17 @@ Deno.serve(async (req: Request) => {
 
   const db = createClient(url, servis);
   try {
+    // Metin yolunda kelimeler modele gider: işlemi isteyen kullanıcının
+    // açık rızası şart (0147 `ekstre_ai_rizalari`, ilk kullanımda sorulur).
+    if (metinYolu) {
+      const { data: riza, error: re } = await db.from('ekstre_ai_rizalari')
+        .select('geri_cekildi_at').eq('user_id', userId).maybeSingle();
+      if (re) throw re;
+      if (!riza || riza.geri_cekildi_at !== null) {
+        return jsonResponse({ ok: false, neden: 'riza' }, 403);
+      }
+    }
+
     // Şablon hafızası (yalnız metin yolu): iz → SHA-256 → saklı eşleme.
     const tablolarMetni = metinYolu ? tablolariAyikla(iskelet) : [];
     const adaylar = await Promise.all(
