@@ -216,6 +216,18 @@ tamamen satılmış (varlık tablosunda olmayan) kod atlanıyordu. Hepsi hâlâ
   kapanmış gösterirdi.
 - Ekran, hareketlerde kod varsa (bayrak açıkken) adla fon olmasa da TEFAS listesini çeker.
 
+## Tabloya yapışık başlık ve künye (2026-10-13)
+
+Örnek ekstre hazırlanırken görüldü: tablonun hemen üstündeki 14 pt başlık ve
+"Müşteri: …   Hesap No: …" künyesi tabloyla aynı bloğa düştü. Başlığın kelime
+arası tablo yazısının hücre eşiğini (sayfa medyanı × 0,9) aştığı için başlık
+hücrelere bölündü; künyenin parçalarıyla birlikte sütun bantlarını köprüledi
+ve "İşlem Tarihi Sembol" tek sütun oldu, tablo tanınmadı. İki düzeltme
+(`pdf_tablo.dart`): hücre eşiği kelimenin kendi boyuyla büyür; sütun bantları
+yalnız en dolu satırın %60'ı kadar hücresi olan asıl satırlardan kurulur.
+Regresyon: `test/fixtures/ekstre_pdf_kunyeli.json` (uydurma veri). Örnek PDF
+(kullanıcıya verilen): `/mnt/project-files/ekstre-ornek/sandik_ornek_ekstre.pdf`.
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örneği: yalnız DenizBank** (PDF, 2026-10-03; kişisel veri olduğu için
