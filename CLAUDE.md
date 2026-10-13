@@ -211,7 +211,10 @@ ilgili md'yi günceller; "Sürüm" **ve** "Onay sürümü" artar, migration yaz�
 kapısı kullanıcıya sorar. Kişisel veri almayan kaynaklar (fiyat/piyasa verisi) metinde adıyla
 **sayılmaz** — "kamuya açık piyasa verisi sağlayıcıları" grubu kapsar; yeni fiyat kaynağı
 metne dokunmaz (kullanıcı kararı 2026-10-08). Esaslı olmayan düzeltmede yalnız "Sürüm" artar
-(md + migration yine gerekir), kapı açılmaz. Açık Rıza Metni'ne "Onay sürümü" yazılmaz.
+(md + migration yine gerekir), kapı açılmaz. İstisna (kullanıcı kararı 2026-10-13): isteğe bağlı bir
+özelliğin veri aktarımı için rıza **işlemi isteyen kullanıcıdan, ilk kullanımda** alınır
+(özelliğe ait rıza tablosu + RPC, fonksiyon rızasız isteği reddeder; örnek 0145, 0147);
+o zaman "Onay sürümü" artmaz, metne bilgi olarak eklenir ve yalnız "Sürüm" artar. Açık Rıza Metni'ne "Onay sürümü" yazılmaz.
 
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.

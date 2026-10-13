@@ -4952,6 +4952,54 @@ abstract class AppLocalizations {
   /// **'Tablonun yalnız yapısı gönderilir: ad, numara ve tutarlar gizlenir, belge telefonundan çıkmaz.'**
   String get importAiHint;
 
+  /// No description provided for @importAiHintText.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tablodaki sütun ve varlık adları yapay zekâya gönderilir; tutar, adet ve hesap/kimlik numaraları gizlenir.'**
+  String get importAiHintText;
+
+  /// No description provided for @importAiRizaBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreni yapay zekâyla oku'**
+  String get importAiRizaBaslik;
+
+  /// No description provided for @importAiRizaMetin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sütunları bulmak için tablodaki kelimeler (sütun ve varlık adları) sunucumuz üzerinden Anthropic\'e (ABD) gönderilir. Tutar, adet, hesap ve kimlik numaraları gönderilmez; ad ve adres gibi etiketli bilgiler gizlenir. Gönderilen metin saklanmaz. Onayını bu ekrandan istediğin zaman geri çekebilirsin.'**
+  String get importAiRizaMetin;
+
+  /// No description provided for @importAiRizaKabul.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylıyorum'**
+  String get importAiRizaKabul;
+
+  /// No description provided for @importAiRizaVazgec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vazgeç'**
+  String get importAiRizaVazgec;
+
+  /// No description provided for @importAiRizaGeriCek.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ onayını geri çek'**
+  String get importAiRizaGeriCek;
+
+  /// No description provided for @importAiRizaGeriCekildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onayını geri çektin. Yapay zekâyla eşle\'ye yeniden basarsan tekrar sorarız.'**
+  String get importAiRizaGeriCekildi;
+
+  /// No description provided for @importAiRizaGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâyla eşleme için onayın gerekiyor; düğmeye yeniden bas.'**
+  String get importAiRizaGerekli;
+
   /// No description provided for @importAiSuggested.
   ///
   /// In tr, this message translates to:
