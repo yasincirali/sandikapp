@@ -48,6 +48,10 @@ dependencies:
   device_info_plus: ^12.4.0
   purchases_flutter: ^10.15.0
   pdf: ^3.13.1
+  # Ekran görüntüsünden maliyet (2026-10-13, bayrak `ekran_goruntusu_maliyet`):
+  # iOS'ta PHPicker (izin istemez), Android'de sistem fotoğraf seçicisi.
+  # file_selector iOS'ta yalnız Dosyalar'ı açar, ekran görüntüleri Fotoğraflar'da.
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:

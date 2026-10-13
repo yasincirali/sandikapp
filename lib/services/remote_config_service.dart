@@ -389,6 +389,17 @@ class RemoteConfigService {
     // birebir eski v1 iskelet.
     'ekstre_metin_yolu': false,
 
+    // Ekran görüntüsünden adet ve ortalama maliyet (2026-10-13, yasin:
+    // "bankalarda ekstrelerde varlıkların ortalama maliyetleri, alım
+    // zamanları yazmıyor"; muadil araştırmasından sonra seçenek "Ekran
+    // görüntüsü"). İçe aktarma ekranında "Ekran görüntüsünden ekle" /
+    // "Maliyetleri ekran görüntüsünden doldur": metin CİHAZDA okunur (iOS
+    // Vision, Android ML Kit; `ekran_okuyucu.dart`), hiçbir şey sunucuya
+    // gitmez, yasal metin değişmez. KAPALI doğar: önce TestFlight'ta gerçek
+    // banka/aracı kurum ekranlarıyla denenir. Kapalıyken düğme yok, ekran
+    // birebir eski. Premium (paywall açıkken ücretsizde kilitli).
+    'ekran_goruntusu_maliyet': false,
+
     // ABD hissesi (2026-10-08). Hisse türünde "BIST | ABD" seçimi, ABD
     // kataloğu (`abd_hisseleri.dart`) ve aramada ABD sonuçları. Veri yeni
     // tür DEĞİL: `type='hisse'`, `sub_category='abd'`, `currency='USD'`,
@@ -856,6 +867,9 @@ class RemoteConfigService {
 
   /// Ekstre metin yolu + şablon hafızası. Gerekçe `_defaults`'ta.
   bool get ekstreMetinYolu => _bayrak('ekstre_metin_yolu');
+
+  /// Ekran görüntüsünden maliyet. Gerekçe `_defaults`'ta.
+  bool get ekranGoruntusuMaliyet => _bayrak('ekran_goruntusu_maliyet');
 
   /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
   bool get abdHisse => _bayrak('abd_hisse');

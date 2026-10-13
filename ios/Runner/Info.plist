@@ -82,6 +82,10 @@
 	  ancak cihazda fark edilir (`NSSupportsLiveActivities` ile aynı sınıf
 	  tuzak).
 	-->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Seçtiğin portföy ekran görüntüsünden adet ve ortalama maliyeti okumak için. Görüntü telefonunda işlenir.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Portföy ekranının fotoğrafından adet ve ortalama maliyeti okumak için.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Portföyünü yalnızca senin görebilmen için uygulama kilidini Face ID ile açar.</string>
 	<!-- Motorun yerleşik derin bağlantı yolu kapalı; URI'yi app_links ele alır

@@ -12,6 +12,26 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-13 Ekran görüntüsünden maliyet (bayrak `ekran_goruntusu_maliyet`, Premium)
+
+İçe aktarma ekranında "Ekran görüntüsünden ekle" (ekstre okunduysa "Maliyetleri
+ekran görüntüsünden doldur"): banka/aracı kurum uygulamasının portföy ekranından
+adet ve ortalama maliyet telefonda okunur (iOS Vision, Android ML Kit). Sunucu,
+migration ve yasal metin değişikliği YOK; görüntü telefondan çıkmaz.
+Ayrıntı: `docs/EKSTRE_MOTORU.md` "Ekran görüntüsünden maliyet".
+
+- [ ] TestFlight'ta dene: Remote Config `ekran_goruntusu_maliyet` (Boolean,
+      varsayılan `false`) → "TestFlight 1.1.6" koşulunda `true` → Publish.
+      Koşulun custom signal değeri `kapali` duruyorsa önce `testflight` yap.
+      Varsayılanı değiştirme.
+- [ ] Kendi banka/aracı kurum uygulamalarından birkaç ekran görüntüsüyle dene;
+      okunmayan bir düzen olursa görüntünün maskeli hâlini (ad/hesap no
+      kapalı) thread'e at, kuralı ona göre genişletirim.
+- [ ] Bilinen sınır: Android'de bankaların çoğu uygulamasında ekran görüntüsü
+      engelli (FLAG_SECURE); orada iPhone ya da aracı kurumun web ekranı gerekir.
+- [ ] İlk Android kurulumunda ML Kit modeli Play hizmetlerinden iner; inmeden
+      denenirse "Görüntü okunamadı" çıkar, biraz sonra yeniden dene.
+
 ## ⏳ 2026-10-13 Ekstre metin yolu + banka şablonu hafızası (0147, bayrak `ekstre_metin_yolu`, Premium)
 
 "Yapay zekâyla eşle" kelimeleri açık metni yollar (rakamlar yine gizli), önce Haiku 5.5;

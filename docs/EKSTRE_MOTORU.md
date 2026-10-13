@@ -264,6 +264,46 @@ ve yurt dışı aktarım yükü yüzünden Claude'da kalındı.
   gelir, kullanıcı yazamaz; ama kasıtlı hazırlanmış bir metin modeli yanıltıp
   bir izi bozabilir — sağlama ve "kontrol et" uyarısı son savunma.
 
+## Ekran görüntüsünden maliyet (2026-10-13, bayrak `ekran_goruntusu_maliyet`)
+
+yasin: "bankalarda ekstrelerde varlıkların ortalama maliyetleri, alım zamanları
+yazmıyor". Banka varlık ekstresi o günün fotoğrafı: adet doğru gelir, maliyet
+ekstre gününün fiyatı olur. Hareketli ekstre yalnız dönem içini düzeltir.
+Muadiller (Greenline, Sharesight AI importer) portföy ekranının görüntüsünden
+içe aktarır; Türkiye'de hesap bağlama (açık bankacılık, MKK e-Yatırımcı)
+yatırım hesabına açık değil. Her banka/aracı kurum uygulaması portföy ekranında
+adet ve ortalama maliyeti zaten gösterir; yasin seçeneği "Ekran görüntüsü".
+
+- **Okuma cihazda:** iOS Apple Vision (`AppDelegate.swift` `OcrChannel`; sistemde
+  hazır, boyut eklemez), Android ML Kit Latin (`MainActivity.kt`, Play
+  hizmetlerindeki model; gömülü model APK'ya ~4 MB/mimari eklerdi).
+  `google_mlkit_text_recognition` eklentisi seçilmedi: iOS 15.5 alt sınırı ve
+  ~10 MB pod isterdi. Görüntü sunucuya gitmez, yasal metin değişmez. Seçici
+  `image_picker` (iOS PHPicker izin sormaz; `file_selector` iOS'ta Fotoğraflar'ı
+  açmaz).
+- **Anlama** (`ekran_goruntusu.dart`, saf): kelime kutuları hücreye bölünür
+  (boşluk > 0,8 × satır yüksekliği), hücreler satıra. Çapa = BIST kodu, hücrede
+  tek başına duran TEFAS kodu ya da TEFAS unvanına TEK eşleşen fon adı (alt
+  satıra taşan ad birleştirilir; kesik "…" ad önek olarak eşleşir). Değer üç
+  düzende bulunur: aynı hücrede ("100 Adet · Ort. 250,00"), etiketin sağında
+  ya da altında (kart), başlık satırının sütununda (tablo). Etiketsiz sayı,
+  yüzde, tarih, saat değer sayılmaz.
+- **"Maliyet" belirsiz:** tek başına "Maliyet" birim de toplam da olabilir.
+  Güncel değer ya da fiyat okunduysa birim fiyata (log uzaklığı) yakın olan
+  seçilir; okunmadıysa birim sayılır. "Toplam maliyet"/"Maliyet tutarı" adede
+  bölünür.
+- **Ekstreyle birleşme** (`maliyetleriUygula`): adet EKSTREDEN kalır, yalnız
+  fiyat yazılır, tutar boşalır. Kod metinde tek alış satırıysa yazılır;
+  hareketlerle bölünmüş ya da satışlı kod dokunulmaz (o fiyatlar gerçek işlem
+  fiyatı). Ekstrede olmayan kod eklenmez, önizleme söyler. Tarih ekstre günü
+  kalır: toplam K/Z doğru, Performans grafiği o günden başlar.
+- **Ekstre yoksa** görüntünün kendisi kanonik metin olur (`sembol adet fiyat
+  tur`), adedi okunmayan ya da kodu çözülmeyen varlık girmez.
+- **Sınırlar:** Android'de banka uygulamalarının çoğu ekran görüntüsünü engeller
+  (FLAG_SECURE). Yan yana kart ızgarası ve etiketsiz düzenler okunmaz. Görsel
+  AI yedeği yok (gerekirse metin yolunun rızasıyla eklenir). Testler
+  `test/ekran_goruntusu_test.dart` (liste, kart, tablo, birleşme).
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örneği: yalnız DenizBank** (PDF, 2026-10-03; kişisel veri olduğu için
