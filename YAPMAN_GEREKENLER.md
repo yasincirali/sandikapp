@@ -12,6 +12,41 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-13 SANDIK X (Twitter) hesabı — günlük taslak + Telegram onayı (0146)
+
+Kod dalda, **her şey kapalı**: `x-paylas` `X_BOT_MODU` secret'ı olmadan 503 döner,
+uygulama hiçbir şey görmez, kullanıcı verisi kullanılmaz (yasal metin değişmez).
+Fizibilite + içerik kuralları: proje klasörü `twitter-bot/fizibilite.md`.
+Önizleme: https://claude.ai/artifact/GPwtuCmf67XGZnAA97G63J
+
+Akış: hafta içi TR 19:40 taslak (Cuma haftanın özeti, TÜİK günü TÜFE) → Telegram'da
+sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanmayan bayatlar.
+
+- [ ] Birleşince Supabase deploy (hedef `ikisi`; migration 0146 + `x-paylas`, `x-onay`).
+- [ ] **Telegram (onay kanalı, 2 dk):** @BotFather → `/newbot` → token. Bota bir kez
+      `/start` yaz (bot sana ilk mesajı ancak böyle atabilir). Kendi sohbet kimliğin:
+      @userinfobot.
+- [ ] Supabase › Edge Functions › Secrets — **yalnız canlı proje (Tokyo)**; iki projede
+      birden açılırsa iki sunucu aynı Telegram botunun webhook'unu birbirinden kapar.
+      Frankfurt'a taşınırken secret'lar taşınır, webhook ilk turda kendini kaydeder.
+      `X_BOT_MODU=taslak`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`,
+      `TELEGRAM_WEBHOOK_SECRET` (32+ karakter, yalnız harf/rakam/`_`/`-`).
+      Bu aşamada onay **X'e göndermez**; 1–2 hafta taslakları beğen/reddet.
+- [ ] **X hesabı:** "sandık" hesabını aç; profil + kapak görseli `twitter-bot/gorseller/`.
+      Bio: "Piyasanın günlük özeti: fon akışı, enflasyon. Sayılarla, sade. Kaynaklar:
+      TEFAS, TÜİK. Yatırım tavsiyesi değildir." Ayarlar › Hesabın › Otomasyon'dan
+      **"Otomatik hesap" etiketini** kendi kişisel hesabına bağla (X kuralı).
+- [ ] **X Developer** (developer.x.com, bot hesabıyla giriş): uygulama oluştur, kullandıkça
+      öde kredisi yükle (10 $ ≈ 600 gönderi). User authentication › **Read and write**,
+      OAuth 1.0a. Keys and tokens: API Key/Secret + Access Token/Secret (bot hesabının).
+- [ ] Secrets (Tokyo): `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`,
+      sonra `X_BOT_MODU=yayin`. Bundan sonra "Yayınla" X'e atar.
+- [ ] İsteğe bağlı: `X_KUR_IZINLI=1` (haftalık karta gram altın/dolar/euro — truncgil
+      verisinin kamuya yayın hakkı belirsiz, kararı senin); `X_BOT_AI=0` (model yerine
+      şablon metin; maliyet sıfır).
+- [ ] Karar (önerilir): sermaye piyasası avukatına tek seferlik "olanı anlatan, yönlendirmeyen
+      otomatik veri hesabı" görüşü.
+
 ## ⏳ 2026-10-13 AI portföy yorumu — Özet'te geçen hafta / geçen ay (0145, bayrak `portfoy_ai_yorumu`, Premium)
 
 Kod ve şema main'de, **her şey kapalı**: bayrak varsayılanı `false`, fonksiyon
