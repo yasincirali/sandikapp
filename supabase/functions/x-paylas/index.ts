@@ -1,6 +1,8 @@
 // x-paylas — SANDIK X hesabının günlük gönderi TASLAĞI (0146, 2026-10-13).
 //
 // pg_cron hafta içi TR 19:40'ta çağırır (fon akışı 19:15 turundan sonra).
+// İçerik: fon akışı, Cuma haftanın özeti, TÜİK TÜFE; ABD için (Türkçe) BLS
+// TÜFE ve Fed faiz kararı.
 // Gönderiyi kendisi ATMAZ: taslağı yazar, kartını çizer ve Telegram'da
 // yöneticiye "Yayınla / Reddet" düğmeleriyle yollar. Atma işi `x-onay`'da.
 //
@@ -24,7 +26,12 @@ import { maliyetUsd } from '../_shared/analiz.ts';
 import { hataOzeti } from '../_shared/ekstre_esleme.ts';
 import { trGun } from '../_shared/tefas_nav.ts';
 import {
+  abdTufeGuncelMi,
+  abdTufeOzeti,
+  abdTufeTaslagi,
   akisOzeti,
+  fedKarariBul,
+  fedTaslagi,
   bugununFonGonderisi,
   fonAkisiTaslagi,
   gunEkle,
@@ -41,6 +48,22 @@ import {
 } from '../_shared/x_paylasim.ts';
 import { telegramAyari, telegramTaslakGonder, telegramWebhookKur } from '../_shared/x_istemci.ts';
 import { pngCiz } from '../bildirim-karti/cizici.ts';
+
+/// ABD kamu verisi (BLS, New York Fed). Anahtarsız uçlar; 15 sn sınır.
+/// Hata ya da beklenmeyen yanıt → null, o gönderi bu tur atlanır.
+async function jsonGetir(url: string, init?: RequestInit): Promise<unknown | null> {
+  try {
+    const r = await fetch(url, { ...init, signal: AbortSignal.timeout(15000) });
+    if (!r.ok) {
+      console.error('[x-paylas] kaynak', new URL(url).host, r.status);
+      return null;
+    }
+    return await r.json();
+  } catch (e) {
+    console.error('[x-paylas] kaynak', new URL(url).host, hataOzeti(e));
+    return null;
+  }
+}
 
 function yanit(govde: unknown, durum = 200): Response {
   return new Response(JSON.stringify(govde), { status: durum, headers: { 'Content-Type': 'application/json' } });
@@ -112,6 +135,22 @@ Deno.serve(async (req: Request) => {
       const t = tufeOzeti((endeks ?? []).map((r) => ({ period: r.period, tufe_index: Number(r.tufe_index) })));
       if (t) taslaklar.push(tufeTaslagi(t));
     }
+
+    // 3) ABD — Türkçe anlatılır (yasin, 13 Eki). Yalnız ABD kamu verisi.
+    const bls = await jsonGetir('https://api.bls.gov/publicAPI/v1/timeseries/data/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seriesid: ['CUSR0000SA0', 'CUUR0000SA0'] }),
+    });
+    const abd = bls ? abdTufeOzeti(bls) : null;
+    if (abd && abdTufeGuncelMi(abd.donem, bugun)) taslaklar.push(abdTufeTaslagi(abd));
+    else if (!bls) sonuc.abd_tufe = 'kaynak_yok';
+
+    const nyfed = await jsonGetir('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/10.json');
+    const fed = nyfed ? fedKarariBul(nyfed) : null;
+    // Karar en geç 4 gün önce yürürlüğe girdiyse (hafta sonu + cron yalnız hafta içi).
+    if (fed && fed.tarih >= gunEkle(bugun, -4)) taslaklar.push(fedTaslagi(fed));
+    else if (!nyfed) sonuc.fed = 'kaynak_yok';
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
     const aiAcik = !!apiKey && Deno.env.get('X_BOT_AI') !== '0';

@@ -5,7 +5,12 @@
 
 import { assert, assertEquals, assertMatch } from 'jsr:@std/assert@1';
 import {
+  abdTufeGuncelMi,
+  abdTufeOzeti,
+  abdTufeTaslagi,
   akisOzeti,
+  fedKarariBul,
+  fedTaslagi,
   ASGARI_FON,
   bugununFonGonderisi,
   type FonAkisSatiri,
@@ -195,13 +200,60 @@ Deno.test('kart PNG çizilir (üç biçim)', async () => {
     fonAkisiTaslagi(o).kart,
     haftalikTaslak({ ...o, baslangic: '2026-10-06', bitis: '2026-10-10' }, [{ ad: 'Gram altın', son: '4.912 ₺', degisim: 1.8 }]).kart,
     tufeTaslagi(tufeOzeti(satirlar)!).kart,
+    abdTufeTaslagi(abdTufeOzeti(bls([320, 320.5, 320.2, 320.9, 321.6, 322.0, 322.96], Array.from({ length: 13 }, (_, i) => 300 + i * 0.7)))!).kart,
+    fedTaslagi({ tarih: '2026-10-30', eski: [4, 4.25], yeni: [3.75, 4] }).kart,
   ];
   for (const k of kartlar) {
     const png = await pngCiz(kartSvg(k));
     assertEquals([...png.slice(1, 4)].map((c) => String.fromCharCode(c)).join(''), 'PNG');
     const dosya = Deno.env.get('X_KART_CIKTI');
-    if (dosya) await Deno.writeFile(`${dosya}/${k.ust.split(' ')[0]}_${kartlar.indexOf(k)}.png`, png);
+    if (dosya) await Deno.writeFile(`${dosya}/kart_${kartlar.indexOf(k)}.png`, png);
   }
+});
+
+// ── ABD (Türkçe) ─────────────────────────────────────────────────────────────
+
+function bls(sa: number[], ham: number[], sonYil = 2026, sonAy = 9) {
+  const seri = (id: string, v: number[]) => ({
+    seriesID: id,
+    data: v.map((d, i) => {
+      const geri = v.length - 1 - i;
+      const toplam = sonYil * 12 + sonAy - 1 - geri;
+      return { year: String(Math.floor(toplam / 12)), period: `M${String((toplam % 12) + 1).padStart(2, '0')}`, value: String(d) };
+    }).reverse(), // BLS en yeniyi önce verir
+  });
+  return { status: 'REQUEST_SUCCEEDED', Results: { series: [seri('CUSR0000SA0', sa), seri('CUUR0000SA0', ham)] } };
+}
+
+Deno.test('ABD TÜFE: aylık arındırılmış seriden, yıllık ham seriden', () => {
+  const ham = Array.from({ length: 13 }, (_, i) => 300 * (1 + 0.029 * i / 12));
+  const t = abdTufeOzeti(bls([320, 320.96], ham))!;
+  assertEquals(t.donem, '2026-09-01');
+  assertEquals(yuzde(t.aylik), '%0,3');
+  assertEquals(yuzde(t.yillik), '%2,9');
+  const ts = abdTufeTaslagi(t);
+  assertEquals(ts.sablon_metin, "ABD'de eylül ayı enflasyonu aylık %0,3, yıllık %2,9 oldu.");
+  assertEquals(metinKapisi({ metin: ts.sablon_metin }, ts).gecti, true);
+  assertEquals(abdTufeOzeti({ Results: { series: [] } }), null);
+  assertEquals(abdTufeOzeti(null), null);
+});
+
+Deno.test('ABD TÜFE yalnız geçen ayın verisi ve ayın ilk 20 gününde', () => {
+  assertEquals(abdTufeGuncelMi('2026-09-01', '2026-10-15'), true);
+  assertEquals(abdTufeGuncelMi('2026-09-01', '2026-10-24'), false);
+  assertEquals(abdTufeGuncelMi('2026-08-01', '2026-10-05'), false);
+  assertEquals(abdTufeGuncelMi('2025-12-01', '2026-01-13'), true);
+});
+
+Deno.test('Fed: hedef aralık değişimi bulunur, değişmediyse null', () => {
+  const r = (d: string, a: number, b: number) => ({ effectiveDate: d, type: 'EFFR', percentRate: a + 0.08, targetRateFrom: a, targetRateTo: b });
+  const k = fedKarariBul({ refRates: [r('2026-10-30', 3.75, 4), r('2026-10-29', 4, 4.25), r('2026-10-28', 4, 4.25)] })!;
+  assertEquals(k, { tarih: '2026-10-30', eski: [4, 4.25], yeni: [3.75, 4] });
+  const t = fedTaslagi(k);
+  assertEquals(t.sablon_metin, 'Fed politika faizini 25 baz puan indirdi. Yeni hedef aralık %3,75–4,00, önceki aralık %4,00–4,25 idi.');
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t).gecti, true);
+  assertEquals(fedKarariBul({ refRates: [r('2026-10-29', 4, 4.25), r('2026-10-28', 4, 4.25)] }), null);
+  assertEquals(fedKarariBul({}), null);
 });
 
 // ── Sunucu tarafı kilitler ───────────────────────────────────────────────────

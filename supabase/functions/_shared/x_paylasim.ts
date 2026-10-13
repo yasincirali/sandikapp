@@ -206,7 +206,7 @@ export function kurDegisimleri(satirlar: KotasyonSatiri[], baslangicTs: string, 
 
 // ── Gönderi ─────────────────────────────────────────────────────────────────
 
-export type GonderiTuru = 'fon_akisi' | 'haftalik' | 'tufe';
+export type GonderiTuru = 'fon_akisi' | 'haftalik' | 'tufe' | 'abd_tufe' | 'fed';
 
 export type KartSatiri = {
   ad: string;
@@ -219,7 +219,7 @@ export type KartSatiri = {
 };
 
 export type Kart =
-  | { bicim: 'liste'; ust: string; baslik: string; vurgu?: string; vurgu_yon?: 'u' | 'd'; son?: string; satirlar: KartSatiri[]; kaynak: string }
+  | { bicim: 'liste'; ust: string; baslik: string; vurgu?: string; vurgu_yon?: 'u' | 'd' | 'n'; son?: string; satirlar: KartSatiri[]; kaynak: string }
   | {
     bicim: 'buyuk';
     ust: string;
@@ -362,6 +362,146 @@ export function tufeTaslagi(t: TufeOzeti): Taslak {
   };
 }
 
+// ── ABD (Türkçe anlatılır; yasin 13 Eki "olur ok") ─────────────────────────
+//
+// Kitle: ABD hissesi tutan Türk yatırımcı; uygulama ABD hisselerini zaten
+// destekliyor. Yalnız ABD kamu verisi (ABD federal eseri, telifsiz):
+// BLS TÜFE ve New York Fed'in açıkladığı politika faizi aralığı. S&P 500 /
+// Nasdaq endeks verisi lisanslı olduğu için KULLANILMAZ.
+
+type BlsVeri = { year?: string; period?: string; value?: string };
+
+function blsSerisi(json: unknown, id: string): { ay: number; deger: number }[] {
+  const seriler = (json as { Results?: { series?: { seriesID?: string; data?: BlsVeri[] }[] } })?.Results?.series ?? [];
+  const s = seriler.find((x) => x.seriesID === id);
+  const out: { ay: number; deger: number }[] = [];
+  for (const d of s?.data ?? []) {
+    const m = /^M(0[1-9]|1[0-2])$/.exec(d.period ?? '');
+    const y = Number(d.year);
+    const v = Number(d.value);
+    if (!m || !Number.isInteger(y) || !Number.isFinite(v) || v <= 0) continue;
+    out.push({ ay: y * 12 + Number(m[1]) - 1, deger: v });
+  }
+  return out.sort((a, b) => a.ay - b.ay);
+}
+
+/// BLS v1 yanıtından manşet TÜFE: aylık değişim mevsimsellikten arındırılmış
+/// seriden (CUSR0000SA0), yıllık değişim ham seriden (CUUR0000SA0) — BLS'nin
+/// kendi bülteniyle aynı ayrım. İki uç da yoksa null.
+export function abdTufeOzeti(json: unknown): TufeOzeti | null {
+  const sa = blsSerisi(json, 'CUSR0000SA0');
+  const ham = blsSerisi(json, 'CUUR0000SA0');
+  if (sa.length < 2 || ham.length < 13) return null;
+  const son = sa[sa.length - 1];
+  const onceki = sa.find((x) => x.ay === son.ay - 1);
+  const hamSon = ham.find((x) => x.ay === son.ay);
+  const hamYil = ham.find((x) => x.ay === son.ay - 12);
+  if (!onceki || !hamSon || !hamYil) return null;
+  const donem = (ay: number) => `${Math.floor(ay / 12)}-${String((ay % 12) + 1).padStart(2, '0')}-01`;
+  const son_aylar: { donem: string; aylik: number }[] = [];
+  for (const x of sa.slice(-6)) {
+    const o = sa.find((y) => y.ay === x.ay - 1);
+    if (o) son_aylar.push({ donem: donem(x.ay), aylik: (x.deger / o.deger - 1) * 100 });
+  }
+  return {
+    donem: donem(son.ay),
+    aylik: (son.deger / onceki.deger - 1) * 100,
+    yillik: (hamSon.deger / hamYil.deger - 1) * 100,
+    son_aylar,
+  };
+}
+
+/// ABD TÜFE ancak "geçen ay"ın verisiyse ve ayın ilk 20 gününde paylaşılır
+/// (BLS ayın ~10–15'inde açıklar): ilk kurulumda eski ayın verisi atılmasın.
+export function abdTufeGuncelMi(donem: string, bugun: string): boolean {
+  const [y, a] = bugun.split('-').map(Number);
+  const gecenAy = a === 1 ? `${y - 1}-12-01` : `${y}-${String(a - 1).padStart(2, '0')}-01`;
+  return donem === gecenAy && Number(bugun.split('-')[2]) <= 20;
+}
+
+export function abdTufeTaslagi(t: TufeOzeti): Taslak {
+  const ay = ayYilYazisi(t.donem);
+  const ayAdi = ay.split(' ')[0].toLocaleLowerCase('tr-TR');
+  const isaretli = (p: number) => (p < 0 ? '−' : '') + yuzde(p);
+  return {
+    tur: 'abd_tufe',
+    donem: t.donem,
+    olgular: [
+      { ad: 'ay', gosterim: ay },
+      { ad: 'ABD aylık TÜFE (mevsimsellikten arındırılmış)', gosterim: isaretli(t.aylik) },
+      { ad: 'ABD yıllık TÜFE', gosterim: isaretli(t.yillik) },
+    ],
+    sablon_metin: `ABD'de ${ayAdi} ayı enflasyonu aylık ${isaretli(t.aylik)}, yıllık ${isaretli(t.yillik)} oldu.`,
+    kart: {
+      bicim: 'buyuk',
+      ust: `ABD ENFLASYONU · ${ay.toLocaleUpperCase('tr-TR')}`,
+      buyuk: isaretli(t.aylik),
+      alt: 'aylık TÜFE (mevsimsellikten arındırılmış)',
+      sutunlar: t.son_aylar.map((m) => ({ etiket: AY_KISA[Number(m.donem.split('-')[1]) - 1], deger: m.aylik })),
+      yan_baslik: 'Yıllık enflasyon',
+      yan_deger: isaretli(t.yillik),
+      kaynak: 'Kaynak: ABD Çalışma İstatistikleri Bürosu (BLS)',
+    },
+  };
+}
+
+export type FedKarari = { tarih: string; eski: [number, number]; yeni: [number, number] };
+
+/// New York Fed EFFR yanıtında (en yeni önce) hedef aralığın değiştiği gün.
+/// Değişiklik yoksa null. `tarih` = yeni aralığın geçerli olduğu ilk gün.
+export function fedKarariBul(json: unknown): FedKarari | null {
+  const satir = ((json as { refRates?: unknown[] })?.refRates ?? []) as {
+    effectiveDate?: string;
+    targetRateFrom?: number;
+    targetRateTo?: number;
+  }[];
+  const temiz = satir
+    .filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.effectiveDate ?? '') && Number.isFinite(r.targetRateFrom) && Number.isFinite(r.targetRateTo))
+    .sort((a, b) => b.effectiveDate!.localeCompare(a.effectiveDate!));
+  for (let i = 0; i + 1 < temiz.length; i++) {
+    const y = temiz[i];
+    const e = temiz[i + 1];
+    if (y.targetRateFrom !== e.targetRateFrom || y.targetRateTo !== e.targetRateTo) {
+      return { tarih: y.effectiveDate!, eski: [e.targetRateFrom!, e.targetRateTo!], yeni: [y.targetRateFrom!, y.targetRateTo!] };
+    }
+  }
+  return null;
+}
+
+function aralik(a: [number, number]): string {
+  return `%${virgul(a[0], 2)}–${virgul(a[1], 2)}`;
+}
+
+export function fedTaslagi(k: FedKarari): Taslak {
+  const bp = Math.round((k.yeni[1] - k.eski[1]) * 100);
+  const fiil = bp < 0 ? 'indirdi' : 'artırdı';
+  const bpYazi = `${Math.abs(bp)} baz puan`;
+  return {
+    tur: 'fed',
+    donem: k.tarih,
+    olgular: [
+      { ad: 'değişim', gosterim: bpYazi },
+      { ad: 'yeni hedef aralık', gosterim: aralik(k.yeni) },
+      { ad: 'önceki hedef aralık', gosterim: aralik(k.eski) },
+    ],
+    sablon_metin: `Fed politika faizini ${bpYazi} ${fiil}. Yeni hedef aralık ${aralik(k.yeni)}, önceki aralık ${aralik(k.eski)} idi.`,
+    kart: {
+      bicim: 'liste',
+      ust: 'FED FAİZ KARARI',
+      baslik: 'Fed faizi',
+      vurgu: bpYazi,
+      // Faiz yönü iyi/kötü değil: nötr altın (değer yargısı yok).
+      vurgu_yon: 'n',
+      son: fiil,
+      satirlar: [
+        { ad: 'Yeni hedef aralık', ek: aralik(k.yeni), deger: '', yon: 'n' },
+        { ad: 'Önceki hedef aralık', ek: aralik(k.eski), deger: '', yon: 'n' },
+      ],
+      kaynak: `Kaynak: New York Fed · Yürürlük ${gunAyYazisi(k.tarih)}`,
+    },
+  };
+}
+
 // ── Model ───────────────────────────────────────────────────────────────────
 
 /// AI işleri kuralı (yasin, 12 Eki): Sonnet 5.5. Gönderi başına tek çağrı,
@@ -406,7 +546,7 @@ export const PAYLASIM_YASAK: RegExp[] = [
   /[!#@]/u,
   /https?:|www\.|\.com|\.app/iu,
   /\p{Extended_Pictographic}/u,
-  /(^|[^\p{L}])(tut(un|mal|abilir)|sinyal|hedef|rekor|tarihi zirve)/iu,
+  /(^|[^\p{L}])(tut(un|mal|abilir)|sinyal|hedef (seviye|fiyat)|rekor|tarihi zirve)/iu,
   /\p{L}(meli|malı)(sin|sın|siniz|sınız|dir|dır)?([^\p{L}]|$)/iu,
   /(^|[^\p{L}])(riskli|güvenli|agresif|başarılı|kötü|iyi bir|harika|müthiş)([^\p{L}]|$)/iu,
   /önümüzdeki|yarın|gelecek (hafta|ay|gün)|devam edebilir|sürebilir|olabilir/iu,
@@ -496,7 +636,7 @@ export function kartSvg(k: Kart): string {
       const x = 72 + i * gen;
       const sonMu = i === n - 1;
       return `<rect x="${x.toFixed(1)}" y="${(530 - h).toFixed(1)}" width="${(gen - 16).toFixed(1)}" height="${h.toFixed(1)}" rx="6" fill="${sonMu ? R.gold : R.amber}" fill-opacity="${sonMu ? 1 : 0.8}"/>
-<text x="${(x + (gen - 16) / 2).toFixed(1)}" y="${(520 - h).toFixed(1)}" font-size="18" font-weight="700" fill="${sonMu ? R.gold : R.t58}" text-anchor="middle">${xmlKacis(yuzde(s.deger))}</text>
+<text x="${(x + (gen - 16) / 2).toFixed(1)}" y="${(520 - h).toFixed(1)}" font-size="18" font-weight="700" fill="${sonMu ? R.gold : R.t58}" text-anchor="middle">${xmlKacis((s.deger < 0 ? '−' : '') + yuzde(s.deger))}</text>
 <text x="${(x + (gen - 16) / 2).toFixed(1)}" y="558" font-size="18" font-weight="500" fill="${R.t58}" text-anchor="middle">${xmlKacis(s.etiket)}</text>`;
     }).join('\n');
     return cerceve(k.ust, k.kaynak, `
@@ -508,7 +648,7 @@ ${sutun}
   }
 
   const vurgu = k.vurgu
-    ? `<tspan fill="${k.vurgu_yon === 'd' ? R.loss : R.gain}">${xmlKacis(k.vurgu)}</tspan>`
+    ? `<tspan fill="${k.vurgu_yon === 'd' ? R.loss : k.vurgu_yon === 'n' ? R.gold : R.gain}">${xmlKacis(k.vurgu)}</tspan>`
     : '';
   const baslik = `<text x="72" y="196" font-size="54" font-weight="700" fill="${R.t90}" letter-spacing="-1">${xmlKacis(k.baslik)}${vurgu ? ' ' : ''}${vurgu}${k.son ? ' ' + xmlKacis(k.son) : ''}</text>`;
   const tablo = k.satirlar.some((s) => s.ek !== undefined);

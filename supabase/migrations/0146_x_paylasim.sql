@@ -24,7 +24,7 @@
 -- ── 1) Taslak / gönderi defteri ─────────────────────────────────────────────
 create table if not exists public.x_gonderileri (
   id               bigint generated always as identity primary key,
-  tur              text not null check (tur in ('fon_akisi', 'haftalik', 'tufe')),
+  tur              text not null check (tur in ('fon_akisi', 'haftalik', 'tufe', 'abd_tufe', 'fed')),
   -- Gönderinin anlattığı gün (fon_akisi, haftalik: haftanın Cuma'sı) ya da
   -- ayın ilk günü (tufe).
   donem            date not null,
