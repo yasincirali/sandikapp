@@ -12,6 +12,31 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-13 AI portföy yorumu — Özet'te geçen hafta / geçen ay (0145, bayrak `portfoy_ai_yorumu`, Premium)
+
+Kod ve şema main'de, **her şey kapalı**: bayrak varsayılanı `false`, fonksiyon
+`PORTFOY_YORUM_ACIK` secret'ı olmadan 503 döner. Canlı kullanıcı hiçbir şey görmez,
+yeniden onay kapısı açılmaz. Tasarım: https://claude.ai/artifact/DMeJXyFCGt2Ff4vjUgRb6z
+
+- [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `portfoy-yorumla`).
+- [ ] **Bayrağı açmadan ÖNCE yasal metin** (sıra önemli — model çağrısı kişisel veri işler):
+      Açık Rıza Metni'ne yeni bölüm F (portföy yüzdeleri Anthropic'e, yurt dışı aktarım,
+      isteğe bağlı, geri çekince yorumlar silinir); Gizlilik §5.3 + KVKK §5.2 (amaç,
+      alıcı, saklama: 4 hafta / 12 ay); Koşullar (yatırım tavsiyesi değildir). "Sürüm" ve
+      "Onay sürümü" artar → `python docs/_build_legal.py` → yeni migration (iki sunucu).
+      ⚠️ "Onay sürümü" artınca **herkese** yeniden onay kapısı çıkar — ne zaman açılacağı
+      senin kararın (paywall açılış günüyle birleştirmek bir seçenek).
+- [ ] Yasal metin yayımlanınca istemcide `portfoyYorumRizaSurumu`
+      (`lib/services/portfoy_yorumu_service.dart`) yeni metin sürümüne güncellenir (Claude yapar).
+- [ ] **30 örnek karşılaştırması:** haftalıkta Haiku 5.5, aylıkta Sonnet 5.5. Haiku'nun red
+      oranı %10'u geçerse haftalık da Sonnet'e geçer (`_shared/portfoy_yorum.ts` › `MODEL`).
+      Claude yapar; senden yalnız "başla".
+- [ ] Supabase › Edge Functions › Secrets (iki proje): `PORTFOY_YORUM_ACIK=1`.
+      İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 3), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
+      (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur).
+- [ ] Firebase Remote Config: `portfoy_ai_yorumu` (Boolean, varsayılan `false`) → önce
+      TestFlight koşulunda `true`. Kart yalnız Premium görünürken (`paywall_enabled` ya da admin) çıkar.
+
 ## ⏳ 2026-10-12 Zirve: "Neden henüz havuzda değilsin?" kartı (0144)
 
 Yalnız ekleme; eski uygulama sürümleri etkilenmez, sıra serbest.

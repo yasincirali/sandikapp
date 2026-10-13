@@ -274,6 +274,14 @@ class RemoteConfigService {
     // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
     'balina_radari_acik': false,
 
+    // Kişiye özel AI portföy yorumu, Performans › Özet (0145, 2026-10-13).
+    // KAPALI doğar ve yasal metin (Açık Rıza F + Gizlilik/KVKK Onay sürümü)
+    // yayımlanmadan AÇILMAZ (YAPMAN_GEREKENLER). Açıkken de yalnız
+    // `premiumOzellikleriGorunur` (paywall açık ya da admin) görür. Sunucuda
+    // ikinci kapı: `portfoy-yorumla` için `PORTFOY_YORUM_ACIK=1` secret'ı.
+    // Kapalıyken kart çizilmez, hiçbir istek atılmaz.
+    'portfoy_ai_yorumu': false,
+
     // Dövizli satışta ele geçen tutar SATIŞ GÜNÜNÜN kuruyla TL'ye çevrilsin
     // (2026-10-05, kullanıcı onayı). Eskiden alım kuruyla çevriliyordu:
     // dolar varlığın kur kazancı gerçekleşen kâra ve nakit akışına girmiyordu.
@@ -777,6 +785,10 @@ class RemoteConfigService {
   /// Fon sayfasında para akışı kartı (0106). Gerekçe `_defaults`'ta.
   bool get balinaRadariAcik =>
       _yerelVeyaTest('balina_radari_acik') || premiumOzellikleriGorunur;
+
+  /// AI portföy yorumu kartı (0145). Gerekçe `_defaults`'ta.
+  bool get portfoyAiYorumu =>
+      _bayrak('portfoy_ai_yorumu') && premiumOzellikleriGorunur;
 
   /// Dövizli satışta satış günü kuru (0111). Gerekçe `_defaults`'ta.
   bool get satisGunuKuru => _bayrak('satis_gunu_kuru');

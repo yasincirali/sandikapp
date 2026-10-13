@@ -8735,4 +8735,85 @@ class AppLocalizationsEn extends AppLocalizations {
   String xrSinifEtiket(String ad, String pay, String tutar) {
     return '$ad, $pay, $tutar. Show sources.';
   }
+
+  @override
+  String get pyzBaslik => 'AI commentary';
+
+  @override
+  String get pyzGecenHafta => 'Last week';
+
+  @override
+  String get pyzGecenAy => 'Last month';
+
+  @override
+  String pyzAciklama(String donem) {
+    return 'Explains in a few points what happened in your portfolio during $donem, using your own data.';
+  }
+
+  @override
+  String get pyzYorumla => 'Comment on this period';
+
+  @override
+  String get pyzYeniden => 'Comment again';
+
+  @override
+  String get pyzEskidi =>
+      'Your portfolio for this period changed after this comment was written.';
+
+  @override
+  String get pyzVeriYok => 'Not enough data for this period yet.';
+
+  @override
+  String pyzMeta(String yazildi, String siradaki) {
+    return 'Written on $yazildi · next comment $siradaki';
+  }
+
+  @override
+  String get pyzUyari =>
+      'Not investment advice. This comment is written automatically by AI, looking only at your past data. Numbers come from the app\'s calculations; mistakes are still possible.';
+
+  @override
+  String get pyzRizaBaslik => 'Turn on AI commentary';
+
+  @override
+  String get pyzRizaMetin =>
+      'To write the comment, your portfolio\'s percentages (asset shares, returns, drawdowns) are sent via our server to Anthropic (USA). Amounts, quantities, your name and email are not sent. You can turn it off from this card at any time; turning it off deletes written comments.';
+
+  @override
+  String get pyzRizaUyari =>
+      'The comment describes the past; it never suggests buying, selling or holding.';
+
+  @override
+  String get pyzKatiliyorum => 'I agree';
+
+  @override
+  String get pyzSimdiDegil => 'Not now';
+
+  @override
+  String get pyzKapat => 'Turn off AI commentary';
+
+  @override
+  String get pyzKapatOnay =>
+      'Written comments are deleted and your portfolio percentages are no longer sent.';
+
+  @override
+  String get pyzHataKota =>
+      'You\'ve used today\'s comments, try again tomorrow.';
+
+  @override
+  String get pyzHataRed =>
+      'The comment couldn\'t be prepared right now. Try again a bit later.';
+
+  @override
+  String get pyzHataKapali => 'AI commentary is unavailable right now.';
+
+  @override
+  String get pyzHataGenel =>
+      'Couldn\'t get the comment. Check your connection and try again.';
+
+  @override
+  String get pyzKilit => 'AI commentary on your portfolio is part of Premium.';
+
+  @override
+  String get pyzDonemSecici => 'Comment period';
 }
