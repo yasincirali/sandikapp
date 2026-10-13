@@ -6,8 +6,8 @@
 <title>Gizlilik Politikası — sandık</title>
 <meta name="description" content="Sandık uygulamasının gizlilik politikası — KVKK ve GDPR uyumlu.">
 <meta name="sandik-kaynak" content="legal/tr/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="9bc595fbd2afd5af01b192017da56f32d110910e3da8be85dc4a4aa74b2c643e">
-<meta name="sandik-govde-sha256" content="45d58bec3c57b4678841f89ed8779a62a749618a3e08c2ecaf3f4f3cf66d2f37">
+<meta name="sandik-kaynak-sha256" content="71f33490ff95af12354e52b1dad5d19869fa5ec66d58cd4213db688ff1fe8816">
+<meta name="sandik-govde-sha256" content="2310f291ab993ba299eedeca9570e32b5c2a3b53950e626a264d5a246dcbf0f7">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -66,8 +66,8 @@ button:hover { opacity: 0.9; }
 <!-- sandik-govde:basla -->
 <h1>Gizlilik Politikası — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 8 Ekim 2026
-<strong>Son güncelleme:</strong> 13 Ekim 2026
-<strong>Sürüm:</strong> 1.10
+<strong>Son güncelleme:</strong> 10 Ekim 2026
+<strong>Sürüm:</strong> 1.9
 <strong>Onay sürümü:</strong> 1.8</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
@@ -535,7 +535,7 @@ button:hover { opacity: 0.9; }
 <li><strong>Saklama:</strong> Supabase tarafında at-rest şifreleme (AES-256)</li>
 <li><strong>Erişim:</strong> Row-Level Security (RLS) ile her kullanıcı yalnızca kendi verisine (ve ortaklık kurduğu kullanıcının paylaşılan portföyüne) erişebilir</li>
 <li><strong>Şifre:</strong> Bcrypt hash (Supabase Auth)</li>
-<li><strong>Oturum:</strong> 1 saat geçerli erişim token'ı ve her yenilemede değişen yenileme token'ı; token cihazın güvenli anahtar deposunda (Keychain / Android Keystore) saklanır. Oturum sen çıkış yapana kadar açık kalır; uygulama kilidi açıksa uygulama 30 saniyeden uzun arka planda kalınca kilitlenir. Hesap aynı anda tek cihazda açık kalır; yeni cihazda e-posta kodu istenir</li>
+<li><strong>Oturum:</strong> 1 saat geçerli erişim token'ı ve her yenilemede değişen yenileme token'ı; token cihazın güvenli anahtar deposunda (Keychain / Android Keystore) saklanır. Uygulama 10 dakikadan uzun arka planda kalırsa uygulama kilidi açıksa kilitlenir, değilse oturum kapanır. Hesap aynı anda tek cihazda açık kalır; yeni cihazda e-posta kodu istenir</li>
 <li><strong>Kötüye kullanım:</strong> Sunucu tarafında istek sınırlaması (rate limiting)</li>
 <li><strong>Loglama:</strong> Üretimde sadece hatalar; hassas alanlar (e-posta, şifre, token, IP) maskelenir</li>
 <li><strong>Geliştirici erişimi:</strong> Veritabanına teknik erişim yalnızca geliştiricidedir ve yalnızca destek, hata teşhisi ve yasal yükümlülükler için kullanılır. Yönetim paneli (yetkisi sunucuda denetlenir) hata kayıtlarını, oturum açma güvenlik kayıtlarını, kayıt hunisini ve hesap bilgisini (e-posta, ad, varlık sayısı) gösterir; portföy içeriğini göstermez</li>

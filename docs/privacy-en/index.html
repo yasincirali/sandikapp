@@ -6,8 +6,8 @@
 <title>Privacy Policy — sandık</title>
 <meta name="description" content="Sandık app privacy policy — GDPR compliant.">
 <meta name="sandik-kaynak" content="legal/en/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="5813db5a88c6dfb653df42bd0d710d6b21630ec3c59fb8d2f0fa6b18b415c539">
-<meta name="sandik-govde-sha256" content="ff0d0c71fa445cb3599ec67bde0e65d7879fb66e5f4434115029a05e97d71b7b">
+<meta name="sandik-kaynak-sha256" content="1fd7637a4238abd15601ba53a7a6ca23c7813c9724b69abfd2503b29ea0001a0">
+<meta name="sandik-govde-sha256" content="932b61f25139ed0f82cad49b1084fd1833e909ae9cedcd5ae83cdd91a0a6007c">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -66,10 +66,10 @@ button:hover { opacity: 0.9; }
 <!-- sandik-govde:basla -->
 <h1>Privacy Policy — sandık</h1>
 <p><strong>Effective date:</strong> October 8, 2026
-<strong>Last updated:</strong> October 13, 2026
-<strong>Version:</strong> 1.10
+<strong>Last updated:</strong> October 10, 2026
+<strong>Version:</strong> 1.9
 <strong>Consent version:</strong> 1.8
-<strong>Source:</strong> TR 1.10 (translation of the Turkish text; the Turkish version prevails)</p>
+<strong>Source:</strong> TR 1.9 (translation of the Turkish text; the Turkish version prevails)</p>
 <hr />
 <h2>1. Data Controller</h2>
 <p>This application (<strong>sandık</strong>, the "App") is operated by <code>Yasin Çıralı</code> ("we", "Company").</p>
@@ -536,7 +536,7 @@ button:hover { opacity: 0.9; }
 <li><strong>Storage:</strong> At-rest encryption on the Supabase side (AES-256)</li>
 <li><strong>Access:</strong> With Row-Level Security (RLS) each user can access only their own data (and the shared portfolio of their partner)</li>
 <li><strong>Password:</strong> Bcrypt hash (Supabase Auth)</li>
-<li><strong>Session:</strong> A 1-hour access token and a refresh token that changes on every refresh; the token is stored in the device's secure key store (Keychain / Android Keystore). The session stays open until you sign out; when the app lock is on, the App locks after more than 30 seconds in the background. The account stays signed in on one device at a time; a new device requires an email code</li>
+<li><strong>Session:</strong> A 1-hour access token and a refresh token that changes on every refresh; the token is stored in the device's secure key store (Keychain / Android Keystore). If the App stays in the background for more than 10 minutes, it locks when the app lock is on, otherwise the session ends. The account stays signed in on one device at a time; a new device requires an email code</li>
 <li><strong>Abuse:</strong> Server-side rate limiting</li>
 <li><strong>Logging:</strong> Only errors in production; sensitive fields (email, password, token, IP) are masked</li>
 <li><strong>Developer access:</strong> Only the developer has technical access to the database, used only for support, diagnostics and legal obligations. The admin panel (permission checked on the server) shows error logs, sign-in security logs, the sign-up funnel and account information (email, name, asset count); it does not show portfolio contents</li>

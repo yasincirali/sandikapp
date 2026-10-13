@@ -277,8 +277,8 @@ Web: `https://yasincirali.github.io/sandikapp`
   'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 13 Ekim 2026
-**Sürüm:** 1.10
+**Son güncelleme:** 10 Ekim 2026
+**Sürüm:** 1.9
 **Onay sürümü:** 1.8
 
 ---
@@ -517,7 +517,7 @@ Aldığımız teknik ve idari önlemler:
 - **Saklama:** Supabase tarafında at-rest şifreleme (AES-256)
 - **Erişim:** Row-Level Security (RLS) ile her kullanıcı yalnızca kendi verisine (ve ortaklık kurduğu kullanıcının paylaşılan portföyüne) erişebilir
 - **Şifre:** Bcrypt hash (Supabase Auth)
-- **Oturum:** 1 saat geçerli erişim token'ı ve her yenilemede değişen yenileme token'ı; token cihazın güvenli anahtar deposunda (Keychain / Android Keystore) saklanır. Oturum sen çıkış yapana kadar açık kalır; uygulama kilidi açıksa uygulama 30 saniyeden uzun arka planda kalınca kilitlenir. Hesap aynı anda tek cihazda açık kalır; yeni cihazda e-posta kodu istenir
+- **Oturum:** 1 saat geçerli erişim token'ı ve her yenilemede değişen yenileme token'ı; token cihazın güvenli anahtar deposunda (Keychain / Android Keystore) saklanır. Uygulama 10 dakikadan uzun arka planda kalırsa uygulama kilidi açıksa kilitlenir, değilse oturum kapanır. Hesap aynı anda tek cihazda açık kalır; yeni cihazda e-posta kodu istenir
 - **Kötüye kullanım:** Sunucu tarafında istek sınırlaması (rate limiting)
 - **Loglama:** Üretimde sadece hatalar; hassas alanlar (e-posta, şifre, token, IP) maskelenir
 - **Geliştirici erişimi:** Veritabanına teknik erişim yalnızca geliştiricidedir ve yalnızca destek, hata teşhisi ve yasal yükümlülükler için kullanılır. Yönetim paneli (yetkisi sunucuda denetlenir) hata kayıtlarını, oturum açma güvenlik kayıtlarını, kayıt hunisini ve hesap bilgisini (e-posta, ad, varlık sayısı) gösterir; portföy içeriğini göstermez
@@ -575,8 +575,8 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
   'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 13 Ekim 2026
-**Sürüm:** 1.10
+**Son güncelleme:** 10 Ekim 2026
+**Sürüm:** 1.9
 **Onay sürümü:** 1.8
 
 ---
@@ -788,7 +788,7 @@ KVKK Madde 12 uyarınca aldığımız önlemler:
 - Bcrypt ile şifre hash'leme
 - Row-Level Security (RLS) ile yetkisiz erişim engeli
 - Rate limiting ile brute-force saldırı koruması
-- Oturum token'ının cihazın güvenli anahtar deposunda saklanması; uygulama kilidi açıksa arka planda kalınca kilitlenme
+- Oturum token'ının cihazın güvenli anahtar deposunda saklanması; 10 dakikadan uzun arka planda kalınca kilit ya da oturum kapanışı
 - Hesabın aynı anda tek cihazda açık kalması; yeni cihazda e-posta kodu
 - Production loglarında PII maskeleme
 

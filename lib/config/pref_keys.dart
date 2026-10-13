@@ -79,17 +79,15 @@ class PrefKeys {
   static const fxMigrationLastRunMs = 'fx_migration_last_run_ms';
 
   /// Uygulama arkaya alındığı an (ms). Süreç öldürülürse bellekteki
-  /// `_backgroundedAt` kaybolurdu ve uzun boşluk kilidi hiç işlemezdi
-  /// (2026-09 L2); açılışta buradan okunur. 2026-10-13'ten beri boşluk
-  /// oturumu kapatmaz, yalnız kilit açıksa kilitler.
+  /// `_backgroundedAt` kaybolurdu ve 10 dk'lık oturum zaman aşımı hiç
+  /// işlemezdi (2026-09 L2); açılışta buradan okunur.
   static const backgroundedAtMs = 'session_backgrounded_at_ms';
 
   /// Uygulama arkaya alınırken çalışan SÜRÜM (`1.1.6+7`).
   ///
   /// Zaman aşımı kontrolü bunu karşılaştırır: sürüm DEĞİŞTİYSE aradaki
-  /// boşluk bir güncellemedir, gerçek bir terk ediş değil (bkz.
-  /// `_AuthGateState._readStaleSessionAtLaunch`; 2026-10-13'ten beri iki
-  /// sonuç da oturumu korur).
+  /// boşluk bir güncellemedir, gerçek bir terk ediş değil — oturum
+  /// düşürülmez (bkz. `_AuthGateState._readStaleSessionAtLaunch`).
   static const backgroundedAtVersion = 'session_backgrounded_at_version';
 
   /// `RemotePushService` cihaz kimliği; çıkışta silinir (L14).

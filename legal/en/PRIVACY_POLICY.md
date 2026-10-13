@@ -1,10 +1,10 @@
 # Privacy Policy — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 13, 2026
-**Version:** 1.10
+**Last updated:** October 10, 2026
+**Version:** 1.9
 **Consent version:** 1.8
-**Source:** TR 1.10 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.9 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -242,7 +242,7 @@ Technical and organisational measures we take:
 - **Storage:** At-rest encryption on the Supabase side (AES-256)
 - **Access:** With Row-Level Security (RLS) each user can access only their own data (and the shared portfolio of their partner)
 - **Password:** Bcrypt hash (Supabase Auth)
-- **Session:** A 1-hour access token and a refresh token that changes on every refresh; the token is stored in the device's secure key store (Keychain / Android Keystore). The session stays open until you sign out; when the app lock is on, the App locks after more than 30 seconds in the background. The account stays signed in on one device at a time; a new device requires an email code
+- **Session:** A 1-hour access token and a refresh token that changes on every refresh; the token is stored in the device's secure key store (Keychain / Android Keystore). If the App stays in the background for more than 10 minutes, it locks when the app lock is on, otherwise the session ends. The account stays signed in on one device at a time; a new device requires an email code
 - **Abuse:** Server-side rate limiting
 - **Logging:** Only errors in production; sensitive fields (email, password, token, IP) are masked
 - **Developer access:** Only the developer has technical access to the database, used only for support, diagnostics and legal obligations. The admin panel (permission checked on the server) shows error logs, sign-in security logs, the sign-up funnel and account information (email, name, asset count); it does not show portfolio contents

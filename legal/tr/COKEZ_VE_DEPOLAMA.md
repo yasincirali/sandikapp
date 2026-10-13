@@ -1,7 +1,7 @@
 # Çerez ve Yerel Depolama Politikası — sandık
 
 **Yürürlük tarihi:** 4 Ekim 2026
-**Sürüm:** 1.2
+**Sürüm:** 1.1
 
 ---
 
@@ -19,7 +19,7 @@ Oturum token'ları (Supabase Auth) burada saklanır:
 
 - **Erişim token'ı (JWT):** 1 saat geçerli
 - **Yenileme token'ı:** her yenilemede değişir
-- Oturum sen çıkış yapana kadar açık kalır; uygulama kilidi açıksa uygulama 30 saniyeden uzun arka planda kalınca kilitlenir
+- Uygulama 10 dakikadan uzun arka planda kalırsa uygulama kilidi açıksa kilitlenir, değilse oturum kapanır
 
 Bu token'lar oturum açma için **zorunludur** (sözleşmenin ifası — KVKK 5(2)(c) / GDPR 6(1)(b)).
 

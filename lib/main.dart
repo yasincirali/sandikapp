@@ -821,10 +821,7 @@ enum BayatlikKarari {
   kilit,
 
   /// Uzun boşluk, aynı sürüm — gerçek terk ediş. Kilit açıksa kilitlenir,
-  /// değilse hiçbir şey sorulmaz. 2026-10-13'e kadar kilitsiz kullanıcının
-  /// oturumu burada KAPATILIYORDU; Android'de "uzun beklemede login
-  /// ekranı" hatasının yolu buydu (bkz. `_staleSessionAtLaunch.then`).
-  /// Artık `kilit` ile aynı sonucu verir; ayrım teşhis için duruyor.
+  /// değilse oturum kapanır (eski davranış).
   bayat,
 }
 
@@ -832,13 +829,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     with WidgetsBindingObserver {
   late final ProviderSubscription<AsyncValue<AppUser?>> _authSubscription;
   DateTime? _backgroundedAt;
-  /// Uzun boşluk eşiği. 2026-10-13'ten beri oturum KAPATMAZ: kilit açıksa
-  /// kilitler, hesap geçişinin cihaz doğrulamasını düşürür.
   static const _sessionTimeout = Duration(minutes: 10);
 
   /// Süreç arkadayken öldürüldüyse `_backgroundedAt` kaybolur; arkaya
-  /// alınma anı diske de yazılır ve açılışta okunur (2026-09 L2). Boşluk
-  /// eşiği geçmişse ilk kullanıcı yayınında kilit açıksa kilitlenir.
+  /// alınma anı diske de yazılır ve açılışta okunur (2026-09 L2). Zaman
+  /// aşımı geçmişse ilk kullanıcı yayınında oturum kapatılır.
   late final Future<BayatlikKarari> _staleSessionAtLaunch =
       _readStaleSessionAtLaunch();
   bool _staleSessionHandled = false;
@@ -854,9 +849,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
       // **GÜNCELLEME oturumu DÜŞÜRMEZ (kullanıcı isteği, 2026-09-23).**
       //
-      // (Tarihçe: zaman aşımı o gün oturumu düşüren bir GÜVENLİK
-      // özelliğiydi; 2026-10-13'ten beri yalnız kilit açıksa kilitler.)
-      // Güncelleme de aynı
+      // Zaman aşımı bir GÜVENLİK özelliğidir: cihaz başkasının eline
+      // geçerse 10 dakika sonra oturum düşer. Ama güncelleme de aynı
       // belirtiyi üretiyordu ve KULLANICI CİHAZIN BAŞINDA:
       //
       //   1. Uygulama arkaya alınır → `backgroundedAtMs` yazılır
@@ -1266,20 +1260,19 @@ class _AuthGateState extends ConsumerState<_AuthGate>
               }
               return;
             }
-            // **Terk ediş dalı: kilit var ya da hiçbir şey (2026-10-13).**
+            // **BİYOMETRİK AÇIKSA ÇIKIŞ YERİNE KİLİTLE.**
             //
             // Soğuk açılış dalı — süreç arkada öldürülmüşse buraya
-            // düşülür. Android kapalı betada bu dal "uzun süre bekleyince
-            // login ekranı" hatasının asıl yoluydu: sistem arkadaki süreci
-            // öldürür, açılışta damga 10 dk'yı geçmiş bulunur ve kilidi
-            // kapalı kullanıcı SESSİZCE çıkarılırdı (mesaj yalnız `resumed`
-            // dalındaydı). `resumed` dalıyla AYNI kural: oturum korunur;
-            // kilit açıksa Face ID sorulur.
+            // düşülür. `resumed` dalıyla AYNI kural: `logout()` token'ı
+            // kasadan siler ve Face ID onu geri getiremez; kilit ise
+            // token'ı yerinde bırakır.
             //
             // Kullanıcı isteği: *"son login olan hesap biyolojik login
             // işaretlediyse Face ID ile login olunmalı."*
             if (ref.read(biometricLockProvider)) {
               setState(() => _locked = true);
+            } else {
+              ref.read(authProvider.notifier).logout();
             }
           });
         }
@@ -1752,67 +1745,91 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // olarak yutmuştu.
       _applySurfaceTheme(trustDeviceBrightness: true);
       final bg = _backgroundedAt;
-      final bosluk = bg == null ? null : DateTime.now().difference(bg);
-      _backgroundedAt = null;
-      // **Uzun boşluk oturumu KAPATMAZ (yasin'in hata bildirimi,
-      // 2026-10-13):** *"uzun süre bekleyen session kapanıyor ve login
-      // ekranına yönlendiriyor"*. Eskiden kilidi kapalı kullanıcı 10 dk
-      // arkada kalınca `logout()` ile çıkarılıyordu (2026-09 L2 "güvenlik
-      // zaman aşımı"). Bu, kişisel portföy takibi için yanlış ödünleşimdi:
-      // her uzun boşlukta şifre/Google/Apple girişi isteniyor, `logout()`
-      // push token'ını da sunucudan siliyordu (bildirimler susuyordu).
-      // Instagram, Gmail, banka dışı finans uygulamaları da boşlukta çıkış
-      // yapmaz. Koruma isteyen kullanıcı için kilit var: token kasada
-      // kalır, Face ID / ekran kilidi açar.
-      //
-      // Uzun boşlukta yalnızca hesap geçişinin cihaz doğrulamasına
-      // güvenmesi biter (`HesapGecisi.cihazDogrulandi`): cihazın başındaki
-      // kişi değişmiş olabilir.
-      if (bosluk != null && bosluk >= _sessionTimeout) {
+      if (bg != null && DateTime.now().difference(bg) >= _sessionTimeout) {
+        _backgroundedAt = null;
+        // **BİYOMETRİK AÇIKSA ÇIKIŞ YERİNE KİLİTLE** (kullanıcı isteği,
+        // 2026-09-23): *"Cihaz/müşteri eşleşmesi varsa ve son login olan
+        // hesap biyolojik login işaretlediyse Face ID ile login olunmalı."*
+        //
+        // `logout()` Supabase oturumunu SİLER — token kasadan kalkar ve
+        // Face ID ile geri getirilemez; kullanıcı şifre girmek zorunda
+        // kalır. Oysa kilit zaten bu iş için var: token kasada durur,
+        // ekran kilitlenir, Face ID onu açar.
+        //
+        // Güvenlik zayıflamaz — aynı kapı korunur:
+        //   • Biyometrik AÇIK  → kilit ekranı; Face ID/PIN olmadan
+        //     içeri girilemez. Cihaz başkasının elindeyse yine giremez.
+        //   • Biyometrik KAPALI → eski davranış (çıkış), çünkü kilit
+        //     olmadan uygulama korumasız kalırdı.
+        //
+        // Ayrıca `LockScreen`, cihaz artık kimseyi doğrulayamıyorsa
+        // (ekran kilidi kaldırılmış) tercihi kapatıp içeri alıyor — yani
+        // kullanıcı dışarıda kilitli kalmaz.
+        // Uzun boşluk: cihazın başındaki kişi yeniden doğrulanmalı; hesap
+        // geçişi bu doğrulamaya güvenemez (`HesapGecisi.cihazDogrulandi`).
         HesapGecisi.instance.cihazDogrulandi = false;
-      }
-      // Kısa arka plan dönüşleri (bildirim çekmecesi, gelen arama)
-      // kilit istemez; 30 sn üstü ister. Uzun boşluk da buradan kilitlenir
-      // — eskiden ayrı daldı ve o dal aşağıdaki tazelemeleri (alarm,
-      // bildirim merkezi, profil) atlıyordu.
-      if (bosluk != null &&
-          bosluk >= _lockAfter &&
-          ref.read(biometricLockProvider) &&
-          ref.read(authProvider).valueOrNull != null) {
-        HesapGecisi.instance.cihazDogrulandi = false;
-        setState(() => _locked = true);
-      }
-      // Öne dönüş açılış olarak sayılır; servis kısa arka plan
-      // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
-      CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'resume'), reason: 'main.RetentionTracker.recordLaunch');
-      // Fiyat alarmı bildirimleri SUNUCUDA yazılır (0065) ve uygulama
-      // arkadayken gelir; tazelenmezse kullanıcı push'u görüp uygulamayı
-      // açtığında çan sayfası boş kalırdı. Sinyal listesi kendi akışında
-      // zaten güncelleniyor.
-      if (ref.read(authProvider).valueOrNull != null) {
-        CrashReporter.arkaPlan(
-          ref.read(priceAlertNotificationProvider.notifier).refresh(), reason: 'main.ref.read'
-        );
-        // Genel bildirimler (aylık/haftalık özet, brifing, TÜFE, takip
-        // listesi, temettü, ortaklık — `app_notifications`, 0066) de
-        // sunucuda yazılır ve uygulama arkadayken gelir. 2026-10-06'ya
-        // kadar bu liste YALNIZCA açılışta okunuyordu: süreç arkada canlı
-        // kaldıysa sabah gelen aylık özet çan sayfasında hiç görünmüyordu
-        // (yasin: "aylık özeti kapattım, bildirim merkezinde göremedim").
-        CrashReporter.arkaPlan(
-          ref.read(appNotificationProvider.notifier).refresh(),
-          reason: 'main.genelBildirimTazele',
-        );
-      }
-      // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
-      // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
-      // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.
-      if (ref.read(authProvider).hasError &&
-          AuthService.instance.hasLocalSession) {
-        ref.invalidate(authProvider);
+        final biyometrikAcik = ref.read(biometricLockProvider);
+        if (biyometrikAcik && ref.read(authProvider).valueOrNull != null) {
+          setState(() => _locked = true);
+        } else {
+          // **Kilitsiz kullanıcı: çıkış SESSİZ olmasın** (kullanıcı
+          // kararı, 2026-09-23). Kullanıcı şifre ekranıyla karşılaşınca
+          // bunun bir arıza mı yoksa güvenlik mi olduğunu bilmiyordu.
+          //
+          // Teklif damgası da SİLİNİR: kaybı bizzat yaşamış kullanıcıya
+          // kararını yeniden sormak dayatma değil. Bir kez "şimdi değil"
+          // demek, sonucunu görmeden verilmiş bir karardı.
+          _zamanAsimiBildir();
+          CrashReporter.arkaPlan(
+            ref.read(biometricLockOfferedProvider.notifier).set(false),
+            reason: 'main.teklifiYenidenAc',
+          );
+          // Oturumu kapat — auth state değişince LoginScreen'e döner
+          ref.read(authProvider.notifier).logout();
+        }
       } else {
-        // Offline'da minimal profille girildiyse gerçek profili tazele.
-        ref.read(authProvider.notifier).refreshProfileIfStale();
+        // Kısa arka plan dönüşleri (bildirim çekmecesi, gelen arama)
+        // kilit istemez; 30 sn üstü ister.
+        if (bg != null &&
+            DateTime.now().difference(bg) >= _lockAfter &&
+            ref.read(biometricLockProvider) &&
+            ref.read(authProvider).valueOrNull != null) {
+          HesapGecisi.instance.cihazDogrulandi = false;
+          setState(() => _locked = true);
+        }
+        _backgroundedAt = null;
+        // Öne dönüş açılış olarak sayılır; servis kısa arka plan
+        // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
+        CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'resume'), reason: 'main.RetentionTracker.recordLaunch');
+        // Fiyat alarmı bildirimleri SUNUCUDA yazılır (0065) ve uygulama
+        // arkadayken gelir; tazelenmezse kullanıcı push'u görüp uygulamayı
+        // açtığında çan sayfası boş kalırdı. Sinyal listesi kendi akışında
+        // zaten güncelleniyor.
+        if (ref.read(authProvider).valueOrNull != null) {
+          CrashReporter.arkaPlan(
+            ref.read(priceAlertNotificationProvider.notifier).refresh(), reason: 'main.ref.read'
+          );
+          // Genel bildirimler (aylık/haftalık özet, brifing, TÜFE, takip
+          // listesi, temettü, ortaklık — `app_notifications`, 0066) de
+          // sunucuda yazılır ve uygulama arkadayken gelir. 2026-10-06'ya
+          // kadar bu liste YALNIZCA açılışta okunuyordu: süreç arkada canlı
+          // kaldıysa sabah gelen aylık özet çan sayfasında hiç görünmüyordu
+          // (yasin: "aylık özeti kapattım, bildirim merkezinde göremedim").
+          CrashReporter.arkaPlan(
+            ref.read(appNotificationProvider.notifier).refresh(),
+            reason: 'main.genelBildirimTazele',
+          );
+        }
+        // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
+        // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
+        // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.
+        if (ref.read(authProvider).hasError &&
+            AuthService.instance.hasLocalSession) {
+          ref.invalidate(authProvider);
+        } else {
+          // Offline'da minimal profille girildiyse gerçek profili tazele.
+          ref.read(authProvider.notifier).refreshProfileIfStale();
+        }
       }
     }
   }
@@ -2446,8 +2463,22 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     );
   }
 
-  /// Tek cihaz çıkışını AÇIKLA: sebepsiz giriş ekranı arıza gibi görünür
-  /// (2026-09-23 kararı). `logout()` ÖNCESİ çağrılır.
+  /// Zaman aşımı çıkışını kullanıcıya AÇIKLA.
+  ///
+  /// Sessiz çıkış kullanıcıya arıza gibi görünüyordu: uygulama açılıyor,
+  /// şifre isteniyor, neden belli değil. Mesaj hem nedeni söyler hem de
+  /// çözümü gösterir (Ayarlar'dan kilit).
+  ///
+  /// `logout()` ÖNCESİ çağrılır: sonrasında bu ağaç LoginScreen'e
+  /// döneceği için `context` artık bu Scaffold'a ait olmaz.
+  void _zamanAsimiBildir() {
+    if (!mounted) return;
+    sandikSnack(context, context.l10n.sessionTimedOut,
+        kind: SandikSnackKind.warning);
+  }
+
+  /// Tek cihaz çıkışını AÇIKLA — [_zamanAsimiBildir] ile aynı gerekçe:
+  /// sebepsiz giriş ekranı arıza gibi görünür. `logout()` ÖNCESİ çağrılır.
   void _baskaCihazdaBildir() {
     if (!mounted) return;
     sandikSnack(context, context.l10n.baskaCihazdaAcildi,

@@ -14,9 +14,9 @@ import 'crash_reporter.dart';
 
 /// Kilit TEKLİFİ bu kapı değerlendirmesinde ertelensin mi?
 ///
-/// **Neden (plan F2, 2026-09-29):** boş portföyde korunacak bir şey yok
-/// (o gün teklif zaman aşımı çıkışını da anlatıyordu; 2026-10-13'te o çıkış
-/// kalktı, teklif yalnız mahremiyeti anlatır). Yeni kullanıcı kayıt → yasal onay → tur → teklif sırasında dördüncü
+/// **Neden (plan F2, 2026-09-29):** teklifin anlattığı kayıp (zaman aşımında
+/// çıkış + push kesintisi) boş portföyde gerçek değil — korunacak bir şey
+/// yok. Yeni kullanıcı kayıt → yasal onay → tur → teklif sırasında dördüncü
 /// ekranda bir izin daha görüyordu; ilk varlığı girmeden önceki her ekran
 /// terk riskidir.
 ///

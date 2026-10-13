@@ -8,17 +8,21 @@ import '../utils/sandik_snack.dart';
 
 /// Biyometrik kilit TEKLİFİ — kullanıcı başına bir kez, giriş sonrası.
 ///
-/// **Neden var (kullanıcı kararı, 2026-09-23).** Kilit varsayılan olarak
-/// açık gelemez: biyometrik doğrulama kullanıcının rızasını ister ve
-/// cihazda biyometri tanımlı olmayabilir. Çözüm, kararı görünür kılmak —
-/// teklifi gerekçesiyle göstermek.
+/// **Neden var (kullanıcı kararı, 2026-09-23).** Kilidi KAPALI olan
+/// kullanıcıda 10 dakikalık zaman aşımı `logout()` uyguluyor; bu üç şeyi
+/// birden götürüyor: oturum, push token'ı (`RemotePushService.stop()`
+/// satırı sunucudan siler) ve dolayısıyla fiyat alarmlarıyla günlük özet.
+/// Kilit AÇIKSA hiçbiri olmuyor — yalnızca perde iniyor.
 ///
-/// **2026-10-13 değişikliği.** Teklif ilk yazıldığında kilidi KAPALI
-/// kullanıcıda 10 dakikalık zaman aşımı `logout()` uyguluyordu (oturum +
-/// push token'ı gidiyordu); ekran bu kaybı ilk iki fayda olarak anlatıyordu.
-/// yasin'in hata bildirimiyle ("uzun süre bekleyen session kapanıyor")
-/// zaman aşımı çıkışı kalktı; o iki madde artık yanlış olacağı için
-/// çıkarıldı. Kilidin kalan, gerçek faydası mahremiyettir.
+/// Yani kilit burada bir kısıt değil, üç şeyi birden koruyan ayar. Ama
+/// varsayılan olarak açık gelemez: biyometrik doğrulama kullanıcının
+/// rızasını ister ve cihazda biyometri tanımlı olmayabilir. Çözüm, kararı
+/// görünür kılmak — teklifi gerekçesiyle göstermek.
+///
+/// **Neden zaman aşımı ANINDA sorulmuyor.** O an kullanıcı zaten
+/// kaybetmiştir (çıkış yapılmış, bildirimler susmuş); teklif ancak bir
+/// sonraki sefere yarar. Girişten hemen sonra sormak kaybı hiç
+/// yaşatmamayı hedefler.
 ///
 /// **Neden turda değil.** Tur öğreticidir, atlanabilir ve tekrar
 /// izlenebilir; kalıcı bir güvenlik tercihi oradan açtırılamaz. Ayrıca
@@ -143,10 +147,22 @@ class _LockOfferScreenState extends State<LockOfferScreen> {
                       style: context.t.bodyMedium?.copyWith(color: c.text58),
                     ),
                     const SizedBox(height: SandikSpace.xl),
-                    // Tek fayda (2026-10-13): kilit artık yalnız
-                    // mahremiyeti korur. "Oturumun kapanmaz" ve
-                    // "Bildirimlerin kesilmez" maddeleri zaman aşımı
-                    // çıkışı kalkınca doğru olmaktan çıktı.
+                    // Sıra ÖNEMLİ: kullanıcının kaybettiği şeyler önce
+                    // (oturum, bildirim), mahremiyet sonra. Kilit çoğu
+                    // kullanıcıya "engel" gibi görünür; ilk iki madde
+                    // onun aslında bir kolaylık olduğunu söyler.
+                    _Fayda(
+                      ikon: Icons.lock_clock_rounded,
+                      baslik: l.lockOfferBenefitStay,
+                      govde: l.lockOfferBenefitStayBody,
+                    ),
+                    const SizedBox(height: SandikSpace.md),
+                    _Fayda(
+                      ikon: Icons.notifications_active_outlined,
+                      baslik: l.lockOfferBenefitPush,
+                      govde: l.lockOfferBenefitPushBody,
+                    ),
+                    const SizedBox(height: SandikSpace.md),
                     _Fayda(
                       ikon: Icons.visibility_off_outlined,
                       baslik: l.lockOfferBenefitPrivacy,
