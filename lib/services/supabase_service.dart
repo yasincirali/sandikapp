@@ -2904,6 +2904,9 @@ Map<String, Map<String, int>>? gostergeParametreleriniOku(Object? ham) {
   return out.isEmpty ? null : out;
 }
 
-/// Ekstre metin yolu rıza metninin sürümü (`importAiRizaMetin`). Yasal metin
-/// yayımlanınca onun sürümüne güncellenir.
-const ekstreAiRizaSurumu = '2026-10-13-taslak';
+/// Ekstre metin yolu rıza metninin sürümü (`importAiRizaMetin`; sunucu
+/// kaydı `ekstre_ai_rizalari.metin_surumu`). Kart metni değişince artar.
+///
+/// 2026-10-14: taslak → yayın. Metin yolu Gizlilik 1.11 §5.4 ve KVKK 1.11
+/// §5.2'ye yazıldı (0149); rıza ilk kullanımda bu kartla alınır.
+const ekstreAiRizaSurumu = '2026-10-14';
