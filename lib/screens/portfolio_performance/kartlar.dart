@@ -381,6 +381,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             ],
             const SizedBox(height: SandikSpace.lg),
             ozetGovdesi(tekAkis: true),
+            // AI yorumu (0145): yalnız kapanmış hafta/ay, bayrak + Premium.
+            if (PortfoyYorumuKarti.gorunur) ...const [
+              SizedBox(height: SandikSpace.md),
+              PortfoyYorumuKarti(),
+            ],
             ...zirveBlogu(),
             const SizedBox(height: SandikSpace.smd),
             const DisclaimerWidget(),
@@ -484,6 +489,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         if (_ozetSekmesi) ...<Widget>[
           // İskelet kapısı ve kanonik seri: gerekçe `ozetGovdesi` notunda.
           ozetGovdesi(),
+          if (PortfoyYorumuKarti.gorunur) ...const [
+            SizedBox(height: SandikSpace.md),
+            PortfoyYorumuKarti(),
+          ],
           const SizedBox(height: 12),
           const DisclaimerWidget(),
           const SizedBox(height: 16),

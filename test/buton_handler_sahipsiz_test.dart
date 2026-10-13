@@ -54,6 +54,9 @@ const _izinli = <String, String>{
       'Yalnızca navigasyon; ağ işi zaten CrashReporter.arkaPlan içinde.',
   'bulk_add_asset_screen.dart#_confirmClear':
       'Onay diyaloğu + senkron sepet temizliği; await eden tek şey diyalog.',
+  'portfoy_yorumu_karti.dart#_kapat':
+      'Servis çağrısı showSandikConfirm(islem:) içinde; hatayı diyalog yakalar '
+      've showAppError ile gösterir (friendly_error.dart _OnayIslemEylemleri).',
 };
 
 String _kisa(String yol) => yol.replaceAll('\\', '/').split('/').last;

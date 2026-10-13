@@ -66,6 +66,7 @@ import '../services/xirr_service.dart';
 import '../services/remote_config_service.dart';
 import '../providers/secili_donem_provider.dart';
 import '../widgets/period_summary_view.dart';
+import '../widgets/portfoy_yorumu_karti.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
 import '../widgets/grafik_stili.dart';

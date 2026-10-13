@@ -1,0 +1,66 @@
+import 'dart:ui' show Locale;
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../l10n/generated/app_localizations.dart';
+import '../models/asset.dart';
+import '../models/position.dart' show positionKey;
+import '../services/portfoy_yorumu_service.dart';
+import '../utils/pozisyon_etiketi.dart';
+import 'auth_provider.dart';
+import 'portfolio_provider.dart';
+
+/// AI portföy yorumu (0145) — Özet kartının durumu.
+///
+/// Paket yalnız DEFTER değişince yeniden kurulur: fiyat tazelemesi yorumun
+/// anlattığı kapanmış dönemi değiştirmez, her tick'te seri hesabı yapmak
+/// boşa iş olurdu ([_defterImzasi]).
+class PortfoyYorumDurumu {
+  const PortfoyYorumDurumu({required this.paket, required this.kayit});
+
+  final PortfoyYorumPaketi paket;
+
+  /// Bu dönemin saklı yorumu (yoksa null).
+  final PortfoyYorumu? kayit;
+
+  /// Saklı yorum bugünkü paketin dönem sonu portföyüyle aynı mı? Değilse
+  /// kart yorumu yine gösterir, "değişti, yeniden yorumla" der.
+  bool get guncel => kayit != null && kayit!.parmakIzi == paket.parmakIzi;
+}
+
+String _defterImzasi(List<Asset>? assets) {
+  if (assets == null) return '';
+  final p = [
+    for (final a in assets)
+      '${a.id}:${a.quantity}:${a.addedDate.millisecondsSinceEpoch}:${a.isActive}',
+  ]..sort();
+  return p.join(',');
+}
+
+/// Kartın "rıza var mı" sorusu. Hata → null (kart rıza varsaymaz).
+final portfoyYorumRizaProvider = FutureProvider.autoDispose<bool?>(
+    (ref) => PortfoyYorumuService.instance.rizaVarMi());
+
+final portfoyYorumuProvider = FutureProvider.autoDispose
+    .family<PortfoyYorumDurumu?, YorumTuru>((ref, tur) async {
+  ref.watch(portfolioProvider.select((s) => _defterImzasi(s.valueOrNull?.assets)));
+  final uid = ref.watch(authProvider.select((s) => s.valueOrNull?.id));
+  final assets = ref.read(portfolioProvider).valueOrNull?.assets;
+  if (uid == null || assets == null) return null;
+  // Yalnız kendi portföyü: ortak varlıkları başkasının verisidir, modele
+  // gönderilmez.
+  final lotlar = [for (final a in assets) if (a.userId == uid) a];
+  if (lotlar.isEmpty) return null;
+
+  // Ölçüm adları modele Türkçe gider (talimat Türkçe); arayüz dili ne olursa olsun.
+  final tr = lookupAppLocalizations(const Locale('tr'));
+  final adlar = <String, String>{for (final a in lotlar) positionKey(a): a.name};
+  final svc = PortfoyYorumuService.instance;
+  final paket = await svc.paketHazirla(
+    tur: tur,
+    lotlar: lotlar,
+    etiket: (k, t) => pozisyonEtiketi(k, t, tr, ad: adlar[k]),
+  );
+  final kayit = await svc.kayitliYorum(tur, paket.baslangic);
+  return PortfoyYorumDurumu(paket: paket, kayit: kayit);
+});

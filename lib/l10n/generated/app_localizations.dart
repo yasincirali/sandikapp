@@ -14422,6 +14422,144 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad}, {pay}, {tutar}. Kaynakları göster.'**
   String xrSinifEtiket(String ad, String pay, String tutar);
+
+  /// No description provided for @pyzBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ yorumu'**
+  String get pyzBaslik;
+
+  /// No description provided for @pyzGecenHafta.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen hafta'**
+  String get pyzGecenHafta;
+
+  /// No description provided for @pyzGecenAy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen ay'**
+  String get pyzGecenAy;
+
+  /// AI portföy yorumu kartı açıklaması. donem: 'Geçen hafta (6 Eki - 12 Eki)'.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} portföyünde ne olduğunu, kendi verinle birkaç maddede anlatır.'**
+  String pyzAciklama(String donem);
+
+  /// No description provided for @pyzYorumla.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemi yorumla'**
+  String get pyzYorumla;
+
+  /// No description provided for @pyzYeniden.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeniden yorumla'**
+  String get pyzYeniden;
+
+  /// No description provided for @pyzEskidi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemin portföyü yorum yazıldıktan sonra değişti.'**
+  String get pyzEskidi;
+
+  /// No description provided for @pyzVeriYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönem için yorum yazacak kadar veri yok.'**
+  String get pyzVeriYok;
+
+  /// Yorumun yazıldığı gün ve bir sonraki dönemin açılacağı gün.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yazildi} tarihinde yazıldı · sıradaki yorum {siradaki}'**
+  String pyzMeta(String yazildi, String siradaki);
+
+  /// No description provided for @pyzUyari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırım tavsiyesi değildir. Bu yorum yapay zekâ tarafından, yalnız geçmiş verine bakılarak otomatik yazılır. Sayılar uygulamanın hesabından gelir; yine de hata olabilir.'**
+  String get pyzUyari;
+
+  /// No description provided for @pyzRizaBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ yorumunu aç'**
+  String get pyzRizaBaslik;
+
+  /// No description provided for @pyzRizaMetin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yorum için portföyünün yüzdeleri (varlık payları, getiriler, düşüşler) sunucumuz üzerinden Anthropic\'e (ABD) gönderilir. Tutar, adet, adın ve e-postan gönderilmez. İstediğin zaman bu karttan kapatabilirsin; kapatınca yazılmış yorumlar silinir.'**
+  String get pyzRizaMetin;
+
+  /// No description provided for @pyzRizaUyari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yorum geçmişi anlatır; al, sat ya da tut önerisi içermez.'**
+  String get pyzRizaUyari;
+
+  /// No description provided for @pyzKatiliyorum.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katılıyorum'**
+  String get pyzKatiliyorum;
+
+  /// No description provided for @pyzSimdiDegil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şimdi değil'**
+  String get pyzSimdiDegil;
+
+  /// No description provided for @pyzKapat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ yorumunu kapat'**
+  String get pyzKapat;
+
+  /// No description provided for @pyzKapatOnay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yazılmış yorumların silinir ve portföy yüzdelerin artık gönderilmez.'**
+  String get pyzKapatOnay;
+
+  /// No description provided for @pyzHataKota.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünlük yorum hakkın doldu, yarın yeniden dene.'**
+  String get pyzHataKota;
+
+  /// No description provided for @pyzHataRed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yorum şu an hazırlanamadı. Biraz sonra yeniden dene.'**
+  String get pyzHataRed;
+
+  /// No description provided for @pyzHataKapali.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ yorumu şu an kullanılamıyor.'**
+  String get pyzHataKapali;
+
+  /// No description provided for @pyzHataGenel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yorum alınamadı. Bağlantını kontrol edip yeniden dene.'**
+  String get pyzHataGenel;
+
+  /// No description provided for @pyzKilit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyünü yapay zekâyla yorumlamak Premium\'da.'**
+  String get pyzKilit;
+
+  /// No description provided for @pyzDonemSecici.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yorum dönemi'**
+  String get pyzDonemSecici;
 }
 
 class _AppLocalizationsDelegate

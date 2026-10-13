@@ -8652,4 +8652,84 @@ class AppLocalizationsTr extends AppLocalizations {
   String xrSinifEtiket(String ad, String pay, String tutar) {
     return '$ad, $pay, $tutar. Kaynakları göster.';
   }
+
+  @override
+  String get pyzBaslik => 'Yapay zekâ yorumu';
+
+  @override
+  String get pyzGecenHafta => 'Geçen hafta';
+
+  @override
+  String get pyzGecenAy => 'Geçen ay';
+
+  @override
+  String pyzAciklama(String donem) {
+    return '$donem portföyünde ne olduğunu, kendi verinle birkaç maddede anlatır.';
+  }
+
+  @override
+  String get pyzYorumla => 'Bu dönemi yorumla';
+
+  @override
+  String get pyzYeniden => 'Yeniden yorumla';
+
+  @override
+  String get pyzEskidi =>
+      'Bu dönemin portföyü yorum yazıldıktan sonra değişti.';
+
+  @override
+  String get pyzVeriYok => 'Bu dönem için yorum yazacak kadar veri yok.';
+
+  @override
+  String pyzMeta(String yazildi, String siradaki) {
+    return '$yazildi tarihinde yazıldı · sıradaki yorum $siradaki';
+  }
+
+  @override
+  String get pyzUyari =>
+      'Yatırım tavsiyesi değildir. Bu yorum yapay zekâ tarafından, yalnız geçmiş verine bakılarak otomatik yazılır. Sayılar uygulamanın hesabından gelir; yine de hata olabilir.';
+
+  @override
+  String get pyzRizaBaslik => 'Yapay zekâ yorumunu aç';
+
+  @override
+  String get pyzRizaMetin =>
+      'Yorum için portföyünün yüzdeleri (varlık payları, getiriler, düşüşler) sunucumuz üzerinden Anthropic\'e (ABD) gönderilir. Tutar, adet, adın ve e-postan gönderilmez. İstediğin zaman bu karttan kapatabilirsin; kapatınca yazılmış yorumlar silinir.';
+
+  @override
+  String get pyzRizaUyari =>
+      'Yorum geçmişi anlatır; al, sat ya da tut önerisi içermez.';
+
+  @override
+  String get pyzKatiliyorum => 'Katılıyorum';
+
+  @override
+  String get pyzSimdiDegil => 'Şimdi değil';
+
+  @override
+  String get pyzKapat => 'Yapay zekâ yorumunu kapat';
+
+  @override
+  String get pyzKapatOnay =>
+      'Yazılmış yorumların silinir ve portföy yüzdelerin artık gönderilmez.';
+
+  @override
+  String get pyzHataKota => 'Bugünlük yorum hakkın doldu, yarın yeniden dene.';
+
+  @override
+  String get pyzHataRed =>
+      'Yorum şu an hazırlanamadı. Biraz sonra yeniden dene.';
+
+  @override
+  String get pyzHataKapali => 'Yapay zekâ yorumu şu an kullanılamıyor.';
+
+  @override
+  String get pyzHataGenel =>
+      'Yorum alınamadı. Bağlantını kontrol edip yeniden dene.';
+
+  @override
+  String get pyzKilit => 'Portföyünü yapay zekâyla yorumlamak Premium\'da.';
+
+  @override
+  String get pyzDonemSecici => 'Yorum dönemi';
 }

@@ -458,13 +458,13 @@ export type NotMaddesi = { metin: string; kanit: string[] };
 export type Not = { baslik: string; maddeler: NotMaddesi[] };
 
 /// Metindeki sayı parçaları: '412,00', '3,1', '48.210', '30', '2026'.
-function sayilar(metin: string): string[] {
+export function sayilar(metin: string): string[] {
   return metin.match(/\d+(?:[.,]\d+)*/g) ?? [];
 }
 
 /// Yasak ifadeler (Türkçe ekleriyle). Kelime sınırı: 'satış' (betimleyici)
 /// serbest, 'satın'/'satmalı' (eylem) yasak.
-const YASAK: RegExp[] = [
+export const YASAK: RegExp[] = [
   /(^|[^\p{L}])(al|sat)(ın|ınız|malı|malısın|manız|mak için|abilirsiniz|ın\.)([^\p{L}]|$)/iu,
   /satın al/iu,
   /hedef fiyat/iu,
@@ -609,6 +609,9 @@ const FIYAT: Record<string, [number, number, number, number]> = {
   'claude-sonnet-5-5': [2, 10, 0.2, 2.5],
   'claude-opus-5-5': [4, 20, 0.2, 5],
   'claude-haiku-4-5': [1, 5, 0.1, 1.25],
+  // Haiku 5.5 (100K token altı istem). Önbellek oranları liste fiyatının
+  // standart katları (okuma %10, yazma %125) varsayımı; portföy yorumu (0145).
+  'claude-haiku-5-5': [0.1, 0.5, 0.01, 0.125],
 };
 
 export type Kullanim = {
