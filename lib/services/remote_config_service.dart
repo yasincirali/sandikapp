@@ -377,6 +377,18 @@ class RemoteConfigService {
     // (0122) yayına; sonra açılır. Kapalıyken hiçbir istek atılmaz.
     'ekstre_ai_esleme': false,
 
+    // Ekstre METİN yolu + banka şablonu hafızası (2026-10-13, yasin:
+    // "eklenen pdf in içeriğini metin olarak apide ayıklatabilir miyiz",
+    // "bahsettiğimiz şekilde geliştirmeyi yap"). "Yapay zekâyla eşle"
+    // anonim iskelet yerine kelimeleri AÇIK metni yollar (rakamlar ve
+    // etiketli ad/adres yine maskeli, `ekstreMetni`); sunucu önce şablon
+    // hafızasına bakar (0147), sonra Haiku 5.5, gerekirse Sonnet 5.5.
+    // KAPALI doğar ve Gizlilik/Açık Rıza güncellenip yeniden onay alınmadan
+    // açılmaz: v1'in "belge telefonundan çıkmaz" sözü burada geçerli değil
+    // (kelimeler sunucu üzerinden Anthropic'e gider). Kapalıyken istek
+    // birebir eski v1 iskelet.
+    'ekstre_metin_yolu': false,
+
     // ABD hissesi (2026-10-08). Hisse türünde "BIST | ABD" seçimi, ABD
     // kataloğu (`abd_hisseleri.dart`) ve aramada ABD sonuçları. Veri yeni
     // tür DEĞİL: `type='hisse'`, `sub_category='abd'`, `currency='USD'`,
@@ -841,6 +853,9 @@ class RemoteConfigService {
   /// Ekstre AI sütun eşleme. Gerekçe `_defaults`'ta.
   bool get ekstreAiEsleme =>
       _yerelVeyaTest('ekstre_ai_esleme') || premiumOzellikleriGorunur;
+
+  /// Ekstre metin yolu + şablon hafızası. Gerekçe `_defaults`'ta.
+  bool get ekstreMetinYolu => _bayrak('ekstre_metin_yolu');
 
   /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
   bool get abdHisse => _bayrak('abd_hisse');

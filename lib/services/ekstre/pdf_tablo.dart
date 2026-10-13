@@ -175,7 +175,13 @@ List<_Blok> _sayfaBloklari(List<PdfKarakter> karakterler, int sayfa) {
     s.sort((a, b) => a.sol.compareTo(b.sol));
     final hucreler = <_Hucre>[];
     for (final k in s) {
-      if (hucreler.isNotEmpty && k.sol - hucreler.last.sag <= h * 0.9) {
+      // Ölçek sayfa medyanı ya da kelimenin kendi boyu, hangisi büyükse:
+      // tablonun hemen üstündeki büyük puntolu başlıkta ("ÖRNEK YATIRIM
+      // A.Ş. — Hesap İşlem Ekstresi", 14 pt) kelime arası tablo yazısının
+      // hücre eşiğini aşıyor, başlık hücrelere bölünüp sütun bantlarını
+      // birleştiriyordu (2026-10-13, örnek ekstre).
+      if (hucreler.isNotEmpty &&
+          k.sol - hucreler.last.sag <= math.max(h, k.yukseklik) * 0.9) {
         hucreler.last
           ..metin = '${hucreler.last.metin} ${k.metin}'
           ..sag = math.max(hucreler.last.sag, k.sag);
@@ -208,14 +214,24 @@ List<_Blok> _sayfaBloklari(List<PdfKarakter> karakterler, int sayfa) {
 
 /// Sütun bantları — yalnız çok hücreli satırlardan (başlık/dipnot gibi tek
 /// parça satırlar sayfa genişliğinde uzanıp bantları yutardı).
+///
+/// Bantlar yalnız tablonun ASIL satırlarından: hücre sayısı en dolu satırın
+/// %60'ı kadar olanlar. Tablonun hemen üstündeki "Müşteri: …   Hesap No: …"
+/// gibi iki-üç parçalı künye satırı aynı bloğa düşünce parçaları sütunları
+/// köprüleyip birleştiriyordu: "İşlem Tarihi Sembol" tek sütun oldu, motor
+/// tabloyu tanımadı (2026-10-13; yasin'in ekstresinde yapay zekâya çok az
+/// tablo gitmesinin olası sebebi). Künye satırı yine en yakın banda yerleşir.
 List<(double, double)> _bantlar(List<_Satir> satirlar) {
   final genislik = [
     for (final s in satirlar)
       for (final c in s.hucreler) c.sag,
   ].fold<double>(0, math.max);
+  final enCok =
+      satirlar.fold<int>(0, (m, s) => math.max(m, s.hucreler.length));
+  final asgari = math.max(2, (enCok * 0.6).ceil());
   final xAraliklari = <(double, double)>[
     for (final s in satirlar)
-      if (s.hucreler.length >= 2)
+      if (s.hucreler.length >= asgari)
         for (final c in s.hucreler)
           if (c.sag - c.sol < genislik * 0.4) (c.sol, c.sag),
   ]..sort((a, b) => a.$1.compareTo(b.$1));

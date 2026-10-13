@@ -6,8 +6,8 @@
 <title>Çerezler ve Yerel Depolama — sandık</title>
 <meta name="description" content="Yerel depolama ve çerez kullanımı bilgilendirmesi.">
 <meta name="sandik-kaynak" content="legal/tr/COKEZ_VE_DEPOLAMA.md">
-<meta name="sandik-kaynak-sha256" content="27d5eca499dbacfd67d3b9ff59a71ff415812b9e7a83fd7d1630f5a7e3dd9195">
-<meta name="sandik-govde-sha256" content="8d3c3796eaa9470940e354e3cf683fda91ab95914d7217e6db0ddf4ba32b1902">
+<meta name="sandik-kaynak-sha256" content="8f848a85226114732e4f27c402d2c25ce31029049d805ce99c4be2c3b8c29a38">
+<meta name="sandik-govde-sha256" content="531548b3f8d1a6b282272e9b2735e5a1f8888ffc9eb14b0576ad63c01c5cd920">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -66,7 +66,7 @@ button:hover { opacity: 0.9; }
 <!-- sandik-govde:basla -->
 <h1>Çerez ve Yerel Depolama Politikası — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 4 Ekim 2026
-<strong>Sürüm:</strong> 1.1</p>
+<strong>Sürüm:</strong> 1.2</p>
 <hr />
 <h2>1. Genel</h2>
 <p><strong>sandık</strong> mobil bir uygulamadır ve geleneksel web çerezleri (HTTP cookies) <strong>kullanmaz</strong>. Bu politika, uygulamanın cihazınızda kullandığı yerel depolama mekanizmalarını ve uygulamadaki ölçüm araçlarını açıklar; KVKK, GDPR ve ePrivacy Direktifi (2002/58/EC) kapsamındaki bilgilendirme amacını taşır.</p>
@@ -77,7 +77,7 @@ button:hover { opacity: 0.9; }
 <ul>
 <li><strong>Erişim token'ı (JWT):</strong> 1 saat geçerli</li>
 <li><strong>Yenileme token'ı:</strong> her yenilemede değişir</li>
-<li>Uygulama 10 dakikadan uzun arka planda kalırsa uygulama kilidi açıksa kilitlenir, değilse oturum kapanır</li>
+<li>Oturum sen çıkış yapana kadar açık kalır; uygulama kilidi açıksa uygulama 30 saniyeden uzun arka planda kalınca kilitlenir</li>
 </ul>
 <p>Bu token'lar oturum açma için <strong>zorunludur</strong> (sözleşmenin ifası — KVKK 5(2)(c) / GDPR 6(1)(b)).</p>
 <h3>2.2 SharedPreferences (Android) / NSUserDefaults (iOS)</h3>

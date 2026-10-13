@@ -216,6 +216,54 @@ tamamen satılmış (varlık tablosunda olmayan) kod atlanıyordu. Hepsi hâlâ
   kapanmış gösterirdi.
 - Ekran, hareketlerde kod varsa (bayrak açıkken) adla fon olmasa da TEFAS listesini çeker.
 
+## Tabloya yapışık başlık ve künye (2026-10-13)
+
+Örnek ekstre hazırlanırken görüldü: tablonun hemen üstündeki 14 pt başlık ve
+"Müşteri: …   Hesap No: …" künyesi tabloyla aynı bloğa düştü. Başlığın kelime
+arası tablo yazısının hücre eşiğini (sayfa medyanı × 0,9) aştığı için başlık
+hücrelere bölündü; künyenin parçalarıyla birlikte sütun bantlarını köprüledi
+ve "İşlem Tarihi Sembol" tek sütun oldu, tablo tanınmadı. İki düzeltme
+(`pdf_tablo.dart`): hücre eşiği kelimenin kendi boyuyla büyür; sütun bantları
+yalnız en dolu satırın %60'ı kadar hücresi olan asıl satırlardan kurulur.
+Regresyon: `test/fixtures/ekstre_pdf_kunyeli.json` (uydurma veri). Örnek PDF
+(kullanıcıya verilen): `/mnt/project-files/ekstre-ornek/sandik_ornek_ekstre.pdf`.
+
+## Metin yolu ve banka şablonu hafızası (2026-10-13, 0147, bayrak `ekstre_metin_yolu`)
+
+yasin'in DenizBank ekstresinde "Yapay zekâyla eşle" 0 tablo döndü (Tokyo
+`ekstre_esleme_kaydi` 2026-10-13 09:05, Sonnet, 2708 girdi token). v1 iskelette
+sözlük dışı her kelime A/a olduğundan model "Nominal Miktar" gibi başlıkları ve
+fon adlarını göremiyordu. Görsel okuma (PDF/görüntü API'ye) konuşuldu; metin
+5–10 kat ucuz olduğu için seçilmedi (yalnız metin katmanı olmayan taranmış PDF
+için ileride yedek). Qwen Flash ile Haiku 5.5 aynı fiyat bandında; ek sağlayıcı
+ve yurt dışı aktarım yükü yüzünden Claude'da kalındı.
+
+- **Metin (`ekstreMetni`, v2):** iskeletle aynı düzen; kelimeler AÇIK, rakamlar
+  9 (tutar, adet, IBAN, TCKN, hesap no cihazda kalır), e-posta ve etiketli
+  künye ("Sayın …", "Ad Soyad: …", "Adres" | değer) A/a. Etiketsiz yazılmış ad
+  geçebilir. Sunucu v1'deki maske denetimini v2'ye de uygular.
+- **Rıza işlemi isteyenden (yasin 2026-10-13: "herkese peşinen değil de işlemi
+  talep ettiklerinde sorsak"):** ilk "Yapay zekâyla eşle"de onay sayfası
+  (`_AiRizaSayfasi`), kayıt `ekstre_ai_rizalari` (metin sürümüyle), sunucu
+  rızasız metni 403 `riza` ile reddeder; kartta "onayı geri çek". Genel
+  "Onay sürümü" ARTMAZ, herkese onay ekranı çıkmaz.
+- **Model:** önce Haiku 5.5; hiç tablo bulamazsa bir kez Sonnet 5.5. v1 iskelet
+  eskisi gibi doğrudan Sonnet.
+- **Şablon hafızası (`ekstre_sablonlari`):** modelin eşlediği tablonun başlık
+  satırı izi (katlanmış hücreler, rakam `#`, `|` ile) SHA-256 olarak, sütun
+  rolleri ve sütun sayısıyla saklanır. Aynı iz + aynı sütun sayısı gelince model
+  çağrılmaz (kota düşmez, kayıtta `model = 'sablon'`, maliyet 0).
+- **Banka tasarımı değişirse:** başlık değişti → iz tutmaz → model bir kez →
+  yeni iz ayrı satır, eskisi kalır. Başlık aynı ama düzen kaymış → cihaz
+  sağlaması (`eslemeSaglamasi`: satırların yarısında adet × fiyat ≈ tutar %2,
+  artı içerik kapısı) reddeder → `sablonsuz` ile yeniden sorulur, şablonun
+  `hata` sayacı artar, modelin eşlemesi aynı ize yazılır. `hata >= 3` şablon
+  kullanılmaz.
+- **Bilinen sınırlar:** model aynı yanlış eşlemeyi verirse şablon her seferinde
+  sıfırlanır (maliyet şablonsuz durumla aynı, fazlası yok). Şablon modelden
+  gelir, kullanıcı yazamaz; ama kasıtlı hazırlanmış bir metin modeli yanıltıp
+  bir izi bozabilir — sağlama ve "kontrol et" uyarısı son savunma.
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örneği: yalnız DenizBank** (PDF, 2026-10-03; kişisel veri olduğu için

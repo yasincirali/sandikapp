@@ -22,7 +22,7 @@ Fizibilite + içerik kuralları: proje klasörü `twitter-bot/fizibilite.md`.
 Akış: hafta içi TR 19:40 taslak (Cuma haftanın özeti, TÜİK günü TÜFE) → Telegram'da
 sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanmayan bayatlar.
 
-- [ ] Birleşince Supabase deploy (hedef `ikisi`; migration 0146 + `x-paylas`, `x-onay`).
+- [x] Birleşince Supabase deploy (hedef `ikisi`, `include_all=true` çünkü 0147/0148 önce girdi; migration 0146 + `x-paylas`, `x-onay`) — Claude yapar.
 - [ ] **Telegram (onay kanalı, 2 dk):** @BotFather → `/newbot` → token. Bota bir kez
       `/start` yaz (bot sana ilk mesajı ancak böyle atabilir). Kendi sohbet kimliğin:
       @userinfobot.
@@ -46,6 +46,25 @@ sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanm
       şablon metin; maliyet sıfır).
 - [ ] Karar (önerilir): sermaye piyasası avukatına tek seferlik "olanı anlatan, yönlendirmeyen
       otomatik veri hesabı" görüşü.
+
+## ⏳ 2026-10-13 Ekstre metin yolu + banka şablonu hafızası (0147, bayrak `ekstre_metin_yolu`, Premium)
+
+"Yapay zekâyla eşle" kelimeleri açık metni yollar (rakamlar yine gizli), önce Haiku 5.5;
+okunan banka düzeni şablon olarak saklanır, aynı düzen bir daha modele gitmez.
+Kapalıyken istek birebir eski (anonim iskelet, Sonnet). Ayrıntı: `docs/EKSTRE_MOTORU.md`.
+
+- [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `ekstre-esle`).
+- [ ] **Bayrağı herkese açmadan ÖNCE yasal metin (bilgilendirme):** rıza herkesten
+      değil, işlemi isteyenden ilk kullanımda alınıyor (senin kararın, 2026-10-13); bu
+      yüzden genel "Onay sürümü" ARTMAZ, herkese onay ekranı çıkmaz. Yapılacak: Gizlilik
+      + KVKK Aydınlatma'ya "ekstre yapay zekâ eşlemesi: tablo kelimeleri Anthropic'e (ABD),
+      isteğe bağlı, saklanmaz" + Açık Rıza Metni'ne ilgili bölüm; yalnız "Sürüm" artar →
+      `python docs/_build_legal.py` → migration (iki sunucu). Sonra istemcide
+      `ekstreAiRizaSurumu` yeni metin sürümüne güncellenir. Claude yapar; senden "başla".
+- [ ] Önce yalnız kendi cihazında dene: Remote Config `ekstre_metin_yolu` (Boolean,
+      varsayılan `false`) → kendi test koşulunda `true`. Varsayılanı değiştirme.
+- [ ] Bakım: Supabase SQL (salt okunur) `select model, count(*), sum(maliyet_usd) from
+      ekstre_esleme_kaydi group by 1;` — `sablon` satırları modelsiz okunan dosyalardır.
 
 ## ⏳ 2026-10-13 AI portföy yorumu — Özet'te geçen hafta / geçen ay (0145, bayrak `portfoy_ai_yorumu`, Premium)
 

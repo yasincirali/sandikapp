@@ -61,6 +61,11 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// eylemin yapıldığı kartta kalır.
   String? _kartMesaji;
 
+  /// Metin yolu açık rızası verildi mi (0147). Yalnız rıza verildikten
+  /// sonra kartta "onayı geri çek" bağlantısı çıkar; sayfa açılışında
+  /// sunucuya sorulmaz (rıza ilk "Yapay zekâyla eşle"de istenir).
+  bool _aiRizasi = false;
+
   /// Adla yazılmış fonlar için TEFAS listesi alınamadı: her ad için ayrı
   /// "tanınmadı" demek yerine tek, nedenini söyleyen satır.
   bool _fonListesiAlinamadi = false;
@@ -227,7 +232,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// AI sütun eşleme (bayrak `ekstre_ai_esleme`, 0121). Belge cihazdan
   /// çıkmaz: yalnız anonim iskelet (`ekstreIskeleti`) gider, yalnız sütun
   /// numaraları döner; değerler yine belgeden okunur. Kullanıcı düğmeye
-  /// basmadan hiçbir şey gönderilmez.
+  /// basmadan hiçbir şey gönderilmez. Metin yolunda (`ekstre_metin_yolu`)
+  /// kelimeler de gider, rakamlar yine gitmez (`ekstreMetni`).
   Future<void> _aiIleEsle() async {
     final e = _ekstre;
     // Çift dokunuş koruması ve gösterge düğmede (SandikAsyncButton,
@@ -237,9 +243,21 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final l = context.l10n;
     setState(() => _kartMesaji = null);
     try {
-      final yanit =
-          await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
-      final yeni = e.aiEslemesiyle(yanit);
+      // Metin yolu (bayrak `ekstre_metin_yolu`, 0147): kelimeler açık,
+      // rakamlar maskeli; sunucu önce banka şablonu hafızasına bakar.
+      // Şablonun eşlemesi sağlamayı geçmezse bir kez şablonsuz sorulur.
+      final metinYolu = RemoteConfigService.instance.ekstreMetinYolu;
+      // Rıza işlemi isteyen kişiden, istediği anda (yasin 2026-10-13:
+      // "herkese peşinen değil de işlemi talep ettiklerinde sorsak").
+      if (metinYolu && !await _aiRizasiAl()) return;
+      final govde = metinYolu ? ekstreMetni(e) : ekstreIskeleti(e);
+      final ilk = await SupabaseService.instance.ekstreEsle(govde);
+      var yeni = e.aiEslemesiyle(ilk.tablolar, sablondan: ilk.sablondan);
+      if (yeni == null && ilk.sablondan) {
+        final ikinci = await SupabaseService.instance
+            .ekstreEsle(govde, sablonsuz: true);
+        yeni = e.aiEslemesiyle(ikinci.tablolar);
+      }
       if (!mounted) return;
       if (yeni == null) {
         setState(() => _kartMesaji = l.importAiNoMatch);
@@ -254,6 +272,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (!mounted) return;
       if (h.premium) {
         await PaywallScreen.show(context, source: 'ekstre_ai');
+      } else if (h.riza) {
+        // Rıza başka cihazda geri çekilmiş: bir sonraki dokunuşta sorulur.
+        setState(() {
+          _aiRizasi = false;
+          _kartMesaji = l.importAiRizaGerekli;
+        });
       } else {
         setState(
             () => _kartMesaji = h.kota ? l.importAiLimit : l.importAiFailed);
@@ -261,6 +285,44 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     } catch (err, st) {
       CrashReporter.report(err, st, reason: 'ekstre_ai_esleme');
       if (mounted) setState(() => _kartMesaji = l.importAiFailed);
+    }
+  }
+
+  /// Metin yolu açık rızası: kayıtlıysa sormaz; değilse sayfa açar,
+  /// kabul edilirse sunucuya yazar. Vazgeç / kapatma → `false`, hiçbir şey
+  /// gönderilmez.
+  Future<bool> _aiRizasiAl() async {
+    if (_aiRizasi) return true;
+    final svc = SupabaseService.instance;
+    if (await svc.ekstreAiRizasiVarMi() == true) {
+      if (mounted) setState(() => _aiRizasi = true);
+      return true;
+    }
+    if (!mounted) return false;
+    final kabul = await showSandikSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => const _AiRizaSayfasi(),
+    );
+    if (kabul != true) return false;
+    await svc.ekstreAiRizasiAyarla(true);
+    if (mounted) setState(() => _aiRizasi = true);
+    return true;
+  }
+
+  Future<void> _aiRizasiniGeriCek() async {
+    final l = context.l10n;
+    try {
+      await SupabaseService.instance.ekstreAiRizasiAyarla(false);
+      if (mounted) {
+        setState(() {
+          _aiRizasi = false;
+          _kartMesaji = l.importAiRizaGeriCekildi;
+        });
+      }
+    } catch (e) {
+      if (mounted) showAppError(context, e);
     }
   }
 
@@ -348,6 +410,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 aiGorunur: ref.watch(premiumOzellikleriGorunurProvider) ||
                     RemoteConfigService.instance.ekstreAiEsleme,
                 mesaj: _kartMesaji,
+                onRizaGeriCek: _aiRizasi ? _aiRizasiniGeriCek : null,
                 onKopyala: _iskeletiKopyala,
               ),
             ],
@@ -486,6 +549,7 @@ class _EslemeKarti extends StatelessWidget {
     required this.aiGorunur,
     required this.mesaj,
     required this.onKopyala,
+    this.onRizaGeriCek,
   });
 
   final EkstreOkumaSonucu sonuc;
@@ -498,6 +562,9 @@ class _EslemeKarti extends StatelessWidget {
   final bool aiGorunur;
   final String? mesaj;
   final VoidCallback onKopyala;
+
+  /// Metin yolu rızası verilmişse geri çekme (0147); yoksa `null`.
+  final Future<void> Function()? onRizaGeriCek;
 
   @override
   Widget build(BuildContext context) {
@@ -611,7 +678,10 @@ class _EslemeKarti extends StatelessWidget {
                   metin: context.l10n.prmKilitEkstreAi, kaynak: 'ekstre_ai')
             else ...[
               Text(
-                context.l10n.importAiHint,
+                // Metin yolunda "belge telefonundan çıkmaz" doğru değil.
+                RemoteConfigService.instance.ekstreMetinYolu
+                    ? context.l10n.importAiHintText
+                    : context.l10n.importAiHint,
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
               Align(
@@ -625,6 +695,15 @@ class _EslemeKarti extends StatelessWidget {
               ),
             ],
           ],
+          if (onRizaGeriCek case final geriCek?)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SandikAsyncButton.kompakt(
+                tur: SandikAsyncTur.metin,
+                onPressed: geriCek,
+                child: Text(context.l10n.importAiRizaGeriCek),
+              ),
+            ),
           // Tanılama (bayrak `ekstre_tanilama`, 2026-10-05): motor dosyayı
           // tam anlamadıysa anonim iskelet kopyalanır; belge cihazdan çıkmaz,
           // kullanıcı metni kendisi gönderir. Anlaşılan dosyada gösterilmez.
@@ -762,6 +841,49 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
             child: Text(l10n.importApply),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Metin yolu açık rızası (0147 `ekstre_ai_rizalari`), ilk "Yapay zekâyla
+/// eşle"de. Portföy yorumu rızası deseni (`portfoy_yorumu_karti.dart`):
+/// isteğe bağlı; "Vazgeç" ya da aşağı çekip kapatmak hiçbir şey göndermez.
+class _AiRizaSayfasi extends StatelessWidget {
+  const _AiRizaSayfasi();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    final yatay = SandikSpace.screenH(context);
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l.importAiRizaBaslik,
+                style: t.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+            const SizedBox(height: SandikSpace.sm),
+            Text(l.importAiRizaMetin,
+                style: t.bodyMedium?.copyWith(color: c.text58)),
+            const SizedBox(height: SandikSpace.lg),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l.importAiRizaKabul),
+            ),
+            const SizedBox(height: SandikSpace.sm),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(minimumSize: SandikTouch.minSize),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l.importAiRizaVazgec),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,10 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'crash_reporter.dart';
-import 'secure_session_storage.dart' show SessionVault;
+import 'secure_session_storage.dart' show KeychainKasasi, SessionVault;
 import 'sunucu_secimi.dart';
 
 /// Cihazda oturumu saklı duran bir hesap (çoklu hesap, bayrak `coklu_hesap`).
@@ -79,17 +78,6 @@ class KayitliHesap {
   }
 }
 
-class _GuvenliKasa implements SessionVault {
-  static const _s = FlutterSecureStorage();
-  @override
-  Future<String?> read(String key) => _s.read(key: key);
-  @override
-  Future<void> write(String key, String value) =>
-      _s.write(key: key, value: value);
-  @override
-  Future<void> delete(String key) => _s.delete(key: key);
-}
-
 /// Cihazdaki hesapların listesi ve her birinin saklı Supabase oturumu.
 ///
 /// ## Neden Keychain/Keystore
@@ -109,7 +97,7 @@ class HesapKasasi {
   HesapKasasi({
     @visibleForTesting SessionVault? kasa,
     @visibleForTesting String? onEk,
-  })  : _kasa = kasa ?? _GuvenliKasa(),
+  })  : _kasa = kasa ?? KeychainKasasi(),
         _onEkSabit = onEk;
 
   static final HesapKasasi instance = HesapKasasi();

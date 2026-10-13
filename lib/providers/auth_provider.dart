@@ -78,6 +78,14 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     state = await AsyncValue.guard(
       () => AuthService.instance.login(email: email, password: password, rememberMe: rememberMe),
     );
+    if (state.hasError) {
+      // Yanlış şifre hiçbir yolda içeri almaz (2026-10-13): istemcide kalmış
+      // bir oturum `_AuthGate`'in "çevrimdışı, yeniden dene" dalını açıp
+      // kullanıcıyı o oturumla içeri alıyordu (bkz. `AuthService` "Çıkış
+      // bekçisi").
+      await AuthService.instance.hayaletOturumuTemizle();
+      return;
+    }
     if (state.hasValue && state.valueOrNull != null) {
       unawaited(AnalyticsService.instance.logLogin(method: 'email'));
     }
@@ -96,6 +104,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       state = previous;
     } catch (e, st) {
       state = AsyncError(e, st);
+      await AuthService.instance.hayaletOturumuTemizle();
     }
   }
 
