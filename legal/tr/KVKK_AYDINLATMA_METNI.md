@@ -1,8 +1,8 @@
 # KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 10 Ekim 2026
-**Sürüm:** 1.9
+**Son güncelleme:** 13 Ekim 2026
+**Sürüm:** 1.10
 **Onay sürümü:** 1.8
 
 ---
@@ -214,7 +214,7 @@ KVKK Madde 12 uyarınca aldığımız önlemler:
 - Bcrypt ile şifre hash'leme
 - Row-Level Security (RLS) ile yetkisiz erişim engeli
 - Rate limiting ile brute-force saldırı koruması
-- Oturum token'ının cihazın güvenli anahtar deposunda saklanması; 10 dakikadan uzun arka planda kalınca kilit ya da oturum kapanışı
+- Oturum token'ının cihazın güvenli anahtar deposunda saklanması; uygulama kilidi açıksa arka planda kalınca kilitlenme
 - Hesabın aynı anda tek cihazda açık kalması; yeni cihazda e-posta kodu
 - Production loglarında PII maskeleme
 

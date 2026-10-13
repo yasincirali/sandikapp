@@ -3237,10 +3237,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alertSetFromAssetScreen => 'Set from the bell on an asset screen';
 
   @override
-  String get sessionTimedOut =>
-      'You were signed out for safety. Turn on the lock in Settings › Privacy and this will not happen again.';
-
-  @override
   String lockOfferTitle(String yontem) {
     String _temp0 = intl.Intl.selectLogic(
       yontem,
@@ -3257,20 +3253,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get lockOfferBody =>
       'Your portfolio lives in your pocket. With the lock on, the app recognises you without getting in your way.';
-
-  @override
-  String get lockOfferBenefitStay => 'You stay signed in';
-
-  @override
-  String get lockOfferBenefitStayBody =>
-      'With the lock off, leaving the app for 10 minutes signs you out for safety and you have to enter your password again. With the lock on, your session stays put.';
-
-  @override
-  String get lockOfferBenefitPush => 'Your alerts keep coming';
-
-  @override
-  String get lockOfferBenefitPushBody =>
-      'Signing out also silences your price alerts and daily summary. With the lock on, they keep arriving.';
 
   @override
   String get lockOfferBenefitPrivacy => 'Your portfolio stays hidden';
@@ -5750,7 +5732,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
+      'Version 1.10: Leaving the app in the background for a long time no longer signs you out; if the app lock is on, it only locks. Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';

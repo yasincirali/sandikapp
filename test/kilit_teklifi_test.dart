@@ -14,9 +14,9 @@ import 'helpers/kaynak.dart';
 /// biyometrik kilidi önerip onaylattırılmalı"*.
 ///
 /// Teklif bir ÖNERİDİR, kapı değil: reddedilebilir ve reddedildiğinde
-/// tekrar sorulmaz. Ama reddin bedeli görünür olmalı — kilitsiz
-/// kullanıcıda zaman aşımı `logout()` uyguluyor ve bu push token'ını da
-/// siliyor.
+/// tekrar sorulmaz. 2026-10-13'ten beri kilitsiz kullanıcı zaman
+/// aşımıyla ÇIKARILMAZ (yasin'in hata bildirimi); teklif yalnız
+/// mahremiyet faydasını anlatır.
 void main() {
   final l = AppLocalizationsTr();
 
@@ -51,22 +51,10 @@ void main() {
   }
 
   group('gerekçe GÖRÜNÜR', () {
-    testWidgets('üç fayda da yazılı — özellikle oturum ve bildirim',
-        (tester) async {
+    testWidgets('gerçek fayda yazılı: mahremiyet', (tester) async {
       await ekraniAc(tester);
-      // Kullanıcının asıl derdi bu ikisiydi: çıkış yapılması ve
-      // push'un kesilmesi. Mahremiyet üçüncü sırada, çünkü kilidi
-      // kapalı kullanıcı onu zaten kabul etmiş sayılır.
-      expect(find.text(l.lockOfferBenefitStay), findsOneWidget);
-      expect(find.text(l.lockOfferBenefitPush), findsOneWidget);
       expect(find.text(l.lockOfferBenefitPrivacy), findsOneWidget);
-    });
-
-    testWidgets('gövde metinleri NEDENİ söylüyor, sadece başlık değil',
-        (tester) async {
-      await ekraniAc(tester);
-      expect(find.text(l.lockOfferBenefitStayBody), findsOneWidget);
-      expect(find.text(l.lockOfferBenefitPushBody), findsOneWidget);
+      expect(find.text(l.lockOfferBenefitPrivacyBody), findsOneWidget);
     });
 
     testWidgets('sonradan açılabileceği söyleniyor — dayatma değil',
@@ -159,9 +147,7 @@ void main() {
       // `select`li başlık ve düğmede olabilir.
       for (final m in [
         l.lockOfferBody,
-        l.lockOfferBenefitStayBody,
         l.lockOfferBenefitPrivacyBody,
-        l.sessionTimedOut,
       ]) {
         expect(m.contains('Face ID'), isFalse, reason: m);
         expect(m.contains('Touch ID'), isFalse, reason: m);
@@ -248,25 +234,6 @@ void main() {
               'biometricLockOfferedProvider.notifier).set(true);'),
           isTrue,
           reason: 'her açılışta sormak dayatma olurdu');
-    });
-
-    test('kaynak: zaman aşımı çıkışı teklifi YENİDEN açar', () {
-      // Kaybı bizzat yaşamış kullanıcıya kararını yeniden sormak
-      // dayatma değil: ilk "şimdi değil" sonucunu görmeden verilmişti.
-      final src = ekranKaynagiSync('lib/main.dart');
-      final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(
-          tek.contains(
-              'ref.read(biometricLockOfferedProvider.notifier).set(false)'),
-          isTrue);
-    });
-
-    test('kaynak: çıkış SESSİZ değil — neden söyleniyor', () {
-      final src = ekranKaynagiSync('lib/main.dart');
-      final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('_zamanAsimiBildir();'), isTrue);
-      expect(tek.contains('context.l10n.sessionTimedOut'), isTrue,
-          reason: 'kullanıcı şifre ekranını arıza sanıyordu');
     });
 
     test('tercih KİŞİYE ÖZEL — ikinci hesap kendi kararını verir', () {

@@ -929,9 +929,9 @@ class AuthService {
   // yasin'in hata bildirimi: *"login ekranında yanlış şifre girilmesine
   // rağmen giriş yapıyor"*. Yol: soğuk açılışta erişim anahtarının süresi
   // dolmuştur ve gotrue yenilemeyi ARKADA başlatır (`recoverSession`,
-  // beklenmez). O sırada çıkış yapılırsa (10 dk zaman aşımı çıkışı tam bunu
-  // yapar) `signOut` yerel oturumu siler, ama süren yenileme dönünce
-  // gotrue `_saveSession` ile oturumu GERİ YAZAR ve kasaya kaydeder.
+  // beklenmez). O sırada çıkış yapılırsa (eski 10 dk zaman aşımı çıkışı
+  // tam bunu yapıyordu) `signOut` yerel oturumu siler, ama süren yenileme
+  // dönünce gotrue `_saveSession` ile oturumu GERİ YAZAR ve kasaya kaydeder.
   // Uygulama "kullanıcı yok" der, giriş ekranını gösterir; istemcide ise
   // geçerli bir oturum durur. Yanlış şifre `AsyncError` üretir, `_AuthGate`
   // "hata + yerel oturum var" görünce bunu çevrimdışı sanıp yeniden dener
