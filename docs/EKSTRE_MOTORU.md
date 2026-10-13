@@ -193,6 +193,29 @@ kapsamalıyız" ve "bunun içinden varlık alım satımları nasıl ayıklarsın
   çıkmaz; kullanıcı metni kendisi gönderir. Sonraki adım (yasin kararı): bu iskelet, motor
   emin olmadığında sunucu üzerinden Claude'a gidip sütun eşlemesi alınacak (Gizlilik 1.6).
 
+## Hareketlerden alım VE satım (2026-10-13)
+
+yasin: "hesap varlık ekstresi yüklüyorum ama içinden varlık alım satımlarını
+çıkaramıyor" — DenizBank'ta da. Sebep: 2026-10-05 sürümü hareketi yalnız varlık
+tablosundaki satırın ALIŞINI inceltmek için kullanıyordu; satışı olan kod ve dönemde
+tamamen satılmış (varlık tablosunda olmayan) kod atlanıyordu. Hepsi hâlâ
+`ekstre_hareketleri` bayrağının arkasında; kapalıyken çıktı birebir eski.
+
+- **Açılış adedi** = dönem sonu adedi − dönem alışları + dönem satışları. Satışsız kodda
+  eskisi gibi kalan adet ekstre gününde kalır. Satışlı kodda açılış İLK HAREKET GÜNÜNE,
+  fiyatı BOŞ yazılır (toplu kayıt o günün kapanışını çeker; uydurma fiyat yok), ardından
+  bütün alış/satışlar tarih sırasıyla (aynı gün önce alış). Defter dönem sonunda varlık
+  tablosundaki adedi tutar; satışlar `IceAktarmaSatislari`'ndan geçer.
+- **Tutarsızlık = dokunma:** açılış negatifse ya da sıralı yürüyüşte bir satış eldekini
+  aşıyorsa kod eski hâliyle kalır (hareket başka hesaptan ya da liste eksik).
+- **Varlık tablosunda olmayan kod** yalnız gerçek varlıksa alınır: TEFAS listesinde fon
+  ya da BIST kataloğunda hisse (`hareketKodlari`). Süpürme fonu "FON5" yine girmez.
+  Varlık tablosu varsa dönem sonu adedi 0 sayılır; yoksa (yalnız hareket listesi)
+  açılış satışları karşılayan en küçük adettir. Çözülemeyen bir fon ADININ adayı olan
+  kod alınmaz: o fonun bugünkü adedi bilinmiyor, satışını eklemek elde duran fonu
+  kapanmış gösterirdi.
+- Ekran, hareketlerde kod varsa (bayrak açıkken) adla fon olmasa da TEFAS listesini çeker.
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örneği: yalnız DenizBank** (PDF, 2026-10-03; kişisel veri olduğu için

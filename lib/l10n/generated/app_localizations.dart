@@ -4979,7 +4979,7 @@ abstract class AppLocalizations {
   /// No description provided for @importTradesApplied.
   ///
   /// In tr, this message translates to:
-  /// **'{count} varlığın gerçek alış tarihi ve fiyatı hesap hareketlerinden alındı.'**
+  /// **'{count} varlığın alım satımları gerçek tarih ve fiyatıyla hesap hareketlerinden alındı.'**
   String importTradesApplied(int count);
 
   /// No description provided for @importDepositRow.

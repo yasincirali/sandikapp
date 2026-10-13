@@ -2886,7 +2886,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String importTradesApplied(int count) {
-    return '$count varlığın gerçek alış tarihi ve fiyatı hesap hareketlerinden alındı.';
+    return '$count varlığın alım satımları gerçek tarih ve fiyatıyla hesap hareketlerinden alındı.';
   }
 
   @override
