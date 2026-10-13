@@ -401,6 +401,12 @@ verify_jwt = false
 [functions.revenuecat-webhook]
 verify_jwt = false
 
+# X onayı (0146): Telegram webhook'u oturumsuz çağırır. Kapıyı fonksiyon
+# tutar: `X-Telegram-Bot-Api-Secret-Token` (fail-closed) + yönetici sohbet
+# kimliği. Bkz. `functions/x-onay/index.ts`.
+[functions.x-onay]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327
