@@ -2869,6 +2869,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Tablonun yalnız yapısı gönderilir: ad, numara ve tutarlar gizlenir, belge telefonundan çıkmaz.';
 
   @override
+  String get importAiHintText =>
+      'Tablodaki sütun ve varlık adları yapay zekâya gönderilir; tutar, adet ve hesap/kimlik numaraları gizlenir.';
+
+  @override
   String get importAiSuggested =>
       'Sütunları yapay zekâ önerdi; eşlemeyi kontrol et, gerekirse düzelt.';
 

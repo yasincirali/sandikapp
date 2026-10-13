@@ -16,7 +16,7 @@ import 'tablo_okuyucular.dart';
 
 export 'ekstre_tablosu.dart' show EkstreAiHatasi, EkstreOkumaHatasi;
 export 'mevduat_tablosu.dart' show EkstreMevduati;
-export 'ekstre_iskeleti.dart' show ekstreIskeleti;
+export 'ekstre_iskeleti.dart' show ekstreIskeleti, ekstreMetni;
 export 'hareket_tablosu.dart' show EkstreHareketi;
 export 'tablo_anlama.dart' show EkstreAnlami, EkstreRol, EkstreRolAdi;
 
@@ -274,17 +274,31 @@ class EkstreOkumaSonucu {
   /// iskeletteki gibi 1'den; satır/sütun numaraları ham tablonun.
   /// İçerik kapısını geçemeyen eşleme düşer ([tabloyuRollerleAnla]); hiçbiri
   /// geçmezse `null` — ekran eski eşlemeyle kalır.
-  EkstreOkumaSonucu? aiEslemesiyle(List<Map<String, dynamic>> yanit) {
+  ///
+  /// [sablondan] (metin yolu, 0147): eşleme modelden değil sunucunun banka
+  /// şablonu hafızasından geldi. Banka aynı başlıkla düzeni değiştirmiş
+  /// olabilir (yasin 2026-10-13: "banka şablonları da değişebilir"), bu
+  /// yüzden daha sıkı: tek bir tablo bile kapıdan ya da adet × fiyat ≈ tutar
+  /// sağlamasından ([eslemeSaglamasi]) geçmezse `null` — ekran şablonsuz
+  /// yeniden sorar, sunucu şablonun hata sayacını artırır.
+  EkstreOkumaSonucu? aiEslemesiyle(
+    List<Map<String, dynamic>> yanit, {
+    bool sablondan = false,
+  }) {
     final yeni = <EkstreAnlami>[];
     for (final x in yanit) {
       final t = x['tablo'], b = x['baslik_satiri'], r = x['roller'];
-      if (t is! int || t < 1 || t > tablolar.length || r is! Map) continue;
+      if (t is! int || t < 1 || t > tablolar.length || r is! Map) {
+        if (sablondan) return null;
+        continue;
+      }
       final roller = <EkstreRol, int>{
         for (final rol in EkstreRol.values)
           if (r[rol.aiAdi] case final int c) rol: c,
       };
       final a = tabloyuRollerleAnla(
           tablolar[t - 1], b is int ? b : -1, roller);
+      if (sablondan && (a == null || !eslemeSaglamasi(a))) return null;
       if (a != null) yeni.add(a);
     }
     if (yeni.isEmpty) return null;
@@ -370,6 +384,35 @@ EkstreOkumaSonucu ekstreyiAnla(
     tablolar: tablolar,
     hareketler: hareketleriBul(tablolar),
   );
+}
+
+/// Adet × fiyat ≈ tutar sağlaması (şablon eşlemesi için, 0147). Üç rol
+/// birden yoksa ya da hiçbir satırda üçü de okunmuyorsa denetlenecek bir
+/// şey yoktur: içerik kapısı ([tabloyuRollerleAnla]) yeterli sayılır. Varsa
+/// satırların en az yarısı %2 içinde tutmalı — sütunu kaymış bir şablon
+/// (adet ↔ fiyat yer değiştirmiş, araya sütun girmiş) burada düşer.
+bool eslemeSaglamasi(EkstreAnlami a) {
+  final ad = a.roller[EkstreRol.adet],
+      fi = a.roller[EkstreRol.fiyat],
+      tu = a.roller[EkstreRol.tutar];
+  if (ad == null || fi == null || tu == null) return true;
+  var denenen = 0, tutan = 0;
+  for (final s in a.veri) {
+    // Sayı stili satırdan bilinmez ("285.40" TR'de 28540): iki stilden
+    // biri tutarsa satır tutar.
+    var okundu = false, tuttu = false;
+    for (final turkce in [true, false]) {
+      final x = sayiCoz(s[ad], turkce: turkce),
+          y = sayiCoz(s[fi], turkce: turkce),
+          z = sayiCoz(s[tu], turkce: turkce);
+      if (x == null || y == null || z == null || z == 0) continue;
+      okundu = true;
+      if (((x * y - z).abs() / z.abs()) <= 0.02) tuttu = true;
+    }
+    if (okundu) denenen++;
+    if (tuttu) tutan++;
+  }
+  return denenen == 0 || tutan * 2 >= denenen;
 }
 
 /// Sembolsüz anlaşılan tablolardan elle eşlemeye en uygun olanı: en az iki

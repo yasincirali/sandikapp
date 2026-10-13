@@ -228,6 +228,38 @@ yalnız en dolu satırın %60'ı kadar hücresi olan asıl satırlardan kurulur.
 Regresyon: `test/fixtures/ekstre_pdf_kunyeli.json` (uydurma veri). Örnek PDF
 (kullanıcıya verilen): `/mnt/project-files/ekstre-ornek/sandik_ornek_ekstre.pdf`.
 
+## Metin yolu ve banka şablonu hafızası (2026-10-13, 0147, bayrak `ekstre_metin_yolu`)
+
+yasin'in DenizBank ekstresinde "Yapay zekâyla eşle" 0 tablo döndü (Tokyo
+`ekstre_esleme_kaydi` 2026-10-13 09:05, Sonnet, 2708 girdi token). v1 iskelette
+sözlük dışı her kelime A/a olduğundan model "Nominal Miktar" gibi başlıkları ve
+fon adlarını göremiyordu. Görsel okuma (PDF/görüntü API'ye) konuşuldu; metin
+5–10 kat ucuz olduğu için seçilmedi (yalnız metin katmanı olmayan taranmış PDF
+için ileride yedek). Qwen Flash ile Haiku 5.5 aynı fiyat bandında; ek sağlayıcı
+ve yurt dışı aktarım yükü yüzünden Claude'da kalındı.
+
+- **Metin (`ekstreMetni`, v2):** iskeletle aynı düzen; kelimeler AÇIK, rakamlar
+  9 (tutar, adet, IBAN, TCKN, hesap no cihazda kalır), e-posta ve etiketli
+  künye ("Sayın …", "Ad Soyad: …", "Adres" | değer) A/a. Etiketsiz yazılmış ad
+  geçebilir → bayrak Gizlilik/Açık Rıza güncellemesi + yeniden onay olmadan
+  açılmaz. Sunucu v1'deki maske denetimini v2'ye de uygular.
+- **Model:** önce Haiku 5.5; hiç tablo bulamazsa bir kez Sonnet 5.5. v1 iskelet
+  eskisi gibi doğrudan Sonnet.
+- **Şablon hafızası (`ekstre_sablonlari`):** modelin eşlediği tablonun başlık
+  satırı izi (katlanmış hücreler, rakam `#`, `|` ile) SHA-256 olarak, sütun
+  rolleri ve sütun sayısıyla saklanır. Aynı iz + aynı sütun sayısı gelince model
+  çağrılmaz (kota düşmez, kayıtta `model = 'sablon'`, maliyet 0).
+- **Banka tasarımı değişirse:** başlık değişti → iz tutmaz → model bir kez →
+  yeni iz ayrı satır, eskisi kalır. Başlık aynı ama düzen kaymış → cihaz
+  sağlaması (`eslemeSaglamasi`: satırların yarısında adet × fiyat ≈ tutar %2,
+  artı içerik kapısı) reddeder → `sablonsuz` ile yeniden sorulur, şablonun
+  `hata` sayacı artar, modelin eşlemesi aynı ize yazılır. `hata >= 3` şablon
+  kullanılmaz.
+- **Bilinen sınırlar:** model aynı yanlış eşlemeyi verirse şablon her seferinde
+  sıfırlanır (maliyet şablonsuz durumla aynı, fazlası yok). Şablon modelden
+  gelir, kullanıcı yazamaz; ama kasıtlı hazırlanmış bir metin modeli yanıltıp
+  bir izi bozabilir — sağlama ve "kontrol et" uyarısı son savunma.
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örneği: yalnız DenizBank** (PDF, 2026-10-03; kişisel veri olduğu için

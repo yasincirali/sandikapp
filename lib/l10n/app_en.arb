@@ -1909,6 +1909,7 @@
   "importDiagnosticCopied": "Diagnostic text copied.",
   "importAiButton": "Map with AI",
   "importAiHint": "Only the table layout is sent: names, numbers and amounts are hidden, the document never leaves your phone.",
+  "importAiHintText": "Column and asset names in the table are sent to AI; amounts, quantities and account/ID numbers stay hidden.",
   "importAiSuggested": "AI suggested the columns; check the mapping and fix it if needed.",
   "importAiNoMatch": "AI couldn't find a holdings table in this file either.",
   "importAiLimit": "You've used today's AI mapping allowance; try again tomorrow.",

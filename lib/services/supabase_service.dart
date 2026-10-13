@@ -2246,20 +2246,26 @@ class SupabaseService {
   // ── Edge Functions ────────────────────────────────────────────────────────
 
   /// Ekstre AI sütun eşleme (0121, `ekstre-esle`). [iskelet] ANONİM
-  /// tanılama iskeletidir (`ekstreIskeleti`); günlüğe yalnız uzunluğu
-  /// yazılır. Yanıt `tablolar` listesi; 2xx dışında `FunctionException`.
-  Future<List<Map<String, dynamic>>> ekstreEsle(String iskelet) async {
+  /// tanılama iskeletidir (`ekstreIskeleti`) ya da metin yolunda
+  /// (`ekstreMetni`, 0147) rakamları maskeli metin; günlüğe yalnız uzunluğu
+  /// yazılır. [sablonsuz]: sunucunun şablondan verdiği eşleme cihazdaki
+  /// sağlamayı geçmedi — şablon atlanır, model sorulur. Yanıt `tablolar` ve
+  /// eşlemenin şablondan gelip gelmediği; 2xx dışında `EkstreAiHatasi`.
+  Future<({List<Map<String, dynamic>> tablolar, bool sablondan})> ekstreEsle(
+    String iskelet, {
+    bool sablonsuz = false,
+  }) async {
     final FunctionResponse res;
     try {
       res = await _log.log(
         source: 'SupabaseService.ekstreEsle',
         table: 'functions/ekstre-esle',
         op: 'FUNCTION',
-        request: {'uzunluk': iskelet.length},
+        request: {'uzunluk': iskelet.length, 'sablonsuz': sablonsuz},
         timeout: const Duration(seconds: 60),
         call: () => _db.functions.invoke(
           'ekstre-esle',
-          body: {'iskelet': iskelet},
+          body: {'iskelet': iskelet, if (sablonsuz) 'sablonsuz': true},
         ),
       );
     } on FunctionException catch (e, st) {
@@ -2268,9 +2274,14 @@ class SupabaseService {
       }
       throw EkstreAiHatasi(kota: e.status == 429, premium: e.status == 403);
     }
-    final t = (res.data is Map) ? (res.data as Map)['tablolar'] : null;
-    if (t is! List) return const [];
-    return [for (final x in t) if (x is Map) Map<String, dynamic>.from(x)];
+    final govde = res.data is Map ? res.data as Map : const <String, dynamic>{};
+    final t = govde['tablolar'];
+    return (
+      tablolar: t is List
+          ? [for (final x in t) if (x is Map) Map<String, dynamic>.from(x)]
+          : const <Map<String, dynamic>>[],
+      sablondan: govde['kaynak'] == 'sablon',
+    );
   }
 
   Future<void> sendPartnerInvitePush(String inviteId) async {

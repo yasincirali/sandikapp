@@ -227,7 +227,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// AI sütun eşleme (bayrak `ekstre_ai_esleme`, 0121). Belge cihazdan
   /// çıkmaz: yalnız anonim iskelet (`ekstreIskeleti`) gider, yalnız sütun
   /// numaraları döner; değerler yine belgeden okunur. Kullanıcı düğmeye
-  /// basmadan hiçbir şey gönderilmez.
+  /// basmadan hiçbir şey gönderilmez. Metin yolunda (`ekstre_metin_yolu`)
+  /// kelimeler de gider, rakamlar yine gitmez (`ekstreMetni`).
   Future<void> _aiIleEsle() async {
     final e = _ekstre;
     // Çift dokunuş koruması ve gösterge düğmede (SandikAsyncButton,
@@ -237,9 +238,18 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final l = context.l10n;
     setState(() => _kartMesaji = null);
     try {
-      final yanit =
-          await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
-      final yeni = e.aiEslemesiyle(yanit);
+      // Metin yolu (bayrak `ekstre_metin_yolu`, 0147): kelimeler açık,
+      // rakamlar maskeli; sunucu önce banka şablonu hafızasına bakar.
+      // Şablonun eşlemesi sağlamayı geçmezse bir kez şablonsuz sorulur.
+      final metinYolu = RemoteConfigService.instance.ekstreMetinYolu;
+      final govde = metinYolu ? ekstreMetni(e) : ekstreIskeleti(e);
+      final ilk = await SupabaseService.instance.ekstreEsle(govde);
+      var yeni = e.aiEslemesiyle(ilk.tablolar, sablondan: ilk.sablondan);
+      if (yeni == null && ilk.sablondan) {
+        final ikinci = await SupabaseService.instance
+            .ekstreEsle(govde, sablonsuz: true);
+        yeni = e.aiEslemesiyle(ikinci.tablolar);
+      }
       if (!mounted) return;
       if (yeni == null) {
         setState(() => _kartMesaji = l.importAiNoMatch);
@@ -611,7 +621,10 @@ class _EslemeKarti extends StatelessWidget {
                   metin: context.l10n.prmKilitEkstreAi, kaynak: 'ekstre_ai')
             else ...[
               Text(
-                context.l10n.importAiHint,
+                // Metin yolunda "belge telefonundan çıkmaz" doğru değil.
+                RemoteConfigService.instance.ekstreMetinYolu
+                    ? context.l10n.importAiHintText
+                    : context.l10n.importAiHint,
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
               Align(

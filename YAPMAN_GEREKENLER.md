@@ -12,6 +12,25 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-13 Ekstre metin yolu + banka şablonu hafızası (0147, bayrak `ekstre_metin_yolu`, Premium)
+
+"Yapay zekâyla eşle" kelimeleri açık metni yollar (rakamlar yine gizli), önce Haiku 5.5;
+okunan banka düzeni şablon olarak saklanır, aynı düzen bir daha modele gitmez.
+Kapalıyken istek birebir eski (anonim iskelet, Sonnet). Ayrıntı: `docs/EKSTRE_MOTORU.md`.
+
+- [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `ekstre-esle`).
+- [ ] **Bayrağı herkese açmadan ÖNCE yasal metin:** bugün Gizlilik 1.6 "belge
+      telefonundan çıkmaz, yalnız maskeli iskelet gider" diyor. Metin yolunda tablodaki
+      kelimeler (sütun ve varlık adları; etiketsiz yazılmış bir ad da olabilir) Anthropic'e
+      gider. Gizlilik + Açık Rıza güncellenir, "Sürüm" ve "Onay sürümü" artar →
+      `python docs/_build_legal.py` → migration (iki sunucu). ⚠️ "Onay sürümü" artınca
+      herkese yeniden onay kapısı çıkar; AI portföy yorumunun yasal güncellemesiyle
+      birleştirmek tek kapı demek. Claude yapar; senden yalnız "ne zaman".
+- [ ] Önce yalnız kendi cihazında dene: Remote Config `ekstre_metin_yolu` (Boolean,
+      varsayılan `false`) → kendi test koşulunda `true`. Varsayılanı değiştirme.
+- [ ] Bakım: Supabase SQL (salt okunur) `select model, count(*), sum(maliyet_usd) from
+      ekstre_esleme_kaydi group by 1;` — `sablon` satırları modelsiz okunan dosyalardır.
+
 ## ⏳ 2026-10-13 AI portföy yorumu — Özet'te geçen hafta / geçen ay (0145, bayrak `portfoy_ai_yorumu`, Premium)
 
 Kod ve şema main'de, **her şey kapalı**: bayrak varsayılanı `false`, fonksiyon

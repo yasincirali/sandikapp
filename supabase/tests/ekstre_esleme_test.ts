@@ -10,7 +10,22 @@
 //   deno test --allow-all supabase/tests/ekstre_esleme_test.ts
 
 import { assertEquals } from 'jsr:@std/assert@1';
-import { hataOzeti, ILK_SATIR, istekGovdesi, iskeletiDogrula, yanitiDogrula } from '../functions/_shared/ekstre_esleme.ts';
+import {
+  adayIzler,
+  baslikIzi,
+  hataOzeti,
+  ILK_SATIR,
+  istekGovdesi,
+  iskeletiDogrula,
+  izOzeti,
+  METIN_ILK_SATIR,
+  type Sablon,
+  sablonlaEsle,
+  sablonRolleri,
+  tablolariAyikla,
+  yanitiDogrula,
+  yeniSablonlar,
+} from '../functions/_shared/ekstre_esleme.ts';
 
 const iskelet = [
   ILK_SATIR,
@@ -32,6 +47,7 @@ Deno.test('iskelet: geçerli olan tablo boyutlarını verir', () => {
   assertEquals(iskeletiDogrula(iskelet), {
     gecti: true,
     tablolar: [{ satir: 4, sutun: 3 }, { satir: 2, sutun: 2 }],
+    surum: 'iskelet',
   });
 });
 
@@ -97,4 +113,75 @@ Deno.test('hata özeti: API durumu ve türü, db kodu; mesaj yok', () => {
   assertEquals(hataOzeti({ code: '42P01', message: 'x' }), 'db 42P01');
   assertEquals(hataOzeti(new TypeError('x')), 'TypeError');
   assertEquals(hataOzeti('x'), 'hata');
+});
+
+// ── Metin yolu ve şablon hafızası (2026-10-13, 0147) ──────────────────────
+
+const metin = [
+  METIN_ILK_SATIR,
+  'biçim: pdf',
+  '',
+  '## tablo 1 (PDF) · 4 satır × 3 sütun',
+  '0\tSayın\tAaaaa Aaaaa',
+  '1\tYatırım Fonu İsmi\tNominal Miktar\tBakiye',
+  '2\tİŞ PORTFÖY ALTIN FONU\t9.999,99\t99.999,99',
+  '3\tYAPI KREDİ PORTFÖY YABANCI TEKNOLOJİ\t999,99\t9.999,99',
+].join('\n');
+
+Deno.test('metin: v2 kabul edilir, rakam yine maskeli olmalı', () => {
+  assertEquals(iskeletiDogrula(metin), {
+    gecti: true,
+    tablolar: [{ satir: 4, sutun: 3 }],
+    surum: 'metin',
+  });
+  assertEquals(
+    iskeletiDogrula(metin.replace('9.999,99', '1.647,00')),
+    { gecti: false, neden: 'maskesiz' },
+  );
+});
+
+Deno.test('iz: Türkçe katlanır, rakam #, başlığa benzemeyen satır yok', () => {
+  assertEquals(baslikIzi(['Yatırım Fonu İsmi', 'Nominal Miktar', 'Bakiye']),
+    'yatirim fonu ismi|nominal miktar|bakiye');
+  assertEquals(baslikIzi(['YATIRIM FONU İSMİ', 'NOMİNAL MİKTAR', 'BAKİYE']),
+    'yatirim fonu ismi|nominal miktar|bakiye');
+  assertEquals(baslikIzi(['Tutar (9)', 'Adet']), 'tutar #|adet');
+  assertEquals(baslikIzi(['9.999,99', '99/99/9999', 'X']), null);
+});
+
+Deno.test('şablon: model eşlemesi saklanır, aynı başlık modelsiz eşlenir', async () => {
+  const t = tablolariAyikla(metin);
+  assertEquals(t.length, 1);
+  assertEquals(t[0][1], ['Yatırım Fonu İsmi', 'Nominal Miktar', 'Bakiye']);
+  const yeni = yeniSablonlar(t, [{ tablo: 1, baslik_satiri: 1, roller: { sembol: 0, adet: 1, tutar: 2 } }]);
+  assertEquals(yeni.length, 1);
+  const depo = new Map<string, Sablon>([[await izOzeti(yeni[0].iz), yeni[0].sablon]]);
+
+  // Aynı banka, başka kullanıcı, başka satırlar: künye bir satır uzun.
+  const baska = tablolariAyikla(metin.replace('0\tSayın\tAaaaa Aaaaa', '0\tSayın\tAaaaa\n9\tAaaaa Aaaaa'));
+  const adaylar = await Promise.all(adayIzler(baska).map(async (a) => ({ ...a, iz: await izOzeti(a.iz) })));
+  const e = sablonlaEsle(baska, adaylar, depo);
+  assertEquals(e.eslemeler, [{ tablo: 1, baslik_satiri: 2, roller: { sembol: 0, adet: 1, tutar: 2 } }]);
+  assertEquals(e.kullanilan.length, 1);
+});
+
+Deno.test('şablon: banka sütun eklerse iz tutmaz (model yeniden sorulur)', async () => {
+  const t = tablolariAyikla(metin);
+  const y = yeniSablonlar(t, [{ tablo: 1, baslik_satiri: 1, roller: { sembol: 0, adet: 1 } }]);
+  const depo = new Map<string, Sablon>([[await izOzeti(y[0].iz), y[0].sablon]]);
+  const yeniDuzen = tablolariAyikla(metin.replace('Nominal Miktar\tBakiye', 'Nominal Miktar\tFiyat\tBakiye'));
+  const adaylar = await Promise.all(adayIzler(yeniDuzen).map(async (a) => ({ ...a, iz: await izOzeti(a.iz) })));
+  assertEquals(sablonlaEsle(yeniDuzen, adaylar, depo).eslemeler, []);
+});
+
+Deno.test('şablon: başlıksız eşleme saklanmaz; bozuk DB rolleri düşer', () => {
+  const t = tablolariAyikla(metin);
+  assertEquals(yeniSablonlar(t, [{ tablo: 1, baslik_satiri: -1, roller: { sembol: 0, adet: 1 } }]), []);
+  assertEquals(sablonRolleri({ sembol: 0, adet: 7 }, 3), null);
+  assertEquals(sablonRolleri({ sembol: 0, adet: 1, uydurma: 2 }, 3), { sembol: 0, adet: 1 });
+});
+
+Deno.test('iz özeti: 64 hane hex (0147 check kısıtı)', async () => {
+  const o = await izOzeti('adet|fiyat');
+  assertEquals(/^[0-9a-f]{64}$/.test(o), true);
 });

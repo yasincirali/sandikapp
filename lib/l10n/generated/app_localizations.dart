@@ -4952,6 +4952,12 @@ abstract class AppLocalizations {
   /// **'Tablonun yalnız yapısı gönderilir: ad, numara ve tutarlar gizlenir, belge telefonundan çıkmaz.'**
   String get importAiHint;
 
+  /// No description provided for @importAiHintText.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tablodaki sütun ve varlık adları yapay zekâya gönderilir; tutar, adet ve hesap/kimlik numaraları gizlenir.'**
+  String get importAiHintText;
+
   /// No description provided for @importAiSuggested.
   ///
   /// In tr, this message translates to:

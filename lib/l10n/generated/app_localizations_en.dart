@@ -2895,6 +2895,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Only the table layout is sent: names, numbers and amounts are hidden, the document never leaves your phone.';
 
   @override
+  String get importAiHintText =>
+      'Column and asset names in the table are sent to AI; amounts, quantities and account/ID numbers stay hidden.';
+
+  @override
   String get importAiSuggested =>
       'AI suggested the columns; check the mapping and fix it if needed.';
 
