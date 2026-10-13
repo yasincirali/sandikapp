@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:uuid/uuid.dart';
 
 import '../../models/asset_type.dart';
+import '../bist_hisse_katalogu.dart';
 import '../../providers/bulk_cart_provider.dart';
 import '../mevduat_hesabi.dart';
 import 'ekstre_tablosu.dart';
@@ -50,6 +51,7 @@ class EkstreOkumaSonucu {
     this.belgeTarihi,
     this.kurum,
     this.adKodlari = const {},
+    this.fonListesi = const [],
     this.tablolar = const [],
     this.hareketler = const [],
     this.aiOnerisi = false,
@@ -89,6 +91,11 @@ class EkstreOkumaSonucu {
   /// `fonAdiAnahtari(ad)` → TEFAS kodu ([kodlarla] doldurur).
   final Map<String, String> adKodlari;
 
+  /// [kodlarla]'ya verilen TEFAS listesi. Hareketlerde geçen ama varlık
+  /// tablosunda olmayan kodun gerçek bir fon olup olmadığını söyler
+  /// ([hareketKodlari]); boşsa öyle kodlar alınmaz.
+  final List<({String kod, String unvan})> fonListesi;
+
   /// Eşleme kartının gösterdiği tablo; yalnız mevduat varsa `null`.
   EkstreAnlami? get ana => anlamlar.firstOrNull;
 
@@ -108,24 +115,90 @@ class EkstreOkumaSonucu {
 
   /// Emin olunan tabloların birleşik kanonik metni.
   ///
-  /// [hareketlerle]: dönem içinde alınmış payların satırı, hesap
-  /// hareketindeki gerçek tarih ve fiyatla bölünür ([hareketlerleIncelt]).
+  /// [hareketlerle]: dönem içindeki alım ve satımlar hesap hareketindeki
+  /// gerçek tarih ve fiyatla ayrı satır olur ([hareketlerleIncelt]).
   /// Kapalıyken (bayrak `ekstre_hareketleri` kapalı) çıktı birebir eski.
   String kanonikMetin({bool hareketlerle = false}) {
-    final k = _kanonik();
-    if (k == null) return '';
-    final satirlar = hareketlerle
-        ? hareketlerleIncelt(k.satirlar, k.sutunlar, hareketler).satirlar
-        : k.satirlar;
-    return [k.sutunlar.map((r) => r.kanonikBaslik).join('\t'), ...satirlar]
+    final ({List<EkstreRol> sutunlar, List<String> satirlar})? k =
+        hareketlerle ? _hareketli() : _kanonik();
+    // Hareketli yolda varlık tablosu olmayabilir; satır yoksa metin de yok.
+    if (k == null || (hareketlerle && k.satirlar.isEmpty)) return '';
+    return [k.sutunlar.map((r) => r.kanonikBaslik).join('\t'), ...k.satirlar]
         .join('\n');
   }
 
-  /// Hareketle inceltilen varlık sayısı (önizleme notu için).
-  int hareketleIncelenen() {
+  /// Hareketlerle satırı değişen ya da hareketten eklenen varlık sayısı
+  /// (önizleme notu için).
+  int hareketleIncelenen() =>
+      hareketler.isEmpty ? 0 : (_hareketlerle()?.incelen ?? 0);
+
+  /// Hareketlerde geçen ama varlık tablosunda olmayan kodlardan gerçek
+  /// varlık olanlar → `tur` hücresi. Fon: TEFAS listesinde (ve çözülemeyen
+  /// bir fon adının adayı DEĞİL — o fonun bugünkü adedi bilinmiyor; satışını
+  /// eklemek elde duran fonu kapanmış gösterirdi). Hisse: BIST kataloğunda.
+  Map<String, String> get hareketKodlari {
+    final fonKodlari = {for (final f in fonListesi) f.kod.trim().toUpperCase()};
+    final belirsiz = {
+      for (final ad in cozulemeyenFonlar) ...fonAdaylari(ad, fonListesi),
+    };
+    final out = <String, String>{};
+    for (final h in hareketler) {
+      final kod = h.kod.toUpperCase();
+      if (fonKodlari.contains(kod)) {
+        if (!belirsiz.contains(kod)) out[kod] = 'Fon';
+      } else if (BistHisseKatalogu.instance.kodMu(kod)) {
+        out[kod] = 'Hisse';
+      }
+    }
+    return out;
+  }
+
+  /// Kanonik çıktı + hareketler. Sütunlar hareket satırının ihtiyacıyla
+  /// genişler (fiyat, tutar, tarih, yön, tür); varlık satırında yeni sütun
+  /// boş kalır ve `CsvImportService` onu eskisi gibi yorumlar (boş tür →
+  /// sembolden çıkarım, boş fiyat → tutardan).
+  ({List<EkstreRol> sutunlar, List<String> satirlar})? _hareketli() =>
+      _hareketlerle()?.kanonik;
+
+  ({
+    ({List<EkstreRol> sutunlar, List<String> satirlar}) kanonik,
+    int incelen
+  })? _hareketlerle() {
     final k = _kanonik();
-    if (k == null || hareketler.isEmpty) return 0;
-    return hareketlerleIncelt(k.satirlar, k.sutunlar, hareketler).incelen;
+    if (hareketler.isEmpty) return k == null ? null : (kanonik: k, incelen: 0);
+    const gerekli = {
+      EkstreRol.sembol, EkstreRol.adet, EkstreRol.fiyat, EkstreRol.tutar,
+      EkstreRol.tarih, EkstreRol.yon, EkstreRol.tur,
+    };
+    final eski = k?.sutunlar ?? const <EkstreRol>[];
+    final sutunlar = [
+      for (final r in EkstreRol.values)
+        if (gerekli.contains(r) || eski.contains(r)) r,
+    ];
+    final satirlar = [
+      for (final satir in k?.satirlar ?? const <String>[])
+        () {
+          final h = satir.split('\t');
+          return [
+            for (final r in sutunlar)
+              if (eski.indexOf(r) case final i when i >= 0 && i < h.length)
+                h[i]
+              else
+                '',
+          ].join('\t');
+        }(),
+    ];
+    final r = hareketlerleIncelt(
+      satirlar,
+      sutunlar,
+      hareketler,
+      bilinenKodlar: hareketKodlari,
+      varlikTablosuVar: k != null,
+    );
+    return (
+      kanonik: (sutunlar: sutunlar, satirlar: r.satirlar),
+      incelen: r.incelen,
+    );
   }
 
   ({List<EkstreRol> sutunlar, List<String> satirlar})? _kanonik() {
@@ -167,7 +240,7 @@ class EkstreOkumaSonucu {
       final kod = fonKoduBul(ad, fonlar);
       if (kod != null) kodlar[fonAdiAnahtari(ad)] = kod;
     }
-    return _kopya(adKodlari: kodlar);
+    return _kopya(adKodlari: kodlar, fonListesi: fonlar.toList());
   }
 
   /// Kullanıcı ana tablonun eşlemesini düzeltti.
@@ -222,6 +295,7 @@ class EkstreOkumaSonucu {
   EkstreOkumaSonucu _kopya({
     List<EkstreAnlami>? anlamlar,
     Map<String, String>? adKodlari,
+    List<({String kod, String unvan})>? fonListesi,
     bool? aiOnerisi,
   }) =>
       EkstreOkumaSonucu(
@@ -232,6 +306,7 @@ class EkstreOkumaSonucu {
         belgeTarihi: belgeTarihi,
         kurum: kurum,
         adKodlari: adKodlari ?? this.adKodlari,
+        fonListesi: fonListesi ?? this.fonListesi,
         tablolar: tablolar,
         hareketler: hareketler,
         aiOnerisi: aiOnerisi ?? this.aiOnerisi,

@@ -111,7 +111,11 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
   Future<EkstreOkumaSonucu> _fonAdlariniCoz(EkstreOkumaSonucu s) async {
     _fonListesiAlinamadi = false;
-    if (s.cozulecekFonAdlari.isEmpty) return s;
+    // Hareketlerde geçen kod gerçek bir fon mu, liste söyler
+    // (`hareketKodlari`): dönemde tamamen satılmış fon varlık tablosunda
+    // yoktur, adını çözmek gerekmese de listeye bakılır.
+    final hareketIcin = _hareketlerle && s.hareketler.isNotEmpty;
+    if (s.cozulecekFonAdlari.isEmpty && !hareketIcin) return s;
     try {
       final fonlar = await TefasService.instance.fetchAllFunds();
       // `fetchAllFunds` ağ hatasını yutar ve BOŞ liste döner (fırlatmaz).

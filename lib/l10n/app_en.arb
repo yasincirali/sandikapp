@@ -1913,7 +1913,7 @@
   "importAiNoMatch": "AI couldn't find a holdings table in this file either.",
   "importAiLimit": "You've used today's AI mapping allowance; try again tomorrow.",
   "importAiFailed": "AI mapping isn't available right now. Try again a bit later.",
-  "importTradesApplied": "Actual purchase date and price for {count} holdings taken from account transactions.",
+  "importTradesApplied": "Buys and sells for {count} holdings taken from account transactions with their actual dates and prices.",
   "@importTradesApplied": {
     "placeholders": {
       "count": {

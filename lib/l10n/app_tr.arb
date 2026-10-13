@@ -1928,7 +1928,7 @@
   "importAiNoMatch": "Yapay zekâ da bu dosyada varlık tablosu bulamadı.",
   "importAiLimit": "Bugünlük yapay zekâ eşleme hakkın doldu; yarın yeniden dene.",
   "importAiFailed": "Yapay zekâ eşlemesi şu an yapılamadı. Biraz sonra yeniden dene.",
-  "importTradesApplied": "{count} varlığın gerçek alış tarihi ve fiyatı hesap hareketlerinden alındı.",
+  "importTradesApplied": "{count} varlığın alım satımları gerçek tarih ve fiyatıyla hesap hareketlerinden alındı.",
   "@importTradesApplied": {
     "placeholders": {
       "count": {

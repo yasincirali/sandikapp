@@ -2912,7 +2912,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String importTradesApplied(int count) {
-    return 'Actual purchase date and price for $count holdings taken from account transactions.';
+    return 'Buys and sells for $count holdings taken from account transactions with their actual dates and prices.';
   }
 
   @override

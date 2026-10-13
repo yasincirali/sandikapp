@@ -363,8 +363,11 @@ class RemoteConfigService {
     // Ekstre hesap hareketlerinden gerçek alış tarihi/fiyatı (2026-10-05,
     // yasin: "bunun içinden varlık alım satımları nasıl ayıklarsın").
     // Varlık satırı dönem içindeki alışlara bölünür; maliyet ekstre günü
-    // fiyatı yerine gerçek alış fiyatı olur (`hareket_tablosu.dart`). KAPALI
-    // doğar: içe aktarılan maliyeti değiştirir; kapalıyken çıktı birebir eski.
+    // fiyatı yerine gerçek alış fiyatı olur (`hareket_tablosu.dart`).
+    // 2026-10-13: satışlar ve dönemde tamamen satılmış fonlar da ayrı satır
+    // olarak gelir (yasin: "içinden varlık alım satımlarını çıkaramıyor").
+    // KAPALI doğar: içe aktarılan maliyeti değiştirir; kapalıyken çıktı
+    // birebir eski.
     'ekstre_hareketleri': false,
 
     // Ekstre AI sütun eşleme (2026-10-05, yasin kararı: "AI sütun eşleme").

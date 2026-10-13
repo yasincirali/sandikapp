@@ -131,77 +131,179 @@ Iterable<EkstreHareketi> _tablodan(EkstreTablosu t) sync* {
   return null;
 }
 
-/// Varlık satırlarını hareketlerle incelt: dönem içinde ALINMIŞ payın
-/// gerçek tarihi ve fiyatı. Satırlar `kanonikSatirlar` düzeninde (sekmeli).
+/// Varlık satırlarını hareketlerle incelt: dönem içindeki alım ve
+/// satımlar gerçek tarih ve fiyatıyla ayrı satır olur. Satırlar
+/// `kanonikSatirlar` düzeninde (sekmeli).
 ///
-/// Kural (çift sayım yok): varlık tablosu NE olduğunu söyler, hareket
-/// yalnız NE ZAMAN ve KAÇA alındığını. Bir kodun dönemdeki alışları
-/// eldeki adedi aşmıyorsa alışlar ayrı satır olur, kalan (dönemden önce
-/// alınmış) adet varlık satırında ekstre günüyle kalır. Kodda satış
-/// varsa ya da alışlar eldekini aşıyorsa (başka hesaptan satış) satır
-/// olduğu gibi kalır — sıralamayı tahmin etmektense eski davranış.
+/// ## Kural (çift sayım yok)
+/// Varlık tablosu dönem sonunda NE KADAR olduğunu söyler (E), hareketler
+/// dönem içinde NE ZAMAN ve KAÇA alınıp satıldığını (alış toplamı a,
+/// satış toplamı s). Dönem başındaki adet bundan çıkar: açılış = E − a + s.
+/// - Satışsız kod: alışlar ayrı satır, kalan (açılış) adet varlık
+///   satırında ekstre günü ve fiyatıyla kalır (2026-10-05 davranışı).
+/// - Satışlı kod (2026-10-13, yasin: "içinden varlık alım satımlarını
+///   çıkaramıyor"): açılış adedi ilk hareket gününe, fiyatı BOŞ yazılır —
+///   toplu kayıt o günün kapanışını çeker (uydurma fiyat yok); ardından
+///   bütün alış ve satışlar tarih sırasıyla. Defter dönem sonunda yine E
+///   tutar; satış, elde olanı aşmadığı için `IceAktarmaSatislari`'ndan
+///   geçer.
+/// - Açılış negatifse ya da sıralı yürüyüşte bir satış eldekini aşıyorsa
+///   (hareket başka hesaptan, ya da liste eksik) kod DOKUNULMAZ: varlık
+///   satırı olduğu gibi kalır. Tahminle defter kurulmaz.
+///
+/// ## Varlık tablosunda olmayan kod
+/// Dönem içinde tamamen satılmış fon/hisse varlık tablosunda yer almaz;
+/// eski sürüm bu yüzden satışları hiç göstermiyordu. Yalnız [bilinenKodlar]
+/// içindeki kod alınır (değer: `tur` hücresi, ör. "Fon"); "FON5" gibi
+/// bankanın iç süpürme fonu bilinmediği için yine hiçbir yere girmez.
+/// [varlikTablosuVar] ise kodun dönem sonu adedi 0 sayılır (açılış =
+/// s − a); yoksa (yalnız hareket listesi) dönem sonu bilinmez ve açılış,
+/// satışları karşılayan EN KÜÇÜK adettir — satış varsa o pay vardı.
 ({List<String> satirlar, int incelen}) hareketlerleIncelt(
   List<String> satirlar,
   List<EkstreRol> sutunlar,
-  List<EkstreHareketi> hareketler,
-) {
+  List<EkstreHareketi> hareketler, {
+  Map<String, String> bilinenKodlar = const {},
+  bool varlikTablosuVar = true,
+}) {
   final iSembol = sutunlar.indexOf(EkstreRol.sembol);
   final iAdet = sutunlar.indexOf(EkstreRol.adet);
   if (hareketler.isEmpty || iSembol < 0 || iAdet < 0) {
     return (satirlar: satirlar, incelen: 0);
   }
-  final iFiyat = sutunlar.indexOf(EkstreRol.fiyat);
-  final iTutar = sutunlar.indexOf(EkstreRol.tutar);
-  final iTarih = sutunlar.indexOf(EkstreRol.tarih);
-  final iYon = sutunlar.indexOf(EkstreRol.yon);
+  final ix = _Sutunlar(
+    adet: iAdet,
+    fiyat: sutunlar.indexOf(EkstreRol.fiyat),
+    tutar: sutunlar.indexOf(EkstreRol.tutar),
+    tarih: sutunlar.indexOf(EkstreRol.tarih),
+    yon: sutunlar.indexOf(EkstreRol.yon),
+  );
   final kodlu = <String, List<EkstreHareketi>>{};
   for (final h in hareketler) {
     kodlu.putIfAbsent(h.kod.toUpperCase(), () => []).add(h);
   }
   final out = <String>[];
+  final islenen = <String>{};
   var incelen = 0;
   for (final satir in satirlar) {
     final h = satir.split('\t');
-    final hs = kodlu[h[iSembol].trim().toUpperCase()];
+    final kod = h[iSembol].trim().toUpperCase();
+    final hs = kodlu[kod];
     final eldeki = sayiCoz(h[iAdet]);
-    final yon = iYon < 0 ? '' : h[iYon];
-    if (hs == null ||
-        eldeki == null ||
-        yon == 'Satış' ||
-        hs.any((x) => x.satis)) {
+    final yon = ix.yon < 0 ? '' : h[ix.yon];
+    if (hs == null || eldeki == null || yon == 'Satış' || islenen.contains(kod)) {
       out.add(satir);
       continue;
     }
-    final alis = hs.fold<double>(0, (t, x) => t + x.adet);
-    if (alis > eldeki + 1e-6) {
+    final d = _Defter(hs);
+    final acilis = eldeki - d.alis + d.satis;
+    if (acilis < d.acik - 1e-6) {
       out.add(satir);
       continue;
     }
+    islenen.add(kod);
     incelen++;
-    for (final x in [...hs]..sort((a, b) => a.tarih.compareTo(b.tarih))) {
-      out.add(_kopya(h, iAdet, iFiyat, iTutar, iTarih, x.adet, x.fiyat, x.tarih));
+    if (d.satis == 0) {
+      for (final x in d.sirali) {
+        out.add(_kopya(h, ix, x.adet, x.fiyat, x.tarih, satis: false));
+      }
+      if (acilis > 1e-6) {
+        final fiyat = ix.fiyat < 0 ? null : sayiCoz(h[ix.fiyat]);
+        out.add(_kopya(h, ix, acilis, fiyat, null, satis: false,
+            fiyatYaz: false));
+      }
+    } else {
+      out.addAll(_hareketSatirlari(h, ix, d, acilis));
     }
-    final kalan = eldeki - alis;
-    if (kalan > 1e-6) {
-      final fiyat = iFiyat < 0 ? null : sayiCoz(h[iFiyat]);
-      out.add(_kopya(h, iAdet, -1, iTutar, -1, kalan, fiyat, null));
-    }
+  }
+  for (final MapEntry(key: kod, value: hs) in kodlu.entries) {
+    final tur = bilinenKodlar[kod];
+    if (tur == null || islenen.contains(kod)) continue;
+    final d = _Defter(hs);
+    final acilis = varlikTablosuVar ? d.satis - d.alis : d.acik;
+    if (acilis < d.acik - 1e-6) continue;
+    incelen++;
+    final sablon = List.filled(sutunlar.length, '');
+    sablon[iSembol] = kod;
+    final iTur = sutunlar.indexOf(EkstreRol.tur);
+    if (iTur >= 0) sablon[iTur] = tur;
+    final iPara = sutunlar.indexOf(EkstreRol.paraBirimi);
+    if (iPara >= 0) sablon[iPara] = 'TRY';
+    out.addAll(_hareketSatirlari(sablon, ix, d, acilis));
   }
   return (satirlar: out, incelen: incelen);
 }
 
-String _kopya(List<String> h, int iAdet, int iFiyat, int iTutar, int iTarih,
-    double adet, double? fiyat, DateTime? tarih) {
-  final y = [...h];
-  y[iAdet] = sayiMetni(adet);
-  if (iFiyat >= 0 && fiyat != null) y[iFiyat] = sayiMetni(fiyat);
-  final birim = fiyat ?? (iFiyat >= 0 ? sayiCoz(h[iFiyat]) : null);
-  if (iTutar >= 0) {
-    y[iTutar] = birim == null ? '' : sayiMetni((adet * birim * 100).round() / 100);
+/// Açılış (varsa, ilk hareket gününde, fiyatsız) + tarih sıralı hareketler.
+Iterable<String> _hareketSatirlari(
+    List<String> h, _Sutunlar ix, _Defter d, double acilis) sync* {
+  if (acilis > 1e-6) {
+    yield _kopya(h, ix, acilis, null, d.sirali.first.tarih, satis: false);
   }
-  if (iTarih >= 0 && tarih != null) {
-    y[iTarih] = '${tarih.day.toString().padLeft(2, '0')}.'
+  for (final x in d.sirali) {
+    yield _kopya(h, ix, x.adet, x.fiyat, x.tarih, satis: x.satis);
+  }
+}
+
+class _Sutunlar {
+  const _Sutunlar({
+    required this.adet,
+    required this.fiyat,
+    required this.tutar,
+    required this.tarih,
+    required this.yon,
+  });
+  final int adet, fiyat, tutar, tarih, yon;
+}
+
+/// Bir kodun dönem içi hareketleri: toplamlar ve sıralı yürüyüşte
+/// satışların karşılanması için gereken en küçük açılış ([acik]).
+class _Defter {
+  _Defter(List<EkstreHareketi> hs)
+      : sirali = [...hs]
+          // Aynı gün önce alış: gün içi sıra ekstrede yok, satış da toplu
+          // kayıtta gün sonuna kadarki alışlarla karşılanır.
+          ..sort((a, b) {
+            final t = a.tarih.compareTo(b.tarih);
+            if (t != 0) return t;
+            return (a.satis ? 1 : 0) - (b.satis ? 1 : 0);
+          }) {
+    var bakiye = 0.0;
+    for (final x in sirali) {
+      if (x.satis) {
+        satis += x.adet;
+        bakiye -= x.adet;
+        if (-bakiye > acik) acik = -bakiye;
+      } else {
+        alis += x.adet;
+        bakiye += x.adet;
+      }
+    }
+  }
+
+  final List<EkstreHareketi> sirali;
+  double alis = 0, satis = 0, acik = 0;
+}
+
+/// [fiyat] `null`: fiyat ve tutar boş yazılır (toplu kayıt o günün
+/// kapanışını çeker). [fiyatYaz] `false`: varlık satırının kendi fiyatı
+/// kalır (ekstre günü fiyatı). [tarih] `null`: satırın tarihi kalır.
+String _kopya(List<String> h, _Sutunlar ix, double adet, double? fiyat,
+    DateTime? tarih,
+    {required bool satis, bool fiyatYaz = true}) {
+  final y = [...h];
+  y[ix.adet] = sayiMetni(adet);
+  if (fiyatYaz && ix.fiyat >= 0) {
+    y[ix.fiyat] = fiyat == null ? '' : sayiMetni(fiyat);
+  }
+  if (ix.tutar >= 0) {
+    y[ix.tutar] =
+        fiyat == null ? '' : sayiMetni((adet * fiyat * 100).round() / 100);
+  }
+  if (ix.tarih >= 0 && tarih != null) {
+    y[ix.tarih] = '${tarih.day.toString().padLeft(2, '0')}.'
         '${tarih.month.toString().padLeft(2, '0')}.${tarih.year}';
   }
+  if (ix.yon >= 0) y[ix.yon] = satis ? 'Satış' : 'Alış';
   return y.join('\t');
 }
