@@ -1,10 +1,10 @@
 # Privacy Policy — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 13, 2026
-**Version:** 1.10
+**Last updated:** October 14, 2026
+**Version:** 1.11
 **Consent version:** 1.8
-**Source:** TR 1.10 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.11 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -49,9 +49,11 @@ The policy is prepared to meet the requirements of KVKK (Turkish Personal Data P
 | Period return (%) and asset-type shares (%) — computed daily on the server | Race (optional; your percentile and comparison with your partner) |
 | Partnership invite codes and mutual links | Multi-user sharing feature |
 | Your feedback on asset notes (optional): the note's asset and period, a "helpful / not helpful" vote, a "wrong number" flag, an explanation of up to 500 characters | Measuring note quality, finding and correcting faulty notes (see §5.3) |
+| AI portfolio comment (optional; only if you give explicit consent and ask for a comment): the return and drawdown percentages of a closed week or month, your assets' names or symbols and their shares of the portfolio (%), the written comment | The comment describing last week or last month in Performance › Summary (see §5.5) |
+| Consent records of AI features (portfolio comment, reading a statement with AI): when consent was given and withdrawn, version of the text shown to you | Proving consent and rejecting requests without consent on the server |
 | Premium entitlement: its source (gift, store subscription or support), start and end time, store and product name, whether renewal was turned off | Verifying access to Premium content on the server. Payment and card details never reach us; Apple or Google collects the payment |
 
-**Statement import:** A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved. If the App is unsure about the statement's columns and you tap "Map with AI", an anonymous skeleton of the tables (see §5.4) is sent to AI via our server; the file itself is still not sent.
+**Statement import:** A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved. If the App is unsure about the statement's columns and you tap "Map with AI", an anonymous skeleton of the tables or, if you consented, the words in the tables (see §5.4) is sent to AI via our server; the file itself is still not sent.
 
 ### 3.3 Device & Notification Data
 | Data | Purpose |
@@ -111,6 +113,8 @@ Card number, billing address and payment method **never reach us**: your device'
 10. Race: if you join, calculating your period return and showing your percentile and comparison with your partner
 11. Premium: verifying the subscription you bought and recognising your right to access Premium content
 12. Using your feedback on asset notes to measure and improve their accuracy
+13. AI portfolio comment: when you ask, writing a comment that describes a past week or month with your own data (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)
+14. Reading a statement with AI: when you ask, finding the columns of the tables in a statement (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)
 
 ---
 
@@ -129,7 +133,8 @@ Card number, billing address and payment method **never reach us**: your device'
 | Subscription verification (only if you buy Premium) | RevenueCat, Inc. | Your account number (random user ID), store transaction record and receipt, device and app version, IP address | Verifying the purchase with the store and reporting the Premium entitlement to our server (see §3.6) | USA |
 | Price and market data | Public market-data providers: exchanges, banks, fund platforms, official institutions (e.g. CBRT) and exchange-rate and price data services | No personal data is sent; only the asset's symbol, fund code or ISIN is queried. For requests sent from the device, the provider sees the device's IP address as with any internet request; some sources are contacted only from our server | Fetching prices and price history | Global |
 | Writing asset notes (AI) | Anthropic PBC | No personal data is sent; only the asset's symbol and market metrics (price, trading volume, fund size, money flow and investor count) | Weekly asset note and monthly report text (see §5.3) | USA |
-| Statement column mapping (AI; only if you ask) | Anthropic PBC | An anonymous skeleton of the statement's tables: column headings and generic finance words; names, numbers, amounts and dates masked | Finding which column is the symbol, quantity, price (see §5.4) | USA |
+| Statement column mapping (AI; only if you ask) | Anthropic PBC | An anonymous skeleton of the statement's tables (column headings and generic finance words; names, numbers, amounts and dates masked) or, if you gave explicit consent, the words in the tables (column and asset names; all digits and labelled name, address and email masked) | Finding which column is the symbol, quantity, price (see §5.4) | USA |
+| Portfolio comment (AI; only if you give explicit consent and ask for a comment) | Anthropic PBC | Return and drawdown percentages of the closed period, your assets' names or symbols and their shares of the portfolio (%); amounts, quantities, your name, email and account number are not sent | Writing the comment describing the past week or month (see §5.5) | USA |
 
 **These providers act solely as data processors, on our instructions. We remain the data controller.** Apple and Google, which collect the Premium payment, are independent controllers for your payment details.
 
@@ -157,13 +162,29 @@ A statement file is always read on your device. When the App can't tell, in a la
 
 If you tap it, your device builds an anonymous skeleton of the tables and sends it via our server to Anthropic's AI model (Claude). The skeleton contains the table layout, column headings and generic finance words ("Pay Adedi", "Birim Fiyat", "PORTFÖY"); names, customer and account numbers, national ID numbers, addresses, amounts and dates are masked (every letter becomes "A", every digit "9"). Our server rejects a skeleton containing unmasked digits before it reaches the model. The model only says which column is which; the values are still read from the file on your device and shown to you before anything is added.
 
-The skeleton and the model's answer are not stored. To limit abuse and cost, only the time of the request, the model used and its cost are kept with your account for 40 days.
+**Reading with the words in the tables (if you give explicit consent).** Because the anonymous skeleton also masks words, the model cannot recognise column headings and fund names in some statements. So the first time you tap "Map with AI" the App asks for your explicit consent on a separate card. If you consent, the words in the tables (column headings, asset and institution names) are sent instead of the skeleton; all digits (amounts, quantities, prices, IBAN, national ID, account, customer and phone numbers) are masked with "9", and email addresses and information following labels such as "Sayın", "Ad Soyad", "Adres" are masked with "A". A name written without a label may not be masked; that is why this path is used only with your consent. If you do not consent, the anonymous skeleton path is used. You can withdraw your consent at any time with "Withdraw AI consent" on the same screen; later requests do not send words.
+
+Our server derives a one-way trace (digest) from a table's header row and stores the column order the model found for that table together with the trace (bank template). When a table with the same layout arrives again, the model is not called. A template consists only of the trace and column numbers; the table's text, values and who uploaded it are not kept.
+
+The skeleton, the text sent and the model's answer are not stored. To limit abuse and cost, only the time of the request, the model used and its cost are kept with your account for 40 days.
+
+### 5.5 Portfolio Comment with AI
+
+In Performance › Summary you can ask for a short comment describing last week or last month. This feature is optional and Premium content. The first time you use it the App asks for your explicit consent on a separate card; if you do not consent, nothing is sent.
+
+If you consent and tap "Comment on this period", your device calculates the metrics of the closed period: return and drawdown percentages, your assets' names or symbols and their shares of the portfolio (%). These metrics are sent via our server to Anthropic's AI model (Claude). Amounts, quantities, your name, email, username and account number are not sent; our server rejects a request containing a currency or a four-digit number before it reaches the model.
+
+Once written, the comment is saved and read from the database for the rest of the period; opening it again sends no request to the model. The metrics sent with it, the model used and its cost are also stored. Only you can see your comment. Retention: the comments of the last 4 weeks and the last 12 months for each user; older ones are deleted automatically.
+
+The comment describes the past; it contains no buy, sell or hold suggestion and is not investment advice. Comments are generated automatically and checked automatically before they are shown (numbers are compared with the metrics sent; a comment with directive or forward-looking language is not shown); no human reads them one by one and they may contain errors.
+
+You can withdraw your consent at any time with "Turn off AI commentary" on the same card; when you do, your written comments are deleted and your metrics are no longer sent.
 
 ---
 
 ## 6. International Data Transfers
 
-Because the Supabase database is hosted {SUPABASE_ULKEDE} and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in, email and store payment services also run on global infrastructure. If you buy Premium, your subscription record is verified through RevenueCat (USA). Under KVKK Article 9 and GDPR Articles 44-49:
+Because the Supabase database is hosted {SUPABASE_ULKEDE} and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in, email and store payment services also run on global infrastructure. If you buy Premium, your subscription record is verified through RevenueCat (USA). If you use the AI portfolio comment or reading a statement by its words, the related data is sent to Anthropic (USA); this transfer relies on the explicit consent you give separately in the App the first time you use the feature (see §5.4, §5.5). Under KVKK Article 9 and GDPR Articles 44-49:
 
 - **For EU/EEA users:** Transfers are made under Standard Contractual Clauses (SCCs) and the providers' GDPR-compliance commitments.
 - **For Turkish users:** **Explicit consent** is collected under KVKK Article 9(1). You give it with the Explicit Consent Notice ("Açık Rıza Metni"), which you read to the end and accept at the end of the text during registration (or on the consent screen at the first sign-in with Apple or Google); this consent is not collected together with any other declaration.
@@ -184,7 +205,10 @@ The destination countries (Supabase: {SUPABASE_ULKE}; Firebase and RevenueCat: U
 | Registered devices | Until you remove the device from the list or delete your account |
 | Feedback on asset notes | Until account deletion |
 | Premium entitlement and subscription records | Until account deletion; deleted immediately when you delete your account. At the same time RevenueCat is asked to delete your subscriber record; payment and invoice records stay with Apple or Google for their own periods. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play |
-| Statement column mapping request records (time, model and cost only; the skeleton and the answer are not stored) | 40 days |
+| Statement column mapping request records (time, model and cost only; the skeleton, the text sent and the answer are not stored) | 40 days |
+| Statement bank templates (one-way trace of the header row and column numbers; not linked to any user) | As long as the institution's table layout is in use; a template found to be wrong is not used |
+| AI portfolio comments (comment, metrics sent, model and cost) | The last 4 weeks and the last 12 months for each user; immediately when consent is withdrawn or the account is deleted |
+| Consent records of AI features | Until the account is deleted (the withdrawal time is also recorded) |
 | Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer) | **3 years** after account deletion (Turkish Code of Obligations Art. 146 limitation period) |
 | Push token | Deleted on sign-out; if the App is uninstalled, found invalid and deleted at the next send |
 | Notification records (in-app notifications, price alert notifications) | 90 days |
@@ -269,7 +293,7 @@ When you sign out, the session token, your cache and preferences and the widget 
 
 ## 12. Investment Advice Disclaimer
 
-**sandık** is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals, charts, market-movement metrics (money flow, volume radar, buyer pressure) and AI-written asset notes shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.
+**sandık** is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals, charts, market-movement metrics (money flow, volume radar, buyer pressure), AI-written asset notes and portfolio comments shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.
 
 The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.
 

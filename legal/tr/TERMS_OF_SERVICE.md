@@ -1,8 +1,8 @@
 # Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 10 Ekim 2026
-**Sürüm:** 1.8
+**Son güncelleme:** 14 Ekim 2026
+**Sürüm:** 1.9
 **Onay sürümü:** 1.6
 
 ---
@@ -41,13 +41,15 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 
 **Piyasa hareketi ve varlık notları:** Uygulama, kamuya açık piyasa verisinden fonlara giren ve çıkan parayı (para akışı), hisselerde olağandışı işlem hacmini (hacim radarı) ve kriptoda alıcı baskısını gösterir. Portföyündeki varlıklar için haftalık varlık notları ve aylık rapor, yapay zekâ ile otomatik hazırlanır (ayrıntı: Gizlilik Politikası §5.3). Notların tamamı ve aylık rapor Premium üyelere açık olabilir; ücretsiz katmanda notun ilk cümlesi gösterilir.
 
+**Yapay zekâ portföy yorumu:** İsterseniz Performans › Özet'te geçen haftanızı ya da geçen ayınızı kendi verinizle anlatan kısa bir yorum yazdırabilirsiniz. Yorum yapay zekâ ile otomatik yazılır, yalnızca geçmişi anlatır; al, sat ya da tut önerisi içermez. Özellik isteğe bağlıdır, ilk kullanımda ayrıca açık rızanız istenir (ayrıntı: Gizlilik Politikası §5.5) ve Premium içeriktir.
+
 ---
 
 ## 2A. Premium Abonelik
 
 Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 
-**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. teknik analiz sinyalleri ve bildirimleri, yıllık kâr, temettü ve masraf raporu, PDF ve Excel dışa aktarma, temettü tahmini, fon içerik dağılımı (X-Ray), kalem kalem masraf dökümü, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
+**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. teknik analiz sinyalleri ve bildirimleri, yıllık kâr, temettü ve masraf raporu, PDF ve Excel dışa aktarma, temettü tahmini, fon içerik dağılımı (X-Ray), kalem kalem masraf dökümü, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması, yapay zekâ portföy yorumu) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
 
 **Fiyat ve ödeme.** Abonelik aylık ya da yıllık dönemlidir. Fiyat, satın alma ekranında App Store ya da Google Play'in gösterdiği tutardır (vergiler dahil). Ödemeyi Şirket değil, cihazınızın mağazası (Apple ya da Google) tahsil eder; kart bilgileriniz Şirket'e ulaşmaz.
 
@@ -75,6 +77,7 @@ Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 - Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler **yalnızca bilgilendirme** amaçlıdır.
 - Hiçbir içerik **yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık** niteliği taşımaz.
 - Piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı) ve **yapay zekâ ile hazırlanan varlık notları** geçmiş piyasa verisini anlatır, geleceği öngörmez. Notlar otomatik üretilir ve bir insan tarafından tek tek kontrol edilmez; sayılar kaynak veriyle otomatik karşılaştırılsa da hata içerebilir. Bir notu yatırım kararının tek dayanağı yapmayınız.
+- **Yapay zekâ portföy yorumu** kişiye özel bir yatırım tavsiyesi değildir: yalnızca geçmiş dönemde portföyünüzde ne olduğunu anlatır, portföyünüzün uygunluğunu değerlendirmez ve bir işlem önermez. Yorum otomatik üretilir, bir insan tarafından kontrol edilmez ve hata içerebilir.
 - Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf piyasa verisi sağlayıcılarının verileri olduğu gibi sunulur.
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
@@ -141,7 +144,7 @@ Bu kuralların ihlali halinde **hesabınız bildirimsiz kapatılabilir**.
 
 ## 7. Üçüncü Taraf Servisleri
 
-Uygulama; Supabase (sunucu, veritabanı ve kimlik doğrulama), Google Firebase (bildirim, hata raporu, kullanım istatistiği, uzaktan ayar), Apple (iOS bildirimleri ve kilit ekranı canlı etkinliği), Apple ile Giriş ve Google ile Giriş (seçerseniz), Google'ın e-posta altyapısı (doğrulama kodları), Anthropic (varlık notlarının yapay zekâ ile yazımı; kişisel veri gönderilmez), RevenueCat (Premium abonelik doğrulaması), App Store ve Google Play (Premium ödemesi) ve kamuya açık piyasa verisi sağlayıcıları (borsalar, bankalar, fon platformları, resmî kurumlar ile kur ve fiyat veri servisleri) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
+Uygulama; Supabase (sunucu, veritabanı ve kimlik doğrulama), Google Firebase (bildirim, hata raporu, kullanım istatistiği, uzaktan ayar), Apple (iOS bildirimleri ve kilit ekranı canlı etkinliği), Apple ile Giriş ve Google ile Giriş (seçerseniz), Google'ın e-posta altyapısı (doğrulama kodları), Anthropic (varlık notlarının yapay zekâ ile yazımı, kişisel veri gönderilmez; açık rıza verirseniz portföy yorumu ve ekstrenin okunması), RevenueCat (Premium abonelik doğrulaması), App Store ve Google Play (Premium ödemesi) ve kamuya açık piyasa verisi sağlayıcıları (borsalar, bankalar, fon platformları, resmî kurumlar ile kur ve fiyat veri servisleri) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
 
 Piyasa verisi kaynaklarının sağladığı bilgiler dahil olmak üzere üçüncü taraf veri sağlayıcılarının kendi kullanım koşulları geçerlidir. Veri çekiminin geçici olarak engellenmesi durumunda, alternatif kaynaklar veya manuel veri girişi seçenekleri sunulabilir.
 
