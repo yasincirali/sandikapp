@@ -67,6 +67,10 @@ on:
         description: "Taşıma öncesi parmak izi: fonksiyon kod özetleri + Auth ayarları (değer değil, özet). Yazmaz"
         type: boolean
         default: false
+      frankfurt_esitle:
+        description: "Frankfurt'u Tokyo'ya eşitle: kamuya açık değerli 4 ayar secret'ı + magic link konusu (yalnız Frankfurt'a YAZAR)"
+        type: boolean
+        default: false
       sql:
         description: "Salt okunur rapor sorgusu (Management API, tek SELECT). Vault DEĞERİ döndüren sorgu YAZMA — log'a düşer"
         type: string
@@ -293,3 +297,55 @@ jobs:
           else
             echo "FARK YOK"
           fi
+
+  # Taşıma öncesi tek seferlik eşitleme (docs/SUPABASE_FRANKFURT_TASIMA.md,
+  # "Eşleme ölçümü 2026-10-14"). YALNIZ Frankfurt'a yazar; Tokyo'yu okur.
+  # Kapsam bilerek dar:
+  #  * Ayar secret'ları sır değil (bayrak "1", tavan "10", tur üstü "3").
+  #    Değer koda yazılı ama Tokyo'daki özetle (sha256) EŞLEŞMEZSE yazılmaz —
+  #    Tokyo'da değer değiştiyse eski değeri Frankfurt'a taşımayız.
+  #  * Gerçek sırlar (DELETION_HASH_SALT, Telegram) Management API'den
+  #    okunamaz (yalnız özet döner) → elle, belgeye bak.
+  #  * Magic link konusu Tokyo'dan okunur, Frankfurt'a PATCH edilir; log'a
+  #    metin değil özet düşer.
+  frankfurt_esitle:
+    if: ${{ inputs.frankfurt_esitle }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TOKYO_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      EU_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU || secrets.SUPABASE_ACCESS_TOKEN }}
+      TOKYO: ybdbzouzhzwthjgwlbmk
+      EU: ynwymnpdiwudrlxfrmuo
+    steps:
+      - name: Ayar secret'ları (Tokyo özeti tutarsa)
+        run: |
+          api=https://api.supabase.com/v1/projects
+          curl -sS -f "$api/$TOKYO/secrets" -H "Authorization: Bearer $TOKYO_TOKEN" > tokyo.json
+          govde='[]'
+          for cift in FON_KALEM_ACIK=1 FON_KALEM_AYLIK_TAVAN_USD=10 FON_KALEM_TUR_USTU=3 PORTFOY_YORUM_ACIK=1; do
+            ad=${cift%%=*}; deger=${cift#*=}
+            beklenen=$(printf '%s' "$deger" | sha256sum | cut -d' ' -f1)
+            tokyo=$(jq -r --arg a "$ad" '.[] | select(.name==$a) | .value' tokyo.json)
+            if [ "$tokyo" = "$beklenen" ]; then
+              govde=$(jq -c --arg a "$ad" --arg d "$deger" '. + [{name:$a, value:$d}]' <<<"$govde")
+              echo "$ad: Tokyo özeti tutuyor → Frankfurt'a yazılacak"
+            else
+              echo "::warning::$ad: Tokyo'daki değer beklenenden farklı ya da yok — YAZILMADI"
+            fi
+          done
+          if [ "$govde" != "[]" ]; then
+            curl -sS -f -X POST "$api/$EU/secrets" -H "Authorization: Bearer $EU_TOKEN" \
+              -H "Content-Type: application/json" -d "$govde" -o /dev/null -w 'Frankfurt secrets HTTP %{http_code}\n'
+          fi
+
+      - name: Magic link konusu (Tokyo → Frankfurt)
+        run: |
+          api=https://api.supabase.com/v1/projects
+          konu=$(curl -sS -f "$api/$TOKYO/config/auth" -H "Authorization: Bearer $TOKYO_TOKEN" | jq -r '.mailer_subjects_magic_link // ""')
+          if [ -z "$konu" ]; then echo "::error::Tokyo'da konu boş"; exit 1; fi
+          curl -sS -f -X PATCH "$api/$EU/config/auth" -H "Authorization: Bearer $EU_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg k "$konu" '{mailer_subjects_magic_link: $k}')" -o /dev/null -w 'Frankfurt auth HTTP %{http_code}\n'
+          yeni=$(curl -sS -f "$api/$EU/config/auth" -H "Authorization: Bearer $EU_TOKEN" | jq -r '.mailer_subjects_magic_link')
+          [ "$yeni" = "$konu" ] && echo "Magic link konusu artık aynı" || { echo "::error::Frankfurt'ta konu hâlâ farklı"; exit 1; }
