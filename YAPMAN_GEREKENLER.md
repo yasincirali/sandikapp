@@ -32,6 +32,41 @@ Ayrıntı: `docs/EKSTRE_MOTORU.md` "Ekran görüntüsünden maliyet".
 - [ ] İlk Android kurulumunda ML Kit modeli Play hizmetlerinden iner; inmeden
       denenirse "Görüntü okunamadı" çıkar, biraz sonra yeniden dene.
 
+## ⏳ 2026-10-13 SANDIK X (Twitter) hesabı — günlük taslak + Telegram onayı (0146)
+
+Kod dalda, **her şey kapalı**: `x-paylas` `X_BOT_MODU` secret'ı olmadan 503 döner,
+uygulama hiçbir şey görmez, kullanıcı verisi kullanılmaz (yasal metin değişmez).
+Fizibilite + içerik kuralları: proje klasörü `twitter-bot/fizibilite.md`.
+Önizleme: https://claude.ai/artifact/GPwtuCmf67XGZnAA97G63J
+
+Akış: hafta içi TR 19:40 taslak (Cuma haftanın özeti, TÜİK günü TÜFE) → Telegram'da
+sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanmayan bayatlar.
+
+- [x] Birleşince Supabase deploy (hedef `ikisi`, `include_all=true` çünkü 0147/0148 önce girdi; migration 0146 + `x-paylas`, `x-onay`) — Claude yapar.
+- [ ] **Telegram (onay kanalı, 2 dk):** @BotFather → `/newbot` → token. Bota bir kez
+      `/start` yaz (bot sana ilk mesajı ancak böyle atabilir). Kendi sohbet kimliğin:
+      @userinfobot.
+- [ ] Supabase › Edge Functions › Secrets — **yalnız canlı proje (Tokyo)**; iki projede
+      birden açılırsa iki sunucu aynı Telegram botunun webhook'unu birbirinden kapar.
+      Frankfurt'a taşınırken secret'lar taşınır, webhook ilk turda kendini kaydeder.
+      `X_BOT_MODU=taslak`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`,
+      `TELEGRAM_WEBHOOK_SECRET` (32+ karakter, yalnız harf/rakam/`_`/`-`).
+      Bu aşamada onay **X'e göndermez**; 1–2 hafta taslakları beğen/reddet.
+- [ ] **X hesabı:** "sandık" hesabını aç; profil + kapak görseli `twitter-bot/gorseller/`.
+      Bio: "Piyasanın günlük özeti: fon akışı, enflasyon. Sayılarla, sade. Kaynaklar:
+      TEFAS, TÜİK. Yatırım tavsiyesi değildir." Ayarlar › Hesabın › Otomasyon'dan
+      **"Otomatik hesap" etiketini** kendi kişisel hesabına bağla (X kuralı).
+- [ ] **X Developer** (developer.x.com, bot hesabıyla giriş): uygulama oluştur, kullandıkça
+      öde kredisi yükle (10 $ ≈ 600 gönderi). User authentication › **Read and write**,
+      OAuth 1.0a. Keys and tokens: API Key/Secret + Access Token/Secret (bot hesabının).
+- [ ] Secrets (Tokyo): `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`,
+      sonra `X_BOT_MODU=yayin`. Bundan sonra "Yayınla" X'e atar.
+- [ ] İsteğe bağlı: `X_KUR_IZINLI=1` (haftalık karta gram altın/dolar/euro — truncgil
+      verisinin kamuya yayın hakkı belirsiz, kararı senin); `X_BOT_AI=0` (model yerine
+      şablon metin; maliyet sıfır).
+- [ ] Karar (önerilir): sermaye piyasası avukatına tek seferlik "olanı anlatan, yönlendirmeyen
+      otomatik veri hesabı" görüşü.
+
 ## ⏳ 2026-10-13 Ekstre metin yolu + banka şablonu hafızası (0147, bayrak `ekstre_metin_yolu`, Premium)
 
 "Yapay zekâyla eşle" kelimeleri açık metni yollar (rakamlar yine gizli), önce Haiku 5.5;
@@ -39,13 +74,11 @@ okunan banka düzeni şablon olarak saklanır, aynı düzen bir daha modele gitm
 Kapalıyken istek birebir eski (anonim iskelet, Sonnet). Ayrıntı: `docs/EKSTRE_MOTORU.md`.
 
 - [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `ekstre-esle`).
-- [ ] **Bayrağı herkese açmadan ÖNCE yasal metin (bilgilendirme):** rıza herkesten
-      değil, işlemi isteyenden ilk kullanımda alınıyor (senin kararın, 2026-10-13); bu
-      yüzden genel "Onay sürümü" ARTMAZ, herkese onay ekranı çıkmaz. Yapılacak: Gizlilik
-      + KVKK Aydınlatma'ya "ekstre yapay zekâ eşlemesi: tablo kelimeleri Anthropic'e (ABD),
-      isteğe bağlı, saklanmaz" + Açık Rıza Metni'ne ilgili bölüm; yalnız "Sürüm" artar →
-      `python docs/_build_legal.py` → migration (iki sunucu). Sonra istemcide
-      `ekstreAiRizaSurumu` yeni metin sürümüne güncellenir. Claude yapar; senden "başla".
+- [x] **Yasal metin (2026-10-14, 0149):** Gizlilik 1.11 §5.4 + KVKK 1.11 §5.2 metin yolunu
+      ve banka şablonunu anlatır; yalnız "Sürüm" arttı, kimseye onay ekranı çıkmaz.
+      `ekstreAiRizaSurumu` = `2026-10-14`. Açık Rıza Metni'ne bölüm EKLENMEDİ: o belgede
+      "Onay sürümü" satırı yok, her sürüm artışı herkese rızayı yeniden okuturdu; rıza
+      zaten ilk kullanımda kartla alınıyor.
 - [ ] Önce yalnız kendi cihazında dene: Remote Config `ekstre_metin_yolu` (Boolean,
       varsayılan `false`) → kendi test koşulunda `true`. Varsayılanı değiştirme.
 - [ ] Bakım: Supabase SQL (salt okunur) `select model, count(*), sum(maliyet_usd) from
@@ -58,18 +91,17 @@ Kod ve şema main'de, **her şey kapalı**: bayrak varsayılanı `false`, fonksi
 yeniden onay kapısı açılmaz. Tasarım: https://claude.ai/artifact/DMeJXyFCGt2Ff4vjUgRb6z
 
 - [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `portfoy-yorumla`).
-- [ ] **Bayrağı açmadan ÖNCE yasal metin** (sıra önemli — model çağrısı kişisel veri işler):
-      Açık Rıza Metni'ne yeni bölüm F (portföy yüzdeleri Anthropic'e, yurt dışı aktarım,
-      isteğe bağlı, geri çekince yorumlar silinir); Gizlilik §5.3 + KVKK §5.2 (amaç,
-      alıcı, saklama: 4 hafta / 12 ay); Koşullar (yatırım tavsiyesi değildir). "Sürüm" ve
-      "Onay sürümü" artar → `python docs/_build_legal.py` → yeni migration (iki sunucu).
-      ⚠️ "Onay sürümü" artınca **herkese** yeniden onay kapısı çıkar — ne zaman açılacağı
-      senin kararın (paywall açılış günüyle birleştirmek bir seçenek).
-- [ ] Yasal metin yayımlanınca istemcide `portfoyYorumRizaSurumu`
-      (`lib/services/portfoy_yorumu_service.dart`) yeni metin sürümüne güncellenir (Claude yapar).
+- [x] **Yasal metin (2026-10-14, 0149):** Gizlilik 1.11 §5.5 (+ §3.2, §4, §5, §6, §7, §12),
+      KVKK 1.11 §5.2, Koşullar 1.9 (yatırım tavsiyesi değildir). Rıza ilk kullanımda kartla
+      alındığı için (13 Ekim istisnası) yalnız "Sürüm" arttı, "Onay sürümü" ve Açık Rıza
+      Metni aynı; kimseye yeniden onay ekranı çıkmaz. `portfoyYorumRizaSurumu` = `2026-10-14`.
+      Migration 0149 iki sunucuya gidince tamam.
 - [ ] **30 örnek karşılaştırması:** haftalıkta Haiku 5.5, aylıkta Sonnet 5.5. Haiku'nun red
       oranı %10'u geçerse haftalık da Sonnet'e geçer (`_shared/portfoy_yorum.ts` › `MODEL`).
-      Claude yapar; senden yalnız "başla".
+      Betik ve iş hazır (`tool/portfoy_yorum_karsilastir.ts`, Actions › "Portföy yorumu model
+      karşılaştırması"). Bulutta Anthropic anahtarı yok; **senden:** GitHub › Settings ›
+      Secrets and variables › Actions › `ANTHROPIC_API_KEY` (Supabase'dekiyle aynı anahtar
+      olabilir; ~0,10 $ harcar). Ekleyince "koş" de, Claude çalıştırıp sonucu uygular.
 - [ ] Supabase › Edge Functions › Secrets (iki proje): `PORTFOY_YORUM_ACIK=1`.
       İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 3), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
       (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur).

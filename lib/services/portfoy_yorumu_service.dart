@@ -302,9 +302,14 @@ class PortfoyYorumHatasi implements Exception {
   String toString() => 'PortfoyYorumHatasi(${tur.name})';
 }
 
-/// Açık rıza metninin sürümü (rıza kartı + sunucu kaydı). Yasal metne F
-/// bölümü yazıldığında o sürüme çekilir (YAPMAN_GEREKENLER, bayrak açılmadan önce).
-const portfoyYorumRizaSurumu = '2026-10-13-taslak';
+/// Açık rıza kartı metninin sürümü (`pyzRizaMetin`; sunucu kaydı
+/// `portfoy_yorum_rizalari.metin_surumu`). Kart metni değişince artar.
+///
+/// 2026-10-14: taslak → yayın. Kartın anlattığı aktarım Gizlilik 1.11 §5.5
+/// ve KVKK 1.11 §5.2'ye yazıldı (0149). Genel "Onay sürümü" artmadı, Açık
+/// Rıza Metni'ne bölüm eklenmedi: rıza işlemi isteyenden, ilk kullanımda bu
+/// kartla alınır (yasin 2026-10-13, CLAUDE.md yasal metin istisnası).
+const portfoyYorumRizaSurumu = '2026-10-14';
 
 class PortfoyYorumuService {
   PortfoyYorumuService._();

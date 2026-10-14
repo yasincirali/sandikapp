@@ -60,8 +60,10 @@ String ekstreIskeleti(
 ///   okunur; sunucu maskesiz rakamı 400 ile reddeder.
 /// - Maskeli (A/a): e-posta ve etiketli kişisel alanlar — "Sayın …",
 ///   "Ad Soyad: …", "Adres …" ([_kisiselEtiketler]). Etiketsiz yazılmış bir
-///   ad maskelenmeyebilir; bu yüzden bayrak, Gizlilik/Açık Rıza
-///   güncellemesi ve yeniden onay olmadan açılmaz.
+///   ad maskelenmeyebilir; bu yüzden metin yolu yalnız açık rızayla
+///   kullanılır. İlk plan Açık Rıza güncellemesi + herkese yeniden onaydı;
+///   yasin (2026-10-13) rızanın işlemi isteyenden ilk kullanımda alınmasını
+///   seçti (`ekstre_ai_rizalari`). Gizlilik/KVKK 1.11 (0149) bunu yazar.
 String ekstreMetni(
   EkstreOkumaSonucu sonuc, {
   int tabloBasinaSatir = 60,
