@@ -41,9 +41,9 @@ sınırları; APNs/FCM/EVDS/Anthropic/RevenueCat secret değerleri.
 
 | Fark | Neden önemli | Yapılacak |
 |---|---|---|
-| `DELETION_HASH_SALT` değeri farklı | Silinmiş hesap özetleri bu tuzla karşılaştırılıyor; Faz 2.5 "aynı olmak zorunda" | Frankfurt'a Tokyo'daki değeri yaz |
-| Magic link e-posta konusu farklı | Tokyo'da sonradan düzeltilmiş | Frankfurt Auth › Emails › Magic link konusunu Tokyo'dakiyle aynı yap |
-| `FON_KALEM_ACIK`, `FON_KALEM_AYLIK_TAVAN_USD`, `FON_KALEM_TUR_USTU`, `PORTFOY_YORUM_ACIK` yalnız Tokyo'da | Geçişte Fon X-Ray ve AI yorumu sessizce kapanır | Frankfurt'a aynı değerlerle ekle (cron kapalıyken harcama yok) |
+| `DELETION_HASH_SALT` değeri farklı | Silinmiş hesap özetleri bu tuzla karşılaştırılıyor; Faz 2.5 "aynı olmak zorunda" | Frankfurt'a Tokyo'daki değeri yaz. API değeri vermez (yalnız özet) → elle. Değer elde yoksa: tuz yalnız `account_deletion_log` kaydını anonimleştirir, karşılaştırma yapan kod yok; Frankfurt'unki kalabilir, iki tuz da saklanır |
+| ~~Magic link e-posta konusu farklı~~ | Tokyo'da sonradan düzeltilmiş | ✅ 2026-10-14 `frankfurt_esitle` (run 38626317559) |
+| ~~`FON_KALEM_ACIK`, `FON_KALEM_AYLIK_TAVAN_USD`, `FON_KALEM_TUR_USTU`, `PORTFOY_YORUM_ACIK` yalnız Tokyo'da~~ | Geçişte Fon X-Ray ve AI yorumu sessizce kapanır | ✅ 2026-10-14 `frankfurt_esitle`: Tokyo özetiyle doğrulanıp Frankfurt'a yazıldı (sır değil: 1/10/3/1) |
 
 **Geçiş GECESİ taşınacak (önce değil):** `TELEGRAM_BOT_TOKEN`,
 `TELEGRAM_ADMIN_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET`, `X_BOT_MODU` (+ varsa
