@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 
 /// İçerik biçimli yükleme yer tutucusu (iskelet).
@@ -176,6 +177,103 @@ class SandikSkeletonChart extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// İskeletten içeriğe (ya da boştan doluya) geçiş: çapraz solma + yükseklik
+/// akışı (bayrak `goz_alici`).
+///
+/// ## Neden (yasin, 2026-10-14: "keskin oldu")
+/// Frankfurt'a geçişle istekler kısaldı; eskiden yavaş yanıtın arkasında
+/// kalan sert geçişler göründü. İskelet TEK KAREDE gidip içerik birden
+/// geliyordu; içerik iskeletten uzunsa altındaki her şey aynı karede
+/// aşağı zıplıyordu. Burada iskelet [SandikMotion.exit] ile hızla söner,
+/// içerik [SandikMotion.enter] ile belirir, aradaki boy farkı
+/// [SandikMotion.move] ile akar. Süre [SandikMotion.surface]: bir yüzeyin
+/// gelişi; hızlı ağda bile göz geçişi okuyabilsin ama beklemesin.
+///
+/// Anahtar yalnızca [yukleniyor]: içerik geldikten sonraki yeniden
+/// kurulumlar (fiyat tiki, 30 sn'lik tazeleme) solmayı OYNATMAZ — aynı
+/// anahtar, Flutter çocuğu yerinde günceller. Canlı fiyat doğruluğuna
+/// dokunmaz: yeni rakam ilk karede yazılır, yalnız yüzey değişimi akar.
+///
+/// Bayrak kapalıyken ya da hareketi azalt açıkken HİÇBİR animasyon
+/// katmanı kurulmaz: eski davranış birebir (tek kare) ve sıfır süreli
+/// `AnimatedSize` assert'i doğmaz (`_BoyGecisi` notu, #96).
+class SandikYuklemeGecisi extends StatelessWidget {
+  const SandikYuklemeGecisi({
+    super.key,
+    required this.yukleniyor,
+    required this.iskelet,
+    required this.icerik,
+    this.hizalama = Alignment.topCenter,
+  });
+
+  final bool yukleniyor;
+  final Widget iskelet;
+
+  /// Yalnız [yukleniyor] false iken kurulur.
+  final WidgetBuilder icerik;
+
+  /// Boy akışının sabit kenarı; liste/kartta üst kenar sabit kalır.
+  final AlignmentGeometry hizalama;
+
+  /// Bayrak okunuşu tek yerde; testte `RemoteConfigService.testAcik`.
+  static bool get acik => RemoteConfigService.instance.gozAlici;
+
+  @override
+  Widget build(BuildContext context) => SandikIcerikGecisi(
+        anahtar: yukleniyor,
+        hizalama: hizalama,
+        child: yukleniyor ? iskelet : icerik(context),
+      );
+}
+
+/// [anahtar] değişince eski içerik söner, yenisi belirir, boy farkı akar
+/// (bayrak `goz_alici`). [SandikYuklemeGecisi]'nin genel hâli: aynı yüzeyin
+/// başka bir sürümüne geçiş — Performans Özet'te dönem/kapsam değişimi.
+///
+/// Anahtar aynı kaldıkça çocuk yerinde güncellenir (fiyat tiki solma
+/// oynatmaz). Bayrak kapalıyken ya da hareketi azalt açıkken çocuk
+/// doğrudan döner; sıfır süreli `AnimatedSize` kurulmaz (#96).
+class SandikIcerikGecisi extends StatelessWidget {
+  const SandikIcerikGecisi({
+    super.key,
+    required this.anahtar,
+    required this.child,
+    this.hizalama = Alignment.topCenter,
+  });
+
+  final Object anahtar;
+  final Widget child;
+  final AlignmentGeometry hizalama;
+
+  @override
+  Widget build(BuildContext context) {
+    final sure = SandikMotion.surfaceOf(context);
+    if (!SandikYuklemeGecisi.acik || sure == Duration.zero) return child;
+    return AnimatedSize(
+      duration: sure,
+      curve: SandikMotion.move,
+      alignment: hizalama,
+      child: AnimatedSwitcher(
+        duration: sure,
+        switchInCurve: SandikMotion.enter,
+        switchOutCurve: SandikMotion.exit,
+        // Çıkan katman boyu belirlemez (Positioned): kutu gelenin boyunu
+        // alır, fark AnimatedSize'da akar. Varsayılan `Stack` en büyüğünü
+        // alıp geçiş bitince tek karede küçülürdü — sertliğin kendisi.
+        layoutBuilder: (gelen, gidenler) => Stack(
+          alignment: hizalama,
+          children: [
+            for (final g in gidenler)
+              Positioned(left: 0, right: 0, top: 0, child: g),
+            if (gelen != null) gelen,
+          ],
+        ),
+        child: KeyedSubtree(key: ValueKey<Object>(anahtar), child: child),
       ),
     );
   }

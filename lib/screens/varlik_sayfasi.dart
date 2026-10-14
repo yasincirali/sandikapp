@@ -501,7 +501,22 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   // ── Gövde ─────────────────────────────────────────────────────────────────
 
-  List<Widget> _govde() {
+  /// İskelet → sayfa çapraz solar, boy farkı akar (bayrak `goz_alici`,
+  /// 2026-10-14; gerekçe [SandikYuklemeGecisi]). `stretch`: liste
+  /// öğeleri eskiden ListView'dan sıkı genişlik alıyordu, aynısı korunur.
+  List<Widget> _govde() => [
+        SandikYuklemeGecisi(
+          yukleniyor: !_acildi,
+          iskelet: const VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi),
+          icerik: (_) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: _govdeIcerik(),
+          ),
+        ),
+      ];
+
+  List<Widget> _govdeIcerik() {
     final k = widget.kimlik;
     final cizilen = _cizilen;
     final ist = cizilen == null ? null : _istatistik[cizilen];
@@ -517,9 +532,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         azami: k.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
     final bayat = cizilen != null && cizilen != _gun;
 
-    if (!_acildi) {
-      return const [VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi)];
-    }
     return [
       _fiyatBlogu(ist, bicim, cizilen),
       const SizedBox(height: SandikSpace.smd),

@@ -843,9 +843,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 const SizedBox(height: SandikSpace.md),
                 // Başlık yerelden gelir, hemen yazılır; geri kalan her şey
                 // açılış kapısı açılınca BİRLİKTE (bkz. `_acildi`).
-                if (!_acildi)
-                  const VarlikIskeleti()
-                else ...[
+                // İskelet → ekran çapraz solar, boy farkı akar (bayrak
+                // `goz_alici`, 2026-10-14): kapı açılınca içerik tek karede
+                // geliyordu, hızlı ağda "keskin" okundu.
+                SandikYuklemeGecisi(
+                  yukleniyor: !_acildi,
+                  iskelet: const VarlikIskeleti(),
+                  // Gövde girintisi bilerek eski düzeyde: 1400 satırı
+                  // yeniden girintilemek paralel dallarla çakışır.
+                  icerik: (context) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                 Align(
                   alignment: Alignment.centerLeft,
                   child: _fiyatBlogu(pnl, baz),
@@ -2268,7 +2276,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   const DisclaimerWidget(),
                 ],
                 ], // eski yığın (katmanlı değil)
-                ],
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

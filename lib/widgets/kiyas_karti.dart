@@ -38,6 +38,17 @@ class KiyasKarti extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final durum = ref.watch(kiyasProvider(girdi));
+    // İskelet → kıyas çapraz solar (bayrak `goz_alici`, 2026-10-14).
+    // Koşul `when(skipLoadingOnReload)`'un iskelet dalıyla aynı: önceki
+    // değer/hata varken yeniden yükleme iskelete dönmez.
+    return SandikYuklemeGecisi(
+      yukleniyor: durum.isLoading && !durum.hasValue && !durum.hasError,
+      iskelet: _Kabuk(girdi: girdi, child: const _Iskelet()),
+      icerik: (_) => _icerik(durum, ref),
+    );
+  }
+
+  Widget _icerik(AsyncValue<KiyasOzeti?> durum, WidgetRef ref) {
     return durum.when(
       skipLoadingOnReload: true,
       loading: () => _Kabuk(girdi: girdi, child: const _Iskelet()),

@@ -64,7 +64,11 @@ void main() {
       // Gün içi dal grafiğin kapılarını kullanır; gün dışı dallar kendi
       // kanonik serisini ister ve o gelene kadar aynı iskeleti çizer
       // (`_OzetSerisi`, 2026-10-01).
-      expect(src.contains('(!hasData || stale) ? _ozetIskeleti(context)'),
+      // İskelet dalı 2026-10-14'ten beri `SandikYuklemeGecisi` içinde
+      // (bayrak `goz_alici` çapraz solması); kapı aynı.
+      expect(
+          src.contains(
+              'yukleniyor: !hasData || stale, iskelet: _ozetIskeleti(context)'),
           isTrue,
           reason: 'yanlış sayı göstermektense iskelet göster');
       expect(src.contains('_OzetSerisi('), isTrue,
