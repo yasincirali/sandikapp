@@ -25,6 +25,45 @@ kullanıcı verisi YOK. Uygulama sunucu adresini **derlemede** alıyor
 (`--dart-define SUPABASE_URL/ANON_KEY` ← GitHub secret) — telefonlardaki her
 sürüm Tokyo'ya bağlı ve güncellenene kadar öyle kalır.
 
+### Eşleme ölçümü 2026-10-14 (geçiş öncesi)
+
+Kanıt: `supabase-deploy.yml` salt okunur koşular — 38624807855 (secret adları
++ özet, cron, Vault adları, boyut) ve 38625261611 (`karsilastir`: fonksiyon
+kod özeti + Auth ayarı özeti; fark `esitlik` işinde tek listede).
+
+**Aynı:** şema (ŞEMA EŞİT, iki tarafta 145 migration, son 0152); 36
+fonksiyonun **kod özeti** birebir; 54 cron adı + zamanlaması (Tokyo açık,
+Frankfurt kapalı — bilinçli); 13 Vault adı; Auth'ta Apple, e-posta
+şablonları, SMTP sunucu/kullanıcı, site_url, yönlendirme listesi, oran
+sınırları; APNs/FCM/EVDS/Anthropic/RevenueCat secret değerleri.
+
+**Geçişten ÖNCE düzeltilecek [SEN]:**
+
+| Fark | Neden önemli | Yapılacak |
+|---|---|---|
+| `DELETION_HASH_SALT` değeri farklı | Silinmiş hesap özetleri bu tuzla karşılaştırılıyor; Faz 2.5 "aynı olmak zorunda" | Frankfurt'a Tokyo'daki değeri yaz |
+| Magic link e-posta konusu farklı | Tokyo'da sonradan düzeltilmiş | Frankfurt Auth › Emails › Magic link konusunu Tokyo'dakiyle aynı yap |
+| `FON_KALEM_ACIK`, `FON_KALEM_AYLIK_TAVAN_USD`, `FON_KALEM_TUR_USTU`, `PORTFOY_YORUM_ACIK` yalnız Tokyo'da | Geçişte Fon X-Ray ve AI yorumu sessizce kapanır | Frankfurt'a aynı değerlerle ekle (cron kapalıyken harcama yok) |
+
+**Geçiş GECESİ taşınacak (önce değil):** `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_ADMIN_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET`, `X_BOT_MODU` (+ varsa
+`X_*`). İki sunucuda aynı anda olurlarsa ikisi aynı botun webhook'unu
+birbirinden kapar. Frankfurt'a ekle → Tokyo'dan sil; webhook ilk turda
+kendini kaydeder. RevenueCat webhook adresi →
+`https://ynwymnpdiwudrlxfrmuo.supabase.co/functions/v1/revenuecat-webhook`.
+
+**Bilinçli / zararsız fark:** `TEFAS_NAV_CRON_SECRET`,
+`WEEKLY_SUMMARY_CRON_SECRET` (Frankfurt'ta yeniden üretildi, Vault'la
+eşleşmeli — K3'te cron'u elle tetikleyip 200 görülür); SMTP uygulama
+şifresi (ayrı şifre, 2026-09-27 uçtan uca denendi); Auth denetim kaydı
+(Frankfurt'ta kapalı, Faz 2.7); `analyze-signals` `verify_jwt`: Tokyo
+`false` (panel kayması), Frankfurt `true` = repo (`config.toml`) — cron
+JWT ile çağırdığı için Frankfurt doğru olan.
+
+**Veri:** Tokyo 351 MB (Free plan sınırı 500 MB), Frankfurt 25 MB (yalnız
+katalog/deneme; `bosalt` siler). Storage kullanılmıyor (iki tarafta bucket
+yok).
+
 ### Karar: iki sürüm değil, tek "köprü sürümü" + Remote Config anahtarı
 
 İlk plan (aşağıda Faz 4'ün eski hâli) geçişi Frankfurt adresli İKİNCİ bir
