@@ -2944,6 +2944,47 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get importScreenshotAdd => 'Add from screenshot';
+
+  @override
+  String get importScreenshotFillCosts => 'Fill costs from a screenshot';
+
+  @override
+  String get importScreenshotHint =>
+      'Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.';
+
+  @override
+  String get importScreenshotReading => 'Reading image…';
+
+  @override
+  String get importScreenshotNone =>
+      'No holdings found in the image. Pick a screen that shows each holding\'s code or name, quantity and cost.';
+
+  @override
+  String get importScreenshotNoCost =>
+      'No average cost found in the image; rows were left as they were.';
+
+  @override
+  String importScreenshotCostsApplied(int count) {
+    return 'Average cost for $count holdings taken from the screenshot.';
+  }
+
+  @override
+  String importScreenshotRead(int count) {
+    return '$count holdings read from the screenshot; check them below.';
+  }
+
+  @override
+  String importScreenshotSkipped(String codes) {
+    return 'Holdings with separate buy/sell rows were left untouched: $codes';
+  }
+
+  @override
+  String importScreenshotNotInStatement(String codes) {
+    return 'Not in the statement, so not added: $codes';
+  }
+
+  @override
   String importDepositRow(String name, String amount, String rate, int days) {
     return '$name · $amount · $rate interest · $days-day term';
   }

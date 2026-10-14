@@ -71,6 +71,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- ML Kit metin modeli Play hizmetlerinden kurulumda insin; ilk
+             "Ekran görüntüsünden ekle"de model yok hatası olmasın. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
         <!-- Bildirim görünümü. İkon beyaz siluet + şeffaf zemin olmalı (Android
              yalnızca alfa kanalını kullanır); renkli PNG düz kare olarak çıkar. -->
         <meta-data

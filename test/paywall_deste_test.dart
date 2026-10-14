@@ -38,6 +38,7 @@ void main() {
         'kripto_baski': PaywallKarti.hacim,
         'analiz_notu': PaywallKarti.not,
         'ekstre_ai': PaywallKarti.ekstre,
+        'ekran_goruntusu': PaywallKarti.ekstre,
         'yillik_rapor': PaywallKarti.rapor,
         'portfoy_disa_aktar': PaywallKarti.rapor,
         // Masraf dökümü X-Ray'in yanında; aylık rapor rapor kartında

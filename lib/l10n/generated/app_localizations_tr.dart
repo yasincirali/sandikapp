@@ -2918,6 +2918,48 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get importScreenshotAdd => 'Ekran görüntüsünden ekle';
+
+  @override
+  String get importScreenshotFillCosts =>
+      'Maliyetleri ekran görüntüsünden doldur';
+
+  @override
+  String get importScreenshotHint =>
+      'Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.';
+
+  @override
+  String get importScreenshotReading => 'Görüntü okunuyor…';
+
+  @override
+  String get importScreenshotNone =>
+      'Görüntüde varlık bulunamadı. Varlığın kodunun ya da adının, adedinin ve maliyetinin göründüğü ekranı seç.';
+
+  @override
+  String get importScreenshotNoCost =>
+      'Görüntüde ortalama maliyet bulunamadı; satırlar olduğu gibi kaldı.';
+
+  @override
+  String importScreenshotCostsApplied(int count) {
+    return '$count varlığın ortalama maliyeti ekran görüntüsünden yazıldı.';
+  }
+
+  @override
+  String importScreenshotRead(int count) {
+    return 'Ekran görüntüsünden $count varlık okundu; aşağıdan kontrol et.';
+  }
+
+  @override
+  String importScreenshotSkipped(String codes) {
+    return 'Alım satımı ayrı satır olan varlıklara dokunulmadı: $codes';
+  }
+
+  @override
+  String importScreenshotNotInStatement(String codes) {
+    return 'Ekstrede olmadığı için eklenmedi: $codes';
+  }
+
+  @override
   String importDepositRow(String name, String amount, String rate, int days) {
     return '$name · $amount · $rate faiz · $days gün vade';
   }

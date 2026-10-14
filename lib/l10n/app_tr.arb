@@ -1944,6 +1944,44 @@
       }
     }
   },
+  "importScreenshotAdd": "Ekran görüntüsünden ekle",
+  "importScreenshotFillCosts": "Maliyetleri ekran görüntüsünden doldur",
+  "importScreenshotHint": "Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.",
+  "importScreenshotReading": "Görüntü okunuyor…",
+  "importScreenshotNone": "Görüntüde varlık bulunamadı. Varlığın kodunun ya da adının, adedinin ve maliyetinin göründüğü ekranı seç.",
+  "importScreenshotNoCost": "Görüntüde ortalama maliyet bulunamadı; satırlar olduğu gibi kaldı.",
+  "importScreenshotCostsApplied": "{count} varlığın ortalama maliyeti ekran görüntüsünden yazıldı.",
+  "@importScreenshotCostsApplied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importScreenshotRead": "Ekran görüntüsünden {count} varlık okundu; aşağıdan kontrol et.",
+  "@importScreenshotRead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importScreenshotSkipped": "Alım satımı ayrı satır olan varlıklara dokunulmadı: {codes}",
+  "@importScreenshotSkipped": {
+    "placeholders": {
+      "codes": {
+        "type": "String"
+      }
+    }
+  },
+  "importScreenshotNotInStatement": "Ekstrede olmadığı için eklenmedi: {codes}",
+  "@importScreenshotNotInStatement": {
+    "placeholders": {
+      "codes": {
+        "type": "String"
+      }
+    }
+  },
   "importDepositRow": "{name} · {amount} · {rate} faiz · {days} gün vade",
   "@importDepositRow": {
     "placeholders": {

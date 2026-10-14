@@ -1929,6 +1929,44 @@
       }
     }
   },
+  "importScreenshotAdd": "Add from screenshot",
+  "importScreenshotFillCosts": "Fill costs from a screenshot",
+  "importScreenshotHint": "Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.",
+  "importScreenshotReading": "Reading image…",
+  "importScreenshotNone": "No holdings found in the image. Pick a screen that shows each holding's code or name, quantity and cost.",
+  "importScreenshotNoCost": "No average cost found in the image; rows were left as they were.",
+  "importScreenshotCostsApplied": "Average cost for {count} holdings taken from the screenshot.",
+  "@importScreenshotCostsApplied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importScreenshotRead": "{count} holdings read from the screenshot; check them below.",
+  "@importScreenshotRead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importScreenshotSkipped": "Holdings with separate buy/sell rows were left untouched: {codes}",
+  "@importScreenshotSkipped": {
+    "placeholders": {
+      "codes": {
+        "type": "String"
+      }
+    }
+  },
+  "importScreenshotNotInStatement": "Not in the statement, so not added: {codes}",
+  "@importScreenshotNotInStatement": {
+    "placeholders": {
+      "codes": {
+        "type": "String"
+      }
+    }
+  },
   "importDepositRow": "{name} · {amount} · {rate} interest · {days}-day term",
   "importFundNotRecognized": "Fund not recognized, skipped: {name}",
   "importFundListFailed": "Couldn't load the TEFAS fund list; funds listed by name were skipped. Check your connection and pick the file again.",

@@ -5030,6 +5030,66 @@ abstract class AppLocalizations {
   /// **'{count} varlığın alım satımları gerçek tarih ve fiyatıyla hesap hareketlerinden alındı.'**
   String importTradesApplied(int count);
 
+  /// No description provided for @importScreenshotAdd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekran görüntüsünden ekle'**
+  String get importScreenshotAdd;
+
+  /// No description provided for @importScreenshotFillCosts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetleri ekran görüntüsünden doldur'**
+  String get importScreenshotFillCosts;
+
+  /// No description provided for @importScreenshotHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.'**
+  String get importScreenshotHint;
+
+  /// No description provided for @importScreenshotReading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görüntü okunuyor…'**
+  String get importScreenshotReading;
+
+  /// No description provided for @importScreenshotNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görüntüde varlık bulunamadı. Varlığın kodunun ya da adının, adedinin ve maliyetinin göründüğü ekranı seç.'**
+  String get importScreenshotNone;
+
+  /// No description provided for @importScreenshotNoCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görüntüde ortalama maliyet bulunamadı; satırlar olduğu gibi kaldı.'**
+  String get importScreenshotNoCost;
+
+  /// No description provided for @importScreenshotCostsApplied.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} varlığın ortalama maliyeti ekran görüntüsünden yazıldı.'**
+  String importScreenshotCostsApplied(int count);
+
+  /// No description provided for @importScreenshotRead.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekran görüntüsünden {count} varlık okundu; aşağıdan kontrol et.'**
+  String importScreenshotRead(int count);
+
+  /// No description provided for @importScreenshotSkipped.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alım satımı ayrı satır olan varlıklara dokunulmadı: {codes}'**
+  String importScreenshotSkipped(String codes);
+
+  /// No description provided for @importScreenshotNotInStatement.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstrede olmadığı için eklenmedi: {codes}'**
+  String importScreenshotNotInStatement(String codes);
+
   /// No description provided for @importDepositRow.
   ///
   /// In tr, this message translates to:

@@ -85,7 +85,8 @@ PaywallKarti? kaynaktanKart(String source) {
     'para_akisi_karti' => PaywallKarti.akis,
     'hacim_radari' || 'kripto_baski' => PaywallKarti.hacim,
     'analiz_notu' => PaywallKarti.not,
-    'ekstre_ai' => PaywallKarti.ekstre,
+    // Ekran görüntüsünden maliyet de ekstre içe aktarmanın parçası.
+    'ekstre_ai' || 'ekran_goruntusu' => PaywallKarti.ekstre,
     _ => null,
   };
 }

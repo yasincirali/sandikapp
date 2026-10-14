@@ -2,12 +2,15 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/bulk_cart_provider.dart';
 import '../providers/premium_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/csv_import_service.dart';
+import '../services/ekstre/ekran_goruntusu.dart';
+import '../services/ekstre/ekran_okuyucu.dart';
 import '../services/ekstre/ekstre_ice_aktarma.dart';
 import '../services/remote_config_service.dart';
 import 'paywall_screen.dart';
@@ -65,6 +68,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// sonra kartta "onayı geri çek" bağlantısı çıkar; sayfa açılışında
   /// sunucuya sorulmaz (rıza ilk "Yapay zekâyla eşle"de istenir).
   bool _aiRizasi = false;
+
+  /// Ekran görüntüsü okumasının sonucu (bayrak `ekran_goruntusu_maliyet`):
+  /// düğmenin altında satır içi, toast değil (bu ekranda toast yok).
+  String? _gorselMesaji;
 
   /// Adla yazılmış fonlar için TEFAS listesi alınamadı: her ad için ayrı
   /// "tanınmadı" demek yerine tek, nedenini söyleyen satır.
@@ -226,6 +233,93 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (mounted) showAppError(context, e);
     } finally {
       if (mounted) setState(() => _okunuyor = false);
+    }
+  }
+
+  /// Ekran görüntüsünden adet ve ortalama maliyet (bayrak
+  /// `ekran_goruntusu_maliyet`, 2026-10-13; yasin: "bankalarda ekstrelerde
+  /// varlıkların ortalama maliyetleri, alım zamanları yazmıyor").
+  ///
+  /// Metin alanında ekstre varsa yalnız MALİYET yazılır (adet ekstreden
+  /// kalır, `maliyetleriUygula`); boşsa görüntünün kendisi kanonik metin
+  /// olur. Görüntü cihazda okunur (`ekran_okuyucu.dart`), sunucuya gitmez.
+  /// Premium: paywall açıkken ücretsizde paywall'a götürür.
+  Future<void> _ekranGoruntusuSec() async {
+    final l = context.l10n;
+    if (ref.read(radarKilitliProvider)) {
+      await PaywallScreen.show(context, source: 'ekran_goruntusu');
+      return;
+    }
+    final List<XFile> gorseller;
+    try {
+      gorseller = await ImagePicker().pickMultiImage();
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ekran_goruntusu_secici');
+      if (mounted) showAppError(context, e);
+      return;
+    }
+    if (gorseller.isEmpty || !mounted) return;
+    setState(() => _gorselMesaji = null);
+    try {
+      final fonlar = await _fonListesiSessiz();
+      final gruplar = <List<EkranVarligi>>[];
+      for (final g in gorseller) {
+        final hucreler = await ekranGoruntusunuOku(await g.readAsBytes());
+        gruplar.add(ekranGoruntusunuAnla(hucreler, fonlar: fonlar));
+      }
+      final varliklar = ekranVarliklariniBirlestir(gruplar);
+      if (!mounted) return;
+      final mesaj = <String>[];
+      final mevcut = _ctrl.text.trim();
+      if (varliklar.isEmpty) {
+        mesaj.add(l.importScreenshotNone);
+      } else if (mevcut.isNotEmpty) {
+        final r = maliyetleriUygula(mevcut, varliklar);
+        mesaj.add(r.uygulanan > 0
+            ? l.importScreenshotCostsApplied(r.uygulanan)
+            : l.importScreenshotNoCost);
+        if (r.bolunmus.isNotEmpty) {
+          mesaj.add(l.importScreenshotSkipped(r.bolunmus.join(', ')));
+        }
+        if (r.ekstredeYok.isNotEmpty) {
+          mesaj.add(l.importScreenshotNotInStatement(r.ekstredeYok.join(', ')));
+        }
+        if (r.uygulanan > 0) _ctrl.text = r.metin;
+      } else {
+        final metin = ekranKanonikMetni(varliklar);
+        if (metin.isEmpty) {
+          mesaj.add(l.importScreenshotNone);
+        } else {
+          _ctrl.text = metin;
+          mesaj.add(l.importScreenshotRead(
+              varliklar.where((v) => v.kod != null && v.adet != null).length));
+        }
+      }
+      for (final v in varliklar) {
+        if (v.kod == null && v.ad != null) {
+          mesaj.add(l.importFundNotRecognized(v.ad!));
+        }
+      }
+      setState(() => _gorselMesaji = mesaj.join('\n'));
+      if (_ctrl.text.trim().isNotEmpty) _parse();
+    } catch (e, st) {
+      if (e is! EkstreOkumaHatasi) {
+        CrashReporter.report(e, st, reason: 'ekran_goruntusu_okunamadi');
+      }
+      if (mounted) showAppError(context, e);
+    }
+  }
+
+  /// Görüntüdeki fon kodlarını ve adlarını tanımak için TEFAS listesi.
+  /// Alınamazsa boş: yalnız BIST hisseleri tanınır (hata göstermez,
+  /// tanınmayan fon adı zaten "tanınmadı" satırıyla görünür).
+  Future<List<({String kod, String unvan})>> _fonListesiSessiz() async {
+    try {
+      final fonlar = await TefasService.instance.fetchAllFunds();
+      return [for (final f in fonlar) (kod: f.code, unvan: f.name)];
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ekran_goruntusu_fon_listesi');
+      return const [];
     }
   }
 
@@ -397,6 +491,32 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   ? context.l10n.importReading
                   : context.l10n.importPickFile),
             ),
+            // Ekran görüntüsünden maliyet (bayrak `ekran_goruntusu_maliyet`).
+            // Metin doluysa (ekstre okundu) etiket "Maliyetleri … doldur".
+            if (RemoteConfigService.instance.ekranGoruntusuMaliyet) ...[
+              const SizedBox(height: SandikSpace.sm),
+              SandikAsyncButton(
+                tur: SandikAsyncTur.cerceve,
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                onPressed: _okunuyor ? null : _ekranGoruntusuSec,
+                child: Text(_ctrl.text.trim().isEmpty
+                    ? context.l10n.importScreenshotAdd
+                    : context.l10n.importScreenshotFillCosts),
+              ),
+              const SizedBox(height: SandikSpace.xs),
+              Text(
+                context.l10n.importScreenshotHint,
+                style: context.t.bodySmall?.copyWith(color: c.text58),
+              ),
+              if (_gorselMesaji != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: SandikSpace.xs),
+                  child: Text(
+                    _gorselMesaji!,
+                    style: context.t.bodySmall?.copyWith(color: c.text90),
+                  ),
+                ),
+            ],
             if (_ekstre != null) ...[
               const SizedBox(height: SandikSpace.md),
               _EslemeKarti(
