@@ -448,7 +448,7 @@ class YorumTufesi {
   String get aralik {
     final bas = DateTime(ilkAy.year, ilkAy.month + 1, 1);
     final a = _aylar[bas.month - 1], b = _aylar[sonAy.month - 1];
-    return bas.year == sonAy.year && bas.month == sonAy.month ? a : '$a–$b';
+    return bas.year == sonAy.year && bas.month == sonAy.month ? a : '$a-$b';
   }
 
   List<YorumOlcumu> olcumler() {

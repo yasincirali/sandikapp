@@ -28,7 +28,7 @@ import 'package:portfoy_takip/widgets/portfoy_yorumu_karti.dart';
 
 const _olcumler = [
   YorumOlcumu('getiri', 'Dönem getirisi', '+%9,8'),
-  YorumOlcumu('tufe', 'Son açıklanan aylarda TÜFE (Tem–Eyl)', '%7,9'),
+  YorumOlcumu('tufe', 'Son açıklanan aylarda TÜFE (Tem-Eyl)', '%7,9'),
   YorumOlcumu('reel_getiri', 'Aynı aylarda enflasyondan arındırılmış (reel) getiri', '+%1,6'),
   YorumOlcumu('kiyas_altin', 'Aynı paralar aynı günlerde gram altın yatırılsaydı getiri', '+%14,1'),
   YorumOlcumu('kiyas_altin_fark', 'Portföyün gram altın kıyasına göre farkı', '−4,3 puan'),
@@ -54,7 +54,7 @@ PortfoyYorumu _portfoyYorumu() => PortfoyYorumu(
       baslik: 'Portföyün son üç ayda +%9,8 ile enflasyonun önünde kaldı, ama paranın altında getireceğinin gerisinde.',
       maddeler: const [
         (
-          metin: 'Tem–Eyl aylarında TÜFE %7,9 iken reel getirin +%1,6: alım gücün korunmuş, üstüne az da olsa eklenmiş.',
+          metin: 'Tem-Eyl aylarında TÜFE %7,9 iken reel getirin +%1,6: alım gücün korunmuş, üstüne az da olsa eklenmiş.',
           kanit: ['tufe', 'reel_getiri'],
         ),
         (

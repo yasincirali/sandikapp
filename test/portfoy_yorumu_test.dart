@@ -301,7 +301,7 @@ void main() {
       expect(t.aralik, 'Eyl');
       final u = YorumTufesi(
           enflasyonPct: 30, ilkAy: DateTime(2025, 9), sonAy: DateTime(2026, 9));
-      expect(u.aralik, 'Eki–Eyl');
+      expect(u.aralik, 'Eki-Eyl');
       for (final o in u.olcumler()) {
         expect(tutarIziVar(o.ad), isFalse, reason: o.ad);
       }
