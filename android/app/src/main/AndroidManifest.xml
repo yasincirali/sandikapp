@@ -111,6 +111,29 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/sandik_widget_info" />
         </receiver>
+
+        <!-- Glance trampoline aktiviteleri DÜŞÜRÜLÜR (2026-10-14).
+             Uygulama Glance KULLANMAZ: widget düz RemoteViews
+             (SandikWidgetProvider), dokunuş HomeWidgetLaunchIntent ile
+             doğrudan MainActivity'ye gider. Bu iki aktivite yalnızca
+             home_widget eklentisinin taşıdığı glance-appwidget
+             bağımlılığından birleştirilmiş manifest'e giriyor.
+             Uygulamadaki hiçbir PendingIntent onları hedeflemediği hâlde
+             sistem (Son kullanılanlar'dan / görev geri yüklemesinde ayrı
+             taskAffinity'li singleInstance görevi yeniden açma) ya da Play
+             ön-lansman robotu onları ekstrasız başlatabiliyor ve
+             launchTrampolineAction requireNotNull ile düşüyor:
+             "List adapter activity trampoline invoked without specifying
+             target intent" (Crashlytics). Kodda yakalanacak yer yok —
+             aktivite kütüphanenin; kalıcı çözüm, kullanılmayan bileşeni
+             hiç kaydetmemek. Glance'e geçilirse bu iki satır kaldırılmalı
+             (glance_trampoline_manifest_test bunu hatırlatır). -->
+        <activity
+            android:name="androidx.glance.appwidget.action.ActionTrampolineActivity"
+            tools:node="remove" />
+        <activity
+            android:name="androidx.glance.appwidget.action.InvisibleActionTrampolineActivity"
+            tools:node="remove" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
