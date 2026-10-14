@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
@@ -135,6 +136,9 @@ void main() {
     gec.complete(await _seri('THYAO.IS', 1825));
     await t.pump();
     await t.pump();
+    // İskelet → sayfa çapraz geçişi (2026-10-14).
+    await t.pump(SandikMotion.surface);
+    await t.pump(SandikMotion.surface);
     expect(find.byType(VarlikIskeleti), findsNothing);
     expect(find.byType(DonemSecici), findsOneWidget);
     expect(find.byType(DonemIstatistikIzgarasi), findsOneWidget);
@@ -148,6 +152,8 @@ void main() {
     expect(find.byType(VarlikIskeleti), findsOneWidget);
     await t.pump(const Duration(seconds: 3));
     await t.pump();
+    await t.pump(SandikMotion.surface);
+    await t.pump(SandikMotion.surface);
     expect(find.byType(VarlikIskeleti), findsNothing);
     expect(find.byType(DonemSecici), findsOneWidget);
   });

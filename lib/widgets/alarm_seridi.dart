@@ -8,6 +8,7 @@ import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import 'alarm_kur_sheet.dart';
 import '../l10n/l10n.dart';
+import 'sandik_skeleton.dart';
 
 /// Varlık ekranındaki alarm şeridi — bu sembolün KURULU alarmları.
 ///
@@ -35,8 +36,13 @@ class AlarmSeridi extends ConsumerWidget {
     required this.guncelFiyat,
   });
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     final c = context.c;
     final alarmlar = ref.watch(symbolAlertsProvider(sembol));
     final n = ref.read(priceAlertsProvider.notifier);

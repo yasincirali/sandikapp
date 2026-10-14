@@ -501,8 +501,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   // ── Gövde ─────────────────────────────────────────────────────────────────
 
-  /// İskelet → sayfa çapraz solar, boy farkı akar (bayrak `goz_alici`,
-  /// 2026-10-14; gerekçe [SandikYuklemeGecisi]). `stretch`: liste
+  /// İskelet → sayfa çapraz solar, boy farkı akar
+  /// (2026-10-14; gerekçe [SandikYuklemeGecisi]). `stretch`: liste
   /// öğeleri eskiden ListView'dan sıkı genişlik alıyordu, aynısı korunur.
   List<Widget> _govde() => [
         SandikYuklemeGecisi(
@@ -606,7 +606,15 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     );
   }
 
+  /// İskelet/mesaj → grafik çapraz solar (2026-10-14).
   Widget _grafik(
+          DonemIstatistigi? ist, NumberFormat bicim, int? cizilen, bool bayat) =>
+      SandikIcerikGecisi(
+        anahtar: cizilen != null && _seriler[cizilen] != null && ist != null,
+        child: _grafikHam(ist, bicim, cizilen, bayat),
+      );
+
+  Widget _grafikHam(
       DonemIstatistigi? ist, NumberFormat bicim, int? cizilen, bool bayat) {
     final seri = cizilen == null ? null : _seriler[cizilen];
     if (seri == null || ist == null) {

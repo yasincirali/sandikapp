@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/remote_config_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 
 /// İçerik biçimli yükleme yer tutucusu (iskelet).
@@ -183,7 +183,7 @@ class SandikSkeletonChart extends StatelessWidget {
 }
 
 /// İskeletten içeriğe (ya da boştan doluya) geçiş: çapraz solma + yükseklik
-/// akışı (bayrak `goz_alici`).
+/// akışı.
 ///
 /// ## Neden (yasin, 2026-10-14: "keskin oldu")
 /// Frankfurt'a geçişle istekler kısaldı; eskiden yavaş yanıtın arkasında
@@ -199,8 +199,9 @@ class SandikSkeletonChart extends StatelessWidget {
 /// anahtar, Flutter çocuğu yerinde günceller. Canlı fiyat doğruluğuna
 /// dokunmaz: yeni rakam ilk karede yazılır, yalnız yüzey değişimi akar.
 ///
-/// Bayrak kapalıyken ya da hareketi azalt açıkken HİÇBİR animasyon
-/// katmanı kurulmaz: eski davranış birebir (tek kare) ve sıfır süreli
+/// Bayraksız (yasin 2026-10-14: "bayrakla çıkmana gerek yok, direkt
+/// düzeltme"): hata düzeltmesi sayıldı, herkese açık. Hareketi azalt
+/// açıkken HİÇBİR animasyon katmanı kurulmaz: tek kare ve sıfır süreli
 /// `AnimatedSize` assert'i doğmaz (`_BoyGecisi` notu, #96).
 class SandikYuklemeGecisi extends StatelessWidget {
   const SandikYuklemeGecisi({
@@ -220,9 +221,6 @@ class SandikYuklemeGecisi extends StatelessWidget {
   /// Boy akışının sabit kenarı; liste/kartta üst kenar sabit kalır.
   final AlignmentGeometry hizalama;
 
-  /// Bayrak okunuşu tek yerde; testte `RemoteConfigService.testAcik`.
-  static bool get acik => RemoteConfigService.instance.gozAlici;
-
   @override
   Widget build(BuildContext context) => SandikIcerikGecisi(
         anahtar: yukleniyor,
@@ -232,11 +230,11 @@ class SandikYuklemeGecisi extends StatelessWidget {
 }
 
 /// [anahtar] değişince eski içerik söner, yenisi belirir, boy farkı akar
-/// (bayrak `goz_alici`). [SandikYuklemeGecisi]'nin genel hâli: aynı yüzeyin
+/// [SandikYuklemeGecisi]'nin genel hâli: aynı yüzeyin
 /// başka bir sürümüne geçiş — Performans Özet'te dönem/kapsam değişimi.
 ///
 /// Anahtar aynı kaldıkça çocuk yerinde güncellenir (fiyat tiki solma
-/// oynatmaz). Bayrak kapalıyken ya da hareketi azalt açıkken çocuk
+/// oynatmaz). Hareketi azalt açıkken çocuk
 /// doğrudan döner; sıfır süreli `AnimatedSize` kurulmaz (#96).
 class SandikIcerikGecisi extends StatelessWidget {
   const SandikIcerikGecisi({
@@ -244,16 +242,45 @@ class SandikIcerikGecisi extends StatelessWidget {
     required this.anahtar,
     required this.child,
     this.hizalama = Alignment.topCenter,
+    this.tamEkran = false,
   });
 
   final Object anahtar;
   final Widget child;
   final AlignmentGeometry hizalama;
 
+  /// `AsyncValue.when(skipLoadingOnReload: true)`'un seçeceği dalın adı —
+  /// [anahtar] olarak verilir: yalnız dal değişince solar. Birden çok
+  /// değer verilirse ilk "içerik olmayan" kazanır (iç içe `when`).
+  static String hal(Iterable<AsyncValue<Object?>> degerler) {
+    for (final d in degerler) {
+      if (d.hasError) return 'hata';
+      if (!d.hasValue) return 'yukleniyor';
+    }
+    return 'icerik';
+  }
+
+  /// Tüm gövdeyi kaplayan geçiş (logo yükleyicisi → sekme gövdesi): boy
+  /// akışı yok, iki katman da aynı sıkı kutuyu doldurur. Kaydırılan liste
+  /// içinde KULLANILMAZ (sınırsız yükseklikte genişletilemez).
+  final bool tamEkran;
+
   @override
   Widget build(BuildContext context) {
     final sure = SandikMotion.surfaceOf(context);
-    if (!SandikYuklemeGecisi.acik || sure == Duration.zero) return child;
+    if (sure == Duration.zero) return child;
+    if (tamEkran) {
+      return AnimatedSwitcher(
+        duration: sure,
+        switchInCurve: SandikMotion.enter,
+        switchOutCurve: SandikMotion.exit,
+        layoutBuilder: (gelen, gidenler) => Stack(
+          fit: StackFit.expand,
+          children: [...gidenler, if (gelen != null) gelen],
+        ),
+        child: KeyedSubtree(key: ValueKey<Object>(anahtar), child: child),
+      );
+    }
     return AnimatedSize(
       duration: sure,
       curve: SandikMotion.move,
@@ -277,4 +304,24 @@ class SandikIcerikGecisi extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Veri gelince beliren kart/şerit: `const SizedBox.shrink()` "henüz yok"
+/// demektir, gerçek içerik gelince yükseklik sıfırdan akar ve kart solarak
+/// belirir (2026-10-14). Eskiden fon karnesi, para
+/// akışı, hacim radarı, alarm şeridi gibi kartlar sağlayıcı yanıtlayınca
+/// tek karede araya giriyor, altındaki her şeyi aşağı itiyordu.
+///
+/// Ayrım `identical(child, const SizedBox.shrink())` ile: sabit örnek
+/// tektir, kartların "çizilmez" dalları zaten tam bunu döndürüyor.
+class SandikBelirme extends StatelessWidget {
+  const SandikBelirme({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => SandikIcerikGecisi(
+        anahtar: identical(child, const SizedBox.shrink()),
+        child: child,
+      );
 }

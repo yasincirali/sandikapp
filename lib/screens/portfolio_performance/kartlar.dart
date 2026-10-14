@@ -191,8 +191,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       }
       final seriAnahtari = _ozetSeriAnahtari(
           SummaryPeriod.fromIndex(_selectedPeriodIdx), chartAssets);
-      // Dönem/kapsam değişince eski özet söner, yenisi belirir (bayrak
-      // `goz_alici`, 2026-10-14): bellekten eşzamanlı okunan yeni rakamlar
+      // Dönem/kapsam değişince eski özet söner, yenisi belirir (2026-10-14): bellekten eşzamanlı okunan yeni rakamlar
       // tek karede yer değiştiriyordu, hızlı ağda "keskin" okundu.
       return SandikIcerikGecisi(
         anahtar: seriAnahtari,
@@ -285,8 +284,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       );
     }
 
-    // İskelet → grafik geçişi çapraz solar (bayrak `goz_alici`,
-    // 2026-10-14); boş durum ve hata dalları içerik tarafında kalır.
+    // İskelet → grafik geçişi çapraz solar (2026-10-14); boş durum ve hata dalları içerik tarafında kalır.
     Widget grafikAlani() => SandikYuklemeGecisi(
           yukleniyor: chartAssets.isNotEmpty && !hasData && !settled,
           iskelet: const SandikSkeletonChart(height: 300),
@@ -1382,7 +1380,7 @@ class _OzetSerisiState extends State<_OzetSerisi> {
   @override
   Widget build(BuildContext context) {
     final bd = _seri;
-    // İskelet → özet çapraz geçişi (bayrak `goz_alici`, 2026-10-14).
+    // İskelet → özet çapraz geçişi (2026-10-14).
     return SandikYuklemeGecisi(
       yukleniyor: bd == null || bd.total.isEmpty,
       iskelet: widget.iskelet,

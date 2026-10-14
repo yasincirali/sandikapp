@@ -67,7 +67,11 @@ class AylikRaporScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: SandikAppBar(title: l10n.anzAylikBaslik(ay)),
-      body: notlar.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([notlar]),
+        child: notlar.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(SandikSpace.md),
           child: SandikSkeletonList(rows: 3),
@@ -147,6 +151,7 @@ class AylikRaporScreen extends ConsumerWidget {
             liste: liste,
           );
         },
+      ),
       ),
     );
   }

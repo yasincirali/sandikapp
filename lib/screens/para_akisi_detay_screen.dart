@@ -11,6 +11,7 @@ import '../utils/tr_format.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/radar_ortak.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_skeleton.dart';
 
 /// Para akışı ayrıntı ekranı (S2-A, 2026-10-05) — tek kaydırma, bölümler.
 ///
@@ -65,7 +66,11 @@ class _ParaAkisiDetayScreenState extends ConsumerState<ParaAkisiDetayScreen> {
           ),
         ],
       ),
-      body: ozet == null
+      body: SandikIcerikGecisi(
+        // Boş → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: ozet == null,
+        child: ozet == null
           ? const SizedBox.shrink()
           : ListView(
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
@@ -149,6 +154,7 @@ class _ParaAkisiDetayScreenState extends ConsumerState<ParaAkisiDetayScreen> {
                     kaynak: 'TEFAS', tarih: gunAy.format(ozet.veriTarihi)),
               ],
             ),
+      ),
     );
   }
 }

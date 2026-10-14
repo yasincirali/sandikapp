@@ -543,8 +543,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ),
       );
 
-  // İskelet sönerken kart belirir, boy farkı akar (bayrak `goz_alici`,
-  // 2026-10-14). Eskiden iskelet tek karede gidiyor, kart sıfır opaklıktan
+  // İskelet sönerken kart belirir, boy farkı akar (2026-10-14). Eskiden iskelet tek karede gidiyor, kart sıfır opaklıktan
   // başlıyordu: arada boş bir an ve altındaki her şeyin zıplaması vardı.
   @override
   Widget build(BuildContext context) => SandikYuklemeGecisi(
@@ -713,7 +712,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           // eğri araya giriyor, kart büyüyüp altındaki her şey aşağı
           // kayıyordu (TestFlight bulgusu 2026-10-10, "grafik geç çiziliyor").
           // Eski fiyatla eğri ÇİZİLMEZ — kural `_seriYukle` notunda.
-          // İskelet → eğri çapraz solar (bayrak `goz_alici`, 2026-10-14).
+          // İskelet → eğri çapraz solar (2026-10-14).
           const SizedBox(height: SandikSpace.sm2),
           SandikYuklemeGecisi(
             yukleniyor: !seriCiz,

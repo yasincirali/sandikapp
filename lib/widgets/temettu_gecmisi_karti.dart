@@ -15,6 +15,7 @@ import '../theme/sandik.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'dividend_dialog.dart';
+import 'sandik_skeleton.dart';
 
 /// Hisse varlık ekranında "Son 12 ay temettü" kartı (plan §F5, 1. aşama).
 ///
@@ -122,8 +123,13 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
         oneri: s.oneri(_sembol!),
       );
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SandikBelirme(child: _belirenGovde(context));
+
+  Widget _belirenGovde(BuildContext context) {
     if (_sembol == null || _satirlar.isEmpty) return const SizedBox.shrink();
     final l = context.l10n;
     final c = context.c;

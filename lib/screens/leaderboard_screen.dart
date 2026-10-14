@@ -995,7 +995,11 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   Widget build(BuildContext context) {
     return FutureBuilder<List<_LeaderboardRow>>(
       future: _future,
-      builder: (context, snap) {
+      builder: (context, snap) => SandikIcerikGecisi(
+        // İskelet → sıralama çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: (snap.data ?? _staleRows) == null,
+        child: ((BuildContext context, AsyncSnapshot<List<_LeaderboardRow>> snap) {
         final isLoading = snap.connectionState == ConnectionState.waiting;
         // Öncelik: fresh Future data > stale cache > spinner
         final rows = snap.data ?? _staleRows;
@@ -1055,7 +1059,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
               ),
           ],
         );
-      },
+      })(context, snap),
+      ),
     );
   }
 }

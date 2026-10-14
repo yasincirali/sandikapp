@@ -104,6 +104,9 @@ Future<void> _pump(WidgetTester tester, Widget ekran) async {
   ));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+  // Yükleyici → gövde çapraz geçişi biter (2026-10-14); yükleyicinin
+  // "sandık" yazısı başlıkla karışmasın.
+  await tester.pump(SandikMotion.surface);
 }
 
 /// Başlık satırındaki 44×44 kutular, soldan sağa.

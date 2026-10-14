@@ -187,6 +187,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// serisi geldi (ya da `acilisSiniri` doldu). Bir kez `true` olur; dönem
   /// değişimi ve nabız tazelemesi ekranı yeniden iskelete DÖNDÜRMEZ.
   bool _acildi = false;
+
+  /// Grafik alanı veri beklerken/boşken çizilen kutunun anahtarı —
+  /// [SandikIcerikGecisi] dalı buradan ayırt eder.
+  static const _grafikYokAnahtari = ValueKey('varlikGrafikYok');
   late Future<Map<int, double>> _historyFuture;
   late ScrollController _scrollController;
   // Compare mode: seçili karşılaştırma varlığı (kullanıcının portföyünden).
@@ -843,8 +847,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 const SizedBox(height: SandikSpace.md),
                 // Başlık yerelden gelir, hemen yazılır; geri kalan her şey
                 // açılış kapısı açılınca BİRLİKTE (bkz. `_acildi`).
-                // İskelet → ekran çapraz solar, boy farkı akar (bayrak
-                // `goz_alici`, 2026-10-14): kapı açılınca içerik tek karede
+                // İskelet → ekran çapraz solar, boy farkı akar (2026-10-14): kapı açılınca içerik tek karede
                 // geliyordu, hızlı ağda "keskin" okundu.
                 SandikYuklemeGecisi(
                   yukleniyor: !_acildi,
@@ -896,6 +899,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 FutureBuilder<Map<int, double>>(
                   future: _historyFuture,
                   builder: (context, snapshot) {
+                    // İskelet → grafik çapraz solar, boy farkı akar (2026-10-14). Dal, gövdenin anahtarından
+                    // okunur: koşul (bayat seriye düşüş dahil) tek yerde kalır.
+                    final govde = ((BuildContext context,
+                        AsyncSnapshot<Map<int, double>> snapshot) {
                     final waiting =
                         snapshot.connectionState == ConnectionState.waiting;
                     // Periyot değişiminde eski seriye düş — böylece bu
@@ -933,6 +940,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       // dürüst bir mesaj. Sonsuz spinner, veri hiç
                       // gelmeyecekken bile "birazdan gelir" der.
                       return SizedBox(
+                        key: _grafikYokAnahtari,
                         height: GrafikStili.kartYuksekligi,
                         child: waiting
                             ? const SandikSkeletonChart(
@@ -2191,6 +2199,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         ),
                         ..._ozelAltBolum(ozelSonuclar),
                       ],
+                    );
+                  })(context, snapshot);
+                    return SandikIcerikGecisi(
+                      anahtar: govde.key == _grafikYokAnahtari,
+                      child: govde,
                     );
                   },
                 ),

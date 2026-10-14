@@ -23,6 +23,7 @@ import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_skeleton.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
@@ -423,20 +424,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         builder: (_) {
           // Hata önceliği: hangisi patlarsa tek hata görünümü.
           final error = asyncState.error ?? asyncPartnerAssets?.error;
-          if (error != null) {
-            return SandikErrorView(error: error, onRetry: _reload);
-          }
-          // Tek loading: ikisi birden hazır olana kadar.
           final myState = asyncState.valueOrNull;
-          if (myState == null ||
+          // Yükleyici → gövde çapraz solar (2026-10-14): logo tek karede kaybolup ekran birden doluyordu.
+          // Anahtar yalnız hâl; gövde içindeki her güncelleme yerinde.
+          final String hal;
+          final Widget govde;
+          if (error != null) {
+            hal = 'hata';
+            govde = SandikErrorView(error: error, onRetry: _reload);
+          } else if (myState == null ||
               (hasPartners && asyncPartnerAssets?.valueOrNull == null)) {
-            return const SandikLoadingScreen();
+            // Tek loading: ikisi birden hazır olana kadar.
+            hal = 'yukleniyor';
+            govde = const SandikLoadingScreen();
+          } else {
+            hal = 'icerik';
+            govde = _buildBody(
+              myState,
+              asyncPartnerAssets?.valueOrNull ?? const {},
+              partners,
+            );
           }
-          return _buildBody(
-            myState,
-            asyncPartnerAssets?.valueOrNull ?? const {},
-            partners,
-          );
+          return SandikIcerikGecisi(
+              tamEkran: true, anahtar: hal, child: govde);
         },
       ),
     );

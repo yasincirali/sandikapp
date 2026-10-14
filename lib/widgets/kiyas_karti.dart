@@ -38,7 +38,7 @@ class KiyasKarti extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final durum = ref.watch(kiyasProvider(girdi));
-    // İskelet → kıyas çapraz solar (bayrak `goz_alici`, 2026-10-14).
+    // İskelet → kıyas çapraz solar (2026-10-14).
     // Koşul `when(skipLoadingOnReload)`'un iskelet dalıyla aynı: önceki
     // değer/hata varken yeniden yükleme iskelete dönmez.
     return SandikYuklemeGecisi(

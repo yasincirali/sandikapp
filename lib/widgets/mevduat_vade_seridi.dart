@@ -10,6 +10,7 @@ import '../services/mevduat_hesabi.dart';
 import '../theme/sandik.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
+import 'sandik_skeleton.dart';
 
 /// Portföy kartının açılır panelinde mevduatın grafik yerine geçen şeridi.
 ///
@@ -41,8 +42,13 @@ class MevduatVadeSeridi extends ConsumerWidget {
 
   final BazPara baz;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     final id = temsilci.sozlesmeId ?? mevduatSozlesmeId(temsilci.ticker);
     if (id == null) return const SizedBox.shrink();
     final donemler =

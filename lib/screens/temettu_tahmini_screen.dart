@@ -42,13 +42,18 @@ class TemettuTahminiScreen extends ConsumerWidget {
     final tahmin = ref.watch(temettuTahminiProvider);
     return Scaffold(
       appBar: SandikAppBar(title: l.ttBaslik),
-      body: tahmin.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([tahmin]),
+        child: tahmin.when(
         loading: () => const SandikSkeletonList(rows: 4),
         error: (e, _) => SandikErrorView(
             error: e, onRetry: () => ref.invalidate(temettuTahminiProvider)),
         data: (t) => t.bos
             ? SandikBosDurum(metin: l.ttBos, alt: l.ttBosAlt)
             : _Govde(t: t),
+      ),
       ),
     );
   }

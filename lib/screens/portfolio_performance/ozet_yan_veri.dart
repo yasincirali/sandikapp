@@ -495,7 +495,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
 
   // İlk ölçüm gelmeden özet çizilmez: kartlar sonradan belirip listeyi
   // itmesin (sınıf notu). Bekleme [_azamiBekleme] ile sınırlı. İskelet →
-  // özet geçişi çapraz solar (bayrak `goz_alici`, 2026-10-14).
+  // özet geçişi çapraz solar (2026-10-14).
   @override
   Widget build(BuildContext context) => SandikYuklemeGecisi(
         yukleniyor: !_hazir,

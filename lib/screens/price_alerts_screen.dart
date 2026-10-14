@@ -100,7 +100,11 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         icon: const Icon(Icons.add_alert_rounded),
         label: Text(context.l10n.createAlert),
       ),
-      body: alarmlar.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([alarmlar]),
+        child: alarmlar.when(
         error: (e, _) => SandikErrorView(
           error: e,
           onRetry: () => ref.read(priceAlertsProvider.notifier).refresh(),
@@ -156,6 +160,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             ),
           );
         },
+      ),
       ),
     );
   }
