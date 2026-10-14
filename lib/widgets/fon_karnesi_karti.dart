@@ -8,6 +8,7 @@ import '../services/analytics_service.dart';
 import '../services/fon_karnesi.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'sandik_skeleton.dart';
 
 /// Fon karnesi kartı (F4, 2026-09-29) — fonun kendi kategorisindeki yeri.
 ///
@@ -54,8 +55,13 @@ class _FonKarnesiKartiState extends ConsumerState<FonKarnesiKarti> {
   // Olay kart başına BİR kez: kaydırma/yeniden çizim sayıyı şişirmesin.
   bool _bildirildi = false;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SandikBelirme(child: _belirenGovde(context));
+
+  Widget _belirenGovde(BuildContext context) {
     if (!ref.watch(fonKarnesiAcikProvider)) return const SizedBox.shrink();
     final kod = fonKoduOf(tur: widget.tur, ticker: widget.ticker);
     if (kod == null) return const SizedBox.shrink();
@@ -165,8 +171,13 @@ class FonKarnesiSatiri extends ConsumerWidget {
   final AssetType tur;
   final String ticker;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(fonKarnesiAcikProvider)) return const SizedBox.shrink();
     final kod = fonKoduOf(tur: tur, ticker: ticker);
     if (kod == null) return const SizedBox.shrink();

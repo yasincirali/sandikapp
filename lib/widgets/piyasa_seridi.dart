@@ -95,6 +95,7 @@ import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'sandik_skeleton.dart';
 
 class PiyasaSeridi extends StatefulWidget {
   const PiyasaSeridi({super.key, this.padding = EdgeInsets.zero, this.onAra});
@@ -251,11 +252,15 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
     final ara = widget.onAra;
     if (ogeler.isEmpty) {
       if (ara == null) return const SizedBox.shrink();
-      return Padding(
-        padding: widget.padding,
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: PiyasaAramaDugmesi(onTap: ara, cerceveli: false),
+      // Arama düğmesi → dolu şerit çapraz solar (2026-10-14). İki dal aynı yuvada, geçiş State'i korunur.
+      return SandikIcerikGecisi(
+        anahtar: true,
+        child: Padding(
+          padding: widget.padding,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: PiyasaAramaDugmesi(onTap: ara, cerceveli: false),
+          ),
         ),
       );
     }
@@ -264,13 +269,16 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
     // ucu (köşeleri sağda yuvarlak) çizer; ikisi 44pt'lik ortak kutuda
     // ortalanır, görünen şerit 36pt. Kart tek Container olsaydı çipin
     // 44pt dokunma alanı 36pt'lik klibin dışında kalırdı (HIG #37).
-    return Padding(
-      padding: widget.padding,
-      child: Row(
-        children: [
-          Expanded(child: KayanBant(ogeler: ogeler, sagKose: ara == null)),
-          if (ara != null) PiyasaAramaDugmesi(onTap: ara),
-        ],
+    return SandikIcerikGecisi(
+      anahtar: false,
+      child: Padding(
+        padding: widget.padding,
+        child: Row(
+          children: [
+            Expanded(child: KayanBant(ogeler: ogeler, sagKose: ara == null)),
+            if (ara != null) PiyasaAramaDugmesi(onTap: ara),
+          ],
+        ),
       ),
     );
   }

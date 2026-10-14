@@ -60,13 +60,18 @@ class PortfoyXrayScreen extends ConsumerWidget {
     final xray = ref.watch(portfoyXrayProvider);
     return Scaffold(
       appBar: SandikAppBar(title: l.xrEkranBaslik),
-      body: xray.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([xray]),
+        child: xray.when(
         loading: () => const SandikSkeletonList(rows: 4),
         error: (e, _) => SandikErrorView(
             error: e, onRetry: () => ref.invalidate(xrayFonVerisiProvider)),
         data: (x) => x.bos
             ? SandikBosDurum(metin: l.xrBos, alt: l.xrBosAlt)
             : _Govde(x: x),
+      ),
       ),
     );
   }

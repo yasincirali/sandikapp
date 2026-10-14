@@ -11,6 +11,7 @@ import '../utils/tr_format.dart';
 import '../utils/polling.dart';
 import 'custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
+import 'sandik_skeleton.dart';
 
 /// Profile ekranında öne çıkan Yarış hero kartı.
 ///
@@ -354,13 +355,16 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
       onTap: _openLeaderboard,
       child: FutureBuilder<_RankSnapshot?>(
         future: _future,
+        // Yer tutucu → önizleme çapraz solar (2026-10-14).
         builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return _skeletonRow();
-          }
-          final data = snap.data;
-          if (data == null) return _skeletonRow();
-          return _preview(data);
+          final data = snap.connectionState == ConnectionState.waiting
+              ? null
+              : snap.data;
+          return SandikYuklemeGecisi(
+            yukleniyor: data == null,
+            iskelet: _skeletonRow(),
+            icerik: (_) => _preview(data!),
+          );
         },
       ),
     );

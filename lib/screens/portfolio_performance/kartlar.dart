@@ -176,22 +176,29 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     Widget ozetGovdesi({bool tekAkis = false}) {
       final ek = tekAkis ? turDokumu() : null;
       if (isIntraday) {
-        return (!hasData || stale)
-            ? _ozetIskeleti(context)
-            : _buildOzetSekmesi(
-                breakdown: breakdown,
-                targetAssets: targetAssets,
-                intraday: true,
-                seansBaslangici: cizimBaslangici,
-                anaRakamGizli: tekAkis,
-                nedenEki: ek,
-              );
+        return SandikYuklemeGecisi(
+          yukleniyor: !hasData || stale,
+          iskelet: _ozetIskeleti(context),
+          icerik: (_) => _buildOzetSekmesi(
+            breakdown: breakdown,
+            targetAssets: targetAssets,
+            intraday: true,
+            seansBaslangici: cizimBaslangici,
+            anaRakamGizli: tekAkis,
+            nedenEki: ek,
+          ),
+        );
       }
-      return _OzetSerisi(
+      final seriAnahtari = _ozetSeriAnahtari(
+          SummaryPeriod.fromIndex(_selectedPeriodIdx), chartAssets);
+      // Dönem/kapsam değişince eski özet söner, yenisi belirir (2026-10-14): bellekten eşzamanlı okunan yeni rakamlar
+      // tek karede yer değiştiriyordu, hızlı ağda "keskin" okundu.
+      return SandikIcerikGecisi(
+        anahtar: seriAnahtari,
+        child: _OzetSerisi(
         // Anahtar = bellek anahtarı: dönem/kapsam değişince yeni State
         // kurulur ama bellekteki sonucu EŞZAMANLI okur (`_OzetBellek`).
-        key: ValueKey(_ozetSeriAnahtari(
-            SummaryPeriod.fromIndex(_selectedPeriodIdx), chartAssets)),
+        key: ValueKey(seriAnahtari),
         bellek: _ozetBellek,
         chartAssets: chartAssets,
         period: SummaryPeriod.fromIndex(_selectedPeriodIdx),
@@ -204,6 +211,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           seansBaslangici: cizimBaslangici,
           anaRakamGizli: tekAkis,
           nedenEki: ek,
+        ),
         ),
       );
     }
@@ -218,7 +226,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     //
     // Yükseklik `minHeight` ile kurulur, SABİT değil: grafik alanı kadar
     // yer tutsun ama büyük metin ölçeğinde (AX5) içerik taşmasın.
-    Widget grafikAlani() {
+    Widget grafikAlaniHam() {
       if (_chartEmptyState(holdsSelectedType, chartAssets) case final empty?) {
         return ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 300),
@@ -275,6 +283,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ),
       );
     }
+
+    // İskelet → grafik geçişi çapraz solar (2026-10-14); boş durum ve hata dalları içerik tarafında kalır.
+    Widget grafikAlani() => SandikYuklemeGecisi(
+          yukleniyor: chartAssets.isNotEmpty && !hasData && !settled,
+          iskelet: const SandikSkeletonChart(height: 300),
+          icerik: (_) => grafikAlaniHam(),
+        );
 
     // Zirvedeki portföyler — Yarış ekranından buraya taşındı
     // (kullanıcı kararı 2026-09-29): zirve bir KIYAS verisi, yarış
@@ -1365,8 +1380,12 @@ class _OzetSerisiState extends State<_OzetSerisi> {
   @override
   Widget build(BuildContext context) {
     final bd = _seri;
-    if (bd == null || bd.total.isEmpty) return widget.iskelet;
-    return widget.builder(bd);
+    // İskelet → özet çapraz geçişi (2026-10-14).
+    return SandikYuklemeGecisi(
+      yukleniyor: bd == null || bd.total.isEmpty,
+      iskelet: widget.iskelet,
+      icerik: (_) => widget.builder(bd!),
+    );
   }
 }
 

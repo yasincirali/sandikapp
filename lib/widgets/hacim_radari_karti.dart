@@ -16,6 +16,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'para_akisi_karti.dart' show HaftaCubuklari, KilitSatiri;
 import 'radar_ortak.dart';
+import 'sandik_skeleton.dart';
 
 /// Hacim radarı kartı (Balina B2 2026-10-04; özet kart 2026-10-05, S4-B) —
 /// BIST hissesinin para hacmi.
@@ -46,8 +47,13 @@ class HacimRadariKarti extends ConsumerWidget {
   final String ticker;
   final EdgeInsetsGeometry dis;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(balinaRadariAcikProvider)) return const SizedBox.shrink();
     final sembol = bistSembolu(tur: tur, ticker: ticker);
     if (sembol == null) return const SizedBox.shrink();
@@ -344,8 +350,13 @@ class KriptoBaskiKarti extends ConsumerWidget {
   final String ticker;
   final EdgeInsetsGeometry dis;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(balinaRadariAcikProvider)) return const SizedBox.shrink();
     final anahtar = kriptoTickeri(tur: tur, ticker: ticker);
     if (anahtar == null) return const SizedBox.shrink();

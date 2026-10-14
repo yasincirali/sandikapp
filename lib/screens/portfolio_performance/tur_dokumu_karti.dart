@@ -337,8 +337,13 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     _onbellek = null;
   }
 
+  // Döküm gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SandikBelirme(child: _belirenGovde(context));
+
+  Widget _belirenGovde(BuildContext context) {
     final (typeRows, childrenOf) = _onbellek ??= _rows();
     if (typeRows.isEmpty) return const SizedBox.shrink();
 

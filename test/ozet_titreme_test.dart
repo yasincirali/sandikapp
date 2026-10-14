@@ -50,7 +50,9 @@ void main() {
   });
 
   test('yan veri ilk ölçüme kadar iskelet; bellekte varsa beklemez', () {
-    expect(src.contains('if (!_hazir) return widget.iskelet;'), isTrue,
+    // 2026-10-14: iskelet → özet `SandikYuklemeGecisi` ile (kapı aynı).
+    expect(src.contains('yukleniyor: !_hazir, iskelet: widget.iskelet'),
+        isTrue,
         reason: 'kartlar özetten sonra belirip listeyi itmesin');
     expect(src.contains('_hazir = bellekte != null;'), isTrue);
     // İskelet sınırlı: ağ yavaşsa özet yine gelir.

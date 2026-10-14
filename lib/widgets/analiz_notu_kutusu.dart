@@ -8,6 +8,7 @@ import '../providers/analiz_provider.dart';
 import '../providers/fon_akisi_provider.dart';
 import '../screens/analiz_notu_screen.dart';
 import '../theme/sandik.dart';
+import 'sandik_skeleton.dart';
 
 /// Varlık sayfasında haftalık not kutusu (S15-B, 2026-10-05): notun başlık
 /// cümlesi + "Notu oku". Başlık ücretsiz katmandır (`analiz_ozetleri`);
@@ -30,8 +31,13 @@ class AnalizNotuKutusu extends ConsumerWidget {
   final String ticker;
   final EdgeInsetsGeometry dis;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(balinaRadariAcikProvider)) return const SizedBox.shrink();
     final anahtar = notAnahtari(tur: tur, ticker: ticker);
     if (anahtar == null) return const SizedBox.shrink();

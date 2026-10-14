@@ -99,9 +99,12 @@ class _ZirveKartiState extends State<ZirveKarti> {
               future: _satirlar,
               builder: (context, snap) {
                 final satirlar = snap.data ?? const <TopGainerAllocation>[];
-                if (snap.connectionState == ConnectionState.waiting &&
-                    satirlar.isEmpty) {
-                  return const Column(
+                // İskelet → içerik ve boş ↔ davet çapraz solar (2026-10-14): rıza yanıtı gelince "boş"
+                // metni tek karede davete dönüyordu.
+                return SandikYuklemeGecisi(
+                  yukleniyor: snap.connectionState == ConnectionState.waiting &&
+                      satirlar.isEmpty,
+                  iskelet: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SandikSkeleton(height: 14),
@@ -110,16 +113,22 @@ class _ZirveKartiState extends State<ZirveKarti> {
                       SizedBox(height: SandikSpace.smd),
                       SandikSkeleton(height: 14),
                     ],
-                  );
-                }
-                if (satirlar.isEmpty) {
-                  return FutureBuilder<bool?>(
-                    future: _riza,
-                    builder: (context, r) =>
-                        r.data == false ? _davet(context) : _bos(context),
-                  );
-                }
-                return _dolu(context, satirlar.first);
+                  ),
+                  icerik: (context) {
+                    if (satirlar.isEmpty) {
+                      return FutureBuilder<bool?>(
+                        future: _riza,
+                        builder: (context, r) => SandikIcerikGecisi(
+                          anahtar: r.data == false,
+                          child: r.data == false
+                              ? _davet(context)
+                              : _bos(context),
+                        ),
+                      );
+                    }
+                    return _dolu(context, satirlar.first);
+                  },
+                );
               },
             ),
           ],

@@ -757,7 +757,8 @@ class _ZoomableChartState extends State<ZoomableChart> {
             // RepaintBoundary: imleç ve balon her karede değişirken çizgi
             // grafiği kendi katmanında kalır, yeniden boyanmaz.
             Positioned.fill(
-              child: RepaintBoundary(
+              child: _IlkCizim(
+                child: RepaintBoundary(
                 child: LineChart(
                   veri,
                   // Hareketi azalt açıkken morf da yok: `swapDuration`
@@ -771,6 +772,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
                       : widget.swapDuration,
                   curve: widget.swapCurve,
                 ),
+              ),
               ),
             ),
 
@@ -1087,4 +1089,46 @@ class _DashedLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DashedLinePainter old) => old.color != color;
+}
+
+/// Grafik ekrana İLK geldiğinde soldan sağa çizilerek açılır (2026-10-14): iskelet sönerken çizgi tek karede tam hâliyle
+/// beliriyordu. Ana sayfa Bugün eğrisiyle aynı dil ([SandikMotion.flow] +
+/// [SandikMotion.glide]). `TweenAnimationBuilder` yalnız ilk kurulumda
+/// oynar; dönem/filtre değişimi LineChart'ın kendi morfuyla akar, jest
+/// sırasında kutu dışına taşan bir şey yok.
+/// Hareketi azalt açıkken çocuk doğrudan döner.
+class _IlkCizim extends StatelessWidget {
+  const _IlkCizim({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final sure = SandikMotion.flowOf(context);
+    if (sure == Duration.zero) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: sure,
+      curve: SandikMotion.glide,
+      child: child,
+      // Ağaç biçimi sabit kalır: ClipRect'i söküp takmak LineChart'ın
+      // State'ini sıfırlardı. Oyun bitince kırpma kutunun kendisidir —
+      // çizim zaten kutusunda kalır (`grafik_tasma_ve_yogunluk_test`).
+      builder: (context, t, c) =>
+          ClipRect(clipper: _SoldanKirpici(t), child: c),
+    );
+  }
+}
+
+class _SoldanKirpici extends CustomClipper<Rect> {
+  const _SoldanKirpici(this.oran);
+
+  final double oran;
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTWH(0, 0, size.width * oran, size.height);
+
+  @override
+  bool shouldReclip(_SoldanKirpici eski) => eski.oran != oran;
 }

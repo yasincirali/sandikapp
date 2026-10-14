@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -125,6 +126,9 @@ Future<void> _ekran(
   ));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+  // Yükleme → içerik çapraz geçişi biter (2026-10-14).
+  await tester.pump(SandikMotion.surface);
+  await tester.pump();
 }
 
 // ── Profil ──────────────────────────────────────────────────────────────────
