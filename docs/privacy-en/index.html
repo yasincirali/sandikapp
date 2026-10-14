@@ -6,8 +6,8 @@
 <title>Privacy Policy — sandık</title>
 <meta name="description" content="Sandık app privacy policy — GDPR compliant.">
 <meta name="sandik-kaynak" content="legal/en/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="17e062912d37377c0a83c1f0f01fa2c7c779361a328b963db7192faa99686e4f">
-<meta name="sandik-govde-sha256" content="79756b22cf96c0f95592e0eeaac2091fbea7cc188f58c6ed0eeede765ab4b076">
+<meta name="sandik-kaynak-sha256" content="91c475f8bfdfd1e1acebaf7732142ff92be3bd891e704b495b5e78e3cc504798">
+<meta name="sandik-govde-sha256" content="8771f2a142e998bf2dd0eb7739159364678a03bdae9edbd8d3c59b354434fad2">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,9 +67,9 @@ button:hover { opacity: 0.9; }
 <h1>Privacy Policy — sandık</h1>
 <p><strong>Effective date:</strong> October 8, 2026
 <strong>Last updated:</strong> October 14, 2026
-<strong>Version:</strong> 1.11
+<strong>Version:</strong> 1.12
 <strong>Consent version:</strong> 1.8
-<strong>Source:</strong> TR 1.11 (translation of the Turkish text; the Turkish version prevails)</p>
+<strong>Source:</strong> TR 1.12 (translation of the Turkish text; the Turkish version prevails)</p>
 <hr />
 <h2>1. Data Controller</h2>
 <p>This application (<strong>sandık</strong>, the "App") is operated by <code>Yasin Çıralı</code> ("we", "Company").</p>
@@ -156,8 +156,8 @@ button:hover { opacity: 0.9; }
 <td>Measuring note quality, finding and correcting faulty notes (see §5.3)</td>
 </tr>
 <tr>
-<td>AI portfolio comment (optional; only if you give explicit consent and ask for a comment): the return and drawdown percentages of a closed week or month, your assets' names or symbols and their shares of the portfolio (%), the written comment</td>
-<td>The comment describing last week or last month in Performance › Summary (see §5.5)</td>
+<td>AI portfolio comment (optional; only if you give explicit consent and ask for a comment): the return, drawdown and volatility percentages of the period commented on, your assets' names or symbols and their shares of the portfolio (%), inflation and market comparisons for the same period (dollar, gold, BIST 100), the written comment</td>
+<td>The comment describing the period you select in Performance › Summary and on the asset detail page, last week or last month (see §5.5)</td>
 </tr>
 <tr>
 <td>Consent records of AI features (portfolio comment, reading a statement with AI): when consent was given and withdrawn, version of the text shown to you</td>
@@ -297,7 +297,7 @@ button:hover { opacity: 0.9; }
 <li>Race: if you join, calculating your period return and showing your percentile and comparison with your partner</li>
 <li>Premium: verifying the subscription you bought and recognising your right to access Premium content</li>
 <li>Using your feedback on asset notes to measure and improve their accuracy</li>
-<li>AI portfolio comment: when you ask, writing a comment that describes a past week or month with your own data (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)</li>
+<li>AI portfolio comment: when you ask, writing a comment that describes the period you select for your portfolio or one of your assets, last week or last month, with your own data (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)</li>
 <li>Reading a statement with AI: when you ask, finding the columns of the tables in a statement (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)</li>
 </ol>
 <hr />
@@ -400,8 +400,8 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Portfolio comment (AI; only if you give explicit consent and ask for a comment)</td>
 <td>Anthropic PBC</td>
-<td>Return and drawdown percentages of the closed period, your assets' names or symbols and their shares of the portfolio (%); amounts, quantities, your name, email and account number are not sent</td>
-<td>Writing the comment describing the past week or month (see §5.5)</td>
+<td>Return, drawdown and volatility percentages of the period commented on, your assets' names or symbols and their shares of the portfolio (%), inflation and market comparisons for the same period; amounts, quantities, your name, email and account number are not sent</td>
+<td>Writing the comment describing a past period of your portfolio or one of your assets (see §5.5)</td>
 <td>USA</td>
 </tr>
 </tbody>
@@ -423,9 +423,9 @@ button:hover { opacity: 0.9; }
 <p>Our server derives a one-way trace (digest) from a table's header row and stores the column order the model found for that table together with the trace (bank template). When a table with the same layout arrives again, the model is not called. A template consists only of the trace and column numbers; the table's text, values and who uploaded it are not kept.</p>
 <p>The skeleton, the text sent and the model's answer are not stored. To limit abuse and cost, only the time of the request, the model used and its cost are kept with your account for 40 days.</p>
 <h3>5.5 Portfolio Comment with AI</h3>
-<p>In Performance › Summary you can ask for a short comment describing last week or last month. This feature is optional and Premium content. The first time you use it the App asks for your explicit consent on a separate card; if you do not consent, nothing is sent.</p>
-<p>If you consent and tap "Comment on this period", your device calculates the metrics of the closed period: return and drawdown percentages, your assets' names or symbols and their shares of the portfolio (%). These metrics are sent via our server to Anthropic's AI model (Claude). Amounts, quantities, your name, email, username and account number are not sent; our server rejects a request containing a currency or a four-digit number before it reaches the model.</p>
-<p>Once written, the comment is saved and read from the database for the rest of the period; opening it again sends no request to the model. The metrics sent with it, the model used and its cost are also stored. Only you can see your comment. Retention: the comments of the last 4 weeks and the last 12 months for each user; older ones are deleted automatically.</p>
+<p>You can ask for a short comment describing the period you select (from the last week to the last 5 years): for your portfolio in Performance › Summary, and for that asset on the asset detail page; in Performance › Summary last week and last month can also be commented on. This feature is optional and Premium content. The first time you use it the App asks for your explicit consent on a separate card; if you do not consent, nothing is sent.</p>
+<p>If you consent and tap "Comment on this period", your device calculates the metrics of the period commented on: return, drawdown and volatility percentages, your assets' names or symbols and their shares of the portfolio (%); together with public market comparisons such as inflation (CPI) and the percentage change of the dollar, gold and BIST 100 in the same period. These metrics are sent via our server to Anthropic's AI model (Claude). Amounts, quantities, your name, email, username and account number are not sent; our server rejects a request containing a currency or a four-digit number before it reaches the model.</p>
+<p>Once written, the comment is saved and read from the database when you open it again, without a request to the model: the last week and last month comments for the rest of the period, the selected period comment for the day it was written. The metrics sent with it, the model used and its cost are also stored; for an asset comment, an irreversible digest of the asset key is stored instead of the asset itself. Only you can see your comment. Retention: for each user, the last 4 weeks and the last 12 months of last week/last month comments and the last 7 days of selected period comments; older ones are deleted automatically.</p>
 <p>The comment describes the past; it contains no buy, sell or hold suggestion and is not investment advice. Comments are generated automatically and checked automatically before they are shown (numbers are compared with the metrics sent; a comment with directive or forward-looking language is not shown); no human reads them one by one and they may contain errors.</p>
 <p>You can withdraw your consent at any time with "Turn off AI commentary" on the same card; when you do, your written comments are deleted and your metrics are no longer sent.</p>
 <hr />
@@ -488,7 +488,7 @@ button:hover { opacity: 0.9; }
 </tr>
 <tr>
 <td>AI portfolio comments (comment, metrics sent, model and cost)</td>
-<td>The last 4 weeks and the last 12 months for each user; immediately when consent is withdrawn or the account is deleted</td>
+<td>For each user, the last 4 weeks and the last 12 months of last week/last month comments and the last 7 days of selected period comments; immediately when consent is withdrawn or the account is deleted</td>
 </tr>
 <tr>
 <td>Consent records of AI features</td>

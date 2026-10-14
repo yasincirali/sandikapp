@@ -5,6 +5,7 @@ import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/services/portfoy_yorumu_service.dart';
+import 'package:portfoy_takip/services/varlik_istatistik.dart';
 
 /// AI portföy yorumu (0145) — istemci tarafı değişmezler.
 ///
@@ -14,6 +15,9 @@ import 'package:portfoy_takip/services/portfoy_yorumu_service.dart';
 ///   · Dönem: sunucunun `beklenenDonem` örnekleriyle aynı takvim kuralı.
 ///   · Paket: TL tutarı YOK, gösterimler sunucunun kabul ettiği biçimde.
 ///   · Parmak izi: küçük fiyat oynaması yorumu eskitmez, pay değişimi eskitir.
+///   · Seçili dönem / varlık (0151): pencere başı sunucunun `seciliBaslangic`
+///     örnekleriyle aynı; varlık paketinde fiyat ve tutar yok; eski (0145)
+///     istekte yeni alanlar hiç gönderilmez.
 
 // Sunucudaki `_shared/portfoy_yorum.ts` gösterim kalıplarının aynısı.
 final _gosterimKaliplari = [
@@ -181,5 +185,125 @@ void main() {
     })!;
     expect(y.maddeler, hasLength(1));
     expect(y.kanitlar(y.maddeler.single.kanit).single.gosterim, '+%4,2');
+  });
+
+  group('seçili dönem ve varlık (0151)', () {
+    test('pencere başı sunucuyla aynı örnekler', () {
+      String bas(SummaryPeriod p, DateTime now) =>
+          isoGun(PeriodSummaryService.pencere(p, now).start);
+      // `supabase/tests/portfoy_yorum_test.ts` "seçili dönem başlangıcı".
+      expect(bas(SummaryPeriod.birHafta, DateTime(2026, 10, 14, 9)), '2026-10-07');
+      expect(bas(SummaryPeriod.birAy, DateTime(2026, 10, 14, 9)), '2026-09-14');
+      expect(bas(SummaryPeriod.ucAy, DateTime(2026, 5, 31, 9)), '2026-02-28');
+      expect(bas(SummaryPeriod.besYil, DateTime(2026, 10, 14, 9)), '2021-10-14');
+      expect(seciliYorumlanabilir(SummaryPeriod.gunluk), isFalse);
+      expect(seciliYorumlanabilir(SummaryPeriod.birYil), isTrue);
+    });
+
+    test('eski sözleşme: kapanmış dönem paketinde yeni alan yok', () {
+      final j = _paket().toJson();
+      expect(j.containsKey('donem_kodu'), isFalse);
+      expect(j.containsKey('kapsam'), isFalse);
+      expect(j.containsKey('varlik_izi'), isFalse);
+    });
+
+    PortfoyYorumPaketi varlik({String ad = 'Türk Hava Yolları'}) =>
+        PortfoyYorumPaketi.varlikKur(
+          period: SummaryPeriod.ucAy,
+          baslangic: DateTime(2026, 7, 14),
+          bitis: DateTime(2026, 10, 14),
+          positionKey: 'hisse|THYAO|TRY',
+          miktar: 1250,
+          varlikAdi: ad,
+          ist: const DonemIstatistigi(
+            ilk: 280,
+            son: 312,
+            yuksek: 330,
+            dusuk: 265,
+            enBuyukDususPct: -9.4,
+            oynaklikPct: 31.2,
+          ),
+          donemPct: 11.4,
+          canliBirim: 314,
+          portfoyPayi: 23.5,
+          pozisyonGetirisi: 48.2,
+          eldeGun: 412,
+          kiyasDegisimi: const {
+            KiyasVarligi.dolar: 3.1,
+            KiyasVarligi.altin: 14.9,
+            KiyasVarligi.bist100: 6.0,
+          },
+          tufe: YorumTufesi(
+            enflasyonPct: 7.8,
+            ilkAy: DateTime(2026, 6),
+            sonAy: DateTime(2026, 9),
+            nominalPct: 10.2,
+            reelPct: 2.2,
+            nominalAdi: 'pozisyonun',
+          ),
+        );
+
+    test('varlık paketi: tutar yok, her gösterim sunucu kalıbında', () {
+      final p = varlik();
+      expect(p.yeterli, isTrue);
+      final j = p.toJson();
+      expect(j['tur'], 'secili');
+      expect(j['donem_kodu'], '3A');
+      expect(j['kapsam'], 'varlik');
+      expect(j['varlik_izi'], matches(RegExp(r'^v1:[a-f0-9]{24}$')));
+      expect(j['varlik_izi'].toString().contains('THYAO'), isFalse);
+      expect(j['varlik_adi'], 'Türk Hava Yolları');
+      final anahtarlar = p.olcumler.map((o) => o.anahtar).toList();
+      expect(anahtarlar.toSet().length, anahtarlar.length);
+      expect(anahtarlar, containsAll(<String>[
+        'degisim', 'en_derin_dusus', 'oynaklik', 'zirveye_uzaklik',
+        'dibe_uzaklik', 'portfoy_payi', 'pozisyon_getirisi', 'elde_tutma',
+        'kiyas_dolar', 'kiyas_dolar_fark', 'kiyas_bist100', 'tufe',
+        'tufe_nominal', 'tufe_fark', 'reel_getiri',
+      ]));
+      for (final o in p.olcumler) {
+        expect(tutarIziVar(o.ad), isFalse, reason: o.ad);
+        expect(_gosterimKaliplari.any((r) => r.hasMatch(o.gosterim)), isTrue,
+            reason: '${o.anahtar}: "${o.gosterim}" sunucu kalıbına uymuyor');
+      }
+      final g = {for (final o in p.olcumler) o.anahtar: o.gosterim};
+      expect(g['degisim'], '+%11,4');
+      expect(g['kiyas_altin_fark'], '−3,5 puan');
+      expect(g['zirveye_uzaklik'], '−%4,8');
+      expect(g['tufe'], '%7,8');
+      expect(g['elde_tutma'], '412 gün');
+    });
+
+    test('tutar izli varlık adı modele gitmez, ölçümler kalır', () {
+      final p = varlik(ad: 'TR 2030 Eurobond');
+      expect(p.toJson().containsKey('varlik_adi'), isFalse);
+      expect(p.yeterli, isTrue);
+    });
+
+    test('varlık parmak izi: miktar değişince eskir', () {
+      expect(varlikParmakIzi('hisse|THYAO|TRY', 1250),
+          varlikParmakIzi('hisse|THYAO|TRY', 1250));
+      expect(varlikParmakIzi('hisse|THYAO|TRY', 1250),
+          isNot(varlikParmakIzi('hisse|THYAO|TRY', 1300)));
+    });
+
+    test('puan gösterimi sunucu kalıbında', () {
+      expect(puanGosterimi(8.24), '+8,2 puan');
+      expect(puanGosterimi(-0.04), '0,0 puan');
+      expect(puanGosterimi(-12.5), '−12,5 puan');
+      expect(puanGosterimi(1200), isNull);
+    });
+
+    test('TÜFE ayları yıl yazmadan', () {
+      final t = YorumTufesi(
+          enflasyonPct: 2.1, ilkAy: DateTime(2026, 8), sonAy: DateTime(2026, 9));
+      expect(t.aralik, 'Eyl');
+      final u = YorumTufesi(
+          enflasyonPct: 30, ilkAy: DateTime(2025, 9), sonAy: DateTime(2026, 9));
+      expect(u.aralik, 'Eki-Eyl');
+      for (final o in u.olcumler()) {
+        expect(tutarIziVar(o.ad), isFalse, reason: o.ad);
+      }
+    });
   });
 }

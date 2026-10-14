@@ -63,6 +63,10 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
       _eurobondKarti(),
       const SizedBox(height: SandikSpace.lg),
       ..._istatistikler(pnl.currentUnitTRY),
+      // AI yorumu (0151): istatistiklerin hemen altında, katmana gömülmez —
+      // yasin'in istediği "seçili dönemin yorumu" dönem seçicisiyle aynı
+      // görünür alanda durmalı.
+      _aiYorumu(isOwnAsset: isOwnAsset, pState: pState),
 
       // ── 3. Analiz ── (başlık yalnız en az bir kart varsa)
       if (analiz.isNotEmpty) ...[

@@ -85,6 +85,9 @@ import '../services/radar_okuma.dart' show kriptoOkunusu;
 import '../services/remote_config_service.dart';
 import '../widgets/sandik_segment.dart';
 import '../widgets/analiz_notu_kutusu.dart';
+import '../services/daily_summary.dart' show DailySummary;
+import '../services/portfoy_yorumu_service.dart';
+import '../widgets/portfoy_yorumu_karti.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/masraf_karti.dart';
@@ -2239,6 +2242,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 _eurobondKarti(),
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
+                _aiYorumu(isOwnAsset: isOwnAsset, pState: pState),
                 _fonKarnesi(),
                 _fonDagilimi(),
                 _paraAkisi(),

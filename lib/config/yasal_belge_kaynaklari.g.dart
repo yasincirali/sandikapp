@@ -12,7 +12,7 @@ const yasalBelgeKaynaklari = <String, String>{
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 14 Ekim 2026
-**Sürüm:** 1.9
+**Sürüm:** 1.10
 **Onay sürümü:** 1.6
 
 ---
@@ -51,7 +51,7 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 
 **Piyasa hareketi ve varlık notları:** Uygulama, kamuya açık piyasa verisinden fonlara giren ve çıkan parayı (para akışı), hisselerde olağandışı işlem hacmini (hacim radarı) ve kriptoda alıcı baskısını gösterir. Portföyündeki varlıklar için haftalık varlık notları ve aylık rapor, yapay zekâ ile otomatik hazırlanır (ayrıntı: Gizlilik Politikası §5.3). Notların tamamı ve aylık rapor Premium üyelere açık olabilir; ücretsiz katmanda notun ilk cümlesi gösterilir.
 
-**Yapay zekâ portföy yorumu:** İsterseniz Performans › Özet'te geçen haftanızı ya da geçen ayınızı kendi verinizle anlatan kısa bir yorum yazdırabilirsiniz. Yorum yapay zekâ ile otomatik yazılır, yalnızca geçmişi anlatır; al, sat ya da tut önerisi içermez. Özellik isteğe bağlıdır, ilk kullanımda ayrıca açık rızanız istenir (ayrıntı: Gizlilik Politikası §5.5) ve Premium içeriktir.
+**Yapay zekâ portföy yorumu:** İsterseniz portföyünüzün (Performans › Özet) ya da bir varlığınızın (varlık detayı) seçtiğiniz dönemini, geçen haftanızı ya da geçen ayınızı kendi verinizle anlatan kısa bir yorum yazdırabilirsiniz. Yorum yapay zekâ ile otomatik yazılır, yalnızca geçmişi anlatır; al, sat ya da tut önerisi içermez. Özellik isteğe bağlıdır, ilk kullanımda ayrıca açık rızanız istenir (ayrıntı: Gizlilik Politikası §5.5) ve Premium içeriktir.
 
 ---
 
@@ -87,7 +87,7 @@ Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 - Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler **yalnızca bilgilendirme** amaçlıdır.
 - Hiçbir içerik **yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık** niteliği taşımaz.
 - Piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı) ve **yapay zekâ ile hazırlanan varlık notları** geçmiş piyasa verisini anlatır, geleceği öngörmez. Notlar otomatik üretilir ve bir insan tarafından tek tek kontrol edilmez; sayılar kaynak veriyle otomatik karşılaştırılsa da hata içerebilir. Bir notu yatırım kararının tek dayanağı yapmayınız.
-- **Yapay zekâ portföy yorumu** kişiye özel bir yatırım tavsiyesi değildir: yalnızca geçmiş dönemde portföyünüzde ne olduğunu anlatır, portföyünüzün uygunluğunu değerlendirmez ve bir işlem önermez. Yorum otomatik üretilir, bir insan tarafından kontrol edilmez ve hata içerebilir.
+- **Yapay zekâ portföy yorumu** kişiye özel bir yatırım tavsiyesi değildir: yalnızca geçmiş dönemde portföyünüzde ya da bir varlığınızda ne olduğunu anlatır, portföyünüzün uygunluğunu değerlendirmez ve bir işlem önermez. Yorum otomatik üretilir, bir insan tarafından kontrol edilmez ve hata içerebilir.
 - Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf piyasa verisi sağlayıcılarının verileri olduğu gibi sunulur.
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
@@ -281,7 +281,7 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 14 Ekim 2026
-**Sürüm:** 1.11
+**Sürüm:** 1.12
 **Onay sürümü:** 1.8
 
 ---
@@ -327,7 +327,7 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 | Dönemsel getiri (%) ve varlık türü payları (%) — sunucuda günlük hesaplanır | Yarış (isteğe bağlı; yüzdelik diliminiz ve ortağınızla karşılaştırma) |
 | Ortaklık davet kodları ve karşılıklı bağlantılar | Çoklu kullanıcı paylaşımı özelliği |
 | Varlık notlarına geri bildiriminiz (isteğe bağlı): notun varlığı ve dönemi, "işe yaradı / yaramadı" oyu, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama | Notların kalitesini ölçmek, hatalı notları bulup düzeltmek (bkz. §5.3) |
-| Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): kapanmış haftanın ya da ayın getiri ve düşüş yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), yazılan yorum | Performans › Özet'te geçen haftayı ya da geçen ayı anlatan yorum (bkz. §5.5) |
+| Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları (dolar, altın, BIST 100), yazılan yorum | Performans › Özet'te ve varlık detayında seçtiğiniz dönemi, geçen haftayı ya da geçen ayı anlatan yorum (bkz. §5.5) |
 | Yapay zekâ özelliklerinin rıza kayıtları (portföy yorumu, ekstrenin yapay zekâyla okunması): verildiği ve geri çekildiği zaman, size gösterilen metnin sürümü | Rızanın ispatı ve rızası olmayan isteğin sunucuda reddedilmesi |
 | Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı, yenilemenin kapatılıp kapatılmadığı | Premium içeriğe erişimin sunucuda doğrulanması. Ödeme ve kart bilgisi bize ulaşmaz; tahsilatı Apple ya da Google yapar |
 
@@ -391,7 +391,7 @@ Kart numarası, fatura adresi ve ödeme yöntemi bize **ulaşmaz**: ödemeyi cih
 10. Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek
 11. Premium: satın aldığınız aboneliği doğrulamak ve Premium içeriğe erişim hakkınızı tanımak
 12. Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek
-13. Yapay zekâ portföy yorumu: istediğinizde geçmiş haftayı ya da ayı kendi verinizle anlatan yorumu yazmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)
+13. Yapay zekâ portföy yorumu: istediğinizde portföyünüzün ya da bir varlığınızın seçtiğiniz dönemini, geçen haftayı ya da geçen ayı kendi verinizle anlatan yorumu yazmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)
 14. Ekstrenin yapay zekâyla okunması: istediğinizde ekstredeki tabloların sütunlarını bulmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)
 
 ---
@@ -412,7 +412,7 @@ Kart numarası, fatura adresi ve ödeme yöntemi bize **ulaşmaz**: ödemeyi cih
 | Fiyat ve piyasa verisi | Kamuya açık piyasa verisi sağlayıcıları: borsalar, bankalar, fon platformları, resmî kurumlar (ör. TCMB) ile kur ve fiyat veri servisleri | Kişisel veri gönderilmez; yalnızca varlığın sembolü, fon kodu ya da ISIN'i sorulur. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; bazı kaynaklara istekler yalnızca sunucumuzdan gider | Fiyat ve fiyat geçmişi çekme | Küresel |
 | Varlık notlarının yazımı (yapay zekâ) | Anthropic PBC | Kişisel veri gönderilmez; yalnızca varlığın sembolü ve piyasa ölçümleri (fiyat, işlem hacmi, fon büyüklüğü, para akışı ve yatırımcı sayısı) | Haftalık varlık notu ve aylık rapor metni (bkz. §5.3) | ABD |
 | Ekstre sütun eşleme (yapay zekâ; yalnızca siz isterseniz) | Anthropic PBC | Ekstredeki tabloların anonim iskeleti (sütun başlıkları ve genel finans kelimeleri; ad, numara, tutar ve tarihler maskeli) ya da açık rıza verdiyseniz tablodaki kelimeler (sütun ve varlık adları; bütün rakamlar ile etiketli ad, adres ve e-posta maskeli) | Hangi sütunun sembol, adet, fiyat olduğunu bulmak (bkz. §5.4) | ABD |
-| Portföy yorumu (yapay zekâ; yalnızca açık rıza verip yorum isterseniz) | Anthropic PBC | Kapanmış dönemin getiri ve düşüş yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%); tutar, adet, adınız, e-postanız ve hesap numaranız gönderilmez | Geçmiş haftayı ya da ayı anlatan yorumu yazmak (bkz. §5.5) | ABD |
+| Portföy yorumu (yapay zekâ; yalnızca açık rıza verip yorum isterseniz) | Anthropic PBC | Yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları; tutar, adet, adınız, e-postanız ve hesap numaranız gönderilmez | Portföyünüzün ya da bir varlığınızın geçmiş dönemini anlatan yorumu yazmak (bkz. §5.5) | ABD |
 
 **Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.** Premium ödemesini tahsil eden Apple ve Google, ödeme bilgileriniz için kendi başına veri sorumlusudur.
 
@@ -448,11 +448,11 @@ Sunucumuz bir tablonun başlık satırından tek yönlü bir iz (özet) çıkar�
 
 ### 5.5 Yapay Zekâ ile Portföy Yorumu
 
-Performans › Özet'te geçen haftayı ya da geçen ayı anlatan kısa bir yorum isteyebilirsiniz. Bu özellik isteğe bağlıdır ve Premium içeriktir. İlk kullandığınızda uygulama ayrı bir kartla açık rızanızı ister; rıza vermezseniz hiçbir şey gönderilmez.
+Performans › Özet'te portföyünüzün, varlık detayında ise o varlığın seçtiğiniz dönemini (son 1 hafta ile son 5 yıl arası) anlatan kısa bir yorum isteyebilirsiniz; Performans › Özet'te geçen hafta ve geçen ay da yorumlanabilir. Bu özellik isteğe bağlıdır ve Premium içeriktir. İlk kullandığınızda uygulama ayrı bir kartla açık rızanızı ister; rıza vermezseniz hiçbir şey gönderilmez.
 
-Rıza verip "Bu dönemi yorumla"ya bastığınızda cihazınız kapanmış dönemin ölçümlerini hesaplar: getiri ve düşüş yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%). Bu ölçümler sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderilir. Tutar, adet, adınız, e-postanız, kullanıcı adınız ve hesap numaranız gönderilmez; sunucumuz para birimi ya da dört haneli bir sayı içeren isteği modele göndermeden reddeder.
+Rıza verip "Bu dönemi yorumla"ya bastığınızda cihazınız yorumlanan dönemin ölçümlerini hesaplar: getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%); bunların yanında aynı dönemde enflasyonun (TÜFE) ve dolar, altın ve BIST 100'ün yüzde değişimi gibi kamuya açık piyasa kıyasları. Bu ölçümler sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderilir. Tutar, adet, adınız, e-postanız, kullanıcı adınız ve hesap numaranız gönderilmez; sunucumuz para birimi ya da dört haneli bir sayı içeren isteği modele göndermeden reddeder.
 
-Yorum yazıldıktan sonra kaydedilir ve dönem boyunca veritabanından okunur; yeniden açtığınızda modele istek gitmez. Yorumla birlikte gönderilen ölçümler, kullanılan model ve maliyet de saklanır. Yorumunuzu yalnızca siz görürsünüz. Saklama: her kullanıcı için son 4 haftanın ve son 12 ayın yorumları; eskileri otomatik silinir.
+Yorum yazıldıktan sonra kaydedilir ve yeniden açtığınızda veritabanından okunur, modele istek gitmez: geçen hafta ve geçen ay yorumu dönem boyunca, seçtiğiniz dönemin yorumu yazıldığı gün boyunca. Yorumla birlikte gönderilen ölçümler, kullanılan model ve maliyet de saklanır; varlık yorumunda varlığın kendisi yerine varlık anahtarının geri çevrilemeyen bir özeti saklanır. Yorumunuzu yalnızca siz görürsünüz. Saklama: her kullanıcı için geçen hafta ve geçen ay yorumlarında son 4 haftanın ve son 12 ayın, seçtiğiniz dönem yorumlarında son 7 günün yorumları; eskileri otomatik silinir.
 
 Yorum geçmişi anlatır; al, sat ya da tut önerisi içermez ve yatırım tavsiyesi değildir. Yorumlar otomatik üretilir ve yayımlanmadan önce otomatik denetlenir (sayılar gönderilen ölçümlerle karşılaştırılır, yönlendiren ya da geleceğe dair dil içeren yorum gösterilmez); bir insan tek tek okumaz, hata içerebilir.
 
@@ -485,7 +485,7 @@ Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: A
 | Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. Aynı anda RevenueCat'teki abone kaydınızın silinmesi RevenueCat'ten istenir; ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır. Hesap silme mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play'den kapatırsınız |
 | Ekstre sütun eşleme istek kayıtları (yalnızca zaman, model ve maliyet; iskelet, gönderilen metin ve yanıt saklanmaz) | 40 gün |
 | Ekstre banka şablonları (başlık satırının tek yönlü izi ve sütun numaraları; kullanıcıya bağlı değil) | Kurumun tablo düzeni kullanıldıkça; hatalı bulunan şablon kullanılmaz |
-| Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model ve maliyet) | Her kullanıcı için son 4 hafta ve son 12 ay; rıza geri alınınca ya da hesap silinince hemen |
+| Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model ve maliyet) | Her kullanıcı için geçen hafta/ay yorumlarında son 4 hafta ve son 12 ay, seçilen dönem yorumlarında son 7 gün; rıza geri alınınca ya da hesap silinince hemen |
 | Yapay zekâ özelliklerinin rıza kayıtları | Hesap silinene kadar (geri çekme zamanı da kaydedilir) |
 | Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silindikten sonra **3 yıl** (TBK Madde 146 zamanaşımı) |
 | Push token | Çıkış yapıldığında silinir; uygulama silinirse bir sonraki gönderimde geçersiz bulunup silinir |
@@ -603,7 +603,7 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 14 Ekim 2026
-**Sürüm:** 1.11
+**Sürüm:** 1.12
 **Onay sürümü:** 1.8
 
 ---
@@ -642,7 +642,7 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 - Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)
 - Dönemsel getiri yüzdesi ve varlık türü payları (Yarış; yalnızca katılırsanız)
 - Ortaklık bağlantıları ve davet kodları
-- Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): kapanmış dönemin getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), yazılan yorum
+- Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): portföyün ya da bir varlığın yorumlanan dönemindeki getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları, yazılan yorum
 - Yapay zekâ özelliklerinin rıza kayıtları (portföy yorumu, ekstrenin yapay zekâyla okunması): verildiği ve geri çekildiği zaman, gösterilen metnin sürümü
 - Varlık notlarına geri bildirim (isteğe bağlı): oy, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama
 - Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı (ödeme ve kart bilgisi işlenmez)
@@ -728,7 +728,7 @@ Yurt içinde üçüncü kişilere aktarım yapılmamaktadır. Ortaklık kurduğu
 | Google LLC (Gmail e-posta altyapısı) | ABD / Küresel | E-posta adresi, doğrulama kodu | Kod e-postalarının teslimi | KVKK 9(1) — açık rıza |
 | Apple Inc. (Apple Push Notification service) | ABD / Küresel | Bildirim içeriği, canlı etkinlik token'ı ve kilit ekranı özeti | iPhone'a teslim | KVKK 9(1) — açık rıza |
 | Apple Inc. / Google LLC (Apple ile Giriş, Google ile Giriş — seçerseniz) | ABD / Küresel | Giriş sırasında sağlayıcıyla doğrulama | Kimlik doğrulama | KVKK 9(1) — açık rıza |
-| Anthropic PBC (yalnızca açık rıza verip yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız) | ABD | Portföy yorumu: kapanmış dönemin getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve payları (%). Ekstre: tablodaki kelimeler (bütün rakamlar ile etiketli ad, adres ve e-posta maskeli). Tutar, adet, ad, e-posta ve hesap numarası gönderilmez | Yorumun yazılması; ekstre sütunlarının bulunması | KVKK 9(1) — açık rıza (uygulama içinde, özelliğe özel) |
+| Anthropic PBC (yalnızca açık rıza verip yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız) | ABD | Portföy yorumu: yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları (%), enflasyon ve piyasa kıyasları. Ekstre: tablodaki kelimeler (bütün rakamlar ile etiketli ad, adres ve e-posta maskeli). Tutar, adet, ad, e-posta ve hesap numarası gönderilmez | Yorumun yazılması; ekstre sütunlarının bulunması | KVKK 9(1) — açık rıza (uygulama içinde, özelliğe özel) |
 | RevenueCat, Inc. (yalnızca Premium satın alırsanız) | ABD | Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı ve makbuzu, cihaz ve uygulama sürümü, IP adresi | Satın almanın mağazayla doğrulanması ve Premium hakkının sunucumuza bildirilmesi | KVKK 9(1) — açık rıza |
 
 Premium ödemesini Apple ya da Google tahsil eder; kart ve ödeme bilgileriniz bize ulaşmaz, bunları mağaza kendi başına veri sorumlusu olarak işler.
@@ -739,7 +739,7 @@ Varlık notlarını ve aylık raporu yazan yapay zekâ sağlayıcısına (Anthro
 
 Ekstre içe aktarmada "Yapay zekâyla eşle"yi seçerseniz aynı sağlayıcıya ekstredeki tabloların anonim iskeleti gönderilir: sütun başlıkları ve genel finans kelimeleri kalır; ad, numara, tutar ve tarihler maskelenir. Bu iskelet kişisel veri içermez ve saklanmaz. Uygulama ilk kullanımda ayrıca açık rızanızı isterse ve verirseniz, iskelet yerine tablodaki kelimeler (sütun başlıkları, varlık ve kurum adları) gönderilir; bütün rakamlar ile e-posta ve etiketli ad, adres bilgileri maskelenir, ancak etiketsiz yazılmış bir ad maskelenmeyebilir. Gönderilen metin saklanmaz; yalnızca tablo düzeninin tek yönlü izi ve sütun numaraları, kullanıcıya bağlanmadan banka şablonu olarak tutulur.
 
-Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın hesapladığı kapanmış dönem ölçümleri (getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve payları) aynı sağlayıcıya gönderilir; tutar, adet ve kimlik bilgisi gönderilmez. Yazılan yorum ve ölçümler size özel olarak saklanır (Gizlilik Politikası §5.5). Bu iki özelliğin açık rızası kayıttaki Açık Rıza Metni'nden ayrı olarak, özelliği ilk kullandığınızda uygulama içinde alınır; vermezseniz bu veriler gönderilmez, uygulamanın diğer özellikleri etkilenmez.
+Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın hesapladığı dönem ölçümleri (portföyünüzün ya da bir varlığınızın getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları, enflasyon ve piyasa kıyasları) aynı sağlayıcıya gönderilir; tutar, adet ve kimlik bilgisi gönderilmez. Yazılan yorum ve ölçümler size özel olarak saklanır (Gizlilik Politikası §5.5). Bu iki özelliğin açık rızası kayıttaki Açık Rıza Metni'nden ayrı olarak, özelliği ilk kullandığınızda uygulama içinde alınır; vermezseniz bu veriler gönderilmez, uygulamanın diğer özellikleri etkilenmez.
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
@@ -763,7 +763,7 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Varlık notlarına geri bildirimler | Hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Ekstre sütun eşleme istek kayıtları (zaman, model, maliyet) | 40 gün | KVKK 5(2)(f) meşru menfaat (kötüye kullanım ve maliyet sınırı) |
-| Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model, maliyet) | Her kullanıcı için son 4 hafta ve son 12 ay; rıza geri alınınca ya da hesap silinince hemen | KVKK 5(1) açık rıza |
+| Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model, maliyet) | Her kullanıcı için geçen hafta/ay yorumlarında son 4 hafta ve son 12 ay, seçilen dönem yorumlarında son 7 gün; rıza geri alınınca ya da hesap silinince hemen | KVKK 5(1) açık rıza |
 | Yapay zekâ özelliklerinin rıza kayıtları | Hesap silinene kadar | KVKK 5(2)(e) |
 | Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. Aynı anda RevenueCat'teki abone kaydınızın silinmesi RevenueCat'ten istenir; ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır. Hesap silme mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play'den kapatırsınız | Sözleşme süresi |
 | Push token | Çıkış yapılana ya da token geçersizleşene (uygulama silinene) kadar | Sözleşme süresi |

@@ -6,8 +6,8 @@
 <title>KVKK Aydınlatma Metni — sandık</title>
 <meta name="description" content="KVKK Madde 10 aydınlatma yükümlülüğü.">
 <meta name="sandik-kaynak" content="legal/tr/KVKK_AYDINLATMA_METNI.md">
-<meta name="sandik-kaynak-sha256" content="e8fa3123e014c584cebf91cce014161f87d6eed54b0e083f53eca808d1e0467e">
-<meta name="sandik-govde-sha256" content="8e62e3f8bc678b0fddb48e79094f14cd0bf9dcb530c1667a2330819f1b7d71bc">
+<meta name="sandik-kaynak-sha256" content="1172e87afad47ce9735d0a312b6cf462e61b7a25e4203bd638075bec7b057231">
+<meta name="sandik-govde-sha256" content="1ffbde31131c92f7b0f7ff515882a25b54790d3529d9d4a167004c9071c3a002">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,7 +67,7 @@ button:hover { opacity: 0.9; }
 <h1>KVKK Aydınlatma Metni — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 8 Ekim 2026
 <strong>Son güncelleme:</strong> 14 Ekim 2026
-<strong>Sürüm:</strong> 1.11
+<strong>Sürüm:</strong> 1.12
 <strong>Onay sürümü:</strong> 1.8</p>
 <hr />
 <h2>1. Veri Sorumlusunun Kimliği</h2>
@@ -131,7 +131,7 @@ button:hover { opacity: 0.9; }
 <li>Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)</li>
 <li>Dönemsel getiri yüzdesi ve varlık türü payları (Yarış; yalnızca katılırsanız)</li>
 <li>Ortaklık bağlantıları ve davet kodları</li>
-<li>Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): kapanmış dönemin getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), yazılan yorum</li>
+<li>Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): portföyün ya da bir varlığın yorumlanan dönemindeki getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları, yazılan yorum</li>
 <li>Yapay zekâ özelliklerinin rıza kayıtları (portföy yorumu, ekstrenin yapay zekâyla okunması): verildiği ve geri çekildiği zaman, gösterilen metnin sürümü</li>
 <li>Varlık notlarına geri bildirim (isteğe bağlı): oy, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama</li>
 <li>Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı (ödeme ve kart bilgisi işlenmez)</li>
@@ -361,7 +361,7 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Anthropic PBC (yalnızca açık rıza verip yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız)</td>
 <td>ABD</td>
-<td>Portföy yorumu: kapanmış dönemin getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve payları (%). Ekstre: tablodaki kelimeler (bütün rakamlar ile etiketli ad, adres ve e-posta maskeli). Tutar, adet, ad, e-posta ve hesap numarası gönderilmez</td>
+<td>Portföy yorumu: yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları (%), enflasyon ve piyasa kıyasları. Ekstre: tablodaki kelimeler (bütün rakamlar ile etiketli ad, adres ve e-posta maskeli). Tutar, adet, ad, e-posta ve hesap numarası gönderilmez</td>
 <td>Yorumun yazılması; ekstre sütunlarının bulunması</td>
 <td>KVKK 9(1) — açık rıza (uygulama içinde, özelliğe özel)</td>
 </tr>
@@ -378,7 +378,7 @@ button:hover { opacity: 0.9; }
 <p>Kamuya açık piyasa verisi sağlayıcılarına (borsalar, bankalar, fon platformları, resmî kurumlar ile kur ve fiyat veri servisleri) kişisel veri aktarılmaz; yalnızca varlığın sembolü, fon kodu ya da ISIN'i sorulur. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; bazı kaynaklara istekler yalnızca sunucumuzdan gider. Bu sağlayıcılar kişisel veri almadığı için tek tek sayılmaz; yeni bir fiyat kaynağı eklemek bu metni değiştirmez.</p>
 <p>Varlık notlarını ve aylık raporu yazan yapay zekâ sağlayıcısına (Anthropic PBC, ABD) kişisel veri aktarılmaz: sunucumuz yalnızca varlığın sembolünü ve kamuya açık piyasa ölçümlerini (fiyat, işlem hacmi, fon büyüklüğü, para akışı, yatırımcı sayısı) gönderir; kimin hangi varlığı tuttuğu, miktar ve tutar gönderilmez. Notu okumanız yapay zekâya istek göndermez.</p>
 <p>Ekstre içe aktarmada "Yapay zekâyla eşle"yi seçerseniz aynı sağlayıcıya ekstredeki tabloların anonim iskeleti gönderilir: sütun başlıkları ve genel finans kelimeleri kalır; ad, numara, tutar ve tarihler maskelenir. Bu iskelet kişisel veri içermez ve saklanmaz. Uygulama ilk kullanımda ayrıca açık rızanızı isterse ve verirseniz, iskelet yerine tablodaki kelimeler (sütun başlıkları, varlık ve kurum adları) gönderilir; bütün rakamlar ile e-posta ve etiketli ad, adres bilgileri maskelenir, ancak etiketsiz yazılmış bir ad maskelenmeyebilir. Gönderilen metin saklanmaz; yalnızca tablo düzeninin tek yönlü izi ve sütun numaraları, kullanıcıya bağlanmadan banka şablonu olarak tutulur.</p>
-<p>Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın hesapladığı kapanmış dönem ölçümleri (getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve payları) aynı sağlayıcıya gönderilir; tutar, adet ve kimlik bilgisi gönderilmez. Yazılan yorum ve ölçümler size özel olarak saklanır (Gizlilik Politikası §5.5). Bu iki özelliğin açık rızası kayıttaki Açık Rıza Metni'nden ayrı olarak, özelliği ilk kullandığınızda uygulama içinde alınır; vermezseniz bu veriler gönderilmez, uygulamanın diğer özellikleri etkilenmez.</p>
+<p>Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın hesapladığı dönem ölçümleri (portföyünüzün ya da bir varlığınızın getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları, enflasyon ve piyasa kıyasları) aynı sağlayıcıya gönderilir; tutar, adet ve kimlik bilgisi gönderilmez. Yazılan yorum ve ölçümler size özel olarak saklanır (Gizlilik Politikası §5.5). Bu iki özelliğin açık rızası kayıttaki Açık Rıza Metni'nden ayrı olarak, özelliği ilk kullandığınızda uygulama içinde alınır; vermezseniz bu veriler gönderilmez, uygulamanın diğer özellikleri etkilenmez.</p>
 <p>Aktarım yapılan ülkeler (Supabase: Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde <strong>bulunmamaktadır</strong>. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında <strong>açık rızanıza</strong> dayanmaktadır.</p>
 <p>Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.</p>
 <h3>5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)</h3>
@@ -436,7 +436,7 @@ button:hover { opacity: 0.9; }
 </tr>
 <tr>
 <td>Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model, maliyet)</td>
-<td>Her kullanıcı için son 4 hafta ve son 12 ay; rıza geri alınınca ya da hesap silinince hemen</td>
+<td>Her kullanıcı için geçen hafta/ay yorumlarında son 4 hafta ve son 12 ay, seçilen dönem yorumlarında son 7 gün; rıza geri alınınca ya da hesap silinince hemen</td>
 <td>KVKK 5(1) açık rıza</td>
 </tr>
 <tr>

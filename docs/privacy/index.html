@@ -6,8 +6,8 @@
 <title>Gizlilik Politikası — sandık</title>
 <meta name="description" content="Sandık uygulamasının gizlilik politikası — KVKK ve GDPR uyumlu.">
 <meta name="sandik-kaynak" content="legal/tr/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="ffa6c9cd3c8b26877b3bfa3de7596d193e472d4fa40ddd43b7f2ec906bdbd6f0">
-<meta name="sandik-govde-sha256" content="b52c5ecdaac5332a1ef78045672e370d2c908c2b0376dad085da385a69f4e3c6">
+<meta name="sandik-kaynak-sha256" content="fe1f56b9a0ea33927e54ceee2374e3a9fafae94edec9a7c4bd250cc82bbac324">
+<meta name="sandik-govde-sha256" content="f6ae65fe8c304a3aafd021b3c1e426cd3fe7746aa358b2f6ca176e66d7a7e007">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,7 +67,7 @@ button:hover { opacity: 0.9; }
 <h1>Gizlilik Politikası — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 8 Ekim 2026
 <strong>Son güncelleme:</strong> 14 Ekim 2026
-<strong>Sürüm:</strong> 1.11
+<strong>Sürüm:</strong> 1.12
 <strong>Onay sürümü:</strong> 1.8</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
@@ -155,8 +155,8 @@ button:hover { opacity: 0.9; }
 <td>Notların kalitesini ölçmek, hatalı notları bulup düzeltmek (bkz. §5.3)</td>
 </tr>
 <tr>
-<td>Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): kapanmış haftanın ya da ayın getiri ve düşüş yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), yazılan yorum</td>
-<td>Performans › Özet'te geçen haftayı ya da geçen ayı anlatan yorum (bkz. §5.5)</td>
+<td>Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları (dolar, altın, BIST 100), yazılan yorum</td>
+<td>Performans › Özet'te ve varlık detayında seçtiğiniz dönemi, geçen haftayı ya da geçen ayı anlatan yorum (bkz. §5.5)</td>
 </tr>
 <tr>
 <td>Yapay zekâ özelliklerinin rıza kayıtları (portföy yorumu, ekstrenin yapay zekâyla okunması): verildiği ve geri çekildiği zaman, size gösterilen metnin sürümü</td>
@@ -296,7 +296,7 @@ button:hover { opacity: 0.9; }
 <li>Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek</li>
 <li>Premium: satın aldığınız aboneliği doğrulamak ve Premium içeriğe erişim hakkınızı tanımak</li>
 <li>Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek</li>
-<li>Yapay zekâ portföy yorumu: istediğinizde geçmiş haftayı ya da ayı kendi verinizle anlatan yorumu yazmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)</li>
+<li>Yapay zekâ portföy yorumu: istediğinizde portföyünüzün ya da bir varlığınızın seçtiğiniz dönemini, geçen haftayı ya da geçen ayı kendi verinizle anlatan yorumu yazmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)</li>
 <li>Ekstrenin yapay zekâyla okunması: istediğinizde ekstredeki tabloların sütunlarını bulmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)</li>
 </ol>
 <hr />
@@ -399,8 +399,8 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Portföy yorumu (yapay zekâ; yalnızca açık rıza verip yorum isterseniz)</td>
 <td>Anthropic PBC</td>
-<td>Kapanmış dönemin getiri ve düşüş yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%); tutar, adet, adınız, e-postanız ve hesap numaranız gönderilmez</td>
-<td>Geçmiş haftayı ya da ayı anlatan yorumu yazmak (bkz. §5.5)</td>
+<td>Yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları; tutar, adet, adınız, e-postanız ve hesap numaranız gönderilmez</td>
+<td>Portföyünüzün ya da bir varlığınızın geçmiş dönemini anlatan yorumu yazmak (bkz. §5.5)</td>
 <td>ABD</td>
 </tr>
 </tbody>
@@ -422,9 +422,9 @@ button:hover { opacity: 0.9; }
 <p>Sunucumuz bir tablonun başlık satırından tek yönlü bir iz (özet) çıkarır ve modelin bu tablo için bulduğu sütun sırasını o izle birlikte saklar (banka şablonu). Aynı düzende bir tablo yeniden geldiğinde model çağrılmaz. Şablon yalnızca iz ile sütun numaralarından oluşur; tablonun metni, değerleri ve kimin yüklediği tutulmaz.</p>
 <p>İskelet, gönderilen metin ve modelin yanıtı saklanmaz. Kötüye kullanımı ve maliyeti sınırlamak için yalnızca isteğin zamanı, kullanılan model ve maliyeti hesabınızla birlikte 40 gün tutulur.</p>
 <h3>5.5 Yapay Zekâ ile Portföy Yorumu</h3>
-<p>Performans › Özet'te geçen haftayı ya da geçen ayı anlatan kısa bir yorum isteyebilirsiniz. Bu özellik isteğe bağlıdır ve Premium içeriktir. İlk kullandığınızda uygulama ayrı bir kartla açık rızanızı ister; rıza vermezseniz hiçbir şey gönderilmez.</p>
-<p>Rıza verip "Bu dönemi yorumla"ya bastığınızda cihazınız kapanmış dönemin ölçümlerini hesaplar: getiri ve düşüş yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%). Bu ölçümler sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderilir. Tutar, adet, adınız, e-postanız, kullanıcı adınız ve hesap numaranız gönderilmez; sunucumuz para birimi ya da dört haneli bir sayı içeren isteği modele göndermeden reddeder.</p>
-<p>Yorum yazıldıktan sonra kaydedilir ve dönem boyunca veritabanından okunur; yeniden açtığınızda modele istek gitmez. Yorumla birlikte gönderilen ölçümler, kullanılan model ve maliyet de saklanır. Yorumunuzu yalnızca siz görürsünüz. Saklama: her kullanıcı için son 4 haftanın ve son 12 ayın yorumları; eskileri otomatik silinir.</p>
+<p>Performans › Özet'te portföyünüzün, varlık detayında ise o varlığın seçtiğiniz dönemini (son 1 hafta ile son 5 yıl arası) anlatan kısa bir yorum isteyebilirsiniz; Performans › Özet'te geçen hafta ve geçen ay da yorumlanabilir. Bu özellik isteğe bağlıdır ve Premium içeriktir. İlk kullandığınızda uygulama ayrı bir kartla açık rızanızı ister; rıza vermezseniz hiçbir şey gönderilmez.</p>
+<p>Rıza verip "Bu dönemi yorumla"ya bastığınızda cihazınız yorumlanan dönemin ölçümlerini hesaplar: getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%); bunların yanında aynı dönemde enflasyonun (TÜFE) ve dolar, altın ve BIST 100'ün yüzde değişimi gibi kamuya açık piyasa kıyasları. Bu ölçümler sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderilir. Tutar, adet, adınız, e-postanız, kullanıcı adınız ve hesap numaranız gönderilmez; sunucumuz para birimi ya da dört haneli bir sayı içeren isteği modele göndermeden reddeder.</p>
+<p>Yorum yazıldıktan sonra kaydedilir ve yeniden açtığınızda veritabanından okunur, modele istek gitmez: geçen hafta ve geçen ay yorumu dönem boyunca, seçtiğiniz dönemin yorumu yazıldığı gün boyunca. Yorumla birlikte gönderilen ölçümler, kullanılan model ve maliyet de saklanır; varlık yorumunda varlığın kendisi yerine varlık anahtarının geri çevrilemeyen bir özeti saklanır. Yorumunuzu yalnızca siz görürsünüz. Saklama: her kullanıcı için geçen hafta ve geçen ay yorumlarında son 4 haftanın ve son 12 ayın, seçtiğiniz dönem yorumlarında son 7 günün yorumları; eskileri otomatik silinir.</p>
 <p>Yorum geçmişi anlatır; al, sat ya da tut önerisi içermez ve yatırım tavsiyesi değildir. Yorumlar otomatik üretilir ve yayımlanmadan önce otomatik denetlenir (sayılar gönderilen ölçümlerle karşılaştırılır, yönlendiren ya da geleceğe dair dil içeren yorum gösterilmez); bir insan tek tek okumaz, hata içerebilir.</p>
 <p>Rızanızı aynı karttaki "Yapay zekâ yorumunu kapat" ile istediğiniz an geri alabilirsiniz; geri aldığınızda yazılmış yorumlarınız silinir ve ölçümleriniz artık gönderilmez.</p>
 <hr />
@@ -487,7 +487,7 @@ button:hover { opacity: 0.9; }
 </tr>
 <tr>
 <td>Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model ve maliyet)</td>
-<td>Her kullanıcı için son 4 hafta ve son 12 ay; rıza geri alınınca ya da hesap silinince hemen</td>
+<td>Her kullanıcı için geçen hafta/ay yorumlarında son 4 hafta ve son 12 ay, seçilen dönem yorumlarında son 7 gün; rıza geri alınınca ya da hesap silinince hemen</td>
 </tr>
 <tr>
 <td>Yapay zekâ özelliklerinin rıza kayıtları</td>

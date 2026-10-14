@@ -417,6 +417,68 @@ extension _DetayOzet on _AssetDetailScreenState {
       AnalizNotuKutusu(
           tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
+  /// Seçili dönemin AI yorumu (0151, 2026-10-14; yasin: "varlık detayında
+  /// … seçili dönem için data detaylı yorum"). Yalnız KENDİ varlığında:
+  /// ortağın pozisyonu başkasının verisidir, modele gönderilmez. Bayrak
+  /// (`portfoy_ai_yorumu` + Premium görünürlüğü) Performans kartıyla aynı.
+  ///
+  /// Paketin sayıları ekranın gösterdikleri: dönem istatistiği (2×2 ızgara),
+  /// fiyatın altındaki dönem yüzdesi, pozisyon kartının kâr/zararı. Paket
+  /// yalnız düğmeye basınca kurulur (`VarlikYorumuKarti.paketKur`).
+  Widget _aiYorumu({
+    required bool isOwnAsset,
+    required PortfolioState? pState,
+    EdgeInsetsGeometry dis = _kartBoslugu,
+  }) {
+    if (!isOwnAsset || !PortfoyYorumuKarti.gorunur) {
+      return const SizedBox.shrink();
+    }
+    final idx = _selectedPeriodIdx.clamp(0, _donemler.length - 1);
+    final period = _donemler[idx];
+    final days = _periods[idx].days;
+    final ist = _donemIstatistikleri[days];
+    final canli = _canli;
+    final pnl = _pnlOzeti(pState);
+    final donemPct = _donemYuzdesi(days, pnl.currentUnitTRY);
+    final anahtar = positionKey(widget.asset);
+
+    double? pay;
+    if (pState != null) {
+      final toplam = DailySummary.kapsamToplami(pState, pState.assets);
+      if (toplam > 0) pay = pnl.currentValueTRY / toplam * 100;
+    }
+    DateTime? ilkAlim;
+    for (final l in canli.lots) {
+      if (ilkAlim == null || l.addedDate.isBefore(ilkAlim)) ilkAlim = l.addedDate;
+    }
+
+    return Padding(
+      padding: dis,
+      child: VarlikYorumuKarti(
+        period: period,
+        positionKey: anahtar,
+        miktar: canli.asset.quantity,
+        varlikAdi: widget.asset.name,
+        veriHazir: ist != null && donemPct != null,
+        paketKur: () => PortfoyYorumuService.instance.varlikPaketHazirla(
+          period: period,
+          positionKey: anahtar,
+          miktar: canli.asset.quantity,
+          varlikAdi: widget.asset.name,
+          pozisyonLotlari: canli.lots,
+          ist: ist,
+          donemPct: donemPct,
+          canliBirim: pnl.currentUnitTRY,
+          portfoyPayi: pay,
+          pozisyonGetirisi: pnl.totalCostTRY > 0 ? pnl.pnlPct : null,
+          eldeGun: ilkAlim == null
+              ? null
+              : DateTime.now().difference(ilkAlim).inDays,
+        ),
+      ),
+    );
+  }
+
   /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yalnız BIST hissesinde
   /// çizilir (koşul widget'ta); ortağın hissesinde de — KAP sayfası kişiye
   /// değil şirkete ait.
