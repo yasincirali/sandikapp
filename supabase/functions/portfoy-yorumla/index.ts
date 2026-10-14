@@ -21,6 +21,11 @@
 //    okura gitmez — RLS yalnız 'yayinda').
 // 6. Saklama: son 4 hafta + 12 ay; aynı dönemin eski yayındaki satırı silinir.
 //
+// Seçili dönem / varlık kapsamı (0151, 2026-10-14): `tur` 'secili' + `donem_kodu`
+// (1H…5Y), `kapsam` 'portfoy' | 'varlik' (+ `varlik_izi`). Kayıt anahtarı
+// bitiş GÜNÜNÜ de içerir: kayan pencerenin yorumu o gün boyunca okunur,
+// ertesi gün yeni pencere yeniden yazılabilir. Saklama 7 gün.
+//
 // Yanıt: { ok: true, yorum, onbellek } ya da { ok: false, neden }.
 // `error.message`, ham model yanıtı, anahtar dönülmez (CLAUDE.md sunucu kuralı).
 
@@ -35,6 +40,7 @@ import {
   MODEL,
   paketiDogrula,
   saklamaSiniri,
+  seciliSaklamaSiniri,
   TAVAN_MODELI,
 } from '../_shared/portfoy_yorum.ts';
 
@@ -51,7 +57,8 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-const SECIM = 'id, tur, donem, bitis, parmak_izi, baslik, maddeler, olcumler, olusturuldu';
+const SECIM =
+  'id, tur, donem, bitis, parmak_izi, baslik, maddeler, olcumler, olusturuldu, kapsam, donem_kodu, varlik_izi';
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -100,10 +107,16 @@ Deno.serve(async (req: Request) => {
     if (re) throw re;
     if (!riza || riza.geri_cekildi_at !== null) return jsonResponse({ ok: false, neden: 'riza' }, 403);
 
-    // Kayıt: aynı dönem ve parmak izi → modeli çağırma.
-    const { data: kayit, error: ke } = await db.from('portfoy_yorumlari')
-      .select(SECIM)
-      .eq('user_id', userId).eq('tur', p.tur).eq('donem', p.baslangic)
+    // Kayıt: aynı kapsam, dönem ve parmak izi → modeli çağırma.
+    const kapsam = p.kapsam ?? 'portfoy';
+    // deno-lint-ignore no-explicit-any
+    const ayni = (q: any) => {
+      q = q.eq('user_id', userId).eq('tur', p.tur).eq('donem', p.baslangic)
+        .eq('bitis', p.bitis).eq('kapsam', kapsam);
+      q = p.donem_kodu ? q.eq('donem_kodu', p.donem_kodu) : q.is('donem_kodu', null);
+      return p.varlik_izi ? q.eq('varlik_izi', p.varlik_izi) : q.is('varlik_izi', null);
+    };
+    const { data: kayit, error: ke } = await ayni(db.from('portfoy_yorumlari').select(SECIM))
       .eq('parmak_izi', p.parmak_izi).eq('durum', 'yayinda')
       .order('olusturuldu', { ascending: false }).limit(1).maybeSingle();
     if (ke) throw ke;
@@ -115,7 +128,9 @@ Deno.serve(async (req: Request) => {
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId).gte('olusturuldu', gunBasi.toISOString());
     if (ce) throw ce;
-    const hak = Number(Deno.env.get('PORTFOY_YORUM_GUNLUK') ?? '3') || 3;
+    // 10 (0151'e kadar 3): seçili dönem ve varlık detayı yüzeyleri eklendi;
+    // her yüzey yorumu gün boyu saklar, sayaç yalnız yeni yazımları sayar.
+    const hak = Number(Deno.env.get('PORTFOY_YORUM_GUNLUK') ?? '10') || 10;
     if ((count ?? 0) >= hak) return jsonResponse({ ok: false, neden: 'gunluk_hak' }, 429);
 
     const ayBasi = new Date();
@@ -146,6 +161,9 @@ Deno.serve(async (req: Request) => {
       bitis: p.bitis,
       parmak_izi: p.parmak_izi,
       olcumler: p.olcumler,
+      kapsam,
+      donem_kodu: p.donem_kodu ?? null,
+      varlik_izi: p.varlik_izi ?? null,
       model,
       girdi_token: kullanim.input_tokens + kullanim.cache_read_input_tokens + kullanim.cache_creation_input_tokens,
       cikti_token: kullanim.output_tokens,
@@ -175,11 +193,15 @@ Deno.serve(async (req: Request) => {
 
     // Saklama: aynı dönemin önceki yorumları (eski parmak izi) ve pencere
     // dışı dönemler. Reddedilen satırlar bugünün sayacı için bugün kalır.
-    await db.from('portfoy_yorumlari').delete()
-      .eq('user_id', userId).eq('tur', p.tur).eq('donem', p.baslangic)
+    await ayni(db.from('portfoy_yorumlari').delete())
       .eq('durum', 'yayinda').neq('id', yeni.id);
-    await db.from('portfoy_yorumlari').delete()
-      .eq('user_id', userId).eq('tur', p.tur).lt('donem', saklamaSiniri(p.tur, p.baslangic));
+    if (p.tur === 'secili') {
+      await db.from('portfoy_yorumlari').delete()
+        .eq('user_id', userId).eq('tur', 'secili').lt('bitis', seciliSaklamaSiniri(bugun));
+    } else {
+      await db.from('portfoy_yorumlari').delete()
+        .eq('user_id', userId).eq('tur', p.tur).lt('donem', saklamaSiniri(p.tur, p.baslangic));
+    }
 
     return jsonResponse({ ok: true, yorum: yeni, onbellek: false });
   } catch (e) {

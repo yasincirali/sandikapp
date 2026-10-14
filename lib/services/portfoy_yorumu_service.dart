@@ -8,8 +8,13 @@ import '../models/asset_type.dart';
 import '../utils/tr_format.dart';
 import 'crash_reporter.dart';
 import 'history_service.dart';
+import 'inflation_service.dart';
 import 'insight_metrics_service.dart';
+import 'kiyas_service.dart';
+import 'kiyas_yukleyici.dart';
 import 'period_summary_service.dart';
+import 'real_return_service.dart';
+import 'varlik_istatistik.dart';
 
 /// Kişiye özel AI portföy yorumu (0145, 2026-10-13) — paket, kayıt, istek.
 ///
@@ -34,12 +39,29 @@ import 'period_summary_service.dart';
 /// kurulmaz ([tutarIziVar]). Sayılar Performans'ın kullandığı servislerden
 /// (`PeriodSummaryService`, `InsightMetricsService`) gelir: ekran ile
 /// yorum aynı kaynaktan okur.
+///
+/// ## Seçili dönem ve varlık detayı (0151, 2026-10-14)
+/// yasin: "daha ekonomist gibi ve varlık detayında ve varlıklar bütününde de
+/// seçili dönem için data detaylı yorum yapılabilir". [YorumTuru.secili]
+/// Performans'ın ve varlık detayının seçili dönemini (1H…5Y, bugün biten
+/// pencere) anlatır; paket "ekonomist" bağları kurulabilsin diye enflasyon,
+/// dolar/altın/BIST 100 kıyası ve oynaklık da taşır ([ekonomiOlcumleri],
+/// [PortfoyYorumPaketi.varlikKur]). Kayan pencere her gün değiştiği için
+/// kayıt GÜN başınadır (sunucu `bitis` gününü anahtara katar).
 enum YorumTuru {
   haftalik,
-  aylik;
+  aylik,
+  secili;
 
   String get sunucuAdi => name;
 }
+
+/// Yorumun neyi anlattığı: bütün portföy (Performans) ya da tek varlık.
+enum YorumKapsami { portfoy, varlik }
+
+/// GÜNLÜK yorumlanmaz: gün içi seri saatler içinde değişir, gün başına
+/// saklanan yorum onu bayat anlatırdı (sunucu da kabul etmez).
+bool seciliYorumlanabilir(SummaryPeriod p) => !p.intraday;
 
 /// [simdi]'den önceki son kapanmış dönem; uçlar yerel gün başı.
 ///
@@ -89,6 +111,10 @@ class PortfoyYorumPaketi {
     required this.bitis,
     required this.parmakIzi,
     required this.olcumler,
+    this.kapsam = YorumKapsami.portfoy,
+    this.donemKodu,
+    this.varlikIzi,
+    this.varlikAdi,
   });
 
   final YorumTuru tur;
@@ -96,10 +122,23 @@ class PortfoyYorumPaketi {
   final DateTime bitis;
   final String parmakIzi;
   final List<YorumOlcumu> olcumler;
+  final YorumKapsami kapsam;
+
+  /// Yalnız [YorumTuru.secili]: `SummaryPeriod.label` (1H…5Y).
+  final String? donemKodu;
+
+  /// Yalnız [YorumKapsami.varlik]: [varlikIziOf].
+  final String? varlikIzi;
+
+  /// Yalnız [YorumKapsami.varlik]: modelin varlığı adıyla anması için.
+  final String? varlikAdi;
 
   /// Yorum yazmaya değer mi? Dönemde seri yoksa (portföy yeni, veri yok)
   /// model çağrılmaz — "bu hafta %0" diye uydurma bir yorum çıkmasın.
-  bool get yeterli => olcumler.any((o) => o.anahtar == 'getiri') && olcumler.length >= 2;
+  /// Varlıkta ana ölçüm dönem değişimi ('degisim').
+  bool get yeterli =>
+      olcumler.any((o) => o.anahtar == 'getiri' || o.anahtar == 'degisim') &&
+      olcumler.length >= 2;
 
   Map<String, Object> toJson() => {
         'tur': tur.sunucuAdi,
@@ -107,12 +146,23 @@ class PortfoyYorumPaketi {
         'bitis': isoGun(bitis),
         'parmak_izi': parmakIzi,
         'olcumler': [for (final o in olcumler) o.toJson()],
+        // Eski sözleşme (0145) bu alanları tanımaz: kapanmış dönem portföy
+        // yorumunda HİÇ gönderilmez.
+        if (tur == YorumTuru.secili) 'donem_kodu': donemKodu!,
+        if (kapsam == YorumKapsami.varlik) ...{
+          'kapsam': 'varlik',
+          'varlik_izi': varlikIzi!,
+          if (varlikAdi != null) 'varlik_adi': varlikAdi!,
+        },
       };
 
   /// SAF: dönem özeti + seri → ölçümler. Test `portfoy_yorumu_test`.
   ///
   /// [ozet] `PeriodSummaryService.compute(pencereBaslangici: baslangic,
   /// now: bitis 23:59:59)` ile kurulmuş olmalı (çağıran [PortfoyYorumuService.paketHazirla]).
+  ///
+  /// [ekOlcumler] seçili dönemin "ekonomist" ölçümleri ([ekonomiOlcumleri]);
+  /// temel ölçümlerden SONRA eklenir (30 sınırında önce onlar düşer).
   static PortfoyYorumPaketi kur({
     required YorumTuru tur,
     required DateTime baslangic,
@@ -120,6 +170,8 @@ class PortfoyYorumPaketi {
     required PeriodSummary ozet,
     required PortfolioHistoryBreakdown breakdown,
     required String Function(String positionKey) etiket,
+    String? donemKodu,
+    List<YorumOlcumu> ekOlcumler = const [],
   }) {
     final fromMs = baslangic.millisecondsSinceEpoch;
     final toMs = DateTime(bitis.year, bitis.month, bitis.day, 23, 59, 59).millisecondsSinceEpoch;
@@ -170,6 +222,15 @@ class PortfoyYorumPaketi {
       if (sonDegerler.length < 1000) {
         ekle('pozisyon_sayisi', 'Dönem sonunda varlık sayısı', '${sonDegerler.length}');
       }
+      // Yoğunlaşma (yalnız seçili dönem; kapanmış dönem paketi 0145'teki
+      // gibi kalır): ilk üç varlığın toplam payı. Model toplayamaz (sayı
+      // kapısı), toplamı biz veririz.
+      if (tur == YorumTuru.secili && sonDegerler.length >= 4) {
+        final sirali = sonDegerler.values.toList()..sort((a, b) => b.compareTo(a));
+        final ilkUc = sirali.take(3).fold<double>(0, (a, b) => a + b);
+        ekle('ilk_uc_pay', 'Dönem sonunda en büyük 3 varlığın toplam payı',
+            pay(ilkUc / posToplam * 100));
+      }
     }
 
     // Dönem içindeki en derin geri çekilme (değer serisi, pencere içi).
@@ -185,12 +246,108 @@ class PortfoyYorumPaketi {
       if (g != null && g < 1000) ekle('toparlanma', 'Geri çekilmeden toparlanma süresi', '$g gün');
     }
 
+    final goruldu = {for (final x in o) x.anahtar};
+    for (final x in ekOlcumler) {
+      if (goruldu.add(x.anahtar) && !tutarIziVar(x.ad)) o.add(x);
+    }
+
     return PortfoyYorumPaketi(
       tur: tur,
       baslangic: baslangic,
       bitis: bitis,
       parmakIzi: portfoyParmakIzi(sonDegerler),
       olcumler: o.take(30).toList(),
+      donemKodu: donemKodu,
+    );
+  }
+
+  /// SAF: varlık detayının seçili dönemi → ölçümler. Test `portfoy_yorumu_test`.
+  ///
+  /// Sayılar varlık detayının gösterdiği değerlerden gelir ([ist] dönem
+  /// istatistiği, [donemPct] fiyatın altındaki dönem yüzdesi): ekran ile
+  /// yorum ayrışmaz. Fiyat ve tutar GİTMEZ; zirveye/dibe uzaklık yüzdedir.
+  static PortfoyYorumPaketi varlikKur({
+    required SummaryPeriod period,
+    required DateTime baslangic,
+    required DateTime bitis,
+    required String positionKey,
+    required double miktar,
+    required String varlikAdi,
+    required DonemIstatistigi? ist,
+    required double? donemPct,
+    required double? canliBirim,
+    double? portfoyPayi,
+    double? pozisyonGetirisi,
+    int? eldeGun,
+    Map<KiyasVarligi, double> kiyasDegisimi = const {},
+    YorumTufesi? tufe,
+  }) {
+    final o = <YorumOlcumu>[];
+    void ekle(String anahtar, String ad, String gosterim) {
+      if (tutarIziVar(ad)) return;
+      o.add(YorumOlcumu(anahtar, ad, gosterim));
+    }
+
+    String pct(double v) => fmtPctIsaretli(v, digits: 1);
+    String pay(double v) => fmtPct(v, digits: 1);
+
+    if (donemPct != null && donemPct.isFinite) {
+      ekle('degisim', 'Dönem içinde fiyat değişimi', pct(donemPct));
+    }
+    if (ist != null) {
+      if (ist.enBuyukDususPct < -0.05) {
+        ekle('en_derin_dusus', 'Dönem içindeki en derin geri çekilme',
+            pct(ist.enBuyukDususPct));
+      }
+      final oyn = ist.oynaklikPct;
+      if (oyn != null && oyn.isFinite) {
+        ekle('oynaklik', 'Yıllıklandırılmış oynaklık', pay(oyn));
+      }
+      final canli = (canliBirim != null && canliBirim > 0) ? canliBirim : ist.son;
+      if (ist.dusuk > 0 && ist.yuksek > ist.dusuk) {
+        ekle('zirveye_uzaklik', 'Fiyatın dönem zirvesine uzaklığı',
+            pct((canli / ist.yuksek - 1) * 100));
+        ekle('dibe_uzaklik', 'Fiyatın dönem dibine uzaklığı',
+            pct((canli / ist.dusuk - 1) * 100));
+      }
+    }
+    if (portfoyPayi != null && portfoyPayi.isFinite && portfoyPayi > 0) {
+      ekle('portfoy_payi', 'Portföy içindeki payı', pay(portfoyPayi));
+    }
+    if (pozisyonGetirisi != null && pozisyonGetirisi.isFinite) {
+      ekle('pozisyon_getirisi', 'İlk alımdan bu yana pozisyonun getirisi',
+          pct(pozisyonGetirisi));
+    }
+    if (eldeGun != null && eldeGun > 0 && eldeGun < 10000) {
+      ekle('elde_tutma', 'İlk alımdan bu yana geçen süre', '$eldeGun gün');
+    }
+    for (final e in kiyasDegisimi.entries) {
+      if (!e.value.isFinite) continue;
+      final ad = kiyasVarligiAdi(e.key);
+      ekle('kiyas_${e.key.name}', 'Aynı dönemde $ad değişimi', pct(e.value));
+      if (donemPct != null && donemPct.isFinite) {
+        final fark = puanGosterimi(donemPct - e.value);
+        if (fark != null) {
+          ekle('kiyas_${e.key.name}_fark', 'Varlığın $ad değişimine göre farkı', fark);
+        }
+      }
+    }
+    if (tufe != null) {
+      for (final x in tufe.olcumler()) {
+        ekle(x.anahtar, x.ad, x.gosterim);
+      }
+    }
+
+    return PortfoyYorumPaketi(
+      tur: YorumTuru.secili,
+      baslangic: baslangic,
+      bitis: bitis,
+      parmakIzi: varlikParmakIzi(positionKey, miktar),
+      olcumler: o.take(30).toList(),
+      kapsam: YorumKapsami.varlik,
+      donemKodu: period.label,
+      varlikIzi: varlikIziOf(positionKey),
+      varlikAdi: tutarIziVar(varlikAdi) ? null : varlikAdi,
     );
   }
 
@@ -227,6 +384,137 @@ String portfoyParmakIzi(Map<String, double> sonDegerler) {
   return 'v1:${ozet.substring(0, 24)}';
 }
 
+/// Varlık kapsamının sunucu anahtarı: pozisyon anahtarının özeti. Ham
+/// anahtar (sembol, mevduat sözleşme UUID'si) sunucuya GİTMEZ.
+String varlikIziOf(String positionKey) =>
+    'v1:${sha256.convert(utf8.encode(positionKey)).toString().substring(0, 24)}';
+
+/// Varlık yorumunun parmak izi: pozisyon + miktar. Miktar değişirse (alım/
+/// satış) aynı günün yorumu eskir; fiyat oynaması eskitmez.
+String varlikParmakIzi(String positionKey, double miktar) {
+  final ozet = sha256.convert(utf8.encode('$positionKey|${miktar.toStringAsPrecision(10)}'));
+  return 'v1:${ozet.toString().substring(0, 24)}';
+}
+
+/// Puan farkı gösterimi: '+8,2 puan' / '−3,1 puan'. Sunucunun puan biçimi
+/// (en çok 3 tam hane); dışındaysa `null` (ölçüm kurulmaz).
+String? puanGosterimi(double v) {
+  if (!v.isFinite || v.abs() >= 999.95) return null;
+  final metin = fmtNum(v.abs(), digits: 1);
+  if (metin == fmtNum(0, digits: 1)) return '$metin puan';
+  return '${v > 0 ? '+' : '\u2212'}$metin puan';
+}
+
+/// Kıyas varlığının modele giden Türkçe adı (arayüz dili ne olursa olsun;
+/// talimat Türkçe).
+///
+/// "dolar/TL" DEĞİL: ölçüm adında "TL" tutar izi sayılır ve ölçüm düşerdi
+/// (`tutarIziVar`, sunucuda `TUTAR_IZI`).
+String kiyasVarligiAdi(KiyasVarligi k) => switch (k) {
+      KiyasVarligi.dolar => 'Amerikan doları',
+      KiyasVarligi.altin => 'gram altın',
+      KiyasVarligi.bist100 => 'BIST 100',
+    };
+
+const _aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+/// Yorumun TÜFE ölçümleri — Performans'ın reel getiri kartıyla AYNI pencere
+/// (`InflationService.pencere`, son açıklanmış aylar) ve AYNI hizalı
+/// nominal (`RealReturnService.hizaliGetiri`). Pencere seçili dönemle
+/// örtüşmez (TÜFE aylık açıklanır); ad bu yüzden ayları açıkça yazar ki
+/// model "aynı dönemde" demesin. Yıl yazılmaz: 4 haneli sayı tutar kapısına
+/// takılır.
+class YorumTufesi {
+  const YorumTufesi({
+    required this.enflasyonPct,
+    required this.ilkAy,
+    required this.sonAy,
+    this.nominalPct,
+    this.reelPct,
+    this.nominalAdi = 'portföyün',
+  });
+
+  final double enflasyonPct;
+
+  /// `InflationWindow.ilkAy` (taban ayı; ölçülen aylar bir sonrakinden başlar).
+  final DateTime ilkAy;
+  final DateTime sonAy;
+  final double? nominalPct;
+  final double? reelPct;
+
+  /// 'portföyün' ya da 'pozisyonun'.
+  final String nominalAdi;
+
+  String get aralik {
+    final bas = DateTime(ilkAy.year, ilkAy.month + 1, 1);
+    final a = _aylar[bas.month - 1], b = _aylar[sonAy.month - 1];
+    return bas.year == sonAy.year && bas.month == sonAy.month ? a : '$a–$b';
+  }
+
+  List<YorumOlcumu> olcumler() {
+    final o = <YorumOlcumu>[];
+    if (!enflasyonPct.isFinite) return o;
+    o.add(YorumOlcumu('tufe', 'Son açıklanan aylarda TÜFE ($aralik)',
+        fmtPct(enflasyonPct, digits: 1)));
+    final n = nominalPct;
+    if (n != null && n.isFinite) {
+      o.add(YorumOlcumu('tufe_nominal', 'Aynı aylarda ($aralik) $nominalAdi getirisi',
+          fmtPctIsaretli(n, digits: 1)));
+      final fark = puanGosterimi(InflationService.spreadPoints(n, enflasyonPct));
+      if (fark != null) {
+        o.add(YorumOlcumu('tufe_fark', 'Aynı aylarda getirinin TÜFE\'ye göre farkı', fark));
+      }
+    }
+    final r = reelPct;
+    if (r != null && r.isFinite) {
+      o.add(YorumOlcumu('reel_getiri', 'Aynı aylarda enflasyondan arındırılmış (reel) getiri',
+          fmtPctIsaretli(r, digits: 1)));
+    }
+    return o;
+  }
+}
+
+/// SAF: seçili dönem portföy yorumunun "ekonomist" ölçümleri — paranın
+/// başka yerdeki karşılığı (PME kıyası), enflasyon, oynaklık, akış oranı.
+/// Hepsi Performans'ın kartlarındaki hesaplardan okunur, burada formül yok.
+List<YorumOlcumu> ekonomiOlcumleri({
+  required PeriodSummary ozet,
+  KiyasOzeti? kiyas,
+  YorumTufesi? tufe,
+  double? oynaklik,
+}) {
+  final o = <YorumOlcumu>[];
+  String pct(double v) => fmtPctIsaretli(v, digits: 1);
+
+  final yillik = ozet.yillikGetiriPct;
+  if (yillik != null && yillik.isFinite) {
+    o.add(YorumOlcumu('yillik_getiri', 'Yıllık bileşik getiri', pct(yillik)));
+  }
+  for (final e in kiyas?.satirlar.entries ?? const <MapEntry<KiyasVarligi, KiyasHesabi>>[]) {
+    final ad = kiyasVarligiAdi(e.key);
+    if (e.value.getiriPct.isFinite) {
+      o.add(YorumOlcumu('kiyas_${e.key.name}',
+          'Aynı paralar aynı günlerde $ad yatırılsaydı getiri', pct(e.value.getiriPct)));
+    }
+    final f = e.value.farkPuan;
+    final fark = f == null ? null : puanGosterimi(f);
+    if (fark != null) {
+      o.add(YorumOlcumu('kiyas_${e.key.name}_fark', 'Portföyün $ad kıyasına göre farkı', fark));
+    }
+  }
+  if (tufe != null) o.addAll(tufe.olcumler());
+  if (oynaklik != null && oynaklik.isFinite && oynaklik > 0) {
+    o.add(YorumOlcumu('oynaklik', 'Portföyün yıllıklandırılmış oynaklığı',
+        fmtPct(oynaklik, digits: 1)));
+  }
+  final katki = ozet.katkiTRY, bas = ozet.baslangicTRY;
+  if (katki != null && bas != null && bas > 0 && (katki / bas).abs() >= 0.001) {
+    o.add(YorumOlcumu('net_katki_orani',
+        'Dönemde eklenen net para, dönem başı değere oranla', pct(katki / bas * 100)));
+  }
+  return o;
+}
+
 /// Saklanmış yorum (tablo satırı ya da fonksiyon yanıtı).
 class PortfoyYorumu {
   const PortfoyYorumu({
@@ -251,7 +539,11 @@ class PortfoyYorumu {
 
   static PortfoyYorumu? fromRow(Map<String, dynamic> r) {
     try {
-      final tur = r['tur'] == 'aylik' ? YorumTuru.aylik : YorumTuru.haftalik;
+      final tur = switch (r['tur']) {
+        'aylik' => YorumTuru.aylik,
+        'secili' => YorumTuru.secili,
+        _ => YorumTuru.haftalik,
+      };
       final m = r['maddeler'];
       final ol = r['olcumler'];
       return PortfoyYorumu(
@@ -309,7 +601,13 @@ class PortfoyYorumHatasi implements Exception {
 /// ve KVKK 1.11 §5.2'ye yazıldı (0149). Genel "Onay sürümü" artmadı, Açık
 /// Rıza Metni'ne bölüm eklenmedi: rıza işlemi isteyenden, ilk kullanımda bu
 /// kartla alınır (yasin 2026-10-13, CLAUDE.md yasal metin istisnası).
-const portfoyYorumRizaSurumu = '2026-10-14';
+///
+/// 2026-10-14.2: kart metni seçili dönem ve varlık yorumunu da kapsıyor
+/// (oynaklık, enflasyon ve piyasa kıyasları; Gizlilik/KVKK 1.12, 0152).
+/// Yeni rızalar bu sürümle kaydedilir; önceki rızalar geçerli kalır:
+/// gönderilen veri türü (yüzdeler) ve alıcı (Anthropic) aynı, piyasa
+/// kıyasları kişisel veri değil.
+const portfoyYorumRizaSurumu = '2026-10-14.2';
 
 class PortfoyYorumuService {
   PortfoyYorumuService._();
@@ -350,6 +648,173 @@ class PortfoyYorumuService {
       breakdown: bd,
       etiket: et,
     );
+  }
+
+  /// Seçili dönemin paketi (Performans, bütün portföy). Seri, pencere ve
+  /// çözünürlük Özet'in kanonik serisiyle aynı (`_ozetSerisiniCek`); kıyas
+  /// ve TÜFE Özet kartlarının servislerinden. Ekonomi ölçümlerinden biri
+  /// kurulamazsa (ağ, endeks yok) o ölçüm düşer, yorum yine yazılır.
+  Future<PortfoyYorumPaketi> seciliPaketHazirla({
+    required SummaryPeriod period,
+    required List<Asset> lotlar,
+    required String Function(String positionKey, AssetType tur) etiket,
+    double? canliSon,
+    Map<AssetType, double>? canliDagilim,
+    DateTime? simdi,
+  }) async {
+    final now = simdi ?? DateTime.now();
+    final w = PeriodSummaryService.pencere(period, now);
+    final tier = ResolutionTierMeta.pickForSpan(period.days.toDouble());
+    final bd = await HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
+      assets: lotlar,
+      from: w.start,
+      to: now,
+      tier: tier,
+    );
+    String et(String k) => etiket(k, bd.positionType[k] ?? AssetType.diger);
+    final ozet = PeriodSummaryService.compute(
+      period: period,
+      assets: lotlar,
+      breakdown: bd,
+      now: now,
+      canliSon: canliSon,
+      canliDagilim: canliDagilim,
+      etiket: et,
+    );
+
+    KiyasOzeti? kiyas;
+    final girdi = KiyasGirdisi.kur(
+        period: period, lotlar: lotlar, seri: bd.total, now: now, canliSon: canliSon);
+    if (girdi != null) {
+      try {
+        kiyas = KiyasService.ozet(girdi, await KiyasYukleyici.serileriGetir(period));
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'portfoy_yorumu_kiyas');
+      }
+    }
+    final tufe = await _tufe(period, lotlar, nominalAdi: 'portföyün');
+    double? oynaklik;
+    if (period.days >= DonemIstatistigi.oynaklikIcinAsgariDonemGun) {
+      oynaklik = InsightMetricsService.annualizedVolatility(
+        bd.total,
+        barSuresiGun: tier.barSuresi.inMinutes / (60 * 24),
+        lotlar: lotlar,
+      );
+    }
+
+    return PortfoyYorumPaketi.kur(
+      tur: YorumTuru.secili,
+      baslangic: w.start,
+      bitis: dayKey(now),
+      ozet: ozet,
+      breakdown: bd,
+      etiket: et,
+      donemKodu: period.label,
+      ekOlcumler: ekonomiOlcumleri(
+          ozet: ozet, kiyas: kiyas, tufe: tufe, oynaklik: oynaklik),
+    );
+  }
+
+  /// Varlık detayının seçili dönem paketi. Dönem istatistiği ve yüzdesi
+  /// ekrandan gelir (ekranda görünenle aynı sayı); kıyas varlıklarının aynı
+  /// penceredeki değişimi ve TÜFE burada eklenir.
+  Future<PortfoyYorumPaketi> varlikPaketHazirla({
+    required SummaryPeriod period,
+    required String positionKey,
+    required double miktar,
+    required String varlikAdi,
+    required List<Asset> pozisyonLotlari,
+    required DonemIstatistigi? ist,
+    required double? donemPct,
+    required double? canliBirim,
+    double? portfoyPayi,
+    double? pozisyonGetirisi,
+    int? eldeGun,
+    DateTime? simdi,
+  }) async {
+    final now = simdi ?? DateTime.now();
+    final w = PeriodSummaryService.pencere(period, now);
+    final kiyas = <KiyasVarligi, double>{};
+    try {
+      final seriler = await KiyasYukleyici.serileriGetir(period);
+      for (final e in seriler.entries) {
+        final bas = KiyasService.fiyatAt(e.value, w.start.millisecondsSinceEpoch);
+        final son = KiyasService.fiyatAt(e.value, now.millisecondsSinceEpoch);
+        if (bas != null && son != null && bas > 0) kiyas[e.key] = (son / bas - 1) * 100;
+      }
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'varlik_yorumu_kiyas');
+    }
+    final tufe = await _tufe(period, pozisyonLotlari, nominalAdi: 'pozisyonun');
+    return PortfoyYorumPaketi.varlikKur(
+      period: period,
+      baslangic: w.start,
+      bitis: dayKey(now),
+      positionKey: positionKey,
+      miktar: miktar,
+      varlikAdi: varlikAdi,
+      ist: ist,
+      donemPct: donemPct,
+      canliBirim: canliBirim,
+      portfoyPayi: portfoyPayi,
+      pozisyonGetirisi: pozisyonGetirisi,
+      eldeGun: eldeGun,
+      kiyasDegisimi: kiyas,
+      tufe: tufe,
+    );
+  }
+
+  /// Performans'ın reel getiri kartıyla AYNI pencere kuralı
+  /// (`ozet_yan_veri`): 1H'de TÜFE sorulmaz (aylık açıklanır), 1A'da son
+  /// açıklanan ay, 5Y'de endeks yetmezse veri olan en erken aya kısaltılır.
+  Future<YorumTufesi?> _tufe(SummaryPeriod period, List<Asset> lotlar,
+      {required String nominalAdi}) async {
+    if (period.days < SummaryPeriod.birAy.days) return null;
+    try {
+      final svc = InflationService.instance;
+      var w = await svc.pencere(period == SummaryPeriod.birAy ? 30 : period.days);
+      if (w == null && period.days > SummaryPeriod.birYil.days) {
+        w = await svc.pencereKapsayan(period.days,
+            enErken: PeriodSummaryService.ilkAlimTarihi(lotlar));
+      }
+      if (w == null) return null;
+      final g = lotlar.isEmpty ? null : await RealReturnService.hizaliGetiri(lotlar, w);
+      return YorumTufesi(
+        enflasyonPct: w.pct,
+        ilkAy: w.ilkAy,
+        sonAy: w.sonAy,
+        nominalPct: g?.nominal,
+        reelPct: g?.reel,
+        nominalAdi: nominalAdi,
+      );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'portfoy_yorumu_tufe');
+      return null;
+    }
+  }
+
+  /// Seçili dönemin bugünkü saklı yorumu (kapsam + varlık + dönem + bitiş
+  /// günü). Yoksa null — dünkü pencere bugünün yorumu sayılmaz.
+  Future<PortfoyYorumu?> kayitliSeciliYorum({
+    required YorumKapsami kapsam,
+    required String donemKodu,
+    required DateTime bitis,
+    String? varlikIzi,
+  }) async {
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return null;
+    var q = _db
+        .from('portfoy_yorumlari')
+        .select('tur, donem, bitis, parmak_izi, baslik, maddeler, olcumler, olusturuldu')
+        .eq('user_id', uid)
+        .eq('tur', YorumTuru.secili.sunucuAdi)
+        .eq('kapsam', kapsam.name)
+        .eq('donem_kodu', donemKodu)
+        .eq('bitis', isoGun(bitis));
+    q = varlikIzi == null ? q.isFilter('varlik_izi', null) : q.eq('varlik_izi', varlikIzi);
+    final rows = await q.order('olusturuldu', ascending: false).limit(1);
+    if (rows.isEmpty) return null;
+    return PortfoyYorumu.fromRow(rows.first);
   }
 
   /// Dönemin saklı yorumu (RLS: yalnız kendi yayındaki satırı). Yoksa null.

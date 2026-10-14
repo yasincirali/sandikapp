@@ -2,7 +2,7 @@
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 14 Ekim 2026
-**Sürüm:** 1.11
+**Sürüm:** 1.12
 **Onay sürümü:** 1.8
 
 ---
@@ -41,7 +41,7 @@
 - Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)
 - Dönemsel getiri yüzdesi ve varlık türü payları (Yarış; yalnızca katılırsanız)
 - Ortaklık bağlantıları ve davet kodları
-- Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): kapanmış dönemin getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), yazılan yorum
+- Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): portföyün ya da bir varlığın yorumlanan dönemindeki getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları, yazılan yorum
 - Yapay zekâ özelliklerinin rıza kayıtları (portföy yorumu, ekstrenin yapay zekâyla okunması): verildiği ve geri çekildiği zaman, gösterilen metnin sürümü
 - Varlık notlarına geri bildirim (isteğe bağlı): oy, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama
 - Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı (ödeme ve kart bilgisi işlenmez)
@@ -127,7 +127,7 @@ Yurt içinde üçüncü kişilere aktarım yapılmamaktadır. Ortaklık kurduğu
 | Google LLC (Gmail e-posta altyapısı) | ABD / Küresel | E-posta adresi, doğrulama kodu | Kod e-postalarının teslimi | KVKK 9(1) — açık rıza |
 | Apple Inc. (Apple Push Notification service) | ABD / Küresel | Bildirim içeriği, canlı etkinlik token'ı ve kilit ekranı özeti | iPhone'a teslim | KVKK 9(1) — açık rıza |
 | Apple Inc. / Google LLC (Apple ile Giriş, Google ile Giriş — seçerseniz) | ABD / Küresel | Giriş sırasında sağlayıcıyla doğrulama | Kimlik doğrulama | KVKK 9(1) — açık rıza |
-| Anthropic PBC (yalnızca açık rıza verip yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız) | ABD | Portföy yorumu: kapanmış dönemin getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve payları (%). Ekstre: tablodaki kelimeler (bütün rakamlar ile etiketli ad, adres ve e-posta maskeli). Tutar, adet, ad, e-posta ve hesap numarası gönderilmez | Yorumun yazılması; ekstre sütunlarının bulunması | KVKK 9(1) — açık rıza (uygulama içinde, özelliğe özel) |
+| Anthropic PBC (yalnızca açık rıza verip yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız) | ABD | Portföy yorumu: yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları (%), enflasyon ve piyasa kıyasları. Ekstre: tablodaki kelimeler (bütün rakamlar ile etiketli ad, adres ve e-posta maskeli). Tutar, adet, ad, e-posta ve hesap numarası gönderilmez | Yorumun yazılması; ekstre sütunlarının bulunması | KVKK 9(1) — açık rıza (uygulama içinde, özelliğe özel) |
 | RevenueCat, Inc. (yalnızca Premium satın alırsanız) | ABD | Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı ve makbuzu, cihaz ve uygulama sürümü, IP adresi | Satın almanın mağazayla doğrulanması ve Premium hakkının sunucumuza bildirilmesi | KVKK 9(1) — açık rıza |
 
 Premium ödemesini Apple ya da Google tahsil eder; kart ve ödeme bilgileriniz bize ulaşmaz, bunları mağaza kendi başına veri sorumlusu olarak işler.
@@ -138,7 +138,7 @@ Varlık notlarını ve aylık raporu yazan yapay zekâ sağlayıcısına (Anthro
 
 Ekstre içe aktarmada "Yapay zekâyla eşle"yi seçerseniz aynı sağlayıcıya ekstredeki tabloların anonim iskeleti gönderilir: sütun başlıkları ve genel finans kelimeleri kalır; ad, numara, tutar ve tarihler maskelenir. Bu iskelet kişisel veri içermez ve saklanmaz. Uygulama ilk kullanımda ayrıca açık rızanızı isterse ve verirseniz, iskelet yerine tablodaki kelimeler (sütun başlıkları, varlık ve kurum adları) gönderilir; bütün rakamlar ile e-posta ve etiketli ad, adres bilgileri maskelenir, ancak etiketsiz yazılmış bir ad maskelenmeyebilir. Gönderilen metin saklanmaz; yalnızca tablo düzeninin tek yönlü izi ve sütun numaraları, kullanıcıya bağlanmadan banka şablonu olarak tutulur.
 
-Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın hesapladığı kapanmış dönem ölçümleri (getiri ve düşüş yüzdeleri, varlık adları ya da sembolleri ve payları) aynı sağlayıcıya gönderilir; tutar, adet ve kimlik bilgisi gönderilmez. Yazılan yorum ve ölçümler size özel olarak saklanır (Gizlilik Politikası §5.5). Bu iki özelliğin açık rızası kayıttaki Açık Rıza Metni'nden ayrı olarak, özelliği ilk kullandığınızda uygulama içinde alınır; vermezseniz bu veriler gönderilmez, uygulamanın diğer özellikleri etkilenmez.
+Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın hesapladığı dönem ölçümleri (portföyünüzün ya da bir varlığınızın getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları, enflasyon ve piyasa kıyasları) aynı sağlayıcıya gönderilir; tutar, adet ve kimlik bilgisi gönderilmez. Yazılan yorum ve ölçümler size özel olarak saklanır (Gizlilik Politikası §5.5). Bu iki özelliğin açık rızası kayıttaki Açık Rıza Metni'nden ayrı olarak, özelliği ilk kullandığınızda uygulama içinde alınır; vermezseniz bu veriler gönderilmez, uygulamanın diğer özellikleri etkilenmez.
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
@@ -162,7 +162,7 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Varlık notlarına geri bildirimler | Hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Ekstre sütun eşleme istek kayıtları (zaman, model, maliyet) | 40 gün | KVKK 5(2)(f) meşru menfaat (kötüye kullanım ve maliyet sınırı) |
-| Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model, maliyet) | Her kullanıcı için son 4 hafta ve son 12 ay; rıza geri alınınca ya da hesap silinince hemen | KVKK 5(1) açık rıza |
+| Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model, maliyet) | Her kullanıcı için geçen hafta/ay yorumlarında son 4 hafta ve son 12 ay, seçilen dönem yorumlarında son 7 gün; rıza geri alınınca ya da hesap silinince hemen | KVKK 5(1) açık rıza |
 | Yapay zekâ özelliklerinin rıza kayıtları | Hesap silinene kadar | KVKK 5(2)(e) |
 | Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. Aynı anda RevenueCat'teki abone kaydınızın silinmesi RevenueCat'ten istenir; ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır. Hesap silme mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play'den kapatırsınız | Sözleşme süresi |
 | Push token | Çıkış yapılana ya da token geçersizleşene (uygulama silinene) kadar | Sözleşme süresi |

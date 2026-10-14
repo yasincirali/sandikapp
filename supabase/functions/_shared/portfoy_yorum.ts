@@ -13,9 +13,18 @@
 //   1) Pakette tutar yok. Gösterim yalnız yüzde / puan / gün / küçük adet;
 //      ₺ $ € ve 4+ haneli sayı hiçbir alanda geçemez. Veri minimizasyonu
 //      istemcinin iyi niyetine bırakılmaz.
-//   2) Dönem KAPANMIŞ bir takvim dönemi (geçen hafta Pzt–Paz, geçen ay).
-//      Kayan pencere her gün değişir ve "kaydet, yeniden yazma" kuralını
-//      (yasin, 12 Eki) boşa çıkarır.
+//   2) Dönem ya KAPANMIŞ bir takvim dönemi (geçen hafta Pzt–Paz, geçen ay)
+//      ya da bugün biten SEÇİLİ dönem (1H…5Y; aşağıda). Uçlar sunucuda
+//      takvimden yeniden hesaplanır; istemcinin uydurduğu pencere geçmez.
+//
+// ── Seçili dönem ve varlık kapsamı (0151, 2026-10-14) ───────────────────────
+// yasin (14 Eki): "daha ekonomist gibi ve varlık detayında ve varlıklar
+// bütününde de seçili dönem için data detaylı yorum yapılabilir". Kayan
+// pencere her gün değişir; "kaydet, yeniden yazma" kuralı (12 Eki) burada
+// GÜN başına uygulanır: aynı kapsam + dönem + bitiş günü + parmak izi için
+// yazılmış yorum o gün boyunca okunur, model yeniden çağrılmaz. Kapsam
+// 'portfoy' (Performans) ya da 'varlik' (varlık detayı; `varlik_izi` =
+// pozisyon anahtarının özeti, ham anahtar gitmez).
 //
 // ── Dil kapısı: danışmanlık sınırı daha yakın ───────────────────────────────
 // Varlık notunun yasakları (`YASAK`) aynen geçerli. Kişiye özel metin "şunu
@@ -26,7 +35,20 @@
 import { gunAy, NOT_SEMASI, sayilar, YASAK } from './analiz.ts';
 import { gunEkle } from './balina.ts';
 
-export type YorumTuru = 'haftalik' | 'aylik';
+export type YorumTuru = 'haftalik' | 'aylik' | 'secili';
+export type YorumKapsami = 'portfoy' | 'varlik';
+
+/// Seçili dönem kodları (uygulamanın `SummaryPeriod` etiketleri; GÜNLÜK yok:
+/// gün içi seri saatler içinde değişir, günlük kayıt onu bayat gösterirdi).
+/// Değer: takvimde kaç ay geri (1H: null → 7 gün).
+export const SECILI_DONEMLER: Record<string, number | null> = {
+  '1H': null,
+  '1A': 1,
+  '3A': 3,
+  '6A': 6,
+  '1Y': 12,
+  '5Y': 60,
+};
 
 export type YorumOlcumu = {
   anahtar: string;
@@ -42,6 +64,15 @@ export type YorumPaketi = {
   bitis: string;
   parmak_izi: string;
   olcumler: YorumOlcumu[];
+  /// Varsayılan 'portfoy' (eski istemciler alanı göndermez).
+  kapsam?: YorumKapsami;
+  /// Yalnız tur 'secili'.
+  donem_kodu?: string;
+  /// Yalnız kapsam 'varlik': pozisyon anahtarının özeti.
+  varlik_izi?: string;
+  /// Yalnız kapsam 'varlik': modelin varlığı adıyla anabilmesi için. Tutar
+  /// izi taşıyorsa düşürülür (model "bu varlık" der).
+  varlik_adi?: string;
 };
 
 export type Dogrulama = { gecti: true; paket: YorumPaketi } | { gecti: false; neden: string };
@@ -67,8 +98,26 @@ export function sonKapaliAy(bugunIso: string): { baslangic: string; bitis: strin
   return { baslangic: bas, bitis: bit };
 }
 
-export function beklenenDonem(tur: YorumTuru, bugunIso: string) {
+export function beklenenDonem(tur: 'haftalik' | 'aylik', bugunIso: string) {
   return tur === 'haftalik' ? sonKapaliHafta(bugunIso) : sonKapaliAy(bugunIso);
+}
+
+/// Seçili dönemin başlangıcı — uygulamanın `PeriodSummaryService.pencere`
+/// kuralı: 1H = 7 gün geri, diğerleri takvimde N ay geri (ayın günü yoksa
+/// ayın son günü; 31 Mart − 1 ay = 28/29 Şubat).
+export function seciliBaslangic(kod: string, bitisIso: string): string | null {
+  if (!(kod in SECILI_DONEMLER)) return null;
+  const ayGeri = SECILI_DONEMLER[kod];
+  if (ayGeri === null) return gunEkle(bitisIso, -7);
+  const [y, a, g] = bitisIso.split('-').map(Number);
+  let yil = y;
+  let ay = a - ayGeri;
+  while (ay <= 0) {
+    ay += 12;
+    yil -= 1;
+  }
+  const sonGun = new Date(Date.UTC(yil, ay, 0)).getUTCDate();
+  return `${yil}-${String(ay).padStart(2, '0')}-${String(Math.min(g, sonGun)).padStart(2, '0')}`;
 }
 
 // ── Paket denetimi ──────────────────────────────────────────────────────────
@@ -76,6 +125,7 @@ export function beklenenDonem(tur: YorumTuru, bugunIso: string) {
 const ANAHTAR = /^[a-z][a-z0-9_]{0,39}$/;
 const ISO_GUN = /^\d{4}-\d{2}-\d{2}$/;
 const PARMAK_IZI = /^[A-Za-z0-9:_.,|=-]{1,128}$/;
+const VARLIK_IZI = /^v1:[a-f0-9]{24}$/;
 
 /// İzinli gösterim biçimleri — `fmtPct` / `fmtPctIsaretli` (1–2 ondalık),
 /// puan, gün ve küçük adet. Tutar biçimi ('₺3,32Mr', '1.234,56') yok.
@@ -96,14 +146,43 @@ export const OLCUM_UST_SINIRI = 30;
 export function paketiDogrula(govde: unknown, bugunIso: string): Dogrulama {
   const g = govde as Partial<YorumPaketi> | null;
   if (!g || typeof g !== 'object') return { gecti: false, neden: 'govde' };
-  if (g.tur !== 'haftalik' && g.tur !== 'aylik') return { gecti: false, neden: 'tur' };
+  if (g.tur !== 'haftalik' && g.tur !== 'aylik' && g.tur !== 'secili') {
+    return { gecti: false, neden: 'tur' };
+  }
   if (typeof g.baslangic !== 'string' || typeof g.bitis !== 'string' ||
       !ISO_GUN.test(g.baslangic) || !ISO_GUN.test(g.bitis)) {
     return { gecti: false, neden: 'donem' };
   }
-  const beklenen = beklenenDonem(g.tur, bugunIso);
-  if (g.baslangic !== beklenen.baslangic || g.bitis !== beklenen.bitis) {
-    return { gecti: false, neden: 'donem' };
+  const kapsam = g.kapsam ?? 'portfoy';
+  if (kapsam !== 'portfoy' && kapsam !== 'varlik') return { gecti: false, neden: 'kapsam' };
+  let donemKodu: string | undefined;
+  if (g.tur === 'secili') {
+    // Bitiş bugün; telefonun saat dilimi TR'den bir gün sapabilir.
+    const gunler = [gunEkle(bugunIso, -1), bugunIso, gunEkle(bugunIso, 1)];
+    if (typeof g.donem_kodu !== 'string' || !gunler.includes(g.bitis) ||
+        seciliBaslangic(g.donem_kodu, g.bitis) !== g.baslangic) {
+      return { gecti: false, neden: 'donem' };
+    }
+    donemKodu = g.donem_kodu;
+  } else {
+    // Kapanmış dönem yalnız portföy kartında (0145 sözleşmesi).
+    if (kapsam !== 'portfoy' || g.donem_kodu !== undefined) return { gecti: false, neden: 'kapsam' };
+    const beklenen = beklenenDonem(g.tur, bugunIso);
+    if (g.baslangic !== beklenen.baslangic || g.bitis !== beklenen.bitis) {
+      return { gecti: false, neden: 'donem' };
+    }
+  }
+  let varlikIzi: string | undefined;
+  let varlikAdi: string | undefined;
+  if (kapsam === 'varlik') {
+    if (typeof g.varlik_izi !== 'string' || !VARLIK_IZI.test(g.varlik_izi)) {
+      return { gecti: false, neden: 'varlik_izi' };
+    }
+    varlikIzi = g.varlik_izi;
+    const ad = typeof g.varlik_adi === 'string' ? g.varlik_adi.trim() : '';
+    if (ad.length >= 2 && ad.length <= 60 && !TUTAR_IZI.test(ad)) varlikAdi = ad;
+  } else if (g.varlik_izi !== undefined || g.varlik_adi !== undefined) {
+    return { gecti: false, neden: 'kapsam' };
   }
   if (typeof g.parmak_izi !== 'string' || !PARMAK_IZI.test(g.parmak_izi)) {
     return { gecti: false, neden: 'parmak_izi' };
@@ -126,10 +205,13 @@ export function paketiDogrula(govde: unknown, bugunIso: string): Dogrulama {
     if (TUTAR_IZI.test(ad) || /[₺$€£]/u.test(x.gosterim)) return { gecti: false, neden: 'tutar' };
     olcumler.push({ anahtar: x.anahtar, ad, gosterim: x.gosterim });
   }
-  return {
-    gecti: true,
-    paket: { tur: g.tur, baslangic: g.baslangic, bitis: g.bitis, parmak_izi: g.parmak_izi, olcumler },
+  const paket: YorumPaketi = {
+    tur: g.tur, baslangic: g.baslangic, bitis: g.bitis, parmak_izi: g.parmak_izi, olcumler, kapsam,
   };
+  if (donemKodu) paket.donem_kodu = donemKodu;
+  if (varlikIzi) paket.varlik_izi = varlikIzi;
+  if (varlikAdi) paket.varlik_adi = varlikAdi;
+  return { gecti: true, paket };
 }
 
 // ── İstek ───────────────────────────────────────────────────────────────────
@@ -139,43 +221,98 @@ export function paketiDogrula(govde: unknown, bugunIso: string): Dogrulama {
 /// "asıl hikâye"yi bulmalı → Sonnet 5.5. Bayrak açılmadan önce 30 örnekle
 /// yan yana karşılaştırılır; Haiku'nun ret oranı %10'u geçerse haftalık da
 /// Sonnet'e alınır (tek satır).
+///
+/// Seçili dönem (0151): Sonnet 5.5. Paket enflasyon, dolar, altın, BIST 100
+/// kıyası, oynaklık gibi birbirine bağlanması gereken ölçümler taşır ve
+/// yasin'in istediği "ekonomist" anlatımı bu bağları kurmaktır; dar, kalıplı
+/// iş değil. İstek kullanıcı basınca gider ve gün boyu saklanır.
 export const MODEL: Record<YorumTuru, string> = {
   haftalik: 'claude-haiku-5-5',
   aylik: 'claude-sonnet-5-5',
+  secili: 'claude-sonnet-5-5',
 };
 export const TAVAN_MODELI = 'claude-haiku-5-5';
 
 /// Sabit sistem talimatı — önbelleğe alınır; değişirse her istek tam fiyat.
-export const SISTEM_TALIMATI = `Sen sandık adlı bir portföy takip uygulamasında, kullanıcının KENDİ portföyünün geçmiş bir dönemini anlatan kısa yorumlar yazan bir editörsün.
+///
+/// Üslup (yasin, 14 Eki: "daha ekonomist gibi"): rakamı tekrar eden bir
+/// özet değil, rakamları birbirine bağlayan bir piyasa notu — getiriyi
+/// enflasyonla (reel getiri), dolar/altın/BIST 100 ile (fırsat maliyeti),
+/// oynaklık ve geri çekilmeyle (yol), yoğunlaşmayla (kaynak) okur. Kişiye
+/// özel danışmanlık sınırı değişmedi: öneri, gelecek, değer yargısı yok;
+/// kapı (`kapidanGecir`) aynı.
+export const SISTEM_TALIMATI = `Sen sandık adlı bir portföy takip uygulamasında yorum yazan bir ekonomistsin. Kullanıcının KENDİ portföyünün ya da portföyündeki tek bir varlığın geçmiş bir dönemini, bir ekonomistin piyasa notu gibi anlatırsın.
 
-Görev: Sana bir portföyün kapanmış bir dönemine (bir hafta ya da bir ay) ait ÖLÇÜMLER verilecek. Bu ölçümlere dayanarak o dönemde portföyde ne olduğunu betimle: getirinin nereden geldiği, ağırlığın nerede olduğu, dönem içindeki en büyük geri çekilme gibi.
+Görev: Sana bir dönemin ÖLÇÜMLERİ verilecek. Kapsam "portföy" ise bütün portföyü, "varlık" ise tek bir varlığı anlatırsın. Ölçümleri tek tek sıralama; aralarındaki ilişkiyi kur ve ne anlama geldiğini açıkla:
+- Nominal getiri ile enflasyonu birlikte oku: reel getiri ölçümü varsa alım gücünün korunup korunmadığını onunla anlat.
+- Dolar, altın ve BIST 100 ölçümleri varsa aynı dönemde paranın başka yerde ne yapacağını (fırsat maliyeti) karşılaştır; fark ölçümü varsa onu kullan.
+- Getirinin kaynağını anlat: hangi varlık ya da tür taşıdı, ağırlık nerede toplandı.
+- Getirinin yolunu anlat: oynaklık, en derin geri çekilme, toparlanma süresi, dönem zirvesine ve dibine uzaklık.
+- Varlık kapsamında varlığın portföy içindeki payını ve alımdan bu yana getirisini dönemin hareketiyle ilişkilendir.
+Ekonomik kavramları (reel getiri, fırsat maliyeti, yoğunlaşma, oynaklık, geri çekilme) kullan ama her birini cümlenin içinde sade Türkçeyle anlat; okurun finans bilgisi az olabilir.
 
 Kesin kurallar:
-1. Yalnız verilen ölçümleri kullan. Metne yazdığın her sayı, bir ölçümün "gosterim" ya da "ad" alanında AYNEN geçmeli. Hesap yapma, yuvarlama, toplama, iki sayıyı karşılaştırıp yeni sayı türetme.
+1. Yalnız verilen ölçümleri kullan. Metne yazdığın her sayı, bir ölçümün "gosterim" ya da "ad" alanında AYNEN geçmeli. Hesap yapma, yuvarlama, toplama, iki sayıyı karşılaştırıp yeni sayı türetme. "Daha yüksek", "gerisinde", "önünde" gibi sözlerle karşılaştırabilirsin; aradaki farkı yalnız bir fark ölçümü varsa yaz.
 2. Yalnız geçmişi anlat. Tahmin, beklenti, "devam edebilir", "önümüzdeki dönemde" gibi gelecek dili yok.
 3. Hiçbir şey önerme ve yönlendirme. "azalt", "artır", "çeşitlendir", "dengele", "ağırlık ver", "yeniden dağıt", "al", "sat", "tut", "ekle", "çık" yok. "-meli/-malı", "önerilir", "mantıklı olur", "düşünebilir", "gerekir" gibi kipler yok.
-4. Değer yargısı yok: portföyü ya da bir varlığı "riskli", "güvenli", "iyi", "kötü", "agresif", "dengeli", "başarılı" diye niteleme. Oranı yaz, yorumu okura bırak.
+4. Değer yargısı yok: portföyü ya da bir varlığı "riskli", "güvenli", "iyi", "kötü", "agresif", "dengeli", "başarılı" diye niteleme. Ölçümü ve anlamını yaz, hükmü okura bırak.
 5. Kullanıcıya "portföyün" diye ikinci tekil şahısla seslen; sade Türkçe; ünlem ve emoji yok. "Yatırım tavsiyesi değildir" yazma; uygulama kendisi ekler.
-6. Dönem sakinse kısa yaz: başlık + 1–2 madde yeter.
+6. Dönem sakinse kısa yaz: başlık + 1–2 madde yeter. Ölçüm çoksa en anlamlı ilişkileri seç; hepsini sığdırmaya çalışma.
 
-Çıktı: "baslik" tek cümle (en çok 140 karakter), dönemin en önemli gözlemi. "maddeler" en az 1, en çok 4; her madde tek cümle (en çok 220 karakter) ve "kanit" alanında dayandığı ölçümlerin "anahtar" değerleri.`;
+Çıktı: "baslik" tek cümle (en çok 140 karakter), dönemin ana fikri. "maddeler" en az 1, en çok 4; her madde tek ya da iki cümle (en çok 280 karakter) ve "kanit" alanında dayandığı ölçümlerin "anahtar" değerleri.`;
+
+const DONEM_ADI: Record<string, string> = {
+  '1H': 'son 1 hafta',
+  '1A': 'son 1 ay',
+  '3A': 'son 3 ay',
+  '6A': 'son 6 ay',
+  '1Y': 'son 1 yıl',
+  '5Y': 'son 5 yıl',
+};
 
 export function kullaniciMesaji(p: YorumPaketi): string {
-  const donem = p.tur === 'haftalik' ? 'hafta' : 'ay';
+  const donem = p.tur === 'haftalik'
+    ? 'kapanmış hafta'
+    : p.tur === 'aylik'
+    ? 'kapanmış ay'
+    : DONEM_ADI[p.donem_kodu ?? ''] ?? 'seçili dönem';
+  const kapsam = p.kapsam === 'varlik'
+    ? `varlık${p.varlik_adi ? ` (${p.varlik_adi})` : ''}`
+    : 'portföy';
   return [
+    `Kapsam: ${kapsam}`,
     `Dönem (${donem}): ${gunAy(p.baslangic)} – ${gunAy(p.bitis)}`,
     'Ölçümler:',
     JSON.stringify(p.olcumler.map(({ anahtar, ad, gosterim }) => ({ anahtar, ad, gosterim })), null, 1),
   ].join('\n');
 }
 
+/// `NOT_SEMASI` (varlık notu) ile aynı yapı; yalnız madde açıklaması
+/// talimattaki uzunlukla (iki cümle, 280) uyumlu.
+export const YORUM_SEMASI = {
+  ...NOT_SEMASI,
+  properties: {
+    ...NOT_SEMASI.properties,
+    maddeler: {
+      ...NOT_SEMASI.properties.maddeler,
+      items: {
+        ...NOT_SEMASI.properties.maddeler.items,
+        properties: {
+          ...NOT_SEMASI.properties.maddeler.items.properties,
+          metin: { type: 'string', description: 'Bir ya da iki cümle, en çok 280 karakter.' },
+        },
+      },
+    },
+  },
+} as const;
+
 export function istekGovdesi(p: YorumPaketi, model: string): Record<string, unknown> {
   return {
     model,
-    max_tokens: 4000,
+    max_tokens: p.tur === 'secili' ? 8000 : 4000,
     system: [{ type: 'text', text: SISTEM_TALIMATI, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: kullaniciMesaji(p) }],
-    output_config: { format: { type: 'json_schema', schema: NOT_SEMASI }, effort: 'low' },
+    output_config: { format: { type: 'json_schema', schema: YORUM_SEMASI }, effort: p.tur === 'secili' ? 'medium' : 'low' },
   };
 }
 
@@ -207,7 +344,7 @@ export function kapidanGecir(n: unknown, p: YorumPaketi): KapiSonucu {
   const anahtarlar = new Set(p.olcumler.map((o) => o.anahtar));
   const maddeler: YorumMaddesi[] = [];
   for (const m of y.maddeler) {
-    if (typeof m?.metin !== 'string' || m.metin.trim().length < 5 || m.metin.length > 300) {
+    if (typeof m?.metin !== 'string' || m.metin.trim().length < 5 || m.metin.length > 400) {
       return { gecti: false, neden: 'yapi: madde metni' };
     }
     if (!Array.isArray(m.kanit) || m.kanit.some((k) => !anahtarlar.has(k))) {
@@ -222,6 +359,7 @@ export function kapidanGecir(n: unknown, p: YorumPaketi): KapiSonucu {
     sayilar(o.ad).forEach((s) => izinli.add(s));
   }
   for (const t of [p.baslangic, p.bitis]) sayilar(gunAy(t)).forEach((s) => izinli.add(s));
+  if (p.varlik_adi) sayilar(p.varlik_adi).forEach((s) => izinli.add(s));
 
   for (const metin of [baslik, ...maddeler.map((m) => m.metin)]) {
     for (const s of sayilar(metin)) {
@@ -237,10 +375,16 @@ export function kapidanGecir(n: unknown, p: YorumPaketi): KapiSonucu {
 // ── Saklama ─────────────────────────────────────────────────────────────────
 
 /// Son 4 hafta + 12 ay (Supabase Free 500 MB): bu günden ÖNCE başlayan
-/// dönemlerin satırları silinir.
-export function saklamaSiniri(tur: YorumTuru, baslangic: string): string {
+/// dönemlerin satırları silinir. Seçili dönem yorumları ([seciliSaklamaSiniri])
+/// bitiş gününe göre 7 gün tutulur: her gün yeni pencere, eskisi bayat.
+export function saklamaSiniri(tur: 'haftalik' | 'aylik', baslangic: string): string {
   if (tur === 'haftalik') return gunEkle(baslangic, -21);
   const [y, a] = baslangic.split('-').map(Number);
   const toplam = y * 12 + (a - 1) - 11;
   return `${Math.floor(toplam / 12)}-${String((toplam % 12) + 1).padStart(2, '0')}-01`;
+}
+
+/// Bu günden ÖNCE biten seçili dönem yorumları silinir (son 7 gün kalır).
+export function seciliSaklamaSiniri(bugunIso: string): string {
+  return gunEkle(bugunIso, -6);
 }

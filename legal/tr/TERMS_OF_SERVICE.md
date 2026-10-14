@@ -2,7 +2,7 @@
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 14 Ekim 2026
-**Sürüm:** 1.9
+**Sürüm:** 1.10
 **Onay sürümü:** 1.6
 
 ---
@@ -41,7 +41,7 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 
 **Piyasa hareketi ve varlık notları:** Uygulama, kamuya açık piyasa verisinden fonlara giren ve çıkan parayı (para akışı), hisselerde olağandışı işlem hacmini (hacim radarı) ve kriptoda alıcı baskısını gösterir. Portföyündeki varlıklar için haftalık varlık notları ve aylık rapor, yapay zekâ ile otomatik hazırlanır (ayrıntı: Gizlilik Politikası §5.3). Notların tamamı ve aylık rapor Premium üyelere açık olabilir; ücretsiz katmanda notun ilk cümlesi gösterilir.
 
-**Yapay zekâ portföy yorumu:** İsterseniz Performans › Özet'te geçen haftanızı ya da geçen ayınızı kendi verinizle anlatan kısa bir yorum yazdırabilirsiniz. Yorum yapay zekâ ile otomatik yazılır, yalnızca geçmişi anlatır; al, sat ya da tut önerisi içermez. Özellik isteğe bağlıdır, ilk kullanımda ayrıca açık rızanız istenir (ayrıntı: Gizlilik Politikası §5.5) ve Premium içeriktir.
+**Yapay zekâ portföy yorumu:** İsterseniz portföyünüzün (Performans › Özet) ya da bir varlığınızın (varlık detayı) seçtiğiniz dönemini, geçen haftanızı ya da geçen ayınızı kendi verinizle anlatan kısa bir yorum yazdırabilirsiniz. Yorum yapay zekâ ile otomatik yazılır, yalnızca geçmişi anlatır; al, sat ya da tut önerisi içermez. Özellik isteğe bağlıdır, ilk kullanımda ayrıca açık rızanız istenir (ayrıntı: Gizlilik Politikası §5.5) ve Premium içeriktir.
 
 ---
 
@@ -77,7 +77,7 @@ Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 - Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler **yalnızca bilgilendirme** amaçlıdır.
 - Hiçbir içerik **yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık** niteliği taşımaz.
 - Piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı) ve **yapay zekâ ile hazırlanan varlık notları** geçmiş piyasa verisini anlatır, geleceği öngörmez. Notlar otomatik üretilir ve bir insan tarafından tek tek kontrol edilmez; sayılar kaynak veriyle otomatik karşılaştırılsa da hata içerebilir. Bir notu yatırım kararının tek dayanağı yapmayınız.
-- **Yapay zekâ portföy yorumu** kişiye özel bir yatırım tavsiyesi değildir: yalnızca geçmiş dönemde portföyünüzde ne olduğunu anlatır, portföyünüzün uygunluğunu değerlendirmez ve bir işlem önermez. Yorum otomatik üretilir, bir insan tarafından kontrol edilmez ve hata içerebilir.
+- **Yapay zekâ portföy yorumu** kişiye özel bir yatırım tavsiyesi değildir: yalnızca geçmiş dönemde portföyünüzde ya da bir varlığınızda ne olduğunu anlatır, portföyünüzün uygunluğunu değerlendirmez ve bir işlem önermez. Yorum otomatik üretilir, bir insan tarafından kontrol edilmez ve hata içerebilir.
 - Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf piyasa verisi sağlayıcılarının verileri olduğu gibi sunulur.
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.

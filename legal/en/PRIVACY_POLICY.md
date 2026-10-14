@@ -2,9 +2,9 @@
 
 **Effective date:** October 8, 2026
 **Last updated:** October 14, 2026
-**Version:** 1.11
+**Version:** 1.12
 **Consent version:** 1.8
-**Source:** TR 1.11 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.12 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -49,7 +49,7 @@ The policy is prepared to meet the requirements of KVKK (Turkish Personal Data P
 | Period return (%) and asset-type shares (%) — computed daily on the server | Race (optional; your percentile and comparison with your partner) |
 | Partnership invite codes and mutual links | Multi-user sharing feature |
 | Your feedback on asset notes (optional): the note's asset and period, a "helpful / not helpful" vote, a "wrong number" flag, an explanation of up to 500 characters | Measuring note quality, finding and correcting faulty notes (see §5.3) |
-| AI portfolio comment (optional; only if you give explicit consent and ask for a comment): the return and drawdown percentages of a closed week or month, your assets' names or symbols and their shares of the portfolio (%), the written comment | The comment describing last week or last month in Performance › Summary (see §5.5) |
+| AI portfolio comment (optional; only if you give explicit consent and ask for a comment): the return, drawdown and volatility percentages of the period commented on, your assets' names or symbols and their shares of the portfolio (%), inflation and market comparisons for the same period (dollar, gold, BIST 100), the written comment | The comment describing the period you select in Performance › Summary and on the asset detail page, last week or last month (see §5.5) |
 | Consent records of AI features (portfolio comment, reading a statement with AI): when consent was given and withdrawn, version of the text shown to you | Proving consent and rejecting requests without consent on the server |
 | Premium entitlement: its source (gift, store subscription or support), start and end time, store and product name, whether renewal was turned off | Verifying access to Premium content on the server. Payment and card details never reach us; Apple or Google collects the payment |
 
@@ -113,7 +113,7 @@ Card number, billing address and payment method **never reach us**: your device'
 10. Race: if you join, calculating your period return and showing your percentile and comparison with your partner
 11. Premium: verifying the subscription you bought and recognising your right to access Premium content
 12. Using your feedback on asset notes to measure and improve their accuracy
-13. AI portfolio comment: when you ask, writing a comment that describes a past week or month with your own data (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)
+13. AI portfolio comment: when you ask, writing a comment that describes the period you select for your portfolio or one of your assets, last week or last month, with your own data (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)
 14. Reading a statement with AI: when you ask, finding the columns of the tables in a statement (KVKK 5(1) — explicit consent; optional, given in the App the first time you use the feature)
 
 ---
@@ -134,7 +134,7 @@ Card number, billing address and payment method **never reach us**: your device'
 | Price and market data | Public market-data providers: exchanges, banks, fund platforms, official institutions (e.g. CBRT) and exchange-rate and price data services | No personal data is sent; only the asset's symbol, fund code or ISIN is queried. For requests sent from the device, the provider sees the device's IP address as with any internet request; some sources are contacted only from our server | Fetching prices and price history | Global |
 | Writing asset notes (AI) | Anthropic PBC | No personal data is sent; only the asset's symbol and market metrics (price, trading volume, fund size, money flow and investor count) | Weekly asset note and monthly report text (see §5.3) | USA |
 | Statement column mapping (AI; only if you ask) | Anthropic PBC | An anonymous skeleton of the statement's tables (column headings and generic finance words; names, numbers, amounts and dates masked) or, if you gave explicit consent, the words in the tables (column and asset names; all digits and labelled name, address and email masked) | Finding which column is the symbol, quantity, price (see §5.4) | USA |
-| Portfolio comment (AI; only if you give explicit consent and ask for a comment) | Anthropic PBC | Return and drawdown percentages of the closed period, your assets' names or symbols and their shares of the portfolio (%); amounts, quantities, your name, email and account number are not sent | Writing the comment describing the past week or month (see §5.5) | USA |
+| Portfolio comment (AI; only if you give explicit consent and ask for a comment) | Anthropic PBC | Return, drawdown and volatility percentages of the period commented on, your assets' names or symbols and their shares of the portfolio (%), inflation and market comparisons for the same period; amounts, quantities, your name, email and account number are not sent | Writing the comment describing a past period of your portfolio or one of your assets (see §5.5) | USA |
 
 **These providers act solely as data processors, on our instructions. We remain the data controller.** Apple and Google, which collect the Premium payment, are independent controllers for your payment details.
 
@@ -170,11 +170,11 @@ The skeleton, the text sent and the model's answer are not stored. To limit abus
 
 ### 5.5 Portfolio Comment with AI
 
-In Performance › Summary you can ask for a short comment describing last week or last month. This feature is optional and Premium content. The first time you use it the App asks for your explicit consent on a separate card; if you do not consent, nothing is sent.
+You can ask for a short comment describing the period you select (from the last week to the last 5 years): for your portfolio in Performance › Summary, and for that asset on the asset detail page; in Performance › Summary last week and last month can also be commented on. This feature is optional and Premium content. The first time you use it the App asks for your explicit consent on a separate card; if you do not consent, nothing is sent.
 
-If you consent and tap "Comment on this period", your device calculates the metrics of the closed period: return and drawdown percentages, your assets' names or symbols and their shares of the portfolio (%). These metrics are sent via our server to Anthropic's AI model (Claude). Amounts, quantities, your name, email, username and account number are not sent; our server rejects a request containing a currency or a four-digit number before it reaches the model.
+If you consent and tap "Comment on this period", your device calculates the metrics of the period commented on: return, drawdown and volatility percentages, your assets' names or symbols and their shares of the portfolio (%); together with public market comparisons such as inflation (CPI) and the percentage change of the dollar, gold and BIST 100 in the same period. These metrics are sent via our server to Anthropic's AI model (Claude). Amounts, quantities, your name, email, username and account number are not sent; our server rejects a request containing a currency or a four-digit number before it reaches the model.
 
-Once written, the comment is saved and read from the database for the rest of the period; opening it again sends no request to the model. The metrics sent with it, the model used and its cost are also stored. Only you can see your comment. Retention: the comments of the last 4 weeks and the last 12 months for each user; older ones are deleted automatically.
+Once written, the comment is saved and read from the database when you open it again, without a request to the model: the last week and last month comments for the rest of the period, the selected period comment for the day it was written. The metrics sent with it, the model used and its cost are also stored; for an asset comment, an irreversible digest of the asset key is stored instead of the asset itself. Only you can see your comment. Retention: for each user, the last 4 weeks and the last 12 months of last week/last month comments and the last 7 days of selected period comments; older ones are deleted automatically.
 
 The comment describes the past; it contains no buy, sell or hold suggestion and is not investment advice. Comments are generated automatically and checked automatically before they are shown (numbers are compared with the metrics sent; a comment with directive or forward-looking language is not shown); no human reads them one by one and they may contain errors.
 
@@ -207,7 +207,7 @@ The destination countries (Supabase: {SUPABASE_ULKE}; Firebase and RevenueCat: U
 | Premium entitlement and subscription records | Until account deletion; deleted immediately when you delete your account. At the same time RevenueCat is asked to delete your subscriber record; payment and invoice records stay with Apple or Google for their own periods. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play |
 | Statement column mapping request records (time, model and cost only; the skeleton, the text sent and the answer are not stored) | 40 days |
 | Statement bank templates (one-way trace of the header row and column numbers; not linked to any user) | As long as the institution's table layout is in use; a template found to be wrong is not used |
-| AI portfolio comments (comment, metrics sent, model and cost) | The last 4 weeks and the last 12 months for each user; immediately when consent is withdrawn or the account is deleted |
+| AI portfolio comments (comment, metrics sent, model and cost) | For each user, the last 4 weeks and the last 12 months of last week/last month comments and the last 7 days of selected period comments; immediately when consent is withdrawn or the account is deleted |
 | Consent records of AI features | Until the account is deleted (the withdrawal time is also recorded) |
 | Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer) | **3 years** after account deletion (Turkish Code of Obligations Art. 146 limitation period) |
 | Push token | Deleted on sign-out; if the App is uninstalled, found invalid and deleted at the next send |

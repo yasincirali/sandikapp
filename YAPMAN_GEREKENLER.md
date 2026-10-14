@@ -96,14 +96,19 @@ yeniden onay kapısı açılmaz. Tasarım: https://claude.ai/artifact/DMeJXyFCGt
       alındığı için (13 Ekim istisnası) yalnız "Sürüm" arttı, "Onay sürümü" ve Açık Rıza
       Metni aynı; kimseye yeniden onay ekranı çıkmaz. `portfoyYorumRizaSurumu` = `2026-10-14`.
       Migration 0149 iki sunucuya gidince tamam.
-- [ ] **30 örnek karşılaştırması:** haftalıkta Haiku 5.5, aylıkta Sonnet 5.5. Haiku'nun red
-      oranı %10'u geçerse haftalık da Sonnet'e geçer (`_shared/portfoy_yorum.ts` › `MODEL`).
-      Betik ve iş hazır (`tool/portfoy_yorum_karsilastir.ts`, Actions › "Portföy yorumu model
-      karşılaştırması"). Bulutta Anthropic anahtarı yok; **senden:** GitHub › Settings ›
-      Secrets and variables › Actions › `ANTHROPIC_API_KEY` (Supabase'dekiyle aynı anahtar
-      olabilir; ~0,10 $ harcar). Ekleyince "koş" de, Claude çalıştırıp sonucu uygular.
+- [x] **30 örnek karşılaştırması → gerçek kullanımdan ölçüm (2026-10-14).** Ayrı test
+      koşulmuyor, GitHub'a anahtar eklenmiyor. TestFlight'ta birkaç hafta sonra Haiku'nun red
+      oranı `portfoy_yorumlari`'ndan (salt okunur SQL) ölçülür; %10'u geçerse haftalık
+      Sonnet'e geçer (`_shared/portfoy_yorum.ts` › `MODEL`).
+- [ ] **Seçili dönem + varlık detayı + ekonomist üslubu (2026-10-14, 0151 + 0152).** Kartın ilk
+      sekmesi Performans'ın seçili dönemi (1H…5Y), varlık detayında da aynı kart; yorum
+      enflasyon, dolar, altın, BIST 100 kıyası ve oynaklıkla yazılır (Sonnet 5.5). Yorum gün
+      başına saklanır, 7 gün tutulur. Günlük hak varsayılanı 3 → 10. Yasal metin Gizlilik/KVKK
+      1.12, Koşullar 1.10 (yalnız "Sürüm"). **Sıra:** birleşince Supabase deploy (hedef
+      `ikisi`, migrations **ve** fonksiyon `portfoy-yorumla` birlikte; önce 0151 sonra
+      fonksiyon). Fonksiyon 0151'siz giderse yeni kolonlara yazamaz; eski build'ler etkilenmez.
 - [ ] Supabase › Edge Functions › Secrets (iki proje): `PORTFOY_YORUM_ACIK=1`.
-      İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 3), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
+      İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 10; 0151'e kadar 3), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
       (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur).
 - [ ] Firebase Remote Config: `portfoy_ai_yorumu` (Boolean, varsayılan `false`) → önce
       TestFlight koşulunda `true`. Kart yalnız Premium görünürken (`paywall_enabled` ya da admin) çıkar.

@@ -2,9 +2,9 @@
 
 **Effective date:** October 8, 2026
 **Last updated:** October 14, 2026
-**Version:** 1.9
+**Version:** 1.10
 **Consent version:** 1.6
-**Source:** TR 1.9 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.10 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -42,7 +42,7 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 
 **Market movement and asset notes:** From public market data, the App shows money flowing into and out of funds (money flow), unusual trading volume in equities (volume radar) and buyer pressure in crypto. Weekly asset notes and a monthly report for the assets in your portfolio are prepared automatically with AI (details: Privacy Policy §5.3). Full notes and the monthly report may be available to Premium members; the free tier shows the first sentence of a note.
 
-**AI portfolio comment:** If you wish, you can have a short comment written in Performance › Summary that describes your last week or last month with your own data. The comment is written automatically with AI and only describes the past; it contains no buy, sell or hold suggestion. The feature is optional, your explicit consent is asked separately the first time you use it (details: Privacy Policy §5.5) and it is Premium content.
+**AI portfolio comment:** If you wish, you can have a short comment written that describes, with your own data, the period you select for your portfolio (Performance › Summary) or for one of your assets (asset detail page), or your last week or last month. The comment is written automatically with AI and only describes the past; it contains no buy, sell or hold suggestion. The feature is optional, your explicit consent is asked separately the first time you use it (details: Privacy Policy §5.5) and it is Premium content.
 
 ---
 
@@ -78,7 +78,7 @@ This section applies once Premium is offered for sale in the App.
 - Prices, performance figures, signals and charts shown in the App are **for information only**.
 - No content constitutes **investment advice, a buy/sell recommendation or financial consultancy**.
 - Market-movement metrics (money flow, volume radar, buyer pressure) and **AI-written asset notes** describe past market data and do not predict the future. Notes are generated automatically and are not checked one by one by a person; although numbers are compared with the source data automatically, they may contain errors. Do not make a note the sole basis of an investment decision.
-- The **AI portfolio comment** is not personalised investment advice: it only describes what happened in your portfolio in a past period, does not assess the suitability of your portfolio and does not suggest a transaction. It is generated automatically, is not checked by a person and may contain errors.
+- The **AI portfolio comment** is not personalised investment advice: it only describes what happened in your portfolio or one of your assets in a past period, does not assess the suitability of your portfolio and does not suggest a transaction. It is generated automatically, is not checked by a person and may contain errors.
 - We do not guarantee the accuracy, timeliness or completeness of data; data from third-party market-data providers is presented as is.
 - Make your investment decisions **after consulting an SPK-licensed brokerage or investment adviser**.
 - **The Company cannot be held liable for any profit or loss** arising from investment decisions you make based on data shown in the App.
