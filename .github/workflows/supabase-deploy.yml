@@ -63,6 +63,10 @@ on:
         description: "Function secret ADLARINI listele (değer değil) — 'X secret'ı girildi mi?' sorusu için"
         type: boolean
         default: false
+      karsilastir:
+        description: "Taşıma öncesi parmak izi: fonksiyon kod özetleri + Auth ayarları (değer değil, özet). Yazmaz"
+        type: boolean
+        default: false
       sql:
         description: "Salt okunur rapor sorgusu (Management API, tek SELECT). Vault DEĞERİ döndüren sorgu YAZMA — log'a düşer"
         type: string
@@ -204,6 +208,37 @@ jobs:
         run: |
           body=$(jq -n --arg q "$SQL" '{query: $q}')
           curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             -H "Content-Type: application/json"             -d "$body" | jq .
+
+      # Taşıma (docs/SUPABASE_FRANKFURT_TASIMA.md) öncesi "iki sunucu aynı
+      # mı?" sorusunun şemanın dışında kalan iki yarısı: dağıtılmış fonksiyon
+      # KODU ve Auth ayarları. Şema parmak izi (esitlik işi) bunları görmez.
+      # Repo herkese açık, log da açık: hiçbir DEĞER basılmaz. Fonksiyonda
+      # Supabase'in paket özeti (ezbr_sha256), Auth'ta her alanın sha256'sının
+      # ilk 12 hanesi — iki iş arasında satır satır karşılaştırılır.
+      # Mantıksal alanlar (sağlayıcı açık/kapalı) zaten sır değil, açık yazılır.
+      - name: Taşıma parmak izi (fonksiyon kodu + Auth ayarı, değersiz)
+        if: ${{ inputs.karsilastir }}
+        run: |
+          api="https://api.supabase.com/v1/projects/$PROJECT_REF"
+          h="Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+          echo "::group::fonksiyonlar (ad | durum | verify_jwt | kod özeti)"
+          curl -sS -f "$api/functions" -H "$h" \
+            | jq -r 'sort_by(.slug)[] | "\(.slug) | \(.status) | jwt=\(.verify_jwt) | \((.ezbr_sha256 // "-")[0:16])"'
+          echo "::endgroup::"
+          echo "::group::auth (alan = özet; mantıksal alanlar açık)"
+          curl -sS -f "$api/config/auth" -H "$h" \
+            | jq -r 'to_entries | sort_by(.key)[]
+                | select(.value != null and .value != "")
+                | if (.value|type) == "boolean" then "\(.key) = \(.value)"
+                  else "\(.key) = #\(.value|tojson)" end' \
+            | while IFS= read -r satir; do
+                case "$satir" in
+                  *" = #"*) k=${satir%% = #*}; v=${satir#* = #}
+                            printf '%s = %s\n' "$k" "$(printf '%s' "$v" | sha256sum | cut -c1-12)" ;;
+                  *) printf '%s\n' "$satir" ;;
+                esac
+              done
+          echo "::endgroup::"
 
       - name: Edge Function'lar
         if: ${{ inputs.functions != 'none' && !inputs.dry_run }}
