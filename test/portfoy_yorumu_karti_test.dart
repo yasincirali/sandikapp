@@ -34,6 +34,7 @@ PortfoyYorumu _yorum() => PortfoyYorumu(
       maddeler: const [
         (
           metin: 'Portföyünün %46,0\'sı tek varlıkta, Türk Hava Yolları\'nda duruyor.',
+          konu: null,
           kanit: ['en_buyuk_pay', 'getiri'],
         ),
       ],
@@ -94,6 +95,19 @@ void main() {
         expect(find.textContaining('değişti'), findsNothing);
         expect(find.textContaining('+%4,2', findRichText: true), findsWidgets);
         expect(find.textContaining('Yatırım tavsiyesi değildir'), findsOneWidget);
+        // Tamamını oku → açılır sayfa + PDF düğmesi (2026-10-14).
+        expect(find.text('Bu dönemi yorumla'), findsNothing);
+        await tester.ensureVisible(find.text('Tamamını oku'));
+        await tester.tap(find.text('Tamamını oku'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('PDF olarak paylaş'), findsOneWidget);
+      });
+
+      testWidgets('kayıt yok: tamamını oku yok ($en)', (tester) async {
+        await _pump(tester,
+            durum: PortfoyYorumDurumu(paket: _paket('v1:a'), kayit: null), en: en);
+        expect(find.text('Tamamını oku'), findsNothing);
       });
 
       testWidgets('portföy değişti: yeniden yorumla çıkar ($en)', (tester) async {

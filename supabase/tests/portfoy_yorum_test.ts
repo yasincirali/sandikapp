@@ -12,6 +12,7 @@ import { assert, assertEquals } from 'jsr:@std/assert@1';
 import {
   beklenenDonem,
   kapidanGecir,
+  konuGecerli,
   paketiDogrula,
   kullaniciMesaji,
   saklamaSiniri,
@@ -237,4 +238,25 @@ Deno.test('mesaj: kapsam ve dönem adı modele gider', () => {
 
 Deno.test('saklama: seçili dönem 7 gün', () => {
   assertEquals(seciliSaklamaSiniri('2026-10-14'), '2026-10-08');
+});
+
+Deno.test('konu: geçerli konu saklanır, kötüsü yalnız atılır', () => {
+  const p = paketiDogrula(paket(), BUGUN);
+  assert(p.gecti);
+  const k = kapidanGecir({
+    baslik: 'Portföyün geçen hafta +%4,2 kazandı.',
+    maddeler: [
+      { metin: 'Getiri +%4,2 oldu.', kanit: ['getiri'], konu: 'Alım gücü' },
+      { metin: 'En büyük pay %46,0 ile THYAO.', kanit: ['en_buyuk_pay'], konu: 'Pay 46' },
+      { metin: 'En derin düşüş −%6,8 oldu.', kanit: ['dusus'], konu: 'Riskli dönem' },
+    ],
+  }, p.gecti ? p.paket : (null as never));
+  assert(k.gecti, k.gecti ? '' : k.neden);
+  const m = k.gecti ? k.yorum.maddeler : [];
+  assertEquals(m[0].konu, 'Alım gücü');
+  assertEquals(m[1].konu, undefined); // rakam
+  assertEquals(m[2].konu, undefined); // değer yargısı
+  assertEquals(konuGecerli('  Kıyas '), 'Kıyas');
+  assertEquals(konuGecerli('x'.repeat(33)), undefined);
+  assertEquals(konuGecerli(7), undefined);
 });

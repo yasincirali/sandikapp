@@ -516,6 +516,10 @@ List<YorumOlcumu> ekonomiOlcumleri({
 }
 
 /// Saklanmış yorum (tablo satırı ya da fonksiyon yanıtı).
+/// Yorumun bir maddesi. [konu] 1–3 kelimelik başlık (2026-10-14; açılır
+/// sayfada ve PDF'te paragraf başı); eski kayıtlarda `null`.
+typedef YorumMaddesi = ({String metin, String? konu, List<String> kanit});
+
 class PortfoyYorumu {
   const PortfoyYorumu({
     required this.tur,
@@ -533,7 +537,7 @@ class PortfoyYorumu {
   final DateTime bitis;
   final String parmakIzi;
   final String baslik;
-  final List<({String metin, List<String> kanit})> maddeler;
+  final List<YorumMaddesi> maddeler;
   final List<YorumOlcumu> olcumler;
   final DateTime olusturuldu;
 
@@ -558,6 +562,9 @@ class PortfoyYorumu {
               if (x is Map && x['metin'] is String)
                 (
                   metin: x['metin'] as String,
+                  konu: x['konu'] is String && (x['konu'] as String).trim().isNotEmpty
+                      ? (x['konu'] as String).trim()
+                      : null,
                   kanit: [
                     if (x['kanit'] is List)
                       for (final k in x['kanit'] as List)

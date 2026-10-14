@@ -8797,6 +8797,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pyzGecenAy => 'Last month';
 
   @override
+  String get pyzTamaminiOku => 'Read in full';
+
+  @override
+  String get pyzNotPortfoy => 'Portfolio commentary';
+
+  @override
+  String get pyzNotVarlik => 'Asset commentary';
+
+  @override
+  String get pyzNotDegerlendirme => 'Assessment';
+
+  @override
+  String get pyzPdfPaylas => 'Share as PDF';
+
+  @override
+  String get pyzNotAlt => 'Written with AI · Not investment advice';
+
+  @override
   String pyzAciklama(String donem) {
     return 'Explains in a few points what happened in your portfolio during $donem, using your own data.';
   }

@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/position.dart';
-import 'package:portfoy_takip/services/fiyat_kaynagi.dart' show KiyasVarligi;
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/services/portfoy_yorumu_service.dart';

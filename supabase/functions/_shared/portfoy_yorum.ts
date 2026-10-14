@@ -259,7 +259,7 @@ Kesin kurallar:
 5. Kullanıcıya "portföyün" diye ikinci tekil şahısla seslen; sade Türkçe; ünlem ve emoji yok. "Yatırım tavsiyesi değildir" yazma; uygulama kendisi ekler.
 6. Dönem sakinse kısa yaz: başlık + 1–2 madde yeter. Ölçüm çoksa en anlamlı ilişkileri seç; hepsini sığdırmaya çalışma.
 
-Çıktı: "baslik" tek cümle (en çok 140 karakter), dönemin ana fikri. "maddeler" en az 1, en çok 4; her madde tek ya da iki cümle (en çok 280 karakter) ve "kanit" alanında dayandığı ölçümlerin "anahtar" değerleri.`;
+Çıktı: "baslik" tek cümle (en çok 140 karakter), dönemin ana fikri. "maddeler" en az 1, en çok 4; her madde tek ya da iki cümle (en çok 280 karakter), "konu" alanında maddenin 1–3 kelimelik rakamsız konusu (ör. "Alım gücü", "Kıyas", "Yoğunlaşma", "Geri çekilme") ve "kanit" alanında dayandığı ölçümlerin "anahtar" değerleri.`;
 
 const DONEM_ADI: Record<string, string> = {
   '1H': 'son 1 hafta',
@@ -300,7 +300,9 @@ export const YORUM_SEMASI = {
         properties: {
           ...NOT_SEMASI.properties.maddeler.items.properties,
           metin: { type: 'string', description: 'Bir ya da iki cümle, en çok 280 karakter.' },
+          konu: { type: 'string', description: 'Maddenin konusu, 1–3 kelime, rakamsız (ör. Alım gücü, Kıyas, Yoğunlaşma, Geri çekilme).' },
         },
+        required: ['metin', 'kanit', 'konu'],
       },
     },
   },
@@ -329,9 +331,22 @@ export const KISISEL_YASAK: RegExp[] = [
   /önümüzdeki|gelecek (hafta|ay|dönem)|devam edebilir|sürebilir/iu,
 ];
 
-export type YorumMaddesi = { metin: string; kanit: string[] };
+/// `konu` (2026-10-14, paylaşılabilir not): maddenin 1–3 kelimelik başlığı;
+/// açılır sayfada ve PDF'te paragraf başı olur. İsteğe bağlı: eski kayıtlarda
+/// yok, kapıdan geçemeyen konu yorumu düşürmez, yalnız atılır.
+export type YorumMaddesi = { metin: string; kanit: string[]; konu?: string };
 export type Yorum = { baslik: string; maddeler: YorumMaddesi[] };
 export type KapiSonucu = { gecti: true; yorum: Yorum } | { gecti: false; neden: string };
+
+/// Konu en çok 32 karakter, rakamsız ve yasak dilden arınmış olmalı; değilse
+/// `undefined` (madde konusuz gösterilir).
+export function konuGecerli(k: unknown): string | undefined {
+  if (typeof k !== 'string') return undefined;
+  const t = k.trim();
+  if (t.length < 2 || t.length > 32 || /\d/.test(t)) return undefined;
+  if ([...YASAK, ...KISISEL_YASAK].some((r) => r.test(t))) return undefined;
+  return t;
+}
 
 export function kapidanGecir(n: unknown, p: YorumPaketi): KapiSonucu {
   const y = n as Yorum;
@@ -350,7 +365,8 @@ export function kapidanGecir(n: unknown, p: YorumPaketi): KapiSonucu {
     if (!Array.isArray(m.kanit) || m.kanit.some((k) => !anahtarlar.has(k))) {
       return { gecti: false, neden: 'kanit: bilinmeyen olcum anahtari' };
     }
-    maddeler.push({ metin: m.metin.trim(), kanit: m.kanit });
+    const konu = konuGecerli((m as { konu?: unknown }).konu);
+    maddeler.push(konu ? { metin: m.metin.trim(), kanit: m.kanit, konu } : { metin: m.metin.trim(), kanit: m.kanit });
   }
 
   const izinli = new Set<string>();

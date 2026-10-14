@@ -458,6 +458,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         period: period,
         positionKey: anahtar,
         miktar: canli.asset.quantity,
+        varlikAdi: widget.asset.name,
         veriHazir: ist != null && donemPct != null,
         paketKur: () => PortfoyYorumuService.instance.varlikPaketHazirla(
           period: period,

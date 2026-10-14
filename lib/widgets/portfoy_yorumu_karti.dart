@@ -9,6 +9,7 @@ import '../services/period_summary_service.dart'
     show PeriodSummaryService, SummaryPeriod;
 import '../services/portfoy_yorumu_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/yorum_notu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart' show showSandikConfirm;
 import '../utils/tr_format.dart' show dayKey;
@@ -16,6 +17,7 @@ import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_async_button.dart';
 import 'sandik_segment.dart';
 import 'sandik_skeleton.dart';
+import 'yorum_notu_sayfasi.dart';
 
 /// Performans › Özet: kişiye özel AI portföy yorumu (0145, 2026-10-13).
 ///
@@ -203,6 +205,11 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
             eskidi: kayit != null && !d.guncel ? l.pyzEskidi : null,
             gunAy: gunAy,
             onYorumla: () => yorumIste(() async => d.paket, _yenile),
+            notu: kayit == null
+                ? null
+                : YorumNotu.kur(kayit,
+                    kapsam: YorumKapsami.portfoy,
+                    donemAdi: YorumNotu.donemAdiOf(tur, widget.secili?.label)),
           );
         },
       );
@@ -257,6 +264,7 @@ class VarlikYorumuKarti extends ConsumerStatefulWidget {
     required this.period,
     required this.positionKey,
     required this.miktar,
+    this.varlikAdi,
     required this.veriHazir,
     required this.paketKur,
   });
@@ -264,6 +272,10 @@ class VarlikYorumuKarti extends ConsumerStatefulWidget {
   final SummaryPeriod period;
   final String positionKey;
   final double miktar;
+
+  /// "Tamamını oku" sayfasının ve PDF'in başlığı; sunucuya ayrıca
+  /// [paketKur] içinde gider.
+  final String? varlikAdi;
 
   /// Dönem istatistiği ve yüzdesi yüklendi mi? Değilse düğme yerine
   /// "veri yok" yazar (uydurma paket gitmez).
@@ -324,6 +336,13 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
                     ? l.pyzVarlikEskidi
                     : null,
                 gunAy: gunAy,
+                notu: kayit == null
+                    ? null
+                    : YorumNotu.kur(kayit,
+                        kapsam: YorumKapsami.varlik,
+                        varlikAdi: widget.varlikAdi,
+                        donemAdi: YorumNotu.donemAdiOf(
+                            YorumTuru.secili, widget.period.label)),
                 onYorumla: () => yorumIste(widget.paketKur,
                     () => ref.invalidate(varlikYorumKaydiProvider(anahtar))),
               );
@@ -434,7 +453,11 @@ class _YorumGovdesi extends StatelessWidget {
     required this.eskidi,
     required this.gunAy,
     required this.onYorumla,
+    this.notu,
   });
+
+  /// "Tamamını oku" (açılır sayfa + PDF, 2026-10-14); kayıt yoksa `null`.
+  final YorumNotu? notu;
 
   final String aciklama;
   final PortfoyYorumu? kayit;
@@ -468,6 +491,19 @@ class _YorumGovdesi extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Yorum(yorum: k, gunAy: gunAy),
+        if (notu != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                minimumSize: SandikTouch.minSize,
+                padding: EdgeInsets.zero,
+              ),
+              onPressed: () => showYorumNotu(context, notu!),
+              icon: const Icon(Icons.article_outlined),
+              label: Text(l.pyzTamaminiOku),
+            ),
+          ),
         if (meta != null) ...[
           const SizedBox(height: SandikSpace.sm),
           Text(meta!, style: t.bodySmall?.copyWith(color: c.text36)),

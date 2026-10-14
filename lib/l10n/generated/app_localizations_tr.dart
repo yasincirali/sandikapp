@@ -8715,6 +8715,24 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pyzGecenAy => 'Geçen ay';
 
   @override
+  String get pyzTamaminiOku => 'Tamamını oku';
+
+  @override
+  String get pyzNotPortfoy => 'Portföy yorumu';
+
+  @override
+  String get pyzNotVarlik => 'Varlık yorumu';
+
+  @override
+  String get pyzNotDegerlendirme => 'Değerlendirme';
+
+  @override
+  String get pyzPdfPaylas => 'PDF olarak paylaş';
+
+  @override
+  String get pyzNotAlt => 'AI ile yazıldı · Yatırım tavsiyesi değildir';
+
+  @override
   String pyzAciklama(String donem) {
     return '$donem portföyünde ne olduğunu, kendi verinle birkaç maddede anlatır.';
   }

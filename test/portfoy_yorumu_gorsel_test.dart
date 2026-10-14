@@ -17,7 +17,10 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/services/portfoy_yorumu_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/services/disa_aktarim/yorum_notu_pdf.dart';
+import 'package:portfoy_takip/services/yorum_notu.dart';
 import 'package:portfoy_takip/widgets/portfoy_yorumu_karti.dart';
+import 'package:portfoy_takip/widgets/yorum_notu_sayfasi.dart';
 
 /// AI yorumu kartı (0151) — önce/sonra GÖRSEL önizlemesi, `build/gorsel/`
 /// altına PNG. Assert etmez; `gorsel` etiketi CI'da atlanır.
@@ -55,14 +58,17 @@ PortfoyYorumu _portfoyYorumu() => PortfoyYorumu(
       maddeler: const [
         (
           metin: 'Tem-Eyl aylarında TÜFE %7,9 iken reel getirin +%1,6: alım gücün korunmuş, üstüne az da olsa eklenmiş.',
+          konu: 'Alım gücü',
           kanit: ['tufe', 'reel_getiri'],
         ),
         (
           metin: 'Aynı paralar aynı günlerde gram altına konsaydı getiri +%14,1 olurdu; portföyün bu kıyasın −4,3 puan gerisinde. BIST 100 kıyası +%6,2 ile portföyün altında kaldı.',
+          konu: 'Kıyas',
           kanit: ['kiyas_altin', 'kiyas_altin_fark', 'kiyas_bist100'],
         ),
         (
           metin: 'Getirinin yükünü %38,5 payla THYAO taşıdı; dönem içindeki en derin geri çekilme −%7,4 oldu.',
+          konu: 'Yoğunlaşma',
           kanit: ['en_buyuk_pay', 'en_derin_dusus'],
         ),
       ],
@@ -79,14 +85,17 @@ PortfoyYorumu _varlikYorumu() => PortfoyYorumu(
       maddeler: const [
         (
           metin: 'Aynı dönemde BIST 100 +%6,0, dolar +%3,1 değişti; hisse ikisinin de önünde, gram altının (+%14,9) ise gerisinde kaldı.',
+          konu: 'Dönem',
           kanit: ['degisim', 'kiyas_bist100', 'kiyas_dolar', 'kiyas_altin'],
         ),
         (
           metin: 'Yol düz değildi: yıllıklandırılmış oynaklık %31,2, en derin geri çekilme −%9,4.',
+          konu: 'Geri çekilme',
           kanit: ['oynaklik', 'en_derin_dusus'],
         ),
         (
           metin: 'Portföyündeki payı %23,5; ilk alımdan bu yana 412 günde pozisyonun +%48,2 getirdi.',
+          konu: 'Pozisyon',
           kanit: ['portfoy_payi', 'elde_tutma', 'pozisyon_getirisi'],
         ),
       ],
@@ -198,5 +207,79 @@ void main() {
     await ciz(tester, 'yorum_sonra_gunluk',
         const PortfoyYorumuKarti(secili: SummaryPeriod.gunluk),
         boy: 480);
+  });
+
+  /// "Tamamını oku" açılır sayfası, telefon boyunda (390×844).
+  Future<void> cizSayfa(WidgetTester tester, String ad, YorumNotu notu,
+      {bool acik = false}) async {
+    tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+    const k = ValueKey('kok');
+    final palet = acik ? SandikPalette.light : SandikPalette.dark;
+    await tester.pumpWidget(RepaintBoundary(
+      key: k,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('tr'),
+        theme: SandikApp.buildTheme(palet, acik ? Brightness.light : Brightness.dark),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => showYorumNotu(context, notu),
+                child: const Text('aç'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('aç'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      final b = tester.renderObject<RenderRepaintBoundary>(find.byKey(k));
+      final img = await b.toImage(pixelRatio: 2.0);
+      final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
+      Directory('build/gorsel').createSync(recursive: true);
+      File('build/gorsel/$ad.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+    });
+  }
+
+  testWidgets('tamamını oku: portföy, karanlık', (tester) async {
+    await cizSayfa(
+        tester,
+        'notu_portfoy',
+        YorumNotu.kur(_portfoyYorumu(),
+            kapsam: YorumKapsami.portfoy,
+            donemAdi: YorumNotu.donemAdiOf(YorumTuru.secili, '3A')));
+  });
+
+  testWidgets('tamamını oku: varlık, açık tema', (tester) async {
+    await cizSayfa(
+        tester,
+        'notu_varlik',
+        YorumNotu.kur(_varlikYorumu(),
+            kapsam: YorumKapsami.varlik,
+            varlikAdi: 'THYAO',
+            donemAdi: YorumNotu.donemAdiOf(YorumTuru.secili, '3A')),
+        acik: true);
+  });
+
+  test('PDF: varlık notu', () async {
+    ByteData oku(String yol) => ByteData.sublistView(File(yol).readAsBytesSync());
+    final b = await yorumNotuPdf(
+      YorumNotu.kur(_varlikYorumu(),
+          kapsam: YorumKapsami.varlik,
+          varlikAdi: 'THYAO',
+          donemAdi: YorumNotu.donemAdiOf(YorumTuru.secili, '3A')),
+      duz: oku('assets/fonts/DMSans-Regular.ttf'),
+      kalin: oku('assets/fonts/DMSans-Bold.ttf'),
+      logo: File('assets/images/sandik_icon.png').readAsBytesSync(),
+    );
+    Directory('build/gorsel').createSync(recursive: true);
+    File('build/gorsel/yorum_notu_varlik.pdf').writeAsBytesSync(b);
   });
 }

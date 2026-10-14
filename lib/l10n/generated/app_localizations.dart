@@ -14519,6 +14519,42 @@ abstract class AppLocalizations {
   /// **'Geçen ay'**
   String get pyzGecenAy;
 
+  /// No description provided for @pyzTamaminiOku.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamamını oku'**
+  String get pyzTamaminiOku;
+
+  /// No description provided for @pyzNotPortfoy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy yorumu'**
+  String get pyzNotPortfoy;
+
+  /// No description provided for @pyzNotVarlik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık yorumu'**
+  String get pyzNotVarlik;
+
+  /// No description provided for @pyzNotDegerlendirme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değerlendirme'**
+  String get pyzNotDegerlendirme;
+
+  /// No description provided for @pyzPdfPaylas.
+  ///
+  /// In tr, this message translates to:
+  /// **'PDF olarak paylaş'**
+  String get pyzPdfPaylas;
+
+  /// No description provided for @pyzNotAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'AI ile yazıldı · Yatırım tavsiyesi değildir'**
+  String get pyzNotAlt;
+
   /// AI portföy yorumu kartı açıklaması. donem: 'Geçen hafta (6 Eki - 12 Eki)'.
   ///
   /// In tr, this message translates to:
