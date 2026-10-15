@@ -113,7 +113,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             else
               for (final ad in e.cozulemeyenFonlar)
                 l.importFundNotRecognized(ad),
-            for (final ad in e.fiyatiAlinamayanFonlar)
+            for (final ad in e.fiyatiAlinamayanlar)
               l.importFundPriceMissing(ad),
             ...e.notlar,
           ],
@@ -152,13 +152,15 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   }
 
   /// Yalnız tutar yazan belge ("Varlık Geçmişi Formu", 2026-10-15): adet =
-  /// tutar ÷ belge günündeki fiyat. Fiyat seriden okunur (BES sözleşmesinin
-  /// geçmiş gün fiyatıyla aynı yol); alınamayan fon eklenmez, önizleme
-  /// "fiyatı alınamadı" der.
+  /// tutar ÷ belge günündeki fiyat. Fon fiyatı TEFAS serisinden (BES
+  /// sözleşmesinin geçmiş gün fiyatıyla aynı yol, en çok 7 gün geri);
+  /// hisse, altın, döviz, kripto ve kurlar toplu eklemenin geçmiş gün
+  /// kapanışından (`fetchHistoricalClose`). Alınamayan kalem eklenmez,
+  /// önizleme "fiyatı alınamadı" der.
   Future<EkstreOkumaSonucu> _tutarFiyatlariniAl(EkstreOkumaSonucu s) async {
     final gun = s.belgeTarihi;
-    final kodlar = s.tutarFonKodlari;
-    if (gun == null || kodlar.isEmpty) return s;
+    final semboller = s.istenecekFiyatlar;
+    if (gun == null || semboller.isEmpty) return s;
     final ay = (DateTime.now().difference(gun).inDays / 30).ceil();
     final aralik = ay <= 1
         ? '1mo'
@@ -170,16 +172,22 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                     ? '1y'
                     : '3y';
     final fiyatlar = <String, double>{};
-    for (final k in kodlar) {
-      try {
-        final seri =
-            await PriceService.instance.fetchHistory('$tefasOneki$k', aralik);
-        final f = gunFiyati(seri, gun);
-        if (f != null) fiyatlar[k] = f;
-      } catch (e, st) {
-        CrashReporter.report(e, st, reason: 'ekstre_tutar_fiyati');
-      }
-    }
+    await Future.wait([
+      for (final sembol in semboller)
+        () async {
+          try {
+            final f = sembol.startsWith(tefasOneki)
+                ? gunFiyati(
+                    await PriceService.instance.fetchHistory(sembol, aralik),
+                    gun)
+                : await PriceService.instance
+                    .fetchHistoricalClose(sembol, gun);
+            if (f != null && f > 0) fiyatlar[sembol] = f;
+          } catch (e, st) {
+            CrashReporter.report(e, st, reason: 'ekstre_tutar_fiyati');
+          }
+        }(),
+    ]);
     return s.fiyatlarla(fiyatlar);
   }
 
@@ -771,7 +779,7 @@ class _EslemeKarti extends StatelessWidget {
             ),
           // Tarih sütunu olmayan döküm: satırlar ekstre gününü aldı ve maliyet
           // o günün fiyatı — kullanıcı K/Z'nin nereden başladığını bilsin.
-          if (tarih != null && sonuc.tutarFonlari.isNotEmpty)
+          if (tarih != null && sonuc.tutarKalemleri.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: SandikSpace.xs),
               child: Text(
@@ -838,7 +846,7 @@ class _EslemeKarti extends StatelessWidget {
           // eksik/yanlış çıkardığı ekstrede kullanıcının elinde AI yolu
           // kalmıyordu. Motor emin olsa da kullanıcı isterse AI'a sorar.
           // Yalnız tutarlı belgede AI'ın bulacağı adet sütunu yok (2026-10-15).
-          if (aiGorunur && !sonuc.aiOnerisi && sonuc.tutarFonlari.isEmpty) ...[
+          if (aiGorunur && !sonuc.aiOnerisi && sonuc.tutarKalemleri.isEmpty) ...[
             const SizedBox(height: SandikSpace.xs),
             if (aiKilitli)
               KilitSatiri(
