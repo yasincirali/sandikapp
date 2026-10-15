@@ -63,6 +63,14 @@ on:
         description: "Function secret ADLARINI listele (değer değil) — 'X secret'ı girildi mi?' sorusu için"
         type: boolean
         default: false
+      karsilastir:
+        description: "Taşıma öncesi parmak izi: fonksiyon kod özetleri + Auth ayarları (değer değil, özet). Yazmaz"
+        type: boolean
+        default: false
+      frankfurt_esitle:
+        description: "Frankfurt'u Tokyo'ya eşitle: kamuya açık değerli 4 ayar secret'ı + magic link konusu (yalnız Frankfurt'a YAZAR)"
+        type: boolean
+        default: false
       sql:
         description: "Salt okunur rapor sorgusu (Management API, tek SELECT). Vault DEĞERİ döndüren sorgu YAZMA — log'a düşer"
         type: string
@@ -205,6 +213,44 @@ jobs:
           body=$(jq -n --arg q "$SQL" '{query: $q}')
           curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             -H "Content-Type: application/json"             -d "$body" | jq .
 
+      # Taşıma (docs/SUPABASE_FRANKFURT_TASIMA.md) öncesi "iki sunucu aynı
+      # mı?" sorusunun şemanın dışında kalan iki yarısı: dağıtılmış fonksiyon
+      # KODU ve Auth ayarları. Şema parmak izi (esitlik işi) bunları görmez.
+      # Repo herkese açık, log da açık: hiçbir DEĞER basılmaz. Fonksiyonda
+      # Supabase'in paket özeti (ezbr_sha256), Auth'ta her alanın sha256'sının
+      # ilk 12 hanesi — iki iş arasında satır satır karşılaştırılır.
+      # Mantıksal alanlar (sağlayıcı açık/kapalı) zaten sır değil, açık yazılır.
+      - name: Taşıma parmak izi (fonksiyon kodu + Auth ayarı, değersiz)
+        if: ${{ inputs.karsilastir }}
+        run: |
+          api="https://api.supabase.com/v1/projects/$PROJECT_REF"
+          h="Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+          {
+          curl -sS -f "$api/functions" -H "$h" \
+            | jq -r 'sort_by(.slug)[] | "fonksiyon \(.slug) | \(.status) | jwt=\(.verify_jwt) | \((.ezbr_sha256 // "-")[0:16])"'
+          curl -sS -f "$api/config/auth" -H "$h" \
+            | jq -r 'to_entries | sort_by(.key)[]
+                | select(.value != null and .value != "")
+                | if (.value|type) == "boolean" then "\(.key) = \(.value)"
+                  else "\(.key) = #\(.value|tojson)" end' \
+            | while IFS= read -r satir; do
+                case "$satir" in
+                  *" = #"*) k=${satir%% = #*}; v=${satir#* = #}
+                            printf '%s = %s\n' "$k" "$(printf '%s' "$v" | sha256sum | cut -c1-12)" ;;
+                  *) printf '%s\n' "$satir" ;;
+                esac
+              done | sed 's/^/auth /'
+          } > "parmak_${{ matrix.hedef }}.txt"
+          cat "parmak_${{ matrix.hedef }}.txt"
+
+      - name: Taşıma parmak izini sakla
+        if: ${{ inputs.karsilastir }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: parmak-${{ matrix.hedef }}
+          path: parmak_${{ matrix.hedef }}.txt
+          retention-days: 3
+
       - name: Edge Function'lar
         if: ${{ inputs.functions != 'none' && !inputs.dry_run }}
         run: |
@@ -234,3 +280,72 @@ jobs:
       - uses: actions/checkout@v4
       - name: Şema parmak izi — Tokyo = Frankfurt
         run: python3 tool/sema_esitlik.py --ayrinti
+      # Yalnız farklı satırlar (özetler; değer yok). Proje adresine/anahtarına
+      # bağlı alanlar (site_url vb.) beklenen farktır — karar taşıma belgesinde.
+      - uses: actions/download-artifact@v4
+        if: ${{ inputs.karsilastir && !cancelled() }}
+        with:
+          pattern: parmak-*
+          merge-multiple: true
+      - name: Taşıma parmak izi — Tokyo ile Frankfurt farkı
+        if: ${{ inputs.karsilastir && !cancelled() }}
+        run: |
+          diff parmak_tokyo.txt parmak_frankfurt.txt > fark.txt || true
+          if [ -s fark.txt ]; then
+            echo "Satır başı '-' = Tokyo, '+' = Frankfurt"
+            grep '^[<>]' fark.txt | sed 's/^</- /; s/^>/+ /'
+          else
+            echo "FARK YOK"
+          fi
+
+  # Taşıma öncesi tek seferlik eşitleme (docs/SUPABASE_FRANKFURT_TASIMA.md,
+  # "Eşleme ölçümü 2026-10-14"). YALNIZ Frankfurt'a yazar; Tokyo'yu okur.
+  # Kapsam bilerek dar:
+  #  * Ayar secret'ları sır değil (bayrak "1", tavan "10", tur üstü "3").
+  #    Değer koda yazılı ama Tokyo'daki özetle (sha256) EŞLEŞMEZSE yazılmaz —
+  #    Tokyo'da değer değiştiyse eski değeri Frankfurt'a taşımayız.
+  #  * Gerçek sırlar (DELETION_HASH_SALT, Telegram) Management API'den
+  #    okunamaz (yalnız özet döner) → elle, belgeye bak.
+  #  * Magic link konusu Tokyo'dan okunur, Frankfurt'a PATCH edilir; log'a
+  #    metin değil özet düşer.
+  frankfurt_esitle:
+    if: ${{ inputs.frankfurt_esitle }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TOKYO_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      EU_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU || secrets.SUPABASE_ACCESS_TOKEN }}
+      TOKYO: ybdbzouzhzwthjgwlbmk
+      EU: ynwymnpdiwudrlxfrmuo
+    steps:
+      - name: Ayar secret'ları (Tokyo özeti tutarsa)
+        run: |
+          api=https://api.supabase.com/v1/projects
+          curl -sS -f "$api/$TOKYO/secrets" -H "Authorization: Bearer $TOKYO_TOKEN" > tokyo.json
+          govde='[]'
+          for cift in FON_KALEM_ACIK=1 FON_KALEM_AYLIK_TAVAN_USD=10 FON_KALEM_TUR_USTU=3 PORTFOY_YORUM_ACIK=1; do
+            ad=${cift%%=*}; deger=${cift#*=}
+            beklenen=$(printf '%s' "$deger" | sha256sum | cut -d' ' -f1)
+            tokyo=$(jq -r --arg a "$ad" '.[] | select(.name==$a) | .value' tokyo.json)
+            if [ "$tokyo" = "$beklenen" ]; then
+              govde=$(jq -c --arg a "$ad" --arg d "$deger" '. + [{name:$a, value:$d}]' <<<"$govde")
+              echo "$ad: Tokyo özeti tutuyor → Frankfurt'a yazılacak"
+            else
+              echo "::warning::$ad: Tokyo'daki değer beklenenden farklı ya da yok — YAZILMADI"
+            fi
+          done
+          if [ "$govde" != "[]" ]; then
+            curl -sS -f -X POST "$api/$EU/secrets" -H "Authorization: Bearer $EU_TOKEN" \
+              -H "Content-Type: application/json" -d "$govde" -o /dev/null -w 'Frankfurt secrets HTTP %{http_code}\n'
+          fi
+
+      - name: Magic link konusu (Tokyo → Frankfurt)
+        run: |
+          api=https://api.supabase.com/v1/projects
+          konu=$(curl -sS -f "$api/$TOKYO/config/auth" -H "Authorization: Bearer $TOKYO_TOKEN" | jq -r '.mailer_subjects_magic_link // ""')
+          if [ -z "$konu" ]; then echo "::error::Tokyo'da konu boş"; exit 1; fi
+          curl -sS -f -X PATCH "$api/$EU/config/auth" -H "Authorization: Bearer $EU_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg k "$konu" '{mailer_subjects_magic_link: $k}')" -o /dev/null -w 'Frankfurt auth HTTP %{http_code}\n'
+          yeni=$(curl -sS -f "$api/$EU/config/auth" -H "Authorization: Bearer $EU_TOKEN" | jq -r '.mailer_subjects_magic_link')
+          [ "$yeni" = "$konu" ] && echo "Magic link konusu artık aynı" || { echo "::error::Frankfurt'ta konu hâlâ farklı"; exit 1; }
