@@ -72,8 +72,9 @@ export function kisaTutar(tl: number): string {
 }
 
 /// Yüzde: 1.83 → '%1,8' (işaretsiz), isaretli: '+%1,8' / '−%0,3'.
-export function yuzde(p: number, isaretli = false): string {
-  const s = `%${virgul(Math.abs(p), 1)}`;
+/// Günlük fon getirisi gibi küçük değerler için `basamak` 2.
+export function yuzde(p: number, isaretli = false, basamak = 1): string {
+  const s = `%${virgul(Math.abs(p), basamak)}`;
   if (!isaretli) return s;
   return (p < 0 ? '−' : '+') + s;
 }
@@ -206,7 +207,7 @@ export function kurDegisimleri(satirlar: KotasyonSatiri[], baslangicTs: string, 
 
 // ── Gönderi ─────────────────────────────────────────────────────────────────
 
-export type GonderiTuru = 'fon_akisi' | 'haftalik' | 'tufe' | 'abd_tufe' | 'fed';
+export type GonderiTuru = 'fon_akisi' | 'haftalik' | 'tufe' | 'abd_tufe' | 'fed' | 'fon_getiri' | 'takvim';
 
 export type KartSatiri = {
   ad: string;
@@ -240,6 +241,9 @@ export type Taslak = {
   olgular: Olgu[];
   sablon_metin: string;
   kart: Kart;
+  /// Model çağrılmaz, şablon metin gider. Takvim gelecekteki olayları sayar;
+  /// modelin "gelecek dili yok" kuralıyla çelişir ve anlatacak cümle yoktur.
+  yalniz_sablon?: boolean;
 };
 
 const UST_SATIR = 5;
@@ -500,6 +504,186 @@ export function fedTaslagi(k: FedKarari): Taslak {
       kaynak: `Kaynak: New York Fed · Yürürlük ${gunAyYazisi(k.tarih)}`,
     },
   };
+}
+
+// ── Sabah gönderisi (yasin, 15 Eki: "günde 2 gönderi", "İkisi dönüşümlü") ──
+//
+// Sabah TR 09:30: Pazartesi haftanın veri takvimi, diğer günler bir önceki iş
+// gününün fon getirileri. Pazartesi takvimde olay yoksa getiri gönderisi
+// atılır: sabah boş geçmez. Akşamki fon akışı gönderisi aynen kalır.
+
+export type FonFiyatSatiri = {
+  fon_kodu: string;
+  tarih: string;
+  fon_tipi: 'YAT' | 'EMK';
+  fon_turu: string | null;
+  pay_adedi: number;
+  portfoy_degeri: number;
+};
+
+export type KategoriGetirisi = { kategori: string; medyan: number; fon_sayisi: number };
+export type GetiriOzeti = {
+  onceki: string;
+  gun: string;
+  fon_sayisi: number;
+  kategoriler: KategoriGetirisi[]; // medyana göre büyükten küçüğe
+};
+
+/// Bir günde bundan büyük mutlak getiri veri hatası sayılır (pay bölünmesi,
+/// TEFAS'ın eksik pay adedi): medyanı bozmasın diye dışarıda kalır.
+export const AZAMI_GUNLUK_GETIRI = 20;
+/// Medyanı anlamlı olsun: bu kadar fonu olmayan kategori gösterilmez.
+export const ASGARI_KATEGORI_FON = 10;
+
+function medyan(xs: number[]): number {
+  const s = [...xs].sort((a, b) => a - b);
+  const o = s.length >> 1;
+  return s.length % 2 ? s[o] : (s[o - 1] + s[o]) / 2;
+}
+
+/// `bugun`den önceki son iki veri gününün fon fiyatlarından (değer / pay)
+/// kategori başına MEDYAN günlük getiri. Ortalama değil: tek bir fonun
+/// sıçraması kategorinin hikâyesini değiştirmesin. Tek fon adı geçmez
+/// (SPKn: tek fon öne çıkarılmaz). BES hariç (akış gönderisiyle aynı).
+export function getiriOzeti(satirlar: FonFiyatSatiri[], bugun: string): GetiriOzeti | null {
+  const gunler = new Map<string, Map<string, FonFiyatSatiri>>();
+  for (const s of satirlar) {
+    if (s.fon_tipi !== 'YAT' || s.tarih >= bugun) continue;
+    if (!(s.pay_adedi > 0) || !(s.portfoy_degeri > 0)) continue;
+    if (!gunler.has(s.tarih)) gunler.set(s.tarih, new Map());
+    gunler.get(s.tarih)!.set(s.fon_kodu, s);
+  }
+  // Yarım gün (akış turu bitmemiş) sayılmaz: en az ASGARI_FON fonu olan günler.
+  const tam = [...gunler.entries()].filter(([, m]) => m.size >= ASGARI_FON).map(([g]) => g).sort();
+  if (tam.length < 2) return null;
+  const gun = tam[tam.length - 1];
+  const onceki = tam[tam.length - 2];
+  const bas = gunler.get(onceki)!;
+  const kat = new Map<string, number[]>();
+  let n = 0;
+  for (const [kod, s] of gunler.get(gun)!) {
+    const o = bas.get(kod);
+    if (!o) continue;
+    const r = ((s.portfoy_degeri / s.pay_adedi) / (o.portfoy_degeri / o.pay_adedi) - 1) * 100;
+    if (!Number.isFinite(r) || Math.abs(r) > AZAMI_GUNLUK_GETIRI) continue;
+    const k = fonKategorisi(s.fon_turu);
+    if (!kat.has(k)) kat.set(k, []);
+    kat.get(k)!.push(r);
+    n++;
+  }
+  if (n < ASGARI_FON) return null;
+  const kategoriler = [...kat.entries()]
+    .filter(([k, rs]) => k !== 'Diğer' && rs.length >= ASGARI_KATEGORI_FON)
+    .map(([kategori, rs]) => ({ kategori, medyan: medyan(rs), fon_sayisi: rs.length }))
+    .sort((a, b) => b.medyan - a.medyan);
+  if (kategoriler.length < 2) return null;
+  return { onceki, gun, fon_sayisi: n, kategoriler };
+}
+
+/// Bir önceki iş gününün kategori getirileri.
+export function fonGetiriTaslagi(o: GetiriOzeti): Taslak {
+  const enBuyuk = Math.max(...o.kategoriler.map((k) => Math.abs(k.medyan)), 0.01);
+  const secili = o.kategoriler.slice(0, 6);
+  const ilk = o.kategoriler[0];
+  const son = o.kategoriler[o.kategoriler.length - 1];
+  const tarih = gunAyYazisi(o.gun);
+  const olgular: Olgu[] = [
+    { ad: 'tarih', gosterim: tarih },
+    ...secili.map((k) => ({
+      ad: `${k.kategori} fonlarının medyan günlük getirisi (${k.medyan >= 0 ? 'artış' : 'düşüş'})`,
+      gosterim: yuzde(k.medyan, false, 2),
+    })),
+  ];
+  if (!secili.includes(son)) {
+    olgular.push({ ad: `${son.kategori} fonlarının medyan günlük getirisi (${son.medyan >= 0 ? 'artış' : 'düşüş'})`, gosterim: yuzde(son.medyan, false, 2) });
+  }
+  const ad = (k: KategoriGetirisi) => k.kategori.toLocaleLowerCase('tr-TR');
+  const cumleler = [
+    `${tarih}'de fon kategorileri içinde en yüksek medyan getiri ${yuzde(ilk.medyan, false, 2)} ile ${ad(ilk)} fonlarında oldu.`,
+  ];
+  if (son !== ilk) {
+    cumleler.push(son.medyan < 0
+      ? `${son.kategori} fonları ${yuzde(son.medyan, false, 2)} geriledi.`
+      : `En düşük getiri ${yuzde(son.medyan, false, 2)} ile ${ad(son)} fonlarında.`);
+  }
+  return {
+    tur: 'fon_getiri',
+    donem: o.gun,
+    olgular,
+    sablon_metin: cumleler.join(' '),
+    kart: {
+      bicim: 'liste',
+      ust: `FON GETİRİLERİ · ${tarih.toLocaleUpperCase('tr-TR')}`,
+      baslik: 'Kategorilerin günlük getirisi',
+      satirlar: secili.map((k) => ({
+        ad: k.kategori,
+        deger: yuzde(k.medyan, true, 2),
+        yon: (k.medyan > 0.005 ? 'u' : k.medyan < -0.005 ? 'd' : 'n') as KartSatiri['yon'],
+        oran: Math.abs(k.medyan) / enBuyuk,
+      })),
+      kaynak: 'Kaynak: TEFAS · Kategori medyanı, BES hariç',
+    },
+  };
+}
+
+/// `x_takvim` satırı: açıklanacak veri ya da karar. `saat` TR saati.
+export type TakvimOlayi = { tarih: string; saat: string | null; baslik: string };
+
+const GUN_KISA = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+const GUN_UZUN = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+/// Gönderi tek parça kalsın (270 karakter): haftada en çok bu kadar olay.
+export const AZAMI_TAKVIM_OLAYI = 4;
+
+/// Pazartesi: bu haftanın (Pzt–Cum) takvimi. Olay yoksa null → getiri gönderisi.
+/// Tarihler yalnız `x_takvim`'den gelir; kural ("ayın 3'ü") ile tahmin
+/// edilmez — tatile kayan bir açıklama yanlış gün yazdırır (uydurma yasağı).
+export function takvimTaslagi(pazartesi: string, olaylar: TakvimOlayi[]): Taslak | null {
+  const cuma = gunEkle(pazartesi, 4);
+  const hafta = olaylar
+    .filter((o) => o.tarih >= pazartesi && o.tarih <= cuma)
+    .sort((a, b) => (a.tarih + (a.saat ?? '')).localeCompare(b.tarih + (b.saat ?? '')))
+    .slice(0, AZAMI_TAKVIM_OLAYI);
+  if (!hafta.length) return null;
+  const saat = (o: TakvimOlayi) => (o.saat ? o.saat.slice(0, 5) : '');
+  const gunYazisi = (o: TakvimOlayi) => `${gunAyYazisi(o.tarih)} ${GUN_UZUN[haftaGunu(o.tarih) - 1]}`;
+  const olgular: Olgu[] = hafta.map((o) => ({
+    ad: o.baslik,
+    gosterim: [gunYazisi(o), saat(o)].filter(Boolean).join(' '),
+  }));
+  const satir = (o: TakvimOlayi) => `${gunYazisi(o)}${o.saat ? ` ${saat(o)}` : ''} ${o.baslik}.`;
+  const aralik = `${gunAyYazisi(pazartesi).split(' ')[0]}–${gunAyYazisi(cuma)}`;
+  let metin = `Bu hafta takvimde: ${hafta.map(satir).join(' ')}`;
+  // Uzun başlıklar sınırı aşarsa saatsiz yazılır; yine aşarsa son olay düşer.
+  for (let n = hafta.length; [...metin].length > AZAMI_KARAKTER && n > 1; n--) {
+    metin = `Bu hafta takvimde: ${hafta.slice(0, n - 1).map((o) => `${gunYazisi(o)} ${o.baslik}.`).join(' ')}`;
+  }
+  return {
+    tur: 'takvim',
+    donem: pazartesi,
+    olgular,
+    sablon_metin: metin,
+    yalniz_sablon: true,
+    kart: {
+      bicim: 'liste',
+      ust: `HAFTANIN TAKVİMİ · ${aralik.toLocaleUpperCase('tr-TR')}`,
+      baslik: 'Bu hafta takvimde',
+      satirlar: hafta.map((o) => ({
+        ad: o.baslik,
+        ek: saat(o),
+        deger: `${GUN_KISA[haftaGunu(o.tarih) - 1]} ${gunAyYazisi(o.tarih).replace(/(\p{L}{3})\p{L}*/u, '$1')}`,
+        yon: 'n' as const,
+      })),
+      kaynak: 'Kaynak: kurumların resmi takvimleri · TR saati',
+    },
+  };
+}
+
+/// Sabah hangi gönderi? Pazartesi takvim (olay varsa), diğer iş günleri ve
+/// olaysız Pazartesi fon getirisi. Hafta sonu yok (cron da hafta içi).
+export function sabahGonderisi(bugun: string): 'takvim' | 'fon_getiri' | null {
+  const g = haftaGunu(bugun);
+  if (g >= 6) return null;
+  return g === 1 ? 'takvim' : 'fon_getiri';
 }
 
 // ── Model ───────────────────────────────────────────────────────────────────

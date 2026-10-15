@@ -1,8 +1,11 @@
 // x-paylas — SANDIK X hesabının günlük gönderi TASLAĞI (0146, 2026-10-13).
 //
-// pg_cron hafta içi TR 19:40'ta çağırır (fon akışı 19:15 turundan sonra).
-// İçerik: fon akışı, Cuma haftanın özeti, TÜİK TÜFE; ABD için (Türkçe) BLS
-// TÜFE ve Fed faiz kararı.
+// pg_cron hafta içi iki kez çağırır:
+//   TR 19:40 (gövde kip yok/'aksam'; fon akışı 19:15 turundan sonra): fon
+//     akışı, Cuma haftanın özeti, TÜİK TÜFE; ABD için (Türkçe) BLS TÜFE ve
+//     Fed faiz kararı.
+//   TR 09:30 (kip 'sabah', 0153; yasin 15 Eki "günde 2 gönderi"): Pazartesi
+//     haftanın takvimi (`x_takvim`), diğer günler dünün fon getirileri.
 // `yayin`/`taslak` modda gönderiyi kendisi ATMAZ: taslağı yazar, kartını
 // çizer ve Telegram'da yöneticiye "Yayınla / Reddet" düğmeleriyle yollar;
 // atma işi `x-onay`'da. `otomatik` modda (yasin, 15 Eki) aynı taslağı
@@ -38,6 +41,8 @@ import {
   botModu,
   bugununFonGonderisi,
   fonAkisiTaslagi,
+  fonGetiriTaslagi,
+  getiriOzeti,
   gunEkle,
   haftalikTaslak,
   istekGovdesi,
@@ -45,6 +50,8 @@ import {
   kurDegisimleri,
   metinKapisi,
   MODEL,
+  sabahGonderisi,
+  takvimTaslagi,
   type Taslak,
   tufeOzeti,
   tufeTaslagi,
@@ -117,6 +124,113 @@ async function otomatikGonder(
   }
 }
 
+/// Akşam turu (0146): fon akışı / haftalık, TÜFE, ABD TÜFE, Fed.
+async function aksamTaslaklari(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  bugun: string,
+  simdi: Date,
+  sonuc: Record<string, string>,
+): Promise<Taslak[]> {
+  const taslaklar: Taslak[] = [];
+
+  // 1) Fon akışı (hafta içi) / haftanın özeti (Cuma).
+  const plan = bugununFonGonderisi(bugun);
+  if (plan) {
+    const { data, error } = await db.from('fon_akis_gunluk')
+      .select('fon_kodu, tarih, fon_tipi, fon_turu, net_akis')
+      .gte('tarih', plan.baslangic).lte('tarih', plan.bitis).eq('fon_tipi', 'YAT')
+      .limit(20000);
+    if (error) throw error;
+    const ozet = akisOzeti(data ?? [], plan.baslangic, plan.bitis);
+    if (!ozet) {
+      sonuc[plan.tur] = 'veri_eksik';
+    } else if (plan.tur === 'fon_akisi') {
+      taslaklar.push(fonAkisiTaslagi(ozet));
+    } else {
+      let kurlar: ReturnType<typeof kurDegisimleri> = [];
+      if (Deno.env.get('X_KUR_IZINLI') === '1') {
+        const bas = trAksam(gunEkle(bugun, -7));
+        const { data: k, error: ke } = await db.from('yurt_ici_kotasyon')
+          .select('sembol, ts, fiyat')
+          .in('sembol', ['ALTIN_GRAM24', 'USDTRY=X', 'EURTRY=X'])
+          .gte('ts', new Date(Date.parse(bas) - 6 * 3600_000).toISOString())
+          .lte('ts', trAksam(bugun))
+          .limit(20000);
+        if (ke) throw ke;
+        kurlar = kurDegisimleri(k ?? [], bas, trAksam(bugun));
+      }
+      taslaklar.push(haftalikTaslak(ozet, kurlar));
+    }
+  }
+
+  // 2) TÜFE — yalnız yeni yayımlandıysa.
+  const { data: endeks, error: ee } = await db.from('inflation_index')
+    .select('period, tufe_index, created_at').order('period', { ascending: false }).limit(25);
+  if (ee) throw ee;
+  const sonEndeks = endeks?.[0];
+  if (sonEndeks && tufeYeniMi(sonEndeks.created_at, simdi)) {
+    const t = tufeOzeti((endeks ?? []).map((r) => ({ period: r.period, tufe_index: Number(r.tufe_index) })));
+    if (t) taslaklar.push(tufeTaslagi(t));
+  }
+
+  // 3) ABD — Türkçe anlatılır (yasin, 13 Eki). Yalnız ABD kamu verisi.
+  const bls = await jsonGetir('https://api.bls.gov/publicAPI/v1/timeseries/data/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seriesid: ['CUSR0000SA0', 'CUUR0000SA0'] }),
+  });
+  const abd = bls ? abdTufeOzeti(bls) : null;
+  if (abd && abdTufeGuncelMi(abd.donem, bugun)) taslaklar.push(abdTufeTaslagi(abd));
+  else if (!bls) sonuc.abd_tufe = 'kaynak_yok';
+
+  const nyfed = await jsonGetir('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/10.json');
+  const fed = nyfed ? fedKarariBul(nyfed) : null;
+  // Karar en geç 4 gün önce yürürlüğe girdiyse (hafta sonu + cron yalnız hafta içi).
+  if (fed && fed.tarih >= gunEkle(bugun, -4)) taslaklar.push(fedTaslagi(fed));
+  else if (!nyfed) sonuc.fed = 'kaynak_yok';
+  return taslaklar;
+}
+
+/// Sabah turu (0153): Pazartesi takvim, olay yoksa ya da diğer günler
+/// bir önceki iş gününün kategori getirileri.
+async function sabahTaslaklari(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  bugun: string,
+  sonuc: Record<string, string>,
+): Promise<Taslak[]> {
+  const plan = sabahGonderisi(bugun);
+  if (!plan) return [];
+  if (plan === 'takvim') {
+    const { data, error } = await db.from('x_takvim')
+      .select('tarih, saat, baslik').gte('tarih', bugun).lte('tarih', gunEkle(bugun, 4));
+    if (error) throw error;
+    const t = takvimTaslagi(bugun, data ?? []);
+    if (t) return [t];
+    sonuc.takvim = 'olay_yok';
+  }
+  // Son iki veri günü: hafta sonu ve bayram arası için 7 gün geriye bakılır.
+  const { data, error } = await db.from('fon_akis_gunluk')
+    .select('fon_kodu, tarih, fon_tipi, fon_turu, pay_adedi, portfoy_degeri')
+    .gte('tarih', gunEkle(bugun, -7)).lt('tarih', bugun).eq('fon_tipi', 'YAT')
+    .limit(20000);
+  if (error) throw error;
+  const o = getiriOzeti(
+    (data ?? []).map((r: Record<string, unknown>) => ({
+      ...r,
+      pay_adedi: Number(r.pay_adedi),
+      portfoy_degeri: Number(r.portfoy_degeri),
+    })),
+    bugun,
+  );
+  if (!o) {
+    sonuc.fon_getiri = 'veri_eksik';
+    return [];
+  }
+  return [fonGetiriTaslagi(o)];
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return yanit({ ok: false }, 405);
   // Fon akışı gözlemiyle aynı secret (0146 gerekçesi): yeni Vault kaydı
@@ -138,64 +252,15 @@ Deno.serve(async (req: Request) => {
   const bugun = trGun(simdi);
   const sonuc: Record<string, string> = {};
 
+  // Gövdesiz/bozuk gövde akşam turu sayılır: 0146'nın tetiği kip yollamaz.
+  let kip = 'aksam';
   try {
-    const taslaklar: Taslak[] = [];
+    const g = await req.json();
+    if (g?.kip === 'sabah') kip = 'sabah';
+  } catch (_) { /* gövde yok */ }
 
-    // 1) Fon akışı (hafta içi) / haftanın özeti (Cuma).
-    const plan = bugununFonGonderisi(bugun);
-    if (plan) {
-      const { data, error } = await db.from('fon_akis_gunluk')
-        .select('fon_kodu, tarih, fon_tipi, fon_turu, net_akis')
-        .gte('tarih', plan.baslangic).lte('tarih', plan.bitis).eq('fon_tipi', 'YAT')
-        .limit(20000);
-      if (error) throw error;
-      const ozet = akisOzeti(data ?? [], plan.baslangic, plan.bitis);
-      if (!ozet) {
-        sonuc[plan.tur] = 'veri_eksik';
-      } else if (plan.tur === 'fon_akisi') {
-        taslaklar.push(fonAkisiTaslagi(ozet));
-      } else {
-        let kurlar: ReturnType<typeof kurDegisimleri> = [];
-        if (Deno.env.get('X_KUR_IZINLI') === '1') {
-          const bas = trAksam(gunEkle(bugun, -7));
-          const { data: k, error: ke } = await db.from('yurt_ici_kotasyon')
-            .select('sembol, ts, fiyat')
-            .in('sembol', ['ALTIN_GRAM24', 'USDTRY=X', 'EURTRY=X'])
-            .gte('ts', new Date(Date.parse(bas) - 6 * 3600_000).toISOString())
-            .lte('ts', trAksam(bugun))
-            .limit(20000);
-          if (ke) throw ke;
-          kurlar = kurDegisimleri(k ?? [], bas, trAksam(bugun));
-        }
-        taslaklar.push(haftalikTaslak(ozet, kurlar));
-      }
-    }
-
-    // 2) TÜFE — yalnız yeni yayımlandıysa.
-    const { data: endeks, error: ee } = await db.from('inflation_index')
-      .select('period, tufe_index, created_at').order('period', { ascending: false }).limit(25);
-    if (ee) throw ee;
-    const sonEndeks = endeks?.[0];
-    if (sonEndeks && tufeYeniMi(sonEndeks.created_at, simdi)) {
-      const t = tufeOzeti((endeks ?? []).map((r) => ({ period: r.period, tufe_index: Number(r.tufe_index) })));
-      if (t) taslaklar.push(tufeTaslagi(t));
-    }
-
-    // 3) ABD — Türkçe anlatılır (yasin, 13 Eki). Yalnız ABD kamu verisi.
-    const bls = await jsonGetir('https://api.bls.gov/publicAPI/v1/timeseries/data/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seriesid: ['CUSR0000SA0', 'CUUR0000SA0'] }),
-    });
-    const abd = bls ? abdTufeOzeti(bls) : null;
-    if (abd && abdTufeGuncelMi(abd.donem, bugun)) taslaklar.push(abdTufeTaslagi(abd));
-    else if (!bls) sonuc.abd_tufe = 'kaynak_yok';
-
-    const nyfed = await jsonGetir('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/10.json');
-    const fed = nyfed ? fedKarariBul(nyfed) : null;
-    // Karar en geç 4 gün önce yürürlüğe girdiyse (hafta sonu + cron yalnız hafta içi).
-    if (fed && fed.tarih >= gunEkle(bugun, -4)) taslaklar.push(fedTaslagi(fed));
-    else if (!nyfed) sonuc.fed = 'kaynak_yok';
+  try {
+    const taslaklar: Taslak[] = kip === 'sabah' ? await sabahTaslaklari(db, bugun, sonuc) : await aksamTaslaklari(db, bugun, simdi, sonuc);
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
     const aiAcik = !!apiKey && Deno.env.get('X_BOT_AI') !== '0';
@@ -217,7 +282,7 @@ Deno.serve(async (req: Request) => {
       let model: string | null = null;
       let maliyet: number | null = null;
       let red: string | null = null;
-      if (aiAcik) {
+      if (aiAcik && !t.yalniz_sablon) {
         try {
           const y = await new Anthropic({ apiKey }).messages.create(
             // deno-lint-ignore no-explicit-any

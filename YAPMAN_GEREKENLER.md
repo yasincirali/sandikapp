@@ -63,6 +63,12 @@ sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanm
       sonra `X_BOT_MODU=yayin`. Bundan sonra "Yayınla" X'e atar.
 - [ ] İsteğe bağlı (2026-10-15): `X_BOT_MODU=otomatik` → taslak onaysız X'e gider, Telegram'a
       yalnız "Otomatik yayınlandı: link" gelir. Geri dönüş: `yayin` (onaylı).
+- [ ] Sabah gönderisi (0153, 2026-10-15): hafta içi 09:30, Pazartesi haftanın takvimi, diğer
+      günler dünün fon getirileri. Ayar gerekmez; akşamla aynı `X_BOT_MODU`'yu kullanır.
+      Takvim yalnız `x_takvim` tablosundaki doğrulanmış olaylardan yazılır (Ekim–Aralık 2026:
+      TCMB ve Fed kararları, Enflasyon Raporu). TÜİK/BLS TÜFE günleri ve 2027 takvimi
+      eklenmedi: resmi takvimden doğrulanınca yeni migration ile eklenir (iki sunucu).
+      Olay olmayan Pazartesi fon getirisi atılır.
 - [ ] İsteğe bağlı: `X_KUR_IZINLI=1` (haftalık karta gram altın/dolar/euro — truncgil
       verisinin kamuya yayın hakkı belirsiz, kararı senin); `X_BOT_AI=0` (model yerine
       şablon metin; maliyet sıfır).
