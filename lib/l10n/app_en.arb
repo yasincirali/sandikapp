@@ -1971,6 +1971,8 @@
   "importFundNotRecognized": "Fund not recognized, skipped: {name}",
   "importFundListFailed": "Couldn't load the TEFAS fund list; funds listed by name were skipped. Check your connection and pick the file again.",
   "importDepositsFound": "{n} time deposits found (demand accounts are not imported)",
+  "importFundPriceMissing": "{name}: couldn't get the price on the statement date, skipped.",
+  "importAmountOnly": "This document shows no quantities: each quantity is the amount divided by the unit price on {date}. Cost is taken as that day's price.",
   "importStatementDate": "Statement date {date}: fund cost is taken as that day's unit price.",
   "cartDepositSubtitle": "Time deposit · {rate} · {days} days",
   "importColumnNone": "None",

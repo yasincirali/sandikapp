@@ -155,8 +155,7 @@ yatırım ve vadeli mevduatlar içeride olmalı."*
   "TEFAS Müşteriye Fon Satış YAY 29,00x1.739,18"). ⚠️ Tuzak: banka gözünden yazılır,
   **"Müşteriye Fon Satış" müşterinin ALIŞI**, "Müşteriden Fon Alış" SATIŞI. Hareketler
   okunacaksa yön bu kuralla çevrilmeli. Yalnız tutar veren "Varlık Geçmişi Formu"
-  (adet yok) desteklenmiyor — elle eşleme yedeğine düşer; adet = tutar ÷ o günün
-  fiyatı ile eklenebilir.
+  (adet yok) 2026-10-15'ten beri okunur: aşağıdaki bölüme bak.
 
 | Karar | Seçilen | Alternatif | Neden |
 |---|---|---|---|
@@ -318,3 +317,22 @@ adet ve ortalama maliyeti zaten gösterir; yasin seçeneği "Ekran görüntüsü
 - **Sayfalar arası tablo birleştirme** yalnız birebir sütun uyumunda: DenizBank hareket
   listesi sayfa 3 ve 4'te ayrı tablo kalıyor (içe aktarılmadığı için etkisiz).
 - **Sonraki adım (E):** "ekstrem tanınmadı → örnek gönder" akışı (açık rızayla).
+
+## Yalnız tutar yazan belge (2026-10-15)
+
+DenizBank'ın aylık "Varlık Geçmişi Formu" fonu adıyla (sonda `---TR…` ISIN) ve
+yalnız TL karşılığıyla yazar; adet ve birim fiyat yoktur. Önceki sürüm onu elle
+eşleme yedeğine düşürüyordu ("Adet ← Sütun 2", "emin değiliz"), AI de adet
+sütunu bulamıyordu (yasin: "varlık tablosu bulamadı diyor").
+
+- **Tanıma** (`tutar_tablosu.dart` `tutarliFonlar`): iki dolu hücreli satır, ilk
+  hücre fon adı ("fon"/"fonu" kelimesi ya da ISIN eki), ikinci TL tutar. Grup
+  başlığı ("Yatırım Fonları") ve "Toplam" alınmaz. Yalnız sembollü varlık tablosu
+  yokken ve belge tarihi biliniyorken devreye girer.
+- **Adet** = tutar ÷ belge günündeki TEFAS fiyatı (`gunFiyati`: o gün ya da önceki
+  7 günün son fiyatı). Tam sayı adet tutarı kuruş içinde veriyorsa adet odur
+  (yatırım fonu payı tam sayı); değilse 4 ondalık. Maliyet o günün fiyatı.
+- **Uydurma yok:** ad TEFAS unvanına tek aday olarak eşleşmezse ya da o günün
+  fiyatı alınamazsa satır eklenmez; önizleme "fiyatı alınamadı" der.
+- Fiyat ekranda `PriceService.fetchHistory('TEFAS:…')` ile alınır (BES
+  sözleşmesinin geçmiş gün fiyatıyla aynı yol). Bu belgede AI düğmesi gizli.

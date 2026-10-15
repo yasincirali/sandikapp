@@ -9,6 +9,8 @@ import '../providers/bulk_cart_provider.dart';
 import '../providers/premium_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/csv_import_service.dart';
+import '../services/price_service.dart';
+import '../models/asset_type.dart' show tefasOneki;
 import '../services/ekstre/ekran_goruntusu.dart';
 import '../services/ekstre/ekran_okuyucu.dart';
 import '../services/ekstre/ekstre_ice_aktarma.dart';
@@ -111,6 +113,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             else
               for (final ad in e.cozulemeyenFonlar)
                 l.importFundNotRecognized(ad),
+            for (final ad in e.fiyatiAlinamayanFonlar)
+              l.importFundPriceMissing(ad),
             ...e.notlar,
           ],
         ));
@@ -145,6 +149,38 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       _fonListesiAlinamadi = true;
       return s;
     }
+  }
+
+  /// Yalnız tutar yazan belge ("Varlık Geçmişi Formu", 2026-10-15): adet =
+  /// tutar ÷ belge günündeki fiyat. Fiyat seriden okunur (BES sözleşmesinin
+  /// geçmiş gün fiyatıyla aynı yol); alınamayan fon eklenmez, önizleme
+  /// "fiyatı alınamadı" der.
+  Future<EkstreOkumaSonucu> _tutarFiyatlariniAl(EkstreOkumaSonucu s) async {
+    final gun = s.belgeTarihi;
+    final kodlar = s.tutarFonKodlari;
+    if (gun == null || kodlar.isEmpty) return s;
+    final ay = (DateTime.now().difference(gun).inDays / 30).ceil();
+    final aralik = ay <= 1
+        ? '1mo'
+        : ay <= 3
+            ? '3mo'
+            : ay <= 6
+                ? '6mo'
+                : ay <= 12
+                    ? '1y'
+                    : '3y';
+    final fiyatlar = <String, double>{};
+    for (final k in kodlar) {
+      try {
+        final seri =
+            await PriceService.instance.fetchHistory('$tefasOneki$k', aralik);
+        final f = gunFiyati(seri, gun);
+        if (f != null) fiyatlar[k] = f;
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'ekstre_tutar_fiyati');
+      }
+    }
+    return s.fiyatlarla(fiyatlar);
   }
 
   /// Önizleme başlığı — sonuç gelince görünür alana kaydırılır.
@@ -215,8 +251,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     if (dosya == null || !mounted) return;
     setState(() => _okunuyor = true);
     try {
-      final sonuc =
-          await _fonAdlariniCoz(await ekstreyiOku(await dosya.readAsBytes()));
+      final sonuc = await _tutarFiyatlariniAl(
+          await _fonAdlariniCoz(await ekstreyiOku(await dosya.readAsBytes())));
       if (!mounted) return;
       _ekstre = sonuc;
       _dosyaAdi = dosya.name;
@@ -735,6 +771,16 @@ class _EslemeKarti extends StatelessWidget {
             ),
           // Tarih sütunu olmayan döküm: satırlar ekstre gününü aldı ve maliyet
           // o günün fiyatı — kullanıcı K/Z'nin nereden başladığını bilsin.
+          if (tarih != null && sonuc.tutarFonlari.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs),
+              child: Text(
+                context.l10n.importAmountOnly(DateFormat('d MMM yyyy',
+                        Localizations.localeOf(context).languageCode)
+                    .format(tarih)),
+                style: context.t.bodySmall?.copyWith(color: c.text58),
+              ),
+            ),
           if (tarih != null &&
               a != null &&
               !a.roller.containsKey(EkstreRol.tarih))
@@ -791,7 +837,8 @@ class _EslemeKarti extends StatelessWidget {
           // ayıklatamıyorum" dedi: motorun kendinden emin okuduğu ama
           // eksik/yanlış çıkardığı ekstrede kullanıcının elinde AI yolu
           // kalmıyordu. Motor emin olsa da kullanıcı isterse AI'a sorar.
-          if (aiGorunur && !sonuc.aiOnerisi) ...[
+          // Yalnız tutarlı belgede AI'ın bulacağı adet sütunu yok (2026-10-15).
+          if (aiGorunur && !sonuc.aiOnerisi && sonuc.tutarFonlari.isEmpty) ...[
             const SizedBox(height: SandikSpace.xs),
             if (aiKilitli)
               KilitSatiri(

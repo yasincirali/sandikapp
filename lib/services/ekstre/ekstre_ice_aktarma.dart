@@ -13,12 +13,14 @@ import 'mevduat_tablosu.dart';
 import 'pdf_okuyucu.dart';
 import 'tablo_anlama.dart';
 import 'tablo_okuyucular.dart';
+import 'tutar_tablosu.dart';
 
 export 'ekstre_tablosu.dart' show EkstreAiHatasi, EkstreOkumaHatasi;
 export 'mevduat_tablosu.dart' show EkstreMevduati;
 export 'ekstre_iskeleti.dart' show ekstreIskeleti, ekstreMetni;
 export 'hareket_tablosu.dart' show EkstreHareketi;
 export 'tablo_anlama.dart' show EkstreAnlami, EkstreRol, EkstreRolAdi;
+export 'tutar_tablosu.dart' show EkstreTutarFonu, gunFiyati;
 
 /// Evrensel ekstre içe aktarma — dosya baytlarından `CsvImportService`'e.
 ///
@@ -55,6 +57,8 @@ class EkstreOkumaSonucu {
     this.tablolar = const [],
     this.hareketler = const [],
     this.aiOnerisi = false,
+    this.tutarFonlari = const [],
+    this.tutarFiyatlari = const {},
   });
 
   final EkstreBicimi bicim;
@@ -71,6 +75,15 @@ class EkstreOkumaSonucu {
   /// Eşleme yapay zekâ önerisinden geldi ([aiEslemesiyle]); kart
   /// "kontrol et" der.
   final bool aiOnerisi;
+
+  /// Yalnız tutar yazan fon satırları ("Varlık Geçmişi Formu",
+  /// `tutar_tablosu.dart`). Yalnız sembollü varlık tablosu yokken ve belge
+  /// tarihi biliniyorken dolar; adet belge günündeki fiyattan bulunur.
+  final List<EkstreTutarFonu> tutarFonlari;
+
+  /// TEFAS kodu → belge günündeki birim fiyat ([fiyatlarla] doldurur; ağdan
+  /// çağıran getirir). Fiyatı olmayan fon kanonik metne girmez.
+  final Map<String, double> tutarFiyatlari;
 
   /// En güçlüsü başta. Birden fazlası XLSX'in ayrı sayfaları ya da ayrı
   /// HTML/PDF tablolarıdır (ör. "Hisse" ve "Fon" sayfaları).
@@ -120,7 +133,11 @@ class EkstreOkumaSonucu {
   /// Kapalıyken (bayrak `ekstre_hareketleri` kapalı) çıktı birebir eski.
   String kanonikMetin({bool hareketlerle = false}) {
     final ({List<EkstreRol> sutunlar, List<String> satirlar})? k =
-        hareketlerle ? _hareketli() : _kanonik();
+        _secilen.isEmpty && tutarFonlari.isNotEmpty
+            ? _tutarKanonik()
+            : hareketlerle
+                ? _hareketli()
+                : _kanonik();
     // Hareketli yolda varlık tablosu olmayabilir; satır yoksa metin de yok.
     if (k == null || (hareketlerle && k.satirlar.isEmpty)) return '';
     return [k.sutunlar.map((r) => r.kanonikBaslik).join('\t'), ...k.satirlar]
@@ -223,9 +240,60 @@ class EkstreOkumaSonucu {
     );
   }
 
+  /// Yalnız-tutarlı fonlar: adet = tutar ÷ belge günündeki fiyat. Kodu ya
+  /// da fiyatı olmayan satır atlanır (tahmin yok).
+  ({List<EkstreRol> sutunlar, List<String> satirlar})? _tutarKanonik() {
+    final gun = belgeTarihi;
+    if (gun == null) return null;
+    final tarih = '${gun.day.toString().padLeft(2, '0')}.'
+        '${gun.month.toString().padLeft(2, '0')}.${gun.year}';
+    const sutunlar = [
+      EkstreRol.sembol, EkstreRol.adet, EkstreRol.fiyat, EkstreRol.tarih,
+      EkstreRol.tur, EkstreRol.paraBirimi, EkstreRol.isim,
+    ];
+    final satirlar = <String>[];
+    for (final f in tutarFonlari) {
+      final kod = adKodlari[fonAdiAnahtari(f.ad)];
+      final fiyat = kod == null ? null : tutarFiyatlari[kod];
+      if (kod == null || fiyat == null || fiyat <= 0) continue;
+      final ad = f.ad.split('---').first.replaceAll(RegExp(r'\s+'), ' ').trim();
+      satirlar.add([
+        kod,
+        sayiMetni(tutardanAdet(f.tutar, fiyat)),
+        sayiMetni(fiyat),
+        tarih,
+        'Fon',
+        'TRY',
+        ad,
+      ].join('\t'));
+    }
+    if (satirlar.isEmpty) return null;
+    return (sutunlar: sutunlar, satirlar: satirlar);
+  }
+
+  /// Koda çözülmüş yalnız-tutarlı fonların kodları (fiyatı istenecekler).
+  List<String> get tutarFonKodlari => {
+        for (final f in tutarFonlari)
+          if (adKodlari[fonAdiAnahtari(f.ad)] case final String k) k,
+      }.toList();
+
+  /// Kodu bulunmuş ama belge gününün fiyatı alınamamış fonların adları.
+  List<String> get fiyatiAlinamayanFonlar => [
+        for (final f in tutarFonlari)
+          if (adKodlari[fonAdiAnahtari(f.ad)] case final String k
+              when !tutarFiyatlari.containsKey(k))
+            f.ad.split('---').first.trim(),
+      ];
+
+  /// Belge günündeki fiyatlarla kopya (saf; fiyatlar ağdan çağıranda gelir).
+  EkstreOkumaSonucu fiyatlarla(Map<String, double> fiyatlar) =>
+      _kopya(tutarFiyatlari: fiyatlar);
+
   /// Koda çözülmesi gereken fon adları (tekil, belge sırasıyla).
-  List<String> get cozulecekFonAdlari =>
-      {for (final a in _secilen) ...a.fonAdlari}.toList();
+  List<String> get cozulecekFonAdlari => {
+        for (final a in _secilen) ...a.fonAdlari,
+        for (final f in tutarFonlari) f.ad,
+      }.toList();
 
   /// TEFAS'ta tek bir fona eşleşmeyen adlar — içe aktarılmadı.
   List<String> get cozulemeyenFonlar => [
@@ -311,6 +379,7 @@ class EkstreOkumaSonucu {
     Map<String, String>? adKodlari,
     List<({String kod, String unvan})>? fonListesi,
     bool? aiOnerisi,
+    Map<String, double>? tutarFiyatlari,
   }) =>
       EkstreOkumaSonucu(
         bicim: bicim,
@@ -324,6 +393,8 @@ class EkstreOkumaSonucu {
         tablolar: tablolar,
         hareketler: hareketler,
         aiOnerisi: aiOnerisi ?? this.aiOnerisi,
+        tutarFonlari: tutarFonlari,
+        tutarFiyatlari: tutarFiyatlari ?? this.tutarFiyatlari,
       );
 }
 
@@ -358,7 +429,18 @@ EkstreOkumaSonucu ekstreyiAnla(
 ) {
   var anlamlar = tablolariAnla(tablolar);
   final mevduat = vadeliMevduatlar(tablolar);
-  if (anlamlar.isEmpty && mevduat.mevduatlar.isEmpty) {
+  final belgeTarihi = belgeTarihiBul(metin);
+  // Sembollü varlık tablosu yok ama fonlar adla ve yalnız tutarla yazılmış
+  // ("Varlık Geçmişi Formu", 2026-10-15): elle eşleme adayı gösterilmez —
+  // orada seçilecek adet sütunu yok, kart "Adet ← Sütun 2" diye yanıltıyordu.
+  final tutarFonlari = belgeTarihi != null &&
+          !anlamlar.any((a) => a.roller.containsKey(EkstreRol.sembol))
+      ? tutarliFonlar(tablolar)
+      : const <EkstreTutarFonu>[];
+  if (tutarFonlari.isNotEmpty) anlamlar = const [];
+  if (anlamlar.isEmpty &&
+      mevduat.mevduatlar.isEmpty &&
+      tutarFonlari.isEmpty) {
     // Sembol sütunu tanınmadı ama ortada bir tablo var: çıkmaz sokak yerine
     // en büyük tabloyu güven 0 ile ver — ekran "emin değiliz" der ve
     // "Sütunları düzelt" ile kullanıcı sembolü kendisi gösterir. Motor
@@ -367,7 +449,9 @@ EkstreOkumaSonucu ekstreyiAnla(
     // kullanıcının dosyayla yapabileceği hiçbir şey kalmıyordu (2026-10-02).
     anlamlar = _elleEslemeAdayi(tablolar);
   }
-  if (anlamlar.isEmpty && mevduat.mevduatlar.isEmpty) {
+  if (anlamlar.isEmpty &&
+      mevduat.mevduatlar.isEmpty &&
+      tutarFonlari.isEmpty) {
     throw const EkstreOkumaHatasi(
       'Dosyada sembol içeren bir tablo bulunamadı. Portföy dökümü ya da '
       'işlem ekstresi olduğundan emin ol; olmuyorsa tabloyu kopyalayıp '
@@ -379,10 +463,11 @@ EkstreOkumaSonucu ekstreyiAnla(
     anlamlar: anlamlar,
     mevduatlar: mevduat.mevduatlar,
     notlar: mevduat.notlar,
-    belgeTarihi: belgeTarihiBul(metin),
+    belgeTarihi: belgeTarihi,
     kurum: bankaAdiBul(metin),
     tablolar: tablolar,
     hareketler: hareketleriBul(tablolar),
+    tutarFonlari: tutarFonlari,
   );
 }
 
