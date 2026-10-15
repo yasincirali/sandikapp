@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../models/abd_hisseleri.dart';
 import '../models/asset_categories.dart';
 import 'bist_hisse_katalogu.dart';
 import '../models/asset_type.dart';
@@ -7,6 +8,7 @@ import '../providers/bulk_cart_provider.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_katla.dart';
 import 'fiyat_kaynagi.dart';
+import 'remote_config_service.dart';
 
 /// Yapıştırılan CSV/TSV metnini sepet kalemlerine çevirir — SAF, ağ yok.
 ///
@@ -44,6 +46,11 @@ class CsvImportService {
   CsvImportService._();
 
   static const _uuid = Uuid();
+
+  /// ABD hisseleri açık mı (bayrak `abd_hisse`) — testler değiştirir.
+  /// Kapalıyken ABD satırı BIST hissesi sanılmaz; satır hatası olur.
+  static bool Function() abdHisseAcik =
+      () => RemoteConfigService.instance.abdHisse;
 
   static const _aliases = <String, List<String>>{
     'ticker': ['sembol', 'kod', 'ticker', 'symbol', 'hisse', 'fon', 'code'],
@@ -176,11 +183,21 @@ class CsvImportService {
         continue;
       }
 
-      final type = _typeFromCell(cell('type')) ?? inferType(rawTicker);
-      final norm = normalizeTicker(rawTicker, type);
-      final currency =
-          (cell('currency') ?? norm.currency ?? type.defaultCurrency)
-              .toUpperCase();
+      final hamTur = cell('type');
+      final hamPara = cell('currency');
+      final abd = abdSatiriMi(rawTicker, hamTur, hamPara);
+      if (abd && !abdHisseAcik()) {
+        errors.add('Satır $lineNo ($rawTicker): ABD hissesi bu sürümde '
+            'eklenemiyor.');
+        continue;
+      }
+      final type = abd
+          ? AssetType.hisse
+          : _typeFromCell(hamTur) ?? inferType(rawTicker);
+      final norm = abd ? _abdNormal(rawTicker) : normalizeTicker(rawTicker, type);
+      final currency = abd
+          ? 'USD'
+          : (hamPara ?? norm.currency ?? type.defaultCurrency).toUpperCase();
 
       rows.add(BulkCartItem(
         id: _uuid.v4(),
@@ -379,6 +396,56 @@ class CsvImportService {
       return AssetType.kripto;
     }
     return null;
+  }
+
+  /// Satır ABD hissesi/ETF'i mi (Midas gibi yurt dışı aracı kurum
+  /// dökümü, 2026-10-15)? Önceden USD'li "AAPL" satırı `AAPL.IS` (olmayan
+  /// BIST hissesi) olarak yazılıyor, üç harfli "AMD" TEFAS fonu sanılıyordu.
+  ///
+  /// Kesin işaret gerekir, tahmin yok:
+  /// - tür hücresi ABD/yurt dışı hisse diyor, ya da
+  /// - para birimi USD ve sembol BIST kodu değil, hisse/ETF sembolü
+  ///   biçiminde (`AAPL`, `BRK.B`), tür hücresi hisse/fon/ETF ya da boş.
+  /// USD'siz çıplak "AMD" eskisi gibi kalır (TEFAS kodu da olabilir).
+  static bool abdSatiriMi(String sembol, String? tur, String? paraBirimi) {
+    final t = sembol.trim().toUpperCase();
+    final k = tur == null ? '' : _katla(tur.trim());
+    if (const {
+      'abd', 'abd hisse', 'abd hissesi', 'abd hisseleri', 'yabanci hisse',
+      'us stock', 'us equity', 'us etf', 'abd etf',
+    }.contains(k)) {
+      return true;
+    }
+    final para = paraBirimi?.trim().toUpperCase();
+    if (para != 'USD' && para != r'$') return false;
+    if (k.isNotEmpty &&
+        !const {'hisse', 'hisse senedi', 'pay', 'stock', 'equity', 'etf', 'fon', 'fund'}
+            .contains(k)) {
+      return false;
+    }
+    if (BistHisseKatalogu.instance.kodMu(t) || t.endsWith('.IS')) return false;
+    if (_dovizKodlari.contains(t)) return false;
+    return RegExp(r'^[A-Z][A-Z0-9]{0,4}([.\-][A-Z])?$').hasMatch(t);
+  }
+
+  /// ABD hissesinin saklama biçimi — ekleme formuyla aynı
+  /// (`AddAssetFormNotifier.resolveIdentity`): Yahoo sembolü, alt
+  /// kategori `abd`, USD.
+  static ({
+    String ticker,
+    String name,
+    String? subCategory,
+    String unitType,
+    String? currency,
+  }) _abdNormal(String raw) {
+    final t = abdSembolu(raw);
+    return (
+      ticker: t,
+      name: abdHisseleri[t] ?? t,
+      subCategory: StockSubCategory.abd.name,
+      unitType: 'piece',
+      currency: 'USD',
+    );
   }
 
   /// Semboldan tür çıkarımı — tür sütunu yokken.

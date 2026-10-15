@@ -2999,6 +2999,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t load the TEFAS fund list; funds listed by name were skipped. Check your connection and pick the file again.';
 
   @override
+  String importFundPriceMissing(String name) {
+    return '$name: couldn\'t get the price on the statement date, skipped.';
+  }
+
+  @override
+  String importAmountOnly(String date) {
+    return 'This document shows no quantities: each quantity is the amount divided by the unit price on $date. Cost is taken as that day\'s price.';
+  }
+
+  @override
   String importDepositsFound(int n) {
     return '$n time deposits found (demand accounts are not imported)';
   }

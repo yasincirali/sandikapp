@@ -2974,6 +2974,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.';
 
   @override
+  String importFundPriceMissing(String name) {
+    return '$name: ekstre günündeki fiyatı alınamadı, eklenmedi.';
+  }
+
+  @override
+  String importAmountOnly(String date) {
+    return 'Bu belge adet yazmıyor: adet, tutarın $date günündeki birim fiyata bölünmesiyle bulundu. Maliyet o günün fiyatı sayıldı.';
+  }
+
+  @override
   String importDepositsFound(int n) {
     return '$n vadeli mevduat bulundu (vadesiz hesaplar alınmaz)';
   }

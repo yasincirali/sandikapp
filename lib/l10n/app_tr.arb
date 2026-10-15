@@ -2008,6 +2008,22 @@
     }
   },
   "importFundListFailed": "TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.",
+  "importFundPriceMissing": "{name}: ekstre günündeki fiyatı alınamadı, eklenmedi.",
+  "@importFundPriceMissing": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importAmountOnly": "Bu belge adet yazmıyor: adet, tutarın {date} günündeki birim fiyata bölünmesiyle bulundu. Maliyet o günün fiyatı sayıldı.",
+  "@importAmountOnly": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "importDepositsFound": "{n} vadeli mevduat bulundu (vadesiz hesaplar alınmaz)",
   "@importDepositsFound": {
     "placeholders": {

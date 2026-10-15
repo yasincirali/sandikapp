@@ -155,8 +155,7 @@ yatırım ve vadeli mevduatlar içeride olmalı."*
   "TEFAS Müşteriye Fon Satış YAY 29,00x1.739,18"). ⚠️ Tuzak: banka gözünden yazılır,
   **"Müşteriye Fon Satış" müşterinin ALIŞI**, "Müşteriden Fon Alış" SATIŞI. Hareketler
   okunacaksa yön bu kuralla çevrilmeli. Yalnız tutar veren "Varlık Geçmişi Formu"
-  (adet yok) desteklenmiyor — elle eşleme yedeğine düşer; adet = tutar ÷ o günün
-  fiyatı ile eklenebilir.
+  (adet yok) 2026-10-15'ten beri okunur: aşağıdaki bölüme bak.
 
 | Karar | Seçilen | Alternatif | Neden |
 |---|---|---|---|
@@ -318,3 +317,47 @@ adet ve ortalama maliyeti zaten gösterir; yasin seçeneği "Ekran görüntüsü
 - **Sayfalar arası tablo birleştirme** yalnız birebir sütun uyumunda: DenizBank hareket
   listesi sayfa 3 ve 4'te ayrı tablo kalıyor (içe aktarılmadığı için etkisiz).
 - **Sonraki adım (E):** "ekstrem tanınmadı → örnek gönder" akışı (açık rızayla).
+
+## Yalnız tutar yazan belge (2026-10-15)
+
+DenizBank'ın aylık "Varlık Geçmişi Formu" fonu adıyla (sonda `---TR…` ISIN) ve
+yalnız TL karşılığıyla yazar; adet ve birim fiyat yoktur. Önceki sürüm onu elle
+eşleme yedeğine düşürüyordu ("Adet ← Sütun 2", "emin değiliz"), AI de adet
+sütunu bulamıyordu (yasin: "varlık tablosu bulamadı diyor").
+
+- **Tanıma** (`tutar_tablosu.dart` `tutarliKalemler`): iki dolu hücreli satır
+  ("ad", "86.520,05 TRY" / "$1,000.00") ya da üç hücre ("ad", "1,234.56", "USD").
+  Para birimi yazmayan tutar alınmaz. Grup başlığı ("Yatırım Fonları", ya da
+  tutarı altındaki satırların toplamı olan işaretsiz ad) ve "Toplam" alınmaz.
+  Yalnız sembol + adet tablosu yokken ve belge tarihi biliniyorken devreye girer.
+- **Tür** yalnız kesin işaretle (`tutarKalemiCoz`, sırayla): ISIN (`TRA…` pay
+  ISIN'i BIST kodundan hisse, diğeri fon) → "fon/fonu" kelimesi → "altın" (alt tür
+  tam kelimeyle; yazmıyorsa 24 ayar gram, banka altın hesabı) → kripto adı ya da
+  açık kripto biçimi → BIST kodu → döviz adı/kodu → USD tutarlı ABD sembolü
+  (yasin 2026-10-15: "sadece fonlar için değil, altın hisse döviz vs tüm
+  varlıklar"). Hesap numarası, "Vadesiz Mevduat" gibi işaretsiz ad alınmaz.
+- **Adet** = tutar ÷ belge günündeki fiyat. Tam sayı adet tutarı kuruş içinde
+  veriyorsa adet odur (fon payı, lot); değilse 4 ondalık (gram, kripto). Tutarın
+  parası fiyatın parasından farklıysa belge gününün kuruyla çevrilir (dolar
+  tutarlı altın); döviz hesabı kendi parasıyla yazılmışsa adet tutarın kendisi,
+  fiyat kur. Maliyet o günün fiyatı.
+- **Uydurma yok:** fon adı TEFAS unvanına tek aday olarak eşleşmezse ya da o
+  günün fiyatı/kuru alınamazsa satır eklenmez; önizleme "fiyatı alınamadı" der.
+- Fiyat ekranda alınır: fon `PriceService.fetchHistory('TEFAS:…')` + `gunFiyati`
+  (o gün ya da önceki 7 günün son fiyatı; BES sözleşmesiyle aynı yol), gerisi ve
+  kurlar `fetchHistoricalClose` (toplu eklemenin geçmiş gün kapanışı). Bu belgede
+  AI düğmesi gizli.
+- Başlıksız tabloda para birimi yazan sütun ("31.240,00 TRY") adet sanılmaz
+  (`_paraIsaretli`): "THYAO 31.240,00 TRY" satırı 31.240 lot olmuyor.
+
+## Yurt dışı aracı kurum dökümü (ABD hissesi, 2026-10-15)
+
+Midas gibi kurumların dökümünde USD'li "AAPL" önceden `AAPL.IS` (olmayan BIST
+hissesi), üç harfli "AMD" TEFAS fonu yazılıyordu. `CsvImportService.abdSatiriMi`:
+tür hücresi ABD/yurt dışı hisse diyorsa ya da para birimi USD ve sembol BIST/döviz
+kodu değil, hisse/ETF biçiminde (`AAPL`, `BRK.B`) ise satır ABD hissesi olur —
+ekleme formuyla aynı saklama (`abdSembolu`, alt kategori `abd`, USD). Para birimi
+sütunu yoksa fiyat/tutar hücrelerindeki `$`/`USD` işareti yeter
+(`EkstreAnlami.dolarli` kanonik metne `USD` yazar). USD işareti olmayan çıplak
+"AMD" eskisi gibi kalır. `abd_hisse` bayrağı kapalıysa satır eklenmez, önizleme
+nedenini söyler. Gerçek Midas örneği henüz yok; düzen gelince genişler.
