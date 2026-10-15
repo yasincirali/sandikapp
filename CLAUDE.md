@@ -128,6 +128,15 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
 - **Riskli yeni davranış bayrakla açılır.** Varsayılanı kapalı Remote Config
   anahtarı (`RemoteConfigService`) arkasında gelir; bayrak kapalıyken eski
   davranış birebir korunur.
+- **Mağaza incelemesi = mağaza kullanıcısı (kullanıcı kuralı 2026-10-14,
+  App Store 2.3.1(a)).** Uygulama nereden kurulduğunu (TestFlight, sandbox
+  makbuzu, simülatör, mağaza; `installerStore`, `appStoreReceiptURL`,
+  Play installer) okumaz, Remote Config'e/sunucuya bildirmez, buna göre
+  dallanmaz. Apple "inceleme ortamını tespit edip RC ile farklı davranma"yı
+  gizli özellik sayıp reddediyor. Bayraklar serbest; test kitlesi **hesapla**
+  seçilir (RC özel sinyali `hesap` = kullanıcı UUID'si, Console koşulu
+  "Test kitlesi"). İnceleme demo hesabı o listeye girmez, mağaza değerlerini
+  alır. Kilit `magaza_inceleme_esitligi_test`.
 - **Canlı veriye dokunulmaz.** Tokyo/Frankfurt projelerinde SQL Editor'dan veri
   değiştirme, toplu silme, canlı secret rotasyonu yok (bkz. "Asla kendiliğinden
   yapma"). Deneme yerel Supabase yığınında (`supabase start` + `seed.sql`) ya da

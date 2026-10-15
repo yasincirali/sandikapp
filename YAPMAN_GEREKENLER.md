@@ -12,6 +12,36 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-14 App Store 2.3.1(a): test kitlesi kurulum kanalıyla değil hesapla
+
+Apple "inceleme ortamını tespit edip Remote Config ile farklı davranma"yı
+gizli özellik sayıp reddediyor. #173'ten beri uygulama `dagitim` sinyaliyle
+TestFlight'ı ayırıyordu; inceleme cihazı da TestFlight gibi göründüğü için
+inceleyen kişi "TestFlight 1.1.6" değerlerini (paywall, Frankfurt) görürdü.
+Yeni build `dagitim` göndermez; oturumdaki hesabın UUID'sini `hesap`
+sinyali olarak gönderir. Yasal metin değişmez: hesap kimliği Firebase'e
+(Analytics) zaten gidiyor, Açık Rıza Metni "uzaktan ayar"ı sayıyor.
+
+Sıra (yeni build TestFlight'a çıkınca, mağazaya göndermeden ÖNCE):
+1. [ ] Testçi hesap UUID'lerini topla (Supabase › Authentication › Users,
+       e-postayla ara; salt okunur). Tokyo ve Frankfurt'ta UUID aynı.
+       **App Review demo hesabını listeye KOYMA.**
+2. [ ] Firebase › Remote Config › Conditions › **Yeni koşul "Test kitlesi"**:
+       Custom signal › anahtar `hesap` › *exactly matches* › UUID'ler
+       (küçük harf). Save.
+3. [ ] "TestFlight 1.1.6" koşulunda değeri olan HER parametreye aynı değeri
+       "Test kitlesi" koşulu için de gir (`sunucu`=frankfurt,
+       `premium_hediye_kesim`, `paywall_enabled`, test bayrakları…).
+       Koşul sırasında "Test kitlesi" üstte olsun. **Publish changes.**
+4. [ ] Yeni build'le TestFlight'ta giriş yap: birkaç saniye içinde
+       "yeniden başlat" (Frankfurt) gelmeli, test bayrakları açık olmalı.
+       Çıkış yapınca bir sonraki fetch'te mağaza değerlerine döner.
+5. [ ] Testçiler yeni build'e geçince "TestFlight 1.1.6" koşulunu ve ona
+       bağlı değerleri SİL (eski build'ler hâlâ `dagitim` gönderir;
+       silinince onlar mağaza değerlerini alır). Mağaza gönderiminden önce.
+6. [ ] Android testçileri de aynı listeye eklenebilir; ayrı "Android test"
+       koşulu artık gerekmez.
+
 ## ⏳ 2026-10-13 Ekran görüntüsünden maliyet (bayrak `ekran_goruntusu_maliyet`, Premium)
 
 İçe aktarma ekranında "Ekran görüntüsünden ekle" (ekstre okunduysa "Maliyetleri
