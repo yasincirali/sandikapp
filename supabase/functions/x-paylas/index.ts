@@ -170,7 +170,7 @@ async function aksamTaslaklari(
   if (ee) throw ee;
   const sonEndeks = endeks?.[0];
   if (sonEndeks && tufeYeniMi(sonEndeks.created_at, simdi)) {
-    const t = tufeOzeti((endeks ?? []).map((r) => ({ period: r.period, tufe_index: Number(r.tufe_index) })));
+    const t = tufeOzeti((endeks ?? []).map((r: { period: string; tufe_index: unknown }) => ({ period: r.period, tufe_index: Number(r.tufe_index) })));
     if (t) taslaklar.push(tufeTaslagi(t));
   }
 
