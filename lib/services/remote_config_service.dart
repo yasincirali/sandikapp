@@ -696,7 +696,8 @@ class RemoteConfigService {
       // Kurulum sürerken gelen oturum değişimi kaçmasın.
       final bekleyen = _bekleyenHesapSinyali;
       if (bekleyen != null && bekleyen != _sonHesapSinyali) {
-        unawaited(hesabiBildir(bekleyen));
+        CrashReporter.arkaPlan(hesabiBildir(bekleyen),
+            reason: 'remote_config_service.bekleyenHesap.init');
       }
     } catch (e) {
       if (kDebugMode) debugPrint('RemoteConfigService init failed: $e');
