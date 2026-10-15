@@ -5108,6 +5108,18 @@ abstract class AppLocalizations {
   /// **'TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.'**
   String get importFundListFailed;
 
+  /// No description provided for @importFundPriceMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name}: ekstre günündeki fiyatı alınamadı, eklenmedi.'**
+  String importFundPriceMissing(String name);
+
+  /// No description provided for @importAmountOnly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu belge adet yazmıyor: adet, tutarın {date} günündeki birim fiyata bölünmesiyle bulundu. Maliyet o günün fiyatı sayıldı.'**
+  String importAmountOnly(String date);
+
   /// No description provided for @importDepositsFound.
   ///
   /// In tr, this message translates to:

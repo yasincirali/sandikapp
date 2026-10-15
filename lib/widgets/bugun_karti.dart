@@ -543,9 +543,16 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ),
       );
 
+  // İskelet sönerken kart belirir, boy farkı akar (2026-10-14). Eskiden iskelet tek karede gidiyor, kart sıfır opaklıktan
+  // başlıyordu: arada boş bir an ve altındaki her şeyin zıplaması vardı.
   @override
-  Widget build(BuildContext context) {
-    if (!_yuklendi && widget.state.assets.isNotEmpty) return _iskelet(context);
+  Widget build(BuildContext context) => SandikYuklemeGecisi(
+        yukleniyor: !_yuklendi && widget.state.assets.isNotEmpty,
+        iskelet: _iskelet(context),
+        icerik: _kart,
+      );
+
+  Widget _kart(BuildContext context) {
     final now = BugunKarti.saat();
     final seri = _seri;
     final ozet = seri == null
@@ -698,23 +705,26 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ),
         const SizedBox(height: SandikSpace.md2),
         _HukumSatiri(birincil: birincil, gizli: gizli),
-        if (seriCiz) ...[
-          const SizedBox(height: SandikSpace.sm2),
-          _GunIciEgri(
-            seri: seri,
-            renk: _hareketRengi(context, birincil),
-            // Gün değişince eğri yeniden çizilerek gelir; aynı gün içindeki
-            // 30 sn'lik tazelemeler yalnız yeni noktayı ekler.
-            anahtar: dayKey(now),
-          ),
-        ] else if (!gizli && _seri == null && (_yukleniyor || _turBekleniyor)) ...[
-          // Seri açılış fiyat turunu bekliyor (`_turBitinceYukle`): eğrinin
+        if (seriCiz ||
+            (!gizli && _seri == null && (_yukleniyor || _turBekleniyor))) ...[
+          // Seri açılış fiyat turunu bekliyorsa (`_turBitinceYukle`) eğrinin
           // yeri İSKELETLE tutulur. Eskiden hiç yer ayrılmıyordu; tur bitince
           // eğri araya giriyor, kart büyüyüp altındaki her şey aşağı
           // kayıyordu (TestFlight bulgusu 2026-10-10, "grafik geç çiziliyor").
           // Eski fiyatla eğri ÇİZİLMEZ — kural `_seriYukle` notunda.
+          // İskelet → eğri çapraz solar (2026-10-14).
           const SizedBox(height: SandikSpace.sm2),
-          const SandikSkeleton(height: _egriYuksekligi),
+          SandikYuklemeGecisi(
+            yukleniyor: !seriCiz,
+            iskelet: const SandikSkeleton(height: _egriYuksekligi),
+            icerik: (_) => _GunIciEgri(
+              seri: seri,
+              renk: _hareketRengi(context, birincil),
+              // Gün değişince eğri yeniden çizilerek gelir; aynı gün içindeki
+              // 30 sn'lik tazelemeler yalnız yeni noktayı ekler.
+              anahtar: dayKey(now),
+            ),
+          ),
         ],
         const SizedBox(height: SandikSpace.sm2),
         _DonemCipleri(onSec: (p) => _ozeteGit(periodIdx: p.index)),

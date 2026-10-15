@@ -501,7 +501,22 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   // ── Gövde ─────────────────────────────────────────────────────────────────
 
-  List<Widget> _govde() {
+  /// İskelet → sayfa çapraz solar, boy farkı akar
+  /// (2026-10-14; gerekçe [SandikYuklemeGecisi]). `stretch`: liste
+  /// öğeleri eskiden ListView'dan sıkı genişlik alıyordu, aynısı korunur.
+  List<Widget> _govde() => [
+        SandikYuklemeGecisi(
+          yukleniyor: !_acildi,
+          iskelet: const VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi),
+          icerik: (_) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: _govdeIcerik(),
+          ),
+        ),
+      ];
+
+  List<Widget> _govdeIcerik() {
     final k = widget.kimlik;
     final cizilen = _cizilen;
     final ist = cizilen == null ? null : _istatistik[cizilen];
@@ -517,9 +532,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         azami: k.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
     final bayat = cizilen != null && cizilen != _gun;
 
-    if (!_acildi) {
-      return const [VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi)];
-    }
     return [
       _fiyatBlogu(ist, bicim, cizilen),
       const SizedBox(height: SandikSpace.smd),
@@ -594,7 +606,15 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     );
   }
 
+  /// İskelet/mesaj → grafik çapraz solar (2026-10-14).
   Widget _grafik(
+          DonemIstatistigi? ist, NumberFormat bicim, int? cizilen, bool bayat) =>
+      SandikIcerikGecisi(
+        anahtar: cizilen != null && _seriler[cizilen] != null && ist != null,
+        child: _grafikHam(ist, bicim, cizilen, bayat),
+      );
+
+  Widget _grafikHam(
       DonemIstatistigi? ist, NumberFormat bicim, int? cizilen, bool bayat) {
     final seri = cizilen == null ? null : _seriler[cizilen];
     if (seri == null || ist == null) {

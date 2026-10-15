@@ -5,6 +5,7 @@ import '../l10n/l10n.dart';
 import '../providers/hafta_ozeti_provider.dart';
 import '../screens/hafta_ozeti_screen.dart';
 import '../theme/sandik.dart';
+import 'sandik_skeleton.dart';
 
 /// Ana ekran, Bugün kartının altında tek satırlık radar şeridi (S7-A,
 /// 2026-10-05): "N varlığında bu hafta olağandışı hareket var ›".
@@ -23,8 +24,13 @@ class RadarSeridi extends ConsumerWidget {
 
   final EdgeInsetsGeometry padding;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     final sayi = ref.watch(haftaOlagandisiSayisiProvider);
     if (sayi <= 0) return const SizedBox.shrink();
     final c = context.c;

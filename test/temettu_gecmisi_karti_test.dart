@@ -89,6 +89,9 @@ Future<void> _pump(
   ));
   await tester.pump();
   await tester.pump();
+  // Yükleme → içerik çapraz geçişi biter (2026-10-14).
+  await tester.pump(SandikMotion.surface);
+  await tester.pump();
 }
 
 void main() {

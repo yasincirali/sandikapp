@@ -781,7 +781,11 @@ class _PortfolioPerformanceScreenState
             ],
           ),
           // ── Body ────────────────────────────────────────────────────
-          govde: SandikKaydirmaBasligi.payIle((ustPay) => pStateAsync.when(
+          govde: SandikKaydirmaBasligi.payIle((ustPay) => SandikIcerikGecisi(
+                // Yükleyici → gövde çapraz solar (2026-10-14).
+                tamEkran: true,
+                anahtar: SandikIcerikGecisi.hal([pStateAsync, partnerAssetsAsync]),
+                child: pStateAsync.when(
                   // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
                   // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
                   // bu anda tam ekran yükleme çizip geri dönüyordu: ekran bir kare
@@ -1091,7 +1095,8 @@ class _PortfolioPerformanceScreenState
                       );
                     },
                   ),
-                )),
+                ),
+              )),
           ),
       ),
     );

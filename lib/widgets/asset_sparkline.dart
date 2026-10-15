@@ -79,7 +79,11 @@ class _AssetSparklineState extends State<AssetSparkline> {
 
     final color = widget.isPositive ? context.c.gain : context.c.loss;
 
-    return SizedBox(
+    // Seri her zaman bir kare sonra gelir (önbellek bile `await`'li): eğri
+    // boş kutuda birden beliriyordu. Kısa bir solmayla gelir (2026-10-14);
+    // hareketi azalt açıkken tek kare.
+    final sure = SandikMotion.stateOf(context);
+    final egri = SizedBox(
       width: widget.width,
       height: widget.height,
       child: RepaintBoundary(
@@ -90,6 +94,14 @@ class _AssetSparklineState extends State<AssetSparkline> {
           isComplex: false,
         ),
       ),
+    );
+    if (sure == Duration.zero) return egri;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: sure,
+      curve: SandikMotion.enter,
+      child: egri,
+      builder: (_, t, c) => Opacity(opacity: t, child: c),
     );
   }
 }

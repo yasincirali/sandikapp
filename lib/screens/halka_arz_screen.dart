@@ -58,7 +58,11 @@ class _HalkaArzScreenState extends ConsumerState<HalkaArzScreen> {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(title: l.ipoTitle),
-      body: async.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([async]),
+        child: async.when(
         // Önceki değer varken (yenileme) iskelet yerine liste kalır.
         skipLoadingOnRefresh: true,
         loading: () => const SandikSkeletonList(rows: 5),
@@ -71,6 +75,7 @@ class _HalkaArzScreenState extends ConsumerState<HalkaArzScreen> {
           onRefresh: _yenile,
           child: _Liste(gorunum: g),
         ),
+      ),
       ),
     );
   }

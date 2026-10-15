@@ -149,7 +149,9 @@ void main() {
       await tester.pump();
       expect(_iskeletVar(), isFalse,
           reason: '$etiket dokunuşunun ilk karesi iskelet olmamalı');
-      expect(find.text('Nereden geldi'), findsOneWidget, reason: etiket);
+      // Dönem değişimi çapraz solar (2026-10-14): eski ve yeni özet bir
+      // an birlikte ağaçta. Önemli olan iskeletin hiç görünmemesi.
+      expect(find.text('Nereden geldi'), findsWidgets, reason: etiket);
     }
 
     // Grafik'e dönüp yine Özet'e gelince de aynı.

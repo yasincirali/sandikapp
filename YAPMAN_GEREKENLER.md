@@ -91,6 +91,8 @@ sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanm
       OAuth 1.0a. Keys and tokens: API Key/Secret + Access Token/Secret (bot hesabının).
 - [ ] Secrets (Tokyo): `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`,
       sonra `X_BOT_MODU=yayin`. Bundan sonra "Yayınla" X'e atar.
+- [ ] İsteğe bağlı (2026-10-15): `X_BOT_MODU=otomatik` → taslak onaysız X'e gider, Telegram'a
+      yalnız "Otomatik yayınlandı: link" gelir. Geri dönüş: `yayin` (onaylı).
 - [ ] İsteğe bağlı: `X_KUR_IZINLI=1` (haftalık karta gram altın/dolar/euro — truncgil
       verisinin kamuya yayın hakkı belirsiz, kararı senin); `X_BOT_AI=0` (model yerine
       şablon metin; maliyet sıfır).

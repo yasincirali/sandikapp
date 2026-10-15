@@ -20,6 +20,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import 'sandik_skeleton.dart';
 
 /// Varlık sayfasındaki sözleşme kartı — mevduat ve BES.
 ///
@@ -37,8 +38,13 @@ class SozlesmeKarti extends ConsumerWidget {
   final Asset varlik;
   final EdgeInsets dis;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     final id = varlik.sozlesmeId;
     if (id == null || !varlik.type.sozlesmeli) return const SizedBox.shrink();
     final sd = ref.watch(sozlesmeProvider).valueOrNull;

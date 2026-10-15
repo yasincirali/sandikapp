@@ -151,7 +151,10 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
 
     return FutureBuilder<List<double>>(
       future: _loadPrices(),
-      builder: (context, snap) {
+      builder: (context, snap) => SandikIcerikGecisi(
+        // Hesaplanıyor satırı → sinyal çapraz solar (2026-10-14).
+        anahtar: snap.connectionState == ConnectionState.waiting,
+        child: ((BuildContext context, AsyncSnapshot<List<double>> snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return _kabuk(
             renk: context.c.text36,
@@ -215,7 +218,8 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           kayit: kayit,
           donus: ozet.donus,
         );
-      },
+      })(context, snap),
+      ),
     );
   }
 
@@ -562,7 +566,10 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
 
     return FutureBuilder<List<double>>(
       future: _loadPrices(),
-      builder: (context, snap) {
+      builder: (context, snap) => SandikIcerikGecisi(
+        // Hesaplanıyor satırı → sinyal çapraz solar (2026-10-14).
+        anahtar: snap.connectionState == ConnectionState.waiting,
+        child: ((BuildContext context, AsyncSnapshot<List<double>> snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return _panelShell(
             child: Row(
@@ -588,7 +595,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         if (prices.length < 30) return _gecmisYok(context);
 
         return _buildPanel(context, prices, enabledIds, izinli, parametreler);
-      },
+      })(context, snap),
+      ),
     );
   }
 

@@ -493,11 +493,17 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     );
   }
 
+  // İlk ölçüm gelmeden özet çizilmez: kartlar sonradan belirip listeyi
+  // itmesin (sınıf notu). Bekleme [_azamiBekleme] ile sınırlı. İskelet →
+  // özet geçişi çapraz solar (2026-10-14).
   @override
-  Widget build(BuildContext context) {
-    // İlk ölçüm gelmeden özet çizilmez: kartlar sonradan belirip listeyi
-    // itmesin (sınıf notu). Bekleme [_azamiBekleme] ile sınırlı.
-    if (!_hazir) return widget.iskelet;
+  Widget build(BuildContext context) => SandikYuklemeGecisi(
+        yukleniyor: !_hazir,
+        iskelet: widget.iskelet,
+        icerik: _icerik,
+      );
+
+  Widget _icerik(BuildContext context) {
 
     // TÜFE farkı burada bağlanır: servis saf ve ağa çıkmıyor, bu yüzden
     // hesabı yapılmış özeti enflasyonla yeniden kurmak yerine yalnızca

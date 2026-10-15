@@ -358,12 +358,18 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
                 ZirveDonemSecici(secili: _donem, onSec: _donemSec),
                 const SizedBox(height: SandikSpace.md),
                 _KatilimDurumu(durum: _durum, donem: _donem),
-                if (yukleniyor)
-                  const _Iskelet()
-                else if (satirlar.isEmpty)
-                  _BosDurum(havuz: _havuz)
-                else
-                  ..._dolu(context, satirlar),
+                // İskelet → liste çapraz solar (2026-10-14).
+                SandikYuklemeGecisi(
+                  yukleniyor: yukleniyor,
+                  iskelet: const _Iskelet(),
+                  icerik: (context) => satirlar.isEmpty
+                      ? _BosDurum(havuz: _havuz)
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisSize: MainAxisSize.min,
+                          children: _dolu(context, satirlar),
+                        ),
+                ),
                 const SizedBox(height: SandikSpace.md),
                 // Onay + rıza geri çekme isteği tek Future: gösterge düğmede
                 // döner, ikinci dokunuş yutulur (tek yükleniyor davranışı,

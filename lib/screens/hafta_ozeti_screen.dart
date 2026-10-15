@@ -55,7 +55,11 @@ class HaftaOzetiScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: SandikAppBar(title: l10n.weekTitle),
-      body: liste.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([liste]),
+        child: liste.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(SandikSpace.md),
           child: SandikSkeletonList(rows: 3),
@@ -124,6 +128,7 @@ class HaftaOzetiScreen extends ConsumerWidget {
             ],
           );
         },
+      ),
       ),
     );
   }
