@@ -701,6 +701,27 @@ export function tufeYeniMi(eklendi: string, simdi: Date, gun = 3): boolean {
   return simdi.getTime() - new Date(eklendi).getTime() <= gun * 86400_000;
 }
 
+// ── Mod ─────────────────────────────────────────────────────────────────────
+
+/// `X_BOT_MODU` secret'ı. Tanınmayan değer KAPALI sayılır (fail-closed).
+///   kapali   → hiçbir şey yapılmaz
+///   taslak   → taslak + Telegram önizleme; onay X'e göndermez
+///   yayin    → taslak Telegram'da onaylanınca X'e gider
+///   otomatik → metin kapısından geçen (ya da şablona düşen) taslak onaysız
+///              X'e gider; Telegram'a yalnız bilgi gelir (yasin, 15 Eki:
+///              "otomatik atmayacak mı"). Geri dönüş: secret'ı `yayin` yap.
+export type XBotModu = 'kapali' | 'taslak' | 'yayin' | 'otomatik';
+
+export function botModu(ham: string | undefined): XBotModu {
+  const m = (ham ?? '').trim();
+  return m === 'taslak' || m === 'yayin' || m === 'otomatik' ? m : 'kapali';
+}
+
+/// Bu modda X'e gönderim yapılabilir mi (onaylı ya da otomatik).
+export function xeGonderir(mod: XBotModu): boolean {
+  return mod === 'yayin' || mod === 'otomatik';
+}
+
 // ── Onay (Telegram) ─────────────────────────────────────────────────────────
 
 /// Onay düğmesi verisi: 'o:<id>' yayınla, 'r:<id>' reddet.

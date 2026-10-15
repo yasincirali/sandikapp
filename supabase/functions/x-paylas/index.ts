@@ -3,14 +3,17 @@
 // pg_cron hafta içi TR 19:40'ta çağırır (fon akışı 19:15 turundan sonra).
 // İçerik: fon akışı, Cuma haftanın özeti, TÜİK TÜFE; ABD için (Türkçe) BLS
 // TÜFE ve Fed faiz kararı.
-// Gönderiyi kendisi ATMAZ: taslağı yazar, kartını çizer ve Telegram'da
-// yöneticiye "Yayınla / Reddet" düğmeleriyle yollar. Atma işi `x-onay`'da.
+// `yayin`/`taslak` modda gönderiyi kendisi ATMAZ: taslağı yazar, kartını
+// çizer ve Telegram'da yöneticiye "Yayınla / Reddet" düğmeleriyle yollar;
+// atma işi `x-onay`'da. `otomatik` modda (yasin, 15 Eki) aynı taslağı
+// onaysız atar, Telegram'a yalnız sonucu bildirir.
 //
 // Kapılar (hepsi varsayılan KAPALI; canlıdaki uygulama kullanıcısı hiçbir
 // şey görmez, uygulama bu tablolara hiç dokunmaz):
 //   X_BOT_MODU  yok/'kapali' → 503, hiçbir şey yapılmaz (AI maliyeti de yok)
 //               'taslak'     → taslak + Telegram önizleme, onay X'e GÖNDERMEZ
 //               'yayin'      → onaylanan taslak X'e gider (x-onay)
+//               'otomatik'   → taslak onaysız X'e gider, Telegram'a bilgi
 //   X_KUR_IZINLI='1' → haftalık karta altın/döviz satırları (veri hakkı
 //               netleşene kadar kapalı; bkz. _shared/x_paylasim.ts).
 //   ANTHROPIC_API_KEY yoksa ya da X_BOT_AI='0' → şablon metin (model yok).
@@ -32,6 +35,7 @@ import {
   akisOzeti,
   fedKarariBul,
   fedTaslagi,
+  botModu,
   bugununFonGonderisi,
   fonAkisiTaslagi,
   gunEkle,
@@ -46,7 +50,14 @@ import {
   tufeTaslagi,
   tufeYeniMi,
 } from '../_shared/x_paylasim.ts';
-import { telegramAyari, telegramTaslakGonder, telegramWebhookKur } from '../_shared/x_istemci.ts';
+import {
+  telegramAyari,
+  telegramTaslakGonder,
+  telegramWebhookKur,
+  xKartliGonder,
+  XHatasi,
+  xKimligi,
+} from '../_shared/x_istemci.ts';
 import { pngCiz } from '../bildirim-karti/cizici.ts';
 
 /// ABD kamu verisi (BLS, New York Fed). Anahtarsız uçlar; 15 sn sınır.
@@ -74,6 +85,38 @@ function trAksam(gun: string): string {
   return new Date(`${gun}T15:00:00Z`).toISOString();
 }
 
+/// Otomatik mod: `x-onay`'daki kilit + gönderim, onaysız. Satır
+/// `taslak → gonderiliyor` koşullu güncellemesiyle kilitlenir; eşzamanlı ikinci
+/// tur ya da bu arada Telegram'dan basılan düğme ikinci kez atamaz.
+async function otomatikGonder(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  kimlik: NonNullable<ReturnType<typeof xKimligi>>,
+  id: number,
+  metin: string,
+  png: Uint8Array<ArrayBuffer> | null,
+  tg: ReturnType<typeof telegramAyari>,
+): Promise<string> {
+  const { data: kilit, error: ke } = await db.from('x_gonderileri')
+    .update({ durum: 'gonderiliyor', karar_at: new Date().toISOString() })
+    .eq('id', id).eq('durum', 'taslak').select('id');
+  if (ke) throw ke;
+  if (!kilit?.length) return `zaten_isleniyor:${id}`;
+  try {
+    const xId = await xKartliGonder(kimlik, metin, png);
+    await db.from('x_gonderileri').update({ durum: 'gonderildi', x_id: xId, gonderildi_at: new Date().toISOString() })
+      .eq('id', id);
+    if (tg) await telegramTaslakGonder(tg, id, `${metin}\n\n— Otomatik yayınlandı: https://x.com/i/status/${xId}`, png, false);
+    return `gonderildi:${id}`;
+  } catch (e) {
+    const neden = e instanceof XHatasi ? e.message : hataOzeti(e);
+    console.error('[x-paylas] otomatik gonderim', neden);
+    await db.from('x_gonderileri').update({ durum: 'hata', hata: neden.slice(0, 200) }).eq('id', id);
+    if (tg) await telegramTaslakGonder(tg, id, `${metin}\n\n— Otomatik gönderilemedi (${neden}).`, png, false);
+    return `hata:${id}`;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return yanit({ ok: false }, 405);
   // Fon akışı gözlemiyle aynı secret (0146 gerekçesi): yeni Vault kaydı
@@ -84,8 +127,10 @@ Deno.serve(async (req: Request) => {
   const yetkisiz = cronYetkisiVarMi(req, secret);
   if (yetkisiz) return yetkisiz;
 
-  const mod = Deno.env.get('X_BOT_MODU') ?? 'kapali';
-  if (mod !== 'taslak' && mod !== 'yayin') return yanit({ ok: false, neden: 'kapali' }, 503);
+  const mod = botModu(Deno.env.get('X_BOT_MODU') ?? 'kapali');
+  if (mod === 'kapali') return yanit({ ok: false, neden: 'kapali' }, 503);
+  // Otomatik modda anahtar yoksa onaylı akışa düşülür (taslak + düğme).
+  const kimlik = mod === 'otomatik' ? xKimligi() : null;
 
   const url = Deno.env.get('SUPABASE_URL')!;
   const db = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -233,8 +278,13 @@ Deno.serve(async (req: Request) => {
       } catch (e) {
         console.error('[x-paylas] kart', hataOzeti(e));
       }
+      if (kimlik) {
+        sonuc[t.tur] = await otomatikGonder(db, kimlik, satir.id, metin, png, tg);
+        continue;
+      }
       if (tg) {
-        const not = mod === 'yayin' ? '' : '\n\n(Taslak modu: onay X\'e göndermez.)';
+        const not = mod === 'taslak' ? '\n\n(Taslak modu: onay X\'e göndermez.)'
+          : mod === 'otomatik' ? '\n\n(Otomatik mod ama X anahtarı yok: onayla gönderilir.)' : '';
         await telegramTaslakGonder(tg, satir.id, `${metin}${not}`, png, true);
       }
       sonuc[t.tur] = `taslak:${satir.id}:${kaynak}`;
