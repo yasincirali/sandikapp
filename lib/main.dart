@@ -1223,6 +1223,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _dataWaitTimer = null;
         _dataWaitExpired = false;
         AnalyticsService.instance.setUserId(null);
+        // Test kitlesi hesapla seçilir (App Store 2.3.1(a), 2026-10-14).
+        CrashReporter.arkaPlan(RemoteConfigService.instance.hesabiBildir(null),
+            reason: 'main.hesabiBildir.cikis');
         // Mağaza kimliğini de bırak: sıradaki hesap öncekinin aboneliğini
         // görmesin. Bayrak kapalıyken/yapılandırılmamışken no-op.
         CrashReporter.arkaPlan(SatinAlmaService.instance.cikis(),
@@ -1300,6 +1303,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         CrashReporter.arkaPlan(HesapGecisi.instance.aktifHesapGirdi(user),
             reason: 'main.HesapGecisi.aktifHesapGirdi');
         AnalyticsService.instance.setUserId(user.id);
+        CrashReporter.arkaPlan(
+            RemoteConfigService.instance.hesabiBildir(user.id),
+            reason: 'main.hesabiBildir.giris');
         // Mağaza aboneliği (RevenueCat): yalnız `paywall_enabled` açıkken ve
         // anahtar build'e girmişken bağlanır; değilse hiçbir şey yapmaz.
         // Hak değişince anlık köprü + sunucu haklarını tazele (webhook
