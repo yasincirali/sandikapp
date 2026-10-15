@@ -5,6 +5,8 @@
 
 import { assert, assertEquals, assertMatch } from 'jsr:@std/assert@1';
 import {
+  botModu,
+  xeGonderir,
   abdTufeGuncelMi,
   abdTufeOzeti,
   abdTufeTaslagi,
@@ -283,6 +285,23 @@ Deno.test('x-paylas: cron secret fail-closed, mod kapıları varsayılan kapalı
   assert(paylas.includes("cronSecretZorunlu(secret, 'TEFAS_NAV_CRON_SECRET')"));
   assert(paylas.includes("Deno.env.get('X_BOT_MODU') ?? 'kapali'"));
   assert(paylas.includes("Deno.env.get('X_KUR_IZINLI') === '1'"));
-  // Gönderi yalnız onayla atılır: x-paylas X'e hiç yazmaz.
-  assertEquals(/xGonder|xGorselYukle/.test(paylas), false);
+  // x-paylas X'e yalnız otomatik modda ve anahtar varken yazar; o yol da
+  // x-onay'daki koşullu kilidi (taslak → gonderiliyor) kullanır.
+  assertEquals(/xGonder\(|xGorselYukle\(/.test(paylas), false);
+  assert(paylas.includes("mod === 'otomatik' ? xKimligi() : null"));
+  assert(paylas.includes(".eq('id', id).eq('durum', 'taslak').select('id')"));
+});
+
+Deno.test('botModu: yalnız bilinen değerler, gerisi kapalı (fail-closed)', () => {
+  assertEquals(botModu(undefined), 'kapali');
+  assertEquals(botModu(''), 'kapali');
+  assertEquals(botModu('acik'), 'kapali');
+  assertEquals(botModu('YAYIN'), 'kapali');
+  assertEquals(botModu('taslak'), 'taslak');
+  assertEquals(botModu(' yayin\n'), 'yayin');
+  assertEquals(botModu('otomatik'), 'otomatik');
+  assertEquals(xeGonderir('taslak'), false);
+  assertEquals(xeGonderir('kapali'), false);
+  assertEquals(xeGonderir('yayin'), true);
+  assertEquals(xeGonderir('otomatik'), true);
 });

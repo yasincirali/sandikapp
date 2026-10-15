@@ -8,10 +8,11 @@ const X_API = 'https://api.x.com/2';
 
 export function xKimligi(): XKimlik | null {
   const k = {
-    consumerKey: Deno.env.get('X_API_KEY') ?? '',
-    consumerSecret: Deno.env.get('X_API_SECRET') ?? '',
-    token: Deno.env.get('X_ACCESS_TOKEN') ?? '',
-    tokenSecret: Deno.env.get('X_ACCESS_SECRET') ?? '',
+    // Panelden yapıştırırken kalan boşluk/satır sonu imzayı bozar (401).
+    consumerKey: (Deno.env.get('X_API_KEY') ?? '').trim(),
+    consumerSecret: (Deno.env.get('X_API_SECRET') ?? '').trim(),
+    token: (Deno.env.get('X_ACCESS_TOKEN') ?? '').trim(),
+    tokenSecret: (Deno.env.get('X_ACCESS_SECRET') ?? '').trim(),
   };
   return Object.values(k).every((v) => v.length > 0) ? k : null;
 }
@@ -55,6 +56,25 @@ export async function xGonder(kimlik: XKimlik, metin: string, medyaId: string | 
   const id = j?.data?.id;
   if (typeof id !== 'string') throw new XHatasi('gonderi_yanit', r.status);
   return id;
+}
+
+/// Kartı yükleyip gönderiyi atar; gönderi kimliğini döner. Görsel
+/// yüklenemezse metin yine gider: gönderinin değeri sayılarda.
+/// `x-onay` (onaylı) ve `x-paylas` (otomatik) aynı yolu kullanır.
+export async function xKartliGonder(
+  kimlik: XKimlik,
+  metin: string,
+  png: Uint8Array<ArrayBuffer> | null,
+): Promise<string> {
+  let medya: string | null = null;
+  if (png) {
+    try {
+      medya = await xGorselYukle(kimlik, png);
+    } catch (e) {
+      console.error('[x] gorsel', e instanceof XHatasi ? e.message : 'bilinmeyen');
+    }
+  }
+  return await xGonder(kimlik, metin, medya);
 }
 
 // ── Telegram (onay kanalı) ──────────────────────────────────────────────────
