@@ -14,7 +14,13 @@ import {
   fedKarariBul,
   fedTaslagi,
   ASGARI_FON,
+  AZAMI_KARAKTER,
   bugununFonGonderisi,
+  type FonFiyatSatiri,
+  fonGetiriTaslagi,
+  getiriOzeti,
+  sabahGonderisi,
+  takvimTaslagi,
   type FonAkisSatiri,
   fonAkisiTaslagi,
   fonKategorisi,
@@ -304,4 +310,105 @@ Deno.test('botModu: yalnız bilinen değerler, gerisi kapalı (fail-closed)', ()
   assertEquals(xeGonderir('kapali'), false);
   assertEquals(xeGonderir('yayin'), true);
   assertEquals(xeGonderir('otomatik'), true);
+});
+
+// ── Sabah gönderisi (0153) ───────────────────────────────────────────────────
+
+/// dagilim: [fon_turu, fon sayısı, iki gün arası getiri %]
+function fiyatlar(gunler: [string, string], dagilim: [string, number, number][]): FonFiyatSatiri[] {
+  const out: FonFiyatSatiri[] = [];
+  let n = 0;
+  for (const [tur, adet, r] of dagilim) {
+    for (let i = 0; i < adet; i++, n++) {
+      const kod = `F${String(n).padStart(4, '0')}`;
+      const pay = 1000 + n;
+      const fiyat = 2 + (n % 7);
+      out.push({ fon_kodu: kod, tarih: gunler[0], fon_tipi: 'YAT', fon_turu: tur, pay_adedi: pay, portfoy_degeri: pay * fiyat });
+      out.push({ fon_kodu: kod, tarih: gunler[1], fon_tipi: 'YAT', fon_turu: tur, pay_adedi: pay + 5, portfoy_degeri: (pay + 5) * fiyat * (1 + r / 100) });
+    }
+  }
+  return out;
+}
+
+const GETIRI = fiyatlar(['2026-10-13', '2026-10-14'], [
+  ['Hisse Senedi Fonu', 120, -0.42],
+  ['Para Piyasası Fonu', 80, 0.13],
+  ['Kıymetli Madenler Fonu', 60, 1.24],
+  ['Borçlanma Araçları Fonu', 70, 0.08],
+  ['Bilinmeyen', 5, 9],
+]);
+
+Deno.test('fon getirisi: son iki tam gün, kategori medyanı, BES ve az fonlu kategori yok', () => {
+  const o = getiriOzeti([
+    ...GETIRI,
+    // BES ve bugünün (yarım) verisi sayılmaz; 25'lik veri hatası dışarıda.
+    { fon_kodu: 'EMK1', tarih: '2026-10-14', fon_tipi: 'EMK', fon_turu: 'Hisse Senedi Fonu', pay_adedi: 1, portfoy_degeri: 1 },
+    { fon_kodu: 'F0000', tarih: '2026-10-15', fon_tipi: 'YAT', fon_turu: 'Hisse Senedi Fonu', pay_adedi: 1, portfoy_degeri: 9 },
+  ], '2026-10-15')!;
+  assertEquals([o.onceki, o.gun], ['2026-10-13', '2026-10-14']);
+  assertEquals(o.kategoriler.map((k) => k.kategori), ['Altın ve kıymetli maden', 'Para piyasası', 'Borçlanma araçları', 'Hisse senedi']);
+  assert(Math.abs(o.kategoriler[0].medyan - 1.24) < 1e-9);
+  // Yarım gün (ASGARI_FON altı) atlanır, iki tam gün yoksa null.
+  assertEquals(getiriOzeti(GETIRI.slice(0, 2 * (ASGARI_FON - 1)), '2026-10-15'), null);
+  const sicrama = fiyatlar(['2026-10-13', '2026-10-14'], [['Hisse Senedi Fonu', ASGARI_FON, 25]]);
+  assertEquals(getiriOzeti(sicrama, '2026-10-15'), null);
+});
+
+Deno.test('fon getirisi taslağı: şablon kendi kapısından geçer, iki basamak', () => {
+  const t = fonGetiriTaslagi(getiriOzeti(GETIRI, '2026-10-15')!);
+  assertEquals(t.tur, 'fon_getiri');
+  assertEquals(t.donem, '2026-10-14');
+  assertEquals(t.sablon_metin, "14 Ekim'de fon kategorileri içinde en yüksek medyan getiri %1,24 ile altın ve kıymetli maden fonlarında oldu. Hisse senedi fonları %0,42 geriledi.");
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t), { gecti: true, metin: t.sablon_metin });
+  assert(t.kart.bicim === 'liste' && t.kart.satirlar[3].deger === '−%0,42');
+});
+
+const OLAYLAR = [
+  { tarih: '2026-10-22', saat: '14:00:00', baslik: 'TCMB faiz kararı' },
+  { tarih: '2026-10-28', saat: '21:00:00', baslik: 'Fed faiz kararı' },
+  { tarih: '2026-11-12', saat: null, baslik: 'TCMB Enflasyon Raporu' },
+];
+
+Deno.test('takvim: yalnız bu haftanın olayları, olay yoksa null, model yok', () => {
+  const t = takvimTaslagi('2026-10-19', OLAYLAR)!;
+  assertEquals(t.sablon_metin, 'Bu hafta takvimde: 22 Ekim Perşembe 14:00 TCMB faiz kararı.');
+  assertEquals(t.yalniz_sablon, true);
+  assertEquals(t.donem, '2026-10-19');
+  assert(t.kart.bicim === 'liste' && t.kart.satirlar[0].deger === 'Per 22 Eki' && t.kart.satirlar[0].ek === '14:00');
+  assertEquals(takvimTaslagi('2026-11-02', OLAYLAR), null);
+  // Saatsiz olay saatsiz yazılır.
+  assertEquals(takvimTaslagi('2026-11-09', OLAYLAR)!.sablon_metin, 'Bu hafta takvimde: 12 Kasım Perşembe TCMB Enflasyon Raporu.');
+  // Uzun hafta tek gönderiye sığar.
+  const cok = Array.from({ length: 6 }, (_, i) => ({ tarih: `2026-10-${19 + (i % 5)}`, saat: '10:00', baslik: `Uzunca bir veri açıklaması başlığı ${i}` }));
+  assert([...takvimTaslagi('2026-10-19', cok)!.sablon_metin].length <= AZAMI_KARAKTER);
+});
+
+Deno.test('sabah: Pazartesi takvim, diğer iş günleri getiri, hafta sonu yok', () => {
+  assertEquals(sabahGonderisi('2026-10-19'), 'takvim');
+  assertEquals(sabahGonderisi('2026-10-20'), 'fon_getiri');
+  assertEquals(sabahGonderisi('2026-10-23'), 'fon_getiri');
+  assertEquals(sabahGonderisi('2026-10-24'), null);
+});
+
+Deno.test('sabah kartları PNG çizilir', async () => {
+  for (const k of [fonGetiriTaslagi(getiriOzeti(GETIRI, '2026-10-15')!).kart, takvimTaslagi('2026-10-26', OLAYLAR)!.kart]) {
+    const png = await pngCiz(kartSvg(k));
+    assertEquals([...png.slice(1, 4)].map((c) => String.fromCharCode(c)).join(''), 'PNG');
+    const dosya = Deno.env.get('X_KART_CIKTI');
+    if (dosya) await Deno.writeFile(`${dosya}/kart_sabah_${k.ust.slice(0, 4)}.png`, png);
+  }
+});
+
+const m0153 = await Deno.readTextFile(new URL('../migrations/0153_x_sabah_gonderisi.sql', import.meta.url));
+
+Deno.test('0153: takvim istemciye kapalı, sabah cron akşamla aynı aktiflikte, eski kip korunur', () => {
+  assert(m0153.includes('force row level security'));
+  assert(m0153.includes('revoke all on table public.x_takvim from public, anon, authenticated'));
+  assertEquals(/create policy/i.test(m0153), false);
+  assert(m0153.includes("cron.schedule('x-paylas-sabah', '30 6 * * 1-5'"));
+  assert(m0153.includes("where jobname = 'x-paylas' and not active"));
+  // Eski tetik kip yollamaz → akşam turu; sabah yalnız açık 'sabah' ile.
+  assert(paylas.includes("let kip = 'aksam'"));
+  assert(paylas.includes("g?.kip === 'sabah'"));
+  assert(paylas.includes('aiAcik && !t.yalniz_sablon'));
 });
