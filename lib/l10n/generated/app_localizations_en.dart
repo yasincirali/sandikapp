@@ -1369,7 +1369,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summaryPushSubtitle =>
-      'Get your weekly and monthly portfolio summary as a notification';
+      'Your weekly and monthly portfolio summary. The monthly inflation notice comes separately';
 
   @override
   String get quietHours => 'Quiet hours';

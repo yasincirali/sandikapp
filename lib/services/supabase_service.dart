@@ -641,7 +641,8 @@ class SupabaseService {
           .eq('id', userId)
           .maybeSingle();
       return row?['weekly_summary_push'] != false;
-    } catch (_) {
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'getWeeklySummaryPush');
       return true;
     }
   }

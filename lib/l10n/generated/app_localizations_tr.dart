@@ -1356,7 +1356,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get summaryPushSubtitle =>
-      'Haftalık ve aylık portföy özetin bildirim olarak gelsin';
+      'Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir';
 
   @override
   String get quietHours => 'Sessiz saatler';

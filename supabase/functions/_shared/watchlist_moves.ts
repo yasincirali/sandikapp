@@ -55,11 +55,20 @@ export function hareketleriSec(
   fonEsikPct = FON_HAREKET_ESIGI_PCT,
 ): Hareket[] {
   return adaylar
+    // Eşik, mesajda GÖRÜNEN tek ondalıklı değerle karşılaştırılır: 9,8/10
+    // kayan noktada −1,99999… çıkar, mesaj "%2,0" der ama eşiği geçmezdi
+    // (müşteri testi 2026-10-17, BES −%2,0 bildirilmiyordu).
     .filter((h) =>
-      Number.isFinite(h.pct) && Math.abs(h.pct) >= (h.fon ? fonEsikPct : esikPct)
+      Number.isFinite(h.pct) &&
+      gorunenYuzde(h.pct) >= (h.fon ? fonEsikPct : esikPct)
     )
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
     .slice(0, enCok);
+}
+
+/// Mesajdaki gösterimle aynı yuvarlama (tek ondalık, mutlak değer).
+export function gorunenYuzde(pct: number): number {
+  return Math.round(Math.abs(pct) * 10) / 10;
 }
 
 /// Mesaj — tutar yok, tavsiye yok, emoji yok (RETENTION_STRATEJISI §8–9).
@@ -73,8 +82,9 @@ export function hareketMesaji(hareketler: Hareket[]): { title: string; body: str
   const title = hareketler.length === 1
     ? `${ilk.pct >= 0 ? '▲' : '▼'} Takip listende: ${parca(ilk)}`
     : `Takip listende ${hareketler.length} büyük hareket`;
+  // Fonun kapanışı yok, günde bir yayımlanan fiyatı var (TEFAS NAV).
   const body = hareketler.length === 1
-    ? 'Bugünkü kapanış. Yatırım tavsiyesi değildir.'
+    ? `${ilk.fon ? 'Bugünkü fon fiyatı' : 'Bugünkü kapanış'}. Yatırım tavsiyesi değildir.`
     : `${hareketler.map(parca).join(' · ')}. Yatırım tavsiyesi değildir.`;
   return { title, body };
 }
@@ -83,7 +93,8 @@ export function hareketMesaji(hareketler: Hareket[]): { title: string; body: str
 /// anlatamaz, metin zaten hepsini sayıyor.
 export function hareketKarti(hareketler: Hareket[]): KartVerisi | null {
   if (hareketler.length !== 1) return null;
-  return degisimKarti(hareketler[0].ad, hareketler[0].pct, 'Takip listesi · son kapanış');
+  const h = hareketler[0];
+  return degisimKarti(h.ad, h.pct, h.fon ? 'Takip listesi · fon fiyatı' : 'Takip listesi · son kapanış');
 }
 
 type WatchRow = {
@@ -123,7 +134,10 @@ export async function takipListesiHareketleri(
     if (!s) continue;
     semboller.add(s);
     const l = kullaniciSatirlari.get(r.user_id) ?? [];
-    l.push({ sembol: s, ad: r.name || s });
+    // Fon adı uzun ("… Para Piyasası Katılım Fonu") ve kilit ekranında
+    // kesilir; fonda kullanıcının tanıdığı ad koddur (TTE, AFT).
+    const ad = s.startsWith('TEFAS:') ? s.slice('TEFAS:'.length) : (r.name || s);
+    l.push({ sembol: s, ad });
     kullaniciSatirlari.set(r.user_id, l);
   }
   if (semboller.size === 0) return { ok: true, reason: 'Fiyatlanabilir sembol yok.', sent: 0 };

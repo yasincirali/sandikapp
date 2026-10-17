@@ -83,3 +83,17 @@ Deno.test('fon ve hisse aynı listede mutlak harekete göre sıralanır', () => 
   ]);
   assertEquals(secili.map((h) => h.ad), ['HISSE', 'FON']);
 });
+
+Deno.test('eşik görünen değerle: kayan noktada %1,9999… olan −%2,0 fon seçilir', () => {
+  const pct = (9.8 / 10 - 1) * 100; // −1,9999999999999927
+  const secili = hareketleriSec([{ ad: 'BES', pct, fon: true }]);
+  assertEquals(secili.length, 1);
+  // %1,94 mesajda "%1,9" yazar → eşiğin altında kalır.
+  assertEquals(hareketleriSec([{ ad: 'F', pct: 1.94, fon: true }]), []);
+});
+
+Deno.test('tek fon hareketi: gövde "fon fiyatı", kapanış değil', () => {
+  const m = hareketMesaji([{ ad: 'AAA Fonu', pct: 2.5, fon: true }]);
+  assertStringIncludes(m.body, 'Bugünkü fon fiyatı');
+  assertEquals(m.body.includes('kapanış'), false);
+});

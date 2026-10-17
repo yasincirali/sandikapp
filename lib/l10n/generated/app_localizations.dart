@@ -2483,7 +2483,7 @@ abstract class AppLocalizations {
   /// No description provided for @summaryPushSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Haftalık ve aylık portföy özetin bildirim olarak gelsin'**
+  /// **'Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir'**
   String get summaryPushSubtitle;
 
   /// No description provided for @quietHours.
