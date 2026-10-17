@@ -8,6 +8,16 @@
 	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- Uygulamanın dilleri. Yoksa App Store sayfası "Diller: İngilizce"
+	     yazar (ölçüm 2026-10-17: iTunes lookup languageCodesISO2A = [EN]),
+	     uygulama aslında Türkçe. Mağaza bu listeyi ikiliden okur; ASC'deki
+	     Türkçe metadata bunu değiştirmez. Flutter de iOS'ta yerelleştirme
+	     için bu anahtarı ister. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>tr</string>
+		<string>en</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Sandık</string>
 	<key>CFBundleExecutable</key>
