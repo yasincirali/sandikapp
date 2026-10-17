@@ -61,7 +61,7 @@ class FiyatBolgesi {
   int get hashCode => Object.hash(alt, ust, temas);
 
   @override
-  String toString() => 'FiyatBolgesi($alt–$ust, temas: $temas)';
+  String toString() => 'FiyatBolgesi($alt-$ust, temas: $temas)';
 }
 
 class DestekDirenc {

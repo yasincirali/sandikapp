@@ -40,7 +40,7 @@ void main() {
     final direnc = t.getTopLeft(find.bySemanticsLabel(RegExp('^Direnç')));
     final destek = t.getTopLeft(find.bySemanticsLabel(RegExp('^Destek')));
     expect(direnc.dy, lessThan(destek.dy));
-    expect(find.bySemanticsLabel('Destek: F41.2 – F42.0, dönemde 3 kez dönülmüş'),
+    expect(find.bySemanticsLabel('Destek: F41.2 - F42.0, dönemde 3 kez dönülmüş'),
         findsOneWidget);
     h.dispose();
   });

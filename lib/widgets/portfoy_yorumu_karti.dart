@@ -400,7 +400,7 @@ class SeviyeSatiri extends StatelessWidget {
     final t = context.t;
     String aralik(FiyatBolgesi b) => b.alt == b.ust
         ? fiyatYaz(b.alt)
-        : '${fiyatYaz(b.alt)} – ${fiyatYaz(b.ust)}';
+        : '${fiyatYaz(b.alt)} - ${fiyatYaz(b.ust)}';
     Widget satir(String ad, FiyatBolgesi b) {
       final metin = l.seviyeSatiri(ad, aralik(b), b.temas);
       return Semantics(
