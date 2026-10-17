@@ -297,14 +297,6 @@ class RemoteConfigService {
     // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
     'birikim_serisi': false,
 
-    // Ayarlar › Bildirimler'de "Dönem özeti" anahtarı (2026-10-17). Sütun
-    // (`profiles.weekly_summary_push`, 0052) ve sunucu okuması zaten var;
-    // eksik olan yalnız yazan anahtardı — iOS'ta haftalık/aylık özeti
-    // susturmanın tek yolu bildirimleri toptan kapatmaktı. KAPALI doğar
-    // (yeni ayar satırı = yeni özellik kuralı); kapalıyken Ayarlar birebir
-    // eski, sunucu davranışı iki durumda da aynı.
-    'ozet_bildirimi_anahtari': false,
-
     // Eurobond varlık türü (2026-10-08, yasin: "varlık tiplerimize eurobond
     // … eklemeliyiz"). Varlık Ekle çipi, sinyal ayarı ve filtrelerdeki tür
     // seçeneği buna bağlı. KAPALI doğar: fiyat tablosu (0124) iki sunucuya
@@ -876,9 +868,6 @@ class RemoteConfigService {
 
   /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
   bool get birikimSerisi => _bayrak('birikim_serisi');
-
-  /// Dönem özeti bildirimi anahtarı. Gerekçe `_defaults`'ta.
-  bool get ozetBildirimiAnahtari => _bayrak('ozet_bildirimi_anahtari');
 
   /// Eurobond türü. Gerekçe `_defaults`'ta.
   bool get eurobond => _bayrak('eurobond');

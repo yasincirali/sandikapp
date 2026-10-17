@@ -822,9 +822,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const _PartnerActivitySwitch(),
             const _BriefSlotTile(),
             // Brifing saatinin hemen altında: ikisi de "proaktif" push ve
-            // kullanıcı ikisini aynı yerde arar.
-            if (RemoteConfigService.instance.ozetBildirimiAnahtari)
-              const _OzetBildirimiSwitch(),
+            // kullanıcı ikisini aynı yerde arar. Bayraksız (yasin
+            // 2026-10-17: "her özelliği kapatma, flag gerekirse ben
+            // belirteceğim"); sunucu sütunu 0052'den beri okuyor.
+            const _OzetBildirimiSwitch(),
             if (ref.watch(balinaRadariAcikProvider)) const _RadarAyarlari(),
             // Maaş günü birikim hatırlatması (0119) — birikim serisiyle aynı
             // bayrak: seri görünmüyorken "serin ay ay sayılıyor" diyen bir

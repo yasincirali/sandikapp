@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/settings_screen.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,8 +13,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Neden: `profiles.weekly_summary_push` sütununu sunucu 0052'den beri
 /// okuyordu ama yazan bir anahtar yoktu (TECHNICAL_DEBT "Dönem özeti
 /// push'unun istemcide kapatma anahtarı yok"). Kilitlenenler:
-///   · bayrak KAPALI doğar ve kapalıyken satır görünmez (eski Ayarlar);
-///   · açıkken satır görünür, dar ekranda ve büyük yazıda taşmaz;
+///   · satır bayraksız görünür (yasin 2026-10-17: bayrağı o ister),
+///     dar ekranda ve büyük yazıda taşmaz;
 ///   · istemcinin yazdığı sütun, sunucunun okuduğu sütunla AYNI — biri
 ///     yeniden adlandırılırsa anahtar sessizce hiçbir şeyi kapatmaz.
 const _baslik = 'Dönem özeti bildirimleri';
@@ -46,21 +45,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
   });
-  tearDown(() => RemoteConfigService.testAcik = {});
 
-  test('bayrak KAPALI doğar', () {
-    expect(RemoteConfigService.instance.ozetBildirimiAnahtari, isFalse);
-  });
-
-  testWidgets('bayrak kapalıyken satır yok — Ayarlar birebir eski',
+  testWidgets('satır var, varsayılan AÇIK görünür',
       (tester) async {
-    await _pump(tester);
-    expect(find.text(_baslik), findsNothing);
-  });
-
-  testWidgets('bayrak açıkken satır var, varsayılan AÇIK görünür',
-      (tester) async {
-    RemoteConfigService.testAcik = {'ozet_bildirimi_anahtari'};
     await _pump(tester);
     await tester.scrollUntilVisible(find.text(_baslik), 200,
         scrollable: find.byType(Scrollable).first);
@@ -76,8 +63,7 @@ void main() {
 
   for (final (w, olcek) in const [(320.0, 1.0), (320.0, 2.0), (430.0, 3.1)]) {
     testWidgets('${w.toInt()}pt, $olcek× yazı: taşma yok', (tester) async {
-      RemoteConfigService.testAcik = {'ozet_bildirimi_anahtari'};
-      await _pump(tester, width: w, olcek: olcek);
+        await _pump(tester, width: w, olcek: olcek);
       // Satır listenin altında; tembel listede çizilmeden taşma ölçülemez.
       await tester.scrollUntilVisible(find.text(_baslik), 200,
           scrollable: find.byType(Scrollable).first);
