@@ -11,7 +11,10 @@
 //     kılardı.
 //   · Yalnızca kullanıcının KENDİ seçtiği liste (watchlist) — proaktif değil,
 //     istek üzerine bildirim; kanal fiyat alarmıyla aynı (`alert_channel`).
-//   · TEFAS fonu değişim taşımaz (günlük tek NAV) → bu turda dışarıda.
+//   · TEFAS fonu (fon/BES) 2026-10-17'den beri dahil: değişim aynı canlı
+//     kotasyon yolundan, TEFAS'ın son iki NAV'ından gelir (bugün tarihli
+//     NAV yoksa fon o gün sayılmaz). Eşik fonda %2: fon hisseye göre az
+//     oynar, %5 fonda neredeyse hiç aşılmazdı.
 //   · Sessiz saatler ve `watchlist_move_log` (0068) günlük tekilleştirme.
 //
 // Sembol kuralı istemcideki `alarmSembolu` ile AYNI: altın alt kategorisi
@@ -27,11 +30,13 @@ import { appNotificationRow, recordAppNotification } from './app_notifications.t
 
 /** Bildirime değer günlük hareket (mutlak, yüzde). */
 export const HAREKET_ESIGI_PCT = 5;
+/** Fon (TEFAS) için eşik — gerekçe dosya başında. */
+export const FON_HAREKET_ESIGI_PCT = 2;
 /** Tek push'ta en çok kaç varlık anılır. */
 export const EN_COK_VARLIK = 3;
 export const CHANNEL_ID = 'alert_channel';
 
-export type Hareket = { ad: string; pct: number };
+export type Hareket = { ad: string; pct: number; fon?: boolean };
 
 /// İstemcideki `alarmSembolu` (lib/widgets/alarm_kur_sheet.dart) eşi.
 export function takipSembolu(ticker: string, subCategory: string | null | undefined): string | null {
@@ -41,14 +46,18 @@ export function takipSembolu(ticker: string, subCategory: string | null | undefi
   return t.length === 0 ? null : t;
 }
 
-/// Eşiği aşanları mutlak harekete göre sırala, ilk N.
+/// Eşiği aşanları mutlak harekete göre sırala, ilk N. Fon satırı
+/// (`fon: true`) kendi eşiğiyle süzülür.
 export function hareketleriSec(
   adaylar: Hareket[],
   esikPct = HAREKET_ESIGI_PCT,
   enCok = EN_COK_VARLIK,
+  fonEsikPct = FON_HAREKET_ESIGI_PCT,
 ): Hareket[] {
   return adaylar
-    .filter((h) => Number.isFinite(h.pct) && Math.abs(h.pct) >= esikPct)
+    .filter((h) =>
+      Number.isFinite(h.pct) && Math.abs(h.pct) >= (h.fon ? fonEsikPct : esikPct)
+    )
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
     .slice(0, enCok);
 }
@@ -105,11 +114,11 @@ export async function takipListesiHareketleri(
   const liste = (rows ?? []) as WatchRow[];
   if (liste.length === 0) return { ok: true, reason: 'Takip listesi bos.', sent: 0 };
 
-  // Sembol ↔ satırlar. Fon (TEFAS) değişim taşımaz; dışarıda.
+  // Sembol ↔ satırlar. Fon/BES ticker'ı `TEFAS:XXX`; canlı kotasyon onu
+  // TEFAS'a yönlendirir (`live_prices.ts`).
   const kullaniciSatirlari = new Map<string, Array<{ sembol: string; ad: string }>>();
   const semboller = new Set<string>();
   for (const r of liste) {
-    if (r.type === 'fon') continue;
     const s = takipSembolu(r.ticker ?? '', r.sub_category);
     if (!s) continue;
     semboller.add(s);
@@ -128,7 +137,7 @@ export async function takipListesiHareketleri(
     for (const s of satirlar) {
       const q = kotasyon.get(s.sembol);
       if (!q || q.changePct === null) continue;
-      adaylar.push({ ad: s.ad, pct: q.changePct });
+      adaylar.push({ ad: s.ad, pct: q.changePct, fon: s.sembol.startsWith('TEFAS:') });
     }
     const secili = hareketleriSec(adaylar, esik);
     if (secili.length > 0) secimler.set(uid, secili);

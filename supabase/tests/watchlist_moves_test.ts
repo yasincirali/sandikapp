@@ -2,6 +2,7 @@
 import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 import {
   EN_COK_VARLIK,
+  FON_HAREKET_ESIGI_PCT,
   HAREKET_ESIGI_PCT,
   hareketleriSec,
   hareketKarti,
@@ -62,4 +63,23 @@ Deno.test('hareket kartı: tek hareket → kart, çok hareket → yok', () => {
   assertEquals(k.b, '%3,1');
   assertEquals(k.y, 'd');
   assertEquals(hareketKarti([{ ad: 'A', pct: 3 }, { ad: 'B', pct: -4 }]), null);
+});
+
+// ── Fon (TEFAS) hareketi (2026-10-17) ─────────────────────────────────────
+Deno.test('fon kendi eşiğiyle (%2) süzülür; hisse %5 eşiğinde kalır', () => {
+  assertEquals(FON_HAREKET_ESIGI_PCT, 2);
+  const secili = hareketleriSec([
+    { ad: 'FON-A', pct: 2.4, fon: true },
+    { ad: 'FON-B', pct: -1.9, fon: true },
+    { ad: 'HISSE', pct: 2.4 },
+  ]);
+  assertEquals(secili.map((h) => h.ad), ['FON-A']);
+});
+
+Deno.test('fon ve hisse aynı listede mutlak harekete göre sıralanır', () => {
+  const secili = hareketleriSec([
+    { ad: 'FON', pct: -3.1, fon: true },
+    { ad: 'HISSE', pct: 6.0 },
+  ]);
+  assertEquals(secili.map((h) => h.ad), ['HISSE', 'FON']);
 });

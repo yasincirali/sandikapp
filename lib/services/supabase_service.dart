@@ -627,6 +627,37 @@ class SupabaseService {
     );
   }
 
+  /// Haftalık (0052) ve aylık (0067) dönem özeti push'u. Sütun ortak:
+  /// `weekly-summary` iki dönemde de `weekly_summary_push = false`'u atlar.
+  ///
+  /// Okuma hatasında `true` — sunucu varsayılanı açık; ağ hatası yüzünden
+  /// anahtarın kapalı görünmesi "kapattım" yanılgısı verirdi
+  /// (`getPartnerActivityPush` ile aynı gerekçe).
+  Future<bool> getWeeklySummaryPush(String userId) async {
+    try {
+      final row = await _db
+          .from('profiles')
+          .select('weekly_summary_push')
+          .eq('id', userId)
+          .maybeSingle();
+      return row?['weekly_summary_push'] != false;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> setWeeklySummaryPush(String userId, bool enabled) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setWeeklySummaryPush',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'weekly_summary_push': enabled},
+      call: () => _db
+          .from('profiles')
+          .update({'weekly_summary_push': enabled}).eq('id', userId),
+    );
+  }
+
   /// Brifing saati (0068): 'morning' (09:45) | 'evening' (18:30).
   /// Okuma hatasında 'morning' — sunucu varsayılanı; anahtar yanlış
   /// tarafta görünmesin.
