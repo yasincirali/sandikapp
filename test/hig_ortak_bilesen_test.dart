@@ -8,6 +8,8 @@ import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
+import 'package:portfoy_takip/services/destek_direnc.dart';
+import 'package:portfoy_takip/widgets/portfoy_yorumu_karti.dart';
 import 'package:portfoy_takip/widgets/pozisyon_islemleri.dart';
 import 'package:portfoy_takip/widgets/sandik_baglam_menusu.dart';
 import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
@@ -167,6 +169,16 @@ void main() {
                       child: Text('ASELS'),
                     ),
                   ),
+                ),
+                const SizedBox(height: SandikSpace.md),
+                // AI yorum kartının destek/direnç satırı (2026-10-17): nötr
+                // renk, metin kontrastı ve ×2 yazıda taşma.
+                SeviyeSatiri(
+                  seviyeler: const DestekDirenc(
+                    destek: FiyatBolgesi(alt: 41.2, ust: 42, temas: 3),
+                    direnc: FiyatBolgesi(alt: 46.5, ust: 47.1, temas: 2),
+                  ),
+                  fiyatYaz: (v) => '₺${v.toStringAsFixed(2)}',
                 ),
                 const SizedBox(height: SandikSpace.md),
                 SandikSectionHeader(title: 'Bölüm'),
