@@ -40,6 +40,10 @@ SORGULAR = [
     "fon takip", "tefas", "yatırım takip", "varlık takip",
     "altın takip", "döviz takip", "temettü takip", "temettü",
     "enflasyon", "reel getiri", "kâr zarar", "birikim",
+    "kripto takip", "net değer",
+    # Yalnız en-US anahtar alanında olan kelimeler: Türkiye vitrini en-US
+    # yerelleştirmesini indeksliyor mu, bunlarla ölçülür.
+    "cpi", "wealth", "dividend tracker", "turkish stocks",
 ]
 
 
