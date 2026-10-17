@@ -864,13 +864,13 @@ yazmalarından tüm servis çağrılarına genişleterek).
 
 ---
 
-## ✅ KAPANDI (2026-10-17, bayrak `ozet_bildirimi_anahtari`) — Dönem özeti push'unun istemcide kapatma anahtarı yok
+## ✅ KAPANDI (2026-10-17, bayraksız) — Dönem özeti push'unun istemcide kapatma anahtarı yok
 
 **KAPANDI:** Ayarlar › Bildirimler'de brifing saatinin altında "Dönem özeti
 bildirimleri" anahtarı `profiles.weekly_summary_push`'u yazar (sunucu 0052'den
 beri okuyordu; migration yok). Tek anahtar haftalık + aylık ikisini birden
 kapatır çünkü sütun ortak. Ortak hareketi anahtarıyla aynı kabuk
-(`_SunucuTercihAnahtari`). RC bayrağı kapalı doğar. "Proaktif bildirimler"
+(`_SunucuTercihAnahtari`). Bayrak yok (ilk sürümde vardı; yasin bayrağı gereksiz buldu, kaldırıldı). "Proaktif bildirimler"
 grubu (brifing / TÜFE günü / takip hareketi için ayrı anahtar) hâlâ açık
 karar: üç ayrı satır Ayarlar'ı şişirir; `push_opened` verisiyle bakılır.
 Kilit `ozet_bildirimi_anahtari_test`.

@@ -12,14 +12,12 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-17 Dönem özeti anahtarı (bayrak `ozet_bildirimi_anahtari`) + takip listesinde fon hareketi
+## ⏳ 2026-10-17 Dönem özeti anahtarı (bayraksız) + takip listesinde fon hareketi
 
-- [ ] Firebase Console › Remote Config: `ozet_bildirimi_anahtari` (Boolean)
-      oluştur; varsayılan **false**, "Test kitlesi" koşulunda **true** → Publish.
-      Ayarlar › Bildirimler'de brifing saatinin altında "Dönem özeti
-      bildirimleri" görünür; kapatınca haftalık + aylık özet push'u gelmez.
-      Migration yok (sütun 0052'den beri var).
-- [ ] Mağaza sürümüyle varsayılanı **true** yap (yeni ayar satırı; risk yok).
+- [x] Remote Config'te bir şey yapma: anahtar bayraksız geldi (yasin
+      2026-10-17, "her özelliği kapatma"). Ayarlar › Bildirimler'de brifing
+      saatinin altında "Dönem özeti bildirimleri"; kapatınca haftalık + aylık
+      özet push'u gelmez. RC'de `ozet_bildirimi_anahtari` oluşturduysan silebilirsin.
 - [ ] Takip listesi fon hareketi bayraksız: `check-price-alerts` fonksiyonu
       iki sunucuya dağıtılır (Claude, birleştirmeden sonra Supabase deploy). Fon izleyen
       kullanıcı fon günde ≥%2 oynadığında hafta içi 18:25 TR'de mevcut

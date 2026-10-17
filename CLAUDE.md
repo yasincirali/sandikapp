@@ -128,6 +128,11 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
 - **Riskli yeni davranış bayrakla açılır.** Varsayılanı kapalı Remote Config
   anahtarı (`RemoteConfigService`) arkasında gelir; bayrak kapalıyken eski
   davranış birebir korunur.
+  **Her yeni özellik bayrak istemez** (kullanıcı kuralı 2026-10-17: "her
+  özelliği kapatma, flagli olması gerekirse ben belirteceğim"). Bayrak
+  yasin istediğinde konur; küçük ayar satırı, düzeltme, mevcut veriye
+  dayanan ek bayraksız gelir. Riskli gördüğün yerde bayrağı kendiliğinden
+  koyma; özette öner, yasin karar verir.
 - **Mağaza incelemesi = mağaza kullanıcısı (kullanıcı kuralı 2026-10-14,
   App Store 2.3.1(a)).** Uygulama nereden kurulduğunu (TestFlight, sandbox
   makbuzu, simülatör, mağaza; `installerStore`, `appStoreReceiptURL`,
