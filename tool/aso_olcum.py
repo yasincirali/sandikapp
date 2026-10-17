@@ -183,7 +183,10 @@ def main():
              "asc": asc_metadata(),
              "app_store": app_store(),
              "play": play()}
-    json.dump(sonuc, sys.stdout, ensure_ascii=False, indent=1)
+    # Bölüm başına TEK satır: Actions logu satır başına zaman damgası ekler
+    # ve uzun çıktının başını kırpabilir; satır satır okunur kalsın.
+    for k, v in sonuc.items():
+        print(f"ASO|{k}|" + json.dumps(v, ensure_ascii=False), flush=True)
     # Kısa tablo stderr'e: Actions logunda okunur.
     print("\nsorgu | App Store sıra | Play sıra", file=sys.stderr)
     for t in SORGULAR:

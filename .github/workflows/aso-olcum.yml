@@ -34,9 +34,9 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
-        run: python tool/aso_olcum.py | tee aso.json
+        run: python tool/aso_olcum.py | tee aso.txt
       - uses: actions/upload-artifact@v4
         with:
           name: aso-olcum
-          path: aso.json
+          path: aso.txt
           retention-days: 90
