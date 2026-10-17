@@ -1352,6 +1352,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'Ortağın portföyüne ekleme yaptığında günlük özette an';
 
   @override
+  String get summaryPushTitle => 'Dönem özeti bildirimleri';
+
+  @override
+  String get summaryPushSubtitle =>
+      'Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir';
+
+  @override
   String get quietHours => 'Sessiz saatler';
 
   @override

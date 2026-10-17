@@ -1365,6 +1365,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Mention it in the daily brief when your partner adds to their portfolio';
 
   @override
+  String get summaryPushTitle => 'Period summary notifications';
+
+  @override
+  String get summaryPushSubtitle =>
+      'Your weekly and monthly portfolio summary. The monthly inflation notice comes separately';
+
+  @override
   String get quietHours => 'Quiet hours';
 
   @override

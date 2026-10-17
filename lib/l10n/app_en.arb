@@ -769,6 +769,8 @@
   "lockWidgetHowTo": "You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.",
   "partnerActivityNotifications": "Partner activity notifications",
   "partnerActivityNotificationsSubtitle": "Mention it in the daily brief when your partner adds to their portfolio",
+  "summaryPushTitle": "Period summary notifications",
+  "summaryPushSubtitle": "Your weekly and monthly portfolio summary. The monthly inflation notice comes separately",
   "quietHours": "Quiet hours",
   "biometricLockSubtitle": "Ask for Face ID / fingerprint / device PIN when opening the app",
   "doneTitle": "Done",

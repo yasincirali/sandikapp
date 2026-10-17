@@ -2474,6 +2474,18 @@ abstract class AppLocalizations {
   /// **'Ortağın portföyüne ekleme yaptığında günlük özette an'**
   String get partnerActivityNotificationsSubtitle;
 
+  /// No description provided for @summaryPushTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem özeti bildirimleri'**
+  String get summaryPushTitle;
+
+  /// No description provided for @summaryPushSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir'**
+  String get summaryPushSubtitle;
+
   /// No description provided for @quietHours.
   ///
   /// In tr, this message translates to:

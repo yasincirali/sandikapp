@@ -85,6 +85,39 @@ export function sonNavSatiri(resultList: unknown): NavSatiri | null {
   return en;
 }
 
+/// Bir fonun BUGÜNKÜ NAV'ının bir önceki NAV'a göre yüzde değişimi.
+///
+/// Takip listesi hareketi (`watchlist_moves.ts`) için: TEFAS canlı kotasyon
+/// taşımaz, ama `fonFiyatBilgiGetir` son bir ayın NAV satırlarını döner;
+/// son iki NAV tarihi günlük değişimdir (istemcinin 1G serisiyle aynı iki
+/// nokta). `null` dönen durumlar bilinçli:
+///   · En yeni NAV `bugun` tarihli değil (tatil, TEFAS henüz yayımlamadı) —
+///     dünkü hareketi bugün ikinci kez bildirmek olurdu.
+///   · Önceki NAV yok ya da geçersiz — uydurma değişim yazılmaz.
+/// Aynı tarihli mükerrer satırlar tek sayılır (`sonNavSatiri` ile aynı
+/// süzgeç: sıfır/negatif/NaN fiyat ve tanınmayan tarih atılır).
+export function fonGunlukDegisimi(resultList: unknown, bugun: string): number | null {
+  if (!Array.isArray(resultList)) return null;
+  const gunler = new Map<string, number>();
+  for (const row of resultList) {
+    if (row === null || typeof row !== 'object') continue;
+    const r = row as Record<string, unknown>;
+    const ham = r.fiyat ?? r.birimPayDegeri ?? r.FIYAT;
+    const fiyat = typeof ham === 'number' ? ham : Number(String(ham ?? '').replace(',', '.'));
+    if (!Number.isFinite(fiyat) || fiyat <= 0) continue;
+    const tarih = tefasTarihToIso(r.tarih ?? r.TARIH);
+    if (tarih === null) continue;
+    gunler.set(tarih, fiyat);
+  }
+  const tarihler = [...gunler.keys()].sort();
+  if (tarihler.length < 2) return null;
+  const son = tarihler[tarihler.length - 1];
+  if (son !== bugun) return null;
+  const onceki = gunler.get(tarihler[tarihler.length - 2])!;
+  const simdi = gunler.get(son)!;
+  return ((simdi - onceki) / onceki) * 100;
+}
+
 /// `assets.ticker` değerlerinden ('TEFAS:AFT') tekil, büyük harfli fon
 /// kodları. Biçimi bozuk olanlar (boş, çok uzun, harf/rakam dışı) atılır —
 /// TEFAS'a anlamsız istek atmamak ve yanıtı kodla eşlerken şaşmamak için.

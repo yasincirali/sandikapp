@@ -782,6 +782,8 @@
   "lockWidgetHowTo": "Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.",
   "partnerActivityNotifications": "Ortak hareketi bildirimleri",
   "partnerActivityNotificationsSubtitle": "Ortağın portföyüne ekleme yaptığında günlük özette an",
+  "summaryPushTitle": "Dönem özeti bildirimleri",
+  "summaryPushSubtitle": "Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir",
   "quietHours": "Sessiz saatler",
   "biometricLockSubtitle": "Uygulamayı açarken Face ID / parmak izi / cihaz PIN'i iste",
   "doneTitle": "Tamamlandı",
