@@ -8914,6 +8914,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get seviyeDestek => 'Support';
+
+  @override
+  String get seviyeDirenc => 'Resistance';
+
+  @override
+  String get seviyeIcinde => 'Current zone';
+
+  @override
+  String seviyeTemas(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'turned $n times in the period',
+      one: 'turned once in the period',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeSatiri(String ad, String aralik, int n) {
+    return '$ad: $aralik, turned $n times in the period';
+  }
+
+  @override
   String pyzVarlikAciklama(String aralik) {
     return 'Explains what happened to this asset in the selected period ($aralik): its place in your portfolio and how it compares with inflation, the dollar, gold and BIST 100.';
   }

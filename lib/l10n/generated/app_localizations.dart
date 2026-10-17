@@ -14711,6 +14711,36 @@ abstract class AppLocalizations {
   /// **'Seçili dönemde ({aralik}) portföyünde ne olduğunu; enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak bir ekonomist gözüyle anlatır.'**
   String pyzSeciliAciklama(String aralik);
 
+  /// No description provided for @seviyeDestek.
+  ///
+  /// In tr, this message translates to:
+  /// **'Destek'**
+  String get seviyeDestek;
+
+  /// No description provided for @seviyeDirenc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Direnç'**
+  String get seviyeDirenc;
+
+  /// No description provided for @seviyeIcinde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatın bulunduğu bölge'**
+  String get seviyeIcinde;
+
+  /// Destek/direnç bölgesinde dönem içinde fiyatın kaç kez döndüğü.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, other{dönemde {n} kez dönülmüş}}'**
+  String seviyeTemas(int n);
+
+  /// Ekran okuyucu için bölge satırı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad}: {aralik}, dönemde {n} kez dönülmüş'**
+  String seviyeSatiri(String ad, String aralik, int n);
+
   /// Varlık detayı AI yorum kartı açıklaması. aralik: '14 Tem - 14 Eki'.
   ///
   /// In tr, this message translates to:

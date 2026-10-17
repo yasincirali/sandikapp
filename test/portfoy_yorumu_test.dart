@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/destek_direnc.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/position.dart';
@@ -222,6 +223,10 @@ void main() {
             dusuk: 265,
             enBuyukDususPct: -9.4,
             oynaklikPct: 31.2,
+            destekDirenc: DestekDirenc(
+              destek: FiyatBolgesi(alt: 298, ust: 302.5, temas: 3),
+              direnc: FiyatBolgesi(alt: 325, ust: 330, temas: 2),
+            ),
           ),
           donemPct: 11.4,
           canliBirim: 314,
@@ -260,6 +265,7 @@ void main() {
         'dibe_uzaklik', 'portfoy_payi', 'pozisyon_getirisi', 'elde_tutma',
         'kiyas_dolar', 'kiyas_dolar_fark', 'kiyas_bist100', 'tufe',
         'tufe_nominal', 'tufe_fark', 'reel_getiri',
+        'destek_uzaklik', 'destek_temas', 'direnc_uzaklik', 'direnc_temas',
       ]));
       for (final o in p.olcumler) {
         expect(tutarIziVar(o.ad), isFalse, reason: o.ad);
@@ -272,6 +278,10 @@ void main() {
       expect(g['zirveye_uzaklik'], '−%4,8');
       expect(g['tufe'], '%7,8');
       expect(g['elde_tutma'], '412 gün');
+      // Destek/direnç: seviye değil, canlı fiyata (314) yüzde uzaklık.
+      expect(g['destek_uzaklik'], '+%3,8');
+      expect(g['direnc_uzaklik'], '−%3,4');
+      expect(g['destek_temas'], '3');
     });
 
     test('tutar izli varlık adı modele gitmez, ölçümler kalır', () {

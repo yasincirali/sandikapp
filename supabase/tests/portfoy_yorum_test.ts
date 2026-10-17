@@ -260,3 +260,43 @@ Deno.test('konu: geçerli konu saklanır, kötüsü yalnız atılır', () => {
   assertEquals(konuGecerli('x'.repeat(33)), undefined);
   assertEquals(konuGecerli(7), undefined);
 });
+
+// ── Destek/direnç (2026-10-17, "Seviye bilgisi") ──────────────────────────
+function ddPaketi(): YorumPaketi {
+  const d = paketiDogrula(paket({
+    olcumler: [
+      { anahtar: 'getiri', ad: 'Dönem getirisi', gosterim: '+%4,2' },
+      { anahtar: 'destek_uzaklik', ad: 'Fiyatın en yakın destek bölgesinin üstündeki uzaklığı', gosterim: '+%3,1' },
+      { anahtar: 'destek_temas', ad: 'Destek bölgesinde dönem içinde dönülen kez', gosterim: '3' },
+      { anahtar: 'direnc_uzaklik', ad: 'Fiyatın en yakın direnç bölgesinin altındaki uzaklığı', gosterim: '−%4,5' },
+    ],
+  }), BUGUN);
+  if (!d.gecti) throw new Error(d.neden);
+  return d.paket;
+}
+
+Deno.test('destek/direnç: yüzde uzaklık ve dönüş sayısı paketi geçer, betimleyici metin geçer', () => {
+  const s = kapidanGecir({
+    baslik: 'Fiyat dönemde +%4,2 değişti ve iki bölgenin arasında duruyor.',
+    maddeler: [{
+      metin: 'Fiyat, dönem içinde 3 kez dönülen destek bölgesinin +%3,1 üstünde, direnç bölgesinin −%4,5 altında.',
+      kanit: ['destek_uzaklik', 'destek_temas', 'direnc_uzaklik'],
+    }],
+  }, ddPaketi());
+  assert(s.gecti, s.gecti ? '' : s.neden);
+});
+
+Deno.test('destek/direnç: kırılma/tutunma senaryosu ve alım bölgesi dili reddedilir', () => {
+  for (const m of [
+    'Destek kırılırsa düşüş derinleşir.',
+    'Fiyat destekte tutunursa toparlanma gelir.',
+    'Destek bölgesi bir alım bölgesi olarak öne çıkıyor.',
+    'Fiyat direnci test edecek.',
+  ]) {
+    const s = kapidanGecir({
+      baslik: 'Fiyat dönemde +%4,2 değişti.',
+      maddeler: [{ metin: m, kanit: ['destek_uzaklik'] }],
+    }, ddPaketi());
+    assert(!s.gecti, `geçmemeliydi: ${m}`);
+  }
+});

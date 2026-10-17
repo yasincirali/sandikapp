@@ -8831,6 +8831,30 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get seviyeDestek => 'Destek';
+
+  @override
+  String get seviyeDirenc => 'Direnç';
+
+  @override
+  String get seviyeIcinde => 'Fiyatın bulunduğu bölge';
+
+  @override
+  String seviyeTemas(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'dönemde $n kez dönülmüş',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeSatiri(String ad, String aralik, int n) {
+    return '$ad: $aralik, dönemde $n kez dönülmüş';
+  }
+
+  @override
   String pyzVarlikAciklama(String aralik) {
     return 'Seçili dönemde ($aralik) bu varlıkta ne olduğunu; portföyündeki yeri, enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak anlatır.';
   }
