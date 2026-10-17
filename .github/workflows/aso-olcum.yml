@@ -1,0 +1,42 @@
+# ASO ölçümü — App Store + Google Play TR arama sırası ve canlı metadata.
+#
+# Neden CI'da: bulut oturumunun ağı Apple/Google mağaza uçlarına kapalı;
+# ölçüm yalnız yerel makinede koşabiliyordu ve defter 20 Eylül'den beri
+# boştu (ASO raporu 2026-10-17). Salt okunur: ASC'ye yalnız GET atar,
+# hiçbir şey yazmaz. Sonuç `aso-olcum` artifact'inde (JSON), özet logda.
+name: ASO ölçümü
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1"  # Pazartesi 10:00 TR
+  push:
+    branches: ["claude/**"]
+    paths:
+      - tool/aso_olcum.py
+      - .github/workflows/aso-olcum.yml
+
+permissions:
+  contents: read
+
+jobs:
+  olc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pyjwt cryptography google-play-scraper
+      - name: Ölç
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+        run: python tool/aso_olcum.py > aso.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aso-olcum
+          path: aso.json
+          retention-days: 90
