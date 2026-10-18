@@ -1,7 +1,9 @@
 // Takip listesi hareketi — saf kurallar (sembol, eşik/sıralama, mesaj).
 import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 import {
+  EMTIA_HAREKET_ESIGI_PCT,
   EN_COK_VARLIK,
+  emtiaSembolu,
   FON_HAREKET_ESIGI_PCT,
   HAREKET_ESIGI_PCT,
   hareketleriSec,
@@ -96,4 +98,30 @@ Deno.test('tek fon hareketi: gövde "fon fiyatı", kapanış değil', () => {
   const m = hareketMesaji([{ ad: 'AAA Fonu', pct: 2.5, fon: true }]);
   assertStringIncludes(m.body, 'Bugünkü fon fiyatı');
   assertEquals(m.body.includes('kapanış'), false);
+});
+
+Deno.test('emtia vadelisi %3 eşiğinde; hisse %5 eşiğinde kalır', () => {
+  assertEquals(EMTIA_HAREKET_ESIGI_PCT, 3);
+  const secili = hareketleriSec([
+    { ad: 'Petrol (Brent)', pct: -3.2, emtia: true },
+    { ad: 'Gümüş', pct: 2.9, emtia: true },
+    { ad: 'THYAO', pct: 4.0 },
+  ]);
+  assertEquals(secili.map((h) => h.ad), ['Petrol (Brent)']);
+});
+
+Deno.test('emtia sembolü: yalnız Yahoo vadelisi (=F)', () => {
+  assertEquals(emtiaSembolu('CL=F'), true);
+  assertEquals(emtiaSembolu(' si=f '), true);
+  assertEquals(emtiaSembolu('THYAO.IS'), false);
+  assertEquals(emtiaSembolu('ALTIN_GRAM'), false);
+  assertEquals(emtiaSembolu('TEFAS:AFT'), false);
+});
+
+Deno.test('tek emtia hareketi: gövde ve kart "gün içi", kapanış değil', () => {
+  const h = [{ ad: 'Petrol (WTI)', pct: 3.4, emtia: true }];
+  const m = hareketMesaji(h);
+  assertStringIncludes(m.body, 'Gün içi hareket');
+  assertEquals(m.body.includes('kapanış'), false);
+  assertStringIncludes(JSON.stringify(hareketKarti(h)), 'gün içi');
 });

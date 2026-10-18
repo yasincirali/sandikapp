@@ -15,6 +15,11 @@
 //     kotasyon yolundan, TEFAS'ın son iki NAV'ından gelir (bugün tarihli
 //     NAV yoksa fon o gün sayılmaz). Eşik fonda %2: fon hisseye göre az
 //     oynar, %5 fonda neredeyse hiç aşılmazdı.
+//   · Emtia (Yahoo vadelisi, `=F`) 2026-10-18: eşik %3 ve metin "gün içi".
+//     Vadeli neredeyse 24 saat işler; push anında "kapanış" yoktur, değişim
+//     önceki uzlaşma fiyatına göre gün içi harekettir. %5 petrol/gümüşte
+//     ayda birkaç kez aşılırdı, kullanıcı hiç haber almazdı (yasin onayı
+//     "Gönder", 18 Eki).
 //   · Sessiz saatler ve `watchlist_move_log` (0068) günlük tekilleştirme.
 //
 // Sembol kuralı istemcideki `alarmSembolu` ile AYNI: altın alt kategorisi
@@ -32,11 +37,20 @@ import { appNotificationRow, recordAppNotification } from './app_notifications.t
 export const HAREKET_ESIGI_PCT = 5;
 /** Fon (TEFAS) için eşik — gerekçe dosya başında. */
 export const FON_HAREKET_ESIGI_PCT = 2;
+/** Emtia vadelisi için eşik — gerekçe dosya başında. */
+export const EMTIA_HAREKET_ESIGI_PCT = 3;
 /** Tek push'ta en çok kaç varlık anılır. */
 export const EN_COK_VARLIK = 3;
 export const CHANNEL_ID = 'alert_channel';
 
-export type Hareket = { ad: string; pct: number; fon?: boolean };
+export type Hareket = { ad: string; pct: number; fon?: boolean; emtia?: boolean };
+
+/// Yahoo vadeli sembolü (`CL=F`, `SI=F`); istemcideki `emtiaKatalogu` ile
+/// aynı biçim. Tür alanına bakılmaz: "Diğer" yolundan eklenen vadeli de
+/// aynı piyasa saatini taşır.
+export function emtiaSembolu(sembol: string): boolean {
+  return sembol.trim().toUpperCase().endsWith('=F');
+}
 
 /// İstemcideki `alarmSembolu` (lib/widgets/alarm_kur_sheet.dart) eşi.
 export function takipSembolu(ticker: string, subCategory: string | null | undefined): string | null {
@@ -46,13 +60,14 @@ export function takipSembolu(ticker: string, subCategory: string | null | undefi
   return t.length === 0 ? null : t;
 }
 
-/// Eşiği aşanları mutlak harekete göre sırala, ilk N. Fon satırı
-/// (`fon: true`) kendi eşiğiyle süzülür.
+/// Eşiği aşanları mutlak harekete göre sırala, ilk N. Fon ve emtia
+/// satırı kendi eşiğiyle süzülür.
 export function hareketleriSec(
   adaylar: Hareket[],
   esikPct = HAREKET_ESIGI_PCT,
   enCok = EN_COK_VARLIK,
   fonEsikPct = FON_HAREKET_ESIGI_PCT,
+  emtiaEsikPct = EMTIA_HAREKET_ESIGI_PCT,
 ): Hareket[] {
   return adaylar
     // Eşik, mesajda GÖRÜNEN tek ondalıklı değerle karşılaştırılır: 9,8/10
@@ -60,7 +75,8 @@ export function hareketleriSec(
     // (müşteri testi 2026-10-17, BES −%2,0 bildirilmiyordu).
     .filter((h) =>
       Number.isFinite(h.pct) &&
-      gorunenYuzde(h.pct) >= (h.fon ? fonEsikPct : esikPct)
+      gorunenYuzde(h.pct) >=
+        (h.fon ? fonEsikPct : h.emtia ? emtiaEsikPct : esikPct)
     )
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
     .slice(0, enCok);
@@ -84,7 +100,7 @@ export function hareketMesaji(hareketler: Hareket[]): { title: string; body: str
     : `Takip listende ${hareketler.length} büyük hareket`;
   // Fonun kapanışı yok, günde bir yayımlanan fiyatı var (TEFAS NAV).
   const body = hareketler.length === 1
-    ? `${ilk.fon ? 'Bugünkü fon fiyatı' : 'Bugünkü kapanış'}. Yatırım tavsiyesi değildir.`
+    ? `${ilk.fon ? 'Bugünkü fon fiyatı' : ilk.emtia ? 'Gün içi hareket' : 'Bugünkü kapanış'}. Yatırım tavsiyesi değildir.`
     : `${hareketler.map(parca).join(' · ')}. Yatırım tavsiyesi değildir.`;
   return { title, body };
 }
@@ -94,7 +110,12 @@ export function hareketMesaji(hareketler: Hareket[]): { title: string; body: str
 export function hareketKarti(hareketler: Hareket[]): KartVerisi | null {
   if (hareketler.length !== 1) return null;
   const h = hareketler[0];
-  return degisimKarti(h.ad, h.pct, h.fon ? 'Takip listesi · fon fiyatı' : 'Takip listesi · son kapanış');
+  const alt = h.fon
+    ? 'Takip listesi · fon fiyatı'
+    : h.emtia
+    ? 'Takip listesi · gün içi'
+    : 'Takip listesi · son kapanış';
+  return degisimKarti(h.ad, h.pct, alt);
 }
 
 type WatchRow = {
@@ -151,7 +172,12 @@ export async function takipListesiHareketleri(
     for (const s of satirlar) {
       const q = kotasyon.get(s.sembol);
       if (!q || q.changePct === null) continue;
-      adaylar.push({ ad: s.ad, pct: q.changePct, fon: s.sembol.startsWith('TEFAS:') });
+      adaylar.push({
+        ad: s.ad,
+        pct: q.changePct,
+        fon: s.sembol.startsWith('TEFAS:'),
+        emtia: emtiaSembolu(s.sembol),
+      });
     }
     const secili = hareketleriSec(adaylar, esik);
     if (secili.length > 0) secimler.set(uid, secili);
