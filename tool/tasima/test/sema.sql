@@ -14,7 +14,9 @@ create table auth.users (
   encrypted_password text,
   email_confirmed_at timestamptz,
   confirmed_at timestamptz generated always as (email_confirmed_at) stored,
-  raw_user_meta_data jsonb
+  raw_user_meta_data jsonb,
+  created_at timestamptz default now(),
+  last_sign_in_at timestamptz
 );
 create table auth.identities (
   id uuid primary key,
@@ -22,7 +24,8 @@ create table auth.identities (
   provider text not null,
   identity_data jsonb
 );
-create table auth.sessions (id uuid primary key, user_id uuid references auth.users(id) on delete cascade);
+create table auth.sessions (id uuid primary key, user_id uuid references auth.users(id) on delete cascade,
+                            created_at timestamptz default now());
 -- Supabase'deki gibi: user_id METİN (varchar). `varchar = uuid` operatörü yok (2026-09-27 canlı hatası).
 create table auth.refresh_tokens (id bigserial primary key, user_id varchar(255), token varchar(255));
 
@@ -66,6 +69,17 @@ create table public.partnerships (
   status text
 );
 -- Başka kullanıcıların izini taşıyan log: tek-kullanıcıda kopyalanmaz.
+-- Sayı çakışması denemesi: varlığa bağlı hareket (FK, serial).
+create table public.transactions (
+  id bigserial primary key,
+  user_id uuid not null references auth.users(id),
+  asset_id bigint references public.assets(id),
+  miktar numeric
+);
+-- FK'sız user_id taşıyan log: ortak tablo SANILMAMALI.
+create table public.olay_sayaci (id serial primary key, user_id uuid, olay text);
+-- Kullanıcısız ortak katalog: Tokyo'nun hâli gelir.
+create table public.katalog (kod text primary key, ad text);
 create table public.account_deletion_log (id serial primary key, user_id_hash text);
 
 grant usage on schema public to anon, authenticated;
