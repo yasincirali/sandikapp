@@ -750,7 +750,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_type == AssetType.eurobond) {
       return _eurobondSelectorField(cs, hata: hata);
     }
-    if (_type == AssetType.emtia) return _emtiaSecici(cs);
+    if (_type == AssetType.emtia) return _emtiaSecici(cs, hata: hata);
     // Diğer — manuel ad + opsiyonel sembol
     return _elleKimlik();
   }
@@ -804,29 +804,60 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     _schedulePricePreview();
   }
 
-  Widget _emtiaSecici(ColorScheme cs) {
+  // Açılır liste (yasin 18 Eki: "çipler yerine listeden dropdowndan
+  // seçilemez mi"). İlk hâli çip ızgarasıydı; yedi emtia + Diğer üç satır
+  // kaplıyor, formu aşağı itiyordu. Alan kripto/eurobond seçicisiyle aynı
+  // kutu (`_selectorContainer`); kısa ve aramasız liste olduğu için alt
+  // sayfa yerine alanın altında açılan menü (iOS pull-down menüsü kalıbı).
+  // Menü değeri sembol; '' = Diğer.
+  Widget _emtiaSecici(ColorScheme cs, {required bool hata}) {
     final elle = _s.emtiaElle;
     final secili = elle ? null : emtiaSecenegi(_ticker.text);
+    final l = context.l10n;
+    final ana =
+        elle ? l.commodityOtherSelected : (secili?.ad ?? l.pickCommodityTap);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: SandikSpace.sm,
-          runSpacing: SandikSpace.sm,
-          children: [
-            for (final e in emtiaKatalogu)
-              _emtiaCipi(
-                etiket: e.ad,
-                alt: _emtiaBirimi(e.birim),
-                secili: e == secili,
-                onTap: () => _emtiaSec(e),
+        Semantics(
+          button: true,
+          label: secili == null && !elle
+              ? l.pickCommodityTap
+              : l.commoditySelectedSemantics(secili == null
+                  ? ana
+                  : '${secili.ad}, ${_emtiaBirimi(secili.birim)}'),
+          excludeSemantics: true,
+          // Menü alanla aynı genişlikte açılır (dropdown okunuşu); içerik
+          // genişliğinde dar bir kutu alanın yarısında asılı kalıyordu.
+          child: LayoutBuilder(
+            builder: (context, kutu) => PopupMenuButton<String>(
+              tooltip: '',
+              position: PopupMenuPosition.under,
+              constraints: BoxConstraints.tightFor(width: kutu.maxWidth),
+              color: context.c.surface2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                side: BorderSide(color: context.c.hairline),
               ),
-            _emtiaCipi(
-              etiket: context.l10n.commodityOther,
-              secili: elle,
-              onTap: () => _emtiaSec(null),
+              onSelected: (t) =>
+                  _emtiaSec(t.isEmpty ? null : emtiaSecenegi(t)),
+              itemBuilder: (_) => [
+                for (final e in emtiaKatalogu)
+                  _emtiaSatiri(e.ticker, e.ad, _emtiaBirimi(e.birim),
+                      secili: e == secili),
+                _emtiaSatiri('', l.commodityOther, null, secili: elle),
+              ],
+              child: _selectorContainer(
+                cs: cs,
+                hasValue: secili != null || elle,
+                hasError: hata,
+                badgeText: secili == null ? null : _emtiaBirimi(secili.birim),
+                mainText: ana,
+                color: AssetType.emtia.color,
+                trailingIcon: Icons.expand_more_rounded,
+              ),
             ),
-          ],
+          ),
         ),
         if (elle) ...[
           const SizedBox(height: SandikSpace.md),
@@ -836,59 +867,35 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  Widget _emtiaCipi({
-    required String etiket,
-    String? alt,
-    required bool secili,
-    required VoidCallback onTap,
-  }) {
-    final renk = AssetType.emtia.color;
-    return Semantics(
-      button: true,
-      selected: secili,
-      label: alt == null ? etiket : '$etiket, $alt',
-      excludeSemantics: true,
-      child: SandikBasma(
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          child: Center(
-            widthFactor: 1,
-            heightFactor: 1,
-            child: AnimatedContainer(
-              duration: SandikMotion.stateOf(context),
-              curve: SandikMotion.enter,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: SandikSpace.md2, vertical: SandikSpace.sm2),
-              decoration: BoxDecoration(
-                color: secili
-                    ? renk.withValues(alpha: 0.18)
-                    : context.c.surface1,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(
-                  color: secili ? renk : context.c.overlay,
-                  width: secili ? 1.4 : 1,
+  PopupMenuItem<String> _emtiaSatiri(String deger, String ad, String? birim,
+      {required bool secili}) {
+    return PopupMenuItem<String>(
+      value: deger,
+      height: 48,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: ad,
+                  style: context.t.bodyMedium?.copyWith(
+                      color: context.c.text90,
+                      fontWeight: secili ? FontWeight.w700 : FontWeight.w400),
                 ),
-              ),
-              child: Text.rich(
-                TextSpan(children: [
+                if (birim != null)
                   TextSpan(
-                    text: etiket,
-                    style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: secili ? context.c.text90 : context.c.text58),
+                    text: ' · $birim',
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text36),
                   ),
-                  if (alt != null)
-                    TextSpan(
-                      text: ' · $alt',
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text36),
-                    ),
-                ]),
-              ),
+              ]),
             ),
           ),
-        ),
+          // Seçili satır yalnız kalın yazıyla değil, işaretle de belli.
+          if (secili)
+            Icon(Icons.check_rounded, size: 18, color: context.c.amberText),
+        ],
       ),
     );
   }
@@ -2505,6 +2512,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     required String? badgeText,
     required String mainText,
     required Color color,
+    IconData trailingIcon = Icons.search_rounded,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -2566,7 +2574,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Icon(Icons.search_rounded, size: 18, color: context.c.text58),
+          Icon(trailingIcon, size: 18, color: context.c.text58),
         ],
       ),
     );
