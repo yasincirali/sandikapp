@@ -644,6 +644,11 @@
   "goldGroupSikke": "Historic coins",
   "goldGroupOns": "Ounce",
   "goldUnitGram": "g",
+  "commodityUnitPound": "lb",
+  "commodityUnitBarrel": "bbl",
+  "commodityUnitMmbtu": "MMBtu",
+  "commodityOther": "Other (enter symbol)",
+  "pickCommodityPrompt": "Pick a commodity, or use Other to enter a symbol",
   "goldUnitOunce": "oz",
   "goldSelectedSemantics": "Selected gold type: {kind}. Double tap to change.",
   "@goldSelectedSemantics": {

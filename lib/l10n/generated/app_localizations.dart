@@ -1976,6 +1976,36 @@ abstract class AppLocalizations {
   /// **'gr'**
   String get goldUnitGram;
 
+  /// No description provided for @commodityUnitPound.
+  ///
+  /// In tr, this message translates to:
+  /// **'libre'**
+  String get commodityUnitPound;
+
+  /// No description provided for @commodityUnitBarrel.
+  ///
+  /// In tr, this message translates to:
+  /// **'varil'**
+  String get commodityUnitBarrel;
+
+  /// No description provided for @commodityUnitMmbtu.
+  ///
+  /// In tr, this message translates to:
+  /// **'MMBtu'**
+  String get commodityUnitMmbtu;
+
+  /// No description provided for @commodityOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer (sembol yaz)'**
+  String get commodityOther;
+
+  /// No description provided for @pickCommodityPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir emtia seç ya da Diğer ile sembol yaz'**
+  String get pickCommodityPrompt;
+
   /// No description provided for @goldUnitOunce.
   ///
   /// In tr, this message translates to:
