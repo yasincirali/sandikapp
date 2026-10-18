@@ -662,6 +662,10 @@
   "commodityUnitMmbtu": "MMBtu",
   "commodityOther": "Diğer (sembol yaz)",
   "pickCommodityPrompt": "Bir emtia seç ya da Diğer ile sembol yaz",
+  "pickCommodityTap": "Emtia seç",
+  "commodityOtherSelected": "Diğer (sembolü aşağıya yaz)",
+  "commoditySelectedSemantics": "Seçili emtia: {name}. Değiştirmek için çift dokun.",
+  "@commoditySelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
   "goldUnitOunce": "ons",
   "goldSelectedSemantics": "Seçili altın türü: {kind}. Değiştirmek için çift dokun.",
   "@goldSelectedSemantics": {

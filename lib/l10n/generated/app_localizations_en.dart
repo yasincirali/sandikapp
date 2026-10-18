@@ -1104,6 +1104,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Pick a commodity, or use Other to enter a symbol';
 
   @override
+  String get pickCommodityTap => 'Pick a commodity';
+
+  @override
+  String get commodityOtherSelected => 'Other (enter the symbol below)';
+
+  @override
+  String commoditySelectedSemantics(String name) {
+    return 'Selected commodity: $name. Double tap to change.';
+  }
+
+  @override
   String get goldUnitOunce => 'oz';
 
   @override

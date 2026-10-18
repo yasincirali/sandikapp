@@ -649,6 +649,10 @@
   "commodityUnitMmbtu": "MMBtu",
   "commodityOther": "Other (enter symbol)",
   "pickCommodityPrompt": "Pick a commodity, or use Other to enter a symbol",
+  "pickCommodityTap": "Pick a commodity",
+  "commodityOtherSelected": "Other (enter the symbol below)",
+  "commoditySelectedSemantics": "Selected commodity: {name}. Double tap to change.",
+  "@commoditySelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
   "goldUnitOunce": "oz",
   "goldSelectedSemantics": "Selected gold type: {kind}. Double tap to change.",
   "@goldSelectedSemantics": {

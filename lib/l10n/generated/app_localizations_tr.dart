@@ -1090,6 +1090,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pickCommodityPrompt => 'Bir emtia seç ya da Diğer ile sembol yaz';
 
   @override
+  String get pickCommodityTap => 'Emtia seç';
+
+  @override
+  String get commodityOtherSelected => 'Diğer (sembolü aşağıya yaz)';
+
+  @override
+  String commoditySelectedSemantics(String name) {
+    return 'Seçili emtia: $name. Değiştirmek için çift dokun.';
+  }
+
+  @override
   String get goldUnitOunce => 'ons';
 
   @override

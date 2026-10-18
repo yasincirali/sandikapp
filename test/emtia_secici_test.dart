@@ -18,7 +18,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///   · seçim yapılmadan kayıt yok; "Diğer" eski serbest girişi açar ve
 ///     listeden gelen adı taşımaz;
 ///   · eski kayıt (listede olmayan sembol / serbest ad) "Diğer"de açılır;
-///   · dar ekran ve büyük yazıda taşma yok, çipler 44pt.
+///   · dar ekran ve büyük yazıda taşma yok, alan ve menü satırı 44pt;
+///     2026-10-18 ikinci tur: çip ızgarası yerine açılır liste (yasin).
 
 class _NoLookup implements AddAssetPriceLookup {
   const _NoLookup();
@@ -141,32 +142,54 @@ void main() {
   });
 
   group('ekran', () {
-    testWidgets('serbest metin yok, çipler var; Diğer serbest girişi açar',
+    testWidgets('serbest metin yok; açılır listeden seçilir, Diğer serbest girişi açar',
         (tester) async {
       await _pump(tester,
           const AddAssetScreen(prefillType: AssetType.emtia));
-      expect(find.textContaining('Gümüş', findRichText: true), findsOneWidget);
-      expect(find.textContaining('Diğer (sembol yaz)', findRichText: true),
-          findsOneWidget);
-      expect(find.byType(TextFormField).evaluate().length, lessThan(5),
-          reason: 'ad/sembol alanları Diğer seçilmeden çizilmez');
+      expect(find.text('Emtia seç'), findsOneWidget);
+      expect(find.textContaining('Gümüş', findRichText: true), findsNothing,
+          reason: 'liste kapalıyken seçenekler çizilmez');
       final once = find.byType(TextFormField).evaluate().length;
+
+      await tester.tap(find.text('Emtia seç'));
+      await tester.pumpAndSettle();
+      for (final e in emtiaKatalogu) {
+        expect(find.textContaining(e.ad, findRichText: true), findsOneWidget,
+            reason: e.ad);
+      }
+      await tester.tap(
+          find.textContaining('Petrol (Brent)', findRichText: true));
+      await tester.pumpAndSettle();
+      expect(find.text('Petrol (Brent)'), findsOneWidget);
+      expect(find.text('varil'), findsWidgets);
+      expect(find.byType(TextFormField).evaluate().length, once);
+
+      await tester.tap(find.text('Petrol (Brent)'));
+      await tester.pumpAndSettle();
       await tester.tap(
           find.textContaining('Diğer (sembol yaz)', findRichText: true));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.byType(TextFormField).evaluate().length, once + 2);
     });
 
     for (final (w, olcek) in const [(320.0, 1.0), (320.0, 2.0), (430.0, 3.1)]) {
-      testWidgets('${w.toInt()}pt, $olcek× yazı: taşma yok, çip ≥44',
+      testWidgets('${w.toInt()}pt, $olcek× yazı: taşma yok, alan ve satır ≥44',
           (tester) async {
         await _pump(tester, const AddAssetScreen(prefillType: AssetType.emtia),
             width: w, olcek: olcek);
         expect(tester.takeException(), isNull);
-        final cip = find
-            .ancestor(of: find.textContaining('Doğalgaz', findRichText: true), matching: find.byType(ConstrainedBox))
-            .first;
-        expect(tester.getSize(cip).height, greaterThanOrEqualTo(44));
+        final alan = find.byType(PopupMenuButton<String>);
+        expect(tester.getSize(alan).height, greaterThanOrEqualTo(44));
+        await tester.tap(alan);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final satir = find.ancestor(
+            of: find.textContaining('Doğalgaz', findRichText: true),
+            matching: find.byType(PopupMenuItem<String>));
+        expect(tester.getSize(satir).height, greaterThanOrEqualTo(44));
+        // Menü alan genişliğinde açılır.
+        expect(tester.getSize(satir).width,
+            closeTo(tester.getSize(alan).width, 1));
       });
     }
   });

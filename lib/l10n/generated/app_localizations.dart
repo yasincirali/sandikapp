@@ -2006,6 +2006,24 @@ abstract class AppLocalizations {
   /// **'Bir emtia seç ya da Diğer ile sembol yaz'**
   String get pickCommodityPrompt;
 
+  /// No description provided for @pickCommodityTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emtia seç'**
+  String get pickCommodityTap;
+
+  /// No description provided for @commodityOtherSelected.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer (sembolü aşağıya yaz)'**
+  String get commodityOtherSelected;
+
+  /// No description provided for @commoditySelectedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili emtia: {name}. Değiştirmek için çift dokun.'**
+  String commoditySelectedSemantics(String name);
+
   /// No description provided for @goldUnitOunce.
   ///
   /// In tr, this message translates to:

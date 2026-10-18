@@ -103,12 +103,21 @@ void main() {
 
   Finder cip(String s) => find.textContaining(s, findRichText: true);
 
+  Future<void> sec(WidgetTester t, String s) async {
+    await t.tap(find.byType(PopupMenuButton<String>));
+    for (var i = 0; i < 10; i++) {
+      await t.pump(const Duration(milliseconds: 50));
+    }
+    await t.tap(cip(s));
+  }
+
   testWidgets('bos', (t) => ciz(t, '1_bos', () async {}));
-  testWidgets('brent', (t) => ciz(t, '2_brent', () async {
-        await t.tap(cip('Petrol (Brent)'));
+  testWidgets('liste acik', (t) => ciz(t, '2_liste', () async {
+        await t.tap(find.byType(PopupMenuButton<String>));
       }));
-  testWidgets('diger', (t) => ciz(t, '3_diger', () async {
-        await t.tap(cip('Diğer (sembol yaz)'));
-      }));
-  testWidgets('buyuk yazi', (t) => ciz(t, '4_yazi2x', () async {}, olcek: 2.0));
+  testWidgets('brent', (t) => ciz(t, '3_brent', () => sec(t, 'Petrol (Brent)')));
+  testWidgets('diger', (t) => ciz(t, '4_diger', () => sec(t, 'Diğer (sembol yaz)')));
+  testWidgets('buyuk yazi liste', (t) => ciz(t, '5_yazi2x', () async {
+        await t.tap(find.byType(PopupMenuButton<String>));
+      }, olcek: 2.0));
 }
