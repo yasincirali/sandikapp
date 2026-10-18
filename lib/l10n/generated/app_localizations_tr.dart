@@ -1075,6 +1075,21 @@ class AppLocalizationsTr extends AppLocalizations {
   String get goldUnitGram => 'gr';
 
   @override
+  String get commodityUnitPound => 'libre';
+
+  @override
+  String get commodityUnitBarrel => 'varil';
+
+  @override
+  String get commodityUnitMmbtu => 'MMBtu';
+
+  @override
+  String get commodityOther => 'Diğer (sembol yaz)';
+
+  @override
+  String get pickCommodityPrompt => 'Bir emtia seç ya da Diğer ile sembol yaz';
+
+  @override
   String get goldUnitOunce => 'ons';
 
   @override

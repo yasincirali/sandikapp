@@ -74,8 +74,17 @@ void main() {
           KimlikEksigi.kripto);
     });
 
-    test('emtia serbest adlıdır — kuralı ad alanında', () {
-      expect(bos(AssetType.emtia).kimlikEksigi(tickerText: ''), isNull);
+    // 2026-10-18: emtia listeden seçilir (yasin: "free text yerine");
+    // serbest ad yalnız "Diğer" yolunda ve kuralı orada ad alanında.
+    test('emtia listeden seçilmeden kayıt yok; Diğer yolunda ad kuralı', () {
+      expect(bos(AssetType.emtia).kimlikEksigi(tickerText: ''),
+          KimlikEksigi.emtia);
+      expect(bos(AssetType.emtia).kimlikEksigi(tickerText: 'NG=F'), isNull);
+      expect(
+          bos(AssetType.emtia)
+              .copyWith(emtiaElle: true)
+              .kimlikEksigi(tickerText: ''),
+          isNull);
     });
 
     test('düzenleme muaf: eski sembolsüz kayıt düzeltilebilir', () {

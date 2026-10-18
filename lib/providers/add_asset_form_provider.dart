@@ -6,6 +6,7 @@ import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/emtia_katalogu.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
 import '../services/bist_hisse_katalogu.dart';
@@ -323,6 +324,7 @@ class AddAssetFormState {
     this.denendi = false,
     this.abdAcik = false,
     this.turIzgarasiAcik = false,
+    this.emtiaElle = false,
     this.eurobondSozlesmesi,
     this.eurobondFiyati,
   });
@@ -392,6 +394,12 @@ class AddAssetFormState {
       // varlık vitrini) türü zaten söylemiş: tekrar sormak bir adım fazla.
       turIzgarasiAcik:
           turIzgarasi && a == null && c == null && prefillType == null,
+      // Listede olmayan eski emtia kaydı (serbest ad / bilinmeyen sembol)
+      // "Diğer" yolunda açılır; listedeki sembol seçili çiple.
+      emtiaElle: type == AssetType.emtia &&
+          (ticker.trim().isNotEmpty
+              ? emtiaSecenegi(ticker) == null
+              : (a?.name ?? c?.name ?? '').trim().isNotEmpty),
     );
   }
 
@@ -431,6 +439,11 @@ class AddAssetFormState {
   /// `notesExpanded` gibi görünüm durumu burada: ekran `setState` taşımaz
   /// (Faz 3.10 ratchet).
   final bool turIzgarasiAcik;
+
+  /// Emtia formunda "Diğer" (serbest ad + sembol) açık mı; kapalıyken emtia
+  /// `emtiaKatalogu` çiplerinden seçilir (2026-10-18). Görünüm durumu,
+  /// `turIzgarasiAcik` ile aynı gerekçeyle burada.
+  final bool emtiaElle;
 
   /// Seçili eurobondun sözleşmesi (katalogdan). Temiz → kirli çevirisi ve
   /// işlemiş faiz satırı buna bakar; kupon/vade kullanıcıdan alınmaz
@@ -599,6 +612,11 @@ class AddAssetFormState {
         return (subCategory ?? '').isEmpty ? KimlikEksigi.altin : null;
       case AssetType.doviz:
         return (subCategory ?? '').isEmpty ? KimlikEksigi.doviz : null;
+      case AssetType.emtia:
+        // "Diğer" yolunda ad alanının kendi doğrulayıcısı (`nameRequired`)
+        // var; listede seçim yapılmadan kayıt yok (2026-10-18).
+        if (emtiaElle) return null;
+        return emtiaSecenegi(tickerText) == null ? KimlikEksigi.emtia : null;
       default:
         return null;
     }
@@ -621,6 +639,7 @@ class AddAssetFormState {
     bool? denendi,
     bool? abdAcik,
     bool? turIzgarasiAcik,
+    bool? emtiaElle,
     Object? eurobondSozlesmesi = _keep,
     Object? eurobondFiyati = _keep,
   }) =>
@@ -649,6 +668,7 @@ class AddAssetFormState {
         denendi: denendi ?? this.denendi,
         abdAcik: abdAcik ?? this.abdAcik,
         turIzgarasiAcik: turIzgarasiAcik ?? this.turIzgarasiAcik,
+        emtiaElle: emtiaElle ?? this.emtiaElle,
         eurobondSozlesmesi: identical(eurobondSozlesmesi, _keep)
             ? this.eurobondSozlesmesi
             : eurobondSozlesmesi as EurobondSozlesmesi?,
@@ -661,7 +681,7 @@ class AddAssetFormState {
 const _keep = Object();
 
 /// Kaydı engelleyen eksik seçim — ekran uyarı metnini buna göre seçer.
-enum KimlikEksigi { hisse, fon, altin, doviz, kripto, eurobond }
+enum KimlikEksigi { hisse, fon, altin, doviz, kripto, eurobond, emtia }
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
 
@@ -785,6 +805,24 @@ class AddAssetFormNotifier
   AlanYazimi selectGold(GoldSubCategory g) {
     _set(state.copyWith(subCategory: g.label, unitType: g.unitType));
     return AlanYazimi(name: g.label);
+  }
+
+  /// Emtia listesinden seçim (2026-10-18): ad + Yahoo sembolü birlikte
+  /// yazılır, fiyat sembolden otomatik gelir. Para birimine dokunulmaz —
+  /// serbest girişte de dokunulmuyordu; çeviri kayıt yolunda.
+  AlanYazimi selectEmtia(EmtiaSecenegi e) {
+    _set(state.copyWith(isManualPrice: false, emtiaElle: false));
+    return AlanYazimi(ticker: e.ticker, name: e.ad);
+  }
+
+  /// Emtia "Diğer": serbest ad + sembol. Listeden seçilmiş ad/sembol
+  /// taşınmaz — "Gümüş" adıyla başka sembol yanlış etiketli lot olurdu.
+  AlanYazimi emtiaDiger({required String tickerText}) {
+    if (state.emtiaElle) return AlanYazimi.yok;
+    final listeden = emtiaSecenegi(tickerText) != null;
+    _set(state.copyWith(
+        emtiaElle: true, isManualPrice: listeden ? true : null));
+    return listeden ? const AlanYazimi(name: '', ticker: '') : AlanYazimi.yok;
   }
 
   /// Döviz her zaman TRY karşılığıyla kaydedilir; TRY'nin kendisi sembolsüz

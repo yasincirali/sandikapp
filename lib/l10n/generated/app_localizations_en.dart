@@ -1088,6 +1088,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goldUnitGram => 'g';
 
   @override
+  String get commodityUnitPound => 'lb';
+
+  @override
+  String get commodityUnitBarrel => 'bbl';
+
+  @override
+  String get commodityUnitMmbtu => 'MMBtu';
+
+  @override
+  String get commodityOther => 'Other (enter symbol)';
+
+  @override
+  String get pickCommodityPrompt =>
+      'Pick a commodity, or use Other to enter a symbol';
+
+  @override
   String get goldUnitOunce => 'oz';
 
   @override

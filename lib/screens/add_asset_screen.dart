@@ -8,6 +8,7 @@ import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../models/emtia_katalogu.dart';
 import '../models/eurobond.dart';
 import '../models/ilk_varlik_secimi.dart';
 import '../models/altin_kisayollari.dart';
@@ -398,9 +399,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   // Kripto biriminin adı coin kodudur ("0,05 BTC"), `unitType` değil.
-  String get _quantitySuffix => _type == AssetType.kripto
-      ? (kriptoKodu(_ticker.text) ?? '')
-      : _s.quantitySuffix;
+  String get _quantitySuffix => switch (_type) {
+        AssetType.kripto => kriptoKodu(_ticker.text) ?? '',
+        AssetType.emtia when !_s.emtiaElle =>
+          switch (emtiaSecenegi(_ticker.text)) {
+            final e? => _emtiaBirimi(e.birim),
+            null => _s.quantitySuffix,
+          },
+        _ => _s.quantitySuffix,
+      };
   List<String> get _quantityPresets => _s.quantityPresets;
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -731,6 +738,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         KimlikEksigi.doviz => context.l10n.pickCurrencyPrompt,
         KimlikEksigi.kripto => context.l10n.pickCryptoPrompt,
         KimlikEksigi.eurobond => context.l10n.pickEurobondPrompt,
+        KimlikEksigi.emtia => context.l10n.pickCommodityPrompt,
       };
 
   Widget _kimlikAlani(ColorScheme cs, {required bool hata}) {
@@ -742,7 +750,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_type == AssetType.eurobond) {
       return _eurobondSelectorField(cs, hata: hata);
     }
-    // Emtia / Diğer — manuel ad + opsiyonel sembol
+    if (_type == AssetType.emtia) return _emtiaSecici(cs);
+    // Diğer — manuel ad + opsiyonel sembol
+    return _elleKimlik();
+  }
+
+  /// Serbest ad + opsiyonel sembol: "Diğer" türü ve emtia listesinin
+  /// "Diğer" yolu (listede olmayan emtia, eski kayıt).
+  Widget _elleKimlik() {
     return Column(
       children: [
         _brandInput(
@@ -763,6 +778,118 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           },
         ),
       ],
+    );
+  }
+
+  // ── Emtia: listeden seç (2026-10-18) ─────────────────────────────────────
+  //
+  // yasin: "emtia seçenekleri listelense, free text yerine". Kullanıcı Yahoo
+  // sembolünü (`CL=F`) bilmiyor; serbest girişte çoğu emtia sembolsüz, yani
+  // fiyatsız kaydediliyordu. Liste `emtiaKatalogu` (arama ile tek kaynak);
+  // "Diğer" eski serbest girişi açar. Seçim yapılmadan kayıt yok
+  // (`KimlikEksigi.emtia`; uyarıyı `_identitySection` yazar).
+
+  String _emtiaBirimi(EmtiaBirimi b) => switch (b) {
+        EmtiaBirimi.ons => context.l10n.goldUnitOunce,
+        EmtiaBirimi.libre => context.l10n.commodityUnitPound,
+        EmtiaBirimi.varil => context.l10n.commodityUnitBarrel,
+        EmtiaBirimi.mmbtu => context.l10n.commodityUnitMmbtu,
+      };
+
+  void _emtiaSec(EmtiaSecenegi? e) {
+    SandikHaptic.selection.perform();
+    _yaz(e == null
+        ? _n.emtiaDiger(tickerText: _ticker.text)
+        : _n.selectEmtia(e));
+    _schedulePricePreview();
+  }
+
+  Widget _emtiaSecici(ColorScheme cs) {
+    final elle = _s.emtiaElle;
+    final secili = elle ? null : emtiaSecenegi(_ticker.text);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: SandikSpace.sm,
+          runSpacing: SandikSpace.sm,
+          children: [
+            for (final e in emtiaKatalogu)
+              _emtiaCipi(
+                etiket: e.ad,
+                alt: _emtiaBirimi(e.birim),
+                secili: e == secili,
+                onTap: () => _emtiaSec(e),
+              ),
+            _emtiaCipi(
+              etiket: context.l10n.commodityOther,
+              secili: elle,
+              onTap: () => _emtiaSec(null),
+            ),
+          ],
+        ),
+        if (elle) ...[
+          const SizedBox(height: SandikSpace.md),
+          _elleKimlik(),
+        ],
+      ],
+    );
+  }
+
+  Widget _emtiaCipi({
+    required String etiket,
+    String? alt,
+    required bool secili,
+    required VoidCallback onTap,
+  }) {
+    final renk = AssetType.emtia.color;
+    return Semantics(
+      button: true,
+      selected: secili,
+      label: alt == null ? etiket : '$etiket, $alt',
+      excludeSemantics: true,
+      child: SandikBasma(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: AnimatedContainer(
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.md2, vertical: SandikSpace.sm2),
+              decoration: BoxDecoration(
+                color: secili
+                    ? renk.withValues(alpha: 0.18)
+                    : context.c.surface1,
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(
+                  color: secili ? renk : context.c.overlay,
+                  width: secili ? 1.4 : 1,
+                ),
+              ),
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(
+                    text: etiket,
+                    style: context.t.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: secili ? context.c.text90 : context.c.text58),
+                  ),
+                  if (alt != null)
+                    TextSpan(
+                      text: ' · $alt',
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text36),
+                    ),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
