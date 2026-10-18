@@ -154,7 +154,11 @@ void main() {
       await tester.tap(find.text('Emtia seç'));
       await tester.pumpAndSettle();
       for (final e in emtiaKatalogu) {
-        expect(find.textContaining(e.ad, findRichText: true), findsOneWidget,
+        // "Gümüş" "Gram Gümüş"ün içinde de geçer; satır başından eşle.
+        expect(
+            find.textContaining(RegExp('^${RegExp.escape(e.ad)} '),
+                findRichText: true),
+            findsOneWidget,
             reason: e.ad);
       }
       await tester.tap(

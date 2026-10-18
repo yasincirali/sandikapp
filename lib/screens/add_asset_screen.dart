@@ -791,6 +791,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   String _emtiaBirimi(EmtiaBirimi b) => switch (b) {
         EmtiaBirimi.ons => context.l10n.goldUnitOunce,
+        EmtiaBirimi.gram => context.l10n.goldUnitGram,
         EmtiaBirimi.libre => context.l10n.commodityUnitPound,
         EmtiaBirimi.varil => context.l10n.commodityUnitBarrel,
         EmtiaBirimi.mmbtu => context.l10n.commodityUnitMmbtu,

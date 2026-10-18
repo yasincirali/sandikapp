@@ -10,6 +10,7 @@ import 'fiyat_kaynagi.dart';
 import 'supabase_service.dart';
 import '../demo/demo_modu.dart';
 import '../models/asset_type.dart';
+import '../models/emtia_katalogu.dart';
 import '../models/eurobond.dart';
 import '../models/ohlc.dart';
 import 'mum_verisi.dart' show yahooOhlcCoz;
@@ -134,6 +135,9 @@ class PriceService {
 
   /// Bir troy ons kaç gram — altın çevriminin sabiti.
   static const _gramsPerTroyOunce = 31.1035;
+
+  /// Gram emtia (`GRAM:SI=F`) fiyatı = ons kotasyonu ÷ bu değer.
+  static const gramsPerTroyOunce = _gramsPerTroyOunce;
 
   /// Türkiye'de "gram altın" 22 ayar üzerinden fiyatlanır; XAU ise 24 ayar
   /// saflıktadır. Bu oran saf ons fiyatını yerel gram fiyatına indirir.
@@ -366,6 +370,13 @@ class PriceService {
     _gunlukYaz(s, fiyat, gunlukPct);
   }
 
+  /// Testler için: ağa çıkmadan taze kotasyon önbelleği kurar (gram emtia
+  /// türetimi `fetchQuotes` içinde sınanabilsin diye).
+  @visibleForTesting
+  void testIcinOnbellegeYaz(YahooQuote q) {
+    _quoteCache[q.symbol.trim().toUpperCase()] = (quote: q, at: DateTime.now());
+  }
+
   /// Testler için: oturum belleğini sıfırlar (disk değil).
   @visibleForTesting
   void sonBilinenFiyatlariTemizle() {
@@ -453,6 +464,13 @@ class PriceService {
         .toSet()
         .toList();
     if (cleaned.isEmpty) return {};
+
+    // Gram emtia (`GRAM:SI=F`, `emtia_katalogu.dart`) kendi kotasyonu olan
+    // bir sembol değildir: ons tabanı çekilir, fiyat 31,1035'e bölünür;
+    // yüzde aynıdır. Taban da önbelleğe ve oturum belleğine girer.
+    if (cleaned.any((s) => emtiaGramTabani(s) != null)) {
+      return _gramKotasyonlari(cleaned, forceRefresh: forceRefresh);
+    }
 
     // Mevduat (`MEVDUAT:<id>`) ağa çıkmaz ve önbelleğe girmez: birim değer
     // sözleşmeden HESAPLANIR (`mevduat_hesabi.dart`), ucuzdur ve yenileme
@@ -643,6 +661,42 @@ class PriceService {
     results.addAll(cachedHits);
     results.addAll(mevduatSonucu);
     return results;
+  }
+
+  Future<Map<String, YahooQuote>> _gramKotasyonlari(
+    List<String> semboller, {
+    required bool forceRefresh,
+  }) async {
+    final gramlar = <String, String>{
+      for (final s in semboller)
+        if (emtiaGramTabani(s) case final t?) s: t,
+    };
+    final digerleri = semboller.where((s) => !gramlar.containsKey(s)).toSet();
+    final ham = await fetchQuotes(
+        [...digerleri, ...gramlar.values], forceRefresh: forceRefresh);
+    final out = <String, YahooQuote>{
+      for (final e in ham.entries)
+        if (digerleri.contains(e.key)) e.key: e.value,
+    };
+    for (final g in gramlar.entries) {
+      final q = ham[g.value];
+      final p = q?.regularMarketPrice;
+      // Taban fiyatsızsa gram da yok — uydurma yok (madde 3).
+      if (q == null || p == null || p <= 0) continue;
+      final gp = p / _gramsPerTroyOunce;
+      out[g.key] = YahooQuote(
+        symbol: g.key,
+        regularMarketPrice: gp,
+        currency: q.currency,
+        regularMarketChangePercent: q.regularMarketChangePercent,
+        shortName: q.shortName,
+        longName: q.longName,
+      );
+      _sonBilinenFiyat[g.key] = gp;
+      _yalnizDisktenBilinen.remove(g.key);
+      _gunlukYaz(g.key, gp, q.regularMarketChangePercent);
+    }
+    return out;
   }
 
   // ── Mevduat — sözleşmeden birim değer (0088) ───────────────────────────
@@ -1326,6 +1380,10 @@ class PriceService {
   /// TEFAS sembolleri (`TEFAS:XYZ`) için TefasService.fetchHistory kullanılır.
   Future<double?> fetchHistoricalClose(String symbol, DateTime date) async {
     if (symbol.trim().isEmpty) return null;
+    if (emtiaGramTabani(symbol) case final taban?) {
+      final ons = await fetchHistoricalClose(taban, date);
+      return ons == null ? null : ons / _gramsPerTroyOunce;
+    }
 
     // Altın iç sembolleri: önce XAUTRY=X dene; Yahoo bu sembolü 404 döner-
     // se GC=F (ons USD) × USDTRY=X ile hesapla — spot fallback'in birebir
@@ -1538,6 +1596,10 @@ class PriceService {
   /// çözünürlük için (HistoryService.getPortfolioHistoryAtResolution).
   Future<List<(int, double)>> fetchHistoryAtInterval(
       String symbol, String range, String interval) async {
+    if (emtiaGramTabani(symbol) case final taban?) {
+      final ons = await fetchHistoryAtInterval(taban, range, interval);
+      return [for (final p in ons) (p.$1, p.$2 / _gramsPerTroyOunce)];
+    }
     // TEFAS fonları için TEFAS history endpoint'i (interval yok, periyod ay).
     if (symbol.startsWith(_tefasPrefix)) {
       final code = symbol.replaceFirst(_tefasPrefix, '');
@@ -1614,6 +1676,20 @@ class PriceService {
   /// Yahoo boş döner, boş liste "mum yok" demektir.
   Future<List<OhlcBar>> fetchOhlc(
       String symbol, MumAraligi aralik, DateTime bas, DateTime son) async {
+    if (emtiaGramTabani(symbol) case final taban?) {
+      const k = _gramsPerTroyOunce;
+      return [
+        for (final b in await fetchOhlc(taban, aralik, bas, son))
+          OhlcBar(
+            t: b.t,
+            acilis: b.acilis / k,
+            enYuksek: b.enYuksek / k,
+            enDusuk: b.enDusuk / k,
+            kapanis: b.kapanis / k,
+            hacim: b.hacim,
+          ),
+      ];
+    }
     final uri = Uri.https('query1.finance.yahoo.com',
         '/v8/finance/chart/$symbol', {
       'interval': aralik.yahooInterval,
