@@ -18,6 +18,7 @@
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { BF_API, bfGecmisiniCoz, EUROBOND_ONEKI, isinGecerli, TARAYICI_UA } from './eurobond.ts';
 import { kriptoKodu, mumlariCek, tlSerisi } from './kripto.ts';
+import { gramTabani } from './emtia_gram.ts';
 
 /// Teknik göstergeler için gereken minimum nokta sayısı.
 /// En uzun pencere EMA(50) — güvenli tarafta 60 istiyoruz.
@@ -93,6 +94,11 @@ async function fetchYahooNoktalari(
   symbol: string,
   f: typeof fetch = fetch,
 ): Promise<Array<[number, number]>> {
+  // Gram emtia: ons tabanı ÷ 31,1035 (`emtia_gram.ts`).
+  const taban = gramTabani(symbol);
+  if (taban) {
+    return (await fetchYahooNoktalari(taban, f)).map(([t, v]) => [t, v / ONS_GRAM]);
+  }
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
     `?interval=1d&range=6mo&includePrePost=false`;

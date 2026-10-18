@@ -19,6 +19,7 @@ import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { fonGunlukDegisimi, sonNavSatiri, trGun } from './tefas_nav.ts';
 import { KRIPTO_ONEKI, kriptoKodu, kriptoMu } from './kripto.ts';
 import { birimDeger, EUROBOND_ONEKI, isinGecerli, sozlesmeSatiri } from './eurobond.ts';
+import { gramTabani, ONS_GRAM } from './emtia_gram.ts';
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
@@ -190,6 +191,12 @@ export function parseTruncgilBody(body: string): Record<string, unknown> {
 /// `interval=5m&range=1d`: gün içi mumlar. Kapanış serisi (`1d`) alarm için
 /// bir gün geç kalırdı.
 async function fetchYahooLast(symbol: string): Promise<number | null> {
+  // Gram emtia: ons tabanı ÷ 31,1035 (`emtia_gram.ts`).
+  const taban = gramTabani(symbol);
+  if (taban) {
+    const ons = await fetchYahooLast(taban);
+    return ons === null ? null : ons / ONS_GRAM;
+  }
   try {
     const url =
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
@@ -226,6 +233,11 @@ export type CanliKotasyon = { price: number; changePct: number | null };
 /// Yahoo: fiyat + günlük değişim. Değişim `meta.chartPreviousClose` (dünkü
 /// kapanış) üzerinden; meta yoksa yalnızca fiyat.
 async function fetchYahooQuote(symbol: string): Promise<CanliKotasyon | null> {
+  const taban = gramTabani(symbol);
+  if (taban) {
+    const ons = await fetchYahooQuote(taban);
+    return ons === null ? null : { price: ons.price / ONS_GRAM, changePct: ons.changePct };
+  }
   try {
     const url =
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +

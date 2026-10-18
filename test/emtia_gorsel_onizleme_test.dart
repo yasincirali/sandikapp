@@ -116,6 +116,8 @@ void main() {
         await t.tap(find.byType(PopupMenuButton<String>));
       }));
   testWidgets('brent', (t) => ciz(t, '3_brent', () => sec(t, 'Petrol (Brent)')));
+  testWidgets('gram gumus',
+      (t) => ciz(t, '3b_gram_gumus', () => sec(t, 'Gram Gümüş')));
   testWidgets('diger', (t) => ciz(t, '4_diger', () => sec(t, 'Diğer (sembol yaz)')));
   testWidgets('buyuk yazi liste', (t) => ciz(t, '5_yazi2x', () async {
         await t.tap(find.byType(PopupMenuButton<String>));

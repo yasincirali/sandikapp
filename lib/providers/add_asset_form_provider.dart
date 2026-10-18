@@ -811,7 +811,10 @@ class AddAssetFormNotifier
   /// yazılır, fiyat sembolden otomatik gelir. Para birimine dokunulmaz —
   /// serbest girişte de dokunulmuyordu; çeviri kayıt yolunda.
   AlanYazimi selectEmtia(EmtiaSecenegi e) {
-    _set(state.copyWith(isManualPrice: false, emtiaElle: false));
+    _set(state.copyWith(
+        isManualPrice: false,
+        emtiaElle: false,
+        unitType: emtiaUnitType(e.birim)));
     return AlanYazimi(ticker: e.ticker, name: e.ad);
   }
 
@@ -821,7 +824,9 @@ class AddAssetFormNotifier
     if (state.emtiaElle) return AlanYazimi.yok;
     final listeden = emtiaSecenegi(tickerText) != null;
     _set(state.copyWith(
-        emtiaElle: true, isManualPrice: listeden ? true : null));
+        emtiaElle: true,
+        isManualPrice: listeden ? true : null,
+        unitType: listeden ? 'piece' : null));
     return listeden ? const AlanYazimi(name: '', ticker: '') : AlanYazimi.yok;
   }
 
