@@ -70,6 +70,7 @@ import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
+import 'services/sistem_eylemleri.dart';
 import 'services/history_service.dart';
 import 'services/seri_disk_depo.dart';
 import 'services/live_activity_service.dart';
@@ -311,6 +312,9 @@ void main() async {
     // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
     // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
     CrashReporter.arkaPlan(DeepLinkService.instance.init(), reason: 'main.DeepLinkService.init');
+    // Siri Kestirmeleri + Spotlight (iOS): soğuk açılışı başlatan eylem de
+    // burada alınır; hedefe gidiş derin bağlantıyla aynı yoldan.
+    CrashReporter.arkaPlan(SistemEylemleri.baslat(), reason: 'main.SistemEylemleri.baslat');
     // Yalnızca zemini şeffaf yap. İkon parlaklığı BURADA sabitlenmez:
     // `Brightness.light` (beyaz ikon) light temada açık zemin üzerinde
     // okunmuyordu. İkon rengi tema ile birlikte değişmeli, bu yüzden
@@ -1756,6 +1760,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // sınırı ağ trafiğini zaten kısıtlar.
       CrashReporter.arkaPlan(RemoteConfigService.instance.refresh(),
           reason: 'main.RemoteConfigService.refresh');
+      // Siri eylemi uygulama arkadayken bırakılmış olabilir (kanal
+      // `geldi` haberini kaçırmış olabilir); öne dönüşte sorulur.
+      CrashReporter.arkaPlan(SistemEylemleri.cek(),
+          reason: 'main.SistemEylemleri.cek');
       // Arkadayken olan bir sistem görünümü değişimi burada yakalanır:
       // önplanda olmadığı için `didChangePlatformBrightness` onu bilinçli
       // olarak yutmuştu.
@@ -1881,6 +1889,19 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (_besOtomatikKullanici == uid) return;
       _besOtomatikKullanici = uid;
       _besOtomatikKatki();
+    });
+
+    // Spotlight dizini (iOS) açık pozisyonları izler. Yükleme karesi atlanır
+    // (kullanıcı değişiminde önceki kullanıcının portföyü taşınır, bkz.
+    // aşağıdaki "yerleşik veri" notu). Kilit açılıp kapanınca ve oturum
+    // kapanınca da yeniden eşitlenir; ayrıntı `SistemEylemleri`.
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
+      if (next.isLoading) return;
+      _spotlightEsitle();
+    });
+    ref.listen<bool>(biometricLockProvider, (_, __) => _spotlightEsitle());
+    ref.listen(authProvider, (_, next) {
+      if (next.valueOrNull == null) _spotlightEsitle();
     });
 
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
@@ -2055,6 +2076,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (son == null || son.assets.isEmpty) return;
       _gunIciYuzeyleriniYaz(son);
     }(), reason: 'main.yuzeyYazimiTurSonu');
+  }
+
+  void _spotlightEsitle() {
+    final p = ref.read(portfolioProvider);
+    CrashReporter.arkaPlan(
+        SistemEylemleri.spotlightEsitle(
+          assets: p.isLoading ? null : p.valueOrNull?.assets,
+          userId: ref.read(authProvider).valueOrNull?.id,
+          kilitli: ref.read(biometricLockProvider),
+        ),
+        reason: 'main.SistemEylemleri.spotlight');
   }
 
   /// Ana ekran widget'ı + Live Activity yazımı (portföy dinleyicisinin

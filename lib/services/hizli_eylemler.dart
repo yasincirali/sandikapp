@@ -13,6 +13,9 @@ import 'crash_reporter.dart';
 /// (Varlık ekle, Alarm kur, Arama). Siri ve Spotlight sonraya kalsın."
 /// Haber anında uygulamayı açıp sekme aramadan tek dokunuşla işe girilir.
 /// "Bugün" bilerek yok: ikona dokunmak zaten onu açar.
+/// Siri ve Spotlight aynı gün (yasin, Ar-Ge turu 1: "arkadaşını getir
+/// dışındakileri uygula") `SistemEylemleri` ile geldi; Siri eylemleri bu
+/// isteğe düşer, ikinci bir yönlendirme yolu yok.
 ///
 /// ## Akış
 /// Sistem kısayolu bildirir → [istek] dolar → sekme kabuğu

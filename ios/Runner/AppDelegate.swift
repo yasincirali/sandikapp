@@ -61,6 +61,13 @@ import Vision
 
     // Ekran görüntüsünden metin (Vision) — `lib/services/ekstre/ekran_okuyucu.dart`.
     OcrChannel.register(messenger: engineBridge.applicationRegistrar.messenger())
+
+    // Siri Kestirmeleri + Spotlight (`SistemEylemleri.swift`). Eklenti
+    // kaydıyla girer: Spotlight dokunuşu sahne olayıdır ve yalnız
+    // `addSceneDelegate` ile sıraya giren nesneye dağıtılır.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SistemEylemleri") {
+      SistemEylemleri.register(registrar: registrar)
+    }
   }
 }
 
