@@ -5,7 +5,11 @@
 //     akışı, Cuma haftanın özeti, TÜİK TÜFE; ABD için (Türkçe) BLS TÜFE ve
 //     Fed faiz kararı.
 //   TR 09:30 (kip 'sabah', 0153; yasin 15 Eki "günde 2 gönderi"): Pazartesi
-//     haftanın takvimi (`x_takvim`), diğer günler dünün fon getirileri.
+//     haftanın takvimi (`x_takvim`), diğer günler dünün fon getirileri
+//     (X_KUR_IZINLI=1 ise altın/dolar/euro ile "dünün piyasası").
+// 19 Eki (yasin, 0157): ABD işsizlik + tarım dışı istihdam (BLS, açıklandığı
+// akşam), Cuma özetine Brent (EIA, yalnız EIA_API_KEY varken), her gönderiye
+// konu etiketleri (`etiketle`, metin kapısından sonra).
 // `yayin`/`taslak` modda gönderiyi kendisi ATMAZ: taslağı yazar, kartını
 // çizer ve Telegram'da yöneticiye "Yayınla / Reddet" düğmeleriyle yollar;
 // atma işi `x-onay`'da. `otomatik` modda (yasin, 15 Eki) aynı taslağı
@@ -34,8 +38,13 @@ import { trGun } from '../_shared/tefas_nav.ts';
 import {
   abdTufeGuncelMi,
   abdTufeOzeti,
+  abdIstihdamOzeti,
+  abdIstihdamTaslagi,
   abdTufeTaslagi,
   akisOzeti,
+  BLS_ISTIHDAM,
+  brentDegisimi,
+  etiketle,
   fedKarariBul,
   fedTaslagi,
   botModu,
@@ -160,6 +169,22 @@ async function aksamTaslaklari(
         if (ke) throw ke;
         kurlar = kurDegisimleri(k ?? [], bas, trAksam(bugun));
       }
+      // Brent: EIA kamu verisi, anahtar yoksa ya da veri bayatsa satır yok.
+      const eia = Deno.env.get('EIA_API_KEY');
+      if (eia) {
+        const u = new URL('https://api.eia.gov/v2/petroleum/pri/spt/data/');
+        u.searchParams.set('api_key', eia);
+        u.searchParams.set('frequency', 'daily');
+        u.searchParams.append('data[0]', 'value');
+        u.searchParams.append('facets[series][]', 'RBRTE');
+        u.searchParams.append('sort[0][column]', 'period');
+        u.searchParams.append('sort[0][direction]', 'desc');
+        u.searchParams.set('length', '20');
+        const b = await jsonGetir(u.toString());
+        const brent = b ? brentDegisimi(b, bugun) : null;
+        if (brent) kurlar = [...kurlar, brent];
+        else sonuc.brent = b ? 'bayat' : 'kaynak_yok';
+      }
       taslaklar.push(haftalikTaslak(ozet, kurlar));
     }
   }
@@ -178,11 +203,14 @@ async function aksamTaslaklari(
   const bls = await jsonGetir('https://api.bls.gov/publicAPI/v1/timeseries/data/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ seriesid: ['CUSR0000SA0', 'CUUR0000SA0'] }),
+    body: JSON.stringify({ seriesid: ['CUSR0000SA0', 'CUUR0000SA0', ...BLS_ISTIHDAM] }),
   });
   const abd = bls ? abdTufeOzeti(bls) : null;
   if (abd && abdTufeGuncelMi(abd.donem, bugun)) taslaklar.push(abdTufeTaslagi(abd));
   else if (!bls) sonuc.abd_tufe = 'kaynak_yok';
+  // İstihdam bülteni ayın ilk Cuma'sı; aynı "geçen ayın verisi, ayın ilk 20 günü" kuralı.
+  const ist = bls ? abdIstihdamOzeti(bls) : null;
+  if (ist && abdTufeGuncelMi(ist.donem, bugun)) taslaklar.push(abdIstihdamTaslagi(ist));
 
   const nyfed = await jsonGetir('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/10.json');
   const fed = nyfed ? fedKarariBul(nyfed) : null;
@@ -228,7 +256,21 @@ async function sabahTaslaklari(
     sonuc.fon_getiri = 'veri_eksik';
     return [];
   }
-  return [fonGetiriTaslagi(o)];
+  // "Dünün piyasası": fon verisinin iki günü arasında altın/dolar/euro
+  // (truncgil yeniden yayın hakkı netleşene kadar X_KUR_IZINLI ile).
+  let kurlar: ReturnType<typeof kurDegisimleri> = [];
+  if (Deno.env.get('X_KUR_IZINLI') === '1') {
+    const bas = trAksam(o.onceki);
+    const { data: k, error: ke } = await db.from('yurt_ici_kotasyon')
+      .select('sembol, ts, fiyat')
+      .in('sembol', ['ALTIN_GRAM24', 'USDTRY=X', 'EURTRY=X'])
+      .gte('ts', new Date(Date.parse(bas) - 6 * 3600_000).toISOString())
+      .lte('ts', trAksam(o.gun))
+      .limit(20000);
+    if (ke) throw ke;
+    kurlar = kurDegisimleri(k ?? [], bas, trAksam(o.gun));
+  }
+  return [fonGetiriTaslagi(o, kurlar)];
 }
 
 Deno.serve(async (req: Request) => {
@@ -314,6 +356,8 @@ Deno.serve(async (req: Request) => {
           red = `model: ${hataOzeti(e)}`;
         }
       }
+
+      metin = etiketle(t, metin);
 
       const { data: satir, error: ie } = await db.from('x_gonderileri').insert({
         tur: t.tur,

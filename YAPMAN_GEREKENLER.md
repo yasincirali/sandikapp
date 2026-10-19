@@ -110,6 +110,12 @@ sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanm
       TCMB ve Fed kararları, Enflasyon Raporu). TÜİK/BLS TÜFE günleri ve 2027 takvimi
       eklenmedi: resmi takvimden doğrulanınca yeni migration ile eklenir (iki sunucu).
       Olay olmayan Pazartesi fon getirisi atılır.
+- [ ] Petrol (0157, 2026-10-19): Cuma özetine Brent satırı için ücretsiz EIA anahtarı al
+      (https://www.eia.gov/opendata/register.php) ve **iki sunucuya** `EIA_API_KEY` olarak gir.
+      Anahtar yokken satır atlanır. ABD işsizlik/istihdam ve etiketler ayar istemez.
+- [ ] Altın/dolar (karar): `X_KUR_IZINLI=1` açılırsa Salı–Cuma sabah kartı "dünün piyasası"
+      olur (gram altın, dolar, euro + fon kategorileri) ve Cuma özetine kur satırları girer.
+      Veri truncgil'den; kamuya yeniden yayın hakkı belirsiz, karar senin.
 - [ ] İsteğe bağlı: `X_KUR_IZINLI=1` (haftalık karta gram altın/dolar/euro — truncgil
       verisinin kamuya yayın hakkı belirsiz, kararı senin); `X_BOT_AI=0` (model yerine
       şablon metin; maliyet sıfır).
