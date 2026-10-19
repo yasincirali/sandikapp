@@ -157,13 +157,25 @@ end
 # App Store'a sızar.
 CHANGELOG_LIMIT = 4000 # App Store Connect "What to Test" üst sınırı
 
+TF_NOTU = "tf_notu.txt" # ios-testflight.yml → tool/tf_notu.py yazar
+
+def tf_notu
+  return nil unless File.exist?(TF_NOTU)
+
+  metin = File.read(TF_NOTU, encoding: "UTF-8").scrub("").strip
+  metin.empty? ? nil : metin
+end
+
 def testflight_changelog(build_number)
   # `encoding: "UTF-8"` ŞART: dosya "•" madde imleriyle başlıyor ve runner'ın
   # locale'i UTF-8 değilse `File.read` içeriği US-ASCII etiketler — `strip`
   # bile "invalid byte sequence" ile patlar (bu container'da birebir üretildi).
   # Eski kod bunu taşıyordu; GitHub macOS runner'ının UTF-8 locale'i gizliyordu.
-  notes = File.read("../../store_listing/en-US/whats_new.txt", encoding: "UTF-8")
-              .scrub("").strip
+  # Önce build'e giren PR'lardan üretilen not (tool/tf_notu.py, CI'da
+  # yazılır): testçi neyin çözüldüğünü ve neyi deneyeceğini görsün (yasin
+  # 2026-10-19). Yoksa (yerel koşu, API hatası) mağaza notuna düşer.
+  notes = tf_notu || File.read("../../store_listing/en-US/whats_new.txt", encoding: "UTF-8")
+                             .scrub("").strip
 
   kimlik = begin
     # `force_encoding` + `scrub`: runner'ın locale'i UTF-8 değilse backtick
@@ -689,9 +701,11 @@ platform :ios do
     gruplar = options[:groups].to_s.split(",").map(&:strip).reject(&:empty?)
     UI.user_error!("En az bir harici grup adı ver (groups:)") if gruplar.empty?
 
-    notlar = options[:changelog].to_s.strip
-    # Otomatik zincirde metin repo değişkeninden gelir; boşsa varsayılan.
+    # Sıra: build'in PR'larından üretilen not (tf_notu.txt) → repo değişkeni
+    # TESTFLIGHT_HARICI_NOT → sabit varsayılan. Değişken önceden her build'de
+    # aynı metni basıyordu (yasin 2026-10-19: "generic metin yazıyor").
     # whats_new.txt kullanılmaz: İngilizce mağaza notu, harici testçi Türkçe.
+    notlar = tf_notu || options[:changelog].to_s.strip
     notlar = HARICI_VARSAYILAN_NOT if notlar.empty?
     notlar = notlar[0, CHANGELOG_LIMIT] if notlar.length > CHANGELOG_LIMIT
 

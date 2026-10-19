@@ -260,6 +260,15 @@ Gösterim kararı `SurumNotuService.yeniNotlar` saf fonksiyonundadır
 kez gösterilmez, atlanan sürümler birikir, notu yazılmamış sürümde susar.
 Bu kuralları değiştirirken testi de güncelle.
 
+**TestFlight notu (kullanıcı kuralı, 2026-10-19).** Her PR gövdesinde
+`## TestFlight'ta test et` bölümü olur (şablon `.github/pull_request_template.md`):
+testçinin anlayacağı sade dille (teknik terim, PR numarası, tablo/fonksiyon
+adı yok) ne değişti ve adım adım nasıl denenir, ne görmeli. Uygulamaya
+dokunmayan PR'da bölüm boş kalır. `ios-testflight.yml` → `tool/tf_notu.py`
+build'e giren PR'ların bu bölümünü TestFlight "What to Test" metnine yazar;
+bölümü olmayan uygulama PR'ında başlık son çare olarak görünür. Build'i
+yasin'e haber verirken de aynı dille yaz: ne çözdü, neyi nasıl test etsin.
+
 **Tur metni arayüzle birlikte değişir (kullanıcı kuralı, 2026-09-21).**
 Yukarıdaki üç ayak "tanıtımda göster" dendiğinde çalışır; bu kural
 İSTENMEDEN de geçerlidir: bir tur adımının anlattığı yüzeyde UI/UX
