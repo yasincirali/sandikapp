@@ -21,6 +21,10 @@ import 'sandik_async_button.dart';
 /// beri bu bir TESTLE zorlanır: kartın metni (başlık, açıklama, maddeler,
 /// hukuk notu, düğme) `yasal_metinler`'e (0102) hash'iyle girer;
 /// `yasal_metin_kilidi_test` sürüm artırılmadan değişen metni yakalar.
+///
+/// 2026-10-20 (0158, yasin 2026-10-19): "Ne paylaşılır" fon dışı varlıkların
+/// piyasa sembolünü ve payını da yazar; "Ne paylaşılmaz"dan "hangi
+/// hisseleri tuttuğun" çıktı. Sürüm '2026-10-20'.
 class ZirveRizaKarti extends StatelessWidget {
   const ZirveRizaKarti({
     super.key,
@@ -55,14 +59,17 @@ class ZirveRizaKarti extends StatelessWidget {
   static const maddeler = <(String, String)>[
     (
       'Ne paylaşılır',
-      'Seçilen dönemdeki getiri yüzden ve portföyünün tür dağılımı '
-          '(ör. %40 hisse, %35 altın). Fonlarda TEFAS fon kodu ve portföy '
-          'içindeki payı.',
+      'Seçilen dönemdeki getiri yüzden, portföyünün tür dağılımı '
+          '(ör. %40 hisse, %35 altın) ve her varlığın portföy içindeki payı: '
+          'fonlarda TEFAS kodu, hisse, kripto, altın ve dövizde piyasa '
+          'sembolü (ör. THYAO %18, BTC %12). Payı %1 altındaki ve elle '
+          'fiyatladığın varlıklar "diğer"de toplanır.',
     ),
     (
       'Ne paylaşılmaz',
-      'Adın, e-postan, kullanıcı adın, TL tutarların, adetlerin ve hangi '
-          'hisseleri tuttuğun. Hiçbir yerde kim olduğun yazmaz.',
+      'Adın, e-postan, kullanıcı adın, TL tutarların, adetlerin ve '
+          'varlıklarına verdiğin adlar ve notlar. Hiçbir yerde kim olduğun '
+          'yazmaz.',
     ),
     (
       'Nasıl görünür',

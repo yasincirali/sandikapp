@@ -16,6 +16,8 @@ import 'helpers/kaynak.dart';
 ///  2. Karşılaştır: ücretsizde 2 seri (kendi serine ek bir kıyas), Premium 5.
 ///  3. Ortak: ücretsizde 1 (yasin kararı 2026-10-08); var olan korunur,
 ///     yalnız yeni ortak eklemek (kod üret / kod gir / kabul) durur.
+///  4. Zirve (0158, yasin 2026-10-19): yeni katılım ve varlık ayrıntısı
+///     Premium; 0158 öncesi katılanlar (`ilk_uye`) olduğu gibi kalır.
 /// Paywall kapalıyken ikisi de yoktur: canlıdaki davranış birebir.
 void main() {
   setUp(() async {
@@ -87,6 +89,24 @@ void main() {
       final istek =
           ekranKaynagiSync('lib/screens/partnership_requests_screen.dart');
       expect(istek.contains('ortakSiniriPaywalliActi('), isTrue);
+    });
+  });
+
+  group('Zirve (0158)', () {
+    test('kilit yalnız paywall açık ve Premium yokken', () {
+      expect(kap(paywall: false).read(premiumKilitliProvider), isFalse);
+      expect(kap(paywall: true).read(premiumKilitliProvider), isTrue);
+      expect(kap(paywall: true, magaza: true).read(premiumKilitliProvider),
+          isFalse);
+    });
+
+    test('yeni katılım kapıdan geçer, içerideki (ilk_uye) çıkarılmaz', () {
+      final src = ekranKaynagiSync('lib/screens/zirve_portfoyler_screen.dart');
+      expect(src.contains('ref.read(premiumKilitliProvider)'), isTrue);
+      expect(src.contains('ilkUye'), isTrue,
+          reason: '0158 öncesi katılanlar Premium istemeden kalır');
+      expect(src.contains("PaywallScreen.show(context, source: 'zirve')"),
+          isTrue);
     });
   });
 

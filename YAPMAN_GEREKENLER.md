@@ -12,6 +12,25 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-19 Zirve varlık oranları + Premium kapısı (0158, yasal metin 1.13)
+
+Zirvedeki portföyler varlık bazında (sembol + oran) görünür; içeride olanlar
+(`ilk_uye`) tam görür, yeni katılım ve ayrıntı Premium. Sunucu değişikliği
+ekleyerek: eski build eski RPC'yi okur, değişmez.
+
+Yayın sırası (birleştirmeden sonra, iki sunucu; Frankfurt canlı):
+1. [ ] Supabase deploy: migration **0158** (Frankfurt → Tokyo). `ilk_uye`
+       bayrağı o an rızası etkin olan herkese yazılır; geç kalınırsa arada
+       katılan da "ilk üye" sayılır (zararsız, yalnız cömert).
+2. [ ] Ardından `leaderboard-snapshot` fonksiyonu (iki sunucu). Önce fonksiyon
+       giderse yeni kolon olmadığı için yazma kırılır; sıra önemli.
+3. [ ] Yasal metin 1.13 (Gizlilik/KVKK), Koşullar 1.11, Açık Rıza 1.6, Zirve
+       rızası 2026-10-20: "Onay sürümü" artmadı, genel yeniden onay kapısı
+       açılmaz. Zirve katılımcısı listede yeni Zirve metnini bir kez onaylar;
+       onaylamayanın sembolleri başkasına görünmez.
+4. [ ] Karar bekliyor: Zirve rızasındaki sembol paylaşımı için avukat
+       görüşü istenecek mi (açık "Zirve rızası avukat" kararı).
+
 ## ⏳ 2026-10-17 Dönem özeti anahtarı (bayraksız) + takip listesinde fon hareketi
 
 - [x] Remote Config'te bir şey yapma: anahtar bayraksız geldi (yasin

@@ -861,6 +861,7 @@ List<_Adim> _adimlariKur() {
       // üstünde çalışır. İki bayrak 2026-10-05'te kalktı, metin kalıcı.
       // Tek akış (S2): kart özetin altında, sayfanın sonunda; tür dökümü
       // artık "Neden böyle?" bölümünde. Konum sözcüğü ona göre.
+      // 2026-10-19 (0158): tür dağılımı yerine varlık bazında oranlar.
       govde: '${PortfolioPerformanceScreen.tekAkisAcik ? 'Sayfanın sonundaki' : 'Tür dökümünün altındaki'}'
           ' kart, dönemin en iyi seçimlerini yapan '
           'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
@@ -872,8 +873,8 @@ List<_Adim> _adimlariKur() {
           'düello arenasında karşılaşırsınız: getiriler yan yana akar, halat '
           'aradaki farkı, taç öndekini gösterir; altındaki şerit dönemin her '
           'günü kimin önde olduğunu. Katılım isteğe bağlı '
-          've anonim: katılanlar birbirinin tür dağılımını ve getirisini '
-          'görür; kimlik, miktar ve TL asla paylaşılmaz.',
+          've anonim: katılanlar birbirinin getirisini ve varlık varlık '
+          'oranlarını görür; kimlik, miktar ve TL asla paylaşılmaz.',
       // Kartı GÖSTER (2026-10-03): kart Grafik yüzeyinde ve listenin en
       // altında; sekmeye geçmek yetmiyordu, metin boşluğun üstünde
       // kalıyordu. Ekran Grafik'e geçer ve kartı görünür alana getirir.

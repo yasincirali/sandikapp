@@ -1,8 +1,8 @@
 # GDPR Notice — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 8, 2026
-**Version:** 1.4
+**Last updated:** October 20, 2026
+**Version:** 1.5
 
 > This document supplements the [Privacy Policy](https://yasincirali.github.io/sandikapp/privacy-en) and [Terms of Service](https://yasincirali.github.io/sandikapp/terms-en) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
 
@@ -47,7 +47,7 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 | Security measures (single active device, rate limiting, abuse detection, sign-in security log, error logs) | Art. 6(1)(f) — legitimate interests |
 | Crash reports and usage statistics (Firebase Crashlytics, Firebase Analytics); sign-up funnel | Art. 6(1)(f) — legitimate interests (diagnostics, product improvement) |
 | Race (optional; period return %, asset-type shares %) | Art. 6(1)(b) — performance of a contract (feature you turn on) |
-| Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(a) — consent (opt-in in the App; withdrawable at any time) |
+| Top Portfolios anonymous pool (period return %, asset-type shares %, per-asset shares % by TEFAS fund code or public market symbol) | Art. 6(1)(a) — consent (opt-in in the App; withdrawable at any time) |
 | Premium subscription verification (only if you buy Premium; RevenueCat) | Art. 6(1)(b) — performance of a contract |
 | International transfer (Supabase Japan → Germany, Firebase and RevenueCat USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
 
@@ -59,7 +59,7 @@ See [Privacy Policy §5](https://yasincirali.github.io/sandikapp/privacy-en) (Su
 
 All processors are bound by Data Processing Agreements (DPAs) under Art. 28.
 
-Other users who have also joined Top Portfolios receive only the anonymous output of the pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see [Privacy Policy §5.1](https://yasincirali.github.io/sandikapp/privacy-en).
+Other users who have also joined Top Portfolios receive only the anonymous output of the pool — rank, return percentage, asset-type shares and each asset's TEFAS fund code or public market symbol with its share, with no identity, amounts or quantities — see [Privacy Policy §5.1](https://yasincirali.github.io/sandikapp/privacy-en).
 
 ---
 

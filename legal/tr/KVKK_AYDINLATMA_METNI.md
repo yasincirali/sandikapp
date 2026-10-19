@@ -1,8 +1,8 @@
 # KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 14 Ekim 2026
-**Sürüm:** 1.12
+**Son güncelleme:** 20 Ekim 2026
+**Sürüm:** 1.13
 **Onay sürümü:** 1.8
 
 ---
@@ -38,7 +38,7 @@
 - Portföy varlık kayıtları (sembol, tür, miktar, alış fiyatı, komisyon, para birimi, tarih, not), vadeli mevduat ve BES sözleşme bilgileri, temettü kayıtları
 - Takip listesi, fiyat alarmları, bildirim tercihleri, hedef tutarı
 - Portföy anlık görüntüleri (saatlik toplam değer)
-- Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)
+- Dönemsel getiri yüzdesi, varlık türü payları ve varlık bazında paylar (fonlarda TEFAS kodu, diğer varlıklarda kamuya açık piyasa sembolü) (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)
 - Dönemsel getiri yüzdesi ve varlık türü payları (Yarış; yalnızca katılırsanız)
 - Ortaklık bağlantıları ve davet kodları
 - Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): portföyün ya da bir varlığın yorumlanan dönemindeki getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları, yazılan yorum
@@ -146,7 +146,7 @@ Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ek
 
 ### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
 
-Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.
+Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve varlıkların kamuya açık kimliği ile portföy içindeki payı (fonlarda TEFAS fon kodu; hisse, kripto, altın, döviz, emtia ve tahvillerde kamuya açık piyasa sembolü, ör. "THYAO %18, BTC %12"; payı %1'in altındaki, elle fiyatlanan ya da kamuya açık sembolü olmayan kalemler türünün içinde toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Fon dışındaki varlıkların sembolleri yalnızca bu açıklamanın 20 Ekim 2026 sürümünü onaylamış katılımcılar için gösterilir; daha önceki sürümü onaylayanlarda yalnızca tür payları ve fon kodları görünür. Karşılığında siz de katılan kullanıcıların hangi varlıkları hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; portföyünüzün listedeki portföylerle ortak varlıklarının toplam payı (benzerlik yüzdesi) yalnızca size gösterilir. Bu karşılaştırma hizmeti yalnızca katılanlara açıktır; diğer portföylerin varlık sembollerini görmek ve havuza yeni katılmak Premium üyelik gerektirebilir, bu sizin hangi bilgilerinizin gösterildiğini değiştirmez. Ad, e-posta, kullanıcı adı, tutar, miktar ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.
 
 ---
 

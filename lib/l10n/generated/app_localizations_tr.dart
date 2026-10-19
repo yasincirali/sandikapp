@@ -5785,7 +5785,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.12: Yapay zekâ yorumu artık Performans\'ta ve varlık detayında seçtiğin dönemi de anlatabiliyor; yoruma enflasyon ve dolar, altın, BIST 100 kıyasları da giriyor. Yine yalnızca sen istersen çalışır, tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.11: İki isteğe bağlı yapay zekâ özelliği anlatıldı: Performans › Özet\'teki portföy yorumu ve ekstrenin kelimeleriyle okunması. İkisi de yalnızca sen istersen, ilk kullanımda ayrıca onayını alarak çalışır; tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.10: Uygulama uzun süre arka planda kalınca artık oturumun kapanmaz; uygulama kilidi açıksa yalnızca kilitlenir. Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.';
+      'Sürüm 1.13: Zirve\'ye katıldıysan, artık portföyündeki varlıkların hangi hisse, kripto ya da altın olduğu da sembolüyle ve yalnızca oran olarak görünebilir; tutar, adet ve kimliğin yine görünmez. Bu yalnızca 20 Ekim 2026 Zirve onayını verenler için geçerli. Zirve\'deki ayrıntılı görünüm yeni katılanlar için Premium\'a bağlı olabilir. Sürüm 1.12: Yapay zekâ yorumu artık Performans\'ta ve varlık detayında seçtiğin dönemi de anlatabiliyor; yoruma enflasyon ve dolar, altın, BIST 100 kıyasları da giriyor. Yine yalnızca sen istersen çalışır, tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.11: İki isteğe bağlı yapay zekâ özelliği anlatıldı: Performans › Özet\'teki portföy yorumu ve ekstrenin kelimeleriyle okunması. İkisi de yalnızca sen istersen, ilk kullanımda ayrıca onayını alarak çalışır; tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.10: Uygulama uzun süre arka planda kalınca artık oturumun kapanmaz; uygulama kilidi açıksa yalnızca kilitlenir. Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';
@@ -8918,4 +8918,20 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pyzVarlikEskidi =>
       'Bu varlıktaki miktarın yorum yazıldıktan sonra değişti.';
+
+  @override
+  String get pwdZirveEtiket => 'ZİRVE';
+
+  @override
+  String get pwdZirveBaslik =>
+      'Zirvedeki portföyler neye yatırıyor, varlık varlık gör.';
+
+  @override
+  String get prmSatirZirve => 'Zirvedeki portföyler';
+
+  @override
+  String get prmZirveUcretsiz => 'Kendi sıran';
+
+  @override
+  String get prmZirvePremium => '1. portföyün dağılımı + örtüşme';
 }

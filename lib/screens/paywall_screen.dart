@@ -624,6 +624,9 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       (l.prmSatirOzelGosterge, null, null),
       (l.prmSatirKars, l.pwdSeri(seriSiniri), l.pwdSeri(kKarsilastirmaEnFazla)),
       (l.prmSatirOrtak, '$ortakSiniri', l.prmSinirsiz),
+      // Zirvedeki portföyler (0158): ücretsizde kendi sıran; Premium'da 1.
+      // portföyün varlık dağılımı ve seninle örtüşmesi.
+      (l.prmSatirZirve, l.prmZirveUcretsiz, l.prmZirvePremium),
       // Çoklu portföy (0133): ücretsiz 1 (Ana), yalnız bayrak açıkken.
       if (RemoteConfigService.instance.cokluPortfoy)
         (l.prmSatirPortfoy, '1', l.pwdPortfoyPremium),

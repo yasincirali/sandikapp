@@ -138,8 +138,21 @@ void main() {
         () {
       expect(
           desteSirasi('profile_banner',
-              radar: true, ekstreAi: true, portfoy: true),
+              radar: true, ekstreAi: true, portfoy: true, zirve: true),
           PaywallKarti.values);
+    });
+
+    test('zirve kartı yalnız kapı canlıyken; zirve kaynağı onunla açılır', () {
+      expect(kaynaktanKart('zirve'), PaywallKarti.zirve);
+      expect(desteSirasi('profile_banner', radar: true, ekstreAi: true),
+          isNot(contains(PaywallKarti.zirve)));
+      expect(desteSirasi('zirve', radar: false, ekstreAi: false).first,
+          PaywallKarti.varlik,
+          reason: 'kapı yokken kaynak varsayılan sıraya düşer');
+      expect(
+          desteSirasi('zirve', radar: false, ekstreAi: false, zirve: true)
+              .first,
+          PaywallKarti.zirve);
     });
 
     test('çoklu hesap destede yok: ücretsiz (yasin 2026-10-10)', () {

@@ -1,10 +1,10 @@
 # Privacy Policy — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 14, 2026
-**Version:** 1.12
+**Last updated:** October 20, 2026
+**Version:** 1.13
 **Consent version:** 1.8
-**Source:** TR 1.12 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.13 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -45,7 +45,7 @@ The policy is prepared to meet the requirements of KVKK (Turkish Personal Data P
 | Asset records (symbol, type, quantity, purchase price, commission, currency, date, note), time deposit and pension (BES) contract details, dividend records | Portfolio tracking (the App's core function) |
 | Watchlist, price alerts, notification preferences (signal settings, quiet hours, briefing time), target amount | Operation of the respective features |
 | Portfolio snapshots (hourly total value) | Performance charts |
-| Period return (%), asset-type shares (%) and per-fund-code shares (%) — computed on the server | Top Portfolios (anonymous comparison, see §5.1; only if you give explicit consent) |
+| Period return (%), asset-type shares (%) and per-asset shares (%; TEFAS code for funds, public market symbol for other assets) — computed on the server | Top Portfolios (anonymous comparison, see §5.1; only if you give explicit consent) |
 | Period return (%) and asset-type shares (%) — computed daily on the server | Race (optional; your percentile and comparison with your partner) |
 | Partnership invite codes and mutual links | Multi-user sharing feature |
 | Your feedback on asset notes (optional): the note's asset and period, a "helpful / not helpful" vote, a "wrong number" flag, an explanation of up to 500 characters | Measuring note quality, finding and correcting faulty notes (see §5.3) |
@@ -109,7 +109,7 @@ Card number, billing address and payment method **never reach us**: your device'
 6. Meeting our legal obligations and proving your acceptances (legal text acceptances, lawful authority requests)
 7. Diagnostics and service quality improvement; usage statistics
 8. Account security (single active device, email code on a new device) and detection of abuse, fraud and cyberattacks (KVKK 5(2)(f) legitimate interest)
-9. Top Portfolios: showing the returns and asset-type allocation of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)
+9. Top Portfolios: showing the returns, asset-type allocation and per-asset shares of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)
 10. Race: if you join, calculating your period return and showing your percentile and comparison with your partner
 11. Premium: verifying the subscription you bought and recognising your right to access Premium content
 12. Using your feedback on asset notes to measure and improve their accuracy
@@ -142,7 +142,7 @@ Market-data providers receive no personal data and are therefore not listed indi
 
 ### 5.1 Anonymous Sharing with Other Users (Top Portfolios)
 
-Top Portfolios is optional and covers only users who give explicit consent in the App. Once you consent, if your portfolio is older than 5 days, your account is older than 7 days and your portfolio holds at least 2 different assets, your period returns (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on the server twice a day and kept in an anonymous comparison pool. If the pool holds at least 8 portfolios, for at most the 4 best-performing portfolios only the rank, return percentage, type shares and, for fund holdings, the public TEFAS fund code and its share in the portfolio (funds with a share below 1% or without a code are grouped) are shown to other users who have joined the pool; fund names come from the official TEFAS list. In return you see, in the same anonymous form, which asset types participating users hold in which proportions and their returns; this comparison service is available only to participants. Name, email, username, amounts, quantities, the names or symbols of shares and other assets, and the names and notes you give your assets are never shared; the information shown contains no data that would reveal your identity. If you do not consent, your return is neither computed nor stored for this purpose; other features of the App are unaffected. You can withdraw your consent at any time from the Top Portfolios screen; when you do, your measurements in the pool are deleted immediately. The date of consent and the version of the text shown to you are recorded as proof of consent. When you delete your account, these records and your measurements in the pool are deleted too.
+Top Portfolios is optional and covers only users who give explicit consent in the App. Once you consent, if your portfolio is older than 5 days, your account is older than 7 days and your portfolio holds at least 2 different assets, your period returns (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on the server twice a day and kept in an anonymous comparison pool. If the pool holds at least 8 portfolios, for at most the 4 best-performing portfolios only the rank, return percentage, type shares and the public identifier of each asset with its share in the portfolio (the TEFAS fund code for funds; the public market symbol for stocks, crypto, gold, currencies, commodities and bonds, e.g. "THYAO 18%, BTC 12%"; items with a share below 1%, manually priced items or items without a public symbol are grouped within their type) are shown to other users who have joined the pool; fund names come from the official TEFAS list. Symbols of non-fund assets are shown only for participants who accepted the 20 October 2026 version of this notice; for those who accepted an earlier version only type shares and fund codes are shown. In return you see, in the same anonymous form, which assets participating users hold in which proportions and their returns; the combined share of the assets your portfolio has in common with the listed portfolios (similarity percentage) is shown only to you. This comparison service is available only to participants; seeing the asset symbols of other portfolios and newly joining the pool may require a Premium membership, which does not change which of your information is shown. Name, email, username, amounts, quantities and the names and notes you give your assets are never shared; the information shown contains no data that would reveal your identity. If you do not consent, your return is neither computed nor stored for this purpose; other features of the App are unaffected. You can withdraw your consent at any time from the Top Portfolios screen; when you do, your measurements in the pool are deleted immediately. The date of consent and the version of the text shown to you are recorded as proof of consent. When you delete your account, these records and your measurements in the pool are deleted too.
 
 ### 5.2 Sharing with Your Partner and in the Race
 

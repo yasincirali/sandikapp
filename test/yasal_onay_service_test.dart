@@ -171,7 +171,7 @@ void main() {
       expect(turler(cagrilar[0]), [YasalTur.yatirimUyarisi]);
       expect(turler(cagrilar[1]), [YasalTur.zirveRiza]);
       expect(((cagrilar[1]['p_ogeler'] as List).single as Map)['surum'],
-          '2026-10-01');
+          '2026-10-20');
     });
 
     test('RPC hatası fırlamaz, false döner (akış durmaz)', () async {

@@ -45,14 +45,45 @@ class TopGainerAllocation {
   /// bir şey söylemez; ekran bu satırı "Sen" diye çizer, ikinci bir "Sen"
   /// işareti koymaz.
   final bool ben;
+
+  /// Fon DIŞI türlerin sembol bazında kırılımı (0158): {tür: {sembol: toplamın
+  /// %'si}}. Sahibi yeni rıza metnini onaylamadıysa ya da sunucu 0158'den
+  /// eskiyse boş. Vitrin hâlinde ([ayrintiKilitli]) kodlar `?1`, `?2`…
+  final Map<String, Map<String, double>> varlikDetay;
+
+  /// Sunucu sembolleri gizledi mi (Premium değil, ilk üye değil). Oranlar ve
+  /// en büyük tek kalem yine açık; gerisi kilitli satır olarak çizilir.
+  final bool ayrintiKilitli;
+
+  /// Çağıranın portföyüyle ortak açık kalemlerin toplam payı (0158,
+  /// Σ min). Kendi satırında, çağıranın ölçümü yoksa ya da eski sunucuda null.
+  final double? benzerlik;
+
   const TopGainerAllocation({
     required this.rank,
     required this.roiPct,
     required this.allocation,
     this.fonDetay = const {},
     this.ben = false,
+    this.varlikDetay = const {},
+    this.ayrintiKilitli = false,
+    this.benzerlik,
   });
 }
+
+/// Çağıranın Zirve erişimi (0158 `zirve_erisimim`).
+///
+/// [ilkUye]: Premium kapısından önce katılmış — yasin 2026-10-19: "içerdeki
+/// şartları karşılayan insanları çıkartmayalım ama yeni gelecekler için
+/// premiumda kullanılabilir olmalı". [ayrintiAcik]: başkalarının sembollerini
+/// tam görür (ilk üye ya da Premium içerik izni; sunucu kapısı kapalıyken
+/// herkes).
+typedef ZirveErisim = ({
+  bool aktif,
+  String? metinSurumu,
+  bool ilkUye,
+  bool ayrintiAcik,
+});
 
 /// Çağıranın zirve havuzundaki kendi değeri (0085 `zirve_benim`).
 /// Havuzdaysa Zirve ekranı "Sen"i bununla çizer: zirveyle AYNI kaynak ve
@@ -513,6 +544,38 @@ class LeaderboardService {
     return ZirveKiyas.fonDetayiTopla(kodDegeri, toplam);
   }
 
+  /// Fon DIŞI türlerin sembol bazında kırılımı, toplam portföyün yüzdesi
+  /// (0158). Kural sunucudaki `varlikDetayi` ile aynı: elle fiyatlı ve
+  /// mevduat sembol taşımaz ("DIGER"), %1 altı "DIGER". Sunucu ayrıca seri
+  /// varlığını sorar; istemcide fiyatı çekilen her ticker'ın serisi vardır.
+  /// Yalnız cihazda kalır ("Sen" satırı ve benzerlik), gönderilmez.
+  Map<String, Map<String, double>> computeVarlikDetay(
+    List<Asset> assets,
+    double Function(double, String) toTRY,
+  ) {
+    final degerler = <String, Map<String, double>>{};
+    var toplam = 0.0;
+    for (final p in aggregatePositions(assets)) {
+      final a = p.asDisplayAsset();
+      final tl = toTRY(a.totalValue, a.currency);
+      if (tl <= 0) continue;
+      toplam += tl;
+      final tur = a.type.name;
+      if (tur == 'fon' || ZirveKiyas.mevduatMi(a.ticker)) continue;
+      final kod = a.isManualPrice
+          ? ZirveKiyas.fonDiger
+          : ZirveKiyas.varlikAnahtari(tur, a.ticker, a.subCategory);
+      degerler
+          .putIfAbsent(tur, () => {})
+          .update(kod, (v) => v + tl, ifAbsent: () => tl);
+    }
+    return {
+      for (final e in degerler.entries)
+        if (ZirveKiyas.fonDetayiTopla(e.value, toplam).isNotEmpty)
+          e.key: ZirveKiyas.fonDetayiTopla(e.value, toplam),
+    };
+  }
+
   /// Kullanıcının tür bazlı % dağılımını Supabase'e yazar. Miktar, TL,
   /// ticker göndermez — sadece {tür: %}. Aktif varlıklar (buy - sell)
   /// üzerinden TL bazlı hesaplanmış oranlar client tarafında hazırlanır.
@@ -541,6 +604,16 @@ class LeaderboardService {
     required int periodDays,
     int topN = 3,
   }) async {
+    // 0158: aynı havuz + varlık kırılımı, vitrin ve benzerlik. Sunucu henüz
+    // 0158'i almadıysa (fonksiyon yok) eski RPC'ye düşülür — ekran bugünkü
+    // gibi tür + fon çizer.
+    try {
+      final res = await Supabase.instance.client.rpc<dynamic>(
+        'zirve_portfoyleri_ayrinti',
+        params: {'p_period_days': periodDays, 'p_top_n': topN},
+      );
+      return zirveSatirlari(res);
+    } catch (_) {}
     try {
       // 0084: aynı havuz + fon kırılımı. Eski `get_top_gainers_allocation`
       // yayındaki eski sürümler için sunucuda duruyor.
@@ -579,6 +652,44 @@ class LeaderboardService {
     } catch (_) {
       return const [];
     }
+  }
+
+  /// `zirve_portfoyleri_ayrinti` yanıtı → satırlar. Saf; test edilir.
+  @visibleForTesting
+  static List<TopGainerAllocation> zirveSatirlari(Object? res) {
+    if (res is! List) return const [];
+    Map<String, double> sayilar(Object? m) => m is Map
+        ? {
+            for (final e in m.entries)
+              if (e.value is num) '${e.key}': (e.value as num).toDouble(),
+          }
+        : const {};
+    final out = <TopGainerAllocation>[];
+    for (final r in res) {
+      if (r is! Map) continue;
+      final rank = (r['rank'] as num?)?.toInt();
+      final roi = (r['roi_pct'] as num?)?.toDouble();
+      final alloc = r['allocation_pct'];
+      if (rank == null || roi == null || alloc is! Map) continue;
+      final varlikRaw = r['varlik_detay'];
+      out.add(TopGainerAllocation(
+        rank: rank,
+        roiPct: roi,
+        allocation: sayilar(alloc),
+        fonDetay: sayilar(r['fon_detay']),
+        ben: r['ben'] == true,
+        varlikDetay: varlikRaw is Map
+            ? {
+                for (final e in varlikRaw.entries)
+                  if (sayilar(e.value).isNotEmpty)
+                    '${e.key}': sayilar(e.value),
+              }
+            : const {},
+        ayrintiKilitli: r['ayrinti_kilitli'] == true,
+        benzerlik: (r['benzerlik'] as num?)?.toDouble(),
+      ));
+    }
+    return out;
   }
 
   /// Caller'ın son 24 saatteki anonim genel sıralamasını döndürür.
@@ -701,7 +812,32 @@ class LeaderboardService {
   /// Zirvedeki Portföyler açık rıza metninin sürümü (0091). Metin
   /// (`ZirveRizaKarti`) anlamca değişirse bu da değişir; sunucu hangi
   /// sürüme rıza verildiğini saklar (ispat yükü veri sorumlusunda).
-  static const zirveRizaMetniSurumu = '2026-10-01';
+  ///
+  /// 2026-10-20 (0158): kart artık fon dışı varlıkların piyasa sembolünü de
+  /// "paylaşılır" diye yazar. Sunucu bir portföyün sembollerini yalnız bu
+  /// sürüm (ve sonrası) onaylandıysa döndürür; eski sürümle katılmış olan
+  /// havuzda kalır, ekranda yeniden onay kartı görür.
+  static const zirveRizaMetniSurumu = '2026-10-20';
+
+  /// Çağıranın Zirve erişimi (0158 `zirve_erisimim`). Sunucu 0158'den
+  /// eskiyse ya da hata → null; ekran yeniden onay kartını ve Premium
+  /// kapısını çizmez (bugünkü davranış).
+  Future<ZirveErisim?> fetchZirveErisim() async {
+    try {
+      final res =
+          await Supabase.instance.client.rpc<dynamic>('zirve_erisimim');
+      if (res is! List || res.isEmpty) return null;
+      final r = res.first as Map<String, dynamic>;
+      return (
+        aktif: r['aktif'] == true,
+        metinSurumu: r['metin_surumu'] as String?,
+        ilkUye: r['ilk_uye'] == true,
+        ayrintiAcik: r['ayrinti_acik'] == true,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Çağıranın geçerli zirve rızası var mı (0091 `zirve_rizalari`, RLS: yalnız
   /// kendi satırı)? Hata → null; ekran "bilinmiyor" der, rıza varsaymaz.

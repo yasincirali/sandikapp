@@ -611,6 +611,80 @@ export function fonDetayi(
   return Object.keys(out).length > 0 ? out : null;
 }
 
+/// Fon dışı türlerde gösterilebilecek piyasa sembolü kalıbı. Yalnız büyük
+/// harf, rakam ve `. = - _ :`; kullanıcının yazdığı serbest metin (boşluk,
+/// küçük harf, Türkçe karakter) buraya hiç gelmez — gelse bile kalıba uymaz.
+export const PIYASA_SEMBOLU = /^[A-Z0-9.=_:-]{1,20}$/;
+
+/// Lotun herkese açık piyasa sembolü; yoksa null ("diğer"e düşer).
+///
+/// Sembol yalnızca sunucunun KENDİ fiyat serisi olan varlıkta açıktır:
+/// elle fiyatlı lotun ticker'ı kullanıcının uydurduğu bir ad olabilir,
+/// mevduatın "sembolü" banka/sözleşme bilgisidir. Altında seri `GC=F`
+/// olduğu için kod (`ALTIN_CEYREK`…) alt kategoriden çözülür.
+export function piyasaSembolu(lot: Lot, seriler: Map<string, Seri>): string | null {
+  if (lot.is_manual_price === true || sozlesmeFiyatli(lot)) return null;
+  let kod: string | null;
+  if (lot.type === 'altin') {
+    kod = altinKodu(lot);
+  } else {
+    const t = seriSembolu(lot);
+    kod = t !== '' && seriler.has(t) ? t : null;
+  }
+  if (kod === null) return null;
+  kod = kod.trim().toUpperCase();
+  return PIYASA_SEMBOLU.test(kod) ? kod : null;
+}
+
+/// Fon DIŞI türlerin sembol bazında kırılımı: `{tür: {sembol: pay}}`, pay
+/// TOPLAM portföyün yüzdesi (Σ ≈ `allocation_pct[tür]`). Kullanıcı kararı
+/// 2026-10-19 (yasin): "amacımız türleri göstermek değil, detaylı
+/// varlıkların yüzdelerini anonim ve miktardan bağımsız oransal göstermek".
+///
+/// Fon kendi sütununda kalır (`fonDetayi`, 0084) — eski istemci onu okur.
+/// Kural fonla aynı: %1 altı ve sembolü açık olmayan kalem türün
+/// "DIGER"inde toplanır; ad/not/miktar/tutar taşınmaz. Yalnızca ZİRVE
+/// tablosuna gider (0158) ve sahibinin yeni rıza sürümü yoksa RPC döndürmez.
+export function varlikDetayi(
+  lots: Lot[],
+  seriler: Map<string, Seri>,
+  nowMs: number,
+): Record<string, Record<string, number>> | null {
+  const degerler = new Map<string, Map<string, number>>();
+  let toplam = 0;
+  for (const lot of lots) {
+    const miktar = Number(lot.quantity ?? 0);
+    if (!Number.isFinite(miktar) || miktar <= 0) continue;
+    const p = lotTryFiyati(lot, seriler, nowMs) ?? yedekTryFiyati(lot, seriler, nowMs);
+    if (p <= 0) continue;
+    const v = miktar * p;
+    toplam += v;
+    if (lot.type === 'fon' || sozlesmeFiyatli(lot)) continue;
+    const anahtar = piyasaSembolu(lot, seriler) ?? FON_DIGER;
+    const tur = degerler.get(lot.type) ?? new Map<string, number>();
+    tur.set(anahtar, (tur.get(anahtar) ?? 0) + v);
+    degerler.set(lot.type, tur);
+  }
+  if (toplam <= 0 || degerler.size === 0) return null;
+  const out: Record<string, Record<string, number>> = {};
+  for (const [tur, kodlar] of degerler) {
+    const satir: Record<string, number> = {};
+    let diger = 0;
+    for (const [kod, v] of kodlar) {
+      const pct = v / toplam * 100;
+      if (kod === FON_DIGER || pct < FON_ESIGI_PCT) {
+        diger += pct;
+        continue;
+      }
+      satir[kod] = Math.round(pct * 10) / 10;
+    }
+    const d = Math.round(diger * 10) / 10;
+    if (d > 0) satir[FON_DIGER] = d;
+    if (Object.keys(satir).length > 0) out[tur] = satir;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 /// Portföydeki FARKLI varlık sayısı: bugün değeri olan açık pozisyonların
 /// tekil anahtarı (`pozisyonAnahtari` — aynı sembolün lotları tek sayılır).
 ///
@@ -831,6 +905,7 @@ Deno.serve(async (request) => {
       allocation_pct: Record<string, number>;
       type_count: number;
       fon_detay: Record<string, number> | null;
+      varlik_detay: Record<string, Record<string, number>> | null;
       varlik_sayisi: number;
     }> = [];
     let atlanan = 0;
@@ -852,6 +927,7 @@ Deno.serve(async (request) => {
           user_id: uid,
           ...d,
           fon_detay: fonDetayi(lots, seriler, nowMs),
+          varlik_detay: varlikDetayi(lots, seriler, nowMs),
           varlik_sayisi: varlikSayisi(lots, seriler, nowMs),
         });
         yazildi = true;
