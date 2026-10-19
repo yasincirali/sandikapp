@@ -19,6 +19,11 @@ class TfNotuTest(unittest.TestCase):
         self.assertIn("görünen bir değişiklik yok",
                       tf.notu_kur([{"no": 1, "baslik": "x", "govde": "", "dosyalar": ["docs/a"]}]))
 
+    def test_yalniz_hat_dosyasi_sessiz(self):
+        d = ["ios/fastlane/Fastfile", ".github/workflows/ios-testflight.yml"]
+        self.assertIsNone(tf.pr_metni(1, "TF notu", "", d))
+        self.assertIsNotNone(tf.pr_metni(1, "Widget", "", ["ios/Runner/Info.plist"]))
+
     def test_numara_yazilmaz(self):
         g = "## TestFlight'ta test et\n- Bir hisse sat"
         m = tf.notu_kur([{"no": 212, "baslik": "fix(0156): uuid", "govde": g, "dosyalar": []}])

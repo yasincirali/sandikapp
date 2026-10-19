@@ -32,6 +32,8 @@ SONRAKI_BASLIK = re.compile(r"^#{1,3}\s", re.M)
 MERGE = re.compile(r"Merge pull request #(\d+)")
 # Bu yollar dışında değişiklik yoksa PR uygulamaya dokunmamıştır.
 UYGULAMA_YOLLARI = ("lib/", "ios/", "android/", "assets/", "pubspec")
+# Derleme/yükleme hattı ios/ altında ama testçinin göreceği bir şey değiştirmez.
+HAT_YOLLARI = ("ios/fastlane/",)
 
 
 def test_bolumu(govde: str) -> list[str]:
@@ -66,7 +68,8 @@ def pr_metni(no: int, baslik: str, govde: str, dosyalar: list[str]) -> str | Non
     adimlar = test_bolumu(govde)
     if adimlar:
         return "\n".join(adimlar)
-    if not any(f.startswith(UYGULAMA_YOLLARI) for f in dosyalar):
+    if not any(f.startswith(UYGULAMA_YOLLARI) and not f.startswith(HAT_YOLLARI)
+               for f in dosyalar):
         return None
     return f"• {baslik.strip()}"
 
