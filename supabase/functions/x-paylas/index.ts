@@ -61,6 +61,7 @@ import {
   MODEL,
   sabahGonderisi,
   takvimTaslagi,
+  type KurDegisimi,
   type Taslak,
   tufeOzeti,
   tufeTaslagi,
@@ -170,21 +171,9 @@ async function aksamTaslaklari(
         kurlar = kurDegisimleri(k ?? [], bas, trAksam(bugun));
       }
       // Brent: EIA kamu verisi, anahtar yoksa ya da veri bayatsa satır yok.
-      const eia = Deno.env.get('EIA_API_KEY');
-      if (eia) {
-        const u = new URL('https://api.eia.gov/v2/petroleum/pri/spt/data/');
-        u.searchParams.set('api_key', eia);
-        u.searchParams.set('frequency', 'daily');
-        u.searchParams.append('data[0]', 'value');
-        u.searchParams.append('facets[series][]', 'RBRTE');
-        u.searchParams.append('sort[0][column]', 'period');
-        u.searchParams.append('sort[0][direction]', 'desc');
-        u.searchParams.set('length', '20');
-        const b = await jsonGetir(u.toString());
-        const brent = b ? brentDegisimi(b, bugun) : null;
-        if (brent) kurlar = [...kurlar, brent];
-        else sonuc.brent = b ? 'bayat' : 'kaynak_yok';
-      }
+      const b = await brentGetir(bugun);
+      if (b.brent) kurlar = [...kurlar, b.brent];
+      else if (b.durum !== 'anahtar_yok') sonuc.brent = b.durum;
       taslaklar.push(haftalikTaslak(ozet, kurlar));
     }
   }
@@ -273,6 +262,24 @@ async function sabahTaslaklari(
   return [fonGetiriTaslagi(o, kurlar)];
 }
 
+// EIA Brent satırı. Anahtar yalnız sorgu parametresinde; yanıta/loga yazılmaz.
+async function brentGetir(bugun: string): Promise<{ brent: KurDegisimi | null; durum: string }> {
+  const eia = Deno.env.get('EIA_API_KEY');
+  if (!eia) return { brent: null, durum: 'anahtar_yok' };
+  const u = new URL('https://api.eia.gov/v2/petroleum/pri/spt/data/');
+  u.searchParams.set('api_key', eia);
+  u.searchParams.set('frequency', 'daily');
+  u.searchParams.append('data[0]', 'value');
+  u.searchParams.append('facets[series][]', 'RBRTE');
+  u.searchParams.append('sort[0][column]', 'period');
+  u.searchParams.append('sort[0][direction]', 'desc');
+  u.searchParams.set('length', '20');
+  const b = await jsonGetir(u.toString());
+  if (!b) return { brent: null, durum: 'kaynak_yok' };
+  const brent = brentDegisimi(b, bugun);
+  return { brent, durum: brent ? 'tamam' : 'bayat' };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return yanit({ ok: false }, 405);
   // Fon akışı gözlemiyle aynı secret (0146 gerekçesi): yeni Vault kaydı
@@ -299,7 +306,15 @@ Deno.serve(async (req: Request) => {
   try {
     const g = await req.json();
     if (g?.kip === 'sabah') kip = 'sabah';
+    else if (g?.kip === 'eia_dene') kip = 'eia_dene';
   } catch (_) { /* gövde yok */ }
+
+  // Yalnız EIA erişimini dener (yasin 19 Eki "erişmeyi denesene"): taslak
+  // yazmaz, X'e/Telegram'a gitmez; yalnız durum ve son Brent satırı döner.
+  if (kip === 'eia_dene') {
+    const b = await brentGetir(bugun);
+    return yanit({ ok: b.durum === 'tamam', brent: b.durum, etiket: b.brent?.ad ?? null, son: b.brent?.son ?? null });
+  }
 
   try {
     const taslaklar: Taslak[] = kip === 'sabah' ? await sabahTaslaklari(db, bugun, sonuc) : await aksamTaslaklari(db, bugun, simdi, sonuc);
