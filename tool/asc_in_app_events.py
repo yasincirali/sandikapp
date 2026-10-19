@@ -36,6 +36,10 @@ BUNDLE_ID = "com.sandik.app"
 API = "https://api.appstoreconnect.apple.com/v1"
 BOLGE = ["TUR"]  # Enflasyon günü ve yıl sonu Türkiye'ye özgü.
 GORSEL_TURLERI = {"EVENT_CARD": "kart_1920x1080", "EVENT_DETAILS_PAGE": "detay_1080x1920"}
+# Etkinlik ekranları ücretsiz; "satın alma gerekli" denirse Apple IAP ürünlerini de
+# incelemeye ister. Alan boş kalınca ASC "Add for Review"u geçirmiyor (2026-10-19,
+# Kasım taslağı elle tamamlandı) — hem kurulumda yazılır hem eski taslakta tamamlanır.
+SATIN_ALMA = "NO_COST_ASSOCIATED"
 
 
 def jeton():
@@ -104,6 +108,13 @@ def lokal_tamamla(asc, olay_id, e, kullanilacak):
     Yarım kalmış görsel (teslim durumu COMPLETE / UPLOAD_COMPLETE olmayan)
     silinip yeniden yüklenir. Dönen değer: yapılan iş sayısı."""
     is_sayisi = 0
+    olay = asc.get(f"/appEvents/{olay_id}")["data"]
+    if olay["attributes"].get("purchaseRequirement") != SATIN_ALMA:
+        asc.patch(f"/appEvents/{olay_id}", {
+            "type": "appEvents", "id": olay_id,
+            "attributes": {"purchaseRequirement": SATIN_ALMA},
+        })
+        is_sayisi += 1
     lokaller = {x["attributes"]["locale"]: x
                 for x in asc.get(f"/appEvents/{olay_id}/localizations")["data"]}
     for dil in kullanilacak:
@@ -188,6 +199,7 @@ def main():
                 "primaryLocale": kullanilacak[0],
                 "priority": e["oncelik"],
                 "purpose": e["amac"],
+                "purchaseRequirement": SATIN_ALMA,
                 "territorySchedules": [{
                     "territories": BOLGE,
                     "publishStart": e["yayin_baslangic"],
