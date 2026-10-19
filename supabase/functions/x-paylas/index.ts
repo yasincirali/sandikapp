@@ -273,9 +273,25 @@ async function brentGetir(bugun: string): Promise<{ brent: KurDegisimi | null; d
   u.searchParams.append('facets[series][]', 'RBRTE');
   u.searchParams.append('sort[0][column]', 'period');
   u.searchParams.append('sort[0][direction]', 'desc');
+  // `start` şart: EIA `length`'i her zaman uygulamıyor, sınırsız sorgu
+  // 1987'den bu yana ~10 bin satır döküp 5 sn'yi aşıyordu (19 Eki denemesi,
+  // 'kaynak_yok'). Son 30 gün 20 satırı rahat karşılar; yine de yavaş
+  // olabildiği için süre 30 sn.
+  u.searchParams.set('start', gunEkle(bugun, -30));
   u.searchParams.set('length', '20');
-  const b = await jsonGetir(u.toString());
-  if (!b) return { brent: null, durum: 'kaynak_yok' };
+  // jsonGetir yerine elle: durum kodu deneme moduna dönsün (403 = anahtar).
+  let b: unknown;
+  try {
+    const r = await fetch(u.toString(), { signal: AbortSignal.timeout(30000) });
+    if (!r.ok) {
+      console.error('[x-paylas] kaynak api.eia.gov', r.status);
+      return { brent: null, durum: `http_${r.status}` };
+    }
+    b = await r.json();
+  } catch (e) {
+    console.error('[x-paylas] kaynak api.eia.gov', hataOzeti(e));
+    return { brent: null, durum: 'kaynak_yok' };
+  }
   const brent = brentDegisimi(b, bugun);
   return { brent, durum: brent ? 'tamam' : 'bayat' };
 }
