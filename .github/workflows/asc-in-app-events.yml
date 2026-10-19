@@ -24,10 +24,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pyjwt cryptography requests pillow
-      # Görseller commit'li; yine de betikten yeniden üretilir ki JSON ile
-      # görsel adları hep eşleşsin.
-      - run: python store_listing/build_event_graphics.py
+      - run: pip install pyjwt cryptography requests
+      # Görseller commit'li DEĞİL (.gitignore store_listing/ios/**/*.png);
+      # kaynak 3B sahneden her koşuda üretilir ki JSON ile görsel adları hep
+      # eşleşsin (2026-10-19: 2B Pillow çizimi → Three.js sahnesi).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Görselleri üret (Three.js + başsız Chromium)
+        working-directory: store_listing/in_app_events_uretici
+        run: |
+          npm install --no-audit --no-fund
+          npx -y playwright@1.56.0 install chromium
+          node cek.mjs
       - name: Etkinlikleri kur
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

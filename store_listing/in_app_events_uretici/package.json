@@ -1,0 +1,7 @@
+{
+  "name": "sandik-in-app-event-gorselleri",
+  "private": true,
+  "type": "module",
+  "scripts": { "uret": "node cek.mjs" },
+  "dependencies": { "playwright-core": "1.56.0" }
+}

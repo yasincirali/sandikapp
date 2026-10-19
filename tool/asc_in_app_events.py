@@ -1,7 +1,7 @@
 """App Store In-App Event taslaklarını App Store Connect'e kurar (karar 6.5).
 
 Kaynak: store_listing/ios/in_app_events/etkinlikler.json (+ PNG'ler,
-`store_listing/build_event_graphics.py`).
+`store_listing/in_app_events_uretici/cek.mjs`).
 
 Güvenlik kuralları (kullanıcı kararı 2026-09-30: "gönderimi ben yapayım" —
 son hâli incelemeye göndermeden önce kullanıcıya gösterilir):
@@ -144,7 +144,7 @@ def main():
         for tur, ek in GORSEL_TURLERI.items():
             yol = os.path.join(KLASOR, f"{e['gorsel']}_{ek}.png")
             if not os.path.exists(yol):
-                sys.exit(f"Görsel yok: {yol} (önce build_event_graphics.py)")
+                sys.exit(f"Görsel yok: {yol} (önce store_listing/in_app_events_uretici: node cek.mjs)")
 
     asc = Asc()
     uygulamalar = asc.get("/apps", **{"filter[bundleId]": BUNDLE_ID})["data"]
