@@ -54,6 +54,7 @@ void pozisyonuAc(BuildContext context, WidgetRef ref, VarlikKimligi kimlik) {
   pushGuarded(
     context,
     adaptiveRoute<void>(
+      settings: const RouteSettings(name: 'asset_detail'),
       builder: (_) => AssetDetailScreen(
         asset: gorunum?.asset ?? lot,
         lots: gorunum?.lots ?? [lot],
@@ -70,6 +71,7 @@ void portfoyeEkleAc(BuildContext context, VarlikKimligi kimlik) {
   pushGuarded(
     context,
     adaptiveRoute<void>(
+      settings: const RouteSettings(name: 'add_asset'),
       builder: (_) => AddAssetScreen(
         prefillTicker: kimlik.ticker,
         prefillName: kimlik.name,

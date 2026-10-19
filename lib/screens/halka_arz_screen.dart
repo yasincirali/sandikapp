@@ -342,6 +342,7 @@ class HalkaArzDetay extends ConsumerWidget {
     final sonuc = await pushGuarded<Object>(
       ust,
       adaptiveRoute(
+        settings: const RouteSettings(name: 'add_asset'),
         fullscreenDialog: true,
         builder: (_) => AddAssetScreen(
           prefillTicker: arz.sembol,
@@ -526,7 +527,7 @@ class HalkaArzProfilSatiri extends ConsumerWidget {
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
         onTap: () => pushGuarded<void>(
           context,
-          adaptiveRoute<void>(builder: (_) => const HalkaArzScreen()),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'halka_arz'), builder: (_) => const HalkaArzScreen()),
         ),
         child: Semantics(
           button: true,

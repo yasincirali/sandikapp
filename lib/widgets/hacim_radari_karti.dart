@@ -73,6 +73,7 @@ class HacimRadariKarti extends ConsumerWidget {
     void ayrintiyaGit() => pushGuarded(
           context,
           adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'hacim_detay'),
               builder: (_) => HacimDetayScreen(anahtar: sembol, kripto: false)),
         );
 
@@ -377,6 +378,7 @@ class KriptoBaskiKarti extends ConsumerWidget {
     void ayrintiyaGit() => pushGuarded(
           context,
           adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'hacim_detay'),
               builder: (_) => HacimDetayScreen(anahtar: anahtar, kripto: true)),
         );
 

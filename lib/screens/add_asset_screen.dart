@@ -330,12 +330,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Future<void> _ekstredenAktar() async {
     final aktarildi = await pushGuarded<bool>(
       context,
-      adaptiveRoute(builder: (_) => const CsvImportScreen()),
+      adaptiveRoute(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
     );
     if (aktarildi != true || !mounted) return;
     final eklendi = await pushGuarded<bool>(
       context,
-      adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+      adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
     );
     if (eklendi == true && mounted) Navigator.of(context).pop(true);
   }
@@ -515,7 +515,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               onPressed: () async {
                 final added = await pushGuarded<bool>(
                   context,
-                  adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+                  adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
                 );
                 if (added == true && context.mounted) {
                   Navigator.of(context).pop(true);

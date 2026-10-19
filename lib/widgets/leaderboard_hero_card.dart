@@ -61,7 +61,7 @@ class _SoloHero extends StatelessWidget {
       // Ortaklarım — karar `yarisGirisEkrani`'nda.
       onTap: () => pushGuarded(
         context,
-        adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()),
+        adaptiveRoute<void>(settings: const RouteSettings(name: 'yaris_giris_ekrani'), builder: (_) => yarisGirisEkrani()),
       ),
       child: Row(
         children: [
@@ -345,7 +345,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   void _openLeaderboard() {
     pushGuarded(
       context,
-      adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()),
+      adaptiveRoute<void>(settings: const RouteSettings(name: 'yaris_giris_ekrani'), builder: (_) => yarisGirisEkrani()),
     );
   }
 

@@ -327,6 +327,7 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
         onTap: () => pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'asset_detail'),
             builder: (_) => AssetDetailScreen(
               asset: p.asDisplayAsset(),
               showBackButton: true,
@@ -411,30 +412,33 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   /// Her hedef BUGÜNKÜ giriş noktasıyla aynı rotadan açılır (aynı ekran,
   /// aynı parametre); arama yeni bir kapı açmaz, var olanlara kestirme olur.
   void _eylemiAc(AramaEylemi e) {
-    void it(Widget Function(BuildContext) b) =>
-        pushGuarded(context, adaptiveRoute<void>(builder: b));
+    // Ad ekran ölçümü içindir (`EkranOlcumu`); giriş noktasındakiyle aynı.
+    void it(String ad, Widget Function(BuildContext) b) => pushGuarded(
+        context,
+        adaptiveRoute<void>(settings: RouteSettings(name: ad), builder: b));
     switch (e) {
       case AramaEylemi.fiyatAlarmlari:
-        it((_) => const PriceAlertsScreen());
+        it('price_alerts', (_) => const PriceAlertsScreen());
       case AramaEylemi.sinyalAyarlari:
-        it((_) => const SignalSettingsScreen());
+        it('signal_settings', (_) => const SignalSettingsScreen());
       case AramaEylemi.ekstreAktar:
         CrashReporter.arkaPlan(_ekstredenAktar(),
             reason: 'GenelArama.ekstredenAktar');
       case AramaEylemi.topluEkle:
-        it((_) => const BulkAddAssetScreen());
+        it('bulk_add_asset', (_) => const BulkAddAssetScreen());
       case AramaEylemi.karsilastir:
-        it((_) => const ComparisonScreen());
+        it('comparison', (_) => const ComparisonScreen());
       case AramaEylemi.takipListesi:
         pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'add_watchlist'),
             builder: (_) => const AddWatchlistScreen(),
             fullscreenDialog: true,
           ),
         );
       case AramaEylemi.ayarlar:
-        it((_) => const SettingsScreen());
+        it('settings', (_) => const SettingsScreen());
       case AramaEylemi.tumHareketler:
       case AramaEylemi.bildirimler:
         // İkisi de ana ekranın kendi açıcısı; arama kapanır, ana ekran açar
@@ -452,12 +456,12 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   Future<void> _ekstredenAktar() async {
     final aktarildi = await pushGuarded<bool>(
       context,
-      adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+      adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
     );
     if (aktarildi != true || !mounted) return;
     await pushGuarded<bool>(
       context,
-      adaptiveRoute<bool>(builder: (_) => const BulkAddAssetScreen()),
+      adaptiveRoute<bool>(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
     );
   }
 }

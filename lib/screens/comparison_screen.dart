@@ -1096,6 +1096,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     await pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => AddAssetScreen(
           prefillTicker: hit.ticker,
           prefillName: hit.name,

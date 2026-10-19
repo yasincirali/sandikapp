@@ -40,6 +40,7 @@ Future<void> demoyuAc(BuildContext context) async {
   final cikis = await pushGuarded<DemoCikisi>(
     context,
     adaptiveRoute<DemoCikisi>(
+      settings: const RouteSettings(name: 'demo_kabugu'),
       builder: (_) => const DemoKabugu(),
       fullscreenDialog: true,
     ),
@@ -50,7 +51,7 @@ Future<void> demoyuAc(BuildContext context) async {
   // kabukta hızla "Hesap oluştur"a basan kullanıcıda kayıt ekranı sessizce
   // açılmazdı.
   await Navigator.of(context).push<void>(
-    adaptiveRoute<void>(builder: (_) => const RegisterScreen()),
+    adaptiveRoute<void>(settings: const RouteSettings(name: 'register'), builder: (_) => const RegisterScreen()),
   );
 }
 
@@ -234,6 +235,7 @@ class _DemoKabuguState extends State<DemoKabugu> {
                     key: _navKey,
                     onGenerateInitialRoutes: (_, __) => [
                       adaptiveRoute<void>(
+                        settings: const RouteSettings(name: 'demo_sekmeleri'),
                         builder: (_) => _DemoSekmeleri(
                           key: _sekmelerKey,
                           onHesapOlustur: () => _hesapOlustur('sekme'),

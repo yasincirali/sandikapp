@@ -93,7 +93,7 @@ class _KarsilamaScreenState extends ConsumerState<KarsilamaScreen> {
     AnalyticsService.instance.logSignupStep('karsilama_kayit');
     pushGuarded(
       context,
-      adaptiveRoute<void>(builder: (_) => const RegisterScreen()),
+      adaptiveRoute<void>(settings: const RouteSettings(name: 'register'), builder: (_) => const RegisterScreen()),
     );
   }
 

@@ -196,7 +196,7 @@ class _AylikRaporSatiri extends StatelessWidget {
     return SandikCard(
       onTap: () => pushGuarded(
         context,
-        adaptiveRoute<void>(builder: (_) => AylikRaporScreen(donem: donem)),
+        adaptiveRoute<void>(settings: const RouteSettings(name: 'aylik_rapor'), builder: (_) => AylikRaporScreen(donem: donem)),
       ),
       child: Row(
         children: [
@@ -245,6 +245,7 @@ class _Satir extends StatelessWidget {
       onTap: () => pushGuarded(
         context,
         adaptiveRoute<void>(
+          settings: const RouteSettings(name: 'asset_detail'),
           builder: (_) => AssetDetailScreen(
             asset: satir.pozisyon.asDisplayAsset(),
             showBackButton: true,
@@ -296,6 +297,7 @@ class _Satir extends StatelessWidget {
                     onPressed: () => pushGuarded(
                       context,
                       adaptiveRoute<void>(
+                        settings: const RouteSettings(name: 'analiz_notu'),
                         builder: (_) => AnalizNotuScreen(
                           ticker: not.ticker,
                           tur: 'haftalik',

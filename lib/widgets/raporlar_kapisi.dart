@@ -132,7 +132,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           baslik: l.weekTitle,
           alt: l.s6HaftaOzetiAlt,
           onTap: () => ac((ekran) => pushGuarded(ekran,
-              adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()))),
+              adaptiveRoute<void>(settings: const RouteSettings(name: 'hafta_ozeti'), builder: (_) => const HaftaOzetiScreen()))),
         ),
       // Tek anahtar: paywall kapalıyken (Console'da `raporlar_kapisi`
       // açık olsa da) yalnız admin görür.
@@ -143,7 +143,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           alt: l.yrSatirAlt,
           kilitli: kilitli,
           onTap: () => ac((ekran) => pushGuarded(ekran,
-              adaptiveRoute<void>(builder: (_) => const YillikRaporScreen()))),
+              adaptiveRoute<void>(settings: const RouteSettings(name: 'yillik_rapor'), builder: (_) => const YillikRaporScreen()))),
         ),
         _RaporSatiri(
           ikon: Icons.event_repeat_rounded,
@@ -153,6 +153,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
               adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'temettu_tahmini'),
                   builder: (_) => const TemettuTahminiScreen()))),
         ),
         // Portföy X-Ray (Premium, 2026-10-10): aynı kural — yalnız bu
@@ -164,7 +165,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           kilitli: kilitli,
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
-              adaptiveRoute<void>(builder: (_) => const PortfoyXrayScreen()))),
+              adaptiveRoute<void>(settings: const RouteSettings(name: 'portfoy_xray'), builder: (_) => const PortfoyXrayScreen()))),
         ),
       ],
       if (aylik != null)
@@ -176,6 +177,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
               adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'aylik_rapor'),
                   builder: (_) => AylikRaporScreen(donem: aylik)))),
         ),
       if (yil != null)
@@ -195,7 +197,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           alt: l.s6SiralamaAlt,
           // Kupayla aynı hedef: Sıralama › Ortaklarım.
           onTap: () => ac((ekran) => pushGuarded(
-              ekran, adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()))),
+              ekran, adaptiveRoute<void>(settings: const RouteSettings(name: 'yaris_giris_ekrani'), builder: (_) => yarisGirisEkrani()))),
         ),
     ];
 

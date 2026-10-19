@@ -52,6 +52,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     await pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => AddAssetScreen(
           cartMode: true,
           cartInitial: existing,
@@ -361,7 +362,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 icon: const Icon(Icons.content_paste_go_rounded),
                 onPressed: () => pushGuarded(
                   context,
-                  adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+                  adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
                 ),
               ),
             if (items.isNotEmpty && !_saving)
@@ -419,7 +420,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             OutlinedButton.icon(
               onPressed: () => pushGuarded(
                 context,
-                adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+                adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
               ),
               icon: const Icon(Icons.content_paste_go_rounded, size: 18),
               label: Text(context.l10n.pasteFromStatement),

@@ -770,6 +770,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                   : pushGuarded(
                       context,
                       adaptiveRoute<void>(
+                          settings: const RouteSettings(name: 'signal_settings'),
                           builder: (_) => const SignalSettingsScreen()),
                     ),
               child: Row(

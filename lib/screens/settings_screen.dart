@@ -353,6 +353,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'legal_doc'),
         builder: (_) =>
             LegalDocScreen(title: title, blocks: blocks, icon: icon),
       ),
@@ -584,7 +585,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _bolumAc(SettingsBolum b) => pushGuarded(
         context,
-        adaptiveRoute<void>(builder: (_) => SettingsScreen(bolum: b)),
+        adaptiveRoute<void>(settings: const RouteSettings(name: 'settings'), builder: (_) => SettingsScreen(bolum: b)),
       );
 
   /// Hub: dört bölüm + (admin) tanılama + (debug) geliştirici + sürüm.
@@ -683,6 +684,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => pushGuarded(
                   context,
                   adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'push_diagnostics'),
                     builder: (_) => const PushDiagnosticsScreen(),
                   ),
                 ),
@@ -760,7 +762,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: context.l10n.signalNotificationsSubtitle,
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'signal_settings'), builder: (_) => const SignalSettingsScreen()),
               ),
               trailing: Semantics(
                 label: context.l10n.signalNotifications,
@@ -796,7 +798,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }(),
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const PriceAlertsScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'price_alerts'), builder: (_) => const PriceAlertsScreen()),
               ),
             ),
             const _QuietHoursTile(),
@@ -869,7 +871,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   context.l10n.kullaniciAdiSecilmedi,
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const KullaniciAdiScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'kullanici_adi'), builder: (_) => const KullaniciAdiScreen()),
               ),
             ),
             _SwitchTile(
@@ -918,6 +920,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => pushGuarded(
                 context,
                 adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'kayitli_cihazlar'),
                     builder: (_) => const KayitliCihazlarScreen()),
               ),
             ),

@@ -166,6 +166,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'comparison'),
         builder: (_) =>
             ComparisonScreen(baslangicVarligi: varlik, baslangicDonemi: donem),
       ),

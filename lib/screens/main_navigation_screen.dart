@@ -24,6 +24,7 @@ import '../services/remote_config_service.dart';
 import '../services/review_prompt_service.dart';
 import '../l10n/l10n.dart';
 import '../services/varlik_eklendi.dart';
+import '../services/ekran_olcumu.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -88,6 +89,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // o yüzden dinleyiciyi bağlamakla yetinmeyip mevcut değeri de bir kez
     // okuyoruz. Yalnızca dinleseydik, uygulama kapalıyken yapılan dokunuş
     // sessizce kaybolurdu.
+    // Ekran ölçümü: açılış sekmesi de bir görüntülemedir.
+    EkranOlcumu.instance.sekmeDegisti(_currentIndex);
     MainNavigationScreen.sekmeIstegi.addListener(_sekmeIstegiGeldi);
     VarlikEklendi.kanal.addListener(_varlikEklendi);
     if (MainNavigationScreen.sekmeIstegi.value != null) {
@@ -152,6 +155,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     MainNavigationScreen.sekmeIstegi.removeListener(_sekmeIstegiGeldi);
     VarlikEklendi.kanal.removeListener(_varlikEklendi);
     _fiyatTuruBagi?.call();
+    EkranOlcumu.instance.sekmelerKapandi();
     super.dispose();
   }
 
@@ -218,6 +222,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   void _sekmeyeGec(int i) {
     setState(() => _currentIndex = i);
     MainNavigationScreen.aktifSekme.value = i;
+    EkranOlcumu.instance.sekmeDegisti(i);
   }
 
   void _onItemTapped(int index) {
@@ -258,6 +263,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final added = await pushGuarded<Object>(
       context,
       adaptiveRoute(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => const AddAssetScreen(),
         fullscreenDialog: true,
       ),
@@ -291,6 +297,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (added == true || added is AlarmAdayi) {
       setState(() => _currentIndex = _portfolioTab);
       MainNavigationScreen.aktifSekme.value = _portfolioTab;
+      EkranOlcumu.instance.sekmeDegisti(_portfolioTab);
     }
     CrashReporter.arkaPlan(
       ref.read(portfolioProvider.notifier).refreshPrices(),

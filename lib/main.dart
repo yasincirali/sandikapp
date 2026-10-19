@@ -25,6 +25,7 @@ import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
 import 'screens/otp_verification_screen.dart';
 import 'services/bist_hisse_katalogu.dart';
+import 'services/ekran_olcumu.dart';
 import 'services/hesap_gecisi.dart';
 import 'widgets/uygulama_kabugu.dart';
 import 'services/cihaz_oturumu_service.dart' show CihazKapisi;
@@ -255,8 +256,8 @@ void main() async {
       // gerekli değil:
       //   - RemotePushService: `start(userId)` zaten kendi içinde init()
       //     çağırıyor (auth gate'te, ilk frame'den sonra).
-      //   - AnalyticsService: `navigatorObserver` hiçbir yerde kullanılmıyor;
-      //     ilk event'e kadar hazır olması yeterli.
+      //   - AnalyticsService: ekran ölçümü (`EkranOlcumu`) servisi her
+      //     olayda o an çağırır; ilk event'e kadar hazır olması yeterli.
       //   - RemoteConfigService: getter'ları init edilmemişken default'lara
       //     düşer, yani erken okuma güvenli.
       // Hataları yutmuyoruz; yalnızca beklemiyoruz.
@@ -421,6 +422,8 @@ class SandikApp extends ConsumerWidget {
       title: 'sandık',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
+      // Hangi ekran açılıyor (sadeleştirme ölçüsü, bkz. `EkranOlcumu`).
+      navigatorObservers: [EkranOlcumu.instance],
       theme: buildTheme(SandikPalette.light, Brightness.light),
       darkTheme: buildTheme(SandikPalette.dark, Brightness.dark),
       themeMode: themeMode,

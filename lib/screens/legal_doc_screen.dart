@@ -161,6 +161,7 @@ Future<void> belgeyiAc(BuildContext context, YasalBelge b) {
   return pushGuarded<void>(
     context,
     adaptiveRoute(
+      settings: const RouteSettings(name: 'legal_doc'),
       builder: (_) => LegalDocScreen(
         title: m.adaylar.first,
         icon: m.ikon,
@@ -177,6 +178,7 @@ Future<ZorunluOkumaSonucu?> zorunluOkumaAc(
     pushGuarded<ZorunluOkumaSonucu>(
       context,
       adaptiveRoute(
+        settings: const RouteSettings(name: 'legal_doc'),
         builder: (_) => LegalDocScreen(
           title: m.adaylar.first,
           icon: m.ikon,

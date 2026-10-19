@@ -90,6 +90,7 @@ Future<void> varligiGuncelleAkisi(
   final sonuc = await pushGuarded<Object>(
     context,
     adaptiveRoute(
+      settings: const RouteSettings(name: 'add_asset'),
       builder: (_) => AddAssetScreen(
         editingAsset: gorunum,
         yerineGecenLotlar: silinecek,
