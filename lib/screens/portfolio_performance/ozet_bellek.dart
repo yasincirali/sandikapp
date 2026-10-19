@@ -185,6 +185,8 @@ Future<PortfolioHistoryBreakdown> _ozetSerisiniCek(
   List<Asset> chartAssets,
   bool simulate,
 ) {
+  final test = PortfolioPerformanceScreen.ozetSerisiTestCekici;
+  if (test != null) return test(period, chartAssets, simulate);
   final p = PeriodSummaryService.pencere(period, DateTime.now());
   return HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
     assets: chartAssets,
