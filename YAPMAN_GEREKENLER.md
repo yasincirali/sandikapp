@@ -1928,7 +1928,7 @@ girildiği an sayılır.
       hilesini önlemek. Aydınlatma metnine eklenmesi gerekip gerekmediğine
       bak (`legal/tr/KVKK_AYDINLATMA_METNI.md`, `ACIK_RIZA_METNI.md`).
 
-## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01) — kalan: `MATCH_PASSWORD_YENI`'yi sil
+## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01)
 
 Repo herkese açık; Fastfile keychain kilidini açarken `MATCH_PASSWORD`'ü
 iOS — TestFlight Actions günlüğüne açık metin bastı (fastlane özet tablosu,
@@ -1956,8 +1956,9 @@ okur, depoyu yeni parolayla şifreler, iki kez doğrular).
       durumda da günlüğü Claude'a ver.
 - [ ] İstersen eski iOS — TestFlight koşularının günlüklerini sil.
 - [x] Sonra Actions → iOS — TestFlight → Run workflow (main) ile doğrula.
-- [ ] **`MATCH_PASSWORD_YENI` secret'ını sil** (artık gereksiz; değeri
-      `MATCH_PASSWORD` ile aynı).
+- [x] **`MATCH_PASSWORD_YENI` secret'ını sil** — 2026-10-19 yasin: secret
+      zaten yok. Yalnız tek seferlik `match-parola-degistir.yml` onu okur;
+      bir sonraki parola değişiminde yeniden oluşturulur.
 
 > Kanıt (Claude): değişim koşusu 36892103259 — eski parolayla çözüldü, yeni
 > parolayla şifrelendi, kopyada ve depo yeniden indirildikten sonra yeni
