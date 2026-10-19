@@ -1,7 +1,7 @@
 """App Store In-App Event taslaklarını App Store Connect'e kurar (karar 6.5).
 
 Kaynak: store_listing/ios/in_app_events/etkinlikler.json (+ PNG'ler,
-`store_listing/build_event_graphics.py`).
+`store_listing/in_app_events_uretici/cek.mjs`).
 
 Güvenlik kuralları (kullanıcı kararı 2026-09-30: "gönderimi ben yapayım" —
 son hâli incelemeye göndermeden önce kullanıcıya gösterilir):
@@ -36,6 +36,10 @@ BUNDLE_ID = "com.sandik.app"
 API = "https://api.appstoreconnect.apple.com/v1"
 BOLGE = ["TUR"]  # Enflasyon günü ve yıl sonu Türkiye'ye özgü.
 GORSEL_TURLERI = {"EVENT_CARD": "kart_1920x1080", "EVENT_DETAILS_PAGE": "detay_1080x1920"}
+# Etkinlik ekranları ücretsiz; "satın alma gerekli" denirse Apple IAP ürünlerini de
+# incelemeye ister. Alan boş kalınca ASC "Add for Review"u geçirmiyor (2026-10-19,
+# Kasım taslağı elle tamamlandı) — hem kurulumda yazılır hem eski taslakta tamamlanır.
+SATIN_ALMA = "NO_COST_ASSOCIATED"
 
 
 def jeton():
@@ -104,6 +108,13 @@ def lokal_tamamla(asc, olay_id, e, kullanilacak):
     Yarım kalmış görsel (teslim durumu COMPLETE / UPLOAD_COMPLETE olmayan)
     silinip yeniden yüklenir. Dönen değer: yapılan iş sayısı."""
     is_sayisi = 0
+    olay = asc.get(f"/appEvents/{olay_id}")["data"]
+    if olay["attributes"].get("purchaseRequirement") != SATIN_ALMA:
+        asc.patch(f"/appEvents/{olay_id}", {
+            "type": "appEvents", "id": olay_id,
+            "attributes": {"purchaseRequirement": SATIN_ALMA},
+        })
+        is_sayisi += 1
     lokaller = {x["attributes"]["locale"]: x
                 for x in asc.get(f"/appEvents/{olay_id}/localizations")["data"]}
     for dil in kullanilacak:
@@ -144,7 +155,7 @@ def main():
         for tur, ek in GORSEL_TURLERI.items():
             yol = os.path.join(KLASOR, f"{e['gorsel']}_{ek}.png")
             if not os.path.exists(yol):
-                sys.exit(f"Görsel yok: {yol} (önce build_event_graphics.py)")
+                sys.exit(f"Görsel yok: {yol} (önce store_listing/in_app_events_uretici: node cek.mjs)")
 
     asc = Asc()
     uygulamalar = asc.get("/apps", **{"filter[bundleId]": BUNDLE_ID})["data"]
@@ -188,6 +199,7 @@ def main():
                 "primaryLocale": kullanilacak[0],
                 "priority": e["oncelik"],
                 "purpose": e["amac"],
+                "purchaseRequirement": SATIN_ALMA,
                 "territorySchedules": [{
                     "territories": BOLGE,
                     "publishStart": e["yayin_baslangic"],

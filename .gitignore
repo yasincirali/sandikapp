@@ -153,6 +153,7 @@ lib/l10n/untranslated.json
 # git içine hiç bakmaz, senaryo ve kurgu kaynağı sessizce kaybolurdu —
 # store_listing/android/ için aynı tuzak yukarıda anlatılıyor.
 store_listing/preview_video/node_modules/
+store_listing/in_app_events_uretici/node_modules/
 store_listing/preview_video/out/
 store_listing/preview_video/public/shots/
 # Ham telefon kaydı (kaynak): 155 MB, public/shots'a kopyalanıp kullanılır.

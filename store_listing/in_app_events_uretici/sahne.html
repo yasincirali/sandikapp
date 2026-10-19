@@ -1,0 +1,127 @@
+<!doctype html>
+<!--
+  App Store In-App Event görselleri — sade 2B SVG (2026-10-19, 2. tur).
+  1. tur Three.js 3B sahneydi; yasin: "parlak kısımlarda sorun var, 3B olma
+  gereksinimi de yok". Parlama/bloom/toz kaldırıldı; düz, keskin vektör.
+
+  Kararlar (karar 6.2 / 6.3, 2026-09-30'dan devralındı):
+  * METİNSİZ: App Store etkinlik adını ve kısa açıklamayı görselin üstüne
+    kendisi yazar; görseldeki yazı onunla çakışır ve dil başına ayrı görsel
+    ister. Kart (16:9) alt üçte biri, detay (9:16) alt yarısı sakin bırakılır.
+  * Palet sandık kimliği (lib/theme/sandik.dart): koyu yeşil zemin, kazanç
+    yeşili sütunlar, TEK amber odak.
+  * Uydurma sayı yok: enflasyon sahnesi TÜİK verisi (AYLIK), yıl sonu sahnesi
+    kişiye özel olduğundan VERİ İMA ETMEZ (12 eşit dilimli yıl halkası).
+-->
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#0B211C}svg{display:block}</style>
+</head><body>
+<script>
+const q = new URLSearchParams(location.search);
+const W = +q.get('w'), H = +q.get('h'), SAHNE = q.get('s');
+const dikey = H > W;
+
+// GERÇEK VERİ (kullanıcı kuralı "uydurma sayı yasak"; yasin 2026-10-19
+// "tarih ve data doğru olmalı"): TÜİK aylık TÜFE, Ekim 2025 – Eylül 2026.
+// Zincir çarpımı %29,72 ≈ TÜİK yıllık %29,73 (Eylül 2026). Yeni ay
+// açıklanınca (ayın 3'ü) diziye ekle, en eskisini çıkar, yeniden üret.
+const AYLIK = [2.55, 0.87, 0.89, 4.84, 2.96, 1.94, 4.18, 1.71, 0.99, 1.78, 1.84, 1.84];
+
+const ZEMIN_UST = '#07171300', ZEMIN = '#0B211C', ZEMIN_ALT = '#143A2D';
+const KAZANC = '#3DB77F', KAZANC_KOYU = '#1E6B4C', AMBER = '#F5A623', ALTIN = '#F5C842';
+const SOLUK = 'rgba(214,240,226,0.78)';
+
+const parca = [];
+const p = s => parca.push(s);
+
+p(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
+p(`<defs>
+  <linearGradient id="zemin" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#0A1F1A"/><stop offset="0.55" stop-color="${ZEMIN}"/><stop offset="1" stop-color="${ZEMIN_ALT}"/>
+  </linearGradient>
+  <linearGradient id="sutun" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="${KAZANC}"/><stop offset="1" stop-color="${KAZANC_KOYU}"/>
+  </linearGradient>
+  <linearGradient id="altin" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="${ALTIN}"/><stop offset="1" stop-color="${AMBER}"/>
+  </linearGradient>
+</defs>`);
+p(`<rect width="${W}" height="${H}" fill="url(#zemin)"/>`);
+
+// Motif kutusu: kart → üst %62 (alt üçte bir metne), detay → %22–%60 bandı.
+const kutu = dikey
+  ? { x0: W * .09, x1: W * .91, y0: H * .22, y1: H * .60 }
+  : { x0: W * .10, x1: W * .90, y0: H * .10, y1: H * .62 };
+
+if (SAHNE === 'enf') {
+  // 12 sütun = aylık TÜFE (ölçek: en yüksek ay kutunun üst sınırına değmez,
+  // %4,84 → kutu yüksekliğinin %78'i); 13. yuva = açıklanmayı bekleyen ay
+  // (kesikli çerçeve, boş); üstünde tek amber nokta: "bu ayın rakamı",
+  // yüksekliği bir değer göstermez. İnce soluk çizgi = birikimli artış.
+  const N = AYLIK.length;
+  const gen = kutu.x1 - kutu.x0, yuk = kutu.y1 - kutu.y0;
+  const adim = gen / (N + 1);
+  const sg = adim * (dikey ? .62 : .56);
+  const enb = Math.max(...AYLIK);
+  const olc = (yuk * .78) / enb;
+  const taban = kutu.y1;
+  const r = sg * .22;
+  const cx = i => kutu.x0 + adim * (i + .5);
+
+  // Taban çizgisi: sütunların durduğu zemin, ince.
+  p(`<line x1="${kutu.x0}" y1="${taban}" x2="${kutu.x1}" y2="${taban}" stroke="rgba(214,240,226,0.22)" stroke-width="${Math.max(2, W * .0012)}"/>`);
+
+  let bir = 1; const birikim = [];
+  for (let i = 0; i < N; i++) {
+    const h = AYLIK[i] * olc;
+    const op = .55 + .45 * (i / (N - 1));
+    p(`<rect x="${cx(i) - sg / 2}" y="${taban - h}" width="${sg}" height="${h}" rx="${r}" fill="url(#sutun)" opacity="${op.toFixed(2)}"/>`);
+    bir *= 1 + AYLIK[i] / 100; birikim.push((bir - 1) * 100);
+  }
+  // Bekleyen ay: kesikli çerçeve, orta boy; içi boş.
+  const bh = yuk * .34;
+  p(`<rect x="${cx(N) - sg / 2}" y="${taban - bh}" width="${sg}" height="${bh}" rx="${r}" fill="none" stroke="${AMBER}" stroke-opacity=".55" stroke-width="${Math.max(2, W * .0016)}" stroke-dasharray="${sg * .18} ${sg * .12}"/>`);
+
+  // Birikimli çizgi: soluk, ince, yumuşak köşeli.
+  const enbBir = birikim[N - 1];
+  const bolc = (yuk * .92) / enbBir;
+  const nokta = [[kutu.x0, taban - 2]];
+  for (let i = 0; i < N; i++) nokta.push([cx(i), taban - birikim[i] * bolc]);
+  const yol = nokta.map((n, i) => (i ? 'L' : 'M') + n[0].toFixed(1) + ' ' + n[1].toFixed(1)).join(' ');
+  p(`<path d="${yol}" fill="none" stroke="${SOLUK}" stroke-width="${Math.max(3, W * .0028)}" stroke-linejoin="round" stroke-linecap="round"/>`);
+  for (let i = 1; i < nokta.length; i++) {
+    p(`<circle cx="${nokta[i][0]}" cy="${nokta[i][1]}" r="${Math.max(4, W * .0042)}" fill="#E8FFF4"/>`);
+  }
+  // Tek amber odak: bekleyen ayın üstünde, keskin, parlamasız.
+  const oy = taban - bh - sg * .95;
+  p(`<circle cx="${cx(N)}" cy="${oy}" r="${sg * .34}" fill="url(#altin)"/>`);
+  // İnce halka: nokta "bekliyor" hissi, tek çizgi.
+  p(`<circle cx="${cx(N)}" cy="${oy}" r="${sg * .58}" fill="none" stroke="${AMBER}" stroke-opacity=".45" stroke-width="${Math.max(2, W * .0014)}"/>`);
+} else {
+  // Yıl sonu: 12 eşit dilimli halka (yılın ayları), Aralık altın ve halkadan
+  // hafifçe dışarı taşmış; merkezde tek amber nokta. Veri ima etmez.
+  const mx = (kutu.x0 + kutu.x1) / 2, my = (kutu.y0 + kutu.y1) / 2;
+  const R = Math.min(kutu.x1 - kutu.x0, kutu.y1 - kutu.y0) * .46;
+  const kal = R * .30, bosluk = 2.2; // derece
+  const yay = (a0, a1, rr) => {
+    const rad = a => (a - 90) * Math.PI / 180;
+    const x0 = mx + rr * Math.cos(rad(a0)), y0 = my + rr * Math.sin(rad(a0));
+    const x1 = mx + rr * Math.cos(rad(a1)), y1 = my + rr * Math.sin(rad(a1));
+    return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${rr} ${rr} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  };
+  for (let i = 0; i < 12; i++) {
+    const a0 = i * 30 + bosluk / 2, a1 = (i + 1) * 30 - bosluk / 2;
+    const aralik = i === 11;
+    const rr = aralik ? R + kal * .22 : R;
+    const op = aralik ? 1 : (.38 + .5 * (i / 11));
+    p(`<path d="${yay(a0, a1, rr)}" fill="none" stroke="${aralik ? ALTIN : KAZANC}" stroke-opacity="${op.toFixed(2)}" stroke-width="${aralik ? kal * 1.2 : kal}" stroke-linecap="butt"/>`);
+  }
+  // İç ince halka + merkez nokta: tamamlanan döngü.
+  p(`<circle cx="${mx}" cy="${my}" r="${R - kal * .95}" fill="none" stroke="rgba(214,240,226,0.22)" stroke-width="${Math.max(2, W * .0012)}"/>`);
+  p(`<circle cx="${mx}" cy="${my}" r="${kal * .42}" fill="url(#altin)"/>`);
+}
+
+p('</svg>');
+document.body.insertAdjacentHTML('beforeend', parca.join('\n'));
+window.HAZIR = true;
+</script></body></html>
