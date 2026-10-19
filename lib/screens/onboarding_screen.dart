@@ -713,11 +713,15 @@ List<_Adim> _adimlariKur() {
       // Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
       // kalktı): hedef formdaki "Ekstreden aktar" düğmesi; metin oradan
       // başlar.
+      // 2026-10-19: düğmenin altına "Ekran görüntüsünden ekle" geldi
+      // (ücretsiz, bayraksız); tur ikisini birlikte anlatır.
       govde: '"Ekstreden aktar": aracı kurum ya da banka ekstreni (PDF, Excel '
           'veya CSV) dosyadan seç ya da tabloyu yapıştır; sütunlar '
           'kendiliğinden tanınır, alışlar ve satışlar tarihleriyle gelir, '
-          'tek onayda kaydedersin. Portföyünü ilk kez kurarken en hızlı '
-          'yol bu.',
+          'tek onayda kaydedersin. Ekstren elinde yoksa altındaki "Ekran '
+          'görüntüsünden ekle" ile kurum uygulamandaki portföy ekranının '
+          'görüntülerini seç; telefonunda okunur. Portföyünü ilk kez '
+          'kurarken en hızlı yol bunlar.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
       cikis: (_) => _varlikEkleKapat(),
@@ -1019,8 +1023,9 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
       // kalktı): hedef formdaki "Ekstreden aktar" düğmesi.
       govde: 'En hızlı yol: "Ekstreden aktar". '
           'Kurumunun PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
-          'tarihiyle deftere girer. Tek tek girmek istersen tür seçmen yeter, '
-          'fiyat kendiliğinden gelir.',
+          'tarihiyle deftere girer. Ekstren yoksa kurum uygulamandaki portföy '
+          'ekranının görüntüsünü "Ekran görüntüsünden ekle" ile seç. Tek tek '
+          'girmek istersen tür seçmen yeter, fiyat kendiliğinden gelir.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),

@@ -3140,6 +3140,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartEmpty => 'The cart is empty';
 
   @override
+  String get cartCostLater => 'Cost to be entered later';
+
+  @override
+  String bulkScreenshotAdded(int count) {
+    return '$count holdings added to the cart.';
+  }
+
+  @override
+  String bulkScreenshotCostLater(int count) {
+    return 'Cost could not be read for $count holdings: they are saved at today\'s price; tap a row to enter its cost.';
+  }
+
+  @override
+  String bulkScreenshotNoQuantity(String codes) {
+    return 'Quantity not read, skipped: $codes';
+  }
+
+  @override
   String get cartEmptyBody =>
       'Use the + Add Asset button below to queue several assets and save them all at once.';
 

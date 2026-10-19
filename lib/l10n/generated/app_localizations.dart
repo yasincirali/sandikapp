@@ -5330,6 +5330,30 @@ abstract class AppLocalizations {
   /// **'Sepet boş'**
   String get cartEmpty;
 
+  /// Toplu Ekle sepet satırı: ekran görüntüsünden maliyet okunamadı (fiyat boş, kayıtta günün kapanışı yazılır).
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyet sonra girilecek'**
+  String get cartCostLater;
+
+  /// No description provided for @bulkScreenshotAdded.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} varlık sepete eklendi.'**
+  String bulkScreenshotAdded(int count);
+
+  /// No description provided for @bulkScreenshotCostLater.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} varlığın maliyeti okunamadı: bugünkü fiyatla kaydedilir, satıra dokunup maliyetini girebilirsin.'**
+  String bulkScreenshotCostLater(int count);
+
+  /// No description provided for @bulkScreenshotNoQuantity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adedi okunamadı, eklenmedi: {codes}'**
+  String bulkScreenshotNoQuantity(String codes);
+
   /// No description provided for @cartEmptyBody.
   ///
   /// In tr, this message translates to:
