@@ -52,6 +52,7 @@ dependencies:
   # iOS'ta PHPicker (izin istemez), Android'de sistem fotoğraf seçicisi.
   # file_selector iOS'ta yalnız Dosyalar'ı açar, ekran görüntüleri Fotoğraflar'da.
   image_picker: ^1.2.4
+  quick_actions: ^1.1.1
 
 dev_dependencies:
   flutter_test:

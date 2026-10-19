@@ -663,6 +663,7 @@ class _Row extends ConsumerWidget {
                     onTap: () => pushGuarded(
                       context,
                       adaptiveRoute<void>(
+                        settings: const RouteSettings(name: 'add_asset'),
                         builder: (_) => AddAssetScreen(
                           prefillTicker: item.ticker,
                           prefillName: item.name,
@@ -749,6 +750,7 @@ class _EmptyState extends StatelessWidget {
                 : pushGuarded(
                     context,
                     adaptiveRoute<void>(
+                      settings: const RouteSettings(name: 'add_watchlist'),
                       builder: (_) => const AddWatchlistScreen(),
                       fullscreenDialog: true,
                     ),
@@ -825,6 +827,7 @@ class _AddHeader extends ConsumerWidget {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_watchlist'),
         builder: (_) => const AddWatchlistScreen(),
         fullscreenDialog: true,
       ),

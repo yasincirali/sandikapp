@@ -352,6 +352,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       await pushGuarded(
         context,
         adaptiveRoute<void>(
+          settings: const RouteSettings(name: 'otp_verification'),
           builder: (_) => OtpVerificationScreen(
             email: emailForOtp,
             kayitOnayi: kayitOnayi,

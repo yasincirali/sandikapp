@@ -59,6 +59,7 @@ class OzelGostergeListesi extends ConsumerWidget {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'ozel_gosterge_editor'),
         fullscreenDialog: true,
         builder: (_) => OzelGostergeEditorScreen(
           gosterge: g,

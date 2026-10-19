@@ -60,6 +60,7 @@ class PaywallScreen extends ConsumerStatefulWidget {
     AnalyticsService.instance.logPremiumUpgradeStarted(source: source);
     return Navigator.of(context).push<bool>(
       adaptiveRoute(
+        settings: const RouteSettings(name: 'paywall'),
         fullscreenDialog: true,
         builder: (_) => PaywallScreen(source: source),
       ),

@@ -41,6 +41,7 @@ import 'varlik_sayfasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
+import '../widgets/ekran_goruntusu_ekle.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/varlik_guncelle.dart' show VarlikGuncelleUyarisi;
 import '../l10n/l10n.dart';
@@ -330,12 +331,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Future<void> _ekstredenAktar() async {
     final aktarildi = await pushGuarded<bool>(
       context,
-      adaptiveRoute(builder: (_) => const CsvImportScreen()),
+      adaptiveRoute(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
     );
     if (aktarildi != true || !mounted) return;
     final eklendi = await pushGuarded<bool>(
       context,
-      adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+      adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
     );
     if (eklendi == true && mounted) Navigator.of(context).pop(true);
   }
@@ -515,7 +516,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               onPressed: () async {
                 final added = await pushGuarded<bool>(
                   context,
-                  adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+                  adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
                 );
                 if (added == true && context.mounted) {
                   Navigator.of(context).pop(true);
@@ -566,6 +567,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   children: [
                     if (_kolay) ...[
                       _ikiYol(),
+                      const SizedBox(height: SandikSpace.sm),
+                      _ekranGoruntusuYolu(),
                       const SizedBox(height: SandikSpace.lgs),
                     ],
                     if (_yenidenKur) ...[
@@ -1732,6 +1735,45 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  /// Üçüncü hızlı yol (2026-10-19, yasin: "ekran görüntüsünden portföy
+  /// ekleme: yap, ama dar kapsamla"): aracı kurum/banka uygulamasının
+  /// portföy ekranının görüntüleri telefonda okunur, sepete girer, onay
+  /// Toplu Ekle'de — "Ekstreden aktar" ile aynı bitiş. İki düğmenin altında
+  /// tam genişlik: üçü yan yana dar ekranda okunmazdı.
+  Widget _ekranGoruntusuYolu() {
+    // Görünüş üstteki iki yolla aynı (`_yolDugmesi`); boy asgari, sabit
+    // değil: büyük yazıda etiket kırpılmaz, küçülür.
+    return SandikAsyncButton(
+      tur: SandikAsyncTur.cerceve,
+      height: null,
+      icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+      onPressed: _ekranGoruntusundenEkle,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: context.c.amberText,
+        side: BorderSide(color: context.c.hairline),
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(context.l10n.importScreenshotAdd),
+      ),
+    );
+  }
+
+  Future<void> _ekranGoruntusundenEkle() async {
+    final eklendi = await ekranGoruntusundenSepete(context, ref);
+    if (!eklendi || !mounted) return;
+    final kaydedildi = await pushGuarded<bool>(
+      context,
+      adaptiveRoute(
+        settings: const RouteSettings(name: 'bulk_add_asset'),
+        builder: (_) => const BulkAddAssetScreen(),
+      ),
+    );
+    if (kaydedildi == true && mounted) Navigator.of(context).pop(true);
+  }
+
   Widget _yolDugmesi({
     required IconData ikon,
     required String etiket,
@@ -2815,6 +2857,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // bilir; ekstreden gelen satış satırı düzenlenince alıma dönüp
         // pozisyonu şişirirdi (karar 5.4).
         satis: widget.cartInitial?.satis ?? false,
+        // Ekran görüntüsünden gelen "maliyet sonra" işareti fiyat boş
+        // kaldıkça durur; kullanıcı maliyeti girince düşer.
+        maliyetSonra: price <= 0 && (widget.cartInitial?.maliyetSonra ?? false),
       );
       final notifier = ref.read(bulkCartProvider.notifier);
       if (widget.cartInitial != null) {

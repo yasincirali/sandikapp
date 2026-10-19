@@ -312,6 +312,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 onAc: () => pushGuarded(
                   context,
                   adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'zirve_giris_ekrani'),
                     builder: (_) => zirveGirisEkrani(ZirveDonem.yakin(
                         _PortfolioPerformanceScreenState
                             ._periods[_selectedPeriodIdx].days)),

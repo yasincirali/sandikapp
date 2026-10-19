@@ -2155,6 +2155,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get priceAlertsTitle => 'Fiyat Alarmları';
 
   @override
+  String get quickActionSearch => 'Ara';
+
+  @override
   String get createAlert => 'Alarm kur';
 
   @override
@@ -3109,6 +3112,24 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cartEmpty => 'Sepet boş';
+
+  @override
+  String get cartCostLater => 'Maliyet sonra girilecek';
+
+  @override
+  String bulkScreenshotAdded(int count) {
+    return '$count varlık sepete eklendi.';
+  }
+
+  @override
+  String bulkScreenshotCostLater(int count) {
+    return '$count varlığın maliyeti okunamadı: bugünkü fiyatla kaydedilir, satıra dokunup maliyetini girebilirsin.';
+  }
+
+  @override
+  String bulkScreenshotNoQuantity(String codes) {
+    return 'Adedi okunamadı, eklenmedi: $codes';
+  }
 
   @override
   String get cartEmptyBody =>

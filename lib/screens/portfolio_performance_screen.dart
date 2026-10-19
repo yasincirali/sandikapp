@@ -752,6 +752,7 @@ class _PortfolioPerformanceScreenState
                               context,
                               // Sıralama › Ortaklarım.
                               adaptiveRoute<void>(
+                                  settings: const RouteSettings(name: 'yaris_giris_ekrani'),
                                   builder: (_) => yarisGirisEkrani()),
                             ),
                             // Üst çubuk düğmeleri her ekranda aynı kabuk

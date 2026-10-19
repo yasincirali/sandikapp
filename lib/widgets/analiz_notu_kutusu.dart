@@ -55,6 +55,7 @@ class AnalizNotuKutusu extends ConsumerWidget {
     void ac() => pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'analiz_notu'),
             builder: (_) => AnalizNotuScreen(
               ticker: anahtar,
               tur: 'haftalik',

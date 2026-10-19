@@ -819,6 +819,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   void _ozeteGit({required int periodIdx}) => pushGuarded<void>(
         context,
         adaptiveRoute<void>(
+          settings: const RouteSettings(name: 'portfolio_performance'),
           builder: (_) => PortfolioPerformanceScreen(
             showBackButton: true,
             initialOzet: true,

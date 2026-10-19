@@ -122,6 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         await pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'otp_verification'),
             builder: (_) => OtpVerificationScreen(email: emailForOtp),
           ),
         );
@@ -368,6 +369,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onTap: () => pushGuarded(
                             context,
                             adaptiveRoute<void>(
+                              settings: const RouteSettings(name: 'forgot_password'),
                               builder: (_) => ForgotPasswordScreen(
                                 initialEmail: _emailCtrl.text.trim().isEmpty
                                     ? null
@@ -422,7 +424,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     CupertinoButton(
                       onPressed: () => pushGuarded(
                         context,
-                        adaptiveRoute<void>(builder: (_) => const RegisterScreen()),
+                        adaptiveRoute<void>(settings: const RouteSettings(name: 'register'), builder: (_) => const RegisterScreen()),
                       ),
                       child: Text(
                         context.l10n.noAccountRegister,

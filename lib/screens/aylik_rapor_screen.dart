@@ -341,6 +341,7 @@ class _VarlikKarti extends StatelessWidget {
     void ac() => pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'analiz_notu'),
             builder: (_) => AnalizNotuScreen(
               ticker: not.ticker,
               tur: 'aylik',

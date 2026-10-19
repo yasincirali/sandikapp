@@ -435,6 +435,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       onPressed: () => pushGuarded(
                         context,
                         adaptiveRoute<void>(
+                            settings: const RouteSettings(name: 'comparison'),
                             builder: (_) => const ComparisonScreen()),
                       ),
                       child: Container(
@@ -704,6 +705,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       onTap: (p, hero) => pushGuarded(
                                         context,
                                         adaptiveRoute<void>(
+                                            settings: const RouteSettings(name: 'asset_detail'),
                                             builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,

@@ -98,7 +98,7 @@ class ParaAkisiKarti extends ConsumerWidget {
 
     void ayrintiyaGit() => pushGuarded(
           context,
-          adaptiveRoute<void>(builder: (_) => ParaAkisiDetayScreen(kod: kod)),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'para_akisi_detay'), builder: (_) => ParaAkisiDetayScreen(kod: kod)),
         );
 
     return Padding(
@@ -189,6 +189,7 @@ class ParaAkisiKarti extends ConsumerWidget {
                       onPressed: () => pushGuarded(
                         context,
                         adaptiveRoute<void>(
+                            settings: const RouteSettings(name: 'hafta_ozeti'),
                             builder: (_) => const HaftaOzetiScreen()),
                       ),
                       child: Text(l10n.weekLink),

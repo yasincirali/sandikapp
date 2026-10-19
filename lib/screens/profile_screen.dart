@@ -442,6 +442,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         onPressed: () => pushGuarded(
                                   context,
                                   adaptiveRoute<void>(
+                                    settings: const RouteSettings(name: 'settings'),
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 ),

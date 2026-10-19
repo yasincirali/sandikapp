@@ -100,7 +100,7 @@ class PortfoySecici extends ConsumerWidget {
           secili: false,
           onTap: () => pushGuarded(
             context,
-            adaptiveRoute<void>(builder: (_) => const PortfoyYonetimiScreen()),
+            adaptiveRoute<void>(settings: const RouteSettings(name: 'portfoy_yonetimi'), builder: (_) => const PortfoyYonetimiScreen()),
           ),
         ),
     ];

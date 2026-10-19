@@ -42,7 +42,7 @@ class RadarSeridi extends ConsumerWidget {
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
         onTap: () => pushGuarded(
           context,
-          adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'hafta_ozeti'), builder: (_) => const HaftaOzetiScreen()),
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(

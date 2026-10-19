@@ -1,0 +1,29 @@
+# Canlı veritabanı boyutu — haftalık salt okunur ölçüm (2026-10-19).
+#
+# Ücretsiz plan 500 MB; aşılırsa proje salt okunura düşer. Bu iş her
+# pazartesi Frankfurt'un boyutunu, en büyük tablolarını ve Storage
+# toplamını iş özetine yazar; 450 MB'ı geçerse kırmızı (e-posta gelir).
+# Yalnız SELECT, Management API; veri satırı okunmaz. Gerekçe ve eşikler
+# `tool/db_boyut.py` başında. Sıkıştırma/budama bilerek YOK (yasin
+# 2026-10-19: "yalnız ölçüm").
+name: Veritabanı boyutu (Frankfurt)
+
+on:
+  schedule:
+    - cron: '45 4 * * 1'   # pazartesi 07:45 TR
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boyut:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boyut ölçümü
+        run: python3 tool/db_boyut.py

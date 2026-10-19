@@ -1301,6 +1301,10 @@
   "loadingEllipsis": "Yükleniyor…",
   "widenDateRangeHint": "Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.",
   "priceAlertsTitle": "Fiyat Alarmları",
+  "quickActionSearch": "Ara",
+  "@quickActionSearch": {
+    "description": "Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler)."
+  },
   "createAlert": "Alarm kur",
   "noAlertsYet": "Henüz alarmın yok",
   "noAlertsBody": "Bir varlığın ekranındaki zile dokun ya da buradan kur; uygulama kapalıyken bile haber verelim.",
@@ -2138,6 +2142,22 @@
   "clearCartConfirm": "Sepetteki tüm varlıklar silinecek. Emin misin?",
   "pasteCsv": "CSV yapıştır",
   "cartEmpty": "Sepet boş",
+  "cartCostLater": "Maliyet sonra girilecek",
+  "@cartCostLater": {
+    "description": "Toplu Ekle sepet satırı: ekran görüntüsünden maliyet okunamadı (fiyat boş, kayıtta günün kapanışı yazılır)."
+  },
+  "bulkScreenshotAdded": "{count} varlık sepete eklendi.",
+  "@bulkScreenshotAdded": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "bulkScreenshotCostLater": "{count} varlığın maliyeti okunamadı: bugünkü fiyatla kaydedilir, satıra dokunup maliyetini girebilirsin.",
+  "@bulkScreenshotCostLater": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "bulkScreenshotNoQuantity": "Adedi okunamadı, eklenmedi: {codes}",
+  "@bulkScreenshotNoQuantity": {
+    "placeholders": {"codes": {"type": "String"}}
+  },
   "cartEmptyBody": "Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.",
   "pasteFromStatement": "Ekstreden içe aktar (PDF, Excel, CSV)",
   "saveAllCount": "Tümünü Kaydet ({n})",
