@@ -1351,6 +1351,15 @@ class _OzetSerisi extends StatefulWidget {
 class _OzetSerisiState extends State<_OzetSerisi> {
   PortfolioHistoryBreakdown? _seri;
 
+  /// Son yükleme seri getirmeden bitti (hata ya da boş seri, elde gösterilecek
+  /// seri yok).
+  ///
+  /// Eskiden bu durumda iskelet SONSUZA kadar kalıyordu: Frankfurt duman testi
+  /// (2026-10-18) 1A'yı 60 sn'den uzun iskelette gördü; aynı anda Grafik
+  /// sekmesi "Grafik verisi alınamadı + Tekrar dene" diyordu. Kullanıcı
+  /// yüklenmeyi bekliyor sanır. Özet de Grafik'le aynı hâli gösterir.
+  bool _basarisiz = false;
+
   String get _anahtar => (widget.key! as ValueKey<String>).value;
 
   @override
@@ -1360,27 +1369,68 @@ class _OzetSerisiState extends State<_OzetSerisi> {
     if (_seri == null || !widget.bellek.seriler.taze(_anahtar)) _yukle();
   }
 
+  /// Seri bu sürede gelmezse "alınamadı" gösterilir; istek arkada sürer ve
+  /// sonradan gelirse özet yine çizilir. Duman testinde fiyat sunucusu
+  /// erişilemezken istek dakikalarca bitmedi — süresiz bekleyen iskelet,
+  /// kullanıcıya "yükleniyor" yalanı söyler.
+  static const _azamiBekleme = Duration(seconds: 20);
+
   Future<void> _yukle() async {
     try {
-      final bd = await widget.bellek.seriler.yukle(
+      final istek = widget.bellek.seriler.yukle(
         _anahtar,
         () => _ozetSerisiniCek(
             widget.period, widget.chartAssets, widget.simulate),
       );
+      final PortfolioHistoryBreakdown bd;
+      try {
+        bd = await istek.timeout(_azamiBekleme);
+      } on TimeoutException {
+        if (!mounted) return;
+        if (_seri == null) setState(() => _basarisiz = true);
+        istek.then((gec) {
+          if (!mounted || gec.total.isEmpty) return;
+          setState(() {
+            _seri = gec;
+            _basarisiz = false;
+          });
+        }).ignore();
+        return;
+      }
       if (!mounted) return;
       // Bellekten çizilmiş seri BOŞ bir tazelemeyle ezilmesin (ağ yok):
       // elde ölçülmüş bir seri varken iskelete dönmek titremenin kendisi.
       if (bd.total.isEmpty && _seri != null) return;
-      setState(() => _seri = bd);
+      setState(() {
+        _seri = bd;
+        _basarisiz = bd.total.isEmpty;
+      });
     } catch (e, st) {
-      // Seri gelmezse iskelet kalır; sessiz değil — Crashlytics'e düşer.
       CrashReporter.report(e, st, reason: 'OzetSerisi.yukle');
+      // Elde çizilmiş seri varsa o kalır; yoksa hata + tekrar dene.
+      if (mounted && _seri == null) setState(() => _basarisiz = true);
     }
+  }
+
+  void _tekrarDene() {
+    setState(() => _basarisiz = false);
+    _yukle();
   }
 
   @override
   Widget build(BuildContext context) {
     final bd = _seri;
+    if (_basarisiz && (bd == null || bd.total.isEmpty)) {
+      return ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 300),
+        child: _ChartPlaceholder(
+          icon: Icons.cloud_off_rounded,
+          title: context.l10n.chartDataFailed,
+          message: context.l10n.chartDataFailedBody,
+          onRetry: _tekrarDene,
+        ),
+      );
+    }
     // İskelet → özet çapraz geçişi (2026-10-14).
     return SandikYuklemeGecisi(
       yukleniyor: bd == null || bd.total.isEmpty,

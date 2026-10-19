@@ -31,7 +31,9 @@ void main() {
   test('Özet serisi bellekten EŞZAMANLI okunur (ilk karede iskelet yok)', () {
     expect(src.contains('_seri = widget.bellek.seriler.oku(_anahtar);'), isTrue,
         reason: 'initState belleği await etmeden okumalı');
-    expect(src.contains('await widget.bellek.seriler.yukle('), isTrue,
+    // 2026-10-19: istek önce alınır, sonra süreyle beklenir (asılı istek
+    // iskelette bırakmasın, `ozet_seri_hatasi_test`) — paylaşım aynı.
+    expect(src.contains('final istek = widget.bellek.seriler.yukle('), isTrue,
         reason: 'ekranın isteği ısıtmayla aynı uçuşan isteği paylaşmalı');
     // Bellekten çizilmiş seri boş tazelemeyle iskelete dönmemeli.
     expect(
