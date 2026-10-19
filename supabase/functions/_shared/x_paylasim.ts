@@ -205,9 +205,98 @@ export function kurDegisimleri(satirlar: KotasyonSatiri[], baslangicTs: string, 
   return out;
 }
 
+
+// ── ABD istihdam (yasin, 19 Eki: "işsizlik bilgileri de paylaşılmalı") ────────
+
+/// BLS seri kimlikleri: işsizlik oranı (LNS14000000) ve tarım dışı istihdam
+/// (CES0000000001, bin kişi), ikisi de mevsimsellikten arındırılmış — BLS'nin
+/// "Employment Situation" bülteninin manşetleri.
+export const BLS_ISTIHDAM = ['LNS14000000', 'CES0000000001'];
+
+export type IstihdamOzeti = {
+  donem: string;
+  issizlik: number;
+  onceki_issizlik: number;
+  /// Tarım dışı istihdamdaki aylık değişim, bin kişi.
+  istihdam_degisim: number;
+  son_aylar: { donem: string; issizlik: number }[];
+};
+
+export function abdIstihdamOzeti(json: unknown): IstihdamOzeti | null {
+  const u = blsSerisi(json, 'LNS14000000');
+  const p = blsSerisi(json, 'CES0000000001');
+  if (u.length < 2 || p.length < 2) return null;
+  const son = u[u.length - 1];
+  const uo = u.find((x) => x.ay === son.ay - 1);
+  const ps = p.find((x) => x.ay === son.ay);
+  const po = p.find((x) => x.ay === son.ay - 1);
+  if (!uo || !ps || !po) return null;
+  return {
+    donem: blsDonem(son.ay),
+    issizlik: son.deger,
+    onceki_issizlik: uo.deger,
+    istihdam_degisim: ps.deger - po.deger,
+    son_aylar: u.slice(-6).map((x) => ({ donem: blsDonem(x.ay), issizlik: x.deger })),
+  };
+}
+
+export function abdIstihdamTaslagi(t: IstihdamOzeti): Taslak {
+  const ay = ayYilYazisi(t.donem);
+  const ayAdi = ay.split(' ')[0].toLocaleLowerCase('tr-TR');
+  const artti = t.istihdam_degisim >= 0;
+  const bin = `${trSayi(Math.abs(t.istihdam_degisim), 0)} bin`;
+  return {
+    tur: 'abd_istihdam',
+    donem: t.donem,
+    olgular: [
+      { ad: 'ay', gosterim: ay },
+      { ad: `ABD tarım dışı istihdam aylık değişimi (${artti ? 'artış' : 'azalış'}, kişi)`, gosterim: bin },
+      { ad: 'ABD işsizlik oranı', gosterim: yuzde(t.issizlik) },
+      { ad: 'bir önceki ay ABD işsizlik oranı', gosterim: yuzde(t.onceki_issizlik) },
+    ],
+    sablon_metin: `ABD'de ${ayAdi} ayında tarım dışı istihdam ${bin} kişi ${artti ? 'arttı' : 'azaldı'}. İşsizlik oranı ${yuzde(t.issizlik)} oldu, bir önceki ay ${yuzde(t.onceki_issizlik)} idi.`,
+    kart: {
+      bicim: 'buyuk',
+      ust: `ABD İSTİHDAM · ${ay.toLocaleUpperCase('tr-TR')}`,
+      buyuk: `${artti ? '+' : '−'}${bin}`,
+      alt: 'tarım dışı istihdam, aylık değişim',
+      sutunlar: t.son_aylar.map((m) => ({ etiket: AY_KISA[Number(m.donem.split('-')[1]) - 1], deger: m.issizlik })),
+      yan_baslik: 'İşsizlik oranı',
+      yan_deger: yuzde(t.issizlik),
+      kaynak: 'Kaynak: ABD Çalışma İstatistikleri Bürosu (BLS)',
+    },
+  };
+}
+
+// ── Brent petrol (EIA; yalnız EIA_API_KEY varken) ───────────────────────────
+
+/// EIA (ABD Enerji Bakanlığı) günlük Brent spot fiyatı, $/varil. Kamu verisi
+/// (ABD federal eseri), yeniden yayımı serbest. EIA seriyi gecikmeli günceller:
+/// son nokta birkaç gün eski olabilir, bu yüzden satır kendi tarihini taşır.
+export type BrentSatiri = { period?: string; value?: unknown };
+
+/// Son noktanın bir hafta öncesine göre değişimi. Son nokta `bugun`den 10
+/// günden eskiyse ya da hafta öncesinde nokta yoksa null (bayat veri yazılmaz).
+export function brentDegisimi(json: unknown, bugun: string): KurDegisimi | null {
+  const ham = (json as { response?: { data?: BrentSatiri[] } })?.response?.data ?? [];
+  const n = ham
+    .map((d) => ({ gun: String(d.period ?? ''), deger: Number(d.value) }))
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.gun) && Number.isFinite(d.deger) && d.deger > 0)
+    .sort((a, b) => a.gun.localeCompare(b.gun));
+  const son = n[n.length - 1];
+  if (!son || son.gun < gunEkle(bugun, -10)) return null;
+  const ilk = [...n].reverse().find((d) => d.gun <= gunEkle(son.gun, -7));
+  if (!ilk) return null;
+  return {
+    ad: `Brent petrol (${gunAyYazisi(son.gun)})`,
+    son: `${trSayi(son.deger, 2)} $`,
+    degisim: (son.deger / ilk.deger - 1) * 100,
+  };
+}
+
 // ── Gönderi ─────────────────────────────────────────────────────────────────
 
-export type GonderiTuru = 'fon_akisi' | 'haftalik' | 'tufe' | 'abd_tufe' | 'fed' | 'fon_getiri' | 'takvim';
+export type GonderiTuru = 'fon_akisi' | 'haftalik' | 'tufe' | 'abd_tufe' | 'fed' | 'fon_getiri' | 'takvim' | 'abd_istihdam';
 
 export type KartSatiri = {
   ad: string;
@@ -244,6 +333,8 @@ export type Taslak = {
   /// Model çağrılmaz, şablon metin gider. Takvim gelecekteki olayları sayar;
   /// modelin "gelecek dili yok" kuralıyla çelişir ve anlatacak cümle yoktur.
   yalniz_sablon?: boolean;
+  /// Varsayılan yerine bu etiketler (bkz. `etiketle`).
+  etiketler?: string[];
 };
 
 const UST_SATIR = 5;
@@ -321,20 +412,31 @@ export function haftalikTaslak(o: AkisOzeti, kurlar: KurDegisimi[]): Taslak {
   ];
   const cumleler = ['Haftanın özeti:'];
   if (kurlar.length) {
-    cumleler.push(kurlar.map((k) => `${k.ad} haftayı ${yuzde(k.degisim)} ${k.degisim >= 0 ? 'artışla' : 'düşüşle'} kapattı`).join(', ') + '.');
+    const yurtIci = kurlar.filter((k) => !k.ad.startsWith('Brent'));
+    const brent = kurlar.find((k) => k.ad.startsWith('Brent'));
+    if (yurtIci.length) cumleler.push(yurtIci.map((k) => `${k.ad} haftayı ${yuzde(k.degisim)} ${k.degisim >= 0 ? 'artışla' : 'düşüşle'} kapattı`).join(', ') + '.');
+    // EIA gecikmeli günceller: Brent "haftayı kapattı" denmez, kendi tarihiyle yazılır.
+    if (brent) cumleler.push(`${brent.ad.replace(/ \((.+)\)$/, ' $1 itibarıyla')} bir haftada ${yuzde(brent.degisim)} ${brent.degisim >= 0 ? 'yükseldi' : 'düştü'}.`);
   }
   cumleler.push(girdi ? `Fonlara beş günde net ${tutarYazisi(o.toplam)} girdi.` : `Fonlardan beş günde net ${tutarYazisi(o.toplam)} çıktı.`);
   return {
     tur: 'haftalik',
     donem: o.bitis,
     olgular,
+    etiketler: [
+      '#fon',
+      ...(kurlar.some((k) => k.ad.includes('altın')) ? ['#altın'] : []),
+      ...(kurlar.some((k) => k.ad.startsWith('Brent')) ? ['#petrol'] : []),
+    ],
     sablon_metin: cumleler.join(' '),
     kart: {
       bicim: 'liste',
       ust: `HAFTANIN ÖZETİ · ${aralik.toLocaleUpperCase('tr-TR')}`,
       baslik: 'Haftanın özeti',
       satirlar,
-      kaynak: kurlar.length ? 'Kaynak: TEFAS, piyasa kotasyonları' : 'Kaynak: TEFAS · Yatırım fonları, BES hariç',
+      kaynak: kurlar.some((k) => k.ad.startsWith('Brent'))
+        ? 'Kaynak: TEFAS, EIA, piyasa kotasyonları'
+        : kurlar.length ? 'Kaynak: TEFAS, piyasa kotasyonları' : 'Kaynak: TEFAS · Yatırım fonları, BES hariç',
     },
   };
 }
@@ -389,6 +491,10 @@ function blsSerisi(json: unknown, id: string): { ay: number; deger: number }[] {
   return out.sort((a, b) => a.ay - b.ay);
 }
 
+function blsDonem(ay: number): string {
+  return `${Math.floor(ay / 12)}-${String((ay % 12) + 1).padStart(2, '0')}-01`;
+}
+
 /// BLS v1 yanıtından manşet TÜFE: aylık değişim mevsimsellikten arındırılmış
 /// seriden (CUSR0000SA0), yıllık değişim ham seriden (CUUR0000SA0) — BLS'nin
 /// kendi bülteniyle aynı ayrım. İki uç da yoksa null.
@@ -401,7 +507,7 @@ export function abdTufeOzeti(json: unknown): TufeOzeti | null {
   const hamSon = ham.find((x) => x.ay === son.ay);
   const hamYil = ham.find((x) => x.ay === son.ay - 12);
   if (!onceki || !hamSon || !hamYil) return null;
-  const donem = (ay: number) => `${Math.floor(ay / 12)}-${String((ay % 12) + 1).padStart(2, '0')}-01`;
+  const donem = blsDonem;
   const son_aylar: { donem: string; aylik: number }[] = [];
   for (const x of sa.slice(-6)) {
     const o = sa.find((y) => y.ay === x.ay - 1);
@@ -581,11 +687,14 @@ export function getiriOzeti(satirlar: FonFiyatSatiri[], bugun: string): GetiriOz
 }
 
 /// Bir önceki iş gününün kategori getirileri.
-export function fonGetiriTaslagi(o: GetiriOzeti): Taslak {
+export function fonGetiriTaslagi(o: GetiriOzeti, kurlar: KurDegisimi[] = []): Taslak {
   const enBuyuk = Math.max(...o.kategoriler.map((k) => Math.abs(k.medyan)), 0.01);
-  const secili = o.kategoriler.slice(0, 6);
   const ilk = o.kategoriler[0];
   const son = o.kategoriler[o.kategoriler.length - 1];
+  // Kur satırları varsa kart 6 satırı aşmasın: en yüksek iki ve en düşük kategori.
+  const secili = kurlar.length
+    ? [...new Set([...o.kategoriler.slice(0, 6 - kurlar.length - 1), son])]
+    : o.kategoriler.slice(0, 6);
   const tarih = gunAyYazisi(o.gun);
   const olgular: Olgu[] = [
     { ad: 'tarih', gosterim: tarih },
@@ -593,35 +702,45 @@ export function fonGetiriTaslagi(o: GetiriOzeti): Taslak {
       ad: `${k.kategori} fonlarının medyan günlük getirisi (${k.medyan >= 0 ? 'artış' : 'düşüş'})`,
       gosterim: yuzde(k.medyan, false, 2),
     })),
+    ...kurlar.map((k) => ({ ad: `${k.ad} günlük değişim (${k.degisim >= 0 ? 'artış' : 'düşüş'})`, gosterim: yuzde(k.degisim, false, 2) })),
   ];
   if (!secili.includes(son)) {
     olgular.push({ ad: `${son.kategori} fonlarının medyan günlük getirisi (${son.medyan >= 0 ? 'artış' : 'düşüş'})`, gosterim: yuzde(son.medyan, false, 2) });
   }
   const ad = (k: KategoriGetirisi) => k.kategori.toLocaleLowerCase('tr-TR');
-  const cumleler = [
-    `${tarih}'de fon kategorileri içinde en yüksek medyan getiri ${yuzde(ilk.medyan, false, 2)} ile ${ad(ilk)} fonlarında oldu.`,
-  ];
+  const cumleler: string[] = [];
+  if (kurlar.length) {
+    cumleler.push(`${tarih}'de ` + kurlar.map((k) => `${k.ad.replace(/^Gram/, 'gram')} ${yuzde(k.degisim, false, 2)} ${k.degisim >= 0 ? 'arttı' : 'geriledi'}`).join(', ') + '.');
+    cumleler.push(`Fonlarda en yüksek medyan getiri ${yuzde(ilk.medyan, false, 2)} ile ${ad(ilk)} fonlarında oldu.`);
+  } else {
+    cumleler.push(`${tarih}'de fon kategorileri içinde en yüksek medyan getiri ${yuzde(ilk.medyan, false, 2)} ile ${ad(ilk)} fonlarında oldu.`);
+  }
   if (son !== ilk) {
     cumleler.push(son.medyan < 0
       ? `${son.kategori} fonları ${yuzde(son.medyan, false, 2)} geriledi.`
       : `En düşük getiri ${yuzde(son.medyan, false, 2)} ile ${ad(son)} fonlarında.`);
   }
+  const yon = (p: number) => (p > 0.005 ? 'u' : p < -0.005 ? 'd' : 'n') as KartSatiri['yon'];
   return {
     tur: 'fon_getiri',
     donem: o.gun,
     olgular,
     sablon_metin: cumleler.join(' '),
+    etiketler: kurlar.some((k) => k.ad.includes('altın')) ? ['#altın', '#fon', '#TEFAS'] : undefined,
     kart: {
       bicim: 'liste',
-      ust: `FON GETİRİLERİ · ${tarih.toLocaleUpperCase('tr-TR')}`,
-      baslik: 'Kategorilerin günlük getirisi',
-      satirlar: secili.map((k) => ({
-        ad: k.kategori,
-        deger: yuzde(k.medyan, true, 2),
-        yon: (k.medyan > 0.005 ? 'u' : k.medyan < -0.005 ? 'd' : 'n') as KartSatiri['yon'],
-        oran: Math.abs(k.medyan) / enBuyuk,
-      })),
-      kaynak: 'Kaynak: TEFAS · Kategori medyanı, BES hariç',
+      ust: `${kurlar.length ? 'DÜNÜN PİYASASI' : 'FON GETİRİLERİ'} · ${tarih.toLocaleUpperCase('tr-TR')}`,
+      baslik: kurlar.length ? 'Dünün piyasası' : 'Kategorilerin günlük getirisi',
+      satirlar: [
+        ...kurlar.map((k) => ({ ad: k.ad, deger: yuzde(k.degisim, true, 2), yon: yon(k.degisim) })),
+        ...secili.map((k) => ({
+          ad: k.kategori,
+          deger: yuzde(k.medyan, true, 2),
+          yon: yon(k.medyan),
+          oran: Math.abs(k.medyan) / enBuyuk,
+        })),
+      ],
+      kaynak: kurlar.length ? 'Kaynak: TEFAS, piyasa kotasyonları · Fon: kategori medyanı' : 'Kaynak: TEFAS · Kategori medyanı, BES hariç',
     },
   };
 }
@@ -663,6 +782,11 @@ export function takvimTaslagi(pazartesi: string, olaylar: TakvimOlayi[]): Taslak
     olgular,
     sablon_metin: metin,
     yalniz_sablon: true,
+    etiketler: [
+      ...(hafta.some((o) => o.baslik.includes('TCMB')) ? ['#TCMB'] : []),
+      ...(hafta.some((o) => o.baslik.includes('Fed')) ? ['#Fed'] : []),
+      '#piyasa',
+    ],
     kart: {
       bicim: 'liste',
       ust: `HAFTANIN TAKVİMİ · ${aralik.toLocaleUpperCase('tr-TR')}`,
@@ -684,6 +808,31 @@ export function sabahGonderisi(bugun: string): 'takvim' | 'fon_getiri' | null {
   const g = haftaGunu(bugun);
   if (g >= 6) return null;
   return g === 1 ? 'takvim' : 'fon_getiri';
+}
+
+// ── Etiket (yasin, 19 Eki: "ilgili konularda hashtag") ──────────────────────
+
+/// Tür başına sabit etiketler. Model etiket yazmaz (`PAYLASIM_YASAK` '#'
+/// reddeder); etiket metin kapısından SONRA eklenir, sayı/dil kuralı bozulmaz.
+export const ETIKETLER: Record<GonderiTuru, string[]> = {
+  fon_akisi: ['#fon', '#TEFAS'],
+  haftalik: ['#fon', '#piyasa'],
+  tufe: ['#enflasyon', '#TÜFE'],
+  abd_tufe: ['#enflasyon', '#ABD'],
+  fed: ['#Fed', '#faiz'],
+  fon_getiri: ['#fon', '#TEFAS'],
+  takvim: ['#piyasa'],
+  abd_istihdam: ['#işsizlik', '#ABD'],
+};
+
+/// X sınırı. Etiket sığmıyorsa hiç eklenmez (gönderi kesilmez).
+export const X_SINIRI = 280;
+
+export function etiketle(t: Taslak, metin: string): string {
+  const e = t.etiketler ?? ETIKETLER[t.tur] ?? [];
+  if (!e.length) return metin;
+  const sonuc = `${metin}\n\n${e.join(' ')}`;
+  return [...sonuc].length <= X_SINIRI ? sonuc : metin;
 }
 
 // ── Model ───────────────────────────────────────────────────────────────────

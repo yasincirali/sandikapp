@@ -15,6 +15,11 @@ import {
   fedTaslagi,
   ASGARI_FON,
   AZAMI_KARAKTER,
+  abdIstihdamOzeti,
+  abdIstihdamTaslagi,
+  brentDegisimi,
+  etiketle,
+  X_SINIRI,
   bugununFonGonderisi,
   type FonFiyatSatiri,
   fonGetiriTaslagi,
@@ -411,4 +416,99 @@ Deno.test('0153: takvim istemciye kapalı, sabah cron akşamla aynı aktiflikte,
   assert(paylas.includes("let kip = 'aksam'"));
   assert(paylas.includes("g?.kip === 'sabah'"));
   assert(paylas.includes('aiAcik && !t.yalniz_sablon'));
+});
+
+// ── 19 Eki: etiket, ABD istihdam, Brent, dünün piyasası (0157) ──────────────
+
+function blsIstihdam(u: number[], p: number[], sonYil = 2026, sonAy = 9) {
+  const seri = (id: string, v: number[]) => ({
+    seriesID: id,
+    data: v.map((d, i) => {
+      const toplam = sonYil * 12 + sonAy - 1 - (v.length - 1 - i);
+      return { year: String(Math.floor(toplam / 12)), period: `M${String((toplam % 12) + 1).padStart(2, '0')}`, value: String(d) };
+    }).reverse(),
+  });
+  return { status: 'REQUEST_SUCCEEDED', Results: { series: [seri('LNS14000000', u), seri('CES0000000001', p)] } };
+}
+
+Deno.test('ABD istihdam: işsizlik oranı ve tarım dışı istihdam değişimi, şablon kapıdan geçer', () => {
+  const o = abdIstihdamOzeti(blsIstihdam([4.2, 4.1, 4.2, 4.3, 4.2, 4.1], [159000, 159100, 159250, 159300, 159358, 159500]))!;
+  assertEquals(o.donem, '2026-09-01');
+  assertEquals(o.istihdam_degisim, 142);
+  const t = abdIstihdamTaslagi(o);
+  assertEquals(t.sablon_metin, "ABD'de eylül ayında tarım dışı istihdam 142 bin kişi arttı. İşsizlik oranı %4,1 oldu, bir önceki ay %4,2 idi.");
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t), { gecti: true, metin: t.sablon_metin });
+  assertEquals(abdIstihdamOzeti(blsIstihdam([4.1], [159000])), null);
+});
+
+Deno.test('etiket: türe göre eklenir, sığmazsa hiç eklenmez, kapıdan sonra', () => {
+  const t = abdIstihdamTaslagi(abdIstihdamOzeti(blsIstihdam([4.2, 4.1], [159358, 159500]))!);
+  assertEquals(etiketle(t, 'Kısa bir metin burada duruyor.'), 'Kısa bir metin burada duruyor.\n\n#işsizlik #ABD');
+  const uzun = 'a'.repeat(270);
+  assertEquals(etiketle(t, uzun), uzun);
+  assert([...etiketle(t, 'b'.repeat(262))].length <= X_SINIRI);
+  // Model etiket yazamaz: kapı '#' reddeder.
+  assertEquals(metinKapisi({ metin: 'Fonlara bugün net 3,2 milyar TL girdi #fon' }, t).gecti, false);
+  const tk = takvimTaslagi('2026-10-19', OLAYLAR)!;
+  assertEquals(etiketle(tk, tk.sablon_metin).endsWith('#TCMB #piyasa'), true);
+});
+
+function eia(noktalar: [string, number][]) {
+  return { response: { data: noktalar.map(([period, value]) => ({ period, value: String(value), series: 'RBRTE' })) } };
+}
+
+Deno.test('Brent: bir hafta önceye göre, kendi tarihiyle; bayatsa null', () => {
+  const b = brentDegisimi(eia([['2026-10-13', 76.5], ['2026-10-06', 75.0], ['2026-10-08', 74]]), '2026-10-16')!;
+  assertEquals(b.ad, 'Brent petrol (13 Ekim)');
+  assertEquals(b.son, '76,50 $');
+  assert(Math.abs(b.degisim - 2) < 1e-9);
+  assertEquals(brentDegisimi(eia([['2026-09-30', 76.5], ['2026-09-22', 75]]), '2026-10-16'), null);
+  assertEquals(brentDegisimi(eia([['2026-10-13', 76.5]]), '2026-10-16'), null);
+  assertEquals(brentDegisimi({ hata: 1 }, '2026-10-16'), null);
+});
+
+Deno.test('haftalık: Brent kendi tarihiyle anlatılır, şablon kapıdan geçer, #petrol', () => {
+  const o = akisOzeti(ORNEK, '2026-10-13', '2026-10-13')!;
+  const brent = brentDegisimi(eia([['2026-10-13', 76.5], ['2026-10-06', 78.0]]), '2026-10-16')!;
+  const t = haftalikTaslak({ ...o, baslangic: '2026-10-12', bitis: '2026-10-16' }, [brent]);
+  assertMatch(t.sablon_metin, /Brent petrol 13 Ekim itibarıyla bir haftada %1,9 düştü\./);
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t).gecti, true);
+  assert(t.kart.kaynak.includes('EIA'));
+  assertEquals(t.etiketler, ['#fon', '#petrol']);
+});
+
+Deno.test('dünün piyasası: kur satırları + fon kategorileri, 6 satırı aşmaz, kapıdan geçer', () => {
+  const o = getiriOzeti(GETIRI, '2026-10-15')!;
+  const t = fonGetiriTaslagi(o, [{ ad: 'Gram altın', son: '5.120 ₺', degisim: 0.84 }, { ad: 'Dolar/TL', son: '41,92', degisim: 0.12 }]);
+  assert(t.kart.bicim === 'liste' && t.kart.satirlar.length <= 6);
+  assertEquals(t.kart.ust, 'DÜNÜN PİYASASI · 14 EKİM');
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t), { gecti: true, metin: t.sablon_metin });
+  assertMatch(t.sablon_metin, /^14 Ekim'de gram altın %0,84 arttı, Dolar\/TL %0,12 arttı\./);
+  assertEquals(t.etiketler, ['#altın', '#fon', '#TEFAS']);
+  // Kur yoksa eski kart birebir.
+  assertEquals(fonGetiriTaslagi(o).kart.ust, 'FON GETİRİLERİ · 14 EKİM');
+});
+
+Deno.test('yeni kartlar PNG çizilir', async () => {
+  const o = getiriOzeti(GETIRI, '2026-10-15')!;
+  const kartlar = [
+    abdIstihdamTaslagi(abdIstihdamOzeti(blsIstihdam([4.2, 4.1, 4.2, 4.3, 4.2, 4.1], [159000, 159100, 159250, 159300, 159358, 159500]))!).kart,
+    fonGetiriTaslagi(o, [{ ad: 'Gram altın', son: '5.120 ₺', degisim: 0.84 }, { ad: 'Dolar/TL', son: '41,92', degisim: 0.12 }]).kart,
+  ];
+  for (const k of kartlar) {
+    const png = await pngCiz(kartSvg(k));
+    assertEquals([...png.slice(1, 4)].map((c) => String.fromCharCode(c)).join(''), 'PNG');
+    const dosya = Deno.env.get('X_KART_CIKTI');
+    if (dosya) await Deno.writeFile(`${dosya}/kart_yeni_${kartlar.indexOf(k)}.png`, png);
+  }
+});
+
+const m0157 = await Deno.readTextFile(new URL('../migrations/0157_x_abd_istihdam.sql', import.meta.url));
+
+Deno.test('0157: tür listesi yalnız genişler; x-paylas etiketi kapıdan sonra ekler', () => {
+  for (const t of ['fon_akisi', 'haftalik', 'tufe', 'abd_tufe', 'fed', 'fon_getiri', 'takvim', 'abd_istihdam']) {
+    assert(m0157.includes(`'${t}'`), t);
+  }
+  assert(paylas.indexOf('metin = etiketle(t, metin)') > paylas.indexOf('metinKapisi(JSON.parse(ham), t)'));
+  assert(paylas.includes("Deno.env.get('EIA_API_KEY')"));
 });
