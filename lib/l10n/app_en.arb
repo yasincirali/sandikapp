@@ -1286,6 +1286,7 @@
   "loadingEllipsis": "Loading…",
   "widenDateRangeHint": "Try widening the date range or clearing the search.",
   "priceAlertsTitle": "Price Alerts",
+  "quickActionSearch": "Search",
   "createAlert": "Create an alert",
   "noAlertsYet": "You have no alerts yet",
   "noAlertsBody": "Tap the bell on an asset's screen or create one here; we'll let you know even when the app is closed.",

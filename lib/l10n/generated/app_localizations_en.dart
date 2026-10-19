@@ -2172,6 +2172,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priceAlertsTitle => 'Price Alerts';
 
   @override
+  String get quickActionSearch => 'Search';
+
+  @override
   String get createAlert => 'Create an alert';
 
   @override

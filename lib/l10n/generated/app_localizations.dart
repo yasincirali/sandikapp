@@ -3836,6 +3836,12 @@ abstract class AppLocalizations {
   /// **'Fiyat Alarmları'**
   String get priceAlertsTitle;
 
+  /// Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler).
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara'**
+  String get quickActionSearch;
+
   /// No description provided for @createAlert.
   ///
   /// In tr, this message translates to:

@@ -2155,6 +2155,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get priceAlertsTitle => 'Fiyat Alarmları';
 
   @override
+  String get quickActionSearch => 'Ara';
+
+  @override
   String get createAlert => 'Alarm kur';
 
   @override

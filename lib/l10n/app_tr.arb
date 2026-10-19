@@ -1301,6 +1301,10 @@
   "loadingEllipsis": "Yükleniyor…",
   "widenDateRangeHint": "Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.",
   "priceAlertsTitle": "Fiyat Alarmları",
+  "quickActionSearch": "Ara",
+  "@quickActionSearch": {
+    "description": "Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler)."
+  },
   "createAlert": "Alarm kur",
   "noAlertsYet": "Henüz alarmın yok",
   "noAlertsBody": "Bir varlığın ekranındaki zile dokun ya da buradan kur; uygulama kapalıyken bile haber verelim.",
