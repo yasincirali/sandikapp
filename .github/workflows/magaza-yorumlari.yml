@@ -1,0 +1,43 @@
+# Mağaza yorumları — haftalık okuma + yanıt taslağı (2026-10-20).
+#
+# App Store ve Google Play'deki son 8 günün yorumlarını okur; her biri
+# için şablon Türkçe yanıt taslağı ve ayrı bir "hata bildirimleri"
+# listesi yazar. Hiçbir yanıt GÖNDERİLMEZ (dışarıya mesaj; gönderim
+# yasin "gönder" deyince elle). AI yok, yeni secret yok.
+# Repo herkese açık: yorum metni loga ve iş özetine basılmaz, yalnız
+# sayılar; metin 7 gün tutulan artifact'te. Secret yoksa o mağaza
+# "atlandı" der, iş yeşil kalır. Gerekçe `tool/magaza_yorumlari.py` başında.
+name: Mağaza yorumları (taslak)
+
+on:
+  schedule:
+    - cron: '0 5 * * 1'   # pazartesi 08:00 TR
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  yorumlar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bağımlılıklar
+        run: pip install --quiet pyjwt cryptography requests
+      - name: Yorumları oku, taslak yaz
+        run: python tool/magaza_yorumlari.py --cikti magaza_yorumlari.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: magaza-yorumlari
+          path: magaza_yorumlari.md
+          retention-days: 7
+          if-no-files-found: ignore

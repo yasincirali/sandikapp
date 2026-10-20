@@ -3,6 +3,10 @@
 # Ücretsiz plan 500 MB; aşılırsa proje salt okunura düşer. Bu iş her
 # pazartesi Frankfurt'un boyutunu, en büyük tablolarını ve Storage
 # toplamını iş özetine yazar; 450 MB'ı geçerse kırmızı (e-posta gelir).
+# 2026-10-20: diğer ücretsiz plan sınırları da (Storage 1 GB, aktif
+# kullanıcı ~MAU 50.000, 7 günlük API istek sayısı) %70 sarı, %90 kırmızı.
+# Egress ve Edge Function çağrısı için proje düzeyinde API yok; özet
+# "panelden elle bak" der, sayı uydurmaz.
 # Yalnız SELECT, Management API; veri satırı okunmaz. Gerekçe ve eşikler
 # `tool/db_boyut.py` başında. Sıkıştırma/budama bilerek YOK (yasin
 # 2026-10-19: "yalnız ölçüm").
