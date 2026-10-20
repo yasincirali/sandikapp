@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/premium_provider.dart';
+import '../screens/paywall_screen.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 
@@ -57,6 +58,9 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
       'play_store' || 'PLAY_STORE' => 'Google Play',
       _ => null,
     };
+    // Hediyede kalan gün de yazılır ve son günlerde "devam et" düğmesi
+    // çıkar: bitiş sessiz olmasın (paywall incelemesi, 2026-10-20).
+    final kalan = hak.hediye ? hak.kalanGun(DateTime.now()) : null;
     final String? alt;
     if (bitis == null) {
       alt = null;
@@ -64,9 +68,12 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
         !hak.iptalEdildi &&
         magaza != null) {
       alt = l10n.prmYenileme(bitis, magaza);
+    } else if (kalan != null) {
+      alt = l10n.prmHediyeKalan(bitis, kalan);
     } else {
       alt = l10n.prmBitis(bitis);
     }
+    final sonGunler = kalan != null && kalan <= hediyeSonGunlerEsigi;
 
     return SandikCard(
       child: Column(
@@ -104,6 +111,14 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
                   style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
                   onPressed: _yonet,
                   child: Text(l10n.prmYonet),
+                ),
+              if (sonGunler)
+                FilledButton.tonal(
+                  style:
+                      FilledButton.styleFrom(minimumSize: SandikTouch.minSize),
+                  onPressed: () =>
+                      PaywallScreen.show(context, source: 'hediye_bitiyor'),
+                  child: Text(l10n.prmHediyeDevam),
                 ),
             ],
           ),

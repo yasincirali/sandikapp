@@ -5258,6 +5258,36 @@ abstract class AppLocalizations {
   /// **'{name}: varlık limitine ulaşıldı'**
   String assetLimitReachedFor(String name);
 
+  /// No description provided for @iktKotaBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz kota dolacak'**
+  String get iktKotaBaslik;
+
+  /// No description provided for @iktKotaGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sepette {bulunan} kalem var, ücretsiz kotaya {sigan} tanesi sığıyor. Kalanı Premium\'la hemen ya da sonra ekleyebilirsin.'**
+  String iktKotaGovde(int bulunan, int sigan);
+
+  /// No description provided for @iktKotaPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'a geç, hepsini ekle'**
+  String get iktKotaPremium;
+
+  /// No description provided for @iktKotaSiganlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sigan} kalemi kaydet, kalanı sepette bırak'**
+  String iktKotaSiganlar(int sigan);
+
+  /// No description provided for @iktKotaVazgec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vazgeç'**
+  String get iktKotaVazgec;
+
   /// No description provided for @someAssetsNotAdded.
   ///
   /// In tr, this message translates to:
@@ -11411,6 +11441,48 @@ abstract class AppLocalizations {
   /// **'Teşekkürler'**
   String get prmTesekkurler;
 
+  /// No description provided for @prmHediyeKalan.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} tarihinde biter · {gun} gün kaldı'**
+  String prmHediyeKalan(String tarih, int gun);
+
+  /// No description provided for @prmHediyeDevam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'la devam et'**
+  String get prmHediyeDevam;
+
+  /// No description provided for @prmHediyeBittiBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hediye süren doldu'**
+  String get prmHediyeBittiBaslik;
+
+  /// No description provided for @prmHediyeBittiGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilerinden hiçbiri silinmedi; {sayi} varlık ve temel özellikler ücretsiz kalır. Raporlar, sinyaller ve sınırsız varlık için Premium\'la kaldığın yerden devam edebilirsin.'**
+  String prmHediyeBittiGovde(int sayi);
+
+  /// No description provided for @prmHediyeBittiBant.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hediyen bitti; Premium\'la kaldığın yerden devam et'**
+  String get prmHediyeBittiBant;
+
+  /// No description provided for @prmHediyeBittiGor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'u gör'**
+  String get prmHediyeBittiGor;
+
+  /// No description provided for @prmHediyeBittiSonra.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şimdi değil'**
+  String get prmHediyeBittiSonra;
+
   /// No description provided for @prmAbonelikAylik.
   ///
   /// In tr, this message translates to:
@@ -12776,8 +12848,8 @@ abstract class AppLocalizations {
   /// No description provided for @pwdGuvenTakip.
   ///
   /// In tr, this message translates to:
-  /// **'Portföy takibin her zaman ücretsiz'**
-  String get pwdGuvenTakip;
+  /// **'{sayi} varlığın her zaman ücretsiz takipte; verin hiç silinmez'**
+  String pwdGuvenTakip(int sayi);
 
   /// No description provided for @pwdGuvenIptal.
   ///

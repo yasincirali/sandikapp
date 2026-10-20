@@ -60,6 +60,29 @@ void main() {
     }
   });
 
+  group('ücretsiz sınırlar DONDURULDU (paywall incelemesi, 2026-10-20)', () {
+    // Sınırlar sezgiyle birkaç kez değişti (varlık 10, takip 5, alarm 20,
+    // kıyas 2, ortak 1). Paywall açılışından sonra huni verisi (kapı →
+    // paywall → satın alma, kaynak başına) toplanana kadar 6 HAFTA
+    // (2026-12-01'e dek) dokunulmaz; sonra ölçüme göre değişir. Değişince
+    // bu testi, paywall tablosunu ve mağaza metinlerini birlikte güncelle.
+    const donmus = {
+      'free_asset_limit': '10',
+      'paywall_watchlist_limit': '5',
+      'free_price_alert_limit': '20',
+      'free_compare_series': '2',
+      'free_partner_limit': '1',
+    };
+    for (final e in donmus.entries) {
+      test('${e.key} = ${e.value}', () {
+        expect(varsayilan(e.key), e.value,
+            reason: '${e.key} 2026-12-01 öncesinde değişmemeli; huni '
+                'verisi olmadan sezgiyle sınır değiştirmek paywall '
+                'incelemesinin bulgusuydu.');
+      });
+    }
+  });
+
   group('kapalı kalması gerekenler', () {
     // Bunlar tutundurma paketine DAHİL DEĞİL; toplu "hepsini aç" turunda
     // yanlışlıkla sürüklenmediklerini doğrular.

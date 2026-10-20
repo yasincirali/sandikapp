@@ -3068,6 +3068,25 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get iktKotaBaslik => 'Ücretsiz kota dolacak';
+
+  @override
+  String iktKotaGovde(int bulunan, int sigan) {
+    return 'Sepette $bulunan kalem var, ücretsiz kotaya $sigan tanesi sığıyor. Kalanı Premium\'la hemen ya da sonra ekleyebilirsin.';
+  }
+
+  @override
+  String get iktKotaPremium => 'Premium\'a geç, hepsini ekle';
+
+  @override
+  String iktKotaSiganlar(int sigan) {
+    return '$sigan kalemi kaydet, kalanı sepette bırak';
+  }
+
+  @override
+  String get iktKotaVazgec => 'Vazgeç';
+
+  @override
   String get someAssetsNotAdded => 'Bazı Varlıklar Eklenemedi';
 
   @override
@@ -6860,6 +6879,32 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmTesekkurler => 'Teşekkürler';
 
   @override
+  String prmHediyeKalan(String tarih, int gun) {
+    return '$tarih tarihinde biter · $gun gün kaldı';
+  }
+
+  @override
+  String get prmHediyeDevam => 'Premium\'la devam et';
+
+  @override
+  String get prmHediyeBittiBaslik => 'Hediye süren doldu';
+
+  @override
+  String prmHediyeBittiGovde(int sayi) {
+    return 'Verilerinden hiçbiri silinmedi; $sayi varlık ve temel özellikler ücretsiz kalır. Raporlar, sinyaller ve sınırsız varlık için Premium\'la kaldığın yerden devam edebilirsin.';
+  }
+
+  @override
+  String get prmHediyeBittiBant =>
+      'Hediyen bitti; Premium\'la kaldığın yerden devam et';
+
+  @override
+  String get prmHediyeBittiGor => 'Premium\'u gör';
+
+  @override
+  String get prmHediyeBittiSonra => 'Şimdi değil';
+
+  @override
   String get prmAbonelikAylik => 'Premium · aylık';
 
   @override
@@ -7661,7 +7706,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwdIlkOdeme => 'İlk ödeme';
 
   @override
-  String get pwdGuvenTakip => 'Portföy takibin her zaman ücretsiz';
+  String pwdGuvenTakip(int sayi) {
+    return '$sayi varlığın her zaman ücretsiz takipte; verin hiç silinmez';
+  }
 
   @override
   String get pwdGuvenIptal => 'İstediğin an iptal, dönem sonuna kadar açık';

@@ -1231,11 +1231,14 @@ class _ProfilePremiumBanner extends ConsumerWidget {
     // alınan şeyin ne olduğunu söyleyemez. Bant yalnız kilit gerçekten
     // varken çıkar.
     if (!ref.watch(premiumKilitliProvider)) return const SizedBox.shrink();
+    // Hediyesi bitmiş kullanıcıya bant "kaldığın yerden devam" der; kaynak
+    // ayrı ki huni analitiğinde hediye sonrası dönüşüm görünsün.
+    final hediyeBitti = ref.watch(hediyesiBitmisProvider) != null;
+    final kaynak = hediyeBitti ? 'hediye_bitti' : 'profile_banner';
     return SandikBasma(
       onTap: () {
-        AnalyticsService.instance
-            .logPremiumGateShown(feature: 'profile_banner');
-        PaywallScreen.show(context, source: 'profile_banner');
+        AnalyticsService.instance.logPremiumGateShown(feature: kaynak);
+        PaywallScreen.show(context, source: kaynak);
       },
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
@@ -1274,7 +1277,9 @@ class _ProfilePremiumBanner extends ConsumerWidget {
                           color: context.c.text90)),
                   const SizedBox(height: 2),
                   Text(
-                    context.l10n.premiumPitch,
+                    hediyeBitti
+                        ? context.l10n.prmHediyeBittiBant
+                        : context.l10n.premiumPitch,
                     style: context.t.bodySmall?.copyWith(
                         color: context.c.text58,
                         height: 1.35),

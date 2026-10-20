@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import '../models/asset.dart' show Asset, birimEtiketi;
 import '../providers/bulk_cart_provider.dart';
 import '../services/ice_aktarma_satislari.dart';
+import '../services/ice_aktarma_kotasi.dart';
+import '../services/analytics_service.dart';
+import '../widgets/ice_aktarma_kota_sheet.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/sozlesme_provider.dart';
 import '../models/gorunum_kapsami.dart';
@@ -84,11 +87,42 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     // çizilir; aynı karedeki ikinci dokunuş ikinci bir toplu kayıt
     // başlatmasın.
     if (_saving) return;
-    final items = ref.read(bulkCartProvider);
+    var items = ref.read(bulkCartProvider);
     if (items.isEmpty) return;
     // Portföy kayıt başında sabitlenir: kayıt sürerken seçici kilitli, ama
     // alım ve satışlar aynı portföye yazılmalı.
     final hedef = _hedefPortfoy;
+
+    // ── 0) Kota kayıttan ÖNCE sorulur (paywall incelemesi, 2026-10-20) ────
+    // Eskiden kalemler paralel yazılır, kota kalem kalem kapıda durur ve
+    // 15 kalemlik ekstrenin ilk 10'u yazılıp gerisi sepette kalırdı; kullanıcı
+    // bunu ancak hata özetinden öğrenirdi. Şimdi "N kalem var, M'si sığıyor"
+    // denir ve kullanıcı seçer; kalem kalem kapı yarış ağı olarak kalır.
+    final kota = ref.read(varlikKotasiProvider);
+    final kayitli = ref.read(kotaAnahtarlariProvider);
+    if (kota != null && kayitli != null) {
+      final plan = iceAktarmaKotaPlani(
+          kalemler: items, kayitli: kayitli, sinir: kota.sinir);
+      if (plan.asiyor) {
+        unawaited(AnalyticsService.instance
+            .logPremiumGateShown(feature: 'bulk_add_quota_plan'));
+        final secim = await IceAktarmaKotaSheet.sor(context,
+            bulunan: items.length, sigan: plan.sigan.length);
+        if (!mounted) return;
+        switch (secim) {
+          case IceAktarmaKotaSecimi.vazgec:
+            return;
+          case IceAktarmaKotaSecimi.siganlar:
+            items = plan.sigan;
+          case IceAktarmaKotaSecimi.premium:
+            final upgraded = await PaywallScreen.show(context,
+                source: 'bulk_add_asset_limit');
+            if (!mounted || upgraded != true) return;
+            // Premium'a geçti: sınır kalktı, hepsi yazılır.
+        }
+        if (items.isEmpty) return;
+      }
+    }
 
     setState(() {
       _saving = true;

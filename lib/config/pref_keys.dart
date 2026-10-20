@@ -146,6 +146,10 @@ class PrefKeys {
   /// Erken kullanıcı hediyesi sayfası gösterildi (bir kez). Kişiye özel.
   static const premiumHediyeGosterildi = 'pref_premium_hediye_gosterildi';
 
+  /// Hediyenin bittiği bir kez söylendi (kişiye özel; bitiş tarihine
+  /// bağlı: yeni hediye = yeni bitiş = yeniden söylenir).
+  static const premiumHediyeBittiSoylenen = 'pref_premium_hediye_bitti_soylenen';
+
   /// Portföy ve Performans'ta seçili portföy (çoklu portföy, 0133): `''`
   /// Tümü, `ana` Ana, uuid adlandırılmış portföy. Kişiye özel (`perUser`):
   /// portföy kimlikleri hesaba aittir, aynı cihazdaki başka hesapta anlamsız.
