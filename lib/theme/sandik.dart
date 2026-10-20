@@ -437,6 +437,11 @@ abstract final class SandikMotion {
   /// dilimin nereden nereye aktığını okumaya yetmiyordu.
   static const Duration flow = Duration(milliseconds: 560);
 
+  /// İskelet nabzının TAM döngüsü (soluk → parlak → soluk). Bir geçiş değil,
+  /// "bekliyorum" ritmi: yavaş ve dikkat çekmeyen. Tüm bloklar aynı saate
+  /// göre aynı fazda atar (`SandikSkeleton`, 2026-10-20).
+  static const Duration nabiz = Duration(milliseconds: 2200);
+
   /// Hafif taşarak yerine oturan varış — seçim imleci ve seçilen işaret.
   /// Yalnız küçük, tek bir öğede; listelerde ve metinde kullanılmaz.
   static const Curve spring = Curves.easeOutBack;

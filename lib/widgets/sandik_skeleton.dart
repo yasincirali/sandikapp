@@ -31,14 +31,18 @@ class SandikSkeleton extends StatefulWidget {
 
 class _SandikSkeletonState extends State<SandikSkeleton>
     with SingleTickerProviderStateMixin {
+  // Tek yönlü 0→1 döngü + üçgen eğri (2026-10-20 hareket denetimi): her
+  // blok kendi saatiyle `repeat(reverse: true)` atınca farklı karelerde
+  // kurulan bloklar faz kayıyor, liste "dalgalı gürültü" gibi okunuyordu.
+  // Başlangıç değeri duvar saatinden türer → aynı ekrandaki bütün bloklar
+  // aynı fazda. Ayrı bir paylaşılan denetleyici gerekmez.
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1100),
+    duration: SandikMotion.nabiz,
   );
-  late final Animation<double> _alpha =
-      Tween<double>(begin: 0.45, end: 0.9).animate(
-    CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-  );
+  late final Animation<double> _alpha = _ctrl
+      .drive(CurveTween(curve: const _Ucgen()))
+      .drive(Tween<double>(begin: 0.45, end: 0.9));
 
   @override
   void didChangeDependencies() {
@@ -47,7 +51,10 @@ class _SandikSkeletonState extends State<SandikSkeleton>
       _ctrl.stop();
       _ctrl.value = 0.5;
     } else if (!_ctrl.isAnimating) {
-      _ctrl.repeat(reverse: true);
+      final dongu = SandikMotion.nabiz.inMilliseconds;
+      _ctrl.value =
+          (DateTime.now().millisecondsSinceEpoch % dongu) / dongu;
+      _ctrl.repeat();
     }
   }
 
@@ -324,4 +331,14 @@ class SandikBelirme extends StatelessWidget {
         anahtar: identical(child, const SizedBox.shrink()),
         child: child,
       );
+}
+
+/// 0→1→0 üçgen, iki yarısı da yumuşak (eski `repeat(reverse: true)` +
+/// `easeInOut` ile aynı görünüm, tek yönlü denetleyicide).
+class _Ucgen extends Curve {
+  const _Ucgen();
+
+  @override
+  double transformInternal(double t) =>
+      Curves.easeInOut.transform(1 - (2 * t - 1).abs());
 }

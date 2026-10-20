@@ -69,9 +69,11 @@ void main() {
     // gerçekten hareket dili dışındaki süreler. 2026-10-01 animasyon
     // denetimi: 28 → 20 (sekme hapı ve yarış seçicisi token'a geçti;
     // aradaki fark önceki turlarda düşmüş ama eşik güncellenmemişti).
+    // 2026-10-20: 20 → 9 (gerçek 10'du; iskelet nabzı `SandikMotion.nabiz`
+    // token'ına geçti).
     expect(
       hits.length,
-      lessThanOrEqualTo(20),
+      lessThanOrEqualTo(9),
       reason: 'Yeni çıplak süre eklenmiş. Hareket ise '
           'SandikMotion.press/state/surface kullan.\n${hits.join('\n')}',
     );

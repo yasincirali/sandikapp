@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 import '../theme/yazi_boyutu.dart';
 import '../widgets/hesap_secici.dart' show profilSekmesiUzunBasildi;
 import '../widgets/sekme_basa_don.dart';
-import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmKurAkisi;
 import '../widgets/review_prompt_sheet.dart';
@@ -370,31 +368,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  Future<void> _confirmExit() async {
-    final confirm = await showSandikConfirm(
-      context: context,
-      title: context.l10n.exitAppTitle,
-      message: context.l10n.exitAppMessage,
-      confirmLabel: context.l10n.exit,
-      destructive: true,
-    );
-    if (confirm) {
-      SandikHaptic.heavy.perform();
-      // Uygulamayı kapat. `Navigator.of(context).pop()` DEĞİL: kök
-      // navigator'da tek route varken pop hiçbir şey yapmıyordu — kullanıcı
-      // "Çık"a basıyor, uygulama açık kalıyordu. SystemNavigator.pop()
-      // Android'de aktiviteyi kapatır; iOS'ta HIG gereği no-op'tur (iOS'ta
-      // zaten sistem geri tuşu olmadığından bu diyalog açılmaz).
-      unawaited(SystemNavigator.pop());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Android geri tuşu (2026-10-20, Material kalıbı): başka sekmedeyken
+    // önce Ana sayfa'ya döner; Ana sayfa'da uygulamadan çıkar. Eskiden her
+    // sekmede "Çıkmak istiyor musun?" diyaloğu açılıyordu — Material'de
+    // kök ekranda onay bir karşı-kalıp ve `canPop: false` Android 14+
+    // öngörülü geri hareketini (ana ekrana kayan önizleme) kapatıyordu.
+    // iOS'ta sistem geri tuşu yok; davranış değişmez.
     return PopScope(
-      canPop: false,
+      canPop: _currentIndex == 0,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _confirmExit();
+        if (!didPop) _sekmeyeGec(0);
       },
       child: Scaffold(
         backgroundColor: context.c.background,

@@ -86,6 +86,15 @@ class SparklineService {
   /// Seri düz ise (min == max) tüm noktalar 0.5 olur → ortada yatay çizgi.
   ///
   /// Veri yoksa veya çizmeye yetmiyorsa boş liste döner.
+  /// Önbellekteki seri, varsa — EŞZAMANLI. Satır yeniden kurulunca
+  /// (kaydırıp geri gelince) eğri ilk karede çizilsin, solma oynamasın
+  /// (2026-10-20 hareket denetimi: kaydırma yüksek sıklıklı bir eylem).
+  List<double>? peek(Asset asset) {
+    final symbol = _symbolFor(asset);
+    if (symbol == null) return null;
+    return _cache[symbol];
+  }
+
   Future<List<double>> seriesFor(Asset asset) async {
     final symbol = _symbolFor(asset);
     if (symbol == null) return const [];

@@ -57,6 +57,7 @@ import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../l10n/l10n.dart';
 import '../models/gorunum_kapsami.dart';
+import '../widgets/sandik_ikon_gecisi.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -1915,23 +1916,10 @@ class _BalanceToggleButton extends ConsumerWidget {
         // Göz ikonu yerinde değişir (tema anahtarındaki gibi kısa çapraz
         // sönüm + hafif büyüme); eskiden tek karede atlıyordu.
         child: Center(
-          child: AnimatedSwitcher(
-            duration: SandikMotion.stateOf(context),
-            switchInCurve: SandikMotion.enter,
-            switchOutCurve: SandikMotion.exit,
-            transitionBuilder: (child, a) => FadeTransition(
-              opacity: a,
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.85, end: 1).animate(a),
-                child: child,
-              ),
-            ),
-            child: Icon(
-              hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-              key: ValueKey(hidden),
-              color: hidden ? context.c.amberText : context.c.text58,
-              size: 20,
-            ),
+          child: SandikIkonGecisi(
+            hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+            renk: hidden ? context.c.amberText : context.c.text58,
+            boyut: 20,
           ),
         ),
       ),

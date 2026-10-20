@@ -31,14 +31,17 @@ void main() {
   test('ham Colors.* satır sayısı artmamalı', () {
     final hits = linesMatching(RegExp(r'Colors\.[a-zA-Z]'));
     // 2026-09-13: 89 (asset_detail_screen 16, portfolio_performance 15, main 11).
-    expect(hits.length, lessThanOrEqualTo(89),
+    // 2026-10-20 incelemesi: gerçek sayı 61'e inmişti, eşik güncellenmemişti
+    // (28 satırlık sessiz geri kayma payı). Eşik gerçeğe çekildi.
+    expect(hits.length, lessThanOrEqualTo(61),
         reason: 'context.c.* kullan:\n${hits.join('\n')}');
   });
 
   test('ham fontSize: satır sayısı artmamalı', () {
     final hits = linesMatching(RegExp(r'fontSize:'));
     // 2026-09-13: 181. Hedef: 7 kademeli ölçek → context.t.* (Faz 2).
-    expect(hits.length, lessThanOrEqualTo(181),
+    // 2026-10-20: gerçek 152 (~29'u PDF yazıcıları); eşik gerçeğe çekildi.
+    expect(hits.length, lessThanOrEqualTo(152),
         reason: 'context.t.* kullan (ya da SandikTypography ölçeğine ekle):\n'
             '${hits.join('\n')}');
   });

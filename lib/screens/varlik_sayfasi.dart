@@ -39,6 +39,7 @@ import 'asset_detail_screen.dart'
 import '../services/technical_analysis_service.dart'
     show kSinyalCozunurlugu, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
+import '../widgets/sandik_ikon_gecisi.dart';
 
 /// Varlık sayfası — bir varlığı portföye EKLEMEDEN incelemek.
 ///
@@ -830,8 +831,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         child: SandikAsyncButton.kompakt(
           tur: SandikAsyncTur.cerceve,
           onPressed: () => _takipDegistir(takipte),
-          icon: Icon(takipte ? Icons.star_rounded : Icons.star_border_rounded,
-              size: 20, color: takipte ? context.c.gold : context.c.text90),
+          icon: SandikIkonGecisi(
+              takipte ? Icons.star_rounded : Icons.star_border_rounded,
+              boyut: 20, renk: takipte ? context.c.gold : context.c.text90),
           style: OutlinedButton.styleFrom(
             foregroundColor: context.c.text90,
             side: BorderSide(color: context.c.hairline),

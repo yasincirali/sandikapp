@@ -43,6 +43,7 @@ import 'add_asset_screen.dart';
 import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
+import '../widgets/sandik_ikon_gecisi.dart';
 
 /// Ortak serisinin arama satırı adındaki ayraç: "Ayşe · tüm portföyü".
 /// Üretildiği yer ve adın ilk parçasını okuyan iki yer aynı sabiti kullanır;
@@ -1186,8 +1187,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(on ? Icons.check_rounded : Icons.add_rounded,
-                        size: 14, color: on ? p.amberText : p.text58),
+                    SandikIkonGecisi(on ? Icons.check_rounded : Icons.add_rounded,
+                        boyut: 14, renk: on ? p.amberText : p.text58),
                     const SizedBox(width: SandikSpace.xs),
                     Text(
                       b.name,
