@@ -807,7 +807,7 @@ class SupabaseService {
   /// "bilinmeyen sütun" (PGRST204 / 42703) ile düşerse bunlar gövdeden
   /// çıkarılıp BİR KEZ yeniden denenir.
   ///
-  /// ## Neden (0159, 2026-10-20)
+  /// ## Neden (0162, 2026-10-20)
   /// `maliyet_bilinmiyor` bayraksız gelir; build migration'dan önce
   /// kullanıcıya ulaşırsa ekran görüntüsünden maliyetsiz ekleme PGRST204 ile
   /// tamamen düşerdi ("akışı bozma", yasin). Yeniden denemede kayıt eskisi

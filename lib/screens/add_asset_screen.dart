@@ -267,7 +267,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
     // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
     final eurobondKaydi = (a?.type ?? c?.type) == AssetType.eurobond;
-    // Alış fiyatı okunamadan kaydedilmiş lotta (0159) kayıtlı değer o günün
+    // Alış fiyatı okunamadan kaydedilmiş lotta (0162) kayıtlı değer o günün
     // fiyatıdır, kullanıcının maliyeti değil: alan BOŞ açılır ki "bilgi
     // eksik" akışından gelen kullanıcı tahmini kendi girdisi sanıp onaylamasın.
     final hamFiyat = eurobondKaydi || a?.maliyetBilinmiyor == true
@@ -2734,7 +2734,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // değer diye yazılmaz.
     if (_s.isEurobond) price = _s.eurobondBirimFiyati(price) ?? 0.0;
     // Kullanıcının YAZDIĞI fiyat — aşağıdaki fiyat çözümü boş alanı o günün
-    // kotasyonuyla doldurur; "maliyet bilinmiyor" işareti (0159) yalnız
+    // kotasyonuyla doldurur; "maliyet bilinmiyor" işareti (0162) yalnız
     // kullanıcı bir değer girdiyse düşer.
     final fiyatGirildi = price > 0;
 

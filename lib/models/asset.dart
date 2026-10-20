@@ -250,7 +250,7 @@ class Asset {
   /// anlamsızdır; ortak görünümü portföy süzgecine hiç girmez.
   final String? portfoyId;
 
-  /// Alış fiyatı okunamadan kaydedilmiş lot (0159 `maliyet_bilinmiyor`).
+  /// Alış fiyatı okunamadan kaydedilmiş lot (0162 `maliyet_bilinmiyor`).
   ///
   /// ## Neden (yasin onayı 2026-10-20)
   /// Ekran görüntüsü / toplu eklemede maliyeti okunamayan satır sepette
@@ -622,7 +622,7 @@ class Asset {
         // NULL kalır ve 0133 tetikleyicisi referans lottan miras alır.
         if (portfoyId != null && RemoteConfigService.instance.cokluPortfoy)
           'portfoy_id': portfoyId,
-        // Aynı gerekçe (0159), bayraksız: `true` yalnız maliyeti okunamayan
+        // Aynı gerekçe (0162), bayraksız: `true` yalnız maliyeti okunamayan
         // yeni lotta, `false` yalnız sunucudan dolu okunmuş lotta (sütun o
         // sunucuda var demektir). Sütunsuz sunucuya INSERT düşerse
         // `SupabaseService` anahtarsız yeniden dener.
@@ -711,7 +711,7 @@ class Asset {
             : null,
         // Migration 0133 öncesi satırlarda sütun yok → null = Ana portföy.
         portfoyId: m['portfoy_id'] as String?,
-        // Migration 0159 öncesi satırlarda sütun yok → null = işaret yok.
+        // Migration 0162 öncesi satırlarda sütun yok → null = işaret yok.
         maliyetBilinmiyor: m['maliyet_bilinmiyor'] as bool?,
       );
 }

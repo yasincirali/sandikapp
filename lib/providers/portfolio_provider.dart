@@ -638,7 +638,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     String? portfoyId,
     // Ölçüm: `asset_added.yol` (bkz. `AnalyticsService.eklemeYollari`).
     String yol = 'form',
-    // Alış fiyatı okunamadı, [purchasePrice] o günün fiyatı (0159). Yalnız
+    // Alış fiyatı okunamadı, [purchasePrice] o günün fiyatı (0162). Yalnız
     // `true` iken lota yazılır; aksi hâlde lot işaretsiz (eski gövde).
     bool maliyetBilinmiyor = false,
   }) async {

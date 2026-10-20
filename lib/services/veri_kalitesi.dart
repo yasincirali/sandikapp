@@ -8,7 +8,7 @@ import '../utils/tr_format.dart' show dayKey;
 /// İki ayrı boşluk aynı sonucu doğuruyordu — kullanıcının toplamı ya da
 /// kâr/zararı yanlış ve haberi yok:
 /// · [alisFiyati]: ekran görüntüsünden/toplu eklemede maliyeti okunamayan
-///   lot o günün fiyatıyla kaydedilir (`Asset.maliyetBilinmiyor`, 0159);
+///   lot o günün fiyatıyla kaydedilir (`Asset.maliyetBilinmiyor`, 0162);
 ///   kâr/zarar sıfır görünür.
 /// · [eskiFiyat]: elle fiyatlanan varlığın (listede olmayan fon, arsa,
 ///   koleksiyon) değeri kullanıcı güncellemedikçe hiç değişmez; 30 günden

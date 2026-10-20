@@ -203,7 +203,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           portfoyId: hedef,
           yol: item.yol,
           // Ekran görüntüsünden maliyeti okunamayan kalem: lot o günün
-          // fiyatıyla yazılır ama işaretli kalır (0159) — ana ekrandaki
+          // fiyatıyla yazılır ama işaretli kalır (0162) — ana ekrandaki
           // "bilgi eksik" satırı maliyeti girmeyi hatırlatır.
           maliyetBilinmiyor: item.maliyetSonra && item.price <= 0,
         );

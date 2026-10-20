@@ -1,4 +1,4 @@
--- 0159 — Alış fiyatı bilinmeyen lot işareti: assets.maliyet_bilinmiyor (2026-10-20)
+-- 0162 — Alış fiyatı bilinmeyen lot işareti: assets.maliyet_bilinmiyor (2026-10-20)
 --
 -- ## Neden (yasin onayı 2026-10-20, Ar-Ge raporu 13:15 #1 + 17:15 #3)
 -- Ekran görüntüsünden/toplu eklemede maliyeti okunamayan satır sepette
@@ -31,7 +31,7 @@ alter table public.assets
   add column if not exists maliyet_bilinmiyor boolean;
 
 comment on column public.assets.maliyet_bilinmiyor is
-  'Alis fiyati okunamadan kaydedilen lot (0159). true: maliyet tahmin (o gunun fiyati), kullanici girince false. NULL: isaret yok (eski satir).';
+  'Alis fiyati okunamadan kaydedilen lot (0162). true: maliyet tahmin (o gunun fiyati), kullanici girince false. NULL: isaret yok (eski satir).';
 
 -- ── Doğrulama ──────────────────────────────────────────────────────────────
 do $$
@@ -42,7 +42,7 @@ begin
        and column_name = 'maliyet_bilinmiyor' and is_nullable = 'YES'
        and data_type = 'boolean'
   ) then
-    raise exception '0159: assets.maliyet_bilinmiyor kurulmadi';
+    raise exception '0162: assets.maliyet_bilinmiyor kurulmadi';
   end if;
-  raise notice '0159 tamam: assets.maliyet_bilinmiyor (bos gecilebilir) yerinde.';
+  raise notice '0162 tamam: assets.maliyet_bilinmiyor (bos gecilebilir) yerinde.';
 end $$;

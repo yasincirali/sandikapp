@@ -23,7 +23,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'helpers/kaynak.dart';
 import 'helpers/yazi_olcegi.dart';
 
-/// "N varlıkta bilgi eksik" (2026-10-20): alış fiyatı okunamayan lot (0159)
+/// "N varlıkta bilgi eksik" (2026-10-20): alış fiyatı okunamayan lot (0162)
 /// + 30 günden eski elle fiyat tek satırda; Portföy etiketi; ekleme yolu
 /// ölçümü; tam tur ölçümü.
 const _uid = 'u1';
@@ -64,7 +64,7 @@ Asset _lot(
 List<Position> _poz(List<Asset> l) => aggregatePositions(l);
 
 void main() {
-  group('Asset.maliyetBilinmiyor (0159)', () {
+  group('Asset.maliyetBilinmiyor (0162)', () {
     test('null iken anahtar gövdeye HİÇ yazılmaz (sütunsuz sunucu)', () {
       expect(_lot('a').toSupabase().containsKey('maliyet_bilinmiyor'),
           isFalse);
