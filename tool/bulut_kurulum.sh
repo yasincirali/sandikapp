@@ -16,7 +16,8 @@
 # hiçbir şey yapmadan çıkar (bkz. adım 0).
 #
 # Sürümler CI ile aynı: Flutter 3.47.2 (`ci.yml`), codebase-memory-mcp 0.9.0
-# (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0, Perplexity MCP 1.3.0.
+# (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0, Perplexity MCP 1.3.0,
+# ruflo 3.56.10.
 set -uo pipefail
 
 REPO="${REPO:-/home/user/sandikapp}"
@@ -24,6 +25,7 @@ FLUTTER_VER=3.47.2
 CBM_VER=0.9.0
 UIUX_VER=1.5.0
 PPLX_VER=1.3.0
+RUFLO_VER=3.56.10
 
 log() { echo "[bulut_kurulum] $*"; }
 
@@ -80,10 +82,23 @@ command -v perplexity-mcp >/dev/null 2>&1 \
   || npm i -g "@perplexity-ai/mcp-server@${PPLX_VER}" >/dev/null 2>&1 \
   || log "UYARI: Perplexity MCP kurulamadı"
 
-# 4) Kayıt — yalnız bu proje yolu için, local kapsam.
+# 3c) ruflo MCP (github.com/ruvnet/ruflo, eski adı claude-flow; kullanıcı
+# isteği 2026-10-20: "tüm threadlerde kullanılabilir yap"). Ajan/swarm
+# orkestrasyonu, kalıcı vektör hafıza, iş akışı araçları (~360 araç).
+# README `npx -y ruflo@latest mcp start` diyor; bilerek kullanılmadı:
+# paket neredeyse her gün sürüm çıkarıyor, `@latest` her oturumda farklı
+# kod ve açılışta ~1 dk npm indirmesi demek. Sabit sürüm global kurulur.
+# Sürüm yükseltme elle: RUFLO_VER'i değiştir. Kendi kendini güncellemesi
+# (CLAUDE_FLOW_AUTO_UPDATE) ve arka plan daemon'u (RUFLO_DAEMON_AUTOSTART)
+# kayıtta kapatılır; anahtar istemez, kayda secret yazılmaz.
+{ command -v ruflo >/dev/null 2>&1 && ruflo --version 2>/dev/null | grep -q "v${RUFLO_VER}"; } \
+  || npm i -g "ruflo@${RUFLO_VER}" >/dev/null 2>&1 \
+  || log "UYARI: ruflo kurulamadı"
+
+# 4) Kayıt — local kapsam (yalnız bu proje yolu); ruflo user kapsamında.
 if command -v claude >/dev/null 2>&1; then
   ( cd "$REPO" 2>/dev/null || cd /
-    for s in codebase-memory-mcp dart ui-ux-pro-mcp perplexity; do
+    for s in codebase-memory-mcp dart ui-ux-pro-mcp perplexity ruflo; do  # ruflo: eski local kayıt
       claude mcp remove -s local "$s" >/dev/null 2>&1 || true
     done
     claude mcp add -s local codebase-memory-mcp -- /opt/cbm/codebase-memory-mcp >/dev/null
@@ -95,6 +110,15 @@ if command -v claude >/dev/null 2>&1; then
         && log "Perplexity MCP kaydedildi"
     else
       log "Perplexity MCP atlandı (PERPLEXITY_API_KEY ortamda yok)"
+    fi
+    # ruflo `.mcp.json`'da yok, bu yüzden user kapsamı yeter ve tercih edilir:
+    # sandikapp dışındaki repolarda (piggy-crew, warranty-vault, birdie-smash)
+    # ve /home/user'da açılan oturumlar da görür ("tüm threadler").
+    claude mcp remove -s user ruflo >/dev/null 2>&1 || true
+    if command -v ruflo >/dev/null 2>&1; then
+      # Ad `-e`'den önce: `-e` çok değerli, sonrasındaki adı da yutuyor (denendi).
+      claude mcp add -s user ruflo -e CLAUDE_FLOW_AUTO_UPDATE=false -e RUFLO_DAEMON_AUTOSTART=0 \
+        -- "$(command -v ruflo)" mcp start >/dev/null && log "ruflo MCP kaydedildi"
     fi
   ) && log "MCP sunucuları kaydedildi" || log "UYARI: MCP kaydı başarısız"
 else

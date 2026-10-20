@@ -367,6 +367,9 @@ Dördüncü sunucu **perplexity** (resmi `@perplexity-ai/mcp-server`, 2026-10-12
 web araması/araştırma): yalnız ortamda `PERPLEXITY_API_KEY` varsa kaydedilir;
 anahtar repoya/kayda yazılmaz. Sorgu için ağ politikasında `api.perplexity.ai`
 izinli olmalı. Yerel `.mcp.json`'da yok (yasin isterse kendi makinesine ekler).
+Beşinci sunucu **ruflo** (`ruflo@3.56.10`, eski adı claude-flow; 2026-10-20): ajan/swarm
+orkestrasyonu + kalıcı hafıza, ~360 araç. `-s user` kapsamında kaydedilir ki tüm repolardaki
+thread'ler görsün; sürüm sabit, kendi kendini güncelleme ve daemon kapalı. Yerel `.mcp.json`'da yok.
 
 ---
 **Son güncelleme:** 2026-10-10 (Apple HIG kontrolü kuralı; 2026-10-08: yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
