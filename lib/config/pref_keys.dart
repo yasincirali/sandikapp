@@ -159,4 +159,10 @@ class PrefKeys {
   /// eksiklerin anahtarları (`VeriEksigi.anahtar`). Kişiye özel. Yeni bir
   /// eksik çıkınca satır yeniden görünür; kapatılanlar bir daha sorulmaz.
   static const veriKalitesiKapatilan = 'pref_veri_kalitesi_kapatilan';
+
+  /// Ana ekran özellik önerisi kartı (`ozellik_onerisi.dart`): kapatılan ya
+  /// da dokunulan önerilerin anahtarları (`OzellikOnerisi.anahtar`) ve son
+  /// kapatmanın zamanı (epoch ms; sıradaki öneri için bekleme). Kişiye özel.
+  static const ozellikOnerisiKapatilan = 'pref_ozellik_onerisi_kapatilan';
+  static const ozellikOnerisiSonKapatma = 'pref_ozellik_onerisi_son_kapatma';
 }

@@ -5291,5 +5291,14 @@
   "vkFiyatGunOnce": "{count, plural, =1{Price entered 1 day ago} other{Price entered {count} days ago}}",
   "vkFiyatBaslik": "Current price of {name}",
   "vkFiyatAciklama": "You enter this holding's price yourself; your total uses this number. Your last price is from {date}.",
-  "vkHepsiTamam": "All set, your total is up to date."
+  "vkHepsiTamam": "All set, your total is up to date.",
+  "onerAlarmBaslik": "Set a price alert",
+  "onerAlarmAlt": "We'll let you know when an asset reaches your price",
+  "onerTakipBaslik": "Watch before you buy",
+  "onerTakipAlt": "Follow stocks and funds without adding them to your portfolio",
+  "onerOrtakBaslik": "Add a partner, track together",
+  "onerOrtakAlt": "See your partner's or family's portfolio next to yours",
+  "onerZirveBaslik": "What's in the top portfolios?",
+  "onerZirveAlt": "See how the best-performing portfolios are allocated",
+  "onerKapat": "Hide this suggestion"
 }

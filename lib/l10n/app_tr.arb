@@ -5932,5 +5932,14 @@
   "@vkFiyatBaslik": {"placeholders": {"name": {"type": "String"}}},
   "vkFiyatAciklama": "Bu varlığın fiyatını sen giriyorsun; toplamın bu sayıyla hesaplanır. Son girdiğin fiyat {date} tarihli.",
   "@vkFiyatAciklama": {"placeholders": {"date": {"type": "String"}}},
-  "vkHepsiTamam": "Bilgiler tamam, toplamın güncel."
+  "vkHepsiTamam": "Bilgiler tamam, toplamın güncel.",
+  "onerAlarmBaslik": "Fiyat alarmı kur",
+  "onerAlarmAlt": "Bir varlığın belirlediğin fiyata gelince haber verelim",
+  "onerTakipBaslik": "Almadan önce takibe al",
+  "onerTakipAlt": "Merak ettiğin hisse ve fonları portföye eklemeden izle",
+  "onerOrtakBaslik": "Ortak ekle, birlikte izleyin",
+  "onerOrtakAlt": "Eşinin ya da ailenin portföyünü seninkiyle tek ekranda gör",
+  "onerZirveBaslik": "Zirvedeki portföylerde ne var?",
+  "onerZirveAlt": "En iyi getiren portföylerin varlık dağılımına göz at",
+  "onerKapat": "Bu öneriyi gizle"
 }
