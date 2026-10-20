@@ -1,8 +1,11 @@
 // Yurt içi kotasyon kaydı — saf satır üretimi (0101).
 //
 //   deno test supabase/tests/yurt_ici_kotasyon_test.ts
-import { assertEquals } from 'jsr:@std/assert@1';
+import { assertEquals, assertRejects } from 'jsr:@std/assert@1';
 import {
+  tekrarDene,
+  YURT_ICI_DENEME_BEKLEMELERI_MS,
+  YURT_ICI_DENEME_ZAMAN_ASIMI_MS,
   YURT_ICI_SEMBOLLER,
   yurtIciSatirlari,
 } from '../functions/_shared/live_prices.ts';
@@ -40,4 +43,35 @@ Deno.test('liste tüm altın ayarlarını ve üç TL dövizini kapsar', () => {
   for (const s of ['ALTIN_GRAM', 'ALTIN_CEYREK', 'ALTIN_GRAM24', 'USDTRY=X', 'EURTRY=X', 'GBPTRY=X']) {
     assertEquals(YURT_ICI_SEMBOLLER.includes(s), true, s);
   }
+});
+
+Deno.test('kaynak bir kez düşerse aynı turda yeniden denenir', async () => {
+  let n = 0;
+  const beklenen: number[] = [];
+  const r = await tekrarDene(
+    () => (++n < 3 ? Promise.reject(new Error('yok')) : Promise.resolve('ok')),
+    [1, 2],
+    (ms) => { beklenen.push(ms); return Promise.resolve(); },
+  );
+  assertEquals(r, 'ok');
+  assertEquals(n, 3);
+  assertEquals(beklenen, [1, 2]);
+});
+
+Deno.test('denemeler biterse son hata atılır (sahte nokta yazılmaz)', async () => {
+  let n = 0;
+  await assertRejects(
+    () => tekrarDene(() => { n++; return Promise.reject(new Error('yok')); },
+      [1, 2], () => Promise.resolve()),
+    Error,
+    'yok',
+  );
+  assertEquals(n, 3);
+});
+
+Deno.test('deneme bütçesi pg_net 30 sn zaman aşımının altında kalır', () => {
+  const toplam = YURT_ICI_DENEME_ZAMAN_ASIMI_MS *
+      (YURT_ICI_DENEME_BEKLEMELERI_MS.length + 1) +
+    YURT_ICI_DENEME_BEKLEMELERI_MS.reduce((a, b) => a + b, 0);
+  assertEquals(toplam < 30_000, true);
 });
