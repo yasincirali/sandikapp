@@ -23,6 +23,7 @@ import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_skeleton.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
@@ -98,6 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_watchlist'),
         builder: (_) => const AddWatchlistScreen(),
         fullscreenDialog: true,
       ),
@@ -118,6 +120,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'genel_arama'),
         builder: (_) => GenelAramaScreen(
           tumHareketleriAc: tumHareketleriAc,
           bildirimleriAc: _scrollToSignals,
@@ -230,6 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             pushGuarded(
               context,
               adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'asset_detail'),
                   builder: (_) => AssetDetailScreen(
                         asset: gorunum?.asset ?? asset,
                         lots: gorunum?.lots ?? [asset],
@@ -320,6 +324,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'portfolio_performance'),
             builder: (_) => const PortfolioPerformanceScreen(
               showBackButton: true,
               initialOzet: true,
@@ -334,6 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'portfolio_performance'),
             builder: (_) => const PortfolioPerformanceScreen(
               showBackButton: true,
               initialOzet: true,
@@ -345,6 +351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         pushGuarded(
           context,
           adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'portfolio_performance'),
             builder: (_) => const PortfolioPerformanceScreen(
               showBackButton: true,
               initialOzet: true,
@@ -423,20 +430,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         builder: (_) {
           // Hata önceliği: hangisi patlarsa tek hata görünümü.
           final error = asyncState.error ?? asyncPartnerAssets?.error;
-          if (error != null) {
-            return SandikErrorView(error: error, onRetry: _reload);
-          }
-          // Tek loading: ikisi birden hazır olana kadar.
           final myState = asyncState.valueOrNull;
-          if (myState == null ||
+          // Yükleyici → gövde çapraz solar (2026-10-14): logo tek karede kaybolup ekran birden doluyordu.
+          // Anahtar yalnız hâl; gövde içindeki her güncelleme yerinde.
+          final String hal;
+          final Widget govde;
+          if (error != null) {
+            hal = 'hata';
+            govde = SandikErrorView(error: error, onRetry: _reload);
+          } else if (myState == null ||
               (hasPartners && asyncPartnerAssets?.valueOrNull == null)) {
-            return const SandikLoadingScreen();
+            // Tek loading: ikisi birden hazır olana kadar.
+            hal = 'yukleniyor';
+            govde = const SandikLoadingScreen();
+          } else {
+            hal = 'icerik';
+            govde = _buildBody(
+              myState,
+              asyncPartnerAssets?.valueOrNull ?? const {},
+              partners,
+            );
           }
-          return _buildBody(
-            myState,
-            asyncPartnerAssets?.valueOrNull ?? const {},
-            partners,
-          );
+          return SandikIcerikGecisi(
+              tamEkran: true, anahtar: hal, child: govde);
         },
       ),
     );
@@ -708,6 +724,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               tumHareketleriAc: () => pushGuarded(
                                 context,
                                 adaptiveRoute<void>(
+                                  settings: const RouteSettings(name: 'all_transactions'),
                                   builder: (_) => AllTransactionsScreen(
                                     allPartnerAssets: allPartnerAssets,
                                     partners: partners,
@@ -1139,6 +1156,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           onTap: () => pushGuarded(
                             context,
                             adaptiveRoute<void>(
+                              settings: const RouteSettings(name: 'all_transactions'),
                               builder: (_) => AllTransactionsScreen(
                                 allPartnerAssets: allPartnerAssets,
                                 partners: partners,
@@ -1508,6 +1526,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                       onTap: () => pushGuarded(
                         context,
                         adaptiveRoute<void>(
+                            settings: const RouteSettings(name: 'price_alerts'),
                             builder: (_) => const PriceAlertsScreen()),
                       ),
                       // En az 44pt (HIG denetimi 2026-10-10): ince metin
@@ -2043,15 +2062,15 @@ class _EmptyPortfolioCta extends StatelessWidget {
       child: IlkVarlikVitrini(
         onSec: (IlkVarlikSecimi s) => pushGuarded(
           context,
-          adaptiveRoute<void>(builder: (_) => AddAssetScreen(hizliSecim: s)),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'add_asset'), builder: (_) => AddAssetScreen(hizliSecim: s)),
         ),
         onDiger: () => pushGuarded(
           context,
-          adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'add_asset'), builder: (_) => const AddAssetScreen()),
         ),
         onEkstre: () => pushGuarded(
           context,
-          adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+          adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
         ),
       ),
     );

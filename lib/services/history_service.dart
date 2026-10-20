@@ -1489,20 +1489,29 @@ class HistoryService {
     // uç taşıması da gerekmez. Karar `FiyatKaynagi.yurtIciGunIciSekli`'nde.
     //
     // Hafta içi seri canlıyken sorgu HİÇ atılmaz; davranış birebir eski.
+    //
+    // Altın bu bayraktan bağımsız: GÜNLÜK'ü hafta içi de kayıttan kurulur
+    // (`FiyatKaynagi.altinYurtIciGunlukMu`, 2026-10-19 — aynı portföy iki
+    // açılışta zıt işaret gösteriyordu).
     final yurtIciSlots = <String, Map<int, double>>{};
-    if (yurtIciSekilAcik()) {
-      final adaylar = <String, Map<int, double>>{};
-      for (final a in assets) {
-        if (!a.isBuy || a.quantity <= 0) continue;
-        if (!FiyatKaynagi.yurtIciKayitli(a.ticker)) continue;
-        if (a.type == AssetType.altin) {
-          adaylar[a.ticker] = goldSlots;
-        } else if (a.type == AssetType.doviz) {
-          adaylar[a.ticker] = tickerSlots[a.ticker] ?? const {};
+    // Bayraktan bağımsız kayıtla çizilen altınlar — geçmiş seans çizilirken
+    // (kayıt yalnızca bugünü taşır) eski yola bırakılır.
+    final altinKaydiZorunlu = <String>{};
+    final dovizKaydi = yurtIciSekilAcik();
+    final adaylar = <String, ({Map<int, double> seri, bool herZaman})>{};
+    for (final a in assets) {
+      if (!a.isBuy || a.quantity <= 0) continue;
+      if (!FiyatKaynagi.yurtIciKayitli(a.ticker)) continue;
+      if (FiyatKaynagi.altinYurtIciGunlukMu(a)) {
+        adaylar[a.ticker] = (seri: goldSlots, herZaman: true);
+      } else if (dovizKaydi && a.type == AssetType.doviz) {
+        final seri = tickerSlots[a.ticker] ?? const <int, double>{};
+        if (FiyatKaynagi.uluslararasiSustu(seri, now)) {
+          adaylar[a.ticker] = (seri: seri, herZaman: false);
         }
       }
-      adaylar.removeWhere(
-          (_, seri) => !FiyatKaynagi.uluslararasiSustu(seri, now));
+    }
+    if (adaylar.isNotEmpty) {
       final gunBasi = dayKey(now);
       final kayitlar = await Future.wait([
         for (final s in adaylar.keys) _yurtIciGetir(s, gunBasi),
@@ -1510,12 +1519,16 @@ class HistoryService {
       var i = 0;
       for (final e in adaylar.entries) {
         final sekil = FiyatKaynagi.yurtIciGunIciSekli(
-          uluslararasi: e.value,
+          uluslararasi: e.value.seri,
           yurtIci: kayitlar[i++],
           simdi: now,
           normalize: normalizeSlot,
+          herZaman: e.value.herZaman,
         );
-        if (sekil != null) yurtIciSlots[e.key] = sekil;
+        if (sekil != null) {
+          yurtIciSlots[e.key] = sekil;
+          if (e.value.herZaman) altinKaydiZorunlu.add(e.key);
+        }
       }
     }
 
@@ -1963,7 +1976,10 @@ class HistoryService {
           expected++;
           double? v;
 
-          final yurtIci = yurtIciSlots[a.ticker];
+          final yurtIci =
+              gecmisSeans && altinKaydiZorunlu.contains(a.ticker)
+                  ? null
+                  : yurtIciSlots[a.ticker];
           if (yurtIci != null) {
             // Ekrandaki kotasyonun kendi kaydı: birim fiyat doğrudan TL.
             // Kayıttan önceki slot (gece yarısını geçen ilk tur gelmeden)

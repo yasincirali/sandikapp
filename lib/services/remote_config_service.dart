@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../models/asset_type.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
@@ -554,47 +553,98 @@ class RemoteConfigService {
   /// okunmaz (yalnız yerel `RC_ACIK` ve test kancası).
   bool get premiumOzellikleriGorunur => paywallEnabled || yonetici;
 
-  /// Uygulamanın hangi kanaldan kurulduğunu Remote Config'e özel sinyal
-  /// (`dagitim`) olarak bildirir. Console'da "TestFlight" koşulu bu sinyale
-  /// bağlanır: `dagitim` tam olarak `testflight`.
+  /// Test kitlesi HESAPLA seçilir: oturumdaki hesabın kimliği Remote
+  /// Config'e özel sinyal (`hesap`) olarak gider; Console'daki "Test
+  /// kitlesi" koşulu bu sinyali testçi hesap kimlikleri listesiyle eşler.
   ///
-  /// ## Neden (paywall kapıları incelemesi, 2026-10-11)
-  /// Koşul sürüme (1.1.6) bağlıydı. TestFlight'taki build ile mağazaya
-  /// çıkan build AYNI ikili dosyadır; sürüm ya da build numarası koşulu o
-  /// sürüm mağazaya çıktığı an bütün müşterileri de kapsar. O koşulda
-  /// `paywall_enabled` açık ve `premium_hediye_kesim` = 2020 olduğu için
-  /// mağaza kullanıcısının hepsi bir anda kilit görürdü. Ayrımı yalnız
-  /// çalışma anı yapabilir: iOS'ta makbuz adı (`sandboxReceipt` =
-  /// TestFlight), `package_info_plus` bunu `installerStore` olarak verir.
-  /// Android'de kapalı test ile üretim aynı mağazadan (Play) gelir, ayırt
-  /// edilemez; orada test kitlesi kullanıcı/cihaz listesiyle seçilir.
+  /// ## Neden (App Store 2.3.1(a), 2026-10-14)
+  /// 2026-10-11'de (#173) test kitlesi kurulum KANALIYLA seçiliyordu
+  /// (`dagitim` sinyali: TestFlight mı, mağaza mı). Apple bunu "inceleme
+  /// ortamını tespit edip Remote Config ile farklı davranma" sayıp
+  /// uygulamaları reddediyor (Guideline 2.3.1(a), "hidden features"):
+  /// inceleme cihazı da TestFlight gibi görünür, yani inceleyen kişi
+  /// mağaza kullanıcısının görmeyeceği değerleri (paywall, sunucu) görürdü.
+  /// Kural (CLAUDE.md "Mağaza incelemesi"): uygulama nereden kurulduğunu
+  /// hiçbir yere bildirmez ve buna göre davranmaz; ayrım kişiye göre
+  /// yapılır. İnceleme hesabı listede olmadığı için mağaza değerlerini alır.
   ///
-  /// Sinyal yazılamazsa (eski SDK, ağ) sessizce geçilir: koşul eşleşmez,
-  /// varsayılan değerler geçerli olur, yani güvenli taraf.
-  Future<void> _dagitimSinyaliniYaz() async {
+  /// Sürüm koşulu kullanılmaz: TestFlight build'i mağazaya çıkan ikilinin
+  /// aynısıdır, sürüm koşulu yayın anında bütün müşterileri kapsardı.
+  /// Kimlik Analytics'e zaten `setUserId` ile gidiyor; yeni bir alıcı yok.
+  ///
+  /// Giriş: sinyal yazılır ve hemen fetch edilir (15 dk aralığı beklenmez,
+  /// testçi Frankfurt'a girişten hemen sonra yönlensin; seyrek olay, kota
+  /// sorunu yok). Çıkış: sinyal boşaltılır, fetch zorlanmaz — oturum
+  /// tazelenirken anlık `null` sunucu bayrağını sallamasın; sıradaki olağan
+  /// fetch mağaza değerlerine döner. Sinyal yazılamazsa (eski SDK, ağ)
+  /// koşul eşleşmez, mağaza değerleri geçerli: güvenli taraf.
+  ///
+  /// RC açılışta ertelenmiş kurulur; oturum ondan önce gelirse değer
+  /// saklanır ve `init` onu ilk fetch'ten ÖNCE yazar (ikinci fetch yok).
+  Future<void> hesabiBildir(String? kullaniciId) async {
+    final deger = hesapSinyali(kullaniciId);
+    final rc = _rc;
+    if (rc == null || !_initialized) {
+      _bekleyenHesapSinyali = deger;
+      return;
+    }
+    if (deger == _sonHesapSinyali) return;
+    _sonHesapSinyali = deger;
     try {
-      final bilgi = await PackageInfo.fromPlatform();
-      await _rc!.setCustomSignals({
-        'dagitim': dagitimKanali(bilgi.installerStore, debug: kDebugMode),
-      });
+      await rc.setCustomSignals({hesapSinyaliAnahtari: deger});
+      if (deger.isEmpty) return;
+      await rc.setConfigSettings(RemoteConfigSettings(
+        fetchTimeout: const Duration(seconds: 10),
+        minimumFetchInterval: Duration.zero,
+      ));
+      await rc.fetchAndActivate();
+      _sunucuyaBildir();
     } catch (e, st) {
-      CrashReporter.report(e, st,
-          reason: 'remote_config_service.dagitimSinyali');
+      CrashReporter.report(e, st, reason: 'remote_config_service.hesabiBildir');
+    } finally {
+      if (deger.isNotEmpty) {
+        try {
+          await rc.setConfigSettings(_ayarlar);
+        } catch (_) {}
+      }
     }
   }
 
-  /// Saf: kurulum kaynağından RC `dagitim` sinyali.
-  @visibleForTesting
-  static String dagitimKanali(String? installerStore, {required bool debug}) {
-    if (debug) return 'debug';
-    return switch (installerStore) {
-      'com.apple.testflight' => 'testflight',
-      'com.apple' => 'app_store',
-      'com.apple.simulator' => 'simulator',
-      'com.android.vending' => 'play',
-      _ => 'diger',
-    };
+  String? _sonHesapSinyali;
+  String? _bekleyenHesapSinyali;
+
+  /// `init` içinde, ilk fetch'ten önce: erken gelen oturumun sinyali.
+  Future<void> _bekleyenHesabiYaz() async {
+    final deger = _bekleyenHesapSinyali;
+    if (deger == null) return;
+    try {
+      await _rc!.setCustomSignals({hesapSinyaliAnahtari: deger});
+      _sonHesapSinyali = deger;
+    } catch (e, st) {
+      CrashReporter.report(e, st,
+          reason: 'remote_config_service.bekleyenHesap');
+    }
   }
+
+  /// Console koşulunun eşlediği özel sinyal adı.
+  static const hesapSinyaliAnahtari = 'hesap';
+
+  /// Saf: oturumdaki hesaptan sinyal değeri (oturum yok → boş).
+  @visibleForTesting
+  static String hesapSinyali(String? kullaniciId) =>
+      kullaniciId?.trim().toLowerCase() ?? '';
+
+  /// Olağan fetch ayarı. Debug'da hemen; prod'da 15 dk. Eskiden 1 saatti.
+  /// Köprü sürümünde (K1) bu aralık, geçiş gecesi gerçek zamanlı bildirimi
+  /// KAÇIRAN açık bir uygulamanın dondurulmuş Tokyo'da en fazla ne kadar
+  /// kalacağıdır (ön plana dönüşte `refresh()`). 2026-09-27 emülatör
+  /// denemesinde gerçek zamanlı yol ulaşmadı; soğuk açılış yolu ~5 sn'de
+  /// çalıştı. 15 dk RC kotasının çok altında (istemci başına saatte 4 fetch).
+  static final _ayarlar = RemoteConfigSettings(
+    fetchTimeout: const Duration(seconds: 10),
+    minimumFetchInterval:
+        kDebugMode ? Duration.zero : const Duration(minutes: 15),
+  );
 
   bool _yerelVeyaTest(String anahtar) =>
       testAcik.contains(anahtar) || _yerelAcik.contains(anahtar);
@@ -613,19 +663,10 @@ class RemoteConfigService {
     if (_initialized) return;
     try {
       _rc = FirebaseRemoteConfig.instance;
-      await _rc!.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        // Debug'da hemen; prod'da 15 dk. Eskiden 1 saatti. Köprü sürümünde
-        // (K1) bu aralık, geçiş gecesi gerçek zamanlı bildirimi KAÇIRAN açık
-        // bir uygulamanın dondurulmuş Tokyo'da en fazla ne kadar kalacağıdır
-        // (ön plana dönüşte `refresh()`). 2026-09-27 emülatör denemesinde
-        // gerçek zamanlı yol ulaşmadı; soğuk açılış yolu ~5 sn'de çalıştı.
-        // 15 dk RC kotasının çok altında (istemci başına saatte 4 fetch).
-        minimumFetchInterval:
-            kDebugMode ? Duration.zero : const Duration(minutes: 15),
-      ));
+      // Aralığın gerekçesi `_ayarlar`'da.
+      await _rc!.setConfigSettings(_ayarlar);
       await _rc!.setDefaults(_defaults);
-      await _dagitimSinyaliniYaz();
+      await _bekleyenHesabiYaz();
       // Fetch başlat ama beklet — offline'da default'lar geçerli olur.
       // Bitince sunucu/güncelleme kararı yeniden değerlendirilir.
       CrashReporter.arkaPlan(
@@ -652,6 +693,12 @@ class RemoteConfigService {
             reason: 'remote_config_service.onConfigUpdated'),
       );
       _initialized = true;
+      // Kurulum sürerken gelen oturum değişimi kaçmasın.
+      final bekleyen = _bekleyenHesapSinyali;
+      if (bekleyen != null && bekleyen != _sonHesapSinyali) {
+        CrashReporter.arkaPlan(hesabiBildir(bekleyen),
+            reason: 'remote_config_service.bekleyenHesap.init');
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('RemoteConfigService init failed: $e');
     }

@@ -55,7 +55,11 @@ class HaftaOzetiScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: SandikAppBar(title: l10n.weekTitle),
-      body: liste.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([liste]),
+        child: liste.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(SandikSpace.md),
           child: SandikSkeletonList(rows: 3),
@@ -125,6 +129,7 @@ class HaftaOzetiScreen extends ConsumerWidget {
           );
         },
       ),
+      ),
     );
   }
 }
@@ -191,7 +196,7 @@ class _AylikRaporSatiri extends StatelessWidget {
     return SandikCard(
       onTap: () => pushGuarded(
         context,
-        adaptiveRoute<void>(builder: (_) => AylikRaporScreen(donem: donem)),
+        adaptiveRoute<void>(settings: const RouteSettings(name: 'aylik_rapor'), builder: (_) => AylikRaporScreen(donem: donem)),
       ),
       child: Row(
         children: [
@@ -240,6 +245,7 @@ class _Satir extends StatelessWidget {
       onTap: () => pushGuarded(
         context,
         adaptiveRoute<void>(
+          settings: const RouteSettings(name: 'asset_detail'),
           builder: (_) => AssetDetailScreen(
             asset: satir.pozisyon.asDisplayAsset(),
             showBackButton: true,
@@ -291,6 +297,7 @@ class _Satir extends StatelessWidget {
                     onPressed: () => pushGuarded(
                       context,
                       adaptiveRoute<void>(
+                        settings: const RouteSettings(name: 'analiz_notu'),
                         builder: (_) => AnalizNotuScreen(
                           ticker: not.ticker,
                           tur: 'haftalik',

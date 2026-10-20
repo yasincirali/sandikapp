@@ -24,6 +24,10 @@ import '../services/remote_config_service.dart';
 import '../services/review_prompt_service.dart';
 import '../l10n/l10n.dart';
 import '../services/varlik_eklendi.dart';
+import '../services/ekran_olcumu.dart';
+import '../services/hizli_eylemler.dart';
+import 'genel_arama_screen.dart';
+import 'price_alerts_screen.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -88,11 +92,23 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // o yüzden dinleyiciyi bağlamakla yetinmeyip mevcut değeri de bir kez
     // okuyoruz. Yalnızca dinleseydik, uygulama kapalıyken yapılan dokunuş
     // sessizce kaybolurdu.
+    // Ekran ölçümü: açılış sekmesi de bir görüntülemedir.
+    EkranOlcumu.instance.sekmeDegisti(_currentIndex);
     MainNavigationScreen.sekmeIstegi.addListener(_sekmeIstegiGeldi);
     VarlikEklendi.kanal.addListener(_varlikEklendi);
     if (MainNavigationScreen.sekmeIstegi.value != null) {
       Future.microtask(_sekmeIstegiGeldi);
     }
+
+    // İkon kısayolu (bkz. `HizliEylemler`): sekme isteğiyle aynı desen —
+    // kabuk kurulmadan (kilit, giriş) gelen istek burada uygulanır.
+    HizliEylemler.istek.addListener(_hizliEylemGeldi);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      CrashReporter.arkaPlan(HizliEylemler.kur(context.l10n),
+          reason: 'MainNavigation.hizliEylemler');
+      _hizliEylemGeldi();
+    });
 
     // Ortak nabzın fiyat turu BURADAN bağlanır — tek sahip.
     //
@@ -151,7 +167,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // birikir ve tek dokunuş birden çok kez işlenir.
     MainNavigationScreen.sekmeIstegi.removeListener(_sekmeIstegiGeldi);
     VarlikEklendi.kanal.removeListener(_varlikEklendi);
+    HizliEylemler.istek.removeListener(_hizliEylemGeldi);
     _fiyatTuruBagi?.call();
+    EkranOlcumu.instance.sekmelerKapandi();
     super.dispose();
   }
 
@@ -215,9 +233,44 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     });
   }
 
+  /// İkon kısayolu: isteği TÜKETİR ve ilgili ekranı açar. Açılan ekranlar
+  /// uygulamadaki giriş noktalarıyla aynı (Ekle düğmesi, Fiyat alarmları,
+  /// arama); kısayol yeni bir kapı açmaz. "Alarm kur" alarmlar ekranını
+  /// açar: soğuk açılışta portföy henüz yüklenmemiş olabilir, aday listesi
+  /// boş kalıp "önce varlık ekle" derdi; ekranın kendi "Alarm kur"
+  /// düğmesi listeyi hazır veriyle kurar.
+  void _hizliEylemGeldi() {
+    final e = HizliEylemler.istek.value;
+    if (e == null || !mounted) return;
+    HizliEylemler.istek.value = null;
+    switch (e) {
+      case HizliEylem.varlikEkle:
+        CrashReporter.arkaPlan(_showAddAsset(),
+            reason: 'MainNavigation.hizliEylem.ekle');
+      case HizliEylem.alarmKur:
+        pushGuarded(
+          context,
+          adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'price_alerts'),
+            builder: (_) => const PriceAlertsScreen(),
+          ),
+        );
+      case HizliEylem.arama:
+        pushGuarded(
+          context,
+          adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'genel_arama'),
+            builder: (_) => const GenelAramaScreen(),
+            fullscreenDialog: true,
+          ),
+        );
+    }
+  }
+
   void _sekmeyeGec(int i) {
     setState(() => _currentIndex = i);
     MainNavigationScreen.aktifSekme.value = i;
+    EkranOlcumu.instance.sekmeDegisti(i);
   }
 
   void _onItemTapped(int index) {
@@ -258,6 +311,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final added = await pushGuarded<Object>(
       context,
       adaptiveRoute(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => const AddAssetScreen(),
         fullscreenDialog: true,
       ),
@@ -291,6 +345,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (added == true || added is AlarmAdayi) {
       setState(() => _currentIndex = _portfolioTab);
       MainNavigationScreen.aktifSekme.value = _portfolioTab;
+      EkranOlcumu.instance.sekmeDegisti(_portfolioTab);
     }
     CrashReporter.arkaPlan(
       ref.read(portfolioProvider.notifier).refreshPrices(),

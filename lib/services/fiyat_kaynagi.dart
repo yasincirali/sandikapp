@@ -373,6 +373,30 @@ class FiyatKaynagi {
     return altinMi(t) || t == usdTry || t == 'EURTRY=X' || t == 'GBPTRY=X';
   }
 
+  /// Altının GÜNLÜK değeri her zaman yurt içi kayıttan mı kurulur?
+  ///
+  /// ## Neden (kullanıcı bildirimi 2026-10-19: "bir açtığımda portföyüm %1
+  /// eksi, bir açtığımda artı")
+  /// Altının gün içi serisi iki kaynaktan birleştiriliyordu: uçlar yurt
+  /// içi kotasyondan (`altinUrunUclari`), şekil uluslararası altından; bir
+  /// ayarın günlük yüzdesi o oturumda henüz gelmemişse aynı ayar eski sabit
+  /// çarpan yoluna düşüyordu ve gün başı uluslararası serinin ilk noktası
+  /// oluyordu. Ölçüldü (sunucu kaydı, 19 Ekim): Kapalıçarşı 17:00'de
+  /// kapanınca 22 ayar ve çeyrek +%0,01'de dondu, uluslararası altın −%0,5'e
+  /// indi. Hangi yolun seçildiği fiyatların geliş sırasına bağlı olduğu için
+  /// aynı portföy bir açılışta eksi, öbüründe artı gösteriyordu.
+  ///
+  /// Muadil uygulamaların kuralı tek kaynak: ürünün değeri ve günlük
+  /// değişimi yalnızca o ürünün kendi fiyatından. Sunucu ekrandaki
+  /// kotasyonu beş dakikada bir kaydettiği için (`yurt_ici_kotasyon`, 0101)
+  /// altının GÜNLÜK'ü hafta içi de bu kayıttan çizilir; uluslararası seri
+  /// günlük hesaba girmez. Kayıt yoksa (ağ, demo) eski yol kalır.
+  ///
+  /// Döviz bu karara girmez: hafta içi Yahoo kuru ile kotasyon aynı ölçekte
+  /// ve sorun yalnızca altının ayar primlerinde çıktı.
+  static bool altinYurtIciGunlukMu(Asset a) =>
+      a.type == AssetType.altin && yurtIciKayitli(a.ticker);
+
   /// Uluslararası seri bu kadar süredir nokta üretmiyorsa SUSMUŞ sayılır.
   ///
   /// Hafta içi döviz ve spot altın 5 dakikada bir nokta verir; tek boşluk
@@ -397,13 +421,17 @@ class FiyatKaynagi {
   /// bugünün gün başına karışırsa "bugün" yüzdesi yanlış güne bağlanır
   /// (`HistoryService._sonIyiOku` ile aynı kural). İki noktadan az kayıt
   /// şekil değildir. Damgalar [normalize] ile çağıranın ızgarasına oturur.
+  ///
+  /// [her zaman] `true` ise uluslararası serinin durumuna bakılmaz: altın
+  /// için kayıt, varsa, GÜNLÜK'ün TEK kaynağıdır (bkz. [altinYurtIciGunlukMu]).
   static Map<int, double>? yurtIciGunIciSekli({
     required Map<int, double> uluslararasi,
     required List<(int, double)> yurtIci,
     required DateTime simdi,
     required int Function(int ms) normalize,
+    bool herZaman = false,
   }) {
-    if (!uluslararasiSustu(uluslararasi, simdi)) return null;
+    if (!herZaman && !uluslararasiSustu(uluslararasi, simdi)) return null;
     final gunBasi = dayKey(simdi).millisecondsSinceEpoch;
     final simdiMs = simdi.millisecondsSinceEpoch;
     final out = <int, double>{};

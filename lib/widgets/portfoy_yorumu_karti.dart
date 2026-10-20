@@ -7,6 +7,7 @@ import '../providers/portfoy_yorumu_provider.dart';
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../services/period_summary_service.dart'
     show PeriodSummaryService, SummaryPeriod;
+import '../services/destek_direnc.dart';
 import '../services/portfoy_yorumu_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/yorum_notu.dart';
@@ -267,6 +268,8 @@ class VarlikYorumuKarti extends ConsumerStatefulWidget {
     this.varlikAdi,
     required this.veriHazir,
     required this.paketKur,
+    this.seviyeler,
+    this.fiyatYaz,
   });
 
   final SummaryPeriod period;
@@ -281,6 +284,12 @@ class VarlikYorumuKarti extends ConsumerStatefulWidget {
   /// "veri yok" yazar (uydurma paket gitmez).
   final bool veriHazir;
   final Future<PortfoyYorumPaketi?> Function() paketKur;
+
+  /// Seçili dönemin destek/direnç bölgeleri ("Seviye bilgisi", 2026-10-17).
+  /// Seviyenin KENDİSİ burada, varlık ekranının fiyat biçimiyle ([fiyatYaz])
+  /// çizilir; AI'a yalnız yüzde uzaklık gider (sunucu tutar kapısı).
+  final DestekDirenc? seviyeler;
+  final String Function(double)? fiyatYaz;
 
   @override
   ConsumerState<VarlikYorumuKarti> createState() => _VarlikYorumuKartiState();
@@ -350,12 +359,83 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
           );
     }
 
+    final seviyeler = widget.seviyeler;
+    final fiyatYaz = widget.fiyatYaz;
     return _YorumCercevesi(
+      // Kilitliyken gösterilmez: bölgeler Premium kartın parçası.
+      // Gün içinde de gizli: 5 dakikalık seride "dönülen bölge" gürültüdür
+      // ve yorum da orada yazılmıyor.
+      ust: kilitli ||
+              !seciliYorumlanabilir(widget.period) ||
+              seviyeler == null ||
+              seviyeler.bos ||
+              fiyatYaz == null
+          ? null
+          : SeviyeSatiri(seviyeler: seviyeler, fiyatYaz: fiyatYaz),
       govdeAnahtari: ValueKey(widget.period),
       govde: govde,
       hata: hata,
       kapatGorunur: riza == true && !kilitli,
       onKapat: kapat,
+    );
+  }
+}
+
+/// Destek / direnç bölgeleri — kartın üstünde, yorumdan bağımsız (AI
+/// yazmadan da görünür; bölge veridir, yorum değil).
+///
+/// Renk anlam taşımaz: bölgeler nötr metin rengiyle çizilir. Kazanç/kayıp
+/// rengi "destek = al, direnç = sat" diye okunurdu — "Seviye bilgisi"
+/// kararı tam olarak bunu dışarıda bırakıyor. Anlam yalnız sözcükte.
+class SeviyeSatiri extends StatelessWidget {
+  const SeviyeSatiri({super.key, required this.seviyeler, required this.fiyatYaz});
+
+  final DestekDirenc seviyeler;
+  final String Function(double) fiyatYaz;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    String aralik(FiyatBolgesi b) => b.alt == b.ust
+        ? fiyatYaz(b.alt)
+        : '${fiyatYaz(b.alt)} - ${fiyatYaz(b.ust)}';
+    Widget satir(String ad, FiyatBolgesi b) {
+      final metin = l.seviyeSatiri(ad, aralik(b), b.temas);
+      return Semantics(
+        label: metin,
+        excludeSemantics: true,
+        child: Text.rich(
+          TextSpan(children: [
+            TextSpan(
+                text: '$ad  ',
+                style: t.bodySmall?.copyWith(color: c.text58)),
+            TextSpan(
+                text: aralik(b),
+                style: t.bodyMedium?.copyWith(
+                    color: c.text90, fontWeight: FontWeight.w600)),
+            TextSpan(
+                text: '  ${l.seviyeTemas(b.temas)}',
+                style: t.bodySmall?.copyWith(color: c.text58)),
+          ]),
+        ),
+      );
+    }
+
+    final satirlar = <Widget>[
+      if (seviyeler.direnc != null) satir(l.seviyeDirenc, seviyeler.direnc!),
+      if (seviyeler.icinde != null) satir(l.seviyeIcinde, seviyeler.icinde!),
+      if (seviyeler.destek != null) satir(l.seviyeDestek, seviyeler.destek!),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < satirlar.length; i++) ...[
+          if (i > 0) const SizedBox(height: SandikSpace.xs),
+          satirlar[i],
+        ],
+      ],
     );
   }
 }

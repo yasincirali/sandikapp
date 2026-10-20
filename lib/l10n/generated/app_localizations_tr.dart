@@ -1075,6 +1075,32 @@ class AppLocalizationsTr extends AppLocalizations {
   String get goldUnitGram => 'gr';
 
   @override
+  String get commodityUnitPound => 'libre';
+
+  @override
+  String get commodityUnitBarrel => 'varil';
+
+  @override
+  String get commodityUnitMmbtu => 'MMBtu';
+
+  @override
+  String get commodityOther => 'Diğer (sembol yaz)';
+
+  @override
+  String get pickCommodityPrompt => 'Bir emtia seç ya da Diğer ile sembol yaz';
+
+  @override
+  String get pickCommodityTap => 'Emtia seç';
+
+  @override
+  String get commodityOtherSelected => 'Diğer (sembolü aşağıya yaz)';
+
+  @override
+  String commoditySelectedSemantics(String name) {
+    return 'Seçili emtia: $name. Değiştirmek için çift dokun.';
+  }
+
+  @override
   String get goldUnitOunce => 'ons';
 
   @override
@@ -1350,6 +1376,13 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get partnerActivityNotificationsSubtitle =>
       'Ortağın portföyüne ekleme yaptığında günlük özette an';
+
+  @override
+  String get summaryPushTitle => 'Dönem özeti bildirimleri';
+
+  @override
+  String get summaryPushSubtitle =>
+      'Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir';
 
   @override
   String get quietHours => 'Sessiz saatler';
@@ -2120,6 +2153,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get priceAlertsTitle => 'Fiyat Alarmları';
+
+  @override
+  String get quickActionSearch => 'Ara';
 
   @override
   String get createAlert => 'Alarm kur';
@@ -2974,6 +3010,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.';
 
   @override
+  String importFundPriceMissing(String name) {
+    return '$name: ekstre günündeki fiyatı alınamadı, eklenmedi.';
+  }
+
+  @override
+  String importAmountOnly(String date) {
+    return 'Bu belge adet yazmıyor: adet, tutarın $date günündeki birim fiyata bölünmesiyle bulundu. Maliyet o günün fiyatı sayıldı.';
+  }
+
+  @override
   String importDepositsFound(int n) {
     return '$n vadeli mevduat bulundu (vadesiz hesaplar alınmaz)';
   }
@@ -3066,6 +3112,24 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cartEmpty => 'Sepet boş';
+
+  @override
+  String get cartCostLater => 'Maliyet sonra girilecek';
+
+  @override
+  String bulkScreenshotAdded(int count) {
+    return '$count varlık sepete eklendi.';
+  }
+
+  @override
+  String bulkScreenshotCostLater(int count) {
+    return '$count varlığın maliyeti okunamadı: bugünkü fiyatla kaydedilir, satıra dokunup maliyetini girebilirsin.';
+  }
+
+  @override
+  String bulkScreenshotNoQuantity(String codes) {
+    return 'Adedi okunamadı, eklenmedi: $codes';
+  }
 
   @override
   String get cartEmptyBody =>
@@ -8811,6 +8875,30 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String pyzSeciliAciklama(String aralik) {
     return 'Seçili dönemde ($aralik) portföyünde ne olduğunu; enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak bir ekonomist gözüyle anlatır.';
+  }
+
+  @override
+  String get seviyeDestek => 'Destek';
+
+  @override
+  String get seviyeDirenc => 'Direnç';
+
+  @override
+  String get seviyeIcinde => 'Fiyatın bulunduğu bölge';
+
+  @override
+  String seviyeTemas(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'dönemde $n kez dönülmüş',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeSatiri(String ad, String aralik, int n) {
+    return '$ad: $aralik, dönemde $n kez dönülmüş';
   }
 
   @override

@@ -474,7 +474,14 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   // ── Grafik ────────────────────────────────────────────────────────────────
 
-  Widget _chartCard(SandikPalette p) {
+  /// İskelet → grafik çapraz solar (2026-10-14).
+  Widget _chartCard(SandikPalette p) => SandikYuklemeGecisi(
+        yukleniyor: _selected.isNotEmpty && _series.isEmpty,
+        iskelet: const SandikSkeletonChart(height: 260),
+        icerik: (_) => _chartCardHam(p),
+      );
+
+  Widget _chartCardHam(SandikPalette p) {
     if (_selected.isEmpty) return _emptyState(p);
 
     if (_series.isEmpty) {
@@ -1089,6 +1096,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     await pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => AddAssetScreen(
           prefillTicker: hit.ticker,
           prefillName: hit.name,

@@ -16,13 +16,12 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { sabitZamanliEsit } from '../_shared/cron_auth.ts';
 import { hataOzeti } from '../_shared/ekstre_esleme.ts';
-import { geriCagriCoz, type Kart, kartSvg, onaySuresiGectiMi } from '../_shared/x_paylasim.ts';
+import { botModu, geriCagriCoz, type Kart, kartSvg, onaySuresiGectiMi, xeGonderir } from '../_shared/x_paylasim.ts';
 import {
   telegramAyari,
   telegramCevapla,
   telegramSonucYaz,
-  xGonder,
-  xGorselYukle,
+  xKartliGonder,
   XHatasi,
   xKimligi,
 } from '../_shared/x_istemci.ts';
@@ -97,8 +96,10 @@ Deno.serve(async (req: Request) => {
       return TAMAM();
     }
 
-    const mod = Deno.env.get('X_BOT_MODU') ?? 'kapali';
-    if (mod !== 'yayin') {
+    // `otomatik` modda yeni taslaklar düğmesiz gelir; düğmesi olan eski bir
+    // taslağa basılırsa onaylı gibi gönderilir.
+    const mod = botModu(Deno.env.get('X_BOT_MODU') ?? 'kapali');
+    if (!xeGonderir(mod)) {
       await db.from('x_gonderileri').update({ durum: 'onaylandi', karar_at: new Date().toISOString() })
         .eq('id', g.id).eq('durum', 'taslak');
       await sonucYaz('Onaylandı (taslak modu: X\'e gönderilmedi).');
@@ -121,14 +122,13 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-      let medya: string | null = null;
+      let png: Uint8Array<ArrayBuffer> | null = null;
       try {
-        medya = await xGorselYukle(kimlik, await pngCiz(kartSvg(g.kart as Kart)));
+        png = await pngCiz(kartSvg(g.kart as Kart));
       } catch (e) {
-        // Görsel yüklenemezse metin yine gider: gönderinin değeri sayılarda.
-        console.error('[x-onay] gorsel', e instanceof XHatasi ? e.message : hataOzeti(e));
+        console.error('[x-onay] kart', hataOzeti(e));
       }
-      const xId = await xGonder(kimlik, g.metin, medya);
+      const xId = await xKartliGonder(kimlik, g.metin, png);
       await db.from('x_gonderileri').update({ durum: 'gonderildi', x_id: xId, gonderildi_at: new Date().toISOString() })
         .eq('id', g.id);
       await sonucYaz(`Yayınlandı: https://x.com/i/status/${xId}`);

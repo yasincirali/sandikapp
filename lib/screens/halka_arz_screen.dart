@@ -58,7 +58,11 @@ class _HalkaArzScreenState extends ConsumerState<HalkaArzScreen> {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(title: l.ipoTitle),
-      body: async.when(
+      body: SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([async]),
+        child: async.when(
         // Önceki değer varken (yenileme) iskelet yerine liste kalır.
         skipLoadingOnRefresh: true,
         loading: () => const SandikSkeletonList(rows: 5),
@@ -71,6 +75,7 @@ class _HalkaArzScreenState extends ConsumerState<HalkaArzScreen> {
           onRefresh: _yenile,
           child: _Liste(gorunum: g),
         ),
+      ),
       ),
     );
   }
@@ -337,6 +342,7 @@ class HalkaArzDetay extends ConsumerWidget {
     final sonuc = await pushGuarded<Object>(
       ust,
       adaptiveRoute(
+        settings: const RouteSettings(name: 'add_asset'),
         fullscreenDialog: true,
         builder: (_) => AddAssetScreen(
           prefillTicker: arz.sembol,
@@ -521,7 +527,7 @@ class HalkaArzProfilSatiri extends ConsumerWidget {
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
         onTap: () => pushGuarded<void>(
           context,
-          adaptiveRoute<void>(builder: (_) => const HalkaArzScreen()),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'halka_arz'), builder: (_) => const HalkaArzScreen()),
         ),
         child: Semantics(
           button: true,

@@ -462,7 +462,15 @@ Hızlı "Al" kopyaları ayırt edilemiyor — iki alışta aynı not görünür.
 
 ---
 
-## 🟡 AÇIK — "Geçen hafta" şeridi önbellekten BAŞKA bir hafta gösteriyor
+## ✅ KAPANDI (2026-10-17 kayıt düzeltmesi) — "Geçen hafta" şeridi önbellekten BAŞKA bir hafta gösteriyor
+
+**KAPANDI:** yüzey kalktı. Şerit (`WeeklySummaryChip`) 2026-10-04 sadeleştirme
+C'de, Bugün kartının haftalık satırı ve `_haftalikYukle` 2026-10-08'de
+silindi (bkz. "RealReturnStrip / WeeklySummaryChip ana ekrandan kalktı" ve
+"Bugün kartı çizmediği satırları hesaplıyor"). Ana ekranda haftalık rakam
+çizen bir yer kalmadı; aşağıdaki iki küçük notun dosyası
+(`period_summary_view.dart`) da yok. Kayıt AÇIK kalmıştı.
+
 
 **Ne (2026-09-27 emülatör regresyon turu, Pazar, gerçek hesap):** Ana ekran
 "Geçen hafta, piyasanın portföyüne etkisi" şeridi soğuk açılışta önbellekten
@@ -856,7 +864,17 @@ yazmalarından tüm servis çağrılarına genişleterek).
 
 ---
 
-## 🟡 AÇIK — Dönem özeti push'unun istemcide kapatma anahtarı yok
+## ✅ KAPANDI (2026-10-17, bayraksız) — Dönem özeti push'unun istemcide kapatma anahtarı yok
+
+**KAPANDI:** Ayarlar › Bildirimler'de brifing saatinin altında "Dönem özeti
+bildirimleri" anahtarı `profiles.weekly_summary_push`'u yazar (sunucu 0052'den
+beri okuyordu; migration yok). Tek anahtar haftalık + aylık ikisini birden
+kapatır çünkü sütun ortak. Ortak hareketi anahtarıyla aynı kabuk
+(`_SunucuTercihAnahtari`). Bayrak yok (ilk sürümde vardı; yasin bayrağı gereksiz buldu, kaldırıldı). "Proaktif bildirimler"
+grubu (brifing / TÜFE günü / takip hareketi için ayrı anahtar) hâlâ açık
+karar: üç ayrı satır Ayarlar'ı şişirir; `push_opened` verisiyle bakılır.
+Kilit `ozet_bildirimi_anahtari_test`.
+
 
 **Ne.** Haftalık (0052) ve aylık (0067) özet push'u `profiles.weekly_summary_push`
 sütununu okuyor ama Ayarlar › Bildirimler'de bu sütunu yazan bir anahtar
@@ -881,7 +899,18 @@ aynı tur.
 
 ---
 
-## 🟡 AÇIK — Takip listesi hareketi fonları (TEFAS) kapsamıyor
+## ✅ KAPANDI (2026-10-17) — Takip listesi hareketi fonları (TEFAS) kapsamıyor
+
+**KAPANDI:** canlı kotasyonun TEFAS yolu (`live_prices.ts` `fetchTefasLast`)
+artık aynı yanıttaki son iki NAV'dan günlük değişimi de döner
+(`fonGunlukDegisimi`, `_shared/tefas_nav.ts`); `watchlist_moves.ts` fon/BES
+satırlarını hisselerle aynı yoldan geçirir. Eşik fonda %2, hissede %5. En yeni NAV bugün tarihli değilse (tatil, henüz
+yayımlanmadı) fon o gün sayılmaz — dünkü hareket ikinci kez bildirilmez.
+`tefas_nav_gozlem` kullanılmadı: o tablo yalnız portföyde TUTULAN fonları
+gözlüyor, takip listesindekileri değil. Fon başına tek istek, 4'lü paralel
+(alarm turuyla aynı). `fetchLiveQuotes`'un başka tüketicisi yalnız fiyat
+okur; değişim alanı yalnız takip hareketinde kullanılır. Kilit `watchlist_moves_test`, `tefas_nav_test`.
+
 
 **Ne.** `watchlist_moves.ts` günlük değişimi canlı kotasyondan okuyor;
 TEFAS tek NAV döndürür, dünkü NAV ayrı istektir. Fon izleyen kullanıcı bu

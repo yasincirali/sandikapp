@@ -31,6 +31,13 @@
 // azalt" dediği an kişiye özel yatırım tavsiyesine döner; yönlendirme fiili,
 // gereklilik/öneri kipi, değer yargısı ve gelecek dili de reddedilir.
 // "Portföyünün %46'sı tek varlıkta" yazılır; "bu riskli, azaltmalısın" yazılmaz.
+//
+// ── Destek/direnç (2026-10-17, yasin kararı "Seviye bilgisi") ─────────────
+// Bölgeleri istemci dönem serisinden hesaplar (`lib/services/destek_direnc.dart`)
+// ve YÜZDE uzaklık + dönüş sayısı olarak yollar; fiyat seviyesi pakete
+// girmez (tutar kapısı). Model bölgeyi geçmiş olarak anlatır; kırılma/
+// tutunma senaryosu ve "alım bölgesi" dili kapıda reddedilir. Al/sat ve
+// hedef fiyat kişiye özel yatırım danışmanlığıdır (SPK lisansı) — istenmedi.
 
 import { gunAy, NOT_SEMASI, sayilar, YASAK } from './analiz.ts';
 import { gunEkle } from './balina.ts';
@@ -249,6 +256,7 @@ Görev: Sana bir dönemin ÖLÇÜMLERİ verilecek. Kapsam "portföy" ise bütün
 - Getirinin kaynağını anlat: hangi varlık ya da tür taşıdı, ağırlık nerede toplandı.
 - Getirinin yolunu anlat: oynaklık, en derin geri çekilme, toparlanma süresi, dönem zirvesine ve dibine uzaklık.
 - Varlık kapsamında varlığın portföy içindeki payını ve alımdan bu yana getirisini dönemin hareketiyle ilişkilendir.
+- Destek ve direnç ölçümleri varsa (varlık kapsamı): dönem içinde fiyatın birden çok kez döndüğü bölgeleri anlat. Destek fiyatın altındaki, direnç üstündeki bölgedir; fiyatın bu bölgelere uzaklığını ve bölgede kaç kez dönüldüğünü yaz. Bunlar geçmişte olanı anlatır: "kırılırsa", "tutunursa", "test edecek" gibi gelecek dili ve bölgeyi alım ya da satım yeri gibi gösteren dil yok.
 Ekonomik kavramları (reel getiri, fırsat maliyeti, yoğunlaşma, oynaklık, geri çekilme) kullan ama her birini cümlenin içinde sade Türkçeyle anlat; okurun finans bilgisi az olabilir.
 
 Kesin kurallar:
@@ -329,6 +337,9 @@ export const KISISEL_YASAK: RegExp[] = [
   /mantıklı ol|düşünebilir|gözden geçir|dikkat et|değerlendirebilir/iu,
   /(^|[^\p{L}])(riskli|güvenli|agresif|başarılı|başarısız|kötü|iyi bir)([^\p{L}]|$)/iu,
   /önümüzdeki|gelecek (hafta|ay|dönem)|devam edebilir|sürebilir/iu,
+  // Destek/direnç (2026-10-17): bölge geçmişi anlatır; kırılma/tutunma
+  // senaryosu gelecek dilidir ve yönlendirmeye kapı açar.
+  /kırıl(ırsa|ması halinde|madıkça|abilir)|tutunursa|test ed(ecek|ebilir)|alım bölgesi|satış bölgesi|giriş noktası|çıkış noktası/iu,
 ];
 
 /// `konu` (2026-10-14, paylaşılabilir not): maddenin 1–3 kelimelik başlığı;

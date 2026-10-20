@@ -8,6 +8,7 @@ import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../models/emtia_katalogu.dart';
 import '../models/eurobond.dart';
 import '../models/ilk_varlik_secimi.dart';
 import '../models/altin_kisayollari.dart';
@@ -40,6 +41,7 @@ import 'varlik_sayfasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
+import '../widgets/ekran_goruntusu_ekle.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/varlik_guncelle.dart' show VarlikGuncelleUyarisi;
 import '../l10n/l10n.dart';
@@ -329,12 +331,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Future<void> _ekstredenAktar() async {
     final aktarildi = await pushGuarded<bool>(
       context,
-      adaptiveRoute(builder: (_) => const CsvImportScreen()),
+      adaptiveRoute(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
     );
     if (aktarildi != true || !mounted) return;
     final eklendi = await pushGuarded<bool>(
       context,
-      adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+      adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
     );
     if (eklendi == true && mounted) Navigator.of(context).pop(true);
   }
@@ -398,9 +400,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   // Kripto biriminin adı coin kodudur ("0,05 BTC"), `unitType` değil.
-  String get _quantitySuffix => _type == AssetType.kripto
-      ? (kriptoKodu(_ticker.text) ?? '')
-      : _s.quantitySuffix;
+  String get _quantitySuffix => switch (_type) {
+        AssetType.kripto => kriptoKodu(_ticker.text) ?? '',
+        AssetType.emtia when !_s.emtiaElle =>
+          switch (emtiaSecenegi(_ticker.text)) {
+            final e? => _emtiaBirimi(e.birim),
+            null => _s.quantitySuffix,
+          },
+        _ => _s.quantitySuffix,
+      };
   List<String> get _quantityPresets => _s.quantityPresets;
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -508,7 +516,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               onPressed: () async {
                 final added = await pushGuarded<bool>(
                   context,
-                  adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+                  adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
                 );
                 if (added == true && context.mounted) {
                   Navigator.of(context).pop(true);
@@ -559,6 +567,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   children: [
                     if (_kolay) ...[
                       _ikiYol(),
+                      const SizedBox(height: SandikSpace.sm),
+                      _ekranGoruntusuYolu(),
                       const SizedBox(height: SandikSpace.lgs),
                     ],
                     if (_yenidenKur) ...[
@@ -731,6 +741,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         KimlikEksigi.doviz => context.l10n.pickCurrencyPrompt,
         KimlikEksigi.kripto => context.l10n.pickCryptoPrompt,
         KimlikEksigi.eurobond => context.l10n.pickEurobondPrompt,
+        KimlikEksigi.emtia => context.l10n.pickCommodityPrompt,
       };
 
   Widget _kimlikAlani(ColorScheme cs, {required bool hata}) {
@@ -742,7 +753,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_type == AssetType.eurobond) {
       return _eurobondSelectorField(cs, hata: hata);
     }
-    // Emtia / Diğer — manuel ad + opsiyonel sembol
+    if (_type == AssetType.emtia) return _emtiaSecici(cs, hata: hata);
+    // Diğer — manuel ad + opsiyonel sembol
+    return _elleKimlik();
+  }
+
+  /// Serbest ad + opsiyonel sembol: "Diğer" türü ve emtia listesinin
+  /// "Diğer" yolu (listede olmayan emtia, eski kayıt).
+  Widget _elleKimlik() {
     return Column(
       children: [
         _brandInput(
@@ -763,6 +781,126 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           },
         ),
       ],
+    );
+  }
+
+  // ── Emtia: listeden seç (2026-10-18) ─────────────────────────────────────
+  //
+  // yasin: "emtia seçenekleri listelense, free text yerine". Kullanıcı Yahoo
+  // sembolünü (`CL=F`) bilmiyor; serbest girişte çoğu emtia sembolsüz, yani
+  // fiyatsız kaydediliyordu. Liste `emtiaKatalogu` (arama ile tek kaynak);
+  // "Diğer" eski serbest girişi açar. Seçim yapılmadan kayıt yok
+  // (`KimlikEksigi.emtia`; uyarıyı `_identitySection` yazar).
+
+  String _emtiaBirimi(EmtiaBirimi b) => switch (b) {
+        EmtiaBirimi.ons => context.l10n.goldUnitOunce,
+        EmtiaBirimi.gram => context.l10n.goldUnitGram,
+        EmtiaBirimi.libre => context.l10n.commodityUnitPound,
+        EmtiaBirimi.varil => context.l10n.commodityUnitBarrel,
+        EmtiaBirimi.mmbtu => context.l10n.commodityUnitMmbtu,
+      };
+
+  void _emtiaSec(EmtiaSecenegi? e) {
+    SandikHaptic.selection.perform();
+    _yaz(e == null
+        ? _n.emtiaDiger(tickerText: _ticker.text)
+        : _n.selectEmtia(e));
+    _schedulePricePreview();
+  }
+
+  // Açılır liste (yasin 18 Eki: "çipler yerine listeden dropdowndan
+  // seçilemez mi"). İlk hâli çip ızgarasıydı; yedi emtia + Diğer üç satır
+  // kaplıyor, formu aşağı itiyordu. Alan kripto/eurobond seçicisiyle aynı
+  // kutu (`_selectorContainer`); kısa ve aramasız liste olduğu için alt
+  // sayfa yerine alanın altında açılan menü (iOS pull-down menüsü kalıbı).
+  // Menü değeri sembol; '' = Diğer.
+  Widget _emtiaSecici(ColorScheme cs, {required bool hata}) {
+    final elle = _s.emtiaElle;
+    final secili = elle ? null : emtiaSecenegi(_ticker.text);
+    final l = context.l10n;
+    final ana =
+        elle ? l.commodityOtherSelected : (secili?.ad ?? l.pickCommodityTap);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          label: secili == null && !elle
+              ? l.pickCommodityTap
+              : l.commoditySelectedSemantics(secili == null
+                  ? ana
+                  : '${secili.ad}, ${_emtiaBirimi(secili.birim)}'),
+          excludeSemantics: true,
+          // Menü alanla aynı genişlikte açılır (dropdown okunuşu); içerik
+          // genişliğinde dar bir kutu alanın yarısında asılı kalıyordu.
+          child: LayoutBuilder(
+            builder: (context, kutu) => PopupMenuButton<String>(
+              tooltip: '',
+              position: PopupMenuPosition.under,
+              constraints: BoxConstraints.tightFor(width: kutu.maxWidth),
+              color: context.c.surface2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                side: BorderSide(color: context.c.hairline),
+              ),
+              onSelected: (t) =>
+                  _emtiaSec(t.isEmpty ? null : emtiaSecenegi(t)),
+              itemBuilder: (_) => [
+                for (final e in emtiaKatalogu)
+                  _emtiaSatiri(e.ticker, e.ad, _emtiaBirimi(e.birim),
+                      secili: e == secili),
+                _emtiaSatiri('', l.commodityOther, null, secili: elle),
+              ],
+              child: _selectorContainer(
+                cs: cs,
+                hasValue: secili != null || elle,
+                hasError: hata,
+                badgeText: secili == null ? null : _emtiaBirimi(secili.birim),
+                mainText: ana,
+                color: AssetType.emtia.color,
+                trailingIcon: Icons.expand_more_rounded,
+              ),
+            ),
+          ),
+        ),
+        if (elle) ...[
+          const SizedBox(height: SandikSpace.md),
+          _elleKimlik(),
+        ],
+      ],
+    );
+  }
+
+  PopupMenuItem<String> _emtiaSatiri(String deger, String ad, String? birim,
+      {required bool secili}) {
+    return PopupMenuItem<String>(
+      value: deger,
+      height: 48,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: ad,
+                  style: context.t.bodyMedium?.copyWith(
+                      color: context.c.text90,
+                      fontWeight: secili ? FontWeight.w700 : FontWeight.w400),
+                ),
+                if (birim != null)
+                  TextSpan(
+                    text: ' · $birim',
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text36),
+                  ),
+              ]),
+            ),
+          ),
+          // Seçili satır yalnız kalın yazıyla değil, işaretle de belli.
+          if (secili)
+            Icon(Icons.check_rounded, size: 18, color: context.c.amberText),
+        ],
+      ),
     );
   }
 
@@ -1597,6 +1735,45 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  /// Üçüncü hızlı yol (2026-10-19, yasin: "ekran görüntüsünden portföy
+  /// ekleme: yap, ama dar kapsamla"): aracı kurum/banka uygulamasının
+  /// portföy ekranının görüntüleri telefonda okunur, sepete girer, onay
+  /// Toplu Ekle'de — "Ekstreden aktar" ile aynı bitiş. İki düğmenin altında
+  /// tam genişlik: üçü yan yana dar ekranda okunmazdı.
+  Widget _ekranGoruntusuYolu() {
+    // Görünüş üstteki iki yolla aynı (`_yolDugmesi`); boy asgari, sabit
+    // değil: büyük yazıda etiket kırpılmaz, küçülür.
+    return SandikAsyncButton(
+      tur: SandikAsyncTur.cerceve,
+      height: null,
+      icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+      onPressed: _ekranGoruntusundenEkle,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: context.c.amberText,
+        side: BorderSide(color: context.c.hairline),
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(context.l10n.importScreenshotAdd),
+      ),
+    );
+  }
+
+  Future<void> _ekranGoruntusundenEkle() async {
+    final eklendi = await ekranGoruntusundenSepete(context, ref);
+    if (!eklendi || !mounted) return;
+    final kaydedildi = await pushGuarded<bool>(
+      context,
+      adaptiveRoute(
+        settings: const RouteSettings(name: 'bulk_add_asset'),
+        builder: (_) => const BulkAddAssetScreen(),
+      ),
+    );
+    if (kaydedildi == true && mounted) Navigator.of(context).pop(true);
+  }
+
   Widget _yolDugmesi({
     required IconData ikon,
     required String etiket,
@@ -2378,6 +2555,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     required String? badgeText,
     required String mainText,
     required Color color,
+    IconData trailingIcon = Icons.search_rounded,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -2439,7 +2617,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Icon(Icons.search_rounded, size: 18, color: context.c.text58),
+          Icon(trailingIcon, size: 18, color: context.c.text58),
         ],
       ),
     );
@@ -2679,6 +2857,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // bilir; ekstreden gelen satış satırı düzenlenince alıma dönüp
         // pozisyonu şişirirdi (karar 5.4).
         satis: widget.cartInitial?.satis ?? false,
+        // Ekran görüntüsünden gelen "maliyet sonra" işareti fiyat boş
+        // kaldıkça durur; kullanıcı maliyeti girince düşer.
+        maliyetSonra: price <= 0 && (widget.cartInitial?.maliyetSonra ?? false),
       );
       final notifier = ref.read(bulkCartProvider.notifier);
       if (widget.cartInitial != null) {

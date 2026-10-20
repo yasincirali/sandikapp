@@ -128,6 +128,20 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
 - **Riskli yeni davranış bayrakla açılır.** Varsayılanı kapalı Remote Config
   anahtarı (`RemoteConfigService`) arkasında gelir; bayrak kapalıyken eski
   davranış birebir korunur.
+  **Her yeni özellik bayrak istemez** (kullanıcı kuralı 2026-10-17: "her
+  özelliği kapatma, flagli olması gerekirse ben belirteceğim"). Bayrak
+  yasin istediğinde konur; küçük ayar satırı, düzeltme, mevcut veriye
+  dayanan ek bayraksız gelir. Riskli gördüğün yerde bayrağı kendiliğinden
+  koyma; özette öner, yasin karar verir.
+- **Mağaza incelemesi = mağaza kullanıcısı (kullanıcı kuralı 2026-10-14,
+  App Store 2.3.1(a)).** Uygulama nereden kurulduğunu (TestFlight, sandbox
+  makbuzu, simülatör, mağaza; `installerStore`, `appStoreReceiptURL`,
+  Play installer) okumaz, Remote Config'e/sunucuya bildirmez, buna göre
+  dallanmaz. Apple "inceleme ortamını tespit edip RC ile farklı davranma"yı
+  gizli özellik sayıp reddediyor. Bayraklar serbest; test kitlesi **hesapla**
+  seçilir (RC özel sinyali `hesap` = kullanıcı UUID'si, Console koşulu
+  "Test kitlesi"). İnceleme demo hesabı o listeye girmez, mağaza değerlerini
+  alır. Kilit `magaza_inceleme_esitligi_test`.
 - **Canlı veriye dokunulmaz.** Tokyo/Frankfurt projelerinde SQL Editor'dan veri
   değiştirme, toplu silme, canlı secret rotasyonu yok (bkz. "Asla kendiliğinden
   yapma"). Deneme yerel Supabase yığınında (`supabase start` + `seed.sql`) ya da
@@ -245,6 +259,15 @@ Gösterim kararı `SurumNotuService.yeniNotlar` saf fonksiyonundadır
 (`test/surum_notu_test.dart`): ilk kurulumda gösterilmez, aynı sürüm ikinci
 kez gösterilmez, atlanan sürümler birikir, notu yazılmamış sürümde susar.
 Bu kuralları değiştirirken testi de güncelle.
+
+**TestFlight notu (kullanıcı kuralı, 2026-10-19).** Her PR gövdesinde
+`## TestFlight'ta test et` bölümü olur (şablon `.github/pull_request_template.md`):
+testçinin anlayacağı sade dille (teknik terim, PR numarası, tablo/fonksiyon
+adı yok) ne değişti ve adım adım nasıl denenir, ne görmeli. Uygulamaya
+dokunmayan PR'da bölüm boş kalır. `ios-testflight.yml` → `tool/tf_notu.py`
+build'e giren PR'ların bu bölümünü TestFlight "What to Test" metnine yazar;
+bölümü olmayan uygulama PR'ında başlık son çare olarak görünür. Build'i
+yasin'e haber verirken de aynı dille yaz: ne çözdü, neyi nasıl test etsin.
 
 **Tur metni arayüzle birlikte değişir (kullanıcı kuralı, 2026-09-21).**
 Yukarıdaki üç ayak "tanıtımda göster" dendiğinde çalışır; bu kural

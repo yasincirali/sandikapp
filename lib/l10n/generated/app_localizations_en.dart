@@ -1088,6 +1088,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goldUnitGram => 'g';
 
   @override
+  String get commodityUnitPound => 'lb';
+
+  @override
+  String get commodityUnitBarrel => 'bbl';
+
+  @override
+  String get commodityUnitMmbtu => 'MMBtu';
+
+  @override
+  String get commodityOther => 'Other (enter symbol)';
+
+  @override
+  String get pickCommodityPrompt =>
+      'Pick a commodity, or use Other to enter a symbol';
+
+  @override
+  String get pickCommodityTap => 'Pick a commodity';
+
+  @override
+  String get commodityOtherSelected => 'Other (enter the symbol below)';
+
+  @override
+  String commoditySelectedSemantics(String name) {
+    return 'Selected commodity: $name. Double tap to change.';
+  }
+
+  @override
   String get goldUnitOunce => 'oz';
 
   @override
@@ -1363,6 +1390,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get partnerActivityNotificationsSubtitle =>
       'Mention it in the daily brief when your partner adds to their portfolio';
+
+  @override
+  String get summaryPushTitle => 'Period summary notifications';
+
+  @override
+  String get summaryPushSubtitle =>
+      'Your weekly and monthly portfolio summary. The monthly inflation notice comes separately';
 
   @override
   String get quietHours => 'Quiet hours';
@@ -2136,6 +2170,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get priceAlertsTitle => 'Price Alerts';
+
+  @override
+  String get quickActionSearch => 'Search';
 
   @override
   String get createAlert => 'Create an alert';
@@ -2999,6 +3036,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t load the TEFAS fund list; funds listed by name were skipped. Check your connection and pick the file again.';
 
   @override
+  String importFundPriceMissing(String name) {
+    return '$name: couldn\'t get the price on the statement date, skipped.';
+  }
+
+  @override
+  String importAmountOnly(String date) {
+    return 'This document shows no quantities: each quantity is the amount divided by the unit price on $date. Cost is taken as that day\'s price.';
+  }
+
+  @override
   String importDepositsFound(int n) {
     return '$n time deposits found (demand accounts are not imported)';
   }
@@ -3091,6 +3138,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cartEmpty => 'The cart is empty';
+
+  @override
+  String get cartCostLater => 'Cost to be entered later';
+
+  @override
+  String bulkScreenshotAdded(int count) {
+    return '$count holdings added to the cart.';
+  }
+
+  @override
+  String bulkScreenshotCostLater(int count) {
+    return 'Cost could not be read for $count holdings: they are saved at today\'s price; tap a row to enter its cost.';
+  }
+
+  @override
+  String bulkScreenshotNoQuantity(String codes) {
+    return 'Quantity not read, skipped: $codes';
+  }
 
   @override
   String get cartEmptyBody =>
@@ -8894,6 +8959,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String pyzSeciliAciklama(String aralik) {
     return 'Explains, like an economist, what happened in your portfolio in the selected period ($aralik), comparing it with inflation, the dollar, gold and BIST 100.';
+  }
+
+  @override
+  String get seviyeDestek => 'Support';
+
+  @override
+  String get seviyeDirenc => 'Resistance';
+
+  @override
+  String get seviyeIcinde => 'Current zone';
+
+  @override
+  String seviyeTemas(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'turned $n times in the period',
+      one: 'turned once in the period',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeSatiri(String ad, String aralik, int n) {
+    return '$ad: $aralik, turned $n times in the period';
   }
 
   @override

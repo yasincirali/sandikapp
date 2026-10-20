@@ -16,9 +16,10 @@
 
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
-import { sonNavSatiri } from './tefas_nav.ts';
+import { fonGunlukDegisimi, sonNavSatiri, trGun } from './tefas_nav.ts';
 import { KRIPTO_ONEKI, kriptoKodu, kriptoMu } from './kripto.ts';
 import { birimDeger, EUROBOND_ONEKI, isinGecerli, sozlesmeSatiri } from './eurobond.ts';
+import { gramTabani, ONS_GRAM } from './emtia_gram.ts';
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
@@ -190,6 +191,12 @@ export function parseTruncgilBody(body: string): Record<string, unknown> {
 /// `interval=5m&range=1d`: gün içi mumlar. Kapanış serisi (`1d`) alarm için
 /// bir gün geç kalırdı.
 async function fetchYahooLast(symbol: string): Promise<number | null> {
+  // Gram emtia: ons tabanı ÷ 31,1035 (`emtia_gram.ts`).
+  const taban = gramTabani(symbol);
+  if (taban) {
+    const ons = await fetchYahooLast(taban);
+    return ons === null ? null : ons / ONS_GRAM;
+  }
   try {
     const url =
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
@@ -226,6 +233,11 @@ export type CanliKotasyon = { price: number; changePct: number | null };
 /// Yahoo: fiyat + günlük değişim. Değişim `meta.chartPreviousClose` (dünkü
 /// kapanış) üzerinden; meta yoksa yalnızca fiyat.
 async function fetchYahooQuote(symbol: string): Promise<CanliKotasyon | null> {
+  const taban = gramTabani(symbol);
+  if (taban) {
+    const ons = await fetchYahooQuote(taban);
+    return ons === null ? null : { price: ons.price / ONS_GRAM, changePct: ons.changePct };
+  }
   try {
     const url =
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
@@ -432,7 +444,12 @@ async function fetchKriptoQuotes(
 /// Fonun son NAV'ı — `observe-tefas-nav` ile aynı uç nokta ve aynı süzgeç
 /// (`sonNavSatiri`). Fon günde bir kez fiyatlanır; alarm için son NAV
 /// "anlık fiyat"tır ve uygulamada görünen sayıyla aynıdır.
-async function fetchTefasLast(symbol: string): Promise<number | null> {
+///
+/// Değişim (2026-10-17, takip listesinde fon hareketi): aynı yanıttaki son
+/// iki NAV'dan (`fonGunlukDegisimi`); en yeni NAV bugün tarihli değilse
+/// `null` — dünkü hareket bugünün hareketi diye okunmasın. Fiyat yine son
+/// NAV'dır (alarm için bayat NAV da gerçek son fiyattır).
+async function fetchTefasLast(symbol: string): Promise<CanliKotasyon | null> {
   const kod = symbol.slice(TEFAS_PREFIX.length).trim().toUpperCase();
   if (!/^[A-Z0-9]{2,6}$/.test(kod)) return null;
   try {
@@ -448,7 +465,12 @@ async function fetchTefasLast(symbol: string): Promise<number | null> {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return sonNavSatiri(data?.resultList)?.fiyat ?? null;
+    const son = sonNavSatiri(data?.resultList);
+    if (son === null) return null;
+    return {
+      price: son.fiyat,
+      changePct: fonGunlukDegisimi(data?.resultList, trGun(new Date())),
+    };
   } catch (_) {
     // Tek fonun başarısızlığı turu düşürmemeli.
     return null;
@@ -471,7 +493,8 @@ export async function fetchLivePrices(
 /// Fiyat + günlük değişim (2026-09-20, takip listesi hareketi için).
 ///
 /// `fetchLivePrices` bunun fiyat izdüşümü; kaynak seçimi ve sıralama aynı.
-/// TEFAS'ta değişim yok (günlük NAV, tek nokta) → `changePct: null`.
+/// TEFAS'ta değişim son iki NAV'dan; bugün tarihli NAV yoksa `null`
+/// (bkz. `fetchTefasLast`).
 ///
 /// [db]: service_role istemcisi — kripto fiyatı `kripto_fiyat`'tan okunur.
 export async function fetchLiveQuotes(
@@ -507,7 +530,7 @@ export async function fetchLiveQuotes(
     const sonuc = await Promise.all(dilim.map(fetchTefasLast));
     dilim.forEach((sym, j) => {
       const p = sonuc[j];
-      if (p !== null) out.set(sym, { price: p, changePct: null });
+      if (p !== null) out.set(sym, p);
     });
   }
 

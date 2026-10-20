@@ -25,6 +25,7 @@ import {
   sorulacakKodlar,
   tefasTarihToIso,
   trGun,
+  fonGunlukDegisimi,
 } from '../functions/_shared/tefas_nav.ts';
 
 // ── tefasTarihToIso ─────────────────────────────────────────────────────────
@@ -130,4 +131,39 @@ Deno.test('önceki tur 45 dk içindeyse aralık alt ucu, değilse null', () => {
   assertEquals(oncekiKontrol(null, now), null);
   // Saat geri alınmış/bozuk: gelecekte kalan tur da güvenilmez.
   assertEquals(oncekiKontrol(new Date(now.getTime() + 60_000), now), null);
+});
+
+// ── Takip listesi fon hareketi (2026-10-17) ──────────────────────────────
+Deno.test('fonGunlukDegisimi: son iki NAV tarihi, sıraya güvenmeden', () => {
+  const pct = fonGunlukDegisimi([
+    { tarih: '2026-10-16', fiyat: 2 },
+    { tarih: '2026-10-15', fiyat: 1.9 },
+    { tarih: '2026-10-14', fiyat: 1.5 },
+  ], '2026-10-16');
+  assertEquals(Math.round(pct! * 1000) / 1000, 5.263);
+});
+
+Deno.test('fonGunlukDegisimi: bugün tarihli NAV yoksa null (tatil / yayımlanmadı)', () => {
+  assertEquals(fonGunlukDegisimi([
+    { tarih: '2026-10-15', fiyat: 2 },
+    { tarih: '2026-10-14', fiyat: 1.9 },
+  ], '2026-10-16'), null);
+});
+
+Deno.test('fonGunlukDegisimi: tek NAV, bozuk fiyat ya da liste değilse null', () => {
+  assertEquals(fonGunlukDegisimi([{ tarih: '2026-10-16', fiyat: 2 }], '2026-10-16'), null);
+  assertEquals(fonGunlukDegisimi([
+    { tarih: '2026-10-16', fiyat: 2 },
+    { tarih: '2026-10-15', fiyat: 0 },
+  ], '2026-10-16'), null);
+  assertEquals(fonGunlukDegisimi(null, '2026-10-16'), null);
+});
+
+Deno.test('fonGunlukDegisimi: mükerrer gün tek sayılır; Türk biçimi ve virgül', () => {
+  const pct = fonGunlukDegisimi([
+    { tarih: '16.10.2026', fiyat: '1,1' },
+    { tarih: '16.10.2026', fiyat: '1,1' },
+    { tarih: '15.10.2026', fiyat: '1,0' },
+  ], '2026-10-16');
+  assertEquals(Math.round(pct! * 10) / 10, 10);
 });

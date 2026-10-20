@@ -79,7 +79,13 @@ class WatchlistBody extends ConsumerWidget {
         const _PeriodToggle(),
         const SizedBox(height: SandikSpace.sm),
         Expanded(
-          child: async.when(
+          child: SandikIcerikGecisi(
+            // Yükleme → içerik çapraz solar (2026-10-14).
+            tamEkran: true,
+            anahtar: async.isLoading && !(eskiyiGoster && async.hasValue)
+              ? 'yukleniyor'
+              : SandikIcerikGecisi.hal([async]),
+            child: async.when(
             // Dönem değişiminde eski liste SOLUK kalır, iskelete düşmez
             // (animasyon denetimi 2026-10-01): her dönem dokunuşunda liste
             // ve grafik iskelete dönüp geri geliyor, yerleşim iki kez
@@ -96,6 +102,7 @@ class WatchlistBody extends ConsumerWidget {
               bekliyor: eskiyiGoster,
               child: items.isEmpty ? const _EmptyState() : _List(items: items),
             ),
+          ),
           ),
         ),
         const _FooterNote(),
@@ -330,7 +337,12 @@ class _ChartCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: SandikSpace.sm),
-          async.when(
+          SandikIcerikGecisi(
+            // Yükleme → içerik çapraz solar (2026-10-14).
+            anahtar: async.isLoading && !(eskiyiGoster && async.hasValue)
+                ? 'yukleniyor'
+                : SandikIcerikGecisi.hal([async]),
+            child: async.when(
             // Dönem değişiminde eski grafik soluk kalır ve yenisine MORF
             // eder; iskelete düşüp sıfırdan çizilmez (bkz. `WatchlistBody`).
             skipLoadingOnReload: eskiyiGoster,
@@ -403,6 +415,7 @@ class _ChartCard extends ConsumerWidget {
               ),
               );
             },
+          ),
           ),
         ],
       ),
@@ -650,6 +663,7 @@ class _Row extends ConsumerWidget {
                     onTap: () => pushGuarded(
                       context,
                       adaptiveRoute<void>(
+                        settings: const RouteSettings(name: 'add_asset'),
                         builder: (_) => AddAssetScreen(
                           prefillTicker: item.ticker,
                           prefillName: item.name,
@@ -736,6 +750,7 @@ class _EmptyState extends StatelessWidget {
                 : pushGuarded(
                     context,
                     adaptiveRoute<void>(
+                      settings: const RouteSettings(name: 'add_watchlist'),
                       builder: (_) => const AddWatchlistScreen(),
                       fullscreenDialog: true,
                     ),
@@ -812,6 +827,7 @@ class _AddHeader extends ConsumerWidget {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_watchlist'),
         builder: (_) => const AddWatchlistScreen(),
         fullscreenDialog: true,
       ),

@@ -29,6 +29,7 @@ class BulkCartItem {
     this.isManualPrice = false,
     this.satis = false,
     this.mevduat,
+    this.maliyetSonra = false,
   });
 
   final String id;
@@ -57,6 +58,12 @@ class BulkCartItem {
   /// düzenlenmez (ekleme formu sözleşme alanlarını taşımıyor).
   final SepetMevduati? mevduat;
 
+  /// Maliyet okunamadı, kullanıcı sonra girecek (ekran görüntüsünden
+  /// ekleme, 2026-10-19; `ekran_goruntusu_sepeti.dart`). Fiyat boştur;
+  /// toplu kayıt o günün kapanışını yazar, sepet satırı bunu söyler.
+  /// Kullanıcı fiyat girince düşer ([copyWith]).
+  final bool maliyetSonra;
+
   BulkCartItem copyWith({
     AssetType? type,
     String? name,
@@ -69,6 +76,7 @@ class BulkCartItem {
     bool? isManualPrice,
     DateTime? addedDate,
     bool? satis,
+    bool? maliyetSonra,
   }) =>
       BulkCartItem(
         id: id,
@@ -84,6 +92,9 @@ class BulkCartItem {
         addedDate: addedDate ?? this.addedDate,
         satis: satis ?? this.satis,
         mevduat: mevduat,
+        // Fiyat girildiyse maliyet artık biliniyor.
+        maliyetSonra:
+            maliyetSonra ?? (price != null && price > 0 ? false : this.maliyetSonra),
       );
 }
 

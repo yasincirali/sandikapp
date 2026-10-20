@@ -442,6 +442,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         onPressed: () => pushGuarded(
                                   context,
                                   adaptiveRoute<void>(
+                                    settings: const RouteSettings(name: 'settings'),
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 ),
@@ -500,7 +501,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 32),
                         SandikSectionHeader(title: context.l10n.myPartnersUpper),
                         const SizedBox(height: 16),
-                        partnersAsync.when(
+                        SandikIcerikGecisi(
+                          // Yükleme → içerik çapraz solar (2026-10-14).
+                          anahtar: SandikIcerikGecisi.hal([partnersAsync]),
+                          child: partnersAsync.when(
                           loading: () => const SizedBox(
                             height: 140,
                             child: SandikSkeletonList(
@@ -517,6 +521,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     const LeaderboardHeroCard(),
                                   ],
                                 ),
+                        ),
                         ),
                         // Yüzdelik dilim şeridi 2026-09-21'de ana ekrandan
                         // buraya: sosyal karşılaştırma Yarış'ın yanında.

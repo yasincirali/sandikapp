@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'destek_direnc.dart';
+
 /// Bir fiyat serisinin dönem istatistikleri — varlık sayfasının sayıları.
 ///
 /// ## Neden saf fonksiyon
@@ -21,6 +23,7 @@ class DonemIstatistigi {
     required this.dusuk,
     required this.enBuyukDususPct,
     required this.oynaklikPct,
+    this.destekDirenc,
   });
 
   /// Dönem başı (serinin ilk noktası).
@@ -37,6 +40,11 @@ class DonemIstatistigi {
 
   /// Yıllıklaştırılmış oynaklık (%), yeterli gözlem yoksa `null`.
   final double? oynaklikPct;
+
+  /// Dönem serisinden destek/direnç bölgeleri (`destek_direnc.dart`); seri
+  /// kısaysa `null`. Bölge hesabı da istatistikle birlikte BİR KEZ yapılır
+  /// (build'de değil — CLAUDE.md katmanlama).
+  final DestekDirenc? destekDirenc;
 
   /// Tutar farkı: son − ilk.
   double get fark => son - ilk;
@@ -95,6 +103,7 @@ class DonemIstatistigi {
       oynaklikPct: periodDays >= oynaklikIcinAsgariDonemGun
           ? yillikOynaklik(ts, fiyat)
           : null,
+      destekDirenc: DestekDirenc.hesapla(fiyat, fiyat.last),
     );
   }
 

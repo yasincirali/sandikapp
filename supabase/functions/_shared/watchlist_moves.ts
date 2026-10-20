@@ -11,7 +11,15 @@
 //     kılardı.
 //   · Yalnızca kullanıcının KENDİ seçtiği liste (watchlist) — proaktif değil,
 //     istek üzerine bildirim; kanal fiyat alarmıyla aynı (`alert_channel`).
-//   · TEFAS fonu değişim taşımaz (günlük tek NAV) → bu turda dışarıda.
+//   · TEFAS fonu (fon/BES) 2026-10-17'den beri dahil: değişim aynı canlı
+//     kotasyon yolundan, TEFAS'ın son iki NAV'ından gelir (bugün tarihli
+//     NAV yoksa fon o gün sayılmaz). Eşik fonda %2: fon hisseye göre az
+//     oynar, %5 fonda neredeyse hiç aşılmazdı.
+//   · Emtia (Yahoo vadelisi, `=F`) 2026-10-18: eşik %3 ve metin "gün içi".
+//     Vadeli neredeyse 24 saat işler; push anında "kapanış" yoktur, değişim
+//     önceki uzlaşma fiyatına göre gün içi harekettir. %5 petrol/gümüşte
+//     ayda birkaç kez aşılırdı, kullanıcı hiç haber almazdı (yasin onayı
+//     "Gönder", 18 Eki).
 //   · Sessiz saatler ve `watchlist_move_log` (0068) günlük tekilleştirme.
 //
 // Sembol kuralı istemcideki `alarmSembolu` ile AYNI: altın alt kategorisi
@@ -27,11 +35,22 @@ import { appNotificationRow, recordAppNotification } from './app_notifications.t
 
 /** Bildirime değer günlük hareket (mutlak, yüzde). */
 export const HAREKET_ESIGI_PCT = 5;
+/** Fon (TEFAS) için eşik — gerekçe dosya başında. */
+export const FON_HAREKET_ESIGI_PCT = 2;
+/** Emtia vadelisi için eşik — gerekçe dosya başında. */
+export const EMTIA_HAREKET_ESIGI_PCT = 3;
 /** Tek push'ta en çok kaç varlık anılır. */
 export const EN_COK_VARLIK = 3;
 export const CHANNEL_ID = 'alert_channel';
 
-export type Hareket = { ad: string; pct: number };
+export type Hareket = { ad: string; pct: number; fon?: boolean; emtia?: boolean };
+
+/// Yahoo vadeli sembolü (`CL=F`, `SI=F`); istemcideki `emtiaKatalogu` ile
+/// aynı biçim. Tür alanına bakılmaz: "Diğer" yolundan eklenen vadeli de
+/// aynı piyasa saatini taşır.
+export function emtiaSembolu(sembol: string): boolean {
+  return sembol.trim().toUpperCase().endsWith('=F');
+}
 
 /// İstemcideki `alarmSembolu` (lib/widgets/alarm_kur_sheet.dart) eşi.
 export function takipSembolu(ticker: string, subCategory: string | null | undefined): string | null {
@@ -41,16 +60,31 @@ export function takipSembolu(ticker: string, subCategory: string | null | undefi
   return t.length === 0 ? null : t;
 }
 
-/// Eşiği aşanları mutlak harekete göre sırala, ilk N.
+/// Eşiği aşanları mutlak harekete göre sırala, ilk N. Fon ve emtia
+/// satırı kendi eşiğiyle süzülür.
 export function hareketleriSec(
   adaylar: Hareket[],
   esikPct = HAREKET_ESIGI_PCT,
   enCok = EN_COK_VARLIK,
+  fonEsikPct = FON_HAREKET_ESIGI_PCT,
+  emtiaEsikPct = EMTIA_HAREKET_ESIGI_PCT,
 ): Hareket[] {
   return adaylar
-    .filter((h) => Number.isFinite(h.pct) && Math.abs(h.pct) >= esikPct)
+    // Eşik, mesajda GÖRÜNEN tek ondalıklı değerle karşılaştırılır: 9,8/10
+    // kayan noktada −1,99999… çıkar, mesaj "%2,0" der ama eşiği geçmezdi
+    // (müşteri testi 2026-10-17, BES −%2,0 bildirilmiyordu).
+    .filter((h) =>
+      Number.isFinite(h.pct) &&
+      gorunenYuzde(h.pct) >=
+        (h.fon ? fonEsikPct : h.emtia ? emtiaEsikPct : esikPct)
+    )
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
     .slice(0, enCok);
+}
+
+/// Mesajdaki gösterimle aynı yuvarlama (tek ondalık, mutlak değer).
+export function gorunenYuzde(pct: number): number {
+  return Math.round(Math.abs(pct) * 10) / 10;
 }
 
 /// Mesaj — tutar yok, tavsiye yok, emoji yok (RETENTION_STRATEJISI §8–9).
@@ -64,8 +98,9 @@ export function hareketMesaji(hareketler: Hareket[]): { title: string; body: str
   const title = hareketler.length === 1
     ? `${ilk.pct >= 0 ? '▲' : '▼'} Takip listende: ${parca(ilk)}`
     : `Takip listende ${hareketler.length} büyük hareket`;
+  // Fonun kapanışı yok, günde bir yayımlanan fiyatı var (TEFAS NAV).
   const body = hareketler.length === 1
-    ? 'Bugünkü kapanış. Yatırım tavsiyesi değildir.'
+    ? `${ilk.fon ? 'Bugünkü fon fiyatı' : ilk.emtia ? 'Gün içi hareket' : 'Bugünkü kapanış'}. Yatırım tavsiyesi değildir.`
     : `${hareketler.map(parca).join(' · ')}. Yatırım tavsiyesi değildir.`;
   return { title, body };
 }
@@ -74,7 +109,13 @@ export function hareketMesaji(hareketler: Hareket[]): { title: string; body: str
 /// anlatamaz, metin zaten hepsini sayıyor.
 export function hareketKarti(hareketler: Hareket[]): KartVerisi | null {
   if (hareketler.length !== 1) return null;
-  return degisimKarti(hareketler[0].ad, hareketler[0].pct, 'Takip listesi · son kapanış');
+  const h = hareketler[0];
+  const alt = h.fon
+    ? 'Takip listesi · fon fiyatı'
+    : h.emtia
+    ? 'Takip listesi · gün içi'
+    : 'Takip listesi · son kapanış';
+  return degisimKarti(h.ad, h.pct, alt);
 }
 
 type WatchRow = {
@@ -105,16 +146,19 @@ export async function takipListesiHareketleri(
   const liste = (rows ?? []) as WatchRow[];
   if (liste.length === 0) return { ok: true, reason: 'Takip listesi bos.', sent: 0 };
 
-  // Sembol ↔ satırlar. Fon (TEFAS) değişim taşımaz; dışarıda.
+  // Sembol ↔ satırlar. Fon/BES ticker'ı `TEFAS:XXX`; canlı kotasyon onu
+  // TEFAS'a yönlendirir (`live_prices.ts`).
   const kullaniciSatirlari = new Map<string, Array<{ sembol: string; ad: string }>>();
   const semboller = new Set<string>();
   for (const r of liste) {
-    if (r.type === 'fon') continue;
     const s = takipSembolu(r.ticker ?? '', r.sub_category);
     if (!s) continue;
     semboller.add(s);
     const l = kullaniciSatirlari.get(r.user_id) ?? [];
-    l.push({ sembol: s, ad: r.name || s });
+    // Fon adı uzun ("… Para Piyasası Katılım Fonu") ve kilit ekranında
+    // kesilir; fonda kullanıcının tanıdığı ad koddur (TTE, AFT).
+    const ad = s.startsWith('TEFAS:') ? s.slice('TEFAS:'.length) : (r.name || s);
+    l.push({ sembol: s, ad });
     kullaniciSatirlari.set(r.user_id, l);
   }
   if (semboller.size === 0) return { ok: true, reason: 'Fiyatlanabilir sembol yok.', sent: 0 };
@@ -128,7 +172,12 @@ export async function takipListesiHareketleri(
     for (const s of satirlar) {
       const q = kotasyon.get(s.sembol);
       if (!q || q.changePct === null) continue;
-      adaylar.push({ ad: s.ad, pct: q.changePct });
+      adaylar.push({
+        ad: s.ad,
+        pct: q.changePct,
+        fon: s.sembol.startsWith('TEFAS:'),
+        emtia: emtiaSembolu(s.sembol),
+      });
     }
     const secili = hareketleriSec(adaylar, esik);
     if (secili.length > 0) secimler.set(uid, secili);

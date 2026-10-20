@@ -25,6 +25,7 @@ import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
 import 'screens/otp_verification_screen.dart';
 import 'services/bist_hisse_katalogu.dart';
+import 'services/ekran_olcumu.dart';
 import 'services/hesap_gecisi.dart';
 import 'widgets/uygulama_kabugu.dart';
 import 'services/cihaz_oturumu_service.dart' show CihazKapisi;
@@ -69,6 +70,7 @@ import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
+import 'services/sistem_eylemleri.dart';
 import 'services/history_service.dart';
 import 'services/seri_disk_depo.dart';
 import 'services/live_activity_service.dart';
@@ -255,8 +257,8 @@ void main() async {
       // gerekli değil:
       //   - RemotePushService: `start(userId)` zaten kendi içinde init()
       //     çağırıyor (auth gate'te, ilk frame'den sonra).
-      //   - AnalyticsService: `navigatorObserver` hiçbir yerde kullanılmıyor;
-      //     ilk event'e kadar hazır olması yeterli.
+      //   - AnalyticsService: ekran ölçümü (`EkranOlcumu`) servisi her
+      //     olayda o an çağırır; ilk event'e kadar hazır olması yeterli.
       //   - RemoteConfigService: getter'ları init edilmemişken default'lara
       //     düşer, yani erken okuma güvenli.
       // Hataları yutmuyoruz; yalnızca beklemiyoruz.
@@ -310,6 +312,9 @@ void main() async {
     // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
     // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
     CrashReporter.arkaPlan(DeepLinkService.instance.init(), reason: 'main.DeepLinkService.init');
+    // Siri Kestirmeleri + Spotlight (iOS): soğuk açılışı başlatan eylem de
+    // burada alınır; hedefe gidiş derin bağlantıyla aynı yoldan.
+    CrashReporter.arkaPlan(SistemEylemleri.baslat(), reason: 'main.SistemEylemleri.baslat');
     // Yalnızca zemini şeffaf yap. İkon parlaklığı BURADA sabitlenmez:
     // `Brightness.light` (beyaz ikon) light temada açık zemin üzerinde
     // okunmuyordu. İkon rengi tema ile birlikte değişmeli, bu yüzden
@@ -421,6 +426,8 @@ class SandikApp extends ConsumerWidget {
       title: 'sandık',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
+      // Hangi ekran açılıyor (sadeleştirme ölçüsü, bkz. `EkranOlcumu`).
+      navigatorObservers: [EkranOlcumu.instance],
       theme: buildTheme(SandikPalette.light, Brightness.light),
       darkTheme: buildTheme(SandikPalette.dark, Brightness.dark),
       themeMode: themeMode,
@@ -1223,6 +1230,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _dataWaitTimer = null;
         _dataWaitExpired = false;
         AnalyticsService.instance.setUserId(null);
+        // Test kitlesi hesapla seçilir (App Store 2.3.1(a), 2026-10-14).
+        CrashReporter.arkaPlan(RemoteConfigService.instance.hesabiBildir(null),
+            reason: 'main.hesabiBildir.cikis');
         // Mağaza kimliğini de bırak: sıradaki hesap öncekinin aboneliğini
         // görmesin. Bayrak kapalıyken/yapılandırılmamışken no-op.
         CrashReporter.arkaPlan(SatinAlmaService.instance.cikis(),
@@ -1300,6 +1310,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         CrashReporter.arkaPlan(HesapGecisi.instance.aktifHesapGirdi(user),
             reason: 'main.HesapGecisi.aktifHesapGirdi');
         AnalyticsService.instance.setUserId(user.id);
+        CrashReporter.arkaPlan(
+            RemoteConfigService.instance.hesabiBildir(user.id),
+            reason: 'main.hesabiBildir.giris');
         // Mağaza aboneliği (RevenueCat): yalnız `paywall_enabled` açıkken ve
         // anahtar build'e girmişken bağlanır; değilse hiçbir şey yapmaz.
         // Hak değişince anlık köprü + sunucu haklarını tazele (webhook
@@ -1747,6 +1760,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // sınırı ağ trafiğini zaten kısıtlar.
       CrashReporter.arkaPlan(RemoteConfigService.instance.refresh(),
           reason: 'main.RemoteConfigService.refresh');
+      // Siri eylemi uygulama arkadayken bırakılmış olabilir (kanal
+      // `geldi` haberini kaçırmış olabilir); öne dönüşte sorulur.
+      CrashReporter.arkaPlan(SistemEylemleri.cek(),
+          reason: 'main.SistemEylemleri.cek');
       // Arkadayken olan bir sistem görünümü değişimi burada yakalanır:
       // önplanda olmadığı için `didChangePlatformBrightness` onu bilinçli
       // olarak yutmuştu.
@@ -1872,6 +1889,19 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (_besOtomatikKullanici == uid) return;
       _besOtomatikKullanici = uid;
       _besOtomatikKatki();
+    });
+
+    // Spotlight dizini (iOS) açık pozisyonları izler. Yükleme karesi atlanır
+    // (kullanıcı değişiminde önceki kullanıcının portföyü taşınır, bkz.
+    // aşağıdaki "yerleşik veri" notu). Kilit açılıp kapanınca ve oturum
+    // kapanınca da yeniden eşitlenir; ayrıntı `SistemEylemleri`.
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
+      if (next.isLoading) return;
+      _spotlightEsitle();
+    });
+    ref.listen<bool>(biometricLockProvider, (_, __) => _spotlightEsitle());
+    ref.listen(authProvider, (_, next) {
+      if (next.valueOrNull == null) _spotlightEsitle();
     });
 
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
@@ -2046,6 +2076,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (son == null || son.assets.isEmpty) return;
       _gunIciYuzeyleriniYaz(son);
     }(), reason: 'main.yuzeyYazimiTurSonu');
+  }
+
+  void _spotlightEsitle() {
+    final p = ref.read(portfolioProvider);
+    CrashReporter.arkaPlan(
+        SistemEylemleri.spotlightEsitle(
+          assets: p.isLoading ? null : p.valueOrNull?.assets,
+          userId: ref.read(authProvider).valueOrNull?.id,
+          kilitli: ref.read(biometricLockProvider),
+        ),
+        reason: 'main.SistemEylemleri.spotlight');
   }
 
   /// Ana ekran widget'ı + Live Activity yazımı (portföy dinleyicisinin

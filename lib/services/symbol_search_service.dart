@@ -6,6 +6,7 @@ import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
+import '../models/emtia_katalogu.dart';
 import 'bist_hisse_katalogu.dart';
 import 'supabase_service.dart';
 import 'tefas_service.dart';
@@ -221,6 +222,8 @@ class SymbolSearchService {
     'BZ=F': 'brent',
     'CL=F': 'wti',
     'NG=F': 'gaz',
+    'HG=F': 'copper',
+    'PL=F': 'platinum',
   };
 
   /// TEFAS fon adlarının katlanmış hâli — kod → ad. Fon sayısı binlerce;
@@ -270,16 +273,13 @@ class SymbolSearchService {
     // borsada işlem yapmak değil, yerel varlığın dayandığı fiyatı görmek.
     // `getSymbolHistory` bunları USD kabul edip o günün kuruyla TRY'ye
     // çevirir.
-    const commodities = {
-      FiyatKaynagi.xauUsd: 'Altın (Ons)',
-      'SI=F': 'Gümüş (Ons)',
-      'BZ=F': 'Petrol (Brent)',
-      'CL=F': 'Petrol (WTI)',
-      'NG=F': 'Doğalgaz',
-    };
-    commodities.forEach((ticker, name) {
-      out.add(SymbolHit(ticker: ticker, name: name, source: 'Emtia'));
-    });
+    // Ons altın + Varlık Ekle'nin emtia listesi (`emtiaKatalogu`, tek
+    // kaynak 2026-10-18): formda seçilebilen her emtia aramada da çıkar.
+    out.add(const SymbolHit(
+        ticker: FiyatKaynagi.xauUsd, name: 'Altın (Ons)', source: 'Emtia'));
+    for (final e in emtiaKatalogu) {
+      out.add(SymbolHit(ticker: e.ticker, name: e.ad, source: 'Emtia'));
+    }
 
     return out;
   }

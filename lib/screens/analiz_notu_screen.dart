@@ -171,7 +171,11 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
         ],
       );
     } else {
-      govde = not!.when(
+      govde = SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([not!]),
+        child: not.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(SandikSpace.md),
           child: SandikSkeletonList(rows: 3),
@@ -191,6 +195,7 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
                 yanlisBildirildi: _yanlisBildirildi,
                 onYanlis: _yanlisSayi,
               ),
+      ),
       );
     }
 

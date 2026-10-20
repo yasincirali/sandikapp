@@ -296,6 +296,7 @@ Future<bool> showSandikConfirm({
                 ),
               ]
             : null,
+        actionLabels: [cancelLabel, confirmLabel],
         asyncActions: islem == null
             ? null
             : _OnayIslemEylemleri(
@@ -353,6 +354,7 @@ class _SandikDialogShell extends StatelessWidget {
     required this.title,
     required this.message,
     required this.actions,
+    this.actionLabels,
     this.detail,
     this.asyncActions,
   });
@@ -364,77 +366,93 @@ class _SandikDialogShell extends StatelessWidget {
   final Widget? detail;
   final List<Widget>? actions;
 
+  /// [actions] etiketleri, aynı sırada — eylem satırı sığma ölçümü.
+  final List<String>? actionLabels;
+
   /// [actions] yerine: kendi meşgul durumunu taşıyan eylem satırı
   /// (`showSandikConfirm(islem:)`).
   final Widget? asyncActions;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 360),
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-            decoration: BoxDecoration(
-              color: context.isLight ? context.c.surface2 : context.c.surface1,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: accent.withValues(alpha: 0.30)),
-              boxShadow: [
-                BoxShadow(
-                  color: context.c.golge
-                      .withValues(alpha: context.isLight ? 0.14 : 0.35),
-                  blurRadius: 30,
-                  spreadRadius: -6,
-                  offset: const Offset(0, 12),
-                ),
-                BoxShadow(
-                  color: accent.withValues(alpha: 0.18),
-                  blurRadius: 40,
-                  spreadRadius: -12,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent.withValues(alpha: 0.35)),
+    // Güvenli alan + kaydırma: büyük metin ölçeğinde ya da yatay küçük
+    // ekranda kart ekran yüksekliğini aşarsa alt kısmı (düğmeler!) kesilip
+    // ulaşılamaz oluyordu. Sığdığında kaydırma görünmez, kart ortada kalır.
+    return SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: SandikSpace.md,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 360),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+              decoration: BoxDecoration(
+                color:
+                    context.isLight ? context.c.surface2 : context.c.surface1,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: accent.withValues(alpha: 0.30)),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.c.golge
+                        .withValues(alpha: context.isLight ? 0.14 : 0.35),
+                    blurRadius: 30,
+                    spreadRadius: -6,
+                    offset: const Offset(0, 12),
                   ),
-                  child: Icon(icon, color: accent, size: 30),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: context.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text90,
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.18),
+                    blurRadius: 40,
+                    spreadRadius: -12,
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: context.t.bodyMedium?.copyWith(
-                    height: 1.4,
-                    color: context.c.text58,
-                  ),
-                ),
-                if (detail != null) ...[
-                  const SizedBox(height: 14),
-                  detail!,
                 ],
-                const SizedBox(height: 20),
-                asyncActions ?? _EylemSatiri(actions: actions ?? const []),
-              ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent.withValues(alpha: 0.35)),
+                    ),
+                    child: Icon(icon, color: accent, size: 30),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: context.t.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.c.text90,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: context.t.bodyMedium?.copyWith(
+                      height: 1.4,
+                      color: context.c.text58,
+                    ),
+                  ),
+                  if (detail != null) ...[
+                    const SizedBox(height: 14),
+                    detail!,
+                  ],
+                  const SizedBox(height: 20),
+                  asyncActions ??
+                      _EylemSatiri(
+                        actions: actions ?? const [],
+                        labels: actionLabels ?? const [],
+                      ),
+                ],
+              ),
             ),
           ),
         ),
@@ -443,21 +461,70 @@ class _SandikDialogShell extends StatelessWidget {
   }
 }
 
+/// Eylem satırı: düğmeler yan yana sığmıyorsa ALT ALTA dizilir.
+///
+/// Eskiden her zaman `Row` + `Expanded` idi ve düğme yüksekliği 46 sabitti.
+/// Büyük metin ölçeğinde (Dynamic Type) "Oturumu kapat" yarım genişliğe
+/// sığmayıp iki satıra kırılıyor, ikinci satır kutunun dışına taşıp
+/// kesiliyordu (kilit ekranı, iPhone ekran görüntüsü 2026-10-15). iOS
+/// uyarıları da aynı şeyi yapar: etiket sığmazsa düğmeler dikey yığılır.
+/// Karar etiketin TEK SATIR genişliğiyle verilir; yığında onay üstte,
+/// vazgeç altta (HIG: iptal en altta, başparmağa yakın).
 class _EylemSatiri extends StatelessWidget {
-  const _EylemSatiri({required this.actions});
+  const _EylemSatiri({required this.actions, required this.labels});
 
   final List<Widget> actions;
 
+  /// [actions] ile aynı sırada etiketler — sığma ölçümü için.
+  final List<String> labels;
+
+  static const double _aralik = SandikSpace.sm2;
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < actions.length; i++) ...[
-          if (i > 0) const SizedBox(width: 10),
-          Expanded(child: actions[i]),
-        ],
-      ],
-    );
+    if (actions.length < 2) {
+      return Row(children: [for (final a in actions) Expanded(child: a)]);
+    }
+    return LayoutBuilder(builder: (context, constraints) {
+      final yarim = (constraints.maxWidth - _aralik * (actions.length - 1)) /
+              actions.length -
+          _DialogButton.yatayDolgu * 2;
+      final stil = _DialogButton.etiketStili(context, null);
+      final scaler = MediaQuery.textScalerOf(context);
+      final sigmiyor = labels.any((l) {
+        final tp = TextPainter(
+          text: TextSpan(text: l, style: stil),
+          textDirection: Directionality.of(context),
+          textScaler: scaler,
+          maxLines: 1,
+        )..layout();
+        final w = tp.width;
+        tp.dispose();
+        return w > yarim;
+      });
+      if (sigmiyor) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = actions.length - 1; i >= 0; i--) ...[
+              actions[i],
+              if (i > 0) const SizedBox(height: _aralik),
+            ],
+          ],
+        );
+      }
+      return IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < actions.length; i++) ...[
+              if (i > 0) const SizedBox(width: _aralik),
+              Expanded(child: actions[i]),
+            ],
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -510,7 +577,10 @@ class _OnayIslemEylemleriState extends State<_OnayIslemEylemleri> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !_mesgul,
-      child: _EylemSatiri(actions: [
+      child: _EylemSatiri(labels: [
+        widget.cancelLabel,
+        widget.confirmLabel,
+      ], actions: [
         Opacity(
           opacity: _mesgul ? 0.5 : 1,
           child: _DialogButton(
@@ -560,18 +630,33 @@ class _DialogButton extends StatelessWidget {
   /// `null` → dokunuşu sarmalayan alır (ör. [SandikAsyncTap]).
   final VoidCallback? onTap;
 
+  /// Etiketin kutu içi yatay boşluğu — [_EylemSatiri] sığma ölçümü de
+  /// bunu düşer.
+  static const double yatayDolgu = SandikSpace.smd;
+
+  static TextStyle? etiketStili(BuildContext context, Color? color) =>
+      context.t.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: color);
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 46,
+    // Yükseklik sabit DEĞİL, en az 46: büyük metinde etiket kırılırsa kutu
+    // büyür, metin kesilmez (eskiden `SizedBox(height: 46)` ikinci satırı
+    // kırpıyordu). 46 ≥ 44 pt dokunma alanı korunur.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 46),
       child: SandikBasma(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Semantics(
           button: true,
           label: label,
+          excludeSemantics: true,
           child: Container(
             alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(
+              horizontal: yatayDolgu,
+              vertical: SandikSpace.sm,
+            ),
             decoration: BoxDecoration(
               color: filled ? color.withValues(alpha: 0.14) : null,
               borderRadius: SandikRadius.mdAll,
@@ -586,10 +671,8 @@ class _DialogButton extends StatelessWidget {
                   opacity: mesgul ? 0 : 1,
                   child: Text(
                     label,
-                    style: context.t.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
+                    textAlign: TextAlign.center,
+                    style: etiketStili(context, color),
                   ),
                 ),
                 if (mesgul)
@@ -619,6 +702,7 @@ Future<void> showSandikDialog({
   required String title,
   required String message,
   String actionLabel = 'Tamam',
+
   /// Verilirse [message] yerine kullanılır ve saniyede bir tazelenir —
   /// geri sayım gibi değişen içerikler için. `null` döndüğü an dialog
   /// otomatik kapanır.
@@ -731,6 +815,7 @@ class _SandikDialogState extends State<_SandikDialog> {
       icon: icon,
       title: title,
       message: message,
+      actionLabels: [actionLabel],
       actions: [
         _DialogButton(
           label: actionLabel,
@@ -744,9 +829,8 @@ class _SandikDialogState extends State<_SandikDialog> {
 }
 
 String _humanize(String raw) {
-  final stripped = raw
-      .replaceFirst(RegExp(r'^(Exception|Error|_TypeError):\s*'), '')
-      .trim();
+  final stripped =
+      raw.replaceFirst(RegExp(r'^(Exception|Error|_TypeError):\s*'), '').trim();
   if (stripped.isEmpty || stripped.length > 120) {
     return 'Bir şeyler ters gitti, tekrar dene.';
   }
@@ -770,8 +854,7 @@ String _humanize(String raw) {
 /// easeOutCubic'i TERSTEN oynuyordu — diyalog neredeyse tam görünür kalıp
 /// son ~80 ms'de birden kayboluyordu; "kapat"a basınca ağır hissettiriyordu
 /// (animasyon denetimi 2026-10-01).
-Widget _diyalogGecisi(
-    BuildContext ctx, Animation<double> anim, Widget child) {
+Widget _diyalogGecisi(BuildContext ctx, Animation<double> anim, Widget child) {
   final egri = CurvedAnimation(
     parent: anim,
     curve: SandikMotion.enter,

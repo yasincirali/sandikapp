@@ -17,6 +17,7 @@ import '../services/radar_okuma.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'radar_ortak.dart';
+import 'sandik_skeleton.dart';
 
 /// Para akışı kartı (Balina B1 2026-10-04; özet kart 2026-10-05, S1-B).
 ///
@@ -70,8 +71,13 @@ class ParaAkisiKarti extends ConsumerWidget {
   /// Kart çizildiğinde çevresine bırakılan boşluk; çizilmezse boşluk da yok.
   final EdgeInsetsGeometry dis;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(balinaRadariAcikProvider)) return const SizedBox.shrink();
     final kod = fonKoduOf(tur: tur, ticker: ticker);
     if (kod == null) return const SizedBox.shrink();
@@ -92,7 +98,7 @@ class ParaAkisiKarti extends ConsumerWidget {
 
     void ayrintiyaGit() => pushGuarded(
           context,
-          adaptiveRoute<void>(builder: (_) => ParaAkisiDetayScreen(kod: kod)),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'para_akisi_detay'), builder: (_) => ParaAkisiDetayScreen(kod: kod)),
         );
 
     return Padding(
@@ -183,6 +189,7 @@ class ParaAkisiKarti extends ConsumerWidget {
                       onPressed: () => pushGuarded(
                         context,
                         adaptiveRoute<void>(
+                            settings: const RouteSettings(name: 'hafta_ozeti'),
                             builder: (_) => const HaftaOzetiScreen()),
                       ),
                       child: Text(l10n.weekLink),

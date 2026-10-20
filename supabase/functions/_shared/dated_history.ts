@@ -19,6 +19,7 @@
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { kriptoKodu, mumlariCek, tlSerisi } from './kripto.ts';
+import { gramTabani, ONS_GRAM } from './emtia_gram.ts';
 import {
   BF_API,
   bfGecmisiniCoz,
@@ -46,6 +47,11 @@ export async function fetchYahooDated(
   symbol: string,
   f: typeof fetch = fetch,
 ): Promise<Seri> {
+  // Gram emtia: ons tabanı ÷ 31,1035 (`emtia_gram.ts`).
+  const taban = gramTabani(symbol);
+  if (taban) {
+    return (await fetchYahooDated(taban, f)).map(([t, v]) => [t, v / ONS_GRAM]);
+  }
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
     `?interval=1d&range=1y&includePrePost=false`;

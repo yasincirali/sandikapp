@@ -435,6 +435,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       onPressed: () => pushGuarded(
                         context,
                         adaptiveRoute<void>(
+                            settings: const RouteSettings(name: 'comparison'),
                             builder: (_) => const ComparisonScreen()),
                       ),
                       child: Container(
@@ -481,7 +482,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
           // değişmez korunuyor.
           govde: _bodyTab == 1
               ? const WatchlistBody()
-              : SandikKaydirmaBasligi.payIle((ustPay) => pStateAsync.when(
+              : SandikKaydirmaBasligi.payIle((ustPay) => SandikIcerikGecisi(
+                  // Yükleyici → gövde çapraz solar (2026-10-14).
+                  tamEkran: true,
+                  anahtar: SandikIcerikGecisi.hal([pStateAsync]),
+                  child: pStateAsync.when(
                   // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
                   // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
                   // bu anda tam ekran yükleme çizip geri dönüyordu: ekran bir kare
@@ -700,6 +705,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       onTap: (p, hero) => pushGuarded(
                                         context,
                                         adaptiveRoute<void>(
+                                            settings: const RouteSettings(name: 'asset_detail'),
                                             builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,
@@ -741,6 +747,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     ),
                     ),
                   ),
+                ),
                 )),
         ),
       ),

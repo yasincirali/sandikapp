@@ -311,6 +311,32 @@ class PortfoyYorumPaketi {
             pct((canli / ist.dusuk - 1) * 100));
       }
     }
+    // Destek/direnç ("Seviye bilgisi" kararı, 2026-10-17): fiyat seviyesi
+    // DEĞİL yüzde uzaklık ve sınanma sayısı gider — sunucu kapısı tutar
+    // biçimini reddeder (veri minimizasyonu) ve AI yalnız ölçümdeki sayıyı
+    // yazabilir. Seviyenin kendisini kart, uygulamanın fiyat biçimiyle çizer.
+    final dd = ist?.destekDirenc;
+    if (dd != null && !dd.bos) {
+      final fiyat = (canliBirim != null && canliBirim > 0) ? canliBirim : ist!.son;
+      final destek = dd.destek;
+      if (destek != null) {
+        ekle('destek_uzaklik', 'Fiyatın en yakın destek bölgesinin üstündeki uzaklığı',
+            pct(destek.uzaklikPct(fiyat)));
+        ekle('destek_temas', 'Destek bölgesinde dönem içinde dönülen kez', '${destek.temas}');
+      }
+      final direnc = dd.direnc;
+      if (direnc != null) {
+        ekle('direnc_uzaklik', 'Fiyatın en yakın direnç bölgesinin altındaki uzaklığı',
+            pct(direnc.uzaklikPct(fiyat)));
+        ekle('direnc_temas', 'Direnç bölgesinde dönem içinde dönülen kez', '${direnc.temas}');
+      }
+      final icinde = dd.icinde;
+      if (icinde != null) {
+        ekle('bolge_icinde_temas',
+            'Fiyatın şu an içinde bulunduğu, dönem içinde dönülen bölgedeki dönüş sayısı',
+            '${icinde.temas}');
+      }
+    }
     if (portfoyPayi != null && portfoyPayi.isFinite && portfoyPayi > 0) {
       ekle('portfoy_payi', 'Portföy içindeki payı', pay(portfoyPayi));
     }

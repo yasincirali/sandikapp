@@ -25,6 +25,8 @@ import '../widgets/review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_eklendi.dart';
+import '../widgets/ekran_goruntusu_ekle.dart';
+import '../widgets/sandik_async_button.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
@@ -52,12 +54,29 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     await pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => AddAssetScreen(
           cartMode: true,
           cartInitial: existing,
         ),
       ),
     );
+  }
+
+  /// Görüntü okunurken kayıt ve ikinci okuma kapalı.
+  bool _gorselOkunuyor = false;
+
+  /// Ekran görüntüsünden sepete (2026-10-19; akış
+  /// `ekranGoruntusundenSepete`). Okunurken kayıt kapalı: yarım okumayla
+  /// sepet kaydedilmesin.
+  Future<void> _ekranGoruntusundenEkle() async {
+    if (_saving) return;
+    setState(() => _gorselOkunuyor = true);
+    try {
+      await ekranGoruntusundenSepete(context, ref);
+    } finally {
+      if (mounted) setState(() => _gorselOkunuyor = false);
+    }
   }
 
   Future<void> _saveAll() async {
@@ -355,13 +374,25 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           titleWidget:
               Text('Toplu Ekle${items.isEmpty ? '' : ' (${items.length})'}'),
           actions: [
+            // Sepet doluyken de ekran görüntüsü eklenebilir (boş hâlde
+            // düğme gövdede). Okunurken simge göstergeye döner.
+            if (!_saving && items.isNotEmpty)
+              SandikAsyncTap(
+                onTap: _ekranGoruntusundenEkle,
+                semanticLabel: context.l10n.importScreenshotAdd,
+                child: const SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Icon(Icons.add_photo_alternate_outlined),
+                ),
+              ),
             if (!_saving)
               IconButton(
                 tooltip: context.l10n.pasteCsv,
                 icon: const Icon(Icons.content_paste_go_rounded),
                 onPressed: () => pushGuarded(
                   context,
-                  adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+                  adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
                 ),
               ),
             if (items.isNotEmpty && !_saving)
@@ -385,9 +416,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
   }
 
   Widget _emptyState() {
+    // Kaydırılabilir: büyük yazıda (Dynamic Type ×2) üç öğe ve açıklama
+    // ekrana sığmıyor, taşma şeridi çıkıyordu (2026-10-19 önizlemesi).
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -416,10 +449,31 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                   ?.copyWith(color: context.c.text58, height: 1.4),
             ),
             const SizedBox(height: 16),
+            // Ekran görüntüsünden ekle (2026-10-19): elle girişin en
+            // kısa alternatifi, bu yüzden ilk sırada.
+            // Boy asgari (sabit değil): büyük yazıda etiket satır kırar,
+            // kırpılmaz.
+            SandikAsyncButton(
+              tur: SandikAsyncTur.cerceve,
+              height: null,
+              icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+              onPressed: _ekranGoruntusundenEkle,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child: Text(context.l10n.importScreenshotAdd),
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              context.l10n.importScreenshotHint,
+              textAlign: TextAlign.center,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+            const SizedBox(height: SandikSpace.md),
             OutlinedButton.icon(
               onPressed: () => pushGuarded(
                 context,
-                adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+                adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
               ),
               icon: const Icon(Icons.content_paste_go_rounded, size: 18),
               label: Text(context.l10n.pasteFromStatement),
@@ -480,9 +534,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 }),
                 bosluk: const EdgeInsets.only(bottom: SandikSpace.smd),
               ),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
+            // Asgari boy (sabit değil): büyük yazıda etiket kırpılmasın
+            // (HIG Dynamic Type, 2026-10-19 önizlemesi ×2'de taşıyordu).
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                  minWidth: double.infinity, minHeight: 48),
               child: OutlinedButton.icon(
                 onPressed: _saving ? null : () => _openAddForm(),
                 icon: Icon(Icons.add_rounded, color: context.c.amberText),
@@ -501,9 +557,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                  minWidth: double.infinity, minHeight: 52),
               // BİLİNÇLİ İSTİSNA (tek yükleniyor davranışı, 2026-10-08):
               // SandikAsyncButton DEĞİL. Meşgul düğme yalnız gösterge değil
               // "3/10 kaydediliyor" ilerlemesini de taşır; standart bileşen
@@ -511,7 +567,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               // ekranın tamamını kilitler (geri tuşu, satır düzenle/sil,
               // Varlık Ekle) — çift dokunuş koruması oradan gelir.
               child: FilledButton(
-                onPressed: _saving || items.isEmpty ? null : _saveAll,
+                onPressed: _saving || _gorselOkunuyor || items.isEmpty
+                    ? null
+                    : _saveAll,
                 style: FilledButton.styleFrom(
                   backgroundColor: context.c.amberFill,
                   foregroundColor: context.c.onAmber,
@@ -615,7 +673,8 @@ class _BulkItemTile extends StatelessWidget {
       if (item.satis) context.l10n.cartSellTag,
       '${_fmt(item.quantity)} ${_unitLabel()}',
       if (item.price > 0) '${_fmt(item.price)} ${item.currency}',
-      if (item.price <= 0) 'Fiyat otomatik',
+      // "Maliyet sonra girilecek" alt satırda kendi başına (kırpılmasın).
+      if (item.price <= 0 && !item.maliyetSonra) 'Fiyat otomatik',
       if (dateLabel != null) dateLabel,
       if (item.subCategory != null && item.subCategory!.isNotEmpty)
         item.subCategory!,
@@ -656,6 +715,20 @@ class _BulkItemTile extends StatelessWidget {
                               item.satis ? context.c.loss : context.c.text58),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
+                  // Ekran görüntüsünden gelen, maliyeti okunamayan satır
+                  // (2026-10-19). Ayrı satır: büyük yazıda ilk satır
+                  // kırpılınca bu uyarı kaybolmasın. Anlam metinde, renk
+                  // yalnız vurgu.
+                  if (item.maliyetSonra) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      context.l10n.cartCostLater,
+                      style: context.t.titleSmall
+                          ?.copyWith(color: context.c.amberText),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),

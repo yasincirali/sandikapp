@@ -5,6 +5,8 @@
 
 import { assert, assertEquals, assertMatch } from 'jsr:@std/assert@1';
 import {
+  botModu,
+  xeGonderir,
   abdTufeGuncelMi,
   abdTufeOzeti,
   abdTufeTaslagi,
@@ -12,7 +14,18 @@ import {
   fedKarariBul,
   fedTaslagi,
   ASGARI_FON,
+  AZAMI_KARAKTER,
+  abdIstihdamOzeti,
+  abdIstihdamTaslagi,
+  brentDegisimi,
+  etiketle,
+  X_SINIRI,
   bugununFonGonderisi,
+  type FonFiyatSatiri,
+  fonGetiriTaslagi,
+  getiriOzeti,
+  sabahGonderisi,
+  takvimTaslagi,
   type FonAkisSatiri,
   fonAkisiTaslagi,
   fonKategorisi,
@@ -283,6 +296,219 @@ Deno.test('x-paylas: cron secret fail-closed, mod kapıları varsayılan kapalı
   assert(paylas.includes("cronSecretZorunlu(secret, 'TEFAS_NAV_CRON_SECRET')"));
   assert(paylas.includes("Deno.env.get('X_BOT_MODU') ?? 'kapali'"));
   assert(paylas.includes("Deno.env.get('X_KUR_IZINLI') === '1'"));
-  // Gönderi yalnız onayla atılır: x-paylas X'e hiç yazmaz.
-  assertEquals(/xGonder|xGorselYukle/.test(paylas), false);
+  // x-paylas X'e yalnız otomatik modda ve anahtar varken yazar; o yol da
+  // x-onay'daki koşullu kilidi (taslak → gonderiliyor) kullanır.
+  assertEquals(/xGonder\(|xGorselYukle\(/.test(paylas), false);
+  assert(paylas.includes("mod === 'otomatik' ? xKimligi() : null"));
+  assert(paylas.includes(".eq('id', id).eq('durum', 'taslak').select('id')"));
+});
+
+Deno.test('botModu: yalnız bilinen değerler, gerisi kapalı (fail-closed)', () => {
+  assertEquals(botModu(undefined), 'kapali');
+  assertEquals(botModu(''), 'kapali');
+  assertEquals(botModu('acik'), 'kapali');
+  assertEquals(botModu('YAYIN'), 'kapali');
+  assertEquals(botModu('taslak'), 'taslak');
+  assertEquals(botModu(' yayin\n'), 'yayin');
+  assertEquals(botModu('otomatik'), 'otomatik');
+  assertEquals(xeGonderir('taslak'), false);
+  assertEquals(xeGonderir('kapali'), false);
+  assertEquals(xeGonderir('yayin'), true);
+  assertEquals(xeGonderir('otomatik'), true);
+});
+
+// ── Sabah gönderisi (0153) ───────────────────────────────────────────────────
+
+/// dagilim: [fon_turu, fon sayısı, iki gün arası getiri %]
+function fiyatlar(gunler: [string, string], dagilim: [string, number, number][]): FonFiyatSatiri[] {
+  const out: FonFiyatSatiri[] = [];
+  let n = 0;
+  for (const [tur, adet, r] of dagilim) {
+    for (let i = 0; i < adet; i++, n++) {
+      const kod = `F${String(n).padStart(4, '0')}`;
+      const pay = 1000 + n;
+      const fiyat = 2 + (n % 7);
+      out.push({ fon_kodu: kod, tarih: gunler[0], fon_tipi: 'YAT', fon_turu: tur, pay_adedi: pay, portfoy_degeri: pay * fiyat });
+      out.push({ fon_kodu: kod, tarih: gunler[1], fon_tipi: 'YAT', fon_turu: tur, pay_adedi: pay + 5, portfoy_degeri: (pay + 5) * fiyat * (1 + r / 100) });
+    }
+  }
+  return out;
+}
+
+const GETIRI = fiyatlar(['2026-10-13', '2026-10-14'], [
+  ['Hisse Senedi Fonu', 120, -0.42],
+  ['Para Piyasası Fonu', 80, 0.13],
+  ['Kıymetli Madenler Fonu', 60, 1.24],
+  ['Borçlanma Araçları Fonu', 70, 0.08],
+  ['Bilinmeyen', 5, 9],
+]);
+
+Deno.test('fon getirisi: son iki tam gün, kategori medyanı, BES ve az fonlu kategori yok', () => {
+  const o = getiriOzeti([
+    ...GETIRI,
+    // BES ve bugünün (yarım) verisi sayılmaz; 25'lik veri hatası dışarıda.
+    { fon_kodu: 'EMK1', tarih: '2026-10-14', fon_tipi: 'EMK', fon_turu: 'Hisse Senedi Fonu', pay_adedi: 1, portfoy_degeri: 1 },
+    { fon_kodu: 'F0000', tarih: '2026-10-15', fon_tipi: 'YAT', fon_turu: 'Hisse Senedi Fonu', pay_adedi: 1, portfoy_degeri: 9 },
+  ], '2026-10-15')!;
+  assertEquals([o.onceki, o.gun], ['2026-10-13', '2026-10-14']);
+  assertEquals(o.kategoriler.map((k) => k.kategori), ['Altın ve kıymetli maden', 'Para piyasası', 'Borçlanma araçları', 'Hisse senedi']);
+  assert(Math.abs(o.kategoriler[0].medyan - 1.24) < 1e-9);
+  // Yarım gün (ASGARI_FON altı) atlanır, iki tam gün yoksa null.
+  assertEquals(getiriOzeti(GETIRI.slice(0, 2 * (ASGARI_FON - 1)), '2026-10-15'), null);
+  const sicrama = fiyatlar(['2026-10-13', '2026-10-14'], [['Hisse Senedi Fonu', ASGARI_FON, 25]]);
+  assertEquals(getiriOzeti(sicrama, '2026-10-15'), null);
+});
+
+Deno.test('fon getirisi taslağı: şablon kendi kapısından geçer, iki basamak', () => {
+  const t = fonGetiriTaslagi(getiriOzeti(GETIRI, '2026-10-15')!);
+  assertEquals(t.tur, 'fon_getiri');
+  assertEquals(t.donem, '2026-10-14');
+  assertEquals(t.sablon_metin, "14 Ekim'de fon kategorileri içinde en yüksek medyan getiri %1,24 ile altın ve kıymetli maden fonlarında oldu. Hisse senedi fonları %0,42 geriledi.");
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t), { gecti: true, metin: t.sablon_metin });
+  assert(t.kart.bicim === 'liste' && t.kart.satirlar[3].deger === '−%0,42');
+});
+
+const OLAYLAR = [
+  { tarih: '2026-10-22', saat: '14:00:00', baslik: 'TCMB faiz kararı' },
+  { tarih: '2026-10-28', saat: '21:00:00', baslik: 'Fed faiz kararı' },
+  { tarih: '2026-11-12', saat: null, baslik: 'TCMB Enflasyon Raporu' },
+];
+
+Deno.test('takvim: yalnız bu haftanın olayları, olay yoksa null, model yok', () => {
+  const t = takvimTaslagi('2026-10-19', OLAYLAR)!;
+  assertEquals(t.sablon_metin, 'Bu hafta takvimde: 22 Ekim Perşembe 14:00 TCMB faiz kararı.');
+  assertEquals(t.yalniz_sablon, true);
+  assertEquals(t.donem, '2026-10-19');
+  assert(t.kart.bicim === 'liste' && t.kart.satirlar[0].deger === 'Per 22 Eki' && t.kart.satirlar[0].ek === '14:00');
+  assertEquals(takvimTaslagi('2026-11-02', OLAYLAR), null);
+  // Saatsiz olay saatsiz yazılır.
+  assertEquals(takvimTaslagi('2026-11-09', OLAYLAR)!.sablon_metin, 'Bu hafta takvimde: 12 Kasım Perşembe TCMB Enflasyon Raporu.');
+  // Uzun hafta tek gönderiye sığar.
+  const cok = Array.from({ length: 6 }, (_, i) => ({ tarih: `2026-10-${19 + (i % 5)}`, saat: '10:00', baslik: `Uzunca bir veri açıklaması başlığı ${i}` }));
+  assert([...takvimTaslagi('2026-10-19', cok)!.sablon_metin].length <= AZAMI_KARAKTER);
+});
+
+Deno.test('sabah: Pazartesi takvim, diğer iş günleri getiri, hafta sonu yok', () => {
+  assertEquals(sabahGonderisi('2026-10-19'), 'takvim');
+  assertEquals(sabahGonderisi('2026-10-20'), 'fon_getiri');
+  assertEquals(sabahGonderisi('2026-10-23'), 'fon_getiri');
+  assertEquals(sabahGonderisi('2026-10-24'), null);
+});
+
+Deno.test('sabah kartları PNG çizilir', async () => {
+  for (const k of [fonGetiriTaslagi(getiriOzeti(GETIRI, '2026-10-15')!).kart, takvimTaslagi('2026-10-26', OLAYLAR)!.kart]) {
+    const png = await pngCiz(kartSvg(k));
+    assertEquals([...png.slice(1, 4)].map((c) => String.fromCharCode(c)).join(''), 'PNG');
+    const dosya = Deno.env.get('X_KART_CIKTI');
+    if (dosya) await Deno.writeFile(`${dosya}/kart_sabah_${k.ust.slice(0, 4)}.png`, png);
+  }
+});
+
+const m0153 = await Deno.readTextFile(new URL('../migrations/0153_x_sabah_gonderisi.sql', import.meta.url));
+
+Deno.test('0153: takvim istemciye kapalı, sabah cron akşamla aynı aktiflikte, eski kip korunur', () => {
+  assert(m0153.includes('force row level security'));
+  assert(m0153.includes('revoke all on table public.x_takvim from public, anon, authenticated'));
+  assertEquals(/create policy/i.test(m0153), false);
+  assert(m0153.includes("cron.schedule('x-paylas-sabah', '30 6 * * 1-5'"));
+  assert(m0153.includes("where jobname = 'x-paylas' and not active"));
+  // Eski tetik kip yollamaz → akşam turu; sabah yalnız açık 'sabah' ile.
+  assert(paylas.includes("let kip = 'aksam'"));
+  assert(paylas.includes("g?.kip === 'sabah'"));
+  assert(paylas.includes('aiAcik && !t.yalniz_sablon'));
+});
+
+// ── 19 Eki: etiket, ABD istihdam, Brent, dünün piyasası (0157) ──────────────
+
+function blsIstihdam(u: number[], p: number[], sonYil = 2026, sonAy = 9) {
+  const seri = (id: string, v: number[]) => ({
+    seriesID: id,
+    data: v.map((d, i) => {
+      const toplam = sonYil * 12 + sonAy - 1 - (v.length - 1 - i);
+      return { year: String(Math.floor(toplam / 12)), period: `M${String((toplam % 12) + 1).padStart(2, '0')}`, value: String(d) };
+    }).reverse(),
+  });
+  return { status: 'REQUEST_SUCCEEDED', Results: { series: [seri('LNS14000000', u), seri('CES0000000001', p)] } };
+}
+
+Deno.test('ABD istihdam: işsizlik oranı ve tarım dışı istihdam değişimi, şablon kapıdan geçer', () => {
+  const o = abdIstihdamOzeti(blsIstihdam([4.2, 4.1, 4.2, 4.3, 4.2, 4.1], [159000, 159100, 159250, 159300, 159358, 159500]))!;
+  assertEquals(o.donem, '2026-09-01');
+  assertEquals(o.istihdam_degisim, 142);
+  const t = abdIstihdamTaslagi(o);
+  assertEquals(t.sablon_metin, "ABD'de eylül ayında tarım dışı istihdam 142 bin kişi arttı. İşsizlik oranı %4,1 oldu, bir önceki ay %4,2 idi.");
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t), { gecti: true, metin: t.sablon_metin });
+  assertEquals(abdIstihdamOzeti(blsIstihdam([4.1], [159000])), null);
+});
+
+Deno.test('etiket: türe göre eklenir, sığmazsa hiç eklenmez, kapıdan sonra', () => {
+  const t = abdIstihdamTaslagi(abdIstihdamOzeti(blsIstihdam([4.2, 4.1], [159358, 159500]))!);
+  assertEquals(etiketle(t, 'Kısa bir metin burada duruyor.'), 'Kısa bir metin burada duruyor.\n\n#işsizlik #ABD');
+  const uzun = 'a'.repeat(270);
+  assertEquals(etiketle(t, uzun), uzun);
+  assert([...etiketle(t, 'b'.repeat(262))].length <= X_SINIRI);
+  // Model etiket yazamaz: kapı '#' reddeder.
+  assertEquals(metinKapisi({ metin: 'Fonlara bugün net 3,2 milyar TL girdi #fon' }, t).gecti, false);
+  const tk = takvimTaslagi('2026-10-19', OLAYLAR)!;
+  assertEquals(etiketle(tk, tk.sablon_metin).endsWith('#TCMB #piyasa'), true);
+});
+
+function eia(noktalar: [string, number][]) {
+  return { response: { data: noktalar.map(([period, value]) => ({ period, value: String(value), series: 'RBRTE' })) } };
+}
+
+Deno.test('Brent: bir hafta önceye göre, kendi tarihiyle; bayatsa null', () => {
+  const b = brentDegisimi(eia([['2026-10-13', 76.5], ['2026-10-06', 75.0], ['2026-10-08', 74]]), '2026-10-16')!;
+  assertEquals(b.ad, 'Brent petrol (13 Ekim)');
+  assertEquals(b.son, '76,50 $');
+  assert(Math.abs(b.degisim - 2) < 1e-9);
+  assertEquals(brentDegisimi(eia([['2026-09-30', 76.5], ['2026-09-22', 75]]), '2026-10-16'), null);
+  assertEquals(brentDegisimi(eia([['2026-10-13', 76.5]]), '2026-10-16'), null);
+  assertEquals(brentDegisimi({ hata: 1 }, '2026-10-16'), null);
+});
+
+Deno.test('haftalık: Brent kendi tarihiyle anlatılır, şablon kapıdan geçer, #petrol', () => {
+  const o = akisOzeti(ORNEK, '2026-10-13', '2026-10-13')!;
+  const brent = brentDegisimi(eia([['2026-10-13', 76.5], ['2026-10-06', 78.0]]), '2026-10-16')!;
+  const t = haftalikTaslak({ ...o, baslangic: '2026-10-12', bitis: '2026-10-16' }, [brent]);
+  assertMatch(t.sablon_metin, /Brent petrol 13 Ekim itibarıyla bir haftada %1,9 düştü\./);
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t).gecti, true);
+  assert(t.kart.kaynak.includes('EIA'));
+  assertEquals(t.etiketler, ['#fon', '#petrol']);
+});
+
+Deno.test('dünün piyasası: kur satırları + fon kategorileri, 6 satırı aşmaz, kapıdan geçer', () => {
+  const o = getiriOzeti(GETIRI, '2026-10-15')!;
+  const t = fonGetiriTaslagi(o, [{ ad: 'Gram altın', son: '5.120 ₺', degisim: 0.84 }, { ad: 'Dolar/TL', son: '41,92', degisim: 0.12 }]);
+  assert(t.kart.bicim === 'liste' && t.kart.satirlar.length <= 6);
+  assertEquals(t.kart.ust, 'DÜNÜN PİYASASI · 14 EKİM');
+  assertEquals(metinKapisi({ metin: t.sablon_metin }, t), { gecti: true, metin: t.sablon_metin });
+  assertMatch(t.sablon_metin, /^14 Ekim'de gram altın %0,84 arttı, Dolar\/TL %0,12 arttı\./);
+  assertEquals(t.etiketler, ['#altın', '#fon', '#TEFAS']);
+  // Kur yoksa eski kart birebir.
+  assertEquals(fonGetiriTaslagi(o).kart.ust, 'FON GETİRİLERİ · 14 EKİM');
+});
+
+Deno.test('yeni kartlar PNG çizilir', async () => {
+  const o = getiriOzeti(GETIRI, '2026-10-15')!;
+  const kartlar = [
+    abdIstihdamTaslagi(abdIstihdamOzeti(blsIstihdam([4.2, 4.1, 4.2, 4.3, 4.2, 4.1], [159000, 159100, 159250, 159300, 159358, 159500]))!).kart,
+    fonGetiriTaslagi(o, [{ ad: 'Gram altın', son: '5.120 ₺', degisim: 0.84 }, { ad: 'Dolar/TL', son: '41,92', degisim: 0.12 }]).kart,
+  ];
+  for (const k of kartlar) {
+    const png = await pngCiz(kartSvg(k));
+    assertEquals([...png.slice(1, 4)].map((c) => String.fromCharCode(c)).join(''), 'PNG');
+    const dosya = Deno.env.get('X_KART_CIKTI');
+    if (dosya) await Deno.writeFile(`${dosya}/kart_yeni_${kartlar.indexOf(k)}.png`, png);
+  }
+});
+
+const m0157 = await Deno.readTextFile(new URL('../migrations/0157_x_abd_istihdam.sql', import.meta.url));
+
+Deno.test('0157: tür listesi yalnız genişler; x-paylas etiketi kapıdan sonra ekler', () => {
+  for (const t of ['fon_akisi', 'haftalik', 'tufe', 'abd_tufe', 'fed', 'fon_getiri', 'takvim', 'abd_istihdam']) {
+    assert(m0157.includes(`'${t}'`), t);
+  }
+  assert(paylas.indexOf('metin = etiketle(t, metin)') > paylas.indexOf('metinKapisi(JSON.parse(ham), t)'));
+  assert(paylas.includes("Deno.env.get('EIA_API_KEY')"));
 });

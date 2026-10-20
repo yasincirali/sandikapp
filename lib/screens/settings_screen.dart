@@ -353,6 +353,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'legal_doc'),
         builder: (_) =>
             LegalDocScreen(title: title, blocks: blocks, icon: icon),
       ),
@@ -584,7 +585,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _bolumAc(SettingsBolum b) => pushGuarded(
         context,
-        adaptiveRoute<void>(builder: (_) => SettingsScreen(bolum: b)),
+        adaptiveRoute<void>(settings: const RouteSettings(name: 'settings'), builder: (_) => SettingsScreen(bolum: b)),
       );
 
   /// Hub: dört bölüm + (admin) tanılama + (debug) geliştirici + sürüm.
@@ -683,6 +684,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => pushGuarded(
                   context,
                   adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'push_diagnostics'),
                     builder: (_) => const PushDiagnosticsScreen(),
                   ),
                 ),
@@ -760,7 +762,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: context.l10n.signalNotificationsSubtitle,
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'signal_settings'), builder: (_) => const SignalSettingsScreen()),
               ),
               trailing: Semantics(
                 label: context.l10n.signalNotifications,
@@ -796,7 +798,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }(),
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const PriceAlertsScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'price_alerts'), builder: (_) => const PriceAlertsScreen()),
               ),
             ),
             const _QuietHoursTile(),
@@ -821,6 +823,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             if (ref.watch(activePartnersProvider).isNotEmpty)
               const _PartnerActivitySwitch(),
             const _BriefSlotTile(),
+            // Brifing saatinin hemen altında: ikisi de "proaktif" push ve
+            // kullanıcı ikisini aynı yerde arar. Bayraksız (yasin
+            // 2026-10-17: "her özelliği kapatma, flag gerekirse ben
+            // belirteceğim"); sunucu sütunu 0052'den beri okuyor.
+            const _OzetBildirimiSwitch(),
             if (ref.watch(balinaRadariAcikProvider)) const _RadarAyarlari(),
             // Maaş günü birikim hatırlatması (0119) — birikim serisiyle aynı
             // bayrak: seri görünmüyorken "serin ay ay sayılıyor" diyen bir
@@ -864,7 +871,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   context.l10n.kullaniciAdiSecilmedi,
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const KullaniciAdiScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'kullanici_adi'), builder: (_) => const KullaniciAdiScreen()),
               ),
             ),
             _SwitchTile(
@@ -913,6 +920,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => pushGuarded(
                 context,
                 adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'kayitli_cihazlar'),
                     builder: (_) => const KayitliCihazlarScreen()),
               ),
             ),
@@ -2365,24 +2373,34 @@ class _BirikimHatirlatmaTileState
   }
 }
 
-/// Ortak hareketinin günlük brifingde anılması.
+/// Sunucuda duran (`profiles.*`) tek bir bildirim tercihi.
 ///
-/// Tercih SUNUCUDA (`profiles.partner_activity_push`) çünkü brifingi üreten
-/// edge function okuyor; cihaz tercihleri oradan görünmez. Bu yüzden diğer
-/// anahtarlar gibi bir `_BoolPrefNotifier` değil — ağ okuması gerektiriyor.
-///
-/// **Mahremiyet notu:** bu bildirim yeni bir bilgi açmaz; ortağın lot'ları
-/// zaten karşı tarafta görünüyor. Anahtar, bilgiyi değil BİLDİRİMİ kapatır.
-class _PartnerActivitySwitch extends ConsumerStatefulWidget {
-  const _PartnerActivitySwitch();
+/// Tercih SUNUCUDA çünkü push'u üreten edge function okuyor; cihaz
+/// tercihleri oradan görünmez. Bu yüzden diğer anahtarlar gibi bir
+/// `_BoolPrefNotifier` değil — ağ okuması gerektiriyor. Ortak hareketi
+/// (0049) ve dönem özeti (0052) aynı kabuğu paylaşır: ikinci bir kopya,
+/// okuma/yazma/geri alma davranışının sessizce ayrışması demekti.
+class _SunucuTercihAnahtari extends ConsumerStatefulWidget {
+  const _SunucuTercihAnahtari({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.oku,
+    required this.yaz,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Future<bool> Function(String userId) oku;
+  final Future<void> Function(String userId, bool value) yaz;
 
   @override
-  ConsumerState<_PartnerActivitySwitch> createState() =>
-      _PartnerActivitySwitchState();
+  ConsumerState<_SunucuTercihAnahtari> createState() =>
+      _SunucuTercihAnahtariState();
 }
 
-class _PartnerActivitySwitchState
-    extends ConsumerState<_PartnerActivitySwitch> {
+class _SunucuTercihAnahtariState extends ConsumerState<_SunucuTercihAnahtari> {
   /// null = henüz okunmadı. Okuma bitene kadar anahtar AÇIK görünür çünkü
   /// sunucu varsayılanı da açık; "kapalı → açık" sıçraması yanıltırdı.
   bool? _deger;
@@ -2396,7 +2414,7 @@ class _PartnerActivitySwitchState
   Future<void> _oku() async {
     final me = ref.read(authProvider).valueOrNull;
     if (me == null) return;
-    final v = await SupabaseService.instance.getPartnerActivityPush(me.id);
+    final v = await widget.oku(me.id);
     if (mounted) setState(() => _deger = v);
   }
 
@@ -2407,7 +2425,7 @@ class _PartnerActivitySwitchState
     // İyimser güncelleme: anahtar hemen hareket etsin, hata olursa geri alsın.
     setState(() => _deger = v);
     try {
-      await SupabaseService.instance.setPartnerActivityPush(me.id, v);
+      await widget.yaz(me.id, v);
     } catch (_) {
       if (!mounted) return;
       setState(() => _deger = onceki);
@@ -2419,11 +2437,53 @@ class _PartnerActivitySwitchState
   @override
   Widget build(BuildContext context) {
     return _SwitchTile(
+      icon: widget.icon,
+      title: widget.title,
+      subtitle: widget.subtitle,
+      value: _deger ?? true,
+      onChanged: _yaz,
+    );
+  }
+}
+
+/// Ortak hareketinin günlük brifingde anılması (`profiles.partner_activity_push`).
+///
+/// **Mahremiyet notu:** bu bildirim yeni bir bilgi açmaz; ortağın lot'ları
+/// zaten karşı tarafta görünüyor. Anahtar, bilgiyi değil BİLDİRİMİ kapatır.
+class _PartnerActivitySwitch extends StatelessWidget {
+  const _PartnerActivitySwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    return _SunucuTercihAnahtari(
       icon: Icons.favorite_border_rounded,
       title: context.l10n.partnerActivityNotifications,
       subtitle: context.l10n.partnerActivityNotificationsSubtitle,
-      value: _deger ?? true,
-      onChanged: _yaz,
+      oku: SupabaseService.instance.getPartnerActivityPush,
+      yaz: SupabaseService.instance.setPartnerActivityPush,
+    );
+  }
+}
+
+/// Haftalık ve aylık dönem özeti push'u (`profiles.weekly_summary_push`).
+///
+/// Neden (TECHNICAL_DEBT "Dönem özeti push'unun istemcide kapatma anahtarı
+/// yok"): sütunu sunucu 0052'den beri okuyordu ama yazan bir anahtar yoktu;
+/// iOS'ta kanal kavramı olmadığından tek yol bildirimleri toptan kapatmaktı.
+/// Tek anahtar iki dönemi birlikte kapatır çünkü sunucuda sütun ortak —
+/// "haftalık"/"aylık" diye iki satır göstermek, ikisini birden değiştiren
+/// bir anahtarı yalan söyletirdi.
+class _OzetBildirimiSwitch extends StatelessWidget {
+  const _OzetBildirimiSwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    return _SunucuTercihAnahtari(
+      icon: Icons.event_note_outlined,
+      title: context.l10n.summaryPushTitle,
+      subtitle: context.l10n.summaryPushSubtitle,
+      oku: SupabaseService.instance.getWeeklySummaryPush,
+      yaz: SupabaseService.instance.setWeeklySummaryPush,
     );
   }
 }

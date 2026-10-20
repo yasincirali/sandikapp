@@ -40,7 +40,7 @@ class RecapScreen extends StatefulWidget {
   static Future<void> show(BuildContext context, RecapData d, int year) async {
     unawaited(AnalyticsService.instance.logRecapViewed(period: d.period));
     await Navigator.of(context).push(
-      adaptiveRoute<void>(builder: (_) => RecapScreen(data: d, year: year)),
+      adaptiveRoute<void>(settings: const RouteSettings(name: 'recap'), builder: (_) => RecapScreen(data: d, year: year)),
     );
     // Özet kapandı. Yıl artıdaysa değerlendirme istemi: kullanıcı az önce
     // kendi iyi yılını izledi. Ekside ("zor bir yıl" sayfası) sorulmaz;

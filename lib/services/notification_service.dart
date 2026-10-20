@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart'
-    show Color, GlobalKey, NavigatorState, VoidCallback;
+    show Color, GlobalKey, NavigatorState, RouteSettings, VoidCallback;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -738,7 +738,7 @@ class NotificationService {
       return;
     }
     navigator.push(
-        adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()));
+        adaptiveRoute<void>(settings: const RouteSettings(name: 'hafta_ozeti'), builder: (_) => const HaftaOzetiScreen()));
   }
 
   void _openOzet({int? periodIdx, int deneme = 0}) {
@@ -754,6 +754,7 @@ class NotificationService {
     }
     navigator.push(
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'portfolio_performance'),
         builder: (_) => PortfolioPerformanceScreen(
           showBackButton: true,
           initialOzet: true,
@@ -777,6 +778,7 @@ class NotificationService {
 
     navigator.push(
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'partnership_requests'),
         builder: (_) => PartnershipRequestsScreen(
           highlightInviteId: inviteId,
         ),
@@ -881,6 +883,7 @@ class NotificationService {
 
     navigator.push(
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'asset_detail'),
         builder: (_) => AssetDetailScreen(
           asset: gorunum?.asset ?? asset!,
           showBackButton: true,
@@ -1040,6 +1043,7 @@ class NotificationService {
       return;
     }
     navigator.push(adaptiveRoute<void>(
+      settings: const RouteSettings(name: 'portfolio_performance'),
       builder: (_) => PortfolioPerformanceScreen(
         showBackButton: true,
         initialOzet: true,
@@ -1054,7 +1058,7 @@ class NotificationService {
     final navigator = _navigatorKey?.currentState;
     if (navigator == null) return;
     navigator.push(
-      adaptiveRoute<void>(builder: (_) => const AssetNotFoundScreen()),
+      adaptiveRoute<void>(settings: const RouteSettings(name: 'asset_not_found'), builder: (_) => const AssetNotFoundScreen()),
     );
   }
 }

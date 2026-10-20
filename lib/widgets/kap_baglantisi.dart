@@ -6,6 +6,7 @@ import '../models/asset_type.dart';
 import '../services/kap_baglanti_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
+import 'sandik_skeleton.dart';
 
 /// Hisse ekranında "KAP bildirimleri ↗" satırı (karar 7.2, 2026-09-30).
 ///
@@ -81,8 +82,13 @@ class _KapBaglantisiState extends State<KapBaglantisi> {
     }
   }
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SandikBelirme(child: _belirenGovde(context));
+
+  Widget _belirenGovde(BuildContext context) {
     if (_adres == null) return const SizedBox.shrink();
     final c = context.c;
     return Padding(

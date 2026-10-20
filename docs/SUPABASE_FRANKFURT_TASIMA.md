@@ -165,7 +165,12 @@ kapalı testin 14 günüyle örtüşür — testçiler köprü sürümünü gün
    Data API → Enable Data API KAPAT** (yetkilere dokunmaz, tüm REST/RPC'yi
    keser, Auth çalışır). İsteğe bağlı: Tokyo Auth → yeni kayıtları kapat
    (pencerede açılan hesap kaybolurdu).
-3. **[SEN] Son veri kopyası** — `bosalt` → `tasi` → `sayim` (Faz 3.1).
+3. **[SEN] Son veri kopyası** — `birlestir --kuru` → `birlestir --gecmis-sayisi N` (Faz 3.1).
+   2026-10-18 (yasin: "Halihazırda geçmiş kişileri elleme"): 14 Ekim'den beri Frankfurt'ta
+   yaşayan TestFlight testçilerinin verisi korunur; `bosalt` + `tasi` onu Tokyo'nun eski hâliyle
+   ezerdi, artık K4'te kullanılmaz. `birlestir` geçmiş kişilere dokunmaz, geri kalan hesapları ve
+   ortak tabloları Tokyo'dan yeniler, çakışan sayısal id'leri yeniden numaralar. `sayim` bu
+   modda EŞİT çıkmaz (geçmiş kişilerin satırları farklıdır); doğrulama aracın kendi raporu.
    `tasi` kendi sonunda sayımı tutturamazsa COMMIT etmez.
 4. **[SEN] Frankfurt cron'larını aç:**
    `select cron.alter_job(job_id := jobid, active := true) from cron.job;`

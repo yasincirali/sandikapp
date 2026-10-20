@@ -1976,6 +1976,54 @@ abstract class AppLocalizations {
   /// **'gr'**
   String get goldUnitGram;
 
+  /// No description provided for @commodityUnitPound.
+  ///
+  /// In tr, this message translates to:
+  /// **'libre'**
+  String get commodityUnitPound;
+
+  /// No description provided for @commodityUnitBarrel.
+  ///
+  /// In tr, this message translates to:
+  /// **'varil'**
+  String get commodityUnitBarrel;
+
+  /// No description provided for @commodityUnitMmbtu.
+  ///
+  /// In tr, this message translates to:
+  /// **'MMBtu'**
+  String get commodityUnitMmbtu;
+
+  /// No description provided for @commodityOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer (sembol yaz)'**
+  String get commodityOther;
+
+  /// No description provided for @pickCommodityPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir emtia seç ya da Diğer ile sembol yaz'**
+  String get pickCommodityPrompt;
+
+  /// No description provided for @pickCommodityTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emtia seç'**
+  String get pickCommodityTap;
+
+  /// No description provided for @commodityOtherSelected.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer (sembolü aşağıya yaz)'**
+  String get commodityOtherSelected;
+
+  /// No description provided for @commoditySelectedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili emtia: {name}. Değiştirmek için çift dokun.'**
+  String commoditySelectedSemantics(String name);
+
   /// No description provided for @goldUnitOunce.
   ///
   /// In tr, this message translates to:
@@ -2473,6 +2521,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ortağın portföyüne ekleme yaptığında günlük özette an'**
   String get partnerActivityNotificationsSubtitle;
+
+  /// No description provided for @summaryPushTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem özeti bildirimleri'**
+  String get summaryPushTitle;
+
+  /// No description provided for @summaryPushSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir'**
+  String get summaryPushSubtitle;
 
   /// No description provided for @quietHours.
   ///
@@ -3775,6 +3835,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fiyat Alarmları'**
   String get priceAlertsTitle;
+
+  /// Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler).
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara'**
+  String get quickActionSearch;
 
   /// No description provided for @createAlert.
   ///
@@ -5108,6 +5174,18 @@ abstract class AppLocalizations {
   /// **'TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.'**
   String get importFundListFailed;
 
+  /// No description provided for @importFundPriceMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name}: ekstre günündeki fiyatı alınamadı, eklenmedi.'**
+  String importFundPriceMissing(String name);
+
+  /// No description provided for @importAmountOnly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu belge adet yazmıyor: adet, tutarın {date} günündeki birim fiyata bölünmesiyle bulundu. Maliyet o günün fiyatı sayıldı.'**
+  String importAmountOnly(String date);
+
   /// No description provided for @importDepositsFound.
   ///
   /// In tr, this message translates to:
@@ -5251,6 +5329,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sepet boş'**
   String get cartEmpty;
+
+  /// Toplu Ekle sepet satırı: ekran görüntüsünden maliyet okunamadı (fiyat boş, kayıtta günün kapanışı yazılır).
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyet sonra girilecek'**
+  String get cartCostLater;
+
+  /// No description provided for @bulkScreenshotAdded.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} varlık sepete eklendi.'**
+  String bulkScreenshotAdded(int count);
+
+  /// No description provided for @bulkScreenshotCostLater.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} varlığın maliyeti okunamadı: bugünkü fiyatla kaydedilir, satıra dokunup maliyetini girebilirsin.'**
+  String bulkScreenshotCostLater(int count);
+
+  /// No description provided for @bulkScreenshotNoQuantity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adedi okunamadı, eklenmedi: {codes}'**
+  String bulkScreenshotNoQuantity(String codes);
 
   /// No description provided for @cartEmptyBody.
   ///
@@ -14686,6 +14788,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Seçili dönemde ({aralik}) portföyünde ne olduğunu; enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak bir ekonomist gözüyle anlatır.'**
   String pyzSeciliAciklama(String aralik);
+
+  /// No description provided for @seviyeDestek.
+  ///
+  /// In tr, this message translates to:
+  /// **'Destek'**
+  String get seviyeDestek;
+
+  /// No description provided for @seviyeDirenc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Direnç'**
+  String get seviyeDirenc;
+
+  /// No description provided for @seviyeIcinde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatın bulunduğu bölge'**
+  String get seviyeIcinde;
+
+  /// Destek/direnç bölgesinde dönem içinde fiyatın kaç kez döndüğü.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, other{dönemde {n} kez dönülmüş}}'**
+  String seviyeTemas(int n);
+
+  /// Ekran okuyucu için bölge satırı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad}: {aralik}, dönemde {n} kez dönülmüş'**
+  String seviyeSatiri(String ad, String aralik, int n);
 
   /// Varlık detayı AI yorum kartı açıklaması. aralik: '14 Tem - 14 Eki'.
   ///

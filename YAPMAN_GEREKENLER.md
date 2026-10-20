@@ -12,6 +12,47 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-17 Dönem özeti anahtarı (bayraksız) + takip listesinde fon hareketi
+
+- [x] Remote Config'te bir şey yapma: anahtar bayraksız geldi (yasin
+      2026-10-17, "her özelliği kapatma"). Ayarlar › Bildirimler'de brifing
+      saatinin altında "Dönem özeti bildirimleri"; kapatınca haftalık + aylık
+      özet push'u gelmez. RC'de `ozet_bildirimi_anahtari` oluşturduysan silebilirsin.
+- [ ] Takip listesi fon hareketi bayraksız: `check-price-alerts` fonksiyonu
+      iki sunucuya dağıtılır (Claude, birleştirmeden sonra Supabase deploy). Fon izleyen
+      kullanıcı fon günde ≥%2 oynadığında hafta içi 18:25 TR'de mevcut
+      "Takip listende" push'unu alır; hisse eşiği %5 aynı.
+
+## ⏳ 2026-10-14 App Store 2.3.1(a): test kitlesi kurulum kanalıyla değil hesapla
+
+Apple "inceleme ortamını tespit edip Remote Config ile farklı davranma"yı
+gizli özellik sayıp reddediyor. #173'ten beri uygulama `dagitim` sinyaliyle
+TestFlight'ı ayırıyordu; inceleme cihazı da TestFlight gibi göründüğü için
+inceleyen kişi "TestFlight 1.1.6" değerlerini (paywall, Frankfurt) görürdü.
+Yeni build `dagitim` göndermez; oturumdaki hesabın UUID'sini `hesap`
+sinyali olarak gönderir. Yasal metin değişmez: hesap kimliği Firebase'e
+(Analytics) zaten gidiyor, Açık Rıza Metni "uzaktan ayar"ı sayıyor.
+
+Sıra (yeni build TestFlight'a çıkınca, mağazaya göndermeden ÖNCE):
+1. [ ] Testçi hesap UUID'lerini topla (Supabase › Authentication › Users,
+       e-postayla ara; salt okunur). Tokyo ve Frankfurt'ta UUID aynı.
+       **App Review demo hesabını listeye KOYMA.**
+2. [ ] Firebase › Remote Config › Conditions › **Yeni koşul "Test kitlesi"**:
+       Custom signal › anahtar `hesap` › *exactly matches* › UUID'ler
+       (küçük harf). Save.
+3. [ ] "TestFlight 1.1.6" koşulunda değeri olan HER parametreye aynı değeri
+       "Test kitlesi" koşulu için de gir (`sunucu`=frankfurt,
+       `premium_hediye_kesim`, `paywall_enabled`, test bayrakları…).
+       Koşul sırasında "Test kitlesi" üstte olsun. **Publish changes.**
+4. [ ] Yeni build'le TestFlight'ta giriş yap: birkaç saniye içinde
+       "yeniden başlat" (Frankfurt) gelmeli, test bayrakları açık olmalı.
+       Çıkış yapınca bir sonraki fetch'te mağaza değerlerine döner.
+5. [ ] Testçiler yeni build'e geçince "TestFlight 1.1.6" koşulunu ve ona
+       bağlı değerleri SİL (eski build'ler hâlâ `dagitim` gönderir;
+       silinince onlar mağaza değerlerini alır). Mağaza gönderiminden önce.
+6. [ ] Android testçileri de aynı listeye eklenebilir; ayrı "Android test"
+       koşulu artık gerekmez.
+
 ## ⏳ 2026-10-13 Ekran görüntüsünden maliyet (bayrak `ekran_goruntusu_maliyet`, Premium)
 
 İçe aktarma ekranında "Ekran görüntüsünden ekle" (ekstre okunduysa "Maliyetleri
@@ -61,6 +102,20 @@ sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanm
       OAuth 1.0a. Keys and tokens: API Key/Secret + Access Token/Secret (bot hesabının).
 - [ ] Secrets (Tokyo): `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`,
       sonra `X_BOT_MODU=yayin`. Bundan sonra "Yayınla" X'e atar.
+- [ ] İsteğe bağlı (2026-10-15): `X_BOT_MODU=otomatik` → taslak onaysız X'e gider, Telegram'a
+      yalnız "Otomatik yayınlandı: link" gelir. Geri dönüş: `yayin` (onaylı).
+- [ ] Sabah gönderisi (0153, 2026-10-15): hafta içi 09:30, Pazartesi haftanın takvimi, diğer
+      günler dünün fon getirileri. Ayar gerekmez; akşamla aynı `X_BOT_MODU`'yu kullanır.
+      Takvim yalnız `x_takvim` tablosundaki doğrulanmış olaylardan yazılır (Ekim–Aralık 2026:
+      TCMB ve Fed kararları, Enflasyon Raporu). TÜİK/BLS TÜFE günleri ve 2027 takvimi
+      eklenmedi: resmi takvimden doğrulanınca yeni migration ile eklenir (iki sunucu).
+      Olay olmayan Pazartesi fon getirisi atılır.
+- [ ] Petrol (0157, 2026-10-19): Cuma özetine Brent satırı için ücretsiz EIA anahtarı al
+      (https://www.eia.gov/opendata/register.php) ve **iki sunucuya** `EIA_API_KEY` olarak gir.
+      Anahtar yokken satır atlanır. ABD işsizlik/istihdam ve etiketler ayar istemez.
+- [ ] Altın/dolar (karar): `X_KUR_IZINLI=1` açılırsa Salı–Cuma sabah kartı "dünün piyasası"
+      olur (gram altın, dolar, euro + fon kategorileri) ve Cuma özetine kur satırları girer.
+      Veri truncgil'den; kamuya yeniden yayın hakkı belirsiz, karar senin.
 - [ ] İsteğe bağlı: `X_KUR_IZINLI=1` (haftalık karta gram altın/dolar/euro — truncgil
       verisinin kamuya yayın hakkı belirsiz, kararı senin); `X_BOT_AI=0` (model yerine
       şablon metin; maliyet sıfır).
@@ -1879,7 +1934,7 @@ girildiği an sayılır.
       hilesini önlemek. Aydınlatma metnine eklenmesi gerekip gerekmediğine
       bak (`legal/tr/KVKK_AYDINLATMA_METNI.md`, `ACIK_RIZA_METNI.md`).
 
-## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01) — kalan: `MATCH_PASSWORD_YENI`'yi sil
+## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01)
 
 Repo herkese açık; Fastfile keychain kilidini açarken `MATCH_PASSWORD`'ü
 iOS — TestFlight Actions günlüğüne açık metin bastı (fastlane özet tablosu,
@@ -1907,8 +1962,9 @@ okur, depoyu yeni parolayla şifreler, iki kez doğrular).
       durumda da günlüğü Claude'a ver.
 - [ ] İstersen eski iOS — TestFlight koşularının günlüklerini sil.
 - [x] Sonra Actions → iOS — TestFlight → Run workflow (main) ile doğrula.
-- [ ] **`MATCH_PASSWORD_YENI` secret'ını sil** (artık gereksiz; değeri
-      `MATCH_PASSWORD` ile aynı).
+- [x] **`MATCH_PASSWORD_YENI` secret'ını sil** — 2026-10-19 yasin: secret
+      zaten yok. Yalnız tek seferlik `match-parola-degistir.yml` onu okur;
+      bir sonraki parola değişiminde yeniden oluşturulur.
 
 > Kanıt (Claude): değişim koşusu 36892103259 — eski parolayla çözüldü, yeni
 > parolayla şifrelendi, kopyada ve depo yeniden indirildikten sonra yeni

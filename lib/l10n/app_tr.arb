@@ -657,6 +657,15 @@
   "goldGroupSikke": "Sikke",
   "goldGroupOns": "Ons",
   "goldUnitGram": "gr",
+  "commodityUnitPound": "libre",
+  "commodityUnitBarrel": "varil",
+  "commodityUnitMmbtu": "MMBtu",
+  "commodityOther": "Diğer (sembol yaz)",
+  "pickCommodityPrompt": "Bir emtia seç ya da Diğer ile sembol yaz",
+  "pickCommodityTap": "Emtia seç",
+  "commodityOtherSelected": "Diğer (sembolü aşağıya yaz)",
+  "commoditySelectedSemantics": "Seçili emtia: {name}. Değiştirmek için çift dokun.",
+  "@commoditySelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
   "goldUnitOunce": "ons",
   "goldSelectedSemantics": "Seçili altın türü: {kind}. Değiştirmek için çift dokun.",
   "@goldSelectedSemantics": {
@@ -782,6 +791,8 @@
   "lockWidgetHowTo": "Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.",
   "partnerActivityNotifications": "Ortak hareketi bildirimleri",
   "partnerActivityNotificationsSubtitle": "Ortağın portföyüne ekleme yaptığında günlük özette an",
+  "summaryPushTitle": "Dönem özeti bildirimleri",
+  "summaryPushSubtitle": "Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir",
   "quietHours": "Sessiz saatler",
   "biometricLockSubtitle": "Uygulamayı açarken Face ID / parmak izi / cihaz PIN'i iste",
   "doneTitle": "Tamamlandı",
@@ -1290,6 +1301,10 @@
   "loadingEllipsis": "Yükleniyor…",
   "widenDateRangeHint": "Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.",
   "priceAlertsTitle": "Fiyat Alarmları",
+  "quickActionSearch": "Ara",
+  "@quickActionSearch": {
+    "description": "Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler)."
+  },
   "createAlert": "Alarm kur",
   "noAlertsYet": "Henüz alarmın yok",
   "noAlertsBody": "Bir varlığın ekranındaki zile dokun ya da buradan kur; uygulama kapalıyken bile haber verelim.",
@@ -2008,6 +2023,22 @@
     }
   },
   "importFundListFailed": "TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.",
+  "importFundPriceMissing": "{name}: ekstre günündeki fiyatı alınamadı, eklenmedi.",
+  "@importFundPriceMissing": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importAmountOnly": "Bu belge adet yazmıyor: adet, tutarın {date} günündeki birim fiyata bölünmesiyle bulundu. Maliyet o günün fiyatı sayıldı.",
+  "@importAmountOnly": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "importDepositsFound": "{n} vadeli mevduat bulundu (vadesiz hesaplar alınmaz)",
   "@importDepositsFound": {
     "placeholders": {
@@ -2111,6 +2142,22 @@
   "clearCartConfirm": "Sepetteki tüm varlıklar silinecek. Emin misin?",
   "pasteCsv": "CSV yapıştır",
   "cartEmpty": "Sepet boş",
+  "cartCostLater": "Maliyet sonra girilecek",
+  "@cartCostLater": {
+    "description": "Toplu Ekle sepet satırı: ekran görüntüsünden maliyet okunamadı (fiyat boş, kayıtta günün kapanışı yazılır)."
+  },
+  "bulkScreenshotAdded": "{count} varlık sepete eklendi.",
+  "@bulkScreenshotAdded": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "bulkScreenshotCostLater": "{count} varlığın maliyeti okunamadı: bugünkü fiyatla kaydedilir, satıra dokunup maliyetini girebilirsin.",
+  "@bulkScreenshotCostLater": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "bulkScreenshotNoQuantity": "Adedi okunamadı, eklenmedi: {codes}",
+  "@bulkScreenshotNoQuantity": {
+    "placeholders": {"codes": {"type": "String"}}
+  },
   "cartEmptyBody": "Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.",
   "pasteFromStatement": "Ekstreden içe aktar (PDF, Excel, CSV)",
   "saveAllCount": "Tümünü Kaydet ({n})",
@@ -5803,6 +5850,13 @@
   "@pyzSecili": {"description": "AI yorum kartında seçili dönem sekmesi. donem: '3A'.", "placeholders": {"donem": {"type": "String"}}},
   "pyzSeciliAciklama": "Seçili dönemde ({aralik}) portföyünde ne olduğunu; enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak bir ekonomist gözüyle anlatır.",
   "@pyzSeciliAciklama": {"description": "AI yorum kartı, seçili dönem açıklaması. aralik: '14 Tem - 14 Eki'.", "placeholders": {"aralik": {"type": "String"}}},
+  "seviyeDestek": "Destek",
+  "seviyeDirenc": "Direnç",
+  "seviyeIcinde": "Fiyatın bulunduğu bölge",
+  "seviyeTemas": "{n, plural, other{dönemde {n} kez dönülmüş}}",
+  "@seviyeTemas": {"description": "Destek/direnç bölgesinde dönem içinde fiyatın kaç kez döndüğü.", "placeholders": {"n": {"type": "int"}}},
+  "seviyeSatiri": "{ad}: {aralik}, dönemde {n} kez dönülmüş",
+  "@seviyeSatiri": {"description": "Ekran okuyucu için bölge satırı.", "placeholders": {"ad": {"type": "String"}, "aralik": {"type": "String"}, "n": {"type": "int"}}},
   "pyzVarlikAciklama": "Seçili dönemde ({aralik}) bu varlıkta ne olduğunu; portföyündeki yeri, enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak anlatır.",
   "@pyzVarlikAciklama": {"description": "Varlık detayı AI yorum kartı açıklaması. aralik: '14 Tem - 14 Eki'.", "placeholders": {"aralik": {"type": "String"}}},
   "pyzGunIci": "Gün içi dönem yorumlanmaz. Yukarıdaki seçiciden 1H ya da daha uzun bir dönem seç.",
