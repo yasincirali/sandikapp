@@ -636,6 +636,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    // Ölçüm: `asset_added.yol` (bkz. `AnalyticsService.eklemeYollari`).
+    String yol = 'form',
+    // Alış fiyatı okunamadı, [purchasePrice] o günün fiyatı (0159). Yalnız
+    // `true` iken lota yazılır; aksi hâlde lot işaretsiz (eski gövde).
+    bool maliyetBilinmiyor = false,
   }) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -685,6 +690,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         commission: commission,
         sozlesmeId: sozlesmeId,
         portfoyId: portfoyId,
+        yol: yol,
+        maliyetBilinmiyor: maliyetBilinmiyor,
       );
     } finally {
       // Yazım bitince lot `state`'te; anahtarı oradan sayılır.
@@ -714,6 +721,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     required double commission,
     required String? sozlesmeId,
     required String? portfoyId,
+    required String yol,
+    required bool maliyetBilinmiyor,
   }) async {
     final fxRate = await _alisKuru(currency, addedDate, currentState);
 
@@ -747,6 +756,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // sözleşmesinin portföyünde kalır. Bayrak kapalıyken hep Ana (null).
       portfoyId: _yazilacakPortfoy(
           portfoyId: portfoyId, sozlesmeId: sozlesmeId, s: currentState),
+      maliyetBilinmiyor: maliyetBilinmiyor ? true : null,
     );
     if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
       asset.purchasePrice = asset.currentPrice;
@@ -758,6 +768,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     unawaited(AnalyticsService.instance.logAssetAdded(
       type: type.name,
       subCategory: subCategory,
+      yol: yol,
     ));
 
     // Aktivasyon eşikleri: ilk varlık ve üçüncü varlık D30 tutunmanın en
@@ -804,7 +815,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// taşıdığı (formda seçilen) portföy. BES'in sonraki katkısı, otomatik
   /// katkı ve fon değişimi böylece başka bir ekrandan seçim istemeden
   /// sözleşmeyi izler.
-  Future<void> sozlesmeLotlariniEkle(List<Asset> lots) async {
+  Future<void> sozlesmeLotlariniEkle(List<Asset> lots,
+      {String yol = 'form'}) async {
     if (lots.isEmpty) return;
     final currentState = state.valueOrNull ?? const PortfolioState();
     lots = [
@@ -839,7 +851,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     sonEklenenPozisyon = positionKey(lots.first);
 
     for (final a in {for (final l in lots) l.type}) {
-      unawaited(AnalyticsService.instance.logAssetAdded(type: a.name));
+      unawaited(AnalyticsService.instance.logAssetAdded(type: a.name, yol: yol));
     }
 
     final current = state.valueOrNull;
@@ -1221,6 +1233,21 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     ));
   }
 
+  /// Elle fiyatlanan pozisyonun güncel fiyatını yazar — "bilgi eksik"
+  /// akışının fiyat sayfası (`veri_kalitesi_seridi.dart`, 2026-10-20).
+  ///
+  /// Pozisyonun değeri temsilci lotun fiyatından okunur
+  /// (`Position.totalValue`); yine de TÜM elle fiyatlı alım lotları yazılır
+  /// ki sonradan eklenen lot temsilci olunca eski fiyat geri gelmesin.
+  /// [updateManualPrice] üzerinden: demo kipi aynı kapıda durur.
+  Future<void> elleFiyatiGuncelle(List<Asset> lotlar, double fiyat) async {
+    for (final l in lotlar) {
+      if (l.isBuy && l.isActive && l.isManualPrice) {
+        await updateManualPrice(l, fiyat);
+      }
+    }
+  }
+
   // ---- Price refresh -------------------------------------------------------
 
   /// Süren fiyat turu — aynı anda gelen ikinci istek buna KATILIR.
@@ -1393,6 +1420,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           x.notes != y.notes ||
           x.addedDate != y.addedDate ||
           x.isManualPrice != y.isManualPrice ||
+          // Başka cihazda maliyet girildi: "bilgi eksik" burada da kalksın.
+          x.maliyetBilinmiyor != y.maliyetBilinmiyor ||
           (x.isManualPrice && x.currentPrice != y.currentPrice)) {
         return false;
       }

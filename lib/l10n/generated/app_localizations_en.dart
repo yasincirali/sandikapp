@@ -9044,4 +9044,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get prmZirvePremium => 'No. 1\'s holdings + overlap';
+
+  @override
+  String vkSeritSayi(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Missing info on $count holdings',
+      one: 'Missing info on 1 holding',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get vkSeritAlt => 'Tap to complete them one by one';
+
+  @override
+  String get vkSeritKapat => 'Dismiss the missing info row';
+
+  @override
+  String get vkAlisFiyatiEksik => 'Purchase price missing';
+
+  @override
+  String vkFiyatGunOnce(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Price entered $count days ago',
+      one: 'Price entered 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String vkFiyatBaslik(String name) {
+    return 'Current price of $name';
+  }
+
+  @override
+  String vkFiyatAciklama(String date) {
+    return 'You enter this holding\'s price yourself; your total uses this number. Your last price is from $date.';
+  }
+
+  @override
+  String get vkHepsiTamam => 'All set, your total is up to date.';
 }

@@ -212,6 +212,7 @@ class CsvImportService {
         isManualPrice: price > 0 && type == AssetType.diger,
         addedDate: date,
         satis: satis,
+        yol: 'ekstre',
       ));
     }
     return CsvImportResult(rows: rows, errors: errors);

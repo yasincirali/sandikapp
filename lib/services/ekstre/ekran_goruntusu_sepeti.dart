@@ -55,7 +55,9 @@ EkranSepetSonucu ekranVarliklarindanSepet(
   return EkranSepetSonucu(
     kalemler: [
       for (final k in satirlar)
-        k.price > 0 ? k : k.copyWith(maliyetSonra: true),
+        k.price > 0
+            ? k.copyWith(yol: 'ekran_goruntusu')
+            : k.copyWith(maliyetSonra: true, yol: 'ekran_goruntusu'),
     ],
     adediOkunamayan: [
       for (final v in varliklar)

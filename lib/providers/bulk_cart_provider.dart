@@ -30,6 +30,7 @@ class BulkCartItem {
     this.satis = false,
     this.mevduat,
     this.maliyetSonra = false,
+    this.yol = 'toplu',
   });
 
   final String id;
@@ -64,6 +65,12 @@ class BulkCartItem {
   /// Kullanıcı fiyat girince düşer ([copyWith]).
   final bool maliyetSonra;
 
+  /// Kalemin sepete hangi yoldan girdiği — `asset_added` olayının `yol`
+  /// parametresi (ekleme yollarını sayma, 2026-10-20; 19 Kasım "hangi yolu
+  /// sadeleştirelim" kararını besler). `toplu`: Toplu Ekle'de elle eklenen
+  /// kalem; `ekstre`: metin/dosya içe aktarma; `ekran_goruntusu`.
+  final String yol;
+
   BulkCartItem copyWith({
     AssetType? type,
     String? name,
@@ -77,6 +84,7 @@ class BulkCartItem {
     DateTime? addedDate,
     bool? satis,
     bool? maliyetSonra,
+    String? yol,
   }) =>
       BulkCartItem(
         id: id,
@@ -95,6 +103,7 @@ class BulkCartItem {
         // Fiyat girildiyse maliyet artık biliniyor.
         maliyetSonra:
             maliyetSonra ?? (price != null && price > 0 ? false : this.maliyetSonra),
+        yol: yol ?? this.yol,
       );
 }
 

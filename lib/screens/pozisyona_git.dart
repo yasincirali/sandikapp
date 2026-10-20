@@ -76,6 +76,7 @@ void portfoyeEkleAc(BuildContext context, VarlikKimligi kimlik) {
         prefillTicker: kimlik.ticker,
         prefillName: kimlik.name,
         prefillType: kimlik.type,
+        ekleYolu: 'arama',
       ),
     ),
   );

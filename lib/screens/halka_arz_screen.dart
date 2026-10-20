@@ -350,6 +350,7 @@ class HalkaArzDetay extends ConsumerWidget {
           prefillType: AssetType.hisse,
           prefillPrice: arz.fiyat,
           prefillDate: halkaArzAlisTarihi(arz, simdi),
+          ekleYolu: 'halka_arz',
         ),
       ),
     );

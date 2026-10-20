@@ -64,6 +64,7 @@ import '../widgets/islem_notu_sheet.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/transaction_row.dart' show hareketTurEtiketi;
 import '../services/varlik_eklendi.dart';
+import '../providers/veri_kalitesi_provider.dart';
 
 enum _SortOrder {
   valueDesc,
@@ -2591,6 +2592,10 @@ class _AssetCardState extends State<_AssetCard>
                               style: context.t.bodySmall
                                   ?.copyWith(color: context.c.text36),
                             ),
+                            // "Alış fiyatı eksik" / "Fiyat 32 gün önce
+                            // girildi" (2026-10-20) — eksik yoksa yer
+                            // kaplamaz; ana ekrandaki satırla aynı kural.
+                            _VeriEksigiEtiketi(position: position),
                             if (buyukYazi) ...[
                               const SizedBox(height: SandikSpace.xs),
                               tutarMetni,
@@ -2821,6 +2826,53 @@ class _AssetCardState extends State<_AssetCard>
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: card,
+    );
+  }
+}
+
+/// Satır altındaki küçük eksik bilgi etiketi (`veri_kalitesi.dart`).
+///
+/// Renk anlamın tek taşıyıcısı değil: ikon + cümle. Tek satıra sığmazsa
+/// sarar (büyük yazıda kırpılıp "Alış fiy…" kalmasın).
+class _VeriEksigiEtiketi extends ConsumerWidget {
+  const _VeriEksigiEtiketi({required this.position});
+
+  final Position position;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final eksikler = pozisyonunEksikleri(
+      ref.watch(pozisyonEksikleriProvider),
+      position,
+      ref.watch(authProvider.select((u) => u.valueOrNull?.id)),
+    );
+    if (eksikler.isEmpty) return const SizedBox.shrink();
+    final l = context.l10n;
+    final metin = [
+      for (final e in eksikler)
+        switch (e.tur) {
+          VeriEksigiTuru.alisFiyati => l.vkAlisFiyatiEksik,
+          VeriEksigiTuru.eskiFiyat => l.vkFiyatGunOnce(e.gun ?? 0),
+        },
+    ].join(' · ');
+    final stil = context.t.bodySmall
+        ?.copyWith(color: context.c.amberText, fontWeight: FontWeight.w600);
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.xxs),
+      child: Text.rich(
+        TextSpan(children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.only(right: SandikSpace.xxs),
+              child: Icon(Icons.info_outline_rounded,
+                  size: 14, color: context.c.amberText),
+            ),
+          ),
+          TextSpan(text: metin),
+        ]),
+        style: stil,
+      ),
     );
   }
 }

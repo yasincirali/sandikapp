@@ -1098,6 +1098,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           prefillTicker: hit.ticker,
           prefillName: hit.name,
           prefillType: _typeOf(hit.ticker),
+          ekleYolu: 'arama',
         ),
       ),
     );

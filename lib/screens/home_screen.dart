@@ -28,6 +28,7 @@ import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
+import '../widgets/veri_kalitesi_seridi.dart';
 import '../widgets/ilk_varlik_vitrini.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -1012,6 +1013,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 ),
               ),
+            ),
+          // "N varlıkta bilgi eksik" (2026-10-20): Bugün kartının hemen
+          // altında, toplam kartına dokunmadan. Yalnız kendi görünümünde —
+          // düzeltme yalnız kendi kaydında yapılabilir. Eksik yoksa ya da
+          // kapatıldıysa yer kaplamaz.
+          if (benGorunumu)
+            SliverToBoxAdapter(
+              child: VeriKalitesiSeridi(
+                  padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
             ),
           // Radar şeridi (Balina S7-A, 2026-10-05): yalnız kendi görünümünde
           // — Haftanın özeti kendi pozisyonlarını anlatır, ortağınkini değil.

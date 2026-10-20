@@ -1018,10 +1018,13 @@ Widget _seviyeAnketi(BuildContext context) => const SeviyeAnketi();
 
 /// Açık tur oturumu — adımlar ve kapanış geri çağrısı.
 class _Oturum {
-  _Oturum({required this.adimlar, required this.onBitti});
+  _Oturum({required this.adimlar, required this.onBitti, this.kisa = false});
 
   final List<_Adim> adimlar;
   final void Function(bool tamamlandi) onBitti;
+
+  /// İlk açılış kısa turu mu — yalnız ölçüm ayrımı (`tam_tur_*` olayları).
+  final bool kisa;
 }
 
 /// Tek tur oturumu; [OnboardingTourHost] bunu dinler.
@@ -1045,8 +1048,13 @@ abstract final class _Tur {
           ? _kisaAdimlar(seviyeSorusu: seviyeSorusu)
           : _adimlariKur(),
       onBitti: onBitti,
+      kisa: kisa,
     );
     AnalyticsService.instance.logOnboardingStep(0);
+    if (!kisa) {
+      unawaited(AnalyticsService.instance
+          .logTamTurBasladi(adimSayisi: oturum.value!.adimlar.length));
+    }
   }
 
   static void kapat(_Oturum o, bool tamamlandi) {
@@ -1388,9 +1396,16 @@ class _TurKatmaniState extends State<_TurKatmani>
     setState(() => _adimaGir(j));
   }
 
+  /// Açık oturum tam tur mu (ölçüm; oturum katman sökülene kadar durur).
+  bool get _tamTur => _Tur.oturum.value?.kisa == false;
+
   void _atla() {
     if (_bitti) return;
     AnalyticsService.instance.logOnboardingSkipped(_i);
+    if (_tamTur) {
+      unawaited(AnalyticsService.instance
+          .logTamTurAtlandi(adim: _i, adimSayisi: widget.adimlar.length));
+    }
     _kapat(tamamlandi: false);
   }
 
@@ -1398,7 +1413,13 @@ class _TurKatmaniState extends State<_TurKatmani>
     if (_bitti) return;
     _bitti = true;
     _ticker.stop();
-    if (tamamlandi) unawaited(AnalyticsService.instance.logOnboardingCompleted());
+    if (tamamlandi) {
+      unawaited(AnalyticsService.instance.logOnboardingCompleted());
+      if (_tamTur) {
+        unawaited(AnalyticsService.instance
+            .logTamTurBitti(adimSayisi: widget.adimlar.length));
+      }
+    }
     // Perde solarak kalkar, SONRA katman sökülür. Çıkış hızla başlar
     // (`exit`); hareketi azalt açıkken süre sıfır.
     if (_perde.duration != Duration.zero && _perde.value > 0) {

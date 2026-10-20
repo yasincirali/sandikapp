@@ -254,6 +254,44 @@ class _IntPrefNotifier extends Notifier<int> {
   }
 }
 
+/// Metin kümesi tercihi — [_BoolPrefNotifier] ile aynı desen (senkron
+/// okuma, demo'da diske yazmaz). Kişiye özel.
+class _KumePrefNotifier extends Notifier<Set<String>> {
+  _KumePrefNotifier(this.key);
+  final String key;
+
+  @override
+  Set<String> build() {
+    final prefs = _prefsSync;
+    if (prefs != null) return {...?prefs.getStringList(_userKey(key))};
+    _loadAsync();
+    return const {};
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getStringList(_userKey(key));
+      if (v != null) state = {...v};
+    } catch (_) {}
+  }
+
+  Future<void> set(Set<String> value) async {
+    state = value;
+    if (DemoModu.aktif) return;
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setStringList(_userKey(key), value.toList()..sort());
+    } catch (_) {}
+  }
+}
+
+/// "Bilgi eksik" satırının kapatıldığı andaki eksik anahtarları
+/// (`veri_kalitesi.dart`).
+final veriKalitesiKapatilanProvider =
+    NotifierProvider<_KumePrefNotifier, Set<String>>(
+        () => _KumePrefNotifier(PrefKeys.veriKalitesiKapatilan));
+
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
   final bool defaultValue;

@@ -662,6 +662,7 @@ class _Row extends ConsumerWidget {
                           prefillTicker: item.ticker,
                           prefillName: item.name,
                           prefillType: item.type,
+                          ekleYolu: 'takip',
                         ),
                       ),
                     ),

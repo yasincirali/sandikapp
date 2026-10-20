@@ -48,6 +48,8 @@ class _SahtePortfoy extends PortfolioNotifier {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    String yol = 'form',
+    bool maliyetBilinmiyor = false,
   }) async {
     if (basarisiz.contains(name)) throw Exception('ağ koptu');
     eklenen.add(name);

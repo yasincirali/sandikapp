@@ -5876,5 +5876,17 @@
   "pwdZirveBaslik": "Zirvedeki portföyler neye yatırıyor, varlık varlık gör.",
   "prmSatirZirve": "Zirvedeki portföyler",
   "prmZirveUcretsiz": "Kendi sıran",
-  "prmZirvePremium": "1. portföyün dağılımı + örtüşme"
+  "prmZirvePremium": "1. portföyün dağılımı + örtüşme",
+  "vkSeritSayi": "{count, plural, =1{1 varlıkta bilgi eksik} other{{count} varlıkta bilgi eksik}}",
+  "@vkSeritSayi": {"placeholders": {"count": {"type": "int"}}},
+  "vkSeritAlt": "Dokun, sırayla tamamlayalım",
+  "vkSeritKapat": "Bilgi eksik satırını kapat",
+  "vkAlisFiyatiEksik": "Alış fiyatı eksik",
+  "vkFiyatGunOnce": "{count, plural, =1{Fiyat 1 gün önce girildi} other{Fiyat {count} gün önce girildi}}",
+  "@vkFiyatGunOnce": {"placeholders": {"count": {"type": "int"}}},
+  "vkFiyatBaslik": "{name} güncel fiyatı",
+  "@vkFiyatBaslik": {"placeholders": {"name": {"type": "String"}}},
+  "vkFiyatAciklama": "Bu varlığın fiyatını sen giriyorsun; toplamın bu sayıyla hesaplanır. Son girdiğin fiyat {date} tarihli.",
+  "@vkFiyatAciklama": {"placeholders": {"date": {"type": "String"}}},
+  "vkHepsiTamam": "Bilgiler tamam, toplamın güncel."
 }

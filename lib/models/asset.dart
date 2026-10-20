@@ -250,6 +250,19 @@ class Asset {
   /// anlamsızdır; ortak görünümü portföy süzgecine hiç girmez.
   final String? portfoyId;
 
+  /// Alış fiyatı okunamadan kaydedilmiş lot (0159 `maliyet_bilinmiyor`).
+  ///
+  /// ## Neden (yasin onayı 2026-10-20)
+  /// Ekran görüntüsü / toplu eklemede maliyeti okunamayan satır sepette
+  /// "maliyet sonra" diye işaretleniyor, kayıtta işaret kayboluyordu: lot
+  /// o günün fiyatıyla yazılıyor, kâr/zarar sıfır görünüyor ve kullanıcı
+  /// maliyeti girmeyi unutuyordu. `true` → [purchasePrice] bir tahmindir;
+  /// ana ekrandaki "bilgi eksik" satırı ve Portföy etiketi buradan okur
+  /// (`veri_kalitesi.dart`). Kullanıcı düzenleme formunda maliyeti girince
+  /// `false`. `null` → işaret yok (eski satır ya da sütunsuz sunucu); bu
+  /// durumda sunucuya HİÇ yazılmaz ([toSupabase]).
+  bool? maliyetBilinmiyor;
+
   /// YALNIZ ekran görünümü ([Position.asDisplayAsset]): pozisyonun lotları
   /// birden çok portföye dağılmış mı ("Tümü" görünümünde aynı sembol iki
   /// portföyde). Sunucuya yazılmaz. Doğruysa [portfoyId] anlamsızdır
@@ -297,6 +310,7 @@ class Asset {
     this.createdAt,
     this.portfoyId,
     this.portfoyKarisik = false,
+    this.maliyetBilinmiyor,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -550,6 +564,7 @@ class Asset {
         createdAt: createdAt,
         portfoyId: portfoyId,
         portfoyKarisik: portfoyKarisik,
+        maliyetBilinmiyor: maliyetBilinmiyor,
       ).._kayitliTicker = _kayitliTicker;
 
   /// Yalnızca notu değiştiren kopya — [copyWithDeletedAt] ile aynı gerekçe
@@ -607,6 +622,11 @@ class Asset {
         // NULL kalır ve 0133 tetikleyicisi referans lottan miras alır.
         if (portfoyId != null && RemoteConfigService.instance.cokluPortfoy)
           'portfoy_id': portfoyId,
+        // Aynı gerekçe (0159), bayraksız: `true` yalnız maliyeti okunamayan
+        // yeni lotta, `false` yalnız sunucudan dolu okunmuş lotta (sütun o
+        // sunucuda var demektir). Sütunsuz sunucuya INSERT düşerse
+        // `SupabaseService` anahtarsız yeniden dener.
+        if (maliyetBilinmiyor != null) 'maliyet_bilinmiyor': maliyetBilinmiyor,
       };
 
   /// Sunucu satırından okur — sembolü [kanonikTicker] biçimine çevirerek.
@@ -691,5 +711,7 @@ class Asset {
             : null,
         // Migration 0133 öncesi satırlarda sütun yok → null = Ana portföy.
         portfoyId: m['portfoy_id'] as String?,
+        // Migration 0159 öncesi satırlarda sütun yok → null = işaret yok.
+        maliyetBilinmiyor: m['maliyet_bilinmiyor'] as bool?,
       );
 }

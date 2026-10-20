@@ -128,6 +128,11 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   /// form birebir eskisi.
   final List<Asset>? yerineGecenLotlar;
 
+  /// Formun hangi yüzeyden açıldığı — yalnız ölçüm (`asset_added.yol`,
+  /// bkz. `AnalyticsService.eklemeYollari`). `null` → `form`. Davranışı
+  /// değiştirmez.
+  final String? ekleYolu;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
@@ -140,6 +145,7 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillPrice,
     this.prefillDate,
     this.hizliSecim,
+    this.ekleYolu,
   });
 
   @override
@@ -261,7 +267,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
     // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
     final eurobondKaydi = (a?.type ?? c?.type) == AssetType.eurobond;
-    final hamFiyat = eurobondKaydi
+    // Alış fiyatı okunamadan kaydedilmiş lotta (0159) kayıtlı değer o günün
+    // fiyatıdır, kullanıcının maliyeti değil: alan BOŞ açılır ki "bilgi
+    // eksik" akışından gelen kullanıcı tahmini kendi girdisi sanıp onaylamasın.
+    final hamFiyat = eurobondKaydi || a?.maliyetBilinmiyor == true
         ? 0.0
         : a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
     // Güncellemede gelen fiyat lotların AĞIRLIKLI ortalamasıdır — kaynağın
@@ -2655,6 +2664,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   entry.type == AssetType.kripto ? null : entry.subCategory,
               unitType: entry.type == AssetType.altin ? 'gram' : 'piece',
               portfoyId: _hedefPortfoy,
+              yol: 'hizli_metin',
             );
       }
     } finally {
@@ -2723,6 +2733,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // fiyat çözümü kotasyonu (zaten birim değer) atar — temiz % asla birim
     // değer diye yazılmaz.
     if (_s.isEurobond) price = _s.eurobondBirimFiyati(price) ?? 0.0;
+    // Kullanıcının YAZDIĞI fiyat — aşağıdaki fiyat çözümü boş alanı o günün
+    // kotasyonuyla doldurur; "maliyet bilinmiyor" işareti (0159) yalnız
+    // kullanıcı bir değer girdiyse düşer.
+    final fiyatGirildi = price > 0;
 
     final kimlik = _s.resolveIdentity(
       nameText: _name.text,
@@ -2757,6 +2771,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // Ekran görüntüsünden gelen "maliyet sonra" işareti fiyat boş
         // kaldıkça durur; kullanıcı maliyeti girince düşer.
         maliyetSonra: price <= 0 && (widget.cartInitial?.maliyetSonra ?? false),
+        yol: widget.cartInitial?.yol ?? 'toplu', // ölçüm: geldiği yol
       );
       final notifier = ref.read(bulkCartProvider.notifier);
       if (widget.cartInitial != null) {
@@ -2843,6 +2858,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ..notes = _notes.text.trim()
           ..isManualPrice = manual
           ..commission = _parse(_commission.text) ?? 0;
+        // Maliyeti girildi: "bilgi eksik" listesinden düşer. `null` (işaret
+        // hiç olmamış) olduğu gibi kalır — sunucuya anahtar yazılmaz.
+        if (a.maliyetBilinmiyor == true && fiyatGirildi) {
+          a.maliyetBilinmiyor = false;
+        }
         // addedDate final — direkt set edilemez; kullanıcı düzenlemede tarih
         // değiştirdiyse Asset'i yeniden inşa edip provider'a yolla.
         if (a.addedDate != _addedDate) {
@@ -2879,6 +2899,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             sozlesmeId: a.sozlesmeId,
             createdAt: a.createdAt,
             portfoyId: a.portfoyId,
+            maliyetBilinmiyor: a.maliyetBilinmiyor,
           );
           await ref.read(portfolioProvider.notifier).updateAsset(updated);
         } else {
@@ -2908,6 +2929,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               addedDate: _addedDate,
               commission: _parse(_commission.text) ?? 0,
               portfoyId: _hedefPortfoy,
+              yol: widget.ekleYolu ?? 'form',
             );
       }
     } on AssetLimitExceededException catch (e) {

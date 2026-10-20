@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../demo/demo_modu.dart';
 import '../models/ozel_gosterge.dart';
@@ -790,13 +791,47 @@ class SupabaseService {
 
   Future<void> insertAsset(Asset asset) async {
     final body = asset.toSupabase();
-    await _log.log<void>(
-      source: 'SupabaseService.insertAsset',
-      table: 'assets',
-      op: 'INSERT',
-      request: {'id': body['id'], 'user_id': body['user_id'], 'ticker': body['ticker']},
-      call: () => _db.from('assets').insert(body),
+    await sutunsuzYenidenDene(
+      body,
+      (b) => _log.log<void>(
+        source: 'SupabaseService.insertAsset',
+        table: 'assets',
+        op: 'INSERT',
+        request: {'id': b['id'], 'user_id': b['user_id'], 'ticker': b['ticker']},
+        call: () => _db.from('assets').insert(b),
+      ),
     );
+  }
+
+  /// Sunucuda henüz olmayabilecek İSTEĞE BAĞLI varlık sütunları — yazım
+  /// "bilinmeyen sütun" (PGRST204 / 42703) ile düşerse bunlar gövdeden
+  /// çıkarılıp BİR KEZ yeniden denenir.
+  ///
+  /// ## Neden (0159, 2026-10-20)
+  /// `maliyet_bilinmiyor` bayraksız gelir; build migration'dan önce
+  /// kullanıcıya ulaşırsa ekran görüntüsünden maliyetsiz ekleme PGRST204 ile
+  /// tamamen düşerdi ("akışı bozma", yasin). Yeniden denemede kayıt eskisi
+  /// gibi yazılır, yalnız işaret kalıcı olmaz. Liste DAR tutulur: zorunlu
+  /// bir sütunun eksikliği burada yutulmaz, hata yukarı çıkar.
+  static const istegeBagliVarlikSutunlari = ['maliyet_bilinmiyor'];
+
+  /// [yaz] gövdeyle çağrılır; bilinmeyen sütun hatasında
+  /// [istegeBagliVarlikSutunlari] çıkarılmış kopyayla bir kez daha. Saf
+  /// akış (test: `veri_kalitesi_test`).
+  @visibleForTesting
+  static Future<void> sutunsuzYenidenDene(
+    Map<String, dynamic> body,
+    Future<void> Function(Map<String, dynamic>) yaz,
+  ) async {
+    try {
+      await yaz(body);
+    } on PostgrestException catch (e) {
+      final sutunYok = e.code == 'PGRST204' || e.code == '42703';
+      final cikacak =
+          istegeBagliVarlikSutunlari.where(body.containsKey).toList();
+      if (!sutunYok || cikacak.isEmpty) rethrow;
+      await yaz({...body}..removeWhere((k, _) => cikacak.contains(k)));
+    }
   }
 
   /// Partner kodundan gelen varlığı içe aktar — zaten varsa güncelle (resync)
@@ -829,12 +864,15 @@ class SupabaseService {
   /// tuzağa düşmesin.
   Future<void> updateAsset(Asset asset) async {
     final body = asset.toSupabase()..remove('deleted_at');
-    await _log.log<void>(
-      source: 'SupabaseService.updateAsset',
-      table: 'assets',
-      op: 'UPDATE',
-      request: {'id': asset.id, 'ticker': body['ticker']},
-      call: () => _db.from('assets').update(body).eq('id', asset.id),
+    await sutunsuzYenidenDene(
+      body,
+      (b) => _log.log<void>(
+        source: 'SupabaseService.updateAsset',
+        table: 'assets',
+        op: 'UPDATE',
+        request: {'id': asset.id, 'ticker': b['ticker']},
+        call: () => _db.from('assets').update(b).eq('id', asset.id),
+      ),
     );
   }
 

@@ -201,6 +201,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           unitType: item.unitType,
           addedDate: item.addedDate,
           portfoyId: hedef,
+          yol: item.yol,
+          // Ekran görüntüsünden maliyeti okunamayan kalem: lot o günün
+          // fiyatıyla yazılır ama işaretli kalır (0159) — ana ekrandaki
+          // "bilgi eksik" satırı maliyeti girmeyi hatırlatır.
+          maliyetBilinmiyor: item.maliyetSonra && item.price <= 0,
         );
         sepet.remove(item.id);
         if (mounted) setState(() => _saved++);
@@ -229,6 +234,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           baslangic: item.addedDate,
           vadeGun: m.vadeGun,
           portfoyId: hedef,
+          yol: item.yol,
         );
         sepet.remove(item.id);
         if (mounted) setState(() => _saved++);

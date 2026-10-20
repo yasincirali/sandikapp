@@ -5239,5 +5239,13 @@
   "pwdZirveBaslik": "See what the top portfolios hold, asset by asset.",
   "prmSatirZirve": "Top portfolios",
   "prmZirveUcretsiz": "Your own rank",
-  "prmZirvePremium": "No. 1's holdings + overlap"
+  "prmZirvePremium": "No. 1's holdings + overlap",
+  "vkSeritSayi": "{count, plural, =1{Missing info on 1 holding} other{Missing info on {count} holdings}}",
+  "vkSeritAlt": "Tap to complete them one by one",
+  "vkSeritKapat": "Dismiss the missing info row",
+  "vkAlisFiyatiEksik": "Purchase price missing",
+  "vkFiyatGunOnce": "{count, plural, =1{Price entered 1 day ago} other{Price entered {count} days ago}}",
+  "vkFiyatBaslik": "Current price of {name}",
+  "vkFiyatAciklama": "You enter this holding's price yourself; your total uses this number. Your last price is from {date}.",
+  "vkHepsiTamam": "All set, your total is up to date."
 }

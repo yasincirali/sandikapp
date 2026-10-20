@@ -381,6 +381,7 @@ class EkstreOkumaSonucu {
               stopaj: onerilenStopaj(m.baslangic, m.vadeGun),
               vadeGun: m.vadeGun,
             ),
+            yol: 'ekstre',
           ),
       ];
 

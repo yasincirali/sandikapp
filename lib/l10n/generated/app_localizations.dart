@@ -14914,6 +14914,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'1. portföyün dağılımı + örtüşme'**
   String get prmZirvePremium;
+
+  /// No description provided for @vkSeritSayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 varlıkta bilgi eksik} other{{count} varlıkta bilgi eksik}}'**
+  String vkSeritSayi(int count);
+
+  /// No description provided for @vkSeritAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dokun, sırayla tamamlayalım'**
+  String get vkSeritAlt;
+
+  /// No description provided for @vkSeritKapat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgi eksik satırını kapat'**
+  String get vkSeritKapat;
+
+  /// No description provided for @vkAlisFiyatiEksik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış fiyatı eksik'**
+  String get vkAlisFiyatiEksik;
+
+  /// No description provided for @vkFiyatGunOnce.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{Fiyat 1 gün önce girildi} other{Fiyat {count} gün önce girildi}}'**
+  String vkFiyatGunOnce(int count);
+
+  /// No description provided for @vkFiyatBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} güncel fiyatı'**
+  String vkFiyatBaslik(String name);
+
+  /// No description provided for @vkFiyatAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu varlığın fiyatını sen giriyorsun; toplamın bu sayıyla hesaplanır. Son girdiğin fiyat {date} tarihli.'**
+  String vkFiyatAciklama(String date);
+
+  /// No description provided for @vkHepsiTamam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgiler tamam, toplamın güncel.'**
+  String get vkHepsiTamam;
 }
 
 class _AppLocalizationsDelegate

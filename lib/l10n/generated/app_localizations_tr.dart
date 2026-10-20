@@ -8959,4 +8959,48 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get prmZirvePremium => '1. portföyün dağılımı + örtüşme';
+
+  @override
+  String vkSeritSayi(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count varlıkta bilgi eksik',
+      one: '1 varlıkta bilgi eksik',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get vkSeritAlt => 'Dokun, sırayla tamamlayalım';
+
+  @override
+  String get vkSeritKapat => 'Bilgi eksik satırını kapat';
+
+  @override
+  String get vkAlisFiyatiEksik => 'Alış fiyatı eksik';
+
+  @override
+  String vkFiyatGunOnce(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Fiyat $count gün önce girildi',
+      one: 'Fiyat 1 gün önce girildi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String vkFiyatBaslik(String name) {
+    return '$name güncel fiyatı';
+  }
+
+  @override
+  String vkFiyatAciklama(String date) {
+    return 'Bu varlığın fiyatını sen giriyorsun; toplamın bu sayıyla hesaplanır. Son girdiğin fiyat $date tarihli.';
+  }
+
+  @override
+  String get vkHepsiTamam => 'Bilgiler tamam, toplamın güncel.';
 }
