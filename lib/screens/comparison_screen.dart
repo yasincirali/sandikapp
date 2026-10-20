@@ -844,20 +844,27 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                                     const SizedBox(width: 6),
                                     // Kullanıcının sahip olduğu varlıklar işaretlenir:
                                     // grafikte "benim" ile "olsaydı" ayrımı kritik.
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            p.amberFill.withValues(alpha: 0.18),
-                                        borderRadius: BorderRadius.circular(
-                                            SandikRadius.sm),
+                                    // 9 → 11 pt (HIG alt sınırı, 2026-10-20).
+                                    // Dar kartta sembolle yeri paylaşır;
+                                    // sığmazsa üç noktayla kısalır, taşmaz.
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: p.amberFill
+                                              .withValues(alpha: 0.18),
+                                          borderRadius: BorderRadius.circular(
+                                              SandikRadius.sm),
+                                        ),
+                                        child: Text(context.l10n.inMyPortfolio,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: context.t.labelLarge
+                                                ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: p.amberText)),
                                       ),
-                                      child: Text(context.l10n.inMyPortfolio,
-                                          // 9 → 11 pt (HIG alt sınırı, 2026-10-20).
-                                          style: context.t.labelLarge?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: p.amberText)),
                                     ),
                                   ],
                                 ],
