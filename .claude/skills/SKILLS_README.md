@@ -71,6 +71,16 @@ Herhangi bir UI değişikliğinden önce:
     web estetiği — sandık paletiyle çakışır), `output-skill` (yanıt uzunluğu
     davranışını ezer; CLAUDE.md'nin özet düzeniyle çakışır), `taste-skill-v1`
     (v2'nin eski kopyası, aynı ad ailesi — çift yükleme).
+  - **2026-10-20 güncelleme (yasin kararı):** yazar depoyu tek skill'e indirdi
+    (`63aba5f`, "tasteskill v2"); `design-taste-frontend` bu sürümle değişti (LICENSE
+    klasörde). v2 web sitesi sanat yönetimidir: `scripts/*.mjs` (Node) yön çekme,
+    lint ve gerçek tarayıcı denetimi yapar; `assets.mjs` açık koleksiyonlardan
+    (Openverse, Wikimedia, Met, AIC, archive.org) görsel indirir. Bu betikler yalnız
+    yasin'e gösterilen web artifact'i/tanıtım sayfası için koşulur; uygulamaya giren
+    hiçbir şey üretmez, `library/` paletleri/fontları **alınmaz** (amber/gold + DM Sans).
+    Flutter işinde değeri `references/tells.md` + `critique.md` + `app-screens.md`
+    (şablon görünüm teşhisi). `high-end-visual-design` ve `redesign-existing-projects`
+    depodan kalktı; kurulu kopyalar (1 Ekim hâli) yerinde bırakıldı.
 - `design-motion-principles` — hareket tasarımı (Emil Kowalski, Jakub Krehel, Jhey Tompkins
   yaklaşımları). İki kipi var: **Create** (bileşene amaçlı hareket) ve **Audit** (mevcut
   animasyonda "AI-slop" kalıplarını yakalar; HTML rapor üretir). Sıklık çerçevesi ("bu
