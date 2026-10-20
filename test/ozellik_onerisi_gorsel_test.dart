@@ -20,6 +20,7 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/portfoy_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
+import 'package:portfoy_takip/screens/portfolio_screen.dart';
 import 'package:portfoy_takip/services/bugun_service.dart';
 import 'package:portfoy_takip/services/bugun_yukleyici.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
@@ -129,8 +130,9 @@ void main() {
   Future<void> ciz(WidgetTester tester, String ad,
       {required bool koyu,
       required double olcek,
-      required OzellikOnerisi? oneri}) async {
-    final boy = olcek > 1 ? 1100.0 : 700.0;
+      required OzellikOnerisi? oneri,
+      bool portfoy = false}) async {
+    final boy = portfoy ? 900.0 : (olcek > 1 ? 1100.0 : 700.0);
     tester.view.physicalSize = Size(390 * 2, boy * 2);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(tester.view.reset);
@@ -162,7 +164,9 @@ void main() {
             debugShowCheckedModeBanner: false,
             theme: SandikApp.buildTheme(
                 p, koyu ? Brightness.dark : Brightness.light),
-            home: Scaffold(
+            home: portfoy
+                ? const PortfolioScreen()
+                : Scaffold(
               body: SafeArea(
                 child: SingleChildScrollView(
                   child: Column(
@@ -207,6 +211,19 @@ void main() {
             '${koyu ? 'koyu' : 'acik'}_${olcek.toStringAsFixed(1)}x';
         testWidgets(
             ad, (t) => ciz(t, ad, koyu: koyu, olcek: olcek, oneri: oneri));
+      }
+    }
+  }
+  // Portföy sekmesi (2026-10-20 "oralara koyalım"): önce/sonra.
+  for (final oneri in <OzellikOnerisi?>[null, OzellikOnerisi.alarm]) {
+    for (final koyu in [true, false]) {
+      for (final olcek in [1.0, 2.0]) {
+        final ad = 'portfoy_${oneri == null ? 'once' : 'sonra'}_'
+            '${koyu ? 'koyu' : 'acik'}_${olcek.toStringAsFixed(1)}x';
+        testWidgets(
+            ad,
+            (t) => ciz(t, ad,
+                koyu: koyu, olcek: olcek, oneri: oneri, portfoy: true));
       }
     }
   }

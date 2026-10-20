@@ -65,6 +65,7 @@ import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/transaction_row.dart' show hareketTurEtiketi;
 import '../services/varlik_eklendi.dart';
 import '../providers/veri_kalitesi_provider.dart';
+import '../widgets/ozellik_onerisi_karti.dart';
 
 enum _SortOrder {
   valueDesc,
@@ -554,6 +555,15 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                             onDegisti: () =>
                                 setState(() => _filteredType = null),
                           ),
+                        // Özellik önerisi (yasin 2026-10-20 "oralara
+                        // koyalım"): Ana sayfadaki kartın aynısı, en çok
+                        // vakit geçirilen sekmede de. Tek sağlayıcı ve tek
+                        // kapatma kaydı: burada kapatılan Ana sayfadan da
+                        // kalkar. Ortağın görünümünde öneri yok (kendi
+                        // hesabının özellikleri).
+                        if (_view == '')
+                          const OzellikOnerisiKarti(
+                              padding: EdgeInsets.only(top: SandikSpace.sm)),
                         const SizedBox(height: 24),
 
                         // Verileri birleştir. NOT: burada iç Scaffold koymayız —

@@ -15,8 +15,10 @@ import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import 'sandik_skeleton.dart';
 
-/// Ana ekran, Bugün kartının altında: kullanılmayan bir özelliğe götüren
-/// tek kart (`ozellik_onerisi.dart`; yasin isteği 2026-10-20).
+/// Ana ekran (Bugün kartının altı) ve Portföy sekmesi (listenin üstü):
+/// kullanılmayan bir özelliğe götüren tek kart (`ozellik_onerisi.dart`;
+/// yasin isteği 2026-10-20). İki yer aynı sağlayıcıyı okur; birinde
+/// kapatmak ikisinden de kaldırır.
 ///
 /// "Bilgi eksik" satırıyla ([VeriKalitesiSeridi]) aynı kalıp: SandikCard,
 /// ikon + iki satır + kapat. Dokununca özelliğin ekranı açılır; dokunmak da
