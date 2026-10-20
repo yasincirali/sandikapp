@@ -1,0 +1,86 @@
+# Web enflasyon hesaplayıcısı: TÜFE verisini aylık güncelle.
+#
+# Neden: docs/enflasyon/ sayfası ("Param enflasyona karşı ne oldu?")
+# docs/data/tufe.json'u okur. TÜFE her ayın 3'ünde TR 10:00'da açıklanır,
+# `fetch-inflation` 10:05'te `inflation_index`'e yazar (4'ünde ikinci tur).
+# Bu iş ondan sonra koşar; 3, 4 ve 5'inde denemesi açıklamanın tatile ya da
+# geç çekime denk gelmesini karşılar (veri aynıysa DEGISIKLIK_YOK, PR yok).
+#
+# `tool/tufe_web.py` canlı sunucuda (Frankfurt) tek salt okunur SELECT koşar;
+# `db-boyut.yml` ile aynı secret. Yeni API/anahtar yok. Main'e doğrudan
+# yazmaz: halka-arz.yml gibi `otomatik/tufe-web-*` dalına PR açar, birleştirme
+# insanda kalır. Birleşince Pages yayınlar.
+#
+# ⚠️ GITHUB_TOKEN ile açılan PR CI'ı TETİKLEMEZ; testler bu işte koşar ve PR
+# yalnızca testler geçtiyse açılır.
+name: TÜFE web verisi
+
+on:
+  schedule:
+    # 3-5'i 07:40 UTC (TR 10:40): 10:05 çekiminden sonra.
+    - cron: "40 7 3-5 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: tufe-web
+  cancel-in-progress: false
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tablodan güncelle
+        id: guncel
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
+        run: |
+          set -o pipefail
+          python -m unittest tool/tufe_web_test.py
+          python tool/tufe_web.py | tee /tmp/sonuc.txt
+          if grep -q DEGISIKLIK_VAR /tmp/sonuc.txt; then
+            echo "degisti=1" >> "$GITHUB_OUTPUT"
+            echo "ozet=$(grep '^seri:' /tmp/sonuc.txt | sed 's/.*son ay: //' | head -1)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: subosito/flutter-action@v2
+        if: steps.guncel.outputs.degisti == '1'
+        with:
+          channel: stable
+          cache: true
+
+      - name: Veri ve sayfa testi (tufe_web_test)
+        if: steps.guncel.outputs.degisti == '1'
+        run: |
+          flutter pub get
+          flutter test test/tufe_web_test.dart
+
+      - name: PR aç
+        if: steps.guncel.outputs.degisti == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OZET: ${{ steps.guncel.outputs.ozet }}
+        run: |
+          dal="otomatik/tufe-web-$(date -u +%Y%m%d)"
+          git config user.name "sandik-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$dal"
+          git add docs/data/tufe.json
+          git commit -m "data(tufe-web): son açıklanan ay $OZET"
+          git push --force -u origin "$dal"
+          if ! gh pr view "$dal" >/dev/null 2>&1; then
+            gh pr create --base main --head "$dal" \
+              --title "Web enflasyon hesaplayıcısı: TÜFE $OZET" \
+              --body "Kaynak: \`inflation_index\` (TÜİK TÜFE genel endeksi, TCMB EVDS üzerinden; yalnız son baz yılı serisi). \`tufe_web_test\` bu işte geçti. Birleşince Pages yayınlar, docs/enflasyon/ yeni ayı gösterir."
+          fi
