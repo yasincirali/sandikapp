@@ -343,6 +343,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noAssetsYet => 'No assets added yet';
 
   @override
+  String get addAssetVazgecBaslik => 'Discard your changes?';
+
+  @override
+  String get addAssetVazgecMetin =>
+      'The quantity, commission or note you entered hasn\'t been saved. Leaving will discard it.';
+
+  @override
+  String get addAssetVazgecSil => 'Discard';
+
+  @override
+  String get addAssetVazgecKal => 'Keep editing';
+
+  @override
   String get addAssetTitle => 'Add Asset';
 
   @override
@@ -1011,6 +1024,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demoSaveSheetContinue => 'Keep exploring';
+
+  @override
+  String get fundsEmptyRetry =>
+      'We couldn\'t get the fund list right now. Try again in a moment.';
 
   @override
   String get fundsLoadFailed => 'Could not load funds';
