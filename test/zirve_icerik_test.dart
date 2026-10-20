@@ -48,7 +48,9 @@ void main() {
     test('fon ve BES kovalara açılır; doğrudan türler kendi kovasında', () {
       expect(x.kovalar[XrayKova.bistHisse], closeTo(15 + 5 + 16, 1e-9));
       expect(x.kovalar[XrayKova.yabanciHisse], closeTo(10 + 9, 1e-9));
-      expect(x.kovalar[XrayKova.paraPiyasasi], closeTo(4, 1e-9));
+      // Para piyasası sade grupta mevduatla birlikte ("Mevduat ve nakit").
+      expect(x.kovalar[XrayKova.paraPiyasasi], isNull);
+      expect(x.kovalar[XrayKova.mevduat], closeTo(4, 1e-9));
       expect(x.kovalar[XrayKova.devletBorclanma], closeTo(10, 1e-9));
       expect(x.kovalar[XrayKova.kiymetliMaden], closeTo(10, 1e-9));
       expect(x.kovalar[XrayKova.kripto], closeTo(10, 1e-9));
@@ -151,7 +153,7 @@ void main() {
 
     testWidgets('Premium görünmüyor: hiçbir şey, veri okunmaz', (t) async {
       await kur(t, gorunur: false);
-      expect(find.text('FONLARIN İÇİ AÇILINCA'), findsNothing);
+      expect(find.text('FONLARIN İÇİNDE NE VAR'), findsNothing);
       expect(okuma, 0);
     });
 
@@ -164,19 +166,19 @@ void main() {
 
     testWidgets('açık: sınıflar, kaynaklar ve özet cümlesi', (t) async {
       await kur(t, gorunur: true);
-      expect(find.text('FONLARIN İÇİ AÇILINCA'), findsOneWidget);
+      expect(find.text('FONLARIN İÇİNDE NE VAR'), findsOneWidget);
       expect(
-          find.text('Listede hisse %30 görünüyor; fonların içiyle birlikte '
+          find.text('Hisse payı listede %30, fonların içindekilerle birlikte '
               '%55.'),
           findsOneWidget);
-      expect(find.text('Doğrudan %20 · AFT %16'), findsOneWidget);
-      expect(find.text('İçeriği bilinmeyen'), findsOneWidget);
+      expect(find.text('Kendi aldığı %20 · AFT %16'), findsOneWidget);
+      expect(find.text('İçi bilinmeyen fonlar'), findsOneWidget);
       expect(find.textContaining('TEFAS'), findsOneWidget);
     });
 
     testWidgets('fon/BES yoksa çizilmez', (t) async {
       await kur(t, gorunur: true, pay: const {'hisse': 100});
-      expect(find.text('FONLARIN İÇİ AÇILINCA'), findsNothing);
+      expect(find.text('FONLARIN İÇİNDE NE VAR'), findsNothing);
     });
 
     testWidgets('×2 ve ×3,1 yazıda taşma yok', (t) async {

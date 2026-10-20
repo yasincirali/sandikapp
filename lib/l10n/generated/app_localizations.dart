@@ -15122,37 +15122,37 @@ abstract class AppLocalizations {
   /// No description provided for @ziBaslikUpper.
   ///
   /// In tr, this message translates to:
-  /// **'FONLARIN İÇİ AÇILINCA'**
+  /// **'FONLARIN İÇİNDE NE VAR'**
   String get ziBaslikUpper;
 
   /// No description provided for @ziOzetHisse.
   ///
   /// In tr, this message translates to:
-  /// **'Listede hisse {gorunen} görünüyor; fonların içiyle birlikte {gercek}.'**
+  /// **'Hisse payı listede {gorunen}, fonların içindekilerle birlikte {gercek}.'**
   String ziOzetHisse(String gorunen, String gercek);
 
   /// No description provided for @ziDogrudan.
   ///
   /// In tr, this message translates to:
-  /// **'Doğrudan'**
+  /// **'Kendi aldığı'**
   String get ziDogrudan;
 
   /// No description provided for @ziBilinmeyen.
   ///
   /// In tr, this message translates to:
-  /// **'İçeriği bilinmeyen'**
+  /// **'İçi bilinmeyen fonlar'**
   String get ziBilinmeyen;
 
   /// No description provided for @ziBilinmeyenAlt.
   ///
   /// In tr, this message translates to:
-  /// **'Dağılımı yayımlanmayan ya da %1 altı fonlar'**
+  /// **'Bu fonlar içeriğini yayımlamıyor ya da payı %1\'in altında'**
   String get ziBilinmeyenAlt;
 
   /// No description provided for @ziKaynak.
   ///
   /// In tr, this message translates to:
-  /// **'Fon ve BES içerikleri TEFAS\'ın günlük varlık dağılımından · {tarih}. Fonların tek tek hisseleri değil, varlık sınıfları.'**
+  /// **'Fonların içi TEFAS\'ın günlük raporundan, {tarih}. Fonun tek tek hangi hisseleri aldığı değil, ne tür varlıklara yatırım yaptığı gösterilir.'**
   String ziKaynak(String tarih);
 
   /// No description provided for @ziKilitBaslik.
@@ -15178,6 +15178,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad} {pay}. {kaynaklar}'**
   String ziSatirEtiket(String ad, String pay, String kaynaklar);
+
+  /// No description provided for @ziAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonlar ve BES kendi içinde neye yatırım yapıyorsa o paya eklendi. Satırın altında payın nereden geldiği yazar.'**
+  String get ziAciklama;
+
+  /// No description provided for @ziGrupBistHisse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Türkiye hisseleri'**
+  String get ziGrupBistHisse;
+
+  /// No description provided for @ziGrupYabanciHisse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yurt dışı hisseleri'**
+  String get ziGrupYabanciHisse;
+
+  /// No description provided for @ziGrupTahvil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil ve bono (TL)'**
+  String get ziGrupTahvil;
+
+  /// No description provided for @ziGrupDovizTahvil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz cinsi tahvil'**
+  String get ziGrupDovizTahvil;
+
+  /// No description provided for @ziGrupNakit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevduat ve nakit'**
+  String get ziGrupNakit;
+
+  /// No description provided for @ziGrupAltin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın ve gümüş'**
+  String get ziGrupAltin;
+
+  /// No description provided for @ziGrupFon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka fonlar'**
+  String get ziGrupFon;
+
+  /// No description provided for @ziGrupGayrimenkul.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gayrimenkul'**
+  String get ziGrupGayrimenkul;
+
+  /// No description provided for @ziGrupDiger.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get ziGrupDiger;
+
+  /// No description provided for @ziGrupDoviz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz'**
+  String get ziGrupDoviz;
+
+  /// No description provided for @ziGrupKripto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto'**
+  String get ziGrupKripto;
+
+  /// No description provided for @ziGrupEmtia.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emtia'**
+  String get ziGrupEmtia;
 }
 
 class _AppLocalizationsDelegate

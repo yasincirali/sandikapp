@@ -130,6 +130,18 @@ List<String> zirveFonKodlari(
     ..sort();
 }
 
+/// Zirve'de sade gruplar (yasin 2026-10-20: "anlaşılır ve net ifadelerle"):
+/// TEFAS'ın ince ayrımı (devlet/özel tahvil, para piyasası/mevduat,
+/// diğer/etiketsiz) başkasının portföyüne bakan kullanıcıya bir şey
+/// söylemez; aynı işi gören sınıflar tek satırda toplanır. Fon X-Ray'in
+/// kendi ekranları ince ayrımı korur. Temsilci kova rengi ve sırası taşır.
+XrayKova zirveSadeKova(XrayKova k) => switch (k) {
+      XrayKova.ozelBorclanma => XrayKova.devletBorclanma,
+      XrayKova.paraPiyasasi => XrayKova.mevduat,
+      XrayKova.etiketsiz => XrayKova.diger,
+      _ => k,
+    };
+
 XrayKova? _dogrudanKova(String tur) => switch (tur) {
       'altin' => XrayKova.kiymetliMaden,
       'doviz' => XrayKova.doviz,
@@ -152,8 +164,9 @@ ZirveIcerik zirveIcerigi({
   var bilinmeyen = 0.0;
   DateTime? tarih;
 
-  void ekle(XrayKova k, String kaynak, double v) {
+  void ekle(XrayKova ham, String kaynak, double v) {
     if (!v.isFinite || v == 0) return;
+    final k = zirveSadeKova(ham);
     kovalar[k] = (kovalar[k] ?? 0) + v;
     final m = kaynaklar.putIfAbsent(k, () => <String, double>{});
     m[kaynak] = (m[kaynak] ?? 0) + v;

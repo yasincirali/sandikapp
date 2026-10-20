@@ -9185,26 +9185,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onerKapat => 'Hide this suggestion';
 
   @override
-  String get ziBaslikUpper => 'WITH FUNDS OPENED UP';
+  String get ziBaslikUpper => 'WHAT\'S INSIDE THE FUNDS';
 
   @override
   String ziOzetHisse(String gorunen, String gercek) {
-    return 'Stocks show as $gorunen in the list; $gercek including what the funds hold.';
+    return 'Stocks are $gorunen in the list, $gercek with what the funds hold.';
   }
 
   @override
-  String get ziDogrudan => 'Direct';
+  String get ziDogrudan => 'Bought directly';
 
   @override
-  String get ziBilinmeyen => 'Contents unknown';
+  String get ziBilinmeyen => 'Funds with unknown contents';
 
   @override
   String get ziBilinmeyenAlt =>
-      'Funds without a published breakdown or under 1%';
+      'These funds don\'t publish their contents or are under 1%';
 
   @override
   String ziKaynak(String tarih) {
-    return 'Fund and pension contents from TEFAS daily asset breakdown · $tarih. Asset classes, not individual holdings.';
+    return 'Fund contents from TEFAS daily reports, $tarih. Shows what kind of assets the funds hold, not which individual stocks.';
   }
 
   @override
@@ -9221,4 +9221,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String ziSatirEtiket(String ad, String pay, String kaynaklar) {
     return '$ad $pay. $kaynaklar';
   }
+
+  @override
+  String get ziAciklama =>
+      'Whatever the funds and pension funds invest in is added to that share. Under each line: where the share comes from.';
+
+  @override
+  String get ziGrupBistHisse => 'Turkish stocks';
+
+  @override
+  String get ziGrupYabanciHisse => 'Foreign stocks';
+
+  @override
+  String get ziGrupTahvil => 'Bonds and bills (TRY)';
+
+  @override
+  String get ziGrupDovizTahvil => 'Foreign-currency bonds';
+
+  @override
+  String get ziGrupNakit => 'Deposits and cash';
+
+  @override
+  String get ziGrupAltin => 'Gold and silver';
+
+  @override
+  String get ziGrupFon => 'Other funds';
+
+  @override
+  String get ziGrupGayrimenkul => 'Real estate';
+
+  @override
+  String get ziGrupDiger => 'Other';
+
+  @override
+  String get ziGrupDoviz => 'Currency';
+
+  @override
+  String get ziGrupKripto => 'Crypto';
+
+  @override
+  String get ziGrupEmtia => 'Commodities';
 }

@@ -97,6 +97,11 @@ class ZirveIcerikKarti extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  l.ziAciklama,
+                  style: context.t.bodySmall?.copyWith(color: c.text58),
+                ),
+                const SizedBox(height: SandikSpace.smd),
                 if (h.fonlardan >= 1) ...[
                   Text(
                     l.ziOzetHisse(
@@ -131,7 +136,7 @@ class ZirveIcerikKarti extends ConsumerWidget {
   Widget _satir(BuildContext context, ZirveIcerik x, XrayKova? k, double v) {
     final l = context.l10n;
     final c = context.c;
-    final ad = k == null ? l.ziBilinmeyen : xrayKovaAdi(l, k);
+    final ad = k == null ? l.ziBilinmeyen : zirveGrupAdi(l, k);
     final String alt;
     if (k == null) {
       alt = l.ziBilinmeyenAlt;
@@ -156,7 +161,7 @@ class ZirveIcerikKarti extends ConsumerWidget {
           children: [
             XrayKovaSatiri(
               kova: k,
-              ad: k == null ? ad : null,
+              ad: ad,
               renk: k == null ? c.text20.withValues(alpha: 0.5) : null,
               deger: yuzde,
             ),
@@ -174,3 +179,21 @@ class ZirveIcerikKarti extends ConsumerWidget {
     );
   }
 }
+
+/// Sade grup adı (Zirve; `zirveSadeKova` sonrası). Fon X-Ray'in teknik
+/// sınıf adları ("Para piyasası / repo", "Kıymetli maden") yerine gündelik
+/// dil: kullanıcı başkasının portföyünü bir bakışta anlamalı.
+String zirveGrupAdi(AppLocalizations l, XrayKova k) => switch (k) {
+      XrayKova.bistHisse => l.ziGrupBistHisse,
+      XrayKova.yabanciHisse => l.ziGrupYabanciHisse,
+      XrayKova.devletBorclanma || XrayKova.ozelBorclanma => l.ziGrupTahvil,
+      XrayKova.dovizBorclanma => l.ziGrupDovizTahvil,
+      XrayKova.paraPiyasasi || XrayKova.mevduat => l.ziGrupNakit,
+      XrayKova.kiymetliMaden => l.ziGrupAltin,
+      XrayKova.fon => l.ziGrupFon,
+      XrayKova.gayrimenkulGirisim => l.ziGrupGayrimenkul,
+      XrayKova.diger || XrayKova.etiketsiz => l.ziGrupDiger,
+      XrayKova.doviz => l.ziGrupDoviz,
+      XrayKova.kripto => l.ziGrupKripto,
+      XrayKova.emtia => l.ziGrupEmtia,
+    };
