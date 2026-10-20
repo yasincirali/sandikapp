@@ -12,6 +12,39 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-20 Bayrak emekliliği, 1. parti (yalnız kod)
+
+Mağazada uzun süredir açık beş bayrak koddan kalktı; özellik artık koşulsuz:
+`donem_hafizasi`, `portfoy_dagilim_cubugu`, `genel_arama`,
+`tur_secici_izgara`, `mevduat_banka_secici`. Yeni build'de davranış
+değişmez (zaten açıktı).
+
+- [ ] Console'da bu beş anahtarı **silme ve `true` bırak**: telefonlardaki
+      eski build'ler hâlâ okuyor; silinirse kod varsayılanı `false`'a düşer
+      ve eski sürümde özellik kapanır. Eski sürümler kullanımdan düşünce
+      (Analytics'te sürüm dağılımına bak) silinebilir.
+
+## ⏳ 2026-10-19 Zirve varlık oranları + Premium kapısı (0158, yasal metin 1.13)
+
+Zirvedeki portföyler varlık bazında (sembol + oran) görünür; içeride olanlar
+(`ilk_uye`) tam görür, yeni katılım ve ayrıntı Premium. Sunucu değişikliği
+ekleyerek: eski build eski RPC'yi okur, değişmez.
+
+Yayın sırası (birleştirmeden sonra, iki sunucu; Frankfurt canlı):
+1. [ ] Supabase deploy: migration **0158** (Frankfurt → Tokyo). `ilk_uye`
+       bayrağı o an rızası etkin olan herkese yazılır; geç kalınırsa arada
+       katılan da "ilk üye" sayılır (zararsız, yalnız cömert).
+   Aynı deploy'da **0162** (`assets.maliyet_bilinmiyor`, boş geçilebilir
+       kolon; yoksa uygulama sütunsuz yeniden dener, eski build görmez).
+2. [ ] Ardından `leaderboard-snapshot` fonksiyonu (iki sunucu). Önce fonksiyon
+       giderse yeni kolon olmadığı için yazma kırılır; sıra önemli.
+3. [ ] Yasal metin 1.13 (Gizlilik/KVKK), Koşullar 1.11, Açık Rıza 1.6, Zirve
+       rızası 2026-10-20: "Onay sürümü" artmadı, genel yeniden onay kapısı
+       açılmaz. Zirve katılımcısı listede yeni Zirve metnini bir kez onaylar;
+       onaylamayanın sembolleri başkasına görünmez.
+4. [ ] Karar bekliyor: Zirve rızasındaki sembol paylaşımı için avukat
+       görüşü istenecek mi (açık "Zirve rızası avukat" kararı).
+
 ## ⏳ 2026-10-20 İyileştirme raporu: sunucu tarafı (0159 + iki fonksiyon)
 
 Rapor: https://claude.ai/artifact/UpzWDoUeGUn8yBozCCVde6
@@ -225,7 +258,10 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
       `portfoy_dagilim_cubugu`, `varlik_detay_katmanli`, `donem_hafizasi`,
       `sinyal_on_ayar`, `ekstre_hareketleri`, `satis_gunu_kuru`,
       `hafta_sonu_yurt_ici_seri`, `canli_etkinlik_dakikalik`
-      (`kayit_hunisi` senin kararın). TestFlight'ta hiç açık olmamış biri
+      (`kayit_hunisi` senin kararın). `tur_secici_izgara`,
+      `mevduat_banka_secici`, `genel_arama`, `portfoy_dagilim_cubugu`,
+      `donem_hafizasi` 2026-10-20'de koddan kalktı; Console'da eski
+      sürümler için `true` kalır. TestFlight'ta hiç açık olmamış biri
       varsa açmadan önce bir dene.
 - [ ] Sunucu `premium_ayar.kapi_acik` **false** kalır (dokunma).
 - [ ] App Store Connect'te sürüm sayfasındaki **"In-App Purchases and
@@ -758,8 +794,8 @@ etkilemeden; seçilen bankanın aylık/yıllık brüt faizi varsayılan, müşte
       çıkan satırın seri kodu TCMB'de farklıdır; doğru kod EVDS katalogundan
       okunup tek UPDATE ile düzeltilir (deploy gerekmez). O satır düzelene
       kadar o vadede öneri yazılmaz, form bugünkü gibi boş gelir.
-- [ ] Remote Config'e `mevduat_banka_secici` (Boolean, varsayılan `false`,
-      TestFlight koşulu `true`). İlk tur `ok` vermeden açma: liste gelir ama
+- [x] ~~Remote Config'e `mevduat_banka_secici` (Boolean, varsayılan `false`,
+      TestFlight koşulu `true`).~~ Bayrak 2026-10-20'de koddan kalktı. İlk tur `ok` vermeden açma: liste gelir ama
       faiz önerisi boş kalır.
 - [ ] TestFlight'ta dene: Varlık Ekle → Mevduat → Banka alanına dokun →
       listeden seç; faiz ve aylık dolsun; vadeyi değiştir, faiz değişsin;
@@ -797,8 +833,8 @@ kartına dokunulmadı.
       bağlanır. Açınca: Portföy listesinde ve hareketlerde hisse/fon/kripto
       satırında tür ikonu yerine sembol (ASE, DLY, BTC) rozeti; varlık
       sayfasındaki büyük fiyatta ve Portföy küçük halkasının ortasında
-      değişen hane döner, ₺ ve kuruş küçük ve soluk. Halka için
-      `portfoy_dagilim_cubugu` da açık olmalı.
+      değişen hane döner, ₺ ve kuruş küçük ve soluk. (Küçük halka
+      2026-10-20'den beri koşulsuz; `portfoy_dagilim_cubugu` kalktı.)
 - [ ] TestFlight'ta dene: piyasa açıkken bir hisse sayfasında fiyat yenilenince
       yalnız değişen hane dönmeli; iOS'ta "Hareketi azalt" açıkken dönmemeli.
 - 2026-10-09 B paketi + rozet yayılımı aynı bayrağa eklendi (yeni bayrak
@@ -926,6 +962,8 @@ detayıyla aynı kural — hata düzeltmesi).
         aylık rapor, yıl özeti, Sıralama).
       - `genel_arama` — Ana ekranda Yenile yerine Ara (varlıklarım, piyasa,
         eylemler); yenileme aşağı çekerek.
+      (2026-10-20: `donem_hafizasi`, `portfoy_dagilim_cubugu`, `genel_arama`
+      koddan kalktı, koşulsuz.)
 - [ ] Denedikten sonra hangilerinin herkese açılacağını söyle; açılanlar için
       sürüm notu + tanıtım turu adımı (CLAUDE.md "Yenilikler") ayrıca yazılır.
 
@@ -991,9 +1029,8 @@ Sıra önemli:
 - [ ] Bayrakları önce kendi cihazında (TestFlight koşulu) aç:
       `abd_hisse` → `varlik_masraflari` → `eurobond`. `eurobond`'u fiyat
       tablosu dolmadan açma: eklenen lot fiyatsız kalır.
-- [ ] Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI): Varlık
-      Ekle'de arama + gruplu tür ızgarası. Sunucu işi yok; önce kendi
-      cihazında aç, kapalıyken çip satırı birebir eski.
+- [x] ~~Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI)~~:
+      bayrak 2026-10-20'de koddan kalktı, ızgara koşulsuz.
 - [ ] Karar (bende varsayılan): eurobond değeri **piyasa fiyatından**
       (Frankfurt temiz + işlemiş faiz); Ziraat alış fiyatı yalnız "bankaya
       satarsan" satırında. Banka alış fiyatıyla değerleme istersen söyle.

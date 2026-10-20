@@ -56,25 +56,35 @@ void main() {
 
   Finder cip(AssetType t) => find.text(t.label);
 
-  testWidgets('Mevduat çipi mevduat formunu açar; Hisse\'ye dönünce genel form',
+  // Tür ızgarası (bayrak `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı):
+  // seçimden sonra tek satıra katlanır; başka tür "Değiştir" ile seçilir.
+  Future<void> turSec(WidgetTester tester, AssetType t) async {
+    final degistir = find.text('Değiştir');
+    if (degistir.evaluate().isNotEmpty) {
+      await tester.tap(degistir);
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(cip(t).last);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Mevduat kutusu mevduat formunu açar; Hisse\'ye dönünce genel form',
       (tester) async {
     await ac(tester, const AddAssetScreen());
+    await turSec(tester, AssetType.hisse);
     // Genel formun bir alanı: miktar (listenin üstünde, tembel ListView onu kurar).
     expect(find.text('Miktar'), findsWidgets);
 
-    await tester.tap(cip(AssetType.mevduat));
-    await tester.pumpAndSettle();
+    await turSec(tester, AssetType.mevduat);
     expect(find.byType(MevduatFormu), findsOneWidget);
     expect(find.text('Miktar'), findsNothing,
         reason: 'Sözleşme formunda miktar × fiyat alanları yok');
 
-    await tester.tap(cip(AssetType.bes));
-    await tester.pumpAndSettle();
+    await turSec(tester, AssetType.bes);
     expect(find.byType(BesFormu), findsOneWidget);
     expect(find.byType(MevduatFormu), findsNothing);
 
-    await tester.tap(cip(AssetType.hisse));
-    await tester.pumpAndSettle();
+    await turSec(tester, AssetType.hisse);
     expect(find.byType(BesFormu), findsNothing);
     expect(find.text('Miktar'), findsWidgets,
         reason: 'Genel form geri geldi — durumu bozulmadı');

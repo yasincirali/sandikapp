@@ -16,10 +16,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Sadeleştirme 2 — Portföy küçük halkası (bayrak `portfoy_dagilim_cubugu`).
 ///
 /// yasin'in seçimi (2026-10-08, "C"): şerit yerine küçük halka + lejant.
+/// Bayrak 2026-10-20'de emekliye ayrıldı; ekrandaki eski büyük halka kalktı.
 /// Kilitlenen davranışlar:
-/// 1. Bayrak kapalı: eski büyük halka (PieChart) ekranda, küçük halka yok.
-/// 2. Bayrak açık: büyük halka yerine küçük halka; lejant "Tür  %xx,x",
-///    ortada toplam.
+/// 1. (Eski "bayrak kapalı" maddesi kalktı.)
+/// 2. Büyük halka yerine küçük halka; lejant "Tür  %xx,x", ortada toplam.
 /// 3. Lejant satırı halka dilimi gibi süzer; aynı satıra yeniden dokunmak
 ///    kaldırır. Seçiliyken ortada türün payı görünür.
 /// 4. Küçük halkaya dokunmak büyük halkayı alt sayfada açar; oradaki
@@ -139,15 +139,8 @@ void main() {
   });
   tearDown(() => RemoteConfigService.testAcik = {});
 
-  testWidgets('bayrak kapalı: eski halka, küçük halka yok', (tester) async {
-    await _pump(tester);
-    expect(find.byType(PieChart), findsOneWidget);
-    expect(_kucukHalka, findsNothing);
-  });
-
-  testWidgets('bayrak açık: küçük halka, lejantta yüzdeler, ortada toplam',
+  testWidgets('küçük halka, lejantta yüzdeler, ortada toplam',
       (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     expect(find.byType(PieChart), findsNothing);
     expect(_kucukHalka, findsOneWidget);
@@ -157,7 +150,6 @@ void main() {
   });
 
   testWidgets('lejant süzer; aynı satır süzgeci kaldırır', (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     expect(_satir('THYAO'), findsWidgets);
     expect(_satir('AFT'), findsWidgets);
@@ -176,7 +168,6 @@ void main() {
   });
 
   testWidgets('lejant satırı dokunma hedefi en az 44pt', (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     final boy = tester.getSize(find.ancestor(
         of: find.text('%75,0'), matching: find.byType(ConstrainedBox)).first);
@@ -185,7 +176,6 @@ void main() {
 
   testWidgets('küçük halka büyük halkayı alt sayfada açar, seçim süzer',
       (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     await tester.tap(_kucukHalka);
     await tester.pumpAndSettle();
@@ -206,7 +196,6 @@ void main() {
   // "+N tür" satırı kalktı.
   testWidgets('altı tür tek sayfada, hepsi görünür, nokta yok',
       (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester, varliklar: _altiTur);
     for (final ad in ['Hisse', 'Fon', 'Altın', 'Döviz', 'Kripto', 'Emtia']) {
       expect(_lejant(ad), findsOneWidget, reason: ad);
@@ -218,7 +207,6 @@ void main() {
   testWidgets(
       'on tür: küçükler katlanmaz, lejant iki sayfa + noktalar; '
       'kaydırınca küçük türler adıyla görünür', (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester, varliklar: _onTur);
     expect(find.byType(PageView), findsOneWidget);
     expect(find.byKey(const ValueKey('nokta-0')), findsOneWidget);
@@ -238,7 +226,6 @@ void main() {
   });
 
   testWidgets('kartın boyu tür sayısından bağımsız', (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     Size kart() => tester.getSize(find
         .ancestor(
             of: find.byKey(const ValueKey('kucuk-halka-lejant')),
@@ -253,7 +240,6 @@ void main() {
 
   testWidgets('halka dönerek dolar; hareketi azalt açıkken anında dolu',
       (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     double ilerleme() => (tester
             .widget<CustomPaint>(find.descendant(

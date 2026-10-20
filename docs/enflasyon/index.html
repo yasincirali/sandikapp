@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Param enflasyona karşı ne oldu? · sandık</title>
+<meta name="description" content="Bir tutar ve başlangıç ayı seç, TÜİK TÜFE endeksine göre bugünkü karşılığını gör. Ücretsiz, kayıt yok, tutarın hiçbir yere gönderilmez.">
+<meta property="og:title" content="Param enflasyona karşı ne oldu?">
+<meta property="og:description" content="TÜİK TÜFE endeksiyle paranın bugünkü karşılığı.">
+<meta property="og:image" content="https://yasincirali.github.io/sandikapp/img/sandik-icon.png">
+<link rel="canonical" href="https://yasincirali.github.io/sandikapp/enflasyon/">
+<meta name="theme-color" content="#0A1E15">
+<meta name="apple-itunes-app" content="app-id=6786837699">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/sandik-icon.png">
+<!--
+  Enflasyon hesaplayıcısı (2026-10-20, Ar-Ge raporu 2026-10-20_1315 #2,
+  yasin onayı). Her ay TÜFE açıklandığı gün "10 bin liram ne oldu" aranıyor;
+  cevabın altında "kendi portföyün enflasyonu yendi mi?" sorusu uygulamaya
+  çağırır.
+  - Veri: ../data/tufe.json. tool/tufe_web.py, uygulamanın kullandığı
+    `inflation_index` tablosundan yazar (TÜİK TÜFE genel endeksi, yalnız son
+    baz yılı serisi). Veri yoksa sayfa boş durum gösterir, sayı uydurmaz.
+  - "Bugün" = son AÇIKLANMIŞ ay; açıklanmamış ay listede yok, hesaplanmaz.
+  - Yalnız TÜFE (v1). Dolar/altın kıyası fiyat verisi lisans sorusunu geri
+    getirir; sonraya.
+  - Hesap tarayıcıda (hesap.js, test/tufe_web_test.dart aynı dosyayı koşar);
+    tutar sunucuya gitmez, sayfada analytics yok.
+  - Mağaza bağlantısı kampanya etiketli (utm_medium=enflasyon) ki kanal
+    ölçülsün. Android henüz yayında değil; indir/ sayfası "yakında" der.
+  - Stil ana sayfanın (docs/index.html) tokenlarıyla aynı; uzun tire yok
+    (tufe_web_test bu sayfayı da tarar).
+-->
+<style>
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-SemiBold.ttf') format('truetype'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-ExtraBold.ttf') format('truetype'); font-weight: 800; font-display: swap; }
+
+:root {
+  color-scheme: dark;
+  --orman: #0A1E15;
+  --kasa: #112E28;
+  --derin: #1A3D2E;
+  --metin: rgba(255, 255, 255, 0.92);
+  --soluk: rgba(255, 255, 255, 0.68);
+  --silik: rgba(255, 255, 255, 0.5);
+  --cizgi: rgba(255, 255, 255, 0.08);
+  --parlak: rgba(255, 255, 255, 0.12);
+  --amber: #F5A623;
+  --altin: #F5C842;
+  --kayip: #FF6B52;
+  --gece: rgba(2, 12, 8, 0.7);
+  --yay: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--orman);
+  color: var(--metin);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; }
+.sayi { font-variant-numeric: tabular-nums; }
+.kap { max-width: 760px; margin: 0 auto; padding-inline: 24px; }
+
+.ada {
+  position: sticky;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  z-index: 10;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 14px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 8px 10px 8px 12px;
+  border-radius: 999px;
+  background: rgba(17, 46, 40, 0.72);
+  border: 1px solid var(--parlak);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+.ada .marka { display: flex; align-items: center; gap: 8px; min-height: 44px; text-decoration: none; font-weight: 800; letter-spacing: -0.02em; color: var(--altin); }
+.ada .marka img { width: 26px; height: 26px; border-radius: 7px; }
+.ada nav a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--soluk); font-size: 14px; padding: 0 12px; border-radius: 999px; }
+@media (hover: hover) and (pointer: fine) { .ada nav a:hover { color: var(--metin); } }
+
+header.bas { padding-block: 64px 32px; }
+h1 { font-size: clamp(2.2rem, 7vw, 3.6rem); font-weight: 800; line-height: 1.02; letter-spacing: -0.04em; text-wrap: balance; }
+h1 span { color: var(--altin); }
+.giris { margin-top: 18px; font-size: 1.12rem; color: var(--soluk); max-width: 44ch; }
+
+.tepsi { padding: 8px; border-radius: 34px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--cizgi); }
+.tepsi + .tepsi { margin-top: 18px; }
+.cekirdek {
+  padding: 28px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--derin), var(--kasa));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 40px 90px -40px var(--gece);
+}
+
+.alanlar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.alan { display: grid; gap: 8px; align-content: start; }
+.alan label { font-size: 14px; font-weight: 600; color: var(--soluk); }
+.girdi {
+  display: flex; align-items: center;
+  border-radius: 16px;
+  background: rgba(10, 30, 21, 0.6);
+  border: 1px solid var(--cizgi);
+  transition: border-color 300ms var(--yay), box-shadow 300ms var(--yay);
+}
+.girdi:focus-within { border-color: rgba(245, 166, 35, 0.6); box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.12); }
+.girdi input, .girdi select {
+  flex: 1; min-width: 0; width: 100%; min-height: 52px;
+  background: transparent; border: 0; outline: 0;
+  color: var(--metin);
+  font: inherit; font-size: 1.2rem; font-weight: 700;
+  padding: 12px 16px;
+  font-variant-numeric: tabular-nums;
+}
+.girdi select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+.girdi select option { background: var(--kasa); color: var(--metin); }
+.girdi span { padding-right: 16px; color: var(--silik); font-weight: 700; }
+.alan small { color: var(--silik); font-size: 13px; }
+.alan small.hata { color: var(--kayip); }
+
+.sonuc .etiket { font-size: 15px; color: var(--soluk); font-weight: 600; }
+.sonuc .buyuk { font-size: clamp(2.4rem, 9vw, 3.6rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; margin-top: 8px; color: var(--altin); overflow-wrap: anywhere; }
+.sonuc .aciklama { margin-top: 16px; color: var(--metin); }
+.sonuc .aciklama b { font-weight: 700; }
+.sonuc .bos { color: var(--soluk); }
+
+.cagri { margin-top: 40px; display: grid; gap: 16px; justify-items: start; }
+.cagri h2 { font-size: clamp(1.4rem, 4.5vw, 1.8rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; text-wrap: balance; }
+.cagri p { color: var(--soluk); max-width: 46ch; }
+.dugme {
+  display: inline-flex; align-items: center; gap: 14px;
+  min-height: 54px;
+  padding: 8px 8px 8px 24px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: var(--kasa);
+  font-weight: 700; font-size: 1.05rem;
+  text-decoration: none;
+  transition: transform 500ms var(--yay);
+  box-shadow: 0 18px 50px -18px rgba(245, 166, 35, 0.55);
+}
+.dugme .ok { width: 38px; height: 38px; border-radius: 999px; background: rgba(17, 46, 40, 0.14); display: grid; place-items: center; }
+.dugme:active { transform: scale(0.98); }
+.dugme:focus-visible, .ada a:focus-visible, .ikincil:focus-visible { outline: 3px solid var(--altin); outline-offset: 4px; }
+.ikincil { display: inline-flex; align-items: center; min-height: 44px; color: var(--soluk); font-size: 0.95rem; }
+
+.notlar { margin-top: 48px; display: grid; gap: 8px; color: var(--silik); font-size: 0.92rem; }
+
+footer { margin-top: 64px; border-top: 1px solid var(--cizgi); padding-block: 32px calc(48px + env(safe-area-inset-bottom, 0px)); font-size: 0.9rem; color: var(--silik); }
+footer nav { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+footer nav a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--soluk); }
+footer nav a:hover { color: var(--metin); text-decoration: underline; }
+footer p { margin-top: 12px; }
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .kap { padding-inline: 16px; }
+  header.bas { padding-block: 44px 24px; }
+  .alanlar { grid-template-columns: minmax(0, 1fr); }
+  .cekirdek { padding: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .girdi, .dugme { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="ada">
+  <a class="marka" href="../" aria-label="sandık ana sayfa"><img src="../img/sandik-icon.png" alt="" width="26" height="26">sandık</a>
+  <nav aria-label="Site">
+    <a href="../">Ana sayfa</a>
+  </nav>
+</div>
+
+<main class="kap">
+  <header class="bas">
+    <h1>Param enflasyona karşı <span>ne oldu?</span></h1>
+    <p class="giris">Bir tutar ve ay seç. TÜİK'in tüketici fiyat endeksine göre o paranın bugün kaç lira ettiğini gör.</p>
+  </header>
+
+  <div class="tepsi">
+    <form class="cekirdek" id="form" novalidate>
+      <div class="alanlar">
+        <div class="alan">
+          <label for="tutar">Tutar</label>
+          <div class="girdi"><input id="tutar" name="tutar" inputmode="decimal" autocomplete="off" value="10.000" aria-describedby="tutar-not"><span aria-hidden="true">₺</span></div>
+          <small id="tutar-not">Örneğin 10.000</small>
+        </div>
+        <div class="alan">
+          <label for="ay">O paranın ayı</label>
+          <div class="girdi"><select id="ay" name="ay" aria-describedby="ay-not" disabled><option>Yükleniyor</option></select><span aria-hidden="true">▾</span></div>
+          <small id="ay-not">Yalnız açıklanmış aylar listede.</small>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="tepsi">
+    <section class="cekirdek sonuc" aria-labelledby="sonuc-etiket">
+      <div aria-live="polite" aria-atomic="true">
+        <p class="etiket" id="sonuc-etiket">Bugünkü karşılığı</p>
+        <p class="buyuk sayi" id="karsilik">&nbsp;</p>
+        <p class="aciklama" id="aciklama">TÜFE verisi yükleniyor.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="cagri" aria-labelledby="cagri-baslik">
+    <h2 id="cagri-baslik">Kendi portföyün enflasyonu yendi mi? sandık'ta gör</h2>
+    <p>Hisse, fon, döviz ve altın yatırımlarını ekle; sandık her birini alış tarihinden bu yana aynı TÜFE ile kıyaslar.</p>
+    <a class="dugme" href="https://apps.apple.com/tr/app/id6786837699?utm_source=web&amp;utm_medium=enflasyon&amp;utm_campaign=hesaplayici">
+      App Store'dan indir
+      <span class="ok" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11L11 5M6 5h5v5"/></svg>
+      </span>
+    </a>
+    <a class="ikincil" href="../indir/?utm_source=web&amp;utm_medium=enflasyon&amp;utm_campaign=hesaplayici">Android için indirme sayfası</a>
+  </section>
+
+  <div class="notlar">
+    <p id="kaynak">Kaynak: TÜİK, tüketici fiyat endeksi (TÜFE) genel endeksi.</p>
+    <p>Hesap yalnız TÜFE'ye dayanır ve senin harcama sepetini değil, ortalama sepeti ölçer. Tutarın tarayıcında hesaplanır, hiçbir yere gönderilmez.</p>
+    <p>Yatırım tavsiyesi değildir.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="kap">
+    <nav aria-label="Hukuki metinler">
+      <a href="../">sandık</a>
+      <a href="../privacy/">Gizlilik Politikası</a>
+      <a href="../terms/">Kullanım Koşulları</a>
+    </nav>
+    <p>© 2026 sandık. Yatırım tavsiyesi değildir.</p>
+  </div>
+</footer>
+
+<script src="hesap.js"></script>
+<script>
+(function () {
+  var H = window.TufeHesap;
+  var tutarEl = document.getElementById('tutar');
+  var tutarNot = document.getElementById('tutar-not');
+  var ayEl = document.getElementById('ay');
+  var karsilikEl = document.getElementById('karsilik');
+  var aciklamaEl = document.getElementById('aciklama');
+  var lira = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 });
+  var kurus = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var yuzde = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var veri = null;
+
+  function tl(x) { return (x >= 100 ? lira : kurus).format(x) + ' ₺'; }
+  function pct(x) { return '%' + yuzde.format(x * 100); }
+
+  function bosDurum(metin) {
+    karsilikEl.textContent = ' ';
+    aciklamaEl.className = 'aciklama bos';
+    aciklamaEl.textContent = metin;
+  }
+
+  function ciz() {
+    if (!veri) return;
+    var tutar = H.sayiOku(tutarEl.value);
+    if (!(tutar > 0)) {
+      tutarNot.textContent = 'Bir tutar yaz, örneğin 10.000';
+      tutarNot.className = 'hata';
+      tutarEl.setAttribute('aria-invalid', 'true');
+      bosDurum('Hesap için geçerli bir tutar gerekiyor.');
+      return;
+    }
+    tutarNot.textContent = 'Örneğin 10.000';
+    tutarNot.className = '';
+    tutarEl.removeAttribute('aria-invalid');
+    var s = H.hesapla(veri, tutar, ayEl.value);
+    if (!s) { bosDurum('Bu ay için hesap yapılamıyor.'); return; }
+    karsilikEl.textContent = tl(s.karsilik);
+    aciklamaEl.className = 'aciklama';
+    aciklamaEl.innerHTML = '';
+    var p1 = document.createElement('span');
+    // Ay/sayıdan sonra ek yok ("2025'teki", "%33'ünü"): ünlü uyumu sayıya
+    // göre değişir, cümle eksiz kurulur.
+    p1.textContent = H.ayAdi(ayEl.value) + ' fiyatlarıyla ' + tl(tutar) + ', ' +
+      H.ayAdi(s.sonAy) + ' fiyatlarıyla ' + tl(s.karsilik) + ' eder. Fiyatlar bu sürede ';
+    var b1 = document.createElement('b'); b1.textContent = pct(s.artis) + ' arttı';
+    var p2 = document.createElement('span');
+    p2.textContent = '; kenarda bekleyen paranın alım gücü ';
+    var b2 = document.createElement('b'); b2.textContent = pct(s.alimGucuKaybi) + ' azaldı';
+    var p3 = document.createElement('span');
+    p3.textContent = '. Son açıklanan ay: ' + H.ayAdi(s.sonAy) + '.';
+    [p1, b1, p2, b2, p3].forEach(function (n) { aciklamaEl.appendChild(n); });
+  }
+
+  function kur(v) {
+    var aylar = H.gecerliAylar(v);
+    if (aylar.length < 2) {
+      bosDurum('TÜFE verisi henüz yüklenmedi. Aylık veri TÜİK açıklamasından sonra burada görünür.');
+      ayEl.innerHTML = '<option>Veri yok</option>';
+      return;
+    }
+    veri = v;
+    ayEl.innerHTML = '';
+    // Son açıklanan ay "bugün"dür; başlangıç olarak sunulmaz.
+    for (var i = aylar.length - 2; i >= 0; i--) {
+      var o = document.createElement('option');
+      o.value = aylar[i].ay;
+      o.textContent = H.ayAdi(aylar[i].ay);
+      ayEl.appendChild(o);
+    }
+    // Varsayılan: bir yıl önce (yoksa en eski ay); aranan soru çoğunlukla "geçen yıl".
+    ayEl.value = aylar[Math.max(0, aylar.length - 13)].ay;
+    ayEl.disabled = false;
+    ciz();
+  }
+
+  tutarEl.addEventListener('input', ciz);
+  tutarEl.addEventListener('blur', function () {
+    var t = H.sayiOku(tutarEl.value);
+    if (t > 0) tutarEl.value = (t >= 100 ? lira : kurus).format(t);
+  });
+  ayEl.addEventListener('change', ciz);
+
+  fetch('../data/tufe.json', { cache: 'no-cache' })
+    .then(function (y) { if (!y.ok) throw new Error(String(y.status)); return y.json(); })
+    .then(kur)
+    .catch(function () {
+      bosDurum('TÜFE verisi şu an okunamadı. Biraz sonra yeniden dene.');
+      ayEl.innerHTML = '<option>Veri yok</option>';
+    });
+})();
+</script>
+</body>
+</html>

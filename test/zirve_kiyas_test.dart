@@ -116,7 +116,7 @@ void main() {
     });
     test('en büyük fark', () {
       expect(ZirveKiyas.enBuyukFarkCumlesi(senPay, zirvePay),
-          'En büyük fark fon: sende %82, onda %6.');
+          'En büyük fark fon: sende %82, onda %5,9.');
     });
     test('bilinmeyen tür cümleyi bozmaz', () {
       expect(ZirveKiyas.turYonelme('nft'), "nft'a");
@@ -180,12 +180,12 @@ void main() {
       expect(
           ZirveKiyas.fonOzeti(
               const {'AFT': 25.0, 'TTE': 12.5, ZirveKiyas.fonDiger: 1.0}),
-          'AFT %25 · TTE %13 · diğer %1,0');
+          'AFT %25 · TTE %12,5 · diğer %1');
       expect(
           ZirveKiyas.fonOzeti(const {
             'A01': 20.0, 'A02': 15.0, 'A03': 10.0, 'A04': 8.0, 'A05': 2.0,
           }),
-          'A01 %20 · A02 %15 · A03 %10 · A04 %8,0 · diğer %2,0');
+          'A01 %20 · A02 %15 · A03 %10 · A04 %8 · diğer %2');
       expect(ZirveKiyas.fonOzeti(const {}), '');
     });
   });

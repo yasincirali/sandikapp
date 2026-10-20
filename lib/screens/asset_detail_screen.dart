@@ -309,24 +309,22 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       final idx = _periods.indexWhere((p) => p.days == istenen);
       if (idx >= 0) _selectedPeriodIdx = idx;
     }
-    // `donem_hafizasi` (Sadeleştirme 2): HAFTALIK varsayılanı yerine
-    // uygulamanın ortak dönemi. Çağıranın isteği (bildirim → GÜNLÜK) yine
-    // önce gelir ve ortak döneme yazılır. Ortak dönem burada yoksa (elle
-    // fiyatlanan varlıkta GÜNLÜK) en yakını gösterilir, ortak değer kalır.
-    if (donemHafizasiAcik) {
-      final istekIdx = istenen == null
-          ? -1
-          : _periods.indexWhere((p) => p.days == istenen);
-      if (istekIdx >= 0) {
-        // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
-        Future.microtask(() {
-          if (mounted) {
-            ref.read(seciliDonemProvider.notifier).state = _donemler[istekIdx];
-          }
-        });
-      } else {
-        _selectedPeriodIdx = _ortakDonemIdx(ref.read(seciliDonemProvider));
-      }
+    // `donem_hafizasi` (Sadeleştirme 2; bayrak 2026-10-20'de emekliye
+    // ayrıldı): HAFTALIK varsayılanı yerine uygulamanın ortak dönemi.
+    // Çağıranın isteği (bildirim → GÜNLÜK) yine önce gelir ve ortak döneme
+    // yazılır. Ortak dönem burada yoksa (elle fiyatlanan varlıkta GÜNLÜK)
+    // en yakını gösterilir, ortak değer kalır.
+    final istekIdx =
+        istenen == null ? -1 : _periods.indexWhere((p) => p.days == istenen);
+    if (istekIdx >= 0) {
+      // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
+      Future.microtask(() {
+        if (mounted) {
+          ref.read(seciliDonemProvider.notifier).state = _donemler[istekIdx];
+        }
+      });
+    } else {
+      _selectedPeriodIdx = _ortakDonemIdx(ref.read(seciliDonemProvider));
     }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
     // Öteki dönemler seçiliyi beklemeden, paralel (çip getirileri).
@@ -711,14 +709,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // açıksa bu DEĞER tutarları maskelenir (`gosterimBazParaProvider`,
     // bulgu #3); fiyat bakiye değildir, açık kalır.
     final baz = ref.watch(gosterimBazParaProvider);
-    // `donem_hafizasi`: ortak dönem başka yüzeyde (üstte açılan Karşılaştır
-    // ya da varlık sayfası) değişirse bu ekran da geçer.
-    if (donemHafizasiAcik) {
-      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
-        final idx = _ortakDonemIdx(yeni);
-        if (idx != _selectedPeriodIdx) _selectPeriod(idx);
-      });
-    }
+    // Ortak dönem başka yüzeyde (üstte açılan Karşılaştır ya da varlık
+    // sayfası) değişirse bu ekran da geçer.
+    ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+      final idx = _ortakDonemIdx(yeni);
+      if (idx != _selectedPeriodIdx) _selectPeriod(idx);
+    });
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;

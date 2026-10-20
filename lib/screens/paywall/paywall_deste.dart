@@ -36,6 +36,11 @@ enum PaywallKarti {
   ozelGosterge,
   karsilastir,
   ortak,
+  // Zirvedeki portföylerin varlık varlık oranları + seninle ortakları
+  // (0158, yasin 2026-10-19). Yalnız Zirve'nin Premium kapısı canlıyken
+  // destede (`desteSirasi(zirve:)`); vitrinden açılan paywall bu kartla
+  // başlar.
+  zirve,
   // Çoklu portföy (0133): yalnız `coklu_portfoy` açıkken destede.
   portfoy,
   // Çoklu hesap kartı (#152) kalktı: hesap ekleme/geçiş ücretsiz
@@ -76,6 +81,7 @@ PaywallKarti? kaynaktanKart(String source) {
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
+    'zirve' => PaywallKarti.zirve,
     // Kısmi aktarım ve ortağın göreceği portföyü seçmek de çoklu portföyün
     // Premium yarısı (#148); kart aynı.
     'portfoy_limit' ||
@@ -145,6 +151,9 @@ List<PaywallKarti> desteSirasi(
   required bool ekstreAi,
   // Varsayılan kapalı: bayrak açılmadan satılmaz (açılmamış şey satılmaz).
   bool portfoy = false,
+  // Zirve Premium kapısı (0158) canlı mı. Varsayılan kapalı: kapı yokken
+  // kart satılmaz.
+  bool zirve = false,
   PaywallPersona persona = PaywallPersona.genel,
 }) {
   final bas = kaynaktanKart(source);
@@ -158,6 +167,7 @@ List<PaywallKarti> desteSirasi(
               radar,
             PaywallKarti.ekstre => ekstreAi,
             PaywallKarti.portfoy => portfoy,
+            PaywallKarti.zirve => zirve,
             _ => true,
           })
         k,
@@ -253,6 +263,9 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
         radar: rc.balinaRadariAcik,
         ekstreAi: rc.ekstreAiEsleme,
         portfoy: rc.cokluPortfoy,
+        // Paywall yalnız `paywall_enabled` açıkken açılır; o an Zirve'nin
+        // Premium kapısı da canlıdır (yeni katılım + varlık ayrıntısı).
+        zirve: true,
         persona: widget.persona);
     return _kartlar = [for (final k in sira) _kart(context, k)];
   }
@@ -344,6 +357,21 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           _OrtakGorseli(renk: _KartRengi.yesil),
           l.pwdOrtakSayi(rc.freePartnerLimit),
           l.prmSinirsiz,
+        ),
+      // Zirve: ücretsizde kendi sıran ve tür payları; Premium'da zirvedeki
+      // portföylerin varlık varlık oranları ve seninle ortakları (0158).
+      PaywallKarti.zirve => (
+          _KartRengi.amber,
+          l.pwdZirveEtiket,
+          l.pwdZirveBaslik,
+          null,
+          _Cubuklar(
+              degerler: const [92, 64, 48, 38, 22],
+              vurgulu: 1,
+              aralik: SandikSpace.sm,
+              renk: _KartRengi.amber),
+          l.prmZirveUcretsiz,
+          l.prmZirvePremium,
         ),
       // Çoklu portföy: ücretsizde 1 (Ana), Premium sınırsız
       // (`portfoyLimitProvider`).

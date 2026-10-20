@@ -19,7 +19,8 @@ import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/symbol_search_service.dart';
 
-/// Genel arama (bayrak `genel_arama`, sadeleştirme 2).
+/// Genel arama (sadeleştirme 2; bayrak `genel_arama` 2026-10-20'de emekliye
+/// ayrıldı).
 ///
 /// Bayrak kapalı: ana ekran üst çubuğu birebir eski (yenile düğmesi).
 /// Bayrak açık: aynı yuvada büyüteç; arama ekranı kendi varlığını,
@@ -113,16 +114,9 @@ void main() {
   tearDown(() => RemoteConfigService.testAcik = {});
 
   group('ana ekran üst çubuğu', () {
-    testWidgets('bayrak kapalı: yenile düğmesi, büyüteç yok', (t) async {
-      await _pump(t, const HomeScreen());
-      expect(find.byIcon(Icons.refresh_rounded), findsOneWidget);
-      expect(find.byKey(const ValueKey('genel-arama-dugmesi')), findsNothing);
-      expect(t.takeException(), isNull);
-    });
-
-    testWidgets('bayrak açık: aynı yuvada Ara, yenile düğmesi yok',
-        (t) async {
-      RemoteConfigService.testAcik = {'genel_arama'};
+    // Bayrak 2026-10-20'de emekliye ayrıldı: büyüteç koşulsuz, eski yenile
+    // düğmesi kalktı.
+    testWidgets('üst çubukta Ara, yenile düğmesi yok', (t) async {
       await _pump(t, const HomeScreen());
       final ara = find.byKey(const ValueKey('genel-arama-dugmesi'));
       expect(ara, findsOneWidget);

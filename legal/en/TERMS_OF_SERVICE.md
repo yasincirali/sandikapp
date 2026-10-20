@@ -1,10 +1,10 @@
 # Terms of Service — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 14, 2026
-**Version:** 1.10
+**Last updated:** October 20, 2026
+**Version:** 1.11
 **Consent version:** 1.6
-**Source:** TR 1.10 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.11 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -36,7 +36,7 @@ sandık is a personal portfolio tracking tool that lets users track the followin
 
 The App shows portfolio value, allocation and performance and, optionally, technical-analysis signals (Premium), price alerts and periodic summaries. You can enter assets manually, in bulk, or by importing a bank / brokerage statement. With the partnership feature two users can share their portfolios.
 
-**Top Portfolios (optional):** If you give explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); for the best-performing portfolios only the rank, return, type shares and TEFAS fund codes with their shares are shown to other participants, without identity or amounts; in return you see the same anonymous information about participants (details: Privacy Policy §5.1). You can leave at any time; not participating affects no other feature.
+**Top Portfolios (optional):** If you give explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); for the best-performing portfolios only the rank, return, type shares and each asset's TEFAS fund code or public market symbol with its share are shown to other participants, without identity, amounts or quantities; in return you see the same anonymous information about participants (details: Privacy Policy §5.1). Seeing the asset symbols of other portfolios and newly joining the pool may require a Premium membership. You can leave at any time; not participating affects no other feature.
 
 **Race (optional):** If you join the Race, your period return and asset-type shares are calculated daily on the server; your standing among participants is shown to you as a percentile, and you can compare your return with your partner. Your identity and amounts are not shown to other participants. You can leave the Race at any time.
 

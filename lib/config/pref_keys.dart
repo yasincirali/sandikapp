@@ -154,4 +154,9 @@ class PrefKeys {
   /// Tümü, `ana` Ana, uuid adlandırılmış portföy. Kişiye özel (`perUser`):
   /// portföy kimlikleri hesaba aittir, aynı cihazdaki başka hesapta anlamsız.
   static const seciliPortfoy = 'pref_secili_portfoy';
+
+  /// Ana ekrandaki "N varlıkta bilgi eksik" satırı kapatıldığında o anki
+  /// eksiklerin anahtarları (`VeriEksigi.anahtar`). Kişiye özel. Yeni bir
+  /// eksik çıkınca satır yeniden görünür; kapatılanlar bir daha sorulmaz.
+  static const veriKalitesiKapatilan = 'pref_veri_kalitesi_kapatilan';
 }

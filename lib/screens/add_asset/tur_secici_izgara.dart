@@ -127,25 +127,30 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
 
   @override
   Widget build(BuildContext context) {
+    final govde = AnimatedSwitcher(
+      duration: SandikMotion.stateOf(context),
+      switchInCurve: SandikMotion.enter,
+      switchOutCurve: SandikMotion.exit,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topCenter,
+        children: [...previous, if (current != null) current],
+      ),
+      child: widget.acik
+          ? KeyedSubtree(
+              key: const ValueKey('tur_izgara_acik'), child: _acikGovde())
+          : KeyedSubtree(
+              key: const ValueKey('tur_izgara_kapali'), child: _seciliSatir()),
+    );
+    // Hareketi azalt açıkken süre sıfır: AnimatedSize sıfır süreli
+    // controller'ı kendi performLayout'unda bitirip kendini yeniden kirletir
+    // ve "mutated in its own performLayout" assert'i atar (integration_test
+    // emülatörü, 2026-10-20). Anında geçişte sarmalayıcıya gerek yok.
+    if (SandikMotion.surfaceOf(context) == Duration.zero) return govde;
     return AnimatedSize(
       duration: SandikMotion.surfaceOf(context),
       curve: SandikMotion.enter,
       alignment: Alignment.topCenter,
-      child: AnimatedSwitcher(
-        duration: SandikMotion.stateOf(context),
-        switchInCurve: SandikMotion.enter,
-        switchOutCurve: SandikMotion.exit,
-        layoutBuilder: (current, previous) => Stack(
-          alignment: Alignment.topCenter,
-          children: [...previous, if (current != null) current],
-        ),
-        child: widget.acik
-            ? KeyedSubtree(
-                key: const ValueKey('tur_izgara_acik'), child: _acikGovde())
-            : KeyedSubtree(
-                key: const ValueKey('tur_izgara_kapali'),
-                child: _seciliSatir()),
-      ),
+      child: govde,
     );
   }
 
@@ -307,8 +312,8 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                   maxLines: 1,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: context.t.labelSmall
-                      ?.copyWith(color: context.c.text36),
+                  style:
+                      context.t.labelSmall?.copyWith(color: context.c.text36),
                 ),
               ],
             ],
@@ -496,8 +501,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                   child: TextButton(
                     onPressed: widget.onDegistir,
                     style: TextButton.styleFrom(
-                      minimumSize:
-                          const Size(SandikSpace.xxl, SandikSpace.xxl),
+                      minimumSize: const Size(SandikSpace.xxl, SandikSpace.xxl),
                       foregroundColor: context.c.amberText,
                     ),
                     child: Text(l.typePickerChange,

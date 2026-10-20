@@ -5,7 +5,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/mevduat_bankasi.dart';
 import 'package:portfoy_takip/providers/mevduat_banka_provider.dart';
 import 'package:portfoy_takip/screens/add_asset/mevduat_formu.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Mevduat banka seçici + faiz önerisi + not (bayrak `mevduat_banka_secici`,
@@ -16,8 +15,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///     yazmak 32 günlükte getiriyi ~7 puan şişirirdi);
 ///   · elle yazılan oranın üstüne öneri bir daha yazılmaz;
 ///   · katılım bankası / vadesiz / verisi olmayan dilimde sayı uydurulmaz;
-///   · liste yoksa da kullanıcı yazdığı adı kullanabilir;
-///   · bayrak kapalıyken form birebir eski.
+///   · liste yoksa da kullanıcı yazdığı adı kullanabilir.
+/// Bayrak 2026-10-20'de emekliye ayrıldı; eski serbest metin formu kalktı.
 const _akbank = MevduatBankasi(kod: 'akbank', ad: 'Akbank', katilim: false);
 const _kuveyt =
     MevduatBankasi(kod: 'kuveytturk', ad: 'Kuveyt Türk', katilim: true);
@@ -141,14 +140,11 @@ void main() {
 
   group('form', () {
     Future<void> ac(WidgetTester tester,
-        {bool bayrak = true,
-        List<MevduatBankasi> bankalar = const [_akbank, _qnb, _kuveyt],
+        {List<MevduatBankasi> bankalar = const [_akbank, _qnb, _kuveyt],
         double genislik = 390,
         double yaziOlcegi = 1}) async {
       await initializeDateFormatting('tr_TR');
       SharedPreferences.setMockInitialValues({});
-      RemoteConfigService.testAcik = bayrak ? {'mevduat_banka_secici'} : {};
-      addTearDown(() => RemoteConfigService.testAcik = {});
       tester.view.physicalSize = Size(genislik * 3, 2400 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -173,7 +169,7 @@ void main() {
     TextField alan(WidgetTester tester, int i) =>
         tester.widgetList<TextField>(find.byType(TextField)).elementAt(i);
 
-    // Sıra (bayrak açık): banka, anapara, yıllık, aylık, stopaj, not.
+    // Sıra: banka, anapara, yıllık, aylık, stopaj, not.
     String yillik(WidgetTester t) => alan(t, 2).controller!.text;
     String aylik(WidgetTester t) => alan(t, 3).controller!.text;
 
@@ -183,14 +179,6 @@ void main() {
       await tester.tap(find.text(ad).last);
       await tester.pumpAndSettle();
     }
-
-    testWidgets('bayrak kapalı: eski form (serbest banka, tek faiz alanı)',
-        (tester) async {
-      await ac(tester, bayrak: false);
-      expect(find.text('Aylık brüt (%)'), findsNothing);
-      expect(find.text('Not'), findsNothing);
-      expect(find.text('Yıllık faiz (brüt, %)'), findsOneWidget);
-    });
 
     testWidgets('banka seçilince 32 gün için basit yıllık + aylık önerilir',
         (tester) async {
@@ -246,7 +234,7 @@ void main() {
       expect(yillik(tester), isEmpty);
     });
 
-    testWidgets('320pt × 3.0 taşmaz (bayrak açık)', (tester) async {
+    testWidgets('320pt × 3.0 taşmaz', (tester) async {
       await ac(tester, genislik: 320, yaziOlcegi: 3);
       await bankaSec(tester, 'Akbank');
       expect(tester.takeException(), isNull);

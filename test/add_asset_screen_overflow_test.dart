@@ -124,6 +124,10 @@ void main() {
     testWidgets('bölüm başlıkları Türkçe büyük harf (noktalı İ)', (tester) async {
       // Düz `toUpperCase` "HISSE" / "KRIPTO PARA" basıyordu; `ustHarf` şart.
       await _pump(tester, const AddAssetScreen());
+      // Bölüm başlığı tür seçilince görünür (tür ızgarası koşulsuz,
+      // 2026-10-20).
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
       expect(find.text('HİSSE'), findsOneWidget);
       expect(find.text('HISSE'), findsNothing);
       expect(find.text('VARLIK TÜRÜ'), findsOneWidget);

@@ -154,16 +154,10 @@ class _PeriodToggle extends ConsumerWidget {
       child: DonemSecici(
         donemler: SummaryPeriod.values,
         secili: ref.watch(watchlistPeriodProvider),
-        // Bayrak açıkken ortak dönem yazılır; `watchlistPeriodProvider`
-        // ondan türediği için kendiliğinden izler.
-        onSec: (i) {
-          if (donemHafizasiAcik) {
-            ref.read(seciliDonemProvider.notifier).state =
-                SummaryPeriod.values[i];
-          } else {
-            ref.read(watchlistPeriodProvider.notifier).state = i;
-          }
-        },
+        // Ortak dönem yazılır; `watchlistPeriodProvider` ondan türediği
+        // için kendiliğinden izler.
+        onSec: (i) => ref.read(seciliDonemProvider.notifier).state =
+            SummaryPeriod.values[i],
       ),
     );
   }
@@ -668,6 +662,7 @@ class _Row extends ConsumerWidget {
                           prefillTicker: item.ticker,
                           prefillName: item.name,
                           prefillType: item.type,
+                          ekleYolu: 'takip',
                         ),
                       ),
                     ),

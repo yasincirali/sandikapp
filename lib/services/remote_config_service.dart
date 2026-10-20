@@ -325,18 +325,13 @@ class RemoteConfigService {
     // Planı"). Yedisi de KAPALI doğar ve kapalıyken ilgili ekran birebir
     // eski; sunucu değişikliği yok. Önce yasin'in TestFlight cihazında açılır.
     //
-    // S1 — tek dönem hafızası: Performans, varlık detayı/sayfası, Takip
-    // listesi ve Karşılaştır aynı seçili dönemi paylaşır (bugün dördünün
-    // varsayılanı farklı: Bugün / 1 hf / 1 ay / 3 ay → sayılar "tutmuyor").
-    'donem_hafizasi': false,
+    // S1 — tek dönem hafızası (`donem_hafizasi`): emekliye ayrıldı, bkz.
+    // aşağıdaki "Emekliye ayrılan bayraklar (2026-10-20)".
     // S2 — Performans tek akış: Grafik | Özet sekmesi kalkar, ikisi tek
     // kaydırmada; kontrol satırı 3 → 1 (dönem + Filtre).
     'performans_tek_akis': false,
-    // S3 — Portföy: büyük halka yerine küçük halka + lejant (yasin'in
-    // seçimi "C", 2026-10-08; ilk ekranda daha çok varlık, vitrin hissi
-    // kalır). Ad tarihî: ilk taslak çubuktu, anahtar Console'da aynı kalsın.
-    // Büyük halka küçüğe dokununca açılır.
-    'portfoy_dagilim_cubugu': false,
+    // S3 — Portföy küçük halka + lejant (`portfoy_dagilim_cubugu`):
+    // emekliye ayrıldı, bkz. "Emekliye ayrılan bayraklar (2026-10-20)".
     // S4 — varlık detayı katmanlı sıra: fiyat+grafik → pozisyonun → analiz
     // (katlı) → geçmiş ve belgeler.
     'varlik_detay_katmanli': false,
@@ -345,8 +340,8 @@ class RemoteConfigService {
     // S6 — Performans başlığında "Raporlar" kapısı (hafta özeti, aylık
     // rapor, yıl özeti, Sıralama).
     'raporlar_kapisi': false,
-    // S7 — Ana ekranda genel arama (Yenile ikonunun yerine; varlık + eylem).
-    'genel_arama': false,
+    // S7 — Ana ekranda genel arama (`genel_arama`): emekliye ayrıldı, bkz.
+    // "Emekliye ayrılan bayraklar (2026-10-20)".
     // Paywall yeniden tasarımı (yasin 2026-10-08): sandık başlığı + sonsuz
     // kart destesi; deste kullanıcının dokunduğu kilidin kartıyla açılır.
     // Kapalıyken eski paywall birebir.
@@ -415,14 +410,6 @@ class RemoteConfigService {
     // KAPALI doğar: ana yüzeyde yeni kart; kapalıyken ekran birebir eski.
     'varlik_masraflari': false,
 
-    // Varlık Ekle tür seçicisi: arama + gruplu ızgara (2026-10-08, yasin:
-    // "göz alıcı ama işlevsel" tür seçici). Tür sayısı 11'e çıktı (ABD,
-    // eurobond); çip yığını sayfanın ilk sorusunu kalabalıklaştırıyordu.
-    // Açıkken üstte arama (THYAO/Apple/BTC/ISIN → tür + kimlik tek dokunuşta),
-    // altında üç gruplu 4 sütunlu ızgara; seçimden sonra tek satıra katlanır.
-    // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
-    'tur_secici_izgara': false,
-
     // Göz alıcılık (2026-10-09, yasin: "uygulamayı göz alıcı hale
     // getirelim, fonksiyonelitesinden hiçbir şey kaybetmeden"; rapor
     // https://claude.ai/artifact/8Wuo6BMHugYnb2Z6LbC5RU). TEK bayrak, bütün
@@ -436,20 +423,25 @@ class RemoteConfigService {
     // KAPALI doğar: ana yüzeylerin görünüşü; kapalıyken birebir eski.
     'goz_alici': false,
 
-    // Mevduat banka seçici (2026-10-09, yasin: "banka listesi yasal
-    // yollardan ve ücretsiz bir API'den performansı etkilemeyecek şekilde
-    // çekilsin; seçilen bankanın aylık/yıllık brüt faizi varsayılan
-    // yazılsın, müşteriye özel oran verildiyse değiştirebilsin; mevduata
-    // not eklenebilsin"). TEK bayrak, üçü birden:
-    //  · banka listeden seçilir (0129 `mevduat_bankalari`, harf rozeti,
-    //    logo YOK — marka hakkı);
-    //  · yıllık brüt faiz vadeye göre TCMB haftalık ağırlıklı ortalamasıyla
-    //    dolar (0129 `mevduat_faiz_ortalama`; bankaya özel kaynak yok),
-    //    yanında aylık brüt; elle yazılan oranın üstüne bir daha yazılmaz;
-    //  · not alanı (lotun `notes` sütunu; şema değişmez).
-    // KAPALI doğar: 0129 + `mevduat-faiz` ilk turu iki sunucuda koşmadan
-    // açılırsa liste boş gelir ve form bugünkü serbest metne düşer.
-    'mevduat_banka_secici': false,
+    // Emekliye ayrılan bayraklar (2026-10-20, ar-ge raporu 2026-10-20_0915
+    // fikir 1, yasin "yap"). Beşi de mağazada (Console varsayılanı) uzun
+    // süredir AÇIK'tı; kapalı dalları ve bu anahtarlar koddan kalktı,
+    // özellik koşulsuz. Console anahtarı eski sürümler için duruyor (onlar
+    // hâlâ okuyor; silinirse kod varsayılanı `false`'a düşer ve eski
+    // build'de özellik kapanır). Gerekçeleri geldikleri yerde:
+    //  · `donem_hafizasi` (S1, 2026-10-08): Performans, varlık detayı/
+    //    sayfası, Takip ve Karşılaştır tek seçili dönemi paylaşır
+    //    (`secili_donem_provider.dart`).
+    //  · `portfoy_dagilim_cubugu` (S3, 2026-10-08, yasin'in seçimi "C"):
+    //    Portföy'de küçük halka + lejant; büyük halka dokununca açılır.
+    //  · `genel_arama` (S7, 2026-10-08): ana ekranda Yenile yerine genel
+    //    arama (varlık + eylem); yenileme aşağı çekmeyle.
+    //  · `tur_secici_izgara` (2026-10-08): Varlık Ekle'de arama + gruplu
+    //    tür ızgarası; eski çip `Wrap`'ı kalktı.
+    //  · `mevduat_banka_secici` (2026-10-09): banka listeden (0129
+    //    `mevduat_bankalari`, logo YOK — marka hakkı), yıllık brüt faiz
+    //    TCMB ortalamasından (elle yazılana dokunulmaz), not alanı. Liste
+    //    boş gelirse seçici sayfası elle banka adı yazdırır.
 
     // Fon X-Ray Katman A (2026-10-10): varlık kartında fonun ilk 10 kalemi
     // (KAP aylık Portföy Dağılım Raporu, beş kontrolden geçenler, 0132) ve
@@ -886,9 +878,7 @@ class RemoteConfigService {
   bool get varlikHeroGecisi => _bayrak('varlik_hero_gecisi');
 
   /// Sadeleştirme 2 bayrakları. Gerekçeler `_defaults`'ta.
-  bool get donemHafizasi => _bayrak('donem_hafizasi');
   bool get performansTekAkis => _bayrak('performans_tek_akis');
-  bool get portfoyDagilimCubugu => _bayrak('portfoy_dagilim_cubugu');
   bool get varlikDetayKatmanli => _bayrak('varlik_detay_katmanli');
   bool get sinyalOnAyar => _bayrak('sinyal_on_ayar');
 
@@ -897,7 +887,6 @@ class RemoteConfigService {
   /// herkese açılır; kapalıyken yalnız admin. Console değeri de okunur.
   bool get raporlarKapisi =>
       _bayrak('raporlar_kapisi') || premiumOzellikleriGorunur;
-  bool get genelArama => _bayrak('genel_arama');
 
   /// Kart desteli paywall. Gerekçe `_defaults`'ta.
   bool get paywallDeste => _bayrak('paywall_deste');
@@ -929,15 +918,8 @@ class RemoteConfigService {
   bool get varlikMasraflari =>
       _bayrak('varlik_masraflari') || premiumOzellikleriGorunur;
 
-  /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
-  bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
-
   /// Göz alıcılık paketleri (tek bayrak). Gerekçe `_defaults`'ta.
   bool get gozAlici => _bayrak('goz_alici');
-
-  /// Mevduat formunda banka seçici + faiz varsayılanı + not. Gerekçe
-  /// `_defaults`'ta.
-  bool get mevduatBankaSecici => _bayrak('mevduat_banka_secici');
 
   /// Fon X-Ray kalemleri ve örtüşme (Katman A). Gerekçe `_defaults`'ta.
   bool get fonXrayKalem => _bayrak('fon_xray_kalem');

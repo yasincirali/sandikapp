@@ -272,6 +272,8 @@ class DemoPortfolioNotifier extends PortfolioNotifier {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    String yol = 'form',
+    bool maliyetBilinmiyor = false,
   }) async =>
       DemoModu.yazmaEngeli('varlik_ekle');
 

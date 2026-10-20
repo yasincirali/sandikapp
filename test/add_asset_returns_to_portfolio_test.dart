@@ -106,8 +106,10 @@ void main() {
     // `true` döndürürse yanlışlıkla sekme geçişi tetiklenebilir.
     // 2026-09-23 (F14): gövde `_kaydet`'e taşındı ve dal
     // `return _KayitSonu.kapandi;` ile biter — desen her `return`'ü kabul eder.
+    // Pencere 1500: dal 2026-10-19'da (ekran görüntüsü `maliyetSonra`) 900
+    // karakteri aştı ve desen dalı hiç bulamıyordu (taban commit'te de kırık).
     final cartBlock = RegExp(
-      r'if \(widget\.cartMode\)[\s\S]{0,900}?return[^;]*;',
+      r'if \(widget\.cartMode\)[\s\S]{0,1500}?return[^;]*;',
     ).firstMatch(add);
     expect(cartBlock, isNotNull, reason: 'Sepet modu dalı bulunamadı.');
     expect(

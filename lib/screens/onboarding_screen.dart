@@ -433,29 +433,20 @@ List<_Adim> _adimlariKur() {
       bitti: (ref) => ref.read(balanceHiddenProvider),
       giris: (_) => _sekmeyeGec(0),
     ),
-    // Bayrak `genel_arama` açıkken aynı yuvada yenile değil büyüteç durur
-    // (`home_screen`, sadeleştirme 2); tur gerçek ekranın üstünde çalıştığı
-    // için metin bayrağa göre dallanır. Bayrak kapalıyken metin birebir eski.
-    // Yenileme bilgisi kaybolmasın: aşağı çekme cümlesi yeni metinde de var.
-    if (RemoteConfigService.instance.genelArama)
-      const _Adim(
-        id: 'yenile',
-        hedef: TourTarget.yenileTusu,
-        rozet: 'YENİ',
-        baslik: 'Her şeyi ara',
-        govde: 'Büyüteçle tek yerden ara: kendi varlıkların, piyasadaki '
-            'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
-            'ekstreden aktar, tüm hareketler, ayarlar…). Fiyatlar arka '
-            'planda güncelleniyor; hemen tazelemek için ekranı aşağı çek.',
-      )
-    else
-      const _Adim(
-        id: 'yenile',
-        hedef: TourTarget.yenileTusu,
-        baslik: 'Fiyatları yenile',
-        govde: 'Fiyatlar zaten arka planda güncelleniyor; bu tuş "şimdi çek" '
-            'demek. Ekranı aşağı çekerek de yapabilirsin.',
-      ),
+    // Üst çubukta yenile değil büyüteç durur (`home_screen`, sadeleştirme 2;
+    // bayrak `genel_arama` 2026-10-20'de emekliye ayrıldı, eski "Fiyatları
+    // yenile" adımı kalktı). Yenileme bilgisi kaybolmasın: aşağı çekme
+    // cümlesi metinde.
+    const _Adim(
+      id: 'yenile',
+      hedef: TourTarget.yenileTusu,
+      rozet: 'YENİ',
+      baslik: 'Her şeyi ara',
+      govde: 'Büyüteçle tek yerden ara: kendi varlıkların, piyasadaki '
+          'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
+          'ekstreden aktar, tüm hareketler, ayarlar…). Fiyatlar arka '
+          'planda güncelleniyor; hemen tazelemek için ekranı aşağı çek.',
+    ),
     // 1.2.0'da eklendi. Tur, uygulamanın GÜNCEL hâlini anlatmalı: yeni
     // kullanıcı yalnızca eski sürümde var olan özellikleri öğrenip en
     // yenisini kaçırmamalı (bkz. `config/surum_notlari.dart` — `onemli`
@@ -564,29 +555,23 @@ List<_Adim> _adimlariKur() {
       // Tur metni arayüzle birlikte değişir (2026-09-21 kuralı): işlem
       // çubuğu (2026-10-04; bayrak `varlik_islem_cubugu` 2026-10-05'te
       // kalktı) Al/Sat/Temettü'nün yerini söyler.
-      // Bayrak `portfoy_dagilim_cubugu` açıkken büyük halka yerini küçük
-      // halka + lejanta bırakır (büyük halka küçüğe dokununca alt sayfada);
-      // metin hangi yüzey görünüyorsa onu anlatır. Kapalıyken eski metin
-      // birebir.
+      // Büyük halka yerini küçük halka + lejanta bıraktı (büyük halka
+      // küçüğe dokununca alt sayfada; bayrak `portfoy_dagilim_cubugu`
+      // 2026-10-20'de emekliye ayrıldı, eski "dağılım halkası" metni kalktı).
       // Bayrak `goz_alici` (2026-10-09): halkada dilime dokunmak o türü
       // seçer, seçili dilime ya da ortaya dokunmak büyütür.
-      govde: (RemoteConfigService.instance.portfoyDagilimCubugu &&
-              RemoteConfigService.instance.gozAlici
+      govde: (RemoteConfigService.instance.gozAlici
           ? 'Varlıklarının listesi ve tür dağılımı burada; halkadaki bir '
               'dilime ya da yandaki türe dokununca liste o türe süzülür, '
               'halkanın ortasına dokununca büyür. Bir varlığa dokununca '
               'detayına inersin; alış, satış ve temettüyü oradaki alt '
               'çubuktan kaydedersin.'
-          : RemoteConfigService.instance.portfoyDagilimCubugu
-          ? 'Varlıklarının listesi ve tür dağılımı burada; yandaki bir türe '
+          : 'Varlıklarının listesi ve tür dağılımı burada; yandaki bir türe '
               'dokununca liste o türe süzülür, türler sığmazsa lejant '
               'sayfalara bölünür ve alttaki noktalardan kaydırırsın; halkaya '
               'dokununca büyür. Bir varlığa dokununca '
               'detayına inersin; alış, satış ve temettüyü oradaki alt '
-              'çubuktan kaydedersin.'
-          : 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
-          'dokununca detayına inersin; alış, satış ve temettüyü oradaki '
-          'alt çubuktan kaydedersin.') +
+              'çubuktan kaydedersin.') +
           // Bayrak `goz_alici` (cam/HIG, 2026-10-12): satıra uzun basmak
           // aynı işlemleri kısayol menüsünde açar — yeni etkileşim, tur
           // söyler. Kapalıyken metin birebir eski.
@@ -635,21 +620,16 @@ List<_Adim> _adimlariKur() {
       // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`). 2026-09-29'dan
       // beri çipler sarmalı (#29): Kripto dar ekranda Fon'la aynı satıra
       // düşmeyebilir, bu yüzden metin konum ("Fon'un yanında") söylemez.
-      // 2026-10-08 (bayrak `tur_secici_izgara`): çipler yerine arama +
-      // gruplu ızgara. Bayrak açıkken metin aramayı ve grubu anlatır
-      // (tur metni arayüzle birlikte değişir); kapalıyken birebir eski.
-      govde: RemoteConfigService.instance.turSeciciIzgara
-          ? 'Üstteki aramaya sembolü ya da adı yaz (THYAO, BTC…): '
+      // 2026-10-08: çipler yerine arama + gruplu ızgara; metin aramayı ve
+      // grubu anlatır (tur metni arayüzle birlikte değişir). Bayrak
+      // `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı, çip metni kalktı.
+      govde: 'Üstteki aramaya sembolü ya da adı yaz (THYAO, BTC…): '
               'sonuca dokununca tür de varlık da seçilir. Aramadan seçmek '
               'istemezsen türler üç grupta durur; Kripto "Borsa ve fon" '
               'grubunda. Seçince ızgara tek satıra katlanır, "Değiştir" '
               'geri açar. Coin\'in fiyatı TL karşılığıyla kendiliğinden '
               'gelir, miktar gerektiği kadar ondalıkla tutulur (0,00045 BTC '
-              'gibi); kripto 7/24 işlediği için grafikte hafta sonu da görünür.'
-          : 'Tür çiplerinde Kripto da var: listeden coin\'i '
-              'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
-              'ondalıkla tutulur (0,00045 BTC gibi); kripto 7/24 işlediği için '
-              'grafikte hafta sonu da görünür.',
+              'gibi); kripto 7/24 işlediği için grafikte hafta sonu da görünür.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),
@@ -667,13 +647,13 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.turSecici,
       rozet: 'YENİ',
       baslik: 'Mevduat ve BES',
-      // Izgarada (bayrak `tur_secici_izgara`) Mevduat ve BES "Birikim"
-      // grubunda; yalnız ilk cümlenin yeri söylenir, gerisi aynı.
-      // 2026-10-09 (bayrak `mevduat_banka_secici`): banka listeden seçilir,
-      // faiz vadeye göre piyasa ortalamasıyla önerilir, not yazılır — ilk
-      // cümle buna göre; kapalıyken birebir eski.
-      govde: '${RemoteConfigService.instance.turSeciciIzgara ? 'Birikim grubunda ' : ''}'
-          '${RemoteConfigService.instance.mevduatBankaSecici ? "Mevduat'ı seç: bankanı listeden seç, tutarı ve vadeyi yaz; faiz piyasa ortalamasıyla gelir, sana özel oran verildiyse değiştirirsin, istersen not eklersin. Net getiriyi " : "Mevduat'ı seç: banka, tutar, faiz ve vadeyi yaz; net getiriyi "}'
+      // Izgarada Mevduat ve BES "Birikim" grubunda. 2026-10-09: banka
+      // listeden seçilir, faiz vadeye göre piyasa ortalamasıyla önerilir,
+      // not yazılır — ilk cümle buna göre. (Bayraklar `tur_secici_izgara`
+      // ve `mevduat_banka_secici` 2026-10-20'de emekliye ayrıldı.)
+      govde: "Birikim grubunda Mevduat'ı seç: bankanı listeden seç, tutarı ve "
+          'vadeyi yaz; faiz piyasa ortalamasıyla gelir, sana özel oran '
+          'verildiyse değiştirirsin, istersen not eklersin. Net getiriyi '
           'stopajıyla birlikte biz hesaplarız. Faiz vade sonunda (günlük faizli '
           'hesapta her gün sonunda) eklenir; '
           'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '
@@ -777,10 +757,10 @@ List<_Adim> _adimlariKur() {
       // (bkz. `kartlar.dart` kontrol yığını notu).
       // Tek akış (S2): seçici sayfanın tek kontrol satırında, sağında
       // Filtre çipi; seçim kartı, grafiği ve özeti birlikte değiştirir.
-      // `donem_hafizasi` açıkken seçim ekranlar arasında taşınır — tur bunu
-      // tek cümleyle söyler (yalnız o bayrak açıkken doğru).
-      govde: (PortfolioPerformanceScreen.tekAkisAcik
-              ? 'Sayfanın en üstündeki seçici: "Bugün" gün içini saat saat '
+      // Seçim ekranlar arasında taşınır (`donem_hafizasi`, bayrak
+      // 2026-10-20'de emekliye ayrıldı) — tur bunu tek cümleyle söyler.
+      govde: PortfolioPerformanceScreen.tekAkisAcik
+          ? 'Sayfanın en üstündeki seçici: "Bugün" gün içini saat saat '
                   'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
                   'geniş pencereler. Seçtiğin dönem üstteki kartı, grafiği '
                   've altındaki özeti birlikte değiştirir. Aynı seçici '
@@ -788,18 +768,15 @@ List<_Adim> _adimlariKur() {
                   'var. Grafiği iki parmakla ya da çift dokunarak '
                   'yakınlaştırabilir, bir noktaya '
                   'basılı tutarak o anın tarihini, saatini ve değerini '
-                  'okuyabilirsin.'
-              : 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
+                  'okuyabilirsin. Seçtiğin dönem her ekranda geçerli olur.'
+          : 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
                   'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
                   'geniş pencereler. Aynı seçici '
                   'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
                   'Grafiği iki parmakla ya da çift dokunarak '
                   'yakınlaştırabilir, bir noktaya '
                   'basılı tutarak o anın tarihini, saatini ve değerini '
-                  'okuyabilirsin.') +
-          (RemoteConfigService.instance.donemHafizasi
-              ? ' Seçtiğin dönem her ekranda geçerli olur.'
-              : ''),
+                  'okuyabilirsin. Seçtiğin dönem her ekranda geçerli olur.',
       // 2026-09-15: bu adımın görevi kaldırıldı. Eski ölçüt "Gerçek /
       // Simülasyon anahtarı belirdi mi" idi; o anahtar artık kapsam
       // panelinin içinde, yani dönem değişimini ondan okuyamıyoruz
@@ -861,6 +838,7 @@ List<_Adim> _adimlariKur() {
       // üstünde çalışır. İki bayrak 2026-10-05'te kalktı, metin kalıcı.
       // Tek akış (S2): kart özetin altında, sayfanın sonunda; tür dökümü
       // artık "Neden böyle?" bölümünde. Konum sözcüğü ona göre.
+      // 2026-10-19 (0158): tür dağılımı yerine varlık bazında oranlar.
       govde: '${PortfolioPerformanceScreen.tekAkisAcik ? 'Sayfanın sonundaki' : 'Tür dökümünün altındaki'}'
           ' kart, dönemin en iyi seçimlerini yapan '
           'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
@@ -872,8 +850,8 @@ List<_Adim> _adimlariKur() {
           'düello arenasında karşılaşırsınız: getiriler yan yana akar, halat '
           'aradaki farkı, taç öndekini gösterir; altındaki şerit dönemin her '
           'günü kimin önde olduğunu. Katılım isteğe bağlı '
-          've anonim: katılanlar birbirinin tür dağılımını ve getirisini '
-          'görür; kimlik, miktar ve TL asla paylaşılmaz.',
+          've anonim: katılanlar birbirinin getirisini ve varlık varlık '
+          'oranlarını görür; kimlik, miktar ve TL asla paylaşılmaz.',
       // Kartı GÖSTER (2026-10-03): kart Grafik yüzeyinde ve listenin en
       // altında; sekmeye geçmek yetmiyordu, metin boşluğun üstünde
       // kalıyordu. Ekran Grafik'e geçer ve kartı görünür alana getirir.
@@ -937,11 +915,13 @@ List<_Adim> _adimlariKur() {
       // `performans_ayar_sade` (2026-10-04; bayrak 2026-10-05'te kalktı):
       // bölümler gruplu ve Performans'ın "Bugünkü portföyle" görünümü
       // Görünüm'de; metin bölüm adlarıyla anlatır ki kullanıcı ekranda aynı
-      // başlıkları bulsun.
+      // başlıkları bulsun. 2026-10-20: Bildirimler tek soruyla açılır
+      // (Az · Dengeli · Çok), tek tek anahtarlar "Ayrıntılı"da.
       govde: 'Dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
           'yatırımcı seviyesi ve "Bugünkü portföyle" görünümü), '
-          'Bildirimler (sinyal ayarları, fiyat alarmları, günlük '
-          'brifingin saati, sessiz saatler), Hesap & Güvenlik '
+          'Bildirimler (tek dokunuşla Az, Dengeli ya da Çok; fiyat '
+          'alarmları, günlük brifingin saati, sessiz saatler; tek tek '
+          'ayarlar "Ayrıntılı"da), Hesap & Güvenlik '
           '(kullanıcı adın, kilit, kayıtlı cihazların, verilerin) ve '
           'Yardım & Yasal. '
           'Bu turu da buradan yeniden izleyebilirsin.',
@@ -1038,10 +1018,13 @@ Widget _seviyeAnketi(BuildContext context) => const SeviyeAnketi();
 
 /// Açık tur oturumu — adımlar ve kapanış geri çağrısı.
 class _Oturum {
-  _Oturum({required this.adimlar, required this.onBitti});
+  _Oturum({required this.adimlar, required this.onBitti, this.kisa = false});
 
   final List<_Adim> adimlar;
   final void Function(bool tamamlandi) onBitti;
+
+  /// İlk açılış kısa turu mu — yalnız ölçüm ayrımı (`tam_tur_*` olayları).
+  final bool kisa;
 }
 
 /// Tek tur oturumu; [OnboardingTourHost] bunu dinler.
@@ -1065,8 +1048,13 @@ abstract final class _Tur {
           ? _kisaAdimlar(seviyeSorusu: seviyeSorusu)
           : _adimlariKur(),
       onBitti: onBitti,
+      kisa: kisa,
     );
     AnalyticsService.instance.logOnboardingStep(0);
+    if (!kisa) {
+      unawaited(AnalyticsService.instance
+          .logTamTurBasladi(adimSayisi: oturum.value!.adimlar.length));
+    }
   }
 
   static void kapat(_Oturum o, bool tamamlandi) {
@@ -1408,9 +1396,16 @@ class _TurKatmaniState extends State<_TurKatmani>
     setState(() => _adimaGir(j));
   }
 
+  /// Açık oturum tam tur mu (ölçüm; oturum katman sökülene kadar durur).
+  bool get _tamTur => _Tur.oturum.value?.kisa == false;
+
   void _atla() {
     if (_bitti) return;
     AnalyticsService.instance.logOnboardingSkipped(_i);
+    if (_tamTur) {
+      unawaited(AnalyticsService.instance
+          .logTamTurAtlandi(adim: _i, adimSayisi: widget.adimlar.length));
+    }
     _kapat(tamamlandi: false);
   }
 
@@ -1418,7 +1413,13 @@ class _TurKatmaniState extends State<_TurKatmani>
     if (_bitti) return;
     _bitti = true;
     _ticker.stop();
-    if (tamamlandi) unawaited(AnalyticsService.instance.logOnboardingCompleted());
+    if (tamamlandi) {
+      unawaited(AnalyticsService.instance.logOnboardingCompleted());
+      if (_tamTur) {
+        unawaited(AnalyticsService.instance
+            .logTamTurBitti(adimSayisi: widget.adimlar.length));
+      }
+    }
     // Perde solarak kalkar, SONRA katman sökülür. Çıkış hızla başlar
     // (`exit`); hareketi azalt açıkken süre sıfır.
     if (_perde.duration != Duration.zero && _perde.value > 0) {

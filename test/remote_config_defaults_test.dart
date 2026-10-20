@@ -109,14 +109,13 @@ void main() {
 
     // Sadeleştirme 2 (2026-10-08): ana yüzeyleri değiştirir; önce yasin'in
     // TestFlight cihazında açılır. Kapalıyken ekranlar birebir eski.
+    // `donem_hafizasi`, `portfoy_dagilim_cubugu`, `genel_arama` 2026-10-20'de
+    // emekliye ayrıldı (aşağıdaki kilit).
     for (final b in const [
-      'donem_hafizasi',
       'performans_tek_akis',
-      'portfoy_dagilim_cubugu',
       'varlik_detay_katmanli',
       'sinyal_on_ayar',
       'raporlar_kapisi',
-      'genel_arama',
     ]) {
       test('$b KAPALI doğar', () => expect(varsayilan(b), 'false'));
     }
@@ -137,22 +136,10 @@ void main() {
       expect(varsayilan('varlik_masraflari'), 'false');
     });
 
-    // Formun ilk sorusu değişir (arama + gruplu ızgara); kapalıyken çip
-    // `Wrap`'ı birebir eski.
-    test('tür seçici ızgarası KAPALI doğar', () {
-      expect(varsayilan('tur_secici_izgara'), 'false');
-    });
-
     // Göz alıcılık (tek bayrak): ana listenin ve fiyatın görünüşü değişir;
     // kapalıyken birebir eski.
     test('göz alıcılık KAPALI doğar', () {
       expect(varsayilan('goz_alici'), 'false');
-    });
-
-    // Sunucu tabloları (0129) ve ilk faiz turu olmadan açılırsa liste boş
-    // gelir; kapalıyken mevduat formu birebir eski.
-    test('mevduat banka seçici KAPALI doğar', () {
-      expect(varsayilan('mevduat_banka_secici'), 'false');
     });
 
     // Çoklu hesap: kapalıyken hesap kasası hiç yazılmaz, giriş/çıkış eski.
@@ -197,6 +184,33 @@ void main() {
               f.path,
         ];
         expect(okuyan, isEmpty, reason: '$b anahtarını okuyan kod geri gelmiş');
+      });
+    }
+
+    // Emekliye ayrılan bayraklar (2026-10-20): mağazada uzun süredir AÇIK
+    // olan beş bayrağın kapalı dalı koddan kalktı, özellik koşulsuz. Kilit
+    // bir okuyucunun (`_bayrak`/`bayrakAcik`/sürüm notu `bayrak:`) ya da
+    // `_defaults` girdisinin geri gelmesini yakalar. Ham `'anahtar'` dizgesi
+    // aranmaz: `genel_arama` aynı zamanda rota adıdır (analitik ekran adı).
+    for (final b in const [
+      'donem_hafizasi',
+      'portfoy_dagilim_cubugu',
+      'genel_arama',
+      'tur_secici_izgara',
+      'mevduat_banka_secici',
+    ]) {
+      test('$b emekli: _defaults ve bayrak okuyucusu yok', () {
+        expect(varsayilan(b), isNull, reason: '_defaults geri gelmiş');
+        final okuyucu = RegExp(
+            "(_bayrak|bayrakAcik|_yerelVeyaTest)\\(\\s*'$b'|bayrak:\\s*'$b'");
+        final okuyan = [
+          for (final f in Directory('lib').listSync(recursive: true))
+            if (f is File &&
+                f.path.endsWith('.dart') &&
+                okuyucu.hasMatch(f.readAsStringSync()))
+              f.path,
+        ];
+        expect(okuyan, isEmpty, reason: '$b bayrağını okuyan kod geri gelmiş');
       });
     }
 

@@ -178,16 +178,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (donem != null) {
       _periodIdx = donem.index;
       _cizilenDonemIdx = donem.index;
-      // `donem_hafizasi`: açılışta istenen dönem ortak döneme de yazılır —
+      // Tek dönem hafızası: açılışta istenen dönem ortak döneme de yazılır —
       // kullanıcı bu pencereye bakarken öteki yüzeyler de aynısını açar.
       // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
-      if (donemHafizasiAcik) {
-        Future.microtask(() {
-          if (mounted) ref.read(seciliDonemProvider.notifier).state = donem;
-        });
-      }
-    } else if (donemHafizasiAcik) {
-      // Ortak dönem 3A varsayılanının yerine geçer (bayrak kapalıyken 3A).
+      Future.microtask(() {
+        if (mounted) ref.read(seciliDonemProvider.notifier).state = donem;
+      });
+    } else {
+      // Ortak dönem eski 3A varsayılanının yerine geçer (bayrak
+      // `donem_hafizasi` 2026-10-20'de emekliye ayrıldı).
       _periodIdx = ref.read(seciliDonemProvider).index;
       _cizilenDonemIdx = _periodIdx;
     }
@@ -359,8 +358,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// grafiği iskelete düşürüyor, çizgiler sonra tek tek sıfırdan çiziliyordu
   /// — `LineChart` morfu kayboluyordu. İki dönemin serisi aynı eksende hiç
   /// karışmaz: yazma tek `setState`.
-  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
-  /// eskisi gibi doğrudan [_changePeriod]'u çağırır). Ortak döneme yazma `_changePeriod` alanı güncelledikten SONRA yapılır ki
+  /// Seçiciden dönem seçimi (tek dönem hafızası). Ortak döneme yazma
+  /// `_changePeriod` alanı güncelledikten SONRA yapılır ki
   /// [build]'deki dinleyici değişikliği kendi seçimimiz olarak tanıyıp
   /// ikinci kez çekmesin.
   void _donemSec(int idx) {
@@ -410,16 +409,14 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.c;
-    // `donem_hafizasi`: ortak dönem başka yüzeyde (bu ekranın üstünde açılan
-    // varlık sayfası gibi) değişirse bu ekran da o döneme geçer.
-    if (donemHafizasiAcik) {
-      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
-        if (yeni.index != _periodIdx) {
-          CrashReporter.arkaPlan(_changePeriod(yeni.index),
-              reason: 'comparison_screen.ortakDonem');
-        }
-      });
-    }
+    // Tek dönem hafızası: ortak dönem başka yüzeyde (bu ekranın üstünde
+    // açılan varlık sayfası gibi) değişirse bu ekran da o döneme geçer.
+    ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+      if (yeni.index != _periodIdx) {
+        CrashReporter.arkaPlan(_changePeriod(yeni.index),
+            reason: 'comparison_screen.ortakDonem');
+      }
+    });
 
     return Scaffold(
       backgroundColor: p.background,
@@ -468,7 +465,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       child: DonemSecici(
         donemler: SummaryPeriod.values,
         secili: _periodIdx,
-        onSec: donemHafizasiAcik ? _donemSec : _changePeriod,
+        onSec: _donemSec,
       ),
     );
   }
@@ -1113,6 +1110,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           prefillTicker: hit.ticker,
           prefillName: hit.name,
           prefillType: _typeOf(hit.ticker),
+          ekleYolu: 'arama',
         ),
       ),
     );

@@ -78,6 +78,8 @@ class _SahtePortfoy extends PortfolioNotifier {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    String yol = 'form',
+    bool maliyetBilinmiyor = false,
   }) async {
     k.ekleme++;
     k.miktar = quantity;

@@ -165,7 +165,9 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   }
 
-  const kucuk = {'portfoy_dagilim_cubugu', 'goz_alici'};
+  // `portfoy_dagilim_cubugu` 2026-10-20'de emekliye ayrıldı: küçük halka
+  // koşulsuz; "büyük halka" kareleri ekrandaki eski halkayla birlikte kalktı.
+  const kucuk = {'goz_alici'};
   testWidgets('önce: küçük halka', (t) => ciz(t, 'abd_once_kucuk',
       bayraklar: kucuk));
   testWidgets('sonra: küçük halka', (t) => ciz(t, 'abd_sonra_kucuk',
@@ -176,8 +178,4 @@ void main() {
       bayraklar: {...kucuk, 'abd_hisse'}, dokun: 'BIST Hisse'));
   testWidgets('sonra: açık tema', (t) => ciz(t, 'abd_sonra_kucuk_acik',
       bayraklar: {...kucuk, 'abd_hisse'}, acik: true));
-  testWidgets('önce: büyük halka', (t) => ciz(t, 'abd_once_buyuk',
-      bayraklar: {'goz_alici'}));
-  testWidgets('sonra: büyük halka', (t) => ciz(t, 'abd_sonra_buyuk',
-      bayraklar: {'goz_alici', 'abd_hisse'}));
 }

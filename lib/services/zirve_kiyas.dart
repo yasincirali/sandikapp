@@ -25,6 +25,7 @@
 library;
 
 import '../utils/tr_format.dart';
+import '../models/asset_categories.dart' show goldTickerMap;
 
 /// Sunucunun snapshot aldığı dönemlerden ekranda sunulanlar.
 ///
@@ -296,15 +297,16 @@ abstract final class ZirveKiyas {
     return en;
   }
 
-  /// "En büyük fark altın: sende %18, onda %56."
+  /// "En büyük fark altın: sende %18, onda %55,7." — sayılar hemen altındaki
+  /// ayna satırlarıyla aynı biçimde ([pay]); cümle ile satır çelişmesin.
   static String enBuyukFarkCumlesi(
     Map<String, double> senPay,
     Map<String, double> zirvePay,
   ) {
     final f = enBuyukFark(senPay, zirvePay);
     if (f == null) return '';
-    return 'En büyük fark ${turAd(f.tur)}: sende %${f.sen.round()}, '
-        'onda %${f.zirve.round()}.';
+    return 'En büyük fark ${turAd(f.tur)}: sende ${pay(f.sen)}, '
+        'onda ${pay(f.zirve)}.';
   }
 
   // ── Fon kırılımı (0084) ────────────────────────────────────────────────
@@ -370,8 +372,156 @@ abstract final class ZirveKiyas {
     return parca.join(' · ');
   }
 
+  /// Pay sayısının TEK biçimi (2026-10-20 okunaklılık turu): en fazla bir
+  /// ondalık, sondaki sıfır yazılmaz — "%7", "%6", "%12,5". Eskiden 10'un
+  /// altı bir ondalıkla yazılıyordu; aynı listede "%7" ile "%6,0" yan yana
+  /// duruyordu.
   static String _payYazisi(double v) =>
-      fmtNum(v, digits: v < 10 ? 1 : 0);
+      fmtNumFlex((v * 10).round() / 10, maxDigits: 1);
+
+  /// "%21", "%6", "%12,5" — Zirve'deki her pay bu biçimle yazılır.
+  static String pay(double v) => '%${_payYazisi(v)}';
+
+  // ── Varlık kırılımı (0158) ─────────────────────────────────────────────
+
+  /// Sunucu vitrininde gizlenen kodun öneki (`?1`, `?2`… — 0158
+  /// `zirve_detay_maske`). Gerçek sembol hiçbir zaman `?` ile başlamaz.
+  static bool kilitliMi(String kod) => kod.startsWith('?');
+
+  static final _piyasaSembolu = RegExp(r'^[A-Z0-9.=_:-]{1,20}$');
+
+  static bool mevduatMi(String? ticker) =>
+      (ticker ?? '').trim().toUpperCase().startsWith('MEVDUAT:');
+
+  /// Fon dışı varlığın gösterilebilir sembolü; sunucudaki `piyasaSembolu`
+  /// ile aynı kalıp. Altında kod alt kategoriden (`goldTickerMap`) de
+  /// çözülür. Uymayan her şey [fonDiger].
+  static String varlikAnahtari(String tur, String? ticker, String? alt) {
+    var kod = (ticker ?? '').trim();
+    if (tur == 'altin' && !kod.startsWith('ALTIN_') && kod != 'XAUUSD=X') {
+      kod = goldTickerMap[(alt ?? '').trim()] ?? '';
+    }
+    kod = kod.toUpperCase();
+    return _piyasaSembolu.hasMatch(kod) ? kod : fonDiger;
+  }
+
+  static final _altinAdi = {
+    for (final e in goldTickerMap.entries) e.value: e.key,
+  };
+
+  /// Sembolün ekranda okunan adı: "THYAO.IS" → "THYAO", "BTCUSDT" → "BTC",
+  /// "USDTRY=X" → "USD", "ALTIN_CEYREK" → "Çeyrek Altın". Kilitli kod ve
+  /// [fonDiger] için "Diğer".
+  static String varlikAdi(String kod) {
+    if (kod == fonDiger || kilitliMi(kod)) return 'Diğer';
+    final altin = _altinAdi[kod];
+    if (altin != null) return altin;
+    var k = kod;
+    if (k.endsWith('.IS')) k = k.substring(0, k.length - 3);
+    final kur = RegExp(r'^([A-Z]{3})TRY=X$').firstMatch(k);
+    if (kur != null) return kur.group(1)!;
+    for (final son in const ['USDT', 'TRY', 'USD']) {
+      if (k.length > son.length + 1 &&
+          k.endsWith(son) &&
+          !k.contains('.') &&
+          !k.contains('=')) {
+        return k.substring(0, k.length - son.length);
+      }
+    }
+    if (k.endsWith('=F') || k.endsWith('=X')) k = k.substring(0, k.length - 2);
+    return k;
+  }
+
+  /// Fon + diğer türlerin kalemleri tek listede, büyükten küçüğe; kilitliler
+  /// yerinde kalır (oranları açık), "diğer"ler ayrı toplanır.
+  static List<({String tur, String kod, double pay})> tumKalemler(
+      Map<String, double> fon, Map<String, Map<String, double>> varlik) {
+    final l = [
+      for (final e in fon.entries)
+        if (e.key != fonDiger && e.value > 0)
+          (tur: 'fon', kod: e.key, pay: e.value),
+      for (final t in varlik.entries)
+        for (final e in t.value.entries)
+          if (e.key != fonDiger && e.value > 0)
+            (tur: t.key, kod: e.key, pay: e.value),
+    ]..sort((a, b) => b.pay.compareTo(a.pay));
+    return l;
+  }
+
+  /// "THYAO %18 · BTC %12 · •••• %9 · diğer %21" — seçili portföy bloğunun
+  /// tek satırı. Kilitli kalem "••••" ile yazılır (sembol cihaza hiç gelmez).
+  static String ayrintiOzeti(
+      Map<String, double> fon, Map<String, Map<String, double>> varlik,
+      {int enFazla = 4}) {
+    final l = tumKalemler(fon, varlik);
+    if (l.isEmpty) return '';
+    final gorunen = l.take(enFazla).toList();
+    final toplam = [
+      ...fon.values,
+      for (final t in varlik.values) ...t.values,
+    ].fold<double>(0, (s, v) => s + v);
+    final kalan =
+        toplam - gorunen.fold<double>(0, (s, e) => s + e.pay);
+    final parca = [
+      for (final e in gorunen)
+        '${kilitliMi(e.kod) ? kilitliYer : (e.tur == 'fon' ? e.kod : varlikAdi(e.kod))} '
+            '%${_payYazisi(e.pay)}',
+      if (kalan >= 0.05) 'diğer %${_payYazisi(kalan)}',
+    ];
+    return parca.join(' · ');
+  }
+
+  /// Kilitli kalemin yer tutucusu (ekran okuyucu "Premium'da görünür" duyar).
+  static const kilitliYer = '••••';
+
+  /// İki portföyün ortak açık kalemleri, ortak payı büyükten küçüğe
+  /// (benzerlik = Σ min; sunucu `zirve_benzerlik_hesapla` ile aynı kural).
+  static List<({String tur, String kod, double sen, double zirve})>
+      ortakKalemler({
+    required Map<String, double> senFon,
+    required Map<String, Map<String, double>> senVarlik,
+    required Map<String, double> zirveFon,
+    required Map<String, Map<String, double>> zirveVarlik,
+  }) {
+    Map<String, double> duz(
+        Map<String, double> f, Map<String, Map<String, double>> v) => {
+          for (final e in f.entries)
+            if (e.key != fonDiger) 'fon:${e.key}': e.value,
+          for (final t in v.entries)
+            for (final e in t.value.entries)
+              if (e.key != fonDiger && !kilitliMi(e.key))
+                '${t.key}:${e.key}': e.value,
+        };
+    final a = duz(senFon, senVarlik);
+    final b = duz(zirveFon, zirveVarlik);
+    final l = [
+      for (final k in a.keys)
+        if (b.containsKey(k))
+          (
+            tur: k.substring(0, k.indexOf(':')),
+            kod: k.substring(k.indexOf(':') + 1),
+            sen: a[k]!,
+            zirve: b[k]!,
+          ),
+    ]..sort((x, y) => (y.sen < y.zirve ? y.sen : y.zirve)
+        .compareTo(x.sen < x.zirve ? x.sen : x.zirve));
+    return l;
+  }
+
+  /// "Seninle %24 benzer: aynı varlıkların ortak payı." / ortak yoksa
+  /// "Seninle ortak varlığı yok."
+  static String benzerlikCumlesi(double b) => b < 0.05
+      ? 'Seninle ortak varlığı yok.'
+      : 'Seninle %${_payYazisi(b)} benzer: aynı varlıklarda ortak payınız.';
+
+  /// Σ min(sen, zirve) — [ortakKalemler] üzerinden, 1 ondalık.
+  static double benzerlik(
+          List<({String tur, String kod, double sen, double zirve})> ortak) =>
+      (ortak.fold<double>(
+                  0, (s, e) => s + (e.sen < e.zirve ? e.sen : e.zirve)) *
+              10)
+          .round() /
+      10;
 
   /// Ayna kıyasındaki fon satırlarının sırası: iki taraftaki kodların
   /// birleşimi, büyük olan payına göre büyükten küçüğe; [fonDiger] sonda.

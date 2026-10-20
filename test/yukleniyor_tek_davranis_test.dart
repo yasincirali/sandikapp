@@ -116,11 +116,11 @@ void main() {
     });
 
     test('kutulu hedefler kutuyu zemin\'e verir', () {
-      // Bilinen kutulu SandikAsyncTap hedefleri: çıkış, yenile, ortak ikonları.
+      // Bilinen kutulu SandikAsyncTap hedefleri: çıkış, ortak ikonları. (Ana
+      // ekranın yenile düğmesi `genel_arama` emekliye ayrılınca 2026-10-20'de
+      // kalktı; yerinde eşzamanlı Ara düğmesi var.)
       final tema = File('lib/theme/sandik.dart').readAsStringSync();
       expect(tema, contains('zemin: BoxDecoration('));
-      final ana = File('lib/screens/home_screen.dart').readAsStringSync();
-      expect(ana, contains('zemin: context.chip(selected: false)'));
       final profil = File('lib/screens/profile_screen.dart').readAsStringSync();
       expect('zemin: _ActionIcon.kutu('.allMatches(profil).length, 2);
       final onay = File('lib/utils/friendly_error.dart').readAsStringSync();

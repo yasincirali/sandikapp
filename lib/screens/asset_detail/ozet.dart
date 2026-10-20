@@ -311,7 +311,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       getiriler: [
         for (final p in _periods) _donemYuzdesi(p.days, canliBirim),
       ],
-      onSec: donemHafizasiAcik ? _ortakDonemSec : _selectPeriod,
+      onSec: _ortakDonemSec,
     );
   }
 

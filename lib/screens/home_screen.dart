@@ -19,7 +19,6 @@ import '../services/notification_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
-import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
@@ -29,6 +28,7 @@ import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
+import '../widgets/veri_kalitesi_seridi.dart';
 import '../widgets/ilk_varlik_vitrini.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -107,7 +107,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Genel arama (bayrak `genel_arama`): üst çubuktaki büyüteç.
+  /// Genel arama: üst çubuktaki büyüteç (bayrak `genel_arama` 2026-10-20'de
+  /// emekliye ayrıldı; her zaman açık).
   ///
   /// Demo'da piyasa çipiyle AYNI kapı: arama piyasa sembolü için sunucuya
   /// ve fiyat servisine çıkıyor, eylemlerin çoğu yazma ekranı. Demo
@@ -132,8 +133,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   /// Fiyatları zorla tazeler. Kendi `_reloading` bayrağı YOK (2026-10-08,
-  /// tek yükleniyor davranışı): üst çubuktaki yenile düğmesinin kilidi ve
-  /// döneni [SandikAsyncTap]'te. Bayrağın öteki işi — çift dokunuşta ikinci
+  /// tek yükleniyor davranışı): çağıranın kilidi ve döneni [SandikAsyncTap]'te
+  /// (üst çubuktaki yenile düğmesi 2026-10-20'de büyüteçle değişti; şerit
+  /// "tekrar dene" ve hata görünümü kaldı). Bayrağın öteki işi — çift dokunuşta ikinci
   /// tur atmamak — provider'da: `refreshPrices` süren zorlamalı tura katılır
   /// (`_surenTur`), şerit "tekrar dene"si ve hata görünümü de böylece tek
   /// turla kalır. `refreshPrices` hatayı kendi içinde yakalar.
@@ -705,49 +707,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  // Bayrak `genel_arama` açıkken aynı yuvada büyüteç
-                  // (sadeleştirme 2): yenileme zaten aşağı çekmede
+                  // Büyüteç (sadeleştirme 2; bayrak `genel_arama` 2026-10-20'de
+                  // emekliye ayrıldı, eski yenile düğmesi kalktı): yenileme
+                  // zaten aşağı çekmede
                   // (`RefreshIndicator`, çan listelerini de tazeler) ve
                   // fiyatlar arka planda güncelleniyor; ayrı bir düğme
                   // üst çubuğun en değerli yerini "şimdi çek"e veriyordu.
                   // Düğme sayısı üç kalır (HIG notu aşağıda). Tur hedefi
-                  // aynı anahtar: adım metni bayrağa göre dallanır
-                  // (`onboarding_screen` 'yenile').
+                  // aynı anahtar (`onboarding_screen` 'yenile').
                   TourAnchor(
                     target: TourTarget.yenileTusu,
-                    // Kilit + gösterge standart bileşende: ikon görünmez
-                    // ama yer tutar, gösterge üstünde (eskiden ikonla yer
-                    // değiştiriyordu, aynı boy).
-                    child: RemoteConfigService.instance.genelArama
-                        ? SandikTappable(
-                            key: const ValueKey('genel-arama-dugmesi'),
-                            onTap: () => _genelAramayiAc(
-                              tumHareketleriAc: () => pushGuarded(
-                                context,
-                                adaptiveRoute<void>(
-                                  settings: const RouteSettings(name: 'all_transactions'),
-                                  builder: (_) => AllTransactionsScreen(
-                                    allPartnerAssets: allPartnerAssets,
-                                    partners: partners,
-                                    initialView: _view,
-                                  ),
-                                ),
-                              ),
+                    child: SandikTappable(
+                      key: const ValueKey('genel-arama-dugmesi'),
+                      onTap: () => _genelAramayiAc(
+                        tumHareketleriAc: () => pushGuarded(
+                          context,
+                          adaptiveRoute<void>(
+                            settings: const RouteSettings(name: 'all_transactions'),
+                            builder: (_) => AllTransactionsScreen(
+                              allPartnerAssets: allPartnerAssets,
+                              partners: partners,
+                              initialView: _view,
                             ),
-                            semanticLabel: context.l10n.s7AraSemantics,
-                            child: _HeaderIconKutusu(
-                              child: Icon(Icons.search_rounded,
-                                  color: context.c.text58, size: 22),
-                            ),
-                          )
-                        : SandikAsyncTap(
-                      onTap: _reload,
-                      semanticLabel: context.l10n.refreshPrices,
-                      // Eski düğme SandikTappable varsayılanıyla titreşirdi.
-                      zemin: context.chip(selected: false),
+                          ),
+                        ),
+                      ),
+                      semanticLabel: context.l10n.s7AraSemantics,
                       child: _HeaderIconKutusu(
-                        kutusuz: true,
-                        child: Icon(Icons.refresh_rounded,
+                        child: Icon(Icons.search_rounded,
                             color: context.c.text58, size: 22),
                       ),
                     ),
@@ -1027,6 +1014,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 ),
               ),
+            ),
+          // "N varlıkta bilgi eksik" (2026-10-20): Bugün kartının hemen
+          // altında, toplam kartına dokunmadan. Yalnız kendi görünümünde —
+          // düzeltme yalnız kendi kaydında yapılabilir. Eksik yoksa ya da
+          // kapatıldıysa yer kaplamaz.
+          if (benGorunumu)
+            SliverToBoxAdapter(
+              child: VeriKalitesiSeridi(
+                  padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
             ),
           // Radar şeridi (Balina S7-A, 2026-10-05): yalnız kendi görünümünde
           // — Haftanın özeti kendi pozisyonlarını anlatır, ortağınkini değil.
@@ -1929,22 +1925,19 @@ class _BalanceToggleButton extends ConsumerWidget {
 
 // ── Header ikon kutusu ────────────────────────────────────────────────────────
 
-/// Üst çubuk ikon kutusu (44×44 çip). Dokunma sarmalayanda
-/// ([SandikAsyncTap]) — yenile düğmesi isteği beklediği için.
+/// Üst çubuk ikon kutusu (44×44 çip). Dokunma sarmalayanda.
+/// (`kutusuz` seçeneği yenile düğmesi içindi; düğme `genel_arama`
+/// emekliye ayrılınca 2026-10-20'de kalktı.)
 class _HeaderIconKutusu extends StatelessWidget {
   final Widget child;
-
-  /// `true` → kutu [SandikAsyncTap.zemin]'de (yenile düğmesi): istek
-  /// sürerken kutu yerinde kalır, yalnız ikon göstergeye yer açar.
-  final bool kutusuz;
-  const _HeaderIconKutusu({required this.child, this.kutusuz = false});
+  const _HeaderIconKutusu({required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 44,
       height: 44,
-      decoration: kutusuz ? null : context.chip(selected: false),
+      decoration: context.chip(selected: false),
       child: Center(child: child),
     );
   }

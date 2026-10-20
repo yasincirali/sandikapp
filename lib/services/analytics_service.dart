@@ -70,15 +70,53 @@ class AnalyticsService {
   Future<void> logOnboardingSkipped(int atStep) =>
       _log('onboarding_skipped', {'at_step': atStep});
 
+  // ── Tam tanıtım turu (Ayarlar › "Tanıtım turunu yeniden izle") ─────────
+  //
+  // Neden ayrı olaylar (2026-10-20, Ar-Ge 17:15 #2): yukarıdaki üç olay
+  // kısa (ilk açılış) ve tam turu AYIRMIYOR. "28 adımlık turu ekran başı
+  // ipucuna çevirelim mi" kararı yalnız tam turun kaç kişi tarafından
+  // başlatılıp kaçıncı adımda bırakıldığını soruyor. Davranış değişmez;
+  // `adim` 0 tabanlı (`onboarding_skipped.at_step` ile aynı), `adim_sayisi`
+  // turun o sürümdeki uzunluğu (adımlar eklenip çıktıkça oran okunabilsin).
+  Future<void> logTamTurBasladi({required int adimSayisi}) =>
+      _log('tam_tur_basladi', {'adim_sayisi': adimSayisi});
+
+  Future<void> logTamTurAtlandi(
+          {required int adim, required int adimSayisi}) =>
+      _log('tam_tur_atlandi', {'adim': adim, 'adim_sayisi': adimSayisi});
+
+  Future<void> logTamTurBitti({required int adimSayisi}) =>
+      _log('tam_tur_bitti', {'adim_sayisi': adimSayisi});
+
   // ── Portföy ─────────────────────────────────────────────────────────────
+  /// [yol]: varlığın hangi ekleme yolundan geldiği (2026-10-20, Ar-Ge
+  /// 13:15 #4 "ekleme yollarını say"; 19 Kasım sadeleştirme kararını
+  /// besler). Değerler [eklemeYollari]; kişisel veri yok.
   Future<void> logAssetAdded({
     required String type,
     String? subCategory,
+    String? yol,
   }) =>
       _log('asset_added', {
         'asset_type': type,
         if (subCategory != null) 'sub_category': subCategory,
+        if (yol != null) 'yol': yol,
       });
+
+  /// `asset_added.yol` değer kümesi — sabit ve küçük, Analytics panosunda
+  /// kırılım olarak okunur. Sesli giriş ayrı bir yol değildir: klavye
+  /// diktesi Hızlı Giriş'e yazar (`hizli_metin`).
+  static const eklemeYollari = {
+    'form', // Varlık Ekle formu (+ Al/Sat hızlı düzeltme, "Varlığı güncelle")
+    'hizli_metin', // "Yazarak ekle" çok satırlı hızlı giriş
+    'toplu', // Toplu Ekle'de elle eklenen kalem
+    'ekstre', // Ekstre / metin / dosya içe aktarma
+    'ekran_goruntusu', // Aracı kurum ekranının görüntüsünden
+    'arama', // Arama sonucu / Karşılaştır'dan "Portföyüme ekle"
+    'takip', // Takip listesi satırından
+    'halka_arz', // Halka arz katılım kaydından
+    'otomatik', // BES otomatik katkısı (kullanıcı eylemi değil)
+  };
 
   Future<void> logAssetUpdated({required String type}) =>
       _log('asset_updated', {'asset_type': type});

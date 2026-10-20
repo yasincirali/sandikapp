@@ -60,6 +60,11 @@ class ZirveCetveli extends StatelessWidget {
   static String _ucEtiketi(double v) =>
       '${v < 0 ? '−' : '+'}%${fmtNum(v.abs(), digits: 0)}';
 
+  /// Sıfır etiketinin uç etiketlerden uzak durması gereken mesafe; yazı
+  /// ölçeğiyle büyür.
+  static double _sifirBosluk(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(40);
+
   @override
   Widget build(BuildContext context) {
     final eksen = ZirveKiyas.eksen(isaretler.map((i) => i.roi));
@@ -71,8 +76,10 @@ class ZirveCetveli extends StatelessWidget {
         double x(double v) => _kenar + oran(v) * kullanilabilir;
         final katlar =
             ZirveKiyas.katlar([for (final i in isaretler) oran(i.roi)]);
-        final ucStili = context.t.labelSmall?.copyWith(
-          color: context.c.text36,
+        // Uç ve sıfır etiketleri en az 11 pt, ikincil metin kontrastında
+        // (okunaklılık turu 2026-10-20; eskiden 9 pt + text36).
+        final ucStili = context.t.labelLarge?.copyWith(
+          color: context.c.text58,
           letterSpacing: 0,
         );
         final seciliIdx = isaretler.indexWhere((i) => i.anahtar == secili);
@@ -97,16 +104,21 @@ class ZirveCetveli extends StatelessWidget {
                 top: _eksenY - 9,
                 child: Container(width: 1, height: 18, color: context.c.text36),
               ),
-              AnimatedPositioned(
-                duration: SandikMotion.flowOf(context),
-                curve: SandikMotion.glide,
-                left: x(0) - 20,
-                top: _eksenY + 12,
-                child: SizedBox(
-                  width: 40,
-                  child: Text('0', textAlign: TextAlign.center, style: ucStili),
+              // "0" uç etiketine çok yakınsa yazılmaz (büyük yazıda "−%2" ile
+              // "0" üst üste binip "−%20" okunuyordu); sıfır çizgisi kalır.
+              if (x(0) - _sifirBosluk(context) > 0 &&
+                  x(0) + _sifirBosluk(context) < genislik)
+                AnimatedPositioned(
+                  duration: SandikMotion.flowOf(context),
+                  curve: SandikMotion.glide,
+                  left: x(0) - 20,
+                  top: _eksenY + 12,
+                  child: SizedBox(
+                    width: 40,
+                    child:
+                        Text('0', textAlign: TextAlign.center, style: ucStili),
+                  ),
                 ),
-              ),
               Positioned(
                 left: 0,
                 top: _eksenY + 12,
@@ -218,15 +230,20 @@ class ZirveCetveli extends StatelessWidget {
               child: AnimatedDefaultTextStyle(
                 duration: SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
-                style: (context.t.labelSmall ?? const TextStyle()).copyWith(
+                style: (context.t.labelLarge ?? const TextStyle()).copyWith(
                   letterSpacing: 0,
                   fontWeight: seciliMi ? FontWeight.w800 : FontWeight.w600,
                   color: seciliMi ? context.c.text90 : context.c.text58,
                 ),
-                child: Text(
-                  i.etiket,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
+                // Sabit yükseklikli şeritte büyük yazı kesilmesin: sığmazsa
+                // küçülür (Semantics etiketi tam metni zaten okur).
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    i.etiket,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                  ),
                 ),
               ),
             ),

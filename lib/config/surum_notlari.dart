@@ -138,7 +138,7 @@ const List<SurumNotu> surumNotlari = [
       // bayrağıyla görünür; kapalıyken madde sayılmaz.
       Yenilik(
         ikon: YenilikIkonu.liste,
-        bayrak: 'tur_secici_izgara',
+        // Bayrak `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı.
         baslik: 'Varlık eklemek daha kolay',
         aciklama: 'Ekleme sayfasının başında arama: THYAO, Apple, BTC ya da '
             'ISIN yaz, türü uygulama bulsun. Aranmayanlar üç grupta: Borsa '

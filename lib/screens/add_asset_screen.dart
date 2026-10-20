@@ -27,7 +27,6 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_acilir.dart';
 import '../services/crash_reporter.dart';
-import '../services/remote_config_service.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -129,6 +128,11 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   /// form birebir eskisi.
   final List<Asset>? yerineGecenLotlar;
 
+  /// Formun hangi yüzeyden açıldığı — yalnız ölçüm (`asset_added.yol`,
+  /// bkz. `AnalyticsService.eklemeYollari`). `null` → `form`. Davranışı
+  /// değiştirmez.
+  final String? ekleYolu;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
@@ -141,6 +145,7 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillPrice,
     this.prefillDate,
     this.hizliSecim,
+    this.ekleYolu,
   });
 
   @override
@@ -262,7 +267,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
     // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
     final eurobondKaydi = (a?.type ?? c?.type) == AssetType.eurobond;
-    final hamFiyat = eurobondKaydi
+    // Alış fiyatı okunamadan kaydedilmiş lotta (0162) kayıtlı değer o günün
+    // fiyatıdır, kullanıcının maliyeti değil: alan BOŞ açılır ki "bilgi
+    // eksik" akışından gelen kullanıcı tahmini kendi girdisi sanıp onaylamasın.
+    final hamFiyat = eurobondKaydi || a?.maliyetBilinmiyor == true
         ? 0.0
         : a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
     // Güncellemede gelen fiyat lotların AĞIRLIKLI ortalamasıdır — kaynağın
@@ -624,7 +632,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       _kotaSatiri(),
                     _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
-                    if (_izgara) _turIzgarasi() else _typeSelector(cs),
+                    _turIzgarasi(),
                     const SizedBox(height: 22),
 
                     // Izgara açıkken form gövdesi yok: önce "ne ekliyorsun"
@@ -2024,116 +2032,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  // ── Varlık türü seçici (Sandik brand) ──────────────────────────────────────
-
-  Widget _typeSelector(ColorScheme cs) {
-    // Vadeli mevduat türü 2026-09-14'te kaldırıldı (hiç yayına çıkmamıştı,
-    // ayrı form + lokal faiz motoru bakım yükü getiriyordu).
-    // Kripto 2026-09-25'ten beri katalog seçicisiyle eklenir (serbest sembol
-    // alanı yok: sunucunun tanımadığı sembol fiyatsız lot üretirdi).
-    // Sıra enum'dan değil sayfaya özel listeden (kullanıcı kararı
-    // 2026-09-25; gerekçe `AssetType.eklemeSirasi`).
-    // Mevduat ve BES yalnız YENİ kayıtta: sepet (toplu ekleme) miktar ×
-    // fiyat satırı taşır, düzenlemede tür değiştirmek lotu sözleşmesiz
-    // bırakırdı.
-    final types = [
-      for (final t in AssetType.eklemeSirasi)
-        if ((!t.sozlesmeli || (!widget.cartMode && !_isEditing)) &&
-            RemoteConfigService.instance.turSecenegi(t))
-          t,
-    ];
-    // Sarmalı (`Wrap`), yatay kaydırmalı DEĞİL (2026-09-29 emülatör testi
-    // #29): kaydırmalı satırda Kripto/Emtia/Diğer ekran dışında kalıyordu ve
-    // kenardaki silik ok ipucu fark edilmiyordu — formun İLK sorusunun
-    // seçenekleri kaydırmadan görünmüyordu. Yedi çip dar ekranda iki satır
-    // tutar; seçeneği gizlemekten ucuz. Sıra `eklemeSirasi` ile okuma
-    // sırasıdır (soldan sağa, yukarıdan aşağı).
-    return TourAnchor(
-      target: TourTarget.turSecici,
-      child: Wrap(
-        runSpacing: SandikSpace.sm,
-        children: types.map((t) {
-          final selected = _type == t;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            // Semantics: çip yalnızca görsel; ekran okuyucu "seçili" ve
-            // "düğme" bilgisini yoksa alamaz (Faz 2.13).
-            child: Semantics(
-              button: true,
-              selected: selected,
-              label: context.l10n.assetTypeSemantics(t.labelOf(context.l10n)),
-              child: SandikBasma(
-              onTap: () async {
-                SandikHaptic.selection.perform();
-                _yaz(_n.selectType(t));
-                _schedulePricePreview();
-              },
-              child: AnimatedContainer(
-                duration: SandikMotion.stateOf(context),
-                curve: SandikMotion.enter,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? t.color.withValues(alpha: 0.18)
-                      : context.c.surface1,
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(
-                    color: selected ? t.color : context.c.overlay,
-                    width: selected ? 1.4 : 1,
-                  ),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color: t.color.withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            spreadRadius: -6,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // İkon `onSurface`: ham kategori rengi açık temada
-                    // %18'lik kendi dolgusu üstünde 1,3–2,6:1 kalıyordu
-                    // (açık tema denetimi 2026-10-08). Dolgu/çerçeve ham.
-                    Icon(t.icon,
-                        size: 18,
-                        color: selected ? t.onSurface(context) : context.c.text58),
-                    const SizedBox(width: 8),
-                    // Flexible: sarmalı satırda çipin azami genişliği satır
-                    // genişliğidir (kaydırmalı satırda sınırsızdı). 3× metin
-                    // ölçeğinde 320pt'de etiket taşardı; kısaltılır.
-                    Flexible(
-                      child: Text(t.labelOf(context.l10n),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color:
-                                selected ? context.c.text90 : context.c.text58,
-                          )),
-                    ),
-                  ],
-                ),
-              ),
-            )),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  // ── Tür seçici: arama + gruplu ızgara (bayrak `tur_secici_izgara`) ─────────
+  // ── Tür seçici: arama + gruplu ızgara ──────────────────────────────────────
   //
-  // Bayrak kapalıyken yukarıdaki çip satırı birebir eski. Açıkken
-  // `TurSeciciIzgara` çizilir; tür ve kimlik geçişleri burada, formun VAR
-  // OLAN `select*` geçişleriyle yapılır (arama → kimlik kuralı tek yerde:
-  // `AddAssetFormNotifier`). Bayrak form açılırken bir kez okunur
-  // (`abdAcik` ile aynı gerekçe: açık formda Remote Config yenilense de
-  // seçici değişmez).
-  late final bool _izgara = RemoteConfigService.instance.turSeciciIzgara;
+  // `TurSeciciIzgara`; tür ve kimlik geçişleri burada, formun VAR OLAN
+  // `select*` geçişleriyle yapılır (arama → kimlik kuralı tek yerde:
+  // `AddAssetFormNotifier`). Bayrak `tur_secici_izgara` 2026-10-20'de
+  // emekliye ayrıldı; eski çip `Wrap`'ı (Vadeli mevduat 2026-09-14'te,
+  // kripto katalog 2026-09-25, sarmalı satır #29 kararlarıyla) kalktı —
+  // tür sırası ve süzme kuralları `tur_secici_duzeni.dart`'ta.
 
   Widget _turIzgarasi() => TourAnchor(
         target: TourTarget.turSecici,
@@ -2815,6 +2721,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   entry.type == AssetType.kripto ? null : entry.subCategory,
               unitType: entry.type == AssetType.altin ? 'gram' : 'piece',
               portfoyId: _hedefPortfoy,
+              yol: 'hizli_metin',
             );
       }
     } finally {
@@ -2883,6 +2790,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // fiyat çözümü kotasyonu (zaten birim değer) atar — temiz % asla birim
     // değer diye yazılmaz.
     if (_s.isEurobond) price = _s.eurobondBirimFiyati(price) ?? 0.0;
+    // Kullanıcının YAZDIĞI fiyat — aşağıdaki fiyat çözümü boş alanı o günün
+    // kotasyonuyla doldurur; "maliyet bilinmiyor" işareti (0162) yalnız
+    // kullanıcı bir değer girdiyse düşer.
+    final fiyatGirildi = price > 0;
 
     final kimlik = _s.resolveIdentity(
       nameText: _name.text,
@@ -2917,6 +2828,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // Ekran görüntüsünden gelen "maliyet sonra" işareti fiyat boş
         // kaldıkça durur; kullanıcı maliyeti girince düşer.
         maliyetSonra: price <= 0 && (widget.cartInitial?.maliyetSonra ?? false),
+        yol: widget.cartInitial?.yol ?? 'toplu', // ölçüm: geldiği yol
       );
       final notifier = ref.read(bulkCartProvider.notifier);
       if (widget.cartInitial != null) {
@@ -3003,6 +2915,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ..notes = _notes.text.trim()
           ..isManualPrice = manual
           ..commission = _parse(_commission.text) ?? 0;
+        // Maliyeti girildi: "bilgi eksik" listesinden düşer. `null` (işaret
+        // hiç olmamış) olduğu gibi kalır — sunucuya anahtar yazılmaz.
+        if (a.maliyetBilinmiyor == true && fiyatGirildi) {
+          a.maliyetBilinmiyor = false;
+        }
         // addedDate final — direkt set edilemez; kullanıcı düzenlemede tarih
         // değiştirdiyse Asset'i yeniden inşa edip provider'a yolla.
         if (a.addedDate != _addedDate) {
@@ -3039,6 +2956,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             sozlesmeId: a.sozlesmeId,
             createdAt: a.createdAt,
             portfoyId: a.portfoyId,
+            maliyetBilinmiyor: a.maliyetBilinmiyor,
           );
           await ref.read(portfolioProvider.notifier).updateAsset(updated);
         } else {
@@ -3068,6 +2986,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               addedDate: _addedDate,
               commission: _parse(_commission.text) ?? 0,
               portfoyId: _hedefPortfoy,
+              yol: widget.ekleYolu ?? 'form',
             );
       }
     } on AssetLimitExceededException catch (e) {

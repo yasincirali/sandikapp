@@ -195,16 +195,7 @@ void main() {
           SummaryPeriod.altiAy);
     });
 
-    test('bayrak kapalı: Takip kendi 1A\'sında, ortak dönemi izlemez', () {
-      final c = ProviderContainer();
-      addTearDown(c.dispose);
-      expect(c.read(watchlistPeriodProvider), SummaryPeriod.birAy.index);
-      c.read(seciliDonemProvider.notifier).state = SummaryPeriod.besYil;
-      expect(c.read(watchlistPeriodProvider), SummaryPeriod.birAy.index);
-    });
-
-    test('bayrak açık: Takip ortak dönemden türer', () {
-      RemoteConfigService.testAcik = {'donem_hafizasi'};
+    test('Takip ortak dönemden türer', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       expect(c.read(watchlistPeriodProvider), SummaryPeriod.gunluk.index);
@@ -214,19 +205,7 @@ void main() {
   });
 
   group('Takip listesi', () {
-    testWidgets('bayrak kapalı: 1A açılır, seçim ortak döneme yazılmaz',
-        (t) async {
-      await _takip(t);
-      expect(_secici(t).secili, SummaryPeriod.birAy.index);
-      _secici(t).onSec(SummaryPeriod.altiAy.index);
-      await t.pump();
-      final c = _kap(t, WatchlistBody);
-      expect(_secici(t).secili, SummaryPeriod.altiAy.index);
-      expect(c.read(seciliDonemProvider), SummaryPeriod.gunluk);
-    });
-
-    testWidgets('bayrak açık: ortak dönemi gösterir ve yazar', (t) async {
-      RemoteConfigService.testAcik = {'donem_hafizasi'};
+    testWidgets('ortak dönemi gösterir ve yazar', (t) async {
       await _takip(t);
       final c = _kap(t, WatchlistBody);
       expect(_secici(t).secili, SummaryPeriod.gunluk.index);
@@ -244,18 +223,8 @@ void main() {
   });
 
   group('varlık detayı', () {
-    testWidgets('bayrak kapalı: HAFTALIK varsayılanı korunur', (t) async {
-      await _detay(t, _asset());
-      expect(_secici(t).donemler[_secici(t).secili], SummaryPeriod.birHafta);
-      _secici(t).onSec(SummaryPeriod.altiAy.index);
-      await t.pump();
-      expect(_kap(t, AssetDetailScreen).read(seciliDonemProvider),
-          SummaryPeriod.gunluk);
-    });
-
-    testWidgets('bayrak açık: ortak dönemle açılır, seçim yazılır, dışarıdan '
+    testWidgets('ortak dönemle açılır, seçim yazılır, dışarıdan '
         'değişim izlenir', (t) async {
-      RemoteConfigService.testAcik = {'donem_hafizasi'};
       await _detay(t, _asset());
       final c = _kap(t, AssetDetailScreen);
       expect(_secici(t).donemler[_secici(t).secili], SummaryPeriod.gunluk);
@@ -270,9 +239,8 @@ void main() {
       expect(_secici(t).donemler[_secici(t).secili], SummaryPeriod.besYil);
     });
 
-    testWidgets('bayrak açık, GÜNLÜK\'süz varlık: 1H gösterilir, ortak '
+    testWidgets('GÜNLÜK\'süz varlık: 1H gösterilir, ortak '
         'GÜNLÜK değişmez; seçim DEĞERLE eşlenir', (t) async {
-      RemoteConfigService.testAcik = {'donem_hafizasi'};
       await _detay(t, _asset(elle: true));
       final c = _kap(t, AssetDetailScreen);
       expect(_secici(t).donemler.first, SummaryPeriod.birHafta);
@@ -287,13 +255,7 @@ void main() {
   });
 
   group('varlık sayfası', () {
-    testWidgets('bayrak kapalı: 1Y varsayılanı', (t) async {
-      await _sayfa(t, YatirimciSeviyesi.orta);
-      expect(_secici(t).secili, SummaryPeriod.birYil.index);
-    });
-
-    testWidgets('bayrak açık: ortak dönemle açılır ve yazar', (t) async {
-      RemoteConfigService.testAcik = {'donem_hafizasi'};
+    testWidgets('ortak dönemle açılır ve yazar', (t) async {
       await _sayfa(t, YatirimciSeviyesi.orta);
       expect(_secici(t).secili, SummaryPeriod.gunluk.index);
       _secici(t).onSec(SummaryPeriod.ucAy.index);

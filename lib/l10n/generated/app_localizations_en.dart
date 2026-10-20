@@ -5874,7 +5874,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.12: The AI comment can now also describe the period you select in Performance and on the asset detail page, and it includes inflation and dollar, gold and BIST 100 comparisons. It still works only if you ask; amounts, quantities and identity details are not sent. Version 1.11: Two optional AI features are described: the portfolio comment in Performance › Summary and reading a statement by its words. Both work only if you ask, with your separate consent the first time you use them; amounts, quantities and identity details are not sent. Version 1.10: Leaving the app in the background for a long time no longer signs you out; if the app lock is on, it only locks. Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
+      'Version 1.13: If you joined Zirve, the stocks, crypto or gold in your portfolio can now also appear by symbol, as percentages only; amounts, quantities and your identity stay hidden. This applies only if you accepted the 20 October 2026 Zirve consent. The detailed Zirve view may require Premium for new joiners. Version 1.12: The AI comment can now also describe the period you select in Performance and on the asset detail page, and it includes inflation and dollar, gold and BIST 100 comparisons. It still works only if you ask; amounts, quantities and identity details are not sent. Version 1.11: Two optional AI features are described: the portfolio comment in Performance › Summary and reading a statement by its words. Both work only if you ask, with your separate consent the first time you use them; amounts, quantities and identity details are not sent. Version 1.10: Leaving the app in the background for a long time no longer signs you out; if the app lock is on, it only locks. Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -7569,6 +7569,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your categories have their own settings. Picking an option applies it to every category.';
 
   @override
+  String get bildirimOnAyarSoru => 'How often should we notify you?';
+
+  @override
+  String get bildirimOnAyarAzAciklama =>
+      'Only the price alerts you set and the daily brief. Signals, period summaries and partner activity stay quiet.';
+
+  @override
+  String get bildirimOnAyarDengeliAciklama =>
+      'Recommended: your alerts, the daily brief, weekly and monthly summaries, strong signals twice a day.';
+
+  @override
+  String get bildirimOnAyarCokAciklama =>
+      'Everything on; signals every 2 hours from 50% confidence.';
+
+  @override
+  String get bildirimOnAyarOzelAciklama =>
+      'You\'ve set notifications one by one. Picking an option applies it to all of them.';
+
+  @override
+  String get bildirimAyrintiliUpper => 'DETAILED';
+
+  @override
+  String get bildirimAyrintiliSemantik => 'Set notifications one by one';
+
+  @override
   String get s5KategoriyeGoreOzellestir => 'Customise by category';
 
   @override
@@ -9067,4 +9092,64 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pyzVarlikEskidi =>
       'Your quantity in this asset changed after the comment was written.';
+
+  @override
+  String get pwdZirveEtiket => 'TOP PORTFOLIOS';
+
+  @override
+  String get pwdZirveBaslik =>
+      'See what the top portfolios hold, asset by asset.';
+
+  @override
+  String get prmSatirZirve => 'Top portfolios';
+
+  @override
+  String get prmZirveUcretsiz => 'Your own rank';
+
+  @override
+  String get prmZirvePremium => 'No. 1\'s holdings + overlap';
+
+  @override
+  String vkSeritSayi(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Missing info on $count holdings',
+      one: 'Missing info on 1 holding',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get vkSeritAlt => 'Tap to complete them one by one';
+
+  @override
+  String get vkSeritKapat => 'Dismiss the missing info row';
+
+  @override
+  String get vkAlisFiyatiEksik => 'Purchase price missing';
+
+  @override
+  String vkFiyatGunOnce(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Price entered $count days ago',
+      one: 'Price entered 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String vkFiyatBaslik(String name) {
+    return 'Current price of $name';
+  }
+
+  @override
+  String vkFiyatAciklama(String date) {
+    return 'You enter this holding\'s price yourself; your total uses this number. Your last price is from $date.';
+  }
+
+  @override
+  String get vkHepsiTamam => 'All set, your total is up to date.';
 }
