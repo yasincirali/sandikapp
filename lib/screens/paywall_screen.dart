@@ -5,8 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart' show Package;
 
+import '../models/asset.dart' show Asset;
+import '../models/asset_type.dart';
+import '../models/position.dart' show aktifLotlar;
+import '../providers/auth_provider.dart' show partnersProvider;
+import '../providers/portfolio_provider.dart' show portfolioProvider;
 import '../providers/preferences_provider.dart'
     show kKarsilastirmaEnFazla, ortakSiniriDoluProvider;
+import '../providers/signal_provider.dart' show activeSignalsProvider;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/remote_config_service.dart';
@@ -109,6 +115,18 @@ int? tasarrufOrani(double aylik, double yillik) {
 String _birimsiz(String rcFiyat) => rcFiyat.split('/').first.trim();
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
+  /// Satın alma tamamlandı; `dispose`'daki "kapandı" olayı atılmaz.
+  bool _satinAlindi = false;
+
+  @override
+  void dispose() {
+    if (!_satinAlindi) {
+      unawaited(AnalyticsService.instance
+          .logPremiumPaywallKapandi(source: widget.source));
+    }
+    super.dispose();
+  }
+
   _Plan _selected = _Plan.yearly;
   bool _busy = false;
   MagazaTeklifi? _teklif;
@@ -152,8 +170,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     // yükleme ve fiyat/deneme okuması bu State'te kalır; yalnız görünüm
     // değişir. Ham fiyat metni verilir, birim eki (/ay, /yıl) gövdede.
     if (rc.paywallDeste) {
+      // Tetikleyicisiz girişte deste kullanıcının işine göre açılır
+      // ([paywallPersona]); sayım bugünkü mülkiyet (`aktifLotlar`).
+      final lotlar = aktifLotlar(
+          ref.watch(portfolioProvider).valueOrNull?.assets ?? const <Asset>[]);
+      final persona = paywallPersona(
+        fonSayisi: lotlar.where((a) => a.type == AssetType.fon).length,
+        hisseSayisi: lotlar.where((a) => a.type == AssetType.hisse).length,
+        sinyalVar: ref.watch(activeSignalsProvider).isNotEmpty,
+        ortakVar:
+            (ref.watch(partnersProvider).valueOrNull ?? const []).isNotEmpty,
+      );
       return _DesteGovdesi(
         source: widget.source,
+        persona: persona,
         yillik: _selected == _Plan.yearly,
         onPlan: (y) =>
             setState(() => _selected = y ? _Plan.yearly : _Plan.monthly),
@@ -285,7 +315,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         case SatinAlmaSonucu.basarili:
           unawaited(AnalyticsService.instance.logPremiumUpgradeCompleted(
             plan: _selected == _Plan.yearly ? 'yearly' : 'monthly',
+            source: widget.source,
+            deneme: denemeGunu(paket.storeProduct) != null,
           ));
+          _satinAlindi = true;
           await _showSuccessSheet();
           if (!mounted) return;
           Navigator.of(context).pop(true);

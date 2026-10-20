@@ -1356,7 +1356,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // turunu görür, sürüm notunu görmez (`yeniNotlar` ilk kurulumda boş
         // döner). Karar `SurumNotuService`'te; burada yalnızca tetiklenir.
         CrashReporter.arkaPlan(
-            _yenilikleriKontrolEt().then((_) => _hediyeyiKontrolEt()),
+            _yenilikleriKontrolEt()
+                .then((_) => _hediyeyiKontrolEt())
+                .then((_) => _hediyeBitisiniKontrolEt()),
             reason: 'main._yenilikleriKontrolEt');
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
@@ -1551,6 +1553,35 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     await ref.read(premiumHediyeGosterildiProvider.notifier).set(true);
     if (!ctx.mounted) return;
     await PremiumHediyeSayfasi.goster(ctx, hak);
+  }
+
+  /// Hediye bittiyse bir kez söyle (paywall incelemesi, 2026-10-20).
+  /// Hediye sayfasıyla aynı bekleme kuralları; aynı bitiş için ikinci kez
+  /// açılmaz, hediye yeniden verilirse (yeni bitiş) yeniden söylenir.
+  Future<void> _hediyeBitisiniKontrolEt() async {
+    if (!mounted || !ref.read(paywallVisibleProvider)) return;
+    await ref.read(premiumHaklariProvider.future);
+    if (!mounted) return;
+    final bitis = ref.read(hediyesiBitmisProvider);
+    if (bitis == null) return;
+    final anahtar = bitis.toUtc().toIso8601String();
+    if (ref.read(premiumHediyeBittiSoylenenProvider) == anahtar) return;
+    for (var deneme = 0; deneme < 20; deneme++) {
+      if (!mounted) return;
+      if (_onboardingDone == true && _yasalKapilarGecildi && !_locked) break;
+      await Future<void>.delayed(_yenilikYoklamaAraligi);
+    }
+    if (!mounted ||
+        _locked ||
+        _onboardingDone != true ||
+        !_yasalKapilarGecildi) {
+      return;
+    }
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    await ref.read(premiumHediyeBittiSoylenenProvider.notifier).set(anahtar);
+    if (!ctx.mounted) return;
+    await PremiumHediyeBittiSayfasi.goster(ctx);
   }
 
   /// Kutlama sheet'inin açılabileceği TEK yer: ana ekran, üstünde hiçbir

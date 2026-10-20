@@ -162,8 +162,25 @@ class AnalyticsService {
   Future<void> logPremiumUpgradeStarted({required String source}) =>
       _log('premium_upgrade_started', {'source': source});
 
-  Future<void> logPremiumUpgradeCompleted({required String plan}) =>
-      _log('premium_upgrade_completed', {'plan': plan});
+  /// Huni kapı → paywall → satın alma TEK kaynak parametresiyle bağlanır
+  /// (paywall incelemesi, 2026-10-20): `premium_gate_shown.feature` =
+  /// `premium_upgrade_started.source` = buradaki `source`. Böylece hangi
+  /// kilidin para ettiği kaynak başına okunur; `deneme` mağazanın deneme
+  /// süresiyle başladığını söyler (deneme → ücretli dönüşüm ayrı sorulur).
+  Future<void> logPremiumUpgradeCompleted({
+    required String plan,
+    String source = '',
+    bool deneme = false,
+  }) =>
+      _log('premium_upgrade_completed', {
+        'plan': plan,
+        if (source.isNotEmpty) 'source': source,
+        'deneme': deneme ? 1 : 0,
+      });
+
+  /// Paywall satın alınmadan kapandı (huni sızıntısı, kaynak başına).
+  Future<void> logPremiumPaywallKapandi({required String source}) =>
+      _log('premium_paywall_closed', {'source': source});
 
   /// Premium dışa aktarım (2026-10-10): hangi belge, hangi biçim. Tutar ya
   /// da içerik gönderilmez.

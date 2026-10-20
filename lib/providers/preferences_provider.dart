@@ -254,6 +254,46 @@ class _IntPrefNotifier extends Notifier<int> {
   }
 }
 
+/// `_BoolPrefNotifier`'in metin karşılığı (aynı desen, aynı demo kuralı).
+class _StringPrefNotifier extends Notifier<String> {
+  final String key;
+  final String defaultValue;
+  final bool perUser;
+
+  _StringPrefNotifier(this.key, this.defaultValue, {this.perUser = false});
+
+  String get _key => perUser ? _userKey(key) : key;
+
+  @override
+  String build() {
+    final prefs = _prefsSync;
+    if (prefs != null) {
+      final v = prefs.getString(_key);
+      if (v != null) return v;
+    } else {
+      _loadAsync();
+    }
+    return defaultValue;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getString(_key);
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(String value) async {
+    state = value;
+    if (DemoModu.aktif) return;
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setString(_key, value);
+    } catch (_) {}
+  }
+}
+
 /// Metin kümesi tercihi — [_BoolPrefNotifier] ile aynı desen (senkron
 /// okuma, demo'da diske yazmaz). Kişiye özel.
 class _KumePrefNotifier extends Notifier<Set<String>> {
@@ -1500,6 +1540,15 @@ final haftaSakinGosterProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final premiumHediyeGosterildiProvider =
     NotifierProvider<_BoolPrefNotifier, bool>(() => _BoolPrefNotifier(
         PrefKeys.premiumHediyeGosterildi, false,
+        perUser: true));
+
+/// Hangi bitiş tarihli hediyenin bittiği söylendi (ISO; boş = hiç).
+/// Paywall incelemesi (2026-10-20): 90 günlük hediye sessizce bitince
+/// kullanıcı bir sabah kilitlerle karşılaşıyordu; bitişte bir kez "hediyen
+/// bitti, verin yerinde, Premium'la devam" denir ve paywall teklif edilir.
+final premiumHediyeBittiSoylenenProvider =
+    NotifierProvider<_StringPrefNotifier, String>(() => _StringPrefNotifier(
+        PrefKeys.premiumHediyeBittiSoylenen, '',
         perUser: true));
 
 // ─── Leaderboard opt-in ───────────────────────────────────────────────────────

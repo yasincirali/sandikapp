@@ -59,10 +59,19 @@ Set<String> kotaAnahtarlari(Iterable<Asset> lotlar, String userId) => {
 final varlikKotasiProvider = Provider<({int kullanilan, int sinir})?>((ref) {
   final sinir = ref.watch(assetLimitProvider);
   if (sinir >= (1 << 30)) return null;
+  final anahtarlar = ref.watch(kotaAnahtarlariProvider);
+  if (anahtarlar == null) return null;
+  return (kullanilan: anahtarlar.length, sinir: sinir);
+});
+
+/// Bugünkü kota anahtarları (oturum yoksa null). Toplu kayıt öncesi plan
+/// (`iceAktarmaKotaPlani`) hangi kalemlerin YENİ varlık olduğunu bununla
+/// ayırır; sayım `addAsset` kapısıyla aynı.
+final kotaAnahtarlariProvider = Provider<Set<String>?>((ref) {
   final uid = ref.watch(authProvider).valueOrNull?.id;
   if (uid == null) return null;
   final lotlar = ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
-  return (kullanilan: kotaAnahtarlari(lotlar, uid).length, sinir: sinir);
+  return kotaAnahtarlari(lotlar, uid);
 });
 
 /// Saf: [yeni] pozisyonu eklemek kotayı aşıyor mu; aşıyorsa kullanılan

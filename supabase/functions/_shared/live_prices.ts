@@ -142,10 +142,12 @@ export function extractTruncgil(
   return out;
 }
 
-async function fetchTruncgil(): Promise<Record<string, unknown>> {
+async function fetchTruncgil(
+  zamanAsimiMs = 10_000,
+): Promise<Record<string, unknown>> {
   const res = await fetch('https://finans.truncgil.com/v4/today.json', {
     headers: { Accept: 'application/json', 'User-Agent': USER_AGENT },
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(zamanAsimiMs),
   });
   if (!res.ok) throw new Error(`Truncgil HTTP ${res.status}`);
   return parseTruncgilBody(await res.text());
@@ -612,7 +614,49 @@ export function yurtIciSatirlari(
   return out;
 }
 
-/// truncgil'i bir kez çekip kayıt satırlarını döner.
-export async function yurtIciKotasyonlariCek(simdi: Date): Promise<YurtIciSatir[]> {
-  return yurtIciSatirlari(await fetchTruncgil(), simdi);
+/// truncgil'i çekip kayıt satırlarını döner; kaynak düşerse ya da gövde
+/// hiç fiyat taşımıyorsa (kesik/boş yanıt) aynı turda yeniden dener.
+/// Kısmi gövde (bazı semboller eksik) kabul edilir: eksik sembol için
+/// nokta yazılmaz, tekrar istek atılmaz.
+export async function yurtIciKotasyonlariCek(
+  simdi: Date,
+  beklemeler: number[] = YURT_ICI_DENEME_BEKLEMELERI_MS,
+  uyu?: (ms: number) => Promise<void>,
+): Promise<YurtIciSatir[]> {
+  return await tekrarDene(async () => {
+    const satirlar = yurtIciSatirlari(
+      await fetchTruncgil(YURT_ICI_DENEME_ZAMAN_ASIMI_MS),
+      simdi,
+    );
+    if (satirlar.length === 0) throw new Error('truncgil: fiyat yok');
+    return satirlar;
+  }, beklemeler, uyu);
+}
+
+/// 2026-10-20 (Frankfurt ölçümü): 5 dakikalık turların ~%10'u truncgil
+/// cevap vermediği için 502 dönüyor ve grafikte o slot boş kalıyordu.
+/// Kesintiler kısa (bir sonraki tur hep başarılı) → aynı tur içinde birkaç
+/// saniye arayla yeniden denemek boşluğu kapatır. Yedek kaynak yok:
+/// farklı sağlayıcının ölçeği farklı, "tek kaynak" kuralı (fiyat_kaynagi).
+/// Bütçe: 3 × 7 sn + 1,5 + 3 sn = 25,5 sn < pg_net 30 sn zaman aşımı (0101).
+export const YURT_ICI_DENEME_ZAMAN_ASIMI_MS = 7_000;
+export const YURT_ICI_DENEME_BEKLEMELERI_MS = [1_500, 3_000];
+
+/// `fn`'i dener; atarsa `beklemeler`deki her süre kadar bekleyip yeniden
+/// dener. Son hata yukarı atılır (çağıran "kaynak_yanitsiz" yazar).
+export async function tekrarDene<T>(
+  fn: () => Promise<T>,
+  beklemeler: number[],
+  uyu: (ms: number) => Promise<void> = (ms) =>
+    new Promise((r) => setTimeout(r, ms)),
+): Promise<T> {
+  for (let i = 0;; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (i >= beklemeler.length) throw e;
+      console.warn(`truncgil deneme ${i + 1} başarısız, yeniden deneniyor`);
+      await uyu(beklemeler[i]);
+    }
+  }
 }
