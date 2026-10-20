@@ -200,7 +200,13 @@ soran yerler (hareket listesi, `HistoryService`, dönem hesapları) ham defteri 
 
 **Sunucu.** Şema kaynağı `supabase/migrations/` (kök `supabase_schema.sql` yalnızca nottur).
 Her `SECURITY DEFINER` fonksiyonunda `SET search_path`. GRANT ve RLS ayrı şeylerdir; yeni
-RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 örnek). Cron
+RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 örnek).
+**Yeni tablo açık GRANT ister** (Supabase 2026-10-30; 0161): `public`'te yeni tablo/görünüm
+artık anon/authenticated/service_role'e otomatik açılmaz. Tabloyu yaratan migration aynı
+dosyada rol başına izni yazar: istemci okuyorsa `authenticated`, sunucu yazıyorsa
+`service_role`, anon'a yalnız giriş öncesi okunan tabloda; `serial` dizisine `usage, select`.
+Toptan `grant ... to anon` yazma. Kilit `tablo_izinleri_test`; 0000'ın taze-yığın bloğunu silme.
+Cron
 edge function'ları `requireCronSecret()` ile **fail-closed**; secret'sız `if (secret)` bloğu
 yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dönme**.
 
