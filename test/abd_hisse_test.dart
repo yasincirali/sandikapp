@@ -356,6 +356,10 @@ void main() {
         ),
       ));
       await tester.pump();
+      // Hisse formu tür ızgarasından seçilince açılır (ızgara 2026-10-20'den
+      // beri koşulsuz); pazar seçimi o formun içinde.
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
       return portfoy;
     }
 

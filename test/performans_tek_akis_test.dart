@@ -424,9 +424,11 @@ void main() {
     test('Performans, dönem ve kapsam adımları tek akışı anlatır', () {
       expect('PortfolioPerformanceScreen.tekAkisAcik'.allMatches(src).length,
           greaterThanOrEqualTo(4));
-      expect(src.contains('Seçtiğin dönem her ekranda geçerli olur.'), isTrue);
-      expect(src.contains('RemoteConfigService.instance.donemHafizasi'),
-          isTrue);
+      // `donem_hafizasi` 2026-10-20'de emekliye ayrıldı: cümle iki dalda da
+      // koşulsuz.
+      expect(
+          'Seçtiğin dönem her ekranda geçerli olur.'.allMatches(src).length,
+          greaterThanOrEqualTo(2));
     });
   });
 

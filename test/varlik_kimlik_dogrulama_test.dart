@@ -180,6 +180,10 @@ void main() {
         ),
       ));
       await tester.pump();
+      // Hisse formu tür ızgarasından açılır (ızgara 2026-10-20'den beri
+      // koşulsuz).
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
 
       // Açılışta uyarı yok — boş form suçlanmaz.
       const uyari = 'Listeden bir hisse seç ya da sembolünü yaz';

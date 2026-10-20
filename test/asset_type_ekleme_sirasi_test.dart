@@ -58,42 +58,9 @@ void main() {
     ]);
   });
 
-  testWidgets('Varlık Ekle çipleri bu sırayla çizilir', (tester) async {
-    // Bayrağa bağlı türler (eurobond) dahil EN GENİŞ küme sınanır.
-    RemoteConfigService.testAcik = {'eurobond'};
-    addTearDown(() => RemoteConfigService.testAcik = {});
-    await initializeDateFormatting('tr_TR');
-    SharedPreferences.setMockInitialValues({});
-    tester.view.physicalSize = const Size(375 * 3, 812 * 3);
-    tester.view.devicePixelRatio = 3.0;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        portfolioProvider.overrideWith(() => _BosPortfoy()),
-        addAssetPriceLookupProvider.overrideWithValue(const _NoLookup()),
-      ],
-      child: MaterialApp(theme: ThemeData.dark(), home: const AddAssetScreen()),
-    ));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    final secici = find.byWidgetPredicate(
-        (w) => w is TourAnchor && w.target == TourTarget.turSecici);
-    // Çipler SARMALI (2026-09-29, emülatör testi #29): sıra okuma sırasıdır —
-    // önce satır (y), satır içinde x.
-    final konumlar = [
-      for (final t in AssetType.eklemeSirasi)
-        tester.getTopLeft(
-            find.descendant(of: secici, matching: find.text(t.label))),
-    ];
-    bool once(Offset a, Offset b) =>
-        (a.dy - b.dy).abs() < 1 ? a.dx < b.dx : a.dy < b.dy;
-    for (var i = 1; i < konumlar.length; i++) {
-      expect(once(konumlar[i - 1], konumlar[i]), isTrue,
-          reason: '${AssetType.eklemeSirasi[i].label} '
-              '${AssetType.eklemeSirasi[i - 1].label}\'dan sonra gelmeli');
-    }
-  });
+  // "Varlık Ekle çipleri bu sırayla çizilir" kalktı (2026-10-20): çip satırı
+  // `tur_secici_izgara` emekliye ayrılınca silindi; ızgaranın gruplu sırası
+  // `tur_secici_duzeni_test`'te kilitli.
 
   // Emülatör testi #29: kaydırmalı satırda Kripto/Emtia/Diğer ekran dışında
   // kalıyordu ve ipucu fark edilmiyordu. Her çip, kaydırmadan, ekranın

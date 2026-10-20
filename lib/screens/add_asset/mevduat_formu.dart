@@ -10,7 +10,6 @@ import '../../providers/mevduat_banka_provider.dart';
 import '../../providers/sozlesme_provider.dart';
 import '../../services/crash_reporter.dart';
 import '../../services/mevduat_hesabi.dart';
-import '../../services/remote_config_service.dart';
 import '../../theme/sandik.dart';
 import '../../utils/friendly_error.dart';
 import '../../utils/sandik_snack.dart';
@@ -29,11 +28,12 @@ import '../paywall_screen.dart';
 /// gelir; kaydedilen lotun değeri de o motorla hesaplanır — formda
 /// gösterilen ile portföyde görünen aynı sayıdır.
 ///
-/// Bayrak `mevduat_banka_secici` (2026-10-09) açıkken: banka listeden
-/// seçilir; yıllık brüt faiz vadeye göre TCMB haftalık ortalamasıyla
-/// ÖNERİLİR (stopaj önerisiyle aynı kural: elle yazılınca bir daha üstüne
-/// yazılmaz), yanında aylık brüt (= yıllık / 12, iki yönlü); mevduata not
-/// yazılır. Kapalıyken form birebir eski.
+/// 2026-10-09: banka listeden seçilir; yıllık brüt faiz vadeye göre TCMB
+/// haftalık ortalamasıyla ÖNERİLİR (stopaj önerisiyle aynı kural: elle
+/// yazılınca bir daha üstüne yazılmaz), yanında aylık brüt (= yıllık / 12,
+/// iki yönlü); mevduata not yazılır. Bayrak `mevduat_banka_secici`
+/// 2026-10-20'de emekliye ayrıldı; serbest banka adı + tek faiz alanlı eski
+/// form kalktı (liste boş gelirse seçici sayfası elle yazmaya izin verir).
 class MevduatFormu extends ConsumerStatefulWidget {
   const MevduatFormu({super.key});
 
@@ -51,10 +51,6 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
   final _stopaj = TextEditingController();
   final _aylik = TextEditingController();
   final _not = TextEditingController();
-
-  /// Bayrak form açılışında bir kez okunur: form açıkken Remote Config
-  /// yenilenirse alanlar yer değiştirmesin.
-  late final bool _secici = RemoteConfigService.instance.mevduatBankaSecici;
 
   /// Listeden seçilen banka; elle yazılan adda `null`.
   MevduatBankasi? _secilenBanka;
@@ -89,13 +85,11 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
     for (final c in [_anapara, _faiz, _ozelGun, _stopaj]) {
       c.addListener(_yenile);
     }
-    if (_secici) {
-      // Liste ve ortalamalar form açılınca bir kez okunur (oturumda
-      // önbellekli); gelince boş faiz alanı önerilir.
-      ref.listenManual(mevduatKaynaklariProvider, (_, __) {
-        if (mounted) setState(_faizOner);
-      });
-    }
+    // Liste ve ortalamalar form açılınca bir kez okunur (oturumda
+    // önbellekli); gelince boş faiz alanı önerilir.
+    ref.listenManual(mevduatKaynaklariProvider, (_, __) {
+      if (mounted) setState(_faizOner);
+    });
   }
 
   @override
@@ -135,7 +129,7 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
   /// dilimin verisi yok) daha önce YAZDIĞIMIZ öneri silinir — eski vadenin
   /// ortalaması yeni vadede yanlış bilgi olurdu. Elle yazılana dokunulmaz.
   void _faizOner() {
-    if (!_secici || _faizElle) return;
+    if (_faizElle) return;
     final k = ref.read(mevduatKaynaklariProvider).valueOrNull;
     final v = mevduatVarsayilanFaiz(
       banka: _secilenBanka,
@@ -204,7 +198,7 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
             stopaj: parseTrNumber(_stopaj.text)!,
             baslangic: _baslangic,
             vadeGun: _gun,
-            not: _secici ? _not.text : '',
+            not: _not.text,
             portfoyId: portfoyId,
           );
       return true;
@@ -267,29 +261,20 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SozlesmeEtiketi(l10n.depositBank),
-          if (_secici)
-            SozlesmeAlani(
-              controller: _banka,
-              ipucu: l10n.depositBankPick,
-              dokununca: _bankaSec,
-              onek: _secilenBanka == null
-                  ? null
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: SandikSpace.smd),
-                      child: MevduatBankaRozeti(_secilenBanka!.rozet),
-                    ),
-              dogrula: (v) =>
-                  (v ?? '').trim().isEmpty ? l10n.depositErrorBank : null,
-            )
-          else
-            SozlesmeAlani(
-              controller: _banka,
-              ipucu: l10n.depositBankHint,
-              buyukHarf: true,
-              dogrula: (v) =>
-                  (v ?? '').trim().isEmpty ? l10n.depositErrorBank : null,
-            ),
+          SozlesmeAlani(
+            controller: _banka,
+            ipucu: l10n.depositBankPick,
+            dokununca: _bankaSec,
+            onek: _secilenBanka == null
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.smd),
+                    child: MevduatBankaRozeti(_secilenBanka!.rozet),
+                  ),
+            dogrula: (v) =>
+                (v ?? '').trim().isEmpty ? l10n.depositErrorBank : null,
+          ),
           const SizedBox(height: SandikSpace.lgs),
           Row(
             children: [
@@ -319,91 +304,53 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
             ],
           ),
           const SizedBox(height: SandikSpace.lgs),
-          if (_secici) ...[
-            SozlesmeEtiketi(l10n.depositPrincipal),
-            SozlesmeAlani(
-              controller: _anapara,
-              ipucu: '0',
-              sonek: '₺',
-              sayi: true,
-              dogrula: (v) => _pozitif(v, l10n.depositErrorPrincipal),
-            ),
-            const SizedBox(height: SandikSpace.lgs),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SozlesmeEtiketi(l10n.depositRateAnnualGross),
-                      SozlesmeAlani(
-                        controller: _faiz,
-                        ipucu: '0',
-                        sonek: '%',
-                        sayi: true,
-                        degisti: _yillikYazildi,
-                        dogrula: (v) => _faizHatasi(v, l10n),
-                      ),
-                    ],
-                  ),
+          SozlesmeEtiketi(l10n.depositPrincipal),
+          SozlesmeAlani(
+            controller: _anapara,
+            ipucu: '0',
+            sonek: '₺',
+            sayi: true,
+            dogrula: (v) => _pozitif(v, l10n.depositErrorPrincipal),
+          ),
+          const SizedBox(height: SandikSpace.lgs),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SozlesmeEtiketi(l10n.depositRateAnnualGross),
+                    SozlesmeAlani(
+                      controller: _faiz,
+                      ipucu: '0',
+                      sonek: '%',
+                      sayi: true,
+                      degisti: _yillikYazildi,
+                      dogrula: (v) => _faizHatasi(v, l10n),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: SandikSpace.smd),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SozlesmeEtiketi(l10n.depositRateMonthlyGross),
-                      SozlesmeAlani(
-                        controller: _aylik,
-                        ipucu: '0',
-                        sonek: '%',
-                        sayi: true,
-                        degisti: _aylikYazildi,
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(width: SandikSpace.smd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SozlesmeEtiketi(l10n.depositRateMonthlyGross),
+                    SozlesmeAlani(
+                      controller: _aylik,
+                      ipucu: '0',
+                      sonek: '%',
+                      sayi: true,
+                      degisti: _aylikYazildi,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            if (_faizNotu(l10n) case final not?) SozlesmeNotu(not),
-          ] else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SozlesmeEtiketi(l10n.depositPrincipal),
-                      SozlesmeAlani(
-                        controller: _anapara,
-                        ipucu: '0',
-                        sonek: '₺',
-                        sayi: true,
-                        dogrula: (v) => _pozitif(v, l10n.depositErrorPrincipal),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: SandikSpace.smd),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SozlesmeEtiketi(l10n.depositRate),
-                      SozlesmeAlani(
-                        controller: _faiz,
-                        ipucu: '0',
-                        sonek: '%',
-                        sayi: true,
-                        dogrula: (v) => _faizHatasi(v, l10n),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          if (_faizNotu(l10n) case final not?) SozlesmeNotu(not),
           if (!_vadesiz) ...[
             const SizedBox(height: SandikSpace.lgs),
             SozlesmeEtiketi(l10n.depositTerm),
@@ -481,16 +428,14 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
           SozlesmeNotu(_stopajElle
               ? l10n.depositWithholdingManual
               : l10n.depositWithholdingHint),
-          if (_secici) ...[
-            const SizedBox(height: SandikSpace.lgs),
-            SozlesmeEtiketi(l10n.depositNote),
-            SozlesmeAlani(
-              controller: _not,
-              ipucu: l10n.depositNoteHint,
-              enFazlaSatir: 3,
-              enFazlaKarakter: 300,
-            ),
-          ],
+          const SizedBox(height: SandikSpace.lgs),
+          SozlesmeEtiketi(l10n.depositNote),
+          SozlesmeAlani(
+            controller: _not,
+            ipucu: l10n.depositNoteHint,
+            enFazlaSatir: 3,
+            enFazlaKarakter: 300,
+          ),
           const SizedBox(height: SandikSpace.lgs),
           _Ozet(
             anapara: parseTrNumber(_anapara.text),

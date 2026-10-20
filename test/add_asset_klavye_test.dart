@@ -82,6 +82,10 @@ void main() {
         (tester) async {
       await _pump(tester, const AddAssetScreen());
       await tester.pumpAndSettle();
+      // Form gövdesi tür seçilince açılır (tür ızgarası, 2026-10-20'den beri
+      // koşulsuz).
+      await tester.tap(find.text('Döviz').last);
+      await tester.pumpAndSettle();
 
       final alan = find.byType(TextFormField).first;
       await tester.ensureVisible(alan);

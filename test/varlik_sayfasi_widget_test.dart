@@ -10,8 +10,11 @@ import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/varlik_kimligi.dart';
 import 'package:portfoy_takip/models/watchlist_item.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/providers/secili_donem_provider.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
 import 'package:portfoy_takip/screens/varlik_sayfasi.dart';
+import 'package:portfoy_takip/services/period_summary_service.dart'
+    show SummaryPeriod;
 import 'package:portfoy_takip/widgets/donem_istatistik.dart';
 import 'package:portfoy_takip/widgets/donem_secici.dart';
 import 'package:portfoy_takip/widgets/varlik_iskeleti.dart';
@@ -96,6 +99,10 @@ Future<void> _kur(
   addTearDown(t.view.reset);
   await t.pumpWidget(ProviderScope(
     overrides: [
+      // Sayfa ortak dönemle açılır (`donem_hafizasi`, 2026-10-20'den beri
+      // koşulsuz). Testler eski 1Y varsayılanıyla yazıldı; ortak dönem 1Y'ye
+      // kurulur ki seri/fiyat beklentileri aynı kalsın.
+      seciliDonemProvider.overrideWith((ref) => SummaryPeriod.birYil),
       portfolioProvider.overrideWith(portfoy ?? () => _Portfoy(const [])),
       watchlistProvider.overrideWith(() => _Takip(takip)),
     ],
@@ -203,7 +210,7 @@ void main() {
     // (yönlü yüzde `fmtPctIsaretli`; eski biçim "%+36,5").
     expect(find.text('+%36,5'), findsWidgets);
     expect(find.text('+%3,0'), findsOneWidget);
-    // Varsayılan dönem 1Y — başlıktaki fiyat 1Y serisinin son noktası.
+    // Seçili (ortak) dönem 1Y — başlıktaki fiyat 1Y serisinin son noktası.
     expect(find.textContaining('136,50'), findsWidgets);
   });
 
@@ -220,7 +227,7 @@ void main() {
     });
     expect(istenen.toSet(), varlikSayfasiDonemleri.toSet());
     expect(istenen.first, 365,
-        reason: 'seçili dönem (varsayılan 1Y) ilk başlatılan olmalı');
+        reason: 'seçili dönem (burada ortak dönem 1Y) ilk başlatılan olmalı');
     for (final c in bekleyen) {
       c.complete(const {});
     }

@@ -181,12 +181,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   late int _gun = varlikSayfasiDonemleri.contains(widget.baslangicDonemGun)
       ? widget.baslangicDonemGun!
-      // `donem_hafizasi`: istek yoksa uygulamanın ortak dönemi (Sadeleştirme
-      // 2); bayrak kapalıyken eski varsayılan 1Y. Sayfa her dönemi
+      // Tek dönem hafızası: istek yoksa uygulamanın ortak dönemi
+      // (Sadeleştirme 2; bayrak `donem_hafizasi` 2026-10-20'de emekliye
+      // ayrıldı, eski 1Y varsayılanı kalktı). Sayfa her dönemi
       // gösterebildiği için en yakına düşme gerekmez.
-      : donemHafizasiAcik
-          ? ref.read(seciliDonemProvider).sembolGunu
-          : 365;
+      : ref.read(seciliDonemProvider).sembolGunu;
 
   /// Grafikte ŞU AN çizilen dönem. Yeni dönem yüklenirken eski çizgi soluk
   /// kalır — boş kutu ya da dönen tekerlek yerine bağlam.
@@ -204,11 +203,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   @override
   void initState() {
     super.initState();
-    // `donem_hafizasi`: açılışta istenen dönem (Takip satırı, derin bağlantı)
+    // Tek dönem hafızası: açılışta istenen dönem (Takip satırı, derin bağlantı)
     // ortak döneme de yazılır. Sağlayıcı kurulum sırasında değiştirilemez;
     // kareden sonra yazılır.
     final istenen = widget.baslangicDonemGun;
-    if (donemHafizasiAcik && varlikSayfasiDonemleri.contains(istenen)) {
+    if (varlikSayfasiDonemleri.contains(istenen)) {
       Future.microtask(() {
         if (!mounted) return;
         ref.read(seciliDonemProvider.notifier).state =
@@ -310,8 +309,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     CrashReporter.arkaPlan(_yukle(gun), reason: 'VarlikSayfasi.donemSec');
   }
 
-  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
-  /// eskisi gibi doğrudan [_donemSec]'i çağırır). Ortak döneme yazma
+  /// Seçiciden dönem seçimi (tek dönem hafızası). Ortak döneme yazma
   /// `_gun` güncellendikten SONRA: [build]'deki dinleyici değişikliği kendi
   /// seçimimiz olarak tanır, ikinci kez yüklemez.
   void _ortakDonemSec(int i) {
@@ -408,13 +406,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   @override
   Widget build(BuildContext context) {
     final k = widget.kimlik;
-    // `donem_hafizasi`: ortak dönem başka yüzeyde değişirse sayfa da geçer.
-    if (donemHafizasiAcik) {
-      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
-        final gun = yeni.sembolGunu;
-        if (gun != _gun) _donemSec(gun);
-      });
-    }
+    // Tek dönem hafızası: ortak dönem başka yüzeyde değişirse sayfa da geçer.
+    ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+      final gun = yeni.sembolGunu;
+      if (gun != _gun) _donemSec(gun);
+    });
     return Semantics(
       label: context.l10n.vsSheetSemantics(k.name),
       container: true,
@@ -691,9 +687,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       getiriler: [
         for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
       ],
-      onSec: donemHafizasiAcik
-          ? _ortakDonemSec
-          : (i) => _donemSec(varlikSayfasiDonemleri[i]),
+      onSec: _ortakDonemSec,
     );
   }
 

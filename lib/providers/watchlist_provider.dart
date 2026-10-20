@@ -260,17 +260,16 @@ final watchlistPeriods = <({String label, int days})>[
   for (final p in SummaryPeriod.values) (label: p.label, days: p.sembolGunu),
 ];
 
-/// Seçili dönem indeksi. Varsayılan 1A — ne çok gürültülü ne çok durgun.
+/// Seçili dönem indeksi. Eskiden ekran-yerel, varsayılan 1A idi.
 ///
-/// `donem_hafizasi` açıkken (Sadeleştirme 2) değer uygulamanın ortak
-/// dönemidir ([seciliDonemProvider]): ortak değer değişince bu sağlayıcı
+/// `donem_hafizasi` (Sadeleştirme 2; bayrak 2026-10-20'de emekliye ayrıldı)
+/// ile değer uygulamanın ortak dönemidir ([seciliDonemProvider]): ortak değer değişince bu sağlayıcı
 /// yeniden kurulur, okuyanlar (liste, grafik, varlık sayfası açılışı) aynı
 /// adla çalışmaya devam eder. Yazma o zaman ortak sağlayıcıya yapılır
 /// (bkz. `watchlist_screen.dart` `_PeriodToggle`). Takip her dönemi
 /// gösterebildiği için en yakın döneme düşme gerekmez.
-final watchlistPeriodProvider = StateProvider<int>((ref) => donemHafizasiAcik
-    ? ref.watch(seciliDonemProvider).index
-    : SummaryPeriod.birAy.index);
+final watchlistPeriodProvider =
+    StateProvider<int>((ref) => ref.watch(seciliDonemProvider).index);
 
 /// Grafikteki portföy çizgisinin KİMİ gösterdiği.
 ///

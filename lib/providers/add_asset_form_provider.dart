@@ -432,10 +432,10 @@ class AddAssetFormState {
   /// edilebilir; form açıkken bayrak yenilense de form tutarlı kalır).
   final bool abdAcik;
 
-  /// Tür ızgarası açık mı (bayrak `tur_secici_izgara`). Açıkken ekran formun
-  /// gövdesini çizmez: önce "ne ekliyorsun", sonra ayrıntı. Seçimden sonra
-  /// ızgara tek satıra katlanır, "Değiştir" yeniden açar. Bayrak kapalıyken
-  /// hep `false` ve hiçbir yerde okunmaz (çip satırı birebir eski).
+  /// Tür ızgarası açık mı. Açıkken ekran formun gövdesini çizmez: önce "ne
+  /// ekliyorsun", sonra ayrıntı. Seçimden sonra ızgara tek satıra katlanır,
+  /// "Değiştir" yeniden açar. (Bayrak `tur_secici_izgara` 2026-10-20'de
+  /// emekliye ayrıldı; eski çip satırı kalktı.)
   /// `notesExpanded` gibi görünüm durumu burada: ekran `setState` taşımaz
   /// (Faz 3.10 ratchet).
   final bool turIzgarasiAcik;
@@ -724,7 +724,9 @@ class AddAssetFormNotifier
       prefillType: arg.prefillType,
       prefillDate: arg.prefillDate,
       abdAcik: RemoteConfigService.instance.abdHisse,
-      turIzgarasi: RemoteConfigService.instance.turSeciciIzgara,
+      // Bayrak `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı: ızgara
+      // her zaman; eski çip satırı kalktı.
+      turIzgarasi: true,
     );
   }
 
@@ -753,7 +755,7 @@ class AddAssetFormNotifier
   void toggleNotes() =>
       _set(state.copyWith(notesExpanded: !state.notesExpanded));
 
-  /// Tür ızgarasını açar/katlar (bayrak `tur_secici_izgara`). Tür seçimi
+  /// Tür ızgarasını açar/katlar. Tür seçimi
   /// bunu KENDİLİĞİNDEN değiştirmez: hızlı giriş ve sepet geçişleri de
   /// `selectType` çağırıyor; katlamayı seçiciyi çizen ekran söyler.
   void turIzgarasi({required bool acik}) {

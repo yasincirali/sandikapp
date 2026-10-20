@@ -67,8 +67,8 @@ extension _DetayEylemler on _AssetDetailScreenState {
         reason: 'AssetDetail.sozlesmeTazele');
   }
 
-  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
-  /// eskisi gibi doğrudan [_selectPeriod]'u çağırır). Ortak döneme yazma
+  /// Seçiciden dönem seçimi; seçim uygulamanın ortak dönemine de yazılır
+  /// (`donem_hafizasi`, bayrak 2026-10-20'de emekliye ayrıldı). Ortak döneme yazma
   /// indeks güncellendikten SONRA: `build`'deki dinleyici değişikliği kendi
   /// seçimimiz olarak tanır, ikinci kez yüklemez.
   void _ortakDonemSec(int idx) {

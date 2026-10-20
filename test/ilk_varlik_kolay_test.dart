@@ -117,6 +117,9 @@ void main() {
       await _pump(tester, const AddAssetScreen());
       expect(find.text('Yazarak ekle'), findsOneWidget);
       expect(find.text('Ekstreden aktar'), findsOneWidget);
+      // Form gövdesi tür seçilince açılır (tür ızgarası, 2026-10-20).
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
       expect(find.text('Not ekle'), findsNothing);
       final ayrinti = find.text('Ayrıntı ekle (komisyon, not)');
       expect(ayrinti, findsOneWidget);

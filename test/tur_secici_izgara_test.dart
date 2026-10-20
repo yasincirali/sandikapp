@@ -15,10 +15,9 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/tour_anchor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Varlık Ekle tür seçicisi "gruplu ızgara + arama" (bayrak
-/// `tur_secici_izgara`, 2026-10-08). Bayrak kapalıyken eski çip satırı
-/// (`asset_type_ekleme_sirasi_test` onu kilitler); açıkken arama + üç grup,
-/// seçimden sonra tek satır.
+/// Varlık Ekle tür seçicisi "gruplu ızgara + arama" (2026-10-08): arama +
+/// üç grup, seçimden sonra tek satır. Bayrak `tur_secici_izgara`
+/// 2026-10-20'de emekliye ayrıldı; eski çip satırı kalktı.
 
 class _BosPortfoy extends PortfolioNotifier {
   @override
@@ -48,7 +47,7 @@ final _tr28 = EurobondSozlesmesi(
 
 Future<void> _ac(
   WidgetTester tester, {
-  Set<String> bayraklar = const {'tur_secici_izgara', 'abd_hisse', 'eurobond'},
+  Set<String> bayraklar = const {'abd_hisse', 'eurobond'},
   Widget ekran = const AddAssetScreen(),
   double genislik = 375,
   double yukseklik = 812,
@@ -195,7 +194,7 @@ void main() {
 
   testWidgets('eurobond bayrağı kapalı: ne kutu ne arama sonucu',
       (tester) async {
-    await _ac(tester, bayraklar: const {'tur_secici_izgara'});
+    await _ac(tester, bayraklar: const {});
     expect(_metin('Eurobond'), findsNothing);
     expect(_metin('ABD hisse'), findsNothing);
     await tester.enterText(
@@ -224,14 +223,6 @@ void main() {
     expect(find.text('Değiştir'), findsOneWidget);
     expect(_seciciIcinde(find.text('Kripto')), findsOneWidget);
     expect(find.text('Güncelle'), findsOneWidget);
-  });
-
-  testWidgets('bayrak kapalı: eski çip satırı, ızgara yok', (tester) async {
-    await _ac(tester, bayraklar: const {});
-    expect(find.byType(TurSeciciIzgara), findsNothing);
-    expect(_seciciIcinde(find.byType(Wrap)), findsOneWidget);
-    expect(find.text('BORSA VE FON'), findsNothing);
-    expect(find.text('Ekle'), findsOneWidget);
   });
 
   for (final (ad, tema) in [
