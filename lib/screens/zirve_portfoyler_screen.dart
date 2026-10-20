@@ -8,6 +8,7 @@ import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
 import '../services/yasal_onay_service.dart';
 import '../services/zirve_kiyas.dart';
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/polling.dart';
@@ -353,6 +354,12 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       backgroundColor: context.c.surface1,
       isScrollControlled: true,
       useSafeArea: true,
+      // Tavan şart (yasin 2026-10-21: "açılıyor ama kapatılamıyor, geri de
+      // gidilemiyor"): fon/BES içi eklenince gövde ekrandan uzadı, sayfa tam
+      // boy açıldı. Üstte dokunulacak boşluk kalmıyor, aşağı çekme jesti de
+      // içteki kaydırmaya gidiyordu. %90 tavan + başlıktaki kapat düğmesi.
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.9),
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -1357,6 +1364,13 @@ class _PortfoyAyrintisi extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                tooltip: context.l10n.close,
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(Icons.close_rounded, color: context.c.text58),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               ),
             ],
           ),

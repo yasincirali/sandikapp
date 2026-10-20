@@ -212,6 +212,16 @@ void main() {
           await tester.pump(const Duration(milliseconds: 300));
         }
         await cek('ayrinti');
+        // Uzun gövdede de sayfa kapanabilmeli (yasin 2026-10-21: "açılıyor
+        // ama kapatılamıyor"): tavan %90, başlıkta kapat düğmesi.
+        final sayfa = find.byType(BottomSheet);
+        expect(tester.getSize(sayfa).height,
+            lessThanOrEqualTo(tester.view.physicalSize.height / 2 * 0.9 + 1));
+        await tester.tap(find.byIcon(Icons.close_rounded));
+        for (var i = 0; i < 4; i++) {
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+        expect(sayfa, findsNothing);
       }
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 1));
