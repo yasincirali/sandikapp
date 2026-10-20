@@ -614,13 +614,23 @@ export function yurtIciSatirlari(
   return out;
 }
 
-/// truncgil'i bir kez çekip kayıt satırlarını döner.
-export async function yurtIciKotasyonlariCek(simdi: Date): Promise<YurtIciSatir[]> {
-  const veri = await tekrarDene(
-    () => fetchTruncgil(YURT_ICI_DENEME_ZAMAN_ASIMI_MS),
-    YURT_ICI_DENEME_BEKLEMELERI_MS,
-  );
-  return yurtIciSatirlari(veri, simdi);
+/// truncgil'i çekip kayıt satırlarını döner; kaynak düşerse ya da gövde
+/// hiç fiyat taşımıyorsa (kesik/boş yanıt) aynı turda yeniden dener.
+/// Kısmi gövde (bazı semboller eksik) kabul edilir: eksik sembol için
+/// nokta yazılmaz, tekrar istek atılmaz.
+export async function yurtIciKotasyonlariCek(
+  simdi: Date,
+  beklemeler: number[] = YURT_ICI_DENEME_BEKLEMELERI_MS,
+  uyu?: (ms: number) => Promise<void>,
+): Promise<YurtIciSatir[]> {
+  return await tekrarDene(async () => {
+    const satirlar = yurtIciSatirlari(
+      await fetchTruncgil(YURT_ICI_DENEME_ZAMAN_ASIMI_MS),
+      simdi,
+    );
+    if (satirlar.length === 0) throw new Error('truncgil: fiyat yok');
+    return satirlar;
+  }, beklemeler, uyu);
 }
 
 /// 2026-10-20 (Frankfurt ölçümü): 5 dakikalık turların ~%10'u truncgil

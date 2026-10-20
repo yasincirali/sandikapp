@@ -7,6 +7,7 @@ import {
   YURT_ICI_DENEME_BEKLEMELERI_MS,
   YURT_ICI_DENEME_ZAMAN_ASIMI_MS,
   YURT_ICI_SEMBOLLER,
+  yurtIciKotasyonlariCek,
   yurtIciSatirlari,
 } from '../functions/_shared/live_prices.ts';
 
@@ -74,4 +75,96 @@ Deno.test('deneme bütçesi pg_net 30 sn zaman aşımının altında kalır', ()
       (YURT_ICI_DENEME_BEKLEMELERI_MS.length + 1) +
     YURT_ICI_DENEME_BEKLEMELERI_MS.reduce((a, b) => a + b, 0);
   assertEquals(toplam < 30_000, true);
+});
+
+// ── Uçtan uca: gerçek `yurtIciKotasyonlariCek`, sahte truncgil ─────────────
+// `fetch` saplanır; her senaryo kaynağın gerçekte görülen bir arızasıdır.
+
+type Yanit = () => Promise<Response>;
+const tamGovde = JSON.stringify({
+  USD: { Buying: 41.5, Change: 0.1 },
+  YIA: { Buying: 5400, Change: -0.7 },
+});
+const ok: Yanit = () => Promise.resolve(new Response(tamGovde));
+const http = (s: number): Yanit => () =>
+  Promise.resolve(new Response('<html>hata</html>', { status: s }));
+const agHatasi: Yanit = () => Promise.reject(new TypeError('connection reset'));
+const zamanAsimi: Yanit = () =>
+  Promise.reject(new DOMException('signal timed out', 'TimeoutError'));
+
+async function senaryo(yanitlar: Yanit[]) {
+  const asil = globalThis.fetch;
+  let n = 0;
+  const beklemeler: number[] = [];
+  globalThis.fetch = () => yanitlar[n++]();
+  try {
+    const sonuc = await yurtIciKotasyonlariCek(
+      simdi,
+      YURT_ICI_DENEME_BEKLEMELERI_MS,
+      (ms) => {
+        beklemeler.push(ms);
+        return Promise.resolve();
+      },
+    );
+    return { sonuc, istek: n, beklemeler };
+  } finally {
+    globalThis.fetch = asil;
+  }
+}
+
+Deno.test('kaynak sağlam: tek istek, bekleme yok', async () => {
+  const r = await senaryo([ok]);
+  assertEquals(r.istek, 1);
+  assertEquals(r.beklemeler, []);
+  assertEquals(r.sonuc.map((s) => s.sembol).sort(), ['ALTIN_GRAM', 'USDTRY=X']);
+});
+
+for (
+  const [ad, ariza] of [
+    ['ağ hatası', agHatasi],
+    ['zaman aşımı', zamanAsimi],
+    ['HTTP 502', http(502)],
+    ['HTTP 429', http(429)],
+    ['200 ama HTML sayfası', () => Promise.resolve(new Response('<html/>'))],
+    ['200 ama boş gövde', () => Promise.resolve(new Response(''))],
+    ['200 ama fiyatsız JSON', () => Promise.resolve(new Response('{}'))],
+  ] as [string, Yanit][]
+) {
+  Deno.test(`${ad} bir kez → ikinci denemede yazılır`, async () => {
+    const r = await senaryo([ariza, ok]);
+    assertEquals(r.istek, 2);
+    assertEquals(r.beklemeler, [1_500]);
+    assertEquals(r.sonuc.length, 2);
+  });
+}
+
+Deno.test('iki arıza üst üste → üçüncü denemede yazılır', async () => {
+  const r = await senaryo([zamanAsimi, http(503), ok]);
+  assertEquals(r.istek, 3);
+  assertEquals(r.beklemeler, [1_500, 3_000]);
+  assertEquals(r.sonuc.length, 2);
+});
+
+Deno.test('üç deneme de düşerse atar, dördüncü istek atılmaz', async () => {
+  const asil = globalThis.fetch;
+  let n = 0;
+  globalThis.fetch = () => {
+    n++;
+    return agHatasi();
+  };
+  try {
+    await assertRejects(() =>
+      yurtIciKotasyonlariCek(simdi, [1, 2], () => Promise.resolve())
+    );
+    assertEquals(n, 3);
+  } finally {
+    globalThis.fetch = asil;
+  }
+});
+
+Deno.test('kesik gövde: kurtarılan fiyat yazılır, yeniden denenmez', async () => {
+  const kesik = '{"USD":{"Buying":41.5,"Change":0.1},"YIA":{"Buy';
+  const r = await senaryo([() => Promise.resolve(new Response(kesik))]);
+  assertEquals(r.istek, 1);
+  assertEquals(r.sonuc.map((s) => s.sembol), ['USDTRY=X']);
 });
