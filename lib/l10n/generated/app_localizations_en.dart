@@ -9152,4 +9152,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vkHepsiTamam => 'All set, your total is up to date.';
+
+  @override
+  String get onerAlarmBaslik => 'Set a price alert';
+
+  @override
+  String get onerAlarmAlt =>
+      'We\'ll let you know when an asset reaches your price';
+
+  @override
+  String get onerTakipBaslik => 'Watch before you buy';
+
+  @override
+  String get onerTakipAlt =>
+      'Follow stocks and funds without adding them to your portfolio';
+
+  @override
+  String get onerOrtakBaslik => 'Add a partner, track together';
+
+  @override
+  String get onerOrtakAlt =>
+      'See your partner\'s or family\'s portfolio next to yours';
+
+  @override
+  String get onerZirveBaslik => 'What\'s in the top portfolios?';
+
+  @override
+  String get onerZirveAlt =>
+      'See how the best-performing portfolios are allocated';
+
+  @override
+  String get onerKapat => 'Hide this suggestion';
 }

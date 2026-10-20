@@ -28,6 +28,7 @@ import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
+import '../widgets/ozellik_onerisi_karti.dart';
 import '../widgets/veri_kalitesi_seridi.dart';
 import '../widgets/ilk_varlik_vitrini.dart';
 import '../utils/sandik_snack.dart';
@@ -1022,6 +1023,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (benGorunumu)
             SliverToBoxAdapter(
               child: VeriKalitesiSeridi(
+                  padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
+            ),
+          // Özellik önerisi (2026-10-20): kullanılmayan bir özelliğe götüren
+          // tek kart (alarm, takip, ortak, Zirve). "Bilgi eksik" satırı
+          // görünürken susar; ana ekranda aynı anda tek dürtü.
+          if (benGorunumu)
+            SliverToBoxAdapter(
+              child: OzellikOnerisiKarti(
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
             ),
           // Radar şeridi (Balina S7-A, 2026-10-05): yalnız kendi görünümünde

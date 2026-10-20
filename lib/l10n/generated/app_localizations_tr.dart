@@ -9067,4 +9067,35 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get vkHepsiTamam => 'Bilgiler tamam, toplamın güncel.';
+
+  @override
+  String get onerAlarmBaslik => 'Fiyat alarmı kur';
+
+  @override
+  String get onerAlarmAlt =>
+      'Bir varlığın belirlediğin fiyata gelince haber verelim';
+
+  @override
+  String get onerTakipBaslik => 'Almadan önce takibe al';
+
+  @override
+  String get onerTakipAlt =>
+      'Merak ettiğin hisse ve fonları portföye eklemeden izle';
+
+  @override
+  String get onerOrtakBaslik => 'Ortak ekle, birlikte izleyin';
+
+  @override
+  String get onerOrtakAlt =>
+      'Eşinin ya da ailenin portföyünü seninkiyle tek ekranda gör';
+
+  @override
+  String get onerZirveBaslik => 'Zirvedeki portföylerde ne var?';
+
+  @override
+  String get onerZirveAlt =>
+      'En iyi getiren portföylerin varlık dağılımına göz at';
+
+  @override
+  String get onerKapat => 'Bu öneriyi gizle';
 }

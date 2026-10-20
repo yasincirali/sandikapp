@@ -332,6 +332,16 @@ final veriKalitesiKapatilanProvider =
     NotifierProvider<_KumePrefNotifier, Set<String>>(
         () => _KumePrefNotifier(PrefKeys.veriKalitesiKapatilan));
 
+/// Ana ekran özellik önerisi: kapatılan/dokunulan öneriler ve son kapatma
+/// zamanı (epoch ms, 0 = hiç). `ozellik_onerisi.dart`.
+final ozellikOnerisiKapatilanProvider =
+    NotifierProvider<_KumePrefNotifier, Set<String>>(
+        () => _KumePrefNotifier(PrefKeys.ozellikOnerisiKapatilan));
+final ozellikOnerisiSonKapatmaProvider =
+    NotifierProvider<_IntPrefNotifier, int>(() => _IntPrefNotifier(
+        PrefKeys.ozellikOnerisiSonKapatma, 0,
+        perUser: true));
+
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
   final bool defaultValue;

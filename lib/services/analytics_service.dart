@@ -396,6 +396,13 @@ class AnalyticsService {
 
   Future<void> logDemoOpened() => _log('demo_opened');
 
+  /// Ana ekran özellik önerisi kartı (`ozellik_onerisi.dart`): hangi öneri,
+  /// `ac` (dokundu) ya da `kapat`. Gösterim sayılmaz: her açılışta olay
+  /// basardı; dönüşüm `ac` / ekran görüntülemeyle okunur.
+  Future<void> logOzellikOnerisi(
+          {required String oneri, required String eylem}) =>
+      _log('ozellik_onerisi', {'oneri': oneri, 'eylem': eylem});
+
   /// Demo'dan hesap oluşturmaya geçti (`from`: hangi eylem tetikledi).
   Future<void> logDemoConverted({required String from}) =>
       _log('demo_converted', {'from': from});

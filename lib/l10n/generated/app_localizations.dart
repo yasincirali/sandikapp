@@ -15064,6 +15064,60 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bilgiler tamam, toplamın güncel.'**
   String get vkHepsiTamam;
+
+  /// No description provided for @onerAlarmBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat alarmı kur'**
+  String get onerAlarmBaslik;
+
+  /// No description provided for @onerAlarmAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir varlığın belirlediğin fiyata gelince haber verelim'**
+  String get onerAlarmAlt;
+
+  /// No description provided for @onerTakipBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Almadan önce takibe al'**
+  String get onerTakipBaslik;
+
+  /// No description provided for @onerTakipAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Merak ettiğin hisse ve fonları portföye eklemeden izle'**
+  String get onerTakipAlt;
+
+  /// No description provided for @onerOrtakBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak ekle, birlikte izleyin'**
+  String get onerOrtakBaslik;
+
+  /// No description provided for @onerOrtakAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşinin ya da ailenin portföyünü seninkiyle tek ekranda gör'**
+  String get onerOrtakAlt;
+
+  /// No description provided for @onerZirveBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zirvedeki portföylerde ne var?'**
+  String get onerZirveBaslik;
+
+  /// No description provided for @onerZirveAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi getiren portföylerin varlık dağılımına göz at'**
+  String get onerZirveAlt;
+
+  /// No description provided for @onerKapat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu öneriyi gizle'**
+  String get onerKapat;
 }
 
 class _AppLocalizationsDelegate
