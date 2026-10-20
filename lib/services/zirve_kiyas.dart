@@ -297,15 +297,16 @@ abstract final class ZirveKiyas {
     return en;
   }
 
-  /// "En büyük fark altın: sende %18, onda %56."
+  /// "En büyük fark altın: sende %18, onda %55,7." — sayılar hemen altındaki
+  /// ayna satırlarıyla aynı biçimde ([pay]); cümle ile satır çelişmesin.
   static String enBuyukFarkCumlesi(
     Map<String, double> senPay,
     Map<String, double> zirvePay,
   ) {
     final f = enBuyukFark(senPay, zirvePay);
     if (f == null) return '';
-    return 'En büyük fark ${turAd(f.tur)}: sende %${f.sen.round()}, '
-        'onda %${f.zirve.round()}.';
+    return 'En büyük fark ${turAd(f.tur)}: sende ${pay(f.sen)}, '
+        'onda ${pay(f.zirve)}.';
   }
 
   // ── Fon kırılımı (0084) ────────────────────────────────────────────────
@@ -371,8 +372,15 @@ abstract final class ZirveKiyas {
     return parca.join(' · ');
   }
 
+  /// Pay sayısının TEK biçimi (2026-10-20 okunaklılık turu): en fazla bir
+  /// ondalık, sondaki sıfır yazılmaz — "%7", "%6", "%12,5". Eskiden 10'un
+  /// altı bir ondalıkla yazılıyordu; aynı listede "%7" ile "%6,0" yan yana
+  /// duruyordu.
   static String _payYazisi(double v) =>
-      fmtNum(v, digits: v < 10 ? 1 : 0);
+      fmtNumFlex((v * 10).round() / 10, maxDigits: 1);
+
+  /// "%21", "%6", "%12,5" — Zirve'deki her pay bu biçimle yazılır.
+  static String pay(double v) => '%${_payYazisi(v)}';
 
   // ── Varlık kırılımı (0158) ─────────────────────────────────────────────
 

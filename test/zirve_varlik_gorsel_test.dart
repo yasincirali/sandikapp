@@ -134,10 +134,11 @@ void main() {
     ('kilitli', Brightness.light, 1.0),
     ('acik', Brightness.light, 1.0),
     ('kilitli', Brightness.dark, 2.0),
+    ('acik', Brightness.dark, 2.0),
   ];
   for (final (hal, b, olcek) in durumlar) {
     testWidgets('zirve varlık — $hal ${b.name} ${olcek}x', (tester) async {
-      tester.view.physicalSize = Size(390 * 2, (olcek > 1 ? 1700 : 1100) * 2);
+      tester.view.physicalSize = Size(390 * 2, (olcek > 1 ? 2400 : 1400) * 2);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.reset);
       const k = Key('kok');
@@ -203,7 +204,8 @@ void main() {
           });
       await cek('liste');
       // Ayrıntı alt sayfası: tür satırlarının altında varlıklar.
-      final bag = find.textContaining('Varlık varlık dağılım');
+      final bag = find.textContaining(
+          RegExp('Varlık varlık dağılım|Tüm varlıklar|Tür tür dağılım'));
       if (bag.evaluate().isNotEmpty) {
         await tester.tap(bag.first);
         for (var i = 0; i < 8; i++) {

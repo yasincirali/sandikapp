@@ -11,7 +11,6 @@ import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/polling.dart';
-import '../utils/tr_format.dart' show fmtNum;
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_segment.dart';
@@ -20,10 +19,9 @@ import '../widgets/zirve_ayna_kiyas.dart';
 import '../widgets/zirve_cetveli.dart';
 import '../widgets/zirve_dagilim_seridi.dart';
 import '../widgets/zirve_donem_secici.dart';
-import '../widgets/zirve_fon_listesi.dart';
 import '../widgets/zirve_karti.dart';
 import '../widgets/zirve_riza_karti.dart';
-import '../widgets/zirve_varlik_listesi.dart';
+import '../widgets/zirve_varlik_siralamasi.dart';
 import 'paywall_screen.dart';
 import '../widgets/zorunlu_okuma.dart';
 
@@ -520,8 +518,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
         title: 'HERKES AYNI ÇİZGİDE',
         trailing: Text(
           'bir işarete dokun',
-          style: context.t.labelMedium
-              ?.copyWith(letterSpacing: 0, color: context.c.text36),
+          style: context.t.bodySmall?.copyWith(color: context.c.text58),
         ),
       ),
       const SizedBox(height: SandikSpace.xs),
@@ -536,15 +533,14 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
         yon: _yon,
         roi: seciliRoi,
         sira: seciliSatir?.rank,
-        baslik: senMi
-            ? 'Sen neye yatırmışsın?'
-            : '${seciliSatir.rank}. portföy neye yatırmış?',
+        baslik: senMi ? 'Senin portföyün' : '${seciliSatir.rank}. portföy',
         cumle: ZirveKiyas.dagilimCumlesi(seciliPay, sen: senMi) + getiriEki,
         pay: seciliPay,
         fonDetay: seciliFon,
         varlikDetay: seciliVarlik,
         benzerlik: senMi ? null : seciliSatir.benzerlik,
         onAyrinti: () => _ayrintiAc(seciliSatir),
+        onKilitli: _premiumAc,
       ),
       if (hedef != null) ...[
         const SizedBox(height: SandikSpace.lg),
@@ -681,7 +677,7 @@ class _Hucre extends StatelessWidget {
               const SizedBox(width: SandikSpace.xs2),
               Text(
                 etiket,
-                style: context.t.labelSmall?.copyWith(
+                style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: context.c.text58,
                 ),
@@ -714,10 +710,11 @@ class _Hucre extends StatelessWidget {
             ),
           Text(
             alt,
-            maxLines: 2,
-            style: context.t.labelMedium?.copyWith(
-              letterSpacing: 0,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.bodySmall?.copyWith(
               color: context.c.text58,
+              height: 1.3,
             ),
           ),
         ],
@@ -789,6 +786,7 @@ class _SeciliPortfoy extends StatelessWidget {
     required this.varlikDetay,
     required this.benzerlik,
     required this.onAyrinti,
+    required this.onKilitli,
   });
 
   /// Seçili işaretin anahtarı — yenilenen parçaların anahtarı.
@@ -809,6 +807,9 @@ class _SeciliPortfoy extends StatelessWidget {
   /// Seninle ortak varlıkların toplam payı (0158); kendi satırında null.
   final double? benzerlik;
   final VoidCallback onAyrinti;
+
+  /// Kilitli varlık satırına dokunuş → paywall (0158).
+  final VoidCallback onKilitli;
 
   Widget _kaydir(BuildContext context, String parca, Widget child) {
     return AnimatedSwitcher(
@@ -836,14 +837,18 @@ class _SeciliPortfoy extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = roi;
+    final ayrintiVar = ZirveVarlikSiralamasi.doluMu(fonDetay, varlikDetay);
     return Semantics(
       button: true,
-      label: '$baslik Ayrıntı için dokun.',
+      label: '$baslik. $cumle Ayrıntı için dokun.',
       child: SandikCard(
         onTap: onAyrinti,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Üst: kim + getirisi. Getiri büyük yazı — kartın ilk okunan
+            // şeyi (2026-10-20 okunaklılık turu; eskiden başlığın yanında
+            // 13 pt'ydi).
             Row(
               children: [
                 Expanded(
@@ -857,7 +862,9 @@ class _SeciliPortfoy extends StatelessWidget {
                         Expanded(
                           child: Text(
                             baslik,
-                            style: context.t.bodyMedium?.copyWith(
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: context.c.text90,
                             ),
@@ -874,77 +881,132 @@ class _SeciliPortfoy extends StatelessWidget {
                     curve: SandikMotion.glide,
                     builder: (context, v, _) => Text(
                       ZirveKiyas.isaretliYuzde(v),
-                      style: context.t.numSmall.copyWith(
-                        fontWeight: FontWeight.w800,
+                      style: context.t.numMedium.copyWith(
                         color: v < 0 ? context.c.loss : context.c.gain,
                       ),
                     ),
                   ),
-                Icon(Icons.chevron_right_rounded, color: context.c.text36),
               ],
             ),
-            const SizedBox(height: SandikSpace.sm),
-            _kaydir(
-              context,
-              'cumle',
+            const SizedBox(height: SandikSpace.smd),
+            // Şerit + altındaki tür etiketleri dağılımı zaten söylüyor;
+            // aynı bilgiyi tekrar eden cümle görünmez, ekran okuyucuya
+            // kartın etiketinde okunur.
+            ExcludeSemantics(child: ZirveDagilimSeridi(pay: pay)),
+            if (ayrintiVar) ...[
+              const SizedBox(height: SandikSpace.md),
               Text(
-                cumle,
-                style: context.t.bodyMedium?.copyWith(
-                  color: context.c.text90,
-                  height: 1.4,
+                'En büyük varlıkları',
+                style: context.t.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: context.c.text58,
                 ),
               ),
-            ),
-            const SizedBox(height: SandikSpace.smd),
-            ZirveDagilimSeridi(pay: pay),
-            if (fonDetay.isNotEmpty || varlikDetay.isNotEmpty) ...[
-              const SizedBox(height: SandikSpace.sm),
+              const SizedBox(height: SandikSpace.xs),
               _kaydir(
                 context,
-                'fon',
-                // Fon dışı kırılım yoksa (eski rıza / eski sunucu) bugünkü
-                // "Fonlar:" satırı aynen.
-                Text(
-                  varlikDetay.isEmpty
-                      ? 'Fonlar: ${ZirveKiyas.fonOzeti(fonDetay)}'
-                      : 'Varlıklar: '
-                          '${ZirveKiyas.ayrintiOzeti(fonDetay, varlikDetay)}',
-                  semanticsLabel: varlikDetay.isEmpty
-                      ? null
-                      : 'Varlıklar: ${ZirveKiyas.ayrintiOzeti(fonDetay, varlikDetay).replaceAll(ZirveKiyas.kilitliYer, 'kilitli varlık')}',
-                  style: context.t.labelMedium?.copyWith(
-                    letterSpacing: 0,
-                    color: context.c.text58,
-                  ),
+                'varliklar',
+                ZirveVarlikSiralamasi(
+                  fonDetay: fonDetay,
+                  varlikDetay: varlikDetay,
+                  enFazla: 5,
+                  onKilitli: onKilitli,
                 ),
               ),
             ],
             if (benzerlik != null) ...[
-              const SizedBox(height: SandikSpace.xs),
+              const SizedBox(height: SandikSpace.smd),
               _kaydir(
                 context,
                 'benzerlik',
-                Text(
-                  ZirveKiyas.benzerlikCumlesi(benzerlik!),
-                  style: context.t.labelMedium?.copyWith(
-                    letterSpacing: 0,
-                    color: context.c.text90,
-                  ),
-                ),
+                _BenzerlikRozeti(benzerlik: benzerlik!, onTap: onAyrinti),
               ),
             ],
-            const SizedBox(height: SandikSpace.sm),
-            Text(
-              fonDetay.isEmpty && varlikDetay.isEmpty
-                  ? 'Tür tür dağılım ve senden farkı ›'
-                  : 'Varlık varlık dağılım ve seninle ortakları ›',
-              style: context.t.labelMedium?.copyWith(
-                letterSpacing: 0,
-                fontWeight: FontWeight.w700,
-                color: context.c.amberText,
-              ),
+            const SizedBox(height: SandikSpace.smd),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    ayrintiVar
+                        ? 'Tüm varlıklar ve seninle ortakları'
+                        : 'Tür tür dağılım',
+                    style: context.t.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.c.amberText,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: context.c.amberText),
+              ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Seninle %49 benzer" — kartta tek vurgulu satır (0158). Sayı herkese
+/// açık; hangi varlıkların ortak olduğu alt sayfada (Premium ya da ilk
+/// üye). Ortak yoksa vurgusuz düz cümle: vurgu yalnız bir şey varken.
+class _BenzerlikRozeti extends StatelessWidget {
+  const _BenzerlikRozeti({required this.benzerlik, required this.onTap});
+
+  final double benzerlik;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (benzerlik < 0.05) {
+      return Text(
+        'Seninle ortak varlığı yok.',
+        style: context.t.bodySmall?.copyWith(color: context.c.text58),
+      );
+    }
+    final yuzde = ZirveKiyas.pay(benzerlik);
+    return Semantics(
+      button: true,
+      label: 'Seninle $yuzde benzer. Ortak varlıkları gör.',
+      excludeSemantics: true,
+      child: Material(
+        color: context.c.amberFill.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(SandikRadius.md),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.smd, vertical: SandikSpace.sm),
+              child: Row(
+                children: [
+                  Icon(Icons.join_inner_rounded,
+                      size: SandikSpace.lgs, color: context.c.amberText),
+                  const SizedBox(width: SandikSpace.sm),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          text: 'Seninle $yuzde benzer',
+                          style: context.t.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: context.c.text90,
+                          ),
+                        ),
+                        TextSpan(
+                          text: '  ortak varlıkları gör',
+                          style: context.t.bodySmall?.copyWith(
+                            color: context.c.amberText,
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -1003,9 +1065,8 @@ class _AltNot extends StatelessWidget {
         return Text(
           '${havuzMetni}anlık görüntü günde iki kez · kimlik, miktar ve TL '
           'paylaşılmaz',
-          style: context.t.labelMedium?.copyWith(
-            letterSpacing: 0,
-            color: context.c.text36,
+          style: context.t.bodySmall?.copyWith(
+            color: context.c.text58,
             height: 1.4,
           ),
         );
@@ -1255,7 +1316,6 @@ class _PortfoyAyrintisi extends StatelessWidget {
     final altBaslik = roi == null
         ? 'Getirin henüz hesaplanamıyor'
         : '${donem.ad} ${ZirveKiyas.getiriParcasi(roi)}$siraEki';
-    final turler = ZirveKiyas.sirali(pay);
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(SandikSpace.lg, SandikSpace.sm,
@@ -1285,8 +1345,8 @@ class _PortfoyAyrintisi extends StatelessWidget {
                     ),
                     Text(
                       altBaslik,
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
+                      style: context.t.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                         color: roi == null
                             ? context.c.text58
                             : roi < 0
@@ -1300,48 +1360,26 @@ class _PortfoyAyrintisi extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SandikSpace.md),
-          Text(
-            ZirveKiyas.dagilimCumlesi(pay, sen: senMi),
-            style: context.t.bodyMedium?.copyWith(
-              color: context.c.text90,
-              height: 1.4,
-            ),
+          Semantics(
+            label: ZirveKiyas.dagilimCumlesi(pay, sen: senMi),
+            excludeSemantics: true,
+            child: ZirveDagilimSeridi(pay: pay, canlandir: false),
           ),
-          const SizedBox(height: SandikSpace.smd),
-          ZirveDagilimSeridi(pay: pay, canlandir: false),
           const SizedBox(height: SandikSpace.lg),
-          const SandikSectionHeader(title: 'TÜR TÜR'),
+          // Tür başlığı + o türün varlıkları, hepsi aynı ölçekte (toplam
+          // portföyün payı; çubuk en büyük kaleme göre). Kıyas ("senden
+          // farkı") ana ekranda; burada tekrar edilmez (2026-10-20).
+          const SandikSectionHeader(title: 'VARLIKLAR'),
           const SizedBox(height: SandikSpace.sm),
-          for (final t in turler) ...[
-            _TurSatiri(tur: t.tur, pay: t.pay),
-            const SizedBox(height: SandikSpace.sm),
-            // Fon satırının altında hangi fonlar: kod, resmi TEFAS adı,
-            // portföy içindeki payı; zirve portföyünde "sende %X" kıyası.
-            if (t.tur == 'fon' && fonDetay.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.only(left: SandikSpace.md),
-                // Kıyas aşağıdaki aynada; burada yalnız bu portföyün
-                // fonları ve resmi adları.
-                child: ZirveFonListesi(fonDetay: fonDetay),
-              ),
-              const SizedBox(height: SandikSpace.xs2),
-            ],
-            // Fon dışı türlerde hangi varlıklar (0158): sembol, payı.
-            // Vitrinde en büyük kalem açık, gerisi kilitli satır.
-            if (t.tur != 'fon' && (varlikDetay[t.tur]?.isNotEmpty ?? false)) ...[
-              Padding(
-                padding: const EdgeInsets.only(left: SandikSpace.md),
-                child: ZirveVarlikListesi(
-                  tur: t.tur,
-                  detay: varlikDetay[t.tur]!,
-                  onKilitli: onKilitli,
-                ),
-              ),
-              const SizedBox(height: SandikSpace.xs2),
-            ],
-          ],
+          ZirveVarlikSiralamasi(
+            pay: pay,
+            fonDetay: fonDetay,
+            varlikDetay: varlikDetay,
+            gruplu: true,
+            onKilitli: onKilitli,
+          ),
           if (!senMi && s.benzerlik != null) ...[
-            const SizedBox(height: SandikSpace.smd),
+            const SizedBox(height: SandikSpace.sm),
             const SandikSectionHeader(title: 'SENİNLE ORTAK'),
             const SizedBox(height: SandikSpace.sm),
             _OrtakVarliklar(
@@ -1355,20 +1393,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
               ),
               onKilitli: onKilitli,
             ),
-          ],
-          if (!senMi) ...[
-            const SizedBox(height: SandikSpace.smd),
-            const SandikSectionHeader(title: 'SENDEN FARKI'),
-            const SizedBox(height: SandikSpace.sm),
-            ZirveAynaKiyas(
-              senPay: senPay,
-              senFon: senFonDetay,
-              zirvePay: pay,
-              zirveFon: fonDetay,
-              zirveAd: '${s.rank}. portföy',
-              senRoi: senRoi,
-              zirveRoi: s.roiPct,
-            ),
+            const SizedBox(height: SandikSpace.md),
           ],
           const SizedBox(height: SandikSpace.sm),
           Text(
@@ -1386,9 +1411,8 @@ class _PortfoyAyrintisi extends StatelessWidget {
                 : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
                     'paylaşılmaz; yalnız tür payı ve varlıkların kodu ile '
                     'payı. Fon adları resmi TEFAS listesinden.',
-            style: context.t.labelMedium?.copyWith(
-              letterSpacing: 0,
-              color: context.c.text36,
+            style: context.t.bodySmall?.copyWith(
+              color: context.c.text58,
               height: 1.4,
             ),
           ),
@@ -1446,25 +1470,25 @@ class _OrtakVarliklar extends StatelessWidget {
         for (final o in ortak) ...[
           Semantics(
             label: '${o.tur == 'fon' ? o.kod : ZirveKiyas.varlikAdi(o.kod)}: '
-                'sende yüzde ${fmtNum(o.sen, digits: 1)}, onda yüzde '
-                '${fmtNum(o.zirve, digits: 1)}',
+                'sende ${ZirveKiyas.pay(o.sen)}, onda ${ZirveKiyas.pay(o.zirve)}',
             excludeSemantics: true,
-            child: Row(
+            // Wrap: büyük yazıda sayılar alt satıra iner, ad kesilmez.
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: SandikSpace.sm,
               children: [
-                Expanded(
-                  child: Text(
-                    o.tur == 'fon' ? o.kod : ZirveKiyas.varlikAdi(o.kod),
-                    style: context.t.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: context.c.text90,
-                    ),
+                Text(
+                  o.tur == 'fon' ? o.kod : ZirveKiyas.varlikAdi(o.kod),
+                  style: context.t.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: context.c.text90,
                   ),
                 ),
                 Text(
-                  'sende %${fmtNum(o.sen, digits: o.sen < 10 ? 1 : 0)} · '
-                  'onda %${fmtNum(o.zirve, digits: o.zirve < 10 ? 1 : 0)}',
-                  style: context.t.labelMedium?.copyWith(
-                    letterSpacing: 0,
+                  'sende ${ZirveKiyas.pay(o.sen)} · '
+                  'onda ${ZirveKiyas.pay(o.zirve)}',
+                  style: context.t.numSmall.copyWith(
                     color: context.c.text58,
                   ),
                 ),
@@ -1518,64 +1542,6 @@ class _YeniRizaKarti extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _TurSatiri extends StatelessWidget {
-  const _TurSatiri({required this.tur, required this.pay});
-
-  final String tur;
-  final double pay;
-
-  @override
-  Widget build(BuildContext context) {
-    final renk = ZirveDagilimSeridi.renk(context, tur);
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: renk,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: SandikSpace.sm),
-        SizedBox(
-          width: 64,
-          child: Text(
-            ZirveDagilimSeridi.etiket(context, tur),
-            style: context.t.bodyMedium?.copyWith(color: context.c.text90),
-          ),
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(SandikRadius.sm),
-            child: Container(
-              height: 8,
-              color: context.c.overlay,
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: (pay / 100).clamp(0.0, 1.0),
-                child: Container(color: renk),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: SandikSpace.sm),
-        SizedBox(
-          width: 44,
-          child: Text(
-            '%${pay.round()}',
-            textAlign: TextAlign.right,
-            style: context.t.numSmall.copyWith(
-              fontWeight: FontWeight.w700,
-              color: context.c.text90,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
