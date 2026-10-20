@@ -60,7 +60,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
   Ayrıca ham `Colors.*` / `fontSize:` üretir — tasarım sistemi kuralı geçerlidir.
 - `test-master` → Flutter/Dart bilmez (k6/Artillery/OWASP odaklı).
 - `secure-code-guardian` → örnekleri web (Zod, CORS/CSP). Buradaki karşılığı
-  **RLS + GRANT + `requireCronSecret()`**.
+  **RLS + GRANT + `cronSecretZorunlu()` → `cronYetkisiVarMi()`**.
 - Web kaynaklı tasarım skill'leri → CSS/React sözdizimi **alınmaz**, yargısı alınır.
 
 Gerekçeler ve kurulmayanların listesi: `.claude/skills/SKILLS_README.md`.
@@ -201,7 +201,7 @@ soran yerler (hareket listesi, `HistoryService`, dönem hesapları) ham defteri 
 **Sunucu.** Şema kaynağı `supabase/migrations/` (kök `supabase_schema.sql` yalnızca nottur).
 Her `SECURITY DEFINER` fonksiyonunda `SET search_path`. GRANT ve RLS ayrı şeylerdir; yeni
 RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 örnek). Cron
-edge function'ları `requireCronSecret()` ile **fail-closed**; secret'sız `if (secret)` bloğu
+edge function'ları önce `cronSecretZorunlu()`, sonra `cronYetkisiVarMi()` ile **fail-closed** (`cron_fail_closed_test`); secret'sız `if (secret)` bloğu
 yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dönme**.
 
 **İki sunucu birebir (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt Supabase
