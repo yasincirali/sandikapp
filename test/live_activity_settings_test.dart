@@ -219,6 +219,10 @@ void main() {
         addTearDown(tester.view.reset);
         await tester.pumpWidget(host());
         await tester.pumpAndSettle();
+        // Tek tek anahtarlar "Ayrıntılı" grubunda (2026-10-20); grup
+        // açılınca da BİLDİRİMLER bölümünün içinde kalmalı.
+        await tester.tap(find.text('AYRINTILI'));
+        await tester.pumpAndSettle();
 
         final bildirimler = tester.getTopLeft(find.text('BİLDİRİMLER')).dy;
         final sinyalAyarlari =

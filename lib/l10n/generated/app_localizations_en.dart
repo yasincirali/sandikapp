@@ -7507,6 +7507,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your categories have their own settings. Picking an option applies it to every category.';
 
   @override
+  String get bildirimOnAyarSoru => 'How often should we notify you?';
+
+  @override
+  String get bildirimOnAyarAzAciklama =>
+      'Only the price alerts you set and the daily brief. Signals, period summaries and partner activity stay quiet.';
+
+  @override
+  String get bildirimOnAyarDengeliAciklama =>
+      'Recommended: your alerts, the daily brief, weekly and monthly summaries, strong signals twice a day.';
+
+  @override
+  String get bildirimOnAyarCokAciklama =>
+      'Everything on; signals every 2 hours from 50% confidence.';
+
+  @override
+  String get bildirimOnAyarOzelAciklama =>
+      'You\'ve set notifications one by one. Picking an option applies it to all of them.';
+
+  @override
+  String get bildirimAyrintiliUpper => 'DETAILED';
+
+  @override
+  String get bildirimAyrintiliSemantik => 'Set notifications one by one';
+
+  @override
   String get s5KategoriyeGoreOzellestir => 'Customise by category';
 
   @override

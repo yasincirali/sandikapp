@@ -938,11 +938,13 @@ List<_Adim> _adimlariKur() {
       // `performans_ayar_sade` (2026-10-04; bayrak 2026-10-05'te kalktı):
       // bölümler gruplu ve Performans'ın "Bugünkü portföyle" görünümü
       // Görünüm'de; metin bölüm adlarıyla anlatır ki kullanıcı ekranda aynı
-      // başlıkları bulsun.
+      // başlıkları bulsun. 2026-10-20: Bildirimler tek soruyla açılır
+      // (Az · Dengeli · Çok), tek tek anahtarlar "Ayrıntılı"da.
       govde: 'Dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
           'yatırımcı seviyesi ve "Bugünkü portföyle" görünümü), '
-          'Bildirimler (sinyal ayarları, fiyat alarmları, günlük '
-          'brifingin saati, sessiz saatler), Hesap & Güvenlik '
+          'Bildirimler (tek dokunuşla Az, Dengeli ya da Çok; fiyat '
+          'alarmları, günlük brifingin saati, sessiz saatler; tek tek '
+          'ayarlar "Ayrıntılı"da), Hesap & Güvenlik '
           '(kullanıcı adın, kilit, kayıtlı cihazların, verilerin) ve '
           'Yardım & Yasal. '
           'Bu turu da buradan yeniden izleyebilirsin.',

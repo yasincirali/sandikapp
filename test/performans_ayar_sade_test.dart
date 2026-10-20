@@ -270,6 +270,7 @@ void main() {
         _tr.textSize,
       ],
       SettingsBolum.bildirimler: [
+        _tr.bildirimOnAyarSoru,
         _tr.signalSettings,
         _tr.priceAlerts,
         _tr.quietHours,
@@ -301,6 +302,12 @@ void main() {
         await _boyut(tester, 1200, h: 4000);
         await tester.pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: e.key)));
         await _bekle(tester);
+        // Bildirimler'in tek tek anahtarları "Ayrıntılı" grubunda
+        // (2026-10-20): katlıdır ama kaybolmamalı.
+        if (e.key == SettingsBolum.bildirimler) {
+          await tester.tap(find.text(_tr.bildirimAyrintiliUpper));
+          await tester.pumpAndSettle();
+        }
         for (final t in e.value) {
           expect(find.text(t), findsAtLeastNWidgets(1),
               reason: '${e.key.name}: "$t" kayboldu');

@@ -7445,6 +7445,31 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.';
 
   @override
+  String get bildirimOnAyarSoru => 'Bildirimler ne sıklıkta gelsin?';
+
+  @override
+  String get bildirimOnAyarAzAciklama =>
+      'Yalnız kurduğun fiyat alarmları ve günlük brifing. Sinyaller, dönem özeti ve ortak hareketi susar.';
+
+  @override
+  String get bildirimOnAyarDengeliAciklama =>
+      'Önerilen: alarmların, günlük brifing, haftalık ve aylık özet, günde 2 kez güçlü sinyaller.';
+
+  @override
+  String get bildirimOnAyarCokAciklama =>
+      'Hepsi açık; sinyaller 2 saatte bir, %50 güvenden itibaren.';
+
+  @override
+  String get bildirimOnAyarOzelAciklama =>
+      'Bildirimleri tek tek ayarlamışsın. Bir seçenek seçersen hepsine uygulanır.';
+
+  @override
+  String get bildirimAyrintiliUpper => 'AYRINTILI';
+
+  @override
+  String get bildirimAyrintiliSemantik => 'Bildirimleri tek tek ayarla';
+
+  @override
   String get s5KategoriyeGoreOzellestir => 'Kategoriye göre özelleştir';
 
   @override

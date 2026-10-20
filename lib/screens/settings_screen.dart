@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/destek.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
+import '../providers/bildirim_on_ayar_provider.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -17,6 +18,7 @@ import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
+import '../widgets/bildirim_on_ayar_karti.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/seviye_anketi.dart';
 import '../widgets/yenilikler_sheet.dart';
@@ -99,6 +101,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Hub'ın "Gelişmiş" grubu açık mı. Kapalı başlar: içindekiler teknik ve
   /// nadir; ilk bakışta yer kaplamasın.
   bool _gelismisAcik = false;
+
+  /// Bildirimler'in "Ayrıntılı" grubu açık mı. Kapalı başlar: üstteki ön
+  /// ayar (Az · Dengeli · Çok) çoğu kullanıcıya yeter (2026-10-20).
+  bool _bildirimAyrintiAcik = false;
 
   // Ayarlar sadeleştirmesi (sadeleştirme listesi madde 10, 2026-10-04):
   // bölümler net başlıklı gruplara ayrılır, teknik satırlar hub'da katlanır
@@ -749,9 +755,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ];
   }
 
+  /// Bildirimler bölümü (2026-10-20 düzeni): üstte tek soru — Az · Dengeli
+  /// · Çok ([BildirimOnAyarKarti], müşteri gözüyle rapor fikir 4). Altında
+  /// yalnız "ne zaman / ne" satırları (alarmlar, sessiz saatler, brifing
+  /// saati) açık durur; tek tek anahtarlar katlanır "Ayrıntılı"ya iner.
+  /// HİÇBİR anahtar kalkmadı, tercih anahtarları değişmedi — yalnız sıra.
   List<Widget> _bildirimler() => [
             SandikSectionHeader(title: context.l10n.notificationsUpper),
             const SizedBox(height: 12),
+            BildirimOnAyarKarti(
+              onPaywall: () {
+                AnalyticsService.instance
+                    .logPremiumGateShown(feature: 'bildirim_on_ayar');
+                PaywallScreen.show(context, source: 'signal_on_ayar');
+              },
+            ),
+            const SizedBox(height: 12),
+            ..._bildirimZamanSatirlari(),
+            const SizedBox(height: 16),
+            _GelismisGrup(
+              acik: _bildirimAyrintiAcik,
+              onDegis: () => setState(
+                  () => _bildirimAyrintiAcik = !_bildirimAyrintiAcik),
+              baslik: context.l10n.bildirimAyrintiliUpper,
+              semantik: context.l10n.bildirimAyrintiliSemantik,
+              children: _bildirimAnahtarlari(),
+            ),
+            const SizedBox(height: 28),
+
+            // -- CANLI ETKİNLİKLER ---------------------------------
+            //
+            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
+            // Etkinlikler"): kullanıcı gördüğü adla arar.
+            //
+            // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
+            // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
+            // Etkinlik'in ne göstereceğini belirler ve o özellik
+            // kapalıyken hiçbir şey ifade etmez. Android'in ayar
+            // kılavuzu da bunu söylüyor -- bir ayar, ait olduğu
+            // ÖZELLİĞİN altında durur.
+            //
+            // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
+            // ve `sync` ilk satırda döner (bkz. LiveActivityService).
+            // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
+            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+              SandikSectionHeader(title: context.l10n.liveActivitiesUpper),
+              const SizedBox(height: 12),
+              const _LiveActivitySection(),
+              const SizedBox(height: 28),
+            ],
+      ];
+
+  /// Ön ayarın dokunmadığı, "ne zaman / ne" satırları: kullanıcının kendi
+  /// kurduğu alarmlar, sessiz saatler ve brifing saati. Az'da bile çalışan
+  /// şeyler oldukları için katlanmaz.
+  List<Widget> _bildirimZamanSatirlari() => [
+            // Alarm KURMA yeri varlık ekranıdır (zil ikonu); burada yalnızca
+            // liste. Alt satır aktif sayısını söyler ki hub'dan bakan kişi
+            // ekrana girmeden durumu görsün.
+            _SettingsTile(
+              icon: Icons.add_alert_outlined,
+              title: context.l10n.priceAlerts,
+              subtitle: () {
+                final aktif = ref
+                        .watch(priceAlertsProvider)
+                        .valueOrNull
+                        ?.where((a) => a.isActive)
+                        .length ??
+                    0;
+                return aktif == 0
+                    ? context.l10n.alertSetFromAssetScreen
+                    : '$aktif aktif alarm';
+              }(),
+              onTap: () => pushGuarded(
+                context,
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'price_alerts'), builder: (_) => const PriceAlertsScreen()),
+              ),
+            ),
+            const _QuietHoursTile(),
+            const _BriefSlotTile(),
+      ];
+
+  /// Tek tek bildirim anahtarları — "Ayrıntılı" altında.
+  List<Widget> _bildirimAnahtarlari() => [
             // Teknik sinyaller TEK satır (2026-09-21): anahtar bildirimi
             // açar/kapar, satırın kendisi ayarlara götürür. Eskiden iki
             // ayrı satırdı (bildirim anahtarı + ayar bağlantısı) ve aynı
@@ -779,30 +865,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
-            // Alarm KURMA yeri varlık ekranıdır (zil ikonu); burada yalnızca
-            // liste. Alt satır aktif sayısını söyler ki hub'dan bakan kişi
-            // ekrana girmeden durumu görsün.
-            _SettingsTile(
-              icon: Icons.add_alert_outlined,
-              title: context.l10n.priceAlerts,
-              subtitle: () {
-                final aktif = ref
-                        .watch(priceAlertsProvider)
-                        .valueOrNull
-                        ?.where((a) => a.isActive)
-                        .length ??
-                    0;
-                return aktif == 0
-                    ? context.l10n.alertSetFromAssetScreen
-                    : '$aktif aktif alarm';
-              }(),
-              onTap: () => pushGuarded(
-                context,
-                adaptiveRoute<void>(settings: const RouteSettings(name: 'price_alerts'), builder: (_) => const PriceAlertsScreen()),
-              ),
-            ),
-            const _QuietHoursTile(),
-            const SizedBox(height: 8),
             // Ortak bildirim anahtarları BURADA kalır, ortak yönetiminin
             // (Profil) yanına taşınmaz (sadeleştirme değerlendirmesi
             // 2026-10-04): kullanıcı "bildirimleri kapat"ı tek listede arar;
@@ -822,9 +884,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // yaramaz ve "bu ne?" sorusu doğurur.
             if (ref.watch(activePartnersProvider).isNotEmpty)
               const _PartnerActivitySwitch(),
-            const _BriefSlotTile(),
-            // Brifing saatinin hemen altında: ikisi de "proaktif" push ve
-            // kullanıcı ikisini aynı yerde arar. Bayraksız (yasin
+            // Dönem özeti: ön ayarın yazdığı üç değerden biri (Az kapatır).
+            // Brifing saati 2026-10-20'de katlanmayan üst gruba çıktı.
+            // Bayraksız (yasin
             // 2026-10-17: "her özelliği kapatma, flag gerekirse ben
             // belirteceğim"); sunucu sütunu 0052'den beri okuyor.
             const _OzetBildirimiSwitch(),
@@ -834,30 +896,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // hatırlatma anlamsız olurdu.
             if (RemoteConfigService.instance.birikimSerisi)
               const _BirikimHatirlatmaTile(),
-            const SizedBox(height: 28),
-
-            // -- CANLI ETKİNLİKLER ---------------------------------
-            //
-            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
-            // Etkinlikler"): kullanıcı gördüğü adla arar.
-            //
-            // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
-            // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
-            // Etkinlik'in ne göstereceğini belirler ve o özellik
-            // kapalıyken hiçbir şey ifade etmez. Android'in ayar
-            // kılavuzu da bunu söylüyor -- bir ayar, ait olduğu
-            // ÖZELLİĞİN altında durur.
-            //
-            // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
-            // ve `sync` ilk satırda döner (bkz. LiveActivityService).
-            // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
-            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              SandikSectionHeader(title: context.l10n.liveActivitiesUpper),
-              const SizedBox(height: 12),
-              const _LiveActivitySection(),
-              const SizedBox(height: 28),
-            ],
-
       ];
 
   List<Widget> _hesap() {
@@ -1095,11 +1133,19 @@ class _GelismisGrup extends StatelessWidget {
     required this.acik,
     required this.onDegis,
     required this.children,
+    this.baslik,
+    this.semantik,
   });
 
   final bool acik;
   final VoidCallback onDegis;
   final List<Widget> children;
+
+  /// Başlık ve ekran okuyucu etiketi; verilmezse hub'ın "Gelişmiş"i.
+  /// Bildirimler'in "Ayrıntılı" grubu da aynı kabuğu kullanır (2026-10-20)
+  /// — iki ayrı katlanır başlık, iki ayrı hareket demekti.
+  final String? baslik;
+  final String? semantik;
 
   @override
   Widget build(BuildContext context) {
@@ -1109,14 +1155,14 @@ class _GelismisGrup extends StatelessWidget {
         Semantics(
           button: true,
           expanded: acik,
-          label: context.l10n.settingsAdvancedSemantics,
+          label: semantik ?? context.l10n.settingsAdvancedSemantics,
           child: ExcludeSemantics(
             child: CupertinoButton(
               minimumSize: SandikTouch.minSize,
               padding: EdgeInsets.zero,
               onPressed: onDegis,
               child: SandikSectionHeader(
-                title: context.l10n.settingsAdvancedUpper,
+                title: baslik ?? context.l10n.settingsAdvancedUpper,
                 trailing: SandikAcilirOk(
                   acik: acik,
                   child: Icon(Icons.expand_more_rounded,
@@ -2380,68 +2426,50 @@ class _BirikimHatirlatmaTileState
 /// `_BoolPrefNotifier` değil — ağ okuması gerektiriyor. Ortak hareketi
 /// (0049) ve dönem özeti (0052) aynı kabuğu paylaşır: ikinci bir kopya,
 /// okuma/yazma/geri alma davranışının sessizce ayrışması demekti.
-class _SunucuTercihAnahtari extends ConsumerStatefulWidget {
+///
+/// 2026-10-20: değer artık anahtarın kendi `State`'inde değil, ortak
+/// [sunucuBildirimTercihleriProvider]'da — üstteki ön ayar kartı aynı iki
+/// sütuna yazıyor; ayrı kopya olsaydı "Ayrıntılı" açıkken ön ayar seçilince
+/// anahtar eski değerde kalırdı. Okuma bitene kadar AÇIK görünür (sunucu
+/// varsayılanı; "kapalı → açık" sıçraması yanıltırdı), yazma iyimser ve
+/// hatada geri alınır.
+class _SunucuTercihAnahtari extends ConsumerWidget {
   const _SunucuTercihAnahtari({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.oku,
-    required this.yaz,
+    required this.ortakHareketi,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
-  final Future<bool> Function(String userId) oku;
-  final Future<void> Function(String userId, bool value) yaz;
+
+  /// `true` → `partner_activity_push`, `false` → `weekly_summary_push`.
+  final bool ortakHareketi;
 
   @override
-  ConsumerState<_SunucuTercihAnahtari> createState() =>
-      _SunucuTercihAnahtariState();
-}
-
-class _SunucuTercihAnahtariState extends ConsumerState<_SunucuTercihAnahtari> {
-  /// null = henüz okunmadı. Okuma bitene kadar anahtar AÇIK görünür çünkü
-  /// sunucu varsayılanı da açık; "kapalı → açık" sıçraması yanıltırdı.
-  bool? _deger;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _oku());
-  }
-
-  Future<void> _oku() async {
-    final me = ref.read(authProvider).valueOrNull;
-    if (me == null) return;
-    final v = await widget.oku(me.id);
-    if (mounted) setState(() => _deger = v);
-  }
-
-  Future<void> _yaz(bool v) async {
-    final me = ref.read(authProvider).valueOrNull;
-    if (me == null) return;
-    final onceki = _deger;
-    // İyimser güncelleme: anahtar hemen hareket etsin, hata olursa geri alsın.
-    setState(() => _deger = v);
-    try {
-      await widget.yaz(me.id, v);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _deger = onceki);
-      sandikSnack(context, 'Ayar kaydedilemedi, tekrar dene.',
-          kind: SandikSnackKind.error);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(sunucuBildirimTercihleriProvider).valueOrNull;
+    final deger =
+        t == null ? true : (ortakHareketi ? t.ortakHareketi : t.donemOzeti);
     return _SwitchTile(
-      icon: widget.icon,
-      title: widget.title,
-      subtitle: widget.subtitle,
-      value: _deger ?? true,
-      onChanged: _yaz,
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      value: deger,
+      onChanged: (v) async {
+        final n = ref.read(sunucuBildirimTercihleriProvider.notifier);
+        try {
+          await (ortakHareketi
+              ? n.ayarla(ortakHareketi: v)
+              : n.ayarla(donemOzeti: v));
+        } catch (_) {
+          if (!context.mounted) return;
+          sandikSnack(context, 'Ayar kaydedilemedi, tekrar dene.',
+              kind: SandikSnackKind.error);
+        }
+      },
     );
   }
 }
@@ -2459,8 +2487,7 @@ class _PartnerActivitySwitch extends StatelessWidget {
       icon: Icons.favorite_border_rounded,
       title: context.l10n.partnerActivityNotifications,
       subtitle: context.l10n.partnerActivityNotificationsSubtitle,
-      oku: SupabaseService.instance.getPartnerActivityPush,
-      yaz: SupabaseService.instance.setPartnerActivityPush,
+      ortakHareketi: true,
     );
   }
 }
@@ -2482,8 +2509,7 @@ class _OzetBildirimiSwitch extends StatelessWidget {
       icon: Icons.event_note_outlined,
       title: context.l10n.summaryPushTitle,
       subtitle: context.l10n.summaryPushSubtitle,
-      oku: SupabaseService.instance.getWeeklySummaryPush,
-      yaz: SupabaseService.instance.setWeeklySummaryPush,
+      ortakHareketi: false,
     );
   }
 }

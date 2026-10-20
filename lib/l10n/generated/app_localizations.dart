@@ -12419,6 +12419,48 @@ abstract class AppLocalizations {
   /// **'Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.'**
   String get s5OnAyarOzelAciklama;
 
+  /// No description provided for @bildirimOnAyarSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler ne sıklıkta gelsin?'**
+  String get bildirimOnAyarSoru;
+
+  /// No description provided for @bildirimOnAyarAzAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız kurduğun fiyat alarmları ve günlük brifing. Sinyaller, dönem özeti ve ortak hareketi susar.'**
+  String get bildirimOnAyarAzAciklama;
+
+  /// No description provided for @bildirimOnAyarDengeliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önerilen: alarmların, günlük brifing, haftalık ve aylık özet, günde 2 kez güçlü sinyaller.'**
+  String get bildirimOnAyarDengeliAciklama;
+
+  /// No description provided for @bildirimOnAyarCokAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hepsi açık; sinyaller 2 saatte bir, %50 güvenden itibaren.'**
+  String get bildirimOnAyarCokAciklama;
+
+  /// No description provided for @bildirimOnAyarOzelAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimleri tek tek ayarlamışsın. Bir seçenek seçersen hepsine uygulanır.'**
+  String get bildirimOnAyarOzelAciklama;
+
+  /// No description provided for @bildirimAyrintiliUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'AYRINTILI'**
+  String get bildirimAyrintiliUpper;
+
+  /// No description provided for @bildirimAyrintiliSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimleri tek tek ayarla'**
+  String get bildirimAyrintiliSemantik;
+
   /// No description provided for @s5KategoriyeGoreOzellestir.
   ///
   /// In tr, this message translates to:
