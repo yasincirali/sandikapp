@@ -747,14 +747,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           Icon(Icons.insights_rounded, size: 40, color: p.text36),
           const SizedBox(height: 12),
           Text(context.l10n.addAssetsToCompare,
-              style: TextStyle(color: p.text58, fontSize: 14)),
+              style: context.t.titleMedium?.copyWith(color: p.text58)),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               context.l10n.addAssetsToCompareBody,
               textAlign: TextAlign.center,
-              style: TextStyle(color: p.text36, fontSize: 12),
+              style: context.t.titleSmall
+                  ?.copyWith(color: p.text36, fontWeight: FontWeight.w400),
             ),
           ),
         ],
@@ -835,9 +836,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                                   Flexible(
                                     child: Text(_displayTicker(hit),
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
+                                        style: context.t.titleMedium?.copyWith(
                                             color: p.text90,
-                                            fontSize: 14,
                                             fontWeight: FontWeight.w600)),
                                   ),
                                   if (isOwned) ...[
@@ -854,8 +854,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                                             SandikRadius.sm),
                                       ),
                                       child: Text(context.l10n.inMyPortfolio,
-                                          style: TextStyle(
-                                              fontSize: 9,
+                                          // 9 → 11 pt (HIG alt sınırı, 2026-10-20).
+                                          style: context.t.labelLarge?.copyWith(
                                               fontWeight: FontWeight.w700,
                                               color: p.amberText)),
                                     ),
@@ -864,8 +864,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                               ),
                               Text(hit.name,
                                   overflow: TextOverflow.ellipsis,
-                                  style:
-                                      TextStyle(color: p.text58, fontSize: 11)),
+                                  style: context.t.bodySmall
+                                      ?.copyWith(color: p.text58)),
                             ],
                           ),
                         ),
@@ -879,7 +879,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 const CustomLoadingIndicator(size: 16)
               else if (isFailed)
                 Text(context.l10n.noDataShort,
-                    style: TextStyle(color: p.text36, fontSize: 11))
+                    style: context.t.bodySmall?.copyWith(color: p.text36))
               else if (norm != null)
                 _returnBadge(p, norm.totalReturnPct),
               // Varlık sayfası: bu varlığın kendi fiyat grafiği ve dönem
@@ -942,8 +942,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
               foregroundColor: p.amberText,
               side: BorderSide(color: p.hairline),
               padding: const EdgeInsets.symmetric(vertical: 8),
-              textStyle:
-                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              textStyle: context.t.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -995,7 +995,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         backgroundColor: background,
         foregroundColor: foreground,
         padding: const EdgeInsets.symmetric(vertical: 8),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        textStyle:
+            context.t.titleSmall?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -1022,12 +1023,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(isPos ? '▲' : '▼', style: TextStyle(color: color, fontSize: 9)),
+        // Yön işareti 9 → 11 pt (HIG alt sınırı, 2026-10-20); yön ayrıca
+        // işaretle de okunur, yalnız renkle değil.
+        Text(isPos ? '▲' : '▼',
+            style: context.t.bodySmall?.copyWith(color: color)),
         const SizedBox(width: 3),
         Text(
           fmtPct(pct.abs(), digits: 2),
-          style: TextStyle(
-              color: color, fontSize: 13, fontWeight: FontWeight.w700),
+          style: context.t.bodyMedium
+              ?.copyWith(color: color, fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -1277,7 +1281,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   Widget _disclaimer(SandikPalette p) {
     return Text(
       context.l10n.comparisonDisclaimer,
-      style: TextStyle(color: p.text36, fontSize: 11, height: 1.4),
+      style: context.t.bodySmall?.copyWith(color: p.text36, height: 1.4),
     );
   }
 }
@@ -1379,9 +1383,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
         padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 6),
         child: Text(
           text,
-          style: TextStyle(
+          style: context.t.labelMedium?.copyWith(
             color: p.text36,
-            fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.6,
           ),
@@ -1398,14 +1401,16 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
         // Portföy serilerinde sanal ticker (PORTFOLIO:MINE) kullanıcıya
         // gösterilmez — anlamsız bir teknik dize olurdu.
         isPortfolio ? _portfolioTitle(h) : h.ticker,
-        style: TextStyle(
-            color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+        style: context.t.titleMedium
+            ?.copyWith(color: p.text90, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(h.name,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: p.text58, fontSize: 12)),
-      trailing: Text(h.source, style: TextStyle(color: p.text36, fontSize: 11)),
+          style: context.t.titleSmall
+              ?.copyWith(color: p.text58, fontWeight: FontWeight.w400)),
+      trailing: Text(h.source,
+          style: context.t.bodySmall?.copyWith(color: p.text36)),
       onTap: () => Navigator.pop(context, h),
     );
   }
@@ -1454,7 +1459,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                   style: TextStyle(color: p.text90),
                   decoration: InputDecoration(
                     hintText: context.l10n.searchAssetsHint,
-                    hintStyle: TextStyle(color: p.text36, fontSize: 14),
+                    hintStyle:
+                        context.t.titleMedium?.copyWith(color: p.text36),
                     prefixIcon: Icon(Icons.search_rounded, color: p.text58),
                     // Dolgu ve çerçeve tema varsayılanından
                     // (`inputDecorationTheme` = `inputFill` kuralı).
@@ -1484,8 +1490,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
                       child: Text(
                         context.l10n.portfolioSeriesNote,
-                        style: TextStyle(
-                            color: p.text36, fontSize: 11, height: 1.4),
+                        style: context.t.bodySmall
+                            ?.copyWith(color: p.text36, height: 1.4),
                       ),
                     ),
                   ],

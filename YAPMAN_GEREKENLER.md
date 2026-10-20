@@ -12,6 +12,24 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-20 İyileştirme raporu: sunucu tarafı (0159 + iki fonksiyon)
+
+Rapor: https://claude.ai/artifact/UpzWDoUeGUn8yBozCCVde6
+
+- [ ] PR birleşince Actions › **Supabase deploy** (main, hedef `ikisi`,
+      migrations: true, functions: `portfoy-yorumla,ekstre-esle`). Sıra önemli
+      değil ama migration önce gider: iki fonksiyon 0159'un `ai_hiz_kapisi` ve
+      `ekstre_sablon_hata_bildir` RPC'lerini çağırır; RPC yoksa AI isteği 503
+      döner (para harcanmaz, kullanıcı "şu an olmadı" görür).
+- [ ] Deploy'dan sonra her iki projede bir kez (SQL Editor, tek ifade):
+      `vacuum full public.snapshots;` — 0159 35 günden eski anlık görüntüleri
+      günde bir noktaya indirir; silinen yer diske ancak vacuum'la döner.
+- [ ] Bilgi: `supabase-deploy.yml`'in `sql` girdisi artık gerçekten salt okunur
+      (`read_only`), tek ifade kabul eder ve e-posta/telefon gibi kişisel veri
+      kolonu adı geçen sorguyu çalıştırmaz (log herkese açık).
+- Eski sürümler etkilenmez: `db_logs` tavanı hata fırlatmaz, sessizce atlar;
+  anlık görüntü okuyan yüzeyler pencerenin ilk/son değerini kullanır.
+
 ## ⏳ 2026-10-17 Dönem özeti anahtarı (bayraksız) + takip listesinde fon hareketi
 
 - [x] Remote Config'te bir şey yapma: anahtar bayraksız geldi (yasin

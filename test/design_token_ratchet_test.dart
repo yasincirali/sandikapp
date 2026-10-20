@@ -40,8 +40,9 @@ void main() {
   test('ham fontSize: satır sayısı artmamalı', () {
     final hits = linesMatching(RegExp(r'fontSize:'));
     // 2026-09-13: 181. Hedef: 7 kademeli ölçek → context.t.* (Faz 2).
-    // 2026-10-20: gerçek 152 (~29'u PDF yazıcıları); eşik gerçeğe çekildi.
-    expect(hits.length, lessThanOrEqualTo(152),
+    // 2026-10-20: gerçek 152 (~29'u PDF yazıcıları); eşik gerçeğe çekildi,
+    // aynı gün karşılaştırma ekranının 17 ham boyutu token'a geçti → 135.
+    expect(hits.length, lessThanOrEqualTo(135),
         reason: 'context.t.* kullan (ya da SandikTypography ölçeğine ekle):\n'
             '${hits.join('\n')}');
   });

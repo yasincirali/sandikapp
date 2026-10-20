@@ -170,7 +170,9 @@ Liste satırının başındaki tür noktası `VarlikRozeti`'dir (takip listesi,
 arama): bayrak açıkken aynı rozet, kapalıyken 8pt nokta. Yeni varlık listesi
 kendi noktasını çizmez. Varlık sayfası başlığına rozet konmaz (sembol zaten
 büyük yazılı).
-Material `*_rounded` ailesi. Aynı glif iki ailede yazılmaz. Gezinti oku
+Material `*_rounded` ailesi. Aynı glif iki ailede yazılmaz. Aç/kapa ikonu
+(yıldız, beğeni, göz, onay) `SandikIkonGecisi` ile yerinde değişir; tek
+karede atlamaz (2026-10-20). Gezinti oku
 `chevron_right_rounded`, rengi `text36`.
 
 ## 5. Kilit testleri
@@ -217,8 +219,9 @@ eklenir.
 7. **Sayı değişimi hareketi.** Fiyat ve toplamlar anında değişiyor; yalnız
    özet kartında renk vurgusu var. Öneri: canlı fiyat değişiminde
    `DegisimVurgusu` her yerde.
-8. **İskelet → içerik geçişi.** Her yerde sert kesme. Öneri: `state`
-   süresinde çapraz solma (tek sarmalayıcı).
+8. ~~**İskelet → içerik geçişi.**~~ Yapıldı: `SandikYuklemeGecisi` /
+   `SandikIcerikGecisi` (~23 dosya); son büyük ada portföy yorumu kartıydı
+   (2026-10-20). Yeni yüzey bunları kullanır.
 9. **Sekme içeriği değişimi.** Altı farklı davranış var (anında, solma,
    solma+kayma, liste solması, yay, TabBarView kayması). Tek kural: içerik
    değişimi `state` solma.
