@@ -34,7 +34,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 |---|---|
 | Flutter UI / widget / ekran | `flutter-architecture`, `flutter-adaptive-ui`, `flutter-expert` ⚠️ |
 | Navigasyon | `flutter-navigation` (**`flutter-expert` GoRouter referansı değil**) |
-| Animasyon / hareket | `flutter-animations`, `animate`, `apple-design` |
+| Animasyon / hareket | `flutter-animations`, `animate`, `apple-design`; denetim/eleştiri `design-motion-principles` |
 | Görsel tasarım / cila | `emil-design-eng`, `ui-ux-pro-max`, `frontend-design` |
 | Flutter testi | `flutter-testing` (**`test-master` değil**) |
 | Test *stratejisi* / kapsam boşluğu | `test-master` |
@@ -60,7 +60,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
   Ayrıca ham `Colors.*` / `fontSize:` üretir — tasarım sistemi kuralı geçerlidir.
 - `test-master` → Flutter/Dart bilmez (k6/Artillery/OWASP odaklı).
 - `secure-code-guardian` → örnekleri web (Zod, CORS/CSP). Buradaki karşılığı
-  **RLS + GRANT + `requireCronSecret()`**.
+  **RLS + GRANT + `cronSecretZorunlu()` → `cronYetkisiVarMi()`**.
 - Web kaynaklı tasarım skill'leri → CSS/React sözdizimi **alınmaz**, yargısı alınır.
 
 Gerekçeler ve kurulmayanların listesi: `.claude/skills/SKILLS_README.md`.
@@ -200,8 +200,14 @@ soran yerler (hareket listesi, `HistoryService`, dönem hesapları) ham defteri 
 
 **Sunucu.** Şema kaynağı `supabase/migrations/` (kök `supabase_schema.sql` yalnızca nottur).
 Her `SECURITY DEFINER` fonksiyonunda `SET search_path`. GRANT ve RLS ayrı şeylerdir; yeni
-RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 örnek). Cron
-edge function'ları `requireCronSecret()` ile **fail-closed**; secret'sız `if (secret)` bloğu
+RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 örnek).
+**Yeni tablo açık GRANT ister** (Supabase 2026-10-30; 0161): `public`'te yeni tablo/görünüm
+artık anon/authenticated/service_role'e otomatik açılmaz. Tabloyu yaratan migration aynı
+dosyada rol başına izni yazar: istemci okuyorsa `authenticated`, sunucu yazıyorsa
+`service_role`, anon'a yalnız giriş öncesi okunan tabloda; `serial` dizisine `usage, select`.
+Toptan `grant ... to anon` yazma. Kilit `tablo_izinleri_test`; 0000'ın taze-yığın bloğunu silme.
+Cron edge function'ları önce `cronSecretZorunlu()`, sonra `cronYetkisiVarMi()` ile
+**fail-closed** (`cron_fail_closed_test`); secret'sız `if (secret)` bloğu
 yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dönme**.
 
 **İki sunucu birebir (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt Supabase
@@ -367,6 +373,9 @@ Dördüncü sunucu **perplexity** (resmi `@perplexity-ai/mcp-server`, 2026-10-12
 web araması/araştırma): yalnız ortamda `PERPLEXITY_API_KEY` varsa kaydedilir;
 anahtar repoya/kayda yazılmaz. Sorgu için ağ politikasında `api.perplexity.ai`
 izinli olmalı. Yerel `.mcp.json`'da yok (yasin isterse kendi makinesine ekler).
+Beşinci sunucu **ruflo** (`ruflo@3.56.10`, eski adı claude-flow; 2026-10-20): ajan/swarm
+orkestrasyonu + kalıcı hafıza, ~360 araç. `-s user` kapsamında kaydedilir ki tüm repolardaki
+thread'ler görsün; sürüm sabit, kendi kendini güncelleme ve daemon kapalı. Yerel `.mcp.json`'da yok.
 
 ---
 **Son güncelleme:** 2026-10-10 (Apple HIG kontrolü kuralı; 2026-10-08: yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat

@@ -34,6 +34,8 @@ Yayın sırası (birleştirmeden sonra, iki sunucu; Frankfurt canlı):
 1. [ ] Supabase deploy: migration **0158** (Frankfurt → Tokyo). `ilk_uye`
        bayrağı o an rızası etkin olan herkese yazılır; geç kalınırsa arada
        katılan da "ilk üye" sayılır (zararsız, yalnız cömert).
+   Aynı deploy'da **0162** (`assets.maliyet_bilinmiyor`, boş geçilebilir
+       kolon; yoksa uygulama sütunsuz yeniden dener, eski build görmez).
 2. [ ] Ardından `leaderboard-snapshot` fonksiyonu (iki sunucu). Önce fonksiyon
        giderse yeni kolon olmadığı için yazma kırılır; sıra önemli.
 3. [ ] Yasal metin 1.13 (Gizlilik/KVKK), Koşullar 1.11, Açık Rıza 1.6, Zirve
@@ -42,6 +44,24 @@ Yayın sırası (birleştirmeden sonra, iki sunucu; Frankfurt canlı):
        onaylamayanın sembolleri başkasına görünmez.
 4. [ ] Karar bekliyor: Zirve rızasındaki sembol paylaşımı için avukat
        görüşü istenecek mi (açık "Zirve rızası avukat" kararı).
+
+## ⏳ 2026-10-20 İyileştirme raporu: sunucu tarafı (0159 + iki fonksiyon)
+
+Rapor: https://claude.ai/artifact/UpzWDoUeGUn8yBozCCVde6
+
+- [ ] PR birleşince Actions › **Supabase deploy** (main, hedef `ikisi`,
+      migrations: true, functions: `portfoy-yorumla,ekstre-esle`). Sıra önemli
+      değil ama migration önce gider: iki fonksiyon 0159'un `ai_hiz_kapisi` ve
+      `ekstre_sablon_hata_bildir` RPC'lerini çağırır; RPC yoksa AI isteği 503
+      döner (para harcanmaz, kullanıcı "şu an olmadı" görür).
+- [ ] Deploy'dan sonra her iki projede bir kez (SQL Editor, tek ifade):
+      `vacuum full public.snapshots;` — 0159 35 günden eski anlık görüntüleri
+      günde bir noktaya indirir; silinen yer diske ancak vacuum'la döner.
+- [ ] Bilgi: `supabase-deploy.yml`'in `sql` girdisi artık gerçekten salt okunur
+      (`read_only`), tek ifade kabul eder ve e-posta/telefon gibi kişisel veri
+      kolonu adı geçen sorguyu çalıştırmaz (log herkese açık).
+- Eski sürümler etkilenmez: `db_logs` tavanı hata fırlatmaz, sessizce atlar;
+  anlık görüntü okuyan yüzeyler pencerenin ilk/son değerini kullanır.
 
 ## ⏳ 2026-10-17 Dönem özeti anahtarı (bayraksız) + takip listesinde fon hareketi
 

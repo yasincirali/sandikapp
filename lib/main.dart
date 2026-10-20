@@ -300,10 +300,13 @@ void main() async {
         ),
       ),
     );
-    await NotificationService.instance.init(navigatorKey: appNavigatorKey);
     // Önceki açılışlardan kalan huni olayları (ilk açılış dahil) — Supabase
     // ancak burada hazır. Beklenmez.
     CrashReporter.arkaPlan(HuniKaydi.instance.bosalt(), reason: 'main.HuniKaydi.bosalt');
+    // TEK çağrı (2026-10-20): #171'in birleştirmesinde bunun üstünde
+    // ertelemesiz ikinci bir `init` kalmıştı; `init` ilk çağrıda kilitlendiği
+    // için iOS izni yine açılışta soruluyor, bayrak etkisiz kalıyordu.
+    // `bildirim_init_tek_cagri_test` kilitler.
     await NotificationService.instance.init(
       navigatorKey: appNavigatorKey,
       // İzin ilk varlıktan sonra sorulur; açılışta değil (sadeleştirme 2).

@@ -722,6 +722,30 @@ abstract class AppLocalizations {
   /// **'Henüz varlık eklenmemiş'**
   String get noAssetsYet;
 
+  /// No description provided for @addAssetVazgecBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Girdiklerin silinsin mi?'**
+  String get addAssetVazgecBaslik;
+
+  /// No description provided for @addAssetVazgecMetin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Miktar, komisyon ya da not kaydedilmedi. Çıkarsan kaybolur.'**
+  String get addAssetVazgecMetin;
+
+  /// No description provided for @addAssetVazgecSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sil ve çık'**
+  String get addAssetVazgecSil;
+
+  /// No description provided for @addAssetVazgecKal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Düzenlemeye dön'**
+  String get addAssetVazgecKal;
+
   /// No description provided for @addAssetTitle.
   ///
   /// In tr, this message translates to:
@@ -1825,6 +1849,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Örneğe devam et'**
   String get demoSaveSheetContinue;
+
+  /// No description provided for @fundsEmptyRetry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon listesi şu an alınamadı. Birazdan yeniden dene.'**
+  String get fundsEmptyRetry;
 
   /// No description provided for @fundsLoadFailed.
   ///

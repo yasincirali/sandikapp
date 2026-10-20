@@ -15,6 +15,7 @@ import 'package:portfoy_takip/widgets/sandik_baglam_menusu.dart';
 import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
+import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 
@@ -81,6 +82,13 @@ void main() {
                 FilledButton(onPressed: () {}, child: const Text('Devam')),
                 OutlinedButton(onPressed: () {}, child: const Text('Vazgeç')),
                 TextButton(onPressed: () {}, child: const Text('Ayrıntı')),
+                // Aç/kapa ikonu geçişi (2026-10-20): dokunma alanını taşıyan
+                // düğme verir, bileşen yalnız ikon.
+                IconButton(
+                  tooltip: 'Takibe al',
+                  onPressed: () {},
+                  icon: const SandikIkonGecisi(Icons.star_border_rounded),
+                ),
                 const SizedBox(height: SandikSpace.md),
                 SandikSegment(
                   adet: 3,

@@ -296,7 +296,48 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       _hizliSecimiUygula();
       _refreshPricePreview();
       _eurobondYukle();
+      // Vazgeç onayının ölçütü: açılıştaki (hızlı seçim uygulanmış) hâl.
+      _ilkMetinler = _kullaniciMetinleri();
+      _metinler.addListener(_kirliliginiGuncelle);
     });
+  }
+
+  // ── Vazgeç onayı (2026-10-20 incelemesi, HIG §6 "gerçek risk") ───────────
+  //
+  // Tam ekran modal; yarım girilmiş miktar/komisyon/not kaydırınca ya da
+  // geri basınca sessizce kayboluyordu (toplu eklemede koruma vardı, burada
+  // yoktu). Fiyat ÖLÇÜT DEĞİL: önizleme onu kendisi doldurur, kullanıcının
+  // emeği sayılmaz. Bayrak yalnız temiz↔kirli dönüşünde yeniden kurar;
+  // her tuşta ekranı yeniden kurmamak için `PopScope` bir
+  // `ValueListenableBuilder` ile sarılır, Scaffold `child` olarak geçer.
+  List<String>? _ilkMetinler;
+  final _kirli = ValueNotifier<bool>(false);
+
+  List<String> _kullaniciMetinleri() =>
+      [_quantity.text.trim(), _commission.text.trim(), _notes.text.trim()];
+
+  void _kirliliginiGuncelle() {
+    final ilk = _ilkMetinler;
+    if (ilk == null) return;
+    final simdi = _kullaniciMetinleri();
+    var farkli = false;
+    for (var i = 0; i < ilk.length; i++) {
+      if (ilk[i] != simdi[i]) farkli = true;
+    }
+    _kirli.value = farkli;
+  }
+
+  Future<void> _vazgecmeyiSor() async {
+    final l = context.l10n;
+    final sil = await showSandikConfirm(
+      context: context,
+      title: l.addAssetVazgecBaslik,
+      message: l.addAssetVazgecMetin,
+      confirmLabel: l.addAssetVazgecSil,
+      cancelLabel: l.addAssetVazgecKal,
+      destructive: true,
+    );
+    if (sil && mounted) Navigator.of(context).pop();
   }
 
   /// Düzenlenen / sepetteki eurobond lotunun sözleşmesini katalogdan yükler
@@ -364,6 +405,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   @override
   void dispose() {
+    _metinler.removeListener(_kirliliginiGuncelle);
+    _kirli.dispose();
     for (final c in [_name, _ticker, _quantity, _price, _notes, _commission]) {
       c.dispose();
     }
@@ -504,7 +547,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             ? context.l10n.varlikGuncelleBaslik
             : (_isEditing ? context.l10n.editAsset : context.l10n.addAssetTitle);
 
-    return Scaffold(
+    final ekran = Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
         titleWidget: Text(
@@ -691,6 +734,20 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ),
         ),
       ),
+      ),
+    );
+    return ValueListenableBuilder<bool>(
+      valueListenable: _kirli,
+      child: ekran,
+      builder: (context, kirli, child) => PopScope(
+        // Kayıt sürerken kapanmaz; kirliyken önce sorulur. Başarılı kayıt
+        // `Navigator.pop` ile kapatır — PopScope onu engellemez.
+        canPop: !kirli && !_saving,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop || _saving) return;
+          _vazgecmeyiSor();
+        },
+        child: child!,
       ),
     );
   }
@@ -3510,8 +3567,9 @@ class _TefasPickerState extends State<_TefasPicker> {
         if (funds.isNotEmpty) {
           setState(() => _funds = funds);
         } else {
-          // Fallback should have funds, but handle edge case
-          setState(() => _error = 'Fon listesi boş (fallback kullanılıyor)');
+          // Yedek katalog da boş geldiyse. Eskiden kullanıcıya geliştirici
+          // notu ("fallback kullanılıyor") gösteriliyordu (2026-10-20).
+          setState(() => _error = context.l10n.fundsEmptyRetry);
         }
       }
     } catch (e) {
@@ -3566,21 +3624,24 @@ class _TefasPickerState extends State<_TefasPicker> {
       },
       query: _q,
       cs: cs,
+      // Yükleniyor/hata görünümü kripto ve eurobond seçicileriyle aynı
+      // (token'lı renk/tipografi, l10n "Tekrar Dene"); 2026-10-20'ye kadar bu
+      // seçici Material renkleri ve ham `fontSize` taşıyordu.
       child: _funds == null && _error == null
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const CustomLoadingIndicator(),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: SandikSpace.smd),
                   Text(context.l10n.fundsLoading,
-                      style: TextStyle(color: cs.onSurfaceVariant)),
-                  const SizedBox(height: 6),
+                      style: context.t.bodyMedium
+                          ?.copyWith(color: context.c.text58)),
+                  const SizedBox(height: SandikSpace.xs),
                   Text(
                     context.l10n.pleaseWait,
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58),
                   ),
                 ],
               ),
@@ -3588,30 +3649,27 @@ class _TefasPickerState extends State<_TefasPicker> {
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(SandikSpace.lg),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.cloud_off_rounded,
-                            color: cs.error, size: 40),
-                        const SizedBox(height: 12),
-                        Text(
-                          context.l10n.fundsLoadFailed,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700, color: cs.onSurface),
-                        ),
-                        const SizedBox(height: 6),
+                            color: context.c.loss, size: 40),
+                        const SizedBox(height: SandikSpace.smd),
+                        Text(context.l10n.fundsLoadFailed,
+                            style: context.t.titleSmall),
+                        const SizedBox(height: SandikSpace.xs),
                         Text(
                           _error!,
-                          style: TextStyle(
-                              fontSize: 12, color: cs.onSurfaceVariant),
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text58),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: SandikSpace.md),
                         FilledButton.icon(
                           onPressed: _load,
                           icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: const Text('Tekrar Dene'),
+                          label: Text(context.l10n.retry),
                         ),
                       ],
                     ),

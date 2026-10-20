@@ -20,6 +20,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'hafta_ozeti_screen.dart' show HaftaRozetCipi;
+import '../widgets/sandik_ikon_gecisi.dart';
 
 /// Yapay zekâ notu (S17-B, 2026-10-05) — madde + kanıt çipi + geri bildirim.
 ///
@@ -300,18 +301,18 @@ class _Not extends StatelessWidget {
             IconButton(
               tooltip: l10n.anzYararli,
               onPressed: () => onOy(1),
-              icon: Icon(
+              icon: SandikIkonGecisi(
                   oy == 1 ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
-                  color: oy == 1 ? c.gain : c.text58),
+                  renk: oy == 1 ? c.gain : c.text58),
             ),
             IconButton(
               tooltip: l10n.anzYararsiz,
               onPressed: () => onOy(-1),
-              icon: Icon(
+              icon: SandikIkonGecisi(
                   oy == -1
                       ? Icons.thumb_down_alt
                       : Icons.thumb_down_alt_outlined,
-                  color: oy == -1 ? c.loss : c.text58),
+                  renk: oy == -1 ? c.loss : c.text58),
             ),
           ],
         ),

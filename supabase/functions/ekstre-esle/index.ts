@@ -141,8 +141,13 @@ Deno.serve(async (req: Request) => {
     const sablondan = sablonlaEsle(tablolarMetni, adaylar, sablonlar);
     if (sablondan.kullanilan.length > 0) {
       if (govde.sablonsuz === true) {
-        // Cihaz bu şablonların verdiği değerleri reddetti.
-        await db.rpc('ekstre_sablon_say', { p_izler: sablondan.kullanilan, p_hata: true });
+        // Cihaz bu şablonların verdiği değerleri reddetti. Her (şablon,
+        // kullanıcı) bir kez sayılır (0159): tek kullanıcı tekrar tekrar
+        // bildirip ortak şablonu herkes için kapatamaz.
+        const { error: be } = await db.rpc('ekstre_sablon_hata_bildir', {
+          p_izler: sablondan.kullanilan, p_user_id: userId,
+        });
+        if (be) console.error('ekstre-esle sablon hata', hataOzeti(be));
       } else {
         await db.rpc('ekstre_sablon_say', { p_izler: sablondan.kullanilan, p_hata: false });
         await db.from('ekstre_esleme_kaydi').insert({
@@ -177,6 +182,18 @@ Deno.serve(async (req: Request) => {
     const tavan = Number(Deno.env.get('EKSTRE_AYLIK_TAVAN_USD') ?? '10');
     if (tavan > 0 && harcama >= tavan) return jsonResponse({ ok: false, neden: 'tavan' }, 429);
 
+    // Atomik kapı (0159): sayım satırı modelden sonra yazıldığından eşzamanlı
+    // istekler günlük hakkı birlikte geçiyordu. Kapı okunamazsa model
+    // çağrılmaz (fail-closed).
+    const { data: izin, error: he } = await db.rpc('ai_hiz_kapisi', {
+      p_subject: userId, p_scope: 'ekstre_ai', p_max: hak, p_pencere_sn: 86400,
+    });
+    if (he) {
+      console.error('ekstre-esle hiz kapisi', hataOzeti(he));
+      return jsonResponse({ ok: false, neden: 'sunucu' }, 503);
+    }
+    if (izin !== true) return jsonResponse({ ok: false, neden: 'gunluk_hak' }, 429);
+
     const anthropic = new Anthropic({ apiKey });
     const sor = async (model: string) => {
       const yanit = await anthropic.messages.create(
@@ -208,9 +225,14 @@ Deno.serve(async (req: Request) => {
     const tablolar: Esleme[] = sonuc.tablolar;
 
     if (metinYolu) {
+      // Yalnız YENİ ya da kapanmış (hata ≥ sınır) şablon yazılır: çalışan bir
+      // ortak şablonun üstüne tek kullanıcının model çıktısı yazılmasın
+      // (2026-10-20). Yukarıda okunan `sablonlar` yalnız açık olanlardır.
       for (const y of yeniSablonlar(tablolarMetni, tablolar)) {
+        const iz = await izOzeti(y.iz);
+        if (sablonlar.has(iz)) continue;
         const { error: ye } = await db.from('ekstre_sablonlari').upsert({
-          iz: await izOzeti(y.iz),
+          iz,
           roller: y.sablon.roller,
           sutun_sayisi: y.sablon.sutun_sayisi,
           model: sonModel,
@@ -218,7 +240,13 @@ Deno.serve(async (req: Request) => {
           hata: 0,
         }, { onConflict: 'iz' });
         // Şablon yazılamazsa kullanıcı yine yanıtını alır; yalnız kod loga.
-        if (ye) console.error('ekstre-esle sablon', hataOzeti(ye));
+        if (ye) {
+          console.error('ekstre-esle sablon', hataOzeti(ye));
+        } else {
+          // Kapanmış şablonun yerine yenisi geldi: eski ret bildirimleri
+          // yeni sürümü saymasın.
+          await db.from('ekstre_sablon_hata_bildirimleri').delete().eq('iz', iz);
+        }
       }
     }
 

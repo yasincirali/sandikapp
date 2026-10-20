@@ -522,7 +522,12 @@ eşitle.
 
 ---
 
-## 🟡 AÇIK — Giriş alanı dolgusu on yerde hâlâ elle seçiliyor
+## ✅ KAPANDI — Giriş alanı dolgusu on yerde hâlâ elle seçiliyor
+
+> **2026-10-20 doğrulama (iyileştirme raporu):** `lib/` içinde tema dışı
+> `fillColor` grep'i 0; kural `input_fill_consistency_test` ile kilitli
+> (CLAUDE.md "Giriş alanı dolgusu temadan gelir"). Aşağıdaki metin kayıttır.
+
 
 **Ne:** 2026-09-25'te tema `inputFill` tek kaynak oldu (light: `surface2`,
 dark: siyah %18) ve üç arama alanı ona bağlandı (seçici alt sayfası, takibe

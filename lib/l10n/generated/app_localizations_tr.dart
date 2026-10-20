@@ -344,6 +344,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noAssetsYet => 'Henüz varlık eklenmemiş';
 
   @override
+  String get addAssetVazgecBaslik => 'Girdiklerin silinsin mi?';
+
+  @override
+  String get addAssetVazgecMetin =>
+      'Miktar, komisyon ya da not kaydedilmedi. Çıkarsan kaybolur.';
+
+  @override
+  String get addAssetVazgecSil => 'Sil ve çık';
+
+  @override
+  String get addAssetVazgecKal => 'Düzenlemeye dön';
+
+  @override
   String get addAssetTitle => 'Varlık Ekle';
 
   @override
@@ -998,6 +1011,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get demoSaveSheetContinue => 'Örneğe devam et';
+
+  @override
+  String get fundsEmptyRetry =>
+      'Fon listesi şu an alınamadı. Birazdan yeniden dene.';
 
   @override
   String get fundsLoadFailed => 'Fonlar yüklenemedi';

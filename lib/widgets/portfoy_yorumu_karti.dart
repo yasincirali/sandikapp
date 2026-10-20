@@ -485,9 +485,15 @@ class _YorumCercevesi extends StatelessWidget {
             ust!,
           ],
           const SizedBox(height: SandikSpace.md),
-          AnimatedSwitcher(
-            duration: SandikMotion.stateOf(context),
-            child: KeyedSubtree(key: govdeAnahtari, child: govde),
+          // İskelet → yorum geçişi (2026-10-20 hareket denetimi): eski
+          // `AnimatedSwitcher`'ın anahtarı yalnız sekmeydi; yükleniyor→veri
+          // aynı anahtarda kaldığı için sert kesiliyor, AI metninin boyu da
+          // tek karede zıplıyordu. Ortak geçiş hem dalı (tür) anahtara katar
+          // hem boy farkını `move` ile akıtır; hareketi azalt açıkken düz.
+          SandikIcerikGecisi(
+            anahtar: (govdeAnahtari, govde.runtimeType),
+            hizalama: AlignmentDirectional.topStart,
+            child: govde,
           ),
           if (hata != null) ...[
             const SizedBox(height: SandikSpace.sm),
