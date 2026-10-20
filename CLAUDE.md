@@ -60,7 +60,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
   Ayrıca ham `Colors.*` / `fontSize:` üretir — tasarım sistemi kuralı geçerlidir.
 - `test-master` → Flutter/Dart bilmez (k6/Artillery/OWASP odaklı).
 - `secure-code-guardian` → örnekleri web (Zod, CORS/CSP). Buradaki karşılığı
-  **RLS + GRANT + `requireCronSecret()`**.
+  **RLS + GRANT + `cronSecretZorunlu()` → `cronYetkisiVarMi()`**.
 - Web kaynaklı tasarım skill'leri → CSS/React sözdizimi **alınmaz**, yargısı alınır.
 
 Gerekçeler ve kurulmayanların listesi: `.claude/skills/SKILLS_README.md`.
@@ -206,8 +206,8 @@ artık anon/authenticated/service_role'e otomatik açılmaz. Tabloyu yaratan mig
 dosyada rol başına izni yazar: istemci okuyorsa `authenticated`, sunucu yazıyorsa
 `service_role`, anon'a yalnız giriş öncesi okunan tabloda; `serial` dizisine `usage, select`.
 Toptan `grant ... to anon` yazma. Kilit `tablo_izinleri_test`; 0000'ın taze-yığın bloğunu silme.
-Cron
-edge function'ları `requireCronSecret()` ile **fail-closed**; secret'sız `if (secret)` bloğu
+Cron edge function'ları önce `cronSecretZorunlu()`, sonra `cronYetkisiVarMi()` ile
+**fail-closed** (`cron_fail_closed_test`); secret'sız `if (secret)` bloğu
 yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dönme**.
 
 **İki sunucu birebir (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt Supabase

@@ -144,6 +144,20 @@ Deno.serve(async (req: Request) => {
     if (tavan > 0 && harcama >= tavan * 3) return jsonResponse({ ok: false, neden: 'tavan' }, 429);
     const model = tavan > 0 && harcama >= tavan ? TAVAN_MODELI : MODEL[p.tur];
 
+    // Atomik kapı (0159, 2026-10-20): yukarıdaki sayım satırı model
+    // yanıtından SONRA yazıldığı için aynı anda gelen istekler sayımı
+    // birlikte geçiyordu. `ai_hiz_kapisi` kullanıcı başına kilitleyip 24
+    // saatlik pencerede sayar ve yazar; modeli çağırmadan önce. Kapı
+    // okunamazsa para harcanmaz (fail-closed).
+    const { data: izin, error: he } = await db.rpc('ai_hiz_kapisi', {
+      p_subject: userId, p_scope: 'portfoy_yorum', p_max: hak, p_pencere_sn: 86400,
+    });
+    if (he) {
+      console.error('portfoy-yorumla hiz kapisi', he.code ?? 'hata');
+      return jsonResponse({ ok: false, neden: 'sunucu' }, 503);
+    }
+    if (izin !== true) return jsonResponse({ ok: false, neden: 'gunluk_hak' }, 429);
+
     const yanit = await new Anthropic({ apiKey }).messages.create(
       // deno-lint-ignore no-explicit-any
       istekGovdesi(p, model) as any,

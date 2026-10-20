@@ -64,7 +64,7 @@ on:
         type: boolean
         default: false
       sql:
-        description: "Salt okunur rapor sorgusu (Management API, tek SELECT). Vault DEĞERİ döndüren sorgu YAZMA — log'a düşer"
+        description: "Salt okunur rapor sorgusu (Management API, read_only, tek ifade). Kişisel veri/Vault değeri döndüren sorgu reddedilir — log herkese açık"
         type: string
         default: ""
 
@@ -197,13 +197,32 @@ jobs:
       # Salt okunur rapor — Management API'nin query ucu access token ile
       # çalışır, DB şifresi/pooler adresi gerektirmez. Çıktı Actions log'una
       # düşer: gizli değer döndüren sorgu yazma.
+      #
+      # 2026-10-20 incelemesi: "salt okunur" yalnız açıklamada yazıyordu;
+      # sorgu sahip yetkisiyle gidiyor, bir `delete`/`update` yazım hatası
+      # canlı veriyi değiştirebiliyordu ve repo herkese açık olduğu için
+      # kişisel veri (e-posta, telefon) dünyaya açık log'a düşebiliyordu.
+      # Üç kapı: (1) API'nin `read_only` bayrağı — sunucu yazmayı reddeder;
+      # (2) tek ifade — `;` ile ikinci ifade eklenemez (sondaki `;` serbest);
+      # (3) kişisel veri kolonu adı geçen sorgu çalışmaz — sayım için
+      # `count(*)` yeterli, kolonun kendisine gerek yok.
       - name: SQL raporu
         if: ${{ inputs.sql != '' }}
         env:
           SQL: ${{ inputs.sql }}
         run: |
-          body=$(jq -n --arg q "$SQL" '{query: $q}')
-          curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             -H "Content-Type: application/json"             -d "$body" | jq .
+          sorgu=$(printf '%s' "$SQL" | sed -e 's/[[:space:]]*;[[:space:]]*$//')
+          if printf '%s' "$sorgu" | grep -q ';'; then
+            echo "::error::Tek ifade çalışır; ';' ile ikinci ifade eklenemez."; exit 1
+          fi
+          if printf '%s' "$sorgu" | grep -Eiq '\b(email|phone|raw_user_meta_data|raw_app_meta_data|decrypted_secrets?|encrypted_password)\b'; then
+            echo "::error::Kişisel veri/gizli kolon adı geçen sorgu herkese açık log'a yazılmaz."; exit 1
+          fi
+          body=$(jq -n --arg q "$sorgu" '{query: $q, read_only: true}')
+          curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$body" | jq .
 
       - name: Edge Function'lar
         if: ${{ inputs.functions != 'none' && !inputs.dry_run }}
