@@ -5300,5 +5300,18 @@
   "onerOrtakAlt": "See your partner's or family's portfolio next to yours",
   "onerZirveBaslik": "What's in the top portfolios?",
   "onerZirveAlt": "See how the best-performing portfolios are allocated",
-  "onerKapat": "Hide this suggestion"
+  "onerKapat": "Hide this suggestion",
+  "ziBaslikUpper": "WITH FUNDS OPENED UP",
+  "ziOzetHisse": "Stocks show as {gorunen} in the list; {gercek} including what the funds hold.",
+  "@ziOzetHisse": {"placeholders": {"gorunen": {"type": "String"}, "gercek": {"type": "String"}}},
+  "ziDogrudan": "Direct",
+  "ziBilinmeyen": "Contents unknown",
+  "ziBilinmeyenAlt": "Funds without a published breakdown or under 1%",
+  "ziKaynak": "Fund and pension contents from TEFAS daily asset breakdown · {tarih}. Asset classes, not individual holdings.",
+  "@ziKaynak": {"placeholders": {"tarih": {"type": "String"}}},
+  "ziKilitBaslik": "Inside the funds",
+  "ziKilitGovde": "Where a top portfolio's money really sits once its funds and pension funds are opened up: stocks, bonds, gold, currency, crypto… From TEFAS daily breakdowns.",
+  "ziKilitSatir": "Inside the funds is Premium",
+  "ziSatirEtiket": "{ad} {pay}. {kaynaklar}",
+  "@ziSatirEtiket": {"placeholders": {"ad": {"type": "String"}, "pay": {"type": "String"}, "kaynaklar": {"type": "String"}}}
 }

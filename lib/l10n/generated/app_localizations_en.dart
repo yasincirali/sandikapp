@@ -9183,4 +9183,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onerKapat => 'Hide this suggestion';
+
+  @override
+  String get ziBaslikUpper => 'WITH FUNDS OPENED UP';
+
+  @override
+  String ziOzetHisse(String gorunen, String gercek) {
+    return 'Stocks show as $gorunen in the list; $gercek including what the funds hold.';
+  }
+
+  @override
+  String get ziDogrudan => 'Direct';
+
+  @override
+  String get ziBilinmeyen => 'Contents unknown';
+
+  @override
+  String get ziBilinmeyenAlt =>
+      'Funds without a published breakdown or under 1%';
+
+  @override
+  String ziKaynak(String tarih) {
+    return 'Fund and pension contents from TEFAS daily asset breakdown · $tarih. Asset classes, not individual holdings.';
+  }
+
+  @override
+  String get ziKilitBaslik => 'Inside the funds';
+
+  @override
+  String get ziKilitGovde =>
+      'Where a top portfolio\'s money really sits once its funds and pension funds are opened up: stocks, bonds, gold, currency, crypto… From TEFAS daily breakdowns.';
+
+  @override
+  String get ziKilitSatir => 'Inside the funds is Premium';
+
+  @override
+  String ziSatirEtiket(String ad, String pay, String kaynaklar) {
+    return '$ad $pay. $kaynaklar';
+  }
 }

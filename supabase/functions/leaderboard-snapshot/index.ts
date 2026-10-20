@@ -623,6 +623,16 @@ export const PIYASA_SEMBOLU = /^[A-Z0-9.=_:-]{1,20}$/;
 /// mevduatın "sembolü" banka/sözleşme bilgisidir. Altında seri `GC=F`
 /// olduğu için kod (`ALTIN_CEYREK`…) alt kategoriden çözülür.
 export function piyasaSembolu(lot: Lot, seriler: Map<string, Seri>): string | null {
+  // BES lotu bir TEFAS emeklilik fonudur; kodu fon kodu gibi kamuya açık
+  // kimliktir ve değerlemesi seriden ya da sözleşmeden gelse de kod aynıdır
+  // (yasin 2026-10-20: "beste de fonların bilgileri verilmeli"). Önceden
+  // seri/elle fiyat kapısına takılıp hep "diğer"e düşüyordu: 92 Zirve
+  // portföyünde BES türü vardı, hiçbirinde kod yoktu. Kural fonla aynı:
+  // kalıba uymayan serbest metin "diğer".
+  if (lot.type === 'bes') {
+    const kod = String(lot.ticker ?? '').trim().toUpperCase().replace(/^TEFAS:/, '');
+    return TEFAS_KODU.test(kod) ? kod : null;
+  }
   if (lot.is_manual_price === true || sozlesmeFiyatli(lot)) return null;
   let kod: string | null;
   if (lot.type === 'altin') {

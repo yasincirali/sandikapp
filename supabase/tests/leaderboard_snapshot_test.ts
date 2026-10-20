@@ -505,3 +505,15 @@ Deno.test('varlikDetayi: altın kodu alt kategoriden; %1 altı diğer; mevduat d
 Deno.test('varlikDetayi: yalnız fon varsa null', () => {
   assertEquals(varlikDetayi([fonLot('AFT', 1, 1)], new Map(), NOW), null);
 });
+
+Deno.test('varlikDetayi: BES fon kodu açık (elle/sözleşme fiyatlı olsa da); serbest metin diğer', () => {
+  const lots = [
+    { ...fonLot('AEA', 100, 10), type: 'bes' } as Lot, // 1000
+    { ...fonLot('TEFAS:ahe', 50, 10), type: 'bes' } as Lot, // 500
+    { ...fonLot('benim bes', 50, 10), type: 'bes' } as Lot, // 500 → diğer
+  ];
+  const d = varlikDetayi(lots, new Map(), NOW)!;
+  assertEquals(d, { bes: { AEA: 50, AHE: 25, DIGER: 25 } });
+  assertEquals(JSON.stringify(d).includes('benim'), false);
+  assertEquals(JSON.stringify(d).includes('notu'), false);
+});

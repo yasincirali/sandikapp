@@ -15118,6 +15118,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu öneriyi gizle'**
   String get onerKapat;
+
+  /// No description provided for @ziBaslikUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'FONLARIN İÇİ AÇILINCA'**
+  String get ziBaslikUpper;
+
+  /// No description provided for @ziOzetHisse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Listede hisse {gorunen} görünüyor; fonların içiyle birlikte {gercek}.'**
+  String ziOzetHisse(String gorunen, String gercek);
+
+  /// No description provided for @ziDogrudan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrudan'**
+  String get ziDogrudan;
+
+  /// No description provided for @ziBilinmeyen.
+  ///
+  /// In tr, this message translates to:
+  /// **'İçeriği bilinmeyen'**
+  String get ziBilinmeyen;
+
+  /// No description provided for @ziBilinmeyenAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılımı yayımlanmayan ya da %1 altı fonlar'**
+  String get ziBilinmeyenAlt;
+
+  /// No description provided for @ziKaynak.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon ve BES içerikleri TEFAS\'ın günlük varlık dağılımından · {tarih}. Fonların tek tek hisseleri değil, varlık sınıfları.'**
+  String ziKaynak(String tarih);
+
+  /// No description provided for @ziKilitBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonların içi'**
+  String get ziKilitBaslik;
+
+  /// No description provided for @ziKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zirvedeki portföyün fonları ve BES\'i açılınca parası gerçekte nerede duruyor: hisse, tahvil, altın, döviz, kripto… TEFAS\'ın günlük dağılımından.'**
+  String get ziKilitGovde;
+
+  /// No description provided for @ziKilitSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonların içi Premium\'da'**
+  String get ziKilitSatir;
+
+  /// No description provided for @ziSatirEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} {pay}. {kaynaklar}'**
+  String ziSatirEtiket(String ad, String pay, String kaynaklar);
 }
 
 class _AppLocalizationsDelegate

@@ -9098,4 +9098,41 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get onerKapat => 'Bu öneriyi gizle';
+
+  @override
+  String get ziBaslikUpper => 'FONLARIN İÇİ AÇILINCA';
+
+  @override
+  String ziOzetHisse(String gorunen, String gercek) {
+    return 'Listede hisse $gorunen görünüyor; fonların içiyle birlikte $gercek.';
+  }
+
+  @override
+  String get ziDogrudan => 'Doğrudan';
+
+  @override
+  String get ziBilinmeyen => 'İçeriği bilinmeyen';
+
+  @override
+  String get ziBilinmeyenAlt => 'Dağılımı yayımlanmayan ya da %1 altı fonlar';
+
+  @override
+  String ziKaynak(String tarih) {
+    return 'Fon ve BES içerikleri TEFAS\'ın günlük varlık dağılımından · $tarih. Fonların tek tek hisseleri değil, varlık sınıfları.';
+  }
+
+  @override
+  String get ziKilitBaslik => 'Fonların içi';
+
+  @override
+  String get ziKilitGovde =>
+      'Zirvedeki portföyün fonları ve BES\'i açılınca parası gerçekte nerede duruyor: hisse, tahvil, altın, döviz, kripto… TEFAS\'ın günlük dağılımından.';
+
+  @override
+  String get ziKilitSatir => 'Fonların içi Premium\'da';
+
+  @override
+  String ziSatirEtiket(String ad, String pay, String kaynaklar) {
+    return '$ad $pay. $kaynaklar';
+  }
 }

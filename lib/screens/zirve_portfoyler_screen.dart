@@ -21,6 +21,7 @@ import '../widgets/zirve_dagilim_seridi.dart';
 import '../widgets/zirve_donem_secici.dart';
 import '../widgets/zirve_karti.dart';
 import '../widgets/zirve_riza_karti.dart';
+import '../widgets/zirve_icerik_karti.dart';
 import '../widgets/zirve_varlik_siralamasi.dart';
 import 'paywall_screen.dart';
 import '../widgets/zorunlu_okuma.dart';
@@ -1377,6 +1378,15 @@ class _PortfoyAyrintisi extends StatelessWidget {
             varlikDetay: varlikDetay,
             gruplu: true,
             onKilitli: onKilitli,
+          ),
+          // Fonlar ve BES açılınca gerçek dağılım (yasin 2026-10-20):
+          // "kazandırması için nelere yatırım yaptığı anlaşılabilsin".
+          // Fon X-Ray ile aynı Premium kapısı; fon/BES yoksa çizilmez.
+          ZirveIcerikKarti(
+            pay: pay,
+            fonDetay: fonDetay,
+            varlikDetay: varlikDetay,
+            dis: const EdgeInsets.only(top: SandikSpace.md),
           ),
           if (!senMi && s.benzerlik != null) ...[
             const SizedBox(height: SandikSpace.sm),

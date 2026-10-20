@@ -5941,5 +5941,18 @@
   "onerOrtakAlt": "Eşinin ya da ailenin portföyünü seninkiyle tek ekranda gör",
   "onerZirveBaslik": "Zirvedeki portföylerde ne var?",
   "onerZirveAlt": "En iyi getiren portföylerin varlık dağılımına göz at",
-  "onerKapat": "Bu öneriyi gizle"
+  "onerKapat": "Bu öneriyi gizle",
+  "ziBaslikUpper": "FONLARIN İÇİ AÇILINCA",
+  "ziOzetHisse": "Listede hisse {gorunen} görünüyor; fonların içiyle birlikte {gercek}.",
+  "@ziOzetHisse": {"placeholders": {"gorunen": {"type": "String"}, "gercek": {"type": "String"}}},
+  "ziDogrudan": "Doğrudan",
+  "ziBilinmeyen": "İçeriği bilinmeyen",
+  "ziBilinmeyenAlt": "Dağılımı yayımlanmayan ya da %1 altı fonlar",
+  "ziKaynak": "Fon ve BES içerikleri TEFAS'ın günlük varlık dağılımından · {tarih}. Fonların tek tek hisseleri değil, varlık sınıfları.",
+  "@ziKaynak": {"placeholders": {"tarih": {"type": "String"}}},
+  "ziKilitBaslik": "Fonların içi",
+  "ziKilitGovde": "Zirvedeki portföyün fonları ve BES'i açılınca parası gerçekte nerede duruyor: hisse, tahvil, altın, döviz, kripto… TEFAS'ın günlük dağılımından.",
+  "ziKilitSatir": "Fonların içi Premium'da",
+  "ziSatirEtiket": "{ad} {pay}. {kaynaklar}",
+  "@ziSatirEtiket": {"placeholders": {"ad": {"type": "String"}, "pay": {"type": "String"}, "kaynaklar": {"type": "String"}}}
 }
