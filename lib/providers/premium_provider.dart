@@ -39,6 +39,15 @@ class PremiumHakki {
 
   bool get hediye => kaynak == 'erken_kullanici';
 
+  /// Bitişe kalan gün, yukarı yuvarlanır (bugün biten "0 gün" demesin);
+  /// süresizde null, bitmişte 0.
+  int? kalanGun(DateTime simdi) {
+    final b = bitis;
+    if (b == null) return null;
+    if (!b.isAfter(simdi)) return 0;
+    return (b.difference(simdi).inHours / 24).ceil().clamp(1, 1 << 30);
+  }
+
   /// Ürün kimliğinde 'yillik' / 'annual' geçiyorsa yıllık.
   bool get yillik {
     final u = (urun ?? '').toLowerCase();
@@ -93,6 +102,24 @@ final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {
     ..sort((a, b) => sira.indexOf(a.kaynak).compareTo(sira.indexOf(b.kaynak)));
   return gecerli.isEmpty ? null : gecerli.first;
 });
+
+/// Hediyesi BİTMİŞ ve başka geçerli hakkı olmayan kullanıcı (paywall
+/// incelemesi, 2026-10-20). 90 günlük hediye herkese aynı gün verildiği için
+/// aynı günlerde biter; bitişi söylemeyen uygulama "bir sabah kilit"
+/// hissi yaratıyordu. Profil bandı ve açılıştaki tek seferlik sayfa bunu
+/// okur. Değer bitmiş hediyenin bitişidir (bir kez söyleme anahtarı).
+final hediyesiBitmisProvider = Provider<DateTime?>((ref) {
+  if (ref.watch(gecerliPremiumHakkiProvider) != null) return null;
+  final haklar = ref.watch(premiumHaklariProvider).valueOrNull ?? const [];
+  for (final h in haklar) {
+    if (h.hediye && h.bitis != null) return h.bitis;
+  }
+  return null;
+});
+
+/// Hediyesi son günlerinde (≤ [esik] gün) olan kullanıcı; yoksa null.
+/// Profil satırı "Premium'la devam et" düğmesini bu eşikte gösterir.
+const hediyeSonGunlerEsigi = 7;
 
 /// Premium'a özgü özellikler (radar, ekstre AI) görünür mü: paywall açıksa
 /// herkese (ücretsizde kilitli), kapalıyken yalnız admin hesabına. Gerekçe

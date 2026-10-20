@@ -91,28 +91,80 @@ PaywallKarti? kaynaktanKart(String source) {
   };
 }
 
+/// Kullanıcının paywall'a tetikleyicisiz geldiği (profil bandı, ayarlar)
+/// durumda destenin hangi işle açılacağı (paywall incelemesi, 2026-10-20).
+///
+/// Tetikleyici varsa dokunulan kilidin kartı önde; yoksa eskiden herkes
+/// aynı varsayılan sırayı görüyordu. Portföyü fon ağırlıklı olana X-Ray ve
+/// rapor, sinyal kuranla teknik analiz, ortağı olana ortak/portföy kartı
+/// önce gelir; gerisi varsayılan sırada. Saf karar [paywallPersona]'da.
+enum PaywallPersona { genel, fon, teknik, ortakli }
+
+/// Saf: ne tür yatırımcı. Sinyal kurmuş olmak en güçlü işaret (bilinçli bir
+/// kurulum); sonra ortak; sonra fon ağırlığı (fon ≥ hisse ve en az bir fon).
+PaywallPersona paywallPersona({
+  required int fonSayisi,
+  required int hisseSayisi,
+  required bool sinyalVar,
+  required bool ortakVar,
+}) {
+  if (sinyalVar) return PaywallPersona.teknik;
+  if (ortakVar) return PaywallPersona.ortakli;
+  if (fonSayisi > 0 && fonSayisi >= hisseSayisi) return PaywallPersona.fon;
+  return PaywallPersona.genel;
+}
+
+/// Persona'nın öne aldığı kartlar (sırayla).
+List<PaywallKarti> _personaOncelik(PaywallPersona p) => switch (p) {
+      PaywallPersona.fon => const [
+          PaywallKarti.xray,
+          PaywallKarti.rapor,
+          PaywallKarti.temettu
+        ],
+      PaywallPersona.teknik => const [
+          PaywallKarti.sinyal,
+          PaywallKarti.ozelGosterge
+        ],
+      PaywallPersona.ortakli => const [PaywallKarti.ortak, PaywallKarti.portfoy],
+      PaywallPersona.genel => const [],
+    };
+
 /// Saf: destenin kart sırası. Açık olmayan özelliğin kartı çıkar; kaynağın
-/// kartı (destede varsa) başa alınır, gerisi varsayılan sırada.
+/// kartı başa alınır, gerisi varsayılan sırada. Kaynak yoksa (bilinmeyen
+/// giriş) [persona]'nın kartları öne gelir.
+///
+/// Kaynağın kartı HER ZAMAN destededir, bayrağı kapalı görünse bile:
+/// kullanıcı o kilide dokunduysa özellik canlıdır. Ekran görüntüsünden
+/// maliyet (`ekran_goruntusu`) Premium kapısıyla (`radarKilitli`) açılır
+/// ama kartı ekstre kartı; `ekstreAiEsleme` kapalıyken deste o kartsız
+/// açılıyor, kullanıcı neden burada olduğunu göremiyordu (paywall
+/// incelemesi, 2026-10-20).
 List<PaywallKarti> desteSirasi(
   String source, {
   required bool radar,
   required bool ekstreAi,
   // Varsayılan kapalı: bayrak açılmadan satılmaz (açılmamış şey satılmaz).
   bool portfoy = false,
+  PaywallPersona persona = PaywallPersona.genel,
 }) {
+  final bas = kaynaktanKart(source);
   final acik = [
     for (final k in PaywallKarti.values)
-      if (switch (k) {
-        PaywallKarti.akis || PaywallKarti.hacim || PaywallKarti.not => radar,
-        PaywallKarti.ekstre => ekstreAi,
-        PaywallKarti.portfoy => portfoy,
-        _ => true,
-      })
+      if (k == bas ||
+          switch (k) {
+            PaywallKarti.akis ||
+            PaywallKarti.hacim ||
+            PaywallKarti.not =>
+              radar,
+            PaywallKarti.ekstre => ekstreAi,
+            PaywallKarti.portfoy => portfoy,
+            _ => true,
+          })
         k,
   ];
-  final bas = kaynaktanKart(source);
-  if (bas == null || !acik.contains(bas)) return acik;
-  return [bas, ...acik.where((k) => k != bas)];
+  if (bas != null) return [bas, ...acik.where((k) => k != bas)];
+  final once = _personaOncelik(persona).where(acik.contains).toList();
+  return [...once, ...acik.where((k) => !once.contains(k))];
 }
 
 /// Kart renkleri. Kartlar marka yüzeyleridir; iki temada da aynı görünür
@@ -158,9 +210,11 @@ class _DesteGovdesi extends StatefulWidget {
     required this.busy,
     required this.onSatinAl,
     required this.onGeriYukle,
+    this.persona = PaywallPersona.genel,
   });
 
   final String source;
+  final PaywallPersona persona;
   final bool yillik;
   final ValueChanged<bool> onPlan;
 
@@ -198,7 +252,8 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
     final sira = desteSirasi(widget.source,
         radar: rc.balinaRadariAcik,
         ekstreAi: rc.ekstreAiEsleme,
-        portfoy: rc.cokluPortfoy);
+        portfoy: rc.cokluPortfoy,
+        persona: widget.persona);
     return _kartlar = [for (final k in sira) _kart(context, k)];
   }
 
@@ -461,7 +516,12 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                         _DenemeCizelgesi(gun: deneme),
                       ],
                       const SizedBox(height: SandikSpace.md2),
-                      _GuvenSatiri(metin: l.pwdGuvenTakip),
+                      // Varlık kartındaki "N varlık ücretsiz" ile aynı sayı:
+                      // "takip her zaman ücretsiz" cümlesi sınırla
+                      // çelişiyordu (paywall incelemesi, 2026-10-20).
+                      _GuvenSatiri(
+                          metin: l.pwdGuvenTakip(
+                              RemoteConfigService.instance.freeAssetLimit)),
                       const SizedBox(height: SandikSpace.sm),
                       _GuvenSatiri(metin: l.pwdGuvenIptal),
                       const SizedBox(height: SandikSpace.lgs),

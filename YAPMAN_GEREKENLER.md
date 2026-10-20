@@ -308,7 +308,7 @@ secret'ları) yerine BU geçer.
 
 1. [ ] **Hediyeyi ver** (Supabase SQL Editor, önce Tokyo sonra Frankfurt —
        iki sunucu birebir):
-       `select public.erken_kullanici_hediyesi_ver('<KESİM>', 90);`
+       `select public.erken_kullanici_hediyesi_ver('<KESİM>', 90, 14);`
        `<KESİM>` = açılış anı, ör. `2026-11-01T00:00:00+03`. Dönen sayı
        yaklaşık kayıtlı kullanıcı sayın olmalı.
 2. [ ] **Aynı kesimi Remote Config'e yaz:** `premium_hediye_kesim` (String)
@@ -709,7 +709,7 @@ o koşmalı.
       `premium_ayar.kapi_acik` kapalıyken birebir eski davranır; erken
       dağıtmak güvenli.
 - [ ] Açılış sırası (değişmedi, kapının görevi büyüdü):
-      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
+      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90, 14);` →
       `paywall_enabled` (Remote Config, yayılsın) →
       `update public.premium_ayar set kapi_acik = true;`. Kapı artık
       sinyali de keser: açıkken yalnız Premium (hak ya da admin) sinyal alır.
@@ -1165,7 +1165,7 @@ Yayın sırası (sıra önemli):
       (`paywall_screen.dart`); RevenueCat SDK'sı senin kararını bekliyor.
       Sunucu hazır: `revenuecat-webhook` için `REVENUECAT_WEBHOOK_SECRET` ve
       `REVENUECAT_API_KEY`. Açılış günü sırası:
-      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
+      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90, 14);` →
       `paywall_enabled` (Remote Config, yayılsın) →
       `update public.premium_ayar set kapi_acik = true;`. Sıra önemli:
       kapı önce açılırsa bayrağı henüz almamış ücretsiz kullanıcı notu

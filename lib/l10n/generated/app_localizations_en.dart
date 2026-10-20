@@ -3111,6 +3111,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get iktKotaBaslik => 'Free quota will be exceeded';
+
+  @override
+  String iktKotaGovde(int bulunan, int sigan) {
+    return 'Your cart has $bulunan items; $sigan fit the free quota. Add the rest now with Premium or later.';
+  }
+
+  @override
+  String get iktKotaPremium => 'Go Premium, add all';
+
+  @override
+  String iktKotaSiganlar(int sigan) {
+    return 'Save $sigan items, keep the rest in the cart';
+  }
+
+  @override
+  String get iktKotaVazgec => 'Cancel';
+
+  @override
   String get someAssetsNotAdded => 'Some Assets Could Not Be Added';
 
   @override
@@ -6940,6 +6959,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmTesekkurler => 'Thanks';
 
   @override
+  String prmHediyeKalan(String tarih, int gun) {
+    return 'Ends on $tarih · $gun days left';
+  }
+
+  @override
+  String get prmHediyeDevam => 'Continue with Premium';
+
+  @override
+  String get prmHediyeBittiBaslik => 'Your gift period has ended';
+
+  @override
+  String prmHediyeBittiGovde(int sayi) {
+    return 'None of your data was deleted; $sayi assets and the core features stay free. For reports, signals and unlimited assets you can pick up where you left off with Premium.';
+  }
+
+  @override
+  String get prmHediyeBittiBant =>
+      'Your gift ended; continue where you left off with Premium';
+
+  @override
+  String get prmHediyeBittiGor => 'See Premium';
+
+  @override
+  String get prmHediyeBittiSonra => 'Not now';
+
+  @override
   String get prmAbonelikAylik => 'Premium · monthly';
 
   @override
@@ -7750,7 +7795,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdIlkOdeme => 'First payment';
 
   @override
-  String get pwdGuvenTakip => 'Portfolio tracking stays free';
+  String pwdGuvenTakip(int sayi) {
+    return '$sayi assets stay free to track; your data is never deleted';
+  }
 
   @override
   String get pwdGuvenIptal => 'Cancel anytime, access until the period ends';

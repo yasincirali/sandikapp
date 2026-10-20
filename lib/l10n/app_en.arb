@@ -2022,6 +2022,22 @@
       }
     }
   },
+  "iktKotaBaslik": "Free quota will be exceeded",
+  "iktKotaGovde": "Your cart has {bulunan} items; {sigan} fit the free quota. Add the rest now with Premium or later.",
+  "@iktKotaGovde": {
+    "placeholders": {
+      "bulunan": {"type": "int"},
+      "sigan": {"type": "int"}
+    }
+  },
+  "iktKotaPremium": "Go Premium, add all",
+  "iktKotaSiganlar": "Save {sigan} items, keep the rest in the cart",
+  "@iktKotaSiganlar": {
+    "placeholders": {
+      "sigan": {"type": "int"}
+    }
+  },
+  "iktKotaVazgec": "Cancel",
   "someAssetsNotAdded": "Some Assets Could Not Be Added",
   "bulkAddSavingProgress": "Saving {saved} / {total}",
   "@bulkAddSavingProgress": {
@@ -4535,6 +4551,24 @@
     }
   },
   "prmTesekkurler": "Thanks",
+  "prmHediyeKalan": "Ends on {tarih} · {gun} days left",
+  "@prmHediyeKalan": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "gun": {"type": "int"}
+    }
+  },
+  "prmHediyeDevam": "Continue with Premium",
+  "prmHediyeBittiBaslik": "Your gift period has ended",
+  "prmHediyeBittiGovde": "None of your data was deleted; {sayi} assets and the core features stay free. For reports, signals and unlimited assets you can pick up where you left off with Premium.",
+  "@prmHediyeBittiGovde": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "prmHediyeBittiBant": "Your gift ended; continue where you left off with Premium",
+  "prmHediyeBittiGor": "See Premium",
+  "prmHediyeBittiSonra": "Not now",
   "prmAbonelikAylik": "Premium · monthly",
   "prmAbonelikYillik": "Premium · yearly",
   "prmAbonelikHediye": "Premium · early-user gift",
@@ -4848,7 +4882,12 @@
   "pwdHerSeyAcik": "Everything unlocked",
   "pwdGun": "Day {gun}",
   "pwdIlkOdeme": "First payment",
-  "pwdGuvenTakip": "Portfolio tracking stays free",
+  "pwdGuvenTakip": "{sayi} assets stay free to track; your data is never deleted",
+  "@pwdGuvenTakip": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
   "pwdGuvenIptal": "Cancel anytime, access until the period ends",
   "pwdYillikAboneOl": "Subscribe yearly",
   "pwdAylikAboneOl": "Subscribe monthly",
