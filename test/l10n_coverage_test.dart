@@ -78,6 +78,7 @@ void main() {
     'lib/widgets/fon_karnesi_karti.dart': 0,
     // Fon X-Ray (Premium, 2026-10-10).
     'lib/widgets/fon_dagilimi_karti.dart': 0,
+    'lib/widgets/zirve_icerik_karti.dart': 0,
     'lib/screens/portfoy_xray_screen.dart': 0,
     'lib/widgets/eurobond_karti.dart': 0,
     'lib/widgets/para_akisi_karti.dart': 0,

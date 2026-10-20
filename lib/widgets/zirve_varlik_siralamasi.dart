@@ -11,6 +11,11 @@ typedef ZirveFonAdiBulucu = Future<String?> Function(String kod);
 Future<String?> _tefasAdi(String kod) async =>
     (await TefasService.instance.lookupFund(kod))?.name;
 
+/// Kodu TEFAS fon kodu olan türler: fon ve BES (BES kodları 2026-10-20'den
+/// beri `varlik_detay.bes`'te). İkisinde de satır kodu yazar, altında resmi
+/// adı; sembol sadeleştirmesi (`varlikAdi`) uygulanmaz.
+bool _fonTuru(String tur) => tur == 'fon' || tur == 'bes';
+
 /// Bir Zirve portföyünün varlıkları, büyükten küçüğe (okunaklılık turu,
 /// yasin 2026-10-20: "daha okunaklı ve tasarım olarak da etkili").
 ///
@@ -142,7 +147,7 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
         ? 'Diğer kalemler'
         : kilitli
             ? ZirveKiyas.kilitliYer
-            : tur == 'fon'
+            : _fonTuru(tur)
                 ? kod
                 : ZirveKiyas.varlikAdi(kod);
 
@@ -154,7 +159,7 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
     } else if (diger) {
       alt = _altMetin(
           context, 'her biri %1 altı ya da sembolsüz', context.c.text58);
-    } else if (tur == 'fon') {
+    } else if (_fonTuru(tur)) {
       alt = FutureBuilder<String?>(
         future: _ad(kod),
         builder: (context, s) => _altMetin(
