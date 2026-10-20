@@ -71,6 +71,15 @@ Herhangi bir UI değişikliğinden önce:
     web estetiği — sandık paletiyle çakışır), `output-skill` (yanıt uzunluğu
     davranışını ezer; CLAUDE.md'nin özet düzeniyle çakışır), `taste-skill-v1`
     (v2'nin eski kopyası, aynı ad ailesi — çift yükleme).
+- `design-motion-principles` — hareket tasarımı (Emil Kowalski, Jakub Krehel, Jhey Tompkins
+  yaklaşımları). İki kipi var: **Create** (bileşene amaçlı hareket) ve **Audit** (mevcut
+  animasyonda "AI-slop" kalıplarını yakalar; HTML rapor üretir). Sıklık çerçevesi ("bu
+  hareket günde kaç kez görülüyor → ne kadar kısa olmalı") ve erişilebilirlik/performans
+  listeleri Flutter'a doğrudan taşınır; Framer Motion/CSS örnekleri taşınmaz, süre ve eğri
+  `SandikMotion`'dan gelir. Rapor şablonu Google Fonts çağırır: yalnız yasin'e gösterilen
+  artifact için, uygulamaya girmez.
+  Kaynak `github.com/kylezantos/design-motion-principles` (MIT, `LICENSE` klasörde),
+  `4a9ca87` (2026-05-30), kurulum 2026-10-20 (yasin isteği).
 - `awwwards-animations` — React/GSAP. Sadece *zamanlama ve easing sezgisi* için oku;
   `useGSAP`, `Lenis`, `motion/react` bu projeye **kurulmaz**
 - `animate`, `improve-animations`, `review-animations`, `find-animation-opportunities`

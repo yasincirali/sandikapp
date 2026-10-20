@@ -34,7 +34,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 |---|---|
 | Flutter UI / widget / ekran | `flutter-architecture`, `flutter-adaptive-ui`, `flutter-expert` ⚠️ |
 | Navigasyon | `flutter-navigation` (**`flutter-expert` GoRouter referansı değil**) |
-| Animasyon / hareket | `flutter-animations`, `animate`, `apple-design` |
+| Animasyon / hareket | `flutter-animations`, `animate`, `apple-design`; denetim/eleştiri `design-motion-principles` |
 | Görsel tasarım / cila | `emil-design-eng`, `ui-ux-pro-max`, `frontend-design` |
 | Flutter testi | `flutter-testing` (**`test-master` değil**) |
 | Test *stratejisi* / kapsam boşluğu | `test-master` |
