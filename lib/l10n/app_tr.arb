@@ -5475,7 +5475,7 @@
     }
   },
   "pwdIlkOdeme": "İlk ödeme",
-  "pwdGuvenTakip": "{sayi} varlığın her zaman ücretsiz takipte; verin hiç silinmez",
+  "pwdGuvenTakip": "{sayi} varlığın her zaman ücretsiz takipte; verilerin hiç silinmez",
   "@pwdGuvenTakip": {
     "placeholders": {
       "sayi": {"type": "int"}

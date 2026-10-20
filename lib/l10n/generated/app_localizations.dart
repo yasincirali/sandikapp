@@ -12848,7 +12848,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdGuvenTakip.
   ///
   /// In tr, this message translates to:
-  /// **'{sayi} varlığın her zaman ücretsiz takipte; verin hiç silinmez'**
+  /// **'{sayi} varlığın her zaman ücretsiz takipte; verilerin hiç silinmez'**
   String pwdGuvenTakip(int sayi);
 
   /// No description provided for @pwdGuvenIptal.

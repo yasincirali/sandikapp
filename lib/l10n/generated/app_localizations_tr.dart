@@ -7707,7 +7707,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String pwdGuvenTakip(int sayi) {
-    return '$sayi varlığın her zaman ücretsiz takipte; verin hiç silinmez';
+    return '$sayi varlığın her zaman ücretsiz takipte; verilerin hiç silinmez';
   }
 
   @override
