@@ -52,6 +52,7 @@ Future<void> _ac(
   double genislik = 375,
   double yukseklik = 812,
   double metinOlcegi = 1,
+  bool hareketiAzalt = false,
   ThemeData? tema,
 }) async {
   RemoteConfigService.testAcik = bayraklar;
@@ -71,8 +72,9 @@ Future<void> _ac(
     child: MaterialApp(
       theme: tema ?? ThemeData.dark(),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(textScaler: TextScaler.linear(metinOlcegi)),
+        data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(metinOlcegi),
+            disableAnimations: hareketiAzalt),
         child: child!,
       ),
       home: ekran,
@@ -88,8 +90,8 @@ Finder get _secici => find.byWidgetPredicate(
 Finder _seciciIcinde(Finder f) => find.descendant(of: _secici, matching: f);
 
 /// Yalnız `Text` (arama alanındaki yazı `EditableText`'tir, sayılmaz).
-Finder _metin(String s) => _seciciIcinde(
-    find.byWidgetPredicate((w) => w is Text && w.data == s));
+Finder _metin(String s) =>
+    _seciciIcinde(find.byWidgetPredicate((w) => w is Text && w.data == s));
 
 Future<void> _yerles(WidgetTester tester) async {
   await tester.pump();
@@ -131,6 +133,23 @@ void main() {
     expect(find.text('BORSA VE FON'), findsOneWidget);
     expect(find.text('Ekle'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  // integration_test (2026-10-20) emülatörde hareketi azalt açık koşar;
+  // süre sıfırken AnimatedSize kendi layout'unda kendini kirletip assert
+  // atıyordu (bayrak emekliye ayrılınca ızgara CI'da da çizilmeye başladı).
+  testWidgets('hareketi azalt: katlanıp açılırken layout assert yok',
+      (tester) async {
+    await _ac(tester, hareketiAzalt: true);
+    await tester.tap(_seciciIcinde(find.text('Fon')));
+    await _yerles(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Değiştir'), findsOneWidget);
+
+    await tester.tap(find.text('Değiştir'));
+    await _yerles(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text('BORSA VE FON'), findsOneWidget);
   });
 
   testWidgets('ABD kutusu: hisse türü ABD pazarıyla, satırda "ABD hisse"',
@@ -177,8 +196,7 @@ void main() {
 
   testWidgets('ISIN araması: katalogdaki eurobond seçilir', (tester) async {
     await _ac(tester);
-    await tester.enterText(
-        _seciciIcinde(find.byType(TextField)), 'US900123DF');
+    await tester.enterText(_seciciIcinde(find.byType(TextField)), 'US900123DF');
     await tester.pump();
     await tester.pump();
     final sonuc = _metin('US900123DF45');
@@ -197,8 +215,7 @@ void main() {
     await _ac(tester, bayraklar: const {});
     expect(_metin('Eurobond'), findsNothing);
     expect(_metin('ABD hisse'), findsNothing);
-    await tester.enterText(
-        _seciciIcinde(find.byType(TextField)), 'US900123DF');
+    await tester.enterText(_seciciIcinde(find.byType(TextField)), 'US900123DF');
     await tester.pump();
     expect(_metin('US900123DF45'), findsNothing);
     await tester.enterText(_seciciIcinde(find.byType(TextField)), '');
