@@ -113,6 +113,15 @@ part 'portfolio_performance/ozet_yan_veri.dart';
 part 'portfolio_performance/ozet_bellek.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
+  /// Özet'in kanonik serisini çeken fonksiyonun test yerine geçeni
+  /// (`test/ozet_seri_hatasi_test.dart`): ağın asılı kaldığı, hata verdiği
+  /// ya da boş döndüğü hâller motorun kendi geri düşüşlerinden geçmeden
+  /// sınansın. `null` = gerçek motor.
+  @visibleForTesting
+  static Future<PortfolioHistoryBreakdown> Function(
+      SummaryPeriod period, List<Asset> chartAssets, bool simulate)?
+      ozetSerisiTestCekici;
+
   final String? initialView;
   final AssetType? initialTypeFilter;
 
