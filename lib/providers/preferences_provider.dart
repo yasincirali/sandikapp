@@ -355,6 +355,12 @@ final ozellikOnerisiSonKapatmaProvider =
         PrefKeys.ozellikOnerisiSonKapatma, 0,
         perUser: true));
 
+/// Ana sayfa "seni ilgilendiren günler": kapatılan olay kimlikleri
+/// (`seni_ilgilendiren_gunler.dart`).
+final gunlerKapatilanProvider =
+    NotifierProvider<_KumePrefNotifier, Set<String>>(
+        () => _KumePrefNotifier(PrefKeys.gunlerKapatilan));
+
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
   final bool defaultValue;
