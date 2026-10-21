@@ -9100,6 +9100,51 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onerKapat => 'Bu öneriyi gizle';
 
   @override
+  String get sigBugun => 'Bugün';
+
+  @override
+  String get sigYarin => 'Yarın';
+
+  @override
+  String sigTcmb(String gun) {
+    return '$gun: TCMB faiz kararı';
+  }
+
+  @override
+  String sigFomc(String gun) {
+    return '$gun: Fed faiz kararı';
+  }
+
+  @override
+  String sigTemettu(String gun, String kod) {
+    return '$gun: $kod temettü günü';
+  }
+
+  @override
+  String get sigTcmbAlt => 'Para Politikası Kurulu, karar 14:00\'te';
+
+  @override
+  String get sigFomcAlt => 'ABD Merkez Bankası, karar Türkiye saatiyle akşam';
+
+  @override
+  String get sigTemettuAlt =>
+      'Geçen yıl bu gün dağıttı; bu yılın günü farklı olabilir';
+
+  @override
+  String get sigSayfaBaslik => 'Yaklaşan günler';
+
+  @override
+  String sigSayfaNot(int gun) {
+    return 'Önümüzdeki $gun gün. Faiz kararı günleri resmî takvimlerden, temettü günleri geçen yılın hak günlerinden. Sonuç tahmini yapılmaz.';
+  }
+
+  @override
+  String get sigKapat => 'Bu günü gizle';
+
+  @override
+  String get sigBos => 'Önümüzdeki iki haftada gösterilecek gün kalmadı.';
+
+  @override
   String get ziBaslikUpper => 'FONLARIN İÇİNDE NE VAR';
 
   @override

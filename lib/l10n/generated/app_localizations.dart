@@ -15119,6 +15119,78 @@ abstract class AppLocalizations {
   /// **'Bu öneriyi gizle'**
   String get onerKapat;
 
+  /// No description provided for @sigBugun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün'**
+  String get sigBugun;
+
+  /// No description provided for @sigYarin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yarın'**
+  String get sigYarin;
+
+  /// No description provided for @sigTcmb.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun}: TCMB faiz kararı'**
+  String sigTcmb(String gun);
+
+  /// No description provided for @sigFomc.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun}: Fed faiz kararı'**
+  String sigFomc(String gun);
+
+  /// No description provided for @sigTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun}: {kod} temettü günü'**
+  String sigTemettu(String gun, String kod);
+
+  /// No description provided for @sigTcmbAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para Politikası Kurulu, karar 14:00\'te'**
+  String get sigTcmbAlt;
+
+  /// No description provided for @sigFomcAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD Merkez Bankası, karar Türkiye saatiyle akşam'**
+  String get sigFomcAlt;
+
+  /// No description provided for @sigTemettuAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen yıl bu gün dağıttı; bu yılın günü farklı olabilir'**
+  String get sigTemettuAlt;
+
+  /// No description provided for @sigSayfaBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaklaşan günler'**
+  String get sigSayfaBaslik;
+
+  /// No description provided for @sigSayfaNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önümüzdeki {gun} gün. Faiz kararı günleri resmî takvimlerden, temettü günleri geçen yılın hak günlerinden. Sonuç tahmini yapılmaz.'**
+  String sigSayfaNot(int gun);
+
+  /// No description provided for @sigKapat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu günü gizle'**
+  String get sigKapat;
+
+  /// No description provided for @sigBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önümüzdeki iki haftada gösterilecek gün kalmadı.'**
+  String get sigBos;
+
   /// No description provided for @ziBaslikUpper.
   ///
   /// In tr, this message translates to:
