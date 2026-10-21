@@ -1,7 +1,11 @@
 package com.sandik.app
 
+import android.content.Intent
 import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.WindowManager
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -57,6 +61,7 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         ocrKanaliniKur(flutterEngine)
+        ayarlarKanaliniKur(flutterEngine)
 
         val renderer = flutterEngine.renderer
         // Listener, renderer çizmeye BAŞLADIKTAN sonra eklenirse hiç çağrılmaz
@@ -76,6 +81,36 @@ class MainActivity : FlutterFragmentActivity() {
                 override fun onFlutterUiNoLongerDisplayed() = Unit
             }
         )
+    }
+
+    /**
+     * "Bildirimler kapalı" satırının "Ayarları aç" düğmesi → doğrudan bu
+     * uygulamanın bildirim ayarı (`lib/services/bildirim_izni.dart`,
+     * 2026-10-21). iOS'ta karşılığı `app-settings:` adresi; Android'de adres
+     * yok, Intent gerekir. API 26 altında bildirim ekranı Intent'i yok:
+     * uygulama bilgi sayfası açılır (bildirimler oradan bir dokunuş).
+     */
+    private fun ayarlarKanaliniKur(flutterEngine: FlutterEngine) {
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.sandik.app/ayarlar")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "bildirimAyarlari") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                val niyet = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                } else {
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        .setData(Uri.fromParts("package", packageName, null))
+                }
+                try {
+                    startActivity(niyet)
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("ayarlar", null, null)
+                }
+            }
     }
 
     /**

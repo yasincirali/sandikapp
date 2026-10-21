@@ -7,6 +7,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/analytics_service.dart';
+import '../widgets/bildirim_izni_uyarisi.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -95,7 +96,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         // uygulanınca simge ve yazı dairenin dışına taşıyordu (kullanıcı
         // ekran görüntüsü, 2026-09-21). Uzatılmış biçim stadyum ister.
         shape: const StadiumBorder(),
-        extendedPadding: const EdgeInsets.symmetric(horizontal: SandikSpace.lgs),
+        extendedPadding:
+            const EdgeInsets.symmetric(horizontal: SandikSpace.lgs),
         onPressed: () => alarmKurAkisi(context, ref, adaylar: _adaylar()),
         icon: const Icon(Icons.add_alert_rounded),
         label: Text(context.l10n.createAlert),
@@ -105,62 +107,77 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         tamEkran: true,
         anahtar: SandikIcerikGecisi.hal([alarmlar]),
         child: alarmlar.when(
-        error: (e, _) => SandikErrorView(
-          error: e,
-          onRetry: () => ref.read(priceAlertsProvider.notifier).refresh(),
-        ),
-        loading: () => const SandikSkeletonList(rows: 5),
-        data: (liste) {
-          if (liste.isEmpty) return _bosDurum(c);
-          return RefreshIndicator.adaptive(
-            color: c.amberText,
-            onRefresh: () => ref.read(priceAlertsProvider.notifier).refresh(),
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 96),
-              itemCount: liste.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              // Silinen satır önce kapanır, altındakiler yukarı kayar; sunucu
-              // reddederse geri açılır ve sebep söylenir (animasyon denetimi
-              // 2026-10-01 — eskiden satır tek karede yok oluyor, hata da
-              // yakalanmıyordu).
-              itemBuilder: (_, i) => KapananSatir(
-                key: ValueKey(liste[i].id),
-                child: Builder(
-                  builder: (satirCtx) => _AlarmSatiri(
-                    alarm: liste[i],
-                    onDelete: () async {
-                      final id = liste[i].id;
-                      SandikHaptic.medium.perform();
-                      try {
-                        await KapananSatir.kapatVeYap(
-                            satirCtx,
-                            () => ref
-                                .read(priceAlertsProvider.notifier)
-                                .delete(id));
-                      } catch (e) {
-                        if (context.mounted) showAppError(context, e);
-                      }
-                    },
-                    // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
-                    // çökme); düğme artık bekliyor, ret sebebi söylenir.
-                    onRearm: () async {
-                      if (alarmSiniriDoluysaUyar(context, ref)) return;
-                      try {
-                        await ref
-                            .read(priceAlertsProvider.notifier)
-                            .rearm(liste[i].id);
-                      } catch (e) {
-                        if (context.mounted) showAppError(context, e);
-                      }
-                    },
+          error: (e, _) => SandikErrorView(
+            error: e,
+            onRetry: () => ref.read(priceAlertsProvider.notifier).refresh(),
+          ),
+          loading: () => const SandikSkeletonList(rows: 5),
+          data: (liste) {
+            if (liste.isEmpty) return _bosDurum(c);
+            // İzin reddedilmişse listedeki hiçbir alarm haber veremez
+            // (Ar-Ge 16:45 #1, 2026-10-21). Liste kaydırılırken satır üstte
+            // sabit kalmaz; yalnız listenin başında görünür.
+            return Column(
+              children: [
+                BildirimIzniUyarisi(
+                  padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                      SandikSpace.sm, SandikSpace.screenH(context), 0),
+                ),
+                Expanded(
+                  child: RefreshIndicator.adaptive(
+                    color: c.amberText,
+                    onRefresh: () =>
+                        ref.read(priceAlertsProvider.notifier).refresh(),
+                    child: ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                          8, SandikSpace.screenH(context), 96),
+                      itemCount: liste.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      // Silinen satır önce kapanır, altındakiler yukarı kayar; sunucu
+                      // reddederse geri açılır ve sebep söylenir (animasyon denetimi
+                      // 2026-10-01 — eskiden satır tek karede yok oluyor, hata da
+                      // yakalanmıyordu).
+                      itemBuilder: (_, i) => KapananSatir(
+                        key: ValueKey(liste[i].id),
+                        child: Builder(
+                          builder: (satirCtx) => _AlarmSatiri(
+                            alarm: liste[i],
+                            onDelete: () async {
+                              final id = liste[i].id;
+                              SandikHaptic.medium.perform();
+                              try {
+                                await KapananSatir.kapatVeYap(
+                                    satirCtx,
+                                    () => ref
+                                        .read(priceAlertsProvider.notifier)
+                                        .delete(id));
+                              } catch (e) {
+                                if (context.mounted) showAppError(context, e);
+                              }
+                            },
+                            // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
+                            // çökme); düğme artık bekliyor, ret sebebi söylenir.
+                            onRearm: () async {
+                              if (alarmSiniriDoluysaUyar(context, ref)) return;
+                              try {
+                                await ref
+                                    .read(priceAlertsProvider.notifier)
+                                    .rearm(liste[i].id);
+                              } catch (e) {
+                                if (context.mounted) showAppError(context, e);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          );
-        },
-      ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

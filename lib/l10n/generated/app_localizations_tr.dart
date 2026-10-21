@@ -9176,4 +9176,17 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ziGrupEmtia => 'Emtia';
+
+  @override
+  String get biKapaliBaslik => 'Bildirimler kapalı';
+
+  @override
+  String get biKapaliAlt => 'Alarm ya da sinyal çalınca sana haber veremeyiz.';
+
+  @override
+  String get biAyarlariAc => 'Ayarları aç';
+
+  @override
+  String get biAyarlariAcSemantics =>
+      'Telefon ayarlarında Sandık bildirimlerini aç';
 }

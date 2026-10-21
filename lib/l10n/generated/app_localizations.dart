@@ -15256,6 +15256,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Emtia'**
   String get ziGrupEmtia;
+
+  /// No description provided for @biKapaliBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler kapalı'**
+  String get biKapaliBaslik;
+
+  /// No description provided for @biKapaliAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm ya da sinyal çalınca sana haber veremeyiz.'**
+  String get biKapaliAlt;
+
+  /// No description provided for @biAyarlariAc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarları aç'**
+  String get biAyarlariAc;
+
+  /// No description provided for @biAyarlariAcSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefon ayarlarında Sandık bildirimlerini aç'**
+  String get biAyarlariAcSemantics;
 }
 
 class _AppLocalizationsDelegate
