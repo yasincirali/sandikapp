@@ -165,4 +165,9 @@ class PrefKeys {
   /// kapatmanın zamanı (epoch ms; sıradaki öneri için bekleme). Kişiye özel.
   static const ozellikOnerisiKapatilan = 'pref_ozellik_onerisi_kapatilan';
   static const ozellikOnerisiSonKapatma = 'pref_ozellik_onerisi_son_kapatma';
+
+  /// Ana sayfa "seni ilgilendiren günler" satırı (`seni_ilgilendiren_gunler.dart`):
+  /// kapatılan olayların kimlikleri (`GunOlayi.kimlik`, tarihli). Kişiye özel:
+  /// temettü günleri kullanıcının kendi hisselerinden gelir.
+  static const gunlerKapatilan = 'pref_gunler_kapatilan';
 }

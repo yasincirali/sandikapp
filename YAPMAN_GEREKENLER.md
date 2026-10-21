@@ -289,6 +289,9 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
        alır; yalnız ilk satıştan önce kullanılır.
 4. [ ] TestFlight testçi kesimi (`2020-01-01`, yalnız TestFlight koşulunda)
        yerine gerçek kesim; `testci_muafiyeti` satırlarına karar ver.
+5. [ ] Balina/hacim radarı herkese açılacaksa `kripto-hacim-saatlik` işini
+       yeniden saatliğe al (0164 onu paywall kapalıyken 6 saate indirdi):
+       Claude'a "kripto hacmini saatliğe döndür" de, yeni migration yazar.
 
 **C. Tokyo → Frankfurt geçişi (1.1.6 mağazaya çıktıktan sonra)**
 

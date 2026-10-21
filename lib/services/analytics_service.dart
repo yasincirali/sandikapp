@@ -414,6 +414,12 @@ class AnalyticsService {
           {required String oneri, required String eylem}) =>
       _log('ozellik_onerisi', {'oneri': oneri, 'eylem': eylem});
 
+  /// Ana sayfa "seni ilgilendiren günler" satırı: olay türü (`tcmb`, `fomc`,
+  /// `temettu`; sembol değil) ve `ac` / `kapat`. Gösterim sayılmaz
+  /// (`logOzellikOnerisi` ile aynı gerekçe).
+  Future<void> logGunlerSatiri({required String tur, required String eylem}) =>
+      _log('gunler_satiri', {'tur': tur, 'eylem': eylem});
+
   /// Demo'dan hesap oluşturmaya geçti (`from`: hangi eylem tetikledi).
   Future<void> logDemoConverted({required String from}) =>
       _log('demo_converted', {'from': from});

@@ -34,6 +34,7 @@
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { haftaSonuKapaliMi } from '../_shared/piyasa_takvimi.ts';
 import { fonKodlari, trGun } from '../_shared/tefas_nav.ts';
 import {
   AkisIstatistigi,
@@ -194,6 +195,16 @@ Deno.serve(async (request) => {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
     } catch (_) { /* gövde opsiyonel */ }
+
+    // Hafta sonu TEFAS yeni gün yayınlamaz (müşteri raporu 2026-10-21
+    // 21:15, yasin "yapılmayan yap'ları yap"): cumartesi ve pazar dört tur
+    // aynı cuma gününü yeniden soruyordu. Kayıp yok: cuma pazartesiye kadar
+    // kesinleşmemiş kalır (`KESINLESME_GUN`), pazartesinin ilk turu onu bir
+    // kez daha çeker ve geç yayınlanan fonları da alır. Kural tek yerde
+    // (`piyasa_takvimi.ts`, analyze-signals ile aynı).
+    if (!dryRun && haftaSonuKapaliMi('fon', new Date())) {
+      return jsonResponse({ ok: true, atlandi: 'hafta_sonu' });
+    }
 
     const client = createClient(supabaseUrl, serviceRoleKey);
     const basladi = Date.now();

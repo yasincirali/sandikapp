@@ -122,14 +122,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         if (!mounted) return;
         await ref.read(portfolioProvider.notifier).refreshPrices(nabiz: true);
       },
-      // Yalnız borsa portföyü + seans dışı: tur 5 dk'da bir (gerekçe
-      // `TazelikRitmi.sakinTur`). "BORSA KAPALI" ile aynı kural.
+      // Yalnız borsa portföyü + seans dışı ya da yalnız fon/BES: tur 5 dk'da
+      // bir (gerekçe `TazelikRitmi.sakinTur`, kural `fiyatTuruSakinMi`).
       sakinMi: () {
         if (!mounted) return false;
         final varliklar = ref.read(portfolioProvider).valueOrNull?.assets;
         if (varliklar == null) return false;
-        return yalnizcaBorsaVarliklardan(varliklar) &&
-            !BugunService.seansAcikMi(DateTime.now());
+        return fiyatTuruSakinMi(varliklar,
+            seansAcik: BugunService.seansAcikMi(DateTime.now()));
       },
     );
 

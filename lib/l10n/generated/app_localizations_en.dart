@@ -9185,6 +9185,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onerKapat => 'Hide this suggestion';
 
   @override
+  String get sigBugun => 'Today';
+
+  @override
+  String get sigYarin => 'Tomorrow';
+
+  @override
+  String sigTcmb(String gun) {
+    return '$gun: CBRT rate decision';
+  }
+
+  @override
+  String sigFomc(String gun) {
+    return '$gun: Fed rate decision';
+  }
+
+  @override
+  String sigTemettu(String gun, String kod) {
+    return '$gun: $kod dividend day';
+  }
+
+  @override
+  String get sigTcmbAlt =>
+      'Central Bank of Türkiye, decision at 14:00 Türkiye time';
+
+  @override
+  String get sigFomcAlt =>
+      'US Federal Reserve, decision in the evening Türkiye time';
+
+  @override
+  String get sigTemettuAlt =>
+      'Paid on this day last year; this year\'s date may differ';
+
+  @override
+  String get sigSayfaBaslik => 'Upcoming days';
+
+  @override
+  String sigSayfaNot(int gun) {
+    return 'Next $gun days. Rate decision days come from official calendars, dividend days from last year\'s ex-dates. No outcome is predicted.';
+  }
+
+  @override
+  String get sigKapat => 'Hide this day';
+
+  @override
+  String get sigBos => 'Nothing left to show in the next two weeks.';
+
+  @override
   String get ziBaslikUpper => 'WHAT\'S INSIDE THE FUNDS';
 
   @override

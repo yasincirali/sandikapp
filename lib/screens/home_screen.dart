@@ -28,6 +28,7 @@ import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
+import '../widgets/gunler_satiri.dart';
 import '../widgets/ozellik_onerisi_karti.dart';
 import '../widgets/veri_kalitesi_seridi.dart';
 import '../widgets/ilk_varlik_vitrini.dart';
@@ -1025,12 +1026,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: VeriKalitesiSeridi(
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
             ),
+          // "Seni ilgilendiren günler" (2026-10-21, müşteri raporu 20 Eki):
+          // iki gün içindeki tek olay (TCMB/Fed faiz kararı, kendi
+          // hissenin geçen yılki temettü günü). Özellik önerisiyle AYNI
+          // yuva: ana ekranda aynı anda tek dürtü, sıra bilgi eksik >
+          // takvim > öneri (`anaSayfaDurtusuProvider`). Yalnız kendi
+          // görünümünde: temettü günleri kendi hisselerinden.
+          if (benGorunumu)
+            SliverToBoxAdapter(
+              child: GunlerSatiri(
+                  padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
+            ),
           // Özellik önerisi (2026-10-20): kullanılmayan bir özelliğe götüren
-          // tek kart (alarm, takip, ortak, Zirve). "Bilgi eksik" satırı
-          // görünürken susar; ana ekranda aynı anda tek dürtü.
+          // tek kart (alarm, takip, ortak, Zirve). "Bilgi eksik" satırı ya
+          // da takvim satırı görünürken susar; ana ekranda aynı anda tek
+          // dürtü.
           if (benGorunumu)
             SliverToBoxAdapter(
               child: OzellikOnerisiKarti(
+                  anaSayfa: true,
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
             ),
           // Radar şeridi (Balina S7-A, 2026-10-05): yalnız kendi görünümünde

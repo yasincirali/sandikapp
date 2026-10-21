@@ -74,3 +74,30 @@ String? piyasaKapaliEtiketi(Iterable<AssetType> turler) =>
 /// [Asset] listesinden doğrudan etiket üretir.
 String? piyasaKapaliEtiketiVarliklardan(Iterable<Asset> varliklar) =>
     yalnizcaBorsaVarliklardan(varliklar) ? 'BORSA KAPALI' : null;
+
+/// Fon gibi günde bir fiyatlanan türler: değer gün içinde değişmez.
+const _gundeBirFiyat = {AssetType.fon, AssetType.bes};
+
+/// Portföy (bugünkü mülkiyet) yalnız fon ve BES'ten mi oluşuyor?
+bool yalnizcaFonVarliklardan(Iterable<Asset> varliklar) {
+  final turler = aktifLotlar(varliklar).map((a) => a.type).toSet();
+  return turler.isNotEmpty && _gundeBirFiyat.containsAll(turler);
+}
+
+/// Ortak nabzın fiyat turu seyrek mi atılsın (`TazelikRitmi.sakinTur`)?
+/// Tek kural, tek yer (`MainNavigationScreen` buradan sorar).
+///
+/// - Yalnız borsa portföyü + seans kapalı (2026-10-21, #232): değişmeyecek
+///   fiyat 30 sn'de bir indirilmesin.
+/// - Yalnız fon/BES portföyü, seans AÇIKKEN de (müşteri raporu 2026-10-21
+///   17:15 + 21:15, yasin "yapılmayan yap'ları yap"): fon fiyatı günde bir
+///   yayınlanır; gün içinde 30 sn'lik tur hep aynı fiyatı getirir.
+///   Yeni fiyat yayınlandığında en fazla bir sakin tur (5 dk) gecikir; öne
+///   dönüş ve aşağı çekme her zaman anında tazeler.
+///
+/// Yalnız portföyün fiyat turunu etkiler: ana sayfadaki piyasa şeridi
+/// (dolar, BIST, altın) kendi kotasyonunu nabızla çekmeye devam eder, o
+/// kişide de canlı kalır.
+bool fiyatTuruSakinMi(Iterable<Asset> varliklar, {required bool seansAcik}) =>
+    yalnizcaFonVarliklardan(varliklar) ||
+    (yalnizcaBorsaVarliklardan(varliklar) && !seansAcik);

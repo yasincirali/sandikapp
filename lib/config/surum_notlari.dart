@@ -105,6 +105,74 @@ class SurumNotu {
 /// bu yana çıkanlar"ı bu listeden baştan itibaren toplar.
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
+    surum: '1.1.7',
+    tarih: 'Ekim 2026',
+    onemli: true,
+    // Müşteri raporu 2026-10-21 21:15 (yasin: "yapılmayan yap'ları yap"):
+    // 1.1.6 notundan sonra gelenler. Yalnız HERKESİN gördüğü özellikler:
+    // paywall kapalıyken yalnız admin'e görünenler (Zirve "fonların içi",
+    // Premium göstergeler, AI seviye bilgisi) yazılmaz. Ekran görüntüsünden
+    // ekleme, "Fotoğrafla ekle" hatası kapanana kadar bilerek dışarıda:
+    // vaat edilen ilk denemede çalışmazsa güven kaybı yazmamaktan büyük.
+    baslik: 'Emtialar, sakin bildirimler, daha güvenilir alarmlar',
+    yenilikler: [
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Yaklaşan önemli günler',
+        aciklama: 'Ana sayfada, Bugün kartının altında önümüzdeki iki günün '
+            'önemli günü yazar: TCMB ya da ABD faiz kararı, elindeki bir '
+            'hissenin geçen yıl temettü dağıttığı gün. Dokununca iki '
+            'haftalık liste açılır.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Gümüş, platin ve paladyum',
+        aciklama: 'Varlık Ekle\'de "Emtia seç" listesinden seç. Gümüş, platin '
+            've paladyumu gram olarak da ekleyebilirsin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Bildirimler tek ayarda',
+        aciklama: 'Ayarlar\'daki Bildirimler bölümünün başında Az, Dengeli '
+            've Çok seçenekleri var. Tek tek ayarlar "Ayrıntılı" altında duruyor.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Çalan alarmı yeniden kur',
+        aciklama: 'Çalmış bir fiyat alarmına dokun, aynı eşikle yeniden '
+            'kurulsun. Fiyat eşiği zaten geçtiyse eşiği değiştirebileceğin '
+            'sayfa açılır.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.guvenlik,
+        baslik: 'Bildirimler kapalıysa söylüyoruz',
+        aciklama: 'Telefonunda sandık bildirimleri kapalıysa alarm ve sinyal '
+            'sayfalarında bir uyarı görürsün. "Ayarları aç" ile tek '
+            'dokunuşta açabilirsin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Zirve yenilendi',
+        aciklama: 'Zirvedeki portföyler daha okunaklı: türler büyükten '
+            'küçüğe sıralı, hepsi aynı ölçekte. Ayrıntı sayfası aşağı '
+            'çekince kapanıyor.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'İkon kısayolları ve Spotlight',
+        aciklama: 'Uygulama ikonuna basılı tut: varlık ekle, alarm kur ve '
+            'ara kısayolları açılır. iPhone\'da varlıklarını Spotlight '
+            'aramasında da bulabilirsin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Eksik alış fiyatı hatırlatması',
+        aciklama: 'Alış fiyatını sonra gireceğin varlıklar ana sayfada tek '
+            'satırla hatırlatılır; girince kâr ve zarar doğru hesaplanır.',
+      ),
+    ],
+  ),
+  SurumNotu(
     surum: '1.1.6',
     tarih: 'Ekim 2026',
     onemli: true,

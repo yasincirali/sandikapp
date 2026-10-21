@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
+import '../providers/gunler_provider.dart';
 import '../providers/ozellik_onerisi_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../screens/add_watchlist_screen.dart';
@@ -26,9 +27,16 @@ import 'sandik_skeleton.dart';
 /// erteler. Bayraksız: mevcut ekranlara yönlendiren ek, söyleyecek bir şey
 /// yoksa yer kaplamaz.
 class OzellikOnerisiKarti extends ConsumerWidget {
-  const OzellikOnerisiKarti({super.key, this.padding = EdgeInsets.zero});
+  const OzellikOnerisiKarti(
+      {super.key, this.padding = EdgeInsets.zero, this.anaSayfa = false});
 
   final EdgeInsetsGeometry padding;
+
+  /// Ana sayfada yuva "seni ilgilendiren günler" satırıyla ([GunlerSatiri])
+  /// paylaşılır: iki gün içinde bir olay varken öneri susar
+  /// ([anaSayfaDurtusuProvider]; sıra bilgi eksik > takvim > öneri).
+  /// Portföy sekmesinde takvim satırı yok; öneri eskisi gibi.
+  final bool anaSayfa;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
@@ -37,6 +45,10 @@ class OzellikOnerisiKarti extends ConsumerWidget {
   Widget _govde(BuildContext context, WidgetRef ref) {
     final oneri = ref.watch(ozellikOnerisiProvider);
     if (oneri == null) return const SizedBox.shrink();
+    if (anaSayfa &&
+        ref.watch(anaSayfaDurtusuProvider) != AnaSayfaDurtusu.oneri) {
+      return const SizedBox.shrink();
+    }
     final c = context.c;
     final t = context.t;
     final l = context.l10n;
