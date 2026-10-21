@@ -5330,5 +5330,11 @@
   "biKapaliBaslik": "Notifications are off",
   "biKapaliAlt": "We can't tell you when an alert or signal fires.",
   "biAyarlariAc": "Open Settings",
-  "biAyarlariAcSemantics": "Turn on Sandık notifications in phone settings"
+  "biAyarlariAcSemantics": "Turn on Sandık notifications in phone settings",
+  "hsnSoru": "If you like, tell us why you're leaving",
+  "hsnKullanmiyorum": "I don't use it anymore",
+  "hsnEksikOzellik": "A feature I need is missing",
+  "hsnFiyatSorunu": "Prices are wrong or late",
+  "hsnBaskaUygulama": "I switched to another app",
+  "hsnKapat": "Close"
 }

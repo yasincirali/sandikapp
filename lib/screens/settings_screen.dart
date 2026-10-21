@@ -20,6 +20,7 @@ import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
 import '../widgets/bildirim_on_ayar_karti.dart';
 import '../widgets/sandik_acilir.dart';
+import '../widgets/hesap_silme_nedeni_sheet.dart';
 import '../widgets/seviye_anketi.dart';
 import '../widgets/yenilikler_sheet.dart';
 import '../services/surum_notu_service.dart';
@@ -240,11 +241,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Açık olabilecek modal'ları kapatıp root'a dön.
       Navigator.of(context).popUntil((r) => r.isFirst);
       if (!mounted) return;
-      await showAppSuccess(
-        context,
-        title: context.l10n.accountDeletedTitle,
-        message: context.l10n.accountDeletedBody,
-      );
+      // Başarı bilgisi + isteğe bağlı "neden?" tek sayfada (2026-10-21).
+      // Kimlik ÖNCE düşer: neden olayı silinen hesaba bağlanmasın.
+      await AnalyticsService.instance.setUserId(null);
+      if (!mounted) return;
+      await hesapSilindiSayfasi(context);
     } on SocialSignInCancelled {
       // Sağlayıcı ekranında vazgeçti — hata değil.
       if (mounted) setState(() => _deleting = false);

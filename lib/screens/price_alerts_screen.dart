@@ -158,15 +158,16 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                             },
                             // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
                             // çökme); düğme artık bekliyor, ret sebebi söylenir.
-                            onRearm: () async {
-                              if (alarmSiniriDoluysaUyar(context, ref)) return;
-                              try {
-                                await ref
-                                    .read(priceAlertsProvider.notifier)
-                                    .rearm(liste[i].id);
-                              } catch (e) {
-                                if (context.mounted) showAppError(context, e);
-                              }
+                            // Eşik geçilmişse ön dolu sayfa, değilse yeniden
+                            // kur + onay (`alarmiYenidenKur`, 2026-10-21).
+                            onRearm: () {
+                              final a = liste[i];
+                              final aday = _adaylar()
+                                      .where((x) => x.sembol == a.symbol)
+                                      .firstOrNull ??
+                                  AlarmAdayi(a.symbol, a.label, 0);
+                              return alarmiYenidenKur(context, ref, a,
+                                  aday: aday);
                             },
                           ),
                         ),

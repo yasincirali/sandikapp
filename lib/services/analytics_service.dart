@@ -52,6 +52,17 @@ class AnalyticsService {
     } catch (_) {}
   }
 
+  // ── Ar-Ge ölçümleri (2026-10-21) ────────────────────────────────────────
+  /// Hesap silindikten sonra isteğe bağlı seçilen neden; yalnız sabit kod
+  /// (`hesap_silme_nedeni_sheet.dart`). Kimlik çağıran tarafta düşürülür.
+  Future<void> logHesapSilmeNedeni(String kod) =>
+      _log('hesap_silme_nedeni', {'neden': kod});
+
+  /// Bir ayar değişti — yalnız anahtarın GÖVDESİ, değer asla
+  /// (`AyarOlcumu`). 19 Kasım "dokunulmayan ayar" kararının verisi.
+  Future<void> logAyarDegisti(String anahtar) =>
+      _log('ayar_degisti', {'anahtar': anahtar});
+
   // ── Auth ────────────────────────────────────────────────────────────────
   Future<void> logLogin({required String method}) =>
       _log('login', {'method': method});

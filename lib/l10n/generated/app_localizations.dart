@@ -15280,6 +15280,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Telefon ayarlarında Sandık bildirimlerini aç'**
   String get biAyarlariAcSemantics;
+
+  /// No description provided for @hsnSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'İstersen neden ayrıldığını söyle'**
+  String get hsnSoru;
+
+  /// No description provided for @hsnKullanmiyorum.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artık kullanmıyorum'**
+  String get hsnKullanmiyorum;
+
+  /// No description provided for @hsnEksikOzellik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aradığım özellik yok'**
+  String get hsnEksikOzellik;
+
+  /// No description provided for @hsnFiyatSorunu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar yanlış ya da geç'**
+  String get hsnFiyatSorunu;
+
+  /// No description provided for @hsnBaskaUygulama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka uygulamaya geçtim'**
+  String get hsnBaskaUygulama;
+
+  /// No description provided for @hsnKapat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapat'**
+  String get hsnKapat;
 }
 
 class _AppLocalizationsDelegate

@@ -9189,4 +9189,22 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get biAyarlariAcSemantics =>
       'Telefon ayarlarında Sandık bildirimlerini aç';
+
+  @override
+  String get hsnSoru => 'İstersen neden ayrıldığını söyle';
+
+  @override
+  String get hsnKullanmiyorum => 'Artık kullanmıyorum';
+
+  @override
+  String get hsnEksikOzellik => 'Aradığım özellik yok';
+
+  @override
+  String get hsnFiyatSorunu => 'Fiyatlar yanlış ya da geç';
+
+  @override
+  String get hsnBaskaUygulama => 'Başka uygulamaya geçtim';
+
+  @override
+  String get hsnKapat => 'Kapat';
 }

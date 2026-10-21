@@ -9274,4 +9274,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get biAyarlariAcSemantics =>
       'Turn on Sandık notifications in phone settings';
+
+  @override
+  String get hsnSoru => 'If you like, tell us why you\'re leaving';
+
+  @override
+  String get hsnKullanmiyorum => 'I don\'t use it anymore';
+
+  @override
+  String get hsnEksikOzellik => 'A feature I need is missing';
+
+  @override
+  String get hsnFiyatSorunu => 'Prices are wrong or late';
+
+  @override
+  String get hsnBaskaUygulama => 'I switched to another app';
+
+  @override
+  String get hsnKapat => 'Close';
 }

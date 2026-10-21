@@ -37,6 +37,7 @@ import {
 } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { haftaSonuKapaliMi } from '../_shared/piyasa_takvimi.ts';
 import {
   createAccessToken,
   sendFcmNotification,
@@ -612,9 +613,13 @@ Deno.serve(async (request) => {
       (assetRows ?? []).filter((a: AssetRow) => (a.kind ?? 'buy') === 'buy')
         .length - acikLotlar.length;
 
-    // Analiz edilebilir türler; manuel fiyatlılar için geçmiş yok.
+    // Analiz edilebilir türler; manuel fiyatlılar için geçmiş yok. Hafta
+    // sonu kapalı piyasalar (hisse/fon/BES/eurobond) atlanır: yeni bar yok
+    // (`piyasa_takvimi.ts`, 2026-10-21).
+    const simdi = new Date();
     const assets = acikLotlar.filter((a: AssetRow) =>
-      ANALYZABLE.has(a.type) && a.is_manual_price !== true
+      ANALYZABLE.has(a.type) && a.is_manual_price !== true &&
+      !haftaSonuKapaliMi(a.type, simdi)
     );
 
     if (assets.length === 0) {
