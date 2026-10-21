@@ -84,6 +84,18 @@ abstract final class TazelikRitmi {
   /// tazelenir, arka plandaki yüzeyler 5 dakikada bir.
   static const Duration gunIciSeriOmru = Duration(minutes: 5);
 
+  /// Portföyün TAMAMI borsa ürünüyken seans dışında fiyat turunun aralığı
+  /// (Ar-Ge 16:45 #2, yasin "kalanlara devam et", 2026-10-21).
+  ///
+  /// Gece ve hafta sonu yalnız hisse/fon/BES tutan kişinin fiyatı
+  /// değişmez; nabız yine de her 30 sn'de turu atıp aynı kapanışı
+  /// indiriyordu (pil, mobil veri, kaynak hız sınırı). Karar "BORSA KAPALI"
+  /// ibaresinin TEK kuralıyla aynı (`yalnizcaBorsaVarliklardan` +
+  /// `BugunService.seansAcikMi`): altın/döviz/kripto/ABD hissesi varsa ritim
+  /// değişmez. Yalnız FİYAT TURU seyrelir; dinleyiciler (piyasa bandı dahil)
+  /// [yuzey]'de atmaya devam eder. Öne dönüş her zaman tur atar.
+  static const Duration sakinTur = gunIciSeriOmru;
+
   /// Serinin ucu bu süreden eskiyse canlı değer son noktayı EZMEZ, ayrı bir
   /// nokta olarak EKLENİR (`DailySummary.dayValues`).
   ///
@@ -219,6 +231,15 @@ class TazelikNabzi with WidgetsBindingObserver {
   /// Her nabızda dinleyicilerden ÖNCE koşan tek fiyat turu.
   Future<void> Function()? _fiyatTuru;
 
+  /// `true` dönerse fiyat turu [TazelikRitmi.sakinTur]'da bir atılır
+  /// (piyasa kapalı, yalnız borsa portföyü). Tur sahibi bağlar.
+  bool Function()? _sakinMi;
+  DateTime? _sonTur;
+
+  /// Testte saati sabitlemek için.
+  @visibleForTesting
+  DateTime Function() saat = DateTime.now;
+
   /// Nabzın fiyat turunu bağlar — uygulamada TEK sahibi vardır
   /// (`MainNavigationScreen`). Dönüş değeri bağı çözer.
   ///
@@ -241,11 +262,31 @@ class TazelikNabzi with WidgetsBindingObserver {
   /// 60 sn'de bir tazeleniyordu.
   ///
   /// Bağ sayacı BAŞLATMAZ — nabız, ona bakan bir yüzey varken atar.
-  VoidCallback fiyatTuruBagla(Future<void> Function() tur) {
+  VoidCallback fiyatTuruBagla(Future<void> Function() tur,
+      {bool Function()? sakinMi}) {
     _fiyatTuru = tur;
+    _sakinMi = sakinMi;
+    _sonTur = null;
     return () {
-      if (identical(_fiyatTuru, tur)) _fiyatTuru = null;
+      if (identical(_fiyatTuru, tur)) {
+        _fiyatTuru = null;
+        _sakinMi = null;
+      }
     };
+  }
+
+  /// Bu nabızda fiyat turu atlanır mı? Sakin dönemde son turdan bu yana
+  /// [TazelikRitmi.sakinTur] geçmediyse.
+  bool _turAtlanir() {
+    final son = _sonTur;
+    if (son == null) return false;
+    bool sakin;
+    try {
+      sakin = _sakinMi?.call() ?? false;
+    } catch (_) {
+      sakin = false; // karar verilemezse eski ritim
+    }
+    return sakin && saat().difference(son) < TazelikRitmi.sakinTur;
   }
 
   /// Bu yüzey her nabızda [geriCagri]'yı çağırsın.
@@ -284,9 +325,10 @@ class TazelikNabzi with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _at() async {
+  Future<void> _at({bool zorla = false}) async {
     final tur = _fiyatTuru;
-    if (tur != null) {
+    if (tur != null && (zorla || !_turAtlanir())) {
+      _sonTur = saat();
       try {
         // Asılı kalan tur yüzeyleri durdurmasın: en fazla bir aralık
         // beklenir, sonra dinleyiciler eldeki fiyatla tazelenir.
@@ -309,7 +351,7 @@ class TazelikNabzi with WidgetsBindingObserver {
       // Öne gelince HEMEN bir tur: arka planda geçen süre kadar bayat
       // rakam gösterilmemeli.
       // `_at` hatayı kendi içinde yutar; yine de başıboş bırakılmaz.
-      CrashReporter.arkaPlan(_at(), reason: 'TazelikNabzi.resumed');
+      CrashReporter.arkaPlan(_at(zorla: true), reason: 'TazelikNabzi.resumed');
       _kur();
     } else {
       _sayac?.cancel();

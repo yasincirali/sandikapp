@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/bildirim_izni.dart';
 import 'package:portfoy_takip/widgets/bildirim_izni_uyarisi.dart';
 
+import 'helpers/kaynak.dart';
+
 /// "Bildirimler kapalı" satırı (Ar-Ge 16:45 #1, 2026-10-21): izin
 /// reddedilmişse alarm/sinyal yüzeylerinde görünür, değilse yer kaplamaz,
 /// öne dönüşte yeniden okunur.
@@ -53,7 +55,7 @@ void main() {
       'lib/screens/price_alerts_screen.dart',
       'lib/screens/signal_settings_screen.dart',
     ]) {
-      expect(File(yol).readAsStringSync(), contains('BildirimIzniUyarisi('),
+      expect(ekranKaynagiSync(yol), contains('BildirimIzniUyarisi('),
           reason: yol);
     }
     const kanal = 'com.sandik.app/ayarlar';
