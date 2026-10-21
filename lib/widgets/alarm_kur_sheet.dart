@@ -13,6 +13,7 @@ import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
+import 'bildirim_izni_uyarisi.dart';
 import 'review_prompt_sheet.dart';
 import 'sandik_async_button.dart';
 import 'sinir_uyarisi.dart';
@@ -374,6 +375,10 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                 style: context.t.bodyMedium?.copyWith(color: c.amberText),
               ),
             const SizedBox(height: SandikSpace.lg),
+            // İzin reddedilmişse alarm kurulur ama çalınca haber gelmez;
+            // bunu kurarken söylemek (Ar-Ge 16:45 #1, 2026-10-21).
+            const BildirimIzniUyarisi(
+                padding: EdgeInsets.only(bottom: SandikSpace.md)),
             SizedBox(
               width: double.infinity,
               child: SandikAsyncButton.kompakt(

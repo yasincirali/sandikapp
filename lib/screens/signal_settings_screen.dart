@@ -6,6 +6,7 @@ import '../providers/preferences_provider.dart';
 import '../providers/sinyal_on_ayar_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
+import '../widgets/bildirim_izni_uyarisi.dart';
 import '../widgets/sandik_acilir.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
@@ -131,6 +132,9 @@ class SignalSettingsScreen extends ConsumerWidget {
         children: [
           const DisclaimerWidget(),
           const SizedBox(height: 16),
+          // Sinyal push'u izin yoksa hiç gelmez (Ar-Ge 16:45 #1, 2026-10-21).
+          const BildirimIzniUyarisi(
+              padding: EdgeInsets.only(bottom: SandikSpace.md)),
 
           // ── Premium kartı (paywall kapalıysa hiç gösterilmez) ────────────
           // Ücretsizde kilitler satırlarda (Premium gösterge, sıklık,

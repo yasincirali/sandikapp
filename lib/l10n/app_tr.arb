@@ -5967,5 +5967,9 @@
   "ziGrupDiger": "Diğer",
   "ziGrupDoviz": "Döviz",
   "ziGrupKripto": "Kripto",
-  "ziGrupEmtia": "Emtia"
+  "ziGrupEmtia": "Emtia",
+  "biKapaliBaslik": "Bildirimler kapalı",
+  "biKapaliAlt": "Alarm ya da sinyal çalınca sana haber veremeyiz.",
+  "biAyarlariAc": "Ayarları aç",
+  "biAyarlariAcSemantics": "Telefon ayarlarında Sandık bildirimlerini aç"
 }

@@ -7,6 +7,8 @@ import 'package:portfoy_takip/main.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
+import 'package:portfoy_takip/services/bildirim_izni.dart';
+import 'package:portfoy_takip/widgets/bildirim_izni_uyarisi.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/services/destek_direnc.dart';
 import 'package:portfoy_takip/widgets/portfoy_yorumu_karti.dart';
@@ -33,6 +35,10 @@ import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 /// bileşenlerden kurulduğu için buradaki bir gerileme her ekrana yayılır.
 /// Yeni ortak bileşen eklenince `vitrin`'e de eklenir.
 void main() {
+  // "Bildirimler kapalı" satırı vitrinde görünsün (izin reddedilmiş say).
+  setUpAll(() => BildirimIzni.testOkuyucu = () async => true);
+  tearDownAll(() => BildirimIzni.testOkuyucu = null);
+
   Widget vitrin({required Brightness parlaklik, double yaziOlcegi = 1}) {
     final palet =
         parlaklik == Brightness.dark ? SandikPalette.dark : SandikPalette.light;
@@ -68,6 +74,8 @@ void main() {
                   onPressed: () async {},
                   child: const Text('Onayla'),
                 ),
+                const SizedBox(height: SandikSpace.md),
+                const BildirimIzniUyarisi(),
                 const SizedBox(height: SandikSpace.md),
                 SandikAsyncTap(
                   onTap: () async {},

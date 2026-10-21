@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/price_alert_provider.dart';
+import 'package:portfoy_takip/services/bildirim_izni.dart';
 import 'package:portfoy_takip/services/price_alert_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/alarm_kur_sheet.dart';
@@ -149,6 +150,9 @@ void _govde() {
     });
 
     testWidgets('büyük metin ölçeği (1.6×), 320pt', (tester) async {
+      // "Bildirimler kapalı" satırı da açıkken sığsın (2026-10-21).
+      BildirimIzni.testOkuyucu = () async => true;
+      addTearDown(() => BildirimIzni.testOkuyucu = null);
       tester.view.physicalSize = const Size(320 * 3, 900 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);

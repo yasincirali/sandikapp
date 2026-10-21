@@ -9261,4 +9261,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ziGrupEmtia => 'Commodities';
+
+  @override
+  String get biKapaliBaslik => 'Notifications are off';
+
+  @override
+  String get biKapaliAlt => 'We can\'t tell you when an alert or signal fires.';
+
+  @override
+  String get biAyarlariAc => 'Open Settings';
+
+  @override
+  String get biAyarlariAcSemantics =>
+      'Turn on Sandık notifications in phone settings';
 }

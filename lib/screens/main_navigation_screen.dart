@@ -15,6 +15,8 @@ import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/bugun_service.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../services/tazelik_ritmi.dart';
 import '../services/crash_reporter.dart';
 import '../services/notification_service.dart';
@@ -115,10 +117,21 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // tazelenmesini o ekranın dönem seçimine borçluydu. Bu ekran oturum
     // boyunca ağaçta kalır; nabız her attığında önce bu tur koşar, sonra
     // yüzeyler aynı fiyatla tazelenir (bkz. `TazelikNabzi.fiyatTuruBagla`).
-    _fiyatTuruBagi = TazelikRitmi.nabiz.fiyatTuruBagla(() async {
-      if (!mounted) return;
-      await ref.read(portfolioProvider.notifier).refreshPrices(nabiz: true);
-    });
+    _fiyatTuruBagi = TazelikRitmi.nabiz.fiyatTuruBagla(
+      () async {
+        if (!mounted) return;
+        await ref.read(portfolioProvider.notifier).refreshPrices(nabiz: true);
+      },
+      // Yalnız borsa portföyü + seans dışı: tur 5 dk'da bir (gerekçe
+      // `TazelikRitmi.sakinTur`). "BORSA KAPALI" ile aynı kural.
+      sakinMi: () {
+        if (!mounted) return false;
+        final varliklar = ref.read(portfolioProvider).valueOrNull?.assets;
+        if (varliklar == null) return false;
+        return yalnizcaBorsaVarliklardan(varliklar) &&
+            !BugunService.seansAcikMi(DateTime.now());
+      },
+    );
 
     // İlk açılışta fiyatları yükle
     // Açılış turu artık SPLASH'ta koşar (`_AuthGateState._acilisiIsit`);

@@ -5326,5 +5326,9 @@
   "ziGrupDiger": "Other",
   "ziGrupDoviz": "Currency",
   "ziGrupKripto": "Crypto",
-  "ziGrupEmtia": "Commodities"
+  "ziGrupEmtia": "Commodities",
+  "biKapaliBaslik": "Notifications are off",
+  "biKapaliAlt": "We can't tell you when an alert or signal fires.",
+  "biAyarlariAc": "Open Settings",
+  "biAyarlariAcSemantics": "Turn on Sandık notifications in phone settings"
 }
