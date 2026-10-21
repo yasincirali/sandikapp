@@ -117,6 +117,14 @@ const List<SurumNotu> surumNotlari = [
     baslik: 'Emtialar, sakin bildirimler, daha güvenilir alarmlar',
     yenilikler: [
       Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Yaklaşan önemli günler',
+        aciklama: 'Ana sayfada, Bugün kartının altında önümüzdeki iki günün '
+            'önemli günü yazar: TCMB ya da ABD faiz kararı, elindeki bir '
+            'hissenin geçen yıl temettü dağıttığı gün. Dokununca iki '
+            'haftalık liste açılır.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.liste,
         baslik: 'Gümüş, platin ve paladyum',
         aciklama: 'Varlık Ekle\'de "Emtia seç" listesinden seç. Gümüş, platin '

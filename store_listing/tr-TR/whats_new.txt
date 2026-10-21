@@ -1,3 +1,4 @@
+• YENİ: Ana sayfada yaklaşan önemli günler (faiz kararları, temettü)
 • YENİ: Gümüş, platin ve paladyum; gram olarak da eklenir
 • YENİ: Bildirimler tek ayarda: Az, Dengeli, Çok
 • YENİ: Çalan fiyat alarmını tek dokunuşla yeniden kur
