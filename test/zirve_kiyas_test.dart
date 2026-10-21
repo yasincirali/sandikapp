@@ -232,4 +232,24 @@ void main() {
       expect(ZirveKiyas.getiriFarkiCumlesi(senRoi: null, zirveRoi: 3.0), '');
     });
   });
+
+  group('ayrıntı paylaşılmadı notu (2026-10-21)', () {
+    test('sembollü tür var ama varlık kırılımı boş: not', () {
+      expect(
+          ZirveKiyas.ayrintiPaylasilmadi(
+              const {'hisse': 40, 'fon': 60}, const {}),
+          isTrue);
+    });
+    test('kırılım varsa ya da yalnız fon/BES/mevduat: not yok', () {
+      expect(
+          ZirveKiyas.ayrintiPaylasilmadi(const {'hisse': 40, 'fon': 60}, const {
+            'hisse': {'THYAO.IS': 40}
+          }),
+          isFalse);
+      expect(
+          ZirveKiyas.ayrintiPaylasilmadi(
+              const {'fon': 50, 'bes': 30, 'mevduat': 20}, const {}),
+          isFalse);
+    });
+  });
 }
