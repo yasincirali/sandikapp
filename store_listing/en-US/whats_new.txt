@@ -1,7 +1,7 @@
-• NEW: Cash dividend tracking — log it with its date, see it in your return
-• NEW: Purchase commission included in cost basis — profit is the real number
-• Fix: "Together" P/L in shared portfolios now matches the individual tabs
-• Fix: Asset names read fully on small screens
-• Fix: Layout overflows on home, performance and transaction screens
-• Fix: Session no longer drops when connectivity is lost
-• Speed: Faster startup, less background network traffic
+• NEW: Silver, platinum and palladium, also by the gram
+• NEW: Notifications in one setting: Less, Balanced, More
+• NEW: Re-arm a triggered price alert with one tap
+• NEW: Alert screens tell you when notifications are off, with "Open Settings"
+• NEW: App icon shortcuts; Spotlight search on iPhone
+• Leaderboard refreshed: sorted asset types, one scale
+• Missing purchase prices are flagged on the home screen

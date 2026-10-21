@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/services/tazelik_ritmi.dart';
+import 'package:portfoy_takip/utils/piyasa_kapali_etiketi.dart';
 
 import 'helpers/kaynak.dart';
 
@@ -63,7 +66,48 @@ void main() {
   test('sakin aralık temele hizalı ve kural "BORSA KAPALI" ile aynı', () {
     expect(TazelikRitmi.hizali(TazelikRitmi.sakinTur), isTrue);
     final kabuk = ekranKaynagiSync('lib/screens/main_navigation_screen.dart');
-    expect(kabuk, contains('yalnizcaBorsaVarliklardan(varliklar)'));
+    expect(kabuk, contains('fiyatTuruSakinMi(varliklar'));
     expect(kabuk, contains('BugunService.seansAcikMi('));
+  });
+
+  // Yalnız fon/BES tutan: seans açıkken de sakin (müşteri raporu 2026-10-21
+  // 21:15). Fon fiyatı günde bir değişir.
+  group('fiyatTuruSakinMi', () {
+    Asset v(String id, AssetType t, {double q = 1}) => Asset(
+          id: id,
+          userId: 'u1',
+          name: id,
+          ticker: id,
+          type: t,
+          quantity: q,
+          purchasePrice: 10,
+          currency: 'TRY',
+          notes: '',
+          isManualPrice: false,
+          addedDate: DateTime(2025, 6, 1),
+        );
+
+    test('yalnız fon/BES: seans açıkken de sakin', () {
+      final p = [v('AFT', AssetType.fon), v('AEA', AssetType.bes)];
+      expect(fiyatTuruSakinMi(p, seansAcik: true), isTrue);
+      expect(fiyatTuruSakinMi(p, seansAcik: false), isTrue);
+    });
+
+    test('hisse varsa yalnız seans dışında sakin', () {
+      final p = [v('AFT', AssetType.fon), v('THYAO.IS', AssetType.hisse)];
+      expect(fiyatTuruSakinMi(p, seansAcik: true), isFalse);
+      expect(fiyatTuruSakinMi(p, seansAcik: false), isTrue);
+    });
+
+    test('altın, döviz ya da kripto varsa hiç sakin değil', () {
+      for (final t in [AssetType.altin, AssetType.doviz, AssetType.kripto]) {
+        final p = [v('AFT', AssetType.fon), v('X', t)];
+        expect(fiyatTuruSakinMi(p, seansAcik: false), isFalse, reason: '$t');
+      }
+    });
+
+    test('boş portföy sakin değil', () {
+      expect(fiyatTuruSakinMi(const [], seansAcik: false), isFalse);
+    });
   });
 }
