@@ -71,8 +71,10 @@ class AlarmSeridi extends ConsumerWidget {
                   // ikinci bir ikon şeridi sıkıştırırdı.
                   onTap: () async {
                     if (a.triggeredAt != null) {
-                      if (alarmSiniriDoluysaUyar(context, ref)) return;
-                      await n.rearm(a.id);
+                      // Fiyat eşiğin ötesindeyse eşik ön dolu sayfa;
+                      // değilse yeniden kur + onay (`alarmiYenidenKur`).
+                      await alarmiYenidenKur(context, ref, a,
+                          aday: AlarmAdayi(sembol, ad, guncelFiyat));
                       return;
                     }
                     final ok = await showSandikConfirm(

@@ -5971,5 +5971,11 @@
   "biKapaliBaslik": "Bildirimler kapalı",
   "biKapaliAlt": "Alarm ya da sinyal çalınca sana haber veremeyiz.",
   "biAyarlariAc": "Ayarları aç",
-  "biAyarlariAcSemantics": "Telefon ayarlarında Sandık bildirimlerini aç"
+  "biAyarlariAcSemantics": "Telefon ayarlarında Sandık bildirimlerini aç",
+  "hsnSoru": "İstersen neden ayrıldığını söyle",
+  "hsnKullanmiyorum": "Artık kullanmıyorum",
+  "hsnEksikOzellik": "Aradığım özellik yok",
+  "hsnFiyatSorunu": "Fiyatlar yanlış ya da geç",
+  "hsnBaskaUygulama": "Başka uygulamaya geçtim",
+  "hsnKapat": "Kapat"
 }

@@ -87,6 +87,7 @@ Future<PriceAlert?> alarmKurAkisi(
   WidgetRef ref, {
   AlarmAdayi? sabit,
   List<AlarmAdayi> adaylar = const [],
+  double? baslangicHedef,
 }) async {
   if (DemoModu.yazmaKapisi('alarm')) return null; // Demo: alarm hesap ister (F1).
   final liste = sabit != null ? [sabit] : adaylar;
@@ -114,6 +115,7 @@ Future<PriceAlert?> alarmKurAkisi(
     builder: (_) => AlarmKurSheet(
       adaylar: liste,
       sabit: sabit != null,
+      baslangicHedef: baslangicHedef,
       kur: (k) async {
         final me = ref.read(authProvider).valueOrNull;
         if (me == null) return;
@@ -152,6 +154,60 @@ Future<PriceAlert?> alarmKurAkisi(
   return kurulan;
 }
 
+/// Aynı eşikle yeniden kurulan alarm ilk kontrolde çalar mı: fiyat eşiğin
+/// hâlâ ötesinde (sunucu `price >= target` / `<=`). Fiyat bilinmiyorsa
+/// (0) `false`.
+bool alarmHemenCalarMi(PriceAlert alarm, double guncelFiyat) =>
+    guncelFiyat > 0 &&
+    (alarm.isAbove
+        ? guncelFiyat >= alarm.targetPrice
+        : guncelFiyat <= alarm.targetPrice);
+
+/// Çalmış alarmı yeniden kurar (Ar-Ge 21 Eki 12:45 #2; yasin "şerh
+/// düştüklerim dışında yap", 2026-10-21).
+///
+/// Alarm bildirimine dokunmak varlık ekranını açar; çalmış alarm orada
+/// şeritte durur ve tek dokunuşla yeniden kurulur. İki eksik vardı (müşteri
+/// raporu 21 Eki 13:15):
+/// - Fiyat eşiğin hâlâ ötesindeyse aynı eşikle kurulan alarm ilk kontrolde
+///   yeniden çalar. Bu durumda eşik ÖN DOLU ve düzenlenebilir sayfa açılır;
+///   yeni alarm kurulunca çalmış olanı silinir (liste ikilenmesin).
+/// - Kurulunca hiçbir şey olmuyordu: artık titreşim + onay satırı.
+///
+/// Güncel fiyat bilinmiyorsa (0) karar verilemez: eski davranış (doğrudan
+/// yeniden kur).
+Future<void> alarmiYenidenKur(
+  BuildContext context,
+  WidgetRef ref,
+  PriceAlert alarm, {
+  required AlarmAdayi aday,
+}) async {
+  final hemenCalar = alarmHemenCalarMi(alarm, aday.guncelFiyat);
+  final n = ref.read(priceAlertsProvider.notifier);
+  try {
+    if (hemenCalar) {
+      final yeni = await alarmKurAkisi(context, ref,
+          sabit: aday, baslangicHedef: alarm.targetPrice);
+      if (yeni != null) await n.delete(alarm.id);
+      return;
+    }
+    if (alarmSiniriDoluysaUyar(context, ref)) return;
+    await n.rearm(alarm.id);
+    SandikHaptic.selection.perform();
+    if (!context.mounted) return;
+    final fiyat = fmtTRYFiyat(alarm.targetPrice);
+    sandikSnack(
+      context,
+      alarm.isAbove
+          ? context.l10n.alertSetAbove(aday.ad, fiyat)
+          : context.l10n.alertSetBelow(aday.ad, fiyat),
+      kind: SandikSnackKind.success,
+    );
+  } catch (e) {
+    if (context.mounted) showAppError(context, e);
+  }
+}
+
 /// Hedef fiyat girişi. Yön SEÇTİRİLMEZ, güncel fiyata göre türetilir ve
 /// kaydetmeden önce GÖSTERİLİR (kullanıcı ne kurduğunu görsün).
 class AlarmKurSheet extends StatefulWidget {
@@ -164,8 +220,16 @@ class AlarmKurSheet extends StatefulWidget {
   /// başarıda sayfa kurulumla kapanır, hata olursa açık kalır. `null` →
   /// sayfa kurulumu hemen döndürür (widget testleri).
   final Future<void> Function(AlarmKurulumu kurulum)? kur;
+
+  /// Alanın ön değeri: çalmış alarmı yeniden kurarken eski eşik
+  /// ([alarmiYenidenKur]); kullanıcı değiştirebilir.
+  final double? baslangicHedef;
   const AlarmKurSheet(
-      {super.key, required this.adaylar, this.sabit = false, this.kur});
+      {super.key,
+      required this.adaylar,
+      this.sabit = false,
+      this.kur,
+      this.baslangicHedef});
 
   @override
   State<AlarmKurSheet> createState() => _AlarmKurSheetState();
@@ -179,6 +243,15 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   /// Hızlı hedefler: güncel fiyatın ±%'si. Kullanıcı çoğu zaman "biraz
   /// yükselince / düşünce" der, rakam hesaplamak istemez.
   static const _hizliYuzdeler = [-10, -5, 5, 10];
+
+  @override
+  void initState() {
+    super.initState();
+    final h = widget.baslangicHedef;
+    if (h != null && h > 0) {
+      _controller.text = h >= 1 ? fmtNum(h, digits: 2) : fmtInputTr(h);
+    }
+  }
 
   @override
   void dispose() {

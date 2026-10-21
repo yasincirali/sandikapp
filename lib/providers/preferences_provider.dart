@@ -17,6 +17,8 @@ import '../config/pref_keys.dart';
 import '../demo/demo_modu.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/biometric_lock_service.dart';
+import '../services/ayar_olcumu.dart';
+import '../services/dil_olcumu.dart';
 import '../services/crash_reporter.dart';
 import '../theme/yazi_boyutu.dart';
 
@@ -114,6 +116,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti('tema'); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(_kThemeModeKey, _toString(mode));
@@ -152,11 +155,17 @@ class LocaleNotifier extends Notifier<Locale?> {
     final prefs = _prefsSync;
     if (prefs != null) {
       final raw = prefs.getString(PrefKeys.locale);
-      if (raw != null) return parse(raw);
+      if (raw != null) return _olc(parse(raw), raw);
     } else {
       _loadAsync();
     }
-    return const Locale('tr', 'TR');
+    return _olc(const Locale('tr', 'TR'), 'varsayilan');
+  }
+
+  /// Dil ölçümü (`DilOlcumu`, 2026-10-21); değeri olduğu gibi döndürür.
+  Locale? _olc(Locale? l, String tercih) {
+    DilOlcumu.yaz(l, tercih: tercih);
+    return l;
   }
 
   /// 'tr' → tr_TR, 'en' → en_US, 'system' → null (sistem), tanınmayan → tr.
@@ -179,15 +188,16 @@ class LocaleNotifier extends Notifier<Locale?> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(PrefKeys.locale);
-      if (raw != null) state = parse(raw);
+      if (raw != null) state = _olc(parse(raw), raw);
     } catch (_) {}
   }
 
   Future<void> set(Locale? locale) async {
-    state = locale;
+    state = _olc(locale, encode(locale));
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti('dil'); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(PrefKeys.locale, encode(locale));
@@ -247,6 +257,7 @@ class _IntPrefNotifier extends Notifier<int> {
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setInt(_key, value);
@@ -287,6 +298,7 @@ class _StringPrefNotifier extends Notifier<String> {
   Future<void> set(String value) async {
     state = value;
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(_key, value);
@@ -319,6 +331,7 @@ class _KumePrefNotifier extends Notifier<Set<String>> {
   Future<void> set(Set<String> value) async {
     state = value;
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setStringList(_userKey(key), value.toList()..sort());
@@ -381,6 +394,7 @@ class _BoolPrefNotifier extends Notifier<bool> {
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setBool(_key, value);
