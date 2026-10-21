@@ -388,6 +388,20 @@ abstract final class ZirveKiyas {
   /// `zirve_detay_maske`). Gerçek sembol hiçbir zaman `?` ile başlamaz.
   static bool kilitliMi(String kod) => kod.startsWith('?');
 
+  /// Sahibi varlık ayrıntısını paylaşmayı onaylamamış portföy mü (yasin
+  /// 2026-10-21: "bazılarını detaylı, bazısını kategorisel görüyorum").
+  /// 0158: `varlik_detay` yalnız 2026-10-20 rıza metnini onaylayan
+  /// sahibinde döner; eski metin "sembol hiçbir koşulda paylaşılmaz"
+  /// dediği için diğerlerinde boş gelir. Boşluk, sembolü olabilecek bir
+  /// tür varken anlamlıdır: fon kendi sütununda (`fon_detay`, eski rızayla
+  /// da açık), mevduat sunucuda hiç kırılmaz, BES kodu 2026-10-20'den önce
+  /// yazılmıyordu — yalnız bunlardan oluşan portföyde not çıkmaz.
+  static bool ayrintiPaylasilmadi(
+          Map<String, double> pay, Map<String, Map<String, double>> varlik) =>
+      varlik.isEmpty &&
+      pay.entries.any((e) =>
+          e.value > 0 && !const {'fon', 'bes', 'mevduat'}.contains(e.key));
+
   static final _piyasaSembolu = RegExp(r'^[A-Z0-9.=_:-]{1,20}$');
 
   static bool mevduatMi(String? ticker) =>

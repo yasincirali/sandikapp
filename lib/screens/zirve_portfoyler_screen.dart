@@ -356,23 +356,36 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       useSafeArea: true,
       // Tavan şart (yasin 2026-10-21: "açılıyor ama kapatılamıyor, geri de
       // gidilemiyor"): fon/BES içi eklenince gövde ekrandan uzadı, sayfa tam
-      // boy açıldı. Üstte dokunulacak boşluk kalmıyor, aşağı çekme jesti de
-      // içteki kaydırmaya gidiyordu. %90 tavan + başlıktaki kapat düğmesi.
-      constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.9),
+      // boy açıldı. Üstte dokunulacak boşluk kalmıyor. %90 tavan + başlıktaki
+      // kapat düğmesi.
+      //
+      // Aşağı çekince de kapanmalı (yasin 2026-10-21: "tepeden aşağı
+      // sürükleyince de kapanması, sadece x ile kapatabiliyorum"): içteki
+      // düz kaydırma aşağı çekme jestini yutuyordu. DraggableScrollableSheet
+      // kaydırmayı sayfanın boyuyla paylaşır: en üstteyken aşağı çekmek
+      // sayfayı küçültür, `snap` ile ya geri açılır ya en alta iner ve
+      // `shouldCloseOnMinExtent` (varsayılan) sayfayı kapatır.
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
-      builder: (_) => _PortfoyAyrintisi(
-        donem: _donem,
-        satir: satir,
-        senPay: _senPay,
-        senFonDetay: _senFonDetay,
-        senVarlikDetay: _senVarlikDetay,
-        senRoi: _senRoi,
-        senHavuzda: _senSunucuda,
-        onKilitli: _premiumAc,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.9,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        snap: true,
+        builder: (_, kaydirma) => _PortfoyAyrintisi(
+          kaydirma: kaydirma,
+          donem: _donem,
+          satir: satir,
+          senPay: _senPay,
+          senFonDetay: _senFonDetay,
+          senVarlikDetay: _senVarlikDetay,
+          senRoi: _senRoi,
+          senHavuzda: _senSunucuda,
+          onKilitli: _premiumAc,
+        ),
       ),
     );
   }
@@ -549,6 +562,8 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
         benzerlik: senMi ? null : seciliSatir.benzerlik,
         onAyrinti: () => _ayrintiAc(seciliSatir),
         onKilitli: _premiumAc,
+        ayrintiKapali: !senMi &&
+            ZirveKiyas.ayrintiPaylasilmadi(seciliPay, seciliVarlik),
       ),
       if (hedef != null) ...[
         const SizedBox(height: SandikSpace.lg),
@@ -795,7 +810,12 @@ class _SeciliPortfoy extends StatelessWidget {
     required this.benzerlik,
     required this.onAyrinti,
     required this.onKilitli,
+    this.ayrintiKapali = false,
   });
+
+  /// Sahibi varlık ayrıntısını paylaşmayı onaylamadı (0158 rızası yok):
+  /// türler ve fonlar görünür, kartta bunu söyleyen tek satır çıkar.
+  final bool ayrintiKapali;
 
   /// Seçili işaretin anahtarı — yenilenen parçaların anahtarı.
   final String anahtar;
@@ -901,6 +921,10 @@ class _SeciliPortfoy extends StatelessWidget {
             // aynı bilgiyi tekrar eden cümle görünmez, ekran okuyucuya
             // kartın etiketinde okunur.
             ExcludeSemantics(child: ZirveDagilimSeridi(pay: pay)),
+            if (ayrintiKapali) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _kaydir(context, 'kapali', const _AyrintiKapaliNotu()),
+            ],
             if (ayrintiVar) ...[
               const SizedBox(height: SandikSpace.md),
               Text(
@@ -1285,6 +1309,7 @@ class _Iskelet extends StatelessWidget {
 /// tarafında da yalnız yüzde — tutar bu ekranın konusu değil.
 class _PortfoyAyrintisi extends StatelessWidget {
   const _PortfoyAyrintisi({
+    required this.kaydirma,
     required this.donem,
     required this.satir,
     required this.senPay,
@@ -1294,6 +1319,9 @@ class _PortfoyAyrintisi extends StatelessWidget {
     required this.senHavuzda,
     required this.onKilitli,
   });
+
+  /// Sayfanın boyuyla paylaşılan kaydırma (aşağı çekince kapanır).
+  final ScrollController kaydirma;
 
   final ZirveDonem donem;
 
@@ -1326,6 +1354,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
         : '${donem.ad} ${ZirveKiyas.getiriParcasi(roi)}$siraEki';
 
     return SingleChildScrollView(
+      controller: kaydirma,
       padding: EdgeInsets.fromLTRB(SandikSpace.lg, SandikSpace.sm,
           SandikSpace.lg, SandikSpace.lg),
       child: Column(
@@ -1386,6 +1415,10 @@ class _PortfoyAyrintisi extends StatelessWidget {
           // farkı") ana ekranda; burada tekrar edilmez (2026-10-20).
           const SandikSectionHeader(title: 'VARLIKLAR'),
           const SizedBox(height: SandikSpace.sm),
+          if (!senMi && ZirveKiyas.ayrintiPaylasilmadi(pay, varlikDetay)) ...[
+            const _AyrintiKapaliNotu(),
+            const SizedBox(height: SandikSpace.sm),
+          ],
           ZirveVarlikSiralamasi(
             pay: pay,
             fonDetay: fonDetay,
@@ -1444,6 +1477,34 @@ class _PortfoyAyrintisi extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Bu portföyün sahibi varlık ayrıntısını paylaşmayı henüz onaylamadı"
+/// (yasin 2026-10-21). Eski rızayla katılanın satırı tür + fon düzeyinde
+/// kalır; not olmadan kullanıcı bunu eksik veri ya da hata sanıyordu.
+/// İkon + metin: anlam yalnız renkle verilmez.
+class _AyrintiKapaliNotu extends StatelessWidget {
+  const _AyrintiKapaliNotu();
+
+  @override
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lock_outline_rounded,
+              size: SandikSpace.md, color: context.c.text58),
+          const SizedBox(width: SandikSpace.xs),
+          Expanded(
+            child: Text(
+              'Sahibi varlık ayrıntısını paylaşmayı henüz onaylamadı. '
+              'Türler ve fonlar görünüyor.',
+              style: context.t.bodySmall?.copyWith(
+                color: context.c.text58,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      );
 }
 
 /// Seçili zirve portföyüyle ortak varlıkların (0158). Benzerlik sayısı
