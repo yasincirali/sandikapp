@@ -1,8 +1,8 @@
 # GDPR Notice — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 20, 2026
-**Version:** 1.5
+**Last updated:** October 22, 2026
+**Version:** 1.6
 
 > This document supplements the [Privacy Policy](https://yasincirali.github.io/sandikapp/privacy-en) and [Terms of Service](https://yasincirali.github.io/sandikapp/terms-en) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
 
@@ -49,7 +49,7 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 | Race (optional; period return %, asset-type shares %) | Art. 6(1)(b) — performance of a contract (feature you turn on) |
 | Top Portfolios anonymous pool (period return %, asset-type shares %, per-asset shares % by TEFAS fund code or public market symbol) | Art. 6(1)(a) — consent (opt-in in the App; withdrawable at any time) |
 | Premium subscription verification (only if you buy Premium; RevenueCat) | Art. 6(1)(b) — performance of a contract |
-| International transfer (Supabase Japan → Germany, Firebase and RevenueCat USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
+| International transfer (Firebase and RevenueCat USA; Supabase pre-migration copy in Japan until deleted) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
 
 ---
 
@@ -65,14 +65,14 @@ Other users who have also joined Top Portfolios receive only the anonymous outpu
 
 ## 5. International Transfers (Art. 44-49)
 
-The database is hosted in Japan (AWS Tokyo), which benefits from the EU adequacy decision for Japan
-(Commission Implementing Decision (EU) 2019/419). It is being migrated to Germany (AWS Frankfurt, EU);
-after the migration, database storage involves no third-country transfer. Supabase Inc. (a U.S.
-company) and Google act as processors under the mechanisms below:
+Since October 18, 2026 the database is hosted in Germany (AWS Frankfurt, EU); database storage
+involves no third-country transfer. A pre-migration copy stays in Japan (AWS Tokyo) until it is
+deleted; Japan benefits from the EU adequacy decision (Commission Implementing Decision (EU)
+2019/419). Supabase Inc. (a U.S. company) and Google act as processors under the mechanisms below:
 
 | Service | Mechanism | Reference |
 |---|---|---|
-| Supabase Inc. (processor; data in Japan → Germany) | EU adequacy decision for Japan; EU-U.S. Data Privacy Framework + Standard Contractual Clauses for remote access | https://supabase.com/privacy |
+| Supabase Inc. (processor; data in Germany, pre-migration copy in Japan until deleted) | EU storage; EU adequacy decision for Japan; EU-U.S. Data Privacy Framework + Standard Contractual Clauses for remote access | https://supabase.com/privacy |
 | Google Firebase and Gmail | EU-U.S. Data Privacy Framework + SCCs | https://firebase.google.com/support/privacy |
 | Apple (Push Notification service, Sign in with Apple) | EU-U.S. Data Privacy Framework + SCCs | https://www.apple.com/legal/privacy/ |
 | RevenueCat, Inc. (only if you buy Premium) | SCCs under RevenueCat's Data Processing Addendum | https://www.revenuecat.com/privacy |

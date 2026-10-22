@@ -53,17 +53,20 @@ UYGULAMA_BELGELERI = [
 
 # Web'de yer tutucuların değeri. Uygulama aynı yer tutucuyu bağlı sunucunun
 # ülkesiyle doldurur (`LegalDocs.yerTutucuDegerleri`). Web hangi sunucuya
-# bağlı olunduğunu bilemez → iki sunucunun gerçek durumunu yazar (Tokyo
-# canlıda, Frankfurt'a taşınma sürecinde). Taşınma bitince YALNIZ burası
-# değişir; md şablonu ve veritabanındaki metin sürümü aynı kalır.
+# bağlı olunduğunu bilemez → iki sunucunun gerçek durumunu yazar. 2026-10-22:
+# canlı sunucu 18 Ekim'den beri Frankfurt; Tokyo'da taşıma öncesi kopya
+# duruyor (proje silinmedi), o yüzden metin onu da söyler. Tokyo silinince
+# yarım cümle kalkar. YALNIZ burası değişir; md şablonu ve veritabanındaki
+# metin sürümü aynı kalır (uygulama içi metin zaten doğru ülkeyi gösteriyordu,
+# esaslı değişiklik değil, onay kapısı açılmaz).
 YER_TUTUCULAR = {
     "tr": {
-        "SUPABASE_ULKE": "Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde",
-        "SUPABASE_ULKEDE": "Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde)",
+        "SUPABASE_ULKE": "Almanya (AWS Frankfurt, AB); taşıma öncesi kopya silinene kadar Japonya'da (AWS Tokyo)",
+        "SUPABASE_ULKEDE": "Almanya'da (AWS Frankfurt, AB; taşıma öncesi kopya silinene kadar Japonya'da, AWS Tokyo)",
     },
     "en": {
-        "SUPABASE_ULKE": "Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU)",
-        "SUPABASE_ULKEDE": "in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU)",
+        "SUPABASE_ULKE": "Germany (AWS Frankfurt, EU); a pre-migration copy stays in Japan (AWS Tokyo) until deleted",
+        "SUPABASE_ULKEDE": "in Germany (AWS Frankfurt, EU; a pre-migration copy stays in Japan, AWS Tokyo, until deleted)",
     },
 }
 _YER_TUTUCU = re.compile(r"\{SUPABASE_[A-Z_]+\}")
