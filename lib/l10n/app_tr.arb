@@ -3145,6 +3145,8 @@
   "adPositionUpper": "POZİSYONUN",
   "adPositionLine": "Pozisyonun: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "adInflationThrough": "{month} TÜFE'sine kadar",
+  "@adInflationThrough": {"description": "Varlık ekranı, enflasyon satırının penceresi; month = son açıklanan TÜFE ayı (ör. Eylül)", "placeholders": {"month": {"type": "String"}}},
   "chartOpenLabel": "AÇILIŞ · {time} · {value}",
   "@chartOpenLabel": {
     "description": "Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.",

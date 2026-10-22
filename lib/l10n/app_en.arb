@@ -3041,6 +3041,8 @@
   "adPositionUpper": "YOUR POSITION",
   "adPositionLine": "Your position: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "adInflationThrough": "through {month} CPI",
+  "@adInflationThrough": {"placeholders": {"month": {"type": "String"}}},
   "chartOpenLabel": "OPEN · {time} · {value}",
   "@chartOpenLabel": {
     "description": "Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.",

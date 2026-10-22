@@ -4392,6 +4392,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String adInflationThrough(String month) {
+    return 'through $month CPI';
+  }
+
+  @override
   String chartOpenLabel(String time, String value) {
     return 'OPEN · $time · $value';
   }

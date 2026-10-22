@@ -4363,6 +4363,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String adInflationThrough(String month) {
+    return '$month TÜFE\'sine kadar';
+  }
+
+  @override
   String chartOpenLabel(String time, String value) {
     return 'AÇILIŞ · $time · $value';
   }

@@ -7323,6 +7323,12 @@ abstract class AppLocalizations {
   /// **'Pozisyonun: {amount} ({pct})'**
   String adPositionLine(String amount, String pct);
 
+  /// Varlık ekranı, enflasyon satırının penceresi; month = son açıklanan TÜFE ayı (ör. Eylül)
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} TÜFE\'sine kadar'**
+  String adInflationThrough(String month);
+
   /// Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.
   ///
   /// In tr, this message translates to:
