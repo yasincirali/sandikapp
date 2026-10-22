@@ -12,6 +12,20 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-22 Veritabanı: bir kez yer geri alma (isteğe bağlı)
+
+0167 Zirve varlık ölçümlerini 7 güne indirdi (okuyan her yer zaten son 24
+saate bakıyordu); tablo bundan sonra büyümez. Silinen ve şişmiş satırların
+yeri Postgres'in içinde kalır, diske dönmez. Diske geri vermek için Frankfurt
+SQL Editor'da **her satırı ayrı çalıştır** (birlikte çalışırsa 25001 hatası):
+
+- [ ] `vacuum full public.user_roi_snapshots;` (870 satır için 3,4 MB)
+- [ ] `vacuum full cron.job_run_details;` (9 satır için 3,1 MB)
+- [ ] `vacuum full public.zirve_allocation_snapshots;`
+
+Her biri saniyenin altında biter; veri değişmez. Sonra Actions ›
+"Veritabanı boyutu" çalıştırıp yeni boyuta bak.
+
 ## ⏳ 2026-10-20 Bayrak emekliliği, 1. parti (yalnız kod)
 
 Mağazada uzun süredir açık beş bayrak koddan kalktı; özellik artık koşulsuz:
