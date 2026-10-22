@@ -29,6 +29,7 @@ import '../utils/spot_lookup.dart';
 import '../services/bist_hisse_katalogu.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart';
+import '../services/real_return_service.dart';
 import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../widgets/disclaimer_widget.dart';
@@ -198,6 +199,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   // periyotta fetch edilir, ilk nokta 100 kabul edilip % normalize edilir.
   Asset? _compareAsset;
   Future<Map<int, double>>? _compareHistoryFuture;
+
+  /// "Aldığından beri enflasyona göre" işi — lot defteri değişmedikçe bir
+  /// kez başlar (`_enflasyonIsiAl`, katmanlar.dart). Anahtar lot parmak izi.
+  Future<RealReturn?>? _enflasyonIsi;
+  String? _enflasyonAnahtari;
 
   /// Grafikte gezinen imlecin (fiyat, tarih) etiketi; başlıktaki büyük
   /// fiyat bunu dinler (bayrak `goz_alici`, varlık sayfasıyla aynı).
