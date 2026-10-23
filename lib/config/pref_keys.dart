@@ -42,6 +42,11 @@ class PrefKeys {
   static const chartEma50 = 'pref_chart_ema50';
   static const chartEma200 = 'pref_chart_ema200';
   static const chartCandle = 'pref_chart_candle';
+
+  /// Yatay tam ekran grafikteki çizimler (trend, ışın, yatay, dikdörtgen),
+  /// sembol başına JSON (2026-10-23). Cihazda kalır, hesaba yazılmaz:
+  /// cihazlar arası eşitleme ayrı (Premium) adım.
+  static const grafikCizimleri = 'pref_grafik_cizimleri_v1';
   // `pref_chart_mum_araligi` (mum aralığı, PR #161) 2026-10-10 gece
   // okunmuyor: aralık artık dönemin TradingView varsayılanıyla açılır,
   // seçim oturumluk (`mumAraligiSecimiProvider`). Anahtar başka iş için

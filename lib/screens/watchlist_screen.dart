@@ -1022,7 +1022,7 @@ extension on WatchlistItem {
 }
 
 /// Satırdaki fiyat metni. Endeks puandır: para simgesi ve kuruş yok
-/// (arama satırı ve piyasa bandıyla aynı kural, `bistEndeksiMi`).
+/// (arama satırı ve piyasa bandıyla aynı kural, `endeksMi`).
 ///
 /// Diğerleri ₺ ile ([sembolSerisiSimgesi], seri denetimi 2026-10-08):
 /// `currentPrice` sembol serisinin son noktasıdır ve seri her sembolde TL'dir
@@ -1034,7 +1034,7 @@ extension on WatchlistItem {
 String takipFiyatMetni(WatchlistItem item) {
   final f = item.currentPrice;
   if (f == null) return '—';
-  if (bistEndeksiMi(item.ticker)) return fmtNum(f, digits: 0);
+  if (endeksMi(item.ticker)) return fmtNum(f, digits: 0);
   // Sabit 2 hane SHIB'i "₺0,00" yazıyordu — ondalık [fiyatBicimi]'nden.
   return fmtFiyat(f,
       azami: item.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);

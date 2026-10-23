@@ -725,6 +725,13 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final sahip = !yukleniyor && portfoydeMi(ref, k);
     final l = context.l10n;
 
+    // Endeks (BIST 100, US100, DAX…) puandır, satın alınamaz: portföye
+    // eklenecek bir şey yok. Yalnız takip düğmesi, tam genişlikte.
+    if (endeksMi(k.ticker) && widget.onSec == null) {
+      return _altCubukKabugu(
+          Row(children: [Expanded(child: _takipDugmesi(takipte))]));
+    }
+
     final Widget birincil;
     if (widget.onSec != null) {
       birincil = _birincilDugme(
@@ -755,28 +762,30 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // (çıkarabilmek için); yeni takip önerilmez — ikisi aynı şeyi izler.
     final takipDugmesi = !sahip || takipte || widget.onSec != null;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        SandikSpace.screenH(context),
-        SandikSpace.smd,
-        SandikSpace.screenH(context),
-        SandikSpace.smd + MediaQuery.viewPaddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: context.c.hairline)),
-      ),
-      child: Row(
-        children: [
-          if (takipDugmesi) ...[
-            _takipDugmesi(takipte),
-            const SizedBox(width: SandikSpace.sm),
-          ],
-          Expanded(child: birincil),
+    return _altCubukKabugu(Row(
+      children: [
+        if (takipDugmesi) ...[
+          _takipDugmesi(takipte),
+          const SizedBox(width: SandikSpace.sm),
         ],
-      ),
-    );
+        Expanded(child: birincil),
+      ],
+    ));
   }
+
+  Widget _altCubukKabugu(Widget icerik) => Container(
+        padding: EdgeInsets.fromLTRB(
+          SandikSpace.screenH(context),
+          SandikSpace.smd,
+          SandikSpace.screenH(context),
+          SandikSpace.smd + MediaQuery.viewPaddingOf(context).bottom,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(top: BorderSide(color: context.c.hairline)),
+        ),
+        child: icerik,
+      );
 
   /// Sayfayı kapatıp alttaki ekrandan rota iter. Sayfanın kendi bağlamı
   /// kapanınca geçersizleşir; rota ALTTAKİ ekranın bağlamından itilir.

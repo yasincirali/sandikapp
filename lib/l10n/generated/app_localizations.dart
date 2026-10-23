@@ -15394,6 +15394,162 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kapat'**
   String get hsnKapat;
+
+  /// No description provided for @tegKapat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tam ekrandan çık'**
+  String get tegKapat;
+
+  /// No description provided for @tegAracImlec.
+  ///
+  /// In tr, this message translates to:
+  /// **'İmleç'**
+  String get tegAracImlec;
+
+  /// No description provided for @tegAracTrend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Trend çizgisi'**
+  String get tegAracTrend;
+
+  /// No description provided for @tegAracIsin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Işın'**
+  String get tegAracIsin;
+
+  /// No description provided for @tegAracYatay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatay çizgi'**
+  String get tegAracYatay;
+
+  /// No description provided for @tegAracYatayIsin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatay ışın'**
+  String get tegAracYatayIsin;
+
+  /// No description provided for @tegAracKutu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dikdörtgen'**
+  String get tegAracKutu;
+
+  /// No description provided for @tegMiknatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mıknatıs: çizimi mumun açılış, yüksek, düşük ya da kapanışına yapıştır'**
+  String get tegMiknatis;
+
+  /// No description provided for @tegMiknatisAcik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mıknatıs açık'**
+  String get tegMiknatisAcik;
+
+  /// No description provided for @tegMiknatisKapali.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mıknatıs kapalı'**
+  String get tegMiknatisKapali;
+
+  /// No description provided for @tegGeriAl.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri al'**
+  String get tegGeriAl;
+
+  /// No description provided for @tegHepsiniSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu grafikteki tüm çizimleri sil'**
+  String get tegHepsiniSil;
+
+  /// No description provided for @tegCizimiSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizimi sil'**
+  String get tegCizimiSil;
+
+  /// No description provided for @tegIpucuTek.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafiğe dokun'**
+  String get tegIpucuTek;
+
+  /// No description provided for @tegIpucuIki.
+  ///
+  /// In tr, this message translates to:
+  /// **'İki noktaya dokun ya da sürükle'**
+  String get tegIpucuIki;
+
+  /// No description provided for @tegIpucuIkinci.
+  ///
+  /// In tr, this message translates to:
+  /// **'İkinci noktaya dokun'**
+  String get tegIpucuIkinci;
+
+  /// No description provided for @tegCizildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizildi. Seçip taşıyabilir ya da silebilirsin'**
+  String get tegCizildi;
+
+  /// No description provided for @tegSilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizim silindi'**
+  String get tegSilindi;
+
+  /// No description provided for @tegHepsiSilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizimler silindi. Geri al ile geri getirebilirsin'**
+  String get tegHepsiSilindi;
+
+  /// No description provided for @tegGeriYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri alınacak bir şey yok'**
+  String get tegGeriYok;
+
+  /// No description provided for @tegSilinecekYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silinecek çizim yok'**
+  String get tegSilinecekYok;
+
+  /// No description provided for @tegGorunumSifir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görünüm sıfırlandı'**
+  String get tegGorunumSifir;
+
+  /// No description provided for @tegYuklenemedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mumlar yüklenemedi. Tekrar denemek için dokun.'**
+  String get tegYuklenemedi;
+
+  /// No description provided for @tegMumaGec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mum grafiğe geç'**
+  String get tegMumaGec;
+
+  /// No description provided for @tegCizgiyeGec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi grafiğe geç'**
+  String get tegCizgiyeGec;
+
+  /// No description provided for @tegGrafikSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad}, {aralik} grafik. Son {fiyat}. {sayi} çizim.'**
+  String tegGrafikSemantik(String ad, String aralik, String fiyat, int sayi);
 }
 
 class _AppLocalizationsDelegate

@@ -108,6 +108,8 @@ import '../utils/hareketli_ortalama.dart';
 import '../utils/mum_turetici.dart' show Mum, mumlariGrafikUzayinda;
 import '../models/ohlc.dart';
 import '../widgets/grafik_arac_cubugu.dart';
+import '../widgets/tam_ekran/yan_cevirince_tam_ekran.dart';
+import 'tam_ekran_grafik_screen.dart';
 import '../services/mum_verisi.dart';
 import '../services/mum_yukleyici.dart';
 
@@ -1609,7 +1611,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             return GrafikStili.donemBasiUstte(
                             context,
                             etiket: donemBasiYazisi,
-                            grafik: ZoomableChart(
+                            grafik: YanCevirinceTamEkran(
+                            // Yan çevirince tam ekran grafik (2026-10-23);
+                            // çip değil, dönüş (çip kararı 2026-09-17).
+                            etkin: TamEkranGrafikEkrani.sunulur(_canli.asset),
+                            ac: (ctx) => TamEkranGrafikEkrani.ac(ctx,
+                                varlik: _canli.asset,
+                                ad: _kimlik.kisaEtiket,
+                                canliBirim: currentUnitTRY,
+                                ilkAralik: mumAr?.aralik),
+                            child: ZoomableChart(
                             semanticLabel: context.l10n
                                 .chartAssetSemantics(_kimlik.kisaEtiket),
                             fullMinX: tamMin,
@@ -2192,7 +2203,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                           ),
                                     ];
                                   },
-                          ),
+                          )),
                             );
                           }),
                         ),

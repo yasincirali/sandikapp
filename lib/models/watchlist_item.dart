@@ -92,7 +92,7 @@ class WatchlistItem {
     final buyuk = t.toUpperCase();
     if (buyuk.startsWith('ALTIN_') ||
         buyuk.endsWith('=F') ||
-        bistEndeksiMi(t)) {
+        endeksMi(t)) {
       return name.trim().isNotEmpty ? name.trim() : ad();
     }
     if (buyuk.endsWith('TRY=X')) return buyuk.replaceAll('TRY=X', '');

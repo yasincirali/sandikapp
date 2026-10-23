@@ -187,6 +187,11 @@ class FiyatKaynagi {
       sym.endsWith('TRY=X') ||
       sym.startsWith('ALTIN_');
 
+  /// Seri çevrimsiz mi döner? TL kote semboller ([tlKote]) ve küresel
+  /// endeksler (`^NDX`): endeks puandır, kurla çevrilmez (gerekçe
+  /// `kureselEndeksMi`). `HistoryService` ve mum kaynağı aynı kuralı sorar.
+  static bool cevrimsiz(String sym) => tlKote(sym) || kureselEndeksMi(sym);
+
   /// [a]'nın GERÇEK mumlarının (OHLC) nereden çekileceği — mum aralığı
   /// seçicisi (yasin, 2026-10-10: "TradingView'deki gibi 1 dk, 1 saat,
   /// 4 saat, günlük, haftalık, aylık").
@@ -244,7 +249,7 @@ class FiyatKaynagi {
         return MumKaynagi(
           MumKaynakTuru.yahoo,
           sembol: t,
-          usdCevir: !tlKote(t),
+          usdCevir: !cevrimsiz(t),
           olcekAlt: kur ? kurKalibreAltSinir : null,
           olcekUst: kur ? kurKalibreUstSinir : null,
         );

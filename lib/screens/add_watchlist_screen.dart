@@ -605,7 +605,7 @@ String? aramaSembolEtiketi(VarlikKimligi c) {
 String? aramaFiyatMetni(VarlikKimligi c, YahooQuote? q) {
   final f = q?.regularMarketPrice;
   if (f == null || !f.isFinite || f <= 0) return null;
-  if (bistEndeksiMi(c.ticker)) {
+  if (endeksMi(c.ticker)) {
     return fmtNum(f, digits: 0);
   }
   // Ondalık [fiyatBicimi]'nden (sabit 2 hane: SHIB "₺0,00").
