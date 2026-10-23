@@ -1,4 +1,5 @@
 import Flutter
+import StoreKit
 import UIKit
 import UserNotifications
 import Vision
@@ -62,6 +63,9 @@ import Vision
     // Ekran görüntüsünden metin (Vision) — `lib/services/ekstre/ekran_okuyucu.dart`.
     OcrChannel.register(messenger: engineBridge.applicationRegistrar.messenger())
 
+    // Uygulama içi abonelik yönetimi — `lib/services/abonelik_yonetimi.dart`.
+    AbonelikChannel.register(messenger: engineBridge.applicationRegistrar.messenger())
+
     // Siri Kestirmeleri + Spotlight (`SistemEylemleri.swift`). Eklenti
     // kaydıyla girer: Spotlight dokunuşu sahne olayıdır ve yalnız
     // `addSceneDelegate` ile sıraya giren nesneye dağıtılır.
@@ -95,6 +99,42 @@ enum SaydamlikChannel {
       queue: .main
     ) { _ in
       channel.invokeMethod("degisti", arguments: UIAccessibility.isReduceTransparencyEnabled)
+    }
+  }
+}
+
+/// Apple'ın uygulama içi abonelik yönetim sayfası → Dart
+/// (`abonelik_yonetimi.dart`, 2026-10-23). `apps.apple.com` adresi yalnız
+/// mağaza aboneliklerini gösterir; sandbox/TestFlight aboneliği orada yoktur
+/// ve iptal testi yapılamıyordu. `showManageSubscriptions` hangi ortamda
+/// çalışıyorsa o ortamın aboneliğini açar; kullanıcı uygulamadan çıkmaz (HIG).
+/// Sayfa dönene kadar bekler, `true` döner; sahne yoksa hata döner ve Dart
+/// web adresine düşer.
+enum AbonelikChannel {
+  static let name = "com.sandik.app/abonelik"
+
+  static func register(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "yonet" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let sahne = UIApplication.shared.connectedScenes
+        .compactMap({ $0 as? UIWindowScene })
+        .first(where: { $0.activationState == .foregroundActive })
+      else {
+        result(FlutterError(code: "sahne", message: nil, details: nil))
+        return
+      }
+      Task { @MainActor in
+        do {
+          try await AppStore.showManageSubscriptions(in: sahne)
+          result(true)
+        } catch {
+          result(FlutterError(code: "storekit", message: nil, details: nil))
+        }
+      }
     }
   }
 }
