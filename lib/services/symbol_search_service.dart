@@ -146,7 +146,9 @@ class SymbolSearchService {
       SymbolHit(ticker: e.key, name: e.value, source: abdKaynagi),
   ];
   static final Map<String, String> _abdAnahtar = {
-    for (final h in _abd) h.ticker: trKatla('${h.ticker} ${h.name}'),
+    for (final h in _abd)
+      h.ticker:
+          trKatla('${h.ticker} ${h.name} ${_takmaAdlar[h.ticker] ?? ''}'),
   };
 
   static bool get _abdAcik => RemoteConfigService.instance.abdHisse;
@@ -217,6 +219,34 @@ class SymbolSearchService {
     'GBPTRY=X': 'gbp sterlin pound',
     'XU100.IS': 'bist100 xu100 borsa',
     'XU030.IS': 'bist30 xu030',
+    // Küresel endeksler: CFD/aracı kurum adları (US100, DE40…) Türk
+    // yatırımcının en sık yazdığı biçim; Yahoo sembolü kimsenin aklına gelmez.
+    '^NDX': 'us100 nas100 nasdaq100 ndx',
+    '^IXIC': 'nasdaq composite ixic',
+    '^GSPC': 'us500 spx sp500 spx500 s&p',
+    '^DJI': 'us30 dow djia',
+    '^RUT': 'us2000 rut',
+    '^VIX': 'korku fear volatility vix',
+    '^GDAXI': 'de40 ger40 dax almanya germany',
+    '^FTSE': 'uk100 ftse ingiltere',
+    '^FCHI': 'fra40 cac fransa',
+    '^STOXX50E': 'eu50 stoxx avrupa europe',
+    '^N225': 'jp225 nikkei japonya',
+    '^HSI': 'hk50 hangseng hong kong',
+    // Tema ETF'leri (ABD kataloğu): adda geçmeyen Türkçe tema kelimeleri.
+    'NASA': 'uzay space tema',
+    'ARKX': 'uzay savunma',
+    'UFO': 'uzay',
+    'ROKT': 'uzay',
+    'ITA': 'savunma havacilik',
+    'BOTZ': 'robot yapay zeka',
+    'ROBO': 'robot',
+    'AIQ': 'yapay zeka',
+    'ICLN': 'temiz enerji yenilenebilir',
+    'TAN': 'gunes enerjisi',
+    'LIT': 'lityum batarya',
+    'URA': 'uranyum nukleer',
+    'CIBR': 'siber guvenlik',
     FiyatKaynagi.xauUsd: 'ons xau',
     'SI=F': 'ons silver',
     'BZ=F': 'brent',
@@ -257,9 +287,27 @@ class SymbolSearchService {
     // Endeksler — "BIST'i yendim mi?" karşılaştırmasının referansı.
     // Yerleşik listede yoklar ama karşılaştırmanın en doğal kıyas
     // noktaları olduğu için elle ekleniyor.
+    //
+    // Küresel endeksler (yasin, 2026-10-23: "US100 falan da nasdaq da
+    // olsun, önemli borsa endekslerini içersin"): takip ve kıyas içindir,
+    // portföye eklenemez (`endeksMi`). Puanla çizilir, kurla çevrilmez
+    // (`FiyatKaynagi.cevrimsiz`). ABD bayrağına bağlı DEĞİL: emtia gibi
+    // kıyas noktası, alım satım değil.
     const indices = {
       'XU100.IS': 'BIST 100 Endeksi',
       'XU030.IS': 'BIST 30 Endeksi',
+      '^NDX': 'Nasdaq 100 (US100)',
+      '^IXIC': 'Nasdaq Bileşik',
+      '^GSPC': 'S&P 500',
+      '^DJI': 'Dow Jones (US30)',
+      '^RUT': 'Russell 2000',
+      '^VIX': 'VIX Volatilite Endeksi',
+      '^GDAXI': 'DAX (Almanya)',
+      '^FTSE': 'FTSE 100 (İngiltere)',
+      '^FCHI': 'CAC 40 (Fransa)',
+      '^STOXX50E': 'Euro Stoxx 50',
+      '^N225': 'Nikkei 225 (Japonya)',
+      '^HSI': 'Hang Seng (Hong Kong)',
     };
     indices.forEach((ticker, name) {
       out.add(SymbolHit(ticker: ticker, name: name, source: 'Endeks'));

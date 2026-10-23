@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/gorunen_hata.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -184,6 +185,8 @@ String _authMessage(String raw) {
 /// Marka renkli hata dialogu.
 void showAppError(BuildContext context, Object? error) {
   if (!context.mounted) return;
+  // Hatayı gören kullanıcıya bu oturumda puan sorulmaz (`GorunenHata`).
+  GorunenHata.kaydet();
   showSandikDialog(
     context: context,
     kind: SandikDialogKind.error,

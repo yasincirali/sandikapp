@@ -9344,4 +9344,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hsnKapat => 'Close';
+
+  @override
+  String get tegKapat => 'Exit full screen';
+
+  @override
+  String get tegAracImlec => 'Cursor';
+
+  @override
+  String get tegAracTrend => 'Trend line';
+
+  @override
+  String get tegAracIsin => 'Ray';
+
+  @override
+  String get tegAracYatay => 'Horizontal line';
+
+  @override
+  String get tegAracYatayIsin => 'Horizontal ray';
+
+  @override
+  String get tegAracKutu => 'Rectangle';
+
+  @override
+  String get tegMiknatis =>
+      'Magnet: snap the drawing to the candle\'s open, high, low or close';
+
+  @override
+  String get tegMiknatisAcik => 'Magnet on';
+
+  @override
+  String get tegMiknatisKapali => 'Magnet off';
+
+  @override
+  String get tegGeriAl => 'Undo';
+
+  @override
+  String get tegHepsiniSil => 'Delete all drawings on this chart';
+
+  @override
+  String get tegCizimiSil => 'Delete drawing';
+
+  @override
+  String get tegIpucuTek => 'Tap the chart';
+
+  @override
+  String get tegIpucuIki => 'Tap two points or drag';
+
+  @override
+  String get tegIpucuIkinci => 'Tap the second point';
+
+  @override
+  String get tegCizildi => 'Drawn. Select it to move or delete';
+
+  @override
+  String get tegSilindi => 'Drawing deleted';
+
+  @override
+  String get tegHepsiSilindi => 'Drawings deleted. Undo to bring them back';
+
+  @override
+  String get tegGeriYok => 'Nothing to undo';
+
+  @override
+  String get tegSilinecekYok => 'No drawings to delete';
+
+  @override
+  String get tegGorunumSifir => 'View reset';
+
+  @override
+  String get tegYuklenemedi => 'Couldn\'t load candles. Tap to try again.';
+
+  @override
+  String get tegMumaGec => 'Switch to candles';
+
+  @override
+  String get tegCizgiyeGec => 'Switch to line';
+
+  @override
+  String tegGrafikSemantik(String ad, String aralik, String fiyat, int sayi) {
+    return '$ad, $aralik chart. Last $fiyat. $sayi drawings.';
+  }
 }

@@ -24,6 +24,7 @@ import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
 import 'screens/otp_verification_screen.dart';
+import 'services/acilis_olcumu.dart';
 import 'services/bist_hisse_katalogu.dart';
 import 'services/ekran_olcumu.dart';
 import 'services/hesap_gecisi.dart';
@@ -179,6 +180,9 @@ Future<void> _initDeferredServices() async {
 
 void main() async {
   // Crashlytics + tüm async hatalar tek `runZonedGuarded` içinde toplanır
+  // Soğuk açılış saati (`AcilisOlcumu`): her `await`ten ÖNCE başlar ki
+  // ölçülen süre kullanıcının beklediği sürenin tamamı olsun.
+  AcilisOlcumu.instance.basla();
   await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
@@ -340,6 +344,8 @@ void main() async {
       tema: (b) => SandikApp.buildTheme(
           b == Brightness.dark ? SandikPalette.dark : SandikPalette.light, b),
     ));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => AcilisOlcumu.instance.ilkKare());
   }, (error, stack) {
     // Zone-level: yakalanmayan async hataları.
     // `CrashReporter` Firebase kurulu değilse sessizce no-op'tur; ağ hatası

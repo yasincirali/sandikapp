@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/gorunen_hata.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 
@@ -15,6 +16,10 @@ class SandikErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Görünen hata: bu oturumda puan istenmez (`GorunenHata`). Yalnız bir
+    // zaman damgası; yeniden çizimde tekrar yazması zararsız, hata hâlâ
+    // ekranda demektir.
+    GorunenHata.kaydet();
     // Erişilebilirlik: "hareketi azalt" açıkken içerik doğrudan görünür.
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 

@@ -20,6 +20,8 @@ import '../services/crash_reporter.dart';
 import '../services/varlik_yeniden_kur.dart';
 import '../services/daily_summary.dart';
 import '../services/fx_rate_migration_service.dart';
+import '../services/acilis_olcumu.dart';
+import '../services/gorunen_hata.dart';
 import '../services/portfolio_cache.dart';
 import '../services/remote_config_service.dart';
 import '../services/tazelik_ritmi.dart';
@@ -452,11 +454,18 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       if (cached == null) rethrow;
       CrashReporter.report(e, st,
           reason: 'PortfolioNotifier.build (önbellekten açıldı)');
+      AcilisOlcumu.instance.defterHazir(onbellekten: true);
+      // "Çevrimdışı" şeridi görünür: bu oturumda puan istenmez.
+      GorunenHata.kaydet();
       return PortfolioState(
         assets: cached,
         errorMessage: 'Çevrimdışı. Son bilinen veriler gösteriliyor.',
         ownerId: user.id,
       );
+    }
+    // Boş defter ölçülmez: fiyat turu olmaz, "toplam" da yok.
+    if (assets.isNotEmpty) {
+      AcilisOlcumu.instance.defterHazir(onbellekten: false);
     }
     return PortfolioState(
       assets: assets,
@@ -1635,6 +1644,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       );
 
       state = AsyncData(finalState);
+      AcilisOlcumu.instance.fiyatHazir(basarili: true);
 
       // NOT: Burada `allPartnerAssetsProvider.reload()` ÇAĞRILMAZ. O metot
       // DB'den yeniden çeker ve yukarıda uygulanan canlı fiyatları geri alır.
@@ -1665,6 +1675,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         isLoading: false,
         errorMessage: 'Fiyatlar güncellenemedi. ${friendlyError(e)}',
       ));
+      AcilisOlcumu.instance.fiyatHazir(basarili: false);
+      // Kullanıcı Ana sayfada "Fiyatlar güncellenemedi" şeridini görür:
+      // bu oturumda puan istenmez (`GorunenHata`).
+      GorunenHata.kaydet();
     }
   }
 

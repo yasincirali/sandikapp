@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 
@@ -14,6 +16,11 @@ class AnalyticsService {
 
   FirebaseAnalytics? _analytics;
   bool _initialized = false;
+  final Completer<void> _hazir = Completer<void>();
+
+  /// [init] bitti (başarılı ya da değil). Ertelenmiş başlatmadan ÖNCE
+  /// üretilen tek seferlik olaylar (`AcilisOlcumu`) bunu bekler.
+  Future<void> get hazir => _hazir.future;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -24,6 +31,8 @@ class AnalyticsService {
       _initialized = true;
     } catch (e) {
       if (kDebugMode) debugPrint('AnalyticsService init failed: $e');
+    } finally {
+      if (!_hazir.isCompleted) _hazir.complete();
     }
   }
 
@@ -62,6 +71,11 @@ class AnalyticsService {
   /// (`AyarOlcumu`). 19 Kasım "dokunulmayan ayar" kararının verisi.
   Future<void> logAyarDegisti(String anahtar) =>
       _log('ayar_degisti', {'anahtar': anahtar});
+
+  /// Soğuk açılış süreleri (`AcilisOlcumu`, Ar-Ge 23 Eki): ms, platform,
+  /// defterin kaynağı. Kişisel veri yok.
+  Future<void> logAcilisSuresi(Map<String, Object> parametreler) =>
+      _log('acilis_suresi', parametreler);
 
   // ── Auth ────────────────────────────────────────────────────────────────
   Future<void> logLogin({required String method}) =>

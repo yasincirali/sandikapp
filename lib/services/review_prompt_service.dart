@@ -8,6 +8,7 @@ import '../config/pref_keys.dart';
 import '../providers/portfolio_provider.dart';
 import 'analytics_service.dart';
 import 'crash_reporter.dart';
+import 'gorunen_hata.dart';
 import 'remote_config_service.dart';
 import 'retention_tracker.dart';
 
@@ -106,7 +107,11 @@ class ReviewDurumu {
 ///    (sistem kartı yalnızca "Evet" denince, bir kez istenir).
 /// 5. **Sorun bildiren kullanıcıya [geriBildirimSonrasi] boyunca sorulmaz.**
 ///    Sorunu çözülmeden puan istemek, mağazada yazılı şikâyete dönüşür.
-/// 6. **Bir kez aktif gün başına en fazla bir istem** — aynı gün iki mutlu
+/// 6. **Kullanıcı az önce bir hata gördüyse sorulmaz** ([hataSonrasi]
+///    boyunca; `GorunenHata`). Fiyat şeridi "güncellenemedi" dedikten
+///    sonra gelen mutlu anda verilen puan uygulamaya değil hataya verilir
+///    (Ar-Ge 23 Eki 08:45 #2). Sonraki mutlu an yine sorar.
+/// 7. **Bir kez aktif gün başına en fazla bir istem** — aynı gün iki mutlu
 ///    an art arda gelirse (paylaşım + toplu ekleme) ikincisi sessiz kalır;
 ///    kural 4 zaten erteleme aralığını kapsar, bu satır aynı günü belirtir.
 bool degerlendirmeSorulsunMu({
@@ -116,6 +121,7 @@ bool degerlendirmeSorulsunMu({
   required int aktifGun,
   required double? karZararOrani,
   required DateTime simdi,
+  int? sonHataMs,
 }) {
   // (1) Zaten değerlendirdi.
   if (durum.tamamlandi) return false;
@@ -149,6 +155,13 @@ bool degerlendirmeSorulsunMu({
     }
   }
 
+  // (6) Az önce hata gördü.
+  if (sonHataMs != null &&
+      simdi.millisecondsSinceEpoch - sonHataMs <
+          ReviewPromptService.hataSonrasi.inMilliseconds) {
+    return false;
+  }
+
   return true;
 }
 
@@ -176,6 +189,10 @@ class ReviewPromptService {
   static const int maxSorulma = 5;
   static const Duration ertelemeAraligi = Duration(days: 14);
   static const Duration geriBildirimSonrasi = Duration(days: 90);
+
+  /// Görünen bir hatadan sonra istemin susma süresi. Bir oturumdan uzun:
+  /// uygulama arka planda yaşarken "oturum" belirsiz, süre değil.
+  static const Duration hataSonrasi = Duration(minutes: 30);
 
   /// Toplam zarar maliyetin bu oranını aşarsa sorulmaz (0.10 = %10).
   static const double maxZararOrani = 0.10;
@@ -222,6 +239,7 @@ class ReviewPromptService {
           ? null
           : (state.totalValue - state.totalCost) / state.totalCost,
       simdi: now(),
+      sonHataMs: GorunenHata.sonMs,
     );
   }
 

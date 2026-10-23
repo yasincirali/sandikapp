@@ -9257,4 +9257,86 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get hsnKapat => 'Kapat';
+
+  @override
+  String get tegKapat => 'Tam ekrandan çık';
+
+  @override
+  String get tegAracImlec => 'İmleç';
+
+  @override
+  String get tegAracTrend => 'Trend çizgisi';
+
+  @override
+  String get tegAracIsin => 'Işın';
+
+  @override
+  String get tegAracYatay => 'Yatay çizgi';
+
+  @override
+  String get tegAracYatayIsin => 'Yatay ışın';
+
+  @override
+  String get tegAracKutu => 'Dikdörtgen';
+
+  @override
+  String get tegMiknatis =>
+      'Mıknatıs: çizimi mumun açılış, yüksek, düşük ya da kapanışına yapıştır';
+
+  @override
+  String get tegMiknatisAcik => 'Mıknatıs açık';
+
+  @override
+  String get tegMiknatisKapali => 'Mıknatıs kapalı';
+
+  @override
+  String get tegGeriAl => 'Geri al';
+
+  @override
+  String get tegHepsiniSil => 'Bu grafikteki tüm çizimleri sil';
+
+  @override
+  String get tegCizimiSil => 'Çizimi sil';
+
+  @override
+  String get tegIpucuTek => 'Grafiğe dokun';
+
+  @override
+  String get tegIpucuIki => 'İki noktaya dokun ya da sürükle';
+
+  @override
+  String get tegIpucuIkinci => 'İkinci noktaya dokun';
+
+  @override
+  String get tegCizildi => 'Çizildi. Seçip taşıyabilir ya da silebilirsin';
+
+  @override
+  String get tegSilindi => 'Çizim silindi';
+
+  @override
+  String get tegHepsiSilindi =>
+      'Çizimler silindi. Geri al ile geri getirebilirsin';
+
+  @override
+  String get tegGeriYok => 'Geri alınacak bir şey yok';
+
+  @override
+  String get tegSilinecekYok => 'Silinecek çizim yok';
+
+  @override
+  String get tegGorunumSifir => 'Görünüm sıfırlandı';
+
+  @override
+  String get tegYuklenemedi => 'Mumlar yüklenemedi. Tekrar denemek için dokun.';
+
+  @override
+  String get tegMumaGec => 'Mum grafiğe geç';
+
+  @override
+  String get tegCizgiyeGec => 'Çizgi grafiğe geç';
+
+  @override
+  String tegGrafikSemantik(String ad, String aralik, String fiyat, int sayi) {
+    return '$ad, $aralik grafik. Son $fiyat. $sayi çizim.';
+  }
 }

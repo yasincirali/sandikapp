@@ -2993,7 +2993,7 @@ class HistoryService {
   /// pariteleri `TRY=X` ile biter, kripto `KRIPTO:` önekli (sunucu TL
   /// verir). Kalan her şey (ABD hisseleri, emtia) USD kabul edilir —
   /// Yahoo'nun varsayılanı budur.
-  static bool _isTryQuoted(String sym) => FiyatKaynagi.tlKote(sym);
+  static bool _isTryQuoted(String sym) => FiyatKaynagi.cevrimsiz(sym);
 
   /// Periyoda uygun Yahoo range.
   ///

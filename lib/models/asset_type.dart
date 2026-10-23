@@ -354,3 +354,22 @@ bool bistEndeksiMi(String ticker) {
   if (t.endsWith('.IS')) return true;
   return t.length == 5 && !t.contains(RegExp(r'[.:=\-]'));
 }
+
+/// Küresel endeks mi (`^NDX`, `^GSPC`, `^GDAXI`)? Yahoo endeksleri `^` ile
+/// başlatır; hisse, fon, emtia ya da kur sembolü hiçbir zaman `^` taşımaz.
+///
+/// ## Neden ayrı kural (yasin, 2026-10-23: "Endeksleri ekle, US100 falan da
+/// nasdaq da olsun")
+/// Küresel endeks de PUANDIR, fiyat değil. Üstelik para birimi tek değil:
+/// DAX euro, FTSE sterlin, Nikkei yen piyasasının puanı. `getSymbolHistory`
+/// TL kote olmayan her sembolü USD sayıp o günün kuruyla çeviriyordu; DAX'ı
+/// dolar kuruyla TL'ye çevirmek uydurma bir sayı olurdu (fiyat kaynağı
+/// sözleşmesi madde 3). Endeks hiç çevrilmez, puanıyla çizilir; kıyas
+/// grafiği zaten yüzde değişimi karşılaştırır.
+bool kureselEndeksMi(String ticker) => ticker.trim().startsWith('^');
+
+/// BIST ya da küresel endeks mi? Gösteren her yüzey (takip satırı, arama
+/// satırı, varlık sayfası) puan biçimi ve "portföye eklenemez" kararı için
+/// buna sorar.
+bool endeksMi(String ticker) =>
+    bistEndeksiMi(ticker) || kureselEndeksMi(ticker);

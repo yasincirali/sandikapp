@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.WindowManager
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -25,10 +24,11 @@ class MainActivity : FlutterFragmentActivity() {
         splashScreen.setKeepOnScreenCondition { !flutterReady }
         super.onCreate(savedInstanceState)
         firebaseArkaPlanKaydiniSil()
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        )
+        // FLAG_SECURE bilerek YOK (yasin kararı 2026-10-23; eski denetim E5'te
+        // eklenmişti). Android'de herkesin ekran görüntüsünü ve kaydını
+        // engelliyordu: kapalı test kullanıcıları hatayı görüntüyle
+        // bildiremiyor, kullanıcı portföyünü paylaşamıyordu. iOS'ta karşılığı
+        // hiç yoktu, iki platform artık aynı davranır.
     }
 
     /**
