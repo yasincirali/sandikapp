@@ -1,13 +1,11 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/premium_provider.dart';
 import '../screens/paywall_screen.dart';
-import '../services/crash_reporter.dart';
+import '../services/abonelik_yonetimi.dart';
 import '../theme/sandik.dart';
 
 /// Profil'de Premium hakkı satırı (S14-A, 2026-10-05): ne tür hak, ne zaman
@@ -15,6 +13,7 @@ import '../theme/sandik.dart';
 ///
 /// - "Yönet" yalnız mağaza aboneliğinde: iptal/plan değişikliği mağazanın
 ///   kendi sayfasında yapılır (Apple/Google kuralı); uygulama aracı olamaz.
+///   iOS'ta o sayfa uygulama içinde açılır (`AbonelikYonetimi`, 2026-10-23).
 /// - "Satın alımları geri yükle" hakları sunucudan yeniden okur. Abonelik
 ///   durumu RevenueCat webhook'uyla sunucuya yazılır (0116); başka cihazda
 ///   alınmış abonelik de böylece görünür.
@@ -22,22 +21,6 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
   const PremiumAbonelikSatiri({super.key, required this.hak});
 
   final PremiumHakki hak;
-
-  static final _yonetAdresi = {
-    TargetPlatform.iOS: 'https://apps.apple.com/account/subscriptions',
-    TargetPlatform.android:
-        'https://play.google.com/store/account/subscriptions',
-  };
-
-  Future<void> _yonet() async {
-    final adres = _yonetAdresi[defaultTargetPlatform];
-    if (adres == null) return;
-    try {
-      await launchUrl(Uri.parse(adres), mode: LaunchMode.externalApplication);
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'PremiumAbonelikSatiri._yonet');
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -109,7 +92,7 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
               if (hak.kaynak == 'revenuecat')
                 TextButton(
                   style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
-                  onPressed: _yonet,
+                  onPressed: AbonelikYonetimi.ac,
                   child: Text(l10n.prmYonet),
                 ),
               if (sonGunler)
