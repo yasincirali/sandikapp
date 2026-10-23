@@ -21,6 +21,7 @@ import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../utils/hareketli_ortalama.dart' show kEmaKisa, kEmaUzun;
 import '../utils/tr_format.dart';
+import '../widgets/custom_loading_indicator.dart';
 import '../widgets/grafik_arac_cubugu.dart' show GrafikCipi, MumAraligiAdi;
 import '../widgets/tam_ekran/grafik_olcegi.dart';
 
@@ -93,6 +94,7 @@ class TamEkranGrafikEkrani extends ConsumerStatefulWidget {
       pushGuarded<void>(
         context,
         adaptiveRoute<void>(
+          settings: const RouteSettings(name: 'tam_ekran_grafik'),
           fullscreenDialog: true,
           builder: (_) => TamEkranGrafikEkrani(
             varlik: varlik,
@@ -852,7 +854,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     final c = context.c;
     final l = context.l10n;
     if (_yukleniyor && _mumlar.isEmpty) {
-      return const Center(child: CircularProgressIndicator.adaptive());
+      return const Center(child: CustomLoadingIndicator());
     }
     if (_hata && _mumlar.length < 2) {
       return Center(
