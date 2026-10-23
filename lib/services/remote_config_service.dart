@@ -713,6 +713,7 @@ class RemoteConfigService {
     SunucuSecimi.instance.rcGuncellendi(
       istenen: rc.getString(SunucuSecimi.anahtar),
       minBuild: rc.getInt(SunucuSecimi.minBuildAnahtari),
+      onerilen: rc.getInt(SunucuSecimi.onerilenBuildAnahtari),
     );
   }
 

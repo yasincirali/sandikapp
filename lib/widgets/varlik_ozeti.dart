@@ -110,6 +110,19 @@ class VarlikBasligi extends StatelessWidget {
   }
 }
 
+/// Seri dönemin başına ulaşmadığında başlıktaki dönem etiketi: "son 8 ay
+/// (veri bu kadar)" (2026-10-23). Yüzde verinin kapsadığı sürenin
+/// getirisidir; "5 yıl" yazmak başka bir dönemin sayısını o dönemin adıyla
+/// göstermek olurdu. "Kuruluştan beri" denmez: boşluk her zaman kuruluş
+/// değildir (kaynaktan yarım gelen seri de olabilir).
+String donemKapsamEtiketi(BuildContext context, int kapsananGun) {
+  final l = context.l10n;
+  final sure = kapsananGun < 60
+      ? l.durationDaysN(kapsananGun)
+      : l.durationMonthsN((kapsananGun / 30.44).round());
+  return l.periodCoverage(sure);
+}
+
 /// Fiyat bloğunun dönem değişimi satırı: metin ve rengi.
 typedef DonemDegisimSatiri = ({String metin, Color renk});
 

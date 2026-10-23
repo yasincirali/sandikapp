@@ -12,6 +12,21 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-23 Yumuşak güncelleme kartı (Remote Config)
+
+Yeni build'de ana sayfada kapatılabilir "Yeni sürüm hazır" kartı var. Hiçbir
+şeyi kilitlemez; zorunlu kapı (`min_build_*`) ayrı kalır. Anahtar tanımsızken
+kart görünmez, yani bugün hiçbir şey değişmez.
+
+- [ ] Console'da iki **sayı** anahtarı oluştur, varsayılan `0`:
+      `onerilen_build_ios`, `onerilen_build_android`.
+- [ ] Bir düzeltme mağazada **yayına çıktıktan sonra** (incelemede değil)
+      o build'in numarasını yaz ve Publish. iOS'ta build numarası
+      (ör. 1785274515), Android'de versionCode (ör. 248). İncelemedeki
+      build'i yazarsan kullanıcı mağazada güncelleme bulamaz.
+- Kartı kapatan kullanıcı aynı numarayı bir daha görmez; daha yeni bir
+  numara yazınca yeniden görür.
+
 ## ⏳ 2026-10-22 Veritabanı: bir kez yer geri alma (isteğe bağlı)
 
 0167 Zirve varlık ölçümlerini 7 güne indirdi (okuyan her yer zaten son 24

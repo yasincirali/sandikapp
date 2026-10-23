@@ -175,16 +175,21 @@ GunOlayi? satirOlayi(
 }
 
 /// Ana sayfanın tek dürtü yuvası.
-enum AnaSayfaDurtusu { bilgiEksik, takvim, oneri }
+enum AnaSayfaDurtusu { bilgiEksik, takvim, guncelleme, oneri }
 
-/// Sıra: bilgi eksik > takvim olayı > özellik önerisi. Hiçbiri yoksa null.
+/// Sıra: bilgi eksik > takvim olayı > yumuşak güncelleme > özellik önerisi.
+/// Hiçbiri yoksa null. Güncelleme takvimin altında: kart kapatılana ya da
+/// güncellenene kadar durur, yarınki temettüyü günlerce örtmesin; öneriden
+/// üstte: yeni sürüm, uygulamanın kendi önerisinden önce gelir.
 AnaSayfaDurtusu? anaSayfaDurtusu({
   required bool bilgiEksikGorunur,
   required GunOlayi? takvimOlayi,
   required bool oneriVar,
+  bool guncellemeVar = false,
 }) {
   if (bilgiEksikGorunur) return AnaSayfaDurtusu.bilgiEksik;
   if (takvimOlayi != null) return AnaSayfaDurtusu.takvim;
+  if (guncellemeVar) return AnaSayfaDurtusu.guncelleme;
   if (oneriVar) return AnaSayfaDurtusu.oneri;
   return null;
 }

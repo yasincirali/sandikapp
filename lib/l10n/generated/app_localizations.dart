@@ -15550,6 +15550,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad}, {aralik} grafik. Son {fiyat}. {sayi} çizim.'**
   String tegGrafikSemantik(String ad, String aralik, String fiyat, int sayi);
+
+  /// No description provided for @periodNotEnoughData.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönem için yeterli veri yok'**
+  String get periodNotEnoughData;
+
+  /// No description provided for @periodCoverage.
+  ///
+  /// In tr, this message translates to:
+  /// **'son {sure} (veri bu kadar)'**
+  String periodCoverage(String sure);
+
+  /// No description provided for @durationDaysN.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gün'**
+  String durationDaysN(int n);
+
+  /// No description provided for @durationMonthsN.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ay'**
+  String durationMonthsN(int n);
+
+  /// No description provided for @softUpdateTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni sürüm hazır'**
+  String get softUpdateTitle;
+
+  /// No description provided for @softUpdateBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son düzeltmeler ve yenilikler için mağazadan güncelle.'**
+  String get softUpdateBody;
+
+  /// No description provided for @softUpdateDismiss.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şimdilik kapat'**
+  String get softUpdateDismiss;
+
+  /// No description provided for @alertCostRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre · {maliyet}'**
+  String alertCostRow(String maliyet);
+
+  /// No description provided for @alertCostBreakEven.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetim'**
+  String get alertCostBreakEven;
+
+  /// No description provided for @alertCostPct.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyet {pct}'**
+  String alertCostPct(String pct);
+
+  /// No description provided for @alertCostBreakEvenSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefi maliyetine ayarla'**
+  String get alertCostBreakEvenSemantics;
+
+  /// No description provided for @alertCostPctSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef maliyetin {sign} yüzde {pct}'**
+  String alertCostPctSemantics(String sign, int pct);
 }
 
 class _AppLocalizationsDelegate

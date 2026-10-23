@@ -22,6 +22,7 @@ import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/guncelleme_karti.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/radar_seridi.dart';
@@ -1035,6 +1036,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (benGorunumu)
             SliverToBoxAdapter(
               child: GunlerSatiri(
+                  padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
+            ),
+          // Yumuşak güncelleme (2026-10-23): Console'da önerilen build bu
+          // build'in üstündeyse "Yeni sürüm hazır". Aynı yuva: takvimin
+          // altında, özellik önerisinin üstünde (`anaSayfaDurtusuProvider`).
+          if (benGorunumu)
+            SliverToBoxAdapter(
+              child: GuncellemeKarti(
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
             ),
           // Özellik önerisi (2026-10-20): kullanılmayan bir özelliğe götüren

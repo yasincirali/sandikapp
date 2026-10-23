@@ -9339,4 +9339,53 @@ class AppLocalizationsTr extends AppLocalizations {
   String tegGrafikSemantik(String ad, String aralik, String fiyat, int sayi) {
     return '$ad, $aralik grafik. Son $fiyat. $sayi çizim.';
   }
+
+  @override
+  String get periodNotEnoughData => 'Bu dönem için yeterli veri yok';
+
+  @override
+  String periodCoverage(String sure) {
+    return 'son $sure (veri bu kadar)';
+  }
+
+  @override
+  String durationDaysN(int n) {
+    return '$n gün';
+  }
+
+  @override
+  String durationMonthsN(int n) {
+    return '$n ay';
+  }
+
+  @override
+  String get softUpdateTitle => 'Yeni sürüm hazır';
+
+  @override
+  String get softUpdateBody =>
+      'Son düzeltmeler ve yenilikler için mağazadan güncelle.';
+
+  @override
+  String get softUpdateDismiss => 'Şimdilik kapat';
+
+  @override
+  String alertCostRow(String maliyet) {
+    return 'Maliyetine göre · $maliyet';
+  }
+
+  @override
+  String get alertCostBreakEven => 'Maliyetim';
+
+  @override
+  String alertCostPct(String pct) {
+    return 'Maliyet $pct';
+  }
+
+  @override
+  String get alertCostBreakEvenSemantics => 'Hedefi maliyetine ayarla';
+
+  @override
+  String alertCostPctSemantics(String sign, int pct) {
+    return 'Hedef maliyetin $sign yüzde $pct';
+  }
 }
