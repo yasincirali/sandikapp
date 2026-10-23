@@ -273,7 +273,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   }
 
   Future<void> _yukle(int gun) async {
-    if (_seriler.containsKey(gun) || _yukleniyor.contains(gun)) return;
+    // Boş gelen dönem yeniden denenir: tek bir boş yanıt (TEFAS sınırı,
+    // kesinti) dönemi sayfa kapanana kadar boş bırakıyordu (2026-10-23).
+    if ((_seriler[gun]?.isNotEmpty ?? false) || _yukleniyor.contains(gun)) {
+      return;
+    }
     setState(() {
       _yukleniyor.add(gun);
       _hatali.remove(gun);

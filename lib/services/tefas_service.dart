@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -613,35 +614,79 @@ class TefasService {
   }
 
   /// Tarihsel NAV verisi — performans grafikleri için.
-  /// [periyod]: 1, 3, 6, 12, 36, 60 (ay)
+  ///
+  /// [periyod] (ay) yalnız bir İPUCU: istek iki kovadan birine gider
+  /// ([tefasGecmisKovasi]) ve aynı kovadaki her dönem tek yanıtı paylaşır.
+  ///
+  /// ## Neden kova (2026-10-23, yasin: AFT/DLY'de 6A·1Y·5Y "%0")
+  /// Varlık sayfası açılışta yedi dönemi + sinyal serisini AYNI ANDA ister;
+  /// fon için bu, TEFAS'a 8 ayrı POST demekti. TEFAS'ın dakikada ~6 istek
+  /// sınırını aşınca hata değil BOŞ 200 döndüğü bildiriliyor (üçüncü taraf
+  /// istemci notu, doğrulanmadı). Kuyruğun sonundaki 6A/1Y/5Y boş kalıyordu.
+  /// Artık bir fon için en fazla iki istek gider; dönemleri çağıranın
+  /// `clipToPeriod`'u keser. Seri ölçeği değişmez: aynı uç, aynı alan.
   Future<List<(int, double)>> fetchHistory(
     String code, {
     int periyod = 3,
-  }) async {
+  }) {
+    final kova = tefasGecmisKovasi(periyod);
+    final anahtar = '${code.trim().toUpperCase()}|$kova';
+    final onbellek = _gecmisOnbellek[anahtar];
+    if (onbellek != null &&
+        DateTime.now().difference(onbellek.ts) < _gecmisTtl) {
+      return Future.value(onbellek.noktalar);
+    }
+    final ucusan = _gecmisUcusan[anahtar];
+    if (ucusan != null) return ucusan;
+    final istek = gecmisCekici(code, kova).then((noktalar) {
+      // Boş yanıt önbelleğe GİRMEZ: sınır aşımıysa bir sonraki deneme
+      // gerçek seriyi alabilmeli.
+      if (noktalar.isNotEmpty) {
+        _gecmisOnbellek[anahtar] = (noktalar: noktalar, ts: DateTime.now());
+      }
+      return noktalar;
+    });
+    _gecmisUcusan[anahtar] = istek;
+    return istek.whenComplete(() => _gecmisUcusan.remove(anahtar));
+  }
+
+  /// NAV günde bir kez değişir; 15 dakika yeni yayını en geç o kadar
+  /// geciktirir, karşılığında sayfa/ekran geçişlerinde TEFAS'a hiç gidilmez.
+  static const _gecmisTtl = Duration(minutes: 15);
+  final Map<String, ({List<(int, double)> noktalar, DateTime ts})>
+      _gecmisOnbellek = {};
+  final Map<String, Future<List<(int, double)>>> _gecmisUcusan = {};
+
+  /// Ağ çekimi — testler ağsız davranışı ölçmek için değiştirir.
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(String code, int periyod)
+      gecmisCekici = _agdanGecmis;
+
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(String, int)
+      get varsayilanGecmisCekici => _agdanGecmis;
+
+  @visibleForTesting
+  void gecmisOnbeleginiTemizle() {
+    _gecmisOnbellek.clear();
+    _gecmisUcusan.clear();
+  }
+
+  static Future<List<(int, double)>> _agdanGecmis(
+      String code, int periyod) async {
     try {
       final body = jsonEncode({'fonKodu': code, 'dil': 'TR', 'periyod': periyod});
-      final res = await _client
+      final res = await instance._client
           .post(Uri.parse('$_baseUrl$_priceEndpoint'),
               headers: _headers, body: body)
           .timeout(const Duration(seconds: 12));
 
       if (res.statusCode != 200) return [];
-      final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
-      final items = (data['resultList'] as List?) ?? [];
-
-      final points = <(int, double)>[];
-      for (final row in items.cast<Map<String, dynamic>>()) {
-        final dateStr = row['tarih'] as String? ?? '';
-        final price = double.tryParse(row['fiyat']?.toString() ?? '');
-        if (price == null || price <= 0) continue;
-        final dt = DateTime.tryParse(dateStr);
-        if (dt != null) points.add((dt.millisecondsSinceEpoch, price));
-      }
-
-      points.sort((a, b) => a.$1.compareTo(b.$1));
-      return points;
-    } catch (e) {
-      _log('fetchHistory error: $e');
+      // Sınır aşımında gövde boş gelebilir: hata değil, boş seri.
+      if (res.bodyBytes.isEmpty) return [];
+      return tefasGecmisSatirlari(utf8.decode(res.bodyBytes));
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'TefasService.fetchHistory');
       return [];
     }
   }
@@ -791,4 +836,35 @@ class TefasService {
       return true;
     }());
   }
+}
+
+/// TEFAS geçmiş isteğinin kovası (ay): 3 aya kadar 3, üstü 60.
+///
+/// İki kova, çünkü portföy yenilemesi her tikte kısa seriyi ister ('5d'):
+/// onu 5 yıllık yanıta bağlamak sık yolu gereksiz ağırlaştırırdı.
+int tefasGecmisKovasi(int periyod) => periyod <= 3 ? 3 : 60;
+
+/// `fonFiyatBilgiGetir` gövdesinden (tarih, fiyat) noktaları, tarih sıralı.
+///
+/// Fiyat alanı `fiyat`, yoksa `birimPayDegeri` — `_fetchPriceRow` ile aynı
+/// okuma (geçmiş yalnız `fiyat`'a bakıyordu). Sıfır/negatif fiyat düşer:
+/// uydurma sayı yok.
+List<(int, double)> tefasGecmisSatirlari(String govde) {
+  final data = jsonDecode(govde) as Map<String, dynamic>;
+  final items = (data['resultList'] as List?) ?? const [];
+  final points = <(int, double)>[];
+  for (final row in items.cast<Map<String, dynamic>>()) {
+    final dateStr = row['tarih']?.toString() ?? '';
+    final raw = row['fiyat'] ?? row['birimPayDegeri'];
+    final price = double.tryParse(raw?.toString() ?? '');
+    if (price == null || price <= 0) continue;
+    final dt = DateTime.tryParse(dateStr) ??
+        switch (int.tryParse(dateStr)) {
+          final ms? => DateTime.fromMillisecondsSinceEpoch(ms),
+          null => null,
+        };
+    if (dt != null) points.add((dt.millisecondsSinceEpoch, price));
+  }
+  points.sort((a, b) => a.$1.compareTo(b.$1));
+  return points;
 }
