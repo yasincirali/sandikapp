@@ -18,6 +18,7 @@ void main() {
     int kurulumGunu = 30,
     int aktifGun = 10,
     double? karZararOrani = 0.15,
+    int? sonHataMs,
   }) =>
       degerlendirmeSorulsunMu(
         an: an,
@@ -26,7 +27,20 @@ void main() {
         aktifGun: aktifGun,
         karZararOrani: karZararOrani,
         simdi: simdi,
+        sonHataMs: sonHataMs,
       );
+
+  group('görünen hata kapısı (Ar-Ge 23 Eki #2)', () {
+    test('son 30 dakikada hata gördüyse sorulmaz', () {
+      expect(sor(sonHataMs: msOnce(const Duration(minutes: 1))), isFalse);
+      expect(sor(sonHataMs: msOnce(const Duration(minutes: 29))), isFalse);
+    });
+
+    test('30 dakika geçince ya da hiç hata yoksa yine sorulur', () {
+      expect(sor(sonHataMs: msOnce(const Duration(minutes: 31))), isTrue);
+      expect(sor(), isTrue);
+    });
+  });
 
   test('olgun ve kârda kullanıcıya her mutlu anda sorulur', () {
     for (final an in ReviewAni.values) {
