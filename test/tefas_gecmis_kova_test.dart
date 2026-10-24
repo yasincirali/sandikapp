@@ -3,6 +3,8 @@
 // Varlık sayfası yedi dönemi aynı anda ister; fon için bu TEFAS'a 8 POST
 // demekti ve sınır aşımında son dönemler boş kalıyordu. Kilit: aynı
 // kovadaki dönemler TEK ağ çekimini paylaşır, boş yanıt önbelleğe girmez.
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/tefas_service.dart';
 
@@ -56,5 +58,19 @@ void main() {
         '{"tarih":"2026-10-23T00:00:00","fiyat":3.25}'
         ']}');
     expect(p.map((e) => e.$2).toList(), [1.5, 3.25]);
+  });
+
+  // Sayaç (2026-10-23): #240 yetti mi? Sonuç sınıfı yanıttan çıkar.
+  test('yanıt sonucu: http, boş gövde, boş liste, dolu', () {
+    expect(tefasGecmisYaniti(503, const []).sonuc, 'http');
+    expect(tefasGecmisYaniti(200, const []).sonuc, 'bos');
+    expect(
+        tefasGecmisYaniti(200, utf8.encode('{"resultList":[]}')).sonuc, 'bos');
+    final dolu = tefasGecmisYaniti(
+        200,
+        utf8.encode('{"resultList":[{"tarih":"2026-10-22T00:00:00",'
+            '"fiyat":2.5}]}'));
+    expect(dolu.sonuc, 'dolu');
+    expect(dolu.noktalar.single.$2, 2.5);
   });
 }

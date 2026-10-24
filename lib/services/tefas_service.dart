@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'analytics_service.dart';
 import 'crash_reporter.dart';
 
 /// Adı devlet katkısı fonu mu?
@@ -672,6 +673,15 @@ class TefasService {
     _gecmisUcusan.clear();
   }
 
+  /// Ağ çekiminin sonucu — testler sayar, üretimde analitiğe gider.
+  @visibleForTesting
+  static void Function(String sonuc, int periyod) gecmisSonucuKaydi =
+      (sonuc, periyod) => unawaited(AnalyticsService.instance
+          .logTefasGecmis(sonuc: sonuc, periyod: periyod));
+
+  static void _gecmisSonucu(String sonuc, int periyod) =>
+      gecmisSonucuKaydi(sonuc, periyod);
+
   static Future<List<(int, double)>> _agdanGecmis(
       String code, int periyod) async {
     try {
@@ -681,11 +691,11 @@ class TefasService {
               headers: _headers, body: body)
           .timeout(const Duration(seconds: 12));
 
-      if (res.statusCode != 200) return [];
-      // Sınır aşımında gövde boş gelebilir: hata değil, boş seri.
-      if (res.bodyBytes.isEmpty) return [];
-      return tefasGecmisSatirlari(utf8.decode(res.bodyBytes));
+      final yanit = tefasGecmisYaniti(res.statusCode, res.bodyBytes);
+      _gecmisSonucu(yanit.sonuc, periyod);
+      return yanit.noktalar;
     } catch (e, st) {
+      _gecmisSonucu('hata', periyod);
       CrashReporter.report(e, st, reason: 'TefasService.fetchHistory');
       return [];
     }
@@ -843,6 +853,19 @@ class TefasService {
 /// İki kova, çünkü portföy yenilemesi her tikte kısa seriyi ister ('5d'):
 /// onu 5 yıllık yanıta bağlamak sık yolu gereksiz ağırlaştırırdı.
 int tefasGecmisKovasi(int periyod) => periyod <= 3 ? 3 : 60;
+
+/// Geçmiş yanıtını sonucu ile çözer: `dolu`, `bos` ya da `http`.
+///
+/// Sınır aşımında TEFAS'ın gövdeyi boş ya da boş listeyle döndüğü bildiriliyor
+/// (doğrulanmadı): ikisi de `bos` sayılır ki sayaç bunu ayırsın. Çözülemeyen
+/// gövde istisna fırlatır; çağıran onu `hata` sayar.
+({List<(int, double)> noktalar, String sonuc}) tefasGecmisYaniti(
+    int durum, List<int> govde) {
+  if (durum != 200) return (noktalar: const [], sonuc: 'http');
+  if (govde.isEmpty) return (noktalar: const [], sonuc: 'bos');
+  final noktalar = tefasGecmisSatirlari(utf8.decode(govde));
+  return (noktalar: noktalar, sonuc: noktalar.isEmpty ? 'bos' : 'dolu');
+}
 
 /// `fonFiyatBilgiGetir` gövdesinden (tarih, fiyat) noktaları, tarih sıralı.
 ///
