@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/services/technical_analysis_service.dart';
+import 'helpers/kaynak.dart';
 
 /// **Varlık sayfası sahte `Asset` ÜRETMEZ.**
 ///
@@ -185,7 +186,7 @@ void main() {
       'lib/screens/add_asset_screen.dart',
     ]) {
       test(yol, () async {
-        final src = _yorumsuz(await File(yol).readAsString());
+        final src = _yorumsuz(ekranKaynagiSync(yol));
         expect(src.contains('showVarlikSayfasi('), isTrue,
             reason: 'bu ekrandaki varlıklar varlık sayfasını açabilmeli');
       });
@@ -202,7 +203,7 @@ void main() {
 
     test('varlık ekleme seçicisinde birincil eylem SEÇMEK', () async {
       final ekle = _yorumsuz(
-          await File('lib/screens/add_asset_screen.dart').readAsString());
+          ekranKaynagiSync('lib/screens/add_asset_screen.dart'));
       expect(ekle.contains('onSec: onTap'), isTrue,
           reason: 'seçiciden açılan sayfa formu terk ettirmemeli; "Bunu seç" '
               'satıra dokunmakla aynı işi yapar');

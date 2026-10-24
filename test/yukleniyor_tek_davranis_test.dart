@@ -161,7 +161,8 @@ void main() {
         if (k > 0) sayim[f.path.replaceAll(r'\', '/')] = k;
       }
       const izin = {
-        'lib/screens/add_asset_screen.dart': 1,
+        // Varlık ekleme önizleme kutusu (part bölünmesi 2026-10-24).
+        'lib/screens/add_asset/tutar_alanlari.dart': 1,
         'lib/screens/csv_import_screen.dart': 1,
         'lib/screens/settings_screen.dart': 2,
       };

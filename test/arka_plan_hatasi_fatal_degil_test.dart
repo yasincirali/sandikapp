@@ -7,6 +7,8 @@ import 'package:portfoy_takip/services/crash_reporter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthRetryableFetchException, FunctionException, PostgrestException;
 
+import 'helpers/kaynak.dart';
+
 /// Üretim çökmesinin (Crashlytics, 2026-09-19) tekrar etmemesi için ratchet.
 ///
 /// Rapor: "Fatal Exception: FlutterError → `Future.timeout` → `DbLogger.log`
@@ -197,8 +199,7 @@ void main() {
       // `onPressed: _save` future'ı kimse beklemiyor; genel `catch`
       // olmadan ağ hatası zone handler'ına düşüp ÇÖKME sayılıyordu ve
       // kullanıcı kaydın olmadığını hiç öğrenmiyordu.
-      final kaynak =
-          File('lib/screens/add_asset_screen.dart').readAsStringSync();
+      final kaynak = ekranKaynagiSync('lib/screens/add_asset_screen.dart');
       expect(
         kaynak.contains("reason: 'AddAssetScreen.save'"),
         isTrue,
