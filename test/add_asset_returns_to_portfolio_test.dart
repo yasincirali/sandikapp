@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Varlık ekledikten sonra **Portföy sekmesine** dönülmeli.
 ///
@@ -31,8 +30,8 @@ void main() {
   late String bulk;
 
   setUpAll(() {
-    String read(String p) => File(p)
-        .readAsStringSync()
+    // Part'lar dahil (`ekranKaynagiSync`): varlık ekleme ekranı bölündü.
+    String read(String p) => ekranKaynagiSync(p)
         .split('\n')
         .where((l) => !l.trimLeft().startsWith('//'))
         .join('\n');
