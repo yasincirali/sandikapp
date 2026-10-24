@@ -760,6 +760,56 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get miktarModuAdet => 'Units';
+
+  @override
+  String miktarModuTutar(String sembol) {
+    return 'Amount ($sembol)';
+  }
+
+  @override
+  String miktarModuSemantik(String mod) {
+    return 'Enter quantity as $mod';
+  }
+
+  @override
+  String get tutarAlani => 'Amount';
+
+  @override
+  String get tutarGecersiz => 'Enter a valid amount';
+
+  @override
+  String get tutarFiyatGerekli => 'A price is needed to work out units';
+
+  @override
+  String tutardanAdetSatiri(String miktar) {
+    return 'Calculated quantity: $miktar';
+  }
+
+  @override
+  String get tutardanAdetFiyatYok =>
+      'The quantity is worked out once a price is in. You can also enter the price yourself.';
+
+  @override
+  String get fonAdetIpucu =>
+      'If your bank shows a different number of units, correct it. If the fund was bought at the next day\'s price, pick that day as the date.';
+
+  @override
+  String fiyatBirimBasina(String fiyat) {
+    return '$fiyat per unit';
+  }
+
+  @override
+  String kuyumcuFarkiAltin(String fark, String tutar) {
+    return 'Dealer spread $fark. Sold today you\'d get $tutar.';
+  }
+
+  @override
+  String kuyumcuFarkiDoviz(String fark, String tutar) {
+    return 'Buy-sell spread $fark. Sold today you\'d get $tutar.';
+  }
+
+  @override
   String get total => 'total';
 
   @override

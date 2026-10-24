@@ -3,6 +3,137 @@ part of '../add_asset_screen.dart';
 /// Varlık ekleme formunun TUTAR alanları: miktar, fiyat, komisyon, toplam,
 /// fiyat önizlemesi, tarih. Bölünme 2026-10-24, davranış aynı.
 extension _TutarAlanlari on _AddAssetScreenState {
+  // ── Adet / Tutar kipi (2026-10-24, Ar-Ge raporu §2) ───────────────────────
+  //
+  // Fon ve altın biriktiren kişi aldığını TL tutarıyla hatırlar ("5.000 TL
+  // fon aldım"); adedi bulmak için bankaya gitmek ilk varlığı yarıda
+  // bıraktırır. Kipte kullanıcı tutarı yazar, adet = tutar ÷ birim fiyat
+  // (`tutardanAdet`) hesaplanır. Kayıt bugünkü gibi adet + fiyattır; şema
+  // değişmez. Varsayılan Adet: bugünkü kullanıcı formu değişmiş görmez.
+  //
+  // Yalnız yeni kayıtta: düzenlemede adet zaten bilinir. Eurobondda yok:
+  // fiyat temiz %, miktar nominal — bölme anlamsız.
+  bool get _tutarKipiVar => _kolay && !_s.isEurobond;
+  bool get _tutarModu => _tutarKipiVar && _s.tutarModu;
+
+  String get _paraSembolu => _currency == 'TRY' ? '₺' : _currency;
+
+  /// Adedin bölüneceği fiyat: yazılan fiyat, yoksa kayıtta atanacak fiyat.
+  /// Önizleme yüklenirken eski önizleme fiyatı KULLANILMAZ (yeni tarih
+  /// seçildiyse o fiyat başka günündür).
+  double? get _tutarBirimFiyati => tutarBirimFiyati(
+        kullaniciFiyati: _parse(_price.text),
+        onizlemeFiyati: _previewLoading ? null : _previewPrice,
+        onizlemeSatis: _previewLoading ? null : _s.previewSatis,
+      );
+
+  /// Kayda girecek adet: Adet kipinde alan, Tutar kipinde hesap.
+  double? get _etkinAdet => _tutarModu
+      ? tutardanAdet(tutar: _parse(_tutar.text), birimFiyat: _tutarBirimFiyati)
+      : _parse(_quantity.text);
+
+  Widget _miktarKipiSegmenti() {
+    final l = context.l10n;
+    final etiketler = [l.miktarModuAdet, l.miktarModuTutar(_paraSembolu)];
+    return SandikSegment(
+      adet: 2,
+      secili: _s.tutarModu ? 1 : 0,
+      onSec: _miktarKipiniSec,
+      semantik: (i) => l.miktarModuSemantik(etiketler[i]),
+      oge: (context, i, _) => Text(etiketler[i],
+          maxLines: 1, overflow: TextOverflow.ellipsis),
+    );
+  }
+
+  /// Tutar → Adet dönüşünde hesaplanan adet alana yazılır: "bankadaki adet
+  /// farklıysa adedi düzelt" ipucunun yolu budur. Adet → Tutar'da tutar
+  /// alanı olduğu gibi kalır (ön doldurulan tutar kullanıcının girdisi
+  /// sanılırdı).
+  void _miktarKipiniSec(int i) {
+    final tutar = i == 1;
+    if (tutar == _s.tutarModu) return;
+    if (!tutar) {
+      final adet = _etkinAdet;
+      if (adet != null) _quantity.text = _fmt(adet);
+    }
+    _n.setTutarModu(tutar);
+  }
+
+  Widget _tutarBlock(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel(context.l10n.tutarAlani),
+        const SizedBox(height: SandikSpace.sm),
+        _brandInput(
+          controller: _tutar,
+          hint: '0',
+          suffixText: _paraSembolu,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [_DecimalFormatter()],
+          validator: (v) {
+            final t = _parse(v ?? '');
+            if (t == null || t <= 0) return context.l10n.tutarGecersiz;
+            // Fiyat yoksa adet hesaplanmaz; kayıt uydurma adetle gitmez.
+            if (_tutarBirimFiyati == null) {
+              return context.l10n.tutarFiyatGerekli;
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Hesaplanan adet (yuvarlanmadan) ve fon ipucu. Fiyat yoksa adet yazılmaz.
+  Widget _tutardanAdetSatiri() {
+    final l = context.l10n;
+    final tutar = _parse(_tutar.text);
+    final adet = _etkinAdet;
+    final String? metin = adet != null
+        ? l.tutardanAdetSatiri(
+            '${fmtNumFlex(adet, maxDigits: 8)} $_quantitySuffix'.trim())
+        : (tutar != null && tutar > 0 && !_previewLoading)
+            ? l.tutardanAdetFiyatYok
+            : null;
+    final stil = context.t.bodySmall?.copyWith(color: context.c.text58);
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (metin != null)
+            Text(metin,
+                key: const ValueKey('tutardan-adet'),
+                style: context.t.bodyMedium?.copyWith(
+                    color: context.c.text90, fontWeight: FontWeight.w600)),
+          // Fonlarda banka tam pay alır, artanı hesapta bırakır; alım çoğu
+          // fonda ertesi günün fiyatından gerçekleşir. Uydurma adet yerine
+          // kullanıcıya düzeltme yolu söylenir.
+          if (_isFon) ...[
+            if (metin != null) const SizedBox(height: SandikSpace.xs),
+            Text(l.fonAdetIpucu, style: stil),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Önizleme kartındaki tek bilgi satırı: kuyumcu farkı ve bugün
+  /// bozdurulunca ele geçen. "Zarardasın" denmez: yeni varlığın ilk gün
+  /// eksi görünmesinin nedeni açıklanır (Ar-Ge raporu §1).
+  String _kuyumcuFarkiSatiri({required double alis, required double satis}) {
+    final l = context.l10n;
+    final fark = fmtPct(kuyumcuFarkiYuzde(alis: alis, satis: satis), digits: 1);
+    final adet = _etkinAdet;
+    final tutar = adet != null && adet > 0
+        ? fmtTRY(adet * alis, digits: 2)
+        : l.fiyatBirimBasina(fmtTRYFiyat(alis));
+    return _type == AssetType.altin
+        ? l.kuyumcuFarkiAltin(fark, tutar)
+        : l.kuyumcuFarkiDoviz(fark, tutar);
+  }
+
   // ── Miktar bloğu ───────────────────────────────────────────────────────────
   Widget _quantityBlock(ColorScheme cs) {
     return Column(
@@ -202,7 +333,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
 
   // ── Toplam maliyet hero card ───────────────────────────────────────────────
   Widget _totalHero(ColorScheme cs) {
-    final qty = _parse(_quantity.text);
+    final qty = _etkinAdet;
     // Eurobond: alan temiz %; toplam nominal × kirli birim değerdir. Fiyat
     // zorunlu olduğundan "boş fiyat otomatik atanır" kartı gösterilmez —
     // çevrilemeyen fiyatta ipucu kartına düşülür.
@@ -438,6 +569,15 @@ extension _TutarAlanlari on _AddAssetScreenState {
       icon = Icons.hourglass_top_rounded;
       title = 'Fiyat çekiliyor…';
       subtitle = '$dateLabel için kapanış aranıyor';
+    } else if (_previewPrice != null && _s.previewSatis != null) {
+      // Boş fiyatlı yeni altın/döviz, bugün: maliyet satıştan yazılacak
+      // (`maliyetSatisFiyati`). Başlık atanacak fiyatı, satır farkı söyler.
+      final satis = _s.previewSatis!;
+      color = context.c.amberText;
+      icon = Icons.auto_awesome_rounded;
+      title = context.l10n.fiyatBirimBasina(
+          '${qtyFormatter(maxDigits: 2).format(satis)} $_currency');
+      subtitle = _kuyumcuFarkiSatiri(alis: _previewPrice!, satis: satis);
     } else if (_previewPrice != null) {
       final p = _previewPrice!;
       final fmt = qtyFormatter(maxDigits: 2);

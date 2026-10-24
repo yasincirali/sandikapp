@@ -749,6 +749,56 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get miktarModuAdet => 'Adet';
+
+  @override
+  String miktarModuTutar(String sembol) {
+    return 'Tutar ($sembol)';
+  }
+
+  @override
+  String miktarModuSemantik(String mod) {
+    return 'Miktarı $mod olarak gir';
+  }
+
+  @override
+  String get tutarAlani => 'Tutar';
+
+  @override
+  String get tutarGecersiz => 'Geçerli tutar';
+
+  @override
+  String get tutarFiyatGerekli => 'Adet için fiyat gerekli';
+
+  @override
+  String tutardanAdetSatiri(String miktar) {
+    return 'Hesaplanan miktar: $miktar';
+  }
+
+  @override
+  String get tutardanAdetFiyatYok =>
+      'Fiyat gelince miktar hesaplanır. Fiyatı elle de girebilirsin.';
+
+  @override
+  String get fonAdetIpucu =>
+      'Bankadaki adet farklıysa adedi düzelt. Fon ertesi gün fiyatıyla alındıysa tarihi o gün seç.';
+
+  @override
+  String fiyatBirimBasina(String fiyat) {
+    return '$fiyat / birim';
+  }
+
+  @override
+  String kuyumcuFarkiAltin(String fark, String tutar) {
+    return 'Kuyumcu farkı $fark. Bugün bozdursan $tutar.';
+  }
+
+  @override
+  String kuyumcuFarkiDoviz(String fark, String tutar) {
+    return 'Alış-satış farkı $fark. Bugün bozdursan $tutar.';
+  }
+
+  @override
   String get total => 'toplam';
 
   @override
