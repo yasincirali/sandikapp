@@ -101,6 +101,47 @@ void main() {
       expect(s['ad'], 'Eylül 2026');
     }, skip: nodeVar ? false : 'node yok');
 
+    // "Sonucu paylaş" (2026-10-24): bağlantı yalnız ay + isteğe bağlı tutar
+    // taşır; saçma değerle açılan bağlantı uydurma sonuç göstermez (null →
+    // sayfa formu boş açar); varsayılan metin tutarı içermez.
+    test('paylaşım bağlantısı sınırlı ve doğrulanmış', () {
+      final s = kos('''
+        const v={aylar:[{ay:"2025-01",endeks:100},{ay:"2025-02",endeks:110},
+                        {ay:"2026-09",endeks:150}]};
+        const o=q=>H.paylasimOku(q,v);
+        return {
+          bos: o(""), yabanci: o("?utm_source=x"),
+          ay: o("?ay=2025-01"), ikisi: o("?ay=2025-02&tutar=2500.5"),
+          kotu: ["?ay=2026-09","?ay=2024-12","?ay=2025-13","?ay=x",
+                 "?tutar=0","?tutar=-5","?tutar=1e5","?tutar=abc","?tutar=1.234",
+                 "?tutar=10000000000000","?ay=2025-01&ay=2025-02",
+                 "?ay=2025-01&tutar=abc"].map(o),
+          veriYok: H.paylasimOku("?ay=2025-01",{aylar:[]}),
+          adres: H.paylasimAdresi("https://a.b/enflasyon/?ay=2024-01#x","2025-01",null),
+          adresT: H.paylasimAdresi("https://a.b/enflasyon/","2025-01",10000.456),
+          adresSacma: H.paylasimAdresi("https://a.b/e/","2025-01",1e13),
+          metin: H.paylasimMetni(H.hesapla(v,10000,"2025-01"),"2025-01",null),
+          metinT: H.paylasimMetni(H.hesapla(v,10000,"2025-01"),"2025-01",10000)
+        };''');
+      expect(s['bos'], {'bos': true});
+      expect(s['yabanci'], {'bos': true});
+      expect(s['ay'], {'ay': '2025-01', 'tutar': null});
+      expect(s['ikisi'], {'ay': '2025-02', 'tutar': 2500.5});
+      expect(s['kotu'], everyElement(isNull));
+      expect(s['veriYok'], isNull);
+      expect(s['adres'], 'https://a.b/enflasyon/?ay=2025-01');
+      expect(s['adresT'], 'https://a.b/enflasyon/?ay=2025-01&tutar=10000.46');
+      expect(s['adresSacma'], 'https://a.b/e/?ay=2025-01');
+      final metin = s['metin'] as String;
+      expect(metin, contains('%50,0 arttı'));
+      expect(metin, contains('%33,3 azaldı'));
+      expect(metin.contains('₺'), isFalse, reason: 'varsayılan metin tutar taşımaz');
+      expect(s['metinT'], contains('10.000 ₺'));
+      for (final t in ['—', '–']) {
+        expect(metin.contains(t) || (s['metinT'] as String).contains(t), isFalse);
+      }
+    }, skip: nodeVar ? false : 'node yok');
+
     test('yayımlanan veriyle her başlangıç ayı sonlu ve pozitif', () {
       final s = kos('''
         const v=JSON.parse(fs.readFileSync("docs/data/tufe.json","utf8"));
@@ -133,6 +174,17 @@ void main() {
           RegExp(r'https://apps\.apple\.com/tr/app/id6786837699\?[^"]*utm_medium=enflasyon')
               .hasMatch(html),
           isTrue);
+    });
+
+    test('paylaş düğmesi: navigator.share, yoksa pano; varsayılan tutarsız', () {
+      expect(gorunen, contains('Sonucu paylaş'));
+      expect(gorunen, contains('Tutarı da paylaş'));
+      expect(html, contains('navigator.share'));
+      expect(html, contains('navigator.clipboard'));
+      expect(html, contains('H.paylasimOku(location.search'));
+      // Kutu işaretli DEĞİLSE tutar bağlantıya/metne girmez.
+      expect(html, contains('tutarEkle.checked ? sonuc.tutar : null'));
+      expect(RegExp(r'id="tutar-ekle"[^>]*checked').hasMatch(html), isFalse);
     });
 
     test('uzun/orta tire yok', () {
