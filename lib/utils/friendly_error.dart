@@ -137,6 +137,33 @@ String friendlyError(Object? error, {bool verbose = false}) {
   return message;
 }
 
+/// [friendlyError]'in hangi dala düştüğü: kısa, sabit ASCII kod.
+///
+/// Neden (2026-10-24, hata ekranında "bize yaz"): destek e-postasına hata
+/// METNİ değil yalnız SINIFI yazılır. Ham hata metni sunucu yanıtı, sembol,
+/// tutar ya da e-posta taşıyabilir; kullanıcı onu kendi adıyla göndermiş
+/// olurdu. Sınıf ise "bağlantı mı, yetki mi, bizim hatamız mı" sorusuna
+/// yeter. Sıra [friendlyError] ile AYNI; ikisi ayrışırsa e-postadaki sınıf
+/// ekranda görülen mesajla çelişir (`destek_maili_test` kilitli).
+String hataSinifi(Object? error) {
+  if (error == null) return 'bilinmeyen';
+  if (error is KullaniciMesajli && error.message.trim().isNotEmpty) {
+    return 'uygulama_mesaji';
+  }
+  if (baglantiHatasiMi(error)) return 'baglanti';
+  if (error is FormatException) return 'veri_okuma';
+  if (error is AuthException) return 'kimlik';
+  if (error is PostgrestException) {
+    if (error.code == '23505') return 'kayit_var';
+    if (error.code == '42501' || error.message.contains('permission')) {
+      return 'yetki';
+    }
+    return 'veri_islemi';
+  }
+  if (error is StorageException) return 'dosya';
+  return 'diger';
+}
+
 String _authMessage(String raw) {
   final lower = raw.toLowerCase();
   if (lower.contains('invalid login credentials') ||

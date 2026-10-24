@@ -4529,6 +4529,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchChip => 'Search';
 
   @override
+  String get aramaIpucuOrnekli => 'e.g. THYAO or 100 USD';
+
+  @override
+  String aramaHizliHesap(String miktar, String ad, String tutar) {
+    return '$miktar $ad ≈ $tutar';
+  }
+
+  @override
+  String get aramaHizliHesapEkle => 'Add to portfolio';
+
+  @override
+  String get hataBizeYaz => 'Still not working? Write to us';
+
+  @override
+  String get hataBizeYazEtiket => 'Still not working? Email us';
+
+  @override
+  String get hataMailAcilamadi =>
+      'Couldn\'t open your email app. You can write to this address:';
+
+  @override
+  String get hataAdresiKopyala => 'Copy address';
+
+  @override
+  String get hataAdresKopyalandi => 'Address copied';
+
+  @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
 
   @override
