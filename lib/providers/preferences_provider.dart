@@ -355,6 +355,11 @@ final ozellikOnerisiSonKapatmaProvider =
         PrefKeys.ozellikOnerisiSonKapatma, 0,
         perUser: true));
 
+/// Yumuşak güncelleme kartının kapatıldığı önerilen build (0 = hiç).
+final guncellemeKapatilanBuildProvider =
+    NotifierProvider<_IntPrefNotifier, int>(
+        () => _IntPrefNotifier(PrefKeys.guncellemeKapatilanBuild, 0));
+
 /// Ana sayfa "seni ilgilendiren günler": kapatılan olay kimlikleri
 /// (`seni_ilgilendiren_gunler.dart`).
 final gunlerKapatilanProvider =

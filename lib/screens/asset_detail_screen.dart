@@ -812,8 +812,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               onPressed: () => alarmKurAkisi(
                 context,
                 ref,
+                // Maliyet çipleri yalnız KENDİ açık pozisyonunda: ortağın
+                // maliyeti bu kullanıcının alarm sorusu değildir.
                 sabit: AlarmAdayi(
-                    _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice),
+                    _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice,
+                    maliyet: isOwnAsset && _canli.acik
+                        ? alarmMaliyeti(_canli.lots)
+                        : null),
               ),
             ),
           // "Varlığı güncelle" (`varlik_guncelle.dart`): kaydırmadaki

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/asset.dart';
 import '../models/position.dart';
 import '../models/price_alert.dart';
 import '../providers/portfolio_provider.dart';
@@ -58,11 +59,20 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     // için kullanıcı artık tutmadığı bir sembol için alarm kurabiliyordu.
     final assets = aktifLotlar(
         ref.read(portfolioProvider).valueOrNull?.assets ?? const []);
+    final sembolLotlari = <String, List<Asset>>{};
     for (final a in assets) {
-      if (!a.isBuy) continue;
       final sembol = alarmSembolu(a.ticker, a.subCategory);
       if (sembol == null) continue;
+      (sembolLotlari[sembol] ??= []).add(a);
+      if (!a.isBuy) continue;
       out[sembol] = AlarmAdayi(sembol, a.name, a.currentPrice);
+    }
+    // Portföydeki adayın maliyeti (maliyet çipleri, 2026-10-23); satış
+    // lot'ları da girer ki ortalama pozisyonun bugünkü hâlini yazsın.
+    for (final e in out.entries.toList()) {
+      final a = e.value;
+      out[e.key] = AlarmAdayi(a.sembol, a.ad, a.guncelFiyat,
+          maliyet: alarmMaliyeti(sembolLotlari[e.key] ?? const []));
     }
 
     final watch = ref.read(watchlistProvider).valueOrNull ?? const [];

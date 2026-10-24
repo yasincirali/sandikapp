@@ -38,6 +38,16 @@ class SunucuSecimi {
   static const minBuildAndroid = 'min_build_android';
   static const minBuildIos = 'min_build_ios';
 
+  /// Yumuşak güncelleme (2026-10-23, Ar-Ge): bu build'in altındakilere ana
+  /// sayfada kapatılabilir "Yeni sürüm hazır" kartı. Zorunlu kapıdan
+  /// ([minBuildIos]) farklı olarak hiçbir şeyi kilitlemez. Console'da
+  /// tanımsız (0) iken kart yok; eski build'ler anahtarı okumaz, etkilenmez.
+  /// Değer yalnız mağazada YAYINDA olan build'e çekilir: incelemedeki bir
+  /// build'i önermek kullanıcıyı mağazada güncellemesi olmayan sayfaya
+  /// gönderir (`YAPMAN_GEREKENLER.md`).
+  static const onerilenBuildAndroid = 'onerilen_build_android';
+  static const onerilenBuildIos = 'onerilen_build_ios';
+
   SunucuYapilandirmasi? _aktif;
   final _hazir = Completer<SunucuYapilandirmasi?>();
 
@@ -57,18 +67,26 @@ class SunucuSecimi {
   /// Bu derleme artık desteklenmiyor — mağazadan güncellemek gerek.
   final guncellemeGerekli = ValueNotifier<bool>(false);
 
+  /// Console'daki önerilen build ([onerilenBuildAnahtari]); 0 = öneri yok.
+  final onerilenBuild = ValueNotifier<int>(0);
+
   int _mevcutBuild = 0;
+
+  /// Çalışan derlemenin build numarası; okunamadıysa 0.
+  int get mevcutBuild => _mevcutBuild;
 
   /// Açılış kararı. `null` = derlemede hiç sunucu yok (yapılandırma hatası).
   Future<SunucuYapilandirmasi?> baslat() async {
     var istenen = '';
     var minBuild = 0;
+    var onerilen = 0;
     try {
       final rc = FirebaseRemoteConfig.instance;
       // Diskteki son etkin değerleri yükler — AĞA ÇIKMAZ.
       await rc.ensureInitialized();
       istenen = rc.getString(anahtar);
       minBuild = rc.getInt(minBuildAnahtari);
+      onerilen = rc.getInt(onerilenBuildAnahtari);
     } catch (e, st) {
       // Firebase kurulamadıysa (config yok, ilk açılış) varsayılan sunucu.
       CrashReporter.report(e, st, reason: 'SunucuSecimi.baslat');
@@ -85,13 +103,15 @@ class SunucuSecimi {
     } catch (_) {}
     guncellemeGerekli.value =
         guncellemeGerekliMi(mevcutBuild: _mevcutBuild, minBuild: minBuild);
+    onerilenBuild.value = onerilen;
     if (!_hazir.isCompleted) _hazir.complete(_aktif);
     return _aktif;
   }
 
   /// Remote Config yeni değerleri ETKİNLEŞTİRDİKTEN sonra çağrılır
   /// (açılış fetch'i ve gerçek zamanlı güncelleme — `RemoteConfigService`).
-  void rcGuncellendi({required String istenen, required int minBuild}) {
+  void rcGuncellendi(
+      {required String istenen, required int minBuild, int onerilen = 0}) {
     final aktif = _aktif;
     if (aktif == null) return;
     final yeni = sunucuSec(
@@ -104,6 +124,7 @@ class SunucuSecimi {
     if (yeni != null && yeni.url != aktif.url) yenidenBaslatGerekli.value = true;
     guncellemeGerekli.value =
         guncellemeGerekliMi(mevcutBuild: _mevcutBuild, minBuild: minBuild);
+    onerilenBuild.value = onerilen;
   }
 
   /// Platforma göre min build anahtarı — `RemoteConfigService` de okur.
@@ -111,10 +132,17 @@ class SunucuSecimi {
   static String get minBuildAnahtari =>
       defaultTargetPlatform == TargetPlatform.iOS ? minBuildIos : minBuildAndroid;
 
+  static String get onerilenBuildAnahtari =>
+      defaultTargetPlatform == TargetPlatform.iOS
+          ? onerilenBuildIos
+          : onerilenBuildAndroid;
+
   @visibleForTesting
-  void testIcinKur(SunucuYapilandirmasi aktif, {int mevcutBuild = 0}) {
+  void testIcinKur(SunucuYapilandirmasi aktif,
+      {int mevcutBuild = 0, int onerilen = 0}) {
     _aktif = aktif;
     _mevcutBuild = mevcutBuild;
+    onerilenBuild.value = onerilen;
     yenidenBaslatGerekli.value = false;
     guncellemeGerekli.value = false;
   }
@@ -172,3 +200,19 @@ SunucuYapilandirmasi? sunucuSec({
 /// başına veri koruması değil).
 bool guncellemeGerekliMi({required int mevcutBuild, required int minBuild}) =>
     minBuild > 0 && mevcutBuild > 0 && mevcutBuild < minBuild;
+
+/// SAF karar: ana sayfada yumuşak güncelleme kartı görünsün mü?
+///
+/// Öneri tanımsızsa (0) ya da build okunamadıysa (0) hayır: bilinmeyen
+/// durumda dürtmek, susmaktan kötüdür. Kullanıcı bu öneriyi kapattıysa
+/// ([kapatilanBuild] ≥ öneri) hayır; Console'da daha yeni bir build
+/// önerilince yeniden görünür.
+bool yumusakGuncellemeGorunur({
+  required int mevcutBuild,
+  required int onerilenBuild,
+  required int kapatilanBuild,
+}) =>
+    onerilenBuild > 0 &&
+    mevcutBuild > 0 &&
+    mevcutBuild < onerilenBuild &&
+    kapatilanBuild < onerilenBuild;

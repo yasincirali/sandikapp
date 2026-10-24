@@ -9425,4 +9425,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String tegGrafikSemantik(String ad, String aralik, String fiyat, int sayi) {
     return '$ad, $aralik chart. Last $fiyat. $sayi drawings.';
   }
+
+  @override
+  String get periodNotEnoughData => 'Not enough data for this period';
+
+  @override
+  String periodCoverage(String sure) {
+    return 'last $sure (all available data)';
+  }
+
+  @override
+  String durationDaysN(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationMonthsN(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get softUpdateTitle => 'A new version is ready';
+
+  @override
+  String get softUpdateBody =>
+      'Update from the store for the latest fixes and features.';
+
+  @override
+  String get softUpdateDismiss => 'Dismiss for now';
+
+  @override
+  String alertCostRow(String maliyet) {
+    return 'From your cost · $maliyet';
+  }
+
+  @override
+  String get alertCostBreakEven => 'My cost';
+
+  @override
+  String alertCostPct(String pct) {
+    return 'Cost $pct';
+  }
+
+  @override
+  String get alertCostBreakEvenSemantics => 'Set target to your cost';
+
+  @override
+  String alertCostPctSemantics(String sign, int pct) {
+    return 'Target your cost $sign $pct percent';
+  }
 }

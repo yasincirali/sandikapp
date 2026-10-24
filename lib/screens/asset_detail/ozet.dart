@@ -96,8 +96,15 @@ extension _DetayOzet on _AssetDetailScreenState {
           if (e.key >= fromMs) e.key: e.value,
       },
       periodDays: days,
+      simdi: now,
     );
   }
+
+  /// Seri dönemin başına ulaşmıyorsa kapsanan gün (`kapsamEksik`); mevduat
+  /// seriden değil sözleşmeden hesaplandığı için hep `null`.
+  int? _donemKapsami(int days) => widget.asset.type == AssetType.mevduat
+      ? null
+      : _donemIstatistikleri[days]?.kapsananGun;
 
   /// Seçili dışındaki dönemleri paralel yükler — çip getirileri için.
   Future<void> _digerDonemleriYukle() async {
@@ -236,7 +243,10 @@ extension _DetayOzet on _AssetDetailScreenState {
   Widget _fiyatBlogu(_PnlOzeti pnl, BazPara baz) {
     final l = context.l10n;
     final days = _periods[_selectedPeriodIdx].days;
-    final etiket = donemEtiketi(l, _periods[_selectedPeriodIdx].label);
+    final kapsam = _donemKapsami(days);
+    final etiket = kapsam != null
+        ? donemKapsamEtiketi(context, kapsam)
+        : donemEtiketi(l, _periods[_selectedPeriodIdx].label);
     final canli = pnl.currentUnitTRY;
     final pct = _donemYuzdesi(days, canli);
     final ilk = _donemIlk[days];
@@ -311,6 +321,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       getiriler: [
         for (final p in _periods) _donemYuzdesi(p.days, canliBirim),
       ],
+      eksik: [for (final p in _periods) _donemKapsami(p.days) != null],
       onSec: _ortakDonemSec,
     );
   }

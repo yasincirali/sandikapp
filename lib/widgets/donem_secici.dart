@@ -47,6 +47,7 @@ class DonemSecici extends StatelessWidget {
     required this.secili,
     required this.onSec,
     this.getiriler,
+    this.eksik,
   });
 
   /// Gösterilecek dönemler — [SummaryPeriod.values] ya da (elle fiyatlanan
@@ -62,6 +63,11 @@ class DonemSecici extends StatelessWidget {
   /// eleman → henüz yok; satır boş yer tutar, yerleşim zıplamaz.
   final List<double?>? getiriler;
 
+  /// [getiriler] ile hizalı: `true` → seri o dönemin başına ulaşmıyor
+  /// (`DonemIstatistigi.kapsamEksik`); yüzde yerine "—" yazılır. Yüzde
+  /// başka bir dönemin getirisi olurdu (8 aylık fonda "5Y").
+  final List<bool>? eksik;
+
   /// Kabuğun tek satırlı yüksekliği (Performans'ın 2026-09-15 ölçüsü).
   static const double tekSatirYukseklik = 36;
 
@@ -75,6 +81,10 @@ class DonemSecici extends StatelessWidget {
     final olcek = MediaQuery.textScalerOf(context);
     final yon = Directionality.of(context);
     final getiri = getiriler;
+    bool eksikMi(int i) {
+      final e = eksik;
+      return e != null && i < e.length && e[i];
+    }
 
     int pay(String etiket) {
       final tp = TextPainter(
@@ -102,6 +112,9 @@ class DonemSecici extends StatelessWidget {
           : SandikTouch.min + SandikSpace.sm,
       semantik: (i) {
         final g = getiri == null || i >= getiri.length ? null : getiri[i];
+        if (g != null && eksikMi(i)) {
+          return '${etiketler[i]}, ${l.periodNotEnoughData}';
+        }
         return g == null ? etiketler[i] : '${etiketler[i]}, ${fmtPctIsaretli(g)}';
       },
       // Tek FittedBox bütün sütunu küçültür: yedi segmentte dar genişlik ve
@@ -109,6 +122,7 @@ class DonemSecici extends StatelessWidget {
       // kırpmak yerine küçülür.
       oge: (context, i, _) {
         final g = getiri == null || i >= getiri.length ? null : getiri[i];
+        final yok = g != null && eksikMi(i);
         return FittedBox(
           fit: BoxFit.scaleDown,
           child: Column(
@@ -117,12 +131,16 @@ class DonemSecici extends StatelessWidget {
               Text(etiketler[i], maxLines: 1, softWrap: false),
               if (getiri != null)
                 Text(
-                  g == null ? ' ' : fmtPctIsaretli(g, digits: 1),
+                  g == null
+                      ? ' '
+                      : yok
+                          ? '—'
+                          : fmtPctIsaretli(g, digits: 1),
                   maxLines: 1,
                   softWrap: false,
                   style: context.t.labelSmall?.copyWith(
                     fontFeatures: const [FontFeature.tabularFigures()],
-                    color: g == null || donemDuzMu(g)
+                    color: g == null || yok || donemDuzMu(g)
                         ? context.c.text36
                         : context.signColor(g),
                   ),

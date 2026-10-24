@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/position.dart';
+import '../demo/demo_modu.dart';
 import '../services/seni_ilgilendiren_gunler.dart';
+import '../services/sunucu_secimi.dart';
 import '../services/temettu_gecmisi.dart' show trGunu;
 import 'auth_provider.dart';
 import 'ozellik_onerisi_provider.dart';
@@ -55,7 +57,28 @@ final takvimSatiriProvider = Provider.autoDispose<GunOlayi?>((ref) {
       bugun: bugun, kapatilanlar: const {});
 });
 
-/// Ana sayfa tek dürtü yuvası: bilgi eksik > takvim > öneri. Yalnız ana
+/// Console'daki önerilen build (`SunucuSecimi.onerilenBuild`); RC yeni
+/// değer etkinleştirince yeniden okunur.
+final onerilenBuildProvider = Provider.autoDispose<int>((ref) {
+  final n = SunucuSecimi.instance.onerilenBuild;
+  void degisti() => ref.invalidateSelf();
+  n.addListener(degisti);
+  ref.onDispose(() => n.removeListener(degisti));
+  return n.value;
+});
+
+/// Yumuşak güncelleme kartı görünsün mü ([yumusakGuncellemeGorunur]).
+/// Demoda hayır: demo hesabının sürümü kullanıcıya ait değil.
+final yumusakGuncellemeProvider = Provider.autoDispose<bool>((ref) {
+  if (DemoModu.aktif) return false;
+  return yumusakGuncellemeGorunur(
+    mevcutBuild: SunucuSecimi.instance.mevcutBuild,
+    onerilenBuild: ref.watch(onerilenBuildProvider),
+    kapatilanBuild: ref.watch(guncellemeKapatilanBuildProvider),
+  );
+});
+
+/// Ana sayfa tek dürtü yuvası: bilgi eksik > takvim > güncelleme > öneri. Yalnız ana
 /// sayfa okur; Portföy sekmesindeki öneri kartı bu sıraya bağlı değil.
 final anaSayfaDurtusuProvider = Provider.autoDispose<AnaSayfaDurtusu?>((ref) {
   final eksik = veriSeridiGorunur(ref.watch(veriEksikleriProvider),
@@ -65,5 +88,6 @@ final anaSayfaDurtusuProvider = Provider.autoDispose<AnaSayfaDurtusu?>((ref) {
     // Eksik satırı görünürken takvim hesaplanmaz bile (temettü ağı yok).
     takvimOlayi: eksik ? null : ref.watch(takvimSatiriProvider),
     oneriVar: ref.watch(ozellikOnerisiProvider) != null,
+    guncellemeVar: ref.watch(yumusakGuncellemeProvider),
   );
 });

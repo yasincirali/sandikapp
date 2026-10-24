@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../demo/demo_modu.dart';
+import '../models/asset.dart';
 import '../models/eurobond.dart' show eurobondOneki;
+import '../models/position.dart' show aggregatePositions;
 import '../models/price_alert.dart';
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
@@ -28,8 +30,49 @@ class AlarmAdayi {
   final String sembol;
   final String ad;
   final double guncelFiyat;
-  const AlarmAdayi(this.sembol, this.ad, this.guncelFiyat);
+
+  /// Kullanıcının bu sembolde açık pozisyonunun ortalama alış fiyatı
+  /// ([alarmMaliyeti]); takip listesinden ya da ortağın varlığından gelen
+  /// adayda `null`. Verilirse sheet "maliyetine göre" çiplerini gösterir.
+  final double? maliyet;
+  const AlarmAdayi(this.sembol, this.ad, this.guncelFiyat, {this.maliyet});
 }
+
+/// Alarm için maliyet: [lots] (kullanıcının KENDİ, bu sembolün lot'ları)
+/// içindeki açık pozisyonların miktar ağırlıklı ortalama alış fiyatı.
+///
+/// Neden (2026-10-23, Ar-Ge): yatırımcının asıl sorusu "güncelin %5
+/// altı" değil "maliyetime inerse / maliyetimin %20 üstüne çıkarsa".
+/// Rakamı kendisi hesaplamak zorundaydı.
+///
+/// Uydurma yok: maliyeti bilinmeyen bir lot (`maliyetBilinmiyor`, 0162)
+/// ya da farklı para birimli iki pozisyon varsa `null` (çip görünmez).
+/// Birim fiyatla aynıdır: alış ve güncel fiyat varlığın kendi para
+/// biriminde tutulur (kâr/zarar da bu iki sayıdan hesaplanır).
+double? alarmMaliyeti(Iterable<Asset> lots) {
+  final pozisyonlar = aggregatePositions(lots.toList());
+  if (pozisyonlar.isEmpty) return null;
+  final para = pozisyonlar.first.representative.currency;
+  var miktar = 0.0, tutar = 0.0;
+  for (final p in pozisyonlar) {
+    if (p.representative.currency != para) return null;
+    if (p.lots.any((l) => l.isBuy && l.maliyetBilinmiyor == true)) return null;
+    if (p.totalQuantity <= 0 || p.weightedPurchasePrice <= 0) return null;
+    miktar += p.totalQuantity;
+    tutar += p.totalQuantity * p.weightedPurchasePrice;
+  }
+  return miktar > 0 ? tutar / miktar : null;
+}
+
+/// Maliyet çiplerinin hedefleri: başa baş, +%20, −%10 (sırayla). Güncel
+/// fiyata eşit düşen hedef elenir: alarm hemen çalışırdı
+/// ([alarmHedefiGuncelFiyatta]).
+List<({int yuzde, double hedef})> maliyetHedefleri(
+    double maliyet, double guncel) => [
+      for (final y in const [0, 20, -10])
+        if (!alarmHedefiGuncelFiyatta(maliyet * (1 + y / 100), guncel))
+          (yuzde: y, hedef: maliyet * (1 + y / 100)),
+    ];
 
 /// Sheet'in döndürdüğü seçim.
 class AlarmKurulumu {
@@ -264,11 +307,47 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
     return (v == null || v <= 0) ? null : v;
   }
 
-  void _hizli(int yuzde) {
-    final f = _secili.guncelFiyat * (1 + yuzde / 100);
+  void _hizli(int yuzde) => _hedefYaz(_secili.guncelFiyat * (1 + yuzde / 100));
+
+  void _hedefYaz(double f) {
     // 1 ₺ altı (SHIB) 2 haneye yuvarlanınca hedef 0 olurdu.
     _controller.text = f >= 1 ? fmtNum(f, digits: 2) : fmtInputTr(f);
     setState(() => _hata = null);
+  }
+
+  /// Hızlı hedef çipi — güncel ve maliyet satırının ortak kabuğu.
+  Widget _cip({
+    required String metin,
+    required String semantik,
+    required Color renk,
+    required VoidCallback onTap,
+  }) {
+    final c = context.c;
+    return Semantics(
+      button: true,
+      label: semantik,
+      excludeSemantics: true,
+      child: SandikTappable(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
+          decoration: BoxDecoration(
+            color: c.surface2,
+            borderRadius: BorderRadius.circular(SandikRadius.sm),
+            border: Border.all(color: c.hairline),
+          ),
+          child: Text(
+            metin,
+            style: context.t.labelLarge?.copyWith(
+              color: renk,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _kaydet() async {
@@ -316,6 +395,10 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         : PriceAlert.suggestDirection(
             currentPrice: _secili.guncelFiyat, targetPrice: hedef);
     final fiyatVar = _secili.guncelFiyat > 0;
+    final maliyet = _secili.maliyet;
+    final maliyetCipleri = maliyet == null || maliyet <= 0 || !fiyatVar
+        ? const <({int yuzde, double hedef})>[]
+        : maliyetHedefleri(maliyet, _secili.guncelFiyat);
     final esit =
         hedef != null && alarmHedefiGuncelFiyatta(hedef, _secili.guncelFiyat);
 
@@ -399,35 +482,53 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               const SizedBox(height: SandikSpace.smd),
               Wrap(
                 spacing: SandikSpace.xs2,
+                runSpacing: SandikSpace.xs2,
                 children: [
                   for (final y in _hizliYuzdeler)
-                    Semantics(
-                      button: true,
-                      label: context.l10n.targetPctSemantics(
+                    _cip(
+                      metin: '${y > 0 ? '+' : '−'}%${y.abs()}',
+                      semantik: context.l10n.targetPctSemantics(
                           y > 0 ? context.l10n.plusWord : context.l10n.minusWord,
                           y.abs()),
-                      child: SandikTappable(
-                        onTap: () => _hizli(y),
-                        child: Container(
-                          constraints:
-                              const BoxConstraints(minHeight: SandikTouch.min),
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: SandikSpace.smd),
-                          decoration: BoxDecoration(
-                            color: c.surface2,
-                            borderRadius: BorderRadius.circular(SandikRadius.sm),
-                            border: Border.all(color: c.hairline),
-                          ),
-                          child: Text(
-                            '${y > 0 ? '+' : '−'}%${y.abs()}',
-                            style: context.t.labelLarge?.copyWith(
-                              color: y > 0 ? c.gain : c.loss,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
+                      renk: y > 0 ? c.gain : c.loss,
+                      onTap: () => _hizli(y),
+                    ),
+                ],
+              ),
+            ],
+            if (maliyetCipleri.isNotEmpty) ...[
+              const SizedBox(height: SandikSpace.smd),
+              // Maliyetine göre (2026-10-23): yüzde güncelden değil kendi
+              // alış fiyatından. Renk yönü söyler, metin de söyler (renk
+              // körlüğü): "Maliyetim", "Maliyet +%20".
+              Text(
+                context.l10n.alertCostRow(fmtTRYFiyat(maliyet!)),
+                style: context.t.labelMedium?.copyWith(color: c.text58),
+              ),
+              const SizedBox(height: SandikSpace.xs),
+              Wrap(
+                spacing: SandikSpace.xs2,
+                runSpacing: SandikSpace.xs2,
+                children: [
+                  for (final h in maliyetCipleri)
+                    _cip(
+                      metin: h.yuzde == 0
+                          ? context.l10n.alertCostBreakEven
+                          : context.l10n.alertCostPct(
+                              '${h.yuzde > 0 ? '+' : '−'}%${h.yuzde.abs()}'),
+                      semantik: h.yuzde == 0
+                          ? context.l10n.alertCostBreakEvenSemantics
+                          : context.l10n.alertCostPctSemantics(
+                              h.yuzde > 0
+                                  ? context.l10n.plusWord
+                                  : context.l10n.minusWord,
+                              h.yuzde.abs()),
+                      renk: h.yuzde == 0
+                          ? c.text90
+                          : h.yuzde > 0
+                              ? c.gain
+                              : c.loss,
+                      onTap: () => _hedefYaz(h.hedef),
                     ),
                 ],
               ),

@@ -171,6 +171,12 @@ class PrefKeys {
   static const ozellikOnerisiKapatilan = 'pref_ozellik_onerisi_kapatilan';
   static const ozellikOnerisiSonKapatma = 'pref_ozellik_onerisi_son_kapatma';
 
+  /// Yumuşak güncelleme kartı (`guncelleme_karti.dart`): kapatıldığı
+  /// önerilen build numarası. Aynı build bir daha sorulmaz; Console'da daha
+  /// yeni bir build önerilince kart yeniden görünür. Cihaza özel (sürüm
+  /// hesaba değil kuruluma ait).
+  static const guncellemeKapatilanBuild = 'pref_guncelleme_kapatilan_build';
+
   /// Ana sayfa "seni ilgilendiren günler" satırı (`seni_ilgilendiren_gunler.dart`):
   /// kapatılan olayların kimlikleri (`GunOlayi.kimlik`, tarihli). Kişiye özel:
   /// temettü günleri kullanıcının kendi hisselerinden gelir.

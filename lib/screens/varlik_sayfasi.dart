@@ -290,7 +290,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       setState(() {
         _yukleniyor.remove(gun);
         _seriler[gun] = seri;
-        _istatistik[gun] = DonemIstatistigi.hesapla(seri, periodDays: gun);
+        _istatistik[gun] = DonemIstatistigi.hesapla(seri,
+            periodDays: gun, simdi: DateTime.now());
         if (gun == _gun) _cizilen = gun;
       });
     } catch (e, st) {
@@ -589,7 +590,12 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   /// Düz değişim `isFlat` ile (ızgara ve detay ekranıyla aynı eşik).
   Widget _fiyatBlogu(
       DonemIstatistigi? ist, NumberFormat bicim, int? cizilen) {
-    final donem = cizilen == null ? '' : _donemEtiketi(cizilen);
+    final kapsam = ist?.kapsananGun;
+    final donem = cizilen == null
+        ? ''
+        : kapsam != null
+            ? donemKapsamEtiketi(context, kapsam)
+            : _donemEtiketi(cizilen);
     return VarlikFiyatBlogu(
       etiket: context.l10n.currentPriceUpper,
       kimlik: widget.kimlik.key,
@@ -691,6 +697,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       secili: varlikSayfasiDonemleri.indexOf(_gun),
       getiriler: [
         for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
+      ],
+      eksik: [
+        for (final g in varlikSayfasiDonemleri)
+          _istatistik[g]?.kapsamEksik ?? false,
       ],
       onSec: _ortakDonemSec,
     );

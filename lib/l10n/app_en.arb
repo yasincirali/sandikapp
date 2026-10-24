@@ -5380,5 +5380,17 @@
   "tegYuklenemedi": "Couldn't load candles. Tap to try again.",
   "tegMumaGec": "Switch to candles",
   "tegCizgiyeGec": "Switch to line",
-  "tegGrafikSemantik": "{ad}, {aralik} chart. Last {fiyat}. {sayi} drawings."
+  "tegGrafikSemantik": "{ad}, {aralik} chart. Last {fiyat}. {sayi} drawings.",
+  "periodNotEnoughData": "Not enough data for this period",
+  "periodCoverage": "last {sure} (all available data)",
+  "durationDaysN": "{n, plural, =1{1 day} other{{n} days}}",
+  "durationMonthsN": "{n, plural, =1{1 month} other{{n} months}}",
+  "softUpdateTitle": "A new version is ready",
+  "softUpdateBody": "Update from the store for the latest fixes and features.",
+  "softUpdateDismiss": "Dismiss for now",
+  "alertCostRow": "From your cost · {maliyet}",
+  "alertCostBreakEven": "My cost",
+  "alertCostPct": "Cost {pct}",
+  "alertCostBreakEvenSemantics": "Set target to your cost",
+  "alertCostPctSemantics": "Target your cost {sign} {pct} percent"
 }
