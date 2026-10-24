@@ -263,6 +263,48 @@ class FiyatKaynagi {
   /// ayrı bir kural var: TRY kote olmayan her şey USD kabul edilir.)
   static bool usdKote(Asset a) => a.currency.trim().toUpperCase() == 'USD';
 
+  /// Tek varlık widget'ının (iOS `SandikVarlikWidget`, 2026-10-24) bu
+  /// varlık için soracağı CANLI kotasyon sembolü; widget'a girmeyecekse
+  /// `null`.
+  ///
+  /// ## Neden burada (sözleşme madde 1)
+  /// Widget yeni bir fiyat yüzeyidir; sembolü kendisi seçseydi "dolar"ın
+  /// bir yerde `USDTRY=X`, başka yerde başka bir kod olduğu ayrışma sınıfı
+  /// geri gelirdi. Sembol portföy fiyat turunun (`refreshPrices`) ve takip
+  /// ekleme aramasının `PriceService.fetchQuotes`'a verdiği sembolün
+  /// aynısıdır; fon kodu [kanonikTicker] ile `TEFAS:` önekine oturur.
+  ///
+  /// ## Neden yalnız çevrimsiz semboller (madde 2 ve 3)
+  /// Widget kotasyonun sayısını olduğu gibi gösterir. USD kote bir sembolün
+  /// (ABD hissesi, emtia vadelisi, eurobond) sayısı dolardır; uygulamanın
+  /// takip listesi aynı varlığı TL seriyle gösteriyor. Widget'ta TL'ye
+  /// çevirmek ikinci bir kur hesabı ve günlük yüzdeye kur hareketini
+  /// karıştırmak demekti; dolar yazmak ise uygulamayla ayrışırdı. İlk
+  /// sürümde bu varlıklar seçim listesine girmez (gram altın, döviz, BIST,
+  /// fon, kripto ve endeksler girer). Mevduat ve "diğer" piyasa fiyatı
+  /// taşımaz; elle fiyatlanan kaydın yayımlanmış kotasyonu yoktur.
+  static String? widgetKotasyonSembolu({
+    required AssetType type,
+    required String ticker,
+    required bool isManualPrice,
+  }) {
+    if (isManualPrice) return null;
+    switch (type) {
+      case AssetType.mevduat:
+      case AssetType.diger:
+      case AssetType.eurobond:
+        return null;
+      default:
+        break;
+    }
+    final t = kanonikTicker(
+            type: type, ticker: ticker, isManualPrice: isManualPrice)
+        .trim()
+        .toUpperCase();
+    if (t.isEmpty || t.startsWith(mevduatOneki)) return null;
+    return cevrimsiz(t) ? t : null;
+  }
+
   /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
   /// aranmayacaksa `null`.
   ///
@@ -637,6 +679,58 @@ const double altinKalibreUstSinir = 1.33;
 /// çevrilmiş parite) ve kalibrasyonla örtülmemelidir.
 const double kurKalibreAltSinir = 0.90;
 const double kurKalibreUstSinir = 1.11;
+
+// ── Boş fiyatlı yeni alımın maliyeti: satış fiyatı (2026-10-24) ─────────────
+//
+// ## Neden
+// Yurt içi kotasyonun iki yüzü var: ALIŞ (kuyumcu/banka senden alırken,
+// yani bozdurursan eline geçen) ve SATIŞ (sana satarken). Değer ve grafik
+// ALIŞ'la kalır (madde 2 — ekrandaki fiyat ile serinin ölçeği aynı). Ama
+// kullanıcı altını/dövizi SATIŞ'tan aldı; fiyatı boş bırakınca maliyeti
+// alıştan yazmak yeni varlığı %0 gösteriyordu, gerçekte kullanıcı makas
+// kadar geride. Banka altın hesapları maliyeti satış kurundan yazar.
+//
+// ## Neden bu kadar dar
+// Satış fiyatı yalnızca ŞU ANKİ kotasyondan bilinir: geçmiş günün satışı
+// kayıtlı değil (madde 3 — bilinmeyen sayı uydurulmaz). Elle girilen fiyat
+// kullanıcının gerçeğidir, eski kayıtlar olduğu gibi kalır. Kaynak AYNI
+// truncgil kaydı, yeni sağlayıcı yok (madde 1); hangi sembolün yurt içi
+// kotasyonla fiyatlandığına [FiyatKaynagi.yurtIciKayitli] karar verir.
+
+/// Satış ÷ alış oranının kabul sınırı. Yurt içi makas gram altında yüzde
+/// birkaç, ziynette biraz daha fazladır; %25'i aşan "makas" değil arızadır
+/// (yanlış alan, kayan anahtar) ve maliyete yazılmaz.
+const double satisMakasiUstSinir = 1.25;
+
+/// Fiyatı BOŞ bırakılmış yeni alımın maliyetine yazılacak satış fiyatı;
+/// kural uygulanmıyorsa `null` (çağıran bugünkü alış fiyatını kullanır).
+///
+/// Uygulanır: sembol yurt içi kotasyonlu (altın ayarları, USD/EUR/GBP),
+/// para birimi TRY (kotasyon TL'dir), alım BUGÜN, satış geçerli ve makas
+/// [satisMakasiUstSinir] içinde. Satış alışın altındaysa veri bozuktur.
+double? maliyetSatisFiyati({
+  required String ticker,
+  required String paraBirimi,
+  required DateTime tarih,
+  required double? alis,
+  required double? satis,
+  DateTime? now,
+}) {
+  if (!FiyatKaynagi.yurtIciKayitli(ticker)) return null;
+  if (paraBirimi.trim().toUpperCase() != 'TRY') return null;
+  if (dayKey(tarih) != dayKey(now ?? DateTime.now())) return null;
+  if (alis == null || satis == null) return null;
+  if (!alis.isFinite || !satis.isFinite || alis <= 0) return null;
+  if (satis < alis || satis / alis > satisMakasiUstSinir) return null;
+  return satis;
+}
+
+/// Formdaki "kuyumcu farkı" yüzdesi: satıştan alınıp bugün alıştan
+/// bozdurulunca kaybedilen pay, `(satış - alış) / satış * 100`. Portföyde
+/// yeni varlığın ilk gün gördüğü eksi yüzdeyle AYNI sayı (maliyet satış,
+/// değer alış); satır o eksiyi açıklar.
+double kuyumcuFarkiYuzde({required double alis, required double satis}) =>
+    satis <= 0 ? 0 : (satis - alis) / satis * 100;
 
 /// Altın serisinin canlı fiyat ölçeğine çarpanı — [olcekCarpani] sarmalayıcısı.
 ///

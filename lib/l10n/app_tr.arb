@@ -397,6 +397,66 @@
   "tickerHintCommodity": "Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)",
   "tickerHintOther": "Yahoo Finance sembolü ya da boş bırak",
   "assetTypeSemantics": "{type} türü",
+  "miktarModuAdet": "Adet",
+  "miktarModuTutar": "Tutar ({sembol})",
+  "@miktarModuTutar": {
+    "placeholders": {
+      "sembol": {
+        "type": "String"
+      }
+    }
+  },
+  "miktarModuSemantik": "Miktarı {mod} olarak gir",
+  "@miktarModuSemantik": {
+    "placeholders": {
+      "mod": {
+        "type": "String"
+      }
+    }
+  },
+  "tutarAlani": "Tutar",
+  "tutarGecersiz": "Geçerli tutar",
+  "tutarFiyatGerekli": "Adet için fiyat gerekli",
+  "tutardanAdetSatiri": "Hesaplanan miktar: {miktar}",
+  "@tutardanAdetSatiri": {
+    "placeholders": {
+      "miktar": {
+        "type": "String"
+      }
+    }
+  },
+  "tutardanAdetFiyatYok": "Fiyat gelince miktar hesaplanır. Fiyatı elle de girebilirsin.",
+  "fonAdetIpucu": "Bankadaki adet farklıysa adedi düzelt. Fon ertesi gün fiyatıyla alındıysa tarihi o gün seç.",
+  "fiyatBirimBasina": "{fiyat} / birim",
+  "@fiyatBirimBasina": {
+    "placeholders": {
+      "fiyat": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiAltin": "Kuyumcu farkı {fark}. Bugün bozdursan {tutar}.",
+  "@kuyumcuFarkiAltin": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiDoviz": "Alış-satış farkı {fark}. Bugün bozdursan {tutar}.",
+  "@kuyumcuFarkiDoviz": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
   "total": "toplam",
   "@assetTypeSemantics": {
     "placeholders": {
@@ -797,6 +857,21 @@
   "partnerActivityNotifications": "Ortak hareketi bildirimleri",
   "partnerActivityNotificationsSubtitle": "Ortağın portföyüne ekleme yaptığında günlük özette an",
   "summaryPushTitle": "Dönem özeti bildirimleri",
+  "watchlistSortMine": "Benim sıram",
+  "watchlistSortGainers": "En çok yükselen",
+  "watchlistSortLosers": "En çok düşen",
+  "watchlistSortMineHint": "Uzun basıp sürükleyerek sırala",
+  "watchlistSortChangeHint": "Seçili dönemin değişimine göre",
+  "watchlistSortSemantics": "Sıralama: {secim}",
+  "@watchlistSortSemantics": {
+    "placeholders": {
+      "secim": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistMoveUp": "Yukarı taşı",
+  "watchlistMoveDown": "Aşağı taşı",
   "summaryPushSubtitle": "Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir",
   "quietHours": "Sessiz saatler",
   "biometricLockSubtitle": "Uygulamayı açarken Face ID / parmak izi / cihaz PIN'i iste",
@@ -3197,6 +3272,15 @@
   "searchInPortfolioTag": "Portföyünde",
   "searchAssetsSemantics": "Varlık ara",
   "searchChip": "Ara",
+  "aramaIpucuOrnekli": "ör. THYAO ya da 5 çeyrek",
+  "aramaHizliHesap": "{miktar} {ad} ≈ {tutar}",
+  "@aramaHizliHesap": {"placeholders": {"miktar": {"type": "String"}, "ad": {"type": "String"}, "tutar": {"type": "String"}}},
+  "aramaHizliHesapEkle": "Portföyüne ekle",
+  "hataBizeYaz": "Sorun sürüyorsa bize yaz",
+  "hataBizeYazEtiket": "Sorun sürüyorsa bize e-posta yaz",
+  "hataMailAcilamadi": "E-posta uygulaması açılamadı. Bu adrese yazabilirsin:",
+  "hataAdresiKopyala": "Adresi kopyala",
+  "hataAdresKopyalandi": "Adres kopyalandı",
   "searchShortHint": "Hisse, fon, altın, döviz, kripto",
   "kullaniciAdiBaslik": "Kullanıcı adını seç",
   "kullaniciAdiAciklama": "Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap'tan değiştirebilirsin.",
@@ -3597,6 +3681,15 @@
   "pensionDayError": "1 ile 28 arasında bir gün yaz.",
   "pensionAuto": "Katkıyı otomatik ekle",
   "pensionAutoNote": "Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.",
+  "chartLastUpdated": "Son güncelleme: {time} · şu an yenilenemedi",
+  "@chartLastUpdated": {
+    "description": "Ağ düştüğünde grafik diskteki son ölçülmüş seriyle kalır; seriyi ne zaman ölçtüğümüzü söyler (önce-eski-seri, 2026-10-24).",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "pensionAutoNeedsPlan": "Otomatik ekleme için aylık katkıyı ve katkı gününü yaz.",
   "pensionAutoLotNote": "Otomatik katkı",
   "pensionAutoAdded": "{date} katkın otomatik eklendi: {amount}. Tutarı güncellemek ister misin?",

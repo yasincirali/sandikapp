@@ -9,6 +9,27 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — Geniş pencere ve önce-eski-seri v1'de bırakılanlar (2026-10-24, Ar-Ge §1/§3)
+
+`HistoryService.kaynakDonemGunu` / `darPencereyiKapsar` / `eldekiSeriyle`.
+
+- **Yahoo pencere modeli canlıda yeniden ölçülmedi.** Eşitlik kararı,
+  sağlayıcının pencereyle örtüşen her barı verdiği (kısmi ilk haftalık mum,
+  `period1`'e damgalı) modele dayanıyor; kanıt 2026-09-03 ölçümü (`6mo|1wk`
+  28, `1y|1wk` 54 nokta). Bulut oturumunda Yahoo'ya çıkış yok. Maliyet: model
+  yanlışsa 1A/1Y pencerenin ilk mumu dar istekten bir gün/hafta farklı
+  olabilir. Ne zaman: bir sonraki GitHub Actions ölçüm turunda
+  `1mo|1d`↔`3mo|1d` ve `1y|1wk`↔`5y|1wk` kırpılmışlarını gerçek API'de
+  karşılaştır.
+- **Kripto, altın, eurobond, mevduat birleştirilmedi** (gerekçe kod yorumunda).
+  Kripto için sunucu `kripto-seri` dar dönemi kısmi mumla verseydi birleşirdi.
+- **Varlık detayı gün içi (GÜNLÜK) önce-eski-seri yolunda değil**: saatlik
+  döküm motoru yurt içi gün içi kaynağına ve TEFAS yayın gözlemine de gidiyor
+  (ağ, `seriCek` dışında). Gün içi seri 5 dk önbellekte, soğuk açılışta da
+  hızlı; ihtiyaç ölçülürse o iki kaynağa da eldeki kip eklenir.
+- **Sinyal paneli** eski seriyle açılmıyor: kapı onu beklemez, panel kendi
+  yerinde taze seriyi bekler.
+
 ## ✅ KAPANDI — ~~Cam yüzeyler iOS "Saydamlığı azalt"ı okumuyor~~ (2026-10-12, bayrak `goz_alici`)
 
 Açıldığı gün kapandı: `goz_alici` mağaza sürümünde varsayılan açılacağı için

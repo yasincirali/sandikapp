@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/position.dart' show aktifLotlar;
 import '../providers/auth_provider.dart' show activePartnersProvider;
 import '../providers/hesap_provider.dart' show cokluHesapGorunurProvider;
+import '../providers/gunler_provider.dart'
+    show AnaSayfaDurtusu, anaSayfaDurtusuProvider;
 import '../providers/hafta_ozeti_provider.dart'
     show haftaOlagandisiSayisiProvider;
 import '../providers/portfolio_provider.dart';
@@ -436,7 +438,8 @@ List<_Adim> _adimlariKur() {
     // Üst çubukta yenile değil büyüteç durur (`home_screen`, sadeleştirme 2;
     // bayrak `genel_arama` 2026-10-20'de emekliye ayrıldı, eski "Fiyatları
     // yenile" adımı kalktı). Yenileme bilgisi kaybolmasın: aşağı çekme
-    // cümlesi metinde.
+    // cümlesi metinde. 2026-10-24: aramadaki hızlı hesap ("5 çeyrek") da
+    // metne girdi (tur metni arayüzle birlikte değişir).
     const _Adim(
       id: 'yenile',
       hedef: TourTarget.yenileTusu,
@@ -444,7 +447,8 @@ List<_Adim> _adimlariKur() {
       baslik: 'Her şeyi ara',
       govde: 'Büyüteçle tek yerden ara: kendi varlıkların, piyasadaki '
           'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
-          'ekstreden aktar, tüm hareketler, ayarlar…). Fiyatlar arka '
+          'ekstreden aktar, tüm hareketler, ayarlar…). "5 çeyrek" ya da '
+          '"100 dolar" yazarsan TL karşılığı en üstte çıkar. Fiyatlar arka '
           'planda güncelleniyor; hemen tazelemek için ekranı aşağı çek.',
     ),
     // 1.2.0'da eklendi. Tur, uygulamanın GÜNCEL hâlini anlatmalı: yeni
@@ -489,6 +493,10 @@ List<_Adim> _adimlariKur() {
     // Balina radarı (S10-A, 2026-10-05): şerit yalnız bayrak açık ve bu
     // hafta olağandışı hareket varken çizilir; anlatacak şerit yoksa adım
     // gösterilmez. Kısa turda yok: ilk açılışta portföy boş, radar susar.
+    // 2026-10-24: şerit ana sayfanın tek dürtü yuvasında; bilgi eksik ya da
+    // takvim satırı görünürken çizilmez. Koşul ekranın kendi koşuluyla
+    // aynı (yuva = radar), yoksa adım gizli şeridi ortada anlatırdı. Önce
+    // sayıya bakılır: sayı 0 iken yuva hiç hesaplanmaz (bayrak kapalı).
     _Adim(
       id: 'radar',
       hedef: TourTarget.radarSeridi,
@@ -502,7 +510,9 @@ List<_Adim> _adimlariKur() {
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
-      kosul: (ref) => ref.read(haftaOlagandisiSayisiProvider) > 0,
+      kosul: (ref) =>
+          ref.read(haftaOlagandisiSayisiProvider) > 0 &&
+          ref.read(anaSayfaDurtusuProvider) == AnaSayfaDurtusu.radar,
     ),
     _Adim(
       id: 'piyasa',
@@ -603,9 +613,15 @@ List<_Adim> _adimlariKur() {
       id: 'ekle',
       hedef: TourTarget.sekmeEkle,
       baslik: 'Varlık ekle',
+      // 2026-10-24: miktarın üstünde "Adet / Tutar (₺)" seçici ve boş
+      // fiyatlı altın/dövizde satış fiyatından maliyet geldi; metin ikisini
+      // söyler (tur metni arayüzle birlikte değişir).
       govde: 'Hisse mi, fon mu, altın mı, kripto mu? Tür seçtiğinde form '
-          'ona göre değişir: altında gram, hissede adet sorulur. Seçim '
-          'listesindeki grafik simgesi, seçmeden önce varlığa bakmanı sağlar.',
+          'ona göre değişir: altında gram, hissede adet sorulur. Adedi '
+          'bilmiyorsan "Tutar"a geç, kaç liralık aldığını yaz; adet '
+          'kendiliğinden hesaplanır. Altın ve dövizde fiyatı boş bırakırsan '
+          'maliyet bugünkü satış fiyatından yazılır. Seçim listesindeki '
+          'grafik simgesi, seçmeden önce varlığa bakmanı sağlar.',
       gorev: '+ tuşuna dokun',
       gorevBitti: 'Varlık Ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),

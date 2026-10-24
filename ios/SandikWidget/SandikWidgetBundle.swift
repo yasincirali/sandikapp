@@ -16,6 +16,12 @@ struct SandikWidgetBundle: WidgetBundle {
         // `HomeWidgetService._iOSKilitWidgetName` = "SandikKilitWidget".
         SandikKilitWidget()
 
+        // Tek varlık widget'ı (Ar-Ge 2026-10-24 §1) — varlık App Intents ile
+        // seçilir. iOS 17 API'si; hedef minimumu 17.0 olduğu için koşulsuz
+        // (bkz. `SandikVarlikWidget.swift` "Neden `@available` yok").
+        // `HomeWidgetService.iOSVarlikWidgetName` = "SandikVarlikWidget".
+        SandikVarlikWidget()
+
         // Kullanılan ActivityKit API'leri (`ActivityContent`, `staleDate`)
         // iOS 16.2+ ister; hedef minimumu 17.0. Koşul pratikte hep doğrudur
         // ama bırakılır ki hedef ileride düşürülürse derleme kırılsın,

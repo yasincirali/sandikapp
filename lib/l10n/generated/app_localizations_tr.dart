@@ -749,6 +749,56 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get miktarModuAdet => 'Adet';
+
+  @override
+  String miktarModuTutar(String sembol) {
+    return 'Tutar ($sembol)';
+  }
+
+  @override
+  String miktarModuSemantik(String mod) {
+    return 'Miktarı $mod olarak gir';
+  }
+
+  @override
+  String get tutarAlani => 'Tutar';
+
+  @override
+  String get tutarGecersiz => 'Geçerli tutar';
+
+  @override
+  String get tutarFiyatGerekli => 'Adet için fiyat gerekli';
+
+  @override
+  String tutardanAdetSatiri(String miktar) {
+    return 'Hesaplanan miktar: $miktar';
+  }
+
+  @override
+  String get tutardanAdetFiyatYok =>
+      'Fiyat gelince miktar hesaplanır. Fiyatı elle de girebilirsin.';
+
+  @override
+  String get fonAdetIpucu =>
+      'Bankadaki adet farklıysa adedi düzelt. Fon ertesi gün fiyatıyla alındıysa tarihi o gün seç.';
+
+  @override
+  String fiyatBirimBasina(String fiyat) {
+    return '$fiyat / birim';
+  }
+
+  @override
+  String kuyumcuFarkiAltin(String fark, String tutar) {
+    return 'Kuyumcu farkı $fark. Bugün bozdursan $tutar.';
+  }
+
+  @override
+  String kuyumcuFarkiDoviz(String fark, String tutar) {
+    return 'Alış-satış farkı $fark. Bugün bozdursan $tutar.';
+  }
+
+  @override
   String get total => 'toplam';
 
   @override
@@ -1396,6 +1446,32 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get summaryPushTitle => 'Dönem özeti bildirimleri';
+
+  @override
+  String get watchlistSortMine => 'Benim sıram';
+
+  @override
+  String get watchlistSortGainers => 'En çok yükselen';
+
+  @override
+  String get watchlistSortLosers => 'En çok düşen';
+
+  @override
+  String get watchlistSortMineHint => 'Uzun basıp sürükleyerek sırala';
+
+  @override
+  String get watchlistSortChangeHint => 'Seçili dönemin değişimine göre';
+
+  @override
+  String watchlistSortSemantics(String secim) {
+    return 'Sıralama: $secim';
+  }
+
+  @override
+  String get watchlistMoveUp => 'Yukarı taşı';
+
+  @override
+  String get watchlistMoveDown => 'Aşağı taşı';
 
   @override
   String get summaryPushSubtitle =>
@@ -4474,6 +4550,33 @@ class AppLocalizationsTr extends AppLocalizations {
   String get searchChip => 'Ara';
 
   @override
+  String get aramaIpucuOrnekli => 'ör. THYAO ya da 5 çeyrek';
+
+  @override
+  String aramaHizliHesap(String miktar, String ad, String tutar) {
+    return '$miktar $ad ≈ $tutar';
+  }
+
+  @override
+  String get aramaHizliHesapEkle => 'Portföyüne ekle';
+
+  @override
+  String get hataBizeYaz => 'Sorun sürüyorsa bize yaz';
+
+  @override
+  String get hataBizeYazEtiket => 'Sorun sürüyorsa bize e-posta yaz';
+
+  @override
+  String get hataMailAcilamadi =>
+      'E-posta uygulaması açılamadı. Bu adrese yazabilirsin:';
+
+  @override
+  String get hataAdresiKopyala => 'Adresi kopyala';
+
+  @override
+  String get hataAdresKopyalandi => 'Adres kopyalandı';
+
+  @override
   String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
 
   @override
@@ -5173,6 +5276,11 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pensionAutoNote =>
       'Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.';
+
+  @override
+  String chartLastUpdated(String time) {
+    return 'Son güncelleme: $time · şu an yenilenemedi';
+  }
 
   @override
   String get pensionAutoNeedsPlan =>

@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/yatirimci_seviyesi.dart';
+import 'package:portfoy_takip/providers/gunler_provider.dart';
+import 'package:portfoy_takip/providers/hafta_ozeti_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/main_navigation_screen.dart';
@@ -57,9 +59,14 @@ class _EvSahibi extends StatefulWidget {
     this.bugunVar = true,
     this.bugunBoyu = 48,
     this.zilVar = true,
+    this.radarVar = false,
   });
 
   final bool davetKoduVar;
+
+  /// Gerçek ekranda radar şeridi yalnız tek dürtü yuvası radara düştüğünde
+  /// çizilir (`RadarSeridi`, 2026-10-24); sahte ekran aynı koşulla çizer.
+  final bool radarVar;
   final bool zilVar;
 
   /// Gerçek ekranda "Bugün" kartı yalnız portföyde aktif lot varken
@@ -145,6 +152,7 @@ class _EvSahibiState extends State<_EvSahibi> {
           // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
           if (widget.bugunVar)
             _tus(TourTarget.bugunKarti, 'bugün', boy: widget.bugunBoyu),
+          if (widget.radarVar) _tus(TourTarget.radarSeridi, 'radar'),
           _tus(TourTarget.piyasaSeridi, 'piyasa'),
           // Gerçek ana ekranda hareket kabı yalnız kayıt varken çizilir;
           // "Bugün" kartıyla aynı koşul (dolu portföy).
@@ -291,6 +299,8 @@ Future<void> _pump(
   double bugunBoyu = 48,
   YatirimciSeviyesi seviye = YatirimciSeviyesi.orta,
   bool seviyeSorusu = false,
+  int radarSayisi = 0,
+  AnaSayfaDurtusu? yuva,
 }) async {
   tester.view.physicalSize = Size(width * 3, height * 3);
   tester.view.devicePixelRatio = 3.0;
@@ -310,6 +320,10 @@ Future<void> _pump(
         // (`investorLevelIndexProvider`) yazar, türetilmiş sağlayıcı onu
         // okumalı — sabit değer seçimin etkisini gizlerdi.
         if (!seviyeSorusu) yatirimciSeviyesiProvider.overrideWithValue(seviye),
+        // Radar adımı sayıya VE ana sayfa yuvasına bakar (2026-10-24).
+        // Varsayılan: bayrak kapalı gibi 0, yuva hesaplanmaz.
+        haftaOlagandisiSayisiProvider.overrideWithValue(radarSayisi),
+        if (radarSayisi > 0) anaSayfaDurtusuProvider.overrideWithValue(yuva),
       ],
       child: MaterialApp(
         theme: ThemeData(brightness: parlaklik, extensions: [palet]),
@@ -327,6 +341,7 @@ Future<void> _pump(
           bugunBoyu: bugunBoyu,
           // Zil her seviyede (2026-10-04, sade Başlangıç; ana ekranla aynı).
           zilVar: true,
+          radarVar: radarSayisi > 0 && yuva == AnaSayfaDurtusu.radar,
         ),
       ),
     ),
@@ -749,6 +764,36 @@ void main() {
     });
   });
 
+  // Ana sayfa tek dürtü yuvası (2026-10-24, Ar-Ge 17:15 #3): radar şeridi
+  // bilgi eksik ya da takvim satırı görünürken çizilmez. Adım yalnız sayıya
+  // baksaydı gizli şeridi hedefsiz, ekranın ortasında anlatırdı.
+  group('radar adımı — tek dürtü yuvası', () {
+    setUp(OnboardingScreen.turuKapatTestIcin);
+    const radarBaslik = 'Varlıklarında olağandışı bir şey var mı?';
+
+    testWidgets('yuva radarda: adım şeridi anlatır', (tester) async {
+      await _pump(tester, radarSayisi: 3, yuva: AnaSayfaDurtusu.radar);
+      await _adimaGit(tester, 'Bugün ne oldu?');
+      await _devam(tester);
+      expect(find.text(radarBaslik), findsOneWidget);
+    });
+
+    for (final ust in [AnaSayfaDurtusu.bilgiEksik, AnaSayfaDurtusu.takvim]) {
+      testWidgets('yuva ${ust.name}: radar gizli, adım görünmeden geçilir',
+          (tester) async {
+        await _pump(tester, radarSayisi: 3, yuva: ust);
+        await _adimaGit(tester, 'Bugün ne oldu?');
+        await tester.tap(_ileri);
+        for (var i = 0; i < 12; i++) {
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(find.text(radarBaslik), findsNothing,
+              reason: 'gizli radar şeridi turda anlatılıyor');
+        }
+        expect(find.text('Piyasa bir bakışta'), findsOneWidget);
+      });
+    }
+  });
+
   group('taşma — dar ekran ve büyük yazı tipi', () {
     for (final genislik in [320.0, 375.0, 430.0]) {
       for (final olcek in [1.0, 1.5, 2.0]) {
@@ -786,7 +831,8 @@ void main() {
   // kaplıyor, açıklama kartı üstüne biniyordu (`turSpotu`).
   group('uzun hedef — Bugün kartı', () {
     for (final (w, h) in const [(375.0, 812.0), (375.0, 667.0)]) {
-      testWidgets('${w.toInt()}×${h.toInt()}: kartın üstü görünür, açıklama '
+      testWidgets(
+          '${w.toInt()}×${h.toInt()}: kartın üstü görünür, açıklama '
           'spotun üstüne binmez', (tester) async {
         await _pump(tester, width: w, height: h, bugunBoyu: 1400);
         await _adimaGit(tester, 'Bugün ne oldu?');

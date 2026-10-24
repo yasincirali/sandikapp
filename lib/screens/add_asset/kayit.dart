@@ -199,7 +199,9 @@ extension _Kayit on _AddAssetScreenState {
 
   /// `_save`'in gövdesi; `saving` bayrağı çağıran tarafından tutulur.
   Future<_KayitSonu> _kaydet() async {
-    final qty = _parse(_quantity.text)!;
+    // Tutar kipinde adet hesaptır (`tutardanAdet`); alanın doğrulayıcısı
+    // fiyatsız tutarı buraya bırakmaz.
+    final qty = _etkinAdet!;
     var price = _parse(_price.text) ?? 0.0;
     // Eurobond: alan temiz %, kayıt kirli birim değer (kirli/100) — fiyat
     // servisi kotasyonuyla aynı ölçek. Sözleşme yoksa kimlik doğrulaması
@@ -211,6 +213,17 @@ extension _Kayit on _AddAssetScreenState {
     // kotasyonuyla doldurur; "maliyet bilinmiyor" işareti (0162) yalnız
     // kullanıcı bir değer girdiyse düşer.
     final fiyatGirildi = price > 0;
+    // Tutar kipinde fiyat boşsa adet ÖNİZLEME fiyatına bölündü; kayıt aynı
+    // fiyatı yazar ki adet × fiyat girilen tutarı tutsun (kayıt anında
+    // yeniden çekilen kotasyon birkaç kuruş oynayabilirdi).
+    var onizlemeFiyatiKullanildi = false;
+    if (price == 0.0 && _tutarModu) {
+      final birim = _tutarBirimFiyati;
+      if (birim != null) {
+        price = birim;
+        onizlemeFiyatiKullanildi = true;
+      }
+    }
 
     final kimlik = _s.resolveIdentity(
       nameText: _name.text,
@@ -261,7 +274,7 @@ extension _Kayit on _AddAssetScreenState {
     // ── Fiyat çek (alış fiyatı boşsa) ──────────────────────────────────────
     // Bugün seçildiyse güncel spot; geçmiş bir tarih seçildiyse o tarihin
     // kapanış fiyatı. Historical fetch başarısızsa spot'a fallback yapar.
-    bool priceFromHistorical = false;
+    bool priceFromHistorical = onizlemeFiyatiKullanildi && _previewIsHistorical;
     // Kayıt sonrası alarm önerisi (2026-09-20): yeni varlık fiyat kaynağı
     // olan bir sembolse çağıran ekran "Alarm kur" eylemi gösterir.
     AlarmAdayi? alarmAdayi;
@@ -271,9 +284,12 @@ extension _Kayit on _AddAssetScreenState {
         lookup: ref.read(addAssetPriceLookupProvider),
         ticker: ticker,
         date: _addedDate,
+        // Yalnız yeni kayıtta dolu: boş fiyatlı bugünkü altın/döviz alımının
+        // maliyeti satış fiyatından (`maliyetSatisFiyati`, 2026-10-24).
+        satisParaBirimi: _n.satisParaBirimi,
       );
       if (!mounted) return _KayitSonu.kaldi;
-      price = sonuc.price ?? 0.0;
+      price = sonuc.satis ?? sonuc.price ?? 0.0;
       priceFromHistorical = sonuc.historical;
       priceFallbackToSpot = sonuc.fallbackToSpot;
     }

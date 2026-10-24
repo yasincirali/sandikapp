@@ -1018,6 +1018,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+          // ── Bugün altı yuvası (2026-10-24, Ar-Ge 16:45 #3) ──────────────
+          // Aşağıdaki beş şeritten aynı anda en fazla BİRİ çizilir; karar
+          // saf `anaSayfaDurtusu` (sıra bilgi eksik > takvim > radar >
+          // güncelleme > öneri), her şerit `anaSayfaDurtusuProvider`'a
+          // bakıp susar. Bilgi eksik satırı yuvanın tepesi olduğu için
+          // kendi koşuluyla (`veriSeridiGorunur`, aynı fonksiyon) çizer.
+          // Toplam kartına dokunulmaz. Sliver sırası yuva sırası değil —
+          // tek şerit göründüğü için konum aynı yer.
+          //
           // "N varlıkta bilgi eksik" (2026-10-20): Bugün kartının hemen
           // altında, toplam kartına dokunmadan. Yalnız kendi görünümünde —
           // düzeltme yalnız kendi kaydında yapılabilir. Eksik yoksa ya da
@@ -1058,7 +1067,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           // Radar şeridi (Balina S7-A, 2026-10-05): yalnız kendi görünümünde
           // — Haftanın özeti kendi pozisyonlarını anlatır, ortağınkini değil.
-          // Bayrak kapalıyken ya da hareket yokken yer kaplamaz.
+          // Bayrak kapalıyken ya da hareket yokken yer kaplamaz. 2026-10-24:
+          // yuvada; bilgi eksik/takvim görünürken susar, tur adımı da susar
+          // (`onboarding_screen.dart` `radar` adımının koşulu).
           if (benGorunumu)
             SliverToBoxAdapter(
               child: TourAnchor(

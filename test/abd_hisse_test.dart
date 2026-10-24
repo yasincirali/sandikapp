@@ -367,7 +367,9 @@ void main() {
 
     testWidgets('bayrak KAPALI: pazar seçimi yok', (tester) async {
       await ac(tester);
-      expect(find.byType(SandikSegment), findsNothing);
+      // Formda başka bir segment de var (Adet / Tutar, 2026-10-24); ölçü
+      // pazar segmenti.
+      expect(find.widgetWithText(SandikSegment, 'ABD'), findsNothing);
       expect(find.text('ABD'), findsNothing);
     });
 
@@ -375,7 +377,7 @@ void main() {
         (tester) async {
       RemoteConfigService.testAcik = {'abd_hisse'};
       final portfoy = await ac(tester);
-      expect(find.byType(SandikSegment), findsOneWidget);
+      expect(find.widgetWithText(SandikSegment, 'ABD'), findsOneWidget);
 
       await tester.tap(find.text('ABD'));
       await tester.pumpAndSettle();

@@ -26,6 +26,13 @@ class YahooQuote {
   final String? shortName;
   final String? longName;
 
+  /// Yurt içi kotasyonun SATIŞ fiyatı (kuyumcu/bankanın sana sattığı) —
+  /// yalnız truncgil kaydı `Selling` taşıdığında dolu, öteki her kaynakta
+  /// `null`. [regularMarketPrice] ALIŞ'tır (bozdurursan eline geçen) ve
+  /// değer/grafik onunla kalır; bu alan yalnız boş fiyatlı yeni altın/döviz
+  /// alımının maliyet önerisidir (`maliyetSatisFiyati`, 2026-10-24).
+  final double? satisFiyati;
+
   const YahooQuote({
     required this.symbol,
     this.regularMarketPrice,
@@ -33,6 +40,7 @@ class YahooQuote {
     this.regularMarketChangePercent,
     this.shortName,
     this.longName,
+    this.satisFiyati,
   });
 
   factory YahooQuote.fromJson(Map<String, dynamic> j) => YahooQuote(
@@ -1004,6 +1012,24 @@ class PriceService {
         entry['Buying'] ??
         entry['Satış'] ??
         entry['Selling'];
+    return _truncgilSayi(raw);
+  }
+
+  /// truncgil kaydının SATIŞ alanı (2026-10-24, maliyet önerisi).
+  ///
+  /// Alış alanı YOKSA `null`: o kayıtta [_parseTruncgilValue] zaten satışa
+  /// düşmüştür, "alış = satış" gibi görünen sıfır makas uydurma olurdu.
+  /// Makasın makul olup olmadığına burada değil sözleşme karar verir
+  /// (`maliyetSatisFiyati`); burası yalnız sayıyı okur.
+  @visibleForTesting
+  static double? parseTruncgilSatis(dynamic entry) {
+    if (entry is! Map) return null;
+    if (entry['Alış'] == null && entry['Buying'] == null) return null;
+    final v = _truncgilSayi(entry['Satış'] ?? entry['Selling']);
+    return v > 0 ? v : null;
+  }
+
+  static double _truncgilSayi(dynamic raw) {
     if (raw == null) return 0;
     // v4: gerçek sayı — string ayrıştırması uygulanmamalı.
     if (raw is num) {
@@ -1027,11 +1053,14 @@ class PriceService {
     if (eurTry > 0) _sonKaynak['EURTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
     if (gbpTry > 0) _sonKaynak['GBPTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
     return {
-      'USDTRY=X': _fxQ('USDTRY=X', usdTry, _truncgilChange(data['USD'])),
+      'USDTRY=X': _fxQ('USDTRY=X', usdTry, _truncgilChange(data['USD']),
+          parseTruncgilSatis(data['USD'])),
       if (eurTry > 0)
-        'EURTRY=X': _fxQ('EURTRY=X', eurTry, _truncgilChange(data['EUR'])),
+        'EURTRY=X': _fxQ('EURTRY=X', eurTry, _truncgilChange(data['EUR']),
+            parseTruncgilSatis(data['EUR'])),
       if (gbpTry > 0)
-        'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry, _truncgilChange(data['GBP'])),
+        'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry, _truncgilChange(data['GBP']),
+            parseTruncgilSatis(data['GBP'])),
     };
   }
 
@@ -1064,6 +1093,7 @@ class PriceService {
           currency: 'TRY',
           shortName: _goldLabel(sym),
           regularMarketChangePercent: _truncgilChange(data[key]),
+          satisFiyati: parseTruncgilSatis(data[key]),
         );
       }
     }
@@ -1111,11 +1141,14 @@ class PriceService {
     };
   }
 
-  YahooQuote _fxQ(String symbol, double price, [double? change]) => YahooQuote(
+  YahooQuote _fxQ(String symbol, double price,
+          [double? change, double? satis]) =>
+      YahooQuote(
         symbol: symbol,
         regularMarketPrice: price,
         currency: 'TRY',
         regularMarketChangePercent: change,
+        satisFiyati: satis,
       );
 
   // ── Gold fallback — XAU/TRY doğrudan, olmazsa GC=F × USD/TRY ─────────────

@@ -36,10 +36,16 @@ import 'crash_reporter.dart';
 ///
 /// ## Gizlilik değişmezi
 /// Widget verisi **cihaz genelinde** okunabilir bir depoya yazılır (Android'de
-/// `SharedPreferences`, iOS'ta App Group). Bu yüzden buraya yalnızca ekranda
-/// zaten görünen ÖZET yazılır — varlık listesi, ticker, adet, kullanıcı id'si
-/// veya e-posta ASLA yazılmaz. Kullanıcı bakiyeyi gizlediyse
-/// ([hideBalance]) tutar da yazılmaz.
+/// `SharedPreferences`, iOS'ta App Group). Bu yüzden portföy özetine
+/// yalnızca ekranda zaten görünen ÖZET yazılır — varlık listesi, ticker,
+/// adet, kullanıcı id'si veya e-posta ASLA yazılmaz. Kullanıcı bakiyeyi
+/// gizlediyse ([hideBalance]) tutar da yazılmaz.
+///
+/// **Tek istisna, bilinçli (2026-10-24):** iOS tek varlık widget'ının seçim
+/// listesi ([varlikListesiniYaz], `sandik_varliklar`) varlık ADLARINI ve
+/// piyasa fiyatlarını taşır — miktar, tutar, lot/kullanıcı kimliği ve
+/// "portföyde mi takipte mi" bilgisi olmadan, yalnız iOS'ta. Gerekçe ve
+/// sınırlar `VarlikWidgetService`'te.
 ///
 /// Oturum kapanınca [clear] çağrılmalı: aksi halde çıkış yapan kullanıcının
 /// bakiyesi ana ekranda asılı kalır.
@@ -66,6 +72,18 @@ class HomeWidgetService {
   /// iOS'ta YALNIZ adı verilen türü yeniler (`reloadTimelines(ofKind:)`);
   /// bu yüzden [_requestUpdate] iOS'ta ikinci bir çağrı yapar.
   static const _iOSKilitWidgetName = 'SandikKilitWidget';
+
+  /// iOS tek varlık widget'ının `kind`'ı (`SandikVarlikWidget.swift`).
+  ///
+  /// Ayrı tür, ayrı yenileme: portföy özeti yazıldığında bu tür yenilenmez
+  /// (fiyatları ayrı turda, [varlikListesiniYaz] ile gelir); tema değişince
+  /// [applyTheme] üçünü birden yeniler.
+  static const iOSVarlikWidgetName = 'SandikVarlikWidget';
+
+  /// Tek varlık widget'ının seçim listesi + fiyatları — JSON (`v`, `saat`,
+  /// `ogeler`; biçim `varlikWidgetPaketi`). YENİ anahtar: eski anahtarların
+  /// hiçbiri ve biçimi değişmedi, eski build'in widget'ları bunu okumaz.
+  static const kVarliklar = 'sandik_varliklar';
 
   // Paylaşımlı depo anahtarları — native taraf bu adlarla okur.
   static const _kTotal = 'sandik_total';
@@ -886,6 +904,10 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
       _sonYazilan[_kIsLightTheme] = themeIsLight;
       await _requestUpdate();
+      // Tek varlık widget'ı da aynı tema bayrağını okur.
+      if (Platform.isIOS) {
+        await HomeWidget.updateWidget(iOSName: iOSVarlikWidgetName);
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget applyTheme failed: $e');
     }
@@ -913,10 +935,42 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>(_kDate, '');
       await HomeWidget.saveWidgetData<String>(_kUpdatedAt, '');
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, 0);
+      // Tek varlık widget'ının seçim listesi de: çıkan kullanıcının takip
+      // ve portföy adları sonraki oturuma kalmamalı. Boş metin = "liste
+      // yok" (Swift tarafı boşu ve bozuk JSON'u aynı okur).
+      await HomeWidget.saveWidgetData<String>(kVarliklar, '');
       await _requestUpdate();
+      if (Platform.isIOS) {
+        await HomeWidget.updateWidget(iOSName: iOSVarlikWidgetName);
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget clear failed: $e');
     }
+  }
+
+  /// Tek varlık widget'ının paketini yazar ve YALNIZ o türü yeniler.
+  ///
+  /// Paketi `VarlikWidgetService` kurar (seçim listesi + fiyat); bu metot
+  /// yalnız sözleşmenin yazma ucudur. Aynı paket ikinci kez yazılmaz.
+  Future<void> varlikListesiniYaz(String paket) async {
+    try {
+      await _ensureInit();
+      if (_sonYazilan[kVarliklar] == paket) return;
+      await HomeWidget.saveWidgetData<String>(kVarliklar, paket);
+      _sonYazilan[kVarliklar] = paket;
+      await HomeWidget.updateWidget(iOSName: iOSVarlikWidgetName);
+    } catch (e) {
+      _sonYazilan.remove(kVarliklar);
+      if (kDebugMode) debugPrint('HomeWidget varlikListesiniYaz failed: $e');
+    }
+  }
+
+  /// Tek varlık widget'ı ana ekranda kurulu mu (iOS `WidgetCenter`)?
+  /// Kurulu değilken `VarlikWidgetService` fiyat için ağa çıkmaz.
+  Future<bool> varlikWidgetiKuruluMu() async {
+    await _ensureInit();
+    final kurulu = await HomeWidget.getInstalledWidgets();
+    return kurulu.any((w) => w.iOSKind == iOSVarlikWidgetName);
   }
 
   Future<void> _requestUpdate() async {

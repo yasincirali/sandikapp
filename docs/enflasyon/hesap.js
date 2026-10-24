@@ -72,5 +72,81 @@
     return parseFloat(s);
   }
 
-  return { gecerliAylar: gecerliAylar, hesapla: hesapla, ayAdi: ayAdi, sayiOku: sayiOku };
+  // ── Paylaşım (2026-10-24, Ar-Ge 2045 §3 / rapor 2115 §3) ────────────────
+  //
+  // Bağlantı YALNIZ iki parametre taşır: `ay` (YYYY-MM) ve isteğe bağlı
+  // `tutar` (düz rakam, nokta ondalık). Fikirdeki `yil`/`tur=altin` yok:
+  // sayfa yalnız TÜFE hesaplar (dolar/altın kıyası lisans sorusu yüzünden
+  // sonraya), olmayan bir türü bağlantıya koymak açılışta uydurma sonuç
+  // demekti. Her parametre sınırlı ve doğrulanır; biri bile geçersizse
+  // bağlantının TAMAMI yok sayılır (yarım okunmuş bağlantı paylaşanın
+  // gördüğünden farklı bir sonuç gösterirdi).
+
+  var TUTAR_UST = 1e12; // 1 trilyon ₺: üstü yazım hatası ya da saçma bağlantı
+
+  /**
+   * `?ay=2025-01&tutar=10000` → { ay, tutar } (tutar yoksa null), parametre
+   * yoksa { bos: true }, geçersizse null. `ay` açıklanmış ve son aydan önce
+   * olmalı (hesapla() ile aynı kural); tutar 0 < t ≤ 1e12, en çok 2 ondalık.
+   */
+  function paylasimOku(sorgu, veri) {
+    var p;
+    try { p = new URLSearchParams(String(sorgu || '')); } catch (e) { return null; }
+    var ay = p.get('ay');
+    var tutarHam = p.get('tutar');
+    if (ay === null && tutarHam === null) return { bos: true };
+    if (p.getAll('ay').length > 1 || p.getAll('tutar').length > 1) return null;
+    var aylar = gecerliAylar(veri);
+    if (aylar.length < 2) return null;
+    if (ay !== null) {
+      var bulundu = false;
+      for (var i = 0; i < aylar.length - 1; i++) if (aylar[i].ay === ay) bulundu = true;
+      if (!bulundu) return null;
+    }
+    var tutar = null;
+    if (tutarHam !== null) {
+      if (!/^\d{1,13}(\.\d{1,2})?$/.test(tutarHam)) return null;
+      tutar = parseFloat(tutarHam);
+      if (!(tutar > 0) || tutar > TUTAR_UST) return null;
+    }
+    return { ay: ay, tutar: tutar };
+  }
+
+  /** Paylaşılacak adres; `tutar` null ise bağlantıda tutar YOK. */
+  function paylasimAdresi(taban, ay, tutar) {
+    var p = new URLSearchParams();
+    p.set('ay', ay);
+    // Açılışta paylasimOku'nun reddedeceği tutar bağlantıya hiç girmez.
+    var t = (tutar === null || tutar === undefined) ? 0 : Math.round(tutar * 100) / 100;
+    if (t > 0 && t <= TUTAR_UST) p.set('tutar', String(t));
+    return String(taban).split(/[?#]/)[0] + '?' + p.toString();
+  }
+
+  var YUZDE = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var LIRA = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 });
+  var KURUS = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function tl(x) { return (x >= 100 ? LIRA : KURUS).format(x) + ' ₺'; }
+  function pct(x) { return '%' + YUZDE.format(x * 100); }
+
+  /**
+   * Paylaşım metni. Varsayılan YALNIZ oran: tutar kişinin kendi bilgisi,
+   * ancak `tutar` verilirse (kullanıcı kutuyu işaretlediyse) metne girer.
+   * Ay/sayıdan sonra ek yok (sayfadaki cümleyle aynı kural).
+   */
+  function paylasimMetni(s, baslangic, tutar) {
+    var govde = tutar !== null && tutar !== undefined
+      ? ayAdi(baslangic) + ' fiyatlarıyla ' + tl(tutar) + ', ' + ayAdi(s.sonAy) +
+        ' fiyatlarıyla ' + tl(tutar * (1 + s.artis)) + ' eder. Alım gücü ' +
+        pct(s.alimGucuKaybi) + ' azaldı.'
+      : ayAdi(baslangic) + ' ile ' + ayAdi(s.sonAy) + ' arasında fiyatlar ' +
+        pct(s.artis) + ' arttı, kenarda bekleyen paranın alım gücü ' +
+        pct(s.alimGucuKaybi) + ' azaldı.';
+    return govde + ' Kendi rakamınla hesapla:';
+  }
+
+  return {
+    gecerliAylar: gecerliAylar, hesapla: hesapla, ayAdi: ayAdi, sayiOku: sayiOku,
+    paylasimOku: paylasimOku, paylasimAdresi: paylasimAdresi, paylasimMetni: paylasimMetni,
+    tl: tl, pct: pct
+  };
 });

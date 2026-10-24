@@ -34,6 +34,7 @@ import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'providers/sozlesme_provider.dart';
+import 'providers/watchlist_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/karsilama_screen.dart';
 import 'screens/kullanici_adi_screen.dart';
@@ -71,6 +72,7 @@ import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
+import 'services/varlik_widget_service.dart';
 import 'services/sistem_eylemleri.dart';
 import 'services/history_service.dart';
 import 'services/seri_disk_depo.dart';
@@ -1940,6 +1942,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       _spotlightEsitle();
     });
     ref.listen<bool>(biometricLockProvider, (_, __) => _spotlightEsitle());
+
+    // iOS tek varlık widget'ı (2026-10-24): seçim listesi portföy + takip
+    // listesinden kurulur. Portföy her fiyat turunda yayınlandığı için takip
+    // listesindeki değişiklik de en geç bir sonraki turda yazılır; takip
+    // listesine AYRI dinleyici bağlanmaz — bağlamak onu her iOS açılışında
+    // yüklerdi (bkz. `VarlikWidgetService.guncelle`). Yükleme karesi
+    // atlanır (önceki kullanıcının defteri taşınabilir).
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
+      if (next.isLoading) return;
+      _varlikWidgetiniYaz(next.valueOrNull);
+    });
     ref.listen(authProvider, (_, next) {
       if (next.valueOrNull == null) _spotlightEsitle();
     });
@@ -2127,6 +2140,28 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           kilitli: ref.read(biometricLockProvider),
         ),
         reason: 'main.SistemEylemleri.spotlight');
+  }
+
+  /// iOS tek varlık widget'ının seçim listesi ve fiyatları.
+  ///
+  /// Yalnız oturumdaki kullanıcının kendi lot'ları (ortak lot'u değil) ve
+  /// takip listesi — o da yalnız zaten yüklenmişse; yüklenmemişse servis
+  /// widget kuruluyken [takipYukle] ile ister. Servis iOS dışında no-op.
+  void _varlikWidgetiniYaz(PortfolioState? durum) {
+    if (!VarlikWidgetService.etkin) return;
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null) return;
+    final takip = ref.exists(watchlistProvider)
+        ? ref.read(watchlistProvider).valueOrNull
+        : null;
+    CrashReporter.arkaPlan(
+        VarlikWidgetService.instance.guncelle(
+          lotlar: (durum?.assets ?? const <Asset>[])
+              .where((a) => a.userId == uid),
+          takip: takip,
+          takipYukle: () => ref.read(watchlistProvider.future),
+        ),
+        reason: 'main.VarlikWidgetService.guncelle');
   }
 
   /// Ana ekran widget'ı + Live Activity yazımı (portföy dinleyicisinin

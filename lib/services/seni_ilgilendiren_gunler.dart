@@ -3,9 +3,9 @@
 ///
 /// ## Karar kuralları
 /// - **Ana sayfada aynı anda tek dürtü.** Sıra: "bilgi eksik" satırı >
-///   takvim olayı > özellik önerisi ([anaSayfaDurtusu]). Eksik veri
-///   düzeltmek her şeyden önce gelir; yaklaşan gün kaçarsa anlamını yitirir,
-///   öneri ise bekleyebilir.
+///   takvim olayı > radar > yumuşak güncelleme > özellik önerisi
+///   ([anaSayfaDurtusu]). Eksik veri düzeltmek her şeyden önce gelir;
+///   yaklaşan gün kaçarsa anlamını yitirir, öneri ise bekleyebilir.
 /// - **Yalnız iki gün içindeki olay satıra çıkar** ([satirPenceresiGun]).
 ///   Daha uzak olay ana sayfada yer kaplamaz; satıra dokununca açılan
 ///   sayfada 14 güne kadar liste görünür ([listePenceresiGun]).
@@ -122,9 +122,8 @@ List<GunOlayi> temettuGunleri(
 }) {
   final out = <GunOlayi>{};
   for (final e in hakGunleri.entries) {
-    final kod = e.key.endsWith('.IS')
-        ? e.key.substring(0, e.key.length - 3)
-        : e.key;
+    final kod =
+        e.key.endsWith('.IS') ? e.key.substring(0, e.key.length - 3) : e.key;
     for (final h in e.value) {
       final y = h.year + 1;
       final gun = h.month == 2 && h.day == 29
@@ -174,21 +173,37 @@ GunOlayi? satirOlayi(
   return l.isEmpty ? null : l.first;
 }
 
-/// Ana sayfanın tek dürtü yuvası.
-enum AnaSayfaDurtusu { bilgiEksik, takvim, guncelleme, oneri }
+/// Ana sayfanın tek dürtü yuvası: Bugün kartının altında aynı anda en fazla
+/// BİR şerit (Ar-Ge 2026-10-24 16:45 #3, kabul 17:15 #3). Eskiden radar
+/// şeridi yuvanın dışındaydı; kötü bir günde bilgi eksik + takvim + radar
+/// üst üste binip toplamın altını uyarı yığınına çeviriyordu.
+enum AnaSayfaDurtusu { bilgiEksik, takvim, radar, guncelleme, oneri }
 
-/// Sıra: bilgi eksik > takvim olayı > yumuşak güncelleme > özellik önerisi.
-/// Hiçbiri yoksa null. Güncelleme takvimin altında: kart kapatılana ya da
-/// güncellenene kadar durur, yarınki temettüyü günlerce örtmesin; öneriden
-/// üstte: yeni sürüm, uygulamanın kendi önerisinden önce gelir.
+/// Sıra: bilgi eksik > takvim olayı > radar > yumuşak güncelleme > özellik
+/// önerisi. Hiçbiri yoksa null.
+///
+/// - Bilgi eksik en üstte: toplam yanlış olabilir.
+/// - Takvim radardan üstte: iki gün içindeki olay kaçarsa anlamını yitirir,
+///   radar haftalıktır ve kendi ekranında (Haftanın özeti) her zaman durur.
+/// - Radar güncellemeden üstte (kabul raporu sırası): güncelleme kartı
+///   kapatılana ya da güncellenene kadar durur, haftalık sinyali günlerce
+///   örtmesin; mağazaya gitmek bekleyebilir.
+/// - Güncelleme öneriden üstte (2026-10-23 sırası korunur): yeni sürüm,
+///   uygulamanın kendi önerisinden önce gelir. Öneri radarın altına düşer:
+///   bekleyebilen, her gün aynı olan bir dürtü; radar o haftaya özgü.
+///
+/// Gizlenen şerit kaybolmaz: radar Haftanın özeti'nde, eksikler varlık
+/// satırlarında, takvim olayı sırası gelince yeniden çıkar.
 AnaSayfaDurtusu? anaSayfaDurtusu({
   required bool bilgiEksikGorunur,
   required GunOlayi? takvimOlayi,
   required bool oneriVar,
   bool guncellemeVar = false,
+  bool radarVar = false,
 }) {
   if (bilgiEksikGorunur) return AnaSayfaDurtusu.bilgiEksik;
   if (takvimOlayi != null) return AnaSayfaDurtusu.takvim;
+  if (radarVar) return AnaSayfaDurtusu.radar;
   if (guncellemeVar) return AnaSayfaDurtusu.guncelleme;
   if (oneriVar) return AnaSayfaDurtusu.oneri;
   return null;

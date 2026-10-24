@@ -1424,6 +1424,78 @@ abstract class AppLocalizations {
   /// **'{type} türü'**
   String assetTypeSemantics(String type);
 
+  /// No description provided for @miktarModuAdet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adet'**
+  String get miktarModuAdet;
+
+  /// No description provided for @miktarModuTutar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutar ({sembol})'**
+  String miktarModuTutar(String sembol);
+
+  /// No description provided for @miktarModuSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Miktarı {mod} olarak gir'**
+  String miktarModuSemantik(String mod);
+
+  /// No description provided for @tutarAlani.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutar'**
+  String get tutarAlani;
+
+  /// No description provided for @tutarGecersiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçerli tutar'**
+  String get tutarGecersiz;
+
+  /// No description provided for @tutarFiyatGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adet için fiyat gerekli'**
+  String get tutarFiyatGerekli;
+
+  /// No description provided for @tutardanAdetSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaplanan miktar: {miktar}'**
+  String tutardanAdetSatiri(String miktar);
+
+  /// No description provided for @tutardanAdetFiyatYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat gelince miktar hesaplanır. Fiyatı elle de girebilirsin.'**
+  String get tutardanAdetFiyatYok;
+
+  /// No description provided for @fonAdetIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bankadaki adet farklıysa adedi düzelt. Fon ertesi gün fiyatıyla alındıysa tarihi o gün seç.'**
+  String get fonAdetIpucu;
+
+  /// No description provided for @fiyatBirimBasina.
+  ///
+  /// In tr, this message translates to:
+  /// **'{fiyat} / birim'**
+  String fiyatBirimBasina(String fiyat);
+
+  /// No description provided for @kuyumcuFarkiAltin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kuyumcu farkı {fark}. Bugün bozdursan {tutar}.'**
+  String kuyumcuFarkiAltin(String fark, String tutar);
+
+  /// No description provided for @kuyumcuFarkiDoviz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış-satış farkı {fark}. Bugün bozdursan {tutar}.'**
+  String kuyumcuFarkiDoviz(String fark, String tutar);
+
   /// No description provided for @total.
   ///
   /// In tr, this message translates to:
@@ -2557,6 +2629,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Dönem özeti bildirimleri'**
   String get summaryPushTitle;
+
+  /// No description provided for @watchlistSortMine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Benim sıram'**
+  String get watchlistSortMine;
+
+  /// No description provided for @watchlistSortGainers.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok yükselen'**
+  String get watchlistSortGainers;
+
+  /// No description provided for @watchlistSortLosers.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok düşen'**
+  String get watchlistSortLosers;
+
+  /// No description provided for @watchlistSortMineHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uzun basıp sürükleyerek sırala'**
+  String get watchlistSortMineHint;
+
+  /// No description provided for @watchlistSortChangeHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili dönemin değişimine göre'**
+  String get watchlistSortChangeHint;
+
+  /// No description provided for @watchlistSortSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralama: {secim}'**
+  String watchlistSortSemantics(String secim);
+
+  /// No description provided for @watchlistMoveUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yukarı taşı'**
+  String get watchlistMoveUp;
+
+  /// No description provided for @watchlistMoveDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aşağı taşı'**
+  String get watchlistMoveDown;
 
   /// No description provided for @summaryPushSubtitle.
   ///
@@ -7497,6 +7617,54 @@ abstract class AppLocalizations {
   /// **'Ara'**
   String get searchChip;
 
+  /// No description provided for @aramaIpucuOrnekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'ör. THYAO ya da 5 çeyrek'**
+  String get aramaIpucuOrnekli;
+
+  /// No description provided for @aramaHizliHesap.
+  ///
+  /// In tr, this message translates to:
+  /// **'{miktar} {ad} ≈ {tutar}'**
+  String aramaHizliHesap(String miktar, String ad, String tutar);
+
+  /// No description provided for @aramaHizliHesapEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyüne ekle'**
+  String get aramaHizliHesapEkle;
+
+  /// No description provided for @hataBizeYaz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sorun sürüyorsa bize yaz'**
+  String get hataBizeYaz;
+
+  /// No description provided for @hataBizeYazEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sorun sürüyorsa bize e-posta yaz'**
+  String get hataBizeYazEtiket;
+
+  /// No description provided for @hataMailAcilamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta uygulaması açılamadı. Bu adrese yazabilirsin:'**
+  String get hataMailAcilamadi;
+
+  /// No description provided for @hataAdresiKopyala.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adresi kopyala'**
+  String get hataAdresiKopyala;
+
+  /// No description provided for @hataAdresKopyalandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adres kopyalandı'**
+  String get hataAdresKopyalandi;
+
   /// No description provided for @searchShortHint.
   ///
   /// In tr, this message translates to:
@@ -8702,6 +8870,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.'**
   String get pensionAutoNote;
+
+  /// Ağ düştüğünde grafik diskteki son ölçülmüş seriyle kalır; seriyi ne zaman ölçtüğümüzü söyler (önce-eski-seri, 2026-10-24).
+  ///
+  /// In tr, this message translates to:
+  /// **'Son güncelleme: {time} · şu an yenilenemedi'**
+  String chartLastUpdated(String time);
 
   /// No description provided for @pensionAutoNeedsPlan.
   ///

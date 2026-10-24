@@ -9,6 +9,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
 import '../models/emtia_katalogu.dart';
+import '../models/hizli_hesap.dart';
 import '../models/eurobond.dart';
 import '../models/ilk_varlik_secimi.dart';
 import '../models/altin_kisayollari.dart';
@@ -22,6 +23,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/portfoy_provider.dart';
 import '../widgets/portfoy_secici.dart';
 import '../services/bist_hisse_katalogu.dart';
+import '../services/fiyat_kaynagi.dart' show kuyumcuFarkiYuzde;
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -126,6 +128,13 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   /// değerleri yine kazanır (prefill kuralı).
   final IlkVarlikSecimi? hizliSecim;
 
+  /// Genel aramadaki "5 çeyrek ≈ ₺X" satırı (2026-10-24): [hizliSecim] gibi
+  /// tür + varlık seçili açılır, ayrıca MİKTAR da yazılı gelir. Ayrı bir
+  /// parametre, çünkü vitrin yalnız dört varlık bilir; arama her altın
+  /// türünü ve GBP'yi tanır. Seçim aynı geçişlerle uygulanır
+  /// ([_hizliSecimiUygula]); düzenleme ve sepet değerleri yine kazanır.
+  final HizliHesap? hizliHesap;
+
   /// "Varlığı güncelle" kipi (`varlik_guncelle.dart`, bayrak `goz_alici`):
   /// [editingAsset] pozisyonun görünümüdür (net miktar, ağırlıklı maliyet,
   /// ilk alış tarihi), bunlar ise yerine geçilecek lotlar. Kayıt bir
@@ -151,6 +160,7 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillPrice,
     this.prefillDate,
     this.hizliSecim,
+    this.hizliHesap,
     this.ekleYolu,
   });
 
@@ -168,6 +178,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   late final TextEditingController _notes;
   late final TextEditingController _commission;
 
+  /// "Tutar (₺)" kipinin alanı (2026-10-24). Kayda girmez: adet bundan
+  /// hesaplanır ([_etkinAdet]), kayıt yine adet + fiyattır.
+  final _tutar = TextEditingController();
+
   // Durum makinesi `addAssetFormProvider`'da (Faz 3.10). Aşağıdaki getter'lar
   // eski alan adlarını korur ki 2000 satırlık widget ağacı dokunulmadan
   // okumaya devam etsin; YAZMA yalnızca `_n` (notifier) üzerinden yapılır.
@@ -175,8 +189,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     editingAsset: widget.editingAsset,
     cartInitial: widget.cartInitial,
     prefillTicker: widget.prefillTicker,
-    prefillType: widget.prefillType ?? widget.hizliSecim?.tur,
+    prefillType: widget.prefillType ??
+        widget.hizliSecim?.tur ??
+        widget.hizliHesap?.tur,
     prefillDate: widget.prefillDate,
+    // Boş fiyatlı altın/döviz maliyeti satıştan yalnız YENİ kayıtta
+    // (güncelleme kipi de `editingAsset` taşır, dışarıda kalır).
+    satisMaliyeti: widget.editingAsset == null && !widget.cartMode,
   );
   AddAssetFormState get _s => ref.read(addAssetFormProvider(_args));
   AddAssetFormNotifier get _n =>
@@ -268,7 +287,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // düzenleniyorsa onun değerleri her zaman kazanır.
     final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
-    final initQty = a?.quantity ?? c?.quantity ?? 0;
+    final initQty =
+        a?.quantity ?? c?.quantity ?? widget.hizliHesap?.miktar ?? 0;
     // Eurobondda kayıtlı fiyat birim değerdir (kirli/100); alan TEMİZ %
     // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
     // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
@@ -320,7 +340,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   final _kirli = ValueNotifier<bool>(false);
 
   List<String> _kullaniciMetinleri() =>
-      [_quantity.text.trim(), _commission.text.trim(), _notes.text.trim()];
+      [
+        _quantity.text.trim(),
+        _commission.text.trim(),
+        _notes.text.trim(),
+        _tutar.text.trim(),
+      ];
 
   void _kirliliginiGuncelle() {
     final ilk = _ilkMetinler;
@@ -372,10 +397,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   /// geçişlerin kuralı.
   void _hizliSecimiUygula() {
     final s = widget.hizliSecim;
-    if (s == null || _isEditing || widget.cartInitial != null) return;
-    if (s.altinAltTuru case final g?) {
+    final h = widget.hizliHesap;
+    if ((s == null && h == null) ||
+        _isEditing ||
+        widget.cartInitial != null) {
+      return;
+    }
+    if (s?.altinAltTuru ?? h?.altin case final g?) {
       _yaz(_n.selectGold(g));
-    } else if (s.dovizEtiketi case final etiket?) {
+    } else if (s?.dovizEtiketi ?? h?.doviz case final etiket?) {
       _yaz(_n.selectDoviz(dovizOptFor(etiket)));
     }
   }
@@ -413,7 +443,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   void dispose() {
     _metinler.removeListener(_kirliliginiGuncelle);
     _kirli.dispose();
-    for (final c in [_name, _ticker, _quantity, _price, _notes, _commission]) {
+    for (final c in [
+      _name,
+      _ticker,
+      _quantity,
+      _price,
+      _notes,
+      _commission,
+      _tutar,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -535,7 +573,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   /// alanlarını okur; eski kod her tuş vuruşunda tüm ekranı yeniden kuruyordu.
   /// Controller'lar zaten `Listenable`: tek dinleyiciyle aynı yeniden çizim.
   late final Listenable _metinler =
-      Listenable.merge([_quantity, _price, _commission, _notes]);
+      Listenable.merge([_quantity, _price, _commission, _notes, _tutar]);
 
   @override
   Widget build(BuildContext context) {
@@ -668,18 +706,31 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     _identitySection(cs),
                     const SizedBox(height: 22),
 
+                    // ── Adet / Tutar kipi (2026-10-24) ────────────────────
+                    if (_tutarKipiVar) ...[
+                      _miktarKipiSegmenti(),
+                      const SizedBox(height: SandikSpace.smd),
+                    ],
+
                     // ── Miktar + Fiyat yan yana ───────────────────────────
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: _quantityBlock(cs)),
+                        Expanded(
+                            child: _tutarModu
+                                ? _tutarBlock(cs)
+                                : _quantityBlock(cs)),
                         const SizedBox(width: 12),
                         Expanded(child: _priceBlock(cs)),
                       ],
                     ),
                     _eurobondFaizSatiri(),
-                    const SizedBox(height: 10),
-                    _quantityPresetsRow(cs),
+                    if (_tutarModu)
+                      _tutardanAdetSatiri()
+                    else ...[
+                      const SizedBox(height: 10),
+                      _quantityPresetsRow(cs),
+                    ],
                     const SizedBox(height: 20),
 
                     // ── Toplam maliyet hero card ─────────────────────────

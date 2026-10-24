@@ -22,7 +22,7 @@ import 'sandik_skeleton.dart';
 /// Metin GENEL ("son düzeltmeler ve yenilikler"): sürüm notları uygulamanın
 /// içinde yaşar, eski build yeni sürümün başlığını bilemez; bilmediği şeyi
 /// yazmaz. Yuva ana sayfa dürtüsüyle paylaşılır ([anaSayfaDurtusuProvider];
-/// sıra bilgi eksik > takvim > güncelleme > öneri). Kapatmak o önerilen
+/// sıra bilgi eksik > takvim > radar > güncelleme > öneri). Kapatmak o önerilen
 /// build'i bir daha sormaz.
 class GuncellemeKarti extends ConsumerWidget {
   const GuncellemeKarti({super.key, this.padding = EdgeInsets.zero});

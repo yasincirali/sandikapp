@@ -12,6 +12,49 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-24 Mağaza metni: yatay tam ekran grafik ve çizim (1.1.7 gönderiminde)
+
+Metin repoda hazır; mağazadaki build'de olmayanı vaat etmemek için
+**yalnız özelliği taşıyan sürüm (1.1.7 ya da sonrası) gönderilirken**
+yapıştırılır (App Store 2.3.1(a), "mağaza incelemesi = mağaza kullanıcısı").
+
+- [ ] **ASC açıklama** (1.1.7 "Prepare for Submission" sayfasında):
+      Türkçe alana `store_listing/ios/tr/description.txt`, İngilizce (U.S.)
+      alana `store_listing/ios/en/description.txt` (yeni bölüm "YATAY TAM
+      EKRAN GRAFİK VE ÇİZİM"; 2.996 / 3.145 karakter, sınır 4.000).
+- [ ] **Play tam açıklama** (Android yayına çıktığında / 1.1.7 ile):
+      `store_listing/tr-TR/full_description.txt` ve `en-US/` (2.692 / 2.589).
+- [ ] **Tanıtım metni** (sürümsüz, anında değişir): 1.1.7 mağazada
+      **yayına çıktıktan sonra** `store_listing/ios/tr/promotional_text.txt`
+      (140/170) ve `ios/en/` (139/170). Önce yapıştırırsan eski sürümdeki
+      kullanıcı olmayan özelliği okur.
+- [ ] **Anahtar kelime önerisi** (yeni sürümle yayınlanır, 100 sınırı;
+      ASC sayacına bak, Türkçe harfleri bayt sayabilir):
+      - Türkçe: `sandik,borsa,bist,yatırım,döviz,dolar,kur,tefas,kâr,zarar,tüfe,reel,getiri,teknik,analiz,çizim`
+        (94; `birikim`, `varlık`, `gümüş` çıktı. Sayaç izin verirse sona `,trend`).
+        `teknik` + `analiz` ayrı: Apple birleştirir ("teknik analiz").
+      - İngilizce (U.S.): `portfoy,hisse takip,fon takip,kar zarar,reel getiri,tufe,gram altin,yatirim,teknik analiz,cizim`
+        (95; `borsa` Türkçe alanda var, `ons` ve `net worth` çıktı).
+      - Kelimeler `ASO_2026_09.md` kümesinin üstüne kuruldu; iki hafta sonra
+        `aso_siralama.py` ile "teknik analiz", "grafik çizim" sırasına bak.
+- [ ] **Görsel:** `store_listing/SCREENSHOT_PLAN.md` §7 (yatay grafik + iki
+      çizim, demo hesabı). Gerçek cihazda yan çevirip çek, galerinin sonuna koy.
+
+## ⏳ 2026-10-24 Altın, döviz ve kripto alarmları 5 dakikada (0168)
+
+İstemci değişmez; eski sürümler etkilenmez. Yeni cron işi
+`check-price-alerts-hizli` eski 30 dakikalık işin açık/kapalı durumunu alır
+(Frankfurt'ta kapalı, Tokyo'da açık doğar).
+
+- [ ] Sıra: önce `check-price-alerts` fonksiyonu (iki sunucu), sonra 0168
+      migration'ı. Ters sıra kırıcı değil: eski fonksiyon `turler`'i bilmez ve
+      5 dakikada bir HER alarmı değerlendirir (BIST/fon için gereksiz Yahoo/TEFAS
+      isteği), ama tek atış damgası tekrar bildirimi önler.
+- [ ] Bir gün sonra: `select jobname, status, count(*) from cron.job_run_details d
+      join cron.job j using (jobid) where j.jobname like 'check-price-alerts%'
+      and start_time > now() - interval '1 day' group by 1, 2;` → hızlı iş
+      ~140 satır, hepsi `succeeded`.
+
 ## ⏳ 2026-10-23 Yumuşak güncelleme kartı (Remote Config)
 
 Yeni build'de ana sayfada kapatılabilir "Yeni sürüm hazır" kartı var. Hiçbir

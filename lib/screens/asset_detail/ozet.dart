@@ -106,6 +106,50 @@ extension _DetayOzet on _AssetDetailScreenState {
       ? null
       : _donemIstatistikleri[days]?.kapsananGun;
 
+  /// Önce eski seri, sonra taze (2026-10-24, Ar-Ge raporu §1).
+  ///
+  /// Soğuk açılışta bellek boş; grafik ağ yanıtına kadar (en çok 8 sn)
+  /// iskeletteydi. Aynı birim seri motoru burada AĞA ÇIKMADAN, diskteki son
+  /// ölçülmüş serilerle koşar (`HistoryService.eldekiSeriyle`); sonuç
+  /// `_lastHistory`'ye yazılır ve FutureBuilder'ın var olan bayat-seri yolu
+  /// onu SOLUK çizer (`isStale`). Taze seri gelince `_loadHistory` yerine
+  /// yazar, grafik ve göstergeler (MA/EMA, özel göstergeler) taze seriden
+  /// yeniden kurulur.
+  ///
+  /// Gün içi (`days == 0`) bu yoldan geçmez: saatlik döküm motoru yurt içi
+  /// gün içi kaynağına ve TEFAS yayın gözlemine de gider (ağ), eski kopyası
+  /// "bugünün" serisi olmayabilir. Taze çekim zaten 5 dakikalık önbellekte.
+  ///
+  /// Dönen değer: eski seri çizildi mi (açılış kapısı tazeyi beklemesin).
+  Future<bool> _eldekiSeriyiGoster(int days) async {
+    if (days == 0) return false;
+    final birim = FiyatKaynagi.birimVarlik(_canli.asset);
+    final ({PortfolioHistoryBreakdown sonuc, DateTime zaman})? e;
+    try {
+      e = await HistoryService.eldekiSeriyle(
+          () => _donemSerisi([birim], days));
+    } catch (err, st) {
+      CrashReporter.report(err, st, reason: 'AssetDetail.eldekiSeri');
+      return false;
+    }
+    if (e == null || !mounted) return false;
+    final seri = e.sonuc.total;
+    final zaman = e.zaman;
+    // Taze seri önce geldiyse, dönem değiştiyse ya da ekranda zaten bir
+    // seri varsa eski kopya yok sayılır.
+    if (seri.length < 2 ||
+        _periods[_selectedPeriodIdx].days != days ||
+        _donemSerileri.containsKey(days) ||
+        _lastHistory != null) {
+      return false;
+    }
+    _guncelle(() {
+      _lastHistory = seri;
+      _eskiSeri = (days: days, zaman: zaman, yolda: true);
+    });
+    return true;
+  }
+
   /// Seçili dışındaki dönemleri paralel yükler — çip getirileri için.
   Future<void> _digerDonemleriYukle() async {
     // `_loadHistory` ile aynı sıra: süren fiyat turu `_canli` OKUNMADAN önce.

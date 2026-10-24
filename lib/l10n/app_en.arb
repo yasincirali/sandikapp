@@ -388,6 +388,66 @@
   "tickerHintCommodity": "e.g. CL=F (oil), NG=F (natural gas), GC=F (gold ounce)",
   "tickerHintOther": "A Yahoo Finance symbol, or leave it empty",
   "assetTypeSemantics": "{type} type",
+  "miktarModuAdet": "Units",
+  "miktarModuTutar": "Amount ({sembol})",
+  "@miktarModuTutar": {
+    "placeholders": {
+      "sembol": {
+        "type": "String"
+      }
+    }
+  },
+  "miktarModuSemantik": "Enter quantity as {mod}",
+  "@miktarModuSemantik": {
+    "placeholders": {
+      "mod": {
+        "type": "String"
+      }
+    }
+  },
+  "tutarAlani": "Amount",
+  "tutarGecersiz": "Enter a valid amount",
+  "tutarFiyatGerekli": "A price is needed to work out units",
+  "tutardanAdetSatiri": "Calculated quantity: {miktar}",
+  "@tutardanAdetSatiri": {
+    "placeholders": {
+      "miktar": {
+        "type": "String"
+      }
+    }
+  },
+  "tutardanAdetFiyatYok": "The quantity is worked out once a price is in. You can also enter the price yourself.",
+  "fonAdetIpucu": "If your bank shows a different number of units, correct it. If the fund was bought at the next day's price, pick that day as the date.",
+  "fiyatBirimBasina": "{fiyat} per unit",
+  "@fiyatBirimBasina": {
+    "placeholders": {
+      "fiyat": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiAltin": "Dealer spread {fark}. Sold today you'd get {tutar}.",
+  "@kuyumcuFarkiAltin": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiDoviz": "Buy-sell spread {fark}. Sold today you'd get {tutar}.",
+  "@kuyumcuFarkiDoviz": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
   "total": "total",
   "@assetTypeSemantics": {
     "placeholders": {
@@ -784,6 +844,21 @@
   "partnerActivityNotifications": "Partner activity notifications",
   "partnerActivityNotificationsSubtitle": "Mention it in the daily brief when your partner adds to their portfolio",
   "summaryPushTitle": "Period summary notifications",
+  "watchlistSortMine": "My order",
+  "watchlistSortGainers": "Top gainers",
+  "watchlistSortLosers": "Top losers",
+  "watchlistSortMineHint": "Long-press and drag to reorder",
+  "watchlistSortChangeHint": "By change in the selected period",
+  "watchlistSortSemantics": "Sort: {secim}",
+  "@watchlistSortSemantics": {
+    "placeholders": {
+      "secim": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistMoveUp": "Move up",
+  "watchlistMoveDown": "Move down",
   "summaryPushSubtitle": "Your weekly and monthly portfolio summary. The monthly inflation notice comes separately",
   "quietHours": "Quiet hours",
   "biometricLockSubtitle": "Ask for Face ID / fingerprint / device PIN when opening the app",
@@ -3092,6 +3167,15 @@
   "searchInPortfolioTag": "In portfolio",
   "searchAssetsSemantics": "Search assets",
   "searchChip": "Search",
+  "aramaIpucuOrnekli": "e.g. THYAO or 100 USD",
+  "aramaHizliHesap": "{miktar} {ad} ≈ {tutar}",
+  "@aramaHizliHesap": {"placeholders": {"miktar": {"type": "String"}, "ad": {"type": "String"}, "tutar": {"type": "String"}}},
+  "aramaHizliHesapEkle": "Add to portfolio",
+  "hataBizeYaz": "Still not working? Write to us",
+  "hataBizeYazEtiket": "Still not working? Email us",
+  "hataMailAcilamadi": "Couldn't open your email app. You can write to this address:",
+  "hataAdresiKopyala": "Copy address",
+  "hataAdresKopyalandi": "Address copied",
   "searchShortHint": "Stocks, funds, gold, FX, crypto",
   "kullaniciAdiBaslik": "Choose your username",
   "kullaniciAdiAciklama": "Your partner sees you by this name, and it's the name shown in the app. You can change it later in Settings > Account.",
@@ -3345,6 +3429,14 @@
   "pensionDayError": "Enter a day between 1 and 28.",
   "pensionAuto": "Add contribution automatically",
   "pensionAutoNote": "On the contribution day we add your monthly contribution at that day's fund price, then ask you to confirm the amount. If off, we only remind you.",
+  "chartLastUpdated": "Last updated: {time} · couldn't refresh right now",
+  "@chartLastUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "pensionAutoNeedsPlan": "Enter the monthly contribution and day to add it automatically.",
   "pensionAutoLotNote": "Automatic contribution",
   "pensionAutoAdded": "Your {date} contribution was added automatically: {amount}. Want to update the amount?",

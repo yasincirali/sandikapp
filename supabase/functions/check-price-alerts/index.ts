@@ -1,6 +1,11 @@
 // Check Price Alerts — kullanıcının kendi kurduğu fiyat alarmları.
 //
-// pg_cron ile TR 08:00–21:30 arası yarım saatte bir tetiklenir.
+// pg_cron ile TR 08:00–21:30 arası tetiklenir (0168'den beri iki iş):
+//   · `check-price-alerts`       :00 ve :30 — gövde `{}`, HER tür (eski davranış)
+//   · `check-price-alerts-hizli` aradaki 5 dakikalar — gövde
+//     `{"turler":["altin","doviz","kripto"]}`, yalnız fiyatı 5 dakikadan sık
+//     tazelenen türler. BIST/fon kaynakları zaten gecikmeli ya da günlük;
+//     onları 5 dakikada sormak Yahoo/TEFAS'a boşa istek olurdu.
 //
 // Bu, kullanıcının KENDİSİNİN istediği tek bildirim: alaka garantili,
 // opt-out riski taşımıyor. Sunucuda değerlendirilir ki uygulama kapalıyken
@@ -14,7 +19,12 @@ import {
   sendFcmNotification,
   ServiceAccount,
 } from '../_shared/fcm.ts';
-import { fetchLivePrices } from '../_shared/live_prices.ts';
+import {
+  fetchLivePrices,
+  isFxSymbol,
+  isGoldSymbol,
+} from '../_shared/live_prices.ts';
+import { kriptoMu } from '../_shared/kripto.ts';
 import {
   fiyatKaynagiKanaryasi,
   kanaryaKismiMi,
@@ -64,6 +74,74 @@ function jsonResponse(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+/// Hızlı turun anladığı türler (0168). Liste dışı ad yok sayılır.
+export type AlarmTuru = 'altin' | 'doviz' | 'kripto' | 'diger';
+const HIZLI_TURLER: ReadonlySet<AlarmTuru> = new Set(['altin', 'doviz', 'kripto']);
+
+/// Sembolün alarm türü — `live_prices.ts`'in kaynak seçimiyle AYNI ayrım:
+/// altın ve döviz truncgil'den, kripto `kripto_fiyat` tablosundan (2 dk)
+/// gelir; geri kalanı (BIST, fon, emtia, eurobond) 30 dakikalık turda kalır.
+export function alarmTuru(symbol: string): AlarmTuru {
+  if (isGoldSymbol(symbol)) return 'altin';
+  if (isFxSymbol(symbol)) return 'doviz';
+  if (kriptoMu(symbol)) return 'kripto';
+  return 'diger';
+}
+
+/// Gövdedeki `turler` → filtre; `null` = HER tür.
+///
+/// Eski çağrılar (parametresiz cron, panel/SQL'den elle `{}`/`dry_run`)
+/// bugünkü gibi her türü değerlendirir: alan yoksa, dizi değilse ya da
+/// içinde tanınan tek ad yoksa `null`. Bilinmeyen değerde HİÇBİR alarmı
+/// değerlendirmemek "alarm sessizce öldü" demek olurdu; fazla değerlendirmek
+/// zararsız (tek atış damgası tekrarı önler).
+export function turFiltresi(raw: unknown): ReadonlySet<AlarmTuru> | null {
+  if (!Array.isArray(raw)) return null;
+  const out = new Set<AlarmTuru>();
+  for (const t of raw) {
+    if (typeof t === 'string' && HIZLI_TURLER.has(t as AlarmTuru)) {
+      out.add(t as AlarmTuru);
+    }
+  }
+  return out.size === 0 ? null : out;
+}
+
+/// Bu turda değerlendirilecek alarmlar. Filtre fiyat çekiminden ÖNCE
+/// uygulanır ki hızlı tur Yahoo/TEFAS'a hiç gitmesin.
+export function turaGirenAlarmlar<T extends { symbol: string }>(
+  alerts: T[],
+  filtre: ReadonlySet<AlarmTuru> | null,
+): T[] {
+  if (filtre === null) return alerts;
+  return alerts.filter((a) => filtre.has(alarmTuru(a.symbol)));
+}
+
+/// Alarmı söndürür; YALNIZ bu çağrı söndürdüyse `'sondu'`.
+///
+/// 0168 öncesi `.is('triggered_at', null)` yarış korumasıydı ama sonuç
+/// okunmuyordu: eşleşmeyen UPDATE hata DEĞİL, boş sonuçtur — çakışan iki
+/// tur ikisi de push gönderirdi. 5 dakikalık ritimde (fonksiyon 60 sn'yi
+/// aşarsa) çakışma artık kuramsal değil; satır dönmezse push gitmez.
+export async function alarmiSondur(
+  // deno-lint-ignore no-explicit-any
+  admin: { from: (t: string) => any },
+  id: string,
+  simdi: Date = new Date(),
+): Promise<'sondu' | 'zaten' | 'hata'> {
+  const { data, error } = await admin
+    .from('price_alerts')
+    .update({ triggered_at: simdi.toISOString(), enabled: false })
+    .eq('id', id)
+    .is('triggered_at', null)
+    .select('id');
+  if (error) {
+    // DB mesajı yalnızca günlüğe; yanıta sabit kod (2026-09-23 denetimi L2).
+    console.error('[check-price-alerts] damga yazilamadi:', error.message);
+    return 'hata';
+  }
+  return Array.isArray(data) && data.length > 0 ? 'sondu' : 'zaten';
 }
 
 /// Alarm tetiklendi mi?
@@ -160,10 +238,12 @@ Deno.serve(async (request) => {
     // (0068 cron'u, TR 18:25). Aynı secret, aynı fonksiyon: alarm kanalının
     // doğal uzantısı; ayrı fonksiyon ayrı secret ve ayrı dağıtım demekti.
     let watchlist = false;
+    let filtre: ReadonlySet<AlarmTuru> | null = null;
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
       if (body?.watchlist === true) watchlist = true;
+      filtre = turFiltresi(body?.turler);
     } catch (_) { /* gövde opsiyonel */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
@@ -188,7 +268,7 @@ Deno.serve(async (request) => {
       .is('triggered_at', null);
     if (alertError) throw new Error(`Alarmlar alinamadi: ${alertError.message}`);
 
-    const alerts = (alertRows ?? []) as AlertRow[];
+    const alerts = turaGirenAlarmlar((alertRows ?? []) as AlertRow[], filtre);
     if (alerts.length === 0) {
       return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0 });
     }
@@ -309,19 +389,15 @@ Deno.serve(async (request) => {
       //
       // Sıra kasıtlı: push başarısız olup damga atılmazsa alarm bir sonraki
       // turda yeniden denenir (istenen davranış). Ters sırada, push gidip
-      // damga yazılamazsa kullanıcı yarım saatte bir aynı bildirimi alırdı —
+      // damga yazılamazsa kullanıcı her turda (5 dakikada bir) aynı bildirimi alırdı —
       // geri alınamaz olan bu.
-      const { error: damgaHatasi } = await admin
-        .from('price_alerts')
-        .update({ triggered_at: new Date().toISOString(), enabled: false })
-        .eq('id', alarm.id)
-        .is('triggered_at', null); // yarış koruması: iki tur çakışırsa biri boşa düşer
-      if (damgaHatasi) {
-        // DB mesajı yalnızca günlüğe; yanıta sabit kod (2026-09-23 denetimi L2).
-        console.error('[check-price-alerts] damga yazilamadi:', damgaHatasi.message);
+      // Yarış koruması: iki tur çakışırsa yalnız damgayı ATAN gönderir.
+      const damga = await alarmiSondur(admin, alarm.id);
+      if (damga === 'hata') {
         failures.push('damga: yazilamadi');
         continue;
       }
+      if (damga === 'zaten') continue;
 
       // Uygulama içi bildirim listesi kaydı (0065).
       //
@@ -387,6 +463,7 @@ Deno.serve(async (request) => {
       priced: fiyatlar.size,
       kanarya: kanaryaKismi,
       triggered: tetiklenen.length,
+      turler: filtre ? [...filtre] : 'hepsi',
       sent,
       skipped_quiet_hours: skippedQuietHours,
       dry_run: dryRun,

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/main.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -19,6 +20,7 @@ import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
 import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
+import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 
 /// Apple HIG kontrol listesinin ölçülebilir kısmı (`docs/TASARIM_DILI.md`
@@ -36,8 +38,16 @@ import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 /// Yeni ortak bileşen eklenince `vitrin`'e de eklenir.
 void main() {
   // "Bildirimler kapalı" satırı vitrinde görünsün (izin reddedilmiş say).
-  setUpAll(() => BildirimIzni.testOkuyucu = () async => true);
-  tearDownAll(() => BildirimIzni.testOkuyucu = null);
+  setUpAll(() async {
+    BildirimIzni.testOkuyucu = () async => true;
+    HataDenemeKaydi.denendi('hig_vitrin');
+    // `SeriSonGuncelleme` tarihi Türkçe ay adıyla yazar.
+    await initializeDateFormatting('tr_TR');
+  });
+  tearDownAll(() {
+    BildirimIzni.testOkuyucu = null;
+    HataDenemeKaydi.sifirlaTest();
+  });
 
   Widget vitrin({required Brightness parlaklik, double yaziOlcegi = 1}) {
     final palet =
@@ -65,6 +75,17 @@ void main() {
             body: ListView(
               padding: const EdgeInsets.all(SandikSpace.md),
               children: [
+                // "Tekrar dene" denenip yine hata: ikincil "bize yaz"
+                // bağlantısı da görünür (2026-10-24); 44 pt + etiket. Listenin
+                // başında: tembel liste sonda kalanı çizmeyebilir.
+                SizedBox(
+                  height: 320,
+                  child: SandikErrorView(
+                    error: Exception('x'),
+                    onRetry: () async {},
+                    ekranAdi: 'hig_vitrin',
+                  ),
+                ),
                 SandikAsyncButton(
                   onPressed: () async {},
                   child: const Text('Kaydet'),
@@ -76,6 +97,8 @@ void main() {
                 ),
                 const SizedBox(height: SandikSpace.md),
                 const BildirimIzniUyarisi(),
+                // Grafik eski seriyle kaldığında (önce-eski-seri, 2026-10-24).
+                SeriSonGuncelleme(zaman: DateTime(2026, 10, 23, 14, 32)),
                 const SizedBox(height: SandikSpace.md),
                 SandikAsyncTap(
                   onTap: () async {},
@@ -221,6 +244,8 @@ void main() {
       final handle = t.ensureSemantics();
       await t.pumpWidget(vitrin(parlaklik: parlaklik));
       await t.pump();
+      // Bize yaz bağlantısı vitrinde gerçekten çizili (ölçüme girsin).
+      expect(find.byKey(const ValueKey('hata-bize-yaz')), findsOneWidget);
       await expectLater(t, meetsGuideline(iOSTapTargetGuideline));
       await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
       handle.dispose();
