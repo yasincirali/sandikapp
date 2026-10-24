@@ -24,7 +24,18 @@ cache'i var; "gram altın 5.400 olunca" diyen kullanıcı ertesi günü beklemez
 
 ## Zamanlama
 
-`*/30 5-18 * * *` (UTC) = **TR 08:00–21:30, yarım saatte bir.**
+İki iş, aynı fonksiyon (0168):
+
+| İş | Ritim (UTC) | Gövde | Türler |
+|---|---|---|---|
+| `check-price-alerts` | `*/30 5-18 * * *` | `{}` | hepsi (eski davranış) |
+| `check-price-alerts-hizli` | `5-25/5,35-55/5 5-18 * * *` | `{"turler":["altin","doviz","kripto"]}` | altın, döviz, kripto |
+
+= **TR 08:00–21:30; altın/döviz/kripto 5 dakikada, BIST/fon/emtia 30 dakikada.**
+Dakikalar ayrık (hızlı iş :00/:30'da koşmaz); 18:30 UTC sonrası hızlı turlar
+sarmalayıcıda erken döner. `turler` yoksa, dizi değilse ya da tanınan ad
+içermiyorsa her tür değerlendirilir. Tür filtresi fiyat çekiminden önce
+uygulanır: hızlı tur Yahoo/TEFAS'a gitmez.
 
 Pencere sessiz saatlere göre seçildi (TR 22:00–08:00 bildirim yasak).
 Hafta sonu da koşar: altın ve döviz BIST saatlerine bağlı değil.
@@ -32,8 +43,10 @@ Hafta sonu da koşar: altın ve döviz BIST saatlerine bağlı değil.
 ## Tek atış
 
 Alarm tetiklenince `triggered_at` damgalanır ve `enabled=false` olur.
-Hedefin etrafında salınan bir fiyat, tekrar eden alarmda yarım saatte bir
-bildirim üretirdi. Kullanıcı "Yeniden kur"a basarak canlandırabilir.
+Hedefin etrafında salınan bir fiyat, tekrar eden alarmda her turda (5
+dakikada bir) bildirim üretirdi. Damga `triggered_at is null` koşuluyla atılır
+ve sonucu okunur: çakışan iki turdan yalnız damgayı atan push gönderir
+(`alarmiSondur`, `supabase/tests/alarm_hizli_tur_test.ts`). Kullanıcı "Yeniden kur"a basarak canlandırabilir.
 
 **Damga bildirimden ÖNCE yazılır.** Ters sırada, push gidip damga
 yazılamazsa kullanıcı her turda aynı bildirimi alırdı — geri alınamaz olan bu.
