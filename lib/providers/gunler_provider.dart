@@ -6,6 +6,7 @@ import '../services/seni_ilgilendiren_gunler.dart';
 import '../services/sunucu_secimi.dart';
 import '../services/temettu_gecmisi.dart' show trGunu;
 import 'auth_provider.dart';
+import 'hafta_ozeti_provider.dart';
 import 'ozellik_onerisi_provider.dart';
 import 'portfolio_provider.dart';
 import 'preferences_provider.dart';
@@ -78,8 +79,11 @@ final yumusakGuncellemeProvider = Provider.autoDispose<bool>((ref) {
   );
 });
 
-/// Ana sayfa tek dürtü yuvası: bilgi eksik > takvim > güncelleme > öneri. Yalnız ana
-/// sayfa okur; Portföy sekmesindeki öneri kartı bu sıraya bağlı değil.
+/// Ana sayfa tek dürtü yuvası: bilgi eksik > takvim > radar > güncelleme >
+/// öneri ([anaSayfaDurtusu]). Yalnız ana sayfa okur; Portföy sekmesindeki
+/// öneri kartı bu sıraya bağlı değil. Yuvadaki her şerit (bilgi eksik dahil)
+/// kendini bu değere göre çizer ya da susar; tur adımı da (`radar`) aynı
+/// değere bakar ki gizlenen şeridi anlatmasın.
 final anaSayfaDurtusuProvider = Provider.autoDispose<AnaSayfaDurtusu?>((ref) {
   final eksik = veriSeridiGorunur(ref.watch(veriEksikleriProvider),
       ref.watch(veriKalitesiKapatilanProvider));
@@ -89,5 +93,7 @@ final anaSayfaDurtusuProvider = Provider.autoDispose<AnaSayfaDurtusu?>((ref) {
     takvimOlayi: eksik ? null : ref.watch(takvimSatiriProvider),
     oneriVar: ref.watch(ozellikOnerisiProvider) != null,
     guncellemeVar: ref.watch(yumusakGuncellemeProvider),
+    // Bayrak kapalıyken 0 (sorgu yok) → yuva eski hâliyle birebir.
+    radarVar: ref.watch(haftaOlagandisiSayisiProvider) > 0,
   );
 });

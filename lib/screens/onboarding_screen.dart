@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/position.dart' show aktifLotlar;
 import '../providers/auth_provider.dart' show activePartnersProvider;
 import '../providers/hesap_provider.dart' show cokluHesapGorunurProvider;
+import '../providers/gunler_provider.dart'
+    show AnaSayfaDurtusu, anaSayfaDurtusuProvider;
 import '../providers/hafta_ozeti_provider.dart'
     show haftaOlagandisiSayisiProvider;
 import '../providers/portfolio_provider.dart';
@@ -489,6 +491,10 @@ List<_Adim> _adimlariKur() {
     // Balina radarı (S10-A, 2026-10-05): şerit yalnız bayrak açık ve bu
     // hafta olağandışı hareket varken çizilir; anlatacak şerit yoksa adım
     // gösterilmez. Kısa turda yok: ilk açılışta portföy boş, radar susar.
+    // 2026-10-24: şerit ana sayfanın tek dürtü yuvasında; bilgi eksik ya da
+    // takvim satırı görünürken çizilmez. Koşul ekranın kendi koşuluyla
+    // aynı (yuva = radar), yoksa adım gizli şeridi ortada anlatırdı. Önce
+    // sayıya bakılır: sayı 0 iken yuva hiç hesaplanmaz (bayrak kapalı).
     _Adim(
       id: 'radar',
       hedef: TourTarget.radarSeridi,
@@ -502,7 +508,9 @@ List<_Adim> _adimlariKur() {
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
-      kosul: (ref) => ref.read(haftaOlagandisiSayisiProvider) > 0,
+      kosul: (ref) =>
+          ref.read(haftaOlagandisiSayisiProvider) > 0 &&
+          ref.read(anaSayfaDurtusuProvider) == AnaSayfaDurtusu.radar,
     ),
     _Adim(
       id: 'piyasa',

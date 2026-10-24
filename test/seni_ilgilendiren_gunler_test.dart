@@ -15,9 +15,13 @@ void main() {
 
   group('satır: iki günlük pencere', () {
     test('bugün, yarın, öbür gün satıra çıkar; üçüncü gün çıkmaz', () {
-      for (final (g, cikar) in [(21, true), (22, true), (23, true), (24, false)]) {
-        expect(
-            satirOlayi([tcmb(10, g)], bugun: bugun, kapatilanlar: const {}),
+      for (final (g, cikar) in [
+        (21, true),
+        (22, true),
+        (23, true),
+        (24, false)
+      ]) {
+        expect(satirOlayi([tcmb(10, g)], bugun: bugun, kapatilanlar: const {}),
             cikar ? isNotNull : isNull,
             reason: '$g Ekim');
       }
@@ -29,8 +33,8 @@ void main() {
     });
 
     test('olay yoksa null', () {
-      expect(satirOlayi(const [], bugun: bugun, kapatilanlar: const {}),
-          isNull);
+      expect(
+          satirOlayi(const [], bugun: bugun, kapatilanlar: const {}), isNull);
     });
 
     test('en yakın olay seçilir; aynı günde makro temettüden önce', () {
@@ -71,7 +75,7 @@ void main() {
     });
   });
 
-  group('yuva sırası: bilgi eksik > takvim > öneri', () {
+  group('yuva sırası: bilgi eksik > takvim > radar > güncelleme > öneri', () {
     final o = tcmb(10, 22);
     test('bilgi eksik her şeyi geçer', () {
       expect(
@@ -90,6 +94,43 @@ void main() {
           anaSayfaDurtusu(
               bilgiEksikGorunur: false, takvimOlayi: null, oneriVar: true),
           AnaSayfaDurtusu.oneri);
+    });
+    // Bugün altı tek yuva (2026-10-24): veri kalitesi > takvim > radar >
+    // güncelleme > öneri. Her ikili sıra ayrı ayrı kilitli.
+    test('radar: takvimin altında, güncelleme ve önerinin üstünde', () {
+      AnaSayfaDurtusu? y({
+        bool eksik = false,
+        GunOlayi? takvim,
+        bool radar = false,
+        bool guncelleme = false,
+        bool oneri = false,
+      }) =>
+          anaSayfaDurtusu(
+              bilgiEksikGorunur: eksik,
+              takvimOlayi: takvim,
+              oneriVar: oneri,
+              guncellemeVar: guncelleme,
+              radarVar: radar);
+      expect(
+          y(eksik: true, takvim: o, radar: true, guncelleme: true, oneri: true),
+          AnaSayfaDurtusu.bilgiEksik);
+      expect(y(eksik: true, radar: true), AnaSayfaDurtusu.bilgiEksik);
+      expect(y(takvim: o, radar: true, guncelleme: true, oneri: true),
+          AnaSayfaDurtusu.takvim);
+      expect(
+          y(radar: true, guncelleme: true, oneri: true), AnaSayfaDurtusu.radar);
+      expect(y(radar: true, oneri: true), AnaSayfaDurtusu.radar);
+      expect(y(guncelleme: true, oneri: true), AnaSayfaDurtusu.guncelleme);
+      expect(y(radar: true), AnaSayfaDurtusu.radar);
+    });
+    test('radar verilmezse eski sıra birebir', () {
+      expect(
+          anaSayfaDurtusu(
+              bilgiEksikGorunur: false,
+              takvimOlayi: null,
+              oneriVar: true,
+              guncellemeVar: true),
+          AnaSayfaDurtusu.guncelleme);
     });
     test('hiçbiri yoksa null', () {
       expect(
@@ -128,18 +169,15 @@ void main() {
     test('TCMB PPK Perşembe, Fed karar günü Çarşamba (yazım hatası kilidi)',
         () {
       for (final o in makroTakvim) {
-        expect(
-            o.gun.weekday,
-            o.tur == GunOlayiTuru.tcmb
-                ? DateTime.thursday
-                : DateTime.wednesday,
+        expect(o.gun.weekday,
+            o.tur == GunOlayiTuru.tcmb ? DateTime.thursday : DateTime.wednesday,
             reason: o.kimlik);
       }
     });
 
     test('kimlikler tekil, liste yalnız makro', () {
-      expect(makroTakvim.map((o) => o.kimlik).toSet().length,
-          makroTakvim.length);
+      expect(
+          makroTakvim.map((o) => o.kimlik).toSet().length, makroTakvim.length);
       expect(makroTakvim.every((o) => o.kod == null), isTrue);
     });
 
