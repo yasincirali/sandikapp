@@ -4474,6 +4474,33 @@ class AppLocalizationsTr extends AppLocalizations {
   String get searchChip => 'Ara';
 
   @override
+  String get aramaIpucuOrnekli => 'ör. THYAO ya da 5 çeyrek';
+
+  @override
+  String aramaHizliHesap(String miktar, String ad, String tutar) {
+    return '$miktar $ad ≈ $tutar';
+  }
+
+  @override
+  String get aramaHizliHesapEkle => 'Portföyüne ekle';
+
+  @override
+  String get hataBizeYaz => 'Sorun sürüyorsa bize yaz';
+
+  @override
+  String get hataBizeYazEtiket => 'Sorun sürüyorsa bize e-posta yaz';
+
+  @override
+  String get hataMailAcilamadi =>
+      'E-posta uygulaması açılamadı. Bu adrese yazabilirsin:';
+
+  @override
+  String get hataAdresiKopyala => 'Adresi kopyala';
+
+  @override
+  String get hataAdresKopyalandi => 'Adres kopyalandı';
+
+  @override
   String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
 
   @override

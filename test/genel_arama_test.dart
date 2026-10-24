@@ -13,9 +13,13 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/signal_provider.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
+import 'package:portfoy_takip/models/asset_categories.dart';
+import 'package:portfoy_takip/models/hizli_hesap.dart';
+import 'package:portfoy_takip/screens/add_asset_screen.dart';
 import 'package:portfoy_takip/screens/genel_arama_screen.dart';
 import 'package:portfoy_takip/screens/home_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
+import 'package:portfoy_takip/services/price_service.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/symbol_search_service.dart';
 
@@ -194,6 +198,75 @@ void main() {
       expect(find.text('Fiyat alarmları'), findsOneWidget);
       expect(find.text('Ayarlar'), findsNothing);
       expect(find.text('VARLIKLARIM'), findsNothing);
+    });
+
+    // Hızlı hesap (2026-10-24): "5 çeyrek" → en üstte "≈ ₺" satırı; fiyat
+    // formun kaydedeceği sembolden, aynı kotasyon yolundan.
+    Widget fiyatliEkran(Map<String, YahooQuote> q) => GenelAramaScreen(
+          aramaServisi: (_) async => const [],
+          kotasyonServisi: (semboller) async => {
+            for (final s in semboller)
+              if (q[s] case final v?) s: v,
+          },
+        );
+
+    testWidgets('"5 çeyrek": fiyat varsa en üstte tutar satırı', (t) async {
+      await _pump(
+          t,
+          fiyatliEkran(const {
+            'ALTIN_CEYREK':
+                YahooQuote(symbol: 'ALTIN_CEYREK', regularMarketPrice: 10500),
+          }));
+      await yaz(t, '5 çeyrek');
+      expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
+          findsOneWidget);
+      expect(find.text('5 Çeyrek Altın ≈ ₺52.500'), findsOneWidget);
+      expect(find.text('Portföyüne ekle'), findsOneWidget);
+      // Satır varken "sonuç yok" yazılmaz.
+      expect(find.textContaining('için sonuç yok'), findsNothing);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('"100 dolar": döviz kotasyonuyla', (t) async {
+      await _pump(
+          t,
+          fiyatliEkran(const {
+            'USDTRY=X': YahooQuote(symbol: 'USDTRY=X', regularMarketPrice: 42),
+          }));
+      await yaz(t, '100 dolar');
+      expect(find.text('100 USD ≈ ₺4.200'), findsOneWidget);
+    });
+
+    testWidgets('satıra dokununca Varlık Ekle o tür ve miktarla açılır',
+        (t) async {
+      await _pump(
+          t,
+          fiyatliEkran(const {
+            'ALTIN_YARIM':
+                YahooQuote(symbol: 'ALTIN_YARIM', regularMarketPrice: 21000),
+          }));
+      await yaz(t, '3 yarım');
+      await t.tap(find.byKey(const ValueKey('genel-arama-hizli-hesap')));
+      for (var i = 0; i < 10; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      final form = t.widget<AddAssetScreen>(find.byType(AddAssetScreen));
+      expect(form.hizliHesap,
+          const HizliHesap(miktar: 3, altin: GoldSubCategory.yarim));
+      expect(form.ekleYolu, 'arama');
+    });
+
+    testWidgets('fiyat bilinmiyorsa satır YOK', (t) async {
+      await _pump(t, fiyatliEkran(const {}));
+      await yaz(t, '5 çeyrek');
+      expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
+          findsNothing);
+      expect(find.textContaining('≈'), findsNothing);
+    });
+
+    testWidgets('ipucu örnek verir', (t) async {
+      await _pump(t, ekran());
+      expect(find.text('ör. THYAO ya da 5 çeyrek'), findsOneWidget);
     });
 
     testWidgets('hiçbir şey eşleşmezse boş durum metni', (t) async {

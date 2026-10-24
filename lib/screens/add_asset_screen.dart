@@ -9,6 +9,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
 import '../models/emtia_katalogu.dart';
+import '../models/hizli_hesap.dart';
 import '../models/eurobond.dart';
 import '../models/ilk_varlik_secimi.dart';
 import '../models/altin_kisayollari.dart';
@@ -126,6 +127,13 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   /// değerleri yine kazanır (prefill kuralı).
   final IlkVarlikSecimi? hizliSecim;
 
+  /// Genel aramadaki "5 çeyrek ≈ ₺X" satırı (2026-10-24): [hizliSecim] gibi
+  /// tür + varlık seçili açılır, ayrıca MİKTAR da yazılı gelir. Ayrı bir
+  /// parametre, çünkü vitrin yalnız dört varlık bilir; arama her altın
+  /// türünü ve GBP'yi tanır. Seçim aynı geçişlerle uygulanır
+  /// ([_hizliSecimiUygula]); düzenleme ve sepet değerleri yine kazanır.
+  final HizliHesap? hizliHesap;
+
   /// "Varlığı güncelle" kipi (`varlik_guncelle.dart`, bayrak `goz_alici`):
   /// [editingAsset] pozisyonun görünümüdür (net miktar, ağırlıklı maliyet,
   /// ilk alış tarihi), bunlar ise yerine geçilecek lotlar. Kayıt bir
@@ -151,6 +159,7 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillPrice,
     this.prefillDate,
     this.hizliSecim,
+    this.hizliHesap,
     this.ekleYolu,
   });
 
@@ -175,7 +184,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     editingAsset: widget.editingAsset,
     cartInitial: widget.cartInitial,
     prefillTicker: widget.prefillTicker,
-    prefillType: widget.prefillType ?? widget.hizliSecim?.tur,
+    prefillType: widget.prefillType ??
+        widget.hizliSecim?.tur ??
+        widget.hizliHesap?.tur,
     prefillDate: widget.prefillDate,
   );
   AddAssetFormState get _s => ref.read(addAssetFormProvider(_args));
@@ -268,7 +279,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // düzenleniyorsa onun değerleri her zaman kazanır.
     final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
-    final initQty = a?.quantity ?? c?.quantity ?? 0;
+    final initQty =
+        a?.quantity ?? c?.quantity ?? widget.hizliHesap?.miktar ?? 0;
     // Eurobondda kayıtlı fiyat birim değerdir (kirli/100); alan TEMİZ %
     // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
     // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
@@ -372,10 +384,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   /// geçişlerin kuralı.
   void _hizliSecimiUygula() {
     final s = widget.hizliSecim;
-    if (s == null || _isEditing || widget.cartInitial != null) return;
-    if (s.altinAltTuru case final g?) {
+    final h = widget.hizliHesap;
+    if ((s == null && h == null) ||
+        _isEditing ||
+        widget.cartInitial != null) {
+      return;
+    }
+    if (s?.altinAltTuru ?? h?.altin case final g?) {
       _yaz(_n.selectGold(g));
-    } else if (s.dovizEtiketi case final etiket?) {
+    } else if (s?.dovizEtiketi ?? h?.doviz case final etiket?) {
       _yaz(_n.selectDoviz(dovizOptFor(etiket)));
     }
   }

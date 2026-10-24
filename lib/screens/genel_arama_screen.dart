@@ -5,16 +5,21 @@ import 'package:flutter/material.dart' show Icons, Material, Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/arama_eylemleri.dart';
+import '../models/asset_categories.dart' show goldTickerMap;
+import '../models/hizli_hesap.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
+import '../providers/add_asset_form_provider.dart' show dovizOptFor;
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/varlik_rozeti.dart';
 import '../l10n/l10n.dart';
+import 'add_asset_screen.dart';
 import 'add_watchlist_screen.dart';
 import 'asset_detail_screen.dart';
 import 'bulk_add_asset_screen.dart';
@@ -43,6 +48,11 @@ import 'varlik_sayfasi.dart';
 ///   takibe alma ekranındaki satırla aynı).
 /// - **Eylemler:** `arama_eylemleri.dart` anahtar sözcükleri; boş sorguda
 ///   öneri olarak hepsi.
+/// - **Hızlı hesap** (2026-10-24): sorgu "5 çeyrek", "100 dolar" gibi
+///   sayı + birim ise ([hizliHesapCoz]) en üstte başlıksız tek satır
+///   "5 Çeyrek Altın ≈ ₺X". Fiyat bilinmiyorsa satır YOK (uydurma sayı
+///   yasak). Dokununca Varlık Ekle o tür ve miktarla açılır; kayıt yolu
+///   formun, ikinci bir ekleme yolu yazılmadı.
 ///
 /// Demo: ekran demoda AÇILMAZ — ana ekrandaki giriş, piyasa çipiyle aynı
 /// `DemoModu.yazmaKapisi('arama')` kapısından geçer (bkz. `home_screen`).
@@ -81,12 +91,29 @@ class GenelAramaScreen extends ConsumerStatefulWidget {
 /// ekranın altına itmesin.
 const _piyasaSiniri = 6;
 
+/// Hızlı hesabın fiyat sembolü — formun KAYDEDECEĞİ sembol (vitrinle aynı
+/// karar, `IlkVarlikVitrini.fiyatSembolu`): altında `goldTickerMap`,
+/// dövizde `dovizOptFor`. Satırdaki tutar, dokununca formun önizlediği
+/// fiyatla aynı ürünün fiyatı olsun diye ayrı bir sembol tablosu yok.
+String? hizliHesapSembolu(HizliHesap h) {
+  if (h.altin case final g?) return goldTickerMap[g.label];
+  if (h.doviz case final d?) {
+    final t = dovizOptFor(d).ticker;
+    return t.isEmpty ? null : t;
+  }
+  return null;
+}
+
 class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   final _ctrl = TextEditingController();
   String _q = '';
   List<VarlikKimligi> _piyasa = const [];
   bool _loading = false;
   Map<String, YahooQuote> _kotasyon = const {};
+
+  /// Sorgu "sayı + birim" ise çözümü; değilse `null`. Her tuşta yeniden
+  /// çözülür (saf, ucuz); fiyat `_kotasyon`'dan okunur.
+  HizliHesap? _hesap;
 
   /// Yalnızca EN SON aramanın sonucu uygulanır (takibe alma ekranıyla aynı
   /// gerekçe: istekler sırasız dönebilir).
@@ -101,7 +128,19 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   }
 
   void _sorguDegisti(String v) {
-    setState(() => _q = v);
+    final hesap = hizliHesapCoz(v);
+    setState(() {
+      _q = v;
+      _hesap = hesap;
+    });
+    // Hızlı hesabın fiyatı beklemesiz istenir: tek sembol, önbellekte
+    // varsa hiç istek yok (`_fiyatla` eksik olanı ister).
+    if (hesap != null) {
+      if (hizliHesapSembolu(hesap) case final s?) {
+        CrashReporter.arkaPlan(_fiyatla([s]),
+            reason: 'GenelArama.hizliHesap');
+      }
+    }
     _debounce?.cancel();
     if (v.trim().isEmpty) {
       // Boş sorguda piyasa önerisi YOK: öneri yeri eylemlerin. Süren
@@ -181,8 +220,12 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
     final bos = _q.trim().isEmpty;
     final varliklar = aramaPozisyonlari(defter, _q);
     final eylemler = aramaEylemleriniSuz(_q, mevcut: _mevcutEylemler);
+    final hesap = _hesap;
+    final hesapSatiri =
+        hesap == null ? null : _hizliHesapSatiri(context, hesap);
     final hicYok = !bos &&
         !_loading &&
+        hesapSatiri == null &&
         varliklar.isEmpty &&
         _piyasa.isEmpty &&
         eylemler.isEmpty;
@@ -206,6 +249,10 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
                     padding: EdgeInsets.fromLTRB(
                         hp, SandikSpace.sm, hp, SandikSpace.lgs),
                     children: [
+                      if (hesapSatiri != null) ...[
+                        hesapSatiri,
+                        const SizedBox(height: SandikSpace.sm),
+                      ],
                       if (hicYok)
                         // Boş durum: takibe alma ekranıyla aynı metin ve
                         // yerleşim (ortak boş durum bileşeni henüz yok,
@@ -266,7 +313,7 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
                 autofocus: true,
                 autocorrect: false,
                 textInputAction: TextInputAction.search,
-                placeholder: context.l10n.s7AramaIpucu,
+                placeholder: context.l10n.aramaIpucuOrnekli,
                 placeholderStyle:
                     context.t.bodyMedium?.copyWith(color: context.c.text36),
                 style: context.t.bodyMedium?.copyWith(color: context.c.text90),
@@ -342,6 +389,41 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
             if (kod.isNotEmpty && kod != a.name) kod,
             a.type.labelOf(context.l10n),
           ].join(' · '),
+        ),
+      ),
+    );
+  }
+
+  /// "5 Çeyrek Altın ≈ ₺X" — fiyat yoksa `null` (satır çizilmez).
+  /// Ad formdaki adla aynı: altında `GoldSubCategory.label` (formun
+  /// seçicisi de bunu yazar), dövizde kodu (USD/EUR/GBP; iki dilde aynı).
+  Widget? _hizliHesapSatiri(BuildContext context, HizliHesap h) {
+    final sembol = hizliHesapSembolu(h);
+    final tutar = sembol == null
+        ? null
+        : h.tutar(_kotasyon[sembol.toUpperCase()]?.regularMarketPrice);
+    if (tutar == null) return null;
+    final baslik = context.l10n.aramaHizliHesap(
+      fmtInputTr(h.miktar),
+      h.altin?.label ?? h.doviz!,
+      fmtTRY(tutar),
+    );
+    return Padding(
+      key: const ValueKey('genel-arama-hizli-hesap'),
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: SandikTappable(
+        semanticLabel: '$baslik. ${context.l10n.aramaHizliHesapEkle}',
+        onTap: () => pushGuarded(
+          context,
+          adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'add_asset'),
+            builder: (_) => AddAssetScreen(hizliHesap: h, ekleYolu: 'arama'),
+          ),
+        ),
+        child: _SatirKabugu(
+          ikon: Icons.calculate_rounded,
+          baslik: baslik,
+          alt: context.l10n.aramaHizliHesapEkle,
         ),
       ),
     );

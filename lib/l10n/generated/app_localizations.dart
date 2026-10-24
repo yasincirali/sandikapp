@@ -7497,6 +7497,54 @@ abstract class AppLocalizations {
   /// **'Ara'**
   String get searchChip;
 
+  /// No description provided for @aramaIpucuOrnekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'ör. THYAO ya da 5 çeyrek'**
+  String get aramaIpucuOrnekli;
+
+  /// No description provided for @aramaHizliHesap.
+  ///
+  /// In tr, this message translates to:
+  /// **'{miktar} {ad} ≈ {tutar}'**
+  String aramaHizliHesap(String miktar, String ad, String tutar);
+
+  /// No description provided for @aramaHizliHesapEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyüne ekle'**
+  String get aramaHizliHesapEkle;
+
+  /// No description provided for @hataBizeYaz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sorun sürüyorsa bize yaz'**
+  String get hataBizeYaz;
+
+  /// No description provided for @hataBizeYazEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sorun sürüyorsa bize e-posta yaz'**
+  String get hataBizeYazEtiket;
+
+  /// No description provided for @hataMailAcilamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta uygulaması açılamadı. Bu adrese yazabilirsin:'**
+  String get hataMailAcilamadi;
+
+  /// No description provided for @hataAdresiKopyala.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adresi kopyala'**
+  String get hataAdresiKopyala;
+
+  /// No description provided for @hataAdresKopyalandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adres kopyalandı'**
+  String get hataAdresKopyalandi;
+
   /// No description provided for @searchShortHint.
   ///
   /// In tr, this message translates to:

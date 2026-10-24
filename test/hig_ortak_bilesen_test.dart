@@ -36,8 +36,14 @@ import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 /// Yeni ortak bileşen eklenince `vitrin`'e de eklenir.
 void main() {
   // "Bildirimler kapalı" satırı vitrinde görünsün (izin reddedilmiş say).
-  setUpAll(() => BildirimIzni.testOkuyucu = () async => true);
-  tearDownAll(() => BildirimIzni.testOkuyucu = null);
+  setUpAll(() {
+    BildirimIzni.testOkuyucu = () async => true;
+    HataDenemeKaydi.denendi('hig_vitrin');
+  });
+  tearDownAll(() {
+    BildirimIzni.testOkuyucu = null;
+    HataDenemeKaydi.sifirlaTest();
+  });
 
   Widget vitrin({required Brightness parlaklik, double yaziOlcegi = 1}) {
     final palet =
@@ -65,6 +71,17 @@ void main() {
             body: ListView(
               padding: const EdgeInsets.all(SandikSpace.md),
               children: [
+                // "Tekrar dene" denenip yine hata: ikincil "bize yaz"
+                // bağlantısı da görünür (2026-10-24); 44 pt + etiket. Listenin
+                // başında: tembel liste sonda kalanı çizmeyebilir.
+                SizedBox(
+                  height: 320,
+                  child: SandikErrorView(
+                    error: Exception('x'),
+                    onRetry: () async {},
+                    ekranAdi: 'hig_vitrin',
+                  ),
+                ),
                 SandikAsyncButton(
                   onPressed: () async {},
                   child: const Text('Kaydet'),
@@ -221,6 +238,8 @@ void main() {
       final handle = t.ensureSemantics();
       await t.pumpWidget(vitrin(parlaklik: parlaklik));
       await t.pump();
+      // Bize yaz bağlantısı vitrinde gerçekten çizili (ölçüme girsin).
+      expect(find.byKey(const ValueKey('hata-bize-yaz')), findsOneWidget);
       await expectLater(t, meetsGuideline(iOSTapTargetGuideline));
       await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
       handle.dispose();
