@@ -5224,6 +5224,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'On the contribution day we add your monthly contribution at that day\'s fund price, then ask you to confirm the amount. If off, we only remind you.';
 
   @override
+  String chartLastUpdated(String time) {
+    return 'Last updated: $time · couldn\'t refresh right now';
+  }
+
+  @override
   String get pensionAutoNeedsPlan =>
       'Enter the monthly contribution and day to add it automatically.';
 

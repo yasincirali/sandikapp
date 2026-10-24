@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/main.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -19,6 +20,7 @@ import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
 import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
+import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 
 /// Apple HIG kontrol listesinin ölçülebilir kısmı (`docs/TASARIM_DILI.md`
@@ -36,7 +38,11 @@ import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 /// Yeni ortak bileşen eklenince `vitrin`'e de eklenir.
 void main() {
   // "Bildirimler kapalı" satırı vitrinde görünsün (izin reddedilmiş say).
-  setUpAll(() => BildirimIzni.testOkuyucu = () async => true);
+  setUpAll(() async {
+    BildirimIzni.testOkuyucu = () async => true;
+    // `SeriSonGuncelleme` tarihi Türkçe ay adıyla yazar.
+    await initializeDateFormatting('tr_TR');
+  });
   tearDownAll(() => BildirimIzni.testOkuyucu = null);
 
   Widget vitrin({required Brightness parlaklik, double yaziOlcegi = 1}) {
@@ -76,6 +82,8 @@ void main() {
                 ),
                 const SizedBox(height: SandikSpace.md),
                 const BildirimIzniUyarisi(),
+                // Grafik eski seriyle kaldığında (önce-eski-seri, 2026-10-24).
+                SeriSonGuncelleme(zaman: DateTime(2026, 10, 23, 14, 32)),
                 const SizedBox(height: SandikSpace.md),
                 SandikAsyncTap(
                   onTap: () async {},

@@ -5175,6 +5175,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.';
 
   @override
+  String chartLastUpdated(String time) {
+    return 'Son güncelleme: $time · şu an yenilenemedi';
+  }
+
+  @override
   String get pensionAutoNeedsPlan =>
       'Otomatik ekleme için aylık katkıyı ve katkı gününü yaz.';
 

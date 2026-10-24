@@ -3345,6 +3345,14 @@
   "pensionDayError": "Enter a day between 1 and 28.",
   "pensionAuto": "Add contribution automatically",
   "pensionAutoNote": "On the contribution day we add your monthly contribution at that day's fund price, then ask you to confirm the amount. If off, we only remind you.",
+  "chartLastUpdated": "Last updated: {time} · couldn't refresh right now",
+  "@chartLastUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "pensionAutoNeedsPlan": "Enter the monthly contribution and day to add it automatically.",
   "pensionAutoLotNote": "Automatic contribution",
   "pensionAutoAdded": "Your {date} contribution was added automatically: {amount}. Want to update the amount?",

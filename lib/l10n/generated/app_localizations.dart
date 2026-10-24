@@ -8703,6 +8703,12 @@ abstract class AppLocalizations {
   /// **'Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.'**
   String get pensionAutoNote;
 
+  /// Ağ düştüğünde grafik diskteki son ölçülmüş seriyle kalır; seriyi ne zaman ölçtüğümüzü söyler (önce-eski-seri, 2026-10-24).
+  ///
+  /// In tr, this message translates to:
+  /// **'Son güncelleme: {time} · şu an yenilenemedi'**
+  String chartLastUpdated(String time);
+
   /// No description provided for @pensionAutoNeedsPlan.
   ///
   /// In tr, this message translates to:

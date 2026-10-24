@@ -58,6 +58,7 @@ import '../services/crash_reporter.dart';
 import '../services/varlik_istatistik.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/seri_son_guncelleme.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
@@ -291,6 +292,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   // alanı "yükleniyor" hissi verir ve filtreler tıklanabilir kalır.
   Map<int, double>? _lastHistory;
 
+  /// Grafikteki seri ESKİ bir kopyadan (önce-eski-seri, 2026-10-24; bkz.
+  /// `_eldekiSeriyiGoster`): hangi dönem, kopyanın ölçüldüğü an ve taze
+  /// çekimin sürüp sürmediği. `yolda` iken grafik soluk (`isStale`); taze
+  /// çekim düştüyse (`yolda: false`) seri net, altında "Son güncelleme".
+  ({int days, DateTime zaman, bool yolda})? _eskiSeri;
+
   /// Dönem (gün) → birim seri, dönem başı ve istatistik — çip getirileri,
   /// başlık ve istatistik ızgarası buradan okur (bkz. `asset_detail/ozet.dart`).
   final Map<int, Map<int, double>> _donemSerileri = {};
@@ -335,6 +342,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       _selectedPeriodIdx = _ortakDonemIdx(ref.read(seciliDonemProvider));
     }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
+    // Önce eski seri: taze çekimle AYNI ANDA, ağa çıkmadan.
+    final eldeki = _eldekiSeriyiGoster(_periods[_selectedPeriodIdx].days);
     // Öteki dönemler seçiliyi beklemeden, paralel (çip getirileri).
     final digerleri = _digerDonemleriYukle();
     CrashReporter.arkaPlan(digerleri, reason: 'AssetDetail.digerDonemler');
@@ -349,11 +358,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 periodDays: kSinyalPenceresiGun,
                 cozunurluk: kSinyalCozunurlugu)
             : null;
+    // Eski seri çizildiyse kapı tazeyi BEKLEMEZ: ekran soluk grafikle hemen
+    // açılır, çipler ve sinyal kendi yerinde dolar. Çizilemediyse (kopya
+    // yok, çok eski, gün içi) eskisi gibi hepsini bekler.
+    final hepsi = Future.wait<Object?>([
+      _historyFuture,
+      digerleri,
+      if (sinyalSerisi != null) sinyalSerisi,
+    ]);
     CrashReporter.arkaPlan(
       acilisKapisi([
-        _historyFuture,
-        digerleri,
-        if (sinyalSerisi != null) sinyalSerisi,
+        Future.any<Object?>([
+          hepsi,
+          eldeki.then<Object?>((cizildi) => cizildi ? null : hepsi),
+        ]),
       ]).then<void>((_) async {
         if (!mounted) return;
         await rotaGecisiniBekle(context);
@@ -444,18 +462,36 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         .read(portfolioProvider.notifier)
         .fiyatTurunuBekle(enFazla: TazelikRitmi.gunIciSeriOmru);
     if (!mounted) return const {};
-    final birim =
-        await _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days);
+    // `tazelikle`: dönen seri ağdan mı, son iyi kopyadan mı (ağ düştü)?
+    final r = await HistoryService.tazelikle(() =>
+        _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days));
+    final birim = r.sonuc;
+    var seri = birim.total;
+    var bayatZaman = seri.length < 2 ? null : r.bayatZaman;
+    // Taze çekim boş döndü ama ekranda bu dönemin eski kopyası var: o kalır
+    // (boş sonuç eski ölçümü silmez), altında "Son güncelleme".
+    final eski = _eskiSeri;
+    final eldeki = _lastHistory;
+    if (seri.length < 2 &&
+        eski != null &&
+        eski.days == days &&
+        eldeki != null &&
+        eldeki.length >= 2) {
+      seri = eldeki;
+      bayatZaman = eski.zaman;
+    }
     if (mounted && sira == _yuklemeSirasi) {
       if (days == 0) _gunIciBaslangic = birim.seansGunu;
-      if (birim.total.isNotEmpty) _lastHistory = birim.total;
+      if (seri.isNotEmpty) _lastHistory = seri;
+      final z = bayatZaman;
+      _eskiSeri = z == null ? null : (days: days, zaman: z, yolda: false);
     }
     // Dönem önbelleği sıradan bağımsız: geç dönen eski dönemin serisi de
     // KENDİ çipine yazılır, seçili dönemi ezmez.
     if (mounted) {
-      _guncelle(() => _donemKaydet(days, birim.total, birim.seansGunu));
+      _guncelle(() => _donemKaydet(days, seri, birim.seansGunu));
     }
-    return birim.total;
+    return seri;
   }
 
   /// Kazanç tutarının lot defteri — birleşik varlık DEĞİL, gerçek lot'lar.
@@ -933,6 +969,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     }
                     final data = snapshot.data ?? fallback;
                     final isStale = snapshot.data == null && data != null;
+                    // Taze çekim düştü, seri eski kopyadan: net çizilir,
+                    // altında ne zaman ölçüldüğü yazılır.
+                    final eskiSeri = _eskiSeri;
+                    final sonGuncelleme = !isStale &&
+                            eskiSeri != null &&
+                            !eskiSeri.yolda &&
+                            eskiSeri.days ==
+                                _periods[_selectedPeriodIdx].days
+                        ? eskiSeri.zaman
+                        : null;
                     // BOŞ seri de "veri yok" demektir.
                     //
                     // `getPortfolioHistoryHourlyBreakdown` başarısız
@@ -2215,6 +2261,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             ); // AnimatedOpacity (bayat seri solukluğu)
                           },
                         ),
+                        if (sonGuncelleme != null)
+                          SeriSonGuncelleme(zaman: sonGuncelleme),
                         ..._ozelAltBolum(ozelSonuclar),
                       ],
                     );
