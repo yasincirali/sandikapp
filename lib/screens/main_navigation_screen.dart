@@ -43,6 +43,10 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   /// "Performans" sekmesi `PortfolioPerformanceScreen` indeks 3'tedir.
   static const performansSekmesi = 3;
 
+  /// Portföy sekmesi (Varlıklarım | Takip Listesi) — iOS tek varlık
+  /// widget'ının dokunuşu buraya gider (`DeepLinkRouter.varlikWidgetHost`).
+  static const portfoySekmesi = 1;
+
   /// Profil sekmesi — yıllık özet afişi (`RecapBanner`) burada; yıl sonu
   /// anı bildirimi (0087) buraya gider.
   static const profilSekmesi = 4;

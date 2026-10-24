@@ -80,25 +80,11 @@ class WatchlistItem {
   ///   · altın iç sembolü (`ALTIN_*`), emtia vadelisi (`GC=F`) ve BIST
   ///     endeksi → görünen ad: bu kodlar kullanıcıya hiçbir şey söylemez;
   ///   · kur çifti (`USDTRY=X`) → para kodu (`USD`).
-  String get kisaEtiket {
-    final t = ticker.trim();
-    final sub = subCategory?.trim();
-    String ad() {
-      if (sub != null && sub.isNotEmpty) return sub;
-      return name.trim().isNotEmpty ? name.trim() : t;
-    }
-
-    if (t.isEmpty) return ad();
-    final buyuk = t.toUpperCase();
-    if (buyuk.startsWith('ALTIN_') ||
-        buyuk.endsWith('=F') ||
-        endeksMi(t)) {
-      return name.trim().isNotEmpty ? name.trim() : ad();
-    }
-    if (buyuk.endsWith('TRY=X')) return buyuk.replaceAll('TRY=X', '');
-    final sade = t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');
-    return sade.length >= 2 ? sade : ad();
-  }
+  ///
+  /// Kural [kisaVarlikEtiketi]'nde: tek varlık widget'ının seçim listesi
+  /// portföy lot'larını da aynı kuralla adlandırır (2026-10-24).
+  String get kisaEtiket => kisaVarlikEtiketi(
+      ticker: ticker, name: name, subCategory: subCategory);
 
   WatchlistItem copyWith({
     double? currentPrice,
@@ -141,4 +127,32 @@ class WatchlistItem {
           'sub_category': subCategory,
         'currency': currency,
       };
+}
+
+/// Takip satırı, grafik açıklaması ve tek varlık widget'ının kısa adı —
+/// kural için bkz. [WatchlistItem.kisaEtiket].
+///
+/// Üst düzey fonksiyon, çünkü widget'ın seçim listesi portföy lot'larını
+/// (`Asset`) da adlandırıyor; sahte bir `WatchlistItem` kurmak ya da kuralı
+/// kopyalamak yerine iki tip aynı fonksiyona sorar.
+String kisaVarlikEtiketi({
+  required String ticker,
+  required String name,
+  String? subCategory,
+}) {
+  final t = ticker.trim();
+  final sub = subCategory?.trim();
+  String ad() {
+    if (sub != null && sub.isNotEmpty) return sub;
+    return name.trim().isNotEmpty ? name.trim() : t;
+  }
+
+  if (t.isEmpty) return ad();
+  final buyuk = t.toUpperCase();
+  if (buyuk.startsWith('ALTIN_') || buyuk.endsWith('=F') || endeksMi(t)) {
+    return name.trim().isNotEmpty ? name.trim() : ad();
+  }
+  if (buyuk.endsWith('TRY=X')) return buyuk.replaceAll('TRY=X', '');
+  final sade = t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');
+  return sade.length >= 2 ? sade : ad();
 }

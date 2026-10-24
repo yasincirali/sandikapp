@@ -263,6 +263,48 @@ class FiyatKaynagi {
   /// ayrı bir kural var: TRY kote olmayan her şey USD kabul edilir.)
   static bool usdKote(Asset a) => a.currency.trim().toUpperCase() == 'USD';
 
+  /// Tek varlık widget'ının (iOS `SandikVarlikWidget`, 2026-10-24) bu
+  /// varlık için soracağı CANLI kotasyon sembolü; widget'a girmeyecekse
+  /// `null`.
+  ///
+  /// ## Neden burada (sözleşme madde 1)
+  /// Widget yeni bir fiyat yüzeyidir; sembolü kendisi seçseydi "dolar"ın
+  /// bir yerde `USDTRY=X`, başka yerde başka bir kod olduğu ayrışma sınıfı
+  /// geri gelirdi. Sembol portföy fiyat turunun (`refreshPrices`) ve takip
+  /// ekleme aramasının `PriceService.fetchQuotes`'a verdiği sembolün
+  /// aynısıdır; fon kodu [kanonikTicker] ile `TEFAS:` önekine oturur.
+  ///
+  /// ## Neden yalnız çevrimsiz semboller (madde 2 ve 3)
+  /// Widget kotasyonun sayısını olduğu gibi gösterir. USD kote bir sembolün
+  /// (ABD hissesi, emtia vadelisi, eurobond) sayısı dolardır; uygulamanın
+  /// takip listesi aynı varlığı TL seriyle gösteriyor. Widget'ta TL'ye
+  /// çevirmek ikinci bir kur hesabı ve günlük yüzdeye kur hareketini
+  /// karıştırmak demekti; dolar yazmak ise uygulamayla ayrışırdı. İlk
+  /// sürümde bu varlıklar seçim listesine girmez (gram altın, döviz, BIST,
+  /// fon, kripto ve endeksler girer). Mevduat ve "diğer" piyasa fiyatı
+  /// taşımaz; elle fiyatlanan kaydın yayımlanmış kotasyonu yoktur.
+  static String? widgetKotasyonSembolu({
+    required AssetType type,
+    required String ticker,
+    required bool isManualPrice,
+  }) {
+    if (isManualPrice) return null;
+    switch (type) {
+      case AssetType.mevduat:
+      case AssetType.diger:
+      case AssetType.eurobond:
+        return null;
+      default:
+        break;
+    }
+    final t = kanonikTicker(
+            type: type, ticker: ticker, isManualPrice: isManualPrice)
+        .trim()
+        .toUpperCase();
+    if (t.isEmpty || t.startsWith(mevduatOneki)) return null;
+    return cevrimsiz(t) ? t : null;
+  }
+
   /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
   /// aranmayacaksa `null`.
   ///
