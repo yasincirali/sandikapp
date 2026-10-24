@@ -95,7 +95,14 @@ class SeriDiskDepo {
   static String dosyaAdi(String anahtar) =>
       '${base64Url.encode(utf8.encode(anahtar)).replaceAll('=', '')}.json';
 
-  Future<List<(int, double)>?> oku(String anahtar) async {
+  Future<List<(int, double)>?> oku(String anahtar) async =>
+      (await okuKayit(anahtar))?.noktalar;
+
+  /// [oku] + kopyanın YAZILDIĞI an (`at`). Önce-eski-seri yolu
+  /// (`HistoryService.eldekiSeriyle`, 2026-10-24) seriyi ancak yeterince
+  /// tazeyse gösterir ve ağ düşerse "son güncelleme" satırına bu anı yazar.
+  Future<({List<(int, double)> noktalar, DateTime at})?> okuKayit(
+      String anahtar) async {
     try {
       final f = File('${(await _dizinAl()).path}/${dosyaAdi(anahtar)}');
       if (!await f.exists()) return null;
@@ -110,7 +117,7 @@ class SeriDiskDepo {
         final v = (l[1] as num).toDouble();
         if (v > 0 && v.isFinite) out.add((t, v));
       }
-      return out.isEmpty ? null : out;
+      return out.isEmpty ? null : (noktalar: out, at: at.toLocal());
     } catch (e) {
       if (kDebugMode) debugPrint('[SeriDiskDepo] okunamadı: $e');
       return null;

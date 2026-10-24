@@ -3681,6 +3681,15 @@
   "pensionDayError": "1 ile 28 arasında bir gün yaz.",
   "pensionAuto": "Katkıyı otomatik ekle",
   "pensionAutoNote": "Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.",
+  "chartLastUpdated": "Son güncelleme: {time} · şu an yenilenemedi",
+  "@chartLastUpdated": {
+    "description": "Ağ düştüğünde grafik diskteki son ölçülmüş seriyle kalır; seriyi ne zaman ölçtüğümüzü söyler (önce-eski-seri, 2026-10-24).",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "pensionAutoNeedsPlan": "Otomatik ekleme için aylık katkıyı ve katkı gününü yaz.",
   "pensionAutoLotNote": "Otomatik katkı",
   "pensionAutoAdded": "{date} katkın otomatik eklendi: {amount}. Tutarı güncellemek ister misin?",

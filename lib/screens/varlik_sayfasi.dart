@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -31,6 +33,7 @@ import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/seri_son_guncelleme.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
@@ -79,6 +82,11 @@ import '../widgets/sandik_ikon_gecisi.dart';
 ///     gösterilmez.
 ///   · Çip altındaki getiriler o dönemin KENDİ serisinden gelir — başka bir
 ///     seriden türetilseydi çip ile başlık aynı dönem için iki sayı yazardı.
+///   · Önce eski seri, sonra taze (2026-10-24, Ar-Ge raporu §1): bellekte
+///     seri yoksa diskteki son ölçülmüş seri ([EldekiSeriYukleyici]) hemen
+///     SOLUK çizilir, taze seri gelince netleşir; istatistikler ve grafik
+///     göstergeleri taze seriden yeniden hesaplanır. Taze çekim düşerse eski
+///     seri net kalır, altında "Son güncelleme: …" ([SeriSonGuncelleme]).
 Future<void> showVarlikSayfasi(
   BuildContext context,
   VarlikKimligi kimlik, {
@@ -133,6 +141,18 @@ final varlikSayfasiDonemleri = <int>[
 typedef SeriYukleyici = Future<Map<int, double>> Function(
     String ticker, int periodDays);
 
+/// Taze seri + tazeliği: `bayatZaman` doluysa ağ düştü ve seri son iyi
+/// kopyadan geldi (`HistoryService.getSymbolHistoryTazelikli`).
+typedef TazeSeriYukleyici
+    = Future<({Map<int, double> seri, DateTime? bayatZaman})> Function(
+        String ticker, int periodDays);
+
+/// Ağa çıkmadan eldeki (disk) son iyi seri; yoksa ya da çok eskiyse `null`
+/// (`HistoryService.getSymbolHistoryEldeki`).
+typedef EldekiSeriYukleyici
+    = Future<({Map<int, double> seri, DateTime zaman})?> Function(
+        String ticker, int periodDays);
+
 class VarlikSayfasi extends ConsumerStatefulWidget {
   const VarlikSayfasi({
     super.key,
@@ -142,6 +162,8 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
     this.baslangicDonemGun,
     this.onSec,
     this.seriYukleyici,
+    this.tazeYukleyici,
+    this.eldekiYukleyici,
   });
 
   final VarlikKimligi kimlik;
@@ -162,6 +184,12 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
   final VoidCallback? onSec;
 
   final SeriYukleyici? seriYukleyici;
+
+  /// Testte tazelik bilgisiyle sahte seri ([seriYukleyici]'nin yerine).
+  final TazeSeriYukleyici? tazeYukleyici;
+
+  /// Testte sahte eldeki seri. Verilmezse ve iki yükleyici de yoksa disk.
+  final EldekiSeriYukleyici? eldekiYukleyici;
 
   @override
   ConsumerState<VarlikSayfasi> createState() => _VarlikSayfasiState();
@@ -196,6 +224,35 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   final Map<int, DonemIstatistigi?> _istatistik = {};
   final Set<int> _yukleniyor = {};
   final Set<int> _hatali = {};
+
+  /// Dönemin ekrandaki serisi ESKİ bir kopyadan: o kopyanın ölçüldüğü an.
+  /// Taze seri gelince silinir; taze çekim düştüyse kalır ve grafiğin altına
+  /// "Son güncelleme" yazılır.
+  final Map<int, DateTime> _eskiZaman = {};
+
+  /// Eski seri çiziliyor, taze çekim sürüyor → grafik soluk.
+  final Set<int> _tazesiYolda = {};
+
+  bool get _agsizTest =>
+      widget.seriYukleyici != null || widget.tazeYukleyici != null;
+
+  TazeSeriYukleyici get _tazeYukleyici {
+    final t = widget.tazeYukleyici;
+    if (t != null) return t;
+    final s = widget.seriYukleyici;
+    if (s != null) {
+      return (tk, d) async => (seri: await s(tk, d), bayatZaman: null);
+    }
+    return (tk, d) => HistoryService.instance
+        .getSymbolHistoryTazelikli(tk, periodDays: d);
+  }
+
+  EldekiSeriYukleyici? get _eldekiYukleyici =>
+      widget.eldekiYukleyici ??
+      (_agsizTest
+          ? null
+          : (tk, d) => HistoryService.instance
+              .getSymbolHistoryEldeki(tk, periodDays: d));
 
   /// Açılış kapısı açıldı mı (bkz. `utils/acilis_kapisi.dart`): altı dönem
   /// ve sinyal serisi geldi ya da süre doldu. Bir kez `true` olur.
@@ -260,38 +317,98 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         if (g != _gun) _yukle(g),
       // Panel seviye kapısının arkasında (Başlangıç'ta yok) — çizilmeyecek
       // panelin serisi de istenmez (varlık detayıyla aynı).
-      if (widget.seriYukleyici == null &&
+      if (!_agsizTest &&
           widget.kimlik.ticker.isNotEmpty &&
           ref.read(sinyalYuzeyiProvider) == SinyalYuzeyi.acik)
-        HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
-            periodDays: kSinyalPenceresiGun,
-                cozunurluk: kSinyalCozunurlugu),
+        _sinyalKapisi(),
     ]);
     if (!mounted) return;
     await rotaGecisiniBekle(context);
     if (mounted) setState(() => _acildi = true);
   }
 
-  Future<void> _yukle(int gun) async {
+  /// Sinyal panelinin serisi açılış kapısında. Eldeki kopyası varsa kapı
+  /// tazeyi BEKLEMEZ (önce-eski-seri): sayfa diskteki serilerle hemen açılır,
+  /// panel aynı serinin taze çekimini kendi yerinde bekler (uçuşan istek
+  /// tekilleştirilir). Kopya yoksa eskisi gibi tazeyi bekler.
+  Future<Object?> _sinyalKapisi() {
+    Future<Map<int, double>> seri() =>
+        HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
+            periodDays: kSinyalPenceresiGun, cozunurluk: kSinyalCozunurlugu);
+    final taze = seri();
+    final eldeki = HistoryService.eldekiSeriyle(seri);
+    return Future.any<Object?>([
+      taze,
+      eldeki.then<Object?>((e) => e == null ? taze : null),
+    ]);
+  }
+
+  /// Dönemi yükler. Dönen future dönem İLK KEZ çizilebilir olunca biter
+  /// (eski kopya ya da taze seri) — açılış kapısı tazeyi beklemesin; taze
+  /// çekim arkada sürer.
+  Future<void> _yukle(int gun) {
+    final elde = _seriler[gun]?.isNotEmpty ?? false;
     // Boş gelen dönem yeniden denenir: tek bir boş yanıt (TEFAS sınırı,
     // kesinti) dönemi sayfa kapanana kadar boş bırakıyordu (2026-10-23).
-    if ((_seriler[gun]?.isNotEmpty ?? false) || _yukleniyor.contains(gun)) {
-      return;
+    // Taze çekimi düşüp eski seriyle kalan dönem de seçilince yeniden dener.
+    if ((elde && !_eskiZaman.containsKey(gun)) || _yukleniyor.contains(gun)) {
+      return Future.value();
     }
     setState(() {
       _yukleniyor.add(gun);
       _hatali.remove(gun);
     });
+    final ilk = Completer<void>();
+    void cizilebilir() {
+      if (!ilk.isCompleted) ilk.complete();
+    }
+
+    final eldeki = _eldekiYukleyici;
+    if (!elde && eldeki != null) {
+      eldeki(widget.kimlik.ticker, gun).then((e) {
+        // Taze seri önce geldiyse eski kopya yok sayılır.
+        if (e == null ||
+            !mounted ||
+            !_yukleniyor.contains(gun) ||
+            (_seriler[gun]?.isNotEmpty ?? false)) {
+          return;
+        }
+        setState(() {
+          _seriKoy(gun, e.seri);
+          _eskiZaman[gun] = e.zaman;
+          _tazesiYolda.add(gun);
+        });
+        cizilebilir();
+      }, onError: (Object e, StackTrace st) {
+        CrashReporter.report(e, st, reason: 'VarlikSayfasi.eldekiSeri');
+      });
+    }
+    CrashReporter.arkaPlan(_tazeYukle(gun).whenComplete(cizilebilir),
+        reason: 'VarlikSayfasi.tazeSeri');
+    return ilk.future;
+  }
+
+  Future<void> _tazeYukle(int gun) async {
     try {
-      final yukleyici = widget.seriYukleyici ??
-          (t, d) => HistoryService.instance.getSymbolHistory(t, periodDays: d);
-      final seri = await yukleyici(widget.kimlik.ticker, gun);
+      final r = await _tazeYukleyici(widget.kimlik.ticker, gun);
       if (!mounted) return;
       setState(() {
         _yukleniyor.remove(gun);
-        _seriler[gun] = seri;
-        _istatistik[gun] = DonemIstatistigi.hesapla(seri,
-            periodDays: gun, simdi: DateTime.now());
+        _tazesiYolda.remove(gun);
+        final eskiCiziliyor = _seriler[gun]?.isNotEmpty ?? false;
+        // Ağ boş döndü ve ekranda eski seri var: o kalır, "son güncelleme"
+        // yazılır. Boş seri eski ölçümü silmez.
+        if (r.seri.isNotEmpty || !eskiCiziliyor) {
+          // Yeni seri → istatistik ve grafik göstergeleri yeniden hesaplanır
+          // (`_seriKoy`; grafik katmanları `seri`'den çizer).
+          _seriKoy(gun, r.seri);
+          final z = r.bayatZaman;
+          if (z == null) {
+            _eskiZaman.remove(gun);
+          } else {
+            _eskiZaman[gun] = z;
+          }
+        }
         if (gun == _gun) _cizilen = gun;
       });
     } catch (e, st) {
@@ -301,9 +418,18 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       if (!mounted) return;
       setState(() {
         _yukleniyor.remove(gun);
+        _tazesiYolda.remove(gun);
         _hatali.add(gun);
       });
     }
+  }
+
+  /// Dönem serisini yazar ve istatistiği BİR KEZ hesaplar (build'de değil).
+  void _seriKoy(int gun, Map<int, double> seri) {
+    _seriler[gun] = seri;
+    _istatistik[gun] =
+        DonemIstatistigi.hesapla(seri, periodDays: gun, simdi: DateTime.now());
+    if (gun == _gun) _cizilen = gun;
   }
 
   void _donemSec(int gun) {
@@ -532,7 +658,13 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // BES fonunu ₺0,18 yazıyordu; `goz_alici` açıkken kaynak hassasiyeti.
     final bicim = fiyatBicimi(ist?.son ?? 0,
         azami: k.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
-    final bayat = cizilen != null && cizilen != _gun;
+    // Soluk: başka dönemin çizgisi (yeni dönem yolda) ya da eski kopya
+    // (taze seri yolda).
+    final bayat = cizilen != null &&
+        (cizilen != _gun || _tazesiYolda.contains(cizilen));
+    final sonGuncelleme = cizilen == null || _tazesiYolda.contains(cizilen)
+        ? null
+        : _eskiZaman[cizilen];
 
     return [
       _fiyatBlogu(ist, bicim, cizilen),
@@ -543,6 +675,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       _donemCipleri(),
       const SizedBox(height: SandikSpace.sm),
       _grafik(ist, bicim, cizilen, bayat),
+      if (sonGuncelleme != null) SeriSonGuncelleme(zaman: sonGuncelleme),
       const SizedBox(height: SandikSpace.md),
       if (ist != null) ...[
         _istatistikIzgarasi(ist, cizilen!),
