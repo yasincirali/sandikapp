@@ -797,6 +797,21 @@
   "partnerActivityNotifications": "Ortak hareketi bildirimleri",
   "partnerActivityNotificationsSubtitle": "Ortağın portföyüne ekleme yaptığında günlük özette an",
   "summaryPushTitle": "Dönem özeti bildirimleri",
+  "watchlistSortMine": "Benim sıram",
+  "watchlistSortGainers": "En çok yükselen",
+  "watchlistSortLosers": "En çok düşen",
+  "watchlistSortMineHint": "Uzun basıp sürükleyerek sırala",
+  "watchlistSortChangeHint": "Seçili dönemin değişimine göre",
+  "watchlistSortSemantics": "Sıralama: {secim}",
+  "@watchlistSortSemantics": {
+    "placeholders": {
+      "secim": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistMoveUp": "Yukarı taşı",
+  "watchlistMoveDown": "Aşağı taşı",
   "summaryPushSubtitle": "Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir",
   "quietHours": "Sessiz saatler",
   "biometricLockSubtitle": "Uygulamayı açarken Face ID / parmak izi / cihaz PIN'i iste",

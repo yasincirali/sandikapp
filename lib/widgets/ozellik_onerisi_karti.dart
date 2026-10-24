@@ -34,7 +34,8 @@ class OzellikOnerisiKarti extends ConsumerWidget {
 
   /// Ana sayfada yuva "seni ilgilendiren günler" satırıyla ([GunlerSatiri])
   /// paylaşılır: iki gün içinde bir olay varken öneri susar
-  /// ([anaSayfaDurtusuProvider]; sıra bilgi eksik > takvim > öneri).
+  /// ([anaSayfaDurtusuProvider]; sıra bilgi eksik > takvim > radar >
+  /// güncelleme > öneri).
   /// Portföy sekmesinde takvim satırı yok; öneri eskisi gibi.
   final bool anaSayfa;
 

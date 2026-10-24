@@ -10,6 +10,9 @@ import 'package:flutter/material.dart'
         Colors,
         Dismissible,
         DismissDirection,
+        ListTile,
+        Material,
+        MaterialType,
         RefreshIndicator;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,11 +23,13 @@ import '../models/varlik_kimligi.dart';
 import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart'
     show activePartnersProvider, authProvider;
-import '../providers/preferences_provider.dart' show watchlistLimitProvider;
+import '../providers/preferences_provider.dart'
+    show takipSiralamaProvider, watchlistLimitProvider;
 import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../services/takip_sirasi.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -171,6 +176,37 @@ class _List extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final periodLabel =
         watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
+    // Ekrandaki sıra kullanıcının seçimiyle (2026-10-24, `takip_sirasi.dart`):
+    // "Benim sıram" varsayılan, fiyat tazelenince satır yer değiştirmez.
+    final mod = takipSiralamaOf(ref.watch(takipSiralamaProvider));
+    final gorunen =
+        ref.watch(siraliTakipListesiProvider).valueOrNull ?? items;
+    final benim = mod == TakipSiralama.benim;
+    final h = SandikSpace.screenH(context);
+
+    // Satır + alt boşluk. Sürüklenebilir listede ayırıcı yok; boşluk satırın
+    // kendi payı ki sürüklenen öğeyle birlikte taşınsın.
+    Widget satir(int i) {
+      final w = gorunen[i];
+      final govde = Padding(
+        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+        child: _Row(
+          item: w,
+          sira: benim ? i : null,
+          toplam: gorunen.length,
+          tasi: benim
+              ? (hedef) => takipSirasiniTasi(ref, gorunen, i, hedef)
+              : null,
+        ),
+      );
+      return KeyedSubtree(
+        key: ValueKey('takip-sira-${w.id}'),
+        // Uzun basıp sürükle: satırın her yeri (tutamaç ayrıca anında).
+        child: benim
+            ? ReorderableDelayedDragStartListener(index: i, child: govde)
+            : govde,
+      );
+    }
 
     return RefreshIndicator.adaptive(
       color: context.c.amberText,
@@ -179,37 +215,218 @@ class _List extends ConsumerWidget {
         ref.invalidate(watchlistProvider);
         await ref.read(watchlistProvider.future);
       },
-      child: ListView.separated(
-      // Segment geçişinde konum korunur (bkz. Portföy `PageStorageKey`).
-      key: const PageStorageKey('portfoy-takip-listesi'),
-      // Aynı ekranın Varlıklarım listesiyle AYNI fizik: Android'de biri
-      // yaylanıp öteki esniyordu (animasyon denetimi 2026-10-01).
-      physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics()),
-      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 12),
-      // +2: grafik kartı ve sayı başlığı. Ekleme satırı artık listede
-      // DEĞİL, gövdenin üstünde (`_AddHeader`).
-      itemCount: items.length + 2,
-      separatorBuilder: (_, __) => const SizedBox(height: SandikSpace.sm),
-      itemBuilder: (context, i) {
-        // Grafik listeyle BİRLİKTE kayar (üstte sabit değil): dar ekranda
-        // sabit bir grafik, listeye ayrılan alanın yarısını yerdi.
-        if (i == 0) return const _ChartCard();
-        if (i == 1) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 4),
-            child: Text(
-              context.l10n.nAssetsPeriod(items.length, periodLabel),
-              style: context.t.labelSmall?.copyWith(
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text36),
+      child: CustomScrollView(
+        // Segment geçişinde konum korunur (bkz. Portföy `PageStorageKey`).
+        key: const PageStorageKey('portfoy-takip-listesi'),
+        // Aynı ekranın Varlıklarım listesiyle AYNI fizik: Android'de biri
+        // yaylanıp öteki esniyordu (animasyon denetimi 2026-10-01).
+        physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics()),
+        slivers: [
+          // Grafik listeyle BİRLİKTE kayar (üstte sabit değil): dar ekranda
+          // sabit bir grafik, listeye ayrılan alanın yarısını yerdi. Ekleme
+          // satırı listede DEĞİL, gövdenin üstünde (`_AddHeader`).
+          SliverPadding(
+            padding:
+                EdgeInsets.fromLTRB(h, SandikSpace.xs, h, SandikSpace.sm),
+            sliver: const SliverToBoxAdapter(child: _ChartCard()),
+          ),
+          // Sayı başlığı + sıralama seçimi (2026-10-24).
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(h, 0, h, SandikSpace.xs),
+            sliver: SliverToBoxAdapter(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.nAssetsPeriod(items.length, periodLabel),
+                      style: context.t.labelSmall?.copyWith(
+                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w700,
+                          color: context.c.text36),
+                    ),
+                  ),
+                  _SiralamaDugmesi(secili: mod),
+                ],
+              ),
             ),
-          );
-        }
-        return _Row(item: items[i - 2]);
-      },
-    ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(h, 0, h, SandikSpace.xs),
+            sliver: benim
+                ? SliverReorderableList(
+                    itemCount: gorunen.length,
+                    itemBuilder: (_, i) => satir(i),
+                    onReorderStart: (_) => SandikHaptic.selection.perform(),
+                    // `onReorderItem` hedefi öğe çıkarıldıktan SONRAKİ konum
+                    // olarak verir; [siraTasi] da onu ister (eski
+                    // `onReorder`'ın −1 düzeltmesi gerekmez).
+                    onReorderItem: (eski, yeni) =>
+                        takipSirasiniTasi(ref, gorunen, eski, yeni),
+                    proxyDecorator: (child, _, anim) =>
+                        _SurukleGolgesi(animasyon: anim, child: child),
+                  )
+                : SliverList.builder(
+                    itemCount: gorunen.length,
+                    itemBuilder: (_, i) => satir(i),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sürüklenen satırın görünüşü: zemin + hafif gölge, başka süs yok. Hareketi
+/// azalt açıkken gölge animasyonsuz, baştan tam.
+class _SurukleGolgesi extends StatelessWidget {
+  const _SurukleGolgesi({required this.animasyon, required this.child});
+
+  final Animation<double> animasyon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final azalt = MediaQuery.disableAnimationsOf(context);
+    return AnimatedBuilder(
+      animation: animasyon,
+      builder: (context, child) => Material(
+        type: MaterialType.transparency,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            color: context.c.surface1,
+            boxShadow: [
+              BoxShadow(
+                color: context.c.overlay,
+                blurRadius: SandikSpace.md * (azalt ? 1 : animasyon.value),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Takip listesi sıralama seçimi: başlık satırının sağında seçili sıranın
+/// adı; dokununca üç seçenekli alt sayfa (Portföy'deki `_SortButton` /
+/// `_SortSheet` kalıbı). Kayan segment DEĞİL (kabul raporu 13:15 #2): üç
+/// seçenek liste başında yer kaplamasın; seçim ekranın ne gösterdiğini
+/// değiştirmez, yalnız sırasını.
+class _SiralamaDugmesi extends ConsumerWidget {
+  const _SiralamaDugmesi({required this.secili});
+
+  final TakipSiralama secili;
+
+  static String etiket(AppLocalizations l, TakipSiralama m) => switch (m) {
+        TakipSiralama.benim => l.watchlistSortMine,
+        TakipSiralama.yukselen => l.watchlistSortGainers,
+        TakipSiralama.dusen => l.watchlistSortLosers,
+      };
+
+  static IconData ikon(TakipSiralama m) => switch (m) {
+        TakipSiralama.benim => Icons.drag_indicator_rounded,
+        TakipSiralama.yukselen => Icons.trending_up_rounded,
+        TakipSiralama.dusen => Icons.trending_down_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    return Semantics(
+      button: true,
+      label: l.watchlistSortSemantics(etiket(l, secili)),
+      excludeSemantics: true,
+      child: CupertinoButton(
+        minimumSize: SandikTouch.minSize,
+        padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+        onPressed: () => showSandikSheet<void>(
+          context: context,
+          backgroundColor: context.c.surface1,
+          builder: (sayfa) => _SiralamaSayfasi(
+            secili: secili,
+            onSec: (m) {
+              Navigator.pop(sayfa);
+              if (m == secili) return;
+              SandikHaptic.selection.perform();
+              ref.read(takipSiralamaProvider.notifier).set(m.index);
+            },
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.sort_rounded,
+                size: SandikSpace.md, color: context.c.text58),
+            const SizedBox(width: SandikSpace.xs),
+            Text(
+              etiket(l, secili),
+              style: context.t.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600, color: context.c.text58),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SiralamaSayfasi extends StatelessWidget {
+  const _SiralamaSayfasi({required this.secili, required this.onSec});
+
+  final TakipSiralama secili;
+  final ValueChanged<TakipSiralama> onSec;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(SandikSpace.lgs,
+                SandikSpace.lgs, SandikSpace.lgs, SandikSpace.xs),
+            child: Text(
+              l.sortCriterion,
+              style: context.t.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: c.text58),
+            ),
+          ),
+          for (final m in TakipSiralama.values)
+            ListTile(
+              minTileHeight: SandikTouch.min,
+              selected: m == secili,
+              leading: Icon(_SiralamaDugmesi.ikon(m),
+                  color: m == secili ? c.amberText : c.text58),
+              title: Text(
+                _SiralamaDugmesi.etiket(l, m),
+                style: context.t.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: m == secili ? c.amberText : c.text90),
+              ),
+              subtitle: Text(
+                m == TakipSiralama.benim
+                    ? l.watchlistSortMineHint
+                    : l.watchlistSortChangeHint,
+                style: context.t.bodySmall?.copyWith(color: c.text36),
+              ),
+              // Seçili bilgisi yalnız renkte kalmasın: onay işareti.
+              trailing: m == secili
+                  ? Icon(Icons.check_rounded, color: c.amberText)
+                  : null,
+              onTap: () => onSec(m),
+            ),
+          const SizedBox(height: SandikSpace.sm),
+        ],
+      ),
     );
   }
 }
@@ -451,7 +668,15 @@ class _ChartCard extends ConsumerWidget {
 
 class _Row extends ConsumerWidget {
   final WatchlistItem item;
-  const _Row({required this.item});
+
+  /// "Benim sıram"da satırın konumu; null = sürükleme kapalı (yükselen/düşen).
+  final int? sira;
+  final int toplam;
+
+  /// Satırı verilen konuma taşı (erişilebilirlik eylemleri); null = kapalı.
+  final ValueChanged<int>? tasi;
+
+  const _Row({required this.item, this.sira, this.toplam = 0, this.tasi});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -497,9 +722,17 @@ class _Row extends ConsumerWidget {
       container: true,
       button: true,
       label: semantic,
+      // Sürükleme ekran okuyucuda yapılamaz; aynı iş "yukarı/aşağı taşı"
+      // eylemleriyle (yalnız "Benim sıram"da, uçta olmayan yönde).
       customSemanticsActions: {
         CustomSemanticsAction(label: l10n.removeFromWatchlist): () =>
             _remove(context, ref),
+        if (sira != null && tasi != null && sira! > 0)
+          CustomSemanticsAction(label: l10n.watchlistMoveUp): () =>
+              tasi!(sira! - 1),
+        if (sira != null && tasi != null && sira! < toplam - 1)
+          CustomSemanticsAction(label: l10n.watchlistMoveDown): () =>
+              tasi!(sira! + 1),
       },
       child: Dismissible(
           key: ValueKey(item.id),
@@ -676,6 +909,21 @@ class _Row extends ConsumerWidget {
                     ),
                   ),
                   ),
+                  // Sürükleme tutamacı (yalnız "Benim sıram"): 44 pt, anında
+                  // sürükler; satırın kendisi uzun basışla sürüklenir.
+                  // Ekran okuyucuda gizli: aynı iş satırın "yukarı/aşağı
+                  // taşı" eylemlerinde.
+                  if (sira != null)
+                    ReorderableDragStartListener(
+                      index: sira!,
+                      child: ExcludeSemantics(
+                        child: SizedBox.square(
+                          dimension: SandikTouch.min,
+                          child: Icon(Icons.drag_handle_rounded,
+                              color: context.c.text36),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -153,7 +153,8 @@ class PrefKeys {
 
   /// Hediyenin bittiği bir kez söylendi (kişiye özel; bitiş tarihine
   /// bağlı: yeni hediye = yeni bitiş = yeniden söylenir).
-  static const premiumHediyeBittiSoylenen = 'pref_premium_hediye_bitti_soylenen';
+  static const premiumHediyeBittiSoylenen =
+      'pref_premium_hediye_bitti_soylenen';
 
   /// Portföy ve Performans'ta seçili portföy (çoklu portföy, 0133): `''`
   /// Tümü, `ana` Ana, uuid adlandırılmış portföy. Kişiye özel (`perUser`):
@@ -181,4 +182,14 @@ class PrefKeys {
   /// kapatılan olayların kimlikleri (`GunOlayi.kimlik`, tarihli). Kişiye özel:
   /// temettü günleri kullanıcının kendi hisselerinden gelir.
   static const gunlerKapatilan = 'pref_gunler_kapatilan';
+
+  /// Takip listesi "benim sıram" (`takip_sirasi.dart`): watchlist satır
+  /// kimliklerinin sırası. Yoksa ilk açılışta bugünkü sıradan (değişime göre)
+  /// kurulur ve kaydedilir. Kişiye özel: kimlikler hesaba ait. Sunucuda
+  /// sıra alanı yok; sıra yalnız bu telefonda.
+  static const takipSirasi = 'pref_takip_sirasi';
+
+  /// Takip listesi sıralama seçimi — `TakipSiralama.index` (0 benim sıram,
+  /// 1 en çok yükselen, 2 en çok düşen). Kişiye özel.
+  static const takipSiralama = 'pref_takip_siralama';
 }
