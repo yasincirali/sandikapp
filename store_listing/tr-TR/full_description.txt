@@ -37,6 +37,15 @@ PERFORMANS
 • Hangi varlık ne kadar katkı yaptı, tek tek gör
 • Dağılım grafiğiyle ağırlığını dengele
 
+YATAY TAM EKRAN GRAFİK VE ÇİZİM
+
+• Bir varlığın sayfasında telefonu yan çevir: grafik tam ekran açılır
+• Mum veya çizgi, aralık seçimi, hareketli ortalama
+• Kendi çizgini çiz: trend çizgisi, ışın, yatay seviye, yatay ışın ve dikdörtgen
+• Mıknatıs çizimi mumlara yapıştırır; geri al ve sil hep elinin altında
+• Çizimlerin o varlıkta kalır, grafiği yeniden açınca yerinde durur
+• Ücretsiz
+
 ORTAK PORTFÖY
 
 • Eşinle, ailenle veya iş ortağınla aynı portföyü takip et

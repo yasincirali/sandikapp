@@ -38,6 +38,14 @@ PERFORMANCE
 • Balance your weights with the allocation chart
 • Show amounts in USD, EUR or grams of gold
 
+FULL-SCREEN LANDSCAPE CHART & DRAWING
+• On any holding's page, turn your phone sideways: the chart opens full screen
+• Candles or line, interval picker, moving averages
+• Draw your own lines: trend line, ray, horizontal level, horizontal ray and rectangle
+• Magnet snaps drawings to candles; undo and delete always at hand
+• Your drawings stay with that holding and are there next time you open the chart
+• Free
+
 SHARED PORTFOLIO
 • Track the same portfolio with your spouse, family or business partner
 • Everyone's contribution and return calculated separately

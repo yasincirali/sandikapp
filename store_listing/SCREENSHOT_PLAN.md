@@ -90,6 +90,41 @@ Gizlilik vaadiyle çelişen tek kare bile güven kırar.
 
 ---
 
+### 7 — Yatay tam ekran grafik ve çizim (1.1.7 ile, Ar-Ge 2026-10-24 §3)
+**Başlık metni:** `Telefonu yan çevir, kendi çizgini çiz`
+**Alt satır:** `Trend, yatay seviye, dikdörtgen · ücretsiz`
+
+**Neden:** BIST'le ilgilenen kullanıcı için ayırt edici ve ücretsiz bir
+özellik, ama galeride hiç görünmüyor. Galeride tek yatay kare olacağı
+için **6. karenin yerine değil, sona** eklenir (Yarış opsiyonel kalır).
+Kare özelliği taşıyan sürüm (1.1.7 ya da sonrası) gönderilirken yüklenir;
+mağazadaki build'de olmayanı göstermez.
+
+**Kurulum (demo verisi, gerçek hesap DEĞİL):**
+- Demo hesabı `demo_portfoy_v4.csv` ile; varlık sayfası **KCHOL** (ya da
+  SAHOL), günlük aralık, **mum** görünümü, en az 6 aylık mum.
+- Telefonu yan çevir (döndürme kilidi kapalı) → tam ekran grafik.
+- **İki çizim:** yükselen bir **trend çizgisi** (iki dip noktası) ve son
+  tepeden bir **yatay seviye**. Mıknatıs açık, çizimler mumlara oturmuş.
+  Üçüncü bir çizim koyma; kare kalabalıklaşır.
+- Bir ortalama (MA20) açık olabilir; imleç (artı) kapalı.
+- Durum çubuğunda saat/pil görünür olabilir, bildirim olmasın.
+- Dil: yatırım tavsiyesi çağrışımı yok. "Al/sat sinyali" değil, "kendi
+  çizgini çiz".
+
+**Üretim:** `build_screenshots.py` bugün yalnız **dikey** çerçeve kuruyor
+(1284×2778, 1242×2688, 1080×1920). Bu kare için iki yol:
+1. **Önerilen:** ham yatay görüntü (2340×1080) dikey çerçevenin içinde,
+   telefon 90° dönmüş olarak; başlık üstte. Galeri tek yönde kalır,
+   mağaza boyutları değişmez.
+2. Yatay hedef ekle (App Store 2796×1290 / 2778×1284, Play 1920×1080).
+   App Store aynı galeride yatay kareyi kabul eder ama arama sonucunda
+   dikey karelerin yanında küçük görünür; bu yüzden ikinci tercih.
+
+Ham dosya `screenshots/raw_v3/09_yatay_grafik.jpg`, başlık `CAPTIONS["09"]`.
+
+---
+
 ## Neyi koymayın
 
 | Ekran | Neden |
