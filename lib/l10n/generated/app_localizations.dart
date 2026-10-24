@@ -2558,6 +2558,54 @@ abstract class AppLocalizations {
   /// **'Dönem özeti bildirimleri'**
   String get summaryPushTitle;
 
+  /// No description provided for @watchlistSortMine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Benim sıram'**
+  String get watchlistSortMine;
+
+  /// No description provided for @watchlistSortGainers.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok yükselen'**
+  String get watchlistSortGainers;
+
+  /// No description provided for @watchlistSortLosers.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok düşen'**
+  String get watchlistSortLosers;
+
+  /// No description provided for @watchlistSortMineHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uzun basıp sürükleyerek sırala'**
+  String get watchlistSortMineHint;
+
+  /// No description provided for @watchlistSortChangeHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili dönemin değişimine göre'**
+  String get watchlistSortChangeHint;
+
+  /// No description provided for @watchlistSortSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralama: {secim}'**
+  String watchlistSortSemantics(String secim);
+
+  /// No description provided for @watchlistMoveUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yukarı taşı'**
+  String get watchlistMoveUp;
+
+  /// No description provided for @watchlistMoveDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aşağı taşı'**
+  String get watchlistMoveDown;
+
   /// No description provided for @summaryPushSubtitle.
   ///
   /// In tr, this message translates to:

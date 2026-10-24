@@ -1398,6 +1398,32 @@ class AppLocalizationsTr extends AppLocalizations {
   String get summaryPushTitle => 'Dönem özeti bildirimleri';
 
   @override
+  String get watchlistSortMine => 'Benim sıram';
+
+  @override
+  String get watchlistSortGainers => 'En çok yükselen';
+
+  @override
+  String get watchlistSortLosers => 'En çok düşen';
+
+  @override
+  String get watchlistSortMineHint => 'Uzun basıp sürükleyerek sırala';
+
+  @override
+  String get watchlistSortChangeHint => 'Seçili dönemin değişimine göre';
+
+  @override
+  String watchlistSortSemantics(String secim) {
+    return 'Sıralama: $secim';
+  }
+
+  @override
+  String get watchlistMoveUp => 'Yukarı taşı';
+
+  @override
+  String get watchlistMoveDown => 'Aşağı taşı';
+
+  @override
   String get summaryPushSubtitle =>
       'Haftalık ve aylık portföy özetin. Ayın enflasyon duyurusu bundan ayrı gelir';
 

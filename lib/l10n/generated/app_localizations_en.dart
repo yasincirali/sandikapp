@@ -1412,6 +1412,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryPushTitle => 'Period summary notifications';
 
   @override
+  String get watchlistSortMine => 'My order';
+
+  @override
+  String get watchlistSortGainers => 'Top gainers';
+
+  @override
+  String get watchlistSortLosers => 'Top losers';
+
+  @override
+  String get watchlistSortMineHint => 'Long-press and drag to reorder';
+
+  @override
+  String get watchlistSortChangeHint => 'By change in the selected period';
+
+  @override
+  String watchlistSortSemantics(String secim) {
+    return 'Sort: $secim';
+  }
+
+  @override
+  String get watchlistMoveUp => 'Move up';
+
+  @override
+  String get watchlistMoveDown => 'Move down';
+
+  @override
   String get summaryPushSubtitle =>
       'Your weekly and monthly portfolio summary. The monthly inflation notice comes separately';
 

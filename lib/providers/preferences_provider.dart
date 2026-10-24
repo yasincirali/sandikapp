@@ -366,6 +366,48 @@ final gunlerKapatilanProvider =
     NotifierProvider<_KumePrefNotifier, Set<String>>(
         () => _KumePrefNotifier(PrefKeys.gunlerKapatilan));
 
+/// Sıralı metin listesi tercihi — [_KumePrefNotifier] gibi, ama SIRA
+/// korunur ve "hiç kaydedilmedi" (`null`) boş listeden ayrılır: takip
+/// listesinin ilk açılışı ([takipSirasiProvider]) bugünkü sıradan kurulur,
+/// boş kayıt ise kullanıcının bilerek bıraktığı hâldir. Kişiye özel.
+class _SiraPrefNotifier extends Notifier<List<String>?> {
+  _SiraPrefNotifier(this.key);
+  final String key;
+
+  @override
+  List<String>? build() {
+    final prefs = _prefsSync;
+    if (prefs != null) return prefs.getStringList(_userKey(key));
+    _loadAsync();
+    return null;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getStringList(_userKey(key));
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(List<String> value) async {
+    state = value;
+    if (DemoModu.aktif) return;
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setStringList(_userKey(key), value);
+    } catch (_) {}
+  }
+}
+
+/// Takip listesi "benim sıram" (`takip_sirasi.dart`); null = hiç kurulmadı.
+final takipSirasiProvider = NotifierProvider<_SiraPrefNotifier, List<String>?>(
+    () => _SiraPrefNotifier(PrefKeys.takipSirasi));
+
+/// Takip listesi sıralama seçimi (`TakipSiralama.index`; 0 = benim sıram).
+final takipSiralamaProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.takipSiralama, 0, perUser: true));
+
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
   final bool defaultValue;
@@ -1695,4 +1737,6 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   premiumHediyeGosterildiProvider,
   gostergeParametreleriProvider,
   seciliPortfoyProvider,
+  takipSirasiProvider,
+  takipSiralamaProvider,
 ];

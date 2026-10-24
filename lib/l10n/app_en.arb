@@ -784,6 +784,21 @@
   "partnerActivityNotifications": "Partner activity notifications",
   "partnerActivityNotificationsSubtitle": "Mention it in the daily brief when your partner adds to their portfolio",
   "summaryPushTitle": "Period summary notifications",
+  "watchlistSortMine": "My order",
+  "watchlistSortGainers": "Top gainers",
+  "watchlistSortLosers": "Top losers",
+  "watchlistSortMineHint": "Long-press and drag to reorder",
+  "watchlistSortChangeHint": "By change in the selected period",
+  "watchlistSortSemantics": "Sort: {secim}",
+  "@watchlistSortSemantics": {
+    "placeholders": {
+      "secim": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistMoveUp": "Move up",
+  "watchlistMoveDown": "Move down",
   "summaryPushSubtitle": "Your weekly and monthly portfolio summary. The monthly inflation notice comes separately",
   "quietHours": "Quiet hours",
   "biometricLockSubtitle": "Ask for Face ID / fingerprint / device PIN when opening the app",

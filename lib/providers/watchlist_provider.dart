@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+import 'package:flutter/foundation.dart'
+    show kDebugMode, debugPrint, listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
@@ -7,6 +8,7 @@ import '../models/watchlist_item.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/supabase_service.dart';
+import '../services/takip_sirasi.dart';
 import '../widgets/watchlist_chart.dart' show WatchlistChart;
 import 'auth_provider.dart';
 import 'portfolio_provider.dart';
@@ -144,8 +146,7 @@ Map<String, Map<int, double>> ortakPencereyeHizala(
   final int bas;
   if (periodDays <= 1) {
     final sonGun = DateTime.fromMillisecondsSinceEpoch(son);
-    bas = dayKey(sonGun)
-        .millisecondsSinceEpoch;
+    bas = dayKey(sonGun).millisecondsSinceEpoch;
   } else {
     bas = son - Duration(days: periodDays).inMilliseconds;
   }
@@ -310,8 +311,7 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
   String? _veriSahibi;
 
   /// Yeniden yüklenirken önceki liste [uid] kullanıcısına mı ait.
-  bool eskiVeriGosterilebilir(String? uid) =>
-      uid != null && _veriSahibi == uid;
+  bool eskiVeriGosterilebilir(String? uid) => uid != null && _veriSahibi == uid;
 
   @override
   Future<List<WatchlistItem>> build() async {
@@ -335,8 +335,7 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
       // `catch`'e DÜŞMEZ. O durumda provider hata durumuna geçer ve takip
       // listesi, boş liste yerine hata ekranı gösterirdi — koruma yazıldığı
       // gibi çalışmıyordu.
-      final sonuc =
-          await _withPrices(items, watchlistPeriods[periodIdx].days);
+      final sonuc = await _withPrices(items, watchlistPeriods[periodIdx].days);
       _veriSahibi = user.id;
       return sonuc;
     } catch (_) {
@@ -377,6 +376,9 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
     final withPrices = await Future.wait(futures);
 
     // Seçili dönemin değişimine göre azalan. Fiyatsızlar dibe iner.
+    // Ekrandaki sıra bu değil (2026-10-24): kullanıcının seçimi ve "benim
+    // sıram" `siraliTakipListesiProvider`'da uygulanır. Bu sıra ilk
+    // açılışta "benim sıram"ın başlangıcıdır.
     withPrices.sort((a, b) =>
         (b.periodChangePct ?? -999).compareTo(a.periodChangePct ?? -999));
     return withPrices;
@@ -436,6 +438,42 @@ final watchlistProvider =
     AsyncNotifierProvider<WatchlistNotifier, List<WatchlistItem>>(
   WatchlistNotifier.new,
 );
+
+/// Takip listesinin EKRANDAKİ sırası (2026-10-24): kullanıcının seçimi
+/// ([takipSiralamaProvider]) ve "benim sıram" ([takipSirasiProvider]) ile.
+/// Karar saf [takipSirala]'da.
+///
+/// Güncel sıra kayıtlıdan farklıysa (ilk açılış, yeni eklenen, silinen)
+/// kaydedilir — kare sonrasına ertelenir: sağlayıcı kurulurken başka bir
+/// sağlayıcıya yazılmaz. Yazılan değer aynı sırayı yeniden üretir, döngü yok.
+/// Liste boşken yazılmaz (ağ hatası da boş döner; bkz. [takipSirala]).
+final siraliTakipListesiProvider =
+    Provider<AsyncValue<List<WatchlistItem>>>((ref) {
+  final async = ref.watch(watchlistProvider);
+  final mod = takipSiralamaOf(ref.watch(takipSiralamaProvider));
+  final kayitli = ref.watch(takipSirasiProvider);
+  return async.whenData((items) {
+    final sonuc = takipSirala(items, mod: mod, kayitliSira: kayitli);
+    if (items.isNotEmpty &&
+        !async.isLoading &&
+        !listEquals(sonuc.sira, kayitli)) {
+      Future.microtask(
+          () => ref.read(takipSirasiProvider.notifier).set(sonuc.sira));
+    }
+    return sonuc.liste;
+  });
+});
+
+/// "Benim sıram"da [eski] konumdaki satırı [yeni] konuma taşır ve kaydeder
+/// ([siraTasi]; [yeni] çıkarıldıktan sonraki hedef konum). Sürükleme ve
+/// erişilebilirlik eylemleri ("yukarı/aşağı taşı") aynı yoldan geçer.
+void takipSirasiniTasi(
+    WidgetRef ref, List<WatchlistItem> gorunen, int eski, int yeni) {
+  final sira = [for (final w in gorunen) w.id];
+  final yeniSira = siraTasi(sira, eski, yeni);
+  if (identical(yeniSira, sira)) return;
+  ref.read(takipSirasiProvider.notifier).set(yeniSira);
+}
 
 /// Takip listesindeki varlık sayısı — Portföy ekranındaki
 /// `Varlıklarım | Takip Listesi` sekmesinin rozeti için.
