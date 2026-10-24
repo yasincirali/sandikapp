@@ -30,8 +30,9 @@
 -- Gece bildirimi rahatsız eder; kripto için gece ayrı karar, ayrı bayrak.
 --
 -- ## İki sunucu
--- Yeni iş `check-price-alerts`'in `active` durumunu ALIR: Frankfurt'ta
--- (geçişe kadar tüm cron kapalı) kapalı, Tokyo'da açık doğar. Var olan işin
+-- Yeni iş `check-price-alerts`'in `active` durumunu ALIR: 18 Ekim geçişinden
+-- beri canlı olan Frankfurt'ta açık, cron'ları kapatılmış Tokyo'da kapalı
+-- doğar (iki sunucu birlikte açılıp kapanır). Var olan işin
 -- `active` bayrağına dokunulmaz. Sarmalayıcı 0076 deseni: URL ve başlıklar
 -- `edge_function_url` / `cron_headers` (Vault), secret aynı
 -- `price_alerts_cron_secret`.
