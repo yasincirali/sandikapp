@@ -388,6 +388,66 @@
   "tickerHintCommodity": "e.g. CL=F (oil), NG=F (natural gas), GC=F (gold ounce)",
   "tickerHintOther": "A Yahoo Finance symbol, or leave it empty",
   "assetTypeSemantics": "{type} type",
+  "miktarModuAdet": "Units",
+  "miktarModuTutar": "Amount ({sembol})",
+  "@miktarModuTutar": {
+    "placeholders": {
+      "sembol": {
+        "type": "String"
+      }
+    }
+  },
+  "miktarModuSemantik": "Enter quantity as {mod}",
+  "@miktarModuSemantik": {
+    "placeholders": {
+      "mod": {
+        "type": "String"
+      }
+    }
+  },
+  "tutarAlani": "Amount",
+  "tutarGecersiz": "Enter a valid amount",
+  "tutarFiyatGerekli": "A price is needed to work out units",
+  "tutardanAdetSatiri": "Calculated quantity: {miktar}",
+  "@tutardanAdetSatiri": {
+    "placeholders": {
+      "miktar": {
+        "type": "String"
+      }
+    }
+  },
+  "tutardanAdetFiyatYok": "The quantity is worked out once a price is in. You can also enter the price yourself.",
+  "fonAdetIpucu": "If your bank shows a different number of units, correct it. If the fund was bought at the next day's price, pick that day as the date.",
+  "fiyatBirimBasina": "{fiyat} per unit",
+  "@fiyatBirimBasina": {
+    "placeholders": {
+      "fiyat": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiAltin": "Dealer spread {fark}. Sold today you'd get {tutar}.",
+  "@kuyumcuFarkiAltin": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiDoviz": "Buy-sell spread {fark}. Sold today you'd get {tutar}.",
+  "@kuyumcuFarkiDoviz": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
   "total": "total",
   "@assetTypeSemantics": {
     "placeholders": {

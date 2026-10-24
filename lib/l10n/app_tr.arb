@@ -397,6 +397,66 @@
   "tickerHintCommodity": "Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)",
   "tickerHintOther": "Yahoo Finance sembolü ya da boş bırak",
   "assetTypeSemantics": "{type} türü",
+  "miktarModuAdet": "Adet",
+  "miktarModuTutar": "Tutar ({sembol})",
+  "@miktarModuTutar": {
+    "placeholders": {
+      "sembol": {
+        "type": "String"
+      }
+    }
+  },
+  "miktarModuSemantik": "Miktarı {mod} olarak gir",
+  "@miktarModuSemantik": {
+    "placeholders": {
+      "mod": {
+        "type": "String"
+      }
+    }
+  },
+  "tutarAlani": "Tutar",
+  "tutarGecersiz": "Geçerli tutar",
+  "tutarFiyatGerekli": "Adet için fiyat gerekli",
+  "tutardanAdetSatiri": "Hesaplanan miktar: {miktar}",
+  "@tutardanAdetSatiri": {
+    "placeholders": {
+      "miktar": {
+        "type": "String"
+      }
+    }
+  },
+  "tutardanAdetFiyatYok": "Fiyat gelince miktar hesaplanır. Fiyatı elle de girebilirsin.",
+  "fonAdetIpucu": "Bankadaki adet farklıysa adedi düzelt. Fon ertesi gün fiyatıyla alındıysa tarihi o gün seç.",
+  "fiyatBirimBasina": "{fiyat} / birim",
+  "@fiyatBirimBasina": {
+    "placeholders": {
+      "fiyat": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiAltin": "Kuyumcu farkı {fark}. Bugün bozdursan {tutar}.",
+  "@kuyumcuFarkiAltin": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
+  "kuyumcuFarkiDoviz": "Alış-satış farkı {fark}. Bugün bozdursan {tutar}.",
+  "@kuyumcuFarkiDoviz": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      },
+      "tutar": {
+        "type": "String"
+      }
+    }
+  },
   "total": "toplam",
   "@assetTypeSemantics": {
     "placeholders": {

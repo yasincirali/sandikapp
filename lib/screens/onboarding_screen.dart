@@ -613,9 +613,15 @@ List<_Adim> _adimlariKur() {
       id: 'ekle',
       hedef: TourTarget.sekmeEkle,
       baslik: 'Varlık ekle',
+      // 2026-10-24: miktarın üstünde "Adet / Tutar (₺)" seçici ve boş
+      // fiyatlı altın/dövizde satış fiyatından maliyet geldi; metin ikisini
+      // söyler (tur metni arayüzle birlikte değişir).
       govde: 'Hisse mi, fon mu, altın mı, kripto mu? Tür seçtiğinde form '
-          'ona göre değişir: altında gram, hissede adet sorulur. Seçim '
-          'listesindeki grafik simgesi, seçmeden önce varlığa bakmanı sağlar.',
+          'ona göre değişir: altında gram, hissede adet sorulur. Adedi '
+          'bilmiyorsan "Tutar"a geç, kaç liralık aldığını yaz; adet '
+          'kendiliğinden hesaplanır. Altın ve dövizde fiyatı boş bırakırsan '
+          'maliyet bugünkü satış fiyatından yazılır. Seçim listesindeki '
+          'grafik simgesi, seçmeden önce varlığa bakmanı sağlar.',
       gorev: '+ tuşuna dokun',
       gorevBitti: 'Varlık Ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
