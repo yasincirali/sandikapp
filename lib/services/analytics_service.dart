@@ -306,6 +306,16 @@ class AnalyticsService {
         'timed_out': timedOut ? 1 : 0,
       });
 
+  /// TEFAS fon geçmişi çekiminin sonucu (`TefasService`, 2026-10-23).
+  ///
+  /// #240 fon başına isteği ikiye indirdi; bu sayaç bunun yetip yetmediğini
+  /// gösterir. `dolu` dışındaki oran yüksek kalırsa fon geçmişi sunucu
+  /// önbelleğine (`fon-seri`) alınır (Ar-Ge 23 Eki 20:45 #2). Fon kodu
+  /// YAZILMAZ: soru "ne sıklıkla", "hangi fon" değil.
+  /// [sonuc]: dolu | bos | http | hata. [periyod]: istenen kova (3 / 60).
+  Future<void> logTefasGecmis({required String sonuc, required int periyod}) =>
+      _log('tefas_gecmis', {'sonuc': sonuc, 'periyod': periyod});
+
   /// [type]: signal_alert | partner_invite | daily_brief | price_alert
   Future<void> logPushOpened({required String type, int? minutesSinceSent}) =>
       _log('push_opened', {
