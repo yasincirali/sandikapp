@@ -14,6 +14,7 @@ import '../models/grafik_cizimi.dart';
 import '../models/ohlc.dart';
 import '../providers/preferences_provider.dart';
 import '../services/cizim_deposu.dart';
+import '../services/share_card_service.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart' show FiyatKaynagi, MumKaynakTuru;
@@ -21,10 +22,13 @@ import '../services/mum_verisi.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../utils/hareketli_ortalama.dart' show kEmaKisa, kEmaUzun;
+import '../utils/friendly_error.dart' show showAppError;
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/grafik_arac_cubugu.dart' show GrafikCipi, MumAraligiAdi;
+import '../widgets/sandik_async_button.dart';
 import '../widgets/tam_ekran/grafik_olcegi.dart';
+import '../widgets/tam_ekran/grafik_paylasimi.dart';
 
 /// Yatay tam ekran grafik — telefonu yan çevirince açılır.
 ///
@@ -57,6 +61,19 @@ import '../widgets/tam_ekran/grafik_olcegi.dart';
 /// ## Çizimler
 /// Zaman + fiyat olarak saklanır ([GrafikCizimi]); aralık değişince yerinde
 /// kalır. Cihazda tutulur ([CizimDeposu]).
+///
+/// ## Paylaşım (Ar-Ge 25 Eki §2, rapor 13:15 §1)
+/// Üst çubuktaki "Grafiği paylaş" grafiği çizimleriyle PNG yapar
+/// ([RepaintBoundary] → [ShareCardService]); görsel cihazda üretilir,
+/// sunucuya bir şey gitmez. Görselde sembol, dönem, verinin alındığı
+/// tarih-saat (eski görüntü yeni sanılmasın), çizimler ve köşede "sandık"
+/// imzası var. Görsel bir PAYLAŞIM KİPİNDE üretilir
+/// ([TamEkranGrafikEkraniState.paylasimKipi]): imleç, seçim tutamakları,
+/// yarım çizim, bildirim ve sil düğmesi çizilmez. Kişisel katman (maliyet
+/// çizgisi, lot/alış noktaları, alarm çizgileri, tutar) bu ekranda bugün
+/// YOK; eklenirse `_GrafikBoyaci.paylasim` açıkken çizilmemeli —
+/// `tam_ekran_grafik_paylas_test` ekranın kişisel veriye erişmediğini tarar
+/// ve eklendiğinde kırılır.
 class TamEkranGrafikEkrani extends ConsumerStatefulWidget {
   const TamEkranGrafikEkrani({
     super.key,
@@ -152,6 +169,22 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   Timer? _bildirimZamani;
   bool _kapaniyor = false;
 
+  /// Görsel üretilirken açık: kişisel/geçici katmanlar çizilmez, başlık ve
+  /// imza görünür. Bir-iki karelik; paylaşım sayfası açılmadan kapanır.
+  bool _paylasimKipi = false;
+  final GlobalKey _paylasimSiniri = GlobalKey();
+
+  /// Mumların bu ekrana geldiği an — görseldeki "… itibarıyla". Önbellek
+  /// en fazla 10 dk eskidir (`MumVerisi`), saat kadar hassas değil ama
+  /// "dün akşamki görüntü" ile "bugünkü"nü ayırır.
+  DateTime? _veriZamani;
+
+  /// Testte PNG üretimi + sistem paylaşım sayfası yerine geçer (widget
+  /// testinde `toImage` ve platform kanalı yok).
+  @visibleForTesting
+  static Future<void> Function(GlobalKey sinir, String metin, Rect? kaynak)?
+      paylasimTesti;
+
   // ── Test okumaları ────────────────────────────────────────────────────
   List<GrafikCizimi> get cizimler => _cizimler;
   GrafikGorunumu? get gorunum => _gorunum;
@@ -160,6 +193,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   Offset? get imlec => _imlec;
   CizimTuru? get arac => _arac;
   MumAraligi get aralik => _aralik;
+  bool get paylasimKipi => _paylasimKipi;
 
   static const double _zamanEkseni = 22;
 
@@ -234,6 +268,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     final kapanis = [for (final b in temiz) b.kapanis];
     setState(() {
       _mumlar = temiz;
+      _veriZamani = DateTime.now();
       _hata = temiz.length < 2;
       _yukleniyor = false;
       _ma20 = TechnicalAnalysisService.smaSeries(kapanis, 20);
@@ -683,6 +718,71 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     return KeyEventResult.ignored;
   }
 
+  // ── Paylaşım ──────────────────────────────────────────────────────────
+
+  /// Ekranda görünen pencerenin dönemi ("6 ay").
+  String _donem() {
+    final m = _mumlar;
+    final g = _gorunum;
+    if (m.length < 2 || g == null) return '';
+    final i0 = g.bas.round().clamp(0, m.length - 1);
+    final i1 = g.son.round().clamp(0, m.length - 1);
+    return gorunurDonemEtiketi(context.l10n, m[i0].t, m[i1].t);
+  }
+
+  /// Görseli üretir ve paylaşım sayfasını açar. Hata Crashlytics'e ve
+  /// kullanıcıya dost metinle; ölçüm yalnız sayfa hatasız açılınca.
+  Future<void> _paylas(Rect? kaynak) async {
+    if (_mumlar.length < 2) return;
+    final metin =
+        grafikPaylasimMetni(context.l10n, ad: widget.ad, donem: _donem());
+    // Yeni hareket yok: kip yalnız katman çizimini değiştirir, geçiş
+    // animasyonu yoktur (hareketi azalt kuralı).
+    setState(() => _paylasimKipi = true);
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+      final test = paylasimTesti;
+      if (test != null) {
+        await test(_paylasimSiniri, metin, kaynak);
+        if (mounted) setState(() => _paylasimKipi = false);
+      } else {
+        final png = await ShareCardService.renderPng(_paylasimSiniri);
+        if (mounted) setState(() => _paylasimKipi = false);
+        await ShareCardService.shareImage(
+          png,
+          text: metin,
+          subject: metin.split('\n').first,
+          origin: kaynak,
+        );
+      }
+      OzellikOlcumu.say(Ozellik.grafikPaylas);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'TamEkranGrafik.paylas');
+      if (mounted) showAppError(context, e);
+    } finally {
+      if (mounted && _paylasimKipi) setState(() => _paylasimKipi = false);
+    }
+  }
+
+  /// Görseldeki başlık: sembol · dönem · imza, altında veri zamanı.
+  Widget _paylasimBasligi() {
+    final c = context.c;
+    final l = context.l10n;
+    final z = _veriZamani;
+    final dil = Localizations.localeOf(context).toLanguageTag();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l.tegPaylasimMetni(widget.ad, _donem()),
+            style: context.t.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+        if (z != null)
+          Text(l.tegPaylasimZamani(DateFormat('d MMM y HH:mm', dil).format(z)),
+              style: context.t.labelSmall?.copyWith(color: c.text58)),
+      ],
+    );
+  }
+
   // ── Görünüm ───────────────────────────────────────────────────────────
 
   @override
@@ -713,7 +813,12 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
                   children: [
                     _aracCubugu(),
                     VerticalDivider(width: 1, thickness: 1, color: c.hairline),
-                    Expanded(child: _grafik()),
+                    Expanded(
+                      child: RepaintBoundary(
+                        key: _paylasimSiniri,
+                        child: ColoredBox(color: c.background, child: _grafik()),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -786,6 +891,36 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
               painter: _AracIkonu(_mumMu ? _Ikon.mum : _Ikon.cizgi, c.text58),
             ),
           ),
+          // İstek atan düğme kalıbı (SandikAsyncTap): görsel üretilirken
+          // kilitli, ikinci dokunuş yutulur. Hedef IconButton'larla aynı
+          // 48 pt; simge platformun paylaş simgesi (HIG sistem kalıbı).
+          // container: yoksa etiket üst çubuğun ve grafiğin özetiyle tek
+          // düğüme karışıyordu (ekran okuyucu hepsini tek parça okuyordu).
+          Builder(builder: (bctx) {
+            final hazir = _mumlar.length >= 2;
+            return Semantics(
+              container: true,
+              child: Tooltip(
+                message: l.tegPaylas,
+                // Etiket SandikAsyncTap'ten; ipucu ikinci kez okunmasın.
+                excludeFromSemantics: true,
+                child: SandikAsyncTap(
+                  key: const ValueKey('tamEkranPaylas'),
+                  semanticLabel: l.tegPaylas,
+                  onTap: hazir
+                      ? () => _paylas(ShareCardService.originOf(bctx))
+                      : null,
+                  child: SizedBox.square(
+                    dimension: kMinInteractiveDimension,
+                    child: Center(
+                      child: Icon(Icons.adaptive.share,
+                          color: hazir ? c.text58 : c.text36),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
           IconButton(
             tooltip: l.tegKapat,
             onPressed: () => Navigator.of(context).maybePop(),
@@ -925,6 +1060,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
                     // Seçim ve çizim rengi: bilgi mavisi — kazanç/kayıp
                     // renkleriyle karışmasın, iki temada da okunur.
                     cizimRengi: c.info,
+                    paylasim: _paylasimKipi,
                   ),
                 ),
               ),
@@ -933,10 +1069,27 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           Positioned(
             left: SandikSpace.sm,
             top: SandikSpace.xs,
-            child: IgnorePointer(child: _lejant(o)),
+            child: IgnorePointer(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_paylasimKipi) _paylasimBasligi(),
+                  _lejant(o),
+                ],
+              ),
+            ),
           ),
-          if (secili != null) _seciliCubugu(o, secili),
-          if (_bildirim != null)
+          if (_paylasimKipi)
+            Positioned(
+              right: _fiyatEkseni + SandikSpace.sm,
+              bottom: _zamanEkseni + SandikSpace.xs,
+              child: Text(context.l10n.appName,
+                  key: const ValueKey('tamEkranImza'),
+                  style: context.t.labelMedium?.copyWith(
+                      color: c.amberText, fontWeight: FontWeight.w700)),
+            ),
+          if (secili != null && !_paylasimKipi) _seciliCubugu(o, secili),
+          if (_bildirim != null && !_paylasimKipi)
             Positioned(
               left: 0,
               right: _fiyatEkseni,
@@ -1233,6 +1386,7 @@ class _GrafikBoyaci extends CustomPainter {
     required this.eksenStili,
     required this.fiyatMetni,
     required this.cizimRengi,
+    this.paylasim = false,
   });
 
   final GrafikOlcegi olcek;
@@ -1250,6 +1404,11 @@ class _GrafikBoyaci extends CustomPainter {
   final TextStyle eksenStili;
   final String Function(double) fiyatMetni;
   final Color cizimRengi;
+
+  /// Paylaşım görseli çiziliyor: imleç, seçim tutamakları ve yarım çizim
+  /// yok. Kişisel bir katman (maliyet, lot, alarm) bu boyacıya eklenirse
+  /// `if (!paylasim)` ardında olmalı — görselde ASLA yer almaz.
+  final bool paylasim;
 
   TextPainter _metin(String s, [TextStyle? st]) => TextPainter(
         text: TextSpan(text: s, style: st ?? eksenStili),
@@ -1400,13 +1559,13 @@ class _GrafikBoyaci extends CustomPainter {
 
     // Çizimler.
     for (var k = 0; k < cizimler.length; k++) {
-      _cizim(canvas, cizimler[k], alan, k == secili);
+      _cizim(canvas, cizimler[k], alan, !paylasim && k == secili);
     }
-    final b = bekleyen;
+    final b = paylasim ? null : bekleyen;
     if (b != null) _cizim(canvas, b, alan, true);
 
     // İmleç (artı).
-    final im = imlec;
+    final im = paylasim ? null : imlec;
     int? imlecMumu;
     if (im != null) {
       imlecMumu = o.i(im.dx).round().clamp(0, mumlar.length - 1);

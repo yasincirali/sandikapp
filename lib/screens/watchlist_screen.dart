@@ -10,7 +10,6 @@ import 'package:flutter/material.dart'
         Colors,
         Dismissible,
         DismissDirection,
-        ListTile,
         Material,
         MaterialType,
         RefreshIndicator;
@@ -31,6 +30,7 @@ import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
+import '../widgets/sandik_siralama_dugmesi.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -313,10 +313,11 @@ class _SurukleGolgesi extends StatelessWidget {
 }
 
 /// Takip listesi sıralama seçimi: başlık satırının sağında seçili sıranın
-/// adı; dokununca üç seçenekli alt sayfa (Portföy'deki `_SortButton` /
-/// `_SortSheet` kalıbı). Kayan segment DEĞİL (kabul raporu 13:15 #2): üç
-/// seçenek liste başında yer kaplamasın; seçim ekranın ne gösterdiğini
-/// değiştirmez, yalnız sırasını.
+/// adı; dokununca üç seçenekli alt sayfa. Düğme ve sayfa ortak bileşenden
+/// (`SandikSiralamaDugmesi.etiketli`, 2026-10-25 — eskiden Portföy'ün
+/// `_SortButton`/`_SortSheet` kalıbının kopyasıydı). Kayan segment DEĞİL
+/// (kabul raporu 13:15 #2): üç seçenek liste başında yer kaplamasın; seçim
+/// ekranın ne gösterdiğini değiştirmez, yalnız sırasını.
 class _SiralamaDugmesi extends ConsumerWidget {
   const _SiralamaDugmesi({required this.secili});
 
@@ -337,98 +338,24 @@ class _SiralamaDugmesi extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    return Semantics(
-      button: true,
-      label: l.watchlistSortSemantics(etiket(l, secili)),
-      excludeSemantics: true,
-      child: CupertinoButton(
-        minimumSize: SandikTouch.minSize,
-        padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
-        onPressed: () => showSandikSheet<void>(
-          context: context,
-          backgroundColor: context.c.surface1,
-          builder: (sayfa) => _SiralamaSayfasi(
-            secili: secili,
-            onSec: (m) {
-              Navigator.pop(sayfa);
-              if (m == secili) return;
-              SandikHaptic.selection.perform();
-              ref.read(takipSiralamaProvider.notifier).set(m.index);
-              OzellikOlcumu.say(Ozellik.takipSirasi);
-            },
+    return SandikSiralamaDugmesi<TakipSiralama>.etiketli(
+      secenekler: [
+        for (final m in TakipSiralama.values)
+          SandikSiralamaSecenegi(
+            deger: m,
+            baslik: etiket(l, m),
+            altBaslik: m == TakipSiralama.benim
+                ? l.watchlistSortMineHint
+                : l.watchlistSortChangeHint,
+            ikon: ikon(m),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.sort_rounded,
-                size: SandikSpace.md, color: context.c.text58),
-            const SizedBox(width: SandikSpace.xs),
-            Text(
-              etiket(l, secili),
-              style: context.t.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w600, color: context.c.text58),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SiralamaSayfasi extends StatelessWidget {
-  const _SiralamaSayfasi({required this.secili, required this.onSec});
-
-  final TakipSiralama secili;
-  final ValueChanged<TakipSiralama> onSec;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    final c = context.c;
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(SandikSpace.lgs,
-                SandikSpace.lgs, SandikSpace.lgs, SandikSpace.xs),
-            child: Text(
-              l.sortCriterion,
-              style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: c.text58),
-            ),
-          ),
-          for (final m in TakipSiralama.values)
-            ListTile(
-              minTileHeight: SandikTouch.min,
-              selected: m == secili,
-              leading: Icon(_SiralamaDugmesi.ikon(m),
-                  color: m == secili ? c.amberText : c.text58),
-              title: Text(
-                _SiralamaDugmesi.etiket(l, m),
-                style: context.t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: m == secili ? c.amberText : c.text90),
-              ),
-              subtitle: Text(
-                m == TakipSiralama.benim
-                    ? l.watchlistSortMineHint
-                    : l.watchlistSortChangeHint,
-                style: context.t.bodySmall?.copyWith(color: c.text36),
-              ),
-              // Seçili bilgisi yalnız renkte kalmasın: onay işareti.
-              trailing: m == secili
-                  ? Icon(Icons.check_rounded, color: c.amberText)
-                  : null,
-              onTap: () => onSec(m),
-            ),
-          const SizedBox(height: SandikSpace.sm),
-        ],
-      ),
+      ],
+      secili: secili,
+      semantikEtiket: l.watchlistSortSemantics(etiket(l, secili)),
+      onSec: (m) {
+        ref.read(takipSiralamaProvider.notifier).set(m.index);
+        OzellikOlcumu.say(Ozellik.takipSirasi);
+      },
     );
   }
 }

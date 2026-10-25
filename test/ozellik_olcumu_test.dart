@@ -20,6 +20,7 @@ void main() {
         'yatay_grafik',
         'cizim',
         'varlik_widget',
+        'grafik_paylas',
       ]);
     });
 
@@ -105,7 +106,7 @@ void main() {
           kullanilan.add(arg);
         }
       }
-      // Yedi özelliğin her biri gerçekten bir çağrı noktasında sayılıyor.
+      // Her özellik (sekiz) gerçekten bir çağrı noktasında sayılıyor.
       for (final o in Ozellik.values) {
         expect(kullanilan, contains('Ozellik.${o.name}'), reason: o.name);
       }
