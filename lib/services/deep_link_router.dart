@@ -52,8 +52,10 @@ class DeepLinkRouter {
   /// kullanıcıya boş/yarım bir özet gösterilmez.
   static const yilOzetiHost = 'yil-ozeti';
 
-  /// iOS tek varlık widget'ı dokunuşu — Swift `varlikWidgetClickURL` ile
-  /// birebir aynı (`sandik://varlik-widget?homeWidget=1`).
+  /// Tek varlık widget'ı dokunuşu — Swift `varlikWidgetClickURL` ve Kotlin
+  /// `SandikVarlikWidgetProvider.VARLIK_WIDGET_CLICK_URI` ile birebir aynı
+  /// (`sandik://varlik-widget?homeWidget=1`). Varlık kimliği taşımaz (iOS
+  /// ile aynı): dokunuş seçili varlığa değil listeye götürür.
   ///
   /// Portföy sekmesine gider (Varlıklarım | Takip Listesi): widget'ın seçim
   /// listesi bu iki listeden kurulur. Performans'ın GÜNLÜK görünümüne
