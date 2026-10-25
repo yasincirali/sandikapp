@@ -17,6 +17,7 @@ CORE FEATURES
 
 • Add stocks, mutual funds, currencies, gold, and commodities
 • Prices update automatically; manual price entry supported
+• Two prices for gold and currencies, "Sell / Buy": see the jeweller's buy-sell spread up front
 • "How much is 100 dollars?" Type it in search, see it at the live price
 • See total value, gain/loss, and allocation chart instantly
 • Track historical performance with a TradingView-style professional chart — pinch zoom, crosshair, dynamic time ranges
@@ -28,6 +29,7 @@ FULL-SCREEN LANDSCAPE CHART & DRAWING
 • Draw your own lines: trend line, ray, horizontal level, horizontal ray and rectangle
 • Magnet snaps drawings to candles; undo and delete always at hand
 • Your drawings stay with that holding and are there next time you open the chart
+• Share the chart you drew
 • Free
 • Share your portfolio securely with family members or business partners
 • End sharing at any time

@@ -20,6 +20,7 @@ NE TAKİP EDEBİLİRSİN
 • Hisse senedi ve yatırım fonu
 • Döviz — USD, EUR, GBP
 • Altın ve gümüş
+• Altın ve dövizde "Bozdurursan / Alırsan" iki fiyat: kuyumcunun alış-satış farkını baştan gör
 • Emtia
 • Fiyatlar otomatik güncellenir; istersen kendi fiyatını girersin
 • "5 çeyrek kaç TL?" Aramaya yaz, canlı fiyattan gör
@@ -45,6 +46,7 @@ YATAY TAM EKRAN GRAFİK VE ÇİZİM
 • Kendi çizgini çiz: trend çizgisi, ışın, yatay seviye, yatay ışın ve dikdörtgen
 • Mıknatıs çizimi mumlara yapıştırır; geri al ve sil hep elinin altında
 • Çizimlerin o varlıkta kalır, grafiği yeniden açınca yerinde durur
+• Çizdiğin grafiği paylaş
 • Ücretsiz
 
 ORTAK PORTFÖY

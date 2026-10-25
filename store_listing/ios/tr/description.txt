@@ -1,69 +1,39 @@
-Altın mı, dolar mı, hisse mi daha çok kazandırdı? sandık hepsini tek ekranda toplar ve sana tek bir şeyi net söyler: gerçekte ne kadar kazandın — ve enflasyonu geçip geçmediğini.
+Altın, dolar, fon ve hisse tek yerde.
+Kuyumcunun alış-satış farkını, enflasyonu geçip geçmediğini ve gerçek kârını gör.
 
 Çoğu takip uygulaması alış fiyatını bugünkü fiyattan çıkarır ve buna "kâr" der. sandık komisyonu maliyete ekler, aldığın temettüyü kazanca yazar. Gördüğün rakam, cebindeki rakamdır.
 
-ENFLASYONA KARŞI GERÇEK GETİRİ
-• Portföyün TÜİK'in açıkladığı TÜFE ile yan yana — 1 ay, 6 ay, 1 yıl
-• Senin getirin, enflasyon ve aradaki fark ayrı ayrı
-• Enflasyonu geçtiysen yeşil, geçemediysen kırmızı
-• Veri TÜİK/TCMB kaynaklı, uydurma değil
-
-NE TAKİP EDEBİLİRSİN
-• Hisse senedi (BIST) ve yatırım fonu (TEFAS)
-• Döviz — USD, EUR, GBP
-• Altın (gram, çeyrek, yarım, tam, Cumhuriyet, ata), gümüş
-• Emtia
+TAKİP
+• Hisse (BIST), yatırım fonu (TEFAS), döviz, altın, gümüş ve emtia tek toplamda
 • Fiyatlar kendiliğinden güncellenir; istersen kendi fiyatını girersin
-• Aracı kurum ekstresini yapıştır, tek seferde içe aktar
+• Geçmiş tarihli alım gir ya da aracı kurum ekstresini yapıştırıp tek seferde içe aktar
+• Eşinle, ailenle veya iş ortağınla ortak portföy; herkesin katkısı ayrı hesaplanır
 
-GERÇEK KÂR/ZARAR
-• Alım komisyonu maliyete dahil
-• Nakit temettüler kazanca yazılır
-• Geçmiş tarihli alım girebilirsin — portföyün doğru tarihten başlar
-• Döviz varlıklarda alım günündeki kur kullanılır
-• Satışlardan gerçekleşen kâr ayrı görünür
+GERÇEK GETİRİ
+• Portföyün TÜİK'in açıkladığı TÜFE ile yan yana: 1 ay, 6 ay, 1 yıl
+• Senin getirin, enflasyon ve aradaki fark ayrı ayrı; geçtiysen yeşil, geçemediysen kırmızı
+• Veri TÜİK/TCMB kaynaklı, uydurma değil
+• Komisyon maliyete, nakit temettü kazanca yazılır; satıştan gerçekleşen kâr ayrı görünür
 
-HER GÜN YENİ BİR ŞEY
-• "Bugün" kartı: günün hareketi, kaç varlığın artıda, hedefine kalan yol, yaklaşan enflasyon açıklaması ve tatiller
-• Portföy hedefi belirle, ilerlemeyi her gün gör
-• Fiyat alarmı: hedef fiyata gelince bildirim
-• Sabah brifingi ve haftalık özet bildirimleri — sessiz saatler senin elinde
-• Ana ekran widget'ı ve kilit ekranı canlı etkinliği (iOS)
-• Altın, dolar ya da istediğin fon için tek varlık widget'ı: ana ekranda ve kilit ekranında
+ALTIN VE DÖVİZ
+• Gram, çeyrek, yarım, tam, Cumhuriyet ve ata altın; USD, EUR, GBP
+• Altın ve dövizde "Bozdurursan / Alırsan" iki fiyat: kuyumcu farkını baştan gör
 • "5 çeyrek kaç TL?" Aramaya yaz, canlı fiyattan gör
+• Tutarları TL, USD, EUR veya gram altın bazında göster
 
-PERFORMANS
-• Portföy geçmişini profesyonel grafikle incele — çizgi veya mum, pinch zoom, crosshair
-• Gün, hafta, ay, yıl — istediğin aralıkta getiri
-• Hangi varlık ne kadar katkı yaptı, tek tek gör
-• Portföyünü BIST 100, dolar ve altınla karşılaştır
-• Dağılım grafiğiyle ağırlığını dengele
-• Tutarları USD, EUR veya gram altın bazında göster
+GRAFİK
+• Çizgi veya mum, hareketli ortalama, pinch zoom; gün, hafta, ay, yıl
+• Telefonu yan çevir: tam ekran grafikte trend çizgisi, yatay seviye ve dikdörtgen çiz
+• Çizdiğin grafiği paylaş
+• Portföyünü BIST 100, dolar ve altınla karşılaştır; hangi varlık ne kadar katkı yaptı, gör
 
-YATAY TAM EKRAN GRAFİK VE ÇİZİM
-• Bir varlığın sayfasında telefonu yan çevir: grafik tam ekran açılır
-• Mum veya çizgi, aralık seçimi, hareketli ortalama
-• Kendi çizgini çiz: trend çizgisi, ışın, yatay seviye, yatay ışın ve dikdörtgen
-• Mıknatıs çizimi mumlara yapıştırır; geri al ve sil hep elinin altında
-• Çizimlerin o varlıkta kalır, grafiği yeniden açınca yerinde durur
-• Ücretsiz
+BİLDİRİM VE WIDGET
+• Fiyat alarmı: hedef fiyata gelince bildirim
+• Sabah brifingi ve haftalık özet; sessiz saatler senin elinde
+• Altın, dolar ya da istediğin fon için tek varlık widget'ı: ana ekranda ve kilit ekranında
+• Ana ekran widget'ı ve kilit ekranı canlı etkinliği
 
-ORTAK PORTFÖY
-• Eşinle, ailenle veya iş ortağınla aynı portföyü takip et
-• Herkesin katkısı ve getirisi ayrı ayrı hesaplanır
-• İstediğin an ortaklığı sonlandır
-
-PAYLAŞ
-• Dönem özetini görsel kartla paylaş — tutar kartta görünmez, yalnızca yüzde
-• Yıl sonunda "sandık Özeti"
-
-GİZLİLİK VE GÜVENLİK
-• Apple ile giriş
-• Biyometrik kilit (Face ID / Touch ID)
-• Bakiyeni tek dokunuşla gizle
-• Uygulama görev yöneticisinde otomatik gizlenir
-• Hesabını ve tüm verini istediğin an sil; verini JSON olarak indir
-• KVKK ve GDPR uyumlu
+Apple ile giriş, Face ID kilidi, bakiyeni tek dokunuşla gizleme. Hesabını ve tüm verini istediğin an silersin. KVKK ve GDPR uyumlu.
 
 Sandığını aç, ne kazandığını gör.
 
