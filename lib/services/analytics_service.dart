@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import 'crash_reporter.dart';
 import 'huni_kaydi.dart';
+import 'ozellik_olcumu.dart' show Ozellik;
 
 /// Merkezi analytics servisi. Tüm event log'ları buradan geçer.
 ///
@@ -76,6 +77,12 @@ class AnalyticsService {
   /// defterin kaynağı. Kişisel veri yok.
   Future<void> logAcilisSuresi(Map<String, Object> parametreler) =>
       _log('acilis_suresi', parametreler);
+
+  /// Ekran-içi özellik kullanıldı (Ar-Ge 25 Eki §3). Yalnız sabit kod
+  /// ([Ozellik]); tekilleştirme (TR gününe göre günde bir) `OzellikOlcumu`'da.
+  /// Doğrudan çağırma: `OzellikOlcumu.say` kullan.
+  Future<void> logOzellikKullanildi(Ozellik ozellik) =>
+      _log('ozellik_kullanildi', {'ozellik': ozellik.kod});
 
   // ── Auth ────────────────────────────────────────────────────────────────
   Future<void> logLogin({required String method}) =>
@@ -339,7 +346,8 @@ class AnalyticsService {
   }) =>
       _log('widget_installed', {'platform': platform, 'size': size});
 
-  /// [surface]: home_widget | lock_widget | live_activity
+  /// [surface]: home_widget | lock_widget | live_activity | varlik_widget
+  /// (iOS tek varlık widget'ı, 2026-10-25; `DeepLinkRouter.widgetYuzeyi`).
   Future<void> logWidgetTapped({required String surface}) =>
       _log('widget_tapped', {'surface': surface});
 

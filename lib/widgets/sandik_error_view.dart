@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/destek.dart';
 import '../l10n/l10n.dart';
 import '../services/crash_reporter.dart';
+import '../services/ozellik_olcumu.dart';
 import '../services/destek_maili.dart';
 import '../services/gorunen_hata.dart';
 import '../theme/sandik.dart';
@@ -131,6 +132,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
   }
 
   Future<void> _bizeYaz() async {
+    OzellikOlcumu.say(Ozellik.bizeYaz);
     final ekran = _anahtar(context);
     final s = await destekSurumu();
     final uri = destekHataMaili(
