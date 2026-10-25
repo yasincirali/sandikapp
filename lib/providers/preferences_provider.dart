@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset_type.dart';
 import '../models/ohlc.dart' show MumAraligi;
+import '../models/portfoy_siralama.dart';
 import '../models/signal_frequency.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
@@ -407,6 +408,14 @@ final takipSirasiProvider = NotifierProvider<_SiraPrefNotifier, List<String>?>(
 /// Takip listesi sıralama seçimi (`TakipSiralama.index`; 0 = benim sıram).
 final takipSiralamaProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.takipSiralama, 0, perUser: true));
+
+/// Portföy listesi sıralama seçimi (`PortfoySiralama.kod`). Eskiden yalnız
+/// ekranın State alanıydı, soğuk açılışta "Değere göre"ye dönüyordu (Ar-Ge
+/// 2026-10-25 #3). Metin + kod: enum sırası değişse de tercih bozulmaz.
+final portfoySiralamaProvider = NotifierProvider<_StringPrefNotifier, String>(
+    () => _StringPrefNotifier(
+        PrefKeys.portfoySiralama, PortfoySiralama.varsayilan.kod,
+        perUser: true));
 
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
@@ -1739,4 +1748,5 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   seciliPortfoyProvider,
   takipSirasiProvider,
   takipSiralamaProvider,
+  portfoySiralamaProvider,
 ];

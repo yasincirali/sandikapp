@@ -193,6 +193,12 @@ class PrefKeys {
   /// 1 en çok yükselen, 2 en çok düşen). Kişiye özel.
   static const takipSiralama = 'pref_takip_siralama';
 
+  /// Portföy listesi sıralama seçimi — `PortfoySiralama.kod`
+  /// (`deger_azalan`, `kar_azalan`…). Index DEĞİL kod: enum sırası değişince
+  /// tercih başka sıralamaya kaymasın. Yoksa / tanınmazsa "Değere göre".
+  /// Kişiye özel (çoklu hesapta her hesabın kendi seçimi).
+  static const portfoySiralama = 'pref_portfoy_siralama';
+
   /// Özellik kullanım ölçümünün (`OzellikOlcumu`) tekilleştirme öneki:
   /// `<önek><ozellik kodu>` → son sayıldığı TR günü (`2026-10-25`). Değer
   /// kullanıcı verisi değil, "bugün bu olay gitti mi" işaretidir; silinirse

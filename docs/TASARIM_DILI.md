@@ -119,6 +119,7 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Bölüm başlığı | `SandikSectionHeader` |
 | Üst çubuk | `SandikAppBar` |
 | Mod değiştiren 2–5 seçenekli seçici (ekranın ne gösterdiği değişir) | `SandikSegment` (ikonlu Ayarlar seçicileri dahil; Material `TabBar`/`ChoiceChip`/elle yazılmış amber hücre yok) |
+| Listenin sırasını seçtiren düğme + alt sayfa (ekranın ne gösterdiği değişmez, yalnız sırası) | `SandikSiralamaDugmesi` — `.ikon` (üst çubuk 44 pt kutu, varsayılan dışı seçimde amber; Portföy) / `.etiketli` (ikon + seçili sıranın adı; takip listesi). Sayfayı kendisi açar; seçili satır amber + onay işareti; aynı satır değişiklik yapmaz; ekran kendi sıralama sayfasını yazmaz |
 | Liste süzen çip ("Tümü" var) | `SandikFiltreCipi` — tam yuvarlak, 44 pt, seçiliyken amber dolgu + onay işareti |
 | Çoklu aç/kapa çip | `GrafikCipi` (çerçeve + onay işareti) |
 | Varlık türü süzgeci (sade çipler; elde olan önde, olmayan sonda pasif) | `TurFiltreCipleri` (Performans › Filtre; bayrak `goz_alici`) |
