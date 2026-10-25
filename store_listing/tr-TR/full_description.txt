@@ -22,6 +22,7 @@ NE TAKİP EDEBİLİRSİN
 • Altın ve gümüş
 • Emtia
 • Fiyatlar otomatik güncellenir; istersen kendi fiyatını girersin
+• "5 çeyrek kaç TL?" Aramaya yaz, canlı fiyattan gör
 
 GERÇEK KÂR/ZARAR
 

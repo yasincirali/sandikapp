@@ -29,6 +29,8 @@ HER GÜN YENİ BİR ŞEY
 • Fiyat alarmı: hedef fiyata gelince bildirim
 • Sabah brifingi ve haftalık özet bildirimleri — sessiz saatler senin elinde
 • Ana ekran widget'ı ve kilit ekranı canlı etkinliği (iOS)
+• Altın, dolar ya da istediğin fon için tek varlık widget'ı: ana ekranda ve kilit ekranında
+• "5 çeyrek kaç TL?" Aramaya yaz, canlı fiyattan gör
 
 PERFORMANS
 • Portföy geçmişini profesyonel grafikle incele — çizgi veya mum, pinch zoom, crosshair
