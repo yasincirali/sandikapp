@@ -1,4 +1,5 @@
 import '../models/asset.dart';
+import '../models/asset_categories.dart' show StockSubCategory;
 import '../models/asset_type.dart';
 import '../models/position.dart';
 
@@ -45,6 +46,15 @@ bool yalnizcaBorsa(Iterable<AssetType> turler) {
   final set = turler.toSet();
   return set.isNotEmpty && _borsayaBagli.containsAll(set);
 }
+
+/// TEK bir varlık borsa takvimine mi bağlı? Aynı küme ve aynı ABD istisnası
+/// ([yalnizcaBorsaVarliklardan]); tek varlık widget'ının "Kapanış" etiketi
+/// (2026-10-25) buradan sorar. Kripto, altın, döviz, emtia, mevduat `false`:
+/// onların fiyatı gece ve hafta sonu da hareket eder (yurt içi altın/dövizin
+/// hafta sonu kaydı bu yüzden tutuluyor: `hafta_sonu_yurt_ici_seri`).
+bool borsaTakvimindeMi({required AssetType type, String? subCategory}) =>
+    _borsayaBagli.contains(type) &&
+    !(type == AssetType.hisse && subCategory == StockSubCategory.abd.name);
 
 /// [Asset] listesinden — BUGÜNKÜ mülkiyete göre (`aktifLotlar`).
 ///
