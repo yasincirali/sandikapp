@@ -28,9 +28,12 @@ import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_siralama_dugmesi.dart';
+import '../widgets/sinir_uyarisi.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -889,11 +892,82 @@ class _Row extends ConsumerWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
+/// Boş takip listesi: başlık, tek cümle açıklama, öneri çipleri, Varlık Ekle.
+///
+/// "NEDEN TAKİP LİSTESİ?" kutusu kaldırıldı (2026-10-25): `noWatchlistBody`
+/// aynı şeyi tek cümlede söylüyordu; boş ekranda iki açıklama okutmak yerine
+/// ilk takibi tek dokunuşa indiren üç öneri çipi kondu.
+class _EmptyState extends ConsumerStatefulWidget {
   const _EmptyState();
 
   @override
+  ConsumerState<_EmptyState> createState() => _EmptyStateState();
+}
+
+class _EmptyStateState extends ConsumerState<_EmptyState> {
+  /// Bu oturumda çipten eklenenler. Liste dolunca boş durum zaten gider;
+  /// bu küme sunucu yanıtı ile listenin tazelenmesi arasındaki anda (ya da
+  /// tazeleme başarısız olursa) çipin ikinci kez dokunulmasını önler.
+  final Set<String> _eklenen = {};
+
+  /// Öneri çipinden takibe alma — `AddWatchlistScreen._add` ile AYNI yol:
+  /// aynı kimlik (`VarlikKimligi`), aynı `watchlistProvider.add` (limit
+  /// kapısı orada), aynı hata ayrımı. Başarı toast'ı yok (2026-09-16 kararı):
+  /// onay çipin kaybolması ve satırın listeye gelmesi.
+  Future<void> _ekle(VarlikKimligi k) async {
+    // Demo (F1): takibe almak bir yazma; Varlık Ekle düğmesiyle aynı kapı.
+    if (DemoModu.yazmaKapisi('takip')) return;
+    OzellikOlcumu.say(Ozellik.takipOnerisi);
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    try {
+      await ref
+          .read(watchlistProvider.notifier)
+          .add(k.toWatchlistItem(userId: user.id));
+      if (mounted) setState(() => _eklenen.add(k.key));
+    } on WatchlistLimitException catch (e) {
+      if (!mounted) return;
+      takipSiniriUyarisi(context, ref, e.limit);
+    } on DemoYazmaEngeli {
+      return; // Mesajı `DemoModu.yazmaEngeli` dinleyicisi gösterdi.
+    } catch (_) {
+      if (!mounted) return;
+      sandikSnack(context, context.l10n.watchlistSuggestFailed,
+          kind: SandikSnackKind.error);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final takipte = {
+      for (final w in ref.watch(watchlistProvider).valueOrNull ?? const [])
+        w.key,
+    };
+    final l = context.l10n;
+    // Etiketler sembole göre: kimlik listesi sırayı ve varlığı belirler,
+    // ekran yalnız adını koyar.
+    final etiketler = <String, (String, String)>{
+      FiyatKaynagi.gramAltin24: (
+        l.watchlistSuggestGold,
+        l.watchlistSuggestGoldSemantics,
+      ),
+      FiyatKaynagi.usdTry: (
+        l.watchlistSuggestUsd,
+        l.watchlistSuggestUsdSemantics,
+      ),
+      FiyatKaynagi.bist100: (
+        l.watchlistSuggestBist,
+        l.watchlistSuggestBistSemantics,
+      ),
+    };
+    final oneriler = [
+      for (final k in VarlikKimligi.takipOnerileri)
+        if (etiketler[k.ticker] != null &&
+            !takipte.contains(k.key) &&
+            !_eklenen.contains(k.key))
+          k,
+    ];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
       child: Column(
@@ -913,6 +987,23 @@ class _EmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
+          if (oneriler.isNotEmpty) ...[
+            const SizedBox(height: SandikSpace.md),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: SandikSpace.sm,
+              runSpacing: SandikSpace.sm,
+              children: [
+                for (final k in oneriler)
+                  _OneriCipi(
+                    key: ValueKey('takip_onerisi_${k.ticker}'),
+                    ad: etiketler[k.ticker]!.$1,
+                    semanticLabel: etiketler[k.ticker]!.$2,
+                    onTap: () => _ekle(k),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: SandikSpace.md),
           SandikTappable(
             semanticLabel: context.l10n.addToWatchlist,
@@ -940,35 +1031,65 @@ class _EmptyState extends StatelessWidget {
                       color: context.c.onStatus, fontWeight: FontWeight.w700)),
             ),
           ),
-          const SizedBox(height: SandikSpace.lg),
-          // Değer önerisini AÇIKÇA söyler — kullanıcı özelliği keşfetmek
-          // zorunda kalmasın.
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.whyWatchlistUpper,
-                  style: context.t.labelSmall?.copyWith(
-                      letterSpacing: 0.9,
-                      fontWeight: FontWeight.w700,
-                      color: context.c.text36),
-                ),
-                const SizedBox(height: SandikSpace.sm),
-                Text(
-                  context.l10n.whyWatchlistBody,
-                  style: context.t.bodySmall
-                      ?.copyWith(color: context.c.text58, height: 1.5),
-                ),
-              ],
-            ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+/// Öneri çipi — `SandikFiltreCipi`'nin seçili olmayan hâliyle aynı hap
+/// (tam yuvarlak, 44 pt, `surface2` + `hairline`), başta "+" ikonu.
+///
+/// Neden `SandikFiltreCipi` değil: o çip SÜZER ve "seçili" taşır; bu çip
+/// istek atar. İstek atan hedef `SandikAsyncTap` (TASARIM_DILI "bir iş = bir
+/// bileşen"): çift dokunma yutulur, iş sürerken etiketin yerinde gösterge
+/// döner, hap yerinde kalır (`zemin:`) — boy değişmez. "+" ikonu eylemi
+/// renksiz de anlatır; seçili hâli yok, dokununca kaybolur.
+class _OneriCipi extends StatelessWidget {
+  const _OneriCipi({
+    super.key,
+    required this.ad,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  final String ad;
+  final String semanticLabel;
+  final Future<void> Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return SandikAsyncTap(
+      onTap: onTap,
+      semanticLabel: semanticLabel,
+      zemin: BoxDecoration(
+        color: c.surface2,
+        borderRadius: BorderRadius.circular(SandikTouch.min / 2),
+        border: Border.all(color: c.hairline),
+      ),
+      // Etiket [semanticLabel]; çipin metni ikinci kez okunmasın.
+      child: ExcludeSemantics(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, size: 16, color: c.text58),
+              const SizedBox(width: SandikSpace.xs2),
+              Flexible(
+                child: Text(
+                  ad,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600, color: c.text90),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

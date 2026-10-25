@@ -3764,18 +3764,6 @@ abstract class AppLocalizations {
   /// **'Takibe varlık ekle'**
   String get addToWatchlist;
 
-  /// No description provided for @whyWatchlistUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'NEDEN TAKİP LİSTESİ?'**
-  String get whyWatchlistUpper;
-
-  /// No description provided for @whyWatchlistBody.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bir varlığı satın almadan fiyatını izleyebilirsin. Takip listesi portföyüne girmez; toplam değerini ve kâr/zararını etkilemez.'**
-  String get whyWatchlistBody;
-
   /// No description provided for @notInPortfolioNote.
   ///
   /// In tr, this message translates to:
@@ -9753,6 +9741,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'PDF, Excel ya da CSV; tek seferde'**
   String get vitrinStatementHintShort;
+
+  /// No description provided for @watchlistSuggestGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gram altın'**
+  String get watchlistSuggestGold;
+
+  /// No description provided for @watchlistSuggestUsd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolar'**
+  String get watchlistSuggestUsd;
+
+  /// No description provided for @watchlistSuggestBist.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST 100'**
+  String get watchlistSuggestBist;
+
+  /// No description provided for @watchlistSuggestGoldSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gram altını takibe al'**
+  String get watchlistSuggestGoldSemantics;
+
+  /// No description provided for @watchlistSuggestUsdSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doları takibe al'**
+  String get watchlistSuggestUsdSemantics;
+
+  /// No description provided for @watchlistSuggestBistSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST 100\'ü takibe al'**
+  String get watchlistSuggestBistSemantics;
+
+  /// No description provided for @watchlistSuggestFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takibe alınamadı. Bağlantını kontrol et.'**
+  String get watchlistSuggestFailed;
 
   /// No description provided for @vitrinTapToAdd.
   ///
