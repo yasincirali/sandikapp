@@ -2124,13 +2124,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addToWatchlist => 'Add to watchlist';
 
   @override
-  String get whyWatchlistUpper => 'WHY A WATCHLIST?';
-
-  @override
-  String get whyWatchlistBody =>
-      'You can follow an asset\'s price without buying it. The watchlist is not part of your portfolio; it does not affect your total value or profit/loss.';
-
-  @override
   String get notInPortfolioNote =>
       'These assets are not part of your portfolio.';
 
@@ -5866,6 +5859,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vitrinStatementHintShort => 'PDF, Excel or CSV in one go';
+
+  @override
+  String get watchlistSuggestGold => 'Gram gold';
+
+  @override
+  String get watchlistSuggestUsd => 'US dollar';
+
+  @override
+  String get watchlistSuggestBist => 'BIST 100';
+
+  @override
+  String get watchlistSuggestGoldSemantics => 'Add gram gold to watchlist';
+
+  @override
+  String get watchlistSuggestUsdSemantics => 'Add US dollar to watchlist';
+
+  @override
+  String get watchlistSuggestBistSemantics => 'Add BIST 100 to watchlist';
+
+  @override
+  String get watchlistSuggestFailed =>
+      'Couldn\'t add to watchlist. Check your connection.';
 
   @override
   String get vitrinTapToAdd => 'Tap to add';

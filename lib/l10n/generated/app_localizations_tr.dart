@@ -2108,13 +2108,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get addToWatchlist => 'Takibe varlık ekle';
 
   @override
-  String get whyWatchlistUpper => 'NEDEN TAKİP LİSTESİ?';
-
-  @override
-  String get whyWatchlistBody =>
-      'Bir varlığı satın almadan fiyatını izleyebilirsin. Takip listesi portföyüne girmez; toplam değerini ve kâr/zararını etkilemez.';
-
-  @override
   String get notInPortfolioNote => 'Bu varlıklar portföyüne dahil değildir.';
 
   @override
@@ -5814,6 +5807,28 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get vitrinStatementHintShort => 'PDF, Excel ya da CSV; tek seferde';
+
+  @override
+  String get watchlistSuggestGold => 'Gram altın';
+
+  @override
+  String get watchlistSuggestUsd => 'Dolar';
+
+  @override
+  String get watchlistSuggestBist => 'BIST 100';
+
+  @override
+  String get watchlistSuggestGoldSemantics => 'Gram altını takibe al';
+
+  @override
+  String get watchlistSuggestUsdSemantics => 'Doları takibe al';
+
+  @override
+  String get watchlistSuggestBistSemantics => 'BIST 100\'ü takibe al';
+
+  @override
+  String get watchlistSuggestFailed =>
+      'Takibe alınamadı. Bağlantını kontrol et.';
 
   @override
   String get vitrinTapToAdd => 'Eklemek için dokun';

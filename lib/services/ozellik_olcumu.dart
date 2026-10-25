@@ -35,7 +35,12 @@ enum Ozellik {
 
   /// Tam ekran grafiğin görsel olarak paylaşılması (Ar-Ge 25 Eki §2):
   /// paylaşım sayfası hatasız açıldığında sayılır, düğmeye dokunuşta değil.
-  grafikPaylas('grafik_paylas');
+  grafikPaylas('grafik_paylas'),
+
+  /// Boş takip listesindeki öneri çipiyle (Gram altın / Dolar / BIST 100)
+  /// takibe alma. Soru: boş durum ilk takibi başlatıyor mu, yoksa çipler
+  /// görülüp geçiliyor mu (görülmezse 19 Kasım turunda kalkar).
+  takipOnerisi('takip_onerisi');
 
   const Ozellik(this.kod);
   final String kod;
