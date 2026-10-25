@@ -146,19 +146,23 @@ const List<SurumNotu> surumNotlari = [
         aciklama: '"10.000 TL\'lik aldım" diye hatırlıyorsan Varlık Ekle\'de '
             'Tutar\'ı seç, adedi uygulama hesaplasın. Altın ve dövizde fiyatı '
             'boş bırakırsan maliyet kuyumcunun satış fiyatından yazılır; '
-            'bu yüzden yeni altın ilk gün kuyumcu farkı kadar eksi görünür.',
+            'bu yüzden yeni altın ilk gün kuyumcu farkı kadar eksi görünür. '
+            'Altın ve döviz sayfasında artık iki fiyat var: bozdurursan '
+            'eline geçen ve alırsan ödeyeceğin.',
       ),
       Yenilik(
         ikon: YenilikIkonu.liste,
         baslik: 'Takip listesi senin sıranda',
         aciklama: 'Satırı uzun basıp sürükle; fiyatlar değişse de yerinde '
-            'kalır. İstersen "En çok yükselen" ya da "En çok düşen" diye sırala.',
+            'kalır. İstersen "En çok yükselen" ya da "En çok düşen" diye sırala. '
+            'Liste boşsa gram altın, dolar ya da BIST 100\'ü tek dokunuşla ekle.',
       ),
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Telefonu yan çevir',
         aciklama: 'Varlık grafiği tam ekran açılır. Trend çizgisi, yatay '
-            'seviye ve dikdörtgen çizebilirsin; çizimlerin o varlıkta kalır.',
+            'seviye ve dikdörtgen çizebilirsin; çizimlerin o varlıkta kalır. '
+            'Paylaş düğmesi grafiği çizimleriyle birlikte görsel olarak gönderir.',
       ),
       Yenilik(
         ikon: YenilikIkonu.bildirim,
