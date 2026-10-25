@@ -28,6 +28,7 @@ import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_acilir.dart';
+import '../services/ozellik_olcumu.dart';
 import '../services/crash_reporter.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';

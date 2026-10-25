@@ -17,6 +17,7 @@ CORE FEATURES
 
 • Add stocks, mutual funds, currencies, gold, and commodities
 • Prices update automatically; manual price entry supported
+• "How much is 100 dollars?" Type it in search, see it at the live price
 • See total value, gain/loss, and allocation chart instantly
 • Track historical performance with a TradingView-style professional chart — pinch zoom, crosshair, dynamic time ranges
 

@@ -8,6 +8,7 @@ import '../models/watchlist_item.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/supabase_service.dart';
+import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
 import '../widgets/watchlist_chart.dart' show WatchlistChart;
 import 'auth_provider.dart';
@@ -473,6 +474,7 @@ void takipSirasiniTasi(
   final yeniSira = siraTasi(sira, eski, yeni);
   if (identical(yeniSira, sira)) return;
   ref.read(takipSirasiProvider.notifier).set(yeniSira);
+  OzellikOlcumu.say(Ozellik.takipSirasi);
 }
 
 /// Takip listesindeki varlık sayısı — Portföy ekranındaki

@@ -29,6 +29,7 @@ import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
@@ -353,6 +354,7 @@ class _SiralamaDugmesi extends ConsumerWidget {
               if (m == secili) return;
               SandikHaptic.selection.perform();
               ref.read(takipSiralamaProvider.notifier).set(m.index);
+              OzellikOlcumu.say(Ozellik.takipSirasi);
             },
           ),
         ),

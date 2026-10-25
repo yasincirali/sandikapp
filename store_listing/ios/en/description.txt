@@ -29,6 +29,8 @@ SOMETHING NEW EVERY DAY
 • Price alerts: get notified when a target price is hit
 • Morning briefing and weekly summary notifications — quiet hours are yours to set
 • Home screen widget and Lock Screen Live Activity (iOS)
+• Single-asset widget for gold, the dollar or any fund, on the Home Screen and Lock Screen
+• "How much is 100 dollars?" Type it in search, see it at the live price
 
 PERFORMANCE
 • Explore your history on a professional chart — line or candles, pinch to zoom, crosshair

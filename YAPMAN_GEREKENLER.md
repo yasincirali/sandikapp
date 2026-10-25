@@ -14,6 +14,12 @@
 
 ## ⏳ 2026-10-24 Mağaza metni: yatay tam ekran grafik ve çizim (1.1.7 gönderiminde)
 
+> **2026-10-25 güncellemesi:** aynı dosyalara tek varlık widget'ı (ana ekran +
+> kilit ekranı, iOS) ve aramada hızlı hesap ("5 çeyrek kaç TL?") satırları
+> eklendi; tanıtım metni widget'ı öne alıyor. Karakterler: ASC açıklama
+> 3.140 / 3.308, Play 2.744 / 2.661, tanıtım 152 / 161. Aşağıdaki sayılar
+> 24 Ekim'indir; yapıştırma adımları aynı.
+
 Metin repoda hazır; mağazadaki build'de olmayanı vaat etmemek için
 **yalnız özelliği taşıyan sürüm (1.1.7 ya da sonrası) gönderilirken**
 yapıştırılır (App Store 2.3.1(a), "mağaza incelemesi = mağaza kullanıcısı").

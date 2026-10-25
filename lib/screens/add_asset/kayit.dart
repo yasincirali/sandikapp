@@ -421,6 +421,10 @@ extension _Kayit on _AddAssetScreenState {
               portfoyId: _hedefPortfoy,
               yol: widget.ekleYolu ?? 'form',
             );
+        // Kipe geçiş değil KAYIT sayılır: geçip vazgeçen merak etmiştir,
+        // kaydeden kullanmıştır. 19 Kasım kararı "kullanılıyor mu"yu sorar.
+        // Tutar gönderilmez, yalnız özellik kodu.
+        if (_tutarModu) OzellikOlcumu.say(Ozellik.tutarKipi);
       }
     } on AssetLimitExceededException catch (e) {
       if (!mounted) return _KayitSonu.kaldi;

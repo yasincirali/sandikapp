@@ -114,8 +114,58 @@ const List<SurumNotu> surumNotlari = [
     // Premium göstergeler, AI seviye bilgisi) yazılmaz. Ekran görüntüsünden
     // ekleme, "Fotoğrafla ekle" hatası kapanana kadar bilerek dışarıda:
     // vaat edilen ilk denemede çalışmazsa güven kaybı yazmamaktan büyük.
-    baslik: 'Emtialar, sakin bildirimler, daha güvenilir alarmlar',
+    //
+    // 2026-10-25 (müşteri raporu 09:15, yasin "yap"): #239/#245 ile gelenler
+    // başa alındı. Çoğu bir hareketle açılıyor (yan çevir, uzun bas, widget
+    // ekle, aramaya yaz); anlatılmazsa bulunmuyor. Sayfa ilk altıyı gösterir
+    // (`YeniliklerSheet.oneCikanSayisi`), bu yüzden ilk altı yeni ve en çok
+    // kullanılacak olanlar. Not en fazla 8 madde: emtia, tek ayar, kısayol,
+    // bildirim uyarısı ve eksik maliyet maddeleri çıkarıldı (özellikler
+    // duruyor; not her şeyi değil, bulunması zor olanı anlatır). Satış
+    // fiyatından maliyet ayrı madde değil, tutar maddesinde tek cümle:
+    // "neden ilk gün eksideyim" sorusunun cevabı orada.
+    baslik: 'Tek varlık widget\'ı, aramada hesap, tutarla ekleme',
     yenilikler: [
+      Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'Tek varlık widget\'ı (iPhone)',
+        aciklama: 'Gram altın, dolar ya da bir fon: ana ekranda ve kilit '
+            'ekranında tek başına görünür. Ana ekrana basılı tut, artıya '
+            'dokun, sandık\'ı seç ve "Tek varlık"ı ekle. Varlığı widget\'ı '
+            'düzenleyerek seçersin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Aramada hızlı hesap',
+        aciklama: 'Aramaya "5 çeyrek" ya da "100 dolar" yaz, TL karşılığı en '
+            'üstte çıkar. Dokununca ekleme sayfası dolu açılır.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Tutarla ekle',
+        aciklama: '"10.000 TL\'lik aldım" diye hatırlıyorsan Varlık Ekle\'de '
+            'Tutar\'ı seç, adedi uygulama hesaplasın. Altın ve dövizde fiyatı '
+            'boş bırakırsan maliyet kuyumcunun satış fiyatından yazılır; '
+            'bu yüzden yeni altın ilk gün kuyumcu farkı kadar eksi görünür.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Takip listesi senin sıranda',
+        aciklama: 'Satırı uzun basıp sürükle; fiyatlar değişse de yerinde '
+            'kalır. İstersen "En çok yükselen" ya da "En çok düşen" diye sırala.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Telefonu yan çevir',
+        aciklama: 'Varlık grafiği tam ekran açılır. Trend çizgisi, yatay '
+            'seviye ve dikdörtgen çizebilirsin; çizimlerin o varlıkta kalır.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Daha hızlı alarmlar',
+        aciklama: 'Altın, döviz ve kripto alarmları 5 dakikada bir kontrol '
+            'edilir. Çalmış bir alarma dokununca aynı eşikle yeniden kurulur.',
+      ),
       Yenilik(
         ikon: YenilikIkonu.bildirim,
         baslik: 'Yaklaşan önemli günler',
@@ -125,50 +175,11 @@ const List<SurumNotu> surumNotlari = [
             'haftalık liste açılır.',
       ),
       Yenilik(
-        ikon: YenilikIkonu.liste,
-        baslik: 'Gümüş, platin ve paladyum',
-        aciklama: 'Varlık Ekle\'de "Emtia seç" listesinden seç. Gümüş, platin '
-            've paladyumu gram olarak da ekleyebilirsin.',
-      ),
-      Yenilik(
-        ikon: YenilikIkonu.bildirim,
-        baslik: 'Bildirimler tek ayarda',
-        aciklama: 'Ayarlar\'daki Bildirimler bölümünün başında Az, Dengeli '
-            've Çok seçenekleri var. Tek tek ayarlar "Ayrıntılı" altında duruyor.',
-      ),
-      Yenilik(
-        ikon: YenilikIkonu.bildirim,
-        baslik: 'Çalan alarmı yeniden kur',
-        aciklama: 'Çalmış bir fiyat alarmına dokun, aynı eşikle yeniden '
-            'kurulsun. Fiyat eşiği zaten geçtiyse eşiği değiştirebileceğin '
-            'sayfa açılır.',
-      ),
-      Yenilik(
-        ikon: YenilikIkonu.guvenlik,
-        baslik: 'Bildirimler kapalıysa söylüyoruz',
-        aciklama: 'Telefonunda sandık bildirimleri kapalıysa alarm ve sinyal '
-            'sayfalarında bir uyarı görürsün. "Ayarları aç" ile tek '
-            'dokunuşta açabilirsin.',
-      ),
-      Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Zirve yenilendi',
         aciklama: 'Zirvedeki portföyler daha okunaklı: türler büyükten '
             'küçüğe sıralı, hepsi aynı ölçekte. Ayrıntı sayfası aşağı '
             'çekince kapanıyor.',
-      ),
-      Yenilik(
-        ikon: YenilikIkonu.genel,
-        baslik: 'İkon kısayolları ve Spotlight',
-        aciklama: 'Uygulama ikonuna basılı tut: varlık ekle, alarm kur ve '
-            'ara kısayolları açılır. iPhone\'da varlıklarını Spotlight '
-            'aramasında da bulabilirsin.',
-      ),
-      Yenilik(
-        ikon: YenilikIkonu.para,
-        baslik: 'Eksik alış fiyatı hatırlatması',
-        aciklama: 'Alış fiyatını sonra gireceğin varlıklar ana sayfada tek '
-            'satırla hatırlatılır; girince kâr ve zarar doğru hesaplanır.',
       ),
     ],
   ),

@@ -9,7 +9,9 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart' show aktifLotlar;
 import '../models/watchlist_item.dart';
+import '../utils/piyasa_kapali_etiketi.dart' show borsaTakvimindeMi;
 import '../utils/tr_format.dart';
+import 'bugun_service.dart';
 import 'crash_reporter.dart';
 import 'history_service.dart';
 import 'home_widget_service.dart';
@@ -49,6 +51,19 @@ import 'price_service.dart';
 /// (gün içi motorun fon basamağıyla aynı seri, `seriCek(…, '5d')`) ve yalnız
 /// NAV kotasyonla aynı güne aitse hesaplanır. Fiyat ya da yüzde
 /// bilinmiyorsa alan BOŞ yazılır, widget "—" gösterir (uydurma sayı yok).
+///
+/// ## Kilit ekranı (Ar-Ge 2026-10-25 §2)
+/// Aynı widget `accessoryRectangular` ve `accessoryInline` boyutlarında da
+/// çizilir; anahtar, seçim ve yazma noktası AYNI. Pakete yalnız isteğe bağlı
+/// alanlar eklendi (eski okuyucu tanımadığı alanı yok sayar, `v` hâlâ 1):
+/// - `zaman` / `tarih`: yazım anı. Fiyat 1 günden eskiyse widget saatin
+///   yerine tarihi gösterir — widget kendi başına ağa çıkmaz, eski bir
+///   fiyat "şimdi" gibi durmasın.
+/// - öğede `kapanis` / `seansSonu`: "Kapanış" etiketi. Karar burada
+///   verilir, Swift'te değil: tür kuralı `borsaTakvimindeMi`, seans
+///   `BugunService.seansAcikMi` (tatil takvimi dahil) — Bugün kartıyla aynı.
+///   Kripto, altın, döviz hiçbir zaman "kapanış" almaz.
+/// - öğede `kisa`: dar satır (`accessoryInline`) için kısa ad.
 class VarlikWidgetService {
   VarlikWidgetService._();
   static final instance = VarlikWidgetService._();
@@ -185,11 +200,12 @@ class VarlikWidgetService {
             yuzde = null;
           }
         }
-        ogeler.add(varlikWidgetOgesi(a, fiyat: fiyat, gunlukPct: yuzde));
+        ogeler.add(
+            varlikWidgetOgesi(a, fiyat: fiyat, gunlukPct: yuzde, simdi: simdi));
       }
 
       final paket = varlikWidgetPaketi(ogeler,
-          saat: DateFormat('HH:mm', 'tr_TR').format(simdi));
+          saat: DateFormat('HH:mm', 'tr_TR').format(simdi), zaman: simdi);
       await HomeWidgetService.instance.varlikListesiniYaz(paket);
       _sonAnahtar = anahtar;
       _sonYazim = simdi;
@@ -207,6 +223,7 @@ class VarlikWidgetAdayi {
     required this.ad,
     required this.type,
     this.alt,
+    this.borsaTakviminde = false,
   });
 
   /// [FiyatKaynagi.widgetKotasyonSembolu] — aynı zamanda widget'ın seçimi
@@ -217,6 +234,10 @@ class VarlikWidgetAdayi {
   /// İkinci satır (fonun uzun adı, "Amerikan Doları"); [ad] ile aynıysa yok.
   final String? alt;
   final AssetType type;
+
+  /// Fiyatı BIST takvimine bağlı mı ([borsaTakvimindeMi]) — "Kapanış"
+  /// etiketi yalnız bunlarda.
+  final bool borsaTakviminde;
 }
 
 /// Widget'ın seçebileceği varlıklar: önce portföy (açık pozisyonlar), sonra
@@ -249,6 +270,7 @@ List<VarlikWidgetAdayi> varlikWidgetAdaylari({
       ad: ad,
       type: type,
       alt: uzun.isEmpty || uzun == ad ? null : uzun,
+      borsaTakviminde: borsaTakvimindeMi(type: type, subCategory: subCategory),
     ));
   }
 
@@ -284,6 +306,9 @@ class VarlikWidgetOgesi {
     this.fiyat,
     this.degisim,
     this.yon,
+    this.kisa,
+    this.kapanis,
+    this.seansSonu,
   });
 
   final String id;
@@ -300,6 +325,19 @@ class VarlikWidgetOgesi {
   /// yalnız renkle değil ▲/▼ ile de gösterir.
   final int? yon;
 
+  /// Kilit ekranının tek satırı için kısa ad ("Gr altın"); [ad] ile aynıysa
+  /// yazılmaz.
+  final String? kisa;
+
+  /// `true`: yazım anında seans kapalıydı, fiyat son kapanış. Yalnız borsa
+  /// takvimindeki türlerde; diğerlerinde hiç yazılmaz.
+  final bool? kapanis;
+
+  /// Yazım anında seans AÇIKTI: bugünkü kapanış (epoch ms). Widget bu andan
+  /// sonra fiyatı "kapanış" diye göstermez (kapanıştan önceki bir an), yazım
+  /// saatini gösterir.
+  final int? seansSonu;
+
   Map<String, Object?> toJson() => {
         'id': id,
         'ad': ad,
@@ -307,15 +345,22 @@ class VarlikWidgetOgesi {
         if (fiyat != null) 'fiyat': fiyat,
         if (degisim != null) 'degisim': degisim,
         if (yon != null) 'yon': yon,
+        if (kisa != null) 'kisa': kisa,
+        if (kapanis != null) 'kapanis': kapanis,
+        if (seansSonu != null) 'seansSonu': seansSonu,
       };
 }
 
 /// Adayı fiyat ve günlük yüzdeyle widget öğesine çevirir. Ölçülmemiş ya da
 /// geçersiz sayı alana YAZILMAZ (sözleşme madde 3).
+///
+/// [simdi] verilirse seans bilgisi (`kapanis` / `seansSonu`) eklenir; yalnız
+/// fiyatı bilinen, borsa takvimindeki varlıkta. Bilinmiyorsa etiket yok.
 VarlikWidgetOgesi varlikWidgetOgesi(
   VarlikWidgetAdayi a, {
   double? fiyat,
   double? gunlukPct,
+  DateTime? simdi,
 }) {
   final f = (fiyat != null && fiyat.isFinite && fiyat > 0) ? fiyat : null;
   final p =
@@ -334,6 +379,16 @@ VarlikWidgetOgesi varlikWidgetOgesi(
     // Sıfıra yuvarlanan değer yön taşımaz — işaretsiz metinle aynı kural.
     yon = degisim == fmtPct(0) ? 0 : (p > 0 ? 1 : -1);
   }
+  bool? kapanis;
+  int? seansSonu;
+  if (f != null && simdi != null && a.borsaTakviminde) {
+    if (BugunService.seansAcikMi(simdi)) {
+      seansSonu = BugunService.seansKapanisi(simdi)?.millisecondsSinceEpoch;
+    } else {
+      kapanis = true;
+    }
+  }
+  final kisa = kilitEkraniKisaAd(a.ad);
   return VarlikWidgetOgesi(
     id: a.sembol,
     ad: a.ad,
@@ -341,8 +396,17 @@ VarlikWidgetOgesi varlikWidgetOgesi(
     fiyat: fiyatMetni,
     degisim: degisim,
     yon: yon,
+    kisa: kisa == a.ad ? null : kisa,
+    kapanis: kapanis,
+    seansSonu: seansSonu,
   );
 }
+
+/// Kilit ekranının tek satırı (`accessoryInline`, saatin üstü) dar: "Gram"
+/// "Gr" olur ("Gram altın" → "Gr altın"). Başka kelime kısaltılmaz — tahmin
+/// edilen kısaltma yanlış okunur; sığmayanı sistem keser.
+String kilitEkraniKisaAd(String ad) =>
+    ad.replaceAll(RegExp(r'\bGram\b', caseSensitive: false), 'Gr');
 
 /// Fonun günlük yüzdesi: son iki NAV. Son NAV gösterilen kotasyondan
 /// belirgin farklıysa (seri bir gün geride) yüzde HESAPLANMAZ — farklı
@@ -358,12 +422,19 @@ double? fonGunlukYuzdesi(List<(int, double)> nav, double fiyat) {
 
 /// Widget sözleşmesinin `sandik_varliklar` değeri. Biçim sürümlüdür (`v`):
 /// Swift tarafı tanımadığı sürümü okumaz, eski build'in widget'ı bozulmaz.
+///
+/// [zaman] (isteğe bağlı) yazım anı: `zaman` epoch ms + `tarih` ("24 Eki
+/// 14:05"). Widget fiyatın 1 günden eski olduğunu buradan anlar.
 String varlikWidgetPaketi(
   List<VarlikWidgetOgesi> ogeler, {
   required String saat,
+  DateTime? zaman,
 }) =>
     jsonEncode({
       'v': 1,
       'saat': saat,
+      if (zaman != null) 'zaman': zaman.millisecondsSinceEpoch,
+      if (zaman != null)
+        'tarih': DateFormat('d MMM HH:mm', 'tr_TR').format(zaman),
       'ogeler': [for (final o in ogeler) o.toJson()],
     });

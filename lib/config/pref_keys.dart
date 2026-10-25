@@ -192,4 +192,17 @@ class PrefKeys {
   /// Takip listesi sıralama seçimi — `TakipSiralama.index` (0 benim sıram,
   /// 1 en çok yükselen, 2 en çok düşen). Kişiye özel.
   static const takipSiralama = 'pref_takip_siralama';
+
+  /// Özellik kullanım ölçümünün (`OzellikOlcumu`) tekilleştirme öneki:
+  /// `<önek><ozellik kodu>` → son sayıldığı TR günü (`2026-10-25`). Değer
+  /// kullanıcı verisi değil, "bugün bu olay gitti mi" işaretidir; silinirse
+  /// yalnız o günün olayı ikinci kez gider.
+  ///
+  /// Cihaza özel, `perUser` DEĞİL ve çıkışta silinmez (2026-10-25 kararı):
+  /// tercih değil, `kullaniciyaOzelTercihler` listesine girmez. Aynı gün
+  /// aynı telefonda hesap değiştiren kişinin ikinci hesabındaki ilk kullanım
+  /// sayılmaz; bu kaybı, her hesaba ayrı anahtar ve çıkış temizliği
+  /// karmaşasına değmez görüyoruz (ölçü "kaç kişi kullanıyor", kesin sayım
+  /// değil).
+  static const ozellikOlcumuPrefix = 'ozellik_olcumu_gun_';
 }
