@@ -7641,6 +7641,24 @@ abstract class AppLocalizations {
   /// **'Portföyüne ekle'**
   String get aramaHizliHesapEkle;
 
+  /// Genel aramada ters hızlı hesap: o TL ile kaç birim alınır (₺10.000 ≈ 2,6 Çeyrek Altın).
+  ///
+  /// In tr, this message translates to:
+  /// **'{tutar} ≈ {miktar} {ad}'**
+  String aramaHizliHesapTers(String tutar, String miktar, String ad);
+
+  /// No description provided for @aramaHizliHesapKuyumcuSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kuyumcu satış fiyatından'**
+  String get aramaHizliHesapKuyumcuSatis;
+
+  /// No description provided for @aramaHizliHesapSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış fiyatından'**
+  String get aramaHizliHesapSatis;
+
   /// No description provided for @hataBizeYaz.
   ///
   /// In tr, this message translates to:

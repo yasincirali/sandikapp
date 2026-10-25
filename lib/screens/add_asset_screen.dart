@@ -289,7 +289,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
     final initQty =
-        a?.quantity ?? c?.quantity ?? widget.hizliHesap?.miktar ?? 0;
+        a?.quantity ?? c?.quantity ?? widget.hizliHesap?.adetOnDolgu ?? 0;
     // Eurobondda kayıtlı fiyat birim değerdir (kirli/100); alan TEMİZ %
     // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
     // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
@@ -408,6 +408,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       _yaz(_n.selectGold(g));
     } else if (s?.dovizEtiketi ?? h?.doviz case final etiket?) {
       _yaz(_n.selectDoviz(dovizOptFor(etiket)));
+    }
+    // Ters hızlı hesap ("10.000 tl çeyrek", 2026-10-25): kullanıcı TL
+    // tutarını yazdı; form Tutar kipinde o tutarla açılır, adedi formun
+    // kendi kuralı (`tutardanAdet`, satış önizlemesi) hesaplar. Arama
+    // satırıyla aynı satış fiyatı: ikinci bir adet hesabı yazılmadı.
+    if (h != null && h.ters && _tutarKipiVar) {
+      _n.setTutarModu(true);
+      _tutar.text = fmtInputTr(h.miktar);
     }
   }
 
