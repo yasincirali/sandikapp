@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tek varlık widget'ının seçim ekranı (`SandikVarlikSecimActivity`) — iOS'taki
+  App Intents "Varlık seç" listesinin karşılığı. Liste YALNIZ uygulamanın
+  yazdığı paketten (portföy + takip listesi); katalog araması yok.
+
+  Renkler Kotlin'de uygulamanın tema tercihine göre basılır (widget'la aynı
+  palet); buradakiler ilk karedeki hâldir. `fitsSystemWindows`: Android 15+
+  kenardan kenara çizimde başlık durum çubuğunun, liste gezinme çubuğunun
+  altına girmesin.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/secim_kok"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    android:background="@color/widget_bg">
+
+    <TextView
+        android:id="@+id/secim_baslik"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="20dp"
+        android:text="@string/varlik_secim_baslik"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="22sp"
+        android:fontFamily="@font/dm_sans_bold"
+        android:accessibilityHeading="true" />
+
+    <TextView
+        android:id="@+id/secim_aciklama"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="12dp"
+        android:text="@string/varlik_secim_aciklama"
+        android:textColor="@color/widget_text_muted"
+        android:textSize="14sp"
+        android:fontFamily="@font/dm_sans_regular" />
+
+    <ListView
+        android:id="@+id/secim_liste"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp"
+        android:choiceMode="none" />
+
+    <!-- Liste boşken (uygulama henüz yazmadı / oturum kapalı). -->
+    <TextView
+        android:id="@+id/secim_bos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="12dp"
+        android:text="@string/varlik_secim_bos"
+        android:textColor="@color/widget_text_muted"
+        android:textSize="15sp"
+        android:fontFamily="@font/dm_sans_medium"
+        android:visibility="gone" />
+
+    <!-- Boş listede widget yine eklenebilir: liste gelince ilk varlığı
+         gösterir (iOS `defaultResult` ile aynı). Dokunma alanı ≥48 dp. -->
+    <Button
+        android:id="@+id/secim_ekle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/varlik_secim_bos_ekle"
+        android:fontFamily="@font/dm_sans_semibold"
+        android:visibility="gone"
+        style="?android:attr/borderlessButtonStyle" />
+</LinearLayout>

@@ -264,6 +264,179 @@ void main() {
       expect(find.textContaining('≈'), findsNothing);
     });
 
+    // İkinci adım (2026-10-25): ters yön SATIŞ fiyatından, hisse/fon adedi
+    // yalnız aramanın kaynağında birebir bulunan sembolle.
+
+    // `pushGuarded`ın çift dokunma penceresi GERÇEK saatle (500 ms) ve
+    // testler arasında paylaşılır; önceki testin push'u bu dokunuşu
+    // yutmasın diye pencere gerçek zamanda geçirilir.
+    Future<void> satiraDokun(WidgetTester t) async {
+      await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 600)));
+      await t.tap(find.byKey(const ValueKey('genel-arama-hizli-hesap')));
+    }
+
+    Widget ikinciAdim(Map<String, YahooQuote> q) => GenelAramaScreen(
+          aramaServisi: (s) async => s.toLowerCase().contains('thy')
+              ? const [
+                  SymbolHit(
+                      ticker: 'THYAO.IS',
+                      name: 'Türk Hava Yolları',
+                      source: 'BIST'),
+                ]
+              : s.toUpperCase() == 'AFT'
+                  ? const [
+                      SymbolHit(
+                          ticker: 'TEFAS:AFT',
+                          name: 'Ak Portföy Yeni Teknolojiler',
+                          source: 'Fon'),
+                    ]
+                  : const [],
+          kotasyonServisi: (semboller) async => {
+            for (final s in semboller)
+              if (q[s] case final v?) s: v,
+          },
+        );
+    const ceyrekSatisli = {
+      'ALTIN_CEYREK': YahooQuote(
+          symbol: 'ALTIN_CEYREK',
+          regularMarketPrice: 3800,
+          satisFiyati: 4000,
+          currency: 'TRY'),
+    };
+
+    testWidgets('ters "10.000 tl çeyrek": satış fiyatından adet', (t) async {
+      await _pump(t, ikinciAdim(ceyrekSatisli));
+      await yaz(t, '10.000 tl çeyrek');
+      expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
+          findsOneWidget);
+      // 10.000 ÷ 4.000 (satış), alış 3.800 değil.
+      expect(find.text('₺10.000 ≈ 2,5 Çeyrek Altın'), findsOneWidget);
+      expect(find.text('Kuyumcu satış fiyatından · Portföyüne ekle'),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(RegExp(r'^₺10\.000 ≈ 2,5 Çeyrek Altın\. '
+              r'Kuyumcu satış fiyatından · Portföyüne ekle')),
+          findsOneWidget);
+      // 44pt satır.
+      expect(
+          t.getSize(find.byKey(const ValueKey('genel-arama-hizli-hesap')))
+              .height,
+          greaterThanOrEqualTo(44));
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('ters döviz: "kuyumcu" denmez', (t) async {
+      await _pump(
+          t,
+          ikinciAdim(const {
+            'USDTRY=X': YahooQuote(
+                symbol: 'USDTRY=X',
+                regularMarketPrice: 41.9,
+                satisFiyati: 42,
+                currency: 'TRY'),
+          }));
+      await yaz(t, '4200 tl dolar');
+      expect(find.text('₺4.200 ≈ 100 USD'), findsOneWidget);
+      expect(find.text('Satış fiyatından · Portföyüne ekle'), findsOneWidget);
+    });
+
+    testWidgets('ters: satış yoksa ya da kapıdan geçmezse satır YOK',
+        (t) async {
+      for (final q in const [
+        // Satış hiç gelmedi: alışa düşülmez.
+        YahooQuote(
+            symbol: 'ALTIN_CEYREK',
+            regularMarketPrice: 3800,
+            currency: 'TRY'),
+        // Satış alışın altında: veri bozuk.
+        YahooQuote(
+            symbol: 'ALTIN_CEYREK',
+            regularMarketPrice: 3800,
+            satisFiyati: 3700,
+            currency: 'TRY'),
+        // Makas sınır dışı.
+        YahooQuote(
+            symbol: 'ALTIN_CEYREK',
+            regularMarketPrice: 3000,
+            satisFiyati: 4000,
+            currency: 'TRY'),
+      ]) {
+        await _pump(t, ikinciAdim({'ALTIN_CEYREK': q}));
+        await yaz(t, '10.000 tl çeyrek');
+        expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
+            findsNothing,
+            reason: '${q.satisFiyati}');
+        expect(find.textContaining('≈'), findsNothing);
+      }
+    });
+
+    testWidgets('ters satıra dokununca form o TL ile açılır', (t) async {
+      await _pump(t, ikinciAdim(ceyrekSatisli));
+      await yaz(t, '10.000 tl çeyrek');
+      await satiraDokun(t);
+      for (var i = 0; i < 10; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      final form = t.widget<AddAssetScreen>(find.byType(AddAssetScreen));
+      expect(
+          form.hizliHesap,
+          const HizliHesap(
+              miktar: 10000, altin: GoldSubCategory.ceyrek, ters: true));
+    });
+
+    const thyFiyatli = {
+      'THYAO.IS': YahooQuote(
+          symbol: 'THYAO.IS', regularMarketPrice: 312.4, currency: 'TRY'),
+    };
+
+    testWidgets('"100 THYAO": birebir hisse, canlı fiyatla', (t) async {
+      await _pump(t, ikinciAdim(thyFiyatli));
+      await yaz(t, '100 THYAO');
+      expect(find.text('100 THYAO ≈ ₺31.240'), findsOneWidget);
+      expect(find.bySemanticsLabel(
+              RegExp(r'^100 THYAO ≈ ₺31\.240\. Portföyüne ekle')),
+          findsOneWidget);
+
+      await satiraDokun(t);
+      for (var i = 0; i < 10; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      final form = t.widget<AddAssetScreen>(find.byType(AddAssetScreen));
+      expect(form.prefillTicker, 'THYAO.IS');
+      expect(form.prefillType, AssetType.hisse);
+      expect(form.hizliHesap?.adetOnDolgu, 100);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('"1000 AFT": TEFAS fonu', (t) async {
+      await _pump(
+          t,
+          ikinciAdim(const {
+            'TEFAS:AFT': YahooQuote(
+                symbol: 'TEFAS:AFT', regularMarketPrice: 1.5, currency: 'TRY'),
+          }));
+      await yaz(t, '1000 AFT');
+      expect(find.text('1000 AFT ≈ ₺1.500'), findsOneWidget);
+    });
+
+    testWidgets('adet: fiyat yoksa, yarım kod ya da serbest metinse satır YOK',
+        (t) async {
+      await _pump(t, ikinciAdim(const {}));
+      await yaz(t, '100 THYAO');
+      expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
+          findsNothing);
+      expect(find.textContaining('≈'), findsNothing);
+
+      await _pump(t, ikinciAdim(thyFiyatli));
+      for (final g in ['100 THY', '2025 raporu', '3 ay', '10 tl']) {
+        await yaz(t, g);
+        expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
+            findsNothing,
+            reason: g);
+      }
+    });
+
     testWidgets('ipucu örnek verir', (t) async {
       await _pump(t, ekran());
       expect(find.text('ör. THYAO ya da 5 çeyrek'), findsOneWidget);

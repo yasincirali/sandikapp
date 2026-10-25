@@ -19,6 +19,14 @@
 > eklendi; tanıtım metni widget'ı öne alıyor. Karakterler: ASC açıklama
 > 3.140 / 3.308, Play 2.744 / 2.661, tanıtım 152 / 161. Aşağıdaki sayılar
 > 24 Ekim'indir; yapıştırma adımları aynı.
+>
+> **2026-10-25 akşam (sadeleştirme):** ASC açıklaması 45 maddeden 5 başlık
+> altında 20 maddeye indi; ilk iki satır altın/döviz sahibine konuşuyor
+> (kuyumcu alış-satış farkı, enflasyon, gerçek kâr). Yeni satırlar
+> "Bozdurursan / Alırsan" iki fiyat ve "Çizdiğin grafiği paylaş"; Play
+> metni kelimeleri koruyup yalnız bu iki satırı aldı. 1.1.7 gönderiminde
+> **dört dosyanın güncel hâlini** yapıştır (eski metni değil). Karakter:
+> ASC 2.375 / 2.322, Play 3.248 / 2.864 (sınır 4.000).
 
 Metin repoda hazır; mağazadaki build'de olmayanı vaat etmemek için
 **yalnız özelliği taşıyan sürüm (1.1.7 ya da sonrası) gönderilirken**

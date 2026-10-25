@@ -75,6 +75,7 @@ import 'services/home_widget_service.dart';
 import 'services/varlik_widget_service.dart';
 import 'services/sistem_eylemleri.dart';
 import 'services/history_service.dart';
+import 'services/portfoy_seri_depo.dart';
 import 'services/seri_disk_depo.dart';
 import 'services/live_activity_service.dart';
 import 'services/notification_service.dart';
@@ -203,6 +204,9 @@ void main() async {
     // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
     // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
     HistoryService.kaliciDepo = SeriDiskDepo();
+    // Performans sekmesinin son portföy serisi — lot defterinin parmak
+    // iziyle; yalnız aynı defterde soluk açılış için (`PortfoySeriDepo`).
+    PortfoySeriDepo.kaliciDepo = PortfoySeriDepo.varsayilanDepo();
     // Sistem bellek uyarısında süreli önbellekleri bırak (bkz. sınıf).
     BellekBaskisi.instance.baglan();
     // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
@@ -1943,10 +1947,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     });
     ref.listen<bool>(biometricLockProvider, (_, __) => _spotlightEsitle());
 
-    // iOS tek varlık widget'ı (2026-10-24): seçim listesi portföy + takip
-    // listesinden kurulur. Portföy her fiyat turunda yayınlandığı için takip
+    // Tek varlık widget'ı (iOS 2026-10-24, Android 2026-10-25): seçim
+    // listesi portföy + takip listesinden kurulur. Portföy her fiyat turunda yayınlandığı için takip
     // listesindeki değişiklik de en geç bir sonraki turda yazılır; takip
-    // listesine AYRI dinleyici bağlanmaz — bağlamak onu her iOS açılışında
+    // listesine AYRI dinleyici bağlanmaz — bağlamak onu her açılışta
     // yüklerdi (bkz. `VarlikWidgetService.guncelle`). Yükleme karesi
     // atlanır (önceki kullanıcının defteri taşınabilir).
     ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
@@ -2142,11 +2146,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         reason: 'main.SistemEylemleri.spotlight');
   }
 
-  /// iOS tek varlık widget'ının seçim listesi ve fiyatları.
+  /// Tek varlık widget'ının (iOS + Android) seçim listesi ve fiyatları.
   ///
   /// Yalnız oturumdaki kullanıcının kendi lot'ları (ortak lot'u değil) ve
   /// takip listesi — o da yalnız zaten yüklenmişse; yüklenmemişse servis
-  /// widget kuruluyken [takipYukle] ile ister. Servis iOS dışında no-op.
+  /// widget kuruluyken [takipYukle] ile ister. Servis iOS/Android dışında
+  /// no-op.
   void _varlikWidgetiniYaz(PortfolioState? durum) {
     if (!VarlikWidgetService.etkin) return;
     final uid = ref.read(authProvider).valueOrNull?.id;

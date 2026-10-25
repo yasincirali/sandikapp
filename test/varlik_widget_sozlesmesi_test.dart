@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,10 +17,13 @@ import 'package:portfoy_takip/services/varlik_widget_service.dart';
 
 import 'helpers/kaynak.dart';
 
-/// iOS tek varlık widget'ı (Ar-Ge kararı 2026-10-24 §1).
+/// Tek varlık widget'ı: iOS (Ar-Ge kararı 2026-10-24 §1) ve Android
+/// (yasin onayı 2026-10-25).
 ///
 /// Swift bu ortamda derlenmiyor ve iOS derlemesi yalnız `main` birleşmesinde
-/// TestFlight hattında oluyor. İki taraf arasındaki SÖZLEŞME (anahtar, JSON
+/// TestFlight hattında oluyor; Android SDK da yok (APK'yı PR'da CI derler).
+/// Kotlin/XML tarafı da aynı yolla kilitlenir: manifest kaydı, seçim ekranı,
+/// okunan anahtarlar ve Kotlin'in andığı kaynakların varlığı. İki taraf arasındaki SÖZLEŞME (anahtar, JSON
 /// alanları, widget türü, paket ve pbxproj kaydı, dokunuş URI'si) kaynak
 /// metinden kilitlenir; Dart tarafının yazdığı değerler kanal taklidiyle
 /// doğrulanır.
@@ -312,6 +316,9 @@ void main() {
       expect(kanal.yazilan.keys, [HomeWidgetService.kVarliklar]);
       expect(kanal.yenilemeler.single['ios'],
           HomeWidgetService.iOSVarlikWidgetName);
+      // Aynı çağrı Android sağlayıcısını da yeniler (iOS'ta yok sayılır).
+      expect(kanal.yenilemeler.single['android'],
+          HomeWidgetService.androidVarlikWidgetName);
     });
 
     test('miktar, tutar, lot ve kullanıcı kimliği YAZILMAZ', () async {
@@ -388,7 +395,8 @@ void main() {
       expect(kotasyonCagrisi, 2);
     });
 
-    test('iOS dışında hiçbir şey yazılmaz (Android etkilenmez)', () async {
+    test('desteklenmeyen platformda (masaüstü/web) hiçbir şey yazılmaz',
+        () async {
       VarlikWidgetService.platformKontrolu = () => false;
       await svc.guncelle(
         lotlar: [
@@ -398,6 +406,34 @@ void main() {
       );
       expect(kanal.yazilan, isEmpty);
       expect(kotasyonCagrisi, 0);
+    });
+
+    test('Android\'de kurulu widget sınıf adından tanınır', () async {
+      // `ComponentName.shortClassName`: aynı paketteki sınıf "." ile başlar.
+      kanal.kurulu = [
+        {'widgetId': 7, 'androidClassName': '.SandikWidgetProvider'},
+      ];
+      expect(await HomeWidgetService.instance.varlikWidgetiKuruluMu(), isFalse,
+          reason: 'portföy widget\'ı tek varlık widget\'ı sayılmaz');
+      kanal.kurulu = [
+        {'widgetId': 7, 'androidClassName': '.SandikWidgetProvider'},
+        {'widgetId': 8, 'androidClassName': '.SandikVarlikWidgetProvider'},
+      ];
+      expect(await HomeWidgetService.instance.varlikWidgetiKuruluMu(), isTrue);
+      kanal.kurulu = [
+        {
+          'widgetId': 9,
+          'androidClassName': 'com.sandik.app.SandikVarlikWidgetProvider'
+        },
+      ];
+      expect(await HomeWidgetService.instance.varlikWidgetiKuruluMu(), isTrue);
+      kanal.kurulu = [
+        {
+          'kind': HomeWidgetService.iOSVarlikWidgetName,
+          'family': 'systemSmall'
+        },
+      ];
+      expect(await HomeWidgetService.instance.varlikWidgetiKuruluMu(), isTrue);
     });
 
     test('oturum kapanınca seçim listesi boşaltılır', () async {
@@ -509,6 +545,11 @@ void main() {
           as Map<String, Object?>;
       expect(eski.containsKey('zaman'), isFalse);
     });
+  });
+
+  test('servis iOS ve Android\'de çalışır (Android widget\'ı 2026-10-25)', () {
+    final kaynak = ekranKaynagiSync('lib/services/varlik_widget_service.dart');
+    expect(kaynak, contains('Platform.isIOS || Platform.isAndroid'));
   });
 
   group('Swift sözleşmesi (kaynak kilidi — derleme burada yok)', () {
@@ -637,6 +678,200 @@ void main() {
           MainNavigationScreen.portfoySekmesi);
       expect(DeepLinkRouter.gunlukGorunumIster(Uri.parse(uri)), isFalse,
           reason: 'Tek varlık portföy toplamını anlatmaz');
+    });
+  });
+
+  group('Android sözleşmesi (kaynak kilidi — APK burada derlenmiyor)', () {
+    const kotlinDizini = 'android/app/src/main/kotlin/com/sandik/app';
+    const resDizini = 'android/app/src/main/res';
+    final provider =
+        ekranKaynagiSync('$kotlinDizini/SandikVarlikWidgetProvider.kt');
+    final secim =
+        ekranKaynagiSync('$kotlinDizini/SandikVarlikSecimActivity.kt');
+    final manifest =
+        ekranKaynagiSync('android/app/src/main/AndroidManifest.xml');
+    final info =
+        ekranKaynagiSync('$resDizini/xml/sandik_varlik_widget_info.xml');
+    final swift = ekranKaynagiSync('ios/SandikWidget/SandikVarlikWidget.swift');
+
+    /// `<receiver …>…</receiver>` / `<activity …>…</activity>` bloğu.
+    String? blok(String etiket, String ad) => RegExp(
+          '<$etiket\\s+android:name="${RegExp.escape(ad)}"[\\s\\S]*?</$etiket>',
+        ).firstMatch(manifest)?.group(0);
+
+    test('receiver manifest\'te kayıtlı: sınıf adı Dart ile birebir', () {
+      final r =
+          blok('receiver', '.${HomeWidgetService.androidVarlikWidgetName}');
+      expect(r, isNotNull, reason: 'receiver yok — widget listede görünmez');
+      expect(r, contains('android:exported="true"'),
+          reason: 'launcher başka uygulama; portföy widget\'ıyla aynı');
+      expect(r, contains('android.appwidget.action.APPWIDGET_UPDATE'));
+      expect(r, contains('android:resource="@xml/sandik_varlik_widget_info"'));
+      expect(
+          provider,
+          contains('class ${HomeWidgetService.androidVarlikWidgetName} '
+              ': AppWidgetProvider()'));
+      // Portföy widget'ının kaydı yerinde (dokunulmadı).
+      expect(blok('receiver', '.SandikWidgetProvider'),
+          contains('@xml/sandik_widget_info'));
+    });
+
+    test('seçim ekranı tanımlı ve widget info onu gösteriyor', () {
+      final a = blok('activity', '.SandikVarlikSecimActivity');
+      expect(a, isNotNull, reason: 'configure Activity manifest\'te yok');
+      expect(a, contains('android.appwidget.action.APPWIDGET_CONFIGURE'));
+      expect(a, contains('android:exported="true"'));
+      expect(a, isNot(contains('android:taskAffinity')),
+          reason: 'ayrı görevde sonuç launcher\'a İPTAL döner');
+      expect(
+          info,
+          contains(
+              'android:configure="com.sandik.app.SandikVarlikSecimActivity"'));
+      expect(secim, contains('class SandikVarlikSecimActivity : Activity()'));
+      expect(info, contains('reconfigurable'));
+      expect(info, contains('android:updatePeriodMillis="0"'),
+          reason: 'sistem zamanlayıcısı pil yer; veriyi uygulama yazar');
+      // Seçim ekranı gelen kimliğin bu sağlayıcıya ait olduğunu doğrular
+      // (exported Activity'ye başka uygulama da kimlik gönderebilir).
+      expect(secim, contains('getAppWidgetInfo(widgetId)?.provider'));
+      expect(secim, contains('setResult(RESULT_CANCELED'));
+      expect(secim, contains('setResult(RESULT_OK'));
+    });
+
+    test('Android\'in okuduğu anahtarlar Dart\'ta yazılanlarla aynı', () {
+      expect(provider,
+          contains('KEY_VARLIKLAR = "${HomeWidgetService.kVarliklar}"'));
+      expect(provider, contains('KEY_ACIK_TEMA = "sandik_is_light_theme"'));
+      // Tema bayrağını Dart bu adla yazıyor.
+      expect(ekranKaynagiSync('lib/services/home_widget_service.dart'),
+          contains("'sandik_is_light_theme'"));
+      // Paket alanları: Dart `toJson` / `varlikWidgetPaketi` adları.
+      final dart = ekranKaynagiSync('lib/services/varlik_widget_service.dart');
+      for (final alan in [
+        'v', 'saat', 'zaman', 'tarih', 'ogeler', //
+        'id', 'ad', 'alt', 'fiyat', 'degisim', 'yon', 'kapanis',
+      ]) {
+        expect(provider, contains('"$alan"'),
+            reason: '`$alan` Kotlin okuyucusunda yok');
+        expect(dart, contains("'$alan'"),
+            reason: '`$alan` Dart paketinde yazılmıyor');
+      }
+      // Sürüm iOS ile aynı: tanınmayan sürüm okunmaz.
+      expect(provider, contains('const val SURUM = 1'));
+      expect(
+          (jsonDecode(varlikWidgetPaketi(const [], saat: ''))
+              as Map<String, Object?>)['v'],
+          1);
+      // Seçim Dart'ın deposuna yazılmaz (oturum kapanışında silinmesin).
+      expect(provider, contains('SECIM_DOSYASI = "SandikVarlikWidgetSecim"'));
+      expect(secim, isNot(contains('HomeWidgetPreferences')));
+    });
+
+    test('dokunuş URI\'si iOS ile birebir → Portföy sekmesi, aynı yüzey', () {
+      final m =
+          RegExp(r'VARLIK_WIDGET_CLICK_URI = "([^"]+)"').firstMatch(provider);
+      expect(m, isNotNull);
+      final uri = m!.group(1)!;
+      final iosUri = RegExp(r'varlikWidgetClickURL = URL\(string: "([^"]+)"\)')
+          .firstMatch(swift)!
+          .group(1)!;
+      expect(uri, iosUri, reason: 'iki platform aynı URI\'yi taşımalı');
+      expect(DeepLinkRouter.hedefSekmeMetin(uri),
+          MainNavigationScreen.portfoySekmesi);
+      // Atıf: `widget_tapped.surface` iOS ile aynı yoldan `varlik_widget`.
+      expect(DeepLinkRouter.widgetYuzeyi(Uri.parse(uri)), 'varlik_widget');
+      // `HomeWidgetLaunchIntent` URI'yi Dart'a (`widgetClicked` /
+      // `initiallyLaunchedFromHomeWidget`) taşır; düz launch intent atfı
+      // kaybederdi.
+      expect(provider, contains('HomeWidgetLaunchIntent.getActivity('));
+      expect(provider, contains('Uri.parse(VARLIK_WIDGET_CLICK_URI)'));
+    });
+
+    test('yön ok + işaretli yüzdeyle; tek erişilebilirlik cümlesi', () {
+      expect(provider, contains('"▲"'));
+      expect(provider, contains('"▼"'));
+      expect(provider, contains('setContentDescription('));
+      // Kapanış kararı Dart'ta: Kotlin takvime bakmaz, alanı okur.
+      expect(provider, contains('oge.kapanis == true'));
+      expect(provider, isNot(contains('Calendar')));
+      // Fiyat bilinmiyorsa "—"; sayı uydurulmaz ya da yeniden biçimlenmez.
+      expect(provider, contains('oge.fiyat ?: "—"'));
+      expect(provider, isNot(contains('String.format')));
+    });
+
+    test('Kotlin\'in andığı kaynaklar var (derleme kırılmasın)', () {
+      String birlestir(String dizin) => Directory(dizin)
+          .listSync()
+          .whereType<File>()
+          .map((f) => f.readAsStringSync())
+          .join('\n');
+      final layoutlar = birlestir('$resDizini/layout');
+      final degerler = birlestir('$resDizini/values');
+      bool drawableVar(String ad) => Directory(resDizini)
+          .listSync()
+          .whereType<Directory>()
+          .where((d) => d.path.contains('drawable'))
+          .any((d) => d
+              .listSync()
+              .any((f) => f.uri.pathSegments.last.startsWith('$ad.')));
+
+      for (final m in RegExp(r'R\.(id|string|layout|color|drawable)\.(\w+)')
+          .allMatches('$provider\n$secim')) {
+        final tur = m.group(1)!;
+        final ad = m.group(2)!;
+        final tanimli = switch (tur) {
+          'id' => layoutlar.contains('@+id/$ad"'),
+          'string' => degerler.contains('<string name="$ad">'),
+          'color' => degerler.contains('<color name="$ad">'),
+          'layout' => File('$resDizini/layout/$ad.xml').existsSync(),
+          _ => drawableVar(ad),
+        };
+        expect(tanimli, isTrue, reason: 'R.$tur.$ad tanımlı değil');
+      }
+      // Manifest, widget info ve yeni layout'ların andığı kaynaklar.
+      final xml = [
+        manifest,
+        info,
+        File('$resDizini/layout/sandik_varlik_widget.xml').readAsStringSync(),
+        File('$resDizini/layout/sandik_varlik_secim.xml').readAsStringSync(),
+        File('$resDizini/layout/sandik_varlik_secim_satir.xml')
+            .readAsStringSync(),
+      ].join('\n');
+      for (final m
+          in RegExp(r'@(string|style|xml|layout|color|drawable|font)/(\w+)')
+              .allMatches(xml)) {
+        final tur = m.group(1)!;
+        final ad = m.group(2)!;
+        final tanimli = switch (tur) {
+          'string' => degerler.contains('<string name="$ad">'),
+          'style' => degerler.contains('<style name="$ad"'),
+          'color' => degerler.contains('<color name="$ad">'),
+          'xml' => File('$resDizini/xml/$ad.xml').existsSync(),
+          'font' => File('$resDizini/font/$ad.ttf').existsSync(),
+          'drawable' => drawableVar(ad),
+          _ => File('$resDizini/layout/$ad.xml').existsSync(),
+        };
+        expect(tanimli, isTrue, reason: '@$tur/$ad tanımlı değil');
+      }
+    });
+
+    test('strings.xml: kaçışsız kesme işareti yok (aapt derlemeyi kırar)', () {
+      final strings = File('$resDizini/values/strings.xml').readAsStringSync();
+      for (final m in RegExp(r'<string name="([^"]+)">([^<]*)</string>')
+          .allMatches(strings)) {
+        expect(RegExp(r"(?<!\\)'").hasMatch(m.group(2)!), isFalse,
+            reason: '${m.group(1)}: kesme işareti \\\' ile yazılmalı');
+        expect(m.group(1), matches(RegExp(r'^[a-z0-9_]+$')),
+            reason: 'kaynak adı yalnız ASCII');
+      }
+    });
+
+    test('seçim ekranı tema stili iki modda da tanımlı', () {
+      for (final d in ['values', 'values-night']) {
+        expect(File('$resDizini/$d/styles.xml').readAsStringSync(),
+            contains('<style name="SandikVarlikSecimTheme"'),
+            reason: '$d/styles.xml');
+      }
     });
   });
 }

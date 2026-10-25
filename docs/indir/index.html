@@ -15,9 +15,17 @@
     paylaşımlardaki link değişmeden çalışmaya devam eder.
   · `?kod=XXXX` ortak kodunu görünür yazar — alan kişi uygulamayı kurduktan
     sonra kodu mesajın içinde aramaz.
-  · utm_* parametreleri mağaza linkine aynen aktarılır (App Store
-    Connect › Analytics kampanya ölçümü için `ct`/`pt` yerine utm yeterli;
-    Play Console'da utm_source doğrudan görünür).
+  · utm_* parametreleri mağaza linkine aynen aktarılır (Play Console'da
+    utm_source doğrudan görünür; web istatistiği de utm okur).
+  · App Store Connect › Uygulama Analizi › Kampanyalar utm_*'i SAYMAZ;
+    yalnız `pt` (sağlayıcı jetonu) ve `ct` (kampanya, en fazla 40 karakter)
+    okur (2026-10-25, Ar-Ge fikir #2; eski yorum "utm yeterli" diyordu,
+    yanlıştı). Bu yüzden iOS bağlantısına ct = utm_source(_utm_campaign),
+    40'a kırpılmış, ve pt = PT eklenir. PT gizli değil: ASC'nin kampanya
+    bağlantısı oluşturucusunda herkese açık bağlantıda yazar; yasin bir kez
+    yapıştırır. PT boşken ya da utm_source yokken bağlantı eskisinin
+    birebir aynısıdır (utm_source'suz ziyaretçiye uydurma kampanya adı
+    yazılmaz). Kilit: test/indir_kapisi_test.dart.
   Play henüz yayında değil: Android'e "yakında" + iOS bağlantısı.
 -->
 <style>
@@ -55,9 +63,17 @@ a.geri { color:var(--text-58); }
 </div>
 <script>
 (function () {
+  // App Store Connect sağlayıcı jetonu (pt). Boşken ct/pt eklenmez.
+  var PT = '';
   var q = new URLSearchParams(location.search);
   var utm = '';
   q.forEach(function (v, k) { if (k.indexOf('utm_') === 0) utm += (utm ? '&' : '?') + encodeURIComponent(k) + '=' + encodeURIComponent(v); });
+  var kaynak = q.get('utm_source') || '';
+  if (PT && kaynak) {
+    var kampanya = q.get('utm_campaign') || '';
+    var ct = (kaynak + (kampanya ? '_' + kampanya : '')).slice(0, 40);
+    utm += (utm ? '&' : '?') + 'ct=' + encodeURIComponent(ct) + '&pt=' + encodeURIComponent(PT);
+  }
   var ios = document.getElementById('ios');
   ios.href += utm;
 

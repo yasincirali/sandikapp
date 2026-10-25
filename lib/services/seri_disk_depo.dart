@@ -34,9 +34,28 @@ class SeriDiskDepo {
   SeriDiskDepo({
     Future<Directory> Function()? kokDizin,
     Future<Directory?> Function()? eskiKokDizin,
+    this.klasor = varsayilanKlasor,
+    this.azamiDosya = varsayilanAzamiDosya,
   })  : _kokDizin = kokDizin ?? getApplicationCacheDirectory,
+        // Eski kökten taşıma yalnız sembol serisi klasörü için: öteki
+        // klasörler (portföy serisi, 2026-10-25) Caches'te doğdu.
         _eskiKokDizin = eskiKokDizin ??
-            (kokDizin == null ? getApplicationSupportDirectory : null);
+            (kokDizin == null && klasor == varsayilanKlasor
+                ? getApplicationSupportDirectory
+                : null);
+
+  /// Sembol serileri bu klasörde. Portföy serisi (`PortfoySeriDepo`,
+  /// 2026-10-25) AYRI bir klasör ve kendi dosya sınırıyla aynı sınıfı
+  /// kullanır: kullanıcıya özel kayıt çıkışta tek hamlede silinebilsin
+  /// ([temizle]) ve onun dosyaları sembol serilerini budayıp atmasın.
+  static const varsayilanKlasor = 'seri_onbellek';
+  static const varsayilanAzamiDosya = 80;
+
+  final String klasor;
+
+  /// En çok bu kadar dosya; fazlası en eski değiştirilme zamanına göre
+  /// silinir.
+  final int azamiDosya;
 
   /// Önbellek KÖKÜ — `Caches` (iOS) / `cacheDir` (Android).
   ///
@@ -56,14 +75,13 @@ class SeriDiskDepo {
   Directory? _dizin;
 
   static const azamiYas = Duration(days: 7);
-  static const azamiDosya = 80;
   static const _surum = 1;
 
   Future<Directory> _dizinAl() async {
     final d = _dizin;
     if (d != null) return d;
     final kok = await _kokDizin();
-    final yeni = Directory('${kok.path}/seri_onbellek');
+    final yeni = Directory('${kok.path}/$klasor');
     await _eskiyiTasi(yeni);
     if (!await yeni.exists()) await yeni.create(recursive: true);
     return _dizin = yeni;
@@ -75,7 +93,7 @@ class SeriDiskDepo {
     try {
       final k = await eskiKok();
       if (k == null) return;
-      final eski = Directory('${k.path}/seri_onbellek');
+      final eski = Directory('${k.path}/$klasor');
       if (eski.path == yeni.path || !await eski.exists()) return;
       if (await yeni.exists()) {
         await eski.delete(recursive: true);
@@ -101,13 +119,18 @@ class SeriDiskDepo {
   /// [oku] + kopyanın YAZILDIĞI an (`at`). Önce-eski-seri yolu
   /// (`HistoryService.eldekiSeriyle`, 2026-10-24) seriyi ancak yeterince
   /// tazeyse gösterir ve ağ düşerse "son güncelleme" satırına bu anı yazar.
+  ///
+  /// [imza] verilirse kayıt yalnız AYNI imzayla yazılmışsa okunur (portföy
+  /// serisinde lot defterinin parmak izi, 2026-10-25): farklı defterin
+  /// serisi hiç dönmez. İmzasız eski kayıtlar imza isteyene dönmez.
   Future<({List<(int, double)> noktalar, DateTime at})?> okuKayit(
-      String anahtar) async {
+      String anahtar, {String? imza}) async {
     try {
       final f = File('${(await _dizinAl()).path}/${dosyaAdi(anahtar)}');
       if (!await f.exists()) return null;
       final m = jsonDecode(await f.readAsString()) as Map<String, dynamic>;
       if (m['v'] != _surum || m['k'] != anahtar) return null;
+      if (imza != null && m['i'] != imza) return null;
       final at = DateTime.tryParse(m['at'] as String? ?? '');
       if (at == null || DateTime.now().difference(at) > azamiYas) return null;
       final out = <(int, double)>[];
@@ -124,7 +147,8 @@ class SeriDiskDepo {
     }
   }
 
-  Future<void> yaz(String anahtar, List<(int, double)> seri) async {
+  Future<void> yaz(String anahtar, List<(int, double)> seri,
+      {String? imza}) async {
     if (seri.isEmpty) return;
     try {
       final dizin = await _dizinAl();
@@ -132,6 +156,8 @@ class SeriDiskDepo {
       await f.writeAsString(jsonEncode({
         'v': _surum,
         'k': anahtar,
+        // Ek alan: eski okuyucu tanımaz ve yok sayar, sürüm artmaz.
+        if (imza != null) 'i': imza,
         'at': DateTime.now().toUtc().toIso8601String(),
         'p': [
           for (final p in seri) [p.$1, p.$2]
@@ -140,6 +166,19 @@ class SeriDiskDepo {
       await _budar(dizin);
     } catch (e) {
       if (kDebugMode) debugPrint('[SeriDiskDepo] yazılamadı: $e');
+    }
+  }
+
+  /// Klasörü tümüyle siler (çıkış: kullanıcıya ait önbellek cihazda
+  /// kalmaz). Hata ana akışa sızmaz.
+  Future<void> temizle() async {
+    try {
+      final d = await _dizinAl();
+      if (await d.exists()) await d.delete(recursive: true);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[SeriDiskDepo] silinemedi: $e');
+    } finally {
+      _dizin = null;
     }
   }
 

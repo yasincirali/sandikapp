@@ -116,18 +116,24 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// yazar, grafik ve göstergeler (MA/EMA, özel göstergeler) taze seriden
   /// yeniden kurulur.
   ///
-  /// Gün içi (`days == 0`) bu yoldan geçmez: saatlik döküm motoru yurt içi
-  /// gün içi kaynağına ve TEFAS yayın gözlemine de gider (ağ), eski kopyası
-  /// "bugünün" serisi olmayabilir. Taze çekim zaten 5 dakikalık önbellekte.
+  /// Gün içi (`days == 0`, 2026-10-25'ten beri, yasin onayı): saatlik
+  /// döküm motoru yurt içi gün içi kaynağına ve TEFAS yayın gözlemine de
+  /// gider; ikisi de eldeki-kipte ağa çıkmaz (yurt içi kayıt bellek/diskten
+  /// BUGÜNÜN kaydı, gözlem yalnız bellekte bugün alınmışsa) ve biri yoksa
+  /// eski seri hiç gösterilmez. Çizilen seans bugün değilse de gösterilmez
+  /// — GÜNLÜK eski seri yalnız bugünden
+  /// (`HistoryService.getPortfolioHistoryHourlyBreakdownEldeki`).
   ///
   /// Dönen değer: eski seri çizildi mi (açılış kapısı tazeyi beklemesin).
   Future<bool> _eldekiSeriyiGoster(int days) async {
-    if (days == 0) return false;
     final birim = FiyatKaynagi.birimVarlik(_canli.asset);
     final ({PortfolioHistoryBreakdown sonuc, DateTime zaman})? e;
     try {
-      e = await HistoryService.eldekiSeriyle(
-          () => _donemSerisi([birim], days));
+      e = days == 0
+          ? await HistoryService.instance
+              .getPortfolioHistoryHourlyBreakdownEldeki([birim])
+          : await HistoryService.eldekiSeriyle(
+              () => _donemSerisi([birim], days));
     } catch (err, st) {
       CrashReporter.report(err, st, reason: 'AssetDetail.eldekiSeri');
       return false;
@@ -143,9 +149,11 @@ extension _DetayOzet on _AssetDetailScreenState {
         _lastHistory != null) {
       return false;
     }
+    final seans = days == 0 ? e.sonuc.seansGunu : null;
     _guncelle(() {
       _lastHistory = seri;
-      _eskiSeri = (days: days, zaman: zaman, yolda: true);
+      if (days == 0) _gunIciBaslangic = seans;
+      _eskiSeri = (days: days, zaman: zaman, yolda: true, seans: seans);
     });
     return true;
   }

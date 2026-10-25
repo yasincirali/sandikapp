@@ -16,4 +16,12 @@
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+    <!-- Tek varlık widget'ının seçim ekranı. Yalnız ilk kare için: zemin,
+         metin ve sistem çubukları `SandikVarlikSecimActivity`'de
+         uygulamanın tema tercihine göre yeniden basılır (widget'la aynı
+         palet). Dark karşılığı values-night/styles.xml. -->
+    <style name="SandikVarlikSecimTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/widget_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>

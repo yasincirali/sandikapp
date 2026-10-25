@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tek varlık widget'ı tanımı (iOS `SandikVarlikWidget`'ın Android karşılığı,
+  2026-10-25).
+
+  `updatePeriodMillis` 0: portföy widget'ıyla aynı karar (bkz.
+  `sandik_widget_info.xml`) — veriyi uygulama yazar ve yazınca yeniler.
+  Tazelik etiketinin (1 günden eski fiyatta tarih) kendiliğinden dönmesi
+  için tek bir kesin olmayan alarm kurulur (`SandikVarlikWidgetProvider`).
+
+  `configure`: eklerken varlık seçilir (iOS'taki "Varlık seç"in karşılığı).
+  `reconfigurable` (Android 12+): basılı tutup yeniden seçilebilir.
+  `configuration_optional` BİLEREK yok: kullanıcı "Tek varlık"ı seçtiyse
+  hangi varlık olduğunu da seçmek ister; atlansaydı listenin ilki
+  gösterilirdi ve değiştirme yolu yalnız basılı tutmak kalırdı.
+
+  2x2 hücre: iOS `systemSmall` karşılığı. Yatay/dikey boyutlandırılabilir.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/sandik_varlik_widget"
+    android:previewLayout="@layout/sandik_varlik_widget"
+    android:configure="com.sandik.app.SandikVarlikSecimActivity"
+    android:widgetFeatures="reconfigurable"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/varlik_widget_description" />

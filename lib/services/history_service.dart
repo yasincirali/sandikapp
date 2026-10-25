@@ -308,12 +308,52 @@ class HistoryService {
   Future<List<(int, double)>> _yurtIciGetir(String sembol, DateTime gun) async {
     final key = '$sembol|${gun.toIso8601String()}';
     final c = _yurtIciCache[key];
+    final eldeki = Zone.current[_eldekiKipi];
+    if (eldeki is _SeriTazelikKaydi) return _yurtIciEldeki(key, c, eldeki);
     if (c != null && DateTime.now().difference(c.$1) < _yurtIciCacheTtl) {
       return c.$2;
     }
     final seri = await yurtIciKaynagi(sembol, gun);
     _yurtIciCache.removeWhere((k, _) => !k.endsWith('|${gun.toIso8601String()}'));
     _yurtIciCache[key] = (DateTime.now(), seri);
+    // Diskte de dursun: gün içi önce-eski-seri soğuk açılışta bu kaydı
+    // okur (2026-10-25). Anahtar GÜNÜ taşır — dünün kaydı bugün okunmaz.
+    // Boş kayıt yazılmaz (depo zaten yazmaz): "kayıt yok" ölçüm değildir.
+    final depo = kaliciDepo;
+    if (depo != null && seri.isNotEmpty && !DemoModu.aktif) {
+      CrashReporter.arkaPlan(depo.yaz('$_yurtIciDiskOneki$key', seri),
+          reason: 'history_service.yurtIciDiske');
+    }
+    return seri;
+  }
+
+  static const _yurtIciDiskOneki = 'yurtici|';
+
+  /// Eldeki-kipte yurt içi kayıt (önce-eski-seri GÜNLÜK, 2026-10-25): ağa
+  /// çıkmaz. Bellekteki kayıt (TTL'e bakmadan; anahtar zaten günü taşır)
+  /// ya da diskteki bugünün kaydı; ikisi de yoksa ya da ölçüldüğü an bugün
+  /// değilse bileşen EKSİK — eski seri gösterilmez. Kaydı atlayıp hesabı
+  /// sürdürmek altını ya da dövizi BAŞKA bir kaynaktan çizerdi (merdiven
+  /// `FiyatKaynagi.yurtIciGunIciSekli`), yani başka bir sayı.
+  Future<List<(int, double)>> _yurtIciEldeki(String key,
+      (DateTime, List<(int, double)>)? c, _SeriTazelikKaydi kayit) async {
+    var at = c?.$1;
+    var seri = c?.$2;
+    if (seri == null) {
+      final depo = kaliciDepo;
+      final k = depo == null || DemoModu.aktif
+          ? null
+          : await depo.okuKayit('$_yurtIciDiskOneki$key');
+      at = k?.at;
+      seri = k?.noktalar;
+    }
+    if (seri == null ||
+        at == null ||
+        !bayatKullanilirMi(range: '1d', olculdu: at)) {
+      kayit.eksik = true;
+      return const [];
+    }
+    kayit.bayat(at);
     return seri;
   }
 
@@ -330,6 +370,24 @@ class HistoryService {
     if (fonKodlari.isEmpty) return const {};
     final key = (fonKodlari.toList()..sort()).join(',');
     final at = _gozlemCacheAt;
+    // Eldeki-kip (önce-eski-seri GÜNLÜK, 2026-10-25): ağa çıkmaz. Yalnız
+    // bellekte bugün alınmış AYNI kümenin gözlemi kullanılır; yoksa bileşen
+    // EKSİK. Gözlemsiz hesap basamağı sabit saate çizerdi — başka bir seri.
+    // Diske yazılmaz (bkz. TECHNICAL_DEBT "önce-eski-seri"): soğuk açılışta
+    // TEFAS fonlu GÜNLÜK bu yüzden taze seriyi bekler.
+    final eldeki = Zone.current[_eldekiKipi];
+    if (eldeki is _SeriTazelikKaydi) {
+      final c = _gozlemCache;
+      if (c == null ||
+          key != _gozlemCacheKey ||
+          at == null ||
+          !bayatKullanilirMi(range: '1d', olculdu: at)) {
+        eldeki.eksik = true;
+        return const {};
+      }
+      eldeki.bayat(at);
+      return c;
+    }
     if (_gozlemCache != null &&
         key == _gozlemCacheKey &&
         at != null &&
@@ -407,6 +465,10 @@ class HistoryService {
     _sonIyi.clear();
     _sonIyiAt.clear();
     _yurtIciCache.clear();
+    // Gözlem de bellekte: "soğuk açılış" (oturum kapanışı, test) onu da
+    // bırakır; GÜNLÜK eldeki-kip yalnız bellekteki gözlemi kullanır.
+    instance._gozlemCache = null;
+    instance._gozlemCacheAt = null;
   }
 
   /// Sistem bellek uyarısında (`didHaveMemoryPressure`) çağrılır.
@@ -573,6 +635,26 @@ class HistoryService {
   @visibleForTesting
   static DateTime Function() gunIciSaat = DateTime.now;
 
+  /// GÜNLÜK (gün içi) dökümün ağa çıkmayan, eldeki son iyi serilerden
+  /// kurulan hâli (önce-eski-seri, 2026-10-25; bkz. [eldekiSeriyle]).
+  ///
+  /// Üç kaynağın üçü de eldeki-kipte: sembol serileri (`seriCek`, yalnız
+  /// bugünün kopyası — [_bugunIcinde] + [bayatKullanilirMi]), yurt içi kayıt
+  /// (bellek ya da diskteki BUGÜNÜN kaydı) ve TEFAS yayın gözlemi (yalnız
+  /// bellekte bugün alınmışsa). Biri yoksa `null`. Çizilen seans bugün
+  /// değilse de `null` (hafta sonu Cuma'yı çizen seri "bugünün" serisi
+  /// değil; GÜNLÜK eski seri yalnız bugünden).
+  Future<({PortfolioHistoryBreakdown sonuc, DateTime zaman})?>
+      getPortfolioHistoryHourlyBreakdownEldeki(List<Asset> assets) async {
+    final r = await eldekiSeriyle(
+        () => getPortfolioHistoryHourlyBreakdown(assets, 24));
+    if (r == null || r.sonuc.total.length < 2) return null;
+    final seans = r.sonuc.seansGunu;
+    final bugun = dayKey(gunIciSaat());
+    if (seans == null || dayKey(seans) != bugun) return null;
+    return r;
+  }
+
   /// Dar/geniş pencere kararının "şimdi"si ([darPencereyiKapsar]) — eşitlik
   /// testi sahte sağlayıcının saatini verir.
   @visibleForTesting
@@ -608,6 +690,10 @@ class HistoryService {
       if (pts.isNotEmpty && _cacheGet(key, ttl: _seriTtl(range)) == null) {
         iz.bayat(_sonIyiAt[key]);
       }
+      // Hiç seri yok (ağ düştü, son iyi kopya da yok): hesap bu bileşeni
+      // `currentPrice` tohumuyla DÜZ çizer. Performans'ın disk kopyası bu
+      // sonucu "taze" sayıp yerine koymasın (`ZoomDataController`).
+      if (pts.isEmpty) iz.bosBilesen = true;
       return pts;
     });
   }
@@ -692,9 +778,13 @@ class HistoryService {
   // gösterilmez — eksik bileşenle hesap başka bir sayı üretirdi (ör. spot
   // altın yokken vadeli merdivene düşmek).
   //
-  // Kapsam: yalnız tek varlık sayfası ve varlık detay grafiği. Performans
-  // sekmesinin portföy serisi bu yolu KULLANMAZ: orada eski seri ile yeni
-  // lotlar karışabilir (rapor maddesi).
+  // Kapsam: tek varlık sayfası ve varlık detay grafiği (GÜNLÜK dahil,
+  // 2026-10-25: yurt içi kayıt ve TEFAS gözlemi de eldeki-kipte, bkz.
+  // [getPortfolioHistoryHourlyBreakdownEldeki]). Performans sekmesinin
+  // portföy serisi bu kipi KULLANMAZ: orada eski seri ile yeni lotlar
+  // karışabilirdi (rapor maddesi). O sekme 2026-10-25'ten beri ekranın son
+  // çizdiği portföy serisini lot defterinin parmak iziyle saklar ve yalnız
+  // aynı defterde soluk açar (`PortfoySeriDepo`) — motor ikinci kipte koşmaz.
 
   static final Object _eldekiKipi = Object();
   static final Object _tazelikIzi = Object();
@@ -786,11 +876,17 @@ class HistoryService {
 
   /// [hesap]'ı normal koşar; dönen seri son iyi kopyadan geldiyse (ağ
   /// boş/hatalı/zaman aşımı) `bayatZaman` o kopyanın ölçüldüğü an.
-  static Future<({T sonuc, DateTime? bayatZaman})> tazelikle<T>(
-      Future<T> Function() hesap) async {
+  /// `bosBilesen`: bileşenlerden biri HİÇ gelmedi (son iyi kopyası da yok);
+  /// sonuç o bileşeni düz tohumla taşır, tam ölçüm değildir.
+  static Future<({T sonuc, DateTime? bayatZaman, bool bosBilesen})>
+      tazelikle<T>(Future<T> Function() hesap) async {
     final kayit = _SeriTazelikKaydi();
     final sonuc = await runZoned(hesap, zoneValues: {_tazelikIzi: kayit});
-    return (sonuc: sonuc, bayatZaman: kayit.enEski);
+    return (
+      sonuc: sonuc,
+      bayatZaman: kayit.enEski,
+      bosBilesen: kayit.bosBilesen,
+    );
   }
 
   /// Verilen varlıkların ilgili periyot için (örn. 365 gün) geçmiş fiyatlarını
@@ -3683,6 +3779,11 @@ class _SeriTazelikKaydi {
   /// Eldeki-kipte bir bileşen yoktu ya da çok eskiydi.
   bool eksik = false;
 
+  /// Taze kipte bir bileşenin çekimi boş döndü (son iyi kopya da yok).
+  /// [eksik]'ten ayrı: eldeki-kip kararlarına (geniş pencere denemesi)
+  /// karışmaz.
+  bool bosBilesen = false;
+
   void bayat(DateTime? at) {
     if (at == null) return;
     final e = enEski;
@@ -3692,5 +3793,6 @@ class _SeriTazelikKaydi {
   void ekle(_SeriTazelikKaydi alt) {
     bayat(alt.enEski);
     eksik = eksik || alt.eksik;
+    bosBilesen = bosBilesen || alt.bosBilesen;
   }
 }

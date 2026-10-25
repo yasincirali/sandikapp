@@ -297,7 +297,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// `_eldekiSeriyiGoster`): hangi dönem, kopyanın ölçüldüğü an ve taze
   /// çekimin sürüp sürmediği. `yolda` iken grafik soluk (`isStale`); taze
   /// çekim düştüyse (`yolda: false`) seri net, altında "Son güncelleme".
-  ({int days, DateTime zaman, bool yolda})? _eskiSeri;
+  /// `seans`: GÜNLÜK kopyanın çizdiği gün (eksen ona kurulur; taze çekim
+  /// düşüp eski kopya kalırsa taze sonucun boş seansı onu ezmesin).
+  ({int days, DateTime zaman, bool yolda, DateTime? seans})? _eskiSeri;
 
   /// Dönem (gün) → birim seri, dönem başı ve istatistik — çip getirileri,
   /// başlık ve istatistik ızgarası buradan okur (bkz. `asset_detail/ozet.dart`).
@@ -468,6 +470,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days));
     final birim = r.sonuc;
     var seri = birim.total;
+    var seans = birim.seansGunu;
     var bayatZaman = seri.length < 2 ? null : r.bayatZaman;
     // Taze çekim boş döndü ama ekranda bu dönemin eski kopyası var: o kalır
     // (boş sonuç eski ölçümü silmez), altında "Son güncelleme".
@@ -480,17 +483,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         eldeki.length >= 2) {
       seri = eldeki;
       bayatZaman = eski.zaman;
+      if (days == 0) seans = eski.seans ?? seans;
     }
     if (mounted && sira == _yuklemeSirasi) {
-      if (days == 0) _gunIciBaslangic = birim.seansGunu;
+      if (days == 0) _gunIciBaslangic = seans;
       if (seri.isNotEmpty) _lastHistory = seri;
       final z = bayatZaman;
-      _eskiSeri = z == null ? null : (days: days, zaman: z, yolda: false);
+      _eskiSeri = z == null
+          ? null
+          : (days: days, zaman: z, yolda: false, seans: days == 0 ? seans : null);
     }
     // Dönem önbelleği sıradan bağımsız: geç dönen eski dönemin serisi de
     // KENDİ çipine yazılır, seçili dönemi ezmez.
     if (mounted) {
-      _guncelle(() => _donemKaydet(days, seri, birim.seansGunu));
+      _guncelle(() => _donemKaydet(days, seri, seans));
     }
     return seri;
   }

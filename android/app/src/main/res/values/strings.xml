@@ -15,4 +15,31 @@
     <string name="widget_name">Sandık Portföy</string>
     <string name="widget_description">Toplam portföy değerini ve günlük getirini ana ekranda göster.</string>
     <string name="widget_empty">Verileri görmek için uygulamayı aç</string>
+
+    <!-- Tek varlık widget'ı (2026-10-25). Metinler iOS
+         `SandikVarlikWidget.swift` ile AYNI kelimeler: iki platformda aynı
+         widget aynı şeyi söylesin. -->
+    <string name="varlik_widget_name">Tek varlık</string>
+    <string name="varlik_widget_description">Seçtiğin varlığın fiyatı ve günlük değişimi: gram altın, dolar, bir fon…</string>
+    <string name="varlik_widget_gunluk">günlük</string>
+    <string name="varlik_widget_degisim_yok">Günlük değişim yok</string>
+    <string name="varlik_widget_kapanis">Kapanış</string>
+    <string name="varlik_widget_liste_bos">Uygulamayı aç; portföyündeki ve takip listendeki varlıklar burada seçilebilir.</string>
+    <string name="varlik_widget_listede_yok">Bu varlık artık listende yok. Değiştirmek için widget\'a basılı tut.</string>
+    <!-- Android 12 altı: yeniden yapılandırma yok. -->
+    <string name="varlik_widget_listede_yok_eski">Bu varlık artık listende yok. Değiştirmek için widget\'ı kaldırıp yeniden ekle.</string>
+    <!-- Erişilebilirlik cümlesi — iOS `erisimMetni` kalıbı. -->
+    <string name="varlik_widget_a11y_fiyat_yok">fiyat yok</string>
+    <string name="varlik_widget_a11y_kapanis">kapanış fiyatı</string>
+    <string name="varlik_widget_a11y_artis">günlük artış %1$s</string>
+    <string name="varlik_widget_a11y_dusus">günlük düşüş %1$s</string>
+    <string name="varlik_widget_a11y_degisim_yok">günlük değişim yok</string>
+    <string name="varlik_widget_a11y_itibariyla">%1$s itibarıyla</string>
+
+    <!-- Seçim ekranı (widget eklerken / basılı tutup düzenlerken). -->
+    <string name="varlik_secim_baslik">Varlık seç</string>
+    <string name="varlik_secim_aciklama">Widget\'ta görünecek varlığı seç. Liste, portföyündeki ve takip listendeki varlıklardan oluşur.</string>
+    <string name="varlik_secim_bos">Liste henüz yok. Uygulamayı açınca portföyündeki ve takip listendeki varlıklar burada görünür.</string>
+    <string name="varlik_secim_bos_ekle">Yine de ekle</string>
+    <string name="varlik_secim_secili">Seçili</string>
 </resources>

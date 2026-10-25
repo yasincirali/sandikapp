@@ -4567,6 +4567,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get aramaHizliHesapEkle => 'Portföyüne ekle';
 
   @override
+  String aramaHizliHesapTers(String tutar, String miktar, String ad) {
+    return '$tutar ≈ $miktar $ad';
+  }
+
+  @override
+  String get aramaHizliHesapKuyumcuSatis => 'Kuyumcu satış fiyatından';
+
+  @override
+  String get aramaHizliHesapSatis => 'Satış fiyatından';
+
+  @override
   String get hataBizeYaz => 'Sorun sürüyorsa bize yaz';
 
   @override
