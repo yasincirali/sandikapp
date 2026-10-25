@@ -11,9 +11,7 @@ import 'package:flutter/material.dart'
     show
         RefreshIndicator,
         Material,
-        MaterialType,
-        ListTile,
-        Divider;
+        MaterialType;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
@@ -55,7 +53,10 @@ import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../providers/portfoy_provider.dart';
 import '../services/crash_reporter.dart';
-import '../providers/preferences_provider.dart' show seciliPortfoyProvider;
+import '../providers/preferences_provider.dart'
+    show portfoySiralamaProvider, seciliPortfoyProvider;
+import '../models/portfoy_siralama.dart';
+import '../widgets/sandik_siralama_dugmesi.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
 import '../widgets/varlik_guncelle.dart';
@@ -66,15 +67,6 @@ import '../widgets/transaction_row.dart' show hareketTurEtiketi;
 import '../services/varlik_eklendi.dart';
 import '../providers/veri_kalitesi_provider.dart';
 import '../widgets/ozellik_onerisi_karti.dart';
-
-enum _SortOrder {
-  valueDesc,
-  valueAsc,
-  gainDesc,
-  gainAsc,
-  gainPctDesc,
-  gainPctAsc,
-}
 
 class PortfolioScreen extends ConsumerStatefulWidget {
   const PortfolioScreen({super.key});
@@ -210,7 +202,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// Liste süzgeci: halka dilimi / lejant satırı. Tür değil [PortfoyGrubu]:
   /// bayrak `abd_hisse` açıkken BIST ve ABD hissesi ayrı süzülür.
   PortfoyGrubu? _filteredType;
-  _SortOrder _sortOrder = _SortOrder.valueDesc;
+  /// Sıralama seçimi kalıcı ve kişiye özel (`portfoySiralamaProvider`,
+  /// 2026-10-25); eskiden burada State alanıydı ve soğuk açılışta
+  /// "Değere göre"ye dönüyordu. `build` başında bir kez okunur; liste
+  /// iç içe builder'larda sıralanır, orada `ref.watch` çağrılmasın.
+  PortfoySiralama _sortOrder = PortfoySiralama.varsayilan;
 
   /// Gövde sekmesi: 0 = Varlıklarım, 1 = Takip Listesi.
   ///
@@ -229,19 +225,19 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   List<Position> _applyPositionSortOrder(
       List<Position> list, PortfolioState pState) {
     switch (_sortOrder) {
-      case _SortOrder.valueDesc:
+      case PortfoySiralama.valueDesc:
         return list
           ..sort((a, b) => pState
               .toTRY(b.totalValue, b.representative.currency)
               .compareTo(
                   pState.toTRY(a.totalValue, a.representative.currency)));
-      case _SortOrder.valueAsc:
+      case PortfoySiralama.valueAsc:
         return list
           ..sort((a, b) => pState
               .toTRY(a.totalValue, a.representative.currency)
               .compareTo(
                   pState.toTRY(b.totalValue, b.representative.currency)));
-      case _SortOrder.gainDesc:
+      case PortfoySiralama.gainDesc:
         return list
           ..sort((a, b) {
             final ga = a.weightedPurchasePrice > 0
@@ -254,7 +250,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 : double.negativeInfinity;
             return gb.compareTo(ga);
           });
-      case _SortOrder.gainAsc:
+      case PortfoySiralama.gainAsc:
         return list
           ..sort((a, b) {
             final ga = a.weightedPurchasePrice > 0
@@ -267,7 +263,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 : double.infinity;
             return ga.compareTo(gb);
           });
-      case _SortOrder.gainPctDesc:
+      case PortfoySiralama.gainPctDesc:
         return list
           ..sort((a, b) {
             final pa = a.weightedPurchasePrice > 0
@@ -278,7 +274,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 : double.negativeInfinity;
             return pb.compareTo(pa);
           });
-      case _SortOrder.gainPctAsc:
+      case PortfoySiralama.gainPctAsc:
         return list
           ..sort((a, b) {
             final pa = a.weightedPurchasePrice > 0
@@ -352,6 +348,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _sortOrder = PortfoySiralama.kodla(ref.watch(portfoySiralamaProvider));
     final pStateAsync = ref.watch(portfolioProvider);
     final partnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final activePartners = ref.watch(activePartnersProvider);
@@ -413,9 +410,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       ),
                       ),
                     ),
-                    _SortButton(
-                      current: _sortOrder,
-                      onChanged: (o) => setState(() => _sortOrder = o),
+                    SandikSiralamaDugmesi<PortfoySiralama>.ikon(
+                      secenekler: _siralamaSecenekleri(context.l10n),
+                      secili: _sortOrder,
+                      varsayilan: PortfoySiralama.varsayilan,
+                      semantikEtiket: context.l10n.sortAssetsSemantics,
+                      onSec: (o) => ref
+                          .read(portfoySiralamaProvider.notifier)
+                          .set(o.kod),
                     ),
                     // Düğme aralığı her ekranda `SandikSpace.sm`
                     // (2026-09-28; burada 8 ve 4 karışıktı).
@@ -3314,138 +3316,29 @@ class _DetailItem extends StatelessWidget {
 
 // ── Sort Button ───────────────────────────────────────────────────────────────
 
-class _SortButton extends StatelessWidget {
-  final _SortOrder current;
-  final void Function(_SortOrder) onChanged;
-
-  const _SortButton({required this.current, required this.onChanged});
-
-  /// Sıralama seçenekleri — `static const` DEĞİL: etiketler dile bağlı (3.20),
-  /// sözlük ise `context` ister.
-  static List<(_SortOrder, String, String)> _options(AppLocalizations l) => [
-        (_SortOrder.valueDesc, l.sortMarketValue, l.sortHighToLow),
-        (_SortOrder.valueAsc, l.sortMarketValue, l.sortLowToHigh),
-        (_SortOrder.gainDesc, l.sortGainTry, l.sortHighestFirst),
-        (_SortOrder.gainAsc, l.sortGainTry, l.sortLowestFirst),
-        (_SortOrder.gainPctDesc, l.sortGainPct, l.sortHighestFirst),
-        (_SortOrder.gainPctAsc, l.sortGainPct, l.sortLowestFirst),
-      ];
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoButton(
-      minimumSize: SandikTouch.minSize,
-      padding: EdgeInsets.zero,
-      onPressed: () => showSandikSheet<void>(
-        context: context,
-        backgroundColor: context.c.surface1,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (_) => _SortSheet(
-            current: current,
-            onChanged: (o) {
-              onChanged(o);
-              Navigator.pop(context);
-            }),
-      ),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: current != _SortOrder.valueDesc
-              ? context.c.amberFill.withValues(alpha: 0.15)
-              : context.c.overlay,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(
-            color: current != _SortOrder.valueDesc
-                ? context.c.amberFill.withValues(alpha: 0.5)
-                : context.c.overlay,
-          ),
-        ),
-        child: Icon(
-          Icons.sort_rounded,
-          semanticLabel: context.l10n.sortAssetsSemantics,
-          size: 20,
-          color: current != _SortOrder.valueDesc
-              ? context.c.amberText
-              : context.c.text58,
-        ),
-      ),
-    );
-  }
-}
-
-class _SortSheet extends StatelessWidget {
-  final _SortOrder current;
-  final void Function(_SortOrder) onChanged;
-
-  const _SortSheet({required this.current, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-            child: Text(
-              context.l10n.sortCriterion,
-              style: context.t.labelLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: context.c.text58,
-              ),
-            ),
-          ),
-          Divider(color: context.c.hairline, height: 1),
-          ..._SortButton._options(context.l10n).map((opt) {
-            final (order, group, label) = opt;
-            final selected = current == order;
-            return ListTile(
-              dense: true,
-              leading: Icon(
-                _iconFor(order),
-                size: 18,
-                color: selected ? context.c.amberText : context.c.text58,
-              ),
-              title: Text(
-                group,
-                style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: selected ? context.c.amberText : context.c.text90,
-                ),
-              ),
-              subtitle: Text(
-                label,
-                style: context.t.bodySmall?.copyWith(color: context.c.text36),
-              ),
-              trailing: selected
-                  ? Icon(Icons.check_rounded,
-                      color: context.c.amberText, size: 18)
-                  : null,
-              tileColor:
-                  selected ? context.c.amberFill.withValues(alpha: 0.07) : null,
-              onTap: () => onChanged(order),
-            );
-          }),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  IconData _iconFor(_SortOrder o) => switch (o) {
-        _SortOrder.valueDesc => Icons.arrow_downward_rounded,
-        _SortOrder.valueAsc => Icons.arrow_upward_rounded,
-        _SortOrder.gainDesc => Icons.trending_up_rounded,
-        _SortOrder.gainAsc => Icons.trending_down_rounded,
-        _SortOrder.gainPctDesc => Icons.percent_rounded,
-        _SortOrder.gainPctAsc => Icons.percent_rounded,
-      };
-}
+/// Sıralama seçenekleri — `static const` DEĞİL: etiketler dile bağlı (3.20),
+/// sözlük ise `context` ister. Düğme ve sayfa ortak bileşenden
+/// (`SandikSiralamaDugmesi`, 2026-10-25); burada yalnız Portföy'ün seçenekleri.
+List<SandikSiralamaSecenegi<PortfoySiralama>> _siralamaSecenekleri(
+        AppLocalizations l) =>
+    [
+      for (final (deger, baslik, alt, ikon) in [
+        (PortfoySiralama.valueDesc, l.sortMarketValue, l.sortHighToLow,
+            Icons.arrow_downward_rounded),
+        (PortfoySiralama.valueAsc, l.sortMarketValue, l.sortLowToHigh,
+            Icons.arrow_upward_rounded),
+        (PortfoySiralama.gainDesc, l.sortGainTry, l.sortHighestFirst,
+            Icons.trending_up_rounded),
+        (PortfoySiralama.gainAsc, l.sortGainTry, l.sortLowestFirst,
+            Icons.trending_down_rounded),
+        (PortfoySiralama.gainPctDesc, l.sortGainPct, l.sortHighestFirst,
+            Icons.percent_rounded),
+        (PortfoySiralama.gainPctAsc, l.sortGainPct, l.sortLowestFirst,
+            Icons.percent_rounded),
+      ])
+        SandikSiralamaSecenegi(
+            deger: deger, baslik: baslik, altBaslik: alt, ikon: ikon),
+    ];
 
 /// Portföy satırının alt metni: miktar · tür.
 ///

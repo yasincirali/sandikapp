@@ -20,8 +20,22 @@ import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
 import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
+import 'package:portfoy_takip/widgets/sandik_siralama_dugmesi.dart';
 import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
+
+const _siralamaVitrini = [
+  SandikSiralamaSecenegi(
+      deger: 0,
+      baslik: 'Değere göre',
+      altBaslik: 'Yüksekten düşüğe',
+      ikon: Icons.arrow_downward_rounded),
+  SandikSiralamaSecenegi(
+      deger: 1,
+      baslik: 'Kâra göre',
+      altBaslik: 'En yüksek önce',
+      ikon: Icons.trending_up_rounded),
+];
 
 /// Apple HIG kontrol listesinin ölçülebilir kısmı (`docs/TASARIM_DILI.md`
 /// §5, yasin 2026-10-10: "bişey değiştirirken bunu standart olarak
@@ -99,6 +113,24 @@ void main() {
                 const BildirimIzniUyarisi(),
                 // Grafik eski seriyle kaldığında (önce-eski-seri, 2026-10-24).
                 SeriSonGuncelleme(zaman: DateTime(2026, 10, 23, 14, 32)),
+                const SizedBox(height: SandikSpace.md),
+                // Tek sıralama düğmesi (2026-10-25): Portföy ikon kutusu
+                // (varsayılan dışı seçimde amber) ve takip listesi etiketli.
+                Row(children: [
+                  SandikSiralamaDugmesi<int>.ikon(
+                    secenekler: _siralamaVitrini,
+                    secili: 1,
+                    varsayilan: 0,
+                    semantikEtiket: 'Varlıkları sırala',
+                    onSec: (_) {},
+                  ),
+                  SandikSiralamaDugmesi<int>.etiketli(
+                    secenekler: _siralamaVitrini,
+                    secili: 0,
+                    semantikEtiket: 'Sıralama: Değere göre',
+                    onSec: (_) {},
+                  ),
+                ]),
                 const SizedBox(height: SandikSpace.md),
                 SandikAsyncTap(
                   onTap: () async {},
@@ -248,6 +280,28 @@ void main() {
       expect(find.byKey(const ValueKey('hata-bize-yaz')), findsOneWidget);
       await expectLater(t, meetsGuideline(iOSTapTargetGuideline));
       await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('sıralama sayfası satırları 44 pt, etiketli ($ad)',
+        (t) async {
+      final handle = t.ensureSemantics();
+      final dugmeler =
+          find.byWidgetPredicate((w) => w is SandikSiralamaDugmesi);
+      for (final i in [0, 1]) {
+        // Her biçim temiz vitrinde: sayfa kapanınca liste kayabiliyor.
+        await t.pumpWidget(const SizedBox());
+        await t.pumpWidget(vitrin(parlaklik: parlaklik));
+        await t.pump();
+        expect(dugmeler, findsNWidgets(2));
+        await t.tap(dugmeler.at(i));
+        await t.pumpAndSettle();
+        expect(find.byIcon(Icons.check_rounded), findsOneWidget,
+            reason: 'seçili satır yalnız renkle değil onay işaretiyle');
+        await expectLater(t, meetsGuideline(iOSTapTargetGuideline));
+        await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(t, meetsGuideline(textContrastGuideline));
+      }
       handle.dispose();
     });
 
