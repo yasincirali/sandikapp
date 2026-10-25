@@ -11,7 +11,8 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ## 🟡 AÇIK — Geniş pencere ve önce-eski-seri v1'de bırakılanlar (2026-10-24, Ar-Ge §1/§3)
 
-`HistoryService.kaynakDonemGunu` / `darPencereyiKapsar` / `eldekiSeriyle`.
+`HistoryService.kaynakDonemGunu` / `darPencereyiKapsar` / `eldekiSeriyle`;
+2026-10-25: `PortfoySeriDepo`, `getPortfolioHistoryHourlyBreakdownEldeki`.
 
 - **Yahoo pencere modeli canlıda yeniden ölçülmedi.** Eşitlik kararı,
   sağlayıcının pencereyle örtüşen her barı verdiği (kısmi ilk haftalık mum,
@@ -23,10 +24,44 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
   karşılaştır.
 - **Kripto, altın, eurobond, mevduat birleştirilmedi** (gerekçe kod yorumunda).
   Kripto için sunucu `kripto-seri` dar dönemi kısmi mumla verseydi birleşirdi.
-- **Varlık detayı gün içi (GÜNLÜK) önce-eski-seri yolunda değil**: saatlik
-  döküm motoru yurt içi gün içi kaynağına ve TEFAS yayın gözlemine de gidiyor
-  (ağ, `seriCek` dışında). Gün içi seri 5 dk önbellekte, soğuk açılışta da
-  hızlı; ihtiyaç ölçülürse o iki kaynağa da eldeki kip eklenir.
+- ~~**Varlık detayı gün içi (GÜNLÜK) önce-eski-seri yolunda değil**~~
+  KAPANDI (2026-10-25, yasin onayı, commit HASH_GUNLUK): üç kaynağın üçü de
+  eldeki-kipte ağa çıkmaz (`getPortfolioHistoryHourlyBreakdownEldeki`).
+  `seriCek` yalnız bugünün kopyası; yurt içi kayıt artık diske de yazılıyor
+  (anahtar günü taşır, `yurtici|…`) ve eldeki-kipte bellek/diskteki BUGÜNÜN
+  kaydı okunur; çizilen seans bugün değilse eski seri yok. Kalan:
+  - **TEFAS yayın gözlemi diske yazılmadı**: yalnız bellekte bugün alınmışsa
+    kullanılır, yoksa bileşen eksik → eski seri gösterilmez. Gözlem
+    `(int, double)` seri değil (`TefasNavGozlem`: dört alan); depoya ayrı
+    biçim eklemek kazancına göre fazla (fonun GÜNLÜK'ü tek basamak, `5d` NAV +
+    gözlem iki hızlı istek). Maliyet: TEFAS fonlu varlığın GÜNLÜK'ü soğuk
+    açılışta eskisi gibi taze seriyi bekler. Ne zaman: `slow_history_fetch`
+    fon GÜNLÜK'ünde uzun bekleme gösterirse gözlem için küçük JSON kaydı.
+  - **Hafta sonu GÜNLÜK eski seriyle açılmaz**: seans Cuma, "yalnız bugünden"
+    kuralı onu dışarıda bırakır (bilerek; dünün serisi bugünün grafiği değil).
+  - Eldeki-kipteki GÜNLÜK, `PriceService`'in o anki bellek değerlerini
+    (günlük referans/yüzde, canlı kur) okur; soğuk açılışta fiyat turu
+    bitmeden hesaplanırsa uçlar taze hesaptan biraz farklı olabilir. Soluk
+    çizilir ve taze seri gelince yerine geçer; sayı basılmaz.
+- ~~**Performans sekmesi önce-eski-seri yolunda değil**~~ KAPANDI
+  (2026-10-25, Ar-Ge 10-25 §4, yasin onayı, commit HASH_GUNLUK):
+  `PortfoySeriDepo` ekranın son çizdiği portföy serisini lot defterinin
+  parmak iziyle (ham defter: kapanmış/silinmiş dahil + motora giden liste)
+  ve kapsam/dönem anahtarıyla saklar; yalnız AYNI izde, ≤7 gün (1H ≤1 gün)
+  soluk açılır, gün içi dönem hiç. Motor ikinci kipte koşmaz. Kalan:
+  - **Özet sekmesi** (`_OzetSerisi`) diskten açılmıyor: kendi kanonik serisi
+    var, bellek önbelleği (`_OzetBellek`) aynı oturumda zaten anında. Grafik
+    sekmesi diskten açılır.
+  - **Tür dökümü kartı** disk kopyasıyla görünmez: kopya yalnız toplamı
+    taşır (dağılım saklanmadı — boyut ve "yanlış kırılım gösterme" kuralı).
+    Taze çekim düşerse kart boş kalır, grafik ve dönem kartı net.
+  - **Sözleşmeli lot (mevduat/BES) içeren kapsam** bu yola girmez: seri
+    sözleşmenin faiz/vade koşullarından gelir, o koşullar lot satırında
+    değil, parmak izi göremez.
+  - Bileşenlerden biri hiç gelmediyse (`tazelikle.bosBilesen`) sonuç diske
+    yazılmaz; hep boş dönen bir bileşeni olan portföy (ör. kapanmış ve
+    sağlayıcıdan düşmüş hisse) eski seriyle hiç açılmaz. Bilerek: yanlış
+    "yenilenemedi" demektense iskelet.
 - **Sinyal paneli** eski seriyle açılmıyor: kapı onu beklemez, panel kendi
   yerinde taze seriyi bekler.
 

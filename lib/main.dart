@@ -75,6 +75,7 @@ import 'services/home_widget_service.dart';
 import 'services/varlik_widget_service.dart';
 import 'services/sistem_eylemleri.dart';
 import 'services/history_service.dart';
+import 'services/portfoy_seri_depo.dart';
 import 'services/seri_disk_depo.dart';
 import 'services/live_activity_service.dart';
 import 'services/notification_service.dart';
@@ -203,6 +204,9 @@ void main() async {
     // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
     // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
     HistoryService.kaliciDepo = SeriDiskDepo();
+    // Performans sekmesinin son portföy serisi — lot defterinin parmak
+    // iziyle; yalnız aynı defterde soluk açılış için (`PortfoySeriDepo`).
+    PortfoySeriDepo.kaliciDepo = PortfoySeriDepo.varsayilanDepo();
     // Sistem bellek uyarısında süreli önbellekleri bırak (bkz. sınıf).
     BellekBaskisi.instance.baglan();
     // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
