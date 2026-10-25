@@ -14,6 +14,7 @@ import '../models/grafik_cizimi.dart';
 import '../models/ohlc.dart';
 import '../providers/preferences_provider.dart';
 import '../services/cizim_deposu.dart';
+import '../services/ozellik_olcumu.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart' show FiyatKaynagi, MumKaynakTuru;
 import '../services/mum_verisi.dart';
@@ -175,6 +176,8 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
         : (gecerli.contains(MumAraligi.gun1)
             ? MumAraligi.gun1
             : (gecerli.isEmpty ? MumAraligi.gun1 : gecerli.first));
+    // Düğme ve yan çevirme aynı ekranı açar; ikisi de burada sayılır.
+    OzellikOlcumu.say(Ozellik.yatayGrafik);
     CrashReporter.arkaPlan(_cizimleriOku(), reason: 'TamEkranGrafik.cizimOku');
     CrashReporter.arkaPlan(_yukle(), reason: 'TamEkranGrafik.mumlar');
   }
@@ -384,6 +387,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
       _imlec = null;
     });
     _kaydet();
+    OzellikOlcumu.say(Ozellik.cizim);
     HapticFeedback.selectionClick();
     _bildir(context.l10n.tegCizildi);
   }

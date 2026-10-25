@@ -17,6 +17,7 @@ import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 import 'deep_link_router.dart';
 import 'notification_service.dart';
+import 'ozellik_olcumu.dart';
 import 'remote_config_service.dart';
 import 'retention_tracker.dart';
 import 'surface_theme.dart';
@@ -224,7 +225,7 @@ class HomeWidgetService {
       await _ensureInit();
       final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
       if (uri == null) return false;
-      await RetentionTracker.instance.recordWidgetTap(surface: 'home_widget');
+      await _dokunusuSay(uri);
       // Dokunuş performans ekranına (günlük grafik) götürür. İstek
       // `MainNavigationScreen` daha kurulmadan yazılabilir; ekran
       // `initState`'te mevcut değeri de okuduğu için kaybolmaz.
@@ -247,8 +248,8 @@ class HomeWidgetService {
       await _ensureInit();
       _clickSub = HomeWidget.widgetClicked.listen((uri) {
         if (uri == null) return;
-        CrashReporter.arkaPlan(RetentionTracker.instance
-            .recordWidgetTap(surface: 'home_widget'), reason: 'home_widget_service.recordWidgetTap');
+        CrashReporter.arkaPlan(_dokunusuSay(uri),
+            reason: 'home_widget_service.recordWidgetTap');
         CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'widget'), reason: 'home_widget_service.RetentionTracker.recordLaunch');
         // Uygulama AÇIKKEN gelen dokunuş: yeni ekran push EDİLMEZ, yalnızca
         // sekme değişir. Push etmek, kullanıcı zaten uygulamadayken üst üste
@@ -259,6 +260,14 @@ class HomeWidgetService {
       // Widget atfı ikincil bir ölçüm — kurulamazsa uygulama etkilenmez.
       if (kDebugMode) debugPrint('startClickAttribution failed: $e');
     }
+  }
+
+  /// Dokunuşu ölçer: yüzey host'tan ([DeepLinkRouter.widgetYuzeyi]); tek
+  /// varlık widget'ı ayrıca özellik kullanımı olarak sayılır (günde bir).
+  Future<void> _dokunusuSay(Uri uri) async {
+    final yuzey = DeepLinkRouter.widgetYuzeyi(uri);
+    if (yuzey == 'varlik_widget') OzellikOlcumu.say(Ozellik.varlikWidget);
+    await RetentionTracker.instance.recordWidgetTap(surface: yuzey);
   }
 
   /// Dokunuşu hedef sekmeye çevirir.

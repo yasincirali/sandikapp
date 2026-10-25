@@ -13,6 +13,7 @@ import '../models/varlik_kimligi.dart';
 import '../providers/add_asset_form_provider.dart' show dovizOptFor;
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
+import '../services/ozellik_olcumu.dart';
 import '../services/price_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
@@ -413,13 +414,17 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
       padding: const EdgeInsets.only(bottom: SandikSpace.sm),
       child: SandikTappable(
         semanticLabel: '$baslik. ${context.l10n.aramaHizliHesapEkle}',
-        onTap: () => pushGuarded(
-          context,
-          adaptiveRoute<void>(
-            settings: const RouteSettings(name: 'add_asset'),
-            builder: (_) => AddAssetScreen(hizliHesap: h, ekleYolu: 'arama'),
-          ),
-        ),
+        onTap: () {
+          // Yalnız özellik kodu sayılır; miktar/birim/arama metni değil.
+          OzellikOlcumu.say(Ozellik.hizliHesap);
+          pushGuarded(
+            context,
+            adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'add_asset'),
+              builder: (_) => AddAssetScreen(hizliHesap: h, ekleYolu: 'arama'),
+            ),
+          );
+        },
         child: _SatirKabugu(
           ikon: Icons.calculate_rounded,
           baslik: baslik,
