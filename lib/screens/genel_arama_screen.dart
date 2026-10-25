@@ -13,6 +13,7 @@ import '../models/varlik_kimligi.dart';
 import '../providers/add_asset_form_provider.dart' show dovizOptFor;
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
+import '../services/fiyat_kaynagi.dart' show gorunurSatisFiyati;
 import '../services/ozellik_olcumu.dart';
 import '../services/price_service.dart';
 import '../services/symbol_search_service.dart';
@@ -54,6 +55,12 @@ import 'varlik_sayfasi.dart';
 ///   "5 Çeyrek Altın ≈ ₺X". Fiyat bilinmiyorsa satır YOK (uydurma sayı
 ///   yasak). Dokununca Varlık Ekle o tür ve miktarla açılır; kayıt yolu
 ///   formun, ikinci bir ekleme yolu yazılmadı.
+///   İkinci adım (2026-10-25): "10.000 tl çeyrek" → "₺10.000 ≈ 2,6 Çeyrek
+///   Altın", SATIŞ fiyatından (`gorunurSatisFiyati`; satış yoksa satır
+///   yok), dokununca form Tutar kipinde o TL ile açılır. "100 THYAO" →
+///   "100 THYAO ≈ ₺X": kod aramanın AYNI kaynağında (`aramaServisi` /
+///   `SymbolSearchService`) aranır, yalnız birebir BIST hissesi ya da
+///   TEFAS fonu kabul edilir (`hizliHesapCoz` → `sembolBul`).
 ///
 /// Demo: ekran demoda AÇILMAZ — ana ekrandaki giriş, piyasa çipiyle aynı
 /// `DemoModu.yazmaKapisi('arama')` kapısından geçer (bkz. `home_screen`).
@@ -97,6 +104,7 @@ const _piyasaSiniri = 6;
 /// dövizde `dovizOptFor`. Satırdaki tutar, dokununca formun önizlediği
 /// fiyatla aynı ürünün fiyatı olsun diye ayrı bir sembol tablosu yok.
 String? hizliHesapSembolu(HizliHesap h) {
+  if (h.kimlik case final k?) return k.ticker;
   if (h.altin case final g?) return goldTickerMap[g.label];
   if (h.doviz case final d?) {
     final t = dovizOptFor(d).ticker;
@@ -116,6 +124,15 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   /// çözülür (saf, ucuz); fiyat `_kotasyon`'dan okunur.
   HizliHesap? _hesap;
 
+  /// "100 THYAO" kalıbının kod → kimlik çözümleri (oturum boyu). Yalnız
+  /// aramanın kaynağında BİREBİR bulunan kod girer; [_istenenKodlar] aynı
+  /// kodun her tuşta yeniden aranmasını önler.
+  final Map<String, VarlikKimligi> _kodlar = {};
+  final Set<String> _istenenKodlar = {};
+
+  HizliHesap? _coz(String v) =>
+      hizliHesapCoz(v, sembolBul: (kod) => _kodlar[kod]);
+
   /// Yalnızca EN SON aramanın sonucu uygulanır (takibe alma ekranıyla aynı
   /// gerekçe: istekler sırasız dönebilir).
   int _seq = 0;
@@ -129,11 +146,14 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   }
 
   void _sorguDegisti(String v) {
-    final hesap = hizliHesapCoz(v);
+    final hesap = _coz(v);
     setState(() {
       _q = v;
       _hesap = hesap;
     });
+    if (hizliHesapKodAdayi(v) case final kod? when hesap == null) {
+      CrashReporter.arkaPlan(_koduCoz(kod), reason: 'GenelArama.hizliKod');
+    }
     // Hızlı hesabın fiyatı beklemesiz istenir: tek sembol, önbellekte
     // varsa hiç istek yok (`_fiyatla` eksik olanı ister).
     if (hesap != null) {
@@ -191,6 +211,44 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
     } catch (_) {
       if (!mounted || id != _seq) return;
       setState(() => _loading = false);
+    }
+  }
+
+  /// Kod adayını ("THYAO", "AFT") piyasa aramasının KENDİ kaynağında arar;
+  /// kısa etiketi birebir aynı hisse/fon bulunursa kaydeder, sorgu hâlâ
+  /// o kodu taşıyorsa satırı yeniden çözer ve fiyatını ister. Yarım kod
+  /// ("THY") burada eşleşmez: `kisaEtiket` birebir karşılaştırılır.
+  Future<void> _koduCoz(String kod) async {
+    if (!_istenenKodlar.add(kod)) return;
+    VarlikKimligi? birebir(List<SymbolHit> hits) {
+      for (final h in hits) {
+        final c = VarlikKimligi.fromSymbolHit(h);
+        if (c == null) continue;
+        if (c.type != AssetType.hisse && c.type != AssetType.fon) continue;
+        if (c.kisaEtiket.toUpperCase() == kod) return c;
+      }
+      return null;
+    }
+
+    try {
+      // Yerleşik BIST listesi ağsız ve anında; test servisi verildiyse
+      // atlanır (belirlenimli kalsın, `_ara` ile aynı kural).
+      var k = widget.aramaServisi == null
+          ? birebir(SymbolSearchService.instance.yerelAra(kod))
+          : null;
+      k ??= birebir(await (widget.aramaServisi ??
+          SymbolSearchService.instance.search)(kod));
+      if (k == null || !mounted) return;
+      final kimlik = k;
+      setState(() {
+        _kodlar[kod] = kimlik;
+        _hesap = _coz(_q);
+      });
+      if (_hesap?.kimlik != null) await _fiyatla([kimlik.ticker]);
+    } catch (_) {
+      // Ağ hatasında kod bir sonraki tuşta yeniden denenebilsin.
+      _istenenKodlar.remove(kod);
+      rethrow;
     }
   }
 
@@ -398,22 +456,54 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   /// "5 Çeyrek Altın ≈ ₺X" — fiyat yoksa `null` (satır çizilmez).
   /// Ad formdaki adla aynı: altında `GoldSubCategory.label` (formun
   /// seçicisi de bunu yazar), dövizde kodu (USD/EUR/GBP; iki dilde aynı).
+  ///
+  /// Ters kalıp ("10.000 tl çeyrek"): "₺10.000 ≈ 2,6 Çeyrek Altın", adet
+  /// SATIŞ fiyatından (`gorunurSatisFiyati`, "Bozdurursan · Alırsan"
+  /// satırıyla aynı kapı); kapı reddederse satır yok, alışa düşülmez.
+  /// Adet kalıbı ("100 THYAO"): kotasyon TL değilse satır yok ("≈ ₺" yalan
+  /// olurdu).
   Widget? _hizliHesapSatiri(BuildContext context, HizliHesap h) {
+    final l = context.l10n;
     final sembol = hizliHesapSembolu(h);
-    final tutar = sembol == null
-        ? null
-        : h.tutar(_kotasyon[sembol.toUpperCase()]?.regularMarketPrice);
-    if (tutar == null) return null;
-    final baslik = context.l10n.aramaHizliHesap(
-      fmtInputTr(h.miktar),
-      h.altin?.label ?? h.doviz!,
-      fmtTRY(tutar),
-    );
+    final q = sembol == null ? null : _kotasyon[sembol.toUpperCase()];
+    if (sembol == null || q == null) return null;
+    final ad = h.kimlik?.kisaEtiket ?? h.altin?.label ?? h.doviz!;
+    final String baslik;
+    final String alt;
+    if (h.ters) {
+      final satis = gorunurSatisFiyati(
+        ticker: sembol,
+        paraBirimi: q.currency ?? '',
+        alis: q.regularMarketPrice,
+        satis: q.satisFiyati,
+      );
+      final adet = h.alinabilecekAdet(satis);
+      if (adet == null) return null;
+      final tamTl = h.miktar == h.miktar.roundToDouble();
+      baslik = l.aramaHizliHesapTers(
+        fmtTRY(h.miktar, digits: tamTl ? 0 : 2),
+        fmtNumFlex(adet, maxDigits: 2),
+        ad,
+      );
+      final dayanak = h.altin != null
+          ? l.aramaHizliHesapKuyumcuSatis
+          : l.aramaHizliHesapSatis;
+      alt = '$dayanak · ${l.aramaHizliHesapEkle}';
+    } else {
+      if (h.kimlik != null && (q.currency ?? 'TRY').toUpperCase() != 'TRY') {
+        return null;
+      }
+      final tutar = h.tutar(q.regularMarketPrice);
+      if (tutar == null) return null;
+      baslik = l.aramaHizliHesap(fmtInputTr(h.miktar), ad, fmtTRY(tutar));
+      alt = l.aramaHizliHesapEkle;
+    }
+    final k = h.kimlik;
     return Padding(
       key: const ValueKey('genel-arama-hizli-hesap'),
       padding: const EdgeInsets.only(bottom: SandikSpace.sm),
       child: SandikTappable(
-        semanticLabel: '$baslik. ${context.l10n.aramaHizliHesapEkle}',
+        semanticLabel: '$baslik. $alt',
         onTap: () {
           // Yalnız özellik kodu sayılır; miktar/birim/arama metni değil.
           OzellikOlcumu.say(Ozellik.hizliHesap);
@@ -421,14 +511,24 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
             context,
             adaptiveRoute<void>(
               settings: const RouteSettings(name: 'add_asset'),
-              builder: (_) => AddAssetScreen(hizliHesap: h, ekleYolu: 'arama'),
+              // Hisse/fon: takip listesi ve varlık sayfasındaki "Portföye
+              // ekle" ile aynı ön doldurma (sembol, ad, tür) + adet.
+              builder: (_) => k == null
+                  ? AddAssetScreen(hizliHesap: h, ekleYolu: 'arama')
+                  : AddAssetScreen(
+                      prefillTicker: k.ticker,
+                      prefillName: k.name,
+                      prefillType: k.type,
+                      hizliHesap: h,
+                      ekleYolu: 'arama',
+                    ),
             ),
           );
         },
         child: _SatirKabugu(
           ikon: Icons.calculate_rounded,
           baslik: baslik,
-          alt: context.l10n.aramaHizliHesapEkle,
+          alt: alt,
         ),
       ),
     );
