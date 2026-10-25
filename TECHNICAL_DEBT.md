@@ -25,7 +25,7 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 - **Kripto, altın, eurobond, mevduat birleştirilmedi** (gerekçe kod yorumunda).
   Kripto için sunucu `kripto-seri` dar dönemi kısmi mumla verseydi birleşirdi.
 - ~~**Varlık detayı gün içi (GÜNLÜK) önce-eski-seri yolunda değil**~~
-  KAPANDI (2026-10-25, yasin onayı, commit HASH_GUNLUK): üç kaynağın üçü de
+  KAPANDI (2026-10-25, yasin onayı, commit 8459c6a): üç kaynağın üçü de
   eldeki-kipte ağa çıkmaz (`getPortfolioHistoryHourlyBreakdownEldeki`).
   `seriCek` yalnız bugünün kopyası; yurt içi kayıt artık diske de yazılıyor
   (anahtar günü taşır, `yurtici|…`) ve eldeki-kipte bellek/diskteki BUGÜNÜN
@@ -44,7 +44,7 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
     bitmeden hesaplanırsa uçlar taze hesaptan biraz farklı olabilir. Soluk
     çizilir ve taze seri gelince yerine geçer; sayı basılmaz.
 - ~~**Performans sekmesi önce-eski-seri yolunda değil**~~ KAPANDI
-  (2026-10-25, Ar-Ge 10-25 §4, yasin onayı, commit HASH_GUNLUK):
+  (2026-10-25, Ar-Ge 10-25 §4, yasin onayı, commit 8459c6a):
   `PortfoySeriDepo` ekranın son çizdiği portföy serisini lot defterinin
   parmak iziyle (ham defter: kapanmış/silinmiş dahil + motora giden liste)
   ve kapsam/dönem anahtarıyla saklar; yalnız AYNI izde, ≤7 gün (1H ≤1 gün)
