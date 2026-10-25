@@ -725,6 +725,33 @@ double? maliyetSatisFiyati({
   return satis;
 }
 
+/// Varlık sayfası ve varlık detayındaki "Bozdurursan · Alırsan · fark"
+/// satırının satış fiyatı; satır gösterilmeyecekse `null` (2026-10-25).
+///
+/// Kendi kuralı YOK: [maliyetSatisFiyati] kapısını bugünün tarihiyle
+/// çağırır. Neden aynı kapı: formun maliyete yazdığı satış ile ekranın
+/// "alırsan" dediği sayı aynı koşullarda var olmalı; biri gösterip öbürü
+/// reddederse kullanıcı iki ekranda iki ayrı gerçek görür. Kapı reddederse
+/// (yurt dışı/USD-kote, satış yok, satış < alış, makas sınır dışı) satır
+/// HİÇ çizilmez — uydurma sayı yok (madde 3).
+double? gorunurSatisFiyati({
+  required String ticker,
+  required String paraBirimi,
+  required double? alis,
+  required double? satis,
+  DateTime? now,
+}) {
+  final bugun = now ?? DateTime.now();
+  return maliyetSatisFiyati(
+    ticker: ticker,
+    paraBirimi: paraBirimi,
+    tarih: bugun,
+    alis: alis,
+    satis: satis,
+    now: bugun,
+  );
+}
+
 /// Formdaki "kuyumcu farkı" yüzdesi: satıştan alınıp bugün alıştan
 /// bozdurulunca kaybedilen pay, `(satış - alış) / satış * 100`. Portföyde
 /// yeni varlığın ilk gün gördüğü eksi yüzdeyle AYNI sayı (maliyet satış,

@@ -5295,6 +5295,34 @@
       }
     }
   },
+  "bozdurAlSatiri": "Bozdurursan {alis} · Alırsan {satis} · fark {fark}",
+  "@bozdurAlSatiri": {
+    "placeholders": {
+      "alis": {
+        "type": "String"
+      },
+      "satis": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "bozdurAlSatiriSemantik": "Bozdurursan eline {alis} geçer, alırsan {satis} ödersin. Aradaki fark {fark}.",
+  "@bozdurAlSatiriSemantik": {
+    "placeholders": {
+      "alis": {
+        "type": "String"
+      },
+      "satis": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondIsinInvalid": "Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.",
   "eurobondIsinNotListed": "Bu ISIN listede yok. Şimdilik yalnız listedeki USD tahvilleri ekleyebilirsin.",
   "eurobondCleanPrice": "Temiz fiyat (%)",

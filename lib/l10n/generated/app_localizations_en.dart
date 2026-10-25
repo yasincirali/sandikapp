@@ -7437,6 +7437,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bozdurAlSatiri(String alis, String satis, String fark) {
+    return 'Sell $alis · Buy $satis · spread $fark';
+  }
+
+  @override
+  String bozdurAlSatiriSemantik(String alis, String satis, String fark) {
+    return 'If you sell, you get $alis; if you buy, you pay $satis. The spread is $fark.';
+  }
+
+  @override
   String get eurobondIsinInvalid =>
       'This ISIN is invalid: the check digit doesn\'t match. A digit may be mistyped.';
 

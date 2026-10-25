@@ -24,6 +24,7 @@ import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/analiz_notu_kutusu.dart';
+import '../widgets/bozdur_al_satiri.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
@@ -668,6 +669,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
     return [
       _fiyatBlogu(ist, bicim, cizilen),
+      // Altın/döviz: "Bozdurursan · Alırsan · fark" (2026-10-25). Büyük
+      // fiyat serinin son noktası (alış) olarak kalır; satır ise iki sayıyı
+      // da AYNI kotasyon kaydından yazar. Kapı reddederse satır yok.
+      BozdurAlSatiri(ticker: k.ticker, paraBirimi: k.currency),
       const SizedBox(height: SandikSpace.smd),
       // Seçici grafiğin ÜSTÜNDE — Performans ve varlık detayıyla aynı sıra
       // (kullanıcı kararı 2026-09-28; gerekçe

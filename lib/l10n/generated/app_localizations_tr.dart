@@ -7375,6 +7375,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String bozdurAlSatiri(String alis, String satis, String fark) {
+    return 'Bozdurursan $alis · Alırsan $satis · fark $fark';
+  }
+
+  @override
+  String bozdurAlSatiriSemantik(String alis, String satis, String fark) {
+    return 'Bozdurursan eline $alis geçer, alırsan $satis ödersin. Aradaki fark $fark.';
+  }
+
+  @override
   String get eurobondIsinInvalid =>
       'Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.';
 

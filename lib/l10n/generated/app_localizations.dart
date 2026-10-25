@@ -12257,6 +12257,18 @@ abstract class AppLocalizations {
   /// **'Getiri {pct}'**
   String eurobondYieldShort(String pct);
 
+  /// No description provided for @bozdurAlSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bozdurursan {alis} · Alırsan {satis} · fark {fark}'**
+  String bozdurAlSatiri(String alis, String satis, String fark);
+
+  /// No description provided for @bozdurAlSatiriSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bozdurursan eline {alis} geçer, alırsan {satis} ödersin. Aradaki fark {fark}.'**
+  String bozdurAlSatiriSemantik(String alis, String satis, String fark);
+
   /// No description provided for @eurobondIsinInvalid.
   ///
   /// In tr, this message translates to:

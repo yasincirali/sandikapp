@@ -4838,6 +4838,34 @@
   "eurobondSourceNote": "USD bonds only for now. Prices are clean, as a percentage of nominal. Not investment advice.",
   "eurobondMaturityShort": "Matures {date}",
   "eurobondYieldShort": "Yield {pct}",
+  "bozdurAlSatiri": "Sell {alis} · Buy {satis} · spread {fark}",
+  "@bozdurAlSatiri": {
+    "placeholders": {
+      "alis": {
+        "type": "String"
+      },
+      "satis": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "bozdurAlSatiriSemantik": "If you sell, you get {alis}; if you buy, you pay {satis}. The spread is {fark}.",
+  "@bozdurAlSatiriSemantik": {
+    "placeholders": {
+      "alis": {
+        "type": "String"
+      },
+      "satis": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondIsinInvalid": "This ISIN is invalid: the check digit doesn't match. A digit may be mistyped.",
   "eurobondIsinNotListed": "This ISIN isn't in the list. For now you can only add the USD bonds listed here.",
   "eurobondCleanPrice": "Clean price (%)",
