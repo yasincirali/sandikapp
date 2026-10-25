@@ -448,6 +448,11 @@
       }
     }
   },
+  "tegPaylas": "Share chart",
+  "tegPaylasimMetni": "{ad} · {donem} · drawn with sandık",
+  "@tegPaylasimMetni": {"description": "Chart share text and image title. No advice wording.", "placeholders": {"ad": {"type": "String"}, "donem": {"type": "String"}}},
+  "tegPaylasimZamani": "As of {zaman}",
+  "@tegPaylasimZamani": {"description": "Date and time the data was loaded, shown on the shared chart image.", "placeholders": {"zaman": {"type": "String"}}},
   "total": "total",
   "@assetTypeSemantics": {
     "placeholders": {

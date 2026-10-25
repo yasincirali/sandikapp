@@ -1496,6 +1496,24 @@ abstract class AppLocalizations {
   /// **'Alış-satış farkı {fark}. Bugün bozdursan {tutar}.'**
   String kuyumcuFarkiDoviz(String fark, String tutar);
 
+  /// No description provided for @tegPaylas.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafiği paylaş'**
+  String get tegPaylas;
+
+  /// Grafik paylaşım metni ve görseldeki başlık. Tavsiye dili yok (sinyal/hedef/al/sat geçmez).
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} · {donem} · sandık ile çizildi'**
+  String tegPaylasimMetni(String ad, String donem);
+
+  /// Paylaşılan grafik görselinde verinin alındığı tarih ve saat.
+  ///
+  /// In tr, this message translates to:
+  /// **'{zaman} itibarıyla'**
+  String tegPaylasimZamani(String zaman);
+
   /// No description provided for @total.
   ///
   /// In tr, this message translates to:

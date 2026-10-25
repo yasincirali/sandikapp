@@ -810,6 +810,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tegPaylas => 'Share chart';
+
+  @override
+  String tegPaylasimMetni(String ad, String donem) {
+    return '$ad · $donem · drawn with sandık';
+  }
+
+  @override
+  String tegPaylasimZamani(String zaman) {
+    return 'As of $zaman';
+  }
+
+  @override
   String get total => 'total';
 
   @override

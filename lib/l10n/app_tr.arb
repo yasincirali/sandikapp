@@ -457,6 +457,11 @@
       }
     }
   },
+  "tegPaylas": "Grafiği paylaş",
+  "tegPaylasimMetni": "{ad} · {donem} · sandık ile çizildi",
+  "@tegPaylasimMetni": {"description": "Grafik paylaşım metni ve görseldeki başlık. Tavsiye dili yok (sinyal/hedef/al/sat geçmez).", "placeholders": {"ad": {"type": "String"}, "donem": {"type": "String"}}},
+  "tegPaylasimZamani": "{zaman} itibarıyla",
+  "@tegPaylasimZamani": {"description": "Paylaşılan grafik görselinde verinin alındığı tarih ve saat.", "placeholders": {"zaman": {"type": "String"}}},
   "total": "toplam",
   "@assetTypeSemantics": {
     "placeholders": {

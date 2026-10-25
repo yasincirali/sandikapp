@@ -799,6 +799,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get tegPaylas => 'Grafiği paylaş';
+
+  @override
+  String tegPaylasimMetni(String ad, String donem) {
+    return '$ad · $donem · sandık ile çizildi';
+  }
+
+  @override
+  String tegPaylasimZamani(String zaman) {
+    return '$zaman itibarıyla';
+  }
+
+  @override
   String get total => 'toplam';
 
   @override

@@ -31,7 +31,11 @@ enum Ozellik {
   cizim('cizim'),
 
   /// iOS tek varlık widget'ından gelen açılış.
-  varlikWidget('varlik_widget');
+  varlikWidget('varlik_widget'),
+
+  /// Tam ekran grafiğin görsel olarak paylaşılması (Ar-Ge 25 Eki §2):
+  /// paylaşım sayfası hatasız açıldığında sayılır, düğmeye dokunuşta değil.
+  grafikPaylas('grafik_paylas');
 
   const Ozellik(this.kod);
   final String kod;
