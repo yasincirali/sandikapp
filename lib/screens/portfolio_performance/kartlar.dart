@@ -29,6 +29,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     /// `getPortfolioHistoryHourlyBreakdown`.
     PortfolioHistoryBreakdown breakdown =
         const PortfolioHistoryBreakdown.empty(),
+
+    /// Seri taze ölçülmedi (taze çekim düştü; disk kopyası ya da son iyi
+    /// bileşenler): grafik net, altında "Son güncelleme: …"
+    /// (`ZoomDataController.sonGuncelleme`).
+    DateTime? sonGuncelleme,
   }) {
     // Ana ekranla birebir aynı TRY hesabı: targetAssets grafik için ham buy
     // lot'ları içeriyor (satılan miktarı geçmişte düşürmemek için). Ancak
@@ -390,6 +395,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             ),
             const SizedBox(height: SandikSpace.sm),
             grafikAlani(),
+            if (sonGuncelleme != null) SeriSonGuncelleme(zaman: sonGuncelleme),
             if (isIntraday &&
                 breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
               const SizedBox(height: SandikSpace.sm),
@@ -547,6 +553,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           const SizedBox(height: SandikSpace.sm),
           // Grafik alanı (boş / hata / iskelet / genç / grafik): `grafikAlani`.
           grafikAlani(),
+          if (sonGuncelleme != null) SeriSonGuncelleme(zaman: sonGuncelleme),
           // Gün içi verisi HİÇ alınamayan türler için açık uyarı.
           //
           // Bu türler grafikte son bilinen fiyatla sabit çizilir; uyarı

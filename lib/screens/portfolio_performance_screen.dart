@@ -49,9 +49,11 @@ import '../utils/spot_lookup.dart';
 import '../widgets/share_card.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/seri_son_guncelleme.dart';
 import '../services/analytics_service.dart';
 import '../services/daily_summary.dart';
 import '../services/history_service.dart';
+import '../services/portfoy_seri_depo.dart';
 import '../services/inflation_service.dart';
 import '../services/tazelik_ritmi.dart';
 import '../services/real_return_service.dart';
@@ -929,6 +931,9 @@ class _PortfolioPerformanceScreenState
                           from: effectiveStart,
                           to: endDate,
                           intraday: false,
+                          // Ham defter (kapanmış/silinmiş dahil): önce-eski-
+                          // seri parmak izi (`_diskSerisi`).
+                          hamDefter: [for (final l in ownerLots) ...l],
                         );
                       }
 
@@ -1086,6 +1091,8 @@ class _PortfolioPerformanceScreenState
                             stale: stale,
                             settled: settled,
                             breakdown: breakdown,
+                            sonGuncelleme:
+                                stale ? null : controller?.sonGuncelleme,
                           );
                         },
                       );

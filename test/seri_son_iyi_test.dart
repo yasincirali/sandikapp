@@ -165,11 +165,11 @@ void main() {
 
     test('dosya sayısı sınırlı', () async {
       final depo = SeriDiskDepo(kokDizin: () async => gecici);
-      for (var i = 0; i < SeriDiskDepo.azamiDosya + 5; i++) {
+      for (var i = 0; i < SeriDiskDepo.varsayilanAzamiDosya + 5; i++) {
         await depo.yaz('S${i}_1mo', seri);
       }
       final n = Directory('${gecici.path}/seri_onbellek').listSync().length;
-      expect(n, SeriDiskDepo.azamiDosya);
+      expect(n, SeriDiskDepo.varsayilanAzamiDosya);
     });
 
     test('bozuk dosya sessizce null', () async {

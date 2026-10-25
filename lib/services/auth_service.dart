@@ -17,6 +17,7 @@ import 'social_auth_service.dart';
 import 'supabase_service.dart';
 import '../utils/friendly_error.dart';
 import 'crash_reporter.dart';
+import 'portfoy_seri_depo.dart';
 
 const _uuid = Uuid();
 const _savedEmailKey = 'saved_email';
@@ -1037,6 +1038,8 @@ class AuthService {
     // Çevrimdışı defter de kullanıcıya ait: aynı cihazdaki bir sonraki
     // hesap öncekinin portföyünü görmemeli.
     if (uid != null) await PortfolioCache.clear(uid);
+    // Performans grafiğinin disk kopyası da o hesabın toplamlarıdır.
+    await PortfoySeriDepo.temizle();
     await SocialAuthService.instance.signOutGoogle();
     // Yerel deneme sayaçları ve push cihaz kimliği kullanıcıya özgü izdir;
     // aynı cihazdaki bir sonraki hesaba taşınmasın (2026-09 L14).
