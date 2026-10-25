@@ -112,6 +112,38 @@
                 android:resource="@xml/sandik_widget_info" />
         </receiver>
 
+        <!-- Tek varlık widget'ı (iOS SandikVarlikWidget'ın karşılığı,
+             2026-10-25). Portföy widget'ıyla aynı gerekçe: `exported=true`
+             zorunlu, yalnızca APPWIDGET_UPDATE dinler. -->
+        <receiver
+            android:name=".SandikVarlikWidgetProvider"
+            android:label="@string/varlik_widget_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sandik_varlik_widget_info" />
+        </receiver>
+
+        <!-- Tek varlık widget'ının seçim ekranı (`android:configure`).
+             `exported=true`: ekleme/düzenleme akışını launcher başlatır;
+             Activity gelen widget kimliğinin kendi sağlayıcısına ait
+             olduğunu doğrular. `taskAffinity`/`launchMode` BİLEREK yok:
+             launcher sonucu (RESULT_OK) bekler; ayrı görevde açılan
+             Activity'nin sonucu bazı launcher'larda hemen İPTAL döner ve
+             widget eklenmez. -->
+        <activity
+            android:name=".SandikVarlikSecimActivity"
+            android:exported="true"
+            android:label="@string/varlik_secim_baslik"
+            android:theme="@style/SandikVarlikSecimTheme">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Glance trampoline aktiviteleri DÜŞÜRÜLÜR (2026-10-14).
              Uygulama Glance KULLANMAZ: widget düz RemoteViews
              (SandikWidgetProvider), dokunuş HomeWidgetLaunchIntent ile

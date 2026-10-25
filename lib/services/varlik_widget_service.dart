@@ -17,8 +17,10 @@ import 'history_service.dart';
 import 'home_widget_service.dart';
 import 'price_service.dart';
 
-/// iOS ana ekranındaki TEK VARLIK widget'ını besler (`SandikVarlikWidget`,
-/// Ar-Ge kararı 2026-10-24 §1: "önce yalnız iOS").
+/// Ana ekrandaki TEK VARLIK widget'ını besler: iOS `SandikVarlikWidget`
+/// (Ar-Ge kararı 2026-10-24 §1: "önce yalnız iOS") ve Android
+/// `SandikVarlikWidgetProvider` (yasin onayı 2026-10-25). İki platform AYNI
+/// anahtarı ve AYNI JSON'u okur; Android için ayrı anahtar ya da biçim yok.
 ///
 /// ## Ne yazar
 /// Widget sözleşmesine YALNIZ yeni bir anahtar ekler
@@ -30,16 +32,21 @@ import 'price_service.dart';
 /// ## Seçim listesi (karar: yalnız takip listesi + portföy)
 /// Widget'ın düzenleme ekranında katalog araması YOK; kullanıcı yalnızca
 /// portföyündeki ([aktifLotlar], kapanmış pozisyon girmez) ve takip
-/// listesindeki varlıklardan seçer. Liste burada kurulur ve App Group'a
-/// yazılır; Swift tarafı (`SandikVarlikQuery`) yalnızca bu listeyi sunar.
+/// listesindeki varlıklardan seçer. Liste burada kurulur ve widget deposuna
+/// yazılır; Swift tarafı (`SandikVarlikQuery`) ve Android seçim ekranı
+/// (`SandikVarlikSecimActivity`) yalnızca bu listeyi sunar.
 ///
 /// ## Gizlilik (portföy widget'ının değişmezinden bilinçli fark)
 /// `HomeWidgetService` portföy özetine varlık adı/ticker yazmaz. Seçim
 /// listesi ise tanım gereği varlık adlarını taşır — ama yalnız ADLARI:
 /// miktar, maliyet, tutar, lot kimliği, kullanıcı kimliği ve bir varlığın
-/// portföyden mi takipten mi geldiği YAZILMAZ. Liste yalnız iOS'ta yazılır
-/// (App Group yalnız bu geliştiricinin uygulamasıyla uzantısına açıktır);
-/// Android'de hiç yazılmaz. Oturum kapanınca [HomeWidgetService.clear]
+/// portföyden mi takipten mi geldiği YAZILMAZ. Depo iki platformda da
+/// uygulamaya özel: iOS'ta App Group (yalnız bu geliştiricinin uygulaması ve
+/// uzantısı), Android'de `home_widget`'ın `MODE_PRIVATE`
+/// `SharedPreferences`'ı (widget'ı çizen sağlayıcı uygulamanın kendi
+/// sürecinde koşar; launcher yalnız çizilmiş `RemoteViews`'u görür).
+/// Android'de 2026-10-25'e kadar hiç yazılmıyordu; widget gelince aynı
+/// sınırlarla açıldı. Oturum kapanınca [HomeWidgetService.clear]
 /// anahtarı boşaltır. Ana ekranda görünen tek şey kullanıcının SEÇTİĞİ
 /// varlığın piyasa fiyatıdır — kamuya açık bir sayı.
 ///
@@ -68,11 +75,12 @@ class VarlikWidgetService {
   VarlikWidgetService._();
   static final instance = VarlikWidgetService._();
 
-  /// Widget yalnız iOS'ta var. Test dikişi.
+  /// Widget iOS ve Android'de var (masaüstü/web'de yok). Test dikişi.
   @visibleForTesting
-  static bool Function() platformKontrolu = () => Platform.isIOS;
+  static bool Function() platformKontrolu =
+      () => Platform.isIOS || Platform.isAndroid;
 
-  /// Bu platformda servis çalışır mı (yalnız iOS)?
+  /// Bu platformda servis çalışır mı (iOS, Android)?
   static bool get etkin => platformKontrolu();
 
   /// Kotasyon kaynağı — üretimde piyasa bandıyla aynı çağrı. Test dikişi;
@@ -118,7 +126,7 @@ class VarlikWidgetService {
   ///
   /// [takip] `null` ise takip listesi henüz yüklenmemiştir: widget
   /// kuruluysa [takipYukle] ile istenir, değilse takip listesi bu turda
-  /// atlanır. Gerekçe: takip listesini her iOS açılışında yüklemek (her
+  /// atlanır. Gerekçe: takip listesini her açılışta yüklemek (her
   /// sembol için seri isteği) widget'ı kullanmayan kullanıcıya da ağ
   /// maliyeti olurdu.
   ///

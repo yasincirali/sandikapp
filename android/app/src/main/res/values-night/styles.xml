@@ -18,4 +18,9 @@
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- Tek varlık seçim ekranı, koyu ilk kare (bkz. values/styles.xml). -->
+    <style name="SandikVarlikSecimTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/widget_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

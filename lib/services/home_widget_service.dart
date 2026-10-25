@@ -42,11 +42,12 @@ import 'crash_reporter.dart';
 /// adet, kullanıcı id'si veya e-posta ASLA yazılmaz. Kullanıcı bakiyeyi
 /// gizlediyse ([hideBalance]) tutar da yazılmaz.
 ///
-/// **Tek istisna, bilinçli (2026-10-24):** iOS tek varlık widget'ının seçim
+/// **Tek istisna, bilinçli (2026-10-24):** tek varlık widget'ının seçim
 /// listesi ([varlikListesiniYaz], `sandik_varliklar`) varlık ADLARINI ve
 /// piyasa fiyatlarını taşır — miktar, tutar, lot/kullanıcı kimliği ve
-/// "portföyde mi takipte mi" bilgisi olmadan, yalnız iOS'ta. Gerekçe ve
-/// sınırlar `VarlikWidgetService`'te.
+/// "portföyde mi takipte mi" bilgisi olmadan. Önce yalnız iOS'ta; Android
+/// widget'ı gelince (2026-10-25) aynı anahtar, aynı sınırlarla Android'de de
+/// yazılır. Gerekçe ve sınırlar `VarlikWidgetService`'te.
 ///
 /// Oturum kapanınca [clear] çağrılmalı: aksi halde çıkış yapan kullanıcının
 /// bakiyesi ana ekranda asılı kalır.
@@ -80,6 +81,11 @@ class HomeWidgetService {
   /// (fiyatları ayrı turda, [varlikListesiniYaz] ile gelir); tema değişince
   /// [applyTheme] üçünü birden yeniler.
   static const iOSVarlikWidgetName = 'SandikVarlikWidget';
+
+  /// Android tek varlık widget sağlayıcısının sınıf adı
+  /// (`SandikVarlikWidgetProvider.kt`) — `AndroidManifest.xml`'deki receiver
+  /// ile birebir aynı. iOS türü gibi ayrı yenilenir.
+  static const androidVarlikWidgetName = 'SandikVarlikWidgetProvider';
 
   /// Tek varlık widget'ının seçim listesi + fiyatları — JSON (`v`, `saat`,
   /// `ogeler`; biçim `varlikWidgetPaketi`). YENİ anahtar: eski anahtarların
@@ -914,9 +920,7 @@ class HomeWidgetService {
       _sonYazilan[_kIsLightTheme] = themeIsLight;
       await _requestUpdate();
       // Tek varlık widget'ı da aynı tema bayrağını okur.
-      if (Platform.isIOS) {
-        await HomeWidget.updateWidget(iOSName: iOSVarlikWidgetName);
-      }
+      await _varlikWidgetiniYenile();
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget applyTheme failed: $e');
     }
@@ -949,9 +953,7 @@ class HomeWidgetService {
       // yok" (Swift tarafı boşu ve bozuk JSON'u aynı okur).
       await HomeWidget.saveWidgetData<String>(kVarliklar, '');
       await _requestUpdate();
-      if (Platform.isIOS) {
-        await HomeWidget.updateWidget(iOSName: iOSVarlikWidgetName);
-      }
+      await _varlikWidgetiniYenile();
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget clear failed: $e');
     }
@@ -967,19 +969,41 @@ class HomeWidgetService {
       if (_sonYazilan[kVarliklar] == paket) return;
       await HomeWidget.saveWidgetData<String>(kVarliklar, paket);
       _sonYazilan[kVarliklar] = paket;
-      await HomeWidget.updateWidget(iOSName: iOSVarlikWidgetName);
+      await HomeWidget.updateWidget(
+        androidName: androidVarlikWidgetName,
+        iOSName: iOSVarlikWidgetName,
+      );
     } catch (e) {
       _sonYazilan.remove(kVarliklar);
       if (kDebugMode) debugPrint('HomeWidget varlikListesiniYaz failed: $e');
     }
   }
 
-  /// Tek varlık widget'ı ana ekranda kurulu mu (iOS `WidgetCenter`)?
-  /// Kurulu değilken `VarlikWidgetService` fiyat için ağa çıkmaz.
+  /// Tek varlık widget'ı ana ekranda kurulu mu (iOS `WidgetCenter`,
+  /// Android `AppWidgetManager`)? Kurulu değilken `VarlikWidgetService`
+  /// fiyat için ağa çıkmaz.
+  ///
+  /// Android sınıf adı `ComponentName.shortClassName` olarak gelir
+  /// (`.SandikVarlikWidgetProvider`); son parça karşılaştırılır. Portföy
+  /// widget'ı (`SandikWidgetProvider`) burada SAYILMAZ.
   Future<bool> varlikWidgetiKuruluMu() async {
     await _ensureInit();
     final kurulu = await HomeWidget.getInstalledWidgets();
-    return kurulu.any((w) => w.iOSKind == iOSVarlikWidgetName);
+    return kurulu.any((w) =>
+        w.iOSKind == iOSVarlikWidgetName ||
+        w.androidClassName?.split('.').last == androidVarlikWidgetName);
+  }
+
+  /// Tek varlık widget'ını yeniler (tema değişimi, oturum kapanışı).
+  ///
+  /// Yalnız iOS ve Android'de: masaüstü/test ortamında çağrı yapılmaz
+  /// (önceden `Platform.isIOS` ile korunan çağrının iki platformlu hâli).
+  Future<void> _varlikWidgetiniYenile() async {
+    if (!(Platform.isIOS || Platform.isAndroid)) return;
+    await HomeWidget.updateWidget(
+      androidName: androidVarlikWidgetName,
+      iOSName: iOSVarlikWidgetName,
+    );
   }
 
   Future<void> _requestUpdate() async {
