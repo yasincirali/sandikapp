@@ -329,14 +329,18 @@ void main() {
       final ham = kanal.yazilan[HomeWidgetService.kVarliklar] as String;
       expect(ham, isNot(contains('lot-uuid-1')));
       expect(ham, isNot(contains('u1')));
-      expect(ham, isNot(contains('37')),
+      // `zaman` bir epoch sayısıdır; içinde rastlantıyla "37" geçebilir.
+      // Miktar araması onun dışında kalan her şeyde yapılır.
+      final zamansiz = Map.of(paket())..remove('zaman');
+      expect(jsonEncode(zamansiz), isNot(contains('37')),
           reason: 'Miktar kilitsiz yüzeyin deposuna girmez');
       for (final o
           in (paket()['ogeler'] as List).cast<Map<String, Object?>>()) {
         expect(
-            o.keys
-                .toSet()
-                .difference({'id', 'ad', 'alt', 'fiyat', 'degisim', 'yon'}),
+            o.keys.toSet().difference({
+              'id', 'ad', 'alt', 'fiyat', 'degisim', 'yon', //
+              'kisa', 'kapanis', 'seansSonu',
+            }),
             isEmpty);
       }
     });
@@ -425,6 +429,88 @@ void main() {
     });
   });
 
+  group('kilit ekranı: kapanış etiketi, kısa ad, tazelik (Ar-Ge 2026-10-25 §2)',
+      () {
+    // 24 Ekim 2026 cumartesi; 26 Ekim pazartesi (seans açık).
+    final cumartesi = DateTime(2026, 10, 24, 14, 5);
+    final pazartesi = DateTime(2026, 10, 26, 14, 5);
+
+    VarlikWidgetAdayi aday(String ticker, AssetType type,
+            {String name = '', String? sub}) =>
+        varlikWidgetAdaylari(
+          lotlar: const [],
+          takip: [_takip(ticker, type, name: name, sub: sub)],
+        ).single;
+
+    test('kripto 7/24: kapanış etiketi HİÇBİR ZAMAN yazılmaz', () {
+      final btc = aday('KRIPTO:BTC', AssetType.kripto, name: 'Bitcoin');
+      expect(btc.borsaTakviminde, isFalse);
+      for (final an in [cumartesi, pazartesi, DateTime(2026, 10, 26, 23)]) {
+        final j = varlikWidgetOgesi(btc, fiyat: 3500000, simdi: an).toJson();
+        expect(j.containsKey('kapanis'), isFalse, reason: '$an');
+        expect(j.containsKey('seansSonu'), isFalse, reason: '$an');
+      }
+    });
+
+    test('altın ve döviz hafta sonu da işler: kapanış yok', () {
+      for (final a in [
+        aday('ALTIN_GRAM24', AssetType.altin, name: 'Gram Altın'),
+        aday('USDTRY=X', AssetType.doviz, sub: 'USD'),
+      ]) {
+        final j = varlikWidgetOgesi(a, fiyat: 42, simdi: cumartesi).toJson();
+        expect(j.containsKey('kapanis'), isFalse, reason: a.sembol);
+      }
+    });
+
+    test('BIST ve fon: seans kapalıyken kapanış, açıkken seans sonu', () {
+      final thy = aday('THYAO.IS', AssetType.hisse);
+      final fon = aday('TEFAS:AFT', AssetType.fon);
+      expect(
+          varlikWidgetOgesi(thy, fiyat: 300, simdi: cumartesi).kapanis, isTrue);
+      expect(
+          varlikWidgetOgesi(fon, fiyat: 2, simdi: cumartesi).kapanis, isTrue);
+      // Pazartesi 20:00: seans bitti.
+      expect(
+          varlikWidgetOgesi(thy, fiyat: 300, simdi: DateTime(2026, 10, 26, 20))
+              .kapanis,
+          isTrue);
+      final acik = varlikWidgetOgesi(thy, fiyat: 300, simdi: pazartesi);
+      expect(acik.kapanis, isNull);
+      expect(acik.seansSonu, DateTime(2026, 10, 26, 18).millisecondsSinceEpoch,
+          reason: 'BugunService.seansAcikMi ile aynı eşik');
+      // Fiyat bilinmiyorsa etiket de yok.
+      final fiyatsiz = varlikWidgetOgesi(thy, simdi: cumartesi).toJson();
+      expect(fiyatsiz.containsKey('kapanis'), isFalse);
+      // An verilmezse (eski çağrı) etiket yok.
+      expect(varlikWidgetOgesi(thy, fiyat: 300).toJson().containsKey('kapanis'),
+          isFalse);
+    });
+
+    test('tek satır için kısa ad: "Gram" → "Gr"; aynıysa yazılmaz', () {
+      expect(kilitEkraniKisaAd('Gram altın'), 'Gr altın');
+      expect(kilitEkraniKisaAd('Gram Altın (24 Ayar)'), 'Gr Altın (24 Ayar)');
+      expect(kilitEkraniKisaAd('USD'), 'USD');
+      final altin = aday('ALTIN_GRAM24', AssetType.altin, name: 'Gram altın');
+      expect(varlikWidgetOgesi(altin, fiyat: 4215).kisa, 'Gr altın');
+      final usd = aday('USDTRY=X', AssetType.doviz, sub: 'USD');
+      expect(varlikWidgetOgesi(usd, fiyat: 42).toJson().containsKey('kisa'),
+          isFalse);
+    });
+
+    test('paket yazım anını taşır (1 günden eski fiyatta tarih görünür)', () {
+      final p = jsonDecode(
+              varlikWidgetPaketi(const [], saat: '14:05', zaman: cumartesi))
+          as Map<String, Object?>;
+      expect(p['v'], 1,
+          reason: 'eski okuyucu: sürüm aynı, alanlar isteğe bağlı');
+      expect(p['zaman'], cumartesi.millisecondsSinceEpoch);
+      expect(p['tarih'], '24 Eki 14:05');
+      final eski = jsonDecode(varlikWidgetPaketi(const [], saat: '14:05'))
+          as Map<String, Object?>;
+      expect(eski.containsKey('zaman'), isFalse);
+    });
+  });
+
   group('Swift sözleşmesi (kaynak kilidi — derleme burada yok)', () {
     final swift = ekranKaynagiSync('ios/SandikWidget/SandikVarlikWidget.swift');
     final bundle =
@@ -447,6 +533,38 @@ void main() {
       for (final alan in ['v', 'saat', 'ogeler']) {
         expect(swift, contains('let $alan: '));
       }
+      // Kilit ekranı alanları isteğe bağlı (`var … = nil`): eski paket de
+      // çözülür.
+      for (final alan in ['kisa', 'kapanis', 'seansSonu', 'zaman', 'tarih']) {
+        expect(swift, contains('var $alan: '),
+            reason: '`$alan` Swift Codable modelinde yok');
+      }
+    });
+
+    test('desteklenen aileler: ana ekran küçük + kilit ekranı iki boyut', () {
+      final m = RegExp(r'\.supportedFamilies\(\[([^\]]*)\]\)')
+          .allMatches(swift)
+          .toList();
+      expect(m, hasLength(1));
+      final aileler = m.single.group(1)!;
+      for (final aile in [
+        '.systemSmall',
+        '.accessoryRectangular',
+        '.accessoryInline',
+      ]) {
+        expect(aileler, contains(aile));
+      }
+      // Kilit ekranında zemin sistemin; tema rengi tek renkte lekeye döner.
+      expect(swift, contains('AccessoryWidgetBackground()'));
+      expect(swift, contains('Color.clear'));
+    });
+
+    test('kapanış kararı Swift\'te verilmez (tek kaynak Dart)', () {
+      // Seans/tatil takvimi Dart'ta (`BugunService`, `BistTakvimi`); Swift
+      // yalnız yazılan `kapanis` / `seansSonu` alanını okur. Swift'te
+      // takvime bakmak kriptoya ya da tatile yanlış "Kapanış" yazdırırdı.
+      expect(swift, isNot(contains('BistSeans')));
+      expect(swift, contains('oge.kapanis == true'));
     });
 
     test('varlık App Intents ile seçilir; liste yalnız uygulamanın paketi', () {
@@ -461,6 +579,9 @@ void main() {
       expect(swift, contains('"▲"'));
       expect(swift, contains('"▼"'));
       expect(swift, contains('accessibilityLabel'));
+      // Üç boyut da aynı erişilebilirlik cümlesini okur.
+      expect('accessibilityLabel(erisimMetni(oge))'.allMatches(swift).length,
+          greaterThanOrEqualTo(3));
     });
 
     test('paket kaydı ve pbxproj (Sources fazı) yerinde', () {

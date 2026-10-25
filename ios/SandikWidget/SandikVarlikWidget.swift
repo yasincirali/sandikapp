@@ -8,6 +8,11 @@ import WidgetKit
 /// ile seçilir; seçim listesi YALNIZ portföy + takip listesi (katalog araması
 /// yok); kilit ekranı varyantı sonra; değişim ok + sayıyla (yalnız renk değil).
 ///
+/// Ar-Ge 2026-10-25 §2: kilit ekranı geldi — aynı widget `accessoryRectangular`
+/// (ad, fiyat, ok + işaretli yüzde) ve `accessoryInline` (tek satır, kısa ad).
+/// Veri, seçim ve yazma noktası aynı; yalnız görünüm eklendi. Mevcut portföy
+/// kilit widget'ı (`SandikKilitWidget`) bundan habersiz.
+///
 /// Veriyi Flutter tarafı yazar (`VarlikWidgetService` →
 /// `HomeWidgetService.varlikListesiniYaz`), burada yalnızca okunur. Sözleşmeye
 /// YALNIZ yeni bir anahtar eklendi (`sandik_varliklar`); portföy widget'ının
@@ -60,6 +65,21 @@ struct SandikVarlikOgesi: Decodable, Hashable {
     let degisim: String?
     /// 1 artış, -1 düşüş, 0 değişim yok; yoksa bilinmiyor.
     let yon: Int?
+    /// Tek satırlık kilit ekranı için kısa ad ("Gr altın"); yoksa `ad`.
+    /// Bu ve aşağıdaki alanlar isteğe bağlı (2026-10-25): eski paket de okunur.
+    var kisa: String? = nil
+    /// Yazım anında seans kapalıydı: fiyat son kapanış. Karar Dart'ta
+    /// (`borsaTakvimindeMi` + `BugunService.seansAcikMi`, tatil dahil);
+    /// kripto/altın/döviz bu alanı hiç almaz.
+    var kapanis: Bool? = nil
+    /// Yazım anında seans açıktı: bugünkü kapanış (epoch ms). Bu andan sonra
+    /// fiyat kapanıştan önceki bir an — "Kapanış" denmez, saat yazılır.
+    var seansSonu: Double? = nil
+
+    var gorunenKisaAd: String {
+        if let kisa = kisa, !kisa.isEmpty { return kisa }
+        return ad
+    }
 }
 
 /// `sandik_varliklar` paketinin tamamı — Dart `varlikWidgetPaketi`.
@@ -67,6 +87,9 @@ struct SandikVarlikPaketi: Decodable {
     let v: Int
     let saat: String?
     let ogeler: [SandikVarlikOgesi]
+    /// Yazım anı (epoch ms) ve biçimli hâli ("24 Eki 14:05"). İsteğe bağlı.
+    var zaman: Double? = nil
+    var tarih: String? = nil
 
     /// Bu build'in tanıdığı tek biçim sürümü. Tanınmayan sürüm okunmaz:
     /// yanlış okunmuş bir fiyat göstermektense "liste yok" demek doğru.
@@ -173,13 +196,33 @@ struct SandikVarlikEntry: TimelineEntry {
     let durum: Durum
     let saat: String
     let isLight: Bool
+    /// Paketin yazım anı; eski paket yazmadıysa `nil` (tazelik bilinmiyor).
+    var zaman: Date? = nil
+    /// Yazım anının tarihli hâli ("24 Eki 14:05"), Dart biçimler.
+    var tarih: String = ""
+
+    /// Fiyat bu kadar eskiyse saatin yerine tarih yazılır (Ar-Ge 2026-10-25).
+    static let bayatlikEsigi: TimeInterval = 24 * 60 * 60
+
+    /// Bu girdinin anında fiyat 1 günden eski mi?
+    var bayat: Bool {
+        guard let zaman = zaman else { return false }
+        return date.timeIntervalSince(zaman) >= Self.bayatlikEsigi
+    }
+
+    /// Aynı veri, başka bir an için — zaman çizelgesinin ileri girdileri.
+    func ayniVeri(at tarihi: Date) -> SandikVarlikEntry {
+        SandikVarlikEntry(
+            date: tarihi, durum: durum, saat: saat, isLight: isLight,
+            zaman: zaman, tarih: tarih)
+    }
 
     /// Önizleme / yer tutucu. Fiyat UYDURULMAZ: "—".
     static let ornek = SandikVarlikEntry(
         date: Date(),
         durum: .oge(SandikVarlikOgesi(
             id: "ALTIN_GRAM24", ad: "Gram altın", alt: nil,
-            fiyat: "—", degisim: nil, yon: nil)),
+            fiyat: "—", degisim: nil, yon: nil, kisa: "Gr altın")),
         saat: "",
         isLight: false
     )
@@ -207,7 +250,10 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
         } else {
             durum = .listeBos
         }
-        return SandikVarlikEntry(date: Date(), durum: durum, saat: saat, isLight: isLight)
+        return SandikVarlikEntry(
+            date: Date(), durum: durum, saat: saat, isLight: isLight,
+            zaman: paket.zaman.map { Date(timeIntervalSince1970: $0 / 1000) },
+            tarih: paket.tarih ?? "")
     }
 
     func placeholder(in context: Context) -> SandikVarlikEntry { .ornek }
@@ -225,7 +271,21 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
     func timeline(for configuration: SandikVarlikSecimi, in context: Context) async -> Timeline<SandikVarlikEntry> {
         // Portföy widget'ıyla aynı karar: veriyi uygulama yazar ve yazınca
         // bu türü yeniler (`.never`). Zamanlı yenileme boşuna bütçe harcardı.
-        Timeline(entries: [oku(configuration)], policy: .never)
+        //
+        // İki ileri girdi (veri aynı, yalnız an): seansın bitişi (açıkken
+        // yazılmış fiyat o andan sonra saatle görünür) ve 1 günlük eşik
+        // (saat → tarih). Uygulama açılmasa da etiket doğru kalır; ağ yok.
+        let simdi = oku(configuration)
+        var anlar: [Date] = []
+        if case .oge(let oge) = simdi.durum, let ms = oge.seansSonu {
+            anlar.append(Date(timeIntervalSince1970: ms / 1000))
+        }
+        if let zaman = simdi.zaman {
+            anlar.append(zaman.addingTimeInterval(SandikVarlikEntry.bayatlikEsigi))
+        }
+        let ileri = anlar.filter { $0 > simdi.date }.sorted()
+            .map { simdi.ayniVeri(at: $0) }
+        return Timeline(entries: [simdi] + ileri, policy: .never)
     }
 }
 
@@ -237,7 +297,42 @@ struct SandikVarlikView: View {
 
     private var palette: SandikPalette { .resolved(isLight: entry.isLight) }
 
+    /// Kilit ekranı aileleri: sistem tek renk (vibrant) çizer. Orada renk
+    /// anlam taşımaz; yön ▲/▼ ve işaretli yüzdeyle verilir, metin
+    /// `.primary` / `.secondary` (portföy kilit widget'ıyla aynı kural).
+    private var kilitEkrani: Bool {
+        family == .accessoryRectangular || family == .accessoryInline
+    }
+
     var body: some View {
+        icerik
+            // iOS 17'de zorunlu (bkz. `SandikHomeWidget`). Kilit ekranında
+            // zemin sistemindir; tema rengi orada lekeye dönerdi.
+            .containerBackground(for: .widget) {
+                if kilitEkrani {
+                    Color.clear
+                } else {
+                    palette.background
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var icerik: some View {
+        switch family {
+        case .accessoryInline:
+            satirGorunumu
+        case .accessoryRectangular:
+            dikdortgenGorunumu
+        default:
+            kucukGorunum
+        }
+    }
+
+    // MARK: Ana ekran (systemSmall)
+
+    @ViewBuilder
+    private var kucukGorunum: some View {
         switch entry.durum {
         case .oge(let oge):
             ogeGorunumu(oge)
@@ -274,10 +369,12 @@ struct SandikVarlikView: View {
             degisimSatiri(oge)
                 .padding(.top, 2)
             Spacer(minLength: 4)
-            if !entry.saat.isEmpty {
-                Text(entry.saat)
+            if let zaman = zamanEtiketi(oge, saatHer: true) {
+                Text(zaman)
                     .font(.sandikNumber(10, weight: .medium))
                     .foregroundColor(palette.text20)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -316,6 +413,162 @@ struct SandikVarlikView: View {
         }
     }
 
+    // MARK: Kilit ekranı — dikdörtgen
+
+    private var dikdortgenGorunumu: some View {
+        Group {
+            switch entry.durum {
+            case .oge(let oge):
+                dikdortgenOge(oge)
+            case .listedeYok(let ad):
+                dikdortgenBilgi(baslik: ad, metin: "Listende yok. Basılı tutup değiştir.")
+            case .listeBos:
+                dikdortgenBilgi(baslik: "sandık", metin: "Uygulamayı aç")
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(
+            AccessoryWidgetBackground()
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        )
+    }
+
+    /// Üç satır: ad · fiyat · değişim + zaman. Kişisel tutar yok — yalnız
+    /// piyasa fiyatı (kilitliyken örtülecek bir şey yok).
+    private func dikdortgenOge(_ oge: SandikVarlikOgesi) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                SandikLogoMark(width: 12)
+                Text(oge.ad)
+                    .font(.sandikLabel(13, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            Text(oge.fiyat ?? "—")
+                .font(.sandikNumber(22, weight: .bold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+                .widgetAccentable()
+            HStack(spacing: 4) {
+                if let degisim = oge.degisim, !degisim.isEmpty {
+                    if let ok = okIsareti(oge.yon) {
+                        Text(ok)
+                            .font(.sandikLabel(10, weight: .black))
+                    }
+                    Text(degisim)
+                        .font(.sandikNumber(12, weight: .semibold))
+                        .lineLimit(1)
+                } else {
+                    // Ölçüm yok: yüzde uydurulmaz.
+                    Text("Değişim yok")
+                        .font(.sandikLabel(11, weight: .medium))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                if let zaman = zamanEtiketi(oge, saatHer: true) {
+                    Text(zaman)
+                        .font(.sandikNumber(11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(erisimMetni(oge))
+    }
+
+    private func dikdortgenBilgi(baslik: String, metin: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                SandikLogoMark(width: 12)
+                Text(baslik)
+                    .font(.sandikLabel(13, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            Text(metin)
+                .font(.sandikLabel(12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Kilit ekranı — tek satır (saatin üstü)
+
+    /// Sistem bu ailede tek satır metin çizer ve sığmayanı keser; bu yüzden
+    /// tek `Text`: "Gr altın ₺4.215 ▲%0,4". Ok varken işaret tekrar
+    /// yazılmaz (dar satır); ok yoksa (değişim sıfır) yüzde zaten işaretsiz.
+    @ViewBuilder
+    private var satirGorunumu: some View {
+        switch entry.durum {
+        case .oge(let oge):
+            Text(satirMetni(oge))
+                .accessibilityLabel(erisimMetni(oge))
+        case .listedeYok(let ad):
+            Text("\(ad) listende yok")
+        case .listeBos:
+            Text("sandık · Uygulamayı aç")
+        }
+    }
+
+    private func satirMetni(_ oge: SandikVarlikOgesi) -> String {
+        var parcalar: [String] = [oge.gorunenKisaAd, oge.fiyat ?? "—"]
+        if let degisim = oge.degisim, !degisim.isEmpty {
+            if let ok = okIsareti(oge.yon) {
+                parcalar.append(ok + isaretsiz(degisim))
+            } else {
+                parcalar.append(degisim)
+            }
+        }
+        var metin = parcalar.joined(separator: " ")
+        // Dar satırda zaman yalnız gerektiğinde: kapanış, bayat fiyat ya da
+        // seans içinde yazılıp seansı bitmiş fiyat.
+        if let zaman = zamanEtiketi(oge, saatHer: false) {
+            metin += " · " + zaman
+        }
+        return metin
+    }
+
+    /// Yalnız gösterim: baştaki işaret düşer, sayı yeniden biçimlenmez.
+    private func isaretsiz(_ yuzde: String) -> String {
+        var s = yuzde
+        while let ilk = s.first, ilk == "+" || ilk == "-" || ilk == "\u{2212}" {
+            s.removeFirst()
+        }
+        return s
+    }
+
+    // MARK: Ortak
+
+    /// Fiyatın yanındaki zaman bilgisi; yoksa `nil`.
+    ///
+    /// - "Kapanış": Dart yazım anında seansı kapalı buldu (yalnız BIST
+    ///   takvimindeki türler; kripto/altın/döviz asla). Fiyat 1 günden
+    ///   eskiyse tarih de eklenir.
+    /// - Fiyat 1 günden eski: saat yerine tarih ("24 Eki 14:05").
+    /// - Seans içinde yazılmış, seans bitmiş: saat (kapanıştan önceki an).
+    /// - Aksi hâlde saat yalnız `saatHer` ise (ana ekran, dikdörtgen).
+    private func zamanEtiketi(_ oge: SandikVarlikOgesi, saatHer: Bool) -> String? {
+        let tarihli = entry.bayat && !entry.tarih.isEmpty
+        if oge.kapanis == true {
+            return tarihli ? "Kapanış · \(entry.tarih)" : "Kapanış"
+        }
+        if tarihli { return entry.tarih }
+        if entry.saat.isEmpty { return nil }
+        if saatHer { return entry.saat }
+        if let ms = oge.seansSonu,
+           entry.date >= Date(timeIntervalSince1970: ms / 1000) {
+            return entry.saat
+        }
+        return nil
+    }
+
     private func okIsareti(_ yon: Int?) -> String? {
         guard let yon = yon, yon != 0 else { return nil }
         return yon > 0 ? "▲" : "▼"
@@ -328,8 +581,12 @@ struct SandikVarlikView: View {
         return palette.statusColor(isPositive: yon > 0)
     }
 
+    /// Üç boyutta da aynı cümle kalıbı: ad, fiyat, günlük değişim, an.
     private func erisimMetni(_ oge: SandikVarlikOgesi) -> String {
         var parcalar: [String] = [oge.ad, oge.fiyat ?? "fiyat yok"]
+        if oge.kapanis == true {
+            parcalar.append("kapanış fiyatı")
+        }
         if let degisim = oge.degisim, !degisim.isEmpty {
             let yon = oge.yon ?? 0
             if yon > 0 {
@@ -342,7 +599,9 @@ struct SandikVarlikView: View {
         } else {
             parcalar.append("günlük değişim yok")
         }
-        if !entry.saat.isEmpty {
+        if entry.bayat && !entry.tarih.isEmpty {
+            parcalar.append("\(entry.tarih) itibarıyla")
+        } else if !entry.saat.isEmpty {
             parcalar.append("\(entry.saat) itibarıyla")
         }
         return parcalar.joined(separator: ", ")
@@ -381,15 +640,15 @@ struct SandikVarlikWidget: Widget {
             intent: SandikVarlikSecimi.self,
             provider: SandikVarlikProvider()
         ) { entry in
+            // Zemin (`containerBackground`) görünümün içinde: aileye göre
+            // seçiliyor (kilit ekranında sistem zemini).
             SandikVarlikView(entry: entry)
                 .widgetURL(varlikWidgetClickURL)
-                // iOS 17'de zorunlu (bkz. `SandikHomeWidget`).
-                .containerBackground(for: .widget) {
-                    SandikPalette.resolved(isLight: entry.isLight).background
-                }
         }
         .configurationDisplayName("Tek varlık")
         .description("Seçtiğin varlığın fiyatı ve günlük değişimi: gram altın, dolar, bir fon…")
-        .supportedFamilies([.systemSmall])
+        // Kilit ekranı (2026-10-25): dikdörtgen + saatin üstündeki tek satır.
+        // Aynı tür, aynı seçim — galeride iki boyut daha.
+        .supportedFamilies([.systemSmall, .accessoryRectangular, .accessoryInline])
     }
 }
