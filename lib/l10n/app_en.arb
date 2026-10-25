@@ -1248,8 +1248,6 @@
   "noWatchlistYet": "You are not watching anything yet",
   "noWatchlistBody": "Watch it before you buy. Track the price without touching your portfolio.",
   "addToWatchlist": "Add to watchlist",
-  "whyWatchlistUpper": "WHY A WATCHLIST?",
-  "whyWatchlistBody": "You can follow an asset's price without buying it. The watchlist is not part of your portfolio; it does not affect your total value or profit/loss.",
   "notInPortfolioNote": "These assets are not part of your portfolio.",
   "addAssetsToCompare": "Add assets to compare",
   "addAssetsToCompareBody": "You can also add assets you don't own.",
@@ -3807,6 +3805,13 @@
   "vitrinOtherTypesShort": "Crypto, pension and more",
   "vitrinStatementHint": "Broker PDF, Excel or CSV, all in one go",
   "vitrinStatementHintShort": "PDF, Excel or CSV in one go",
+  "watchlistSuggestGold": "Gram gold",
+  "watchlistSuggestUsd": "US dollar",
+  "watchlistSuggestBist": "BIST 100",
+  "watchlistSuggestGoldSemantics": "Add gram gold to watchlist",
+  "watchlistSuggestUsdSemantics": "Add US dollar to watchlist",
+  "watchlistSuggestBistSemantics": "Add BIST 100 to watchlist",
+  "watchlistSuggestFailed": "Couldn't add to watchlist. Check your connection.",
   "vitrinTapToAdd": "Tap to add",
   "vitrinPriceUnknown": "No price yet",
   "rankingTitle": "Rankings",
@@ -4838,6 +4843,34 @@
   "eurobondSourceNote": "USD bonds only for now. Prices are clean, as a percentage of nominal. Not investment advice.",
   "eurobondMaturityShort": "Matures {date}",
   "eurobondYieldShort": "Yield {pct}",
+  "bozdurAlSatiri": "Sell {alis} · Buy {satis} · spread {fark}",
+  "@bozdurAlSatiri": {
+    "placeholders": {
+      "alis": {
+        "type": "String"
+      },
+      "satis": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "bozdurAlSatiriSemantik": "If you sell, you get {alis}; if you buy, you pay {satis}. The spread is {fark}.",
+  "@bozdurAlSatiriSemantik": {
+    "placeholders": {
+      "alis": {
+        "type": "String"
+      },
+      "satis": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondIsinInvalid": "This ISIN is invalid: the check digit doesn't match. A digit may be mistyped.",
   "eurobondIsinNotListed": "This ISIN isn't in the list. For now you can only add the USD bonds listed here.",
   "eurobondCleanPrice": "Clean price (%)",

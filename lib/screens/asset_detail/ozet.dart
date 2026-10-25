@@ -317,7 +317,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         : (pnl.gainPositive ? context.c.gain : context.c.loss);
     final isaret = pnlDuz ? '' : (pnl.gainPositive ? '+' : '−');
 
-    return VarlikFiyatBlogu(
+    final blok = VarlikFiyatBlogu(
       etiket: mevduat ? l.currentValueUpper : l.currentPriceUpper,
       kimlik: widget.asset.id,
       // Kripto fiyatı gecikmeli olabilir — etiket fiyatın yanında,
@@ -345,6 +345,22 @@ extension _DetayOzet on _AssetDetailScreenState {
         style: context.t.numSmall
             .copyWith(color: pnlRenk, fontWeight: FontWeight.w600),
       ),
+    );
+    // Altın/döviz: "Bozdurursan · Alırsan · fark" (2026-10-25; gerekçe
+    // [BozdurAlSatiri]). Büyük fiyat ve pozisyon değeri alışta kalır; satır
+    // kapı reddederse hiç çizilmez. Pozisyon satırının ALTINDA: o satır
+    // "param ne durumda"yı söyler, bu satır ek bilgidir.
+    if (mevduat) return blok;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        blok,
+        BozdurAlSatiri(
+          ticker: widget.asset.ticker,
+          paraBirimi: widget.asset.currency,
+        ),
+      ],
     );
   }
 

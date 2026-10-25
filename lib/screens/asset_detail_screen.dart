@@ -62,6 +62,7 @@ import '../widgets/seri_son_guncelleme.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
+import '../widgets/bozdur_al_satiri.dart';
 import '../widgets/grafik_stili.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/chart_axis.dart';
