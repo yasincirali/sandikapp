@@ -180,7 +180,7 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
             paket: VarlikPaketi,
             secim: SharedPreferences,
             widgetIds: IntArray
-        ): List<String> = widgetIds
+        ): List<String> = widgetIds.asList()
             .mapNotNull { (durumuBul(paket, secim, it) as? VarlikDurumu.Oge)?.oge }
             .filter { it.sunucu == true }
             .map { it.id }
