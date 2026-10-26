@@ -3183,6 +3183,7 @@
   "hataMailAcilamadi": "Couldn't open your email app. You can write to this address:",
   "hataAdresiKopyala": "Copy address",
   "hataAdresKopyalandi": "Address copied",
+  "searchRecentRemove": "Remove from list",
   "searchShortHint": "Stocks, funds, gold, FX, crypto",
   "kullaniciAdiBaslik": "Choose your username",
   "kullaniciAdiAciklama": "Your partner sees you by this name, and it's the name shown in the app. You can change it later in Settings > Account.",

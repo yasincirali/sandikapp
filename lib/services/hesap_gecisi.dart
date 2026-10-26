@@ -19,6 +19,7 @@ import 'portfolio_cache.dart';
 import 'portfoy_seri_depo.dart';
 import 'remote_config_service.dart';
 import 'remote_push_service.dart';
+import 'son_bakilanlar.dart';
 import 'supabase_service.dart';
 
 /// Aktif hesap kasaya alındıktan sonra bir hesaba daha yer var mı. Saf.
@@ -397,6 +398,8 @@ class HesapGecisi {
     }
     // Çevrimdışı defter de o hesabın: cihazda kalmasın (çıkıştaki kuralla aynı).
     await PortfolioCache.clear(uid);
+    // Aramadaki "Son baktıkların" da o hesabın izi: çıkıştaki kuralla aynı.
+    await SonBakilanlar.instance.sil(uid);
     // Performans grafiğinin disk kopyası: kayıtlar kullanıcı anahtarlı
     // ama klasör tek; önbellek olduğu için hepsi gider, öteki hesaplar
     // bir sonraki açılışta yeniden yazar.

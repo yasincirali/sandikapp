@@ -4594,6 +4594,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get hataAdresKopyalandi => 'Adres kopyalandı';
 
   @override
+  String get searchRecentRemove => 'Listeden kaldır';
+
+  @override
   String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
 
   @override

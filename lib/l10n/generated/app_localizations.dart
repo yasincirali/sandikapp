@@ -7689,6 +7689,12 @@ abstract class AppLocalizations {
   /// **'Adres kopyalandı'**
   String get hataAdresKopyalandi;
 
+  /// No description provided for @searchRecentRemove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Listeden kaldır'**
+  String get searchRecentRemove;
+
   /// No description provided for @searchShortHint.
   ///
   /// In tr, this message translates to:

@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Icons, Material, Colors;
+import 'package:flutter/material.dart'
+    show Colors, DismissDirection, Dismissible, Icons, Material;
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/arama_eylemleri.dart';
@@ -11,11 +13,14 @@ import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/add_asset_form_provider.dart' show dovizOptFor;
+import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/fiyat_kaynagi.dart' show gorunurSatisFiyati;
 import '../services/ozellik_olcumu.dart';
 import '../services/price_service.dart';
+import '../services/son_bakilanlar.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -50,6 +55,16 @@ import 'varlik_sayfasi.dart';
 ///   takibe alma ekranındaki satırla aynı).
 /// - **Eylemler:** `arama_eylemleri.dart` anahtar sözcükleri; boş sorguda
 ///   öneri olarak hepsi.
+/// - **Son baktıkların** (2026-10-26, yalnız boş sorguda, eylemlerin
+///   ÜSTÜNDE): varlık sayfası açılan son varlıklar ([SonBakilanlar] —
+///   takibe alma ekranının şeridiyle AYNI depo, kayıt varlık sayfasının
+///   kendisinde). Takipte ve bugün portföyde olanlar süzülür (kendi
+///   yüzeyleri var), en çok [SonBakilanlar.gosterimSiniri]. Satır piyasa
+///   satırının aynısı; fiyat aramanın kotasyon yolundan tek toplu istekle
+///   (`_fiyatla`), yoksa yalnız ad. Kaldırma satır başına: sola kaydır ya
+///   da VoiceOver özel eylemi; ayrı "Temizle" düğmesi yok (beş satırlık
+///   kısayolu toptan silmek nadir iş, eylem satırlarının yanında ikinci bir
+///   metin düğmesi gürültü olurdu). Boşsa bölüm hiç çizilmez.
 /// - **Hızlı hesap** (2026-10-24): sorgu "5 çeyrek", "100 dolar" gibi
 ///   sayı + birim ise ([hizliHesapCoz]) en üstte başlıksız tek satır
 ///   "5 Çeyrek Altın ≈ ₺X". Fiyat bilinmiyorsa satır YOK (uydurma sayı
@@ -137,6 +152,62 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   /// gerekçe: istekler sırasız dönebilir).
   int _seq = 0;
   Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // Oturum soğuk açılışta henüz çözülmemiş olabilir: kimlik gelince yükle
+    // (takibe alma ekranıyla aynı yol).
+    ref.listenManual(authProvider, (_, next) {
+      final uid = next.valueOrNull?.id;
+      if (uid == null) return;
+      CrashReporter.arkaPlan(
+          SonBakilanlar.instance.yukle(uid).then((_) => _sonBakilanFiyatla()),
+          reason: 'GenelArama.sonBakilanlar');
+    }, fireImmediately: true);
+  }
+
+  /// Takipte ya da BUGÜN portföyde olanların anahtarları — "Son
+  /// baktıkların"da gösterilmezler. `aktifLotlar`: tamamen satılmış varlık
+  /// portföyde sayılmaz (CLAUDE.md "Kapanmış pozisyon"); anahtar
+  /// `varlikAnahtari`, takibe alma ekranındaki "Portföyünde" etiketiyle aynı.
+  Set<String> _haricAnahtarlar({required bool izle}) {
+    final takip = (izle
+                ? ref.watch(watchlistProvider)
+                : ref.read(watchlistProvider))
+            .valueOrNull ??
+        const [];
+    final defter = (izle
+                ? ref.watch(portfolioProvider)
+                : ref.read(portfolioProvider))
+            .valueOrNull
+            ?.assets ??
+        const [];
+    return {
+      for (final w in takip) w.key,
+      for (final a in aktifLotlar(defter))
+        varlikAnahtari(
+            type: a.type, ticker: a.ticker, subCategory: a.subCategory),
+    };
+  }
+
+  /// Görünen (en çok beş) satırın fiyatı — tek toplu istek, önbellekteki
+  /// sembol yeniden istenmez (`_fiyatla`).
+  Future<void> _sonBakilanFiyatla() async {
+    if (!mounted) return;
+    final gorunen = SonBakilanlar.gorunenler(
+        SonBakilanlar.instance.liste.value, _haricAnahtarlar(izle: false));
+    if (gorunen.isEmpty) return;
+    await _fiyatla([for (final k in gorunen) k.ticker]);
+  }
+
+  Future<void> _sonBakilaniKaldir(VarlikKimligi k) async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null) return;
+    await SonBakilanlar.instance.kaldir(uid, k);
+    // Altıncı kayıt yukarı çıktıysa onun fiyatı da gelsin.
+    await _sonBakilanFiyatla();
+  }
 
   @override
   void dispose() {
@@ -289,6 +360,9 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
         _piyasa.isEmpty &&
         eylemler.isEmpty;
     final hp = SandikSpace.screenH(context);
+    // Boş sorguda süzgeç için; yazarken takip/portföy değişimi ekranı
+    // yeniden kurmasın diye yalnız boşken izlenir.
+    final haric = bos ? _haricAnahtarlar(izle: true) : const <String>{};
 
     return DefaultTextStyle(
       style: sandikFont(
@@ -343,6 +417,25 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
                         for (final c in _piyasa) _piyasaSatiri(context, c),
                         const SizedBox(height: SandikSpace.sm),
                       ],
+                      if (bos)
+                        ValueListenableBuilder<List<VarlikKimligi>>(
+                          valueListenable: SonBakilanlar.instance.liste,
+                          builder: (context, son, _) {
+                            final gorunen =
+                                SonBakilanlar.gorunenler(son, haric);
+                            if (gorunen.isEmpty) return const SizedBox.shrink();
+                            return Column(
+                              key: const ValueKey('genel-arama-son-bakilanlar'),
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _Baslik(context.l10n.searchRecentUpper),
+                                for (final c in gorunen)
+                                  _sonBakilanSatiri(context, c),
+                                const SizedBox(height: SandikSpace.sm),
+                              ],
+                            );
+                          },
+                        ),
                       if (eylemler.isNotEmpty) ...[
                         _Baslik(context.l10n.s7EylemlerUpper),
                         for (final e in eylemler) _eylemSatiri(context, e),
@@ -546,6 +639,79 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
           ),
         ),
       );
+
+  /// "Son baktıkların" satırı: piyasa satırının AYNISI (aynı kutu, aynı
+  /// fiyat yolu) + satır başına kaldırma. Kaldırma jesti takip listesinin
+  /// kalıbı (`watchlist_screen`: sola kaydır, zemin işi yazar); kaydırma
+  /// ekran okuyucuda yapılamadığı için aynı iş özel eylem olarak da var.
+  /// Etiket dıştaki tek düğümde; dokunma eylemi `SandikTappable`'ın
+  /// jestinden o düğüme katılır (iç etiket verilmez, iki düğüm olmasın).
+  Widget _sonBakilanSatiri(BuildContext context, VarlikKimligi c) {
+    final l = context.l10n;
+    return Padding(
+      key: ValueKey('son-bakilan-${c.key}'),
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: Semantics(
+        container: true,
+        button: true,
+        label: l.vsOpenDetailSemantics(c.name),
+        customSemanticsActions: {
+          CustomSemanticsAction(label: l.searchRecentRemove): () =>
+              CrashReporter.arkaPlan(_sonBakilaniKaldir(c),
+                  reason: 'GenelArama.sonBakilanKaldir'),
+        },
+        child: Dismissible(
+          key: ValueKey('son-bakilan-kaydir-${c.key}'),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: SandikSpace.md),
+            decoration: BoxDecoration(
+              color: context.c.loss,
+              borderRadius: BorderRadius.circular(SandikRadius.md),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    l.searchRecentRemove,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelLarge
+                        ?.copyWith(color: context.c.onStatus),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.xs2),
+                Icon(Icons.close_rounded,
+                    color: context.c.onStatus, size: 20),
+              ],
+            ),
+          ),
+          confirmDismiss: (_) async {
+            SandikHaptic.medium.perform();
+            return true;
+          },
+          onDismissed: (_) => CrashReporter.arkaPlan(_sonBakilaniKaldir(c),
+              reason: 'GenelArama.sonBakilanKaldir'),
+          child: SandikTappable(
+            onTap: () {
+              // Yalnız özellik kodu; hangi varlığa bakıldığı gitmez.
+              OzellikOlcumu.say(Ozellik.sonBakilan);
+              showVarlikSayfasi(context, c);
+            },
+            child: ExcludeSemantics(
+              child: AramaSatirKutusu(
+                kimlik: c,
+                kotasyon: _kotasyon[c.ticker.toUpperCase()],
+                sonu: const _Ok(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _eylemSatiri(BuildContext context, AramaEylemi e) {
     final (ikon, etiket) = switch (e) {

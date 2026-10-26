@@ -3288,6 +3288,7 @@
   "hataMailAcilamadi": "E-posta uygulaması açılamadı. Bu adrese yazabilirsin:",
   "hataAdresiKopyala": "Adresi kopyala",
   "hataAdresKopyalandi": "Adres kopyalandı",
+  "searchRecentRemove": "Listeden kaldır",
   "searchShortHint": "Hisse, fon, altın, döviz, kripto",
   "kullaniciAdiBaslik": "Kullanıcı adını seç",
   "kullaniciAdiAciklama": "Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap'tan değiştirebilirsin.",

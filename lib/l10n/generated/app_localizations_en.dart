@@ -4623,6 +4623,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hataAdresKopyalandi => 'Address copied';
 
   @override
+  String get searchRecentRemove => 'Remove from list';
+
+  @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
 
   @override
