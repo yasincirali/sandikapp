@@ -24,6 +24,7 @@ import '../services/son_bakilanlar.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../widgets/sandik_acilir.dart';
 import '../widgets/varlik_rozeti.dart';
 import '../l10n/l10n.dart';
 import 'add_asset_screen.dart';
@@ -53,8 +54,12 @@ import 'varlik_sayfasi.dart';
 ///   Portföy satırıyla aynı varlık ekranı.
 /// - **Piyasa:** sembol araması → varlık sayfası (`showVarlikSayfasi`,
 ///   takibe alma ekranındaki satırla aynı).
-/// - **Eylemler:** `arama_eylemleri.dart` anahtar sözcükleri; boş sorguda
-///   öneri olarak hepsi.
+/// - **Eylemler:** `arama_eylemleri.dart` anahtar sözcükleri. Boş sorguda
+///   (2026-10-26) SABİT dört eylem ([aramaSabitEylemler]) + "Tüm eylemler"
+///   satırı; dokununca kalanı aynı listede, satırın altında açılır
+///   ([SandikAcilir]; satır yerinde kalır ki ikinci dokunuş aynı yere
+///   düşsün). Kişiye göre sıra/sayaç yok (gerekçe [aramaSabitEylemler]).
+///   Açık/kapalı kalıcı değil: her açılışta kapalı. Yazınca eşleşen hepsi.
 /// - **Son baktıkların** (2026-10-26, yalnız boş sorguda, eylemlerin
 ///   ÜSTÜNDE): varlık sayfası açılan son varlıklar ([SonBakilanlar] —
 ///   takibe alma ekranının şeridiyle AYNI depo, kayıt varlık sayfasının
@@ -131,6 +136,10 @@ String? hizliHesapSembolu(HizliHesap h) {
 class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   final _ctrl = TextEditingController();
   String _q = '';
+
+  /// Boş sorgudaki "Tüm eylemler" açık mı. Bilerek kalıcı değil (tercih
+  /// anahtarı yok): arama her açıldığında aynı kısa listeyle başlar.
+  bool _tumEylemlerAcik = false;
   List<VarlikKimligi> _piyasa = const [];
   bool _loading = false;
   Map<String, YahooQuote> _kotasyon = const {};
@@ -349,7 +358,8 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
         ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
     final bos = _q.trim().isEmpty;
     final varliklar = aramaPozisyonlari(defter, _q);
-    final eylemler = aramaEylemleriniSuz(_q, mevcut: _mevcutEylemler);
+    final duzen = aramaEylemDuzeni(_q, mevcut: _mevcutEylemler);
+    final eylemler = duzen.gorunen;
     final hesap = _hesap;
     final hesapSatiri =
         hesap == null ? null : _hizliHesapSatiri(context, hesap);
@@ -436,9 +446,22 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
                             );
                           },
                         ),
-                      if (eylemler.isNotEmpty) ...[
+                      if (eylemler.isNotEmpty || duzen.kalan.isNotEmpty) ...[
                         _Baslik(context.l10n.s7EylemlerUpper),
                         for (final e in eylemler) _eylemSatiri(context, e),
+                        if (duzen.kalan.isNotEmpty) ...[
+                          _tumEylemlerSatiri(context),
+                          SandikAcilir(
+                            acik: _tumEylemlerAcik,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (final e in duzen.kalan)
+                                  _eylemSatiri(context, e),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ],
                   ),
@@ -762,6 +785,40 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
     );
   }
 
+  /// "Tüm eylemler": eylem satırıyla aynı kabuk, sonda gezinti oku yerine
+  /// aç/kapa oku ([SandikAcilirOk], panelle aynı süre; hareketi azalt'ta
+  /// anında). Ekran okuyucu için tek düğüm: etiket + `expanded` durumu
+  /// ("açık"/"kapalı"); dokunma eylemi `SandikTappable`'ın jestinden bu
+  /// düğüme katılır (son baktıkların satırıyla aynı kalıp).
+  Widget _tumEylemlerSatiri(BuildContext context) => Padding(
+        key: const ValueKey('genel-arama-tum-eylemler'),
+        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+        child: Semantics(
+          container: true,
+          button: true,
+          expanded: _tumEylemlerAcik,
+          label: context.l10n.searchAllActions,
+          child: SandikTappable(
+            onTap: () =>
+                setState(() => _tumEylemlerAcik = !_tumEylemlerAcik),
+            child: ExcludeSemantics(
+              child: _SatirKabugu(
+                ikon: Icons.more_horiz_rounded,
+                baslik: context.l10n.searchAllActions,
+                sonu: Padding(
+                  padding: const EdgeInsets.only(right: SandikSpace.smd),
+                  child: SandikAcilirOk(
+                    acik: _tumEylemlerAcik,
+                    child: Icon(Icons.expand_more_rounded,
+                        size: 20, color: context.c.text36),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
   /// Her hedef BUGÜNKÜ giriş noktasıyla aynı rotadan açılır (aynı ekran,
   /// aynı parametre); arama yeni bir kapı açmaz, var olanlara kestirme olur.
   void _eylemiAc(AramaEylemi e) {
@@ -842,6 +899,7 @@ class _SatirKabugu extends StatelessWidget {
     this.alt,
     this.bas,
     this.ikon,
+    this.sonu,
   });
 
   final String baslik;
@@ -850,6 +908,9 @@ class _SatirKabugu extends StatelessWidget {
   /// Varlık satırının başı (tür noktası ya da `goz_alici` rozeti).
   final Widget? bas;
   final IconData? ikon;
+
+  /// Satır sonu; verilmezse gezinti oku ([_Ok]).
+  final Widget? sonu;
 
   @override
   Widget build(BuildContext context) => ConstrainedBox(
@@ -885,7 +946,7 @@ class _SatirKabugu extends StatelessWidget {
                   ),
                 ),
               ),
-              const _Ok(),
+              sonu ?? const _Ok(),
             ],
           ),
         ),

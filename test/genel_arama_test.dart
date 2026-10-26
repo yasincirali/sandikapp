@@ -137,8 +137,12 @@ void main() {
         await t.pump(const Duration(milliseconds: 100));
       }
       expect(find.byType(GenelAramaScreen), findsOneWidget);
-      // Boş sorguda eylemler öneri olarak; ana ekranın açıcıları da var.
+      // Boş sorguda dört sabit eylem; ana ekranın açıcıları ("Bildirimler",
+      // "Tüm hareketler") "Tüm eylemler"in arkasında.
       expect(find.text('EYLEMLER'), findsOneWidget);
+      expect(find.text('Bildirimler'), findsNothing);
+      await t.tap(find.text('Tüm eylemler'));
+      await t.pumpAndSettle();
       expect(find.text('Bildirimler'), findsOneWidget);
       expect(find.text('Tüm hareketler'), findsOneWidget);
       expect(t.takeException(), isNull);
@@ -179,6 +183,129 @@ void main() {
       expect(find.text('Tüm hareketler'), findsNothing);
       expect(find.text('VARLIKLARIM'), findsNothing);
       expect(find.text('PİYASA'), findsNothing);
+    });
+
+    // Boş arama sadeleşmesi (2026-10-26): dört sabit + "Tüm eylemler".
+    const sabit = ['Fiyat alarmları', 'Takibe al', 'Toplu ekle', 'Ayarlar'];
+    const kalan = [
+      'Sinyal ayarları',
+      'Ekstreden aktar (CSV)',
+      'Tüm hareketler',
+      'Karşılaştır',
+      'Bildirimler',
+    ];
+    final tumu = find.byKey(const ValueKey('genel-arama-tum-eylemler'));
+    Widget tamEkran() => GenelAramaScreen(
+          tumHareketleriAc: () {},
+          bildirimleriAc: () {},
+          aramaServisi: (_) async => const [],
+          kotasyonServisi: (_) async => const {},
+        );
+    int gorunenEylem() => [...sabit, ...kalan]
+        .where((m) => find.text(m).evaluate().isNotEmpty)
+        .length;
+
+    testWidgets('boşta dört sabit + "Tüm eylemler"; dokununca 9, tekrar 4',
+        (t) async {
+      await _pump(t, tamEkran());
+      for (final m in sabit) {
+        expect(find.text(m), findsOneWidget, reason: m);
+      }
+      // Sıra: alarm, takip, toplu, ayarlar; "Tüm eylemler" en altta.
+      final y = [for (final m in sabit) t.getTopLeft(find.text(m)).dy];
+      expect(y, orderedEquals([...y]..sort()));
+      expect(t.getTopLeft(tumu).dy, greaterThan(y.last));
+      expect(gorunenEylem(), 4);
+
+      await t.tap(tumu);
+      await t.pumpAndSettle();
+      expect(gorunenEylem(), 9);
+      // Kalanlar satırın ALTINDA açılır; satır yerinde kalır.
+      expect(t.getTopLeft(find.text('Sinyal ayarları')).dy,
+          greaterThan(t.getTopLeft(tumu).dy));
+
+      await t.tap(tumu);
+      await t.pumpAndSettle();
+      expect(gorunenEylem(), 4);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('yazınca açılır satır yok, eşleşen hepsi', (t) async {
+      await _pump(t, tamEkran());
+      await yaz(t, 'sinyal');
+      expect(find.text('Sinyal ayarları'), findsOneWidget);
+      expect(tumu, findsNothing);
+    });
+
+    testWidgets('açık/kapalı kalıcı değil: yeniden açılışta kapalı',
+        (t) async {
+      await _pump(t, tamEkran());
+      await t.tap(tumu);
+      await t.pumpAndSettle();
+      expect(gorunenEylem(), 9);
+      await t.pumpWidget(const SizedBox());
+      await _pump(t, tamEkran());
+      expect(gorunenEylem(), 4);
+    });
+
+    testWidgets('VoiceOver: "Tüm eylemler" düğme + açık/kapalı durumu; 44pt',
+        (t) async {
+      final h = t.ensureSemantics();
+      await _pump(t, tamEkran());
+      expect(t.getSize(tumu).height, greaterThanOrEqualTo(44));
+      final dugum = find.bySemanticsLabel('Tüm eylemler');
+      expect(
+          t.getSemantics(dugum),
+          matchesSemantics(
+            label: 'Tüm eylemler',
+            isButton: true,
+            hasExpandedState: true,
+            isExpanded: false,
+            hasTapAction: true,
+          ));
+      await t.tap(tumu);
+      await t.pumpAndSettle();
+      expect(
+          t.getSemantics(dugum),
+          matchesSemantics(
+            label: 'Tüm eylemler',
+            isButton: true,
+            hasExpandedState: true,
+            isExpanded: true,
+            hasTapAction: true,
+          ));
+      h.dispose();
+    });
+
+    // ×2 en dar telefonda (320pt), ×3.1 375pt'de. 320pt × 3.1'de arama
+    // ALANININ yer tutucusu taşıyor — bu satırdan önce de vardı, ayrı iş.
+    testWidgets('Dynamic Type ×2 / ×3.1: taşma yok', (t) async {
+      for (final (en, olcek) in [(320.0, 2.0), (375.0, 3.1)]) {
+        t.view.physicalSize = Size(en * 3, 640 * 3);
+        t.view.devicePixelRatio = 3.0;
+        addTearDown(t.view.reset);
+        await t.pumpWidget(ProviderScope(
+          overrides: [
+            authProvider.overrideWith(_FakeAuth.new),
+            portfolioProvider.overrideWith(_FakePortfolio.new),
+            watchlistProvider.overrideWith(_Takip.new),
+          ],
+          child: MaterialApp(
+            builder: (c, child) => MediaQuery(
+              data: MediaQuery.of(c)
+                  .copyWith(textScaler: TextScaler.linear(olcek)),
+              child: child!,
+            ),
+            home: Material(
+                type: MaterialType.transparency, child: tamEkran()),
+          ),
+        ));
+        await t.pump(const Duration(milliseconds: 100));
+        await t.tap(tumu);
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull, reason: '${en}pt ×$olcek');
+        expect(t.getSize(tumu).height, greaterThanOrEqualTo(44));
+      }
     });
 
     testWidgets('"thy": kendi varlığı + piyasa sonucu', (t) async {

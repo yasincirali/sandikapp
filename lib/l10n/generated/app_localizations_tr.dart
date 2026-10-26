@@ -4597,6 +4597,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get searchRecentRemove => 'Listeden kaldır';
 
   @override
+  String get searchAllActions => 'Tüm eylemler';
+
+  @override
   String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
 
   @override

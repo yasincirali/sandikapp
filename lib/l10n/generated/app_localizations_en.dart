@@ -4626,6 +4626,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchRecentRemove => 'Remove from list';
 
   @override
+  String get searchAllActions => 'All actions';
+
+  @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
 
   @override

@@ -440,7 +440,8 @@ List<_Adim> _adimlariKur() {
     // yenile" adımı kalktı). Yenileme bilgisi kaybolmasın: aşağı çekme
     // cümlesi metinde. 2026-10-24: aramadaki hızlı hesap ("5 çeyrek") da
     // metne girdi (tur metni arayüzle birlikte değişir). 2026-10-26: boş
-    // aramadaki "Son baktıkların" bölümü de.
+    // aramadaki "Son baktıkların" bölümü de; aynı gün boş aramada eylemler
+    // dört sabit kısayola + "Tüm eylemler"e indi, metin onu da söyler.
     const _Adim(
       id: 'yenile',
       hedef: TourTarget.yenileTusu,
@@ -450,7 +451,8 @@ List<_Adim> _adimlariKur() {
           'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
           'ekstreden aktar, tüm hareketler, ayarlar…). "5 çeyrek" ya da '
           '"100 dolar" yazarsan TL karşılığı en üstte çıkar; boşken son '
-          'baktığın varlıklar durur. Fiyatlar arka '
+          'baktığın varlıklar ve dört kısayol durur, kalanı "Tüm '
+          'eylemler"de. Fiyatlar arka '
           'planda güncelleniyor; hemen tazelemek için ekranı aşağı çek.',
     ),
     // 1.2.0'da eklendi. Tur, uygulamanın GÜNCEL hâlini anlatmalı: yeni
