@@ -92,6 +92,18 @@ class HomeWidgetService {
   /// hiçbiri ve biçimi değişmedi, eski build'in widget'ları bunu okumaz.
   static const kVarliklar = 'sandik_varliklar';
 
+  /// Tek varlık widget'ının arka plan tazelemesi (`widget-fiyat`, yasin
+  /// onayı 2026-10-26): AKTİF sunucunun public URL'si ve anon anahtarı.
+  /// İkisi de uygulama paketinde zaten gömülü kamuya açık değerler; oturum
+  /// jetonu YAZILMAZ. YENİ anahtarlar: eski hiçbir anahtar değişmedi.
+  static const kWidgetApiUrl = 'sandik_widget_api_url';
+  static const kWidgetApiAnahtar = 'sandik_widget_api_anahtar';
+
+  /// Widget'ın sunucudan kendi çektiği son fiyatlar (yalnız native taraf
+  /// YAZAR; JSON `{sembol: {fiyat, zaman, degisim?}}`). Dart yalnız oturum
+  /// kapanınca boşaltır: seçili sembollerin adı sonraki oturuma kalmasın.
+  static const kVarlikCanli = 'sandik_varlik_canli';
+
   // Paylaşımlı depo anahtarları — native taraf bu adlarla okur.
   static const _kTotal = 'sandik_total';
   static const _kChange = 'sandik_change';
@@ -952,6 +964,7 @@ class HomeWidgetService {
       // ve portföy adları sonraki oturuma kalmamalı. Boş metin = "liste
       // yok" (Swift tarafı boşu ve bozuk JSON'u aynı okur).
       await HomeWidget.saveWidgetData<String>(kVarliklar, '');
+      await HomeWidget.saveWidgetData<String>(kVarlikCanli, '');
       await _requestUpdate();
       await _varlikWidgetiniYenile();
     } catch (e) {
@@ -976,6 +989,31 @@ class HomeWidgetService {
     } catch (e) {
       _sonYazilan.remove(kVarliklar);
       if (kDebugMode) debugPrint('HomeWidget varlikListesiniYaz failed: $e');
+    }
+  }
+
+  /// Widget'ın arka planda çağıracağı sunucuyu yazar (bkz. [kWidgetApiUrl]).
+  /// Aynı değer ikinci kez yazılmaz; widget'ı yenilemez (sıradaki paket
+  /// yazımı yeniler).
+  Future<void> widgetSunucusunuYaz({
+    required String url,
+    required String anonKey,
+  }) async {
+    if (url.isEmpty || anonKey.isEmpty) return;
+    try {
+      await _ensureInit();
+      if (_sonYazilan[kWidgetApiUrl] != url) {
+        await HomeWidget.saveWidgetData<String>(kWidgetApiUrl, url);
+        _sonYazilan[kWidgetApiUrl] = url;
+      }
+      if (_sonYazilan[kWidgetApiAnahtar] != anonKey) {
+        await HomeWidget.saveWidgetData<String>(kWidgetApiAnahtar, anonKey);
+        _sonYazilan[kWidgetApiAnahtar] = anonKey;
+      }
+    } catch (e) {
+      _sonYazilan.remove(kWidgetApiUrl);
+      _sonYazilan.remove(kWidgetApiAnahtar);
+      if (kDebugMode) debugPrint('HomeWidget widgetSunucusunuYaz failed: $e');
     }
   }
 

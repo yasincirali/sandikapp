@@ -347,6 +347,9 @@ void main() {
             o.keys.toSet().difference({
               'id', 'ad', 'alt', 'fiyat', 'degisim', 'yon', //
               'kisa', 'kapanis', 'seansSonu',
+              // 2026-10-26: sunucu tazelemesi — kapsam bayrağı ve ondalık
+              // kuralı; kişisel değil.
+              'sunucu', 'hane',
             }),
             isEmpty);
       }

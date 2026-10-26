@@ -124,6 +124,9 @@ class SandikVarlikSecimActivity : Activity() {
             duzenle.apply()
             SandikVarlikWidgetProvider.ciz(
                 this, AppWidgetManager.getInstance(this), intArrayOf(widgetId))
+            // Seçilen varlık sunucu kapsamındaysa ve fiyatı eskiyse hemen
+            // tazelenir (arka iş parçacığında; ekran beklemez).
+            SandikVarlikWidgetProvider.tazele(applicationContext, null)
         } catch (e: Exception) {
             // Çizilemese de sonuç OK: bir sonraki güncellemede çizilir.
         }

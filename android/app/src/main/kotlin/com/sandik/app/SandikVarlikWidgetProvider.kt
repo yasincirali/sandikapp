@@ -14,7 +14,19 @@ import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
 import es.antonborri.home_widget.HomeWidgetPlugin
+import org.json.JSONArray
 import org.json.JSONObject
+import java.math.RoundingMode
+import java.net.HttpURLConnection
+import java.net.URL
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.math.log10
 
 /**
  * Ana ekran widget'ı — TEK VARLIK (gram altın, dolar, bir fon…).
@@ -43,7 +55,19 @@ import org.json.JSONObject
  * iOS iki ileri girdiyle (seans sonu, 1 günlük eşik) etiketi uygulama
  * açılmadan çevirir. Android'de girdi yok; aynı anlara tek bir KESİN OLMAYAN
  * alarm (`AlarmManager.set`, RTC — cihazı uyandırmaz, izin istemez) kurulur
- * ve widget yeniden çizilir. Ağa çıkılmaz; yalnız etiket değişir.
+ * ve widget yeniden çizilir. Kapsam dışı varlıkta ağa çıkılmaz; yalnız
+ * etiket değişir.
+ *
+ * ## Uygulama açılmadan tazeleme (yasin onayı 2026-10-26; iOS ile aynı)
+ * Gösterilen varlık SUNUCU KAPSAMINDAYSA (öğede `sunucu == true`: altın, TL
+ * döviz, kripto — karar Dart'ta) aynı kesin olmayan alarm en geç 30 dk
+ * sonraya kurulur; `onUpdate` bilinen fiyat 10 dk'dan eskiyse `widget-fiyat`
+ * edge function'ını ARKA İŞ PARÇACIĞINDA çağırır (`goAsync`, ana iş
+ * parçacığında ağ yok) ve yeniden çizer. Çağrı uygulamanın yazdığı public URL
+ * + anon anahtarla yapılır; oturum jetonu YOK. Başarısızsa son bilinen değer
+ * saatiyle kalır. Sistem zamanlayıcısı (`updatePeriodMillis`) ve WorkManager
+ * KULLANILMAZ: projedeki desen bu alarm; RTC olduğu için ekran kapalıyken
+ * cihaz uyandırılmaz, açılınca tazelenir.
  */
 class SandikVarlikWidgetProvider : AppWidgetProvider() {
 
@@ -69,6 +93,32 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
 
         /** Fiyat bu kadar eskiyse saatin yerine tarih (iOS `bayatlikEsigi`). */
         const val BAYATLIK_ESIGI_MS = 24L * 60 * 60 * 1000
+
+        /**
+         * `HomeWidgetService.kWidgetApiUrl` / `kWidgetApiAnahtar`: aktif
+         * sunucunun public URL'si ve anon anahtarı (uygulama yazar).
+         */
+        const val KEY_API_URL = "sandik_widget_api_url"
+        const val KEY_API_ANAHTAR = "sandik_widget_api_anahtar"
+
+        /**
+         * `HomeWidgetService.kVarlikCanli`: widget'ın sunucudan çektiği son
+         * fiyatlar (`{sembol: {fiyat, zaman, degisim?}}`). Yalnız burada
+         * YAZILIR; Dart'ın deposunda durur ki oturum kapanınca boşalsın.
+         */
+        const val KEY_CANLI = "sandik_varlik_canli"
+
+        /** Sunucu kapsamındaki varlıkta yenileme aralığı (iOS `tazelemeAraligi`). */
+        const val TAZELEME_ARALIGI_MS = 30L * 60 * 1000
+
+        /** Bilinen fiyat bundan tazeyse ağa çıkılmaz (iOS `tazeEsigi`). */
+        const val TAZE_ESIGI_MS = 10L * 60 * 1000
+
+        /** Son deneme anı — başarısız istek her yayında tekrarlanmasın. */
+        private const val KEY_SON_DENEME = "canli_son_deneme"
+
+        /** `widget-fiyat` istek sınırı (sunucudaki `WIDGET_AZAMI_SEMBOL`). */
+        private const val AZAMI_SEMBOL = 5
 
         fun secimAnahtari(widgetId: Int) = "secim_$widgetId"
         fun secimAdAnahtari(widgetId: Int) = "secim_ad_$widgetId"
@@ -108,16 +158,130 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
                 val paket = paketiOku(context)
                 val paleti = WidgetPaleti(acikTemaMi(context))
                 val secim = secimDeposu(context)
+                val canli = canliDepo(context)
                 val simdi = System.currentTimeMillis()
                 widgetIds.forEach { id ->
-                    val durum = durumuBul(paket, secim, id)
+                    val (gorunen, durum) =
+                        canliyiUygula(paket, durumuBul(paket, secim, id), canli)
                     manager.updateAppWidget(
-                        id, gorunum(context, paket, durum, paleti, simdi))
+                        id, gorunum(context, gorunen, durum, paleti, simdi))
                 }
                 alarmiKur(context, paket, manager, simdi)
             } catch (e: Exception) {
                 // Yutulur: bir sonraki güncellemede yeniden denenir.
             }
+        }
+
+        /**
+         * Tüm örneklerde gösterilen ve sunucudan tazelenebilecek semboller
+         * (`sunucu == true`), en çok [AZAMI_SEMBOL].
+         */
+        private fun kapsamdakiSemboller(
+            paket: VarlikPaketi,
+            secim: SharedPreferences,
+            widgetIds: IntArray
+        ): List<String> = widgetIds.asList()
+            .mapNotNull { (durumuBul(paket, secim, it) as? VarlikDurumu.Oge)?.oge }
+            .filter { it.sunucu == true }
+            .map { it.id }
+            .distinct()
+            .take(AZAMI_SEMBOL)
+
+        /**
+         * Widget'ın sunucudan çektiği fiyat, uygulamanın yazdığından
+         * YENİYSE onu gösterir; zaman etiketi de onun anıdır (iOS
+         * `SandikVarlikProvider.oku` ile aynı karar). Sunucu yüzdeyi
+         * bilmiyorsa yüzde YOK — uygulamanın eski yüzdesi yeni fiyatın
+         * yanında kalmaz (farklı anların sayısı birleşmez).
+         */
+        private fun canliyiUygula(
+            paket: VarlikPaketi,
+            durum: VarlikDurumu,
+            canli: Map<String, CanliFiyat>
+        ): Pair<VarlikPaketi, VarlikDurumu> {
+            val oge = (durum as? VarlikDurumu.Oge)?.oge ?: return paket to durum
+            if (oge.sunucu != true) return paket to durum
+            val c = canli[oge.id] ?: return paket to durum
+            val yazim = paket.zaman
+            if (yazim != null && c.zaman <= yazim) return paket to durum
+            val yuzde = c.degisim?.let { WidgetBicim.yuzde(it) }
+            val yeni = oge.copy(
+                fiyat = WidgetBicim.fiyat(c.fiyat, oge.hane),
+                degisim = yuzde?.first,
+                yon = yuzde?.second,
+                kapanis = null,
+            )
+            val gorunen = paket.copy(
+                saat = WidgetBicim.saat(c.zaman),
+                zaman = c.zaman,
+                tarih = WidgetBicim.tarih(c.zaman),
+            )
+            return gorunen to VarlikDurumu.Oge(yeni)
+        }
+
+        /** Widget'ın daha önce çektiği fiyatlar; okunamazsa boş. */
+        fun canliDepo(context: Context): Map<String, CanliFiyat> = try {
+            val metin = HomeWidgetPlugin.getData(context).getString(KEY_CANLI, null)
+            if (metin.isNullOrEmpty()) emptyMap() else CanliFiyat.sozlukCoz(metin)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+
+        /**
+         * Gerekiyorsa `widget-fiyat`'tan fiyat çeker, depoya yazar ve
+         * örnekleri yeniden çizer — ARKA İŞ PARÇACIĞINDA. [bitince] her
+         * durumda (gerek yoksa hemen) çağrılır: `goAsync` sonucunu kapatır.
+         *
+         * Gerek: gösterilen kapsamdaki bir varlığın bilinen fiyatı
+         * [TAZE_ESIGI_MS]'den eski ve son deneme de o kadar eski.
+         */
+        fun tazele(context: Context, bitince: (() -> Unit)?) {
+            val bitir = { try { bitince?.invoke() } catch (e: Exception) {} }
+            try {
+                val manager = AppWidgetManager.getInstance(context)
+                val tumu = manager.getAppWidgetIds(
+                    ComponentName(context, SandikVarlikWidgetProvider::class.java))
+                val paket = paketiOku(context)
+                val secim = secimDeposu(context)
+                val semboller = kapsamdakiSemboller(paket, secim, tumu)
+                val simdi = System.currentTimeMillis()
+                val canli = canliDepo(context)
+                val bayat = semboller.filter { s ->
+                    val bilinen = maxOf(paket.zaman ?: 0L, canli[s]?.zaman ?: 0L)
+                    simdi - bilinen >= TAZE_ESIGI_MS
+                }
+                val sonDeneme = secim.getLong(KEY_SON_DENEME, 0L)
+                if (bayat.isEmpty() || simdi - sonDeneme < TAZE_ESIGI_MS) {
+                    bitir()
+                    return
+                }
+                secim.edit().putLong(KEY_SON_DENEME, simdi).apply()
+                Thread {
+                    try {
+                        val gelen = WidgetFiyatIstemcisi.cek(context, bayat)
+                        if (gelen.isNotEmpty()) {
+                            canliyiYaz(context, gelen)
+                            ciz(context, manager, tumu)
+                        }
+                    } catch (e: Exception) {
+                        // Son bilinen değer saatiyle kalır.
+                    } finally {
+                        bitir()
+                    }
+                }.start()
+            } catch (e: Exception) {
+                bitir()
+            }
+        }
+
+        private fun canliyiYaz(context: Context, gelen: Map<String, CanliFiyat>) {
+            val depo = HomeWidgetPlugin.getData(context)
+            val birlesik = canliDepo(context).toMutableMap()
+            birlesik.putAll(gelen)
+            // Yalnız seçili birkaç sembol birikir; sınırsız büyümesin.
+            val kalan = birlesik.entries.sortedByDescending { it.value.zaman }
+                .take(20).associate { it.key to it.value }
+            depo.edit().putString(KEY_CANLI, CanliFiyat.sozlukYaz(kalan)).apply()
         }
 
         private fun durumuBul(
@@ -350,8 +514,13 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            val esik = paket.zaman?.plus(BAYATLIK_ESIGI_MS)
-            if (tumu.isEmpty() || paket.ogeler.isEmpty() || esik == null || esik <= simdi) {
+            val gunEsigi = paket.zaman?.plus(BAYATLIK_ESIGI_MS)?.takeIf { it > simdi }
+            // Sunucu kapsamındaki varlık gösteriliyorsa en geç yarım saat
+            // sonra yeniden çizilir; `onUpdate` o turda fiyatı tazeler.
+            val tazeleme = if (kapsamdakiSemboller(paket, secimDeposu(context), tumu)
+                    .isNotEmpty()) simdi + TAZELEME_ARALIGI_MS else null
+            val esik = listOfNotNull(gunEsigi, tazeleme).minOrNull()
+            if (tumu.isEmpty() || paket.ogeler.isEmpty() || esik == null) {
                 alarm.cancel(bekleyen)
                 return
             }
@@ -367,6 +536,10 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray
     ) {
         ciz(context, appWidgetManager, appWidgetIds)
+        // Ağ çağrısı (gerekiyorsa) arka iş parçacığında; yayın `goAsync`
+        // ile açık tutulur (sistem ~10 sn tanır; istek 9 sn'de vazgeçer).
+        val sonuc = goAsync()
+        tazele(context.applicationContext) { sonuc.finish() }
     }
 
     /** Kaldırılan widget'ın seçimi depoda asılı kalmaz. */
@@ -408,7 +581,138 @@ data class VarlikOgesi(
     val yon: Int?,
     /** Yazım anında seans kapalıydı: fiyat son kapanış (karar Dart'ta). */
     val kapanis: Boolean?,
+    /** `true`: fiyat `widget-fiyat`'tan tazelenebilir (2026-10-26). */
+    val sunucu: Boolean? = null,
+    /** Sunucudan gelen fiyatın azami ondalığı (Dart `fmtFiyat` `azami`). */
+    val hane: Int? = null,
 )
+
+/**
+ * `widget-fiyat` yanıtındaki tek sembol (iOS `SandikCanliFiyat`): TL fiyat,
+ * kaynağın yazım anı (epoch ms), günlük yüzde (bilinmiyorsa `null`).
+ */
+data class CanliFiyat(val fiyat: Double, val zaman: Long, val degisim: Double?) {
+    companion object {
+        /** `{sembol: {fiyat, zaman, degisim?}}`; geçersiz öğe düşer. */
+        fun sozlukCoz(metin: String): Map<String, CanliFiyat> {
+            val kok = JSONObject(metin)
+            val out = mutableMapOf<String, CanliFiyat>()
+            val anahtarlar = kok.keys()
+            while (anahtarlar.hasNext()) {
+                val s = anahtarlar.next()
+                val o = kok.optJSONObject(s) ?: continue
+                val fiyat = o.optDouble("fiyat", Double.NaN)
+                val zaman = o.optLong("zaman", 0L)
+                if (fiyat.isNaN() || fiyat.isInfinite() || fiyat <= 0.0 || zaman <= 0L) continue
+                val d = if (o.has("degisim") && !o.isNull("degisim"))
+                    o.optDouble("degisim", Double.NaN) else Double.NaN
+                out[s] = CanliFiyat(fiyat, zaman, if (d.isNaN() || d.isInfinite()) null else d)
+            }
+            return out
+        }
+
+        fun sozlukYaz(sozluk: Map<String, CanliFiyat>): String {
+            val kok = JSONObject()
+            sozluk.forEach { (s, c) ->
+                val o = JSONObject().put("fiyat", c.fiyat).put("zaman", c.zaman)
+                if (c.degisim != null) o.put("degisim", c.degisim)
+                kok.put(s, o)
+            }
+            return kok.toString()
+        }
+    }
+}
+
+/**
+ * Dart `tr_format.dart` kurallarının Kotlin eşi — YALNIZ widget'ın
+ * sunucudan çektiği sayı için (uygulamanın yazdığı metin yeniden
+ * biçimlenmez). `fmtFiyat` / `fmtPctIsaretli` ile aynı çıktı: `₺6.123,45`,
+ * `+%0,42`, `−%0,06`, `%0,00`.
+ */
+object WidgetBicim {
+    private val TR = Locale("tr", "TR")
+
+    private fun bicimci(enAz: Int, enCok: Int): DecimalFormat {
+        val semboller = DecimalFormatSymbols(TR).apply {
+            groupingSeparator = '.'
+            decimalSeparator = ','
+        }
+        return DecimalFormat("#,##0", semboller).apply {
+            isGroupingUsed = true
+            groupingSize = 3
+            roundingMode = RoundingMode.HALF_UP
+            minimumFractionDigits = enAz
+            maximumFractionDigits = enCok
+        }
+    }
+
+    /** Dart `fiyatOndaligi`: 1 ₺ ve üstü 2 hane; altı en az 4 anlamlı hane. */
+    fun fiyatOndaligi(deger: Double): Int {
+        val a = abs(deger)
+        if (a > 0 && a < 1) return (floor(-log10(a)).toInt() + 4).coerceIn(2, 8)
+        return 2
+    }
+
+    /** Dart `fmtFiyat(deger, azami: hane)`. */
+    fun fiyat(deger: Double, hane: Int?): String {
+        val f = if (hane != null) bicimci(2, maxOf(2, hane))
+                else fiyatOndaligi(deger).let { bicimci(it, it) }
+        return "₺" + f.format(deger)
+    }
+
+    /** Dart `fmtPctIsaretli` + yön: sıfıra yuvarlanan değer işaretsiz, yönsüz. */
+    fun yuzde(pct: Double): Pair<String, Int> {
+        val f = bicimci(2, 2)
+        val mutlak = "%" + f.format(abs(pct))
+        if (mutlak == "%" + f.format(0.0)) return mutlak to 0
+        return if (pct > 0) ("+$mutlak" to 1) else ("−$mutlak" to -1)
+    }
+
+    /** Dart `DateFormat('HH:mm', 'tr_TR')` / `'d MMM HH:mm'`. */
+    fun saat(ms: Long): String = SimpleDateFormat("HH:mm", TR).format(Date(ms))
+    fun tarih(ms: Long): String = SimpleDateFormat("d MMM HH:mm", TR).format(Date(ms))
+}
+
+/**
+ * `widget-fiyat` istemcisi (iOS `SandikWidgetFiyatServisi.cek`). Ana iş
+ * parçacığında ÇAĞRILMAZ. Uygulamanın yazdığı public URL + anon anahtar;
+ * oturum jetonu yok, gövde yalnız semboller. Her hata boş sözlük.
+ */
+object WidgetFiyatIstemcisi {
+    /** `goAsync` ~10 sn tanır: bağlantı + okuma bunun altında kalır. */
+    private const val BAGLANTI_MS = 4_000
+    private const val OKUMA_MS = 5_000
+
+    fun cek(context: Context, semboller: List<String>): Map<String, CanliFiyat> {
+        if (semboller.isEmpty()) return emptyMap()
+        val depo = HomeWidgetPlugin.getData(context)
+        val taban = depo.getString(SandikVarlikWidgetProvider.KEY_API_URL, null)
+        val anahtar = depo.getString(SandikVarlikWidgetProvider.KEY_API_ANAHTAR, null)
+        if (taban.isNullOrEmpty() || anahtar.isNullOrEmpty()) return emptyMap()
+        if (!taban.startsWith("https://")) return emptyMap()
+        val hedef = URL(taban.trimEnd('/') + "/functions/v1/widget-fiyat")
+        val baglanti = hedef.openConnection() as HttpURLConnection
+        return try {
+            baglanti.requestMethod = "POST"
+            baglanti.connectTimeout = BAGLANTI_MS
+            baglanti.readTimeout = OKUMA_MS
+            baglanti.doOutput = true
+            baglanti.useCaches = false
+            baglanti.setRequestProperty("Content-Type", "application/json")
+            baglanti.setRequestProperty("apikey", anahtar)
+            baglanti.setRequestProperty("Authorization", "Bearer $anahtar")
+            val govde = JSONObject().put("semboller", JSONArray(semboller)).toString()
+            baglanti.outputStream.use { it.write(govde.toByteArray(Charsets.UTF_8)) }
+            if (baglanti.responseCode != 200) return emptyMap()
+            val metin = baglanti.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            CanliFiyat.sozlukCoz(metin).filterKeys { it in semboller }
+        } catch (e: Exception) {
+            emptyMap()
+        } finally {
+            baglanti.disconnect()
+        }
+    }
+}
 
 /** `sandik_varliklar` paketi — Dart `varlikWidgetPaketi`. */
 data class VarlikPaketi(
@@ -450,6 +754,10 @@ data class VarlikPaketi(
                         yon = if (o.has("yon") && !o.isNull("yon")) o.optInt("yon") else null,
                         kapanis = if (o.has("kapanis") && !o.isNull("kapanis"))
                             o.optBoolean("kapanis") else null,
+                        sunucu = if (o.has("sunucu") && !o.isNull("sunucu"))
+                            o.optBoolean("sunucu") else null,
+                        hane = if (o.has("hane") && !o.isNull("hane"))
+                            o.optInt("hane") else null,
                     )
                 )
             }
