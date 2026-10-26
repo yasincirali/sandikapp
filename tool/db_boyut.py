@@ -66,14 +66,21 @@ ELLE = [
 ]
 FN_SINIR = 500_000
 
-# Son 24 saatte fonksiyon başına çağrı (yol = `/<fonksiyon>`). Satır içeriği
-# (gövde, başlık, IP) seçilmez.
-FN_SORGU = (
-    "select r.pathname as yol, count(*) as n from function_edge_logs "
-    "cross join unnest(metadata) as m cross join unnest(m.request) as r "
-    "group by yol order by n desc"
-)
-FN_TOPLAM_SORGU = "select count(*) as n from function_edge_logs"
+# Son 24 saatte fonksiyon başına çağrı. 2026-10: `logs.all` kaldırıldı;
+# yeni uç tek `logs` tablosu (ClickHouse SQL) okur, kaynak `source` sütunuyla
+# süzülür (Supabase'in kendi rehberi `source_name` diyor, API başvurusu
+# `source`; ikisi de denenir). Fonksiyon adı `event_message`'daki yoldan
+# ("POST | 200 | https://…/functions/v1/<ad>"). Satır içeriği (gövde,
+# başlık, IP) seçilmez. İlk çalışan sorgu kullanılır.
+_FN_AD = "extract(event_message, 'functions/v1/([A-Za-z0-9_-]+)')"
+FN_SORGULAR = [
+    f"select {_FN_AD} as yol, count() as n from logs "
+    f"where {kol} = 'function_edge_logs' group by yol order by n desc"
+    for kol in ("source", "source_name")
+] + [
+    f"select count() as n from logs where {kol} = 'function_edge_logs'"
+    for kol in ("source", "source_name")
+]
 
 SORGU = """
 select json_build_object(
@@ -133,7 +140,7 @@ def fonksiyon_cagrilari(token: str) -> dict | None:
     # toplam. İkisi de düşerse nedeni (HTTP kodu + API'nin kısa mesajı;
     # token içermez) günlüğe yazılır ki "elle bak" satırı sessiz kalmasın
     # (2026-10-26 ilk koşu: neden görünmeden None döndü).
-    for sql in (FN_SORGU, FN_TOPLAM_SORGU):
+    for sql in FN_SORGULAR:
         sorgu = urllib.parse.urlencode({
             "sql": sql,
             "iso_timestamp_start": zaman(baslangic),
@@ -169,10 +176,14 @@ def fn_coz(veri: object) -> dict | None:
         return None
     yollar: dict[str, int] = {}
     for r in satirlar:
-        if not isinstance(r, dict) or not isinstance(r.get("n"), (int, float)):
+        # ClickHouse UInt64'ü JSON'da metin olarak da dönebilir.
+        n = r.get("n") if isinstance(r, dict) else None
+        if isinstance(n, str) and n.isdigit():
+            n = int(n)
+        if not isinstance(n, (int, float)):
             continue
         ad = str(r.get("yol") or "?").removeprefix("/functions/v1").strip("/") or "?"
-        yollar[ad] = yollar.get(ad, 0) + int(r["n"])
+        yollar[ad] = yollar.get(ad, 0) + int(n)
     return {"toplam": sum(yollar.values()), "yollar": yollar}
 
 

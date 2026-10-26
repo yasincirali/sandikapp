@@ -57,6 +57,9 @@ class DbBoyutTest(unittest.TestCase):
         self.assertEqual(fn["toplam"], 760)
         self.assertEqual(fn["yollar"]["widget-fiyat"], 40)
 
+    def test_fn_coz_metin_sayi(self):
+        self.assertEqual(db.fn_coz({"result": [{"n": "42"}]})["toplam"], 42)
+
     def test_fn_coz_hata_none(self):
         self.assertIsNone(db.fn_coz({"error": {"message": "x"}}))
         self.assertIsNone(db.fn_coz({"result": None}))
