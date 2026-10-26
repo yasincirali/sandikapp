@@ -73,6 +73,7 @@ FN_SORGU = (
     "cross join unnest(metadata) as m cross join unnest(m.request) as r "
     "group by yol order by n desc"
 )
+FN_TOPLAM_SORGU = "select count(*) as n from function_edge_logs"
 
 SORGU = """
 select json_build_object(
@@ -127,21 +128,36 @@ def fonksiyon_cagrilari(token: str) -> dict | None:
     import urllib.parse
     bitis = datetime.datetime.now(datetime.timezone.utc)
     baslangic = bitis - datetime.timedelta(hours=24)
-    sorgu = urllib.parse.urlencode({
-        "sql": FN_SORGU,
-        "iso_timestamp_start": baslangic.isoformat(),
-        "iso_timestamp_end": bitis.isoformat(),
-    })
-    istek = urllib.request.Request(
-        f"https://api.supabase.com/v1/projects/{REF}/analytics/endpoints/logs.all?{sorgu}",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    try:
-        with urllib.request.urlopen(istek, timeout=60) as y:
-            veri = json.loads(y.read().decode())
-    except (urllib.error.URLError, ValueError):
-        return None
-    return fn_coz(veri)
+    zaman = lambda d: d.strftime("%Y-%m-%dT%H:%M:%S.000Z")  # noqa: E731
+    # İlk deneme fonksiyon başına; uç yolu çözemezse (şema farkı) yalnız
+    # toplam. İkisi de düşerse nedeni (HTTP kodu + API'nin kısa mesajı;
+    # token içermez) günlüğe yazılır ki "elle bak" satırı sessiz kalmasın
+    # (2026-10-26 ilk koşu: neden görünmeden None döndü).
+    for sql in (FN_SORGU, FN_TOPLAM_SORGU):
+        sorgu = urllib.parse.urlencode({
+            "sql": sql,
+            "iso_timestamp_start": zaman(baslangic),
+            "iso_timestamp_end": zaman(bitis),
+        })
+        istek = urllib.request.Request(
+            f"https://api.supabase.com/v1/projects/{REF}/analytics/endpoints/logs.all?{sorgu}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        try:
+            with urllib.request.urlopen(istek, timeout=60) as y:
+                veri = json.loads(y.read().decode())
+        except urllib.error.HTTPError as h:
+            print(f"logs.all HTTP {h.code}: {h.read().decode(errors='replace')[:200]}")
+            continue
+        except (urllib.error.URLError, ValueError) as e:
+            print(f"logs.all okunamadı: {type(e).__name__}")
+            continue
+        fn = fn_coz(veri)
+        if fn is not None:
+            return fn
+        hata = veri.get("error") if isinstance(veri, dict) else None
+        print(f"logs.all yanıtı çözülemedi: {str(hata)[:200]}")
+    return None
 
 
 def fn_coz(veri: object) -> dict | None:
