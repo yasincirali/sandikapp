@@ -29,7 +29,7 @@ Diğer ücretsiz plan sınırları (2026-10-20, müşteri raporu 20 Eki 13:15 #3
     yazılmaz: rapor "panelden elle bak" der.
   * Edge Function çağrısı (500.000/ay; müşteri raporu 2026-10-26 21:15 #3,
     yasin "yap"): widget her kurulumda sunucu çağrısı demek, kota artık
-    ölçülür. Kaynak `analytics/endpoints/logs.all` (belgeli uç) üzerinden
+    ölçülür. Kaynak `analytics/endpoints/logs` (belgeli uç; `logs.all` 2026-10 kaldırıldı) üzerinden
     `function_edge_logs`: son 24 saatteki çağrı, fonksiyon başına. Ücretsiz
     planda log 1 gün saklandığı için ay ölçülemez; aylık sayı "24 saat × 30"
     diye TAHMİN etiketiyle yazılır, %70/%90 eşiği o tahmine uygulanır.
@@ -140,28 +140,28 @@ def fonksiyon_cagrilari(token: str) -> dict | None:
             "iso_timestamp_end": zaman(bitis),
         })
         istek = urllib.request.Request(
-            f"https://api.supabase.com/v1/projects/{REF}/analytics/endpoints/logs.all?{sorgu}",
+            f"https://api.supabase.com/v1/projects/{REF}/analytics/endpoints/logs?{sorgu}",
             headers={"Authorization": f"Bearer {token}"},
         )
         try:
             with urllib.request.urlopen(istek, timeout=60) as y:
                 veri = json.loads(y.read().decode())
         except urllib.error.HTTPError as h:
-            print(f"logs.all HTTP {h.code}: {h.read().decode(errors='replace')[:200]}")
+            print(f"logs HTTP {h.code}: {h.read().decode(errors='replace')[:200]}")
             continue
         except (urllib.error.URLError, ValueError) as e:
-            print(f"logs.all okunamadı: {type(e).__name__}")
+            print(f"logs okunamadı: {type(e).__name__}")
             continue
         fn = fn_coz(veri)
         if fn is not None:
             return fn
         hata = veri.get("error") if isinstance(veri, dict) else None
-        print(f"logs.all yanıtı çözülemedi: {str(hata)[:200]}")
+        print(f"logs yanıtı çözülemedi: {str(hata)[:200]}")
     return None
 
 
 def fn_coz(veri: object) -> dict | None:
-    """`logs.all` yanıtı → toplam + fonksiyon başına sayı (saf; test edilir)."""
+    """`logs` yanıtı → toplam + fonksiyon başına sayı (saf; test edilir)."""
     if not isinstance(veri, dict) or veri.get("error"):
         return None
     satirlar = veri.get("result")
