@@ -441,6 +441,11 @@ Deno.serve(async (request) => {
           title: mesaj.title,
           body: mesaj.body,
           channelId: CHANNEL_ID,
+          // Acil uyarı (`_shared/fcm.ts` priority belgesi): `normal`ken iOS
+          // APNs 5 ile güç tasarrufu için erteleyebiliyor, Android Doze'da
+          // geciktiriyordu; 5 dakikalık alarm hızı (#245) bildirim geç
+          // gelince boşa gidiyordu. Müşteri raporu 2026-10-26 21:15 #1.
+          priority: 'high',
           data: { type: 'price_alert', alert_id: alarm.id, symbol: alarm.symbol },
           gorselUrl: await kartGorseli(kart, t, kartVerisi),
         });

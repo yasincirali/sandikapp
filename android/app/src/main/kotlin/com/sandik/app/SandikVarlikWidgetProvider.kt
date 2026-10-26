@@ -248,7 +248,8 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
                 val canli = canliDepo(context)
                 val bayat = semboller.filter { s ->
                     val bilinen = maxOf(paket.zaman ?: 0L, canli[s]?.zaman ?: 0L)
-                    simdi - bilinen >= TAZE_ESIGI_MS
+                    simdi - bilinen >= TAZE_ESIGI_MS &&
+                        WidgetRitmi.cekilmeli(s, simdi, canli[s]?.zaman)
                 }
                 val sonDeneme = secim.getLong(KEY_SON_DENEME, 0L)
                 if (bayat.isEmpty() || simdi - sonDeneme < TAZE_ESIGI_MS) {
@@ -515,10 +516,12 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val gunEsigi = paket.zaman?.plus(BAYATLIK_ESIGI_MS)?.takeIf { it > simdi }
-            // Sunucu kapsamındaki varlık gösteriliyorsa en geç yarım saat
-            // sonra yeniden çizilir; `onUpdate` o turda fiyatı tazeler.
-            val tazeleme = if (kapsamdakiSemboller(paket, secimDeposu(context), tumu)
-                    .isNotEmpty()) simdi + TAZELEME_ARALIGI_MS else null
+            // Sunucu kapsamındaki varlık gösteriliyorsa ritmin ilk anında
+            // (gündüz yarım saat; gece, hafta sonu, fon seyrek —
+            // [WidgetRitmi]) yeniden çizilir; `onUpdate` o turda tazeler.
+            val canli = canliDepo(context)
+            val tazeleme = kapsamdakiSemboller(paket, secimDeposu(context), tumu)
+                .minOfOrNull { WidgetRitmi.sonraki(it, simdi, canli[it]?.zaman) }
             val esik = listOfNotNull(gunEsigi, tazeleme).minOrNull()
             if (tumu.isEmpty() || paket.ogeler.isEmpty() || esik == null) {
                 alarm.cancel(bekleyen)

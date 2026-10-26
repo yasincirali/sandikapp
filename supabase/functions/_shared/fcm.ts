@@ -136,6 +136,7 @@ export async function sendFcmNotification({
   badge,
   gorselUrl,
   hesap,
+  onem,
 }: {
   accessToken: string;
   projectId: string;
@@ -164,6 +165,15 @@ export async function sendFcmNotification({
   /// hangi hesabın bildirimi olduğunu görsün; `data.hesap_uid` istemciye
   /// dokununca o hesaba geçmesini söyler. Verilmezse gövde birebir eskisi.
   hesap?: { uid: string; etiket: string };
+  /// iOS bildirim önemi (`aps.interruption-level`, iOS 15+). `passive`:
+  /// ses/titreşim yok, kilit ekranını uyandırmaz, Bildirim Özeti'ne düşer —
+  /// brifing, özet, takvim dürtüsü için (müşteri raporu 2026-10-26 21:15 #1,
+  /// yasin "yap"). Verilmezse alan yazılmaz = sistem varsayılanı `active`
+  /// (sinyal, fiyat alarmı, ortaklık daveti). `time-sensitive` BİLEREK yok:
+  /// uygulama kimliğinde yetenek açılmadan yetki satırı TestFlight imzasını
+  /// kırar; yasin Apple Developer'da açınca ayrı iş.
+  /// Android etkilenmez: orada önem kanalla belirlenir (`notification_service.dart`).
+  onem?: 'passive';
 }): Promise<SendResult> {
   if (hesap) {
     title = hesapliBaslik(hesap.etiket, title);
@@ -177,6 +187,11 @@ export async function sendFcmNotification({
   // Extension'ı uyandırır, o da `fcm_options.image`'ı ekler. Uzantısı
   // olmayan sürüm bu alanları yok sayar ve metni gösterir.
   if (gorselUrl) aps['mutable-content'] = 1;
+  // Bildirim Merkezi'nde türe göre yığın: kanal kimliği zaten bildirim
+  // türüdür (alert/brief/summary/signal…). Android'in kanal ayrımının iOS
+  // eşi; eski build bu alanı da sistem düzeyinde alır, istemci kodu yok.
+  aps['thread-id'] = channelId;
+  if (onem) aps['interruption-level'] = onem;
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
     {

@@ -290,6 +290,91 @@ enum SandikWidgetFiyatServisi {
     }
 }
 
+/// Sunucudan tazelenen widget'ın ritmi — Android `WidgetRitmi` ile birebir
+/// (müşteri raporu 2026-10-26 21:15 #2/#3, yasin "yap").
+///
+/// Neden: her widget her çağrıda bir Edge Function çağrısı ve log satırı
+/// harcar (ücretsiz plan ayda 500.000 çağrı, 1 GB log). Kullanıcının
+/// bakmadığı saatte yarım saatlik ritim boşa gider:
+/// - gece 00:00–07:00 TR: 2 saatte bir;
+/// - hafta sonu altın/döviz (kotasyon az oynar): saatte bir; kripto 7/24
+///   olduğu için hafta sonu gündüz yarım saatte bir kalır;
+/// - fon: NAV günde bir değişir. İş günü 07:00–22:00 TR arasında bugünün
+///   NAV'ı henüz alınmadıysa saatte bir denenir; alındıysa ya da pencere
+///   dışındaysa sonraki iş gününün 07:00'sine kadar beklenir.
+/// "Bugünün NAV'ı alındı" = widget'ın sunucudan çektiği fiyatın anı (fon
+/// için NAV'ın sunucuda İLK görüldüğü an) bugüne (TR) ait. Uygulamanın
+/// yazım anı sayılmaz: uygulama sabah NAV yayımlanmadan açıldıysa dünkü
+/// NAV'ı bugünün saatiyle yazmış olur.
+enum SandikWidgetRitmi {
+    static let gece: TimeInterval = 2 * 60 * 60
+    static let haftaSonu: TimeInterval = 60 * 60
+    static let fonDeneme: TimeInterval = 60 * 60
+    static let geceSonu = 7
+    static let fonPencereSonu = 22
+
+    private static var takvim: Calendar {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        return c
+    }
+
+    static func fonMu(_ sembol: String) -> Bool { sembol.hasPrefix("TEFAS:") }
+    static func kriptoMu(_ sembol: String) -> Bool { sembol.hasPrefix("KRIPTO:") }
+
+    private static func isGunu(_ d: Date) -> Bool {
+        let g = takvim.component(.weekday, from: d) // 1 = Pazar, 7 = Cumartesi
+        return g != 1 && g != 7
+    }
+
+    private static func fonPenceresinde(_ d: Date) -> Bool {
+        let saat = takvim.component(.hour, from: d)
+        return isGunu(d) && saat >= geceSonu && saat < fonPencereSonu
+    }
+
+    private static func bugunAlindi(_ canliZaman: Date?, _ simdi: Date) -> Bool {
+        guard let z = canliZaman else { return false }
+        return takvim.isDate(z, inSameDayAs: simdi)
+    }
+
+    /// Fiyat şimdi sunucudan çekilmeli mi (bilinen fiyatın 10 dk tazelik
+    /// kuralına ek olarak). Fonda pencere dışında ya da bugünün NAV'ı
+    /// alındıysa çağrı yapılmaz.
+    static func cekilmeli(_ sembol: String, simdi: Date, canliZaman: Date?) -> Bool {
+        guard fonMu(sembol) else { return true }
+        return fonPenceresinde(simdi) && !bugunAlindi(canliZaman, simdi)
+    }
+
+    /// Zaman çizelgesinin sonraki yenileme anı.
+    static func sonraki(_ sembol: String, simdi: Date, canliZaman: Date?) -> Date {
+        if fonMu(sembol) {
+            if cekilmeli(sembol, simdi: simdi, canliZaman: canliZaman) {
+                return simdi.addingTimeInterval(fonDeneme)
+            }
+            return sonrakiIsGunuSabahi(simdi)
+        }
+        let saat = takvim.component(.hour, from: simdi)
+        if saat < geceSonu { return simdi.addingTimeInterval(gece) }
+        if !isGunu(simdi) && !kriptoMu(sembol) { return simdi.addingTimeInterval(haftaSonu) }
+        return simdi.addingTimeInterval(SandikWidgetFiyatServisi.tazelemeAraligi)
+    }
+
+    /// Bugün iş günüyse ve saat 07:00'den önceyse bugün 07:00; değilse
+    /// sonraki iş gününün 07:00'si (TR).
+    static func sonrakiIsGunuSabahi(_ simdi: Date) -> Date {
+        let c = takvim
+        var gun = c.startOfDay(for: simdi)
+        for _ in 0..<8 {
+            if let sabah = c.date(bySettingHour: geceSonu, minute: 0, second: 0, of: gun),
+               sabah > simdi, isGunu(sabah) {
+                return sabah
+            }
+            gun = c.date(byAdding: .day, value: 1, to: gun) ?? gun.addingTimeInterval(86_400)
+        }
+        return simdi.addingTimeInterval(fonDeneme)
+    }
+}
+
 /// `sandik_varliklar` paketinin tamamı — Dart `varlikWidgetPaketi`.
 struct SandikVarlikPaketi: Decodable {
     let v: Int
@@ -501,11 +586,11 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
         // uygulama yazar ve yazınca bu türü yeniler (`.never`). Zamanlı
         // yenileme boşuna bütçe harcardı.
         //
-        // Sunucu kapsamındaki varlıkta (2026-10-26) yarım saatte bir
+        // Sunucu kapsamındaki varlıkta (2026-10-26) gündüz yarım saatte bir
         // yenilenir; bilinen fiyat 10 dk'dan eskiyse `widget-fiyat`'tan
-        // çekilir. Başarısızsa son bilinen değer saatiyle kalır. Hafta sonu
-        // ve gece de aynı ritim: yurt içi altın/döviz kotasyonu hafta sonu
-        // da yazılıyor (0101), kripto 7/24; sunucu yanıtı 60 sn önbellekli.
+        // çekilir. Başarısızsa son bilinen değer saatiyle kalır. Gece, hafta
+        // sonu ve fon için seyrek ritim (aynı gün, 21:15 raporu #2/#3):
+        // `SandikWidgetRitmi`. Sunucu yanıtı 60 sn önbellekli.
         //
         // İki ileri girdi (veri aynı, yalnız an): seansın bitişi (açıkken
         // yazılmış fiyat o andan sonra saatle görünür) ve 1 günlük eşik
@@ -513,17 +598,19 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
         var simdi = oku(configuration)
         var yenileme: Date? = nil
         if case .oge(let oge) = simdi.durum, oge.sunucu == true {
-            yenileme = simdi.date.addingTimeInterval(SandikWidgetFiyatServisi.tazelemeAraligi)
+            // Ritim (gece, hafta sonu, fon günde bir): `SandikWidgetRitmi`.
+            var canliZaman = SandikWidgetFiyatServisi.depo()[oge.id]?.tarih
             var bayat = true
             if let bilinen = simdi.zaman {
                 bayat = simdi.date.timeIntervalSince(bilinen) >= SandikWidgetFiyatServisi.tazeEsigi
             }
-            if bayat {
-                let cekilen = await SandikWidgetFiyatServisi.cek(oge.id)
-                if cekilen != nil {
+            if bayat, SandikWidgetRitmi.cekilmeli(oge.id, simdi: simdi.date, canliZaman: canliZaman) {
+                if let cekilen = await SandikWidgetFiyatServisi.cek(oge.id) {
+                    canliZaman = cekilen.tarih
                     simdi = oku(configuration)
                 }
             }
+            yenileme = SandikWidgetRitmi.sonraki(oge.id, simdi: simdi.date, canliZaman: canliZaman)
         }
         var anlar: [Date] = []
         if case .oge(let oge) = simdi.durum, let ms = oge.seansSonu {

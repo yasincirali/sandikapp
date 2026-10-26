@@ -311,12 +311,19 @@ class FiyatKaynagi {
   /// Yalnız sunucunun zaten canlı tuttuğu, uygulamanın gösterdiğiyle AYNI
   /// kaynaktan gelen semboller: altın ayarları ve TL dövizler
   /// (`yurt_ici_kotasyon`, truncgil — [PriceService.yurtIciSembolleri])
-  /// ve kripto (`kripto_fiyat`). BIST hisse, fon, endeks sunucuda canlı
-  /// tutulmuyor; widget onları yalnız uygulamanın yazdığı değerle gösterir.
+  /// ve kripto (`kripto_fiyat`). Fon (müşteri raporu 2026-10-26 21:15 #2,
+  /// yasin "yap"): `tefas_nav_gozlem` — uygulamanın gösterdiği AYNI TEFAS
+  /// NAV'ı, sunucunun gözlem cron'u okur; widget günde bir tazeler. BIST
+  /// hisse ve endeks sunucuda canlı tutulmuyor; widget onları yalnız
+  /// uygulamanın yazdığı değerle gösterir.
   /// Sunucu eşi `_shared/widget_fiyat.ts › widgetSembolTuru`; iki liste
-  /// `varlik_widget_sozlesmesi_test` ile kilitli.
+  /// `varlik_widget_sunucu_tazeleme_test` ile kilitli.
   static bool widgetSunucuKapsamindaMi(String sembol) {
     if (PriceService.yurtIciSembolleri.contains(sembol)) return true;
+    if (sembol.startsWith(tefasOneki)) {
+      return RegExp(r'^[A-Z0-9]{3}$')
+          .hasMatch(sembol.substring(tefasOneki.length));
+    }
     if (!kriptoMu(sembol) || sembol != sembol.trim().toUpperCase()) {
       return false;
     }

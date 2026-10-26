@@ -868,6 +868,9 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
+        // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+        // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+        onem: 'passive',
         data: aylik
           ? { type: bildirimTipi, sent_on: bugun, ay: ay.donem.slice(0, 7) }
           : akisCumlesi !== null
@@ -936,6 +939,9 @@ Deno.serve(async (request) => {
           title: tm.title,
           body: tm.body,
           channelId: CHANNEL_ID,
+          // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+          // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+          onem: 'passive',
           data: { type: 'inflation_day', period: ay.donem },
         });
         if (r.ok) {

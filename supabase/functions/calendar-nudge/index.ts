@@ -288,6 +288,9 @@ async function yilSonuAni(p: {
       title: mesaj.title,
       body: mesaj.body,
       channelId: CHANNEL_ID,
+      // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+      // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+      onem: 'passive',
       data: { type: 'calendar_nudge', occasion: YIL_SONU },
     });
     if (r.ok) {
@@ -511,6 +514,9 @@ async function birikimAni(p: {
       title: mesaj.title,
       body: mesaj.body,
       channelId: CHANNEL_ID,
+      // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+      // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+      onem: 'passive',
       data: { type: 'calendar_nudge', occasion: BIRIKIM },
     });
     if (r.ok) {
@@ -741,6 +747,9 @@ async function hediyeAni(p: {
       title: mesaj.title,
       body: mesaj.body,
       channelId: CHANNEL_ID,
+      // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+      // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+      onem: 'passive',
       data: { type: 'calendar_nudge', occasion: HEDIYE_BITIYOR },
     });
     if (r.ok) {
@@ -991,6 +1000,9 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
+        // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+        // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+        onem: 'passive',
         data: { type: 'calendar_nudge', occasion: 'inflation_day' },
       });
       if (r.ok) {

@@ -24,9 +24,17 @@ Diğer ücretsiz plan sınırları (2026-10-20, müşteri raporu 20 Eki 13:15 #3
     sayı ALT SINIR, etiketinde öyle yazar. Yalnız sayı, kimlik okunmaz.
   * API istek sayıları: Management API `analytics/endpoints/usage.api-counts`
     (son 7 gün, belgeli uç). Ücretsiz planın istek sınırı yok, yalnız bilgi.
-  * Dışarı trafik (egress, 5 GB/ay) ve Edge Function çağrısı (500.000/ay):
-    Management API'de proje düzeyinde belgeli uç YOK (kullanım organizasyon
-    faturasında). Uydurma sayı yazılmaz: rapor "panelden elle bak" der.
+  * Dışarı trafik (egress, 5 GB/ay): Management API'de proje düzeyinde
+    belgeli uç YOK (kullanım organizasyon faturasında). Uydurma sayı
+    yazılmaz: rapor "panelden elle bak" der.
+  * Edge Function çağrısı (500.000/ay; müşteri raporu 2026-10-26 21:15 #3,
+    yasin "yap"): widget her kurulumda sunucu çağrısı demek, kota artık
+    ölçülür. Kaynak `analytics/endpoints/logs.all` (belgeli uç) üzerinden
+    `function_edge_logs`: son 24 saatteki çağrı, fonksiyon başına. Ücretsiz
+    planda log 1 gün saklandığı için ay ölçülemez; aylık sayı "24 saat × 30"
+    diye TAHMİN etiketiyle yazılır, %70/%90 eşiği o tahmine uygulanır.
+    Uç yanıt vermezse eski satır: "panelden elle bak". Kimlik/IP okunmaz,
+    yalnız yol ve sayı.
 Her ölçülen sınırda %70 sarı, %90 kırmızı (iş kırmızı → e-posta). DB'nin
 350/450 MB eşiği de tam bu orana denk.
 
@@ -55,8 +63,16 @@ KIRMIZI_ORAN = 0.90
 # Ölçülemeyenler: belgeli proje uç noktası yok → elle.
 ELLE = [
     ("Dışarı trafik (egress)", "5 GB / ay"),
-    ("Edge Function çağrısı", "500.000 / ay"),
 ]
+FN_SINIR = 500_000
+
+# Son 24 saatte fonksiyon başına çağrı (yol = `/<fonksiyon>`). Satır içeriği
+# (gövde, başlık, IP) seçilmez.
+FN_SORGU = (
+    "select r.pathname as yol, count(*) as n from function_edge_logs "
+    "cross join unnest(metadata) as m cross join unnest(m.request) as r "
+    "group by yol order by n desc"
+)
 
 SORGU = """
 select json_build_object(
@@ -102,6 +118,46 @@ def api_sayilari(token: str) -> dict | None:
             if k.startswith("total_") and isinstance(v, (int, float)):
                 toplam[k] = toplam.get(k, 0) + int(v)
     return toplam
+
+
+def fonksiyon_cagrilari(token: str) -> dict | None:
+    """Son 24 saatin Edge Function çağrıları: `{"toplam": n, "yollar": {ad: n}}`.
+    Uç yanıt vermezse None (rapor "elle" der, iş düşmez)."""
+    import datetime
+    import urllib.parse
+    bitis = datetime.datetime.now(datetime.timezone.utc)
+    baslangic = bitis - datetime.timedelta(hours=24)
+    sorgu = urllib.parse.urlencode({
+        "sql": FN_SORGU,
+        "iso_timestamp_start": baslangic.isoformat(),
+        "iso_timestamp_end": bitis.isoformat(),
+    })
+    istek = urllib.request.Request(
+        f"https://api.supabase.com/v1/projects/{REF}/analytics/endpoints/logs.all?{sorgu}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(istek, timeout=60) as y:
+            veri = json.loads(y.read().decode())
+    except (urllib.error.URLError, ValueError):
+        return None
+    return fn_coz(veri)
+
+
+def fn_coz(veri: object) -> dict | None:
+    """`logs.all` yanıtı → toplam + fonksiyon başına sayı (saf; test edilir)."""
+    if not isinstance(veri, dict) or veri.get("error"):
+        return None
+    satirlar = veri.get("result")
+    if not isinstance(satirlar, list):
+        return None
+    yollar: dict[str, int] = {}
+    for r in satirlar:
+        if not isinstance(r, dict) or not isinstance(r.get("n"), (int, float)):
+            continue
+        ad = str(r.get("yol") or "?").removeprefix("/functions/v1").strip("/") or "?"
+        yollar[ad] = yollar.get(ad, 0) + int(r["n"])
+    return {"toplam": sum(yollar.values()), "yollar": yollar}
 
 
 def sorgula(token: str) -> dict:
@@ -187,10 +243,27 @@ def kota_satirlari(s: dict) -> tuple[list[str], int]:
             satir.append(f"| API istekleri, 7 gün ({ad}) | {sayi(deger)} | sınırsız | — |")
     else:
         satir.append("| API istekleri, 7 gün | panelden elle bak | sınırsız | — |")
+    fn = s.get("fn")
+    if fn:
+        aylik = fn["toplam"] * 30
+        i, k = isaret(aylik / FN_SINIR)
+        kod = max(kod, k)
+        satir.append(
+            f"| Edge Function çağrısı (son 24 saat × 30, tahmin) | {sayi(aylik)} | 500.000 / ay "
+            f"| {i} %{aylik / FN_SINIR * 100:.0f} |")
+        widget = fn["yollar"].get("widget-fiyat", 0)
+        satir.append(f"| ↳ son 24 saat ölçüm (widget-fiyat: {sayi(widget)}) | {sayi(fn['toplam'])} | — | — |")
+    else:
+        satir.append("| Edge Function çağrısı | panelden elle bak | 500.000 / ay | — |")
     for ad, sinir in ELLE:
         satir.append(f"| {ad} | panelden elle bak | {sinir} | — |")
-    satir += ["", "_Egress ve Edge Function çağrısı için Management API'de proje düzeyinde uç yok: "
-              "Supabase paneli › Organization › Usage._"]
+    satir += ["", "_Egress için Management API'de proje düzeyinde uç yok: "
+              "Supabase paneli › Organization › Usage. Edge Function satırı log'dan "
+              "son 24 saatin ölçümü; aylık sayı ondan tahmin._"]
+    if fn and fn["yollar"]:
+        satir += ["", "| Fonksiyon (son 24 saat) | Çağrı |", "|---|---:|"]
+        for ad, n in sorted(fn["yollar"].items(), key=lambda x: -x[1])[:12]:
+            satir.append(f"| `{ad}` | {sayi(n)} |")
     return satir, kod
 
 
@@ -201,6 +274,7 @@ def main() -> int:
         return 2
     s = sorgula(token)
     s["api"] = api_sayilari(token)
+    s["fn"] = fonksiyon_cagrilari(token)
     metin, kod = rapor(s)
     print(metin)
     ozet = os.environ.get("GITHUB_STEP_SUMMARY")

@@ -1,16 +1,23 @@
 // Widget Fiyat Edge Function — tek varlık widget'ının arka plan tazelemesi
 //
 // yasin onayı 2026-10-26: "Tek varlık widget'ı uygulama açılmadan da
-// tazelensin". iOS WidgetKit zaman çizelgesi ve Android widget alarmı yarım
-// saatte bir, YALNIZ seçili varlık sunucu kapsamındaysa (altın, TL döviz,
-// kripto) çağırır. Gerekçe ve kapsam: `_shared/widget_fiyat.ts`.
+// tazelensin". iOS WidgetKit zaman çizelgesi ve Android widget alarmı
+// YALNIZ seçili varlık sunucu kapsamındaysa (altın, TL döviz, kripto; fon
+// 2026-10-26 21:15 #2) çağırır — ritim native tarafta (gündüz 30 dk, gece
+// 2 sa, hafta sonu altın/döviz 1 sa, fon günde bir). Gerekçe ve kapsam:
+// `_shared/widget_fiyat.ts`.
 //
 // ── Güvenlik (karar: oturum jetonu widget'a taşınmaz) ───────────────────────
 // · Çağıran anon anahtarıyla gelir; gateway JWT doğrulaması Supabase
 //   varsayılanı (`verify_jwt = true`, config.toml'da blok yok — anon
 //   anahtarı geçerli JWT'dir). Kullanıcı kimliği SORULMAZ, kişisel veri
 //   okunmaz/dönmez: yanıt herkes için aynı kamu piyasa fiyatıdır.
-// · Okuma service role ile yalnız iki piyasa tablosundan; tabloların
+// · Fon (2026-10-26): `tefas_nav_gozlem` yalnız portföylerde tutulan fonları
+//   gözler; yanıtın varlığı "bu fon birinin portföyünde var" demektir.
+//   Bilerek kabul: tablo zaten her oturum açmış kullanıcıya SELECT açık
+//   (0063 `tefas_nav_gozlem_select`), fon kodu kamuya açık ve tek kişiyi
+//   belli etmez; yanıtta sayı/kişi/portföy bilgisi yok.
+// · Okuma service role ile yalnız üç piyasa tablosundan; tabloların
 //   anon/authenticated GRANT ve RLS'ine DOKUNULMAZ (0101/0074 anon'a kapalı
 //   kalır). Yazma yok, SQL yok (PostgREST sorgu kurucusu, sabit tablo/sütun).
 // · Sembol beyaz listesi; en çok 5 sembol; gövde ≤ 1 KB. Başka sağlayıcıya
@@ -25,6 +32,8 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { kriptoKodu } from '../_shared/kripto.ts';
 import {
+  fonKodu,
+  fonWidgetFiyati,
   kriptoWidgetFiyati,
   WIDGET_AZAMI_GOVDE,
   WIDGET_ONBELLEK_SN,
@@ -90,6 +99,7 @@ Deno.serve(async (request) => {
 
     const yurtIci = semboller.filter((s) => widgetSembolTuru(s) === 'yurt_ici');
     const kripto = semboller.filter((s) => widgetSembolTuru(s) === 'kripto');
+    const fon = semboller.filter((s) => widgetSembolTuru(s) === 'fon');
     const yanit: Record<string, WidgetFiyat> = {};
     // Okuma hatası olan tur önbelleğe girmez: eksik yanıt 60 sn dağıtılmasın.
     let eksik = false;
@@ -110,6 +120,22 @@ Deno.serve(async (request) => {
           return;
         }
         const f = data ? yurtIciWidgetFiyati(data, simdi) : null;
+        if (f) yanit[s] = f;
+      }),
+      // Fon başına en yeni iki gözlem: indeks (fon_kodu, nav_tarihi desc).
+      ...fon.map(async (s) => {
+        const { data, error } = await admin
+          .from('tefas_nav_gozlem')
+          .select('nav_tarihi, ilk_gorulme, nav')
+          .eq('fon_kodu', fonKodu(s)!)
+          .order('nav_tarihi', { ascending: false })
+          .limit(2);
+        if (error) {
+          console.error('widget-fiyat fon okunamadi', error.code);
+          eksik = true;
+          return;
+        }
+        const f = fonWidgetFiyati(data ?? [], simdi);
         if (f) yanit[s] = f;
       }),
       (async () => {
