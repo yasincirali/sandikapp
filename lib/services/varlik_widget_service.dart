@@ -16,6 +16,7 @@ import 'crash_reporter.dart';
 import 'history_service.dart';
 import 'home_widget_service.dart';
 import 'price_service.dart';
+import 'sunucu_secimi.dart';
 
 /// Ana ekrandaki TEK VARLIK widget'ını besler: iOS `SandikVarlikWidget`
 /// (Ar-Ge kararı 2026-10-24 §1: "önce yalnız iOS") ve Android
@@ -64,13 +65,29 @@ import 'price_service.dart';
 /// çizilir; anahtar, seçim ve yazma noktası AYNI. Pakete yalnız isteğe bağlı
 /// alanlar eklendi (eski okuyucu tanımadığı alanı yok sayar, `v` hâlâ 1):
 /// - `zaman` / `tarih`: yazım anı. Fiyat 1 günden eskiyse widget saatin
-///   yerine tarihi gösterir — widget kendi başına ağa çıkmaz, eski bir
-///   fiyat "şimdi" gibi durmasın.
+///   yerine tarihi gösterir — kapsam dışı varlıkta widget kendi başına ağa
+///   çıkmaz, eski bir fiyat "şimdi" gibi durmasın. (Sunucu kapsamındaki
+///   varlıkta widget'ın çektiği fiyat kendi `zaman`ını taşır; aşağıda.)
 /// - öğede `kapanis` / `seansSonu`: "Kapanış" etiketi. Karar burada
 ///   verilir, Swift'te değil: tür kuralı `borsaTakvimindeMi`, seans
 ///   `BugunService.seansAcikMi` (tatil takvimi dahil) — Bugün kartıyla aynı.
 ///   Kripto, altın, döviz hiçbir zaman "kapanış" almaz.
 /// - öğede `kisa`: dar satır (`accessoryInline`) için kısa ad.
+///
+/// ## Uygulama açılmadan tazeleme (yasin onayı 2026-10-26)
+/// Sunucunun canlı tuttuğu varlıklarda (altın, TL döviz, kripto —
+/// [FiyatKaynagi.widgetSunucuKapsamindaMi]) widget yarım saatte bir
+/// `widget-fiyat` edge function'ından fiyatı kendisi çeker. Bunun için:
+/// - öğede `sunucu: true` (kapsam kararı burada, native tarafta değil) ve
+///   `hane`: fiyatın azami ondalığı (`AssetType.fiyatHassasiyeti`; yoksa
+///   eski kural) — widget sunucudan gelen sayıyı [fmtFiyat] ile AYNI
+///   kuralla biçimler.
+/// - ayrı anahtarlarda (`HomeWidgetService.widgetSunucusunuYaz`) AKTİF
+///   sunucunun public URL'si ve anon anahtarı (`SunucuSecimi`, RC `sunucu`):
+///   ikisi de uygulama paketinde zaten gömülü olan kamuya açık değerler.
+///   Oturum jetonu widget'a TAŞINMAZ (karar); fonksiyon kimlik sormaz,
+///   yalnız kamu piyasa fiyatı döner.
+/// Kapsam dışı varlıkta (BIST, fon, endeks) davranış değişmedi.
 class VarlikWidgetService {
   VarlikWidgetService._();
   static final instance = VarlikWidgetService._();
@@ -105,6 +122,13 @@ class VarlikWidgetService {
   /// Saat kaynağı — testler sabitler.
   @visibleForTesting
   DateTime Function() saat = DateTime.now;
+
+  /// Widget'ın arka planda çağıracağı sunucu — bu süreçte bağlanılan proje
+  /// (`SunucuSecimi`; Frankfurt/Tokyo seçimi RC `sunucu` ile orada). Test
+  /// dikişi.
+  @visibleForTesting
+  SunucuYapilandirmasi? Function() sunucu =
+      () => SunucuSecimi.instance.aktifOrNull;
 
   /// Aynı liste bu süreden sık yazılmaz. Portföy dinleyicisi dakikada
   /// birkaç kez çağırıyor; widget'ın gösterdiği saat dakika çözünürlüğünde.
@@ -214,6 +238,14 @@ class VarlikWidgetService {
 
       final paket = varlikWidgetPaketi(ogeler,
           saat: DateFormat('HH:mm', 'tr_TR').format(simdi), zaman: simdi);
+      // Sunucu bilgisi paketten ÖNCE: paket yazımı widget'ı yeniler ve o
+      // turda widget tazelemeyi deneyebilir. Yalnız kapsamda öğe varsa —
+      // kapsam dışı listeyle widget hiç ağa çıkmaz, yazmak gereksiz.
+      final api = sunucu();
+      if (api != null && ogeler.any((o) => o.sunucu == true)) {
+        await HomeWidgetService.instance
+            .widgetSunucusunuYaz(url: api.url, anonKey: api.anonKey);
+      }
       await HomeWidgetService.instance.varlikListesiniYaz(paket);
       _sonAnahtar = anahtar;
       _sonYazim = simdi;
@@ -317,6 +349,8 @@ class VarlikWidgetOgesi {
     this.kisa,
     this.kapanis,
     this.seansSonu,
+    this.sunucu,
+    this.hane,
   });
 
   final String id;
@@ -346,6 +380,15 @@ class VarlikWidgetOgesi {
   /// saatini gösterir.
   final int? seansSonu;
 
+  /// `true`: widget bu sembolün fiyatını uygulama açılmadan `widget-fiyat`
+  /// fonksiyonundan tazeleyebilir ([FiyatKaynagi.widgetSunucuKapsamindaMi]).
+  /// Kapsam dışında hiç yazılmaz (eski paket gibi: widget ağa çıkmaz).
+  final bool? sunucu;
+
+  /// Sunucudan gelen fiyatın biçimi: azami ondalık ([fmtFiyat] `azami`).
+  /// Yazılmamışsa eski kural ([fiyatOndaligi]). Yalnız [sunucu] öğesinde.
+  final int? hane;
+
   Map<String, Object?> toJson() => {
         'id': id,
         'ad': ad,
@@ -356,6 +399,8 @@ class VarlikWidgetOgesi {
         if (kisa != null) 'kisa': kisa,
         if (kapanis != null) 'kapanis': kapanis,
         if (seansSonu != null) 'seansSonu': seansSonu,
+        if (sunucu != null) 'sunucu': sunucu,
+        if (hane != null) 'hane': hane,
       };
 }
 
@@ -397,6 +442,8 @@ VarlikWidgetOgesi varlikWidgetOgesi(
     }
   }
   final kisa = kilitEkraniKisaAd(a.ad);
+  // Endeks hiçbir zaman kapsamda değil (puan biçimi widget'ta yok).
+  final sunucuda = FiyatKaynagi.widgetSunucuKapsamindaMi(a.sembol);
   return VarlikWidgetOgesi(
     id: a.sembol,
     ad: a.ad,
@@ -407,6 +454,8 @@ VarlikWidgetOgesi varlikWidgetOgesi(
     kisa: kisa == a.ad ? null : kisa,
     kapanis: kapanis,
     seansSonu: seansSonu,
+    sunucu: sunucuda ? true : null,
+    hane: sunucuda ? a.type.fiyatHassasiyeti : null,
   );
 }
 

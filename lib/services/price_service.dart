@@ -113,6 +113,13 @@ class PriceService {
     'ALTIN_BESLI': 'BESLIALTIN',
   };
 
+  /// truncgil'den fiyatlanan semboller (altın ayarları + TL dövizler) —
+  /// sunucunun `yurt_ici_kotasyon`'a yazdığı küme (`YURT_ICI_SEMBOLLER`).
+  /// Tek varlık widget'ının sunucu kapsamı buradan okunur
+  /// (`FiyatKaynagi.widgetSunucuKapsamindaMi`).
+  static Set<String> get yurtIciSembolleri =>
+      {..._truncgilGoldKeys.keys, ..._fxSymbols};
+
   // Fallback gold weights in 22K grams (used with Yahoo GC=F if truncgil fails)
   static const _goldWeights = <String, double>{
     'ALTIN_GRAM': 1.0,

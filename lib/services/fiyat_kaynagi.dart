@@ -305,6 +305,25 @@ class FiyatKaynagi {
     return cevrimsiz(t) ? t : null;
   }
 
+  /// Widget'ın bu sembolün fiyatını uygulama açılmadan SUNUCUDAN
+  /// tazeleyip tazeleyemeyeceği (`widget-fiyat`, yasin onayı 2026-10-26).
+  ///
+  /// Yalnız sunucunun zaten canlı tuttuğu, uygulamanın gösterdiğiyle AYNI
+  /// kaynaktan gelen semboller: altın ayarları ve TL dövizler
+  /// (`yurt_ici_kotasyon`, truncgil — [PriceService.yurtIciSembolleri])
+  /// ve kripto (`kripto_fiyat`). BIST hisse, fon, endeks sunucuda canlı
+  /// tutulmuyor; widget onları yalnız uygulamanın yazdığı değerle gösterir.
+  /// Sunucu eşi `_shared/widget_fiyat.ts › widgetSembolTuru`; iki liste
+  /// `varlik_widget_sozlesmesi_test` ile kilitli.
+  static bool widgetSunucuKapsamindaMi(String sembol) {
+    if (PriceService.yurtIciSembolleri.contains(sembol)) return true;
+    if (!kriptoMu(sembol) || sembol != sembol.trim().toUpperCase()) {
+      return false;
+    }
+    return RegExp(r'^[A-Z0-9]{2,15}$')
+        .hasMatch(sembol.substring(kriptoOneki.length));
+  }
+
   /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
   /// aranmayacaksa `null`.
   ///
