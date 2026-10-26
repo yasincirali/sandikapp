@@ -138,7 +138,8 @@ const List<SurumNotu> surumNotlari = [
         ikon: YenilikIkonu.para,
         baslik: 'Aramada hızlı hesap',
         aciklama: 'Aramaya "5 çeyrek" ya da "100 dolar" yaz, TL karşılığı en '
-            'üstte çıkar. Dokununca ekleme sayfası dolu açılır.',
+            'üstte çıkar. Dokununca ekleme sayfası dolu açılır. Arama boşken '
+            'son baktığın varlıklar orada durur.',
       ),
       Yenilik(
         ikon: YenilikIkonu.para,
@@ -155,7 +156,8 @@ const List<SurumNotu> surumNotlari = [
         baslik: 'Takip listesi senin sıranda',
         aciklama: 'Satırı uzun basıp sürükle; fiyatlar değişse de yerinde '
             'kalır. İstersen "En çok yükselen" ya da "En çok düşen" diye sırala. '
-            'Liste boşsa gram altın, dolar ya da BIST 100\'ü tek dokunuşla ekle.',
+            'Liste boşsa gram altın, dolar ya da BIST 100\'ü tek dokunuşla ekle. '
+            'Alarm kurduğun satırda çan ve hedef fiyat görünür.',
       ),
       Yenilik(
         ikon: YenilikIkonu.grafik,

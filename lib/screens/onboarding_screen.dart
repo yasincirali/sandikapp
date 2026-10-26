@@ -439,7 +439,9 @@ List<_Adim> _adimlariKur() {
     // bayrak `genel_arama` 2026-10-20'de emekliye ayrıldı, eski "Fiyatları
     // yenile" adımı kalktı). Yenileme bilgisi kaybolmasın: aşağı çekme
     // cümlesi metinde. 2026-10-24: aramadaki hızlı hesap ("5 çeyrek") da
-    // metne girdi (tur metni arayüzle birlikte değişir).
+    // metne girdi (tur metni arayüzle birlikte değişir). 2026-10-26: boş
+    // aramadaki "Son baktıkların" bölümü de; aynı gün boş aramada eylemler
+    // dört sabit kısayola + "Tüm eylemler"e indi, metin onu da söyler.
     const _Adim(
       id: 'yenile',
       hedef: TourTarget.yenileTusu,
@@ -448,7 +450,9 @@ List<_Adim> _adimlariKur() {
       govde: 'Büyüteçle tek yerden ara: kendi varlıkların, piyasadaki '
           'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
           'ekstreden aktar, tüm hareketler, ayarlar…). "5 çeyrek" ya da '
-          '"100 dolar" yazarsan TL karşılığı en üstte çıkar. Fiyatlar arka '
+          '"100 dolar" yazarsan TL karşılığı en üstte çıkar; boşken son '
+          'baktığın varlıklar ve dört kısayol durur, kalanı "Tüm '
+          'eylemler"de. Fiyatlar arka '
           'planda güncelleniyor; hemen tazelemek için ekranı aşağı çek.',
     ),
     // 1.2.0'da eklendi. Tur, uygulamanın GÜNCEL hâlini anlatmalı: yeni
@@ -603,10 +607,14 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.govdeSekmeleri,
       rozet: 'BİZE ÖZEL',
       baslik: 'Takip listesi',
+      // 2026-10-26: alarm kurulu satırda çan + hedef fiyat; çan o varlığın
+      // alarmlarını açar (tur metni arayüzle birlikte değişir).
       govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin; portföyünün '
           'toplamına karışmaz. Bir satıra dokununca grafiği, dönem '
           'getirileri ve istatistikleri açılır, oradan portföyüne de '
-          'eklersin. Sayaç kaç yerin kaldığını gösterir.',
+          'eklersin. Fiyat alarmı kurduğun satırda çan ve hedef fiyat '
+          'görünür; çana dokununca o varlığın alarmları açılır. Sayaç kaç '
+          'yerin kaldığını gösterir.',
       giris: (_) => _sekmeyeGec(1),
     ),
     _Adim(

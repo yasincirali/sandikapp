@@ -238,6 +238,12 @@ if __name__ == "__main__":
         build(src, out, title, subtitle, desc, lang)
     print("Writing app legal sources...")
     dart_yaz()
+    # Site haritası diskteki sayfalardan üretilir (2026-10-26): yasal sayfa
+    # eklenince/kalkınca harita aynı koşuda yenilenir; elle liste yok.
+    print("Writing sitemap...")
+    import _build_sitemap
+    _build_sitemap.yaz()
+    print("  -> docs/sitemap.xml")
 
     # ── Landing page + favicon: BU BETİK YAZMAZ (2026-10-01) ────────────────
     # `docs/index.html` ve `docs/favicon.svg` elle bakılır. Eskiden betik ikisini

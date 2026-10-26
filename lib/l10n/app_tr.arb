@@ -3288,6 +3288,8 @@
   "hataMailAcilamadi": "E-posta uygulaması açılamadı. Bu adrese yazabilirsin:",
   "hataAdresiKopyala": "Adresi kopyala",
   "hataAdresKopyalandi": "Adres kopyalandı",
+  "searchRecentRemove": "Listeden kaldır",
+  "searchAllActions": "Tüm eylemler",
   "searchShortHint": "Hisse, fon, altın, döviz, kripto",
   "kullaniciAdiBaslik": "Kullanıcı adını seç",
   "kullaniciAdiAciklama": "Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap'tan değiştirebilirsin.",
@@ -4104,6 +4106,31 @@
   "watchlistSuggestUsdSemantics": "Doları takibe al",
   "watchlistSuggestBistSemantics": "BIST 100'ü takibe al",
   "watchlistSuggestFailed": "Takibe alınamadı. Bağlantını kontrol et.",
+  "watchlistAlertSet": "{price} için alarm kurulu",
+  "@watchlistAlertSet": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistAlertMore": "ve {count} alarm daha",
+  "@watchlistAlertMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "watchlistAlertExtra": "+{count}",
+  "@watchlistAlertExtra": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "watchlistOpenAlerts": "Alarmları aç",
   "vitrinTapToAdd": "Eklemek için dokun",
   "vitrinPriceUnknown": "Fiyat henüz yok",
   "rankingTitle": "Sıralama",

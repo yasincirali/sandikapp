@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart' show SynchronousFuture;
+import 'package:flutter/foundation.dart' show SynchronousFuture, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,6 +100,7 @@ import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
 import '../providers/secili_donem_provider.dart';
 import '../services/sozlesme_deposu.dart';
+import '../services/mevduat_hesabi.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import '../widgets/varlik_guncelle.dart';
 import 'comparison_screen.dart';
@@ -212,6 +213,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Grafikte gezinen imlecin (fiyat, tarih) etiketi; başlıktaki büyük
   /// fiyat bunu dinler (bayrak `goz_alici`, varlık sayfasıyla aynı).
   final _imlec = ValueNotifier<(String, String)?>(null);
+
+  /// Mevduat tutar serisinin son girdisi ve sonucu — aynı birim seri ve
+  /// aynı defterle her karede yeniden hesaplanmasın (`_mevduatTutarSerisi`,
+  /// asset_detail/ozet.dart).
+  ({Map<int, double> birim, List<Asset> defter, Map<int, double> tutar})?
+      _mevduatTutarOnbellek;
 
   /// Periyot sekmeleri. `days: 0` → GÜN İÇİ (5 dakikalık çözünürlük).
   ///
@@ -974,8 +981,21 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       };
                       if (clipped.length >= 2) fallback = clipped;
                     }
-                    final data = snapshot.data ?? fallback;
-                    final isStale = snapshot.data == null && data != null;
+                    final hamData = snapshot.data ?? fallback;
+                    final isStale = snapshot.data == null && hamData != null;
+                    // Mevduat: çizgi BİRİM değer değil, mevduattaki TOPLAM
+                    // tutar (kullanıcı isteği 2026-10-26; gerekçe
+                    // `MevduatHesabi.tutarSerisi`). Karşılaştırmada birim
+                    // seri kalır — % kıyası ürünün hareketidir, para
+                    // ekleme/çekme onu oynatmamalı. Dönem değişimi satırı
+                    // ve çipler `_donemSerileri`'nden (birim) okumaya devam
+                    // eder: yüzde sözleşmeden, tutar piyasa etkisinden.
+                    final mevduatTutari =
+                        widget.asset.type == AssetType.mevduat &&
+                            _compareAsset == null;
+                    final data = hamData != null && mevduatTutari
+                        ? _mevduatTutarSerisi(hamData)
+                        : hamData;
                     // Taze çekim düştü, seri eski kopyadan: net çizilir,
                     // altında ne zaman ölçüldüğü yazılır.
                     final eskiSeri = _eskiSeri;
@@ -1044,15 +1064,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // Göz alıcılık (bayrak `goz_alici`): büyük fiyat imleci
                     // izler. Karşılaştırmada YOK — çizgi % ölçeğinde, başlık
                     // ise birim fiyat; % değeri fiyat yerine yazılırsa
-                    // "₺" başlığında "+%12" okunurdu. Mevduatta başlık birim
-                    // değil pozisyon değeri, seri onu çizmiyor.
-                    final imlecAcik = RemoteConfigService.instance.gozAlici &&
-                        !compareOn &&
-                        widget.asset.type != AssetType.mevduat;
+                    // "₺" başlığında "+%12" okunurdu. Mevduatta başlık
+                    // pozisyon değeridir; 2026-10-26'dan beri seri de
+                    // (`mevduatTutari`), imleç o tarihteki toplamı yazar.
+                    final imlecAcik =
+                        RemoteConfigService.instance.gozAlici && !compareOn;
 
+                    // Sağ uç başlıkla aynı sayı: birimde canlı birim fiyat,
+                    // mevduat tutarında canlı pozisyon değeri.
                     final rawSegments = _convertHistoryToSegments(
                         historyMap, startDate, endDate,
-                        currentUnitPriceOverride: currentUnitTRY);
+                        currentUnitPriceOverride: mevduatTutari
+                            ? pnl.currentValueTRY
+                            : currentUnitTRY);
 
                     // Normalize base: aktif segmentin ilk noktası. Bunun
                     // altında ana varlığın Y'leri (y / base) * 100 → % olur.
@@ -2160,8 +2184,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     final date = startDate.add(Duration(
                                         minutes: (snapped.x * 1440).round()));
                                     return (
-                                      _birimBicimi(currentUnitTRY)
-                                          .format(fromY(snapped.y)),
+                                      // Mevduatta değer başlıkla aynı
+                                      // biçimde (baz para).
+                                      mevduatTutari
+                                          ? baz.fmt(fromY(snapped.y))
+                                          : _birimBicimi(currentUnitTRY)
+                                              .format(fromY(snapped.y)),
                                       isIntraday
                                           ? DateFormat('d MMM · HH:mm', 'tr_TR')
                                               .format(date)
@@ -2253,7 +2281,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                                       .format(t.lot.addedDate)
                                                   : fmtTarihSaat(
                                                       t.lot.addedDate),
-                                              fiyatFmt.format(t.birim),
+                                              // Mevduatta pay fiyatı
+                                              // (₺1,00) TL çizgide anlamsız:
+                                              // işlemin tutarı yazılır.
+                                              mevduatTutari
+                                                  ? fmtTRY(t.lot.quantity *
+                                                      t.birim)
+                                                  : fiyatFmt.format(t.birim),
                                             ),
                                             t.satis
                                                 ? context.c.loss

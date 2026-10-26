@@ -18,6 +18,7 @@ import 'supabase_service.dart';
 import '../utils/friendly_error.dart';
 import 'crash_reporter.dart';
 import 'portfoy_seri_depo.dart';
+import 'son_bakilanlar.dart';
 
 const _uuid = Uuid();
 const _savedEmailKey = 'saved_email';
@@ -1038,6 +1039,9 @@ class AuthService {
     // Çevrimdışı defter de kullanıcıya ait: aynı cihazdaki bir sonraki
     // hesap öncekinin portföyünü görmemeli.
     if (uid != null) await PortfolioCache.clear(uid);
+    // Aramadaki "Son baktıkların" da o hesabın izi (kullanıcı kararı
+    // 2026-10-26): çıkışta cihazda kalmaz.
+    if (uid != null) await SonBakilanlar.instance.sil(uid);
     // Performans grafiğinin disk kopyası da o hesabın toplamlarıdır.
     await PortfoySeriDepo.temizle();
     await SocialAuthService.instance.signOutGoogle();

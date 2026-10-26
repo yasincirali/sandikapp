@@ -7689,6 +7689,18 @@ abstract class AppLocalizations {
   /// **'Adres kopyalandı'**
   String get hataAdresKopyalandi;
 
+  /// No description provided for @searchRecentRemove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Listeden kaldır'**
+  String get searchRecentRemove;
+
+  /// No description provided for @searchAllActions.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm eylemler'**
+  String get searchAllActions;
+
   /// No description provided for @searchShortHint.
   ///
   /// In tr, this message translates to:
@@ -9801,6 +9813,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Takibe alınamadı. Bağlantını kontrol et.'**
   String get watchlistSuggestFailed;
+
+  /// No description provided for @watchlistAlertSet.
+  ///
+  /// In tr, this message translates to:
+  /// **'{price} için alarm kurulu'**
+  String watchlistAlertSet(String price);
+
+  /// No description provided for @watchlistAlertMore.
+  ///
+  /// In tr, this message translates to:
+  /// **'ve {count} alarm daha'**
+  String watchlistAlertMore(int count);
+
+  /// No description provided for @watchlistAlertExtra.
+  ///
+  /// In tr, this message translates to:
+  /// **'+{count}'**
+  String watchlistAlertExtra(int count);
+
+  /// No description provided for @watchlistOpenAlerts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmları aç'**
+  String get watchlistOpenAlerts;
 
   /// No description provided for @vitrinTapToAdd.
   ///

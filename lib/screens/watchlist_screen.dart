@@ -17,6 +17,7 @@ import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset_type.dart';
+import '../models/price_alert.dart';
 import '../models/user_model.dart';
 import '../models/varlik_kimligi.dart';
 import '../models/watchlist_item.dart';
@@ -24,6 +25,7 @@ import '../providers/auth_provider.dart'
     show activePartnersProvider, authProvider;
 import '../providers/preferences_provider.dart'
     show takipSiralamaProvider, watchlistLimitProvider;
+import '../providers/price_alert_provider.dart' show symbolAlertsProvider;
 import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
@@ -31,6 +33,7 @@ import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
+import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_siralama_dugmesi.dart';
 import '../widgets/sinir_uyarisi.dart';
@@ -45,6 +48,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
 import 'add_asset_screen.dart';
 import 'add_watchlist_screen.dart';
+import 'price_alerts_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
@@ -623,6 +627,19 @@ class _Row extends ConsumerWidget {
     final fiyatMetni = takipFiyatMetni(item);
     final l10n = context.l10n;
 
+    // Etkin fiyat alarmı (2026-10-26): kurulu ve bekleyen alarm satırda çan
+    // + fiyata en yakın hedef olarak görünür; alarm ekranına gitmeden "bu
+    // varlığa alarm kurmuş muydum, hangi fiyata" sorusu cevaplanır. Sembol
+    // alarm kurarkenki kuralla (`alarmSembolu`) eşlenir; veri zaten
+    // yüklenmiş `priceAlertsProvider`'dan — yeni sunucu çağrısı yok.
+    final alarmKodu = alarmSembolu(item.ticker, item.subCategory);
+    final alarm = alarmKodu == null
+        ? null
+        : etkinAlarmOzeti(ref.watch(symbolAlertsProvider(alarmKodu)),
+            guncelFiyat: item.currentPrice);
+    final hedefMetni =
+        alarm == null ? null : takipFiyatBicimi(item, alarm.enYakin.targetPrice);
+
     // Ekran okuyucu için tek parça cümle — parçalı okunursa yön bilgisi
     // yalnızca renkte kalırdı.
     final semantic = [
@@ -632,6 +649,11 @@ class _Row extends ConsumerWidget {
         pct >= 0
             ? l10n.watchlistRowUp(fmtPct(pct.abs()))
             : l10n.watchlistRowDown(fmtPct(pct.abs())),
+      if (alarm != null)
+        [
+          l10n.watchlistAlertSet(hedefMetni!),
+          if (alarm.digerSayisi > 0) l10n.watchlistAlertMore(alarm.digerSayisi),
+        ].join(' '),
       l10n.watchlistRowFollowing,
     ].join(', ');
 
@@ -747,30 +769,42 @@ class _Row extends ConsumerWidget {
                   VarlikRozeti(type: item.type, ticker: item.ticker),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: ExcludeSemantics(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.displayLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.t.bodyMedium
-                                ?.copyWith(color: context.c.text90),
-                          ),
-                          // Kısa ad zaten görünen adsa (endeks, altın, emtia)
-                          // ikinci satır aynı metni tekrar ederdi.
-                          if (item.displayLabel != item.name)
-                            Text(
-                              item.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.t.bodySmall?.copyWith(
-                                  color: context.c.text36, fontSize: 11),
+                    child: alarm == null
+                        ? ExcludeSemantics(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _adMetni(context),
+                                // Kısa ad zaten görünen adsa (endeks, altın,
+                                // emtia) ikinci satır aynı metni tekrar ederdi.
+                                if (item.displayLabel != item.name)
+                                  _uzunAdMetni(context),
+                              ],
                             ),
-                        ],
-                      ),
-                    ),
+                          )
+                        // Alarmlı satır: çan kendi düğümü olduğundan
+                        // `ExcludeSemantics` yalnız metinleri sarar. `Wrap`:
+                        // çan ada sığarsa yanında, sığmazsa (dar ekran, büyük
+                        // yazı 3.1×) alt satıra iner — ad çan için kısalmaz.
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: SandikSpace.xs,
+                                children: [
+                                  ExcludeSemantics(child: _adMetni(context)),
+                                  _TakipAlarmCani(
+                                    sembol: alarmKodu!,
+                                    hedefMetni: hedefMetni!,
+                                    digerSayisi: alarm.digerSayisi,
+                                  ),
+                                ],
+                              ),
+                              if (item.displayLabel != item.name)
+                                ExcludeSemantics(child: _uzunAdMetni(context)),
+                            ],
+                          ),
                   ),
                   const SizedBox(width: 8),
                   // Expanded (sıkı), Flexible (gevşek) DEĞİL: gevşek hâlde
@@ -864,6 +898,21 @@ class _Row extends ConsumerWidget {
     );
   }
 
+  Widget _adMetni(BuildContext context) => Text(
+        item.displayLabel,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+      );
+
+  Widget _uzunAdMetni(BuildContext context) => Text(
+        item.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.bodySmall
+            ?.copyWith(color: context.c.text36, fontSize: 11),
+      );
+
   /// Takipten çıkarır.
   ///
   /// ## Neden "Geri al" toast'ı YOK (kullanıcı kararı, 2026-09-16)
@@ -889,6 +938,71 @@ class _Row extends ConsumerWidget {
       sandikSnack(context, 'Takipten çıkarılamadı. Bağlantını kontrol et.',
           kind: SandikSnackKind.error);
     }
+  }
+}
+
+/// Takip satırındaki alarm çanı: zil + fiyata en yakın hedef (+N).
+///
+/// Ayrı dokunma hedefi (≥44 pt, kendi semantik düğümü): satırın dokunuşu
+/// varlık sayfasını açar, çanınki o varlığın alarmlarını. Anlam renkte
+/// değil: zil ikonu + hedef metni; renk yalnız token (`amberText`, Portföy
+/// kartındaki alarm rozetiyle aynı dil).
+class _TakipAlarmCani extends StatelessWidget {
+  final String sembol;
+  final String hedefMetni;
+  final int digerSayisi;
+
+  const _TakipAlarmCani({
+    required this.sembol,
+    required this.hedefMetni,
+    required this.digerSayisi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final renk = context.c.amberText;
+    final metin = digerSayisi > 0
+        ? '$hedefMetni ${l10n.watchlistAlertExtra(digerSayisi)}'
+        : hedefMetni;
+    return Semantics(
+      container: true,
+      child: SandikTappable(
+        semanticLabel: l10n.watchlistOpenAlerts,
+        onTap: () {
+          OzellikOlcumu.say(Ozellik.takipAlarmCani);
+          pushGuarded(
+            context,
+            adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'price_alerts'),
+              builder: (_) => PriceAlertsScreen(sembol: sembol),
+            ),
+          );
+        },
+        // Görsel küçük, dokunma alanı 44×44 (şeffaf dolgu;
+        // `touch_target_size_test`).
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+              minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+          child: ExcludeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.notifications_active_rounded,
+                    size: 14, color: renk),
+                const SizedBox(width: SandikSpace.xxs),
+                Flexible(
+                  child: Text(
+                    metin,
+                    style: context.t.numSmall.copyWith(color: renk),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1332,6 +1446,13 @@ extension on WatchlistItem {
 String takipFiyatMetni(WatchlistItem item) {
   final f = item.currentPrice;
   if (f == null) return '—';
+  return takipFiyatBicimi(item, f);
+}
+
+/// [item]'ın fiyat biçimiyle herhangi bir fiyat (alarm hedefi dahil): satırdaki
+/// güncel fiyat ile çanın hedefi aynı biçimde okunsun — biri "₺4.300,00",
+/// öbürü "4.300" olsaydı iki sayı kıyaslanamazdı.
+String takipFiyatBicimi(WatchlistItem item, double f) {
   if (endeksMi(item.ticker)) return fmtNum(f, digits: 0);
   // Sabit 2 hane SHIB'i "₺0,00" yazıyordu — ondalık [fiyatBicimi]'nden.
   return fmtFiyat(f,

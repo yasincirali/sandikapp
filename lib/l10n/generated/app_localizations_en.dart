@@ -4623,6 +4623,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hataAdresKopyalandi => 'Address copied';
 
   @override
+  String get searchRecentRemove => 'Remove from list';
+
+  @override
+  String get searchAllActions => 'All actions';
+
+  @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
 
   @override
@@ -5892,6 +5898,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get watchlistSuggestFailed =>
       'Couldn\'t add to watchlist. Check your connection.';
+
+  @override
+  String watchlistAlertSet(String price) {
+    return 'alert set at $price';
+  }
+
+  @override
+  String watchlistAlertMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'and $count more alerts',
+      one: 'and 1 more alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String watchlistAlertExtra(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get watchlistOpenAlerts => 'Open alerts';
 
   @override
   String get vitrinTapToAdd => 'Tap to add';

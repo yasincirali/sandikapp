@@ -236,6 +236,9 @@ extension _DetayEylemler on _AssetDetailScreenState {
 
     // [history] BİRİM fiyat serisidir (1 gram / 1 adet / 1 pay, TL) —
     // `FiyatKaynagi.birimVarlik` ile çekilir. Bölme YOK, miktar YOK.
+    // İstisna mevduat (2026-10-26): çağıran seriyi önceden TOPLAM TL
+    // tutarına çevirir (`MevduatHesabi.tutarSerisi`), override de pozisyon
+    // değeridir; buradaki kurallar aynen geçerli.
     //
     // ## Kaldırılanlar (kullanıcı kararı, 2026-09-23)
     // *"Zaman aralığına göre 1 gram ya da bir lot varlığın grafiğini
