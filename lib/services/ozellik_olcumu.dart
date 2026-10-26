@@ -40,7 +40,12 @@ enum Ozellik {
   /// Boş takip listesindeki öneri çipiyle (Gram altın / Dolar / BIST 100)
   /// takibe alma. Soru: boş durum ilk takibi başlatıyor mu, yoksa çipler
   /// görülüp geçiliyor mu (görülmezse 19 Kasım turunda kalkar).
-  takipOnerisi('takip_onerisi');
+  takipOnerisi('takip_onerisi'),
+
+  /// Takip listesi satırındaki alarm çanına dokunuş (o varlığın alarmları
+  /// açılır). Soru: satırdaki hedef bilgisi yetiyor mu, yoksa kullanıcı
+  /// alarmlara oradan da gidiyor mu.
+  takipAlarmCani('takip_alarm_cani');
 
   const Ozellik(this.kod);
   final String kod;

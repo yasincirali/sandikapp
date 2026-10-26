@@ -22,6 +22,7 @@ void main() {
         'varlik_widget',
         'grafik_paylas',
         'takip_onerisi',
+        'takip_alarm_cani',
       ]);
     });
 

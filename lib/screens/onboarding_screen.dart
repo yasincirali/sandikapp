@@ -603,10 +603,14 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.govdeSekmeleri,
       rozet: 'BİZE ÖZEL',
       baslik: 'Takip listesi',
+      // 2026-10-26: alarm kurulu satırda çan + hedef fiyat; çan o varlığın
+      // alarmlarını açar (tur metni arayüzle birlikte değişir).
       govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin; portföyünün '
           'toplamına karışmaz. Bir satıra dokununca grafiği, dönem '
           'getirileri ve istatistikleri açılır, oradan portföyüne de '
-          'eklersin. Sayaç kaç yerin kaldığını gösterir.',
+          'eklersin. Fiyat alarmı kurduğun satırda çan ve hedef fiyat '
+          'görünür; çana dokununca o varlığın alarmları açılır. Sayaç kaç '
+          'yerin kaldığını gösterir.',
       giris: (_) => _sekmeyeGec(1),
     ),
     _Adim(
