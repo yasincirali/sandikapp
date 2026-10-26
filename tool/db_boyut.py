@@ -29,7 +29,7 @@ Diğer ücretsiz plan sınırları (2026-10-20, müşteri raporu 20 Eki 13:15 #3
     yazılmaz: rapor "panelden elle bak" der.
   * Edge Function çağrısı (500.000/ay; müşteri raporu 2026-10-26 21:15 #3,
     yasin "yap"): widget her kurulumda sunucu çağrısı demek, kota artık
-    ölçülür. Kaynak `analytics/endpoints/logs.all` (belgeli uç) üzerinden
+    ölçülür. Kaynak `analytics/endpoints/logs` (belgeli uç; `logs.all` 2026-10 kaldırıldı) üzerinden
     `function_edge_logs`: son 24 saatteki çağrı, fonksiyon başına. Ücretsiz
     planda log 1 gün saklandığı için ay ölçülemez; aylık sayı "24 saat × 30"
     diye TAHMİN etiketiyle yazılır, %70/%90 eşiği o tahmine uygulanır.
@@ -66,13 +66,21 @@ ELLE = [
 ]
 FN_SINIR = 500_000
 
-# Son 24 saatte fonksiyon başına çağrı (yol = `/<fonksiyon>`). Satır içeriği
-# (gövde, başlık, IP) seçilmez.
-FN_SORGU = (
-    "select r.pathname as yol, count(*) as n from function_edge_logs "
-    "cross join unnest(metadata) as m cross join unnest(m.request) as r "
-    "group by yol order by n desc"
-)
+# Son 24 saatte fonksiyon başına çağrı. 2026-10: `logs.all` kaldırıldı;
+# yeni uç tek `logs` tablosu (ClickHouse SQL) okur, kaynak `source` sütunuyla
+# süzülür (Supabase'in kendi rehberi `source_name` diyor, API başvurusu
+# `source`; ikisi de denenir). Fonksiyon adı `event_message`'daki yoldan
+# ("POST | 200 | https://…/functions/v1/<ad>"). Satır içeriği (gövde,
+# başlık, IP) seçilmez. İlk çalışan sorgu kullanılır.
+_FN_AD = "extract(event_message, 'functions/v1/([A-Za-z0-9_-]+)')"
+FN_SORGULAR = [
+    f"select {_FN_AD} as yol, count() as n from logs "
+    f"where {kol} = 'function_edge_logs' group by yol order by n desc"
+    for kol in ("source", "source_name")
+] + [
+    f"select count() as n from logs where {kol} = 'function_edge_logs'"
+    for kol in ("source", "source_name")
+]
 
 SORGU = """
 select json_build_object(
@@ -127,25 +135,40 @@ def fonksiyon_cagrilari(token: str) -> dict | None:
     import urllib.parse
     bitis = datetime.datetime.now(datetime.timezone.utc)
     baslangic = bitis - datetime.timedelta(hours=24)
-    sorgu = urllib.parse.urlencode({
-        "sql": FN_SORGU,
-        "iso_timestamp_start": baslangic.isoformat(),
-        "iso_timestamp_end": bitis.isoformat(),
-    })
-    istek = urllib.request.Request(
-        f"https://api.supabase.com/v1/projects/{REF}/analytics/endpoints/logs.all?{sorgu}",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    try:
-        with urllib.request.urlopen(istek, timeout=60) as y:
-            veri = json.loads(y.read().decode())
-    except (urllib.error.URLError, ValueError):
-        return None
-    return fn_coz(veri)
+    zaman = lambda d: d.strftime("%Y-%m-%dT%H:%M:%S.000Z")  # noqa: E731
+    # İlk deneme fonksiyon başına; uç yolu çözemezse (şema farkı) yalnız
+    # toplam. İkisi de düşerse nedeni (HTTP kodu + API'nin kısa mesajı;
+    # token içermez) günlüğe yazılır ki "elle bak" satırı sessiz kalmasın
+    # (2026-10-26 ilk koşu: neden görünmeden None döndü).
+    for sql in FN_SORGULAR:
+        sorgu = urllib.parse.urlencode({
+            "sql": sql,
+            "iso_timestamp_start": zaman(baslangic),
+            "iso_timestamp_end": zaman(bitis),
+        })
+        istek = urllib.request.Request(
+            f"https://api.supabase.com/v1/projects/{REF}/analytics/endpoints/logs?{sorgu}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        try:
+            with urllib.request.urlopen(istek, timeout=60) as y:
+                veri = json.loads(y.read().decode())
+        except urllib.error.HTTPError as h:
+            print(f"logs HTTP {h.code}: {h.read().decode(errors='replace')[:200]}")
+            continue
+        except (urllib.error.URLError, ValueError) as e:
+            print(f"logs okunamadı: {type(e).__name__}")
+            continue
+        fn = fn_coz(veri)
+        if fn is not None:
+            return fn
+        hata = veri.get("error") if isinstance(veri, dict) else None
+        print(f"logs yanıtı çözülemedi: {str(hata)[:200]}")
+    return None
 
 
 def fn_coz(veri: object) -> dict | None:
-    """`logs.all` yanıtı → toplam + fonksiyon başına sayı (saf; test edilir)."""
+    """`logs` yanıtı → toplam + fonksiyon başına sayı (saf; test edilir)."""
     if not isinstance(veri, dict) or veri.get("error"):
         return None
     satirlar = veri.get("result")
@@ -153,10 +176,14 @@ def fn_coz(veri: object) -> dict | None:
         return None
     yollar: dict[str, int] = {}
     for r in satirlar:
-        if not isinstance(r, dict) or not isinstance(r.get("n"), (int, float)):
+        # ClickHouse UInt64'ü JSON'da metin olarak da dönebilir.
+        n = r.get("n") if isinstance(r, dict) else None
+        if isinstance(n, str) and n.isdigit():
+            n = int(n)
+        if not isinstance(n, (int, float)):
             continue
         ad = str(r.get("yol") or "?").removeprefix("/functions/v1").strip("/") or "?"
-        yollar[ad] = yollar.get(ad, 0) + int(r["n"])
+        yollar[ad] = yollar.get(ad, 0) + int(n)
     return {"toplam": sum(yollar.values()), "yollar": yollar}
 
 
