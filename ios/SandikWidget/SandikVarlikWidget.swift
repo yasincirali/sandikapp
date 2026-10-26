@@ -31,8 +31,16 @@ import WidgetKit
 /// (pbxproj, üç yapılandırmada da). Hedef düşürülürse derleme burada kırılır
 /// — widget sessizce boş kalmaz (`SandikWidgetBundle` notuyla aynı karar).
 ///
-/// Widget kendi başına ağa çıkmaz: fiyat yalnızca uygulama açıkken tazelenir.
-/// Bu yüzden son güncelleme saati gösterilir.
+/// Fiyat uygulama açıkken tazelenir; son güncelleme saati gösterilir.
+///
+/// ## Uygulama açılmadan tazeleme (yasin onayı 2026-10-26)
+/// Seçili varlık SUNUCU KAPSAMINDAYSA (öğede `sunucu == true`: altın, TL
+/// döviz, kripto — karar Dart'ta, `FiyatKaynagi.widgetSunucuKapsamindaMi`)
+/// zaman çizelgesi yarım saatte bir yenilenir ve fiyat `widget-fiyat` edge
+/// function'ından çekilir (`SandikWidgetFiyatServisi`). Çağrı uygulamanın
+/// yazdığı public URL + anon anahtarla yapılır; oturum jetonu widget'ta YOK.
+/// Başarısızsa son bilinen değer saatiyle kalır (bugünkü davranış). Kapsam
+/// dışı varlıkta (BIST, fon, endeks) widget ağa çıkmaz, `.never` sürer.
 
 // MARK: - Paylaşımlı veri
 
@@ -42,6 +50,13 @@ private enum VarlikWidgetKeys {
     static let varliklar = "sandik_varliklar"
     /// Portföy widget'ıyla aynı tema bayrağı (`HomeWidgetService._kIsLightTheme`).
     static let isLightTheme = "sandik_is_light_theme"
+    /// `HomeWidgetService.kWidgetApiUrl` / `kWidgetApiAnahtar`: aktif sunucunun
+    /// public URL'si ve anon anahtarı (uygulama yazar).
+    static let apiUrl = "sandik_widget_api_url"
+    static let apiAnahtar = "sandik_widget_api_anahtar"
+    /// `HomeWidgetService.kVarlikCanli`: widget'ın sunucudan çektiği son
+    /// fiyatlar. Yalnız burada YAZILIR; oturum kapanınca Dart boşaltır.
+    static let canli = "sandik_varlik_canli"
 }
 
 /// Dokunuş: Portföy sekmesi (Varlıklarım | Takip Listesi).
@@ -53,8 +68,10 @@ private let varlikWidgetClickURL = URL(string: "sandik://varlik-widget?homeWidge
 
 /// Seçim listesindeki bir varlık — Dart `VarlikWidgetOgesi.toJson`.
 ///
-/// Metinler Dart'ta biçimlenir (`fmtFiyat`, `fmtPctIsaretli`); burada sayı
-/// yeniden biçimlenmez ya da hesaplanmaz. Eksik alan = bilinmiyor ("—").
+/// Metinler Dart'ta biçimlenir (`fmtFiyat`, `fmtPctIsaretli`); uygulamanın
+/// yazdığı sayı burada yeniden biçimlenmez ya da hesaplanmaz. Tek istisna
+/// widget'ın SUNUCUDAN kendi çektiği fiyat (`canliIle`): o sayı Dart'ın
+/// kuralıyla (`SandikWidgetBicim`) biçimlenir. Eksik alan = bilinmiyor ("—").
 struct SandikVarlikOgesi: Decodable, Hashable {
     /// Kotasyon sembolü (`ALTIN_GRAM24`, `USDTRY=X`, `TEFAS:AFT`) — seçimin
     /// saklanan kimliği.
@@ -75,10 +92,201 @@ struct SandikVarlikOgesi: Decodable, Hashable {
     /// Yazım anında seans açıktı: bugünkü kapanış (epoch ms). Bu andan sonra
     /// fiyat kapanıştan önceki bir an — "Kapanış" denmez, saat yazılır.
     var seansSonu: Double? = nil
+    /// `true`: fiyat `widget-fiyat`'tan tazelenebilir (2026-10-26). Yoksa
+    /// widget bu öğe için ağa çıkmaz.
+    var sunucu: Bool? = nil
+    /// Sunucudan gelen fiyatın azami ondalığı (Dart `fmtFiyat` `azami`);
+    /// yoksa eski kural (`fiyatOndaligi`).
+    var hane: Int? = nil
 
     var gorunenKisaAd: String {
         if let kisa = kisa, !kisa.isEmpty { return kisa }
         return ad
+    }
+
+    /// Aynı öğe, sunucudan çekilen fiyatla. Yüzdeyi sunucu bilmiyorsa
+    /// `nil` — uygulamanın eski yüzdesi YENİ fiyatın yanında kalmaz
+    /// (farklı anların sayısı birleşmez; satır "değişim yok" der).
+    /// Kapanış/seans alanları düşer: kapsamdaki türler (altın, döviz,
+    /// kripto) zaten hiç almaz.
+    func canliIle(_ c: SandikCanliFiyat) -> SandikVarlikOgesi {
+        let yuzde = c.degisim.map { SandikWidgetBicim.yuzde($0) }
+        return SandikVarlikOgesi(
+            id: id, ad: ad, alt: alt,
+            fiyat: SandikWidgetBicim.fiyat(c.fiyat, hane: hane),
+            degisim: yuzde?.metin,
+            yon: yuzde?.yon,
+            kisa: kisa,
+            kapanis: nil,
+            seansSonu: nil,
+            sunucu: sunucu,
+            hane: hane)
+    }
+}
+
+/// `widget-fiyat` yanıtındaki tek sembol: TL fiyat, kaynağın yazım anı
+/// (epoch ms) ve günlük yüzde (bilinmiyorsa yok).
+struct SandikCanliFiyat: Codable, Hashable {
+    let fiyat: Double
+    let zaman: Double
+    var degisim: Double? = nil
+
+    var gecerli: Bool { fiyat.isFinite && fiyat > 0 && zaman.isFinite && zaman > 0 }
+
+    var tarih: Date { Date(timeIntervalSince1970: zaman / 1000) }
+}
+
+/// Dart `tr_format.dart` kurallarının Swift eşi — YALNIZ widget'ın sunucudan
+/// çektiği sayı için. `fmtFiyat` (`fiyatBicimi`) ve `fmtPctIsaretli` ile
+/// aynı çıktı: `₺6.123,45`, `+%0,42`, `−%0,06`, `%0,00`.
+enum SandikWidgetBicim {
+    private static func bicimci(enAz: Int, enCok: Int) -> NumberFormatter {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.numberStyle = .decimal
+        f.usesGroupingSeparator = true
+        f.groupingSize = 3
+        f.groupingSeparator = "."
+        f.decimalSeparator = ","
+        f.roundingMode = .halfUp
+        f.minimumFractionDigits = enAz
+        f.maximumFractionDigits = enCok
+        return f
+    }
+
+    /// Dart `fiyatOndaligi`: 1 ₺ ve üstü 2 hane; altı en az 4 anlamlı hane
+    /// (en çok 8).
+    static func fiyatOndaligi(_ deger: Double) -> Int {
+        let a = abs(deger)
+        if a > 0 && a < 1 {
+            return min(max(Int(floor(-log10(a))) + 4, 2), 8)
+        }
+        return 2
+    }
+
+    /// Dart `fmtFiyat(deger, azami: hane)`.
+    static func fiyat(_ deger: Double, hane: Int?) -> String {
+        let f: NumberFormatter
+        if let hane = hane {
+            f = bicimci(enAz: 2, enCok: max(2, hane))
+        } else {
+            let d = fiyatOndaligi(deger)
+            f = bicimci(enAz: d, enCok: d)
+        }
+        return "₺" + (f.string(from: NSNumber(value: deger)) ?? "")
+    }
+
+    /// Dart `fmtPctIsaretli` + yön (`varlikWidgetOgesi`): sıfıra yuvarlanan
+    /// değer işaretsiz ve yönsüz.
+    static func yuzde(_ pct: Double) -> (metin: String, yon: Int) {
+        let f = bicimci(enAz: 2, enCok: 2)
+        let mutlak = "%" + (f.string(from: NSNumber(value: abs(pct))) ?? "")
+        let sifir = "%" + (f.string(from: NSNumber(value: 0.0)) ?? "")
+        if mutlak == sifir { return (mutlak, 0) }
+        return pct > 0 ? ("+" + mutlak, 1) : ("\u{2212}" + mutlak, -1)
+    }
+
+    /// Dart `DateFormat('HH:mm', 'tr_TR')` / `'d MMM HH:mm'`.
+    static func saat(_ an: Date) -> String { tarihci("HH:mm").string(from: an) }
+    static func tarih(_ an: Date) -> String { tarihci("d MMM HH:mm").string(from: an) }
+
+    private static func tarihci(_ kalip: String) -> DateFormatter {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = kalip
+        return f
+    }
+}
+
+/// `widget-fiyat` istemcisi ve widget'ın kendi fiyat deposu.
+///
+/// Yalnız `sunucu == true` öğe için çağrılır. Uygulamanın yazdığı public
+/// URL + anon anahtar kullanılır (ikisi de uygulama paketinde gömülü kamuya
+/// açık değerler); oturum jetonu YOK, kişisel veri gitmez — gövde yalnız
+/// sembol. Her hata sessizce `nil`: widget son bilinen değerle kalır.
+enum SandikWidgetFiyatServisi {
+    /// Zaman çizelgesi bu aralıkla yenilenir (WidgetKit bütçesi; sunucu
+    /// yanıtı da 60 sn önbellekli).
+    static let tazelemeAraligi: TimeInterval = 30 * 60
+    /// Bilinen fiyat bundan tazeyse ağa çıkılmaz (uygulama az önce yazdı ya
+    /// da önceki tur yeni çekti).
+    static let tazeEsigi: TimeInterval = 10 * 60
+    /// Kısa: WidgetKit zaman çizelgesini uzun bekletmek istemez.
+    static let zamanAsimi: TimeInterval = 8
+    /// Depoda en çok bu kadar sembol (yalnız seçili olanlar birikir).
+    static let depoSiniri = 20
+
+    /// Widget'ın daha önce çektiği fiyatlar (sembol → fiyat).
+    static func depo() -> [String: SandikCanliFiyat] {
+        guard let defaults = UserDefaults(suiteName: VarlikWidgetKeys.suite),
+              let metin = defaults.string(forKey: VarlikWidgetKeys.canli),
+              !metin.isEmpty,
+              let veri = metin.data(using: .utf8),
+              let sozluk = try? JSONDecoder().decode([String: SandikCanliFiyat].self, from: veri)
+        else {
+            return [:]
+        }
+        return sozluk.filter { $0.value.gecerli }
+    }
+
+    private static func depoyaYaz(_ sembol: String, _ c: SandikCanliFiyat) {
+        guard let defaults = UserDefaults(suiteName: VarlikWidgetKeys.suite) else { return }
+        var sozluk = depo()
+        sozluk[sembol] = c
+        if sozluk.count > depoSiniri {
+            let enEskiler = sozluk.sorted { $0.value.zaman < $1.value.zaman }
+                .prefix(sozluk.count - depoSiniri)
+            for (anahtar, _) in enEskiler {
+                sozluk.removeValue(forKey: anahtar)
+            }
+        }
+        guard let veri = try? JSONEncoder().encode(sozluk),
+              let metin = String(data: veri, encoding: .utf8)
+        else { return }
+        defaults.set(metin, forKey: VarlikWidgetKeys.canli)
+    }
+
+    /// Sembolün güncel fiyatını sunucudan çeker ve depoya yazar.
+    static func cek(_ sembol: String) async -> SandikCanliFiyat? {
+        guard let defaults = UserDefaults(suiteName: VarlikWidgetKeys.suite),
+              let taban = defaults.string(forKey: VarlikWidgetKeys.apiUrl),
+              let anahtar = defaults.string(forKey: VarlikWidgetKeys.apiAnahtar),
+              !anahtar.isEmpty,
+              let kok = URL(string: taban),
+              kok.scheme == "https"
+        else {
+            return nil
+        }
+        let hedef = kok.appendingPathComponent("functions/v1/widget-fiyat")
+        var istek = URLRequest(
+            url: hedef, cachePolicy: .reloadIgnoringLocalCacheData,
+            timeoutInterval: zamanAsimi)
+        istek.httpMethod = "POST"
+        istek.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        istek.setValue(anahtar, forHTTPHeaderField: "apikey")
+        istek.setValue("Bearer \(anahtar)", forHTTPHeaderField: "Authorization")
+        guard let govde = try? JSONSerialization.data(withJSONObject: ["semboller": [sembol]])
+        else { return nil }
+        istek.httpBody = govde
+
+        let ayar = URLSessionConfiguration.ephemeral
+        ayar.timeoutIntervalForRequest = zamanAsimi
+        ayar.timeoutIntervalForResource = zamanAsimi
+        let oturum = URLSession(configuration: ayar)
+        defer { oturum.finishTasksAndInvalidate() }
+        do {
+            let (veri, yanit) = try await oturum.data(for: istek)
+            guard let http = yanit as? HTTPURLResponse, http.statusCode == 200,
+                  let sozluk = try? JSONDecoder().decode([String: SandikCanliFiyat].self, from: veri),
+                  let c = sozluk[sembol], c.gecerli
+            else {
+                return nil
+            }
+            depoyaYaz(sembol, c)
+            return c
+        } catch {
+            return nil
+        }
     }
 }
 
@@ -236,7 +444,7 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
             .bool(forKey: VarlikWidgetKeys.isLightTheme) ?? false
         let saat = paket.saat ?? ""
 
-        let durum: SandikVarlikEntry.Durum
+        var durum: SandikVarlikEntry.Durum
         if paket.ogeler.isEmpty {
             durum = .listeBos
         } else if let secili = secim.varlik {
@@ -250,10 +458,30 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
         } else {
             durum = .listeBos
         }
+        var zaman = paket.zaman.map { Date(timeIntervalSince1970: $0 / 1000) }
+        var saatMetni = saat
+        var tarih = paket.tarih ?? ""
+
+        // Widget'ın sunucudan çektiği fiyat, uygulamanın yazdığından
+        // YENİYSE o gösterilir; zaman etiketi de onun anıdır.
+        if case .oge(let oge) = durum, oge.sunucu == true,
+           let c = SandikWidgetFiyatServisi.depo()[oge.id] {
+            let dahaYeni: Bool
+            if let yazim = zaman {
+                dahaYeni = c.tarih > yazim
+            } else {
+                dahaYeni = true
+            }
+            if dahaYeni {
+                durum = .oge(oge.canliIle(c))
+                zaman = c.tarih
+                saatMetni = SandikWidgetBicim.saat(c.tarih)
+                tarih = SandikWidgetBicim.tarih(c.tarih)
+            }
+        }
         return SandikVarlikEntry(
-            date: Date(), durum: durum, saat: saat, isLight: isLight,
-            zaman: paket.zaman.map { Date(timeIntervalSince1970: $0 / 1000) },
-            tarih: paket.tarih ?? "")
+            date: Date(), durum: durum, saat: saatMetni, isLight: isLight,
+            zaman: zaman, tarih: tarih)
     }
 
     func placeholder(in context: Context) -> SandikVarlikEntry { .ornek }
@@ -269,13 +497,34 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
     }
 
     func timeline(for configuration: SandikVarlikSecimi, in context: Context) async -> Timeline<SandikVarlikEntry> {
-        // Portföy widget'ıyla aynı karar: veriyi uygulama yazar ve yazınca
-        // bu türü yeniler (`.never`). Zamanlı yenileme boşuna bütçe harcardı.
+        // Kapsam dışı varlıkta portföy widget'ıyla aynı karar: veriyi
+        // uygulama yazar ve yazınca bu türü yeniler (`.never`). Zamanlı
+        // yenileme boşuna bütçe harcardı.
+        //
+        // Sunucu kapsamındaki varlıkta (2026-10-26) yarım saatte bir
+        // yenilenir; bilinen fiyat 10 dk'dan eskiyse `widget-fiyat`'tan
+        // çekilir. Başarısızsa son bilinen değer saatiyle kalır. Hafta sonu
+        // ve gece de aynı ritim: yurt içi altın/döviz kotasyonu hafta sonu
+        // da yazılıyor (0101), kripto 7/24; sunucu yanıtı 60 sn önbellekli.
         //
         // İki ileri girdi (veri aynı, yalnız an): seansın bitişi (açıkken
         // yazılmış fiyat o andan sonra saatle görünür) ve 1 günlük eşik
-        // (saat → tarih). Uygulama açılmasa da etiket doğru kalır; ağ yok.
-        let simdi = oku(configuration)
+        // (saat → tarih). Uygulama açılmasa da etiket doğru kalır.
+        var simdi = oku(configuration)
+        var yenileme: Date? = nil
+        if case .oge(let oge) = simdi.durum, oge.sunucu == true {
+            yenileme = simdi.date.addingTimeInterval(SandikWidgetFiyatServisi.tazelemeAraligi)
+            var bayat = true
+            if let bilinen = simdi.zaman {
+                bayat = simdi.date.timeIntervalSince(bilinen) >= SandikWidgetFiyatServisi.tazeEsigi
+            }
+            if bayat {
+                let cekilen = await SandikWidgetFiyatServisi.cek(oge.id)
+                if cekilen != nil {
+                    simdi = oku(configuration)
+                }
+            }
+        }
         var anlar: [Date] = []
         if case .oge(let oge) = simdi.durum, let ms = oge.seansSonu {
             anlar.append(Date(timeIntervalSince1970: ms / 1000))
@@ -285,6 +534,9 @@ struct SandikVarlikProvider: AppIntentTimelineProvider {
         }
         let ileri = anlar.filter { $0 > simdi.date }.sorted()
             .map { simdi.ayniVeri(at: $0) }
+        if let yenileme = yenileme {
+            return Timeline(entries: [simdi] + ileri, policy: .after(yenileme))
+        }
         return Timeline(entries: [simdi] + ileri, policy: .never)
     }
 }
