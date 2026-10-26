@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import '../utils/tr_format.dart';
 
+import '../models/asset.dart';
 import '../models/sozlesme.dart';
 
 /// Mevduatın BİRİM DEĞER hesabı — sözleşmeden, saf fonksiyonlarla.
@@ -134,6 +135,59 @@ abstract final class MevduatHesabi {
     }
     final v = birimDeger(donemler, son);
     if (v != null) out.add((son.millisecondsSinceEpoch, v));
+    return out;
+  }
+
+  /// Birim değer serisinden mevduatın TOPLAM TL tutarı serisi (epoch ms).
+  ///
+  /// ## Neden (kullanıcı isteği, 2026-10-26)
+  /// *"Vadeli mevduatlara özel grafikte benim vadeli mevduata ait tüm mal
+  /// varlığımın tutarını izleyebilmeliyim."* Varlık ekranı mevduatta birim
+  /// değeri (₺1,37 — iç hesabın payı) çiziyordu; başlık ise pozisyon
+  /// değeriydi. Her noktada `o an elde tutulan pay × birim değer`: para
+  /// ekleme/çekme o tarihten sonra çizgiyi kaydırır, vade sonunda net faiz
+  /// birim değere eklendiği için (`birimDeger`, vade içinde düz) basamak
+  /// görünür.
+  ///
+  /// Miktar ham defterden (CLAUDE.md "Kapanmış pozisyon": geçmişi soran
+  /// yer `aktifLotlar` değil ham defteri kullanır), `birimPiyasaEtkisi` ile
+  /// aynı kural: silinen lot ve miktar taşımayan satır (temettü, mezar
+  /// taşı) sayılmaz, satım (çekim) düşer, lot `addedDate` anından itibaren
+  /// sayılır.
+  ///
+  /// **Uydurma yok:** ilk lottan önceki ya da elde pay kalmamış (≤ 0)
+  /// noktalar seriye GİRMEZ — o anki tutar "sıfır" değil, bu hesabın
+  /// tutarı değildir. `v <= 0` birim noktaları da (verisiz kova) atlanır.
+  static Map<int, double> tutarSerisi({
+    required Map<int, double> birimSeri,
+    required List<Asset> lotlar,
+  }) {
+    final hareketler = <(int, double)>[
+      for (final l in lotlar)
+        if (!l.isQuantityNeutral && l.isActive)
+          (
+            l.addedDate.millisecondsSinceEpoch,
+            l.isSell ? -l.quantity : l.quantity,
+          ),
+    ]..sort((a, b) => a.$1.compareTo(b.$1));
+    final out = <int, double>{};
+    if (hareketler.isEmpty) return out;
+    final tsler = birimSeri.keys.toList()..sort();
+    var i = 0;
+    var miktar = 0.0;
+    for (final ts in tsler) {
+      while (i < hareketler.length && hareketler[i].$1 <= ts) {
+        miktar += hareketler[i].$2;
+        i++;
+      }
+      // Hiç lot sayılmadıysa (ilk alımdan önce) miktar bilinmiyor değil,
+      // yok: nokta girmez. Kayan nokta artığı (çekimden sonra 1e-12)
+      // "elde pay var" sayılmasın.
+      if (i == 0 || miktar <= 1e-9) continue;
+      final birim = birimSeri[ts]!;
+      if (birim <= 0) continue;
+      out[ts] = miktar * birim;
+    }
     return out;
   }
 

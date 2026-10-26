@@ -189,6 +189,23 @@ extension _DetayOzet on _AssetDetailScreenState {
     ]);
   }
 
+  /// Mevduatın grafik serisi: birim seriden TOPLAM TL tutarı (gerekçe
+  /// `MevduatHesabi.tutarSerisi`). Defter `_seriDefteri` — dönem değişimi
+  /// tutarıyla aynı ham lot listesi. Girdi aynıysa önbellekten.
+  Map<int, double> _mevduatTutarSerisi(Map<int, double> birim) {
+    final defter = _seriDefteri;
+    final o = _mevduatTutarOnbellek;
+    if (o != null &&
+        identical(o.birim, birim) &&
+        listEquals(o.defter, defter)) {
+      return o.tutar;
+    }
+    final tutar =
+        MevduatHesabi.tutarSerisi(birimSeri: birim, lotlar: defter);
+    _mevduatTutarOnbellek = (birim: birim, defter: defter, tutar: tutar);
+    return tutar;
+  }
+
   /// Dönemin yüzdesi: dönem başı (`uclar`) → canlı birim fiyat.
   double? _donemYuzdesi(int days, double canliBirim) {
     // Mevduat: seriden değil sözleşmeden (bkz. `mevduatDegisimi`).
@@ -338,9 +355,10 @@ extension _DetayOzet on _AssetDetailScreenState {
           : (canli > 0 ? bicim.format(canli) : '—'),
       fiyatRengi: context.c.gold,
       degisim: degisim,
-      // Grafikte gezinirken fiyat ve tarih imleçten (bayrak `goz_alici`);
-      // mevduatta başlık pozisyon değeri, imleç bağlanmaz.
-      imlec: RemoteConfigService.instance.gozAlici && !mevduat ? _imlec : null,
+      // Grafikte gezinirken fiyat ve tarih imleçten (bayrak `goz_alici`).
+      // Mevduatta başlık pozisyon değeri; grafik de toplam tutarı çizdiği
+      // için (2026-10-26, `MevduatHesabi.tutarSerisi`) imleç aynı ölçekte.
+      imlec: RemoteConfigService.instance.gozAlici ? _imlec : null,
       // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
       // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla.
       altSatir: Text(
