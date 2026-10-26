@@ -69,7 +69,7 @@ void main() {
   setUpAll(() async => initializeDateFormatting('tr_TR'));
 
   group('sunucu kapsamı kararı fiyat_kaynagi.dart\'ta', () {
-    test('altın ayarları, TL dövizler ve kripto kapsamda', () {
+    test('altın ayarları, TL dövizler, kripto ve fon kapsamda', () {
       for (final s in [
         'ALTIN_GRAM',
         'ALTIN_GRAM24',
@@ -79,15 +79,18 @@ void main() {
         'GBPTRY=X',
         'KRIPTO:BTC',
         'KRIPTO:1INCH',
+        'TEFAS:AFT',
       ]) {
         expect(FiyatKaynagi.widgetSunucuKapsamindaMi(s), isTrue, reason: s);
       }
     });
 
-    test('BIST, fon, endeks, emtia ve bozuk sembol kapsam DIŞI', () {
+    test('BIST, endeks, emtia ve bozuk sembol kapsam DIŞI', () {
       for (final s in [
         'THYAO.IS',
-        'TEFAS:AFT',
+        'TEFAS:',
+        'TEFAS:AFTX',
+        'tefas:aft',
         'XU100.IS',
         'GC=F',
         'GUMUS_GRAM',
@@ -201,6 +204,8 @@ void main() {
     final swift = ekranKaynagiSync('ios/SandikWidget/SandikVarlikWidget.swift');
     final kt = ekranKaynagiSync(
         'android/app/src/main/kotlin/com/sandik/app/SandikVarlikWidgetProvider.kt');
+    final ritimKt = ekranKaynagiSync(
+        'android/app/src/main/kotlin/com/sandik/app/WidgetRitmi.kt');
 
     test('sunucunun yurt içi kümesi Dart\'ınkiyle birebir', () {
       // Altın anahtarları `altin_anahtar_paritesi_test`'te birebir; burada
@@ -218,6 +223,8 @@ void main() {
       expect(dartFx, tsFx);
       expect(ts, contains('isGoldSymbol(sembol) || isFxSymbol(sembol)'));
       expect(ts, contains('kriptoKodu(sembol)'));
+      // Fon kimliği iki tarafta aynı biçim: `TEFAS:` + 3 harf/rakam.
+      expect(ts, contains(r'/^TEFAS:[A-Z0-9]{3}$/'));
     });
 
     test('fonksiyon: oturum sormaz, yazmaz, hata metni dönmez, kısa önbellek',
@@ -262,6 +269,31 @@ void main() {
       expect(kt, contains('startsWith("https://")'));
       // Desen: kesin olmayan, cihazı uyandırmayan alarm (WorkManager yok).
       expect(kt, contains('AlarmManager.RTC'));
+    });
+
+    // Müşteri raporu 2026-10-26 21:15 #2/#3: gece, hafta sonu ve fon için
+    // seyrek ritim (Edge Function kotası). İki platform aynı kuralı taşır.
+    test('ritim: iki platformda aynı saatler ve aynı fon kuralı', () {
+      for (final k in [swift, ritimKt]) {
+        expect(k, contains('"Europe/Istanbul"'));
+        expect(k, contains('"TEFAS:"'));
+        expect(k, contains('"KRIPTO:"'));
+      }
+      expect(swift, contains('gece: TimeInterval = 2 * 60 * 60'));
+      expect(ritimKt, contains('GECE_MS = 2L * 60 * 60 * 1000'));
+      expect(swift, contains('haftaSonu: TimeInterval = 60 * 60'));
+      expect(ritimKt, contains('HAFTA_SONU_MS = 60L * 60 * 1000'));
+      expect(swift, contains('fonDeneme: TimeInterval = 60 * 60'));
+      expect(ritimKt, contains('FON_DENEME_MS = 60L * 60 * 1000'));
+      expect(swift, contains('static let geceSonu = 7'));
+      expect(ritimKt, contains('GECE_SONU = 7'));
+      expect(swift, contains('static let fonPencereSonu = 22'));
+      expect(ritimKt, contains('FON_PENCERE_SONU = 22'));
+      // Zaman çizelgesi ve alarm ritimden; fiyat çekimi de ona sorar.
+      expect(swift, contains('SandikWidgetRitmi.sonraki('));
+      expect(swift, contains('SandikWidgetRitmi.cekilmeli('));
+      expect(kt, contains('WidgetRitmi.sonraki('));
+      expect(kt, contains('WidgetRitmi.cekilmeli('));
     });
 
     test('native biçim Dart kuralını taklit eder (aynı ondalık eşikleri)', () {

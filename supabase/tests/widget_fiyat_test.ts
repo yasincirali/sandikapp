@@ -3,6 +3,7 @@
 //   deno test supabase/tests/widget_fiyat_test.ts
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
+  fonWidgetFiyati,
   kriptoWidgetFiyati,
   WIDGET_AZAMI_SEMBOL,
   widgetIstegiCoz,
@@ -12,12 +13,13 @@ import {
 
 const simdi = Date.parse('2026-10-26T10:00:00Z');
 
-Deno.test('beyaz liste: altın, TL döviz, kripto; gerisi yok', () => {
+Deno.test('beyaz liste: altın, TL döviz, kripto, fon; gerisi yok', () => {
   assertEquals(widgetSembolTuru('ALTIN_GRAM24'), 'yurt_ici');
   assertEquals(widgetSembolTuru('ALTIN_CEYREK'), 'yurt_ici');
   assertEquals(widgetSembolTuru('USDTRY=X'), 'yurt_ici');
   assertEquals(widgetSembolTuru('KRIPTO:BTC'), 'kripto');
-  for (const s of ['THYAO.IS', 'TEFAS:AFT', 'XU100.IS', 'GC=F', 'ALTIN_YOK', 'kripto:btc', 'KRIPTO:', '']) {
+  assertEquals(widgetSembolTuru('TEFAS:AFT'), 'fon');
+  for (const s of ['THYAO.IS', 'TEFAS:', 'TEFAS:AFTX', 'tefas:aft', 'XU100.IS', 'GC=F', 'ALTIN_YOK', 'kripto:btc', 'KRIPTO:', '']) {
     assertEquals(widgetSembolTuru(s), null, s);
   }
 });
@@ -106,4 +108,44 @@ Deno.test('fonksiyon yanıtı hata metni ve kişisel veri taşımaz', async () =
   for (const y of ['.insert(', '.upsert(', '.update(', '.delete()', '.rpc(']) {
     assertEquals(kaynak.includes(y), false, y);
   }
+});
+
+// Müşteri raporu 2026-10-26 21:15 #2: fon widget'ı da günde bir tazelenir.
+const gun = (t: string, ilk: string, nav: number | null) => ({
+  nav_tarihi: t,
+  ilk_gorulme: ilk,
+  nav,
+});
+
+Deno.test('fon: son iki NAV → fiyat, ilk görülme anı, yüzde', () => {
+  const f = fonWidgetFiyati([
+    gun('2026-10-26', '2026-10-26T07:30:00Z', 1.1),
+    gun('2026-10-23', '2026-10-23T07:30:00Z', 1.0),
+  ], simdi);
+  assertEquals(f?.fiyat, 1.1);
+  assertEquals(f?.zaman, Date.parse('2026-10-26T07:30:00Z'));
+  assertEquals(Math.round(f!.degisim! * 1000) / 1000, 10);
+});
+
+Deno.test('fon: tek NAV ya da arada gözlenmemiş gün varsa yüzde yok', () => {
+  assertEquals(
+    fonWidgetFiyati([gun('2026-10-26', '2026-10-26T07:30:00Z', 2)], simdi),
+    { fiyat: 2, zaman: Date.parse('2026-10-26T07:30:00Z') },
+  );
+  const bosluklu = fonWidgetFiyati([
+    gun('2026-10-26', '2026-10-26T07:30:00Z', 2),
+    gun('2026-10-20', '2026-10-20T07:30:00Z', 1),
+  ], simdi);
+  assertEquals(bosluklu?.degisim, undefined);
+  const navsiz = fonWidgetFiyati([
+    gun('2026-10-26', '2026-10-26T07:30:00Z', 2),
+    gun('2026-10-23', '2026-10-23T07:30:00Z', null),
+  ], simdi);
+  assertEquals(navsiz?.degisim, undefined);
+});
+
+Deno.test('fon: 5 günden eski gözlem, NAV yok ya da boş liste dönmez', () => {
+  assertEquals(fonWidgetFiyati([gun('2026-10-19', '2026-10-19T07:30:00Z', 2)], simdi), null);
+  assertEquals(fonWidgetFiyati([gun('2026-10-26', '2026-10-26T07:30:00Z', null)], simdi), null);
+  assertEquals(fonWidgetFiyati([], simdi), null);
 });

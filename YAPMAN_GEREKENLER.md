@@ -12,6 +12,18 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-26 (isteğe bağlı) Fiyat alarmı Odak modunu da delsin
+
+Alarm bildirimi artık acil öncelikle gidiyor; Odak modu açıkken de
+görünmesi için iOS "Zaman Duyarlı Bildirimler" yeteneği gerekir. Kod
+eklenmedi: yetenek uygulama kimliğinde açılmadan eklenirse TestFlight
+imzası kırılır.
+
+- [ ] developer.apple.com › Identifiers › `com.sandik.app` › **Time Sensitive
+      Notifications** işaretle → Save. Profiller CI'da yeniden üretilir.
+- [ ] Bunu yaptığını thread'e yaz; yetki satırı ve `time-sensitive` önemi
+      küçük bir PR'la gelir.
+
 ## ⏳ 2026-10-26 Google Search Console: web sitesini kaydet (3 Kasım TÜFE gününden ÖNCE)
 
 Site haritası (`docs/sitemap.xml`) ve paylaşım görselleri hazır. 3 Kasım'da TÜFE

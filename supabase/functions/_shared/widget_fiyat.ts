@@ -13,7 +13,12 @@
 //   · kripto → `kripto_fiyat` (0074; Binance TL fiyatı, yüzde İstanbul günü
 //     açılışına göre — uygulama ve fiyat alarmıyla aynı hesap,
 //     `live_prices.ts › kriptoSatiriKotasyon`)
-// BIST hisse, fon, endeks, emtia sunucuda canlı tutulmuyor: kapsam DIŞI.
+//   · fon → `tefas_nav_gozlem` (0063; `observe-tefas-nav` iş günleri yarım
+//     saatte bir TEFAS'ın son NAV'ını yazar). Müşteri raporu 2026-10-26
+//     21:15 #2 (yasin "yap"): fon günde bir değişir, widget da günde bir
+//     tazelenir (ritim native tarafta). Yüzde son iki NAV'dan — uygulamanın
+//     `fonGunlukYuzdesi` kuralı (Dart) ile aynı.
+// BIST hisse, endeks, emtia sunucuda canlı tutulmuyor: kapsam DIŞI.
 // Fonksiyon başka bir sağlayıcıya GİTMEZ (açık proxy değil); sembol beyaz
 // listede değilse yok sayılır.
 //
@@ -40,11 +45,29 @@ export const WIDGET_YURT_ICI_BAYATLIK_MS = 2 * 60 * 60_000;
 /// Kripto dakikada bir yazılır (0074); 30 dk sessizlik = Binance/cron durmuş.
 export const WIDGET_KRIPTO_BAYATLIK_MS = 30 * 60_000;
 
+/// Fon NAV'ı iş günü başına bir kez görülür; uzun bayram tatili dahil
+/// 5 günden eski gözlem = fon artık gözlenmiyor (portföylerden çıktı) ya da
+/// gözlem durmuş. Widget uygulamanın son yazdığıyla kalır.
+export const WIDGET_FON_BAYATLIK_MS = 5 * 24 * 60 * 60_000;
+
+/// İki NAV arasında en çok bu kadar gün varsa yüzde hesaplanır (hafta sonu
+/// + bir tatil). Daha geniş aralık = arada gözlenmemiş gün(ler) var; o
+/// "günlük" değişim değildir, yazılmaz (uydurma sayı yok).
+export const WIDGET_FON_YUZDE_AZAMI_GUN = 4;
+
 /// Yanıt önbelleği (istemci ve isolate içi): truncgil kaydı 5 dk'da,
 /// kripto 1 dk'da bir değişir.
 export const WIDGET_ONBELLEK_SN = 60;
 
-export type WidgetSembolTuru = 'yurt_ici' | 'kripto';
+export type WidgetSembolTuru = 'yurt_ici' | 'kripto' | 'fon';
+
+/// TEFAS fon kimliği: `TEFAS:` + 3 harf/rakam (uygulamadaki kanonik biçim).
+const FON_KIMLIGI = /^TEFAS:[A-Z0-9]{3}$/;
+
+/// `TEFAS:AFT` → `AFT`; fon kimliği değilse `null`.
+export function fonKodu(sembol: string): string | null {
+  return FON_KIMLIGI.test(sembol) ? sembol.slice('TEFAS:'.length) : null;
+}
 
 /// Sembol beyaz listede mi; öyleyse hangi tablodan okunur. Bilinmeyen
 /// sembol `null` — yok sayılır, sorguya hiç girmez.
@@ -58,6 +81,7 @@ export function widgetSembolTuru(sembol: string): WidgetSembolTuru | null {
   if (
     sembol === sembol.trim().toUpperCase() && kriptoKodu(sembol) !== null
   ) return 'kripto';
+  if (fonKodu(sembol) !== null) return 'fon';
   return null;
 }
 
@@ -117,4 +141,29 @@ export function kriptoWidgetFiyati(
   const acilis = sayi(satir.gun_acilis_try);
   if (acilis === null || acilis <= 0) return { fiyat, zaman };
   return { fiyat, zaman, degisim: (fiyat / acilis - 1) * 100 };
+}
+
+/// `tefas_nav_gozlem`in bir fona ait en yeni iki satırı (yeniden eskiye)
+/// → yanıt öğesi. `zaman` NAV'ın sunucuda İLK görüldüğü an: widget ritmi
+/// "bugünün NAV'ı alındı mı"yı buna bakarak verir. Bayat ya da geçersizse
+/// `null`.
+export function fonWidgetFiyati(
+  satirlar: { nav_tarihi: unknown; ilk_gorulme: unknown; nav: unknown }[],
+  simdiMs: number,
+): WidgetFiyat | null {
+  const [son, onceki] = satirlar;
+  if (!son) return null;
+  const fiyat = sayi(son.nav);
+  if (fiyat === null || fiyat <= 0) return null;
+  const zaman = Date.parse(String(son.ilk_gorulme));
+  if (!Number.isFinite(zaman) || simdiMs - zaman > WIDGET_FON_BAYATLIK_MS) return null;
+  if (!onceki) return { fiyat, zaman };
+  const oncekiNav = sayi(onceki.nav);
+  const g1 = Date.parse(String(son.nav_tarihi));
+  const g0 = Date.parse(String(onceki.nav_tarihi));
+  if (
+    oncekiNav === null || oncekiNav <= 0 || !Number.isFinite(g1) || !Number.isFinite(g0) ||
+    g1 <= g0 || (g1 - g0) / 86_400_000 > WIDGET_FON_YUZDE_AZAMI_GUN
+  ) return { fiyat, zaman };
+  return { fiyat, zaman, degisim: (fiyat - oncekiNav) / oncekiNav * 100 };
 }

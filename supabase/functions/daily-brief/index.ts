@@ -597,6 +597,9 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
+        // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+        // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+        onem: 'passive',
         data: veri,
         // Ortak mesajında kart yok: fiyat hareketi değil, bir kişinin
         // eylemi; halka ve yüzde anlatacak bir şey taşımaz.

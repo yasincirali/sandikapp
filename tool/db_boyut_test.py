@@ -13,7 +13,7 @@ MB = 1024 * 1024
 
 class DbBoyutTest(unittest.TestCase):
     def _s(self, **k):
-        s = {"db": 81 * MB, "storage": 0, "aktif_30g": 14, "tablolar": [], "api": None}
+        s = {"db": 81 * MB, "storage": 0, "aktif_30g": 14, "tablolar": [], "api": None, "fn": None}
         s.update(k)
         return s
 
@@ -45,6 +45,29 @@ class DbBoyutTest(unittest.TestCase):
     def test_api_sayilari_yazilir(self):
         metin, _ = db.rapor(self._s(api={"total_rest_requests": 12345}))
         self.assertIn("API istekleri, 7 gün (rest) | 12.345", metin)
+
+
+    # Müşteri raporu 2026-10-26 21:15 #3: Edge Function kotası ölçülür.
+    def test_fn_coz_yol_ve_toplam(self):
+        fn = db.fn_coz({"result": [
+            {"yol": "/kripto-fiyat", "n": 720},
+            {"yol": "/functions/v1/widget-fiyat", "n": 30},
+            {"yol": "/widget-fiyat", "n": 10},
+        ]})
+        self.assertEqual(fn["toplam"], 760)
+        self.assertEqual(fn["yollar"]["widget-fiyat"], 40)
+
+    def test_fn_coz_hata_none(self):
+        self.assertIsNone(db.fn_coz({"error": {"message": "x"}}))
+        self.assertIsNone(db.fn_coz({"result": None}))
+
+    def test_fn_tahmin_etiketli_ve_esikli(self):
+        metin, kod = db.rapor(self._s(fn={"toplam": 2_000, "yollar": {"widget-fiyat": 100}}))
+        self.assertEqual(kod, 0)
+        self.assertIn("son 24 saat × 30, tahmin) | 60.000", metin)
+        self.assertIn("widget-fiyat: 100", metin)
+        _, kod = db.rapor(self._s(fn={"toplam": 16_000, "yollar": {}}))
+        self.assertEqual(kod, 1)
 
 
 if __name__ == "__main__":

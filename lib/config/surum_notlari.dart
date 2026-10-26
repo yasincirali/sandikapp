@@ -132,7 +132,8 @@ const List<SurumNotu> surumNotlari = [
         aciklama: 'Gram altın, dolar ya da bir fon: ana ekranda ve kilit '
             'ekranında tek başına görünür. Ana ekrana basılı tut, artıya '
             'dokun, sandık\'ı seç ve "Tek varlık"ı ekle. Varlığı widget\'ı '
-            'düzenleyerek seçersin.',
+            'düzenleyerek seçersin. Altın, döviz, kripto ve fonda uygulamayı '
+            'açmasan da fiyat kendiliğinden tazelenir.',
       ),
       Yenilik(
         ikon: YenilikIkonu.para,
