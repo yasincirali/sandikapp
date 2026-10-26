@@ -7695,6 +7695,12 @@ abstract class AppLocalizations {
   /// **'Listeden kaldır'**
   String get searchRecentRemove;
 
+  /// No description provided for @searchAllActions.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm eylemler'**
+  String get searchAllActions;
+
   /// No description provided for @searchShortHint.
   ///
   /// In tr, this message translates to:
