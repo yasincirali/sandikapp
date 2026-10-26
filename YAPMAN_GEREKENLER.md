@@ -12,6 +12,26 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-26 Google Search Console: web sitesini kaydet (3 Kasım TÜFE gününden ÖNCE)
+
+Site haritası (`docs/sitemap.xml`) ve paylaşım görselleri hazır. 3 Kasım'da TÜFE
+açıklanınca enflasyon sayfası aranacak; Google'ın sayfayı o güne kadar tanıması için:
+
+- [ ] search.google.com/search-console → **Mülk ekle** → **URL ön eki** (alan adı
+      değil): `https://yasincirali.github.io/sandikapp/`
+- [ ] Doğrulama yöntemi **HTML dosyası**: Google'ın verdiği `googleXXXX.html`
+      dosyasını indir, thread'e ver. Claude onu `docs/`'a ekler (PR + birleşme),
+      sayfa yayınlanınca Console'da **Doğrula**.
+- [ ] Doğrulandıktan sonra Console › **Site haritaları** → `sitemap.xml` yaz → Gönder.
+- [ ] (İsteğe bağlı) URL denetimi → `https://yasincirali.github.io/sandikapp/enflasyon/`
+      → **Dizine eklenmesini iste**.
+
+Not: `robots.txt` bu repodan yazılamaz. Google onu alan kökünde
+(`yasincirali.github.io/robots.txt`) arar; o dosya `yasincirali.github.io`
+reposuna aittir. Gerek de yok: robots.txt olmayınca her şey taranabilir sayılır;
+site haritası Console'dan gönderilir. `docs/indir/` `noindex` taşıdığı için
+haritada yok (yönlendirme kapısı, arama sonucunda yeri yok).
+
 ## ⏳ 2026-10-24 Mağaza metni: yatay tam ekran grafik ve çizim (1.1.7 gönderiminde)
 
 > **2026-10-25 güncellemesi:** aynı dosyalara tek varlık widget'ı (ana ekran +

@@ -21,6 +21,12 @@ Kullanım:
     icon_512.png              → Play Console "Uygulama simgesi"
     feature_graphic_1024x500.png → Play Console "Öne çıkan grafik"
 
+Çıktı: docs/img/ (2026-10-26, web paylaşım kartı, 1200x630, <300 KB)
+    og-ana.png                → docs/index.html og:image
+    og-enflasyon.png          → docs/enflasyon/index.html og:image
+Aynı betikte çünkü aynı türev: palet, logo, font. Yalnız web görselleri
+için: `python build_store_graphics.py --og`.
+
 ⚠️ Play ikonu ALFA KANALI KABUL ETMEZ ve köşeleri kendi yuvarlar. Bu yüzden
 kaynak RGBA ikon marka zemini üzerine düzleştiriliyor ve köşe yuvarlama
 UYGULANMIYOR — iki kez yuvarlanmış köşe Play'de bozuk görünür.
@@ -181,7 +187,130 @@ def feature_graphic() -> str:
     return yol
 
 
+# ── Web paylaşım kartları (og:image) ────────────────────────────────────────
+# 2026-10-26. Eskiden og:image kare uygulama ikonuydu; WhatsApp/X/LinkedIn
+# 1.91:1 kartı kırpıp bulanık küçük bir kare gösteriyordu. 1200x630 her
+# platformun "büyük kart" ölçüsü (twitter:card summary_large_image).
+#
+# Kurallar:
+# - Rakam YOK. Ne gerçek kullanıcı verisi ne "örnek" sayı: kart sayfadan
+#   koparılıp tek başına dolaşır, "örnek" notu onunla gitmez; görsel bir
+#   getiri vaadi gibi okunur (Play finansal politika + uydurma sayı yasak).
+# - Başlık sayfanın og:title'ıyla AYNI cümle: önizlemede başlık ile görsel
+#   iki farklı vaat vermesin.
+# - İmza öğesi: logodaki üç amber dalga (sandik_logo.svg geometrisi,
+#   periyot 256, genlik 25 birim). Sayfadaki "sandık katmanları"nın eşi.
+# - <300 KB: WhatsApp 300 KB üstü önizlemeyi düşürüyor. Bunun için palet
+#   kuantalama (gradyan + dalga birkaç düz renktir, kayıp görünmez).
+OG_OUT = os.path.join(ROOT, "docs", "img")
+OG_W, OG_H = 1200, 630
+OG_SINIR = 300 * 1024
+# Logodaki dalga renkleri (sandik_logo.svg), üstten alta.
+DALGA = [(226, 134, 31), (197, 99, 20), (153, 61, 10)]
+OG_KARTLAR = [
+    # (dosya, başlık, alt satır) — başlık = sayfanın og:title'ı.
+    ("og-ana.png", "Birikimin tek ekranda",
+     "Hisse, fon, döviz, altın ve BES bir arada"),
+    ("og-enflasyon.png", "Param enflasyona karşı ne oldu?",
+     "TÜİK TÜFE endeksiyle bugünkü karşılığı"),
+]
+
+
+def _dalga_katmani(img: Image.Image, taban_y: int, renk, alfa: int,
+                   faz: float) -> None:
+    """Logodaki S-eğrisi dalganın düz bant hâli, tuvalin altına."""
+    import math
+
+    katman = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(katman)
+    # SVG'de periyot 256/512 genişlik, genlik 25/512 → tuvale ölçekli.
+    periyot = OG_W / 2
+    genlik = OG_W * 25 / 512 / 2
+    noktalar = [
+        (x, taban_y + genlik * (1 - math.cos(2 * math.pi * (x / periyot) + faz)))
+        for x in range(0, OG_W + 1, 4)
+    ]
+    noktalar += [(OG_W, OG_H), (0, OG_H)]
+    d.polygon(noktalar, fill=(*renk, alfa))
+    img.alpha_composite(katman)
+
+
+def og_kart(dosya: str, baslik: str, alt: str) -> str:
+    img = dikey_gradyan(OG_W, OG_H).convert("RGBA")
+
+    # Dalgalar: alt üçte birde, yavaşça koyulaşan üç bant. Opaklık düşük
+    # tutulur ki metinle yarışmasın; imza, dikkat çekici süs değil.
+    for i, renk in enumerate(DALGA):
+        _dalga_katmani(img, 520 + i * 30, renk, 50 + i * 35, faz=i * 0.9)
+
+    d = ImageDraw.Draw(img)
+    kenar = 80
+
+    # Üst sol: logo + "sandık" kelime markası.
+    logo = Image.open(SRC_ICON).convert("RGBA")
+    kutu = logo.getchannel("A").getbbox()
+    if kutu:
+        logo = logo.crop(kutu)
+    boy = 88
+    logo = logo.resize((boy, boy), Image.LANCZOS)
+    img.alpha_composite(logo, (kenar, kenar))
+    f_marka = ImageFont.truetype(FONT_BOLD, 52)
+    ust, alt_ = f_marka.getbbox("sandık")[1], f_marka.getbbox("sandık")[3]
+    d.text((kenar + boy + 24, kenar + (boy - (alt_ - ust)) // 2 - ust),
+           "sandık", font=f_marka, fill=TEXT)
+
+    # Başlık: sığana kadar küçülen punto, gerekirse iki satır.
+    kullanilabilir = OG_W - 2 * kenar
+
+    def satirlara_bol(metin: str, f) -> list:
+        kelimeler, satirlar, simdiki = metin.split(), [], ""
+        for k in kelimeler:
+            aday = f"{simdiki} {k}".strip()
+            if d.textlength(aday, font=f) <= kullanilabilir:
+                simdiki = aday
+            else:
+                satirlar.append(simdiki)
+                simdiki = k
+        satirlar.append(simdiki)
+        return satirlar
+
+    for punto in range(84, 47, -4):
+        f_baslik = ImageFont.truetype(FONT_BOLD, punto)
+        satirlar = satirlara_bol(baslik, f_baslik)
+        if len(satirlar) <= 2:
+            break
+    satir_y = int(punto * 1.12)
+    y = 250 if len(satirlar) == 1 else 200
+    for satir in satirlar:
+        d.text((kenar, y), satir, font=f_baslik, fill=TEXT)
+        y += satir_y
+
+    f_alt = ImageFont.truetype(FONT_MED, 34)
+    d.text((kenar, y + 18), alt, font=f_alt, fill=AMBER)
+
+    yol = os.path.join(OG_OUT, dosya)
+    # Kuantalama: 128 renk gradyanı bantlamadan taşır, boyutu ~4x düşürür.
+    img.convert("RGB").quantize(colors=128, method=Image.MEDIANCUT,
+                                dither=Image.Dither.NONE).save(
+        yol, "PNG", optimize=True)
+    boyut = os.path.getsize(yol)
+    if boyut >= OG_SINIR:
+        raise SystemExit(f"HATA: {dosya} {boyut // 1024} KB >= 300 KB")
+    return yol
+
+
+def og_kartlari() -> list:
+    os.makedirs(OG_OUT, exist_ok=True)
+    return [og_kart(*k) for k in OG_KARTLAR]
+
+
 def main() -> None:
+    if "--og" in sys.argv:
+        for y in og_kartlari():
+            im = Image.open(y)
+            print(f"  + {os.path.basename(y):32s} {im.size[0]}x{im.size[1]} "
+                  f"{os.path.getsize(y) // 1024} KB")
+        return
     os.makedirs(OUT, exist_ok=True)
     for f in (SRC_ICON, FONT_BOLD, FONT_MED):
         if not os.path.exists(f):

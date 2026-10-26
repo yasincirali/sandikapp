@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ÜRETİLDİ: python docs/_build_sitemap.py — elle düzenleme. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://yasincirali.github.io/sandikapp/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/data-deletion/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/data-request/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/enflasyon/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/legal/acik-riza/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/legal/depolama/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/legal/gdpr/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/legal/kvkk/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/privacy-en/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/privacy/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/terms-en/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/terms/</loc></url>
+</urlset>
