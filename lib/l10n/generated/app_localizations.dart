@@ -9808,6 +9808,30 @@ abstract class AppLocalizations {
   /// **'Takibe alınamadı. Bağlantını kontrol et.'**
   String get watchlistSuggestFailed;
 
+  /// No description provided for @watchlistAlertSet.
+  ///
+  /// In tr, this message translates to:
+  /// **'{price} için alarm kurulu'**
+  String watchlistAlertSet(String price);
+
+  /// No description provided for @watchlistAlertMore.
+  ///
+  /// In tr, this message translates to:
+  /// **'ve {count} alarm daha'**
+  String watchlistAlertMore(int count);
+
+  /// No description provided for @watchlistAlertExtra.
+  ///
+  /// In tr, this message translates to:
+  /// **'+{count}'**
+  String watchlistAlertExtra(int count);
+
+  /// No description provided for @watchlistOpenAlerts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmları aç'**
+  String get watchlistOpenAlerts;
+
   /// No description provided for @vitrinTapToAdd.
   ///
   /// In tr, this message translates to:

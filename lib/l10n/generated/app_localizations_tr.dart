@@ -5845,6 +5845,24 @@ class AppLocalizationsTr extends AppLocalizations {
       'Takibe alınamadı. Bağlantını kontrol et.';
 
   @override
+  String watchlistAlertSet(String price) {
+    return '$price için alarm kurulu';
+  }
+
+  @override
+  String watchlistAlertMore(int count) {
+    return 've $count alarm daha';
+  }
+
+  @override
+  String watchlistAlertExtra(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get watchlistOpenAlerts => 'Alarmları aç';
+
+  @override
   String get vitrinTapToAdd => 'Eklemek için dokun';
 
   @override

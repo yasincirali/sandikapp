@@ -37,7 +37,12 @@ import '../l10n/l10n.dart';
 /// olduğu ya da izlediği şeye alarm kurar; boş bir arama kutusu hem fazladan
 /// bir adım hem de kaynağın tanımadığı bir sembol girme riski demekti.
 class PriceAlertsScreen extends ConsumerStatefulWidget {
-  const PriceAlertsScreen({super.key});
+  const PriceAlertsScreen({super.key, this.sembol});
+
+  /// Verilirse liste yalnız bu sembolün alarmlarını gösterir (takip listesi
+  /// satırındaki çan, 2026-10-26: "bu varlığın alarmları"). `null` → eski
+  /// davranış birebir: tüm alarmlar. Sembol `alarmSembolu` kuralındadır.
+  final String? sembol;
 
   @override
   ConsumerState<PriceAlertsScreen> createState() => _PriceAlertsScreenState();
@@ -108,7 +113,15 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         shape: const StadiumBorder(),
         extendedPadding:
             const EdgeInsets.symmetric(horizontal: SandikSpace.lgs),
-        onPressed: () => alarmKurAkisi(context, ref, adaylar: _adaylar()),
+        onPressed: () {
+          // Süzülmüş listede yeni alarm o sembol için kurulur; sembol aday
+          // değilse (takipten çıkmış) genel seçime düşer.
+          final adaylar = _adaylar();
+          final sabit = widget.sembol == null
+              ? null
+              : adaylar.where((a) => a.sembol == widget.sembol).firstOrNull;
+          alarmKurAkisi(context, ref, sabit: sabit, adaylar: adaylar);
+        },
         icon: const Icon(Icons.add_alert_rounded),
         label: Text(context.l10n.createAlert),
       ),
@@ -122,7 +135,11 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             onRetry: () => ref.read(priceAlertsProvider.notifier).refresh(),
           ),
           loading: () => const SandikSkeletonList(rows: 5),
-          data: (liste) {
+          data: (hepsi) {
+            final s = widget.sembol;
+            final liste = s == null
+                ? hepsi
+                : [for (final a in hepsi) if (a.symbol == s) a];
             if (liste.isEmpty) return _bosDurum(c);
             // İzin reddedilmişse listedeki hiçbir alarm haber veremez
             // (Ar-Ge 16:45 #1, 2026-10-21). Liste kaydırılırken satır üstte

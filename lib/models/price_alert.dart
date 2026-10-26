@@ -73,3 +73,45 @@ class PriceAlert {
   }) =>
       targetPrice >= currentPrice ? 'above' : 'below';
 }
+
+/// Bir sembolün ETKİN alarmlarının satır özeti: gösterilecek tek hedef +
+/// kalan etkin alarm sayısı (takip listesi çanı, 2026-10-26).
+class EtkinAlarmOzeti {
+  /// Güncel fiyata en yakın etkin alarm.
+  final PriceAlert enYakin;
+
+  /// [enYakin] dışında kalan etkin alarm sayısı ("+N").
+  final int digerSayisi;
+
+  const EtkinAlarmOzeti(this.enYakin, this.digerSayisi);
+}
+
+/// [alarmlar] içinden yalnız ETKİN olanları ([PriceAlert.isActive]) alır,
+/// güncel fiyata en yakın hedefi seçer. Etkin alarm yoksa `null`.
+///
+/// **Neden en yakın:** satırda tek hedefe yer var; kullanıcının "ne zaman
+/// haber gelecek" sorusunun cevabı fiyata en yakın eşiktir, en yeni ya da en
+/// eski alarm değil. Tetiklenmiş/kapalı alarm haber vermeyeceği için sayılmaz
+/// — çan "bekleyen bir alarm var" demektir.
+///
+/// [guncelFiyat] bilinmiyorsa (null/0) mesafe hesaplanamaz; sayı uydurulmaz,
+/// listenin sırası (provider: en yeni önce) korunur ve ilk etkin alarm
+/// gösterilir. Eşit mesafede de listedeki ilk kazanır (deterministik).
+EtkinAlarmOzeti? etkinAlarmOzeti(Iterable<PriceAlert> alarmlar,
+    {double? guncelFiyat}) {
+  final etkin = [for (final a in alarmlar) if (a.isActive) a];
+  if (etkin.isEmpty) return null;
+  var enYakin = etkin.first;
+  final f = guncelFiyat;
+  if (f != null && f > 0) {
+    var enKisa = (enYakin.targetPrice - f).abs();
+    for (final a in etkin.skip(1)) {
+      final m = (a.targetPrice - f).abs();
+      if (m < enKisa) {
+        enKisa = m;
+        enYakin = a;
+      }
+    }
+  }
+  return EtkinAlarmOzeti(enYakin, etkin.length - 1);
+}

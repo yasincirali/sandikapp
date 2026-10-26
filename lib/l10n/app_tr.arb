@@ -4105,6 +4105,31 @@
   "watchlistSuggestUsdSemantics": "Doları takibe al",
   "watchlistSuggestBistSemantics": "BIST 100'ü takibe al",
   "watchlistSuggestFailed": "Takibe alınamadı. Bağlantını kontrol et.",
+  "watchlistAlertSet": "{price} için alarm kurulu",
+  "@watchlistAlertSet": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistAlertMore": "ve {count} alarm daha",
+  "@watchlistAlertMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "watchlistAlertExtra": "+{count}",
+  "@watchlistAlertExtra": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "watchlistOpenAlerts": "Alarmları aç",
   "vitrinTapToAdd": "Eklemek için dokun",
   "vitrinPriceUnknown": "Fiyat henüz yok",
   "rankingTitle": "Sıralama",

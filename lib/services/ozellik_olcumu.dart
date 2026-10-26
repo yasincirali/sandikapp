@@ -45,7 +45,12 @@ enum Ozellik {
   /// Genel aramanın boş hâlindeki "Son baktıkların" satırına dokunuş.
   /// Soru: kısayol geri dönüşte kullanılıyor mu, yoksa eylemlerin üstünde
   /// yalnız yer mi kaplıyor.
-  sonBakilan('son_bakilan');
+  sonBakilan('son_bakilan'),
+
+  /// Takip listesi satırındaki alarm çanına dokunuş (o varlığın alarmları
+  /// açılır). Soru: satırdaki hedef bilgisi yetiyor mu, yoksa kullanıcı
+  /// alarmlara oradan da gidiyor mu.
+  takipAlarmCani('takip_alarm_cani');
 
   const Ozellik(this.kod);
   final String kod;

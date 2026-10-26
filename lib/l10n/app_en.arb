@@ -3817,6 +3817,31 @@
   "watchlistSuggestUsdSemantics": "Add US dollar to watchlist",
   "watchlistSuggestBistSemantics": "Add BIST 100 to watchlist",
   "watchlistSuggestFailed": "Couldn't add to watchlist. Check your connection.",
+  "watchlistAlertSet": "alert set at {price}",
+  "@watchlistAlertSet": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistAlertMore": "{count, plural, =1{and 1 more alert} other{and {count} more alerts}}",
+  "@watchlistAlertMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "watchlistAlertExtra": "+{count}",
+  "@watchlistAlertExtra": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "watchlistOpenAlerts": "Open alerts",
   "vitrinTapToAdd": "Tap to add",
   "vitrinPriceUnknown": "No price yet",
   "rankingTitle": "Rankings",
