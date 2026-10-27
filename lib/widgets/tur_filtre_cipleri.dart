@@ -132,9 +132,15 @@ class SandikFiltreCipi extends StatelessWidget {
     this.pasifEtiket,
     this.ikon,
     this.ikonRengi,
+    this.semantik,
   });
 
   final String ad;
+
+  /// Ekran okuyucu etiketi; verilmezse [ad]. "±%2" gibi simgeli etiket
+  /// sesli okunurken anlamını yitirir ("Günlük yüzde 2 eşiği" okunsun —
+  /// yüzde alarmı, 2026-10-27).
+  final String? semantik;
   final bool secili;
   final VoidCallback? onTap;
 
@@ -216,7 +222,7 @@ class SandikFiltreCipi extends StatelessWidget {
     return SandikTappable(
       onTap: onTap,
       selected: secili,
-      semanticLabel: ad,
+      semanticLabel: semantik ?? ad,
       // Etiket zaten [ad]; çipin kendi metni ikinci kez okunmasın
       // ("Tümü, Tümü").
       child: ExcludeSemantics(child: cip),

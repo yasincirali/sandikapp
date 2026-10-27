@@ -13,6 +13,7 @@ import '../providers/base_currency_provider.dart';
 import '../providers/bildirim_on_ayar_provider.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
+import '../providers/yuzde_alarmi_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
 import '../providers/preferences_provider.dart';
@@ -818,12 +819,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.add_alert_outlined,
               title: context.l10n.priceAlerts,
               subtitle: () {
-                final aktif = ref
-                        .watch(priceAlertsProvider)
-                        .valueOrNull
-                        ?.where((a) => a.isActive)
-                        .length ??
-                    0;
+                // Yüzde alarmları (0169) da sayılır: ikisi de "kurduğum alarm".
+                final aktif = (ref
+                            .watch(priceAlertsProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0) +
+                    (ref
+                            .watch(yuzdeAlarmlariProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0);
                 return aktif == 0
                     ? context.l10n.alertSetFromAssetScreen
                     : '$aktif aktif alarm';

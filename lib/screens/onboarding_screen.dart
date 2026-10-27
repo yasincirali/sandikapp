@@ -553,10 +553,14 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.bildirimCani,
       rozet: 'YENİ',
       baslik: 'Bildirim merkezi',
+      // 2026-10-27 (0169): alarm sayfasına "Günlük yüzde" kipi geldi
+      // (altın, döviz, kripto); tur metni arayüzle birlikte değişir.
       govde: '$_zilBasi'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
-          'uygulama kapalıyken de çalışır.',
+          'uygulama kapalıyken de çalışır. Altın, döviz ve kriptoda '
+          '"Günlük yüzde" ile "bugün %2 düşerse" gibi bir alarm da '
+          'kurabilirsin.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       // Koşul yok: zil 2026-10-04'ten beri her seviyede görünür (bayrak

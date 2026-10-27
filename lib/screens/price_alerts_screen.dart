@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
 import '../models/price_alert.dart';
+import '../models/yuzde_alarmi.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/watchlist_provider.dart';
+import '../providers/yuzde_alarmi_provider.dart';
 import '../services/analytics_service.dart';
 import '../widgets/bildirim_izni_uyarisi.dart';
 import '../widgets/sandik_bos_durum.dart';
@@ -36,6 +38,11 @@ import '../l10n/l10n.dart';
 /// **Sembol seçimi arama değil, kendi varlıklarından.** Kullanıcı sahip
 /// olduğu ya da izlediği şeye alarm kurar; boş bir arama kutusu hem fazladan
 /// bir adım hem de kaynağın tanımadığı bir sembol girme riski demekti.
+///
+/// 2026-10-27 (0169): günlük yüzde alarmları da bu listede, fiyat
+/// alarmlarıyla tek zaman sırasında (en yeni önce). Ayrı bölüm açılmadı:
+/// kullanıcı için ikisi de "kurduğum alarm"; satır türünü kendi etiketiyle
+/// söyler ("Günlük %2 düşüş").
 class PriceAlertsScreen extends ConsumerStatefulWidget {
   const PriceAlertsScreen({super.key, this.sembol});
 
@@ -95,10 +102,19 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     return liste;
   }
 
+  Future<void> _yenile() => Future.wait([
+        ref.read(priceAlertsProvider.notifier).refresh(),
+        ref.read(yuzdeAlarmlariProvider.notifier).refresh(),
+      ]);
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final alarmlar = ref.watch(priceAlertsProvider);
+    // Yüzde listesi hata vermez (okuma hatası boş liste, bkz. provider);
+    // yüklenirken fiyat alarmları beklemeden görünür.
+    final yuzdeHepsi =
+        ref.watch(yuzdeAlarmlariProvider).valueOrNull ?? const <YuzdeAlarmi>[];
     return Scaffold(
       backgroundColor: c.background,
       appBar: SandikAppBar(
@@ -132,14 +148,28 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         child: alarmlar.when(
           error: (e, _) => SandikErrorView(
             error: e,
-            onRetry: () => ref.read(priceAlertsProvider.notifier).refresh(),
+            onRetry: _yenile,
           ),
           loading: () => const SandikSkeletonList(rows: 5),
           data: (hepsi) {
             final s = widget.sembol;
-            final liste = s == null
+            final fiyatListe = s == null
                 ? hepsi
                 : [for (final a in hepsi) if (a.symbol == s) a];
+            final yuzdeListe = s == null
+                ? yuzdeHepsi
+                : [for (final a in yuzdeHepsi) if (a.symbol == s) a];
+            // Tek zaman sırası, en yeni önce; eşitlikte fiyat alarmı önde
+            // (`List.sort` kararlı değil; liste yenilenince zıplamasın).
+            final liste = <({DateTime t, PriceAlert? f, YuzdeAlarmi? y})>[
+              for (final a in fiyatListe) (t: a.createdAt, f: a, y: null),
+              for (final a in yuzdeListe) (t: a.createdAt, f: null, y: a),
+            ];
+            liste.sort((a, b) {
+              final z = b.t.compareTo(a.t);
+              if (z != 0) return z;
+              return (a.f == null ? 1 : 0) - (b.f == null ? 1 : 0);
+            });
             if (liste.isEmpty) return _bosDurum(c);
             // İzin reddedilmişse listedeki hiçbir alarm haber veremez
             // (Ar-Ge 16:45 #1, 2026-10-21). Liste kaydırılırken satır üstte
@@ -153,8 +183,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                 Expanded(
                   child: RefreshIndicator.adaptive(
                     color: c.amberText,
-                    onRefresh: () =>
-                        ref.read(priceAlertsProvider.notifier).refresh(),
+                    onRefresh: _yenile,
                     child: ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
@@ -165,13 +194,41 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                       // reddederse geri açılır ve sebep söylenir (animasyon denetimi
                       // 2026-10-01 — eskiden satır tek karede yok oluyor, hata da
                       // yakalanmıyordu).
-                      itemBuilder: (_, i) => KapananSatir(
-                        key: ValueKey(liste[i].id),
+                      itemBuilder: (_, i) {
+                        final yuzde = liste[i].y;
+                        if (yuzde != null) {
+                          return KapananSatir(
+                            key: ValueKey('yuzde_${yuzde.id}'),
+                            child: Builder(
+                              builder: (satirCtx) => _YuzdeAlarmSatiri(
+                                alarm: yuzde,
+                                onDelete: () async {
+                                  SandikHaptic.medium.perform();
+                                  try {
+                                    await KapananSatir.kapatVeYap(
+                                        satirCtx,
+                                        () => ref
+                                            .read(yuzdeAlarmlariProvider
+                                                .notifier)
+                                            .delete(yuzde.id));
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      showAppError(context, e);
+                                    }
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                        final alarm = liste[i].f!;
+                        return KapananSatir(
+                        key: ValueKey(alarm.id),
                         child: Builder(
                           builder: (satirCtx) => _AlarmSatiri(
-                            alarm: liste[i],
+                            alarm: alarm,
                             onDelete: () async {
-                              final id = liste[i].id;
+                              final id = alarm.id;
                               SandikHaptic.medium.perform();
                               try {
                                 await KapananSatir.kapatVeYap(
@@ -188,7 +245,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                             // Eşik geçilmişse ön dolu sayfa, değilse yeniden
                             // kur + onay (`alarmiYenidenKur`, 2026-10-21).
                             onRearm: () {
-                              final a = liste[i];
+                              final a = alarm;
                               final aday = _adaylar()
                                       .where((x) => x.sembol == a.symbol)
                                       .firstOrNull ??
@@ -198,7 +255,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                             },
                           ),
                         ),
-                      ),
+                      );
+                      },
                     ),
                   ),
                 ),
@@ -236,6 +294,82 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           ),
         ),
       );
+}
+
+// ── Yüzde alarmı satırı (0169) ───────────────────────────────────────────────
+
+/// Fiyat alarmı satırıyla aynı iskelet. "Yeniden kur" yok: alarm ertesi gün
+/// kendiliğinden nöbete döner; bugün çaldıysa alt satır bunu ve çaldığı
+/// andaki yüzdeyi (bildirimdeki sayının kendisi) söyler.
+class _YuzdeAlarmSatiri extends StatelessWidget {
+  final YuzdeAlarmi alarm;
+  final VoidCallback onDelete;
+
+  const _YuzdeAlarmSatiri({required this.alarm, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final l10n = context.l10n;
+    final etiket = yuzdeAlarmEtiketi(l10n, alarm.esikPct, alarm.yon);
+    final pct = alarm.sonTetikPct;
+    final caldi = alarm.bugunCaldi(DateTime.now()) && pct != null;
+    return SandikCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
+      child: Row(
+        children: [
+          // Yön RENKLE anlatılmaz — ok her zaman var, etiket de yazar.
+          ExcludeSemantics(
+            child: Text(
+              switch (alarm.yon) {
+                YuzdeYon.dusus => '▼',
+                YuzdeYon.yukselis => '▲',
+                YuzdeYon.ikisi => '▲▼',
+              },
+              style: context.t.titleMedium?.copyWith(
+                color: switch (alarm.yon) {
+                  YuzdeYon.dusus => c.loss,
+                  YuzdeYon.yukselis => c.gain,
+                  YuzdeYon.ikisi => c.text58,
+                },
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  alarm.label,
+                  style: context.t.titleMedium?.copyWith(color: c.text90),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  caldi ? etiket : l10n.yuzdeAlarmHerGun(etiket),
+                  style: context.t.bodyMedium?.copyWith(color: c.text58),
+                ),
+                if (caldi)
+                  Text(
+                    l10n.yuzdeAlarmBugunCaldi(fmtPctIsaretli(pct, digits: 1)),
+                    style: context.t.bodySmall?.copyWith(color: c.text58),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: onDelete,
+            icon: Icon(Icons.delete_outline_rounded, color: c.text36),
+            tooltip: l10n.delete,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Alarm satırı ─────────────────────────────────────────────────────────────

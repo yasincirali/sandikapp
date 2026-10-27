@@ -24,6 +24,7 @@ void main() {
         'takip_onerisi',
         'son_bakilan',
         'takip_alarm_cani',
+        'yuzde_alarm',
       ]);
     });
 
