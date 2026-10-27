@@ -43,6 +43,10 @@ class DataExportService {
     ('disclaimer_acceptances', 'user_id', 'disclaimer_acceptances'),
     ('watchlist', 'user_id', 'watchlist'),
     ('price_alerts', 'user_id', 'price_alerts'),
+    // 0169 (2026-10-27): günlük yüzde alarmları — kullanıcının kendi
+    // kurduğu kayıt. 0169 dağıtılmadan önce tablo yoktur; `topla` yer
+    // tutucuyla geçer.
+    ('yuzde_alarmlari', 'user_id', 'yuzde_alarmlari'),
     ('signal_preferences', 'user_id', 'signal_preferences'),
     ('signal_notifications', 'user_id', 'signal_notifications'),
     ('milestones', 'user_id', 'milestones'),

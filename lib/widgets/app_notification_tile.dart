@@ -59,6 +59,11 @@ class AppNotificationTile extends StatelessWidget {
           Icons.savings_outlined,
           l10n.notifTypeDividend
         ),
+      // 0169: günlük yüzde alarmı — fiyat alarmıyla aynı zil ikonu.
+      AppNotification.yuzdeAlarm => (
+          Icons.notifications_active_rounded,
+          l10n.notifTypeAlarm
+        ),
       _ => (Icons.event_note_rounded, l10n.notifTypeReminder),
     };
     // Bilgi bildirimi: yön/kazanç anlamı yok, marka vurgusu (amber).

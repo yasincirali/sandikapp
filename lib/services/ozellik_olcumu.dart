@@ -50,7 +50,12 @@ enum Ozellik {
   /// Takip listesi satırındaki alarm çanına dokunuş (o varlığın alarmları
   /// açılır). Soru: satırdaki hedef bilgisi yetiyor mu, yoksa kullanıcı
   /// alarmlara oradan da gidiyor mu.
-  takipAlarmCani('takip_alarm_cani');
+  takipAlarmCani('takip_alarm_cani'),
+
+  /// Günlük yüzde alarmı KURULMASI (0169, Ar-Ge 27 Eki §1). Soru: altın,
+  /// döviz ve kripto tutan kişi "bugün sert oynarsa" alarmını kuruyor mu,
+  /// yoksa sabit hedef fiyat mı yetiyor.
+  yuzdeAlarm('yuzde_alarm');
 
   const Ozellik(this.kod);
   final String kod;

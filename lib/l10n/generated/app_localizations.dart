@@ -15911,6 +15911,126 @@ abstract class AppLocalizations {
   /// **'Hedef maliyetin {sign} yüzde {pct}'**
   String alertCostPctSemantics(String sign, int pct);
 
+  /// No description provided for @alarmModFiyat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat'**
+  String get alarmModFiyat;
+
+  /// No description provided for @alarmModYuzde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük yüzde'**
+  String get alarmModYuzde;
+
+  /// No description provided for @alarmModSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm türü: {tur}'**
+  String alarmModSemantik(String tur);
+
+  /// No description provided for @alarmYuzdeEsikBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün ne kadar oynarsa?'**
+  String get alarmYuzdeEsikBaslik;
+
+  /// No description provided for @alarmYuzdeEsikSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük yüzde {n} eşiği'**
+  String alarmYuzdeEsikSemantik(int n);
+
+  /// No description provided for @alarmYuzdeYonBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi yöne?'**
+  String get alarmYuzdeYonBaslik;
+
+  /// No description provided for @alarmYonDusus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Düşerse'**
+  String get alarmYonDusus;
+
+  /// No description provided for @alarmYonYukselis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yükselirse'**
+  String get alarmYonYukselis;
+
+  /// No description provided for @alarmYonIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'İkisi de'**
+  String get alarmYonIkisi;
+
+  /// No description provided for @alarmYuzdeOzetDusus.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} bugün %{pct} düşerse haber vereceğiz.'**
+  String alarmYuzdeOzetDusus(String name, int pct);
+
+  /// No description provided for @alarmYuzdeOzetYukselis.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} bugün %{pct} yükselirse haber vereceğiz.'**
+  String alarmYuzdeOzetYukselis(String name, int pct);
+
+  /// No description provided for @alarmYuzdeOzetIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} bugün %{pct} düşer ya da yükselirse haber vereceğiz.'**
+  String alarmYuzdeOzetIkisi(String name, int pct);
+
+  /// No description provided for @alarmYuzdeGundeBir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günde en çok bir kez çalar; ertesi gün kendiliğinden yeniden kurulur.'**
+  String get alarmYuzdeGundeBir;
+
+  /// No description provided for @yuzdeAlarmEtiketDusus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük %{pct} düşüş'**
+  String yuzdeAlarmEtiketDusus(String pct);
+
+  /// No description provided for @yuzdeAlarmEtiketYukselis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük %{pct} yükseliş'**
+  String yuzdeAlarmEtiketYukselis(String pct);
+
+  /// No description provided for @yuzdeAlarmEtiketIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük %{pct} hareket'**
+  String yuzdeAlarmEtiketIkisi(String pct);
+
+  /// No description provided for @yuzdeAlarmKuruldu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} için alarm kuruldu: {etiket}'**
+  String yuzdeAlarmKuruldu(String name, String etiket);
+
+  /// No description provided for @yuzdeAlarmHerGun.
+  ///
+  /// In tr, this message translates to:
+  /// **'{etiket} · her gün'**
+  String yuzdeAlarmHerGun(String etiket);
+
+  /// No description provided for @yuzdeAlarmBugunCaldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün çalıştı · {pct} · yarın yeniden kurulur'**
+  String yuzdeAlarmBugunCaldi(String pct);
+
+  /// No description provided for @notifTypeAlarm.
+  ///
+  /// In tr, this message translates to:
+  /// **'ALARM'**
+  String get notifTypeAlarm;
+
   /// No description provided for @ortakPortfoyKartBaslik.
   ///
   /// In tr, this message translates to:
