@@ -12,6 +12,26 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-27 (karar senin) Avrupa'daki Türkler: sandık AB mağazalarında görünsün
+
+Ar-Ge 27 Eki #3, yasin: "yapılacaklara ekle". Apple, AB DSA "trader"
+beyanı olmayan uygulamayı AB ülkelerinin App Store'unda göstermiyor;
+beyan 2026-10-01'den beri bekliyor (aşağıdaki 2026-10-01 notu). Almanya,
+Hollanda, Avusturya, Fransa ve Belçika'da Türkiye'de altın/fon tutan büyük
+bir kitle var; uygulama hazır (euro baz para birimi, sunucu Frankfurt'ta).
+Kod değişikliği yok, uygulama ülkeye göre dallanmaz.
+
+- [ ] App Store Connect › Uygulama › **Fiyatlandırma ve Bulunabilirlik**:
+      AB ülkeleri açık mı bak.
+- [ ] Business › **Dijital Hizmetler Yasası**: tacir beyanını doldur.
+      ⚠️ Bireysel geliştiricide adres, telefon ve e-posta AB mağaza
+      sayfasında herkese görünür; görünmesini istemediğin bilgi için önce
+      şirket/iş adresi seçeneğine bak. Bu kişisel bir karar.
+- [ ] Beyan onaylanınca DE, NL, AT, FR, BE'yi bulunabilirliğe ekle.
+- [ ] AB vitrininde sayfanın hangi dilde göründüğüne bak (Türkçe metin
+      görünmüyorsa İngilizce metin zaten hazır). Sonucu thread'e yaz;
+      gerekirse GDPR cümlelerine bakılır.
+
 ## ⏳ 2026-10-26 (isteğe bağlı) Fiyat alarmı Odak modunu da delsin
 
 Alarm bildirimi artık acil öncelikle gidiyor; Odak modu açıkken de

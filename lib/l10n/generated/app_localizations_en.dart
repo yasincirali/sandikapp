@@ -9673,4 +9673,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String alertCostPctSemantics(String sign, int pct) {
     return 'Target your cost $sign $pct percent';
   }
+
+  @override
+  String get ortakPortfoyKartBaslik => 'Shared portfolio';
+
+  @override
+  String get ortakPortfoyKartGovde =>
+      'Combine your portfolio with someone close on one screen. You can leave any time.';
+
+  @override
+  String get ortakPortfoyDavetEt => 'Invite';
+
+  @override
+  String get ortakPortfoyKodGir => 'Enter code';
 }

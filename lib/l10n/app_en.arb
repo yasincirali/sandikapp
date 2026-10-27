@@ -5553,5 +5553,9 @@
   "alertCostBreakEven": "My cost",
   "alertCostPct": "Cost {pct}",
   "alertCostBreakEvenSemantics": "Set target to your cost",
-  "alertCostPctSemantics": "Target your cost {sign} {pct} percent"
+  "alertCostPctSemantics": "Target your cost {sign} {pct} percent",
+  "ortakPortfoyKartBaslik": "Shared portfolio",
+  "ortakPortfoyKartGovde": "Combine your portfolio with someone close on one screen. You can leave any time.",
+  "ortakPortfoyDavetEt": "Invite",
+  "ortakPortfoyKodGir": "Enter code"
 }

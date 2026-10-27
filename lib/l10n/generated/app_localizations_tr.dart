@@ -9569,4 +9569,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String alertCostPctSemantics(String sign, int pct) {
     return 'Hedef maliyetin $sign yüzde $pct';
   }
+
+  @override
+  String get ortakPortfoyKartBaslik => 'Ortak portföy';
+
+  @override
+  String get ortakPortfoyKartGovde =>
+      'Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.';
+
+  @override
+  String get ortakPortfoyDavetEt => 'Davet et';
+
+  @override
+  String get ortakPortfoyKodGir => 'Kod gir';
 }

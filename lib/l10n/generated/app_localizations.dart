@@ -15910,6 +15910,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hedef maliyetin {sign} yüzde {pct}'**
   String alertCostPctSemantics(String sign, int pct);
+
+  /// No description provided for @ortakPortfoyKartBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak portföy'**
+  String get ortakPortfoyKartBaslik;
+
+  /// No description provided for @ortakPortfoyKartGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.'**
+  String get ortakPortfoyKartGovde;
+
+  /// No description provided for @ortakPortfoyDavetEt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Davet et'**
+  String get ortakPortfoyDavetEt;
+
+  /// No description provided for @ortakPortfoyKodGir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod gir'**
+  String get ortakPortfoyKodGir;
 }
 
 class _AppLocalizationsDelegate

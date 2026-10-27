@@ -6202,5 +6202,9 @@
   "@alertCostPct": {"placeholders": {"pct": {"type": "String"}}},
   "alertCostBreakEvenSemantics": "Hedefi maliyetine ayarla",
   "alertCostPctSemantics": "Hedef maliyetin {sign} yüzde {pct}",
-  "@alertCostPctSemantics": {"placeholders": {"sign": {"type": "String"}, "pct": {"type": "int"}}}
+  "@alertCostPctSemantics": {"placeholders": {"sign": {"type": "String"}, "pct": {"type": "int"}}},
+  "ortakPortfoyKartBaslik": "Ortak portföy",
+  "ortakPortfoyKartGovde": "Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.",
+  "ortakPortfoyDavetEt": "Davet et",
+  "ortakPortfoyKodGir": "Kod gir"
 }
