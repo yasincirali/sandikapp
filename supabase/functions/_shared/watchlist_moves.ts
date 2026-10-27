@@ -29,6 +29,7 @@ import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { createAccessToken, sendFcmNotification, ServiceAccount } from './fcm.ts';
 import { collapseTokens, ekHesap, ekHesapSatirlari, tokenSatirlariniOku } from './push_tokens.ts';
 import { degisimKarti, kartGorseli, KartAyari, KartVerisi } from './bildirim_karti.ts';
+import { istanbulGunu } from './kripto.ts';
 import { fetchLiveQuotes } from './live_prices.ts';
 import { sessizKullanicilar } from './quiet_hours.ts';
 import { appNotificationRow, recordAppNotification } from './app_notifications.ts';
@@ -80,6 +81,21 @@ export function hareketleriSec(
     )
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
     .slice(0, enCok);
+}
+
+/// Bugün yüzde alarmı (0169) çalmış (kullanıcı, sembol) çiftlerini
+/// adaylardan çıkarır. Aynı varlığın aynı günkü hareketi kullanıcıya iki
+/// kez gelmesin: yüzde alarmını kendisi kurmuş ve almış, akşamki takip
+/// listesi özeti onu tekrar söylemez (müşteri raporu 27 Eki 09:15 #2).
+/// Anahtar `user_id|sembol`; sembol kuralı iki tarafta da istemcinin
+/// `alarmSembolu`'dur (ALTIN_* ya da ticker).
+export function calanlariCikar<T extends { sembol: string }>(
+  uid: string,
+  satirlar: T[],
+  calanlar: ReadonlySet<string>,
+): T[] {
+  if (calanlar.size === 0) return satirlar;
+  return satirlar.filter((s) => !calanlar.has(`${uid}|${s.sembol}`));
 }
 
 /// Mesajdaki gösterimle aynı yuvarlama (tek ondalık, mutlak değer).
@@ -165,11 +181,25 @@ export async function takipListesiHareketleri(
 
   const kotasyon = await fetchLiveQuotes(semboller, admin);
 
+  // Bugün çalmış yüzde alarmları (0169). Okuma düşerse (tablo henüz
+  // dağıtılmamış) tekilleştirme yapılmaz, özet bugünkü gibi gider.
+  const calanlar = new Set<string>();
+  const { data: yuzdeSatirlari, error: yuzdeHatasi } = await admin
+    .from('yuzde_alarmlari')
+    .select('user_id, symbol')
+    .eq('son_tetik_gunu', istanbulGunu(new Date()));
+  if (yuzdeHatasi) {
+    console.error('watchlist_moves: yuzde_alarmlari okunamadi', yuzdeHatasi.code);
+  }
+  for (const r of (yuzdeSatirlari ?? []) as Array<{ user_id: string; symbol: string }>) {
+    calanlar.add(`${r.user_id}|${r.symbol}`);
+  }
+
   // Kullanıcı → seçilen hareketler.
   const secimler = new Map<string, Hareket[]>();
   for (const [uid, satirlar] of kullaniciSatirlari) {
     const adaylar: Hareket[] = [];
-    for (const s of satirlar) {
+    for (const s of calanlariCikar(uid, satirlar, calanlar)) {
       const q = kotasyon.get(s.sembol);
       if (!q || q.changePct === null) continue;
       adaylar.push({

@@ -362,7 +362,9 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   /// davranış birebir; kip yalnız kapsamdaki adayda sunulur.
   bool _yuzdeKipi = false;
   int _esik = 2;
-  YuzdeYon _yuzdeYon = YuzdeYon.dusus;
+  // Varsayılan "İkisi de" (müşteri raporu 27 Eki 09:15): "bugün sert
+  // oynarsa haber ver" yönsüz bir istek; kullanıcı yön seçmekle uğraşmasın.
+  YuzdeYon _yuzdeYon = YuzdeYon.ikisi;
 
   bool get _yuzdeSunulur =>
       yuzdeKipiSunulur(_secili, baslangicHedef: widget.baslangicHedef);

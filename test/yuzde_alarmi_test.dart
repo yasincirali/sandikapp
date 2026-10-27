@@ -205,23 +205,24 @@ void main() {
       expect(find.text('±%1'), findsOneWidget);
       expect(find.text('±%3'), findsOneWidget);
       expect(find.text('Düşerse'), findsOneWidget);
+      // Varsayılan yön "İkisi de" (müşteri raporu 27 Eki 09:15).
       expect(
-          find.text('Gram altın bugün %2 düşerse haber vereceğiz.'),
+          find.text('Gram altın bugün %2 düşer ya da yükselirse '
+              'haber vereceğiz.'),
           findsOneWidget);
 
       await t.tap(find.text('±%3'));
-      await t.tap(find.text('İkisi de'));
+      await t.tap(find.text('Düşerse'));
       await t.pump();
       expect(
-          find.text('Gram altın bugün %3 düşer ya da yükselirse '
-              'haber vereceğiz.'),
+          find.text('Gram altın bugün %3 düşerse haber vereceğiz.'),
           findsOneWidget);
 
       await t.tap(find.byType(FilledButton));
       await t.pumpAndSettle();
       final k = sonuclar.single as YuzdeAlarmKurulumu;
       expect(k.esik, 3);
-      expect(k.yon, YuzdeYon.ikisi);
+      expect(k.yon, YuzdeYon.dusus);
       expect(k.aday.sembol, 'ALTIN_GRAM');
     });
 
