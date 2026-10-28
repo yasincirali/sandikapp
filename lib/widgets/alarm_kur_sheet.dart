@@ -8,17 +8,23 @@ import '../models/asset.dart';
 import '../models/eurobond.dart' show eurobondOneki;
 import '../models/position.dart' show aggregatePositions;
 import '../models/price_alert.dart';
+import '../models/yuzde_alarmi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
 import '../providers/price_alert_provider.dart';
+import '../providers/yuzde_alarmi_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
+import '../services/fiyat_kaynagi.dart';
+import '../services/ozellik_olcumu.dart';
 import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import 'bildirim_izni_uyarisi.dart';
 import 'review_prompt_sheet.dart';
 import 'sandik_async_button.dart';
+import 'sandik_segment.dart';
 import 'sinir_uyarisi.dart';
+import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -81,6 +87,37 @@ class AlarmKurulumu {
   final String yon;
   const AlarmKurulumu(this.aday, this.hedef, this.yon);
 }
+
+/// Sheet'in "Günlük yüzde" kipinde döndürdüğü seçim (0169).
+class YuzdeAlarmKurulumu {
+  final AlarmAdayi aday;
+  final int esik;
+  final YuzdeYon yon;
+  const YuzdeAlarmKurulumu(this.aday, this.esik, this.yon);
+}
+
+/// Yüzde alarmının listede ve onayda okunan adı: "Günlük %2 düşüş".
+/// Yön metinde de yazar (renk körlüğü: yalnız renkle/okla anlatılmaz).
+String yuzdeAlarmEtiketi(AppLocalizations l10n, double esik, YuzdeYon yon) {
+  final e = esik == esik.roundToDouble()
+      ? esik.round().toString()
+      : fmtNum(esik, digits: 1);
+  return switch (yon) {
+    YuzdeYon.dusus => l10n.yuzdeAlarmEtiketDusus(e),
+    YuzdeYon.yukselis => l10n.yuzdeAlarmEtiketYukselis(e),
+    YuzdeYon.ikisi => l10n.yuzdeAlarmEtiketIkisi(e),
+  };
+}
+
+/// Sheet bu adaya "Günlük yüzde" kipini sunar mı.
+///
+/// Kapsam [FiyatKaynagi.yuzdeAlarmiKapsamindaMi]'da (altın, TL döviz,
+/// kripto; fon/BIST yok — sunucu onların gün içi yüzdesini ölçmüyor,
+/// uydurma yok). Çalmış fiyat alarmını yeniden kurarken ([baslangicHedef]
+/// dolu) sunulmaz: o akış eşik düzeltmesidir, kip değiştirmek eski alarmı
+/// silip başka türde alarm kurmak olurdu.
+bool yuzdeKipiSunulur(AlarmAdayi aday, {double? baslangicHedef}) =>
+    baslangicHedef == null && FiyatKaynagi.yuzdeAlarmiKapsamindaMi(aday.sembol);
 
 /// Fiyat kaynağının anladığı sembol.
 ///
@@ -148,7 +185,8 @@ Future<PriceAlert?> alarmKurAkisi(
   // kapanır; hata olursa açık kalır, girilen hedef kaybolmaz ve hata alanın
   // altında (eski snackbar'ın önekiyle) yazar.
   PriceAlert? kayit;
-  final sonuc = await showSandikSheet<AlarmKurulumu>(
+  YuzdeAlarmi? yuzdeKayit;
+  final sonuc = await showSandikSheet<Object>(
     context: context,
     backgroundColor: context.c.surface1,
     isScrollControlled: true,
@@ -173,10 +211,42 @@ Future<PriceAlert?> alarmKurAkisi(
           createdAt: DateTime.now(),
         ));
       },
+      kurYuzde: (k) async {
+        final me = ref.read(authProvider).valueOrNull;
+        if (me == null) return;
+        yuzdeKayit =
+            await ref.read(yuzdeAlarmlariProvider.notifier).create(YuzdeAlarmi(
+          id: '',
+          userId: me.id,
+          symbol: k.aday.sembol,
+          label: k.aday.ad,
+          esikPct: k.esik.toDouble(),
+          yon: k.yon,
+          createdAt: DateTime.now(),
+        ));
+      },
     ),
   );
+  if (sonuc is YuzdeAlarmKurulumu && yuzdeKayit != null) {
+    OzellikOlcumu.say(Ozellik.yuzdeAlarm);
+    if (context.mounted) {
+      sandikSnack(
+        context,
+        context.l10n.yuzdeAlarmKuruldu(sonuc.aday.ad,
+            yuzdeAlarmEtiketi(context.l10n, sonuc.esik.toDouble(), sonuc.yon)),
+        kind: SandikSnackKind.success,
+      );
+      CrashReporter.arkaPlan(
+          ReviewPromptSheet.belkiGoster(context, ReviewAni.alarmKuruldu),
+          reason: 'alarmKur.degerlendirmeIstemi');
+    }
+    // Dönüş tipi fiyat alarmı: çağıranlar (varlık ekranı, yeniden kur)
+    // yalnız fiyat alarmının kaydıyla iş yapar; yüzde alarmı onlar için
+    // "fiyat alarmı kurulmadı" demektir.
+    return null;
+  }
   final kurulan = kayit;
-  if (sonuc == null || kurulan == null) return null;
+  if (sonuc is! AlarmKurulumu || kurulan == null) return null;
   unawaited(AnalyticsService.instance
       .logScreenView(screenName: 'price_alert_created'));
   if (context.mounted) {
@@ -264,6 +334,10 @@ class AlarmKurSheet extends StatefulWidget {
   /// sayfa kurulumu hemen döndürür (widget testleri).
   final Future<void> Function(AlarmKurulumu kurulum)? kur;
 
+  /// "Günlük yüzde" kipinin yazması ([kur] ile aynı sözleşme). `null` →
+  /// sayfa kurulumu hemen döndürür (widget testleri).
+  final Future<void> Function(YuzdeAlarmKurulumu kurulum)? kurYuzde;
+
   /// Alanın ön değeri: çalmış alarmı yeniden kurarken eski eşik
   /// ([alarmiYenidenKur]); kullanıcı değiştirebilir.
   final double? baslangicHedef;
@@ -272,6 +346,7 @@ class AlarmKurSheet extends StatefulWidget {
       required this.adaylar,
       this.sabit = false,
       this.kur,
+      this.kurYuzde,
       this.baslangicHedef});
 
   @override
@@ -282,6 +357,21 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   late AlarmAdayi _secili = widget.adaylar.first;
   final _controller = TextEditingController();
   String? _hata;
+
+  /// "Günlük yüzde" kipi seçili mi (0169). Varsayılan Fiyat: bugünkü
+  /// davranış birebir; kip yalnız kapsamdaki adayda sunulur.
+  bool _yuzdeKipi = false;
+  int _esik = 2;
+  // Varsayılan "İkisi de" (müşteri raporu 27 Eki 09:15): "bugün sert
+  // oynarsa haber ver" yönsüz bir istek; kullanıcı yön seçmekle uğraşmasın.
+  YuzdeYon _yuzdeYon = YuzdeYon.ikisi;
+
+  bool get _yuzdeSunulur =>
+      yuzdeKipiSunulur(_secili, baslangicHedef: widget.baslangicHedef);
+
+  /// Seçici fon gibi kapsam dışı bir adaya geçerse kip kendiliğinden
+  /// Fiyat'a döner (segment de görünmez).
+  bool get _yuzdeAcik => _yuzdeKipi && _yuzdeSunulur;
 
   /// Hızlı hedefler: güncel fiyatın ±%'si. Kullanıcı çoğu zaman "biraz
   /// yükselince / düşünce" der, rakam hesaplamak istemez.
@@ -386,6 +476,101 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
     Navigator.of(context).pop(kurulum);
   }
 
+  Future<void> _kaydetYuzde() async {
+    final kurulum = YuzdeAlarmKurulumu(_secili, _esik, _yuzdeYon);
+    final kur = widget.kurYuzde;
+    if (kur != null) {
+      final l10n = context.l10n;
+      try {
+        await kur(kurulum);
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
+        return;
+      }
+      if (!mounted) return;
+    }
+    Navigator.of(context).pop(kurulum);
+  }
+
+  String _yonAdi(YuzdeYon y) => switch (y) {
+        YuzdeYon.dusus => context.l10n.alarmYonDusus,
+        YuzdeYon.yukselis => context.l10n.alarmYonYukselis,
+        YuzdeYon.ikisi => context.l10n.alarmYonIkisi,
+      };
+
+  /// "Günlük yüzde" kipinin gövdesi: eşik çipleri, yön çipleri, özet.
+  /// Seçim çipi `SandikFiltreCipi` (tam yuvarlak, 44 pt, seçiliyken amber +
+  /// onay işareti — tasarım dili "tek seçim"). Yön üç yoldan okunur: ok
+  /// ikonu, fiil ("Düşerse") ve özet cümlesi; renk yalnız ikonda, ek bilgi.
+  List<Widget> _yuzdeBolumu(SandikPalette c) {
+    final l10n = context.l10n;
+    final ozet = switch (_yuzdeYon) {
+      YuzdeYon.dusus => l10n.alarmYuzdeOzetDusus(_secili.ad, _esik),
+      YuzdeYon.yukselis => l10n.alarmYuzdeOzetYukselis(_secili.ad, _esik),
+      YuzdeYon.ikisi => l10n.alarmYuzdeOzetIkisi(_secili.ad, _esik),
+    };
+    return [
+      Text(l10n.alarmYuzdeEsikBaslik,
+          style: context.t.labelMedium?.copyWith(color: c.text58)),
+      const SizedBox(height: SandikSpace.xs),
+      Wrap(
+        spacing: SandikSpace.xs2,
+        runSpacing: SandikSpace.xs2,
+        children: [
+          for (final e in YuzdeAlarmi.esikler)
+            SandikFiltreCipi(
+              ad: '±%$e',
+              semantik: l10n.alarmYuzdeEsikSemantik(e),
+              secili: _esik == e,
+              onTap: () => setState(() {
+                _esik = e;
+                _hata = null;
+              }),
+            ),
+        ],
+      ),
+      const SizedBox(height: SandikSpace.smd),
+      Text(l10n.alarmYuzdeYonBaslik,
+          style: context.t.labelMedium?.copyWith(color: c.text58)),
+      const SizedBox(height: SandikSpace.xs),
+      Wrap(
+        spacing: SandikSpace.xs2,
+        runSpacing: SandikSpace.xs2,
+        children: [
+          for (final y in YuzdeYon.values)
+            SandikFiltreCipi(
+              ad: _yonAdi(y),
+              ikon: switch (y) {
+                YuzdeYon.dusus => Icons.arrow_downward_rounded,
+                YuzdeYon.yukselis => Icons.arrow_upward_rounded,
+                YuzdeYon.ikisi => Icons.swap_vert_rounded,
+              },
+              ikonRengi: switch (y) {
+                YuzdeYon.dusus => c.loss,
+                YuzdeYon.yukselis => c.gain,
+                YuzdeYon.ikisi => null,
+              },
+              secili: _yuzdeYon == y,
+              onTap: () => setState(() {
+                _yuzdeYon = y;
+                _hata = null;
+              }),
+            ),
+        ],
+      ),
+      const SizedBox(height: SandikSpace.smd),
+      Text(ozet, style: context.t.bodyMedium?.copyWith(color: c.amberText)),
+      const SizedBox(height: SandikSpace.xs),
+      Text(l10n.alarmYuzdeGundeBir,
+          style: context.t.bodySmall?.copyWith(color: c.text58)),
+      if (_hata != null) ...[
+        const SizedBox(height: SandikSpace.xs),
+        Text(_hata!, style: context.t.bodyMedium?.copyWith(color: c.danger)),
+      ],
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
@@ -467,6 +652,32 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               style: context.t.bodyMedium?.copyWith(color: c.text58),
             ),
             const SizedBox(height: SandikSpace.md),
+            // Kip seçici (0169): yalnız günlük yüzdesi sunucuda ölçülen
+            // adayda. Kayan segment = "mod değiştiren seçici" (tasarım dili);
+            // hareketi azalt açıkken zemin anında yerine oturur.
+            if (_yuzdeSunulur) ...[
+              SandikSegment(
+                adet: 2,
+                secili: _yuzdeAcik ? 1 : 0,
+                onSec: (i) {
+                  // Yüzde kipinde klavye açık kalırsa çipleri örter.
+                  if (i == 1) FocusScope.of(context).unfocus();
+                  setState(() {
+                    _yuzdeKipi = i == 1;
+                    _hata = null;
+                  });
+                },
+                oge: (_, i, __) => Text(
+                  i == 0
+                      ? context.l10n.alarmModFiyat
+                      : context.l10n.alarmModYuzde,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: SandikSpace.md),
+            ],
+            if (_yuzdeAcik) ..._yuzdeBolumu(c) else ...[
             TextField(
               controller: _controller,
               autofocus: widget.sabit,
@@ -548,6 +759,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                     : context.l10n.notifyWhenBelow,
                 style: context.t.bodyMedium?.copyWith(color: c.amberText),
               ),
+            ],
             const SizedBox(height: SandikSpace.lg),
             // İzin reddedilmişse alarm kurulur ama çalınca haber gelmez;
             // bunu kurarken söylemek (Ar-Ge 16:45 #1, 2026-10-21).
@@ -561,7 +773,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   foregroundColor: c.onAmber,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: _kaydet,
+                onPressed: _yuzdeAcik ? _kaydetYuzde : _kaydet,
                 child: Text(context.l10n.setAlert),
               ),
             ),
@@ -580,10 +792,22 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
 /// Neden ortak (paywall kapıları incelemesi, 2026-10-11): sınır yalnız bu
 /// sayfada denetleniyordu; Alarmlar ekranı ve alarm şeridindeki "yeniden
 /// kur" tetiklenmiş alarmları aktife döndürerek 20 sınırını aşıyordu.
+///
+/// Yüzde alarmı (0169) aynı tavana sayılır: kullanıcı için ikisi de "bir
+/// alarm"; açık yüzde alarmı her gün nöbettedir, yani hep aktiftir.
 bool alarmSiniriDoluysaUyar(BuildContext context, WidgetRef ref) {
-  final mevcut = ref.read(priceAlertsProvider).valueOrNull ?? const [];
   final limit = ref.read(priceAlertLimitProvider);
-  if (mevcut.where((a) => a.isActive).length < limit) return false;
+  if (etkinAlarmSayisi(ref) < limit) return false;
   alarmSiniriUyarisi(context, ref, limit);
   return true;
+}
+
+/// Tavana sayılan alarm sayısı: aktif fiyat alarmları + açık yüzde
+/// alarmları. Yüklenmemiş liste 0 sayılır (bilinmeyen sayı yüzünden
+/// kimseyi durdurmayız — `ortakSiniriDoluProvider` ile aynı kural).
+int etkinAlarmSayisi(WidgetRef ref) {
+  final fiyat = ref.read(priceAlertsProvider).valueOrNull ?? const [];
+  final yuzde = ref.read(yuzdeAlarmlariProvider).valueOrNull ?? const [];
+  return fiyat.where((a) => a.isActive).length +
+      yuzde.where((a) => a.isActive).length;
 }

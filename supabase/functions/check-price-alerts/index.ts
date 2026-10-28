@@ -11,6 +11,10 @@
 // opt-out riski taşımıyor. Sunucuda değerlendirilir ki uygulama kapalıyken
 // de çalışsın — yalnızca açıkken çalışan bir alarm geri getirme kanalı
 // değildir, sadece bir ekran öğesidir.
+//
+// 0169: aynı turda yüzde alarmları da (`_shared/yuzde_alarmi.ts`, "gram
+// altın bugün %2 düşerse"). Ayrı tablo, ayrı damga; fiyat alarmının
+// sorgusu, tetikleme kuralı ve sırası değişmedi.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -45,6 +49,7 @@ import {
   kartVerisiniHazirla,
 } from '../_shared/bildirim_karti.ts';
 import { takipListesiHareketleri } from '../_shared/watchlist_moves.ts';
+import { yuzdeAlarmTuruKos } from '../_shared/yuzde_alarmi.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -260,6 +265,25 @@ Deno.serve(async (request) => {
       }));
     }
 
+    // ── 0) Yüzde alarmları (0169) ───────────────────────────────────────────
+    // Fiyat alarmından ÖNCE ve ondan BAĞIMSIZ: kendi tablosu, kendi damgası.
+    // Hata yutulur (günlüğe yazılır) ki aşağıdaki fiyat alarmı turu birebir
+    // eskisi gibi koşsun; yanıta yalnız `yuzde` alanı eklenir.
+    let yuzde: Record<string, unknown>;
+    try {
+      yuzde = await yuzdeAlarmTuruKos(admin, {
+        dryRun,
+        filtre,
+        fcm: dryRun
+          ? null
+          : { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson },
+        kart,
+      });
+    } catch (e) {
+      console.error('[check-price-alerts] yuzde alarm turu basarisiz:', e);
+      yuzde = { error: 'yuzde alarm turu basarisiz' };
+    }
+
     // ── 1) Aktif alarmlar ───────────────────────────────────────────────────
     const { data: alertRows, error: alertError } = await admin
       .from('price_alerts')
@@ -270,7 +294,7 @@ Deno.serve(async (request) => {
 
     const alerts = turaGirenAlarmlar((alertRows ?? []) as AlertRow[], filtre);
     if (alerts.length === 0) {
-      return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0 });
+      return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0, yuzde });
     }
 
     // ── 2) Fiyatlar ─────────────────────────────────────────────────────────
@@ -297,6 +321,7 @@ Deno.serve(async (request) => {
         reason: 'Fiyat alinamadi.',
         sent: 0,
         kanarya,
+        yuzde,
       });
     }
 
@@ -331,6 +356,7 @@ Deno.serve(async (request) => {
         priced: fiyatlar.size,
       kanarya: kanaryaKismi,
         sent: 0,
+        yuzde,
       });
     }
 
@@ -473,6 +499,7 @@ Deno.serve(async (request) => {
       skipped_quiet_hours: skippedQuietHours,
       dry_run: dryRun,
       failures: failures.slice(0, 5),
+      yuzde,
     });
   } catch (error) {
     // Ayrıntı yalnızca günlüğe: yanıtta `error.message` dönmek tablo/sütun

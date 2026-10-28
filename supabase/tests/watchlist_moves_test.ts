@@ -1,6 +1,7 @@
 // Takip listesi hareketi — saf kurallar (sembol, eşik/sıralama, mesaj).
 import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 import {
+  calanlariCikar,
   EMTIA_HAREKET_ESIGI_PCT,
   EN_COK_VARLIK,
   emtiaSembolu,
@@ -124,4 +125,12 @@ Deno.test('tek emtia hareketi: gövde ve kart "gün içi", kapanış değil', ()
   assertStringIncludes(m.body, 'Gün içi hareket');
   assertEquals(m.body.includes('kapanış'), false);
   assertStringIncludes(JSON.stringify(hareketKarti(h)), 'gün içi');
+});
+
+Deno.test('calanlariCikar: bugün yüzde alarmı çalan sembol özetten çıkar', () => {
+  const satirlar = [{ sembol: 'ALTIN_GRAM', ad: 'Gram altın' }, { sembol: 'USDTRY=X', ad: 'Dolar' }];
+  const calanlar = new Set(['u1|ALTIN_GRAM', 'u2|USDTRY=X']);
+  assertEquals(calanlariCikar('u1', satirlar, calanlar).map((s) => s.sembol), ['USDTRY=X']);
+  assertEquals(calanlariCikar('u3', satirlar, calanlar).length, 2);
+  assertEquals(calanlariCikar('u1', satirlar, new Set()), satirlar);
 });

@@ -331,6 +331,20 @@ class FiyatKaynagi {
         .hasMatch(sembol.substring(kriptoOneki.length));
   }
 
+  /// Bu sembole "günlük yüzde" alarmı kurulabilir mi (0169, Ar-Ge
+  /// 2026-10-27 §1, yasin onayı).
+  ///
+  /// Kapsam [widgetSunucuKapsamindaMi]'dan TÜRER, ayrı sembol listesi yok
+  /// (sözleşme madde 1): sunucu günlük yüzdeyi yalnız altın/TL döviz
+  /// (`yurt_ici_kotasyon.degisim_pct`) ve kripto (`kripto_fiyat`, gün
+  /// açılışına göre) için ölçüyor. Fon bu kapsamın içinde ama çıkarılır:
+  /// günde tek NAV var, "bugün %2 düşerse" gün içi bir soru ve sayı gün
+  /// içinde değişmez. BIST/endeks/emtia sunucuda canlı tutulmadığı için
+  /// zaten dışarıda; o varlıklarda yüzde sekmesi hiç görünmez (uydurma yok,
+  /// madde 3). Sunucu eşi `_shared/yuzde_alarmi.ts › yuzdeAlarmKaynagi`.
+  static bool yuzdeAlarmiKapsamindaMi(String sembol) =>
+      widgetSunucuKapsamindaMi(sembol) && !sembol.startsWith(tefasOneki);
+
   /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
   /// aranmayacaksa `null`.
   ///

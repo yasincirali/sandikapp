@@ -9569,4 +9569,100 @@ class AppLocalizationsTr extends AppLocalizations {
   String alertCostPctSemantics(String sign, int pct) {
     return 'Hedef maliyetin $sign yüzde $pct';
   }
+
+  @override
+  String get alarmModFiyat => 'Fiyat';
+
+  @override
+  String get alarmModYuzde => 'Günlük yüzde';
+
+  @override
+  String alarmModSemantik(String tur) {
+    return 'Alarm türü: $tur';
+  }
+
+  @override
+  String get alarmYuzdeEsikBaslik => 'Bugün ne kadar oynarsa?';
+
+  @override
+  String alarmYuzdeEsikSemantik(int n) {
+    return 'Günlük yüzde $n eşiği';
+  }
+
+  @override
+  String get alarmYuzdeYonBaslik => 'Hangi yöne?';
+
+  @override
+  String get alarmYonDusus => 'Düşerse';
+
+  @override
+  String get alarmYonYukselis => 'Yükselirse';
+
+  @override
+  String get alarmYonIkisi => 'İkisi de';
+
+  @override
+  String alarmYuzdeOzetDusus(String name, int pct) {
+    return '$name bugün %$pct düşerse haber vereceğiz.';
+  }
+
+  @override
+  String alarmYuzdeOzetYukselis(String name, int pct) {
+    return '$name bugün %$pct yükselirse haber vereceğiz.';
+  }
+
+  @override
+  String alarmYuzdeOzetIkisi(String name, int pct) {
+    return '$name bugün %$pct düşer ya da yükselirse haber vereceğiz.';
+  }
+
+  @override
+  String get alarmYuzdeGundeBir =>
+      'Günde en çok bir kez çalar; ertesi gün kendiliğinden yeniden kurulur.';
+
+  @override
+  String yuzdeAlarmEtiketDusus(String pct) {
+    return 'Günlük %$pct düşüş';
+  }
+
+  @override
+  String yuzdeAlarmEtiketYukselis(String pct) {
+    return 'Günlük %$pct yükseliş';
+  }
+
+  @override
+  String yuzdeAlarmEtiketIkisi(String pct) {
+    return 'Günlük %$pct hareket';
+  }
+
+  @override
+  String yuzdeAlarmKuruldu(String name, String etiket) {
+    return '$name için alarm kuruldu: $etiket';
+  }
+
+  @override
+  String yuzdeAlarmHerGun(String etiket) {
+    return '$etiket · her gün';
+  }
+
+  @override
+  String yuzdeAlarmBugunCaldi(String pct) {
+    return 'Bugün çalıştı · $pct · yarın yeniden kurulur';
+  }
+
+  @override
+  String get notifTypeAlarm => 'ALARM';
+
+  @override
+  String get ortakPortfoyKartBaslik => 'Ortak portföy';
+
+  @override
+  String get ortakPortfoyKartGovde =>
+      'Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.';
+
+  @override
+  String get ortakPortfoyDavetEt => 'Davet et';
+
+  @override
+  String get ortakPortfoyKodGir => 'Kod gir';
 }

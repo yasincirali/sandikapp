@@ -23,6 +23,10 @@ class AppNotification {
   /// (`ticker`, `hak_tarihi`, `tutar_pay`, `lot`).
   static const temettu = 'temettu';
 
+  /// Günlük yüzde alarmı çaldı (0169, `check-price-alerts`); `data`
+  /// `symbol` + `yuzde_alarm_id`. Dokununca varlık ekranı (push'la aynı).
+  static const yuzdeAlarm = 'yuzde_alarm';
+
   final String id;
   final String type;
   final String title;

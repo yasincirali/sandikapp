@@ -90,7 +90,18 @@ Future<void> _showPartnerMsg(
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _codeCtrl = TextEditingController();
+  final _codeFocus = FocusNode();
   String? _generatedCode;
+
+  /// Ortağı olmayan kullanıcıda ortaklık bölümü tek karta iner (yasin
+  /// 2026-10-27, Ar-Ge 27 Eki #2): iki başlık + üç kart ("Davet kodu üret",
+  /// "Ortak kodu gir", "Henüz ortağın yok") boş Profil'in çoğunu kaplıyordu,
+  /// oysa ortak portföyü kullanıcıların çoğu kullanmıyor. Kartın düğmesine
+  /// basınca bu bayrak açılır ve bugünkü bölüm AYNI yerde açılır — alt
+  /// sayfa yerine yerinde açılma bilinçli: kod üretme/girme durumu
+  /// (`_generatedCode`, `_pendingInviteId`, hız sınırı) bu State'te yaşıyor,
+  /// sayfaya taşımak o durumu ikiye bölerdi.
+  bool _ortaklikAcik = false;
 
   /// Gönderim sürüyor mu. Tek yükleniyor davranışı (2026-10-08) düğmenin
   /// kendi kilidini [SandikAsyncButton]'a verdi; bu bayrak KALIR çünkü klavyenin
@@ -132,6 +143,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _rateLimitTicker?.cancel();
     _codeCtrl.dispose();
+    _codeFocus.dispose();
     _poll?.cancel();
     super.dispose();
   }
@@ -495,9 +507,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const HalkaArzProfilSatiri(),
                         const _PendingRequestsSection(),
                         const SizedBox(height: 8),
+                        if (_ortaklikKisa(partnersAsync))
+                          _buildOrtaklikKarti()
+                        else ...[
                         SandikSectionHeader(title: context.l10n.partnerActionsUpper),
                         const SizedBox(height: 16),
                         _buildInviteSection(),
+                        // Ortak yokken "ORTAKLARIM" + "Henüz ortağın yok"
+                        // kartı tekrar oluyordu (yukarıda zaten davet var);
+                        // yalnız ortak varken ya da yüklenirken çizilir.
+                        if (partnersAsync.valueOrNull?.isEmpty != true) ...[
                         const SizedBox(height: 32),
                         SandikSectionHeader(title: context.l10n.myPartnersUpper),
                         const SizedBox(height: 16),
@@ -511,8 +530,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 rows: 2, padding: EdgeInsets.zero),
                           ),
                           error: (e, _) => SandikErrorView(error: e),
+                          // Boş liste buraya gelmez (yukarıdaki koşul).
                           data: (partners) => partners.isEmpty
-                              ? _buildEmptyPartners()
+                              ? const SizedBox.shrink()
                               : Column(
                                   children: [
                                     ...partners
@@ -523,6 +543,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ),
                         ),
                         ),
+                        ],
+                        ],
                         // Yüzdelik dilim şeridi 2026-09-21'de ana ekrandan
                         // buraya: sosyal karşılaştırma Yarış'ın yanında.
                         // Kapıları (bayrak, opt-in, k-anonimlik, yatırımcı
@@ -690,6 +712,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ] else ...[
                 TextField(
                   controller: _codeCtrl,
+                  focusNode: _codeFocus,
                   // Kilitliyken alan kapalı: kullanıcı boşuna yazıp
                   // yeni bir ret almasın.
                   enabled: _rateLimitRemaining == 0,
@@ -818,21 +841,92 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildEmptyPartners() {
-    return SandikCard(
-      padding: const EdgeInsets.all(32),
-      bordered: false,
-      child: Column(
-        children: [
-          Icon(Icons.people_outline_rounded,
-              size: 48, color: context.c.text36),
-          const SizedBox(height: 16),
-          Text(
-            context.l10n.noPartnersYet,
-            style: context.t.titleMedium?.copyWith(color: context.c.text36),
-            textAlign: TextAlign.center,
-          ),
-        ],
+  /// Ortaklık bölümü tek karta insin mi? Yalnız ortak listesi YÜKLENMİŞ
+  /// ve boşken, kullanıcı bölümü açmamışken ve yarım kalmış bir akış yokken
+  /// (üretilmiş kod ya da yanıt bekleyen istek görünür kalmalı). Yüklenirken
+  /// eski yerleşim: ortağı olan kullanıcıda kart bir an görünüp kaybolmasın.
+  bool _ortaklikKisa(AsyncValue<List<PartnerAccount>> partnersAsync) =>
+      !_ortaklikAcik &&
+      _generatedCode == null &&
+      _pendingInviteId == null &&
+      partnersAsync.valueOrNull?.isEmpty == true;
+
+  /// Ortağı olmayana tek kart: ne olduğu bir cümle, iki eylem. "Davet et"
+  /// bölümü açıp kodu hemen üretir (kullanıcının niyeti kod almak; açıp bir
+  /// kez daha "Kod üret"e bastırmak boş adım). "Kod gir" bölümü açıp alana
+  /// odaklanır. Tur adımı `davetKodu` kısa hâlde bu karta bağlanır — tur
+  /// metni ("kodunu gönder ya da onunkini gir") iki düğmeyle birebir.
+  Widget _buildOrtaklikKarti() {
+    return TourAnchor(
+      target: TourTarget.davetKodu,
+      child: SandikCard(
+        padding: const EdgeInsets.all(SandikSpace.lgs),
+        bordered: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                ExcludeSemantics(
+                  child: Icon(Icons.people_outline_rounded,
+                      color: context.c.text58),
+                ),
+                const SizedBox(width: SandikSpace.sm),
+                Expanded(
+                  child: Text(context.l10n.ortakPortfoyKartBaslik,
+                      style: context.t.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.c.text90)),
+                ),
+              ],
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              context.l10n.ortakPortfoyKartGovde,
+              style: context.t.bodyMedium?.copyWith(color: context.c.text36),
+            ),
+            const SizedBox(height: SandikSpace.md),
+            Row(
+              children: [
+                Expanded(
+                  child: SandikAsyncButton(
+                    onPressed: () async {
+                      setState(() => _ortaklikAcik = true);
+                      await _generateCode();
+                    },
+                    height: 46,
+                    style: _hafifDolguStili(context.c.amberFill),
+                    child: Text(
+                      context.l10n.ortakPortfoyDavetEt,
+                      style: context.t.titleMedium?.copyWith(
+                          color: context.c.amberText,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.sm),
+                Expanded(
+                  child: SandikAsyncButton(
+                    onPressed: () async {
+                      setState(() => _ortaklikAcik = true);
+                      // Alan bir sonraki karede kurulur; odak ondan sonra.
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _codeFocus.requestFocus();
+                      });
+                    },
+                    height: 46,
+                    style: _hafifDolguStili(context.c.gain),
+                    child: Text(
+                      context.l10n.ortakPortfoyKodGir,
+                      style: context.t.titleMedium?.copyWith(
+                          color: context.c.gain, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

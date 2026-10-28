@@ -9673,4 +9673,100 @@ class AppLocalizationsEn extends AppLocalizations {
   String alertCostPctSemantics(String sign, int pct) {
     return 'Target your cost $sign $pct percent';
   }
+
+  @override
+  String get alarmModFiyat => 'Price';
+
+  @override
+  String get alarmModYuzde => 'Daily %';
+
+  @override
+  String alarmModSemantik(String tur) {
+    return 'Alert type: $tur';
+  }
+
+  @override
+  String get alarmYuzdeEsikBaslik => 'How big a move today?';
+
+  @override
+  String alarmYuzdeEsikSemantik(int n) {
+    return 'Daily $n percent threshold';
+  }
+
+  @override
+  String get alarmYuzdeYonBaslik => 'Which direction?';
+
+  @override
+  String get alarmYonDusus => 'If it falls';
+
+  @override
+  String get alarmYonYukselis => 'If it rises';
+
+  @override
+  String get alarmYonIkisi => 'Either way';
+
+  @override
+  String alarmYuzdeOzetDusus(String name, int pct) {
+    return 'We\'ll let you know if $name falls $pct% today.';
+  }
+
+  @override
+  String alarmYuzdeOzetYukselis(String name, int pct) {
+    return 'We\'ll let you know if $name rises $pct% today.';
+  }
+
+  @override
+  String alarmYuzdeOzetIkisi(String name, int pct) {
+    return 'We\'ll let you know if $name moves $pct% either way today.';
+  }
+
+  @override
+  String get alarmYuzdeGundeBir =>
+      'Fires at most once a day and re-arms itself the next day.';
+
+  @override
+  String yuzdeAlarmEtiketDusus(String pct) {
+    return 'Daily $pct% drop';
+  }
+
+  @override
+  String yuzdeAlarmEtiketYukselis(String pct) {
+    return 'Daily $pct% rise';
+  }
+
+  @override
+  String yuzdeAlarmEtiketIkisi(String pct) {
+    return 'Daily $pct% move';
+  }
+
+  @override
+  String yuzdeAlarmKuruldu(String name, String etiket) {
+    return 'Alert set for $name: $etiket';
+  }
+
+  @override
+  String yuzdeAlarmHerGun(String etiket) {
+    return '$etiket · every day';
+  }
+
+  @override
+  String yuzdeAlarmBugunCaldi(String pct) {
+    return 'Fired today · $pct · re-arms tomorrow';
+  }
+
+  @override
+  String get notifTypeAlarm => 'ALERT';
+
+  @override
+  String get ortakPortfoyKartBaslik => 'Shared portfolio';
+
+  @override
+  String get ortakPortfoyKartGovde =>
+      'Combine your portfolio with someone close on one screen. You can leave any time.';
+
+  @override
+  String get ortakPortfoyDavetEt => 'Invite';
+
+  @override
+  String get ortakPortfoyKodGir => 'Enter code';
 }
