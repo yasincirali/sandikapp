@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/services/bist_calendar.dart';
 import 'package:portfoy_takip/services/daily_summary.dart'
     show IntradaySeriesCache;
 import 'package:portfoy_takip/services/live_activity_service.dart';
@@ -88,12 +89,16 @@ PortfolioState _state() => PortfolioState(
 ///
 /// Hafta sonu kaydırması şart: `isMarketOpen` Cts/Paz'ı eler, o günlerde
 /// seans hiç açılmaz ve seans-içi varsayan testler düşer.
+// Tam seans günü olmalı: 28 Ekim 2026 (yarım gün, 12:30 kapanış) ve 29 Ekim
+// (tatil) bugünü sabit alan eski hâli kırdı. Hafta sonu, tatil ve yarım gün
+// geriye atlanır; 14:30 yalnız tam günde seans içidir.
 final _duringSession = () {
   var d = DateTime.now();
-  if (d.weekday == DateTime.saturday) {
+  while (d.weekday == DateTime.saturday ||
+      d.weekday == DateTime.sunday ||
+      BistTakvimi.tatilMi(d) ||
+      BistTakvimi.yarimGunMu(d)) {
     d = d.subtract(const Duration(days: 1));
-  } else if (d.weekday == DateTime.sunday) {
-    d = d.subtract(const Duration(days: 2));
   }
   return DateTime(d.year, d.month, d.day, 14, 30);
 }();
