@@ -399,7 +399,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _openFeedbackSheet() async {
-    String type = 'Şikayet';
+    // Varsayılan "Tavsiye" (Ar-Ge 29 Eki #2): form "Şikayet" seçili
+    // açılıyordu; öneri yazmaya gelen kişiye ilk gösterilen şey şikâyetti.
+    String type = 'Tavsiye';
     const turlar = ['Şikayet', 'Tavsiye', 'Diğer'];
     final etiketler = [
       context.l10n.feedbackTypeComplaint,
@@ -502,12 +504,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: Text(context.l10n.send,
                       style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
+                // Formsuz yazmak isteyene doğrudan e-posta (eski "Bize ulaş"
+                // satırının işi; satırlar birleşti, Ar-Ge 29 Eki #2).
+                const SizedBox(height: 4),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, const {'eposta': '1'}),
+                  child: Text(context.l10n.feedbackDogrudanEposta),
+                ),
               ],
             ),
           ),
         );
       },
     );
+    if (result?['eposta'] != null) {
+      await _sendMail(subject: 'Sandık uygulama iletişim');
+      return;
+    }
     if (result != null) {
       await _sendMail(
         subject: '[${result['type']}] Sandık uygulama geri bildirim',
@@ -1022,112 +1038,147 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ];
   }
 
+  /// Beş yasal belge tek satırın arkasında (Ar-Ge 29 Eki #2, yasin "yap").
+  /// Belgeler ve metinleri değişmedi, yalnız giriş: Yardım'da beş açıklamalı
+  /// satır alt alta, sayfanın yarısını kaplıyordu. Liste alt sayfada; bir
+  /// belgeye dokununca sayfa kapanır ve belge bugünkü gibi tam ekran açılır.
+  /// Gizlilik politikası uygulama içinden erişilebilir kalır (bir dokunuş
+  /// daha derinde).
+  void _yasalBelgeleriAc() {
+    final l = context.l10n;
+    void ac(VoidCallback git) {
+      Navigator.of(context).pop();
+      git();
+    }
+
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              SandikSpace.screenH(ctx), 20, SandikSpace.screenH(ctx), 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SandikSectionHeader(title: l.legalUpper),
+              const SizedBox(height: 12),
+              _SettingsTile(
+                icon: Icons.privacy_tip_outlined,
+                title: l.privacyPolicy,
+                subtitle: l.privacyPolicySubtitle,
+                onTap: () => ac(() => _showLegalDoc(l.privacyPolicy,
+                    LegalDocs.privacy, Icons.privacy_tip_outlined)),
+              ),
+              _SettingsTile(
+                icon: Icons.gavel_outlined,
+                title: l.termsOfUse,
+                subtitle: l.termsOfUseSubtitle,
+                onTap: () => ac(() => _showLegalDoc(
+                    l.termsOfUse, LegalDocs.terms, Icons.gavel_outlined)),
+              ),
+              _SettingsTile(
+                icon: Icons.shield_outlined,
+                title: l.kvkkNotice,
+                subtitle: l.kvkkNoticeSubtitle,
+                onTap: () => ac(() => _showLegalDoc(
+                    l.kvkkNotice, LegalDocs.kvkk, Icons.shield_outlined)),
+              ),
+              // 1.2 (2026-10-04): kayıtta onaylanan dört belgenin dördü de
+              // burada; hepsi `legal/tr/*.md`'den (web ile aynı metin).
+              _SettingsTile(
+                icon: Icons.public_rounded,
+                title: l.yasalBelgeAcikRiza,
+                subtitle: l.yasalBelgeAcikRizaAciklama,
+                onTap: () => ac(() => _showLegalDoc(l.yasalBelgeAcikRiza,
+                    LegalDocs.acikRiza, Icons.public_rounded)),
+              ),
+              _SettingsTile(
+                icon: Icons.gavel_rounded,
+                title: l.investmentDisclaimer,
+                subtitle: l.disclaimerSubtitle,
+                onTap: () => ac(_showDisclaimerText),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _yardim() {
+    // "Bize ulaş" ile "Şikayet & Tavsiye" tek satır (Ar-Ge 29 Eki #2): ikisi
+    // de e-posta açıyordu, biri boş, biri türü seçilmiş formla. Kişi hangisini
+    // seçeceğini bilmiyordu. Satır formu açar; formdan doğrudan e-postaya
+    // geçen bağlantı da var.
     final iletisim = _SettingsTile(
-              icon: Icons.mail_outline_rounded,
-              title: context.l10n.contactUs,
-              subtitle: _supportEmail,
-              onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
-            );
+      icon: Icons.mail_outline_rounded,
+      title: context.l10n.contactUs,
+      subtitle: _supportEmail,
+      onTap: _openFeedbackSheet,
+    );
     final puan = _SettingsTile(
-              icon: Icons.star_outline_rounded,
-              title: context.l10n.rateAppTitle,
-              subtitle: context.l10n.rateAppSubtitle,
-              // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
-              // "Sonra" diye geçiştirdiyse puanı buradan verir.
-              onTap: () => ReviewPromptService.instance.magazayiAc(),
-            );
+      icon: Icons.star_outline_rounded,
+      title: context.l10n.rateAppTitle,
+      subtitle: context.l10n.rateAppSubtitle,
+      // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
+      // "Sonra" diye geçiştirdiyse puanı buradan verir.
+      onTap: () => ReviewPromptService.instance.magazayiAc(),
+    );
     final yenilikler = _SettingsTile(
-              icon: Icons.auto_awesome_outlined,
-              title: context.l10n.whatsNewTitle,
-              subtitle: context.l10n.whatsNewSubtitle,
-              // Elle açılışta TÜM liste gösterilir (otomatik açılışın
-              // `onemli` filtresi uygulanmaz): kullanıcı buraya bilerek
-              // geliyor, yama sürümlerini de görebilmeli.
-              onTap: () async {
-                final notlar = await SurumNotuService.instance
-                    .gosterilecekler(otomatikAcilis: false);
-                // State'in kendi `mounted`'ı — `context.mounted` burada
-                // analyzer'ın istediği güvence değil.
-                if (!mounted) return;
-                if (notlar.isEmpty) {
-                  sandikSnack(context, context.l10n.whatsNewEmpty);
-                  return;
-                }
-                await YeniliklerSheet.goster(context, notlar);
-              },
-            );
+      icon: Icons.auto_awesome_outlined,
+      title: context.l10n.whatsNewTitle,
+      subtitle: context.l10n.whatsNewSubtitle,
+      // Elle açılışta TÜM liste gösterilir (otomatik açılışın
+      // `onemli` filtresi uygulanmaz): kullanıcı buraya bilerek
+      // geliyor, yama sürümlerini de görebilmeli.
+      onTap: () async {
+        final notlar = await SurumNotuService.instance
+            .gosterilecekler(otomatikAcilis: false);
+        // State'in kendi `mounted`'ı — `context.mounted` burada
+        // analyzer'ın istediği güvence değil.
+        if (!mounted) return;
+        if (notlar.isEmpty) {
+          sandikSnack(context, context.l10n.whatsNewEmpty);
+          return;
+        }
+        await YeniliklerSheet.goster(context, notlar);
+      },
+    );
     final tur = _SettingsTile(
-              icon: Icons.explore_outlined,
-              title: context.l10n.replayTour,
-              subtitle: context.l10n.replayTourSubtitle,
-              // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
-              // köke dönülür ve katman orada açılır.
-              onTap: () => OnboardingScreen.yenidenBaslat(context),
-            );
-    final geriBildirim = _SettingsTile(
-              icon: Icons.rate_review_outlined,
-              title: context.l10n.feedbackTitle,
-              subtitle: context.l10n.feedbackSubtitle,
-              onTap: _openFeedbackSheet,
-            );
-    final yasal = <Widget>[
-            SandikSectionHeader(title: context.l10n.legalUpper),
-            const SizedBox(height: 12),
-            _SettingsTile(
-              icon: Icons.privacy_tip_outlined,
-              title: context.l10n.privacyPolicy,
-              subtitle: context.l10n.privacyPolicySubtitle,
-              onTap: () => _showLegalDoc(context.l10n.privacyPolicy,
-                  LegalDocs.privacy, Icons.privacy_tip_outlined),
-            ),
-            _SettingsTile(
-              icon: Icons.gavel_outlined,
-              title: context.l10n.termsOfUse,
-              subtitle: context.l10n.termsOfUseSubtitle,
-              onTap: () => _showLegalDoc(
-                  context.l10n.termsOfUse, LegalDocs.terms, Icons.gavel_outlined),
-            ),
-            _SettingsTile(
-              icon: Icons.shield_outlined,
-              title: context.l10n.kvkkNotice,
-              subtitle: context.l10n.kvkkNoticeSubtitle,
-              onTap: () => _showLegalDoc(context.l10n.kvkkNotice,
-                  LegalDocs.kvkk, Icons.shield_outlined),
-            ),
-            // 1.2 (2026-10-04): kayıtta onaylanan dört belgenin dördü de
-            // burada; hepsi `legal/tr/*.md`'den (web ile aynı metin).
-            _SettingsTile(
-              icon: Icons.public_rounded,
-              title: context.l10n.yasalBelgeAcikRiza,
-              subtitle: context.l10n.yasalBelgeAcikRizaAciklama,
-              onTap: () => _showLegalDoc(context.l10n.yasalBelgeAcikRiza,
-                  LegalDocs.acikRiza, Icons.public_rounded),
-            ),
-            _SettingsTile(
-              icon: Icons.gavel_rounded,
-              title: context.l10n.investmentDisclaimer,
-              subtitle: context.l10n.disclaimerSubtitle,
-              onTap: _showDisclaimerText,
-            ),
-            const SizedBox(height: 28),
-    ];
-    // "Bize yaz" türü satırlar (iletişim, geri bildirim, puan)
-    // DESTEK'te yan yana; uygulamanın kendini anlattığı satırlar
-    // (yenilikler, tanıtım turu) UYGULAMA HAKKINDA'da; yasal belgeler aynı.
+      icon: Icons.explore_outlined,
+      title: context.l10n.replayTour,
+      subtitle: context.l10n.replayTourSubtitle,
+      // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
+      // köke dönülür ve katman orada açılır.
+      onTap: () => OnboardingScreen.yenidenBaslat(context),
+    );
+    final yasal = _SettingsTile(
+      icon: Icons.gavel_outlined,
+      title: context.l10n.yasalBelgelerBaslik,
+      subtitle: context.l10n.yasalBelgelerAlt,
+      onTap: _yasalBelgeleriAc,
+    );
+    // "Bize yaz" türü satırlar (iletişim, puan) DESTEK'te; uygulamanın
+    // kendini anlattığı satırlar (yenilikler, tanıtım turu) ve yasal
+    // belgeler UYGULAMA HAKKINDA'da. 10 satır → 5 (Ar-Ge 29 Eki #2).
     return [
       SandikSectionHeader(title: context.l10n.supportUpper),
       const SizedBox(height: 12),
       iletisim,
-      geriBildirim,
       puan,
       const SizedBox(height: 28),
       SandikSectionHeader(title: context.l10n.settingsGroupAbout),
       const SizedBox(height: 12),
       yenilikler,
       tur,
+      yasal,
       const SizedBox(height: 28),
-      ...yasal,
     ];
   }
 }

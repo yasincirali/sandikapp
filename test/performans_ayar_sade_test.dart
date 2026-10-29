@@ -289,18 +289,17 @@ void main() {
         _tr.rateAppTitle,
         _tr.whatsNewTitle,
         _tr.replayTour,
-        _tr.feedbackTitle,
-        _tr.privacyPolicy,
-        _tr.termsOfUse,
-        _tr.kvkkNotice,
-        _tr.investmentDisclaimer,
+        // Beş yasal belge tek satırın arkasında (Ar-Ge 29 Eki #2);
+        // `ayarlar_yardim_sade_test` sayfanın beşini de açtığını kilitler.
+        _tr.yasalBelgelerBaslik,
       ],
     };
 
     for (final e in beklenen.entries) {
       testWidgets('${e.key.name} tam', (tester) async {
         await _boyut(tester, 1200, h: 4000);
-        await tester.pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: e.key)));
+        await tester
+            .pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: e.key)));
         await _bekle(tester);
         // Bildirimler'in tek tek anahtarları "Ayrıntılı" grubunda
         // (2026-10-20): katlıdır ama kaybolmamalı.
@@ -329,8 +328,54 @@ void main() {
           [_tr.settingsGroupGeneral, _tr.settingsGroupPortfolioView]);
       await bak(SettingsBolum.hesap,
           [_tr.settingsGroupSecurityAccount, _tr.settingsGroupData]);
-      await bak(SettingsBolum.yardim,
-          [_tr.supportUpper, _tr.settingsGroupAbout, _tr.legalUpper]);
+      await bak(
+          SettingsBolum.yardim, [_tr.supportUpper, _tr.settingsGroupAbout]);
+    });
+
+    // Ar-Ge 29 Eki #2: Yardım 10 satırdan 5'e; hiçbir belge ya da yol
+    // kaybolmaz, yalnız bir dokunuş derine iner.
+    testWidgets('Yardım: yasal belgeler alt sayfada beşi birden',
+        (tester) async {
+      await _boyut(tester, 1200, h: 4000);
+      await tester.pumpWidget(
+          _uygulama(_kap(), const SettingsScreen(bolum: SettingsBolum.yardim)));
+      await _bekle(tester);
+      expect(find.text(_tr.privacyPolicy), findsNothing);
+      expect(find.text(_tr.feedbackTitle), findsNothing,
+          reason: 'iki iletişim satırı tek satır');
+      await tester.tap(find.text(_tr.yasalBelgelerBaslik));
+      await tester.pumpAndSettle();
+      for (final t in [
+        _tr.privacyPolicy,
+        _tr.termsOfUse,
+        _tr.kvkkNotice,
+        _tr.yasalBelgeAcikRiza,
+        _tr.investmentDisclaimer,
+      ]) {
+        expect(find.text(t), findsOneWidget, reason: t);
+      }
+    });
+
+    testWidgets(
+        'Yardım: "Bize ulaş" formu Tavsiye seçili açar, e-posta yolu var',
+        (tester) async {
+      await _boyut(tester, 1200, h: 4000);
+      await tester.pumpWidget(
+          _uygulama(_kap(), const SettingsScreen(bolum: SettingsBolum.yardim)));
+      await _bekle(tester);
+      await tester.tap(find.text(_tr.contactUs));
+      await tester.pumpAndSettle();
+      expect(find.text(_tr.feedbackTitle), findsOneWidget);
+      expect(find.text(_tr.feedbackDogrudanEposta), findsOneWidget);
+      final cip = tester.widget<ChoiceChip>(
+          find.widgetWithText(ChoiceChip, _tr.feedbackTypeSuggestion));
+      expect(cip.selected, isTrue);
+      expect(
+          tester
+              .widget<ChoiceChip>(
+                  find.widgetWithText(ChoiceChip, _tr.feedbackTypeComplaint))
+              .selected,
+          isFalse);
     });
 
     testWidgets('hub\'da teknik satırlar katlanır "Gelişmiş"te',
@@ -363,7 +408,8 @@ void main() {
         for (final b in SettingsBolum.values) {
           testWidgets('${w.toInt()}pt ${b.name}', (tester) async {
             await _boyut(tester, w);
-            await tester.pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: b)));
+            await tester
+                .pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: b)));
             await _bekle(tester);
             expect(tester.takeException(), isNull, reason: b.name);
           });

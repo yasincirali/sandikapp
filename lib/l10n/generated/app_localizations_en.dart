@@ -1392,6 +1392,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackSubtitle => 'Send us your thoughts';
 
   @override
+  String get yasalBelgelerBaslik => 'Legal documents';
+
+  @override
+  String get yasalBelgelerAlt =>
+      'Privacy, terms, KVKK notice, explicit consent, investment disclaimer';
+
+  @override
+  String get feedbackDogrudanEposta => 'Write by email instead';
+
+  @override
   String get legalUpper => 'LEGAL';
 
   @override

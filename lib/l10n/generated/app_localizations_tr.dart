@@ -1378,6 +1378,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get feedbackSubtitle => 'Görüşünü bize ilet';
 
   @override
+  String get yasalBelgelerBaslik => 'Yasal belgeler';
+
+  @override
+  String get yasalBelgelerAlt =>
+      'Gizlilik, kullanım koşulları, KVKK, açık rıza, yatırım uyarısı';
+
+  @override
+  String get feedbackDogrudanEposta => 'Formsuz, doğrudan e-postayla yaz';
+
+  @override
   String get legalUpper => 'YASAL';
 
   @override

@@ -2504,6 +2504,24 @@ abstract class AppLocalizations {
   /// **'Görüşünü bize ilet'**
   String get feedbackSubtitle;
 
+  /// No description provided for @yasalBelgelerBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal belgeler'**
+  String get yasalBelgelerBaslik;
+
+  /// No description provided for @yasalBelgelerAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gizlilik, kullanım koşulları, KVKK, açık rıza, yatırım uyarısı'**
+  String get yasalBelgelerAlt;
+
+  /// No description provided for @feedbackDogrudanEposta.
+  ///
+  /// In tr, this message translates to:
+  /// **'Formsuz, doğrudan e-postayla yaz'**
+  String get feedbackDogrudanEposta;
+
   /// No description provided for @legalUpper.
   ///
   /// In tr, this message translates to:
