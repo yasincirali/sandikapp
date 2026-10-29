@@ -107,5 +107,15 @@ class SeviyeAlarmiService {
     return kayit;
   }
 
+  /// Çizgi alarmının okunan adı (yasin 2026-10-29). Yalnız `label`:
+  /// nöbet durumu (taraf, damga) değişmez. 0170 güncelleme ilkesi Premium
+  /// ister — abonelik bitmişse sunucu reddeder, hata kullanıcıya söylenir.
+  Future<CizimAlarmi> cizimEtiketi(String id, String label) async {
+    final kayit = CizimAlarmi.fromMap(
+        await _store.update(cizimTablosu, id, {'label': label}));
+    if (kayit == null) throw StateError('cizim_alarmlari: bozuk satır');
+    return kayit;
+  }
+
   Future<void> cizimSil(String id) => _store.delete(cizimTablosu, id);
 }

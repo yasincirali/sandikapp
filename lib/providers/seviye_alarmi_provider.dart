@@ -105,6 +105,13 @@ class CizimAlarmlariNotifier extends AsyncNotifier<List<CizimAlarmi>> {
     return kayit;
   }
 
+  /// Alarmlarım'dan yeniden adlandırma ([SeviyeAlarmiService.cizimEtiketi]).
+  Future<CizimAlarmi> etiketiGuncelle(String id, String label) async {
+    final kayit = await _svc.cizimEtiketi(id, label);
+    _yerinde(kayit);
+    return kayit;
+  }
+
   Future<void> delete(String id) async {
     await _svc.cizimSil(id);
     state = AsyncData([

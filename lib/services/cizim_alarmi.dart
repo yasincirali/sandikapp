@@ -8,7 +8,11 @@ library;
 import '../models/asset.dart';
 import '../models/asset_type.dart' show alarmFiyatSimgesi;
 import '../models/grafik_cizimi.dart';
+import '../models/watchlist_item.dart';
+import '../models/varlik_kimligi.dart';
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
+import 'cizim_deposu.dart' show YatayAlarmBagi;
+import 'fiyat_kaynagi.dart';
 
 /// Grafiğin birimi ile alarmın birimi arasında izin verilen fark. Grafik
 /// mumları canlı fiyata hizalı (`canliyaHizala`); TL kote sembolde
@@ -137,3 +141,107 @@ String cizimImzasi(GrafikCizimi c) => [
       c.b?.t ?? '',
       c.b?.p ?? '',
     ].join('|');
+
+// ── Çizginin adı (yasin 2026-10-29: "Çizgi alarmında isim verebilelim") ─────
+
+/// Varlık adı ile çizginin adı arasındaki ayraç: "THYAO · Destek 245".
+const String kCizgiAdiAyiraci = ' · ';
+
+/// Çizgi adının en çok uzunluğu. `label` sunucuda 1–80 karakter (0170);
+/// varlığın kısa adı (THYAO, ALTIN…) ve ayraçla birlikte sığsın diye 40.
+const int kCizgiAdiAzami = 40;
+
+/// Sunucudaki `label`'ın en çok uzunluğu (0170 / 0046 check'i).
+const int kAlarmEtiketiAzami = 80;
+
+/// Çizgi alarmının `label`'ı: ad yoksa eskisi gibi yalnız varlığın adı,
+/// varsa "varlık · ad".
+///
+/// ## Neden ayrı kolon değil, `label`'ın içinde
+/// Ad, alarmın okunan adıdır ve her yüzey (push başlığı, çan satırı,
+/// Alarmlarım, eski build'ler) zaten `label`'ı okur. Ayrı kolon yeni bir
+/// migration ve eski build'de görünmeyen bir ad demekti; varlık adını
+/// silip yerine yalnız "Destek 245" yazmak da push'ta "hangi varlık?"
+/// sorusunu doğururdu. Bu yüzden ikisi birlikte, ayraçla. Varlık adı
+/// önde: kısa etiketlerde (THYAO) ayraç geçmez, ilk ayraçtan bölmek güvenli.
+String cizgiAlarmEtiketi(String varlikAdi, String? isim) {
+  final v = varlikAdi.trim();
+  var i = (isim ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (i.length > kCizgiAdiAzami) i = i.substring(0, kCizgiAdiAzami).trim();
+  if (i.isEmpty) return v;
+  final tam = '$v$kCizgiAdiAyiraci$i';
+  return tam.length <= kAlarmEtiketiAzami
+      ? tam
+      : tam.substring(0, kAlarmEtiketiAzami).trim();
+}
+
+/// [cizgiAlarmEtiketi]'nin tersi: `label`'dan varlık adı ve çizginin adı
+/// (adsızsa `null`). Eski satırların `label`'ı yalnız varlık adıdır.
+({String varlik, String? isim}) cizgiEtiketiniAyir(String label) {
+  final k = label.indexOf(kCizgiAdiAyiraci);
+  if (k <= 0) return (varlik: label.trim(), isim: null);
+  final isim = label.substring(k + kCizgiAdiAyiraci.length).trim();
+  return (varlik: label.substring(0, k).trim(), isim: isim.isEmpty ? null : isim);
+}
+
+// ── Bildirimden çizgiye (yasin 2026-10-29: "bildirime ve alarma
+// tıkladığımızda çizgiyi izleyebilelim") ──────────────────────────────────
+
+/// Yatay çizgi fiyat alarmının bağlı olduğu çizim (bağ cihazda,
+/// [YatayAlarmBagi]); bağ yoksa `null` — o zaman varlık eskisi gibi açılır.
+String? yatayAlarmCizimi(Map<String, YatayAlarmBagi> baglar, String? alarmId) {
+  if (alarmId == null || alarmId.isEmpty) return null;
+  for (final e in baglar.entries) {
+    if (e.value.alarmId == alarmId) return e.key;
+  }
+  return null;
+}
+
+/// Tam ekran grafiği açmak için gereken üçlü.
+typedef CizgiGrafigi = ({Asset varlik, String ad, double canliBirim});
+
+/// Alarm sembolünden grafiğin varlığı: önce portföydeki lot, yoksa takip
+/// listesindeki satırdan gözlem varlığı. Alarm kurmadaki kuralın tersi
+/// ([alarmSembolu]); iki yön aynı fonksiyonu kullanır.
+///
+/// Canlı birim: varlığın bilinen fiyatı. Çizgi alarmı yalnız TL kote
+/// sembolde kurulur ([cizimAlarmSembolu]); orada grafiğin birimi ile
+/// `currentPrice` aynı sayıdır. Fiyat bilinmiyorsa (0) `null`: mumlar
+/// uydurma bir ölçeğe hizalanmasın, varlık eskisi gibi açılır.
+CizgiGrafigi? cizgiGrafigi(
+  String sembol, {
+  required List<Asset> varliklar,
+  List<WatchlistItem> takip = const [],
+}) {
+  final hedef = sembol.trim().toUpperCase();
+  bool esit(String ticker, String? alt) =>
+      alarmSembolu(ticker, alt)?.toUpperCase() == hedef;
+  for (final a in varliklar) {
+    if (!esit(a.ticker, a.subCategory)) continue;
+    if (!(a.currentPrice > 0)) return null;
+    final k = VarlikKimligi(
+        ticker: a.ticker,
+        name: a.name,
+        type: a.type,
+        subCategory: a.subCategory,
+        currency: a.currency);
+    return (varlik: a, ad: k.kisaEtiket, canliBirim: a.currentPrice);
+  }
+  for (final w in takip) {
+    if (!esit(w.ticker, w.subCategory)) continue;
+    final f = w.currentPrice ?? 0;
+    if (!(f > 0)) return null;
+    final k = VarlikKimligi.fromWatchlistItem(w);
+    return (
+      varlik: FiyatKaynagi.gozlemVarligi(
+          ticker: w.ticker,
+          type: w.type,
+          currency: w.currency,
+          subCategory: w.subCategory,
+          name: w.name),
+      ad: k.kisaEtiket,
+      canliBirim: f,
+    );
+  }
+  return null;
+}

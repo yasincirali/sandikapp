@@ -6394,5 +6394,13 @@
   "@alarmCalanlar": {"placeholders": {"n": {"type": "int"}}},
   "alarmCalanlariTemizle": "Çalanları temizle",
   "alarmCalanlariTemizleSoru": "Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.",
-  "@alarmCalanlariTemizleSoru": {"placeholders": {"n": {"type": "int"}}}
+  "@alarmCalanlariTemizleSoru": {"placeholders": {"n": {"type": "int"}}},
+  "cizgiAdiEtiket": "Çizginin adı (isteğe bağlı)",
+  "cizgiAdiIpucu": "ör. Destek 245, Kırılım",
+  "cizgiAdiAciklama": "Bildirimde ve Alarmlarım'da bu adla görünür.",
+  "cizgiAlarmiBaslik": "Çizgi alarmı",
+  "cizgiAlarmiAdlandir": "Adlandır",
+  "cizgiAlarmiAdlandirBaslik": "Çizgi alarmının adı",
+  "cizgiyiGrafikteAc": "Grafikte aç",
+  "cizgiAlarmiAdlandi": "Alarmın adı kaydedildi"
 }

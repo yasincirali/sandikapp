@@ -5718,5 +5718,13 @@
   "alarmBekleyenler": "Waiting",
   "alarmCalanlar": "Fired ({n})",
   "alarmCalanlariTemizle": "Clear fired",
-  "alarmCalanlariTemizleSoru": "Delete {n} fired alarms? Your waiting alarms stay."
+  "alarmCalanlariTemizleSoru": "Delete {n} fired alarms? Your waiting alarms stay.",
+  "cizgiAdiEtiket": "Line name (optional)",
+  "cizgiAdiIpucu": "e.g. Support 245, Breakout",
+  "cizgiAdiAciklama": "Shown with this name in the notification and My alarms.",
+  "cizgiAlarmiBaslik": "Line alert",
+  "cizgiAlarmiAdlandir": "Rename",
+  "cizgiAlarmiAdlandirBaslik": "Line alert name",
+  "cizgiyiGrafikteAc": "Open in chart",
+  "cizgiAlarmiAdlandi": "Alert name saved"
 }

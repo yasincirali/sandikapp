@@ -281,10 +281,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           //
           // Sembolden varlığa eşleme `alarmSembolu` üstünden yapılır —
           // alarm payload'ı `asset_id` taşımaz (bkz. migration 0065).
-          NotificationService.instance.openPriceAlertAsset(
-            bildirim.symbol,
-            onNotFound: () => NotificationService.instance.showAssetNotFound(),
-          );
+          // Yatay çizgiye bağlı alarm çizgiyi açar (bağ cihazda, 2026-10-29);
+          // bağ yoksa [openCizgi] varlığa düşer — eski davranış.
+          CrashReporter.arkaPlan(
+              NotificationService.instance.openCizgi(
+                bildirim.symbol,
+                alertId: bildirim.alertId,
+                onNotFound: () =>
+                    NotificationService.instance.showAssetNotFound(),
+              ),
+              reason: 'home.alarmCizgiAc');
         },
       ),
     ).whenComplete(() {
@@ -357,8 +363,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             AppNotification.gostergeAlarm ||
             AppNotification.cizimAlarm:
         // Push'la AYNI varış (`type: price_alert` + `symbol`): varlık ekranı.
+        // Çizgi alarmı çizgiyi yatay grafikte açar (2026-10-29; `cizim_id`
+        // yeni kayıtlarda, eskilerde `cizim_alarm_id` listeden çözülür).
         final sembol = b.data['symbol']?.toString() ?? '';
-        if (sembol.isNotEmpty) {
+        if (sembol.isEmpty) break;
+        if (b.type == AppNotification.cizimAlarm) {
+          CrashReporter.arkaPlan(
+              NotificationService.instance.openCizgi(sembol,
+                  cizimId: b.data['cizim_id']?.toString(),
+                  cizimAlarmId: b.data['cizim_alarm_id']?.toString()),
+              reason: 'home.cizgiAc');
+        } else {
           NotificationService.instance.openPriceAlertAsset(sembol);
         }
       case AppNotification.inflationDay:

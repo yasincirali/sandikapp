@@ -21,6 +21,8 @@ import '../providers/yuzde_alarmi_provider.dart';
 import '../screens/paywall_screen.dart' show PaywallScreen;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
+import '../services/cizim_alarmi.dart'
+    show cizgiAlarmEtiketi, kCizgiAdiAzami;
 import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/review_prompt_service.dart';
@@ -91,7 +93,11 @@ class AlarmKurulumu {
   final AlarmAdayi aday;
   final double hedef;
   final String yon;
-  const AlarmKurulumu(this.aday, this.hedef, this.yon);
+
+  /// Yatay çizgiden kurulurken kullanıcının verdiği ad (boş olabilir);
+  /// diğer yollarda `null`. `label`'a [cizgiAlarmEtiketi] ile girer.
+  final String? isim;
+  const AlarmKurulumu(this.aday, this.hedef, this.yon, {this.isim});
 }
 
 /// Sheet'in "Günlük yüzde" kipinde döndürdüğü seçim (0169).
@@ -211,6 +217,7 @@ Future<PriceAlert?> alarmKurAkisi(
   List<AlarmAdayi> adaylar = const [],
   double? baslangicHedef,
   bool? odakla,
+  bool cizgiAdi = false,
 }) async {
   if (DemoModu.yazmaKapisi('alarm')) return null; // Demo: alarm hesap ister (F1).
   final liste = sabit != null ? [sabit] : adaylar;
@@ -242,6 +249,7 @@ Future<PriceAlert?> alarmKurAkisi(
       sabit: sabit != null,
       baslangicHedef: baslangicHedef,
       odakla: odakla,
+      cizgiAdi: cizgiAdi,
       // Gösterge kipi (0170, Premium): görünürlük ve kilit ƒx ile aynı
       // kapı; kilitliyken sekmeye dokunmak paywall'u açar.
       gostergeGorunur: ref.read(premiumOzellikleriGorunurProvider),
@@ -270,7 +278,8 @@ Future<PriceAlert?> alarmKurAkisi(
           id: '',
           userId: me.id,
           symbol: k.aday.sembol,
-          label: k.aday.ad,
+          // Yatay çizgiden: "varlık · ad" (ad yoksa yalnız varlık, eskisi).
+          label: cizgiAdi ? cizgiAlarmEtiketi(k.aday.ad, k.isim) : k.aday.ad,
           targetPrice: k.hedef,
           direction: k.yon,
           enabled: true,
@@ -427,6 +436,10 @@ class AlarmKurSheet extends StatefulWidget {
   /// klavye sayfanın neredeyse tamamını örter, hedef zaten ön dolu.
   final bool? odakla;
 
+  /// Yatay grafikteki çizgiden açıldı: hedefin altında isteğe bağlı "Çizginin
+  /// adı" alanı (yasin 2026-10-29). Varsayılan kapalı: sayfa birebir eski.
+  final bool cizgiAdi;
+
   /// "Gösterge" kipi (0170, Premium) görünür mü — `premiumOzellikleriGorunur`.
   /// Varsayılan kapalı: bugünkü sayfa birebir.
   final bool gostergeGorunur;
@@ -447,6 +460,7 @@ class AlarmKurSheet extends StatefulWidget {
       this.kurYuzde,
       this.baslangicHedef,
       this.odakla,
+      this.cizgiAdi = false,
       this.gostergeGorunur = false,
       this.gostergeKilitli = false,
       this.onGostergeKilitli,
@@ -459,6 +473,7 @@ class AlarmKurSheet extends StatefulWidget {
 class _AlarmKurSheetState extends State<AlarmKurSheet> {
   late AlarmAdayi _secili = widget.adaylar.first;
   final _controller = TextEditingController();
+  final _isim = TextEditingController();
   String? _hata;
 
   /// Seçili kip (0169 yüzde, 0170 gösterge). Varsayılan Fiyat: bugünkü
@@ -509,6 +524,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   @override
   void dispose() {
     _controller.dispose();
+    _isim.dispose();
     super.dispose();
   }
 
@@ -589,7 +605,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       currentPrice: _secili.guncelFiyat,
       targetPrice: hedef,
     );
-    final kurulum = AlarmKurulumu(_secili, hedef, yon);
+    final kurulum = AlarmKurulumu(_secili, hedef, yon,
+        isim: widget.cizgiAdi ? _isim.text.trim() : null);
     final kur = widget.kur;
     if (kur != null) {
       final l10n = context.l10n;
@@ -1019,6 +1036,23 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                     : context.l10n.notifyWhenBelow,
                 style: context.t.bodyMedium?.copyWith(color: c.amberText),
               ),
+            if (widget.cizgiAdi) ...[
+              const SizedBox(height: SandikSpace.md),
+              // Ad isteğe bağlı; boşsa alarm varlığın adıyla kurulur.
+              TextField(
+                key: const ValueKey('cizgiAdiAlani'),
+                controller: _isim,
+                maxLength: kCizgiAdiAzami,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: context.l10n.cizgiAdiEtiket,
+                  hintText: context.l10n.cizgiAdiIpucu,
+                  helperText: context.l10n.cizgiAdiAciklama,
+                  helperMaxLines: 2,
+                ),
+              ),
+            ],
             ],
             const SizedBox(height: SandikSpace.lg),
             // İzin reddedilmişse alarm kurulur ama çalınca haber gelmez;

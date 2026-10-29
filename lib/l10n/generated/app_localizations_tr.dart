@@ -9944,4 +9944,29 @@ class AppLocalizationsTr extends AppLocalizations {
   String alarmCalanlariTemizleSoru(int n) {
     return 'Çalmış $n alarm silinsin mi? Bekleyen alarmların yerinde kalır.';
   }
+
+  @override
+  String get cizgiAdiEtiket => 'Çizginin adı (isteğe bağlı)';
+
+  @override
+  String get cizgiAdiIpucu => 'ör. Destek 245, Kırılım';
+
+  @override
+  String get cizgiAdiAciklama =>
+      'Bildirimde ve Alarmlarım\'da bu adla görünür.';
+
+  @override
+  String get cizgiAlarmiBaslik => 'Çizgi alarmı';
+
+  @override
+  String get cizgiAlarmiAdlandir => 'Adlandır';
+
+  @override
+  String get cizgiAlarmiAdlandirBaslik => 'Çizgi alarmının adı';
+
+  @override
+  String get cizgiyiGrafikteAc => 'Grafikte aç';
+
+  @override
+  String get cizgiAlarmiAdlandi => 'Alarmın adı kaydedildi';
 }
