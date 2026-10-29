@@ -133,7 +133,10 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     return Scaffold(
       backgroundColor: c.background,
       appBar: SandikAppBar(
-        title: context.l10n.priceAlertsTitle,
+        // "Alarmlarım" (uçtan uca test 2026-10-29): liste artık yalnız fiyat
+        // alarmı değil — yüzde, gösterge ve çizgi alarmları da burada.
+        // Ana sayfadaki giriş de aynı adı taşır (`myAlarms`).
+        title: context.l10n.myAlarms,
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: c.amberFill,
@@ -310,6 +313,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     final double? tetik;
     final String anahtar;
     final Future<void> Function() sil;
+    String? seviyeMetni;
     if (g != null) {
       etiket = gostergeAlarmEtiketi(l10n, g.gosterge, g.yon);
       yon = g.yon;
@@ -328,6 +332,17 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       calisti = c.triggeredAt != null;
       tetik = c.tetikFiyat;
       anahtar = 'cizim_${c.id}';
+      // Çizginin bugünkü seviyesi ve (uzamayan parçada) bitişi: "altına
+      // inince" tek başına hangi seviye olduğunu söylemiyordu. Çalmış
+      // alarmda seviye yazılmaz; durum satırı tetik fiyatını yazar.
+      final v = c.isActive ? c.seviye(DateTime.now().millisecondsSinceEpoch) : null;
+      if (v != null) {
+        final fiyat = fmtFiyat(v, symbol: alarmFiyatSimgesi(c.symbol) ?? '');
+        seviyeMetni = c.uzanir
+            ? l10n.cizimAlarmSeviyesi(fiyat)
+            : l10n.cizimAlarmSeviyesiBitisli(fiyat,
+                fmtTarihSaat(DateTime.fromMillisecondsSinceEpoch(c.t2)));
+      }
       sil = () => ref.read(cizimAlarmlariProvider.notifier).delete(c.id);
     }
     final sembol = g?.symbol ?? cz!.symbol;
@@ -337,6 +352,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         builder: (satirCtx) => _SeviyeAlarmSatiri(
           ad: g?.label ?? cz!.label,
           etiket: etiket,
+          seviye: seviyeMetni,
           yon: yon,
           durum: !calisti
               ? null
@@ -470,6 +486,9 @@ class _YuzdeAlarmSatiri extends StatelessWidget {
 class _SeviyeAlarmSatiri extends StatelessWidget {
   final String ad;
   final String etiket;
+
+  /// Çizgi alarmında bugünkü seviye (ve bitiş); gösterge alarmında null.
+  final String? seviye;
   final SeviyeYon yon;
 
   /// Çalmışsa durum satırı; nöbetteyse null.
@@ -479,6 +498,7 @@ class _SeviyeAlarmSatiri extends StatelessWidget {
   const _SeviyeAlarmSatiri({
     required this.ad,
     required this.etiket,
+    this.seviye,
     required this.yon,
     required this.durum,
     required this.onDelete,
@@ -529,6 +549,11 @@ class _SeviyeAlarmSatiri extends StatelessWidget {
                   etiket,
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
+                if (seviye != null)
+                  Text(
+                    seviye!,
+                    style: context.t.bodySmall?.copyWith(color: c.text58),
+                  ),
                 if (durum != null)
                   Text(
                     durum!,

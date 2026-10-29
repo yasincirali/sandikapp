@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/seviye_alarmi.dart';
+import '../services/cizim_deposu.dart';
 import '../services/crash_reporter.dart';
 import '../services/seviye_alarmi_service.dart';
 import 'auth_provider.dart';
@@ -74,6 +75,10 @@ class CizimAlarmlariNotifier extends AsyncNotifier<List<CizimAlarmi>> {
     state = await AsyncValue.guard(build);
   }
 
+  /// Bilinen liste (yüklenmemişse boş) — `state` korumalı; çizim
+  /// eşitlemesi ekrandan bağımsız okur.
+  List<CizimAlarmi> get liste => state.valueOrNull ?? const [];
+
   void _yerinde(CizimAlarmi kayit) {
     state = AsyncData([
       kayit,
@@ -112,3 +117,49 @@ class CizimAlarmlariNotifier extends AsyncNotifier<List<CizimAlarmi>> {
 final cizimAlarmlariProvider =
     AsyncNotifierProvider<CizimAlarmlariNotifier, List<CizimAlarmi>>(
         CizimAlarmlariNotifier.new);
+
+/// Yatay çizgi → fiyat alarmı bağları (2026-10-29, uçtan uca test: zil
+/// kurulduktan sonra dolmuyordu, ikinci dokunuş ikinci alarm açıyordu,
+/// çizgi silinince alarm ortada kalıyordu). Cihazda saklanır
+/// ([CizimDeposu.alarmBaglari]); ilk okuma arka planda, [yuklendi] bekler.
+class YatayAlarmBaglariNotifier extends Notifier<Map<String, YatayAlarmBagi>> {
+  /// Kayıttan ilk okuma bitti mi — eşitleme bundan önce karar vermez
+  /// (boş görünen bağ "alarm yok" sanılıp atlanmasın).
+  Future<void> yuklendi = Future.value();
+
+  @override
+  Map<String, YatayAlarmBagi> build() {
+    yuklendi = _yukle();
+    CrashReporter.arkaPlan(yuklendi, reason: 'yatayAlarmBagi.oku');
+    return const {};
+  }
+
+  Future<void> _yukle() async {
+    final kayit = await CizimDeposu.instance.alarmBaglari();
+    // Okuma sürerken kurulan bağ kayıttakini ezer (daha yeni).
+    state = {...kayit, ...state};
+  }
+
+  Map<String, YatayAlarmBagi> get baglar => state;
+
+  void bagla(String cizimId, String alarmId, double fiyat) {
+    state = {...state, cizimId: (alarmId: alarmId, fiyat: fiyat)};
+    _yaz();
+  }
+
+  void coz(String cizimId) {
+    if (!state.containsKey(cizimId)) return;
+    state = {...state}..remove(cizimId);
+    _yaz();
+  }
+
+  /// İlk okuma bitmeden yazılırsa kayıttaki bağlar silinirdi; önce bekler.
+  void _yaz() => CrashReporter.arkaPlan(() async {
+        await yuklendi;
+        await CizimDeposu.instance.alarmBaglariniYaz(state);
+      }(), reason: 'yatayAlarmBagi.yaz');
+}
+
+final yatayAlarmBaglariProvider =
+    NotifierProvider<YatayAlarmBaglariNotifier, Map<String, YatayAlarmBagi>>(
+        YatayAlarmBaglariNotifier.new);

@@ -9877,4 +9877,32 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tegAlarmSilindi => 'Çizim silindi, çizgi alarmı da kaldırıldı';
+
+  @override
+  String get tegAlarmGeriGeldi => 'Çizginin alarmı da geri geldi';
+
+  @override
+  String nActiveAlarmsAll(int n) {
+    return '$n aktif alarm';
+  }
+
+  @override
+  String seviyeAlarmOzetCipi(int n) {
+    return '$n gösterge/çizgi alarmı';
+  }
+
+  @override
+  String seviyeAlarmOzetCipiEtiket(int n) {
+    return '$n gösterge ve çizgi alarmı. Alarmlarım\'da gör';
+  }
+
+  @override
+  String cizimAlarmSeviyesi(String fiyat) {
+    return 'Çizgi şu an $fiyat';
+  }
+
+  @override
+  String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
+    return 'Çizgi şu an $fiyat · $tarih tarihine kadar';
+  }
 }

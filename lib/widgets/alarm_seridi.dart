@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/price_alert.dart';
+import '../models/seviye_alarmi.dart';
 import '../providers/price_alert_provider.dart';
+import '../providers/seviye_alarmi_provider.dart';
+import '../screens/price_alerts_screen.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
@@ -25,6 +28,14 @@ import 'sandik_skeleton.dart';
 /// app bar'daki zil. Şerit yalnızca kurulu alarm varken görünür; sonuna
 /// küçük bir "+" çipi eklenir ki ikinci alarm mevcut olanların yanından
 /// kurulabilsin.
+///
+/// ## Gösterge ve çizgi alarmları (uçtan uca test, 2026-10-29)
+/// Şerit yalnız fiyat alarmlarını sayıyordu: EMA50 ve trend çizgisi alarmı
+/// olan THYAO'da "2 aktif fiyat alarmı" yazıyordu. Bu iki tür artık sayıya
+/// girer ("4 aktif alarm") ve tek bir özet çipiyle görünür; çipe dokunmak
+/// Alarmlarım'ı bu sembole süzülmüş açar. Tek tek çip yok: gösterge/çizgi
+/// alarmı şeritte silinip yeniden kurulacak bir eşik değil, kurulduğu yer
+/// (gösterge sayfası, yatay grafik) başka.
 class AlarmSeridi extends ConsumerWidget {
   final String sembol;
   final String ad;
@@ -46,7 +57,22 @@ class AlarmSeridi extends ConsumerWidget {
     final c = context.c;
     final alarmlar = ref.watch(symbolAlertsProvider(sembol));
     final n = ref.read(priceAlertsProvider.notifier);
-    if (alarmlar.isEmpty) return const SizedBox.shrink();
+    final gosterge = [
+      for (final a in ref.watch(gostergeAlarmlariProvider).valueOrNull ??
+          const <GostergeAlarmi>[])
+        if (a.symbol == sembol) a,
+    ];
+    final cizgi = [
+      for (final a
+          in ref.watch(cizimAlarmlariProvider).valueOrNull ??
+              const <CizimAlarmi>[])
+        if (a.symbol == sembol) a,
+    ];
+    final seviyeSayisi = gosterge.length + cizgi.length;
+    if (alarmlar.isEmpty && seviyeSayisi == 0) return const SizedBox.shrink();
+    final aktif = alarmlar.where((a) => a.isActive).length +
+        gosterge.where((a) => a.isActive).length +
+        cizgi.where((a) => a.isActive).length;
 
     // Alt boşluk şeridin KENDİ sorumluluğu: üst ekran "şerit + SizedBox"
     // dizerse boş durumda boşluk tek başına kalır ve sinyal kartıyla periyot
@@ -55,8 +81,7 @@ class AlarmSeridi extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: SandikSpace.smd),
       child: Semantics(
         container: true,
-        label: context.l10n
-            .nActiveAlerts(alarmlar.where((a) => a.isActive).length),
+        label: context.l10n.nActiveAlarmsAll(aktif),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -90,6 +115,37 @@ class AlarmSeridi extends ConsumerWidget {
                     );
                     if (ok) await n.delete(a.id);
                   },
+                ),
+              ],
+              if (seviyeSayisi > 0) ...[
+                if (alarmlar.isNotEmpty)
+                  const SizedBox(width: SandikSpace.xs2),
+                _Cip(
+                  key: const ValueKey('alarmSeridiSeviyeOzeti'),
+                  onTap: () => pushGuarded(
+                    context,
+                    adaptiveRoute<void>(
+                      settings: const RouteSettings(name: 'price_alerts'),
+                      builder: (_) => PriceAlertsScreen(sembol: sembol),
+                    ),
+                  ),
+                  renk: c.text58,
+                  zemin: c.text58.withValues(alpha: 0.08),
+                  semanticLabel:
+                      context.l10n.seviyeAlarmOzetCipiEtiket(seviyeSayisi),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.show_chart_rounded,
+                          size: 16, color: c.text90),
+                      const SizedBox(width: SandikSpace.xs),
+                      Text(
+                        context.l10n.seviyeAlarmOzetCipi(seviyeSayisi),
+                        style: context.t.labelLarge?.copyWith(
+                            color: c.text90, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(width: SandikSpace.xs2),
@@ -164,6 +220,7 @@ class _Cip extends StatelessWidget {
   final String semanticLabel;
   final Widget child;
   const _Cip({
+    super.key,
     required this.onTap,
     required this.renk,
     required this.zemin,

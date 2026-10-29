@@ -225,6 +225,20 @@ class CizimAlarmi {
     );
   }
 
+  /// Doğrunun [simdiMs] anındaki seviyesi — Alarmlarım satırı "çizgi şu
+  /// an ₺…" yazsın diye (uçtan uca test 2026-10-29: satır seviyesiz
+  /// "altına inince" diyordu). Sunucunun `cizgiDegeri`yle aynı kural
+  /// (`_shared/cizim_alarmi.ts`): parça bittiyse ya da değer sıfırın
+  /// altındaysa `null` (uydurma sayı yok). Başlamamış doğruda başlangıç
+  /// seviyesi: nöbet oradan başlayacak.
+  double? seviye(int simdiMs) {
+    if (t2 <= t1) return null;
+    if (!uzanir && simdiMs > t2) return null;
+    final t = simdiMs < t1 ? t1 : simdiMs;
+    final v = p1 + (p2 - p1) * (t - t1) / (t2 - t1);
+    return v.isFinite && v > 0 ? v : null;
+  }
+
   /// Doğru alanları — ekleme ve "çizgi taşındı" güncellemesi ortak.
   Map<String, dynamic> dogruMap() => {
         'cizim_imzasi': cizimImzasi,

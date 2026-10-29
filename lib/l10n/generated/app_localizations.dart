@@ -16378,6 +16378,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çizim silindi, çizgi alarmı da kaldırıldı'**
   String get tegAlarmSilindi;
+
+  /// No description provided for @tegAlarmGeriGeldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizginin alarmı da geri geldi'**
+  String get tegAlarmGeriGeldi;
+
+  /// No description provided for @nActiveAlarmsAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} aktif alarm'**
+  String nActiveAlarmsAll(int n);
+
+  /// No description provided for @seviyeAlarmOzetCipi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gösterge/çizgi alarmı'**
+  String seviyeAlarmOzetCipi(int n);
+
+  /// No description provided for @seviyeAlarmOzetCipiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gösterge ve çizgi alarmı. Alarmlarım\'da gör'**
+  String seviyeAlarmOzetCipiEtiket(int n);
+
+  /// No description provided for @cizimAlarmSeviyesi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi şu an {fiyat}'**
+  String cizimAlarmSeviyesi(String fiyat);
+
+  /// No description provided for @cizimAlarmSeviyesiBitisli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi şu an {fiyat} · {tarih} tarihine kadar'**
+  String cizimAlarmSeviyesiBitisli(String fiyat, String tarih);
 }
 
 class _AppLocalizationsDelegate

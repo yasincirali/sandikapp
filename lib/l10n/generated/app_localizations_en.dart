@@ -9982,4 +9982,50 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tegAlarmSilindi =>
       'Drawing deleted; its line alert was removed too';
+
+  @override
+  String get tegAlarmGeriGeldi => 'The line\'s alert is back too';
+
+  @override
+  String nActiveAlarmsAll(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n active alerts',
+      one: '1 active alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeAlarmOzetCipi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n indicator/line alerts',
+      one: '1 indicator/line alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeAlarmOzetCipiEtiket(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n indicator and line alerts',
+      one: '1 indicator or line alert',
+    );
+    return '$_temp0. View in My alerts';
+  }
+
+  @override
+  String cizimAlarmSeviyesi(String fiyat) {
+    return 'Line now at $fiyat';
+  }
+
+  @override
+  String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
+    return 'Line now at $fiyat · until $tarih';
+  }
 }
