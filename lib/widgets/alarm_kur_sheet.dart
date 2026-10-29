@@ -8,11 +8,17 @@ import '../models/asset.dart';
 import '../models/eurobond.dart' show eurobondOneki;
 import '../models/position.dart' show aggregatePositions;
 import '../models/price_alert.dart';
+import '../models/seviye_alarmi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../providers/auth_provider.dart';
-import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
+import '../providers/preferences_provider.dart'
+    show premiumKilitliProvider, priceAlertLimitProvider;
+import '../providers/premium_provider.dart'
+    show premiumOzellikleriGorunurProvider;
 import '../providers/price_alert_provider.dart';
+import '../providers/seviye_alarmi_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
+import '../screens/paywall_screen.dart' show PaywallScreen;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/fiyat_kaynagi.dart';
@@ -96,6 +102,44 @@ class YuzdeAlarmKurulumu {
   const YuzdeAlarmKurulumu(this.aday, this.esik, this.yon);
 }
 
+/// Sheet'in "Gösterge" kipinde döndürdüğü seçim (0170).
+class GostergeAlarmKurulumu {
+  final AlarmAdayi aday;
+  final GostergeKodu gosterge;
+  final SeviyeYon yon;
+  const GostergeAlarmKurulumu(this.aday, this.gosterge, this.yon);
+}
+
+/// Göstergenin okunan adı: "EMA50", "Bollinger üst bandı".
+String gostergeAdi(AppLocalizations l10n, GostergeKodu g) => switch (g) {
+      GostergeKodu.bbUst => l10n.gostergeBbUst,
+      GostergeKodu.bbAlt => l10n.gostergeBbAlt,
+      _ => g.kisaAd,
+    };
+
+/// Gösterge alarmının listede okunan adı: "EMA50 · yukarı keserse".
+/// Yön metinde yazar (renk körlüğü: yalnız okla anlatılmaz).
+String gostergeAlarmEtiketi(
+        AppLocalizations l10n, GostergeKodu g, SeviyeYon yon) =>
+    switch (yon) {
+      SeviyeYon.yukari => l10n.gostergeAlarmEtiketYukari(gostergeAdi(l10n, g)),
+      SeviyeYon.asagi => l10n.gostergeAlarmEtiketAsagi(gostergeAdi(l10n, g)),
+      SeviyeYon.herIkisi => l10n.gostergeAlarmEtiketIkisi(gostergeAdi(l10n, g)),
+    };
+
+/// Sheet bu adaya "Gösterge" kipini sunar mı (0170).
+///
+/// Premium özelliği: [gorunur] `premiumOzellikleriGorunurProvider` (paywall
+/// kapalıyken yalnız admin; açıkken herkes, ücretsizde kilitli). Kapsam
+/// [FiyatKaynagi.gostergeAlarmiKapsamindaMi] (altın ve TL döviz yok — canlı
+/// fiyat ile günlük seri ayrı kaynak). Çalmış fiyat alarmını yeniden
+/// kurarken ([baslangicHedef] dolu) sunulmaz — yüzde kipiyle aynı gerekçe.
+bool gostergeKipiSunulur(AlarmAdayi aday,
+        {required bool gorunur, double? baslangicHedef}) =>
+    gorunur &&
+    baslangicHedef == null &&
+    FiyatKaynagi.gostergeAlarmiKapsamindaMi(aday.sembol);
+
 /// Yüzde alarmının listede ve onayda okunan adı: "Günlük %2 düşüş".
 /// Yön metinde de yazar (renk körlüğü: yalnız renkle/okla anlatılmaz).
 String yuzdeAlarmEtiketi(AppLocalizations l10n, double esik, YuzdeYon yon) {
@@ -168,6 +212,7 @@ Future<PriceAlert?> alarmKurAkisi(
   AlarmAdayi? sabit,
   List<AlarmAdayi> adaylar = const [],
   double? baslangicHedef,
+  bool? odakla,
 }) async {
   if (DemoModu.yazmaKapisi('alarm')) return null; // Demo: alarm hesap ister (F1).
   final liste = sabit != null ? [sabit] : adaylar;
@@ -186,6 +231,7 @@ Future<PriceAlert?> alarmKurAkisi(
   // altında (eski snackbar'ın önekiyle) yazar.
   PriceAlert? kayit;
   YuzdeAlarmi? yuzdeKayit;
+  GostergeAlarmi? gostergeKayit;
   final sonuc = await showSandikSheet<Object>(
     context: context,
     backgroundColor: context.c.surface1,
@@ -197,6 +243,28 @@ Future<PriceAlert?> alarmKurAkisi(
       adaylar: liste,
       sabit: sabit != null,
       baslangicHedef: baslangicHedef,
+      odakla: odakla,
+      // Gösterge kipi (0170, Premium): görünürlük ve kilit ƒx ile aynı
+      // kapı; kilitliyken sekmeye dokunmak paywall'u açar.
+      gostergeGorunur: ref.read(premiumOzellikleriGorunurProvider),
+      gostergeKilitli: ref.read(premiumKilitliProvider),
+      onGostergeKilitli: (ctx) =>
+          PaywallScreen.show(ctx, source: 'gosterge_alarmi'),
+      kurGosterge: (k) async {
+        final me = ref.read(authProvider).valueOrNull;
+        if (me == null) return;
+        gostergeKayit = await ref
+            .read(gostergeAlarmlariProvider.notifier)
+            .create(GostergeAlarmi(
+              id: '',
+              userId: me.id,
+              symbol: k.aday.sembol,
+              label: k.aday.ad,
+              gosterge: k.gosterge,
+              yon: k.yon,
+              createdAt: DateTime.now(),
+            ));
+      },
       kur: (k) async {
         final me = ref.read(authProvider).valueOrNull;
         if (me == null) return;
@@ -227,6 +295,19 @@ Future<PriceAlert?> alarmKurAkisi(
       },
     ),
   );
+  if (sonuc is GostergeAlarmKurulumu && gostergeKayit != null) {
+    OzellikOlcumu.say(Ozellik.gostergeAlarm);
+    if (context.mounted) {
+      sandikSnack(
+        context,
+        context.l10n.gostergeAlarmKuruldu(sonuc.aday.ad,
+            gostergeAlarmEtiketi(context.l10n, sonuc.gosterge, sonuc.yon)),
+        kind: SandikSnackKind.success,
+      );
+    }
+    // Fiyat alarmı kurulmadı (yüzde kipiyle aynı sözleşme).
+    return null;
+  }
   if (sonuc is YuzdeAlarmKurulumu && yuzdeKayit != null) {
     OzellikOlcumu.say(Ozellik.yuzdeAlarm);
     if (context.mounted) {
@@ -339,15 +420,39 @@ class AlarmKurSheet extends StatefulWidget {
   final Future<void> Function(YuzdeAlarmKurulumu kurulum)? kurYuzde;
 
   /// Alanın ön değeri: çalmış alarmı yeniden kurarken eski eşik
-  /// ([alarmiYenidenKur]); kullanıcı değiştirebilir.
+  /// ([alarmiYenidenKur]) ya da yatay grafikteki çizginin fiyatı;
+  /// kullanıcı değiştirebilir.
   final double? baslangicHedef;
+
+  /// Hedef alanı açılışta klavyeyi açsın mı; `null` → [sabit] (eski
+  /// davranış). Yatay grafikten açılınca kapalı: telefon yan dururken
+  /// klavye sayfanın neredeyse tamamını örter, hedef zaten ön dolu.
+  final bool? odakla;
+
+  /// "Gösterge" kipi (0170, Premium) görünür mü — `premiumOzellikleriGorunur`.
+  /// Varsayılan kapalı: bugünkü sayfa birebir.
+  final bool gostergeGorunur;
+
+  /// Görünür ama kilitli (paywall açık, Premium değil): sekme kilit
+  /// simgesiyle durur, dokunuş [onGostergeKilitli]'yı çağırır.
+  final bool gostergeKilitli;
+  final void Function(BuildContext context)? onGostergeKilitli;
+
+  /// "Gösterge" kipinin yazması ([kur] ile aynı sözleşme).
+  final Future<void> Function(GostergeAlarmKurulumu kurulum)? kurGosterge;
+
   const AlarmKurSheet(
       {super.key,
       required this.adaylar,
       this.sabit = false,
       this.kur,
       this.kurYuzde,
-      this.baslangicHedef});
+      this.baslangicHedef,
+      this.odakla,
+      this.gostergeGorunur = false,
+      this.gostergeKilitli = false,
+      this.onGostergeKilitli,
+      this.kurGosterge});
 
   @override
   State<AlarmKurSheet> createState() => _AlarmKurSheetState();
@@ -358,20 +463,37 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   final _controller = TextEditingController();
   String? _hata;
 
-  /// "Günlük yüzde" kipi seçili mi (0169). Varsayılan Fiyat: bugünkü
-  /// davranış birebir; kip yalnız kapsamdaki adayda sunulur.
-  bool _yuzdeKipi = false;
+  /// Seçili kip (0169 yüzde, 0170 gösterge). Varsayılan Fiyat: bugünkü
+  /// davranış birebir; diğer kipler yalnız kapsamdaki adayda sunulur.
+  _AlarmKipi _kip = _AlarmKipi.fiyat;
   int _esik = 2;
   // Varsayılan "İkisi de" (müşteri raporu 27 Eki 09:15): "bugün sert
   // oynarsa haber ver" yönsüz bir istek; kullanıcı yön seçmekle uğraşmasın.
   YuzdeYon _yuzdeYon = YuzdeYon.ikisi;
 
+  GostergeKodu _gosterge = GostergeKodu.ema50;
+  // "Keserse haber ver" yönsüz bir istek (yüzde kipindeki karar, müşteri
+  // raporu 27 Eki 09:15): varsayılan iki yön.
+  SeviyeYon _gostergeYon = SeviyeYon.herIkisi;
+
   bool get _yuzdeSunulur =>
       yuzdeKipiSunulur(_secili, baslangicHedef: widget.baslangicHedef);
 
-  /// Seçici fon gibi kapsam dışı bir adaya geçerse kip kendiliğinden
-  /// Fiyat'a döner (segment de görünmez).
-  bool get _yuzdeAcik => _yuzdeKipi && _yuzdeSunulur;
+  bool get _gostergeSunulur => gostergeKipiSunulur(_secili,
+      gorunur: widget.gostergeGorunur, baslangicHedef: widget.baslangicHedef);
+
+  /// Bu adayda sunulan kipler, segmentteki sırayla.
+  List<_AlarmKipi> get _kipler => [
+        _AlarmKipi.fiyat,
+        if (_yuzdeSunulur) _AlarmKipi.yuzde,
+        if (_gostergeSunulur) _AlarmKipi.gosterge,
+      ];
+
+  /// Seçici kapsam dışı bir adaya geçerse kip kendiliğinden Fiyat'a döner.
+  _AlarmKipi get _etkinKip => _kipler.contains(_kip) ? _kip : _AlarmKipi.fiyat;
+
+  bool get _yuzdeAcik => _etkinKip == _AlarmKipi.yuzde;
+  bool get _gostergeAcik => _etkinKip == _AlarmKipi.gosterge;
 
   /// Hızlı hedefler: güncel fiyatın ±%'si. Kullanıcı çoğu zaman "biraz
   /// yükselince / düşünce" der, rakam hesaplamak istemez.
@@ -474,6 +596,130 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       if (!mounted) return;
     }
     Navigator.of(context).pop(kurulum);
+  }
+
+  Future<void> _kaydetGosterge() async {
+    if (widget.gostergeKilitli) {
+      widget.onGostergeKilitli?.call(context);
+      return;
+    }
+    final kurulum = GostergeAlarmKurulumu(_secili, _gosterge, _gostergeYon);
+    final kur = widget.kurGosterge;
+    if (kur != null) {
+      final l10n = context.l10n;
+      try {
+        await kur(kurulum);
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
+        return;
+      }
+      if (!mounted) return;
+    }
+    Navigator.of(context).pop(kurulum);
+  }
+
+  String _seviyeYonAdi(SeviyeYon y) => switch (y) {
+        SeviyeYon.yukari => context.l10n.gostergeYonYukari,
+        SeviyeYon.asagi => context.l10n.gostergeYonAsagi,
+        SeviyeYon.herIkisi => context.l10n.alarmYonIkisi,
+      };
+
+  /// "Gösterge" kipinin gövdesi (0170): gösterge çipleri, yön çipleri,
+  /// özet ve hesap notu. Yüzde kipiyle aynı bileşenler (tek seçim çipi
+  /// `SandikFiltreCipi`); yön ok ikonu + fiil + özet cümlesiyle okunur.
+  List<Widget> _gostergeBolumu(SandikPalette c) {
+    final l10n = context.l10n;
+    final ad = gostergeAdi(l10n, _gosterge);
+    final ozet = switch (_gostergeYon) {
+      SeviyeYon.yukari => l10n.gostergeOzetYukari(_secili.ad, ad),
+      SeviyeYon.asagi => l10n.gostergeOzetAsagi(_secili.ad, ad),
+      SeviyeYon.herIkisi => l10n.gostergeOzetIkisi(_secili.ad, ad),
+    };
+    return [
+      Text(l10n.gostergeBaslik,
+          style: context.t.labelMedium?.copyWith(color: c.text58)),
+      const SizedBox(height: SandikSpace.xs),
+      Wrap(
+        spacing: SandikSpace.xs2,
+        runSpacing: SandikSpace.xs2,
+        children: [
+          for (final g in GostergeKodu.values)
+            SandikFiltreCipi(
+              key: ValueKey('gostergeCipi_${g.kod}'),
+              ad: gostergeAdi(l10n, g),
+              secili: _gosterge == g,
+              onTap: () => setState(() {
+                _gosterge = g;
+                _hata = null;
+              }),
+            ),
+        ],
+      ),
+      const SizedBox(height: SandikSpace.smd),
+      Text(l10n.alarmYuzdeYonBaslik,
+          style: context.t.labelMedium?.copyWith(color: c.text58)),
+      const SizedBox(height: SandikSpace.xs),
+      Wrap(
+        spacing: SandikSpace.xs2,
+        runSpacing: SandikSpace.xs2,
+        children: [
+          for (final y in SeviyeYon.values)
+            SandikFiltreCipi(
+              ad: _seviyeYonAdi(y),
+              ikon: switch (y) {
+                SeviyeYon.yukari => Icons.arrow_upward_rounded,
+                SeviyeYon.asagi => Icons.arrow_downward_rounded,
+                SeviyeYon.herIkisi => Icons.swap_vert_rounded,
+              },
+              ikonRengi: switch (y) {
+                SeviyeYon.yukari => c.gain,
+                SeviyeYon.asagi => c.loss,
+                SeviyeYon.herIkisi => null,
+              },
+              secili: _gostergeYon == y,
+              onTap: () => setState(() {
+                _gostergeYon = y;
+                _hata = null;
+              }),
+            ),
+        ],
+      ),
+      const SizedBox(height: SandikSpace.smd),
+      Text(ozet, style: context.t.bodyMedium?.copyWith(color: c.amberText)),
+      const SizedBox(height: SandikSpace.xs),
+      Text(l10n.gostergeNot,
+          style: context.t.bodySmall?.copyWith(color: c.text58)),
+      if (_hata != null) ...[
+        const SizedBox(height: SandikSpace.xs),
+        Text(_hata!, style: context.t.bodyMedium?.copyWith(color: c.danger)),
+      ],
+    ];
+  }
+
+  /// Segmentteki kip etiketi; kilitli gösterge sekmesi kilit simgesi taşır
+  /// (ƒx çipiyle aynı dil: görünür, dokununca Premium).
+  Widget _kipEtiketi(_AlarmKipi k) {
+    final l10n = context.l10n;
+    final metin = Text(
+      switch (k) {
+        _AlarmKipi.fiyat => l10n.alarmModFiyat,
+        _AlarmKipi.yuzde => l10n.alarmModYuzde,
+        _AlarmKipi.gosterge => l10n.alarmModGosterge,
+      },
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    if (k != _AlarmKipi.gosterge || !widget.gostergeKilitli) return metin;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.lock_outline_rounded,
+            size: SandikSpace.md, semanticLabel: l10n.alarmPremiumGerekli),
+        const SizedBox(width: SandikSpace.xs),
+        Flexible(child: metin),
+      ],
+    );
   }
 
   Future<void> _kaydetYuzde() async {
@@ -655,32 +901,38 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
             // Kip seçici (0169): yalnız günlük yüzdesi sunucuda ölçülen
             // adayda. Kayan segment = "mod değiştiren seçici" (tasarım dili);
             // hareketi azalt açıkken zemin anında yerine oturur.
-            if (_yuzdeSunulur) ...[
+            // 0170: üçüncü kip "Gösterge" (Premium); kilitliyse sekme
+            // seçilmez, paywall açılır.
+            if (_kipler.length > 1) ...[
               SandikSegment(
-                adet: 2,
-                secili: _yuzdeAcik ? 1 : 0,
+                key: const ValueKey('alarmKipSegmenti'),
+                adet: _kipler.length,
+                secili: _kipler.indexOf(_etkinKip),
                 onSec: (i) {
-                  // Yüzde kipinde klavye açık kalırsa çipleri örter.
-                  if (i == 1) FocusScope.of(context).unfocus();
+                  final k = _kipler[i];
+                  if (k == _AlarmKipi.gosterge && widget.gostergeKilitli) {
+                    widget.onGostergeKilitli?.call(context);
+                    return;
+                  }
+                  // Çipli kiplerde klavye açık kalırsa çipleri örter.
+                  if (k != _AlarmKipi.fiyat) FocusScope.of(context).unfocus();
                   setState(() {
-                    _yuzdeKipi = i == 1;
+                    _kip = k;
                     _hata = null;
                   });
                 },
-                oge: (_, i, __) => Text(
-                  i == 0
-                      ? context.l10n.alarmModFiyat
-                      : context.l10n.alarmModYuzde,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                oge: (_, i, __) => _kipEtiketi(_kipler[i]),
               ),
               const SizedBox(height: SandikSpace.md),
             ],
-            if (_yuzdeAcik) ..._yuzdeBolumu(c) else ...[
+            if (_yuzdeAcik)
+              ..._yuzdeBolumu(c)
+            else if (_gostergeAcik)
+              ..._gostergeBolumu(c)
+            else ...[
             TextField(
               controller: _controller,
-              autofocus: widget.sabit,
+              autofocus: widget.odakla ?? widget.sabit,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
@@ -773,7 +1025,11 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   foregroundColor: c.onAmber,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: _yuzdeAcik ? _kaydetYuzde : _kaydet,
+                onPressed: _yuzdeAcik
+                    ? _kaydetYuzde
+                    : _gostergeAcik
+                        ? _kaydetGosterge
+                        : _kaydet,
                 child: Text(context.l10n.setAlert),
               ),
             ),
@@ -785,6 +1041,9 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   }
 }
 
+/// Sheet'in kipleri: sabit hedef, günlük yüzde (0169), gösterge (0170).
+enum _AlarmKipi { fiyat, yuzde, gosterge }
+
 /// Bir alarm daha AKTİF olursa (yeni kurma ya da tetiklenmişi yeniden kurma)
 /// sınır aşılır mı; aşılırsa uyarıyı gösterip true döner. Paywall açıkken
 /// sınır satış kapısıdır: Premium yolu da gösterilir.
@@ -795,6 +1054,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
 ///
 /// Yüzde alarmı (0169) aynı tavana sayılır: kullanıcı için ikisi de "bir
 /// alarm"; açık yüzde alarmı her gün nöbettedir, yani hep aktiftir.
+/// Gösterge ve çizgi alarmı (0170) da sayılır: Premium'a özgü olsalar da
+/// paywall kapalıyken (admin) ya da abonelik bitince tavan yine geçerli.
 bool alarmSiniriDoluysaUyar(BuildContext context, WidgetRef ref) {
   final limit = ref.read(priceAlertLimitProvider);
   if (etkinAlarmSayisi(ref) < limit) return false;
@@ -808,6 +1069,10 @@ bool alarmSiniriDoluysaUyar(BuildContext context, WidgetRef ref) {
 int etkinAlarmSayisi(WidgetRef ref) {
   final fiyat = ref.read(priceAlertsProvider).valueOrNull ?? const [];
   final yuzde = ref.read(yuzdeAlarmlariProvider).valueOrNull ?? const [];
+  final gosterge = ref.read(gostergeAlarmlariProvider).valueOrNull ?? const [];
+  final cizim = ref.read(cizimAlarmlariProvider).valueOrNull ?? const [];
   return fiyat.where((a) => a.isActive).length +
-      yuzde.where((a) => a.isActive).length;
+      yuzde.where((a) => a.isActive).length +
+      gosterge.where((a) => a.isActive).length +
+      cizim.where((a) => a.isActive).length;
 }

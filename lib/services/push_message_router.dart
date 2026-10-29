@@ -58,6 +58,8 @@ class GenelBildirimEylemi extends PushEylemi {
 String genelBildirimKanali(String? type) => switch (type) {
       NotificationService.priceAlertType ||
       'yuzde_alarm' ||
+      'gosterge_alarm' ||
+      'cizim_alarm' ||
       NotificationService.watchlistMoveType =>
         'alert_channel',
       NotificationService.weeklySummaryType ||

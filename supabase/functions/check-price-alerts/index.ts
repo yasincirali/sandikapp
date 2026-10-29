@@ -15,6 +15,11 @@
 // 0169: aynı turda yüzde alarmları da (`_shared/yuzde_alarmi.ts`, "gram
 // altın bugün %2 düşerse"). Ayrı tablo, ayrı damga; fiyat alarmının
 // sorgusu, tetikleme kuralı ve sırası değişmedi.
+//
+// 0170 (2026-10-29): gösterge ve çizgi alarmları da (`_shared/
+// seviye_alarmi.ts`, "EMA50'yi keserse", "çizdiğim trend çizgisine
+// değerse"). Yine ayrı tablolar, ayrı damga, try içinde; yanıta yalnız
+// `seviye` alanı eklenir.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -51,6 +56,7 @@ import {
 } from '../_shared/bildirim_karti.ts';
 import { takipListesiHareketleri } from '../_shared/watchlist_moves.ts';
 import { yuzdeAlarmTuruKos } from '../_shared/yuzde_alarmi.ts';
+import { seviyeAlarmTuruKos } from '../_shared/seviye_alarmi.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -295,6 +301,25 @@ Deno.serve(async (request) => {
       yuzde = { error: 'yuzde alarm turu basarisiz' };
     }
 
+    // ── 0b) Gösterge ve çizgi alarmları (0170) ──────────────────────────────
+    // Yüzde turuyla aynı sözleşme: bağımsız, hata yutulur, fiyat alarmı
+    // turu birebir eskisi gibi koşar. Hızlı turda yalnız o turun türleri
+    // (0168 süzgeci, fiyat alarmıyla aynı `alarmTuru`).
+    let seviye: Record<string, unknown>;
+    try {
+      seviye = await seviyeAlarmTuruKos(admin, {
+        dryRun,
+        turaGirer: (s) => filtre === null || filtre.has(alarmTuru(s)),
+        fcm: dryRun
+          ? null
+          : { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson },
+        kart,
+      });
+    } catch (e) {
+      console.error('[check-price-alerts] seviye alarm turu basarisiz:', e);
+      seviye = { error: 'seviye alarm turu basarisiz' };
+    }
+
     // ── 1) Aktif alarmlar ───────────────────────────────────────────────────
     const { data: alertRows, error: alertError } = await admin
       .from('price_alerts')
@@ -305,7 +330,7 @@ Deno.serve(async (request) => {
 
     const alerts = turaGirenAlarmlar((alertRows ?? []) as AlertRow[], filtre);
     if (alerts.length === 0) {
-      return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0, yuzde });
+      return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0, yuzde, seviye });
     }
 
     // ── 2) Fiyatlar ─────────────────────────────────────────────────────────
@@ -333,6 +358,7 @@ Deno.serve(async (request) => {
         sent: 0,
         kanarya,
         yuzde,
+        seviye,
       });
     }
 
@@ -368,6 +394,7 @@ Deno.serve(async (request) => {
       kanarya: kanaryaKismi,
         sent: 0,
         yuzde,
+        seviye,
       });
     }
 
@@ -514,6 +541,7 @@ Deno.serve(async (request) => {
       dry_run: dryRun,
       failures: failures.slice(0, 5),
       yuzde,
+      seviye,
     });
   } catch (error) {
     // Ayrıntı yalnızca günlüğe: yanıtta `error.message` dönmek tablo/sütun

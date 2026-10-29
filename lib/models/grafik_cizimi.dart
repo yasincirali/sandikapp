@@ -7,6 +7,8 @@
 /// ve telefonda saklama ÜCRETSİZ — TradingView, Investing ve Midas bunu
 /// ücretsiz veriyor; kilitlemek kullanıcıyı onlara gönderirdi. Premium'a
 /// ayrılanlar (çizgi alarmı, cihazlar arası eşitleme) sonraki adım.
+/// 2026-10-29: çizgi alarmı geldi (0170) — trend/ışın alarmı Premium, yatay
+/// çizgiden kurulan fiyat alarmı ücretsiz; bağ [GrafikCizimi.id].
 ///
 /// ## Neden zaman + fiyat
 /// Nokta mum İNDEKSİYLE değil, ZAMANLA ([CizimNoktasi.t], epoch ms)
@@ -14,6 +16,8 @@
 /// aynı yerde kalır; indeks saklansaydı her aralıkta başka bir tarihe
 /// kayardı. Fiyat ekrandaki ölçekle aynı birimdedir (TL ya da endeks puanı).
 library;
+
+import 'dart:math' as math;
 
 /// Çizim araçları — TradingView mobilinin en çok kullanılan beşi.
 enum CizimTuru {
@@ -69,7 +73,7 @@ class CizimNoktasi {
 }
 
 class GrafikCizimi {
-  const GrafikCizimi({required this.tur, required this.a, this.b});
+  const GrafikCizimi({required this.tur, required this.a, this.b, this.id});
 
   final CizimTuru tur;
   final CizimNoktasi a;
@@ -77,13 +81,33 @@ class GrafikCizimi {
   /// İkinci nokta; tek noktalı türlerde (yatay, yatay ışın) null.
   final CizimNoktasi? b;
 
-  GrafikCizimi copyWith({CizimNoktasi? a, CizimNoktasi? b}) =>
-      GrafikCizimi(tur: tur, a: a ?? this.a, b: b ?? this.b);
+  /// Çizimin kalıcı kimliği (2026-10-29, çizgi alarmı 0170): sunucudaki
+  /// alarm satırı (`cizim_alarmlari.cizim_id`) çizimi bununla bulur; çizim
+  /// silinince/taşınınca alarmı da silinir/taşınır. Eski kayıtlarda yoktur
+  /// (null) — alarm kurulurken verilir ve kaydedilir; kimliksiz çizim
+  /// bugünkü gibi çalışır. Eşitliğe girmez: iki çizimin "aynı" olması
+  /// biçimleriyle ilgilidir (geri al, test karşılaştırmaları).
+  final String? id;
+
+  GrafikCizimi copyWith({CizimNoktasi? a, CizimNoktasi? b, String? id}) =>
+      GrafikCizimi(
+          tur: tur, a: a ?? this.a, b: b ?? this.b, id: id ?? this.id);
+
+  /// Yeni kimlik: zaman + rastgele parça; cihazda benzersiz olması yeter
+  /// (sunucuda kullanıcı + sembol ile birlikte anahtar).
+  static String yeniKimlik() {
+    final simdi = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+    final rastgele = _rastgele.nextInt(1 << 30).toRadixString(36);
+    return 'c$simdi$rastgele';
+  }
+
+  static final _rastgele = math.Random();
 
   Map<String, Object> toJson() => {
         'tur': tur.name,
         'a': a.toJson(),
         if (b != null) 'b': b!.toJson(),
+        if (id != null) 'id': id!,
       };
 
   /// Bozuk ya da tanınmayan kayıt null döner, listeden düşer: eski ya da
@@ -95,7 +119,12 @@ class GrafikCizimi {
     if (tur == null || a == null) return null;
     final b = CizimNoktasi.fromJson(j['b']);
     if (!tur.tekNokta && b == null) return null;
-    return GrafikCizimi(tur: tur, a: a, b: tur.tekNokta ? null : b);
+    final id = j['id'];
+    return GrafikCizimi(
+        tur: tur,
+        a: a,
+        b: tur.tekNokta ? null : b,
+        id: id is String && id.isNotEmpty && id.length <= 64 ? id : null);
   }
 
   @override

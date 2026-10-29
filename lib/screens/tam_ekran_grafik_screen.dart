@@ -34,6 +34,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/gosterge_cizimi.dart' show betikRengi;
 import '../widgets/grafik_arac_cubugu.dart' show GrafikCipi, MumAraligiAdi;
 import '../widgets/sandik_async_button.dart';
+import '../widgets/tam_ekran/cizim_alarm_dugmesi.dart';
 import '../widgets/tam_ekran/grafik_olcegi.dart';
 import '../widgets/tam_ekran/grafik_paylasimi.dart';
 import 'ozel_gosterge_screen.dart' show showOzelGostergeSayfasi;
@@ -261,9 +262,34 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     setState(() => _cizimler = c);
   }
 
-  void _kaydet() => CrashReporter.arkaPlan(
-      CizimDeposu.instance.yaz(widget.varlik.ticker, _cizimler),
-      reason: 'TamEkranGrafik.cizimYaz');
+  void _kaydet() {
+    CrashReporter.arkaPlan(
+        CizimDeposu.instance.yaz(widget.varlik.ticker, _cizimler),
+        reason: 'TamEkranGrafik.cizimYaz');
+    // Çizgi zili (0170): çizim taşındı/silindiyse sunucudaki karşılığı da
+    // taşınır/silinir. Zil kurulmamış sembolde hiçbir şey yapmaz.
+    CrashReporter.arkaPlan(
+        cizimAlarmlariniEsitle(ref,
+            varlik: widget.varlik,
+            canliBirim: widget.canliBirim,
+            cizimler: _cizimler,
+            olcek: _olcek,
+            bildir: (m) {
+              if (mounted) _bildir(m);
+            },
+            l10n: context.l10n),
+        reason: 'TamEkranGrafik.zilEsitle');
+  }
+
+  /// Seçili çizime kalıcı kimlik verir (eski kayıtlarda yoktur) ve kaydeder.
+  String _seciliKimligi() {
+    final c = _cizimler[_secili];
+    if (c.id != null) return c.id!;
+    final id = GrafikCizimi.yeniKimlik();
+    setState(() => _cizimler = [..._cizimler]..[_secili] = c.copyWith(id: id));
+    _kaydet();
+    return id;
+  }
 
   /// Aralığın penceresi: ~400 mum (TradingView mobilin ilk yüklemesi
   /// kadar); gün içinde seans boşlukları için duvar saatinde 3 kat geri.
@@ -537,7 +563,11 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
         return;
       }
       setState(() {
-        _bekleyen = GrafikCizimi(tur: arac, a: n, b: arac.tekNokta ? null : n);
+        _bekleyen = GrafikCizimi(
+            tur: arac,
+            a: n,
+            b: arac.tekNokta ? null : n,
+            id: GrafikCizimi.yeniKimlik());
         _imlec = dokunmatik ? p : null;
       });
       _jest = _Jest(_JestTuru.ciz, baslangic: p);
@@ -624,7 +654,8 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           yeni = GrafikCizimi(
               tur: c0.tur,
               a: kaydir(c0.a),
-              b: c0.b == null ? null : kaydir(c0.b!));
+              b: c0.b == null ? null : kaydir(c0.b!),
+              id: c0.id);
         }
         setState(() =>
             _cizimler = [..._cizimler]..[_secili] = yeni);
@@ -1373,18 +1404,24 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
         crossAxisAlignment: CrossAxisAlignment.start, children: satirlar);
   }
 
-  /// Seçili çizimin üstünde küçük sil düğmesi (TradingView'in yüzen araç
-  /// çubuğu). Kenara taşmaz.
+  /// Seçili çizimin üstünde küçük araç çubuğu: zil (0170, birimi uyan
+  /// sembolde) ve sil (TradingView'in yüzen araç çubuğu). Kenara taşmaz.
+  /// Paylaşım kipinde hiç çizilmez (çağıran `!_paylasimKipi`).
   Widget _seciliCubugu(GrafikOlcegi o, GrafikCizimi s) {
+    final zil = CizimAlarmDugmesi.sunulur(
+        ref, s, widget.varlik, widget.canliBirim);
+    final genislik = SandikTouch.min * (zil ? 2 : 1);
     final a = o.ekranda(s.a);
     final b = s.b == null ? a : o.ekranda(s.b!);
     final x = (s.tur == CizimTuru.yatay ? o.genislik / 2 : (a.dx + b.dx) / 2) -
-        SandikTouch.min / 2;
+        genislik / 2;
     var y = math.min(a.dy, b.dy) - SandikTouch.min - SandikSpace.smd;
     if (y < SandikSpace.xs) y = math.max(a.dy, b.dy) + SandikSpace.smd;
     final alan = _cizimAlani;
     return Positioned(
-      left: x.clamp(SandikSpace.xs, alan.width - SandikTouch.min).toDouble(),
+      left: x
+          .clamp(SandikSpace.xs, math.max(SandikSpace.xs, alan.width - genislik))
+          .toDouble(),
       top: y.clamp(SandikSpace.xs, alan.height - SandikTouch.min).toDouble(),
       child: Material(
         color: context.c.surface2,
@@ -1392,11 +1429,29 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           borderRadius: BorderRadius.circular(SandikRadius.md),
           side: BorderSide(color: context.c.hairline),
         ),
-        child: IconButton(
-          key: const ValueKey('tamEkranCizimiSil'),
-          tooltip: context.l10n.tegCizimiSil,
-          onPressed: _seciliyiSil,
-          icon: Icon(Icons.delete_outline_rounded, color: context.c.text90),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (zil)
+              CizimAlarmDugmesi(
+                cizim: s,
+                varlik: widget.varlik,
+                ad: widget.varlik.name.trim().isEmpty
+                    ? widget.ad
+                    : widget.varlik.name,
+                canliBirim: widget.canliBirim,
+                olcek: o,
+                kimlikVer: _seciliKimligi,
+                bildir: _bildir,
+              ),
+            IconButton(
+              key: const ValueKey('tamEkranCizimiSil'),
+              tooltip: context.l10n.tegCizimiSil,
+              onPressed: _seciliyiSil,
+              icon:
+                  Icon(Icons.delete_outline_rounded, color: context.c.text90),
+            ),
+          ],
         ),
       ),
     );

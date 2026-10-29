@@ -353,7 +353,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case AppNotification.watchlistMove:
         // Takip listesi Portföy sekmesinin gövdesinde; sekmeye geç yeter.
         MainNavigationScreen.sekmeIstegi.value = 1;
-      case AppNotification.yuzdeAlarm:
+      case AppNotification.yuzdeAlarm ||
+            AppNotification.gostergeAlarm ||
+            AppNotification.cizimAlarm:
         // Push'la AYNI varış (`type: price_alert` + `symbol`): varlık ekranı.
         final sembol = b.data['symbol']?.toString() ?? '';
         if (sembol.isNotEmpty) {
