@@ -365,8 +365,11 @@ gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir. İstis
 
 ### Bulut oturumu (Claude Code web / Projects)
 Üç MCP sunucusu ve Flutter `tool/bulut_kurulum.sh` ile kurulur (Project settings ›
-Cloud environment › Setup script: `bash tool/bulut_kurulum.sh`). Sunucular `-s local`
-kapsamında Linux yollarıyla kaydedilir; `.mcp.json`'a dokunulmaz. Bulut grafiği
+Cloud environment › Setup script: `curl -fsSL https://raw.githubusercontent.com/yasincirali/sandikapp/main/tool/bulut_kurulum.sh | bash || true`;
+ortam tüm projelerde ortak). Sunucular Linux yollarıyla hem `-s local` (repo yolunda
+`.mcp.json`'ı ezer) hem `-s user` (thread'ler `/home/user`'da açılır; 2026-10-29) kapsamında
+kaydedilir; `.mcp.json`'a dokunulmaz. Konteynerdeki her repo codebase-memory grafiğine
+indekslenir; kod keşfinde önce graph (`search_graph`, `trace_path`), sonra grep. Bulut grafiği
 ADR'siz başlar (ADR'ler yerel grafikte). Emülatör yok (KVM yok); doğrulama
 `flutter analyze` + `flutter test`.
 Dördüncü sunucu **perplexity** (resmi `@perplexity-ai/mcp-server`, 2026-10-12;

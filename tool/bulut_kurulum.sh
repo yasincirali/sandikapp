@@ -9,8 +9,9 @@
 # proje kapsamını ezer (user kapsamı EZMEZ, denendi 2026-09-28).
 #
 # Kullanım: Project settings › Cloud environment › Setup script alanına
-#   bash tool/bulut_kurulum.sh
-# ya da (repo henüz klonlanmamışsa) bu dosyanın içeriğini yapıştır.
+#   curl -fsSL https://raw.githubusercontent.com/yasincirali/sandikapp/main/tool/bulut_kurulum.sh | bash || true
+# Ortam tüm projelerde ortaktır; sandikapp klonlanmayan projede de bu satır
+# çalışır (repo herkese açık). Repo varsa `bash tool/bulut_kurulum.sh` da olur.
 # Yeni oturumlar sunucuları açılışta görür; kurulumun yapıldığı oturum
 # görmez. Tekrar koşmak güvenli (idempotent). Yerel makinede koşulursa
 # hiçbir şey yapmadan çıkar (bkz. adım 0).
@@ -95,7 +96,7 @@ command -v perplexity-mcp >/dev/null 2>&1 \
   || npm i -g "ruflo@${RUFLO_VER}" >/dev/null 2>&1 \
   || log "UYARI: ruflo kurulamadı"
 
-# 4) Kayıt — local kapsam (yalnız bu proje yolu); ruflo user kapsamında.
+# 4) Kayıt — local kapsam ($REPO yolu, `.mcp.json`'ı ezer) + user kapsamı (her yol).
 if command -v claude >/dev/null 2>&1; then
   ( cd "$REPO" 2>/dev/null || cd /
     for s in codebase-memory-mcp dart ui-ux-pro-mcp perplexity ruflo; do  # ruflo: eski local kayıt
@@ -111,6 +112,20 @@ if command -v claude >/dev/null 2>&1; then
     else
       log "Perplexity MCP atlandı (PERPLEXITY_API_KEY ortamda yok)"
     fi
+    # Aynı üç sunucu user kapsamında da (kullanıcı isteği 2026-10-29: "tüm
+    # threadlerde ve projelerde codebase-memory-mcp kullanalım"). Neden: proje
+    # thread'leri /home/user'da açılır, local kayıt ise yalnız $REPO yolunda
+    # okunur; codebase-memory hiçbir thread'e görünmüyordu (denendi). $REPO
+    # içinde local kayıt `.mcp.json`'ın Windows yolunu ezmeye devam eder,
+    # /home/user'da `.mcp.json` yok, user kaydı tek başına yeter.
+    for s in codebase-memory-mcp dart ui-ux-pro-mcp; do
+      claude mcp remove -s user "$s" >/dev/null 2>&1 || true
+    done
+    claude mcp add -s user codebase-memory-mcp -- /opt/cbm/codebase-memory-mcp >/dev/null
+    [ -x /opt/flutter/bin/dart ] \
+      && claude mcp add -s user dart -- /opt/flutter/bin/dart mcp-server --force-roots-fallback >/dev/null
+    command -v ui-ux-pro-mcp >/dev/null 2>&1 \
+      && claude mcp add -s user ui-ux-pro-mcp -- "$(command -v ui-ux-pro-mcp)" >/dev/null
     # ruflo `.mcp.json`'da yok, bu yüzden user kapsamı yeter ve tercih edilir:
     # sandikapp dışındaki repolarda (piggy-crew, warranty-vault, birdie-smash)
     # ve /home/user'da açılan oturumlar da görür ("tüm threadler").
@@ -125,11 +140,21 @@ else
   log "UYARI: claude CLI yok, MCP kaydı atlandı"
 fi
 
-# 5) Kod grafiği (3 sn). Repo yoksa atlanır; oturumda `index_repository` ile yapılır.
-# Not: geliştiricinin ADR'leri yalnız yerel grafikte; bulut grafiği ADR'siz başlar.
-if [ -d "$REPO/lib" ] && [ -x /opt/cbm/codebase-memory-mcp ]; then
-  /opt/cbm/codebase-memory-mcp cli index_repository --repo-path "$REPO" >/dev/null 2>&1 \
-    && log "kod grafiği indekslendi" || log "UYARI: indeksleme başarısız"
+# 5) Kod grafiği. Konteynerdeki her git deposu (sandikapp, piggy-crew,
+# warranty-vault, birdie-smash…; 2026-10-29 önce yalnız $REPO'ydu) ayrı proje
+# olarak indekslenir; depo başına 1–3 sn. Olmayan atlanır; oturumda
+# `index_repository` ile yapılır. Geliştiricinin ADR'leri yalnız yerel
+# grafikte; bulut grafiği ADR'siz başlar.
+if [ -x /opt/cbm/codebase-memory-mcp ]; then
+  goruldu=" "
+  for d in "$REPO" /home/user/*/; do
+    d="${d%/}"
+    [ -d "$d/.git" ] || continue
+    case "$goruldu" in *" $d "*) continue ;; esac
+    goruldu="$goruldu$d "
+    /opt/cbm/codebase-memory-mcp cli index_repository --repo-path "$d" >/dev/null 2>&1 \
+      && log "kod grafiği indekslendi: $d" || log "UYARI: indeksleme başarısız: $d"
+  done
 fi
 
 # 6) Paketler — pubspec.lock'u değiştirirse geri al (yerel Flutter meta/matcher'ı kaydırır).
