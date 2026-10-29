@@ -44,7 +44,9 @@ import WidgetKit
 
 // MARK: - Paylaşımlı veri
 
-private enum VarlikWidgetKeys {
+/// `private` değil: vitrin widget'ı (`SandikVitrinWidget.swift`, 2026-10-29)
+/// aynı anahtarları okur; ikinci bir anahtar listesi kopya olurdu.
+enum VarlikWidgetKeys {
     static let suite = "group.com.sandik.app"
     /// `HomeWidgetService.kVarliklar` ile birebir aynı.
     static let varliklar = "sandik_varliklar"
@@ -63,8 +65,10 @@ private enum VarlikWidgetKeys {
 ///
 /// `DeepLinkRouter.varlikWidgetHost` ile aynı olmalı. `?homeWidget` ZORUNLU:
 /// `home_widget` eklentisi iOS'ta yalnız bu parametreyi taşıyan URL'yi Dart'a
-/// iletir (gerekçe `SandikHomeWidget.swift` › `widgetClickURL`).
-private let varlikWidgetClickURL = URL(string: "sandik://varlik-widget?homeWidget=1")
+/// iletir (gerekçe `SandikHomeWidget.swift` › `widgetClickURL`). Vitrin
+/// widget'ı da bunu kullanır (aynı liste; satır başına bağlantı yok — URL
+/// varlık kimliği taşımaz, bkz. `DeepLinkRouter.varlikWidgetHost`).
+let varlikWidgetClickURL = URL(string: "sandik://varlik-widget?homeWidget=1")
 
 /// Seçim listesindeki bir varlık — Dart `VarlikWidgetOgesi.toJson`.
 ///
@@ -215,6 +219,10 @@ enum SandikWidgetFiyatServisi {
     static let zamanAsimi: TimeInterval = 8
     /// Depoda en çok bu kadar sembol (yalnız seçili olanlar birikir).
     static let depoSiniri = 20
+    /// Tek istekte en çok bu kadar sembol — sunucu `WIDGET_AZAMI_SEMBOL`
+    /// (`_shared/widget_fiyat.ts`) ile aynı; fazlası istenirse fonksiyon
+    /// isteği bütünüyle reddeder, bu yüzden burada kesilir.
+    static let azamiSembol = 5
 
     /// Widget'ın daha önce çektiği fiyatlar (sembol → fiyat).
     static func depo() -> [String: SandikCanliFiyat] {
@@ -229,10 +237,13 @@ enum SandikWidgetFiyatServisi {
         return sozluk.filter { $0.value.gecerli }
     }
 
-    private static func depoyaYaz(_ sembol: String, _ c: SandikCanliFiyat) {
-        guard let defaults = UserDefaults(suiteName: VarlikWidgetKeys.suite) else { return }
+    private static func depoyaYaz(_ yeni: [String: SandikCanliFiyat]) {
+        guard !yeni.isEmpty,
+              let defaults = UserDefaults(suiteName: VarlikWidgetKeys.suite) else { return }
         var sozluk = depo()
-        sozluk[sembol] = c
+        for (sembol, c) in yeni {
+            sozluk[sembol] = c
+        }
         if sozluk.count > depoSiniri {
             let enEskiler = sozluk.sorted { $0.value.zaman < $1.value.zaman }
                 .prefix(sozluk.count - depoSiniri)
@@ -248,14 +259,28 @@ enum SandikWidgetFiyatServisi {
 
     /// Sembolün güncel fiyatını sunucudan çeker ve depoya yazar.
     static func cek(_ sembol: String) async -> SandikCanliFiyat? {
-        guard let defaults = UserDefaults(suiteName: VarlikWidgetKeys.suite),
+        await cekToplu([sembol])[sembol]
+    }
+
+    /// Birden çok sembolü TEK istekte çeker (vitrin, 2026-10-29: üç satır =
+    /// bir çağrı; Edge Function kotası tek varlık widget'ıyla aynı kalır).
+    /// Yanıtta olmayan ya da geçersiz sembol sonuçta yoktur; her hata boş
+    /// sözlük — widget son bilinen değerle kalır.
+    static func cekToplu(_ semboller: [String]) async -> [String: SandikCanliFiyat] {
+        var istenen: [String] = []
+        for s in semboller where !s.isEmpty && !istenen.contains(s) {
+            istenen.append(s)
+        }
+        istenen = Array(istenen.prefix(azamiSembol))
+        guard !istenen.isEmpty,
+              let defaults = UserDefaults(suiteName: VarlikWidgetKeys.suite),
               let taban = defaults.string(forKey: VarlikWidgetKeys.apiUrl),
               let anahtar = defaults.string(forKey: VarlikWidgetKeys.apiAnahtar),
               !anahtar.isEmpty,
               let kok = URL(string: taban),
               kok.scheme == "https"
         else {
-            return nil
+            return [:]
         }
         let hedef = kok.appendingPathComponent("functions/v1/widget-fiyat")
         var istek = URLRequest(
@@ -265,8 +290,8 @@ enum SandikWidgetFiyatServisi {
         istek.setValue("application/json", forHTTPHeaderField: "Content-Type")
         istek.setValue(anahtar, forHTTPHeaderField: "apikey")
         istek.setValue("Bearer \(anahtar)", forHTTPHeaderField: "Authorization")
-        guard let govde = try? JSONSerialization.data(withJSONObject: ["semboller": [sembol]])
-        else { return nil }
+        guard let govde = try? JSONSerialization.data(withJSONObject: ["semboller": istenen])
+        else { return [:] }
         istek.httpBody = govde
 
         let ayar = URLSessionConfiguration.ephemeral
@@ -277,15 +302,20 @@ enum SandikWidgetFiyatServisi {
         do {
             let (veri, yanit) = try await oturum.data(for: istek)
             guard let http = yanit as? HTTPURLResponse, http.statusCode == 200,
-                  let sozluk = try? JSONDecoder().decode([String: SandikCanliFiyat].self, from: veri),
-                  let c = sozluk[sembol], c.gecerli
+                  let sozluk = try? JSONDecoder().decode([String: SandikCanliFiyat].self, from: veri)
             else {
-                return nil
+                return [:]
             }
-            depoyaYaz(sembol, c)
-            return c
+            var gecerli: [String: SandikCanliFiyat] = [:]
+            for s in istenen {
+                if let c = sozluk[s], c.gecerli {
+                    gecerli[s] = c
+                }
+            }
+            depoyaYaz(gecerli)
+            return gecerli
         } catch {
-            return nil
+            return [:]
         }
     }
 }
@@ -383,6 +413,10 @@ struct SandikVarlikPaketi: Decodable {
     /// Yazım anı (epoch ms) ve biçimli hâli ("24 Eki 14:05"). İsteğe bağlı.
     var zaman: Double? = nil
     var tarih: String? = nil
+    /// Vitrin widget'ının boş bırakılan satırlarına düşen semboller (takip
+    /// listesinin ilk üçü; karar Dart'ta, `varsayilanVitrin`). İsteğe bağlı
+    /// (2026-10-29): eski paket de okunur, o zaman listenin başı kullanılır.
+    var vitrin: [String]? = nil
 
     /// Bu build'in tanıdığı tek biçim sürümü. Tanınmayan sürüm okunmaz:
     /// yanlış okunmuş bir fiyat göstermektense "liste yok" demek doğru.
