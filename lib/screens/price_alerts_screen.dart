@@ -173,10 +173,16 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             final s = widget.sembol;
             final fiyatListe = s == null
                 ? hepsi
-                : [for (final a in hepsi) if (a.symbol == s) a];
+                : [
+                    for (final a in hepsi)
+                      if (a.symbol == s) a
+                  ];
             final yuzdeListe = s == null
                 ? yuzdeHepsi
-                : [for (final a in yuzdeHepsi) if (a.symbol == s) a];
+                : [
+                    for (final a in yuzdeHepsi)
+                      if (a.symbol == s) a
+                  ];
             // Tek zaman sırası, en yeni önce; eşitlikte fiyat alarmı önde
             // (`List.sort` kararlı değil; liste yenilenince zıplamasın).
             final liste = <({
@@ -227,7 +233,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                       // 2026-10-01 — eskiden satır tek karede yok oluyor, hata da
                       // yakalanmıyordu).
                       itemBuilder: (_, i) {
-                        final seviye = _seviyeSatiri(context, liste[i].g, liste[i].c);
+                        final seviye =
+                            _seviyeSatiri(context, liste[i].g, liste[i].c);
                         if (seviye != null) return seviye;
                         final yuzde = liste[i].y;
                         if (yuzde != null) {
@@ -242,8 +249,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                                     await KapananSatir.kapatVeYap(
                                         satirCtx,
                                         () => ref
-                                            .read(yuzdeAlarmlariProvider
-                                                .notifier)
+                                            .read(
+                                                yuzdeAlarmlariProvider.notifier)
                                             .delete(yuzde.id));
                                   } catch (e) {
                                     if (context.mounted) {
@@ -257,39 +264,39 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                         }
                         final alarm = liste[i].f!;
                         return KapananSatir(
-                        key: ValueKey(alarm.id),
-                        child: Builder(
-                          builder: (satirCtx) => _AlarmSatiri(
-                            alarm: alarm,
-                            onDelete: () async {
-                              final id = alarm.id;
-                              SandikHaptic.medium.perform();
-                              try {
-                                await KapananSatir.kapatVeYap(
-                                    satirCtx,
-                                    () => ref
-                                        .read(priceAlertsProvider.notifier)
-                                        .delete(id));
-                              } catch (e) {
-                                if (context.mounted) showAppError(context, e);
-                              }
-                            },
-                            // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
-                            // çökme); düğme artık bekliyor, ret sebebi söylenir.
-                            // Eşik geçilmişse ön dolu sayfa, değilse yeniden
-                            // kur + onay (`alarmiYenidenKur`, 2026-10-21).
-                            onRearm: () {
-                              final a = alarm;
-                              final aday = _adaylar()
-                                      .where((x) => x.sembol == a.symbol)
-                                      .firstOrNull ??
-                                  AlarmAdayi(a.symbol, a.label, 0);
-                              return alarmiYenidenKur(context, ref, a,
-                                  aday: aday);
-                            },
+                          key: ValueKey(alarm.id),
+                          child: Builder(
+                            builder: (satirCtx) => _AlarmSatiri(
+                              alarm: alarm,
+                              onDelete: () async {
+                                final id = alarm.id;
+                                SandikHaptic.medium.perform();
+                                try {
+                                  await KapananSatir.kapatVeYap(
+                                      satirCtx,
+                                      () => ref
+                                          .read(priceAlertsProvider.notifier)
+                                          .delete(id));
+                                } catch (e) {
+                                  if (context.mounted) showAppError(context, e);
+                                }
+                              },
+                              // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
+                              // çökme); düğme artık bekliyor, ret sebebi söylenir.
+                              // Eşik geçilmişse ön dolu sayfa, değilse yeniden
+                              // kur + onay (`alarmiYenidenKur`, 2026-10-21).
+                              onRearm: () {
+                                final a = alarm;
+                                final aday = _adaylar()
+                                        .where((x) => x.sembol == a.symbol)
+                                        .firstOrNull ??
+                                    AlarmAdayi(a.symbol, a.label, 0);
+                                return alarmiYenidenKur(context, ref, a,
+                                    aday: aday);
+                              },
+                            ),
                           ),
-                        ),
-                      );
+                        );
                       },
                     ),
                   ),
@@ -335,17 +342,18 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       // Çizginin bugünkü seviyesi ve (uzamayan parçada) bitişi: "altına
       // inince" tek başına hangi seviye olduğunu söylemiyordu. Çalmış
       // alarmda seviye yazılmaz; durum satırı tetik fiyatını yazar.
-      final v = c.isActive ? c.seviye(DateTime.now().millisecondsSinceEpoch) : null;
+      final v =
+          c.isActive ? c.seviye(DateTime.now().millisecondsSinceEpoch) : null;
       if (v != null) {
         final fiyat = fmtFiyat(v, symbol: alarmFiyatSimgesi(c.symbol) ?? '');
         seviyeMetni = c.uzanir
             ? l10n.cizimAlarmSeviyesi(fiyat)
             // Bitiş yalnız GÜN: çizginin ucu grafikte serbest bir nokta,
             // saati ("21:42") günlük mumda anlamsız (e2e 2026-10-29).
-            : l10n.cizimAlarmSeviyesiBitisli(fiyat, () {
-                final b = DateTime.fromMillisecondsSinceEpoch(c.t2);
-                return fmtTarihSaat(DateTime(b.year, b.month, b.day));
-              }());
+            : l10n.cizimAlarmSeviyesiBitisli(
+                fiyat,
+                fmtTarihSaat(
+                    dayKey(DateTime.fromMillisecondsSinceEpoch(c.t2))));
       }
       sil = () => ref.read(cizimAlarmlariProvider.notifier).delete(c.id);
     }
