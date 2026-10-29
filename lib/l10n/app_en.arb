@@ -832,6 +832,9 @@
   "replayTour": "Replay the tour",
   "replayTourSubtitle": "Remind yourself what each screen does",
   "feedbackSubtitle": "Send us your thoughts",
+  "yasalBelgelerBaslik": "Legal documents",
+  "yasalBelgelerAlt": "Privacy, terms, KVKK notice, explicit consent, investment disclaimer",
+  "feedbackDogrudanEposta": "Write by email instead",
   "legalUpper": "LEGAL",
   "privacyPolicy": "Privacy Policy",
   "privacyPolicySubtitle": "How your data is processed",
@@ -3906,6 +3909,9 @@
       }
     }
   },
+  "watchlistYuzdeAlarmSet": "{etiket} alert set",
+  "@watchlistYuzdeAlarmSet": {"placeholders": {"etiket": {"type": "String"}}},
+  "watchlistYuzdeAlarmCaldi": "went off today, re-arms tomorrow",
   "watchlistAlertMore": "{count, plural, =1{and 1 more alert} other{and {count} more alerts}}",
   "@watchlistAlertMore": {
     "placeholders": {
@@ -5651,6 +5657,10 @@
   "yuzdeAlarmEtiketYukselis": "Daily {pct}% rise",
   "yuzdeAlarmEtiketIkisi": "Daily {pct}% move",
   "yuzdeAlarmKuruldu": "Alert set for {name}: {etiket}",
+  "yuzdeAlarmSilSoru": "Delete the {etiket} alert? It will stop re-arming every day.",
+  "@yuzdeAlarmSilSoru": {"placeholders": {"etiket": {"type": "String"}}},
+  "yuzdeCipBugunCaldi": "{etiket} · went off today",
+  "@yuzdeCipBugunCaldi": {"placeholders": {"etiket": {"type": "String"}}},
   "yuzdeAlarmHerGun": "{etiket} · every day",
   "yuzdeAlarmBugunCaldi": "Fired today · {pct} · re-arms tomorrow",
   "notifTypeAlarm": "ALERT",
@@ -5704,5 +5714,9 @@
   "cizimAlarmSeviyesi": "Line now at {fiyat}",
   "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
   "cizimAlarmSeviyesiBitisli": "Line now at {fiyat} · until {tarih}",
-  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}},
+  "alarmBekleyenler": "Waiting",
+  "alarmCalanlar": "Fired ({n})",
+  "alarmCalanlariTemizle": "Clear fired",
+  "alarmCalanlariTemizleSoru": "Delete {n} fired alarms? Your waiting alarms stay."
 }

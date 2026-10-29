@@ -5,10 +5,12 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/price_alert.dart';
 import 'package:portfoy_takip/models/watchlist_item.dart';
+import 'package:portfoy_takip/models/yuzde_alarmi.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/price_alert_provider.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
+import 'package:portfoy_takip/providers/yuzde_alarmi_provider.dart';
 import 'package:portfoy_takip/screens/price_alerts_screen.dart';
 import 'package:portfoy_takip/screens/watchlist_screen.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -63,6 +65,29 @@ class _SabitAlarmlar extends PriceAlertsNotifier {
   Future<List<PriceAlert>> build() async => _alarmlar;
 }
 
+List<YuzdeAlarmi> _yuzdeler = const [];
+
+class _SabitYuzdeler extends YuzdeAlarmlariNotifier {
+  @override
+  Future<List<YuzdeAlarmi>> build() async => _yuzdeler;
+}
+
+YuzdeAlarmi _yuzde(String id, String sembol, double esik,
+        {YuzdeYon yon = YuzdeYon.ikisi,
+        bool enabled = true,
+        String? sonTetikGunu}) =>
+    YuzdeAlarmi(
+      id: id,
+      userId: 'u1',
+      symbol: sembol,
+      label: sembol,
+      esikPct: esik,
+      yon: yon,
+      enabled: enabled,
+      sonTetikGunu: sonTetikGunu,
+      createdAt: DateTime(2026, 10, 28),
+    );
+
 Future<void> _pump(WidgetTester tester,
     {double genislik = 390, double olcek = 1}) async {
   tester.view.physicalSize = Size(genislik * 3, 2400 * 3);
@@ -75,6 +100,7 @@ Future<void> _pump(WidgetTester tester,
       activePartnersProvider.overrideWithValue(const []),
       watchlistLimitProvider.overrideWithValue(1 << 30),
       priceAlertsProvider.overrideWith(_SabitAlarmlar.new),
+      yuzdeAlarmlariProvider.overrideWith(_SabitYuzdeler.new),
     ],
     child: MaterialApp(
       theme: ThemeData(
@@ -97,7 +123,91 @@ Finder _can() => find.bySemanticsLabel('Alarmları aç');
 
 void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    _alarmlar = const [];
+    _yuzdeler = const [];
+  });
+
+  // Ar-Ge 27 Eki 12:45 #1 (yasin 29 Eki "yap"): çan yüzde alarmını da okur.
+  group('takipCaniOzeti (saf)', () {
+    test('yalnız yüzde alarmı → en dar eşik önde, kalanlar +N', () {
+      final o = takipCaniOzeti(const [], [
+        _yuzde('a', 'X', 3),
+        _yuzde('b', 'X', 1, yon: YuzdeYon.dusus),
+        _yuzde('c', 'X', 2, enabled: false),
+        _yuzde('d', 'Y', 1),
+      ], sembol: 'X')!;
+      expect(o.fiyat, isNull);
+      expect(o.yuzde!.id, 'b');
+      expect(o.digerSayisi, 1, reason: 'kapalı ve başka sembol sayılmaz');
+      expect(yuzdeKisaMetni(o.yuzde!), '\u2212%1');
+    });
+
+    test('fiyat alarmı varsa önde; yüzde alarmları +N sayısına girer', () {
+      final o = takipCaniOzeti([_alarm('a', 'X', 40)], [_yuzde('b', 'X', 2)],
+          sembol: 'X', guncelFiyat: 38)!;
+      expect(o.fiyat!.id, 'a');
+      expect(o.yuzde, isNull);
+      expect(o.digerSayisi, 1);
+    });
+
+    test('hiç etkin alarm yoksa null', () {
+      expect(takipCaniOzeti(const [], const [], sembol: 'X'), isNull);
+      expect(
+          takipCaniOzeti(const [], [_yuzde('a', 'X', 2, enabled: false)],
+              sembol: 'X'),
+          isNull);
+    });
+
+    test('kısa metin yönü işaretle yazar', () {
+      expect(yuzdeKisaMetni(_yuzde('a', 'X', 2)), '±%2');
+      expect(
+          yuzdeKisaMetni(_yuzde('a', 'X', 2, yon: YuzdeYon.yukselis)), '+%2');
+      expect(yuzdeKisaMetni(_yuzde('a', 'X', 1.5)), '±%1,5');
+    });
+  });
+
+  testWidgets('yalnız yüzde alarmı → çan "±%2"; cümlede günlük yüzde',
+      (tester) async {
+    _yuzdeler = [_yuzde('y', 'SISE.IS', 2)];
+    final semantics = tester.ensureSemantics();
+    await _pump(tester);
+
+    expect(find.text('±%2'), findsOneWidget);
+    expect(find.byIcon(Icons.notifications_active_rounded), findsOneWidget);
+    final etiket = tester
+        .getSemantics(find.bySemanticsLabel(RegExp(r'^Şişe Cam, ')))
+        .label;
+    expect(etiket, contains('Günlük %2 hareket alarmı kurulu'));
+    expect(etiket, isNot(contains('bugün çaldı')));
+    semantics.dispose();
+  });
+
+  testWidgets('bugün çalmış yüzde alarmı → boş zil, cümlede "bugün çaldı"',
+      (tester) async {
+    _yuzdeler = [
+      _yuzde('y', 'SISE.IS', 2, sonTetikGunu: yuzdeAlarmGunu(DateTime.now())),
+    ];
+    final semantics = tester.ensureSemantics();
+    await _pump(tester);
+
+    expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.notifications_active_rounded), findsNothing);
+    final etiket = tester
+        .getSemantics(find.bySemanticsLabel(RegExp(r'^Şişe Cam, ')))
+        .label;
+    expect(etiket, contains('bugün çaldı'));
+    semantics.dispose();
+  });
+
+  testWidgets('fiyat + yüzde alarmı → fiyat hedefi ve +1', (tester) async {
+    _alarmlar = [_alarm('a', 'SISE.IS', 40)];
+    _yuzdeler = [_yuzde('y', 'SISE.IS', 2)];
+    await _pump(tester);
+    expect(find.text('₺40,00 +1'), findsOneWidget);
+    expect(find.text('±%2'), findsNothing);
+  });
 
   group('etkinAlarmOzeti (saf)', () {
     test('etkin alarm yoksa null; tetiklenmiş ve kapalı sayılmaz', () {
@@ -123,16 +233,14 @@ void main() {
     });
 
     test('fiyat bilinmiyorsa liste sırası (uydurma mesafe yok)', () {
-      final o = etkinAlarmOzeti(
-          [_alarm('a', 'X', 10), _alarm('b', 'X', 5)],
+      final o = etkinAlarmOzeti([_alarm('a', 'X', 10), _alarm('b', 'X', 5)],
           guncelFiyat: null)!;
       expect(o.enYakin.id, 'a');
       expect(o.digerSayisi, 1);
     });
 
     test('eşit mesafede listedeki ilk kazanır', () {
-      final o = etkinAlarmOzeti(
-          [_alarm('a', 'X', 110), _alarm('b', 'X', 90)],
+      final o = etkinAlarmOzeti([_alarm('a', 'X', 110), _alarm('b', 'X', 90)],
           guncelFiyat: 100)!;
       expect(o.enYakin.id, 'a');
     });
@@ -188,8 +296,9 @@ void main() {
       (tester) async {
     _alarmlar = const [];
     await _pump(tester);
-    final once = tester.getSize(find.ancestor(
-        of: find.text('ASELS'), matching: find.byType(Container)).first);
+    final once = tester.getSize(find
+        .ancestor(of: find.text('ASELS'), matching: find.byType(Container))
+        .first);
 
     // Aynı kapsamda alarm listesi değişir (alarm kuruldu): yalnız alarm
     // sağlayıcısı yeniden okunur.
@@ -198,8 +307,9 @@ void main() {
         .invalidate(priceAlertsProvider);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    final sonra = tester.getSize(find.ancestor(
-        of: find.text('ASELS'), matching: find.byType(Container)).first);
+    final sonra = tester.getSize(find
+        .ancestor(of: find.text('ASELS'), matching: find.byType(Container))
+        .first);
     expect(sonra, once, reason: 'başka satırın alarmı bu satırı değiştirmez');
     expect(find.byIcon(Icons.notifications_active_rounded), findsOneWidget);
   });
@@ -241,8 +351,8 @@ void main() {
     // + sıralama düğmesi, "Listede n" kartı) 3.1×'te 320 pt'ye sığmıyor
     // (2026-10-26 bulgusu; ayrı iş). Yalnız takip SATIRININ kaynağındaki
     // (`_Row` … `_EmptyState` arası, çan dahil) taşma testi kırar.
-    final kaynak = ekranKaynagiSync('lib/screens/watchlist_screen.dart')
-        .split('\n');
+    final kaynak =
+        ekranKaynagiSync('lib/screens/watchlist_screen.dart').split('\n');
     final bas = kaynak.indexWhere((l) => l.startsWith('class _Row ')) + 1;
     final son =
         kaynak.indexWhere((l) => l.startsWith('class _EmptyState ')) + 1;
@@ -256,8 +366,10 @@ void main() {
     FlutterError.onError = eski;
     final ilgili = [
       for (final h in hatalar)
-        if (konum.allMatches(h.toString()).map((m) => int.parse(m[1]!)).any(
-            (satir) => satir >= bas && satir < son))
+        if (konum
+            .allMatches(h.toString())
+            .map((m) => int.parse(m[1]!))
+            .any((satir) => satir >= bas && satir < son))
           h,
     ];
     expect(ilgili, isEmpty, reason: ilgili.join('\n'));

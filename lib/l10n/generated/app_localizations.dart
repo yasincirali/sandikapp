@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr'),
+    Locale('tr')
   ];
 
   /// No description provided for @appName.
@@ -2533,6 +2533,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Görüşünü bize ilet'**
   String get feedbackSubtitle;
+
+  /// No description provided for @yasalBelgelerBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal belgeler'**
+  String get yasalBelgelerBaslik;
+
+  /// No description provided for @yasalBelgelerAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gizlilik, kullanım koşulları, KVKK, açık rıza, yatırım uyarısı'**
+  String get yasalBelgelerAlt;
+
+  /// No description provided for @feedbackDogrudanEposta.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-postayla yaz'**
+  String get feedbackDogrudanEposta;
 
   /// No description provided for @legalUpper.
   ///
@@ -6607,11 +6625,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  );
+      String acilis, String yuksek, String dusuk, String kapanis);
 
   /// No description provided for @fullscreenChart.
   ///
@@ -9096,11 +9110,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  );
+      String date, String end, String change, String cpi);
 
   /// No description provided for @savingsRose.
   ///
@@ -9924,6 +9934,18 @@ abstract class AppLocalizations {
   /// **'{price} için alarm kurulu'**
   String watchlistAlertSet(String price);
 
+  /// No description provided for @watchlistYuzdeAlarmSet.
+  ///
+  /// In tr, this message translates to:
+  /// **'{etiket} alarmı kurulu'**
+  String watchlistYuzdeAlarmSet(String etiket);
+
+  /// No description provided for @watchlistYuzdeAlarmCaldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'bugün çaldı, yarın yeniden kurulur'**
+  String get watchlistYuzdeAlarmCaldi;
+
   /// No description provided for @watchlistAlertMore.
   ///
   /// In tr, this message translates to:
@@ -10643,11 +10665,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  );
+      String amount, String times, String pct, String share);
 
   /// No description provided for @cryFootnote.
   ///
@@ -16121,6 +16139,18 @@ abstract class AppLocalizations {
   /// **'{name} için alarm kuruldu: {etiket}'**
   String yuzdeAlarmKuruldu(String name, String etiket);
 
+  /// No description provided for @yuzdeAlarmSilSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'{etiket} alarmı silinsin mi? Her gün yeniden kurulmayı bırakır.'**
+  String yuzdeAlarmSilSoru(String etiket);
+
+  /// No description provided for @yuzdeCipBugunCaldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{etiket} · bugün çaldı'**
+  String yuzdeCipBugunCaldi(String etiket);
+
   /// No description provided for @yuzdeAlarmHerGun.
   ///
   /// In tr, this message translates to:
@@ -16414,6 +16444,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çizgi şu an {fiyat} · {tarih} tarihine kadar'**
   String cizimAlarmSeviyesiBitisli(String fiyat, String tarih);
+
+  /// No description provided for @alarmBekleyenler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekleyenler'**
+  String get alarmBekleyenler;
+
+  /// No description provided for @alarmCalanlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalanlar ({n})'**
+  String alarmCalanlar(int n);
+
+  /// No description provided for @alarmCalanlariTemizle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalanları temizle'**
+  String get alarmCalanlariTemizle;
+
+  /// No description provided for @alarmCalanlariTemizleSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.'**
+  String alarmCalanlariTemizleSoru(int n);
 }
 
 class _AppLocalizationsDelegate
@@ -16443,9 +16497,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

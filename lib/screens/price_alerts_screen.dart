@@ -19,6 +19,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/kapanan_satir.dart';
 import '../widgets/alarm_kur_sheet.dart';
+import '../widgets/sandik_acilir.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -51,6 +52,15 @@ import '../l10n/l10n.dart';
 /// ("Çizgi alarmı · üstüne çıkınca") alarmları da aynı listede, aynı
 /// gerekçeyle. Çizgi alarmı yatay grafikte çizimden kurulur; burada
 /// görünür ve silinir.
+/// Listedeki bir satır: tam olarak bir alan dolu.
+typedef _Satir = ({
+  DateTime t,
+  PriceAlert? f,
+  YuzdeAlarmi? y,
+  GostergeAlarmi? g,
+  CizimAlarmi? c,
+});
+
 class PriceAlertsScreen extends ConsumerStatefulWidget {
   const PriceAlertsScreen({super.key, this.sembol});
 
@@ -64,6 +74,9 @@ class PriceAlertsScreen extends ConsumerStatefulWidget {
 }
 
 class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
+  /// Çalanlar grubu kapalı açılır: liste "neyi bekliyorum"u cevaplar.
+  bool _calanlarAcik = false;
+
   @override
   void initState() {
     super.initState();
@@ -185,13 +198,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                   ];
             // Tek zaman sırası, en yeni önce; eşitlikte fiyat alarmı önde
             // (`List.sort` kararlı değil; liste yenilenince zıplamasın).
-            final liste = <({
-              DateTime t,
-              PriceAlert? f,
-              YuzdeAlarmi? y,
-              GostergeAlarmi? g,
-              CizimAlarmi? c,
-            })>[
+            final liste = <_Satir>[
               for (final a in fiyatListe)
                 (t: a.createdAt, f: a, y: null, g: null, c: null),
               for (final a in yuzdeListe)
@@ -209,14 +216,65 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               return (a.f == null ? 1 : 0) - (b.f == null ? 1 : 0);
             });
             if (liste.isEmpty) return _bosDurum(c);
+            // Bekleyenler üstte, çalmışlar altta katlı grupta (Ar-Ge 29 Eki
+            // 16:45 #2). Çalmış fiyat/gösterge/çizgi alarmı silinene kadar
+            // listede kalıyordu; bir ay sonra bekleyen birkaç alarm onlarca
+            // çalmış satırın arasında kayboluyordu. Yüzde alarmı "çalmış"
+            // sayılmaz: ertesi gün kendiliğinden nöbette, bekleyenlerde
+            // kalır. Çalmış yoksa liste eskisi gibi başlıksız tek grup.
+            final bekleyen = [
+              for (final r in liste)
+                if (_calmaAni(r) == null) r
+            ];
+            final calan = [
+              for (final r in liste)
+                if (_calmaAni(r) != null) r
+            ]..sort((a, b) => _calmaAni(b)!.compareTo(_calmaAni(a)!));
+            final sh = SandikSpace.screenH(context);
+            final ogeler = <Widget>[
+              if (calan.isNotEmpty && bekleyen.isNotEmpty)
+                SandikSectionHeader(title: context.l10n.alarmBekleyenler),
+              for (final r in bekleyen) _satir(context, r),
+              if (calan.isNotEmpty) ...[
+                _CalanlarBasligi(
+                  sayi: calan.length,
+                  acik: _calanlarAcik,
+                  onTap: () => setState(() => _calanlarAcik = !_calanlarAcik),
+                ),
+                SandikAcilir(
+                  acik: _calanlarAcik,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final r in calan) ...[
+                        _satir(context, r),
+                        const SizedBox(height: 10),
+                      ],
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          key: const ValueKey('calanlariTemizle'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: c.loss,
+                            minimumSize: const Size(0, SandikTouch.min),
+                          ),
+                          onPressed: () => _calanlariTemizle(calan),
+                          icon: const Icon(Icons.delete_sweep_rounded),
+                          label: Text(context.l10n.alarmCalanlariTemizle),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ];
             // İzin reddedilmişse listedeki hiçbir alarm haber veremez
             // (Ar-Ge 16:45 #1, 2026-10-21). Liste kaydırılırken satır üstte
             // sabit kalmaz; yalnız listenin başında görünür.
             return Column(
               children: [
                 BildirimIzniUyarisi(
-                  padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
-                      SandikSpace.sm, SandikSpace.screenH(context), 0),
+                  padding: EdgeInsets.fromLTRB(sh, SandikSpace.sm, sh, 0),
                 ),
                 Expanded(
                   child: RefreshIndicator.adaptive(
@@ -224,85 +282,112 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                     onRefresh: _yenile,
                     child: ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
-                          8, SandikSpace.screenH(context), 96),
-                      itemCount: liste.length,
+                      padding: EdgeInsets.fromLTRB(sh, 8, sh, 96),
+                      itemCount: ogeler.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      // Silinen satır önce kapanır, altındakiler yukarı kayar; sunucu
-                      // reddederse geri açılır ve sebep söylenir (animasyon denetimi
-                      // 2026-10-01 — eskiden satır tek karede yok oluyor, hata da
-                      // yakalanmıyordu).
-                      itemBuilder: (_, i) {
-                        final seviye =
-                            _seviyeSatiri(context, liste[i].g, liste[i].c);
-                        if (seviye != null) return seviye;
-                        final yuzde = liste[i].y;
-                        if (yuzde != null) {
-                          return KapananSatir(
-                            key: ValueKey('yuzde_${yuzde.id}'),
-                            child: Builder(
-                              builder: (satirCtx) => _YuzdeAlarmSatiri(
-                                alarm: yuzde,
-                                onDelete: () async {
-                                  SandikHaptic.medium.perform();
-                                  try {
-                                    await KapananSatir.kapatVeYap(
-                                        satirCtx,
-                                        () => ref
-                                            .read(
-                                                yuzdeAlarmlariProvider.notifier)
-                                            .delete(yuzde.id));
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      showAppError(context, e);
-                                    }
-                                  }
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                        final alarm = liste[i].f!;
-                        return KapananSatir(
-                          key: ValueKey(alarm.id),
-                          child: Builder(
-                            builder: (satirCtx) => _AlarmSatiri(
-                              alarm: alarm,
-                              onDelete: () async {
-                                final id = alarm.id;
-                                SandikHaptic.medium.perform();
-                                try {
-                                  await KapananSatir.kapatVeYap(
-                                      satirCtx,
-                                      () => ref
-                                          .read(priceAlertsProvider.notifier)
-                                          .delete(id));
-                                } catch (e) {
-                                  if (context.mounted) showAppError(context, e);
-                                }
-                              },
-                              // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
-                              // çökme); düğme artık bekliyor, ret sebebi söylenir.
-                              // Eşik geçilmişse ön dolu sayfa, değilse yeniden
-                              // kur + onay (`alarmiYenidenKur`, 2026-10-21).
-                              onRearm: () {
-                                final a = alarm;
-                                final aday = _adaylar()
-                                        .where((x) => x.sembol == a.symbol)
-                                        .firstOrNull ??
-                                    AlarmAdayi(a.symbol, a.label, 0);
-                                return alarmiYenidenKur(context, ref, a,
-                                    aday: aday);
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                      itemBuilder: (_, i) => ogeler[i],
                     ),
                   ),
                 ),
               ],
             );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Çalmış alarmın çalma anı; bekleyen (ve her zaman yüzde) alarmda null.
+  static DateTime? _calmaAni(_Satir r) =>
+      r.f?.triggeredAt ?? r.g?.triggeredAt ?? r.c?.triggeredAt;
+
+  /// Çalmış alarmları toplu siler (kişinin kendi verisi, onayla). Yalnız
+  /// [calan] grubundakiler gider; bekleyen alarmlara dokunulmaz. Biri
+  /// reddedilirse diyalog açık kalır, sebep söylenir; silinenler gitmiş olur
+  /// (sağlayıcı her başarılı silmede listeyi günceller).
+  Future<void> _calanlariTemizle(List<_Satir> calan) async {
+    final l10n = context.l10n;
+    final ok = await showSandikConfirm(
+      context: context,
+      title: l10n.alarmCalanlariTemizle,
+      message: l10n.alarmCalanlariTemizleSoru(calan.length),
+      confirmLabel: l10n.delete,
+      destructive: true,
+      islem: () async {
+        for (final r in calan) {
+          if (r.f != null) {
+            await ref.read(priceAlertsProvider.notifier).delete(r.f!.id);
+          } else if (r.g != null) {
+            await ref.read(gostergeAlarmlariProvider.notifier).delete(r.g!.id);
+          } else if (r.c != null) {
+            await ref.read(cizimAlarmlariProvider.notifier).delete(r.c!.id);
+          }
+        }
+      },
+    );
+    if (ok) {
+      SandikHaptic.medium.perform();
+      if (mounted) setState(() => _calanlarAcik = false);
+    }
+  }
+
+  // Silinen satır önce kapanır, altındakiler yukarı kayar; sunucu reddederse
+  // geri açılır ve sebep söylenir (animasyon denetimi 2026-10-01 — eskiden
+  // satır tek karede yok oluyor, hata da yakalanmıyordu).
+  Widget _satir(BuildContext context, _Satir r) {
+    final seviye = _seviyeSatiri(context, r.g, r.c);
+    if (seviye != null) return seviye;
+    final yuzde = r.y;
+    if (yuzde != null) {
+      return KapananSatir(
+        key: ValueKey('yuzde_${yuzde.id}'),
+        child: Builder(
+          builder: (satirCtx) => _YuzdeAlarmSatiri(
+            alarm: yuzde,
+            onDelete: () async {
+              SandikHaptic.medium.perform();
+              try {
+                await KapananSatir.kapatVeYap(
+                    satirCtx,
+                    () => ref
+                        .read(yuzdeAlarmlariProvider.notifier)
+                        .delete(yuzde.id));
+              } catch (e) {
+                if (context.mounted) {
+                  showAppError(context, e);
+                }
+              }
+            },
+          ),
+        ),
+      );
+    }
+    final alarm = r.f!;
+    return KapananSatir(
+      key: ValueKey(alarm.id),
+      child: Builder(
+        builder: (satirCtx) => _AlarmSatiri(
+          alarm: alarm,
+          onDelete: () async {
+            final id = alarm.id;
+            SandikHaptic.medium.perform();
+            try {
+              await KapananSatir.kapatVeYap(satirCtx,
+                  () => ref.read(priceAlertsProvider.notifier).delete(id));
+            } catch (e) {
+              if (context.mounted) showAppError(context, e);
+            }
+          },
+          // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
+          // çökme); düğme artık bekliyor, ret sebebi söylenir.
+          // Eşik geçilmişse ön dolu sayfa, değilse yeniden
+          // kur + onay (`alarmiYenidenKur`, 2026-10-21).
+          onRearm: () {
+            final a = alarm;
+            final aday =
+                _adaylar().where((x) => x.sembol == a.symbol).firstOrNull ??
+                    AlarmAdayi(a.symbol, a.label, 0);
+            return alarmiYenidenKur(context, ref, a, aday: aday);
           },
         ),
       ),
@@ -654,6 +739,60 @@ class _AlarmSatiri extends StatelessWidget {
             tooltip: 'Sil',
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Çalanlar grubu başlığı (Ar-Ge 29 Eki 16:45 #2) ─────────────────────────
+
+/// "Çalanlar (N)" — dokununca grup açılır/kapanır. Tüm satır dokunma alanı
+/// (≥44 pt); açık/kapalı durumu ok yönüyle ve erişilebilirlikte `expanded`
+/// ile söylenir, yalnız hareketle değil.
+class _CalanlarBasligi extends StatelessWidget {
+  const _CalanlarBasligi({
+    required this.sayi,
+    required this.acik,
+    required this.onTap,
+  });
+
+  final int sayi;
+  final bool acik;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Semantics(
+      button: true,
+      expanded: acik,
+      child: SandikTappable(
+        key: const ValueKey('calanlarBasligi'),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.l10n.alarmCalanlar(sayi),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: c.text58,
+                  ),
+                ),
+              ),
+              SandikAcilirOk(
+                acik: acik,
+                child:
+                    Icon(Icons.expand_more_rounded, size: 20, color: c.text58),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

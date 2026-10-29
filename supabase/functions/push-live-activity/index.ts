@@ -34,6 +34,7 @@ import {
 } from '../_shared/canli_etkinlik.ts';
 import { fetchLivePrices } from '../_shared/live_prices.ts';
 import { pushImzasi, pushOnceligi } from '../_shared/canli_etkinlik_oncelik.ts';
+import { bistSeansAcikMi } from '../_shared/piyasa_takvimi.ts';
 
 // ── APNs kimlik bilgileri ───────────────────────────────────────────────
 // Token bazlı kimlik doğrulama (sertifika değil): .p8 anahtarı 1 yıl
@@ -115,29 +116,16 @@ function b64url(bytes: Uint8Array): string {
 
 /// BIST işlem saatleri içinde miyiz? (Istanbul saatiyle 10:00–18:10, hafta içi)
 ///
-/// `LiveActivityService.isMarketOpen` ile AYNI kuraldır ve aynı kalmalıdır:
+/// `DailySummary.isMarketOpen` ile AYNI kuraldır ve aynı kalmalıdır:
 /// uygulama önplandayken istemci, kapalıyken sunucu karar verir; ikisi
 /// ayrışırsa aynı anda "Canlı" ve "Piyasa kapalı" gösterilebilir.
 ///
-/// Resmî tatiller burada da bilinmez — takvim gerektirir ve yanlış bir
-/// tatil listesi listesizlikten kötüdür (bkz. TECHNICAL_DEBT.md).
+/// Resmî tatil ve yarım gün artık burada da biliniyor (Ar-Ge 29 Eki #1):
+/// istemci 2026-09-14'te öğrenmişti, sunucu öğrenmediği için kilit ekranı
+/// 29 Ekim boyunca "Canlı" diye güncelleniyordu. Kural ve liste tek yerde
+/// (`_shared/piyasa_takvimi.ts` + `bist_tatil.ts`, istemciyle parite testi).
 function isBistOpen(now = new Date()): boolean {
-  // `en-GB` + `Europe/Istanbul`: DST'yi runtime çözsün, elle ofset
-  // eklemek yaz saati uygulamasında sessizce bir saat kaydırırdı.
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/Istanbul',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).formatToParts(now);
-
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
-  const weekday = get('weekday');
-  if (weekday === 'Sat' || weekday === 'Sun') return false;
-
-  const mins = Number(get('hour')) * 60 + Number(get('minute'));
-  return mins >= 10 * 60 && mins < 18 * 60 + 10;
+  return bistSeansAcikMi(now);
 }
 
 /// Tek bir oturuma güncelleme gönderir.

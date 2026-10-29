@@ -2502,8 +2502,11 @@ kapsam-dışı yıl davranışını kilitler.
 
 **Kalan (bakım):** her Aralık ayında bir sonraki yılın Resmî Gazete
 takvimini `_diniTamGun` / `_diniYarimGun`'a girip `sonKapsananYil`'i
-artır. Sunucu (push sinyalleri) hâlâ takvimi bilmez — "işlem günü"
-tablosu gelirse iki taraf da oradan beslenir.
+artır; aynı günleri sunucunun kopyası
+`supabase/functions/_shared/bist_tatil.ts`'e de yaz (`bist_tatil_parite_test`
+farkı kırar). **2026-10-29:** sunucu da takvimi biliyor: kilit ekranı push'u
+(`push-live-activity`), sinyal taraması, TEFAS akış gözlemi ve sabah/akşam
+brifinginin hisse mesajı tatilde susar (Ar-Ge 29 Eki #1).
 
 **Karar tarihi:** 2026-08-13
 

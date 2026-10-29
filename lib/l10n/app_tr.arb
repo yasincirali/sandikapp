@@ -845,6 +845,9 @@
   "replayTour": "Tanıtım turunu yeniden izle",
   "replayTourSubtitle": "Ekranların ne işe yaradığını hatırla",
   "feedbackSubtitle": "Görüşünü bize ilet",
+  "yasalBelgelerBaslik": "Yasal belgeler",
+  "yasalBelgelerAlt": "Gizlilik, kullanım koşulları, KVKK, açık rıza, yatırım uyarısı",
+  "feedbackDogrudanEposta": "E-postayla yaz",
   "legalUpper": "YASAL",
   "privacyPolicy": "Gizlilik Politikası",
   "privacyPolicySubtitle": "Verilerin nasıl işleniyor",
@@ -4194,6 +4197,9 @@
       }
     }
   },
+  "watchlistYuzdeAlarmSet": "{etiket} alarmı kurulu",
+  "@watchlistYuzdeAlarmSet": {"placeholders": {"etiket": {"type": "String"}}},
+  "watchlistYuzdeAlarmCaldi": "bugün çaldı, yarın yeniden kurulur",
   "watchlistAlertMore": "ve {count} alarm daha",
   "@watchlistAlertMore": {
     "placeholders": {
@@ -6309,6 +6315,10 @@
   "@yuzdeAlarmEtiketIkisi": {"placeholders": {"pct": {"type": "String"}}},
   "yuzdeAlarmKuruldu": "{name} için alarm kuruldu: {etiket}",
   "@yuzdeAlarmKuruldu": {"placeholders": {"name": {"type": "String"}, "etiket": {"type": "String"}}},
+  "yuzdeAlarmSilSoru": "{etiket} alarmı silinsin mi? Her gün yeniden kurulmayı bırakır.",
+  "@yuzdeAlarmSilSoru": {"placeholders": {"etiket": {"type": "String"}}},
+  "yuzdeCipBugunCaldi": "{etiket} · bugün çaldı",
+  "@yuzdeCipBugunCaldi": {"placeholders": {"etiket": {"type": "String"}}},
   "yuzdeAlarmHerGun": "{etiket} · her gün",
   "@yuzdeAlarmHerGun": {"placeholders": {"etiket": {"type": "String"}}},
   "yuzdeAlarmBugunCaldi": "Bugün çalıştı · {pct} · yarın yeniden kurulur",
@@ -6378,5 +6388,11 @@
   "cizimAlarmSeviyesi": "Çizgi şu an {fiyat}",
   "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
   "cizimAlarmSeviyesiBitisli": "Çizgi şu an {fiyat} · {tarih} tarihine kadar",
-  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}},
+  "alarmBekleyenler": "Bekleyenler",
+  "alarmCalanlar": "Çalanlar ({n})",
+  "@alarmCalanlar": {"placeholders": {"n": {"type": "int"}}},
+  "alarmCalanlariTemizle": "Çalanları temizle",
+  "alarmCalanlariTemizleSoru": "Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.",
+  "@alarmCalanlariTemizleSoru": {"placeholders": {"n": {"type": "int"}}}
 }
