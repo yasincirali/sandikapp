@@ -27,6 +27,11 @@ class PriceAlertTile extends StatelessWidget {
   /// Test/vitrin: satır açık başlasın.
   final bool baslangictaAcik;
 
+  /// Bildirimin alarmı "her geçişte" mi (0171). Bildirim satırı alarmın
+  /// türünü taşımaz; çağıran alarm listesinden bakar. `false` → eski metin
+  /// ("tek seferlikti, kapatıldı") birebir.
+  final bool tekrar;
+
   /// [onTap]: alarmın varlığı — 2026-10-29'dan beri açık satırdaki "Aç".
   const PriceAlertTile({
     super.key,
@@ -36,6 +41,7 @@ class PriceAlertTile extends StatelessWidget {
     required this.onDismiss,
     required this.onDelete,
     this.baslangictaAcik = false,
+    this.tekrar = false,
   });
 
   @override
@@ -62,7 +68,10 @@ class PriceAlertTile extends StatelessWidget {
           fiyat(bildirim.triggeredPrice), fiyat(bildirim.targetPrice)),
       // Push gövdesindeki "tek seferlik, kapatıldı" bilgisi çanda da var;
       // kapalı satırı kalabalıklaştırmasın diye yalnız açıkken.
-      ekAciklama: context.l10n.alarmTileOneShot,
+      // Tekrarlı alarmda (0171) "kapatıldı" yanlış olurdu: alarm açık.
+      ekAciklama: tekrar
+          ? context.l10n.alarmTileTekrar
+          : context.l10n.alarmTileOneShot,
       zaman: _tarih(context, bildirim.sentAt),
       faded: faded,
       onAc: onTap,

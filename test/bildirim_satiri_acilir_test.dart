@@ -163,12 +163,13 @@ void main() {
         );
 
     Future<void> kurAlarm(WidgetTester tester, PriceAlertNotification a,
-        {bool faded = false}) =>
+        {bool faded = false, bool tekrar = false}) =>
         kur(
           tester,
           PriceAlertTile(
             bildirim: a,
             faded: faded,
+            tekrar: tekrar,
             onTap: () {},
             onDismiss: faded ? null : () {},
             onDelete: faded ? () {} : null,
@@ -195,6 +196,13 @@ void main() {
       expect(find.textContaining('Tek seferlik alarmdı'), findsOneWidget);
       expect(find.textContaining('₺321,40'), findsOneWidget);
       expect(find.textContaining('Bugün'), findsOneWidget);
+    });
+
+    // 0171: "her geçişte" alarmı kapanmaz; "kapatıldı" yazmak yanlış olurdu.
+    testWidgets('tekrarlı alarmın satırı açık kaldığını söyler', (tester) async {
+      await kurAlarm(tester, alarm('USDTRY=X', 42.1, 42), tekrar: true);
+      expect(find.textContaining('Tek seferlik alarmdı'), findsNothing);
+      expect(find.textContaining('Her geçişte alarmı'), findsOneWidget);
     });
   });
 }

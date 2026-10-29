@@ -10117,4 +10117,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String tegAdliAlarmKurulduIkisi(String ad) {
     return '“$ad” alert set: we\'ll notify you when the price crosses the line';
   }
+
+  @override
+  String get alarmHerGeciste => 'on every cross';
+
+  @override
+  String get alarmTekrarAnahtar => 'Notify on every cross';
+
+  @override
+  String get alarmTekrarAciklama =>
+      'If the price comes back and crosses again, we\'ll notify you again. At most 3 times a day.';
+
+  @override
+  String alarmSonCaldi(String zaman) {
+    return 'Last fired: $zaman';
+  }
+
+  @override
+  String get alarmTileTekrar =>
+      'Every-cross alert: it stays on and notifies you again if the price comes back and crosses again.';
 }

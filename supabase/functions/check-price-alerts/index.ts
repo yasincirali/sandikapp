@@ -20,6 +20,12 @@
 // seviye_alarmi.ts`, "EMA50'yi keserse", "çizdiğim trend çizgisine
 // değerse"). Yine ayrı tablolar, ayrı damga, try içinde; yanıta yalnız
 // `seviye` alanı eklenir.
+//
+// 0171 (2026-10-29): "Her geçişte haber ver" (`price_alerts.tekrar`).
+// Tekrarlı alarm çalınca SÖNDÜRÜLMEZ; hedefin öbür tarafına %0,5 tamponla
+// geçince nöbete döner, günde en çok 3 kez çalar (`_shared/
+// fiyat_alarmi_tekrar.ts`). `tekrar=false` alarmın dalı (isTriggered +
+// alarmiSondur + metin) birebir eskisi; yanıta yalnız `nobete_donen` eklenir.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -57,6 +63,7 @@ import {
 import { takipListesiHareketleri } from '../_shared/watchlist_moves.ts';
 import { yuzdeAlarmTuruKos } from '../_shared/yuzde_alarmi.ts';
 import { seviyeAlarmTuruKos } from '../_shared/seviye_alarmi.ts';
+import { tekrarKarari, type TekrarKarari } from '../_shared/fiyat_alarmi_tekrar.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -79,7 +86,17 @@ type AlertRow = {
   label: string;
   target_price: number;
   direction: string;
+  // 0171 — migration'dan önceki şemada yok; yoksa tek atış sayılır.
+  tekrar?: boolean | null;
+  triggered_at?: string | null;
+  gunluk_tetik_sayisi?: number | null;
+  gunluk_tetik_gunu?: string | null;
 };
+
+/// Eski sorgunun kolonları (0046) ve 0171'in ekledikleri.
+const ALARM_KOLONLARI = 'id, user_id, symbol, label, target_price, direction';
+const TEKRAR_KOLONLARI =
+  `${ALARM_KOLONLARI}, tekrar, triggered_at, gunluk_tetik_sayisi, gunluk_tetik_gunu`;
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -156,6 +173,63 @@ export async function alarmiSondur(
   return Array.isArray(data) && data.length > 0 ? 'sondu' : 'zaten';
 }
 
+/// Tekrarlı alarmın çalışını yazar (0171); YALNIZ bu çağrı yazdıysa `'caldi'`.
+///
+/// `alarmiSondur`'un eşi, tek farkla: `enabled` true kalır. Aynı yarış
+/// koruması (`triggered_at is null` koşullu UPDATE; satır dönmezse push
+/// gitmez). `son_tetik_at` nöbete dönüşte silinmez, listedeki "son çaldı"
+/// satırını besler.
+export async function tekrarliCalisiYaz(
+  // deno-lint-ignore no-explicit-any
+  admin: { from: (t: string) => any },
+  id: string,
+  karar: Extract<TekrarKarari, { tur: 'cal' }>,
+  simdi: Date = new Date(),
+): Promise<'caldi' | 'zaten' | 'hata'> {
+  const an = simdi.toISOString();
+  const { data, error } = await admin
+    .from('price_alerts')
+    .update({
+      triggered_at: an,
+      son_tetik_at: an,
+      gunluk_tetik_sayisi: karar.sayi,
+      gunluk_tetik_gunu: karar.gun,
+    })
+    .eq('id', id)
+    .is('triggered_at', null)
+    .select('id');
+  if (error) {
+    console.error('[check-price-alerts] tekrar damgasi yazilamadi:', error.message);
+    return 'hata';
+  }
+  return Array.isArray(data) && data.length > 0 ? 'caldi' : 'zaten';
+}
+
+/// Çalmış tekrarlı alarmı nöbete döndürür (0171): `triggered_at` null.
+///
+/// Koşul okunan damga: arada başka tur çaldırdıysa ya da kişi alarmı
+/// kapattıysa eski okumaya göre verilmiş karar yazılmaz. Eski build bu
+/// satırı yeniden "bekleyen" görür (`enabled && triggered_at == null`).
+export async function nobeteDondur(
+  // deno-lint-ignore no-explicit-any
+  admin: { from: (t: string) => any },
+  id: string,
+  okunanDamga: string,
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from('price_alerts')
+    .update({ triggered_at: null })
+    .eq('id', id)
+    .eq('enabled', true)
+    .eq('triggered_at', okunanDamga)
+    .select('id');
+  if (error) {
+    console.error('[check-price-alerts] nobete donus yazilamadi:', error.message);
+    return false;
+  }
+  return Array.isArray(data) && data.length > 0;
+}
+
 /// Alarm tetiklendi mi?
 ///
 /// Sınır DAHİLDİR: kullanıcı "5.400 olunca" der, "5.400'ü geçince" demez.
@@ -190,18 +264,25 @@ export function formatTRY(value: number): string {
 /// hissesinde) ve alarmın tek seferlik olduğunu, artık KAPALI olduğunu
 /// söyler — kullanıcı "yine çalacak mı?" diye sormasın; çan satırı da aynı
 /// metni okur.
+///
+/// [tekrar] (0171): aynı soruya öbür cevap — alarm açık kalır, fiyat geri
+/// dönüp yeniden geçerse yine haber verir. Varsayılan `false`: metin birebir.
 export function buildAlertMessage(
   label: string,
   price: number,
   target: number,
   direction: string,
   simge: string | null = '₺',
+  tekrar = false,
 ): { title: string; body: string } {
   const yukari = direction === 'above';
   return {
     title: `${yukari ? '▲' : '▼'} ${label} ${fiyatMetni(target, simge)} ` +
       `${yukari ? 'seviyesine ulaştı' : 'seviyesinin altına indi'}`,
-    body: `Şu an ${fiyatMetni(price, simge)}. Tek seferlik alarmdı, kapatıldı. ` +
+    body: `Şu an ${fiyatMetni(price, simge)}. ` +
+      (tekrar
+        ? 'Alarm açık: fiyat geri dönüp yeniden geçerse yine haber vereceğiz. '
+        : 'Tek seferlik alarmdı, kapatıldı. ') +
       'Yatırım tavsiyesi değildir.',
   };
 }
@@ -321,22 +402,52 @@ Deno.serve(async (request) => {
     }
 
     // ── 1) Aktif alarmlar ───────────────────────────────────────────────────
-    const { data: alertRows, error: alertError } = await admin
+    // 0171 kolonlarıyla okunur; şema henüz 0171'i almadıysa (fonksiyon
+    // migration'dan önce dağıtıldı) eski kolonlarla yeniden sorulur ve
+    // hepsi tek atış sayılır — alarm turu kolon yüzünden ölmesin.
+    const aktifSorgu = (kolonlar: string) => admin
       .from('price_alerts')
-      .select('id, user_id, symbol, label, target_price, direction')
+      .select(kolonlar)
       .eq('enabled', true)
       .is('triggered_at', null);
+    let tekrarSemasi = true;
+    let { data: alertRows, error: alertError } = await aktifSorgu(TEKRAR_KOLONLARI);
+    if (alertError) {
+      console.error('[check-price-alerts] 0171 kolonlari okunamadi:', alertError.message);
+      tekrarSemasi = false;
+      ({ data: alertRows, error: alertError } = await aktifSorgu(ALARM_KOLONLARI));
+    }
     if (alertError) throw new Error(`Alarmlar alinamadi: ${alertError.message}`);
 
-    const alerts = turaGirenAlarmlar((alertRows ?? []) as AlertRow[], filtre);
-    if (alerts.length === 0) {
+    const alerts = turaGirenAlarmlar((alertRows ?? []) as unknown as AlertRow[], filtre);
+
+    // ── 1b) Nöbete dönmeyi bekleyen tekrarlı alarmlar (0171) ────────────────
+    // Çalmış (`triggered_at` dolu) ama açık tekrarlı alarmlar. Hata yutulur:
+    // bu tur kaçarsa alarm bir sonraki turda döner; fiyat alarmı turu
+    // etkilenmez.
+    let donecekler: AlertRow[] = [];
+    if (tekrarSemasi) {
+      const { data: donusRows, error: donusError } = await admin
+        .from('price_alerts')
+        .select(TEKRAR_KOLONLARI)
+        .eq('enabled', true)
+        .eq('tekrar', true)
+        .not('triggered_at', 'is', null);
+      if (donusError) {
+        console.error('[check-price-alerts] nobet donusu okunamadi:', donusError.message);
+      } else {
+        donecekler = turaGirenAlarmlar((donusRows ?? []) as unknown as AlertRow[], filtre);
+      }
+    }
+
+    if (alerts.length === 0 && donecekler.length === 0) {
       return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0, yuzde, seviye });
     }
 
     // ── 2) Fiyatlar ─────────────────────────────────────────────────────────
     // Sembol başına TEK çekim: 500 kullanıcı aynı gram altın alarmını
     // kurmuşsa da tek istek gider.
-    const semboller = new Set(alerts.map((a) => a.symbol));
+    const semboller = new Set([...alerts, ...donecekler].map((a) => a.symbol));
     const fiyatlar = await fetchLivePrices(semboller, admin);
     if (fiyatlar.size === 0) {
       // KANARYA: alarm var ama TEK sembol bile fiyatlanamadı. 2026-09-15'te
@@ -346,7 +457,7 @@ Deno.serve(async (request) => {
       // düşer ve admin'e (12 saatte en çok bir kez) push gider.
       const kanarya = await fiyatKaynagiKanaryasi(admin, {
         kaynak: 'check-price-alerts',
-        alarmSayisi: alerts.length,
+        alarmSayisi: alerts.length + donecekler.length,
         semboller: [...semboller],
         fcm: dryRun
           ? null
@@ -371,7 +482,7 @@ Deno.serve(async (request) => {
     if (kanaryaKismiMi(fiyatlar.size, semboller.size)) {
       kanaryaKismi = await fiyatKaynagiKanaryasi(admin, {
         kaynak: 'check-price-alerts',
-        alarmSayisi: alerts.length,
+        alarmSayisi: alerts.length + donecekler.length,
         semboller: [...semboller].filter((s) => !fiyatlar.has(s)),
         fiyatlanan: fiyatlar.size,
         fcm: dryRun
@@ -380,11 +491,30 @@ Deno.serve(async (request) => {
       });
     }
 
+    // ── 2b) Nöbete dönüş (0171) ─────────────────────────────────────────────
+    // Push yok, yalnız damga temizlenir. Kuru koşuda yazılmaz, sayılır.
+    let nobeteDonen = 0;
+    for (const a of donecekler) {
+      const p = fiyatlar.get(a.symbol);
+      if (p === undefined || !a.triggered_at) continue;
+      if (tekrarKarari(a, p).tur !== 'nobete_don') continue;
+      if (dryRun || await nobeteDondur(admin, a.id, a.triggered_at)) nobeteDonen += 1;
+    }
+
+    // Tekrarlı alarmın kararı (0171); tek atış alarm bu haritaya girmez.
+    const tekrarKararlari = new Map<string, Extract<TekrarKarari, { tur: 'cal' }>>();
     const tetiklenen = alerts.filter((a) => {
       const p = fiyatlar.get(a.symbol);
       // Fiyatı alınamayan sembol DEĞERLENDİRİLMEZ: yanlış tetiklemektense
       // bir tur beklemek doğru.
-      return p !== undefined && isTriggered(p, Number(a.target_price), a.direction);
+      if (p === undefined) return false;
+      if (a.tekrar === true) {
+        const karar = tekrarKarari(a, p);
+        if (karar.tur !== 'cal') return false;
+        tekrarKararlari.set(a.id, karar);
+        return true;
+      }
+      return isTriggered(p, Number(a.target_price), a.direction);
     });
     if (tetiklenen.length === 0) {
       return jsonResponse({
@@ -393,6 +523,7 @@ Deno.serve(async (request) => {
         priced: fiyatlar.size,
       kanarya: kanaryaKismi,
         sent: 0,
+        nobete_donen: nobeteDonen,
         yuzde,
         seviye,
       });
@@ -438,12 +569,14 @@ Deno.serve(async (request) => {
       if (sessiz.has(alarm.user_id)) { skippedQuietHours += 1; continue; }
       const fiyat = fiyatlar.get(alarm.symbol)!;
       const simge = kotasyonSimgesi(alarm.symbol);
+      const tekrarKarar = tekrarKararlari.get(alarm.id);
       const mesaj = buildAlertMessage(
         alarm.label,
         fiyat,
         Number(alarm.target_price),
         alarm.direction,
         simge,
+        tekrarKarar !== undefined,
       );
 
       if (dryRun) {
@@ -458,7 +591,10 @@ Deno.serve(async (request) => {
       // damga yazılamazsa kullanıcı her turda (5 dakikada bir) aynı bildirimi alırdı —
       // geri alınamaz olan bu.
       // Yarış koruması: iki tur çakışırsa yalnız damgayı ATAN gönderir.
-      const damga = await alarmiSondur(admin, alarm.id);
+      // Tekrarlı alarm (0171) aynı sırayla damgalanır ama söndürülmez.
+      const damga = tekrarKarar
+        ? await tekrarliCalisiYaz(admin, alarm.id, tekrarKarar)
+        : await alarmiSondur(admin, alarm.id);
       if (damga === 'hata') {
         failures.push('damga: yazilamadi');
         continue;
@@ -538,6 +674,7 @@ Deno.serve(async (request) => {
       turler: filtre ? [...filtre] : 'hepsi',
       sent,
       skipped_quiet_hours: skippedQuietHours,
+      nobete_donen: nobeteDonen,
       dry_run: dryRun,
       failures: failures.slice(0, 5),
       yuzde,

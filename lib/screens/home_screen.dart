@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../demo/demo_modu.dart';
 import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../providers/price_alert_notification_provider.dart';
+import '../providers/price_alert_provider.dart';
 import '../providers/app_notification_provider.dart';
 import '../models/app_notification.dart';
 import '../models/price_alert_notification.dart';
@@ -1405,18 +1406,24 @@ class _SignalsBottomSheet extends ConsumerWidget {
   Widget _satir(BuildContext context, BildirimOgesi e, {required bool faded}) {
     switch (e) {
       case FiyatAlarmiOgesi(:final bildirim):
-        return PriceAlertTile(
-          bildirim: bildirim,
-          faded: faded,
-          onTap: () => onAlarmTap(bildirim),
-          // Geçmişte dismiss yok, kalıcı silme var — sinyal tarafıyla
-          // aynı sözleşme.
-          onDismiss: faded
-              ? null
-              : _guarded(context, () => onAlarmDismiss(bildirim.id)),
-          onDelete: faded
-              ? _guarded(context, () => onAlarmDelete(bildirim.id))
-              : null,
+        // Alarm "her geçişte" mi (0171): bildirim satırı türü taşımaz,
+        // yüklü alarm listesinden okunur (silinmişse tek atış metni).
+        return Consumer(
+          builder: (_, ref, __) => PriceAlertTile(
+            tekrar: (ref.watch(priceAlertsProvider).valueOrNull ?? const [])
+                .any((a) => a.id == bildirim.alertId && a.tekrar),
+            bildirim: bildirim,
+            faded: faded,
+            onTap: () => onAlarmTap(bildirim),
+            // Geçmişte dismiss yok, kalıcı silme var — sinyal tarafıyla
+            // aynı sözleşme.
+            onDismiss: faded
+                ? null
+                : _guarded(context, () => onAlarmDismiss(bildirim.id)),
+            onDelete: faded
+                ? _guarded(context, () => onAlarmDelete(bildirim.id))
+                : null,
+          ),
         );
       case GenelOgesi(:final bildirim):
         return AppNotificationTile(

@@ -16,9 +16,20 @@ class PriceAlert {
 
   final bool enabled;
 
-  /// Tetiklendiği an. Doluysa alarm susmuştur; kullanıcı yeniden kurabilir.
+  /// Tetiklendiği an. Tek atış alarmda doluysa alarm susmuştur; kullanıcı
+  /// yeniden kurabilir. Tekrarlı alarmda ([tekrar]) "çaldı, fiyatın geri
+  /// dönmesini bekliyor" demektir; sunucu dönüşte temizler.
   final DateTime? triggeredAt;
   final DateTime createdAt;
+
+  /// "Her geçişte haber ver" (0171). `false` → tek atış (0046, varsayılan;
+  /// kolon yoksa da `false`). `true` → çalınca sönmez; fiyat hedefin öbür
+  /// tarafına %0,5 geçince sunucu yeniden nöbete alır, günde en çok 3 kez.
+  final bool tekrar;
+
+  /// Son çalış anı (0171). Nöbete dönüşte [triggeredAt] silinir, bu kalır:
+  /// listedeki "son çaldı" satırı bunu okur.
+  final DateTime? sonTetikAt;
 
   const PriceAlert({
     required this.id,
@@ -30,12 +41,26 @@ class PriceAlert {
     required this.enabled,
     required this.createdAt,
     this.triggeredAt,
+    this.tekrar = false,
+    this.sonTetikAt,
   });
 
   bool get isAbove => direction == 'above';
 
   /// Hâlâ beklemede mi? (kapatılmamış ve tetiklenmemiş)
-  bool get isActive => enabled && triggeredAt == null;
+  ///
+  /// 0171: açık tekrarlı alarm çalmış olsa da BEKLEYENDİR — kendiliğinden
+  /// nöbete döner, kişi bir şey yapmaz. Sayımlar (tavan, çan, rozet) onu
+  /// etkin sayar; Alarmlarım onu "Çalanlar"a düşürmez.
+  bool get isActive => enabled && (tekrar || triggeredAt == null);
+
+  /// Çalıp susmuş tek atış alarm: "yeniden kur" isteyen tek durum.
+  /// Tekrarlı alarm hiç bu duruma düşmez.
+  bool get sondu => !tekrar && triggeredAt != null;
+
+  /// Gösterilecek son çalış: [sonTetikAt], yoksa (0171 öncesi satır)
+  /// [triggeredAt]. Hiç çalmadıysa `null`.
+  DateTime? get sonCalis => sonTetikAt ?? triggeredAt;
 
   factory PriceAlert.fromMap(Map<String, dynamic> m) => PriceAlert(
         id: m['id'].toString(),
@@ -51,15 +76,46 @@ class PriceAlert {
         createdAt:
             DateTime.tryParse(m['created_at']?.toString() ?? '') ??
                 DateTime.now(),
+        // Kolon yoksa (0171 öncesi şema) tek atış.
+        tekrar: m['tekrar'] == true,
+        sonTetikAt: m['son_tetik_at'] == null
+            ? null
+            : DateTime.tryParse(m['son_tetik_at'].toString()),
       );
 
+  /// [tekrar] yalnız açıkken yazılır: tek atış alarmın insert'i 0171'den
+  /// önceki şemada da (kolon yokken) birebir eskisi gibi geçer.
   Map<String, dynamic> toInsertMap() => {
         'user_id': userId,
         'symbol': symbol,
         'label': label,
         'target_price': targetPrice,
         'direction': direction,
+        if (tekrar) 'tekrar': true,
       };
+
+  /// Aynı alarm, değişen alanlarla (provider'ın yerel yamaları).
+  /// [triggeredAt]'i silmek için [damgasiz].
+  PriceAlert copyWith({
+    String? label,
+    double? targetPrice,
+    String? direction,
+    bool? enabled,
+    bool damgasiz = false,
+  }) =>
+      PriceAlert(
+        id: id,
+        userId: userId,
+        symbol: symbol,
+        label: label ?? this.label,
+        targetPrice: targetPrice ?? this.targetPrice,
+        direction: direction ?? this.direction,
+        enabled: enabled ?? this.enabled,
+        triggeredAt: damgasiz ? null : triggeredAt,
+        createdAt: createdAt,
+        tekrar: tekrar,
+        sonTetikAt: sonTetikAt,
+      );
 
   /// Verilen fiyat için mantıklı bir yön önerir.
   ///

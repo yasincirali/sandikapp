@@ -16546,6 +16546,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz'**
   String tegAdliAlarmKurulduIkisi(String ad);
+
+  /// No description provided for @alarmHerGeciste.
+  ///
+  /// In tr, this message translates to:
+  /// **'her geçişte'**
+  String get alarmHerGeciste;
+
+  /// No description provided for @alarmTekrarAnahtar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her geçişte haber ver'**
+  String get alarmTekrarAnahtar;
+
+  /// No description provided for @alarmTekrarAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.'**
+  String get alarmTekrarAciklama;
+
+  /// No description provided for @alarmSonCaldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son çaldı: {zaman}'**
+  String alarmSonCaldi(String zaman);
+
+  /// No description provided for @alarmTileTekrar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her geçişte alarmı: açık kalır, fiyat geri dönüp yeniden geçerse yine haber verir.'**
+  String get alarmTileTekrar;
 }
 
 class _AppLocalizationsDelegate

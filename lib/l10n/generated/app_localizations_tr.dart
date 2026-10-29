@@ -9994,4 +9994,23 @@ class AppLocalizationsTr extends AppLocalizations {
   String tegAdliAlarmKurulduIkisi(String ad) {
     return '«$ad» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz';
   }
+
+  @override
+  String get alarmHerGeciste => 'her geçişte';
+
+  @override
+  String get alarmTekrarAnahtar => 'Her geçişte haber ver';
+
+  @override
+  String get alarmTekrarAciklama =>
+      'Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.';
+
+  @override
+  String alarmSonCaldi(String zaman) {
+    return 'Son çaldı: $zaman';
+  }
+
+  @override
+  String get alarmTileTekrar =>
+      'Her geçişte alarmı: açık kalır, fiyat geri dönüp yeniden geçerse yine haber verir.';
 }

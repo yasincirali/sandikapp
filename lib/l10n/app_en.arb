@@ -5752,5 +5752,10 @@
   "cizgiAlarmiAdlandi": "Alert name saved",
   "tegAdliAlarmKurulduUst": "“{ad}” alert set: we'll notify you when the price rises above the line",
   "tegAdliAlarmKurulduAlt": "“{ad}” alert set: we'll notify you when the price falls below the line",
-  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line"
+  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line",
+  "alarmHerGeciste": "on every cross",
+  "alarmTekrarAnahtar": "Notify on every cross",
+  "alarmTekrarAciklama": "If the price comes back and crosses again, we'll notify you again. At most 3 times a day.",
+  "alarmSonCaldi": "Last fired: {zaman}",
+  "alarmTileTekrar": "Every-cross alert: it stays on and notifies you again if the price comes back and crosses again."
 }
