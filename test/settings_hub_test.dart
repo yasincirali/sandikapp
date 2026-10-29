@@ -87,7 +87,8 @@ void main() {
     await tester.pumpWidget(host(bolum: SettingsBolum.yardim));
     await tester.pumpAndSettle();
     final destek = tester.getTopLeft(find.text('Bize Ulaş')).dy;
-    final yasal = tester.getTopLeft(find.text('Gizlilik Politikası')).dy;
+    // Beş belge tek "Yasal belgeler" satırının arkasında (Ar-Ge 29 Eki #2).
+    final yasal = tester.getTopLeft(find.text(_tr.yasalBelgelerBaslik)).dy;
     expect(destek, lessThan(yasal));
     expect(find.text(_tr.replayTour), findsOneWidget);
   });

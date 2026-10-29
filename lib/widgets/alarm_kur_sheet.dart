@@ -99,9 +99,7 @@ class YuzdeAlarmKurulumu {
 /// Yüzde alarmının listede ve onayda okunan adı: "Günlük %2 düşüş".
 /// Yön metinde de yazar (renk körlüğü: yalnız renkle/okla anlatılmaz).
 String yuzdeAlarmEtiketi(AppLocalizations l10n, double esik, YuzdeYon yon) {
-  final e = esik == esik.roundToDouble()
-      ? esik.round().toString()
-      : fmtNum(esik, digits: 1);
+  final e = yuzdeEsikMetni(esik);
   return switch (yon) {
     YuzdeYon.dusus => l10n.yuzdeAlarmEtiketDusus(e),
     YuzdeYon.yukselis => l10n.yuzdeAlarmEtiketYukselis(e),

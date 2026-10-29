@@ -17,7 +17,6 @@ import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset_type.dart';
-import '../models/price_alert.dart';
 import '../models/user_model.dart';
 import '../models/varlik_kimligi.dart';
 import '../models/watchlist_item.dart';
@@ -25,7 +24,9 @@ import '../providers/auth_provider.dart'
     show activePartnersProvider, authProvider;
 import '../providers/preferences_provider.dart'
     show takipSiralamaProvider, watchlistLimitProvider;
+import '../models/yuzde_alarmi.dart';
 import '../providers/price_alert_provider.dart' show symbolAlertsProvider;
+import '../providers/yuzde_alarmi_provider.dart' show yuzdeAlarmlariProvider;
 import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
@@ -33,7 +34,7 @@ import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
-import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
+import '../widgets/alarm_kur_sheet.dart' show alarmSembolu, yuzdeAlarmEtiketi;
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_siralama_dugmesi.dart';
 import '../widgets/sinir_uyarisi.dart';
@@ -632,13 +633,24 @@ class _Row extends ConsumerWidget {
     // varlığa alarm kurmuş muydum, hangi fiyata" sorusu cevaplanır. Sembol
     // alarm kurarkenki kuralla (`alarmSembolu`) eşlenir; veri zaten
     // yüklenmiş `priceAlertsProvider`'dan — yeni sunucu çağrısı yok.
+    // Günlük yüzde alarmı da çanda (2026-10-29, `takipCaniOzeti`): fiyat
+    // alarmı yoksa "±%2", varsa "+N" sayısına girer.
     final alarmKodu = alarmSembolu(item.ticker, item.subCategory);
     final alarm = alarmKodu == null
         ? null
-        : etkinAlarmOzeti(ref.watch(symbolAlertsProvider(alarmKodu)),
+        : takipCaniOzeti(
+            ref.watch(symbolAlertsProvider(alarmKodu)),
+            ref.watch(yuzdeAlarmlariProvider).valueOrNull ??
+                const <YuzdeAlarmi>[],
+            sembol: alarmKodu,
             guncelFiyat: item.currentPrice);
-    final hedefMetni =
-        alarm == null ? null : takipFiyatBicimi(item, alarm.enYakin.targetPrice);
+    final yuzdeAlarm = alarm?.yuzde;
+    final yuzdeCaldi = yuzdeAlarm?.bugunCaldi(DateTime.now()) ?? false;
+    final hedefMetni = alarm == null
+        ? null
+        : alarm.fiyat != null
+            ? takipFiyatBicimi(item, alarm.fiyat!.targetPrice)
+            : yuzdeKisaMetni(yuzdeAlarm!);
 
     // Ekran okuyucu için tek parça cümle — parçalı okunursa yön bilgisi
     // yalnızca renkte kalırdı.
@@ -651,7 +663,12 @@ class _Row extends ConsumerWidget {
             : l10n.watchlistRowDown(fmtPct(pct.abs())),
       if (alarm != null)
         [
-          l10n.watchlistAlertSet(hedefMetni!),
+          if (alarm.fiyat != null)
+            l10n.watchlistAlertSet(hedefMetni!)
+          else
+            l10n.watchlistYuzdeAlarmSet(
+                yuzdeAlarmEtiketi(l10n, yuzdeAlarm!.esikPct, yuzdeAlarm.yon)),
+          if (yuzdeCaldi) l10n.watchlistYuzdeAlarmCaldi,
           if (alarm.digerSayisi > 0) l10n.watchlistAlertMore(alarm.digerSayisi),
         ].join(' '),
       l10n.watchlistRowFollowing,
@@ -798,6 +815,7 @@ class _Row extends ConsumerWidget {
                                     sembol: alarmKodu!,
                                     hedefMetni: hedefMetni!,
                                     digerSayisi: alarm.digerSayisi,
+                                    bugunCaldi: yuzdeCaldi,
                                   ),
                                 ],
                               ),
@@ -952,16 +970,21 @@ class _TakipAlarmCani extends StatelessWidget {
   final String hedefMetni;
   final int digerSayisi;
 
+  /// Öndeki yüzde alarmı bugün çaldı: zil boş çizgili ve sönük. Anlam
+  /// yalnız renkte değil, ikon biçiminde ve satırın cümlesinde de.
+  final bool bugunCaldi;
+
   const _TakipAlarmCani({
     required this.sembol,
     required this.hedefMetni,
     required this.digerSayisi,
+    this.bugunCaldi = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final renk = context.c.amberText;
+    final renk = bugunCaldi ? context.c.text36 : context.c.amberText;
     final metin = digerSayisi > 0
         ? '$hedefMetni ${l10n.watchlistAlertExtra(digerSayisi)}'
         : hedefMetni;
@@ -988,8 +1011,12 @@ class _TakipAlarmCani extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.notifications_active_rounded,
-                    size: 14, color: renk),
+                Icon(
+                    bugunCaldi
+                        ? Icons.notifications_none_rounded
+                        : Icons.notifications_active_rounded,
+                    size: 14,
+                    color: renk),
                 const SizedBox(width: SandikSpace.xxs),
                 Flexible(
                   child: Text(

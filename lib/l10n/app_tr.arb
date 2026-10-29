@@ -4117,6 +4117,9 @@
       }
     }
   },
+  "watchlistYuzdeAlarmSet": "{etiket} alarmı kurulu",
+  "@watchlistYuzdeAlarmSet": {"placeholders": {"etiket": {"type": "String"}}},
+  "watchlistYuzdeAlarmCaldi": "bugün çaldı, yarın yeniden kurulur",
   "watchlistAlertMore": "ve {count} alarm daha",
   "@watchlistAlertMore": {
     "placeholders": {

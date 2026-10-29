@@ -3829,6 +3829,9 @@
       }
     }
   },
+  "watchlistYuzdeAlarmSet": "{etiket} alert set",
+  "@watchlistYuzdeAlarmSet": {"placeholders": {"etiket": {"type": "String"}}},
+  "watchlistYuzdeAlarmCaldi": "went off today, re-arms tomorrow",
   "watchlistAlertMore": "{count, plural, =1{and 1 more alert} other{and {count} more alerts}}",
   "@watchlistAlertMore": {
     "placeholders": {

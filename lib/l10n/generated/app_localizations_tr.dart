@@ -1385,7 +1385,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Gizlilik, kullanım koşulları, KVKK, açık rıza, yatırım uyarısı';
 
   @override
-  String get feedbackDogrudanEposta => 'Formsuz, doğrudan e-postayla yaz';
+  String get feedbackDogrudanEposta => 'E-postayla yaz';
 
   @override
   String get legalUpper => 'YASAL';
@@ -5861,6 +5861,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String watchlistAlertSet(String price) {
     return '$price için alarm kurulu';
   }
+
+  @override
+  String watchlistYuzdeAlarmSet(String etiket) {
+    return '$etiket alarmı kurulu';
+  }
+
+  @override
+  String get watchlistYuzdeAlarmCaldi => 'bugün çaldı, yarın yeniden kurulur';
 
   @override
   String watchlistAlertMore(int count) {

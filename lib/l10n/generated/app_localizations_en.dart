@@ -5915,6 +5915,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String watchlistYuzdeAlarmSet(String etiket) {
+    return '$etiket alert set';
+  }
+
+  @override
+  String get watchlistYuzdeAlarmCaldi => 'went off today, re-arms tomorrow';
+
+  @override
   String watchlistAlertMore(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

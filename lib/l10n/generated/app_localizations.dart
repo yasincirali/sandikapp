@@ -2519,7 +2519,7 @@ abstract class AppLocalizations {
   /// No description provided for @feedbackDogrudanEposta.
   ///
   /// In tr, this message translates to:
-  /// **'Formsuz, doğrudan e-postayla yaz'**
+  /// **'E-postayla yaz'**
   String get feedbackDogrudanEposta;
 
   /// No description provided for @legalUpper.
@@ -9837,6 +9837,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{price} için alarm kurulu'**
   String watchlistAlertSet(String price);
+
+  /// No description provided for @watchlistYuzdeAlarmSet.
+  ///
+  /// In tr, this message translates to:
+  /// **'{etiket} alarmı kurulu'**
+  String watchlistYuzdeAlarmSet(String etiket);
+
+  /// No description provided for @watchlistYuzdeAlarmCaldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'bugün çaldı, yarın yeniden kurulur'**
+  String get watchlistYuzdeAlarmCaldi;
 
   /// No description provided for @watchlistAlertMore.
   ///

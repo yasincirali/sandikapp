@@ -1,4 +1,6 @@
 import '../services/temettu_gecmisi.dart' show trGunu;
+import '../utils/tr_format.dart' show fmtNum;
+import 'price_alert.dart';
 
 /// Günlük yüzde alarmı — "Gram altın bugün %2 düşerse haber ver" (0169,
 /// Ar-Ge 2026-10-27 §1, yasin onayı).
@@ -131,4 +133,63 @@ String yuzdeAlarmGunu(DateTime t) {
   final g = trGunu(t);
   String iki(int n) => n.toString().padLeft(2, '0');
   return '${g.year}-${iki(g.month)}-${iki(g.day)}';
+}
+
+/// Eşiğin metni: tam sayıysa "2", değilse "1,5" (listedeki adla aynı).
+String yuzdeEsikMetni(double esik) {
+  if (esik == esik.roundToDouble()) return esik.round().toString();
+  return fmtNum(esik, digits: 1);
+}
+
+/// Takip satırındaki çanın kısa metni: "±%2", "−%2", "+%2".
+/// Yön işaretle yazılır (renk körlüğü); tam cümleyi ekran okuyucu söyler.
+String yuzdeKisaMetni(YuzdeAlarmi a) {
+  final isaret = switch (a.yon) {
+    YuzdeYon.dusus => '\u2212',
+    YuzdeYon.yukselis => '+',
+    YuzdeYon.ikisi => '±',
+  };
+  return '$isaret%${yuzdeEsikMetni(a.esikPct)}';
+}
+
+/// Takip satırındaki çanın özeti (Ar-Ge 27 Eki 12:45 #1, müşteri raporu
+/// 13:15 "YAP", yasin 29 Eki "yap"): çan yalnız fiyat alarmını okuyordu;
+/// gram altına yalnız yüzde alarmı kuran kişi satırda çan görmüyor, "kurdum
+/// mu?" diye alarm ekranına gidiyordu.
+///
+/// Fiyat alarmı varsa o önde kalır (somut hedef, bugünkü davranış birebir);
+/// yüzde alarmları "+N" sayısına girer. Yalnız yüzde alarmı varsa en dar
+/// eşikli olan gösterilir (ilk çalacak olan).
+class TakipCaniOzeti {
+  /// Öndeki fiyat alarmı; yoksa `null` ve [yuzde] doludur.
+  final PriceAlert? fiyat;
+  final YuzdeAlarmi? yuzde;
+
+  /// Öndeki dışındaki etkin alarm sayısı (iki tür birlikte).
+  final int digerSayisi;
+
+  const TakipCaniOzeti._(this.fiyat, this.yuzde, this.digerSayisi);
+}
+
+TakipCaniOzeti? takipCaniOzeti(
+  Iterable<PriceAlert> fiyatAlarmlari,
+  Iterable<YuzdeAlarmi> yuzdeAlarmlari, {
+  required String sembol,
+  double? guncelFiyat,
+}) {
+  final yuzdeler = [
+    for (final a in yuzdeAlarmlari)
+      if (a.isActive && a.symbol == sembol) a,
+  ];
+  final fiyat = etkinAlarmOzeti(fiyatAlarmlari, guncelFiyat: guncelFiyat);
+  if (fiyat != null) {
+    return TakipCaniOzeti._(
+        fiyat.enYakin, null, fiyat.digerSayisi + yuzdeler.length);
+  }
+  if (yuzdeler.isEmpty) return null;
+  var en = yuzdeler.first;
+  for (final a in yuzdeler.skip(1)) {
+    if (a.esikPct < en.esikPct) en = a;
+  }
+  return TakipCaniOzeti._(null, en, yuzdeler.length - 1);
 }
