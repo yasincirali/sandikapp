@@ -227,9 +227,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 /// "Bildirim merkezi" adımının ilk cümlesi. Paywall açıkken de doğru:
 /// ücretsizde üç göstergenin bildirimi günde 1 kez zile düşer (2026-10-10
 /// akşam, `sinyalSlotSiniriProvider`); ayrı "Premium'da sinyaller" metni
-/// kalktı.
+/// kalktı. 2026-10-29: satırlar açılır oldu (dokunuş tam metni açar,
+/// gezinme "Aç"ta) — tur metni arayüzle birlikte değişir.
 const _zilBasi = 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
-    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir ';
+    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir '
+    'bildirime dokununca tamamı açılır, "Aç" seni ilgili ekrana götürür. Bir ';
 
 class _Adim {
   const _Adim({

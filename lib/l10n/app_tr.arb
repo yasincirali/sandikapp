@@ -6260,5 +6260,16 @@
   "ortakPortfoyKartBaslik": "Ortak portföy",
   "ortakPortfoyKartGovde": "Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.",
   "ortakPortfoyDavetEt": "Davet et",
-  "ortakPortfoyKodGir": "Kod gir"
+  "ortakPortfoyKodGir": "Kod gir",
+  "notifOpenAction": "Aç",
+  "notifExpandHint": "Tamamını göster",
+  "notifCollapseHint": "Daralt",
+  "alarmTileBody": "{price} · hedef {target}",
+  "@alarmTileBody": {
+    "placeholders": {
+      "price": {"type": "String"},
+      "target": {"type": "String"}
+    }
+  },
+  "alarmTileOneShot": "Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç."
 }

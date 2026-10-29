@@ -16084,6 +16084,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kod gir'**
   String get ortakPortfoyKodGir;
+
+  /// No description provided for @notifOpenAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aç'**
+  String get notifOpenAction;
+
+  /// No description provided for @notifExpandHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamamını göster'**
+  String get notifExpandHint;
+
+  /// No description provided for @notifCollapseHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daralt'**
+  String get notifCollapseHint;
+
+  /// No description provided for @alarmTileBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'{price} · hedef {target}'**
+  String alarmTileBody(String price, String target);
+
+  /// No description provided for @alarmTileOneShot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.'**
+  String get alarmTileOneShot;
 }
 
 class _AppLocalizationsDelegate

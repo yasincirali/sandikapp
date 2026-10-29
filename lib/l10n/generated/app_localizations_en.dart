@@ -9787,4 +9787,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ortakPortfoyKodGir => 'Enter code';
+
+  @override
+  String get notifOpenAction => 'Open';
+
+  @override
+  String get notifExpandHint => 'Show full text';
+
+  @override
+  String get notifCollapseHint => 'Collapse';
+
+  @override
+  String alarmTileBody(String price, String target) {
+    return '$price · target $target';
+  }
+
+  @override
+  String get alarmTileOneShot =>
+      'This was a one-time alarm and is now off. Open the asset to set it again.';
 }

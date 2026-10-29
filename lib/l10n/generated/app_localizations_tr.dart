@@ -9683,4 +9683,22 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ortakPortfoyKodGir => 'Kod gir';
+
+  @override
+  String get notifOpenAction => 'Aç';
+
+  @override
+  String get notifExpandHint => 'Tamamını göster';
+
+  @override
+  String get notifCollapseHint => 'Daralt';
+
+  @override
+  String alarmTileBody(String price, String target) {
+    return '$price · hedef $target';
+  }
+
+  @override
+  String get alarmTileOneShot =>
+      'Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.';
 }

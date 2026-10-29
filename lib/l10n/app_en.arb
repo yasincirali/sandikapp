@@ -5600,5 +5600,10 @@
   "ortakPortfoyKartBaslik": "Shared portfolio",
   "ortakPortfoyKartGovde": "Combine your portfolio with someone close on one screen. You can leave any time.",
   "ortakPortfoyDavetEt": "Invite",
-  "ortakPortfoyKodGir": "Enter code"
+  "ortakPortfoyKodGir": "Enter code",
+  "notifOpenAction": "Open",
+  "notifExpandHint": "Show full text",
+  "notifCollapseHint": "Collapse",
+  "alarmTileBody": "{price} · target {target}",
+  "alarmTileOneShot": "This was a one-time alarm and is now off. Open the asset to set it again."
 }

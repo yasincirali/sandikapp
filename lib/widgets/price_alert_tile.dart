@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
+import '../models/asset_type.dart';
 import '../models/price_alert_notification.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'bildirim_satiri.dart';
 
 /// Fiyat alarmı satırı — `_SignalTile` ile AYNI görsel dil.
 ///
@@ -12,7 +14,9 @@ import '../utils/tr_format.dart';
 /// alanlarına dayanıyor, alarmda ikisi de yok. Ortak olan kart iskeleti
 /// (yuvarlak ikon + ad + rozet + alt satır + sağdaki eylem) burada
 /// tekrarlanıyor; tekrar bilinçli, çünkü alternatifi iki farklı anlamı tek
-/// parametreleştirilmiş widget'a sıkıştırmaktı.
+/// parametreleştirilmiş widget'a sıkıştırmaktı. 2026-10-29: iskelet
+/// (açılır davranış dahil) `BildirimSatiri`'ne çıktı; MODEL ayrılığı sürüyor,
+/// bu sınıf alarm alanlarını metne çevirir.
 class PriceAlertTile extends StatelessWidget {
   final PriceAlertNotification bildirim;
   final bool faded;
@@ -20,6 +24,10 @@ class PriceAlertTile extends StatelessWidget {
   final VoidCallback? onDismiss;
   final VoidCallback? onDelete;
 
+  /// Test/vitrin: satır açık başlasın.
+  final bool baslangictaAcik;
+
+  /// [onTap]: alarmın varlığı — 2026-10-29'dan beri açık satırdaki "Aç".
   const PriceAlertTile({
     super.key,
     required this.bildirim,
@@ -27,6 +35,7 @@ class PriceAlertTile extends StatelessWidget {
     required this.onTap,
     required this.onDismiss,
     required this.onDelete,
+    this.baslangictaAcik = false,
   });
 
   @override
@@ -35,121 +44,44 @@ class PriceAlertTile extends StatelessWidget {
     // Alarm "iyi haber" demek değil (kullanıcı düşüşe de alarm kurar) ama
     // ok yönü ile renk tutarlı olmalı, aksi halde ikisi çelişir.
     final yukari = bildirim.yukari;
-    final Color color = yukari ? context.c.gain : context.c.loss;
-    final IconData icon = yukari
-        ? Icons.notifications_active_rounded
-        : Icons.notifications_active_outlined;
-
-    // Soluk satırda METİN opaklıkla değil ton basamağıyla iner (HIG denetimi
-    // 2026-10-10): %45 opak text58 açık temada 2,1:1 idi. İkon ve zemin
-    // (metin dışı) opaklıkla solmaya devam eder.
-    final double alphaFactor = faded ? 0.45 : 1.0;
-    final double bgAlpha = faded ? 0.05 : 0.10;
-    final double borderAlpha = faded ? 0.12 : 0.28;
-
-    return SandikBasma(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: bgAlpha),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(
-              color: color.withValues(alpha: borderAlpha), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18 * alphaFactor),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon,
-                  color: color.withValues(alpha: alphaFactor), size: 20),
-            ),
-            const SizedBox(width: SandikSpace.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          bildirim.label,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: faded ? context.c.text58 : context.c.text90,
-                              decoration: TextDecoration.none),
-                        ),
-                      ),
-                      const SizedBox(width: SandikSpace.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.18 * alphaFactor),
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
-                        ),
-                        child: Text('ALARM',
-                            style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: faded ? context.c.text36 : color,
-                                decoration: TextDecoration.none)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: SandikSpace.xs),
-                  // Kullanıcının görmek istediği sayı TETİKLENME fiyatıdır,
-                  // hedef değil: hedefi zaten kendisi koydu.
-                  Text(
-                    faded
-                        ? _tarih(bildirim.sentAt)
-                        : '${fmtTRYFiyat(bildirim.triggeredPrice)} · hedef '
-                            '${fmtTRYFiyat(bildirim.targetPrice)}',
-                    style: context.t.bodySmall?.copyWith(
-                        color: faded ? context.c.text36 : context.c.text58,
-                        decoration: TextDecoration.none),
-                  ),
-                ],
-              ),
-            ),
-            if (onDismiss != null)
-              IconButton(
-                tooltip: context.l10n.close,
-                icon: Icon(Icons.close_rounded,
-                    size: 18, color: context.c.text36),
-                onPressed: onDismiss,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
-              )
-            else if (onDelete != null)
-              IconButton(
-                tooltip: context.l10n.delete,
-                icon: Icon(Icons.delete_outline_rounded,
-                    size: 18, color: context.c.text36),
-                onPressed: onDelete,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
-              ),
-          ],
-        ),
-      ),
+    final simge = alarmFiyatSimgesi(bildirim.symbol);
+    // Kullanıcının görmek istediği sayı TETİKLENME fiyatıdır, hedef değil:
+    // hedefi zaten kendisi koydu. Simge sembolün kendi biriminde
+    // (2026-10-29): ABD hissesi alarmı "₺255,10" yazıyordu, sayı dolardı.
+    // `fmtFiyat` 1'in altını 4 anlamlı haneyle yazar (SHIB ₺0,0004).
+    String fiyat(double v) => fmtFiyat(v, symbol: simge ?? '');
+    return BildirimSatiri(
+      renk: yukari ? context.c.gain : context.c.loss,
+      ikon: yukari
+          ? Icons.notifications_active_rounded
+          : Icons.notifications_active_outlined,
+      baslik: bildirim.label,
+      kapaliBaslikSatiri: 1,
+      rozet: context.l10n.notifTypeAlarm,
+      govde: context.l10n.alarmTileBody(
+          fiyat(bildirim.triggeredPrice), fiyat(bildirim.targetPrice)),
+      // Push gövdesindeki "tek seferlik, kapatıldı" bilgisi çanda da var;
+      // kapalı satırı kalabalıklaştırmasın diye yalnız açıkken.
+      ekAciklama: context.l10n.alarmTileOneShot,
+      zaman: _tarih(context, bildirim.sentAt),
+      faded: faded,
+      onAc: onTap,
+      onDismiss: onDismiss,
+      onDelete: onDelete,
+      baslangictaAcik: baslangictaAcik,
     );
   }
 
-  String _tarih(DateTime d) {
+  /// `sent_at` UTC gelir; yerel saate çevrilir (genel bildirim satırıyla
+  /// aynı kural — çevrilmeden TR'de saat 3 geri yazılıyordu).
+  String _tarih(BuildContext context, DateTime ham) {
+    final d = ham.toLocal();
     final now = DateTime.now();
+    final saat = '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
     if (d.year == now.year && d.month == now.month && d.day == now.day) {
-      return 'Bugün ${d.hour.toString().padLeft(2, '0')}:'
-          '${d.minute.toString().padLeft(2, '0')}';
+      return context.l10n.notifToday(saat);
     }
-    return '${d.day}.${d.month}.${d.year}';
+    return '${d.day}.${d.month}.${d.year} $saat';
   }
 }
-

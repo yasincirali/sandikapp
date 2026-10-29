@@ -141,6 +141,7 @@ class RemotePushService {
         message.data,
         notificationTitle: message.notification?.title,
         notificationBody: message.notification?.body,
+        androidChannelId: message.notification?.android?.channelId,
       );
       switch (eylem) {
         case OrtaklikDavetiEylemi(:final inviteId, :final requesterName):
@@ -164,6 +165,22 @@ class RemotePushService {
           );
         // Cron'dan gelen "analiz zamanı" tetiği. Callback set edilmişse
         // client tarafında portföy analizini başlatır.
+        // Diğer görünür türler (alarm, takip listesi, brifing, özet…):
+        // yalnız Android — iOS ön plan sunumu değişmedi (2026-10-29).
+        case GenelBildirimEylemi(
+            :final title,
+            :final body,
+            :final channelId,
+            :final data
+          ):
+          if (Platform.isAndroid) {
+            await NotificationService.instance.showGenelBildirim(
+              title: title,
+              body: body,
+              channelId: channelId,
+              data: data,
+            );
+          }
         case AnalizIstegiEylemi(:final slot):
           try {
             _onSignalAnalyzeRequest?.call(slot);
