@@ -47,6 +47,9 @@ class DataExportService {
     // kurduğu kayıt. 0169 dağıtılmadan önce tablo yoktur; `topla` yer
     // tutucuyla geçer.
     ('yuzde_alarmlari', 'user_id', 'yuzde_alarmlari'),
+    // 0170 (2026-10-29): gösterge ve çizgi alarmları — aynı gerekçe.
+    ('gosterge_alarmlari', 'user_id', 'gosterge_alarmlari'),
+    ('cizim_alarmlari', 'user_id', 'cizim_alarmlari'),
     ('signal_preferences', 'user_id', 'signal_preferences'),
     ('signal_notifications', 'user_id', 'signal_notifications'),
     ('milestones', 'user_id', 'milestones'),

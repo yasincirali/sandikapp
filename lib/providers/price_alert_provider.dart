@@ -44,6 +44,34 @@ class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
     ]);
   }
 
+  /// Bilinen liste (yüklenmemişse boş) — `state` korumalı; çizim
+  /// eşitlemesi ([cizimAlarmlariniEsitle]) ekrandan bağımsız okur.
+  List<PriceAlert> get liste => state.valueOrNull ?? const [];
+
+  /// Liste sunucudan geldi mi (gelmeden "alarm yok" sonucu çıkarılmaz).
+  bool get yuklendi => state.hasValue;
+
+  /// Yatay çizgi taşındı: alarm yeni seviyeye geçer (aynı satır).
+  Future<void> hedefiGuncelle(String id, double hedef, String yon) async {
+    await _svc.hedefiGuncelle(id, hedef, yon);
+    state = AsyncData([
+      for (final a in state.valueOrNull ?? const <PriceAlert>[])
+        a.id == id
+            ? PriceAlert(
+                id: a.id,
+                userId: a.userId,
+                symbol: a.symbol,
+                label: a.label,
+                targetPrice: hedef,
+                direction: yon,
+                enabled: a.enabled,
+                triggeredAt: a.triggeredAt,
+                createdAt: a.createdAt,
+              )
+            : a,
+    ]);
+  }
+
   Future<void> rearm(String id) async {
     await _svc.rearm(id);
     // Sunucu satırı döndürmez; yerel kopya yamayla aynı şekle getirilir.

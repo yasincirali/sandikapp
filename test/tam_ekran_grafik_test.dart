@@ -12,6 +12,8 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/grafik_cizimi.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
+import 'package:portfoy_takip/providers/preferences_provider.dart'
+    show initPreferencesCache;
 import 'package:portfoy_takip/screens/tam_ekran_grafik_screen.dart';
 import 'package:portfoy_takip/services/cizim_deposu.dart';
 import 'package:portfoy_takip/services/mum_verisi.dart';
@@ -19,6 +21,8 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/tam_ekran/grafik_olcegi.dart';
 import 'package:portfoy_takip/widgets/tam_ekran/yan_cevirince_tam_ekran.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'helpers/kaynak.dart';
 
 /// Yatay tam ekran grafik ve çizim araçları (yasin, 2026-10-23; benchmark
 /// kararı: yatay grafik + çizim + telefonda saklama ücretsiz).
@@ -224,12 +228,14 @@ void main() {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = dik;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: YanCevirinceTamEkran(
-            etkin: etkin,
-            ac: (_) async => acilis++,
-            child: const SizedBox.expand(),
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: YanCevirinceTamEkran(
+              etkin: etkin,
+              ac: (_) async => acilis++,
+              child: const SizedBox(height: 200),
+            ),
           ),
         ),
       ));
@@ -260,15 +266,141 @@ void main() {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(844, 390);
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(
-        home: YanCevirinceTamEkran(
-          etkin: true,
-          ac: (_) async => acilis++,
-          child: const SizedBox.expand(),
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          home: YanCevirinceTamEkran(
+            etkin: true,
+            ac: (_) async => acilis++,
+            child: const SizedBox.expand(),
+          ),
         ),
       ));
       await tester.pump();
       expect(acilis, 0);
+    });
+  });
+
+  // yasin 2026-10-29: "Detaylı varlık detayı ekranında yan çevirmeyle ilgili
+  // bir bilgi içermeli mi?" — çip geri gelmez; düğme olmayan tek seferlik
+  // satır, yatay bir kez açılınca kaybolur.
+  group('yan çevirme ipucu', () {
+    const ipucu = 'Detaylı grafik için telefonu yan çevir';
+    // Tercih önbelleği süreç geneli: her testte taze diskten kurulur.
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await initPreferencesCache();
+    });
+
+    Future<void> kur(WidgetTester tester,
+        {Size boyut = const Size(390, 844),
+        bool etkin = true,
+        Future<void> Function(BuildContext)? ac}) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = boyut;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: YanCevirinceTamEkran(
+              etkin: etkin,
+              ac: ac ?? (_) async {},
+              child: const SizedBox(height: 200),
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+    }
+
+    testWidgets('telefonda dik: grafiğin altında, düğme değil',
+        (tester) async {
+      final anlam = tester.ensureSemantics();
+      await kur(tester);
+      expect(find.text(ipucu), findsOneWidget);
+      expect(find.byIcon(Icons.screen_rotation_rounded), findsOneWidget);
+      final kok = find.byKey(const ValueKey('yanCevirIpucu'));
+      expect(
+          find.descendant(of: kok, matching: find.byType(InkWell)), findsNothing);
+      expect(find.descendant(of: kok, matching: find.byType(GestureDetector)),
+          findsNothing);
+      expect(tester.getSemantics(find.text(ipucu)).flagsCollection.isButton,
+          isFalse);
+      // Grafiğin ALTINDA.
+      expect(tester.getTopLeft(kok).dy, greaterThanOrEqualTo(200));
+      anlam.dispose();
+    });
+
+    testWidgets('mum kaynağı yoksa ve tablette yok', (tester) async {
+      await kur(tester, etkin: false);
+      expect(find.text(ipucu), findsNothing);
+      await kur(tester, boyut: const Size(820, 1180));
+      expect(find.text(ipucu), findsNothing);
+    });
+
+    testWidgets('yatay bir kez açılınca kalıcı olarak kaybolur',
+        (tester) async {
+      var acilis = 0;
+      await kur(tester, ac: (_) async => acilis++);
+      expect(find.text(ipucu), findsOneWidget);
+      tester.view.physicalSize = const Size(844, 390);
+      await tester.pump();
+      await tester.pump();
+      expect(acilis, 1);
+      tester.view.physicalSize = const Size(390, 844);
+      await tester.pump();
+      expect(find.text(ipucu), findsNothing);
+      final sp = await SharedPreferences.getInstance();
+      expect(sp.getBool(PrefKeys.yatayGrafikIpucu), isTrue);
+    });
+
+    testWidgets('daha önce açıldıysa hiç görünmez', (tester) async {
+      SharedPreferences.setMockInitialValues({PrefKeys.yatayGrafikIpucu: true});
+      await initPreferencesCache();
+      await kur(tester);
+      expect(find.text(ipucu), findsNothing);
+    });
+
+    testWidgets('İngilizce metin', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: YanCevirinceTamEkran(
+              etkin: true,
+              ac: (_) async {},
+              child: const SizedBox(height: 200),
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(find.text('Turn your phone sideways for the detailed chart'),
+          findsOneWidget);
+    });
+
+    test('varlık detayı ipucunu sabit yükseklikli kartın altına koyar', () {
+      final k = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
+      expect(k, contains('ipucu: false'));
+      expect(k, contains('YanCevirIpucu('));
+      final v = ekranKaynagiSync('lib/widgets/katmanli_fiyat_grafigi.dart');
+      expect(v, isNot(contains('ipucu: false')),
+          reason: 'varlık sayfasında ipucu sarmalayıcının içinde');
+    });
+
+    test('eski "düğme" metni kalmadı (giriş yalnız yan çevirmek)', () {
+      expect(
+          ekranKaynagiSync('lib/services/ozellik_olcumu.dart')
+              .contains('düğmeyle ya da yan çevirerek'),
+          isFalse);
+      expect(
+          ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart')
+              .contains('Düğme ve yan çevirme aynı ekranı açar'),
+          isFalse);
     });
   });
 
@@ -405,6 +537,101 @@ void main() {
           [GrafikCizimi(tur: CizimTuru.yatay, a: CizimNoktasi(t, 100))]);
       final s = await ac(tester);
       expect(s.cizimler, hasLength(1));
+      await bitir(tester);
+    });
+
+    // ── Uçtan uca test düzeltmeleri (2026-10-29) ──────────────────────
+
+    testWidgets('aralık değişince görünüm son mumlara döner', (tester) async {
+      final s = await ac(tester);
+      final r = grafikAlani(tester);
+      // Geçmişe kaydır: pencere artık sonda değil.
+      await tester.dragFrom(
+          r.topLeft + const Offset(300, 200), const Offset(300, 0));
+      await tester.pump();
+      final kaymis = s.gorunum!;
+      final pw = s.olcek!.genislik;
+      final varsayilan = varsayilanGorunum(200, pw);
+      expect(kaymis.son, lessThan(varsayilan.son - 1));
+
+      await tester.tap(find.text('1 sa'));
+      await tester.pump();
+      // Yükleme sürerken de eski pencere taşınmaz.
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(s.aralik, MumAraligi.saat1);
+      expect(s.gorunum!.son, closeTo(varsayilan.son, 1e-6));
+      expect(s.gorunum!.bas, closeTo(varsayilan.bas, 1e-6));
+      await bitir(tester);
+    });
+
+    testWidgets('lejant yüzdesi yönlü biçimde ("−%0,29", "%-" yok)',
+        (tester) async {
+      await ac(tester);
+      final lejant = find.byWidgetPredicate((w) =>
+          w is RichText && w.text.toPlainText().startsWith('A '));
+      expect(lejant, findsOneWidget);
+      final metin =
+          (tester.widget(lejant) as RichText).text.toPlainText();
+      expect(metin, isNot(contains('%-')));
+      expect(metin, matches(RegExp(r'([+\u2212]%\d|%0,00)')));
+      await bitir(tester);
+    });
+
+    testWidgets('390 pt yatayda geri al / tümünü sil kaydırmadan görünür',
+        (tester) async {
+      await ac(tester);
+      final ekran = tester.view.physicalSize / tester.view.devicePixelRatio;
+      for (final ad in ['Geri al', 'Bu grafikteki tüm çizimleri sil']) {
+        final r = tester.getRect(find.byTooltip(ad));
+        expect(r.bottom, lessThanOrEqualTo(ekran.height), reason: ad);
+        expect(r.height, greaterThanOrEqualTo(SandikTouch.min), reason: ad);
+        // Gerçekten dokunulabilir: o noktadaki isabet düğmenin kendisi.
+        final hedef = tester.renderObject(find.byTooltip(ad));
+        expect(
+            tester
+                .hitTestOnBinding(r.center)
+                .path
+                .any((e) => identical(e.target, hedef)),
+            isTrue,
+            reason: ad);
+      }
+      await tester.tap(find.byTooltip('Geri al'));
+      await tester.pump();
+      expect(find.text('Geri alınacak bir şey yok'), findsWidgets);
+      await bitir(tester);
+    });
+
+    testWidgets('alarm düğmesi kendi anlam düğümünde, ekranı yutmaz',
+        (tester) async {
+      final anlam = tester.ensureSemantics();
+      final s = await ac(tester);
+      await tester.tap(find.byTooltip('Yatay çizgi'));
+      await tester.pump();
+      final r = grafikAlani(tester);
+      await tester.tapAt(r.topLeft + const Offset(300, 120));
+      await tester.pump();
+      expect(s.secili, 0);
+      final zil = find.byKey(const ValueKey('tamEkranCizimAlarmi'));
+      expect(zil, findsOneWidget);
+      final dugum = tester.getSemantics(zil);
+      expect(dugum.label, 'Bu çizgiye alarm kur');
+      expect(dugum.label, isNot(contains('THYAO')));
+      anlam.dispose();
+      await bitir(tester);
+    });
+
+    testWidgets('paylaşım logosu ekran açıkken önceden çözülür',
+        (tester) async {
+      await ac(tester);
+      // Şerit yokken de görünmez bir logo kopyası ağaçta: ilk paylaşımda
+      // logo boş yakalanmasın.
+      expect(find.byKey(const ValueKey('tamEkranImza')), findsNothing);
+      expect(
+          find.descendant(
+              of: find.byType(Offstage, skipOffstage: false),
+              matching: find.byType(SandikLogo, skipOffstage: false),
+              skipOffstage: false),
+          findsOneWidget);
       await bitir(tester);
     });
 

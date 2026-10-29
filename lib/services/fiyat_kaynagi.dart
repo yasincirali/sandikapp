@@ -63,6 +63,12 @@ class FiyatKaynagi {
   /// ayar demektir. Serisi [altinGramSerisi]'nden ağırlık çarpanıyla türer.
   static const String gramAltin24 = 'ALTIN_GRAM24';
 
+  /// Bitcoin (TL). Piyasa bandının beşinci öğesi (yasin 2026-10-29: "BTC de
+  /// eklenmeli fiyat bandına"). Kripto kuralı geçerli ([kriptoMu]): fiyat ve
+  /// gün içi yüzde sunucunun `kripto_fiyat` tablosundan, portföydeki
+  /// BTC ile aynı sayı.
+  static const String btcTry = 'KRIPTO:BTC';
+
   /// Uygulamanın iç altın sembolleri (`ALTIN_GRAM`, `ALTIN_CEYREK`…)
   /// gerçek bir Yahoo/TEFAS sembolü DEĞİLDİR: hepsi gram22k serisinden
   /// ağırlık çarpanıyla türetilir.
@@ -344,6 +350,22 @@ class FiyatKaynagi {
   /// madde 3). Sunucu eşi `_shared/yuzde_alarmi.ts › yuzdeAlarmKaynagi`.
   static bool yuzdeAlarmiKapsamindaMi(String sembol) =>
       widgetSunucuKapsamindaMi(sembol) && !sembol.startsWith(tefasOneki);
+
+  /// Bu sembole gösterge alarmı (EMA/MA/Bollinger, 0170) kurulabilir mi.
+  ///
+  /// Sunucu seviyeyi günlük kapanışlardan, son nokta CANLI fiyat olarak
+  /// hesaplar; ikisi aynı kaynaktan ve aynı birimde gelmelidir (madde 2).
+  /// Altın ayarları ve truncgil'den fiyatlanan üç TL döviz ([yurtIciKayitli])
+  /// HARİÇ: canlı fiyat yurt içi kotasyon, günlük seri Yahoo (vadeli × kur);
+  /// aradaki yapısal fark "EMA50'yi kesti" kararını sahte kılardı (uydurma
+  /// yok, madde 3). Eurobond zaten alarm kuramaz (`alarmSembolu`). Sunucu eşi
+  /// `_shared/gosterge_alarmi.ts › gostergeAlarmKapsamindaMi`.
+  static bool gostergeAlarmiKapsamindaMi(String sembol) {
+    final t = sembol.trim().toUpperCase();
+    if (t.isEmpty) return false;
+    if (t.startsWith('ALTIN_') || yurtIciKayitli(t)) return false;
+    return !t.startsWith(eurobondOneki);
+  }
 
   /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
   /// aranmayacaksa `null`.

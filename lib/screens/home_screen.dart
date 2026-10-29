@@ -37,6 +37,7 @@ import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
 import '../widgets/app_notification_tile.dart';
+import '../widgets/bildirim_satiri.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../utils/tr_iyelik.dart';
@@ -86,6 +87,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// karede kare üretiyor, uygulama hiç boşa düşmüyordu (animasyon
   /// denetimi 2026-10-01). Ekrandan çıkınca `TickerMode` ile durur, geri
   /// gelince kaldığı yerden akar; nabız turu da gizliyken atlanır.
+  /// "Portföy hareketleri" satırlarının önceki → sonraki bakiyesi
+  /// (2026-10-29). Görünen üç satır değil `ledgerAssets`'in tamamından
+  /// hesaplanır (bakiye eski alımları ister); defter değişmedikçe önbellek.
+  final _bakiyeOnbellegi = HareketBakiyeOnbellegi();
+
   final _seritAnahtari = GlobalKey();
   final _seritGorunur = ValueNotifier<bool>(true);
 
@@ -94,7 +100,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (kutu is! RenderBox || !kutu.attached || !kutu.hasSize) return;
     final alt = kutu.localToGlobal(Offset(0, kutu.size.height)).dy;
     _seritGorunur.value = alt > 0;
+    // Kaydıran kullanıcı ekranda: boşta durmuş bandı uyandır (2026-10-29).
+    _seritUyandirici.notifyListeners();
   }
+
+  /// Ana sayfa kaydırmasında piyasa bandını uyandırır (bkz.
+  /// `KayanBant.uyandirici`).
+  final _seritUyandirici = _Uyandirici();
 
   /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
   void _aramayiAc() {
@@ -159,6 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _scrollCtrl.removeListener(_seritGorunurlugunuGuncelle);
     _scrollCtrl.dispose();
     _seritGorunur.dispose();
+    _seritUyandirici.dispose();
     super.dispose();
   }
 
@@ -340,7 +353,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case AppNotification.watchlistMove:
         // Takip listesi Portföy sekmesinin gövdesinde; sekmeye geç yeter.
         MainNavigationScreen.sekmeIstegi.value = 1;
-      case AppNotification.yuzdeAlarm:
+      case AppNotification.yuzdeAlarm ||
+            AppNotification.gostergeAlarm ||
+            AppNotification.cizimAlarm:
         // Push'la AYNI varış (`type: price_alert` + `symbol`): varlık ekranı.
         final sembol = b.data['symbol']?.toString() ?? '';
         if (sembol.isNotEmpty) {
@@ -410,6 +425,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       portfolioState: portfolioState,
       hideBalance: hideBalance,
       not: not,
+      bakiye: _bakiyeOnbellegi.hesapla(defter)[a.id],
       onTap: acilir
           ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
           : null,
@@ -870,6 +886,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // payı 4 = 8pt.
                 padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm2),
                 onAra: _aramayiAc,
+                uyandirici: _seritUyandirici,
               ),
               ),
             ),
@@ -1544,7 +1561,10 @@ class _SignalsBottomSheet extends ConsumerWidget {
                           decoration: TextDecoration.none),
                     ),
                     const SizedBox(width: SandikSpace.sm),
-                    if (akis.isNotEmpty)
+                    // Sayaç yalnız AKTİF bildirimleri sayar: kapatılan
+                    // GEÇMİŞ'e iner, sayıda kalırsa "kapattım ama
+                    // azalmadı" okunur (e2e 2026-10-29).
+                    if (active.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
@@ -1556,7 +1576,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                   context.c.amberFill.withValues(alpha: 0.3)),
                         ),
                         child: Text(
-                          '${akis.length}',
+                          '${active.length}',
                           style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: context.c.amberText,
@@ -1832,106 +1852,24 @@ class _SignalTile extends StatelessWidget {
             : Icons.horizontal_rule_rounded);
     final int count = isBuy ? alert.buyCount : (isSell ? alert.sellCount : 0);
 
-    // Soluk satırda METİN opaklıkla değil ton basamağıyla iner (HIG denetimi
-    // 2026-10-10): %45 opak text58 açık temada 2,1:1 idi. İkon ve zemin
-    // (metin dışı) opaklıkla solmaya devam eder.
-    final double alphaFactor = faded ? 0.45 : 1.0;
-    final double bgAlpha = faded ? 0.05 : 0.10;
-    final double borderAlpha = faded ? 0.12 : 0.28;
-
-    final Widget content = SandikBasma(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: bgAlpha),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(
-              color: color.withValues(alpha: borderAlpha), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18 * alphaFactor),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon,
-                  color: color.withValues(alpha: alphaFactor), size: 20),
-            ),
-            const SizedBox(width: SandikSpace.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          alert.assetName,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: faded ? context.c.text58 : context.c.text90,
-                              decoration: TextDecoration.none),
-                        ),
-                      ),
-                      const SizedBox(width: SandikSpace.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.18 * alphaFactor),
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
-                        ),
-                        child: Text(label,
-                            style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: faded ? context.c.text36 : color,
-                                decoration: TextDecoration.none)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: SandikSpace.xs),
-                  Text(
-                    faded
-                        ? context.l10n.signalDeletedAt(_formatDate(alert.detectedAt))
-                        : context.l10n.signalConfidence(count, fmtPct(alert.confidence, digits: 0)),
-                    style: context.t.bodySmall?.copyWith(
-                        color: faded ? context.c.text36 : context.c.text58,
-                        decoration: TextDecoration.none),
-                  ),
-                ],
-              ),
-            ),
-            if (onDismiss != null)
-              IconButton(
-                tooltip: context.l10n.close,
-                icon: Icon(Icons.close_rounded,
-                    size: 18, color: context.c.text36),
-                onPressed: onDismiss,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
-              )
-            else if (onDelete != null)
-              IconButton(
-                tooltip: context.l10n.delete,
-                icon: Icon(Icons.delete_outline_rounded,
-                    size: 18, color: context.c.text36),
-                onPressed: onDelete,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
-              ),
-          ],
-        ),
-      ),
+    // Ortak açılır iskelet (2026-10-29, `BildirimSatiri`): dokunuş satırı
+    // açar, varlığa gitmek "Aç"ta. Soluk satır da gösterge/güven satırını
+    // gösterir; tarih eskiden onun YERİNE yazılıyordu.
+    final date = _formatDate(alert.detectedAt);
+    return BildirimSatiri(
+      renk: color,
+      ikon: icon,
+      baslik: alert.assetName,
+      kapaliBaslikSatiri: 1,
+      rozet: label,
+      govde: context.l10n
+          .signalConfidence(count, fmtPct(alert.confidence, digits: 0)),
+      zaman: faded ? context.l10n.signalDeletedAt(date) : date,
+      faded: faded,
+      onAc: onTap,
+      onDismiss: onDismiss,
+      onDelete: onDelete,
     );
-
-    return content;
   }
 
   String _formatDate(DateTime d) {
@@ -2105,4 +2043,10 @@ class _EmptyPortfolioCta extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Değer taşımayan bildirim kaynağı — "şimdi" demekten ibaret.
+class _Uyandirici extends ChangeNotifier {
+  @override
+  void notifyListeners() => super.notifyListeners();
 }

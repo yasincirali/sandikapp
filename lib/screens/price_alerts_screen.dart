@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
 import '../models/position.dart';
+import '../models/asset_type.dart' show alarmFiyatSimgesi;
 import '../models/price_alert.dart';
+import '../models/seviye_alarmi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/price_alert_provider.dart';
+import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
 import '../services/analytics_service.dart';
@@ -43,6 +46,11 @@ import '../l10n/l10n.dart';
 /// alarmlarıyla tek zaman sırasında (en yeni önce). Ayrı bölüm açılmadı:
 /// kullanıcı için ikisi de "kurduğum alarm"; satır türünü kendi etiketiyle
 /// söyler ("Günlük %2 düşüş").
+///
+/// 2026-10-29 (0170): gösterge ("EMA50 · yukarı keserse") ve çizgi
+/// ("Çizgi alarmı · üstüne çıkınca") alarmları da aynı listede, aynı
+/// gerekçeyle. Çizgi alarmı yatay grafikte çizimden kurulur; burada
+/// görünür ve silinir.
 class PriceAlertsScreen extends ConsumerStatefulWidget {
   const PriceAlertsScreen({super.key, this.sembol});
 
@@ -105,6 +113,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   Future<void> _yenile() => Future.wait([
         ref.read(priceAlertsProvider.notifier).refresh(),
         ref.read(yuzdeAlarmlariProvider.notifier).refresh(),
+        ref.read(gostergeAlarmlariProvider.notifier).refresh(),
+        ref.read(cizimAlarmlariProvider.notifier).refresh(),
       ]);
 
   @override
@@ -115,10 +125,18 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     // yüklenirken fiyat alarmları beklemeden görünür.
     final yuzdeHepsi =
         ref.watch(yuzdeAlarmlariProvider).valueOrNull ?? const <YuzdeAlarmi>[];
+    // Gösterge ve çizgi alarmları (0170): aynı kural, okuma hatası boş liste.
+    final gostergeHepsi = ref.watch(gostergeAlarmlariProvider).valueOrNull ??
+        const <GostergeAlarmi>[];
+    final cizimHepsi =
+        ref.watch(cizimAlarmlariProvider).valueOrNull ?? const <CizimAlarmi>[];
     return Scaffold(
       backgroundColor: c.background,
       appBar: SandikAppBar(
-        title: context.l10n.priceAlertsTitle,
+        // "Alarmlarım" (uçtan uca test 2026-10-29): liste artık yalnız fiyat
+        // alarmı değil — yüzde, gösterge ve çizgi alarmları da burada.
+        // Ana sayfadaki giriş de aynı adı taşır (`myAlarms`).
+        title: context.l10n.myAlarms,
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: c.amberFill,
@@ -155,15 +173,35 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             final s = widget.sembol;
             final fiyatListe = s == null
                 ? hepsi
-                : [for (final a in hepsi) if (a.symbol == s) a];
+                : [
+                    for (final a in hepsi)
+                      if (a.symbol == s) a
+                  ];
             final yuzdeListe = s == null
                 ? yuzdeHepsi
-                : [for (final a in yuzdeHepsi) if (a.symbol == s) a];
+                : [
+                    for (final a in yuzdeHepsi)
+                      if (a.symbol == s) a
+                  ];
             // Tek zaman sırası, en yeni önce; eşitlikte fiyat alarmı önde
             // (`List.sort` kararlı değil; liste yenilenince zıplamasın).
-            final liste = <({DateTime t, PriceAlert? f, YuzdeAlarmi? y})>[
-              for (final a in fiyatListe) (t: a.createdAt, f: a, y: null),
-              for (final a in yuzdeListe) (t: a.createdAt, f: null, y: a),
+            final liste = <({
+              DateTime t,
+              PriceAlert? f,
+              YuzdeAlarmi? y,
+              GostergeAlarmi? g,
+              CizimAlarmi? c,
+            })>[
+              for (final a in fiyatListe)
+                (t: a.createdAt, f: a, y: null, g: null, c: null),
+              for (final a in yuzdeListe)
+                (t: a.createdAt, f: null, y: a, g: null, c: null),
+              for (final a in gostergeHepsi)
+                if (s == null || a.symbol == s)
+                  (t: a.createdAt, f: null, y: null, g: a, c: null),
+              for (final a in cizimHepsi)
+                if (s == null || a.symbol == s)
+                  (t: a.createdAt, f: null, y: null, g: null, c: a),
             ];
             liste.sort((a, b) {
               final z = b.t.compareTo(a.t);
@@ -195,6 +233,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                       // 2026-10-01 — eskiden satır tek karede yok oluyor, hata da
                       // yakalanmıyordu).
                       itemBuilder: (_, i) {
+                        final seviye =
+                            _seviyeSatiri(context, liste[i].g, liste[i].c);
+                        if (seviye != null) return seviye;
                         final yuzde = liste[i].y;
                         if (yuzde != null) {
                           return KapananSatir(
@@ -208,8 +249,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                                     await KapananSatir.kapatVeYap(
                                         satirCtx,
                                         () => ref
-                                            .read(yuzdeAlarmlariProvider
-                                                .notifier)
+                                            .read(
+                                                yuzdeAlarmlariProvider.notifier)
                                             .delete(yuzde.id));
                                   } catch (e) {
                                     if (context.mounted) {
@@ -223,45 +264,121 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                         }
                         final alarm = liste[i].f!;
                         return KapananSatir(
-                        key: ValueKey(alarm.id),
-                        child: Builder(
-                          builder: (satirCtx) => _AlarmSatiri(
-                            alarm: alarm,
-                            onDelete: () async {
-                              final id = alarm.id;
-                              SandikHaptic.medium.perform();
-                              try {
-                                await KapananSatir.kapatVeYap(
-                                    satirCtx,
-                                    () => ref
-                                        .read(priceAlertsProvider.notifier)
-                                        .delete(id));
-                              } catch (e) {
-                                if (context.mounted) showAppError(context, e);
-                              }
-                            },
-                            // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
-                            // çökme); düğme artık bekliyor, ret sebebi söylenir.
-                            // Eşik geçilmişse ön dolu sayfa, değilse yeniden
-                            // kur + onay (`alarmiYenidenKur`, 2026-10-21).
-                            onRearm: () {
-                              final a = alarm;
-                              final aday = _adaylar()
-                                      .where((x) => x.sembol == a.symbol)
-                                      .firstOrNull ??
-                                  AlarmAdayi(a.symbol, a.label, 0);
-                              return alarmiYenidenKur(context, ref, a,
-                                  aday: aday);
-                            },
+                          key: ValueKey(alarm.id),
+                          child: Builder(
+                            builder: (satirCtx) => _AlarmSatiri(
+                              alarm: alarm,
+                              onDelete: () async {
+                                final id = alarm.id;
+                                SandikHaptic.medium.perform();
+                                try {
+                                  await KapananSatir.kapatVeYap(
+                                      satirCtx,
+                                      () => ref
+                                          .read(priceAlertsProvider.notifier)
+                                          .delete(id));
+                                } catch (e) {
+                                  if (context.mounted) showAppError(context, e);
+                                }
+                              },
+                              // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
+                              // çökme); düğme artık bekliyor, ret sebebi söylenir.
+                              // Eşik geçilmişse ön dolu sayfa, değilse yeniden
+                              // kur + onay (`alarmiYenidenKur`, 2026-10-21).
+                              onRearm: () {
+                                final a = alarm;
+                                final aday = _adaylar()
+                                        .where((x) => x.sembol == a.symbol)
+                                        .firstOrNull ??
+                                    AlarmAdayi(a.symbol, a.label, 0);
+                                return alarmiYenidenKur(context, ref, a,
+                                    aday: aday);
+                              },
+                            ),
                           ),
-                        ),
-                      );
+                        );
                       },
                     ),
                   ),
                 ),
               ],
             );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Gösterge ya da çizgi alarmının satırı (0170); ikisi de değilse null.
+  Widget? _seviyeSatiri(
+      BuildContext context, GostergeAlarmi? g, CizimAlarmi? cz) {
+    if (g == null && cz == null) return null;
+    final l10n = context.l10n;
+    final String etiket;
+    final SeviyeYon yon;
+    final bool calisti;
+    final double? tetik;
+    final String anahtar;
+    final Future<void> Function() sil;
+    String? seviyeMetni;
+    if (g != null) {
+      etiket = gostergeAlarmEtiketi(l10n, g.gosterge, g.yon);
+      yon = g.yon;
+      calisti = g.triggeredAt != null;
+      tetik = g.tetikFiyat;
+      anahtar = 'gosterge_${g.id}';
+      sil = () => ref.read(gostergeAlarmlariProvider.notifier).delete(g.id);
+    } else {
+      final c = cz!;
+      etiket = switch (c.yon) {
+        SeviyeYon.yukari => l10n.cizimAlarmEtiketUst,
+        SeviyeYon.asagi => l10n.cizimAlarmEtiketAlt,
+        SeviyeYon.herIkisi => l10n.cizimAlarmEtiketIkisi,
+      };
+      yon = c.yon;
+      calisti = c.triggeredAt != null;
+      tetik = c.tetikFiyat;
+      anahtar = 'cizim_${c.id}';
+      // Çizginin bugünkü seviyesi ve (uzamayan parçada) bitişi: "altına
+      // inince" tek başına hangi seviye olduğunu söylemiyordu. Çalmış
+      // alarmda seviye yazılmaz; durum satırı tetik fiyatını yazar.
+      final v =
+          c.isActive ? c.seviye(DateTime.now().millisecondsSinceEpoch) : null;
+      if (v != null) {
+        final fiyat = fmtFiyat(v, symbol: alarmFiyatSimgesi(c.symbol) ?? '');
+        seviyeMetni = c.uzanir
+            ? l10n.cizimAlarmSeviyesi(fiyat)
+            // Bitiş yalnız GÜN: çizginin ucu grafikte serbest bir nokta,
+            // saati ("21:42") günlük mumda anlamsız (e2e 2026-10-29).
+            : l10n.cizimAlarmSeviyesiBitisli(
+                fiyat,
+                fmtTarihSaat(
+                    dayKey(DateTime.fromMillisecondsSinceEpoch(c.t2))));
+      }
+      sil = () => ref.read(cizimAlarmlariProvider.notifier).delete(c.id);
+    }
+    final sembol = g?.symbol ?? cz!.symbol;
+    return KapananSatir(
+      key: ValueKey(anahtar),
+      child: Builder(
+        builder: (satirCtx) => _SeviyeAlarmSatiri(
+          ad: g?.label ?? cz!.label,
+          etiket: etiket,
+          seviye: seviyeMetni,
+          yon: yon,
+          durum: !calisti
+              ? null
+              : tetik == null
+                  ? l10n.seviyeAlarmCalistiSade
+                  : l10n.seviyeAlarmCalisti(
+                      fmtFiyat(tetik, symbol: alarmFiyatSimgesi(sembol) ?? '')),
+          onDelete: () async {
+            SandikHaptic.medium.perform();
+            try {
+              await KapananSatir.kapatVeYap(satirCtx, sil);
+            } catch (e) {
+              if (context.mounted) showAppError(context, e);
+            }
           },
         ),
       ),
@@ -365,6 +482,102 @@ class _YuzdeAlarmSatiri extends StatelessWidget {
             onPressed: onDelete,
             icon: Icon(Icons.delete_outline_rounded, color: c.text36),
             tooltip: l10n.delete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Gösterge / çizgi alarmı satırı (0170) ───────────────────────────────────
+
+/// Yüzde alarmı satırıyla aynı iskelet. "Yeniden kur" yok: gösterge
+/// alarmı sayfadan, çizgi alarmı grafikteki zilden yeniden kurulur. Çalmış
+/// alarm soluk ok + "Çalıştı · ₺312,40 · tek seferlikti" (bildirimdeki
+/// sayı; simge sembolün kendi biriminde).
+class _SeviyeAlarmSatiri extends StatelessWidget {
+  final String ad;
+  final String etiket;
+
+  /// Çizgi alarmında bugünkü seviye (ve bitiş); gösterge alarmında null.
+  final String? seviye;
+  final SeviyeYon yon;
+
+  /// Çalmışsa durum satırı; nöbetteyse null.
+  final String? durum;
+  final VoidCallback onDelete;
+
+  const _SeviyeAlarmSatiri({
+    required this.ad,
+    required this.etiket,
+    this.seviye,
+    required this.yon,
+    required this.durum,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final calisti = durum != null;
+    return SandikCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
+      child: Row(
+        children: [
+          // Yön RENKLE anlatılmaz — ok her zaman var, etiket de yazar.
+          ExcludeSemantics(
+            child: Text(
+              switch (yon) {
+                SeviyeYon.yukari => '▲',
+                SeviyeYon.asagi => '▼',
+                SeviyeYon.herIkisi => '▲▼',
+              },
+              style: context.t.titleMedium?.copyWith(
+                color: calisti
+                    ? c.text36
+                    : switch (yon) {
+                        SeviyeYon.yukari => c.gain,
+                        SeviyeYon.asagi => c.loss,
+                        SeviyeYon.herIkisi => c.text58,
+                      },
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: SandikSpace.smd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ad,
+                  style: context.t.titleMedium?.copyWith(color: c.text90),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: SandikSpace.xxs),
+                Text(
+                  etiket,
+                  style: context.t.bodyMedium?.copyWith(color: c.text58),
+                ),
+                if (seviye != null)
+                  Text(
+                    seviye!,
+                    style: context.t.bodySmall?.copyWith(color: c.text58),
+                  ),
+                if (durum != null)
+                  Text(
+                    durum!,
+                    style: context.t.bodySmall?.copyWith(color: c.text58),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: onDelete,
+            icon: Icon(Icons.delete_outline_rounded, color: c.text36),
+            tooltip: context.l10n.delete,
           ),
         ],
       ),

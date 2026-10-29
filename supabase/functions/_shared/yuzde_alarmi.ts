@@ -49,6 +49,7 @@ import {
 } from './push_tokens.ts';
 import { sessizKullanicilar } from './quiet_hours.ts';
 import { appNotificationRow, recordAppNotification } from './app_notifications.ts';
+import { fiyatSayisi } from './fiyat_metni.ts';
 
 /// Fiyat alarmıyla aynı kanal: kullanıcı "alarmlar" kanalını açık tutup
 /// brifingi kapatabilir; yüzde alarmı da kendi kurduğu alarmdır.
@@ -160,16 +161,11 @@ export function esikMetni(esik: number): string {
     : String(yuvarlak).replace('.', ',');
 }
 
-/// Türkçe TL biçimi — `check-price-alerts › formatTRY` ile aynı kural
-/// (Intl'in tr-TR verisine güvenilmez). 1 ₺ altı (SHIB) 2 haneye
-/// yuvarlanınca 0 olurdu; orada 6 haneye kadar, sondaki sıfırlar atılır.
+/// Türkçe TL biçimi. 2026-10-29: kural `_shared/fiyat_metni.ts ›
+/// fiyatSayisi`'de tek yerde (fiyat alarmı ve takip listesi de kullanıyor);
+/// 1 ₺ altı (SHIB) 6 haneye kadar, sondaki sıfırlar atılır.
 export function tlMetni(v: number): string {
-  if (Math.abs(v) < 1) {
-    return v.toFixed(6).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',');
-  }
-  const [tam, kesir] = Math.abs(v).toFixed(2).split('.');
-  const binlik = tam.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `${v < 0 ? '-' : ''}${binlik},${kesir}`;
+  return fiyatSayisi(v);
 }
 
 /// Bildirim metni: "▼ Gram altın bugün %2,1 düştü · ₺4.212,37".

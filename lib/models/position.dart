@@ -166,6 +166,20 @@ String positionKey(Asset a) {
       // `positions.ts` › `pozisyonAnahtari`.
       core = '${a.ticker.trim().toUpperCase()}|'
           'sub:${(a.subCategory ?? '').toLowerCase()}';
+      // Sözleşme kimliği de anahtara girer (2026-10-29, yasin: "BES
+      // varlığı fon dağılımıyla birlikte tek mi gözükmeli"). Fon kodu
+      // sözleşmeye özgü değildir: iki ayrı BES sözleşmesi aynı fonu
+      // (ör. iki şirkette de altın fonu) tutunca lotları TEK pozisyona
+      // düşüyor, Portföy'de tek satır ve tek maliyet ortalaması çıkıyordu;
+      // bir sözleşmenin "Fon değiştir" satışı öbürünün payından düşülebilirdi.
+      // Satış lotları (`_besSatisi`, `addSellTransaction`) sözleşme kimliğini
+      // taşıdığı için netleşme sözleşme içinde kalır. Kimliksiz lot (0088
+      // öncesi ya da elle girilmiş) eski anahtarı korur — veri taşınmaz.
+      // Mevduatta gerek yok: sembolü zaten `MEVDUAT:<sözleşme id>`.
+      // Sunucu (`positions.ts`) bilerek eski anahtarda kalır: lider tablosu
+      // yalnız pozisyon sayar ve değer toplamı birleşmeden etkilenmez.
+      final sid = a.sozlesmeId?.trim() ?? '';
+      if (sid.isNotEmpty) core = '$core|soz:${sid.toLowerCase()}';
       break;
     case AssetType.emtia:
     case AssetType.diger:
@@ -605,15 +619,27 @@ List<Asset> gosterilecekVarliklar(Iterable<Asset> assets) =>
 /// girişte "aynı gün al-sat"). Sıralamada elde olandan fazla satış çıkarsa
 /// (tarihi tutarsız defter) `null` döner ve çağıran eski ortalamaya düşer:
 /// uydurma bir maliyet yazmaktansa bilinen davranış.
+/// Defterin zaman sırası: tarih artan, aynı anda alım satımdan önce.
+///
+/// [_yuruyenOrtalama] ile [hareketBakiyeleri] AYNI sırayı kullanır
+/// (2026-10-29): biri satışı "elde yok" sayıp diğeri saymasaydı maliyet
+/// ile hareket satırındaki bakiye aynı defterden farklı hikâye anlatırdı.
+/// Son ölçüt kimlik: aynı anlı iki alımın sırası maliyeti değiştirmez ama
+/// satırda "10 → 15" mi "15 → 20" mi yazacağını belirler; `List.sort`
+/// kararlı değil, her çizimde yer değiştirmesinler.
+int _defterSirasi(Asset a, Asset b) {
+  final t = a.addedDate.compareTo(b.addedDate);
+  if (t != 0) return t;
+  final k = (a.isSell ? 1 : 0) - (b.isSell ? 1 : 0);
+  if (k != 0) return k;
+  return a.id.compareTo(b.id);
+}
+
 ({double fiyat, double kur})? _yuruyenOrtalama(List<Asset> lots) {
   final sirali = [
     for (final l in lots)
       if (!l.isDividend) l,
-  ]..sort((a, b) {
-      final t = a.addedDate.compareTo(b.addedDate);
-      if (t != 0) return t;
-      return (a.isSell ? 1 : 0) - (b.isSell ? 1 : 0);
-    });
+  ]..sort(_defterSirasi);
   var adet = 0.0, maliyet = 0.0, kurluMaliyet = 0.0;
   for (final l in sirali) {
     if (l.isSell) {
@@ -719,4 +745,99 @@ List<Position> aggregatePositions(List<Asset> assets) {
     ));
   });
   return positions;
+}
+
+/// Hareket satırının "önceki → sonraki" bakiyesi: lot kimliği → o işlemden
+/// hemen önce ve hemen sonra pozisyonda tutulan MİKTAR.
+///
+/// Kullanıcı isteği (2026-10-29): "Portföy hareketlerinde önceki ve sonraki
+/// bakiye de yazmalı." Kararlar:
+///
+/// - **Miktar, ₺ değil.** Geçmiş bir işlemin "önceki bakiyesi"ni ₺ ile
+///   yazmak o günün fiyatını ister; bugünkü fiyatla çarpmak geçmişi
+///   uydurur, kayıtlı fiyatla çarpmak satırdaki tutarla çelişir. Miktar
+///   defterin kendisinden gelir, uydurma sayı yoktur ("12 → 17 gr").
+/// - **Ham defter.** Geçmişi soran yer (`CLAUDE.md` "Kapanmış pozisyon"):
+///   tamamen satılıp yeniden alınan pozisyonda satış "5 → 0", yeni alım
+///   "0 → 3" yazar; `aktifLotlar` kapanmış pozisyonu düşürürdü.
+/// - **Sahip başına.** Gruplama (`userId`, [positionKey]): Birlikte
+///   görünümünde iki ortağın aynı hissesi netleşmesin — `positionKey` sahip
+///   taşımaz (aynı tuzak `aggregatePositionsByOwner`'da).
+/// - **Yalnız süren alım/satım.** Silinmiş lot, mezar taşı ([Asset.isActive])
+///   ve temettü (miktarı 0, nakit hareketi) bakiyeye girmez ve bakiye
+///   almaz — `aggregatePositions` ile aynı küme.
+/// - **Mevduat ve BES yok.** Mevduatta miktar iç hesabın birim payıdır
+///   (satır onu zaten yazmıyor, bkz. `hareketTurEtiketi`); BES'te fon payı
+///   adedi kullanıcıya bir şey söylemez, her "fon değiştir" satış + alımdır.
+/// - **Tutarsız defter → hiç yazılmaz.** Sıralamada elde olandan fazla
+///   satış çıkarsa (geç girilmiş alım, bozuk kayıt) o pozisyonun HİÇBİR
+///   satırına bakiye verilmez: eksi bakiye ya da sıfıra kırpılmış sayı
+///   uydurma olurdu. [_yuruyenOrtalama]'nın vazgeçtiği yerle aynı.
+///
+/// Sıra [_defterSirasi]. Kayan nokta gürültüsü (0,1 + 0,2 − 0,3) sıfıra
+/// çekilir ki kapanış "0" yazsın, "0,0000" değil.
+///
+/// **Girdi tüm kapsam defteri olmalı**, tarih/tür/arama süzgecinden
+/// GEÇMEMİŞ: süzülmüş listede eski alımlar yoktur, bakiye yanlış başlar.
+Map<String, ({double once, double sonra})> hareketBakiyeleri(
+    Iterable<Asset> defter) {
+  final gruplar = <(String, String), List<Asset>>{};
+  for (final a in defter) {
+    if (!a.isActive || a.isDividend) continue;
+    if (a.type == AssetType.mevduat || a.type == AssetType.bes) continue;
+    gruplar.putIfAbsent((a.userId, positionKey(a)), () => []).add(a);
+  }
+  const tolerans = 0.0000001;
+  final out = <String, ({double once, double sonra})>{};
+  for (final lots in gruplar.values) {
+    lots.sort(_defterSirasi);
+    final grup = <String, ({double once, double sonra})>{};
+    var adet = 0.0;
+    var tutarli = true;
+    for (final l in lots) {
+      final once = adet;
+      if (l.isSell) {
+        if (l.quantity > adet + tolerans) {
+          tutarli = false;
+          break;
+        }
+        adet -= l.quantity;
+      } else {
+        adet += l.quantity;
+      }
+      if (adet.abs() < tolerans) adet = 0;
+      grup[l.id] = (once: once, sonra: adet);
+    }
+    if (tutarli) out.addAll(grup);
+  }
+  return out;
+}
+
+/// [hareketBakiyeleri]'nin son sonucunu tutan küçük önbellek (2026-10-29).
+///
+/// Ekranlar defteri her `build`'de yeniden kurar (`kapsamDefteri` yeni
+/// liste döner), liste kimliği anahtar olamaz. Lot nesneleri ise yalnız
+/// veri yenilenince değişir; aynı uzunlukta ve sırayla AYNI nesnelerden
+/// oluşan defter aynı sonucu verir. Bu karşılaştırma O(n) kimlik denetimi
+/// — sıralama + `positionKey` metni kurmaktan ucuz; arama kutusuna her
+/// harf yazılışında hesap tekrarlanmaz.
+class HareketBakiyeOnbellegi {
+  List<Asset>? _defter;
+  Map<String, ({double once, double sonra})> _sonuc = const {};
+
+  Map<String, ({double once, double sonra})> hesapla(List<Asset> defter) {
+    final onceki = _defter;
+    if (onceki != null && _ayniNesneler(onceki, defter)) return _sonuc;
+    _defter = List.of(defter, growable: false);
+    return _sonuc = hareketBakiyeleri(defter);
+  }
+
+  static bool _ayniNesneler(List<Asset> a, List<Asset> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i], b[i])) return false;
+    }
+    return true;
+  }
 }

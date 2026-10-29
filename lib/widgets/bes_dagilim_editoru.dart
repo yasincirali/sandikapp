@@ -21,7 +21,12 @@ class BesDagilimEditoru extends StatefulWidget {
     this.adlar = const {},
     this.hata,
     this.degisti,
+    this.kurum,
   });
+
+  /// Sözleşmenin şirketi: fon seçici bu şirketin fonlarıyla açılır
+  /// (`emeklilikFonuSec`, 2026-10-29). `null` → tüm EMK fonları.
+  final String? kurum;
 
   /// Açılıştaki satırlar (fon değişikliğinde bugünkü dağılım).
   final List<FonPayi> baslangic;
@@ -70,7 +75,8 @@ class BesDagilimEditoruState extends State<BesDagilimEditoru> {
   double get _oranToplami => dagilim.fold<double>(0, (t, f) => t + f.oran);
 
   Future<void> _fonEkle() async {
-    final f = await emeklilikFonuSec(context, devletKatkisi: false);
+    final f = await emeklilikFonuSec(context,
+        devletKatkisi: false, kurum: widget.kurum);
     if (f == null || !mounted) return;
     if (_fonlar.any((x) => x.kod == f.code)) return;
     setState(() {

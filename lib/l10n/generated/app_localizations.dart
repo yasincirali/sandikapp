@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr')
+    Locale('tr'),
   ];
 
   /// No description provided for @appName.
@@ -1514,6 +1514,24 @@ abstract class AppLocalizations {
   /// **'{zaman} itibarıyla'**
   String tegPaylasimZamani(String zaman);
 
+  /// Paylaşılan grafiğin dönemi: mum aralığı (günlük, 1 saatlik…) ve görünen tarih aralığı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{aralik} mumlar, {tarihler}'**
+  String tegPaylasimDonem(String aralik, String tarihler);
+
+  /// Dik grafiğin altında tek seferlik ipucu; yatay tam ekran bir kez açılınca kaybolur. Düğme değil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Detaylı grafik için telefonu yan çevir'**
+  String get tegYanCevirIpucu;
+
+  /// Yatay grafikte ayrı panelli (RSI gibi) kendi göstergesi çizilmez; lejant bunu söyler.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} · ayrı panel dik ekranda'**
+  String tegOzelPanelDikte(String ad);
+
   /// No description provided for @total.
   ///
   /// In tr, this message translates to:
@@ -1597,6 +1615,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Notların...'**
   String get notesHint;
+
+  /// No description provided for @txBalanceChange.
+  ///
+  /// In tr, this message translates to:
+  /// **'{once} → {sonra}'**
+  String txBalanceChange(String once, String sonra);
+
+  /// No description provided for @txBalanceSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {once} iken {sonra} oldu'**
+  String txBalanceSemantics(String once, String sonra);
 
   /// No description provided for @txHasNote.
   ///
@@ -6577,7 +6607,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis);
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  );
 
   /// No description provided for @fullscreenChart.
   ///
@@ -7202,6 +7236,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'BIST 100'**
   String get marketBist;
+
+  /// No description provided for @marketBitcoin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bitcoin'**
+  String get marketBitcoin;
 
   /// No description provided for @notifTypeWatchlist.
   ///
@@ -8973,6 +9013,66 @@ abstract class AppLocalizations {
   /// **'Ek katkı ekle'**
   String get pensionAddExtraContribution;
 
+  /// No description provided for @pensionFundCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 fon} other{{count} fon}}'**
+  String pensionFundCount(int count);
+
+  /// No description provided for @pensionFundsNow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü dağılım'**
+  String get pensionFundsNow;
+
+  /// No description provided for @pensionFundsNowHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylar fonların bugünkü değerinden; fiyatlar farklı yürüdüğü için katkı talimatından ayrışabilir.'**
+  String get pensionFundsNowHint;
+
+  /// No description provided for @pensionContributionPlan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni katkılar: {plan}'**
+  String pensionContributionPlan(String plan);
+
+  /// No description provided for @pensionFundRowSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{code}, sözleşmenin {share} kadarı, {amount}'**
+  String pensionFundRowSemantics(String code, String share, String amount);
+
+  /// No description provided for @pensionPickCompany.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emeklilik şirketini seç'**
+  String get pensionPickCompany;
+
+  /// No description provided for @pensionCompanyUseTyped.
+  ///
+  /// In tr, this message translates to:
+  /// **'\"{name}\" olarak kullan'**
+  String pensionCompanyUseTyped(String name);
+
+  /// No description provided for @pensionCompanyListUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şirket listesi şu an yüklenemedi. Şirketin adını yazıp kullanabilirsin.'**
+  String get pensionCompanyListUnavailable;
+
+  /// No description provided for @pensionCompanyFunds.
+  ///
+  /// In tr, this message translates to:
+  /// **'{company} fonları'**
+  String pensionCompanyFunds(String company);
+
+  /// No description provided for @pensionAllFunds.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm fonlar'**
+  String get pensionAllFunds;
+
   /// No description provided for @cpiSentenceMonth.
   ///
   /// In tr, this message translates to:
@@ -8996,7 +9096,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi);
+    String date,
+    String end,
+    String change,
+    String cpi,
+  );
 
   /// No description provided for @savingsRose.
   ///
@@ -10539,7 +10643,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-      String amount, String times, String pct, String share);
+    String amount,
+    String times,
+    String pct,
+    String share,
+  );
 
   /// No description provided for @cryFootnote.
   ///
@@ -16054,6 +16162,258 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kod gir'**
   String get ortakPortfoyKodGir;
+
+  /// No description provided for @notifOpenAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aç'**
+  String get notifOpenAction;
+
+  /// No description provided for @notifExpandHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamamını göster'**
+  String get notifExpandHint;
+
+  /// No description provided for @notifCollapseHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daralt'**
+  String get notifCollapseHint;
+
+  /// No description provided for @alarmTileBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'{price} · hedef {target}'**
+  String alarmTileBody(String price, String target);
+
+  /// No description provided for @alarmTileOneShot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.'**
+  String get alarmTileOneShot;
+
+  /// No description provided for @alarmModGosterge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gösterge'**
+  String get alarmModGosterge;
+
+  /// No description provided for @alarmPremiumGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium gerekir'**
+  String get alarmPremiumGerekli;
+
+  /// No description provided for @gostergeBbUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bollinger üst'**
+  String get gostergeBbUst;
+
+  /// No description provided for @gostergeBbAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bollinger alt'**
+  String get gostergeBbAlt;
+
+  /// No description provided for @gostergeBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi gösterge?'**
+  String get gostergeBaslik;
+
+  /// No description provided for @gostergeYonYukari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yukarı keserse'**
+  String get gostergeYonYukari;
+
+  /// No description provided for @gostergeYonAsagi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aşağı keserse'**
+  String get gostergeYonAsagi;
+
+  /// No description provided for @gostergeOzetYukari.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyatı {gosterge} çizgisini yukarı keserse haber vereceğiz.'**
+  String gostergeOzetYukari(String name, String gosterge);
+
+  /// No description provided for @gostergeOzetAsagi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyatı {gosterge} çizgisini aşağı keserse haber vereceğiz.'**
+  String gostergeOzetAsagi(String name, String gosterge);
+
+  /// No description provided for @gostergeOzetIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyatı {gosterge} çizgisini hangi yöne keserse haber vereceğiz.'**
+  String gostergeOzetIkisi(String name, String gosterge);
+
+  /// No description provided for @gostergeNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük kapanışlarla hesaplanır, bugün için canlı fiyat kullanılır (Bollinger 20 gün, 2σ). Tek seferliktir: çalınca kapanır.'**
+  String get gostergeNot;
+
+  /// No description provided for @gostergeAlarmEtiketYukari.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} · yukarı keserse'**
+  String gostergeAlarmEtiketYukari(String gosterge);
+
+  /// No description provided for @gostergeAlarmEtiketAsagi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} · aşağı keserse'**
+  String gostergeAlarmEtiketAsagi(String gosterge);
+
+  /// No description provided for @gostergeAlarmEtiketIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} · keserse'**
+  String gostergeAlarmEtiketIkisi(String gosterge);
+
+  /// No description provided for @gostergeAlarmKuruldu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} için alarm kuruldu: {etiket}'**
+  String gostergeAlarmKuruldu(String name, String etiket);
+
+  /// No description provided for @cizimAlarmEtiketUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı · üstüne çıkınca'**
+  String get cizimAlarmEtiketUst;
+
+  /// No description provided for @cizimAlarmEtiketAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı · altına inince'**
+  String get cizimAlarmEtiketAlt;
+
+  /// No description provided for @cizimAlarmEtiketIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı · kesince'**
+  String get cizimAlarmEtiketIkisi;
+
+  /// No description provided for @seviyeAlarmCalisti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalıştı · {fiyat} · tek seferlikti'**
+  String seviyeAlarmCalisti(String fiyat);
+
+  /// No description provided for @seviyeAlarmCalistiSade.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalıştı · tek seferlikti'**
+  String get seviyeAlarmCalistiSade;
+
+  /// No description provided for @tegAlarmKur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu çizgiye alarm kur'**
+  String get tegAlarmKur;
+
+  /// No description provided for @tegAlarmKurPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı kur (Premium)'**
+  String get tegAlarmKurPremium;
+
+  /// No description provided for @tegAlarmKaldir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmını kaldır'**
+  String get tegAlarmKaldir;
+
+  /// No description provided for @tegAlarmKaldirildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı kaldırıldı'**
+  String get tegAlarmKaldirildi;
+
+  /// No description provided for @tegAlarmKurulduUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz'**
+  String get tegAlarmKurulduUst;
+
+  /// No description provided for @tegAlarmKurulduAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kuruldu: fiyat çizginin altına inince haber vereceğiz'**
+  String get tegAlarmKurulduAlt;
+
+  /// No description provided for @tegAlarmKurulduIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kuruldu: fiyat çizgiyi kesince haber vereceğiz'**
+  String get tegAlarmKurulduIkisi;
+
+  /// No description provided for @tegAlarmBitti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu çizgi geçmişte bitiyor. Alarm için bugünü geçen bir çizgi ya da ışın çiz'**
+  String get tegAlarmBitti;
+
+  /// No description provided for @tegAlarmYonsuz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ışın ileriye uzanmıyor; alarm kurulamadı'**
+  String get tegAlarmYonsuz;
+
+  /// No description provided for @tegAlarmGecersiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi sıfırın altına iniyor; alarm kurulamadı'**
+  String get tegAlarmGecersiz;
+
+  /// No description provided for @tegAlarmSilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizim silindi, çizgi alarmı da kaldırıldı'**
+  String get tegAlarmSilindi;
+
+  /// No description provided for @tegAlarmGeriGeldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizginin alarmı da geri geldi'**
+  String get tegAlarmGeriGeldi;
+
+  /// No description provided for @nActiveAlarmsAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} aktif alarm'**
+  String nActiveAlarmsAll(int n);
+
+  /// No description provided for @seviyeAlarmOzetCipi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gösterge/çizgi alarmı'**
+  String seviyeAlarmOzetCipi(int n);
+
+  /// No description provided for @seviyeAlarmOzetCipiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gösterge ve çizgi alarmı. Alarmlarım\'da gör'**
+  String seviyeAlarmOzetCipiEtiket(int n);
+
+  /// No description provided for @cizimAlarmSeviyesi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi şu an {fiyat}'**
+  String cizimAlarmSeviyesi(String fiyat);
+
+  /// No description provided for @cizimAlarmSeviyesiBitisli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi şu an {fiyat} · {tarih} tarihine kadar'**
+  String cizimAlarmSeviyesiBitisli(String fiyat, String tarih);
 }
 
 class _AppLocalizationsDelegate
@@ -16083,8 +16443,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

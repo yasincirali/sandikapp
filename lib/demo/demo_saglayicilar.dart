@@ -9,6 +9,7 @@ import '../models/asset_type.dart';
 import '../models/kullanici_adi.dart';
 import '../models/price_alert.dart';
 import '../models/price_alert_notification.dart';
+import '../models/seviye_alarmi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../models/signal_alert.dart';
 import '../models/user_model.dart';
@@ -20,6 +21,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/price_alert_notification_provider.dart';
 import '../providers/price_alert_provider.dart';
+import '../providers/seviye_alarmi_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
 import '../providers/quiet_hours_provider.dart';
 import '../providers/signal_provider.dart';
@@ -63,6 +65,8 @@ List<Override> demoOverrides() => [
       appNotificationProvider.overrideWith(_DemoAppNotifications.new),
       priceAlertsProvider.overrideWith(_DemoPriceAlerts.new),
       yuzdeAlarmlariProvider.overrideWith(_DemoYuzdeAlarmlari.new),
+      gostergeAlarmlariProvider.overrideWith(_DemoGostergeAlarmlari.new),
+      cizimAlarmlariProvider.overrideWith(_DemoCizimAlarmlari.new),
       watchlistProvider.overrideWith(_DemoWatchlist.new),
       quietHoursProvider.overrideWith(_DemoQuietHours.new),
       kriptoKatalogProvider.overrideWith((ref) async => const []),
@@ -485,6 +489,42 @@ class _DemoYuzdeAlarmlari extends YuzdeAlarmlariNotifier {
 
   @override
   Future<YuzdeAlarmi> create(YuzdeAlarmi alarm) async =>
+      DemoModu.yazmaEngeli('alarm');
+
+  @override
+  Future<void> delete(String id) async => DemoModu.yazmaEngeli('alarm');
+}
+
+/// Gösterge ve çizgi alarmı (0170): fiyat alarmıyla aynı — demo hesabı
+/// alarm kurmaz.
+class _DemoGostergeAlarmlari extends GostergeAlarmlariNotifier {
+  @override
+  Future<List<GostergeAlarmi>> build() async => const [];
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<GostergeAlarmi> create(GostergeAlarmi alarm) async =>
+      DemoModu.yazmaEngeli('alarm');
+
+  @override
+  Future<void> delete(String id) async => DemoModu.yazmaEngeli('alarm');
+}
+
+class _DemoCizimAlarmlari extends CizimAlarmlariNotifier {
+  @override
+  Future<List<CizimAlarmi>> build() async => const [];
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<CizimAlarmi> create(CizimAlarmi alarm) async =>
+      DemoModu.yazmaEngeli('alarm');
+
+  @override
+  Future<CizimAlarmi> tasi(String id, CizimAlarmi yeni) async =>
       DemoModu.yazmaEngeli('alarm');
 
   @override

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -812,6 +813,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String tegPaylasimDonem(String aralik, String tarihler) {
+    return '$aralik mumlar, $tarihler';
+  }
+
+  @override
+  String get tegYanCevirIpucu => 'Detaylı grafik için telefonu yan çevir';
+
+  @override
+  String tegOzelPanelDikte(String ad) {
+    return '$ad · ayrı panel dik ekranda';
+  }
+
+  @override
   String get total => 'toplam';
 
   @override
@@ -859,6 +873,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get notesHint => 'Notların...';
+
+  @override
+  String txBalanceChange(String once, String sonra) {
+    return '$once → $sonra';
+  }
+
+  @override
+  String txBalanceSemantics(String once, String sonra) {
+    return 'Bakiye $once iken $sonra oldu';
+  }
 
   @override
   String get txHasNote => 'Not var';
@@ -3436,15 +3460,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID ile koru',
-        'touchId': 'Touch ID ile koru',
-        'biyometrik': 'Biyometrik kilitle koru',
-        'other': 'Ekran kilidiyle koru',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID ile koru',
+      'touchId': 'Touch ID ile koru',
+      'biyometrik': 'Biyometrik kilitle koru',
+      'other': 'Ekran kilidiyle koru',
+    });
     return '$_temp0';
   }
 
@@ -3461,15 +3482,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID\'yi aç',
-        'touchId': 'Touch ID\'yi aç',
-        'biyometrik': 'Biyometrik kilidi aç',
-        'other': 'Uygulama kilidini aç',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID\'yi aç',
+      'touchId': 'Touch ID\'yi aç',
+      'biyometrik': 'Biyometrik kilidi aç',
+      'other': 'Uygulama kilidini aç',
+    });
     return '$_temp0';
   }
 
@@ -3916,7 +3934,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis) {
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  ) {
     return 'A $acilis · Y $yuksek · D $dusuk · K $kapanis';
   }
 
@@ -4299,6 +4321,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get marketBist => 'BIST 100';
+
+  @override
+  String get marketBitcoin => 'Bitcoin';
 
   @override
   String get notifTypeWatchlist => 'TAKİP';
@@ -5339,14 +5364,61 @@ class AppLocalizationsTr extends AppLocalizations {
       locale: localeName,
       other:
           '$count aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
-      one:
-          'BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
+      one: 'BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
     );
     return '$_temp0';
   }
 
   @override
   String get pensionAddExtraContribution => 'Ek katkı ekle';
+
+  @override
+  String pensionFundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fon',
+      one: '1 fon',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pensionFundsNow => 'Bugünkü dağılım';
+
+  @override
+  String get pensionFundsNowHint =>
+      'Paylar fonların bugünkü değerinden; fiyatlar farklı yürüdüğü için katkı talimatından ayrışabilir.';
+
+  @override
+  String pensionContributionPlan(String plan) {
+    return 'Yeni katkılar: $plan';
+  }
+
+  @override
+  String pensionFundRowSemantics(String code, String share, String amount) {
+    return '$code, sözleşmenin $share kadarı, $amount';
+  }
+
+  @override
+  String get pensionPickCompany => 'Emeklilik şirketini seç';
+
+  @override
+  String pensionCompanyUseTyped(String name) {
+    return '\"$name\" olarak kullan';
+  }
+
+  @override
+  String get pensionCompanyListUnavailable =>
+      'Şirket listesi şu an yüklenemedi. Şirketin adını yazıp kullanabilirsin.';
+
+  @override
+  String pensionCompanyFunds(String company) {
+    return '$company fonları';
+  }
+
+  @override
+  String get pensionAllFunds => 'Tüm fonlar';
 
   @override
   String cpiSentenceMonth(String month, String change, String cpi) {
@@ -5365,7 +5437,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi) {
+    String date,
+    String end,
+    String change,
+    String cpi,
+  ) {
     return 'İlk alımından ($date) $end sonuna birikimin $change, enflasyon $cpi oldu.';
   }
 
@@ -6298,7 +6374,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-      String amount, String times, String pct, String share) {
+    String amount,
+    String times,
+    String pct,
+    String share,
+  ) {
     return '$amount · ortalamanın $times katı · fiyat $pct · alıcı payı $share';
   }
 
@@ -8847,8 +8927,7 @@ class AppLocalizationsTr extends AppLocalizations {
       locale: localeName,
       other:
           'Bu varlığın $n hareketi (alış, satış, temettü) silinir, yerine buradaki bilgilerle tek bir kayıt kalır. Adım adım geçmiş artık bu varlıkta görünmez. Varlığı silip yeniden eklemekle aynıdır.',
-      one:
-          'Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.',
+      one: 'Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.',
     );
     return '$_temp0';
   }
@@ -9665,4 +9744,165 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ortakPortfoyKodGir => 'Kod gir';
+
+  @override
+  String get notifOpenAction => 'Aç';
+
+  @override
+  String get notifExpandHint => 'Tamamını göster';
+
+  @override
+  String get notifCollapseHint => 'Daralt';
+
+  @override
+  String alarmTileBody(String price, String target) {
+    return '$price · hedef $target';
+  }
+
+  @override
+  String get alarmTileOneShot =>
+      'Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.';
+
+  @override
+  String get alarmModGosterge => 'Gösterge';
+
+  @override
+  String get alarmPremiumGerekli => 'Premium gerekir';
+
+  @override
+  String get gostergeBbUst => 'Bollinger üst';
+
+  @override
+  String get gostergeBbAlt => 'Bollinger alt';
+
+  @override
+  String get gostergeBaslik => 'Hangi gösterge?';
+
+  @override
+  String get gostergeYonYukari => 'Yukarı keserse';
+
+  @override
+  String get gostergeYonAsagi => 'Aşağı keserse';
+
+  @override
+  String gostergeOzetYukari(String name, String gosterge) {
+    return '$name fiyatı $gosterge çizgisini yukarı keserse haber vereceğiz.';
+  }
+
+  @override
+  String gostergeOzetAsagi(String name, String gosterge) {
+    return '$name fiyatı $gosterge çizgisini aşağı keserse haber vereceğiz.';
+  }
+
+  @override
+  String gostergeOzetIkisi(String name, String gosterge) {
+    return '$name fiyatı $gosterge çizgisini hangi yöne keserse haber vereceğiz.';
+  }
+
+  @override
+  String get gostergeNot =>
+      'Günlük kapanışlarla hesaplanır, bugün için canlı fiyat kullanılır (Bollinger 20 gün, 2σ). Tek seferliktir: çalınca kapanır.';
+
+  @override
+  String gostergeAlarmEtiketYukari(String gosterge) {
+    return '$gosterge · yukarı keserse';
+  }
+
+  @override
+  String gostergeAlarmEtiketAsagi(String gosterge) {
+    return '$gosterge · aşağı keserse';
+  }
+
+  @override
+  String gostergeAlarmEtiketIkisi(String gosterge) {
+    return '$gosterge · keserse';
+  }
+
+  @override
+  String gostergeAlarmKuruldu(String name, String etiket) {
+    return '$name için alarm kuruldu: $etiket';
+  }
+
+  @override
+  String get cizimAlarmEtiketUst => 'Çizgi alarmı · üstüne çıkınca';
+
+  @override
+  String get cizimAlarmEtiketAlt => 'Çizgi alarmı · altına inince';
+
+  @override
+  String get cizimAlarmEtiketIkisi => 'Çizgi alarmı · kesince';
+
+  @override
+  String seviyeAlarmCalisti(String fiyat) {
+    return 'Çalıştı · $fiyat · tek seferlikti';
+  }
+
+  @override
+  String get seviyeAlarmCalistiSade => 'Çalıştı · tek seferlikti';
+
+  @override
+  String get tegAlarmKur => 'Bu çizgiye alarm kur';
+
+  @override
+  String get tegAlarmKurPremium => 'Çizgi alarmı kur (Premium)';
+
+  @override
+  String get tegAlarmKaldir => 'Çizgi alarmını kaldır';
+
+  @override
+  String get tegAlarmKaldirildi => 'Çizgi alarmı kaldırıldı';
+
+  @override
+  String get tegAlarmKurulduUst =>
+      'Alarm kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz';
+
+  @override
+  String get tegAlarmKurulduAlt =>
+      'Alarm kuruldu: fiyat çizginin altına inince haber vereceğiz';
+
+  @override
+  String get tegAlarmKurulduIkisi =>
+      'Alarm kuruldu: fiyat çizgiyi kesince haber vereceğiz';
+
+  @override
+  String get tegAlarmBitti =>
+      'Bu çizgi geçmişte bitiyor. Alarm için bugünü geçen bir çizgi ya da ışın çiz';
+
+  @override
+  String get tegAlarmYonsuz => 'Bu ışın ileriye uzanmıyor; alarm kurulamadı';
+
+  @override
+  String get tegAlarmGecersiz =>
+      'Çizgi sıfırın altına iniyor; alarm kurulamadı';
+
+  @override
+  String get tegAlarmSilindi => 'Çizim silindi, çizgi alarmı da kaldırıldı';
+
+  @override
+  String get tegAlarmGeriGeldi => 'Çizginin alarmı da geri geldi';
+
+  @override
+  String nActiveAlarmsAll(int n) {
+    return '$n aktif alarm';
+  }
+
+  @override
+  String seviyeAlarmOzetCipi(int n) {
+    return '$n gösterge/çizgi alarmı';
+  }
+
+  @override
+  String seviyeAlarmOzetCipiEtiket(int n) {
+    return '$n gösterge ve çizgi alarmı. Alarmlarım\'da gör';
+  }
+
+  @override
+  String cizimAlarmSeviyesi(String fiyat) {
+    return 'Çizgi şu an $fiyat';
+  }
+
+  @override
+  String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
+    return 'Çizgi şu an $fiyat · $tarih tarihine kadar';
+  }
 }

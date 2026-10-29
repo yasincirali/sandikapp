@@ -1686,8 +1686,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     an: startDate.add(Duration(
                                         minutes:
                                             (anchorSpot.x * 1440).round())),
-                                    deger:
-                                        '${fixedFormatter(2).format(normBase)} ₺',
+                                    // Birim fiyat kuralı (`fiyatBicimi`):
+                                    // sabit 2 hane BES fonunu ₺0,03420 →
+                                    // "0,03 ₺" yazıyordu (e2e 2026-10-29).
+                                    deger: fiyatBicimi(normBase,
+                                            azami: _canli
+                                                .asset.type.fiyatHassasiyeti)
+                                        .format(normBase),
                                     gunIci: isIntraday,
                                   );
                             return GrafikStili.donemBasiUstte(
@@ -1697,6 +1702,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // Yan çevirince tam ekran grafik (2026-10-23);
                             // çip değil, dönüş (çip kararı 2026-09-17).
                             etkin: TamEkranGrafikEkrani.sunulur(_canli.asset),
+                            // İpucu sabit yükseklikli kartın İÇİNE sığmaz;
+                            // kartın altında (bkz. `YanCevirIpucu`).
+                            ipucu: false,
                             ac: (ctx) => TamEkranGrafikEkrani.ac(ctx,
                                 varlik: _canli.asset,
                                 ad: _kimlik.kisaEtiket,
@@ -2304,6 +2312,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         ),
                         if (sonGuncelleme != null)
                           SeriSonGuncelleme(zaman: sonGuncelleme),
+                        // Yan çevirme ipucu (2026-10-29): grafik kartının
+                        // altında, bir kez; kural `YanCevirIpucu`'da.
+                        YanCevirIpucu(
+                            etkin:
+                                TamEkranGrafikEkrani.sunulur(_canli.asset)),
                         ..._ozelAltBolum(ozelSonuclar),
                       ],
                     );
