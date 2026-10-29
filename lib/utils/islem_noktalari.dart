@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 
 import '../models/asset.dart';
+import '../services/para_agirlikli_getiri.dart' show getiriAkisi;
 
 /// Bir grafik noktasına düşen alım/satımların özeti.
 ///
@@ -29,10 +30,15 @@ class IslemNoktasi {
 
   int get islemSayisi => alimSayisi + satisSayisi;
 
+  // Tutar [getiriAkisi]'ndan (2026-10-29, E2E): satış eskiden MALİYETLE
+  // (`totalCostTRY`) yazılıyordu — 30 lot 160'tan alınıp 172'den satılınca
+  // crosshair "Satış ₺4.800", YATIRDIĞIN başlığı ve hareket satırı ise
+  // ele geçen ₺5.160 diyordu. Aynı işlem iki yüzeyde iki tutar olamaz
+  // (yasin: "tutarsızlık olmamalı"); başlık zaten bu akışı kullanıyor.
   IslemNoktasi _ekle(Asset a) => IslemNoktasi(
         x: x,
-        alim: alim + (a.isBuy ? a.totalCostTRY : 0),
-        satis: satis + (a.isSell ? a.totalCostTRY : 0),
+        alim: alim + (a.isBuy ? getiriAkisi(a) : 0),
+        satis: satis + (a.isSell ? -getiriAkisi(a) : 0),
         alimSayisi: alimSayisi + (a.isBuy ? 1 : 0),
         satisSayisi: satisSayisi + (a.isSell ? 1 : 0),
       );

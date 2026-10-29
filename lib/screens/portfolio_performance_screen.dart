@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../demo/demo_modu.dart';
 import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
+import '../services/para_agirlikli_getiri.dart' show getiriAkisi;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart'
@@ -266,6 +267,10 @@ class _PortfolioPerformanceScreenState
   /// BOŞ — zoom ve Özet anahtarları bayrak öncesiyle birebir aynı metin
   /// kalır; portföy seçiliyse `|p:<seçim>`. `build` her karede yazar.
   String _portfoyAnahtari = '';
+
+  /// Günlük seriyi yayınladığımız kapsam (`_gunlukSeriyiYayinla`); ekran
+  /// kapanınca ya da kapsam değişince yayın geri çekilir.
+  HareketKapsami? _yayinKapsami;
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
   //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
   //
@@ -502,6 +507,9 @@ class _PortfolioPerformanceScreenState
     _gorunurluk?.removeListener(_gorunurlukDegisti);
     IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     _nabziBirak?.call();
+    if (_yayinKapsami case final k?) {
+      PerformansSeriYayini.instance.yayinla(k, null);
+    }
     _zoomController?.dispose();
     _viewport?.dispose();
     _basaDonBirak?.call();

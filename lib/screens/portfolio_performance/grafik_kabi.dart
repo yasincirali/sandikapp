@@ -706,12 +706,16 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                         .millisecondsSinceEpoch;
                     final onSameDay = aDay == spotDayMs;
                     final onOrBefore = aDay <= spotDayMs;
+                    // Tutar `getiriAkisi` (2026-10-29): satış ele geçen
+                    // tutarla — YATIRDIĞIN başlığı, crosshair ve hareket
+                    // satırıyla aynı; eskiden maliyetle yazılıyordu.
+                    final akis = getiriAkisi(a);
                     if (a.isBuy) {
-                      if (onSameDay) dayBuyTRY += a.totalCostTRY;
-                      if (onOrBefore) cumBuyTRY += a.totalCostTRY;
+                      if (onSameDay) dayBuyTRY += akis;
+                      if (onOrBefore) cumBuyTRY += akis;
                     } else if (a.isSell) {
-                      if (onSameDay) daySellTRY += a.totalCostTRY;
-                      if (onOrBefore) cumSellTRY += a.totalCostTRY;
+                      if (onSameDay) daySellTRY -= akis;
+                      if (onOrBefore) cumSellTRY -= akis;
                     }
                   }
                 }
