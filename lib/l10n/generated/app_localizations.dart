@@ -1514,6 +1514,12 @@ abstract class AppLocalizations {
   /// **'{zaman} itibarıyla'**
   String tegPaylasimZamani(String zaman);
 
+  /// Paylaşılan grafiğin dönemi: mum aralığı (günlük, 1 saatlik…) ve görünen tarih aralığı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{aralik} mumlar, {tarihler}'**
+  String tegPaylasimDonem(String aralik, String tarihler);
+
   /// Dik grafiğin altında tek seferlik ipucu; yatay tam ekran bir kez açılınca kaybolur. Düğme değil.
   ///
   /// In tr, this message translates to:

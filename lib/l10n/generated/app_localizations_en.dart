@@ -824,6 +824,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String tegPaylasimDonem(String aralik, String tarihler) {
+    return '$aralik candles, $tarihler';
+  }
+
+  @override
   String get tegYanCevirIpucu =>
       'Turn your phone sideways for the detailed chart';
 

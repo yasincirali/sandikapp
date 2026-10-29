@@ -68,8 +68,9 @@ void main() {
     });
   });
 
-  Future<void> kur(WidgetTester t, AlarmAdayi aday, {double olcek = 1}) async {
-    t.view.physicalSize = const Size(375 * 3, 900 * 3);
+  Future<void> kur(WidgetTester t, AlarmAdayi aday,
+      {double olcek = 1, Size boyut = const Size(375, 900)}) async {
+    t.view.physicalSize = boyut * 3;
     t.view.devicePixelRatio = 3.0;
     addTearDown(t.view.reset);
     await t.pumpWidget(ProviderScope(
@@ -118,6 +119,32 @@ void main() {
       expect(t.getSize(cip).height, greaterThanOrEqualTo(SandikTouch.min));
     });
   }
+
+  // Uçtan uca test 2026-10-29: yatay grafikten (844×390) açılan sayfada
+  // dört ±% çipi tam genişlik alt alta diziliyor, "Alarm kur" ekranın
+  // altına itiliyordu. Çipler içerik kadar geniş, yan yana; düğmeye
+  // kaydırarak ulaşılır.
+  testWidgets('yatayda ±% çipleri tek satır, Alarm kur erişilir', (t) async {
+    await kur(t, const AlarmAdayi('THYAO.IS', 'THY', 300, maliyet: 200),
+        boyut: const Size(844, 390));
+    expect(t.takeException(), isNull);
+    final cipler = [
+      for (final m in ['−%10', '−%5', '+%5', '+%10'])
+        find.ancestor(of: find.text(m), matching: find.byType(SandikTappable))
+    ];
+    final ilk = t.getRect(cipler.first);
+    for (final c in cipler) {
+      final r = t.getRect(c);
+      expect(r.top, closeTo(ilk.top, 0.5), reason: 'tek satır');
+      expect(r.width, lessThan(200));
+      expect(r.width, greaterThanOrEqualTo(SandikTouch.min));
+      expect(r.height, greaterThanOrEqualTo(SandikTouch.min));
+    }
+    final dugme = find.byType(FilledButton);
+    await t.ensureVisible(dugme);
+    await t.pump();
+    expect(t.getRect(dugme).bottom, lessThanOrEqualTo(390));
+  });
 
   test('varlık detayı ve alarm listesi maliyeti geçirir', () {
     for (final y in [

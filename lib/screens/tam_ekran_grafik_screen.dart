@@ -195,6 +195,10 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   bool _paylasimKipi = false;
   final GlobalKey _paylasimSiniri = GlobalKey();
 
+  /// Sol araç çubuğunun kaydırması (kaydırma çubuğu aynı denetleyiciyi
+  /// okur).
+  final ScrollController _aracKaydirma = ScrollController();
+
   /// Kendi göstergelerin girdisi: bu ekranın mumları, X = mum indeksi
   /// (boyacının ölçeğiyle aynı eksen). Mumlar değişince yeniden kurulur.
   BetikVerisi? _betikVerisi;
@@ -251,6 +255,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   void dispose() {
     _uzunBasma?.cancel();
     _bildirimZamani?.cancel();
+    _aracKaydirma.dispose();
     super.dispose();
   }
 
@@ -337,18 +342,43 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           : betikVerisiMumdan(temiz, ar,
               x: [for (var i = 0; i < temiz.length; i++) i.toDouble()],
               sembol: widget.ad);
-      _gorunum = null;
-      _imlec = null;
+      _gorunumuSifirla();
       _bekleyen = null;
       _ikinciNoktaBekleniyor = false;
     });
   }
 
+  /// Aralık değişince görünüm SON mumlara döner.
+  ///
+  /// Neden (uçtan uca test 2026-10-29): görünüm mum İNDEKSİYLE tutulur;
+  /// 1 dk'dan Gün'e geçince eski pencere (ya da süren bir kaydırma
+  /// jestinin başlangıç görünümü) yeni seride bambaşka tarihlere düşüyordu
+  /// — ekran 22 Ağu–18 Eyl'i gösterirken lejant bugünün mumunu yazıyordu,
+  /// o pencerede çizilen trend çizgisi geçmişte bitiyordu. İki aralığın
+  /// indeksleri ortak değil; taşınacak anlamlı bir pencere yok, bu yüzden
+  /// hem burada (yükleme sürerken) hem yükleme bitince sıfırlanır ve
+  /// yarım jest bırakılır.
   void _aralikSec(MumAraligi ar) {
     if (ar == _aralik) return;
-    _aralik = ar;
-    _secili = -1;
+    setState(() {
+      _aralik = ar;
+      _secili = -1;
+      _gorunumuSifirla();
+    });
     CrashReporter.arkaPlan(_yukle(), reason: 'TamEkranGrafik.mumlar');
+  }
+
+  /// Görünümü varsayılana (en yeni mumlar sağ kenarda) döndürür ve yarım
+  /// kalmış jesti bırakır: jest başlangıç görünümünü kendi içinde taşır,
+  /// sonraki parmak hareketi eski pencereyi geri yazmasın.
+  void _gorunumuSifirla() {
+    _gorunum = null;
+    _imlec = null;
+    _jest = null;
+    _uzunBasma?.cancel();
+    _isaretciler.clear();
+    _dokunusBasi = null;
+    _sonDokunus = null;
   }
 
   // ── Ölçek ─────────────────────────────────────────────────────────────
@@ -813,7 +843,14 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     if (m.length < 2 || g == null) return '';
     final i0 = g.bas.round().clamp(0, m.length - 1);
     final i1 = g.son.round().clamp(0, m.length - 1);
-    return gorunurDonemEtiketi(context.l10n, m[i0].t, m[i1].t);
+    // Mum aralığı + gerçek tarih aralığı; yuvarlanmış "3 ay" günlük
+    // mumlarda yanlış pencereyi anlatıyordu (`grafikPaylasimDonemi`).
+    return grafikPaylasimDonemi(context.l10n,
+        aralikAdi: _aralik.uzunAdi(context),
+        basMs: m[i0].t,
+        sonMs: m[i1].t,
+        dil: Localizations.localeOf(context).toLanguageTag(),
+        gunIci: _aralik.gunIci);
   }
 
   /// Görseli üretir ve paylaşım sayfasını açar. Hata Crashlytics'e ve
@@ -839,6 +876,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           text: metin,
           subject: metin.split('\n').first,
           origin: kaynak,
+          dosyaAdi: grafikPaylasimDosyaAdi(widget.ad),
         );
       }
       OzellikOlcumu.say(Ozellik.grafikPaylas);
@@ -991,6 +1029,15 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
                   ],
                 ),
               ),
+              // Marka şeridinin logosunu ısıtır (uçtan uca test 2026-10-29:
+              // İLK paylaşımın logosu boştu). SvgPicture logoyu ilk
+              // çizildiğinde eşzamansız çözer; şerit yalnız paylaşım
+              // kipinde kurulduğu için görsel, logo gelmeden yakalanıyordu.
+              // Görünmez bir kopya ekran açıkken çözülmüş resmi canlı tutar;
+              // şeridin logosu onu aynı karede, eşzamanlı alır. Boyutsuz,
+              // boyanmaz, dokunulmaz, ekran okuyucuya görünmez.
+              const Offstage(
+                  child: SandikLogo(size: SandikSpace.lg, withBackground: true)),
             ],
           ),
         ),
@@ -1141,49 +1188,78 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
       (CizimTuru.yatayIsin, l.tegAracYatayIsin, _Ikon.yatayIsin),
       (CizimTuru.kutu, l.tegAracKutu, _Ikon.kutu),
     ];
+    final c = context.c;
+    final ayrac = Padding(
+      padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+      child: SizedBox(
+          width: SandikSpace.lg,
+          height: 1,
+          child: ColoredBox(color: c.hairline)),
+    );
+    // Yatay telefonda (390 pt yükseklik) dokuz 44 pt düğme sığmıyor; eski
+    // çubuk bütünüyle kayıyordu ama kaydırılabildiği görünmüyordu, "Geri al"
+    // ve "Tümünü sil" ekranın altında kesik kalıyordu (uçtan uca test
+    // 2026-10-29). Düğmeler küçültülmez (44 pt, HIG); onun yerine:
+    //  · eylemler (geri al, tümünü sil) altta SABİT — her zaman erişilir;
+    //  · araçlar üstte kayar ve sığmadıklarında kaydırma çubuğu görünür;
+    //  · alt güvenli alan (ana ekran çizgisi) kadar boşluk bırakılır —
+    //    `SafeArea(bottom: false)` grafiği kenara kadar uzatır, çubuğu değil.
+    final alt = MediaQuery.paddingOf(context).bottom;
     return SizedBox(
       width: SandikTouch.min + SandikSpace.xs,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
-        child: Column(
-          children: [
-            for (final (tur, ad, ikon) in araclar)
-              _AracDugmesi(
-                etiket: ad,
-                ikon: ikon,
-                secili: _arac == tur,
-                onTap: () => _aracSec(tur),
+      child: Column(
+        children: [
+          Expanded(
+            child: Scrollbar(
+              controller: _aracKaydirma,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _aracKaydirma,
+                padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+                child: Column(
+                  children: [
+                    for (final (tur, ad, ikon) in araclar)
+                      _AracDugmesi(
+                        etiket: ad,
+                        ikon: ikon,
+                        secili: _arac == tur,
+                        onTap: () => _aracSec(tur),
+                      ),
+                    ayrac,
+                    _AracDugmesi(
+                      etiket: l.tegMiknatis,
+                      ikon: _Ikon.miknatis,
+                      secili: _miknatis,
+                      onTap: () {
+                        setState(() => _miknatis = !_miknatis);
+                        _bildir(_miknatis
+                            ? l.tegMiknatisAcik
+                            : l.tegMiknatisKapali);
+                      },
+                    ),
+                  ],
+                ),
               ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
-              child: SizedBox(
-                  width: SandikSpace.lg,
-                  height: 1,
-                  child: ColoredBox(color: context.c.hairline)),
             ),
-            _AracDugmesi(
-              etiket: l.tegMiknatis,
-              ikon: _Ikon.miknatis,
-              secili: _miknatis,
-              onTap: () {
-                setState(() => _miknatis = !_miknatis);
-                _bildir(_miknatis ? l.tegMiknatisAcik : l.tegMiknatisKapali);
-              },
-            ),
-            _AracDugmesi(
-              etiket: l.tegGeriAl,
-              ikon: _Ikon.geri,
-              secili: false,
-              onTap: _geriAl,
-            ),
-            _AracDugmesi(
-              etiket: l.tegHepsiniSil,
-              ikon: _Ikon.cop,
-              secili: false,
-              onTap: _hepsiniSil,
-            ),
-          ],
-        ),
+          ),
+          SizedBox(
+              width: SandikSpace.lg,
+              height: 1,
+              child: ColoredBox(color: c.hairline)),
+          _AracDugmesi(
+            etiket: l.tegGeriAl,
+            ikon: _Ikon.geri,
+            secili: false,
+            onTap: _geriAl,
+          ),
+          _AracDugmesi(
+            etiket: l.tegHepsiniSil,
+            ikon: _Ikon.cop,
+            secili: false,
+            onTap: _hepsiniSil,
+          ),
+          SizedBox(height: alt + SandikSpace.xs),
+        ],
       ),
     );
   }
@@ -1385,7 +1461,8 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
             text: 'A ${_fiyatMetni(b.acilis)}  Y ${_fiyatMetni(b.enYuksek)}  '
                 'D ${_fiyatMetni(b.enDusuk)}  K ${_fiyatMetni(b.kapanis)}  '),
         TextSpan(
-            text: fmtPct(d * 100),
+            // Yönlü biçim: "−%0,29" (fmtPct "%-0,29" yazıyordu).
+            text: fmtPctIsaretli(d * 100),
             style: st.copyWith(color: d >= 0 ? c.gain : c.loss)),
       ])),
       for (final (on, ad, s, r) in [
@@ -1423,35 +1500,48 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           .clamp(SandikSpace.xs, math.max(SandikSpace.xs, alan.width - genislik))
           .toDouble(),
       top: y.clamp(SandikSpace.xs, alan.height - SandikTouch.min).toDouble(),
-      child: Material(
-        color: context.c.surface2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          side: BorderSide(color: context.c.hairline),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (zil)
-              CizimAlarmDugmesi(
-                cizim: s,
-                varlik: widget.varlik,
-                ad: widget.varlik.name.trim().isEmpty
-                    ? widget.ad
-                    : widget.varlik.name,
-                canliBirim: widget.canliBirim,
-                olcek: o,
-                kimlikVer: _seciliKimligi,
-                bildir: _bildir,
+      // Çubuk kendi düğümü; içindeki düğmeler ayrı ayrı okunur.
+      child: Semantics(
+        container: true,
+        explicitChildNodes: true,
+        child: Material(
+          color: context.c.surface2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            side: BorderSide(color: context.c.hairline),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // container: düğmenin anlamı kendi düğümünde kalır. Yoksa
+              // etiketi ekranın geri kalanıyla (üst çubuk, grafik özeti) tek
+              // düğüme karışıyor, ekran okuyucu bütün ekranı "Bu çizgiye
+              // alarm kur THYAO …" diye tek düğme okuyordu (uçtan uca test
+              // 2026-10-29; paylaş düğmesindeki düzeltmenin aynısı).
+              if (zil)
+                Semantics(
+                  container: true,
+                  child: CizimAlarmDugmesi(
+                    cizim: s,
+                    varlik: widget.varlik,
+                    ad: widget.varlik.name.trim().isEmpty
+                        ? widget.ad
+                        : widget.varlik.name,
+                    canliBirim: widget.canliBirim,
+                    olcek: o,
+                    kimlikVer: _seciliKimligi,
+                    bildir: _bildir,
+                  ),
+                ),
+              IconButton(
+                key: const ValueKey('tamEkranCizimiSil'),
+                tooltip: context.l10n.tegCizimiSil,
+                onPressed: _seciliyiSil,
+                icon:
+                    Icon(Icons.delete_outline_rounded, color: context.c.text90),
               ),
-            IconButton(
-              key: const ValueKey('tamEkranCizimiSil'),
-              tooltip: context.l10n.tegCizimiSil,
-              onPressed: _seciliyiSil,
-              icon:
-                  Icon(Icons.delete_outline_rounded, color: context.c.text90),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
