@@ -10007,4 +10007,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String tekDokunusYuzdeKuruldu(String name, String etiket) {
     return '$name: $etiket alarmı kuruldu. Alarmlarım\'dan değiştirebilirsin.';
   }
+
+  @override
+  String get alarmlarGuncellenemedi =>
+      'Güncellenemedi; son bilinen durum gösteriliyor. Yenilemek için aşağı çek.';
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/yuzde_alarmi.dart';
 import '../services/crash_reporter.dart';
 import '../services/yuzde_alarmi_service.dart';
+import 'alarm_disk_ilk.dart';
 import 'auth_provider.dart';
 
 /// Servis kapısı — testte sahte `YuzdeAlarmiStore`'lu servisle değiştirilir.
@@ -23,12 +24,22 @@ class YuzdeAlarmlariNotifier extends AsyncNotifier<List<YuzdeAlarmi>> {
   Future<List<YuzdeAlarmi>> build() async {
     final me = ref.watch(authProvider).valueOrNull;
     if (me == null) return const [];
-    try {
-      return await _svc.fetchAll(me.id);
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'yuzdeAlarmlari.fetch');
-      return const [];
+    Future<List<YuzdeAlarmi>> sunucu() async {
+      try {
+        return await _svc.fetchAll(me.id);
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'yuzdeAlarmlari.fetch');
+        return const [];
+      }
     }
+
+    return diskIlkYukle(
+      ref: ref,
+      disk: () => _svc.onbellektenGetir(me.id),
+      sunucu: sunucu,
+      taze: (l) => state = AsyncData(l),
+      neden: 'yuzdeAlarmlari.arkaPlanOkuma',
+    );
   }
 
   Future<void> refresh() async {

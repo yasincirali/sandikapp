@@ -6436,5 +6436,6 @@
   "@tekDokunusYuzdeOneri": {"placeholders": {"name": {"type": "String"}}},
   "tekDokunusYuzdeKur": "Kur",
   "tekDokunusYuzdeKuruldu": "{name}: {etiket} alarmı kuruldu. Alarmlarım'dan değiştirebilirsin.",
-  "@tekDokunusYuzdeKuruldu": {"placeholders": {"name": {"type": "String"}, "etiket": {"type": "String"}}}
+  "@tekDokunusYuzdeKuruldu": {"placeholders": {"name": {"type": "String"}, "etiket": {"type": "String"}}},
+  "alarmlarGuncellenemedi": "Güncellenemedi; son bilinen durum gösteriliyor. Yenilemek için aşağı çek."
 }

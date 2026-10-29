@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/price_alert.dart';
 import '../services/price_alert_service.dart';
+import '../services/alarm_onbellegi.dart';
+import 'alarm_disk_ilk.dart';
 import 'auth_provider.dart';
 
 /// Servis kapısı — testte sahte `PriceAlertStore`'lu servisle değiştirilir.
@@ -18,11 +20,31 @@ final priceAlertServiceProvider =
 class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
   PriceAlertService get _svc => ref.read(priceAlertServiceProvider);
 
+  /// Liste SUNUCUDAN geldi mi. Cihaz kopyası gösterilirken `false`:
+  /// yatay çizgi eşitlemesi "Alarmlarım'dan silinmiş" sonucunu ancak
+  /// sunucunun listesinden çıkarır (kopyada henüz olmayan alarm bağı
+  /// yanlışlıkla çözülmesin).
+  bool _sunucudan = false;
+
   @override
   Future<List<PriceAlert>> build() async {
+    _sunucudan = false;
     final me = ref.watch(authProvider).valueOrNull;
     if (me == null) return const [];
-    return _svc.fetchAll(me.id);
+    Future<List<PriceAlert>> sunucu() async {
+      final l = await _svc.fetchAll(me.id);
+      // Okuma hata verip kopyaya düştüyse liste yine sunucunun değil.
+      _sunucudan = !AlarmOnbellegi.bayat.value;
+      return l;
+    }
+
+    return diskIlkYukle(
+      ref: ref,
+      disk: () => _svc.onbellektenGetir(me.id),
+      sunucu: sunucu,
+      taze: (l) => state = AsyncData(l),
+      neden: 'priceAlerts.arkaPlanOkuma',
+    );
   }
 
   Future<void> refresh() async {
@@ -49,7 +71,7 @@ class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
   List<PriceAlert> get liste => state.valueOrNull ?? const [];
 
   /// Liste sunucudan geldi mi (gelmeden "alarm yok" sonucu çıkarılmaz).
-  bool get yuklendi => state.hasValue;
+  bool get yuklendi => state.hasValue && _sunucudan;
 
   /// Yatay çizgi taşındı: alarm yeni seviyeye geçer (aynı satır).
   Future<void> hedefiGuncelle(String id, double hedef, String yon) async {

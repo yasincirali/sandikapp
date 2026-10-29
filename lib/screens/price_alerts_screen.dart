@@ -12,6 +12,7 @@ import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
+import '../services/alarm_onbellegi.dart';
 import '../services/analytics_service.dart';
 import '../services/cizim_alarmi.dart'
     show cizgiAlarmEtiketi, cizgiEtiketiniAyir, yatayAlarmCizimi;
@@ -287,6 +288,33 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               children: [
                 BildirimIzniUyarisi(
                   padding: EdgeInsets.fromLTRB(sh, SandikSpace.sm, sh, 0),
+                ),
+                // Okuma hata verdi, liste cihazdaki son kopya (Ar-Ge 29 Eki
+                // 20:45 #3): alarm "kaybolmuş" görünmez ama bayat olduğu da
+                // saklanmaz. İkon + cümle; yalnız renkle değil.
+                ValueListenableBuilder<bool>(
+                  valueListenable: AlarmOnbellegi.bayat,
+                  builder: (context, bayat, _) => !bayat
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          key: const ValueKey('alarmlarBayat'),
+                          padding:
+                              EdgeInsets.fromLTRB(sh, SandikSpace.sm, sh, 0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.cloud_off_rounded,
+                                  size: 16, color: c.text58),
+                              const SizedBox(width: SandikSpace.sm),
+                              Expanded(
+                                child: Text(
+                                  context.l10n.alarmlarGuncellenemedi,
+                                  style: context.t.bodySmall
+                                      ?.copyWith(color: c.text58),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                 ),
                 Expanded(
                   child: RefreshIndicator.adaptive(

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/price_alert.dart';
+import 'alarm_onbellegi.dart';
 
 /// `price_alerts` tablosuna giden ham kapı.
 ///
@@ -61,33 +62,52 @@ class PriceAlertService {
   };
 
   Future<List<PriceAlert>> fetchAll(String userId) async {
-    final rows = await _store.select(userId);
+    final rows = await AlarmOnbellegi.secOnbellekli(
+        'price_alerts', userId, () => _store.select(userId));
     return rows.map(PriceAlert.fromMap).toList();
   }
 
+  /// Cihazdaki son kopya (açılışta önce bu çizilir); yoksa `null`.
+  Future<List<PriceAlert>?> onbellektenGetir(String userId) async =>
+      (await AlarmOnbellegi.oku('price_alerts', userId))
+          ?.map(PriceAlert.fromMap)
+          .toList();
+
   Future<PriceAlert> create(PriceAlert alert) async {
     final row = await _store.insert(alert.toInsertMap());
+    await AlarmOnbellegi.satirYaz(_tablo, row);
     return PriceAlert.fromMap(row);
   }
 
-  Future<void> delete(String id) => _store.delete(id);
+  Future<void> delete(String id) async {
+    await _store.delete(id);
+    await AlarmOnbellegi.satirSil(_tablo, id);
+  }
+
+  static const _tablo = 'price_alerts';
+
+  /// Gövdesiz güncelleme + cihaz kopyasının aynı yaması.
+  Future<void> _guncelle(String id, Map<String, dynamic> yama) async {
+    await _store.update(id, yama);
+    await AlarmOnbellegi.satirYamala(_tablo, id, yama);
+  }
 
   /// Tetiklenmiş bir alarmı yeniden kurar.
   ///
   /// Yeni kayıt açmak yerine damgayı temizler: kullanıcı aynı hedefi yeniden
   /// yazmak zorunda kalmasın.
-  Future<void> rearm(String id) => _store.update(id, rearmPatch);
+  Future<void> rearm(String id) => _guncelle(id, rearmPatch);
 
   /// Hedefi ve yönü değiştirir (yatay grafikte alarmlı yatay çizgi
   /// taşındı, 2026-10-29). Yeni satır açılmaz: alarm aynı alarm, kimliği ve
   /// kuruluş zamanı korunur; tavana ikinci kez sayılmaz. `price_alerts`
   /// şeması değişmez — eski build'ler aynı satırı okumaya devam eder.
   Future<void> hedefiGuncelle(String id, double hedef, String yon) =>
-      _store.update(id, {'target_price': hedef, 'direction': yon});
+      _guncelle(id, {'target_price': hedef, 'direction': yon});
 
   /// Okunan adı değiştirir (çizgi alarmına ad, yasin 2026-10-29). Yalnız
   /// `label`: hedef, yön ve damga aynı kalır. Kolon 0046'dan beri var;
   /// eski build'ler yeni adı olduğu gibi okur.
   Future<void> etiketiGuncelle(String id, String label) =>
-      _store.update(id, {'label': label});
+      _guncelle(id, {'label': label});
 }

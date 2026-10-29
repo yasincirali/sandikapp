@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/yuzde_alarmi.dart';
+import 'alarm_onbellegi.dart';
 
 /// `yuzde_alarmlari` tablosuna (0169) giden ham kapı — [PriceAlertStore]
 /// ile aynı kalıp: servisin satır ↔ model işi Supabase istemcisi olmadan
@@ -45,12 +46,25 @@ class YuzdeAlarmiService {
   final YuzdeAlarmiStore _store;
 
   Future<List<YuzdeAlarmi>> fetchAll(String userId) async {
-    final rows = await _store.select(userId);
+    final rows = await AlarmOnbellegi.secOnbellekli(
+        'yuzde_alarmlari', userId, () => _store.select(userId));
     return rows.map(YuzdeAlarmi.fromMap).toList();
   }
 
-  Future<YuzdeAlarmi> create(YuzdeAlarmi alarm) async =>
-      YuzdeAlarmi.fromMap(await _store.insert(alarm.toInsertMap()));
+  /// Cihazdaki son kopya (açılışta önce bu çizilir); yoksa `null`.
+  Future<List<YuzdeAlarmi>?> onbellektenGetir(String userId) async =>
+      (await AlarmOnbellegi.oku('yuzde_alarmlari', userId))
+          ?.map(YuzdeAlarmi.fromMap)
+          .toList();
 
-  Future<void> delete(String id) => _store.delete(id);
+  Future<YuzdeAlarmi> create(YuzdeAlarmi alarm) async {
+    final row = await _store.insert(alarm.toInsertMap());
+    await AlarmOnbellegi.satirYaz('yuzde_alarmlari', row);
+    return YuzdeAlarmi.fromMap(row);
+  }
+
+  Future<void> delete(String id) async {
+    await _store.delete(id);
+    await AlarmOnbellegi.satirSil('yuzde_alarmlari', id);
+  }
 }

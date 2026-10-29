@@ -16564,6 +16564,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{name}: {etiket} alarmı kuruldu. Alarmlarım\'dan değiştirebilirsin.'**
   String tekDokunusYuzdeKuruldu(String name, String etiket);
+
+  /// No description provided for @alarmlarGuncellenemedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncellenemedi; son bilinen durum gösteriliyor. Yenilemek için aşağı çek.'**
+  String get alarmlarGuncellenemedi;
 }
 
 class _AppLocalizationsDelegate

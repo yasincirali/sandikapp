@@ -10130,4 +10130,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String tekDokunusYuzdeKuruldu(String name, String etiket) {
     return '$name: $etiket alarm set. You can change it in My alarms.';
   }
+
+  @override
+  String get alarmlarGuncellenemedi =>
+      'Couldn\'t refresh; showing the last known state. Pull down to retry.';
 }
