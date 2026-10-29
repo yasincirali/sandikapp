@@ -34,7 +34,7 @@
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { haftaSonuKapaliMi } from '../_shared/piyasa_takvimi.ts';
+import { borsaKapaliGunMu } from '../_shared/piyasa_takvimi.ts';
 import { fonKodlari, trGun } from '../_shared/tefas_nav.ts';
 import {
   AkisIstatistigi,
@@ -201,9 +201,11 @@ Deno.serve(async (request) => {
     // aynı cuma gününü yeniden soruyordu. Kayıp yok: cuma pazartesiye kadar
     // kesinleşmemiş kalır (`KESINLESME_GUN`), pazartesinin ilk turu onu bir
     // kez daha çeker ve geç yayınlanan fonları da alır. Kural tek yerde
-    // (`piyasa_takvimi.ts`, analyze-signals ile aynı).
-    if (!dryRun && haftaSonuKapaliMi('fon', new Date())) {
-      return jsonResponse({ ok: true, atlandi: 'hafta_sonu' });
+    // (`piyasa_takvimi.ts`, analyze-signals ile aynı). Resmî tatilde de
+    // TEFAS fiyat yayınlamaz (Ar-Ge 29 Eki #1); kayıp yine yok, ertesi iş
+    // gününün ilk turu pencereyi tarar.
+    if (!dryRun && borsaKapaliGunMu('fon', new Date())) {
+      return jsonResponse({ ok: true, atlandi: 'kapali_gun' });
     }
 
     const client = createClient(supabaseUrl, serviceRoleKey);

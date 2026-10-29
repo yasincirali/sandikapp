@@ -67,6 +67,7 @@ import { degisimKarti, kartGorseli, KartAyari } from '../_shared/bildirim_karti.
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
 import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
+import { bistTatilMi } from '../_shared/piyasa_takvimi.ts';
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
@@ -528,6 +529,11 @@ Deno.serve(async (request) => {
 
     let sent = 0;
     let skippedQuiet = 0;
+    // Resmî tatilde hisse mesajı gitmez (Ar-Ge 29 Eki #1): "son kapanış"
+    // tatilden önceki günün kapanışıdır, aynı haber bir gün önce zaten
+    // gitti. Ortak hareketi fiyata bağlı değil, o tatilde de gider.
+    const tatil = bistTatilMi(new Date());
+    let skippedTatil = 0;
     let skippedQuietHours = 0;
     const failures: string[] = [];
     // Çan kaydı kullanıcı başına TEK (çok cihaz) — bkz. app_notifications.ts.
@@ -553,6 +559,10 @@ Deno.serve(async (request) => {
       // yaptı" kendi başına bir haber; fiyat hareketine bağlı değil.
       if (!ortak) {
         if (!aday) continue;
+        if (tatil) {
+          skippedTatil += 1;
+          continue;
+        }
         if (Math.abs(aday.en.changePct) < minMovePct) {
           skippedQuiet += 1;
           continue;
@@ -635,6 +645,7 @@ Deno.serve(async (request) => {
       ok: true,
       sent,
       skipped_quiet: skippedQuiet,
+      skipped_tatil: skippedTatil,
       skipped_quiet_hours: skippedQuietHours,
       candidates: kullaniciAdaylari.size,
       partner_variant: partnerSayisi,
