@@ -4330,6 +4330,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketBist => 'BIST 100';
 
   @override
+  String get marketBitcoin => 'Bitcoin';
+
+  @override
   String get notifTypeWatchlist => 'WATCHLIST';
 
   @override

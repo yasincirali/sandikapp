@@ -7203,6 +7203,12 @@ abstract class AppLocalizations {
   /// **'BIST 100'**
   String get marketBist;
 
+  /// No description provided for @marketBitcoin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bitcoin'**
+  String get marketBitcoin;
+
   /// No description provided for @notifTypeWatchlist.
   ///
   /// In tr, this message translates to:

@@ -3143,6 +3143,7 @@
   "marketEuro": "Euro",
   "marketGold": "Gram altın",
   "marketBist": "BIST 100",
+  "marketBitcoin": "Bitcoin",
   "notifTypeWatchlist": "TAKİP",
   "notifTypeInflation": "TÜFE",
   "alarmSuggest": "{name} eklendi. Fiyatı izlemek için alarm kur?",

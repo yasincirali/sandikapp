@@ -94,7 +94,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (kutu is! RenderBox || !kutu.attached || !kutu.hasSize) return;
     final alt = kutu.localToGlobal(Offset(0, kutu.size.height)).dy;
     _seritGorunur.value = alt > 0;
+    // Kaydıran kullanıcı ekranda: boşta durmuş bandı uyandır (2026-10-29).
+    _seritUyandirici.notifyListeners();
   }
+
+  /// Ana sayfa kaydırmasında piyasa bandını uyandırır (bkz.
+  /// `KayanBant.uyandirici`).
+  final _seritUyandirici = _Uyandirici();
 
   /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
   void _aramayiAc() {
@@ -159,6 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _scrollCtrl.removeListener(_seritGorunurlugunuGuncelle);
     _scrollCtrl.dispose();
     _seritGorunur.dispose();
+    _seritUyandirici.dispose();
     super.dispose();
   }
 
@@ -870,6 +877,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // payı 4 = 8pt.
                 padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm2),
                 onAra: _aramayiAc,
+                uyandirici: _seritUyandirici,
               ),
               ),
             ),
@@ -2105,4 +2113,10 @@ class _EmptyPortfolioCta extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Değer taşımayan bildirim kaynağı — "şimdi" demekten ibaret.
+class _Uyandirici extends ChangeNotifier {
+  @override
+  void notifyListeners() => super.notifyListeners();
 }

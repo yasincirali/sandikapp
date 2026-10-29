@@ -63,6 +63,12 @@ class FiyatKaynagi {
   /// ayar demektir. Serisi [altinGramSerisi]'nden ağırlık çarpanıyla türer.
   static const String gramAltin24 = 'ALTIN_GRAM24';
 
+  /// Bitcoin (TL). Piyasa bandının beşinci öğesi (yasin 2026-10-29: "BTC de
+  /// eklenmeli fiyat bandına"). Kripto kuralı geçerli ([kriptoMu]): fiyat ve
+  /// gün içi yüzde sunucunun `kripto_fiyat` tablosundan, portföydeki
+  /// BTC ile aynı sayı.
+  static const String btcTry = 'KRIPTO:BTC';
+
   /// Uygulamanın iç altın sembolleri (`ALTIN_GRAM`, `ALTIN_CEYREK`…)
   /// gerçek bir Yahoo/TEFAS sembolü DEĞİLDİR: hepsi gram22k serisinden
   /// ağırlık çarpanıyla türetilir.

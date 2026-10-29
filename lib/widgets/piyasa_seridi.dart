@@ -1,4 +1,4 @@
-// Ana ekranın üstündeki piyasa bandı — dolar, euro, gram altın, BIST 100.
+// Ana ekranın üstündeki piyasa bandı — dolar, euro, gram altın, BIST 100, Bitcoin.
 //
 // Neden var (2026-09-20, günlük giriş turu): Türkiye'de bir finans
 // uygulamasına her gün girmenin ezici sebebi "dolar/altın ne oldu"; portföyü
@@ -92,15 +92,24 @@ import 'package:flutter/scheduler.dart';
 
 import '../l10n/l10n.dart';
 import '../services/crash_reporter.dart';
+import '../services/fiyat_kaynagi.dart';
 import '../services/price_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'sandik_skeleton.dart';
 
 class PiyasaSeridi extends StatefulWidget {
-  const PiyasaSeridi({super.key, this.padding = EdgeInsets.zero, this.onAra});
+  const PiyasaSeridi({
+    super.key,
+    this.padding = EdgeInsets.zero,
+    this.onAra,
+    this.uyandirici,
+  });
 
   final EdgeInsets padding;
+
+  /// Her bildirimde boşta durmuş bant yeniden akar (bkz. [KayanBant.uyandirici]).
+  final Listenable? uyandirici;
 
   /// Verilirse bandın sağ ucunda arama büyüteci çizilir.
   final VoidCallback? onAra;
@@ -126,6 +135,10 @@ class PiyasaSeridi extends StatefulWidget {
     'EURTRY=X',
     altinSembolu,
     'XU100.IS',
+    // Bitcoin (2026-10-29, yasin): kripto tutan kullanıcı da "BTC ne oldu"ya
+    // bandın ilk bakışında cevap bulsun. En sağda: Türk kullanıcısının ilk
+    // sorusu yine dolar/altın; bant 5 öğeyle ~21 sn'de bir tur atar.
+    FiyatKaynagi.btcTry,
   ];
 
   /// Banttaki "Gram altın" — 24 ayar (bkz. [semboller]).
@@ -222,7 +235,17 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
     try {
       final q = await PriceService.instance.fetchQuotes(PiyasaSeridi.semboller);
       if (!mounted) return;
-      setState(() => _kotasyon = q);
+      // BİRLEŞTİR, değiştirme (2026-10-29, "bant bazen duruyor"):
+      // `fetchQuotes` kaynak hatasını yutup EKSİK harita döner, istisna
+      // atmaz. Eskiden o eksik harita bandı değiştiriyordu: Yahoo bir tur
+      // düşünce BIST bant dışına çıkıyor, hepsi düşünce bant tamamen
+      // kayboluyor ve sonraki başarıda baştan kuruluyordu. Şimdi gelmeyen
+      // sembolün son bilinen değeri kalır; yalnız geçerli fiyat üzerine yazar.
+      setState(() => _kotasyon = {
+            ..._kotasyon,
+            for (final e in q.entries)
+              if ((e.value.regularMarketPrice ?? 0) > 0) e.key: e.value,
+          });
     } catch (e, st) {
       // Bant ikincil: kaynak düşerse son bilinen değer kalır, yoksa hiç
       // çizilmez. Sessiz kalmasın diye non-fatal raporlanır.
@@ -241,11 +264,14 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
               'USDTRY=X' => l10n.marketDollar,
               'EURTRY=X' => l10n.marketEuro,
               PiyasaSeridi.altinSembolu => l10n.marketGold,
+              FiyatKaynagi.btcTry => l10n.marketBitcoin,
               _ => l10n.marketBist,
             },
-            // Endeks puan, diğerleri ₺: endekste kuruş anlamsız.
-            deger:
-                s == 'XU100.IS' ? fmtNum(f, digits: 0) : fmtNum(f, digits: 2),
+            // Endeks puan, diğerleri ₺: endekste kuruş anlamsız. BTC
+            // milyonlarca ₺; kuruş yalnız gürültü.
+            deger: s == 'XU100.IS' || s == FiyatKaynagi.btcTry
+                ? fmtNum(f, digits: 0)
+                : fmtNum(f, digits: 2),
             degisimPct: _kotasyon[s]?.regularMarketChangePercent,
           ),
     ];
@@ -275,7 +301,13 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
         padding: widget.padding,
         child: Row(
           children: [
-            Expanded(child: KayanBant(ogeler: ogeler, sagKose: ara == null)),
+            Expanded(
+              child: KayanBant(
+                ogeler: ogeler,
+                sagKose: ara == null,
+                uyandirici: widget.uyandirici,
+              ),
+            ),
             if (ara != null) PiyasaAramaDugmesi(onTap: ara),
           ],
         ),
@@ -363,9 +395,22 @@ class _AramaCipi extends StatelessWidget {
 /// değeri bir [ValueNotifier]'da yaşar: kare başına `setState` yok, widget
 /// ağacı hiç yeniden kurulmaz.
 class KayanBant extends StatefulWidget {
-  const KayanBant({super.key, required this.ogeler, this.sagKose = true});
+  const KayanBant({
+    super.key,
+    required this.ogeler,
+    this.sagKose = true,
+    this.uyandirici,
+  });
 
   final List<PiyasaOgesi> ogeler;
+
+  /// Dışarıdan uyandırma (2026-10-29, yasin: "ana sayfa fiyat bandı duruyor
+  /// bazen"). Bant 35 sn dokunulmazsa CPU için durur (dosya başı "Boşta
+  /// durma"); ama yalnız BANDIN ÜSTÜNE dokunuş onu uyandırıyordu. Ana
+  /// sayfayı kaydıran kullanıcı ekrandadır, bant ise donmuş görünüyordu.
+  /// Ana sayfa kaydırması bu bildirimi atar: durmuş (ya da durmaya
+  /// giren) bant akmaya döner; akarken hiçbir şey yapmaz, faz bozulmaz.
+  final Listenable? uyandirici;
 
   /// Sağ köşeler de yuvarlak mı. Yanında "Ara" çipi varken `false`: şerit
   /// çipe düz kenarla bitişir, yuvarlağı çip tamamlar.
@@ -440,6 +485,24 @@ class KayanBantState extends State<KayanBant>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.uyandirici?.addListener(_distanUyandir);
+  }
+
+  @override
+  void didUpdateWidget(KayanBant oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.uyandirici != widget.uyandirici) {
+      oldWidget.uyandirici?.removeListener(_distanUyandir);
+      widget.uyandirici?.addListener(_distanUyandir);
+    }
+  }
+
+  /// Yalnız durmuş ya da yavaşlayarak duran bandı uyandırır. Akan bandı
+  /// her kaydırma karesinde yeniden başlatmak fazı titretirdi.
+  void _distanUyandir() {
+    if (_ticker.isActive && _hedefHiz != 0) return;
+    if (!TickerMode.valuesOf(context).enabled) return;
+    _uyandir();
   }
 
   @override
@@ -547,6 +610,18 @@ class KayanBantState extends State<KayanBant>
     _baslat(hiz: v.toDouble());
   }
 
+  /// Tutuş iptal (2026-10-29, "bant bazen duruyor"): parmak basılıyken
+  /// uygulama arka plana gider, bildirim perdesi ya da arama gelirse
+  /// Flutter `onLongPressEnd` yerine `onLongPressCancel` çağırır. Bu yol
+  /// yokken [_tutuluyor] sonsuza dek `true` kalıyor, her uyandırma yolu
+  /// erken dönüyor ve bant yeni bir uzun basışa kadar KALICI duruyordu.
+  void _tutusIptal() {
+    if (!_tutuluyor) return;
+    setState(() => _tutuluyor = false);
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    _baslat(hiz: 0);
+  }
+
   /// Hareketi azalt açıkken bant hiç akmaz; uzun basış beklemeden doğrudan
   /// sürüklenir.
   void _surukle(DragUpdateDetails d) {
@@ -556,6 +631,7 @@ class KayanBantState extends State<KayanBant>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.uyandirici?.removeListener(_distanUyandir);
     _ticker.dispose();
     _kaydirma.dispose();
     super.dispose();
@@ -577,6 +653,7 @@ class KayanBantState extends State<KayanBant>
         onLongPressStart: _tut,
         onLongPressMoveUpdate: _tutarkenKaydir,
         onLongPressEnd: _birak,
+        onLongPressCancel: _tutusIptal,
         onHorizontalDragUpdate: hareketiAzalt ? _surukle : null,
         behavior: HitTestBehavior.opaque,
         // Dokunma alanı 44pt (HIG); görünen şerit 36pt, kutuda ortalı —

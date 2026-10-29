@@ -4301,6 +4301,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get marketBist => 'BIST 100';
 
   @override
+  String get marketBitcoin => 'Bitcoin';
+
+  @override
   String get notifTypeWatchlist => 'TAKİP';
 
   @override

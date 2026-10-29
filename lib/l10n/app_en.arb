@@ -3039,6 +3039,7 @@
   "marketEuro": "EUR",
   "marketGold": "Gold (g)",
   "marketBist": "BIST 100",
+  "marketBitcoin": "Bitcoin",
   "notifTypeWatchlist": "WATCHLIST",
   "notifTypeInflation": "CPI",
   "alarmSuggest": "{name} added. Set a price alert?",
