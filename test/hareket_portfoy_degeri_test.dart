@@ -159,12 +159,15 @@ void main() {
       expect(m['a1']!.sonra, 5000.0);
     });
 
-    // Performans: satır başına sabit iş, tek sıralama. 2000 hareket bir
-    // kare bütçesinin (16 ms) çok altında kurulur.
-    test('2000 hareket bir karenin altında', () {
+    // Performans: satır başına sabit iş, tek sıralama. Duvar saati paralel
+    // test yükünde şişiyor (CI'da 16 ms eşiği 17 ms'yle kırıldı); ölçülen
+    // şey algoritmanın BÜYÜMESİ: 4 kat hareket ~4 kat süre (n log n), n²
+    // olsaydı ~16 kat. Mutlak üst sınır gevşek bir emniyet: hesap kare
+    // içinde değil, ilk kareden sonra ve yalnız defter değişince koşar.
+    int enIyiSure(int n) {
       final lots = [
-        for (var i = 0; i < 2000; i++)
-          _lot('l$i', 1, DateTime(2026, 1, 1).add(Duration(hours: i))),
+        for (var i = 0; i < n; i++)
+          _lot('l$i', 1, DateTime(2026, 1, 1).add(Duration(minutes: i * 30))),
       ];
       final seri = {
         for (var d = 0; d < 90; d++)
@@ -179,18 +182,23 @@ void main() {
             toTRY: _tl,
           );
       kos(); // ısınma (JIT)
-      // En iyi 5 koşu: paralel test yükü tek ölçümü şişirebilir; ölçülen
-      // şey algoritmanın maliyeti, makinenin o anki yükü değil.
       var enIyi = 1 << 30;
-      late Map<String, ({double once, double sonra})> m;
-      for (var i = 0; i < 5; i++) {
+      for (var i = 0; i < 7; i++) {
         final sw = Stopwatch()..start();
-        m = kos();
+        final m = kos();
         sw.stop();
+        expect(m.length, n);
         if (sw.elapsedMicroseconds < enIyi) enIyi = sw.elapsedMicroseconds;
       }
-      expect(m.length, 2000);
-      expect(enIyi, lessThan(16000), reason: '$enIyi µs');
+      return enIyi;
+    }
+
+    test('hareket sayısıyla doğrusala yakın büyür (n² değil)', () {
+      final kucuk = enIyiSure(1000);
+      final buyuk = enIyiSure(4000);
+      expect(buyuk, lessThan(kucuk * 8 + 2000),
+          reason: '1000: $kucuk µs, 4000: $buyuk µs');
+      expect(buyuk, lessThan(250000), reason: '4000 hareket: $buyuk µs');
     });
   });
 
