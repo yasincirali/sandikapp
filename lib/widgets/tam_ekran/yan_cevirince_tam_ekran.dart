@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
+import '../../services/crash_reporter.dart';
 import '../../providers/preferences_provider.dart'
     show yatayGrafikAcildiProvider;
 import '../../theme/sandik.dart';
@@ -87,7 +88,9 @@ class _YanCevirinceTamEkranState extends ConsumerState<YanCevirinceTamEkran> {
       }
       // Açılış = jest öğrenildi; ipucu bir daha çıkmaz. Kare sonrasında:
       // build sırasında sağlayıcı değiştirmek yasak.
-      unawaited(ref.read(yatayGrafikAcildiProvider.notifier).set(true));
+      CrashReporter.arkaPlan(
+          ref.read(yatayGrafikAcildiProvider.notifier).set(true),
+          reason: 'YanCevirinceTamEkran.ipucuGoruldu');
       try {
         await widget.ac(context);
       } finally {
