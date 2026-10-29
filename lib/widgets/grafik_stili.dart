@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../l10n/l10n.dart';
+import '../models/grafik_alarm_cizgisi.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
 import '../utils/seans_sikistirma.dart';
+import '../utils/tr_format.dart';
 
 /// Fiyat ve değer grafiklerinin ORTAK görünümü — "Performans stili".
 ///
@@ -210,9 +212,16 @@ abstract final class GrafikStili {
   /// [SandikSpace.lgs]) dönem başı açıklamasını koyar: kesikli çizgi
   /// işareti + [etiket]. Çizim alanına girmez; grafiğin boyu değişmez.
   /// [etiket] boşsa grafik aynen döner.
+  ///
+  /// [sag]: aynı satırın SAĞ ucuna konan ikinci açıklama — fiyat alarmı
+  /// etiketi ([alarmEtiketi], Ar-Ge 29 Eki 20:45 #2). Kartın üstünde tek
+  /// satırlık boşluk var ([kartDolgusu] üstü); ikinci satır kart boyunu
+  /// değiştirir ve alarm listesi gelince yerleşim zıplardı. Yer darsa iki
+  /// yazı da kısalır (`…`), taşmaz.
   static Widget donemBasiUstte(BuildContext context,
-      {required Widget grafik, String? etiket}) {
-    if (etiket == null || etiket.isEmpty) return grafik;
+      {required Widget grafik, String? etiket, Widget? sag}) {
+    final donemVar = etiket != null && etiket.isNotEmpty;
+    if (!donemVar && sag == null) return grafik;
     final renk = context.c.text58;
     return Stack(
       clipBehavior: Clip.none,
@@ -225,30 +234,117 @@ abstract final class GrafikStili {
           height: SandikSpace.lgs,
           child: IgnorePointer(
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CustomPaint(
-                  size: const Size(14, 1),
-                  painter: _KesikliCizgi(context.c.text36),
-                ),
-                const SizedBox(width: SandikSpace.xs2),
-                Flexible(
-                  child: Text(
-                    etiket,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.labelSmall?.copyWith(
-                      letterSpacing: 0,
-                      fontWeight: FontWeight.w600,
-                      color: renk,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                if (donemVar)
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CustomPaint(
+                          size: const Size(14, 1),
+                          painter: _KesikliCizgi(context.c.text36),
+                        ),
+                        const SizedBox(width: SandikSpace.xs2),
+                        Flexible(
+                          child: Text(
+                            etiket,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _ustYazi(context, renk),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                if (donemVar && sag != null)
+                  const SizedBox(width: SandikSpace.sm),
+                if (sag != null) Flexible(child: sag),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  static TextStyle? _ustYazi(BuildContext context, Color renk) =>
+      context.t.labelSmall?.copyWith(
+        letterSpacing: 0,
+        fontWeight: FontWeight.w600,
+        color: renk,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
+  /// Fiyat alarmı: ince (1 px), dönem başından SIK kesikli yatay çizgi
+  /// (Ar-Ge 29 Eki 20:45 #2, yasin onayı). Renk alarm şeridinin çipiyle
+  /// aynı anlam: üstüne çıkınca gain, altına inince loss — ama anlam yalnız
+  /// renkte değil, kartın üstündeki etiket ▲/▼ ve fiille yazar.
+  /// Etiketi çizim alanına GİRMEZ ("yazı grafiği engellemesin", 2026-10-12);
+  /// açıklama [alarmEtiketi] ile kartın üst boşluğunda.
+  static HorizontalLine alarmCizgisi(BuildContext context, double y,
+          {required bool yukari}) =>
+      HorizontalLine(
+        y: y,
+        color: (yukari ? context.c.gain : context.c.loss)
+            .withValues(alpha: 0.55),
+        strokeWidth: 1,
+        dashArray: const [2, 3],
+      );
+
+  /// Kartın üst boşluğundaki fiyat alarmı açıklaması: zil + güncel fiyata
+  /// en yakın alarm ("₺4.300 ▲ üstüne çıkınca" ya da aralık dışındaysa
+  /// "₺4.300 ▲ grafiğin üstünde") + gösterilmeyenlerin sayısı ("+2").
+  ///
+  /// Neden tek alarm yazılı: satırda dönem başı açıklaması da var; üç
+  /// alarmın tamamı yazılsa ikisi de okunmaz `…` olurdu. Takip çanı da aynı
+  /// kalıpta (en yakın + "+N", 2026-10-26). Ekran okuyucu hepsini tek tek
+  /// okur. [alarmlar] boşsa `null` (satır yalnız dönem başıyla kalır).
+  static Widget? alarmEtiketi(
+      BuildContext context, List<GrafikAlarmCizgisi> alarmlar) {
+    if (alarmlar.isEmpty) return null;
+    final l = context.l10n;
+    String ayrinti(GrafikAlarmCizgisi a) => switch (a.konum) {
+          AlarmCizgiKonumu.icinde =>
+            a.alarm.isAbove ? l.chartAlarmRises : l.chartAlarmFalls,
+          AlarmCizgiKonumu.ustunde => l.chartAlarmAboveChart,
+          AlarmCizgiKonumu.altinda => l.chartAlarmBelowChart,
+        };
+    final ilk = alarmlar.first;
+    final yukari = ilk.alarm.isAbove;
+    final renk = context.c.text58;
+    final stil = _ustYazi(context, renk);
+    // ▲/▼ alarm şeridinin çipiyle aynı işaret (yön), metin koşulu ya da
+    // konumu söyler: renk körlüğünde de okunur.
+    final metin = l.chartAlarmLabel(
+        fmtTRYFiyat(ilk.alarm.targetPrice), yukari ? '▲' : '▼', ayrinti(ilk));
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: [
+        for (final a in alarmlar)
+          l.chartAlarmA11y(fmtTRYFiyat(a.alarm.targetPrice), ayrinti(a)),
+      ].join('. '),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.notifications_none_rounded,
+              size: 14, color: renk),
+          const SizedBox(width: SandikSpace.xs2),
+          Flexible(
+            child: Text(
+              metin,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: stil,
+            ),
+          ),
+          if (alarmlar.length > 1) ...[
+            const SizedBox(width: SandikSpace.xs2),
+            Text(l.chartAlarmMore(alarmlar.length - 1), style: stil),
+          ],
+        ],
+      ),
     );
   }
 
