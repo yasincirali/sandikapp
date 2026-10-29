@@ -33,7 +33,11 @@ import 'helpers/kaynak.dart';
 ///    sayfasından önce kapanır.
 ///  · Kişisel katman yok: ekran maliyet, lot, alarm, tutar verisine hiç
 ///    erişmez — eklenirse bu test kırılır ve paylaşım kipinde gizlenmesi
-///    istenir.
+///    istenir. Tek bilinçli istisna (0170, 2026-10-29): seçili çizimin
+///    "Alarm kur" düğmesi ([CizimAlarmDugmesi]) ve çizim değişince alarmı
+///    eşitleyen çağrı. Düğme yalnız seçim çubuğunda yaşar, seçim çubuğu
+///    paylaşım kipinde çizilmez; grafiğe alarm çizgisi/sayısı çizilmez.
+///    Bu adlar taramadan önce çıkarılır, kapı ayrıca kilitlenir.
 ///  · Hata dost metinle gösterilir, ölçüm yalnız başarıda.
 const _gun = 86400000;
 
@@ -122,7 +126,12 @@ void main() {
           ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart')
               .split('\n')
               .where((s) => !s.trimLeft().startsWith('//'))
-              .join('\n');
+              .join('\n')
+              // İzinli (0170): seçim çubuğundaki zil ve eşitleme çağrısı;
+              // ikisi de alarm VERİSİNİ grafiğe çizmez (aşağıdaki kapı testi).
+              .replaceAll('CizimAlarmDugmesi', '')
+              .replaceAll('cizimAlarmlariniEsitle', '')
+              .replaceAll('cizim_alarm_dugmesi', '');
       for (final yasak in [
         'purchasePrice',
         '.quantity',
@@ -149,6 +158,15 @@ void main() {
       expect(k, contains('final im = paylasim ? null : imlec;'));
       expect(k, contains('final b = paylasim ? null : bekleyen;'));
       expect(k, contains('!paylasim && k == secili'));
+    });
+
+    test('alarm düğmesi yalnız seçim çubuğunda, o da paylaşımda yok (0170)',
+        () {
+      final k = ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart');
+      expect(k, contains('if (secili != null && !_paylasimKipi) _seciliCubugu('));
+      expect('CizimAlarmDugmesi('.allMatches(k).length, 1);
+      final cubuk = k.substring(k.indexOf('Widget _seciliCubugu('));
+      expect(cubuk, contains('CizimAlarmDugmesi('));
     });
   });
 

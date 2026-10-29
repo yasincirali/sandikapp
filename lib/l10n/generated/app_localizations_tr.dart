@@ -9757,4 +9757,119 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get alarmTileOneShot =>
       'Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.';
+
+  @override
+  String get alarmModGosterge => 'Gösterge';
+
+  @override
+  String get alarmPremiumGerekli => 'Premium gerekir';
+
+  @override
+  String get gostergeBbUst => 'Bollinger üst';
+
+  @override
+  String get gostergeBbAlt => 'Bollinger alt';
+
+  @override
+  String get gostergeBaslik => 'Hangi gösterge?';
+
+  @override
+  String get gostergeYonYukari => 'Yukarı keserse';
+
+  @override
+  String get gostergeYonAsagi => 'Aşağı keserse';
+
+  @override
+  String gostergeOzetYukari(String name, String gosterge) {
+    return '$name fiyatı $gosterge çizgisini yukarı keserse haber vereceğiz.';
+  }
+
+  @override
+  String gostergeOzetAsagi(String name, String gosterge) {
+    return '$name fiyatı $gosterge çizgisini aşağı keserse haber vereceğiz.';
+  }
+
+  @override
+  String gostergeOzetIkisi(String name, String gosterge) {
+    return '$name fiyatı $gosterge çizgisini hangi yöne keserse haber vereceğiz.';
+  }
+
+  @override
+  String get gostergeNot =>
+      'Günlük kapanışlarla hesaplanır, bugün için canlı fiyat kullanılır (Bollinger 20 gün, 2σ). Tek seferliktir: çalınca kapanır.';
+
+  @override
+  String gostergeAlarmEtiketYukari(String gosterge) {
+    return '$gosterge · yukarı keserse';
+  }
+
+  @override
+  String gostergeAlarmEtiketAsagi(String gosterge) {
+    return '$gosterge · aşağı keserse';
+  }
+
+  @override
+  String gostergeAlarmEtiketIkisi(String gosterge) {
+    return '$gosterge · keserse';
+  }
+
+  @override
+  String gostergeAlarmKuruldu(String name, String etiket) {
+    return '$name için alarm kuruldu: $etiket';
+  }
+
+  @override
+  String get cizimAlarmEtiketUst => 'Çizgi alarmı · üstüne çıkınca';
+
+  @override
+  String get cizimAlarmEtiketAlt => 'Çizgi alarmı · altına inince';
+
+  @override
+  String get cizimAlarmEtiketIkisi => 'Çizgi alarmı · kesince';
+
+  @override
+  String seviyeAlarmCalisti(String fiyat) {
+    return 'Çalıştı · $fiyat · tek seferlikti';
+  }
+
+  @override
+  String get seviyeAlarmCalistiSade => 'Çalıştı · tek seferlikti';
+
+  @override
+  String get tegAlarmKur => 'Bu çizgiye alarm kur';
+
+  @override
+  String get tegAlarmKurPremium => 'Çizgi alarmı kur (Premium)';
+
+  @override
+  String get tegAlarmKaldir => 'Çizgi alarmını kaldır';
+
+  @override
+  String get tegAlarmKaldirildi => 'Çizgi alarmı kaldırıldı';
+
+  @override
+  String get tegAlarmKurulduUst =>
+      'Alarm kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz';
+
+  @override
+  String get tegAlarmKurulduAlt =>
+      'Alarm kuruldu: fiyat çizginin altına inince haber vereceğiz';
+
+  @override
+  String get tegAlarmKurulduIkisi =>
+      'Alarm kuruldu: fiyat çizgiyi kesince haber vereceğiz';
+
+  @override
+  String get tegAlarmBitti =>
+      'Bu çizgi geçmişte bitiyor. Alarm için bugünü geçen bir çizgi ya da ışın çiz';
+
+  @override
+  String get tegAlarmYonsuz => 'Bu ışın ileriye uzanmıyor; alarm kurulamadı';
+
+  @override
+  String get tegAlarmGecersiz =>
+      'Çizgi sıfırın altına iniyor; alarm kurulamadı';
+
+  @override
+  String get tegAlarmSilindi => 'Çizim silindi, çizgi alarmı da kaldırıldı';
 }

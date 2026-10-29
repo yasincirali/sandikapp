@@ -25,6 +25,9 @@ void main() {
         'son_bakilan',
         'takip_alarm_cani',
         'yuzde_alarm',
+        'gosterge_alarm',
+        'cizim_alarm',
+        'yatay_cizgi_alarm',
       ]);
     });
 

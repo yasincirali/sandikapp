@@ -56,7 +56,18 @@ enum Ozellik {
   /// Günlük yüzde alarmı KURULMASI (0169, Ar-Ge 27 Eki §1). Soru: altın,
   /// döviz ve kripto tutan kişi "bugün sert oynarsa" alarmını kuruyor mu,
   /// yoksa sabit hedef fiyat mı yetiyor.
-  yuzdeAlarm('yuzde_alarm');
+  yuzdeAlarm('yuzde_alarm'),
+
+  /// Gösterge alarmı KURULMASI (0170, yasin 2026-10-29). Soru: Premium
+  /// kullanıcı "EMA50'yi keserse" alarmını kuruyor mu.
+  gostergeAlarm('gosterge_alarm'),
+
+  /// Yatay grafikte trend çizgisi / ışından çizgi alarmı kurulması (0170).
+  cizimAlarm('cizim_alarm'),
+
+  /// Yatay grafikte yatay çizgiden fiyat alarmı kurulması (0170). Soru:
+  /// çizimden alarm kısayolu, zilden kurmaya göre kullanılıyor mu.
+  yatayCizgiAlarm('yatay_cizgi_alarm');
 
   const Ozellik(this.kod);
   final String kod;

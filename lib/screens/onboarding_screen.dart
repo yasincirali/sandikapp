@@ -561,12 +561,17 @@ List<_Adim> _adimlariKur() {
       baslik: 'Bildirim merkezi',
       // 2026-10-27 (0169): alarm sayfasına "Günlük yüzde" kipi geldi
       // (altın, döviz, kripto); tur metni arayüzle birlikte değişir.
+      // 2026-10-29 (0170): yatay grafikte seçili çizimin zili (yatay çizgi
+      // → fiyat alarmı; trend/ışın → çizgi alarmı) ve alarm sayfasının
+      // Premium "Gösterge" kipi; ikisi de bu adımın anlattığı alarm akışı.
       govde: '$_zilBasi'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
           'uygulama kapalıyken de çalışır. Altın, döviz ve kriptoda '
           '"Günlük yüzde" ile "bugün %2 düşerse" gibi bir alarm da '
-          'kurabilirsin.',
+          'kurabilirsin. Yan çevrilmiş grafikte çizdiğin çizgiyi seçip '
+          'zile dokunursan fiyat o çizgiye gelince haber verir; Premium\'da '
+          '"Gösterge" ile "EMA50\'yi keserse" alarmı da var.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       // Koşul yok: zil 2026-10-04'ten beri her seviyede görünür (bayrak

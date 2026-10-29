@@ -16186,6 +16186,192 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.'**
   String get alarmTileOneShot;
+
+  /// No description provided for @alarmModGosterge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gösterge'**
+  String get alarmModGosterge;
+
+  /// No description provided for @alarmPremiumGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium gerekir'**
+  String get alarmPremiumGerekli;
+
+  /// No description provided for @gostergeBbUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bollinger üst'**
+  String get gostergeBbUst;
+
+  /// No description provided for @gostergeBbAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bollinger alt'**
+  String get gostergeBbAlt;
+
+  /// No description provided for @gostergeBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi gösterge?'**
+  String get gostergeBaslik;
+
+  /// No description provided for @gostergeYonYukari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yukarı keserse'**
+  String get gostergeYonYukari;
+
+  /// No description provided for @gostergeYonAsagi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aşağı keserse'**
+  String get gostergeYonAsagi;
+
+  /// No description provided for @gostergeOzetYukari.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyatı {gosterge} çizgisini yukarı keserse haber vereceğiz.'**
+  String gostergeOzetYukari(String name, String gosterge);
+
+  /// No description provided for @gostergeOzetAsagi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyatı {gosterge} çizgisini aşağı keserse haber vereceğiz.'**
+  String gostergeOzetAsagi(String name, String gosterge);
+
+  /// No description provided for @gostergeOzetIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyatı {gosterge} çizgisini hangi yöne keserse haber vereceğiz.'**
+  String gostergeOzetIkisi(String name, String gosterge);
+
+  /// No description provided for @gostergeNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük kapanışlarla hesaplanır, bugün için canlı fiyat kullanılır (Bollinger 20 gün, 2σ). Tek seferliktir: çalınca kapanır.'**
+  String get gostergeNot;
+
+  /// No description provided for @gostergeAlarmEtiketYukari.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} · yukarı keserse'**
+  String gostergeAlarmEtiketYukari(String gosterge);
+
+  /// No description provided for @gostergeAlarmEtiketAsagi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} · aşağı keserse'**
+  String gostergeAlarmEtiketAsagi(String gosterge);
+
+  /// No description provided for @gostergeAlarmEtiketIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} · keserse'**
+  String gostergeAlarmEtiketIkisi(String gosterge);
+
+  /// No description provided for @gostergeAlarmKuruldu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} için alarm kuruldu: {etiket}'**
+  String gostergeAlarmKuruldu(String name, String etiket);
+
+  /// No description provided for @cizimAlarmEtiketUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı · üstüne çıkınca'**
+  String get cizimAlarmEtiketUst;
+
+  /// No description provided for @cizimAlarmEtiketAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı · altına inince'**
+  String get cizimAlarmEtiketAlt;
+
+  /// No description provided for @cizimAlarmEtiketIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı · kesince'**
+  String get cizimAlarmEtiketIkisi;
+
+  /// No description provided for @seviyeAlarmCalisti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalıştı · {fiyat} · tek seferlikti'**
+  String seviyeAlarmCalisti(String fiyat);
+
+  /// No description provided for @seviyeAlarmCalistiSade.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalıştı · tek seferlikti'**
+  String get seviyeAlarmCalistiSade;
+
+  /// No description provided for @tegAlarmKur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu çizgiye alarm kur'**
+  String get tegAlarmKur;
+
+  /// No description provided for @tegAlarmKurPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı kur (Premium)'**
+  String get tegAlarmKurPremium;
+
+  /// No description provided for @tegAlarmKaldir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmını kaldır'**
+  String get tegAlarmKaldir;
+
+  /// No description provided for @tegAlarmKaldirildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı kaldırıldı'**
+  String get tegAlarmKaldirildi;
+
+  /// No description provided for @tegAlarmKurulduUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz'**
+  String get tegAlarmKurulduUst;
+
+  /// No description provided for @tegAlarmKurulduAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kuruldu: fiyat çizginin altına inince haber vereceğiz'**
+  String get tegAlarmKurulduAlt;
+
+  /// No description provided for @tegAlarmKurulduIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kuruldu: fiyat çizgiyi kesince haber vereceğiz'**
+  String get tegAlarmKurulduIkisi;
+
+  /// No description provided for @tegAlarmBitti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu çizgi geçmişte bitiyor. Alarm için bugünü geçen bir çizgi ya da ışın çiz'**
+  String get tegAlarmBitti;
+
+  /// No description provided for @tegAlarmYonsuz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ışın ileriye uzanmıyor; alarm kurulamadı'**
+  String get tegAlarmYonsuz;
+
+  /// No description provided for @tegAlarmGecersiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi sıfırın altına iniyor; alarm kurulamadı'**
+  String get tegAlarmGecersiz;
+
+  /// No description provided for @tegAlarmSilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizim silindi, çizgi alarmı da kaldırıldı'**
+  String get tegAlarmSilindi;
 }
 
 class _AppLocalizationsDelegate
