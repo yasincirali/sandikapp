@@ -78,19 +78,7 @@ class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
     await _svc.hedefiGuncelle(id, hedef, yon);
     state = AsyncData([
       for (final a in state.valueOrNull ?? const <PriceAlert>[])
-        a.id == id
-            ? PriceAlert(
-                id: a.id,
-                userId: a.userId,
-                symbol: a.symbol,
-                label: a.label,
-                targetPrice: hedef,
-                direction: yon,
-                enabled: a.enabled,
-                triggeredAt: a.triggeredAt,
-                createdAt: a.createdAt,
-              )
-            : a,
+        a.id == id ? a.copyWith(targetPrice: hedef, direction: yon) : a,
     ]);
   }
 
@@ -99,39 +87,17 @@ class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
     await _svc.etiketiGuncelle(id, label);
     state = AsyncData([
       for (final a in state.valueOrNull ?? const <PriceAlert>[])
-        a.id == id
-            ? PriceAlert(
-                id: a.id,
-                userId: a.userId,
-                symbol: a.symbol,
-                label: label,
-                targetPrice: a.targetPrice,
-                direction: a.direction,
-                enabled: a.enabled,
-                triggeredAt: a.triggeredAt,
-                createdAt: a.createdAt,
-              )
-            : a,
+        a.id == id ? a.copyWith(label: label) : a,
     ]);
   }
 
   Future<void> rearm(String id) async {
     await _svc.rearm(id);
     // Sunucu satırı döndürmez; yerel kopya yamayla aynı şekle getirilir.
+    // `copyWith`: elle kurulan kopya 0171'in `tekrar`ını düşürüyordu.
     state = AsyncData([
       for (final a in state.valueOrNull ?? const <PriceAlert>[])
-        a.id == id
-            ? PriceAlert(
-                id: a.id,
-                userId: a.userId,
-                symbol: a.symbol,
-                label: a.label,
-                targetPrice: a.targetPrice,
-                direction: a.direction,
-                enabled: true,
-                createdAt: a.createdAt,
-              )
-            : a,
+        a.id == id ? a.copyWith(enabled: true, damgasiz: true) : a,
     ]);
   }
 }

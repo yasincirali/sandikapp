@@ -10161,4 +10161,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get alarmlarGuncellenemedi =>
       'Couldn\'t refresh; showing the last known state. Pull down to retry.';
+
+  @override
+  String get alarmHerGeciste => 'on every cross';
+
+  @override
+  String get alarmTekrarAnahtar => 'Notify on every cross';
+
+  @override
+  String get alarmTekrarAciklama =>
+      'If the price comes back and crosses again, we\'ll notify you again. At most 3 times a day.';
+
+  @override
+  String alarmSonCaldi(String zaman) {
+    return 'Last fired: $zaman';
+  }
+
+  @override
+  String get alarmTileTekrar =>
+      'Every-cross alert: it stays on and notifies you again if the price comes back and crosses again.';
 }

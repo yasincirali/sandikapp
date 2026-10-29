@@ -86,8 +86,10 @@ class AlarmSeridi extends ConsumerWidget {
                   // Tetiklenmiş alarm dokununca yeniden kurulur; aktif alarm
                   // dokununca silme sorulur. İki durumun tek dokunuşu vardır,
                   // ikinci bir ikon şeridi sıkıştırırdı.
+                  // Tekrarlı alarm (0171) hiç "sönmüş" olmaz: çalmış olsa da
+                  // kendiliğinden nöbete döner, dokunuş silme sorar.
                   onTap: () async {
-                    if (a.triggeredAt != null) {
+                    if (a.sondu) {
                       // Fiyat eşiğin ötesindeyse eşik ön dolu sayfa;
                       // değilse yeniden kur + onay (`alarmiYenidenKur`).
                       await alarmiYenidenKur(context, ref, a,
@@ -196,18 +198,22 @@ class _AlarmCipi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final tetiklendi = alarm.triggeredAt != null;
+    final tetiklendi = alarm.sondu;
     final renk = tetiklendi ? c.text58 : (alarm.isAbove ? c.gain : c.loss);
     final fiyat = fmtTRYFiyat(alarm.targetPrice);
+    final etiket = tetiklendi
+        ? context.l10n.triggeredAlertSemantics(fiyat)
+        : (alarm.isAbove
+            ? context.l10n.alertAboveSemantics(fiyat)
+            : context.l10n.alertBelowSemantics(fiyat));
     return _Cip(
       onTap: onTap,
       renk: renk,
       zemin: renk.withValues(alpha: tetiklendi ? 0.06 : 0.12),
-      semanticLabel: tetiklendi
-          ? context.l10n.triggeredAlertSemantics(fiyat)
-          : (alarm.isAbove
-              ? context.l10n.alertAboveSemantics(fiyat)
-              : context.l10n.alertBelowSemantics(fiyat)),
+      // Tekrarlı alarm (0171): döngü ikonu + etikette "her geçişte".
+      semanticLabel: alarm.tekrar
+          ? '$etiket, ${context.l10n.alarmHerGeciste}'
+          : etiket,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -226,6 +232,10 @@ class _AlarmCipi extends StatelessWidget {
           if (tetiklendi) ...[
             const SizedBox(width: SandikSpace.xs),
             Icon(Icons.refresh_rounded, size: 14, color: c.text58),
+          ],
+          if (alarm.tekrar) ...[
+            const SizedBox(width: SandikSpace.xs),
+            Icon(Icons.repeat_rounded, size: 14, color: c.text58),
           ],
         ],
       ),

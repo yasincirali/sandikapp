@@ -6456,5 +6456,11 @@
   "tekDokunusYuzdeKur": "Kur",
   "tekDokunusYuzdeKuruldu": "{name}: {etiket} alarmı kuruldu. Alarmlarım'dan değiştirebilirsin.",
   "@tekDokunusYuzdeKuruldu": {"placeholders": {"name": {"type": "String"}, "etiket": {"type": "String"}}},
-  "alarmlarGuncellenemedi": "Güncellenemedi; son bilinen durum gösteriliyor. Yenilemek için aşağı çek."
+  "alarmlarGuncellenemedi": "Güncellenemedi; son bilinen durum gösteriliyor. Yenilemek için aşağı çek.",
+  "alarmHerGeciste": "her geçişte",
+  "alarmTekrarAnahtar": "Her geçişte haber ver",
+  "alarmTekrarAciklama": "Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.",
+  "alarmSonCaldi": "Son çaldı: {zaman}",
+  "@alarmSonCaldi": {"placeholders": {"zaman": {"type": "String"}}},
+  "alarmTileTekrar": "Her geçişte alarmı: açık kalır, fiyat geri dönüp yeniden geçerse yine haber verir."
 }

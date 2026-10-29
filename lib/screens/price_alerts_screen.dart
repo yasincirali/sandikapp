@@ -338,8 +338,15 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   }
 
   /// Çalmış alarmın çalma anı; bekleyen (ve her zaman yüzde) alarmda null.
-  static DateTime? _calmaAni(_Satir r) =>
-      r.f?.triggeredAt ?? r.g?.triggeredAt ?? r.c?.triggeredAt;
+  ///
+  /// Tekrarlı fiyat alarmı (0171) "çalmış" sayılmaz: çalmış olsa da fiyat
+  /// geri dönünce kendiliğinden nöbete girer, yüzde alarmı gibi
+  /// Bekleyenler'de kalır. Grup kararı [PriceAlert.sondu]'dan.
+  static DateTime? _calmaAni(_Satir r) {
+    final f = r.f;
+    if (f != null) return f.sondu ? f.triggeredAt : null;
+    return r.g?.triggeredAt ?? r.c?.triggeredAt;
+  }
 
   /// Çalmış alarmları toplu siler (kişinin kendi verisi, onayla). Yalnız
   /// [calan] grubundakiler gider; bekleyen alarmlara dokunulmaz. Biri
@@ -791,7 +798,15 @@ class _AlarmSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final tetiklendi = alarm.triggeredAt != null;
+    final l10n = context.l10n;
+    // Tekrarlı alarm (0171) hiç "sönmüş" olmaz: ok renkli kalır, "yeniden
+    // kur" yok; satır "her geçişte" yazar, çaldıysa son çalışı alt satırda
+    // (yüzde alarmı satırının kalıbı).
+    final tetiklendi = alarm.sondu;
+    final sonCalis = alarm.tekrar ? alarm.sonCalis : null;
+    final kosul =
+        '${alarm.isAbove ? "Üstüne çıkınca" : "Altına inince"}'
+        ' · ${fmtTRYFiyat(alarm.targetPrice)}';
     // Düz kart: kenar `text20 %22` idi, kartlar arası tek kenar dili
     // saç teli olsun diye `SandikCard`'a geçti (SandikCard 2. tur, 2026-10-08).
     return _CizgiSatirKabugu(
@@ -821,10 +836,17 @@ class _AlarmSatiri extends StatelessWidget {
                 Text(
                   tetiklendi
                       ? 'Çalıştı · ${fmtTRYFiyat(alarm.targetPrice)}'
-                      : '${alarm.isAbove ? "Üstüne çıkınca" : "Altına inince"}'
-                          ' · ${fmtTRYFiyat(alarm.targetPrice)}',
+                      : alarm.tekrar
+                          ? '$kosul · ${l10n.alarmHerGeciste}'
+                          : kosul,
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
+                if (sonCalis != null)
+                  Text(
+                    l10n.alarmSonCaldi(fmtTarihSaat(sonCalis)),
+                    key: const ValueKey('alarmSonCaldi'),
+                    style: context.t.bodySmall?.copyWith(color: c.text58),
+                  ),
                 if (onAc != null) const _GrafikteAcSatiri(),
               ],
             ),
