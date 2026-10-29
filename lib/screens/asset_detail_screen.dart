@@ -44,7 +44,7 @@ import '../providers/signal_provider.dart';
 import '../services/tefas_service.dart';
 import '../services/tazelik_ritmi.dart';
 import '../widgets/custom_loading_indicator.dart';
-import '../providers/price_alert_provider.dart';
+import '../providers/sembol_alarmlari_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 import '../models/varlik_kimligi.dart';
@@ -849,13 +849,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           // Tek giriş noktası burası (2026-09-18): sinyal kartının altındaki
           // "Alarm kur" butonu kaldırıldı, aynı eylem iki yerde duruyordu.
           // Zil DURUM taşır: aktif alarm varsa dolu ikon + amber — kullanıcı
-          // ekrana girer girmez "bu varlıkta alarmım var" der.
+          // ekrana girer girmez "bu varlıkta alarmım var" der. Dört alarm
+          // türüne bakar (`sembolAlarmlariProvider`, Ar-Ge 29 Eki 20:45 #0):
+          // yalnız yüzde alarmı kuranın şeridi çipi gösterirken zil boştu.
           if (_alarmSembolu != null)
             IconButton(
               tooltip: context.l10n.setPriceAlert,
-              icon: ref
-                      .watch(symbolAlertsProvider(_alarmSembolu!))
-                      .any((a) => a.isActive)
+              icon: ref.watch(sembolAlarmlariProvider(_alarmSembolu!)).aktif >
+                      0
                   ? Icon(Icons.notifications_active_rounded,
                       color: context.c.amberText)
                   : Icon(Icons.add_alert_outlined, color: context.c.text90),

@@ -13,6 +13,8 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/alarm_seridi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/kaynak.dart';
+
 /// Dört alarm türü tek yerden (Ar-Ge 29 Eki 16:45 #1): yüzde alarmı varlık
 /// şeridinde ve Portföy rozetinde de görünür; sayım dört türü toplar.
 List<PriceAlert> _fiyat = const [];
@@ -167,5 +169,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Her gün yeniden kurulmayı bırakır'),
         findsOneWidget);
+  });
+
+  test('ekranlar alarm durumunu yalnız ortak özetten okur', () {
+    // Varlık sayfası zili yalnız fiyat alarmına bakıyordu (20:45 #0):
+    // yüzde alarmı kuranın şeridi dolu, zili boştu. Ekran ya da widget
+    // tek türün listesinden "alarm var mı" çıkarmaz.
+    for (final yol in [
+      'lib/screens/asset_detail_screen.dart',
+      'lib/screens/portfolio_screen.dart',
+      'lib/screens/watchlist_screen.dart',
+      'lib/widgets/alarm_seridi.dart',
+    ]) {
+      final k = ekranKaynagiSync(yol);
+      expect(k, isNot(contains('symbolAlertsProvider(')), reason: yol);
+      expect(k, contains('sembolAlarmlariProvider('), reason: yol);
+    }
   });
 }
