@@ -65,4 +65,45 @@ class CizimDeposu {
     }
     await sp.setString(PrefKeys.grafikCizimleri, jsonEncode(hepsi));
   }
+
+  /// Yatay çizgi → fiyat alarmı bağları ([PrefKeys.grafikCizimAlarmBaglari]).
+  ///
+  /// Çizim kimliği cihazda benzersizdir ([GrafikCizimi.yeniKimlik]); sembol
+  /// tutulmaz, alarmın kendi satırı sembolü taşır. Bozuk kayıt düşer.
+  Future<Map<String, YatayAlarmBagi>> alarmBaglari() async {
+    final sp = await SharedPreferences.getInstance();
+    final ham = sp.getString(PrefKeys.grafikCizimAlarmBaglari);
+    if (ham == null || ham.isEmpty) return {};
+    try {
+      final j = jsonDecode(ham);
+      if (j is! Map) return {};
+      return {
+        for (final e in j.entries)
+          if (e.key is String &&
+              e.value is Map &&
+              (e.value as Map)['a'] is String &&
+              (e.value as Map)['p'] is num)
+            e.key as String: (
+              alarmId: (e.value as Map)['a'] as String,
+              fiyat: ((e.value as Map)['p'] as num).toDouble(),
+            ),
+      };
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'CizimDeposu.alarmBagiOku');
+      return {};
+    }
+  }
+
+  Future<void> alarmBaglariniYaz(Map<String, YatayAlarmBagi> baglar) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString(PrefKeys.grafikCizimAlarmBaglari, jsonEncode({
+      for (final e in baglar.entries)
+        e.key: {'a': e.value.alarmId, 'p': e.value.fiyat},
+    }));
+  }
 }
+
+/// Bir yatay çizginin bağlı olduğu fiyat alarmı ve bağlandığı andaki çizgi
+/// fiyatı (çizgi taşındı mı sorusu bununla cevaplanır; kullanıcı sayfada
+/// hedefi elle değiştirdiyse taşınmadıkça hedefine dokunulmaz).
+typedef YatayAlarmBagi = ({String alarmId, double fiyat});

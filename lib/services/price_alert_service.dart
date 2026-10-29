@@ -77,4 +77,11 @@ class PriceAlertService {
   /// Yeni kayıt açmak yerine damgayı temizler: kullanıcı aynı hedefi yeniden
   /// yazmak zorunda kalmasın.
   Future<void> rearm(String id) => _store.update(id, rearmPatch);
+
+  /// Hedefi ve yönü değiştirir (yatay grafikte alarmlı yatay çizgi
+  /// taşındı, 2026-10-29). Yeni satır açılmaz: alarm aynı alarm, kimliği ve
+  /// kuruluş zamanı korunur; tavana ikinci kez sayılmaz. `price_alerts`
+  /// şeması değişmez — eski build'ler aynı satırı okumaya devam eder.
+  Future<void> hedefiGuncelle(String id, double hedef, String yon) =>
+      _store.update(id, {'target_price': hedef, 'direction': yon});
 }

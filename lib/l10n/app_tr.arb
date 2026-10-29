@@ -6365,5 +6365,16 @@
   "tegAlarmBitti": "Bu çizgi geçmişte bitiyor. Alarm için bugünü geçen bir çizgi ya da ışın çiz",
   "tegAlarmYonsuz": "Bu ışın ileriye uzanmıyor; alarm kurulamadı",
   "tegAlarmGecersiz": "Çizgi sıfırın altına iniyor; alarm kurulamadı",
-  "tegAlarmSilindi": "Çizim silindi, çizgi alarmı da kaldırıldı"
+  "tegAlarmSilindi": "Çizim silindi, çizgi alarmı da kaldırıldı",
+  "tegAlarmGeriGeldi": "Çizginin alarmı da geri geldi",
+  "nActiveAlarmsAll": "{n} aktif alarm",
+  "@nActiveAlarmsAll": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipi": "{n} gösterge/çizgi alarmı",
+  "@seviyeAlarmOzetCipi": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipiEtiket": "{n} gösterge ve çizgi alarmı. Alarmlarım'da gör",
+  "@seviyeAlarmOzetCipiEtiket": {"placeholders": {"n": {"type": "int"}}},
+  "cizimAlarmSeviyesi": "Çizgi şu an {fiyat}",
+  "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
+  "cizimAlarmSeviyesiBitisli": "Çizgi şu an {fiyat} · {tarih} tarihine kadar",
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
 }

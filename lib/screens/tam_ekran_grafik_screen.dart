@@ -262,6 +262,10 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     setState(() => _cizimler = c);
   }
 
+  /// Çizimle silinen alarmlar; geri al çizimi getirince alarm da gelir
+  /// (`CizimAlarmCopu`, uçtan uca test 2026-10-29).
+  final _alarmCopu = CizimAlarmCopu();
+
   void _kaydet() {
     CrashReporter.arkaPlan(
         CizimDeposu.instance.yaz(widget.varlik.ticker, _cizimler),
@@ -277,7 +281,8 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
             bildir: (m) {
               if (mounted) _bildir(m);
             },
-            l10n: context.l10n),
+            l10n: context.l10n,
+            cop: _alarmCopu),
         reason: 'TamEkranGrafik.zilEsitle');
   }
 

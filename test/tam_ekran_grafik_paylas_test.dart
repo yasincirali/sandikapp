@@ -131,7 +131,11 @@ void main() {
               // ikisi de alarm VERİSİNİ grafiğe çizmez (aşağıdaki kapı testi).
               .replaceAll('CizimAlarmDugmesi', '')
               .replaceAll('cizimAlarmlariniEsitle', '')
-              .replaceAll('cizim_alarm_dugmesi', '');
+              .replaceAll('cizim_alarm_dugmesi', '')
+              // Geri al için silinen alarmların çöpü (2026-10-29): yalnız
+              // eşitlemeye geçer, grafiğe hiçbir şey çizmez.
+              .replaceAll('CizimAlarmCopu', '')
+              .replaceAll('_alarmCopu', '');
       for (final yasak in [
         'purchasePrice',
         '.quantity',

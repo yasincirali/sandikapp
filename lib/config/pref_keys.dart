@@ -52,6 +52,12 @@ class PrefKeys {
   /// sembol başına JSON (2026-10-23). Cihazda kalır, hesaba yazılmaz:
   /// cihazlar arası eşitleme ayrı (Premium) adım.
   static const grafikCizimleri = 'pref_grafik_cizimleri_v1';
+
+  /// Yatay çizgi → fiyat alarmı bağı (2026-10-29): `{çizimId: {a: alarmId,
+  /// p: bağlandığı fiyat}}`. `price_alerts`'e çizim kolonu eklemek eski
+  /// build'lerin okuduğu tabloyu değiştirmek olurdu; çizim zaten cihazda
+  /// yaşadığı için bağ da cihazda (`CizimDeposu.alarmBaglari`).
+  static const grafikCizimAlarmBaglari = 'pref_grafik_cizim_alarm_baglari_v1';
   // `pref_chart_mum_araligi` (mum aralığı, PR #161) 2026-10-10 gece
   // okunmuyor: aralık artık dönemin TradingView varsayılanıyla açılır,
   // seçim oturumluk (`mumAraligiSecimiProvider`). Anahtar başka iş için

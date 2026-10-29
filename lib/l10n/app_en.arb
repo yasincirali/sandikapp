@@ -5691,5 +5691,16 @@
   "tegAlarmBitti": "This line ends in the past. Draw a line or ray that reaches past today",
   "tegAlarmYonsuz": "This ray doesn't extend forward; no alert set",
   "tegAlarmGecersiz": "The line goes below zero; no alert set",
-  "tegAlarmSilindi": "Drawing deleted; its line alert was removed too"
+  "tegAlarmSilindi": "Drawing deleted; its line alert was removed too",
+  "tegAlarmGeriGeldi": "The line's alert is back too",
+  "nActiveAlarmsAll": "{n, plural, =1{1 active alert} other{{n} active alerts}}",
+  "@nActiveAlarmsAll": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipi": "{n, plural, =1{1 indicator/line alert} other{{n} indicator/line alerts}}",
+  "@seviyeAlarmOzetCipi": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipiEtiket": "{n, plural, =1{1 indicator or line alert} other{{n} indicator and line alerts}}. View in My alerts",
+  "@seviyeAlarmOzetCipiEtiket": {"placeholders": {"n": {"type": "int"}}},
+  "cizimAlarmSeviyesi": "Line now at {fiyat}",
+  "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
+  "cizimAlarmSeviyesiBitisli": "Line now at {fiyat} · until {tarih}",
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
 }
