@@ -27,8 +27,10 @@ import 'helpers/kaynak.dart';
 ///  · Üst çubukta "Grafiği paylaş" düğmesi, ≥44 pt, etiketli.
 ///  · Paylaşılan metin: "THYAO · (dönem) · sandık ile çizildi" + mağaza
 ///    bağlantısı; tavsiye dili (sinyal/hedef/al/sat) yok.
-///  · Görsel paylaşım kipinde üretilir: imleç/seçim/sil düğmesi yok, başlık
-///    ve "sandık" imzası var; kip paylaşım sayfasından önce kapanır.
+///  · Görsel paylaşım kipinde üretilir: imleç/seçim/sil düğmesi yok; altta
+///    marka şeridi (logo + "sandık" + sembol · dönem · zaman + okunur kısa
+///    bağlantı, yasin 2026-10-29) grafiğin DIŞINDA; kip paylaşım
+///    sayfasından önce kapanır.
 ///  · Kişisel katman yok: ekran maliyet, lot, alarm, tutar verisine hiç
 ///    erişmez — eklenirse bu test kırılır ve paylaşım kipinde gizlenmesi
 ///    istenir.
@@ -92,6 +94,14 @@ void main() {
       expect(AppLocalizationsTr().tegPaylasimMetni('THYAO', '6A'),
           'THYAO · 6A · sandık ile çizildi');
       expect(AppLocalizationsTr().tegPaylas, 'Grafiği paylaş');
+    });
+
+    test('görseldeki kısa bağlantı: indirme kapısı, şemasız, UTM yok', () {
+      final k = grafikPaylasimKisaBaglanti();
+      expect(k, 'yasincirali.github.io/sandikapp/indir');
+      expect(Magaza.indirKapisi, contains(k));
+      expect(k, isNot(contains('utm_')));
+      expect(k, isNot(startsWith('http')));
     });
 
     test('dönem: görünen pencerenin en yakın uygulama dönemi', () {
@@ -232,6 +242,29 @@ void main() {
             findsOneWidget);
         expect(find.textContaining('itibarıyla'), findsOneWidget);
         expect(find.byKey(const ValueKey('tamEkranCizimiSil')), findsNothing);
+        // Marka şeridi: logo, "sandık" ve görselde okunan bağlantı.
+        final serit = find.byKey(const ValueKey('tamEkranImza'));
+        expect(find.descendant(of: serit, matching: find.byType(SandikLogo)),
+            findsOneWidget);
+        expect(find.descendant(of: serit, matching: find.text('sandık')),
+            findsOneWidget);
+        final baglanti = find.descendant(
+            of: find.byKey(sinir),
+            matching: find.byKey(const ValueKey('tamEkranBaglanti')));
+        expect(baglanti, findsOneWidget);
+        expect(tester.widget<Text>(baglanti).data,
+            grafikPaylasimKisaBaglanti());
+        // Şerit çizim alanının ALTINDA: eksen ve mumların üstüne binmez.
+        final alan = tester.getRect(find.byWidgetPredicate((w) =>
+            w is Listener &&
+            w.onPointerSignal != null &&
+            w.onPointerDown != null));
+        final seritKutusu = tester.getRect(serit);
+        expect(seritKutusu.top, greaterThanOrEqualTo(alan.bottom - 0.5));
+        expect(seritKutusu.height, greaterThanOrEqualTo(36));
+        expect(
+            tester.getRect(find.byKey(sinir)).contains(seritKutusu.center),
+            isTrue);
       };
 
       await tester.tap(find.byTooltip('Grafiği paylaş'));

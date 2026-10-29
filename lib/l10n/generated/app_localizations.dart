@@ -1514,6 +1514,18 @@ abstract class AppLocalizations {
   /// **'{zaman} itibarıyla'**
   String tegPaylasimZamani(String zaman);
 
+  /// Dik grafiğin altında tek seferlik ipucu; yatay tam ekran bir kez açılınca kaybolur. Düğme değil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Detaylı grafik için telefonu yan çevir'**
+  String get tegYanCevirIpucu;
+
+  /// Yatay grafikte ayrı panelli (RSI gibi) kendi göstergesi çizilmez; lejant bunu söyler.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} · ayrı panel dik ekranda'**
+  String tegOzelPanelDikte(String ad);
+
   /// No description provided for @total.
   ///
   /// In tr, this message translates to:

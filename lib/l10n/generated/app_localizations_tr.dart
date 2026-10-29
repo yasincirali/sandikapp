@@ -813,6 +813,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get tegYanCevirIpucu => 'Detaylı grafik için telefonu yan çevir';
+
+  @override
+  String tegOzelPanelDikte(String ad) {
+    return '$ad · ayrı panel dik ekranda';
+  }
+
+  @override
   String get total => 'toplam';
 
   @override

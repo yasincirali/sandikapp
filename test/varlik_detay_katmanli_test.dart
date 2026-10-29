@@ -9,6 +9,7 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/models/yatirimci_seviyesi.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/config/pref_keys.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
@@ -87,7 +88,10 @@ double _y(WidgetTester tester, Finder f) => tester.getTopLeft(f.first).dy;
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
-    SharedPreferences.setMockInitialValues({});
+    // Yan çevirme ipucu (2026-10-29) bu testin konusu değil: görülmüş
+    // sayılır ki katmanlı düzenin satırları eski konumunda ölçülsün
+    // (ipucu `tam_ekran_grafik_test`'te kilitli).
+    SharedPreferences.setMockInitialValues({PrefKeys.yatayGrafikIpucu: true});
     await initPreferencesCache();
   });
 

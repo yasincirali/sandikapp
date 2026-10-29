@@ -824,6 +824,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tegYanCevirIpucu =>
+      'Turn your phone sideways for the detailed chart';
+
+  @override
+  String tegOzelPanelDikte(String ad) {
+    return '$ad · separate pane in portrait';
+  }
+
+  @override
   String get total => 'total';
 
   @override
