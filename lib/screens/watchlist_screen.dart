@@ -25,8 +25,7 @@ import '../providers/auth_provider.dart'
 import '../providers/preferences_provider.dart'
     show takipSiralamaProvider, watchlistLimitProvider;
 import '../models/yuzde_alarmi.dart';
-import '../providers/price_alert_provider.dart' show symbolAlertsProvider;
-import '../providers/yuzde_alarmi_provider.dart' show yuzdeAlarmlariProvider;
+import '../providers/sembol_alarmlari_provider.dart';
 import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
@@ -638,12 +637,14 @@ class _Row extends ConsumerWidget {
     final alarmKodu = alarmSembolu(item.ticker, item.subCategory);
     final alarm = alarmKodu == null
         ? null
-        : takipCaniOzeti(
-            ref.watch(symbolAlertsProvider(alarmKodu)),
-            ref.watch(yuzdeAlarmlariProvider).valueOrNull ??
-                const <YuzdeAlarmi>[],
-            sembol: alarmKodu,
-            guncelFiyat: item.currentPrice);
+        : () {
+            final hepsi = ref.watch(sembolAlarmlariProvider(alarmKodu));
+            return takipCaniOzeti(hepsi.fiyat, hepsi.yuzde,
+                sembol: alarmKodu,
+                guncelFiyat: item.currentPrice,
+                ekSayi: hepsi.gosterge.where((a) => a.isActive).length +
+                    hepsi.cizim.where((a) => a.isActive).length);
+          }();
     final yuzdeAlarm = alarm?.yuzde;
     final yuzdeCaldi = yuzdeAlarm?.bugunCaldi(DateTime.now()) ?? false;
     final hedefMetni = alarm == null

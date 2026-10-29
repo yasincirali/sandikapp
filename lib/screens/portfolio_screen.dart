@@ -15,7 +15,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
-import '../providers/price_alert_provider.dart';
+import '../providers/sembol_alarmlari_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
@@ -2943,8 +2943,9 @@ class _AlarmRozeti extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = sembol;
     if (s == null) return const SizedBox.shrink();
-    final aktif =
-        ref.watch(symbolAlertsProvider(s)).where((a) => a.isActive).length;
+    // Dört alarm türü birlikte (Ar-Ge 29 Eki 16:45 #1): rozet yalnız fiyat
+    // alarmını sayıyordu; yüzde ya da gösterge alarmı olan kartta zil yoktu.
+    final aktif = ref.watch(sembolAlarmlariProvider(s)).aktif;
     if (aktif == 0) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(left: SandikSpace.xs),

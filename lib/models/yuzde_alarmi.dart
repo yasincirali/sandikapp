@@ -159,7 +159,8 @@ String yuzdeKisaMetni(YuzdeAlarmi a) {
 ///
 /// Fiyat alarmı varsa o önde kalır (somut hedef, bugünkü davranış birebir);
 /// yüzde alarmları "+N" sayısına girer. Yalnız yüzde alarmı varsa en dar
-/// eşikli olan gösterilir (ilk çalacak olan).
+/// eşikli olan gösterilir (ilk çalacak olan). [ekSayi]: gösterge ve çizgi
+/// alarmları (0170) yalnız "+N" sayısına girer.
 class TakipCaniOzeti {
   /// Öndeki fiyat alarmı; yoksa `null` ve [yuzde] doludur.
   final PriceAlert? fiyat;
@@ -176,6 +177,7 @@ TakipCaniOzeti? takipCaniOzeti(
   Iterable<YuzdeAlarmi> yuzdeAlarmlari, {
   required String sembol,
   double? guncelFiyat,
+  int ekSayi = 0,
 }) {
   final yuzdeler = [
     for (final a in yuzdeAlarmlari)
@@ -184,12 +186,14 @@ TakipCaniOzeti? takipCaniOzeti(
   final fiyat = etkinAlarmOzeti(fiyatAlarmlari, guncelFiyat: guncelFiyat);
   if (fiyat != null) {
     return TakipCaniOzeti._(
-        fiyat.enYakin, null, fiyat.digerSayisi + yuzdeler.length);
+        fiyat.enYakin, null, fiyat.digerSayisi + yuzdeler.length + ekSayi);
   }
+  // Yalnız gösterge/çizgi alarmı varsa çan yok: onların kısa bir "hedefi"
+  // yok, satırda anlatılamaz (şerit onları tek özet çipiyle gösterir).
   if (yuzdeler.isEmpty) return null;
   var en = yuzdeler.first;
   for (final a in yuzdeler.skip(1)) {
     if (a.esikPct < en.esikPct) en = a;
   }
-  return TakipCaniOzeti._(null, en, yuzdeler.length - 1);
+  return TakipCaniOzeti._(null, en, yuzdeler.length - 1 + ekSayi);
 }

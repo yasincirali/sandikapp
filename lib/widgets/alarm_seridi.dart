@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/price_alert.dart';
-import '../models/seviye_alarmi.dart';
+import '../models/yuzde_alarmi.dart';
 import '../providers/price_alert_provider.dart';
-import '../providers/seviye_alarmi_provider.dart';
+import '../providers/sembol_alarmlari_provider.dart';
+import '../providers/yuzde_alarmi_provider.dart';
 import '../screens/price_alerts_screen.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -55,24 +56,15 @@ class AlarmSeridi extends ConsumerWidget {
 
   Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     final c = context.c;
-    final alarmlar = ref.watch(symbolAlertsProvider(sembol));
+    // Dört tür tek yerden (`sembolAlarmlariProvider`, Ar-Ge 29 Eki 16:45
+    // #1): yüzde alarmı şeritte görünmüyordu, takip çanında görünüyordu.
+    final hepsi = ref.watch(sembolAlarmlariProvider(sembol));
+    final alarmlar = hepsi.fiyat;
+    final yuzdeler = hepsi.yuzde;
     final n = ref.read(priceAlertsProvider.notifier);
-    final gosterge = [
-      for (final a in ref.watch(gostergeAlarmlariProvider).valueOrNull ??
-          const <GostergeAlarmi>[])
-        if (a.symbol == sembol) a,
-    ];
-    final cizgi = [
-      for (final a
-          in ref.watch(cizimAlarmlariProvider).valueOrNull ??
-              const <CizimAlarmi>[])
-        if (a.symbol == sembol) a,
-    ];
-    final seviyeSayisi = gosterge.length + cizgi.length;
-    if (alarmlar.isEmpty && seviyeSayisi == 0) return const SizedBox.shrink();
-    final aktif = alarmlar.where((a) => a.isActive).length +
-        gosterge.where((a) => a.isActive).length +
-        cizgi.where((a) => a.isActive).length;
+    final seviyeSayisi = hepsi.gosterge.length + hepsi.cizim.length;
+    if (hepsi.bos) return const SizedBox.shrink();
+    final aktif = hepsi.aktif;
 
     // Alt boşluk şeridin KENDİ sorumluluğu: üst ekran "şerit + SizedBox"
     // dizerse boş durumda boşluk tek başına kalır ve sinyal kartıyla periyot
@@ -117,8 +109,36 @@ class AlarmSeridi extends ConsumerWidget {
                   },
                 ),
               ],
+              // Yüzde alarmı: her biri bir çip. Dokununca silme sorulur;
+              // "yeniden kur" dalı yok, ertesi gün kendiliğinden nöbette.
+              for (final y in yuzdeler) ...[
+                if (alarmlar.isNotEmpty || y != yuzdeler.first)
+                  const SizedBox(width: SandikSpace.xs2),
+                _YuzdeCipi(
+                  alarm: y,
+                  onTap: () async {
+                    final etiket =
+                        yuzdeAlarmEtiketi(context.l10n, y.esikPct, y.yon);
+                    final ok = await showSandikConfirm(
+                      context: context,
+                      title: context.l10n.deleteAlertTitle,
+                      message: context.l10n.yuzdeAlarmSilSoru(etiket),
+                      confirmLabel: 'Sil',
+                      destructive: true,
+                    );
+                    if (!ok) return;
+                    try {
+                      await ref
+                          .read(yuzdeAlarmlariProvider.notifier)
+                          .delete(y.id);
+                    } catch (e) {
+                      if (context.mounted) showAppError(context, e);
+                    }
+                  },
+                ),
+              ],
               if (seviyeSayisi > 0) ...[
-                if (alarmlar.isNotEmpty)
+                if (alarmlar.isNotEmpty || yuzdeler.isNotEmpty)
                   const SizedBox(width: SandikSpace.xs2),
                 _Cip(
                   key: const ValueKey('alarmSeridiSeviyeOzeti'),
@@ -207,6 +227,46 @@ class _AlarmCipi extends StatelessWidget {
             const SizedBox(width: SandikSpace.xs),
             Icon(Icons.refresh_rounded, size: 14, color: c.text58),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Yüzde alarmı çipi: "Günlük %2 hareket". Bugün çaldıysa sönük ve
+/// "bugün çaldı" ekli; anlam renkte değil, metinde ve ikonda (onay işareti).
+class _YuzdeCipi extends StatelessWidget {
+  final YuzdeAlarmi alarm;
+  final VoidCallback onTap;
+  const _YuzdeCipi({required this.alarm, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final l10n = context.l10n;
+    final caldi = alarm.bugunCaldi(DateTime.now());
+    final etiket = yuzdeAlarmEtiketi(l10n, alarm.esikPct, alarm.yon);
+    final renk = caldi ? c.text58 : c.amberText;
+    return _Cip(
+      onTap: onTap,
+      renk: renk,
+      zemin: renk.withValues(alpha: caldi ? 0.06 : 0.12),
+      semanticLabel: [
+        l10n.watchlistYuzdeAlarmSet(etiket),
+        if (caldi) l10n.watchlistYuzdeAlarmCaldi,
+      ].join(', '),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(caldi ? Icons.check_rounded : Icons.percent_rounded,
+              size: 16, color: renk),
+          const SizedBox(width: SandikSpace.xs),
+          Text(
+            caldi ? l10n.yuzdeCipBugunCaldi(etiket) : etiket,
+            style: context.t.labelLarge?.copyWith(
+                color: caldi ? c.text58 : c.text90,
+                fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
