@@ -45,6 +45,8 @@ import '../services/tefas_service.dart';
 import '../services/tazelik_ritmi.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../providers/sembol_alarmlari_provider.dart';
+import '../models/price_alert.dart';
+import '../models/grafik_alarm_cizgisi.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 import '../models/varlik_kimligi.dart';
@@ -124,6 +126,7 @@ part 'asset_detail/ozet.dart';
 part 'asset_detail/katmanlar.dart';
 part 'asset_detail/grafik_katmanlari.dart';
 part 'asset_detail/ozel_gostergeler.dart';
+part 'asset_detail/alarm_cizgileri.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -1310,6 +1313,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         ? const <_OzelSonuc>[]
                         : _ozelGostergeleriCalistir(ozelAcik, ozelVeri);
                     final anchorY = anchorSpot?.y ?? 0.0;
+                    // Kurulu fiyat alarmları — `asset_detail/alarm_cizgileri.dart`
+                    // (LOG/Karşılaştır'da boş).
+                    final alarmAdaylari = _grafikAlarmAdaylari(
+                        compareOn: compareOn, logOn: logOn);
 
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
                     // ÜZERİNDE; gerçek işlem fiyatı crosshair'da yazılır
@@ -1680,6 +1687,38 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // Değer HAM fiyattır (`normBase`): LOG ve
                             // karşılaştırmada çizginin Y'si dönüştürülmüş
                             // olsa da açıklama fiyatı yazar.
+                            // Görünen pencerenin Y bandı. Ek noktalar
+                            // pencereye bağlı değil: bir kez kurulur (eskiden
+                            // her pinch/pan karesinde listeler baştan
+                            // yazılıyordu). Ana grafik ve alarm etiketi AYNI
+                            // bandı okur (`_alarmUstEtiketi`).
+                            // İşaretler de Y aralığına girer. Artık
+                            // çizginin üstündeler (2026-09-24), yani
+                            // aralığı genişletmezler; güvence olarak
+                            // kalır.
+                            // Ortalamalar ve kendi göstergen bandı
+                            // yalnız DIŞINA taşarlarsa genişletir
+                            // (yasin 2026-10-11); bant fiyattan — çizgi
+                            // ya da mum fitilleri.
+                            // Fiyat alarmı bandı GENİŞLETMEZ (Ar-Ge 29 Eki
+                            // 20:45 #2): Y ekseni fiyata göre.
+                            final bantEkNoktalari = [
+                              ...?compareBar?.spots,
+                              ...islemSpots,
+                              ..._ohlcUclari(ohlcMumlar, toY),
+                            ];
+                            final bantGostergeNoktalari = [
+                              ...?ma20Spots,
+                              for (final e in emaCizgileri) ...e.spots,
+                              ..._ozelBantNoktalari(ozelSonuclar, toY),
+                            ];
+                            ({double minY, double maxY, double interval})
+                                gorunurBant(double a, double b) => computeY(
+                                      a,
+                                      b,
+                                      extraSpots: bantEkNoktalari,
+                                      gostergeSpots: bantGostergeNoktalari,
+                                    );
                             final donemBasiYazisi = anchorSpot == null
                                 ? null
                                 : GrafikStili.donemBasiEtiketi(
@@ -1699,6 +1738,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             return GrafikStili.donemBasiUstte(
                             context,
                             etiket: donemBasiYazisi,
+                            sag: _alarmUstEtiketi(
+                              adaylar: alarmAdaylari,
+                              tamPencere: (min: geri(tamMin), max: geri(tamMax)),
+                              bant: gorunurBant,
+                              guncelFiyat: currentUnitTRY,
+                            ),
                             grafik: YanCevirinceTamEkran(
                             // Yan çevirince tam ekran grafik (2026-10-23);
                             // çip değil, dönüş (çip kararı 2026-09-17).
@@ -1737,31 +1782,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       60 -
                                       40)
                                   .clamp(120.0, 2000.0);
-                              final yBounds = computeY(
-                                viewMinX,
-                                viewMaxX,
-                                // İşaretler de Y aralığına girer. Artık
-                                // çizginin üstündeler (2026-09-24), yani
-                                // aralığı genişletmezler; güvence olarak
-                                // kalır.
-                                // Ortalamalar ve kendi göstergen bandı
-                                // yalnız DIŞINA taşarlarsa genişletir
-                                // (yasin 2026-10-11); bant fiyattan — çizgi
-                                // ya da mum fitilleri.
-                                extraSpots: [
-                                  ...?compareBar?.spots,
-                                  ...islemSpots,
-                                  ..._ohlcUclari(ohlcMumlar, toY),
-                                ],
-                                gostergeSpots: [
-                                  ...?ma20Spots,
-                                  for (final e in emaCizgileri) ...e.spots,
-                                  ..._ozelBantNoktalari(ozelSonuclar, toY),
-                                ],
-                              );
+                              final yBounds =
+                                  gorunurBant(viewMinX, viewMaxX);
                               final viewMinY = yBounds.minY;
                               final viewMaxY = yBounds.maxY;
                               final yInterval = yBounds.interval;
+                              // Kurulu fiyat alarmları: yalnız görünen
+                              // Y aralığındakilerin çizgisi (bant
+                              // genişletilmez; `grafikAlarmCizgileri`).
+                              final alarmCizgileri = grafikAlarmCizgileri(
+                                  alarmAdaylari,
+                                  minY: viewMinY,
+                                  maxY: viewMaxY,
+                                  guncelFiyat: currentUnitTRY);
                               // Komşu iki Y etiketinin GERÇEK değer farkı —
                               // log ölçekte en dar aralık en alttadır. Etiket
                               // hanesi buna göre seçilir: `fmtTRYCompact`
@@ -1951,6 +1984,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   horizontalLines: [
                                     GrafikStili.donemBasi(
                                         context, anchorY),
+                                    // Kurulu fiyat alarmları (Ar-Ge 29 Eki
+                                    // 20:45 #2); açıklaması kartın üstünde.
+                                    ..._alarmYatayCizgileri(alarmCizgileri),
                                   ],
                                   verticalLines: [
                                     if (lastSpot != null && !isIntraday)

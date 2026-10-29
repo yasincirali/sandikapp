@@ -3200,6 +3200,25 @@
     "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
     "placeholders": {"date": {"type": "String"}, "value": {"type": "String"}}
   },
+  "chartAlarmLabel": "{price} {arrow} {detail}",
+  "@chartAlarmLabel": {
+    "description": "Varlık grafiğinin üstünde fiyat alarmı etiketi: hedef fiyat, yön işareti (▲/▼) ve koşul ya da konum metni.",
+    "placeholders": {"price": {"type": "String"}, "arrow": {"type": "String"}, "detail": {"type": "String"}}
+  },
+  "chartAlarmMore": "+{count}",
+  "@chartAlarmMore": {
+    "description": "Grafik üstü alarm etiketinde gösterilmeyen öteki alarmların sayısı.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "chartAlarmA11y": "Price alert {price}, {detail}",
+  "@chartAlarmA11y": {
+    "description": "Grafik üstü fiyat alarmı etiketinin ekran okuyucu metni.",
+    "placeholders": {"price": {"type": "String"}, "detail": {"type": "String"}}
+  },
+  "chartAlarmRises": "when it rises above",
+  "chartAlarmFalls": "when it falls below",
+  "chartAlarmAboveChart": "above the chart",
+  "chartAlarmBelowChart": "below the chart",
   "chartNowLabel": "NOW",
   "vsWatch": "Watch",
   "vsSelect": "Select this",
