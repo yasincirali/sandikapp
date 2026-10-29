@@ -16444,6 +16444,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çizgi şu an {fiyat} · {tarih} tarihine kadar'**
   String cizimAlarmSeviyesiBitisli(String fiyat, String tarih);
+
+  /// No description provided for @alarmBekleyenler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekleyenler'**
+  String get alarmBekleyenler;
+
+  /// No description provided for @alarmCalanlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalanlar ({n})'**
+  String alarmCalanlar(int n);
+
+  /// No description provided for @alarmCalanlariTemizle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalanları temizle'**
+  String get alarmCalanlariTemizle;
+
+  /// No description provided for @alarmCalanlariTemizleSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.'**
+  String alarmCalanlariTemizleSoru(int n);
 }
 
 class _AppLocalizationsDelegate

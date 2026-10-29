@@ -6388,5 +6388,11 @@
   "cizimAlarmSeviyesi": "Çizgi şu an {fiyat}",
   "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
   "cizimAlarmSeviyesiBitisli": "Çizgi şu an {fiyat} · {tarih} tarihine kadar",
-  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}},
+  "alarmBekleyenler": "Bekleyenler",
+  "alarmCalanlar": "Çalanlar ({n})",
+  "@alarmCalanlar": {"placeholders": {"n": {"type": "int"}}},
+  "alarmCalanlariTemizle": "Çalanları temizle",
+  "alarmCalanlariTemizleSoru": "Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.",
+  "@alarmCalanlariTemizleSoru": {"placeholders": {"n": {"type": "int"}}}
 }

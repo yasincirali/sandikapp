@@ -9928,4 +9928,20 @@ class AppLocalizationsTr extends AppLocalizations {
   String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
     return 'Çizgi şu an $fiyat · $tarih tarihine kadar';
   }
+
+  @override
+  String get alarmBekleyenler => 'Bekleyenler';
+
+  @override
+  String alarmCalanlar(int n) {
+    return 'Çalanlar ($n)';
+  }
+
+  @override
+  String get alarmCalanlariTemizle => 'Çalanları temizle';
+
+  @override
+  String alarmCalanlariTemizleSoru(int n) {
+    return 'Çalmış $n alarm silinsin mi? Bekleyen alarmların yerinde kalır.';
+  }
 }

@@ -5714,5 +5714,9 @@
   "cizimAlarmSeviyesi": "Line now at {fiyat}",
   "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
   "cizimAlarmSeviyesiBitisli": "Line now at {fiyat} · until {tarih}",
-  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}},
+  "alarmBekleyenler": "Waiting",
+  "alarmCalanlar": "Fired ({n})",
+  "alarmCalanlariTemizle": "Clear fired",
+  "alarmCalanlariTemizleSoru": "Delete {n} fired alarms? Your waiting alarms stay."
 }

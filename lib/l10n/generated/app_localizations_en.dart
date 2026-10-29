@@ -10051,4 +10051,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
     return 'Line now at $fiyat · until $tarih';
   }
+
+  @override
+  String get alarmBekleyenler => 'Waiting';
+
+  @override
+  String alarmCalanlar(int n) {
+    return 'Fired ($n)';
+  }
+
+  @override
+  String get alarmCalanlariTemizle => 'Clear fired';
+
+  @override
+  String alarmCalanlariTemizleSoru(int n) {
+    return 'Delete $n fired alarms? Your waiting alarms stay.';
+  }
 }
