@@ -180,12 +180,29 @@ void main() {
         reason: 'Akarken parmak bandı 200 pt ötelememeli.');
   });
 
+  // yasin 2026-10-29: bant hiç durmasın. Varsayılan: boşta durma kapalı.
+  testWidgets('varsayılan: dokunulmasa da 2 dakika sonra bant akıyor',
+      (tester) async {
+    expect(PiyasaSeridi.bostaDurur, isFalse);
+    await pump(tester);
+    final b = bant(tester);
+    await tester.pump(const Duration(minutes: 2));
+    final a = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect((b.kaydirma - a) / 0.5, closeTo(PiyasaSeridi.hiz, 1));
+    expect(b.bostaDurdu, isFalse);
+  });
+
   // ── Boşta durma (2026-10-01, CPU/GPU raporu) ─────────────────────────
+  // 2026-10-29'dan beri KAPALI ([PiyasaSeridi.bostaDurur]); mekanizma geri
+  // açılabilsin diye aşağıdaki testler bayrağı açarak sınar.
   // Bant dokunulmadan iki tur aktıktan sonra yavaşlayıp durur; dokunuş,
   // öne geliş ve sekmeye dönüş yeniden akıtır. Akarken kare hızı değişmez.
 
   testWidgets('dokunuşsuz boşta süresi dolunca bant yumuşakça durur',
       (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     expect(b.akiyor, isTrue);
@@ -222,6 +239,8 @@ void main() {
 
   testWidgets('durmuş banda dokunuş yeniden akıtır; kalkış yumuşak',
       (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     // İki kare: ilki süreyi doldurup sönmeye geçer, ikincisi sönmeyi bitirir.
@@ -246,6 +265,8 @@ void main() {
   });
 
   testWidgets('akarken dokunuş boşta saatini sıfırlar', (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     await tester.pump(PiyasaSeridi.bostaSuresi - const Duration(seconds: 2));
@@ -262,6 +283,8 @@ void main() {
 
   testWidgets('gizli sekmeden dönüş bandı uyandırır, saat sıfırlanır',
       (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     tester.view.physicalSize = const Size(320 * 3, 200 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -296,6 +319,8 @@ void main() {
   });
 
   testWidgets('öne geliş durmuş bandı uyandırır', (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     // İki kare: ilki süreyi doldurup sönmeye geçer, ikincisi sönmeyi bitirir.
@@ -482,6 +507,8 @@ void main() {
   });
 
   testWidgets('dış uyandırıcı boşta durmuş bandı akıtır', (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     tester.view.physicalSize = const Size(320 * 3, 200 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);

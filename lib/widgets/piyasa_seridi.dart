@@ -30,7 +30,8 @@
 // görsel olarak hiçbir şey değiştirmediği için "yakaladın" bilgisi oradan
 // gelir.
 //
-// ## Boşta durma: kimse bakmazken akmaz (2026-10-01, CPU/GPU raporu)
+// ## Boşta durma: KAPALI (2026-10-29, yasin: bant hiç durmasın; bkz.
+// [PiyasaSeridi.bostaDurur]). Aşağısı 2026-10-01 gerekçesi, kayıt için:
 // Cihaz ölçümü: Ana ekran boşta dururken bant 58 fps çiziyor ve
 // emülatörde bir çekirdeğin %64'ünü tutuyordu; Portföy ve Performans
 // sekmeleri boşta sıfırdı. Bant tek başına ekranı ve GPU'yu hiç uyutmuyordu
@@ -166,6 +167,16 @@ class PiyasaSeridi extends StatefulWidget {
   /// hissini verir; üçüncü turu kimse izlemez. 30 sn'lik fiyat nabzından
   /// uzun olması bilinçli — nabız bandı uyandırmaz ama zamanlama çakışmasın.
   static const bostaSuresi = Duration(seconds: 35);
+
+  /// Boşta durma açık mı (2026-10-29, yasin: "bant hiç durmasın" —
+  /// "3 özelliği de yap"). 1 Ekim CPU kararı bant boşta 35 sn sonra
+  /// dursun diyordu; kullanıcı bunu "bant donuyor" diye okudu. Artık bant
+  /// ekrandayken HEP akar. CPU korumasının asıl yarısı yerinde kalır:
+  /// sekme gizli, bant ekran dışı (`TickerMode`) ya da uygulama arka
+  /// plandayken kare üretilmez. Mekanizma silinmedi: pil/ısı şikâyeti
+  /// gelirse tek satırla geri açılır; testler onu bu bayrakla sınar.
+  @visibleForTesting
+  static bool bostaDurur = false;
 
   /// Boşta durma yavaşlamasının zaman sabiti (sn). 0,6 sn: bant ~2 sn'de
   /// (≈ 3 zaman sabiti) görünür biçimde durur, "fren" değil "sönme".
@@ -579,7 +590,8 @@ class KayanBantState extends State<KayanBant>
       }
       return;
     }
-    if (gecen - _fazT0 >= PiyasaSeridi.bostaSuresi) {
+    if (PiyasaSeridi.bostaDurur &&
+        gecen - _fazT0 >= PiyasaSeridi.bostaSuresi) {
       _fazaGec(gecen, hiz: _sonHiz, hedef: 0);
     }
   }
