@@ -1,6 +1,7 @@
 import 'asset.dart';
 import 'asset_categories.dart';
 import 'asset_type.dart';
+import '../utils/tr_format.dart' show dayKey;
 
 /// Aggregated portfolio position — birden çok Asset (lot) tek pozisyon olarak.
 ///
@@ -747,34 +748,16 @@ List<Position> aggregatePositions(List<Asset> assets) {
   return positions;
 }
 
-/// Bir hareketin önceki/sonraki bakiyesi: miktar ve (işlem fiyatı
-/// biliniyorsa) o fiyatla değeri, varlığın kendi para biriminde.
-/// Sözleşme [hareketBakiyeleri] belge yorumunda.
-typedef HareketBakiyesi = ({
-  double once,
-  double sonra,
-  double? onceDeger,
-  double? sonraDeger,
-});
-
 /// Hareket satırının "önceki → sonraki" bakiyesi: lot kimliği → o işlemden
-/// hemen önce ve hemen sonra pozisyonda tutulan MİKTAR ve işlem fiyatıyla
-/// DEĞERİ.
+/// hemen önce ve hemen sonra pozisyonda tutulan MİKTAR.
 ///
 /// Kullanıcı isteği (2026-10-29): "Portföy hareketlerinde önceki ve sonraki
 /// bakiye de yazmalı." Kararlar:
 ///
-/// - **Önce miktar, yanında işlem fiyatıyla değer.** Miktar defterin
-///   kendisinden gelir ("12 → 17 gr"). Değer (kullanıcı isteği 2026-10-29,
-///   ikinci tur: "alım satım öncesi ve sonrası toplam bakiyeleri görelim")
-///   o İŞLEMİN kendi birim fiyatıyla çarpılır: [HareketBakiyesi.onceDeger]
-///   = önceki miktar × işlem fiyatı. Bugünkü fiyat geçmişi uydururdu;
-///   işlem fiyatı o an kullanıcının gördüğü fiyattır ve fark
-///   (sonra − önce) satırdaki işlem tutarına birebir eşittir — iki sayı
-///   birbiriyle çelişmez. Fiyat bilinmiyorsa (satış fiyatı boş, 0)
-///   değer `null`: satır yalnız miktarı yazar, uydurma sayı yok. Değer
-///   varlığın KENDİ para biriminde; gösterim birimine çeviri satırın işi
-///   (tutarla aynı yol: `toTRY` → `BazPara`).
+/// - **Miktar, ₺ değil.** Geçmiş bir işlemin "önceki bakiyesi"ni ₺ ile
+///   yazmak o günün fiyatını ister; bugünkü fiyatla çarpmak geçmişi
+///   uydurur, kayıtlı fiyatla çarpmak satırdaki tutarla çelişir. Miktar
+///   defterin kendisinden gelir, uydurma sayı yoktur ("12 → 17 gr").
 /// - **Ham defter.** Geçmişi soran yer (`CLAUDE.md` "Kapanmış pozisyon"):
 ///   tamamen satılıp yeniden alınan pozisyonda satış "5 → 0", yeni alım
 ///   "0 → 3" yazar; `aktifLotlar` kapanmış pozisyonu düşürürdü.
@@ -797,7 +780,8 @@ typedef HareketBakiyesi = ({
 ///
 /// **Girdi tüm kapsam defteri olmalı**, tarih/tür/arama süzgecinden
 /// GEÇMEMİŞ: süzülmüş listede eski alımlar yoktur, bakiye yanlış başlar.
-Map<String, HareketBakiyesi> hareketBakiyeleri(Iterable<Asset> defter) {
+Map<String, ({double once, double sonra})> hareketBakiyeleri(
+    Iterable<Asset> defter) {
   final gruplar = <(String, String), List<Asset>>{};
   for (final a in defter) {
     if (!a.isActive || a.isDividend) continue;
@@ -805,10 +789,10 @@ Map<String, HareketBakiyesi> hareketBakiyeleri(Iterable<Asset> defter) {
     gruplar.putIfAbsent((a.userId, positionKey(a)), () => []).add(a);
   }
   const tolerans = 0.0000001;
-  final out = <String, HareketBakiyesi>{};
+  final out = <String, ({double once, double sonra})>{};
   for (final lots in gruplar.values) {
     lots.sort(_defterSirasi);
-    final grup = <String, HareketBakiyesi>{};
+    final grup = <String, ({double once, double sonra})>{};
     var adet = 0.0;
     var tutarli = true;
     for (final l in lots) {
@@ -823,17 +807,7 @@ Map<String, HareketBakiyesi> hareketBakiyeleri(Iterable<Asset> defter) {
         adet += l.quantity;
       }
       if (adet.abs() < tolerans) adet = 0;
-      // Satışta `sellPrice` yoksa `currentPrice`'a DÜŞÜLMEZ (satırın tutarı
-      // düşer, eski kayıt uyumu için): o bugünkü fiyat olabilir, geçmişin
-      // bakiyesini uydururdu.
-      final fiyat = l.isSell ? l.sellPrice : l.purchasePrice;
-      final f = fiyat != null && fiyat.isFinite && fiyat > 0 ? fiyat : null;
-      grup[l.id] = (
-        once: once,
-        sonra: adet,
-        onceDeger: f == null ? null : once * f,
-        sonraDeger: f == null ? null : adet * f,
-      );
+      grup[l.id] = (once: once, sonra: adet);
     }
     if (tutarli) out.addAll(grup);
   }
@@ -850,9 +824,9 @@ Map<String, HareketBakiyesi> hareketBakiyeleri(Iterable<Asset> defter) {
 /// harf yazılışında hesap tekrarlanmaz.
 class HareketBakiyeOnbellegi {
   List<Asset>? _defter;
-  Map<String, HareketBakiyesi> _sonuc = const {};
+  Map<String, ({double once, double sonra})> _sonuc = const {};
 
-  Map<String, HareketBakiyesi> hesapla(List<Asset> defter) {
+  Map<String, ({double once, double sonra})> hesapla(List<Asset> defter) {
     final onceki = _defter;
     if (onceki != null && _ayniNesneler(onceki, defter)) return _sonuc;
     _defter = List.of(defter, growable: false);
@@ -867,4 +841,88 @@ class HareketBakiyeOnbellegi {
     }
     return true;
   }
+}
+
+/// Hareket satırının "Portföy önce → sonra" değeri: lot kimliği → işlemden
+/// hemen önce ve hemen sonra kapsamın TOPLAM portföy değeri (TRY).
+///
+/// ## Neden (yasin, 2026-10-29)
+/// "Hareketlerde genel bakiye ekle, alım satım öncesi ve sonrası toplam
+/// bakiyeleri görelim" + "tutarsızlık olmamalı". İlk sürüm varlığın kendi
+/// değerini (miktar × işlem fiyatı) yazıyordu; yasin PORTFÖY toplamını
+/// seçti. Tutarsızlık olmasın diye burada ikinci bir değerleme YOK: "sonra"
+/// Performans grafiğinin o işlemi İÇEREN ilk noktasının sayısıdır.
+///
+/// ## "Sonra" = işlemi içeren ilk seri noktası
+/// Motor (`getPortfolioHistoryBreakdownAtResolution`, günlük katman) bir
+/// lotu `addedDate <= slot başı` ise o slota sayar; yani 14:00'teki alım o
+/// günün noktasına DEĞİL ertesi günün noktasına girer (yalnız tarihli,
+/// saatsiz kayıt gece yarısıdır → kendi gününe girer). "Sonra" bu yüzden
+/// [gunlukSeri]`[S]`, S = işlemi içeren ilk gün başı. Grafikte o noktanın
+/// gösterdiği sayının ta kendisi.
+///
+/// Bugünün noktası Performans'ta canlı toplamla ezilir
+/// (`currentTotalOverride`); dün gece yarısından sonraki işlemler (S ≥
+/// bugün) bu yüzden [canliToplam]'a bağlanır — grafiğin sağ ucu.
+///
+/// ## Zincir
+/// Aynı noktaya düşen işlemler (aynı gün, ya da canlı uçtaki son iki gün)
+/// sondan başa yürünür: en son işlemin "sonra"sı noktanın değeri, her
+/// işlemin "önce"si = "sonra" − alım tutarı (satışta + satış tutarı), bir
+/// öncekinin "sonra"sı = bunun "önce"si. Tutar satırdaki işlem tutarıyla
+/// aynı: miktar × işlem fiyatı, [toTRY] ile (satır tutarı da bugünkü kurla
+/// çevrilir). Satış fiyatı bilinmeyen işlemde zincir orada KOPAR: o işlemin
+/// ve ondan önceki aynı-nokta işlemlerin değeri yazılmaz (uydurma yok).
+///
+/// ## Değer almayanlar
+/// [seriGirdisi]'nde olmayan lot (temettü, silinmiş, mezar taşı, fiyat
+/// serisi olmayan) grafiği değiştirmez; ne zincire girer ne değer alır.
+/// Nokta yoksa (pencere dışı, seri yüklenmedi) o grup değer almaz; satır
+/// yalnız miktarı yazar.
+///
+/// O(n log n): tek gruplama + grup içi sıralama; satır başına sabit iş.
+Map<String, ({double once, double sonra})> hareketPortfoyDegerleri({
+  required List<Asset> seriGirdisi,
+  required Map<int, double> gunlukSeri,
+  required double? canliToplam,
+  required DateTime simdi,
+  required double Function(double tutar, String paraBirimi) toTRY,
+}) {
+  final bugun = dayKey(simdi).millisecondsSinceEpoch;
+  // -1: canlı uç (Performans'ın bugünkü noktası).
+  const canliAnahtar = -1;
+  final gruplar = <int, List<Asset>>{};
+  for (final a in seriGirdisi) {
+    if (!a.isActive || a.isQuantityNeutral) continue;
+    final t = a.addedDate;
+    // Gün başı `dayKey` — `ResolutionTier.daily.normalizeTs` ile aynı;
+    // ertesi gün takvimden kurulur (+24 sa DST'de kayardı).
+    final gunBasi = dayKey(t);
+    final s = gunBasi == t
+        ? gunBasi.millisecondsSinceEpoch
+        : DateTime(gunBasi.year, gunBasi.month, gunBasi.day + 1)
+            .millisecondsSinceEpoch;
+    final anahtar = s >= bugun ? canliAnahtar : s;
+    (gruplar[anahtar] ??= []).add(a);
+  }
+  final out = <String, ({double once, double sonra})>{};
+  for (final e in gruplar.entries) {
+    final nokta = e.key == canliAnahtar ? canliToplam : gunlukSeri[e.key];
+    if (nokta == null || !nokta.isFinite || nokta < 0) continue;
+    var deger = nokta;
+    final lots = e.value..sort((a, b) => _defterSirasi(b, a));
+    for (final l in lots) {
+      final fiyat = l.isSell ? l.sellPrice : l.purchasePrice;
+      if (fiyat == null || !fiyat.isFinite || fiyat <= 0) break;
+      final tutar = toTRY(l.quantity * fiyat, l.currency);
+      final once = l.isSell ? deger + tutar : deger - tutar;
+      // Eksi "önce": nokta kapanış fiyatıyla, tutar işlem fiyatıyla
+      // ölçüldüğü için ilk alımda olabilir; eksi portföy uydurma olurdu,
+      // kırpmak da. Zincir burada durur.
+      if (once < 0) break;
+      out[l.id] = (once: once, sonra: deger);
+      deger = once;
+    }
+  }
+  return out;
 }

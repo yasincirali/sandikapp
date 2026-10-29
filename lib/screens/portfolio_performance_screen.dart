@@ -29,6 +29,7 @@ import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/sandik_segment.dart';
@@ -883,17 +884,24 @@ class _PortfolioPerformanceScreenState
                       // gösteriyordu (kullanıcı bildirimi 2026-09-22).
                       const isRenderable = FiyatKaynagi.seriyeGirer;
 
-                      final chartAssetsRenderable = [
-                        for (final a in chartAssets)
-                          if (isRenderable(a)) a
-                      ];
-                      final filteredOwnerLotsRenderable = [
-                        for (final lots in filteredOwnerLots)
-                          [
-                            for (final a in lots)
-                              if (isRenderable(a)) a
-                          ]
-                      ];
+                      // Süzgeç TEK kaynaktan (`performansSeriDefterleri`,
+                      // 2026-10-29): hareket satırının "Portföy önce →
+                      // sonra" değeri aynı girdiyle aynı motoru çağırır;
+                      // burada ayrı bir kopya kalsaydı iki yüzey ilk
+                      // değişiklikte ayrışırdı. Sonuç eskisiyle birebir
+                      // (aynı lotlar, aynı sıra).
+                      final filteredOwnerLotsRenderable =
+                          performansSeriDefterleri(ownerLots,
+                              suzgec: _typeFilter?.kapsar);
+                      final chartAssetsRenderable = _simulate
+                          ? [
+                              for (final a in chartAssets)
+                                if (isRenderable(a)) a
+                            ]
+                          : [
+                              for (final l in filteredOwnerLotsRenderable)
+                                ...l
+                            ];
 
                       // TradingView "auto range": kullanıcı seçilen periyot
                       // içinde hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün

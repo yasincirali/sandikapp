@@ -896,18 +896,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String txBalanceValueChange(String once, String sonra) {
-    return '· $once → $sonra';
+  String txPortfolioValueChange(String once, String sonra) {
+    return '· Portfolio $once → $sonra';
   }
 
   @override
-  String txBalanceValueSemantics(
-    String once,
-    String onceDeger,
-    String sonra,
-    String sonraDeger,
-  ) {
-    return 'Holding went from $once ($onceDeger) to $sonra ($sonraDeger)';
+  String txPortfolioValueSemantics(String once, String sonra) {
+    return 'Portfolio went from $once to $sonra';
   }
 
   @override

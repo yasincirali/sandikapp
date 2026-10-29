@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
-import '../models/position.dart';
 import '../models/varlik_monogrami.dart';
 import '../services/remote_config_service.dart';
 import '../providers/portfolio_provider.dart';
@@ -38,6 +37,7 @@ class TransactionRow extends StatelessWidget {
     this.silinenGorunumu = false,
     this.not,
     this.bakiye,
+    this.portfoyDegeri,
     this.onTap,
   });
 
@@ -83,14 +83,20 @@ class TransactionRow extends StatelessWidget {
   /// "Alım · 5 gr" ile "12 → 17 gr" iki miktar yan yana karışırdı. Solda
   /// isim alanı esnek; satır bir metin satırı uzar, gruplu liste ritmi
   /// tüm bakiyeli satırlarda aynı kalır.
+  final ({double once, double sonra})? bakiye;
+
+  /// İşlemden hemen önce ve sonra kapsamın TOPLAM portföy değeri (TRY) —
+  /// çağıran `hareketPortfoyDegerleriProvider`'dan okur; satır hesaplamaz.
   ///
-  /// İkinci tur (2026-10-29, "alım satım öncesi ve sonrası toplam
-  /// bakiyeleri görelim"): miktarın yanına işlem fiyatıyla DEĞER gelir
-  /// ("400 → 300 lot · ₺12.400,00 → ₺9.300,00"). Sağ kolon yine 116pt;
-  /// değer aynı sol satırın devamıdır ve sığmazsa `Wrap` ile alt satıra
-  /// iner (büyük yazıda kırpılan bir tutar yanlış okunur). Fiyat ya da kur
-  /// bilinmiyorsa, bakiye gizliyse yalnız miktar yazılır.
-  final HareketBakiyesi? bakiye;
+  /// yasin (2026-10-29): "alım satım öncesi ve sonrası toplam bakiyeleri
+  /// görelim … tutarsızlık olmamalı". Sayı Performans grafiğinin o işlemi
+  /// içeren noktasıdır (karar kaydı `hareketPortfoyDegerleri`). Bakiye
+  /// satırının devamında, "Portföy" önekiyle: varlığın değeri sanılmasın.
+  /// Sağ kolon 116pt kalır; sığmazsa `Wrap` bütün parçayı alt satıra
+  /// indirir. Kompakt yazılır (₺1,24M) — satırın ikinci bilgisi, kuruş
+  /// gürültü olurdu; ekran okuyucu tam tutarı okur. Bakiye gizliyse ya da
+  /// değer yoksa (seri yüklenmedi, pencere dışı) yalnız miktar.
+  final ({double once, double sonra})? portfoyDegeri;
 
   /// Satıra dokununca — işlem notu sayfası. `null` ise satır eskisi gibi
   /// dokunulmaz (ör. ortak kaydının notu yoksa açılacak bir şey yok).
@@ -219,29 +225,8 @@ class TransactionRow extends StatelessWidget {
                     notIsareti: not != null,
                   ),
                   if (bakiye case final b?)
-                    if (hareketBakiyeMetni(l10n, asset, b,
-                            degerYaz: hideBalance || baz.gizli
-                                ? null
-                                : (v) => _degerMetni(v, tryFmt))
-                        case final m?)
-                      Padding(
-                        padding: const EdgeInsets.only(top: SandikSpace.xxs),
-                        child: Semantics(
-                          label: m.okunan,
-                          excludeSemantics: true,
-                          // Miktar ve değer ayrı parçalar: dar ekranda ya
-                          // da büyük yazıda değer bütün hâlinde alt satıra
-                          // iner, "₺12.400 →" ile "₺9.300" bölünmez.
-                          child: Wrap(
-                            spacing: SandikSpace.xs,
-                            children: [
-                              _bakiyeMetni(context, m.gorunen),
-                              if (m.deger case final d?)
-                                _bakiyeMetni(context, d),
-                            ],
-                          ),
-                        ),
-                      ),
+                    if (hareketBakiyeMetni(l10n, asset, b) case final m?)
+                      _bakiyeSatiri(context, m),
                 ],
               ],
             ),
@@ -309,29 +294,50 @@ class TransactionRow extends StatelessWidget {
     );
   }
 
-  /// Bakiyenin yerel para birimindeki değeri → satır tutarıyla AYNI yol
-  /// (`toTRY` + [baz] biçimi, 2 ondalık): fark (sonra − önce) satırdaki
-  /// işlem tutarıyla birebir aynı yazılsın. Kur bilinmiyorsa (`toTRY` 0
-  /// döner) `null`: "₺0" uydurma olurdu.
-  String? _degerMetni(double yerel, ParaBicimi fmt) {
-    final tl = portfolioState.toTRY(yerel, asset.currency);
-    if (yerel > 0 && !(tl > 0)) return null;
-    return fmt.format(tl);
+  /// Bakiye satırı: miktar ve (biliniyorsa) portföy değeri, tek ekran
+  /// okuyucu cümlesi. Miktar ve değer ayrı parçalar: dar ekranda ya da
+  /// büyük yazıda değer BÜTÜN hâlinde alt satıra iner, "₺1,24M →" ile
+  /// "₺1,21M" bölünmez.
+  Widget _bakiyeSatiri(
+      BuildContext context, ({String gorunen, String okunan}) m) {
+    final l10n = context.l10n;
+    final p = hideBalance || baz.gizli ? null : portfoyDegeri;
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.xxs),
+      child: Semantics(
+        label: p == null
+            ? m.okunan
+            : '${m.okunan}. ${l10n.txPortfolioValueSemantics(baz.fmt(p.once), baz.fmt(p.sonra))}',
+        excludeSemantics: true,
+        child: Wrap(
+          spacing: SandikSpace.xs,
+          children: [
+            _bakiyeMetni(context, m.gorunen),
+            if (p != null)
+              _bakiyeMetni(
+                context,
+                l10n.txPortfolioValueChange(
+                    baz.compact(p.once), baz.compact(p.sonra)),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Bakiye satırının bir parçası. Tarihten bir ton açık (text58 > text36):
   /// satırın ikinci bilgisi, ama tutarla yarışmaz. Alt alta sayılar hizalı
   /// okunsun diye tabular figür. İki satıra kadar kırılır; daha uzunu
-  /// (aşırı büyük yazı + dev sayı) kırpılır, taşmaz.
+  /// (aşırı büyük yazı) kırpılır, taşmaz.
   Widget _bakiyeMetni(BuildContext context, String metin) => Text(
-    metin,
-    maxLines: 2,
-    overflow: TextOverflow.ellipsis,
-    style: context.t.labelSmall?.copyWith(
-      color: context.c.text58,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    ),
-  );
+        metin,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.labelSmall?.copyWith(
+          color: context.c.text58,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      );
 
   /// Tarih satırı; [notIsareti] ise sonunda not ikonu.
   ///
@@ -477,8 +483,7 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
   return '${asset.isSell ? l10n.txSell : l10n.txBuy} · $miktarMetni';
 }
 
-/// "12 → 17 gr", değeri ("· ₺1.200,00 → ₺1.700,00") ve ekran okuyucu
-/// cümlesi; gösterilmeyecekse `null`.
+/// "12 → 17 gr" ve ekran okuyucu cümlesi; gösterilmeyecekse `null`.
 ///
 /// Birim kuralı [hareketTurEtiketi] ile aynı (`qtyFormatter` +
 /// `azamiOndalik`, döviz sembolü önde): satırın sağındaki "Alım · 5 gr" ile
@@ -488,17 +493,11 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
 /// temettü için `null` (2026-10-29) — `hareketBakiyeleri` onlara zaten
 /// bakiye üretmez; bu ikinci kapı satırın kendi başına da doğru kalması
 /// için.
-///
-/// [degerYaz] yerel para birimindeki değeri gösterim metnine çevirir
-/// (satır kendi biçimiyle verir; `null` = değer yazılmaz, ör. bakiye
-/// gizli). İki uçtan biri bilinmiyorsa değer HİÇ yazılmaz — yarım
-/// "₺12.400 → ?" ya da tek uç, okuyanı yanıltır.
-({String gorunen, String? deger, String okunan})? hareketBakiyeMetni(
+({String gorunen, String okunan})? hareketBakiyeMetni(
   AppLocalizations l10n,
   Asset asset,
-  HareketBakiyesi bakiye, {
-  String? Function(double yerelDeger)? degerYaz,
-}) {
+  ({double once, double sonra}) bakiye,
+) {
   if (asset.isDeleteLog || asset.isDividend || asset.isDeleted) return null;
   if (asset.type == AssetType.mevduat || asset.type == AssetType.bes) {
     return null;
@@ -506,36 +505,17 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
   final fmt = qtyFormatter(maxDigits: asset.azamiOndalik);
   final once = fmt.format(bakiye.once);
   final sonra = fmt.format(bakiye.sonra);
-  final String gorunen, onceOkunan, sonraOkunan;
   if (asset.unitIsPrefix) {
     final b = asset.unitLabel;
-    gorunen = l10n.txBalanceChange('$b$once', '$b$sonra');
-    onceOkunan = '$b$once';
-    sonraOkunan = '$b$sonra';
-  } else {
-    final birim = birimMetni(l10n, asset.unitLabel);
-    gorunen = l10n.txBalanceChange(once, '$sonra $birim');
-    onceOkunan = '$once $birim';
-    sonraOkunan = '$sonra $birim';
-  }
-  final od = bakiye.onceDeger, sd = bakiye.sonraDeger;
-  final onceDeger = od == null ? null : degerYaz?.call(od);
-  final sonraDeger = sd == null ? null : degerYaz?.call(sd);
-  if (onceDeger == null || sonraDeger == null) {
+    final gorunen = l10n.txBalanceChange('$b$once', '$b$sonra');
     return (
       gorunen: gorunen,
-      deger: null,
-      okunan: l10n.txBalanceSemantics(onceOkunan, sonraOkunan),
+      okunan: l10n.txBalanceSemantics('$b$once', '$b$sonra'),
     );
   }
+  final birim = birimMetni(l10n, asset.unitLabel);
   return (
-    gorunen: gorunen,
-    deger: l10n.txBalanceValueChange(onceDeger, sonraDeger),
-    okunan: l10n.txBalanceValueSemantics(
-      onceOkunan,
-      onceDeger,
-      sonraOkunan,
-      sonraDeger,
-    ),
+    gorunen: l10n.txBalanceChange(once, '$sonra $birim'),
+    okunan: l10n.txBalanceSemantics('$once $birim', '$sonra $birim'),
   );
 }

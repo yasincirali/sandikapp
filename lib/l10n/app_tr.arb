@@ -522,8 +522,9 @@
       }
     }
   },
-  "txBalanceValueChange": "· {once} → {sonra}",
-  "@txBalanceValueChange": {
+  "txPortfolioValueChange": "· Portföy {once} → {sonra}",
+  "@txPortfolioValueChange": {
+    "description": "Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).",
     "placeholders": {
       "once": {
         "type": "String"
@@ -533,19 +534,13 @@
       }
     }
   },
-  "txBalanceValueSemantics": "Bakiye {once} ({onceDeger}) iken {sonra} ({sonraDeger}) oldu",
-  "@txBalanceValueSemantics": {
+  "txPortfolioValueSemantics": "Portföy {once} iken {sonra} oldu",
+  "@txPortfolioValueSemantics": {
     "placeholders": {
       "once": {
         "type": "String"
       },
-      "onceDeger": {
-        "type": "String"
-      },
       "sonra": {
-        "type": "String"
-      },
-      "sonraDeger": {
         "type": "String"
       }
     }
