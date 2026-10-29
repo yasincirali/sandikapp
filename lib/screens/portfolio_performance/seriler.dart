@@ -451,6 +451,44 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       tazeKaydet: disk?.yaz,
     );
     previous?.dispose();
+    _gunlukSeriyiYayinla();
+  }
+
+  /// Hareket satırlarının "Portföy önce → sonra" değeri bu ekranın ÇİZDİĞİ
+  /// günlük serinin noktalarını okur (`PerformansSeriYayini`, E2E
+  /// 2026-10-29: iki yüzey ayrı anlarda hesaplayınca canlı altın/kur
+  /// hizalaması yüzünden ayrışıyordu). Yalnız satırların sorduğu küme
+  /// yayınlanır: gerçek geçmiş, tür süzgeci yok, günlük katman, yükleme
+  /// bitmiş (tohum önceki katmanın verisi olabilir). Aksi halde yayın geri
+  /// çekilir; satırlar kendi serisine döner. Kapsam değişince eski kapsamın
+  /// yayını da çekilir.
+  void _gunlukSeriyiYayinla() {
+    final c = _zoomController;
+    if (c == null) return;
+    final kapsam = hareketKapsami(
+        kisi: _view, portfoy: ref.read(portfoyKapsamiProvider).secim);
+    final onceki = _yayinKapsami;
+    if (onceki != null && onceki != kapsam) {
+      PerformansSeriYayini.instance.yayinla(onceki, null);
+    }
+    _yayinKapsami = kapsam;
+    final uygun = !_simulate && _typeFilter == null;
+    void yayinla() {
+      if (!identical(_zoomController, c)) return;
+      PerformansSeriYayini.instance.yayinla(
+        kapsam,
+        uygun &&
+                c.settled &&
+                !c.loading &&
+                c.tier == ResolutionTier.daily &&
+                c.data.isNotEmpty
+            ? c.data
+            : null,
+      );
+    }
+
+    c.addListener(yayinla);
+    yayinla();
   }
 
   /// Önce-eski-seri (Ar-Ge 2026-10-25 §4, yasin onayı): Performans grafiği

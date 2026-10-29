@@ -1206,8 +1206,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // taşımaz) tüm defteri için bir kez kurulmuş harita; satır
                 // O(1) okur. Seri gelene kadar boş → satırlar miktarla.
                 final portfoyDegerleri = ref.watch(
-                    hareketPortfoyDegerleriProvider(
-                        (kisi: _view, portfoy: PortfoySecimi.tumu)));
+                    hareketPortfoyDegerleriProvider(hareketKapsami(
+                        kisi: _view, portfoy: PortfoySecimi.tumu)));
                 // Tur hedefi: satırların dokunulabilir olduğunu (işlem notu)
                 // satırın kendisi göstermiyor; tur anlatır.
                 return TourAnchor(

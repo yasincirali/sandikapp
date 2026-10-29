@@ -270,11 +270,120 @@ void main() {
       expect(m['a3']!.once, canli - 5 * 70);
     });
   });
+
+  // E2E (2026-10-29): Performans geçmişi canlı kura/altına hizalayarak
+  // yeniden hesaplarken satırlar defter değişimini bekliyordu; dakikalar
+  // sonra ₺931.267 / ₺931.288. Kilit: (1) canlı kotasyon değişince satır,
+  // Performans'ın o an çağırdığı motorun sayısına yeniden eşitlenir;
+  // (2) Performans günlük seriyi yayınladıysa satır o ÖRNEĞİ okur.
+  group('canlı kotasyon ve Performans yayını', () {
+    final eskiKur = HistoryService.canliKur;
+    final eskiAralik = HareketGunlukSeriNotifier.tazelemeAraligi;
+    setUpAll(() => DbLogger.silentInTests = true);
+    tearDownAll(() => DbLogger.silentInTests = false);
+    tearDown(() {
+      HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
+      HistoryService.canliKur = eskiKur;
+      HareketGunlukSeriNotifier.tazelemeAraligi = eskiAralik;
+      PerformansSeriYayini.instance.temizle();
+      HistoryService.clearCache();
+    });
+
+    Future<
+        ({
+          ProviderContainer c,
+          ProviderSubscription<Map<String, ({double once, double sonra})>> abone,
+          List<Asset> lots,
+          DateTime d10,
+        })> kur(void Function(double) kurAyarla) async {
+      final g = dayKey(DateTime.now());
+      HistoryService.clearCache();
+      HistoryService.seriCekici = (sym, range, interval) async => [
+            for (var d = 400; d >= 0; d--)
+              (
+                g.subtract(Duration(days: d)).add(const Duration(hours: 10))
+                    .millisecondsSinceEpoch,
+                sym.contains('USD') ? 40.0 : 10.0 + (400 - d) * 0.01,
+              ),
+          ];
+      kurAyarla(40);
+      final d10 = g.subtract(const Duration(days: 10));
+      final lots = [
+        _lot('a1', 10, d10.add(const Duration(hours: 10)),
+            alis: 10, currency: 'USD', ticker: 'AAPL'),
+      ];
+      final c = ProviderContainer(overrides: [
+        portfolioProvider.overrideWith(() => _Portfoy(lots, usdTry: 40)),
+      ]);
+      await c.read(portfolioProvider.future);
+      final abone = c.listen(
+          hareketPortfoyDegerleriProvider(
+              hareketKapsami(kisi: '', portfoy: PortfoySecimi.tumu)),
+          (_, __) {});
+      await c.read(hareketGunlukSeriProvider(
+              hareketKapsami(kisi: '', portfoy: PortfoySecimi.tumu))
+          .future);
+      return (c: c, abone: abone, lots: lots, d10: d10);
+    }
+
+    Future<Map<int, double>> performans(List<Asset> lots, DateTime from) =>
+        HistoryService.instance.getPortfolioHistoryAtResolution(
+          assets: [for (final l in performansSeriDefterleri([lots])) ...l],
+          from: from,
+          to: DateTime.now(),
+          tier: ResolutionTier.daily,
+        );
+
+    test('canlı kur değişince satır yeniden Performans sayısına eşit',
+        () async {
+      var kurDegeri = 40.0;
+      HistoryService.canliKur = () => kurDegeri;
+      HareketGunlukSeriNotifier.tazelemeAraligi = Duration.zero;
+      final t = await kur((v) => kurDegeri = v);
+      addTearDown(t.c.dispose);
+      final s = _gun(t.d10.add(const Duration(days: 1)));
+      final ilk = t.abone.read()['a1']!.sonra;
+      expect(ilk, (await performans(t.lots, t.d10))[s]);
+
+      // Fiyat turu: canlı kur %1 oynadı, portföy durumu tazelendi.
+      kurDegeri = 40.4;
+      (t.c.read(portfolioProvider.notifier) as _Portfoy).kurGuncelle(40.4);
+      final beklenen = (await performans(t.lots, t.d10))[s];
+      expect(beklenen, isNot(ilk), reason: 'hizalama sayıyı değiştirmeli');
+      for (var i = 0; i < 100; i++) {
+        if (t.abone.read()['a1']?.sonra == beklenen) break;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(t.abone.read()['a1']!.sonra, beklenen);
+    });
+
+    test('Performans yayınladıysa satır o örneği okur', () async {
+      final t = await kur((_) {});
+      addTearDown(t.c.dispose);
+      final s = _gun(t.d10.add(const Duration(days: 1)));
+      PerformansSeriYayini.instance.yayinla(
+          hareketKapsami(kisi: '', portfoy: PortfoySecimi.tumu),
+          {s: 123456.0});
+      await Future<void>.delayed(Duration.zero);
+      expect(t.abone.read()['a1']!.sonra, 123456.0);
+      // Yayın çekilince kendi serisine döner.
+      PerformansSeriYayini.instance.yayinla(
+          hareketKapsami(kisi: '', portfoy: PortfoySecimi.tumu), null);
+      await Future<void>.delayed(Duration.zero);
+      expect(t.abone.read()['a1']!.sonra, isNot(123456.0));
+    });
+  });
 }
 
 class _Portfoy extends PortfolioNotifier {
-  _Portfoy(this.lotlar);
+  _Portfoy(this.lotlar, {this.usdTry = 1.0});
   final List<Asset> lotlar;
+  final double usdTry;
   @override
-  Future<PortfolioState> build() async => PortfolioState(assets: lotlar);
+  Future<PortfolioState> build() async =>
+      PortfolioState(assets: lotlar, usdTry: usdTry);
+
+  /// Fiyat turu: aynı defter, yeni nesneler ve yeni kur.
+  void kurGuncelle(double kur) => state = AsyncData(PortfolioState(
+      assets: List.of(lotlar), usdTry: kur));
 }

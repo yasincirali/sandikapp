@@ -550,10 +550,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     // filtrelenmiş sayfayla değil — bkz. `islemNotu`.
     final ledger = _ledger;
     final bakiyeler = _bakiyeOnbellegi.hesapla(ledger);
-    final portfoyDegerleri = ref.watch(hareketPortfoyDegerleriProvider((
-      kisi: _view,
-      portfoy: ref.watch(portfoyKapsamiProvider).secim,
-    )));
+    final portfoyDegerleri = ref.watch(hareketPortfoyDegerleriProvider(
+        hareketKapsami(
+            kisi: _view, portfoy: ref.watch(portfoyKapsamiProvider).secim)));
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     ref.listen(activePartnersProvider, (_, next) {

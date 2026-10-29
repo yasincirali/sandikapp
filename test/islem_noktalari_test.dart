@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/services/para_agirlikli_getiri.dart';
 import 'package:portfoy_takip/utils/islem_noktalari.dart';
 
 import 'helpers/kaynak.dart';
@@ -181,5 +182,42 @@ void main() {
         reason: 'crosshair takvim gününe değil noktaya bakmalı');
     expect(src.contains('crosshairNetBuy'), isTrue,
         reason: 'karışık noktada NET yazılmalı');
+  });
+
+  // E2E (2026-10-29): 30 lot 160'tan alınıp 172'den satıldı. Crosshair
+  // "Satış ₺4.800" (maliyet) yazarken YATIRDIĞIN başlığı ve hareket satırı
+  // ₺5.160 (ele geçen) diyordu. Tutar artık `getiriAkisi`'nden.
+  test('satış tutarı maliyet değil ele geçen tutar (başlıkla aynı)', () {
+    final satis = Asset(
+      id: 's',
+      userId: 'u',
+      name: 'X',
+      ticker: 'X',
+      type: AssetType.hisse,
+      quantity: 30,
+      purchasePrice: 160,
+      sellPrice: 172,
+      currency: 'TRY',
+      notes: '',
+      addedDate: DateTime(2026, 9, 18),
+      kind: AssetKind.sell,
+    );
+    final m = islemNoktalari(
+      spots: [for (var g = 0; g < 5; g++) FlSpot(g.toDouble(), 100.0)],
+      lotlar: [satis],
+      startDate: DateTime(2026, 9, 17),
+      intraday: false,
+    );
+    expect(m.values.single.satis, 5160);
+    expect(m.values.single.satis, -getiriAkisi(satis));
+  });
+
+  test('kaynak: nokta ipucu da getiriAkisi ile yazar, maliyetle değil', () {
+    final src = ekranKaynagiSync(
+            'lib/screens/portfolio_performance/grafik_kabi.dart')
+        .replaceAll(RegExp(r'\s+'), ' ');
+    expect(src.contains('daySellTRY += a.totalCostTRY'), isFalse);
+    expect(src.contains('cumSellTRY += a.totalCostTRY'), isFalse);
+    expect(src.contains('final akis = getiriAkisi(a);'), isTrue);
   });
 }
