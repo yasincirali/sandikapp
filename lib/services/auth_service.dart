@@ -19,6 +19,7 @@ import '../utils/friendly_error.dart';
 import 'crash_reporter.dart';
 import 'portfoy_seri_depo.dart';
 import 'son_bakilanlar.dart';
+import 'alarm_onbellegi.dart';
 
 const _uuid = Uuid();
 const _savedEmailKey = 'saved_email';
@@ -1044,6 +1045,8 @@ class AuthService {
     if (uid != null) await SonBakilanlar.instance.sil(uid);
     // Performans grafiğinin disk kopyası da o hesabın toplamlarıdır.
     await PortfoySeriDepo.temizle();
+    // Alarm listelerinin cihaz kopyası da o hesabın (Ar-Ge 29 Eki 20:45 #3).
+    await AlarmOnbellegi.temizle();
     await SocialAuthService.instance.signOutGoogle();
     // Yerel deneme sayaçları ve push cihaz kimliği kullanıcıya özgü izdir;
     // aynı cihazdaki bir sonraki hesaba taşınmasın (2026-09 L14).

@@ -97,7 +97,11 @@ class AlarmKurulumu {
   /// Yatay çizgiden kurulurken kullanıcının verdiği ad (boş olabilir);
   /// diğer yollarda `null`. `label`'a [cizgiAlarmEtiketi] ile girer.
   final String? isim;
-  const AlarmKurulumu(this.aday, this.hedef, this.yon, {this.isim});
+
+  /// "Her geçişte haber ver" (0171); varsayılan tek atış.
+  final bool tekrar;
+  const AlarmKurulumu(this.aday, this.hedef, this.yon,
+      {this.isim, this.tekrar = false});
 }
 
 /// Sheet'in "Günlük yüzde" kipinde döndürdüğü seçim (0169).
@@ -284,6 +288,7 @@ Future<PriceAlert?> alarmKurAkisi(
           direction: k.yon,
           enabled: true,
           createdAt: DateTime.now(),
+          tekrar: k.tekrar,
         ));
       },
       kurYuzde: (k) async {
@@ -493,6 +498,11 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   // raporu 27 Eki 09:15): varsayılan iki yön.
   SeviyeYon _gostergeYon = SeviyeYon.herIkisi;
 
+  /// "Her geçişte haber ver" (0171, Ar-Ge 29 Eki 20:45 #1). Varsayılan
+  /// kapalı: bugünkü tek atış alarm birebir. Ücretsiz (alarm temel değer);
+  /// tavana yine tek alarm olarak sayılır.
+  bool _tekrar = false;
+
   bool get _yuzdeSunulur =>
       yuzdeKipiSunulur(_secili, baslangicHedef: widget.baslangicHedef);
 
@@ -610,7 +620,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       targetPrice: hedef,
     );
     final kurulum = AlarmKurulumu(_secili, hedef, yon,
-        isim: widget.cizgiAdi ? _isim.text.trim() : null);
+        isim: widget.cizgiAdi ? _isim.text.trim() : null, tekrar: _tekrar);
     final kur = widget.kur;
     if (kur != null) {
       final l10n = context.l10n;
@@ -724,6 +734,59 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         Text(_hata!, style: context.t.bodyMedium?.copyWith(color: c.danger)),
       ],
     ];
+  }
+
+  /// "Her geçişte haber ver" anahtarı (0171). Bütün satır dokunma alanı
+  /// (≥44 pt); ekran okuyucu satırı tek öğe okur (başlık + açıklama +
+  /// anahtar durumu). Açık/kapalı yalnız renkle değil, anahtarın konumuyla
+  /// da okunur (sistem kontrolü, `Switch.adaptive`).
+  Widget _tekrarSatiri(SandikPalette c) {
+    final l10n = context.l10n;
+    void degistir(bool v) {
+      SandikHaptic.selection.perform();
+      setState(() => _tekrar = v);
+    }
+
+    return MergeSemantics(
+      child: SandikTappable(
+        key: const ValueKey('alarmTekrarSatiri'),
+        onTap: () => degistir(!_tekrar),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.alarmTekrarAnahtar,
+                      style: context.t.bodyMedium?.copyWith(
+                          color: c.text90, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: SandikSpace.xxs),
+                    Text(
+                      l10n.alarmTekrarAciklama,
+                      style: context.t.bodySmall?.copyWith(color: c.text58),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: SandikSpace.sm),
+              Switch.adaptive(
+                key: const ValueKey('alarmTekrarAnahtari'),
+                value: _tekrar,
+                // TRACK rengi: iOS'ta `CupertinoSwitch` açık rengi track'te
+                // taşır (bkz. sinyal ayarları anahtarı).
+                activeTrackColor: c.amberText,
+                onChanged: degistir,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// Segmentteki kip etiketi; kilitli gösterge sekmesi kilit simgesi taşır
@@ -1049,6 +1112,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                         : context.l10n.notifyWhenBelow,
                     style: context.t.bodyMedium?.copyWith(color: c.amberText),
                   ),
+                const SizedBox(height: SandikSpace.sm),
+                _tekrarSatiri(c),
                 if (widget.cizgiAdi) ...[
                   const SizedBox(height: SandikSpace.md),
                   // Ad isteğe bağlı; boşsa alarm varlığın adıyla kurulur.

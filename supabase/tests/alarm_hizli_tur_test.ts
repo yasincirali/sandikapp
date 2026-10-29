@@ -115,8 +115,10 @@ const KAYNAK = await Deno.readTextFile(
   new URL('../functions/check-price-alerts/index.ts', import.meta.url),
 );
 
+// 0171: sorgu `aktifSorgu(kolonlar)` oldu (tekrar kolonlarıyla, yoksa eski
+// kolonlarla); filtreler aynı. Tekrarlı alarmın nöbete dönüşü ayrı sorguda.
 Deno.test('aktif alarm sorgusu tetiklenmişi dışlar (yeniden kur gerekir)', () => {
-  const sorgu = KAYNAK.slice(KAYNAK.indexOf(".select('id, user_id, symbol"));
+  const sorgu = KAYNAK.slice(KAYNAK.indexOf('const aktifSorgu = '));
   const blok = sorgu.slice(0, sorgu.indexOf(';'));
   assert(blok.includes(".eq('enabled', true)"), 'enabled filtresi yok');
   assert(blok.includes(".is('triggered_at', null)"), 'triggered_at filtresi yok');

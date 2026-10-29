@@ -4559,6 +4559,33 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chartAlarmLabel(String price, String arrow, String detail) {
+    return '$price $arrow $detail';
+  }
+
+  @override
+  String chartAlarmMore(int count) {
+    return '+$count';
+  }
+
+  @override
+  String chartAlarmA11y(String price, String detail) {
+    return 'Price alert $price, $detail';
+  }
+
+  @override
+  String get chartAlarmRises => 'when it rises above';
+
+  @override
+  String get chartAlarmFalls => 'when it falls below';
+
+  @override
+  String get chartAlarmAboveChart => 'above the chart';
+
+  @override
+  String get chartAlarmBelowChart => 'below the chart';
+
+  @override
   String get chartNowLabel => 'NOW';
 
   @override
@@ -10117,4 +10144,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String tegAdliAlarmKurulduIkisi(String ad) {
     return '“$ad” alert set: we\'ll notify you when the price crosses the line';
   }
+
+  @override
+  String tekDokunusYuzdeOneri(String name) {
+    return '$name added. Notify you if it moves 2% today?';
+  }
+
+  @override
+  String get tekDokunusYuzdeKur => 'Set';
+
+  @override
+  String tekDokunusYuzdeKuruldu(String name, String etiket) {
+    return '$name: $etiket alarm set. You can change it in My alarms.';
+  }
+
+  @override
+  String get alarmlarGuncellenemedi =>
+      'Couldn\'t refresh; showing the last known state. Pull down to retry.';
+
+  @override
+  String get alarmHerGeciste => 'on every cross';
+
+  @override
+  String get alarmTekrarAnahtar => 'Notify on every cross';
+
+  @override
+  String get alarmTekrarAciklama =>
+      'If the price comes back and crosses again, we\'ll notify you again. At most 3 times a day.';
+
+  @override
+  String alarmSonCaldi(String zaman) {
+    return 'Last fired: $zaman';
+  }
+
+  @override
+  String get alarmTileTekrar =>
+      'Every-cross alert: it stays on and notifies you again if the price comes back and crosses again.';
 }

@@ -4,6 +4,7 @@ import '../models/seviye_alarmi.dart';
 import '../services/cizim_deposu.dart';
 import '../services/crash_reporter.dart';
 import '../services/seviye_alarmi_service.dart';
+import 'alarm_disk_ilk.dart';
 import 'auth_provider.dart';
 
 /// Servis kapısı — testte sahte `SeviyeAlarmiStore`'lu servisle değiştirilir.
@@ -22,12 +23,22 @@ class GostergeAlarmlariNotifier extends AsyncNotifier<List<GostergeAlarmi>> {
   Future<List<GostergeAlarmi>> build() async {
     final me = ref.watch(authProvider).valueOrNull;
     if (me == null) return const [];
-    try {
-      return await _svc.gostergeleriGetir(me.id);
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'gostergeAlarmlari.fetch');
-      return const [];
+    Future<List<GostergeAlarmi>> sunucu() async {
+      try {
+        return await _svc.gostergeleriGetir(me.id);
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'gostergeAlarmlari.fetch');
+        return const [];
+      }
     }
+
+    return diskIlkYukle(
+      ref: ref,
+      disk: () => _svc.gostergeleriOnbellektenGetir(me.id),
+      sunucu: sunucu,
+      taze: (l) => state = AsyncData(l),
+      neden: 'gostergeAlarmlari.arkaPlanOkuma',
+    );
   }
 
   Future<void> refresh() async {
@@ -62,12 +73,22 @@ class CizimAlarmlariNotifier extends AsyncNotifier<List<CizimAlarmi>> {
   Future<List<CizimAlarmi>> build() async {
     final me = ref.watch(authProvider).valueOrNull;
     if (me == null) return const [];
-    try {
-      return await _svc.cizimleriGetir(me.id);
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'cizimAlarmlari.fetch');
-      return const [];
+    Future<List<CizimAlarmi>> sunucu() async {
+      try {
+        return await _svc.cizimleriGetir(me.id);
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'cizimAlarmlari.fetch');
+        return const [];
+      }
     }
+
+    return diskIlkYukle(
+      ref: ref,
+      disk: () => _svc.cizimleriOnbellektenGetir(me.id),
+      sunucu: sunucu,
+      taze: (l) => state = AsyncData(l),
+      neden: 'cizimAlarmlari.arkaPlanOkuma',
+    );
   }
 
   Future<void> refresh() async {

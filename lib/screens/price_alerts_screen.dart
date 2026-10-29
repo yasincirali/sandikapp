@@ -12,6 +12,7 @@ import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
+import '../services/alarm_onbellegi.dart';
 import '../services/analytics_service.dart';
 import '../services/cizim_alarmi.dart'
     show cizgiAlarmEtiketi, cizgiEtiketiniAyir, yatayAlarmCizimi;
@@ -288,6 +289,33 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                 BildirimIzniUyarisi(
                   padding: EdgeInsets.fromLTRB(sh, SandikSpace.sm, sh, 0),
                 ),
+                // Okuma hata verdi, liste cihazdaki son kopya (Ar-Ge 29 Eki
+                // 20:45 #3): alarm "kaybolmuş" görünmez ama bayat olduğu da
+                // saklanmaz. İkon + cümle; yalnız renkle değil.
+                ValueListenableBuilder<bool>(
+                  valueListenable: AlarmOnbellegi.bayat,
+                  builder: (context, bayat, _) => !bayat
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          key: const ValueKey('alarmlarBayat'),
+                          padding:
+                              EdgeInsets.fromLTRB(sh, SandikSpace.sm, sh, 0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.cloud_off_rounded,
+                                  size: 16, color: c.text58),
+                              const SizedBox(width: SandikSpace.sm),
+                              Expanded(
+                                child: Text(
+                                  context.l10n.alarmlarGuncellenemedi,
+                                  style: context.t.bodySmall
+                                      ?.copyWith(color: c.text58),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
                 Expanded(
                   child: RefreshIndicator.adaptive(
                     color: c.amberText,
@@ -310,8 +338,15 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   }
 
   /// Çalmış alarmın çalma anı; bekleyen (ve her zaman yüzde) alarmda null.
-  static DateTime? _calmaAni(_Satir r) =>
-      r.f?.triggeredAt ?? r.g?.triggeredAt ?? r.c?.triggeredAt;
+  ///
+  /// Tekrarlı fiyat alarmı (0171) "çalmış" sayılmaz: çalmış olsa da fiyat
+  /// geri dönünce kendiliğinden nöbete girer, yüzde alarmı gibi
+  /// Bekleyenler'de kalır. Grup kararı [PriceAlert.sondu]'dan.
+  static DateTime? _calmaAni(_Satir r) {
+    final f = r.f;
+    if (f != null) return f.sondu ? f.triggeredAt : null;
+    return r.g?.triggeredAt ?? r.c?.triggeredAt;
+  }
 
   /// Çalmış alarmları toplu siler (kişinin kendi verisi, onayla). Yalnız
   /// [calan] grubundakiler gider; bekleyen alarmlara dokunulmaz. Biri
@@ -763,7 +798,15 @@ class _AlarmSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final tetiklendi = alarm.triggeredAt != null;
+    final l10n = context.l10n;
+    // Tekrarlı alarm (0171) hiç "sönmüş" olmaz: ok renkli kalır, "yeniden
+    // kur" yok; satır "her geçişte" yazar, çaldıysa son çalışı alt satırda
+    // (yüzde alarmı satırının kalıbı).
+    final tetiklendi = alarm.sondu;
+    final sonCalis = alarm.tekrar ? alarm.sonCalis : null;
+    final kosul =
+        '${alarm.isAbove ? "Üstüne çıkınca" : "Altına inince"}'
+        ' · ${fmtTRYFiyat(alarm.targetPrice)}';
     // Düz kart: kenar `text20 %22` idi, kartlar arası tek kenar dili
     // saç teli olsun diye `SandikCard`'a geçti (SandikCard 2. tur, 2026-10-08).
     return _CizgiSatirKabugu(
@@ -793,10 +836,17 @@ class _AlarmSatiri extends StatelessWidget {
                 Text(
                   tetiklendi
                       ? 'Çalıştı · ${fmtTRYFiyat(alarm.targetPrice)}'
-                      : '${alarm.isAbove ? "Üstüne çıkınca" : "Altına inince"}'
-                          ' · ${fmtTRYFiyat(alarm.targetPrice)}',
+                      : alarm.tekrar
+                          ? '$kosul · ${l10n.alarmHerGeciste}'
+                          : kosul,
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
+                if (sonCalis != null)
+                  Text(
+                    l10n.alarmSonCaldi(fmtTarihSaat(sonCalis)),
+                    key: const ValueKey('alarmSonCaldi'),
+                    style: context.t.bodySmall?.copyWith(color: c.text58),
+                  ),
                 if (onAc != null) const _GrafikteAcSatiri(),
               ],
             ),

@@ -3304,6 +3304,25 @@
     "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
     "placeholders": {"date": {"type": "String"}, "value": {"type": "String"}}
   },
+  "chartAlarmLabel": "{price} {arrow} {detail}",
+  "@chartAlarmLabel": {
+    "description": "Varlık grafiğinin üstünde fiyat alarmı etiketi: hedef fiyat, yön işareti (▲/▼) ve koşul ya da konum metni.",
+    "placeholders": {"price": {"type": "String"}, "arrow": {"type": "String"}, "detail": {"type": "String"}}
+  },
+  "chartAlarmMore": "+{count}",
+  "@chartAlarmMore": {
+    "description": "Grafik üstü alarm etiketinde gösterilmeyen öteki alarmların sayısı.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "chartAlarmA11y": "Fiyat alarmı {price}, {detail}",
+  "@chartAlarmA11y": {
+    "description": "Grafik üstü fiyat alarmı etiketinin ekran okuyucu metni.",
+    "placeholders": {"price": {"type": "String"}, "detail": {"type": "String"}}
+  },
+  "chartAlarmRises": "üstüne çıkınca",
+  "chartAlarmFalls": "altına inince",
+  "chartAlarmAboveChart": "grafiğin üstünde",
+  "chartAlarmBelowChart": "grafiğin altında",
   "chartNowLabel": "ŞİMDİ",
   "vsWatch": "Takip et",
   "vsSelect": "Bunu seç",
@@ -6431,5 +6450,17 @@
   "tegAdliAlarmKurulduAlt": "«{ad}» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz",
   "@tegAdliAlarmKurulduAlt": {"placeholders": {"ad": {"type": "String"}}},
   "tegAdliAlarmKurulduIkisi": "«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz",
-  "@tegAdliAlarmKurulduIkisi": {"placeholders": {"ad": {"type": "String"}}}
+  "@tegAdliAlarmKurulduIkisi": {"placeholders": {"ad": {"type": "String"}}},
+  "tekDokunusYuzdeOneri": "{name} eklendi. Bugün %2 oynarsa haber verelim mi?",
+  "@tekDokunusYuzdeOneri": {"placeholders": {"name": {"type": "String"}}},
+  "tekDokunusYuzdeKur": "Kur",
+  "tekDokunusYuzdeKuruldu": "{name}: {etiket} alarmı kuruldu. Alarmlarım'dan değiştirebilirsin.",
+  "@tekDokunusYuzdeKuruldu": {"placeholders": {"name": {"type": "String"}, "etiket": {"type": "String"}}},
+  "alarmlarGuncellenemedi": "Güncellenemedi; son bilinen durum gösteriliyor. Yenilemek için aşağı çek.",
+  "alarmHerGeciste": "her geçişte",
+  "alarmTekrarAnahtar": "Her geçişte haber ver",
+  "alarmTekrarAciklama": "Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.",
+  "alarmSonCaldi": "Son çaldı: {zaman}",
+  "@alarmSonCaldi": {"placeholders": {"zaman": {"type": "String"}}},
+  "alarmTileTekrar": "Her geçişte alarmı: açık kalır, fiyat geri dönüp yeniden geçerse yine haber verir."
 }

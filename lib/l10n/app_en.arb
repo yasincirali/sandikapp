@@ -3200,6 +3200,25 @@
     "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
     "placeholders": {"date": {"type": "String"}, "value": {"type": "String"}}
   },
+  "chartAlarmLabel": "{price} {arrow} {detail}",
+  "@chartAlarmLabel": {
+    "description": "Varlık grafiğinin üstünde fiyat alarmı etiketi: hedef fiyat, yön işareti (▲/▼) ve koşul ya da konum metni.",
+    "placeholders": {"price": {"type": "String"}, "arrow": {"type": "String"}, "detail": {"type": "String"}}
+  },
+  "chartAlarmMore": "+{count}",
+  "@chartAlarmMore": {
+    "description": "Grafik üstü alarm etiketinde gösterilmeyen öteki alarmların sayısı.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "chartAlarmA11y": "Price alert {price}, {detail}",
+  "@chartAlarmA11y": {
+    "description": "Grafik üstü fiyat alarmı etiketinin ekran okuyucu metni.",
+    "placeholders": {"price": {"type": "String"}, "detail": {"type": "String"}}
+  },
+  "chartAlarmRises": "when it rises above",
+  "chartAlarmFalls": "when it falls below",
+  "chartAlarmAboveChart": "above the chart",
+  "chartAlarmBelowChart": "below the chart",
   "chartNowLabel": "NOW",
   "vsWatch": "Watch",
   "vsSelect": "Select this",
@@ -5752,5 +5771,14 @@
   "cizgiAlarmiAdlandi": "Alert name saved",
   "tegAdliAlarmKurulduUst": "“{ad}” alert set: we'll notify you when the price rises above the line",
   "tegAdliAlarmKurulduAlt": "“{ad}” alert set: we'll notify you when the price falls below the line",
-  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line"
+  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line",
+  "tekDokunusYuzdeOneri": "{name} added. Notify you if it moves 2% today?",
+  "tekDokunusYuzdeKur": "Set",
+  "tekDokunusYuzdeKuruldu": "{name}: {etiket} alarm set. You can change it in My alarms.",
+  "alarmlarGuncellenemedi": "Couldn't refresh; showing the last known state. Pull down to retry.",
+  "alarmHerGeciste": "on every cross",
+  "alarmTekrarAnahtar": "Notify on every cross",
+  "alarmTekrarAciklama": "If the price comes back and crosses again, we'll notify you again. At most 3 times a day.",
+  "alarmSonCaldi": "Last fired: {zaman}",
+  "alarmTileTekrar": "Every-cross alert: it stays on and notifies you again if the price comes back and crosses again."
 }

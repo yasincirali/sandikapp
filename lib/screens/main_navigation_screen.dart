@@ -7,6 +7,8 @@ import '../widgets/hesap_secici.dart' show profilSekmesiUzunBasildi;
 import '../widgets/sekme_basa_don.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmKurAkisi;
+import '../widgets/tek_dokunus_alarm.dart';
+import '../providers/yuzde_alarmi_provider.dart';
 import '../widgets/review_prompt_sheet.dart';
 import '../widgets/tour_anchor.dart';
 import 'home_screen.dart';
@@ -332,7 +334,26 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ),
     );
     if (!mounted) return;
-    if (added is AlarmAdayi) {
+    if (added is AlarmAdayi &&
+        yuzdeAlarmiOnerilsinMi(
+            added, ref.read(yuzdeAlarmlariProvider).valueOrNull ?? const [])) {
+      // Altın/döviz/kripto: soru snack'in kendisinde, "Kur" sayfa açmadan
+      // ±%2 yüzde alarmı kurar (Ar-Ge 29 Eki 12:45 #1).
+      sandikSnack(
+        context,
+        context.l10n.tekDokunusYuzdeOneri(added.ad),
+        action: SnackBarAction(
+          label: context.l10n.tekDokunusYuzdeKur,
+          onPressed: () {
+            if (!mounted) return;
+            CrashReporter.arkaPlan(
+              tekDokunusYuzdeAlarmiKur(context, ref, added),
+              reason: 'main_navigation.tekDokunusYuzde',
+            );
+          },
+        ),
+      );
+    } else if (added is AlarmAdayi) {
       sandikSnack(
         context,
         context.l10n.alarmSuggest(added.ad),

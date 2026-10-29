@@ -4529,6 +4529,33 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String chartAlarmLabel(String price, String arrow, String detail) {
+    return '$price $arrow $detail';
+  }
+
+  @override
+  String chartAlarmMore(int count) {
+    return '+$count';
+  }
+
+  @override
+  String chartAlarmA11y(String price, String detail) {
+    return 'Fiyat alarmı $price, $detail';
+  }
+
+  @override
+  String get chartAlarmRises => 'üstüne çıkınca';
+
+  @override
+  String get chartAlarmFalls => 'altına inince';
+
+  @override
+  String get chartAlarmAboveChart => 'grafiğin üstünde';
+
+  @override
+  String get chartAlarmBelowChart => 'grafiğin altında';
+
+  @override
   String get chartNowLabel => 'ŞİMDİ';
 
   @override
@@ -9994,4 +10021,40 @@ class AppLocalizationsTr extends AppLocalizations {
   String tegAdliAlarmKurulduIkisi(String ad) {
     return '«$ad» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz';
   }
+
+  @override
+  String tekDokunusYuzdeOneri(String name) {
+    return '$name eklendi. Bugün %2 oynarsa haber verelim mi?';
+  }
+
+  @override
+  String get tekDokunusYuzdeKur => 'Kur';
+
+  @override
+  String tekDokunusYuzdeKuruldu(String name, String etiket) {
+    return '$name: $etiket alarmı kuruldu. Alarmlarım\'dan değiştirebilirsin.';
+  }
+
+  @override
+  String get alarmlarGuncellenemedi =>
+      'Güncellenemedi; son bilinen durum gösteriliyor. Yenilemek için aşağı çek.';
+
+  @override
+  String get alarmHerGeciste => 'her geçişte';
+
+  @override
+  String get alarmTekrarAnahtar => 'Her geçişte haber ver';
+
+  @override
+  String get alarmTekrarAciklama =>
+      'Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.';
+
+  @override
+  String alarmSonCaldi(String zaman) {
+    return 'Son çaldı: $zaman';
+  }
+
+  @override
+  String get alarmTileTekrar =>
+      'Her geçişte alarmı: açık kalır, fiyat geri dönüp yeniden geçerse yine haber verir.';
 }

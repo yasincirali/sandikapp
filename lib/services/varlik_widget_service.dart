@@ -88,6 +88,20 @@ import 'sunucu_secimi.dart';
 ///   Oturum jetonu widget'a TAŞINMAZ (karar); fonksiyon kimlik sormaz,
 ///   yalnız kamu piyasa fiyatı döner.
 /// Kapsam dışı varlıkta (BIST, fon, endeks) davranış değişmedi.
+///
+/// ## Vitrin: orta boy, üç varlık (Ar-Ge 2026-10-29 §2, yasin onayı)
+/// iOS `SandikVitrinWidget` AYNI paketi okur; yeni anahtar yok. Pakete
+/// yalnız isteğe bağlı `vitrin` alanı eklendi (`v` hâlâ 1, eski okuyucu
+/// tanımadığı alanı yok sayar): kullanıcı düzenleme ekranında satırı boş
+/// bıraktığında gösterilecek üç sembol — takip listesinin ilk üçü
+/// ([varsayilanVitrin]). Karar burada, Swift'te değil: hangi öğenin takip
+/// listesinden geldiği pakete başka yoldan yazılmıyor (gizlilik notu
+/// yukarıda) ve yazılmamalı. `vitrin` yalnız üç sembol taşır; "portföyde mi"
+/// sorusunu cevaplamaz (portföydeki bir varlık takipte de olabilir). Depo
+/// uygulamaya özel App Group olduğundan bu küçük ek bilinçli kabul.
+/// Widget bu üç sembolün sunucu kapsamındakileri TEK `widget-fiyat`
+/// isteğinde çeker (fonksiyon en çok 5 sembol alır); ritim tek varlık
+/// widget'ıyla aynı.
 class VarlikWidgetService {
   VarlikWidgetService._();
   static final instance = VarlikWidgetService._();
@@ -192,8 +206,14 @@ class VarlikWidgetService {
       final adaylar =
           varlikWidgetAdaylari(lotlar: lotlar, takip: takipListesi ?? const []);
 
+      final vitrin =
+          varsayilanVitrin(adaylar: adaylar, takip: takipListesi ?? const []);
+
       final simdi = saat();
-      final anahtar = '$kurulu|${adaylar.map((a) => a.sembol).join(',')}';
+      // Vitrin anahtara girer: takip sırası değişip aday listesi aynı
+      // kalırsa (sembol portföyde de var) varsayılan üçlü yine yazılsın.
+      final anahtar = '$kurulu|${adaylar.map((a) => a.sembol).join(',')}'
+          '|${vitrin.join(',')}';
       final son = _sonYazim;
       if (anahtar == _sonAnahtar &&
           son != null &&
@@ -237,7 +257,9 @@ class VarlikWidgetService {
       }
 
       final paket = varlikWidgetPaketi(ogeler,
-          saat: DateFormat('HH:mm', 'tr_TR').format(simdi), zaman: simdi);
+          saat: DateFormat('HH:mm', 'tr_TR').format(simdi),
+          zaman: simdi,
+          vitrin: vitrin);
       // Sunucu bilgisi paketten ÖNCE: paket yazımı widget'ı yeniler ve o
       // turda widget tazelemeyi deneyebilir. Yalnız kapsamda öğe varsa —
       // kapsam dışı listeyle widget hiç ağa çıkmaz, yazmak gereksiz.
@@ -332,6 +354,39 @@ List<VarlikWidgetAdayi> varlikWidgetAdaylari({
       isManualPrice: false,
       subCategory: w.subCategory,
     );
+  }
+  return out;
+}
+
+/// Vitrin widget'ının (orta boy, üç satır) varsayılan sembolleri: takip
+/// listesinin ilk [adet] varlığı, takip sırasıyla (Ar-Ge 2026-10-29 §2:
+/// "varsayılan seçim takip listesinin ilk üçü").
+///
+/// Yalnız [adaylar]'da olan sembol girer — widget satırı paketteki öğeden
+/// çizer; listede olmayan kimlik "listende yok" satırı olurdu. Sembol
+/// kararı adaylarla aynı yerden ([FiyatKaynagi.widgetKotasyonSembolu]);
+/// burada ikinci bir sembol merdiveni yok (sözleşme madde 1). Takip listesi
+/// üçten kısaysa eksik satır seçim listesinin başından (önce portföy)
+/// tamamlanır: boş satırlı bir vitrin "bozuk" okunur.
+List<String> varsayilanVitrin({
+  required List<VarlikWidgetAdayi> adaylar,
+  required Iterable<WatchlistItem> takip,
+  int adet = 3,
+}) {
+  final listede = {for (final a in adaylar) a.sembol};
+  final out = <String>[];
+  for (final w in takip) {
+    if (out.length >= adet) return out;
+    final sembol = FiyatKaynagi.widgetKotasyonSembolu(
+        type: w.type, ticker: w.ticker, isManualPrice: false);
+    if (sembol == null || !listede.contains(sembol) || out.contains(sembol)) {
+      continue;
+    }
+    out.add(sembol);
+  }
+  for (final a in adaylar) {
+    if (out.length >= adet) break;
+    if (!out.contains(a.sembol)) out.add(a.sembol);
   }
   return out;
 }
@@ -482,10 +537,14 @@ double? fonGunlukYuzdesi(List<(int, double)> nav, double fiyat) {
 ///
 /// [zaman] (isteğe bağlı) yazım anı: `zaman` epoch ms + `tarih` ("24 Eki
 /// 14:05"). Widget fiyatın 1 günden eski olduğunu buradan anlar.
+///
+/// [vitrin] (isteğe bağlı, 2026-10-29) vitrin widget'ının boş satırlarına
+/// düşen sembol sırası ([varsayilanVitrin]); boşsa alan yazılmaz.
 String varlikWidgetPaketi(
   List<VarlikWidgetOgesi> ogeler, {
   required String saat,
   DateTime? zaman,
+  List<String> vitrin = const [],
 }) =>
     jsonEncode({
       'v': 1,
@@ -494,4 +553,5 @@ String varlikWidgetPaketi(
       if (zaman != null)
         'tarih': DateFormat('d MMM HH:mm', 'tr_TR').format(zaman),
       'ogeler': [for (final o in ogeler) o.toJson()],
+      if (vitrin.isNotEmpty) 'vitrin': vitrin,
     });
