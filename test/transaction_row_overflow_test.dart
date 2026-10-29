@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
-import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/widgets/transaction_row.dart';
 
@@ -54,7 +53,8 @@ Future<void> _pump(
   Asset asset, {
   double width = 375,
   bool hideBalance = false,
-  HareketBakiyesi? bakiye,
+  ({double once, double sonra})? bakiye,
+  ({double once, double sonra})? portfoy,
   double yaziOlcegi = 1,
 }) async {
   tester.view.physicalSize = Size(width * 3, 800 * 3);
@@ -76,6 +76,7 @@ Future<void> _pump(
               portfolioState: const PortfolioState(),
               hideBalance: hideBalance,
               bakiye: bakiye,
+              portfoyDegeri: portfoy,
             ),
           ),
         ),
@@ -181,42 +182,27 @@ void main() {
           _asset(name: 'Gram Altın', type: AssetType.altin, qty: 12.5),
           width: 320,
           yaziOlcegi: olcek,
-          bakiye: (
-            once: 123456.7891,
-            sonra: 123469.2891,
-            onceDeger: null,
-            sonraDeger: null,
-          ),
+          bakiye: (once: 123456.7891, sonra: 123469.2891),
         );
         expect(tester.takeException(), isNull);
       });
     }
 
-    // Miktar + değer (2026-10-29 ikinci tur): sağ kolon 116pt kalır, uzun
-    // değer büyük yazıda alt satıra iner (Wrap) — taşmaz, sağ kolonu itmez.
+    // Miktar + portföy değeri (2026-10-29): sağ kolon 116pt kalır, değer
+    // büyük yazıda bütün hâlinde alt satıra iner — taşmaz.
     for (final olcek in [1.0, 2.0]) {
-      testWidgets('bakiye + değer — 320pt, yazı ×$olcek', (tester) async {
+      testWidgets('bakiye + portföy — 320pt, yazı ×$olcek', (tester) async {
         await _pump(
           tester,
-          _asset(
-            name: 'Aselsan',
-            type: AssetType.hisse,
-            ticker: 'ASELS.IS',
-            kind: AssetKind.sell,
-            qty: 100,
-          ),
+          _asset(name: 'Aselsan', type: AssetType.hisse,
+              ticker: 'ASELS.IS', kind: AssetKind.sell, qty: 100),
           width: 320,
           yaziOlcegi: olcek,
-          bakiye: (
-            once: 123456,
-            sonra: 123356,
-            onceDeger: 100555432.5,
-            sonraDeger: 100473982.5,
-          ),
+          bakiye: (once: 123456, sonra: 123356),
+          portfoy: (once: 987654321.5, sonra: 987643210.5),
         );
         expect(tester.takeException(), isNull);
-        expect(find.textContaining('→ ₺'), findsOneWidget);
-        // Sağ kolon genişliği değişmedi.
+        expect(find.textContaining('Portföy'), findsOneWidget);
         final sag = tester
             .widgetList<SizedBox>(find.byType(SizedBox))
             .where((s) => s.width == 116);

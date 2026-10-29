@@ -7,6 +7,7 @@ import '../models/position.dart';
 import '../models/asset_type.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/user_model.dart';
+import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -510,7 +511,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     required BazPara baz,
     required PortfolioState portfolioState,
     required bool hideBalance,
-    required Map<String, HareketBakiyesi> bakiyeler,
+    required Map<String, ({double once, double sonra})> bakiyeler,
+    required Map<String, ({double once, double sonra})> portfoyDegerleri,
   }) {
     final not = islemNotu(a, defter);
     final benimId = ref.watch(authProvider).valueOrNull?.id;
@@ -527,6 +529,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       // Silinenler alanı "artık portföyde olmayan" kayıtları anlatır;
       // bakiye süren defterin hikâyesi, orada yazılmaz.
       bakiye: _silinenler ? null : bakiyeler[a.id],
+      // Kapsamın TOPLAM portföyü (tür/arama süzgeci uygulanmaz): Performans
+      // aynı kişi + portföy seçiminde bu sayıyı gösterir.
+      portfoyDegeri: _silinenler ? null : portfoyDegerleri[a.id],
       onTap: acilir
           ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
           : null,
@@ -545,6 +550,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     // filtrelenmiş sayfayla değil — bkz. `islemNotu`.
     final ledger = _ledger;
     final bakiyeler = _bakiyeOnbellegi.hesapla(ledger);
+    final portfoyDegerleri = ref.watch(hareketPortfoyDegerleriProvider((
+      kisi: _view,
+      portfoy: ref.watch(portfoyKapsamiProvider).secim,
+    )));
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     ref.listen(activePartnersProvider, (_, next) {
@@ -820,6 +829,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                                               pState ?? const PortfolioState(),
                                           hideBalance: hideBalance,
                                           bakiyeler: bakiyeler,
+                                          portfoyDegerleri: portfoyDegerleri,
                                         ),
                                       ],
                                     ],

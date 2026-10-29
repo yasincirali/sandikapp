@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../demo/demo_modu.dart';
+import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../providers/price_alert_notification_provider.dart';
 import '../providers/app_notification_provider.dart';
 import '../models/app_notification.dart';
@@ -414,6 +415,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required BazPara baz,
     required PortfolioState portfolioState,
     required bool hideBalance,
+    required Map<String, ({double once, double sonra})> portfoyDegerleri,
   }) {
     final not = islemNotu(a, defter);
     final benimId = ref.watch(authProvider).valueOrNull?.id;
@@ -426,6 +428,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       hideBalance: hideBalance,
       not: not,
       bakiye: _bakiyeOnbellegi.hesapla(defter)[a.id],
+      portfoyDegeri: portfoyDegerleri[a.id],
       onTap: acilir
           ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
           : null,
@@ -1184,6 +1187,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final count = recentAssets.length > 3 ? 3 : recentAssets.length;
 
                 final hideBalance = ref.watch(balanceHiddenProvider);
+                // Portföy önce → sonra: kapsamın (ana sayfa portföy süzgeci
+                // taşımaz) tüm defteri için bir kez kurulmuş harita; satır
+                // O(1) okur. Seri gelene kadar boş → satırlar miktarla.
+                final portfoyDegerleri = ref.watch(
+                    hareketPortfoyDegerleriProvider(
+                        (kisi: _view, portfoy: PortfoySecimi.tumu)));
                 // Tur hedefi: satırların dokunulabilir olduğunu (işlem notu)
                 // satırın kendisi göstermiyor; tur anlatır.
                 return TourAnchor(
@@ -1201,6 +1210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           baz: baz,
                           portfolioState: myState,
                           hideBalance: hideBalance,
+                          portfoyDegerleri: portfoyDegerleri,
                         ),
                       ],
                       // "Tümünü gör" — hareket ekranına götürür. Kabın son

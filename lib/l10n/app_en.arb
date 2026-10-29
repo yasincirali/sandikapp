@@ -509,8 +509,9 @@
       }
     }
   },
-  "txBalanceValueChange": "· {once} → {sonra}",
-  "@txBalanceValueChange": {
+  "txPortfolioValueChange": "· Portfolio {once} → {sonra}",
+  "@txPortfolioValueChange": {
+    "description": "Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).",
     "placeholders": {
       "once": {
         "type": "String"
@@ -520,19 +521,13 @@
       }
     }
   },
-  "txBalanceValueSemantics": "Holding went from {once} ({onceDeger}) to {sonra} ({sonraDeger})",
-  "@txBalanceValueSemantics": {
+  "txPortfolioValueSemantics": "Portfolio went from {once} to {sonra}",
+  "@txPortfolioValueSemantics": {
     "placeholders": {
       "once": {
         "type": "String"
       },
-      "onceDeger": {
-        "type": "String"
-      },
       "sonra": {
-        "type": "String"
-      },
-      "sonraDeger": {
         "type": "String"
       }
     }

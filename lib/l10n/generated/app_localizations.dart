@@ -1628,22 +1628,17 @@ abstract class AppLocalizations {
   /// **'Bakiye {once} iken {sonra} oldu'**
   String txBalanceSemantics(String once, String sonra);
 
-  /// No description provided for @txBalanceValueChange.
+  /// Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).
   ///
   /// In tr, this message translates to:
-  /// **'· {once} → {sonra}'**
-  String txBalanceValueChange(String once, String sonra);
+  /// **'· Portföy {once} → {sonra}'**
+  String txPortfolioValueChange(String once, String sonra);
 
-  /// No description provided for @txBalanceValueSemantics.
+  /// No description provided for @txPortfolioValueSemantics.
   ///
   /// In tr, this message translates to:
-  /// **'Bakiye {once} ({onceDeger}) iken {sonra} ({sonraDeger}) oldu'**
-  String txBalanceValueSemantics(
-    String once,
-    String onceDeger,
-    String sonra,
-    String sonraDeger,
-  );
+  /// **'Portföy {once} iken {sonra} oldu'**
+  String txPortfolioValueSemantics(String once, String sonra);
 
   /// No description provided for @txHasNote.
   ///
