@@ -5752,5 +5752,8 @@
   "cizgiAlarmiAdlandi": "Alert name saved",
   "tegAdliAlarmKurulduUst": "“{ad}” alert set: we'll notify you when the price rises above the line",
   "tegAdliAlarmKurulduAlt": "“{ad}” alert set: we'll notify you when the price falls below the line",
-  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line"
+  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line",
+  "tekDokunusYuzdeOneri": "{name} added. Notify you if it moves 2% today?",
+  "tekDokunusYuzdeKur": "Set",
+  "tekDokunusYuzdeKuruldu": "{name}: {etiket} alarm set. You can change it in My alarms."
 }

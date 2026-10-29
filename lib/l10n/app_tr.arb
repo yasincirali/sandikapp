@@ -6431,5 +6431,10 @@
   "tegAdliAlarmKurulduAlt": "«{ad}» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz",
   "@tegAdliAlarmKurulduAlt": {"placeholders": {"ad": {"type": "String"}}},
   "tegAdliAlarmKurulduIkisi": "«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz",
-  "@tegAdliAlarmKurulduIkisi": {"placeholders": {"ad": {"type": "String"}}}
+  "@tegAdliAlarmKurulduIkisi": {"placeholders": {"ad": {"type": "String"}}},
+  "tekDokunusYuzdeOneri": "{name} eklendi. Bugün %2 oynarsa haber verelim mi?",
+  "@tekDokunusYuzdeOneri": {"placeholders": {"name": {"type": "String"}}},
+  "tekDokunusYuzdeKur": "Kur",
+  "tekDokunusYuzdeKuruldu": "{name}: {etiket} alarmı kuruldu. Alarmlarım'dan değiştirebilirsin.",
+  "@tekDokunusYuzdeKuruldu": {"placeholders": {"name": {"type": "String"}, "etiket": {"type": "String"}}}
 }

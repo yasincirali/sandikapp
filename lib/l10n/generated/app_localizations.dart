@@ -16546,6 +16546,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz'**
   String tegAdliAlarmKurulduIkisi(String ad);
+
+  /// No description provided for @tekDokunusYuzdeOneri.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} eklendi. Bugün %2 oynarsa haber verelim mi?'**
+  String tekDokunusYuzdeOneri(String name);
+
+  /// No description provided for @tekDokunusYuzdeKur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kur'**
+  String get tekDokunusYuzdeKur;
+
+  /// No description provided for @tekDokunusYuzdeKuruldu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name}: {etiket} alarmı kuruldu. Alarmlarım\'dan değiştirebilirsin.'**
+  String tekDokunusYuzdeKuruldu(String name, String etiket);
 }
 
 class _AppLocalizationsDelegate

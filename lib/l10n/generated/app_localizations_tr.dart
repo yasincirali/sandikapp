@@ -9994,4 +9994,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String tegAdliAlarmKurulduIkisi(String ad) {
     return '«$ad» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz';
   }
+
+  @override
+  String tekDokunusYuzdeOneri(String name) {
+    return '$name eklendi. Bugün %2 oynarsa haber verelim mi?';
+  }
+
+  @override
+  String get tekDokunusYuzdeKur => 'Kur';
+
+  @override
+  String tekDokunusYuzdeKuruldu(String name, String etiket) {
+    return '$name: $etiket alarmı kuruldu. Alarmlarım\'dan değiştirebilirsin.';
+  }
 }

@@ -10117,4 +10117,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String tegAdliAlarmKurulduIkisi(String ad) {
     return '“$ad” alert set: we\'ll notify you when the price crosses the line';
   }
+
+  @override
+  String tekDokunusYuzdeOneri(String name) {
+    return '$name added. Notify you if it moves 2% today?';
+  }
+
+  @override
+  String get tekDokunusYuzdeKur => 'Set';
+
+  @override
+  String tekDokunusYuzdeKuruldu(String name, String etiket) {
+    return '$name: $etiket alarm set. You can change it in My alarms.';
+  }
 }
