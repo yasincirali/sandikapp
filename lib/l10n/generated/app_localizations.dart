@@ -16528,6 +16528,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Alarmın adı kaydedildi'**
   String get cizgiAlarmiAdlandi;
+
+  /// No description provided for @tegAdliAlarmKurulduUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'«{ad}» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz'**
+  String tegAdliAlarmKurulduUst(String ad);
+
+  /// No description provided for @tegAdliAlarmKurulduAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'«{ad}» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz'**
+  String tegAdliAlarmKurulduAlt(String ad);
+
+  /// No description provided for @tegAdliAlarmKurulduIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz'**
+  String tegAdliAlarmKurulduIkisi(String ad);
 }
 
 class _AppLocalizationsDelegate

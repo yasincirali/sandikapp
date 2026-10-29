@@ -95,55 +95,90 @@ class _CizgiAdiSayfasiState extends State<CizgiAdiSayfasi> {
     final l = context.l10n;
     final c = context.c;
     final sh = SandikSpace.screenH(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(sh, SandikSpace.sm2, sh,
-          MediaQuery.of(context).viewInsets.bottom + SandikSpace.lg),
-      // Büyük yazıda ve yatay ekranda (kısa yükseklik) düğme kesilmesin.
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.sm),
-            Text(
-              widget.baslik,
-              style: context.t.headlineSmall
-                  ?.copyWith(color: c.text90, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: SandikSpace.md),
-            TextField(
-              key: const ValueKey('cizgiAdiAlani'),
-              controller: _ctrl,
-              autofocus: widget.odakla,
-              maxLength: kCizgiAdiAzami,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _kaydet(),
-              onChanged: (_) {
-                if (_hata != null) setState(() => _hata = null);
-              },
-              style: context.t.bodyLarge?.copyWith(color: c.text90),
-              decoration: context.inputDecoration(
-                l.cizgiAdiIpucu,
-                labelText: l.cizgiAdiEtiket,
-                errorText: _hata,
+    // Kısa ekran (yatay telefon, ~390 pt): alan ile düğme yan yana, açıklama
+    // ve sayaç yok — dikey dizilimde düğme ana ekran çubuğunun altında
+    // kalıyordu (e2e 2026-10-29). Dik ekranda düzen değişmez.
+    final kisa = MediaQuery.sizeOf(context).height < 480;
+    final alan = TextField(
+      key: const ValueKey('cizgiAdiAlani'),
+      controller: _ctrl,
+      autofocus: widget.odakla,
+      maxLength: kCizgiAdiAzami,
+      // Kısa ekranda sayaç satırı yer kaplamasın; sınır yine geçerli.
+      buildCounter: kisa
+          ? (_, {required currentLength, required isFocused, maxLength}) =>
+              null
+          : null,
+      textCapitalization: TextCapitalization.sentences,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _kaydet(),
+      onChanged: (_) {
+        if (_hata != null) setState(() => _hata = null);
+      },
+      style: context.t.bodyLarge?.copyWith(color: c.text90),
+      decoration: context.inputDecoration(
+        l.cizgiAdiIpucu,
+        labelText: l.cizgiAdiEtiket,
+        errorText: _hata,
+      ),
+    );
+    final dugme = SandikAsyncButton.kompakt(
+      key: const ValueKey('cizgiAdiKaydet'),
+      style: FilledButton.styleFrom(
+        backgroundColor: c.amberFill,
+        foregroundColor: c.onAmber,
+        minimumSize: kisa
+            ? const Size(0, SandikTouch.min)
+            : const Size.fromHeight(SandikTouch.min),
+      ),
+      onPressed: _kaydet,
+      child: Text(widget.dugme),
+    );
+    // Ana ekran çubuğu / çentik payı (yatayda altta ~21 pt, yanlarda çentik).
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+            sh,
+            kisa ? SandikSpace.xs : SandikSpace.sm2,
+            sh,
+            MediaQuery.of(context).viewInsets.bottom +
+                (kisa ? SandikSpace.md : SandikSpace.lg)),
+        // Büyük yazıda düğme kesilmesin: sığmazsa kaydırılır.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Center(child: SandikTutamac()),
+              SizedBox(height: kisa ? SandikSpace.xs : SandikSpace.sm),
+              Text(
+                widget.baslik,
+                style: (kisa ? context.t.titleLarge : context.t.headlineSmall)
+                    ?.copyWith(color: c.text90, fontWeight: FontWeight.w700),
               ),
-            ),
-            Text(l.cizgiAdiAciklama,
-                style: context.t.bodySmall?.copyWith(color: c.text58)),
-            const SizedBox(height: SandikSpace.md),
-            SandikAsyncButton.kompakt(
-              key: const ValueKey('cizgiAdiKaydet'),
-              style: FilledButton.styleFrom(
-                backgroundColor: c.amberFill,
-                foregroundColor: c.onAmber,
-                minimumSize: const Size.fromHeight(SandikTouch.min),
-              ),
-              onPressed: _kaydet,
-              child: Text(widget.dugme),
-            ),
-          ],
+              SizedBox(height: kisa ? SandikSpace.sm : SandikSpace.md),
+              if (kisa)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: alan),
+                    const SizedBox(width: SandikSpace.sm),
+                    Padding(
+                      padding: const EdgeInsets.only(top: SandikSpace.xs),
+                      child: dugme,
+                    ),
+                  ],
+                )
+              else ...[
+                alan,
+                Text(l.cizgiAdiAciklama,
+                    style: context.t.bodySmall?.copyWith(color: c.text58)),
+                const SizedBox(height: SandikSpace.md),
+                dugme,
+              ],
+            ],
+          ),
         ),
       ),
     );

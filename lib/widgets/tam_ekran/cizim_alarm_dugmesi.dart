@@ -239,6 +239,7 @@ class CizimAlarmDugmesi extends ConsumerWidget {
       // Ad isteğe bağlı: boş bırakılırsa alarm bugünkü gibi varlığın adıyla
       // kurulur. Yazma sayfanın düğmesinde koşar; hata sayfada söylenir.
       var kuruldu = false;
+      var verilenAd = '';
       await showCizgiAdiSayfasi(
         context,
         baslik: l10n.cizgiAlarmiBaslik,
@@ -260,15 +261,24 @@ class CizimAlarmDugmesi extends ConsumerWidget {
             createdAt: simdi,
           ));
           kuruldu = true;
+          verilenAd = cizgiEtiketiniAyir(cizgiAlarmEtiketi(ad, isim)).isim ?? '';
         },
       );
       if (!kuruldu) return;
       OzellikOlcumu.say(Ozellik.cizimAlarm);
-      bildir(switch (yon) {
-        SeviyeYon.yukari => l10n.tegAlarmKurulduUst,
-        SeviyeYon.asagi => l10n.tegAlarmKurulduAlt,
-        SeviyeYon.herIkisi => l10n.tegAlarmKurulduIkisi,
-      });
+      // Onay adı söyler (e2e 2026-10-29): kullanıcı hangi çizgiyi
+      // kurduğunu okur. Adsızda eski metin birebir.
+      bildir(verilenAd.isEmpty
+          ? switch (yon) {
+              SeviyeYon.yukari => l10n.tegAlarmKurulduUst,
+              SeviyeYon.asagi => l10n.tegAlarmKurulduAlt,
+              SeviyeYon.herIkisi => l10n.tegAlarmKurulduIkisi,
+            }
+          : switch (yon) {
+              SeviyeYon.yukari => l10n.tegAdliAlarmKurulduUst(verilenAd),
+              SeviyeYon.asagi => l10n.tegAdliAlarmKurulduAlt(verilenAd),
+              SeviyeYon.herIkisi => l10n.tegAdliAlarmKurulduIkisi(verilenAd),
+            });
     } catch (e) {
       if (context.mounted) showAppError(context, e);
     }
@@ -332,6 +342,7 @@ class CizimAlarmAdlari extends ConsumerWidget {
     if (adlar.isEmpty) return const SizedBox.shrink();
     final stil = context.t.labelSmall
         ?.copyWith(color: renk, fontWeight: FontWeight.w600);
+    final zemin = context.c.background;
     final yazilar = <Widget>[];
     for (final c in cizimler) {
       final isim = c.id == null ? null : adlar[c.id];
@@ -350,8 +361,16 @@ class CizimAlarmAdlari extends ConsumerWidget {
       yazilar.add(Positioned(
         right: alan.width - uc.dx + SandikSpace.xs,
         bottom: alan.height - uc.dy + SandikSpace.xxs,
-        child: ConstrainedBox(
+        // Zemin (e2e 2026-10-29): mumların üstünde ad okunmuyordu. Grafik
+        // zemininden yarı saydam hap; çizgi rengi yazıda kalır.
+        child: Container(
           constraints: BoxConstraints(maxWidth: alan.width / 2),
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.xs, vertical: SandikSpace.xxs),
+          decoration: BoxDecoration(
+            color: zemin.withValues(alpha: 0.85),
+            borderRadius: SandikRadius.smAll,
+          ),
           child: Text(isim,
               maxLines: 1, overflow: TextOverflow.ellipsis, style: stil),
         ),

@@ -9979,4 +9979,19 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cizgiAlarmiAdlandi => 'Alarmın adı kaydedildi';
+
+  @override
+  String tegAdliAlarmKurulduUst(String ad) {
+    return '«$ad» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz';
+  }
+
+  @override
+  String tegAdliAlarmKurulduAlt(String ad) {
+    return '«$ad» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz';
+  }
+
+  @override
+  String tegAdliAlarmKurulduIkisi(String ad) {
+    return '«$ad» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz';
+  }
 }

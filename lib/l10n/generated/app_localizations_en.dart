@@ -10102,4 +10102,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cizgiAlarmiAdlandi => 'Alert name saved';
+
+  @override
+  String tegAdliAlarmKurulduUst(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price rises above the line';
+  }
+
+  @override
+  String tegAdliAlarmKurulduAlt(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price falls below the line';
+  }
+
+  @override
+  String tegAdliAlarmKurulduIkisi(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price crosses the line';
+  }
 }

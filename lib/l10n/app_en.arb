@@ -5749,5 +5749,8 @@
   "cizgiAlarmiAdlandir": "Rename",
   "cizgiAlarmiAdlandirBaslik": "Line alert name",
   "cizgiyiGrafikteAc": "Open in chart",
-  "cizgiAlarmiAdlandi": "Alert name saved"
+  "cizgiAlarmiAdlandi": "Alert name saved",
+  "tegAdliAlarmKurulduUst": "“{ad}” alert set: we'll notify you when the price rises above the line",
+  "tegAdliAlarmKurulduAlt": "“{ad}” alert set: we'll notify you when the price falls below the line",
+  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line"
 }

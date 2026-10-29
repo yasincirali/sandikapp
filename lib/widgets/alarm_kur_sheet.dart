@@ -338,11 +338,15 @@ Future<PriceAlert?> alarmKurAkisi(
   unawaited(AnalyticsService.instance
       .logScreenView(screenName: 'price_alert_created'));
   if (context.mounted) {
+    // Yatay çizgiye ad verildiyse onay adı söyler ("«Destek» için alarm
+    // kuruldu", e2e 2026-10-29); adsızda varlığın adı, eskisi gibi.
+    final isim = (sonuc.isim ?? '').trim();
+    final ad = isim.isEmpty ? sonuc.aday.ad : '«$isim»';
     sandikSnack(
       context,
       sonuc.yon == 'above'
-          ? context.l10n.alertSetAbove(sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef))
-          : context.l10n.alertSetBelow(sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef)),
+          ? context.l10n.alertSetAbove(ad, fmtTRYFiyat(sonuc.hedef))
+          : context.l10n.alertSetBelow(ad, fmtTRYFiyat(sonuc.hedef)),
       kind: SandikSnackKind.success,
     );
     // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:

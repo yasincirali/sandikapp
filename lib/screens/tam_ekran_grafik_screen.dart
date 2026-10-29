@@ -202,6 +202,18 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   /// görünüm buradan bugüne uzanır. Aralık değişince bırakılır (kullanıcı
   /// artık kendi bakıyor).
   int? _odakZamani;
+
+  /// Odak çiziminin AÇILIŞTAKİ hâli: fiyat ekseni onu kapsar
+  /// ([cizimFiyatAraligi]). Canlı hâli değil: kullanıcı çizgiyi taşırken
+  /// eksen çizgiyle birlikte kayarsa sürükleme kaçardı. Çizim silinince
+  /// bırakılır.
+  GrafikCizimi? _odakIlk;
+
+  GrafikCizimi? get _odakCizimi {
+    final o = _odakIlk;
+    if (o == null || !_cizimler.any((c) => c.id == o.id)) return null;
+    return o;
+  }
   CizimTuru? _arac;
   bool _miknatis = false;
   int _secili = -1;
@@ -313,6 +325,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
       if (k < 0) return;
       _secili = k;
       final ci = c[k];
+      _odakIlk = ci;
       // Yatay çizginin zamanı yok (her yerde aynı fiyat): görünüm değişmez.
       _odakZamani = ci.tur.tekNokta || ci.b == null
           ? null
@@ -490,6 +503,18 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           lo = math.min(lo, v);
           hi = math.max(hi, v);
         }
+      }
+    }
+    // Bildirimden açılan çizgi (odak) mumların dışında olsa da görünür.
+    final odak = _odakCizimi;
+    if (odak != null && lo.isFinite && hi.isFinite) {
+      final aMs = barUzunluguMs(m.last.t, _aralik);
+      final zamanlar = [for (final b in m) b.t];
+      final r = cizimFiyatAraligi(
+          odak, (t) => zamanIndeksiBul(zamanlar, aMs, t), g);
+      if (r != null && r.lo > 0) {
+        lo = math.min(lo, r.lo);
+        hi = math.max(hi, r.hi);
       }
     }
     if (!lo.isFinite || !hi.isFinite) {

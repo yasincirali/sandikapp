@@ -6425,5 +6425,11 @@
   "cizgiAlarmiAdlandir": "Adlandır",
   "cizgiAlarmiAdlandirBaslik": "Çizgi alarmının adı",
   "cizgiyiGrafikteAc": "Grafikte aç",
-  "cizgiAlarmiAdlandi": "Alarmın adı kaydedildi"
+  "cizgiAlarmiAdlandi": "Alarmın adı kaydedildi",
+  "tegAdliAlarmKurulduUst": "«{ad}» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz",
+  "@tegAdliAlarmKurulduUst": {"placeholders": {"ad": {"type": "String"}}},
+  "tegAdliAlarmKurulduAlt": "«{ad}» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz",
+  "@tegAdliAlarmKurulduAlt": {"placeholders": {"ad": {"type": "String"}}},
+  "tegAdliAlarmKurulduIkisi": "«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz",
+  "@tegAdliAlarmKurulduIkisi": {"placeholders": {"ad": {"type": "String"}}}
 }

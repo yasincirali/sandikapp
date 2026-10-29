@@ -528,6 +528,161 @@ void main() {
       expect(find.text('Destek 245'), findsOneWidget);
       await tester.pump(const Duration(seconds: 5));
     });
+
+    // e2e 2026-10-29: yatay çizgi ₺228,30, mumlar ~260–315 → çizgi seçili
+    // ama ekran dışındaydı.
+    Future<TamEkranGrafikEkraniState> acOdak(
+        WidgetTester tester, GrafikCizimi c) async {
+      final simdi = DateTime.now();
+      final bas = DateTime(simdi.year, simdi.month, simdi.day)
+          .subtract(const Duration(days: 199))
+          .millisecondsSinceEpoch;
+      MumVerisi.testCekici = (a, ar, b, s) async => _barlar(200, bas: bas);
+      await CizimDeposu.instance.yaz('THYAO.IS', [c]);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(844, 390);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          priceAlertsProvider.overrideWith(() => _F(const [], {})),
+          cizimAlarmlariProvider.overrideWith(() => _C(const [], {})),
+        ],
+        child: MaterialApp(
+          theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+          locale: const Locale('tr'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: TamEkranGrafikEkrani(
+            varlik: _thy(),
+            ad: 'THYAO',
+            canliBirim: 101,
+            odakCizim: c.id,
+            dikteKapan: false,
+          ),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump();
+      return tester.state<TamEkranGrafikEkraniState>(
+          find.byType(TamEkranGrafikEkrani));
+    }
+
+    void ekranda(TamEkranGrafikEkraniState s, CizimNoktasi n) {
+      final o = s.olcek!;
+      final y = o.ekranda(n).dy;
+      expect(y, inInclusiveRange(0, o.fiyatAlani),
+          reason: '${n.p} fiyat ekseninde (${o.dusuk}–${o.yuksek})');
+    }
+
+    testWidgets('mumların altındaki yatay çizgi eksene girer', (tester) async {
+      final c = GrafikCizimi(
+          tur: CizimTuru.yatay, a: CizimNoktasi(0, 60), id: 'yatay');
+      final s = await acOdak(tester, c);
+      expect(s.cizimler[s.secili].id, 'yatay');
+      ekranda(s, c.a);
+      // Kenara yapışmaz: pay bırakılır (ad ve seçim çubuğu sığsın).
+      expect(s.olcek!.dusuk, lessThan(60));
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('mumların üstündeki trend çizgisi de eksene girer',
+        (tester) async {
+      final simdi = DateTime.now();
+      final bas = DateTime(simdi.year, simdi.month, simdi.day)
+          .subtract(const Duration(days: 199))
+          .millisecondsSinceEpoch;
+      final c = GrafikCizimi(
+          tur: CizimTuru.trend,
+          a: CizimNoktasi(bas + 150 * _gun, 150),
+          b: CizimNoktasi(bas + 195 * _gun, 160),
+          id: 'trend');
+      final s = await acOdak(tester, c);
+      ekranda(s, c.a);
+      ekranda(s, c.b!);
+      await tester.pump(const Duration(seconds: 5));
+    });
+  });
+
+  group('fiyat aralığı (saf)', () {
+    double indeks(int t) => t.toDouble();
+    const g = (bas: 100.0, son: 200.0);
+
+    test('yatay: tek fiyat', () {
+      final c = GrafikCizimi(tur: CizimTuru.yatay, a: CizimNoktasi(0, 228.3));
+      expect(cizimFiyatAraligi(c, indeks, g), (lo: 228.3, hi: 228.3));
+    });
+
+    test('trend: yalnız penceredeki parça', () {
+      final c = GrafikCizimi(
+          tur: CizimTuru.trend,
+          a: CizimNoktasi(0, 0 + 10),
+          b: CizimNoktasi(150, 160));
+      // i=100 → 110, i=150 → 160.
+      final r = cizimFiyatAraligi(c, indeks, g)!;
+      expect(r.lo, closeTo(110, 1e-9));
+      expect(r.hi, closeTo(160, 1e-9));
+    });
+
+    test('ışın: pencere sonuna uzar; pencere dışı parça null', () {
+      final isin = GrafikCizimi(
+          tur: CizimTuru.isin, a: CizimNoktasi(150, 100), b: CizimNoktasi(160, 110));
+      expect(cizimFiyatAraligi(isin, indeks, g)!.hi, closeTo(150, 1e-9));
+      final gecmis = GrafikCizimi(
+          tur: CizimTuru.trend, a: CizimNoktasi(10, 1), b: CizimNoktasi(20, 2));
+      expect(cizimFiyatAraligi(gecmis, indeks, g), isNull);
+    });
+  });
+
+  group('e2e düzeltmeleri (2026-10-29)', () {
+    testWidgets('ad sayfası yatay telefonda (390 pt) düğme tam görünür',
+        (tester) async {
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = const Size(844 * 3, 390 * 3);
+      const pay = FakeViewPadding(left: 59 * 3, right: 59 * 3, bottom: 21 * 3);
+      tester.view.padding = pay;
+      tester.view.viewPadding = pay;
+      addTearDown(tester.view.reset);
+      for (final olcek in [1.0, 1.3]) {
+        await tester.pumpWidget(MaterialApp(
+          theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+          locale: const Locale('tr'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(olcek)),
+              child: child!),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showCizgiAdiSayfasi(context,
+                    baslik: 'Çizgi alarmı',
+                    dugme: 'Alarmı kur',
+                    kaydet: (_) async {}),
+                child: const Text('aç'),
+              ),
+            ),
+          ),
+        ));
+        await tester.tap(find.text('aç'));
+        await tester.pumpAndSettle();
+        final r = tester.getRect(find.byKey(const ValueKey('cizgiAdiKaydet')));
+        expect(r.bottom, lessThanOrEqualTo(390 - 21), reason: 'ölçek $olcek');
+        expect(r.height, greaterThanOrEqualTo(SandikTouch.min));
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+
+    test('onay adı söyler; ad hapının zemini var', () {
+      final d =
+          ekranKaynagiSync('lib/widgets/tam_ekran/cizim_alarm_dugmesi.dart');
+      expect(d, contains('l10n.tegAdliAlarmKurulduUst(verilenAd)'));
+      expect(d, contains('color: zemin.withValues(alpha: 0.85)'));
+      final k = ekranKaynagiSync('lib/widgets/alarm_kur_sheet.dart');
+      expect(k, contains("final ad = isim.isEmpty ? sonuc.aday.ad : '«\$isim»';"));
+    });
   });
 }
 
