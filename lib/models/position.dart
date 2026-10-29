@@ -166,6 +166,20 @@ String positionKey(Asset a) {
       // `positions.ts` › `pozisyonAnahtari`.
       core = '${a.ticker.trim().toUpperCase()}|'
           'sub:${(a.subCategory ?? '').toLowerCase()}';
+      // Sözleşme kimliği de anahtara girer (2026-10-29, yasin: "BES
+      // varlığı fon dağılımıyla birlikte tek mi gözükmeli"). Fon kodu
+      // sözleşmeye özgü değildir: iki ayrı BES sözleşmesi aynı fonu
+      // (ör. iki şirkette de altın fonu) tutunca lotları TEK pozisyona
+      // düşüyor, Portföy'de tek satır ve tek maliyet ortalaması çıkıyordu;
+      // bir sözleşmenin "Fon değiştir" satışı öbürünün payından düşülebilirdi.
+      // Satış lotları (`_besSatisi`, `addSellTransaction`) sözleşme kimliğini
+      // taşıdığı için netleşme sözleşme içinde kalır. Kimliksiz lot (0088
+      // öncesi ya da elle girilmiş) eski anahtarı korur — veri taşınmaz.
+      // Mevduatta gerek yok: sembolü zaten `MEVDUAT:<sözleşme id>`.
+      // Sunucu (`positions.ts`) bilerek eski anahtarda kalır: lider tablosu
+      // yalnız pozisyon sayar ve değer toplamı birleşmeden etkilenmez.
+      final sid = a.sozlesmeId?.trim() ?? '';
+      if (sid.isNotEmpty) core = '$core|soz:${sid.toLowerCase()}';
       break;
     case AssetType.emtia:
     case AssetType.diger:

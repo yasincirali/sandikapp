@@ -13,6 +13,7 @@ import '../../utils/friendly_error.dart';
 import '../../utils/sandik_snack.dart';
 import '../../utils/tr_format.dart';
 import 'emeklilik_fonu_secici.dart';
+import 'emeklilik_sirketi_secici.dart';
 import '../../widgets/bes_dagilim_editoru.dart';
 import '../../widgets/sozlesme_formu_ortak.dart';
 import '../../providers/portfolio_provider.dart';
@@ -88,8 +89,22 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
       (parseTrNumber(_dkAnaPara.text) ?? 0) +
       (parseTrNumber(_dkGetiri.text) ?? 0);
 
+  /// Şirket listeden seçilir ya da yazılır (2026-10-29). Seçilen ad fon
+  /// seçicilerine geçer; liste o şirketin fonlarıyla açılır.
+  Future<void> _sirketSec() async {
+    final ad = await emeklilikSirketiSec(context, secili: _sirket.text);
+    if (ad == null || !mounted) return;
+    setState(() => _sirket.text = ad);
+  }
+
+  String? get _kurum {
+    final k = _sirket.text.trim();
+    return k.isEmpty ? null : k;
+  }
+
   Future<void> _dkFonuSec() async {
-    final f = await emeklilikFonuSec(context, devletKatkisi: true);
+    final f = await emeklilikFonuSec(context,
+        devletKatkisi: true, kurum: _kurum);
     if (f == null || !mounted) return;
     setState(() => _dkFonu = f);
   }
@@ -176,10 +191,13 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SozlesmeEtiketi(l10n.pensionCompany),
+          // Serbest metin alanı seçiciye döndü (2026-10-29): şirket TEFAS fon
+          // unvanlarından türeyen listeden seçilir, listede yoksa seçicideki
+          // "… olarak kullan" satırı yazılanı alır (eski davranış).
           SozlesmeAlani(
             controller: _sirket,
-            ipucu: l10n.pensionCompanyHint,
-            buyukHarf: true,
+            ipucu: l10n.pensionPickCompany,
+            dokununca: _sirketSec,
             dogrula: (v) =>
                 (v ?? '').trim().isEmpty ? l10n.pensionErrorCompany : null,
           ),
@@ -229,6 +247,7 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
           SozlesmeEtiketi(l10n.pensionFunds),
           BesDagilimEditoru(
             key: _dagilimEditoru,
+            kurum: _kurum,
             hata: _dagilimHatasi,
             degisti: () {
               if (_dagilimHatasi != null) {

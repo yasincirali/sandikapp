@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/asset_type.dart';
+import '../../models/emeklilik_sirketi.dart';
 import '../../services/crash_reporter.dart';
 import '../../services/tefas_service.dart';
 import '../../theme/sandik.dart';
 import '../../utils/friendly_error.dart';
 import '../../widgets/custom_loading_indicator.dart';
+import '../../widgets/sozlesme_formu_ortak.dart';
 
 /// TEFAS emeklilik fonu (EMK) seçici — alt sayfa.
 ///
@@ -14,9 +16,17 @@ import '../../widgets/custom_loading_indicator.dart';
 /// KATKI" geçen EMK fonları); `false`: onlar HARİÇ tüm EMK fonları.
 /// Katılımcı kendi katkısını devlet katkısı fonuna yönlendiremez; iki liste
 /// ayrık olursa yanlış seçim baştan engellenir.
+///
+/// [kurum] sözleşmenin şirketi (serbest metin ya da listeden seçilmiş ad).
+/// Fon unvanlarından türetilen bir şirkete bağlanırsa liste yalnız o
+/// şirketin fonlarıyla açılır, "Tüm fonlar" çipi kaçış yolu olarak durur
+/// (2026-10-29, yasin: MetLife müşterisi kendi fonunu yüzlerce EMK fonu
+/// arasında arıyordu). Bağlanamazsa liste eskisi gibi hepsi — eski serbest
+/// metinli sözleşme hiçbir fonu kaybetmez.
 Future<TefasFund?> emeklilikFonuSec(
   BuildContext context, {
   required bool devletKatkisi,
+  String? kurum,
 }) =>
     showSandikSheet<TefasFund>(
       context: context,
@@ -26,15 +36,26 @@ Future<TefasFund?> emeklilikFonuSec(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
-      builder: (_) => _Secici(devletKatkisi: devletKatkisi),
+      builder: (_) => _Secici(devletKatkisi: devletKatkisi, kurum: kurum),
     );
 
 /// Adı devlet katkısı fonu mu? Kural tek yerde: `devletKatkisiAdiMi`.
 bool devletKatkisiFonuMu(TefasFund f) => devletKatkisiAdiMi(f.name);
 
+/// [fonlar]'ı [sirket]e göre süzer; `null` → hepsi. Saf, test edilir.
+List<TefasFund> sirketFonlari(
+        List<TefasFund> fonlar, EmeklilikSirketi? sirket) =>
+    sirket == null
+        ? fonlar
+        : [
+            for (final f in fonlar)
+              if (emeklilikFonuSirketin(f.name, sirket)) f,
+          ];
+
 class _Secici extends StatefulWidget {
-  const _Secici({required this.devletKatkisi});
+  const _Secici({required this.devletKatkisi, this.kurum});
   final bool devletKatkisi;
+  final String? kurum;
 
   @override
   State<_Secici> createState() => _SeciciState();
@@ -44,6 +65,12 @@ class _SeciciState extends State<_Secici> {
   final _ara = TextEditingController();
   List<TefasFund>? _fonlar;
   String? _hata;
+
+  /// Sözleşmenin şirketi (fon unvanlarından bağlanabildiyse).
+  EmeklilikSirketi? _sirket;
+
+  /// `false` → "Tüm fonlar" çipi seçili.
+  bool _yalnizSirket = true;
 
   @override
   void initState() {
@@ -65,7 +92,11 @@ class _SeciciState extends State<_Secici> {
           ? await TefasService.instance.fetchDevletKatkisiFonlari()
           : _suz(await TefasService.instance.fetchAllFunds());
       if (!mounted) return;
-      setState(() => _fonlar = fonlar);
+      setState(() {
+        _fonlar = fonlar;
+        _sirket = emeklilikSirketiBul(
+            widget.kurum, emeklilikSirketleri(fonlar.map((f) => f.name)));
+      });
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'emeklilikFonuSec.yukle');
       if (mounted) setState(() => _hata = friendlyError(e));
@@ -81,7 +112,8 @@ class _SeciciState extends State<_Secici> {
 
   List<TefasFund> get _suzulmus {
     final q = _ara.text.trim().toLowerCase();
-    final l = _fonlar ?? const <TefasFund>[];
+    final l = sirketFonlari(
+        _fonlar ?? const <TefasFund>[], _yalnizSirket ? _sirket : null);
     if (q.isEmpty) return l;
     return [
       for (final f in l)
@@ -127,6 +159,30 @@ class _SeciciState extends State<_Secici> {
                           color: context.c.text58),
                     ),
                   ),
+                  if (_sirket != null) ...[
+                    const SizedBox(height: SandikSpace.sm),
+                    Wrap(
+                      spacing: SandikSpace.sm,
+                      runSpacing: SandikSpace.sm,
+                      children: [
+                        SozlesmeCipi(
+                          metin: l10n.pensionCompanyFunds(_sirket!.ad),
+                          secili: _yalnizSirket,
+                          renk: AssetType.bes.color,
+                          icerigeGore: true,
+                          secildi: () => setState(() => _yalnizSirket = true),
+                        ),
+                        SozlesmeCipi(
+                          metin: l10n.pensionAllFunds,
+                          secili: !_yalnizSirket,
+                          renk: AssetType.bes.color,
+                          icerigeGore: true,
+                          secildi: () =>
+                              setState(() => _yalnizSirket = false),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

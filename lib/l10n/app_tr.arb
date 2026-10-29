@@ -3753,6 +3753,57 @@
     }
   },
   "pensionAddExtraContribution": "Ek katkı ekle",
+  "pensionFundCount": "{count, plural, =1{1 fon} other{{count} fon}}",
+  "@pensionFundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionFundsNow": "Bugünkü dağılım",
+  "pensionFundsNowHint": "Paylar fonların bugünkü değerinden; fiyatlar farklı yürüdüğü için katkı talimatından ayrışabilir.",
+  "pensionContributionPlan": "Yeni katkılar: {plan}",
+  "@pensionContributionPlan": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionFundRowSemantics": "{code}, sözleşmenin {share} kadarı, {amount}",
+  "@pensionFundRowSemantics": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionPickCompany": "Emeklilik şirketini seç",
+  "pensionCompanyUseTyped": "\"{name}\" olarak kullan",
+  "@pensionCompanyUseTyped": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionCompanyListUnavailable": "Şirket listesi şu an yüklenemedi. Şirketin adını yazıp kullanabilirsin.",
+  "pensionCompanyFunds": "{company} fonları",
+  "@pensionCompanyFunds": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionAllFunds": "Tüm fonlar",
   "cpiSentenceMonth": "{month} ayında birikimin {change}, aylık enflasyon {cpi} oldu.",
   "@cpiSentenceMonth": {
       "placeholders": {

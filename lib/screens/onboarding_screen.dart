@@ -676,6 +676,9 @@ List<_Adim> _adimlariKur() {
     // (0096) formda ve kartta; son cümle onu anlatır.
     // 2026-10-02: vadeli faiz vade sonunda eklenir, vade içinde oran
     // karttan güncellenir — mevduat cümlesi buna göre.
+    // 2026-10-29: BES şirketi listeden seçilir (fon seçici o şirketin
+    // fonlarıyla açılır), sözleşme Portföy'de tek satır ve kartta fon
+    // dağılımı görünür — BES cümlesi buna göre (tur metni arayüzle değişir).
     _Adim(
       id: 'mevduat_bes',
       hedef: TourTarget.turSecici,
@@ -692,9 +695,12 @@ List<_Adim> _adimlariKur() {
           'hesapta her gün sonunda) eklenir; '
           'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '
           'son orana göre çıkar. Vade dolunca varlık sayfasından tek '
-          "dokunuşla yenilersin. BES'i seç: şirketini, ana "
-          'paranı, getirini ve fon dağılımını gir; grafik ve dönem getirileri '
-          'emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu değiştirince grafik yeni fonlarla devam eder; devlet '
+          "dokunuşla yenilersin. BES'i seç: şirketini listeden seç, fon "
+          'listesi o şirketin fonlarıyla açılır; ana paranı, getirini ve fon '
+          'dağılımını gir. Portföy\'de sözleşmen tek satırdır; oka dokununca '
+          'fonlarını, paylarını ve getirilerini görürsün. Grafik ve dönem '
+          'getirileri emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu '
+          'değiştirince grafik yeni fonlarla devam eder; devlet '
           'katkısı hak ediş oranıyla ayrı görünür. Katkı gününü yazıp '
           'otomatik eklemeyi açarsan aylık katkın o gün kendiliğinden eklenir; '
           'tutar farklıysa kartta tek dokunuşla düzeltirsin.',

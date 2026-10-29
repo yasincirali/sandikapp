@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr')
+    Locale('tr'),
   ];
 
   /// No description provided for @appName.
@@ -6601,7 +6601,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis);
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  );
 
   /// No description provided for @fullscreenChart.
   ///
@@ -9003,6 +9007,66 @@ abstract class AppLocalizations {
   /// **'Ek katkı ekle'**
   String get pensionAddExtraContribution;
 
+  /// No description provided for @pensionFundCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 fon} other{{count} fon}}'**
+  String pensionFundCount(int count);
+
+  /// No description provided for @pensionFundsNow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü dağılım'**
+  String get pensionFundsNow;
+
+  /// No description provided for @pensionFundsNowHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylar fonların bugünkü değerinden; fiyatlar farklı yürüdüğü için katkı talimatından ayrışabilir.'**
+  String get pensionFundsNowHint;
+
+  /// No description provided for @pensionContributionPlan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni katkılar: {plan}'**
+  String pensionContributionPlan(String plan);
+
+  /// No description provided for @pensionFundRowSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{code}, sözleşmenin {share} kadarı, {amount}'**
+  String pensionFundRowSemantics(String code, String share, String amount);
+
+  /// No description provided for @pensionPickCompany.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emeklilik şirketini seç'**
+  String get pensionPickCompany;
+
+  /// No description provided for @pensionCompanyUseTyped.
+  ///
+  /// In tr, this message translates to:
+  /// **'\"{name}\" olarak kullan'**
+  String pensionCompanyUseTyped(String name);
+
+  /// No description provided for @pensionCompanyListUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şirket listesi şu an yüklenemedi. Şirketin adını yazıp kullanabilirsin.'**
+  String get pensionCompanyListUnavailable;
+
+  /// No description provided for @pensionCompanyFunds.
+  ///
+  /// In tr, this message translates to:
+  /// **'{company} fonları'**
+  String pensionCompanyFunds(String company);
+
+  /// No description provided for @pensionAllFunds.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm fonlar'**
+  String get pensionAllFunds;
+
   /// No description provided for @cpiSentenceMonth.
   ///
   /// In tr, this message translates to:
@@ -9026,7 +9090,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi);
+    String date,
+    String end,
+    String change,
+    String cpi,
+  );
 
   /// No description provided for @savingsRose.
   ///
@@ -10569,7 +10637,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-      String amount, String times, String pct, String share);
+    String amount,
+    String times,
+    String pct,
+    String share,
+  );
 
   /// No description provided for @cryFootnote.
   ///
@@ -16143,8 +16215,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }
