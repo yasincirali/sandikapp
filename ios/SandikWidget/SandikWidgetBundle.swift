@@ -22,6 +22,12 @@ struct SandikWidgetBundle: WidgetBundle {
         // `HomeWidgetService.iOSVarlikWidgetName` = "SandikVarlikWidget".
         SandikVarlikWidget()
 
+        // Vitrin: üç varlık alt alta, orta boy (Ar-Ge 2026-10-29 §2). Tek
+        // varlık widget'ıyla aynı paket ve seçim listesi, ayrı tür ve intent
+        // (gerekçe `SandikVitrinWidget.swift`).
+        // `HomeWidgetService.iOSVitrinWidgetName` = "SandikVitrinWidget".
+        SandikVitrinWidget()
+
         // Kullanılan ActivityKit API'leri (`ActivityContent`, `staleDate`)
         // iOS 16.2+ ister; hedef minimumu 17.0. Koşul pratikte hep doğrudur
         // ama bırakılır ki hedef ileride düşürülürse derleme kırılsın,

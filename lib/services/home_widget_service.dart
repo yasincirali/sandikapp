@@ -82,6 +82,17 @@ class HomeWidgetService {
   /// [applyTheme] üçünü birden yeniler.
   static const iOSVarlikWidgetName = 'SandikVarlikWidget';
 
+  /// iOS vitrin widget'ının `kind`'ı (`SandikVitrinWidget.swift`; orta boy,
+  /// üç varlık, Ar-Ge 2026-10-29 §2). Tek varlık widget'ıyla AYNI paketi
+  /// ([kVarliklar]) okur; ayrı tür olduğu için ayrı yenilenir — `home_widget`
+  /// iOS'ta yalnız adı verilen türü yeniler. Android'de eşi yok (sonra).
+  static const iOSVitrinWidgetName = 'SandikVitrinWidget';
+
+  /// iOS mu? Vitrin türünün ek yenileme çağrısı yalnız iOS'ta (Android'de bu
+  /// tür yok; adsız çağrı orada hata olurdu). Test dikişi.
+  @visibleForTesting
+  static bool Function() iOSMu = () => Platform.isIOS;
+
   /// Android tek varlık widget sağlayıcısının sınıf adı
   /// (`SandikVarlikWidgetProvider.kt`) — `AndroidManifest.xml`'deki receiver
   /// ile birebir aynı. iOS türü gibi ayrı yenilenir.
@@ -986,6 +997,10 @@ class HomeWidgetService {
         androidName: androidVarlikWidgetName,
         iOSName: iOSVarlikWidgetName,
       );
+      // Vitrin aynı paketi okur (bkz. [iOSVitrinWidgetName]).
+      if (iOSMu()) {
+        await HomeWidget.updateWidget(iOSName: iOSVitrinWidgetName);
+      }
     } catch (e) {
       _sonYazilan.remove(kVarliklar);
       if (kDebugMode) debugPrint('HomeWidget varlikListesiniYaz failed: $e');
@@ -1023,12 +1038,14 @@ class HomeWidgetService {
   ///
   /// Android sınıf adı `ComponentName.shortClassName` olarak gelir
   /// (`.SandikVarlikWidgetProvider`); son parça karşılaştırılır. Portföy
-  /// widget'ı (`SandikWidgetProvider`) burada SAYILMAZ.
+  /// widget'ı (`SandikWidgetProvider`) burada SAYILMAZ; vitrin widget'ı
+  /// (aynı paketi okur, 2026-10-29) SAYILIR.
   Future<bool> varlikWidgetiKuruluMu() async {
     await _ensureInit();
     final kurulu = await HomeWidget.getInstalledWidgets();
     return kurulu.any((w) =>
         w.iOSKind == iOSVarlikWidgetName ||
+        w.iOSKind == iOSVitrinWidgetName ||
         w.androidClassName?.split('.').last == androidVarlikWidgetName);
   }
 
@@ -1042,6 +1059,9 @@ class HomeWidgetService {
       androidName: androidVarlikWidgetName,
       iOSName: iOSVarlikWidgetName,
     );
+    if (iOSMu()) {
+      await HomeWidget.updateWidget(iOSName: iOSVitrinWidgetName);
+    }
   }
 
   Future<void> _requestUpdate() async {
