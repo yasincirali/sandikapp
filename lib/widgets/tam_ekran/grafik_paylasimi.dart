@@ -25,6 +25,18 @@ String grafikPaylasimMetni(
     '${l.tegPaylasimMetni(ad, donem)}\n'
     '${Magaza.indirBaglantisi(kaynak: 'grafik_paylas', kampanya: 'grafik')}';
 
+/// Görseldeki kısa bağlantı: indirme kapısının host + yolu, şemasız ve
+/// UTM'siz ("yasincirali.github.io/sandikapp/indir") — görselde okunup
+/// elle yazılabilsin (yasin 2026-10-29, marka şeridi). Kanal ölçümü
+/// paylaşım METNİNDEKİ tam bağlantıda kalır.
+String grafikPaylasimKisaBaglanti() {
+  final u = Uri.parse(Magaza.indirKapisi);
+  final yol = u.path.endsWith('/')
+      ? u.path.substring(0, u.path.length - 1)
+      : u.path;
+  return '${u.host}$yol';
+}
+
 /// Ekranda görünen pencerenin dönem kimliği ('GÜNLÜK', '1H', '1A', '3A',
 /// '6A', '1Y', '5Y'); gösterim [donemEtiketi] üzerinden.
 ///

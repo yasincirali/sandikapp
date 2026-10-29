@@ -1,6 +1,7 @@
 @Tags(['gorsel'])
 library;
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -17,8 +18,13 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/grafik_cizimi.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
+import 'package:portfoy_takip/models/ozel_gosterge.dart';
+import 'package:portfoy_takip/providers/ozel_gosterge_provider.dart';
+import 'package:portfoy_takip/providers/preferences_provider.dart';
+import 'package:portfoy_takip/providers/premium_provider.dart';
 import 'package:portfoy_takip/screens/tam_ekran_grafik_screen.dart';
 import 'package:portfoy_takip/services/cizim_deposu.dart';
+import 'package:portfoy_takip/services/gosterge_betigi/katalog.dart';
 import 'package:portfoy_takip/services/mum_verisi.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,6 +35,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Sayılar DEMO'dur: deterministik yapay fiyat yolu, canlı veri değil.
 const _gun = 86400000;
+
+/// Kendi göstergen önizlemesi: EMA kesişimi şablonu (2026-10-29, ƒx yatayda).
+class _Gostergeler extends OzelGostergelerNotifier {
+  @override
+  Future<List<OzelGosterge>> build() async => [
+        OzelGosterge(
+            id: 'g',
+            userId: 'u',
+            ad: 'EMA kesişimi',
+            kod: kBetikSablonlari
+                .firstWhere((t) => t.kimlik == 'ema_kesisim')
+                .kod),
+      ];
+}
 
 List<OhlcBar> _barlar(int bas) {
   var k = 280.0;
@@ -103,6 +123,11 @@ void main() {
       const k = ValueKey('cerceve');
       final palet = koyu ? SandikPalette.dark : SandikPalette.light;
       await tester.pumpWidget(ProviderScope(
+        overrides: [
+          premiumOzellikleriGorunurProvider.overrideWithValue(true),
+          premiumKilitliProvider.overrideWithValue(false),
+          ozelGostergelerProvider.overrideWith(_Gostergeler.new),
+        ],
         child: RepaintBoundary(
           key: k,
           child: MaterialApp(
@@ -149,6 +174,29 @@ void main() {
         File('build/gorsel/tam_ekran_${koyu ? 'koyu' : 'acik'}.png')
             .writeAsBytesSync(bytes!.buffer.asUint8List());
       });
+
+      // Paylaşım kipi (marka şeridi, 2026-10-29): kip açıkken kare
+      // yakalanır, sonra paylaşım akışı bırakılır.
+      final yakalandi = Completer<void>();
+      final birak = Completer<void>();
+      TamEkranGrafikEkraniState.paylasimTesti = (sinir, metin, kaynak) async {
+        yakalandi.complete();
+        await birak.future;
+      };
+      addTearDown(() => TamEkranGrafikEkraniState.paylasimTesti = null);
+      await tester.tap(find.byTooltip('Grafiği paylaş'));
+      await tester.pump();
+      await tester.pump();
+      expect(yakalandi.isCompleted, isTrue);
+      await tester.runAsync(() async {
+        final b = tester.renderObject<RenderRepaintBoundary>(find.byKey(k));
+        final img = await b.toImage(pixelRatio: 2);
+        final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
+        File('build/gorsel/tam_ekran_paylasim_${koyu ? 'koyu' : 'acik'}.png')
+            .writeAsBytesSync(bytes!.buffer.asUint8List());
+      });
+      birak.complete();
+      await tester.pump();
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 6));
     });

@@ -453,6 +453,10 @@
   "@tegPaylasimMetni": {"description": "Chart share text and image title. No advice wording.", "placeholders": {"ad": {"type": "String"}, "donem": {"type": "String"}}},
   "tegPaylasimZamani": "As of {zaman}",
   "@tegPaylasimZamani": {"description": "Date and time the data was loaded, shown on the shared chart image.", "placeholders": {"zaman": {"type": "String"}}},
+  "tegYanCevirIpucu": "Turn your phone sideways for the detailed chart",
+  "@tegYanCevirIpucu": {"description": "One-time hint under the portrait chart; disappears once landscape full screen has been opened. Not a button."},
+  "tegOzelPanelDikte": "{ad} · separate pane in portrait",
+  "@tegOzelPanelDikte": {"description": "Pane-type custom indicators (RSI-like) are not drawn in landscape; the legend says so.", "placeholders": {"ad": {"type": "String"}}},
   "total": "total",
   "@assetTypeSemantics": {
     "placeholders": {

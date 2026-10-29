@@ -24,7 +24,8 @@ enum Ozellik {
   /// Hata ekranında "Sorun sürüyorsa bize yaz" dokunuşu.
   bizeYaz('bize_yaz'),
 
-  /// Yatay tam ekran grafiğin açılması (düğmeyle ya da yan çevirerek).
+  /// Yatay tam ekran grafiğin açılması. Tek giriş yan çevirmek (dik
+  /// ekrandaki çip 2026-09-17'de kalktı; kod adı sabit).
   yatayGrafik('yatay_grafik'),
 
   /// Tam ekran grafikte çizim aracıyla bir çizimin tamamlanması.

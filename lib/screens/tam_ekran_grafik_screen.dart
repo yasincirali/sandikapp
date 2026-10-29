@@ -12,7 +12,13 @@ import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/grafik_cizimi.dart';
 import '../models/ohlc.dart';
+import '../models/ozel_gosterge.dart';
+import '../providers/ozel_gosterge_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/premium_provider.dart'
+    show premiumOzellikleriGorunurProvider;
+import '../services/gosterge_betigi/betik.dart';
+import '../services/ozel_gosterge_calistirici.dart';
 import '../services/cizim_deposu.dart';
 import '../services/share_card_service.dart';
 import '../services/ozellik_olcumu.dart';
@@ -25,10 +31,13 @@ import '../utils/hareketli_ortalama.dart' show kEmaKisa, kEmaUzun;
 import '../utils/friendly_error.dart' show showAppError;
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/gosterge_cizimi.dart' show betikRengi;
 import '../widgets/grafik_arac_cubugu.dart' show GrafikCipi, MumAraligiAdi;
 import '../widgets/sandik_async_button.dart';
 import '../widgets/tam_ekran/grafik_olcegi.dart';
 import '../widgets/tam_ekran/grafik_paylasimi.dart';
+import 'ozel_gosterge_screen.dart' show showOzelGostergeSayfasi;
+import 'paywall_screen.dart' show PaywallScreen;
 
 /// Yatay tam ekran grafik — telefonu yan çevirince açılır.
 ///
@@ -66,14 +75,25 @@ import '../widgets/tam_ekran/grafik_paylasimi.dart';
 /// Üst çubuktaki "Grafiği paylaş" grafiği çizimleriyle PNG yapar
 /// ([RepaintBoundary] → [ShareCardService]); görsel cihazda üretilir,
 /// sunucuya bir şey gitmez. Görselde sembol, dönem, verinin alındığı
-/// tarih-saat (eski görüntü yeni sanılmasın), çizimler ve köşede "sandık"
-/// imzası var. Görsel bir PAYLAŞIM KİPİNDE üretilir
+/// tarih-saat (eski görüntü yeni sanılmasın), çizimler ve altta sandık
+/// marka şeridi ([TamEkranGrafikEkraniState._paylasimSeridi]) var. Görsel
+/// bir PAYLAŞIM KİPİNDE üretilir
 /// ([TamEkranGrafikEkraniState.paylasimKipi]): imleç, seçim tutamakları,
 /// yarım çizim, bildirim ve sil düğmesi çizilmez. Kişisel katman (maliyet
 /// çizgisi, lot/alış noktaları, alarm çizgileri, tutar) bu ekranda bugün
 /// YOK; eklenirse `_GrafikBoyaci.paylasim` açıkken çizilmemeli —
 /// `tam_ekran_grafik_paylas_test` ekranın kişisel veriye erişmediğini tarar
 /// ve eklendiğinde kırılır.
+///
+/// ## Kendi göstergen (ƒx, yasin 2026-10-29)
+/// *"Yan çevrildiğinde detaylı grafikte custom Pine kodu için fx
+/// girilebilmeli (premium hesapta)."* Dik grafikle AYNI kapı ve kilit:
+/// çip yalnız `premiumOzellikleriGorunurProvider`'da, kilitliyse paywall
+/// (kaynak `grafik_ozel_gosterge`), değilse aynı göstergeler sayfası.
+/// Açık göstergeler bu ekranın mumlarında ortak çalıştırıcıyla
+/// ([ozelGostergeleriCalistir]) koşar ve fiyatın üstüne çizilir. Kendi
+/// göstergen kişisel veri değil (kullanıcının yazdığı formül; tutar,
+/// miktar, maliyet taşımaz) — paylaşım görselinde de çizilir.
 class TamEkranGrafikEkrani extends ConsumerStatefulWidget {
   const TamEkranGrafikEkrani({
     super.key,
@@ -174,6 +194,15 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   bool _paylasimKipi = false;
   final GlobalKey _paylasimSiniri = GlobalKey();
 
+  /// Kendi göstergelerin girdisi: bu ekranın mumları, X = mum indeksi
+  /// (boyacının ölçeğiyle aynı eksen). Mumlar değişince yeniden kurulur.
+  BetikVerisi? _betikVerisi;
+
+  /// Bu karede açık göstergelerin sonuçları (build başında bir kez; ölçek,
+  /// boyacı ve lejant aynı listeyi okur). Çalıştırıcı kod + veri parmak
+  /// iziyle saklar; imleç/zoom kareleri betiği yeniden koşturmaz.
+  List<OzelSonuc> _ozel = const [];
+
   /// Mumların bu ekrana geldiği an — görseldeki "… itibarıyla". Önbellek
   /// en fazla 10 dk eskidir (`MumVerisi`), saat kadar hassas değil ama
   /// "dün akşamki görüntü" ile "bugünkü"nü ayırır.
@@ -210,7 +239,8 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
         : (gecerli.contains(MumAraligi.gun1)
             ? MumAraligi.gun1
             : (gecerli.isEmpty ? MumAraligi.gun1 : gecerli.first));
-    // Düğme ve yan çevirme aynı ekranı açar; ikisi de burada sayılır.
+    // Tek giriş yan çevirmek (dik ekrandaki çip 2026-09-17'de kalktı);
+    // açılış burada sayılır.
     OzellikOlcumu.say(Ozellik.yatayGrafik);
     CrashReporter.arkaPlan(_cizimleriOku(), reason: 'TamEkranGrafik.cizimOku');
     CrashReporter.arkaPlan(_yukle(), reason: 'TamEkranGrafik.mumlar');
@@ -274,6 +304,13 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
       _ma20 = TechnicalAnalysisService.smaSeries(kapanis, 20);
       _ema50 = TechnicalAnalysisService.emaSeries(kapanis, kEmaKisa);
       _ema200 = TechnicalAnalysisService.emaSeries(kapanis, kEmaUzun);
+      // Isınma ayrıca istenmez: pencere ~400 mum ve kullanıcı sondan
+      // bakar; ilk [betikIsinmaCubugu] mum ısınmayı kendiliğinden verir.
+      _betikVerisi = temiz.length < 2
+          ? null
+          : betikVerisiMumdan(temiz, ar,
+              x: [for (var i = 0; i < temiz.length; i++) i.toDouble()],
+              sembol: widget.ad);
       _gorunum = null;
       _imlec = null;
       _bekleyen = null;
@@ -320,6 +357,24 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     for (var i = i0; i <= i1; i++) {
       lo = math.min(lo, _mumMu ? m[i].enDusuk : m[i].kapanis);
       hi = math.max(hi, _mumMu ? m[i].enYuksek : m[i].kapanis);
+    }
+    // Fiyatın üstündeki kendi göstergen bandın dışına taşarsa bant onu da
+    // kapsar (dik grafikteki kural, yasin 2026-10-11 —
+    // `gostergeyiKapsayanBant`). Histogram sayılmaz: sıfırdan çıkan
+    // sütunlar fiyat ölçeğini ezerdi.
+    for (final r in _ozel) {
+      if (!r.s.fiyatUstunde) continue;
+      for (final c in r.s.cizgiler) {
+        if (c.gizli || c.stil == BetikCizgiStili.histogram) continue;
+        for (var k = 0; k < r.s.x.length; k++) {
+          final xi = r.s.x[k];
+          if (xi < i0 || xi > i1) continue;
+          final v = c.degerler[k];
+          if (!v.isFinite) continue;
+          lo = math.min(lo, v);
+          hi = math.max(hi, v);
+        }
+      }
     }
     if (!lo.isFinite || !hi.isFinite) {
       lo = m.last.kapanis * 0.98;
@@ -764,23 +819,85 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     }
   }
 
-  /// Görseldeki başlık: sembol · dönem · imza, altında veri zamanı.
-  Widget _paylasimBasligi() {
+  /// Görselin altındaki marka şeridi — yalnız paylaşım kipinde.
+  ///
+  /// ## Neden (yasin 2026-10-29)
+  /// *"Yan çevrildiğinde paylaş kısmında sandık marka vurgusu daha net
+  /// olmalı."* Eski görselde sağ altta küçük bir "sandık" yazısı vardı,
+  /// mağaza bağlantısı yalnız paylaşım METNİNDEydi (görsel tek başına
+  /// iletilince kayboluyordu). Şerit, paylaşım kartının başlığıyla aynı dil
+  /// (`ShareCard._Baslik`: amber/altın "sandık", w800) + logo; ortada sembol ·
+  /// dönem · "sandık ile çizildi" ve veri zamanı, sağda okunur kısa
+  /// bağlantı (UTM'siz; metindeki bağlantı kanal etiketini taşımaya devam
+  /// eder).
+  ///
+  /// ## Neden grafiğin DIŞINDA
+  /// Şerit [RepaintBoundary]'nin içinde ama çizim alanının altında: eski
+  /// başlık mumların ve eksenin üstüne biniyordu. Kip açıkken grafik şerit
+  /// kadar kısalır; görünüm (hangi mumlar) değişmez. Tavsiye dili yok
+  /// (`tam_ekran_grafik_paylas_test`).
+  Widget _paylasimSeridi() {
     final c = context.c;
     final l = context.l10n;
     final z = _veriZamani;
     final dil = Localizations.localeOf(context).toLanguageTag();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l.tegPaylasimMetni(widget.ad, _donem()),
-            style: context.t.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
-        if (z != null)
-          Text(l.tegPaylasimZamani(DateFormat('d MMM y HH:mm', dil).format(z)),
+    return Container(
+      key: const ValueKey('tamEkranImza'),
+      constraints: const BoxConstraints(minHeight: SandikSpace.xl + SandikSpace.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.smd, vertical: SandikSpace.xs),
+      decoration: BoxDecoration(
+        color: c.surface1,
+        border: Border(top: BorderSide(color: c.hairline)),
+      ),
+      child: Row(
+        children: [
+          const SandikLogo(size: SandikSpace.lg, withBackground: true),
+          const SizedBox(width: SandikSpace.sm),
+          Text(l.appName,
+              style: context.t.titleMedium?.copyWith(
+                  color: c.amberText,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5)),
+          const SizedBox(width: SandikSpace.md),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.tegPaylasimMetni(widget.ad, _donem()),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700, color: c.text90)),
+                if (z != null)
+                  Text(
+                      l.tegPaylasimZamani(
+                          DateFormat('d MMM y HH:mm', dil).format(z)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.labelSmall?.copyWith(color: c.text58)),
+              ],
+            ),
+          ),
+          const SizedBox(width: SandikSpace.md),
+          Text(grafikPaylasimKisaBaglanti(),
+              key: const ValueKey('tamEkranBaglanti'),
               style: context.t.labelSmall?.copyWith(color: c.text58)),
-      ],
+        ],
+      ),
     );
+  }
+
+  /// `ƒx` çipine dokunuş — dik grafikle aynı yol
+  /// (`asset_detail/ozel_gostergeler.dart`, `KatmanliFiyatGrafigi`).
+  void _ozelGostergeAc(bool kilitli) {
+    if (kilitli) {
+      PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
+      return;
+    }
+    showOzelGostergeSayfasi(context,
+        onizleme: _betikVerisi, varlikAdi: widget.ad);
   }
 
   // ── Görünüm ───────────────────────────────────────────────────────────
@@ -788,13 +905,25 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   @override
   Widget build(BuildContext context) {
     final yatay = MediaQuery.orientationOf(context) == Orientation.landscape;
-    if (!yatay && widget.dikteKapan && !_kapaniyor) {
+    // Üstte göstergeler sayfası ya da düzenleyici varken dik dönmek o
+    // sayfayı KAPATMAMALI (maybePop en üstteki rotayı kapatır; yazılan kod
+    // kaybolurdu). Bu sayfa yeniden en üste gelince (ModalRoute
+    // bağımlılığı build'i yeniden çağırır) hâlâ dikse o zaman kapanır.
+    // 2026-10-29, ƒx yatayda açılınca.
+    final enUstte = ModalRoute.of(context)?.isCurrent ?? true;
+    if (!yatay && widget.dikteKapan && !_kapaniyor && enUstte) {
       // Telefon dik döndü: sayfa kendini kapatır, alttaki dik grafik kalır.
       _kapaniyor = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.of(context).maybePop();
+        if (!mounted) return;
+        if (ModalRoute.of(context)?.isCurrent == false) {
+          _kapaniyor = false;
+          return;
+        }
+        Navigator.of(context).maybePop();
       });
     }
+    _ozel = _ozelSonuclar();
     final c = context.c;
     return Scaffold(
       backgroundColor: c.background,
@@ -816,7 +945,16 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
                     Expanded(
                       child: RepaintBoundary(
                         key: _paylasimSiniri,
-                        child: ColoredBox(color: c.background, child: _grafik()),
+                        child: ColoredBox(
+                          color: c.background,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(child: _grafik()),
+                              if (_paylasimKipi) _paylasimSeridi(),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -829,10 +967,27 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     );
   }
 
+  /// Açık kendi göstergelerin sonuçları. Kapı kapalı ya da kilitliyse
+  /// boş — sağlayıcı izlenmez, betik koşmaz (dik grafikle aynı kural).
+  List<OzelSonuc> _ozelSonuclar() {
+    final veri = _betikVerisi;
+    if (veri == null ||
+        !ref.watch(premiumOzellikleriGorunurProvider) ||
+        ref.watch(premiumKilitliProvider)) {
+      return const [];
+    }
+    final acik = grafiktekiGostergeler(
+        ref.watch(ozelGostergelerProvider).valueOrNull ??
+            const <OzelGosterge>[]);
+    return ozelGostergeleriCalistir(acik, veri);
+  }
+
   Widget _ustCubuk() {
     final l = context.l10n;
     final c = context.c;
     final ma20 = ref.watch(chartMA20Provider);
+    final ozelGorunur = ref.watch(premiumOzellikleriGorunurProvider);
+    final ozelKilitli = ref.watch(premiumKilitliProvider);
     final ema50 = ref.watch(chartEma50Provider);
     final ema200 = ref.watch(chartEma200Provider);
     return SizedBox(
@@ -880,6 +1035,19 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
                   onTap: () =>
                       ref.read(chartEma200Provider.notifier).set(!ema200),
                 ),
+                // Kendi göstergen — dik araç çubuğundaki çiple aynı etiket,
+                // kilit ve anlam (`GrafikAracCubugu`).
+                if (ozelGorunur)
+                  Semantics(
+                    label: l.ozgCipSemantik,
+                    child: GrafikCipi(
+                      key: const ValueKey('tamEkranOzelGosterge'),
+                      label: _ozel.isNotEmpty ? 'ƒx ${_ozel.length}' : 'ƒx',
+                      active: _ozel.isNotEmpty,
+                      kilitli: ozelKilitli,
+                      onTap: () => _ozelGostergeAc(ozelKilitli),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1061,6 +1229,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
                     // renkleriyle karışmasın, iki temada da okunur.
                     cizimRengi: c.info,
                     paylasim: _paylasimKipi,
+                    ozel: _ozelKatmanlar(context),
                   ),
                 ),
               ),
@@ -1069,25 +1238,9 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           Positioned(
             left: SandikSpace.sm,
             top: SandikSpace.xs,
-            child: IgnorePointer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_paylasimKipi) _paylasimBasligi(),
-                  _lejant(o),
-                ],
-              ),
-            ),
+            right: _fiyatEkseni + SandikSpace.sm,
+            child: IgnorePointer(child: _lejant(o)),
           ),
-          if (_paylasimKipi)
-            Positioned(
-              right: _fiyatEkseni + SandikSpace.sm,
-              bottom: _zamanEkseni + SandikSpace.xs,
-              child: Text(context.l10n.appName,
-                  key: const ValueKey('tamEkranImza'),
-                  style: context.t.labelMedium?.copyWith(
-                      color: c.amberText, fontWeight: FontWeight.w700)),
-            ),
           if (secili != null && !_paylasimKipi) _seciliCubugu(o, secili),
           if (_bildirim != null && !_paylasimKipi)
             Positioned(
@@ -1113,6 +1266,72 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
         ],
       );
     });
+  }
+
+  /// Boyacının okuduğu hâl: renkler token'dan burada çözülür (boyacıda
+  /// `BuildContext` yok). Ayrı panel göstergeleri (RSI gibi, kendi ölçeği)
+  /// yatayda ÇİZİLMEZ: alt panel bu ekranın tek ölçekli düzenini (çizim
+  /// araçları, imleç, isabet) bölerdi; lejant "ayrı panel dik ekranda"
+  /// der, kullanıcı dik grafikte görür (2026-10-29 kararı).
+  List<_OzelKatman> _ozelKatmanlar(BuildContext context) => [
+        for (final r in _ozel)
+          if (r.s.fiyatUstunde)
+            (
+              s: r.s,
+              kayma: r.v.uzunluk - r.s.x.length,
+              kapanis: r.v.kapanis,
+              renk: [
+                for (final (i, c) in r.s.cizgiler.indexed)
+                  betikRengi(context, c.renk, i)
+              ],
+              eksiRenk: [
+                for (final (i, c) in r.s.cizgiler.indexed)
+                  betikRengi(context, c.eksiRenk ?? c.renk, i)
+              ],
+              dolguRenk: [
+                for (final d in r.s.dolgular)
+                  d.a == null || d.b == null
+                      ? null
+                      : betikRengi(
+                              context,
+                              d.renk ?? r.s.cizgiler[d.a!].renk,
+                              d.a!)
+                          .withValues(alpha: 0.12)
+              ],
+              isaretRenk: [
+                for (final m in r.s.isaretler) betikRengi(context, m.renk, 1)
+              ],
+            ),
+      ];
+
+  /// Lejantta bir kendi göstergen satırı: ad + her çizginin renk noktası,
+  /// adı ve imlecin mumundaki değeri (renk tek başına anlam taşımaz).
+  Widget _ozelLejantSatiri(OzelSonuc r, int i, TextStyle st) {
+    final c = context.c;
+    final k = i - (r.v.uzunluk - r.s.x.length);
+    return Text.rich(TextSpan(style: st, children: [
+      TextSpan(
+          text: r.g.ad,
+          style: st.copyWith(color: c.text90, fontWeight: FontWeight.w700)),
+      for (final (j, cz) in r.s.cizgiler.indexed)
+        if (!cz.gizli) ...[
+          const TextSpan(text: '  '),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              width: SandikSpace.sm,
+              height: SandikSpace.sm,
+              decoration: BoxDecoration(
+                  color: betikRengi(context, cz.renk, j),
+                  shape: BoxShape.circle),
+            ),
+          ),
+          TextSpan(
+              text: k >= 0 && k < cz.degerler.length && cz.degerler[k].isFinite
+                  ? ' ${cz.ad} ${_fiyatMetni(cz.degerler[k])}'
+                  : ' ${cz.ad}'),
+        ],
+    ]));
   }
 
   /// Sol üstte OHLC ve ortalama değerleri — imleç varsa onun mumu, yoksa
@@ -1145,6 +1364,10 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
       ])
         if (on && i < s.length && s[i].isFinite)
           Text('$ad ${_fiyatMetni(s[i])}', style: st.copyWith(color: r)),
+      for (final r in _ozel)
+        r.s.fiyatUstunde
+            ? _ozelLejantSatiri(r, i, st)
+            : Text(context.l10n.tegOzelPanelDikte(r.g.ad), style: st),
     ];
     return Column(
         crossAxisAlignment: CrossAxisAlignment.start, children: satirlar);
@@ -1179,6 +1402,19 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     );
   }
 }
+
+/// Fiyatın üstündeki bir kendi göstergen, boyanmaya hazır: sonuç, sonucun
+/// ilk çubuğunun mum indeksi ([kayma]; X'ler zaten mum indeksi) ve token'dan
+/// çözülmüş renkler (`betikRengi` — dik grafikle aynı renk kuralı).
+typedef _OzelKatman = ({
+  BetikSonucu s,
+  int kayma,
+  List<double> kapanis,
+  List<Color> renk,
+  List<Color> eksiRenk,
+  List<Color?> dolguRenk,
+  List<Color> isaretRenk,
+});
 
 enum _JestTuru { kaydir, pinch, imlec, ciz, tasi, eksen }
 
@@ -1387,6 +1623,7 @@ class _GrafikBoyaci extends CustomPainter {
     required this.fiyatMetni,
     required this.cizimRengi,
     this.paylasim = false,
+    this.ozel = const [],
   });
 
   final GrafikOlcegi olcek;
@@ -1409,6 +1646,10 @@ class _GrafikBoyaci extends CustomPainter {
   /// yok. Kişisel bir katman (maliyet, lot, alarm) bu boyacıya eklenirse
   /// `if (!paylasim)` ardında olmalı — görselde ASLA yer almaz.
   final bool paylasim;
+
+  /// Fiyatın üstündeki kendi göstergelerin (Pine). Kişisel veri değil;
+  /// paylaşım görselinde de çizilir.
+  final List<_OzelKatman> ozel;
 
   TextPainter _metin(String s, [TextStyle? st]) => TextPainter(
         text: TextSpan(text: s, style: st ?? eksenStili),
@@ -1548,6 +1789,11 @@ class _GrafikBoyaci extends CustomPainter {
       }
     }
 
+    // Kendi göstergelerin — ortalamalarla aynı katmanda, çizimlerin altında.
+    for (final k in ozel) {
+      _ozelGosterge(canvas, k, ph, i0, i1);
+    }
+
     // Son fiyat çizgisi.
     final son = mumlar.last;
     final sonY = o.y(son.kapanis);
@@ -1599,6 +1845,130 @@ class _GrafikBoyaci extends CustomPainter {
       canvas.drawRRect(r, Paint()..color = renk.text90);
       t.paint(canvas,
           Offset(lx + (w - t.width) / 2, ph + (zamanEkseni - t.height) / 2));
+    }
+  }
+
+  /// Bir göstergenin çizgileri, dolguları ve işaretleri. Dik grafikteki
+  /// (`gosterge_cizimi.dart`, fl_chart) karşılıklar: çizgi `na`'da bölünür,
+  /// alan çizginin altını sıfıra (grafikte alt kenara) doldurur, histogram
+  /// sıfırdan sütun, nokta daire; `fill` iki çizgi arası, `plotshape`
+  /// kapanışın üstünde daire. Yatay seviye (`hline`) dik grafikte de
+  /// fiyatın üstüne çizilmez; burada da yok.
+  void _ozelGosterge(Canvas canvas, _OzelKatman k, double ph, int i0, int i1) {
+    final o = olcek;
+    final s = k.s;
+    final x = s.x;
+    bool gorunur(int j) => x[j] >= i0 - 1 && x[j] <= i1 + 1;
+    Path parcali(List<double> d) {
+      final yol = Path();
+      var ilk = true;
+      for (var j = 0; j < x.length; j++) {
+        if (!gorunur(j) || !d[j].isFinite) {
+          ilk = true;
+          continue;
+        }
+        final p = Offset(o.x(x[j]), o.y(d[j]));
+        ilk ? yol.moveTo(p.dx, p.dy) : yol.lineTo(p.dx, p.dy);
+        ilk = false;
+      }
+      return yol;
+    }
+
+    // Dolgular önce: çizgiler üstte kalsın.
+    for (final (n, d) in s.dolgular.indexed) {
+      final renk = k.dolguRenk[n];
+      if (renk == null) continue;
+      final a = s.cizgiler[d.a!].degerler, b = s.cizgiler[d.b!].degerler;
+      final dolgu = Paint()..color = renk;
+      var j = 0;
+      while (j < x.length) {
+        if (!gorunur(j) || !a[j].isFinite || !b[j].isFinite) {
+          j++;
+          continue;
+        }
+        final bas = j;
+        while (j < x.length && gorunur(j) && a[j].isFinite && b[j].isFinite) {
+          j++;
+        }
+        final yol = Path()..moveTo(o.x(x[bas]), o.y(a[bas]));
+        for (var t = bas + 1; t < j; t++) {
+          yol.lineTo(o.x(x[t]), o.y(a[t]));
+        }
+        for (var t = j - 1; t >= bas; t--) {
+          yol.lineTo(o.x(x[t]), o.y(b[t]));
+        }
+        canvas.drawPath(yol..close(), dolgu);
+      }
+    }
+
+    for (final (n, c) in s.cizgiler.indexed) {
+      if (c.gizli) continue;
+      final renk = k.renk[n];
+      switch (c.stil) {
+        case BetikCizgiStili.cizgi || BetikCizgiStili.alan:
+          final yol = parcali(c.degerler);
+          if (c.stil == BetikCizgiStili.alan) {
+            final taban = math.min(ph, o.y(0));
+            for (final m in yol.computeMetrics()) {
+              final bas = m.getTangentForOffset(0)?.position;
+              final son = m.getTangentForOffset(m.length)?.position;
+              if (bas == null || son == null) continue;
+              canvas.drawPath(
+                  m.extractPath(0, m.length)
+                    ..lineTo(son.dx, taban)
+                    ..lineTo(bas.dx, taban)
+                    ..close(),
+                  Paint()..color = renk.withValues(alpha: 0.14));
+            }
+          }
+          canvas.drawPath(
+              yol,
+              Paint()
+                ..color = renk
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = c.kalinlik
+                ..strokeCap = StrokeCap.round
+                ..strokeJoin = StrokeJoin.round);
+        case BetikCizgiStili.histogram:
+          final sifir = o.y(0);
+          for (var j = 0; j < x.length; j++) {
+            final v = c.degerler[j];
+            if (!gorunur(j) || !v.isFinite) continue;
+            final px = o.x(x[j]);
+            canvas.drawLine(
+                Offset(px, sifir),
+                Offset(px, o.y(v)),
+                Paint()
+                  ..color = (v >= 0 ? renk : k.eksiRenk[n])
+                      .withValues(alpha: 0.8)
+                  ..strokeWidth = c.kalinlik + 0.6);
+          }
+        case BetikCizgiStili.nokta:
+          final p = Paint()..color = renk;
+          for (var j = 0; j < x.length; j++) {
+            final v = c.degerler[j];
+            if (!gorunur(j) || !v.isFinite) continue;
+            canvas.drawCircle(Offset(o.x(x[j]), o.y(v)), c.kalinlik, p);
+          }
+      }
+    }
+
+    for (final (n, m) in s.isaretler.indexed) {
+      final ic = Paint()..color = k.isaretRenk[n];
+      final kenar = Paint()
+        ..color = renk.surface1
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      for (final j in m.indeksler) {
+        if (j < 0 || j >= x.length || !gorunur(j)) continue;
+        final mi = k.kayma + j;
+        if (mi < 0 || mi >= k.kapanis.length || !k.kapanis[mi].isFinite) {
+          continue;
+        }
+        final p = Offset(o.x(x[j]), o.y(k.kapanis[mi]));
+        canvas.drawCircle(p, 4, ic);
+        canvas.drawCircle(p, 4, kenar);
+      }
     }
   }
 

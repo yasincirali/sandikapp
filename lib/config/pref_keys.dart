@@ -28,6 +28,11 @@ class PrefKeys {
 
   /// Toplam kartı kaydırma ipucu (tek seferlik göz kırpma) gösterildi mi.
   static const kaydirmaIpucu = 'pref_kaydirma_ipucu_gosterildi';
+
+  /// Dik grafiğin altındaki "Detaylı grafik için telefonu yan çevir" ipucu
+  /// artık gerekmiyor mu: kullanıcı yatay tam ekranı bir kez açtı
+  /// (2026-10-29). Cihaz tercihi — jest cihaza ait.
+  static const yatayGrafikIpucu = 'pref_yatay_grafik_ipucu_goruldu';
   static const lockScreenAmounts = 'pref_lockscreen_amounts';
   static const liveActivityStartMin = 'pref_live_activity_start_min';
   static const liveActivityEndMin = 'pref_live_activity_end_min';
