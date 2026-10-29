@@ -462,6 +462,8 @@
   "@tegPaylasimMetni": {"description": "Grafik paylaşım metni ve görseldeki başlık. Tavsiye dili yok (sinyal/hedef/al/sat geçmez).", "placeholders": {"ad": {"type": "String"}, "donem": {"type": "String"}}},
   "tegPaylasimZamani": "{zaman} itibarıyla",
   "@tegPaylasimZamani": {"description": "Paylaşılan grafik görselinde verinin alındığı tarih ve saat.", "placeholders": {"zaman": {"type": "String"}}},
+  "tegPaylasimDonem": "{aralik} mumlar, {tarihler}",
+  "@tegPaylasimDonem": {"description": "Paylaşılan grafiğin dönemi: mum aralığı (günlük, 1 saatlik…) ve görünen tarih aralığı.", "placeholders": {"aralik": {"type": "String"}, "tarihler": {"type": "String"}}},
   "tegYanCevirIpucu": "Detaylı grafik için telefonu yan çevir",
   "@tegYanCevirIpucu": {"description": "Dik grafiğin altında tek seferlik ipucu; yatay tam ekran bir kez açılınca kaybolur. Düğme değil."},
   "tegOzelPanelDikte": "{ad} · ayrı panel dik ekranda",

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:intl/intl.dart' show DateFormat;
+
 import '../../config/magaza.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../l10n/l10n.dart' show donemEtiketi;
@@ -70,3 +72,63 @@ String gorunurDonemKimligi(int basMs, int sonMs) {
 /// Kimliği ekran diline çevirir (TR "6 ay", EN "6M").
 String gorunurDonemEtiketi(AppLocalizations l, int basMs, int sonMs) =>
     donemEtiketi(l, gorunurDonemKimligi(basMs, sonMs));
+
+/// Paylaşımda okunan pencere: görünen İLK ve SON mumun tarihi
+/// ("22 Ağu – 29 Eki 2026"; gün içi aralıkta saatle).
+///
+/// ## Neden yaklaşık dönem değil (uçtan uca test 2026-10-29)
+/// Görsel ve metin "THYAO · 3 ay" diyordu: [gorunurDonemKimligi] pencereyi
+/// EN YAKIN uygulama dönemine yuvarlar, mum aralığını hiç söylemez. Günlük
+/// mumlarla ~4 aylık pencere "3 ay", dört haftalık pencere "1 ay" okunuyor;
+/// alan kişi neye baktığını bilemiyordu. Tarih aralığı ölçüm değil olgudur,
+/// yuvarlanmaz; mum aralığını çağıran ([grafikPaylasimDonemi]) ekler.
+String gorunurTarihAraligi(int basMs, int sonMs, String dil,
+    {required bool gunIci}) {
+  final a = DateTime.fromMillisecondsSinceEpoch(math.min(basMs, sonMs));
+  final b = DateTime.fromMillisecondsSinceEpoch(math.max(basMs, sonMs));
+  final ayniGun = a.year == b.year && a.month == b.month && a.day == b.day;
+  final ayniYil = a.year == b.year;
+  if (gunIci && ayniGun) {
+    return '${DateFormat('d MMM y HH:mm', dil).format(a)}'
+        '\u2013${DateFormat('HH:mm', dil).format(b)}';
+  }
+  if (gunIci) {
+    final f = DateFormat(ayniYil ? 'd MMM HH:mm' : 'd MMM y HH:mm', dil);
+    return '${f.format(a)} \u2013 ${f.format(b)}';
+  }
+  if (ayniGun) return DateFormat('d MMM y', dil).format(a);
+  final bas = DateFormat(ayniYil ? 'd MMM' : 'd MMM y', dil).format(a);
+  return '$bas \u2013 ${DateFormat('d MMM y', dil).format(b)}';
+}
+
+/// Paylaşımın "dönem" alanı: mum aralığı + görünen tarih aralığı
+/// ("günlük mumlar, 22 Ağu – 29 Eki 2026"). Başlık, görseldeki şerit ve
+/// paylaşım metni aynı cümleyi okur.
+String grafikPaylasimDonemi(AppLocalizations l,
+        {required String aralikAdi,
+        required int basMs,
+        required int sonMs,
+        required String dil,
+        required bool gunIci}) =>
+    l.tegPaylasimDonem(
+        aralikAdi, gorunurTarihAraligi(basMs, sonMs, dil, gunIci: gunIci));
+
+/// Paylaşılan dosyanın adı: "sandik-thyao-grafik.png".
+///
+/// Neden: ortak `ShareCardService` her görsele "sandik-ozet.png" diyordu;
+/// alıcının galerisinde grafik, özet kartıyla aynı adla duruyordu. Ad
+/// yalnız ASCII küçük harf, rakam ve tire: bazı paylaşım hedefleri (e-posta
+/// eki, Windows) Türkçe harfi ve noktayı bozar. Sembolden bir şey kalmazsa
+/// "sandik-grafik.png".
+String grafikPaylasimDosyaAdi(String ad) {
+  const tr = {
+    'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+    'â': 'a', 'î': 'i', 'û': 'u',
+  };
+  var k = ad.replaceAll('İ', 'i').replaceAll('I', 'i').toLowerCase();
+  tr.forEach((a, b) => k = k.replaceAll(a, b));
+  k = k
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+  return k.isEmpty ? 'sandik-grafik.png' : 'sandik-$k-grafik.png';
+}

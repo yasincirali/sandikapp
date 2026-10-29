@@ -120,6 +120,64 @@ void main() {
     });
   });
 
+  // Uçtan uca test 2026-10-29: metin günlük mumlarda "3 ay" diyordu
+  // (yuvarlanmış dönem, aralık yok); dosya her paylaşımda "sandik-ozet.png".
+  group('paylaşım dönemi ve dosya adı', () {
+    int t(int y, int a, int g, [int s = 0, int d = 0]) =>
+        DateTime(y, a, g, s, d).millisecondsSinceEpoch;
+
+    test('günlük: gerçek tarih aralığı, yuvarlanmaz', () {
+      expect(gorunurTarihAraligi(t(2026, 8, 22), t(2026, 10, 29), 'tr',
+              gunIci: false),
+          '22 Ağu \u2013 29 Eki 2026');
+      expect(gorunurTarihAraligi(t(2025, 11, 3), t(2026, 2, 6), 'en',
+              gunIci: false),
+          '3 Nov 2025 \u2013 6 Feb 2026');
+    });
+
+    test('gün içi: saatle; aynı gün tek tarih', () {
+      expect(gorunurTarihAraligi(t(2026, 10, 29, 10, 0),
+              t(2026, 10, 29, 17, 30), 'tr', gunIci: true),
+          '29 Eki 2026 10:00\u201317:30');
+      expect(gorunurTarihAraligi(t(2026, 10, 27, 10, 0),
+              t(2026, 10, 29, 17, 30), 'tr', gunIci: true),
+          '27 Eki 10:00 \u2013 29 Eki 17:30');
+    });
+
+    test('dönem metni mum aralığını söyler (TR/EN)', () {
+      final tr = grafikPaylasimDonemi(AppLocalizationsTr(),
+          aralikAdi: 'günlük',
+          basMs: t(2026, 8, 22),
+          sonMs: t(2026, 10, 29),
+          dil: 'tr',
+          gunIci: false);
+      expect(tr, 'günlük mumlar, 22 Ağu \u2013 29 Eki 2026');
+      final en = grafikPaylasimDonemi(AppLocalizationsEn(),
+          aralikAdi: 'daily',
+          basMs: t(2026, 8, 22),
+          sonMs: t(2026, 10, 29),
+          dil: 'en',
+          gunIci: false);
+      expect(en, startsWith('daily candles, '));
+      expect(_tavsiye.hasMatch(tr), isFalse);
+    });
+
+    test('dosya adı sembolden, ASCII', () {
+      expect(grafikPaylasimDosyaAdi('THYAO'), 'sandik-thyao-grafik.png');
+      expect(grafikPaylasimDosyaAdi('Gram Altın'),
+          'sandik-gram-altin-grafik.png');
+      expect(grafikPaylasimDosyaAdi('İŞ BANKASI (C)'),
+          'sandik-is-bankasi-c-grafik.png');
+      expect(grafikPaylasimDosyaAdi('—'), 'sandik-grafik.png');
+    });
+
+    test('ekran dosya adını ve dönemi geçirir', () {
+      final k = ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart');
+      expect(k, contains('dosyaAdi: grafikPaylasimDosyaAdi(widget.ad)'));
+      expect(k, contains('grafikPaylasimDonemi('));
+    });
+  });
+
   group('kişisel katman yok', () {
     test('ekran kişisel veriye erişmez (maliyet, lot, alarm, tutar)', () {
       final satirlar =
@@ -294,6 +352,9 @@ void main() {
       final ilk = giden!.split('\n').first;
       expect(ilk, startsWith('THYAO · '));
       expect(ilk, endsWith(' · sandık ile çizildi'));
+      // Mum aralığı adıyla; yuvarlanmış "N ay" yok.
+      expect(ilk, contains('günlük mumlar, '));
+      expect(ilk, isNot(matches(RegExp(r'· \d+ ay ·'))));
       expect(giden, contains(Magaza.indirKapisi));
       expect(_tavsiye.hasMatch(ilk), isFalse);
       // Tutar/miktar/maliyet metne girmez.

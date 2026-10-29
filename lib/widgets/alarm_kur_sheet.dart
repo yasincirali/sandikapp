@@ -541,20 +541,30 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       excludeSemantics: true,
       child: SandikTappable(
         onTap: onTap,
+        // Çip içeriği kadar geniş (en az 44×44). `Container.alignment`
+        // Align'ı genişlik çarpanı olmadan kurar ve Wrap'in verdiği tüm
+        // genişliğe yayılır: yatay grafikten açılan sayfada dört ±% çipi
+        // alt alta tam genişlik diziliyor, "Alarm kur" 390 pt'lik ekranın
+        // altına itiliyordu (uçtan uca test 2026-10-29). widthFactor /
+        // heightFactor 1 → çip metni sarar, Wrap onları yan yana dizer.
         child: Container(
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          alignment: Alignment.center,
+          constraints: const BoxConstraints(
+              minHeight: SandikTouch.min, minWidth: SandikTouch.min),
           padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
           decoration: BoxDecoration(
             color: c.surface2,
             borderRadius: BorderRadius.circular(SandikRadius.sm),
             border: Border.all(color: c.hairline),
           ),
-          child: Text(
-            metin,
-            style: context.t.labelLarge?.copyWith(
-              color: renk,
-              fontWeight: FontWeight.w700,
+          child: Align(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Text(
+              metin,
+              style: context.t.labelLarge?.copyWith(
+                color: renk,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),

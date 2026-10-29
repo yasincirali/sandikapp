@@ -813,6 +813,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String tegPaylasimDonem(String aralik, String tarihler) {
+    return '$aralik mumlar, $tarihler';
+  }
+
+  @override
   String get tegYanCevirIpucu => 'Detaylı grafik için telefonu yan çevir';
 
   @override
