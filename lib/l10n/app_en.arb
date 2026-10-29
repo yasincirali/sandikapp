@@ -3483,6 +3483,57 @@
   "pensionAutoUpdated": "Contribution updated",
   "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added automatically. You can update the amount on the pension card.} other{{count} monthly pension contributions were added automatically. You can update the amount on the pension card.}}",
   "pensionAddExtraContribution": "Add extra contribution",
+  "pensionFundCount": "{count, plural, =1{1 fund} other{{count} funds}}",
+  "@pensionFundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionFundsNow": "Today's allocation",
+  "pensionFundsNowHint": "Shares use today's fund values; because prices move differently they can drift from your contribution instruction.",
+  "pensionContributionPlan": "New contributions: {plan}",
+  "@pensionContributionPlan": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionFundRowSemantics": "{code}, {share} of the contract, {amount}",
+  "@pensionFundRowSemantics": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionPickCompany": "Pick your pension company",
+  "pensionCompanyUseTyped": "Use \"{name}\"",
+  "@pensionCompanyUseTyped": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionCompanyListUnavailable": "The company list couldn't load right now. You can type the company name and use it.",
+  "pensionCompanyFunds": "{company} funds",
+  "@pensionCompanyFunds": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionAllFunds": "All funds",
   "cpiSentenceMonth": "In {month} your savings {change}; monthly inflation was {cpi}.",
   "@cpiSentenceMonth": {
       "placeholders": {

@@ -9,6 +9,11 @@ import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/bildirim_izni.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/models/bes_sozlesme_pozisyonu.dart';
+import 'package:portfoy_takip/models/position.dart';
+import 'package:portfoy_takip/widgets/bes_fon_satiri.dart';
 import 'package:portfoy_takip/widgets/bildirim_izni_uyarisi.dart';
 import 'package:portfoy_takip/widgets/bildirim_satiri.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
@@ -24,6 +29,26 @@ import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/sandik_siralama_dugmesi.dart';
 import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
+
+/// BES fon satırı (2026-10-29): Portföy sözleşme paneli + sözleşme kartı.
+final _besFonVitrini = besFonSatirlari(aggregatePositions([
+  for (final (kod, sub) in [('AH5', 'katki'), ('AEK', 'dk')])
+    Asset(
+      id: kod,
+      userId: 'u',
+      name: 'MetLife Emeklilik · $kod',
+      ticker: 'TEFAS:$kod',
+      type: AssetType.bes,
+      subCategory: sub,
+      quantity: 1000,
+      purchasePrice: 1,
+      currency: 'TRY',
+      notes: '',
+      isManualPrice: true,
+      currentPrice: 1.2,
+      sozlesmeId: 's',
+    ),
+]));
 
 const _siralamaVitrini = [
   SandikSiralamaSecenegi(
@@ -258,6 +283,14 @@ void main() {
                     ),
                   ),
                 ),
+                const SizedBox(height: SandikSpace.md),
+                for (final f in _besFonVitrini)
+                  BesFonSatiriGorunumu(
+                    satir: f,
+                    tutar: '₺1.200',
+                    kisaAd: 'Altın Katılım',
+                    onTap: f.devlet ? null : () {},
+                  ),
                 const SizedBox(height: SandikSpace.md),
                 // AI yorum kartının destek/direnç satırı (2026-10-17): nötr
                 // renk, metin kontrastı ve ×2 yazıda taşma.

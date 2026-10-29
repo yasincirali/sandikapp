@@ -6,11 +6,14 @@ import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/bes_sozlesme_pozisyonu.dart';
 import '../models/position.dart';
 import '../models/sozlesme.dart';
+import '../providers/fon_karnesi_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/sozlesme_provider.dart';
 import 'bes_dagilim_editoru.dart';
+import 'bes_fon_satiri.dart';
 import 'sandik_async_button.dart';
 import 'sozlesme_formu_ortak.dart';
 import '../services/bes_hesabi.dart';
@@ -664,6 +667,10 @@ class _BesGovdesi extends ConsumerWidget {
     final l10n = context.l10n;
     final simdi = DateTime.now();
     final d = besDokumu(s, lotlar, simdi);
+    // Fon fon döküm (2026-10-29): Portföy'deki sözleşme satırının açılır
+    // paneliyle aynı fonksiyon (`besFonSatirlari`).
+    final fonlar = besFonSatirlari(aggregatePositions(lotlar));
+    final kisaAdlar = ref.watch(emeklilikFonKisaAdlariProvider);
     final yil = BesHesabi.tamYil(s.baslangic, simdi) + 1;
     final sonraki = BesHesabi.sonrakiBasamakSuresi(s.baslangic, simdi);
     final n = ref.read(sozlesmeProvider.notifier);
@@ -735,6 +742,43 @@ class _BesGovdesi extends ConsumerWidget {
             deger: '${d.getiri >= 0 ? '+' : '−'}${fmtTRY(d.getiri.abs())}',
             renk: d.getiri >= 0 ? context.c.gain : context.c.loss,
           ),
+          // ── Fon dağılımı (yasin, 2026-10-29: "içerden varlık dağılımı
+          // değiştirilebilmeli") ──────────────────────────────────────
+          // Kart toplamları gösteriyordu ama HANGİ fonda ne kadar olduğunu
+          // söylemiyordu; kullanıcı bunu Portföy'deki ayrı fon satırlarından
+          // topluyordu. Bugünkü dağılım (değerden) ile katkı talimatı
+          // (`fonDagilimi`) ayrı yazılır: fiyatlar farklı yürüdüğü için ikisi
+          // ayrışır ve "Fon değiştir" yalnız ilkini taşır. Düğme bu bölümün
+          // altına alındı ki dağılımı gören onu değiştirebileceği yeri de
+          // görsün.
+          if (fonlar.isNotEmpty) ...[
+            Divider(height: SandikSpace.lg, color: context.c.hairline),
+            Semantics(
+              header: true,
+              child: Text(l10n.pensionFunds,
+                  style: context.t.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700, color: context.c.text58)),
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            for (final f in fonlar)
+              BesFonSatiriGorunumu(
+                satir: f,
+                tutar: fmtTRY(f.deger),
+                kisaAd: kisaAdlar[f.kod],
+              ),
+            SozlesmeNotu(l10n.pensionFundsNowHint),
+            if (s.fonDagilimi.isNotEmpty)
+              SozlesmeNotu(l10n.pensionContributionPlan(s.fonDagilimi
+                  .map((p) => '${p.kod} ${fmtPct(p.oran, digits: 0)}')
+                  .join(' · '))),
+            if (s.acik) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _Eylem(
+                metin: l10n.pensionSwitchFunds,
+                isle: () => _fonDegistir(context, ref),
+              ),
+            ],
+          ],
           Divider(height: SandikSpace.lg, color: context.c.hairline),
           SozlesmeOzetSatiri(
               etiket: l10n.pensionIfLeave, deger: fmtTRY(d.eldeKalan)),
@@ -806,11 +850,15 @@ class _BesGovdesi extends ConsumerWidget {
               birincil: katkiBekliyor,
               isle: () => _katkiEkle(context, ref),
             ),
-            const SizedBox(height: SandikSpace.sm),
-            _Eylem(
-              metin: l10n.pensionSwitchFunds,
-              isle: () => _fonDegistir(context, ref),
-            ),
+            // Fon dağılımı boşsa (tüm fonlar satılmış) "Fon değiştir"
+            // bölümle birlikte kaybolmasın: eski yerinde kalır.
+            if (fonlar.isEmpty) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _Eylem(
+                metin: l10n.pensionSwitchFunds,
+                isle: () => _fonDegistir(context, ref),
+              ),
+            ],
           ],
         ],
       ),
@@ -1122,6 +1170,7 @@ extension on _BesGovdesi {
       builder: (_) => _FonDegisimSayfasi(
         bugunku: bugunku,
         buYil: n.buYilFonDegisikligi(s.id, DateTime.now().year),
+        kurum: s.kurum,
       ),
     );
     if (sonuc == null || !context.mounted) return;
@@ -1159,9 +1208,13 @@ extension on _BesGovdesi {
 }
 
 class _FonDegisimSayfasi extends StatefulWidget {
-  const _FonDegisimSayfasi({required this.bugunku, required this.buYil});
+  const _FonDegisimSayfasi(
+      {required this.bugunku, required this.buYil, this.kurum});
   final List<FonPayi> bugunku;
   final int buYil;
+
+  /// Fon seçici bu şirketin fonlarıyla açılır (2026-10-29).
+  final String? kurum;
 
   @override
   State<_FonDegisimSayfasi> createState() => _FonDegisimSayfasiState();
@@ -1207,6 +1260,7 @@ class _FonDegisimSayfasiState extends State<_FonDegisimSayfasi> {
             BesDagilimEditoru(
               key: _editor,
               baslangic: widget.bugunku,
+              kurum: widget.kurum,
               hata: _hata,
               degisti: () {
                 if (_hata != null) setState(() => _hata = null);
