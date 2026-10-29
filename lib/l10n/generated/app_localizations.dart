@@ -1631,7 +1631,7 @@ abstract class AppLocalizations {
   /// Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).
   ///
   /// In tr, this message translates to:
-  /// **'· Portföy {once} → {sonra}'**
+  /// **'Portföy {once} → {sonra}'**
   String txPortfolioValueChange(String once, String sonra);
 
   /// No description provided for @txPortfolioValueSemantics.

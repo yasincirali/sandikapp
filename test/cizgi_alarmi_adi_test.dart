@@ -675,6 +675,56 @@ void main() {
       }
     });
 
+    testWidgets('yatay çizgi alarm sayfası 390 pt: düğme kaydırmadan görünür',
+        (tester) async {
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = const Size(844 * 3, 390 * 3);
+      const pay = FakeViewPadding(left: 59 * 3, right: 59 * 3, bottom: 21 * 3);
+      tester.view.padding = pay;
+      tester.view.viewPadding = pay;
+      addTearDown(tester.view.reset);
+      AlarmKurulumu? sonuc;
+      await tester.pumpWidget(MaterialApp(
+        theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+        locale: const Locale('tr'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                sonuc = await showModalBottomSheet<AlarmKurulumu>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (_) => const AlarmKurSheet(
+                      adaylar: [AlarmAdayi('THYAO.IS', 'THYAO', 300)],
+                      sabit: true,
+                      baslangicHedef: 310,
+                      odakla: false,
+                      cizgiAdi: true),
+                );
+              },
+              child: const Text('aç'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('aç'));
+      await tester.pumpAndSettle();
+      final dugme = find.byType(FilledButton);
+      final r = tester.getRect(dugme);
+      expect(r.bottom, lessThanOrEqualTo(390 - 21));
+      expect(r.height, greaterThanOrEqualTo(SandikTouch.min));
+      expect(tester.takeException(), isNull);
+      // Kısa ekranda açıklama/sayaç yok; ad alanı yine var ve kuruluma girer.
+      expect(find.text('0/$kCizgiAdiAzami'), findsNothing);
+      await tester.enterText(find.byKey(const ValueKey('cizgiAdiAlani')), 'Ana destek');
+      await tester.tap(dugme, warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(sonuc?.isim, 'Ana destek');
+    });
+
     test('onay adı söyler; ad hapının zemini var', () {
       final d =
           ekranKaynagiSync('lib/widgets/tam_ekran/cizim_alarm_dugmesi.dart');

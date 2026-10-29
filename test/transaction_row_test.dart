@@ -159,8 +159,9 @@ void main() {
       final h = tester.ensureSemantics();
       await _pump(tester, _asset(kind: AssetKind.sell, qty: 100),
           bakiye: (once: 400, sonra: 300), portfoy: p);
-      expect(find.text('400 → 300 lot'), findsOneWidget);
-      expect(find.text('· Portföy ₺1,24M → ₺1,21M'), findsOneWidget);
+      // Ayraç miktarda: değer alt satıra inerse "·" ile başlamaz.
+      expect(find.text('400 → 300 lot ·'), findsOneWidget);
+      expect(find.text('Portföy ₺1,24M → ₺1,21M'), findsOneWidget);
       expect(
           find.bySemanticsLabel('Bakiye 400 lot iken 300 lot oldu. '
               'Portföy ₺1.240.000 iken ₺1.210.000 oldu'),

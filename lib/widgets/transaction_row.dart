@@ -312,7 +312,9 @@ class TransactionRow extends StatelessWidget {
         child: Wrap(
           spacing: SandikSpace.xs,
           children: [
-            _bakiyeMetni(context, m.gorunen),
+            // Ayraç miktarın sonunda: değer alt satıra inince yeni satır
+            // "·" ile başlamasın (e2e 2026-10-29).
+            _bakiyeMetni(context, p == null ? m.gorunen : '${m.gorunen} ·'),
             if (p != null)
               _bakiyeMetni(
                 context,
