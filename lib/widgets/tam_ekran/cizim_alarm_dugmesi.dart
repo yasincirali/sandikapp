@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,6 +20,7 @@ import '../../services/cizim_alarmi.dart';
 import '../../services/crash_reporter.dart';
 import '../../services/ozellik_olcumu.dart';
 import '../../theme/sandik.dart';
+import '../../utils/tr_format.dart' show fiyatOndaligi;
 import '../../utils/friendly_error.dart' show showAppError;
 import '../alarm_kur_sheet.dart';
 import '../sandik_async_button.dart';
@@ -132,6 +135,9 @@ class CizimAlarmDugmesi extends ConsumerWidget {
             : l10n.tegAlarmKur;
     return Tooltip(
       message: etiket,
+      // Etiket SandikAsyncTap'ten; ipucu ikinci kez okunmasın (ekran okuyucu
+      // "Bu çizgiye alarm kur" iki kez okuyordu, e2e 2026-10-29).
+      excludeFromSemantics: true,
       child: SandikAsyncTap(
         key: const ValueKey('tamEkranCizimAlarmi'),
         semanticLabel: etiket,
@@ -437,7 +443,7 @@ Future<void> _esitle({
         // Çizgi taşındı: alarm aynı satırda yeni seviyeye geçer.
         await fiyatN.hedefiGuncelle(
             alarm.id,
-            c.a.p,
+            _hedefFiyati(c.a.p),
             PriceAlert.suggestDirection(
                 currentPrice: canliBirim, targetPrice: c.a.p));
         bagN.bagla(e.key, alarm.id, c.a.p);
@@ -461,7 +467,7 @@ Future<void> _esitle({
             userId: eski.userId,
             symbol: eski.symbol,
             label: eski.label,
-            targetPrice: c.a.p,
+            targetPrice: _hedefFiyati(c.a.p),
             direction: PriceAlert.suggestDirection(
                 currentPrice: canliBirim, targetPrice: c.a.p),
             enabled: true,
@@ -497,3 +503,13 @@ CizimAlarmi _cizgiAlarmi(
       yon: SeviyeYon.fiyattan(guncel: canliBirim, seviye: d.p1),
       createdAt: createdAt ?? a.createdAt,
     );
+
+/// Sürüklenen çizginin fiyatı ekran pikselinden gelir (247,9144963791);
+/// alarm sayfasıyla kurulan hedef ise birim fiyat hanesine yuvarlıdır
+/// (247,91). Taşıma ve geri al da aynı haneyi yazar ki Alarmlarım'daki
+/// hedef ile sunucudaki değer aynı olsun (e2e 2026-10-29). Bağdaki çizgi
+/// fiyatı ham kalır: "çizgi taşındı mı" karşılaştırması onunla yapılır.
+double _hedefFiyati(double p) {
+  final k = math.pow(10, fiyatOndaligi(p)).toDouble();
+  return (p * k).round() / k;
+}

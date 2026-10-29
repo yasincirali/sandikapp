@@ -340,8 +340,12 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         final fiyat = fmtFiyat(v, symbol: alarmFiyatSimgesi(c.symbol) ?? '');
         seviyeMetni = c.uzanir
             ? l10n.cizimAlarmSeviyesi(fiyat)
-            : l10n.cizimAlarmSeviyesiBitisli(fiyat,
-                fmtTarihSaat(DateTime.fromMillisecondsSinceEpoch(c.t2)));
+            // Bitiş yalnız GÜN: çizginin ucu grafikte serbest bir nokta,
+            // saati ("21:42") günlük mumda anlamsız (e2e 2026-10-29).
+            : l10n.cizimAlarmSeviyesiBitisli(fiyat, () {
+                final b = DateTime.fromMillisecondsSinceEpoch(c.t2);
+                return fmtTarihSaat(DateTime(b.year, b.month, b.day));
+              }());
       }
       sil = () => ref.read(cizimAlarmlariProvider.notifier).delete(c.id);
     }
