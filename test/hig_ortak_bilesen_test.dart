@@ -10,6 +10,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/bildirim_izni.dart';
 import 'package:portfoy_takip/widgets/bildirim_izni_uyarisi.dart';
+import 'package:portfoy_takip/widgets/bildirim_satiri.dart';
 import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/services/destek_direnc.dart';
 import 'package:portfoy_takip/widgets/portfoy_yorumu_karti.dart';
@@ -131,6 +132,22 @@ void main() {
                     onSec: (_) {},
                   ),
                 ]),
+                const SizedBox(height: SandikSpace.md),
+                // Çan satırı (2026-10-29): açık hâli — "Aç" düğmesi ve
+                // kapatma düğmesi 44 pt, başlık/gövde ×2 yazıda taşmaz.
+                Builder(builder: (context) => BildirimSatiri(
+                  renk: context.c.amberText,
+                  ikon: Icons.visibility_rounded,
+                  baslik: 'Takip listende bugün 3 sert hareket',
+                  rozet: 'TAKİP',
+                  govde: 'Günlük değişim (önceki kapanışa göre): THYAO '
+                      '+%5,3 ₺312,40 · ASELS −%5,5 ₺150,20.',
+                  zaman: 'Bugün 18:25',
+                  faded: false,
+                  onAc: () {},
+                  onDismiss: () {},
+                  baslangictaAcik: true,
+                )),
                 const SizedBox(height: SandikSpace.md),
                 SandikAsyncTap(
                   onTap: () async {},

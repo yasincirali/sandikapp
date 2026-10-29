@@ -9,7 +9,9 @@ import {
   HAREKET_ESIGI_PCT,
   hareketleriSec,
   hareketKarti,
+  hareketDonemi,
   hareketMesaji,
+  takipEtiketi,
   takipSembolu,
 } from '../functions/_shared/watchlist_moves.ts';
 
@@ -38,24 +40,88 @@ Deno.test('bozuk yüzde (NaN) elenir', () => {
   assertEquals(hareketleriSec([{ ad: 'A', pct: Number.NaN }]), []);
 });
 
-Deno.test('tek hareket: başlıkta yön oku, ad ve yüzde; Türkçe virgül', () => {
-  const m = hareketMesaji([{ ad: 'THYAO', pct: 6.14 }]);
-  assertEquals(m.title, '▲ Takip listende: THYAO +%6,1');
+Deno.test('tek hareket: başlıkta yön oku, ad, dönem, yüzde ve fiyat; Türkçe virgül', () => {
+  const m = hareketMesaji([
+    { ad: 'THYAO', pct: 5.34, donem: 'kapanis', fiyat: 312.4, simge: '₺' },
+  ]);
+  assertEquals(m.title, '▲ THYAO bugün +%5,3 · ₺312,40');
+  assertStringIncludes(m.body, 'Günlük değişim, önceki kapanışa göre.');
+  assertStringIncludes(m.body, 'Takip listendeki varlık');
   assertStringIncludes(m.body, 'Yatırım tavsiyesi değildir');
 });
 
-Deno.test('çoklu hareket: sayı başlıkta, liste gövdede, eksi işareti', () => {
-  const m = hareketMesaji([
-    { ad: 'ASELS', pct: -5.5 },
-    { ad: 'KCHOL', pct: 5.1 },
-  ]);
-  assertEquals(m.title, 'Takip listende 2 büyük hareket');
-  assertStringIncludes(m.body, 'ASELS −%5,5 · KCHOL +%5,1');
+Deno.test('fiyat bilinmiyorsa başlıkta fiyat yazılmaz (uydurma yok)', () => {
+  const m = hareketMesaji([{ ad: 'THYAO', pct: -6.14 }]);
+  assertEquals(m.title, '▼ THYAO bugün −%6,1');
 });
 
-Deno.test('tutar sızmaz', () => {
-  const m = hareketMesaji([{ ad: 'X', pct: 9 }]);
-  assertEquals(/₺|\bTL\b/.test(m.title + m.body), false);
+Deno.test('ABD hissesi gün içi ve dolarla; kripto 00:00 tabanlı', () => {
+  const abd = hareketMesaji([
+    { ad: 'AAPL', pct: -5.2, donem: hareketDonemi('AAPL'), fiyat: 255.1, simge: '$' },
+  ]);
+  assertEquals(abd.title, '▼ AAPL gün içi −%5,2 · $255,10');
+  assertStringIncludes(abd.body, 'Gün içi değişim, önceki kapanışa göre.');
+  assertEquals(abd.body.includes('kapanış.'), false);
+  const btc = hareketMesaji([
+    { ad: 'BTC', pct: 6, donem: hareketDonemi('KRIPTO:BTC'), fiyat: 4123456.7, simge: '₺' },
+  ]);
+  assertEquals(btc.title, '▲ BTC gün içi +%6,0 · ₺4.123.456,70');
+  assertStringIncludes(btc.body, "Bugün 00:00'dan (İstanbul) bu yana.");
+});
+
+Deno.test('küçük fiyat 2 haneye yuvarlanmaz', () => {
+  const m = hareketMesaji([
+    { ad: 'SHIB', pct: 7, donem: 'kripto', fiyat: 0.000412, simge: '₺' },
+  ]);
+  assertStringIncludes(m.title, '₺0,000412');
+});
+
+Deno.test('dönem sembolden: BIST kapanış, fon, kripto, diğerleri gün içi', () => {
+  assertEquals(hareketDonemi('THYAO.IS'), 'kapanis');
+  assertEquals(hareketDonemi('XU100.IS'), 'kapanis');
+  assertEquals(hareketDonemi('TEFAS:AFT'), 'fon');
+  assertEquals(hareketDonemi('KRIPTO:BTC'), 'kripto');
+  assertEquals(hareketDonemi('AAPL'), 'gun_ici');
+  assertEquals(hareketDonemi('CL=F'), 'gun_ici');
+  assertEquals(hareketDonemi('ALTIN_GRAM'), 'gun_ici');
+  assertEquals(hareketDonemi('USDTRY=X'), 'gun_ici');
+});
+
+Deno.test('kısa etiket: kod; kodun bir şey söylemediği yerde ad', () => {
+  assertEquals(takipEtiketi('THYAO.IS', 'Türk Hava Yolları A.O.'), 'THYAO');
+  assertEquals(takipEtiketi('TEFAS:AFT', 'Ak Portföy Yeni Teknolojiler Fonu'), 'AFT');
+  assertEquals(takipEtiketi('KRIPTO:BTC', 'Bitcoin'), 'BTC');
+  assertEquals(takipEtiketi('AAPL', 'Apple Inc.'), 'AAPL');
+  assertEquals(takipEtiketi('ALTIN_GRAM', 'Gram Altın'), 'Gram Altın');
+  assertEquals(takipEtiketi('USDTRY=X', 'Dolar'), 'Dolar');
+  assertEquals(takipEtiketi('CL=F', 'Petrol (WTI)'), 'Petrol (WTI)');
+  assertEquals(takipEtiketi('GRAM:SI=F', 'Gram Gümüş'), 'Gram Gümüş');
+});
+
+Deno.test('çoklu hareket: sayı ve "bugün" başlıkta, dönem + liste gövdede, eksi işareti', () => {
+  const m = hareketMesaji([
+    { ad: 'ASELS', pct: -5.5, fiyat: 150.2, simge: '₺' },
+    { ad: 'KCHOL', pct: 5.1 },
+  ]);
+  assertEquals(m.title, 'Takip listende bugün 2 sert hareket');
+  assertEquals(
+    m.body,
+    'Günlük değişim (önceki kapanışa göre): ASELS −%5,5 ₺150,20 · KCHOL +%5,1. ' +
+      'Yatırım tavsiyesi değildir.',
+  );
+});
+
+Deno.test('çoklu hareket, karışık dönem: her satır kendi dönemini söyler', () => {
+  const m = hareketMesaji([
+    { ad: 'THYAO', pct: 5.3, donem: 'kapanis' },
+    { ad: 'BTC', pct: -6.1, donem: 'kripto' },
+    { ad: 'AAPL', pct: 5.0, donem: 'gun_ici', fiyat: 255.1, simge: '$' },
+  ]);
+  assertEquals(
+    m.body,
+    "THYAO +%5,3 (günlük) · BTC −%6,1 (00:00'dan beri) · AAPL +%5,0 $255,10 (gün içi). " +
+      'Yatırım tavsiyesi değildir.',
+  );
 });
 
 // 0092: kart yalnız TEK hareketli bildirimde (birden çok hareketi tek halka
@@ -65,6 +131,7 @@ Deno.test('hareket kartı: tek hareket → kart, çok hareket → yok', () => {
   assertEquals(k.e, 'KCHOL');
   assertEquals(k.b, '%3,1');
   assertEquals(k.y, 'd');
+  assertEquals(k.a, 'Takip listesi · günlük');
   assertEquals(hareketKarti([{ ad: 'A', pct: 3 }, { ad: 'B', pct: -4 }]), null);
 });
 
@@ -96,8 +163,9 @@ Deno.test('eşik görünen değerle: kayan noktada %1,9999… olan −%2,0 fon s
 });
 
 Deno.test('tek fon hareketi: gövde "fon fiyatı", kapanış değil', () => {
-  const m = hareketMesaji([{ ad: 'AAA Fonu', pct: 2.5, fon: true }]);
-  assertStringIncludes(m.body, 'Bugünkü fon fiyatı');
+  const m = hareketMesaji([{ ad: 'AAA', pct: 2.5, fon: true }]);
+  assertEquals(m.title, '▲ AAA bugün +%2,5');
+  assertStringIncludes(m.body, 'Bugün açıklanan fon fiyatı, bir önceki fiyata göre.');
   assertEquals(m.body.includes('kapanış'), false);
 });
 
@@ -122,8 +190,8 @@ Deno.test('emtia sembolü: yalnız Yahoo vadelisi (=F)', () => {
 Deno.test('tek emtia hareketi: gövde ve kart "gün içi", kapanış değil', () => {
   const h = [{ ad: 'Petrol (WTI)', pct: 3.4, emtia: true }];
   const m = hareketMesaji(h);
-  assertStringIncludes(m.body, 'Gün içi hareket');
-  assertEquals(m.body.includes('kapanış'), false);
+  assertStringIncludes(m.title, 'gün içi');
+  assertStringIncludes(m.body, 'Gün içi değişim');
   assertStringIncludes(JSON.stringify(hareketKarti(h)), 'gün içi');
 });
 

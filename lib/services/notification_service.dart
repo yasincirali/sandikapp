@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
@@ -77,6 +78,22 @@ class NotificationService {
   static const yilSonuOccasion = 'year_end_recap';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
+
+  /// Ön planda yeniden basılan genel push'un yükü: FCM `data` JSON olarak.
+  /// Dokunuş [handleRemoteMessageData]'ya gider — push'a dokunmakla AYNI
+  /// varış yeri (2026-10-29).
+  static const _pushDataPayloadPrefix = 'push_data:';
+
+  /// Kanal kimliği → kullanıcıya görünen ad; `_createAndroidChannels` ile
+  /// aynı adlar (bildirim ayrıntısı kanalı ilk kez yaratırsa da aynı ad
+  /// görünsün).
+  static const _kanalAdlari = <String, String>{
+    'alert_channel': 'Fiyat alarmları',
+    'brief_channel': 'Günlük brifing',
+    'summary_channel': 'Dönem özeti',
+    'signal_channel': 'Teknik sinyal bildirimleri',
+    'partner_invite_channel': 'Ortaklık bildirimleri',
+  };
 
   /// Navigator/portföy hazır değilken yeniden deneme aralığı.
   ///
@@ -475,7 +492,8 @@ class NotificationService {
     if (!await _prefEnabled(_kPartnerNotificationsKey)) return;
     if (!_initialized) await init();
 
-    const androidDetails = AndroidNotificationDetails(
+    final body = '$requesterName ortaklik kodunuzu girdi.';
+    final androidDetails = AndroidNotificationDetails(
       'partner_invite_channel',
       'Ortaklik Bildirimleri',
       channelDescription: 'Yeni ortaklik onay istekleri',
@@ -483,6 +501,8 @@ class NotificationService {
       priority: Priority.high,
       icon: 'ic_stat_sandik',
       color: Sandik.amber, // marka amber
+      // Genişletilince tam metin (2026-10-29): uzun adda tek satır kesiliyordu.
+      styleInformation: BigTextStyleInformation(body),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -494,8 +514,8 @@ class NotificationService {
     await _plugin.show(
       inviteId.hashCode,
       'Yeni ortaklik istegi',
-      '$requesterName ortaklik kodunuzu girdi.',
-      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      body,
+      NotificationDetails(android: androidDetails, iOS: iosDetails),
       payload: '$_partnerInvitePayloadPrefix$inviteId',
     );
   }
@@ -515,7 +535,7 @@ class NotificationService {
   }) async {
     if (!_initialized) await init();
 
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'signal_channel',
       'Teknik Sinyal Bildirimleri',
       channelDescription: 'Portföyünüzdeki varlıklar için trend bildirimleri',
@@ -523,6 +543,9 @@ class NotificationService {
       priority: Priority.high,
       icon: 'ic_stat_sandik',
       color: Sandik.amber, // marka amber
+      // Genişletilince tam gövde (2026-10-29, "tüm bildirimler push içinde
+      // okunabilir olmalı"): varsayılan stil gövdeyi tek satırda kesiyordu.
+      styleInformation: BigTextStyleInformation(body),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -535,11 +558,49 @@ class NotificationService {
       assetId.hashCode,
       title,
       body,
-      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      NotificationDetails(android: androidDetails, iOS: iosDetails),
       // PAYLOAD ŞART: bu alan boş bırakılmıştı, bu yüzden ön planda basılan
       // bildirime dokunmak hiçbir şey yapmıyordu. Tıklama bilgisiz kalıyordu
       // — hangi varlığa ait olduğu kayboluyordu.
       payload: assetId.isEmpty ? null : '$_signalPayloadPrefix$assetId',
+    );
+  }
+
+  /// Ön planda gelen genel push'u (alarm, takip listesi, brifing, özet…)
+  /// yerel bildirim olarak basar — yalnız Android (iOS sunumu değişmedi).
+  ///
+  /// Neden (2026-10-29): Android ön planda `notification` yükünü kendisi
+  /// göstermez; bu türler için dal yoktu ve uygulama açıkken gelen alarm
+  /// hiç görünmüyordu. Kanal sunucunun gönderdiği kanaldır: kullanıcının o
+  /// kanalı kapatması ön planda da geçerli kalır. Gövde `BigTextStyle`:
+  /// takip listesinin çoklu özeti ve brifing tek satıra sığmıyordu.
+  Future<void> showGenelBildirim({
+    required String title,
+    required String body,
+    required String channelId,
+    required Map<String, String> data,
+  }) async {
+    if (!_initialized) await init();
+    final androidDetails = AndroidNotificationDetails(
+      channelId,
+      _kanalAdlari[channelId] ?? 'sandık',
+      importance: channelId == 'alert_channel'
+          ? Importance.high
+          : Importance.defaultImportance,
+      priority: channelId == 'alert_channel'
+          ? Priority.high
+          : Priority.defaultPriority,
+      icon: 'ic_stat_sandik',
+      color: Sandik.amber,
+      styleInformation: BigTextStyleInformation(body),
+    );
+    await _plugin.show(
+      // Aynı tür + başlık ikinci kez gelirse üstüne yazar (çift satır yok).
+      Object.hash(data['type'], title),
+      title,
+      body,
+      NotificationDetails(android: androidDetails),
+      payload: '$_pushDataPayloadPrefix${jsonEncode(data)}',
     );
   }
 
@@ -666,6 +727,21 @@ class NotificationService {
 
   void _handleNotificationPayload(String? payload) {
     if (payload == null) return;
+
+    // Ön planda yeniden basılmış genel push: push'a dokunulmuş gibi
+    // (ölçüm dahil `handleRemoteMessageData` yapar).
+    if (payload.startsWith(_pushDataPayloadPrefix)) {
+      try {
+        final ham = jsonDecode(payload.substring(_pushDataPayloadPrefix.length));
+        if (ham is Map) {
+          handleRemoteMessageData(
+              ham.map((k, v) => MapEntry(k.toString(), v)));
+        }
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'notification.pushDataPayload');
+      }
+      return;
+    }
 
     // Dokunulan bildirimin tipi — hangi bildirim tipinin gerçekten
     // açıldığını ölçmek, hangisinin kapatılmayı hak ettiğini söyler.
