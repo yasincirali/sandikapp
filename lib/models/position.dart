@@ -747,16 +747,34 @@ List<Position> aggregatePositions(List<Asset> assets) {
   return positions;
 }
 
+/// Bir hareketin önceki/sonraki bakiyesi: miktar ve (işlem fiyatı
+/// biliniyorsa) o fiyatla değeri, varlığın kendi para biriminde.
+/// Sözleşme [hareketBakiyeleri] belge yorumunda.
+typedef HareketBakiyesi = ({
+  double once,
+  double sonra,
+  double? onceDeger,
+  double? sonraDeger,
+});
+
 /// Hareket satırının "önceki → sonraki" bakiyesi: lot kimliği → o işlemden
-/// hemen önce ve hemen sonra pozisyonda tutulan MİKTAR.
+/// hemen önce ve hemen sonra pozisyonda tutulan MİKTAR ve işlem fiyatıyla
+/// DEĞERİ.
 ///
 /// Kullanıcı isteği (2026-10-29): "Portföy hareketlerinde önceki ve sonraki
 /// bakiye de yazmalı." Kararlar:
 ///
-/// - **Miktar, ₺ değil.** Geçmiş bir işlemin "önceki bakiyesi"ni ₺ ile
-///   yazmak o günün fiyatını ister; bugünkü fiyatla çarpmak geçmişi
-///   uydurur, kayıtlı fiyatla çarpmak satırdaki tutarla çelişir. Miktar
-///   defterin kendisinden gelir, uydurma sayı yoktur ("12 → 17 gr").
+/// - **Önce miktar, yanında işlem fiyatıyla değer.** Miktar defterin
+///   kendisinden gelir ("12 → 17 gr"). Değer (kullanıcı isteği 2026-10-29,
+///   ikinci tur: "alım satım öncesi ve sonrası toplam bakiyeleri görelim")
+///   o İŞLEMİN kendi birim fiyatıyla çarpılır: [HareketBakiyesi.onceDeger]
+///   = önceki miktar × işlem fiyatı. Bugünkü fiyat geçmişi uydururdu;
+///   işlem fiyatı o an kullanıcının gördüğü fiyattır ve fark
+///   (sonra − önce) satırdaki işlem tutarına birebir eşittir — iki sayı
+///   birbiriyle çelişmez. Fiyat bilinmiyorsa (satış fiyatı boş, 0)
+///   değer `null`: satır yalnız miktarı yazar, uydurma sayı yok. Değer
+///   varlığın KENDİ para biriminde; gösterim birimine çeviri satırın işi
+///   (tutarla aynı yol: `toTRY` → `BazPara`).
 /// - **Ham defter.** Geçmişi soran yer (`CLAUDE.md` "Kapanmış pozisyon"):
 ///   tamamen satılıp yeniden alınan pozisyonda satış "5 → 0", yeni alım
 ///   "0 → 3" yazar; `aktifLotlar` kapanmış pozisyonu düşürürdü.
@@ -779,8 +797,7 @@ List<Position> aggregatePositions(List<Asset> assets) {
 ///
 /// **Girdi tüm kapsam defteri olmalı**, tarih/tür/arama süzgecinden
 /// GEÇMEMİŞ: süzülmüş listede eski alımlar yoktur, bakiye yanlış başlar.
-Map<String, ({double once, double sonra})> hareketBakiyeleri(
-    Iterable<Asset> defter) {
+Map<String, HareketBakiyesi> hareketBakiyeleri(Iterable<Asset> defter) {
   final gruplar = <(String, String), List<Asset>>{};
   for (final a in defter) {
     if (!a.isActive || a.isDividend) continue;
@@ -788,10 +805,10 @@ Map<String, ({double once, double sonra})> hareketBakiyeleri(
     gruplar.putIfAbsent((a.userId, positionKey(a)), () => []).add(a);
   }
   const tolerans = 0.0000001;
-  final out = <String, ({double once, double sonra})>{};
+  final out = <String, HareketBakiyesi>{};
   for (final lots in gruplar.values) {
     lots.sort(_defterSirasi);
-    final grup = <String, ({double once, double sonra})>{};
+    final grup = <String, HareketBakiyesi>{};
     var adet = 0.0;
     var tutarli = true;
     for (final l in lots) {
@@ -806,7 +823,17 @@ Map<String, ({double once, double sonra})> hareketBakiyeleri(
         adet += l.quantity;
       }
       if (adet.abs() < tolerans) adet = 0;
-      grup[l.id] = (once: once, sonra: adet);
+      // Satışta `sellPrice` yoksa `currentPrice`'a DÜŞÜLMEZ (satırın tutarı
+      // düşer, eski kayıt uyumu için): o bugünkü fiyat olabilir, geçmişin
+      // bakiyesini uydururdu.
+      final fiyat = l.isSell ? l.sellPrice : l.purchasePrice;
+      final f = fiyat != null && fiyat.isFinite && fiyat > 0 ? fiyat : null;
+      grup[l.id] = (
+        once: once,
+        sonra: adet,
+        onceDeger: f == null ? null : once * f,
+        sonraDeger: f == null ? null : adet * f,
+      );
     }
     if (tutarli) out.addAll(grup);
   }
@@ -823,9 +850,9 @@ Map<String, ({double once, double sonra})> hareketBakiyeleri(
 /// harf yazılışında hesap tekrarlanmaz.
 class HareketBakiyeOnbellegi {
   List<Asset>? _defter;
-  Map<String, ({double once, double sonra})> _sonuc = const {};
+  Map<String, HareketBakiyesi> _sonuc = const {};
 
-  Map<String, ({double once, double sonra})> hesapla(List<Asset> defter) {
+  Map<String, HareketBakiyesi> hesapla(List<Asset> defter) {
     final onceki = _defter;
     if (onceki != null && _ayniNesneler(onceki, defter)) return _sonuc;
     _defter = List.of(defter, growable: false);

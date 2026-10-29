@@ -509,6 +509,34 @@
       }
     }
   },
+  "txBalanceValueChange": "· {once} → {sonra}",
+  "@txBalanceValueChange": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txBalanceValueSemantics": "Holding went from {once} ({onceDeger}) to {sonra} ({sonraDeger})",
+  "@txBalanceValueSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "onceDeger": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      },
+      "sonraDeger": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Has a note",
   "txOpenNote": "{name} transaction, add a note",
   "@txOpenNote": {

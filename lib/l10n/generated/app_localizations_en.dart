@@ -896,6 +896,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String txBalanceValueChange(String once, String sonra) {
+    return '· $once → $sonra';
+  }
+
+  @override
+  String txBalanceValueSemantics(
+    String once,
+    String onceDeger,
+    String sonra,
+    String sonraDeger,
+  ) {
+    return 'Holding went from $once ($onceDeger) to $sonra ($sonraDeger)';
+  }
+
+  @override
   String get txHasNote => 'Has a note';
 
   @override

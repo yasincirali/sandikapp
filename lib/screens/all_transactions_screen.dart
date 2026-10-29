@@ -510,7 +510,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     required BazPara baz,
     required PortfolioState portfolioState,
     required bool hideBalance,
-    required Map<String, ({double once, double sonra})> bakiyeler,
+    required Map<String, HareketBakiyesi> bakiyeler,
   }) {
     final not = islemNotu(a, defter);
     final benimId = ref.watch(authProvider).valueOrNull?.id;

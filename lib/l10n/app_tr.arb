@@ -522,6 +522,34 @@
       }
     }
   },
+  "txBalanceValueChange": "· {once} → {sonra}",
+  "@txBalanceValueChange": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txBalanceValueSemantics": "Bakiye {once} ({onceDeger}) iken {sonra} ({sonraDeger}) oldu",
+  "@txBalanceValueSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "onceDeger": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      },
+      "sonraDeger": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Not var",
   "txOpenNote": "{name} işlemi, not ekle",
   "@txOpenNote": {

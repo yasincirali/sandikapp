@@ -884,6 +884,21 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String txBalanceValueChange(String once, String sonra) {
+    return '· $once → $sonra';
+  }
+
+  @override
+  String txBalanceValueSemantics(
+    String once,
+    String onceDeger,
+    String sonra,
+    String sonraDeger,
+  ) {
+    return 'Bakiye $once ($onceDeger) iken $sonra ($sonraDeger) oldu';
+  }
+
+  @override
   String get txHasNote => 'Not var';
 
   @override

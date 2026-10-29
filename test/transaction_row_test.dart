@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/widgets/transaction_row.dart';
 
@@ -44,14 +45,17 @@ Asset _asset({
 Future<void> _pump(WidgetTester tester, Asset asset,
     {bool yilGoster = true,
     bool silinenGorunumu = false,
-    ({double once, double sonra})? bakiye}) async {
+    bool hideBalance = false,
+    PortfolioState portfolioState = const PortfolioState(),
+    HareketBakiyesi? bakiye}) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: ThemeData.dark(),
       home: Scaffold(
         body: TransactionRow(
           asset: asset,
-          portfolioState: const PortfolioState(),
+          portfolioState: portfolioState,
+          hideBalance: hideBalance,
           yilGoster: yilGoster,
           silinenGorunumu: silinenGorunumu,
           bakiye: bakiye,
@@ -134,7 +138,7 @@ void main() {
   // ikinci satır, birim sonda; ekran okuyucuya tam cümle. Silme/temettü/
   // silinenler/mevduat satırında yazılmaz.
   group('hareket satırı — bakiye', () {
-    const b = (once: 12.0, sonra: 17.5);
+    const b = (once: 12.0, sonra: 17.5, onceDeger: null, sonraDeger: null);
 
     testWidgets('alım: "12 → 17,5 lot" + erişilebilir cümle',
         (tester) async {
@@ -144,6 +148,80 @@ void main() {
       expect(find.bySemanticsLabel('Bakiye 12 lot iken 17,5 lot oldu'),
           findsOneWidget);
       h.dispose();
+    });
+
+    // Değer (2026-10-29 ikinci tur): miktar × işlem fiyatı, satır tutarının
+    // biçimiyle (₺, 2 ondalık); ekran okuyucu cümlesine de girer.
+    const d = (
+      once: 400.0,
+      sonra: 300.0,
+      onceDeger: 12400.0,
+      sonraDeger: 9300.0,
+    );
+
+    testWidgets('satım: miktar + değer, cümlede ikisi de', (tester) async {
+      final h = tester.ensureSemantics();
+      await _pump(tester, _asset(kind: AssetKind.sell, qty: 100), bakiye: d);
+      expect(find.text('400 → 300 lot'), findsOneWidget);
+      expect(find.text('· ₺12.400,00 → ₺9.300,00'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'Bakiye 400 lot (₺12.400,00) iken 300 lot (₺9.300,00) oldu',
+        ),
+        findsOneWidget,
+      );
+      h.dispose();
+    });
+
+    testWidgets('bakiye gizliyken değer yazılmaz, miktar kalır', (
+      tester,
+    ) async {
+      await _pump(tester, _asset(), bakiye: d, hideBalance: true);
+      expect(find.text('400 → 300 lot'), findsOneWidget);
+      expect(find.textContaining('12.400'), findsNothing);
+    });
+
+    testWidgets('değer bilinmiyorsa yalnız miktar', (tester) async {
+      await _pump(
+        tester,
+        _asset(),
+        bakiye: (
+          once: 400.0,
+          sonra: 300.0,
+          onceDeger: null,
+          sonraDeger: 9300.0,
+        ),
+      );
+      expect(find.text('400 → 300 lot'), findsOneWidget);
+      expect(find.textContaining('9.300'), findsNothing);
+    });
+
+    testWidgets('USD varlık: satır tutarı gibi ₺\'ye çevrilir', (tester) async {
+      final usd = Asset(
+        id: 'aapl',
+        userId: 'u1',
+        name: 'Apple',
+        ticker: 'AAPL',
+        type: AssetType.hisse,
+        quantity: 2,
+        purchasePrice: 200,
+        currency: 'USD',
+        notes: '',
+        addedDate: DateTime(2026, 7, 24),
+      );
+      const b = (once: 1.0, sonra: 3.0, onceDeger: 200.0, sonraDeger: 600.0);
+      await _pump(
+        tester,
+        usd,
+        bakiye: b,
+        portfolioState: const PortfolioState(usdTry: 40),
+      );
+      expect(find.text('· ₺8.000,00 → ₺24.000,00'), findsOneWidget);
+      // Kur 0 (çekilemedi) ise "₺0" uydurulmaz; miktar yine yazılır.
+      await _pump(tester, usd,
+          bakiye: b, portfolioState: const PortfolioState(usdTry: 0));
+      expect(find.text('1 → 3 lot'), findsOneWidget);
+      expect(find.textContaining('→ ₺'), findsNothing);
     });
 
     testWidgets('bakiye verilmezse satır yok', (tester) async {
@@ -166,7 +244,7 @@ void main() {
           notes: '',
           addedDate: DateTime(2026, 7, 24),
         ),
-        bakiye: (once: 100, sonra: 150),
+        bakiye: (once: 100, sonra: 150, onceDeger: null, sonraDeger: null),
       );
       expect(find.text('\$100 → \$150'), findsOneWidget);
     });

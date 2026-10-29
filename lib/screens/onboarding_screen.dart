@@ -542,11 +542,14 @@ List<_Adim> _adimlariKur() {
       govde: 'Bir harekete dokun: o işleme not yaz ya da yazdığını oku '
           '("maaştan aldım", "hedef 400"). Notu olan işlemin tarihinin '
           "yanında küçük bir işaret durur; altında da o işlemle elindeki "
-          "miktarın nasıl değiştiği yazar (12 → 17 gr). Notlar Portföy'de "
-          "varlık kartını açınca da görünür, Tüm Hareketler'de aranır.",
+          "miktarın ve işlem fiyatıyla değerinin nasıl değiştiği yazar "
+          "(12 → 17 gr · ₺36.000 → ₺51.000). Notlar Portföy'de varlık "
+          "kartını açınca da görünür, Tüm Hareketler'de aranır.",
       // Bakiye cümlesi 2026-10-29: hedef yüzeyin satırına "önceki → sonraki"
       // bakiye eklendi; tur gerçek satırın üstünde çalıştığı için yeni
       // satırı anlatmayan metin onu açıklamasız bırakırdı (tur kuralı).
+      // Aynı gün ikinci tur: bakiyenin yanına işlem fiyatıyla değer geldi;
+      // "işlem fiyatıyla" bugünkü değer sanılmasın diye metinde açık.
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       // Hareket kabı yalnız kayıt varken çizilir (`home_screen.dart`).

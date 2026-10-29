@@ -1628,6 +1628,23 @@ abstract class AppLocalizations {
   /// **'Bakiye {once} iken {sonra} oldu'**
   String txBalanceSemantics(String once, String sonra);
 
+  /// No description provided for @txBalanceValueChange.
+  ///
+  /// In tr, this message translates to:
+  /// **'· {once} → {sonra}'**
+  String txBalanceValueChange(String once, String sonra);
+
+  /// No description provided for @txBalanceValueSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {once} ({onceDeger}) iken {sonra} ({sonraDeger}) oldu'**
+  String txBalanceValueSemantics(
+    String once,
+    String onceDeger,
+    String sonra,
+    String sonraDeger,
+  );
+
   /// No description provided for @txHasNote.
   ///
   /// In tr, this message translates to:
