@@ -369,7 +369,9 @@ Cloud environment › Setup script: `curl -fsSL https://raw.githubusercontent.co
 ortam tüm projelerde ortak). Sunucular Linux yollarıyla hem `-s local` (repo yolunda
 `.mcp.json`'ı ezer) hem `-s user` (thread'ler `/home/user`'da açılır; 2026-10-29) kapsamında
 kaydedilir; `.mcp.json`'a dokunulmaz. Konteynerdeki her repo codebase-memory grafiğine
-indekslenir; kod keşfinde önce graph (`search_graph`, `trace_path`), sonra grep. Bulut grafiği
+indekslenir; kod keşfinde önce graph (`search_graph`, `trace_path`), sonra grep. Betik her
+repodaki `.claude/skills/`'i `~/.claude/skills`'e kopyalar ki thread hangi klasörde açılırsa
+açılsın skill'ler görünsün (aynı ad: sandikapp'inki kalır). Bulut grafiği
 ADR'siz başlar (ADR'ler yerel grafikte). Emülatör yok (KVM yok); doğrulama
 `flutter analyze` + `flutter test`.
 Dördüncü sunucu **perplexity** (resmi `@perplexity-ai/mcp-server`, 2026-10-12;

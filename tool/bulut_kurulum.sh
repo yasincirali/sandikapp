@@ -157,6 +157,27 @@ if [ -x /opt/cbm/codebase-memory-mcp ]; then
   done
 fi
 
+# 5b) Skill'ler. Repo `.claude/skills/` yalnız oturum o repoda açılınca okunur;
+# proje thread'leri /home/user'da açıldığı için hiçbiri görünmüyordu (2026-10-29,
+# yasin: "ui-ux-pro-max tüm uygulamalarda, Unity oyuna Unity, Flutter'a Flutter
+# skill'leri"). Her repodaki skill kullanıcı klasörüne kopyalanır; aynı ad iki
+# repoda varsa önce gelen ($REPO = sandikapp) kalır. Hangi skill'in hangi işe
+# çağrılacağı yine her reponun CLAUDE.md yönlendirme tablosundadır.
+# Unity MCP burada kurulmaz: Editor'a bağlanır, bulutta Editor yok (araç hep
+# "bağlı değil" derdi). Unity MCP yasin'in PC'sinde, açık Editor'la çalışır.
+mkdir -p "$HOME/.claude/skills"
+for d in "$REPO" /home/user/*/; do
+  d="${d%/}"
+  [ -d "$d/.claude/skills" ] || continue
+  for sk in "$d"/.claude/skills/*/; do
+    sk="${sk%/}"; ad="$(basename "$sk")"
+    [ -f "$sk/SKILL.md" ] || continue
+    [ -e "$HOME/.claude/skills/$ad" ] && continue  # hesap/yerleşik skill'i ezme
+    cp -r "$sk" "$HOME/.claude/skills/$ad"
+  done
+done
+log "skill'ler kullanıcı klasöründe: $(ls "$HOME/.claude/skills" | wc -l)"
+
 # 6) Paketler — pubspec.lock'u değiştirirse geri al (yerel Flutter meta/matcher'ı kaydırır).
 if [ -f "$REPO/pubspec.yaml" ]; then
   ( cd "$REPO" && flutter pub get >/dev/null 2>&1 && git checkout -q -- pubspec.lock 2>/dev/null ) || true
