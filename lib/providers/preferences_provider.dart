@@ -487,6 +487,12 @@ final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.kaydirmaIpucu, false));
 
+/// Yatay tam ekran grafik bir kez açıldı mı (yan çevirme ipucu artık
+/// gösterilmez; `YanCevirinceTamEkran`). Cihaz tercihi, kişiye özel değil:
+/// telefonu yan çevirmeyi öğrenen cihazdaki kişidir. 2026-10-29.
+final yatayGrafikAcildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.yatayGrafikIpucu, false));
+
 /// Baz para birimi (Faz 3.2) — `BaseCurrency.index` olarak saklanır; model
 /// ve kur eşlemesi `base_currency_provider.dart`'ta. Kişiye özel: aynı
 /// cihazı paylaşan iki kullanıcının tercihi karışmasın.

@@ -30,6 +30,45 @@ class SinyalBildirimiEylemi extends PushEylemi {
   final String assetId;
 }
 
+/// Diğer her görünür push (fiyat alarmı, yüzde alarmı, takip listesi,
+/// brifing, özet, temettü, takvim, TÜFE): Android ön planda göstermez,
+/// uygulama aynı kanalda yerel bildirim olarak basar (2026-10-29).
+///
+/// Neden (yasin, 2026-10-29: "tüm bildirimler push içinde okunabilir
+/// olmalı"): yalnız sinyal ve davet yeniden basılıyordu; uygulama açıkken
+/// gelen alarm Android'de HİÇ görünmüyordu (kullanıcı ancak çanı açınca
+/// fark ediyordu). [data] dokunuşta push'a dokunulmuş gibi aynı varış
+/// yerine gitsin diye taşınır (`handleRemoteMessageData`).
+class GenelBildirimEylemi extends PushEylemi {
+  const GenelBildirimEylemi({
+    required this.title,
+    required this.body,
+    required this.channelId,
+    required this.data,
+  });
+  final String title;
+  final String body;
+  final String channelId;
+  final Map<String, String> data;
+}
+
+/// Tür → Android kanalı; sunucunun `channel_id`'si gelmezse yedek. Eşleme
+/// sunucudaki gönderenlerle aynı (alarm/takip `alert_channel`, brifing/
+/// temettü/takvim `brief_channel`, özet/TÜFE `summary_channel`).
+String genelBildirimKanali(String? type) => switch (type) {
+      NotificationService.priceAlertType ||
+      'yuzde_alarm' ||
+      'gosterge_alarm' ||
+      'cizim_alarm' ||
+      NotificationService.watchlistMoveType =>
+        'alert_channel',
+      NotificationService.weeklySummaryType ||
+      NotificationService.monthlySummaryType ||
+      NotificationService.inflationDayType =>
+        'summary_channel',
+      _ => 'brief_channel',
+    };
+
 /// Cron'dan "analiz zamanı" tetiği.
 class AnalizIstegiEylemi extends PushEylemi {
   const AnalizIstegiEylemi(this.slot);
@@ -46,10 +85,15 @@ class YokEylemi extends PushEylemi {
 /// [data] FCM `message.data`; [notificationTitle]/[notificationBody] varsa
 /// `message.notification` alanları (sunucu bazen yalnızca `notification`
 /// bloğunda başlık gönderir, bazen `data` içinde — ikisi de kabul).
+///
+/// [androidChannelId]: `message.notification.android.channelId` — genel
+/// dalda yerel bildirim aynı kanala basılır ki kullanıcının kanal ayarı
+/// (kapalı/sessiz) ön planda da geçerli olsun.
 PushEylemi pushMesajiniYonlendir(
   Map<String, dynamic> data, {
   String? notificationTitle,
   String? notificationBody,
+  String? androidChannelId,
 }) {
   final type = data['type']?.toString();
 
@@ -74,6 +118,22 @@ PushEylemi pushMesajiniYonlendir(
 
   if (type == NotificationService.signalAnalyzeRequestType) {
     return AnalizIstegiEylemi(data['slot']?.toString() ?? 'manual');
+  }
+
+  // Görünür bildirim taşıyan her diğer tür. Başlıksız (yalnız veri) mesaj
+  // sessiz tetiktir; ona bildirim basılmaz.
+  final baslik = notificationTitle?.trim() ?? '';
+  if (type != null && type.isNotEmpty && baslik.isNotEmpty) {
+    final kanal = androidChannelId?.trim() ?? '';
+    return GenelBildirimEylemi(
+      title: baslik,
+      body: notificationBody ?? '',
+      channelId: kanal.isNotEmpty ? kanal : genelBildirimKanali(type),
+      data: {
+        for (final e in data.entries)
+          if (e.value != null) e.key: e.value.toString(),
+      },
+    );
   }
 
   return const YokEylemi();

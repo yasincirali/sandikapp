@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/fiyat_kaynagi.dart';
 import 'helpers/kaynak.dart';
 import 'package:portfoy_takip/models/asset_categories.dart';
 import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
@@ -179,12 +180,29 @@ void main() {
         reason: 'Akarken parmak bandı 200 pt ötelememeli.');
   });
 
+  // yasin 2026-10-29: bant hiç durmasın. Varsayılan: boşta durma kapalı.
+  testWidgets('varsayılan: dokunulmasa da 2 dakika sonra bant akıyor',
+      (tester) async {
+    expect(PiyasaSeridi.bostaDurur, isFalse);
+    await pump(tester);
+    final b = bant(tester);
+    await tester.pump(const Duration(minutes: 2));
+    final a = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect((b.kaydirma - a) / 0.5, closeTo(PiyasaSeridi.hiz, 1));
+    expect(b.bostaDurdu, isFalse);
+  });
+
   // ── Boşta durma (2026-10-01, CPU/GPU raporu) ─────────────────────────
+  // 2026-10-29'dan beri KAPALI ([PiyasaSeridi.bostaDurur]); mekanizma geri
+  // açılabilsin diye aşağıdaki testler bayrağı açarak sınar.
   // Bant dokunulmadan iki tur aktıktan sonra yavaşlayıp durur; dokunuş,
   // öne geliş ve sekmeye dönüş yeniden akıtır. Akarken kare hızı değişmez.
 
   testWidgets('dokunuşsuz boşta süresi dolunca bant yumuşakça durur',
       (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     expect(b.akiyor, isTrue);
@@ -221,6 +239,8 @@ void main() {
 
   testWidgets('durmuş banda dokunuş yeniden akıtır; kalkış yumuşak',
       (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     // İki kare: ilki süreyi doldurup sönmeye geçer, ikincisi sönmeyi bitirir.
@@ -245,6 +265,8 @@ void main() {
   });
 
   testWidgets('akarken dokunuş boşta saatini sıfırlar', (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     await tester.pump(PiyasaSeridi.bostaSuresi - const Duration(seconds: 2));
@@ -261,6 +283,8 @@ void main() {
 
   testWidgets('gizli sekmeden dönüş bandı uyandırır, saat sıfırlanır',
       (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     tester.view.physicalSize = const Size(320 * 3, 200 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -295,6 +319,8 @@ void main() {
   });
 
   testWidgets('öne geliş durmuş bandı uyandırır', (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
     await pump(tester);
     final b = bant(tester);
     // İki kare: ilki süreyi doldurup sönmeye geçer, ikincisi sönmeyi bitirir.
@@ -456,5 +482,51 @@ void main() {
         reason: 'Bant ile portföydeki 24 ayar gram aynı fiyatı göstermeli.');
     expect(PiyasaSeridi.semboller, isNot(contains('ALTIN_GRAM')),
         reason: '`ALTIN_GRAM` 22 ayardır; "Gram altın" etiketiyle yanıltır.');
+  });
+
+  // yasin 2026-10-29: "BTC de eklenmeli fiyat bandına". Kripto kuralı:
+  // fiyat sunucudan (`kripto_fiyat`), Yahoo'ya düşmez.
+  test('bantta Bitcoin var ve kripto yolundan gelir', () {
+    expect(PiyasaSeridi.semboller, contains(FiyatKaynagi.btcTry));
+    expect(FiyatKaynagi.kriptoMu(FiyatKaynagi.btcTry), isTrue);
+  });
+
+  // yasin 2026-10-29: "Ana sayfa fiyat bandı duruyor bazen". Uzun basış
+  // iptal edilince (arka plana geçiş, bildirim perdesi) `onLongPressEnd`
+  // gelmez; tutuş bayrağı takılı kalıp bant kalıcı duruyordu.
+  testWidgets('iptal edilen uzun basış bandı tutulu bırakmaz', (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    final g = await tester.startGesture(tester.getCenter(find.byType(KayanBant)));
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    expect(b.tutuluyor, isTrue);
+    await g.cancel();
+    await tester.pump();
+    expect(b.tutuluyor, isFalse);
+    expect(b.akiyor, isTrue);
+  });
+
+  testWidgets('dış uyandırıcı boşta durmuş bandı akıtır', (tester) async {
+    PiyasaSeridi.bostaDurur = true;
+    addTearDown(() => PiyasaSeridi.bostaDurur = false);
+    tester.view.physicalSize = const Size(320 * 3, 200 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final uyandirici = ValueNotifier<int>(0);
+    addTearDown(uyandirici.dispose);
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData.dark(),
+      home: Scaffold(
+          body: KayanBant(ogeler: ogeler, uyandirici: uyandirici)),
+    ));
+    await tester.pump();
+    final b = bant(tester);
+    await tester.pump(PiyasaSeridi.bostaSuresi + const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 6));
+    expect(b.bostaDurdu, isTrue);
+    uyandirici.value++;
+    await tester.pump();
+    expect(b.akiyor, isTrue);
+    expect(b.bostaDurdu, isFalse);
   });
 }

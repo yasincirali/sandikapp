@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -823,6 +824,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String tegPaylasimDonem(String aralik, String tarihler) {
+    return '$aralik candles, $tarihler';
+  }
+
+  @override
+  String get tegYanCevirIpucu =>
+      'Turn your phone sideways for the detailed chart';
+
+  @override
+  String tegOzelPanelDikte(String ad) {
+    return '$ad · separate pane in portrait';
+  }
+
+  @override
   String get total => 'total';
 
   @override
@@ -870,6 +885,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesHint => 'Your notes...';
+
+  @override
+  String txBalanceChange(String once, String sonra) {
+    return '$once → $sonra';
+  }
+
+  @override
+  String txBalanceSemantics(String once, String sonra) {
+    return 'Holding went from $once to $sonra';
+  }
 
   @override
   String get txHasNote => 'Has a note';
@@ -3472,15 +3497,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Protect with Face ID',
-        'touchId': 'Protect with Touch ID',
-        'biyometrik': 'Protect with biometrics',
-        'other': 'Protect with your screen lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Protect with Face ID',
+      'touchId': 'Protect with Touch ID',
+      'biyometrik': 'Protect with biometrics',
+      'other': 'Protect with your screen lock',
+    });
     return '$_temp0';
   }
 
@@ -3497,15 +3519,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Turn on Face ID',
-        'touchId': 'Turn on Touch ID',
-        'biyometrik': 'Turn on biometric lock',
-        'other': 'Turn on app lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Turn on Face ID',
+      'touchId': 'Turn on Touch ID',
+      'biyometrik': 'Turn on biometric lock',
+      'other': 'Turn on app lock',
+    });
     return '$_temp0';
   }
 
@@ -3955,7 +3974,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis) {
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  ) {
     return 'O $acilis · H $yuksek · L $dusuk · C $kapanis';
   }
 
@@ -4338,6 +4361,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marketBist => 'BIST 100';
+
+  @override
+  String get marketBitcoin => 'Bitcoin';
 
   @override
   String get notifTypeWatchlist => 'WATCHLIST';
@@ -5399,14 +5425,61 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$count monthly pension contributions were added automatically. You can update the amount on the pension card.',
-      one:
-          'Your pension contribution was added automatically. You can update the amount on the pension card.',
+      one: 'Your pension contribution was added automatically. You can update the amount on the pension card.',
     );
     return '$_temp0';
   }
 
   @override
   String get pensionAddExtraContribution => 'Add extra contribution';
+
+  @override
+  String pensionFundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count funds',
+      one: '1 fund',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pensionFundsNow => 'Today\'s allocation';
+
+  @override
+  String get pensionFundsNowHint =>
+      'Shares use today\'s fund values; because prices move differently they can drift from your contribution instruction.';
+
+  @override
+  String pensionContributionPlan(String plan) {
+    return 'New contributions: $plan';
+  }
+
+  @override
+  String pensionFundRowSemantics(String code, String share, String amount) {
+    return '$code, $share of the contract, $amount';
+  }
+
+  @override
+  String get pensionPickCompany => 'Pick your pension company';
+
+  @override
+  String pensionCompanyUseTyped(String name) {
+    return 'Use \"$name\"';
+  }
+
+  @override
+  String get pensionCompanyListUnavailable =>
+      'The company list couldn\'t load right now. You can type the company name and use it.';
+
+  @override
+  String pensionCompanyFunds(String company) {
+    return '$company funds';
+  }
+
+  @override
+  String get pensionAllFunds => 'All funds';
 
   @override
   String cpiSentenceMonth(String month, String change, String cpi) {
@@ -5425,7 +5498,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi) {
+    String date,
+    String end,
+    String change,
+    String cpi,
+  ) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
@@ -6375,7 +6452,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-      String amount, String times, String pct, String share) {
+    String amount,
+    String times,
+    String pct,
+    String share,
+  ) {
     return '$amount · $times× the average · price $pct · buyer share $share';
   }
 
@@ -8954,8 +9035,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           'This asset\'s $n transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.',
-      one:
-          'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
+      one: 'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }
@@ -9787,4 +9867,183 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ortakPortfoyKodGir => 'Enter code';
+
+  @override
+  String get notifOpenAction => 'Open';
+
+  @override
+  String get notifExpandHint => 'Show full text';
+
+  @override
+  String get notifCollapseHint => 'Collapse';
+
+  @override
+  String alarmTileBody(String price, String target) {
+    return '$price · target $target';
+  }
+
+  @override
+  String get alarmTileOneShot =>
+      'This was a one-time alarm and is now off. Open the asset to set it again.';
+
+  @override
+  String get alarmModGosterge => 'Indicator';
+
+  @override
+  String get alarmPremiumGerekli => 'Requires Premium';
+
+  @override
+  String get gostergeBbUst => 'Bollinger upper';
+
+  @override
+  String get gostergeBbAlt => 'Bollinger lower';
+
+  @override
+  String get gostergeBaslik => 'Which indicator?';
+
+  @override
+  String get gostergeYonYukari => 'Crosses up';
+
+  @override
+  String get gostergeYonAsagi => 'Crosses down';
+
+  @override
+  String gostergeOzetYukari(String name, String gosterge) {
+    return 'We\'ll notify you when $name crosses above $gosterge.';
+  }
+
+  @override
+  String gostergeOzetAsagi(String name, String gosterge) {
+    return 'We\'ll notify you when $name crosses below $gosterge.';
+  }
+
+  @override
+  String gostergeOzetIkisi(String name, String gosterge) {
+    return 'We\'ll notify you when $name crosses $gosterge in either direction.';
+  }
+
+  @override
+  String get gostergeNot =>
+      'Calculated from daily closes, with the live price for today (Bollinger 20 days, 2σ). One-time: it turns off after it fires.';
+
+  @override
+  String gostergeAlarmEtiketYukari(String gosterge) {
+    return '$gosterge · crosses up';
+  }
+
+  @override
+  String gostergeAlarmEtiketAsagi(String gosterge) {
+    return '$gosterge · crosses down';
+  }
+
+  @override
+  String gostergeAlarmEtiketIkisi(String gosterge) {
+    return '$gosterge · crosses';
+  }
+
+  @override
+  String gostergeAlarmKuruldu(String name, String etiket) {
+    return 'Alert set for $name: $etiket';
+  }
+
+  @override
+  String get cizimAlarmEtiketUst => 'Line alert · when above';
+
+  @override
+  String get cizimAlarmEtiketAlt => 'Line alert · when below';
+
+  @override
+  String get cizimAlarmEtiketIkisi => 'Line alert · when crossed';
+
+  @override
+  String seviyeAlarmCalisti(String fiyat) {
+    return 'Fired · $fiyat · one-time';
+  }
+
+  @override
+  String get seviyeAlarmCalistiSade => 'Fired · one-time';
+
+  @override
+  String get tegAlarmKur => 'Set an alert on this line';
+
+  @override
+  String get tegAlarmKurPremium => 'Set a line alert (Premium)';
+
+  @override
+  String get tegAlarmKaldir => 'Remove line alert';
+
+  @override
+  String get tegAlarmKaldirildi => 'Line alert removed';
+
+  @override
+  String get tegAlarmKurulduUst =>
+      'Alert set: we\'ll notify you when the price rises above the line';
+
+  @override
+  String get tegAlarmKurulduAlt =>
+      'Alert set: we\'ll notify you when the price falls below the line';
+
+  @override
+  String get tegAlarmKurulduIkisi =>
+      'Alert set: we\'ll notify you when the price crosses the line';
+
+  @override
+  String get tegAlarmBitti =>
+      'This line ends in the past. Draw a line or ray that reaches past today';
+
+  @override
+  String get tegAlarmYonsuz => 'This ray doesn\'t extend forward; no alert set';
+
+  @override
+  String get tegAlarmGecersiz => 'The line goes below zero; no alert set';
+
+  @override
+  String get tegAlarmSilindi =>
+      'Drawing deleted; its line alert was removed too';
+
+  @override
+  String get tegAlarmGeriGeldi => 'The line\'s alert is back too';
+
+  @override
+  String nActiveAlarmsAll(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n active alerts',
+      one: '1 active alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeAlarmOzetCipi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n indicator/line alerts',
+      one: '1 indicator/line alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeAlarmOzetCipiEtiket(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n indicator and line alerts',
+      one: '1 indicator or line alert',
+    );
+    return '$_temp0. View in My alerts';
+  }
+
+  @override
+  String cizimAlarmSeviyesi(String fiyat) {
+    return 'Line now at $fiyat';
+  }
+
+  @override
+  String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
+    return 'Line now at $fiyat · until $tarih';
+  }
 }

@@ -53,6 +53,8 @@ Future<void> _pump(
   Asset asset, {
   double width = 375,
   bool hideBalance = false,
+  ({double once, double sonra})? bakiye,
+  double yaziOlcegi = 1,
 }) async {
   tester.view.physicalSize = Size(width * 3, 800 * 3);
   tester.view.devicePixelRatio = 3.0;
@@ -61,12 +63,19 @@ Future<void> _pump(
   await tester.pumpWidget(
     MaterialApp(
       theme: ThemeData.dark(),
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: TransactionRow(
-            asset: asset,
-            portfolioState: const PortfolioState(),
-            hideBalance: hideBalance,
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: Size(width, 800),
+          textScaler: TextScaler.linear(yaziOlcegi),
+        ),
+        child: Scaffold(
+          body: SingleChildScrollView(
+            child: TransactionRow(
+              asset: asset,
+              portfolioState: const PortfolioState(),
+              hideBalance: hideBalance,
+              bakiye: bakiye,
+            ),
           ),
         ),
       ),
@@ -161,5 +170,20 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+
+    // Önceki → sonraki bakiye satırı (2026-10-29): uzun kesirli miktar,
+    // dar ekran ve büyük yazıda sol sütunda kırpılır, taşmaz.
+    for (final olcek in [1.0, 2.0]) {
+      testWidgets('bakiye satırı — 320pt, yazı ×$olcek', (tester) async {
+        await _pump(
+          tester,
+          _asset(name: 'Gram Altın', type: AssetType.altin, qty: 12.5),
+          width: 320,
+          yaziOlcegi: olcek,
+          bakiye: (once: 123456.7891, sonra: 123469.2891),
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }

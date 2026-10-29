@@ -62,9 +62,12 @@ class ShareCardService {
     required String text,
     required String subject,
     Rect? origin,
+    // Dosya adı paylaşıma göre: tam ekran grafik "sandik-thyao-grafik.png"
+    // verir (2026-10-29); özet kartları eski adla kalır.
+    String dosyaAdi = 'sandik-ozet.png',
   }) =>
       Share.shareXFiles(
-        [XFile.fromData(png, mimeType: 'image/png', name: 'sandik-ozet.png')],
+        [XFile.fromData(png, mimeType: 'image/png', name: dosyaAdi)],
         text: text,
         subject: subject,
         sharePositionOrigin: origin,

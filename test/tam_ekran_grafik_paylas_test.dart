@@ -27,11 +27,17 @@ import 'helpers/kaynak.dart';
 ///  · Üst çubukta "Grafiği paylaş" düğmesi, ≥44 pt, etiketli.
 ///  · Paylaşılan metin: "THYAO · (dönem) · sandık ile çizildi" + mağaza
 ///    bağlantısı; tavsiye dili (sinyal/hedef/al/sat) yok.
-///  · Görsel paylaşım kipinde üretilir: imleç/seçim/sil düğmesi yok, başlık
-///    ve "sandık" imzası var; kip paylaşım sayfasından önce kapanır.
+///  · Görsel paylaşım kipinde üretilir: imleç/seçim/sil düğmesi yok; altta
+///    marka şeridi (logo + "sandık" + sembol · dönem · zaman + okunur kısa
+///    bağlantı, yasin 2026-10-29) grafiğin DIŞINDA; kip paylaşım
+///    sayfasından önce kapanır.
 ///  · Kişisel katman yok: ekran maliyet, lot, alarm, tutar verisine hiç
 ///    erişmez — eklenirse bu test kırılır ve paylaşım kipinde gizlenmesi
-///    istenir.
+///    istenir. Tek bilinçli istisna (0170, 2026-10-29): seçili çizimin
+///    "Alarm kur" düğmesi ([CizimAlarmDugmesi]) ve çizim değişince alarmı
+///    eşitleyen çağrı. Düğme yalnız seçim çubuğunda yaşar, seçim çubuğu
+///    paylaşım kipinde çizilmez; grafiğe alarm çizgisi/sayısı çizilmez.
+///    Bu adlar taramadan önce çıkarılır, kapı ayrıca kilitlenir.
 ///  · Hata dost metinle gösterilir, ölçüm yalnız başarıda.
 const _gun = 86400000;
 
@@ -94,6 +100,14 @@ void main() {
       expect(AppLocalizationsTr().tegPaylas, 'Grafiği paylaş');
     });
 
+    test('görseldeki kısa bağlantı: indirme kapısı, şemasız, UTM yok', () {
+      final k = grafikPaylasimKisaBaglanti();
+      expect(k, 'yasincirali.github.io/sandikapp/indir');
+      expect(Magaza.indirKapisi, contains(k));
+      expect(k, isNot(contains('utm_')));
+      expect(k, isNot(startsWith('http')));
+    });
+
     test('dönem: görünen pencerenin en yakın uygulama dönemi', () {
       int g(num n) => (n * _gun).round();
       expect(gorunurDonemKimligi(0, g(1)), 'GÜNLÜK');
@@ -106,13 +120,80 @@ void main() {
     });
   });
 
+  // Uçtan uca test 2026-10-29: metin günlük mumlarda "3 ay" diyordu
+  // (yuvarlanmış dönem, aralık yok); dosya her paylaşımda "sandik-ozet.png".
+  group('paylaşım dönemi ve dosya adı', () {
+    int t(int y, int a, int g, [int s = 0, int d = 0]) =>
+        DateTime(y, a, g, s, d).millisecondsSinceEpoch;
+
+    test('günlük: gerçek tarih aralığı, yuvarlanmaz', () {
+      expect(gorunurTarihAraligi(t(2026, 8, 22), t(2026, 10, 29), 'tr',
+              gunIci: false),
+          '22 Ağu \u2013 29 Eki 2026');
+      expect(gorunurTarihAraligi(t(2025, 11, 3), t(2026, 2, 6), 'en',
+              gunIci: false),
+          '3 Nov 2025 \u2013 6 Feb 2026');
+    });
+
+    test('gün içi: saatle; aynı gün tek tarih', () {
+      expect(gorunurTarihAraligi(t(2026, 10, 29, 10, 0),
+              t(2026, 10, 29, 17, 30), 'tr', gunIci: true),
+          '29 Eki 2026 10:00\u201317:30');
+      expect(gorunurTarihAraligi(t(2026, 10, 27, 10, 0),
+              t(2026, 10, 29, 17, 30), 'tr', gunIci: true),
+          '27 Eki 10:00 \u2013 29 Eki 17:30');
+    });
+
+    test('dönem metni mum aralığını söyler (TR/EN)', () {
+      final tr = grafikPaylasimDonemi(AppLocalizationsTr(),
+          aralikAdi: 'günlük',
+          basMs: t(2026, 8, 22),
+          sonMs: t(2026, 10, 29),
+          dil: 'tr',
+          gunIci: false);
+      expect(tr, 'günlük mumlar, 22 Ağu \u2013 29 Eki 2026');
+      final en = grafikPaylasimDonemi(AppLocalizationsEn(),
+          aralikAdi: 'daily',
+          basMs: t(2026, 8, 22),
+          sonMs: t(2026, 10, 29),
+          dil: 'en',
+          gunIci: false);
+      expect(en, startsWith('daily candles, '));
+      expect(_tavsiye.hasMatch(tr), isFalse);
+    });
+
+    test('dosya adı sembolden, ASCII', () {
+      expect(grafikPaylasimDosyaAdi('THYAO'), 'sandik-thyao-grafik.png');
+      expect(grafikPaylasimDosyaAdi('Gram Altın'),
+          'sandik-gram-altin-grafik.png');
+      expect(grafikPaylasimDosyaAdi('İŞ BANKASI (C)'),
+          'sandik-is-bankasi-c-grafik.png');
+      expect(grafikPaylasimDosyaAdi('—'), 'sandik-grafik.png');
+    });
+
+    test('ekran dosya adını ve dönemi geçirir', () {
+      final k = ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart');
+      expect(k, contains('dosyaAdi: grafikPaylasimDosyaAdi(widget.ad)'));
+      expect(k, contains('grafikPaylasimDonemi('));
+    });
+  });
+
   group('kişisel katman yok', () {
     test('ekran kişisel veriye erişmez (maliyet, lot, alarm, tutar)', () {
       final satirlar =
           ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart')
               .split('\n')
               .where((s) => !s.trimLeft().startsWith('//'))
-              .join('\n');
+              .join('\n')
+              // İzinli (0170): seçim çubuğundaki zil ve eşitleme çağrısı;
+              // ikisi de alarm VERİSİNİ grafiğe çizmez (aşağıdaki kapı testi).
+              .replaceAll('CizimAlarmDugmesi', '')
+              .replaceAll('cizimAlarmlariniEsitle', '')
+              .replaceAll('cizim_alarm_dugmesi', '')
+              // Geri al için silinen alarmların çöpü (2026-10-29): yalnız
+              // eşitlemeye geçer, grafiğe hiçbir şey çizmez.
+              .replaceAll('CizimAlarmCopu', '')
+              .replaceAll('_alarmCopu', '');
       for (final yasak in [
         'purchasePrice',
         '.quantity',
@@ -139,6 +220,15 @@ void main() {
       expect(k, contains('final im = paylasim ? null : imlec;'));
       expect(k, contains('final b = paylasim ? null : bekleyen;'));
       expect(k, contains('!paylasim && k == secili'));
+    });
+
+    test('alarm düğmesi yalnız seçim çubuğunda, o da paylaşımda yok (0170)',
+        () {
+      final k = ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart');
+      expect(k, contains('if (secili != null && !_paylasimKipi) _seciliCubugu('));
+      expect('CizimAlarmDugmesi('.allMatches(k).length, 1);
+      final cubuk = k.substring(k.indexOf('Widget _seciliCubugu('));
+      expect(cubuk, contains('CizimAlarmDugmesi('));
     });
   });
 
@@ -232,6 +322,29 @@ void main() {
             findsOneWidget);
         expect(find.textContaining('itibarıyla'), findsOneWidget);
         expect(find.byKey(const ValueKey('tamEkranCizimiSil')), findsNothing);
+        // Marka şeridi: logo, "sandık" ve görselde okunan bağlantı.
+        final serit = find.byKey(const ValueKey('tamEkranImza'));
+        expect(find.descendant(of: serit, matching: find.byType(SandikLogo)),
+            findsOneWidget);
+        expect(find.descendant(of: serit, matching: find.text('sandık')),
+            findsOneWidget);
+        final baglanti = find.descendant(
+            of: find.byKey(sinir),
+            matching: find.byKey(const ValueKey('tamEkranBaglanti')));
+        expect(baglanti, findsOneWidget);
+        expect(tester.widget<Text>(baglanti).data,
+            grafikPaylasimKisaBaglanti());
+        // Şerit çizim alanının ALTINDA: eksen ve mumların üstüne binmez.
+        final alan = tester.getRect(find.byWidgetPredicate((w) =>
+            w is Listener &&
+            w.onPointerSignal != null &&
+            w.onPointerDown != null));
+        final seritKutusu = tester.getRect(serit);
+        expect(seritKutusu.top, greaterThanOrEqualTo(alan.bottom - 0.5));
+        expect(seritKutusu.height, greaterThanOrEqualTo(36));
+        expect(
+            tester.getRect(find.byKey(sinir)).contains(seritKutusu.center),
+            isTrue);
       };
 
       await tester.tap(find.byTooltip('Grafiği paylaş'));
@@ -243,6 +356,9 @@ void main() {
       final ilk = giden!.split('\n').first;
       expect(ilk, startsWith('THYAO · '));
       expect(ilk, endsWith(' · sandık ile çizildi'));
+      // Mum aralığı adıyla; yuvarlanmış "N ay" yok.
+      expect(ilk, contains('günlük mumlar, '));
+      expect(ilk, isNot(matches(RegExp(r'· \d+ ay ·'))));
       expect(giden, contains(Magaza.indirKapisi));
       expect(_tavsiye.hasMatch(ilk), isFalse);
       // Tutar/miktar/maliyet metne girmez.

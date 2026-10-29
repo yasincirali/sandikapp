@@ -323,6 +323,34 @@ String kotasyonSembolu(String ticker, String currency) {
   return _currencySymbols[currency.trim().toUpperCase()] ?? '₺';
 }
 
+/// Fiyat alarmı sembolünün (yalnız sembol, para birimi kaydı yok)
+/// kotasyon simgesi; bilinmiyorsa `null` (simgesiz yazılır).
+///
+/// Sunucudaki `_shared/fiyat_metni.ts › kotasyonSimgesi` eşi (2026-10-29):
+/// push ile çan satırı AYNI simgeyi yazsın. Çan satırı her alarmda "₺"
+/// basıyordu; ABD hissesi alarmının sayısı dolardı (canlı kotasyon,
+/// [kotasyonSembolu] ile aynı ilke). `price_alert_notifications` para
+/// birimi tutmaz (yeni kolon migration ister); sembol çoğu durumda yeter:
+/// `.IS`/altın/kur/fon/kripto TL, vadeli (`=F`) ve gram türevi dolar, son
+/// eksiz harf sembolü ABD borsası. Endeks puandır; başka son ek ve eurobond
+/// belirsizdir — yanlış simge simgesiz sayıdan kötüdür.
+String? alarmFiyatSimgesi(String sembol) {
+  final t = sembol.trim().toUpperCase();
+  if (t.isEmpty || bistEndeksiMi(t) || kureselEndeksMi(t)) return null;
+  if (t.endsWith('=X')) {
+    final cift = t.substring(0, t.length - 2);
+    return cift.length == 6 ? _currencySymbols[cift.substring(3)] : null;
+  }
+  if (t.startsWith('ALTIN_') ||
+      t.startsWith('TEFAS:') ||
+      t.startsWith('KRIPTO:') ||
+      t.endsWith('.IS')) {
+    return '₺';
+  }
+  if (t.endsWith('=F') || t.startsWith('GRAM:')) return '\$';
+  return RegExp(r'^[A-Z][A-Z\-]{0,5}$').hasMatch(t) ? '\$' : null;
+}
+
 /// SEMBOL SERİSİNDEN okunan fiyatın simgesi — her zaman ₺.
 ///
 /// ## Neden ayrı (seri denetimi, 2026-10-08)

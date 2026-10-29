@@ -28,6 +28,11 @@ class PrefKeys {
 
   /// Toplam kartı kaydırma ipucu (tek seferlik göz kırpma) gösterildi mi.
   static const kaydirmaIpucu = 'pref_kaydirma_ipucu_gosterildi';
+
+  /// Dik grafiğin altındaki "Detaylı grafik için telefonu yan çevir" ipucu
+  /// artık gerekmiyor mu: kullanıcı yatay tam ekranı bir kez açtı
+  /// (2026-10-29). Cihaz tercihi — jest cihaza ait.
+  static const yatayGrafikIpucu = 'pref_yatay_grafik_ipucu_goruldu';
   static const lockScreenAmounts = 'pref_lockscreen_amounts';
   static const liveActivityStartMin = 'pref_live_activity_start_min';
   static const liveActivityEndMin = 'pref_live_activity_end_min';
@@ -47,6 +52,12 @@ class PrefKeys {
   /// sembol başına JSON (2026-10-23). Cihazda kalır, hesaba yazılmaz:
   /// cihazlar arası eşitleme ayrı (Premium) adım.
   static const grafikCizimleri = 'pref_grafik_cizimleri_v1';
+
+  /// Yatay çizgi → fiyat alarmı bağı (2026-10-29): `{çizimId: {a: alarmId,
+  /// p: bağlandığı fiyat}}`. `price_alerts`'e çizim kolonu eklemek eski
+  /// build'lerin okuduğu tabloyu değiştirmek olurdu; çizim zaten cihazda
+  /// yaşadığı için bağ da cihazda (`CizimDeposu.alarmBaglari`).
+  static const grafikCizimAlarmBaglari = 'pref_grafik_cizim_alarm_baglari_v1';
   // `pref_chart_mum_araligi` (mum aralığı, PR #161) 2026-10-10 gece
   // okunmuyor: aralık artık dönemin TradingView varsayılanıyla açılır,
   // seçim oturumluk (`mumAraligiSecimiProvider`). Anahtar başka iş için

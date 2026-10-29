@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
+import '../models/position.dart';
 import '../models/asset_type.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/user_model.dart';
@@ -299,6 +300,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
+  /// Satırların "önceki → sonraki" bakiyesi (2026-10-29). Süzülmüş listeden
+  /// değil `_ledger`'dan (tüm kapsam) hesaplanır: "son 7 gün" süzgecinde
+  /// eski alımlar listede yoktur ama bakiyeye girmeleri gerekir. Arama
+  /// kutusuna her harf `build` tetikler; defter değişmedikçe önbellekten.
+  final _bakiyeOnbellegi = HareketBakiyeOnbellegi();
+
   @override
   void initState() {
     super.initState();
@@ -503,6 +510,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     required BazPara baz,
     required PortfolioState portfolioState,
     required bool hideBalance,
+    required Map<String, ({double once, double sonra})> bakiyeler,
   }) {
     final not = islemNotu(a, defter);
     final benimId = ref.watch(authProvider).valueOrNull?.id;
@@ -516,6 +524,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       yilGoster: _silinenler,
       silinenGorunumu: _silinenler,
       not: not,
+      // Silinenler alanı "artık portföyde olmayan" kayıtları anlatır;
+      // bakiye süren defterin hikâyesi, orada yazılmaz.
+      bakiye: _silinenler ? null : bakiyeler[a.id],
       onTap: acilir
           ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
           : null,
@@ -533,6 +544,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     // Not görünürlüğü (eski kopya ayıklaması) tüm defterle karar verir,
     // filtrelenmiş sayfayla değil — bkz. `islemNotu`.
     final ledger = _ledger;
+    final bakiyeler = _bakiyeOnbellegi.hesapla(ledger);
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     ref.listen(activePartnersProvider, (_, next) {
@@ -807,6 +819,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                                           portfolioState:
                                               pState ?? const PortfolioState(),
                                           hideBalance: hideBalance,
+                                          bakiyeler: bakiyeler,
                                         ),
                                       ],
                                     ],

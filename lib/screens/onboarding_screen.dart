@@ -227,9 +227,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 /// "Bildirim merkezi" adımının ilk cümlesi. Paywall açıkken de doğru:
 /// ücretsizde üç göstergenin bildirimi günde 1 kez zile düşer (2026-10-10
 /// akşam, `sinyalSlotSiniriProvider`); ayrı "Premium'da sinyaller" metni
-/// kalktı.
+/// kalktı. 2026-10-29: satırlar açılır oldu (dokunuş tam metni açar,
+/// gezinme "Aç"ta) — tur metni arayüzle birlikte değişir.
 const _zilBasi = 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
-    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir ';
+    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir '
+    'bildirime dokununca tamamı açılır, "Aç" seni ilgili ekrana götürür. Bir ';
 
 class _Adim {
   const _Adim({
@@ -539,8 +541,12 @@ List<_Adim> _adimlariKur() {
       baslik: 'İşlem notların',
       govde: 'Bir harekete dokun: o işleme not yaz ya da yazdığını oku '
           '("maaştan aldım", "hedef 400"). Notu olan işlemin tarihinin '
-          "yanında küçük bir işaret durur. Notlar Portföy'de varlık kartını "
-          "açınca da görünür, Tüm Hareketler'de aranır.",
+          "yanında küçük bir işaret durur; altında da o işlemle elindeki "
+          "miktarın nasıl değiştiği yazar (12 → 17 gr). Notlar Portföy'de "
+          "varlık kartını açınca da görünür, Tüm Hareketler'de aranır.",
+      // Bakiye cümlesi 2026-10-29: hedef yüzeyin satırına "önceki → sonraki"
+      // bakiye eklendi; tur gerçek satırın üstünde çalıştığı için yeni
+      // satırı anlatmayan metin onu açıklamasız bırakırdı (tur kuralı).
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       // Hareket kabı yalnız kayıt varken çizilir (`home_screen.dart`).
@@ -555,12 +561,17 @@ List<_Adim> _adimlariKur() {
       baslik: 'Bildirim merkezi',
       // 2026-10-27 (0169): alarm sayfasına "Günlük yüzde" kipi geldi
       // (altın, döviz, kripto); tur metni arayüzle birlikte değişir.
+      // 2026-10-29 (0170): yatay grafikte seçili çizimin zili (yatay çizgi
+      // → fiyat alarmı; trend/ışın → çizgi alarmı) ve alarm sayfasının
+      // Premium "Gösterge" kipi; ikisi de bu adımın anlattığı alarm akışı.
       govde: '$_zilBasi'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
           'uygulama kapalıyken de çalışır. Altın, döviz ve kriptoda '
           '"Günlük yüzde" ile "bugün %2 düşerse" gibi bir alarm da '
-          'kurabilirsin.',
+          'kurabilirsin. Yan çevrilmiş grafikte çizdiğin çizgiyi seçip '
+          'zile dokunursan fiyat o çizgiye gelince haber verir; Premium\'da '
+          '"Gösterge" ile "EMA50\'yi keserse" alarmı da var.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       // Koşul yok: zil 2026-10-04'ten beri her seviyede görünür (bayrak
@@ -670,6 +681,9 @@ List<_Adim> _adimlariKur() {
     // (0096) formda ve kartta; son cümle onu anlatır.
     // 2026-10-02: vadeli faiz vade sonunda eklenir, vade içinde oran
     // karttan güncellenir — mevduat cümlesi buna göre.
+    // 2026-10-29: BES şirketi listeden seçilir (fon seçici o şirketin
+    // fonlarıyla açılır), sözleşme Portföy'de tek satır ve kartta fon
+    // dağılımı görünür — BES cümlesi buna göre (tur metni arayüzle değişir).
     _Adim(
       id: 'mevduat_bes',
       hedef: TourTarget.turSecici,
@@ -686,9 +700,12 @@ List<_Adim> _adimlariKur() {
           'hesapta her gün sonunda) eklenir; '
           'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '
           'son orana göre çıkar. Vade dolunca varlık sayfasından tek '
-          "dokunuşla yenilersin. BES'i seç: şirketini, ana "
-          'paranı, getirini ve fon dağılımını gir; grafik ve dönem getirileri '
-          'emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu değiştirince grafik yeni fonlarla devam eder; devlet '
+          "dokunuşla yenilersin. BES'i seç: şirketini listeden seç, fon "
+          'listesi o şirketin fonlarıyla açılır; ana paranı, getirini ve fon '
+          'dağılımını gir. Portföy\'de sözleşmen tek satırdır; oka dokununca '
+          'fonlarını, paylarını ve getirilerini görürsün. Grafik ve dönem '
+          'getirileri emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu '
+          'değiştirince grafik yeni fonlarla devam eder; devlet '
           'katkısı hak ediş oranıyla ayrı görünür. Katkı gününü yazıp '
           'otomatik eklemeyi açarsan aylık katkın o gün kendiliğinden eklenir; '
           'tutar farklıysa kartta tek dokunuşla düzeltirsin.',

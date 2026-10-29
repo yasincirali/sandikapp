@@ -453,6 +453,12 @@
   "@tegPaylasimMetni": {"description": "Chart share text and image title. No advice wording.", "placeholders": {"ad": {"type": "String"}, "donem": {"type": "String"}}},
   "tegPaylasimZamani": "As of {zaman}",
   "@tegPaylasimZamani": {"description": "Date and time the data was loaded, shown on the shared chart image.", "placeholders": {"zaman": {"type": "String"}}},
+  "tegPaylasimDonem": "{aralik} candles, {tarihler}",
+  "@tegPaylasimDonem": {"description": "Shared chart period: candle interval (daily, 1-hour…) and the visible date range.", "placeholders": {"aralik": {"type": "String"}, "tarihler": {"type": "String"}}},
+  "tegYanCevirIpucu": "Turn your phone sideways for the detailed chart",
+  "@tegYanCevirIpucu": {"description": "One-time hint under the portrait chart; disappears once landscape full screen has been opened. Not a button."},
+  "tegOzelPanelDikte": "{ad} · separate pane in portrait",
+  "@tegOzelPanelDikte": {"description": "Pane-type custom indicators (RSI-like) are not drawn in landscape; the legend says so.", "placeholders": {"ad": {"type": "String"}}},
   "total": "total",
   "@assetTypeSemantics": {
     "placeholders": {
@@ -481,6 +487,28 @@
   "transactionDate": "Transaction date",
   "addNote": "Add a note",
   "notesHint": "Your notes...",
+  "txBalanceChange": "{once} → {sonra}",
+  "@txBalanceChange": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txBalanceSemantics": "Holding went from {once} to {sonra}",
+  "@txBalanceSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Has a note",
   "txOpenNote": "{name} transaction, add a note",
   "@txOpenNote": {
@@ -3042,6 +3070,7 @@
   "marketEuro": "EUR",
   "marketGold": "Gold (g)",
   "marketBist": "BIST 100",
+  "marketBitcoin": "Bitcoin",
   "notifTypeWatchlist": "WATCHLIST",
   "notifTypeInflation": "CPI",
   "alarmSuggest": "{name} added. Set a price alert?",
@@ -3459,6 +3488,57 @@
   "pensionAutoUpdated": "Contribution updated",
   "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added automatically. You can update the amount on the pension card.} other{{count} monthly pension contributions were added automatically. You can update the amount on the pension card.}}",
   "pensionAddExtraContribution": "Add extra contribution",
+  "pensionFundCount": "{count, plural, =1{1 fund} other{{count} funds}}",
+  "@pensionFundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionFundsNow": "Today's allocation",
+  "pensionFundsNowHint": "Shares use today's fund values; because prices move differently they can drift from your contribution instruction.",
+  "pensionContributionPlan": "New contributions: {plan}",
+  "@pensionContributionPlan": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionFundRowSemantics": "{code}, {share} of the contract, {amount}",
+  "@pensionFundRowSemantics": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionPickCompany": "Pick your pension company",
+  "pensionCompanyUseTyped": "Use \"{name}\"",
+  "@pensionCompanyUseTyped": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionCompanyListUnavailable": "The company list couldn't load right now. You can type the company name and use it.",
+  "pensionCompanyFunds": "{company} funds",
+  "@pensionCompanyFunds": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionAllFunds": "All funds",
   "cpiSentenceMonth": "In {month} your savings {change}; monthly inflation was {cpi}.",
   "@cpiSentenceMonth": {
       "placeholders": {
@@ -5583,5 +5663,52 @@
   "ortakPortfoyKartBaslik": "Shared portfolio",
   "ortakPortfoyKartGovde": "Combine your portfolio with someone close on one screen. You can leave any time.",
   "ortakPortfoyDavetEt": "Invite",
-  "ortakPortfoyKodGir": "Enter code"
+  "ortakPortfoyKodGir": "Enter code",
+  "notifOpenAction": "Open",
+  "notifExpandHint": "Show full text",
+  "notifCollapseHint": "Collapse",
+  "alarmTileBody": "{price} · target {target}",
+  "alarmTileOneShot": "This was a one-time alarm and is now off. Open the asset to set it again.",
+  "alarmModGosterge": "Indicator",
+  "alarmPremiumGerekli": "Requires Premium",
+  "gostergeBbUst": "Bollinger upper",
+  "gostergeBbAlt": "Bollinger lower",
+  "gostergeBaslik": "Which indicator?",
+  "gostergeYonYukari": "Crosses up",
+  "gostergeYonAsagi": "Crosses down",
+  "gostergeOzetYukari": "We'll notify you when {name} crosses above {gosterge}.",
+  "gostergeOzetAsagi": "We'll notify you when {name} crosses below {gosterge}.",
+  "gostergeOzetIkisi": "We'll notify you when {name} crosses {gosterge} in either direction.",
+  "gostergeNot": "Calculated from daily closes, with the live price for today (Bollinger 20 days, 2σ). One-time: it turns off after it fires.",
+  "gostergeAlarmEtiketYukari": "{gosterge} · crosses up",
+  "gostergeAlarmEtiketAsagi": "{gosterge} · crosses down",
+  "gostergeAlarmEtiketIkisi": "{gosterge} · crosses",
+  "gostergeAlarmKuruldu": "Alert set for {name}: {etiket}",
+  "cizimAlarmEtiketUst": "Line alert · when above",
+  "cizimAlarmEtiketAlt": "Line alert · when below",
+  "cizimAlarmEtiketIkisi": "Line alert · when crossed",
+  "seviyeAlarmCalisti": "Fired · {fiyat} · one-time",
+  "seviyeAlarmCalistiSade": "Fired · one-time",
+  "tegAlarmKur": "Set an alert on this line",
+  "tegAlarmKurPremium": "Set a line alert (Premium)",
+  "tegAlarmKaldir": "Remove line alert",
+  "tegAlarmKaldirildi": "Line alert removed",
+  "tegAlarmKurulduUst": "Alert set: we'll notify you when the price rises above the line",
+  "tegAlarmKurulduAlt": "Alert set: we'll notify you when the price falls below the line",
+  "tegAlarmKurulduIkisi": "Alert set: we'll notify you when the price crosses the line",
+  "tegAlarmBitti": "This line ends in the past. Draw a line or ray that reaches past today",
+  "tegAlarmYonsuz": "This ray doesn't extend forward; no alert set",
+  "tegAlarmGecersiz": "The line goes below zero; no alert set",
+  "tegAlarmSilindi": "Drawing deleted; its line alert was removed too",
+  "tegAlarmGeriGeldi": "The line's alert is back too",
+  "nActiveAlarmsAll": "{n, plural, =1{1 active alert} other{{n} active alerts}}",
+  "@nActiveAlarmsAll": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipi": "{n, plural, =1{1 indicator/line alert} other{{n} indicator/line alerts}}",
+  "@seviyeAlarmOzetCipi": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipiEtiket": "{n, plural, =1{1 indicator or line alert} other{{n} indicator and line alerts}}. View in My alerts",
+  "@seviyeAlarmOzetCipiEtiket": {"placeholders": {"n": {"type": "int"}}},
+  "cizimAlarmSeviyesi": "Line now at {fiyat}",
+  "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
+  "cizimAlarmSeviyesiBitisli": "Line now at {fiyat} · until {tarih}",
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
 }

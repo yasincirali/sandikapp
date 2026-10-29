@@ -462,6 +462,12 @@
   "@tegPaylasimMetni": {"description": "Grafik paylaşım metni ve görseldeki başlık. Tavsiye dili yok (sinyal/hedef/al/sat geçmez).", "placeholders": {"ad": {"type": "String"}, "donem": {"type": "String"}}},
   "tegPaylasimZamani": "{zaman} itibarıyla",
   "@tegPaylasimZamani": {"description": "Paylaşılan grafik görselinde verinin alındığı tarih ve saat.", "placeholders": {"zaman": {"type": "String"}}},
+  "tegPaylasimDonem": "{aralik} mumlar, {tarihler}",
+  "@tegPaylasimDonem": {"description": "Paylaşılan grafiğin dönemi: mum aralığı (günlük, 1 saatlik…) ve görünen tarih aralığı.", "placeholders": {"aralik": {"type": "String"}, "tarihler": {"type": "String"}}},
+  "tegYanCevirIpucu": "Detaylı grafik için telefonu yan çevir",
+  "@tegYanCevirIpucu": {"description": "Dik grafiğin altında tek seferlik ipucu; yatay tam ekran bir kez açılınca kaybolur. Düğme değil."},
+  "tegOzelPanelDikte": "{ad} · ayrı panel dik ekranda",
+  "@tegOzelPanelDikte": {"description": "Yatay grafikte ayrı panelli (RSI gibi) kendi göstergesi çizilmez; lejant bunu söyler.", "placeholders": {"ad": {"type": "String"}}},
   "total": "toplam",
   "@assetTypeSemantics": {
     "placeholders": {
@@ -494,6 +500,28 @@
   "transactionDate": "İşlem tarihi",
   "addNote": "Not ekle",
   "notesHint": "Notların...",
+  "txBalanceChange": "{once} → {sonra}",
+  "@txBalanceChange": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txBalanceSemantics": "Bakiye {once} iken {sonra} oldu",
+  "@txBalanceSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Not var",
   "txOpenNote": "{name} işlemi, not ekle",
   "@txOpenNote": {
@@ -3146,6 +3174,7 @@
   "marketEuro": "Euro",
   "marketGold": "Gram altın",
   "marketBist": "BIST 100",
+  "marketBitcoin": "Bitcoin",
   "notifTypeWatchlist": "TAKİP",
   "notifTypeInflation": "TÜFE",
   "alarmSuggest": "{name} eklendi. Fiyatı izlemek için alarm kur?",
@@ -3729,6 +3758,57 @@
     }
   },
   "pensionAddExtraContribution": "Ek katkı ekle",
+  "pensionFundCount": "{count, plural, =1{1 fon} other{{count} fon}}",
+  "@pensionFundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionFundsNow": "Bugünkü dağılım",
+  "pensionFundsNowHint": "Paylar fonların bugünkü değerinden; fiyatlar farklı yürüdüğü için katkı talimatından ayrışabilir.",
+  "pensionContributionPlan": "Yeni katkılar: {plan}",
+  "@pensionContributionPlan": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionFundRowSemantics": "{code}, sözleşmenin {share} kadarı, {amount}",
+  "@pensionFundRowSemantics": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionPickCompany": "Emeklilik şirketini seç",
+  "pensionCompanyUseTyped": "\"{name}\" olarak kullan",
+  "@pensionCompanyUseTyped": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionCompanyListUnavailable": "Şirket listesi şu an yüklenemedi. Şirketin adını yazıp kullanabilirsin.",
+  "pensionCompanyFunds": "{company} fonları",
+  "@pensionCompanyFunds": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionAllFunds": "Tüm fonlar",
   "cpiSentenceMonth": "{month} ayında birikimin {change}, aylık enflasyon {cpi} oldu.",
   "@cpiSentenceMonth": {
       "placeholders": {
@@ -6243,5 +6323,66 @@
   "ortakPortfoyKartBaslik": "Ortak portföy",
   "ortakPortfoyKartGovde": "Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.",
   "ortakPortfoyDavetEt": "Davet et",
-  "ortakPortfoyKodGir": "Kod gir"
+  "ortakPortfoyKodGir": "Kod gir",
+  "notifOpenAction": "Aç",
+  "notifExpandHint": "Tamamını göster",
+  "notifCollapseHint": "Daralt",
+  "alarmTileBody": "{price} · hedef {target}",
+  "@alarmTileBody": {
+    "placeholders": {
+      "price": {"type": "String"},
+      "target": {"type": "String"}
+    }
+  },
+  "alarmTileOneShot": "Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.",
+  "alarmModGosterge": "Gösterge",
+  "alarmPremiumGerekli": "Premium gerekir",
+  "gostergeBbUst": "Bollinger üst",
+  "gostergeBbAlt": "Bollinger alt",
+  "gostergeBaslik": "Hangi gösterge?",
+  "gostergeYonYukari": "Yukarı keserse",
+  "gostergeYonAsagi": "Aşağı keserse",
+  "gostergeOzetYukari": "{name} fiyatı {gosterge} çizgisini yukarı keserse haber vereceğiz.",
+  "@gostergeOzetYukari": {"placeholders": {"name": {"type": "String"}, "gosterge": {"type": "String"}}},
+  "gostergeOzetAsagi": "{name} fiyatı {gosterge} çizgisini aşağı keserse haber vereceğiz.",
+  "@gostergeOzetAsagi": {"placeholders": {"name": {"type": "String"}, "gosterge": {"type": "String"}}},
+  "gostergeOzetIkisi": "{name} fiyatı {gosterge} çizgisini hangi yöne keserse haber vereceğiz.",
+  "@gostergeOzetIkisi": {"placeholders": {"name": {"type": "String"}, "gosterge": {"type": "String"}}},
+  "gostergeNot": "Günlük kapanışlarla hesaplanır, bugün için canlı fiyat kullanılır (Bollinger 20 gün, 2σ). Tek seferliktir: çalınca kapanır.",
+  "gostergeAlarmEtiketYukari": "{gosterge} · yukarı keserse",
+  "@gostergeAlarmEtiketYukari": {"placeholders": {"gosterge": {"type": "String"}}},
+  "gostergeAlarmEtiketAsagi": "{gosterge} · aşağı keserse",
+  "@gostergeAlarmEtiketAsagi": {"placeholders": {"gosterge": {"type": "String"}}},
+  "gostergeAlarmEtiketIkisi": "{gosterge} · keserse",
+  "@gostergeAlarmEtiketIkisi": {"placeholders": {"gosterge": {"type": "String"}}},
+  "gostergeAlarmKuruldu": "{name} için alarm kuruldu: {etiket}",
+  "@gostergeAlarmKuruldu": {"placeholders": {"name": {"type": "String"}, "etiket": {"type": "String"}}},
+  "cizimAlarmEtiketUst": "Çizgi alarmı · üstüne çıkınca",
+  "cizimAlarmEtiketAlt": "Çizgi alarmı · altına inince",
+  "cizimAlarmEtiketIkisi": "Çizgi alarmı · kesince",
+  "seviyeAlarmCalisti": "Çalıştı · {fiyat} · tek seferlikti",
+  "@seviyeAlarmCalisti": {"placeholders": {"fiyat": {"type": "String"}}},
+  "seviyeAlarmCalistiSade": "Çalıştı · tek seferlikti",
+  "tegAlarmKur": "Bu çizgiye alarm kur",
+  "tegAlarmKurPremium": "Çizgi alarmı kur (Premium)",
+  "tegAlarmKaldir": "Çizgi alarmını kaldır",
+  "tegAlarmKaldirildi": "Çizgi alarmı kaldırıldı",
+  "tegAlarmKurulduUst": "Alarm kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz",
+  "tegAlarmKurulduAlt": "Alarm kuruldu: fiyat çizginin altına inince haber vereceğiz",
+  "tegAlarmKurulduIkisi": "Alarm kuruldu: fiyat çizgiyi kesince haber vereceğiz",
+  "tegAlarmBitti": "Bu çizgi geçmişte bitiyor. Alarm için bugünü geçen bir çizgi ya da ışın çiz",
+  "tegAlarmYonsuz": "Bu ışın ileriye uzanmıyor; alarm kurulamadı",
+  "tegAlarmGecersiz": "Çizgi sıfırın altına iniyor; alarm kurulamadı",
+  "tegAlarmSilindi": "Çizim silindi, çizgi alarmı da kaldırıldı",
+  "tegAlarmGeriGeldi": "Çizginin alarmı da geri geldi",
+  "nActiveAlarmsAll": "{n} aktif alarm",
+  "@nActiveAlarmsAll": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipi": "{n} gösterge/çizgi alarmı",
+  "@seviyeAlarmOzetCipi": {"placeholders": {"n": {"type": "int"}}},
+  "seviyeAlarmOzetCipiEtiket": "{n} gösterge ve çizgi alarmı. Alarmlarım'da gör",
+  "@seviyeAlarmOzetCipiEtiket": {"placeholders": {"n": {"type": "int"}}},
+  "cizimAlarmSeviyesi": "Çizgi şu an {fiyat}",
+  "@cizimAlarmSeviyesi": {"placeholders": {"fiyat": {"type": "String"}}},
+  "cizimAlarmSeviyesiBitisli": "Çizgi şu an {fiyat} · {tarih} tarihine kadar",
+  "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}}
 }

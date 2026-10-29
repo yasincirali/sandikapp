@@ -13,6 +13,7 @@ import '../providers/base_currency_provider.dart';
 import '../providers/bildirim_on_ayar_provider.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
+import '../providers/seviye_alarmi_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
@@ -835,7 +836,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.add_alert_outlined,
               title: context.l10n.priceAlerts,
               subtitle: () {
-                // Yüzde alarmları (0169) da sayılır: ikisi de "kurduğum alarm".
+                // Yüzde (0169), gösterge ve çizgi (0170) alarmları da
+                // sayılır: hepsi "kurduğum alarm".
                 final aktif = (ref
                             .watch(priceAlertsProvider)
                             .valueOrNull
@@ -844,6 +846,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         0) +
                     (ref
                             .watch(yuzdeAlarmlariProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0) +
+                    (ref
+                            .watch(gostergeAlarmlariProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0) +
+                    (ref
+                            .watch(cizimAlarmlariProvider)
                             .valueOrNull
                             ?.where((a) => a.isActive)
                             .length ??

@@ -42,7 +42,9 @@ Asset _asset({
     );
 
 Future<void> _pump(WidgetTester tester, Asset asset,
-    {bool yilGoster = true}) async {
+    {bool yilGoster = true,
+    bool silinenGorunumu = false,
+    ({double once, double sonra})? bakiye}) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: ThemeData.dark(),
@@ -51,6 +53,8 @@ Future<void> _pump(WidgetTester tester, Asset asset,
           asset: asset,
           portfolioState: const PortfolioState(),
           yilGoster: yilGoster,
+          silinenGorunumu: silinenGorunumu,
+          bakiye: bakiye,
         ),
       ),
     ),
@@ -123,6 +127,85 @@ void main() {
       await _pump(tester, _asset(addedDate: DateTime(2026, 7, 24)),
           yilGoster: false);
       expect(find.text('24 Tem'), findsOneWidget);
+    });
+  });
+
+  // Önceki → sonraki bakiye (kullanıcı isteği 2026-10-29): tarihin altında
+  // ikinci satır, birim sonda; ekran okuyucuya tam cümle. Silme/temettü/
+  // silinenler/mevduat satırında yazılmaz.
+  group('hareket satırı — bakiye', () {
+    const b = (once: 12.0, sonra: 17.5);
+
+    testWidgets('alım: "12 → 17,5 lot" + erişilebilir cümle',
+        (tester) async {
+      final h = tester.ensureSemantics();
+      await _pump(tester, _asset(qty: 5.5), bakiye: b);
+      expect(find.text('12 → 17,5 lot'), findsOneWidget);
+      expect(find.bySemanticsLabel('Bakiye 12 lot iken 17,5 lot oldu'),
+          findsOneWidget);
+      h.dispose();
+    });
+
+    testWidgets('bakiye verilmezse satır yok', (tester) async {
+      await _pump(tester, _asset());
+      expect(find.textContaining('→'), findsNothing);
+    });
+
+    testWidgets('döviz: sembol iki sayıda da önde', (tester) async {
+      await _pump(
+        tester,
+        Asset(
+          id: 'usd',
+          userId: 'u1',
+          name: 'Dolar',
+          ticker: 'USDTRY=X',
+          type: AssetType.doviz,
+          quantity: 50,
+          purchasePrice: 40,
+          currency: 'TRY',
+          notes: '',
+          addedDate: DateTime(2026, 7, 24),
+        ),
+        bakiye: (once: 100, sonra: 150),
+      );
+      expect(find.text('\$100 → \$150'), findsOneWidget);
+    });
+
+    testWidgets('temettü, silme kaydı, silinmiş lot: yazılmaz',
+        (tester) async {
+      for (final a in [
+        _asset(kind: AssetKind.dividend, qty: 0, dividend: 10),
+        _asset(kind: AssetKind.deleteLog, qty: 0),
+        _asset(deletedAt: DateTime(2026, 8, 1)),
+      ]) {
+        await _pump(tester, a, bakiye: b);
+        expect(find.textContaining('→'), findsNothing, reason: a.kind.name);
+      }
+    });
+
+    testWidgets('silinenler görünümünde yazılmaz', (tester) async {
+      await _pump(tester, _asset(), silinenGorunumu: true, bakiye: b);
+      expect(find.textContaining('→'), findsNothing);
+    });
+
+    testWidgets('mevduat: yazılmaz', (tester) async {
+      await _pump(
+        tester,
+        Asset(
+          id: 'mv',
+          userId: 'u1',
+          name: 'Mevduat',
+          ticker: 'MEVDUAT:1',
+          type: AssetType.mevduat,
+          quantity: 100000,
+          purchasePrice: 1,
+          currency: 'TRY',
+          notes: '',
+          addedDate: DateTime(2026, 7, 24),
+        ),
+        bakiye: b,
+      );
+      expect(find.textContaining('→'), findsNothing);
     });
   });
 

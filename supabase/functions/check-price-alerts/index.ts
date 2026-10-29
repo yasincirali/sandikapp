@@ -15,6 +15,11 @@
 // 0169: aynı turda yüzde alarmları da (`_shared/yuzde_alarmi.ts`, "gram
 // altın bugün %2 düşerse"). Ayrı tablo, ayrı damga; fiyat alarmının
 // sorgusu, tetikleme kuralı ve sırası değişmedi.
+//
+// 0170 (2026-10-29): gösterge ve çizgi alarmları da (`_shared/
+// seviye_alarmi.ts`, "EMA50'yi keserse", "çizdiğim trend çizgisine
+// değerse"). Yine ayrı tablolar, ayrı damga, try içinde; yanıta yalnız
+// `seviye` alanı eklenir.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -23,6 +28,7 @@ import {
   sendFcmNotification,
   ServiceAccount,
 } from '../_shared/fcm.ts';
+import { fiyatMetni, fiyatSayisi, kotasyonSimgesi } from '../_shared/fiyat_metni.ts';
 import {
   fetchLivePrices,
   isFxSymbol,
@@ -50,6 +56,7 @@ import {
 } from '../_shared/bildirim_karti.ts';
 import { takipListesiHareketleri } from '../_shared/watchlist_moves.ts';
 import { yuzdeAlarmTuruKos } from '../_shared/yuzde_alarmi.ts';
+import { seviyeAlarmTuruKos } from '../_shared/seviye_alarmi.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -168,24 +175,33 @@ export function isTriggered(
 /// `Intl` Deno'da mevcut ama `tr-TR` verisi çalışma zamanına göre eksik
 /// olabiliyor; bildirim metni sessizce "5,412.37" olarak çıkarsa kullanıcı
 /// rakamı yanlış okur. Elle biçimlendirmek bu belirsizliği kaldırır.
+///
+/// 2026-10-29: kural `_shared/fiyat_metni.ts › fiyatSayisi`'ye taşındı —
+/// 1'in altındaki fiyat (SHIB ₺0,0004) 2 haneye yuvarlanıp "0,00"
+/// okunuyordu. Ad, eski içe aktaranlar için kalır.
 export function formatTRY(value: number): string {
-  const [tam, kesir] = Math.abs(value).toFixed(2).split('.');
-  const binlik = tam.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  const isaret = value < 0 ? '-' : '';
-  return `${isaret}${binlik},${kesir}`;
+  return fiyatSayisi(value);
 }
 
+/// [simge]: kotasyonun para simgesi (`kotasyonSimgesi`); `null` → simgesiz.
+/// Varsayılan ₺ eski çağıranlar için (alarmların çoğu TL kote).
+///
+/// 2026-10-29 (bildirim denetimi): başlık ve gövde simgeli ("$" ABD
+/// hissesinde) ve alarmın tek seferlik olduğunu, artık KAPALI olduğunu
+/// söyler — kullanıcı "yine çalacak mı?" diye sormasın; çan satırı da aynı
+/// metni okur.
 export function buildAlertMessage(
   label: string,
   price: number,
   target: number,
   direction: string,
+  simge: string | null = '₺',
 ): { title: string; body: string } {
   const yukari = direction === 'above';
   return {
-    title: `${yukari ? '▲' : '▼'} ${label} ${formatTRY(target)} ` +
+    title: `${yukari ? '▲' : '▼'} ${label} ${fiyatMetni(target, simge)} ` +
       `${yukari ? 'seviyesine ulaştı' : 'seviyesinin altına indi'}`,
-    body: `Şu anki fiyat ${formatTRY(price)}. Kurduğun alarm çalıştı. ` +
+    body: `Şu an ${fiyatMetni(price, simge)}. Tek seferlik alarmdı, kapatıldı. ` +
       'Yatırım tavsiyesi değildir.',
   };
 }
@@ -199,13 +215,14 @@ export function buildAlertCard(
   price: number,
   target: number,
   direction: string,
+  simge: string | null = '₺',
 ): KartVerisi | null {
   if (!Number.isFinite(price) || !Number.isFinite(target)) return null;
   return kartVerisiniHazirla({
     e: label,
-    b: `₺${formatTRY(price)}`,
+    b: fiyatMetni(price, simge),
     y: direction === 'above' ? 'u' : 'd',
-    a: `Fiyat alarmı · hedef ₺${formatTRY(target)}`,
+    a: `Fiyat alarmı · hedef ${fiyatMetni(target, simge)}`,
   });
 }
 
@@ -284,6 +301,25 @@ Deno.serve(async (request) => {
       yuzde = { error: 'yuzde alarm turu basarisiz' };
     }
 
+    // ── 0b) Gösterge ve çizgi alarmları (0170) ──────────────────────────────
+    // Yüzde turuyla aynı sözleşme: bağımsız, hata yutulur, fiyat alarmı
+    // turu birebir eskisi gibi koşar. Hızlı turda yalnız o turun türleri
+    // (0168 süzgeci, fiyat alarmıyla aynı `alarmTuru`).
+    let seviye: Record<string, unknown>;
+    try {
+      seviye = await seviyeAlarmTuruKos(admin, {
+        dryRun,
+        turaGirer: (s) => filtre === null || filtre.has(alarmTuru(s)),
+        fcm: dryRun
+          ? null
+          : { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson },
+        kart,
+      });
+    } catch (e) {
+      console.error('[check-price-alerts] seviye alarm turu basarisiz:', e);
+      seviye = { error: 'seviye alarm turu basarisiz' };
+    }
+
     // ── 1) Aktif alarmlar ───────────────────────────────────────────────────
     const { data: alertRows, error: alertError } = await admin
       .from('price_alerts')
@@ -294,7 +330,7 @@ Deno.serve(async (request) => {
 
     const alerts = turaGirenAlarmlar((alertRows ?? []) as AlertRow[], filtre);
     if (alerts.length === 0) {
-      return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0, yuzde });
+      return jsonResponse({ ok: true, reason: 'Aktif alarm yok.', sent: 0, yuzde, seviye });
     }
 
     // ── 2) Fiyatlar ─────────────────────────────────────────────────────────
@@ -322,6 +358,7 @@ Deno.serve(async (request) => {
         sent: 0,
         kanarya,
         yuzde,
+        seviye,
       });
     }
 
@@ -357,6 +394,7 @@ Deno.serve(async (request) => {
       kanarya: kanaryaKismi,
         sent: 0,
         yuzde,
+        seviye,
       });
     }
 
@@ -399,11 +437,13 @@ Deno.serve(async (request) => {
     for (const alarm of tetiklenen) {
       if (sessiz.has(alarm.user_id)) { skippedQuietHours += 1; continue; }
       const fiyat = fiyatlar.get(alarm.symbol)!;
+      const simge = kotasyonSimgesi(alarm.symbol);
       const mesaj = buildAlertMessage(
         alarm.label,
         fiyat,
         Number(alarm.target_price),
         alarm.direction,
+        simge,
       );
 
       if (dryRun) {
@@ -457,6 +497,7 @@ Deno.serve(async (request) => {
         fiyat,
         Number(alarm.target_price),
         alarm.direction,
+        simge,
       );
       for (const t of tokensByUser.get(alarm.user_id) ?? []) {
         const r = await sendFcmNotification({
@@ -500,6 +541,7 @@ Deno.serve(async (request) => {
       dry_run: dryRun,
       failures: failures.slice(0, 5),
       yuzde,
+      seviye,
     });
   } catch (error) {
     // Ayrıntı yalnızca günlüğe: yanıtta `error.message` dönmek tablo/sütun

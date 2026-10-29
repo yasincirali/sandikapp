@@ -22,12 +22,14 @@ import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
+import '../models/bes_sozlesme_pozisyonu.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/varlik_monogrami.dart';
 import '../models/sozlesme.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/sozlesme_provider.dart';
 import '../services/sparkline_service.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
@@ -67,6 +69,9 @@ import '../widgets/transaction_row.dart' show hareketTurEtiketi;
 import '../services/varlik_eklendi.dart';
 import '../providers/veri_kalitesi_provider.dart';
 import '../widgets/ozellik_onerisi_karti.dart';
+import '../widgets/bes_fon_satiri.dart';
+
+part 'portfolio/bes_sozlesme_satiri.dart';
 
 class PortfolioScreen extends ConsumerStatefulWidget {
   const PortfolioScreen({super.key});
@@ -339,6 +344,19 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// geliyordu ve yalnızca o siliniyordu; parça parça eklenmiş bir varlık
   /// "son eklenen kadarı" eksilmiş halde listede kalıyordu.
   void _confirmDelete(BuildContext ctx, WidgetRef ref, Position position) {
+    // BES sözleşme satırı: tek onay, fon başına silme (bkz.
+    // `confirmAndDeletePosition` › parcalar).
+    if (position is BesSozlesmePozisyonu) {
+      final parcalar = [
+        for (final f in position.fonlar)
+          f.lots.where((l) => !l.isDeleteLog).toList(),
+      ];
+      confirmAndDeletePosition(ctx, ref,
+          name: besSozlesmeBasligi(ctx, ref, position, izle: false),
+          lots: [for (final p in parcalar) ...p],
+          parcalar: parcalar);
+      return;
+    }
     final asset = position.representative;
     // Silinecek gerçek kayıt sayısı — deleteLog izleri lot listesinde
     // olabilir ama silinmez.
@@ -646,14 +664,19 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                         filtre.abd == null
                                     ? filtre
                                     : PortfoyGrubu(filtre.tur);
+                                // BES sözleşmesi TEK satır (2026-10-29,
+                                // `BesSozlesmePozisyonu`). Yalnız LİSTE
+                                // gruplanır: halka, üst özet ve toplamlar
+                                // `positions`/`displayAssets`'ten okumaya
+                                // devam eder, sayılar değişmez. Gruplama
+                                // sıralamadan ÖNCE: sözleşme satırı toplam
+                                // değeriyle yarışır.
                                 final filteredPositions =
                                     _applyPositionSortOrder(
-                                  secili != null
-                                      ? positions
-                                          .where((p) =>
-                                              secili.kapsar(p.representative))
-                                          .toList()
-                                      : List<Position>.from(positions),
+                                  besSozlesmeleriniGrupla(secili != null
+                                      ? positions.where(
+                                          (p) => secili.kapsar(p.representative))
+                                      : positions),
                                   pState,
                                 );
 
@@ -2000,6 +2023,26 @@ class _AssetList {
       ];
 
   Widget _kart(Position position, Position? kendi) {
+    if (position is BesSozlesmePozisyonu) {
+      // Yeni fon/katkı lotu fon anahtarını duyurur; sözleşme satırı da
+      // parlasın (fon satırı artık listede tek başına yok).
+      final vurgu = position.key == vurgulanan ||
+          position.fonlar.any((f) => f.key == vurgulanan);
+      return _YeniVarlikParlamasi(
+        key: ValueKey(position.key),
+        aktif: vurgu,
+        tetik: vurguNo,
+        child: _BesSozlesmeSatiri(
+          key: vurgu ? vurguAnahtari : null,
+          sozlesme: position,
+          pState: pState,
+          baz: baz,
+          canEdit: kendi != null,
+          onFonTap: (fon) => onTap(fon, null),
+          onDelete: () => onDelete(position),
+        ),
+      );
+    }
     // Etiket GÖSTERİLEN satırın anahtarından: tekil (`ValueKey` ile aynı),
     // açılan pozisyon ortak satırda farklı olsa da.
     final hero = heroAcik ? varlikHeroEtiketi(position.key) : null;

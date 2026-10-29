@@ -89,19 +89,23 @@ async function fetchYahoo(symbol: string, f: typeof fetch = fetch): Promise<numb
   return (await fetchYahooNoktalari(symbol, f)).map((p) => p[1]);
 }
 
-/// Yahoo günlük kapanışları zamanıyla ([ms, kapanış]), 6 ay.
+/// Yahoo günlük kapanışları zamanıyla ([ms, kapanış]), varsayılan 6 ay.
+///
+/// [aralik] Yahoo `range` değeri. 2026-10-29: gösterge alarmı (0170) EMA200
+/// için '2y' ister; sinyal turu bugünkü gibi '6mo' (varsayılan değişmedi).
 async function fetchYahooNoktalari(
   symbol: string,
   f: typeof fetch = fetch,
+  aralik: '6mo' | '2y' = '6mo',
 ): Promise<Array<[number, number]>> {
   // Gram emtia: ons tabanı ÷ 31,1035 (`emtia_gram.ts`).
   const taban = gramTabani(symbol);
   if (taban) {
-    return (await fetchYahooNoktalari(taban, f)).map(([t, v]) => [t, v / ONS_GRAM]);
+    return (await fetchYahooNoktalari(taban, f, aralik)).map(([t, v]) => [t, v / ONS_GRAM]);
   }
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
-    `?interval=1d&range=6mo&includePrePost=false`;
+    `?interval=1d&range=${aralik}&includePrePost=false`;
 
   const res = await f(url, {
     headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
@@ -158,7 +162,17 @@ export function altinGramTlSerisi(
 
 /// TEFAS fon NAV serisi (6 ay).
 async function fetchTefas(code: string): Promise<number[]> {
-  const res = await fetch(
+  return (await fetchTefasNoktalari(code, 6)).map((p) => p[1]);
+}
+
+/// TEFAS NAV'ları zamanıyla ([ms, NAV]), eski→yeni. [periyod] ay; istemci
+/// 60'ı da kullanıyor (`tefasGecmisKovasi`), gösterge alarmı (0170) onu ister.
+async function fetchTefasNoktalari(
+  code: string,
+  periyod: number,
+  f: typeof fetch = fetch,
+): Promise<Array<[number, number]>> {
+  const res = await f(
     'https://www.tefas.gov.tr/api/funds/fonFiyatBilgiGetir',
     {
       method: 'POST',
@@ -167,7 +181,7 @@ async function fetchTefas(code: string): Promise<number[]> {
         Accept: 'application/json, text/plain, */*',
         'User-Agent': USER_AGENT,
       },
-      body: JSON.stringify({ fonKodu: code, dil: 'TR', periyod: 6 }),
+      body: JSON.stringify({ fonKodu: code, dil: 'TR', periyod }),
       signal: AbortSignal.timeout(15_000),
     },
   );
@@ -185,7 +199,7 @@ async function fetchTefas(code: string): Promise<number[]> {
     points.push([ts, price]);
   }
   points.sort((a, b) => a[0] - b[0]);
-  return points.map((p) => p[1]);
+  return points;
 }
 
 /// Kripto günlük kapanışları (6 ay), TL'ye çevrilmiş.
@@ -199,6 +213,17 @@ export async function fetchKripto(
   symbol: string,
   f: typeof fetch = fetch,
 ): Promise<number[]> {
+  return (await fetchKriptoNoktalari(client, symbol, 183, f)).map((p) => p[1]);
+}
+
+/// Kripto günlük TL kapanışları zamanıyla, son [gun] gün ([fetchKripto]'nun
+/// kaynağı ve dönüşümü; gösterge alarmı 730 gün ister).
+async function fetchKriptoNoktalari(
+  client: SupabaseClient,
+  symbol: string,
+  gun: number,
+  f: typeof fetch = fetch,
+): Promise<Array<[number, number]>> {
   const kod = kriptoKodu(symbol);
   if (!kod) return [];
   const { data: coin } = await client
@@ -208,7 +233,7 @@ export async function fetchKripto(
     .maybeSingle();
   if (!coin) return [];
   const simdi = Date.now();
-  const baslangic = simdi - 183 * 24 * 60 * 60 * 1000;
+  const baslangic = simdi - gun * 24 * 60 * 60 * 1000;
   const [ham, kur] = await Promise.all([
     mumlariCek(String(coin.binance_sembol), '1d', baslangic, simdi, f),
     coin.parite === 'USDT'
@@ -219,7 +244,7 @@ export async function fetchKripto(
   const noktalar = coin.parite === 'USDT'
     ? (kur === null ? [] : tlSerisi(ham, kur))
     : ham;
-  return noktalar.map((p) => p[1]).filter((c) => Number.isFinite(c) && c > 0);
+  return noktalar.filter((p) => Number.isFinite(p[1]) && p[1] > 0);
 }
 
 /// Eurobond günlük TEMİZ kapanışları (6 ay), Börse Frankfurt.
@@ -354,6 +379,33 @@ export async function loadPriceHistories(
   }
 
   return out;
+}
+
+/// Gösterge alarmının (0170) 2 yıllık günlük serisi, zamanıyla ([ms, kapanış]),
+/// eski→yeni. Kaynak seçimi [fetchFromSource] ile AYNI (kripto Binance TL,
+/// fon TEFAS, kalanı Yahoo), yalnız pencere uzun: EMA200 en az 200 kapanış
+/// ister, 6 aylık sinyal serisi ~125 kapanış. Altın/TL döviz ve eurobond
+/// gösterge alarmı kapsamında değil (`gosterge_alarmi.ts`); burada boş döner.
+/// Hata fırlatmaz: tek sembolün düşmesi turu düşürmez.
+export async function fetchGunlukNoktalar(
+  client: SupabaseClient,
+  symbol: string,
+  f: typeof fetch = fetch,
+): Promise<Array<[number, number]>> {
+  try {
+    if (symbol === ALTIN_GRAM_TL || symbol.toUpperCase().startsWith(EUROBOND_ONEKI)) {
+      return [];
+    }
+    if (kriptoKodu(symbol)) return await fetchKriptoNoktalari(client, symbol, 730, f);
+    if (symbol.startsWith(TEFAS_PREFIX)) {
+      const iki = Date.now() - 730 * 24 * 60 * 60 * 1000;
+      return (await fetchTefasNoktalari(symbol.slice(TEFAS_PREFIX.length), 60, f))
+        .filter((p) => p[0] >= iki);
+    }
+    return await fetchYahooNoktalari(symbol, f, '2y');
+  } catch (_) {
+    return [];
+  }
 }
 
 /// Test/CLI kolaylığı için — edge function kendi client'ını kurar.
