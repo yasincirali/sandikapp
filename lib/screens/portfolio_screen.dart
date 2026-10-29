@@ -29,6 +29,7 @@ import '../models/sozlesme.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/sozlesme_provider.dart';
 import '../services/sparkline_service.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
@@ -351,7 +352,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
           f.lots.where((l) => !l.isDeleteLog).toList(),
       ];
       confirmAndDeletePosition(ctx, ref,
-          name: besSozlesmeBasligi(ctx, position),
+          name: besSozlesmeBasligi(ctx, ref, position, izle: false),
           lots: [for (final p in parcalar) ...p],
           parcalar: parcalar);
       return;

@@ -1,10 +1,20 @@
 part of '../portfolio_screen.dart';
 
-/// Sözleşme satırının başlığı: "MetLife Emeklilik · BES". Kurum lot adından
-/// okunamazsa (eski biçim) yalnız "BES".
-String besSozlesmeBasligi(BuildContext context, BesSozlesmePozisyonu s) {
+/// Sözleşme satırının başlığı: "MetLife Emeklilik · BES". Kurum önce lot
+/// adından, okunamazsa (eski biçimli lot adı) sözleşme kaydının kendi
+/// `kurum` alanından gelir; e2e (2026-10-29) eski sözleşmenin satırda yalnız
+/// "BES", kartında "BES · Anadolu Hayat" yazdığını gösterdi. İkisi de yoksa
+/// yalnız "BES".
+String besSozlesmeBasligi(
+    BuildContext context, WidgetRef ref, BesSozlesmePozisyonu s,
+    {bool izle = true}) {
   final tur = context.l10n.pensionCardTitle;
-  final kurum = s.kurum;
+  // `build` dışından (silme onayı) çağrılınca `watch` değil `read`.
+  final durum =
+      izle ? ref.watch(sozlesmeProvider) : ref.read(sozlesmeProvider);
+  final kayitKurumu = durum.value?.sozlesme(s.sozlesmeId)?.kurum.trim();
+  final kurum = s.kurum ??
+      (kayitKurumu == null || kayitKurumu.isEmpty ? null : kayitKurumu);
   return kurum == null ? tur : '$kurum · $tur';
 }
 
@@ -18,7 +28,7 @@ String besSozlesmeBasligi(BuildContext context, BesSozlesmePozisyonu s) {
 /// Kaydırma panelinde yalnız Sil var: Al/Sat/Temettü sözleşmede anlamsız
 /// (katkı ve fon değişimi sözleşme kartından yapılır), Taşı/Güncelle tek
 /// varlık içindir. Sil, sözleşmenin bütün fonlarını tek onayla siler.
-class _BesSozlesmeSatiri extends StatefulWidget {
+class _BesSozlesmeSatiri extends ConsumerStatefulWidget {
   const _BesSozlesmeSatiri({
     super.key,
     required this.sozlesme,
@@ -37,10 +47,10 @@ class _BesSozlesmeSatiri extends StatefulWidget {
   final VoidCallback onDelete;
 
   @override
-  State<_BesSozlesmeSatiri> createState() => _BesSozlesmeSatiriState();
+  ConsumerState<_BesSozlesmeSatiri> createState() => _BesSozlesmeSatiriState();
 }
 
-class _BesSozlesmeSatiriState extends State<_BesSozlesmeSatiri> {
+class _BesSozlesmeSatiriState extends ConsumerState<_BesSozlesmeSatiri> {
   bool _acik = false;
 
   @override
@@ -53,7 +63,7 @@ class _BesSozlesmeSatiriState extends State<_BesSozlesmeSatiri> {
     final degerTRY = pState.toTRY(s.totalValue, a.currency);
     final karZararTRY =
         degerTRY - s.totalCostTRY + totalDividendTRY(s.lots);
-    final baslik = besSozlesmeBasligi(context, s);
+    final baslik = besSozlesmeBasligi(context, ref, s);
     final alt = [
       l10n.pensionFundCount(s.fonSayisi),
       if (s.devletKatkisiVar) l10n.pensionGov,

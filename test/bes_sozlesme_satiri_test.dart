@@ -10,6 +10,7 @@ import 'package:portfoy_takip/models/sozlesme.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/providers/sozlesme_provider.dart';
 import 'package:portfoy_takip/screens/portfolio_screen.dart';
 
 /// BES sözleşmesi Portföy'de TEK satır (2026-10-29, yasin: "BES varlığı
@@ -36,13 +37,14 @@ Asset _bes(
   String sub = BesAltKategori.katki,
   AssetKind kind = AssetKind.buy,
   DateTime? tarih,
+  String? ad,
 }) =>
     Asset(
       id: id,
       userId: _uid,
-      name: sub == BesAltKategori.devletKatkisi
+      name: ad ?? (sub == BesAltKategori.devletKatkisi
           ? '$kurum · $kod · Devlet'
-          : '$kurum · $kod',
+          : '$kurum · $kod'),
       ticker: 'TEFAS:$kod',
       type: AssetType.bes,
       subCategory: sub,
@@ -193,7 +195,8 @@ void main() {
   });
 
   group('Portföy listesi', () {
-    Future<void> pump(WidgetTester tester, List<Asset> assets) async {
+    Future<void> pump(WidgetTester tester, List<Asset> assets,
+        {Map<String, Sozlesme> sozlesmeler = const {}}) async {
       tester.view.physicalSize = const Size(375 * 3, 1400 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -202,6 +205,7 @@ void main() {
           authProvider.overrideWith(_FakeAuth.new),
           portfolioProvider.overrideWith(() => _FakePortfolio(assets)),
           partnersProvider.overrideWith(_FakePartners.new),
+          sozlesmeProvider.overrideWith(() => _FakeSozlesme(sozlesmeler)),
         ],
         child:
             MaterialApp(theme: ThemeData.dark(), home: const PortfolioScreen()),
@@ -236,6 +240,25 @@ void main() {
           reason: 'yalnız açılan sözleşmenin fonları');
       // Pay: 1200 / 2100 → %57, 900 / 2100 → %43.
       expect(find.textContaining('57'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('eski biçimli lot adı: başlık sözleşmenin kurumunu yazar',
+        (tester) async {
+      // e2e 2026-10-29: lot adı "Kurum · " önekini taşımayan eski sözleşme
+      // satırda yalnız "BES", kartta "BES · Anadolu Hayat" yazıyordu.
+      await pump(tester, [
+        _bes('a', kod: 'AH5', sozlesme: _s1, pay: 100, ad: 'AH5'),
+      ], sozlesmeler: {
+        _s1: Sozlesme(
+          id: _s1,
+          userId: _uid,
+          tur: SozlesmeTuru.bes,
+          kurum: 'Anadolu Hayat',
+          baslangic: DateTime(2020, 1, 1),
+        ),
+      });
+      expect(find.text('Anadolu Hayat · BES'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -275,4 +298,12 @@ class _FakePortfolio extends PortfolioNotifier {
 class _FakePartners extends PartnersNotifier {
   @override
   Future<List<PartnerAccount>> build() async => const [];
+}
+
+class _FakeSozlesme extends SozlesmeNotifier {
+  _FakeSozlesme(this._s);
+  final Map<String, Sozlesme> _s;
+
+  @override
+  Future<SozlesmeState> build() async => SozlesmeState(sozlesmeler: _s);
 }

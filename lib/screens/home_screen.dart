@@ -1561,7 +1561,10 @@ class _SignalsBottomSheet extends ConsumerWidget {
                           decoration: TextDecoration.none),
                     ),
                     const SizedBox(width: SandikSpace.sm),
-                    if (akis.isNotEmpty)
+                    // Sayaç yalnız AKTİF bildirimleri sayar: kapatılan
+                    // GEÇMİŞ'e iner, sayıda kalırsa "kapattım ama
+                    // azalmadı" okunur (e2e 2026-10-29).
+                    if (active.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
@@ -1573,7 +1576,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                   context.c.amberFill.withValues(alpha: 0.3)),
                         ),
                         child: Text(
-                          '${akis.length}',
+                          '${active.length}',
                           style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: context.c.amberText,

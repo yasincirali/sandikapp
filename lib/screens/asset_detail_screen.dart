@@ -1686,8 +1686,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     an: startDate.add(Duration(
                                         minutes:
                                             (anchorSpot.x * 1440).round())),
-                                    deger:
-                                        '${fixedFormatter(2).format(normBase)} ₺',
+                                    // Birim fiyat kuralı (`fiyatBicimi`):
+                                    // sabit 2 hane BES fonunu ₺0,03420 →
+                                    // "0,03 ₺" yazıyordu (e2e 2026-10-29).
+                                    deger: fiyatBicimi(normBase,
+                                            azami: _canli
+                                                .asset.type.fiyatHassasiyeti)
+                                        .format(normBase),
                                     gunIci: isIntraday,
                                   );
                             return GrafikStili.donemBasiUstte(
