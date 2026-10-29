@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3472,12 +3471,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Protect with Face ID',
-      'touchId': 'Protect with Touch ID',
-      'biyometrik': 'Protect with biometrics',
-      'other': 'Protect with your screen lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Protect with Face ID',
+        'touchId': 'Protect with Touch ID',
+        'biyometrik': 'Protect with biometrics',
+        'other': 'Protect with your screen lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3494,12 +3496,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Turn on Face ID',
-      'touchId': 'Turn on Touch ID',
-      'biyometrik': 'Turn on biometric lock',
-      'other': 'Turn on app lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Turn on Face ID',
+        'touchId': 'Turn on Touch ID',
+        'biyometrik': 'Turn on biometric lock',
+        'other': 'Turn on app lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3949,11 +3954,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  ) {
+      String acilis, String yuksek, String dusuk, String kapanis) {
     return 'O $acilis · H $yuksek · L $dusuk · C $kapanis';
   }
 
@@ -5400,7 +5401,8 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$count monthly pension contributions were added automatically. You can update the amount on the pension card.',
-      one: 'Your pension contribution was added automatically. You can update the amount on the pension card.',
+      one:
+          'Your pension contribution was added automatically. You can update the amount on the pension card.',
     );
     return '$_temp0';
   }
@@ -5425,11 +5427,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  ) {
+      String date, String end, String change, String cpi) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
@@ -6371,11 +6369,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  ) {
+      String amount, String times, String pct, String share) {
     return '$amount · $times× the average · price $pct · buyer share $share';
   }
 
@@ -8954,7 +8948,8 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           'This asset\'s $n transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.',
-      one: 'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
+      one:
+          'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }
