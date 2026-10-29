@@ -57,22 +57,7 @@ class GrafikOlcegi {
   /// Zamanın (kesirli) mum indeksi. Mumlar arasında doğrusal; ilk mumdan
   /// önce ve son mumdan sonra [aralikMs] adımıyla uzar. Hafta sonu ve gece
   /// boşlukları böylece ekranda yer kaplamaz, çizim yine doğru mumda durur.
-  double zamanIndeksi(int t) {
-    final z = zamanlar;
-    if (z.isEmpty) return 0;
-    if (t <= z.first) return (t - z.first) / aralikMs;
-    if (t >= z.last) return z.length - 1 + (t - z.last) / aralikMs;
-    var lo = 0, hi = z.length - 1;
-    while (hi - lo > 1) {
-      final m = (lo + hi) >> 1;
-      if (z[m] <= t) {
-        lo = m;
-      } else {
-        hi = m;
-      }
-    }
-    return lo + (t - z[lo]) / (z[hi] - z[lo]);
-  }
+  double zamanIndeksi(int t) => zamanIndeksiBul(zamanlar, aralikMs, t);
 
   /// [zamanIndeksi]'nin tersi.
   int indeksZamani(double i) {
@@ -89,6 +74,69 @@ class GrafikOlcegi {
 
   CizimNoktasi veride(Offset o) => CizimNoktasi(
       indeksZamani(i(o.dx)), p(o.dy.clamp(0, fiyatAlani).toDouble()));
+}
+
+/// [GrafikOlcegi.zamanIndeksi]'nin ölçeksiz hâli: açılış görünümü ölçek
+/// kurulmadan önce de zamanı mum indeksine çevirebilsin.
+double zamanIndeksiBul(List<int> z, int aralikMs, int t) {
+  if (z.isEmpty) return 0;
+  if (t <= z.first) return (t - z.first) / aralikMs;
+  if (t >= z.last) return z.length - 1 + (t - z.last) / aralikMs;
+  var lo = 0, hi = z.length - 1;
+  while (hi - lo > 1) {
+    final m = (lo + hi) >> 1;
+    if (z[m] <= t) {
+      lo = m;
+    } else {
+      hi = m;
+    }
+  }
+  return lo + (t - z[lo]) / (z[hi] - z[lo]);
+}
+
+/// Bildirimden açılan çizginin açılış görünümü (yasin 2026-10-29: "çizgiyi
+/// izleyebilelim"). Sağ kenar varsayılandaki gibi bugün; çizginin başı
+/// ([cizimIndeksi]) pencerenin solundaysa pencere oraya kadar (3 mum pay)
+/// genişler ki çizginin geçmişteki parçası ve bugünkü değeri birlikte
+/// görünsün. Zaten görünüyorsa varsayılan aynen döner. Genişlik sınırı
+/// [gorunumuSinirla]'da (en çok tüm veri).
+GrafikGorunumu odakliGorunum(GrafikGorunumu v, double cizimIndeksi) {
+  if (!cizimIndeksi.isFinite || cizimIndeksi >= v.bas + 2) return v;
+  return (bas: cizimIndeksi - 3, son: v.son);
+}
+
+/// Çizimin [g] penceresinde kalan parçasının fiyat aralığı; pencerede
+/// parçası yoksa `null`. [indeks] zamanı mum indeksine çevirir.
+///
+/// Neden (e2e 2026-10-29): bildirimden açılan yatay çizgi ₺228,30'daydı,
+/// fiyat ekseni yalnız görünen mumları (~260–315) kapsıyordu; çizgi seçili
+/// ama ekran dışındaydı, uzaklaştırmak da getirmiyordu. Ekran odak çizimini
+/// bu aralıkla eksene katar. Yalnız pencerede GÖRÜNEN parça sayılır: geçmişte
+/// bitmiş uzun bir trend çizgisinin uzak ucu ölçeği ezmesin.
+({double lo, double hi})? cizimFiyatAraligi(
+    GrafikCizimi c, double Function(int t) indeks, GrafikGorunumu g) {
+  final b = c.b;
+  if (c.tur.tekNokta || b == null) return (lo: c.a.p, hi: c.a.p);
+  if (c.tur == CizimTuru.kutu) {
+    return (lo: math.min(c.a.p, b.p), hi: math.max(c.a.p, b.p));
+  }
+  final ia = indeks(c.a.t), ib = indeks(b.t);
+  if (ia == ib) return (lo: math.min(c.a.p, b.p), hi: math.max(c.a.p, b.p));
+  double deger(double i) => c.a.p + (b.p - c.a.p) * (i - ia) / (ib - ia);
+  var s0 = math.min(ia, ib), s1 = math.max(ia, ib);
+  if (c.tur == CizimTuru.isin) {
+    // Işın a'dan b yönüne sonsuza uzar.
+    if (ib > ia) {
+      s1 = double.infinity;
+    } else {
+      s0 = double.negativeInfinity;
+    }
+  }
+  final x0 = math.max(s0, g.bas), x1 = math.min(s1, g.son);
+  if (x0 > x1) return null;
+  final v0 = deger(x0), v1 = deger(x1);
+  if (!v0.isFinite || !v1.isFinite) return null;
+  return (lo: math.min(v0, v1), hi: math.max(v0, v1));
 }
 
 /// Açılış görünümü: son ~[genislik]/9 mum, sağda 4 mum boşluk.

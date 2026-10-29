@@ -542,11 +542,16 @@ List<_Adim> _adimlariKur() {
       govde: 'Bir harekete dokun: o işleme not yaz ya da yazdığını oku '
           '("maaştan aldım", "hedef 400"). Notu olan işlemin tarihinin '
           "yanında küçük bir işaret durur; altında da o işlemle elindeki "
-          "miktarın nasıl değiştiği yazar (12 → 17 gr). Notlar Portföy'de "
-          "varlık kartını açınca da görünür, Tüm Hareketler'de aranır.",
+          "miktarın ve tüm portföyünün nasıl değiştiği yazar (12 → 17 gr · "
+          "Portföy ₺1,2M → ₺1,3M; Performans grafiğiyle aynı sayı). Notlar "
+          "Portföy'de varlık kartını açınca da görünür, Tüm Hareketler'de "
+          "aranır.",
       // Bakiye cümlesi 2026-10-29: hedef yüzeyin satırına "önceki → sonraki"
       // bakiye eklendi; tur gerçek satırın üstünde çalıştığı için yeni
       // satırı anlatmayan metin onu açıklamasız bırakırdı (tur kuralı).
+      // Aynı gün: yanına kapsamın toplam portföy değeri geldi (yasin).
+      // "Performans grafiğiyle aynı" açıkça yazılır: varlığın değeri ya da
+      // işlem tutarı sanılmasın.
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       // Hareket kabı yalnız kayıt varken çizilir (`home_screen.dart`).
@@ -564,13 +569,17 @@ List<_Adim> _adimlariKur() {
       // 2026-10-29 (0170): yatay grafikte seçili çizimin zili (yatay çizgi
       // → fiyat alarmı; trend/ışın → çizgi alarmı) ve alarm sayfasının
       // Premium "Gösterge" kipi; ikisi de bu adımın anlattığı alarm akışı.
+      // 2026-10-29 (akşam): çizgi alarmına ad verilir, bildirime ya da
+      // Alarmlarım satırına dokununca çizgi yatay grafikte açılır.
       govde: '$_zilBasi'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
           'uygulama kapalıyken de çalışır. Altın, döviz ve kriptoda '
           '"Günlük yüzde" ile "bugün %2 düşerse" gibi bir alarm da '
           'kurabilirsin. Yan çevrilmiş grafikte çizdiğin çizgiyi seçip '
-          'zile dokunursan fiyat o çizgiye gelince haber verir; Premium\'da '
+          'zile dokunursan fiyat o çizgiye gelince haber verir; istersen '
+          'çizgiye "Destek 245" gibi bir ad ver, bildirimine dokununca '
+          'çizgi grafikte açılır. Premium\'da '
           '"Gösterge" ile "EMA50\'yi keserse" alarmı da var.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,

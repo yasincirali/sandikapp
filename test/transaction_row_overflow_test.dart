@@ -54,6 +54,7 @@ Future<void> _pump(
   double width = 375,
   bool hideBalance = false,
   ({double once, double sonra})? bakiye,
+  ({double once, double sonra})? portfoy,
   double yaziOlcegi = 1,
 }) async {
   tester.view.physicalSize = Size(width * 3, 800 * 3);
@@ -75,6 +76,7 @@ Future<void> _pump(
               portfolioState: const PortfolioState(),
               hideBalance: hideBalance,
               bakiye: bakiye,
+              portfoyDegeri: portfoy,
             ),
           ),
         ),
@@ -183,6 +185,28 @@ void main() {
           bakiye: (once: 123456.7891, sonra: 123469.2891),
         );
         expect(tester.takeException(), isNull);
+      });
+    }
+
+    // Miktar + portföy değeri (2026-10-29): sağ kolon 116pt kalır, değer
+    // büyük yazıda bütün hâlinde alt satıra iner — taşmaz.
+    for (final olcek in [1.0, 2.0]) {
+      testWidgets('bakiye + portföy — 320pt, yazı ×$olcek', (tester) async {
+        await _pump(
+          tester,
+          _asset(name: 'Aselsan', type: AssetType.hisse,
+              ticker: 'ASELS.IS', kind: AssetKind.sell, qty: 100),
+          width: 320,
+          yaziOlcegi: olcek,
+          bakiye: (once: 123456, sonra: 123356),
+          portfoy: (once: 987654321.5, sonra: 987643210.5),
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.textContaining('Portföy'), findsOneWidget);
+        final sag = tester
+            .widgetList<SizedBox>(find.byType(SizedBox))
+            .where((s) => s.width == 116);
+        expect(sag, hasLength(1));
       });
     }
   });

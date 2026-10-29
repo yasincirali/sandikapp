@@ -140,6 +140,24 @@ export function gostergeMesaji(
   };
 }
 
+/// Çizgi alarmının `label`'ı "varlık · ad" olabilir (istemci
+/// `cizgiAlarmEtiketi`, yasin 2026-10-29: "Çizgi alarmında isim
+/// verebilelim"). İlk ayraçtan bölünür; varlık kısa etiketi (THYAO) ayraç
+/// taşımaz. Adsız (eski) satırda `isim` null.
+export const CIZGI_ADI_AYIRACI = ' · ';
+
+export function cizgiEtiketiniAyir(
+  label: string,
+): { varlik: string; isim: string | null } {
+  const k = label.indexOf(CIZGI_ADI_AYIRACI);
+  if (k <= 0) return { varlik: label.trim(), isim: null };
+  const isim = label.slice(k + CIZGI_ADI_AYIRACI.length).trim();
+  return { varlik: label.slice(0, k).trim(), isim: isim.length > 0 ? isim : null };
+}
+
+/// "▲ THYAO çizdiğin çizginin üstüne çıktı · ₺312,40"; adlı çizgide
+/// "▲ THYAO «Destek 245» çizgisinin üstüne çıktı · ₺312,40" — kullanıcı
+/// hangi çizginin çaldığını başlıktan okur.
 export function cizimMesaji(
   label: string,
   taraf: Taraf,
@@ -148,8 +166,12 @@ export function cizimMesaji(
   simge: string | null,
 ): { title: string; body: string } {
   const ust = taraf === 'ust';
+  const { varlik, isim } = cizgiEtiketiniAyir(label);
+  const ozne = isim === null
+    ? `${label} çizdiğin çizginin`
+    : `${varlik} «${isim}» çizgisinin`;
   return {
-    title: `${ust ? '▲' : '▼'} ${label} çizdiğin çizginin ` +
+    title: `${ust ? '▲' : '▼'} ${ozne} ` +
       `${ust ? 'üstüne çıktı' : 'altına indi'} · ${fiyatMetni(fiyat, simge)}`,
     body: `Çizginin şu anki değeri ${fiyatMetni(seviye, simge)}. ` +
       'Tek seferlik alarmdı, kapatıldı. Yatırım tavsiyesi değildir.',
@@ -172,6 +194,18 @@ export function seviyeKarti(
   });
 }
 
+/// Çizgi alarmının push / çan verisi. `cizim_id` EKLEMEDİR (2026-10-29,
+/// "bildirime tıklayınca çizgiyi izleyebilelim"): yeni build dokununca o
+/// çizimi yatay grafikte açar; eski build bilmediği anahtarı okumaz, varlığı
+/// açar. Var olan anahtarlar (`symbol`, `cizim_alarm_id`) değişmez.
+export function cizimVerisi(
+  a: { id: string; symbol: string; cizim_id?: string | null },
+): Record<string, string> {
+  const veri: Record<string, string> = { symbol: a.symbol, cizim_alarm_id: a.id };
+  if (typeof a.cizim_id === 'string' && a.cizim_id.length > 0) veri.cizim_id = a.cizim_id;
+  return veri;
+}
+
 // ── Satırlar ────────────────────────────────────────────────────────────────
 
 type OrtakSatir = {
@@ -186,6 +220,9 @@ type OrtakSatir = {
 export type GostergeSatiri = OrtakSatir & { gosterge: string };
 
 export type CizimSatiri = OrtakSatir & {
+  /// Cihazdaki çizimin kimliği — push/çan verisine `cizim_id` olarak girer
+  /// ki dokunuş çizgiyi açsın (2026-10-29). Eski satır/sorgu için isteğe bağlı.
+  cizim_id?: string | null;
   t1: number | string;
   p1: number | string;
   t2: number | string;
@@ -255,7 +292,7 @@ export async function seviyeAlarmTuruKos(
       .eq('enabled', true)
       .is('triggered_at', null),
     admin.from('cizim_alarmlari')
-      .select('id, user_id, symbol, label, t1, p1, t2, p2, uzanir, yon, son_taraf')
+      .select('id, user_id, symbol, label, cizim_id, t1, p1, t2, p2, uzanir, yon, son_taraf')
       .eq('enabled', true)
       .is('triggered_at', null),
   ]);
@@ -353,7 +390,7 @@ export async function seviyeAlarmTuruKos(
         kart: seviyeKarti(a.label, k.taraf, fiyat,
           `Çizgi ${fiyatMetni(seviye, simge)}`, simge),
         bildirimTuru: 'cizim_alarm',
-        veri: { symbol: a.symbol, cizim_alarm_id: a.id },
+        veri: cizimVerisi(a),
       });
     }
   }

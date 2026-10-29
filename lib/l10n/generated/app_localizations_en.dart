@@ -896,6 +896,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String txPortfolioValueChange(String once, String sonra) {
+    return 'Portfolio $once → $sonra';
+  }
+
+  @override
+  String txPortfolioValueSemantics(String once, String sonra) {
+    return 'Portfolio went from $once to $sonra';
+  }
+
+  @override
   String get txHasNote => 'Has a note';
 
   @override
@@ -10066,5 +10076,45 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String alarmCalanlariTemizleSoru(int n) {
     return 'Delete $n fired alarms? Your waiting alarms stay.';
+  }
+
+  @override
+  String get cizgiAdiEtiket => 'Line name (optional)';
+
+  @override
+  String get cizgiAdiIpucu => 'e.g. Support 245, Breakout';
+
+  @override
+  String get cizgiAdiAciklama =>
+      'Shown with this name in the notification and My alarms.';
+
+  @override
+  String get cizgiAlarmiBaslik => 'Line alert';
+
+  @override
+  String get cizgiAlarmiAdlandir => 'Rename';
+
+  @override
+  String get cizgiAlarmiAdlandirBaslik => 'Line alert name';
+
+  @override
+  String get cizgiyiGrafikteAc => 'Open in chart';
+
+  @override
+  String get cizgiAlarmiAdlandi => 'Alert name saved';
+
+  @override
+  String tegAdliAlarmKurulduUst(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price rises above the line';
+  }
+
+  @override
+  String tegAdliAlarmKurulduAlt(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price falls below the line';
+  }
+
+  @override
+  String tegAdliAlarmKurulduIkisi(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price crosses the line';
   }
 }

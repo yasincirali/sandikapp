@@ -1628,6 +1628,18 @@ abstract class AppLocalizations {
   /// **'Bakiye {once} iken {sonra} oldu'**
   String txBalanceSemantics(String once, String sonra);
 
+  /// Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy {once} → {sonra}'**
+  String txPortfolioValueChange(String once, String sonra);
+
+  /// No description provided for @txPortfolioValueSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy {once} iken {sonra} oldu'**
+  String txPortfolioValueSemantics(String once, String sonra);
+
   /// No description provided for @txHasNote.
   ///
   /// In tr, this message translates to:
@@ -16468,6 +16480,72 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.'**
   String alarmCalanlariTemizleSoru(int n);
+
+  /// No description provided for @cizgiAdiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizginin adı (isteğe bağlı)'**
+  String get cizgiAdiEtiket;
+
+  /// No description provided for @cizgiAdiIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'ör. Destek 245, Kırılım'**
+  String get cizgiAdiIpucu;
+
+  /// No description provided for @cizgiAdiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimde ve Alarmlarım\'da bu adla görünür.'**
+  String get cizgiAdiAciklama;
+
+  /// No description provided for @cizgiAlarmiBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı'**
+  String get cizgiAlarmiBaslik;
+
+  /// No description provided for @cizgiAlarmiAdlandir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adlandır'**
+  String get cizgiAlarmiAdlandir;
+
+  /// No description provided for @cizgiAlarmiAdlandirBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmının adı'**
+  String get cizgiAlarmiAdlandirBaslik;
+
+  /// No description provided for @cizgiyiGrafikteAc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafikte aç'**
+  String get cizgiyiGrafikteAc;
+
+  /// No description provided for @cizgiAlarmiAdlandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmın adı kaydedildi'**
+  String get cizgiAlarmiAdlandi;
+
+  /// No description provided for @tegAdliAlarmKurulduUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'«{ad}» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz'**
+  String tegAdliAlarmKurulduUst(String ad);
+
+  /// No description provided for @tegAdliAlarmKurulduAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'«{ad}» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz'**
+  String tegAdliAlarmKurulduAlt(String ad);
+
+  /// No description provided for @tegAdliAlarmKurulduIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz'**
+  String tegAdliAlarmKurulduIkisi(String ad);
 }
 
 class _AppLocalizationsDelegate

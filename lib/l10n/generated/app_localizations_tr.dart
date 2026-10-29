@@ -884,6 +884,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String txPortfolioValueChange(String once, String sonra) {
+    return 'Portföy $once → $sonra';
+  }
+
+  @override
+  String txPortfolioValueSemantics(String once, String sonra) {
+    return 'Portföy $once iken $sonra oldu';
+  }
+
+  @override
   String get txHasNote => 'Not var';
 
   @override
@@ -9943,5 +9953,45 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String alarmCalanlariTemizleSoru(int n) {
     return 'Çalmış $n alarm silinsin mi? Bekleyen alarmların yerinde kalır.';
+  }
+
+  @override
+  String get cizgiAdiEtiket => 'Çizginin adı (isteğe bağlı)';
+
+  @override
+  String get cizgiAdiIpucu => 'ör. Destek 245, Kırılım';
+
+  @override
+  String get cizgiAdiAciklama =>
+      'Bildirimde ve Alarmlarım\'da bu adla görünür.';
+
+  @override
+  String get cizgiAlarmiBaslik => 'Çizgi alarmı';
+
+  @override
+  String get cizgiAlarmiAdlandir => 'Adlandır';
+
+  @override
+  String get cizgiAlarmiAdlandirBaslik => 'Çizgi alarmının adı';
+
+  @override
+  String get cizgiyiGrafikteAc => 'Grafikte aç';
+
+  @override
+  String get cizgiAlarmiAdlandi => 'Alarmın adı kaydedildi';
+
+  @override
+  String tegAdliAlarmKurulduUst(String ad) {
+    return '«$ad» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz';
+  }
+
+  @override
+  String tegAdliAlarmKurulduAlt(String ad) {
+    return '«$ad» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz';
+  }
+
+  @override
+  String tegAdliAlarmKurulduIkisi(String ad) {
+    return '«$ad» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz';
   }
 }

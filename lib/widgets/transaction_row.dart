@@ -37,6 +37,7 @@ class TransactionRow extends StatelessWidget {
     this.silinenGorunumu = false,
     this.not,
     this.bakiye,
+    this.portfoyDegeri,
     this.onTap,
   });
 
@@ -83,6 +84,19 @@ class TransactionRow extends StatelessWidget {
   /// isim alanı esnek; satır bir metin satırı uzar, gruplu liste ritmi
   /// tüm bakiyeli satırlarda aynı kalır.
   final ({double once, double sonra})? bakiye;
+
+  /// İşlemden hemen önce ve sonra kapsamın TOPLAM portföy değeri (TRY) —
+  /// çağıran `hareketPortfoyDegerleriProvider`'dan okur; satır hesaplamaz.
+  ///
+  /// yasin (2026-10-29): "alım satım öncesi ve sonrası toplam bakiyeleri
+  /// görelim … tutarsızlık olmamalı". Sayı Performans grafiğinin o işlemi
+  /// içeren noktasıdır (karar kaydı `hareketPortfoyDegerleri`). Bakiye
+  /// satırının devamında, "Portföy" önekiyle: varlığın değeri sanılmasın.
+  /// Sağ kolon 116pt kalır; sığmazsa `Wrap` bütün parçayı alt satıra
+  /// indirir. Kompakt yazılır (₺1,24M) — satırın ikinci bilgisi, kuruş
+  /// gürültü olurdu; ekran okuyucu tam tutarı okur. Bakiye gizliyse ya da
+  /// değer yoksa (seri yüklenmedi, pencere dışı) yalnız miktar.
+  final ({double once, double sonra})? portfoyDegeri;
 
   /// Satıra dokununca — işlem notu sayfası. `null` ise satır eskisi gibi
   /// dokunulmaz (ör. ortak kaydının notu yoksa açılacak bir şey yok).
@@ -212,27 +226,7 @@ class TransactionRow extends StatelessWidget {
                   ),
                   if (bakiye case final b?)
                     if (hareketBakiyeMetni(l10n, asset, b) case final m?)
-                      Padding(
-                        padding: const EdgeInsets.only(top: SandikSpace.xxs),
-                        child: Semantics(
-                          label: m.okunan,
-                          excludeSemantics: true,
-                          child: Text(
-                            m.gorunen,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            // Tarihten bir ton açık (text58 > text36): satırın
-                            // ikinci bilgisi, ama tutarla yarışmaz. Alt alta
-                            // sayılar hizalı okunsun diye tabular figür.
-                            style: context.t.labelSmall?.copyWith(
-                              color: context.c.text58,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      _bakiyeSatiri(context, m),
                 ],
               ],
             ),
@@ -299,6 +293,53 @@ class TransactionRow extends StatelessWidget {
       child: gorunen,
     );
   }
+
+  /// Bakiye satırı: miktar ve (biliniyorsa) portföy değeri, tek ekran
+  /// okuyucu cümlesi. Miktar ve değer ayrı parçalar: dar ekranda ya da
+  /// büyük yazıda değer BÜTÜN hâlinde alt satıra iner, "₺1,24M →" ile
+  /// "₺1,21M" bölünmez.
+  Widget _bakiyeSatiri(
+      BuildContext context, ({String gorunen, String okunan}) m) {
+    final l10n = context.l10n;
+    final p = hideBalance || baz.gizli ? null : portfoyDegeri;
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.xxs),
+      child: Semantics(
+        label: p == null
+            ? m.okunan
+            : '${m.okunan}. ${l10n.txPortfolioValueSemantics(baz.fmt(p.once), baz.fmt(p.sonra))}',
+        excludeSemantics: true,
+        child: Wrap(
+          spacing: SandikSpace.xs,
+          children: [
+            // Ayraç miktarın sonunda: değer alt satıra inince yeni satır
+            // "·" ile başlamasın (e2e 2026-10-29).
+            _bakiyeMetni(context, p == null ? m.gorunen : '${m.gorunen} ·'),
+            if (p != null)
+              _bakiyeMetni(
+                context,
+                l10n.txPortfolioValueChange(
+                    baz.compact(p.once), baz.compact(p.sonra)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Bakiye satırının bir parçası. Tarihten bir ton açık (text58 > text36):
+  /// satırın ikinci bilgisi, ama tutarla yarışmaz. Alt alta sayılar hizalı
+  /// okunsun diye tabular figür. İki satıra kadar kırılır; daha uzunu
+  /// (aşırı büyük yazı) kırpılır, taşmaz.
+  Widget _bakiyeMetni(BuildContext context, String metin) => Text(
+        metin,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.labelSmall?.copyWith(
+          color: context.c.text58,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      );
 
   /// Tarih satırı; [notIsareti] ise sonunda not ikonu.
   ///

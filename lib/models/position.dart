@@ -1,6 +1,7 @@
 import 'asset.dart';
 import 'asset_categories.dart';
 import 'asset_type.dart';
+import '../utils/tr_format.dart' show dayKey;
 
 /// Aggregated portfolio position — birden çok Asset (lot) tek pozisyon olarak.
 ///
@@ -840,4 +841,88 @@ class HareketBakiyeOnbellegi {
     }
     return true;
   }
+}
+
+/// Hareket satırının "Portföy önce → sonra" değeri: lot kimliği → işlemden
+/// hemen önce ve hemen sonra kapsamın TOPLAM portföy değeri (TRY).
+///
+/// ## Neden (yasin, 2026-10-29)
+/// "Hareketlerde genel bakiye ekle, alım satım öncesi ve sonrası toplam
+/// bakiyeleri görelim" + "tutarsızlık olmamalı". İlk sürüm varlığın kendi
+/// değerini (miktar × işlem fiyatı) yazıyordu; yasin PORTFÖY toplamını
+/// seçti. Tutarsızlık olmasın diye burada ikinci bir değerleme YOK: "sonra"
+/// Performans grafiğinin o işlemi İÇEREN ilk noktasının sayısıdır.
+///
+/// ## "Sonra" = işlemi içeren ilk seri noktası
+/// Motor (`getPortfolioHistoryBreakdownAtResolution`, günlük katman) bir
+/// lotu `addedDate <= slot başı` ise o slota sayar; yani 14:00'teki alım o
+/// günün noktasına DEĞİL ertesi günün noktasına girer (yalnız tarihli,
+/// saatsiz kayıt gece yarısıdır → kendi gününe girer). "Sonra" bu yüzden
+/// [gunlukSeri]`[S]`, S = işlemi içeren ilk gün başı. Grafikte o noktanın
+/// gösterdiği sayının ta kendisi.
+///
+/// Bugünün noktası Performans'ta canlı toplamla ezilir
+/// (`currentTotalOverride`); dün gece yarısından sonraki işlemler (S ≥
+/// bugün) bu yüzden [canliToplam]'a bağlanır — grafiğin sağ ucu.
+///
+/// ## Zincir
+/// Aynı noktaya düşen işlemler (aynı gün, ya da canlı uçtaki son iki gün)
+/// sondan başa yürünür: en son işlemin "sonra"sı noktanın değeri, her
+/// işlemin "önce"si = "sonra" − alım tutarı (satışta + satış tutarı), bir
+/// öncekinin "sonra"sı = bunun "önce"si. Tutar satırdaki işlem tutarıyla
+/// aynı: miktar × işlem fiyatı, [toTRY] ile (satır tutarı da bugünkü kurla
+/// çevrilir). Satış fiyatı bilinmeyen işlemde zincir orada KOPAR: o işlemin
+/// ve ondan önceki aynı-nokta işlemlerin değeri yazılmaz (uydurma yok).
+///
+/// ## Değer almayanlar
+/// [seriGirdisi]'nde olmayan lot (temettü, silinmiş, mezar taşı, fiyat
+/// serisi olmayan) grafiği değiştirmez; ne zincire girer ne değer alır.
+/// Nokta yoksa (pencere dışı, seri yüklenmedi) o grup değer almaz; satır
+/// yalnız miktarı yazar.
+///
+/// O(n log n): tek gruplama + grup içi sıralama; satır başına sabit iş.
+Map<String, ({double once, double sonra})> hareketPortfoyDegerleri({
+  required List<Asset> seriGirdisi,
+  required Map<int, double> gunlukSeri,
+  required double? canliToplam,
+  required DateTime simdi,
+  required double Function(double tutar, String paraBirimi) toTRY,
+}) {
+  final bugun = dayKey(simdi).millisecondsSinceEpoch;
+  // -1: canlı uç (Performans'ın bugünkü noktası).
+  const canliAnahtar = -1;
+  final gruplar = <int, List<Asset>>{};
+  for (final a in seriGirdisi) {
+    if (!a.isActive || a.isQuantityNeutral) continue;
+    final t = a.addedDate;
+    // Gün başı `dayKey` — `ResolutionTier.daily.normalizeTs` ile aynı;
+    // ertesi gün takvimden kurulur (+24 sa DST'de kayardı).
+    final gunBasi = dayKey(t);
+    final s = gunBasi == t
+        ? gunBasi.millisecondsSinceEpoch
+        : DateTime(gunBasi.year, gunBasi.month, gunBasi.day + 1)
+            .millisecondsSinceEpoch;
+    final anahtar = s >= bugun ? canliAnahtar : s;
+    (gruplar[anahtar] ??= []).add(a);
+  }
+  final out = <String, ({double once, double sonra})>{};
+  for (final e in gruplar.entries) {
+    final nokta = e.key == canliAnahtar ? canliToplam : gunlukSeri[e.key];
+    if (nokta == null || !nokta.isFinite || nokta < 0) continue;
+    var deger = nokta;
+    final lots = e.value..sort((a, b) => _defterSirasi(b, a));
+    for (final l in lots) {
+      final fiyat = l.isSell ? l.sellPrice : l.purchasePrice;
+      if (fiyat == null || !fiyat.isFinite || fiyat <= 0) break;
+      final tutar = toTRY(l.quantity * fiyat, l.currency);
+      final once = l.isSell ? deger + tutar : deger - tutar;
+      // Eksi "önce": nokta kapanış fiyatıyla, tutar işlem fiyatıyla
+      // ölçüldüğü için ilk alımda olabilir; eksi portföy uydurma olurdu,
+      // kırpmak da. Zincir burada durur.
+      if (once < 0) break;
+      out[l.id] = (once: once, sonra: deger);
+      deger = once;
+    }
+  }
+  return out;
 }

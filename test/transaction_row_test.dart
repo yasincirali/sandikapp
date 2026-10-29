@@ -44,6 +44,8 @@ Asset _asset({
 Future<void> _pump(WidgetTester tester, Asset asset,
     {bool yilGoster = true,
     bool silinenGorunumu = false,
+    bool hideBalance = false,
+    ({double once, double sonra})? portfoy,
     ({double once, double sonra})? bakiye}) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -54,7 +56,9 @@ Future<void> _pump(WidgetTester tester, Asset asset,
           portfolioState: const PortfolioState(),
           yilGoster: yilGoster,
           silinenGorunumu: silinenGorunumu,
+          hideBalance: hideBalance,
           bakiye: bakiye,
+          portfoyDegeri: portfoy,
         ),
       ),
     ),
@@ -144,6 +148,37 @@ void main() {
       expect(find.bySemanticsLabel('Bakiye 12 lot iken 17,5 lot oldu'),
           findsOneWidget);
       h.dispose();
+    });
+
+    // Portföy önce → sonra (yasin 2026-10-29): miktarın yanında, "Portföy"
+    // önekiyle, kompakt; ekran okuyucu tam tutarı tek cümlede okur.
+    const p = (once: 1240000.0, sonra: 1210000.0);
+
+    testWidgets('portföy değeri: kompakt görünür, tam okunur',
+        (tester) async {
+      final h = tester.ensureSemantics();
+      await _pump(tester, _asset(kind: AssetKind.sell, qty: 100),
+          bakiye: (once: 400, sonra: 300), portfoy: p);
+      // Ayraç miktarda: değer alt satıra inerse "·" ile başlamaz.
+      expect(find.text('400 → 300 lot ·'), findsOneWidget);
+      expect(find.text('Portföy ₺1,24M → ₺1,21M'), findsOneWidget);
+      expect(
+          find.bySemanticsLabel('Bakiye 400 lot iken 300 lot oldu. '
+              'Portföy ₺1.240.000 iken ₺1.210.000 oldu'),
+          findsOneWidget);
+      h.dispose();
+    });
+
+    testWidgets('bakiye gizliyken portföy değeri yazılmaz', (tester) async {
+      await _pump(tester, _asset(),
+          bakiye: (once: 400, sonra: 300), portfoy: p, hideBalance: true);
+      expect(find.text('400 → 300 lot'), findsOneWidget);
+      expect(find.textContaining('Portföy'), findsNothing);
+    });
+
+    testWidgets('portföy değeri yoksa yalnız miktar', (tester) async {
+      await _pump(tester, _asset(), bakiye: (once: 400, sonra: 300));
+      expect(find.textContaining('Portföy'), findsNothing);
     });
 
     testWidgets('bakiye verilmezse satır yok', (tester) async {

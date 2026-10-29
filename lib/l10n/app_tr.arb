@@ -522,6 +522,29 @@
       }
     }
   },
+  "txPortfolioValueChange": "Portföy {once} → {sonra}",
+  "@txPortfolioValueChange": {
+    "description": "Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).",
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txPortfolioValueSemantics": "Portföy {once} iken {sonra} oldu",
+  "@txPortfolioValueSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Not var",
   "txOpenNote": "{name} işlemi, not ekle",
   "@txOpenNote": {
@@ -6394,5 +6417,19 @@
   "@alarmCalanlar": {"placeholders": {"n": {"type": "int"}}},
   "alarmCalanlariTemizle": "Çalanları temizle",
   "alarmCalanlariTemizleSoru": "Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.",
-  "@alarmCalanlariTemizleSoru": {"placeholders": {"n": {"type": "int"}}}
+  "@alarmCalanlariTemizleSoru": {"placeholders": {"n": {"type": "int"}}},
+  "cizgiAdiEtiket": "Çizginin adı (isteğe bağlı)",
+  "cizgiAdiIpucu": "ör. Destek 245, Kırılım",
+  "cizgiAdiAciklama": "Bildirimde ve Alarmlarım'da bu adla görünür.",
+  "cizgiAlarmiBaslik": "Çizgi alarmı",
+  "cizgiAlarmiAdlandir": "Adlandır",
+  "cizgiAlarmiAdlandirBaslik": "Çizgi alarmının adı",
+  "cizgiyiGrafikteAc": "Grafikte aç",
+  "cizgiAlarmiAdlandi": "Alarmın adı kaydedildi",
+  "tegAdliAlarmKurulduUst": "«{ad}» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz",
+  "@tegAdliAlarmKurulduUst": {"placeholders": {"ad": {"type": "String"}}},
+  "tegAdliAlarmKurulduAlt": "«{ad}» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz",
+  "@tegAdliAlarmKurulduAlt": {"placeholders": {"ad": {"type": "String"}}},
+  "tegAdliAlarmKurulduIkisi": "«{ad}» alarmı kuruldu: fiyat çizgiyi kesince haber vereceğiz",
+  "@tegAdliAlarmKurulduIkisi": {"placeholders": {"ad": {"type": "String"}}}
 }

@@ -21,6 +21,8 @@ import '../providers/yuzde_alarmi_provider.dart';
 import '../screens/paywall_screen.dart' show PaywallScreen;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
+import '../services/cizim_alarmi.dart'
+    show cizgiAlarmEtiketi, kCizgiAdiAzami;
 import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/review_prompt_service.dart';
@@ -91,7 +93,11 @@ class AlarmKurulumu {
   final AlarmAdayi aday;
   final double hedef;
   final String yon;
-  const AlarmKurulumu(this.aday, this.hedef, this.yon);
+
+  /// Yatay çizgiden kurulurken kullanıcının verdiği ad (boş olabilir);
+  /// diğer yollarda `null`. `label`'a [cizgiAlarmEtiketi] ile girer.
+  final String? isim;
+  const AlarmKurulumu(this.aday, this.hedef, this.yon, {this.isim});
 }
 
 /// Sheet'in "Günlük yüzde" kipinde döndürdüğü seçim (0169).
@@ -211,6 +217,7 @@ Future<PriceAlert?> alarmKurAkisi(
   List<AlarmAdayi> adaylar = const [],
   double? baslangicHedef,
   bool? odakla,
+  bool cizgiAdi = false,
 }) async {
   if (DemoModu.yazmaKapisi('alarm')) return null; // Demo: alarm hesap ister (F1).
   final liste = sabit != null ? [sabit] : adaylar;
@@ -242,6 +249,7 @@ Future<PriceAlert?> alarmKurAkisi(
       sabit: sabit != null,
       baslangicHedef: baslangicHedef,
       odakla: odakla,
+      cizgiAdi: cizgiAdi,
       // Gösterge kipi (0170, Premium): görünürlük ve kilit ƒx ile aynı
       // kapı; kilitliyken sekmeye dokunmak paywall'u açar.
       gostergeGorunur: ref.read(premiumOzellikleriGorunurProvider),
@@ -270,7 +278,8 @@ Future<PriceAlert?> alarmKurAkisi(
           id: '',
           userId: me.id,
           symbol: k.aday.sembol,
-          label: k.aday.ad,
+          // Yatay çizgiden: "varlık · ad" (ad yoksa yalnız varlık, eskisi).
+          label: cizgiAdi ? cizgiAlarmEtiketi(k.aday.ad, k.isim) : k.aday.ad,
           targetPrice: k.hedef,
           direction: k.yon,
           enabled: true,
@@ -329,11 +338,15 @@ Future<PriceAlert?> alarmKurAkisi(
   unawaited(AnalyticsService.instance
       .logScreenView(screenName: 'price_alert_created'));
   if (context.mounted) {
+    // Yatay çizgiye ad verildiyse onay adı söyler ("«Destek» için alarm
+    // kuruldu", e2e 2026-10-29); adsızda varlığın adı, eskisi gibi.
+    final isim = (sonuc.isim ?? '').trim();
+    final ad = isim.isEmpty ? sonuc.aday.ad : '«$isim»';
     sandikSnack(
       context,
       sonuc.yon == 'above'
-          ? context.l10n.alertSetAbove(sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef))
-          : context.l10n.alertSetBelow(sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef)),
+          ? context.l10n.alertSetAbove(ad, fmtTRYFiyat(sonuc.hedef))
+          : context.l10n.alertSetBelow(ad, fmtTRYFiyat(sonuc.hedef)),
       kind: SandikSnackKind.success,
     );
     // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:
@@ -427,6 +440,10 @@ class AlarmKurSheet extends StatefulWidget {
   /// klavye sayfanın neredeyse tamamını örter, hedef zaten ön dolu.
   final bool? odakla;
 
+  /// Yatay grafikteki çizgiden açıldı: hedefin altında isteğe bağlı "Çizginin
+  /// adı" alanı (yasin 2026-10-29). Varsayılan kapalı: sayfa birebir eski.
+  final bool cizgiAdi;
+
   /// "Gösterge" kipi (0170, Premium) görünür mü — `premiumOzellikleriGorunur`.
   /// Varsayılan kapalı: bugünkü sayfa birebir.
   final bool gostergeGorunur;
@@ -447,6 +464,7 @@ class AlarmKurSheet extends StatefulWidget {
       this.kurYuzde,
       this.baslangicHedef,
       this.odakla,
+      this.cizgiAdi = false,
       this.gostergeGorunur = false,
       this.gostergeKilitli = false,
       this.onGostergeKilitli,
@@ -459,6 +477,7 @@ class AlarmKurSheet extends StatefulWidget {
 class _AlarmKurSheetState extends State<AlarmKurSheet> {
   late AlarmAdayi _secili = widget.adaylar.first;
   final _controller = TextEditingController();
+  final _isim = TextEditingController();
   String? _hata;
 
   /// Seçili kip (0169 yüzde, 0170 gösterge). Varsayılan Fiyat: bugünkü
@@ -509,6 +528,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   @override
   void dispose() {
     _controller.dispose();
+    _isim.dispose();
     super.dispose();
   }
 
@@ -589,7 +609,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       currentPrice: _secili.guncelFiyat,
       targetPrice: hedef,
     );
-    final kurulum = AlarmKurulumu(_secili, hedef, yon);
+    final kurulum = AlarmKurulumu(_secili, hedef, yon,
+        isim: widget.cizgiAdi ? _isim.text.trim() : null);
     final kur = widget.kur;
     if (kur != null) {
       final l10n = context.l10n;
@@ -841,6 +862,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
     final esit =
         hedef != null && alarmHedefiGuncelFiyatta(hedef, _secili.guncelFiyat);
 
+    final kisa = MediaQuery.sizeOf(context).height < 480;
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -850,181 +872,213 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         // Kaydırılabilir: büyük yazıda (3,1×) form sayfa yüksekliğini aşıyor,
         // "Alarm kur" düğmesi ekranın altında kesiliyordu (büyük yazı
         // taraması 2026-10-12). Sığınca kaydırma yok, düzen aynı.
-        child: SingleChildScrollView(
-          child: Column(
+        // Düğme kaydırmanın DIŞINDA, altta sabit: yatay grafikten (390 pt
+        // yükseklik) çizgi adıyla açılınca form sığmıyor, düğme kaydırmadan
+        // görünmüyordu (e2e 2026-10-29). Kaydırılan yalnız form.
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.sm),
-            Text(widget.sabit ? context.l10n.alertForAsset(_secili.ad) : 'Alarm kur',
-                style: context.t.headlineSmall?.copyWith(color: c.text90),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-            const SizedBox(height: SandikSpace.md),
-            if (!widget.sabit) ...[
-              // `DropdownButton` + `value`: projede kararlı kalıp
-              // (bkz. add_asset_screen).
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
-                decoration: BoxDecoration(
-                  // Altındaki hedef fiyat alanıyla aynı dolgu kuralı;
-                  // sabit `surface2` alt sayfa zemini değişirse ayrışırdı.
-                  color: context.inputFill,
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(color: c.hairline),
+            Flexible(
+              child: SingleChildScrollView(
+              child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
+                const Center(child: SandikTutamac()),
+                const SizedBox(height: SandikSpace.sm),
+                Text(widget.sabit ? context.l10n.alertForAsset(_secili.ad) : 'Alarm kur',
+                    style: context.t.headlineSmall?.copyWith(color: c.text90),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: SandikSpace.md),
+                if (!widget.sabit) ...[
+                  // `DropdownButton` + `value`: projede kararlı kalıp
+                  // (bkz. add_asset_screen).
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
+                    decoration: BoxDecoration(
+                      // Altındaki hedef fiyat alanıyla aynı dolgu kuralı;
+                      // sabit `surface2` alt sayfa zemini değişirse ayrışırdı.
+                      color: context.inputFill,
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
+                      border: Border.all(color: c.hairline),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<AlarmAdayi>(
+                        value: _secili,
+                        isExpanded: true,
+                        // null: satır yüksekliği yazıyla büyür (en az 48).
+                        // Varsayılan sabit 48'de büyük yazıda (2×+) varlık adı
+                        // dikeyde kesiliyordu (büyük yazı taraması 2026-10-12).
+                        itemHeight: null,
+                        dropdownColor: c.surface2,
+                        style: context.t.titleMedium?.copyWith(color: c.text90),
+                        icon: Icon(Icons.arrow_drop_down_rounded, color: c.amberText),
+                        items: [
+                          for (final a in widget.adaylar)
+                            DropdownMenuItem(
+                              value: a,
+                              child: Text(a.ad, overflow: TextOverflow.ellipsis),
+                            ),
+                        ],
+                        onChanged: (v) => setState(() => _secili = v ?? _secili),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: SandikSpace.xs2),
+                ],
+                Text(
+                  fiyatVar
+                      ? context.l10n.currentlyPrice(fmtTRYFiyat(_secili.guncelFiyat))
+                      : context.l10n.currentPriceUnknown,
+                  style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<AlarmAdayi>(
-                    value: _secili,
-                    isExpanded: true,
-                    // null: satır yüksekliği yazıyla büyür (en az 48).
-                    // Varsayılan sabit 48'de büyük yazıda (2×+) varlık adı
-                    // dikeyde kesiliyordu (büyük yazı taraması 2026-10-12).
-                    itemHeight: null,
-                    dropdownColor: c.surface2,
-                    style: context.t.titleMedium?.copyWith(color: c.text90),
-                    icon: Icon(Icons.arrow_drop_down_rounded, color: c.amberText),
-                    items: [
-                      for (final a in widget.adaylar)
-                        DropdownMenuItem(
-                          value: a,
-                          child: Text(a.ad, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: SandikSpace.md),
+                // Kip seçici (0169): yalnız günlük yüzdesi sunucuda ölçülen
+                // adayda. Kayan segment = "mod değiştiren seçici" (tasarım dili);
+                // hareketi azalt açıkken zemin anında yerine oturur.
+                // 0170: üçüncü kip "Gösterge" (Premium); kilitliyse sekme
+                // seçilmez, paywall açılır.
+                if (_kipler.length > 1) ...[
+                  SandikSegment(
+                    key: const ValueKey('alarmKipSegmenti'),
+                    adet: _kipler.length,
+                    secili: _kipler.indexOf(_etkinKip),
+                    onSec: (i) {
+                      final k = _kipler[i];
+                      if (k == _AlarmKipi.gosterge && widget.gostergeKilitli) {
+                        widget.onGostergeKilitli?.call(context);
+                        return;
+                      }
+                      // Çipli kiplerde klavye açık kalırsa çipleri örter.
+                      if (k != _AlarmKipi.fiyat) FocusScope.of(context).unfocus();
+                      setState(() {
+                        _kip = k;
+                        _hata = null;
+                      });
+                    },
+                    oge: (_, i, __) => _kipEtiketi(_kipler[i]),
+                  ),
+                  const SizedBox(height: SandikSpace.md),
+                ],
+                if (_yuzdeAcik)
+                  ..._yuzdeBolumu(c)
+                else if (_gostergeAcik)
+                  ..._gostergeBolumu(c)
+                else ...[
+                TextField(
+                  controller: _controller,
+                  autofocus: widget.odakla ?? widget.sabit,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Hedef fiyat',
+                    errorText: _hata,
+                  ),
+                  onChanged: (_) => setState(() => _hata = null),
+                ),
+                if (fiyatVar) ...[
+                  const SizedBox(height: SandikSpace.smd),
+                  Wrap(
+                    spacing: SandikSpace.xs2,
+                    runSpacing: SandikSpace.xs2,
+                    children: [
+                      for (final y in _hizliYuzdeler)
+                        _cip(
+                          metin: '${y > 0 ? '+' : '−'}%${y.abs()}',
+                          semantik: context.l10n.targetPctSemantics(
+                              y > 0 ? context.l10n.plusWord : context.l10n.minusWord,
+                              y.abs()),
+                          renk: y > 0 ? c.gain : c.loss,
+                          onTap: () => _hizli(y),
                         ),
                     ],
-                    onChanged: (v) => setState(() => _secili = v ?? _secili),
                   ),
-                ),
-              ),
-              const SizedBox(height: SandikSpace.xs2),
-            ],
-            Text(
-              fiyatVar
-                  ? context.l10n.currentlyPrice(fmtTRYFiyat(_secili.guncelFiyat))
-                  : context.l10n.currentPriceUnknown,
-              style: context.t.bodyMedium?.copyWith(color: c.text58),
-            ),
-            const SizedBox(height: SandikSpace.md),
-            // Kip seçici (0169): yalnız günlük yüzdesi sunucuda ölçülen
-            // adayda. Kayan segment = "mod değiştiren seçici" (tasarım dili);
-            // hareketi azalt açıkken zemin anında yerine oturur.
-            // 0170: üçüncü kip "Gösterge" (Premium); kilitliyse sekme
-            // seçilmez, paywall açılır.
-            if (_kipler.length > 1) ...[
-              SandikSegment(
-                key: const ValueKey('alarmKipSegmenti'),
-                adet: _kipler.length,
-                secili: _kipler.indexOf(_etkinKip),
-                onSec: (i) {
-                  final k = _kipler[i];
-                  if (k == _AlarmKipi.gosterge && widget.gostergeKilitli) {
-                    widget.onGostergeKilitli?.call(context);
-                    return;
-                  }
-                  // Çipli kiplerde klavye açık kalırsa çipleri örter.
-                  if (k != _AlarmKipi.fiyat) FocusScope.of(context).unfocus();
-                  setState(() {
-                    _kip = k;
-                    _hata = null;
-                  });
-                },
-                oge: (_, i, __) => _kipEtiketi(_kipler[i]),
-              ),
-              const SizedBox(height: SandikSpace.md),
-            ],
-            if (_yuzdeAcik)
-              ..._yuzdeBolumu(c)
-            else if (_gostergeAcik)
-              ..._gostergeBolumu(c)
-            else ...[
-            TextField(
-              controller: _controller,
-              autofocus: widget.odakla ?? widget.sabit,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Hedef fiyat',
-                errorText: _hata,
-              ),
-              onChanged: (_) => setState(() => _hata = null),
-            ),
-            if (fiyatVar) ...[
-              const SizedBox(height: SandikSpace.smd),
-              Wrap(
-                spacing: SandikSpace.xs2,
-                runSpacing: SandikSpace.xs2,
-                children: [
-                  for (final y in _hizliYuzdeler)
-                    _cip(
-                      metin: '${y > 0 ? '+' : '−'}%${y.abs()}',
-                      semantik: context.l10n.targetPctSemantics(
-                          y > 0 ? context.l10n.plusWord : context.l10n.minusWord,
-                          y.abs()),
-                      renk: y > 0 ? c.gain : c.loss,
-                      onTap: () => _hizli(y),
-                    ),
                 ],
-              ),
-            ],
-            if (maliyetCipleri.isNotEmpty) ...[
-              const SizedBox(height: SandikSpace.smd),
-              // Maliyetine göre (2026-10-23): yüzde güncelden değil kendi
-              // alış fiyatından. Renk yönü söyler, metin de söyler (renk
-              // körlüğü): "Maliyetim", "Maliyet +%20".
-              Text(
-                context.l10n.alertCostRow(fmtTRYFiyat(maliyet!)),
-                style: context.t.labelMedium?.copyWith(color: c.text58),
-              ),
-              const SizedBox(height: SandikSpace.xs),
-              Wrap(
-                spacing: SandikSpace.xs2,
-                runSpacing: SandikSpace.xs2,
-                children: [
-                  for (final h in maliyetCipleri)
-                    _cip(
-                      metin: h.yuzde == 0
-                          ? context.l10n.alertCostBreakEven
-                          : context.l10n.alertCostPct(
-                              '${h.yuzde > 0 ? '+' : '−'}%${h.yuzde.abs()}'),
-                      semantik: h.yuzde == 0
-                          ? context.l10n.alertCostBreakEvenSemantics
-                          : context.l10n.alertCostPctSemantics(
-                              h.yuzde > 0
-                                  ? context.l10n.plusWord
-                                  : context.l10n.minusWord,
-                              h.yuzde.abs()),
-                      renk: h.yuzde == 0
-                          ? c.text90
-                          : h.yuzde > 0
-                              ? c.gain
-                              : c.loss,
-                      onTap: () => _hedefYaz(h.hedef),
-                    ),
+                if (maliyetCipleri.isNotEmpty) ...[
+                  const SizedBox(height: SandikSpace.smd),
+                  // Maliyetine göre (2026-10-23): yüzde güncelden değil kendi
+                  // alış fiyatından. Renk yönü söyler, metin de söyler (renk
+                  // körlüğü): "Maliyetim", "Maliyet +%20".
+                  Text(
+                    context.l10n.alertCostRow(fmtTRYFiyat(maliyet!)),
+                    style: context.t.labelMedium?.copyWith(color: c.text58),
+                  ),
+                  const SizedBox(height: SandikSpace.xs),
+                  Wrap(
+                    spacing: SandikSpace.xs2,
+                    runSpacing: SandikSpace.xs2,
+                    children: [
+                      for (final h in maliyetCipleri)
+                        _cip(
+                          metin: h.yuzde == 0
+                              ? context.l10n.alertCostBreakEven
+                              : context.l10n.alertCostPct(
+                                  '${h.yuzde > 0 ? '+' : '−'}%${h.yuzde.abs()}'),
+                          semantik: h.yuzde == 0
+                              ? context.l10n.alertCostBreakEvenSemantics
+                              : context.l10n.alertCostPctSemantics(
+                                  h.yuzde > 0
+                                      ? context.l10n.plusWord
+                                      : context.l10n.minusWord,
+                                  h.yuzde.abs()),
+                          renk: h.yuzde == 0
+                              ? c.text90
+                              : h.yuzde > 0
+                                  ? c.gain
+                                  : c.loss,
+                          onTap: () => _hedefYaz(h.hedef),
+                        ),
+                    ],
+                  ),
                 ],
-              ),
-            ],
-            const SizedBox(height: SandikSpace.smd),
-            // Eşit hedef: "çıkınca haber vereceğiz" demek yalan olurdu —
-            // alarm hemen çalışır. Yön cümlesinin yerine uyarı (#24).
-            if (esit && _hata == null)
-              Text(
-                context.l10n.alertTargetAtCurrent,
-                style: context.t.bodyMedium?.copyWith(color: c.danger),
-              )
-            else if (yon != null && !esit)
-              Text(
-                yon == 'above'
-                    ? context.l10n.notifyWhenAbove
-                    : context.l10n.notifyWhenBelow,
-                style: context.t.bodyMedium?.copyWith(color: c.amberText),
-              ),
-            ],
-            const SizedBox(height: SandikSpace.lg),
-            // İzin reddedilmişse alarm kurulur ama çalınca haber gelmez;
-            // bunu kurarken söylemek (Ar-Ge 16:45 #1, 2026-10-21).
-            const BildirimIzniUyarisi(
-                padding: EdgeInsets.only(bottom: SandikSpace.md)),
+                const SizedBox(height: SandikSpace.smd),
+                // Eşit hedef: "çıkınca haber vereceğiz" demek yalan olurdu —
+                // alarm hemen çalışır. Yön cümlesinin yerine uyarı (#24).
+                if (esit && _hata == null)
+                  Text(
+                    context.l10n.alertTargetAtCurrent,
+                    style: context.t.bodyMedium?.copyWith(color: c.danger),
+                  )
+                else if (yon != null && !esit)
+                  Text(
+                    yon == 'above'
+                        ? context.l10n.notifyWhenAbove
+                        : context.l10n.notifyWhenBelow,
+                    style: context.t.bodyMedium?.copyWith(color: c.amberText),
+                  ),
+                if (widget.cizgiAdi) ...[
+                  const SizedBox(height: SandikSpace.md),
+                  // Ad isteğe bağlı; boşsa alarm varlığın adıyla kurulur.
+                  TextField(
+                    key: const ValueKey('cizgiAdiAlani'),
+                    controller: _isim,
+                    maxLength: kCizgiAdiAzami,
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.cizgiAdiEtiket,
+                      hintText: context.l10n.cizgiAdiIpucu,
+                      // Kısa ekranda (yatay) açıklama ve sayaç yer kaplamasın;
+                      // ipucu metni aynı şeyi söylüyor.
+                      helperText: kisa ? null : context.l10n.cizgiAdiAciklama,
+                      helperMaxLines: 2,
+                      counterText: kisa ? '' : null,
+                    ),
+                  ),
+                ],
+                ],
+                SizedBox(height: kisa ? SandikSpace.md : SandikSpace.lg),
+                // İzin reddedilmişse alarm kurulur ama çalınca haber gelmez;
+                // bunu kurarken söylemek (Ar-Ge 16:45 #1, 2026-10-21).
+                const BildirimIzniUyarisi(
+                    padding: EdgeInsets.only(bottom: SandikSpace.md)),
+              ],
+            ),
+            ),
+            ),
             SizedBox(
               width: double.infinity,
               child: SandikAsyncButton.kompakt(
@@ -1042,7 +1096,6 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               ),
             ),
           ],
-        ),
         ),
       ),
     );

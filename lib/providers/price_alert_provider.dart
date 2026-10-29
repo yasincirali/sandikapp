@@ -72,6 +72,27 @@ class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
     ]);
   }
 
+  /// Okunan adı değiştirir (yatay çizgiye bağlı alarm, 2026-10-29).
+  Future<void> etiketiGuncelle(String id, String label) async {
+    await _svc.etiketiGuncelle(id, label);
+    state = AsyncData([
+      for (final a in state.valueOrNull ?? const <PriceAlert>[])
+        a.id == id
+            ? PriceAlert(
+                id: a.id,
+                userId: a.userId,
+                symbol: a.symbol,
+                label: label,
+                targetPrice: a.targetPrice,
+                direction: a.direction,
+                enabled: a.enabled,
+                triggeredAt: a.triggeredAt,
+                createdAt: a.createdAt,
+              )
+            : a,
+    ]);
+  }
+
   Future<void> rearm(String id) async {
     await _svc.rearm(id);
     // Sunucu satırı döndürmez; yerel kopya yamayla aynı şekle getirilir.

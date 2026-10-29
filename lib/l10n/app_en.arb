@@ -509,6 +509,29 @@
       }
     }
   },
+  "txPortfolioValueChange": "Portfolio {once} → {sonra}",
+  "@txPortfolioValueChange": {
+    "description": "Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).",
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txPortfolioValueSemantics": "Portfolio went from {once} to {sonra}",
+  "@txPortfolioValueSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Has a note",
   "txOpenNote": "{name} transaction, add a note",
   "@txOpenNote": {
@@ -5718,5 +5741,16 @@
   "alarmBekleyenler": "Waiting",
   "alarmCalanlar": "Fired ({n})",
   "alarmCalanlariTemizle": "Clear fired",
-  "alarmCalanlariTemizleSoru": "Delete {n} fired alarms? Your waiting alarms stay."
+  "alarmCalanlariTemizleSoru": "Delete {n} fired alarms? Your waiting alarms stay.",
+  "cizgiAdiEtiket": "Line name (optional)",
+  "cizgiAdiIpucu": "e.g. Support 245, Breakout",
+  "cizgiAdiAciklama": "Shown with this name in the notification and My alarms.",
+  "cizgiAlarmiBaslik": "Line alert",
+  "cizgiAlarmiAdlandir": "Rename",
+  "cizgiAlarmiAdlandirBaslik": "Line alert name",
+  "cizgiyiGrafikteAc": "Open in chart",
+  "cizgiAlarmiAdlandi": "Alert name saved",
+  "tegAdliAlarmKurulduUst": "“{ad}” alert set: we'll notify you when the price rises above the line",
+  "tegAdliAlarmKurulduAlt": "“{ad}” alert set: we'll notify you when the price falls below the line",
+  "tegAdliAlarmKurulduIkisi": "“{ad}” alert set: we'll notify you when the price crosses the line"
 }
