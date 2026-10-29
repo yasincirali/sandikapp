@@ -10077,4 +10077,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String alarmCalanlariTemizleSoru(int n) {
     return 'Delete $n fired alarms? Your waiting alarms stay.';
   }
+
+  @override
+  String get cizgiAdiEtiket => 'Line name (optional)';
+
+  @override
+  String get cizgiAdiIpucu => 'e.g. Support 245, Breakout';
+
+  @override
+  String get cizgiAdiAciklama =>
+      'Shown with this name in the notification and My alarms.';
+
+  @override
+  String get cizgiAlarmiBaslik => 'Line alert';
+
+  @override
+  String get cizgiAlarmiAdlandir => 'Rename';
+
+  @override
+  String get cizgiAlarmiAdlandirBaslik => 'Line alert name';
+
+  @override
+  String get cizgiyiGrafikteAc => 'Open in chart';
+
+  @override
+  String get cizgiAlarmiAdlandi => 'Alert name saved';
 }

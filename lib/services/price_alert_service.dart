@@ -84,4 +84,10 @@ class PriceAlertService {
   /// şeması değişmez — eski build'ler aynı satırı okumaya devam eder.
   Future<void> hedefiGuncelle(String id, double hedef, String yon) =>
       _store.update(id, {'target_price': hedef, 'direction': yon});
+
+  /// Okunan adı değiştirir (çizgi alarmına ad, yasin 2026-10-29). Yalnız
+  /// `label`: hedef, yön ve damga aynı kalır. Kolon 0046'dan beri var;
+  /// eski build'ler yeni adı olduğu gibi okur.
+  Future<void> etiketiGuncelle(String id, String label) =>
+      _store.update(id, {'label': label});
 }

@@ -13,6 +13,12 @@ import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/cizim_alarmi.dart'
+    show cizgiAlarmEtiketi, cizgiEtiketiniAyir, yatayAlarmCizimi;
+import '../services/notification_service.dart';
+import '../services/crash_reporter.dart';
+import '../widgets/cizgi_adi_sayfasi.dart';
+import '../utils/sandik_snack.dart';
 import '../widgets/bildirim_izni_uyarisi.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
@@ -52,6 +58,12 @@ import '../l10n/l10n.dart';
 /// ("Çizgi alarmı · üstüne çıkınca") alarmları da aynı listede, aynı
 /// gerekçeyle. Çizgi alarmı yatay grafikte çizimden kurulur; burada
 /// görünür ve silinir.
+///
+/// 2026-10-29 (yasin: "Çizgi alarmında isim verebilelim. Ve bildirime ve
+/// alarma tıkladığımızda çizgiyi izleyebilelim"): çizgi alarmı satırı (ve
+/// yatay çizgiye bağlı fiyat alarmı satırı) dokununca çizgiyi yatay
+/// grafikte açar ([NotificationService.openCizgi], push'la aynı varış) ve
+/// kalem düğmesiyle yeniden adlandırılır. Ad `label`'da "varlık · ad".
 /// Listedeki bir satır: tam olarak bir alan dolu.
 typedef _Satir = ({
   DateTime t,
@@ -363,11 +375,22 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       );
     }
     final alarm = r.f!;
+    // Yatay çizgiye bağlı mı (bağ cihazda): bağlıysa satır çizgiyi açar ve
+    // adlandırılır; bağsız fiyat alarmı birebir eskisi.
+    final cizim = yatayAlarmCizimi(ref.watch(yatayAlarmBaglariProvider), alarm.id);
     return KapananSatir(
       key: ValueKey(alarm.id),
       child: Builder(
         builder: (satirCtx) => _AlarmSatiri(
           alarm: alarm,
+          onAc: cizim == null ? null : () => _cizgiyiAc(alarm.symbol, cizim),
+          onAdlandir: cizim == null
+              ? null
+              : () => _adlandir(
+                  alarm.label,
+                  (label) => ref
+                      .read(priceAlertsProvider.notifier)
+                      .etiketiGuncelle(alarm.id, label)),
           onDelete: () async {
             final id = alarm.id;
             SandikHaptic.medium.perform();
@@ -448,6 +471,14 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       child: Builder(
         builder: (satirCtx) => _SeviyeAlarmSatiri(
           ad: g?.label ?? cz!.label,
+          onAc: cz == null ? null : () => _cizgiyiAc(cz.symbol, cz.cizimId),
+          onAdlandir: cz == null
+              ? null
+              : () => _adlandir(
+                  cz.label,
+                  (label) => ref
+                      .read(cizimAlarmlariProvider.notifier)
+                      .etiketiGuncelle(cz.id, label)),
           etiket: etiket,
           seviye: seviyeMetni,
           yon: yon,
@@ -468,6 +499,39 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         ),
       ),
     );
+  }
+
+  /// Satırdan çizgiye: push ve çanla aynı varış.
+  void _cizgiyiAc(String sembol, String cizimId) {
+    SandikHaptic.selection.perform();
+    CrashReporter.arkaPlan(
+        NotificationService.instance.openCizgi(sembol, cizimId: cizimId),
+        reason: 'alarmlarim.cizgiAc');
+  }
+
+  /// Çizgi alarmının adı: yalnız "varlık · ad"ın ad kısmı düzenlenir,
+  /// varlık adı korunur. Boş bırakmak adı kaldırır (eski biçim).
+  Future<void> _adlandir(
+      String label, Future<void> Function(String label) yaz) async {
+    final l10n = context.l10n;
+    final parca = cizgiEtiketiniAyir(label);
+    var kaydedildi = false;
+    await showCizgiAdiSayfasi(
+      context,
+      baslik: l10n.cizgiAlarmiAdlandirBaslik,
+      dugme: l10n.save,
+      baslangic: parca.isim ?? '',
+      odakla: true,
+      kaydet: (isim) async {
+        await yaz(cizgiAlarmEtiketi(parca.varlik, isim));
+        kaydedildi = true;
+      },
+    );
+    if (kaydedildi && mounted) {
+      SandikHaptic.selection.perform();
+      sandikSnack(context, l10n.cizgiAlarmiAdlandi,
+          kind: SandikSnackKind.success);
+    }
   }
 
   Widget _bosDurum(SandikPalette c) => Center(
@@ -592,6 +656,10 @@ class _SeviyeAlarmSatiri extends StatelessWidget {
   final String? durum;
   final VoidCallback onDelete;
 
+  /// Çizgi alarmında: satır çizgiyi yatay grafikte açar / adı değiştirir.
+  final VoidCallback? onAc;
+  final VoidCallback? onAdlandir;
+
   const _SeviyeAlarmSatiri({
     required this.ad,
     required this.etiket,
@@ -599,15 +667,16 @@ class _SeviyeAlarmSatiri extends StatelessWidget {
     required this.yon,
     required this.durum,
     required this.onDelete,
+    this.onAc,
+    this.onAdlandir,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final calisti = durum != null;
-    return SandikCard(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
+    return _CizgiSatirKabugu(
+      onAc: onAc,
       child: Row(
         children: [
           // Yön RENKLE anlatılmaz — ok her zaman var, etiket de yazar.
@@ -656,9 +725,11 @@ class _SeviyeAlarmSatiri extends StatelessWidget {
                     durum!,
                     style: context.t.bodySmall?.copyWith(color: c.text58),
                   ),
+                if (onAc != null) const _GrafikteAcSatiri(),
               ],
             ),
           ),
+          if (onAdlandir != null) _AdlandirDugmesi(onPressed: onAdlandir!),
           IconButton(
             onPressed: onDelete,
             icon: Icon(Icons.delete_outline_rounded, color: c.text36),
@@ -677,10 +748,16 @@ class _AlarmSatiri extends StatelessWidget {
   final VoidCallback onDelete;
   final Future<void> Function() onRearm;
 
+  /// Yatay çizgiye bağlı alarmda: çizgiyi aç / adı değiştir; bağsızda null.
+  final VoidCallback? onAc;
+  final VoidCallback? onAdlandir;
+
   const _AlarmSatiri({
     required this.alarm,
     required this.onDelete,
     required this.onRearm,
+    this.onAc,
+    this.onAdlandir,
   });
 
   @override
@@ -689,9 +766,8 @@ class _AlarmSatiri extends StatelessWidget {
     final tetiklendi = alarm.triggeredAt != null;
     // Düz kart: kenar `text20 %22` idi, kartlar arası tek kenar dili
     // saç teli olsun diye `SandikCard`'a geçti (SandikCard 2. tur, 2026-10-08).
-    return SandikCard(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
+    return _CizgiSatirKabugu(
+      onAc: onAc,
       child: Row(
         children: [
           // Yön RENKLE anlatılmaz — ok her zaman var.
@@ -721,6 +797,7 @@ class _AlarmSatiri extends StatelessWidget {
                           ' · ${fmtTRYFiyat(alarm.targetPrice)}',
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
+                if (onAc != null) const _GrafikteAcSatiri(),
               ],
             ),
           ),
@@ -733,6 +810,7 @@ class _AlarmSatiri extends StatelessWidget {
               onPressed: onRearm,
               child: Text(context.l10n.recreateAlert),
             ),
+          if (onAdlandir != null) _AdlandirDugmesi(onPressed: onAdlandir!),
           IconButton(
             onPressed: onDelete,
             icon: Icon(Icons.delete_outline_rounded, color: c.text36),
@@ -742,6 +820,80 @@ class _AlarmSatiri extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Çizgi alarmı satırının ortakları (2026-10-29) ────────────────────────────
+
+/// Satırın kartı; çizgi alarmında bütün kart dokunma alanıdır (≥44 pt,
+/// kartın kendisi) ve ekran okuyucu "düğme · Grafikte aç" der. Çizgisiz
+/// satırda düz kart, birebir eskisi.
+class _CizgiSatirKabugu extends StatelessWidget {
+  const _CizgiSatirKabugu({required this.onAc, required this.child});
+
+  final VoidCallback? onAc;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final kart = SandikCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
+      onTap: onAc,
+      child: child,
+    );
+    if (onAc == null) return kart;
+    return Semantics(
+      button: true,
+      onTapHint: context.l10n.cizgiyiGrafikteAc,
+      child: kart,
+    );
+  }
+}
+
+/// "Grafikte aç ›" — satırın dokunulabilir olduğunu yalnız kart
+/// gölgesine bırakmayan görünür ipucu (metin + ok; yalnız renk değil).
+class _GrafikteAcSatiri extends StatelessWidget {
+  const _GrafikteAcSatiri();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.xxs),
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.show_chart_rounded, size: 16, color: c.amberText),
+            const SizedBox(width: SandikSpace.xs),
+            Flexible(
+              child: Text(
+                context.l10n.cizgiyiGrafikteAc,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.labelMedium?.copyWith(color: c.amberText),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Kalem: çizgi alarmının adını değiştirir (IconButton, 48 pt).
+class _AdlandirDugmesi extends StatelessWidget {
+  const _AdlandirDugmesi({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        key: const ValueKey('cizgiAlarmiAdlandir'),
+        onPressed: onPressed,
+        icon: Icon(Icons.edit_outlined, color: context.c.text36),
+        tooltip: context.l10n.cizgiAlarmiAdlandir,
+      );
 }
 
 // ── Çalanlar grubu başlığı (Ar-Ge 29 Eki 16:45 #2) ─────────────────────────

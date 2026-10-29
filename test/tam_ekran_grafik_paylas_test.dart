@@ -193,7 +193,10 @@ void main() {
               // Geri al için silinen alarmların çöpü (2026-10-29): yalnız
               // eşitlemeye geçer, grafiğe hiçbir şey çizmez.
               .replaceAll('CizimAlarmCopu', '')
-              .replaceAll('_alarmCopu', '');
+              .replaceAll('_alarmCopu', '')
+              // Alarmlı çizginin adı (2026-10-29): boyacıda değil, ayrı
+              // katman ve yalnız paylaşım kipi kapalıyken (aşağıdaki kapı).
+              .replaceAll('CizimAlarmAdlari', '');
       for (final yasak in [
         'purchasePrice',
         '.quantity',
@@ -229,6 +232,17 @@ void main() {
       expect('CizimAlarmDugmesi('.allMatches(k).length, 1);
       final cubuk = k.substring(k.indexOf('Widget _seciliCubugu('));
       expect(cubuk, contains('CizimAlarmDugmesi('));
+    });
+
+    test('çizgi alarmının adı yalnız paylaşım kipi kapalıyken (2026-10-29)',
+        () {
+      final k = ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart');
+      expect('CizimAlarmAdlari('.allMatches(k).length, 1);
+      expect(
+          k,
+          matches(RegExp(
+              r'if \(!_paylasimKipi\)\s*Positioned\([^;]*?CizimAlarmAdlari\(',
+              dotAll: true)));
     });
   });
 

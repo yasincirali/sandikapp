@@ -23,6 +23,7 @@ import '../../theme/sandik.dart';
 import '../../utils/tr_format.dart' show fiyatOndaligi;
 import '../../utils/friendly_error.dart' show showAppError;
 import '../alarm_kur_sheet.dart';
+import '../cizgi_adi_sayfasi.dart';
 import '../sandik_async_button.dart';
 import 'grafik_olcegi.dart';
 
@@ -44,8 +45,9 @@ import 'grafik_olcegi.dart';
 ///   (ikinci dokunuş kaldırır); çizgi taşınınca hedef, silinince alarm
 ///   gider, geri al alarmı da geri getirir ([cizimAlarmlariniEsitle]).
 /// - **Trend çizgisi / ışın → çizgi alarmı** (Premium, `cizim_alarmlari`).
-///   Tek dokunuş kurar, ikinci dokunuş kaldırır (TradingView'deki gibi zil
-///   durum taşır). Çizim taşınınca/silinince alarm da taşınır/silinir
+///   Dokunuş kısa bir ad sayfası açar (ad isteğe bağlı, boşsa varlığın
+///   adı; yasin 2026-10-29 "Çizgi alarmında isim verebilelim"), ikinci
+///   dokunuş kaldırır (TradingView'deki gibi zil durum taşır). Çizim taşınınca/silinince alarm da taşınır/silinir
 ///   ([cizimAlarmlariniEsitle]).
 ///
 /// Kutu (dikdörtgen) için alarm yok: "kutuya girince" ayrı bir soru.
@@ -189,6 +191,9 @@ class CizimAlarmDugmesi extends ConsumerWidget {
       sabit: AlarmAdayi(sembol, ad, canliBirim),
       baslangicHedef: cizim.a.p,
       odakla: false,
+      // Yatay çizgiye de ad verilir (trend çizgisiyle aynı istek); ad
+      // alarmın `label`'ına "varlık · ad" olarak girer.
+      cizgiAdi: true,
     );
     if (kurulan == null) return;
     baglar.bagla(id, kurulan.id, cizim.a.p);
@@ -230,21 +235,34 @@ class CizimAlarmDugmesi extends ConsumerWidget {
       if (me == null) return;
       final id = cizim.id ?? kimlikVer();
       final yon = SeviyeYon.fiyattan(guncel: canliBirim, seviye: d.p1);
-      await n.create(CizimAlarmi(
-        id: '',
-        userId: me.id,
-        symbol: sembol,
-        label: ad,
-        cizimId: id,
-        cizimImzasi: cizimImzasi(cizim),
-        t1: d.t1,
-        p1: d.p1,
-        t2: d.t2,
-        p2: d.p2,
-        uzanir: d.uzanir,
-        yon: yon,
-        createdAt: simdi,
-      ));
+      // Ad sayfası (yasin 2026-10-29: "Çizgi alarmında isim verebilelim").
+      // Ad isteğe bağlı: boş bırakılırsa alarm bugünkü gibi varlığın adıyla
+      // kurulur. Yazma sayfanın düğmesinde koşar; hata sayfada söylenir.
+      var kuruldu = false;
+      await showCizgiAdiSayfasi(
+        context,
+        baslik: l10n.cizgiAlarmiBaslik,
+        dugme: l10n.setAlert,
+        kaydet: (isim) async {
+          await n.create(CizimAlarmi(
+            id: '',
+            userId: me.id,
+            symbol: sembol,
+            label: cizgiAlarmEtiketi(ad, isim),
+            cizimId: id,
+            cizimImzasi: cizimImzasi(cizim),
+            t1: d.t1,
+            p1: d.p1,
+            t2: d.t2,
+            p2: d.p2,
+            uzanir: d.uzanir,
+            yon: yon,
+            createdAt: simdi,
+          ));
+          kuruldu = true;
+        },
+      );
+      if (!kuruldu) return;
       OzellikOlcumu.say(Ozellik.cizimAlarm);
       bildir(switch (yon) {
         SeviyeYon.yukari => l10n.tegAlarmKurulduUst,
@@ -254,6 +272,97 @@ class CizimAlarmDugmesi extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) showAppError(context, e);
     }
+  }
+}
+
+/// Alarmlı çizginin adı, çizginin sağ ucunda küçük yazı (yasin
+/// 2026-10-29: "Çizgi alarmında isim verebilelim"). Ad yoksa (eski ya da
+/// adsız alarm) hiçbir şey çizilmez; grafik birebir eskisi.
+///
+/// ## Neden boyacıda değil, ayrı katman
+/// Alarm kişisel veridir ve paylaşım görseline girmez
+/// (`tam_ekran_grafik_paylas_test`). Ekran bu katmanı yalnız paylaşım kipi
+/// kapalıyken koyar; boyacı alarm bilmez. Dokunuşları geçirir (çizimi
+/// seçmek/taşımak altındaki grafiğin işi).
+///
+/// Konum: trend/ışın çizgisinde görünen sağ uç (ışın alan kenarına kadar),
+/// yatay çizgide alanın sağ kenarı; yazı çizginin hemen üstünde, ucun
+/// soluna hizalı. Uç alanın dışındaysa çizilmez (kenara sıkıştırılmış ad
+/// başka bir yeri gösteriyor sanılırdı).
+class CizimAlarmAdlari extends ConsumerWidget {
+  const CizimAlarmAdlari({
+    super.key,
+    required this.cizimler,
+    required this.olcek,
+    required this.alan,
+    required this.varlik,
+    required this.canliBirim,
+    required this.renk,
+  });
+
+  final List<GrafikCizimi> cizimler;
+  final GrafikOlcegi olcek;
+
+  /// Çizim alanı (fiyat ve zaman ekseni hariç).
+  final Size alan;
+  final Asset varlik;
+  final double canliBirim;
+
+  /// Çizimlerin rengi — ad aynı renkte, hangi çizgiye ait olduğu belli olsun.
+  final Color renk;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sembol = cizimAlarmSembolu(varlik, canliBirim);
+    if (sembol == null) return const SizedBox.shrink();
+    final adlar = <String, String>{};
+    for (final a in ref.watch(cizimAlarmlariProvider).valueOrNull ??
+        const <CizimAlarmi>[]) {
+      if (a.symbol != sembol || !a.isActive) continue;
+      final isim = cizgiEtiketiniAyir(a.label).isim;
+      if (isim != null) adlar[a.cizimId] = isim;
+    }
+    final fiyat = ref.watch(priceAlertsProvider).valueOrNull ?? const [];
+    for (final e in ref.watch(yatayAlarmBaglariProvider).entries) {
+      final a = fiyat.where((x) => x.id == e.value.alarmId).firstOrNull;
+      if (a == null || a.symbol != sembol || !a.isActive) continue;
+      final isim = cizgiEtiketiniAyir(a.label).isim;
+      if (isim != null) adlar[e.key] = isim;
+    }
+    if (adlar.isEmpty) return const SizedBox.shrink();
+    final stil = context.t.labelSmall
+        ?.copyWith(color: renk, fontWeight: FontWeight.w600);
+    final yazilar = <Widget>[];
+    for (final c in cizimler) {
+      final isim = c.id == null ? null : adlar[c.id];
+      if (isim == null) continue;
+      final a = olcek.ekranda(c.a);
+      final Offset uc = switch (c.tur) {
+        CizimTuru.yatay || CizimTuru.yatayIsin => Offset(alan.width, a.dy),
+        CizimTuru.isin when c.b != null =>
+          isinUcu(a, olcek.ekranda(c.b!), alan),
+        _ when c.b != null => olcek.ekranda(c.b!),
+        _ => a,
+      };
+      if (uc.dx < 0 || uc.dx > alan.width || uc.dy < 0 || uc.dy > alan.height) {
+        continue;
+      }
+      yazilar.add(Positioned(
+        right: alan.width - uc.dx + SandikSpace.xs,
+        bottom: alan.height - uc.dy + SandikSpace.xxs,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: alan.width / 2),
+          child: Text(isim,
+              maxLines: 1, overflow: TextOverflow.ellipsis, style: stil),
+        ),
+      ));
+    }
+    return IgnorePointer(
+      child: SizedBox.fromSize(
+        size: alan,
+        child: Stack(clipBehavior: Clip.hardEdge, children: yazilar),
+      ),
+    );
   }
 }
 

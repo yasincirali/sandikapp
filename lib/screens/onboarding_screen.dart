@@ -569,13 +569,17 @@ List<_Adim> _adimlariKur() {
       // 2026-10-29 (0170): yatay grafikte seçili çizimin zili (yatay çizgi
       // → fiyat alarmı; trend/ışın → çizgi alarmı) ve alarm sayfasının
       // Premium "Gösterge" kipi; ikisi de bu adımın anlattığı alarm akışı.
+      // 2026-10-29 (akşam): çizgi alarmına ad verilir, bildirime ya da
+      // Alarmlarım satırına dokununca çizgi yatay grafikte açılır.
       govde: '$_zilBasi'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
           'uygulama kapalıyken de çalışır. Altın, döviz ve kriptoda '
           '"Günlük yüzde" ile "bugün %2 düşerse" gibi bir alarm da '
           'kurabilirsin. Yan çevrilmiş grafikte çizdiğin çizgiyi seçip '
-          'zile dokunursan fiyat o çizgiye gelince haber verir; Premium\'da '
+          'zile dokunursan fiyat o çizgiye gelince haber verir; istersen '
+          'çizgiye "Destek 245" gibi bir ad ver, bildirimine dokununca '
+          'çizgi grafikte açılır. Premium\'da '
           '"Gösterge" ile "EMA50\'yi keserse" alarmı da var.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,

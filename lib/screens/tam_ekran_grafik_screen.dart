@@ -103,6 +103,8 @@ class TamEkranGrafikEkrani extends ConsumerStatefulWidget {
     required this.canliBirim,
     this.ilkAralik,
     this.dikteKapan = true,
+    this.odakCizim,
+    this.yatayaZorla = false,
   });
 
   /// Mum kaynağının sorulduğu varlık (`FiyatKaynagi.gozlemVarligi` ya da
@@ -121,6 +123,23 @@ class TamEkranGrafikEkrani extends ConsumerStatefulWidget {
   /// Telefon dik dönünce sayfa kendini kapatsın mı (testte kapalı).
   final bool dikteKapan;
 
+  /// Açılışta seçilecek çizimin kimliği (`GrafikCizimi.id`): bildirime ya
+  /// da Alarmlarım satırına dokunup "çizgiyi izle" (yasin 2026-10-29).
+  /// Çizim seçili açılır (tutamaklar, zil) ve görünüm çizginin başından
+  /// bugüne uzanır. Çizim artık yoksa grafik eskisi gibi açılır.
+  final String? odakCizim;
+
+  /// Sayfa yan çevirmeden açıldı (bildirim, Alarmlarım): ekran yataya
+  /// alınır, kapanınca sistemin yön ayarına geri bırakılır. Bu kipte dik
+  /// dönmek sayfayı kapatmaz — kapatmak üst çubuktaki düğmeyle.
+  ///
+  /// Neden zorla: giriş normalde yan çevirmektir ve sayfa yatay düzene
+  /// göre kurulu (sol araç çubuğu, sağ eksen). Elinde dik telefonla
+  /// bildirime dokunan kullanıcıya dik bir tam ekran ya da "telefonu
+  /// çevir" engeli göstermek yerine yatay açılır; uygulama başka yerde
+  /// yön kilitlemediği için geri bırakmak boş liste (= sistem ayarı).
+  final bool yatayaZorla;
+
   /// Sayfayı iter. Hızlı yön değişiminde ikinci kopya açılmaz
   /// ([pushGuarded]).
   static Future<void> ac(
@@ -129,6 +148,8 @@ class TamEkranGrafikEkrani extends ConsumerStatefulWidget {
     required String ad,
     required double canliBirim,
     MumAraligi? ilkAralik,
+    String? odakCizim,
+    bool yatayaZorla = false,
   }) =>
       pushGuarded<void>(
         context,
@@ -140,6 +161,9 @@ class TamEkranGrafikEkrani extends ConsumerStatefulWidget {
             ad: ad,
             canliBirim: canliBirim,
             ilkAralik: ilkAralik,
+            odakCizim: odakCizim,
+            yatayaZorla: yatayaZorla,
+            dikteKapan: !yatayaZorla,
           ),
         ),
       );
@@ -173,6 +197,11 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
 
   List<GrafikCizimi> _cizimler = const [];
   final List<List<GrafikCizimi>> _gecmis = [];
+
+  /// [TamEkranGrafikEkrani.odakCizim]'in başladığı an (epoch ms): ilk
+  /// görünüm buradan bugüne uzanır. Aralık değişince bırakılır (kullanıcı
+  /// artık kendi bakıyor).
+  int? _odakZamani;
   CizimTuru? _arac;
   bool _miknatis = false;
   int _secili = -1;
@@ -247,6 +276,14 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     // Tek giriş yan çevirmek (dik ekrandaki çip 2026-09-17'de kalktı);
     // açılış burada sayılır.
     OzellikOlcumu.say(Ozellik.yatayGrafik);
+    if (widget.yatayaZorla) {
+      CrashReporter.arkaPlan(
+          SystemChrome.setPreferredOrientations(const [
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]),
+          reason: 'TamEkranGrafik.yatayaAl');
+    }
     CrashReporter.arkaPlan(_cizimleriOku(), reason: 'TamEkranGrafik.cizimOku');
     CrashReporter.arkaPlan(_yukle(), reason: 'TamEkranGrafik.mumlar');
   }
@@ -256,6 +293,11 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     _uzunBasma?.cancel();
     _bildirimZamani?.cancel();
     _aracKaydirma.dispose();
+    if (widget.yatayaZorla) {
+      // Boş liste = Info.plist / manifestteki yönler (sistem ayarı).
+      CrashReporter.arkaPlan(SystemChrome.setPreferredOrientations(const []),
+          reason: 'TamEkranGrafik.yonuBirak');
+    }
     super.dispose();
   }
 
@@ -264,7 +306,20 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
   Future<void> _cizimleriOku() async {
     final c = await CizimDeposu.instance.oku(widget.varlik.ticker);
     if (!mounted) return;
-    setState(() => _cizimler = c);
+    setState(() {
+      _cizimler = c;
+      final odak = widget.odakCizim;
+      final k = odak == null ? -1 : c.indexWhere((x) => x.id == odak);
+      if (k < 0) return;
+      _secili = k;
+      final ci = c[k];
+      // Yatay çizginin zamanı yok (her yerde aynı fiyat): görünüm değişmez.
+      _odakZamani = ci.tur.tekNokta || ci.b == null
+          ? null
+          : math.min(ci.a.t, ci.b!.t);
+      // Mumlar önce geldiyse açılış görünümü çizimle yeniden kurulur.
+      if (_jest == null) _gorunum = null;
+    });
   }
 
   /// Çizimle silinen alarmlar; geri al çizimi getirince alarm da gelir
@@ -368,6 +423,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     setState(() {
       _aralik = ar;
       _secili = -1;
+      _odakZamani = null;
       _gorunumuSifirla();
     });
     CrashReporter.arkaPlan(_yukle(), reason: 'TamEkranGrafik.mumlar');
@@ -410,8 +466,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     _fiyatEkseni = enUzun + SandikSpace.md;
     final pw = math.max(40.0, alan.width - _fiyatEkseni);
     final ph = math.max(40.0, alan.height - _zamanEkseni);
-    final g = gorunumuSinirla(
-        _gorunum ?? varsayilanGorunum(m.length, pw), m.length);
+    final g = gorunumuSinirla(_gorunum ?? _acilisGorunumu(m, pw), m.length);
     _gorunum = g;
     final i0 = math.max(0, g.bas.floor()), i1 = math.min(m.length - 1, g.son.ceil());
     var lo = double.infinity, hi = -double.infinity;
@@ -457,6 +512,17 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
     );
     _olcek = o;
     return o;
+  }
+
+  /// Varsayılan açılış (son mumlar); odak çizimi varsa pencere çizginin
+  /// başına kadar genişler ([odakliGorunum]).
+  GrafikGorunumu _acilisGorunumu(List<OhlcBar> m, double pw) {
+    final v = varsayilanGorunum(m.length, pw);
+    final t = _odakZamani;
+    if (t == null) return v;
+    final zamanlar = [for (final b in m) b.t];
+    return odakliGorunum(
+        v, zamanIndeksiBul(zamanlar, barUzunluguMs(m.last.t, _aralik), t));
   }
 
   Size get _cizimAlani => Size(
@@ -1347,6 +1413,21 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
               ),
             ),
           ),
+          // Alarmlı çizginin adı (2026-10-29): kişisel katman, boyacıda
+          // değil; paylaşım görseline girmez.
+          if (!_paylasimKipi)
+            Positioned(
+              left: 0,
+              top: 0,
+              child: CizimAlarmAdlari(
+                cizimler: _cizimler,
+                olcek: o,
+                alan: _cizimAlani,
+                varlik: widget.varlik,
+                canliBirim: widget.canliBirim,
+                renk: c.info,
+              ),
+            ),
           Positioned(
             left: SandikSpace.sm,
             top: SandikSpace.xs,

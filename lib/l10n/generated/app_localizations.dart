@@ -16480,6 +16480,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çalmış {n} alarm silinsin mi? Bekleyen alarmların yerinde kalır.'**
   String alarmCalanlariTemizleSoru(int n);
+
+  /// No description provided for @cizgiAdiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizginin adı (isteğe bağlı)'**
+  String get cizgiAdiEtiket;
+
+  /// No description provided for @cizgiAdiIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'ör. Destek 245, Kırılım'**
+  String get cizgiAdiIpucu;
+
+  /// No description provided for @cizgiAdiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimde ve Alarmlarım\'da bu adla görünür.'**
+  String get cizgiAdiAciklama;
+
+  /// No description provided for @cizgiAlarmiBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmı'**
+  String get cizgiAlarmiBaslik;
+
+  /// No description provided for @cizgiAlarmiAdlandir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adlandır'**
+  String get cizgiAlarmiAdlandir;
+
+  /// No description provided for @cizgiAlarmiAdlandirBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çizgi alarmının adı'**
+  String get cizgiAlarmiAdlandirBaslik;
+
+  /// No description provided for @cizgiyiGrafikteAc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafikte aç'**
+  String get cizgiyiGrafikteAc;
+
+  /// No description provided for @cizgiAlarmiAdlandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmın adı kaydedildi'**
+  String get cizgiAlarmiAdlandi;
 }
 
 class _AppLocalizationsDelegate

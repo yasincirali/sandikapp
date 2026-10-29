@@ -14,11 +14,15 @@ import '../models/position.dart' show pozisyonGorunumu;
 import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/seviye_alarmi_provider.dart'
+    show cizimAlarmlariProvider, yatayAlarmBaglariProvider;
+import '../providers/watchlist_provider.dart' show watchlistProvider;
 import '../screens/main_navigation_screen.dart' show MainNavigationScreen;
 import '../screens/partnership_requests_screen.dart';
 import '../screens/portfolio_performance_screen.dart';
 import '../screens/asset_detail_screen.dart';
 import '../screens/hafta_ozeti_screen.dart';
+import '../screens/tam_ekran_grafik_screen.dart' show TamEkranGrafikEkrani;
 import 'remote_config_service.dart';
 import '../screens/asset_not_found_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
@@ -28,6 +32,7 @@ import '../config/pref_keys.dart';
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
 import '../widgets/dividend_dialog.dart' show showDividendDialog;
 import 'analytics_service.dart';
+import 'cizim_alarmi.dart' show cizgiGrafigi, yatayAlarmCizimi;
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'temettu_gecmisi.dart';
@@ -698,9 +703,27 @@ class NotificationService {
     // "hangi varlık?" sorusunu tekrar sordurtuyordu.
     //
     // Hedef sembolle taşınır (`asset_id` yok — bkz. [openPriceAlertAsset]).
+    //
+    // 2026-10-29 (yasin: "bildirime tıkladığımızda çizgiyi izleyebilelim"):
+    // çizgi alarmı (`cizim_id` / `cizim_alarm_id`) ya da yatay çizgiye bağlı
+    // fiyat alarmı (`alert_id`, bağ cihazda) çizgiyi yatay grafikte açar;
+    // çizgi bulunamazsa [openCizgi] eskisi gibi varlığa düşer. Anahtarlar
+    // eklemedir: eski build onları okumaz, varlığı açar.
     if (type == priceAlertType) {
       final symbol = data['symbol']?.toString();
       if (symbol == null || symbol.isEmpty) return;
+      final cizim = data['cizim_id']?.toString();
+      final cizimAlarmi = data['cizim_alarm_id']?.toString();
+      final alarm = data['alert_id']?.toString();
+      if ((cizim ?? '').isNotEmpty ||
+          (cizimAlarmi ?? '').isNotEmpty ||
+          (alarm ?? '').isNotEmpty) {
+        CrashReporter.arkaPlan(
+            openCizgi(symbol,
+                cizimId: cizim, cizimAlarmId: cizimAlarmi, alertId: alarm),
+            reason: 'notification.cizgiAc');
+        return;
+      }
       openPriceAlertAsset(symbol);
       return;
     }
@@ -1055,6 +1078,97 @@ class NotificationService {
       // sessizce varsayılana düşer.
       initialPeriodDays: 0,
     );
+  }
+
+  /// Çizgi alarmının çizgisini yatay grafikte açar (yasin 2026-10-29:
+  /// *"bildirime ve alarma tıkladığımızda çizgiyi izleyebilelim"*). Push,
+  /// çan satırı ve Alarmlarım aynı fonksiyondan geçer (tek varış yeri).
+  ///
+  /// Çizim kimliği sırayla: [cizimId] (yeni push / çan verisi) →
+  /// [cizimAlarmId] ile cihazdaki çizgi alarmı listesi (eski çan kaydı) →
+  /// [alertId] ile yatay çizgi bağı ([yatayAlarmCizimi]; bağ cihazda).
+  /// Hiçbiri yoksa ya da grafik açılamıyorsa (varlık yok, fiyat bilinmiyor,
+  /// mum kaynağı yok) [openPriceAlertAsset]: eski davranış birebir.
+  ///
+  /// Grafik doğrudan yatay açılır ([TamEkranGrafikEkrani.yatayaZorla]):
+  /// kullanıcı telefonu dik tutarken bildirime dokunur; kapatınca geldiği
+  /// ekrana döner.
+  Future<void> openCizgi(
+    String symbol, {
+    String? cizimId,
+    String? cizimAlarmId,
+    String? alertId,
+    VoidCallback? onNotFound,
+    int deneme = 0,
+  }) async {
+    void tekrar() => openCizgi(symbol,
+        cizimId: cizimId,
+        cizimAlarmId: cizimAlarmId,
+        alertId: alertId,
+        onNotFound: onNotFound,
+        deneme: deneme + 1);
+    if (kilitKapisi.ertele(() => openCizgi(symbol,
+        cizimId: cizimId,
+        cizimAlarmId: cizimAlarmId,
+        alertId: alertId,
+        onNotFound: onNotFound))) {
+      return;
+    }
+    final navigator = _navigatorKey?.currentState;
+    final context = navigator?.overlay?.context;
+    if (navigator == null || context == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(_yenidenDenemeAraligi, tekrar);
+      return;
+    }
+    final container = ProviderScope.containerOf(context, listen: false);
+    void varligaDus() => openPriceAlertAsset(symbol, onNotFound: onNotFound);
+
+    var id = (cizimId ?? '').isEmpty ? null : cizimId;
+    if (id == null && (cizimAlarmId ?? '').isNotEmpty) {
+      id = (container.read(cizimAlarmlariProvider).valueOrNull ?? const [])
+          .where((a) => a.id == cizimAlarmId)
+          .firstOrNull
+          ?.cizimId;
+    }
+    if (id == null && (alertId ?? '').isNotEmpty) {
+      final baglar = container.read(yatayAlarmBaglariProvider.notifier);
+      await baglar.yuklendi;
+      id = yatayAlarmCizimi(baglar.baglar, alertId);
+    }
+    if (id == null || id.isEmpty) {
+      varligaDus();
+      return;
+    }
+
+    // Soğuk açılış: portföy birkaç saniye sonra düşer ([openPriceAlertAsset]
+    // ile aynı bekleme). Boş portföy (yalnız takip listesi) beklenmez.
+    final assets = container.read(portfolioProvider).valueOrNull?.assets;
+    if (assets == null) {
+      if (deneme >= _yenidenDenemeSiniri) {
+        varligaDus();
+        return;
+      }
+      Future<void>.delayed(_yenidenDenemeAraligi, tekrar);
+      return;
+    }
+    final g = cizgiGrafigi(symbol,
+        varliklar: assets,
+        takip: container.read(watchlistProvider).valueOrNull ?? const []);
+    final ctx = _navigatorKey?.currentState?.overlay?.context;
+    if (g == null ||
+        ctx == null ||
+        !ctx.mounted ||
+        !TamEkranGrafikEkrani.sunulur(g.varlik)) {
+      varligaDus();
+      return;
+    }
+    await TamEkranGrafikEkrani.ac(ctx,
+        varlik: g.varlik,
+        ad: g.ad,
+        canliBirim: g.canliBirim,
+        odakCizim: id,
+        yatayaZorla: true);
   }
 
   /// Temettü önerisinden (push ya da çan) ön dolu temettü diyaloğunu açar.
