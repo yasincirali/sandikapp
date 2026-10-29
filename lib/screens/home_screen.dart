@@ -86,6 +86,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// karede kare üretiyor, uygulama hiç boşa düşmüyordu (animasyon
   /// denetimi 2026-10-01). Ekrandan çıkınca `TickerMode` ile durur, geri
   /// gelince kaldığı yerden akar; nabız turu da gizliyken atlanır.
+  /// "Portföy hareketleri" satırlarının önceki → sonraki bakiyesi
+  /// (2026-10-29). Görünen üç satır değil `ledgerAssets`'in tamamından
+  /// hesaplanır (bakiye eski alımları ister); defter değişmedikçe önbellek.
+  final _bakiyeOnbellegi = HareketBakiyeOnbellegi();
+
   final _seritAnahtari = GlobalKey();
   final _seritGorunur = ValueNotifier<bool>(true);
 
@@ -417,6 +422,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       portfolioState: portfolioState,
       hideBalance: hideBalance,
       not: not,
+      bakiye: _bakiyeOnbellegi.hesapla(defter)[a.id],
       onTap: acilir
           ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
           : null,

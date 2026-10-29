@@ -494,6 +494,28 @@
   "transactionDate": "İşlem tarihi",
   "addNote": "Not ekle",
   "notesHint": "Notların...",
+  "txBalanceChange": "{once} → {sonra}",
+  "@txBalanceChange": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txBalanceSemantics": "Bakiye {once} iken {sonra} oldu",
+  "@txBalanceSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Not var",
   "txOpenNote": "{name} işlemi, not ekle",
   "@txOpenNote": {

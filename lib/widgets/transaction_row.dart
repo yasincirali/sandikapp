@@ -36,6 +36,7 @@ class TransactionRow extends StatelessWidget {
     this.yilGoster = true,
     this.silinenGorunumu = false,
     this.not,
+    this.bakiye,
     this.onTap,
   });
 
@@ -70,6 +71,18 @@ class TransactionRow extends StatelessWidget {
   /// bozulurdu. İkon satır yüksekliğini değiştirmez; metin dokununca açılan
   /// not sayfasında okunur.
   final String? not;
+
+  /// Bu işlemden hemen önce ve sonra pozisyonda tutulan miktar — çağıran
+  /// `hareketBakiyeleri(...)` ile TÜM kapsam defterinden hesaplar (satır
+  /// saf kalır, defteri görmez). `null` ise ikinci satır çizilmez.
+  ///
+  /// Kullanıcı isteği (2026-10-29): "Portföy hareketlerinde önceki ve
+  /// sonraki bakiye de yazmalı." Tarihin ALTINDA, solda ikinci küçük satır:
+  /// sağ kolon 116pt sabit ve tutar + tür etiketiyle dolu; oraya eklenseydi
+  /// "Alım · 5 gr" ile "12 → 17 gr" iki miktar yan yana karışırdı. Solda
+  /// isim alanı esnek; satır bir metin satırı uzar, gruplu liste ritmi
+  /// tüm bakiyeli satırlarda aynı kalır.
+  final ({double once, double sonra})? bakiye;
 
   /// Satıra dokununca — işlem notu sayfası. `null` ise satır eskisi gibi
   /// dokunulmaz (ör. ortak kaydının notu yoksa açılacak bir şey yok).
@@ -191,12 +204,36 @@ class TransactionRow extends StatelessWidget {
                         yilsiz: !yilGoster)),
                     notIsareti: not != null,
                   ),
-                ] else
+                ] else ...[
                   _tarihSatiri(
                     context,
                     fmtTarihSaat(asset.addedDate, yilsiz: !yilGoster),
                     notIsareti: not != null,
                   ),
+                  if (bakiye case final b?)
+                    if (hareketBakiyeMetni(l10n, asset, b) case final m?)
+                      Padding(
+                        padding: const EdgeInsets.only(top: SandikSpace.xxs),
+                        child: Semantics(
+                          label: m.okunan,
+                          excludeSemantics: true,
+                          child: Text(
+                            m.gorunen,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            // Tarihten bir ton açık (text58 > text36): satırın
+                            // ikinci bilgisi, ama tutarla yarışmaz. Alt alta
+                            // sayılar hizalı okunsun diye tabular figür.
+                            style: context.t.labelSmall?.copyWith(
+                              color: context.c.text58,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                ],
               ],
             ),
           ),
@@ -405,4 +442,41 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
       ? '${asset.unitLabel}$miktar'
       : '$miktar ${birimMetni(l10n, asset.unitLabel)}';
   return '${asset.isSell ? l10n.txSell : l10n.txBuy} · $miktarMetni';
+}
+
+/// "12 → 17 gr" ve ekran okuyucu cümlesi; gösterilmeyecekse `null`.
+///
+/// Birim kuralı [hareketTurEtiketi] ile aynı (`qtyFormatter` +
+/// `azamiOndalik`, döviz sembolü önde): satırın sağındaki "Alım · 5 gr" ile
+/// soldaki bakiye aynı sayı dilini konuşur. Sonek birim yalnız sonda
+/// ("12 → 17 gr"); önek sembol iki sayıda da ("$100 → $150") çünkü
+/// "$100 → 150" ikinci sayıyı birimsiz bırakır. Mevduat/BES ve silme/
+/// temettü için `null` (2026-10-29) — `hareketBakiyeleri` onlara zaten
+/// bakiye üretmez; bu ikinci kapı satırın kendi başına da doğru kalması
+/// için.
+({String gorunen, String okunan})? hareketBakiyeMetni(
+  AppLocalizations l10n,
+  Asset asset,
+  ({double once, double sonra}) bakiye,
+) {
+  if (asset.isDeleteLog || asset.isDividend || asset.isDeleted) return null;
+  if (asset.type == AssetType.mevduat || asset.type == AssetType.bes) {
+    return null;
+  }
+  final fmt = qtyFormatter(maxDigits: asset.azamiOndalik);
+  final once = fmt.format(bakiye.once);
+  final sonra = fmt.format(bakiye.sonra);
+  if (asset.unitIsPrefix) {
+    final b = asset.unitLabel;
+    final gorunen = l10n.txBalanceChange('$b$once', '$b$sonra');
+    return (
+      gorunen: gorunen,
+      okunan: l10n.txBalanceSemantics('$b$once', '$b$sonra'),
+    );
+  }
+  final birim = birimMetni(l10n, asset.unitLabel);
+  return (
+    gorunen: l10n.txBalanceChange(once, '$sonra $birim'),
+    okunan: l10n.txBalanceSemantics('$once $birim', '$sonra $birim'),
+  );
 }

@@ -481,6 +481,28 @@
   "transactionDate": "Transaction date",
   "addNote": "Add a note",
   "notesHint": "Your notes...",
+  "txBalanceChange": "{once} → {sonra}",
+  "@txBalanceChange": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
+  "txBalanceSemantics": "Holding went from {once} to {sonra}",
+  "@txBalanceSemantics": {
+    "placeholders": {
+      "once": {
+        "type": "String"
+      },
+      "sonra": {
+        "type": "String"
+      }
+    }
+  },
   "txHasNote": "Has a note",
   "txOpenNote": "{name} transaction, add a note",
   "@txOpenNote": {
