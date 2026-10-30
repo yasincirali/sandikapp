@@ -5790,5 +5790,9 @@
   "alarmTekrarAnahtar": "Notify on every cross",
   "alarmTekrarAciklama": "If the price comes back and crosses again, we'll notify you again. At most 3 times a day.",
   "alarmSonCaldi": "Last fired: {zaman}",
-  "alarmTileTekrar": "Every-cross alert: it stays on and notifies you again if the price comes back and crosses again."
+  "alarmTileTekrar": "Every-cross alert: it stays on and notifies you again if the price comes back and crosses again.",
+  "todayShareTooltip": "Share today",
+  "todayShareLabel": "My portfolio today",
+  "todayShareText": "My portfolio today {pct} · {tarih}",
+  "notInvestmentAdvice": "Not investment advice."
 }

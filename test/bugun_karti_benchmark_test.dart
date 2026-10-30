@@ -197,6 +197,25 @@ void main() {
       });
     }
 
+    testWidgets('paylaş düğmesi: 44 pt, etiketli; yalnız yüzdeyi açar',
+        (tester) async {
+      await kur(tester, genislik: 320);
+      final dugme = find.byTooltip('Bugünü paylaş');
+      expect(dugme, findsOneWidget);
+      final boyut = tester.getSize(dugme);
+      expect(boyut.width, greaterThanOrEqualTo(44));
+      expect(boyut.height, greaterThanOrEqualTo(44));
+      await tester.tap(dugme);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+      // Kartın yüzdesi Bugün kartının yüzdesiyle aynı alan (changePct).
+      expect(find.text('PORTFÖYÜM BUGÜN'), findsOneWidget);
+      expect(find.textContaining('+%'), findsWidgets);
+      // Görselde tutar yok — rozetteki "+₺240" yalnız arkadaki kartta.
+      expect(find.textContaining('+₺240'), findsOneWidget);
+    });
+
     testWidgets('düşüşte hüküm "Geriledi", rozet eksi tutar', (tester) async {
       await kur(tester, genislik: 390, dusus: true);
       expect(tester.takeException(), isNull);

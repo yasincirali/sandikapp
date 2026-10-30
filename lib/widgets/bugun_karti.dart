@@ -44,8 +44,10 @@ import '../utils/pozisyon_etiketi.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import 'aralik_cipi.dart' show AralikMetni;
+import 'bugun_paylasimi.dart';
 import 'hedef_sheet.dart';
 import 'sandik_skeleton.dart';
+import 'share_card.dart' show showShareSheet;
 import 'sigan_metin.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 
@@ -704,7 +706,13 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
               : null,
         ),
         const SizedBox(height: SandikSpace.md2),
-        _HukumSatiri(birincil: birincil, gizli: gizli),
+        _HukumSatiri(
+          birincil: birincil,
+          gizli: gizli,
+          onPaylas: birincil is GunlukDegisimSatiri
+              ? () => _bugunuPaylas(birincil, now)
+              : null,
+        ),
         if (seriCiz ||
             (!gizli && _seri == null && (_yukleniyor || _turBekleniyor))) ...[
           // Seri açılış fiyat turunu bekliyorsa (`_turBitinceYukle`) eğrinin
@@ -754,6 +762,35 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         const SizedBox(height: SandikSpace.md2),
         _hedefKutusu(veri.hedef, gizli),
       ],
+    );
+  }
+
+  /// Günün yüzdesini görsel olarak paylaşır (müşteri raporu 30 Eki 17:15
+  /// §1). Görsel ve metin tutar taşımaz; dağılım yalnız tür adıyla
+  /// (`bugun_paylasimi.dart`). Bakiye gizliyken de açılır: gizlenen şey
+  /// tutardır, görselde tutar yok.
+  ///
+  /// Dağılım BUGÜNKÜ mülkiyetten (`activeAssets`): satılmış varlığın türü
+  /// "bugün"ün görseline girmez.
+  Future<void> _bugunuPaylas(GunlukDegisimSatiri s, DateTime now) {
+    final l = context.l10n;
+    final pct = s.flat ? 0.0 : s.changePct;
+    return showShareSheet(
+      context,
+      data: bugunPaylasimKarti(
+        l,
+        degisimPct: pct,
+        dagilim: DailySummary.kapsamDagilimi(
+            widget.state, widget.state.activeAssets),
+      ),
+      metin: bugunPaylasimMetni(
+        l,
+        degisimPct: pct,
+        tarih: DateFormat('d MMMM yyyy', _dil).format(now),
+      ),
+      subject: 'sandık · ${l.todayTitle}',
+      analyticsPeriod: 'bugun',
+      sayfaBasligi: l.todayShareTooltip,
     );
   }
 
@@ -1060,10 +1097,15 @@ class _CanliNoktaState extends State<_CanliNokta>
 /// yüzde ekran okuyucuya gider. Seans kapalıyken "Piyasa kapalı", seri
 /// henüz yokken "Gün içi veri geliyor" — uydurma sayı yok.
 class _HukumSatiri extends StatelessWidget {
-  const _HukumSatiri({required this.birincil, required this.gizli});
+  const _HukumSatiri(
+      {required this.birincil, required this.gizli, this.onPaylas});
 
   final BugunSatiri? birincil;
   final bool gizli;
+
+  /// Sağ uçtaki paylaşım düğmesi; yalnız günün yüzdesi biliniyorken.
+  /// Sessiz: ikon gri, rozet/çağrı yok (rapor: "düğme yalnız durur").
+  final VoidCallback? onPaylas;
 
   @override
   Widget build(BuildContext context) {
@@ -1103,7 +1145,7 @@ class _HukumSatiri extends StatelessWidget {
       height: 1.1,
     );
 
-    return Semantics(
+    final satir = Semantics(
       label: [hukum, if (tutar != null) tutar, if (yuzde != null) yuzde]
           .join(', '),
       excludeSemantics: true,
@@ -1149,6 +1191,25 @@ class _HukumSatiri extends StatelessWidget {
           ],
         ],
       ),
+    );
+    final paylas = onPaylas;
+    if (paylas == null) return satir;
+    return Row(
+      children: [
+        Expanded(child: satir),
+        // 44 pt dokunma alanı, ikon küçük ve gri: hüküm satırının ağırlığı
+        // değişmez. `Tooltip` aynı zamanda erişilebilirlik etiketi.
+        IconButton(
+          onPressed: paylas,
+          tooltip: l10n.todayShareTooltip,
+          icon: const Icon(Icons.ios_share_rounded),
+          iconSize: 20,
+          color: c.text58,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints.tightFor(
+              width: SandikTouch.min, height: SandikTouch.min),
+        ),
+      ],
     );
   }
 }
