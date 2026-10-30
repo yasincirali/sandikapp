@@ -3195,6 +3195,16 @@
       }
     }
   },
+  "chartPrevCloseLabel": "PREV CLOSE · {value}",
+  "@chartPrevCloseLabel": {
+    "description": "Gün içi grafikte gün başı çizgisinin etiketi, seanslı varlıkta (hisse): çizgi önceki kapanıştır.",
+    "placeholders": {"value": {"type": "String"}}
+  },
+  "chartDayStartLabel": "DAY START · {value}",
+  "@chartDayStartLabel": {
+    "description": "Gün içi grafikte gün başı (00:00) çizgisinin etiketi.",
+    "placeholders": {"value": {"type": "String"}}
+  },
   "chartStartLabel": "START · {date} · {value}",
   "@chartStartLabel": {
     "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",

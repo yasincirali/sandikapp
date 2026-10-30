@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/price_service.dart';
 
-/// `yahooSeriCoz`: gün içi seanslı enstrümanda önceki kapanış ilk barın bir
+/// Yahoo grafik yanıtı ayrıştırıcıları. `yahooSeriCoz`: gün içi seanslı
+/// enstrümanda önceki kapanış ilk barın bir
 /// slot öncesine eklenir (gerekçe fonksiyonun başında).
 void main() {
   Map<String, dynamic> yanit(String? tur, {double? onceki}) => {
@@ -54,5 +55,45 @@ void main() {
 
   test('boş yanıt boş', () {
     expect(yahooSeriCoz(const {}, gunIci: true), isEmpty);
+  });
+
+  group('yahooGrafikKotasyonu (toplu uç düşünce yedek yol)', () {
+    Map<String, dynamic> kotasyon(Map<String, dynamic> meta) => {
+          'chart': {
+            'result': [
+              {'meta': meta}
+            ]
+          }
+        };
+
+    test('yüzde aynı yanıtın önceki kapanışından', () {
+      final q = yahooGrafikKotasyonu('THYAO.IS', kotasyon({
+        'regularMarketPrice': 300.0,
+        'chartPreviousClose': 294.12,
+        'currency': 'TRY',
+      }))!;
+      expect(q.regularMarketPrice, 300.0);
+      expect(q.regularMarketChangePercent, closeTo(1.9992, 1e-4));
+      expect(q.currency, 'TRY');
+    });
+
+    test('önceki kapanış yoksa yüzde yok (uydurma yok)', () {
+      final q = yahooGrafikKotasyonu(
+          'THYAO.IS', kotasyon({'regularMarketPrice': 300.0}))!;
+      expect(q.regularMarketChangePercent, isNull);
+      expect(
+          yahooGrafikKotasyonu('THYAO.IS', kotasyon({
+            'regularMarketPrice': 300.0,
+            'chartPreviousClose': 0,
+          }))!
+              .regularMarketChangePercent,
+          isNull);
+    });
+
+    test('fiyat yoksa kotasyon yok', () {
+      expect(yahooGrafikKotasyonu('X', kotasyon({'chartPreviousClose': 1})),
+          isNull);
+      expect(yahooGrafikKotasyonu('X', const {}), isNull);
+    });
   });
 }

@@ -7569,6 +7569,18 @@ abstract class AppLocalizations {
   /// **'{period} kâr/zarar'**
   String posPeriodPnl(String period);
 
+  /// Gün içi grafikte gün başı çizgisinin etiketi, seanslı varlıkta (hisse): çizgi önceki kapanıştır.
+  ///
+  /// In tr, this message translates to:
+  /// **'ÖNCEKİ KAPANIŞ · {value}'**
+  String chartPrevCloseLabel(String value);
+
+  /// Gün içi grafikte gün başı (00:00) çizgisinin etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'GÜN BAŞI · {value}'**
+  String chartDayStartLabel(String value);
+
   /// Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.
   ///
   /// In tr, this message translates to:

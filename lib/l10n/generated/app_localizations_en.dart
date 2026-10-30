@@ -4554,6 +4554,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chartPrevCloseLabel(String value) {
+    return 'PREV CLOSE · $value';
+  }
+
+  @override
+  String chartDayStartLabel(String value) {
+    return 'DAY START · $value';
+  }
+
+  @override
   String chartStartLabel(String date, String value) {
     return 'START · $date · $value';
   }
