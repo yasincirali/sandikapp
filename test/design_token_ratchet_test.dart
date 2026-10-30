@@ -15,6 +15,12 @@ void main() {
       .whereType<File>()
       .where((f) => f.path.endsWith('.dart'))
       .where((f) => !f.path.replaceAll(r'\', '/').contains('lib/theme/'))
+      // PDF yazıcıları KÂĞIT çizer (`pw.TextStyle`, `PdfColors`): ekran
+      // teması orada geçersiz, kâğıt paleti ve ölçeği `pdf_marka.dart`'ta.
+      // 2026-10-30 PDF tasarım turunda dışarı alındı; eşikler PDF'siz
+      // gerçek sayıya indi (ekran sızıntısına pay kalmadı).
+      .where((f) =>
+          !f.path.replaceAll(r'\', '/').contains('lib/services/disa_aktarim/'))
       .toList();
 
   List<String> linesMatching(RegExp pattern) {
@@ -33,7 +39,8 @@ void main() {
     // 2026-09-13: 89 (asset_detail_screen 16, portfolio_performance 15, main 11).
     // 2026-10-20 incelemesi: gerçek sayı 61'e inmişti, eşik güncellenmemişti
     // (28 satırlık sessiz geri kayma payı). Eşik gerçeğe çekildi.
-    expect(hits.length, lessThanOrEqualTo(61),
+    // 2026-10-30: PDF yazıcıları sayımdan çıktı → 60.
+    expect(hits.length, lessThanOrEqualTo(60),
         reason: 'context.c.* kullan:\n${hits.join('\n')}');
   });
 
@@ -42,7 +49,8 @@ void main() {
     // 2026-09-13: 181. Hedef: 7 kademeli ölçek → context.t.* (Faz 2).
     // 2026-10-20: gerçek 152 (~29'u PDF yazıcıları); eşik gerçeğe çekildi,
     // aynı gün karşılaştırma ekranının 17 ham boyutu token'a geçti → 135.
-    expect(hits.length, lessThanOrEqualTo(135),
+    // 2026-10-30: PDF yazıcıları (kâğıt ölçeği) sayımdan çıktı → 106.
+    expect(hits.length, lessThanOrEqualTo(106),
         reason: 'context.t.* kullan (ya da SandikTypography ölçeğine ekle):\n'
             '${hits.join('\n')}');
   });
