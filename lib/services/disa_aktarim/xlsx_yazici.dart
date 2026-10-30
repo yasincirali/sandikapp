@@ -64,6 +64,11 @@ String _ozetSayfasi(RaporBelgesi b) {
     [(b.altBaslik, null)],
     [],
     for (final (etiket, deger) in b.ozet) [(etiket, _sKalin), (deger, null)],
+    if (b.oneCikanlar.isNotEmpty) ...[
+      [],
+      [('Öne çıkanlar', _sKalin)],
+      for (final c in b.oneCikanlar) [(c, null)],
+    ],
     [],
     for (final d in b.dipnotlar) [(d, null)],
   ];

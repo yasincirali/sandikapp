@@ -50,7 +50,8 @@ class DisaAktarimService {
       case DisaAktarimBicimi.pdf:
         _duz ??= await rootBundle.load('assets/fonts/DMSans-Regular.ttf');
         _kalin ??= await rootBundle.load('assets/fonts/DMSans-Bold.ttf');
-        baytlar = await pdfYaz(belge, duz: _duz!, kalin: _kalin!);
+        baytlar = await pdfYaz(belge,
+            duz: _duz!, kalin: _kalin!, logo: await _logoYukle());
         uzanti = 'pdf';
         mime = 'application/pdf';
     }
@@ -76,17 +77,20 @@ class DisaAktarimService {
 
   Uint8List? _logo;
 
+  /// Uygulama ikonu — iki PDF'in üst bandındaki logo (2026-10-30).
+  Future<Uint8List> _logoYukle() async =>
+      _logo ??= (await rootBundle.load('assets/images/sandik_icon.png'))
+          .buffer
+          .asUint8List();
+
   /// AI yorumunun A4 notunu (2026-10-14) PDF olarak paylaşır. Dosya
   /// [paylas] gibi geçici klasöre yazılır, paylaşım bitince silinir. Premium
   /// kilidi kartta: yorum yalnız Premium'a (ya da admin'e) yazılır.
   Future<void> yorumNotuPaylas(YorumNotu n, {Rect? kaynak}) async {
     _duz ??= await rootBundle.load('assets/fonts/DMSans-Regular.ttf');
     _kalin ??= await rootBundle.load('assets/fonts/DMSans-Bold.ttf');
-    _logo ??= (await rootBundle.load('assets/images/sandik_icon.png'))
-        .buffer
-        .asUint8List();
-    final baytlar =
-        await yorumNotuPdf(n, duz: _duz!, kalin: _kalin!, logo: _logo!);
+    final baytlar = await yorumNotuPdf(n,
+        duz: _duz!, kalin: _kalin!, logo: await _logoYukle());
     final dir = await getTemporaryDirectory();
     final dosya = File('${dir.path}/${n.dosyaAdi}.pdf');
     await dosya.writeAsBytes(baytlar, flush: true);

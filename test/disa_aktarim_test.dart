@@ -129,8 +129,80 @@ void main() {
         ByteData.sublistView(File(yol).readAsBytesSync());
     final baytlar = await pdfYaz(_belge(),
         duz: oku('assets/fonts/DMSans-Regular.ttf'),
-        kalin: oku('assets/fonts/DMSans-Bold.ttf'));
+        kalin: oku('assets/fonts/DMSans-Bold.ttf'),
+        logo: File('assets/images/sandik_icon.png').readAsBytesSync());
     expect(ascii.decode(baytlar.sublist(0, 5)), '%PDF-');
     expect(baytlar.length, greaterThan(1000));
+  });
+
+  // Tasarım turu (yasin 2026-10-30: "yorumları da eklenmeli, data göze
+  // güzel gelecek şekilde"): öne çıkanlar ve grafikler belgeyle aynı
+  // sayılardan; iç anahtar (ALTIN_GRAM) cümlede ad olarak okunur.
+  group('öne çıkanlar ve grafikler', () {
+    Asset lot(String id, String ad, String ticker, AssetType tur,
+            double alis, double guncel) =>
+        Asset(
+          id: id, userId: 'u1', name: ad, ticker: ticker, type: tur,
+          quantity: 10, purchasePrice: alis, currentPrice: guncel,
+          currency: 'TRY', notes: '', isManualPrice: false,
+          addedDate: DateTime(2025, 1, 2),
+        );
+
+    test('portföy: en büyük pay, en çok kazandıran, toplam kâr/zarar', () {
+      final b = portfoyBelgesi(
+        lotlar: [
+          lot('a', 'Gram Altın', 'ALTIN_GRAM', AssetType.altin, 100, 300),
+          lot('t', 'Türk Hava Yolları', 'THYAO.IS', AssetType.hisse, 100, 90),
+        ],
+        tlYap: (t, _) => t,
+        kim: 'demo',
+        olusturma: DateTime(2026, 10, 30),
+      );
+      expect(b.belgeTuru, 'Portföy dökümü');
+      expect(b.oneCikanlar.join(' | '), allOf(
+        contains('En büyük pay Altın: %76,9'),
+        contains('En çok kazandıran Gram Altın (+%200,0), en zayıf THYAO '
+            '(\u2212%10,0)'),
+        contains('+₺1.900'),
+      ));
+      expect(b.oneCikanlar.join(), isNot(contains('ALTIN_GRAM')));
+      final dagilim = b.grafikler
+          .firstWhere((g) => g.tur == RaporGrafikTuru.dagilim);
+      expect(dagilim.kalemler.fold(0.0, (t, k) => t + k.$2), 3900);
+      final kar = b.grafikler.firstWhere((g) => g.tur == RaporGrafikTuru.cubuk);
+      expect(kar.kalemler, [('Gram Altın', 2000.0), ('THYAO', -100.0)]);
+    });
+
+    test('yıllık: satış ve temettü cümleleri, Excel Özet sayfasında', () {
+      final b = _belge();
+      expect(b.oneCikanlar.first,
+          '2025 yılında 1 satışın gerçekleşen kâr/zararı +₺300.');
+      expect(b.oneCikanlar, contains('Temettüden net ₺85 geldi.'));
+      expect(_ac(xlsxYaz(b))['xl/worksheets/sheet1.xml'],
+          contains('Öne çıkanlar'));
+    });
+
+    test('teknik sembol PDF\'te adın altına yazılmaz', () {
+      expect(teknikSembolMu('ALTIN_GRAM'), isTrue);
+      expect(teknikSembolMu('USDTRY=X'), isTrue);
+      expect(teknikSembolMu('THYAO'), isFalse);
+    });
+  });
+
+  test('iki Premium PDF aynı kimlikte: üst bant, sayfa başı, dipnot', () {
+    for (final yol in [
+      'lib/services/disa_aktarim/pdf_yazici.dart',
+      'lib/services/disa_aktarim/yorum_notu_pdf.dart',
+    ]) {
+      final k = File(yol).readAsStringSync();
+      for (final parca in [
+        'ustBantIcerigi(',
+        'ilkSayfaArkaPlani',
+        'sayfaBasi(',
+        'sayfaSonu(',
+      ]) {
+        expect(k, contains(parca), reason: '$yol $parca kullanmalı');
+      }
+    }
   });
 }
