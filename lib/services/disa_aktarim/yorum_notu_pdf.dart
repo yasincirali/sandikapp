@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../portfoy_yorumu_service.dart' show YorumKapsami, YorumOlcumu;
 import '../yorum_notu.dart';
+import 'pdf_marka.dart';
 
 /// AI yorumunun A4 "değerlendirme notu" PDF'i (2A, 2026-10-14).
 ///
@@ -15,6 +16,11 @@ import '../yorum_notu.dart';
 /// sağda kıyas çubukları + puan farkları + tanımlar, altta kaynak ve "yatırım
 /// tavsiyesi değildir". Logo uygulama ikonu (`assets/images/sandik_icon.png`;
 /// yasin: "pdf'te logomuz olmalı").
+///
+/// 2026-10-30: künye yerine tablolu raporla ORTAK üst bant (logo, PREMIUM
+/// rozeti, belge adı; `pdf_marka.dart`), ortak sayfa başı ve dipnot — iki
+/// Premium PDF aynı kimliği taşır (yasin: "Premium'a özel olanlara ekstra
+/// dikkat").
 ///
 /// Renkler kâğıt için sabit (dışa aktarım PDF'iyle aynı aile: marka yeşili,
 /// kehribar); ekran karanlık olsa da kâğıt beyazdır. Tutar YOK: yorum
@@ -40,24 +46,37 @@ Future<Uint8List> yorumNotuPdf(
 
   doc.addPage(
     pw.MultiPage(
-      theme: tema,
-      pageFormat: PdfPageFormat.a4,
-      margin: const pw.EdgeInsets.fromLTRB(40, 38, 40, 30),
-      footer: (ctx) => _dipnot(ctx),
+      // Üst bant, sayfa başı ve dipnot tablolu raporla ortak (`PdfMarka`,
+      // 2026-10-30): iki Premium PDF'in kimliği aynı. Eski künye (logo +
+      // ince çizgi) bandın içine taşındı.
+      pageTheme: pw.PageTheme(
+        theme: tema,
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(PdfMarka.yanBosluk,
+            PdfMarka.ustBosluk, PdfMarka.yanBosluk, 30),
+        buildBackground: ilkSayfaArkaPlani,
+      ),
+      header: (ctx) => sayfaBasi(ctx, logo: logoImg, belgeAdi: belgeAdi),
+      footer: (ctx) => sayfaSonu(
+          ctx,
+          'Bu not, sandık uygulamasındaki portföy kayıtlarından hesaplanan '
+          'oranlarla yapay zekâ tarafından yazılmıştır; tutar içermez. Kıyas '
+          'verileri kamuya açık piyasa verisi sağlayıcılarından, TÜFE '
+          'TÜİK\'ten alınır. Yatırım tavsiyesi değildir.'),
       build: (ctx) => [
-        _kunye(logoImg, belgeAdi),
+        ustBantIcerigi(
+            logo: logoImg,
+            belgeTuru: 'Yapay zekâ notu',
+            baslik: belgeAdi,
+            alt: '${n.donemAdi} · kişisel kullanım içindir'),
+        pw.SizedBox(height: 14 + 2.2 + 6),
         _meta([
           ('Dönem', '${tarih.format(y.baslangic)} - ${tarih.format(y.bitis)}'),
           ('Kapsam', n.kapsam == YorumKapsami.varlik ? (n.varlikAdi ?? 'Varlık') : 'Tüm portföy'),
           ('Hazırlanma', tarih.format(hazirlanma ?? y.olusturuldu)),
           ('Para birimi', 'Türk lirası'),
         ]),
-        pw.SizedBox(height: 16),
-        pw.Text(trBuyuk(n.donemAdi),
-            style: pw.TextStyle(
-                fontSize: 7.5, color: _kehribarKoyu, fontWeight: pw.FontWeight.bold,
-                letterSpacing: 0.8)),
-        pw.SizedBox(height: 3),
+        pw.SizedBox(height: 14),
         pw.Text(y.baslik,
             style: pw.TextStyle(
                 fontSize: 17, fontWeight: pw.FontWeight.bold, color: _yesil, lineSpacing: 2)),
@@ -95,35 +114,6 @@ PdfColor _isaretRengi(String gosterim) {
   if (s.startsWith('−') || s.startsWith('-')) return _kayip;
   return _murekkep;
 }
-
-pw.Widget _kunye(pw.ImageProvider logo, String belgeAdi) => pw.Container(
-      padding: const pw.EdgeInsets.only(bottom: 9),
-      decoration: const pw.BoxDecoration(
-          border: pw.Border(bottom: pw.BorderSide(color: _yesil, width: 1.6))),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.end,
-        children: [
-          pw.Image(logo, width: 24, height: 24),
-          pw.SizedBox(width: 7),
-          pw.Text('sandık',
-              style: pw.TextStyle(
-                  fontSize: 16, fontWeight: pw.FontWeight.bold, color: _yesil)),
-          pw.Spacer(),
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
-            children: [
-              pw.Text(trBuyuk(belgeAdi),
-                  style: pw.TextStyle(
-                      fontSize: 8, fontWeight: pw.FontWeight.bold,
-                      color: _murekkep, letterSpacing: 0.8)),
-              pw.SizedBox(height: 1),
-              pw.Text('Kişisel kullanım içindir',
-                  style: const pw.TextStyle(fontSize: 7.5, color: _gri)),
-            ],
-          ),
-        ],
-      ),
-    );
 
 pw.Widget _meta(List<(String, String)> alanlar) => pw.Container(
       padding: const pw.EdgeInsets.symmetric(vertical: 7),
@@ -359,26 +349,3 @@ pw.Widget _kiyasGrafigi(List<KiyasCubugu> k) {
   );
 }
 
-pw.Widget _dipnot(pw.Context ctx) => pw.Container(
-      margin: const pw.EdgeInsets.only(top: 10),
-      padding: const pw.EdgeInsets.only(top: 6),
-      decoration: const pw.BoxDecoration(
-          border: pw.Border(top: pw.BorderSide(color: _cizgi, width: 0.8))),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.end,
-        children: [
-          pw.Expanded(
-            child: pw.Text(
-              'Bu not, sandık uygulamasındaki portföy kayıtlarından hesaplanan '
-              'oranlarla yapay zekâ tarafından yazılmıştır; tutar içermez. Kıyas '
-              'verileri kamuya açık piyasa verisi sağlayıcılarından, TÜFE '
-              'TÜİK\'ten alınır. Yatırım tavsiyesi değildir.',
-              style: const pw.TextStyle(fontSize: 6.6, color: _gri, lineSpacing: 1.4),
-            ),
-          ),
-          pw.SizedBox(width: 14),
-          pw.Text('${ctx.pageNumber} / ${ctx.pagesCount}',
-              style: const pw.TextStyle(fontSize: 6.6, color: _gri)),
-        ],
-      ),
-    );

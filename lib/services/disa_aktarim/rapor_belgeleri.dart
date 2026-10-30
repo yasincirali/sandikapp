@@ -21,7 +21,29 @@ RaporBelgesi yillikRaporBelgesi(
   required double? bistStopajOrani,
 }) {
   final stopaj = r.stopajTry;
+  final karVarlik =
+      _topla([for (final s in r.satislar) (_kisaAd(s.ticker, s.ad), s.karTry)]);
+  final temettuVarlik =
+      _topla([for (final t in r.temettuler) (_kisaAd(t.ticker, t.ad), t.netTry)]);
   return RaporBelgesi(
+    belgeTuru: 'Yıllık rapor',
+    oneCikanlar: _yillikOneCikanlar(r, karVarlik, temettuVarlik),
+    grafikler: [
+      if (karVarlik.isNotEmpty)
+        RaporGrafigi(
+          baslik: 'Varlık bazında gerçekleşen kâr/zarar',
+          tur: RaporGrafikTuru.cubuk,
+          kalemler: karVarlik,
+          not: 'satışlar, TL',
+        ),
+      if (temettuVarlik.isNotEmpty)
+        RaporGrafigi(
+          baslik: 'Varlık bazında net temettü',
+          tur: RaporGrafikTuru.cubuk,
+          kalemler: temettuVarlik,
+          not: 'ele geçen, TL',
+        ),
+    ],
     baslik: 'sandık · ${r.yil} yıllık kâr, temettü ve masraf raporu',
     altBaslik: '$kim · oluşturma ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)}',
     dosyaAdi: 'sandik-${r.yil}-yillik-rapor',
@@ -165,7 +187,35 @@ RaporBelgesi portfoyBelgesi({
         AssetKind.deleteLog => 'Silme',
       };
 
+  final turDegeri = _topla([
+    for (final p in pozisyonlar) (p.representative.type.label, deger(p)),
+  ]);
   return RaporBelgesi(
+    belgeTuru: 'Portföy dökümü',
+    oneCikanlar: _portfoyOneCikanlar(
+        pozisyonlar, deger, turDegeri, toplamDeger, toplamMaliyet),
+    grafikler: [
+      if (turDegeri.length > 1)
+        RaporGrafigi(
+          baslik: 'Varlık türlerine göre dağılım',
+          tur: RaporGrafikTuru.dagilim,
+          kalemler: turDegeri,
+          not: 'güncel değer',
+        ),
+      if (pozisyonlar.isNotEmpty)
+        RaporGrafigi(
+          baslik: 'Varlık bazında kâr/zarar',
+          tur: RaporGrafikTuru.cubuk,
+          kalemler: [
+            for (final p in pozisyonlar)
+              (
+                _kisaAd(p.representative.ticker, p.representative.name),
+                deger(p) - p.totalCostTRY
+              ),
+          ]..sort((a, b) => b.$2.compareTo(a.$2)),
+          not: 'açık pozisyonlar, TL',
+        ),
+    ],
     baslik: 'sandık · portföy dökümü',
     altBaslik: '$kim · ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)} itibarıyla',
     dosyaAdi: 'sandik-portfoy-${DateFormat('yyyy-MM-dd').format(olusturma)}',
@@ -261,10 +311,109 @@ RaporBelgesi portfoyBelgesi({
   );
 }
 
+/// Grafik ve cümlede kısa ad: borsa sembolü okunur (THYAO, AK3), teknik
+/// anahtar okunmaz (`ALTIN_GRAM`, `USDTRY=X`) — onlarda varlığın adı.
+String _kisaAd(String ticker, String ad) {
+  final s = sadeSembol(ticker);
+  return teknikSembolMu(s) ? ad : s;
+}
+
+/// Kullanıcıya gösterilmeyen iç anahtar mı (`ALTIN_GRAM`, `USDTRY=X`)?
+/// PDF tablosu bunları adın altına yazmaz.
+bool teknikSembolMu(String s) => s.contains('_') || s.contains('=');
+
 /// Ekranda gösterilen sembol: `TEFAS:AFT` → AFT, `THYAO.IS` → THYAO.
 String sadeSembol(String ticker) {
   var t = ticker.trim();
   if (t.contains(':')) t = t.substring(t.lastIndexOf(':') + 1);
   if (t.endsWith('.IS')) t = t.substring(0, t.length - 3);
   return t;
+}
+
+/// Aynı etiketi toplar; büyükten küçüğe (mutlak değere göre değil, işaretli)
+/// sıralı. Sıra sabit: eşitlikte ilk görülen önde.
+List<(String, double)> _topla(List<(String, double)> kalemler) {
+  final m = <String, double>{};
+  for (final (k, v) in kalemler) {
+    m[k] = (m[k] ?? 0) + v;
+  }
+  return [for (final e in m.entries) (e.key, e.value)]
+    ..sort((a, b) => b.$2.compareTo(a.$2));
+}
+
+/// "+₺1.234" / "−₺368" — uygulamanın tutar dili (U+2212).
+String _isaretliTl(double v) {
+  final m = fmtTRY(v.abs());
+  if (v.round() == 0) return m;
+  return '${v > 0 ? '+' : '\u2212'}$m';
+}
+
+/// Yıllık raporun öne çıkanları: ölçüm, tavsiye değil. Boş yıl → boş.
+List<String> _yillikOneCikanlar(YillikRapor r, List<(String, double)> karVarlik,
+    List<(String, double)> temettuVarlik) {
+  final out = <String>[];
+  if (r.satislar.isNotEmpty) {
+    out.add('${r.yil} yılında ${r.satislar.length} satışın gerçekleşen '
+        'kâr/zararı ${_isaretliTl(r.gerceklesenKarTry)}.');
+    final (enAd, enKar) = karVarlik.first;
+    if (karVarlik.length > 1 && enKar > 0) {
+      out.add('En büyük katkı $enAd: ${_isaretliTl(enKar)}.');
+    }
+    final (sonAd, sonKar) = karVarlik.last;
+    if (sonKar < 0) {
+      out.add('Zararla kapanan: $sonAd, ${_isaretliTl(sonKar)}.');
+    }
+  }
+  if (temettuVarlik.isNotEmpty) {
+    final (ad, net) = temettuVarlik.first;
+    out.add('Temettüden net ${fmtTRY(r.temettuNetTry)} geldi'
+        '${temettuVarlik.length > 1 ? '; en çok $ad (${fmtTRY(net)})' : ''}.');
+  }
+  if (r.masrafTry > 0) {
+    final kazanc = r.gerceklesenKarTry + r.temettuNetTry;
+    out.add('İşlem masrafı ${fmtTRY(r.masrafTry)}'
+        '${kazanc > 0 ? '; kâr ve temettü toplamına oranı ${fmtPct(r.masrafTry / kazanc * 100, digits: 1)}' : ''}.');
+  }
+  return out;
+}
+
+/// Portföy dökümünün öne çıkanları (açık pozisyonlar, oluşturma anı).
+List<String> _portfoyOneCikanlar(
+  List<Position> pozisyonlar,
+  double Function(Position) deger,
+  List<(String, double)> turDegeri,
+  double toplamDeger,
+  double toplamMaliyet,
+) {
+  if (pozisyonlar.isEmpty || toplamDeger <= 0) return const [];
+  String pay(double v) => fmtPct(v / toplamDeger * 100, digits: 1);
+  final out = <String>[];
+  final (tur, turV) = turDegeri.first;
+  if (turDegeri.length > 1) {
+    // Yüzdeye ek ("'i/'ü") okunuşa göre değişir; ek gerektirmeyen kalıp.
+    out.add('En büyük pay $tur: ${pay(turV)}. Portföy '
+        '${turDegeri.length} varlık türüne yayılıyor.');
+  }
+  final enBuyuk = pozisyonlar.first;
+  out.add('En büyük tek varlık ${enBuyuk.representative.name}, payı '
+      '${pay(deger(enBuyuk))}.');
+  final getirili = [
+    for (final p in pozisyonlar)
+      if (p.totalCostTRY > 0) (p, (deger(p) / p.totalCostTRY - 1) * 100),
+  ]..sort((a, b) => b.$2.compareTo(a.$2));
+  if (getirili.length > 1) {
+    final (iyi, iyiPct) = getirili.first;
+    final (zayif, zayifPct) = getirili.last;
+    out.add('En çok kazandıran '
+        '${_kisaAd(iyi.representative.ticker, iyi.representative.name)} '
+        '(${fmtPctIsaretli(iyiPct, digits: 1)}), en zayıf '
+        '${_kisaAd(zayif.representative.ticker, zayif.representative.name)} '
+        '(${fmtPctIsaretli(zayifPct, digits: 1)}).');
+  }
+  if (toplamMaliyet > 0) {
+    out.add('Açık pozisyonların toplam kâr/zararı '
+        '${_isaretliTl(toplamDeger - toplamMaliyet)} '
+        '(${fmtPctIsaretli((toplamDeger / toplamMaliyet - 1) * 100, digits: 1)}).');
+  }
+  return out;
 }

@@ -18,6 +18,9 @@ class RaporBelgesi {
     required this.tablolar,
     required this.dipnotlar,
     required this.dosyaAdi,
+    this.belgeTuru = 'Rapor',
+    this.oneCikanlar = const [],
+    this.grafikler = const [],
   });
 
   /// Belge başlığı ("sandık · 2025 yıllık rapor").
@@ -36,6 +39,43 @@ class RaporBelgesi {
 
   /// Uzantısız dosya adı (ASCII, boşluksuz).
   final String dosyaAdi;
+
+  /// PDF bandındaki küçük tür etiketi ("Yıllık rapor", "Portföy dökümü").
+  final String belgeTuru;
+
+  /// "Öne çıkanlar" — kayıtlardan HESAPLANAN düz cümleler (yasin
+  /// 2026-10-30: "yorumları da eklenmeli"). Tavsiye değil, ölçüm: "en büyük
+  /// pay X", "en çok kazandıran Y". PDF'te özetin altında kutu; Excel'de
+  /// Özet sayfasının sonunda. Sayı belgedeki tablolarla aynı kaynaktan.
+  final List<String> oneCikanlar;
+
+  /// PDF'te tabloların üstünde çizilen grafikler. Excel'e yazılmaz: aynı
+  /// sayılar zaten tablolarda (grafik onların görsel özeti).
+  final List<RaporGrafigi> grafikler;
+}
+
+/// Grafik türü: [dagilim] tek yığılmış çubuk + lejant (pay %), [cubuk]
+/// yatay çubuklar (işaretli tutar; eksi sola, artı sağa değil — sıfırdan
+/// sağa uzunluk, renk + işaret).
+enum RaporGrafikTuru { dagilim, cubuk }
+
+@immutable
+class RaporGrafigi {
+  const RaporGrafigi({
+    required this.baslik,
+    required this.tur,
+    required this.kalemler,
+    this.not,
+  });
+
+  final String baslik;
+  final RaporGrafikTuru tur;
+
+  /// (etiket, TL değeri). Dağılımda pay buradan hesaplanır.
+  final List<(String, double)> kalemler;
+
+  /// Başlığın sağındaki küçük açıklama ("açık pozisyonlar, TL").
+  final String? not;
 }
 
 @immutable
