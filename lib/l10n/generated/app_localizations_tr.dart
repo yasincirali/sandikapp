@@ -10067,4 +10067,18 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get alarmTileTekrar =>
       'Her geçişte alarmı: açık kalır, fiyat geri dönüp yeniden geçerse yine haber verir.';
+
+  @override
+  String get todayShareTooltip => 'Bugünü paylaş';
+
+  @override
+  String get todayShareLabel => 'Portföyüm bugün';
+
+  @override
+  String todayShareText(String pct, String tarih) {
+    return 'Portföyüm bugün $pct · $tarih';
+  }
+
+  @override
+  String get notInvestmentAdvice => 'Yatırım tavsiyesi değildir.';
 }

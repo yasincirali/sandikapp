@@ -19,6 +19,7 @@ import '../services/mum_yukleyici.dart';
 import '../services/ozel_gosterge_calistirici.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_axis.dart' show gunIciSeansli;
 import '../utils/hareketli_ortalama.dart';
 import '../utils/mum_turetici.dart';
 import 'fiyat_grafigi.dart';
@@ -318,6 +319,7 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
             ucTitresimi: widget.ucTitresimi,
             semanticLabel: widget.semanticLabel,
             onViewportChanged: (mn, mx) => _gorunum.value = (min: mn, max: mx),
+            seansli: gunIciSeansli(widget.type),
             // Dönem ya da sıklık değişince yakınlaştırma sıfırlanır.
             sifirlamaAnahtari: '${widget.periodDays}|${aralik?.name}',
             katmanlar: FiyatKatmanlari(
@@ -363,6 +365,7 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
         imlecEtiketi: widget.imlecEtiketi,
         ucTitresimi: widget.ucTitresimi,
         semanticLabel: widget.semanticLabel,
+        seansli: gunIciSeansli(widget.type),
       );
 
   List<FlSpot> _ma20(List<FlSpot> spots) {

@@ -10190,4 +10190,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get alarmTileTekrar =>
       'Every-cross alert: it stays on and notifies you again if the price comes back and crosses again.';
+
+  @override
+  String get todayShareTooltip => 'Share today';
+
+  @override
+  String get todayShareLabel => 'My portfolio today';
+
+  @override
+  String todayShareText(String pct, String tarih) {
+    return 'My portfolio today $pct · $tarih';
+  }
+
+  @override
+  String get notInvestmentAdvice => 'Not investment advice.';
 }

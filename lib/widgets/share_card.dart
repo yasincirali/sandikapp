@@ -52,6 +52,8 @@ class ShareCardData {
     this.enSabirliGun,
     this.takipGunu,
     this.dagilim = const {},
+    this.dagilimOranGizli = false,
+    this.dipnotlar = const [],
   });
 
   /// "Son 1 yıl", "2026 Özetim".
@@ -93,6 +95,20 @@ class ShareCardData {
 
   /// Tür dağılımı — yalnızca oran olarak çizilir.
   final Map<AssetType, double> dagilim;
+
+  /// Dağılım yalnız TÜR ADIYLA mı çizilsin (Bugün kartı, 2026-10-30)?
+  ///
+  /// Dönem özeti kartı payı yazar ("Hisse %60"); Bugün kartından açılan
+  /// paylaşımda şerit ve yüzde payı yok, yalnız "Altın · Fon · Hisse"
+  /// (müşteri raporu 30 Eki 17:15 §1: "şerit oran sızdırmaz"). Günün
+  /// yüzdesi her gün paylaşılabilir; her gün değişen pay dizisi ise
+  /// portföyün bileşimini zamanla açık eder.
+  final bool dagilimOranGizli;
+
+  /// Kartın ortasının en altına küçük yazılan satırlar (Bugün kartında
+  /// kısa indirme bağlantısı ve "Yatırım tavsiyesi değildir"). Boşsa yer
+  /// ayrılmaz; dönem özeti kartının bütçesi değişmez.
+  final List<String> dipnotlar;
 
   bool get bos =>
       degisimPct == null &&
@@ -297,7 +313,20 @@ class ShareCard extends StatelessWidget {
                           ],
                           if (dagilim.isNotEmpty) ...[
                             const SizedBox(height: SandikSpace.sm2),
-                            _DagilimSeridi(oranlar: dagilim),
+                            _DagilimSeridi(
+                                oranlar: dagilim,
+                                oranGizli: d.dagilimOranGizli),
+                          ],
+                          if (d.dipnotlar.isNotEmpty) ...[
+                            const SizedBox(height: SandikSpace.sm2),
+                            for (final n in d.dipnotlar)
+                              Text(
+                                n,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.t.bodySmall
+                                    ?.copyWith(color: p.text58, height: 1.3),
+                              ),
                           ],
                           const SizedBox(height: SandikSpace.sm),
                         ],
@@ -659,8 +688,12 @@ class _KutuGorunumu extends StatelessWidget {
 /// aynı (amber = hisse, mavi = fon…). Koyu zemin için seçilmiş tonlar,
 /// kart da koyu; light varyanta gerek yok.
 class _DagilimSeridi extends StatelessWidget {
-  const _DagilimSeridi({required this.oranlar});
+  const _DagilimSeridi({required this.oranlar, this.oranGizli = false});
   final List<({AssetType tur, double pay})> oranlar;
+
+  /// Şerit çizilmez, açıklamada pay yazmaz; yalnız tür adları
+  /// ([ShareCardData.dagilimOranGizli]).
+  final bool oranGizli;
 
   @override
   Widget build(BuildContext context) {
@@ -672,6 +705,7 @@ class _DagilimSeridi extends StatelessWidget {
         // Ayrı bir "DAĞILIM" başlığı yok: açıklama satırı (Hisse %60 …)
         // zaten ne olduğunu söylüyor; başlık 4:5'te 19 px'e mal oluyordu.
         // Erişilebilirlik için etiket `Semantics`'te.
+        if (!oranGizli) ...[
         Semantics(
           label: l.shareCardAllocation,
           child: ClipRRect(
@@ -697,6 +731,7 @@ class _DagilimSeridi extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SandikSpace.xs),
+        ],
         Wrap(
           spacing: SandikSpace.sm2,
           runSpacing: SandikSpace.xxs,
@@ -715,7 +750,9 @@ class _DagilimSeridi extends StatelessWidget {
                   ),
                   const SizedBox(width: SandikSpace.xs),
                   Text(
-                    '${o.tur.labelOf(l)} %${fmtNum(o.pay * 100, digits: 0)}',
+                    oranGizli
+                        ? o.tur.labelOf(l)
+                        : '${o.tur.labelOf(l)} %${fmtNum(o.pay * 100, digits: 0)}',
                     style: context.t.bodySmall?.copyWith(
                       color: p.text90,
                       height: 1.2,
@@ -742,6 +779,7 @@ Future<void> showShareSheet(
   required String metin,
   required String subject,
   required String analyticsPeriod,
+  String? sayfaBasligi,
 }) async {
   final key = GlobalKey();
   // Sheet içinde bir paylaşım GERÇEKLEŞTİ mi — değerlendirme istemi bunu
@@ -761,6 +799,7 @@ Future<void> showShareSheet(
       metin: metin,
       subject: subject,
       analyticsPeriod: analyticsPeriod,
+      sayfaBasligi: sayfaBasligi,
       onPaylasildi: () => paylasildi = true,
     ),
   );
@@ -779,9 +818,14 @@ class _ShareSheet extends StatefulWidget {
     required this.subject,
     required this.onPaylasildi,
     required this.analyticsPeriod,
+    this.sayfaBasligi,
   });
 
   final GlobalKey boundaryKey;
+
+  /// Sayfanın başlığı; verilmezse "Özetini paylaş" (dönem özeti). Bugün
+  /// kartı "Bugünü paylaş" verir (2026-10-30) — özet açılmıyor.
+  final String? sayfaBasligi;
   final ShareCardData data;
   final String metin;
   final String subject;
@@ -879,7 +923,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             ),
             const SizedBox(height: SandikSpace.md),
             Text(
-              'Özetini paylaş',
+              widget.sayfaBasligi ?? 'Özetini paylaş',
               style: context.t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: c.text90,

@@ -16654,6 +16654,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Her geçişte alarmı: açık kalır, fiyat geri dönüp yeniden geçerse yine haber verir.'**
   String get alarmTileTekrar;
+
+  /// Bugün kartındaki paylaşım düğmesinin ipucu ve erişilebilirlik etiketi. Görselde tutar yok, yalnız yüzde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünü paylaş'**
+  String get todayShareTooltip;
+
+  /// Bugün paylaşım görselinde büyük yüzdenin üstündeki etiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyüm bugün'**
+  String get todayShareLabel;
+
+  /// Bugün paylaşım metninin ilk satırı. Tutar yok; tavsiye dili yok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyüm bugün {pct} · {tarih}'**
+  String todayShareText(String pct, String tarih);
+
+  /// Paylaşım görseli ve metnindeki kısa uyarı.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırım tavsiyesi değildir.'**
+  String get notInvestmentAdvice;
 }
 
 class _AppLocalizationsDelegate

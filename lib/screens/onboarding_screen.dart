@@ -482,8 +482,11 @@ List<_Adim> _adimlariKur() {
       // cümleydi, açıklama kartı uzun kartın yanına sığmıyordu. Spot artık
       // kartın üst kısmını alıyor (`turSpotu`); metin o kısmı anlatır,
       // alttakileri tek cümlede sayar.
+      // 2026-10-30: hüküm satırının sağına paylaş düğmesi geldi; görsel
+      // tutar yazmaz, metin bunu bir yarım cümleyle söyler.
       govde: 'Günün hükmü tek kelimeyle (Yükseldi, Geriledi, Yerinde saydı) '
           've yanında tutar: yalnız fiyat etkisi, yatırdığın para sayılmaz. '
+          'Sağdaki düğme günün yüzdesini tutarsız bir görsel olarak paylaşır. '
           'Eğri günün seyri; Hafta, Ay, Yıl çipleri Özet\'e götürür. '
           'Aşağıda en çok oynayanlar, 100 liranın bugünkü karşılığı ve '
           'hedefine kalan var.',
