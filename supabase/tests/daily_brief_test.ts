@@ -14,8 +14,13 @@
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
   briefAdayiSec,
+  briefKartAltYazisi,
+  briefSembolu,
+  briefTuru,
   briefVerisi,
   buildBriefMessage,
+  fonNavGuncelMi,
+  oncekiIsGunu,
   buildPartnerMessage,
   collapseTokens,
   ortakLotuGorur,
@@ -262,4 +267,94 @@ Deno.test('ortakLotuGorur: seçili modda yalnız Ana ve seçilenler', () => {
   assertEquals(ortakLotuGorur(p, 'p2'), false);
   const anasiz = { tumu: false, ana: false, portfoyIdler: [] };
   assertEquals(ortakLotuGorur(anasiz, null), false);
+});
+
+// ── v2: altın, döviz, fon (Ar-Ge 2026-10-30 #1) ────────────────────────────
+
+Deno.test('briefSembolu: altın ayarı sub_category\'den, öbürleri ticker\'dan', () => {
+  assertEquals(briefSembolu('XAU', 'ALTIN_GRAM'), 'ALTIN_GRAM');
+  assertEquals(briefSembolu(' USDTRY=X ', null), 'USDTRY=X');
+  assertEquals(briefSembolu('TEFAS:AFT', 'hisse_senedi'), 'TEFAS:AFT');
+});
+
+Deno.test('briefTuru: kapsam widget beyaz listesiyle aynı', () => {
+  assertEquals(briefTuru('hisse', 'ASELS.IS'), 'hisse');
+  assertEquals(briefTuru('altin', 'ALTIN_GRAM'), 'yurt_ici');
+  assertEquals(briefTuru('doviz', 'USDTRY=X'), 'yurt_ici');
+  assertEquals(briefTuru('fon', 'TEFAS:AFT'), 'fon');
+  // BES lotu da TEFAS: taşır ama fon değildir; kapsam dışı.
+  assertEquals(briefTuru('bes', 'TEFAS:AH5'), null);
+  // Listede olmayan döviz, kripto, emtia: aday olmaz (uydurma yok).
+  assertEquals(briefTuru('doviz', 'CHFTRY=X'), null);
+  assertEquals(briefTuru('kripto', 'KRIPTO:BTC'), null);
+  assertEquals(briefTuru('emtia', 'GUMUS_GRAM'), null);
+});
+
+Deno.test('yalnız hisse tutana metin birebir eskisi', () => {
+  const m = buildBriefMessage('ASELS', 3.0, 2);
+  assertEquals(m.title, '▲ ASELS son kapanışta %3,0 yükseldi');
+  assertEquals(
+    m.body,
+    'Portföyünde en çok hareket eden hisse. Portföyündeki 2 hisse daha hareketli. ' +
+      'Yatırım tavsiyesi değildir.',
+  );
+});
+
+Deno.test('altın/döviz "bugün", fon "son fiyatında" der', () => {
+  assertEquals(
+    buildBriefMessage('22 Ayar Gram Altın', 1.42, 0, 'yurt_ici', 'varlık').title,
+    '▲ 22 Ayar Gram Altın bugün %1,4 yükseldi',
+  );
+  assertEquals(
+    buildBriefMessage('AFT', -2.04, 0, 'fon', 'varlık').title,
+    '▼ AFT son fiyatında %2,0 düştü',
+  );
+});
+
+Deno.test('karışık portföyde gövde "varlık" der, altını hisse diye anlatmaz', () => {
+  const m = buildBriefMessage('Dolar', 1.6, 1, 'yurt_ici', 'varlık');
+  assertEquals(m.body.includes('hisse'), false, m.body);
+  assertEquals(m.body.includes('Portföyündeki 1 varlık daha hareketli.'), true, m.body);
+  assertEquals(m.body.endsWith('Yatırım tavsiyesi değildir.'), true, m.body);
+});
+
+Deno.test('kart alt yazısı başlıktaki zamanla aynı', () => {
+  assertEquals(briefKartAltYazisi('hisse'), 'Son kapanış · en hareketli');
+  assertEquals(briefKartAltYazisi('yurt_ici'), 'Bugün · en hareketli');
+  assertEquals(briefKartAltYazisi('fon'), 'Son fon fiyatı · en hareketli');
+});
+
+Deno.test('briefAdayiSec: türler karışınca yalnizHisse false', () => {
+  const s = briefAdayiSec([
+    { label: 'A', sembol: 'A.IS', changePct: 0.5 },
+    { label: 'Gram', sembol: 'ALTIN_GRAM', changePct: 1.8, tur: 'yurt_ici' },
+  ], 1.5)!;
+  assertEquals(s.en.sembol, 'ALTIN_GRAM');
+  assertEquals(s.yalnizHisse, false);
+  const h = briefAdayiSec([{ label: 'A', sembol: 'A.IS', changePct: 2 }], 1.5)!;
+  assertEquals(h.yalnizHisse, true);
+});
+
+Deno.test('oncekiIsGunu: hafta sonunu ve resmî tatili atlar', () => {
+  // Pazartesi 2026-11-02 09:45 TR → cuma 2026-10-30.
+  assertEquals(oncekiIsGunu(new Date('2026-11-02T06:45:00Z')), '2026-10-30');
+  // Cuma 2026-10-30 09:45 TR → 29 Ekim tatil, 28 Ekim (yarım gün işlem var).
+  assertEquals(oncekiIsGunu(new Date('2026-10-30T06:45:00Z')), '2026-10-28');
+  // Salı → pazartesi.
+  assertEquals(oncekiIsGunu(new Date('2026-11-03T06:45:00Z')), '2026-11-02');
+});
+
+Deno.test('fonNavGuncelMi: bugünün ya da önceki iş gününün NAV\'ı; eskisi yinelenmez', () => {
+  const sali = new Date('2026-11-03T06:45:00Z');
+  assertEquals(fonNavGuncelMi('2026-11-02', sali), true);
+  assertEquals(fonNavGuncelMi('2026-11-03', sali), true);
+  // Pazartesi NAV'ı gelmediyse cumanın değişimi salı sabahı yeniden anlatılmaz.
+  assertEquals(fonNavGuncelMi('2026-10-30', sali), false);
+  // Pazartesi sabahı cumanın NAV'ı güncel sayılır.
+  assertEquals(fonNavGuncelMi('2026-10-30', new Date('2026-11-02T06:45:00Z')), true);
+});
+
+Deno.test('altın brifingi push verisi varlığı bulacak sembolü taşır', () => {
+  assertEquals(briefVerisi('2026-10-30', 'mover', 'ALTIN_GRAM').ticker, 'ALTIN_GRAM');
+  assertEquals(briefVerisi('2026-10-30', 'mover', 'TEFAS:AFT').ticker, 'TEFAS:AFT');
 });

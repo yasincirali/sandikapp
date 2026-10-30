@@ -14,8 +14,11 @@ import { assert, assertEquals } from 'jsr:@std/assert@1';
 import {
   bugunkuSayi,
   GUNLUK_TAVAN,
+  KRIPTO_TEKRAR_TAMPONU,
   tampondanGecti,
   tekrarKarari,
+  tekrarTamponu,
+  TEKRAR_TAMPONU,
   trGunuTekrar,
 } from '../functions/_shared/fiyat_alarmi_tekrar.ts';
 import {
@@ -228,6 +231,38 @@ Deno.test('tekrarlı alarm metni "kapatıldı" demez, yine haber vereceğini sö
     'Şu an ₺42,10. Tek seferlik alarmdı, kapatıldı. Yatırım tavsiyesi değildir.',
   );
 });
+
+// ── Ar-Ge 30 Eki #0: kripto tamponu ve günün son çalışı ────────────────────
+Deno.test('kriptoda tampon %1, öbürlerinde %0,5', () => {
+  assertEquals(tekrarTamponu('KRIPTO:BTC'), KRIPTO_TEKRAR_TAMPONU);
+  assertEquals(tekrarTamponu('USDTRY=X'), TEKRAR_TAMPONU);
+  assertEquals(tekrarTamponu('ALTIN_GRAM'), TEKRAR_TAMPONU);
+  assertEquals(tekrarTamponu(undefined), TEKRAR_TAMPONU);
+  // 100.000'de kurulan BTC 'above' alarmı: 99.400 (%0,6) yetmez, 99.000 döner.
+  const a = yukari({ symbol: 'KRIPTO:BTC', target_price: 100000, triggered_at: 'x', gunluk_tetik_sayisi: 1, gunluk_tetik_gunu: '2026-10-29' });
+  assertEquals(tekrarKarari(a, 99400, OGLE).tur, 'bekle');
+  assertEquals(tekrarKarari(a, 99000, OGLE).tur, 'nobete_don');
+  // Aynı oran dolarda yeter (%0,5 tampon).
+  const d = yukari({ symbol: 'USDTRY=X', triggered_at: 'x' });
+  assertEquals(tekrarKarari(d, 41.75, OGLE).tur, 'nobete_don');
+});
+
+Deno.test('günün son çalışı yarına kadar susacağını söyler', () => {
+  const m = buildAlertMessage('Dolar', 42.1, 42, 'above', '₺', true, true);
+  assert(m.body.includes(`Bugün ${GUNLUK_TAVAN}. kez çaldı; yarın yeniden nöbette.`), m.body);
+  assert(!m.body.includes('yine haber vereceğiz'), m.body);
+  assert(m.body.includes('Yatırım tavsiyesi değildir.'));
+  // Tek atışta sonCalis yok sayılır.
+  assert(buildAlertMessage('Dolar', 42.1, 42, 'above', '₺', false, true).body.includes('kapatıldı'));
+});
+
+Deno.test('kaynak: son çalış bayrağı tavana göre veriliyor', () => {
+  assert(KAYNAK_ERKEN.includes('tekrarKarar.sayi >= GUNLUK_TAVAN'));
+});
+
+const KAYNAK_ERKEN = await Deno.readTextFile(
+  new URL('../functions/check-price-alerts/index.ts', import.meta.url),
+);
 
 // ── Kaynak kilitleri ───────────────────────────────────────────────────────
 const KAYNAK = await Deno.readTextFile(

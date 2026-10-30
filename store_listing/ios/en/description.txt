@@ -28,9 +28,12 @@ CHARTS
 • Compare your portfolio with BIST 100, the dollar and gold; see what each holding contributed
 
 NOTIFICATIONS & WIDGETS
-• Price alerts: get notified when a target price is hit
+• Price alerts: get notified when a target price is hit; optionally on every cross
+• Daily percent alerts for gold, currencies and crypto: "tell me if it moves 2% today"
+• Your alerts show as lines on the asset chart
 • Morning briefing and weekly summary; quiet hours are yours to set
 • Single-asset widget for gold, the dollar or any fund, on the Home Screen and Lock Screen
+• Showcase widget: three assets stacked, with price and daily change
 • Home screen widget and Lock Screen Live Activity
 
 Sign in with Apple, Face ID lock, hide your balance with one tap. Delete your account and all data at any time. KVKK and GDPR compliant.

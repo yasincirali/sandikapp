@@ -63,7 +63,11 @@ import {
 import { takipListesiHareketleri } from '../_shared/watchlist_moves.ts';
 import { yuzdeAlarmTuruKos } from '../_shared/yuzde_alarmi.ts';
 import { seviyeAlarmTuruKos } from '../_shared/seviye_alarmi.ts';
-import { tekrarKarari, type TekrarKarari } from '../_shared/fiyat_alarmi_tekrar.ts';
+import {
+  GUNLUK_TAVAN,
+  tekrarKarari,
+  type TekrarKarari,
+} from '../_shared/fiyat_alarmi_tekrar.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -267,6 +271,10 @@ export function formatTRY(value: number): string {
 ///
 /// [tekrar] (0171): aynı soruya öbür cevap — alarm açık kalır, fiyat geri
 /// dönüp yeniden geçerse yine haber verir. Varsayılan `false`: metin birebir.
+///
+/// [sonCalis] (Ar-Ge 30 Eki #0): günün son çalışı (`GUNLUK_TAVAN`). "Yine
+/// haber vereceğiz" demek yalan olurdu — o gün alarm susar; susan alarm
+/// bozuk sanılmasın diye bu bildirim bunu söyler.
 export function buildAlertMessage(
   label: string,
   price: number,
@@ -274,13 +282,16 @@ export function buildAlertMessage(
   direction: string,
   simge: string | null = '₺',
   tekrar = false,
+  sonCalis = false,
 ): { title: string; body: string } {
   const yukari = direction === 'above';
   return {
     title: `${yukari ? '▲' : '▼'} ${label} ${fiyatMetni(target, simge)} ` +
       `${yukari ? 'seviyesine ulaştı' : 'seviyesinin altına indi'}`,
     body: `Şu an ${fiyatMetni(price, simge)}. ` +
-      (tekrar
+      (tekrar && sonCalis
+        ? `Bugün ${GUNLUK_TAVAN}. kez çaldı; yarın yeniden nöbette. `
+        : tekrar
         ? 'Alarm açık: fiyat geri dönüp yeniden geçerse yine haber vereceğiz. '
         : 'Tek seferlik alarmdı, kapatıldı. ') +
       'Yatırım tavsiyesi değildir.',
@@ -577,6 +588,7 @@ Deno.serve(async (request) => {
         alarm.direction,
         simge,
         tekrarKarar !== undefined,
+        tekrarKarar !== undefined && tekrarKarar.sayi >= GUNLUK_TAVAN,
       );
 
       if (dryRun) {

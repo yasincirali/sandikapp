@@ -24,13 +24,29 @@
 // Günlük sayaç satırda (`gunluk_tetik_sayisi`, `gunluk_tetik_gunu`); gece
 // sıfırlayan iş yok — gün okurken karşılaştırılır ([bugunkuSayi]).
 
+import { kriptoKodu } from './kripto.ts';
+
 /// Nöbete dönüş tamponu: hedefin %0,5 öbür tarafı.
 export const TEKRAR_TAMPONU = 0.005;
+
+/// Kriptoda tampon %1 (müşteri raporu 2026-10-29 21:15 #1; Ar-Ge 30 Eki
+/// #0, yasin "yap"): kripto 7/24 ve oynak, %0,5 dakikalar içinde gelip
+/// gidiyor; tampon yine kendi işini görmeyip günlük tavanı öğlene kadar
+/// doldururdu. Altın/döviz/hisse %0,5'te kalır.
+export const KRIPTO_TEKRAR_TAMPONU = 0.01;
+
+/// Sembolün nöbete dönüş tamponu.
+export function tekrarTamponu(sembol: string | null | undefined): number {
+  const s = (sembol ?? '').trim();
+  return s.length > 0 && kriptoKodu(s) !== null ? KRIPTO_TEKRAR_TAMPONU : TEKRAR_TAMPONU;
+}
 
 /// Bir alarmın bir TR gününde en çok çalış sayısı.
 export const GUNLUK_TAVAN = 3;
 
 export type TekrarDurumu = {
+  /// Tampon seçimi için ([tekrarTamponu]); yoksa %0,5.
+  symbol?: string | null;
   target_price: number;
   direction: string;
   triggered_at?: string | null;
@@ -73,10 +89,11 @@ export function tampondanGecti(
   price: number,
   target: number,
   direction: string,
+  tampon: number = TEKRAR_TAMPONU,
 ): boolean {
   return direction === 'above'
-    ? price <= target * (1 - TEKRAR_TAMPONU)
-    : price >= target * (1 + TEKRAR_TAMPONU);
+    ? price <= target * (1 - tampon)
+    : price >= target * (1 + tampon);
 }
 
 /// Tekrarlı alarmın bu turdaki kararı.
@@ -97,7 +114,9 @@ export function tekrarKarari(
     if (tavanDolu) return { tur: 'tavan' };
     return { tur: 'cal', sayi: sayi + 1, gun: bugun };
   }
-  if (!tampondanGecti(price, target, a.direction)) return { tur: 'bekle' };
+  if (!tampondanGecti(price, target, a.direction, tekrarTamponu(a.symbol))) {
+    return { tur: 'bekle' };
+  }
   if (tavanDolu) return { tur: 'tavan' };
   return { tur: 'nobete_don' };
 }

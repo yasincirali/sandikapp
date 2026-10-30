@@ -25,6 +25,28 @@
 // BIST hissesi bu tuzakların dışında: Yahoo serisi de holding de TRY.
 // Kapsamı genişletmek, önce sunucu tarafına kur modeli koymayı gerektirir.
 //
+// ── v2 (2026-10-30, Ar-Ge 30 Eki 08:45 #1, yasin "yap"): altın, döviz, fon ──
+// Yukarıdaki engel kalktı: sunucu artık TL fiyatı KENDİ tutuyor ve
+// uygulamanın gösterdiği sayıyla aynı ölçekte:
+//   · altın ayarları + TL döviz → `yurt_ici_kotasyon` (0101; 5 dk, TL,
+//     truncgil `Change` = uygulamadaki günlük yüzde)
+//   · TEFAS fonu → `tefas_nav_gozlem` (0063; portföydeki fonların NAV'ı)
+// Yüzde alarmı (0169) ve widget (`widget-fiyat`) aynı iki tablodan aynı
+// yardımcılarla (`_shared/widget_fiyat.ts`) okuyor; brifing yeni bir sembol
+// merdiveni KURMAZ (fiyat_kaynagi sözleşmesi madde 1). Kapsam dışı kalan:
+//   · GC=F/Yahoo üzerinden altın SERİSİ kullanılmaz — o seri gösterge içindir,
+//     brifingin söylediği "bugün %X" uygulamadaki sayı olmalı (madde 2).
+//   · kripto: 7/24 ve oynak; brifingin "en çok hareket eden"i neredeyse her
+//     gün kripto olurdu ve hisse/altın/fon sahibinin günlük sözü kaybolurdu.
+//     Kriptonun kendi yüzde alarmı var.
+//   · emtia, eurobond, BES, mevduat: sunucuda TL günlük yüzdeleri yok
+//     (BES fonu gözleniyor ama "BES'in bugün %X" bireysel katkı payıyla
+//     karışır; kapsam fikirde bilerek dışarıda).
+// Yüzde bilinmiyorsa, kotasyon bayatsa ya da fonun NAV'ı son işlem gününe
+// ait değilse o varlık aday OLMAZ (uydurma yok, madde 3); dünkü NAV
+// değişimini bugün ikinci kez anlatmamak için fonda tarih kapısı var
+// ([fonNavGuncelMi]).
+//
 // ── ORTAK HAREKETİ: neden ayrı bir push değil ───────────────────────────────
 // Ortağın portföyüne ekleme yapması, "en çok hareket eden hissen"den daha
 // güçlü bir kanca: sosyal bağ bireysel mekaniklerin hepsinden güçlü.
@@ -68,6 +90,13 @@ import { degisimKarti, kartGorseli, KartAyari } from '../_shared/bildirim_karti.
 export { collapseTokens };
 import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 import { bistTatilMi } from '../_shared/piyasa_takvimi.ts';
+import {
+  fonKodu,
+  fonWidgetFiyati,
+  widgetSembolTuru,
+  yurtIciWidgetFiyati,
+} from '../_shared/widget_fiyat.ts';
+import { trGun } from '../_shared/tefas_nav.ts';
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
@@ -88,6 +117,65 @@ const CHANNEL_ID = 'brief_channel';
 /// dahil). "%0,3 yükseldi" o bütçeyi hiçbir şey söylemeden harcar ve
 /// kullanıcıyı bildirimleri kapatmaya iter.
 const DEFAULT_MIN_MOVE_PCT = 1.5;
+
+/// Altın/döviz kotasyonu bu yaştan eskiyse brifing onu "bugün" diye
+/// anlatmaz. `yurt-ici-kotasyon` 5 dakikada bir yazar; yüzde alarmının
+/// eşiğiyle aynı (`YUZDE_YURT_ICI_BAYATLIK_MS`, 15 dk).
+export const BRIEF_YURT_ICI_BAYATLIK_MS = 15 * 60_000;
+
+/// Brifingin anlatabildiği varlık türü (v2, dosya başı).
+export type BriefTuru = 'hisse' | 'yurt_ici' | 'fon';
+
+/// Lotun fiyat kaynağındaki sembolü — istemcideki `alarmSembolu` ile aynı
+/// kural: altın lotunun ayarı `sub_category`'de (`ALTIN_GRAM`), `ticker`'da
+/// değil. Push'taki `ticker` de bu değeri taşır ki istemci varlığı aynı
+/// kuralla bulsun (`openPriceAlertAsset`).
+export function briefSembolu(ticker: string | null, subCategory: string | null): string {
+  const sub = (subCategory ?? '').trim();
+  if (sub.startsWith('ALTIN_')) return sub;
+  return (ticker ?? '').trim();
+}
+
+/// Lot satırı brifinge girer mi; girerse hangi kaynaktan. [sembol]
+/// [briefSembolu]'nden gelir.
+///
+/// Kapsam `widgetSembolTuru`'ndan TÜRER (yüzde alarmı ve widget'la aynı
+/// beyaz liste): altın ayarları ve üç TL döviz `yurt_ici`, `TEFAS:XXX` fon.
+/// Tür sütunu da bakılır: BES lotu da `TEFAS:` taşır ama fon değildir.
+export function briefTuru(type: string, sembol: string): BriefTuru | null {
+  const t = (sembol ?? '').trim();
+  if (type === 'hisse') return 'hisse';
+  if ((type === 'altin' || type === 'doviz') && widgetSembolTuru(t) === 'yurt_ici') {
+    return 'yurt_ici';
+  }
+  if (type === 'fon' && widgetSembolTuru(t) === 'fon') return 'fon';
+  return null;
+}
+
+/// [simdi]'den önceki son BIST işlem günü (TR takvimi, `YYYY-MM-DD`).
+/// Hafta sonu ve resmî tatiller atlanır (`bistTatilMi`).
+export function oncekiIsGunu(simdi: Date): string {
+  const gun = 24 * 60 * 60 * 1000;
+  let d = new Date(simdi.getTime() - gun);
+  for (let i = 0; i < 14; i++) {
+    const hafta = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Istanbul',
+      weekday: 'short',
+    }).format(d);
+    if (hafta !== 'Sat' && hafta !== 'Sun' && !bistTatilMi(d)) break;
+    d = new Date(d.getTime() - gun);
+  }
+  return trGun(d);
+}
+
+/// Fonun son NAV'ı brifinge girecek kadar yeni mi: bugünün ya da bir önceki
+/// işlem gününün fiyatı. Sabah 09:45'te bugünün NAV'ı henüz yok, dünkü
+/// (pazartesi cumanın) anlatılır; NAV bir gün gelmediyse eski değişim
+/// ertesi sabah YİNELENMEZ.
+export function fonNavGuncelMi(navTarihi: string, simdi: Date): boolean {
+  const t = String(navTarihi ?? '').slice(0, 10);
+  return t === trGun(simdi) || t === oncekiIsGunu(simdi);
+}
 
 type AssetRow = {
   id: string;
@@ -135,25 +223,54 @@ export function lastChangePct(closes: number[]): number | null {
 /// değildi (emülatör testi #16, 2026-09-29) ve aynı hissenin iki lot'u
 /// "diğer hisse" sayılıyordu. Şimdi söylenen şey doğrulanabilir: o hisseler
 /// de bugün eşik üstü hareket etti.
+///
+/// v2 (2026-10-30): [tur] zaman ifadesini seçer, çünkü üç kaynağın
+/// yüzdesi üç ayrı ana aittir — hisse "son kapanışta" (Yahoo günlük
+/// kapanış), altın/döviz "bugün" (truncgil günlük değişimi), fon "son
+/// fiyatında" (günde bir açıklanan NAV). [isim] gövdedeki adı seçer:
+/// yalnız hisse tutan kişiye metin birebir eskisi ("hisse"), karışık
+/// portföyde "varlık" — altını "hisse" diye anlatmamak için.
 export function buildBriefMessage(
   label: string,
   changePct: number,
   otherCount: number,
+  tur: BriefTuru = 'hisse',
+  isim: 'hisse' | 'varlık' = 'hisse',
 ): { title: string; body: string } {
   const yukari = changePct >= 0;
   const mutlak = Math.abs(changePct).toFixed(1).replace('.', ',');
   const kalan = otherCount > 0
-    ? `Portföyündeki ${otherCount} hisse daha hareketli. `
+    ? `Portföyündeki ${otherCount} ${isim} daha hareketli. `
     : '';
+  const zaman = tur === 'yurt_ici'
+    ? 'bugün'
+    : tur === 'fon'
+    ? 'son fiyatında'
+    : 'son kapanışta';
   return {
-    title: `${yukari ? '▲' : '▼'} ${label} son kapanışta %${mutlak} ` +
+    title: `${yukari ? '▲' : '▼'} ${label} ${zaman} %${mutlak} ` +
       `${yukari ? 'yükseldi' : 'düştü'}`,
-    body: `Portföyünde en çok hareket eden hisse. ${kalan}` +
+    body: `Portföyünde en çok hareket eden ${isim}. ${kalan}` +
       'Yatırım tavsiyesi değildir.',
   };
 }
 
-export type BriefAdayi = { label: string; sembol: string; changePct: number };
+/// Bildirim kartının alt yazısı; başlıktaki zaman ifadesiyle aynı an.
+export function briefKartAltYazisi(tur: BriefTuru): string {
+  return tur === 'yurt_ici'
+    ? 'Bugün · en hareketli'
+    : tur === 'fon'
+    ? 'Son fon fiyatı · en hareketli'
+    : 'Son kapanış · en hareketli';
+}
+
+/// [tur] yoksa hisse (v1 satırları ve testler).
+export type BriefAdayi = {
+  label: string;
+  sembol: string;
+  changePct: number;
+  tur?: BriefTuru;
+};
 
 /// Kullanıcının hisse satırlarından brifingin konusu: en çok hareket eden
 /// hisse ve eşiği ayrıca geçen DİĞER hisse sayısı.
@@ -164,7 +281,7 @@ export type BriefAdayi = { label: string; sembol: string; changePct: number };
 export function briefAdayiSec(
   satirlar: BriefAdayi[],
   minMovePct: number,
-): { en: BriefAdayi; digerHareketli: number } | null {
+): { en: BriefAdayi; digerHareketli: number; yalnizHisse: boolean } | null {
   const tekil = new Map<string, BriefAdayi>();
   for (const s of satirlar) {
     if (!tekil.has(s.sembol)) tekil.set(s.sembol, s);
@@ -180,7 +297,8 @@ export function briefAdayiSec(
       digerHareketli += 1;
     }
   }
-  return { en, digerHareketli };
+  const yalnizHisse = [...tekil.values()].every((a) => (a.tur ?? 'hisse') === 'hisse');
+  return { en, digerHareketli, yalnizHisse };
 }
 
 /// Bildirim `data`'sı — push ve çan kaydı AYNI veriyi taşır ki iki dokunuş
@@ -361,8 +479,8 @@ Deno.serve(async (request) => {
     }
 
     // ── 3) Varlıklar ────────────────────────────────────────────────────────
-    // Yalnızca BIST hissesi (bkz. dosya başındaki kapsam notu), aktif alım
-    // lot'ları ve fiyatı otomatik çekilenler.
+    // BIST hissesi, altın, TL döviz ve TEFAS fonu (bkz. dosya başındaki
+    // kapsam notu, v2); aktif alım lot'ları ve fiyatı otomatik çekilenler.
     //
     // `deleted_at is null` ŞART: silme fiziksel değil, damgalı
     // (bkz. 0027_soft_delete_lots). Filtre olmadan kullanıcı sildiği hisse
@@ -377,46 +495,133 @@ Deno.serve(async (request) => {
         'id, user_id, name, ticker, type, is_manual_price, kind, quantity, sub_category, currency, added_date, ref_asset_id',
       )
       .in('user_id', userIds)
-      .eq('type', 'hisse')
+      .in('type', ['hisse', 'altin', 'doviz', 'fon'])
       .is('deleted_at', null);
     if (assetError) {
       throw new Error(`Varliklar alinamadi: ${assetError.message}`);
     }
 
     const assets = acikPozisyonLotlari((assetRows ?? []) as AssetRow[])
-      .filter((a) => a.is_manual_price !== true);
+      .filter((a) => a.is_manual_price !== true)
+      .filter((a) => briefTuru(a.type, briefSembolu(a.ticker, a.sub_category)) !== null);
     if (assets.length === 0) {
-      return jsonResponse({ ok: true, reason: 'Brifing icin hisse yok.', sent: 0 });
+      return jsonResponse({ ok: true, reason: 'Brifing icin varlik yok.', sent: 0 });
     }
 
-    // ── 4) Fiyat serileri (semboller arası paylaşımlı cache) ────────────────
+    // ── 4) Fiyatlar ─────────────────────────────────────────────────────────
+    // Hisse: günlük kapanış serisi (semboller arası paylaşımlı cache).
     const semboller = new Set<string>();
+    const yurtIciSemboller = new Set<string>();
+    const fonKodlariSet = new Set<string>();
     for (const a of assets) {
-      const s = resolveSymbol(a.ticker ?? '', a.type);
-      if (s) semboller.add(s);
+      const t = briefSembolu(a.ticker, a.sub_category);
+      const tur = briefTuru(a.type, t);
+      if (tur === 'hisse') {
+        const s = resolveSymbol(t, a.type);
+        if (s) semboller.add(s);
+      } else if (tur === 'yurt_ici') {
+        yurtIciSemboller.add(t);
+      } else if (tur === 'fon') {
+        const kod = fonKodu(t);
+        if (kod) fonKodlariSet.add(kod);
+      }
     }
-    const histories = await loadPriceHistories(admin, semboller);
+    const histories = semboller.size > 0
+      ? await loadPriceHistories(admin, semboller)
+      : new Map<string, number[]>();
 
-    // ── 5) Kullanıcı başına en çok hareket eden hisse ───────────────────────
+    // Altın/döviz ve fon: sunucunun zaten tuttuğu iki tablo (v2). Okuma
+    // hatası brifingi DÜŞÜRMEZ: o türler bu tur aday olmaz, hisse gider.
+    const simdi = new Date();
+    const yurtIciYuzde = new Map<string, number>();
+    if (yurtIciSemboller.size > 0) {
+      const { data, error } = await admin
+        .from('yurt_ici_kotasyon')
+        .select('sembol, ts, fiyat, degisim_pct')
+        .in('sembol', [...yurtIciSemboller])
+        .gte('ts', new Date(simdi.getTime() - BRIEF_YURT_ICI_BAYATLIK_MS).toISOString())
+        .order('ts', { ascending: false });
+      if (error) {
+        console.error('[daily-brief] yurt ici kotasyon okunamadi:', error.code);
+      }
+      for (const r of (data ?? []) as Array<Record<string, unknown>>) {
+        const s = String(r.sembol);
+        if (yurtIciYuzde.has(s)) continue; // en yeni kova önce geldi
+        const f = yurtIciWidgetFiyati(
+          { ts: r.ts, fiyat: r.fiyat, degisim_pct: r.degisim_pct },
+          simdi.getTime(),
+        );
+        if (f?.degisim !== undefined && simdi.getTime() - f.zaman <= BRIEF_YURT_ICI_BAYATLIK_MS) {
+          yurtIciYuzde.set(s, f.degisim);
+        }
+      }
+    }
+    const fonYuzde = new Map<string, number>();
+    if (fonKodlariSet.size > 0) {
+      const { data, error } = await admin
+        .from('tefas_nav_gozlem')
+        .select('fon_kodu, nav_tarihi, ilk_gorulme, nav')
+        .in('fon_kodu', [...fonKodlariSet])
+        .gte('nav_tarihi', trGun(new Date(simdi.getTime() - 10 * 24 * 60 * 60 * 1000)))
+        .order('nav_tarihi', { ascending: false });
+      if (error) {
+        console.error('[daily-brief] fon gozlemi okunamadi:', error.code);
+      }
+      const kodSatirlari = new Map<string, Array<Record<string, unknown>>>();
+      for (const r of (data ?? []) as Array<Record<string, unknown>>) {
+        const kod = String(r.fon_kodu);
+        const liste = kodSatirlari.get(kod);
+        if (liste) liste.push(r); else kodSatirlari.set(kod, [r]);
+      }
+      for (const [kod, satirlar] of kodSatirlari) {
+        const son = satirlar[0];
+        if (!son || !fonNavGuncelMi(String(son.nav_tarihi), simdi)) continue;
+        const f = fonWidgetFiyati(
+          satirlar.slice(0, 2).map((r) => ({
+            nav_tarihi: r.nav_tarihi,
+            ilk_gorulme: r.ilk_gorulme,
+            nav: r.nav,
+          })),
+          simdi.getTime(),
+        );
+        if (f?.degisim !== undefined) fonYuzde.set(kod, f.degisim);
+      }
+    }
+
+    // ── 5) Kullanıcı başına en çok hareket eden varlık ──────────────────────
     const kullaniciSatirlari = new Map<string, BriefAdayi[]>();
 
     for (const a of assets) {
       if (zatenGonderildi.has(a.user_id)) continue;
-      const sembol = resolveSymbol(a.ticker ?? '', a.type);
-      if (!sembol) continue;
-      const closes = histories.get(sembol);
-      if (!closes) continue;
-      const degisim = lastChangePct(closes);
-      if (degisim === null) continue;
+      const t = briefSembolu(a.ticker, a.sub_category);
+      const tur = briefTuru(a.type, t)!;
+      let sembol: string | null = null;
+      let degisim: number | null = null;
+      // Etiket: hisse/fon kodu ("ASELS", "AFT"); altın/dövizde ad — kod
+      // (`ALTIN_GRAM`) kimseye bir şey söylemez.
+      let label = shortLabel(a.name, t);
+      if (tur === 'hisse') {
+        sembol = resolveSymbol(t, a.type);
+        const closes = sembol ? histories.get(sembol) : undefined;
+        degisim = closes ? lastChangePct(closes) : null;
+      } else if (tur === 'yurt_ici') {
+        sembol = t;
+        degisim = yurtIciYuzde.get(t) ?? null;
+        label = (a.name ?? '').trim() || t;
+      } else {
+        const kod = fonKodu(t);
+        sembol = t;
+        degisim = kod ? fonYuzde.get(kod) ?? null : null;
+      }
+      if (!sembol || degisim === null || !isFinite(degisim)) continue;
 
-      const label = shortLabel(a.name, a.ticker ?? '');
-      const satir: BriefAdayi = { label, sembol, changePct: degisim };
+      const satir: BriefAdayi = { label, sembol, changePct: degisim, tur };
       const liste = kullaniciSatirlari.get(a.user_id);
       if (liste) liste.push(satir); else kullaniciSatirlari.set(a.user_id, [satir]);
     }
     const kullaniciAdaylari = new Map<
       string,
-      { en: BriefAdayi; digerHareketli: number }
+      { en: BriefAdayi; digerHareketli: number; yalnizHisse: boolean }
     >();
     for (const [uid, satirlar] of kullaniciSatirlari) {
       const secim = briefAdayiSec(satirlar, minMovePct);
@@ -529,9 +734,12 @@ Deno.serve(async (request) => {
 
     let sent = 0;
     let skippedQuiet = 0;
-    // Resmî tatilde hisse mesajı gitmez (Ar-Ge 29 Eki #1): "son kapanış"
+    // Resmî tatilde fiyat mesajı gitmez (Ar-Ge 29 Eki #1): "son kapanış"
     // tatilden önceki günün kapanışıdır, aynı haber bir gün önce zaten
-    // gitti. Ortak hareketi fiyata bağlı değil, o tatilde de gider.
+    // gitti. v2'de altın/döviz ve fon da aynı kapıdan geçer: tatilde fon
+    // NAV'ı açıklanmaz, truncgil'in günlük değişimi önceki günü taşıyabilir
+    // (yüzde alarmının hafta sonu gerekçesi). Ortak hareketi fiyata bağlı
+    // değil, o tatilde de gider.
     const tatil = bistTatilMi(new Date());
     let skippedTatil = 0;
     let skippedQuietHours = 0;
@@ -555,7 +763,7 @@ Deno.serve(async (request) => {
       const ortak = ortakHareketi.get(tokenRow.user_id);
       const aday = kullaniciAdaylari.get(tokenRow.user_id);
 
-      // Hareket eşiği YALNIZCA hisse mesajına uygulanır. "Ortağın ekleme
+      // Hareket eşiği YALNIZCA fiyat mesajına uygulanır. "Ortağın ekleme
       // yaptı" kendi başına bir haber; fiyat hareketine bağlı değil.
       if (!ortak) {
         if (!aday) continue;
@@ -576,6 +784,8 @@ Deno.serve(async (request) => {
           aday!.en.label,
           aday!.en.changePct,
           aday!.digerHareketli,
+          aday!.en.tur ?? 'hisse',
+          aday!.yalnizHisse ? 'hisse' : 'varlık',
         );
       if (ortak) partnerSayisi += 1;
       const veri = briefVerisi(bugun, variant, ortak ? undefined : aday!.en.sembol);
@@ -616,7 +826,11 @@ Deno.serve(async (request) => {
         gorselUrl: ortak ? undefined : await kartGorseli(
           kart,
           tokenRow,
-          degisimKarti(aday!.en.label, aday!.en.changePct, 'Son kapanış · en hareketli'),
+          degisimKarti(
+            aday!.en.label,
+            aday!.en.changePct,
+            briefKartAltYazisi(aday!.en.tur ?? 'hisse'),
+          ),
         ),
       });
 

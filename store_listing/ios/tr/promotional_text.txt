@@ -1,1 +1,1 @@
-Yeni: altın, dolar ya da fonun için tek varlık widget'ı, kilit ekranında da. Aramaya "5 çeyrek" yaz, TL karşılığını gör. Yatay grafik ve çizim ücretsiz.
+Yeni: altın ve dövizde tek dokunuşla günlük %2 alarmı, her geçişte çalan fiyat alarmı, üç varlıklı Vitrin widget'ı. Aramaya "5 çeyrek" yaz, TL'sini gör.

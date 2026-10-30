@@ -79,6 +79,14 @@ haritada yok (yönlendirme kapısı, arama sonucunda yeri yok).
 > metni kelimeleri koruyup yalnız bu iki satırı aldı. 1.1.7 gönderiminde
 > **dört dosyanın güncel hâlini** yapıştır (eski metni değil). Karakter:
 > ASC 2.375 / 2.322, Play 3.248 / 2.864 (sınır 4.000).
+>
+> **2026-10-30 (Ar-Ge 08:45 #2, "1,2,3 yap"):** 29 Ekim alarm paketi ve
+> Vitrin widget'ı eklendi. ASC açıklamasında BİLDİRİM bölümüne üç alarm
+> satırı (her geçişte, günlük yüzde, grafikte çizgi) ve Vitrin satırı; tanıtım
+> metni alarm ve Vitrin'i öne alıyor; Play "Yenilikler"de "tek dokunuşla
+> yeniden kur" satırı alarm satırına dönüştü. Karakter: ASC 2.363 / 2.506,
+> tanıtım 152 / 161 (sınır 170), Play notu 465 / 497 (sınır 500).
+> Uygulamadaki 1.1.7 notu da aynı (`surum_notlari.dart`, 8 madde).
 
 Metin repoda hazır; mağazadaki build'de olmayanı vaat etmemek için
 **yalnız özelliği taşıyan sürüm (1.1.7 ya da sonrası) gönderilirken**
