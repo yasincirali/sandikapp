@@ -36,6 +36,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
+import '../widgets/sandik_paylas_dugmesi.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -653,13 +654,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       // `Builder`: `sharePositionOrigin` dokunulan DÜĞMENİN
                       // dikdörtgeninden üretilir, ekranın tamamından değil —
                       // iPad popover'ının oku düğmeyi göstersin.
+                      // Simge uygulamanın tek paylaş düğmesi (yasin
+                      // 2026-10-30, "her yerde aynı standart"): eskiden
+                      // amber Android `share_rounded`'dı ve etiketsizdi;
+                      // şimdi gri `ios_share` + erişilebilirlik etiketi.
                       Builder(
-                        builder: (dugmeContext) => CupertinoButton(
-                          minimumSize: SandikTouch.minSize,
-                          padding: EdgeInsets.zero,
+                        builder: (dugmeContext) => SandikPaylasDugmesi(
                           onPressed: () => _davetiPaylas(dugmeContext),
-                          child: Icon(Icons.share_rounded,
-                              color: context.c.amberText),
+                          tooltip: context.l10n.shareInviteCode,
                         ),
                       ),
                     ],

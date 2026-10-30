@@ -16,6 +16,7 @@ import '../services/tuik_takvimi.dart';
 import '../theme/sandik.dart';
 import 'aralik_cipi.dart';
 import 'sandik_acilir.dart';
+import 'sandik_paylas_dugmesi.dart';
 import 'sandik_segment.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
@@ -235,7 +236,20 @@ class PeriodSummaryView extends StatelessWidget {
         // Ana rakam gizliyken (tek akış) SONUÇ boş kalabilir; boş başlık
         // çizilmez. Eski düzende ana rakam hep vardır — koşul hep doğru.
         if (g.sonuc.isNotEmpty) ...[
-          SandikSectionHeader(title: l10n.sectionResult),
+          // Paylaş "Ne oldu?" başlığının sağ ucunda (yasin 2026-10-30:
+          // "dikkat çekici olmasın, her yerde aynı standart"). Eskiden
+          // SONUÇ'un altında tam genişlik amber düğmeydi; bölümün en
+          // parlak öğesi paylaşım oluyordu. Artık kartların köşesindeki
+          // gri simgeyle aynı (`SandikPaylasDugmesi`): bloğun sağ üstü.
+          // Paylaşım kartı TUTAR İÇERMEZ (yüzde + etiket); metni
+          // `RecapService.shareText` üretir, düğme yalnız tetikler.
+          SandikSectionHeader(
+            title: l10n.sectionResult,
+            trailing: onShare == null
+                ? null
+                : SandikPaylasDugmesi(
+                    onPressed: onShare, tooltip: l10n.shareSummary),
+          ),
           const SizedBox(height: SandikSpace.sm),
           ..._arali(g.sonuc),
         ],
@@ -404,12 +418,6 @@ class PeriodSummaryView extends StatelessWidget {
         }
     }
 
-    // Paylaş SONUÇ'un altında: paylaşılan şey ana rakam + reel hüküm, buton
-    // onların hemen yanında durur.
-    if (onShare != null) {
-      sonuc.add(_PaylasButonu(onShare: onShare!));
-    }
-
     final neden = <Widget>[
       // Köprü eksik uçla çizilmez (bkz. `_KopruKarti.cizilir`); listeye de
       // girmez ki tek içeriği köprü olan NEDEN başlığı boş kalmasın.
@@ -526,8 +534,7 @@ class _AnaRakamKarti extends StatelessWidget {
           ? context.c.text58
           : (tufeFarki > 0 ? context.c.gain : context.c.loss);
       enflasyonSatiri = _KucukSatir(
-        etiket: l.vsInflationIn(AralikMetni.olculenAylar(
-            l, context.tarihDili,
+        etiket: l.vsInflationIn(AralikMetni.olculenAylar(l, context.tarihDili,
             bas: tufeBas, bitis: tufeBitis)),
         deger: deger,
         ton: ton,
@@ -831,9 +838,8 @@ class _CubukSatiri extends StatelessWidget {
     // −₺0"; `isaretliYuzde` ile aynı kural).
     final mutlak = baz.fmt(deger.abs());
     final sifir = !RegExp(r'[1-9]').hasMatch(mutlak);
-    final yazi = isaretli && !sifir
-        ? '${deger >= 0 ? '+' : '−'}$mutlak'
-        : mutlak;
+    final yazi =
+        isaretli && !sifir ? '${deger >= 0 ? '+' : '−'}$mutlak' : mutlak;
 
     return Semantics(
       label: '$etiket $yazi',
@@ -1203,8 +1209,7 @@ class _ReelGetiriKartiState extends State<_ReelGetiriKarti> {
     // Ekranda "0,0 puan"a yuvarlanan fark yön söylemez — başa baş.
     final fark = w.fark;
     final puanMetni = fark == null ? null : fmtNum(fark.abs(), digits: 1);
-    final basaBas =
-        puanMetni != null && puanMetni == fmtNum(0, digits: 1);
+    final basaBas = puanMetni != null && puanMetni == fmtNum(0, digits: 1);
     final hukum = fark == null
         ? InflationService.hukum(w.reel)
         : basaBas
@@ -1268,8 +1273,8 @@ class _ReelGetiriKartiState extends State<_ReelGetiriKarti> {
         cumle = l.cpiSentenceYear(
             kisa.format(bas), kisa.format(bitis), degisim, cpi);
       } else {
-        cumle = l.cpiSentenceRange(uzunAy.format(ilkOlculenAy),
-            uzunAyYil.format(bitis), degisim, cpi);
+        cumle = l.cpiSentenceRange(
+            uzunAy.format(ilkOlculenAy), uzunAyYil.format(bitis), degisim, cpi);
       }
     }
     final hukumCumlesi = switch (hukum) {
@@ -1301,8 +1306,7 @@ class _ReelGetiriKartiState extends State<_ReelGetiriKarti> {
       // aynı soruyu aynı adla sormalı.
       baslik: l.todayRealLabel,
       cip: pencereBelli
-          ? AralikMetni.olculenAylar(l, dil,
-              bas: w.baslangic!, bitis: w.bitis!)
+          ? AralikMetni.olculenAylar(l, dil, bas: w.baslangic!, bitis: w.bitis!)
           : w.donemEtiketi,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1718,41 +1722,6 @@ class _SabirKarti extends StatelessWidget {
       );
 }
 
-/// Paylaş butonu — 1Y bloğu.
-///
-/// Paylaşım kartı TUTAR İÇERMEZ (yüzde + etiket yeter): tutarlı bir kart
-/// paylaşılmaz, tutarsız kart paylaşılır. Metni `RecapService.shareText`
-/// üretir; buton yalnızca tetikler.
-class _PaylasButonu extends StatelessWidget {
-  final VoidCallback onShare;
-
-  const _PaylasButonu({required this.onShare});
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: double.infinity,
-        child: TextButton.icon(
-          onPressed: onShare,
-          icon: Icon(Icons.ios_share_rounded,
-              size: 16, color: context.c.amberText),
-          label: Text(
-            context.l10n.shareSummary,
-            style: context.t.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: context.c.amberText,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            backgroundColor: context.c.surface1,
-            padding: const EdgeInsets.symmetric(vertical: SandikSpace.smd),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-            ),
-          ),
-        ),
-      );
-}
-
 /// Bağlam bloklarının ortak kabuğu.
 class _BaglamKarti extends StatelessWidget {
   final String baslik;
@@ -1886,15 +1855,14 @@ class ContributionKarti extends StatelessWidget {
   /// ayında ₺529.881. Haziran ayında ₺12.000 çektin."
   String _tekKatkiCumlesi(BuildContext context) {
     final l = context.l10n;
-    final katki = ozet.kovalar.firstWhere((k) => k.netTRY > 0,
-        orElse: () => ozet.kovalar.first);
+    final katki = ozet.kovalar
+        .firstWhere((k) => k.netTRY > 0, orElse: () => ozet.kovalar.first);
     final parcalar = [
       l.singleContribution(_donemIfadesi(context), _kovaIfadesi(context, katki),
           baz.fmt(katki.netTRY)),
       for (final k in ozet.kovalar)
         if (k.netTRY < -0.5)
-          l.singleWithdrawal(
-              _kovaIfadesi(context, k), baz.fmt(k.netTRY.abs())),
+          l.singleWithdrawal(_kovaIfadesi(context, k), baz.fmt(k.netTRY.abs())),
     ];
     return parcalar.join(' ');
   }
@@ -2074,13 +2042,14 @@ class _SeriBolumu extends StatelessWidget {
         ),
         const SizedBox(height: SandikSpace.xxs),
         Text(
-          seri.yenidenBasladi ? l.streakRestarted : l.streakMonths('${seri.guncel}'),
+          seri.yenidenBasladi
+              ? l.streakRestarted
+              : l.streakMonths('${seri.guncel}'),
           style: context.t.numMedium.copyWith(color: c.amberText),
         ),
         const SizedBox(height: SandikSpace.smd),
         Semantics(
-          label: l.streakStripSemantics(
-              '${seri.serit.length}', '$kaydedilen'),
+          label: l.streakStripSemantics('${seri.serit.length}', '$kaydedilen'),
           excludeSemantics: true,
           child: Row(
             children: [
@@ -2093,8 +2062,7 @@ class _SeriBolumu extends StatelessWidget {
                       const SizedBox(height: SandikSpace.xs),
                       Text(
                         DateFormat('MMMMM', dil).format(seri.serit[i].ay),
-                        style: context.t.labelSmall
-                            ?.copyWith(color: c.text36),
+                        style: context.t.labelSmall?.copyWith(color: c.text36),
                       ),
                     ],
                   ),
@@ -2108,7 +2076,8 @@ class _SeriBolumu extends StatelessWidget {
           spacing: SandikSpace.smd,
           runSpacing: SandikSpace.xs,
           children: [
-            _SeriLejant(durum: SeriAyDurumu.birikim, etiket: l.streakLegendSaving),
+            _SeriLejant(
+                durum: SeriAyDurumu.birikim, etiket: l.streakLegendSaving),
             _SeriLejant(durum: SeriAyDurumu.mola, etiket: l.streakLegendPause),
             _SeriLejant(durum: SeriAyDurumu.ara, etiket: l.streakLegendGap),
             _SeriLejant(durum: SeriAyDurumu.acik, etiket: l.streakLegendOpen),
@@ -2136,7 +2105,9 @@ class _SeriBolumu extends StatelessWidget {
         ],
         const SizedBox(height: SandikSpace.sm),
         Text(
-          besDahil ? '${l.streakExplain} ${l.streakBesIncluded}' : l.streakExplain,
+          besDahil
+              ? '${l.streakExplain} ${l.streakBesIncluded}'
+              : l.streakExplain,
           style: context.t.bodySmall?.copyWith(color: c.text36),
         ),
       ],

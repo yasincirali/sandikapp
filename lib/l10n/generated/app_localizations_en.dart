@@ -1596,6 +1596,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generateInviteCode => 'Generate Invite Code';
 
   @override
+  String get shareInviteCode => 'Share invite code';
+
+  @override
   String get generateInviteCodeBody =>
       'Send the code to your partner. Once they enter it, you get an approval request.';
 

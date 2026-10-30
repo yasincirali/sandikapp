@@ -1019,7 +1019,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             if (RemoteConfigService.instance.premiumOzellikleriGorunur)
               _SettingsTile(
                 key: _portfoyKaroKey,
-                icon: Icons.ios_share_rounded,
+                icon: Icons.adaptive.share,
                 title: context.l10n.dsPortfoyBaslik,
                 subtitle: context.l10n.dsPortfoyAlt,
                 trailing: ref.watch(premiumKilitliProvider)

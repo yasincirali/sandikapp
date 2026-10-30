@@ -46,6 +46,7 @@ import '../utils/tr_iyelik.dart';
 import 'aralik_cipi.dart' show AralikMetni;
 import 'bugun_paylasimi.dart';
 import 'hedef_sheet.dart';
+import 'sandik_paylas_dugmesi.dart';
 import 'sandik_skeleton.dart';
 import 'share_card.dart' show showShareSheet;
 import 'sigan_metin.dart';
@@ -603,6 +604,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final veriYok = b is GunlukDegisimSatiri &&
         b.flat &&
         (bd?.gunIciVerisiYokTurler.isNotEmpty ?? false);
+    final birincilPaylasilir = b is GunlukDegisimSatiri && !veriYok;
 
     // Benchmark düzeni (kullanıcı seçimi 2026-10-09). Düzen H (2026-10-04)
     // ve D "sakin pano" (2026-10-01) bu tarihte kalktı; D'nin satırları
@@ -623,10 +625,27 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             child: child,
           ),
         ),
-        child: SandikCard(
-          padding: const EdgeInsets.all(SandikSpace.md),
-          child: _benchmarkDuzeni(
-              veri, ozet, oynayanlar, now, gizli, dil, veriYok),
+        // Paylaş düğmesi kartın sağ üst köşesinde, başlık hizasında
+        // (yasin 2026-10-30: "dikkat çekici olmasın, her yerde aynı
+        // standart"). Eskiden hüküm satırının sağındaydı; hüküm ve rozetle
+        // aynı satırda bir eylem gibi okunuyordu. Kartın ait olduğu yer
+        // köşe; ölçü ve renk `SandikPaylasDugmesi`'nde. Veri yokken
+        // paylaşılacak bir yüzde yok.
+        child: SandikPaylasDugmesi.kartKosesi(
+          // Kart dolgusu md (16) + başlık satırının yarısı ≈ 24 → 44'lük
+          // düğmenin merkezi başlık satırına oturur.
+          ust: SandikSpace.xxs,
+          dugme: birincilPaylasilir
+              ? SandikPaylasDugmesi(
+                  onPressed: () => _bugunuPaylas(b, now),
+                  tooltip: context.l10n.todayShareTooltip,
+                )
+              : null,
+          kart: SandikCard(
+            padding: const EdgeInsets.all(SandikSpace.md),
+            child: _benchmarkDuzeni(veri, ozet, oynayanlar, now, gizli, dil,
+                veriYok, birincilPaylasilir),
+          ),
         ),
       ),
     );
@@ -701,7 +720,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       DateTime now,
       bool gizli,
       String dil,
-      bool veriYok) {
+      bool veriYok,
+      bool paylasimVar) {
     final reel = veri.reel;
     final birincil = veri.birincil;
     final seri = ozet?.sparkline ?? const <double>[];
@@ -724,16 +744,14 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           tazelik: birincil is GunlukDegisimSatiri
               ? (birincil.changeTRY, birincil.changePct)
               : null,
+          // Köşedeki paylaş düğmesine yer: durum metni altına girmesin.
+          sagPay: paylasimVar ? SandikPaylasDugmesi.kartKosesiPayi : 0,
         ),
         const SizedBox(height: SandikSpace.md2),
         _HukumSatiri(
           birincil: birincil,
           gizli: gizli,
           veriYok: veriYok,
-          // Veri yokken paylaşılacak bir yüzde yok.
-          onPaylas: birincil is GunlukDegisimSatiri && !veriYok
-              ? () => _bugunuPaylas(birincil, now)
-              : null,
         ),
         if (seriCiz ||
             (!gizli && _seri == null && (_yukleniyor || _turBekleniyor))) ...[
@@ -949,7 +967,11 @@ class _KiyasBaslik extends StatelessWidget {
     required this.durum,
     required this.acik,
     this.tazelik,
+    this.sagPay = 0,
   });
+
+  /// Kartın köşesindeki paylaş düğmesine bırakılan sağ boşluk.
+  final double sagPay;
 
   final DateTime now;
   final String dil;
@@ -980,7 +1002,7 @@ class _KiyasBaslik extends StatelessWidget {
       )..layout();
       final durumW = math.min(tp.width + 1, k.maxWidth * 0.45);
       tp.dispose();
-      return Row(
+      final satir = Row(
         children: [
           Expanded(
             child: SiganMetin(
@@ -1005,6 +1027,9 @@ class _KiyasBaslik extends StatelessWidget {
           ),
         ],
       );
+      return sagPay == 0
+          ? satir
+          : Padding(padding: EdgeInsets.only(right: sagPay), child: satir);
     });
   }
 }
@@ -1120,10 +1145,7 @@ class _CanliNoktaState extends State<_CanliNokta>
 /// henüz yokken "Gün içi veri geliyor" — uydurma sayı yok.
 class _HukumSatiri extends StatelessWidget {
   const _HukumSatiri(
-      {required this.birincil,
-      required this.gizli,
-      this.veriYok = false,
-      this.onPaylas});
+      {required this.birincil, required this.gizli, this.veriYok = false});
 
   final BugunSatiri? birincil;
   final bool gizli;
@@ -1131,10 +1153,6 @@ class _HukumSatiri extends StatelessWidget {
   /// Gün içi seri hiç gelmedi: hüküm "Bugünün verisi henüz gelmedi",
   /// rozet yok (₺0 bir ölçüm değildir).
   final bool veriYok;
-
-  /// Sağ uçtaki paylaşım düğmesi; yalnız günün yüzdesi biliniyorken.
-  /// Sessiz: ikon gri, rozet/çağrı yok (rapor: "düğme yalnız durur").
-  final VoidCallback? onPaylas;
 
   @override
   Widget build(BuildContext context) {
@@ -1182,7 +1200,7 @@ class _HukumSatiri extends StatelessWidget {
             height: 1.1,
           );
 
-    final satir = Semantics(
+    return Semantics(
       label: [hukum, if (tutar != null) tutar, if (yuzde != null) yuzde]
           .join(', '),
       excludeSemantics: true,
@@ -1228,25 +1246,6 @@ class _HukumSatiri extends StatelessWidget {
           ],
         ],
       ),
-    );
-    final paylas = onPaylas;
-    if (paylas == null) return satir;
-    return Row(
-      children: [
-        Expanded(child: satir),
-        // 44 pt dokunma alanı, ikon küçük ve gri: hüküm satırının ağırlığı
-        // değişmez. `Tooltip` aynı zamanda erişilebilirlik etiketi.
-        IconButton(
-          onPressed: paylas,
-          tooltip: l10n.todayShareTooltip,
-          icon: const Icon(Icons.ios_share_rounded),
-          iconSize: 20,
-          color: c.text58,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(
-              width: SandikTouch.min, height: SandikTouch.min),
-        ),
-      ],
     );
   }
 }

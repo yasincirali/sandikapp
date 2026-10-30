@@ -2852,6 +2852,12 @@ abstract class AppLocalizations {
   /// **'Davet Kodu Üret'**
   String get generateInviteCode;
 
+  /// No description provided for @shareInviteCode.
+  ///
+  /// In tr, this message translates to:
+  /// **'Davet kodunu paylaş'**
+  String get shareInviteCode;
+
   /// No description provided for @generateInviteCodeBody.
   ///
   /// In tr, this message translates to:

@@ -25,6 +25,7 @@ import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
 import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
+import 'package:portfoy_takip/widgets/sandik_paylas_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/sandik_siralama_dugmesi.dart';
 import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
@@ -256,6 +257,10 @@ void main() {
                   GrafikCipi(
                       label: 'ƒx', active: false, kilitli: true, onTap: () {}),
                 ]),
+                const SizedBox(height: SandikSpace.md),
+                // Uygulamanın tek paylaş düğmesi (2026-10-30): kart köşesi,
+                // bölüm başlığı ve Profil davet kodu aynı bileşen.
+                SandikPaylasDugmesi(onPressed: () {}, tooltip: 'Paylaş'),
                 const SizedBox(height: SandikSpace.md),
                 // Varlık sayfasının Al · Sat · Temettü çubuğu: şerit ve
                 // (bayrak `goz_alici`) yüzen cam kapsül.
