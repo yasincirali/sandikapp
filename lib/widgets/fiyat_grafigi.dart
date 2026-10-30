@@ -45,7 +45,12 @@ class FiyatGrafigi extends StatelessWidget {
     this.katmanlar,
     this.onViewportChanged,
     this.sifirlamaAnahtari,
+    this.seansli = false,
   });
+
+  /// GÜNLÜK eksen seanstan mı başlasın (hisse; [gunIciEksenBasiDk]).
+  /// `false` → 00:00, eski davranış.
+  final bool seansli;
 
   /// Bkz. [ZoomableChart.sifirlamaAnahtari]; `null` → dönem ([periodDays]).
   final Object? sifirlamaAnahtari;
@@ -101,6 +106,7 @@ class FiyatGrafigi extends StatelessWidget {
       ilkMs: spots.first.x,
       sonMs: spots.last.x,
       periodDays: periodDays,
+      seansli: seansli,
     );
     final ilk = spots.first.y;
     // Seans boşlukları eksenden çıkar (yasin 2026-10-12, bkz.

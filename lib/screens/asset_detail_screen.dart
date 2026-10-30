@@ -779,14 +779,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;
-    // GÜNLÜK sekmesinde eksen ÇİZİLEN GÜNÜN 00:00'ında başlar ve tam gün
-    // (24 saat) boyunca uzanır.
+    // GÜNLÜK sekmesinde X'in sıfırı ÇİZİLEN GÜNÜN 00:00'ıdır.
     //
     // İki karar da bilinçli:
     //   · 00:00: kullanıcı isteği — "GÜNLÜK seçildiğinde 00:00'dan
     //     başlayarak gözükmeli" (2026-09-10). Ekseni ilk fiyat noktasında
     //     başlatmak, sabah 09:00'da bakınca başka, öğlen bakınca başka bir
     //     zaman ölçeği gösterirdi.
+    //     2026-10-30 (yasin, karar kartı "Seanstan başlasın"): HİSSEDE
+    //     görünür pencere önceki kapanış noktasından başlar; gece veri yok,
+    //     sol yarı boş kalıyordu. Diğer türler 00:00'da kalır. Pencere
+    //     `gunIciEksenBasiDk` ile aşağıda (focusMin) kurulur; X'in sıfırı
+    //     yine 00:00.
     //   · Çizilen gün bugün OLMAYABİLİR: piyasa kapalıyken servis son
     //     seansı döndürür (`seansGunu`). Ekseni `now`'a kurmak hafta sonu
     //     Cuma seansını grafiğin dışına atardı.
@@ -1586,17 +1590,32 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // çiziyordu; seans kartın sol %60'ına sıkışıp
                             // sağı boş kalıyordu. Piyasa kapalıyken seri
                             // bugüne uzar; son nokta yine o uç olur.
+                            //
+                            // Hisse seanstan başlar (yasin 2026-10-30,
+                            // `gunIciEksenBasiDk`): sol uç serinin ilk
+                            // noktası, yani önceki kapanış. Karşılaştırmada
+                            // iki seri var, 00:00 kalır.
                             if (isIntraday) {
                               double sonX = 0;
+                              double? ilkX;
                               for (final seg in segments) {
-                                if (seg.spots.isNotEmpty &&
-                                    seg.spots.last.x > sonX) {
+                                if (seg.spots.isEmpty) continue;
+                                if (seg.spots.last.x > sonX) {
                                   sonX = seg.spots.last.x;
                                 }
+                                if (ilkX == null || seg.spots.first.x < ilkX) {
+                                  ilkX = seg.spots.first.x;
+                                }
                               }
-                              focusMax =
-                                  gunIciEksenSonuDk(sonX * 24 * 60) / (24 * 60);
-                              focusMin = -focusMax * 0.03;
+                              final basDk = gunIciEksenBasiDk(
+                                  (ilkX ?? 0) * 24 * 60,
+                                  seansli: !compareOn &&
+                                      gunIciSeansli(widget.asset.type));
+                              final bas = basDk / (24 * 60);
+                              focusMax = gunIciEksenSonuDk(sonX * 24 * 60,
+                                      basDk: basDk) /
+                                  (24 * 60);
+                              focusMin = bas - (focusMax - bas) * 0.03;
                             }
                             // GÜNLÜK sekmesinde daraltma YOK: gün bir
                             // TAKVİM GÜNÜDÜR. Bugün 14:00'te alınan bir

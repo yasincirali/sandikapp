@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:intl/intl.dart';
+import '../models/asset_type.dart';
 import 'tr_format.dart';
 
 /// Çizgi grafiklerin ORTAK eksen ve odak cebiri.
@@ -327,8 +328,35 @@ double gunIciTickDk(double gorunurDk) {
 /// fl_chart'ı düşürür.
 ///
 /// [sonNoktaDk] serinin son noktasının gün başından dakika cinsinden uzaklığı.
-double gunIciEksenSonuDk(double sonNoktaDk) =>
-    sonNoktaDk > 0 ? sonNoktaDk / _gunIciSonNoktaKonumu : 240.0;
+///
+/// [basDk] eksenin sol ucu ([gunIciEksenBasiDk]); %82 kuralı o uçtan
+/// itibaren uygulanır. Varsayılan 0 (00:00) eski davranışın birebiri.
+double gunIciEksenSonuDk(double sonNoktaDk, {double basDk = 0}) =>
+    sonNoktaDk > basDk
+        ? basDk + (sonNoktaDk - basDk) / _gunIciSonNoktaKonumu
+        : basDk + 240.0;
+
+/// Gün içi ("GÜNLÜK") X ekseninin SOL ucu — gün başlangıcından dakika.
+///
+/// **Hisse seanstan başlar (yasin 2026-10-30, karar kartı "Seanstan
+/// başlasın").** 2026-09-10 kuralı "GÜNLÜK 00:00'dan başlasın" idi; hissede
+/// gece veri olmadığı için öğlen bakan kişi grafiğin yarısını boş görüyor,
+/// günün hareketi sağa sıkışıyordu. Muadillerin hepsi BIST günlüğünü seans
+/// saatiyle çizer. Hissede eksen serinin İLK noktasında başlar: o nokta
+/// önceki kapanıştır ve ilk mumun bir slot öncesindedir (`yahooSeriCoz`,
+/// #262), yani açılış basamağı ve referans çizgisi görünür kalır.
+///
+/// Altın, döviz, kripto, fon ve Performans 00:00'da kalır ([seansli]
+/// `false`): 7/24'e yakın işleyen seride gece de hareket vardır.
+///
+/// Takvim varsayımı yok: sol uç VERİDEN gelir. Hafta sonu ve tatilde seri
+/// son seansı döndürür; eksen o seansın önceki kapanışından başlar.
+double gunIciEksenBasiDk(double ilkNoktaDk, {required bool seansli}) =>
+    seansli && ilkNoktaDk > 0 && ilkNoktaDk < 24 * 60 ? ilkNoktaDk : 0;
+
+/// GÜNLÜK eksende seanstan başlayan varlık türü ([gunIciEksenBasiDk]).
+/// Varlık detayı ve varlık sayfası (takip listesi) bu tek karardan okur.
+bool gunIciSeansli(AssetType tur) => tur == AssetType.hisse;
 
 /// Son noktanın gün içi viewport'taki yeri — bkz. [gunIciEksenSonuDk].
 const double _gunIciSonNoktaKonumu = 0.82;
@@ -361,6 +389,7 @@ const double gunIciCokGunEsigi = 1 / _gunIciSonNoktaKonumu;
   required double ilkMs,
   required double sonMs,
   required int periodDays,
+  bool seansli = false,
 }) {
   const dkMs = 60 * 1000.0;
   const gunMs = 24 * 60 * dkMs;
@@ -373,10 +402,16 @@ const double gunIciCokGunEsigi = 1 / _gunIciSonNoktaKonumu;
     final geceYarisi = dayKey(son);
     final bas = geceYarisi.millisecondsSinceEpoch.toDouble();
     final sonDk = (sonMs - bas) / dkMs;
+    final basDk = gunIciEksenBasiDk((ilkMs - bas) / dkMs, seansli: seansli);
+    final sagDk = gunIciEksenSonuDk(sonDk, basDk: basDk);
     return (
-      min: bas,
-      max: bas + gunIciEksenSonuDk(sonDk) * dkMs,
-      interval: gunIciEksenAdimiDk * dkMs,
+      min: bas + basDk * dkMs,
+      max: bas + sagDk * dkMs,
+      // Seanstan başlayan pencere birkaç saattir; sabit 4 saatlik adım tek
+      // etiket bırakıyordu (önizleme 2026-10-30). Adım pencereye göre,
+      // varlık detayıyla aynı kural (`gunIciTickDk`).
+      interval: (basDk > 0 ? gunIciTickDk(sagDk - basDk) : gunIciEksenAdimiDk) *
+          dkMs,
       baseline: bas,
       gunIci: true,
     );
