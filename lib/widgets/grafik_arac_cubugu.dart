@@ -5,11 +5,11 @@ import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart';
 import '../models/ohlc.dart';
 import '../theme/sandik.dart';
-import 'sandik_cam.dart';
 
-/// Fiyat grafiğinin araç çubuğu — [aralık ⌄] · MUM · LOG · ƒx / MA20 · EMA50 ·
-/// EMA200. Aralık açılır menüsü (1 dk … ay) mum YA DA bir gösterge açıkken
-/// görünür ([aralikGerekli]).
+/// Fiyat grafiğinin araç çubuğu — [aralık ⌄] · [Göstergeler · 2 açık ⌄];
+/// düğme açılınca MUM · LOG · ƒx · MA20 · EMA50 · EMA200 çipleri
+/// (2026-10-30, [GostergelerDugmesi]). Aralık açılır menüsü (1 dk … ay)
+/// mum YA DA bir gösterge açıkken görünür ([aralikGerekli]).
 ///
 /// ## Sıklık neden yalnız mumda değil (yasin, 2026-10-11 TestFlight)
 /// *"mum seçili değilken sıklık gelmiyor bu olması gereken mi?"* İlk sürümde
@@ -32,7 +32,7 @@ import 'sandik_cam.dart';
 /// Değerler çağırandan gelir (o ekranda ETKİN olan durum: karşılaştırma
 /// açıkken LOG etkisiz sayılır, vb.); dokunuş tercihi tersine çevirir.
 /// Hangi çipin bulunacağına da çağıran karar verir ([log], [ozel]).
-class GrafikAracCubugu extends ConsumerWidget {
+class GrafikAracCubugu extends ConsumerStatefulWidget {
   const GrafikAracCubugu({
     super.key,
     required this.katmanlar,
@@ -84,7 +84,28 @@ class GrafikAracCubugu extends ConsumerWidget {
   static const double _buyukYaziEsigi = 1.3;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GrafikAracCubugu> createState() => _GrafikAracCubuguState();
+}
+
+class _GrafikAracCubuguState extends ConsumerState<GrafikAracCubugu> {
+  /// Çip satırı açık mı. Varsayılan kapalı (rapor: "bilmeyen hiç görmez");
+  /// yalnız bu grafiğin ömrü boyunca hatırlanır.
+  bool _acik = false;
+
+  bool get ma20Acik => widget.ma20Acik;
+  bool? get logAcik => widget.logAcik;
+  bool get mumAcik => widget.mumAcik;
+  bool get ema50Acik => widget.ema50Acik;
+  bool get ema200Acik => widget.ema200Acik;
+  bool get katmanlar => widget.katmanlar;
+  GrafikOzelCipi? get ozel => widget.ozel;
+  MumAraligi? get aralik => widget.aralik;
+  List<MumAraligi> get gecerliAraliklar => widget.gecerliAraliklar;
+  double? get pencereDakika => widget.pencereDakika;
+  bool get kapanistan => widget.kapanistan;
+
+  @override
+  Widget build(BuildContext context) {
     final ma20 = GrafikCipi(
       label: 'MA20',
       active: ma20Acik,
@@ -108,10 +129,28 @@ class GrafikAracCubugu extends ConsumerWidget {
       );
     }
     final o = ozel;
-    // Beş çip 375pt'ye tek satırda sığmıyor (Wrap LOG'u tek başına alta
-    // düşürüyordu). İki anlamlı satır: üstte GÖRÜNÜM (mum, ölçek, kendi
-    // göstergen), altta ORTALAMALAR (MA20, EMA50, EMA200).
-    final ustSatir = <Widget>[
+    final ar = aralik;
+    final pencere = pencereDakika;
+    final secici = aralikGerekli(
+          mum: mumAcik,
+          ma20: ma20Acik,
+          ema50: ema50Acik,
+          ema200: ema200Acik,
+          ozel: (o?.acikSayi ?? 0) > 0,
+        ) &&
+        ar != null &&
+        gecerliAraliklar.length >= 2;
+    // Rozet sayısı: o ekranda ETKİN olan katmanlar (LOG çipi olmayan
+    // ekranda LOG sayılmaz).
+    final acikSayi = [
+          mumAcik,
+          logAcik ?? false,
+          ma20Acik,
+          ema50Acik,
+          ema200Acik,
+        ].where((b) => b).length +
+        (o?.acikSayi ?? 0);
+    final cipler = <Widget>[
       GrafikCipi(
         label: context.l10n.chartCandleChip,
         active: mumAcik,
@@ -128,19 +167,6 @@ class GrafikAracCubugu extends ConsumerWidget {
             onTap: o.onTap,
           ),
         ),
-    ];
-    final ar = aralik;
-    final pencere = pencereDakika;
-    final secici = aralikGerekli(
-          mum: mumAcik,
-          ma20: ma20Acik,
-          ema50: ema50Acik,
-          ema200: ema200Acik,
-          ozel: (o?.acikSayi ?? 0) > 0,
-        ) &&
-        ar != null &&
-        gecerliAraliklar.length >= 2;
-    final ortalamalar = <Widget>[
       ma20,
       GrafikCipi(
         label: 'EMA50',
@@ -155,175 +181,182 @@ class GrafikAracCubugu extends ConsumerWidget {
         onTap: () => ref.read(chartEma200Provider.notifier).set(!ema200Acik),
       ),
     ];
-    final aciklama = mumAcik && kapanistan
-        ? Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              context.l10n.chartCandleFromCloses,
-              style: context.t.labelSmall?.copyWith(color: context.c.text58),
-            ),
+    // ── Tek düğme (UX raporu 30 Eki §2, yasin "yap") ──
+    // Dönem çiplerinin hemen altında MUM · LOG · MA20 · EMA50 · EMA200
+    // yatay kayıyordu; 390 pt'de son çip kesikti ("EMA2") ve yeni kullanıcı
+    // fiyatla grafik arasında beş teknik terim görüyordu. Artık tek
+    // "Göstergeler" düğmesi; açık katman sayısı yanında ("2 açık"), çipler
+    // düğmeye dokununca grafiğin ÜSTÜNDE açılır (sheet değil: seçimin
+    // etkisi grafikte hemen görülsün). Bilen kullanıcı bir dokunuş fazla
+    // yapar, bilmeyen hiç görmez.
+    //
+    // 9 Ekim kuralı ("bilinen kontrol saklanmaz") bu kararla değişti:
+    // kontrol kalkmadı, bir kat geri itildi; açık olan katman rozetle
+    // söylenir. Aralık menüsü dışarıda kalır — katman açıkken çizimin
+    // ayarıdır, sık değişir.
+    //
+    // Eski iki düzen (cam: tek sıra yatay kaydırma; klasik: iki sıra)
+    // birleşti: açılan satır `Wrap`, 320 pt'de ve 3,1× yazıda alta iner.
+    final dugme = GostergelerDugmesi(
+      acikSayi: acikSayi,
+      acik: _acik,
+      onTap: () => setState(() => _acik = !_acik),
+    );
+    final buyukYazi = MediaQuery.textScalerOf(context).scale(1) >
+        GrafikAracCubugu._buyukYaziEsigi;
+    final menu = secici
+        ? MumAraligiMenusu(
+            aralik: ar,
+            gecerli: gecerliAraliklar,
+            onSec: (yeni) {
+              if (pencere == null) return;
+              ref.read(mumAraligiSecimiProvider.notifier).sec(pencere, yeni);
+            },
           )
         : null;
-    // ── Tek sıra (bayrak `goz_alici`, cam/HIG incelemesi 2026-10-12) ──
-    // Telefonda grafikten önce üç sıra kontrol vardı (dönem, görünüm,
-    // ortalamalar); grafik ilk ekranın altına itiliyordu. Çipler AYNI sırada
-    // ve aynı yerde kalır (bilinen kontrol saklanmaz, 9 Ekim kuralı), yalnız
-    // tek satıra iner: sığarsa sağa yaslı, sığmazsa yatay kayar. Aralık
-    // menüsü yine solda.
-    if (SandikCam.acik) {
-      final ayrac = Padding(
-        padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
-        child: SizedBox(
-          width: 1,
-          height: SandikSpace.lg,
-          child: ColoredBox(color: context.c.hairline),
-        ),
-      );
-      final ciplar = <Widget>[
-        for (var i = 0; i < ustSatir.length; i++) ...[
-          if (i > 0) const SizedBox(width: 6),
-          ustSatir[i],
-        ],
-        ayrac,
-        for (var i = 0; i < ortalamalar.length; i++) ...[
-          if (i > 0) const SizedBox(width: 6),
-          ortalamalar[i],
-        ],
-      ];
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          LayoutBuilder(
-            builder: (context, kutu) => SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              // `min` boyutlu satır en az kutu genişliğinde: artan boşluk
-              // `spaceBetween` ile menü ile çipler arasına gider (sığınca
-              // çipler sağda, menü solda — iki satırlı düzenle aynı kenarlar).
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: kutu.maxWidth),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (secici)
-                      Padding(
-                        padding: const EdgeInsets.only(right: SandikSpace.sm),
-                        child: MumAraligiMenusu(
-                          aralik: ar,
-                          gecerli: gecerliAraliklar,
-                          onSec: (yeni) {
-                            if (pencere == null) return;
-                            ref
-                                .read(mumAraligiSecimiProvider.notifier)
-                                .sec(pencere, yeni);
-                          },
-                        ),
-                      )
-                    else
-                      const SizedBox.shrink(),
-                    Row(mainAxisSize: MainAxisSize.min, children: ciplar),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (aciklama != null) aciklama,
-        ],
-      );
-    }
-    // Cihazda büyük yazı açıkken (> 1,3×; uygulama ayarı bunu geçemez)
-    // menü + çipler tek satıra sığmıyor, 3,1×'te 49 px taşıyordu (büyük
-    // yazı taraması 2026-10-12). Orada satır `Wrap` olur: sığmayan çip alt
-    // satıra iner. Normal yazıda aşağıdaki `Row` birebir korunur.
-    final buyukYazi =
-        MediaQuery.textScalerOf(context).scale(1) > _buyukYaziEsigi;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Aralık menüsü sol başta (TradingView'de de zaman dilimi araç
-        // çubuğunun başında); çipler sağda kalır, yerleri değişmez.
+        // çubuğunun başında); düğme sağda.
         if (buyukYazi)
           Wrap(
             alignment: WrapAlignment.spaceBetween,
             spacing: 6,
-            children: [
-              if (secici)
-                MumAraligiMenusu(
-                  aralik: ar,
-                  gecerli: gecerliAraliklar,
-                  onSec: (yeni) {
-                    if (pencere == null) return;
-                    ref
-                        .read(mumAraligiSecimiProvider.notifier)
-                        .sec(pencere, yeni);
-                  },
-                ),
-              ...ustSatir,
-            ],
+            children: [if (menu != null) menu, dugme],
           )
         else
-        Row(
-          children: [
-            if (secici)
-              Flexible(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: MumAraligiMenusu(
-                    aralik: ar,
-                    gecerli: gecerliAraliklar,
-                    onSec: (yeni) {
-                      if (pencere == null) return;
-                      ref
-                          .read(mumAraligiSecimiProvider.notifier)
-                          .sec(pencere, yeni);
-                    },
-                  ),
-                ),
-              )
-            else
-              const Spacer(),
-            for (var i = 0; i < ustSatir.length; i++) ...[
-              if (i > 0) const SizedBox(width: 6),
-              ustSatir[i],
+          Row(
+            children: [
+              if (menu != null)
+                Flexible(
+                  child: Align(alignment: Alignment.centerLeft, child: menu),
+                )
+              else
+                const Spacer(),
+              dugme,
             ],
-          ],
+          ),
+        AnimatedSize(
+          duration: SandikMotion.stateOf(context),
+          curve: SandikMotion.enter,
+          alignment: Alignment.topCenter,
+          child: !_acik
+              ? const SizedBox(width: double.infinity)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Satır arası boşluk yok: çiplerin 44pt dokunma payı
+                    // (HIG, 2026-10-10) zaten aralık bırakıyor.
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 6,
+                      children: cipler,
+                    ),
+                    if (mumAcik && kapanistan)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          context.l10n.chartCandleFromCloses,
+                          style: context.t.labelSmall
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ),
+                  ],
+                ),
         ),
-        // Satır arası boşluk yok: çiplerin 44pt dokunma payı (HIG,
-        // 2026-10-10) zaten aralık bırakıyor. Wrap: 320pt ekranda (iPhone SE)
-        // üç ortalama çipi tek satıra sığmıyor, 22–54 px taşıyordu
-        // (`performance_screen_overflow_test`, 2026-10-11 mum/EMA herkese
-        // açılınca görüldü); sığmayan çip alt satıra iner.
-        Wrap(
-          alignment: WrapAlignment.end,
-          spacing: 6,
-          children: [
-            ma20,
-            GrafikCipi(
-              label: 'EMA50',
-              active: ema50Acik,
-              renk: context.c.gain,
-              onTap: () =>
-                  ref.read(chartEma50Provider.notifier).set(!ema50Acik),
-            ),
-            GrafikCipi(
-              label: 'EMA200',
-              active: ema200Acik,
-              renk: context.c.loss,
-              onTap: () =>
-                  ref.read(chartEma200Provider.notifier).set(!ema200Acik),
-            ),
-          ],
-        ),
-        if (mumAcik && kapanistan)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              context.l10n.chartCandleFromCloses,
-              style: context.t.labelSmall?.copyWith(color: context.c.text58),
+      ],
+    );
+  }
+}
+
+/// "Göstergeler · 2 açık ⌄" — grafik katmanlarını açan tek düğme (UX
+/// raporu 30 Eki §2). Görünüm [MumAraligiMenusu] ile aynı aile: nötr
+/// zemin, değer, aşağı/yukarı ok; amber yalnız açık katman sayısında
+/// (durum). Sayı yalnız renkle değil, metinle de söylenir.
+class GostergelerDugmesi extends StatelessWidget {
+  const GostergelerDugmesi({
+    super.key,
+    required this.acikSayi,
+    required this.acik,
+    required this.onTap,
+  });
+
+  /// Açık katman sayısı; 0 → rozet yok.
+  final int acikSayi;
+
+  /// Çip satırı açık mı (ok yönü, ekran okuyucu "genişletildi").
+  final bool acik;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Semantics(
+      button: true,
+      expanded: acik,
+      label: acikSayi > 0
+          ? l.chartIndicatorsSemantics(acikSayi)
+          : l.chartIndicatorsButton,
+      hint: l.chartIndicatorsHint,
+      excludeSemantics: true,
+      child: GenisDokunma(
+        onTap: onTap,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: context.c.overlay,
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(color: context.c.hairline),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.tune_rounded, size: 12, color: context.c.text58),
+                  const SizedBox(width: SandikSpace.xs),
+                  Flexible(
+                    child: Text(
+                      l.chartIndicatorsButton,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.c.text90,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                  if (acikSayi > 0) ...[
+                    const SizedBox(width: SandikSpace.xs),
+                    Text(
+                      '· ${l.chartIndicatorsOn(acikSayi)}',
+                      maxLines: 1,
+                      style: context.t.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.c.amberText,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: SandikSpace.xxs),
+                  AnimatedRotation(
+                    turns: acik ? 0.5 : 0,
+                    duration: SandikMotion.stateOf(context),
+                    curve: SandikMotion.enter,
+                    child: Icon(Icons.expand_more_rounded,
+                        size: 14, color: context.c.text58),
+                  ),
+                ],
+              ),
             ),
           ),
-      ],
+        ),
+      ),
     );
   }
 }
@@ -581,9 +614,7 @@ class GrafikCipi extends StatelessWidget {
                 )
               else
                 Icon(
-                  active
-                      ? Icons.check_rounded
-                      : Icons.horizontal_rule_rounded,
+                  active ? Icons.check_rounded : Icons.horizontal_rule_rounded,
                   size: 12,
                   color: active ? context.c.amberText : context.c.text58,
                 ),

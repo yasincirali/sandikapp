@@ -391,6 +391,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 targetAssets,
                 intraday: isIntraday,
                 tekAkis: true,
+                veriGelmedi: isIntraday &&
+                    breakdown.gunIciVerisiYokTurler.isNotEmpty,
               ),
             ),
             const SizedBox(height: SandikSpace.sm),
@@ -548,6 +550,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               endDate,
               targetAssets,
               intraday: isIntraday,
+              veriGelmedi:
+                  isIntraday && breakdown.gunIciVerisiYokTurler.isNotEmpty,
             ),
           ),
           const SizedBox(height: SandikSpace.sm),
@@ -594,6 +598,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     required bool intraday,
     // Tek akış (`performans_tek_akis`): alt kat üç kalem yerine tek cümle.
     bool tekAkis = false,
+    // Gün içi seride gerçek nokta alınamayan tür var (`gunIciVerisiYokTurler`):
+    // düz manşet "Değişim yok" değil, Bugün kartı ve varlık sayfasıyla aynı
+    // cümle (UX raporu 30 Eki §1).
+    bool veriGelmedi = false,
   }) {
     // Pencere GEÇİLİR — Özet sekmesiyle AYNI dönem başı.
     //
@@ -886,6 +894,33 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                       context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ],
+              // Paylaş (UX raporu 30 Eki §6, yasin "yap"): Özet'te "Ne
+              // oldu?" başlığının altında tek başına bir düğme duruyordu;
+              // başlık bölüm vaat ediyor, altı boştu. Artık manşet rakamın
+              // kartında, Bugün kartındaki paylaşımla aynı kalıp: 44 pt,
+              // ikon gri, tooltip = erişilebilirlik etiketi. Görsel ve
+              // metin yine Özet'ten (tutar yok, yüzde + etiket).
+              if (tekAkis)
+                ValueListenableBuilder<VoidCallback?>(
+                  valueListenable: _ozetPaylasim,
+                  builder: (context, paylas, _) => paylas == null
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding:
+                              const EdgeInsets.only(left: SandikSpace.xs),
+                          child: IconButton(
+                            onPressed: paylas,
+                            tooltip: context.l10n.shareSummary,
+                            icon: const Icon(Icons.ios_share_rounded),
+                            iconSize: 20,
+                            color: context.c.text58,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(
+                                width: SandikTouch.min,
+                                height: SandikTouch.min),
+                          ),
+                        ),
+                ),
             ],
           ),
           const SizedBox(height: SandikSpace.sm2),
@@ -906,11 +941,17 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    piyasaFlat
-                        ? context.l10n.noChange
-                        : '${piyasa >= 0 ? '+' : '−'}${tryFmt.format(piyasa.abs())}',
+                    piyasaFlat && veriGelmedi
+                        ? context.l10n.todayNoDataYet
+                        : piyasaFlat
+                            ? context.l10n.noChange
+                            : '${piyasa >= 0 ? '+' : '−'}${tryFmt.format(piyasa.abs())}',
                     maxLines: 1,
-                    style: context.t.numMedium.copyWith(color: piyasaColor),
+                    // Veri yokken cümle rakam boyunda değil: durum bildirimi.
+                    style: piyasaFlat && veriGelmedi
+                        ? context.t.titleMedium
+                            ?.copyWith(color: context.c.text58)
+                        : context.t.numMedium.copyWith(color: piyasaColor),
                   ),
                 ),
               ),
@@ -1189,6 +1230,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           : null,
       anaRakamGizli: anaRakamGizli,
       nedenEki: nedenEki,
+      // Tek akışta paylaş düğmesi Özet'te değil, dönem kartının ikonunda.
+      paylasimKanali: anaRakamGizli ? _ozetPaylasim : null,
     );
   }
 }

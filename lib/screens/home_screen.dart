@@ -56,7 +56,6 @@ import 'asset_detail_screen.dart';
 import 'portfolio_performance_screen.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/piyasa_seridi.dart';
-import 'add_watchlist_screen.dart';
 import 'genel_arama_screen.dart';
 import '../widgets/tour_anchor.dart';
 import '../services/islem_notu.dart';
@@ -109,20 +108,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Ana sayfa kaydırmasında piyasa bandını uyandırır (bkz.
   /// `KayanBant.uyandirici`).
   final _seritUyandirici = _Uyandirici();
-
-  /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
-  void _aramayiAc() {
-    // Demo (F1): takibe alma bir yazma; arama sayfası oraya çıkıyor.
-    if (DemoModu.yazmaKapisi('arama')) return;
-    pushGuarded(
-      context,
-      adaptiveRoute<void>(
-        settings: const RouteSettings(name: 'add_watchlist'),
-        builder: (_) => const AddWatchlistScreen(),
-        fullscreenDialog: true,
-      ),
-    );
-  }
 
   /// Genel arama: üst çubuktaki büyüteç (bayrak `genel_arama` 2026-10-20'de
   /// emekliye ayrıldı; her zaman açık).
@@ -751,39 +736,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  // Büyüteç (sadeleştirme 2; bayrak `genel_arama` 2026-10-20'de
-                  // emekliye ayrıldı, eski yenile düğmesi kalktı): yenileme
-                  // zaten aşağı çekmede
-                  // (`RefreshIndicator`, çan listelerini de tazeler) ve
-                  // fiyatlar arka planda güncelleniyor; ayrı bir düğme
-                  // üst çubuğun en değerli yerini "şimdi çek"e veriyordu.
-                  // Düğme sayısı üç kalır (HIG notu aşağıda). Tur hedefi
-                  // aynı anahtar (`onboarding_screen` 'yenile').
-                  TourAnchor(
-                    target: TourTarget.yenileTusu,
-                    child: SandikTappable(
-                      key: const ValueKey('genel-arama-dugmesi'),
-                      onTap: () => _genelAramayiAc(
-                        tumHareketleriAc: () => pushGuarded(
-                          context,
-                          adaptiveRoute<void>(
-                            settings: const RouteSettings(name: 'all_transactions'),
-                            builder: (_) => AllTransactionsScreen(
-                              allPartnerAssets: allPartnerAssets,
-                              partners: partners,
-                              initialView: _view,
-                            ),
-                          ),
-                        ),
-                      ),
-                      semanticLabel: context.l10n.s7AraSemantics,
-                      child: _HeaderIconKutusu(
-                        child: Icon(Icons.search_rounded,
-                            color: context.c.text58, size: 22),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: SandikSpace.sm),
+                  // Büyüteç 30 Eki'de kalktı (UX raporu §3, yasin "yap"):
+                  // ortadaki "Ara" hapıyla iki arama girişi vardı, biri
+                  // takibe alma aramasına öteki genel aramaya gidiyordu ve
+                  // kullanıcı farkı bilemiyordu. Tek giriş hap; o da artık
+                  // genel aramayı açar (piyasa sembolü dahil, takibe alma
+                  // varlık sayfasından). Tur hedefi `yenileTusu` hapa geçti.
                   const TourAnchor(
                     target: TourTarget.gizleTusu,
                     child: _BalanceToggleButton(),
@@ -904,7 +862,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // başlatıyordu; başlık→kart görsel boşluğu artık 4 + kutu
                 // payı 4 = 8pt.
                 padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm2),
-                onAra: _aramayiAc,
+                onAra: () => _genelAramayiAc(
+                  tumHareketleriAc: () => pushGuarded(
+                    context,
+                    adaptiveRoute<void>(
+                      settings: const RouteSettings(name: 'all_transactions'),
+                      builder: (_) => AllTransactionsScreen(
+                        allPartnerAssets: allPartnerAssets,
+                        partners: partners,
+                        initialView: _view,
+                      ),
+                    ),
+                  ),
+                ),
+                // Turun "Her şeyi ara" adımı hapın kendisini gösterir.
+                aramaSarici: (hap) =>
+                    TourAnchor(target: TourTarget.yenileTusu, child: hap),
                 uyandirici: _seritUyandirici,
               ),
               ),
@@ -1938,26 +1911,6 @@ class _BalanceToggleButton extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-// ── Header ikon kutusu ────────────────────────────────────────────────────────
-
-/// Üst çubuk ikon kutusu (44×44 çip). Dokunma sarmalayanda.
-/// (`kutusuz` seçeneği yenile düğmesi içindi; düğme `genel_arama`
-/// emekliye ayrılınca 2026-10-20'de kalktı.)
-class _HeaderIconKutusu extends StatelessWidget {
-  final Widget child;
-  const _HeaderIconKutusu({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: context.chip(selected: false),
-      child: Center(child: child),
     );
   }
 }

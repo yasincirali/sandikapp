@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/models/position.dart';
+import 'package:portfoy_takip/widgets/transaction_row.dart';
 
 /// Hareket satırının "önceki → sonraki" bakiyesi (kullanıcı isteği
 /// 2026-10-29). Sözleşme `hareketBakiyeleri` belge yorumunda: miktar, ham
@@ -135,8 +137,7 @@ void main() {
 
   test('mevduat ve BES için bakiye yok', () {
     final b = hareketBakiyeleri([
-      _lot('m1', 100000, _g(1),
-          type: AssetType.mevduat, ticker: 'MEVDUAT:1'),
+      _lot('m1', 100000, _g(1), type: AssetType.mevduat, ticker: 'MEVDUAT:1'),
       _lot('b1', 500, _g(1), type: AssetType.bes, ticker: 'AEA'),
     ]);
     expect(b, isEmpty);
@@ -150,5 +151,16 @@ void main() {
     final yeni = o.hesapla([...lots, _lot('a3', 1, _g(3))]);
     expect(identical(yeni, ilk), isFalse);
     expect(yeni['a3'], (once: 15.0, sonra: 16.0));
+  });
+
+  // UX raporu 30 Eki §4: ilk alımda "0 → 550 lot" sağdaki "Alım · 550
+  // lot"u tekrar ediyordu; önceki bakiye 0 iken satır yok.
+  test('ilk alımda bakiye satırı yok, sonraki alımda var', () {
+    final l = AppLocalizationsTr();
+    final lot = _lot('a1', 550, _g(1));
+    expect(hareketBakiyeMetni(l, lot, (once: 0.0, sonra: 550.0)), isNull);
+    final m = hareketBakiyeMetni(l, lot, (once: 550.0, sonra: 1100.0));
+    expect(m, isNotNull);
+    expect(m!.gorunen, contains('550'));
   });
 }

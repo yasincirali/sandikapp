@@ -15,6 +15,7 @@ import 'package:flutter/material.dart'
         RefreshIndicator,
         Switch,
         TextButton,
+        IconButton,
         FilledButton,
         Divider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -371,6 +372,12 @@ class _PortfolioPerformanceScreenState
   /// titremesini önler. Gerekçe `_OzetBellek` notunda.
   final _ozetBellek = _OzetBellek();
 
+  /// Tek akışta Özet'in paylaşım eylemi dönem kartının ikonuna buradan
+  /// ulaşır (UX raporu 30 Eki §6): paylaşım metnini Özet ölçer (TÜFE,
+  /// XIRR, seviye kapıları onda), düğme ise kartın sağ üstünde durur.
+  /// `null` → paylaşılacak ölçülmüş bir sayı yok, ikon çizilmez.
+  final _ozetPaylasim = _PaylasimKanali();
+
   // Ana grafik + volume subchart aynı X viewport'unu paylaşsın diye
   // ortak controller. Grafiğin fullMinX/fullMaxX'i period değiştikçe
   // güncellenir; ZoomableChart bunu dinler.
@@ -499,6 +506,7 @@ class _PortfolioPerformanceScreenState
 
   @override
   void dispose() {
+    _ozetPaylasim.dispose();
     // Dinleyici STATİK bir `ValueNotifier`'a bağlı: kaldırılmazsa ekran
     // yeniden kurulduğunda üst üste birikir ve tek dokunuş birden çok kez
     // işlenir (aynı gerekçe `MainNavigationScreen.dispose`).

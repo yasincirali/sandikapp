@@ -516,6 +516,11 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
 /// temettü için `null` (2026-10-29) — `hareketBakiyeleri` onlara zaten
 /// bakiye üretmez; bu ikinci kapı satırın kendi başına da doğru kalması
 /// için.
+///
+/// İlk alımda (önceki bakiye 0) da `null` (UX raporu 30 Eki §4, yasin
+/// "yap"): "0 → 550 lot" sağdaki "Alım · 550 lot"u ikinci kez söylüyordu;
+/// bilgi yalnız bakiye ÖNCEDEN varken yenidir. Portföy önce → sonra satırı
+/// ayrıdır, kalır.
 ({String gorunen, String okunan})? hareketBakiyeMetni(
   AppLocalizations l10n,
   Asset asset,
@@ -526,6 +531,11 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
     return null;
   }
   final fmt = qtyFormatter(maxDigits: asset.azamiOndalik);
+  // Biçimlenmiş 0 ("0", "$0"): sayının kendisi değil gösterilen değer —
+  // 0,00001 BTC "0" yazılırsa o da yeni bilgi taşımaz.
+  if (bakiye.once.abs() < 1e-9 || fmt.format(bakiye.once) == fmt.format(0)) {
+    return null;
+  }
   final once = fmt.format(bakiye.once);
   final sonra = fmt.format(bakiye.sonra);
   if (asset.unitIsPrefix) {

@@ -34,7 +34,8 @@ void main() {
   group('donemDegisimSatiri — iki eski kopyanın biçimi', () {
     testWidgets('yüzde yoksa boş satır, nötr renk (yer tutulur)', (t) async {
       await _baglam(t);
-      final s = donemDegisimSatiri(_ctx, pct: null, donem: '1 yıl', bicim: bicim);
+      final s =
+          donemDegisimSatiri(_ctx, pct: null, donem: '1 yıl', bicim: bicim);
       expect(s.metin, ' ');
       expect(s.renk, _ctx.c.text36);
     });
@@ -68,14 +69,22 @@ void main() {
       final s = donemDegisimSatiri(_ctx, pct: 1.2, donem: '1 ay', bicim: bicim);
       expect(s.metin, '+%1,20 · 1 ay');
     });
+
+    // UX raporu 30 Eki §1: tohum seri "değişim yok" diye okunmasın.
+    testWidgets('veri gelmedi: Bugün kartıyla aynı cümle', (t) async {
+      await _baglam(t);
+      final s = donemDegisimSatiri(_ctx,
+          pct: 0, donem: 'Bugün', fark: 0, bicim: bicim, veriGelmedi: true);
+      expect(s.metin, 'Bugünün verisi henüz gelmedi');
+      expect(s.metin, isNot(contains('değişim')));
+    });
   });
 
   group('VarlikBasligi', () {
     Future<void> ciz(WidgetTester t, VarlikKimligi k, {bool atla = false}) =>
         t.pumpWidget(MaterialApp(
           theme: ThemeData.dark(),
-          home: Scaffold(
-              body: VarlikBasligi(kimlik: k, adTekrariniAtla: atla)),
+          home: Scaffold(body: VarlikBasligi(kimlik: k, adTekrariniAtla: atla)),
         ));
 
     testWidgets('kısa etiket + "ad · tür"', (t) async {

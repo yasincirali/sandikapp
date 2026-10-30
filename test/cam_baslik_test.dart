@@ -94,8 +94,7 @@ void main() {
         ),
       );
 
-  _tw('bayrak kapalı: eski SafeArea > Column, cam ve pay yok',
-      (t) async {
+  _tw('bayrak kapalı: eski SafeArea > Column, cam ve pay yok', (t) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     await t.pumpWidget(sekme());
     await t.pump();
@@ -108,8 +107,7 @@ void main() {
     expect(find.byType(BackdropFilter), findsNothing);
   });
 
-  _tw('iOS: içerik başlığın altında başlar, kaydırınca cam gelir',
-      (t) async {
+  _tw('iOS: içerik başlığın altında başlar, kaydırınca cam gelir', (t) async {
     RemoteConfigService.testAcik = {'goz_alici'};
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     await t.pumpWidget(sekme());
@@ -158,8 +156,7 @@ void main() {
 
   // Ayar Flutter'a gelmiyor, kanaldan okunur; uygulama açıkken değişince
   // yüzey yeniden başlatmadan opaklaşmalı (HIG; mağazaya gitmeden kapandı).
-  _tw('iOS Saydamlığı azalt: cam çizilmez, değişince hemen uyar',
-      (t) async {
+  _tw('iOS Saydamlığı azalt: cam çizilmez, değişince hemen uyar', (t) async {
     RemoteConfigService.testAcik = {'goz_alici'};
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     final azalt = SaydamlikTercihi.instance.azalt;
@@ -255,8 +252,7 @@ void main() {
     expect(find.byType(CupertinoContextMenu), findsNothing);
   });
 
-  _tw('bağlam menüsü iOS: sistem menüsü, dokunuş satırı açar',
-      (t) async {
+  _tw('bağlam menüsü iOS: sistem menüsü, dokunuş satırı açar', (t) async {
     RemoteConfigService.testAcik = {'goz_alici'};
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     var acildi = 0;
@@ -310,7 +306,8 @@ void main() {
                       children: [
                         Row(children: [
                           const Expanded(child: Text('KCHOL')),
-                          Consumer(builder: (_, ref, __) => Text(ref.watch(ad))),
+                          Consumer(
+                              builder: (_, ref, __) => Text(ref.watch(ad))),
                         ]),
                         const Spacer(),
                         const Text('620 lot'),
@@ -337,8 +334,7 @@ void main() {
     expect(find.text('kaptan'), findsNothing);
   });
 
-  _tw('bağlam menüsü Android: uzun basınca alt sayfa, yıkıcı sonda',
-      (t) async {
+  _tw('bağlam menüsü Android: uzun basınca alt sayfa, yıkıcı sonda', (t) async {
     RemoteConfigService.testAcik = {'goz_alici'};
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     var alindi = 0;
@@ -383,22 +379,30 @@ void main() {
         ),
       );
 
-  _tw('grafik araçları: bayrakla tek sıra, sırası aynı', (t) async {
-    await t.pumpWidget(araclar());
-    final ikiSira = t.getTopLeft(find.text('EMA50')).dy !=
-        t.getTopLeft(find.text('LOG')).dy;
-    expect(ikiSira, isTrue, reason: 'bayrak kapalı: eski iki satır');
-
-    RemoteConfigService.testAcik = {'goz_alici'};
-    await t.pumpWidget(const SizedBox.shrink());
-    await t.pumpWidget(araclar());
-    final y = t.getTopLeft(find.text('LOG')).dy;
-    for (final c in ['MA20', 'EMA50', 'EMA200']) {
-      expect(t.getTopLeft(find.text(c)).dy, y, reason: c);
+  // Tek düğme (UX raporu 30 Eki §2): bayraktan bağımsız aynı düzen —
+  // kapalıyken yalnız aralık menüsü + "Göstergeler · 1 açık"; açılınca
+  // çipler aynı sırada, görünüm çipleri önce.
+  _tw('grafik araçları: tek düğme, açılınca sıra aynı', (t) async {
+    for (final bayrak in [
+      <String>{},
+      {'goz_alici'}
+    ]) {
+      RemoteConfigService.testAcik = bayrak;
+      await t.pumpWidget(const SizedBox.shrink());
+      await t.pumpWidget(araclar());
+      expect(find.text('EMA50'), findsNothing, reason: '$bayrak');
+      expect(find.textContaining('1 açık'), findsOneWidget, reason: '$bayrak');
+      await t.tap(find.byType(GostergelerDugmesi));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 400));
+      for (final c in ['MUM', 'LOG', 'MA20', 'EMA50', 'EMA200']) {
+        expect(find.text(c), findsOneWidget, reason: '$c $bayrak');
+      }
+      double y(String c) => t.getTopLeft(find.text(c)).dy;
+      double x(String c) => t.getTopLeft(find.text(c)).dx;
+      expect(y('LOG') < y('MA20') || x('LOG') < x('MA20'), isTrue,
+          reason: 'görünüm çipleri ortalamalardan önce');
     }
-    // Sıra korunur: görünüm çipleri, sonra ortalamalar.
-    expect(t.getTopLeft(find.text('LOG')).dx,
-        lessThan(t.getTopLeft(find.text('MA20')).dx));
     expect(t.takeException(), isNull);
   });
 }

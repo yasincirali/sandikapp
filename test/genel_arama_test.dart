@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/signal_alert.dart';
@@ -118,17 +119,16 @@ void main() {
   tearDown(() => RemoteConfigService.testAcik = {});
 
   group('ana ekran üst çubuğu', () {
-    // Bayrak 2026-10-20'de emekliye ayrıldı: büyüteç koşulsuz, eski yenile
-    // düğmesi kalktı.
-    testWidgets('üst çubukta Ara, yenile düğmesi yok', (t) async {
+    // 2026-10-30 (UX raporu §3): tek arama girişi. Üst çubuktaki büyüteç
+    // kalktı; piyasa şeridindeki "Ara" hapı genel aramayı açar.
+    testWidgets('tek arama girişi: Ara hapı genel aramayı açar', (t) async {
       await _pump(t, const HomeScreen());
-      final ara = find.byKey(const ValueKey('genel-arama-dugmesi'));
-      expect(ara, findsOneWidget);
+      expect(find.byKey(const ValueKey('genel-arama-dugmesi')), findsNothing);
       expect(find.byIcon(Icons.refresh_rounded), findsNothing);
-      // Aynı boy: 44pt kutu.
-      final r = t.getRect(ara);
-      expect(r.width, 44);
-      expect(r.height, 44);
+      final ara = find.byType(PiyasaAramaDugmesi);
+      expect(ara, findsOneWidget);
+      // 44pt dokunma yüksekliği.
+      expect(t.getRect(ara).height, 44);
       // Yenileme aşağı çekmede kalır.
       expect(find.byType(RefreshIndicator), findsOneWidget);
 
@@ -153,8 +153,7 @@ void main() {
     setUp(SymbolSearchService.clearCacheForTest);
 
     Future<void> yaz(WidgetTester t, String q) async {
-      await t.enterText(
-          find.byKey(const ValueKey('genel-arama-alani')), q);
+      await t.enterText(find.byKey(const ValueKey('genel-arama-alani')), q);
       for (var i = 0; i < 6; i++) {
         await t.pump(const Duration(milliseconds: 100));
       }
@@ -237,8 +236,7 @@ void main() {
       expect(tumu, findsNothing);
     });
 
-    testWidgets('açık/kapalı kalıcı değil: yeniden açılışta kapalı',
-        (t) async {
+    testWidgets('açık/kapalı kalıcı değil: yeniden açılışta kapalı', (t) async {
       await _pump(t, tamEkran());
       await t.tap(tumu);
       await t.pumpAndSettle();
@@ -296,8 +294,7 @@ void main() {
                   .copyWith(textScaler: TextScaler.linear(olcek)),
               child: child!,
             ),
-            home: Material(
-                type: MaterialType.transparency, child: tamEkran()),
+            home: Material(type: MaterialType.transparency, child: tamEkran()),
           ),
         ));
         await t.pump(const Duration(milliseconds: 100));
@@ -386,8 +383,8 @@ void main() {
     testWidgets('fiyat bilinmiyorsa satır YOK', (t) async {
       await _pump(t, fiyatliEkran(const {}));
       await yaz(t, '5 çeyrek');
-      expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
-          findsNothing);
+      expect(
+          find.byKey(const ValueKey('genel-arama-hizli-hesap')), findsNothing);
       expect(find.textContaining('≈'), findsNothing);
     });
 
@@ -447,7 +444,8 @@ void main() {
           findsOneWidget);
       // 44pt satır.
       expect(
-          t.getSize(find.byKey(const ValueKey('genel-arama-hizli-hesap')))
+          t
+              .getSize(find.byKey(const ValueKey('genel-arama-hizli-hesap')))
               .height,
           greaterThanOrEqualTo(44));
       expect(t.takeException(), isNull);
@@ -473,9 +471,7 @@ void main() {
       for (final q in const [
         // Satış hiç gelmedi: alışa düşülmez.
         YahooQuote(
-            symbol: 'ALTIN_CEYREK',
-            regularMarketPrice: 3800,
-            currency: 'TRY'),
+            symbol: 'ALTIN_CEYREK', regularMarketPrice: 3800, currency: 'TRY'),
         // Satış alışın altında: veri bozuk.
         YahooQuote(
             symbol: 'ALTIN_CEYREK',
@@ -491,8 +487,8 @@ void main() {
       ]) {
         await _pump(t, ikinciAdim({'ALTIN_CEYREK': q}));
         await yaz(t, '10.000 tl çeyrek');
-        expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
-            findsNothing,
+        expect(
+            find.byKey(const ValueKey('genel-arama-hizli-hesap')), findsNothing,
             reason: '${q.satisFiyati}');
         expect(find.textContaining('≈'), findsNothing);
       }
@@ -521,7 +517,8 @@ void main() {
       await _pump(t, ikinciAdim(thyFiyatli));
       await yaz(t, '100 THYAO');
       expect(find.text('100 THYAO ≈ ₺31.240'), findsOneWidget);
-      expect(find.bySemanticsLabel(
+      expect(
+          find.bySemanticsLabel(
               RegExp(r'^100 THYAO ≈ ₺31\.240\. Portföyüne ekle')),
           findsOneWidget);
 
@@ -551,15 +548,15 @@ void main() {
         (t) async {
       await _pump(t, ikinciAdim(const {}));
       await yaz(t, '100 THYAO');
-      expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
-          findsNothing);
+      expect(
+          find.byKey(const ValueKey('genel-arama-hizli-hesap')), findsNothing);
       expect(find.textContaining('≈'), findsNothing);
 
       await _pump(t, ikinciAdim(thyFiyatli));
       for (final g in ['100 THY', '2025 raporu', '3 ay', '10 tl']) {
         await yaz(t, g);
-        expect(find.byKey(const ValueKey('genel-arama-hizli-hesap')),
-            findsNothing,
+        expect(
+            find.byKey(const ValueKey('genel-arama-hizli-hesap')), findsNothing,
             reason: g);
       }
     });

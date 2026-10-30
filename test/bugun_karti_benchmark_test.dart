@@ -114,7 +114,8 @@ void main() {
     Future<void> kur(WidgetTester tester,
         {required double genislik,
         bool azalt = false,
-        bool dusus = false}) async {
+        bool dusus = false,
+        bool veriYok = false}) async {
       tester.view.physicalSize = Size(genislik * 3, 1200 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -130,9 +131,14 @@ void main() {
       final kThy = positionKey(_defter[0]);
       final kAsl = positionKey(_defter[1]);
       IntradaySeriesCache.instance.seedForTest(
-        series: dusus
-            ? {ms(10): 41700, ms(15): 41000}
-            : {ms(10): 41000, ms(15): 41700},
+        // Veri yok: seri son bilinen fiyatın düz taşınması (canlı toplam
+        // 41.240), hisse için tek gerçek nokta yok.
+        series: veriYok
+            ? {ms(10): 41240, ms(15): 41240}
+            : dusus
+                ? {ms(10): 41700, ms(15): 41000}
+                : {ms(10): 41000, ms(15): 41700},
+        gunIciVerisiYokTurler: veriYok ? {AssetType.hisse} : const {},
         fetchedAt: DateTime.now(),
         seansGunu: gun,
         kume: kume,
@@ -214,6 +220,17 @@ void main() {
       expect(find.textContaining('+%'), findsWidgets);
       // Görselde tutar yok — rozetteki "+₺240" yalnız arkadaki kartta.
       expect(find.textContaining('+₺240'), findsOneWidget);
+    });
+
+    // UX raporu 30 Eki §1: veri gelmeyince "Yerinde saydı · ₺0" değil.
+    testWidgets('gün içi veri gelmedi: "Yerinde saydı" yok, rozet/paylaş yok',
+        (tester) async {
+      await kur(tester, genislik: 390, veriYok: true);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Bugünün verisi henüz gelmedi'), findsOneWidget);
+      expect(find.text('Yerinde saydı'), findsNothing);
+      expect(find.textContaining('₺0'), findsNothing);
+      expect(find.byTooltip('Bugünü paylaş'), findsNothing);
     });
 
     testWidgets('düşüşte hüküm "Geriledi", rozet eksi tutar', (tester) async {

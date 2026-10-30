@@ -248,6 +248,14 @@ void main() {
                   ],
                   kapanistan: false,
                 ),
+                // Çipler 30 Eki'den beri "Göstergeler" düğmesinin ardında;
+                // vitrinde açık hâlleri ayrıca durur ki ölçüm sürsün.
+                Wrap(spacing: 6, children: [
+                  GrafikCipi(label: 'MA20', active: true, onTap: () {}),
+                  GrafikCipi(label: 'EMA50', active: false, onTap: () {}),
+                  GrafikCipi(
+                      label: 'ƒx', active: false, kilitli: true, onTap: () {}),
+                ]),
                 const SizedBox(height: SandikSpace.md),
                 // Varlık sayfasının Al · Sat · Temettü çubuğu: şerit ve
                 // (bayrak `goz_alici`) yüzen cam kapsül.

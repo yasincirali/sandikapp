@@ -747,6 +747,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         fark: ist?.fark,
         bicim: bicim,
         duz: ist?.isFlat,
+        // GÜNLÜK seri boş geldi (ağ yanıt verdi, nokta yok): boş satır
+        // yerine detay ekranı ve Bugün kartıyla aynı cümle.
+        veriGelmedi: cizilen == 1 && (_seriler[1]?.isEmpty ?? false),
       ),
     );
   }

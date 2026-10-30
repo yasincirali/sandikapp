@@ -6542,6 +6542,30 @@ abstract class AppLocalizations {
   /// **'Grafik tipi'**
   String get chartTypeTooltip;
 
+  /// Grafik araç çubuğunda MUM/LOG/MA/EMA çiplerini açan tek düğme (UX raporu 30 Eki §2)
+  ///
+  /// In tr, this message translates to:
+  /// **'Göstergeler'**
+  String get chartIndicatorsButton;
+
+  /// No description provided for @chartIndicatorsOn.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} açık'**
+  String chartIndicatorsOn(int n);
+
+  /// No description provided for @chartIndicatorsSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Göstergeler, {n} açık'**
+  String chartIndicatorsSemantics(int n);
+
+  /// No description provided for @chartIndicatorsHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gösterge ve grafik katmanlarını açar ya da kapatır'**
+  String get chartIndicatorsHint;
+
   /// No description provided for @chartCandleChip.
   ///
   /// In tr, this message translates to:
@@ -6848,6 +6872,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Canlı'**
   String get todayLiveWord;
+
+  /// Gün içi seri hiç gelmediğinde düz çizgi yerine söylenen cümle (Bugün kartı, varlık başlığı)
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünün verisi henüz gelmedi'**
+  String get todayNoDataYet;
 
   /// No description provided for @todayLoading.
   ///
