@@ -68,6 +68,38 @@ List<(int, double)> yahooSeriCoz(Map<String, dynamic> body,
   return [(points.first.$1 - slot.inMilliseconds, onceki), ...points];
 }
 
+/// Yahoo `v8/finance/chart` yanıtından kotasyon — toplu `v7/finance/quote`
+/// düştüğünde kullanılan yedek yol.
+///
+/// ## Neden yüzde de (Ar-Ge 2026-10-30 12:45 #1, yasin "yap")
+/// Yedek yol yalnız fiyat yazıyordu. Toplu uç düşünce (çerez/crumb ister;
+/// çoğu istemcide 401 döndüğü biliniyor, ölçüm bekliyor) hisse günlük
+/// yüzdesiz kalıyordu: piyasa bandı ve tek varlık widget'ı yüzde
+/// göstermiyor, gün başı referansı (`gunlukReferansFiyat`) oluşmuyordu.
+/// Yüzde aynı yanıtın `meta.chartPreviousClose`'undan hesaplanır: sunucu
+/// (`_shared/live_prices.ts` › `fetchYahooQuote`) ve gün içi seri
+/// ([yahooSeriCoz]) de bu alanı kullanır, üç yüzey tanım gereği aynı
+/// sayıyı yazar. Önceki kapanış yoksa yüzde `null` (uydurma yok).
+YahooQuote? yahooGrafikKotasyonu(String symbol, Map<String, dynamic> body) {
+  final result =
+      (body['chart']?['result'] as List?)?.firstOrNull as Map<String, dynamic>?;
+  if (result == null) return null;
+  final m = result['meta'] as Map<String, dynamic>?;
+  final price = (m?['regularMarketPrice'] as num?)?.toDouble();
+  if (price == null) return null;
+  final onceki = (m?['chartPreviousClose'] as num?)?.toDouble();
+  return YahooQuote(
+    symbol: symbol,
+    regularMarketPrice: price,
+    currency: m?['currency'] as String?,
+    shortName: m?['shortName'] as String?,
+    regularMarketChangePercent:
+        onceki != null && onceki.isFinite && onceki > 0 && price > 0
+            ? (price / onceki - 1) * 100
+            : null,
+  );
+}
+
 class YahooQuote {
   final String symbol;
   final double? regularMarketPrice;
@@ -1438,21 +1470,8 @@ class PriceService {
 
       if (res.statusCode != 200) return null;
 
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
-      final result = (body['chart']?['result'] as List?)?.firstOrNull
-          as Map<String, dynamic>?;
-      if (result == null) return null;
-
-      final m = result['meta'] as Map<String, dynamic>?;
-      final price = (m?['regularMarketPrice'] as num?)?.toDouble();
-      if (price == null) return null;
-
-      return YahooQuote(
-        symbol: symbol,
-        regularMarketPrice: price,
-        currency: m?['currency'] as String?,
-        shortName: m?['shortName'] as String?,
-      );
+      return yahooGrafikKotasyonu(
+          symbol, jsonDecode(res.body) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }

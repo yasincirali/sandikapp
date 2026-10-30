@@ -4524,6 +4524,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String chartPrevCloseLabel(String value) {
+    return 'ÖNCEKİ KAPANIŞ · $value';
+  }
+
+  @override
+  String chartDayStartLabel(String value) {
+    return 'GÜN BAŞI · $value';
+  }
+
+  @override
   String chartStartLabel(String date, String value) {
     return 'BAŞLANGIÇ · $date · $value';
   }

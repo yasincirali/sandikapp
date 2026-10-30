@@ -118,6 +118,20 @@ const CHANNEL_ID = 'brief_channel';
 /// kullanıcıyı bildirimleri kapatmaya iter.
 const DEFAULT_MIN_MOVE_PCT = 1.5;
 
+/// Fonun eşiği genel eşiğin yarısı (varsayılanla %0,75).
+///
+/// Ar-Ge 2026-10-30 12:45 #3 (yasin "yap"; müşteri raporu 30 Eki 09:15):
+/// fon günlük oynaklığı altın/döviz/hisseden düşük; tek eşikle (%1,5)
+/// yarışınca fon neredeyse hiç seçilmiyor, yalnız fon tutan kişi sabah
+/// hiçbir şey duymuyordu. Oran olarak tutulur ki `min_move_pct` ile
+/// eşiği değiştiren çağrı fonu da aynı oranda taşısın.
+export const FON_ESIK_ORANI = 0.5;
+
+/// [tur] için eşik (yüzde puanı).
+export function briefEsigi(tur: BriefTuru | undefined, minMovePct: number): number {
+  return tur === 'fon' ? minMovePct * FON_ESIK_ORANI : minMovePct;
+}
+
 /// Altın/döviz kotasyonu bu yaştan eskiyse brifing onu "bugün" diye
 /// anlatmaz. `yurt-ici-kotasyon` 5 dakikada bir yazar; yüzde alarmının
 /// eşiğiyle aynı (`YUZDE_YURT_ICI_BAYATLIK_MS`, 15 dk).
@@ -217,7 +231,7 @@ export function lastChangePct(closes: number[]): number | null {
 /// Yön oku başlıkta en solda — kilit ekranında kullanıcı önce sol kenarı
 /// tarar; ▲▼ her yazı tipinde aynı görünür ve VoiceOver düzgün okur.
 ///
-/// [otherCount] = eşiği (`minMovePct`) AYRICA geçen DİĞER hisse sayısı
+/// [otherCount] = kendi eşiğini ([briefEsigi]) AYRICA geçen DİĞER hisse sayısı
 /// (tekil sembol). Eskiden "portföydeki diğer lot sayısı"ydı ve metin
 /// "Portföyündeki diğer 2 hisse daha var." diyordu: ne söylediği belli
 /// değildi (emülatör testi #16, 2026-09-29) ve aynı hissenin iki lot'u
@@ -286,14 +300,19 @@ export function briefAdayiSec(
   for (const s of satirlar) {
     if (!tekil.has(s.sembol)) tekil.set(s.sembol, s);
   }
+  // Seçim yüzde ÷ eşik oranıyla: fon kendi eşiğine göre ölçülür
+  // ([briefEsigi]). Yalnız hisse/altın/döviz tutanda eşik tek, sıra
+  // eskisiyle aynı.
+  const oran = (a: BriefAdayi) =>
+    Math.abs(a.changePct) / briefEsigi(a.tur, minMovePct);
   let en: BriefAdayi | null = null;
   for (const a of tekil.values()) {
-    if (!en || Math.abs(a.changePct) > Math.abs(en.changePct)) en = a;
+    if (!en || oran(a) > oran(en)) en = a;
   }
   if (!en) return null;
   let digerHareketli = 0;
   for (const a of tekil.values()) {
-    if (a.sembol !== en.sembol && Math.abs(a.changePct) >= minMovePct) {
+    if (a.sembol !== en.sembol && oran(a) >= 1) {
       digerHareketli += 1;
     }
   }
@@ -771,7 +790,7 @@ Deno.serve(async (request) => {
           skippedTatil += 1;
           continue;
         }
-        if (Math.abs(aday.en.changePct) < minMovePct) {
+        if (Math.abs(aday.en.changePct) < briefEsigi(aday.en.tur, minMovePct)) {
           skippedQuiet += 1;
           continue;
         }

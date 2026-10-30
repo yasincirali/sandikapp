@@ -350,11 +350,28 @@ abstract final class GrafikStili {
 
   /// Dönem başı etiketinin metni — üç grafikte AYNI biçim: gün içinde
   /// "AÇILIŞ · 09:55 · değer", diğer dönemlerde "BAŞLANGIÇ · 21 Eyl · değer".
+  ///
+  /// ## Gün başı 00:00'daysa saat yazılmaz (Ar-Ge 2026-10-30 12:45 #2)
+  /// Gün içi seri gece yarısından başlar ve ilk nokta günün tabanıdır:
+  /// hissede önceki kapanış (#262, `yahooSeriCoz`), dövizde kotasyonun
+  /// referansı, altında yurt içi kaydın ilk noktası. "AÇILIŞ · 00:00"
+  /// yanlış okunuyordu: borsa 10:00'da açılır ve çizgi açılış fiyatı
+  /// değildir. [oncekiKapanis] (seanslı varlık) "ÖNCEKİ KAPANIŞ", öteki
+  /// "GÜN BAŞI" yazar. Taban gün içinde sonra başlıyorsa (bugün eklenen
+  /// varlık) eski biçim kalır: o anın saati bilgi taşır.
   static String donemBasiEtiketi(BuildContext context,
-      {required DateTime an, required String deger, required bool gunIci}) {
+      {required DateTime an,
+      required String deger,
+      required bool gunIci,
+      bool oncekiKapanis = false}) {
     final l = context.l10n;
     // Tarih dili sözlükten: delegate yoksa sözlük Türkçe'ye düşer, tarih de.
     final tag = l.localeName.startsWith('en') ? 'en_US' : 'tr_TR';
+    if (gunIci && an.hour == 0 && an.minute == 0) {
+      return oncekiKapanis
+          ? l.chartPrevCloseLabel(deger)
+          : l.chartDayStartLabel(deger);
+    }
     return gunIci
         ? l.chartOpenLabel(DateFormat('HH:mm', tag).format(an), deger)
         : l.chartStartLabel(DateFormat('d MMM', tag).format(an), deger);

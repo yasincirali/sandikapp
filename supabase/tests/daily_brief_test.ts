@@ -14,6 +14,7 @@
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
   briefAdayiSec,
+  briefEsigi,
   briefKartAltYazisi,
   briefSembolu,
   briefTuru,
@@ -135,6 +136,29 @@ Deno.test('aynı hissenin iki lot\'u iki hisse sayılmaz', () => {
     { label: 'B', sembol: 'B.IS', changePct: 3 },
     { label: 'B', sembol: 'B.IS', changePct: 3 },
   ], 1.5)!;
+  assertEquals(s.digerHareketli, 1);
+});
+
+// Ar-Ge 2026-10-30 12:45 #3: fonun eşiği yarısı (%0,75), seçim oranla.
+Deno.test('fon kendi eşiğiyle: %0,9 fon, %1,2 altını geçer', () => {
+  assertEquals(briefEsigi('fon', 1.5), 0.75);
+  assertEquals(briefEsigi('yurt_ici', 1.5), 1.5);
+  assertEquals(briefEsigi(undefined, 1.5), 1.5);
+  const s = briefAdayiSec([
+    { label: 'Gram altın', sembol: 'ALTIN_GRAM', changePct: 1.2, tur: 'yurt_ici' },
+    { label: 'AFT', sembol: 'TEFAS:AFT', changePct: -0.9, tur: 'fon' },
+  ], 1.5)!;
+  assertEquals(s.en.sembol, 'TEFAS:AFT');
+  assertEquals(s.digerHareketli, 0, 'altın kendi eşiğini (%1,5) geçmedi');
+});
+
+Deno.test('fon %0,75 altında kalırsa diğer sayısına girmez; büyük hareket yine önde', () => {
+  const s = briefAdayiSec([
+    { label: 'THYAO', sembol: 'THYAO.IS', changePct: 3, tur: 'hisse' },
+    { label: 'AFT', sembol: 'TEFAS:AFT', changePct: 0.7, tur: 'fon' },
+    { label: 'TTE', sembol: 'TEFAS:TTE', changePct: 0.8, tur: 'fon' },
+  ], 1.5)!;
+  assertEquals(s.en.sembol, 'THYAO.IS');
   assertEquals(s.digerHareketli, 1);
 });
 

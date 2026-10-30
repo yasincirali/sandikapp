@@ -1734,6 +1734,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                                 .asset.type.fiyatHassasiyeti)
                                         .format(normBase),
                                     gunIci: isIntraday,
+                                    // Hissede gün başı önceki kapanıştır
+                                    // (#262); öteki türlerde gün başı.
+                                    oncekiKapanis: _canli.asset.type ==
+                                        AssetType.hisse,
                                   );
                             return GrafikStili.donemBasiUstte(
                             context,
