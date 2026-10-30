@@ -1,7 +1,7 @@
 • YENİ: Ana sayfada yaklaşan önemli günler (faiz kararları, temettü)
 • YENİ: Gümüş, platin ve paladyum; gram olarak da eklenir
 • YENİ: Bildirimler tek ayarda: Az, Dengeli, Çok
-• YENİ: Çalan fiyat alarmını tek dokunuşla yeniden kur
+• YENİ: Altın, döviz ve kriptoda günlük % alarmı; fiyat alarmı her geçişte
 • YENİ: Bildirimler kapalıysa alarm sayfasında uyarı ve "Ayarları aç"
 • YENİ: İkon kısayolları; iPhone'da Spotlight araması
 • Zirve yenilendi: sıralı türler, tek ölçek

@@ -124,16 +124,36 @@ const List<SurumNotu> surumNotlari = [
     // duruyor; not her şeyi değil, bulunması zor olanı anlatır). Satış
     // fiyatından maliyet ayrı madde değil, tutar maddesinde tek cümle:
     // "neden ilk gün eksideyim" sorusunun cevabı orada.
-    baslik: 'Tek varlık widget\'ı, aramada hesap, tutarla ekleme',
+    //
+    // 2026-10-30 (Ar-Ge 08:45 #2, yasin "yap"): 29 Ekim alarm paketi (#260:
+    // tek dokunuşla yüzde alarmı, "her geçişte", grafikte alarm çizgisi) ve
+    // vitrin widget'ı eklendi. Madde sayısı ARTMADI: "Daha hızlı alarmlar"
+    // tek "Alarmlar" maddesine dönüştü ve ikinci sıraya çıktı (hedef kitlenin
+    // en sık kullanacağı yeni şey; ilk altı kuralı), vitrin widget maddesine
+    // bir cümle olarak girdi. "Çalmış alarma dokununca yeniden kurulur"
+    // cümlesi çıktı: özellik duruyor, ama yeni üç şeyin yanında not uzardı.
+    baslik: 'Alarmlar, widget\'lar, aramada hesap',
     yenilikler: [
       Yenilik(
         ikon: YenilikIkonu.genel,
-        baslik: 'Tek varlık widget\'ı (iPhone)',
+        baslik: 'Tek varlık ve Vitrin widget\'ı (iPhone)',
         aciklama: 'Gram altın, dolar ya da bir fon: ana ekranda ve kilit '
             'ekranında tek başına görünür. Ana ekrana basılı tut, artıya '
             'dokun, sandık\'ı seç ve "Tek varlık"ı ekle. Varlığı widget\'ı '
-            'düzenleyerek seçersin. Altın, döviz, kripto ve fonda uygulamayı '
-            'açmasan da fiyat kendiliğinden tazelenir.',
+            'düzenleyerek seçersin. Orta boy "Vitrin" üç varlığı alt alta '
+            'gösterir. Altın, döviz, kripto ve fonda uygulamayı açmasan da '
+            'fiyat kendiliğinden tazelenir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Alarmlar',
+        aciklama: 'Altın, dolar ya da kripto ekleyince "Bugün %2 oynarsa '
+            'haber verelim mi?" sorusu çıkar; "Kur"a dokunman yeter. Fiyat '
+            'alarmında "Her geçişte haber ver"i açarsan alarm çalınca '
+            'kapanmaz, fiyat yeniden geçerse yine haber verir (günde en çok '
+            '3 kez). Kurduğun alarm varlık grafiğinde kesikli çizgi olarak '
+            'görünür. Altın, döviz ve kripto alarmları 5 dakikada bir kontrol '
+            'edilir.',
       ),
       Yenilik(
         ikon: YenilikIkonu.para,
@@ -166,12 +186,6 @@ const List<SurumNotu> surumNotlari = [
         aciklama: 'Varlık grafiği tam ekran açılır. Trend çizgisi, yatay '
             'seviye ve dikdörtgen çizebilirsin; çizimlerin o varlıkta kalır. '
             'Paylaş düğmesi grafiği çizimleriyle birlikte görsel olarak gönderir.',
-      ),
-      Yenilik(
-        ikon: YenilikIkonu.bildirim,
-        baslik: 'Daha hızlı alarmlar',
-        aciklama: 'Altın, döviz ve kripto alarmları 5 dakikada bir kontrol '
-            'edilir. Çalmış bir alarma dokununca aynı eşikle yeniden kurulur.',
       ),
       Yenilik(
         ikon: YenilikIkonu.bildirim,

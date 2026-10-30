@@ -53,7 +53,7 @@ hatasıdır.
 
 | # | Vaka | Adım | Beklenen | Öncelik |
 |---|---|---|---|---|
-| R-01 | Sabah brifingi yetkisi | `select public.trigger_daily_brief();` | `200`. `sent:0` + "Brifing icin hisse yok." piyasa kapalıyken **normaldir** — sınanan şey yetki kapısı | 🟠 |
+| R-01 | Sabah brifingi yetkisi | `select public.trigger_daily_brief();` | `200`. `sent:0` + "Brifing icin varlik yok." portföyünde hisse, altın, döviz ya da fon olan kullanıcı yokken **normaldir** — sınanan şey yetki kapısı | 🟠 |
 | R-02 | Haftalık özet yetkisi | `select public.trigger_weekly_summary();` | `200`, `failures: []`. Sıfır sayaçlar normal (bkz. R-03) | 🟠 |
 | R-03 | Haftalık özet eleme mantığı | R-02 çıktısındaki `skipped_*` alanlarını oku | `skipped_flow` > 0 ise **doğru**: hafta içinde alım/satım yapana yüzde göndermek yanlış rakam olurdu. Bug değil | 🟡 |
 | R-04 | TÜFE çekimi | `select public.trigger_fetch_inflation();` | `200`, `written:24`. `reason:"no_new_data"` = o ayın verisi zaten var, normal | 🟠 |

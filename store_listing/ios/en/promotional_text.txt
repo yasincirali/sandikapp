@@ -1,1 +1,1 @@
-New: a single-asset widget for gold, the dollar or a fund, on the Lock Screen too. Type "100 USD" in search to see it in lira. Landscape chart and drawing, free.
+New: one-tap 2% daily alerts for gold and currencies, price alerts that fire on every cross, and a three-asset Showcase widget. Type "100 USD" to see it in lira.

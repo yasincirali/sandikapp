@@ -28,9 +28,12 @@ GRAFİK
 • Portföyünü BIST 100, dolar ve altınla karşılaştır; hangi varlık ne kadar katkı yaptı, gör
 
 BİLDİRİM VE WIDGET
-• Fiyat alarmı: hedef fiyata gelince bildirim
+• Fiyat alarmı: hedef fiyata gelince bildirim; istersen her geçişte yeniden çalar
+• Altın, döviz ve kriptoda günlük yüzde alarmı: "bugün %2 oynarsa haber ver"
+• Kurduğun alarm varlık grafiğinde çizgi olarak görünür
 • Sabah brifingi ve haftalık özet; sessiz saatler senin elinde
 • Altın, dolar ya da istediğin fon için tek varlık widget'ı: ana ekranda ve kilit ekranında
+• Vitrin widget'ı: üç varlık alt alta, fiyat ve günlük değişim
 • Ana ekran widget'ı ve kilit ekranı canlı etkinliği
 
 Apple ile giriş, Face ID kilidi, bakiyeni tek dokunuşla gizleme. Hesabını ve tüm verini istediğin an silersin. KVKK ve GDPR uyumlu.
