@@ -318,6 +318,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   final Map<int, DonemIstatistigi?> _donemIstatistikleri = {};
   DateTime? _gunIciSeansOnbellek;
 
+  /// GÜNLÜK seride tek gerçek nokta yok (`gunIciVerisiYokTurler`): seri son
+  /// bilinen fiyatın düz taşınmasıdır. Başlık "değişim yok" değil "verisi
+  /// henüz gelmedi" der, çip yüzdesi boş kalır (UX raporu 30 Eki §1).
+  bool _gunIciVeriGelmedi = false;
+
   @override
   void initState() {
     super.initState();
@@ -505,8 +510,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     }
     // Dönem önbelleği sıradan bağımsız: geç dönen eski dönemin serisi de
     // KENDİ çipine yazılır, seçili dönemi ezmez.
+    // Eski kopya çiziliyorsa (taze çekim boş) o ölçülmüş seridir; "veri
+    // gelmedi" yalnız taze sonucun kendisi tohumsa.
+    final veriYok = identical(seri, birim.total) &&
+        birim.gunIciVerisiYokTurler.isNotEmpty;
     if (mounted) {
-      _guncelle(() => _donemKaydet(days, seri, seans));
+      _guncelle(() => _donemKaydet(days, seri, seans, veriYok: veriYok));
     }
     return seri;
   }
@@ -625,7 +634,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     }
     if (!mounted || sira != _yuklemeSirasi || !_gunIciMi) return;
     if (seri.length < 2) return;
-    _guncelle(() => _historyFuture = SynchronousFuture(seri));
+    // Blok gövde: ok fonksiyonu atamanın değerini (Future) döndürür ve
+    // setState bunu "async geri çağrı" sayıp hata verir.
+    _guncelle(() {
+      _historyFuture = SynchronousFuture(seri);
+    });
   }
 
   @override

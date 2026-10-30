@@ -437,7 +437,8 @@ List<_Adim> _adimlariKur() {
       bitti: (ref) => ref.read(balanceHiddenProvider),
       giris: (_) => _sekmeyeGec(0),
     ),
-    // Üst çubukta yenile değil büyüteç durur (`home_screen`, sadeleştirme 2;
+    // 2026-10-30: büyüteç kalktı, hedef şeritteki "Ara" hapı (UX raporu
+    // §3; tek arama girişi). Önce: üst çubukta yenile değil büyüteç durur (`home_screen`, sadeleştirme 2;
     // bayrak `genel_arama` 2026-10-20'de emekliye ayrıldı, eski "Fiyatları
     // yenile" adımı kalktı). Yenileme bilgisi kaybolmasın: aşağı çekme
     // cümlesi metinde. 2026-10-24: aramadaki hızlı hesap ("5 çeyrek") da
@@ -449,7 +450,7 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.yenileTusu,
       rozet: 'YENİ',
       baslik: 'Her şeyi ara',
-      govde: 'Büyüteçle tek yerden ara: kendi varlıkların, piyasadaki '
+      govde: 'Piyasa şeridinin sağındaki "Ara" ile tek yerden ara: kendi varlıkların, piyasadaki '
           'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
           'ekstreden aktar, tüm hareketler, ayarlar…). "5 çeyrek" ya da '
           '"100 dolar" yazarsan TL karşılığı en üstte çıkar; boşken son '
@@ -530,9 +531,8 @@ List<_Adim> _adimlariKur() {
       govde: 'Dolar, euro, gram altın ve BIST 100 günlük değişimiyle en '
           'üstte. Şeride uzun basıp tut, sağa sola kaydır; bırakınca akmaya '
           'devam eder. Bir süre dokunulmazsa durur, dokununca yeniden akar. '
-          'Sağ uçtaki "Ara" ile herhangi bir hisseyi, '
-          'fonu, altını ya da kriptoyu ara; portföyüne eklemeden grafiğine '
-          've istatistiklerine bak, istersen takibe al.',
+          'Aradığın hisse, fon ya da altının sayfasında portföyüne '
+          'eklemeden grafiğine ve istatistiklerine bak, istersen takibe al.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,

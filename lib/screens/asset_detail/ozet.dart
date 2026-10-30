@@ -57,8 +57,7 @@ extension _DetayOzet on _AssetDetailScreenState {
     final currentUnitTRY = qty > 0 ? currentValueTRY / qty : 0.0;
     final totalCostTRY = asset.totalCostTRY;
     final totalPnlTRY = currentValueTRY - totalCostTRY;
-    final pnlPct =
-        totalCostTRY > 0 ? (totalPnlTRY / totalCostTRY) * 100 : 0.0;
+    final pnlPct = totalCostTRY > 0 ? (totalPnlTRY / totalCostTRY) * 100 : 0.0;
     return (
       anchorUnitTRY: anchorUnitTRY,
       currentUnitTRY: currentUnitTRY,
@@ -80,7 +79,12 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// Yüklenen dönem serisini önbelleğe yazar ve dönem başını / istatistiği
   /// BİR KEZ hesaplar (build'de değil). Boş ya da tek noktalı seri yazılmaz:
   /// "veri yok" bir ölçüm değildir, çip boş kalır.
-  void _donemKaydet(int days, Map<int, double> seri, DateTime? seansGunu) {
+  ///
+  /// [veriYok]: GÜNLÜK seride gerçek nokta yok, seri tohumdur. Dönem başı
+  /// yazılmaz — tohumdan çıkan %0 bir ölçüm değildir.
+  void _donemKaydet(int days, Map<int, double> seri, DateTime? seansGunu,
+      {bool veriYok = false}) {
+    if (days == 0) _gunIciVeriGelmedi = veriYok && seri.isNotEmpty;
     if (seri.length < 2) return;
     final now = DateTime.now();
     final fromMs =
@@ -89,7 +93,8 @@ extension _DetayOzet on _AssetDetailScreenState {
         fromMs: fromMs, toMs: now.millisecondsSinceEpoch);
     _donemSerileri[days] = seri;
     if (days == 0) _gunIciSeansOnbellek = seansGunu;
-    _donemIlk[days] = u == null || u.firstTs == u.lastTs ? null : u.first;
+    _donemIlk[days] =
+        u == null || u.firstTs == u.lastTs || veriYok ? null : u.first;
     _donemIstatistikleri[days] = DonemIstatistigi.hesapla(
       {
         for (final e in seri.entries)
@@ -177,14 +182,15 @@ extension _DetayOzet on _AssetDetailScreenState {
             // biri ayrı tam ekran yeniden kurulum yapıyordu — sayfa kayarak
             // girerken (animasyon denetimi 2026-10-01).
             if (!_acildi) {
-              _donemKaydet(p.days, b.total, b.seansGunu);
+              _donemKaydet(p.days, b.total, b.seansGunu,
+                  veriYok: b.gunIciVerisiYokTurler.isNotEmpty);
               return;
             }
-            _guncelle(() => _donemKaydet(p.days, b.total, b.seansGunu));
+            _guncelle(() => _donemKaydet(p.days, b.total, b.seansGunu,
+                veriYok: b.gunIciVerisiYokTurler.isNotEmpty));
           }, onError: (Object e, StackTrace st) {
             // Çip boş kalır; dönem seçilince `_loadHistory` yeniden dener.
-            CrashReporter.report(e, st,
-                reason: 'AssetDetail.digerDonemler');
+            CrashReporter.report(e, st, reason: 'AssetDetail.digerDonemler');
           }),
     ]);
   }
@@ -200,8 +206,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         listEquals(o.defter, defter)) {
       return o.tutar;
     }
-    final tutar =
-        MevduatHesabi.tutarSerisi(birimSeri: birim, lotlar: defter);
+    final tutar = MevduatHesabi.tutarSerisi(birimSeri: birim, lotlar: defter);
     _mevduatTutarOnbellek = (birim: birim, defter: defter, tutar: tutar);
     return tutar;
   }
@@ -251,10 +256,9 @@ extension _DetayOzet on _AssetDetailScreenState {
   ({double tutar, double yuzde})? _donemDegisimi(
       int days, DateTime start, DateTime end, double canliBirim) {
     final seri = _donemSerileri[days];
-    if (seri == null) return null;
+    if (seri == null || (days == 0 && _gunIciVeriGelmedi)) return null;
     final u = PeriodSummaryService.uclar(seri,
-        fromMs: start.millisecondsSinceEpoch,
-        toMs: end.millisecondsSinceEpoch);
+        fromMs: start.millisecondsSinceEpoch, toMs: end.millisecondsSinceEpoch);
     if (u == null || u.firstTs == u.lastTs) return null;
     // Son = grafiğin sağ ucu (canlı birim fiyat).
     final son = canliBirim > 0 ? canliBirim : u.last;
@@ -277,8 +281,8 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// "+₺0,00"; 2026-10-04 kullanıcı bildirimi). 1 ₺ ve üstü yine 2 hane.
   ///
   /// `goz_alici` açıkken kaynak hassasiyeti ([fiyatBicimi]): fon ₺1,234567.
-  NumberFormat _birimBicimi(double birimFiyat) => fiyatBicimi(birimFiyat,
-      azami: widget.asset.type.fiyatHassasiyeti);
+  NumberFormat _birimBicimi(double birimFiyat) =>
+      fiyatBicimi(birimFiyat, azami: widget.asset.type.fiyatHassasiyeti);
 
   // ── Başlık ───────────────────────────────────────────────────────────────
 
@@ -333,6 +337,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       donem: etiket,
       fark: mevduat || ilk == null ? null : canli - ilk,
       bicim: bicim,
+      veriGelmedi: days == 0 && _gunIciVeriGelmedi && !mevduat,
     );
 
     final pnlDuz =
@@ -360,10 +365,13 @@ extension _DetayOzet on _AssetDetailScreenState {
       // için (2026-10-26, `MevduatHesabi.tutarSerisi`) imleç aynı ölçekte.
       imlec: RemoteConfigService.instance.gozAlici ? _imlec : null,
       // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
-      // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla.
+      // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla — ve AYNI
+      // biçimle (UX raporu 30 Eki §5, yasin "yap"): başlık "+₺36,0K",
+      // kart "+₺36.022" yazıyordu; tam tutar, kısaltma yok (hareketlerdeki
+      // portföy önce → sonra kararıyla aynı). Sığmazsa üç nokta.
       altSatir: Text(
         l.adPositionLine(
-          '$isaret${baz.compact(pnl.totalPnlTRY.abs())}',
+          '$isaret${baz.fmt(pnl.totalPnlTRY.abs())}',
           pnlDuz ? fmtPct(0) : fmtPctIsaretli(pnl.pnlPct),
         ),
         maxLines: 1,
@@ -427,6 +435,9 @@ extension _DetayOzet on _AssetDetailScreenState {
     final days = _periods[_selectedPeriodIdx].days;
     final ist = _donemIstatistikleri[days];
     final pct = _donemYuzdesi(days, canliBirim);
+    // Veri gelmedi (GÜNLÜK seri tohum): beklenecek bir ölçüm yok, iskelet
+    // sonsuza dek dönerdi. Bölüm çizilmez; başlık durumu cümleyle söyler.
+    if (days == 0 && _gunIciVeriGelmedi) return const [];
     // Dönem yüzdesi yalnız fiyatın altında (madde 7, 2026-10-04; bayrak
     // `varlik_islem_cubugu` 2026-10-05'te kalktı); ızgara onu (GÜNLÜK'te
     // "Bugün"ü de) yazmaz — bkz. `DonemIstatistikIzgarasi.donemGetirisiGizli`.
@@ -486,15 +497,14 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// Para akışı (Balina B1) — fon karnesinin hemen altında: karne "getirisi
   /// nasıl", bu kart "parası nereye gidiyor" sorusunu yanıtlar. Çizilmeme
   /// koşulları ve boşluk kuralı karneyle aynı (bkz. `ParaAkisiKarti`).
-  Widget _paraAkisi({EdgeInsetsGeometry dis = _kartBoslugu}) =>
-      ParaAkisiKarti(
-          tur: widget.asset.type,
-          ticker: widget.asset.ticker,
-          // Bağlantı yalnız kendi varlığında: "fonlarım" ortağın fonunu
-          // kapsamaz.
-          haftaBaglantisi: widget.asset.userId ==
-              ref.read(portfolioProvider).valueOrNull?.ownerId,
-          dis: dis);
+  Widget _paraAkisi({EdgeInsetsGeometry dis = _kartBoslugu}) => ParaAkisiKarti(
+      tur: widget.asset.type,
+      ticker: widget.asset.ticker,
+      // Bağlantı yalnız kendi varlığında: "fonlarım" ortağın fonunu
+      // kapsamaz.
+      haftaBaglantisi: widget.asset.userId ==
+          ref.read(portfolioProvider).valueOrNull?.ownerId,
+      dis: dis);
 
   /// Hacim radarı (Balina B2) — yalnız BIST hissesinde çizilir (koşul
   /// widget'ta); fon kartıyla aynı bayrak, aynı boşluk kuralı.
@@ -546,7 +556,9 @@ extension _DetayOzet on _AssetDetailScreenState {
     }
     DateTime? ilkAlim;
     for (final l in canli.lots) {
-      if (ilkAlim == null || l.addedDate.isBefore(ilkAlim)) ilkAlim = l.addedDate;
+      if (ilkAlim == null || l.addedDate.isBefore(ilkAlim)) {
+        ilkAlim = l.addedDate;
+      }
     }
 
     return Padding(
@@ -587,9 +599,8 @@ extension _DetayOzet on _AssetDetailScreenState {
   Widget _sozlesmeKarti({EdgeInsets dis = _kartBoslugu}) =>
       SozlesmeKarti(varlik: _canli.asset, dis: dis);
 
-  Widget _kapBaglantisi({EdgeInsets dis = _kartBoslugu}) =>
-      KapBaglantisi(
-          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
+  Widget _kapBaglantisi({EdgeInsets dis = _kartBoslugu}) => KapBaglantisi(
+      tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   // ── Temettü ──────────────────────────────────────────────────────────────
 

@@ -118,8 +118,8 @@ Future<_YanVeri> _yanVeriYukle({
     final from = PeriodSummaryService.donemBaslangici(now, 12);
     final tier =
         ResolutionTierMeta.pickForSpan(SummaryPeriod.birYil.days.toDouble());
-    final bd = await HistoryService.instance
-        .getPortfolioHistoryBreakdownAtResolution(
+    final bd =
+        await HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
       assets: assets,
       from: from,
       to: now,
@@ -268,6 +268,25 @@ Future<_YanVeri> _yanVeriYukle({
 /// durur ve özet tek seferde, tam hâliyle gelir. Ağ yavaşsa iskelet
 /// [_azamiBekleme]'den uzun tutulmaz: özet çizilir, kartlar geldiğinde
 /// eklenir (iskeletin sonsuza kadar dönmesi titremeden kötüdür).
+/// Özet → dönem kartı paylaşım kanalı. Yazımlar kare sonrasına
+/// ertelendiği için ekran kapanırken (notifier dispose edildikten sonra)
+/// gelen yazım sessizce düşer.
+class _PaylasimKanali extends ValueNotifier<VoidCallback?> {
+  _PaylasimKanali() : super(null);
+
+  bool _kapali = false;
+
+  void yaz(VoidCallback? eylem) {
+    if (!_kapali) value = eylem;
+  }
+
+  @override
+  void dispose() {
+    _kapali = true;
+    super.dispose();
+  }
+}
+
 class _OzetYanVeri extends ConsumerStatefulWidget {
   final SummaryPeriod period;
   final PeriodSummary summary;
@@ -296,6 +315,10 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
   final bool anaRakamGizli;
   final Widget? nedenEki;
 
+  /// Verilirse paylaş düğmesi Özet'te çizilmez; eylem buraya yayınlanır
+  /// ve dönem kartının ikonu onu çağırır (tek akış, UX raporu 30 Eki §6).
+  final _PaylasimKanali? paylasimKanali;
+
   const _OzetYanVeri({
     required this.period,
     required this.summary,
@@ -309,6 +332,7 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
     this.enSabirliGun,
     this.anaRakamGizli = false,
     this.nedenEki,
+    this.paylasimKanali,
   });
 
   @override
@@ -358,7 +382,32 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   @override
   void dispose() {
     _beklemeSayaci?.cancel();
+    // Bu özetin eylemi kanalda kaldıysa kalkar (dönem değişti, yenisi
+    // ölçülürken eski dönemin paylaşımı sunulmasın). Kare sonrası: dispose
+    // ağaç kurulurken çalışır, dinleyici o sırada yeniden kurulamaz.
+    final kanal = widget.paylasimKanali;
+    final benim = _yayinlanan;
+    if (kanal != null && benim != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (identical(kanal.value, benim)) kanal.yaz(null);
+      });
+    }
     super.dispose();
+  }
+
+  /// Kanala en son yayınlanan eylem (bkz. [_OzetYanVeri.paylasimKanali]).
+  VoidCallback? _yayinlanan;
+
+  /// Eylemi kare sonrası kanala yazar — build sırasında başka bir
+  /// widget'ın dinleyicisi tetiklenmesin.
+  void _yayinla(VoidCallback? eylem) {
+    final kanal = widget.paylasimKanali;
+    if (kanal == null) return;
+    _yayinlanan = eylem;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      kanal.yaz(eylem);
+    });
   }
 
   /// Yeni anahtar için durumu kurar: bellekte varsa EŞZAMANLI okunur
@@ -504,7 +553,6 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       );
 
   Widget _icerik(BuildContext context) {
-
     // TÜFE farkı burada bağlanır: servis saf ve ağa çıkmıyor, bu yüzden
     // hesabı yapılmış özeti enflasyonla yeniden kurmak yerine yalnızca
     // farkı hesaplayıp view'a veriyoruz.
@@ -534,6 +582,19 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       karakter: widget.karakter,
       xirrPct: xirrPaylasim,
     );
+    final VoidCallback? paylasimEylemi = paylasimMetni == null
+        ? null
+        : () => _paylas(
+              paylasimMetni,
+              gosterilen,
+              xirrPct: xirrPaylasim,
+              drawdownPct: gorunur.saglik ? _veri.drawdown?.yuzde : null,
+              percentile: gorunur.percentile &&
+                      RemoteConfigService.instance.globalLeaderboardEnabled
+                  ? _dilim?.percentile
+                  : null,
+            );
+    _yayinla(paylasimEylemi);
 
     // Birikim kartı: saf hesap, her build'de yeniden kurulur. Ağa çıkmıyor
     // ve `assets` zaten elde — state'te tutmak, kova aralığı değiştiğinde
@@ -597,17 +658,15 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       karakter: widget.karakter,
       enSabirli: widget.enSabirli,
       enSabirliGun: widget.enSabirliGun,
-      percentile: gorunur.percentile && RemoteConfigService.instance.globalLeaderboardEnabled ? _dilim?.percentile : null,
-      percentileKatilimci: gorunur.percentile && RemoteConfigService.instance.globalLeaderboardEnabled ? _dilim?.total : null,
-      onShare: paylasimMetni == null
-          ? null
-          : () => _paylas(
-                paylasimMetni,
-                gosterilen,
-                xirrPct: xirrPaylasim,
-                drawdownPct: gorunur.saglik ? v.drawdown?.yuzde : null,
-                percentile: gorunur.percentile && RemoteConfigService.instance.globalLeaderboardEnabled ? _dilim?.percentile : null,
-              ),
+      percentile: gorunur.percentile &&
+              RemoteConfigService.instance.globalLeaderboardEnabled
+          ? _dilim?.percentile
+          : null,
+      percentileKatilimci: gorunur.percentile &&
+              RemoteConfigService.instance.globalLeaderboardEnabled
+          ? _dilim?.total
+          : null,
+      onShare: widget.paylasimKanali != null ? null : paylasimEylemi,
       katkiKarti: katki == null
           ? null
           : ContributionKarti(
@@ -661,8 +720,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       context,
       data: ShareCardData(
         baslik: PeriodSummaryService.donemAdi(widget.period),
-        tarihAraligi: context.l10n
-            .shareCardRange(f.format(gosterilen.start), f.format(gosterilen.end)),
+        tarihAraligi: context.l10n.shareCardRange(
+            f.format(gosterilen.start), f.format(gosterilen.end)),
         degisimPct: gosterilen.getiriPct,
         degisimEtiketi: context.l10n.myMarketReturn,
         karakter: widget.karakter,

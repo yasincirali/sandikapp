@@ -120,6 +120,10 @@ void main() {
         ),
       ));
       await t.pump(const Duration(milliseconds: 100));
+      // Çipler "Göstergeler" düğmesinin ardında (UX raporu 30 Eki §2).
+      await t.tap(find.byType(GostergelerDugmesi));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 400));
     }
 
     testWidgets('paywall kapalı, admin değil: mum ve EMA var, ƒx yok',

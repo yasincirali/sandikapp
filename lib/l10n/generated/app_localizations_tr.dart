@@ -3910,6 +3910,23 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chartTypeTooltip => 'Grafik tipi';
 
   @override
+  String get chartIndicatorsButton => 'Göstergeler';
+
+  @override
+  String chartIndicatorsOn(int n) {
+    return '$n açık';
+  }
+
+  @override
+  String chartIndicatorsSemantics(int n) {
+    return 'Göstergeler, $n açık';
+  }
+
+  @override
+  String get chartIndicatorsHint =>
+      'Gösterge ve grafik katmanlarını açar ya da kapatır';
+
+  @override
   String get chartCandleChip => 'MUM';
 
   @override
@@ -4084,6 +4101,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get todayLiveWord => 'Canlı';
+
+  @override
+  String get todayNoDataYet => 'Bugünün verisi henüz gelmedi';
 
   @override
   String get todayLoading => 'Gün içi veri geliyor';

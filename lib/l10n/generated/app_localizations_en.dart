@@ -3940,6 +3940,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chartTypeTooltip => 'Chart type';
 
   @override
+  String get chartIndicatorsButton => 'Indicators';
+
+  @override
+  String chartIndicatorsOn(int n) {
+    return '$n on';
+  }
+
+  @override
+  String chartIndicatorsSemantics(int n) {
+    return 'Indicators, $n on';
+  }
+
+  @override
+  String get chartIndicatorsHint =>
+      'Shows or hides chart indicators and layers';
+
+  @override
   String get chartCandleChip => 'CANDLE';
 
   @override
@@ -4114,6 +4131,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayLiveWord => 'Live';
+
+  @override
+  String get todayNoDataYet => 'Today\'s data hasn\'t arrived yet';
 
   @override
   String get todayLoading => 'Intraday data loading';

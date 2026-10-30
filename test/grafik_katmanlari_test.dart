@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/user_model.dart';
@@ -92,6 +93,10 @@ Future<void> _pump(WidgetTester tester,
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+  // Çipler "Göstergeler" düğmesinin ardında (UX raporu 30 Eki §2).
+  await tester.tap(find.byType(GostergelerDugmesi));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
 }
 
 void main() {

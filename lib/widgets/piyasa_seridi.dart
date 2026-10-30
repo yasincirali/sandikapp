@@ -104,6 +104,7 @@ class PiyasaSeridi extends StatefulWidget {
     super.key,
     this.padding = EdgeInsets.zero,
     this.onAra,
+    this.aramaSarici,
     this.uyandirici,
   });
 
@@ -114,6 +115,9 @@ class PiyasaSeridi extends StatefulWidget {
 
   /// Verilirse bandın sağ ucunda arama büyüteci çizilir.
   final VoidCallback? onAra;
+
+  /// "Ara" hapını saran parça (ana ekran: tur çapası). `null` → olduğu gibi.
+  final Widget Function(Widget hap)? aramaSarici;
 
   /// Sırası sabit: en çok bakılan en solda.
   ///
@@ -264,6 +268,8 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
     }
   }
 
+  Widget _sar(Widget hap) => widget.aramaSarici?.call(hap) ?? hap;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -296,7 +302,7 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
           padding: widget.padding,
           child: Align(
             alignment: Alignment.centerRight,
-            child: PiyasaAramaDugmesi(onTap: ara, cerceveli: false),
+            child: _sar(PiyasaAramaDugmesi(onTap: ara, cerceveli: false)),
           ),
         ),
       );
@@ -319,7 +325,7 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
                 uyandirici: widget.uyandirici,
               ),
             ),
-            if (ara != null) PiyasaAramaDugmesi(onTap: ara),
+            if (ara != null) _sar(PiyasaAramaDugmesi(onTap: ara)),
           ],
         ),
       ),
@@ -380,20 +386,20 @@ class _AramaCipi extends StatelessWidget {
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.search_rounded, size: 16, color: context.c.amberText),
-          const SizedBox(width: SandikSpace.xs2),
-          Text(
-            context.l10n.searchChip,
-            style: context.t.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-              color: context.c.amberText,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_rounded, size: 16, color: context.c.amberText),
+            const SizedBox(width: SandikSpace.xs2),
+            Text(
+              context.l10n.searchChip,
+              style: context.t.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+                color: context.c.amberText,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -575,7 +581,8 @@ class KayanBantState extends State<KayanBant>
   /// hâli: hız üstel söner, kayma asimptotik yerleşir, ticker durur.
   void _kare(Duration gecen) {
     final hedef = _hedefHiz;
-    final tau = hedef == 0 ? PiyasaSeridi.durusSabiti : PiyasaSeridi.devirSabiti;
+    final tau =
+        hedef == 0 ? PiyasaSeridi.durusSabiti : PiyasaSeridi.devirSabiti;
     final t = (gecen - _fazT0).inMicroseconds / 1e6;
     final sonum = math.exp(-t / tau);
     _sonHiz = hedef + (_baslangicHizi - hedef) * sonum;
@@ -590,8 +597,7 @@ class KayanBantState extends State<KayanBant>
       }
       return;
     }
-    if (PiyasaSeridi.bostaDurur &&
-        gecen - _fazT0 >= PiyasaSeridi.bostaSuresi) {
+    if (PiyasaSeridi.bostaDurur && gecen - _fazT0 >= PiyasaSeridi.bostaSuresi) {
       _fazaGec(gecen, hiz: _sonHiz, hedef: 0);
     }
   }
@@ -617,8 +623,8 @@ class KayanBantState extends State<KayanBant>
   void _birak(LongPressEndDetails d) {
     setState(() => _tutuluyor = false);
     if (MediaQuery.disableAnimationsOf(context)) return;
-    final v = (-d.velocity.pixelsPerSecond.dx).clamp(
-        -PiyasaSeridi.azamiDevirHizi, PiyasaSeridi.azamiDevirHizi);
+    final v = (-d.velocity.pixelsPerSecond.dx)
+        .clamp(-PiyasaSeridi.azamiDevirHizi, PiyasaSeridi.azamiDevirHizi);
     _baslat(hiz: v.toDouble());
   }
 
@@ -662,55 +668,55 @@ class KayanBantState extends State<KayanBant>
       child: Listener(
         onPointerDown: (_) => _uyandir(),
         child: GestureDetector(
-        onLongPressStart: _tut,
-        onLongPressMoveUpdate: _tutarkenKaydir,
-        onLongPressEnd: _birak,
-        onLongPressCancel: _tutusIptal,
-        onHorizontalDragUpdate: hareketiAzalt ? _surukle : null,
-        behavior: HitTestBehavior.opaque,
-        // Dokunma alanı 44pt (HIG); görünen şerit 36pt, kutuda ortalı —
-        // 4pt'lik dikey tamponlar ana sayfa dolgusuyla birlikte 12pt üst
-        // boşluğu verir (seçenek C, 2026-09-28). Önceki sürüm 30pt bandı
-        // kutunun üstüne yaslıyordu; şerit kartı artık başlıktan ayrı
-        // durduğu için ortalama doğru.
-        child: Container(
-          height: 44,
-          alignment: Alignment.center,
+          onLongPressStart: _tut,
+          onLongPressMoveUpdate: _tutarkenKaydir,
+          onLongPressEnd: _birak,
+          onLongPressCancel: _tutusIptal,
+          onHorizontalDragUpdate: hareketiAzalt ? _surukle : null,
+          behavior: HitTestBehavior.opaque,
+          // Dokunma alanı 44pt (HIG); görünen şerit 36pt, kutuda ortalı —
+          // 4pt'lik dikey tamponlar ana sayfa dolgusuyla birlikte 12pt üst
+          // boşluğu verir (seçenek C, 2026-09-28). Önceki sürüm 30pt bandı
+          // kutunun üstüne yaslıyordu; şerit kartı artık başlıktan ayrı
+          // durduğu için ortalama doğru.
           child: Container(
-            height: KayanBant.seritYuksekligi,
-            // Şerit kartı: surface1 zemin, saç teli kenar, sol köşeler
-            // yuvarlak; sağ köşeler çip yoksa. Metin kenardan taşmasın
-            // diye klip — akan öğe köşeden çıkarken kırpılır.
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: context.c.surface1,
-              borderRadius: widget.sagKose
-                  ? BorderRadius.circular(SandikRadius.md)
-                  : const BorderRadius.horizontal(
-                      left: Radius.circular(SandikRadius.md)),
-              border: widget.sagKose
-                  ? Border.all(color: context.c.hairline)
-                  : Border(
-                      left: BorderSide(color: context.c.hairline),
-                      top: BorderSide(color: context.c.hairline),
-                      bottom: BorderSide(color: context.c.hairline),
+            height: 44,
+            alignment: Alignment.center,
+            child: Container(
+              height: KayanBant.seritYuksekligi,
+              // Şerit kartı: surface1 zemin, saç teli kenar, sol köşeler
+              // yuvarlak; sağ köşeler çip yoksa. Metin kenardan taşmasın
+              // diye klip — akan öğe köşeden çıkarken kırpılır.
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: context.c.surface1,
+                borderRadius: widget.sagKose
+                    ? BorderRadius.circular(SandikRadius.md)
+                    : const BorderRadius.horizontal(
+                        left: Radius.circular(SandikRadius.md)),
+                border: widget.sagKose
+                    ? Border.all(color: context.c.hairline)
+                    : Border(
+                        left: BorderSide(color: context.c.hairline),
+                        top: BorderSide(color: context.c.hairline),
+                        bottom: BorderSide(color: context.c.hairline),
+                      ),
+              ),
+              // RepaintBoundary: bant her karede boyanır; sınır olmadan hero
+              // kart ve üst çubuk da her karede yeniden boyanırdı (GPU).
+              child: RepaintBoundary(
+                child: ExcludeSemantics(
+                  child: _Bant(
+                    kaydirma: _kaydirma,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [for (final o in ogeler) _Oge(oge: o)],
                     ),
-            ),
-            // RepaintBoundary: bant her karede boyanır; sınır olmadan hero
-            // kart ve üst çubuk da her karede yeniden boyanırdı (GPU).
-            child: RepaintBoundary(
-              child: ExcludeSemantics(
-                child: _Bant(
-                  kaydirma: _kaydirma,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [for (final o in ogeler) _Oge(oge: o)],
                   ),
                 ),
               ),
             ),
           ),
-        ),
         ),
       ),
     );

@@ -2716,6 +2716,19 @@
   "scopeWho": "Whose portfolio",
   "scopePartners": "Partners",
   "chartTypeTooltip": "Chart type",
+  "chartIndicatorsButton": "Indicators",
+  "@chartIndicatorsButton": {
+    "description": "Grafik araç çubuğunda MUM/LOG/MA/EMA çiplerini açan tek düğme (UX raporu 30 Eki §2)"
+  },
+  "chartIndicatorsOn": "{n} on",
+  "@chartIndicatorsOn": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "chartIndicatorsSemantics": "Indicators, {n} on",
+  "@chartIndicatorsSemantics": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "chartIndicatorsHint": "Shows or hides chart indicators and layers",
   "chartCandleChip": "CANDLE",
   "chartIntervalM1": "1m",
   "chartIntervalH1": "1h",
@@ -2832,6 +2845,10 @@
   },
   "todayClosedWord": "Market closed",
   "todayLiveWord": "Live",
+  "todayNoDataYet": "Today's data hasn't arrived yet",
+  "@todayNoDataYet": {
+    "description": "Gün içi seri hiç gelmediğinde düz çizgi yerine söylenen cümle (Bugün kartı, varlık başlığı)"
+  },
   "todayLoading": "Intraday data loading",
   "todayRealLabel": "Versus inflation",
   "todayRealHint": "Yearly return minus CPI",

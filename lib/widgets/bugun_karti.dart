@@ -593,6 +593,16 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
 
     final gizli = ref.watch(balanceHiddenProvider);
     final dil = _dil;
+    // Veri gelmedi (UX raporu 30 Eki §1, yasin "yap"): gün içi seride tek
+    // gerçek nokta alınamayan tür varken düz gün "Yerinde saydı · ₺0"
+    // diyordu; o düzlük son bilinen fiyatın taşınmasıdır, piyasanın
+    // durgunluğu değil (`gunIciVerisiYokTurler`). Performans aynı durumda
+    // "alınamadı" diyordu; iki ekran iki ayrı anlam söylüyordu. Yalnız
+    // DÜZ günde: bir tür gelmeyip öteki oynadıysa rakam gerçektir, kalır.
+    final b = veri.birincil;
+    final veriYok = b is GunlukDegisimSatiri &&
+        b.flat &&
+        (bd?.gunIciVerisiYokTurler.isNotEmpty ?? false);
 
     // Benchmark düzeni (kullanıcı seçimi 2026-10-09). Düzen H (2026-10-04)
     // ve D "sakin pano" (2026-10-01) bu tarihte kalktı; D'nin satırları
@@ -615,7 +625,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ),
         child: SandikCard(
           padding: const EdgeInsets.all(SandikSpace.md),
-          child: _benchmarkDuzeni(veri, ozet, oynayanlar, now, gizli, dil),
+          child: _benchmarkDuzeni(
+              veri, ozet, oynayanlar, now, gizli, dil, veriYok),
         ),
       ),
     );
@@ -683,13 +694,22 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// Kullanıcı şartı (2026-10-04) korunur: en çok oynayan, enflasyon kıyası
   /// ve hedef kartta BULUNUR. Hesap katmanı (`BugunService`, `DailySummary`,
   /// `enCokOynayanlar`) değişmedi; yalnızca çizim.
-  Widget _benchmarkDuzeni(BugunKartiVerisi veri, DailySummary? ozet,
-      List<EnCokOynayan> oynayanlar, DateTime now, bool gizli, String dil) {
+  Widget _benchmarkDuzeni(
+      BugunKartiVerisi veri,
+      DailySummary? ozet,
+      List<EnCokOynayan> oynayanlar,
+      DateTime now,
+      bool gizli,
+      String dil,
+      bool veriYok) {
     final reel = veri.reel;
     final birincil = veri.birincil;
     final seri = ozet?.sparkline ?? const <double>[];
-    final seriCiz =
-        !gizli && birincil is GunlukDegisimSatiri && seri.length >= 2;
+    // Veri yokken düz eğri de çizilmez: çizgi "hiç oynamadı" diye okunur.
+    final seriCiz = !gizli &&
+        !veriYok &&
+        birincil is GunlukDegisimSatiri &&
+        seri.length >= 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -709,7 +729,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         _HukumSatiri(
           birincil: birincil,
           gizli: gizli,
-          onPaylas: birincil is GunlukDegisimSatiri
+          veriYok: veriYok,
+          // Veri yokken paylaşılacak bir yüzde yok.
+          onPaylas: birincil is GunlukDegisimSatiri && !veriYok
               ? () => _bugunuPaylas(birincil, now)
               : null,
         ),
@@ -1098,10 +1120,17 @@ class _CanliNoktaState extends State<_CanliNokta>
 /// henüz yokken "Gün içi veri geliyor" — uydurma sayı yok.
 class _HukumSatiri extends StatelessWidget {
   const _HukumSatiri(
-      {required this.birincil, required this.gizli, this.onPaylas});
+      {required this.birincil,
+      required this.gizli,
+      this.veriYok = false,
+      this.onPaylas});
 
   final BugunSatiri? birincil;
   final bool gizli;
+
+  /// Gün içi seri hiç gelmedi: hüküm "Bugünün verisi henüz gelmedi",
+  /// rozet yok (₺0 bir ölçüm değildir).
+  final bool veriYok;
 
   /// Sağ uçtaki paylaşım düğmesi; yalnız günün yüzdesi biliniyorken.
   /// Sessiz: ikon gri, rozet/çağrı yok (rapor: "düğme yalnız durur").
@@ -1117,7 +1146,10 @@ class _HukumSatiri extends StatelessWidget {
     Color renk;
     String? tutar;
     String? yuzde;
-    if (s is GunlukDegisimSatiri) {
+    if (s is GunlukDegisimSatiri && veriYok) {
+      hukum = l10n.todayNoDataYet;
+      renk = c.text58;
+    } else if (s is GunlukDegisimSatiri) {
       if (s.flat) {
         hukum = l10n.todayVerdictFlat;
         renk = c.text58;
@@ -1138,12 +1170,17 @@ class _HukumSatiri extends StatelessWidget {
       renk = c.text36;
     }
 
-    final hukumStil = context.t.headlineSmall?.copyWith(
-      color: c.text90,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.5,
-      height: 1.1,
-    );
+    // Veri yokken cümle hüküm boyunda bağırmaz: gri, bir kademe küçük —
+    // bu bir sonuç değil, durum bildirimi.
+    final hukumStil = veriYok && s is GunlukDegisimSatiri
+        ? context.t.titleMedium?.copyWith(
+            color: c.text58, fontWeight: FontWeight.w600, height: 1.1)
+        : context.t.headlineSmall?.copyWith(
+            color: c.text90,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            height: 1.1,
+          );
 
     final satir = Semantics(
       label: [hukum, if (tutar != null) tutar, if (yuzde != null) yuzde]

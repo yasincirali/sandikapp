@@ -2813,6 +2813,19 @@
   "scopeWho": "Kimin portföyü",
   "scopePartners": "Ortaklar",
   "chartTypeTooltip": "Grafik tipi",
+  "chartIndicatorsButton": "Göstergeler",
+  "@chartIndicatorsButton": {
+    "description": "Grafik araç çubuğunda MUM/LOG/MA/EMA çiplerini açan tek düğme (UX raporu 30 Eki §2)"
+  },
+  "chartIndicatorsOn": "{n} açık",
+  "@chartIndicatorsOn": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "chartIndicatorsSemantics": "Göstergeler, {n} açık",
+  "@chartIndicatorsSemantics": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "chartIndicatorsHint": "Gösterge ve grafik katmanlarını açar ya da kapatır",
   "chartCandleChip": "MUM",
   "chartIntervalM1": "1 dk",
   "chartIntervalH1": "1 sa",
@@ -2935,6 +2948,10 @@
   },
   "todayClosedWord": "Piyasa kapalı",
   "todayLiveWord": "Canlı",
+  "todayNoDataYet": "Bugünün verisi henüz gelmedi",
+  "@todayNoDataYet": {
+    "description": "Gün içi seri hiç gelmediğinde düz çizgi yerine söylenen cümle (Bugün kartı, varlık başlığı)"
+  },
   "todayLoading": "Gün içi veri geliyor",
   "todayRealLabel": "Enflasyona göre",
   "todayRealHint": "Yıllık getirin ile TÜFE farkı",

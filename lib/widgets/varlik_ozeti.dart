@@ -133,6 +133,9 @@ typedef DonemDegisimSatiri = ({String metin, Color renk});
 ///   · düz değişim → "1 yıl boyunca değişmedi", nötr renk. [duz] verilmezse
 ///     [donemDuzMu] (= `DonemIstatistigi.isFlat` eşiği).
 ///   · [fark] `null` → yalnız yüzde (mevduat: birim fark anlamsız).
+///   · [veriGelmedi] → "Bugünün verisi henüz gelmedi" (GÜNLÜK seri hiç
+///     gelmedi; Bugün kartıyla aynı cümle, UX raporu 30 Eki §1). Düz
+///     tohum seri "değişim yok" diye okunmasın.
 DonemDegisimSatiri donemDegisimSatiri(
   BuildContext context, {
   required double? pct,
@@ -140,8 +143,10 @@ DonemDegisimSatiri donemDegisimSatiri(
   required NumberFormat bicim,
   double? fark,
   bool? duz,
+  bool veriGelmedi = false,
 }) {
   final l = context.l10n;
+  if (veriGelmedi) return (metin: l.todayNoDataYet, renk: context.c.text58);
   if (pct == null) return (metin: ' ', renk: context.c.text36);
   if (duz ?? donemDuzMu(pct)) {
     return (metin: l.periodNoChange(donem), renk: context.c.text36);

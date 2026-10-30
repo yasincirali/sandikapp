@@ -128,9 +128,10 @@ void main() {
       // çiplerinin sağında.
       // Not artık düz `Text`; sığmazsa alt satıra düşer (`Wrap`).
       expect(find.text('sadece fiyat etkisi'), findsOneWidget);
-      // Seri çekici boş dönüyor: gün başı = canlı toplam, hüküm "Yerinde
-      // saydı" (sayı uydurulmaz, ₺0).
-      expect(find.text('Yerinde saydı'), findsOneWidget);
+      // Seri çekici boş dönüyor: gün içi seride gerçek nokta yok. Hüküm
+      // "Yerinde saydı · ₺0" değil, veri gelmedi (UX raporu 30 Eki §1).
+      expect(find.text('Bugünün verisi henüz gelmedi'), findsOneWidget);
+      expect(find.text('Yerinde saydı'), findsNothing);
       expect(sigan('Hedef belirle'), findsOneWidget);
       // D'nin dönen bilgi kutuları H'de yok.
       expect(sigan('Artıdaki varlık'), findsNothing);
