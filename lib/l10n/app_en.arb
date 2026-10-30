@@ -934,6 +934,7 @@
   "partnerActionsUpper": "PARTNER ACTIONS",
   "myPartnersUpper": "MY PARTNERS",
   "generateInviteCode": "Generate Invite Code",
+  "shareInviteCode": "Share invite code",
   "generateInviteCodeBody": "Send the code to your partner. Once they enter it, you get an approval request.",
   "enterPartnerCode": "Enter Partner Code",
   "enterPartnerCodeBody": "Enter the code your partner sent you (e.g. KRHNJ-8P2SW). They then need to approve.",

@@ -244,7 +244,6 @@ void main() {
         find.text('Ne oldu?'),
         find.text('Paranın getirisi · 1 yıl'),
         find.text('Enflasyona göre'),
-        find.text('Özetini paylaş'),
         find.text('Neden böyle?'),
         find.text('Nereden geldi'),
         find.text('Yıl eğrisi'),
@@ -260,6 +259,14 @@ void main() {
         expect(y(t, sira[i]), greaterThan(y(t, sira[i - 1])),
             reason: '${sira[i]} → ${sira[i - 1]} altında olmalı');
       }
+      // Paylaş 2026-10-30'dan beri "Ne oldu?" başlığının sağ ucunda gri
+      // simge (`SandikPaylasDugmesi`); tam genişlik amber düğme yok.
+      expect(find.text('Özetini paylaş'), findsNothing);
+      final paylas = find.byTooltip('Özetini paylaş');
+      expect(paylas, findsOneWidget);
+      expect((t.getCenter(paylas).dy - t.getCenter(find.text('Ne oldu?')).dy)
+              .abs(),
+          lessThan(2));
       // Eski başlıklar kalmadı (BU DÖNEM/VARLIKLAR 2026-10-01, büyük
       // harfli SONUÇ/DERİNLİK 2026-10-04 sadeleştirme 2).
       expect(find.text('BU DÖNEM'), findsNothing);

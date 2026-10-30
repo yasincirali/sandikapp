@@ -211,6 +211,10 @@ void main() {
       final boyut = tester.getSize(dugme);
       expect(boyut.width, greaterThanOrEqualTo(44));
       expect(boyut.height, greaterThanOrEqualTo(44));
+      // Yer (yasin 2026-10-30, "dikkat çekici olmasın"): kartın sağ üst
+      // köşesi, başlık hizası — hüküm satırında değil.
+      final hukumY = tester.getCenter(find.text('Yükseldi')).dy;
+      expect(tester.getCenter(dugme).dy, lessThan(hukumY - 20));
       await tester.tap(dugme);
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));

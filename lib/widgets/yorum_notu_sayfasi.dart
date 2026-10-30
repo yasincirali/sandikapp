@@ -126,7 +126,7 @@ class YorumNotuSayfasi extends StatelessWidget {
                   children: [
                     Builder(
                       builder: (bctx) => SandikAsyncButton(
-                        icon: const Icon(Icons.ios_share_rounded),
+                        icon: Icon(Icons.adaptive.share),
                         onPressed: () => _paylas(bctx),
                         child: Text(l.pyzPdfPaylas),
                       ),
