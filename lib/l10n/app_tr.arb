@@ -947,6 +947,7 @@
   "partnerActionsUpper": "ORTAKLIK İŞLEMLERİ",
   "myPartnersUpper": "ORTAKLARIM",
   "generateInviteCode": "Davet Kodu Üret",
+  "shareInviteCode": "Davet kodunu paylaş",
   "generateInviteCodeBody": "Kodu ortağına gönder. Ortağın kodu girince sana onay isteği gelir.",
   "enterPartnerCode": "Ortak Kodunu Gir",
   "enterPartnerCodeBody": "Ortağının sana gönderdiği kodu gir (örn: KRHNJ-8P2SW). Onay vermesi beklenir.",

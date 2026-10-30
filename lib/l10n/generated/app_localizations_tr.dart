@@ -1581,6 +1581,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get generateInviteCode => 'Davet Kodu Üret';
 
   @override
+  String get shareInviteCode => 'Davet kodunu paylaş';
+
+  @override
   String get generateInviteCodeBody =>
       'Kodu ortağına gönder. Ortağın kodu girince sana onay isteği gelir.';
 
