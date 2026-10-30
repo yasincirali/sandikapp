@@ -897,7 +897,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String txPortfolioValueChange(String once, String sonra) {
-    return 'Portfolio $once → $sonra';
+    return 'Portfolio $once → $sonra';
   }
 
   @override

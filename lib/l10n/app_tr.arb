@@ -522,7 +522,7 @@
       }
     }
   },
-  "txPortfolioValueChange": "Portföy {once} → {sonra}",
+  "txPortfolioValueChange": "Portföy {once}\u00a0→\u00a0{sonra}",
   "@txPortfolioValueChange": {
     "description": "Hareket satırı: işlemden önce ve sonra kapsamın toplam portföy değeri (Performans grafiğiyle aynı sayı).",
     "placeholders": {
