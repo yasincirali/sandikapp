@@ -18,6 +18,56 @@ import 'tefas_service.dart';
 import 'mevduat_hesabi.dart';
 import 'sozlesme_deposu.dart';
 
+/// Yahoo `v8/finance/chart` yanıtı → (ms, kapanış) noktaları.
+///
+/// ## Gün içinde önceki kapanış (2026-10-30, yasin: "bugün sayfası, canlı
+/// aktivite, Performans bugün ve varlık detay bugün tutarlı olmalı")
+/// Hisse/ETF/endeks gün içi serisi açılış seansının İLK 5 dakikalık
+/// barıyla başlıyordu. Gün içi motor bu ilk noktayı gün başı sayar
+/// (`HistoryService` › `assetSeedTRY`); açılıştaki sıçrama günün hiçbir
+/// yüzeyinde görünmüyordu. Ölçüldü (senaryo testi): önceki kapanış
+/// 294,12, ilk bar 296, canlı 300 → kotasyon, takip listesi ve brifing
+/// "+%2,0" derken varlık sayfası GÜNLÜK "+%1,35" yazıyor, Bugün kartı
+/// da açılış sıçramasını tutara katmıyordu. Döviz ve altın bu sorunu
+/// kotasyonun kendi gün başıyla çözmüştü (`dovizUrunBirimi`, yurt içi
+/// kayıt); hissede yoktu.
+///
+/// Çözüm: aynı yanıtın `meta.chartPreviousClose`'u, ilk barın bir slot
+/// ÖNCESİNE nokta olarak eklenir. Kaynak ve ölçek seriyle aynıdır (aynı
+/// sağlayıcı, aynı yanıt), uydurma değildir. Açılış sıçraması grafikte
+/// açılış anında bir basamak olur; şekil yayılmaz.
+///
+/// Yalnız seanslı enstrümanlar ([gunIci] ve `instrumentType` hisse, ETF,
+/// endeks): döviz ve vadeli 7/24'e yakın işler, gün başları kendi
+/// yolundan gelir.
+List<(int, double)> yahooSeriCoz(Map<String, dynamic> body,
+    {required bool gunIci}) {
+  final result =
+      (body['chart']?['result'] as List?)?.firstOrNull as Map<String, dynamic>?;
+  if (result == null) return [];
+
+  final timestamps = (result['timestamp'] as List?)?.cast<int>() ?? [];
+  final closes = (((result['indicators']?['quote'] as List?)?.firstOrNull
+          as Map<String, dynamic>?)?['close'] as List?)
+      ?.cast<dynamic>() ?? [];
+
+  final points = <(int, double)>[];
+  for (var i = 0; i < timestamps.length && i < closes.length; i++) {
+    final price = (closes[i] as num?)?.toDouble();
+    if (price != null && price > 0) {
+      points.add((timestamps[i] * 1000, price));
+    }
+  }
+  if (!gunIci || points.isEmpty) return points;
+  final meta = result['meta'] as Map<String, dynamic>?;
+  final tur = meta?['instrumentType'];
+  if (tur != 'EQUITY' && tur != 'ETF' && tur != 'INDEX') return points;
+  final onceki = (meta?['chartPreviousClose'] as num?)?.toDouble();
+  if (onceki == null || !onceki.isFinite || onceki <= 0) return points;
+  const slot = Duration(minutes: 5);
+  return [(points.first.$1 - slot.inMilliseconds, onceki), ...points];
+}
+
 class YahooQuote {
   final String symbol;
   final double? regularMarketPrice;
@@ -1686,24 +1736,8 @@ class PriceService {
 
     if (res.statusCode != 200) return [];
 
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final result =
-        (body['chart']?['result'] as List?)?.firstOrNull as Map<String, dynamic>?;
-    if (result == null) return [];
-
-    final timestamps = (result['timestamp'] as List?)?.cast<int>() ?? [];
-    final closes = (((result['indicators']?['quote'] as List?)?.firstOrNull
-            as Map<String, dynamic>?)?['close'] as List?)
-        ?.cast<dynamic>() ?? [];
-
-    final points = <(int, double)>[];
-    for (var i = 0; i < timestamps.length && i < closes.length; i++) {
-      final price = (closes[i] as num?)?.toDouble();
-      if (price != null && price > 0) {
-        points.add((timestamps[i] * 1000, price));
-      }
-    }
-    return points;
+    return yahooSeriCoz(jsonDecode(res.body) as Map<String, dynamic>,
+        gunIci: range == '1d');
   }
 
   /// Gerçek mumlar (OHLC) — Yahoo `v8/finance/chart`, [bas, son] penceresi

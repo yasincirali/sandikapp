@@ -2074,7 +2074,10 @@ class HistoryService {
     //
     // Seed önceliği:
     //   1. Yahoo intraday map'inin en erken (bugüne ait ilk) noktası —
-    //      dünkü kapanışa en yakın değer.
+    //      dünkü kapanışa en yakın değer. Hisse/ETF/endekste bu nokta
+    //      artık dünkü kapanışın KENDİSİ (`yahooSeriCoz`, 2026-10-30):
+    //      ilk bar gün başı sayılınca açılış sıçraması hiçbir "bugün"
+    //      yüzeyine girmiyordu.
     //   2. Yoksa currentPrice (canlı — genelde intraday map ile aynı
     //      mertebede).
     double? assetSeedTRY(Asset a) {
