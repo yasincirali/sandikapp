@@ -158,10 +158,19 @@ class TransactionRow extends StatelessWidget {
     final String sagAltEtiket =
         isVoided ? '$turEtiketi · ${l10n.txVoided}' : turEtiketi;
 
+    // Portföy önce → sonra satırı, metin kolonu yerine satırın TAM
+    // genişliğinde (tutar kolonunun altına da uzanır): tutarlar kısaltmasız
+    // yazıldığı için (yasin 2026-10-30) 116 pt'lik sağ kolonun yanındaki dar
+    // alanda büyük yazıda kesiliyordu.
+    final portfoySatiri = silinenGorunumu ? null : _portfoySatiri(context);
     final row = Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: yatayBosluk, vertical: SandikSpace.smd),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+      Row(
         // Avatar, metin bloğu ve tutar kolonu ortak eksende hizalansın.
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -278,6 +287,14 @@ class TransactionRow extends StatelessWidget {
           ),
         ],
       ),
+          if (portfoySatiri != null)
+            Padding(
+              padding: const EdgeInsets.only(
+                  left: avatarCap + avatarAraligi, top: SandikSpace.xxs),
+              child: portfoySatiri,
+            ),
+        ],
+      ),
     );
 
     final Widget gorunen =
@@ -294,35 +311,38 @@ class TransactionRow extends StatelessWidget {
     );
   }
 
-  /// Bakiye satırı: miktar ve (biliniyorsa) portföy değeri, tek ekran
-  /// okuyucu cümlesi. Miktar ve değer ayrı parçalar: dar ekranda ya da
-  /// büyük yazıda değer BÜTÜN hâlinde alt satıra iner, "₺1,24M →" ile
-  /// "₺1,21M" bölünmez.
+  /// Bakiye satırı: işlemden önce → sonra miktar.
   Widget _bakiyeSatiri(
-      BuildContext context, ({String gorunen, String okunan}) m) {
-    final l10n = context.l10n;
-    final p = hideBalance || baz.gizli ? null : portfoyDegeri;
-    return Padding(
-      padding: const EdgeInsets.only(top: SandikSpace.xxs),
-      child: Semantics(
-        label: p == null
-            ? m.okunan
-            : '${m.okunan}. ${l10n.txPortfolioValueSemantics(baz.fmt(p.once), baz.fmt(p.sonra))}',
-        excludeSemantics: true,
-        child: Wrap(
-          spacing: SandikSpace.xs,
-          children: [
-            // Ayraç miktarın sonunda: değer alt satıra inince yeni satır
-            // "·" ile başlamasın (e2e 2026-10-29).
-            _bakiyeMetni(context, p == null ? m.gorunen : '${m.gorunen} ·'),
-            if (p != null)
-              _bakiyeMetni(
-                context,
-                l10n.txPortfolioValueChange(
-                    baz.compact(p.once), baz.compact(p.sonra)),
-              ),
-          ],
+          BuildContext context, ({String gorunen, String okunan}) m) =>
+      Padding(
+        padding: const EdgeInsets.only(top: SandikSpace.xxs),
+        child: Semantics(
+          label: m.okunan,
+          excludeSemantics: true,
+          child: _bakiyeMetni(context, m.gorunen),
         ),
+      );
+
+  /// Portföy önce → sonra (yasin 2026-10-29), TAM tutar (2026-10-30: "tam
+  /// yazılmalı, karmaşa olmamalı"): Performans ipucuyla aynı biçim (₺,
+  /// kuruşsuz). Okun iki yanı bölünmez boşluk: dar ekranda ya da büyük
+  /// yazıda satır yalnız "Portföy"den sonra kırılır, iki tutar ayrılmaz.
+  /// Bakiye gizliyken ya da değer bilinmiyorsa (92 günden eski) yok.
+  Widget? _portfoySatiri(BuildContext context) {
+    final p = hideBalance || baz.gizli ? null : portfoyDegeri;
+    final l10n = context.l10n;
+    // Bakiye satırı çıkan hareketlerde (alım/satım; temettüde değil).
+    final b = bakiye;
+    if (p == null || b == null || hareketBakiyeMetni(l10n, asset, b) == null) {
+      return null;
+    }
+    return Semantics(
+      label: l10n.txPortfolioValueSemantics(baz.fmt(p.once), baz.fmt(p.sonra)),
+      excludeSemantics: true,
+      child: _bakiyeMetni(
+        context,
+        l10n.txPortfolioValueChange(baz.fmt(p.once), baz.fmt(p.sonra)),
+        satir: 3,
       ),
     );
   }
@@ -331,9 +351,10 @@ class TransactionRow extends StatelessWidget {
   /// satırın ikinci bilgisi, ama tutarla yarışmaz. Alt alta sayılar hizalı
   /// okunsun diye tabular figür. İki satıra kadar kırılır; daha uzunu
   /// (aşırı büyük yazı) kırpılır, taşmaz.
-  Widget _bakiyeMetni(BuildContext context, String metin) => Text(
+  Widget _bakiyeMetni(BuildContext context, String metin, {int satir = 2}) =>
+      Text(
         metin,
-        maxLines: 2,
+        maxLines: satir,
         overflow: TextOverflow.ellipsis,
         style: context.t.labelSmall?.copyWith(
           color: context.c.text58,
