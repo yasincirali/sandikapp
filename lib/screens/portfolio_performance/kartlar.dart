@@ -844,12 +844,14 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ? (gunIciBugun ? null : '${dateFmt.format(start)} · son seans')
         : '${dateFmt.format(start)} → ${dateFmt.format(end)}';
 
-    // Paylaş (UX raporu 30 Eki §6; yer yasin 2026-10-30: "dikkat çekici
-    // olmasın, her yerde aynı standart"): Özet'te "Ne oldu?" başlığının
-    // altında tek başına duran düğme manşet rakamın kartına geldi, kartın
-    // sağ üst köşesine — Bugün kartıyla aynı yer ve ölçü
-    // (`SandikPaylasDugmesi`). Başlık satırının içinde 44 pt'lik düğme
-    // satırı şişiriyordu; köşeye bindirilince kart yüksekliği aynı kalır.
+    // Paylaş (UX raporu 30 Eki §6): Özet'te "Ne oldu?" başlığının altında
+    // tek başına duran düğme manşet rakamın kartına geldi. Yeri başlık
+    // satırının SONU, satırın içinde (yasin 2026-10-31: "garip bir yerde
+    // duruyor… simetri ve ahengi bozmayacak şekilde"; kural
+    // `SandikPaylasDugmesi`). 2026-10-30'da köşeye bindirilmişti; çerçevesiz
+    // manşette dolgu 4 pt olunca simge tarih aralığıyla yüzde rozetinin
+    // ARASINA düşüyordu. Şimdi simge tarih aralığıyla aynı satırda, sağ
+    // kenarı rozetin sağ kenarıyla aynı çizgide.
     // Görsel ve metin yine Özet'ten (tutar yok, yüzde + etiket).
     //
     // Tek akışta çerçevesiz (müşteri raporu 31 Eki 17:15 tasarım #2, yasin
@@ -857,10 +859,21 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // cevap (rakam) grafik kartıyla aynı görsel ağırlıktaydı. Rakam artık
     // sayfa zemininde, ekranın en büyük öğesi (`numLarge`); çerçeveli tek
     // yüzey grafik. Eski düzen (bayrak kapalı) birebir aynı kalır.
+    // Paylaş varken başlık satırı 44 pt kutuyla uzar; üst dolgu ve satırın
+    // altındaki boşluk o payı düşer (en fazla kendileri kadar).
     Widget kart(VoidCallback? paylas) => Container(
           padding: tekAkis
-              ? const EdgeInsets.fromLTRB(
-                  SandikSpace.xs, SandikSpace.xs, SandikSpace.xs, SandikSpace.xs)
+              ? EdgeInsets.fromLTRB(
+                  SandikSpace.xs,
+                  paylas == null
+                      ? SandikSpace.xs
+                      : math.max(
+                          0,
+                          SandikSpace.xs -
+                              SandikPaylasDugmesi.satirPayi(
+                                  context, context.t.titleSmall)),
+                  SandikSpace.xs,
+                  SandikSpace.xs)
               : const EdgeInsets.fromLTRB(SandikSpace.md, SandikSpace.md2,
                   SandikSpace.md, SandikSpace.md2),
           decoration:
@@ -871,63 +884,70 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               // Üst bilgi: başlık solda, dönem aralığı sağda — ikisi de sessiz.
               // Başlık "1A birikim değişimi · simülasyon" gibi uzayabiliyor;
               // 320pt'de tek satıra sığmalı (taşma testi bunu kovalıyor).
-              Padding(
-                padding: EdgeInsets.only(
-                    right: paylas == null
-                        ? 0
-                        : SandikPaylasDugmesi.kartKosesiPayi),
-                child: Row(
-                  children: [
-                    Expanded(
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.titleSmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ),
+                  // "PİYASA KAPALI" rozeti — grafikteki gri kesikli kuyruğun
+                  // ne olduğunu SÖZLE de anlatır. Desen tek başına yeterli
+                  // değil: kullanıcı düz çizgiyi "fiyat oynamadı" diye
+                  // okuyabilir, oysa borsa kapalıydı.
+                  if (kapaliEtiketi != null) ...[
+                    const SizedBox(width: SandikSpace.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: context.c.text36.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
+                      ),
                       child: Text(
-                        title,
+                        // Metin portföydeki TÜRLERE göre karar verilir:
+                        // mevduat faizi, altın, kripto hafta sonu da işler,
+                        // onlara "kapalı" demek yanlış bilgidir (bkz.
+                        // `piyasaKapaliEtiketi`).
+                        kapaliEtiketi,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.titleSmall
-                            ?.copyWith(color: context.c.text58),
+                        style: context.t.labelSmall?.copyWith(
+                          letterSpacing: 0.6,
+                          fontWeight: FontWeight.w700,
+                          color: context.c.text36,
+                        ),
                       ),
                     ),
-                    // "PİYASA KAPALI" rozeti — grafikteki gri kesikli kuyruğun
-                    // ne olduğunu SÖZLE de anlatır. Desen tek başına yeterli
-                    // değil: kullanıcı düz çizgiyi "fiyat oynamadı" diye
-                    // okuyabilir, oysa borsa kapalıydı.
-                    if (kapaliEtiketi != null) ...[
-                      const SizedBox(width: SandikSpace.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: context.c.text36.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
-                        ),
-                        child: Text(
-                          // Metin portföydeki TÜRLERE göre karar verilir:
-                          // mevduat faizi, altın, kripto hafta sonu da işler,
-                          // onlara "kapalı" demek yanlış bilgidir (bkz.
-                          // `piyasaKapaliEtiketi`).
-                          kapaliEtiketi,
-                          maxLines: 1,
-                          style: context.t.labelSmall?.copyWith(
-                            letterSpacing: 0.6,
-                            fontWeight: FontWeight.w700,
-                            color: context.c.text36,
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (aralik != null) ...[
-                      const SizedBox(width: SandikSpace.sm),
-                      Text(
-                        aralik,
-                        maxLines: 1,
-                        style: context.t.bodySmall
-                            ?.copyWith(color: context.c.text36),
-                      ),
-                    ],
                   ],
-                ),
+                  if (aralik != null) ...[
+                    const SizedBox(width: SandikSpace.sm),
+                    Text(
+                      aralik,
+                      maxLines: 1,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text36),
+                    ),
+                  ],
+                  // Son öğe; 44 pt kutunun boşluğu tarihe doğru kalır,
+                  // simge sağ kenara yaslanır.
+                  if (paylas != null)
+                    SandikPaylasDugmesi(
+                        onPressed: paylas,
+                        tooltip: context.l10n.shareSummary),
+                ],
               ),
-              const SizedBox(height: SandikSpace.sm2),
+              SizedBox(
+                  height: paylas == null
+                      ? SandikSpace.sm2
+                      : math.max(
+                          0,
+                          SandikSpace.sm2 -
+                              SandikPaylasDugmesi.satirPayi(
+                                  context, context.t.titleSmall))),
               // Kahraman: tutar en büyük tipografi. Yüzde rozeti YALNIZCA akış
               // yokken burada (o zaman birikim = piyasanın kattığı); akış
               // varken rozet aşağıdaki piyasa kaleminde. Müşteri testi
@@ -1057,15 +1077,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     if (!tekAkis) return kart(null);
     return ValueListenableBuilder<VoidCallback?>(
       valueListenable: _ozetPaylasim,
-      builder: (context, paylas, _) => SandikPaylasDugmesi.kartKosesi(
-        // Kart üst dolgusu md2 (14) + başlık satırının yarısı ≈ 24.
-        ust: SandikSpace.xxs,
-        dugme: paylas == null
-            ? null
-            : SandikPaylasDugmesi(
-                onPressed: paylas, tooltip: context.l10n.shareSummary),
-        kart: kart(paylas),
-      ),
+      builder: (context, paylas, _) => kart(paylas),
     );
   }
 
