@@ -5341,6 +5341,7 @@
     }
   },
   "anzAylikEksik": "{kodlar} için bu ay not çıkmadı; sayıları kendi sayfalarında.",
+  "anzAylikPdfPaylas": "Raporu PDF olarak paylaş",
   "@anzAylikEksik": {
     "placeholders": {
       "kodlar": {"type": "String"}

@@ -261,6 +261,9 @@ void main() {
                 // Uygulamanın tek paylaş düğmesi (2026-10-30): kart köşesi,
                 // bölüm başlığı ve Profil davet kodu aynı bileşen.
                 SandikPaylasDugmesi(onPressed: () {}, tooltip: 'Paylaş'),
+                // Belge hazırlayan hâli (aylık rapor PDF'i, 2026-10-31).
+                SandikPaylasDugmesi.istekli(
+                    onPaylas: (_) async {}, tooltip: 'PDF olarak paylaş'),
                 const SizedBox(height: SandikSpace.md),
                 // Varlık sayfasının Al · Sat · Temettü çubuğu: şerit ve
                 // (bayrak `goz_alici`) yüzen cam kapsül.

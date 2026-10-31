@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/services/disa_aktarim/aylik_rapor_belgesi.dart';
 import 'package:portfoy_takip/services/disa_aktarim/pdf_yazici.dart';
 import 'package:portfoy_takip/services/disa_aktarim/rapor_belgeleri.dart';
 import 'package:portfoy_takip/services/disa_aktarim/yorum_notu_pdf.dart';
@@ -168,5 +169,47 @@ void main() {
       logo: File('assets/images/sandik_icon.png').readAsBytesSync(),
     );
     File('${dir.path}/yorum_notu.pdf').writeAsBytesSync(b);
+  });
+
+  // Aylık rapor (2026-10-31): TÜFE henüz açıklanmamış hâl (ayın 1'i).
+  test('aylık rapor', () async {
+    final b = aylikRaporBelgesi(
+      donem: DateTime(2026, 10),
+      notlar: const [
+        AylikRaporNotu(
+          kod: 'THYAO',
+          rozet: 'Alıcı istekli',
+          baslik: 'Ay boyunca alıcılar baskındı; fiyat ayı yükselişle kapattı.',
+          maddeler: [
+            'İşlem hacmi ayın son iki haftasında 3 aylık ortalamanın %62 üstündeydi.',
+            'Kapanış fiyatı ay başına göre %8,4 yukarıda; en yüksek gün 24 Ekim.',
+            'Günlük oynaklık önceki aya göre azaldı.',
+          ],
+        ),
+        AylikRaporNotu(
+          kod: 'TTE',
+          rozet: 'Büyük giriş',
+          baslik: 'Fona ay içinde belirgin para girişi oldu.',
+          maddeler: [
+            'Toplam giriş fon büyüklüğünün %4,1\'i kadar.',
+            'Yatırımcı sayısı ay başına göre 2.300 kişi arttı.',
+          ],
+        ),
+        AylikRaporNotu(
+          kod: 'BTC',
+          baslik: 'Sakin bir ay; fiyat dar bir bantta kaldı.',
+          maddeler: ['Ay içi en yüksek ile en düşük arasındaki fark %6.'],
+        ),
+      ],
+      ozetCumlesi: 'Notu çıkan 3 varlığından 2 tanesinde ay boyunca belirgin '
+          'hareket oldu.',
+      eksikCumlesi: 'AFT için bu ay not çıkmadı; sayıları kendi sayfalarında.',
+      kim: 'demo',
+      olusturma: DateTime(2026, 11, 1, 9, 12),
+      getiriPct: 3.42,
+    );
+    File('${dir.path}/aylik.pdf')
+        .writeAsBytesSync(
+            await pdfYaz(b, duz: duz, kalin: kalin, logo: _logo()));
   });
 }

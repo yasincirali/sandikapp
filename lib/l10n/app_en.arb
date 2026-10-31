@@ -4926,6 +4926,7 @@
     }
   },
   "anzAylikEksik": "No note this month for {kodlar}; their numbers are on their own pages.",
+  "anzAylikPdfPaylas": "Share report as PDF",
   "@anzAylikEksik": {
     "placeholders": {
       "kodlar": {"type": "String"}

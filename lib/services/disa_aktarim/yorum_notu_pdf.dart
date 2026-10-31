@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../config/magaza.dart';
 import '../portfoy_yorumu_service.dart' show YorumKapsami, YorumOlcumu;
 import '../yorum_notu.dart';
 import 'pdf_marka.dart';
@@ -62,7 +63,9 @@ Future<Uint8List> yorumNotuPdf(
           'Bu not, sandık uygulamasındaki portföy kayıtlarından hesaplanan '
           'oranlarla yapay zekâ tarafından yazılmıştır; tutar içermez. Kıyas '
           'verileri kamuya açık piyasa verisi sağlayıcılarından, TÜFE '
-          'TÜİK\'ten alınır. Yatırım tavsiyesi değildir.'),
+          'TÜİK\'ten alınır. Yatırım tavsiyesi değildir.',
+          baglanti: Magaza.indirBaglantisi(
+              kaynak: 'pdf_rapor', kampanya: 'ai_notu')),
       build: (ctx) => [
         ustBantIcerigi(
             logo: logoImg,

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../config/magaza.dart';
 import '../../utils/tr_format.dart';
 import 'pdf_marka.dart';
 import 'rapor_belgeleri.dart' show teknikSembolMu;
@@ -64,7 +65,9 @@ Future<Uint8List> pdfYaz(
       footer: (ctx) => sayfaSonu(
           ctx,
           'sandık uygulamasındaki kendi kayıtlarından hazırlandı. Yatırım '
-          'ya da vergi tavsiyesi değildir.'),
+          'ya da vergi tavsiyesi değildir.',
+          baglanti: Magaza.indirBaglantisi(
+              kaynak: 'pdf_rapor', kampanya: b.kampanya)),
       build: (ctx) => [
         ustBantIcerigi(
             logo: logoImg,
@@ -76,6 +79,10 @@ Future<Uint8List> pdfYaz(
         if (b.oneCikanlar.isNotEmpty) ...[
           pw.SizedBox(height: 14),
           _oneCikanlar(b.oneCikanlar),
+        ],
+        for (final m in b.bolumler) ...[
+          pw.SizedBox(height: 14),
+          ..._metinBolumu(m),
         ],
         if (b.grafikler.isNotEmpty) ...[
           pw.SizedBox(height: 16),
@@ -236,6 +243,44 @@ pw.Widget _oneCikanlar(List<String> cumleler) => pw.Container(
         ],
       ),
     );
+
+// ── Metin bölümleri ────────────────────────────────────────────────────────
+
+/// Varlık notu (aylık rapor, 2026-10-31): başlık + durum etiketi, öz cümle
+/// kalın, maddeler noktalı. Liste döner ki MultiPage uzun notu sayfalar
+/// arasında bölebilsin (tek `Column` sayfaya sığmazsa hata verir).
+List<pw.Widget> _metinBolumu(RaporMetinBolumu m) => [
+      bolumBasligi(m.baslik, sag: m.etiket),
+      pw.Text(m.oz,
+          style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfMarka.murekkep,
+              lineSpacing: 1.6)),
+      for (final madde in m.maddeler)
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 4),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                margin: const pw.EdgeInsets.only(top: 3.6, right: 7),
+                width: 3.5,
+                height: 3.5,
+                decoration: const pw.BoxDecoration(
+                    color: PdfMarka.yesil, shape: pw.BoxShape.circle),
+              ),
+              pw.Expanded(
+                child: pw.Text(madde,
+                    style: const pw.TextStyle(
+                        fontSize: 9,
+                        color: PdfMarka.murekkep,
+                        lineSpacing: 1.6)),
+              ),
+            ],
+          ),
+        ),
+    ];
 
 // ── Grafikler ──────────────────────────────────────────────────────────────
 

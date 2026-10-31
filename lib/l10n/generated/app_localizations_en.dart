@@ -7414,6 +7414,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get anzAylikPdfPaylas => 'Share report as PDF';
+
+  @override
   String get anzAylikOzetYok => 'None of your assets had a notable month.';
 
   @override

@@ -21,6 +21,8 @@ class RaporBelgesi {
     this.belgeTuru = 'Rapor',
     this.oneCikanlar = const [],
     this.grafikler = const [],
+    this.bolumler = const [],
+    this.kampanya = 'rapor',
   });
 
   /// Belge başlığı ("sandık · 2025 yıllık rapor").
@@ -52,6 +54,33 @@ class RaporBelgesi {
   /// PDF'te tabloların üstünde çizilen grafikler. Excel'e yazılmaz: aynı
   /// sayılar zaten tablolarda (grafik onların görsel özeti).
   final List<RaporGrafigi> grafikler;
+
+  /// Metin bölümleri (aylık rapor, 2026-10-31): varlık başına başlık, durum
+  /// etiketi ve maddeler. PDF'te öne çıkanların altında; Excel'de "Notlar"
+  /// sayfasında satır satır. Tablolu raporlar kullanmaz.
+  final List<RaporMetinBolumu> bolumler;
+
+  /// PDF dipnotundaki "sandık ile hazırlandı" bağlantısının `utm_campaign`'i
+  /// (belge türü; ör. `yillik_rapor`). Kaç kurulumu hangi belgenin
+  /// getirdiği ölçülür; kişi ya da gönderen izlenmez.
+  final String kampanya;
+}
+
+/// Bir metin bölümü: başlık ("THYAO"), isteğe bağlı durum etiketi
+/// ("Alıcı istekli"), öz cümle ve maddeler.
+@immutable
+class RaporMetinBolumu {
+  const RaporMetinBolumu({
+    required this.baslik,
+    required this.oz,
+    this.etiket,
+    this.maddeler = const [],
+  });
+
+  final String baslik;
+  final String? etiket;
+  final String oz;
+  final List<String> maddeler;
 }
 
 /// Grafik türü: [dagilim] tek yığılmış çubuk + lejant (pay %), [cubuk]
