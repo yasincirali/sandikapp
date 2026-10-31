@@ -61,8 +61,8 @@ class FonFiyatGunuEtiketi extends StatelessWidget {
     return Text(
       '· $metin',
       key: const ValueKey('fonFiyatGunu'),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      // Büyük yazıda etiketin yanında iki satıra sarar; kırpılmaz.
+      maxLines: 2,
       semanticsLabel: metin,
       style: context.t.labelSmall?.copyWith(color: context.c.text36),
     );

@@ -7,6 +7,7 @@ import 'package:portfoy_takip/services/tefas_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/fon_fiyat_gunu.dart';
 import 'package:portfoy_takip/widgets/fon_fiyat_gunu_etiketi.dart';
+import 'package:portfoy_takip/widgets/varlik_ozeti.dart';
 
 import 'helpers/kaynak.dart';
 
@@ -135,6 +136,36 @@ void main() {
     expect(find.text('· Fiyat 30 Eki (Cuma)'), findsOneWidget);
     // Ekran okuyucu ayraç noktasını okumaz.
     expect(find.bySemanticsLabel('Fiyat 30 Eki (Cuma)'), findsOneWidget);
+  });
+
+  testWidgets('3.1× yazı, 320 pt: fiyat başlığı notla taşmaz', (tester) async {
+    tester.view.physicalSize = const Size(320 * 3, 900 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(
+      theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+      locale: const Locale('tr'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: MediaQuery(
+        data: const MediaQueryData(
+            size: Size(320, 900), textScaler: TextScaler.linear(3.1)),
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => VarlikFiyatBlogu(
+              etiket: 'GÜNCEL FİYAT',
+              etiketYani: FonFiyatGunuEtiketi(
+                  tarih: DateTime(2026, 10, 30), simdi: pazartesi),
+              fiyat: '₺2,154318',
+              fiyatRengi: context.c.gold,
+              degisim: (metin: '+%0,42', renk: context.c.gain),
+            ),
+          ),
+        ),
+      ),
+    ));
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const ValueKey('fonFiyatGunu')), findsOneWidget);
   });
 
   test('üç yüzey de aynı yardımcıdan okur (kendi tarih kuralı yok)', () {
