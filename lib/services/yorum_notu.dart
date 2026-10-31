@@ -1,4 +1,5 @@
 import '../utils/tr_format.dart' show parseTrNumber;
+import 'disa_aktarim/dosya_adi.dart';
 import 'fiyat_kaynagi.dart' show KiyasVarligi;
 import 'portfoy_yorumu_service.dart';
 
@@ -185,11 +186,25 @@ class YorumNotu {
           },
       };
 
-  /// PDF ve paylaşım dosyasının adı: `sandik-yorum-2026-10-14`.
+  /// PDF ve paylaşım dosyasının adı; kalıp ve gerekçe `belgeDosyaAdi`
+  /// (2026-10-31). Belge türü PDF başlığıyla aynı ("Portföy değerlendirme
+  /// notu"), varlık notunda varlığın adı, dönem türüne göre:
+  /// `sandık Portföy Değerlendirme Notu Haftalık 2026-10-20 (20-26 Ekim)`,
+  /// `… Aylık 2026-09 (Eylül)`, `sandık Varlık Değerlendirme Notu THYAO
+  /// Son 3 ay 2026-10-14`. Eskiden `sandik-yorum-2026-10-14`: hafta mı 3 ay
+  /// mı, hangi varlık, addan okunmuyordu.
   String get dosyaAdi {
-    final b = yorum.bitis;
-    String iki(int v) => v.toString().padLeft(2, '0');
-    return 'sandik-yorum-${b.year}-${iki(b.month)}-${iki(b.day)}';
+    final tur = kapsam == YorumKapsami.varlik
+        ? 'Varlık Değerlendirme Notu'
+        : 'Portföy Değerlendirme Notu';
+    final donem = switch (yorum.tur) {
+      YorumTuru.haftalik =>
+        'Haftalık ${haftaDonemi(yorum.baslangic, yorum.bitis)}',
+      YorumTuru.aylik => 'Aylık ${ayDonemi(yorum.baslangic)}',
+      YorumTuru.secili => '$donemAdi ${gunDonemi(yorum.bitis)}',
+    };
+    return belgeDosyaAdi(tur, donem,
+        varlik: kapsam == YorumKapsami.varlik ? varlikAdi : null);
   }
 }
 
