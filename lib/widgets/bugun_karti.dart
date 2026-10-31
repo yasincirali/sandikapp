@@ -552,7 +552,11 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   // başlıyordu: arada boş bir an ve altındaki her şeyin zıplaması vardı.
   @override
   Widget build(BuildContext context) => SandikYuklemeGecisi(
-        yukleniyor: !_yuklendi && widget.state.assets.isNotEmpty,
+        // Açılış kopyasında (dünkü fiyat olabilir) günün yüzdesi ve hükmü
+        // söylenmez; ilk fiyat turu bitene kadar iskelet (müşteri raporu
+        // 30 Eki #1, `PortfolioState.onbellekKopyasi`).
+        yukleniyor: (!_yuklendi || widget.state.onbellekKopyasi) &&
+            widget.state.assets.isNotEmpty,
         iskelet: _iskelet(context),
         icerik: _kart,
       );

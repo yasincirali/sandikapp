@@ -1,0 +1,5 @@
+{
+ "_not": "Her ayın 3'ünde App Store Tanıtım metni (TR). {ay} = açıklanan ayın adı, {yillik} = yıllık TÜFE (inflation_index'ten). 170 karakteri geçerse yazılmaz. 'onay' true olmadan mağazaya yazılmaz (yasin ilk metni görüp onaylar; müşteri raporu 30 Eki #3). Cümle yatırım vaadi değil soru kalıbında kalır.",
+ "onay": false,
+ "kalip": "{ay} ayında yıllık enflasyon %{yillik} oldu. Birikimin enflasyonu geçti mi? sandık getirini enflasyonla yan yana koyar, gerçek kârını gösterir."
+}

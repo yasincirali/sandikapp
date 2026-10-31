@@ -60,10 +60,52 @@ abstract final class PortfolioCache {
     }
   }
 
+  static String _kurKey(String userId) =>
+      '${PrefKeys.portfolioCachePrefix}kur_$userId';
+
+  /// Son başarılı fiyat turunun kurları — açılış kopyası (2026-10-31)
+  /// dövizli varlığı ×1.0 ile değil gerçek son kurla çizsin. Ayrı anahtar:
+  /// defter yazımı (build, defter tazeleme) kurları bilmez.
+  static Future<void> kurYaz(String userId,
+      {required double usd,
+      required double eur,
+      required double gbp,
+      required double altin}) async {
+    if (usd <= 1 || eur <= 1 || gbp <= 1) return; // bilinmeyen kur yazılmaz
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          _kurKey(userId),
+          jsonEncode({
+            'usd': usd,
+            'eur': eur,
+            'gbp': gbp,
+            'altin': altin,
+            'at': DateTime.now().toUtc().toIso8601String(),
+          }));
+    } catch (_) {}
+  }
+
+  static Future<({double usd, double eur, double gbp, double altin})?> kurOku(
+      String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kurKey(userId));
+      if (raw == null) return null;
+      final m = jsonDecode(raw) as Map<String, dynamic>;
+      double d(String k) => (m[k] as num?)?.toDouble() ?? 0;
+      if (d('usd') <= 1 || d('eur') <= 1 || d('gbp') <= 1) return null;
+      return (usd: d('usd'), eur: d('eur'), gbp: d('gbp'), altin: d('altin'));
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<void> clear(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key(userId));
+      await prefs.remove(_kurKey(userId));
     } catch (_) {}
   }
 }
