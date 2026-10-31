@@ -12,6 +12,18 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-31 (onay senin) App Store tanıtım metni her ayın 3'ünde TÜFE ile
+
+Müşteri raporu 30 Eki #3 (yasin "yap"). İş `asc-tanitim-tufe.yml` her ayın
+3-5'inde koşar, metni iş özetine yazar. Kalıp
+`store_listing/ios/tr/tanitim_tufe.json`; `onay: false` iken mağazaya
+**yazmaz**.
+
+- [ ] 3 Kasım'daki ilk koşunun metnini oku (Actions › "App Store tanıtım
+      metni (TÜFE)" › özet); yıllık oranı TÜİK'in açıkladığıyla karşılaştır.
+- [ ] Uygunsa Claude'a "tanıtım metnini aç" de: `onay` true yapılır, iş
+      elle bir kez "uygula" ile koşulur, sonraki aylar kendiliğinden yazar.
+
 ## ⏳ 2026-10-27 (karar senin) Avrupa'daki Türkler: sandık AB mağazalarında görünsün
 
 Ar-Ge 27 Eki #3, yasin: "yapılacaklara ekle". Apple, AB DSA "trader"

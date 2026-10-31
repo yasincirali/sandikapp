@@ -58,10 +58,16 @@ class AcilisOlcumu {
     _ilkKareMs ??= _saat.elapsedMilliseconds;
   }
 
-  void defterHazir({required bool onbellekten}) {
+  /// [kopya]: açılış kopyası (sunucu arkadan gelir, 2026-10-31) — çevrimdışı
+  /// önbellekten ([onbellekten] tek başına) ayrı sayılsın diye `kopya`.
+  void defterHazir({required bool onbellekten, bool kopya = false}) {
     if (!_saat.isRunning || _defterMs != null) return;
     _defterMs = _saat.elapsedMilliseconds;
-    _defterKaynagi = onbellekten ? 'onbellek' : 'sunucu';
+    _defterKaynagi = kopya
+        ? 'kopya'
+        : onbellekten
+            ? 'onbellek'
+            : 'sunucu';
   }
 
   void fiyatHazir({required bool basarili}) {

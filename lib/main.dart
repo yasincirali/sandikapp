@@ -1932,6 +1932,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
       final uid = ref.read(authProvider).valueOrNull?.id;
       if (uid == null || next.isLoading || !next.hasValue) return;
+      // Açılış kopyası başka cihazda eklenmiş katkıları bilmeyebilir: katkı
+      // kararı sunucudan okunmuş defterle verilir (çift katkı yazılmasın).
+      if (next.valueOrNull?.onbellekKopyasi ?? false) return;
       if (_besOtomatikKullanici == uid) return;
       _besOtomatikKullanici = uid;
       _besOtomatikKatki();
