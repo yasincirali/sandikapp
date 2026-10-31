@@ -108,6 +108,7 @@ void main() {
     expect(ozet['Temettü (net, ele geçen)'], const TlTutar(85));
     expect((ozet['Temettü stopajı'] as TlTutar).deger, closeTo(15, 1e-9));
     expect(b.dipnotlar.first, contains('vergi tavsiyesi değildir'));
+    expect(b.dosyaAdi, 'sandık Yıllık Rapor 2025');
   });
 
   test('portföy belgesi: pozisyon değeri TL, işlem listesi yeniden eskiye', () {
@@ -126,6 +127,8 @@ void main() {
     final islemler = b.tablolar.last;
     expect(islemler.satirlar.first[1], 'Temettü');
     expect(sadeSembol('TEFAS:AFT'), 'AFT');
+    // Anlık belge: saat de adda (aynı gün iki döküm üst üste yazılmaz).
+    expect(b.dosyaAdi, 'sandık Portföy Dökümü 2026-01-05 00.00');
   });
 
   test('pdf: gömülü DM Sans ile üretilir', () async {
@@ -271,7 +274,7 @@ void main() {
           b.oneCikanlar, contains('Belirgin hareket: THYAO (alıcı istekli).'));
       expect(b.oneCikanlar, contains('AFT için bu ay not çıkmadı.'));
       expect(b.kampanya, 'aylik_rapor');
-      expect(b.dosyaAdi, 'sandik-2026-10-aylik-rapor');
+      expect(b.dosyaAdi, 'sandık Aylık Rapor 2026-10 (Ekim)');
     });
 
     test('pdf ve xlsx yazılır; Excel\'de Notlar sayfası', () async {

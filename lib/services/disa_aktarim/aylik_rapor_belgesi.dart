@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../utils/tr_format.dart';
 import '../inflation_service.dart';
 import '../tuik_takvimi.dart';
+import 'dosya_adi.dart';
 import 'rapor_belgesi.dart';
 
 /// Aylık raporun PDF'indeki bir varlık notu (saklanan yapay zekâ notu;
@@ -68,7 +69,7 @@ RaporBelgesi aylikRaporBelgesi({
     baslik: 'sandık · $ay raporu',
     altBaslik:
         '$kim · oluşturma ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)}',
-    dosyaAdi: 'sandik-${DateFormat('yyyy-MM').format(donem)}-aylik-rapor',
+    dosyaAdi: belgeDosyaAdi('Aylık Rapor', ayDonemi(donem)),
     ozet: [
       if (getiriPct != null) ('Ayın getirisi', fmtPctIsaretli(getiriPct)),
       (

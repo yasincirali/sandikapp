@@ -5,6 +5,7 @@ import '../../models/position.dart';
 import '../../utils/tr_format.dart';
 import '../varlik_masraflari.dart' show abdTemettuStopajOrani;
 import '../yillik_rapor.dart';
+import 'dosya_adi.dart';
 import 'rapor_belgesi.dart';
 
 /// Premium dışa aktarımlarının İÇERİĞİ (2026-10-10). Biçimden bağımsız:
@@ -47,7 +48,7 @@ RaporBelgesi yillikRaporBelgesi(
     ],
     baslik: 'sandık · ${r.yil} yıllık kâr, temettü ve masraf raporu',
     altBaslik: '$kim · oluşturma ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)}',
-    dosyaAdi: 'sandik-${r.yil}-yillik-rapor',
+    dosyaAdi: belgeDosyaAdi('Yıllık Rapor', '${r.yil}'),
     ozet: [
       ('Gerçekleşen kâr/zarar (satışlar)', TlTutar(r.gerceklesenKarTry)),
       if (r.yurtDisiVar)
@@ -220,7 +221,7 @@ RaporBelgesi portfoyBelgesi({
     ],
     baslik: 'sandık · portföy dökümü',
     altBaslik: '$kim · ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)} itibarıyla',
-    dosyaAdi: 'sandik-portfoy-${DateFormat('yyyy-MM-dd').format(olusturma)}',
+    dosyaAdi: belgeDosyaAdi('Portföy Dökümü', anDonemi(olusturma)),
     ozet: [
       ('Toplam değer', TlTutar(toplamDeger)),
       ('Toplam maliyet', TlTutar(toplamMaliyet)),
