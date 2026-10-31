@@ -352,9 +352,13 @@ extension _DetayOzet on _AssetDetailScreenState {
       kimlik: widget.asset.id,
       // Kripto fiyatı gecikmeli olabilir — etiket fiyatın yanında,
       // okunduğu yerde (eskiden grafiğin altındaydı).
+      // Fonda fiyatın GÜNÜ (bugünün değilse "· Fiyat 30 Eki"; müşteri
+      // raporu 30 Eki #2). Elle fiyatta TEFAS günü anlamsız, yazılmaz.
       etiketYani: widget.asset.type == AssetType.kripto
           ? KriptoGecikmeEtiketi(sembol: widget.asset.ticker)
-          : null,
+          : fonFiyatliMi(widget.asset.type) && !widget.asset.isManualPrice
+              ? FonFiyatGunuEtiketi(tarih: fonFiyatGunu(widget.asset.ticker))
+              : null,
       fiyat: mevduat
           ? baz.fmt(pnl.currentValueTRY)
           : (canli > 0 ? bicim.format(canli) : '—'),

@@ -50,6 +50,8 @@ import 'sandik_paylas_dugmesi.dart';
 import 'sandik_skeleton.dart';
 import 'share_card.dart' show showShareSheet;
 import 'sigan_metin.dart';
+import 'fon_fiyat_gunu_etiketi.dart';
+import '../utils/fon_fiyat_gunu.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 
 /// Yüzdeyi TUTARLA AYNI işaret biçimiyle yazar: `+%1,23` / `−%0,06`.
@@ -1702,6 +1704,14 @@ class _OynayanCipi extends StatelessWidget {
         ? '••••'
         : '${o.degisimTRY >= 0 ? '+' : '−'}${fmtTRY(o.degisimTRY.abs())}';
     final yuzde = isaretliYuzde(o.degisimPct);
+    // Fonun değişimi bugünün değilse kısa not ("dünkü fiyat", "Cuma
+    // fiyatı"; müşteri raporu 30 Eki #2): Pazartesi sabahı görünen tutar
+    // Cuma'nındır. Dar çipte tam tarih değil kısa biçim; tarih varlık
+    // sayfasında.
+    final fonKodu = fonFiyatliMi(o.tur) ? fonKoduAnahtardan(o.positionKey) : null;
+    final fiyatGunu = fonKodu == null
+        ? null
+        : fonFiyatGunuKisa(context, fonFiyatGunu(fonKodu));
     // Kademeli giriş: her çip bir öncekinden biraz sonra belirir (opaklık +
     // hafif yükselme). Kademe [SandikMotion.state]'in üçte biri (60 ms;
     // 30-80 ms bandı). Dekoratif; dokunmayı engellemez, hareketi azalt
@@ -1726,7 +1736,8 @@ class _OynayanCipi extends StatelessWidget {
       ),
       child: SandikTappable(
         onTap: onTap,
-        semanticLabel: '$ad, $tutar, $yuzde',
+        semanticLabel: [ad, tutar, yuzde, if (fiyatGunu != null) fiyatGunu]
+            .join(', '),
         child: ExcludeSemantics(
             child: Container(
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -1782,6 +1793,14 @@ class _OynayanCipi extends StatelessWidget {
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
+                      if (fiyatGunu != null)
+                        Text(
+                          fiyatGunu,
+                          key: const ValueKey('oynayanFiyatGunu'),
+                          maxLines: 1,
+                          style: context.t.labelSmall
+                              ?.copyWith(color: context.c.text36),
+                        ),
                     ],
                   ),
                 ),

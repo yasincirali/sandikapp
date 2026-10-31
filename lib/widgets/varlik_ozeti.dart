@@ -239,9 +239,13 @@ class VarlikFiyatBlogu extends StatelessWidget {
         if (yan == null)
           ust
         else
+          // Etiket de esnek: 3.1× yazıda 320 pt'te "GÜNCEL FİYAT" sabit
+          // genişlikle satırı taşırıyordu (fonun fiyat günü notu eklenince
+          // her fonda Row kuruluyor; 2026-10-31).
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ust,
+              Flexible(child: ust),
               const SizedBox(width: SandikSpace.sm),
               Flexible(child: yan),
             ],

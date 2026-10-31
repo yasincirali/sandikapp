@@ -43,6 +43,7 @@ import 'asset_detail_screen.dart'
 import '../services/technical_analysis_service.dart'
     show kSinyalCozunurlugu, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
+import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import '../widgets/sandik_ikon_gecisi.dart';
 
 /// Varlık sayfası — bir varlığı portföye EKLEMEDEN incelemek.
@@ -734,8 +735,23 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         : kapsam != null
             ? donemKapsamEtiketi(context, kapsam)
             : _donemEtiketi(cizilen);
+    // Fonda gösterilen fiyatın GÜNÜ (müşteri raporu 30 Eki #2): önce canlı
+    // TEFAS kotasyonunun günü, yoksa çizilen serinin son noktası — büyük
+    // rakam (`ist.son`) o noktadır. Bugünün fiyatıysa etiket yer kaplamaz.
+    final k = widget.kimlik;
+    Widget? fonGunu;
+    if (fonFiyatliMi(k.type)) {
+      final seri = cizilen == null ? null : _seriler[cizilen];
+      final sonNokta = seri == null || seri.isEmpty
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+              seri.keys.reduce((a, b) => a > b ? a : b));
+      fonGunu = FonFiyatGunuEtiketi(
+          tarih: fonFiyatGunu(k.ticker) ?? sonNokta);
+    }
     return VarlikFiyatBlogu(
       etiket: context.l10n.currentPriceUpper,
+      etiketYani: fonGunu,
       kimlik: widget.kimlik.key,
       imlec: RemoteConfigService.instance.gozAlici ? _imlec : null,
       fiyat: ist == null ? '—' : bicim.format(ist.son),

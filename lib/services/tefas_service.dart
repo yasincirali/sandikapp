@@ -118,7 +118,30 @@ class TefasService {
   // Kod → (price, timestamp). refreshPrices sırasında yazılır, TTL bitene
   // kadar hem RAM hem disk'ten servis eder. Portföyde 20 fon varsa 20
   // ayrı HTTP isteği yerine cache'ten anında geliyor.
-  final Map<String, ({double price, DateTime ts})> _priceCache = {};
+  final Map<String, ({double price, DateTime ts, DateTime? tarih})>
+      _priceCache = {};
+
+  /// Fonun son fiyatının TEFAS'taki GÜNÜ (fiyatın ait olduğu gün, çekildiği
+  /// an değil). Bilinmiyorsa null (eski önbellek kaydı, elle fiyat).
+  ///
+  /// Neden (müşteri raporu 30 Eki 21:15 #2, yasin "yap"): fon günde bir
+  /// fiyat yayımlar, bugünün fiyatı akşam/ertesi sabah gelir. Pazartesi
+  /// sabahı görünen "+%0,4" Cuma'nın değişimidir; akşam sayı değişince
+  /// "sabah başka diyordu" denir. Ekran fiyatın hangi güne ait olduğunu
+  /// söylesin diye tarih burada tutulur. TTL'e bakmaz: tarih fiyatla
+  /// birlikte eskir, fiyat ekranda durdukça tarihi de doğrudur.
+  DateTime? fiyatTarihi(String kod) {
+    final k = kod
+        .trim()
+        .toUpperCase()
+        .replaceFirst(RegExp(r'^TEFAS:'), '');
+    return _priceCache[k]?.tarih;
+  }
+
+  /// Test: fiyat önbelleğine tarihli kayıt koyar.
+  @visibleForTesting
+  void fiyatTarihiYaz(String kod, double fiyat, DateTime? tarih) =>
+      _priceCache[kod] = (price: fiyat, ts: DateTime.now(), tarih: tarih);
   bool _priceDiskLoaded = false;
 
   static const _baseUrl = 'https://www.tefas.gov.tr';
@@ -280,7 +303,14 @@ class TefasService {
         final t = DateTime.fromMillisecondsSinceEpoch(ts);
         // TTL geçmişse ignore et — eski fiyat kullanma.
         if (now.difference(t) > _pricesCacheTtl) continue;
-        _priceCache[entry.key] = (price: p, ts: t);
+        // `d` (fiyat günü) 2026-10-31'de eklendi; eski kayıtta yok → null,
+        // ekran tarih yazmaz (uydurma gün yok).
+        final d = v['d'] as int?;
+        _priceCache[entry.key] = (
+          price: p,
+          ts: t,
+          tarih: d == null ? null : DateTime.fromMillisecondsSinceEpoch(d),
+        );
       }
     } catch (_) {
       // Bozuk cache — sessizce yok say.
@@ -295,6 +325,8 @@ class TefasService {
         map[entry.key] = {
           'p': entry.value.price,
           'ts': entry.value.ts.millisecondsSinceEpoch,
+          if (entry.value.tarih != null)
+            'd': entry.value.tarih!.millisecondsSinceEpoch,
         };
       }
       await prefs.setString(_prefsPricesKey, jsonEncode(map));
@@ -433,7 +465,9 @@ class TefasService {
         final p = entry.value;
         if (p != null && p > 0) {
           result[entry.key] = p;
-          _priceCache[entry.key] = (price: p, ts: now);
+          // Fiyat günü `_fetchPriceRow`'da yazıldı; burada ezilmesin.
+          _priceCache[entry.key] =
+              (price: p, ts: now, tarih: _priceCache[entry.key]?.tarih);
           dirty = true;
         }
       }
@@ -602,7 +636,11 @@ class TefasService {
       }
       if (latest == null || price == null) return null;
 
-      _priceCache[normalized] = (price: price, ts: DateTime.now());
+      _priceCache[normalized] = (
+        price: price,
+        ts: DateTime.now(),
+        tarih: tefasTarihi(latest['tarih']?.toString() ?? ''),
+      );
       CrashReporter.arkaPlan(_savePricesToDisk(), reason: 'tefas_service._savePricesToDisk');
 
       return (
@@ -867,6 +905,15 @@ int tefasGecmisKovasi(int periyod) => periyod <= 3 ? 3 : 60;
   return (noktalar: noktalar, sonuc: noktalar.isEmpty ? 'bos' : 'dolu');
 }
 
+/// TEFAS `tarih` alanı: ISO (`2026-10-30`) ya da epoch ms (`"1761782400000"`).
+/// Çözülemezse null — gün uydurulmaz.
+DateTime? tefasTarihi(String s) =>
+    DateTime.tryParse(s) ??
+    switch (int.tryParse(s)) {
+      final ms? => DateTime.fromMillisecondsSinceEpoch(ms),
+      null => null,
+    };
+
 /// `fonFiyatBilgiGetir` gövdesinden (tarih, fiyat) noktaları, tarih sıralı.
 ///
 /// Fiyat alanı `fiyat`, yoksa `birimPayDegeri` — `_fetchPriceRow` ile aynı
@@ -881,11 +928,7 @@ List<(int, double)> tefasGecmisSatirlari(String govde) {
     final raw = row['fiyat'] ?? row['birimPayDegeri'];
     final price = double.tryParse(raw?.toString() ?? '');
     if (price == null || price <= 0) continue;
-    final dt = DateTime.tryParse(dateStr) ??
-        switch (int.tryParse(dateStr)) {
-          final ms? => DateTime.fromMillisecondsSinceEpoch(ms),
-          null => null,
-        };
+    final dt = tefasTarihi(dateStr);
     if (dt != null) points.add((dt.millisecondsSinceEpoch, price));
   }
   points.sort((a, b) => a.$1.compareTo(b.$1));

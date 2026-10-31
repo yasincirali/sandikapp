@@ -9499,6 +9499,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String fundPriceDate(String tarih) {
+    return 'Price $tarih';
+  }
+
+  @override
+  String get fundPriceYesterday => 'Yesterday\'s price';
+
+  @override
+  String fundPriceOfDay(String gun) {
+    return '$gun price';
+  }
+
+  @override
   String vkFiyatBaslik(String name) {
     return 'Current price of $name';
   }

@@ -1,4 +1,5 @@
 import 'dart:async' show FutureOr, unawaited;
+import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import 'dart:math' as math;
 
 import '../widgets/sandik_baglam_menusu.dart';
@@ -2651,6 +2652,13 @@ class _AssetCardState extends State<_AssetCard>
                             // girildi" (2026-10-20) — eksik yoksa yer
                             // kaplamaz; ana ekrandaki satırla aynı kural.
                             _VeriEksigiEtiketi(position: position),
+                            // Fonda fiyat bugünün değilse "dünkü fiyat" /
+                            // "Perşembe fiyatı" (müşteri raporu 30 Eki #2).
+                            // Kendi satırı: alt metnin sonuna eklenince
+                            // 390pt'te "dünkü fi…" diye kırpılıyordu. Elle
+                            // fiyatta TEFAS günü anlamsız; tam tarih detayda.
+                            if (a.type == AssetType.fon && !a.isManualPrice)
+                              _FonFiyatGunuSatiri(ticker: a.ticker),
                             if (buyukYazi) ...[
                               const SizedBox(height: SandikSpace.xs),
                               tutarMetni,
@@ -2927,6 +2935,28 @@ class _VeriEksigiEtiketi extends ConsumerWidget {
           TextSpan(text: metin),
         ]),
         style: stil,
+      ),
+    );
+  }
+}
+
+/// Portföy satırında fonun fiyat günü (kısa biçim); bugünün fiyatıysa ya
+/// da gün bilinmiyorsa yer kaplamaz.
+class _FonFiyatGunuSatiri extends StatelessWidget {
+  const _FonFiyatGunuSatiri({required this.ticker});
+
+  final String ticker;
+
+  @override
+  Widget build(BuildContext context) {
+    final gun = fonFiyatGunuKisa(context, fonFiyatGunu(ticker));
+    if (gun == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.xxs),
+      child: Text(
+        gun,
+        key: const ValueKey('portfoyFonFiyatGunu'),
+        style: context.t.bodySmall?.copyWith(color: context.c.text36),
       ),
     );
   }
