@@ -611,6 +611,11 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         b.flat &&
         (bd?.gunIciVerisiYokTurler.isNotEmpty ?? false);
     final birincilPaylasilir = b is GunlukDegisimSatiri && !veriYok;
+    // Başlık satırının uzun stili durum metni (`_KiyasBaslik.durumStili`).
+    final paylasPayi = birincilPaylasilir
+        ? SandikPaylasDugmesi.satirPayi(
+            context, _KiyasBaslik.durumStili(context))
+        : 0.0;
 
     // Benchmark düzeni (kullanıcı seçimi 2026-10-09). Düzen H (2026-10-04)
     // ve D "sakin pano" (2026-10-01) bu tarihte kalktı; D'nin satırları
@@ -631,27 +636,36 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             child: child,
           ),
         ),
-        // Paylaş düğmesi kartın sağ üst köşesinde, başlık hizasında
-        // (yasin 2026-10-30: "dikkat çekici olmasın, her yerde aynı
-        // standart"). Eskiden hüküm satırının sağındaydı; hüküm ve rozetle
-        // aynı satırda bir eylem gibi okunuyordu. Kartın ait olduğu yer
-        // köşe; ölçü ve renk `SandikPaylasDugmesi`'nde. Veri yokken
-        // paylaşılacak bir yüzde yok.
-        child: SandikPaylasDugmesi.kartKosesi(
-          // Kart dolgusu md (16) + başlık satırının yarısı ≈ 24 → 44'lük
-          // düğmenin merkezi başlık satırına oturur.
-          ust: SandikSpace.xxs,
-          dugme: birincilPaylasilir
-              ? SandikPaylasDugmesi(
-                  onPressed: () => _bugunuPaylas(b, now),
-                  tooltip: context.l10n.todayShareTooltip,
-                )
-              : null,
-          kart: SandikCard(
-            padding: const EdgeInsets.all(SandikSpace.md),
-            child: _benchmarkDuzeni(veri, ozet, oynayanlar, now, gizli, dil,
-                veriYok, birincilPaylasilir),
-          ),
+        // Paylaş düğmesi başlık satırının SONUNDA, satırın içinde (yasin
+        // 2026-10-31: "simetri ve ahengi bozmayacak şekilde"; ölçü, renk ve
+        // yer kuralı `SandikPaylasDugmesi`'nde). 2026-10-30'da kartın sağ üst
+        // köşesine bindirilmişti; bindirme satırla bağ kurmuyordu. Eskiden de
+        // hüküm satırının sağındaydı; hüküm ve rozetle aynı satırda bir eylem
+        // gibi okunuyordu. Veri yokken paylaşılacak bir yüzde yok.
+        //
+        // Düğmenin 44 pt kutusu başlık satırını uzatır; kart üst dolgusundan
+        // [SandikPaylasDugmesi.satirPayi] kadar düşer ki yazı yerinden
+        // oynamasın (alttaki boşluk `_benchmarkDuzeni`'nde).
+        child: SandikCard(
+            padding: EdgeInsets.fromLTRB(
+                SandikSpace.md,
+                math.max(0, SandikSpace.md - paylasPayi),
+                SandikSpace.md,
+                SandikSpace.md),
+            child: _benchmarkDuzeni(
+                veri,
+                ozet,
+                oynayanlar,
+                now,
+                gizli,
+                dil,
+                veriYok,
+                birincilPaylasilir
+                    ? SandikPaylasDugmesi(
+                        onPressed: () => _bugunuPaylas(b, now),
+                        tooltip: context.l10n.todayShareTooltip,
+                      )
+                    : null),
         ),
       ),
     );
@@ -727,7 +741,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       bool gizli,
       String dil,
       bool veriYok,
-      bool paylasimVar) {
+      Widget? paylas) {
     final reel = veri.reel;
     final birincil = veri.birincil;
     final seri = ozet?.sparkline ?? const <double>[];
@@ -739,7 +753,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _KiyasBaslik(
+        SandikPaylasDugmesi.satirSonunda(
+          dugme: paylas,
+          satir: _KiyasBaslik(
           now: now,
           dil: dil,
           etiket: widget.etiket,
@@ -750,10 +766,17 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           tazelik: birincil is GunlukDegisimSatiri
               ? (birincil.changeTRY, birincil.changePct)
               : null,
-          // Köşedeki paylaş düğmesine yer: durum metni altına girmesin.
-          sagPay: paylasimVar ? SandikPaylasDugmesi.kartKosesiPayi : 0,
+          ),
         ),
-        const SizedBox(height: SandikSpace.md2),
+        // Paylaş kutusu satırı uzattı: alttaki boşluk aynı payı düşer.
+        SizedBox(
+            height: paylas == null
+                ? SandikSpace.md2
+                : math.max(
+                    0,
+                    SandikSpace.md2 -
+                        SandikPaylasDugmesi.satirPayi(
+                            context, _KiyasBaslik.durumStili(context)))),
         _HukumSatiri(
           birincil: birincil,
           gizli: gizli,
@@ -973,11 +996,7 @@ class _KiyasBaslik extends StatelessWidget {
     required this.durum,
     required this.acik,
     this.tazelik,
-    this.sagPay = 0,
   });
-
-  /// Kartın köşesindeki paylaş düğmesine bırakılan sağ boşluk.
-  final double sagPay;
 
   final DateTime now;
   final String dil;
@@ -986,27 +1005,45 @@ class _KiyasBaslik extends StatelessWidget {
   final bool acik;
   final Object? tazelik;
 
+  /// Durum metninin stili; satırın en uzun yazısı (paylaş düğmesinin satır
+  /// payı bununla ölçülür).
+  static TextStyle? durumStili(BuildContext context) =>
+      context.t.labelMedium?.copyWith(
+        color: context.c.text58,
+        fontWeight: FontWeight.w600,
+      );
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final bas = etiket ?? context.l10n.todayTitle;
     final tarih = DateFormat('EEEE d MMMM', dil).format(now);
-    final durumStil = context.t.labelMedium?.copyWith(
-      color: c.text58,
-      fontWeight: FontWeight.w600,
-    );
+    final durumStil = durumStili(context);
     // Durum metni DOĞAL genişliğini alır (en fazla satırın %45'i), başlık
     // kalanı. İkisi de esnek olunca satır yarı yarıya bölünüyor ve "Canlı"
     // gibi kısa bir durumda bile tarih sığmayıp düşüyordu (önizleme PNG'si,
     // 2026-10-04).
     return LayoutBuilder(builder: (context, k) {
+      // Kutu SEÇİLEN adayın genişliğinde: ilk aday sığmayıp kısası
+      // seçilince kutu %45'te kalıyor, kısa metin sağa yaslanınca canlı
+      // noktasıyla arasında boşluk açılıyordu (paylaş düğmesi satıra
+      // girince 320 pt'de görüldü, 2026-10-31).
+      final sinir = k.maxWidth * 0.45;
       final tp = TextPainter(
-        text: TextSpan(text: durum.first, style: durumStil),
         textDirection: Directionality.of(context),
         maxLines: 1,
         textScaler: MediaQuery.textScalerOf(context),
-      )..layout();
-      final durumW = math.min(tp.width + 1, k.maxWidth * 0.45);
+      );
+      var durumW = sinir;
+      for (final aday in durum) {
+        tp
+          ..text = TextSpan(text: aday, style: durumStil)
+          ..layout();
+        if (tp.width + 1 <= sinir) {
+          durumW = tp.width + 1;
+          break;
+        }
+      }
       tp.dispose();
       final satir = Row(
         children: [
@@ -1033,9 +1070,7 @@ class _KiyasBaslik extends StatelessWidget {
           ),
         ],
       );
-      return sagPay == 0
-          ? satir
-          : Padding(padding: EdgeInsets.only(right: sagPay), child: satir);
+      return satir;
     });
   }
 }

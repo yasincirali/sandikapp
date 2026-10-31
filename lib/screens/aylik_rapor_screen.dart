@@ -149,7 +149,10 @@ class AylikRaporScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: SandikSpace.xs),
+                        // Cümle iki satıra sarabilir: simge ilk satırla
+                        // hizalı (`topEnd`), sağ kenarı kartların kenarında.
                         SandikPaylasDugmesi.istekli(
+                          hiza: AlignmentDirectional.topEnd,
                           tooltip: l10n.anzAylikPdfPaylas,
                           onPaylas: (kaynak) => _pdfPaylas(context, ref,
                               notlar: buAy, eksik: eksik, kaynak: kaynak),

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../services/share_card_service.dart';
@@ -17,11 +19,24 @@ import 'sandik_async_button.dart';
 ///     eylem simgesi için 3:1 kontrastın altına iner.
 ///   · 44 pt dokunma alanı (HIG), `tooltip` = erişilebilirlik etiketi.
 ///
-/// ## Yer
-/// Kartın SAĞ ÜST köşesi, başlık satırının hizasında — kartın içeriğine
-/// (hüküm, manşet rakam) değil, kartın kendisine ait olduğu yerde. Kart
-/// yüksekliği değişmesin diye [kartKosesi] ile kartın üstüne bindirilir;
-/// başlık satırı sağdan [kartKosesiPayi] kadar boşluk bırakır.
+/// ## Yer (yasin 2026-10-31: "garip bir yerde duruyor; dikkat çekmeyecek,
+/// simetri ve ahengi bozmayacak şekilde, tüm uygulamada")
+/// Bulunduğu yüzeyin BAŞLIK SATIRININ SON ÖĞESİ, o satırın içinde
+/// ([satirSonunda]). Simge satırın ortasına oturur ve sağ kenarı içeriğin
+/// sağ kenarıyla aynı çizgidedir: altındaki rozet/tutar hangi çizgide
+/// bitiyorsa simge de orada biter (iOS gezinme çubuğundaki düğmelerin
+/// kenara yaslanması gibi; [hiza]).
+///
+/// Eskiden kartın sağ üst köşesine BİNDİRİLİYORDU (`kartKosesi`, sabit
+/// `ust` payıyla). Bindirme satırla bağ kurmuyordu: çerçevesiz Performans
+/// manşetinde dolgu 4 pt olunca simge başlık satırının değil iki satırın
+/// ARASINA düşüyor, 44 pt kutunun ortasında durduğu için de rozetin
+/// çizgisinden 9 pt içeride kalıyordu (ekran görüntüsü 31 Eki). Satırın
+/// içinde olunca hizayı düzen kurar, el ayarı sabit kalmaz.
+///
+/// 44 pt kutu satırı uzatır; kart bu payı ([satirPayi]) üst dolgusundan
+/// ve başlığın altındaki boşluktan düşerek karşılar ki kart yüksekliği ve
+/// yazının yeri değişmesin (dolgu yetmezse fark kadar uzar).
 ///
 /// Paylaşmanın ekranın asıl işi olduğu yerler (yıl özeti hikâyesinin son
 /// sayfası, yorum notu PDF sayfası, Ayarlar'daki dışa aktarım satırı)
@@ -31,6 +46,7 @@ class SandikPaylasDugmesi extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.tooltip,
+    this.hiza = AlignmentDirectional.centerEnd,
   }) : onPaylas = null;
 
   /// Belge hazırlayıp paylaşan (istek atan) düğme: iş sürerken simgenin
@@ -42,30 +58,54 @@ class SandikPaylasDugmesi extends StatelessWidget {
     super.key,
     required Future<void> Function(Rect? kaynak) this.onPaylas,
     required this.tooltip,
+    this.hiza = AlignmentDirectional.centerEnd,
   }) : onPressed = null;
 
   final VoidCallback? onPressed;
   final Future<void> Function(Rect? kaynak)? onPaylas;
   final String tooltip;
 
-  /// Kart başlık satırının, köşedeki düğmeye bırakacağı sağ boşluk.
-  static const double kartKosesiPayi = SandikSpace.lg;
+  /// Simgenin punto boyu. Kutu [SandikTouch.min]; ikisinin farkının yarısı
+  /// [gorunmezPay].
+  static const double simgeBoyu = 18;
 
-  /// Düğmeyi [kart]ın sağ üst köşesine bindirir. [ust]: düğmenin dikey
-  /// merkezi kartın başlık satırına otursun diye üstten uzaklık.
-  static Widget kartKosesi({
-    required Widget kart,
-    required Widget? dugme,
-    double ust = 0,
-  }) {
-    if (dugme == null) return kart;
-    return Stack(
+  /// 44 pt dokunma kutusunun simgeden taşan payı (her yanda).
+  static const double gorunmezPay = (SandikTouch.min - simgeBoyu) / 2;
+
+  /// [stil]deki tek satırlık başlığın yanına 44 pt kutu konunca satırın
+  /// üstte ve altta ne kadar uzadığı. Kart bu kadarı üst dolgusundan ve
+  /// başlığın altındaki boşluktan düşer ki yazı yerinden oynamasın, kart
+  /// büyümesin. Ölçü yazı ölçeğiyle (Dynamic Type) birlikte yapılır: yazı
+  /// 44 pt'yi aşınca satır zaten o boydadır, pay sıfırdır.
+  static double satirPayi(BuildContext context, TextStyle? stil) {
+    final tp = TextPainter(
+      text: TextSpan(text: 'Ağ', style: stil),
+      textDirection: Directionality.of(context),
+      maxLines: 1,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final yukseklik = tp.height;
+    tp.dispose();
+    return math.max(0, (SandikTouch.min - yukseklik) / 2);
+  }
+
+  /// [satir]ın SONUNA [dugme]yi koyar; düğme yoksa satır olduğu gibi döner.
+  /// Simge satırın dikey ortasında, sağ kenarı satırın sağ kenarında.
+  static Widget satirSonunda({required Widget satir, required Widget? dugme}) {
+    if (dugme == null) return satir;
+    return Row(
       children: [
-        kart,
-        Positioned(top: ust, right: 0, child: dugme),
+        Expanded(child: satir),
+        dugme,
       ],
     );
   }
+
+  /// Simgenin 44 pt kutu içindeki yeri. Varsayılan: dikeyde orta, yatayda
+  /// SONDA — simgenin kenarı kutunun, dolayısıyla içeriğin kenarına yaslanır
+  /// (kutunun boşluğu soldaki metne doğru kalır, kenara taşmaz). Birden çok
+  /// satıra sarabilen başlığın yanında `topEnd`: ilk satıra hizalı.
+  final AlignmentGeometry hiza;
 
   @override
   Widget build(BuildContext context) {
@@ -79,9 +119,10 @@ class SandikPaylasDugmesi extends StatelessWidget {
         child: SandikAsyncTap(
           semanticLabel: tooltip,
           onTap: () => istek(ShareCardService.originOf(context)),
-          child: Center(
-            child:
-                Icon(Icons.adaptive.share, size: 18, color: context.c.text58),
+          child: Align(
+            alignment: hiza,
+            child: Icon(Icons.adaptive.share,
+                size: simgeBoyu, color: context.c.text58),
           ),
         ),
       ),
@@ -92,10 +133,17 @@ class SandikPaylasDugmesi extends StatelessWidget {
         onPressed: onPressed,
         tooltip: tooltip,
         icon: Icon(Icons.adaptive.share),
-        iconSize: 18,
+        iconSize: simgeBoyu,
         color: context.c.text58,
         padding: EdgeInsets.zero,
+        alignment: hiza,
         constraints: const BoxConstraints.tightFor(
             width: SandikTouch.min, height: SandikTouch.min),
+        // Material'ın 48 dp asgari kutusu (`padded`) kutuyu 44'ten 48'e
+        // büyütüyordu; `istekli` hâli 44. İkisi aynı ölçüde olsun ki satır
+        // payı ([satirPayi]) doğru çıksın; 44 pt HIG eşiği (48 dp Material
+        // eşiği bilerek uygulanmıyor, `hig_ortak_bilesen_test`).
+        style: const ButtonStyle(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap),
       );
 }

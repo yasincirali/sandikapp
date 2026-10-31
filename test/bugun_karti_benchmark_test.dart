@@ -12,6 +12,7 @@ import 'package:portfoy_takip/services/bugun_yukleyici.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/tr_format.dart' show dayKey;
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
@@ -211,10 +212,19 @@ void main() {
       final boyut = tester.getSize(dugme);
       expect(boyut.width, greaterThanOrEqualTo(44));
       expect(boyut.height, greaterThanOrEqualTo(44));
-      // Yer (yasin 2026-10-30, "dikkat çekici olmasın"): kartın sağ üst
-      // köşesi, başlık hizası — hüküm satırında değil.
+      // Yer (yasin 2026-10-31, "simetri ve ahengi bozmayacak şekilde"):
+      // başlık satırının sonu — hüküm satırında değil; simge durum
+      // metniyle aynı dikey ortada, sağ kenarı içeriğin sağ kenarında
+      // (kartın iç dolgusunun bittiği çizgi).
       final hukumY = tester.getCenter(find.text('Yükseldi')).dy;
       expect(tester.getCenter(dugme).dy, lessThan(hukumY - 20));
+      final simge = tester.getRect(find.byIcon(Icons.adaptive.share));
+      final durum = tester.getRect(find.byWidgetPredicate(
+          (w) => w is SiganMetin && w.adaylar.first.startsWith('Canlı')));
+      expect(simge.center.dy, moreOrLessEquals(durum.center.dy, epsilon: 1));
+      final kart = tester.getRect(find.byType(SandikCard).first);
+      expect(simge.right,
+          moreOrLessEquals(kart.right - SandikSpace.md, epsilon: 1));
       await tester.tap(dugme);
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));

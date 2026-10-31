@@ -488,9 +488,12 @@ List<_Adim> _adimlariKur() {
       // 2026-10-30: paylaş düğmesi geldi; görsel tutar yazmaz, metin bunu
       // bir yarım cümleyle söyler. Aynı gün düğme hüküm satırından kartın
       // sağ üst köşesine taşındı (yasin: "dikkat çekici olmasın").
+      // 2026-10-31: köşeye bindirme yerine başlık satırının sonunda
+      // ("simetri ve ahengi bozmayacak şekilde"); metin yeri öyle söyler.
       govde: 'Günün hükmü tek kelimeyle (Yükseldi, Geriledi, Yerinde saydı) '
           've yanında tutar: yalnız fiyat etkisi, yatırdığın para sayılmaz. '
-          'Sağ üst köşedeki simge günün yüzdesini tutarsız bir görsel olarak '
+          'Başlık satırının sonundaki simge günün yüzdesini tutarsız bir '
+          'görsel olarak '
           'paylaşır. '
           'Eğri günün seyri; Hafta, Ay, Yıl çipleri Özet\'e götürür. '
           'Aşağıda en çok oynayanlar, 100 liranın bugünkü karşılığı ve '
