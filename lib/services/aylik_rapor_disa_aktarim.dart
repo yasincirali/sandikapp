@@ -36,13 +36,14 @@ class AylikRaporDisaAktarim {
     required List<String> eksik,
     required List<Asset> lotlar,
     required String kim,
+    double? canliToplam,
     DateTime? simdi,
   }) async {
     final now = simdi ?? DateTime.now();
     final tr = AppLocalizationsTr();
     final sonuclar = await Future.wait([
       Future.wait(notlar.map(_tamNot)),
-      _ayinGetirisi(donem, lotlar, now),
+      _ayinGetirisi(donem, lotlar, now, canliToplam),
       _ayinTufesi(donem),
     ]);
     final tamNotlar = sonuclar[0] as List<VarlikNotu?>;
@@ -83,8 +84,13 @@ class AylikRaporDisaAktarim {
     }
   }
 
-  static Future<double?> _ayinGetirisi(
-      DateTime donem, List<Asset> lotlar, DateTime now) async {
+  /// [canliToplam]: bugünkü canlı kapsam toplamı (`DailySummary
+  /// .kapsamToplami`). Yalnız pencere BUGÜNDE bitiyorsa (süren ay) uç olarak
+  /// verilir; Performans'ın aylık özeti de ucu canlıya bağlar, verilmezse
+  /// bugünkü alımlar katkıda sayılıp değerde sayılmaz ve getiri ekrandan
+  /// farklı çıkar (`ozet_canli_uc_test`). Kapanmış ayda uç ay sonu slotudur.
+  static Future<double?> _ayinGetirisi(DateTime donem, List<Asset> lotlar,
+      DateTime now, double? canliToplam) async {
     if (lotlar.isEmpty) return null;
     final ayBasi = DateTime(donem.year, donem.month);
     final aySonu = DateTime(donem.year, donem.month + 1)
@@ -106,6 +112,7 @@ class AylikRaporDisaAktarim {
         breakdown: bd,
         now: son,
         pencereBaslangici: ayBasi,
+        canliSon: identical(son, now) ? canliToplam : null,
       ).getiriPct;
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'AylikRaporPdf.getiri');

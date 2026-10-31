@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/aylik_rapor_disa_aktarim.dart';
 import '../services/crash_reporter.dart';
+import '../services/daily_summary.dart';
 import '../services/disa_aktarim/disa_aktarim_service.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/sandik_paylas_dugmesi.dart';
@@ -209,6 +210,8 @@ class AylikRaporScreen extends ConsumerWidget {
         eksik: eksik,
         lotlar: lotlar,
         kim: kullanici?.username ?? kullanici?.email ?? '',
+        canliToplam:
+            durum == null ? null : DailySummary.kapsamToplami(durum, lotlar),
       );
       await DisaAktarimService.instance.paylas(belge,
           bicim: DisaAktarimBicimi.pdf, tur: 'aylik_rapor', kaynak: kaynak);
