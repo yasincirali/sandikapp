@@ -5826,5 +5826,17 @@
   "altinTumTurlerSemantik": "All gold types",
   "varlikEklendiGenel": "Added",
   "veriBekleniyor": "Waiting for data",
-  "intradayMissingShort": "{names}: shown at last known price"
+  "intradayMissingShort": "{names}: shown at last known price",
+  "alarmSilindi": "Alarm deleted",
+  "alarmiDuzenle": "Edit alarm",
+  "alarmiSil": "Delete alarm",
+  "alarmGuncellendi": "Alarm updated",
+  "alarmKaldi": "{pct} to go",
+  "alarmKaldiSemantik": "{pct} to target",
+  "alarmKosulUst": "Rises above · {fiyat}",
+  "alarmKosulAlt": "Falls below · {fiyat}",
+  "alarmCalistiFiyat": "Triggered · {fiyat}",
+  "alarmGrupSimdi": "now {fiyat}",
+  "alarmOneriBaslik": "Quick start",
+  "alarmOneriAciklama": "We'll tell you if it moves 2% in a day"
 }

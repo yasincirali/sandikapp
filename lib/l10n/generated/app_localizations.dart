@@ -16798,6 +16798,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{names}: son bilinen fiyatla gösteriliyor'**
   String intradayMissingShort(String names);
+
+  /// No description provided for @alarmSilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm silindi'**
+  String get alarmSilindi;
+
+  /// No description provided for @alarmiDuzenle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmı düzenle'**
+  String get alarmiDuzenle;
+
+  /// No description provided for @alarmiSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmı sil'**
+  String get alarmiSil;
+
+  /// No description provided for @alarmGuncellendi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm güncellendi'**
+  String get alarmGuncellendi;
+
+  /// No description provided for @alarmKaldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pct} kaldı'**
+  String alarmKaldi(String pct);
+
+  /// No description provided for @alarmKaldiSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefe {pct} kaldı'**
+  String alarmKaldiSemantik(String pct);
+
+  /// No description provided for @alarmKosulUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üstüne çıkınca · {fiyat}'**
+  String alarmKosulUst(String fiyat);
+
+  /// No description provided for @alarmKosulAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altına inince · {fiyat}'**
+  String alarmKosulAlt(String fiyat);
+
+  /// No description provided for @alarmCalistiFiyat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalıştı · {fiyat}'**
+  String alarmCalistiFiyat(String fiyat);
+
+  /// No description provided for @alarmGrupSimdi.
+  ///
+  /// In tr, this message translates to:
+  /// **'şimdi {fiyat}'**
+  String alarmGrupSimdi(String fiyat);
+
+  /// No description provided for @alarmOneriBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hızlı başla'**
+  String get alarmOneriBaslik;
+
+  /// No description provided for @alarmOneriAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün içinde %2 oynarsa haber verelim'**
+  String get alarmOneriAciklama;
 }
 
 class _AppLocalizationsDelegate

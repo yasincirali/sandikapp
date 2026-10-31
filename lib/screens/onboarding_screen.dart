@@ -230,7 +230,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 /// kalktı. 2026-10-29: satırlar açılır oldu (dokunuş tam metni açar,
 /// gezinme "Aç"ta) — tur metni arayüzle birlikte değişir.
 const _zilBasi = 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
-    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir '
+    'toplanır; üstteki "Alarmlarım" tüm alarmlarını varlığa göre listeler, '
+    'her alarmda hedefe ne kadar kaldığını yazar; alarma dokunup '
+    'düzenleyebilir, sola kaydırıp silebilirsin. Bir '
     'bildirime dokununca tamamı açılır, "Aç" seni ilgili ekrana götürür. Bir ';
 
 class _Adim {
@@ -576,6 +578,8 @@ List<_Adim> _adimlariKur() {
       // Premium "Gösterge" kipi; ikisi de bu adımın anlattığı alarm akışı.
       // 2026-10-29 (akşam): çizgi alarmına ad verilir, bildirime ya da
       // Alarmlarım satırına dokununca çizgi yatay grafikte açılır.
+      // 2026-10-31: Alarmlarım varlığa göre gruplu, satırda hedefe mesafe,
+      // dokununca düzenle, kaydırarak sil (`_zilBasi`).
       govde: '$_zilBasi'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '

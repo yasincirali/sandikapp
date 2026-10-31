@@ -105,6 +105,19 @@ class PriceAlertService {
   Future<void> hedefiGuncelle(String id, double hedef, String yon) =>
       _guncelle(id, {'target_price': hedef, 'direction': yon});
 
+  /// Alarmlarım'da satıra dokunup düzenleme (müşteri raporu 31 Eki 21:15,
+  /// yasin "yap"): hedef, yön ve "her geçişte" aynı satırda değişir. Sil +
+  /// yeniden kur iki adımdı ve arada alarm kayboluyordu; kimlik ve kuruluş
+  /// zamanı korunur, tavana ikinci kez sayılmaz. `tekrar` 0171'den beri
+  /// var; politika (0046, satır sahibi) güncellemeye izin veriyor, şema
+  /// değişmez. Yalnız nöbetteki alarm düzenlenir (çalmış olan "yeniden
+  /// kur"la döner), damgaya dokunulmaz.
+  Future<void> duzenle(String id,
+          {required double hedef,
+          required String yon,
+          required bool tekrar}) =>
+      _guncelle(id, {'target_price': hedef, 'direction': yon, 'tekrar': tekrar});
+
   /// Okunan adı değiştirir (çizgi alarmına ad, yasin 2026-10-29). Yalnız
   /// `label`: hedef, yön ve damga aynı kalır. Kolon 0046'dan beri var;
   /// eski build'ler yeni adı olduğu gibi okur.
