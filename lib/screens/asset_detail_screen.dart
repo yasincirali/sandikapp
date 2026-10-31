@@ -18,6 +18,7 @@ import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
+import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/sandik_snack.dart';

@@ -68,8 +68,9 @@ List<(int, double)> yahooSeriCoz(Map<String, dynamic> body,
   return [(points.first.$1 - slot.inMilliseconds, onceki), ...points];
 }
 
-/// Yahoo `v8/finance/chart` yanıtından kotasyon — toplu `v7/finance/quote`
-/// düştüğünde kullanılan yedek yol.
+/// Yahoo `v8/finance/chart` yanıtından kotasyon — 2026-10-31'den beri tek
+/// yol (toplu `v7/finance/quote` 401 döndüğü için kaldırıldı; bkz.
+/// `_fetchYahoo`).
 ///
 /// ## Neden yüzde de (Ar-Ge 2026-10-30 12:45 #1, yasin "yap")
 /// Yedek yol yalnız fiyat yazıyordu. Toplu uç düşünce (çerez/crumb ister;
@@ -1415,39 +1416,16 @@ class PriceService {
 
   // ── Yahoo Finance — stocks, crypto, commodities ────────────────────────────
 
-  Future<Map<String, YahooQuote>> _fetchYahoo(List<String> symbols) async {
-    try {
-      final bulk = await _fetchBulk(symbols);
-      if (bulk.isNotEmpty) return bulk;
-    } catch (_) {}
-    return _fetchChartAll(symbols);
-  }
-
-  Future<Map<String, YahooQuote>> _fetchBulk(List<String> symbols) async {
-    final uri = Uri.https('query1.finance.yahoo.com', '/v7/finance/quote', {
-      'symbols': symbols.join(','),
-      'lang': 'en-US',
-      'region': 'US',
-      'corsDomain': 'finance.yahoo.com',
-      'fields':
-          'regularMarketPrice,currency,shortName,longName,regularMarketChangePercent',
-    });
-
-    final res = await _client
-        .get(uri, headers: {'User-Agent': _ua, 'Accept': 'application/json'})
-        .timeout(const Duration(seconds: 10));
-
-    if (res.statusCode != 200) throw Exception('Bulk HTTP ${res.statusCode}');
-
-    final parsed = jsonDecode(res.body) as Map<String, dynamic>;
-    final list = (parsed['quoteResponse']?['result'] as List?) ?? [];
-    if (list.isEmpty) throw Exception('Empty bulk');
-
-    return {
-      for (final q in list.cast<Map<String, dynamic>>())
-        (q['symbol'] as String).toUpperCase(): YahooQuote.fromJson(q),
-    };
-  }
+  /// Yahoo kotasyonları — sembol başına `v8/finance/chart`.
+  ///
+  /// Toplu `v7/finance/quote` isteği 2026-10-31'de KALDIRILDI (müşteri
+  /// raporu 30 Eki, yasin "yap"): uç çerez/crumb istiyor ve ölçümde her
+  /// fiyat turunda HTTP 401 döndü; her tur önce boşa bir istek atıp sonra
+  /// yine bu yola düşüyordu (fazladan gecikme + ağ). Yüzde de bu yoldan
+  /// geliyor (`yahooGrafikKotasyonu`, `chartPreviousClose`), yani toplu
+  /// ucun verdiği hiçbir alan kaybolmaz.
+  Future<Map<String, YahooQuote>> _fetchYahoo(List<String> symbols) =>
+      _fetchChartAll(symbols);
 
   Future<Map<String, YahooQuote>> _fetchChartAll(List<String> symbols) async {
     final quotes = await Future.wait(symbols.map(_fetchOneChart));

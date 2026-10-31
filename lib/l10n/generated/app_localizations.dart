@@ -15575,6 +15575,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Fiyat 1 gün önce girildi} other{Fiyat {count} gün önce girildi}}'**
   String vkFiyatGunOnce(int count);
 
+  /// Fonun gösterilen fiyatı bugünün değilse fiyatın günü (Fiyat 30 Eki)
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat {tarih}'**
+  String fundPriceDate(String tarih);
+
+  /// No description provided for @fundPriceYesterday.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dünkü fiyat'**
+  String get fundPriceYesterday;
+
+  /// No description provided for @fundPriceOfDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} fiyatı'**
+  String fundPriceOfDay(String gun);
+
   /// No description provided for @vkFiyatBaslik.
   ///
   /// In tr, this message translates to:

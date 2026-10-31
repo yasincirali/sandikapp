@@ -9407,6 +9407,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String fundPriceDate(String tarih) {
+    return 'Fiyat $tarih';
+  }
+
+  @override
+  String get fundPriceYesterday => 'Dünkü fiyat';
+
+  @override
+  String fundPriceOfDay(String gun) {
+    return '$gun fiyatı';
+  }
+
+  @override
   String vkFiyatBaslik(String name) {
     return '$name güncel fiyatı';
   }
