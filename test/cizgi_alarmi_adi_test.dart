@@ -361,7 +361,10 @@ void main() {
         (tester) async {
       cizgiler = [_cizgi('c1', 'THYAO · Destek 245')];
       await pump(tester);
-      expect(find.text('THYAO · Destek 245'), findsOneWidget);
+      // 31 Eki: alarmlar varlık başlığında gruplu; varlık adı başlıkta,
+      // çizginin adı satırda.
+      expect(find.text('THYAO'), findsOneWidget);
+      expect(find.text('«Destek 245»'), findsOneWidget);
       expect(find.text('Grafikte aç'), findsOneWidget);
       final kalem = find.byKey(const ValueKey('cizgiAlarmiAdlandir'));
       expect(tester.getSize(kalem).height, greaterThanOrEqualTo(44));
@@ -374,7 +377,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('cizgiAdiKaydet')));
       await tester.pumpAndSettle();
       expect(yazilan, {'c1': 'THYAO · Kırılım'});
-      expect(find.text('THYAO · Kırılım'), findsOneWidget);
+      expect(find.text('«Kırılım»'), findsOneWidget);
     });
 
     testWidgets('bağsız fiyat alarmı birebir eski: kalem ve ipucu yok',
@@ -429,8 +432,8 @@ void main() {
       final k = ekranKaynagiSync('lib/screens/price_alerts_screen.dart');
       expect(k, contains(
           'NotificationService.instance.openCizgi(sembol, cizimId: cizimId)'));
-      expect(k, contains('onAc: cz == null ? null : () => _cizgiyiAc(cz.symbol, cz.cizimId)'));
-      expect(k, contains('onAc: cizim == null ? null : () => _cizgiyiAc(alarm.symbol, cizim)'));
+      expect(k, contains('onTap: cz == null ? null : () => _cizgiyiAc(cz.symbol, cz.cizimId)'));
+      expect(k, contains('? () => _cizgiyiAc(alarm.symbol, cizim)'));
     });
   });
 

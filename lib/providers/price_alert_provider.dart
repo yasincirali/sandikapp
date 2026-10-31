@@ -82,6 +82,20 @@ class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
     ]);
   }
 
+  /// Nöbetteki alarmın hedefini, yönünü ve tekrarını değiştirir (aynı satır).
+  Future<void> duzenle(String id,
+      {required double hedef,
+      required String yon,
+      required bool tekrar}) async {
+    await _svc.duzenle(id, hedef: hedef, yon: yon, tekrar: tekrar);
+    state = AsyncData([
+      for (final a in state.valueOrNull ?? const <PriceAlert>[])
+        a.id == id
+            ? a.copyWith(targetPrice: hedef, direction: yon, tekrar: tekrar)
+            : a,
+    ]);
+  }
+
   /// Okunan adı değiştirir (yatay çizgiye bağlı alarm, 2026-10-29).
   Future<void> etiketiGuncelle(String id, String label) async {
     await _svc.etiketiGuncelle(id, label);

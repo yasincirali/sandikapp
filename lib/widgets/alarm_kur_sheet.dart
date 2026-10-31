@@ -418,6 +418,67 @@ Future<void> alarmiYenidenKur(
   }
 }
 
+/// Nöbetteki fiyat alarmını düzenler (müşteri raporu 31 Eki 21:15, yasin
+/// "yap"). Altın yükseldikçe hedefi yukarı çekmek en sık alarm işi; eskiden
+/// sil + yeniden kur iki adımdı ve arada alarm kayboluyordu.
+///
+/// Sayfa kurma sayfasının kendisi, ön dolu: hedef, "her geçişte". Yön yine
+/// güncel fiyattan türetilir (kurmadaki kural). Kayıt aynı satırı günceller
+/// ([PriceAlertsNotifier.duzenle]); tavana ikinci kez sayılmaz, bu yüzden
+/// sınır denetimi yok. [sil] verilirse sayfanın altında "Alarmı sil" durur;
+/// sayfa önce kapanır, silme (ve "Geri al") listenin kendi yolundan koşar.
+/// Kaydedilirse `true`.
+Future<bool> alarmDuzenleAkisi(
+  BuildContext context,
+  WidgetRef ref,
+  PriceAlert alarm, {
+  required AlarmAdayi aday,
+  VoidCallback? sil,
+}) async {
+  if (DemoModu.yazmaKapisi('alarm')) return false;
+  var silinsin = false;
+  final sonuc = await showSandikSheet<Object>(
+    context: context,
+    backgroundColor: context.c.surface1,
+    isScrollControlled: true,
+    useSafeArea: true,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (sayfa) => AlarmKurSheet(
+      adaylar: [aday],
+      sabit: true,
+      duzenle: true,
+      // Hedef zaten yazılı; klavye açılışta sayfayı örtmesin.
+      odakla: false,
+      baslangicHedef: alarm.targetPrice,
+      baslangicTekrar: alarm.tekrar,
+      onSil: sil == null
+          ? null
+          : () {
+              silinsin = true;
+              Navigator.of(sayfa).pop();
+            },
+      // Güncel fiyat bilinmiyorsa yön türetilemez: alarmın kendi yönü
+      // korunur (yoksa "altına inince" sessizce "üstüne çıkınca" olurdu).
+      kur: (k) => ref.read(priceAlertsProvider.notifier).duzenle(alarm.id,
+          hedef: k.hedef,
+          yon: aday.guncelFiyat > 0 ? k.yon : alarm.direction,
+          tekrar: k.tekrar),
+    ),
+  );
+  if (silinsin) {
+    sil!();
+    return false;
+  }
+  if (sonuc is! AlarmKurulumu) return false;
+  SandikHaptic.selection.perform();
+  if (context.mounted) {
+    sandikSnack(context, context.l10n.alarmGuncellendi,
+        kind: SandikSnackKind.success);
+  }
+  return true;
+}
+
 /// Hedef fiyat girişi. Yön SEÇTİRİLMEZ, güncel fiyata göre türetilir ve
 /// kaydetmeden önce GÖSTERİLİR (kullanıcı ne kurduğunu görsün).
 class AlarmKurSheet extends StatefulWidget {
@@ -461,6 +522,17 @@ class AlarmKurSheet extends StatefulWidget {
   /// "Gösterge" kipinin yazması ([kur] ile aynı sözleşme).
   final Future<void> Function(GostergeAlarmKurulumu kurulum)? kurGosterge;
 
+  /// Var olan alarmı düzenleme kipi ([alarmDuzenleAkisi]): başlık "Alarmı
+  /// düzenle", düğme "Kaydet". Varsayılan kapalı: sayfa birebir eskisi.
+  final bool duzenle;
+
+  /// "Her geçişte" anahtarının ön değeri (düzenlenen alarmın kendisi).
+  final bool baslangicTekrar;
+
+  /// Düzenlemede sayfanın altındaki "Alarmı sil": kaydırarak silme tek yol
+  /// kalırsa bulunamaz; görünür yol burada (müşteri raporu 31 Eki 21:15).
+  final VoidCallback? onSil;
+
   const AlarmKurSheet(
       {super.key,
       required this.adaylar,
@@ -473,7 +545,10 @@ class AlarmKurSheet extends StatefulWidget {
       this.gostergeGorunur = false,
       this.gostergeKilitli = false,
       this.onGostergeKilitli,
-      this.kurGosterge});
+      this.kurGosterge,
+      this.duzenle = false,
+      this.baslangicTekrar = false,
+      this.onSil});
 
   @override
   State<AlarmKurSheet> createState() => _AlarmKurSheetState();
@@ -501,7 +576,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   /// "Her geçişte haber ver" (0171, Ar-Ge 29 Eki 20:45 #1). Varsayılan
   /// kapalı: bugünkü tek atış alarm birebir. Ücretsiz (alarm temel değer);
   /// tavana yine tek alarm olarak sayılır.
-  bool _tekrar = false;
+  late bool _tekrar = widget.baslangicTekrar;
 
   bool get _yuzdeSunulur =>
       yuzdeKipiSunulur(_secili, baslangicHedef: widget.baslangicHedef);
@@ -951,7 +1026,12 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                 // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
                 const Center(child: SandikTutamac()),
                 const SizedBox(height: SandikSpace.sm),
-                Text(widget.sabit ? context.l10n.alertForAsset(_secili.ad) : 'Alarm kur',
+                Text(
+                    widget.duzenle
+                        ? context.l10n.alarmiDuzenle
+                        : widget.sabit
+                            ? context.l10n.alertForAsset(_secili.ad)
+                            : 'Alarm kur',
                     style: context.t.headlineSmall?.copyWith(color: c.text90),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
@@ -1157,9 +1237,22 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                     : _gostergeAcik
                         ? _kaydetGosterge
                         : _kaydet,
-                child: Text(context.l10n.setAlert),
+                child: Text(widget.duzenle
+                    ? context.l10n.save
+                    : context.l10n.setAlert),
               ),
             ),
+            if (widget.onSil != null)
+              TextButton.icon(
+                key: const ValueKey('alarmiSil'),
+                style: TextButton.styleFrom(
+                  foregroundColor: c.danger,
+                  minimumSize: const Size(0, SandikTouch.min),
+                ),
+                onPressed: widget.onSil,
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: Text(context.l10n.alarmiSil),
+              ),
           ],
         ),
       ),

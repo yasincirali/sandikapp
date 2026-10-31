@@ -101,6 +101,7 @@ class PriceAlert {
     double? targetPrice,
     String? direction,
     bool? enabled,
+    bool? tekrar,
     bool damgasiz = false,
   }) =>
       PriceAlert(
@@ -113,7 +114,7 @@ class PriceAlert {
         enabled: enabled ?? this.enabled,
         triggeredAt: damgasiz ? null : triggeredAt,
         createdAt: createdAt,
-        tekrar: tekrar,
+        tekrar: tekrar ?? this.tekrar,
         sonTetikAt: sonTetikAt,
       );
 

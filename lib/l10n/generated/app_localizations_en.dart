@@ -10275,4 +10275,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String intradayMissingShort(String names) {
     return '$names: shown at last known price';
   }
+
+  @override
+  String get alarmSilindi => 'Alarm deleted';
+
+  @override
+  String get alarmiDuzenle => 'Edit alarm';
+
+  @override
+  String get alarmiSil => 'Delete alarm';
+
+  @override
+  String get alarmGuncellendi => 'Alarm updated';
+
+  @override
+  String alarmKaldi(String pct) {
+    return '$pct to go';
+  }
+
+  @override
+  String alarmKaldiSemantik(String pct) {
+    return '$pct to target';
+  }
+
+  @override
+  String alarmKosulUst(String fiyat) {
+    return 'Rises above · $fiyat';
+  }
+
+  @override
+  String alarmKosulAlt(String fiyat) {
+    return 'Falls below · $fiyat';
+  }
+
+  @override
+  String alarmCalistiFiyat(String fiyat) {
+    return 'Triggered · $fiyat';
+  }
+
+  @override
+  String alarmGrupSimdi(String fiyat) {
+    return 'now $fiyat';
+  }
+
+  @override
+  String get alarmOneriBaslik => 'Quick start';
+
+  @override
+  String get alarmOneriAciklama => 'We\'ll tell you if it moves 2% in a day';
 }
