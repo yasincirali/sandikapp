@@ -6499,5 +6499,18 @@
   "todayShareText": "Portföyüm bugün {pct} · {tarih}",
   "@todayShareText": {"description": "Bugün paylaşım metninin ilk satırı. Tutar yok; tavsiye dili yok.", "placeholders": {"pct": {"type": "String"}, "tarih": {"type": "String"}}},
   "notInvestmentAdvice": "Yatırım tavsiyesi değildir.",
-  "@notInvestmentAdvice": {"description": "Paylaşım görseli ve metnindeki kısa uyarı."}
+  "@notInvestmentAdvice": {"description": "Paylaşım görseli ve metnindeki kısa uyarı."},
+  "tekrarAlBaslik": "Tekrar al",
+  "tekrarAlSemantik": "{ad} tekrar al, son alım {miktar}",
+  "@tekrarAlSemantik": {"placeholders": {"ad": {"type": "String"}, "miktar": {"type": "String"}}},
+  "baskaYoldanEkle": "Başka yoldan ekle",
+  "yazarakEkleAlt": "\"10 gram altın 4500 lira\" yaz ya da söyle",
+  "ekstredenAktarAlt": "Aracı kurum ekstresi: PDF, Excel ya da CSV",
+  "ekranGoruntusuAlt": "Kurum uygulamandaki portföy ekranı",
+  "varlikEklendiBirDaha": "{ad} eklendi",
+  "@varlikEklendiBirDaha": {"placeholders": {"ad": {"type": "String"}}},
+  "birTaneDahaEkle": "Bir tane daha ekle",
+  "altinTumTurler": "Tümü",
+  "altinTumTurlerSemantik": "Tüm altın türleri",
+  "varlikEklendiGenel": "Eklendi"
 }

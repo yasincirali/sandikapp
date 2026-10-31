@@ -413,6 +413,7 @@ class AddAssetFormState {
     this.denendi = false,
     this.abdAcik = false,
     this.turIzgarasiAcik = false,
+    this.turSecildi = false,
     this.emtiaElle = false,
     this.eurobondSozlesmesi,
     this.eurobondFiyati,
@@ -483,6 +484,10 @@ class AddAssetFormState {
       // varlık vitrini) türü zaten söylemiş: tekrar sormak bir adım fazla.
       turIzgarasiAcik:
           turIzgarasi && a == null && c == null && prefillType == null,
+      // Türü önceden belli form (düzenleme, sepet, ön seçim) "seçilmiş"
+      // doğar: "Değiştir"le açılan ızgarada o tür vurgulu görünür.
+      turSecildi:
+          !(turIzgarasi && a == null && c == null && prefillType == null),
       // Listede olmayan eski emtia kaydı (serbest ad / bilinmeyen sembol)
       // "Diğer" yolunda açılır; listedeki sembol seçili çiple.
       emtiaElle: type == AssetType.emtia &&
@@ -537,6 +542,13 @@ class AddAssetFormState {
   /// `notesExpanded` gibi görünüm durumu burada: ekran `setState` taşımaz
   /// (Faz 3.10 ratchet).
   final bool turIzgarasiAcik;
+
+  /// Kullanıcı bu formda ızgaradan bir tür (ya da arama sonucu) seçti mi.
+  /// Yeni kayıt türü varsayılan hisseyle doğar; seçim yapılmadan ızgara
+  /// hiçbir kutuyu seçili çizmez (müşteri raporu 31 Eki 13:15). Izgara
+  /// katlanınca kalıcı olarak `true`: "Değiştir" ile geri açılan ızgarada
+  /// mevcut seçim görünür.
+  final bool turSecildi;
 
   /// Emtia formunda "Diğer" (serbest ad + sembol) açık mı; kapalıyken emtia
   /// `emtiaKatalogu` çiplerinden seçilir (2026-10-18). Görünüm durumu,
@@ -739,6 +751,7 @@ class AddAssetFormState {
     bool? denendi,
     bool? abdAcik,
     bool? turIzgarasiAcik,
+    bool? turSecildi,
     bool? emtiaElle,
     Object? eurobondSozlesmesi = _keep,
     Object? eurobondFiyati = _keep,
@@ -775,6 +788,7 @@ class AddAssetFormState {
         denendi: denendi ?? this.denendi,
         abdAcik: abdAcik ?? this.abdAcik,
         turIzgarasiAcik: turIzgarasiAcik ?? this.turIzgarasiAcik,
+        turSecildi: turSecildi ?? this.turSecildi,
         emtiaElle: emtiaElle ?? this.emtiaElle,
         eurobondSozlesmesi: identical(eurobondSozlesmesi, _keep)
             ? this.eurobondSozlesmesi
@@ -876,7 +890,8 @@ class AddAssetFormNotifier
   /// `selectType` çağırıyor; katlamayı seçiciyi çizen ekran söyler.
   void turIzgarasi({required bool acik}) {
     if (state.turIzgarasiAcik != acik) {
-      _set(state.copyWith(turIzgarasiAcik: acik));
+      _set(state.copyWith(
+          turIzgarasiAcik: acik, turSecildi: state.turSecildi || !acik));
     }
   }
 

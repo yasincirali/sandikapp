@@ -146,8 +146,10 @@ void main() {
           kapi: _SatisliKapi(),
           ekran: const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin));
       await tester.enterText(find.widgetWithText(TextField, '0').first, '2');
+      // 2026-10-31: boş fiyat alanının ipucu "Otomatik" değil, kayıtta
+      // atanacak satış fiyatının kendisi.
       await tester.enterText(
-          find.widgetWithText(TextField, 'Otomatik'), '2950');
+          find.widgetWithText(TextField, '₺3.100,00'), '2950');
       await tester.pump();
       expect(find.textContaining('Kuyumcu farkı'), findsNothing);
 

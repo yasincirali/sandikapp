@@ -5813,5 +5813,16 @@
   "todayShareTooltip": "Share today",
   "todayShareLabel": "My portfolio today",
   "todayShareText": "My portfolio today {pct} · {tarih}",
-  "notInvestmentAdvice": "Not investment advice."
+  "notInvestmentAdvice": "Not investment advice.",
+  "tekrarAlBaslik": "Buy again",
+  "tekrarAlSemantik": "Buy {ad} again, last purchase {miktar}",
+  "baskaYoldanEkle": "Other ways to add",
+  "yazarakEkleAlt": "Type or say \"10 grams of gold 4500 lira\"",
+  "ekstredenAktarAlt": "Broker statement: PDF, Excel or CSV",
+  "ekranGoruntusuAlt": "Portfolio screen of your broker's app",
+  "varlikEklendiBirDaha": "{ad} added",
+  "birTaneDahaEkle": "Add another",
+  "altinTumTurler": "All",
+  "altinTumTurlerSemantik": "All gold types",
+  "varlikEklendiGenel": "Added"
 }

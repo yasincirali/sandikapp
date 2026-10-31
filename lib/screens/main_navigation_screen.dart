@@ -17,6 +17,7 @@ import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
+import '../models/tekrar_al.dart' show birTaneDahaOnerilsinMi;
 import '../services/bugun_service.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../services/tazelik_ritmi.dart';
@@ -334,7 +335,42 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ),
     );
     if (!mounted) return;
-    if (added is AlarmAdayi &&
+    // "Bir tane daha ekle" (müşteri raporu 31 Eki 13:15, yasin "yap"):
+    // portföyünü KURAN kullanıcıda (kendi açık pozisyonu 5'ten az) kayıt
+    // sonu bildirimi alarm önerisi yerine Varlık Ekle'yi yeniden açar.
+    // Kural ve "neden koşullu" `birTaneDahaOnerilsinMi`'de. Bildirim, Portföy
+    // satırının parlamasından (`VarlikEklendi`) SONRA gelir: önce ödül anı,
+    // sonra sıradaki adım. Hareketi azalt açıkken bekleme sıfırdır
+    // (`SandikMotion.surfaceOf`), parlama da yoktur; yalnız bildirim kalır.
+    final durum = ref.read(portfolioProvider).valueOrNull;
+    if ((added == true || added is AlarmAdayi) &&
+        durum != null &&
+        birTaneDahaOnerilsinMi(durum.assets, sahip: durum.ownerId)) {
+      final bekle = SandikMotion.surfaceOf(context);
+      final l10n = context.l10n;
+      final mesaj = added is AlarmAdayi
+          ? l10n.varlikEklendiBirDaha(added.ad)
+          : l10n.varlikEklendiGenel;
+      CrashReporter.arkaPlan(
+        () async {
+          if (bekle > Duration.zero) await Future<void>.delayed(bekle);
+          if (!mounted) return;
+          sandikSnack(
+            context,
+            mesaj,
+            action: SnackBarAction(
+              label: l10n.birTaneDahaEkle,
+              onPressed: () {
+                if (!mounted) return;
+                CrashReporter.arkaPlan(_showAddAsset(),
+                    reason: 'main_navigation.birTaneDaha');
+              },
+            ),
+          );
+        }(),
+        reason: 'main_navigation.birTaneDahaSnack',
+      );
+    } else if (added is AlarmAdayi &&
         yuzdeAlarmiOnerilsinMi(
             added, ref.read(yuzdeAlarmlariProvider).valueOrNull ?? const [])) {
       // Altın/döviz/kripto: soru snack'in kendisinde, "Kur" sayfa açmadan

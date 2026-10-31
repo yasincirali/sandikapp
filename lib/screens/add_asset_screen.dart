@@ -21,6 +21,7 @@ import '../providers/eurobond_provider.dart';
 import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/portfoy_provider.dart';
+import '../providers/tekrar_al_provider.dart';
 import '../widgets/portfoy_secici.dart';
 import '../services/bist_hisse_katalogu.dart';
 import '../services/fiyat_kaynagi.dart' show kuyumcuFarkiYuzde;
@@ -628,14 +629,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               },
               ),
             ),
-            TourAnchor(
-              target: TourTarget.hizliGiris,
-              child: IconButton(
-                tooltip: context.l10n.quickEntryVoice,
-                icon: Icon(Icons.mic_none_rounded, color: context.c.text58),
-                onPressed: _showQuickEntrySheet,
-              ),
-            ),
+            // Mikrofon 2026-10-31'de kalktı (müşteri raporu 31 Eki 13:15,
+            // yasin "yap"): "Yazarak ekle" ile AYNI sayfayı açıyordu, etiketsiz
+            // iki simge kullanıcıya iki farklı iş gibi görünüyordu. Hızlı
+            // Giriş klavyenin dikte tuşuyla zaten sesli çalışır; tek giriş
+            // formun altındaki "Başka yoldan ekle" kartında.
           ],
         ],
       ),
@@ -669,12 +667,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (_kolay) ...[
-                      _ikiYol(),
-                      const SizedBox(height: SandikSpace.sm),
-                      _ekranGoruntusuYolu(),
-                      const SizedBox(height: SandikSpace.lgs),
-                    ],
+                    // Üç hızlı yol (Yazarak, Ekstre, Ekran görüntüsü) eskiden
+                    // burada, ilk ~160 pt'yi kaplıyordu: kullanıcının asıl işi
+                    // olan arama ve tür seçimi ondan sonra başlıyordu.
+                    // 2026-10-31 (müşteri raporu 31 Eki 13:15, yasin "yap"):
+                    // arama başa çıktı, yollar sayfanın sonunda tek kartta
+                    // (`_baskaYollarKarti`).
                     if (_yenidenKur) ...[
                       const SizedBox(height: SandikSpace.sm),
                       VarlikGuncelleUyarisi(
@@ -787,6 +785,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                             .state = (id: v),
                         bosluk: const EdgeInsets.only(top: SandikSpace.lgs),
                       ),
+                    if (_kolay) ...[
+                      SizedBox(
+                          height: _s.turIzgarasiAcik
+                              ? SandikSpace.sm
+                              : SandikSpace.xl),
+                      _baskaYollarKarti(),
+                    ],
                   ],
                   ),
                 ),
@@ -819,57 +824,142 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
 
-  // ── İki hızlı yol (sadeleştirme 2, 2026-10-04) ─────────────────────────────
-  // Hızlı Giriş ("GARAN 500 adet 105 lira") ve ekstre içe aktarma rakiplerden
-  // ayrıştıran iki yol; bugün biri etiketsiz mikrofon ikonu, diğeri Toplu
-  // Ekle'nin içinde. Burada formun en üstünde, adıyla.
-  Widget _ikiYol() {
-    return Row(
+  // ── Başka yoldan ekle (2026-10-31) ──────────────────────────────────────────
+  // Hızlı Giriş, ekstre ve ekran görüntüsü 2026-10-04'ten beri formun EN
+  // ÜSTÜNDEYDİ (üç çerçeveli düğme, ~160 pt). Müşteri raporu 31 Eki 13:15
+  // (yasin "yap"): kullanıcıların çoğu tek varlığı arayarak ekliyor; üstteki
+  // yollar aramayı ekranın ortasına itiyordu. Şimdi arama başta, üç yol
+  // sayfanın sonunda TEK gruplu kartta: iOS Ayarlar satırı kalıbı (ikon +
+  // ad + ne işe yaradığı + ›). Alt satır her yolun ne istediğini söylüyor;
+  // eski düğmelerde yalnız ad vardı ve "Ekstreden aktar" ne alır belli
+  // değildi.
+  //
+  // Tur hedefleri burada: `hizliGiris` "Yazarak ekle" satırında (tur,
+  // Varlık Ekle'nin açık olduğunu bu çapanın kurulu olmasından anlar; kart
+  // `_kolay` iken hep kuruludur), `topluEkle` "Ekstreden aktar" satırında.
+  Widget _baskaYollarKarti() {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: _yolDugmesi(
-            ikon: Icons.edit_note_rounded,
-            etiket: context.l10n.addByTyping,
-            onTap: _showQuickEntrySheet,
-          ),
-        ),
-        const SizedBox(width: SandikSpace.sm),
-        Expanded(
-          child: TourAnchor(
-            target: TourTarget.topluEkle,
-            child: _yolDugmesi(
-              ikon: Icons.content_paste_go_rounded,
-              etiket: context.l10n.importFromStatement,
-              onTap: _ekstredenAktar,
-            ),
+        _sectionLabel(l10n.baskaYoldanEkle),
+        const SizedBox(height: SandikSpace.sm),
+        SandikCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              TourAnchor(
+                target: TourTarget.hizliGiris,
+                child: _yolSatiri(
+                  ikon: Icons.edit_note_rounded,
+                  baslik: l10n.addByTyping,
+                  alt: l10n.yazarakEkleAlt,
+                  onTap: _showQuickEntrySheet,
+                ),
+              ),
+              _yolAyirici(),
+              TourAnchor(
+                target: TourTarget.topluEkle,
+                child: _yolSatiri(
+                  ikon: Icons.content_paste_go_rounded,
+                  baslik: l10n.importFromStatement,
+                  alt: l10n.ekstredenAktarAlt,
+                  onTap: () => CrashReporter.arkaPlan(_ekstredenAktar(),
+                      reason: 'Varlık Ekle: ekstreden aktar'),
+                ),
+              ),
+              _yolAyirici(),
+              // Ekran görüntüsü okuması sürerken satır kilitlenir ve gösterge
+              // döner (`SandikAsyncTap`): okuma saniyeler sürebilir, ikinci
+              // dokunuş ikinci seçiciyi açmasın.
+              SandikAsyncTap(
+                onTap: _ekranGoruntusundenEkle,
+                semanticLabel: l10n.importScreenshotAdd,
+                child: _yolSatiriIcerik(
+                  ikon: Icons.add_photo_alternate_outlined,
+                  baslik: l10n.importScreenshotAdd,
+                  alt: l10n.ekranGoruntusuAlt,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  /// Üçüncü hızlı yol (2026-10-19, yasin: "ekran görüntüsünden portföy
-  /// ekleme: yap, ama dar kapsamla"): aracı kurum/banka uygulamasının
-  /// portföy ekranının görüntüleri telefonda okunur, sepete girer, onay
-  /// Toplu Ekle'de — "Ekstreden aktar" ile aynı bitiş. İki düğmenin altında
-  /// tam genişlik: üçü yan yana dar ekranda okunmazdı.
-  Widget _ekranGoruntusuYolu() {
-    // Görünüş üstteki iki yolla aynı (`_yolDugmesi`); boy asgari, sabit
-    // değil: büyük yazıda etiket kırpılmaz, küçülür.
-    return SandikAsyncButton(
-      tur: SandikAsyncTur.cerceve,
-      height: null,
-      icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
-      onPressed: _ekranGoruntusundenEkle,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: context.c.amberText,
-        side: BorderSide(color: context.c.hairline),
-        minimumSize: const Size.fromHeight(48),
-        shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+  Widget _yolAyirici() => Divider(
+        height: 1,
+        thickness: 1,
+        indent: SandikSpace.md + 32 + SandikSpace.md,
+        color: context.c.hairline,
+      );
+
+  Widget _yolSatiri({
+    required IconData ikon,
+    required String baslik,
+    required String alt,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      label: baslik,
+      hint: alt,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: _yolSatiriIcerik(ikon: ikon, baslik: baslik, alt: alt),
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(context.l10n.importScreenshotAdd),
+    );
+  }
+
+  Widget _yolSatiriIcerik({
+    required IconData ikon,
+    required String baslik,
+    required String alt,
+  }) {
+    return ConstrainedBox(
+      // Satır ≥ 56: iki satır metin + HIG 44 pt dokunma alanı.
+      constraints: const BoxConstraints(minHeight: SandikTouch.min + 12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: context.c.amberFill.withValues(alpha: 0.14),
+                borderRadius: SandikRadius.smAll,
+              ),
+              child: Icon(ikon, size: 18, color: context.c.amberText),
+            ),
+            const SizedBox(width: SandikSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(baslik,
+                      style: context.t.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.c.text90)),
+                  const SizedBox(height: 2),
+                  Text(alt,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58)),
+                ],
+              ),
+            ),
+            const SizedBox(width: SandikSpace.sm),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: context.c.text36),
+          ],
+        ),
       ),
     );
   }
@@ -885,25 +975,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       ),
     );
     if (kaydedildi == true && mounted) Navigator.of(context).pop(true);
-  }
-
-  Widget _yolDugmesi({
-    required IconData ikon,
-    required String etiket,
-    required VoidCallback onTap,
-  }) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(ikon, size: 18),
-      // Dar ekranda iki düğme yan yana: metin kırpılmaz, küçülür.
-      label: FittedBox(fit: BoxFit.scaleDown, child: Text(etiket)),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: context.c.amberText,
-        side: BorderSide(color: context.c.hairline),
-        minimumSize: const Size.fromHeight(48),
-        shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
-      ),
-    );
   }
 
   // ── Notlar collapsible ─────────────────────────────────────────────────────
@@ -1094,6 +1165,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         child: TurSeciciIzgara(
           secili: seciliKutu(_type, isAbd: _s.isAbd),
           acik: _s.turIzgarasiAcik,
+          seciliGoster: _s.turSecildi,
+          tekrarAl: _kolay ? ref.watch(tekrarAlProvider) : const [],
           sozlesmeliAcik: !widget.cartMode && !_isEditing,
           onKutu: _kutuSec,
           onSonuc: _aramaSonucuSec,

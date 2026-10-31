@@ -83,10 +83,12 @@ void main() {
       await _pump(tester,
           const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin));
       await tester.pump();
+      // 2026-10-31: seçim alanı kalktı; seçili tür çip satırında seçili
+      // görünür.
       expect(
-          find.bySemanticsLabel(
-              RegExp(r'Seçili altın türü: Gram Altın \(24 Ayar\)')),
-          findsOneWidget);
+          tester.getSemantics(
+              find.bySemanticsLabel(RegExp(r'^Gram Altın \(24 Ayar\) altın'))),
+          isSemantics(isSelected: true));
       expect(tester.takeException(), isNull);
     });
 
@@ -95,8 +97,9 @@ void main() {
           const AddAssetScreen(hizliSecim: IlkVarlikSecimi.ceyrekAltin));
       await tester.pump();
       expect(
-          find.bySemanticsLabel(RegExp(r'Seçili altın türü: Çeyrek Altın')),
-          findsOneWidget);
+          tester.getSemantics(
+              find.bySemanticsLabel(RegExp(r'^Çeyrek Altın altın'))),
+          isSemantics(isSelected: true));
       expect(tester.takeException(), isNull);
     });
 

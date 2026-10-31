@@ -10107,4 +10107,41 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get notInvestmentAdvice => 'Yatırım tavsiyesi değildir.';
+
+  @override
+  String get tekrarAlBaslik => 'Tekrar al';
+
+  @override
+  String tekrarAlSemantik(String ad, String miktar) {
+    return '$ad tekrar al, son alım $miktar';
+  }
+
+  @override
+  String get baskaYoldanEkle => 'Başka yoldan ekle';
+
+  @override
+  String get yazarakEkleAlt => '\"10 gram altın 4500 lira\" yaz ya da söyle';
+
+  @override
+  String get ekstredenAktarAlt => 'Aracı kurum ekstresi: PDF, Excel ya da CSV';
+
+  @override
+  String get ekranGoruntusuAlt => 'Kurum uygulamandaki portföy ekranı';
+
+  @override
+  String varlikEklendiBirDaha(String ad) {
+    return '$ad eklendi';
+  }
+
+  @override
+  String get birTaneDahaEkle => 'Bir tane daha ekle';
+
+  @override
+  String get altinTumTurler => 'Tümü';
+
+  @override
+  String get altinTumTurlerSemantik => 'Tüm altın türleri';
+
+  @override
+  String get varlikEklendiGenel => 'Eklendi';
 }

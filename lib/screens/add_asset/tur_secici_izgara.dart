@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/l10n.dart';
 import '../../models/asset_type.dart';
 import '../../models/eurobond.dart';
+import '../../models/tekrar_al.dart';
 import '../../models/tur_secici_duzeni.dart';
 import '../../providers/eurobond_provider.dart';
 import '../../services/bugun_service.dart';
@@ -13,6 +14,7 @@ import '../../services/crash_reporter.dart';
 import '../../services/remote_config_service.dart';
 import '../../services/symbol_search_service.dart';
 import '../../theme/sandik.dart';
+import '../../utils/tr_format.dart';
 
 /// Varlık Ekle'nin tür seçicisi — "B · Gruplu ızgara + arama" (bayrak
 /// `tur_secici_izgara`, 2026-10-08; yasin: "göz alıcı ama işlevsel, sayfayı
@@ -42,6 +44,8 @@ class TurSeciciIzgara extends ConsumerStatefulWidget {
     required this.onKutu,
     required this.onSonuc,
     required this.onDegistir,
+    this.seciliGoster = true,
+    this.tekrarAl = const [],
   });
 
   /// Formun şu anki türü (ABD dahil).
@@ -53,6 +57,17 @@ class TurSeciciIzgara extends ConsumerStatefulWidget {
   /// Mevduat/BES gösterilsin mi (yalnız yeni kayıt; bkz.
   /// `turSeciciGruplari`).
   final bool sozlesmeliAcik;
+
+  /// Seçili kutu vurgulansın mı. Yeni kayıtta form türü varsayılan olarak
+  /// hisse doğar; kullanıcı henüz bir şey seçmeden Hisse kutusunu amber
+  /// çerçeveyle çizmek "Hisse'ye mi bastım?" sorusunu doğuruyordu (müşteri
+  /// raporu 31 Eki 13:15). Vurgu yalnız kullanıcı bir seçim yaptıktan sonra
+  /// ("Değiştir" ile geri açılınca) görünür.
+  final bool seciliGoster;
+
+  /// "Tekrar al" çipleri (kural `tekrarAlAdaylari`); boşsa satır yok.
+  /// Dokunuş arama sonucuyla aynı yoldan gider ([onSonuc]).
+  final List<TekrarAlAdayi> tekrarAl;
 
   final ValueChanged<TurKutusu> onKutu;
   final ValueChanged<TurAramaSonucu> onSonuc;
@@ -188,7 +203,15 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
           ),
         ),
         const SizedBox(height: SandikSpace.smd),
-        if (_q.trim().isNotEmpty) _sonucListesi() else ..._gruplar(),
+        if (_q.trim().isNotEmpty)
+          _sonucListesi()
+        else ...[
+          if (widget.tekrarAl.isNotEmpty) ...[
+            _tekrarAlSatiri(),
+            const SizedBox(height: SandikSpace.md),
+          ],
+          ..._gruplar(),
+        ],
       ],
     );
   }
@@ -259,7 +282,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
       };
 
   Widget _kutu(TurKutusu k, bool seansAcik) {
-    final secili = widget.secili == k;
+    final secili = widget.seciliGoster && widget.secili == k;
     final renk = k.tur.color;
     final ipucu = _ipucuMetni(turKutusuIpucu(k, bistSeansAcik: seansAcik));
     final etiket = _kutuEtiketi(k);
@@ -335,6 +358,124 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
         alignment: Alignment.center,
         child: Icon(_kutuIkonu(k), size: 20, color: k.tur.onSurface(context)),
       );
+
+  // ── Tekrar al ────────────────────────────────────────────────────────────
+
+  /// Aramanın altında, daha önce alınmış varlıklar (müşteri raporu 31 Eki
+  /// 13:15). Tek satır, yatay kayar: büyük yazıda sarmalayıp ızgarayı
+  /// aşağı itmez. Çipte FİYAT yok (yuvarlanmış kotasyon "kaynak basamağı"
+  /// kuralına aykırı, tam basamak da çipi şişirirdi); ad ve son alım
+  /// miktarı var, miktar forma yazılmaz.
+  Widget _tekrarAlSatiri() {
+    final l = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          ustHarf(l.tekrarAlBaslik, l),
+          style: context.t.labelMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: context.c.text36,
+          ),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          child: Row(
+            children: [
+              for (final (i, a) in widget.tekrarAl.indexed) ...[
+                if (i > 0) const SizedBox(width: SandikSpace.sm),
+                _tekrarAlCipi(a),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _miktarMetni(TekrarAlAdayi a) {
+    final l = context.l10n;
+    final sayi = fmtNumFlex(a.sonMiktar, maxDigits: 8);
+    return switch (a.sonuc.kutu.tur) {
+      AssetType.altin => switch (a.birim) {
+          'gr' => '$sayi ${l.goldUnitGram}',
+          'ounce' => '$sayi ${l.goldUnitOunce}',
+          _ => '$sayi ${l.unitPiece}',
+        },
+      AssetType.hisse || AssetType.fon => '$sayi ${l.unitPiece}',
+      _ => sayi,
+    };
+  }
+
+  Widget _tekrarAlCipi(TekrarAlAdayi a) {
+    final k = a.sonuc.kutu;
+    final renk = k.tur.color;
+    final miktar = _miktarMetni(a);
+    return Semantics(
+      button: true,
+      label: context.l10n.tekrarAlSemantik(a.sonuc.sembol, miktar),
+      excludeSemantics: true,
+      child: SandikBasma(
+        olcek: 0.96,
+        onTap: () {
+          SandikHaptic.selection.perform();
+          widget.onSonuc(a.sonuc);
+        },
+        child: Container(
+          // Üst sınır: "Gram Altın (24 Ayar)" 2× yazıda 740 pt'lik bir çip
+          // oluyordu (ekranın iki katı); ad kısalır, miktar hep görünür,
+          // tam ad ekran okuyucuda.
+          constraints: BoxConstraints(
+              minHeight: SandikTouch.min,
+              maxWidth: MediaQuery.sizeOf(context).width * 0.72),
+          padding: const EdgeInsets.fromLTRB(SandikSpace.xs2, SandikSpace.xs2,
+              SandikSpace.smd, SandikSpace.xs2),
+          decoration: BoxDecoration(
+            color: context.c.surface1,
+            borderRadius: SandikRadius.lgAll,
+            border: Border.all(color: context.c.overlay),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: SandikSpace.lg,
+                height: SandikSpace.lg,
+                decoration: BoxDecoration(
+                  color: renk.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(Icons.replay_rounded,
+                    size: 14, color: k.tur.onSurface(context)),
+              ),
+              const SizedBox(width: SandikSpace.xs2),
+              Flexible(
+                child: Text(
+                  a.sonuc.sembol,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: context.c.text90,
+                  ),
+                ),
+              ),
+              const SizedBox(width: SandikSpace.xs),
+              Text(
+                miktar,
+                maxLines: 1,
+                style: context.t.bodySmall?.copyWith(color: context.c.text58),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   // ── Arama sonuçları ──────────────────────────────────────────────────────
 
