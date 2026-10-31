@@ -107,7 +107,11 @@ void main() {
         (tester) async {
       await _pump(tester, const AddAssetScreen());
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.mic_none_rounded));
+      // Mikrofon 2026-10-31'de kalktı; Hızlı Giriş "Başka yoldan ekle"
+      // kartındaki "Yazarak ekle" satırından açılır.
+      await tester.ensureVisible(find.text('Yazarak ekle'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yazarak ekle'));
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsWidgets);
       expect(tester.testTextInput.isVisible, isFalse);

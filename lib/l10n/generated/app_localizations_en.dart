@@ -10230,4 +10230,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notInvestmentAdvice => 'Not investment advice.';
+
+  @override
+  String get tekrarAlBaslik => 'Buy again';
+
+  @override
+  String tekrarAlSemantik(String ad, String miktar) {
+    return 'Buy $ad again, last purchase $miktar';
+  }
+
+  @override
+  String get baskaYoldanEkle => 'Other ways to add';
+
+  @override
+  String get yazarakEkleAlt => 'Type or say \"10 grams of gold 4500 lira\"';
+
+  @override
+  String get ekstredenAktarAlt => 'Broker statement: PDF, Excel or CSV';
+
+  @override
+  String get ekranGoruntusuAlt => 'Portfolio screen of your broker\'s app';
+
+  @override
+  String varlikEklendiBirDaha(String ad) {
+    return '$ad added';
+  }
+
+  @override
+  String get birTaneDahaEkle => 'Add another';
+
+  @override
+  String get altinTumTurler => 'All';
+
+  @override
+  String get altinTumTurlerSemantik => 'All gold types';
+
+  @override
+  String get varlikEklendiGenel => 'Added';
 }

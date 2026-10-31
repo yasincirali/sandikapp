@@ -289,46 +289,89 @@ extension _KimlikAlanlari on _AddAssetScreenState {
     );
   }
 
-  // ── Altın: seçim alanı + kısayol çipleri ─────────────────────────────────────
+  // ── Altın: tek yatay çip satırı ─────────────────────────────────────────────
   //
-  // 2026-09-25: 16 tür tek çip ızgarasında ekranı dolduruyordu. Kullanıcının
-  // üç alternatif arasından seçtiği düzen (C): hisse/fon seçicisiyle aynı
-  // alan (tümü aramalı, gruplu alt sayfada) + altında 5 kısayol. Kısayolların
-  // kuralı `altinKisayollari`'nda (portföydeki türler, 5'e popülerle tamamla).
+  // 2026-09-25: 16 tür tek çip ızgarasında ekranı dolduruyordu; düzen (C)
+  // seçildi: hisse/fon seçicisiyle aynı alan + altında 5 kısayol.
+  // 2026-10-31 (müşteri raporu 31 Eki 13:15 tasarım #6, yasin "yap"): seçim
+  // alanı + "Hızlı seçim" başlığı + üç satıra kayan beş çip, ekranın en
+  // dağınık yeriydi ve aynı şeyi iki kez soruyordu. Şimdi TEK yatay satır:
+  // kısayollar + sonda "Tümü ›" (aramalı gruplu alt sayfa, nadir türler
+  // için, satırın sağında sabit). Satır sarmaz, kayar: büyük yazıda
+  // yükseklik sabit kalır.
+  // Kısayolların kuralı `altinKisayollari`'nda (portföydeki türler, 5'e
+  // popülerle tamamla). Alt sayfadan kısayolda olmayan bir tür seçilirse
+  // satırın BAŞINA eklenir: seçim her zaman görünür.
   Widget _goldChipGrid(ColorScheme cs, {required bool hata}) {
     final secili = _seciliAltin;
     final kisayollar = altinKisayollari(
         ref.watch(portfolioProvider).valueOrNull?.assets ?? const []);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final cipler = [
+      if (secili != null && !kisayollar.contains(secili)) secili,
+      ...kisayollar,
+    ];
+    // "Tümü" kayan satırın DIŞINDA, sağda sabit: dar ekranda kaydırmanın
+    // sonunda kalsaydı nadir türlere giden tek yol görünmezdi.
+    return Row(
       children: [
-        Semantics(
-          button: true,
-          label: secili == null
-              ? context.l10n.pickGoldTap
-              : context.l10n.goldSelectedSemantics(secili.label),
-          child: SandikBasma(
-            onTap: _showGoldPicker,
-            child: _selectorContainer(
-              cs: cs,
-              hasValue: secili != null,
-              hasError: hata,
-              badgeText: secili == null ? null : _altinBirimi(secili),
-              mainText: secili?.label ?? context.l10n.pickGoldTap,
-              color: AssetType.altin.color,
+        Expanded(
+          // Düz kaydırma, `HScrollWithFade` DEĞİL: onun ok rozeti dar
+          // satırda yarım görünen çipin üstüne biniyordu (önce/sonra
+          // görüntüsü 2026-10-31). Kenarda kesilen çip kaydırmayı zaten
+          // söylüyor.
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final g in cipler) ...[
+                  _goldChip(g, g == secili, hata: hata && secili == null),
+                  const SizedBox(width: SandikSpace.sm),
+                ],
+              ],
             ),
           ),
         ),
-        const SizedBox(height: SandikSpace.smd),
-        Text(context.l10n.goldQuickPick,
-            style: context.t.bodySmall?.copyWith(color: context.c.text36)),
-        const SizedBox(height: SandikSpace.sm),
-        Wrap(
-          spacing: SandikSpace.sm,
-          runSpacing: SandikSpace.sm,
-          children: [for (final g in kisayollar) _goldChip(g, g == secili)],
-        ),
+        const SizedBox(width: SandikSpace.xs),
+        _tumAltinlarCipi(hata: hata && secili == null),
       ],
+    );
+  }
+
+  Widget _tumAltinlarCipi({required bool hata}) {
+    return Semantics(
+      button: true,
+      label: context.l10n.altinTumTurlerSemantik,
+      excludeSemantics: true,
+      child: SandikBasma(
+        onTap: _showGoldPicker,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(SandikSpace.md2,
+                  SandikSpace.sm2, SandikSpace.sm, SandikSpace.sm2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(
+                    color: hata ? context.c.loss : context.c.overlay),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(context.l10n.altinTumTurler,
+                      style: context.t.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.c.amberText)),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 18, color: context.c.amberText),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -372,7 +415,7 @@ extension _KimlikAlanlari on _AddAssetScreenState {
     );
   }
 
-  Widget _goldChip(GoldSubCategory g, bool selected) {
+  Widget _goldChip(GoldSubCategory g, bool selected, {bool hata = false}) {
     // Diğer çipler gibi (tür, döviz, miktar): ekran okuyucu 'düğme' ve
     // 'seçili' bilgisini Semantics olmadan alamaz (Faz 2.13).
     return Semantics(
@@ -399,7 +442,9 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                 : context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(
-              color: selected ? AssetType.altin.color : context.c.overlay,
+              color: selected
+                  ? AssetType.altin.color
+                  : (hata ? context.c.loss : context.c.overlay),
               width: selected ? 1.4 : 1,
             ),
             boxShadow: selected

@@ -16720,6 +16720,72 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yatırım tavsiyesi değildir.'**
   String get notInvestmentAdvice;
+
+  /// No description provided for @tekrarAlBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar al'**
+  String get tekrarAlBaslik;
+
+  /// No description provided for @tekrarAlSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} tekrar al, son alım {miktar}'**
+  String tekrarAlSemantik(String ad, String miktar);
+
+  /// No description provided for @baskaYoldanEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka yoldan ekle'**
+  String get baskaYoldanEkle;
+
+  /// No description provided for @yazarakEkleAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'\"10 gram altın 4500 lira\" yaz ya da söyle'**
+  String get yazarakEkleAlt;
+
+  /// No description provided for @ekstredenAktarAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aracı kurum ekstresi: PDF, Excel ya da CSV'**
+  String get ekstredenAktarAlt;
+
+  /// No description provided for @ekranGoruntusuAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurum uygulamandaki portföy ekranı'**
+  String get ekranGoruntusuAlt;
+
+  /// No description provided for @varlikEklendiBirDaha.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} eklendi'**
+  String varlikEklendiBirDaha(String ad);
+
+  /// No description provided for @birTaneDahaEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir tane daha ekle'**
+  String get birTaneDahaEkle;
+
+  /// No description provided for @altinTumTurler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümü'**
+  String get altinTumTurler;
+
+  /// No description provided for @altinTumTurlerSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm altın türleri'**
+  String get altinTumTurlerSemantik;
+
+  /// No description provided for @varlikEklendiGenel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eklendi'**
+  String get varlikEklendiGenel;
 }
 
 class _AppLocalizationsDelegate

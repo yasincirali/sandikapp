@@ -676,8 +676,12 @@ List<_Adim> _adimlariKur() {
       // 2026-10-08: çipler yerine arama + gruplu ızgara; metin aramayı ve
       // grubu anlatır (tur metni arayüzle birlikte değişir). Bayrak
       // `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı, çip metni kalktı.
+      // 2026-10-31: aramanın altına "Tekrar al" çipleri geldi (daha önce
+      // alınan en sık 3 varlık); metin onları da söyler.
       govde: 'Üstteki aramaya sembolü ya da adı yaz (THYAO, BTC…): '
-              'sonuca dokununca tür de varlık da seçilir. Aramadan seçmek '
+              'sonuca dokununca tür de varlık da seçilir. Daha önce '
+              'aldıkların aramanın altında "Tekrar al" olarak durur; tek '
+              'dokunuşla miktara geçersin. Aramadan seçmek '
               'istemezsen türler üç grupta durur; Kripto "Borsa ve fon" '
               'grubunda. Seçince ızgara tek satıra katlanır, "Değiştir" '
               'geri açar. Coin\'in fiyatı TL karşılığıyla kendiliğinden '
@@ -734,10 +738,14 @@ List<_Adim> _adimlariKur() {
       // Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
       // kalktı): aynı sayfa formun üstündeki "Yazarak ekle" düğmesiyle de
       // açılır; metin ikisini söyler.
-      govde: '"Yazarak ekle" (ya da mikrofon) '
+      // 2026-10-31: başlıktaki mikrofon kalktı, "Yazarak ekle" formun
+      // sonundaki "Başka yoldan ekle" kartına indi; metin oradan başlar ve
+      // sesli girişi klavyenin mikrofonuna bağlar.
+      govde: 'Sayfanın altındaki "Başka yoldan ekle" kartında "Yazarak ekle" '
           'Hızlı Giriş\'i açar: "10 gram altın 4500 lira" ya da '
-          '"GARAN 500 adet" yazman (veya söylemen) yeter. Her satır ayrı bir '
-          'varlık olur; fiyat yazmazsan güncel fiyat kendiliğinden çekilir.',
+          '"GARAN 500 adet" yazman yeter; klavyenin mikrofonuyla söyleyebilirsin '
+          'de. Her satır ayrı bir varlık olur; fiyat yazmazsan güncel fiyat '
+          'kendiliğinden çekilir.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),
@@ -754,7 +762,10 @@ List<_Adim> _adimlariKur() {
       // başlar.
       // 2026-10-19: düğmenin altına "Ekran görüntüsünden ekle" geldi
       // (ücretsiz, bayraksız); tur ikisini birlikte anlatır.
-      govde: '"Ekstreden aktar": aracı kurum ya da banka ekstreni (PDF, Excel '
+      // 2026-10-31: üç yol formun sonundaki "Başka yoldan ekle" kartında,
+      // alt alta; "altındaki" sözü karttaki sırayla hâlâ doğru.
+      govde: '"Başka yoldan ekle" kartındaki "Ekstreden aktar": aracı kurum '
+          'ya da banka ekstreni (PDF, Excel '
           'veya CSV) dosyadan seç ya da tabloyu yapıştır; sütunlar '
           'kendiliğinden tanınır, alışlar ve satışlar tarihleriyle gelir, '
           'tek onayda kaydedersin. Ekstren elinde yoksa altındaki "Ekran '
@@ -1060,7 +1071,8 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
       baslik: 'Hazırsın',
       // Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
       // kalktı): hedef formdaki "Ekstreden aktar" düğmesi.
-      govde: 'En hızlı yol: "Ekstreden aktar". '
+      // 2026-10-31: düğme formun sonundaki "Başka yoldan ekle" kartında.
+      govde: 'En hızlı yol: sayfanın altındaki "Ekstreden aktar". '
           'Kurumunun PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
           'tarihiyle deftere girer. Ekstren yoksa kurum uygulamandaki portföy '
           'ekranının görüntüsünü "Ekran görüntüsünden ekle" ile seç. Tek tek '

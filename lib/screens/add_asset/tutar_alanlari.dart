@@ -156,6 +156,25 @@ extension _TutarAlanlari on _AddAssetScreenState {
     );
   }
 
+  /// Boş fiyat alanının ipucu: kayıtta atanacak fiyatın KENDİSİ (müşteri
+  /// raporu 31 Eki 13:15 tasarım #8, yasin "yap"). "Otomatik" yazısı ne
+  /// atanacağını söylemiyordu; rakamı gören kullanıcı alana dokunmadan
+  /// güveniyor. Altın/dövizde satış fiyatı (maliyet ondan yazılır,
+  /// `maliyetSatisFiyati`). Fiyat kaynak basamağıyla (`fmtFiyat` + türün
+  /// azami hanesi), yuvarlama yok. Önizleme gelmediyse "Otomatik" kalır:
+  /// uydurma sayı yok. Düzenlemede de "Otomatik" kalır: orada boş alan
+  /// fiyat ATAMAZ (maliyeti bilinmeyen lot işaretli kalır,
+  /// `veri_kalitesi_akis_test`), rakam yanlış söz verirdi.
+  String _fiyatIpucu() {
+    if (_isEditing) return context.l10n.auto;
+    final p = _previewLoading ? null : (_s.previewSatis ?? _previewPrice);
+    if (p == null || p <= 0) return context.l10n.auto;
+    final azami = _type.fiyatAzamiOndalik;
+    return _currency == 'TRY'
+        ? fmtFiyat(p, azami: azami)
+        : '${fmtFiyat(p, azami: azami, symbol: '')} $_currency';
+  }
+
   // ── Fiyat bloğu (para birimi dropdown right-side) ──────────────────────────
   Widget _priceBlock(ColorScheme cs) {
     return Column(
@@ -189,7 +208,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         const SizedBox(height: 8),
         _brandInput(
           controller: _price,
-          hint: _s.isEurobond ? '98,75' : context.l10n.auto,
+          hint: _s.isEurobond ? '98,75' : _fiyatIpucu(),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [_DecimalFormatter()],
           validator: (v) {
@@ -344,23 +363,13 @@ extension _TutarAlanlari on _AddAssetScreenState {
     final isPriceEmpty = !eurobond &&
         (_price.text.trim().isEmpty || (price != null && price == 0));
 
-    // Miktar yoksa hiçbir şey gösterme
+    // Miktar yoksa hiçbir şey gösterme. 2026-10-31'e kadar burada "miktarı
+    // yaz, toplam burada görünsün" diyen BOŞ bir kart vardı (müşteri raporu
+    // 31 Eki 13:15 tasarım #7, yasin "yap"): yorumun kendisi "hiçbir şey
+    // gösterme" diyordu, kart ise formun ortasında içeriksiz bir kutu olarak
+    // ritmi bozuyordu. Toplam miktar yazılınca belirir.
     if (qty == null || qty <= 0 || (eurobond && price == null)) {
-      return SandikCard(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.calculate_outlined, color: context.c.text36, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                context.l10n.costPreviewHint,
-                style: context.t.titleSmall?.copyWith(color: context.c.text58),
-              ),
-            ),
-          ],
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     if (isPriceEmpty) {

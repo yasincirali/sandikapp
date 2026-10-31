@@ -193,7 +193,7 @@ void main() {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 
     for (final b in Brightness.values) {
-      testWidgets('${b.name}: seçici inputFill, kutu içi arama filled=false',
+      testWidgets('${b.name}: alt sayfada kutu içi arama filled=false',
           (tester) async {
         final p =
             b == Brightness.light ? SandikPalette.light : SandikPalette.dark;
@@ -213,17 +213,10 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
-        final tetik = find.text('Altın türü seçmek için dokun...');
-        final ctx = tester.element(tetik);
-        // Seçici kutusu: alan gibi görünür → alanlarla aynı dolgu/kenar.
-        final kutu = tester.widget<Container>(find
-            .ancestor(of: tetik, matching: find.byType(Container))
-            .first);
-        final bd = kutu.decoration! as BoxDecoration;
-        expect(bd.color, ctx.inputFill);
-        expect((bd.border! as Border).top.color, p.hairline);
-
-        await tester.tap(tetik);
+        // 2026-10-31: alan gibi görünen altın seçicisi kalktı (müşteri
+        // raporu 31 Eki 13:15); alt sayfa çip satırındaki "Tümü"den açılır.
+        // Alt sayfanın kutu içi araması kuralı aynen geçerli.
+        await tester.tap(find.text('Tümü'));
         await tester.pumpAndSettle();
         expect(find.text('Altın Türleri'), findsOneWidget);
 
@@ -233,23 +226,6 @@ void main() {
         final d = tester.widget<InputDecorator>(arama.last).decoration;
         expect(d.filled, isFalse);
 
-        // Seçim yapılınca kutu varlık rengiyle parlar. Dolgu dark'ta
-        // şeffaf olduğundan normal gölge kutunun İÇİNİ boyardı; yalnız
-        // dışarıda (`BlurStyle.outer`) kalmalı.
-        await tester.enterText(arama.last, 'gremse');
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Gremse Altın'));
-        await tester.pumpAndSettle();
-        final secili = find
-            .ancestor(
-                of: find.text('Gremse Altın'), matching: find.byType(Container))
-            .evaluate()
-            .map((e) => (e.widget as Container).decoration)
-            .whereType<BoxDecoration>()
-            .firstWhere((d) => d.boxShadow != null);
-        expect(secili.color, ctx.inputFill);
-        expect(secili.boxShadow!.map((s) => s.blurStyle),
-            everyElement(BlurStyle.outer));
       });
     }
   });

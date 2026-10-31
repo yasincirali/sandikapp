@@ -272,8 +272,10 @@ void main() {
           const AddAssetScreen(
               hizliHesap: HizliHesap(miktar: 5, altin: GoldSubCategory.yarim)));
       await tester.pump();
-      expect(find.bySemanticsLabel(RegExp(r'Seçili altın türü: Yarım Altın')),
-          findsOneWidget);
+      // 2026-10-31: seçim alanı kalktı; seçili tür çip satırında.
+      expect(
+          tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Yarım Altın altın'))),
+          isSemantics(isSelected: true));
       expect(_alanVar(tester, '5'), isTrue);
       // İleri kalıp Adet kipinde kalır ("Tutar" alanı yalnız Tutar kipinde).
       expect(find.text('Tutar'), findsNothing);
@@ -304,8 +306,10 @@ void main() {
                   altin: GoldSubCategory.ceyrek,
                   ters: true)));
       await tester.pump();
-      expect(find.bySemanticsLabel(RegExp(r'Seçili altın türü: Çeyrek Altın')),
-          findsOneWidget);
+      // 2026-10-31: seçim alanı kalktı; seçili tür çip satırında.
+      expect(
+          tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Çeyrek Altın altın'))),
+          isSemantics(isSelected: true));
       // TL tutarı adet alanına "10000 çeyrek" diye yazılmaz.
       expect(_alanVar(tester, '10000'), isTrue);
       expect(find.text('Tutar'), findsWidgets);
