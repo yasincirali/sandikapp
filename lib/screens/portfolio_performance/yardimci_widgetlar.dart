@@ -68,6 +68,15 @@ class _VolumeBar {
 ///
 /// Not yalnızca gün içi fiyatı OLMASI GEREKEN türler için çıkar; fon
 /// (TEFAS gün içi NAV yayınlamaz), vadeli mevduat ve "diğer" için asla.
+///
+/// ## Neden tek satır (müşteri raporu 31 Eki 17:15, yasin "yap")
+/// Eskiden çerçeveli bir kutuda üç cümleydi ("…SABİT çizildi… durgun
+/// olduğu anlamına gelmez"). Manşet aynı durumu zaten "Bugünün verisi
+/// henüz gelmedi" diye söylüyor (#266); büyük harfli ikinci uyarı ekranı
+/// bozuk gibi gösteriyordu, özellikle sabah seans öncesi. Şimdi grafiğin
+/// altında, son güncelleme satırıyla aynı ağırlıkta tek satır: hangi tür,
+/// ne gösteriliyor. Apple Borsa da veri yokken son değeri ve küçük bir
+/// not gösterir, kutu açmaz.
 class _GunIciVeriYokNotu extends StatelessWidget {
   const _GunIciVeriYokNotu({required this.turler});
 
@@ -79,18 +88,20 @@ class _GunIciVeriYokNotu extends StatelessWidget {
     // aynı ekran her build'de farklı okunurdu.
     final adlar =
         (turler.map((t) => t.labelOf(context.l10n)).toList()..sort()).join(', ');
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: SandikSpace.md, vertical: 12),
-      decoration: context.surfaceCard(radius: SandikRadius.lg),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, size: 15, color: context.c.text58),
-          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: SandikSpace.xxs),
+            child: Icon(Icons.schedule_rounded,
+                size: 13, color: context.c.text58),
+          ),
+          const SizedBox(width: SandikSpace.xs2),
           Expanded(
             child: Text(
-              context.l10n.intradayMissingBody(adlar),
+              context.l10n.intradayMissingShort(adlar),
               style: context.t.bodySmall?.copyWith(color: context.c.text58),
             ),
           ),

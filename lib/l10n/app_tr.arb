@@ -6512,5 +6512,8 @@
   "birTaneDahaEkle": "Bir tane daha ekle",
   "altinTumTurler": "Tümü",
   "altinTumTurlerSemantik": "Tüm altın türleri",
-  "varlikEklendiGenel": "Eklendi"
+  "varlikEklendiGenel": "Eklendi",
+  "veriBekleniyor": "Veri bekleniyor",
+  "intradayMissingShort": "{names}: son bilinen fiyatla gösteriliyor",
+  "@intradayMissingShort": {"placeholders": {"names": {"type": "String"}}}
 }
