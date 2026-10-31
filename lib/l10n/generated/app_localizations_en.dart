@@ -10267,4 +10267,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get varlikEklendiGenel => 'Added';
+
+  @override
+  String get veriBekleniyor => 'Waiting for data';
+
+  @override
+  String intradayMissingShort(String names) {
+    return '$names: shown at last known price';
+  }
 }

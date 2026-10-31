@@ -397,11 +397,16 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final canExpand = kids.isNotEmpty;
     final isOpen = _expanded.contains(type);
 
+    // Gün içi verisi gelmeyen türün satırı düz çizilir; "değişim yok"
+    // demek yanlış olurdu (piyasa oynamış olabilir), "veri bekleniyor" der.
+    final bekliyor =
+        widget.intraday && widget.breakdown.gunIciVerisiYokTurler.contains(type);
     final header = _row(
       context,
       tryFmt,
       label: row.label,
       dotColor: type.color,
+      bekliyor: bekliyor,
       value: row.last,
       cost: row.first,
       flow: row.flow,
@@ -486,6 +491,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
                     cost: k.first,
                     flow: k.flow,
                     dense: true,
+                    bekliyor: bekliyor,
                   ),
                   if (k != kids.last) const SizedBox(height: 8),
                 ],
@@ -507,6 +513,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     required double flow,
     Widget? trailing,
     bool dense = false,
+    bool bekliyor = false,
   }) {
     // Gün içinde arındırılmış rakam — bkz. [_pnl]. Taban da üst kartla
     // aynı: baş + pozitif akış.
@@ -539,7 +546,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final semanticLabel = [
       label,
       if (isFlat)
-        context.l10n.noChangeLower
+        bekliyor ? context.l10n.veriBekleniyor : context.l10n.noChangeLower
       else ...[
         pnl >= 0
             ? context.l10n.gainAmount(tutar)
@@ -567,6 +574,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
           pnl: pnl,
           pct: pct,
           isFlat: isFlat,
+          bekliyor: bekliyor,
           color: color,
         ),
       ),
@@ -593,6 +601,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     required double pnl,
     required double? pct,
     required bool isFlat,
+    required bool bekliyor,
     required Color color,
   }) {
     return Row(
@@ -651,16 +660,27 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  isFlat
-                      ? '—'
-                      : '${pnl >= 0 ? '+' : '−'}${tryFmt.format(pnl.abs())}',
-                  maxLines: 1,
-                  style: context.t.numSmall.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                      fontSize: dense ? 12 : null),
-                ),
+                // Değişim yokken "—" yazıyordu (müşteri raporu 31 Eki 17:15,
+                // yasin "yap"): tire "hesaplanamadı" diye okunuyordu. Sözle
+                // söylenir; gün içi verisi gelmeyen türde "veri bekleniyor".
+                if (isFlat)
+                  Text(
+                    bekliyor
+                        ? context.l10n.veriBekleniyor
+                        : context.l10n.noChange,
+                    maxLines: 1,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text36),
+                  )
+                else
+                  Text(
+                    '${pnl >= 0 ? '+' : '−'}${tryFmt.format(pnl.abs())}',
+                    maxLines: 1,
+                    style: context.t.numSmall.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: dense ? 12 : null),
+                  ),
                 if (pct != null && !isFlat)
                   Text(
                     // Tutar üstte işaretli; yüzde de aynı yönü taşır

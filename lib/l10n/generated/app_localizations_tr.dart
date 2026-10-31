@@ -10144,4 +10144,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get varlikEklendiGenel => 'Eklendi';
+
+  @override
+  String get veriBekleniyor => 'Veri bekleniyor';
+
+  @override
+  String intradayMissingShort(String names) {
+    return '$names: son bilinen fiyatla gösteriliyor';
+  }
 }

@@ -5824,5 +5824,7 @@
   "birTaneDahaEkle": "Add another",
   "altinTumTurler": "All",
   "altinTumTurlerSemantik": "All gold types",
-  "varlikEklendiGenel": "Added"
+  "varlikEklendiGenel": "Added",
+  "veriBekleniyor": "Waiting for data",
+  "intradayMissingShort": "{names}: shown at last known price"
 }

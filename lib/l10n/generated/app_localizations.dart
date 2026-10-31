@@ -16786,6 +16786,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Eklendi'**
   String get varlikEklendiGenel;
+
+  /// No description provided for @veriBekleniyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Veri bekleniyor'**
+  String get veriBekleniyor;
+
+  /// No description provided for @intradayMissingShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'{names}: son bilinen fiyatla gösteriliyor'**
+  String intradayMissingShort(String names);
 }
 
 class _AppLocalizationsDelegate

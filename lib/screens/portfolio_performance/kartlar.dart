@@ -851,10 +851,20 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // (`SandikPaylasDugmesi`). Başlık satırının içinde 44 pt'lik düğme
     // satırı şişiriyordu; köşeye bindirilince kart yüksekliği aynı kalır.
     // Görsel ve metin yine Özet'ten (tutar yok, yüzde + etiket).
+    //
+    // Tek akışta çerçevesiz (müşteri raporu 31 Eki 17:15 tasarım #2, yasin
+    // "yap"): manşet ile grafik iki ayrı kart olarak üst üste duruyordu ve
+    // cevap (rakam) grafik kartıyla aynı görsel ağırlıktaydı. Rakam artık
+    // sayfa zemininde, ekranın en büyük öğesi (`numLarge`); çerçeveli tek
+    // yüzey grafik. Eski düzen (bayrak kapalı) birebir aynı kalır.
     Widget kart(VoidCallback? paylas) => Container(
-          padding: const EdgeInsets.fromLTRB(
-              SandikSpace.md, SandikSpace.md2, SandikSpace.md, SandikSpace.md2),
-          decoration: context.surfaceCard(radius: SandikRadius.lg),
+          padding: tekAkis
+              ? const EdgeInsets.fromLTRB(
+                  SandikSpace.xs, SandikSpace.xs, SandikSpace.xs, SandikSpace.xs)
+              : const EdgeInsets.fromLTRB(SandikSpace.md, SandikSpace.md2,
+                  SandikSpace.md, SandikSpace.md2),
+          decoration:
+              tekAkis ? null : context.surfaceCard(radius: SandikRadius.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -945,7 +955,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         style: piyasaFlat && veriGelmedi
                             ? context.t.titleMedium
                                 ?.copyWith(color: context.c.text58)
-                            : context.t.numMedium.copyWith(color: piyasaColor),
+                            : (tekAkis
+                                    ? context.t.numLarge
+                                    : context.t.numMedium)
+                                .copyWith(color: piyasaColor),
                       ),
                     ),
                   ),
