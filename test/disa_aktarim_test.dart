@@ -6,6 +6,10 @@ import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/config/magaza.dart';
+import 'package:portfoy_takip/services/disa_aktarim/aylik_rapor_belgesi.dart';
+import 'package:portfoy_takip/services/disa_aktarim/pdf_marka.dart';
 import 'package:portfoy_takip/services/disa_aktarim/pdf_yazici.dart';
 import 'package:portfoy_takip/services/disa_aktarim/rapor_belgeleri.dart';
 import 'package:portfoy_takip/services/disa_aktarim/rapor_belgesi.dart';
@@ -139,12 +143,20 @@ void main() {
   // güzel gelecek şekilde"): öne çıkanlar ve grafikler belgeyle aynı
   // sayılardan; iç anahtar (ALTIN_GRAM) cümlede ad olarak okunur.
   group('öne çıkanlar ve grafikler', () {
-    Asset lot(String id, String ad, String ticker, AssetType tur,
-            double alis, double guncel) =>
+    Asset lot(String id, String ad, String ticker, AssetType tur, double alis,
+            double guncel) =>
         Asset(
-          id: id, userId: 'u1', name: ad, ticker: ticker, type: tur,
-          quantity: 10, purchasePrice: alis, currentPrice: guncel,
-          currency: 'TRY', notes: '', isManualPrice: false,
+          id: id,
+          userId: 'u1',
+          name: ad,
+          ticker: ticker,
+          type: tur,
+          quantity: 10,
+          purchasePrice: alis,
+          currentPrice: guncel,
+          currency: 'TRY',
+          notes: '',
+          isManualPrice: false,
           addedDate: DateTime(2025, 1, 2),
         );
 
@@ -159,15 +171,17 @@ void main() {
         olusturma: DateTime(2026, 10, 30),
       );
       expect(b.belgeTuru, 'Portföy dökümü');
-      expect(b.oneCikanlar.join(' | '), allOf(
-        contains('En büyük pay Altın: %76,9'),
-        contains('En çok kazandıran Gram Altın (+%200,0), en zayıf THYAO '
-            '(\u2212%10,0)'),
-        contains('+₺1.900'),
-      ));
+      expect(
+          b.oneCikanlar.join(' | '),
+          allOf(
+            contains('En büyük pay Altın: %76,9'),
+            contains('En çok kazandıran Gram Altın (+%200,0), en zayıf THYAO '
+                '(\u2212%10,0)'),
+            contains('+₺1.900'),
+          ));
       expect(b.oneCikanlar.join(), isNot(contains('ALTIN_GRAM')));
-      final dagilim = b.grafikler
-          .firstWhere((g) => g.tur == RaporGrafikTuru.dagilim);
+      final dagilim =
+          b.grafikler.firstWhere((g) => g.tur == RaporGrafikTuru.dagilim);
       expect(dagilim.kalemler.fold(0.0, (t, k) => t + k.$2), 3900);
       final kar = b.grafikler.firstWhere((g) => g.tur == RaporGrafikTuru.cubuk);
       expect(kar.kalemler, [('Gram Altın', 2000.0), ('THYAO', -100.0)]);
@@ -204,5 +218,91 @@ void main() {
         expect(k, contains(parca), reason: '$yol $parca kullanmalı');
       }
     }
+  });
+
+  // Aylık rapor PDF'i (2026-10-31, müşteri raporu 31 Eki #1).
+  group('aylık rapor belgesi', () {
+    setUpAll(() => initializeDateFormatting('tr_TR'));
+
+    RaporBelgesi aylik({double? getiri = 2.5, double? tufe}) =>
+        aylikRaporBelgesi(
+          donem: DateTime(2026, 10),
+          notlar: const [
+            AylikRaporNotu(
+                kod: 'THYAO',
+                baslik: 'Ay boyunca alıcılar baskındı.',
+                rozet: 'Alıcı istekli',
+                maddeler: ['Hacim ortalamanın iki katı.', 'Fiyat %8 arttı.']),
+            AylikRaporNotu(kod: 'TTE', baslik: 'Sakin bir ay geçti.'),
+          ],
+          ozetCumlesi: 'Notu çıkan 2 varlığından 1 tanesinde belirgin hareket.',
+          eksikCumlesi: 'AFT için bu ay not çıkmadı.',
+          kim: 'yasin',
+          olusturma: DateTime(2026, 11, 1, 9),
+          getiriPct: getiri,
+          tufePct: tufe,
+        );
+
+    test('TÜFE açıklanmadıysa kutu açıklanacağı günü yazar; reel yok', () {
+      final b = aylik();
+      final ozet = {for (final (k, v) in b.ozet) k: v};
+      expect(ozet["Ayın TÜFE'si"], "3 Kasım'da açıklanır");
+      expect(ozet['Ayın getirisi'], '+%2,50');
+      expect(ozet.containsKey('Reel getiri'), isFalse);
+    });
+
+    test('TÜFE varsa reel getiri (1+n)/(1+e)−1', () {
+      final ozet = {for (final (k, v) in aylik(tufe: 2.0).ozet) k: v};
+      expect(ozet["Ayın TÜFE'si"], '%2,00');
+      expect(ozet['Reel getiri'], '+%0,49');
+    });
+
+    test('getiri hesaplanamadıysa getiri ve reel kutusu çıkmaz', () {
+      final ozet = {for (final (k, _) in aylik(getiri: null, tufe: 2).ozet) k};
+      expect(ozet, isNot(contains('Ayın getirisi')));
+      expect(ozet, isNot(contains('Reel getiri')));
+    });
+
+    test('notlar bölüm, sıra korunur; eksikler ve hareket öne çıkanlarda', () {
+      final b = aylik();
+      expect([for (final m in b.bolumler) m.baslik], ['THYAO', 'TTE']);
+      expect(b.bolumler.first.maddeler, hasLength(2));
+      expect(
+          b.oneCikanlar, contains('Belirgin hareket: THYAO (alıcı istekli).'));
+      expect(b.oneCikanlar, contains('AFT için bu ay not çıkmadı.'));
+      expect(b.kampanya, 'aylik_rapor');
+      expect(b.dosyaAdi, 'sandik-2026-10-aylik-rapor');
+    });
+
+    test('pdf ve xlsx yazılır; Excel\'de Notlar sayfası', () async {
+      ByteData oku(String yol) =>
+          ByteData.sublistView(File(yol).readAsBytesSync());
+      final pdf = await pdfYaz(aylik(tufe: 2),
+          duz: oku('assets/fonts/DMSans-Regular.ttf'),
+          kalin: oku('assets/fonts/DMSans-Bold.ttf'),
+          logo: File('assets/images/sandik_icon.png').readAsBytesSync());
+      expect(ascii.decode(pdf.sublist(0, 5)), '%PDF-');
+      final d = _ac(xlsxYaz(aylik()));
+      expect(d['xl/workbook.xml'], contains('name="Notlar"'));
+    });
+  });
+
+  // Dipnot bağlantısı (2026-10-31, müşteri raporu 31 Eki #2): üç PDF de
+  // sessiz "sandık ile hazırlandı" bağlantısını taşır, tek kaynak `Magaza`.
+  test('PDF dipnotunda sandık ile hazırlandı bağlantısı, kanal etiketli', () {
+    expect(hazirlandiMetni, 'sandık ile hazırlandı');
+    for (final yol in [
+      'lib/services/disa_aktarim/pdf_yazici.dart',
+      'lib/services/disa_aktarim/yorum_notu_pdf.dart',
+    ]) {
+      final k = File(yol).readAsStringSync();
+      expect(k, contains('baglanti: Magaza.indirBaglantisi('),
+          reason: '$yol dipnot bağlantısı');
+      expect(k, contains("kaynak: 'pdf_rapor'"), reason: yol);
+    }
+    final url =
+        Magaza.indirBaglantisi(kaynak: 'pdf_rapor', kampanya: 'aylik_rapor');
+    expect(url, contains('utm_source=pdf_rapor'));
+    expect(url, contains('utm_campaign=aylik_rapor'));
   });
 }

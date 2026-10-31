@@ -27,6 +27,7 @@ RaporBelgesi yillikRaporBelgesi(
       _topla([for (final t in r.temettuler) (_kisaAd(t.ticker, t.ad), t.netTry)]);
   return RaporBelgesi(
     belgeTuru: 'Yıllık rapor',
+    kampanya: 'yillik_rapor',
     oneCikanlar: _yillikOneCikanlar(r, karVarlik, temettuVarlik),
     grafikler: [
       if (karVarlik.isNotEmpty)
@@ -192,6 +193,7 @@ RaporBelgesi portfoyBelgesi({
   ]);
   return RaporBelgesi(
     belgeTuru: 'Portföy dökümü',
+    kampanya: 'portfoy_dokumu',
     oneCikanlar: _portfoyOneCikanlar(
         pozisyonlar, deger, turDegeri, toplamDeger, toplamMaliyet),
     grafikler: [

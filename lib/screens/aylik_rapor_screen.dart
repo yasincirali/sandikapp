@@ -4,6 +4,14 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/l10n.dart';
+import '../models/asset.dart';
+import '../providers/auth_provider.dart';
+import '../providers/portfolio_provider.dart';
+import '../services/aylik_rapor_disa_aktarim.dart';
+import '../services/crash_reporter.dart';
+import '../services/disa_aktarim/disa_aktarim_service.dart';
+import '../utils/friendly_error.dart';
+import '../widgets/sandik_paylas_dugmesi.dart';
 import '../providers/analiz_provider.dart';
 import '../providers/hafta_ozeti_provider.dart';
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
@@ -72,88 +80,142 @@ class AylikRaporScreen extends ConsumerWidget {
         tamEkran: true,
         anahtar: SandikIcerikGecisi.hal([notlar]),
         child: notlar.when(
-        loading: () => const Padding(
-          padding: EdgeInsets.all(SandikSpace.md),
-          child: SandikSkeletonList(rows: 3),
-        ),
-        // Hata BOŞ değildir (TASARIM_DILI §6.1): neden ve yeniden dene.
-        error: (e, _) => SandikErrorView(
-          error: e,
-          onRetry: () => ref
-              .invalidate(notOzetleriProvider(notKumesi(anahtarlar, 'aylik'))),
-        ),
-        data: (m) {
-          final buAy = [
-            for (final n in m.values)
-              if (n.donem == donem) n
-          ]..sort((a, b) {
-              final ra =
-                  (haftaRozetiSunucudan(a.rozet) ?? HaftaRozeti.sakin).index;
-              final rb =
-                  (haftaRozetiSunucudan(b.rozet) ?? HaftaRozeti.sakin).index;
-              return ra != rb ? ra - rb : a.ticker.compareTo(b.ticker);
-            });
-          if (buAy.isEmpty) return _Bos(metin: l10n.anzAylikBos);
-          final hareketli = buAy.where((n) => n.rozet != 'sakin').length;
-          // Tutup notu çıkmayan varlıklar (ay boyu veri yetmedi ya da not
-          // sayı kapısından geçmedi). Sessizce düşerse titiz okur "5
-          // varlığım var, rapor 3 diyor" diye takılır; adlarıyla söylenir.
-          final notlu = {for (final n in buAy) n.ticker};
-          final eksik = [
-            for (final k in anahtarlar)
-              if (!notlu.contains(k)) notKodu(k)
-          ]..sort();
-          final yatay = SandikSpace.screenH(context);
-          Widget liste({VoidCallback? onHikaye}) => ListView(
-                padding: EdgeInsets.fromLTRB(
-                    yatay, SandikSpace.md, yatay, SandikSpace.xl),
-                children: [
-                  if (onHikaye != null)
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: TextButton.icon(
-                        style: TextButton.styleFrom(
-                            minimumSize: SandikTouch.minSize,
-                            padding: EdgeInsets.zero),
-                        onPressed: onHikaye,
-                        icon: const Icon(Icons.auto_stories_rounded),
-                        label: Text(l10n.hkyAylikTekrar),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(SandikSpace.md),
+            child: SandikSkeletonList(rows: 3),
+          ),
+          // Hata BOŞ değildir (TASARIM_DILI §6.1): neden ve yeniden dene.
+          error: (e, _) => SandikErrorView(
+            error: e,
+            onRetry: () => ref.invalidate(
+                notOzetleriProvider(notKumesi(anahtarlar, 'aylik'))),
+          ),
+          data: (m) {
+            final buAy = [
+              for (final n in m.values)
+                if (n.donem == donem) n
+            ]..sort((a, b) {
+                final ra =
+                    (haftaRozetiSunucudan(a.rozet) ?? HaftaRozeti.sakin).index;
+                final rb =
+                    (haftaRozetiSunucudan(b.rozet) ?? HaftaRozeti.sakin).index;
+                return ra != rb ? ra - rb : a.ticker.compareTo(b.ticker);
+              });
+            if (buAy.isEmpty) return _Bos(metin: l10n.anzAylikBos);
+            final hareketli = buAy.where((n) => n.rozet != 'sakin').length;
+            // Tutup notu çıkmayan varlıklar (ay boyu veri yetmedi ya da not
+            // sayı kapısından geçmedi). Sessizce düşerse titiz okur "5
+            // varlığım var, rapor 3 diyor" diye takılır; adlarıyla söylenir.
+            final notlu = {for (final n in buAy) n.ticker};
+            final eksik = [
+              for (final k in anahtarlar)
+                if (!notlu.contains(k)) notKodu(k)
+            ]..sort();
+            final yatay = SandikSpace.screenH(context);
+            Widget liste({VoidCallback? onHikaye}) => ListView(
+                  padding: EdgeInsets.fromLTRB(
+                      yatay, SandikSpace.md, yatay, SandikSpace.xl),
+                  children: [
+                    if (onHikaye != null)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                              minimumSize: SandikTouch.minSize,
+                              padding: EdgeInsets.zero),
+                          onPressed: onHikaye,
+                          icon: const Icon(Icons.auto_stories_rounded),
+                          label: Text(l10n.hkyAylikTekrar),
+                        ),
                       ),
+                    // PDF (2026-10-31, müşteri raporu 31 Eki #1, yasin "yap"):
+                    // özet cümlesinin sağ üstünde, uygulamanın tek paylaş
+                    // simgesi (`SandikPaylasDugmesi`). Hikâyedeki "PAYLAŞIM
+                    // KARTI YOK" kararı (aşağıda) sosyal görsel içindir; PDF
+                    // kişinin kendi seçtiği alıcıya (müşavir, aile) giden özel
+                    // belge, portföy dökümüyle aynı sınıf.
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            hareketli > 0
+                                ? l10n.anzAylikOzetVar(
+                                    '${buAy.length}', '$hareketli')
+                                : l10n.anzAylikOzetYok,
+                            style: t.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700, color: c.text90),
+                          ),
+                        ),
+                        const SizedBox(width: SandikSpace.xs),
+                        SandikPaylasDugmesi.istekli(
+                          tooltip: l10n.anzAylikPdfPaylas,
+                          onPaylas: (kaynak) => _pdfPaylas(context, ref,
+                              notlar: buAy, eksik: eksik, kaynak: kaynak),
+                        ),
+                      ],
                     ),
-                  Text(
-                    hareketli > 0
-                        ? l10n.anzAylikOzetVar('${buAy.length}', '$hareketli')
-                        : l10n.anzAylikOzetYok,
-                    style: t.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700, color: c.text90),
-                  ),
-                  const SizedBox(height: SandikSpace.md),
-                  for (final n in buAy) ...[
-                    _VarlikKarti(not: n),
-                    const SizedBox(height: SandikSpace.smd),
+                    const SizedBox(height: SandikSpace.md),
+                    for (final n in buAy) ...[
+                      _VarlikKarti(not: n),
+                      const SizedBox(height: SandikSpace.smd),
+                    ],
+                    if (eksik.isNotEmpty) ...[
+                      Text(l10n.anzAylikEksik(eksik.join(', ')),
+                          style: t.bodySmall?.copyWith(color: c.text58)),
+                      const SizedBox(height: SandikSpace.sm),
+                    ],
+                    Text(l10n.rdrHaftaKaynak,
+                        style: t.bodySmall?.copyWith(color: c.text36)),
                   ],
-                  if (eksik.isNotEmpty) ...[
-                    Text(l10n.anzAylikEksik(eksik.join(', ')),
-                        style: t.bodySmall?.copyWith(color: c.text58)),
-                    const SizedBox(height: SandikSpace.sm),
-                  ],
-                  Text(l10n.rdrHaftaKaynak,
-                      style: t.bodySmall?.copyWith(color: c.text36)),
-                ],
-              );
-          // Bayrak `goz_alici`: ayın ilk açılışında hikâye; kapalıyken
-          // birebir eski liste.
-          if (!RemoteConfigService.instance.gozAlici) return liste();
-          return AylikHikayeKapisi(
-            donem: donem,
-            notlar: buAy,
-            hareketli: hareketli,
-            liste: liste,
-          );
-        },
-      ),
+                );
+            // Bayrak `goz_alici`: ayın ilk açılışında hikâye; kapalıyken
+            // birebir eski liste.
+            if (!RemoteConfigService.instance.gozAlici) return liste();
+            return AylikHikayeKapisi(
+              donem: donem,
+              notlar: buAy,
+              hareketli: hareketli,
+              liste: liste,
+            );
+          },
+        ),
       ),
     );
+  }
+
+  /// Aylık raporun PDF'i: notların tamamı, ayın getirisi ve TÜFE'si
+  /// (`AylikRaporDisaAktarim`). Ekran Premium kilidinin ardında; buraya
+  /// kilitli kullanıcı gelmez.
+  Future<void> _pdfPaylas(
+    BuildContext context,
+    WidgetRef ref, {
+    required List<AnalizOzeti> notlar,
+    required List<String> eksik,
+    Rect? kaynak,
+  }) async {
+    final kullanici = ref.read(authProvider).valueOrNull;
+    final durum = ref.read(portfolioProvider).valueOrNull;
+    final lotlar = durum == null
+        ? const <Asset>[]
+        : [
+            for (final a in durum.assets)
+              if (a.userId == durum.ownerId && a.isActive) a
+          ];
+    try {
+      final belge = await AylikRaporDisaAktarim.belgeHazirla(
+        donem: donem,
+        notlar: notlar,
+        eksik: eksik,
+        lotlar: lotlar,
+        kim: kullanici?.username ?? kullanici?.email ?? '',
+      );
+      await DisaAktarimService.instance.paylas(belge,
+          bicim: DisaAktarimBicimi.pdf, tur: 'aylik_rapor', kaynak: kaynak);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AylikRapor.pdf');
+      if (context.mounted) showAppError(context, e);
+    }
   }
 }
 

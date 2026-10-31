@@ -12155,6 +12155,12 @@ abstract class AppLocalizations {
   /// **'{kodlar} için bu ay not çıkmadı; sayıları kendi sayfalarında.'**
   String anzAylikEksik(String kodlar);
 
+  /// No description provided for @anzAylikPdfPaylas.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporu PDF olarak paylaş'**
+  String get anzAylikPdfPaylas;
+
   /// No description provided for @anzAylikOzetYok.
   ///
   /// In tr, this message translates to:

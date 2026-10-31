@@ -42,5 +42,15 @@ void main() {
         AppLocalizations.of(tester.element(find.byType(AylikRaporScreen)))!;
     expect(find.text(l10n.anzAylikOzetVar('3', '1')), findsOneWidget);
     expect(find.text(l10n.anzAylikEksik('AFT, AH5')), findsOneWidget);
+    // PDF (2026-10-31): özet cümlesinin sağında tek paylaş simgesi, 44 pt,
+    // etiketli; cümleyle aynı satırın üstünde.
+    final pdf = find.byTooltip(l10n.anzAylikPdfPaylas);
+    expect(pdf, findsOneWidget);
+    expect(tester.getSize(pdf).width, greaterThanOrEqualTo(44));
+    expect(tester.getSize(pdf).height, greaterThanOrEqualTo(44));
+    expect(
+        tester.getTopLeft(pdf).dy,
+        lessThanOrEqualTo(
+            tester.getTopLeft(find.text(l10n.anzAylikOzetVar('3', '1'))).dy));
   });
 }

@@ -7344,6 +7344,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get anzAylikPdfPaylas => 'Raporu PDF olarak paylaş';
+
+  @override
   String get anzAylikOzetYok =>
       'Bu ay varlıklarında belirgin bir hareket olmadı.';
 

@@ -18,6 +18,7 @@ import '../screens/yillik_rapor_screen.dart';
 import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import 'portfoy_dokumu.dart';
 
 /// Performans başlığındaki "Raporlar" kapısı (bayrak `raporlar_kapisi`,
 /// sadeleştirme 2 S6).
@@ -35,7 +36,8 @@ import '../theme/sandik.dart';
 /// Bir satır yalnızca o rapor BUGÜN başka bir yerden açılabiliyorsa görünür
 /// (koşullar `raporlar_provider.dart` ve [yilOzetiProvider] notlarında);
 /// kapı yeni bir erişim icat etmez. İstisna Yıllık rapor, Temettü
-/// tahmini ve Portföy X-Ray (Premium, 2026-10-10): yalnız bu kapıdan
+/// tahmini, Portföy X-Ray (Premium, 2026-10-10) ve Portföy dökümü
+/// (2026-10-31, Ayarlar'dan taşındı): yalnız bu kapıdan
 /// açılır ve Premium özellikleri görünürken hep vardır. Hiç satır yoksa düğme de yok. Demoda
 /// düğme hiç çizilmez: kupa da demoda yoktu (yarış sunucu havuzudur) ve
 /// öteki üç rapor da sunucu notlarından/anlık görüntülerden okunur.
@@ -166,6 +168,15 @@ class _RaporlarSayfasi extends ConsumerWidget {
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
               adaptiveRoute<void>(settings: const RouteSettings(name: 'portfoy_xray'), builder: (_) => const PortfoyXrayScreen()))),
+        ),
+        // Portföy dökümü (2026-10-31): Ayarlar › Veri'den buraya. Ekran
+        // değil eylem: biçim sorulur, belge paylaşılır; kilitliyse paywall.
+        _RaporSatiri(
+          ikon: Icons.description_rounded,
+          baslik: l.dsPortfoyBaslik,
+          alt: l.dsPortfoyAlt,
+          kilitli: kilitli,
+          onTap: () => ac((ekran) => portfoyDokumunuPaylas(ekran)),
         ),
       ],
       if (aylik != null)

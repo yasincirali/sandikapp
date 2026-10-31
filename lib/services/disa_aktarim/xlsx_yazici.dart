@@ -20,6 +20,10 @@ Uint8List xlsxYaz(RaporBelgesi b) {
   final sayfalar = <(String, String)>[
     ('Özet', _ozetSayfasi(b)),
     for (final t in b.tablolar) (t.baslik, _tabloSayfasi(t)),
+    // Metin bölümleri tek sayfada, madde başına bir satır: aynı içerik iki
+    // biçimde de dursun (aylık rapor, 2026-10-31).
+    if (b.bolumler.isNotEmpty)
+      ('Notlar', _tabloSayfasi(_notTablosu(b.bolumler))),
   ];
   final adlar = _benzersizAdlar([for (final s in sayfalar) s.$1]);
 
@@ -36,6 +40,17 @@ Uint8List xlsxYaz(RaporBelgesi b) {
   }
   return ZipEncoder().encodeBytes(a);
 }
+
+RaporTablosu _notTablosu(List<RaporMetinBolumu> bolumler) => RaporTablosu(
+      baslik: 'Notlar',
+      sutunlar: const ['Varlık', 'Durum', 'Not'],
+      satirlar: [
+        for (final b in bolumler) ...[
+          [b.baslik, b.etiket, b.oz],
+          for (final m in b.maddeler) [b.baslik, null, m],
+        ],
+      ],
+    );
 
 // ── Stiller: 0 düz, 1 sayı #,##0.00, 2 tarih, 3 kalın ────────────────────
 const _sDuz = 0, _sSayi = 1, _sTarih = 2, _sKalin = 3;

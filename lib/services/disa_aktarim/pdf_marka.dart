@@ -198,7 +198,16 @@ pw.Widget sayfaBasi(pw.Context ctx,
 }
 
 /// Her sayfanın dipnotu: kaynak/uyarı metni solda, sayfa numarası sağda.
-pw.Widget sayfaSonu(pw.Context ctx, String metin) => pw.Container(
+///
+/// [baglanti] verilirse sayfa numarasının solunda gri, küçük "sandık ile
+/// hazırlandı" bağlantısı (2026-10-31, müşteri raporu 31 Eki #2, yasin
+/// "yap"). PDF'in doğası başkasına gitmek (mali müşavir, eş, banka); okuyan
+/// "bu neyle yapıldı" diye sorduğunda cevap kâğıtta durur. Bilinçli olarak
+/// SESSİZ: "indir"/"ücretsiz dene" çağrısı ve QR yok, Premium belge reklam
+/// broşürü gibi durmasın. Hedef `Magaza.indirBaglantisi` (paylaşım kartı ve
+/// davetle aynı tek kaynak, UTM taşır, göndereni izlemez).
+pw.Widget sayfaSonu(pw.Context ctx, String metin, {String? baglanti}) =>
+    pw.Container(
       margin: const pw.EdgeInsets.only(top: 10),
       padding: const pw.EdgeInsets.only(top: 6),
       decoration: const pw.BoxDecoration(
@@ -212,12 +221,27 @@ pw.Widget sayfaSonu(pw.Context ctx, String metin) => pw.Container(
                 style: const pw.TextStyle(
                     fontSize: 6.6, color: PdfMarka.gri, lineSpacing: 1.4)),
           ),
+          if (baglanti != null) ...[
+            pw.SizedBox(width: 14),
+            pw.UrlLink(
+              destination: baglanti,
+              child: pw.Text(hazirlandiMetni,
+                  style: const pw.TextStyle(
+                      fontSize: 6.6,
+                      color: PdfMarka.gri,
+                      decoration: pw.TextDecoration.underline,
+                      decorationColor: PdfMarka.cizgi)),
+            ),
+          ],
           pw.SizedBox(width: 14),
           pw.Text('${ctx.pageNumber} / ${ctx.pagesCount}',
               style: const pw.TextStyle(fontSize: 6.6, color: PdfMarka.gri)),
         ],
       ),
     );
+
+/// Dipnot bağlantısının metni (iki PDF yazıcısı ve test aynı sabiti okur).
+const hazirlandiMetni = 'sandık ile hazırlandı';
 
 /// Bölüm başlığı: küçük büyük harf, yeşil, altında ince çizgi.
 pw.Widget bolumBasligi(String t, {String? sag}) => pw.Container(

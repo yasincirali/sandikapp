@@ -311,14 +311,16 @@ void main() {
           findsOneWidget);
       expect(find.text('Yıllık rapor'), findsOneWidget);
       expect(find.text('Temettü tahmini'), findsOneWidget);
+      // Portföy dökümü 2026-10-31'de Ayarlar'dan buraya taşındı.
+      expect(find.text('Portföyü dışa aktar'), findsOneWidget);
     });
 
     testWidgets('paywall açık + ücretsiz: satır kilit simgesiyle', (t) async {
       RemoteConfigService.testAcik = {'paywall_enabled'};
       await sayfa(t, kilitli: true);
       expect(find.text('Portföy X-Ray'), findsOneWidget);
-      // Üç Premium satırının üçü de kilitli.
-      expect(find.byIcon(Icons.lock_outline_rounded), findsNWidgets(3));
+      // Dört Premium satırının dördü de kilitli (portföy dökümü dahil).
+      expect(find.byIcon(Icons.lock_outline_rounded), findsNWidgets(4));
     });
   });
 

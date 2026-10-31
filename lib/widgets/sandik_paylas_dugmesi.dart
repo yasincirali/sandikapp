@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../services/share_card_service.dart';
 import '../theme/sandik.dart';
+import 'sandik_async_button.dart';
 
 /// Uygulamanın TEK paylaş düğmesi (yasin 2026-10-30: "paylaş butonları
 /// dikkat çekici olmasın, tüm uygulamada aynı standartta olmalı").
@@ -29,9 +31,21 @@ class SandikPaylasDugmesi extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.tooltip,
-  });
+  }) : onPaylas = null;
+
+  /// Belge hazırlayıp paylaşan (istek atan) düğme: iş sürerken simgenin
+  /// yerinde yükleme göstergesi döner, ikinci dokunuş yutulur
+  /// (`SandikAsyncTap`; CLAUDE.md "istek atan düğme"). [onPaylas] düğmenin
+  /// kendi dikdörtgenini alır: iPad paylaşım penceresinin oku düğmeyi
+  /// göstersin (aylık rapor PDF'i, 2026-10-31).
+  const SandikPaylasDugmesi.istekli({
+    super.key,
+    required Future<void> Function(Rect? kaynak) this.onPaylas,
+    required this.tooltip,
+  }) : onPressed = null;
 
   final VoidCallback? onPressed;
+  final Future<void> Function(Rect? kaynak)? onPaylas;
   final String tooltip;
 
   /// Kart başlık satırının, köşedeki düğmeye bırakacağı sağ boşluk.
@@ -54,7 +68,27 @@ class SandikPaylasDugmesi extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => IconButton(
+  Widget build(BuildContext context) {
+    final istek = onPaylas;
+    if (istek == null) return _simge(context);
+    return Tooltip(
+      message: tooltip,
+      excludeFromSemantics: true,
+      child: SizedBox.square(
+        dimension: SandikTouch.min,
+        child: SandikAsyncTap(
+          semanticLabel: tooltip,
+          onTap: () => istek(ShareCardService.originOf(context)),
+          child: Center(
+            child:
+                Icon(Icons.adaptive.share, size: 18, color: context.c.text58),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _simge(BuildContext context) => IconButton(
         onPressed: onPressed,
         tooltip: tooltip,
         icon: Icon(Icons.adaptive.share),
