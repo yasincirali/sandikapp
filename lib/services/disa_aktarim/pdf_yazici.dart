@@ -54,6 +54,12 @@ Future<Uint8List> pdfYaz(
   final doc = pw.Document(title: b.baslik, author: 'sandık');
   doc.addPage(
     pw.MultiPage(
+      // `pdf` paketinin varsayılan sınırı 20 sayfa; aşınca belge HİÇ
+      // üretilmiyor (PdfTooBigPageException). Portföy dökümü TÜM işlem
+      // geçmişini yazar: ~600 işlemli hesapta "PDF çalışmıyor" (yasin
+      // 2026-11-01). Sınır yalnız sonsuz döngü emniyeti; gerçek belge
+      // uzunluğu işlem sayısıyla büyür.
+      maxPages: 1000,
       pageTheme: pw.PageTheme(
         theme: tema,
         pageFormat: PdfPageFormat.a4,
