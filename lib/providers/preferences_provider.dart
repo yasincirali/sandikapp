@@ -352,8 +352,9 @@ final ozellikOnerisiKapatilanProvider =
     NotifierProvider<_KumePrefNotifier, Set<String>>(
         () => _KumePrefNotifier(PrefKeys.ozellikOnerisiKapatilan));
 final ozellikOnerisiSonKapatmaProvider =
-    NotifierProvider<_IntPrefNotifier, int>(() =>
-        _IntPrefNotifier(PrefKeys.ozellikOnerisiSonKapatma, 0, perUser: true));
+    NotifierProvider<_IntPrefNotifier, int>(() => _IntPrefNotifier(
+        PrefKeys.ozellikOnerisiSonKapatma, 0,
+        perUser: true));
 
 /// Yumuşak güncelleme kartının kapatıldığı önerilen build (0 = hiç).
 final guncellemeKapatilanBuildProvider =
@@ -489,9 +490,8 @@ final portfoyBugunModuProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 
 /// Toplam kartındaki kaydırma ipucu bir kez gösterildi mi (cihaz tercihi;
 /// jest cihaza ait, kişiye değil). 2026-09-21.
-final kaydirmaIpucuGosterildiProvider =
-    NotifierProvider<_BoolPrefNotifier, bool>(
-        () => _BoolPrefNotifier(PrefKeys.kaydirmaIpucu, false));
+final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.kaydirmaIpucu, false));
 
 /// Yatay tam ekran grafik bir kez açıldı mı (yan çevirme ipucu artık
 /// gösterilmez; `YanCevirinceTamEkran`). Cihaz tercihi, kişiye özel değil:
@@ -522,12 +522,13 @@ final yaziBoyutuProvider = Provider<YaziBoyutu>(
 final karsilamaGorulduProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.karsilamaGoruldu, false));
 
-final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(() =>
-    _IntPrefNotifier(PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
+final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(
+        PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
         perUser: true));
 
-final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>((ref) =>
-    YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
+final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
+    (ref) => YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
 
 /// Seviyenin görünürlük tablosu (sade Başlangıç dahil). Yeni kapılar
 /// (grafik araçları, derinlik) bunu okur.
@@ -560,8 +561,7 @@ final zilSinyalleriGosterProvider = Provider<bool>(
 /// (`sinyalSlotSiniriProvider`). Tek kalan kapı seviye: Başlangıç'ta
 /// sinyal hiç çizilmez. Paywall kapalıyken davranış birebir eski.
 final sinyalYuzeyiProvider = Provider<SinyalYuzeyi>((ref) {
-  if (!seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
-      .teknikSinyaller) {
+  if (!seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller) {
     return SinyalYuzeyi.gizli;
   }
   return SinyalYuzeyi.acik;
@@ -592,8 +592,8 @@ final biometricLockProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 /// Varsayılan KAPALI: mevcut kullanıcılar da teklifi bir kez görür.
 /// Kişiye özel.
 final biometricLockOfferedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () =>
-        _BoolPrefNotifier(PrefKeys.biometricLockOffered, false, perUser: true));
+    () => _BoolPrefNotifier(PrefKeys.biometricLockOffered, false,
+        perUser: true));
 
 /// Cihazın kilit yöntemi; cihazda hiç kilit yoksa `null`.
 ///
@@ -852,11 +852,11 @@ final premiumKilitliProvider = Provider<bool>((ref) =>
 /// olana sekizi, ücretsize en yaygın üçü (RSI, MACD, Bollinger — yasin
 /// 2026-10-10). Sunucu push'u yalnız Premium'a gönderir
 /// (`analyze-signals`, `premium_ayar.kapi_acik`) ve orada sekizini hesaplar.
-final izinliGostergelerProvider =
-    Provider<Set<String>>((ref) => IndicatorId.izinli(
-          paywall: ref.watch(paywallVisibleProvider),
-          premium: ref.watch(premiumErisimProvider),
-        ));
+final izinliGostergelerProvider = Provider<Set<String>>((ref) =>
+    IndicatorId.izinli(
+      paywall: ref.watch(paywallVisibleProvider),
+      premium: ref.watch(premiumErisimProvider),
+    ));
 
 /// Gösterge parametrelerinin (periyot vb.) bu kullanıcıdaki hâli.
 ///
@@ -1139,8 +1139,7 @@ class GostergeParametreNotifier
   }
 }
 
-final gostergeParametreleriProvider = NotifierProvider<
-    GostergeParametreNotifier,
+final gostergeParametreleriProvider = NotifierProvider<GostergeParametreNotifier,
     Map<AssetType, Map<String, GostergeAyari>>>(GostergeParametreNotifier.new);
 
 /// Bu kullanıcıda HESAPTA kullanılacak parametreler: özellik açıksa
@@ -1209,14 +1208,12 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
     if (kDebugMode) {
       debugPrint('[signal_pref] ${type.name} sunucuya yazılamadı: $e');
     }
-    CrashReporter.arkaPlan(
-        FirebaseCrashlytics.instance.recordError(
-          e,
-          st,
-          reason: 'signal_preferences upsert (${type.name})',
-          fatal: false,
-        ),
-        reason: 'preferences_provider.FirebaseCrashlytics.recordError');
+    CrashReporter.arkaPlan(FirebaseCrashlytics.instance.recordError(
+      e,
+      st,
+      reason: 'signal_preferences upsert (${type.name})',
+      fatal: false,
+    ), reason: 'preferences_provider.FirebaseCrashlytics.recordError');
   }
 }
 
@@ -1625,8 +1622,9 @@ MumAraligi? secilenMumAraligi(WidgetRef ref, double spanDakika) {
 /// tutmuyor" diye okunur. Unutulup açık kalma riskine karşı Performans
 /// etkinken rozet gösterir ("görünmeyen filtre" sınıfı hata, bkz.
 /// `_buildScopeBar`). Varsayılan kapalı: gerçek geçmiş.
-final bugunkuPortfoyleProvider = NotifierProvider<_BoolPrefNotifier, bool>(() =>
-    _BoolPrefNotifier(PrefKeys.performansBugunkuPortfoy, false, perUser: true));
+final bugunkuPortfoyleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.performansBugunkuPortfoy, false,
+        perUser: true));
 
 // ─── Balina Radarı (2026-10-05) ───────────────────────────────────────────────
 
