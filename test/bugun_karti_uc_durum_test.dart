@@ -53,7 +53,11 @@ bool get baslikVar =>
 /// `SiganMetin` kendi RenderBox'ıyla çizer; `find.text` onu görmez.
 Finder sigan(String metin) => find.byElementPredicate((e) {
       final r = e.renderObject;
-      return r is SiganMetinRender && r.secilen == metin;
+      // Yalnız SiganMetin öğesi: üstündeki Flexible da aynı render
+      // nesnesini gösterir, iki kez sayılırdı.
+      return e.widget is SiganMetin &&
+          r is SiganMetinRender &&
+          r.secilen == metin;
     });
 
 final _defter = [

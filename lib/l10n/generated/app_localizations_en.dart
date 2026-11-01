@@ -3015,7 +3015,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nOfMIndicators(int on, int all) {
-    return '· $on/$all indicators on';
+    return '$on/$all indicators on';
   }
 
   @override
@@ -4532,8 +4532,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get vsVolatilityShortNote =>
-      'Volatility is computed for periods of 1 month or longer.';
+  String vsDayRangePosition(String pct) {
+    return 'Price is at $pct% of the day\'s range';
+  }
 
   @override
   String get adPositionUpper => 'YOUR POSITION';
@@ -4617,6 +4618,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartAlarmBelowChart => 'below the chart';
+
+  @override
+  String chartCostLabel(String price) {
+    return 'Your cost $price';
+  }
+
+  @override
+  String chartCostOutside(String price, String detail) {
+    return 'Your cost $price $detail';
+  }
+
+  @override
+  String chartCostA11yAbove(String price, String pct) {
+    return 'Your average cost $price. Price is $pct above your cost.';
+  }
+
+  @override
+  String chartCostA11yBelow(String price, String pct) {
+    return 'Your average cost $price. Price is $pct below your cost.';
+  }
+
+  @override
+  String chartCostA11yAt(String price) {
+    return 'Your average cost $price. Price is at your cost.';
+  }
+
+  @override
+  String get configureShort => 'Adjust';
+
+  @override
+  String get posAvgCost => 'Average cost';
+
+  @override
+  String get vsDayLow => 'Day low';
+
+  @override
+  String get vsDayHigh => 'Day high';
+
+  @override
+  String get costsEmptyRow => 'Costs · not recorded';
+
+  @override
+  String get costsHowToAdd => 'How to add';
+
+  @override
+  String get costsEmptyA11y =>
+      'No costs recorded. Open to see how to add them.';
+
+  @override
+  String pricesRefreshedAt(String time) {
+    return 'Prices updated · $time';
+  }
+
+  @override
+  String get todayGoalNone => 'No goal yet';
 
   @override
   String get chartNowLabel => 'NOW';

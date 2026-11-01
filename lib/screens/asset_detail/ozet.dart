@@ -426,7 +426,7 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   // ── İstatistikler ────────────────────────────────────────────────────────
 
-  /// 2×2 istatistik + dönem aralığı. Seçili dönemin serisi gelmeden sayı
+  /// İstatistik ızgarası + dönem aralığı. Seçili dönemin serisi gelmeden sayı
   /// yazılmaz (uydurma yok); gelince yerine oturur.
   ///
   /// Seri henüz yokken bölüm BOŞ DÖNMEZ, aynı boyda iskelet durur
@@ -447,7 +447,13 @@ extension _DetayOzet on _AssetDetailScreenState {
     // "Bugün"ü de) yazmaz — bkz. `DonemIstatistikIzgarasi.donemGetirisiGizli`.
     if (ist == null || pct == null) {
       // İskelet gerçek ızgarayla aynı boyda kalsın (yerleşim oynamasın).
-      final hucre = days == 0 ? 2 : 3;
+      // Hücre sayısı ızgaranın kuralından gelir (Ar-Ge 1 Kas 08:45 #3):
+      // oynaklık kısa dönemde hiç hesaplanmaz, hücresi de çizilmez.
+      final hucre = DonemIstatistikIzgarasi.hucreSayisi(
+        donemGetirisiGizli: true,
+        bugunGizli: days == 0,
+        oynaklikVar: days >= DonemIstatistigi.oynaklikIcinAsgariDonemGun,
+      );
       return [_istatistikIskeleti(hucre)];
     }
     // Aralık canlı fiyatı da kapsar: seri haftalıkken bugünkü fiyat son
@@ -473,6 +479,7 @@ extension _DetayOzet on _AssetDetailScreenState {
           widget.asset.type != AssetType.mevduat) ...[
         const SizedBox(height: SandikSpace.sm),
         DonemAralikCubugu(
+          gunIci: days == 0,
           dusuk: dusuk,
           yuksek: yuksek,
           konum: (canli - dusuk) / aralik,

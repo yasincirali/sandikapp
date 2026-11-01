@@ -90,3 +90,21 @@ List<GrafikAlarmCizgisi> grafikAlarmCizgileri(
       ),
   ];
 }
+
+/// Ortalama maliyetin grafiğin GÖRÜNEN fiyat aralığına göre yeri
+/// (Ar-Ge 1 Kas 08:45 #1, yasin "yap").
+///
+/// Alarm çizgisiyle AYNI kurallar ([grafikAlarmCizgileri]): Y ekseni
+/// maliyete göre genişletilmez (genişletse grafik her pozisyonda başka
+/// ölçekte çizilirdi); aralık dışındaysa çizgi yok, etiket "grafiğin
+/// üstünde/altında" der. Maliyet ya da aralık geçersizse `null`: bilinmeyen
+/// yer uydurulmaz. [minY]/[maxY] HAM fiyat biriminde; LOG ve Karşılaştır'da
+/// çağrılmaz.
+AlarmCizgiKonumu? maliyetCizgiKonumu(double? maliyet,
+    {required double minY, required double maxY}) {
+  if (maliyet == null || !maliyet.isFinite || maliyet <= 0) return null;
+  if (!minY.isFinite || !maxY.isFinite || minY >= maxY) return null;
+  if (maliyet > maxY) return AlarmCizgiKonumu.ustunde;
+  if (maliyet < minY) return AlarmCizgiKonumu.altinda;
+  return AlarmCizgiKonumu.icinde;
+}

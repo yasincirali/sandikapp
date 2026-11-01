@@ -1335,6 +1335,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // (LOG/Karşılaştır'da boş).
                     final alarmAdaylari = _grafikAlarmAdaylari(
                         compareOn: compareOn, logOn: logOn);
+                    // Ortalama maliyet — `asset_detail/alarm_cizgileri.dart`
+                    // (yalnız kendi açık TL pozisyonu; LOG/Karşılaştır'da yok).
+                    final grafikMaliyeti = _grafikMaliyeti(
+                        isOwnAsset: isOwnAsset,
+                        compareOn: compareOn,
+                        logOn: logOn);
 
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
                     // ÜZERİNDE; gerçek işlem fiyatı crosshair'da yazılır
@@ -1777,6 +1783,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             etiket: donemBasiYazisi,
                             sag: _alarmUstEtiketi(
                               adaylar: alarmAdaylari,
+                              maliyet: grafikMaliyeti,
                               tamPencere: (min: geri(tamMin), max: geri(tamMax)),
                               bant: gorunurBant,
                               guncelFiyat: currentUnitTRY,
@@ -2024,6 +2031,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     // Kurulu fiyat alarmları (Ar-Ge 29 Eki
                                     // 20:45 #2); açıklaması kartın üstünde.
                                     ..._alarmYatayCizgileri(alarmCizgileri),
+                                    // Ortalama maliyet (Ar-Ge 1 Kas
+                                    // 08:45 #1); açıklaması kartın üstünde.
+                                    ..._maliyetYatayCizgisi(grafikMaliyeti,
+                                        minY: viewMinY, maxY: viewMaxY),
                                   ],
                                   verticalLines: [
                                     if (lastSpot != null && !isIntraday)

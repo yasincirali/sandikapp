@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../demo/demo_modu.dart';
 import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../providers/price_alert_notification_provider.dart';
@@ -680,9 +681,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
       // Çan listeleri de tazelenir (2026-10-06): "aşağı çektim, yeni
       // bildirim yok" denmesin. Fiyat yenilemesini beklemez.
-      onRefresh: () {
+      //
+      // Başarılı yenilemede kısa onay + hafif titreşim (Ar-Ge 1 Kas 12:45
+      // #1, yasin "yap"): gösterge kaybolunca "oldu mu?" sorusu açık
+      // kalıyordu. Hatada snack YOK: mevcut çevrimdışı/hata şeridi zaten
+      // konuşuyor, iki ses aynı şeyi söylemesin.
+      onRefresh: () async {
         _sunucuBildirimleriniTazele();
-        return ref.read(portfolioProvider.notifier).refreshPrices(force: true);
+        await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
+        if (!mounted) return;
+        final s = ref.read(portfolioProvider).valueOrNull;
+        if (s == null || s.errorMessage != null || s.assets.isEmpty) return;
+        SandikHaptic.selection.perform();
+        sandikSnack(context,
+            context.l10n.pricesRefreshedAt(
+                DateFormat('HH:mm').format(DateTime.now())));
       },
       child: CustomScrollView(
         controller: _scrollCtrl,

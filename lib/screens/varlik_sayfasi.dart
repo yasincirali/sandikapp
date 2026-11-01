@@ -686,7 +686,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       if (ist != null) ...[
         _istatistikIzgarasi(ist, cizilen!),
         const SizedBox(height: SandikSpace.sm),
-        _aralikCubugu(ist, bicim),
+        _aralikCubugu(ist, bicim, gunIci: cizilen == 1),
         const SizedBox(height: SandikSpace.lg),
       ],
       FonKarnesiKarti(tur: k.type, ticker: k.ticker),
@@ -869,11 +869,17 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         gun: gun,
         donemPct: ist.degisimPct,
         bugunPct: _istatistik[1]?.degisimPct,
+        // Dönem getirisi fiyatın altında zaten yazıyor; GÜNLÜK'te (gun 1)
+        // "Bugün" de aynı sayı (Ar-Ge 1 Kas 08:45 #3, yasin "yap").
+        donemGetirisiGizli: true,
+        bugunGizli: gun == 1,
       );
 
   /// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri.
-  Widget _aralikCubugu(DonemIstatistigi ist, NumberFormat bicim) =>
+  Widget _aralikCubugu(DonemIstatistigi ist, NumberFormat bicim,
+          {bool gunIci = false}) =>
       DonemAralikCubugu(
+        gunIci: gunIci,
         dusuk: ist.dusuk,
         yuksek: ist.yuksek,
         konum: ist.konum,

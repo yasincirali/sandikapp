@@ -2029,7 +2029,7 @@
   "indicatorsNoHistory": "Bu varlığın fiyat geçmişi şu an çekilemedi, göstergeler hesaplanamıyor.",
   "noIndicatorsSelected": "Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları'ndan aktifleştir.",
   "technicalAnalysisUpper": "TEKNİK ANALİZ · GÜNLÜK",
-  "nOfMIndicators": "· {on}/{all} gösterge açık",
+  "nOfMIndicators": "{on}/{all} gösterge açık",
   "@nOfMIndicators": {
     "placeholders": {
       "on": {
@@ -3292,7 +3292,8 @@
   "vsPeriodHigh": "Dönem yükseği",
   "vsRangePosition": "Fiyat dönem aralığının %{pct} noktasında",
   "@vsRangePosition": {"placeholders": {"pct": {"type": "String"}}},
-  "vsVolatilityShortNote": "Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.",
+  "vsDayRangePosition": "Fiyat gün aralığının %{pct} noktasında",
+  "@vsDayRangePosition": {"placeholders": {"pct": {"type": "String"}}},
   "adPositionUpper": "POZİSYONUN",
   "adPositionLine": "Pozisyonun: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
@@ -3351,6 +3352,44 @@
   "chartAlarmFalls": "altına inince",
   "chartAlarmAboveChart": "grafiğin üstünde",
   "chartAlarmBelowChart": "grafiğin altında",
+  "chartCostLabel": "Maliyetin {price}",
+  "@chartCostLabel": {
+    "description": "Varlık grafiğinin üstünde ortalama maliyet çizgisinin etiketi.",
+    "placeholders": {"price": {"type": "String"}}
+  },
+  "chartCostOutside": "Maliyetin {price} {detail}",
+  "@chartCostOutside": {
+    "description": "Maliyet görünen fiyat aralığının dışındayken etiket; detail ↑ (grafiğin üstünde) ya da ↓ (altında). Üst şerit dönem başı ve alarmla paylaşılır, kısa kalmalı.",
+    "placeholders": {"price": {"type": "String"}, "detail": {"type": "String"}}
+  },
+  "chartCostA11yAbove": "Maliyetin {price}. Fiyat maliyetinin {pct} üstünde.",
+  "@chartCostA11yAbove": {
+    "description": "Maliyet etiketinin ekran okuyucu metni (fiyat maliyetin üstünde).",
+    "placeholders": {"price": {"type": "String"}, "pct": {"type": "String"}}
+  },
+  "chartCostA11yBelow": "Maliyetin {price}. Fiyat maliyetinin {pct} altında.",
+  "@chartCostA11yBelow": {
+    "description": "Maliyet etiketinin ekran okuyucu metni (fiyat maliyetin altında).",
+    "placeholders": {"price": {"type": "String"}, "pct": {"type": "String"}}
+  },
+  "chartCostA11yAt": "Maliyetin {price}. Fiyat maliyetinde.",
+  "@chartCostA11yAt": {
+    "description": "Maliyet etiketinin ekran okuyucu metni (fiyat maliyete eşit).",
+    "placeholders": {"price": {"type": "String"}}
+  },
+  "configureShort": "Ayarla",
+  "posAvgCost": "Ortalama maliyet",
+  "vsDayLow": "Gün düşüğü",
+  "vsDayHigh": "Gün yükseği",
+  "costsEmptyRow": "Masraflar · kaydedilmemiş",
+  "costsHowToAdd": "Nasıl eklenir",
+  "costsEmptyA11y": "Masraflar kaydedilmemiş. Nasıl ekleneceğini görmek için aç.",
+  "pricesRefreshedAt": "Fiyatlar güncellendi · {time}",
+  "@pricesRefreshedAt": {
+    "description": "Ana sayfada aşağı çekip yenileme başarıyla bitince kısa bildirim.",
+    "placeholders": {"time": {"type": "String"}}
+  },
+  "todayGoalNone": "Hedefin yok",
   "chartNowLabel": "ŞİMDİ",
   "vsWatch": "Takip et",
   "vsSelect": "Bunu seç",

@@ -43,31 +43,90 @@ extension _AlarmCizgileri on _AssetDetailScreenState {
                 yukari: a.alarm.isAbove),
       ];
 
-  /// Kartın üst boşluğundaki alarm açıklaması. Yakınlaştırma/kaydırma Y
-  /// aralığını değiştirir; etiket ana grafiğin X penceresini
+  /// Grafikteki ortalama maliyet (Ar-Ge 1 Kas 08:45 #1, yasin "yap").
+  ///
+  /// Neden: varlığa giren kişinin ikinci sorusu "kârda mıyım, başa baş ne
+  /// kadar uzakta". Rakam fiyatın altında yazıyordu; çizgi bunu grafikte
+  /// bir bakışta söyler. Hesap alarm sayfasının "maliyetime göre"
+  /// çipleriyle AYNI kaynaktan ([alarmMaliyeti]): tek maliyet tanımı.
+  ///
+  /// Kurallar (alarm çizgisiyle aynı, [maliyetCizgiKonumu]):
+  /// - Yalnız KENDİ açık pozisyonunda ([isOwnAsset] && `_canli.acik`).
+  /// - Maliyet bilinmiyorsa (`maliyetBilinmiyor`, karışık para birimi) yok.
+  /// - Yalnız TL varlıkta: grafik ve alarm hedefleri kaynak fiyat
+  ///   biriminde, [alarmMaliyeti] varlığın kendi para biriminde. Dövizli
+  ///   varlıkta iki ölçeğin aynı olduğunu bu katman garanti edemez; yanlış
+  ///   yerde çizgi uydurma sayıdır (fiyat kaynağı kuralı 2).
+  /// - LOG ve Karşılaştır'da yok: Y dönüştürülmüştür.
+  double? _grafikMaliyeti({
+    required bool isOwnAsset,
+    required bool compareOn,
+    required bool logOn,
+  }) {
+    if (!isOwnAsset || !_canli.acik || compareOn || logOn) return null;
+    if (_canli.asset.currency != 'TRY') return null;
+    return alarmMaliyeti(_canli.lots);
+  }
+
+  /// Maliyetin kesikli çizgisi — yalnız görünen Y aralığındaysa.
+  List<HorizontalLine> _maliyetYatayCizgisi(double? maliyet,
+          {required double minY, required double maxY}) =>
+      [
+        if (maliyetCizgiKonumu(maliyet, minY: minY, maxY: maxY) ==
+            AlarmCizgiKonumu.icinde)
+          GrafikStili.maliyetCizgisi(context, maliyet!),
+      ];
+
+  /// Kartın üst boşluğundaki maliyet ve alarm açıklaması. Yakınlaştırma/
+  /// kaydırma Y aralığını değiştirir; etiket ana grafiğin X penceresini
   /// (`_ozelGorunum`, alt panellerle aynı) dinler ve [bant] ile çizimle
   /// AYNI aralığı hesaplar — "çizgi yok ama etiket içeride diyor"
   /// ayrışması olmasın. Pencere henüz bildirilmediyse [tamPencere].
+  ///
+  /// Sıra: önce maliyet (kişinin kendi parası, hep aynı yerde), sonra
+  /// alarm. İkisi birden varken alarm kısa yazılır (fiyat + yön; "+N"
+  /// kalır): satır tek; ikinci satır kart boyunu değiştirirdi
+  /// (`donemBasiUstte`). Yer yetmezse alarm `…` ile kısalır, maliyet değil.
   Widget? _alarmUstEtiketi({
     required List<PriceAlert> adaylar,
+    required double? maliyet,
     required ({double min, double max}) tamPencere,
     required ({double minY, double maxY, double interval}) Function(
             double minX, double maxX)
         bant,
     required double guncelFiyat,
   }) {
-    if (adaylar.isEmpty) return null;
+    if (adaylar.isEmpty && maliyet == null) return null;
     return ValueListenableBuilder<({double min, double max})?>(
       valueListenable: _ozelGorunum,
       builder: (context, gorunum, _) {
         final p = gorunum ?? tamPencere;
         final b = bant(p.min, p.max);
-        return GrafikStili.alarmEtiketi(
-              context,
-              grafikAlarmCizgileri(adaylar,
-                  minY: b.minY, maxY: b.maxY, guncelFiyat: guncelFiyat),
-            ) ??
-            const SizedBox.shrink();
+        final konum = maliyetCizgiKonumu(maliyet, minY: b.minY, maxY: b.maxY);
+        final maliyetYazisi = konum == null
+            ? null
+            : GrafikStili.maliyetEtiketi(context,
+                maliyet: maliyet!, konum: konum, guncelFiyat: guncelFiyat);
+        final alarmYazisi = GrafikStili.alarmEtiketi(
+          context,
+          grafikAlarmCizgileri(adaylar,
+              minY: b.minY, maxY: b.maxY, guncelFiyat: guncelFiyat),
+          kisa: maliyetYazisi != null,
+        );
+        if (maliyetYazisi == null) {
+          return alarmYazisi ?? const SizedBox.shrink();
+        }
+        if (alarmYazisi == null) return maliyetYazisi;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // İkisi de esner: dar ekranda önce uzun olan kırpılır, satır
+            // taşmaz.
+            Flexible(child: maliyetYazisi),
+            const SizedBox(width: SandikSpace.sm),
+            Flexible(child: alarmYazisi),
+          ],
+        );
       },
     );
   }

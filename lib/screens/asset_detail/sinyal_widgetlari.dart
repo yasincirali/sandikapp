@@ -737,15 +737,15 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Başlık ──────────────────────────────────────────────────────────
+        // 390 pt'de "TEKNİK ANALİZ · GÜNLÜK" kırpılıyordu (Ar-Ge 1 Kas 08:45
+        // #2, yasin "yap"): başlık tam okunur, ayar bağlantısı kısa "Ayarla ›"
+        // ve 44 pt dokunma alanı alır, sayaç kendi satırına iner. Ekran
+        // okuyucu bağlantıyı tam adıyla ("Göstergeleri Ayarla") duyar.
         Row(
           children: [
-            // Başlık + sayaç dar ekranda sağdaki ayar bağlantısını taşırıyordu.
-            // Flexible: önce sayaç, gerekirse başlık kırpılır.
-            Flexible(
+            Expanded(
               child: Text(
                 context.l10n.technicalAnalysisUpper,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
@@ -753,41 +753,49 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                context.l10n.nOfMIndicators(indicators.length, IndicatorId.all.length),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.bodySmall?.copyWith(color: context.c.text36),
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              // Demo (F1): sinyal ayarları sunucuya yazılır.
-              onTap: () => DemoModu.yazmaKapisi('ayarlar')
-                  ? null
-                  : pushGuarded(
-                      context,
-                      adaptiveRoute<void>(
-                          settings: const RouteSettings(name: 'signal_settings'),
-                          builder: (_) => const SignalSettingsScreen()),
-                    ),
-              child: Row(
-                children: [
-                  Icon(Icons.tune_rounded, size: 14, color: context.c.amberText),
-                  const SizedBox(width: 4),
-                  Text(
-                    context.l10n.configureIndicators,
-                    style: context.t.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: context.c.amberText,
-                    ),
+            const SizedBox(width: SandikSpace.sm),
+            Semantics(
+              button: true,
+              label: context.l10n.configureIndicators,
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                // Demo (F1): sinyal ayarları sunucuya yazılır.
+                onTap: () => DemoModu.yazmaKapisi('ayarlar')
+                    ? null
+                    : pushGuarded(
+                        context,
+                        adaptiveRoute<void>(
+                            settings:
+                                const RouteSettings(name: 'signal_settings'),
+                            builder: (_) => const SignalSettingsScreen()),
+                      ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                      minHeight: SandikTouch.min, minWidth: SandikTouch.min),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        context.l10n.configureShort,
+                        style: context.t.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.c.amberText,
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded,
+                          size: 18, color: context.c.amberText),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],
+        ),
+        Text(
+          context.l10n.nOfMIndicators(indicators.length, IndicatorId.all.length),
+          style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
         // Yasal ibare panelin İÇİNDE değil, panelin hemen ALTINDA, onu
         // barındıran ekranda (asset_detail_screen, varlik_sayfasi) durur.

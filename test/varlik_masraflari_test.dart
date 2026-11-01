@@ -304,6 +304,16 @@ void main() {
         (tester) async {
       await ciz(tester, _hesap(_lot(type: AssetType.altin, ticker: 'ALTIN_GRAM')),
           koyu: false);
+      // Hiç kayıt yok: kart tek satır başlar (Ar-Ge 1 Kas 08:45 #4).
+      expect(find.text('Masraflar · kaydedilmemiş'), findsOneWidget);
+      expect(find.text('Nasıl eklenir'), findsOneWidget);
+      expect(find.text('Alış-satış makası'), findsNothing);
+      expect(
+          tester.getSize(find.byType(SandikCard)).height,
+          greaterThanOrEqualTo(SandikTouch.min));
+      await tester.tap(find.text('Nasıl eklenir'));
+      await tester.pumpAndSettle();
+      expect(find.text('Masraflar · kaydedilmemiş'), findsNothing);
       expect(find.textContaining('Tümünü gör'), findsNothing);
       expect(find.text('Ödenen'), findsNothing);
       expect(find.text('Alış-satış makası'), findsOneWidget);

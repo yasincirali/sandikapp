@@ -5135,7 +5135,7 @@ abstract class AppLocalizations {
   /// No description provided for @nOfMIndicators.
   ///
   /// In tr, this message translates to:
-  /// **'· {on}/{all} gösterge açık'**
+  /// **'{on}/{all} gösterge açık'**
   String nOfMIndicators(int on, int all);
 
   /// No description provided for @configureIndicators.
@@ -7533,11 +7533,11 @@ abstract class AppLocalizations {
   /// **'Fiyat dönem aralığının %{pct} noktasında'**
   String vsRangePosition(String pct);
 
-  /// No description provided for @vsVolatilityShortNote.
+  /// No description provided for @vsDayRangePosition.
   ///
   /// In tr, this message translates to:
-  /// **'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.'**
-  String get vsVolatilityShortNote;
+  /// **'Fiyat gün aralığının %{pct} noktasında'**
+  String vsDayRangePosition(String pct);
 
   /// No description provided for @adPositionUpper.
   ///
@@ -7664,6 +7664,90 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'grafiğin altında'**
   String get chartAlarmBelowChart;
+
+  /// Varlık grafiğinin üstünde ortalama maliyet çizgisinin etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetin {price}'**
+  String chartCostLabel(String price);
+
+  /// Maliyet görünen fiyat aralığının dışındayken etiket; detail ↑ (grafiğin üstünde) ya da ↓ (altında). Üst şerit dönem başı ve alarmla paylaşılır, kısa kalmalı.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetin {price} {detail}'**
+  String chartCostOutside(String price, String detail);
+
+  /// Maliyet etiketinin ekran okuyucu metni (fiyat maliyetin üstünde).
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetin {price}. Fiyat maliyetinin {pct} üstünde.'**
+  String chartCostA11yAbove(String price, String pct);
+
+  /// Maliyet etiketinin ekran okuyucu metni (fiyat maliyetin altında).
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetin {price}. Fiyat maliyetinin {pct} altında.'**
+  String chartCostA11yBelow(String price, String pct);
+
+  /// Maliyet etiketinin ekran okuyucu metni (fiyat maliyete eşit).
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetin {price}. Fiyat maliyetinde.'**
+  String chartCostA11yAt(String price);
+
+  /// No description provided for @configureShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarla'**
+  String get configureShort;
+
+  /// No description provided for @posAvgCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortalama maliyet'**
+  String get posAvgCost;
+
+  /// No description provided for @vsDayLow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün düşüğü'**
+  String get vsDayLow;
+
+  /// No description provided for @vsDayHigh.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün yükseği'**
+  String get vsDayHigh;
+
+  /// No description provided for @costsEmptyRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Masraflar · kaydedilmemiş'**
+  String get costsEmptyRow;
+
+  /// No description provided for @costsHowToAdd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Nasıl eklenir'**
+  String get costsHowToAdd;
+
+  /// No description provided for @costsEmptyA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Masraflar kaydedilmemiş. Nasıl ekleneceğini görmek için aç.'**
+  String get costsEmptyA11y;
+
+  /// Ana sayfada aşağı çekip yenileme başarıyla bitince kısa bildirim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar güncellendi · {time}'**
+  String pricesRefreshedAt(String time);
+
+  /// No description provided for @todayGoalNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefin yok'**
+  String get todayGoalNone;
 
   /// No description provided for @chartNowLabel.
   ///

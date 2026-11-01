@@ -59,7 +59,11 @@ class _FakePortfolio extends PortfolioNotifier {
 /// Seçilen (ekranda TAM yazılan) metne göre bulur.
 Finder sigan(String metin) => find.byElementPredicate((e) {
       final r = e.renderObject;
-      return r is SiganMetinRender && r.secilen == metin;
+      // Yalnız SiganMetin öğesi: üstündeki Flexible da aynı render
+      // nesnesini gösterir, iki kez sayılırdı.
+      return e.widget is SiganMetin &&
+          r is SiganMetinRender &&
+          r.secilen == metin;
     });
 
 void main() {

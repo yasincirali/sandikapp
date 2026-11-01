@@ -177,7 +177,10 @@ void main() {
   testWidgets('aralık içi alarm: çizgi + kartın üstünde etiket', (t) async {
     await ac(t, alarmlar: [_alarm('a', 286, 'below')]);
     expect(yataylar(t), contains(286.0));
-    expect(find.text('₺286,00 ▼ altına inince'), findsOneWidget);
+    // Pozisyon sahibi: üst satırda maliyet etiketi de var (Ar-Ge 1 Kas
+    // 08:45 #5), alarm kısa yazılır; ekran okuyucu yine tamını okur.
+    expect(find.text('₺286,00 ▼'), findsOneWidget);
+    expect(find.textContaining('Maliyetin ₺230'), findsOneWidget);
     expect(find.bySemanticsLabel('Fiyat alarmı ₺286,00, altına inince'),
         findsOneWidget);
     expect(t.takeException(), isNull);
@@ -190,7 +193,7 @@ void main() {
     expect(yataylar(t), isNot(contains(2875.0)));
     final g = t.widget<LineChart>(find.byType(LineChart).first);
     expect(g.data.maxY, lessThan(400), reason: 'Y ekseni alarma uzamamalı');
-    expect(find.textContaining('grafiğin üstünde'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('grafiğin üstünde')), findsOneWidget);
     await kapat(t);
   });
 
@@ -200,7 +203,7 @@ void main() {
       _alarm('yakin', 289, 'above'),
     ]);
     expect(yataylar(t), contains(289.0));
-    expect(find.text('₺289,00 ▲ üstüne çıkınca'), findsOneWidget);
+    expect(find.text('₺289,00 ▲'), findsOneWidget);
     expect(find.text('+1'), findsOneWidget);
     await kapat(t);
   });
