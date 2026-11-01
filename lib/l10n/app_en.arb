@@ -5865,5 +5865,13 @@
   "alarmCalistiFiyat": "Triggered · {fiyat}",
   "alarmGrupSimdi": "now {fiyat}",
   "alarmOneriBaslik": "Quick start",
-  "alarmOneriAciklama": "We'll tell you if it moves 2% in a day"
+  "alarmOneriAciklama": "We'll tell you if it moves 2% in a day",
+  "kilometreTaslariUpper": "YOUR MILESTONES",
+  "kilometreTaslariTumu": "All",
+  "kilometreTaslariTumuEtiket": "Show all milestones",
+  "kilometreTasiSiradaki": "Next",
+  "kilometreTasiEtiket": "{baslik}, milestone",
+  "kilometreTasiSiradakiEtiket": "Next milestone: {baslik}",
+  "kilometreTaslariBaslik": "Your milestones",
+  "kilometreTaslariNot": "A milestone you pass stays yours, even if the market drops."
 }

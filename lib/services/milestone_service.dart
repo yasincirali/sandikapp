@@ -63,8 +63,16 @@ class MilestoneService {
   /// 2,5M'den 2,6M'ye çıkmak değildir. Sabit aralık, büyük portföyde her ay
   /// kutlama üretip anlamı öldürürdü.
   static const valueThresholds = <double>[
-    10000, 25000, 50000, 100000, 250000, 500000,
-    1000000, 2500000, 5000000, 10000000,
+    10000,
+    25000,
+    50000,
+    100000,
+    250000,
+    500000,
+    1000000,
+    2500000,
+    5000000,
+    10000000,
   ];
 
   /// Altın adedi eşikleri — tür başına.
@@ -136,7 +144,12 @@ class MilestoneService {
     final out = <Milestone>[];
     for (final ay in streakMonths) {
       if (seri.enUzun < ay) break;
-      out.add(Milestone(
+      out.add(_seriTasi(ay));
+    }
+    return out;
+  }
+
+  static Milestone _seriTasi(int ay) => Milestone(
         kind: 'contribution_streak',
         value: '${ay}m',
         rank: ay.toDouble(),
@@ -146,26 +159,25 @@ class MilestoneService {
                 'Düzen, piyasadan bağımsız tek şey.'
             : '$ay aydır her ay portföyüne ekleme yapıyorsun. Düzen, '
                 'piyasadan bağımsız tek şey.',
-      ));
-    }
-    return out;
-  }
+      );
 
   static List<Milestone> _valueMilestones(double totalTRY) {
     final out = <Milestone>[];
     for (final esik in valueThresholds) {
       if (totalTRY < esik) break; // liste artan sıralı
-      out.add(Milestone(
+      out.add(_degerTasi(esik));
+    }
+    return out;
+  }
+
+  static Milestone _degerTasi(double esik) => Milestone(
         kind: 'portfolio_value',
         value: esik.toStringAsFixed(0),
         rank: esik,
         title: '${_kisaTutar(esik)} geçildi',
         body: 'Portföyün ${_kisaTutar(esik)} sınırını aştı. Biriktirmeye '
             'devam.',
-      ));
-    }
-    return out;
-  }
+      );
 
   static List<Milestone> _goldMilestones(List<Asset> aktif) {
     final adetler = <String, double>{};
@@ -180,19 +192,23 @@ class MilestoneService {
       final tam = adet.floor();
       for (final esik in goldCountThresholds) {
         if (tam < esik) break;
-        final etiket = _goldLabels[sub]!;
-        out.add(Milestone(
-          kind: 'gold_count',
-          value: '$sub:$esik',
-          rank: esik.toDouble(),
-          title: esik == 1 ? 'İlk $etiket' : '$esik $etiket',
-          body: esik == 1
-              ? 'Portföyüne ilk $etiket girdi.'
-              : 'Toplam $esik $etiket biriktirdin.',
-        ));
+        out.add(_altinTasi(sub, esik));
       }
     });
     return out;
+  }
+
+  static Milestone _altinTasi(String sub, int esik) {
+    final etiket = _goldLabels[sub]!;
+    return Milestone(
+      kind: 'gold_count',
+      value: '$sub:$esik',
+      rank: esik.toDouble(),
+      title: esik == 1 ? 'İlk $etiket' : '$esik $etiket',
+      body: esik == 1
+          ? 'Portföyüne ilk $etiket girdi.'
+          : 'Toplam $esik $etiket biriktirdin.',
+    );
   }
 
   static List<Milestone> _ageMilestones(List<Asset> aktif, DateTime now) {
@@ -205,7 +221,12 @@ class MilestoneService {
     final out = <Milestone>[];
     for (final yil in ageYears) {
       if (gun < yil * 365) break;
-      out.add(Milestone(
+      out.add(_yasTasi(yil));
+    }
+    return out;
+  }
+
+  static Milestone _yasTasi(int yil) => Milestone(
         kind: 'portfolio_age',
         value: '${yil}y',
         rank: yil.toDouble(),
@@ -215,25 +236,148 @@ class MilestoneService {
         // alım girip birkaç haftadır kullanan kullanıcıya "2 yıldır
         // takiptesin" denmişti (2026-09-27). Söylenen, bilinen tek gerçek.
         body: 'İlk alımın $yil yıl önceydi. Sabır bu işin yarısı.',
-      ));
-    }
-    return out;
-  }
+      );
 
   static List<Milestone> _diversificationMilestones(List<Asset> aktif) {
     final turler = aktif.map((a) => a.type).toSet();
     final out = <Milestone>[];
     for (final n in typeCounts) {
       if (turler.length < n) break;
-      out.add(Milestone(
+      out.add(_cesitTasi(n));
+    }
+    return out;
+  }
+
+  // Gövde "Portföyünde n tür var" değil: rozet şeridi bu taşı geçmişten de
+  // gösterir ve kullanıcı bugün daha az türde olabilir.
+  static Milestone _cesitTasi(int n) => Milestone(
         kind: 'diversification',
         value: '${n}types',
         rank: n.toDouble(),
         title: '$n farklı varlık türü',
-        body: 'Çeşitlendirme riski dağıtır. Portföyünde $n tür var.',
-      ));
+        body: 'Çeşitlendirme riski dağıtır. Portföyün $n türe ulaştı.',
+      );
+
+  // ---------------------------------------------------------------------
+  // Rozet şeridi (Profil, Ar-Ge 1 Kas 20:45 #1; yasin: ücretsiz)
+  // ---------------------------------------------------------------------
+
+  /// Sunucudaki kayıttan (`kind`, `value`) taşı yeniden kurar. Tanınmayan
+  /// ya da artık listede olmayan eşik `null` döner: rozet uydurulmaz.
+  static Milestone? anahtardan(String kind, String value) {
+    switch (kind) {
+      case 'portfolio_value':
+        final v = double.tryParse(value);
+        return v != null && valueThresholds.contains(v) ? _degerTasi(v) : null;
+      case 'gold_count':
+        final i = value.lastIndexOf(':');
+        if (i <= 0) return null;
+        final sub = value.substring(0, i);
+        final n = int.tryParse(value.substring(i + 1));
+        return n != null &&
+                _goldLabels.containsKey(sub) &&
+                goldCountThresholds.contains(n)
+            ? _altinTasi(sub, n)
+            : null;
+      case 'portfolio_age':
+        final y = int.tryParse(value.replaceAll('y', ''));
+        return y != null && ageYears.contains(y) ? _yasTasi(y) : null;
+      case 'diversification':
+        final n = int.tryParse(value.replaceAll('types', ''));
+        return n != null && typeCounts.contains(n) ? _cesitTasi(n) : null;
+      case 'contribution_streak':
+        final ay = int.tryParse(value.replaceAll('m', ''));
+        return ay != null && streakMonths.contains(ay) ? _seriTasi(ay) : null;
+    }
+    return null;
+  }
+
+  /// Kazanılan taşlar + sıradaki tek hedef.
+  ///
+  /// **Geçilen eşik kalıcıdır** (müşteri raporu 1 Kas 21:15 koşulu):
+  /// kaynak sunucudaki kayıt ([kayitli], `kind:value`) ile bugünkü hesabın
+  /// ([bugun]) birleşimi. Piyasa düşüp toplam 100 binin altına inse de
+  /// "100 bin ₺ geçildi" rozeti kaybolmaz; kutlanan şey bir andı.
+  ///
+  /// Sıra [pickOne] önceliği (yaş → seri → değer → altın → çeşitlilik),
+  /// tür içinde büyükten küçüğe.
+  ///
+  /// Sıradaki hedef yalnız portföy değeri eşiğidir: herkes için anlamlı tek
+  /// ölçek ve bugünkü veriden hesaplanır (uydurma sayı yok). Hepsi geçildiyse
+  /// `null`.
+  static ({List<Milestone> kazanilan, Milestone? siradaki}) koleksiyon({
+    required Set<String> kayitli,
+    required List<Milestone> bugun,
+    required double totalTRY,
+  }) {
+    final hepsi = <Milestone>{...bugun};
+    for (final k in kayitli) {
+      final i = k.indexOf(':');
+      if (i <= 0) continue;
+      final m = anahtardan(k.substring(0, i), k.substring(i + 1));
+      if (m != null) hepsi.add(m);
+    }
+    const oncelik = [
+      'portfolio_age',
+      'contribution_streak',
+      'portfolio_value',
+      'gold_count',
+      'diversification',
+    ];
+    final kazanilan = hepsi.toList()
+      ..sort((a, b) {
+        final t = oncelik.indexOf(a.kind).compareTo(oncelik.indexOf(b.kind));
+        return t != 0 ? t : b.rank.compareTo(a.rank);
+      });
+
+    var enYuksek = totalTRY;
+    for (final m in kazanilan) {
+      if (m.kind == 'portfolio_value' && m.rank > enYuksek) enYuksek = m.rank;
+    }
+    Milestone? siradaki;
+    for (final esik in valueThresholds) {
+      if (esik > enYuksek) {
+        siradaki = Milestone(
+          kind: 'portfolio_value',
+          value: esik.toStringAsFixed(0),
+          rank: esik,
+          title: _kisaTutar(esik),
+          body: 'Portföyün ${_kisaTutar(esik)} sınırını geçtiğinde bu taş '
+              'açılır.',
+        );
+        break;
+      }
+    }
+    return (kazanilan: kazanilan, siradaki: siradaki);
+  }
+
+  /// Şeritte gösterilecekler: her türün (altında her altın cinsinin) en
+  /// yükseği. "10 bin, 25 bin, 50 bin geçildi" yan yana tekrar olurdu;
+  /// tamamı "Tümü" sayfasında.
+  static List<Milestone> vitrin(List<Milestone> kazanilan) {
+    final gorulen = <String>{};
+    final out = <Milestone>[];
+    for (final m in kazanilan) {
+      final grup = m.kind == 'gold_count'
+          ? 'gold:${m.value.substring(0, m.value.lastIndexOf(':'))}'
+          : m.kind;
+      if (gorulen.add(grup)) out.add(m);
     }
     return out;
+  }
+
+  /// Bakiye gizliyken gösterilecek hâli: tutar taşıyan taşın başlığı ve
+  /// gövdesi tutarsız yazılır (müşteri raporu 1 Kas 21:15 koşulu). Altın
+  /// adedi, yaş ve tür sayısı tutar değildir, aynen kalır.
+  static Milestone gizli(Milestone m, {bool siradaki = false}) {
+    if (m.kind != 'portfolio_value') return m;
+    return Milestone(
+      kind: m.kind,
+      value: m.value,
+      rank: m.rank,
+      title: siradaki ? 'Portföy eşiği' : 'Portföy eşiği geçildi',
+      body: 'Bakiye gizliyken tutar gösterilmez.',
+    );
   }
 
   /// 100000 → "100 bin ₺", 1000000 → "1 milyon ₺"

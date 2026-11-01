@@ -105,6 +105,21 @@ class SurumNotu {
 /// bu yana çıkanlar"ı bu listeden baştan itibaren toplar.
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
+    surum: '1.1.8',
+    tarih: 'Kasım 2026',
+    // 1.1.7 paywall derlemesiyle kapandı; sonrası buraya (koordinatör,
+    // 1 Kas). Yama sürümü: yalnız Ayarlar'da görünür.
+    yenilikler: [
+      // Ar-Ge 1 Kas 20:45 #1, yasin "önerini uygula" (ücretsiz).
+      Yenilik(
+        baslik: 'Kilometre taşların',
+        aciklama: 'Profil\'de geçtiğin eşikler duruyor: 100 bin, ilk '
+            'çeyrek altın, portföyünün yaşı. Dokununca o anı yeniden '
+            'açarsın; sıradaki hedef de yanında.',
+      ),
+    ],
+  ),
+  SurumNotu(
     surum: '1.1.7',
     tarih: 'Ekim 2026',
     onemli: true,
