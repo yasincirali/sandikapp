@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/kilometre_tasi_seridi.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/hesap_secici.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -491,6 +492,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // üst üste kalıyordu (Ar-Ge 1 Kas 20:45 tasarım 3).
                         const _ProfilePremiumBanner(),
                         const SizedBox(height: SandikSpace.lg),
+                        // Kilometre taşları (Ar-Ge 1 Kas 20:45 #1, ücretsiz):
+                        // kimliğin hemen altında, tek satır. Boşken sıfır
+                        // yükseklik; alt boşluğunu kendisi taşır.
+                        const KilometreTasiSeridi(),
                         // Yıllık özet afişi. Kendi kendini kapatır: bayrak,
                         // takvim penceresi (26 Aralık–10 Ocak) ve verinin
                         // anlamlı olması. Yılın 11 ayı hiç görünmez.

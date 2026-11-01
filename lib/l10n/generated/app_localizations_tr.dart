@@ -10295,4 +10295,33 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get alarmOneriAciklama => 'Gün içinde %2 oynarsa haber verelim';
+
+  @override
+  String get kilometreTaslariUpper => 'KİLOMETRE TAŞLARIN';
+
+  @override
+  String get kilometreTaslariTumu => 'Tümü';
+
+  @override
+  String get kilometreTaslariTumuEtiket => 'Tüm kilometre taşlarını göster';
+
+  @override
+  String get kilometreTasiSiradaki => 'Sıradaki';
+
+  @override
+  String kilometreTasiEtiket(String baslik) {
+    return '$baslik, kilometre taşı';
+  }
+
+  @override
+  String kilometreTasiSiradakiEtiket(String baslik) {
+    return 'Sıradaki kilometre taşı: $baslik';
+  }
+
+  @override
+  String get kilometreTaslariBaslik => 'Kilometre taşların';
+
+  @override
+  String get kilometreTaslariNot =>
+      'Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.';
 }

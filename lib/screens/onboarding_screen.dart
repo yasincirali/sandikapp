@@ -955,8 +955,10 @@ List<_Adim> _adimlariKur() {
       baslik: 'Profil sekmesi',
       // Tema 2026-10-04'e kadar Profil başlığında da bir düğmeydi; artık
       // yalnız Ayarlar'da. Metin neyin nerede olduğunu ayırır.
-      govde: 'Ortaklık burada; bildirimler, sinyal ayarları, fiyat '
-          'alarmları, tema ve yasal belgeler aşağıdaki Ayarlar\'da.',
+      // Kilometre taşları şeridi 1 Kas'ta kimliğin altına geldi.
+      govde: 'Geçtiğin kilometre taşları ve ortaklık burada; bildirimler, '
+          'sinyal ayarları, fiyat alarmları, tema ve yasal belgeler '
+          'aşağıdaki Ayarlar\'da.',
       gorev: 'Profil sekmesine dokun',
       gorevBitti: 'Profil açıldı',
       bitti: (_) => _sekmede(4),

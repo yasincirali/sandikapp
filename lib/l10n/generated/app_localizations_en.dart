@@ -10418,4 +10418,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alarmOneriAciklama => 'We\'ll tell you if it moves 2% in a day';
+
+  @override
+  String get kilometreTaslariUpper => 'YOUR MILESTONES';
+
+  @override
+  String get kilometreTaslariTumu => 'All';
+
+  @override
+  String get kilometreTaslariTumuEtiket => 'Show all milestones';
+
+  @override
+  String get kilometreTasiSiradaki => 'Next';
+
+  @override
+  String kilometreTasiEtiket(String baslik) {
+    return '$baslik, milestone';
+  }
+
+  @override
+  String kilometreTasiSiradakiEtiket(String baslik) {
+    return 'Next milestone: $baslik';
+  }
+
+  @override
+  String get kilometreTaslariBaslik => 'Your milestones';
+
+  @override
+  String get kilometreTaslariNot =>
+      'A milestone you pass stays yours, even if the market drops.';
 }

@@ -6586,5 +6586,15 @@
   "alarmGrupSimdi": "şimdi {fiyat}",
   "@alarmGrupSimdi": {"placeholders": {"fiyat": {"type": "String"}}},
   "alarmOneriBaslik": "Hızlı başla",
-  "alarmOneriAciklama": "Gün içinde %2 oynarsa haber verelim"
+  "alarmOneriAciklama": "Gün içinde %2 oynarsa haber verelim",
+  "kilometreTaslariUpper": "KİLOMETRE TAŞLARIN",
+  "kilometreTaslariTumu": "Tümü",
+  "kilometreTaslariTumuEtiket": "Tüm kilometre taşlarını göster",
+  "kilometreTasiSiradaki": "Sıradaki",
+  "kilometreTasiEtiket": "{baslik}, kilometre taşı",
+  "@kilometreTasiEtiket": {"placeholders": {"baslik": {"type": "String"}}},
+  "kilometreTasiSiradakiEtiket": "Sıradaki kilometre taşı: {baslik}",
+  "@kilometreTasiSiradakiEtiket": {"placeholders": {"baslik": {"type": "String"}}},
+  "kilometreTaslariBaslik": "Kilometre taşların",
+  "kilometreTaslariNot": "Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır."
 }

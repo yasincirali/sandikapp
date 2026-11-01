@@ -17020,6 +17020,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gün içinde %2 oynarsa haber verelim'**
   String get alarmOneriAciklama;
+
+  /// No description provided for @kilometreTaslariUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'KİLOMETRE TAŞLARIN'**
+  String get kilometreTaslariUpper;
+
+  /// No description provided for @kilometreTaslariTumu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümü'**
+  String get kilometreTaslariTumu;
+
+  /// No description provided for @kilometreTaslariTumuEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm kilometre taşlarını göster'**
+  String get kilometreTaslariTumuEtiket;
+
+  /// No description provided for @kilometreTasiSiradaki.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki'**
+  String get kilometreTasiSiradaki;
+
+  /// No description provided for @kilometreTasiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{baslik}, kilometre taşı'**
+  String kilometreTasiEtiket(String baslik);
+
+  /// No description provided for @kilometreTasiSiradakiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki kilometre taşı: {baslik}'**
+  String kilometreTasiSiradakiEtiket(String baslik);
+
+  /// No description provided for @kilometreTaslariBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilometre taşların'**
+  String get kilometreTaslariBaslik;
+
+  /// No description provided for @kilometreTaslariNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.'**
+  String get kilometreTaslariNot;
 }
 
 class _AppLocalizationsDelegate

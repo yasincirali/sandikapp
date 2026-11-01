@@ -20,9 +20,14 @@ class MilestoneSheet extends StatelessWidget {
 
   const MilestoneSheet({super.key, required this.milestone});
 
-  static Future<void> show(BuildContext context, Milestone m) {
-    AnalyticsService.instance
-        .logMilestoneReached(kind: m.kind, value: m.value);
+  /// [tekrar]: Profil rozet şeridinden yeniden açılış. `milestone_reached`
+  /// yazılmaz; o olay eşiğin GEÇİLDİĞİ anı sayar, tekrar bakmayı değil.
+  static Future<void> show(BuildContext context, Milestone m,
+      {bool tekrar = false}) {
+    if (!tekrar) {
+      AnalyticsService.instance
+          .logMilestoneReached(kind: m.kind, value: m.value);
+    }
     return showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -31,7 +36,11 @@ class MilestoneSheet extends StatelessWidget {
     );
   }
 
-  IconData get _ikon => switch (milestone.kind) {
+  IconData get _ikon => ikonu(milestone.kind);
+
+  /// Taş türünün simgesi — kutlama ve Profil rozet şeridi aynı simgeyi
+  /// kullanır.
+  static IconData ikonu(String kind) => switch (kind) {
         'portfolio_age' => Icons.hourglass_bottom_rounded,
         'gold_count' => Icons.star_rounded,
         'diversification' => Icons.pie_chart_rounded,
