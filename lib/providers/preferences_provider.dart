@@ -772,61 +772,34 @@ final effectivePremiumProvider = Provider<bool>((ref) {
 
 /// Paywall açık olsa da kilitler bu kullanıcıda ASKIDA mı.
 ///
-/// İki durum (Premium netleştirmesi, 2026-10-10, kritik bulgu Y1):
+/// Tek durum: **acil durum** `premium_ayar.acil_kapali` = true (sunucu,
+/// 0172; eskiden RC `premium_enabled=false`). Eskiden bu anahtar TERS
+/// çalışıyordu: `effectivePremium`'u false yapıp ödeyenler dahil herkesi
+/// kilitliyordu, yani "bir şey ters giderse kapatırım" düğmesi yangını
+/// büyütüyordu. Artık açılınca kimse kilit görmez; sınırlar kalkar, satış
+/// ekranları açık kalır ama hiçbir şey alınmaz. Ücretli içerik yine
+/// sunucuda `premium_ayar.kapi_acik` ile korunur.
 ///
-/// 1. **Acil durum** `premium_ayar.acil_kapali` = true (sunucu, 0172; eskiden
-///    RC `premium_enabled=false`). Eskiden bu anahtar TERS çalışıyordu:
-///    `effectivePremium`'u false yapıp ödeyenler dahil herkesi kilitliyordu,
-///    yani "bir şey ters giderse kapatırım" düğmesi yangını büyütüyordu.
-///    Artık açılınca kimse kilit görmez; sınırlar kalkar, satış ekranları
-///    açık kalır ama hiçbir şey alınmaz.
-/// 2. **Hediye güvencesi.** Mevcut kullanıcıların 90 günlük hediyesi elle
-///    verilir (`erken_kullanici_hediyesi_ver`, 0116); kesimi aynı çağrı
-///    `premium_ayar.hediye_kesim`e yazar (0172), uygulama oradan okur.
-///    Paywall hediyeden önce açılırsa o arada herkes kilitlenirdi. Kural:
-///    hesabı hediye kesiminden ESKİ olan ve sunucuda HİÇ hak satırı olmayan
-///    kullanıcı kilit görmez. Kesim boşsa (hediye hiç verilmemiş ya da ayar
-///    okunamamış) her hesap "eski" sayılır: satırsız kimse kilitlenmez
-///    (güvenli taraf). Haklar henüz okunmadıysa ya da okunamadıysa da kilit
-///    yok — sunucu cevabı gelene kadar mevcut kullanıcıyı kilitlememek, bir
-///    yeni kullanıcıya birkaç saniye kilitsiz ekran göstermekten ucuz.
-///    Ücretli içerik yine sunucuda `premium_ayar.kapi_acik` ile korunur.
+/// Hediye güvencesi KALKTI (yasin 2026-11-01: "paywall arkasındaki
+/// featurelar eski userlara da kapalı olduğundan ... eskilerine de normal
+/// insanlara nasıl gelirse öyle gelmeli"). 2026-10-10'dan 2026-11-01'e
+/// kadar kesimden eski ve hak satırı olmayan hesap kilit görmüyordu
+/// (90 gün hediye SQL'i koşulana kadar kimseyi kilitlememek için). Hediye
+/// verilmeyeceği için eski ve yeni hesap aynı kuralı görür: Premium hakkı
+/// yoksa kilit. Sunucu `hediye_kesim` kolonu ve `erken_kullanici_hediyesi_ver`
+/// durur (ileride kampanya olursa hak satırı yazar; uygulama hakkı okur),
+/// uygulama kesimi okumaz.
 ///
 /// Saf karar [kilitlerAskidaMi]'da (test edilir).
 final kilitlerAskidaProvider = Provider<bool>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return false;
   final ayar = ref.watch(premiumSunucuAyariProvider).valueOrNull ??
       PremiumSunucuAyari.varsayilan;
-  // Oturum yokken hediye güvencesinin sorusu da yok (kilitli yüzey de yok).
-  final kullanici = ref.watch(authProvider).valueOrNull;
-  if (kullanici == null) return ayar.acilKapali;
-  final haklar = ref.watch(premiumHaklariProvider);
-  return kilitlerAskidaMi(
-    premiumEnabled: !ayar.acilKapali,
-    haklar: haklar.hasValue && !haklar.hasError ? haklar.value : null,
-    hesapOlusturma: kullanici.createdAt,
-    hediyeKesimi: ayar.hediyeKesim,
-  );
+  return kilitlerAskidaMi(acilKapali: ayar.acilKapali);
 });
 
-/// [kilitlerAskidaProvider]'ın saf kararı. [haklar] null = henüz bilinmiyor.
-bool kilitlerAskidaMi({
-  required bool premiumEnabled,
-  required List<PremiumHakki>? haklar,
-  required DateTime? hesapOlusturma,
-  required DateTime? hediyeKesimi,
-}) {
-  if (!premiumEnabled) return true;
-  // Kesimden sonra açılmış hesap hediye almaz; normal kurallar.
-  if (hediyeKesimi != null &&
-      hesapOlusturma != null &&
-      !hesapOlusturma.isBefore(hediyeKesimi)) {
-    return false;
-  }
-  // Eski hesap: hak satırı (geçerli ya da bitmiş) varsa hediye verilmiştir.
-  if (haklar != null && haklar.isNotEmpty) return false;
-  return true;
-}
+/// [kilitlerAskidaProvider]'ın saf kararı: yalnız acil kapatma askıya alır.
+bool kilitlerAskidaMi({required bool acilKapali}) => acilKapali;
 
 /// Premium yüzeylere ve sınırsız kullanıma erişim: Premium hakkı ya da
 /// askıdaki kilitler. Bütün sınır provider'ları bunu okur.

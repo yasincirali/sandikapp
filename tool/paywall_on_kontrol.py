@@ -2,8 +2,9 @@
 
 Neden: açılış dört ayrı yerde dört elle adım ister (hediye SQL'i, RC
 `premium_hediye_kesim`, RC `paywall_enabled`, sunucu `premium_ayar.kapi_acik`)
-ve sırası önemli. 2026-11-01'den beri (0172) RC adımı yok: kesim hediye
-SQL'iyle sunucuya yazılır, paywall kodda açık, kapı sunucuda. Biri atlanırsa
+ve sırası önemli. 2026-11-01'den beri (0172) RC adımı yok: paywall kodda
+açık, kapı ve acil kapatma sunucuda; aynı gün HEDİYE de kalktı (yasin: eski
+kullanıcı da yeni gibi görür) — hediye satırları artık bilgi, engel değil. Biri atlanırsa
 ya herkes kilit görür ya da ücretli içerik açıkta kalır; bunu bir bakışta
 gören bir yer yoktu. Betik SUNUCU tarafını okur ve kontrol listesi basar.
 
@@ -109,51 +110,40 @@ def rapor(s: dict, secretler: set[str], kesim: str | None) -> tuple[str, int]:
     hediye_adet = sum(h["adet"] for h in hediye)
     hediyesiz = s.get("hediyesiz_eski")
 
-    satirlar.append("**Sıra: 1 hediye SQL'i (kesimi de yazar) → 2 sürümü yayınla → 3 kapi_acik**")
+    satirlar.append("**Sıra: 1 sürümü yayınla → 2 kapi_acik** (hediye yok, yasin 2026-11-01)")
     satirlar.append("")
-    if kesim is None:
-        madde(None, "1) Hediye: `--kesim` verilmedi; hediyesiz eski kullanıcı sayılamadı. "
-                    f"Mevcut hediye satırı: {hediye_adet}.")
-    elif hediyesiz == 0 and hediye_adet > 0:
-        madde(True, f"1) Hediye yazılmış: {hediye_adet} satır, kesimden eski hediyesiz kullanıcı yok.")
-    elif hediyesiz == 0 and hediye_adet == 0:
-        madde(None, "1) Kesimden eski kullanıcı yok ve hediye satırı yok (yeni proje?).")
-    else:
-        madde(False, f"1) Hediye EKSİK: kesimden eski {hediyesiz} kullanıcının hediye satırı yok. "
-                     "Önce `erken_kullanici_hediyesi_ver(kesim, 90, 14)` çalıştır.")
-    if hediye:
+    # Hediye kaldırıldı (yasin 2026-11-01: eski kullanıcı da yeni gibi görür).
+    # Satırlar bilgi amaçlı kalır: eski kampanya satırı ya da yanlışlıkla
+    # koşulmuş hediye SQL'i görünsün; engel değildir.
+    if hediye_adet > 0:
+        madde(None, f"1) Hediye satırı var: {hediye_adet} (erken_kullanici). Hediye planı KALKTI; "
+                    "bu satırlar kalıcı Premium verir, bilinçli değilse sil.")
         ilk = min(h["ilk_bitis"] for h in hediye if h["ilk_bitis"])
         son = max(h["son_bitis"] for h in hediye if h["son_bitis"])
-        satirlar.append(f"  - hediye bitişleri {ilk[:10]} … {son[:10]}"
-                        + (" (tek güne yığılı: 0160 yayılımı kullanılmamış)" if ilk[:10] == son[:10] and hediye_adet > 1 else ""))
-    # 0172: kesim ve acil durum sunucuda; Remote Config satırı kalmadı.
-    sunucu_kesim = s.get("hediye_kesim")
-    if kesim is not None and sunucu_kesim and str(sunucu_kesim)[:10] != kesim[:10]:
-        madde(False, f"   `premium_ayar.hediye_kesim` = {sunucu_kesim} ama `--kesim` {kesim}: "
-                     "uygulama sunucudaki kesimi okur; hediye SQL'i hangi kesimle koştuysa odur.")
-    elif sunucu_kesim:
-        madde(True, f"   `premium_ayar.hediye_kesim` = {sunucu_kesim} (uygulama bunu okur, 0172).")
+        satirlar.append(f"  - hediye bitişleri {ilk[:10]} … {son[:10]}")
     else:
-        madde(None, "   `premium_ayar.hediye_kesim` boş: hediye SQL'i henüz koşmamış; uygulama herkesi 'eski' sayar, kimse kilit görmez.")
+        madde(True, "1) Hediye yok (plan: eski ve yeni kullanıcı aynı kilidi görür).")
+    if kesim is not None and hediyesiz not in (None, 0):
+        satirlar.append(f"  - bilgi: `--kesim` {kesim} öncesi hak satırsız {hediyesiz} kullanıcı (beklenen; hediye yok).")
+    # 0172: acil durum sunucuda; `hediye_kesim` kolonu durur, uygulama OKUMAZ.
+    sunucu_kesim = s.get("hediye_kesim")
+    if sunucu_kesim:
+        madde(None, f"   `premium_ayar.hediye_kesim` = {sunucu_kesim} dolu: hediye SQL'i koşmuş; uygulama bu değeri kullanmaz.")
     madde(None, "2) Paywall kodda açık (iOS, 1.1.7 paywall build'i+); Remote Config'te bayrak yok. Mağazada o sürüm yayında mı (elle).")
     kapi = s.get("kapi_acik")
-    if kapi is True and hediyesiz not in (0, None):
-        madde(False, "3) `premium_ayar.kapi_acik` AÇIK ama hediye eksik: hediyesiz eski kullanıcıların ücretli içeriği kilitli.")
-    else:
-        madde(True if kapi is not None else False,
-              f"3) `premium_ayar.kapi_acik` = {kapi} (açılış günü en son bu çevrilir; "
-              "kapalıyken ücretli içerik herkese açık).")
+    madde(True if kapi is not None else False,
+          f"3) `premium_ayar.kapi_acik` = {kapi} (açılış günü en son bu çevrilir; "
+          "kapalıyken ücretli içerik herkese açık).")
     acil = s.get("acil_kapali")
     madde(not acil, "Acil kapatma `premium_ayar.acil_kapali` = " + ("AÇIK: kilitler herkeste askıda" if acil else "kapalı (normal)") + ".")
 
     eksik = [a for a in GEREKLI_SECRETLER if a not in secretler]
     madde(not eksik, "Function secret'ları: " + ("tamam" if not eksik else "EKSİK " + ", ".join(eksik)))
     cron = s.get("cron")
-    if not cron:
-        madde(False, "Hediye hatırlatma cron'u (`calendar-nudge-premium-hediye`) kurulu değil (0142).")
-    else:
-        madde(bool(cron.get("active")),
-              f"Hediye hatırlatma cron'u {'aktif' if cron.get('active') else 'KAPALI'} ({cron.get('schedule')}).")
+    # Hediye yokken hatırlatma cron'u sessiz çalışır (satır bulamaz); bilgi.
+    madde(None, "Hediye hatırlatma cron'u (`calendar-nudge-premium-hediye`): "
+                + ("yok" if not cron else f"{'aktif' if cron.get('active') else 'kapalı'} ({cron.get('schedule')})")
+                + " — hediye yokken etkisiz.")
 
     satirlar += ["", "| Kaynak | Sandbox | Satır | Geçerli |", "|---|---|---:|---:|"]
     for h in haklar:

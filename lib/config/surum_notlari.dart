@@ -134,11 +134,12 @@ const List<SurumNotu> surumNotlari = [
     // cümlesi çıktı: özellik duruyor, ama yeni üç şeyin yanında not uzardı.
     //
     // 2026-11-01 (yasin: paywall 1.1.7'de, Remote Config bayrağı yok, kodda
-    // açık): Premium ve 90 gün hediye maddeleri BAŞA eklendi. `bayrak:
-    // 'paywall_enabled'` platforma bağlı: iOS'ta görünür, Android'de
-    // RevenueCat kurulana kadar hiç yok (sayaca girmez). Fiyat yazılmaz
-    // (mağaza gösterir). Ücretsiz sınırlar sayıyla verilir ki "bir sabah
-    // kilit" sürprizi olmasın.
+    // açık): Premium maddesi BAŞA eklendi. `bayrak: 'paywall_enabled'`
+    // platforma bağlı: iOS'ta görünür, Android'de RevenueCat kurulana kadar
+    // hiç yok (sayaca girmez). Fiyat yazılmaz (mağaza gösterir). Ücretsiz
+    // sınırlar sayıyla verilir ki "bir sabah kilit" sürprizi olmasın.
+    // "Önceden kuranlara 90 gün hediye" maddesi aynı gün KALKTI (yasin: eski
+    // kullanıcı da yeni gibi görür; hediye yok).
     baslik: 'Premium, alarmlar, widget\'lar',
     yenilikler: [
       Yenilik(
@@ -148,16 +149,9 @@ const List<SurumNotu> surumNotlari = [
         aciklama: 'Sınırsız varlık, takip listesi, alarm, ortak ve portföy; '
             'yıllık rapor, PDF ve Excel; fon X-Ray; 8 gösterge ve sınırsız '
             'sinyal bildirimi; kendi göstergen. Aylık ya da yıllık, yıllıkta '
-            '7 gün ücretsiz. Profil › Sandık Premium\'dan bakarsın.',
-      ),
-      Yenilik(
-        ikon: YenilikIkonu.genel,
-        bayrak: 'paywall_enabled',
-        baslik: 'Önceden kuranlara 90 gün hediye',
-        aciklama: 'Bu sürümden önce hesabı olan herkese 90 gün Premium '
-            'hediye; bitiş tarihi Profil\'de yazar, son hafta hatırlatırız. '
-            'Süre dolunca hiçbir verin silinmez; 10 varlık, 5 takip, 20 alarm '
-            've 1 ortak ücretsiz kalır.',
+            '7 gün ücretsiz. Profil › Sandık Premium\'dan bakarsın. Hiçbir '
+            'verin silinmez; 10 varlık, 5 takip, 20 alarm, 1 ortak ve temel '
+            'özellikler ücretsiz kalır.',
       ),
       Yenilik(
         ikon: YenilikIkonu.genel,
