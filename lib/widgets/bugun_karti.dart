@@ -883,6 +883,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   }
 
   /// Hedef satırı (amber): ikon + başlık + alt satır; hedef varsa çubuk.
+  /// Hedef yoksa amber kutu yerine tek satırlık bağlantı (Ar-Ge 1 Kas
+  /// 12:45 #2, yasin "yap"): hedefi olmayan çoğunluğa kart her gün aynı
+  /// büyük çağrıyı yapıyordu. Hedefi olanın kutusu değişmedi.
   Widget _hedefKutusu(HedefSatiri s, bool gizli) {
     final l10n = context.l10n;
     final hedefAc = _olcerek(
@@ -890,12 +893,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         () => showHedefSheet(context, ref,
             kapsam: widget.hedefKapsami, etiket: widget.etiket));
     if (s.belirlenmedi) {
-      return _EylemKutusu(
-        ikon: Icons.flag_outlined,
-        baslik: l10n.todayGoalSetAction,
-        alt: [l10n.todayGoalSetSub],
-        onTap: hedefAc,
-      );
+      return _HedefBaglantisi(onTap: hedefAc);
     }
     final hedef = gizli ? '••••' : fmtTRYCompactSade(s.hedefTRY.toDouble());
     if (s.ulasildi) {
@@ -2051,6 +2049,60 @@ class _DoluCubuk extends StatelessWidget {
 
 /// `[ikon] başlık / alt` — amber zemin; dokununca hedef sayfası. Hedef
 /// varsa altta ilerleme çubuğu (Monzo Pots kalıbı; benchmark 4/8).
+/// "Hedefin yok · Hedef belirle ›" — hedef belirlenmemişken [_EylemKutusu]
+/// yerine. Dolgu yok, satırın tamamı 44 pt dokunma alanı.
+class _HedefBaglantisi extends StatelessWidget {
+  const _HedefBaglantisi({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final l10n = context.l10n;
+    return Semantics(
+      button: true,
+      onTap: onTap,
+      label: '${l10n.todayGoalNone}. ${l10n.todayGoalSetAction}',
+      excludeSemantics: true,
+      child: SandikTappable(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Row(
+            children: [
+              Icon(Icons.flag_outlined, size: 18, color: c.text58),
+              const SizedBox(width: SandikSpace.sm),
+              // Dar ekran / büyük yazı: önce "Hedefin yok" kısalır, eylem
+              // okunur kalır.
+              Flexible(
+                child: Text(l10n.todayGoalNone,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelLarge?.copyWith(color: c.text58)),
+              ),
+              const SizedBox(width: SandikSpace.xs),
+              Text('·',
+                  style: context.t.labelLarge?.copyWith(color: c.text36)),
+              const SizedBox(width: SandikSpace.xs),
+              Flexible(
+                child: SiganMetin(
+                  [l10n.todayGoalSetAction],
+                  style: context.t.labelLarge?.copyWith(
+                    color: c.amberText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 18, color: c.amberText),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EylemKutusu extends StatelessWidget {
   const _EylemKutusu({
     required this.ikon,

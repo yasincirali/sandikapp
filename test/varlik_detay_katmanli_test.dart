@@ -125,12 +125,16 @@ void main() {
     // Pozisyonun: üç sayı ilk bakışta; yedi satırın geri kalanı kapalı.
     expect(find.text('POZİSYONUN'), findsOneWidget);
     expect(find.text('Bugünkü değer'), findsOneWidget);
-    expect(find.text('Toplam kâr/zarar'), findsOneWidget);
+    // Orta sütun ortalama maliyet (Ar-Ge 1 Kas 08:45 #3): toplam kâr/zarar
+    // fiyatın altındaki "Pozisyonun" satırında zaten yazıyor.
+    expect(find.text('Ortalama maliyet'), findsOneWidget);
+    expect(find.text('Toplam kâr/zarar'), findsNothing);
     expect(find.text('Miktar'), findsOneWidget);
-    expect(find.textContaining('+₺6.165 · +%24,59'), findsOneWidget);
+    // Toplam kâr/zarar bir kez: fiyatın altındaki satırda.
+    expect(find.textContaining('+₺6.165'), findsOneWidget);
     expect(find.text('Alış fiyatın (ortalama)'), findsNothing);
     // Dönem kâr/zararı ilk bakışta tekrar etmez (fiyatın altında var).
-    expect(find.textContaining('kâr/zarar'), findsOneWidget);
+    expect(find.textContaining('kâr/zarar'), findsNothing);
 
     // Sinyal kartı üstten kalktı; Analiz'de kapalı satır.
     expect(find.text('ANALİZ'), findsOneWidget);
@@ -156,8 +160,8 @@ void main() {
     ]) {
       expect(find.text(etiket), findsOneWidget, reason: '$etiket satırı yok');
     }
-    // Toplam (özet + ayrıntı) ve dönem satırı.
-    expect(find.textContaining('kâr/zarar'), findsNWidgets(3));
+    // Ayrıntıdaki toplam ve dönem satırı (özet kartta artık yok).
+    expect(find.textContaining('kâr/zarar'), findsNWidgets(2));
 
     // Analiz satırı yerinde açılır: kart + panel.
     await tester.ensureVisible(find.text('Teknik sinyaller'));
@@ -189,9 +193,10 @@ void main() {
     // birlikte açılınca kart kayboluyordu.
     RemoteConfigService.testAcik = {_bayrak, 'varlik_masraflari'};
     await _ac(tester);
-    expect(find.text('MASRAFLAR'), findsOneWidget);
+    // Kayıt yok: kart tek satır (Ar-Ge 1 Kas 08:45 #4).
+    expect(find.text('Masraflar · kaydedilmemiş'), findsOneWidget);
     expect(_y(tester, find.text('POZİSYONUN')),
-        lessThan(_y(tester, find.text('MASRAFLAR'))));
+        lessThan(_y(tester, find.text('Masraflar · kaydedilmemiş'))));
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
   });

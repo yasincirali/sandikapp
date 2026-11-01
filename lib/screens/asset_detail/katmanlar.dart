@@ -55,6 +55,14 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
             : widget.asset.miktarMetni(
                 _canli.asset.quantity, (v, d) => fmtNum(v, digits: d)),
         ayrinti: ayrinti,
+        // Mevduatta birim değer (₺1,37) bir şey söylemez: orada toplam
+        // kâr/zarar kalır. Maliyet bilinmiyorsa "—" (uydurma yok); sayı
+        // grafikteki maliyet çizgisiyle aynı kaynaktan (`alarmMaliyeti`).
+        ortalamaMaliyetMetni: birimGizli
+            ? null
+            : (alarmMaliyeti(_canli.lots) == null || pnl.anchorUnitTRY <= 0
+                ? '—'
+                : _birimBicimi(pnl.anchorUnitTRY).format(pnl.anchorUnitTRY)),
         // Yalnız kendi varlığında: soru "benim param enflasyonu yendi mi?".
         enflasyon: isOwnAsset ? _enflasyonIsiAl() : null,
       ),
@@ -232,7 +240,8 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
   }
 }
 
-/// Pozisyonun özet kartı: bugünkü değer, toplam kâr/zarar, miktar — ve
+/// Pozisyonun özet kartı: bugünkü değer, ortalama maliyet (mevduatta
+/// toplam kâr/zarar), miktar — ve
 /// "Ayrıntı" ile açılan eski yedi satır.
 ///
 /// Dönem kâr/zararı yalnız ayrıntıda: seçili dönemin yüzdesi fiyatın
@@ -244,8 +253,14 @@ class _KatmanliPozisyonKarti extends StatefulWidget {
     required this.pnl,
     required this.miktarMetni,
     required this.ayrinti,
+    this.ortalamaMaliyetMetni,
     this.enflasyon,
   });
+
+  /// Orta sütun (Ar-Ge 1 Kas 08:45 #3, yasin "yap"): "Toplam kâr/zarar"
+  /// fiyatın altındaki "Pozisyonun" satırını tekrarlıyordu; yerine ortalama
+  /// maliyet. `null` → eski sütun (mevduat: birim değer anlamsız).
+  final String? ortalamaMaliyetMetni;
 
   final BazPara baz;
   final _PnlOzeti pnl;
@@ -312,7 +327,10 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
             children: [
               sayi(l.posCurrentValue, tutar.format(pnl.currentValueTRY)),
               const SizedBox(width: SandikSpace.smd),
-              sayi(l.posTotalPnl, k?.metin ?? l.noChange, renk: kRenk),
+              if (widget.ortalamaMaliyetMetni case final m?)
+                sayi(l.posAvgCost, m)
+              else
+                sayi(l.posTotalPnl, k?.metin ?? l.noChange, renk: kRenk),
               if (widget.miktarMetni case final m?) ...[
                 const SizedBox(width: SandikSpace.smd),
                 sayi(l.posQuantity, m),

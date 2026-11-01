@@ -44,6 +44,12 @@ class MasrafKarti extends StatefulWidget {
 class _MasrafKartiState extends State<MasrafKarti> {
   bool _acik = false;
 
+  /// Hiç kayıt yokken kart tek satır başlar (Ar-Ge 1 Kas 08:45 #4, yasin
+  /// "yap"): komisyon kaydetmeyen çoğunluk için üç "—" satırı "bir şey
+  /// eksik yaptım" diye okunuyordu. Dokununca tam kart açılır; kalemlerin
+  /// açıklaması "nasıl eklenir"in cevabıdır.
+  bool _bosAcik = false;
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -54,6 +60,43 @@ class _MasrafKartiState extends State<MasrafKarti> {
         ? ozet.kalemler
         : ozet.kalemler.take(MasrafKarti.kapaliKalem).toList();
     final odenenVar = ozet.odenenToplamTry > 0;
+
+    if (!odenenVar && !ozet.tahminiVar && !_bosAcik) {
+      return Padding(
+        padding: const EdgeInsets.only(top: SandikSpace.lg),
+        child: Semantics(
+          button: true,
+          expanded: false,
+          label: l.costsEmptyA11y,
+          excludeSemantics: true,
+          child: SandikCard(
+              onTap: () => setState(() => _bosAcik = true),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.md, vertical: SandikSpace.xs),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: SandikTouch.min),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(l.costsEmptyRow,
+                          style: context.t.bodyMedium
+                              ?.copyWith(color: context.c.text58)),
+                    ),
+                    const SizedBox(width: SandikSpace.sm),
+                    Text(l.costsHowToAdd,
+                        style: context.t.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.c.amberText,
+                        )),
+                    Icon(Icons.chevron_right_rounded,
+                        color: context.c.amberText),
+                  ],
+                ),
+              ),
+            ),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: SandikSpace.lg),

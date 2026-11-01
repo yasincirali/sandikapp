@@ -2987,7 +2987,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String nOfMIndicators(int on, int all) {
-    return '· $on/$all gösterge açık';
+    return '$on/$all gösterge açık';
   }
 
   @override
@@ -4502,8 +4502,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get vsVolatilityShortNote =>
-      'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.';
+  String vsDayRangePosition(String pct) {
+    return 'Fiyat gün aralığının %$pct noktasında';
+  }
 
   @override
   String get adPositionUpper => 'POZİSYONUN';
@@ -4587,6 +4588,61 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chartAlarmBelowChart => 'grafiğin altında';
+
+  @override
+  String chartCostLabel(String price) {
+    return 'Maliyetin $price';
+  }
+
+  @override
+  String chartCostOutside(String price, String detail) {
+    return 'Maliyetin $price $detail';
+  }
+
+  @override
+  String chartCostA11yAbove(String price, String pct) {
+    return 'Maliyetin $price. Fiyat maliyetinin $pct üstünde.';
+  }
+
+  @override
+  String chartCostA11yBelow(String price, String pct) {
+    return 'Maliyetin $price. Fiyat maliyetinin $pct altında.';
+  }
+
+  @override
+  String chartCostA11yAt(String price) {
+    return 'Maliyetin $price. Fiyat maliyetinde.';
+  }
+
+  @override
+  String get configureShort => 'Ayarla';
+
+  @override
+  String get posAvgCost => 'Ortalama maliyet';
+
+  @override
+  String get vsDayLow => 'Gün düşüğü';
+
+  @override
+  String get vsDayHigh => 'Gün yükseği';
+
+  @override
+  String get costsEmptyRow => 'Masraflar · kaydedilmemiş';
+
+  @override
+  String get costsHowToAdd => 'Nasıl eklenir';
+
+  @override
+  String get costsEmptyA11y =>
+      'Masraflar kaydedilmemiş. Nasıl ekleneceğini görmek için aç.';
+
+  @override
+  String pricesRefreshedAt(String time) {
+    return 'Fiyatlar güncellendi · $time';
+  }
+
+  @override
+  String get todayGoalNone => 'Hedefin yok';
 
   @override
   String get chartNowLabel => 'ŞİMDİ';

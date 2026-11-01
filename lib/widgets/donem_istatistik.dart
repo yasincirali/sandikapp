@@ -23,7 +23,8 @@ import '../utils/tr_format.dart';
 /// ([DonemIstatistigi.isFlat] ile aynı eşik).
 bool donemDuzMu(double pct) => pct.abs() < 0.005;
 
-/// 2×2 istatistik ızgarası: dönem getirisi, bugün, en büyük düşüş, oynaklık.
+/// İstatistik ızgarası: dönem getirisi, bugün, en büyük düşüş, oynaklık.
+/// Fiyatın altında zaten yazan sayı ve bilinmeyen oynaklık hücre almaz.
 ///
 /// [donemPct] ve [bugunPct] çağırandan gelir: detay ekranı dönem yüzdesini
 /// canlı birim fiyata göre ölçer (grafiğin sağ ucu ve başlıktaki sayı ile
@@ -36,7 +37,27 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
     required this.donemPct,
     required this.bugunPct,
     this.donemGetirisiGizli = false,
+    this.bugunGizli,
   });
+
+  /// Izgarada kaç hücre çizilir — iskelet de aynı sayıyı kullanır, yoksa
+  /// veri gelince kartın boyu zıplar (Ar-Ge 1 Kas 08:45 #3).
+  static int hucreSayisi({
+    required bool donemGetirisiGizli,
+    required bool bugunGizli,
+    required bool oynaklikVar,
+  }) =>
+      (donemGetirisiGizli ? 0 : 1) +
+      (bugunGizli ? 0 : 1) +
+      1 +
+      (oynaklikVar ? 1 : 0);
+
+  /// "Bugün" hücresi gizli mi. `null` → eski kural: dönem getirisi gizliyken
+  /// GÜNLÜK seçiliyse ([gun] 0) bugün aynı sayıdır, düşer. Varlık sayfası
+  /// GÜNLÜK'ü `gun == 1` ile taşıdığı için kendi kararını açıkça verir.
+  final bool? bugunGizli;
+
+  bool get _bugunGizli => bugunGizli ?? (donemGetirisiGizli && gun == 0);
 
   final DonemIstatistigi ist;
 
@@ -67,7 +88,7 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
           fmtPctIsaretli(donemPct),
           yon(donemPct),
         ),
-      if (!donemGetirisiGizli || gun != 0)
+      if (!_bugunGizli)
         (
           l.vsTodayUpper,
           bugun == null ? '—' : fmtPctIsaretli(bugun),
@@ -78,11 +99,15 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
         fmtPctIsaretli(ist.enBuyukDususPct),
         ist.enBuyukDususPct.abs() < 0.005 ? context.c.text58 : context.c.loss,
       ),
-      (
-        l.vsVolatilityUpper,
-        ist.oynaklikPct == null ? '—' : fmtPct(ist.oynaklikPct!),
-        context.c.text90,
-      ),
+      // Oynaklık bilinmiyorsa hücre hiç yok (Ar-Ge 1 Kas 08:45 #3, yasin
+      // "yap"): "—" kutusu ve altındaki "kısa dönemde hesaplanmaz" notu yer
+      // kaplayıp bir şey söylemiyordu. Uydurma sayı da yazılmaz.
+      if (ist.oynaklikPct != null)
+        (
+          l.vsVolatilityUpper,
+          fmtPct(ist.oynaklikPct!),
+          context.c.text90,
+        ),
     ];
 
     Widget hucre((String, String, Color) h) => Expanded(
@@ -127,15 +152,7 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...satirlar,
-        if (ist.oynaklikPct == null &&
-            gun < DonemIstatistigi.oynaklikIcinAsgariDonemGun) ...[
-          const SizedBox(height: SandikSpace.xs2),
-          Text(l.vsVolatilityShortNote,
-              style: context.t.bodySmall?.copyWith(color: context.c.text36)),
-        ],
-      ],
+      children: satirlar,
     );
   }
 }
@@ -148,7 +165,12 @@ class DonemAralikCubugu extends StatelessWidget {
     required this.yuksek,
     required this.konum,
     required this.bicim,
+    this.gunIci = false,
   });
+
+  /// GÜNLÜK seçiliyken etiketler "Gün düşüğü/yükseği" der (Ar-Ge 1 Kas
+  /// 08:45 #3): "Dönem" bir günlük aralıkta yabancı geliyordu.
+  final bool gunIci;
 
   final double dusuk;
   final double yuksek;
@@ -172,7 +194,7 @@ class DonemAralikCubugu extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(l.vsPeriodLow,
+                child: Text(gunIci ? l.vsDayLow : l.vsPeriodLow,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelSmall
@@ -180,7 +202,7 @@ class DonemAralikCubugu extends StatelessWidget {
               ),
               const SizedBox(width: SandikSpace.sm),
               Expanded(
-                child: Text(l.vsPeriodHigh,
+                child: Text(gunIci ? l.vsDayHigh : l.vsPeriodHigh,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
@@ -256,7 +278,10 @@ class DonemAralikCubugu extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SandikSpace.xs),
-          Text(l.vsRangePosition('$konumYuzde'),
+          Text(
+              gunIci
+                  ? l.vsDayRangePosition('$konumYuzde')
+                  : l.vsRangePosition('$konumYuzde'),
               style: context.t.bodySmall?.copyWith(color: context.c.text58)),
         ],
       ),

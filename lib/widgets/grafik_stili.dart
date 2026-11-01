@@ -232,37 +232,48 @@ abstract final class GrafikStili {
           left: SandikSpace.sm,
           right: yEkseniGenisligi,
           height: SandikSpace.lgs,
-          child: IgnorePointer(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (donemVar)
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CustomPaint(
-                          size: const Size(14, 1),
-                          painter: _KesikliCizgi(context.c.text36),
-                        ),
-                        const SizedBox(width: SandikSpace.xs2),
-                        Flexible(
-                          child: Text(
-                            etiket,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: _ustYazi(context, renk),
+          child: LayoutBuilder(builder: (context, kutu) {
+            final genislik = kutu.maxWidth;
+            return IgnorePointer(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (donemVar)
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CustomPaint(
+                            size: const Size(14, 1),
+                            painter: _KesikliCizgi(context.c.text36),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: SandikSpace.xs2),
+                          Flexible(
+                            child: Text(
+                              etiket,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _ustYazi(context, renk),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                if (donemVar && sag != null)
-                  const SizedBox(width: SandikSpace.sm),
-                if (sag != null) Flexible(child: sag),
-              ],
-            ),
-          ),
+                  if (donemVar && sag != null)
+                    const SizedBox(width: SandikSpace.sm),
+                  // Sağdaki (maliyet/alarm) önce kendi genişliğini alır, en
+                  // çok yarıdan biraz fazlası; dönem başı kalanı doldurur.
+                  // İkisi eşit Flexible iken kısa iki etiket birden
+                  // kırpılıyordu (maliyet etiketi, 2026-11-01).
+                  if (sag != null)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: genislik * 0.55),
+                      child: sag,
+                    ),
+                ],
+              ),
+            );
+          }),
         ),
       ],
     );
@@ -286,11 +297,87 @@ abstract final class GrafikStili {
           {required bool yukari}) =>
       HorizontalLine(
         y: y,
-        color: (yukari ? context.c.gain : context.c.loss)
-            .withValues(alpha: 0.55),
+        color:
+            (yukari ? context.c.gain : context.c.loss).withValues(alpha: 0.55),
         strokeWidth: 1,
         dashArray: const [2, 3],
       );
+
+  /// Ortalama maliyet: ince (1 px), seyrek kesikli yatay çizgi, `info`
+  /// mavisi (Ar-Ge 1 Kas 08:45 #1, yasin "yap"). Mavi uygulamada "senin
+  /// paran" anlamında (Performans köprüsünde "Yatırdığın"); kâr/zarar rengi
+  /// değil, çünkü çizgi bir eşik değil, bir referans. Anlam yalnız renkte
+  /// değil: kartın üstündeki etiket "Maliyetin ₺…" yazar. Kesik deseni
+  /// alarmdan (2/3) ve dönem başından (4/4) ayrı: 6/4.
+  static HorizontalLine maliyetCizgisi(BuildContext context, double y) =>
+      HorizontalLine(
+        y: y,
+        color: context.c.info.withValues(alpha: 0.7),
+        strokeWidth: 1,
+        dashArray: const [6, 4],
+      );
+
+  /// Kartın üst boşluğundaki maliyet açıklaması: kısa mavi kesik işareti +
+  /// "Maliyetin ₺250,75" (aralık dışındaysa "· grafiğin altında").
+  /// Ekran okuyucu fiyatın maliyete uzaklığını da okur. [guncelFiyat]
+  /// bilinmiyorsa uzaklık söylenmez (uydurma yok).
+  static Widget maliyetEtiketi(BuildContext context,
+      {required double maliyet,
+      required AlarmCizgiKonumu konum,
+      double? guncelFiyat}) {
+    final l = context.l10n;
+    final fiyat = fmtTRYFiyat(maliyet);
+    final metin = switch (konum) {
+      AlarmCizgiKonumu.icinde => l.chartCostLabel(fiyat),
+      // Aralık dışı: ok yeter. Üst şeridi dönem başı ve alarm etiketiyle
+      // paylaşıyor; "· grafiğin altında" 390 pt'de iki etiketi de
+      // kırpıyordu. Ekran okuyucu konumu cümleyle duyar (aşağıda).
+      AlarmCizgiKonumu.ustunde => l.chartCostOutside(fiyat, '↑'),
+      AlarmCizgiKonumu.altinda => l.chartCostOutside(fiyat, '↓'),
+    };
+    final konumCumlesi = switch (konum) {
+      AlarmCizgiKonumu.icinde => null,
+      AlarmCizgiKonumu.ustunde => l.chartAlarmAboveChart,
+      AlarmCizgiKonumu.altinda => l.chartAlarmBelowChart,
+    };
+    final g = guncelFiyat;
+    final String okunus;
+    if (g == null || !g.isFinite || g <= 0) {
+      okunus = metin;
+    } else {
+      final fark = (g - maliyet) / maliyet * 100;
+      okunus = fark.abs() < 0.005
+          ? l.chartCostA11yAt(fiyat)
+          : fark > 0
+              ? l.chartCostA11yAbove(fiyat, fmtPct(fark))
+              : l.chartCostA11yBelow(fiyat, fmtPct(fark.abs()));
+    }
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: konumCumlesi == null
+          ? okunus
+          : '$okunus ${konumCumlesi[0].toUpperCase()}${konumCumlesi.substring(1)}.',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CustomPaint(
+            size: const Size(14, 1),
+            painter: _KesikliCizgi(context.c.info),
+          ),
+          const SizedBox(width: SandikSpace.xs2),
+          Flexible(
+            child: Text(
+              metin,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: _ustYazi(context, context.c.text58),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Kartın üst boşluğundaki fiyat alarmı açıklaması: zil + güncel fiyata
   /// en yakın alarm ("₺4.300 ▲ üstüne çıkınca" ya da aralık dışındaysa
@@ -301,7 +388,8 @@ abstract final class GrafikStili {
   /// kalıpta (en yakın + "+N", 2026-10-26). Ekran okuyucu hepsini tek tek
   /// okur. [alarmlar] boşsa `null` (satır yalnız dönem başıyla kalır).
   static Widget? alarmEtiketi(
-      BuildContext context, List<GrafikAlarmCizgisi> alarmlar) {
+      BuildContext context, List<GrafikAlarmCizgisi> alarmlar,
+      {bool kisa = false}) {
     if (alarmlar.isEmpty) return null;
     final l = context.l10n;
     String ayrinti(GrafikAlarmCizgisi a) => switch (a.konum) {
@@ -316,8 +404,12 @@ abstract final class GrafikStili {
     final stil = _ustYazi(context, renk);
     // ▲/▼ alarm şeridinin çipiyle aynı işaret (yön), metin koşulu ya da
     // konumu söyler: renk körlüğünde de okunur.
-    final metin = l.chartAlarmLabel(
-        fmtTRYFiyat(ilk.alarm.targetPrice), yukari ? '▲' : '▼', ayrinti(ilk));
+    // [kisa]: satırda maliyet etiketi de var; koşul/konum metni düşer,
+    // fiyat ve yön kalır (ekran okuyucu yine tamını okur).
+    final metin = kisa
+        ? '${fmtTRYFiyat(ilk.alarm.targetPrice)} ${yukari ? '▲' : '▼'}'
+        : l.chartAlarmLabel(fmtTRYFiyat(ilk.alarm.targetPrice),
+            yukari ? '▲' : '▼', ayrinti(ilk));
     return Semantics(
       container: true,
       excludeSemantics: true,
@@ -328,8 +420,7 @@ abstract final class GrafikStili {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.notifications_none_rounded,
-              size: 14, color: renk),
+          Icon(Icons.notifications_none_rounded, size: 14, color: renk),
           const SizedBox(width: SandikSpace.xs2),
           Flexible(
             child: Text(
