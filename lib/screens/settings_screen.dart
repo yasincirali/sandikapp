@@ -570,73 +570,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _bolumAc(SettingsBolum b) => pushGuarded(
-        context,
-        adaptiveRoute<void>(settings: const RouteSettings(name: 'settings'), builder: (_) => SettingsScreen(bolum: b)),
-      );
 
   /// Hub: dört bölüm + (admin) tanılama + (debug) geliştirici + sürüm.
   List<Widget> _hub() => [
         const SizedBox(height: 4),
-        _SettingsTile(
-          icon: Icons.palette_outlined,
-          title: SettingsBolum.gorunum.baslik(context),
-          subtitle: context.l10n.settingsAppearanceSubtitle,
-          onTap: () => _bolumAc(SettingsBolum.gorunum),
-        ),
-        _SettingsTile(
-          icon: Icons.notifications_outlined,
-          title: SettingsBolum.bildirimler.baslik(context),
-          subtitle: defaultTargetPlatform == TargetPlatform.iOS
-              ? context.l10n.notifSubtitleIos
-              : context.l10n.notifSubtitleAndroid,
-          onTap: () => _bolumAc(SettingsBolum.bildirimler),
-        ),
-        _SettingsTile(
-          icon: Icons.shield_outlined,
-          title: SettingsBolum.hesap.baslik(context),
-          subtitle: context.l10n.settingsAccountSubtitle,
-          onTap: () => _bolumAc(SettingsBolum.hesap),
-        ),
-        _SettingsTile(
-          icon: Icons.help_outline_rounded,
-          title: SettingsBolum.yardim.baslik(context),
-          subtitle: context.l10n.settingsHelpSubtitle,
-          onTap: () => _bolumAc(SettingsBolum.yardim),
-        ),
-            ...() {
-              final teknik = _teknikBolumler();
-              if (teknik.isEmpty) return teknik;
-              // Teknik satırlar katlanır "Gelişmiş" grubunda:
-              // tanılama ve geliştirici araçları gündelik ayar değildir,
-              // hub'ın dört bölümüyle aynı ağırlıkta durmaları listeyi
-              // olduğundan kalabalık gösteriyordu (madde 10).
-              return <Widget>[
-                const SizedBox(height: 28),
-                _GelismisGrup(
-                  acik: _gelismisAcik,
-                  onDegis: () =>
-                      setState(() => _gelismisAcik = !_gelismisAcik),
-                  children: teknik,
-                ),
-              ];
-            }(),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
-              // için elle yazılan değer bayatlıyordu (gerçek 1.1.4 iken
-              // burada "1.0.0" görünüyordu). `PackageInfo` kurulu olanı
-              // söyler.
-              child: Text(
-                context.l10n.appVersionLabel(_surum ?? '…'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: context.c.text36,
-                  fontSize: 12,
-                ),
-              ),
-            ),
+        const AyarGrupSatirlari(),
+        ..._gelismisVeSurum(),
             const SizedBox(height: 40),
       ];
 
@@ -1139,9 +1078,95 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       yenilikler,
       tur,
       yasal,
-      const SizedBox(height: 28),
+      // Ayar grupları Profil'e taşınınca (Ar-Ge 1 Kas 20:45 #2) hub'a
+      // yalnız arama ve derin bağlantı gidiyor; sürüm satırı ve admin'in
+      // "Gelişmiş"i görünür kalsın diye Yardım'ın sonunda da var. Sürüm
+      // "Uygulama hakkında"nın doğal yeri (iOS Ayarlar › Genel › Hakkında).
+      ..._gelismisVeSurum(),
     ];
   }
+
+  /// Katlanır "Gelişmiş" (admin/debug) + kurulu sürüm. Hub ve Yardım ortak.
+  List<Widget> _gelismisVeSurum() => [
+        ...() {
+          final teknik = _teknikBolumler();
+          if (teknik.isEmpty) return teknik;
+          // Teknik satırlar katlanır "Gelişmiş" grubunda:
+          // tanılama ve geliştirici araçları gündelik ayar değildir,
+          // hub'ın dört bölümüyle aynı ağırlıkta durmaları listeyi
+          // olduğundan kalabalık gösteriyordu (madde 10).
+          return <Widget>[
+            const SizedBox(height: 28),
+            _GelismisGrup(
+              acik: _gelismisAcik,
+              onDegis: () => setState(() => _gelismisAcik = !_gelismisAcik),
+              children: teknik,
+            ),
+          ];
+        }(),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
+          // için elle yazılan değer bayatlıyordu (gerçek 1.1.4 iken
+          // burada "1.0.0" görünüyordu). `PackageInfo` kurulu olanı
+          // söyler.
+          child: Text(
+            context.l10n.appVersionLabel(_surum ?? '…'),
+            textAlign: TextAlign.center,
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          ),
+        ),
+      ];
+}
+
+/// Ayarların dört grubu (Görünüm, Bildirimler, Hesap, Yardım) — TEK yer.
+///
+/// Profil'in altında ve Ayarlar hub'ında aynı satırlar (Ar-Ge 1 Kas 20:45
+/// #2, müşteri "yap"): bir ayara ulaşmak Profil → dişli → grup → satır
+/// üç dokunuştu, Profil ise yarı boştu. Grup sayfaları değişmedi.
+class AyarGrupSatirlari extends StatelessWidget {
+  const AyarGrupSatirlari({super.key});
+
+  void _ac(BuildContext context, SettingsBolum b) => pushGuarded(
+        context,
+        adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'settings'),
+            builder: (_) => SettingsScreen(bolum: b)),
+      );
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SettingsTile(
+            icon: Icons.palette_outlined,
+            title: SettingsBolum.gorunum.baslik(context),
+            subtitle: context.l10n.settingsAppearanceSubtitle,
+            onTap: () => _ac(context, SettingsBolum.gorunum),
+          ),
+          _SettingsTile(
+            icon: Icons.notifications_outlined,
+            title: SettingsBolum.bildirimler.baslik(context),
+            subtitle: defaultTargetPlatform == TargetPlatform.iOS
+                ? context.l10n.notifSubtitleIos
+                : context.l10n.notifSubtitleAndroid,
+            onTap: () => _ac(context, SettingsBolum.bildirimler),
+          ),
+          _SettingsTile(
+            icon: Icons.shield_outlined,
+            title: SettingsBolum.hesap.baslik(context),
+            subtitle: context.l10n.settingsAccountSubtitle,
+            onTap: () => _ac(context, SettingsBolum.hesap),
+          ),
+          _SettingsTile(
+            icon: Icons.help_outline_rounded,
+            title: SettingsBolum.yardim.baslik(context),
+            subtitle: context.l10n.settingsHelpSubtitle,
+            onTap: () => _ac(context, SettingsBolum.yardim),
+          ),
+        ],
+      );
 }
 
 /// Hub'ın katlanır "Gelişmiş" grubu (sadeleştirme madde 10, 2026-10-04).

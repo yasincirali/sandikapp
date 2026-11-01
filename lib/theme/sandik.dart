@@ -1487,10 +1487,16 @@ class SandikLogoutButton extends StatelessWidget {
   final Future<void> Function() onPressed;
   final bool disabled;
 
+  /// Metinli tam genişlik satır ("Çıkış yap"): Profil listesinin sonunda
+  /// (Ar-Ge 1 Kas 20:45 #3). Yıkıcı eylem başlıkta, dişlinin yanında
+  /// yanlış dokunuşa açıktı; iOS kalıbı listenin sonu, metinle.
+  final bool satir;
+
   const SandikLogoutButton({
     super.key,
     required this.onPressed,
     this.disabled = false,
+    this.satir = false,
   });
 
   @override
@@ -1515,13 +1521,39 @@ class SandikLogoutButton extends StatelessWidget {
       child: Semantics(
         button: true,
         label: context.l10n.signOutAction,
-        child: SizedBox(
-          width: SandikTouch.min,
-          height: SandikTouch.min,
-          child: Center(
-            child: Icon(Icons.logout_rounded, color: color, size: 20),
-          ),
-        ),
+        child: satir
+            ? ExcludeSemantics(
+                child: ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(minHeight: SandikTouch.min),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout_rounded,
+                            color: color, size: SandikSpace.lgs),
+                        const SizedBox(width: SandikSpace.sm),
+                        Flexible(
+                          child: Text(
+                            context.l10n.signOutAction,
+                            style: context.t.bodyLarge?.copyWith(
+                                color: color, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : SizedBox(
+                width: SandikTouch.min,
+                height: SandikTouch.min,
+                child: Center(
+                  child: Icon(Icons.logout_rounded, color: color, size: 20),
+                ),
+              ),
       ),
     );
   }

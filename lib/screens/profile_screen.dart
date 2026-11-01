@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import '../config/magaza.dart';
 import '../models/user_model.dart';
 import '../providers/hesap_provider.dart';
@@ -444,31 +445,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       // Tema hızlı geçişi buradaydı; 2026-10-04 sadeleştirmede
                       // kaldırıldı — tema YALNIZ Ayarlar'daki üçlü seçicide.
-                      // Aynı tercih iki yerde duruyordu ve "sistem" yalnız
-                      // Ayarlar'dan seçilebildiği için ikisi farklı şey
-                      // anlatıyordu.
-                      TourAnchor(
-                        target: TourTarget.ayarlar,
-                        child: CupertinoButton(
-                        minimumSize: SandikTouch.minSize,
-                        padding: EdgeInsets.zero,
-                        onPressed: () => pushGuarded(
-                                  context,
-                                  adaptiveRoute<void>(
-                                    settings: const RouteSettings(name: 'settings'),
-                                    builder: (_) => const SettingsScreen(),
-                                  ),
-                                ),
-                        child: _ActionIcon(
-                          icon: Icons.settings_outlined,
-                          color: context.c.text90,
-                          semanticLabel: context.l10n.settingsTitle,
-                        ),
-                        ),
-                      ),
-                      // Düğme aralığı her ekranda `SandikSpace.sm` (2026-09-28).
-                      const SizedBox(width: SandikSpace.sm),
-                      SandikLogoutButton(onPressed: _logout),
+                      //
+                      // Ayarlar dişlisi ve çıkış simgesi de buradaydı; 1 Kas
+                      // (Ar-Ge 20:45 #2-#3, müşteri "yap") ikisi de listeye
+                      // indi: ayar grupları sayfanın altında (bir dokunuş
+                      // eksi), çıkış en sonda metinle (yıkıcı eylem dişlinin
+                      // yanında yanlış dokunuşa açıktı).
+                      //
+                      // Başlık satırı yine 44 pt: öteki sekmelerin başlığı
+                      // düğmeli; yükseklik düşerse "dört sekmede aynı çizgi"
+                      // (2026-09-28) bozulur.
+                      const SizedBox(height: SandikTouch.min),
                     ],
                   ),
                 ),
@@ -486,6 +473,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       },
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
+      // Liste kısa ama tur hedefi `ayarlar` en altta: tembel kurulumda
+      // ekran dışındaysa çapası hiç takılmaz, tur onu bulamazdı.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(4000),
                       // Üst dolgu 0: ilk kart başlık bloğunun hemen altında,
                       // dört sekmede aynı çizgi (2026-09-28).
                       padding: EdgeInsets.fromLTRB(
@@ -496,9 +486,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Oturum çözülmeden bu ekran kurulmaz; null yalnızca
                         // çıkış anındaki son karede görülebilir.
                         if (user != null) _buildUserHeader(user),
-                        const SizedBox(height: 20),
+                        // Afiş boşluğunu kendisi taşır: görünmeyende kimlik
+                        // kartıyla sonraki satır arasında 20 + 24 pt boşluk
+                        // üst üste kalıyordu (Ar-Ge 1 Kas 20:45 tasarım 3).
                         const _ProfilePremiumBanner(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: SandikSpace.lg),
                         // Yıllık özet afişi. Kendi kendini kapatır: bayrak,
                         // takvim penceresi (26 Aralık–10 Ocak) ve verinin
                         // anlamlı olması. Yılın 11 ayı hiç görünmez.
@@ -561,6 +553,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               padding: const EdgeInsets.only(top: 12),
                             );
                           }),
+                        const SizedBox(height: SandikSpace.xl),
+                        // Ayarlar: hub'ın dört grubu burada (`AyarGrupSatirlari`,
+                        // TEK yer). Tur hedefi `ayarlar` dişliden bu başlığa
+                        // taşındı.
+                        TourAnchor(
+                          target: TourTarget.ayarlar,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SandikSectionHeader(
+                                  title: context.l10n.settingsTitle
+                                      .toUpperCase()),
+                              const SizedBox(height: SandikSpace.md),
+                              const AyarGrupSatirlari(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: SandikSpace.lg),
+                        SandikCard(
+                          padding: EdgeInsets.zero,
+                          child: SandikLogoutButton(
+                              onPressed: _logout, satir: true),
+                        ),
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -772,7 +787,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ? null
                       : _submitCode,
                   height: 46,
-                  style: _hafifDolguStili(context.c.gain),
+                  // Nötr (Ar-Ge 1 Kas 20:45 tasarım 4): yeşil bu uygulamada
+                  // kâr demek; ikincil düğme nötr, "Davet et" amber.
+                  style: _hafifDolguStili(context.c.text90),
                   child: Text(
                     _submitting
                         ? context.l10n.sendingEllipsis
@@ -782,7 +799,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     style: context.t.titleMedium?.copyWith(
                         color: _rateLimitRemaining > 0
                             ? context.c.text36
-                            : context.c.gain,
+                            : context.c.text90,
                         fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -917,11 +934,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       });
                     },
                     height: 46,
-                    style: _hafifDolguStili(context.c.gain),
+                    // Nötr: yeşil kâr demek (bkz. ortaklık isteği düğmesi).
+                    style: _hafifDolguStili(context.c.text90),
                     child: Text(
                       context.l10n.ortakPortfoyKodGir,
                       style: context.t.titleMedium?.copyWith(
-                          color: context.c.gain, fontWeight: FontWeight.w600),
+                          color: context.c.text90, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1308,10 +1326,21 @@ class _ActionIcon extends StatelessWidget {
 class _ProfilePremiumBanner extends ConsumerWidget {
   const _ProfilePremiumBanner();
 
+  /// Afiş varken kimlik kartıyla arasındaki boşluk; afiş yoksa boşluk da
+  /// yok (bkz. çağıran).
+  static const _ustBosluk = 20.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final afis = _afis(context, ref);
+    if (afis == null) return const SizedBox.shrink();
+    return Padding(
+        padding: const EdgeInsets.only(top: _ustBosluk), child: afis);
+  }
+
+  Widget? _afis(BuildContext context, WidgetRef ref) {
     // Paywall master switch kapalıysa banner hiç gösterilmez.
-    if (!ref.watch(paywallVisibleProvider)) return const SizedBox.shrink();
+    if (!ref.watch(paywallVisibleProvider)) return null;
     final premium = ref.watch(effectivePremiumProvider);
     if (premium) {
       // Sunucu hakkı varsa (abonelik, erken kullanıcı hediyesi) türü ve
@@ -1326,7 +1355,7 @@ class _ProfilePremiumBanner extends ConsumerWidget {
     // kullanıcı her şeyi zaten kullanıyor: "Premium'a geç" bandı satın
     // alınan şeyin ne olduğunu söyleyemez. Bant yalnız kilit gerçekten
     // varken çıkar.
-    if (!ref.watch(premiumKilitliProvider)) return const SizedBox.shrink();
+    if (!ref.watch(premiumKilitliProvider)) return null;
     // Hediyesi bitmiş kullanıcıya bant "kaldığın yerden devam" der; kaynak
     // ayrı ki huni analitiğinde hediye sonrası dönüşüm görünsün.
     final hediyeBitti = ref.watch(hediyesiBitmisProvider) != null;
