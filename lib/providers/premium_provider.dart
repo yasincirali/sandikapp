@@ -105,8 +105,10 @@ class PremiumSunucuAyari {
 }
 
 /// Sunucu ayarını oturum başına bir kez okur; hata → varsayılan +
-/// Crashlytics non-fatal (kullanıcıyı ağ hatası yüzünden kilitlememek için
-/// kesim null kalır, bkz. `kilitlerAskidaMi`). Oturum yokken varsayılan.
+/// Crashlytics non-fatal (acil kapatma okunamazsa normal kural: kilit).
+/// `hediye_kesim` sunucudan gelir ama uygulama kararda KULLANMAZ (hediye
+/// kaldırıldı, 2026-11-01; bkz. `kilitlerAskidaProvider`). Oturum yokken
+/// varsayılan.
 final premiumSunucuAyariProvider =
     FutureProvider<PremiumSunucuAyari>((ref) async {
   if (!ref.watch(paywallVisibleProvider)) return PremiumSunucuAyari.varsayilan;
@@ -124,13 +126,9 @@ final premiumSunucuAyariProvider =
 /// Oturumdaki kullanıcının hakları. autoDispose DEĞİL: kalıcı
 /// `effectivePremiumProvider` bunu izler; oturum değişince `authProvider`
 /// üzerinden yenilenir. Hata → boş liste + Crashlytics non-fatal:
-/// okuyamadığımız hak "Premium değil" sayılır. Kilit kararı ama bunun
-/// üstünde (`kilitlerAskidaProvider`, 2026-10-10): hesap hediye kesiminden
-/// eskiyse ve hak satırı okunamadıysa kilit GÖSTERİLMEZ — hediyesini almış
-/// olabilecek kullanıcıyı bir ağ hatası yüzünden kilitlemek, ücretli içeriği
-/// birkaç dakika açık bırakmaktan pahalı. Yeni hesap (kesimden sonra) yine
-/// kilit görür. Liste süresi geçmiş satırları da içerir: hediyesi biten
-/// hesap "satırı var" sayılır ve kilit döner.
+/// okuyamadığımız hak "Premium değil" sayılır (2026-11-01'e kadar hediye
+/// güvencesi bunu eski hesapta askıya alıyordu; hediye kalktı, kural tek).
+/// Liste süresi geçmiş satırları da içerir (abonelik yönetimi satırı için).
 final premiumHaklariProvider = FutureProvider<List<PremiumHakki>>((ref) async {
   if (!ref.watch(paywallVisibleProvider)) return const [];
   final uid = ref.watch(authProvider).valueOrNull?.id;

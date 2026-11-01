@@ -434,13 +434,15 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
 **B. Paywall'ı açma (GİB yazısı + hesap hazır olunca)**
 
 2026-11-01 (yasin: "rc flagleriyle yönetmemeye çalışalım"): paywall artık
-Remote Config'le açılmaz. yeni 1.1.7 build'inden itibaren kodda açık (iOS; Android
-RevenueCat kurulunca), hediye kesimi ve acil kapatma sunucuda (0172).
+Remote Config'le açılmaz. 1.1.7 build 1785274601'den itibaren kodda açık (iOS; Android
+RevenueCat kurulunca), acil kapatma sunucuda (0172). **Hediye yok** (yasin
+2026-11-01 22:53: eski kullanıcı da yeni gibi görür): hediye SQL'i ve kesim adımı
+kalktı; `erken_kullanici_hediyesi_ver` ve `hediye_kesim` kolonu durur, uygulama okumaz.
 Güncel adım listesi tek yerde: `/mnt/project-files/paywall/acilis_listesi_1.1.7.md`.
 
 1. [ ] Yeni 1.1.7 build'ini gönderirken "In-App Purchases and Subscriptions" bölümüne iki
-       ürünü ekle; aynı gün hediye SQL'i (kesimi sunucuya yazar); demo hesabı
-       kesimden sonra aç; inceleme notu: Profil › Sandık Premium.
+       ürünü ekle; demo hesabı sıradan hesap (kilitleri görür); inceleme notu:
+       Profil › Sandık Premium.
 2. [ ] Apple onaylayınca Release → en son
        `update public.premium_ayar set kapi_acik = true;` (Frankfurt).
 3. [ ] Acil kapatma (ilk satıştan sonra):

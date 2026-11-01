@@ -19,31 +19,27 @@ def _durum(**k):
 
 
 class PaywallOnKontrolTest(unittest.TestCase):
-    def test_hediye_eksikse_engel(self):
+    def test_hediyesiz_eski_kullanici_engel_degil(self):
+        # Hediye kalktı (2026-11-01): hak satırsız eski kullanıcı beklenen durum.
         m, kod = pk.rapor(_durum(hediyesiz_eski=12), SECRETLER, "2026-10-28")
-        self.assertEqual(kod, 1)
-        self.assertIn("Hediye EKSİK: kesimden eski 12", m)
+        self.assertEqual(kod, 0)
+        self.assertIn("Hediye yok", m)
+        self.assertIn("hak satırsız 12", m)
 
-    def test_hediye_tam_ve_kapi_kapali_gecer(self):
+    def test_hediye_satiri_varsa_uyarir_ama_engel_degil(self):
         h = [{"kaynak": "erken_kullanici", "sandbox": False, "adet": 40, "gecerli": 40,
               "ilk_bitis": "2027-01-26T00:00:00+00:00", "son_bitis": "2027-02-09T00:00:00+00:00"}]
-        m, kod = pk.rapor(_durum(haklar=h), SECRETLER, "2026-10-28")
+        m, kod = pk.rapor(_durum(haklar=h), SECRETLER, None)
         self.assertEqual(kod, 0)
-        self.assertIn("Hediye yazılmış: 40 satır", m)
-        self.assertNotIn("tek güne yığılı", m)
-
-    def test_tek_gune_yigili_bitis_uyarir(self):
-        h = [{"kaynak": "erken_kullanici", "sandbox": False, "adet": 5, "gecerli": 5,
-              "ilk_bitis": "2027-01-26T00:00:00+00:00", "son_bitis": "2027-01-26T23:00:00+00:00"}]
-        m, _ = pk.rapor(_durum(haklar=h), SECRETLER, "2026-10-28")
-        self.assertIn("tek güne yığılı", m)
+        self.assertIn("Hediye satırı var: 40", m)
+        self.assertIn("bilinçli değilse sil", m)
 
     def test_secret_eksik_ve_cron_kapali_engel(self):
         m, kod = pk.rapor(_durum(cron={"active": False, "schedule": "15 9 * * *"}),
                           {"REVENUECAT_API_KEY"}, None)
         self.assertEqual(kod, 1)
         self.assertIn("EKSİK REVENUECAT_WEBHOOK_SECRET", m)
-        self.assertIn("KAPALI", m)
+        self.assertIn("hediye yokken etkisiz", m)
 
     def test_kesim_sql_tirnak_kacirilir(self):
         self.assertIn("'2026-10-28T00:00:00+03'::timestamptz", pk.sorgu("2026-10-28T00:00:00+03"))
@@ -58,11 +54,11 @@ if __name__ == "__main__":
 class SunucuAyari0172(unittest.TestCase):
     """0172: kesim ve acil kapatma sunucuda; rapor bunları okur, RC satırı yok."""
 
-    def test_sunucu_kesimi_ile_girdi_kesimi_farkliysa_engel(self):
+    def test_sunucu_kesimi_doluysa_bilgi_engel_degil(self):
         d = _durum(hediye_kesim="2026-11-05T00:00:00+03:00")
-        m, kod = pk.rapor(d, set(pk.GEREKLI_SECRETLER), "2026-11-07T00:00:00+03")
-        self.assertEqual(kod, 1)
-        self.assertIn("hediye_kesim", m)
+        m, kod = pk.rapor(d, set(pk.GEREKLI_SECRETLER), None)
+        self.assertEqual(kod, 0)
+        self.assertIn("uygulama bu değeri kullanmaz", m)
 
     def test_acil_kapali_engel_ve_rc_satiri_yok(self):
         d = _durum(acil_kapali=True)

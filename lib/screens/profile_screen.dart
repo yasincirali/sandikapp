@@ -1350,8 +1350,8 @@ class _ProfilePremiumBanner extends ConsumerWidget {
           ? const _PremiumActiveBadge()
           : PremiumAbonelikSatiri(hak: hak);
     }
-    // Kilitler askıdaysa (acil anahtar `premium_enabled=false` ya da
-    // hediyesi henüz yazılmamış eski hesap — `kilitlerAskidaProvider`)
+    // Kilitler askıdaysa (acil kapatma `premium_ayar.acil_kapali`,
+    // `kilitlerAskidaProvider`)
     // kullanıcı her şeyi zaten kullanıyor: "Premium'a geç" bandı satın
     // alınan şeyin ne olduğunu söyleyemez. Bant yalnız kilit gerçekten
     // varken çıkar.
