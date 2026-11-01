@@ -956,7 +956,7 @@ List<_Adim> _adimlariKur() {
       // Tema 2026-10-04'e kadar Profil başlığında da bir düğmeydi; artık
       // yalnız Ayarlar'da. Metin neyin nerede olduğunu ayırır.
       govde: 'Ortaklık burada; bildirimler, sinyal ayarları, fiyat '
-          'alarmları, tema ve yasal belgeler sağ üstteki Ayarlar\'da.',
+          'alarmları, tema ve yasal belgeler aşağıdaki Ayarlar\'da.',
       gorev: 'Profil sekmesine dokun',
       gorevBitti: 'Profil açıldı',
       bitti: (_) => _sekmede(4),
@@ -1001,14 +1001,16 @@ List<_Adim> _adimlariKur() {
       // Görünüm'de; metin bölüm adlarıyla anlatır ki kullanıcı ekranda aynı
       // başlıkları bulsun. 2026-10-20: Bildirimler tek soruyla açılır
       // (Az · Dengeli · Çok), tek tek anahtarlar "Ayrıntılı"da.
-      govde: 'Dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
+      // 1 Kas: ayarlar dişliden Profil'in altına indi (tur metni arayüzle
+      // birlikte değişir); sürüm ve yardım satırları Yardım & Yasal'da.
+      govde: 'Profil\'in altındaki dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
           'yatırımcı seviyesi ve "Bugünkü portföyle" görünümü), '
           'Bildirimler (tek dokunuşla Az, Dengeli ya da Çok; fiyat '
           'alarmları, günlük brifingin saati, sessiz saatler; tek tek '
           'ayarlar "Ayrıntılı"da), Hesap & Güvenlik '
           '(kullanıcı adın, kilit, kayıtlı cihazların, verilerin) ve '
           'Yardım & Yasal. '
-          'Bu turu da buradan yeniden izleyebilirsin.',
+          'Bu turu da buradan yeniden izleyebilirsin. Çıkış yap en altta.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
     ),

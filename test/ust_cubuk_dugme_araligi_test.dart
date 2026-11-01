@@ -181,7 +181,20 @@ void main() {
     testWidgets('${e.key}: başlık düğmeleri eşit aralıkta ve hizalı',
         (tester) async {
       await _pump(tester, e.value.$1);
-      final kutular = _basilikKutulari(tester);
+      var kutular = _basilikKutulari(tester);
+      // Profil'in başlığında düğme yok (1 Kas: dişli ve çıkış listeye
+      // indi). Satır yine 44 pt; ölçü başlık satırının kendisinden.
+      if (e.key == 'Profil') {
+        expect(kutular, isEmpty,
+            reason: 'Profil başlığında düğme kalmamalı ($kutular)');
+        final satir = tester.getRect(find
+            .ancestor(of: find.text('Profil').first, matching: find.byType(Row))
+            .first);
+        expect((satir.height - SandikTouch.min).abs(), lessThan(0.5),
+            reason: 'Profil başlık satırı ${satir.height}, beklenen 44');
+        kutular = [Rect.fromLTWH(satir.right - SandikTouch.min, satir.top,
+            SandikTouch.min, SandikTouch.min)];
+      }
       expect(kutular, isNotEmpty, reason: '${e.key}: başlıkta 44pt kutu yok');
 
       // Başlık metni: ekran kenarından `screenH`, düğme satırıyla aynı
