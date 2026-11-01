@@ -61,6 +61,7 @@ void main() {
         'kar_artan',
         'kar_yuzde_azalan',
         'kar_yuzde_artan',
+        'bugun_hareket',
       ]);
     });
   });

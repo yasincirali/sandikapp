@@ -4645,6 +4645,32 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayGoalNone => 'Hedefin yok';
 
   @override
+  String get pfModeTotal => 'Toplam';
+
+  @override
+  String get pfModeToday => 'Bugün';
+
+  @override
+  String pfModeA11y(String mode) {
+    return 'Kartlarda gösterilen: $mode';
+  }
+
+  @override
+  String get pfTodayTraded => 'Bugün işlem var';
+
+  @override
+  String get pfTodayNoData => 'Gün içi veri yok';
+
+  @override
+  String get pfTodayWaiting => 'Veri bekleniyor';
+
+  @override
+  String get sortTodayMove => 'Bugünkü hareket';
+
+  @override
+  String get sortTodayMoveSub => 'En çok oynayan önce';
+
+  @override
   String get chartNowLabel => 'ŞİMDİ';
 
   @override
