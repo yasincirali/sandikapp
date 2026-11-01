@@ -214,8 +214,15 @@ void main() {
       });
     }
 
-    test('paywall_enabled hâlâ kapalı — IAP paketi yok', () {
-      expect(varsayilan('paywall_enabled'), 'false');
+    test('paywall_enabled / premium_enabled / premium_hediye_kesim RC\'de yok',
+        () {
+      // 2026-11-01: paywall RC bayraklarıyla yönetilmez (yasin). Görünürlük
+      // kodda (`paywallKodVarsayilani`), acil kapatma ve kesim sunucuda
+      // (`premium_ayar`, 0172). Anahtar geri gelirse açılış yine elle
+      // eşlenen iki yere bölünür.
+      expect(varsayilan('paywall_enabled'), isNull);
+      expect(varsayilan('premium_enabled'), isNull);
+      expect(varsayilan('premium_hediye_kesim'), isNull);
     });
 
     test('deposits_enabled artık yok — vadeli mevduat koddan çıkarıldı', () {

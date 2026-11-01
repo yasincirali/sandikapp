@@ -338,6 +338,19 @@ class SupabaseService {
     );
   }
 
+  /// Sunucudaki paywall ayarları (0172 `premium_ayarlari()`): kapı, hediye
+  /// kesimi, acil kapatma. Remote Config'in yerini aldı (2026-11-01).
+  Future<Map<String, dynamic>> premiumAyarlari() {
+    return _log.log<Map<String, dynamic>>(
+      source: 'SupabaseService.premiumAyarlari',
+      table: 'premium_ayar',
+      op: 'RPC',
+      request: const {},
+      call: () async => Map<String, dynamic>.from(
+          (await _db.rpc<dynamic>('premium_ayarlari')) as Map),
+    );
+  }
+
   /// Varlıkların en yeni yayındaki notunun başlığı (0117 `analiz_ozetleri`;
   /// ücretsiz katmanın gördüğü kısım).
   Future<List<Map<String, dynamic>>> analizOzetleri(

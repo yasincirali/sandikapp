@@ -37,25 +37,11 @@ class RemoteConfigService {
   // ── Default değerler ─────────────────────────────────────────────────────
   // Firebase Console'dan override edilene kadar bu değerler geçerli.
   static const _defaults = <String, dynamic>{
-    // Master kill switch: kullanıcının göreceği TÜM üyelik/ödeme ekranları,
-    // banner, chip, kilit overlay, paywall trigger'ları buna bağlı. false ise
-    // premium sistem uygulamada hiç yokmuş gibi davranır. RevenueCat entegrasyonu
-    // + store onayları tamamlanana kadar kapalı tutulur.
-    'paywall_enabled': false,
-
-    // ACİL DURUM anahtarı (2026-10-10 düzeltmesi, kritik bulgu Y1): false
-    // olunca paywall açık kalsa da KİMSE kilit görmez, sınırlar kalkar.
-    // Eskiden ters çalışıyordu (false = ödeyenler dahil herkes kilitli).
-    // Karar `kilitlerAskidaProvider`'da.
-    'premium_enabled': true,
-
-    // Erken kullanıcı hediyesinin KESİM anı (ISO tarih, ör. "2026-11-01").
-    // `erken_kullanici_hediyesi_ver(kesim, 90)` çağrısına verilen değerle
-    // AYNI girilir. Bu andan önce açılmış ve sunucuda hiç hak satırı olmayan
-    // hesap kilit görmez (hediye henüz verilmemiş demektir); boşken her
-    // hesap "eski" sayılır, yani satırsız kimse kilitlenmez. Güvenli taraf:
-    // sıra karışsa bile mevcut kullanıcı bir sabah kilit görmez.
-    'premium_hediye_kesim': '',
+    // `paywall_enabled`, `premium_enabled`, `premium_hediye_kesim` artık RC'de
+    // DEĞİL (yasin 2026-11-01: "rc flagleriyle yönetmemeye çalışalım"):
+    // görünürlük kodda (`paywallEnabled`), acil kapatma ve hediye kesimi
+    // sunucuda (`premium_ayar`, 0172; `premiumSunucuAyariProvider`).
+    // Konsoldaki eski anahtarlar 1.1.7 ve öncesi için kalır, buradan okunmaz.
 
     // Free tier varlık limiti. 20 → 7 (yasin, 2026-10-08: "ilk varlık
     // eklemeyi 7 varlık yapalım … premium istemeli"). 7 → 10 (yasin,
@@ -649,7 +635,12 @@ class RemoteConfigService {
   /// Adıyla bayrak (sürüm notu maddesi gibi veri tarafından anılan
   /// bayraklar için). Varsayılanlarda olmayan ad → kapalı.
   bool bayrakAcik(String anahtar) =>
-      _defaults[anahtar] is bool && _bayrak(anahtar);
+      // Paywall RC'de değil (2026-11-01): sürüm notunun Premium maddeleri
+      // paywall'ın kodda açık olduğu platformda (iOS) görünür, Android'de
+      // RevenueCat kurulana kadar gizli kalır.
+      anahtar == 'paywall_enabled'
+          ? paywallEnabled
+          : _defaults[anahtar] is bool && _bayrak(anahtar);
 
   Future<void> init() async {
     if (_initialized) return;
@@ -725,42 +716,43 @@ class RemoteConfigService {
   // `_bayrak` üstünden: yerel testte RC_ACIK ile açılabilsin (sunucu kapısı
   // açık bir yığında istemci kilidi kapalı kalınca not "açılamadı" diyordu).
   // Release'te `_yerelAcik` boş, davranış değişmez.
-  bool get paywallEnabled => _bayrak('paywall_enabled');
+  /// Paywall bu build'de görünür mü — KOD kararı, Remote Config okunmaz
+  /// (yasin 2026-11-01: "rc flagleriyle yönetmemeye çalışalım burayı").
+  /// 1.1.7'nin paywall build'inden itibaren iOS'ta açık; Android RevenueCat zinciri (Play
+  /// abonelikleri + anahtar) kurulunca orada da açılır, web/masaüstünde yok.
+  /// Mağaza kullanıcısı ile inceleyici aynı kodu görür (App Store 2.3.1).
+  /// Acil kapatma artık sunucuda (`premium_ayar.acil_kapali`, 0172):
+  /// kilitler askıya alınır, ödeyenin hakkı korunur. Testte `testAcik`,
+  /// yerelde `RC_ACIK` ile açılabilir; `testKapali` ile iOS'ta kapatılabilir.
+  bool get paywallEnabled =>
+      testAcik.contains('paywall_enabled') ||
+      _yerelAcik.contains('paywall_enabled') ||
+      (!testKapali.contains('paywall_enabled') && paywallKodVarsayilani);
 
-  bool get premiumEnabled =>
-      _rc?.getBool('premium_enabled') ?? _defaults['premium_enabled'] as bool;
+  /// Platforma göre kod varsayılanı (bkz. [paywallEnabled]).
+  static bool get paywallKodVarsayilani =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-  /// Hediye kesimi (bkz. `_defaults['premium_hediye_kesim']`); boş ya da
-  /// okunamazsa null.
-  DateTime? get premiumHediyeKesim {
-    final ham = (_rc?.getString('premium_hediye_kesim') ??
-            _defaults['premium_hediye_kesim'] as String)
-        .trim();
-    return ham.isEmpty ? null : DateTime.tryParse(ham);
-  }
+  /// Test kancası: kod varsayılanı açık olan bayrağı kapatır (`testAcik`'in
+  /// tersi). Yalnız testte; release'te boş.
+  @visibleForTesting
+  static Set<String> testKapali = {};
 
-  int get freeAssetLimit =>
-      _rc?.getInt('free_asset_limit') ?? _defaults['free_asset_limit'] as int;
+  // Ücretsiz sınırlar KOD sabiti (2026-11-01): Remote Config okunmaz,
+  // `_defaults` tek kaynak; değişiklik sürümle gelir (ölçüm 1 Aralık sonrası,
+  // `remote_config_defaults_test` dondurur).
+  int get freeAssetLimit => _defaults['free_asset_limit'] as int;
 
   int get freeSignalSlotsPerDay =>
-      _rc?.getInt('free_signal_slots_per_day') ??
       _defaults['free_signal_slots_per_day'] as int;
 
-  int get freeCompareSeries =>
-      _rc?.getInt('free_compare_series') ??
-      _defaults['free_compare_series'] as int;
+  int get freeCompareSeries => _defaults['free_compare_series'] as int;
 
-  int get freePartnerLimit =>
-      _rc?.getInt('free_partner_limit') ??
-      _defaults['free_partner_limit'] as int;
+  int get freePartnerLimit => _defaults['free_partner_limit'] as int;
 
-  int get freeWatchlistLimit =>
-      _rc?.getInt('free_watchlist_limit') ??
-      _defaults['free_watchlist_limit'] as int;
+  int get freeWatchlistLimit => _defaults['free_watchlist_limit'] as int;
 
-  int get paywallWatchlistLimit =>
-      _rc?.getInt('paywall_watchlist_limit') ??
-      _defaults['paywall_watchlist_limit'] as int;
+  int get paywallWatchlistLimit => _defaults['paywall_watchlist_limit'] as int;
 
   String get premiumPriceMonthly =>
       _rc?.getString('premium_price_monthly') ??
@@ -792,9 +784,7 @@ class RemoteConfigService {
       _rc?.getBool('real_return_enabled') ??
       _defaults['real_return_enabled'] as bool;
 
-  int get freePriceAlertLimit =>
-      _rc?.getInt('free_price_alert_limit') ??
-      _defaults['free_price_alert_limit'] as int;
+  int get freePriceAlertLimit => _defaults['free_price_alert_limit'] as int;
 
   bool get milestonesEnabled =>
       _rc?.getBool('milestones_enabled') ??

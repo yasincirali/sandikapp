@@ -725,11 +725,11 @@ final magazaPremiumProvider = StateProvider<bool>((_) => false);
 
 /// Kullanıcının göreceği tüm üyelik/ödeme UI'ları buna bağlı. false ise
 /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
-/// edilmez. Store + RevenueCat entegrasyonu hazır olunca Remote Config'ten
-/// true'ya çekilir.
+/// edilmez. Karar KODDA (`RemoteConfigService.paywallEnabled`: iOS açık,
+/// Android RevenueCat kurulunca); Remote Config okunmaz (2026-11-01).
 ///
-/// RC etkinleşince yeniden hesaplanır (`rcEtkinlesmeProvider`): açılış
-/// fetch'i ilk kareden sonra bittiğinde de yeni değer aynı oturumda yansır.
+/// `rcEtkinlesmeProvider` izlenmeye devam eder: yerel `RC_ACIK` ve test
+/// kancaları etkinleşme sayacıyla yeniden hesaplanır.
 final paywallVisibleProvider = Provider<bool>((ref) {
   ref.watch(rcEtkinlesmeProvider);
   return RemoteConfigService.instance.paywallEnabled;
@@ -774,36 +774,38 @@ final effectivePremiumProvider = Provider<bool>((ref) {
 ///
 /// İki durum (Premium netleştirmesi, 2026-10-10, kritik bulgu Y1):
 ///
-/// 1. **Acil durum anahtarı** `premium_enabled` = false. Eskiden bu anahtar
-///    TERS çalışıyordu: `effectivePremium`'u false yapıp ödeyenler dahil
-///    herkesi kilitliyordu, yani "bir şey ters giderse kapatırım" düğmesi
-///    yangını büyütüyordu. Artık false olunca kimse kilit görmez; sınırlar
-///    kalkar, satış ekranları açık kalır ama hiçbir şey alınmaz.
+/// 1. **Acil durum** `premium_ayar.acil_kapali` = true (sunucu, 0172; eskiden
+///    RC `premium_enabled=false`). Eskiden bu anahtar TERS çalışıyordu:
+///    `effectivePremium`'u false yapıp ödeyenler dahil herkesi kilitliyordu,
+///    yani "bir şey ters giderse kapatırım" düğmesi yangını büyütüyordu.
+///    Artık açılınca kimse kilit görmez; sınırlar kalkar, satış ekranları
+///    açık kalır ama hiçbir şey alınmaz.
 /// 2. **Hediye güvencesi.** Mevcut kullanıcıların 90 günlük hediyesi elle
-///    verilir (`erken_kullanici_hediyesi_ver`, 0116). Paywall hediyeden önce
-///    açılırsa o arada herkes kilitlenirdi. Kural: hesabı hediye kesiminden
-///    (`premium_hediye_kesim`) ESKİ olan ve sunucuda HİÇ hak satırı olmayan
-///    kullanıcı kilit görmez. Kesim boşsa her hesap "eski" sayılır: kesim
-///    girilene kadar satırsız kimse kilitlenmez (güvenli taraf). Haklar
-///    henüz okunmadıysa ya da okunamadıysa da kilit yok — sunucu cevabı
-///    gelene kadar mevcut kullanıcıyı kilitlememek, bir yeni kullanıcıya
-///    birkaç saniye kilitsiz ekran göstermekten ucuz. Ücretli içerik yine
-///    sunucuda `premium_ayar.kapi_acik` ile korunur.
+///    verilir (`erken_kullanici_hediyesi_ver`, 0116); kesimi aynı çağrı
+///    `premium_ayar.hediye_kesim`e yazar (0172), uygulama oradan okur.
+///    Paywall hediyeden önce açılırsa o arada herkes kilitlenirdi. Kural:
+///    hesabı hediye kesiminden ESKİ olan ve sunucuda HİÇ hak satırı olmayan
+///    kullanıcı kilit görmez. Kesim boşsa (hediye hiç verilmemiş ya da ayar
+///    okunamamış) her hesap "eski" sayılır: satırsız kimse kilitlenmez
+///    (güvenli taraf). Haklar henüz okunmadıysa ya da okunamadıysa da kilit
+///    yok — sunucu cevabı gelene kadar mevcut kullanıcıyı kilitlememek, bir
+///    yeni kullanıcıya birkaç saniye kilitsiz ekran göstermekten ucuz.
+///    Ücretli içerik yine sunucuda `premium_ayar.kapi_acik` ile korunur.
 ///
 /// Saf karar [kilitlerAskidaMi]'da (test edilir).
 final kilitlerAskidaProvider = Provider<bool>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return false;
-  ref.watch(rcEtkinlesmeProvider);
-  final rc = RemoteConfigService.instance;
+  final ayar = ref.watch(premiumSunucuAyariProvider).valueOrNull ??
+      PremiumSunucuAyari.varsayilan;
   // Oturum yokken hediye güvencesinin sorusu da yok (kilitli yüzey de yok).
   final kullanici = ref.watch(authProvider).valueOrNull;
-  if (kullanici == null) return !rc.premiumEnabled;
+  if (kullanici == null) return ayar.acilKapali;
   final haklar = ref.watch(premiumHaklariProvider);
   return kilitlerAskidaMi(
-    premiumEnabled: rc.premiumEnabled,
+    premiumEnabled: !ayar.acilKapali,
     haklar: haklar.hasValue && !haklar.hasError ? haklar.value : null,
     hesapOlusturma: kullanici.createdAt,
-    hediyeKesimi: rc.premiumHediyeKesim,
+    hediyeKesimi: ayar.hediyeKesim,
   );
 });
 
