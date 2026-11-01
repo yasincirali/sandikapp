@@ -352,9 +352,8 @@ final ozellikOnerisiKapatilanProvider =
     NotifierProvider<_KumePrefNotifier, Set<String>>(
         () => _KumePrefNotifier(PrefKeys.ozellikOnerisiKapatilan));
 final ozellikOnerisiSonKapatmaProvider =
-    NotifierProvider<_IntPrefNotifier, int>(() => _IntPrefNotifier(
-        PrefKeys.ozellikOnerisiSonKapatma, 0,
-        perUser: true));
+    NotifierProvider<_IntPrefNotifier, int>(() =>
+        _IntPrefNotifier(PrefKeys.ozellikOnerisiSonKapatma, 0, perUser: true));
 
 /// Yumuşak güncelleme kartının kapatıldığı önerilen build (0 = hiç).
 final guncellemeKapatilanBuildProvider =
@@ -490,8 +489,9 @@ final portfoyBugunModuProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 
 /// Toplam kartındaki kaydırma ipucu bir kez gösterildi mi (cihaz tercihi;
 /// jest cihaza ait, kişiye değil). 2026-09-21.
-final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () => _BoolPrefNotifier(PrefKeys.kaydirmaIpucu, false));
+final kaydirmaIpucuGosterildiProvider =
+    NotifierProvider<_BoolPrefNotifier, bool>(
+        () => _BoolPrefNotifier(PrefKeys.kaydirmaIpucu, false));
 
 /// Yatay tam ekran grafik bir kez açıldı mı (yan çevirme ipucu artık
 /// gösterilmez; `YanCevirinceTamEkran`). Cihaz tercihi, kişiye özel değil:
@@ -522,13 +522,12 @@ final yaziBoyutuProvider = Provider<YaziBoyutu>(
 final karsilamaGorulduProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.karsilamaGoruldu, false));
 
-final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
-    () => _IntPrefNotifier(
-        PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
+final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(() =>
+    _IntPrefNotifier(PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
         perUser: true));
 
-final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
-    (ref) => YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
+final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>((ref) =>
+    YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
 
 /// Seviyenin görünürlük tablosu (sade Başlangıç dahil). Yeni kapılar
 /// (grafik araçları, derinlik) bunu okur.
@@ -561,7 +560,8 @@ final zilSinyalleriGosterProvider = Provider<bool>(
 /// (`sinyalSlotSiniriProvider`). Tek kalan kapı seviye: Başlangıç'ta
 /// sinyal hiç çizilmez. Paywall kapalıyken davranış birebir eski.
 final sinyalYuzeyiProvider = Provider<SinyalYuzeyi>((ref) {
-  if (!seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller) {
+  if (!seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
+      .teknikSinyaller) {
     return SinyalYuzeyi.gizli;
   }
   return SinyalYuzeyi.acik;
@@ -592,8 +592,8 @@ final biometricLockProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 /// Varsayılan KAPALI: mevcut kullanıcılar da teklifi bir kez görür.
 /// Kişiye özel.
 final biometricLockOfferedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () => _BoolPrefNotifier(PrefKeys.biometricLockOffered, false,
-        perUser: true));
+    () =>
+        _BoolPrefNotifier(PrefKeys.biometricLockOffered, false, perUser: true));
 
 /// Cihazın kilit yöntemi; cihazda hiç kilit yoksa `null`.
 ///
@@ -725,11 +725,11 @@ final magazaPremiumProvider = StateProvider<bool>((_) => false);
 
 /// Kullanıcının göreceği tüm üyelik/ödeme UI'ları buna bağlı. false ise
 /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
-/// edilmez. Store + RevenueCat entegrasyonu hazır olunca Remote Config'ten
-/// true'ya çekilir.
+/// edilmez. Karar KODDA (`RemoteConfigService.paywallEnabled`: iOS açık,
+/// Android RevenueCat kurulunca); Remote Config okunmaz (2026-11-01).
 ///
-/// RC etkinleşince yeniden hesaplanır (`rcEtkinlesmeProvider`): açılış
-/// fetch'i ilk kareden sonra bittiğinde de yeni değer aynı oturumda yansır.
+/// `rcEtkinlesmeProvider` izlenmeye devam eder: yerel `RC_ACIK` ve test
+/// kancaları etkinleşme sayacıyla yeniden hesaplanır.
 final paywallVisibleProvider = Provider<bool>((ref) {
   ref.watch(rcEtkinlesmeProvider);
   return RemoteConfigService.instance.paywallEnabled;
@@ -774,36 +774,38 @@ final effectivePremiumProvider = Provider<bool>((ref) {
 ///
 /// İki durum (Premium netleştirmesi, 2026-10-10, kritik bulgu Y1):
 ///
-/// 1. **Acil durum anahtarı** `premium_enabled` = false. Eskiden bu anahtar
-///    TERS çalışıyordu: `effectivePremium`'u false yapıp ödeyenler dahil
-///    herkesi kilitliyordu, yani "bir şey ters giderse kapatırım" düğmesi
-///    yangını büyütüyordu. Artık false olunca kimse kilit görmez; sınırlar
-///    kalkar, satış ekranları açık kalır ama hiçbir şey alınmaz.
+/// 1. **Acil durum** `premium_ayar.acil_kapali` = true (sunucu, 0172; eskiden
+///    RC `premium_enabled=false`). Eskiden bu anahtar TERS çalışıyordu:
+///    `effectivePremium`'u false yapıp ödeyenler dahil herkesi kilitliyordu,
+///    yani "bir şey ters giderse kapatırım" düğmesi yangını büyütüyordu.
+///    Artık açılınca kimse kilit görmez; sınırlar kalkar, satış ekranları
+///    açık kalır ama hiçbir şey alınmaz.
 /// 2. **Hediye güvencesi.** Mevcut kullanıcıların 90 günlük hediyesi elle
-///    verilir (`erken_kullanici_hediyesi_ver`, 0116). Paywall hediyeden önce
-///    açılırsa o arada herkes kilitlenirdi. Kural: hesabı hediye kesiminden
-///    (`premium_hediye_kesim`) ESKİ olan ve sunucuda HİÇ hak satırı olmayan
-///    kullanıcı kilit görmez. Kesim boşsa her hesap "eski" sayılır: kesim
-///    girilene kadar satırsız kimse kilitlenmez (güvenli taraf). Haklar
-///    henüz okunmadıysa ya da okunamadıysa da kilit yok — sunucu cevabı
-///    gelene kadar mevcut kullanıcıyı kilitlememek, bir yeni kullanıcıya
-///    birkaç saniye kilitsiz ekran göstermekten ucuz. Ücretli içerik yine
-///    sunucuda `premium_ayar.kapi_acik` ile korunur.
+///    verilir (`erken_kullanici_hediyesi_ver`, 0116); kesimi aynı çağrı
+///    `premium_ayar.hediye_kesim`e yazar (0172), uygulama oradan okur.
+///    Paywall hediyeden önce açılırsa o arada herkes kilitlenirdi. Kural:
+///    hesabı hediye kesiminden ESKİ olan ve sunucuda HİÇ hak satırı olmayan
+///    kullanıcı kilit görmez. Kesim boşsa (hediye hiç verilmemiş ya da ayar
+///    okunamamış) her hesap "eski" sayılır: satırsız kimse kilitlenmez
+///    (güvenli taraf). Haklar henüz okunmadıysa ya da okunamadıysa da kilit
+///    yok — sunucu cevabı gelene kadar mevcut kullanıcıyı kilitlememek, bir
+///    yeni kullanıcıya birkaç saniye kilitsiz ekran göstermekten ucuz.
+///    Ücretli içerik yine sunucuda `premium_ayar.kapi_acik` ile korunur.
 ///
 /// Saf karar [kilitlerAskidaMi]'da (test edilir).
 final kilitlerAskidaProvider = Provider<bool>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return false;
-  ref.watch(rcEtkinlesmeProvider);
-  final rc = RemoteConfigService.instance;
+  final ayar = ref.watch(premiumSunucuAyariProvider).valueOrNull ??
+      PremiumSunucuAyari.varsayilan;
   // Oturum yokken hediye güvencesinin sorusu da yok (kilitli yüzey de yok).
   final kullanici = ref.watch(authProvider).valueOrNull;
-  if (kullanici == null) return !rc.premiumEnabled;
+  if (kullanici == null) return ayar.acilKapali;
   final haklar = ref.watch(premiumHaklariProvider);
   return kilitlerAskidaMi(
-    premiumEnabled: rc.premiumEnabled,
+    premiumEnabled: !ayar.acilKapali,
     haklar: haklar.hasValue && !haklar.hasError ? haklar.value : null,
     hesapOlusturma: kullanici.createdAt,
-    hediyeKesimi: rc.premiumHediyeKesim,
+    hediyeKesimi: ayar.hediyeKesim,
   );
 });
 
@@ -850,11 +852,11 @@ final premiumKilitliProvider = Provider<bool>((ref) =>
 /// olana sekizi, ücretsize en yaygın üçü (RSI, MACD, Bollinger — yasin
 /// 2026-10-10). Sunucu push'u yalnız Premium'a gönderir
 /// (`analyze-signals`, `premium_ayar.kapi_acik`) ve orada sekizini hesaplar.
-final izinliGostergelerProvider = Provider<Set<String>>((ref) =>
-    IndicatorId.izinli(
-      paywall: ref.watch(paywallVisibleProvider),
-      premium: ref.watch(premiumErisimProvider),
-    ));
+final izinliGostergelerProvider =
+    Provider<Set<String>>((ref) => IndicatorId.izinli(
+          paywall: ref.watch(paywallVisibleProvider),
+          premium: ref.watch(premiumErisimProvider),
+        ));
 
 /// Gösterge parametrelerinin (periyot vb.) bu kullanıcıdaki hâli.
 ///
@@ -1137,7 +1139,8 @@ class GostergeParametreNotifier
   }
 }
 
-final gostergeParametreleriProvider = NotifierProvider<GostergeParametreNotifier,
+final gostergeParametreleriProvider = NotifierProvider<
+    GostergeParametreNotifier,
     Map<AssetType, Map<String, GostergeAyari>>>(GostergeParametreNotifier.new);
 
 /// Bu kullanıcıda HESAPTA kullanılacak parametreler: özellik açıksa
@@ -1206,12 +1209,14 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
     if (kDebugMode) {
       debugPrint('[signal_pref] ${type.name} sunucuya yazılamadı: $e');
     }
-    CrashReporter.arkaPlan(FirebaseCrashlytics.instance.recordError(
-      e,
-      st,
-      reason: 'signal_preferences upsert (${type.name})',
-      fatal: false,
-    ), reason: 'preferences_provider.FirebaseCrashlytics.recordError');
+    CrashReporter.arkaPlan(
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          st,
+          reason: 'signal_preferences upsert (${type.name})',
+          fatal: false,
+        ),
+        reason: 'preferences_provider.FirebaseCrashlytics.recordError');
   }
 }
 
@@ -1620,9 +1625,8 @@ MumAraligi? secilenMumAraligi(WidgetRef ref, double spanDakika) {
 /// tutmuyor" diye okunur. Unutulup açık kalma riskine karşı Performans
 /// etkinken rozet gösterir ("görünmeyen filtre" sınıfı hata, bkz.
 /// `_buildScopeBar`). Varsayılan kapalı: gerçek geçmiş.
-final bugunkuPortfoyleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () => _BoolPrefNotifier(PrefKeys.performansBugunkuPortfoy, false,
-        perUser: true));
+final bugunkuPortfoyleProvider = NotifierProvider<_BoolPrefNotifier, bool>(() =>
+    _BoolPrefNotifier(PrefKeys.performansBugunkuPortfoy, false, perUser: true));
 
 // ─── Balina Radarı (2026-10-05) ───────────────────────────────────────────────
 

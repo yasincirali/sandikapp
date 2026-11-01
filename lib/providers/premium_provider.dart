@@ -70,6 +70,57 @@ class PremiumHakki {
   }
 }
 
+/// Sunucudaki paywall ayarları (`premium_ayar`, 0172). Remote Config'in
+/// `premium_enabled` / `premium_hediye_kesim` anahtarlarının yerini aldı
+/// (yasin 2026-11-01: paywall RC bayraklarıyla yönetilmez): kesim hediye
+/// SQL'iyle aynı yerde yazılır, acil kapatma tek UPDATE'tir.
+class PremiumSunucuAyari {
+  const PremiumSunucuAyari({
+    this.kapiAcik = false,
+    this.hediyeKesim,
+    this.acilKapali = false,
+  });
+
+  /// Sunucu ücretli içeriği kısıtlıyor mu (bilgi; kilit kararına girmez).
+  final bool kapiAcik;
+
+  /// Erken kullanıcı hediyesinin kesimi; verilmediyse null (herkes "eski").
+  final DateTime? hediyeKesim;
+
+  /// true → kilitler herkeste askıda, ödeyenin hakkı korunur.
+  final bool acilKapali;
+
+  /// Okunamayan ayar = güvenli taraf: kesim bilinmiyor, acil durum yok.
+  static const varsayilan = PremiumSunucuAyari();
+
+  static PremiumSunucuAyari satirdan(Map<String, dynamic> m) {
+    final kesimHam = m['hediye_kesim'];
+    return PremiumSunucuAyari(
+      kapiAcik: m['kapi_acik'] == true,
+      hediyeKesim:
+          kesimHam is String ? DateTime.tryParse(kesimHam)?.toUtc() : null,
+      acilKapali: m['acil_kapali'] == true,
+    );
+  }
+}
+
+/// Sunucu ayarını oturum başına bir kez okur; hata → varsayılan +
+/// Crashlytics non-fatal (kullanıcıyı ağ hatası yüzünden kilitlememek için
+/// kesim null kalır, bkz. `kilitlerAskidaMi`). Oturum yokken varsayılan.
+final premiumSunucuAyariProvider =
+    FutureProvider<PremiumSunucuAyari>((ref) async {
+  if (!ref.watch(paywallVisibleProvider)) return PremiumSunucuAyari.varsayilan;
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  if (uid == null) return PremiumSunucuAyari.varsayilan;
+  try {
+    return PremiumSunucuAyari.satirdan(
+        await SupabaseService.instance.premiumAyarlari());
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'premiumSunucuAyariProvider');
+    return PremiumSunucuAyari.varsayilan;
+  }
+});
+
 /// Oturumdaki kullanıcının hakları. autoDispose DEĞİL: kalıcı
 /// `effectivePremiumProvider` bunu izler; oturum değişince `authProvider`
 /// üzerinden yenilenir. Hata → boş liste + Crashlytics non-fatal:

@@ -1514,6 +1514,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   Future<void> _yenilikleriKontrolEt() async {
     final notlar = await SurumNotuService.instance.gosterilecekler();
     if (notlar.isEmpty || !mounted) return;
+    // Bütün maddeler bayrak arkasında ve bayrak bu platformda kapalıysa
+    // (1.1.7 Premium notu Android'de) boş sayfa açılmaz; not "görüldü"
+    // sayılmaz, maddeler görünür olunca bir sonraki sürümle birlikte gelir.
+    final rc = RemoteConfigService.instance;
+    final gorunurVar = notlar.any((n) => n.yenilikler
+        .any((y) => y.bayrak == null || rc.bayrakAcik(y.bayrak!)));
+    if (!gorunurVar) return;
 
     // Ana ekran gerçekten kurulana kadar bekle. `_locked` ve
     // `_onboardingDone` build'de değerlendiriliyor; sheet yalnızca ikisi de
@@ -1806,6 +1813,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // sınırı ağ trafiğini zaten kısıtlar.
       CrashReporter.arkaPlan(RemoteConfigService.instance.refresh(),
           reason: 'main.RemoteConfigService.refresh');
+      // Paywall ayarı sunucuda (0172): acil kapatma ya da hediye kesimi
+      // değiştiyse açık uygulama öne dönüşte görsün, soğuk açılışı beklemesin.
+      ref.invalidate(premiumSunucuAyariProvider);
       // Siri eylemi uygulama arkadayken bırakılmış olabilir (kanal
       // `geldi` haberini kaçırmış olabilir); öne dönüşte sorulur.
       CrashReporter.arkaPlan(SistemEylemleri.cek(),

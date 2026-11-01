@@ -433,21 +433,20 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
 
 **B. Paywall'ı açma (GİB yazısı + hesap hazır olunca)**
 
-1. [ ] Yeni bir mağaza sürümü gönder; "In-App Purchases and Subscriptions"
-       bölümüne iki ürünü ekle. İnceleme notu: paywall'a nasıl ulaşılır
-       (ör. bir test hesabı + Profil › Premium). İnceleyicinin paywall'ı
-       görebilmesi gerekir; nasıl açılacağını o gün birlikte planlarız
-       (Claude'a sor).
-2. [ ] Ürünler onaylanınca yukarıdaki **"PAYWALL AÇILIŞ GÜNÜ"** listesi
-       sırasıyla: hediye SQL (iki sunucu) → `premium_hediye_kesim` aynı tarih
-       → `paywall_enabled` önce %20 sonra herkes → en son
-       `update public.premium_ayar set kapi_acik = true;` (iki sunucu).
-3. [ ] Acil kapatma (ilk satıştan sonra): RC `premium_enabled = false` +
-       `kapi_acik = false`. `paywall_enabled = false` ödeyenden de Premium'u
-       alır; yalnız ilk satıştan önce kullanılır.
-4. [ ] TestFlight testçi kesimi (`2020-01-01`, yalnız TestFlight koşulunda)
-       yerine gerçek kesim; `testci_muafiyeti` satırlarına karar ver.
-5. [ ] Balina/hacim radarı herkese açılacaksa `kripto-hacim-saatlik` işini
+2026-11-01 (yasin: "rc flagleriyle yönetmemeye çalışalım"): paywall artık
+Remote Config'le açılmaz. yeni 1.1.7 build'inden itibaren kodda açık (iOS; Android
+RevenueCat kurulunca), hediye kesimi ve acil kapatma sunucuda (0172).
+Güncel adım listesi tek yerde: `/mnt/project-files/paywall/acilis_listesi_1.1.7.md`.
+
+1. [ ] Yeni 1.1.7 build'ini gönderirken "In-App Purchases and Subscriptions" bölümüne iki
+       ürünü ekle; aynı gün hediye SQL'i (kesimi sunucuya yazar); demo hesabı
+       kesimden sonra aç; inceleme notu: Profil › Sandık Premium.
+2. [ ] Apple onaylayınca Release → en son
+       `update public.premium_ayar set kapi_acik = true;` (Frankfurt).
+3. [ ] Acil kapatma (ilk satıştan sonra):
+       `update public.premium_ayar set acil_kapali = true, kapi_acik = false;`
+       → kilitler kalkar, ödeyenin hakkı korunur.
+4. [ ] Balina/hacim radarı herkese açılacaksa `kripto-hacim-saatlik` işini
        yeniden saatliğe al (0164 onu paywall kapalıyken 6 saate indirdi):
        Claude'a "kripto hacmini saatliğe döndür" de, yeni migration yazar.
 

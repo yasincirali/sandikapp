@@ -53,3 +53,20 @@ class PaywallOnKontrolTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SunucuAyari0172(unittest.TestCase):
+    """0172: kesim ve acil kapatma sunucuda; rapor bunları okur, RC satırı yok."""
+
+    def test_sunucu_kesimi_ile_girdi_kesimi_farkliysa_engel(self):
+        d = _durum(hediye_kesim="2026-11-05T00:00:00+03:00")
+        m, kod = pk.rapor(d, set(pk.GEREKLI_SECRETLER), "2026-11-07T00:00:00+03")
+        self.assertEqual(kod, 1)
+        self.assertIn("hediye_kesim", m)
+
+    def test_acil_kapali_engel_ve_rc_satiri_yok(self):
+        d = _durum(acil_kapali=True)
+        m, kod = pk.rapor(d, set(pk.GEREKLI_SECRETLER), None)
+        self.assertEqual(kod, 1)
+        self.assertIn("askıda", m)
+        self.assertNotIn("Remote Config `paywall_enabled`", m)

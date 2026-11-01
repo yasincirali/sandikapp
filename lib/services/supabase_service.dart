@@ -112,7 +112,10 @@ class SupabaseService {
       source: 'SupabaseService.yurtIciKotasyonSerisi',
       table: 'yurt_ici_kotasyon',
       op: 'SELECT',
-      request: {'sembol': sembol, 'ts_gte': baslangic.toUtc().toIso8601String()},
+      request: {
+        'sembol': sembol,
+        'ts_gte': baslangic.toUtc().toIso8601String()
+      },
       call: () => _db
           .from('yurt_ici_kotasyon')
           .select('ts, fiyat')
@@ -335,6 +338,19 @@ class SupabaseService {
       call: () => _db
           .from('premium_haklari')
           .select('kaynak, urun, magaza, bitis, iptal_edildi, baslangic'),
+    );
+  }
+
+  /// Sunucudaki paywall ayarları (0172 `premium_ayarlari()`): kapı, hediye
+  /// kesimi, acil kapatma. Remote Config'in yerini aldı (2026-11-01).
+  Future<Map<String, dynamic>> premiumAyarlari() {
+    return _log.log<Map<String, dynamic>>(
+      source: 'SupabaseService.premiumAyarlari',
+      table: 'premium_ayar',
+      op: 'RPC',
+      request: const {},
+      call: () async => Map<String, dynamic>.from(
+          (await _db.rpc<dynamic>('premium_ayarlari')) as Map),
     );
   }
 
@@ -577,8 +593,7 @@ class SupabaseService {
       request: {'id': userId, 'leaderboard_opt_in': acik},
       call: () => _db
           .from('profiles')
-          .update({'leaderboard_opt_in': acik})
-          .eq('id', userId),
+          .update({'leaderboard_opt_in': acik}).eq('id', userId),
     );
   }
 
@@ -797,7 +812,11 @@ class SupabaseService {
         source: 'SupabaseService.insertAsset',
         table: 'assets',
         op: 'INSERT',
-        request: {'id': b['id'], 'user_id': b['user_id'], 'ticker': b['ticker']},
+        request: {
+          'id': b['id'],
+          'user_id': b['user_id'],
+          'ticker': b['ticker']
+        },
         call: () => _db.from('assets').insert(b),
       ),
     );
@@ -841,7 +860,11 @@ class SupabaseService {
       source: 'SupabaseService.upsertAsset',
       table: 'assets',
       op: 'UPSERT',
-      request: {'id': body['id'], 'user_id': body['user_id'], 'ticker': body['ticker']},
+      request: {
+        'id': body['id'],
+        'user_id': body['user_id'],
+        'ticker': body['ticker']
+      },
       call: () => _db.from('assets').upsert(body),
     );
   }
@@ -913,11 +936,8 @@ class SupabaseService {
       table: 'assets',
       op: 'UPDATE',
       request: {'id': id, 'len': notes.length},
-      call: () => _db
-          .from('assets')
-          .update({'notes': notes})
-          .eq('id', id)
-          .select('id'),
+      call: () =>
+          _db.from('assets').update({'notes': notes}).eq('id', id).select('id'),
     );
     if (rows.isEmpty) {
       throw StateError('Not hiçbir satıra yazılamadı.');
@@ -1346,7 +1366,9 @@ class SupabaseService {
   }
 
   Future<void> updateSozlesme(Sozlesme s) async {
-    final body = s.toSupabase()..remove('id')..remove('user_id');
+    final body = s.toSupabase()
+      ..remove('id')
+      ..remove('user_id');
     await _log.log<void>(
       source: 'SupabaseService.updateSozlesme',
       table: 'sozlesmeler',
@@ -1639,11 +1661,8 @@ class SupabaseService {
       table: 'partner_invites',
       op: 'SELECT',
       request: {'id': inviteId},
-      call: () => _db
-          .from('partner_invites')
-          .select()
-          .eq('id', inviteId)
-          .maybeSingle(),
+      call: () =>
+          _db.from('partner_invites').select().eq('id', inviteId).maybeSingle(),
     );
   }
 
@@ -1735,8 +1754,8 @@ class SupabaseService {
       table: 'kayitli_cihazlar',
       op: 'RPC',
       request: {},
-      call: () => _db.rpc<dynamic>('cihaz_durumu',
-          params: {'p_cihaz_id': cihazId}),
+      call: () =>
+          _db.rpc<dynamic>('cihaz_durumu', params: {'p_cihaz_id': cihazId}),
     );
     return CihazDurumu.parse(r);
   }
@@ -1821,7 +1840,8 @@ class SupabaseService {
       table: 'kayitli_cihazlar',
       op: 'RPC',
       request: {},
-      call: () => _db.rpc<dynamic>('cihaz_sil', params: {'p_cihaz_id': cihazId}),
+      call: () =>
+          _db.rpc<dynamic>('cihaz_sil', params: {'p_cihaz_id': cihazId}),
     );
     return r is int ? r : 0;
   }
@@ -1933,10 +1953,10 @@ class SupabaseService {
           // bildirimsiz bırakmaktansa varsayılanı korumak doğru.
           signalsEnabled: r['signals_enabled'] as bool? ?? true,
           frequency: SignalFrequency.fromId(r['frequency'] as String?),
-          notifyHours:
-              (r['notify_hours'] as List?)?.map((e) => (e as num).toInt())
-                      .toList() ??
-                  const [11, 15],
+          notifyHours: (r['notify_hours'] as List?)
+                  ?.map((e) => (e as num).toInt())
+                  .toList() ??
+              const [11, 15],
           parametreler: gostergeParametreleriniOku(r['parametreler']),
         ),
     ];
@@ -1991,8 +2011,9 @@ class SupabaseService {
           // 0142. Yalnız kullanıcı parametreye dokunduysa yazılır: hiç
           // dokunmamış kullanıcının satırı eskisiyle aynı kalır.
           if (parametreYaz)
-            'parametreler':
-                parametreler == null || parametreler.isEmpty ? null : parametreler,
+            'parametreler': parametreler == null || parametreler.isEmpty
+                ? null
+                : parametreler,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         },
         onConflict: 'user_id,asset_type',
@@ -2253,7 +2274,10 @@ class SupabaseService {
       if (s == null) continue;
       final f = r['eurobond_fiyat'];
       final fm = f is List ? (f.isEmpty ? null : f.first) : f;
-      out.add((s, fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null));
+      out.add((
+        s,
+        fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null
+      ));
     }
     return out;
   }
@@ -2279,7 +2303,10 @@ class SupabaseService {
       if (s == null) continue;
       final f = r['eurobond_fiyat'];
       final fm = f is List ? (f.isEmpty ? null : f.first) : f;
-      out[s.isin] = (s, fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null);
+      out[s.isin] = (
+        s,
+        fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null
+      );
     }
     return out;
   }
@@ -2354,7 +2381,10 @@ class SupabaseService {
     final t = govde['tablolar'];
     return (
       tablolar: t is List
-          ? [for (final x in t) if (x is Map) Map<String, dynamic>.from(x)]
+          ? [
+              for (final x in t)
+                if (x is Map) Map<String, dynamic>.from(x)
+            ]
           : const <Map<String, dynamic>>[],
       sablondan: govde['kaynak'] == 'sablon',
     );
@@ -2429,7 +2459,11 @@ class SupabaseService {
         table: 'partnerships',
         op: 'UPDATE',
         request: supportsHidden
-            ? {'id': existing['id'], 'hidden_for_1': false, 'hidden_for_2': false}
+            ? {
+                'id': existing['id'],
+                'hidden_for_1': false,
+                'hidden_for_2': false
+              }
             : {'id': existing['id'], 'active': true},
         call: () => _db
             .from('partnerships')
@@ -2534,10 +2568,8 @@ class SupabaseService {
       table: 'partnerships',
       op: 'SELECT',
       request: {'user_id_1': uid1, 'user_id_2': uid2},
-      call: () => _db
-          .from('partnerships')
-          .select('id')
-          .or('and(user_id_1.eq.$uid1,user_id_2.eq.$uid2),and(user_id_1.eq.$uid2,user_id_2.eq.$uid1)'),
+      call: () => _db.from('partnerships').select('id').or(
+          'and(user_id_1.eq.$uid1,user_id_2.eq.$uid2),and(user_id_1.eq.$uid2,user_id_2.eq.$uid1)'),
     );
     return rows.isNotEmpty;
   }
@@ -2800,8 +2832,8 @@ class SupabaseService {
       request: {'ids': ids.length, 'dismissed_at': 'now()'},
       call: () => _db
           .from('price_alert_notifications')
-          .update({'dismissed_at': DateTime.now().toIso8601String()})
-          .inFilter('id', ids),
+          .update({'dismissed_at': DateTime.now().toIso8601String()}).inFilter(
+              'id', ids),
     );
   }
 
@@ -2813,10 +2845,8 @@ class SupabaseService {
       table: 'price_alert_notifications',
       op: 'DELETE',
       request: {'ids': ids.length},
-      call: () => _db
-          .from('price_alert_notifications')
-          .delete()
-          .inFilter('id', ids),
+      call: () =>
+          _db.from('price_alert_notifications').delete().inFilter('id', ids),
     );
   }
 
@@ -2854,8 +2884,8 @@ class SupabaseService {
       request: {'ids': ids.length, 'dismissed_at': 'now()'},
       call: () => _db
           .from('app_notifications')
-          .update({'dismissed_at': DateTime.now().toIso8601String()})
-          .inFilter('id', ids),
+          .update({'dismissed_at': DateTime.now().toIso8601String()}).inFilter(
+              'id', ids),
     );
   }
 
@@ -2866,8 +2896,7 @@ class SupabaseService {
       table: 'app_notifications',
       op: 'DELETE',
       request: {'ids': ids.length},
-      call: () =>
-          _db.from('app_notifications').delete().inFilter('id', ids),
+      call: () => _db.from('app_notifications').delete().inFilter('id', ids),
     );
   }
 
@@ -2877,10 +2906,8 @@ class SupabaseService {
       table: 'signal_notifications',
       op: 'UPDATE',
       request: {'id': id, 'dismissed_at': 'now()'},
-      call: () => _db
-          .from('signal_notifications')
-          .update({'dismissed_at': DateTime.now().toIso8601String()})
-          .eq('id', id),
+      call: () => _db.from('signal_notifications').update(
+          {'dismissed_at': DateTime.now().toIso8601String()}).eq('id', id),
     );
   }
 
@@ -2898,8 +2925,8 @@ class SupabaseService {
       request: {'ids': ids.length, 'dismissed_at': 'now()'},
       call: () => _db
           .from('signal_notifications')
-          .update({'dismissed_at': DateTime.now().toIso8601String()})
-          .inFilter('id', ids),
+          .update({'dismissed_at': DateTime.now().toIso8601String()}).inFilter(
+              'id', ids),
     );
   }
 
@@ -2914,8 +2941,7 @@ class SupabaseService {
       table: 'signal_notifications',
       op: 'DELETE',
       request: {'ids': ids.length},
-      call: () =>
-          _db.from('signal_notifications').delete().inFilter('id', ids),
+      call: () => _db.from('signal_notifications').delete().inFilter('id', ids),
     );
   }
 
@@ -2925,8 +2951,7 @@ class SupabaseService {
       table: 'signal_notifications',
       op: 'DELETE',
       request: {'id': id},
-      call: () =>
-          _db.from('signal_notifications').delete().eq('id', id),
+      call: () => _db.from('signal_notifications').delete().eq('id', id),
     );
   }
 
@@ -2940,7 +2965,9 @@ class SupabaseService {
   Future<bool> isPushAdmin() async {
     if (_uid == null) return false;
     try {
-      final r = await _db.rpc<dynamic>('is_push_admin').timeout(DbLogger.defaultTimeout);
+      final r = await _db
+          .rpc<dynamic>('is_push_admin')
+          .timeout(DbLogger.defaultTimeout);
       return r == true;
     } catch (_) {
       return false;
