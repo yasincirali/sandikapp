@@ -7749,6 +7749,54 @@ abstract class AppLocalizations {
   /// **'Hedefin yok'**
   String get todayGoalNone;
 
+  /// No description provided for @pfModeTotal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam'**
+  String get pfModeTotal;
+
+  /// No description provided for @pfModeToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün'**
+  String get pfModeToday;
+
+  /// No description provided for @pfModeA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kartlarda gösterilen: {mode}'**
+  String pfModeA11y(String mode);
+
+  /// No description provided for @pfTodayTraded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün işlem var'**
+  String get pfTodayTraded;
+
+  /// No description provided for @pfTodayNoData.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün içi veri yok'**
+  String get pfTodayNoData;
+
+  /// No description provided for @pfTodayWaiting.
+  ///
+  /// In tr, this message translates to:
+  /// **'Veri bekleniyor'**
+  String get pfTodayWaiting;
+
+  /// No description provided for @sortTodayMove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü hareket'**
+  String get sortTodayMove;
+
+  /// No description provided for @sortTodayMoveSub.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok oynayan önce'**
+  String get sortTodayMoveSub;
+
   /// No description provided for @chartNowLabel.
   ///
   /// In tr, this message translates to:

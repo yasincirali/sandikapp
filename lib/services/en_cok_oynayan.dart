@@ -127,3 +127,69 @@ EnCokOynayan? gununSurukleyeni(
   return adaylar
       .reduce((a, b) => b.degisimTRY.abs() > a.degisimTRY.abs() ? b : a);
 }
+
+/// Bir pozisyonun bugünkü değişimi — Portföy "Bugün" modu (Ar-Ge 1 Kas
+/// 16:45 #1, yasin "yap").
+class PozisyonGunDegisimi {
+  const PozisyonGunDegisimi({
+    required this.degisimPct,
+    required this.degisimTRY,
+    this.islemVar = false,
+  });
+
+  /// Gün içinde alım/satım yapıldı: seri miktar değiştiği için zıplar,
+  /// yüzde uydurma olurdu. Kart "Bugün işlem var" yazar, sayı yazmaz.
+  const PozisyonGunDegisimi.islem()
+      : degisimPct = 0,
+        degisimTRY = 0,
+        islemVar = true;
+
+  final double degisimPct;
+  final double degisimTRY;
+  final bool islemVar;
+
+  /// Yuvarlanınca sıfır: "Değişim yok" (piyasa kapalı, fon fiyatı
+  /// yayımlanmamış).
+  bool get duz => !islemVar && degisimPct.abs() < 0.005;
+}
+
+/// Her pozisyonun bugünkü değişimi, anahtar `positionKey` — SAF.
+///
+/// Kural [enCokOynayanlar] ile BİREBİR (aynı pencere, aynı uçlar, aynı
+/// akış kümesi): Ana sayfadaki "en çok oynayanlar" ile Portföy'ün Bugün
+/// modu aynı gün aynı sayıyı söyler. Farkı: sıfır değişim de döner (kart
+/// "Değişim yok" yazar), gün içi akışlı pozisyon elenmez,
+/// [PozisyonGunDegisimi.islem] olarak döner. Serisi olmayan pozisyon
+/// haritada YOKTUR — çağıran "Gün içi veri yok" yazar, sayı uydurmaz.
+Map<String, PozisyonGunDegisimi> pozisyonGunDegisimleri(
+  PortfolioHistoryBreakdown breakdown, {
+  required List<Asset> lotlar,
+  required DateTime now,
+}) {
+  if (breakdown.byPosition.isEmpty) return const {};
+  final p = PeriodSummaryService.pencere(SummaryPeriod.gunluk, now,
+      seansGunu: breakdown.seansGunu);
+  final fromMs = p.start.millisecondsSinceEpoch;
+  final toMs = p.end.millisecondsSinceEpoch;
+  final akisli = <String>{};
+  for (final a in lotlar) {
+    final ms = a.addedDate.millisecondsSinceEpoch;
+    if (ms < fromMs || ms > toMs) continue;
+    if (PeriodSummaryService.flowOf(a) == 0) continue;
+    akisli.add(positionKey(a));
+  }
+  final sonuc = <String, PozisyonGunDegisimi>{};
+  breakdown.byPosition.forEach((key, seri) {
+    if (akisli.contains(key)) {
+      sonuc[key] = const PozisyonGunDegisimi.islem();
+      return;
+    }
+    final u = PeriodSummaryService.uclar(seri, fromMs: fromMs, toMs: toMs);
+    if (u == null || u.first <= 0) return;
+    sonuc[key] = PozisyonGunDegisimi(
+      degisimPct: u.firstTs == u.lastTs ? 0 : (u.last / u.first - 1) * 100,
+      degisimTRY: u.firstTs == u.lastTs ? 0 : u.last - u.first,
+    );
+  });
+  return sonuc;
+}

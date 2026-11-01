@@ -26,6 +26,10 @@ class PrefKeys {
   static const partnerNotifications = 'pref_partner_notifications';
   static const balanceHidden = 'pref_balance_hidden';
 
+  /// Portföy listesi "Toplam | Bugün" modu (1 Kas 2026). Cihaz tercihi:
+  /// bakış alışkanlığı, hesaba değil.
+  static const portfoyBugunModu = 'pref_portfoy_bugun_modu';
+
   /// Toplam kartı kaydırma ipucu (tek seferlik göz kırpma) gösterildi mi.
   static const kaydirmaIpucu = 'pref_kaydirma_ipucu_gosterildi';
 

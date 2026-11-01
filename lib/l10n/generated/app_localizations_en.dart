@@ -4675,6 +4675,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayGoalNone => 'No goal yet';
 
   @override
+  String get pfModeTotal => 'Total';
+
+  @override
+  String get pfModeToday => 'Today';
+
+  @override
+  String pfModeA11y(String mode) {
+    return 'Cards show: $mode';
+  }
+
+  @override
+  String get pfTodayTraded => 'Traded today';
+
+  @override
+  String get pfTodayNoData => 'No intraday data';
+
+  @override
+  String get pfTodayWaiting => 'Waiting for data';
+
+  @override
+  String get sortTodayMove => 'Today\'s move';
+
+  @override
+  String get sortTodayMoveSub => 'Biggest mover first';
+
+  @override
   String get chartNowLabel => 'NOW';
 
   @override

@@ -129,7 +129,16 @@ class SparklineService {
   /// yapılmaz, uçuşan istek `_inflight` ile tekilleştirilir. [max] ile
   /// sınırlanır — 200 varlıklı bir portföyde açılışta 200 istek atmak ne
   /// kullanıcıya ne sağlayıcıya yapılacak bir şey.
-  void prefetch(Iterable<Asset> assets, {int max = 40}) {
+  ///
+  /// ## Yalnız ilk [max] sembol (Ar-Ge 1 Kas 16:45, yasin "yap")
+  /// Mini grafik satırda değil, yalnız kart açılınca panelde çiziliyor;
+  /// 40 varlığın serisini açılışta çekmek çoğu hiç görülmeyen istekti. Artık
+  /// listenin İLK [max] sembolü (çağıran ekrandaki sırayla verir: en üstteki
+  /// kartlar, açılma olasılığı en yüksek olanlar). Önbellekteki sembol de
+  /// sayılır: eskiden yalnız atılan istek sayılıyordu, sınır küçükken her
+  /// yeniden kurulum bir sonraki beşi çekerdi. Gerisi kart açılınca
+  /// `seriesFor` ile gelir (panel yükleniyor durumunu çiziyor).
+  void prefetch(Iterable<Asset> assets, {int max = 5}) {
     var kalan = max;
     final gorulen = <String>{};
     for (final a in assets) {
@@ -138,8 +147,8 @@ class SparklineService {
       final symbol = _symbolFor(a);
       if (symbol == null) continue;
       if (!gorulen.add(symbol)) continue;
-      if (_cache.containsKey(symbol) || _inflight.containsKey(symbol)) continue;
       kalan--;
+      if (_cache.containsKey(symbol) || _inflight.containsKey(symbol)) continue;
       // Hata yutulur: prefetch bir kolaylıktır, başarısızlığı kullanıcıya
       // gösterilecek bir olay değil. Kart açıldığında `seriesFor` yine
       // denenir (boş sonuç önbelleğe alınmaz, bkz. `_fetch`).

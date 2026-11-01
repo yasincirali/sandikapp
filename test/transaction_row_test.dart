@@ -72,13 +72,14 @@ void main() {
     testWidgets('alım: tür + miktar tek metin', (tester) async {
       await _pump(tester, _asset());
       expect(find.textContaining('Alım · 100'), findsOneWidget);
-      expect(find.textContaining('+₺'), findsOneWidget);
+      // Tutar nötr ve işaretsiz (1 Kas 2026): alım kazanç değil.
+      expect(find.textContaining('+₺'), findsNothing);
     });
 
-    testWidgets('satım: "Satım · miktar", tutar eksi', (tester) async {
+    testWidgets('satım: "Satım · miktar", tutar işaretsiz', (tester) async {
       await _pump(tester, _asset(kind: AssetKind.sell, qty: 10));
       expect(find.textContaining('Satım · 10'), findsOneWidget);
-      expect(find.textContaining('−₺'), findsOneWidget);
+      expect(find.textContaining('−₺'), findsNothing);
     });
 
     testWidgets('temettü: miktar yazılmaz', (tester) async {

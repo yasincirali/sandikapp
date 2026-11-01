@@ -482,6 +482,12 @@ final partnerNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kBalanceHiddenKey, false));
 
+/// Portföy listesinde kartların ikinci sayısı bugünkü değişim mi (`true`)
+/// yoksa alıştan beri kâr/zarar mı (Ar-Ge 1 Kas 16:45 #1). Varsayılan
+/// Toplam: güncellemeyle gelen kullanıcının listesi değişmez.
+final portfoyBugunModuProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.portfoyBugunModu, false));
+
 /// Toplam kartındaki kaydırma ipucu bir kez gösterildi mi (cihaz tercihi;
 /// jest cihaza ait, kişiye değil). 2026-09-21.
 final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(

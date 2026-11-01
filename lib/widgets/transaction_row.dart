@@ -24,8 +24,9 @@ import '../l10n/l10n.dart';
 /// (şerit + pil + işaret hepsi "alım" diyordu) ve her satır ayrı kutu
 /// olduğu için göz kayıtları birlikte okuyamıyordu. Yeni satır DÜZ:
 /// arka planı ve kenarı yok, çağıran taraf bir kaba (SandikCard) koyar ve
-/// satırlar arasına [HareketAyraci] çizer (iOS gruplu liste). Tek renk
-/// sinyali tutarın kendisi; işlem türü ve miktar sağ altta düz metin.
+/// satırlar arasına [HareketAyraci] çizer (iOS gruplu liste). İşlem türü
+/// ve miktar sağ altta düz metin. Tutar 2026-11-01'den beri nötr (yalnız
+/// temettü amber): renk kâr/zarara ayrıldı, bkz. `tutarRengi`.
 class TransactionRow extends StatelessWidget {
   const TransactionRow({
     super.key,
@@ -136,15 +137,20 @@ class TransactionRow extends StatelessWidget {
         isDividend ? asset.dividendAmount : asset.quantity * unitPrice;
     final txValueTRY = portfolioState.toTRY(txValue, asset.currency);
 
-    // Tek renk sinyali: tutar. Alım yeşil, satım kırmızı, temettü amber,
-    // silme kaydı soluk. Başka hiçbir öğe renkle tür anlatmaz — eski
-    // tasarımda şerit + pil + tutar üçü birden anlatıyordu.
+    // Tutar NÖTR (yasin 1 Kas 2026: "global örneklere bak, yap diyorsa
+    // ekle"; 28 Eyl'deki "tek renk sinyali: tutar" kararının yerine).
+    // Alım yeşil yazılınca uygulamanın geri kalanındaki "yeşil = kazandın"
+    // anlamıyla çakışıyordu: alım kazanç değil, paranın varlığa geçişi.
+    // Robinhood, Freetrade, Trade Republic işlem geçmişinde alım/satım
+    // nötr; yeşil/kırmızı yalnız fiyat performansında. Tür metinle (sağ
+    // altta "Alım · 100 lot") okunur; renk körlüğüne de daha uygun.
+    // İstisnalar: temettü gerçekten gelen para, amber ve "+" kalır; silme
+    // kaydı soluk.
     final Color tutarRengi = isDelete || silinenGorunumu
         ? context.c.text58
-        : (isSell
-            ? context.c.loss
-            : (isDividend ? context.c.amberText : context.c.gain));
-    final String sign = isSell || isDelete ? '−' : '+';
+        : (isDividend ? context.c.amberText : context.c.text90);
+    // İşaret yalnız temettüde: alımdaki "+" de kazanç gibi okunuyordu.
+    final String sign = isDividend && !isDelete ? '+' : '';
 
     final String turEtiketi = hareketTurEtiketi(l10n, asset);
 

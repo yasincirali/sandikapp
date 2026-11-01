@@ -370,6 +370,10 @@ const _portfoySeridiCumlesi = ' Üstteki portföy şeridiyle Tümü, Ana ya da '
     'adlandırdığın bir portföye bakarsın; yenisini şeridin sonundaki '
     '"Yeni portföy"den açarsın. Toplam görünümün hep "Tümü"dür.';
 
+const _bugunSeciciCumlesi = ' Halkanın altındaki "Toplam | Bugün" ile '
+    'kartlarda toplam kâr ya da bugünkü hareket görünür; sıralamada '
+    '"Bugünkü hareket" en çok oynayanı öne alır.';
+
 List<_Adim> _adimlariKur() {
   // Vadeli mevduat 2026-09-14'te kaldırıldı; tür listesi artık sabit metin.
   return [
@@ -632,7 +636,10 @@ List<_Adim> _adimlariKur() {
           // tur metni arayüzle birlikte değişir (2026-09-21 kuralı). Üç
           // düzenin üçüne de eklenir; özellik görünmüyorsa metin birebir
           // eski.
-          (_cokluPortfoyGorunur ? _portfoySeridiCumlesi : ''),
+          (_cokluPortfoyGorunur ? _portfoySeridiCumlesi : '') +
+          // 1 Kas: halkanın altında Toplam | Bugün seçici; kart alt satırı
+          // türü değil fiyatı yazar (tur metni arayüzle birlikte değişir).
+          _bugunSeciciCumlesi,
       gorev: 'Portföy sekmesine dokun',
       gorevBitti: 'Portföy açıldı',
       bitti: (_) => _sekmede(1),

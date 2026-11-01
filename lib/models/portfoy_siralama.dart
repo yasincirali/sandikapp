@@ -12,7 +12,14 @@ enum PortfoySiralama {
   gainDesc('kar_azalan'),
   gainAsc('kar_artan'),
   gainPctDesc('kar_yuzde_azalan'),
-  gainPctAsc('kar_yuzde_artan');
+  gainPctAsc('kar_yuzde_artan'),
+
+  /// Bugünkü hareket, en çok oynayan önce (Ar-Ge 1 Kas 16:45 #1, yasin
+  /// "yap"). Kendi seçeneği: Bugün moduna geçmek kullanıcının sırasını
+  /// KENDİLİĞİNDEN değiştirmez — satırlar yer değiştirince "nereye gitti"
+  /// sorusu doğar. Gün içi verisi olmayan ya da bugün işlem gören satır
+  /// sona, kendi içinde değere göre.
+  todayMoveDesc('bugun_hareket');
 
   const PortfoySiralama(this.kod);
 
