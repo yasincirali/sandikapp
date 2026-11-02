@@ -207,6 +207,14 @@ void main() {
       kim: 'demo',
       olusturma: DateTime(2026, 11, 1, 9, 12),
       getiriPct: 3.42,
+      portfoy: const AyinPortfoyu(
+        baslangicTRY: 480000,
+        sonTRY: 501640,
+        katkiTRY: 10000,
+        piyasaTRY: 11640,
+        enIyi: ('THYAO', 8.2),
+        enZayif: ('AFT', -3.1),
+      ),
     );
     File('${dir.path}/aylik.pdf')
         .writeAsBytesSync(

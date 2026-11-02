@@ -410,6 +410,7 @@ class AddAssetFormState {
     this.bist100Ticker,
     this.selectedFund,
     this.notesExpanded = false,
+    this.sembolleEkleAcik = false,
     this.denendi = false,
     this.abdAcik = false,
     this.turIzgarasiAcik = false,
@@ -523,6 +524,10 @@ class AddAssetFormState {
   final String? bist100Ticker;
   final TefasFund? selectedFund;
   final bool notesExpanded;
+
+  /// Hisse formunda "Listede yok mu? Sembolle ekle" açıldı mı (müşteri
+  /// raporu 2 Kas 17:15 #3). Görünüm durumu; kayda girmez.
+  final bool sembolleEkleAcik;
 
   /// "Ekle"ye en az bir kez basıldı mı. Bundan sonra form her değişimde
   /// yeniden doğrulanır: uyarı, kullanıcı varlığı seçtiği anda kalkar (bir
@@ -748,6 +753,7 @@ class AddAssetFormState {
     Object? bist100Ticker = _keep,
     Object? selectedFund = _keep,
     bool? notesExpanded,
+    bool? sembolleEkleAcik,
     bool? denendi,
     bool? abdAcik,
     bool? turIzgarasiAcik,
@@ -785,6 +791,7 @@ class AddAssetFormState {
             ? this.selectedFund
             : selectedFund as TefasFund?,
         notesExpanded: notesExpanded ?? this.notesExpanded,
+        sembolleEkleAcik: sembolleEkleAcik ?? this.sembolleEkleAcik,
         denendi: denendi ?? this.denendi,
         abdAcik: abdAcik ?? this.abdAcik,
         turIzgarasiAcik: turIzgarasiAcik ?? this.turIzgarasiAcik,
@@ -884,6 +891,7 @@ class AddAssetFormNotifier
   void setManualPrice(bool v) => _set(state.copyWith(isManualPrice: v));
   void toggleNotes() =>
       _set(state.copyWith(notesExpanded: !state.notesExpanded));
+  void sembolleEkleAc() => _set(state.copyWith(sembolleEkleAcik: true));
 
   /// Tür ızgarasını açar/katlar. Tür seçimi
   /// bunu KENDİLİĞİNDEN değiştirmez: hızlı giriş ve sepet geçişleri de

@@ -58,9 +58,9 @@ class PriceAlertTile extends StatelessWidget {
     String fiyat(double v) => fmtFiyat(v, symbol: simge ?? '');
     return BildirimSatiri(
       renk: yukari ? context.c.gain : context.c.loss,
-      ikon: yukari
-          ? Icons.notifications_active_rounded
-          : Icons.notifications_active_outlined,
+      // Yön şekille de söylenir (▲/▼): kart zemini nötr olunca renk tek
+      // başına kalırdı (renk körlüğü).
+      ikon: yukari ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
       baslik: bildirim.label,
       kapaliBaslikSatiri: 1,
       rozet: context.l10n.notifTypeAlarm,

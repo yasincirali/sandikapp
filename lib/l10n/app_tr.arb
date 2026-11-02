@@ -196,19 +196,7 @@
   },
   "signalDeleteFailed": "Bildirim silinemedi. Bağlantını kontrol et.",
   "permanentDelete": "Kalıcı sil",
-  "signalDeleteChoice": "Geçmişte {past}, aktif {active} bildirim var. Ne silinsin?",
-  "@signalDeleteChoice": {
-    "placeholders": {
-      "past": {
-        "type": "int"
-      },
-      "active": {
-        "type": "int"
-      }
-    }
-  },
   "cancelShort": "Vazgeç",
-  "onlyHistory": "Yalnızca geçmiş",
   "clearAllSignals": "Tüm sinyalleri temizle",
   "clearAllLower": "Tümünü temizle",
   "clearAllSignalsBody": "{count} bildirim geçmişe taşınacak. Kalıcı silmek için geçmişteki \"Geçmişi Sil\" düğmesini kullan.",
@@ -220,8 +208,8 @@
     }
   },
   "clearVerb": "Temizle",
-  "clearAllUpper": "Tümünü Temizle",
-  "noActiveSignals": "Şu an aktif sinyal yok",
+  "clearAllUpper": "Temizle",
+  "noActiveSignals": "Yeni bildirim yok",
   "historyUpper": "GEÇMİŞ",
   "deleteHistoryCount": "Geçmişteki {count} bildirimi kalıcı olarak sil",
   "@deleteHistoryCount": {
@@ -3175,7 +3163,7 @@
     }
   },
   "goalTitle": "Portföy hedefi",
-  "goalHint": "Yalnızca gösterim için; hesapları değiştirmez.",
+  "goalHint": "Ana sayfada ilerlemeni gösterir; hesapları değiştirmez.",
   "goalInvalid": "Geçerli bir tutar gir",
   "goalRemove": "Hedefi kaldır",
   "goalSettingsSubtitle": "Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör",
@@ -6597,5 +6585,18 @@
   "kilometreTasiSiradakiEtiket": "Sıradaki kilometre taşı: {baslik}",
   "@kilometreTasiSiradakiEtiket": {"placeholders": {"baslik": {"type": "String"}}},
   "kilometreTaslariBaslik": "Kilometre taşların",
-  "kilometreTaslariNot": "Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır."
+  "kilometreTaslariNot": "Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.",
+  "bosCanAciklama": "Fiyat alarmı kurduğunda, hedefe gelince burada ve bildirimde haber veririz.",
+  "goalPreview": "Şu an {deger} · {yuzde} tamam · {kalan} kaldı",
+  "@goalPreview": {"placeholders": {"deger": {"type": "String"}, "yuzde": {"type": "String"}, "kalan": {"type": "String"}}},
+  "goalPreviewHidden": "{yuzde} tamam",
+  "@goalPreviewHidden": {"placeholders": {"yuzde": {"type": "String"}}},
+  "goalPreviewDone": "Şu an {deger} · bu hedefi zaten geçtin",
+  "@goalPreviewDone": {"placeholders": {"deger": {"type": "String"}}},
+  "goalPreviewDoneHidden": "Bu hedefi zaten geçtin",
+  "pricePreviewToday": "Bugünkü piyasa fiyatı. Kayıtta bu fiyat kullanılacak",
+  "fiyatBirimiyle": "{fiyat} / {birim}",
+  "@fiyatBirimiyle": {"placeholders": {"fiyat": {"type": "String"}, "birim": {"type": "String"}}},
+  "notInListAddBySymbol": "Listede yok mu? Sembolle ekle",
+  "tlCurrencyLocked": "Fon ve BIST hissesi TL ile kaydedilir"
 }

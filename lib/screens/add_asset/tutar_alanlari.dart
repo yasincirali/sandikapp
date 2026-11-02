@@ -320,6 +320,22 @@ extension _TutarAlanlari on _AddAssetScreenState {
                 color: context.c.text58, fontWeight: FontWeight.w700)),
       );
     }
+    // Fon ve BIST hissesi her zaman TL (müşteri raporu 2 Kas 17:15 #2):
+    // açılır liste yalnız yanlış kayıt üretebiliyordu. Kilit yalnız para
+    // birimi ZATEN TRY iken; geçmişte yanlışlıkla başka birimle kaydedilmiş
+    // bir lot düzenlenirken liste açık kalır ki düzeltilebilsin. "Diğer
+    // Hisseler" yurt dışı olabilir, kilitlenmez.
+    final borsaIstanbul = _type == AssetType.hisse &&
+        !_s.isAbd &&
+        _s.subCategory != StockSubCategory.other.label;
+    if ((_s.isFon || borsaIstanbul) && _currency == 'TRY') {
+      return Tooltip(
+        message: context.l10n.tlCurrencyLocked,
+        child: Text('TRY',
+            style: context.t.titleSmall?.copyWith(
+                color: context.c.text58, fontWeight: FontWeight.w700)),
+      );
+    }
     // `DropdownButton` içeride kendi `Row`'unu kurar ve o Row daralamaz;
     // 320pt × 3.0× ölçekte 10px taşıyordu. İçerik üç harflik bir para
     // birimi kodu ("TRY") olduğu için ölçeği sınırlamak burada güvenli:
@@ -590,21 +606,42 @@ extension _TutarAlanlari on _AddAssetScreenState {
     } else if (_previewPrice != null) {
       final p = _previewPrice!;
       final fmt = qtyFormatter(maxDigits: 2);
-      color = _previewIsHistorical ? context.c.gain : context.c.amberText;
+      // Müşteri raporu 2 Kas 17:15 (#1): Bugün seçiliyken fiyat ZATEN
+      // canlı kotasyondan gelir (`fiyatBul` Bugün'de tarihli kapanış
+      // aramaz); kart yine de amber + yıldızla "Tarihli fiyat bulunamadı"
+      // diyordu ve ilk varlığını ekleyen kişi bir şeyin ters gittiğini
+      // sanıyordu. Bugün: nötr ton, doğru cümle. Uyarı tonu yalnız geçmiş
+      // bir gün seçilip o günün kapanışı bulunamadığında (gerçek uyarı).
+      // Başlık uygulamanın geri kalanı gibi ₺ ve birim adıyla ("/ lot",
+      // "/ gr"), "TRY / birim" değil.
+      final tutar =
+          _currency == 'TRY' ? '₺${fmt.format(p)}' : '${fmt.format(p)} $_currency';
+      final gecmisteBulunamadi = !_previewIsHistorical && !isToday;
+      color = _previewIsHistorical
+          ? context.c.gain
+          : gecmisteBulunamadi
+              ? context.c.amberText
+              : context.c.text58;
       icon = _previewIsHistorical
           ? Icons.event_available_rounded
-          : Icons.auto_awesome_rounded;
-      title = '${fmt.format(p)} $_currency / birim';
+          : gecmisteBulunamadi
+              ? Icons.info_outline_rounded
+              : Icons.show_chart_rounded;
+      title = _quantitySuffix.isEmpty
+          ? tutar
+          : context.l10n.fiyatBirimiyle(tutar, _quantitySuffix);
       // Hafta sonu seçildiyse gelen kapanış Cuma'nındır; metin seçilen
       // günü değil, fiyatın GERÇEK gününü söyler (emülatör testi #31).
       final islemGunu = haftaSonuKapanisGunu(_addedDate,
           yediGun: _type == AssetType.kripto);
-      subtitle = !_previewIsHistorical
-          ? 'Tarihli fiyat bulunamadı, güncel piyasa fiyatı kullanılacak'
-          : islemGunu != null
-              ? context.l10n.pricePreviewLastTradingClose(
-                  DateFormat('d MMM', context.tarihDili).format(islemGunu))
-              : context.l10n.pricePreviewClose(dateLabel);
+      subtitle = isToday && !_previewIsHistorical
+          ? context.l10n.pricePreviewToday
+          : !_previewIsHistorical
+              ? 'Tarihli fiyat bulunamadı, güncel piyasa fiyatı kullanılacak'
+              : islemGunu != null
+                  ? context.l10n.pricePreviewLastTradingClose(
+                      DateFormat('d MMM', context.tarihDili).format(islemGunu))
+                  : context.l10n.pricePreviewClose(dateLabel);
     } else {
       color = context.c.loss.withValues(alpha: 0.8);
       icon = Icons.help_outline_rounded;

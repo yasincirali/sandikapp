@@ -127,6 +127,24 @@ const List<SurumNotu> surumNotlari = [
             'çeyrek altın, portföyünün yaşı. Dokununca o anı yeniden '
             'açarsın; sıradaki hedef de yanında.',
       ),
+      // Ar-Ge 2 Kas 08:45 #1-#2, müşteri YAP.
+      Yenilik(
+        baslik: 'Hedef ve alarm daha kolay',
+        aciklama: 'Hedef sayfasındaki hazır tutarlar artık portföyüne göre '
+            'geliyor ve yazdığın hedefin yüzde kaçında olduğunu hemen '
+            'görüyorsun. Çan boşken tek dokunuşla fiyat alarmı kurabilirsin.',
+        ikon: YenilikIkonu.bildirim,
+      ),
+      // Ar-Ge 2 Kas 12:45 #1-#2, müşteri YAP. Premium maddesi: paywall'ın
+      // kodda açık olduğu platformda görünür.
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        bayrak: 'paywall_enabled',
+        baslik: 'Aylık rapor portföyünü anlatıyor',
+        aciklama: 'Aylık PDF raporunda artık ay sonu değerin, kârın, '
+            'yatırdığın para ve en çok kazandıran varlık var. Performans\'ta '
+            '1 ay seçiliyken rapora tek dokunuşla ulaşırsın.',
+      ),
     ],
   ),
   SurumNotu(

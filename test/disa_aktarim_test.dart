@@ -249,7 +249,8 @@ void main() {
     test('TÜFE açıklanmadıysa kutu açıklanacağı günü yazar; reel yok', () {
       final b = aylik();
       final ozet = {for (final (k, v) in b.ozet) k: v};
-      expect(ozet["Ayın TÜFE'si"], "3 Kasım'da açıklanır");
+      // Kutuda cümle değil "—"; açıklanma günü etikette.
+      expect(ozet["Ayın TÜFE'si · 3 Kasım'da açıklanır"], '—');
       expect(ozet['Ayın getirisi'], '+%2,50');
       expect(ozet.containsKey('Reel getiri'), isFalse);
     });
@@ -264,6 +265,59 @@ void main() {
       final ozet = {for (final (k, _) in aylik(getiri: null, tufe: 2).ozet) k};
       expect(ozet, isNot(contains('Ayın getirisi')));
       expect(ozet, isNot(contains('Reel getiri')));
+    });
+
+    // Müşteri raporu 2 Kas 13:15 #1: ayın portföyü (Performans 1A ile aynı
+    // sayılar). Ayak eksikse köprü cümlesi ve kutusu yok (uydurma yok).
+    test('ayın portföyü: kutular, köprü ve en iyi/en zayıf cümlesi', () {
+      final b = aylikRaporBelgesi(
+        donem: DateTime(2026, 10),
+        notlar: const [],
+        ozetCumlesi: 'x',
+        eksikCumlesi: null,
+        kim: 'yasin',
+        olusturma: DateTime(2026, 11, 1, 9),
+        getiriPct: 2.4,
+        portfoy: const AyinPortfoyu(
+          baslangicTRY: 480000,
+          sonTRY: 501640,
+          katkiTRY: 10000,
+          piyasaTRY: 11640,
+          enIyi: ('THYAO', 8.2),
+          enZayif: ('AFT', -3.1),
+        ),
+      );
+      final ozet = {for (final (k, v) in b.ozet) k: v};
+      expect(ozet['Ayın kâr/zararı'], const TlTutar(11640));
+      expect(ozet['Ay sonu değer'], const TlTutar(501640));
+      expect(ozet['Yatırdığın net para'], const TlTutar(10000));
+      expect(ozet.containsKey('Notu çıkan varlık'), isFalse);
+      expect(
+          b.oneCikanlar,
+          contains('Ay başında ₺480.000 olan portföyün ay sonunda ₺501.640 '
+              'oldu. Piyasanın etkisi +₺11.640, yatırdığın net para '
+              '+₺10.000.'));
+      expect(
+          b.oneCikanlar,
+          contains('En çok kazandıran THYAO (+%8,20), en çok düşüren AFT '
+              '(−%3,10).'));
+
+      const eksik = AyinPortfoyu(sonTRY: 501640, piyasaTRY: 11640);
+      expect(eksik.kopruCumlesi, isNull);
+      expect(eksik.enIyiCumlesi, isNull);
+    });
+
+    test('PDF özetinde sayaç ve sıfır masraf kutusu yok, Excel aynı', () {
+      final s = pdfOzeti(const [
+        ('Toplam değer', TlTutar(100)),
+        ('Varlık sayısı', '6'),
+        ('İşlem sayısı', '10'),
+        ('İşlem masrafları (komisyon)', TlTutar(0)),
+      ]);
+      expect([for (final (k, _) in s) k], ['Toplam değer']);
+      expect(
+          pdfOzeti(const [('İşlem masrafları (komisyon)', TlTutar(12))]),
+          hasLength(1));
     });
 
     test('notlar bölüm, sıra korunur; eksikler ve hareket öne çıkanlarda', () {

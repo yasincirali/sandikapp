@@ -223,6 +223,18 @@ extension _KimlikAlanlari on _AddAssetScreenState {
     );
   }
 
+  /// "Listede yok mu?" alanları açık mı. Listeden seçilen hisse alanlara
+  /// da yazılır (`selectBist100`, `selectAbdHisse`); o durumda alanlar
+  /// kapalı kalır, yalnız listede OLMAYAN bir sembol yazılıysa açılır.
+  bool _sembolAlanlariAcik({required bool hata}) {
+    if (_s.sembolleEkleAcik || hata) return true;
+    final t = _ticker.text.trim();
+    if (t.isEmpty) return false;
+    return _s.isAbd
+        ? !abdHisseleri.containsKey(t)
+        : _s.bist100Ticker == null;
+  }
+
   // ── Hisse: birleşik "BIST100'den seç veya sembol yaz" bloğu ────────────────
   //
   // BIST100 seçilirse subCategory = "BIST 100 Hisseleri" yazılır (data korunur).
@@ -244,47 +256,61 @@ extension _KimlikAlanlari on _AddAssetScreenState {
           _abdSelectorField(cs, hata: hata)
         else
           _bist100SelectorField(cs, hata: hata),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                  height: 1, color: context.c.text36.withValues(alpha: 0.3)),
-            ),
-            // Ayraç metni büyük font ayarında iki çizgiyi dışarı itiyordu.
-            // Çizgiler zaten `Expanded`; daralması gereken metindir.
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(context.l10n.orNotInList,
-                    style:
-                        context.t.bodySmall?.copyWith(color: context.c.text36),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+        // Müşteri raporu 2 Kas 17:15 (#3): ayraç ("veya listede yok") ve
+        // iki boş alan her zaman çiziliyordu; çoğu kişi listeden seçiyor ve
+        // boş alanlar "bunları da mı doldurmalıyım?" diye düşündürüyordu.
+        // Artık tek satır bağlantı; dokununca alanlar açılır. Listede
+        // olmayan bir sembol zaten yazılıysa (düzenleme, `prefillTicker`)
+        // ya da kimlik eksik uyarısı varsa alanlar açık başlar.
+        if (!_sembolAlanlariAcik(hata: hata))
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: SandikBasma(
+              onTap: () {
+                SandikHaptic.selection.perform();
+                _n.sembolleEkleAc();
+              },
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(minHeight: SandikTouch.min),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: SandikSpace.xs),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(context.l10n.notInListAddBySymbol,
+                            style: context.t.bodyMedium?.copyWith(
+                                color: context.c.amberText,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      Icon(Icons.chevron_right_rounded,
+                          size: 18, color: context.c.amberText),
+                    ],
+                  ),
+                ),
               ),
             ),
-            Expanded(
-              child: Container(
-                  height: 1, color: context.c.text36.withValues(alpha: 0.3)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        _brandInput(
-          controller: _ticker,
-          hint: abd ? context.l10n.usSymbolHint : context.l10n.symbolHint,
-          textCapitalization: TextCapitalization.characters,
-          autocorrect: false,
-          onChanged: (v) {
-            _n.tickerTyped(v);
-            _schedulePricePreview();
-          },
-        ),
-        const SizedBox(height: 8),
-        _brandInput(
-          controller: _name,
-          hint: context.l10n.companyNameHint,
-        ),
+          )
+        else ...[
+          const SizedBox(height: 8),
+          _brandInput(
+            controller: _ticker,
+            hint: abd ? context.l10n.usSymbolHint : context.l10n.symbolHint,
+            textCapitalization: TextCapitalization.characters,
+            autocorrect: false,
+            onChanged: (v) {
+              _n.tickerTyped(v);
+              _schedulePricePreview();
+            },
+          ),
+          const SizedBox(height: 8),
+          _brandInput(
+            controller: _name,
+            hint: context.l10n.companyNameHint,
+          ),
+        ],
       ],
     );
   }

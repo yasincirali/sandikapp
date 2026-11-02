@@ -240,6 +240,43 @@ class _RaporlarSayfasi extends ConsumerWidget {
   }
 }
 
+/// Performans › 1A özetinin altındaki aylık rapor satırı (Ar-Ge 2 Kas
+/// 12:45 #2, müşteri raporu 13:15 YAP).
+///
+/// **Neden:** ayın 1'indeki aylık özet bildirimi Performans › 1A'yı
+/// açıyor; rapor ise yalnız başlıktaki Raporlar düğmesinin içindeydi.
+/// Raporun hazır olduğu an, kullanıcının zaten baktığı yerde görünür.
+/// Satır Raporlar'daki aylık rapor satırıyla AYNI bileşen ve aynı kural:
+/// dönem [aylikRaporDonemiProvider]'dan; kilitliyse kilit simgesi, ekran
+/// açılınca kilit kartı karşılar. Yeni ekran ya da bildirim yok.
+class AylikRaporSatiri extends ConsumerWidget {
+  const AylikRaporSatiri({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Demo: Raporlar düğmesi gibi gizli (rapor sunucu notlarından).
+    if (DemoModu.aktif) return const SizedBox.shrink();
+    final aylik = ref.watch(aylikRaporDonemiProvider);
+    if (aylik == null) return const SizedBox.shrink();
+    final l = context.l10n;
+    final dil = Localizations.localeOf(context).toString();
+    return SandikCard(
+      padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
+      child: _RaporSatiri(
+        ikon: Icons.summarize_rounded,
+        baslik: l.s6AylikRapor,
+        alt: l.anzAylikBaslik(DateFormat('MMMM y', dil).format(aylik)),
+        kilitli: ref.watch(premiumKilitliProvider),
+        onTap: () => pushGuarded(
+            context,
+            adaptiveRoute<void>(
+                settings: const RouteSettings(name: 'aylik_rapor'),
+                builder: (_) => AylikRaporScreen(donem: aylik))),
+      ),
+    );
+  }
+}
+
 class _RaporSatiri extends StatelessWidget {
   const _RaporSatiri({
     required this.ikon,

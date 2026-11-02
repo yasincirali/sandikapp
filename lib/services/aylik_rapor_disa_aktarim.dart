@@ -16,7 +16,8 @@ import 'varlik_analizi.dart';
 /// saf kurucuda (`aylikRaporBelgesi`); burası okumalar:
 ///   - varlık notlarının TAMAMI (maddeler) — saklanan satır, yapay zekâ
 ///     yeniden çağrılmaz;
-///   - ayın getirisi — Performans'ın aylık özetiyle aynı hesap
+///   - ayın getirisi ve köprüsü (ay başı, yatırılan, piyasa, ay sonu, en
+///     iyi/en zayıf) — Performans'ın aylık özetiyle aynı hesap
 ///     (`PeriodSummaryService.compute`, pencere ayın 1'inden ay sonuna ya da
 ///     bugüne);
 ///   - ayın TÜFE'si — endeksten tek bölme (`InflationService.changePct`).
@@ -47,6 +48,7 @@ class AylikRaporDisaAktarim {
       _ayinTufesi(donem),
     ]);
     final tamNotlar = sonuclar[0] as List<VarlikNotu?>;
+    final ay = sonuclar[1] as PeriodSummary?;
     final hareketli = notlar.where((n) => n.rozet != 'sakin').length;
     return aylikRaporBelgesi(
       donem: donem,
@@ -68,8 +70,22 @@ class AylikRaporDisaAktarim {
       eksikCumlesi: eksik.isEmpty ? null : tr.anzAylikEksik(eksik.join(', ')),
       kim: kim,
       olusturma: now,
-      getiriPct: sonuclar[1] as double?,
+      getiriPct: ay?.getiriPct,
       tufePct: sonuclar[2] as double?,
+      portfoy: ay == null
+          ? null
+          : AyinPortfoyu(
+              baslangicTRY: ay.baslangicTRY,
+              sonTRY: ay.sonTRY,
+              katkiTRY: ay.katkiTRY,
+              piyasaTRY: ay.piyasaTRY,
+              enIyi: ay.enIyi == null
+                  ? null
+                  : (ay.enIyi!.name, ay.enIyi!.changePct),
+              enZayif: ay.enZayif == null
+                  ? null
+                  : (ay.enZayif!.name, ay.enZayif!.changePct),
+            ),
     );
   }
 
@@ -89,7 +105,7 @@ class AylikRaporDisaAktarim {
   /// verilir; Performans'ın aylık özeti de ucu canlıya bağlar, verilmezse
   /// bugünkü alımlar katkıda sayılıp değerde sayılmaz ve getiri ekrandan
   /// farklı çıkar (`ozet_canli_uc_test`). Kapanmış ayda uç ay sonu slotudur.
-  static Future<double?> _ayinGetirisi(DateTime donem, List<Asset> lotlar,
+  static Future<PeriodSummary?> _ayinGetirisi(DateTime donem, List<Asset> lotlar,
       DateTime now, double? canliToplam) async {
     if (lotlar.isEmpty) return null;
     final ayBasi = DateTime(donem.year, donem.month);
@@ -113,7 +129,7 @@ class AylikRaporDisaAktarim {
         now: son,
         pencereBaslangici: ayBasi,
         canliSon: identical(son, now) ? canliToplam : null,
-      ).getiriPct;
+      );
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'AylikRaporPdf.getiri');
       return null;

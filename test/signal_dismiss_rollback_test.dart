@@ -237,8 +237,10 @@ void main() {
           reason: 'kalıcı silme eylemi ekranda görünmeli');
       expect(src.contains('await onDeleteHistory()'), isTrue,
           reason: 'düğme provider metodunu ÇAĞIRMALI (yorum sayılmaz)');
-      expect(src.contains('await onDeleteAll()'), isTrue,
-          reason: 'kapsam "hepsi" seçilince deleteAll çağrılmalı');
+      // "Hepsini sil" kapsam sorusu 2 Kas'ta kalktı (Ar-Ge 08:45 #3):
+      // "Geçmişi sil" yalnız geçmişi siler, aktif önce "Temizle" ile iner.
+      expect(src.contains('onDeleteAll'), isFalse,
+          reason: 'çanda tek kalıcı silme yolu: geçmiş');
     });
   });
 }

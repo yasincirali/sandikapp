@@ -92,8 +92,6 @@ class _BildirimSatiriState extends State<BildirimSatiri> {
     // 2026-10-10): %45 opak text58 açık temada 2,1:1 idi. İkon ve zemin
     // (metin dışı) opaklıkla solmaya devam eder.
     final double alphaFactor = faded ? 0.45 : 1.0;
-    final double bgAlpha = faded ? 0.05 : 0.10;
-    final double borderAlpha = faded ? 0.12 : 0.28;
 
     final govde = widget.govde?.trim() ?? '';
     final ek = widget.ekAciklama?.trim() ?? '';
@@ -119,14 +117,16 @@ class _BildirimSatiriState extends State<BildirimSatiri> {
             const SizedBox(width: SandikSpace.sm),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              // Rozet nötr: tür METİNLE söylenir, renk simge dairesinde.
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18 * alphaFactor),
+                color: context.c.overlay,
                 borderRadius: BorderRadius.circular(SandikRadius.sm),
+                border: Border.all(color: context.c.hairline),
               ),
               child: Text(widget.rozet,
                   style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: faded ? context.c.text36 : color,
+                      color: faded ? context.c.text36 : context.c.text58,
                       decoration: TextDecoration.none)),
             ),
           ],
@@ -206,11 +206,15 @@ class _BildirimSatiriState extends State<BildirimSatiri> {
         olcek: 0.98,
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+          // Zemin ve çerçeve NÖTR, renk yalnız simge dairesinde (Ar-Ge 2 Kas
+          // 08:45 tasarım 2, müşteri YAP): zemin, çerçeve, daire ve rozet
+          // aynı renkteydi; üç kart yeşil/sarı/kırmızı levha gibi duruyordu.
+          // iOS Bildirim Merkezi kalıbı; Hareketler'de alım/satımı nötre
+          // alan ilkeyle (#278) aynı.
           decoration: BoxDecoration(
-            color: color.withValues(alpha: bgAlpha),
+            color: faded ? context.c.background : context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(
-                color: color.withValues(alpha: borderAlpha), width: 1.5),
+            border: Border.all(color: context.c.hairline),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

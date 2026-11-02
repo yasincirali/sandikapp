@@ -46,6 +46,7 @@ import '../widgets/gorunum_cipi.dart';
 import '../utils/tr_iyelik.dart';
 import '../widgets/kaydirmali_gecis.dart';
 import 'price_alerts_screen.dart';
+import '../widgets/alarm_kur_sheet.dart' show alarmKurAkisi;
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/transaction_row.dart';
@@ -219,11 +220,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   .read(priceAlertNotificationProvider.notifier)
                   .deleteHistory(),
               ref.read(appNotificationProvider.notifier).deleteHistory(),
-            ]),
-        onDeleteAll: () => Future.wait([
-              ref.read(signalProvider.notifier).deleteAll(),
-              ref.read(priceAlertNotificationProvider.notifier).deleteAll(),
-              ref.read(appNotificationProvider.notifier).deleteAll(),
             ]),
         onTap: (alert) {
           Navigator.pop(context);
@@ -1348,10 +1344,13 @@ class _SignalsBottomSheet extends ConsumerWidget {
   final Future<void> Function() onDismissAll;
 
   /// GEÇMİŞİ kalıcı siler (dismiss edilmiş kayıtlar).
+  ///
+  /// "Hepsini (aktif + geçmiş) sil" yolu ve onun kapsam sorusu 2 Kas'ta
+  /// kalktı (Ar-Ge 08:45 #3, müşteri YAP): üç düğmeli soru ("Hepsini sil
+  /// (3+2)") neyi sileceğini söylemiyordu. Aktifi silmek isteyen önce
+  /// "Temizle", sonra "Geçmişi sil" der; kayıtlar sunucuda 90 günde zaten
+  /// kendiliğinden silinir (0065, 0066).
   final Future<void> Function() onDeleteHistory;
-
-  /// HEPSİNİ (aktif + geçmiş) kalıcı siler.
-  final Future<void> Function() onDeleteAll;
 
   final void Function(SignalAlert alert) onTap;
 
@@ -1373,7 +1372,6 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required this.onDelete,
     required this.onDismissAll,
     required this.onDeleteHistory,
-    required this.onDeleteAll,
     required this.onTap,
     required this.onAlarmTap,
     required this.onAlarmDismiss,
@@ -1466,48 +1464,6 @@ class _SignalsBottomSheet extends ConsumerWidget {
       confirmLabel: eylem,
       destructive: true,
       islem: islem,
-    );
-  }
-
-  /// Kalıcı silmenin KAPSAMINI sorar.
-  ///
-  /// `true` → hepsi (aktif + geçmiş), `false` → yalnızca geçmiş,
-  /// `null` → vazgeçildi.
-  ///
-  /// Yalnızca aktif sinyal DE varken sorulur. Aktif yoksa iki seçenek aynı
-  /// şeyi yapar ve gereksiz bir soru olur (HIG: her karar kullanıcının
-  /// dikkatinden harcar).
-  ///
-  /// Varsayılan yıkıcı olmayan seçenektir: liste sırasında "Yalnızca geçmiş"
-  /// önce gelir, "Hepsini sil" en yıkıcı olduğu için kırmızıdır.
-  static Future<bool?> _kapsamSor(
-    BuildContext context, {
-    required int gecmis,
-    required int aktif,
-  }) {
-    return showSandikGecisli<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.permanentDelete),
-        content: Text(
-          context.l10n.signalDeleteChoice(gecmis, aktif),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.l10n.cancelShort),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.l10n.onlyHistory),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Hepsini sil ($gecmis+$aktif)',
-                style: TextStyle(color: context.c.loss)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1680,11 +1636,26 @@ class _SignalsBottomSheet extends ConsumerWidget {
                           if (!onay || !temizlendi) return;
                           if (context.mounted) Navigator.pop(context);
                         },
-                        child: Text(
-                          context.l10n.clearAllUpper,
-                          style: context.t.titleSmall?.copyWith(
-                              color: context.c.text36,
-                              decoration: TextDecoration.none),
+                        // 44 pt ve %58 metin (Ar-Ge 2 Kas 08:45 tasarım 3):
+                        // %36 dolgusuz metin hem soluk hem küçük hedefti;
+                        // yanındaki "Alarmlarım" ile aynı pay.
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                              minHeight: SandikTouch.min,
+                              minWidth: SandikTouch.min),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: SandikSpace.sm),
+                            child: Center(
+                              widthFactor: 1,
+                              child: Text(
+                                context.l10n.clearAllUpper,
+                                style: context.t.titleSmall?.copyWith(
+                                    color: context.c.text58,
+                                    decoration: TextDecoration.none),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                   ],
@@ -1692,17 +1663,52 @@ class _SignalsBottomSheet extends ConsumerWidget {
               ),
               const SizedBox(height: SandikSpace.md),
               if (active.isEmpty && history.isEmpty)
+                // Boş çan (Ar-Ge 2 Kas 08:45 #1, müşteri YAP): eskiden yeşil
+                // onay + "Şu an aktif sinyal yok" — sinyali olmayan için boş
+                // bir cümle, yeşil de bu uygulamada kâr demek. Artık nötr
+                // çan ve bir sonraki adım: alarm, uygulama kapalıyken geri
+                // çağıran tek özellik. Aday listesi Alarmlarım FAB'ıyla aynı
+                // (`alarmAdaylari`); varlık yoksa akış "önce varlık ekle" der.
                 Padding(
-                  padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 32),
-                  child: Row(
+                  padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                      SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.check_circle_outline_rounded,
-                          color: context.c.gain, size: 22),
-                      const SizedBox(width: SandikSpace.md),
-                      Text(context.l10n.noActiveSignals,
-                          style: context.t.titleMedium?.copyWith(
+                      Row(
+                        children: [
+                          Icon(Icons.notifications_none_rounded,
+                              color: context.c.text58, size: 22),
+                          const SizedBox(width: SandikSpace.md2),
+                          Flexible(
+                            child: Text(context.l10n.noActiveSignals,
+                                style: context.t.titleMedium?.copyWith(
+                                    color: context.c.text90,
+                                    decoration: TextDecoration.none)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: SandikSpace.sm),
+                      Text(context.l10n.bosCanAciklama,
+                          style: context.t.bodyMedium?.copyWith(
                               color: context.c.text58,
                               decoration: TextDecoration.none)),
+                      const SizedBox(height: SandikSpace.md),
+                      Consumer(
+                        builder: (context, ref, _) => OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: context.c.amberText,
+                            side: BorderSide(
+                                color: context.c.amberFill
+                                    .withValues(alpha: 0.5)),
+                            minimumSize: SandikTouch.minSize,
+                          ),
+                          onPressed: () => alarmKurAkisi(context, ref,
+                              adaylar: alarmAdaylari(ref)),
+                          icon: const Icon(Icons.add_alert_outlined),
+                          label: Text(context.l10n.createAlert),
+                        ),
+                      ),
                     ],
                   ),
                 )
@@ -1743,52 +1749,27 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                         decoration: TextDecoration.none),
                                   ),
                                   const Spacer(),
-                                  // SandikAsyncTap: "hepsini sil" yolunda
-                                  // onay diyaloğu yok (kapsam sorusu onay
-                                  // yerine geçer), istek bu düğmede
-                                  // göstergeli koşar; ikinci dokunuş ikinci
-                                  // diyalog/istek açmaz.
+                                  // İstek onay düğmesinin içinde koşar
+                                  // (diyalog göstergeyle açık kalır);
+                                  // ikinci dokunuş ikinci diyalog açmaz.
                                   SandikAsyncTap(
                                     semanticLabel:
                                         context.l10n.deleteHistoryCount(history.length),
                                     onTap: () async {
-                                      // Aktif sinyal de varsa kullanıcıya
-                                      // KAPSAM sorulur: yalnızca geçmiş mi,
-                                      // yoksa çanı tamamen boşalt mı.
-                                      // Aktif yoksa soru anlamsız — düz onay.
-                                      final hepsiniSil = active.isEmpty
-                                          ? false
-                                          : await _kapsamSor(
-                                              context,
-                                              gecmis: history.length,
-                                              aktif: active.length,
-                                            );
-                                      if (hepsiniSil == null) return;
-                                      if (!context.mounted) return;
-                                      Future<void> sil() async {
-                                        try {
-                                          if (hepsiniSil) {
-                                            await onDeleteAll();
-                                          } else {
-                                            await onDeleteHistory();
-                                          }
-                                        } catch (_) {
-                                          if (context.mounted) {
-                                            _hataGoster(context);
-                                          }
-                                        }
-                                      }
-
-                                      if (hepsiniSil) return sil();
-                                      // Yalnız geçmiş: silme onay düğmesinin
-                                      // içinde (diyalog göstergeyle açık
-                                      // kalır, iş bitince kapanır).
                                       await _onayAl(
                                         context,
                                         baslik: context.l10n.deleteHistoryTitle,
                                         mesaj: context.l10n.deleteHistoryBody(history.length),
                                         eylem: context.l10n.permanentDeleteUpper,
-                                        islem: sil,
+                                        islem: () async {
+                                          try {
+                                            await onDeleteHistory();
+                                          } catch (_) {
+                                            if (context.mounted) {
+                                              _hataGoster(context);
+                                            }
+                                          }
+                                        },
                                       );
                                     },
                                     // 44pt dokunma hedefi: metin ~18pt,
@@ -1822,15 +1803,26 @@ class _SignalsBottomSheet extends ConsumerWidget {
                               const SizedBox(height: SandikSpace.sm),
                             ],
                           ],
+                          // Uyarı listenin SONUNDA, kaydırmayla gelir (Ar-Ge
+                          // 2 Kas 08:45 tasarım 1): sayfanın dibine sabitken
+                          // son kartı kesiyordu. Tek satıra katlanmadı: bu
+                          // sayfa sinyal gösteriyor, tam metin görünür kalır
+                          // (`signal_disclaimer_coverage_test`).
+                          const SizedBox(height: SandikSpace.xs),
+                          const DisclaimerWidget(),
                         ],
                       ),
                     ),
                   ),
                 ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 16),
-                child: DisclaimerWidget(),
-              ),
+              if (active.isEmpty && history.isEmpty)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
+                      SandikSpace.screenH(context), SandikSpace.md),
+                  child: const DisclaimerWidget(),
+                )
+              else
+                const SizedBox(height: SandikSpace.xs),
             ],
           ),
         ),
