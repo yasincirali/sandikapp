@@ -66,6 +66,7 @@ mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final l = context.l10n;
     return switch (t) {
       YorumHataTuru.kota => l.pyzHataKota,
+      YorumHataTuru.kotaAy => l.pyzHataKotaAy,
       YorumHataTuru.reddedildi => l.pyzHataRed,
       YorumHataTuru.kapali => l.pyzHataKapali,
       YorumHataTuru.premium => l.pyzKilit,

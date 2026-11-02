@@ -5607,6 +5607,7 @@
   "pyzKapat": "Turn off AI commentary",
   "pyzKapatOnay": "Written comments are deleted and your portfolio percentages are no longer sent.",
   "pyzHataKota": "You've used today's comments, try again tomorrow.",
+  "pyzHataKotaAy": "You've used this month's comments, try again next month.",
   "pyzHataRed": "The comment couldn't be prepared right now. Try again a bit later.",
   "pyzHataKapali": "AI commentary is unavailable right now.",
   "pyzHataGenel": "Couldn't get the comment. Check your connection and try again.",

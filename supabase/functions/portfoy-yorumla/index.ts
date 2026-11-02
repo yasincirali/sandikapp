@@ -13,9 +13,10 @@
 // 2. Paket biçim denetimi (tutar yok, kapanmış takvim dönemi).
 // 3. KAYIT: aynı dönem + aynı parmak izi için yayında satır varsa onu döner,
 //    model ÇAĞRILMAZ (yasin, 12 Eki: "her seferinde ai token tüketmeyelim").
-// 4. Kota: kullanıcı başına günde PORTFOY_YORUM_GUNLUK (varsayılan 3) çağrı;
-//    ay toplamı PORTFOY_YORUM_AYLIK_TAVAN_USD (varsayılan 100) aşılınca
-//    Haiku 5.5'e iner, 3 katında o ay durur (429 `tavan`).
+// 4. Kota: kullanıcı başına günde PORTFOY_YORUM_GUNLUK (varsayılan 10) ve
+//    takvim ayında PORTFOY_YORUM_AYLIK (varsayılan 30, yasin 2 Kas 2026)
+//    yeni yorum; ay toplamı PORTFOY_YORUM_AYLIK_TAVAN_USD (varsayılan 100)
+//    aşılınca Haiku 5.5'e iner, 3 katında o ay durur (429 `tavan`).
 // 5. Messages API (Batch değil: kullanıcı bekliyor), yapılandırılmış JSON,
 //    sayı + dil kapısı. Red/hata da satır olarak yazılır (günlük sayaca girer,
 //    okura gitmez — RLS yalnız 'yayinda').
@@ -136,6 +137,17 @@ Deno.serve(async (req: Request) => {
     const ayBasi = new Date();
     ayBasi.setUTCDate(1);
     ayBasi.setUTCHours(0, 0, 0, 0);
+    // Kişi başı aylık sınır (yasin 2 Kas 2026, "Evet olsun"): günlük 10'u
+    // her gün dolduran tek kullanıcı ayda ~27 $ harcatıyor ve herkesin
+    // ortak tavanını (aşağıda) bitirebiliyordu; 30'la en kötü durum kişi
+    // başı ~1,5 $. Saklanan yorumun yeniden açılması buraya girmez (kayıt
+    // yukarıda döndü). Günlük sayaç gibi red/hata satırları da sayılır.
+    const aylikHak = Number(Deno.env.get('PORTFOY_YORUM_AYLIK') ?? '30') || 30;
+    const { count: aySayi, error: ase } = await db.from('portfoy_yorumlari')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId).gte('olusturuldu', ayBasi.toISOString());
+    if (ase) throw ase;
+    if ((aySayi ?? 0) >= aylikHak) return jsonResponse({ ok: false, neden: 'aylik_hak' }, 429);
     const { data: ay, error: ae } = await db.from('portfoy_yorumlari')
       .select('maliyet_usd').gte('olusturuldu', ayBasi.toISOString()).limit(50000);
     if (ae) throw ae;

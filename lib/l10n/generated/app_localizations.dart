@@ -15551,6 +15551,12 @@ abstract class AppLocalizations {
   /// **'Bugünlük yorum hakkın doldu, yarın yeniden dene.'**
   String get pyzHataKota;
 
+  /// No description provided for @pyzHataKotaAy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ayki yorum hakkın doldu, gelecek ay yeniden dene.'**
+  String get pyzHataKotaAy;
+
   /// No description provided for @pyzHataRed.
   ///
   /// In tr, this message translates to:

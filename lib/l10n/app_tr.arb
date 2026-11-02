@@ -6261,6 +6261,7 @@
   "pyzKapat": "Yapay zekâ yorumunu kapat",
   "pyzKapatOnay": "Yazılmış yorumların silinir ve portföy yüzdelerin artık gönderilmez.",
   "pyzHataKota": "Bugünlük yorum hakkın doldu, yarın yeniden dene.",
+  "pyzHataKotaAy": "Bu ayki yorum hakkın doldu, gelecek ay yeniden dene.",
   "pyzHataRed": "Yorum şu an hazırlanamadı. Biraz sonra yeniden dene.",
   "pyzHataKapali": "Yapay zekâ yorumu şu an kullanılamıyor.",
   "pyzHataGenel": "Yorum alınamadı. Bağlantını kontrol edip yeniden dene.",

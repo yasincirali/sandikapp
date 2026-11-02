@@ -117,7 +117,8 @@ const List<SurumNotu> surumNotlari = [
         baslik: 'Portföyüne yapay zekâ yorumu',
         aciklama: 'Performans › Özet\'te ve varlık sayfasında seçili dönem '
             'için kısa bir değerlendirme: enflasyon, dolar, altın ve BIST '
-            '100 ile kıyas. Sen istemeden yazılmaz. Premium ile.',
+            '100 ile kıyas. Sen istemeden yazılmaz; günde 10, ayda 30 yeni '
+            'yorum. Premium ile.',
       ),
       // Ar-Ge 1 Kas 20:45 #1, yasin "önerini uygula" (ücretsiz).
       Yenilik(

@@ -372,8 +372,10 @@ kullanılamıyor" der. Yeniden onay kapısı açılmaz (rıza ilk kullanımda). 
       `ikisi`, migrations **ve** fonksiyon `portfoy-yorumla` birlikte; önce 0151 sonra
       fonksiyon). Fonksiyon 0151'siz giderse yeni kolonlara yazamaz; eski build'ler etkilenmez.
 - [ ] Supabase › Edge Functions › Secrets (iki proje): `PORTFOY_YORUM_ACIK=1`.
-      İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 10; 0151'e kadar 3), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
-      (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur).
+      İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 10; 0151'e kadar 3), `PORTFOY_YORUM_AYLIK`
+      (kişi başı takvim ayında yeni yorum, varsayılan 30; yasin 2026-11-02), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
+      (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur). Aylık sınır fonksiyonla
+      gelir: birleşince Supabase deploy (functions açık) yoksa eski fonksiyon yalnız günlük sınırı uygular.
 - [x] ~~Firebase Remote Config: `portfoy_ai_yorumu`~~ **Bayrak kalktı (2026-11-02,
       yasin: "kitleden bağımsız… tüm free ve premium kişilerde olması gerektiği gibi
       durmalı").** Kart paywall'un diğer özellikleri gibi kodla gelir: Premium görür,
