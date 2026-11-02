@@ -110,6 +110,16 @@ const List<SurumNotu> surumNotlari = [
     // 1.1.7 paywall derlemesiyle kapandı; sonrası buraya (koordinatör,
     // 1 Kas). Yama sürümü: yalnız Ayarlar'da görünür.
     yenilikler: [
+      // yasin 2 Kas 07:09 (müşteri thread'i): AI yorumu bayraktan çıktı,
+      // Premium'la gelir. Ücretsiz hesap kartı kilitli görür; not yine de
+      // yazılır çünkü kart herkesin ekranında (Premium maddesi deseni).
+      Yenilik(
+        baslik: 'Portföyüne yapay zekâ yorumu',
+        aciklama: 'Performans › Özet\'te ve varlık sayfasında seçili dönem '
+            'için kısa bir değerlendirme: enflasyon, dolar, altın ve BIST '
+            '100 ile kıyas. Sen istemeden yazılmaz; günde 10, ayda 30 yeni '
+            'yorum. Premium ile.',
+      ),
       // Ar-Ge 1 Kas 20:45 #1, yasin "önerini uygula" (ücretsiz).
       Yenilik(
         baslik: 'Kilometre taşların',

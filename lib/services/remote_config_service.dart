@@ -259,13 +259,14 @@ class RemoteConfigService {
     // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
     'balina_radari_acik': false,
 
-    // Kişiye özel AI portföy yorumu, Performans › Özet (0145, 2026-10-13).
-    // KAPALI doğar ve yasal metin (Açık Rıza F + Gizlilik/KVKK Onay sürümü)
-    // yayımlanmadan AÇILMAZ (YAPMAN_GEREKENLER). Açıkken de yalnız
-    // `premiumOzellikleriGorunur` (paywall açık ya da admin) görür. Sunucuda
-    // ikinci kapı: `portfoy-yorumla` için `PORTFOY_YORUM_ACIK=1` secret'ı.
-    // Kapalıyken kart çizilmez, hiçbir istek atılmaz.
-    'portfoy_ai_yorumu': false,
+    // Kişiye özel AI portföy yorumu (0145, 2026-10-13): anahtar
+    // `portfoy_ai_yorumu` 2026-11-02'ye kadar burada KAPALI doğuyordu (yasal
+    // metin 0149 ile yayımlanana kadar). yasin 2 Kas: "kitleden bağımsız ...
+    // tüm free ve premium kişilerde olması gerektiği gibi durmalı" → anahtar
+    // kaldırıldı, kart `premiumOzellikleriGorunur` ile gelir (bkz.
+    // `portfoyAiYorumu`). Sunucudaki kapı durur: `portfoy-yorumla`
+    // `PORTFOY_YORUM_ACIK=1` secret'ı yokken 503 döner, kart "şu an
+    // kullanılamıyor" der.
 
     // Dövizli satışta ele geçen tutar SATIŞ GÜNÜNÜN kuruyla TL'ye çevrilsin
     // (2026-10-05, kullanıcı onayı). Eskiden alım kuruyla çevriliyordu:
@@ -842,9 +843,11 @@ class RemoteConfigService {
   bool get balinaRadariAcik =>
       _yerelVeyaTest('balina_radari_acik') || premiumOzellikleriGorunur;
 
-  /// AI portföy yorumu kartı (0145). Gerekçe `_defaults`'ta.
-  bool get portfoyAiYorumu =>
-      _bayrak('portfoy_ai_yorumu') && premiumOzellikleriGorunur;
+  /// AI portföy yorumu kartı (0145). Paywall'un diğer özellikleri gibi
+  /// bayraksız: Premium görünürken herkese çıkar, ücretsiz hesap kilitli
+  /// görüp paywall'a gider (yasin 2026-11-02, "kitleden bağımsız"). Test
+  /// kitlesi ya da Console değeri okunmaz; gerekçe `_defaults` notunda.
+  bool get portfoyAiYorumu => premiumOzellikleriGorunur;
 
   /// Dövizli satışta satış günü kuru (0111). Gerekçe `_defaults`'ta.
   bool get satisGunuKuru => _bayrak('satis_gunu_kuru');

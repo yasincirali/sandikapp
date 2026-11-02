@@ -537,8 +537,8 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   /// Seçili dönemin AI yorumu (0151, 2026-10-14; yasin: "varlık detayında
   /// … seçili dönem için data detaylı yorum"). Yalnız KENDİ varlığında:
-  /// ortağın pozisyonu başkasının verisidir, modele gönderilmez. Bayrak
-  /// (`portfoy_ai_yorumu` + Premium görünürlüğü) Performans kartıyla aynı.
+  /// ortağın pozisyonu başkasının verisidir, modele gönderilmez. Görünürlük
+  /// (Premium görünürlüğü, bayraksız) Performans kartıyla aynı.
   ///
   /// Paketin sayıları ekranın gösterdikleri: dönem istatistiği (2×2 ızgara),
   /// fiyatın altındaki dönem yüzdesi, pozisyon kartının kâr/zararı. Paket

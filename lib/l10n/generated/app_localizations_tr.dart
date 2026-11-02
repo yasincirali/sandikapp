@@ -9373,6 +9373,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pyzHataKota => 'Bugünlük yorum hakkın doldu, yarın yeniden dene.';
 
   @override
+  String get pyzHataKotaAy =>
+      'Bu ayki yorum hakkın doldu, gelecek ay yeniden dene.';
+
+  @override
   String get pyzHataRed =>
       'Yorum şu an hazırlanamadı. Biraz sonra yeniden dene.';
 

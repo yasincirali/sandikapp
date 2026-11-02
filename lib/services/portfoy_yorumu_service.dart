@@ -618,7 +618,9 @@ class PortfoyYorumu {
 }
 
 /// Fonksiyonun döndüğü kullanıcıya gösterilebilir neden.
-enum YorumHataTuru { riza, premium, kota, reddedildi, kapali, diger }
+/// [kotaAy]: sunucunun kişi başı aylık sınırı (`aylik_hak`, 2026-11-02);
+/// metni günlükten ayrı, çünkü "yarın dene" demek yanlış olurdu.
+enum YorumHataTuru { riza, premium, kota, kotaAy, reddedildi, kapali, diger }
 
 class PortfoyYorumHatasi implements Exception {
   const PortfoyYorumHatasi(this.tur);
@@ -904,6 +906,7 @@ class PortfoyYorumuService {
         'riza' => YorumHataTuru.riza,
         'premium' => YorumHataTuru.premium,
         'gunluk_hak' || 'tavan' => YorumHataTuru.kota,
+        'aylik_hak' => YorumHataTuru.kotaAy,
         'reddedildi' => YorumHataTuru.reddedildi,
         'kapali' => YorumHataTuru.kapali,
         _ => YorumHataTuru.diger,

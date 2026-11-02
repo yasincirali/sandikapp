@@ -9464,6 +9464,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You\'ve used today\'s comments, try again tomorrow.';
 
   @override
+  String get pyzHataKotaAy =>
+      'You\'ve used this month\'s comments, try again next month.';
+
+  @override
   String get pyzHataRed =>
       'The comment couldn\'t be prepared right now. Try again a bit later.';
 
