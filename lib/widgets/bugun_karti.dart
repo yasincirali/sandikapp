@@ -891,7 +891,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final hedefAc = _olcerek(
         s,
         () => showHedefSheet(context, ref,
-            kapsam: widget.hedefKapsami, etiket: widget.etiket));
+            kapsam: widget.hedefKapsami,
+            etiket: widget.etiket,
+            deger: s.deger,
+            gizli: gizli));
     if (s.belirlenmedi) {
       return _HedefBaglantisi(onTap: hedefAc);
     }

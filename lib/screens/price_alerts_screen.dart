@@ -92,6 +92,49 @@ class PriceAlertsScreen extends ConsumerStatefulWidget {
   ConsumerState<PriceAlertsScreen> createState() => _PriceAlertsScreenState();
 }
 
+/// Alarm kurulabilecek semboller: portföydeki aktif alımlar + takip listesi.
+///
+/// TEK aday hesabı: Alarmlarım FAB'ı ve boş çan sayfasının "Alarm kur"
+/// düğmesi (Ar-Ge 2 Kas 08:45 #1) aynı listeyi kullanır.
+List<AlarmAdayi> alarmAdaylari(WidgetRef ref) {
+  final out = <String, AlarmAdayi>{};
+
+  // `aktifLotlar`: tamamen satılmış pozisyonlar elenir. Ham `isActive`
+  // filtresi yetmiyordu — satılan hissenin alım lot'u defterde durduğu
+  // için kullanıcı artık tutmadığı bir sembol için alarm kurabiliyordu.
+  final assets = aktifLotlar(
+      ref.read(portfolioProvider).valueOrNull?.assets ?? const []);
+  final sembolLotlari = <String, List<Asset>>{};
+  for (final a in assets) {
+    final sembol = alarmSembolu(a.ticker, a.subCategory);
+    if (sembol == null) continue;
+    (sembolLotlari[sembol] ??= []).add(a);
+    if (!a.isBuy) continue;
+    out[sembol] = AlarmAdayi(sembol, a.name, a.currentPrice);
+  }
+  // Portföydeki adayın maliyeti (maliyet çipleri, 2026-10-23); satış
+  // lot'ları da girer ki ortalama pozisyonun bugünkü hâlini yazsın.
+  for (final e in out.entries.toList()) {
+    final a = e.value;
+    out[e.key] = AlarmAdayi(a.sembol, a.ad, a.guncelFiyat,
+        maliyet: alarmMaliyeti(sembolLotlari[e.key] ?? const []));
+  }
+
+  final watch = ref.read(watchlistProvider).valueOrNull ?? const [];
+  for (final w in watch) {
+    final sembol = alarmSembolu(w.ticker, w.subCategory);
+    if (sembol == null) continue;
+    out.putIfAbsent(
+      sembol,
+      () => AlarmAdayi(sembol, w.name, w.currentPrice ?? 0),
+    );
+  }
+
+  final liste = out.values.toList()
+    ..sort((a, b) => a.ad.toLowerCase().compareTo(b.ad.toLowerCase()));
+  return liste;
+}
+
 class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   /// Çalanlar grubu kapalı açılır: liste "neyi bekliyorum"u cevaplar.
   bool _calanlarAcik = false;
@@ -102,45 +145,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     AnalyticsService.instance.logScreenView(screenName: 'price_alerts');
   }
 
-  /// Alarm kurulabilecek semboller: portföydeki aktif alımlar + takip listesi.
-  List<AlarmAdayi> _adaylar() {
-    final out = <String, AlarmAdayi>{};
-
-    // `aktifLotlar`: tamamen satılmış pozisyonlar elenir. Ham `isActive`
-    // filtresi yetmiyordu — satılan hissenin alım lot'u defterde durduğu
-    // için kullanıcı artık tutmadığı bir sembol için alarm kurabiliyordu.
-    final assets = aktifLotlar(
-        ref.read(portfolioProvider).valueOrNull?.assets ?? const []);
-    final sembolLotlari = <String, List<Asset>>{};
-    for (final a in assets) {
-      final sembol = alarmSembolu(a.ticker, a.subCategory);
-      if (sembol == null) continue;
-      (sembolLotlari[sembol] ??= []).add(a);
-      if (!a.isBuy) continue;
-      out[sembol] = AlarmAdayi(sembol, a.name, a.currentPrice);
-    }
-    // Portföydeki adayın maliyeti (maliyet çipleri, 2026-10-23); satış
-    // lot'ları da girer ki ortalama pozisyonun bugünkü hâlini yazsın.
-    for (final e in out.entries.toList()) {
-      final a = e.value;
-      out[e.key] = AlarmAdayi(a.sembol, a.ad, a.guncelFiyat,
-          maliyet: alarmMaliyeti(sembolLotlari[e.key] ?? const []));
-    }
-
-    final watch = ref.read(watchlistProvider).valueOrNull ?? const [];
-    for (final w in watch) {
-      final sembol = alarmSembolu(w.ticker, w.subCategory);
-      if (sembol == null) continue;
-      out.putIfAbsent(
-        sembol,
-        () => AlarmAdayi(sembol, w.name, w.currentPrice ?? 0),
-      );
-    }
-
-    final liste = out.values.toList()
-      ..sort((a, b) => a.ad.toLowerCase().compareTo(b.ad.toLowerCase()));
-    return liste;
-  }
+  List<AlarmAdayi> _adaylar() => alarmAdaylari(ref);
 
   Future<void> _yenile() => Future.wait([
         ref.read(priceAlertsProvider.notifier).refresh(),

@@ -498,15 +498,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get permanentDelete => 'Delete permanently';
 
   @override
-  String signalDeleteChoice(int past, int active) {
-    return 'There are $past past and $active active notifications. What should be deleted?';
-  }
-
-  @override
   String get cancelShort => 'Cancel';
-
-  @override
-  String get onlyHistory => 'History only';
 
   @override
   String get clearAllSignals => 'Clear all signals';
@@ -523,10 +515,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearVerb => 'Clear';
 
   @override
-  String get clearAllUpper => 'Clear All';
+  String get clearAllUpper => 'Clear';
 
   @override
-  String get noActiveSignals => 'No active signals right now';
+  String get noActiveSignals => 'No new notifications';
 
   @override
   String get historyUpper => 'HISTORY';
@@ -4351,7 +4343,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalTitle => 'Portfolio goal';
 
   @override
-  String get goalHint => 'Display only; it does not change any calculation.';
+  String get goalHint =>
+      'Shows your progress on the home screen; it does not change any calculation.';
 
   @override
   String get goalInvalid => 'Enter a valid amount';
@@ -10447,4 +10440,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get kilometreTaslariNot =>
       'A milestone you pass stays yours, even if the market drops.';
+
+  @override
+  String get bosCanAciklama =>
+      'Set a price alert and we will tell you here and in a notification when it hits.';
+
+  @override
+  String goalPreview(String deger, String yuzde, String kalan) {
+    return 'Now $deger · $yuzde there · $kalan to go';
+  }
+
+  @override
+  String goalPreviewHidden(String yuzde) {
+    return '$yuzde there';
+  }
+
+  @override
+  String goalPreviewDone(String deger) {
+    return 'Now $deger · you have already passed this goal';
+  }
+
+  @override
+  String get goalPreviewDoneHidden => 'You have already passed this goal';
 }

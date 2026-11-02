@@ -499,15 +499,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get permanentDelete => 'Kalıcı sil';
 
   @override
-  String signalDeleteChoice(int past, int active) {
-    return 'Geçmişte $past, aktif $active bildirim var. Ne silinsin?';
-  }
-
-  @override
   String get cancelShort => 'Vazgeç';
-
-  @override
-  String get onlyHistory => 'Yalnızca geçmiş';
 
   @override
   String get clearAllSignals => 'Tüm sinyalleri temizle';
@@ -524,10 +516,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get clearVerb => 'Temizle';
 
   @override
-  String get clearAllUpper => 'Tümünü Temizle';
+  String get clearAllUpper => 'Temizle';
 
   @override
-  String get noActiveSignals => 'Şu an aktif sinyal yok';
+  String get noActiveSignals => 'Yeni bildirim yok';
 
   @override
   String get historyUpper => 'GEÇMİŞ';
@@ -4321,7 +4313,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get goalTitle => 'Portföy hedefi';
 
   @override
-  String get goalHint => 'Yalnızca gösterim için; hesapları değiştirmez.';
+  String get goalHint =>
+      'Ana sayfada ilerlemeni gösterir; hesapları değiştirmez.';
 
   @override
   String get goalInvalid => 'Geçerli bir tutar gir';
@@ -10324,4 +10317,26 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get kilometreTaslariNot =>
       'Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.';
+
+  @override
+  String get bosCanAciklama =>
+      'Fiyat alarmı kurduğunda, hedefe gelince burada ve bildirimde haber veririz.';
+
+  @override
+  String goalPreview(String deger, String yuzde, String kalan) {
+    return 'Şu an $deger · $yuzde tamam · $kalan kaldı';
+  }
+
+  @override
+  String goalPreviewHidden(String yuzde) {
+    return '$yuzde tamam';
+  }
+
+  @override
+  String goalPreviewDone(String deger) {
+    return 'Şu an $deger · bu hedefi zaten geçtin';
+  }
+
+  @override
+  String get goalPreviewDoneHidden => 'Bu hedefi zaten geçtin';
 }

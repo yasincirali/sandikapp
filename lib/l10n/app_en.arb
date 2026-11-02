@@ -187,19 +187,7 @@
   },
   "signalDeleteFailed": "Could not delete the notification. Check your connection.",
   "permanentDelete": "Delete permanently",
-  "signalDeleteChoice": "There are {past} past and {active} active notifications. What should be deleted?",
-  "@signalDeleteChoice": {
-    "placeholders": {
-      "past": {
-        "type": "int"
-      },
-      "active": {
-        "type": "int"
-      }
-    }
-  },
   "cancelShort": "Cancel",
-  "onlyHistory": "History only",
   "clearAllSignals": "Clear all signals",
   "clearAllLower": "Clear all",
   "clearAllSignalsBody": "{count} notifications will move to history. To delete them for good, use the \"Delete History\" button there.",
@@ -211,8 +199,8 @@
     }
   },
   "clearVerb": "Clear",
-  "clearAllUpper": "Clear All",
-  "noActiveSignals": "No active signals right now",
+  "clearAllUpper": "Clear",
+  "noActiveSignals": "No new notifications",
   "historyUpper": "HISTORY",
   "deleteHistoryCount": "Permanently delete {count} notifications from history",
   "@deleteHistoryCount": {
@@ -3071,7 +3059,7 @@
     }
   },
   "goalTitle": "Portfolio goal",
-  "goalHint": "Display only; it does not change any calculation.",
+  "goalHint": "Shows your progress on the home screen; it does not change any calculation.",
   "goalInvalid": "Enter a valid amount",
   "goalRemove": "Remove goal",
   "goalSettingsSubtitle": "Pick a target; track progress on the Today card",
@@ -5873,5 +5861,10 @@
   "kilometreTasiEtiket": "{baslik}, milestone",
   "kilometreTasiSiradakiEtiket": "Next milestone: {baslik}",
   "kilometreTaslariBaslik": "Your milestones",
-  "kilometreTaslariNot": "A milestone you pass stays yours, even if the market drops."
+  "kilometreTaslariNot": "A milestone you pass stays yours, even if the market drops.",
+  "bosCanAciklama": "Set a price alert and we will tell you here and in a notification when it hits.",
+  "goalPreview": "Now {deger} · {yuzde} there · {kalan} to go",
+  "goalPreviewHidden": "{yuzde} there",
+  "goalPreviewDone": "Now {deger} · you have already passed this goal",
+  "goalPreviewDoneHidden": "You have already passed this goal"
 }

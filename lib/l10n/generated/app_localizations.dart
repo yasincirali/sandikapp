@@ -1010,23 +1010,11 @@ abstract class AppLocalizations {
   /// **'Kalıcı sil'**
   String get permanentDelete;
 
-  /// No description provided for @signalDeleteChoice.
-  ///
-  /// In tr, this message translates to:
-  /// **'Geçmişte {past}, aktif {active} bildirim var. Ne silinsin?'**
-  String signalDeleteChoice(int past, int active);
-
   /// No description provided for @cancelShort.
   ///
   /// In tr, this message translates to:
   /// **'Vazgeç'**
   String get cancelShort;
-
-  /// No description provided for @onlyHistory.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yalnızca geçmiş'**
-  String get onlyHistory;
 
   /// No description provided for @clearAllSignals.
   ///
@@ -1055,13 +1043,13 @@ abstract class AppLocalizations {
   /// No description provided for @clearAllUpper.
   ///
   /// In tr, this message translates to:
-  /// **'Tümünü Temizle'**
+  /// **'Temizle'**
   String get clearAllUpper;
 
   /// No description provided for @noActiveSignals.
   ///
   /// In tr, this message translates to:
-  /// **'Şu an aktif sinyal yok'**
+  /// **'Yeni bildirim yok'**
   String get noActiveSignals;
 
   /// No description provided for @historyUpper.
@@ -7224,7 +7212,7 @@ abstract class AppLocalizations {
   /// No description provided for @goalHint.
   ///
   /// In tr, this message translates to:
-  /// **'Yalnızca gösterim için; hesapları değiştirmez.'**
+  /// **'Ana sayfada ilerlemeni gösterir; hesapları değiştirmez.'**
   String get goalHint;
 
   /// No description provided for @goalInvalid.
@@ -17068,6 +17056,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.'**
   String get kilometreTaslariNot;
+
+  /// No description provided for @bosCanAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat alarmı kurduğunda, hedefe gelince burada ve bildirimde haber veririz.'**
+  String get bosCanAciklama;
+
+  /// No description provided for @goalPreview.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an {deger} · {yuzde} tamam · {kalan} kaldı'**
+  String goalPreview(String deger, String yuzde, String kalan);
+
+  /// No description provided for @goalPreviewHidden.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yuzde} tamam'**
+  String goalPreviewHidden(String yuzde);
+
+  /// No description provided for @goalPreviewDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an {deger} · bu hedefi zaten geçtin'**
+  String goalPreviewDone(String deger);
+
+  /// No description provided for @goalPreviewDoneHidden.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hedefi zaten geçtin'**
+  String get goalPreviewDoneHidden;
 }
 
 class _AppLocalizationsDelegate

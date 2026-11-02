@@ -83,7 +83,9 @@ void main() {
         .replaceAll('\r\n', '\n');
 
     test('toplu eylemler ÜÇ notifier\'ı birden çağırır', () {
-      for (final eylem in ['dismissAll', 'deleteHistory', 'deleteAll']) {
+      // `deleteAll` (hepsini sil) 2 Kas'ta kalktı: çanda kalıcı silme
+      // yalnız geçmiş için (Ar-Ge 08:45 #3).
+      for (final eylem in ['dismissAll', 'deleteHistory']) {
         for (final saglayici in [
           'signalProvider',
           'priceAlertNotificationProvider',
