@@ -67,7 +67,7 @@ void main() {
     // Asıl regresyon: bu liste ayrışmanın görüldüğü yerleri kapsıyor.
     final durumlar = <({AssetType type, String unitType, String beklenen})>[
       (type: AssetType.hisse, unitType: 'piece', beklenen: 'lot'),
-      (type: AssetType.fon, unitType: 'piece', beklenen: 'lot'),
+      (type: AssetType.fon, unitType: 'piece', beklenen: 'pay'),
       (type: AssetType.altin, unitType: 'gram', beklenen: 'gr'),
       (type: AssetType.altin, unitType: 'piece', beklenen: 'adet'),
       (type: AssetType.emtia, unitType: 'ounce', beklenen: 'oz'),

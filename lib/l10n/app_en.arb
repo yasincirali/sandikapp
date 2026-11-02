@@ -5871,5 +5871,7 @@
   "pricePreviewToday": "Today's market price. This price will be saved",
   "fiyatBirimiyle": "{fiyat} per {birim}",
   "notInListAddBySymbol": "Not in the list? Add by symbol",
-  "tlCurrencyLocked": "Funds and BIST stocks are recorded in TRY"
+  "tlCurrencyLocked": "Funds and BIST stocks are recorded in TRY",
+  "unitFundShare": "units",
+  "fonGunlukTekFiyatNotu": "Fund prices are published once a day; there is no intraday movement."
 }

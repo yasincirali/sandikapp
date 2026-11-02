@@ -6598,5 +6598,7 @@
   "fiyatBirimiyle": "{fiyat} / {birim}",
   "@fiyatBirimiyle": {"placeholders": {"fiyat": {"type": "String"}, "birim": {"type": "String"}}},
   "notInListAddBySymbol": "Listede yok mu? Sembolle ekle",
-  "tlCurrencyLocked": "Fon ve BIST hissesi TL ile kaydedilir"
+  "tlCurrencyLocked": "Fon ve BIST hissesi TL ile kaydedilir",
+  "unitFundShare": "pay",
+  "fonGunlukTekFiyatNotu": "Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez."
 }

@@ -1521,6 +1521,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 !FiyatKaynagi.mumKaynagi(_canli.asset)
                                     .gercekOhlc,
                           ),
+                        // TEFAS fonu günde tek fiyat açıklar; GÜNLÜK'te mum
+                        // aralığı seçicisi bu yüzden çıkmaz (<3 mum). Kullanıcı
+                        // bunu arıza sanıyordu (yasin 2 Kas 2026): neden
+                        // olduğunu tek satır söyler.
+                        if (isIntraday &&
+                            _canli.asset.type == AssetType.fon) ...[
+                          const SizedBox(height: SandikSpace.xs),
+                          Text(
+                            context.l10n.fonGunlukTekFiyatNotu,
+                            style: context.t.bodySmall
+                                ?.copyWith(color: context.c.text58),
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         // Karşılaştırma gün içinde de açık — seri
                         // `_karsilastirmaSerisi` ile ana varlıkla aynı

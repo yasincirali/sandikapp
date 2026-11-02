@@ -10481,4 +10481,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tlCurrencyLocked => 'Funds and BIST stocks are recorded in TRY';
+
+  @override
+  String get unitFundShare => 'units';
+
+  @override
+  String get fonGunlukTekFiyatNotu =>
+      'Fund prices are published once a day; there is no intraday movement.';
 }
