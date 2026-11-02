@@ -10462,4 +10462,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalPreviewDoneHidden => 'You have already passed this goal';
+
+  @override
+  String get pricePreviewToday =>
+      'Today\'s market price. This price will be saved';
+
+  @override
+  String fiyatBirimiyle(String fiyat, String birim) {
+    return '$fiyat per $birim';
+  }
+
+  @override
+  String get notInListAddBySymbol => 'Not in the list? Add by symbol';
+
+  @override
+  String get tlCurrencyLocked => 'Funds and BIST stocks are recorded in TRY';
 }

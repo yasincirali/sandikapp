@@ -17086,6 +17086,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu hedefi zaten geçtin'**
   String get goalPreviewDoneHidden;
+
+  /// No description provided for @pricePreviewToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü piyasa fiyatı. Kayıtta bu fiyat kullanılacak'**
+  String get pricePreviewToday;
+
+  /// No description provided for @fiyatBirimiyle.
+  ///
+  /// In tr, this message translates to:
+  /// **'{fiyat} / {birim}'**
+  String fiyatBirimiyle(String fiyat, String birim);
+
+  /// No description provided for @notInListAddBySymbol.
+  ///
+  /// In tr, this message translates to:
+  /// **'Listede yok mu? Sembolle ekle'**
+  String get notInListAddBySymbol;
+
+  /// No description provided for @tlCurrencyLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon ve BIST hissesi TL ile kaydedilir'**
+  String get tlCurrencyLocked;
 }
 
 class _AppLocalizationsDelegate

@@ -5866,5 +5866,9 @@
   "goalPreview": "Now {deger} · {yuzde} there · {kalan} to go",
   "goalPreviewHidden": "{yuzde} there",
   "goalPreviewDone": "Now {deger} · you have already passed this goal",
-  "goalPreviewDoneHidden": "You have already passed this goal"
+  "goalPreviewDoneHidden": "You have already passed this goal",
+  "pricePreviewToday": "Today's market price. This price will be saved",
+  "fiyatBirimiyle": "{fiyat} per {birim}",
+  "notInListAddBySymbol": "Not in the list? Add by symbol",
+  "tlCurrencyLocked": "Funds and BIST stocks are recorded in TRY"
 }

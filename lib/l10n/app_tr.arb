@@ -6592,5 +6592,10 @@
   "@goalPreviewHidden": {"placeholders": {"yuzde": {"type": "String"}}},
   "goalPreviewDone": "Şu an {deger} · bu hedefi zaten geçtin",
   "@goalPreviewDone": {"placeholders": {"deger": {"type": "String"}}},
-  "goalPreviewDoneHidden": "Bu hedefi zaten geçtin"
+  "goalPreviewDoneHidden": "Bu hedefi zaten geçtin",
+  "pricePreviewToday": "Bugünkü piyasa fiyatı. Kayıtta bu fiyat kullanılacak",
+  "fiyatBirimiyle": "{fiyat} / {birim}",
+  "@fiyatBirimiyle": {"placeholders": {"fiyat": {"type": "String"}, "birim": {"type": "String"}}},
+  "notInListAddBySymbol": "Listede yok mu? Sembolle ekle",
+  "tlCurrencyLocked": "Fon ve BIST hissesi TL ile kaydedilir"
 }
