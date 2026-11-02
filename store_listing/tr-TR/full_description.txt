@@ -2,6 +2,8 @@ Paran arttı mı, yoksa sadece eridi mi?
 
 Portföyün %40 kazandırdı ama enflasyon %45 olduysa, alım gücün AZALDI. Çoğu takip uygulaması bunu söylemez — sandık söyler.
 
+Hisse ve fon takibi, altın ve döviz takibi, temettü takibi tek uygulamada, tek toplamda: portföy takip etmenin sade yolu.
+
 sandık, portföyünü TÜİK'in açıkladığı TÜFE ile yan yana koyar: nominal getirin, dönem enflasyonu ve aradaki puan farkı ayrı ayrı görünür. Enflasyonu geçtiysen yeşil, geçemediysen kırmızı.
 
 ENFLASYONA KARŞI GERÇEK GETİRİ

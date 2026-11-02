@@ -12,6 +12,26 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-02 ASO: mağaza metinleri ve görünürlük (yasin "yapman gerekenleri yap")
+
+Plan: `/mnt/project-files/sandik-aso/ASO_2026_11.md`. Repo tarafı (Play
+metinleri, iOS açıklama ilk satırları, girilecek ASC değerleri) bu PR'da;
+aşağıdakiler yalnız senin hesabınla yapılabiliyor. Önem sırasıyla:
+
+- [ ] **Play'de herkese açık yayın** (en büyük kaldıraç). Play'de 30 aramanın
+      hiçbirinde yokuz; Türkiye'de telefonların çoğu Android. Play metinleri
+      `store_listing/tr-TR/` (başlık, kısa açıklama, yenilikler bu PR'da güncel).
+- [ ] **1.1.7 App Store gönderiminde** `store_listing/ios/ASO_2026_11.md`
+      tablosundaki ad, alt başlık, anahtar kelime (TR + İngilizce) ve "Bu
+      sürümde yeni" metnini gir. Açıklama: `store_listing/ios/tr/description.txt`.
+- [ ] **Apple Search Ads marka kampanyası**: "sandık" (ı ile) aramasında
+      hiç çıkmıyoruz, metinle çözülmüyor. Exact match `sandık`, `sandık
+      uygulama`, `sandık portföy`; günlük tavan 50–100 ₺, 2 hafta sonra
+      kurulum başına maliyete bak.
+- [ ] **Aboneliği öne çıkar** (App Store Promotion) ve **3 özel ürün
+      sayfası** (altın, temettü, enflasyon): değerler aynı dosyada.
+- [ ] Mağazadaki her yoruma cevap ver (puan sayısı 11; rakip 203).
+
 ## ⏳ 2026-10-31 (onay senin) App Store tanıtım metni her ayın 3'ünde TÜFE ile
 
 Müşteri raporu 30 Eki #3 (yasin "yap"). İş `asc-tanitim-tufe.yml` her ayın
