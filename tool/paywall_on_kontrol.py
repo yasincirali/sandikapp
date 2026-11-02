@@ -34,6 +34,9 @@ GEREKLI_SECRETLER = (
     "REVENUECAT_WEBHOOK_SECRET",
     "REVENUECAT_API_KEY",
     "CALENDAR_NUDGE_CRON_SECRET",
+    # AI portföy yorumu 2 Kas 2026'dan beri bayraksız, paywall'la gelir;
+    # bu secret yoksa Premium kullanıcı "şu an kullanılamıyor" görür.
+    "PORTFOY_YORUM_ACIK",
 )
 
 

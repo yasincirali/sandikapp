@@ -348,11 +348,11 @@ Kapalıyken istek birebir eski (anonim iskelet, Sonnet). Ayrıntı: `docs/EKSTRE
 - [ ] Bakım: Supabase SQL (salt okunur) `select model, count(*), sum(maliyet_usd) from
       ekstre_esleme_kaydi group by 1;` — `sablon` satırları modelsiz okunan dosyalardır.
 
-## ⏳ 2026-10-13 AI portföy yorumu — Özet'te geçen hafta / geçen ay (0145, bayrak `portfoy_ai_yorumu`, Premium)
+## ⏳ 2026-10-13 AI portföy yorumu — Özet'te geçen hafta / geçen ay (0145, Premium; bayrak 2026-11-02'de kalktı)
 
-Kod ve şema main'de, **her şey kapalı**: bayrak varsayılanı `false`, fonksiyon
-`PORTFOY_YORUM_ACIK` secret'ı olmadan 503 döner. Canlı kullanıcı hiçbir şey görmez,
-yeniden onay kapısı açılmaz. Tasarım: https://claude.ai/artifact/DMeJXyFCGt2Ff4vjUgRb6z
+Kod ve şema main'de. Uygulama tarafı 2026-11-02'den beri açık (Premium görür, ücretsiz
+kilitli görür); fonksiyon `PORTFOY_YORUM_ACIK` secret'ı olmadan 503 döner, kart "şu an
+kullanılamıyor" der. Yeniden onay kapısı açılmaz (rıza ilk kullanımda). Tasarım: https://claude.ai/artifact/DMeJXyFCGt2Ff4vjUgRb6z
 
 - [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `portfoy-yorumla`).
 - [x] **Yasal metin (2026-10-14, 0149):** Gizlilik 1.11 §5.5 (+ §3.2, §4, §5, §6, §7, §12),
@@ -374,8 +374,13 @@ yeniden onay kapısı açılmaz. Tasarım: https://claude.ai/artifact/DMeJXyFCGt
 - [ ] Supabase › Edge Functions › Secrets (iki proje): `PORTFOY_YORUM_ACIK=1`.
       İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 10; 0151'e kadar 3), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
       (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur).
-- [ ] Firebase Remote Config: `portfoy_ai_yorumu` (Boolean, varsayılan `false`) → önce
-      TestFlight koşulunda `true`. Kart yalnız Premium görünürken (`paywall_enabled` ya da admin) çıkar.
+- [x] ~~Firebase Remote Config: `portfoy_ai_yorumu`~~ **Bayrak kalktı (2026-11-02,
+      yasin: "kitleden bağımsız… tüm free ve premium kişilerde olması gerektiği gibi
+      durmalı").** Kart paywall'un diğer özellikleri gibi kodla gelir: Premium görür,
+      ücretsiz hesap kilitli görüp paywall'a gider. Console'daki anahtar artık okunmaz,
+      silinebilir. Sunucu kapısı durur: yukarıdaki `PORTFOY_YORUM_ACIK=1` secret'ı
+      girilmeden Premium kullanıcı "Yapay zekâ yorumu şu an kullanılamıyor" görür —
+      secret, paywall ön kontrolünde (`tool/paywall_on_kontrol.py`) zorunlu listede.
 
 ## ⏳ 2026-10-12 Zirve: "Neden henüz havuzda değilsin?" kartı (0144)
 

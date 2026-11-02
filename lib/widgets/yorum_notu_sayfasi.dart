@@ -15,8 +15,8 @@ import 'sandik_async_button.dart';
 /// Önce rakamlar (manşet + gruplu satırlar), sonra konu başlıklı yorum;
 /// "PDF olarak paylaş" altta SABİT (uzun yorumda kaybolmaz). PDF düzeni
 /// `yorum_notu_pdf.dart`, hangi ölçümün nerede durduğu [YorumNotu].
-/// Kart zaten `portfoy_ai_yorumu` bayrağının ve Premium kilidinin
-/// arkasında; sayfa ayrıca bayrak istemez (yasin 14 Eki: "ekstra flag
+/// Kart zaten Premium kilidinin arkasında (ayrı bayrak 2026-11-02'de
+/// kalktı); sayfa ayrıca bayrak istemez (yasin 14 Eki: "ekstra flag
 /// eklemeden").
 Future<void> showYorumNotu(BuildContext context, YorumNotu notu) =>
     showSandikSheet<void>(

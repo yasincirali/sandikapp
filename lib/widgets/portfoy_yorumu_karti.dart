@@ -34,8 +34,10 @@ import 'yorum_notu_sayfasi.dart';
 ///   yazdırılmaz (`_shared/portfoy_yorum.ts`).
 /// - İlk kullanımda açık rıza sayfası (Zirve'deki gibi, isteğe bağlı).
 ///
-/// Bayrak `portfoy_ai_yorumu` kapalıyken [gorunur] false: kart ağaca hiç
-/// girmez, istek atılmaz.
+/// [gorunur] = Premium görünürlüğü (`premiumOzellikleriGorunur`); false
+/// iken kart ağaca hiç girmez, istek atılmaz. Ayrı `portfoy_ai_yorumu`
+/// bayrağı 2026-11-02'de kalktı (yasin: "tüm free ve premium kişilerde
+/// olması gerektiği gibi durmalı"): ücretsiz hesap kartı kilitli görür.
 ///
 /// ## Seçili dönem (0151, 2026-10-14)
 /// yasin: "varlık detayında ve varlıklar bütününde de seçili dönem için data
