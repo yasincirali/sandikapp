@@ -53,6 +53,7 @@ RaporBelgesi aylikRaporBelgesi({
   required DateTime olusturma,
   double? getiriPct,
   double? tufePct,
+  AyinPortfoyu? portfoy,
 }) {
   final ay = DateFormat('MMMM y', 'tr_TR').format(donem);
   final aciklama = TuikTakvimi.aciklamaTarihi(donem);
@@ -70,19 +71,33 @@ RaporBelgesi aylikRaporBelgesi({
     altBaslik:
         '$kim · oluşturma ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)}',
     dosyaAdi: belgeDosyaAdi('Aylık Rapor', ayDonemi(donem)),
+    // Sıra (müşteri raporu 2 Kas 13:15 #1): ilk satır kişinin parası
+    // (yüzde, TL kâr, ay sonu), ikinci satır kıyas (TÜFE, reel, yatırılan).
+    // "Notu çıkan varlık" sayacı çıktı: aynı sayı öne çıkanların ilk
+    // cümlesinde yazıyor (fikir 3, tekrar).
     ozet: [
       if (getiriPct != null) ('Ayın getirisi', fmtPctIsaretli(getiriPct)),
-      (
-        'Ayın TÜFE\'si',
-        tufePct != null
-            ? fmtPct(tufePct)
-            : '${DateFormat('d MMMM', 'tr_TR').format(aciklama)}\'da açıklanır'
-      ),
+      if (portfoy?.piyasaTRY != null)
+        ('Ayın kâr/zararı', TlTutar(portfoy!.piyasaTRY!)),
+      if (portfoy?.sonTRY != null) ('Ay sonu değer', TlTutar(portfoy!.sonTRY!)),
+      // Açıklanmamış TÜFE: kutuya cümle değil "—"; günü etikette küçük
+      // yazılır (Ar-Ge 2 Kas 12:45 tasarım #4: rakam puntosunda cümle).
+      if (tufePct != null)
+        ('Ayın TÜFE\'si', fmtPct(tufePct))
+      else
+        (
+          'Ayın TÜFE\'si · '
+              '${DateFormat('d MMMM', 'tr_TR').format(aciklama)}\'da açıklanır',
+          '—'
+        ),
       if (reel != null) ('Reel getiri', fmtPctIsaretli(reel)),
-      ('Notu çıkan varlık', '${notlar.length}'),
+      if (portfoy?.katkiTRY != null)
+        ('Yatırdığın net para', TlTutar(portfoy!.katkiTRY!)),
     ],
     oneCikanlar: [
       ozetCumlesi,
+      if (portfoy?.kopruCumlesi case final k?) k,
+      if (portfoy?.enIyiCumlesi case final k?) k,
       if (hareketli.isNotEmpty) 'Belirgin hareket: ${hareketli.join(', ')}.',
       if (eksikCumlesi != null) eksikCumlesi,
     ],
@@ -104,4 +119,67 @@ RaporBelgesi aylikRaporBelgesi({
           'yazılmıştır; tutar içermez. Yatırım tavsiyesi değildir.',
     ],
   );
+}
+
+/// Aylık raporun "ayın portföyü" sayıları (müşteri raporu 2 Kas 13:15 #1,
+/// Ar-Ge 12:45 #1). Hepsi Performans › 1A özetinin AYNI hesabından
+/// (`PeriodSummary`); burada yeni formül yok.
+///
+/// **Neden:** rapor yüzde, TÜFE ve piyasa notlarından ibaretti; "Ekim'de
+/// ne oldu?" sorusunun kişiye ait yarısı (ay sonu değer, TL kâr, yatırılan
+/// para, hangi varlık taşıdı) yoktu. Uydurma yok: bir ayak bilinmiyorsa
+/// (seri eksik) o kutu ve köprü cümlesi çıkmaz.
+class AyinPortfoyu {
+  const AyinPortfoyu({
+    this.baslangicTRY,
+    this.sonTRY,
+    this.katkiTRY,
+    this.piyasaTRY,
+    this.enIyi,
+    this.enZayif,
+  });
+
+  final double? baslangicTRY;
+  final double? sonTRY;
+
+  /// Ay içinde giren net para (alım +, satış ve nakit temettü −).
+  final double? katkiTRY;
+
+  /// Piyasanın payı: (son − baş) − katkı.
+  final double? piyasaTRY;
+
+  /// (ad, ayın yüzde değişimi); ay içinde alım yapılan pozisyon elenmiş
+  /// (`PeriodSummaryService.enIyiEnZayif`).
+  final (String, double)? enIyi;
+  final (String, double)? enZayif;
+
+  /// "Ay başında ₺480.000 olan portföyün ay sonunda ₺501.640 oldu.
+  /// Piyasanın etkisi +₺11.640, yatırdığın net para +₺10.000." Dört ayağın
+  /// hepsi biliniyorsa; Türkçe ek sayıya bitişmesin diye tutarlar cümlenin
+  /// ekten bağımsız yerinde.
+  String? get kopruCumlesi {
+    final b = baslangicTRY, s = sonTRY, k = katkiTRY, p = piyasaTRY;
+    if (b == null || s == null || k == null || p == null) return null;
+    String tl(double v) => fmtTRY(v, digits: 0);
+    String isaretli(double v) =>
+        v.abs() < 0.5 ? tl(0) : '${v > 0 ? '+' : '−'}${tl(v.abs())}';
+    return 'Ay başında ${tl(b)} olan portföyün ay sonunda ${tl(s)} oldu. '
+        'Piyasanın etkisi ${isaretli(p)}, yatırdığın net para '
+        '${isaretli(k)}.';
+  }
+
+  /// "En çok kazandıran THYAO (+%8,20), en çok düşüren AFT (−%3,10)."
+  String? get enIyiCumlesi {
+    final i = enIyi, z = enZayif;
+    if (i == null && z == null) return null;
+    final parca = [
+      if (i != null && i.$2 > 0)
+        'en çok kazandıran ${i.$1} (${fmtPctIsaretli(i.$2)})',
+      if (z != null && z.$2 < 0 && z.$1 != i?.$1)
+        'en çok düşüren ${z.$1} (${fmtPctIsaretli(z.$2)})',
+    ];
+    if (parca.isEmpty) return null;
+    final c = parca.join(', ');
+    return '${c[0].toUpperCase()}${c.substring(1)}.';
+  }
 }

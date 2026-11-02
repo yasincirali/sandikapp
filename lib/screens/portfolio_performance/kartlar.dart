@@ -406,6 +406,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 ],
                 const SizedBox(height: SandikSpace.lg),
                 ozetGovdesi(tekAkis: true),
+                // Aylık rapor satırı: yalnız 1A'da (aylık özet bildirimi
+                // buraya açılıyor; Ar-Ge 2 Kas 12:45 #2).
+                if (SummaryPeriod.fromIndex(_selectedPeriodIdx) ==
+                    SummaryPeriod.birAy) ...[
+                  const SizedBox(height: SandikSpace.md),
+                  const AylikRaporSatiri(),
+                ],
                 // AI yorumu (0145): bayrak + Premium. İlk sekmesi seçili dönem
                 // (0151); geçen hafta/ay sekmeleri kalır.
                 if (PortfoyYorumuKarti.gorunur) ...[
@@ -519,6 +526,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 ...<Widget>[
                   // İskelet kapısı ve kanonik seri: gerekçe `ozetGovdesi` notunda.
                   ozetGovdesi(),
+                  if (SummaryPeriod.fromIndex(_selectedPeriodIdx) ==
+                      SummaryPeriod.birAy) ...[
+                    const SizedBox(height: SandikSpace.md),
+                    const AylikRaporSatiri(),
+                  ],
                   if (PortfoyYorumuKarti.gorunur) ...[
                     const SizedBox(height: SandikSpace.md),
                     PortfoyYorumuKarti(

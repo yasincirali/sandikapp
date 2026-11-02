@@ -81,7 +81,7 @@ Future<Uint8List> pdfYaz(
             baslik: _ilkHarfBuyuk(baslik),
             alt: b.altBaslik),
         pw.SizedBox(height: 14 + 2.2 + 16),
-        _gostergeler(b.ozet),
+        _gostergeler(pdfOzeti(b.ozet)),
         if (b.oneCikanlar.isNotEmpty) ...[
           pw.SizedBox(height: 14),
           _oneCikanlar(b.oneCikanlar),
@@ -148,6 +148,22 @@ String _isaretli(double v, {int digits = 2}) {
 bool _yonlu(String etiket) => etiket.toLowerCase().contains('kâr/zarar');
 
 // ── Gösterge kutuları ──────────────────────────────────────────────────────
+
+/// PDF'te çizilecek özet kutuları (Ar-Ge 2 Kas 12:45 #3, müşteri YAP).
+///
+/// Sayaç kutuları ("Varlık sayısı", "İşlem sayısı", "Satış sayısı") çıkar:
+/// aynı sayı tablo başlığında "N kayıt" diye yazıyor, kutu ikinci bir sıra
+/// açıyordu. Sıfır komisyon kutusu da çıkar (girmeyen herkeste "₺0,00").
+/// Süzme YALNIZ burada: `RaporBelgesi.ozet` Excel'de de okunur, müşavir
+/// için sayı sütunu orada kalır.
+List<(String, Object?)> pdfOzeti(List<(String, Object?)> ozet) => [
+      for (final k in ozet)
+        if (!k.$1.trim().endsWith(' sayısı') &&
+            !(k.$1.contains('masraf') &&
+                k.$2 is TlTutar &&
+                (k.$2 as TlTutar).deger.abs() < 0.005))
+          k,
+    ];
 
 pw.Widget _gostergeler(List<(String, Object?)> ozet) {
   const sutun = 3;
@@ -479,12 +495,24 @@ List<pw.Widget> _tablo(RaporTablosu t) {
   final sembolSutunu = t.sutunlar.indexOf('Sembol');
   final birlesik = adSutunu >= 0 && sembolSutunu >= 0;
   if (birlesik) gizli.add(sembolSutunu);
+  // Getiri yüzdesi PDF'te kâr/zarar hücresinin altında küçük satır olur
+  // (müşteri raporu 2 Kas 13:15, tasarım #2): ayrı sütun A4 dikeyde on
+  // sütuna çıkıp tutarları ikiye bölüyordu. Excel'de ayrı sütun kalır.
+  final getiriSutunu = t.sutunlar.indexOf('Getiri (%)');
+  final karSutunu = t.sutunlar.indexWhere((a) => a.startsWith('Kâr/zarar'));
+  final getiriAltta = getiriSutunu >= 0 && karSutunu >= 0;
+  if (getiriAltta) gizli.add(getiriSutunu);
 
   final sutunlar = [for (var i = 0; i < n; i++) if (!gizli.contains(i)) i];
   bool sagaYasli(int i) {
     for (final r in t.satirlar) {
       final h = hucre(r, i);
-      if (h != null) return h is num || h is TlTutar;
+      // Yüzde metni ("%12,11", "+%3,4") sayı gibi sağa yaslanır.
+      if (h != null) {
+        return h is num ||
+            h is TlTutar ||
+            (h is String && RegExp(r'^[+\u2212-]?%').hasMatch(h));
+      }
     }
     return false;
   }
@@ -535,8 +563,20 @@ List<pw.Widget> _tablo(RaporTablosu t) {
       );
     }
     if (h is TlTutar && _yonlu(t.sutunlar[i])) {
-      return yazi(_isaretli(h.deger), i,
+      final tutar = yazi(_isaretli(h.deger), i,
           kalin: true, renk: PdfMarka.isaretRengi(h.deger));
+      final g = i == karSutunu && getiriAltta ? hucre(r, getiriSutunu) : null;
+      final yuzde = g == null ? '' : hucreMetni(g);
+      if (yuzde.isEmpty) return tutar;
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          tutar,
+          pw.SizedBox(height: 1),
+          pw.Text(yuzde,
+              style: const pw.TextStyle(fontSize: 6.3, color: PdfMarka.gri)),
+        ],
+      );
     }
     return yazi(hucreMetni(h), i, kalin: toplam);
   }

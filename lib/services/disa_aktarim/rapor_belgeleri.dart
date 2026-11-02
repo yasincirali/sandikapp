@@ -62,7 +62,7 @@ RaporBelgesi yillikRaporBelgesi(
     tablolar: [
       RaporTablosu(
         baslik: 'Satışlar',
-        sutunlar: const [
+        sutunlar: [
           'Tarih',
           'Varlık',
           'Sembol',
@@ -71,7 +71,10 @@ RaporBelgesi yillikRaporBelgesi(
           'Maliyet (TL)',
           'Komisyon (TL)',
           'Kâr/zarar (TL)',
-          'Yurt dışı',
+          // Yalnız yurt dışı satış varken (Ar-Ge 2 Kas 12:45 tasarım #6):
+          // her satırda "Hayır" okunacak bilgi taşımıyordu. Özet kutusu da
+          // aynı koşulla (`yurtDisiVar`).
+          if (r.yurtDisiVar) 'Yurt dışı',
         ],
         satirlar: [
           for (final s in r.satislar)
@@ -84,7 +87,7 @@ RaporBelgesi yillikRaporBelgesi(
               TlTutar(s.maliyetTry),
               TlTutar(s.komisyonTry),
               TlTutar(s.karTry),
-              s.yurtDisi ? 'Evet' : 'Hayır',
+              if (r.yurtDisiVar) s.yurtDisi ? 'Evet' : 'Hayır',
             ],
         ],
         toplam: r.satislar.isEmpty
@@ -98,7 +101,7 @@ RaporBelgesi yillikRaporBelgesi(
                 TlTutar(r.satislar.fold(0.0, (t, s) => t + s.maliyetTry)),
                 TlTutar(r.satisKomisyonuTry),
                 TlTutar(r.gerceklesenKarTry),
-                null,
+                if (r.yurtDisiVar) null,
               ],
       ),
       RaporTablosu(
@@ -243,6 +246,12 @@ RaporBelgesi portfoyBelgesi({
           'Değer (TL)',
           'Maliyet (TL)',
           'Kâr/zarar (TL)',
+          // Yüzdeler (Ar-Ge 2 Kas 12:45 tasarım #2): kâr/zarar yalnız TL'ydi;
+          // "hangisi iyi gitti" ve "ağırlık nerede" tablodan okunmuyordu.
+          // Metin yüzde (stopaj oranıyla aynı biçim, işaretli: renk körlüğü);
+          // maliyeti sıfır olanda boş.
+          'Getiri (%)',
+          'Pay (%)',
         ],
         satirlar: [
           for (final p in pozisyonlar)
@@ -257,6 +266,11 @@ RaporBelgesi portfoyBelgesi({
               TlTutar(deger(p)),
               TlTutar(p.totalCostTRY),
               TlTutar(deger(p) - p.totalCostTRY),
+              p.totalCostTRY > 0
+                  ? fmtPctIsaretli(
+                      (deger(p) - p.totalCostTRY) / p.totalCostTRY * 100)
+                  : null,
+              toplamDeger > 0 ? fmtPct(deger(p) / toplamDeger * 100) : null,
             ],
         ],
         toplam: pozisyonlar.isEmpty
@@ -272,6 +286,11 @@ RaporBelgesi portfoyBelgesi({
                 TlTutar(toplamDeger),
                 TlTutar(toplamMaliyet),
                 TlTutar(toplamDeger - toplamMaliyet),
+                toplamMaliyet > 0
+                    ? fmtPctIsaretli(
+                        (toplamDeger - toplamMaliyet) / toplamMaliyet * 100)
+                    : null,
+                null,
               ],
       ),
       RaporTablosu(
