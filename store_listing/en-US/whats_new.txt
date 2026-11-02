@@ -1,8 +1,5 @@
-• NEW: Upcoming key dates on the home screen (rate decisions, dividends)
-• NEW: Silver, platinum and palladium, also by the gram
-• NEW: Notifications in one setting: Less, Balanced, More
-• NEW: Daily % alerts for gold, FX, crypto; alerts on every cross
-• NEW: Alert screens tell you when notifications are off, with "Open Settings"
-• NEW: App icon shortcuts; Spotlight search on iPhone
-• Leaderboard refreshed: sorted asset types, one scale
-• Missing purchase prices are flagged on the home screen
+• NEW: Single-asset widget: gram gold, dollar or a fund on your home screen
+• Alerts: one-tap daily 2% alert, price alerts that fire on every cross, alert line on the chart
+• Quick math in search: type "5 quarter gold" or "100 dollars", see it in lira
+• Silver, platinum and palladium; upcoming rate decisions and dividend dates on Home
+• Notifications in one setting: Less, Balanced, More
