@@ -10358,4 +10358,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tlCurrencyLocked => 'Fon ve BIST hissesi TL ile kaydedilir';
+
+  @override
+  String get unitFundShare => 'pay';
+
+  @override
+  String get fonGunlukTekFiyatNotu =>
+      'Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez.';
 }

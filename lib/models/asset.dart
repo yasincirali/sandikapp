@@ -69,9 +69,13 @@ String birimEtiketi({
     case AssetType.doviz:
       return currencySymbol ?? currency.toUpperCase();
     case AssetType.hisse:
-    case AssetType.fon:
       // "adet" DEĞİL: borsada işlem birimi lot'tur.
       return 'lot';
+    case AssetType.fon:
+      // Fon payla alınır; TEFAS ve banka uygulamaları "pay" yazar. "lot"
+      // borsanın birimidir, fonun değil (yasin 2 Kas 2026, müşteri raporu
+      // 17:15). Yalnız gösterim: kayıtta birim tutulmaz, eski veri etkilenmez.
+      return 'pay';
     case AssetType.altin:
     case AssetType.emtia:
       switch (unitType) {

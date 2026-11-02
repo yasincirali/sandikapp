@@ -14,6 +14,8 @@ import 'package:portfoy_takip/models/asset_type.dart';
 /// Kullanıcı isteği: "fon ise lot, gram altın ise gram, çeyrek ise adet,
 /// dolar ise de işaretleriyle gösterilmeli… tüm varlıklarda varlığa uygun
 /// miktar göstergesiyle gözükmeli."
+/// Güncelleme (yasin 2 Kas 2026): fon birimi "lot" değil "pay" (TEFAS ve
+/// banka uygulamalarının terimi); hisse "lot" kalır.
 ///
 /// `unitLabel` bu eşlemeyi zaten yapıyordu — ekran onu kullanmıyordu.
 Asset _a({
@@ -42,8 +44,8 @@ String _f(double v, int d) => v.toStringAsFixed(d);
 
 void main() {
   group('unitLabel — kullanıcının verdiği örnekler', () {
-    test('fon → lot', () {
-      expect(_a(type: AssetType.fon).unitLabel, 'lot');
+    test('fon → pay', () {
+      expect(_a(type: AssetType.fon).unitLabel, 'pay');
     });
 
     test('hisse → lot', () {
@@ -107,7 +109,7 @@ void main() {
     });
 
     test('diğer birimler SONA gelir', () {
-      expect(_a(type: AssetType.fon).miktarMetni(15603, _f), '15603 lot');
+      expect(_a(type: AssetType.fon).miktarMetni(15603, _f), '15603 pay');
       expect(_a(type: AssetType.altin, unitType: 'gram').miktarMetni(2.5, _f),
           '2.50 gr');
       expect(_a(type: AssetType.altin, unitType: 'piece').miktarMetni(3, _f),
@@ -121,7 +123,7 @@ void main() {
     test('tam sayı miktar ondalıksız', () {
       expect(_a(type: AssetType.altin, unitType: 'piece').miktarMetni(3, _f),
           '3 adet');
-      expect(_a(type: AssetType.fon).miktarMetni(15603, _f), '15603 lot');
+      expect(_a(type: AssetType.fon).miktarMetni(15603, _f), '15603 pay');
     });
 
     test('KÜSURAT korunur — bilgi kaybı olmaz', () {
@@ -129,7 +131,7 @@ void main() {
       // "3 gr" ya da "2 gr" görünemez.
       expect(_a(type: AssetType.altin, unitType: 'gram').miktarMetni(2.5, _f),
           '2.50 gr');
-      expect(_a(type: AssetType.fon).miktarMetni(10.75, _f), '10.75 lot');
+      expect(_a(type: AssetType.fon).miktarMetni(10.75, _f), '10.75 pay');
     });
 
     test('kayan nokta gürültüsü tam sayı sayılır', () {

@@ -17116,6 +17116,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fon ve BIST hissesi TL ile kaydedilir'**
   String get tlCurrencyLocked;
+
+  /// No description provided for @unitFundShare.
+  ///
+  /// In tr, this message translates to:
+  /// **'pay'**
+  String get unitFundShare;
+
+  /// No description provided for @fonGunlukTekFiyatNotu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez.'**
+  String get fonGunlukTekFiyatNotu;
 }
 
 class _AppLocalizationsDelegate
