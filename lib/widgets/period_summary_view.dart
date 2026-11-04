@@ -348,8 +348,12 @@ class PeriodSummaryView extends StatelessWidget {
     }
 
     switch (summary.period) {
+      // Eğri kartı yalnız eski (Grafik | Özet sekmeli) düzende: tek akışta
+      // (`anaRakamGizli`) sayfanın başındaki büyük grafik aynı dönemi zaten
+      // çiziyor; küçük kopya yeni bir şey söylemeden köprü ile tür dökümünün
+      // arasına giriyordu (müşteri raporu 2 Kas 20:45 #1).
       case SummaryPeriod.gunluk:
-        if (summary.sparkline.length >= 2) {
+        if (!anaRakamGizli && summary.sparkline.length >= 2) {
           seyir.add(_GunIciEgriKarti(summary: summary));
         }
         varlikKarti(context.l10n.biggestMoverToday);
@@ -380,7 +384,7 @@ class PeriodSummaryView extends StatelessWidget {
 
       case SummaryPeriod.besYil:
         reelYaDaTufe(context.l10n.last5YearsPeriod);
-        if (summary.sparkline.length >= 2) {
+        if (!anaRakamGizli && summary.sparkline.length >= 2) {
           seyir.add(_GunIciEgriKarti(
               summary: summary, baslik: context.l10n.fiveYearCurve));
         }
@@ -398,7 +402,7 @@ class PeriodSummaryView extends StatelessWidget {
 
       case SummaryPeriod.birYil:
         reelYaDaTufe(context.l10n.lastYearPeriod);
-        if (summary.sparkline.length >= 2) {
+        if (!anaRakamGizli && summary.sparkline.length >= 2) {
           seyir.add(_GunIciEgriKarti(
               summary: summary, baslik: context.l10n.yearCurve));
         }
@@ -692,6 +696,8 @@ class _KopruKarti extends StatelessWidget {
     final piyasa = s.piyasaTRY!;
     final temettu = s.temettuTRY;
     final yatirilan = yatirdigin(s);
+    final paraHareketi = yatirilan.abs() >= 0.005;
+    final temettuVar = temettu != null && temettu.abs() >= 0.005;
 
     final enBuyuk = [
       bas.abs(),
@@ -726,16 +732,21 @@ class _KopruKarti extends StatelessWidget {
             renk: context.c.text36,
             isaretli: false,
           ),
-          const SizedBox(height: SandikSpace.sm),
-          _CubukSatiri(
-            baz: baz,
-            etiket: l.investedRow,
-            deger: yatirilan,
-            oran: yatirilan.abs() / enBuyuk,
-            // MAVİ — getiri değil, kullanıcının kendi parası.
-            renk: context.c.info,
-            isaretli: true,
-          ),
+          // Para hareketi olmayan dönemde "Yatırdığın ₺0" boş çubukla
+          // çiziliyordu (müşteri raporu 2 Kas 20:45 #2). Satır yalnız para
+          // girip çıktıysa; köprü yine toplanır (baş + piyasa = şimdi).
+          if (paraHareketi) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _CubukSatiri(
+              baz: baz,
+              etiket: l.investedRow,
+              deger: yatirilan,
+              oran: yatirilan.abs() / enBuyuk,
+              // MAVİ — getiri değil, kullanıcının kendi parası.
+              renk: context.c.info,
+              isaretli: true,
+            ),
+          ],
           // Temettü kendi çubuğuyla (eksi): cebe giden para. Çubuk olarak
           // çizilmesi köprüyü BOZMAZ — artık "yatırdığın" temettüyü
           // içermiyor, dolayısıyla toplam = parçalar yine tutar.
@@ -794,8 +805,12 @@ class _KopruKarti extends StatelessWidget {
                   size: 13, color: context.c.text36),
               const SizedBox(width: SandikSpace.xs2),
               Expanded(
+                // Dipnot yatırılan parayı ve temettüyü açıklar; ikisi de
+                // yoksa tek cümle: değişimin tamamı fiyattan.
                 child: Text(
-                  l.contributionNotReturn,
+                  paraHareketi || temettuVar
+                      ? l.contributionNotReturn
+                      : l.allChangeFromPrice,
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ),

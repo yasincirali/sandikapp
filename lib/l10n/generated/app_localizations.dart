@@ -17128,6 +17128,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez.'**
   String get fonGunlukTekFiyatNotu;
+
+  /// No description provided for @allChangeFromPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.'**
+  String get allChangeFromPrice;
 }
 
 class _AppLocalizationsDelegate
