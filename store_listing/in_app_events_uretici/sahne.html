@@ -22,10 +22,13 @@ const W = +q.get('w'), H = +q.get('h'), SAHNE = q.get('s');
 const dikey = H > W;
 
 // GERÇEK VERİ (kullanıcı kuralı "uydurma sayı yasak"; yasin 2026-10-19
-// "tarih ve data doğru olmalı"): TÜİK aylık TÜFE, Ekim 2025 – Eylül 2026.
-// Zincir çarpımı %29,72 ≈ TÜİK yıllık %29,73 (Eylül 2026). Yeni ay
-// açıklanınca (ayın 3'ü) diziye ekle, en eskisini çıkar, yeniden üret.
-const AYLIK = [2.55, 0.87, 0.89, 4.84, 2.96, 1.94, 4.18, 1.71, 0.99, 1.78, 1.84, 1.84];
+// "tarih ve data doğru olmalı"): TÜİK aylık TÜFE, Kasım 2025 – Ekim 2026.
+// Zincir çarpımı %29,76 ≈ TÜİK yıllık %29,77 (Ekim 2026, açıklama 3 Kasım);
+// son 10 ay %27,51 ≈ TÜİK yılbaşından beri %27,52. Aralık etkinliği
+// (yayın 19 Kasım) bu diziyle çizilir. Yeni ay açıklanınca (ayın 3'ü)
+// diziye ekle, en eskisini çıkar, yeniden üret.
+// Geçmiş: Eylül 2026 dizisi Ekim 2025 (%2,55) ile başlıyordu, zincir %29,72.
+const AYLIK = [0.87, 0.89, 4.84, 2.96, 1.94, 4.18, 1.71, 0.99, 1.78, 1.84, 1.84, 2.58];
 
 const ZEMIN_UST = '#07171300', ZEMIN = '#0B211C', ZEMIN_ALT = '#143A2D';
 const KAZANC = '#3DB77F', KAZANC_KOYU = '#1E6B4C', AMBER = '#F5A623', ALTIN = '#F5C842';

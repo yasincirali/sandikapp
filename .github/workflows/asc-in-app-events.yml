@@ -14,6 +14,10 @@ on:
         description: "Taslakları gerçekten kur (işaretsiz = kuru koşu)"
         type: boolean
         default: false
+      gorsel_yenile:
+        description: "Görselleri yenilenecek etkinliğin referansı (ör. enflasyon-gunu-2026-12; boş = yalnız eksikler)"
+        type: string
+        default: ""
 
 jobs:
   etkinlikler:
@@ -42,9 +46,13 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          # Girdi doğrudan kabuğa gömülmez (enjeksiyon); env'den okunur.
+          GORSEL_YENILE: ${{ inputs.gorsel_yenile }}
         run: |
+          ek=()
+          if [ -n "$GORSEL_YENILE" ]; then ek=(--gorsel-yenile "$GORSEL_YENILE"); fi
           if [ "${{ inputs.uygula }}" = "true" ]; then
-            python tool/asc_in_app_events.py --uygula
+            python tool/asc_in_app_events.py --uygula "${ek[@]}"
           else
-            python tool/asc_in_app_events.py
+            python tool/asc_in_app_events.py "${ek[@]}"
           fi
