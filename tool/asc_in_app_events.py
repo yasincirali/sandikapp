@@ -20,6 +20,14 @@ GitHub secret'ları). Anahtar ekrana basılmaz.
     pip install pyjwt cryptography requests
     python tool/asc_in_app_events.py            # kuru koşu
     python tool/asc_in_app_events.py --uygula   # taslakları kur
+    python tool/asc_in_app_events.py --uygula --gorsel-yenile enflasyon-gunu-2026-12
+
+`--gorsel-yenile REF` (2026-11-05): onarıcı koşu tamamlanmış görsele
+dokunmaz; Aralık taslağı Eylül verisiyle çizilmiş görseli taşıyordu, Ekim
+TÜFE'si gelince yenilenmesi gerekti. Yalnız adı verilen etkinliğin
+görselleri silinip yeniden yüklenir; diğer etkinlikler bu bayraktan
+etkilenmez. Apple incelemedeki/yayındaki etkinliğin görselini değiştirmeye
+izin vermez; bayrak taslak içindir.
 """
 import argparse
 import json
@@ -102,11 +110,12 @@ def gorsel_yukle(asc, lokal_id, tur, yol):
     })
 
 
-def lokal_tamamla(asc, olay_id, e, kullanilacak):
+def lokal_tamamla(asc, olay_id, e, kullanilacak, gorsel_yenile=False):
     """Etkinliğin eksik dillerini ve görsellerini tamamlar.
 
     Yarım kalmış görsel (teslim durumu COMPLETE / UPLOAD_COMPLETE olmayan)
-    silinip yeniden yüklenir. Dönen değer: yapılan iş sayısı."""
+    silinip yeniden yüklenir; `gorsel_yenile` ise tamamlanmış görsel de
+    silinip güncel PNG yüklenir. Dönen değer: yapılan iş sayısı."""
     is_sayisi = 0
     olay = asc.get(f"/appEvents/{olay_id}")["data"]
     if olay["attributes"].get("purchaseRequirement") != SATIN_ALMA:
@@ -132,7 +141,7 @@ def lokal_tamamla(asc, olay_id, e, kullanilacak):
         mevcut_gorsel = {}
         for g in asc.get(f"/appEventLocalizations/{lok['id']}/appEventScreenshots")["data"]:
             durum = ((g["attributes"].get("assetDeliveryState") or {}).get("state") or "")
-            if durum in ("COMPLETE", "UPLOAD_COMPLETE"):
+            if durum in ("COMPLETE", "UPLOAD_COMPLETE") and not gorsel_yenile:
                 mevcut_gorsel[g["attributes"]["appEventAssetType"]] = g["id"]
             else:
                 asc.delete(f"/appEventScreenshots/{g['id']}")
@@ -148,9 +157,13 @@ def lokal_tamamla(asc, olay_id, e, kullanilacak):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--uygula", action="store_true", help="taslakları gerçekten kur")
+    ap.add_argument("--gorsel-yenile", metavar="REF", default="",
+                    help="bu referanslı etkinliğin görsellerini silip yeniden yükle")
     args = ap.parse_args()
 
     tanim = json.load(open(os.path.join(KLASOR, "etkinlikler.json"), encoding="utf-8"))
+    if args.gorsel_yenile and args.gorsel_yenile not in {e["referans"] for e in tanim["etkinlikler"]}:
+        sys.exit(f"--gorsel-yenile: '{args.gorsel_yenile}' etkinlikler.json'da yok.")
     for e in tanim["etkinlikler"]:
         for tur, ek in GORSEL_TURLERI.items():
             yol = os.path.join(KLASOR, f"{e['gorsel']}_{ek}.png")
@@ -176,10 +189,12 @@ def main():
         ref = e["referans"]
         kullanilacak = [d for d in e["metin"] if d in diller]
         if ref in mevcut:
+            yenile = ref == args.gorsel_yenile
             if not args.uygula:
-                print(f"= {ref}: zaten var (uygulamada eksikleri tamamlanır)")
+                print(f"= {ref}: zaten var (uygulamada eksikleri tamamlanır"
+                      + ("; görseller YENİLENİR)" if yenile else ")"))
                 continue
-            n = lokal_tamamla(asc, mevcut[ref], e, kullanilacak)
+            n = lokal_tamamla(asc, mevcut[ref], e, kullanilacak, gorsel_yenile=yenile)
             print(f"= {ref}: zaten var — {n} eksik tamamlandı")
             continue
         atlanan = [d for d in e["metin"] if d not in diller]

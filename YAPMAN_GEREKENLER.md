@@ -32,6 +32,23 @@ aşağıdakiler yalnız senin hesabınla yapılabiliyor. Önem sırasıyla:
       sayfası** (altın, temettü, enflasyon): değerler aynı dosyada.
 - [ ] Mağazadaki her yoruma cevap ver (puan sayısı 11; rakip 203).
 
+## ⏳ 2026-11-05 Aralık "Enflasyon günü" görseli Ekim TÜFE'siyle yenilendi
+
+Görsel kaynağı (`store_listing/in_app_events_uretici/sahne.html`, `AYLIK`)
+artık Kasım 2025 – Ekim 2026 (TÜİK Ekim: aylık %2,58, yıllık %29,77). ASC'deki
+Aralık taslağı hâlâ Eylül verisiyle çizilmiş eski görseli taşıyor; onarıcı koşu
+tamamlanmış görsele dokunmadığı için yeni `gorsel_yenile` girdisi eklendi.
+Mağazaya hiçbir şey gönderilmedi.
+
+- [ ] **19 Kasım'dan önce** (yayın başlangıcı): Actions › "App Store
+      etkinlikleri (taslak)" › `uygula` ✔ + `gorsel_yenile` =
+      `enflasyon-gunu-2026-12`. Yalnız Aralık taslağının iki görseli silinip
+      yenisi yüklenir; incelemeye gönderilmez. İstersen Claude'a "Aralık
+      görselini yükle" de, o koşturur.
+- [ ] Taslak zaten incelemeye gönderildiyse Apple görseli değiştirmeye izin
+      vermez: ASC'de taslağı geri çek ya da görseli elle değiştir
+      (PNG'ler: iş özetinin artifact'i veya `node cek.mjs`).
+
 ## ⏳ 2026-10-31 (onay senin) App Store tanıtım metni her ayın 3'ünde TÜFE ile
 
 Müşteri raporu 30 Eki #3 (yasin "yap"). İş `asc-tanitim-tufe.yml` her ayın
