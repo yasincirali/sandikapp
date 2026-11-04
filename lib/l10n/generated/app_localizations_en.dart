@@ -10488,4 +10488,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get fonGunlukTekFiyatNotu =>
       'Fund prices are published once a day; there is no intraday movement.';
+
+  @override
+  String get allChangeFromPrice =>
+      'You did not add or withdraw money in this period; the whole change came from prices.';
 }

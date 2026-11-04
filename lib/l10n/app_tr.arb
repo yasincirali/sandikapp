@@ -6600,5 +6600,6 @@
   "notInListAddBySymbol": "Listede yok mu? Sembolle ekle",
   "tlCurrencyLocked": "Fon ve BIST hissesi TL ile kaydedilir",
   "unitFundShare": "pay",
-  "fonGunlukTekFiyatNotu": "Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez."
+  "fonGunlukTekFiyatNotu": "Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez.",
+  "allChangeFromPrice": "Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan."
 }

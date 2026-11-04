@@ -10365,4 +10365,8 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get fonGunlukTekFiyatNotu =>
       'Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez.';
+
+  @override
+  String get allChangeFromPrice =>
+      'Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.';
 }
