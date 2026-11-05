@@ -2644,9 +2644,9 @@ class _ToplamBugunSecici extends StatelessWidget {
 }
 
 /// Varlık listesinin başlığı: "6 varlık" ve sağda (yalnız "Ben") küçük
-/// Toplam | Bugün seçici. Ortak bileşen `SandikSectionHeader`; seçici en
-/// fazla [_seciciEnGenis] pt alır, büyük yazıda metni kısalır, başlık
-/// kalan yeri doldurur.
+/// Toplam | Bugün seçici. Ortak bileşen `SandikSectionHeader`; seçici
+/// [_seciciEnGenis] pt, büyük yazıda metni kısalır, başlık kalan yeri
+/// doldurur.
 class _ListeBasligi extends StatelessWidget {
   const _ListeBasligi({required this.adet, this.secici});
 
@@ -2658,16 +2658,23 @@ class _ListeBasligi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = secici;
+    final baslik = context.l10n.pfAssetsHeader(adet);
+    // Büyük yazıda (Dynamic Type > ×1,3) 168 pt'ye "Toplam" sığmıyor,
+    // "Topla…" kalıyordu: seçici başlığın altına, tam genişliğe iner.
+    if (s != null &&
+        MediaQuery.textScalerOf(context).scale(1) > _ikiSutunMetinOlcegi) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [SandikSectionHeader(title: baslik), s],
+      );
+    }
     return SandikSectionHeader(
-      title: context.l10n.pfAssetsHeader(adet),
+      title: baslik,
+      // Sabit genişlik: `Flexible` içinde seçici kalan yarıda sağa
+      // yaslanmıyor, kart kenarından içeride kalıyordu.
       trailing: s == null
           ? null
-          : Flexible(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _seciciEnGenis),
-                child: s,
-              ),
-            ),
+          : SizedBox(width: _seciciEnGenis, child: s),
     );
   }
 }
