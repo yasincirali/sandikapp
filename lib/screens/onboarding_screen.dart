@@ -375,7 +375,9 @@ const _portfoySeridiCumlesi = ' Üstteki portföy şeridiyle Tümü, Ana ya da '
     'adlandırdığın bir portföye bakarsın; yenisini şeridin sonundaki '
     '"Yeni portföy"den açarsın. Toplam görünümün hep "Tümü"dür.';
 
-const _bugunSeciciCumlesi = ' Halkanın altındaki "Toplam | Bugün" ile '
+// 5 Kas 20:45: seçici liste başlığının yanına taşındı (tur metni
+// arayüzle birlikte değişir).
+const _bugunSeciciCumlesi = ' Liste başlığının yanındaki "Toplam | Bugün" ile '
     'kartlarda toplam kâr ya da bugünkü hareket görünür; sıralamada '
     '"Bugünkü hareket" en çok oynayanı öne alır.';
 
@@ -637,7 +639,7 @@ List<_Adim> _adimlariKur() {
           // düzenin üçüne de eklenir; özellik görünmüyorsa metin birebir
           // eski.
           (_cokluPortfoyGorunur ? _portfoySeridiCumlesi : '') +
-          // 1 Kas: halkanın altında Toplam | Bugün seçici; kart alt satırı
+          // 1 Kas: Toplam | Bugün seçici (5 Kas: liste başlığında); kart alt satırı
           // türü değil fiyatı yazar (tur metni arayüzle birlikte değişir).
           _bugunSeciciCumlesi,
       gorev: 'Portföy sekmesine dokun',

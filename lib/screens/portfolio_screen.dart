@@ -609,7 +609,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       // Cam başlık açıkken ilk satır başlığın altında başlar (kapalıyken 0).
                       padding: EdgeInsets.fromLTRB(
                           SandikSpace.screenH(context),
-                          12 + ustPay,
+                          SandikSpace.xs + ustPay,
                           SandikSpace.screenH(context),
                           80),
                       children: [
@@ -646,12 +646,16 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                               padding: EdgeInsets.only(top: SandikSpace.sm)),
                         // Üstte seçici yokken sekmelerle halka arasında
                         // ~32 pt boş bant kalıyordu (Ar-Ge 1 Kas 16:45).
+                        // Tek ölçü (Ar-Ge 5 Kas 20:45 #2): seçici yokken
+                        // sekmelerle halka kartı arası 16 pt görünür
+                        // (sekmenin 4 pt şeffaf payı + 8 + üst dolgu 4);
+                        // seçici varken seçiciden karta `md`.
                         SizedBox(
                             height: activePartners.isNotEmpty ||
                                     (_view == '' &&
                                         ref.watch(cokluPortfoyGorunurProvider))
-                                ? SandikSpace.lg
-                                : SandikSpace.sm),
+                                ? SandikSpace.md
+                                : 0),
 
                         // Verileri birleştir. NOT: burada iç Scaffold koymayız —
                         // SandikLoadingScreen bir Scaffold içerir ve ListView
@@ -811,18 +815,35 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       onHalka: () => _halkayiAc(
                                           displayAssets, pState, pazarAyir),
                                     ),
-                                    if (benGorunumu) ...[
-                                      const SizedBox(
-                                          height: SandikSpace.md),
-                                      _ToplamBugunSecici(
-                                        bugun: _bugunModu,
-                                        onSec: (b) => ref
-                                            .read(portfoyBugunModuProvider
-                                                .notifier)
-                                            .set(b),
-                                      ),
-                                    ],
-                                    const SizedBox(height: SandikSpace.lg),
+                                    // Liste başlığı + küçük Toplam | Bugün
+                                    // (Ar-Ge 5 Kas 20:45 #1, müşteri YAP).
+                                    // Eskiden seçici halkanın altında, üstteki
+                                    // "Varlıklarım | Takip listesi" ile aynı
+                                    // boy ve görünüşteydi: sayfayı değiştiren
+                                    // seçici ile yalnız kart rakamını
+                                    // değiştiren seçici eşit duruyor, hangisinin
+                                    // ne yaptığı anlaşılmıyordu; liste de
+                                    // başlıksızdı. iOS Hisse Senetleri ve
+                                    // Midas'ta mod seçici liste başlığında
+                                    // küçük durur. Ayrı satır kalktı.
+                                    // Aralıklar tek ölçüde (#2): kart →
+                                    // başlık `sm`, başlık → liste `xs`;
+                                    // segmentin 44 pt dokunma alanı üst/alt
+                                    // 8 pt şeffaf pay ekler.
+                                    const SizedBox(height: SandikSpace.sm),
+                                    _ListeBasligi(
+                                      adet: filteredPositions.length,
+                                      secici: benGorunumu
+                                          ? _ToplamBugunSecici(
+                                              bugun: _bugunModu,
+                                              onSec: (b) => ref
+                                                  .read(portfoyBugunModuProvider
+                                                      .notifier)
+                                                  .set(b),
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(height: SandikSpace.xs),
                                     ..._AssetList(
                                       bugun: _bugunModu
                                           ? _BugunVerisi(gunDegisimi)
@@ -1158,8 +1179,8 @@ List<LejantOgesi> lejantKatla(
 int lejantSayfaSayisi(int adet, int sayfaBasina) =>
     adet <= 0 ? 1 : (adet + sayfaBasina - 1) ~/ sayfaBasina;
 
-/// Lejantın satır sayısı: 4 × 44pt dokunma hedefi ≈ halkanın boyu + nokta
-/// satırı. Tür sayısından bağımsız; az türde satırlar boşluğu eşit paylaşır.
+/// Lejant sayfasının en çok satır sayısı (4 × 44pt dokunma hedefi). Az
+/// türde lejant dolu satır kadar uzar, en az halka boyunda (5 Kas 20:45).
 const _lejantSatirSayisi = 4;
 
 /// İki sütun için gereken en az genişlik. Hücre iki satır (ad + yüzde);
@@ -1513,11 +1534,22 @@ class _LejantState extends State<_Lejant> {
             onHalka: widget.onHalka,
           );
 
+      // Lejant gereken satır kadar uzar, en az halka boyunda (Ar-Ge 5 Kas
+      // 20:45 #2, müşteri YAP). Eskiden HEP 4 satır yer tutuyordu: 4 türlü
+      // portföyde iki sütun = 2 satır doluyken kart halkanın ~1,7 katıydı,
+      // üstte ve altta boş bant kalıyordu. Satır yine 44 pt; birden çok
+      // sayfada 4 satır kalır ki sayfa çevirince kart boyu oynamasın.
+      final doluSatir = sayfaSayisi > 1
+          ? _lejantSatirSayisi
+          : ((widget.ogeler.length + sutun - 1) ~/ sutun)
+              .clamp(1, _lejantSatirSayisi);
+      final lejantBoyu =
+          math.max(doluSatir * satirBoyu, _halkaCapi - SandikSpace.sm);
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: _lejantSatirSayisi * satirBoyu,
+            height: lejantBoyu,
             child: sayfaSayisi == 1
                 ? sayfaKur(0)
                 : PageView.builder(
@@ -2592,16 +2624,50 @@ class _ToplamBugunSecici extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final etiketler = [l10n.pfModeTotal, l10n.pfModeToday];
+    // Küçük boy (Ar-Ge 5 Kas 20:45 #1): görünür kabuk 28 pt, dokunma
+    // alanı bileşenin kendi kuralıyla 44 pt (`SandikSegment.yukseklik`).
     return SandikSegment(
       adet: 2,
       secili: bugun ? 1 : 0,
       onSec: (i) => onSec(i == 1),
+      yukseklik: 28,
+      icBosluk: SandikSpace.xxs,
+      metinStili: context.t.bodySmall,
       semantik: (i) => l10n.pfModeA11y(etiketler[i]),
       oge: (_, i, __) => Text(
         etiketler[i],
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
+    );
+  }
+}
+
+/// Varlık listesinin başlığı: "6 varlık" ve sağda (yalnız "Ben") küçük
+/// Toplam | Bugün seçici. Ortak bileşen `SandikSectionHeader`; seçici en
+/// fazla [_seciciEnGenis] pt alır, büyük yazıda metni kısalır, başlık
+/// kalan yeri doldurur.
+class _ListeBasligi extends StatelessWidget {
+  const _ListeBasligi({required this.adet, this.secici});
+
+  final int adet;
+  final Widget? secici;
+
+  static const double _seciciEnGenis = 168;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = secici;
+    return SandikSectionHeader(
+      title: context.l10n.pfAssetsHeader(adet),
+      trailing: s == null
+          ? null
+          : Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _seciciEnGenis),
+                child: s,
+              ),
+            ),
     );
   }
 }
@@ -3129,7 +3195,14 @@ class _VeriEksigiEtiketi extends ConsumerWidget {
       for (final e in eksikler)
         switch (e.tur) {
           VeriEksigiTuru.alisFiyati => l.vkAlisFiyatiEksik,
-          VeriEksigiTuru.eskiFiyat => l.vkFiyatGunOnce(e.gun ?? 0),
+          // Ay/yıl (Ar-Ge 5 Kas 20:45 #3): gün sayısı satırı iki satıra
+          // taşıyordu. Eşik altı (olmaz ama) gün yazar.
+          VeriEksigiTuru.eskiFiyat => (e.gun ?? 0) < eskiFiyatEsikGun
+              ? l.vkFiyatGunOnce(e.gun ?? 0)
+              : switch (eskiFiyatAySayisi(e.gun ?? 0)) {
+                  null => l.vkFiyatYildanEski,
+                  final ay => l.vkFiyatAyOnce(ay),
+                },
         },
     ].join(' · ');
     final stil = context.t.bodySmall
