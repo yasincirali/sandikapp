@@ -13,7 +13,8 @@ SECRETLER = set(pk.GEREKLI_SECRETLER)
 
 def _durum(**k):
     d = {"kapi_acik": False, "haklar": [], "hediyesiz_eski": 0,
-         "cron": {"active": True, "schedule": "15 9 * * *"}}
+         "cron": {"active": True, "schedule": "15 9 * * *"},
+         "inceleme": {"muaf": True, "premium": False, "admin": False}}
     d.update(k)
     return d
 
@@ -45,6 +46,35 @@ class PaywallOnKontrolTest(unittest.TestCase):
         self.assertIn("'2026-10-28T00:00:00+03'::timestamptz", pk.sorgu("2026-10-28T00:00:00+03"))
         self.assertIn("'a''b'", pk.sorgu("a'b"))
         self.assertIn("null is not null", pk.sorgu(None))
+
+
+class IncelemeHesabi(unittest.TestCase):
+    """App Review demo hesabı: muaf olmalı, Premium/admin olmamalı; UUID basılmaz."""
+
+    def test_muaf_ve_siradan_hesap_temiz(self):
+        m, kod = pk.rapor(_durum(), SECRETLER, None)
+        self.assertEqual(kod, 0)
+        self.assertIn("cihaz kodundan muaf: evet", m)
+        self.assertIn("sıradan kullanıcı: evet", m)
+        self.assertNotIn(pk.INCELEME_HESABI, m)
+
+    def test_muaf_degilse_engel(self):
+        m, kod = pk.rapor(_durum(inceleme={"muaf": False, "premium": False, "admin": False}), SECRETLER, None)
+        self.assertEqual(kod, 1)
+        self.assertIn("e-posta kodunda kalır", m)
+
+    def test_premium_ya_da_admin_ise_engel(self):
+        m, kod = pk.rapor(_durum(inceleme={"muaf": True, "premium": True, "admin": True}), SECRETLER, None)
+        self.assertEqual(kod, 1)
+        self.assertIn("geçerli Premium hakkı var ve admin", m)
+
+    def test_hesap_yoksa_engel(self):
+        m, kod = pk.rapor(_durum(inceleme=None), SECRETLER, None)
+        self.assertEqual(kod, 1)
+        self.assertIn("bu sunucuda YOK", m)
+
+    def test_sorgu_hesabi_kucuk_harfle_arar(self):
+        self.assertIn("lower(u.email) = 'test.sandikapp@gmail.com'", pk.sorgu(None))
 
 
 if __name__ == "__main__":
