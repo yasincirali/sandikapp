@@ -964,13 +964,14 @@ List<_Adim> _adimlariKur() {
       devam: (_) => _sekmeyeGec(4),
     ),
     // Çoklu hesap (yasin 2026-10-10 gece: "session switchi de tanıtım
-    // turuna ekleyelim"). Başlık yalnız bayrak açıkken hesap adı; kapalıyken
-    // "Profil" düz metin ve hedef yok, adım gösterilmez.
+    // turuna ekleyelim"). "Hesap ⌄" yalnız bayrak açıkken kimlik kartında;
+    // kapalıyken hedef yok, adım gösterilmez.
     _Adim(
       id: 'hesap_gecisi',
       hedef: TourTarget.hesapBasligi,
       baslik: 'Hesapların arasında geç',
-      govde: 'Üstteki adına dokun: bu telefondaki hesapların listelenir, '
+      // 5 Kas 21:00: düğme başlıktan kimlik kartına indi ("Hesap ⌄").
+      govde: 'Kartındaki "Hesap"a dokun: bu telefondaki hesapların listelenir, '
           'birine dokununca o hesaba geçersin. Öbür hesaplar açık kalır; '
           'şifre sorulmaz, Face ID ile girdiysen tekrar sorulmaz. "Hesap '
           'ekle" ile 5 hesaba kadar ekleyebilirsin. Alttaki Profil tuşuna '
@@ -984,7 +985,8 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.davetKodu,
       rozet: 'Bize özel',
       baslik: 'Eşinle tek portföy',
-      govde: 'Kodunu eşine gönder ya da onunkini gir. Karşı taraf '
+      // 5 Kas 21:00: ortağı yokken kart tek satır; dokununca eylemler.
+      govde: 'Buradan kodunu eşine gönderir ya da onunkini girersin. Karşı taraf '
           'onayladığında portföyleriniz tek ekranda birleşir; "Birlikte" '
           'herkesin toplamı, "Ben" yalnız senin. Birden çok ortağın olabilir; '
           'ana ekranda kartı kaydırarak aralarında geçersin. İstediğin an '

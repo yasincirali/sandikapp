@@ -134,6 +134,9 @@ class ShareCardData {
 /// 4. Dağılım şeridi + açıklama — kartın "kimlik" parçası; iki kişinin
 ///    kartı aynı yüzdeyle bile farklı görünür.
 /// 5. Alt bilgi — "sandık ile takip ediyorum" + tarih.
+/// Paylaşım kartlarındaki marka adı (tek yer; kartlar aynı yazar).
+const kSandikMarka = 'sandık';
+
 class ShareCard extends StatelessWidget {
   const ShareCard({super.key, required this.data, this.tarih});
 
@@ -391,7 +394,7 @@ class _Baslik extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'sandık',
+          kSandikMarka,
           style: context.t.titleLarge?.copyWith(
             color: p.gold,
             fontWeight: FontWeight.w600,
@@ -770,14 +773,20 @@ class _DagilimSeridi extends StatelessWidget {
 /// veriyordu — kullanıcı ne paylaştığını görmüyordu ve sonuç "arkası boş"
 /// hissi veriyordu (2026-09-14 geri bildirimi). Şimdi kart önce gösterilir;
 /// görsel varsayılan yol, metin yedek (görsel almayan hedefler için).
+/// [kart] verilirse dönem kartı ([ShareCard]) yerine o çizilir ve PNG ondan
+/// alınır (kilometre taşı kartı, 5 Kas 21:00); [not] önizleme altındaki
+/// açıklamanın yerine geçer. Biri [data], biri [kart] verilmeli.
 Future<void> showShareSheet(
   BuildContext context, {
-  required ShareCardData data,
+  ShareCardData? data,
+  Widget? kart,
+  String? not,
   required String metin,
   required String subject,
   required String analyticsPeriod,
   String? sayfaBasligi,
 }) async {
+  assert(data != null || kart != null);
   final key = GlobalKey();
   // Sheet içinde bir paylaşım GERÇEKLEŞTİ mi — değerlendirme istemi bunu
   // sheet kapandıktan sonra sorar. Sheet'in üstüne açmak iki katman
@@ -793,6 +802,8 @@ Future<void> showShareSheet(
     builder: (sheetCtx) => _ShareSheet(
       boundaryKey: key,
       data: data,
+      kart: kart,
+      not: not,
       metin: metin,
       subject: subject,
       analyticsPeriod: analyticsPeriod,
@@ -812,6 +823,8 @@ class _ShareSheet extends StatefulWidget {
     required this.boundaryKey,
     required this.data,
     required this.metin,
+    this.kart,
+    this.not,
     required this.subject,
     required this.onPaylasildi,
     required this.analyticsPeriod,
@@ -823,7 +836,13 @@ class _ShareSheet extends StatefulWidget {
   /// Sayfanın başlığı; verilmezse "Özetini paylaş" (dönem özeti). Bugün
   /// kartı "Bugünü paylaş" verir (2026-10-30) — özet açılmıyor.
   final String? sayfaBasligi;
-  final ShareCardData data;
+  final ShareCardData? data;
+
+  /// Dönem kartı yerine çizilecek kart (bkz. [showShareSheet]).
+  final Widget? kart;
+
+  /// Önizleme altındaki açıklama; verilmezse "Kartta tutar yok…".
+  final String? not;
   final String metin;
   final String subject;
   final String analyticsPeriod;
@@ -928,7 +947,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             ),
             const SizedBox(height: SandikSpace.xs),
             Text(
-              context.l10n.shareCardNoAmounts,
+              widget.not ?? context.l10n.shareCardNoAmounts,
               style: context.t.bodySmall?.copyWith(color: c.text58),
             ),
             const SizedBox(height: SandikSpace.md),
@@ -939,7 +958,7 @@ class _ShareSheetState extends State<_ShareSheet> {
                 fit: BoxFit.scaleDown,
                 child: RepaintBoundary(
                   key: widget.boundaryKey,
-                  child: ShareCard(data: widget.data),
+                  child: widget.kart ?? ShareCard(data: widget.data!),
                 ),
               ),
             ),
@@ -956,6 +975,85 @@ class _ShareSheetState extends State<_ShareSheet> {
               onPressed: _mesgul ? null : _metin,
               icon: const Icon(Icons.notes_rounded, size: 18),
               label: Text(context.l10n.shareAsText),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Kilometre taşı paylaşım kartı (Ar-Ge 5 Kas 21:00 #3, müşteri YAP).
+///
+/// Kutlama kullanıcının en mutlu anıydı ama paylaşma yolu yoktu; Strava,
+/// Duolingo ve Midas'ın "yılın" kartları paylaşılabilir. Kart dönem
+/// kartıyla aynı boyda ve zeminde (320×400, koyu palet): marka, sandık
+/// çizimi, taşın başlığı ve tek cümle. Portföy toplamı YOK; taş başlığı
+/// ("250 bin ₺ geçildi") bir eşiktir ve bakiye gizliyken zaten tutarsız
+/// gelir (`MilestoneService.gizli`).
+class KilometreTasiPaylasKarti extends StatelessWidget {
+  const KilometreTasiPaylasKarti({super.key, required this.baslik, this.cizim});
+
+  final String baslik;
+
+  /// Ortadaki çizim (milestone sayfası sandık çizimini verir).
+  final Widget? cizim;
+
+  @override
+  Widget build(BuildContext context) {
+    const p = SandikPalette.dark;
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: Container(
+        width: ShareCard.width,
+        height: ShareCard.height,
+        padding: const EdgeInsets.all(ShareCard.kenar),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [p.background, p.surface1],
+          ),
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              kSandikMarka,
+              style: context.t.titleLarge?.copyWith(
+                color: p.gold,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+              ),
+            ),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: SizedBox(
+                  width: ShareCard.icGenislik,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (cizim != null) cizim!,
+                      const SizedBox(height: SandikSpace.lg),
+                      Text(
+                        baslik,
+                        textAlign: TextAlign.center,
+                        style: context.t.headlineMedium?.copyWith(
+                            color: p.text90, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: SandikSpace.sm),
+                      Text(
+                        context.l10n.kilometreTasiPaylasAlt,
+                        textAlign: TextAlign.center,
+                        style: context.t.bodyMedium?.copyWith(color: p.text58),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

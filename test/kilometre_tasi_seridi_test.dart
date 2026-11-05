@@ -6,6 +6,7 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/services/milestone_service.dart';
 import 'package:portfoy_takip/widgets/kilometre_tasi_seridi.dart';
 import 'package:portfoy_takip/widgets/milestone_sheet.dart';
+import 'package:portfoy_takip/widgets/share_card.dart' show KilometreTasiPaylasKarti;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -87,6 +88,22 @@ void main() {
       ]);
     });
 
+    // Ar-Ge 5 Kas 21:00 #1: sıradaki taşta ilerleme ve kalan.
+    test('ilerleme = toplam / eşik, kalan = eşik − toplam', () {
+      final k = MilestoneService.koleksiyon(
+          kayitli: {'portfolio_value:250000'}, bugun: const [], totalTRY: 430000);
+      expect(k.siradaki!.rank, 500000);
+      expect(k.ilerleme, closeTo(0.86, 1e-9));
+      expect(k.kalan, 70000);
+      expect(MilestoneService.kalanKisa(70000), '70 bin ₺');
+      expect(MilestoneService.kalanKisa(69200), '70 bin ₺'); // yukarı
+      expect(MilestoneService.kalanKisa(300), '1 bin ₺');
+      final bos = MilestoneService.koleksiyon(
+          kayitli: const {}, bugun: const [], totalTRY: 0);
+      expect(bos.ilerleme, isNull, reason: 'toplam bilinmiyor: bayrak');
+      expect(bos.kalan, isNull);
+    });
+
     test('gizli: tutar taşı tutarsız, altın aynen', () {
       final deger = MilestoneService.anahtardan('portfolio_value', '100000')!;
       final g = MilestoneService.gizli(deger);
@@ -148,6 +165,43 @@ void main() {
       expect(find.text('Kilometre taşların'), findsWidgets);
       expect(find.text('10 bin ₺ geçildi'), findsOneWidget);
       expect(find.text('Sıradaki: 250 bin ₺'), findsOneWidget);
+    });
+
+    testWidgets('sıradaki taşta halka, yüzde ve kalan', (tester) async {
+      await pump(tester);
+      // 120 bin / 250 bin = %48; kalan 130 bin.
+      expect(find.text('%48'), findsOneWidget);
+      expect(find.text('130 bin ₺ kaldı'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              'Sıradaki kilometre taşı: 250 bin ₺, yüzde 48, 130 bin ₺ kaldı'),
+          findsOneWidget);
+    });
+
+    testWidgets('bakiye gizliyken yüzde kalır, kalan yazılmaz',
+        (tester) async {
+      await pump(tester, gizli: true);
+      expect(find.text('%48'), findsOneWidget);
+      expect(find.textContaining('kaldı'), findsNothing);
+    });
+
+    testWidgets('kutlamada Paylaş: tutarsız kart önizlemesi açılır',
+        (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('5 gram altın'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('kilometreTasiPaylas')));
+      await tester.pumpAndSettle();
+      expect(find.byType(KilometreTasiPaylasKarti), findsOneWidget);
+      expect(find.text('Kilometre taşını paylaş'), findsOneWidget);
+      expect(find.text('Kartta portföy tutarın yok; yalnız geçtiğin taş.'),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byType(KilometreTasiPaylasKarti),
+              matching: find.textContaining('₺')),
+          findsNothing);
     });
 
     testWidgets('rozete dokununca kutlama sayfası yeniden açılır',

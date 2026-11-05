@@ -14,6 +14,7 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/signal_provider.dart';
 import 'package:portfoy_takip/screens/profile_screen.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 
 AppUser _kisi(String id, String ad) => AppUser(
@@ -90,21 +91,26 @@ void main() {
   });
   tearDownAll(() => DbLogger.silentInTests = false);
 
-  testWidgets('ortak yoksa tek kart; iki başlık ve boş kart yok',
+  // Ar-Ge 5 Kas 21:00 #2 (müşteri YAP): ortak yokken iki düğmeli kart
+  // yerine tek satır; eylemler satıra dokununca açılan bölümde.
+  testWidgets('ortak yoksa tek satır; iki başlık ve boş kart yok',
       (tester) async {
     await _profil(tester, ortaklar: _Bos.new);
     expect(find.text('Ortak portföy'), findsOneWidget);
-    expect(find.text('Davet et'), findsOneWidget);
-    expect(find.text('Kod gir'), findsOneWidget);
+    expect(find.text('Bir yakınınla portföyünü tek ekranda birleştir'),
+        findsOneWidget);
+    expect(find.text('Davet et'), findsNothing);
+    expect(find.text('Kod gir'), findsNothing);
     expect(find.text('Ortaklık işlemleri'), findsNothing);
     expect(find.text('Ortaklarım'), findsNothing);
     expect(find.text('Henüz ortağın yok'), findsNothing);
     expect(find.byType(TextField), findsNothing);
   });
 
-  testWidgets('"Kod gir" bölümü yerinde açar, alan görünür', (tester) async {
+  testWidgets('satıra dokununca bölüm yerinde açılır, alan görünür',
+      (tester) async {
     await _profil(tester, ortaklar: _Bos.new);
-    await tester.tap(find.text('Kod gir'));
+    await tester.tap(find.text('Ortak portföy'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Ortaklık işlemleri'), findsOneWidget);
@@ -121,13 +127,20 @@ void main() {
     expect(find.text('Ortak portföy'), findsNothing);
   });
 
-  testWidgets('kartın düğmeleri en az 44 pt', (tester) async {
+  testWidgets('satır en az 44 pt ve kısa (~140 pt kart yerine)',
+      (tester) async {
     await _profil(tester, ortaklar: _Bos.new);
-    for (final t in ['Davet et', 'Kod gir']) {
-      final kutu = tester.getSize(find
-          .ancestor(of: find.text(t), matching: find.byType(FilledButton))
-          .first);
-      expect(kutu.height, greaterThanOrEqualTo(44), reason: t);
-    }
+    final kutu = tester.getSize(find
+        .ancestor(of: find.text('Ortak portföy'), matching: find.byType(SandikCard))
+        .first);
+    expect(kutu.height, greaterThanOrEqualTo(44));
+    expect(kutu.height, lessThan(110)); // test yazı tipi geniş: alt satır sarar
+  });
+
+  // Ar-Ge 5 Kas 21:00 tasarım 3: başlık hep "Profil", ad bir kez.
+  testWidgets('başlık "Profil"; ad yalnız kimlik kartında', (tester) async {
+    await _profil(tester, ortaklar: _Bos.new);
+    expect(find.text('Profil'), findsOneWidget);
+    expect(find.text('Test'), findsOneWidget);
   });
 }

@@ -575,7 +575,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAccountSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Biyometrik kilit, kayıtlı cihazlar, verilerini indir, hesabını sil'**
+  /// **'Kilit, cihazlar, veri indirme, hesap silme'**
   String get settingsAccountSubtitle;
 
   /// No description provided for @settingsHelpSubtitle.
@@ -5879,7 +5879,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifSubtitleIos.
   ///
   /// In tr, this message translates to:
-  /// **'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik'**
+  /// **'Sinyal, alarm, sessiz saat, Canlı Etkinlik'**
   String get notifSubtitleIos;
 
   /// No description provided for @notifSubtitleAndroid.
@@ -16445,29 +16445,17 @@ abstract class AppLocalizations {
   /// **'Alarm'**
   String get notifTypeAlarm;
 
+  /// No description provided for @ortakPortfoySatirAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir yakınınla portföyünü tek ekranda birleştir'**
+  String get ortakPortfoySatirAlt;
+
   /// No description provided for @ortakPortfoyKartBaslik.
   ///
   /// In tr, this message translates to:
   /// **'Ortak portföy'**
   String get ortakPortfoyKartBaslik;
-
-  /// No description provided for @ortakPortfoyKartGovde.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.'**
-  String get ortakPortfoyKartGovde;
-
-  /// No description provided for @ortakPortfoyDavetEt.
-  ///
-  /// In tr, this message translates to:
-  /// **'Davet et'**
-  String get ortakPortfoyDavetEt;
-
-  /// No description provided for @ortakPortfoyKodGir.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kod gir'**
-  String get ortakPortfoyKodGir;
 
   /// No description provided for @notifOpenAction.
   ///
@@ -17074,6 +17062,49 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}'**
   String kilometreTasiSiradakiEtiket(String baslik);
+
+  /// No description provided for @kilometreTasiKalan.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tutar} kaldı'**
+  String kilometreTasiKalan(String tutar);
+
+  /// No description provided for @kilometreTasiPaylasAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık ile birikimimi takip ediyorum'**
+  String get kilometreTasiPaylasAlt;
+
+  /// No description provided for @kilometreTasiPaylasNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kartta portföy tutarın yok; yalnız geçtiğin taş.'**
+  String get kilometreTasiPaylasNot;
+
+  /// No description provided for @kilometreTasiPaylasBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilometre taşını paylaş'**
+  String get kilometreTasiPaylasBaslik;
+
+  /// No description provided for @kilometreTasiPaylasMetni.
+  ///
+  /// In tr, this message translates to:
+  /// **'{baslik}. sandık ile birikimimi takip ediyorum: {link}'**
+  String kilometreTasiPaylasMetni(String baslik, String link);
+
+  /// No description provided for @kilometreTasiSiradakiIlerlemeEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
+  String kilometreTasiSiradakiIlerlemeEtiket(
+      String baslik, int yuzde, String kalan);
+
+  /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}'**
+  String kilometreTasiSiradakiYuzdeEtiket(String baslik, int yuzde);
 
   /// No description provided for @kilometreTaslariBaslik.
   ///

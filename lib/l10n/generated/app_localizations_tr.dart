@@ -261,7 +261,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsAccountSubtitle =>
-      'Biyometrik kilit, kayıtlı cihazlar, verilerini indir, hesabını sil';
+      'Kilit, cihazlar, veri indirme, hesap silme';
 
   @override
   String get settingsHelpSubtitle =>
@@ -3465,8 +3465,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get notifSubtitleIos =>
-      'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik';
+  String get notifSubtitleIos => 'Sinyal, alarm, sessiz saat, Canlı Etkinlik';
 
   @override
   String get notifSubtitleAndroid =>
@@ -9949,17 +9948,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notifTypeAlarm => 'Alarm';
 
   @override
+  String get ortakPortfoySatirAlt =>
+      'Bir yakınınla portföyünü tek ekranda birleştir';
+
+  @override
   String get ortakPortfoyKartBaslik => 'Ortak portföy';
-
-  @override
-  String get ortakPortfoyKartGovde =>
-      'Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.';
-
-  @override
-  String get ortakPortfoyDavetEt => 'Davet et';
-
-  @override
-  String get ortakPortfoyKodGir => 'Kod gir';
 
   @override
   String get notifOpenAction => 'Aç';
@@ -10341,6 +10334,37 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String kilometreTasiSiradakiEtiket(String baslik) {
     return 'Sıradaki kilometre taşı: $baslik';
+  }
+
+  @override
+  String kilometreTasiKalan(String tutar) {
+    return '$tutar kaldı';
+  }
+
+  @override
+  String get kilometreTasiPaylasAlt => 'sandık ile birikimimi takip ediyorum';
+
+  @override
+  String get kilometreTasiPaylasNot =>
+      'Kartta portföy tutarın yok; yalnız geçtiğin taş.';
+
+  @override
+  String get kilometreTasiPaylasBaslik => 'Kilometre taşını paylaş';
+
+  @override
+  String kilometreTasiPaylasMetni(String baslik, String link) {
+    return '$baslik. sandık ile birikimimi takip ediyorum: $link';
+  }
+
+  @override
+  String kilometreTasiSiradakiIlerlemeEtiket(
+      String baslik, int yuzde, String kalan) {
+    return 'Sıradaki kilometre taşı: $baslik, yüzde $yuzde, $kalan kaldı';
+  }
+
+  @override
+  String kilometreTasiSiradakiYuzdeEtiket(String baslik, int yuzde) {
+    return 'Sıradaki kilometre taşı: $baslik, yüzde $yuzde';
   }
 
   @override

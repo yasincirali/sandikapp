@@ -261,7 +261,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAccountSubtitle =>
-      'Biometric lock, registered devices, download your data, delete account';
+      'Lock, devices, data download, delete account';
 
   @override
   String get settingsHelpSubtitle => 'Contact us, tour, privacy and terms';
@@ -3493,8 +3493,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notifSubtitleIos =>
-      'Signals, price alerts, quiet hours, Live Activity';
+  String get notifSubtitleIos => 'Signals, alerts, quiet hours, Live Activity';
 
   @override
   String get notifSubtitleAndroid => 'Signals, price alerts, quiet hours';
@@ -10054,17 +10053,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTypeAlarm => 'Alert';
 
   @override
+  String get ortakPortfoySatirAlt => 'Combine portfolios with someone close';
+
+  @override
   String get ortakPortfoyKartBaslik => 'Shared portfolio';
-
-  @override
-  String get ortakPortfoyKartGovde =>
-      'Combine your portfolio with someone close on one screen. You can leave any time.';
-
-  @override
-  String get ortakPortfoyDavetEt => 'Invite';
-
-  @override
-  String get ortakPortfoyKodGir => 'Enter code';
 
   @override
   String get notifOpenAction => 'Open';
@@ -10464,6 +10456,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String kilometreTasiSiradakiEtiket(String baslik) {
     return 'Next milestone: $baslik';
+  }
+
+  @override
+  String kilometreTasiKalan(String tutar) {
+    return '$tutar to go';
+  }
+
+  @override
+  String get kilometreTasiPaylasAlt => 'Tracking my savings with sandık';
+
+  @override
+  String get kilometreTasiPaylasNot =>
+      'No portfolio amount on the card; just the milestone.';
+
+  @override
+  String get kilometreTasiPaylasBaslik => 'Share your milestone';
+
+  @override
+  String kilometreTasiPaylasMetni(String baslik, String link) {
+    return '$baslik. Tracking my savings with sandık: $link';
+  }
+
+  @override
+  String kilometreTasiSiradakiIlerlemeEtiket(
+      String baslik, int yuzde, String kalan) {
+    return 'Next milestone: $baslik, $yuzde percent, $kalan to go';
+  }
+
+  @override
+  String kilometreTasiSiradakiYuzdeEtiket(String baslik, int yuzde) {
+    return 'Next milestone: $baslik, $yuzde percent';
   }
 
   @override

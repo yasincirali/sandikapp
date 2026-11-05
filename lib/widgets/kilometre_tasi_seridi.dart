@@ -6,6 +6,7 @@ import '../providers/kilometre_tasi_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/milestone_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart' show fmtPct;
 import 'milestone_sheet.dart';
 
 /// Profil'de "Kilometre taşların" rozet şeridi (Ar-Ge 1 Kas 20:45 #1,
@@ -91,7 +92,17 @@ class KilometreTasiSeridi extends ConsumerWidget {
                     m: m,
                     onTap: () => MilestoneSheet.show(context, m, tekrar: true),
                   ),
-                if (siradaki != null) _Rozet(m: siradaki, siradaki: true),
+                if (siradaki != null)
+                  _Rozet(
+                    m: siradaki,
+                    siradaki: true,
+                    ilerleme: veri.ilerleme,
+                    // Bakiye gizliyken kalan TUTAR yazılmaz; yüzde kalır
+                    // (eşik de gizli olduğundan yüzde tutarı ele vermez).
+                    kalan: gizli || veri.kalan == null
+                        ? null
+                        : MilestoneService.kalanKisa(veri.kalan!),
+                  ),
               ],
             ),
           ),
@@ -115,11 +126,24 @@ class KilometreTasiSeridi extends ConsumerWidget {
 /// Tek rozet: 46 pt daire + iki satıra kadar etiket. Dokunma alanı
 /// sütunun tamamı (≥44 pt).
 class _Rozet extends StatelessWidget {
-  const _Rozet({required this.m, this.siradaki = false, this.onTap});
+  const _Rozet({
+    required this.m,
+    this.siradaki = false,
+    this.onTap,
+    this.ilerleme,
+    this.kalan,
+  });
 
   final Milestone m;
   final bool siradaki;
   final VoidCallback? onTap;
+
+  /// Sıradaki taşta bugünkü toplam / eşik (Ar-Ge 5 Kas 21:00 #1). `null`
+  /// → toplam bilinmiyor, bayrak eskisi gibi.
+  final double? ilerleme;
+
+  /// "70 bin ₺"; bakiye gizliyken `null`.
+  final String? kalan;
 
   static const double _cap = 46;
   static const double _genislik = 84;
@@ -127,15 +151,28 @@ class _Rozet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final etiket = siradaki
-        ? context.l10n.kilometreTasiSiradakiEtiket(m.title)
-        : context.l10n.kilometreTasiEtiket(m.title);
+    final l = context.l10n;
+    final oran = siradaki ? ilerleme : null;
+    // Taban yüzde: eşiğe varmadan "%100" yazmasın.
+    final yuzde = oran == null ? null : (oran * 100).floor();
+    final etiket = !siradaki
+        ? l.kilometreTasiEtiket(m.title)
+        : yuzde == null
+            ? l.kilometreTasiSiradakiEtiket(m.title)
+            : kalan == null
+                ? l.kilometreTasiSiradakiYuzdeEtiket(m.title, yuzde)
+                : l.kilometreTasiSiradakiIlerlemeEtiket(
+                    m.title, yuzde, kalan!);
     final govde = SizedBox(
       width: _genislik,
       child: Padding(
         padding: const EdgeInsets.only(right: SandikSpace.sm),
         child: Column(
           children: [
+            if (yuzde != null)
+              _IlerlemeHalkasi(
+                  oran: oran!, yuzde: yuzde, cap: _cap)
+            else
             Container(
               width: _cap,
               height: _cap,
@@ -166,6 +203,14 @@ class _Rozet extends StatelessWidget {
               style: context.t.bodySmall
                   ?.copyWith(color: siradaki ? c.text58 : c.text90),
             ),
+            if (siradaki && kalan != null)
+              Text(
+                l.kilometreTasiKalan(kalan!),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.labelSmall?.copyWith(color: c.text36),
+              ),
           ],
         ),
       ),
@@ -175,6 +220,52 @@ class _Rozet extends StatelessWidget {
       return Semantics(label: etiket, child: icerik);
     }
     return SandikTappable(semanticLabel: etiket, onTap: onTap, child: icerik);
+  }
+}
+
+/// Sıradaki taşın ince ilerleme halkası, ortasında yüzde. Durum renkle
+/// değil yüzde metniyle de söylenir. Hareket yok: değer her açılışta
+/// aynı yerde, dolma animasyonu süs olurdu (hareketi azalt sorusu da
+/// böylece doğmaz).
+class _IlerlemeHalkasi extends StatelessWidget {
+  const _IlerlemeHalkasi(
+      {required this.oran, required this.yuzde, required this.cap});
+
+  final double oran;
+  final int yuzde;
+  final double cap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return SizedBox.square(
+      dimension: cap,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned.fill(
+            child: CircularProgressIndicator(
+              value: oran,
+              strokeWidth: 3,
+              backgroundColor: c.overlay,
+              color: c.amberText,
+              strokeCap: StrokeCap.round,
+            ),
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              padding: const EdgeInsets.all(SandikSpace.xs2),
+              child: Text(
+                fmtPct(yuzde.toDouble(), digits: 0),
+                style: context.t.labelSmall?.copyWith(
+                    color: c.text90, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
