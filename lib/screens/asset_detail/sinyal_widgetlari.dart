@@ -217,6 +217,11 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           canli: true,
           kayit: kayit,
           donus: ozet.donus,
+          sayimlar: (
+            yukari: ozet.buyCount,
+            asagi: ozet.sellCount,
+            notr: ozet.toplam - ozet.buyCount - ozet.sellCount,
+          ),
         );
       })(context, snap),
       ),
@@ -299,6 +304,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     required bool canli,
     required SignalAlert? kayit,
     bool donus = false,
+    ({int yukari, int asagi, int notr})? sayimlar,
   }) {
     // Yasal not: kesin "AL/SAT" yerine trend yönü ya da aşırılık bölgesi —
     // ekranın geri kalanıyla aynı dil (bkz. [sinyalGorunumu]). Kayıtlı
@@ -309,9 +315,15 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     final etiket = g.etiket;
     final ikon = g.ikon;
 
-    final detay = toplam > 0
-        ? context.l10n.indicatorsConfidence(lehte, toplam, guven.round())
-        : context.l10n.confidenceOnly(guven.round());
+    // Canlı yolda sayım panelin özet kartıyla birebir aynı cümle. Kayıtlı
+    // bildirimde nötr sayısı tutulmadığı için eski "x/y gösterge" kalır.
+    final sayim = sayimlar;
+    final detay = sayim != null
+        ? context.l10n
+            .buySellNeutralCounts(sayim.yukari, sayim.asagi, sayim.notr)
+        : toplam > 0
+            ? context.l10n.indicatorsConfidence(lehte, toplam, guven.round())
+            : context.l10n.confidenceOnly(guven.round());
 
     // Kayıtlı bildirim, CANLI özetten ayrı bir satırda durur. İkisi
     // çeliştiğinde (bildirim "yukarı" derken göstergeler bugün "aşağı"
@@ -357,45 +369,39 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Üst etiket: şeridin NE olduğunu söyler. Ekranın diğer
-                // kartlarında ("BUGÜN / lot", "1H DEĞİŞİM") aynı kalıp
-                // kullanılıyor — labelSmall + letterSpacing 0.8 + text36.
-                // Sayfayla ahengi kuran şey bu tekrar.
-                Text(
-                  context.l10n.technicalOutlookUpper,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelSmall?.copyWith(
-                    letterSpacing: 0.8,
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text36,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                // Ton düşürüldü: `w800` + `letterSpacing 0.6` idi ve
-                // kırmızı zeminle birleşince başlık bağırıyordu. Renk
-                // korundu (yön bilgisini o taşıyor), ağırlık ekranın
-                // diğer kart başlıklarıyla aynı seviyeye çekildi.
-                Text(
-                  etiket,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: renk,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                // İki satır: büyük yazı ölçeğinde "1/2 gösterge · güven %50"
-                // tek satırda "güven …" diye kesiliyordu — güven yüzdesi
-                // satırın tek sayısal bilgisiydi ve kayboluyordu (kullanıcı
-                // ekran görüntüsü 2026-09-18).
-                Text(
-                  detay,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      context.t.bodySmall?.copyWith(color: context.c.text58),
+                // Tek satır: "Teknik: YATAY  1 yukarı · 1 aşağı · 3 nötr"
+                // (Ar-Ge 5 Kas 14:45 #1). Eski üst etiket "TEKNİK GÖRÜNÜM ·
+                // GÜNLÜK" 390 pt'de "GÜN…" diye kesiliyordu ve sayım üç ayrı
+                // dilde yazıyordu (şerit "1/5 gösterge aynı yönde", panel
+                // "1 yukarı · 1 aşağı · 3 nötr"). Şerit artık panelin özet
+                // kartıyla aynı sayımı yazar; güven yüzdesi panelde.
+                // `Wrap`: sığmazsa sayım alt satıra iner, hiçbir parça
+                // kesilmez (Dynamic Type 2×). Ağırlık w600 (unslop: en
+                // fazla w600); renk yönü taşır, metin de yazılı.
+                Wrap(
+                  spacing: SandikSpace.sm,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          text: '${context.l10n.technicalPrefix} ',
+                          style: TextStyle(color: context.c.text58),
+                        ),
+                        TextSpan(text: etiket),
+                      ]),
+                      style: context.t.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: renk,
+                      ),
+                    ),
+                    Text(
+                      detay,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ],
                 ),
                 if (kayitSatiri != null) ...[
                   const SizedBox(height: 2),
@@ -422,32 +428,35 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           // "10 Eyl · 11:00" oluyor ve 320pt × 1.6 ölçekte taşıyordu.
           // Canlı hesapta "ŞU AN", kayıtta TAM tarih+saat — göreli ifade
           // soldaki "Son bildirim" satırında duruyor, mutlak olan burada.
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
-                decoration: BoxDecoration(
-                  color: renk.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
-                child: Text(
-                  canli
-                      ? context.l10n.nowUpper
-                      : DateFormat('d MMM · HH:mm', 'tr_TR')
-                          .format(kayit!.detectedAt),
-                  maxLines: 1,
-                  style: context.t.labelSmall?.copyWith(
-                    letterSpacing: 0.8,
-                    fontWeight: FontWeight.w700,
-                    color: renk,
+          //
+          // Canlı yolda pil YOK (Ar-Ge 5 Kas 14:45 #1): "ŞU AN" her açılışta
+          // aynıydı, bilgi taşımıyordu ve şeridi kalabalıklaştırıyordu. Pil
+          // yalnız kayıtlı bildirimde, o bildirimin tam zamanını yazar.
+          if (!canli)
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
+                  decoration: BoxDecoration(
+                    color: renk.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  ),
+                  child: Text(
+                    DateFormat('d MMM · HH:mm', 'tr_TR')
+                        .format(kayit!.detectedAt),
+                    maxLines: 1,
+                    style: context.t.labelSmall?.copyWith(
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.w700,
+                      color: renk,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           // Chevron sütunun ALTINDA değil YANINDA ve dikey ortada — "bu
           // karta dokunulabilir" işareti, zaman bilgisinin bir parçası
           // değil. Örnek tasarımda da ayrı bir sütun olarak duruyor.

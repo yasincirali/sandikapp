@@ -5072,6 +5072,12 @@ abstract class AppLocalizations {
   /// **'TEKNİK GÖRÜNÜM · GÜNLÜK'**
   String get technicalOutlookUpper;
 
+  /// No description provided for @technicalPrefix.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teknik:'**
+  String get technicalPrefix;
+
   /// No description provided for @nowUpper.
   ///
   /// In tr, this message translates to:

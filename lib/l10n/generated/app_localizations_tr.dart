@@ -2952,6 +2952,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get technicalOutlookUpper => 'TEKNİK GÖRÜNÜM · GÜNLÜK';
 
   @override
+  String get technicalPrefix => 'Teknik:';
+
+  @override
   String get nowUpper => 'ŞU AN';
 
   @override

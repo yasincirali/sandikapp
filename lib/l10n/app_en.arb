@@ -1991,6 +1991,7 @@
     }
   },
   "technicalOutlookUpper": "TECHNICAL OUTLOOK · DAILY",
+  "technicalPrefix": "Technical:",
   "nowUpper": "NOW",
   "arrowUp": "▲ up",
   "arrowDown": "▼ down",

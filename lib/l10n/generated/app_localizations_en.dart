@@ -2980,6 +2980,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get technicalOutlookUpper => 'TECHNICAL OUTLOOK · DAILY';
 
   @override
+  String get technicalPrefix => 'Technical:';
+
+  @override
   String get nowUpper => 'NOW';
 
   @override

@@ -88,10 +88,14 @@ String _ekranMetni(WidgetTester tester) => tester
 void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
 
-  testWidgets('üst etiket ekranda — "TEKNİK GÖRÜNÜM · GÜNLÜK"', (tester) async {
+  // Üst etiket "TEKNİK GÖRÜNÜM · GÜNLÜK" 390 pt'de kesiliyordu; şerit tek
+  // satıra indi ve ne olduğunu "Teknik:" öneki söylüyor (Ar-Ge 5 Kas 14:45).
+  testWidgets('şeridin ne olduğu ekranda — "Teknik:" öneki', (tester) async {
     await _bas(tester, DateTime.now().subtract(const Duration(minutes: 10)));
-    expect(find.text('TEKNİK GÖRÜNÜM · GÜNLÜK'), findsOneWidget,
-        reason: 'Şeridin ne olduğunu söyleyen üst etiket kayıp.');
+    expect(find.textContaining('Teknik:', findRichText: true), findsOneWidget,
+        reason: 'Şeridin ne olduğunu söyleyen önek kayıp.');
+    expect(find.text('TEKNİK GÖRÜNÜM · GÜNLÜK'), findsNothing,
+        reason: 'Kesilen eski üst etiket geri geldi.');
   });
 
   testWidgets('göreli zaman ekranda — "10 dk önce"', (tester) async {

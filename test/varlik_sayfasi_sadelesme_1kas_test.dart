@@ -55,7 +55,7 @@ void main() {
     );
 
     Future<void> izgara(WidgetTester tester,
-        {bool? bugunGizli, int gun = 1}) async {
+        {bool? bugunGizli, int gun = 1, bool gunIci = false}) async {
       await tester.pumpWidget(MaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
@@ -66,17 +66,19 @@ void main() {
             bugunPct: 1.98,
             donemGetirisiGizli: true,
             bugunGizli: bugunGizli,
+            gunIci: gunIci,
           ),
         ),
       ));
     }
 
-    testWidgets('GÜNLÜK varlık sayfası: tek hücre "En büyük düşüş"',
+    // 5 Kas 14:45 #3: GÜNLÜK'te "En büyük düşüş" de düştü; ızgara boş.
+    testWidgets('GÜNLÜK varlık sayfası: ızgarada hücre kalmaz',
         (tester) async {
-      await izgara(tester, bugunGizli: true);
+      await izgara(tester, bugunGizli: true, gunIci: true);
       expect(find.text('DÖNEM GETİRİSİ'), findsNothing);
       expect(find.text('BUGÜN'), findsNothing);
-      expect(find.text('EN BÜYÜK DÜŞÜŞ'), findsOneWidget);
+      expect(find.text('EN BÜYÜK DÜŞÜŞ'), findsNothing);
       // Oynaklık bilinmiyor: ne "—" kutusu ne açıklama notu.
       expect(find.text('OYNAKLIK (YILLIK)'), findsNothing);
       expect(find.text('—'), findsNothing);

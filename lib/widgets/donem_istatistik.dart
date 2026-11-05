@@ -38,7 +38,18 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
     required this.bugunPct,
     this.donemGetirisiGizli = false,
     this.bugunGizli,
+    this.gunIci = false,
   });
+
+  /// GÜNLÜK görünüm mü. Günlükte "En büyük düşüş" hücresi çizilmez.
+  final bool gunIci;
+
+  /// "En büyük düşüş" hücresi çizilir mi (Ar-Ge 5 Kas 14:45 #3). Bugün
+  /// görünümünde ve %0,05'in altında hücre "%0,00" yazıp ayrı kart
+  /// kaplıyordu; bilgi yoktu. Yahoo ve Midas günlükte drawdown göstermez.
+  /// Gizleme, uydurma sayı değil: değer bilinir ama söylenecek bir şey yok.
+  static bool dususVar(DonemIstatistigi ist, {required bool gunIci}) =>
+      !gunIci && ist.enBuyukDususPct.abs() >= 0.05;
 
   /// Izgarada kaç hücre çizilir — iskelet de aynı sayıyı kullanır, yoksa
   /// veri gelince kartın boyu zıplar (Ar-Ge 1 Kas 08:45 #3).
@@ -46,10 +57,11 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
     required bool donemGetirisiGizli,
     required bool bugunGizli,
     required bool oynaklikVar,
+    bool dususVar = true,
   }) =>
       (donemGetirisiGizli ? 0 : 1) +
       (bugunGizli ? 0 : 1) +
-      1 +
+      (dususVar ? 1 : 0) +
       (oynaklikVar ? 1 : 0);
 
   /// "Bugün" hücresi gizli mi. `null` → eski kural: dönem getirisi gizliyken
@@ -94,11 +106,12 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
           bugun == null ? '—' : fmtPctIsaretli(bugun),
           bugun == null ? context.c.text58 : yon(bugun),
         ),
-      (
-        l.vsMaxDrawdownUpper,
-        fmtPctIsaretli(ist.enBuyukDususPct),
-        ist.enBuyukDususPct.abs() < 0.005 ? context.c.text58 : context.c.loss,
-      ),
+      if (dususVar(ist, gunIci: gunIci))
+        (
+          l.vsMaxDrawdownUpper,
+          fmtPctIsaretli(ist.enBuyukDususPct),
+          context.c.loss,
+        ),
       // Oynaklık bilinmiyorsa hücre hiç yok (Ar-Ge 1 Kas 08:45 #3, yasin
       // "yap"): "—" kutusu ve altındaki "kısa dönemde hesaplanmaz" notu yer
       // kaplayıp bir şey söylemiyordu. Uydurma sayı da yazılmaz.
@@ -137,6 +150,7 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
           ),
         );
 
+    if (hucreler.isEmpty) return const SizedBox.shrink();
     final satirlar = <Widget>[
       for (var i = 0; i < hucreler.length; i += 2) ...[
         if (i > 0) const SizedBox(height: SandikSpace.sm),

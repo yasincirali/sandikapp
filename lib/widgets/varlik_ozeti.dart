@@ -133,6 +133,11 @@ typedef DonemDegisimSatiri = ({String metin, Color renk});
 ///   · düz değişim → "1 yıl boyunca değişmedi", nötr renk. [duz] verilmezse
 ///     [donemDuzMu] (= `DonemIstatistigi.isFlat` eşiği).
 ///   · [fark] `null` → yalnız yüzde (mevduat: birim fark anlamsız).
+///   · [birim] verilirse fark "/ lot" gibi birimle yazılır: portföydeki
+///     hissede başlık "+₺9,22 · Bugün", hemen altındaki Pozisyonun tablosu
+///     "Bugün kâr/zarar +₺922" diyordu; iki "bugün" tutarı 100 kat farklı ve
+///     biri birimsizdi (Ar-Ge 5 Kas 14:45 #4). Yalnız hisse/fon verir: altın
+///     ve dövizde birim fiyatın kendisinde okunuyor.
 ///   · [veriGelmedi] → "Bugünün verisi henüz gelmedi" (GÜNLÜK seri hiç
 ///     gelmedi; Bugün kartıyla aynı cümle, UX raporu 30 Eki §1). Düz
 ///     tohum seri "değişim yok" diye okunmasın.
@@ -144,6 +149,7 @@ DonemDegisimSatiri donemDegisimSatiri(
   double? fark,
   bool? duz,
   bool veriGelmedi = false,
+  String? birim,
 }) {
   final l = context.l10n;
   if (veriGelmedi) return (metin: l.todayNoDataYet, renk: context.c.text58);
@@ -157,7 +163,8 @@ DonemDegisimSatiri donemDegisimSatiri(
   }
   return (
     metin: '$yuzde · ${fark >= 0 ? '+' : '−'}'
-        '${bicim.format(fark.abs())} · $donem',
+        '${bicim.format(fark.abs())}${birim == null ? '' : ' / $birim'}'
+        ' · $donem',
     renk: context.signColor(pct),
   );
 }
@@ -222,8 +229,8 @@ class VarlikFiyatBlogu extends StatelessWidget {
     );
   }
 
-  Widget _kur(BuildContext context, String fiyat,
-      DonemDegisimSatiri degisim, Object? kimlik) {
+  Widget _kur(BuildContext context, String fiyat, DonemDegisimSatiri degisim,
+      Object? kimlik) {
     final ust = Text(
       etiket,
       style: context.t.labelSmall?.copyWith(
@@ -291,8 +298,8 @@ class VarlikFiyatBlogu extends StatelessWidget {
     // başında, kenarları sönük, renk geçişi `flowOf` (hareketi azalt → anında).
     // Hare dönemin yönüdür: imleç gezinirken (değişim satırı tarihe
     // dönünce) sönmez.
-    final yonlu =
-        this.degisim.renk == context.c.gain || this.degisim.renk == context.c.loss;
+    final yonlu = this.degisim.renk == context.c.gain ||
+        this.degisim.renk == context.c.loss;
     final hedef = this.degisim.renk;
     return Stack(
       clipBehavior: Clip.none,
