@@ -30,6 +30,12 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 
 REF = os.environ.get("FRANKFURT_REF", "ynwymnpdiwudrlxfrmuo")
 
+# App Review demo hesabı (0099). İnceleyici e-postayı okuyamaz ve hesabı
+# birden çok cihazda açar: cihaz kodu muafiyeti ŞART. Mağaza kullanıcısıyla
+# aynı şeyi görmesi için (2.3.1(a)) Premium hakkı ve admin yetkisi OLMAMALI.
+# Rapor yalnız evet/hayır basar; repo herkese açık, Actions loguna UUID yazılmaz.
+INCELEME_HESABI = "test.sandikapp@gmail.com"
+
 GEREKLI_SECRETLER = (
     "REVENUECAT_WEBHOOK_SECRET",
     "REVENUECAT_API_KEY",
@@ -63,7 +69,15 @@ select json_build_object(
          and not exists (select 1 from public.premium_haklari h
                           where h.user_id = u.id and h.kaynak = 'erken_kullanici')),
   'cron', (select json_build_object('active', active, 'schedule', schedule)
-             from cron.job where jobname = 'calendar-nudge-premium-hediye')
+             from cron.job where jobname = 'calendar-nudge-premium-hediye'),
+  'inceleme', (select json_build_object(
+      'muaf', exists (select 1 from public.cihaz_kontrol_muafiyeti m where m.user_id = u.id),
+      'premium', exists (select 1 from public.premium_haklari h
+                          where h.user_id = u.id and (h.bitis is null or h.bitis > now())),
+      'admin', exists (select 1 from public.push_admins a where a.user_id = u.id))
+    from auth.users u
+   where lower(u.email) = '{INCELEME_HESABI}' and u.deleted_at is null
+   limit 1)
 ) as sonuc;
 """
 
@@ -147,6 +161,21 @@ def rapor(s: dict, secretler: set[str], kesim: str | None) -> tuple[str, int]:
     madde(None, "Hediye hatırlatma cron'u (`calendar-nudge-premium-hediye`): "
                 + ("yok" if not cron else f"{'aktif' if cron.get('active') else 'kapalı'} ({cron.get('schedule')})")
                 + " — hediye yokken etkisiz.")
+
+    # App Review demo hesabı: yoksa ya da muaf değilse inceleyici cihaz kodu
+    # ekranında kalır ("giriş yapılamıyor" reddi); Premium/admin ise
+    # inceleyici paywall'ı görmez (abonelik incelenemez, 2.3.1(a)).
+    inc = s.get("inceleme")
+    if inc is None:
+        madde(False, "İnceleme hesabı bu sunucuda YOK: App Review giriş yapamaz.")
+    else:
+        madde(bool(inc.get("muaf")), "İnceleme hesabı cihaz kodundan muaf: "
+              + ("evet" if inc.get("muaf") else "HAYIR, inceleyici e-posta kodunda kalır (0099 satırını ekle)"))
+        madde(not inc.get("premium") and not inc.get("admin"), "İnceleme hesabı sıradan kullanıcı: "
+              + ("evet (paywall'ı görür)" if not inc.get("premium") and not inc.get("admin")
+                 else "HAYIR, " + " ve ".join(a for a, v in (("geçerli Premium hakkı var", inc.get("premium")),
+                                                             ("admin", inc.get("admin"))) if v)
+                 + "; inceleyici paywall'ı görmez"))
 
     satirlar += ["", "| Kaynak | Sandbox | Satır | Geçerli |", "|---|---|---:|---:|"]
     for h in haklar:
