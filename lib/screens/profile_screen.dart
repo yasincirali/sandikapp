@@ -1335,7 +1335,9 @@ class _ProfilePremiumBanner extends ConsumerWidget {
     // ayrı ki huni analitiğinde hediye sonrası dönüşüm görünsün.
     final hediyeBitti = ref.watch(hediyesiBitmisProvider) != null;
     final kaynak = hediyeBitti ? 'hediye_bitti' : 'profile_banner';
-    return SandikBasma(
+    return SandikTappable(
+      soluk: true,
+      haptic: SandikHaptic.none,
       onTap: () {
         AnalyticsService.instance.logPremiumGateShown(feature: kaynak);
         PaywallScreen.show(context, source: kaynak);

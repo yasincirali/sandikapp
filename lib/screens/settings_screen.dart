@@ -165,68 +165,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     // 2. Kademe — şifre doğrulama
+    //
+    // Marka onay kabuğu (Ar-Ge 5 Kas 22:40 #7): eskiden `AlertDialog`'du —
+    // yıkıcı onayın geri kalanı (1. kademe, sosyal hesap) markanın uyarı
+    // ikonlu kartındayken şifre adımı Material kartında açılıyordu. Alan
+    // `detail`'e girer; sonuç (`true` = sil) ve kapatılamazlık aynı.
     final passwordCtrl = TextEditingController();
     bool obscure = true;
-    final secondConfirm = await showSandikGecisli<bool>(
+    final secondConfirm = await showSandikConfirm(
       context: context,
+      title: context.l10n.confirmWithPassword,
+      message: context.l10n.confirmWithPasswordBody,
+      confirmLabel: context.l10n.deleteAccountUpper,
+      destructive: true,
       barrierDismissible: false,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          backgroundColor: context.c.surface2,
-          title: Text(context.l10n.confirmWithPassword,
-              style: TextStyle(color: context.c.text90)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.confirmWithPasswordBody,
-                style: TextStyle(color: context.c.text58, fontSize: 13),
+      detail: StatefulBuilder(
+        builder: (ctx, setLocal) => TextField(
+          controller: passwordCtrl,
+          obscureText: obscure,
+          autofocus: true,
+          style: TextStyle(color: context.c.text90),
+          decoration: context.inputDecoration(
+            context.l10n.passwordLabel,
+            prefixIcon: Icon(Icons.lock_outline_rounded,
+                color: context.c.text36, size: 20),
+            suffixIcon: IconButton(
+              tooltip: obscure
+                  ? context.l10n.passwordShow
+                  : context.l10n.passwordHide,
+              icon: Icon(
+                obscure
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: context.c.text36,
+                size: 20,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: passwordCtrl,
-                obscureText: obscure,
-                autofocus: true,
-                style: TextStyle(color: context.c.text90),
-                decoration: context.inputDecoration(
-                  context.l10n.passwordLabel,
-                  prefixIcon: Icon(Icons.lock_outline_rounded,
-                      color: context.c.text36, size: 20),
-                  suffixIcon: IconButton(
-                    tooltip: obscure
-                        ? context.l10n.passwordShow
-                        : context.l10n.passwordHide,
-                    icon: Icon(
-                      obscure
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: context.c.text36,
-                      size: 20,
-                    ),
-                    onPressed: () => setLocal(() => obscure = !obscure),
-                  ),
-                ),
-              ),
-            ],
+              onPressed: () => setLocal(() => obscure = !obscure),
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: Text('Vazgeç', style: TextStyle(color: context.c.text58)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: Text(context.l10n.deleteAccountUpper,
-                  style: TextStyle(
-                      color: context.c.loss, fontWeight: FontWeight.bold)),
-            ),
-          ],
         ),
       ),
     );
 
-    if (secondConfirm != true || !mounted || passwordCtrl.text.isEmpty) return;
+    if (!secondConfirm || !mounted || passwordCtrl.text.isEmpty) return;
     await _runDelete(password: passwordCtrl.text);
   }
 
@@ -281,43 +262,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Yatırım uyarısı metni — marka kabuğunda (Ar-Ge 5 Kas 22:40 #7; eskiden
+  /// `AlertDialog`). Başlık ve "Kapat" sabit, uzun metin aradaki alanda kayar
+  /// (`kaydir: false` + `Flexible`) — `AlertDialog`'daki düzenin aynısı.
   void _showDisclaimerText() {
     showSandikGecisli<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: context.c.surface2,
-        title: Row(
+      builder: (dialogCtx) => SandikDiyalogKabugu(
+        kaydir: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.gavel_rounded, color: context.c.amberText, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                context.l10n.investmentDisclaimer,
-                style: TextStyle(color: context.c.text90, fontSize: 16),
+            Row(
+              children: [
+                Icon(Icons.gavel_rounded, color: context.c.amberText, size: 20),
+                const SizedBox(width: SandikSpace.sm),
+                Expanded(
+                  child: Text(
+                    context.l10n.investmentDisclaimer,
+                    style:
+                        context.t.titleLarge?.copyWith(color: context.c.text90),
+                  ),
+                ),
+                Text(
+                  'v$disclaimerVersion',
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
+                ),
+              ],
+            ),
+            const SizedBox(height: SandikSpace.md),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Text(
+                  disclaimerText,
+                  style: context.t.bodyMedium?.copyWith(
+                    color: context.c.text90,
+                    height: 1.55,
+                  ),
+                ),
               ),
             ),
-            Text(
-              'v$disclaimerVersion',
-              style: TextStyle(color: context.c.text36, fontSize: 11),
+            const SizedBox(height: SandikSpace.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: Text(context.l10n.close,
+                    style: TextStyle(color: context.c.amberText)),
+              ),
             ),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Text(
-            disclaimerText,
-            style: TextStyle(
-              color: context.c.text90,
-              fontSize: 13,
-              height: 1.55,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.close, style: TextStyle(color: context.c.amberText)),
-          ),
-        ],
       ),
     );
   }

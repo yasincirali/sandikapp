@@ -166,7 +166,9 @@ class _DisclaimerAcceptanceScreenState
         const SizedBox(height: 24),
 
         // Onay checkbox
-        SandikBasma(
+        SandikTappable(
+          soluk: true,
+          haptic: SandikHaptic.none,
           // Zorunlu okumada metnin sonuna gelinmeden kutu kilitli.
           onTap: _kilitli
               ? null

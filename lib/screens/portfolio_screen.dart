@@ -1026,14 +1026,25 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     // Sabit 300 değil ALT sınır: büyük yazıda (3,1×) ikon + metin 300'ü
     // aşıp 28 px taşıyordu (büyük yazı taraması 2026-10-12).
+    //
+    // Bayrak `goz_alici`: ortak boş durum `SandikBosDurum` (Ar-Ge 5 Kas
+    // 22:40 #6; tek cümlelik boşluk, düz değiş tokuş). Metin text36'dan
+    // ortak bileşenin text58'ine çıkar — anlam taşıyan metin text36'da
+    // kalmamalı (HIG kontrast). Kapalıyken eski ikon + metin birebir.
+    if (RemoteConfigService.instance.gozAlici) {
+      return Container(
+        constraints: const BoxConstraints(minHeight: 300),
+        alignment: Alignment.center,
+        child: SandikBosDurum(metin: context.l10n.noAssetsYet),
+      );
+    }
     return Container(
       constraints: const BoxConstraints(minHeight: 300),
       alignment: Alignment.center,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Bayrak `goz_alici`: kapalı sandık; kapalıyken eski ikon.
-          const SandikBosIkonu(ikon: Icons.inbox_rounded, boyut: 64),
+          Icon(Icons.inbox_rounded, size: 64, color: context.c.text36),
           const SizedBox(height: 16),
           Text(context.l10n.noAssetsYet,
               style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
@@ -1239,7 +1250,7 @@ class _KucukHalkaState extends State<_KucukHalka>
   bool _kuruldu = false;
 
   /// Son parmak inişinin halka içindeki yeri (bayrak `goz_alici`): dokunma
-  /// `SandikBasma`'dan konumsuz gelir; `Listener` jest yarışına girmeden
+  /// `SandikTappable`'dan konumsuz gelir; `Listener` jest yarışına girmeden
   /// konumu saklar.
   Offset? _sonDokunus;
 
@@ -1329,7 +1340,9 @@ class _KucukHalkaState extends State<_KucukHalka>
           Semantics(
             button: true,
             label: l10n.s3HalkayiAc,
-            child: SandikBasma(
+            child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: _halkayaDokunuldu,
               child: Listener(
                 onPointerDown: (e) => _sonDokunus = e.localPosition,
@@ -1673,7 +1686,9 @@ class _LejantSatiri extends StatelessWidget {
     return Semantics(
       button: true,
       selected: secili,
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -2037,7 +2052,9 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
             final pct = fmtPct(
                 e.value.value / (totalVal > 0 ? totalVal : 1) * 100,
                 digits: 1);
-            return SandikBasma(
+            return SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: () {
                 final newIdx = _touchedIndex == e.key ? null : e.key;
                 setState(() => _touchedIndex = newIdx);
@@ -2387,8 +2404,9 @@ Widget _rowAction(
     // `Builder` aramayı bir seviye aşağı taşır — artık gerçek `Slidable`
     // bulunur.
     child: Builder(
-      builder: (innerContext) => SandikBasma(
-        behavior: HitTestBehavior.opaque,
+      builder: (innerContext) => SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: () async {
           // Panel kapanışı bir ANİMASYONDUR. Eskiden `close()` çağrılıp hemen
           // ardından dialog açılıyordu; dialog açılış animasyonu araya girince
@@ -3299,8 +3317,9 @@ class _ExpandChevron extends StatelessWidget {
       label: expanded
           ? context.l10n.hideDetailsSemantics
           : context.l10n.showDetailsSemantics,
-      child: SandikBasma(
-      behavior: HitTestBehavior.opaque,
+      child: SandikTappable(
+      soluk: true,
+      haptic: SandikHaptic.none,
       onTap: onTap,
       // Dokunma alanı 44×44 (HIG #37, High severity) — görsel ikon 32'de
       // kalır. `Container` 32 iken parmakla ıskalanabiliyordu; büyütmek

@@ -388,8 +388,9 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
               container: true,
               button: true,
               enabled: active,
-              child: SandikBasma(
-                behavior: HitTestBehavior.opaque,
+              child: SandikTappable(
+                soluk: true,
+                haptic: SandikHaptic.none,
                 onTap: active
                     ? () => Navigator.pop(
                         context,

@@ -10,10 +10,12 @@ import 'package:flutter/material.dart'
         Icons,
         Material,
         RoundedRectangleBorder,
+        Scaffold,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
@@ -109,30 +111,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
+    // Üst çubuk `SandikAppBar` (Ar-Ge 5 Kas 22:40 #7, TASARIM_DILI §6.12):
+    // eskiden `CupertinoNavigationBar`dı — başlık 17/w600, geri oku 18pt
+    // text58; uygulamanın geri kalanındaki çubuktan farklı görünüyordu.
+    // Geri davranışı aynı (`Navigator.pop`); `Scaffold` klavye payını
+    // `CupertinoPageScaffold` gibi verir.
+    return Scaffold(
       backgroundColor: context.c.background,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: context.c.background,
-        border: null,
-        middle: Text(
-          context.l10n.forgotTitle,
-          style: context.t.headlineSmall?.copyWith(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: context.c.text90,
-          ),
-        ),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.pop(context),
-          child: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 18,
-            color: context.c.text58,
-          ),
-        ),
-      ),
-      child: SafeArea(
+      appBar: SandikAppBar(title: context.l10n.forgotTitle),
+      body: SafeArea(
         child: Material(
           color: Colors.transparent,
           child: SingleChildScrollView(

@@ -1006,7 +1006,9 @@ class _SaatChip extends StatelessWidget {
     return Semantics(
       selected: secili,
       button: true,
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: () {
           SandikHaptic.selection.perform();
           onTap();

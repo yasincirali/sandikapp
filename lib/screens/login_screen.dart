@@ -364,8 +364,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         const Spacer(),
-                        SandikBasma(
-                          behavior: HitTestBehavior.opaque,
+                        SandikTappable(
+                          soluk: true,
+                          haptic: SandikHaptic.none,
                           onTap: () => pushGuarded(
                             context,
                             adaptiveRoute<void>(

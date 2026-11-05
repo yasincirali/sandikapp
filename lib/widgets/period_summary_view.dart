@@ -17,6 +17,8 @@ import '../theme/sandik.dart';
 import 'aralik_cipi.dart';
 import 'sandik_acilir.dart';
 import 'sandik_paylas_dugmesi.dart';
+import 'sandik_bos_durum.dart';
+import '../services/remote_config_service.dart';
 import 'sandik_segment.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
@@ -2597,7 +2599,22 @@ class _BosDurum extends StatelessWidget {
   const _BosDurum({required this.period});
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final metin =
+        context.l10n.notEnoughHistory(donemEtiketi(context.l10n, period.label));
+    // Bayrak `goz_alici`: ortak boş durum `SandikBosDurum` (Ar-Ge 5 Kas
+    // 22:40 #6). Metin ve alt satır stilleri bileşeninkiyle zaten aynıydı;
+    // değişen yalnız baştaki saat ikonunun yerine kapalı sandık ve iç pay
+    // (bileşen kendi `lg` payını taşır). Kapalıyken eski kart birebir.
+    if (RemoteConfigService.instance.gozAlici) {
+      return Container(
+        width: double.infinity,
+        decoration: context.surfaceCard(radius: SandikRadius.lg),
+        child: SandikBosDurum(
+            metin: metin, alt: context.l10n.notEnoughHistoryBody),
+      );
+    }
+    return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
             horizontal: SandikSpace.md, vertical: SandikSpace.lg),
@@ -2607,8 +2624,7 @@ class _BosDurum extends StatelessWidget {
             Icon(Icons.timelapse_rounded, size: 28, color: context.c.text36),
             const SizedBox(height: SandikSpace.smd),
             Text(
-              context.l10n
-                  .notEnoughHistory(donemEtiketi(context.l10n, period.label)),
+              metin,
               textAlign: TextAlign.center,
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
@@ -2621,6 +2637,7 @@ class _BosDurum extends StatelessWidget {
           ],
         ),
       );
+  }
 }
 
 /// Derinlik — katlanır bölüm (2026-09-21).

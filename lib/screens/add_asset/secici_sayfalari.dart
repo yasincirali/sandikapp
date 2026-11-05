@@ -1018,8 +1018,9 @@ class _PickerShellState extends State<_PickerShell> {
                     Semantics(
                       button: true,
                       label: context.l10n.clearSearch,
-                      child: SandikBasma(
-                        behavior: HitTestBehavior.opaque,
+                      child: SandikTappable(
+                        soluk: true,
+                        haptic: SandikHaptic.none,
                         onTap: () {
                           widget.searchCtrl.clear();
                           widget.onSearch('');

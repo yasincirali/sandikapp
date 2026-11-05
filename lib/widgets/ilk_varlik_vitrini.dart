@@ -52,7 +52,7 @@ import 'sigan_metin.dart';
 ///      ve boşta kare kapısı aynı yöne çıkıyor.
 /// "Hareketi azalt" açıkken üçü de yok: giriş son karede başlar, nabız
 /// atmaz, fiyat yerinde değişir (`SandikMotion.of` → `Duration.zero`).
-/// Basma geri bildirimi `SandikBasma` (ölçek + solma).
+/// Basma geri bildirimi `SandikTappable(soluk: true)` (ölçek + solma).
 class IlkVarlikVitrini extends ConsumerStatefulWidget {
   const IlkVarlikVitrini({
     super.key,
@@ -362,7 +362,9 @@ class _IlkVarlikVitriniState extends ConsumerState<IlkVarlikVitrini>
       button: true,
       label: l10n.vitrinOtherTypes,
       excludeSemantics: true,
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: widget.onDiger,
         child: ConstrainedBox(
           // 44pt dokunma yüksekliği (HIG); metin ortada.
@@ -393,7 +395,7 @@ class _IlkVarlikVitriniState extends ConsumerState<IlkVarlikVitrini>
       label: '${l10n.importFromStatement}. ${l10n.vitrinStatementHint}',
       excludeSemantics: true,
       // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı: surface2 +
-      // saç teli + tema gölgesi, basma geri bildirimi `SandikBasma`.
+      // saç teli + tema gölgesi, basma geri bildirimi `SandikTappable(soluk: true)`.
       child: SandikCard(
         onTap: widget.onEkstre,
         elevated: true,

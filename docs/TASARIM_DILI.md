@@ -76,7 +76,7 @@ Süre ve eğri **birlikte** seçilir:
 | Sayfa geçişi | `pushGuarded(context, adaptiveRoute(...))` |
 | Alt sayfa | `showSandikSheet` |
 | Onay / bilgi / hata diyaloğu | `showSandikConfirm`, `showSandikDialog`, `showAppError/Success/Info` |
-| Özel içerikli diyalog | `showSandikGecisli` (aynı geçiş) |
+| Özel içerikli diyalog | `showSandikGecisli` (aynı geçiş) + `SandikDiyalogKabugu` (onay diyaloğuyla aynı kart, klavye payı); ham `AlertDialog`/`Dialog` yazılmaz |
 | Aç/kapa bölüm | `SandikAcilir` + `SandikAcilirOk` |
 | Satır kalkışı | `KapananSatir` |
 | Değer değişim vurgusu | `DegisimVurgusu` |
@@ -96,7 +96,7 @@ Süre ve eğri **birlikte** seçilir:
 | İstek atmayan ana eylem | `FilledButton` (tema: amber, köşe 14, ~48 pt) |
 | İkincil | `OutlinedButton` |
 | Metin bağlantısı | `TextButton` |
-| Basılabilir yüzey (kart, satır, çip) | `SandikTappable` |
+| Basılabilir yüzey (kart, satır, çip) | `SandikTappable` (solma isteyen yüzey `soluk: true`; eski `SandikBasma` buna katıldı, `sandik_basma_ratchet_test`) |
 | Çıkış | `SandikLogoutButton`, **yalnız Profil üst çubuğunda** |
 
 **Tek yükleniyor davranışı:** iş sürerken düğme pasif, etiketin yerinde
@@ -202,10 +202,15 @@ eklenir.
 1. **Boş durum bileşeni.** `SandikBosDurum` / `SandikBosIkonu` geldi
    (2026-10-09, bayrak `goz_alici`); `analiz_notu`, `aylik_rapor`,
    `hafta_ozeti` hatada artık `SandikErrorView` gösteriyor; `kiyas_karti`
-   hatada kart içi "Tekrar dene" (2026-10-09). Kalan: bayrak herkese
-   açılınca eski ikon dalları silinir.
-2. **Tek basma ilkeli.** `SandikTappable` (54), `SandikBasma` (32) ve
-   Material dalga (`InkWell`, 26) yan yana. Hedef: hepsi `SandikTappable`.
+   hatada kart içi "Tekrar dene" (2026-10-09). Portföy listesi ve dönem
+   özetinin "yetersiz geçmiş" kartı da bayrak açıkken `SandikBosDurum`
+   çizer (Ar-Ge 5 Kas 22:40 #6). Kendi düzeninde kalanlar: izleme listesi
+   (başlık + gövde + öneri çipleri, `SandikBosIkonu`), Zirve (havuz
+   ilerleme kartı, boşluk değil bilgi), ana sayfa ilk varlık çağrısı.
+   Kalan: bayrak herkese açılınca eski ikon dalları silinir.
+2. ~~**Tek basma ilkeli.**~~ Yapıldı (Ar-Ge 5 Kas 21:10 #2 ve 22:40 #3):
+   `InkWell` ve `SandikBasma` `SandikTappable`'a taşındı; solma
+   `soluk: true`. Kilit `inkwell_ratchet_test`, `sandik_basma_ratchet_test`.
 3. **Sheet içeriği standardı.** Hareket artık tek (`showSandikSheet`), ama
    zemin üç tonda (`surface1`/`surface2`/`background`), 15 sheet'te tutamaç
    yok, başlık iki farklı stilde. Hedef: `showSandikSheet`'e `baslik:` ve
@@ -215,8 +220,9 @@ eklenir.
    önerisi: kullanıcının girdiği form başarısızsa diyalog, arka plan / tek
    satır eylem başarısızsa snack. Başarı mesajı: yalnız geri alınabilir
    eylemde snack, diğerlerinde sessiz.
-6. **Kalan beş ham `AlertDialog`/`Dialog`** (ana ekran, Ayarlar ×2, temettü,
-   hızlı düzeltme) marka diyalog kabuğuna taşınsın.
+6. ~~**Kalan ham `AlertDialog`/`Dialog`**~~ Yapıldı (Ar-Ge 5 Kas 22:40 #7):
+   Ayarlar şifre adımı `showSandikConfirm(detail:)`; yasal uyarı, temettü ve
+   hızlı al/sat `SandikDiyalogKabugu`.
 7. **Sayı değişimi hareketi.** Fiyat ve toplamlar anında değişiyor; yalnız
    özet kartında renk vurgusu var. Öneri: canlı fiyat değişiminde
    `DegisimVurgusu` her yerde.
@@ -233,8 +239,8 @@ eklenir.
 11. **İkon ailesi:** 72 `*_outlined` kullanımı (23'ü Ayarlar'da). Aynı
     glifin iki ailesi temizlendi (`lock_outline`, `chevron_right`); kalan
     `visibility_off`, `savings`, `notifications_active`, `add_alert` çiftleri.
-12. **Üst çubuk:** kayıt ve şifre sıfırlama `CupertinoNavigationBar`
-    kullanıyor (başlık 17/w600, geri ikonu farklı). `SandikAppBar`'a taşınsın.
+12. ~~**Üst çubuk:**~~ Yapıldı (Ar-Ge 5 Kas 22:40 #7): kayıt ve şifre
+    sıfırlama `CupertinoNavigationBar`'dan `SandikAppBar`'a geçti.
 13. **Düğme yüksekliği:** istek atmayan ana düğmeler 36–56 pt arasında
     dağınık. Kural önerisi: tam genişlik ana eylem 52, sheet/kart içi 48.
 

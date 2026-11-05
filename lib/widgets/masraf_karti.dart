@@ -148,7 +148,9 @@ class _MasrafKartiState extends State<MasrafKarti> {
                   Semantics(
                     button: true,
                     expanded: _acik,
-                    child: SandikBasma(
+                    child: SandikTappable(
+                      soluk: true,
+                      haptic: SandikHaptic.none,
                       onTap: () => setState(() => _acik = !_acik),
                       child: ConstrainedBox(
                         // 48 pt dokunma hedefi (HIG 44'ün üstü; satırın
