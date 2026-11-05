@@ -6607,5 +6607,12 @@
   "@alarmCaldiZaman": {"description": "Çalmış tek seferlik alarmın çalma anı", "placeholders": {"zaman": {"type": "String"}}},
   "alarmSayaci": "Kurulu alarm: {sayi}/{limit}",
   "@alarmSayaci": {"description": "Ücretsiz planda tavana yaklaşınca alarm sayacı", "placeholders": {"sayi": {"type": "int"}, "limit": {"type": "int"}}},
-  "alarmSayaciSinirsiz": "Sınırsız ›"
+  "alarmSayaciSinirsiz": "Sınırsız ›",
+  "todayPeriodNoData": "Bu dönemin verisi yok",
+  "todayPeriodSemantics": "Dönem: {name}, {n} seçenekten {i}",
+  "@todayPeriodSemantics": {"description": "Bugün kartı dönem segmenti ekran okuyucu", "placeholders": {"name": {"type": "String"}, "i": {"type": "int"}, "n": {"type": "int"}}},
+  "todayOpenInPerformance": "Performans'ta aç",
+  "todayGoalHideSuggestion": "Hedef önerisini gizle",
+  "goalProfileRowTitle": "Portföy hedefi",
+  "goalProfileRowSubtitle": "Bir tutar seç, kalanı Ana sayfada gör"
 }

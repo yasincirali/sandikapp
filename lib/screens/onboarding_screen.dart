@@ -497,12 +497,14 @@ List<_Adim> _adimlariKur() {
       // sağ üst köşesine taşındı (yasin: "dikkat çekici olmasın").
       // 2026-10-31: köşeye bindirme yerine başlık satırının sonunda
       // ("simetri ve ahengi bozmayacak şekilde"); metin yeri öyle söyler.
+      // 2026-11-05 (Ar-Ge 19:00 #1): dönem segmenti kartı yerinde çevirir,
+      // Özet'e götürmez; metin öyle söyler.
       govde: 'Günün hükmü tek kelimeyle (Yükseldi, Geriledi, Yerinde saydı) '
           've yanında tutar: yalnız fiyat etkisi, yatırdığın para sayılmaz. '
           'Başlık satırının sonundaki simge günün yüzdesini tutarsız bir '
           'görsel olarak '
           'paylaşır. '
-          'Eğri günün seyri; Hafta, Ay, Yıl çipleri Özet\'e götürür. '
+          'Eğri günün seyri; Hafta, Ay, Yıl kartı yerinde o döneme çevirir. '
           'Aşağıda en çok oynayanlar, 100 liranın bugünkü karşılığı ve '
           'hedefine kalan var.',
       giris: (_) => _sekmeyeGec(0),

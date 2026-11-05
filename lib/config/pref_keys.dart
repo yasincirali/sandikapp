@@ -37,6 +37,11 @@ class PrefKeys {
   /// artık gerekmiyor mu: kullanıcı yatay tam ekranı bir kez açtı
   /// (2026-10-29). Cihaz tercihi — jest cihaza ait.
   static const yatayGrafikIpucu = 'pref_yatay_grafik_ipucu_goruldu';
+
+  /// Bugün kartındaki "Hedefin yok · Hedef belirle" önerisinin durumu
+  /// (`HedefOnerisiDurumu.kod`; ✕ ve 3 gösterimde 30 gün sönme, 5 Kas
+  /// 2026). Kişiye özel: hedef hesabın, öneri de.
+  static const hedefOnerisi = 'pref_hedef_onerisi';
   static const lockScreenAmounts = 'pref_lockscreen_amounts';
   static const liveActivityStartMin = 'pref_live_activity_start_min';
   static const liveActivityEndMin = 'pref_live_activity_end_min';

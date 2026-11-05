@@ -17158,6 +17158,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sınırsız ›'**
   String get alarmSayaciSinirsiz;
+
+  /// No description provided for @todayPeriodNoData.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemin verisi yok'**
+  String get todayPeriodNoData;
+
+  /// Bugün kartı dönem segmenti ekran okuyucu
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem: {name}, {n} seçenekten {i}'**
+  String todayPeriodSemantics(String name, int i, int n);
+
+  /// No description provided for @todayOpenInPerformance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Performans\'ta aç'**
+  String get todayOpenInPerformance;
+
+  /// No description provided for @todayGoalHideSuggestion.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef önerisini gizle'**
+  String get todayGoalHideSuggestion;
+
+  /// No description provided for @goalProfileRowTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy hedefi'**
+  String get goalProfileRowTitle;
+
+  /// No description provided for @goalProfileRowSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir tutar seç, kalanı Ana sayfada gör'**
+  String get goalProfileRowSubtitle;
 }
 
 class _AppLocalizationsDelegate

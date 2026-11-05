@@ -179,7 +179,7 @@ class _OzetBellek {
 /// Özet'in kanonik serisi — `_OzetSerisi` ve ısıtma AYNI isteği atar.
 ///
 /// Pencere `PeriodSummaryService.pencere`, çözünürlük `pickForSpan(period.days)`
-/// — gerekçe `_OzetSerisi` notunda.
+/// — gerekçe `_OzetSerisi` notunda; gövde `DonemOzetiYukleyici.seri`.
 Future<PortfolioHistoryBreakdown> _ozetSerisiniCek(
   SummaryPeriod period,
   List<Asset> chartAssets,
@@ -187,14 +187,9 @@ Future<PortfolioHistoryBreakdown> _ozetSerisiniCek(
 ) {
   final test = PortfolioPerformanceScreen.ozetSerisiTestCekici;
   if (test != null) return test(period, chartAssets, simulate);
-  final p = PeriodSummaryService.pencere(period, DateTime.now());
-  return HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
-    assets: chartAssets,
-    from: p.start,
-    to: p.end,
-    tier: ResolutionTierMeta.pickForSpan(period.days.toDouble()),
-    simulate: simulate,
-  );
+  // Ana sayfa Bugün kartının dönem görünümü AYNI fonksiyonu çağırır
+  // (Ar-Ge 5 Kas 19:00 #1): iki yüzey aynı dönemde aynı sayıyı yazar.
+  return DonemOzetiYukleyici.seri(period, chartAssets, simulate: simulate);
 }
 
 /// Ekran tarafı: bellek anahtarları ve ısıtma tetiği.

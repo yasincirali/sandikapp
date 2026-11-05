@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/hedef_sheet.dart' show HedefProfilSatiri;
 import '../widgets/kilometre_tasi_seridi.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/hesap_secici.dart';
@@ -503,6 +504,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Halka arz takvimi (F6). Bayrak kapalıyken sıfır
                         // yükseklik — Profil yerleşimi değişmez.
                         const HalkaArzProfilSatiri(),
+                        // Hedef sayfasının ikinci girişi: yalnız Bugün
+                        // kartındaki öneri sönmüşken (Ar-Ge 5 Kas 19:00 #2).
+                        const HedefProfilSatiri(),
                         const _PendingRequestsSection(),
                         const SizedBox(height: 8),
                         if (_ortaklikKisa(partnersAsync))

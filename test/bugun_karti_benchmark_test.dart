@@ -295,7 +295,7 @@ void main() {
       expect(src.contains('_HukumSatiri('), isTrue);
       expect(src.contains('_DeltaRozeti('), isTrue);
       expect(src.contains('_GunIciEgri('), isTrue);
-      expect(src.contains('_DonemCipleri('), isTrue);
+      expect(src.contains('_DonemSegmenti('), isTrue);
       expect(src.contains('_OynayanlarSirasi('), isTrue);
       expect(src.contains('_AlimGucuKutusu('), isTrue);
       expect(src.contains('_EylemKutusu('), isTrue);
@@ -311,16 +311,22 @@ void main() {
       expect(src.contains('_Izgara'), isFalse);
     });
 
-    test('dönem çipleri yeni seri çekmez — Özet kısayolu', () {
-      // Gün içi tek seri kuralı (2026-10-02): kart kendi seri merdivenini
-      // kurmaz; çip `_ozeteGit` ile Özet'e gider.
-      expect(
-          src.contains(
-              '_DonemCipleri(onSec: (p) => _ozeteGit(periodIdx: p.index))'),
+    test('dönem segmenti kartı yerinde çevirir, seri Özet\'in kaynağından',
+        () {
+      // Ar-Ge 5 Kas 19:00 #1: segment Özet'e götürmez, kartı o döneme
+      // çevirir. Kart kendi seri merdivenini KURMAZ: dönem serisi ve özeti
+      // Özet'in kanonik fonksiyonundan (`DonemOzetiYukleyici`), gün içi seri
+      // yine BugunYukleyici / IntradaySeriesCache'ten (kural 2026-10-02).
+      expect(src.contains('onSec: _donemSec'), isTrue);
+      expect(src.contains('DonemOzetiYukleyici.seri(p, lotlar)'), isTrue);
+      expect(src.contains('DonemOzetiYukleyici.ozet('), isTrue);
+      expect(src.contains('HistoryService.instance'), isFalse,
+          reason: 'kart HistoryService\'e doğrudan gitmez');
+      expect(src.contains('PeriodSummaryService.compute'), isFalse,
+          reason: 'dönem hesabı Özet\'le ortak yükleyicide');
+      // Performans'a kısayol kaybolmadı: seçili dönemle açılır.
+      expect(src.contains('onPerformans: () => _ozeteGit(periodIdx: _donem.index)'),
           isTrue);
-      expect(src.contains('HistoryService.'), isFalse,
-          reason:
-              'kart seriyi yalnız BugunYukleyici / IntradaySeriesCache\'ten alır');
     });
 
     test('oynayanlar sırası ≤3, aynı kural (enCokOynayanlar)', () {
