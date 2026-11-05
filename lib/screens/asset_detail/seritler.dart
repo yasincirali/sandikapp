@@ -300,9 +300,8 @@ class _CompareStrip extends StatelessWidget {
             onTap: onAddPressed,
             child: Material(
               color: Colors.transparent,
-              child: InkWell(
+              child: SandikTappable(
                 onTap: onAddPressed,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

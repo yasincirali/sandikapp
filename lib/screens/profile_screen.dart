@@ -419,31 +419,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       vertical: SandikSpace.xs),
                   child: Row(
                     children: [
-                      // Çoklu hesap (bayrak `coklu_hesap`): başlık aktif
-                      // hesabın adı + ok, dokununca hesap listesi
-                      // (Instagram yerleşimi). Kapalıyken birebir "Profil".
+                      // Başlık hep "Profil" (Ar-Ge 5 Kas 21:00 tasarım 3):
+                      // çoklu hesapta aktif hesabın adıydı, kimlik kartı adı
+                      // ikinci kez yazıyordu. Hesap değiştirme kartta
+                      // (`HesapBasligi`, "Hesap ⌄").
                       Expanded(
-                        child: ref.watch(cokluHesapGorunurProvider)
-                            ? Align(
-                                alignment: Alignment.centerLeft,
-                                child: TourAnchor(
-                                  target: TourTarget.hesapBasligi,
-                                  child: HesapBasligi(
-                                    stil: context.t.headlineMedium
-                                        ?.copyWith(color: context.c.text90),
-                                  ),
-                                ),
-                              )
-                            : SandikKucululenBaslik(
-                                child: Text(
-                                'Profil',
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.fade,
-                                style: context.t.headlineMedium
-                                    ?.copyWith(color: context.c.text90),
-                              ),
-                              ),
+                        child: SandikKucululenBaslik(
+                          child: Text(
+                            'Profil',
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.fade,
+                            style: context.t.headlineMedium
+                                ?.copyWith(color: context.c.text90),
+                          ),
+                        ),
                       ),
                       // Tema hızlı geçişi buradaydı; 2026-10-04 sadeleştirmede
                       // kaldırıldı — tema YALNIZ Ayarlar'daki üçlü seçicide.
@@ -508,7 +498,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // kartındaki öneri sönmüşken (Ar-Ge 5 Kas 19:00 #2).
                         const HedefProfilSatiri(),
                         const _PendingRequestsSection(),
-                        const SizedBox(height: 8),
+                        // Tek satırın üstünde ek boşluk yok: üstteki satır
+                        // (halka arz, hedef) alt boşluğunu kendisi taşır.
+                        if (!_ortaklikKisa(partnersAsync))
+                          const SizedBox(height: 8),
                         if (_ortaklikKisa(partnersAsync))
                           _buildOrtaklikKarti()
                         else ...[
@@ -628,6 +621,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
           ),
+          // Çoklu hesap (bayrak `coklu_hesap`): hesap değiştirme adın
+          // yanında. Kapalıyken kart birebir eski.
+          if (ref.watch(cokluHesapGorunurProvider))
+            const TourAnchor(
+              target: TourTarget.hesapBasligi,
+              child: HesapBasligi(),
+            ),
         ],
       ),
     );
@@ -878,82 +878,49 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _pendingInviteId == null &&
       partnersAsync.valueOrNull?.isEmpty == true;
 
-  /// Ortağı olmayana tek kart: ne olduğu bir cümle, iki eylem. "Davet et"
-  /// bölümü açıp kodu hemen üretir (kullanıcının niyeti kod almak; açıp bir
-  /// kez daha "Kod üret"e bastırmak boş adım). "Kod gir" bölümü açıp alana
-  /// odaklanır. Tur adımı `davetKodu` kısa hâlde bu karta bağlanır — tur
-  /// metni ("kodunu gönder ya da onunkini gir") iki düğmeyle birebir.
+  /// Ortağı olmayana TEK SATIR (Ar-Ge 5 Kas 21:00 #2, müşteri YAP).
+  ///
+  /// Eskiden iki düğmeli kart (~140 pt) her açılışta Ayarlar'dan önce
+  /// duruyordu: özelliği bir kez öğrenen için kalıcı tanıtım. iOS Ayarlar
+  /// "Aile Paylaşımı" da tek satırdır, eylemler içeride. Satır "Halka
+  /// arzlar" kalıbında; dokununca bölüm açılır, "Kod üret" ve "Kod gir"
+  /// orada. Tur adımı `davetKodu` kısa hâlde bu satıra bağlanır.
   Widget _buildOrtaklikKarti() {
+    final c = context.c;
     return TourAnchor(
       target: TourTarget.davetKodu,
       child: SandikCard(
-        padding: const EdgeInsets.all(SandikSpace.lgs),
-        bordered: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                ExcludeSemantics(
-                  child: Icon(Icons.people_outline_rounded,
-                      color: context.c.text58),
-                ),
-                const SizedBox(width: SandikSpace.sm),
-                Expanded(
-                  child: Text(context.l10n.ortakPortfoyKartBaslik,
-                      style: context.t.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.c.text90)),
-                ),
-              ],
-            ),
-            const SizedBox(height: SandikSpace.xs),
-            Text(
-              context.l10n.ortakPortfoyKartGovde,
-              style: context.t.bodyMedium?.copyWith(color: context.c.text36),
-            ),
-            const SizedBox(height: SandikSpace.md),
-            Row(
-              children: [
-                Expanded(
-                  child: SandikAsyncButton(
-                    onPressed: () async {
-                      setState(() => _ortaklikAcik = true);
-                      await _generateCode();
-                    },
-                    height: 46,
-                    style: _hafifDolguStili(context.c.amberFill),
-                    child: Text(
-                      context.l10n.ortakPortfoyDavetEt,
+        padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.md, vertical: SandikSpace.smd),
+        onTap: () => setState(() => _ortaklikAcik = true),
+        child: Semantics(
+          button: true,
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: Icon(Icons.people_outline_rounded,
+                    size: 22, color: c.amberText),
+              ),
+              const SizedBox(width: SandikSpace.smd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.ortakPortfoyKartBaslik,
                       style: context.t.titleMedium?.copyWith(
-                          color: context.c.amberText,
-                          fontWeight: FontWeight.w600),
+                          fontWeight: FontWeight.w600, color: c.text90),
                     ),
-                  ),
-                ),
-                const SizedBox(width: SandikSpace.sm),
-                Expanded(
-                  child: SandikAsyncButton(
-                    onPressed: () async {
-                      setState(() => _ortaklikAcik = true);
-                      // Alan bir sonraki karede kurulur; odak ondan sonra.
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) _codeFocus.requestFocus();
-                      });
-                    },
-                    height: 46,
-                    // Nötr: yeşil kâr demek (bkz. ortaklık isteği düğmesi).
-                    style: _hafifDolguStili(context.c.text90),
-                    child: Text(
-                      context.l10n.ortakPortfoyKodGir,
-                      style: context.t.titleMedium?.copyWith(
-                          color: context.c.text90, fontWeight: FontWeight.w600),
+                    Text(
+                      context.l10n.ortakPortfoySatirAlt,
+                      style: context.t.bodySmall?.copyWith(color: c.text58),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+              Icon(Icons.chevron_right_rounded, color: c.text58),
+            ],
+          ),
         ),
       ),
     );

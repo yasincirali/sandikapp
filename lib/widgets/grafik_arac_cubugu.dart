@@ -304,9 +304,8 @@ class GostergelerDugmesi extends StatelessWidget {
         onTap: onTap,
         child: Material(
           type: MaterialType.transparency,
-          child: InkWell(
+          child: SandikTappable(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
@@ -580,9 +579,8 @@ class GrafikCipi extends StatelessWidget {
   Widget _cip(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: SandikTappable(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
@@ -641,7 +639,7 @@ class GrafikCipi extends StatelessWidget {
 }
 
 /// Görseli büyütmeden dokunma alanını 44pt'ye çıkarır (HIG denetimi
-/// 2026-10-10). Çipin kendi `InkWell`'i içte kalır ve kendi alanında
+/// 2026-10-10). Çipin kendi `SandikTappable`'ı içte kalır ve kendi alanında
 /// kazanır; çevresindeki şeffaf pay aynı eylemi çağırır. Semantik düğüm
 /// içteki öğeden gelir, burada ikinci bir düğme üretilmez.
 class GenisDokunma extends StatelessWidget {

@@ -261,7 +261,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAccountSubtitle =>
-      'Biometric lock, registered devices, download your data, delete account';
+      'Lock, devices, data download, delete account';
 
   @override
   String get settingsHelpSubtitle => 'Contact us, tour, privacy and terms';
@@ -320,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get investorLevelNote =>
-      'Only changes WHICH metrics are shown; your calculations and data stay the same.';
+      'Only changes which metrics are shown; your calculations and data stay the same.';
 
   @override
   String get levelBeginner => 'Beginner';
@@ -1390,14 +1390,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get biometricLock => 'Biometric lock';
 
   @override
-  String get downloadMyData => 'Download My Data';
+  String biometricLockYontem(String yontem) {
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Lock with Face ID',
+        'touchId': 'Lock with Touch ID',
+        'biyometrik': 'Biometric lock',
+        'other': 'Lock with screen lock',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get downloadMyData => 'Download my data';
 
   @override
   String get downloadMyDataSubtitle =>
       'Get all your data as a JSON file (KVKK Article 11)';
 
   @override
-  String get deleteMyAccount => 'Delete My Account';
+  String get deleteMyAccount => 'Delete my account';
 
   @override
   String get deleteMyAccountSubtitle => 'All your data is permanently deleted';
@@ -1406,7 +1420,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get supportUpper => 'Support';
 
   @override
-  String get contactUs => 'Contact Us';
+  String get contactUs => 'Contact us';
+
+  @override
+  String get sssBaslik => 'Frequently asked';
+
+  @override
+  String get sssFonSoru => 'Why doesn\'t my fund price change during the day?';
+
+  @override
+  String get sssFonCevap =>
+      'TEFAS publishes fund prices once a day, on business-day evenings. sandık shows that day\'s published price; it does not change during the day.';
+
+  @override
+  String get sssSiklikSoru => 'How often are prices updated?';
+
+  @override
+  String get sssSiklikCevap =>
+      'While the app is open, prices refresh about every 30 seconds. Pull the list down to refresh right away. When the market is closed, the last close is shown.';
+
+  @override
+  String get sssKriptoSoru => 'Where do crypto prices come from?';
+
+  @override
+  String get sssKriptoCevap =>
+      'Crypto prices come from Binance and update every day, weekends included.';
+
+  @override
+  String get sssVeriSoru => 'Where is my data stored, and how do I delete it?';
+
+  @override
+  String get sssVeriCevap =>
+      'Your account and portfolio are stored on sandık\'s cloud servers; the Privacy Notice under Legal documents says which country they are kept in. From Profile › Account & Security you can download your data or delete your account with all its data.';
+
+  @override
+  String get sssOrtakSoru => 'How does the shared portfolio work?';
+
+  @override
+  String get sssOrtakCevap =>
+      'Tap Shared portfolio in Profile, send your code to someone close, or enter theirs. After approval, both portfolios appear combined on one screen. You can leave any time.';
+
+  @override
+  String get sssPremiumSoru => 'What\'s in Premium, and how do I cancel?';
+
+  @override
+  String get sssPremiumCevap =>
+      'Premium\'s features and current price are on the Sandık Premium page in Profile. The subscription runs through the store; to cancel, use the subscription settings in the App Store or Google Play.';
+
+  @override
+  String get sssBizeYaz => 'Still stuck? Write to us';
 
   @override
   String get replayTour => 'Replay the tour';
@@ -3493,8 +3555,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notifSubtitleIos =>
-      'Signals, price alerts, quiet hours, Live Activity';
+  String get notifSubtitleIos => 'Signals, alerts, quiet hours, Live Activity';
 
   @override
   String get notifSubtitleAndroid => 'Signals, price alerts, quiet hours';
@@ -10054,17 +10115,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTypeAlarm => 'Alert';
 
   @override
+  String get ortakPortfoySatirAlt => 'Combine portfolios with someone close';
+
+  @override
   String get ortakPortfoyKartBaslik => 'Shared portfolio';
-
-  @override
-  String get ortakPortfoyKartGovde =>
-      'Combine your portfolio with someone close on one screen. You can leave any time.';
-
-  @override
-  String get ortakPortfoyDavetEt => 'Invite';
-
-  @override
-  String get ortakPortfoyKodGir => 'Enter code';
 
   @override
   String get notifOpenAction => 'Open';
@@ -10464,6 +10518,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String kilometreTasiSiradakiEtiket(String baslik) {
     return 'Next milestone: $baslik';
+  }
+
+  @override
+  String kilometreTasiKalan(String tutar) {
+    return '$tutar to go';
+  }
+
+  @override
+  String get kilometreTasiPaylasAlt => 'Tracking my savings with sandık';
+
+  @override
+  String get kilometreTasiPaylasNot =>
+      'No portfolio amount on the card; just the milestone.';
+
+  @override
+  String get kilometreTasiPaylasBaslik => 'Share your milestone';
+
+  @override
+  String kilometreTasiPaylasMetni(String baslik, String link) {
+    return '$baslik. Tracking my savings with sandık: $link';
+  }
+
+  @override
+  String kilometreTasiSiradakiIlerlemeEtiket(
+      String baslik, int yuzde, String kalan) {
+    return 'Next milestone: $baslik, $yuzde percent, $kalan to go';
+  }
+
+  @override
+  String kilometreTasiSiradakiYuzdeEtiket(String baslik, int yuzde) {
+    return 'Next milestone: $baslik, $yuzde percent';
   }
 
   @override

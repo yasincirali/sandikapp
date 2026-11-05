@@ -109,7 +109,7 @@ Future<void> terimSayfasiniAc(BuildContext context, RadarTerim terim,
 }
 
 /// Altı noktalı, dokunulabilir terim. Dokunma alanı metnin kendisinden
-/// büyük: `InkWell` en az 44pt yüksekliğinde bir kutuya sarılır.
+/// büyük: `SandikTappable` en az 44pt yüksekliğinde bir kutuya sarılır.
 class TerimMetni extends StatelessWidget {
   const TerimMetni({
     super.key,
@@ -131,9 +131,8 @@ class TerimMetni extends StatelessWidget {
     return Semantics(
       button: true,
       hint: terim.metin(context.l10n).$1,
-      child: InkWell(
+      child: SandikTappable(
         onTap: () => terimSayfasiniAc(context, terim, ornek: ornek),
-        borderRadius: SandikRadius.smAll,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
           child: Align(

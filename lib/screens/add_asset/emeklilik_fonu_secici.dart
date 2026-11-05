@@ -221,7 +221,7 @@ class _SeciciState extends State<_Secici> {
           Divider(height: 1, color: context.c.hairline),
       itemBuilder: (context, i) {
         final f = liste[i];
-        return InkWell(
+        return SandikTappable(
           onTap: () => Navigator.of(context).pop(f),
           child: Container(
             constraints: const BoxConstraints(minHeight: SandikTouch.min),

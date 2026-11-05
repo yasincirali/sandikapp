@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../config/magaza.dart';
+import '../l10n/l10n.dart';
 import '../services/analytics_service.dart';
 import '../services/milestone_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import 'sandik_cizimi.dart';
+import 'share_card.dart';
 
 /// Kilometre taşı kutlaması.
 ///
@@ -37,6 +40,29 @@ class MilestoneSheet extends StatelessWidget {
   }
 
   IconData get _ikon => ikonu(milestone.kind);
+
+  Future<void> _paylas(BuildContext context) {
+    final l = context.l10n;
+    return showShareSheet(
+      context,
+      kart: KilometreTasiPaylasKarti(
+        baslik: milestone.title,
+        cizim: const SandikCizimi(
+          zemin: SandikZemini.yuzey,
+          dokunulabilir: false,
+        ),
+      ),
+      not: l.kilometreTasiPaylasNot,
+      sayfaBasligi: l.kilometreTasiPaylasBaslik,
+      metin: l.kilometreTasiPaylasMetni(
+        milestone.title,
+        Magaza.indirBaglantisi(
+            kaynak: 'share_card', kampanya: 'kilometre_tasi'),
+      ),
+      subject: milestone.title,
+      analyticsPeriod: 'kilometre_tasi',
+    );
+  }
 
   /// Taş türünün simgesi — kutlama ve Profil rozet şeridi aynı simgeyi
   /// kullanır.
@@ -96,6 +122,17 @@ class MilestoneSheet extends StatelessWidget {
             ),
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Devam'),
+          ),
+          // Paylaş (Ar-Ge 5 Kas 21:00 #3): ikincil, birincil eylemin
+          // altında. Kart tutar göstermez (`KilometreTasiPaylasKarti`);
+          // paylaşım sonrası puan isteği `showShareSheet`'in kendi kapısında
+          // (sıklık kuralı aynı oturumda ikinci istemi engeller).
+          const SizedBox(height: SandikSpace.sm),
+          TextButton.icon(
+            key: const ValueKey('kilometreTasiPaylas'),
+            onPressed: () => _paylas(context),
+            icon: const Icon(Icons.ios_share_rounded, size: 18),
+            label: Text(context.l10n.shareWord),
           ),
         ],
       ),

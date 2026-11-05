@@ -14,8 +14,8 @@ import 'uygulama_kabugu.dart' show HesapAvatari;
 
 /// Çoklu hesap arayüzü (bayrak `coklu_hesap`, 2026-10-10).
 ///
-/// Giriş noktası Profil'in üst çubuğu: "Profil" başlığının yerinde aktif
-/// hesabın adı ve küçük bir ok (Instagram'ın yerleşimi). Alt gezinme çubuğu
+/// Giriş noktası Profil'in kimlik kartındaki "Hesap ⌄" düğmesi (5 Kas
+/// 21:00; önce üst çubukta "Profil"in yerinde aktif hesabın adıydı). Alt gezinme çubuğu
 /// değişmez (kullanıcı kuralı). Çıkış düğmesi yerinde kalır; birden fazla
 /// hesap varken iki seçenek sorar ([cokluCikisSor]).
 ///
@@ -25,40 +25,44 @@ import 'uygulama_kabugu.dart' show HesapAvatari;
 
 // ── Profil başlığı ───────────────────────────────────────────────────────────
 
-/// Profil üst çubuğundaki başlık: aktif hesabın adı + ok. Dokununca hesap
-/// listesi açılır.
+/// Hesap değiştirme düğmesi: "Hesap ⌄", Profil'in kimlik kartının sağında.
+/// Dokununca hesap listesi açılır.
+///
+/// ## Neden kartta (Ar-Ge 5 Kas 21:00 tasarım 3, müşteri YAP)
+/// İlk sürümde başlık "Profil"in yerinde aktif hesabın adıydı (Instagram
+/// yerleşimi); hemen altındaki kimlik kartı adı bir kez daha yazıyordu:
+/// aynı ad üst üste iki kez. Başlık yine "Profil" (dört sekmede aynı dil),
+/// hesap değiştirme adın yanında durur: neyi değiştirdiğin göz önünde.
 class HesapBasligi extends ConsumerWidget {
-  const HesapBasligi({super.key, required this.stil});
+  const HesapBasligi({super.key, this.stil});
 
   final TextStyle? stil;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).valueOrNull;
-    final ad = user == null ? 'Profil' : hesapAdi(user);
+    final ad = user == null ? '' : hesapAdi(user);
     return Semantics(
       button: true,
-      label: '$ad, hesap değiştir',
+      label: ad.isEmpty ? 'Hesap değiştir' : 'Hesap değiştir, şu an $ad',
       excludeSemantics: true,
       child: SandikTappable(
         onTap: () => hesapSeciciniAc(context, ref),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          constraints: const BoxConstraints(
+              minHeight: SandikTouch.min, minWidth: SandikTouch.min),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
-                child: Text(
-                  ad,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: stil,
-                ),
+              Text(
+                'Hesap',
+                maxLines: 1,
+                style: stil ??
+                    context.t.labelLarge?.copyWith(
+                        color: context.c.text58, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(width: SandikSpace.xs),
               Icon(Icons.keyboard_arrow_down_rounded,
-                  color: context.c.text58, size: 22),
+                  color: context.c.text58, size: SandikSpace.lgs),
             ],
           ),
         ),

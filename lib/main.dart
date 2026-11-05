@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart'
-    show CupertinoThemeData, CupertinoTextThemeData;
+    show
+        CupertinoPageTransitionsBuilder,
+        CupertinoTextThemeData,
+        CupertinoThemeData;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -49,6 +52,7 @@ import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'widgets/premium_hediye_sayfasi.dart';
 import 'widgets/klavye_kapatici.dart';
+import 'widgets/gizlilik_perdesi.dart';
 import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
 import 'services/deep_link_service.dart';
@@ -474,11 +478,14 @@ class SandikApp extends ConsumerWidget {
       // `SunucuKapisi` en dışta: zorunlu güncelleme / sunucu değişimi
       // ekranı her rotanın ve turun ÖNÜNE geçer (köprü sürümü, K1).
       // `YaziBoyutuKapsami` hepsinin dışında: kapı, tur ve her rota aynı
-      // yazı ölçeğini görür.
+      // yazı ölçeğini görür. `GizlilikPerdesi` kapının da üstünde: uygulama
+      // değiştirici görüntüsünde hiçbir yüzey açık kalmasın (kilit açıkken).
       builder: (context, child) => YaziBoyutuKapsami(
           boyut: yaziBoyutu,
-          child: SunucuKapisi(
-              child: KlavyeKapatici(child: OnboardingTourHost(child: child!)))),
+          child: GizlilikPerdesi(
+              child: SunucuKapisi(
+                  child: KlavyeKapatici(
+                      child: OnboardingTourHost(child: child!))))),
       home: const _AuthGate(),
     );
   }
@@ -591,6 +598,17 @@ class SandikApp extends ConsumerWidget {
       brightness: brightness,
       scaffoldBackgroundColor: p.background,
       textTheme: textTheme,
+
+      // Android geri jesti önizlemesi (Ar-Ge 5 Kas 21:10 #7, müşteri YAP).
+      // Manifestte `enableOnBackInvokedCallback` açıktı ama tema geçiş
+      // kurucusu vermiyordu: Android 14+ kullanıcı geri çekerken önceki
+      // sayfayı görmüyordu. Yalnız Android; iOS kendi kenar kaydırmasıyla
+      // (`CupertinoPageRoute`) aynen kalır. `_AlttanModalRoute` kendi
+      // geçişini çizer, etkilenmez.
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      }),
 
       // Cupertino köprüsü.
       //

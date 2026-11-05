@@ -556,10 +556,9 @@ class _HeroShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: SandikTappable(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        child: Ink(
+        child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SandikRadius.lg),
             // Gradyan uçları dark'ta koyu kahve, light'ta amber'in açık

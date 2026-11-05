@@ -125,7 +125,15 @@ const List<SurumNotu> surumNotlari = [
         baslik: 'Kilometre taşların',
         aciklama: 'Profil\'de geçtiğin eşikler duruyor: 100 bin, ilk '
             'çeyrek altın, portföyünün yaşı. Dokununca o anı yeniden '
-            'açarsın; sıradaki hedef de yanında.',
+            'açarsın. Sıradaki taşa ne kadar kaldığını halkada görürsün, '
+            'geçtiğin taşı tutar göstermeden paylaşabilirsin.',
+      ),
+      // Ar-Ge 5 Kas 21:20 #1 ve #3, müşteri YAP.
+      Yenilik(
+        baslik: 'Kilit açıkken portföyün gizli',
+        aciklama: 'Uygulama kilidi açıksa uygulamalar arasında geçerken '
+            'ekranın örtülür; tutarların görünmez. Yardım\'da sık sorulan '
+            'soruların cevapları var.',
       ),
       // Ar-Ge 2 Kas 08:45 #1-#2, müşteri YAP.
       Yenilik(

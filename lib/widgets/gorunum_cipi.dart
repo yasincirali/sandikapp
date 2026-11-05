@@ -592,11 +592,11 @@ class _Satir extends StatelessWidget {
       button: true,
       selected: secili,
       label: '$ad${tutar == null ? '' : ', $tutar'}',
-      // `excludeSemantics` InkWell'in eylemini de siliyor — eylem açıkça
+      // `excludeSemantics` dokunma algılayıcısının eylemini de siliyor — eylem açıkça
       // verilmezse satır okunur ama seçilemez (emülatör testi #28).
       onTap: onTap,
       excludeSemantics: true,
-      child: InkWell(
+      child: SandikTappable(
         onTap: onTap,
         child: Container(
           constraints: const BoxConstraints(minHeight: 56),

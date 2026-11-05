@@ -278,8 +278,7 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
             isaretli: true,
           ),
           const SizedBox(height: SandikSpace.sm),
-          InkWell(
-            borderRadius: SandikRadius.mdAll,
+          SandikTappable(
             onTap: _dkFonuSec,
             child: Container(
               constraints: const BoxConstraints(minHeight: SandikTouch.min),

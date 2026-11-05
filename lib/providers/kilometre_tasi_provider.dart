@@ -32,7 +32,13 @@ final kayitliKilometreTaslariProvider =
 /// varlık listesi, canlı toplam ve birikim serisi (bayrak, yalnız kendi
 /// lotları). Şerit kutlamayı TETİKLEMEZ ve kayıt yazmaz; yalnız gösterir.
 final kilometreTaslariProvider =
-    Provider<({List<Milestone> kazanilan, Milestone? siradaki})?>((ref) {
+    Provider<
+    ({
+      List<Milestone> kazanilan,
+      Milestone? siradaki,
+      double? ilerleme,
+      double? kalan,
+    })?>((ref) {
   if (!RemoteConfigService.instance.milestonesEnabled) return null;
   final uid = ref.watch(authProvider).valueOrNull?.id;
   if (uid == null) return null;

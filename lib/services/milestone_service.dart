@@ -305,7 +305,20 @@ class MilestoneService {
   /// Sıradaki hedef yalnız portföy değeri eşiğidir: herkes için anlamlı tek
   /// ölçek ve bugünkü veriden hesaplanır (uydurma sayı yok). Hepsi geçildiyse
   /// `null`.
-  static ({List<Milestone> kazanilan, Milestone? siradaki}) koleksiyon({
+  ///
+  /// [ilerleme] ve [kalan] (Ar-Ge 5 Kas 21:00 #1, müşteri YAP): "Sıradaki
+  /// 500 bin ₺" boş bir bayraktı; kişi hedefe ne kadar yakın olduğunu
+  /// bilmiyordu (Midas/Papara hedef kartı, Strava "sıradakine X kaldı").
+  /// İlerleme = bugünkü toplam / eşik (0–1); kalan = eşik − toplam. Toplam
+  /// bilinmiyorsa (≤ 0) ikisi de `null`, bayrak eskisi gibi çizilir.
+  /// Kayıtlı yüksek eşik toplamın üstündeyse (piyasa düştü) sıradaki daha
+  /// büyük eşiktir; ilerleme yine bugünkü toplamdan, uydurma yok.
+  static ({
+    List<Milestone> kazanilan,
+    Milestone? siradaki,
+    double? ilerleme,
+    double? kalan,
+  }) koleksiyon({
     required Set<String> kayitli,
     required List<Milestone> bugun,
     required double totalTRY,
@@ -348,7 +361,22 @@ class MilestoneService {
         break;
       }
     }
-    return (kazanilan: kazanilan, siradaki: siradaki);
+    final bilinir = siradaki != null && totalTRY > 0;
+    return (
+      kazanilan: kazanilan,
+      siradaki: siradaki,
+      ilerleme: bilinir ? (totalTRY / siradaki.rank).clamp(0.0, 1.0) : null,
+      kalan: bilinir ? siradaki.rank - totalTRY : null,
+    );
+  }
+
+  /// Kalan tutarın kısa yazımı: 70.000 → "70 bin ₺", 1.250.000 →
+  /// "1,3 milyon ₺"; binin altı "1 bin ₺"ün altında kalmasın diye en az
+  /// "1 bin ₺" (yuvarlama yukarı: "kaldı" az söylemesin).
+  static String kalanKisa(double v) {
+    if (v >= 1000000) return _kisaTutar(v);
+    final bin = (v / 1000).ceil();
+    return '${bin < 1 ? 1 : bin} bin ₺';
   }
 
   /// Şeritte gösterilecekler: her türün (altında her altın cinsinin) en

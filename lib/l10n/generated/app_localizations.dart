@@ -575,7 +575,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAccountSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Biyometrik kilit, kayıtlı cihazlar, verilerini indir, hesabını sil'**
+  /// **'Kilit, cihazlar, veri indirme, hesap silme'**
   String get settingsAccountSubtitle;
 
   /// No description provided for @settingsHelpSubtitle.
@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// No description provided for @investorLevelNote.
   ///
   /// In tr, this message translates to:
-  /// **'Yalnızca hangi metriklerin GÖSTERİLECEĞİNİ değiştirir; hesaplar ve verilerin aynı kalır.'**
+  /// **'Yalnızca hangi metriklerin gösterileceğini değiştirir; hesaplar ve verilerin aynı kalır.'**
   String get investorLevelNote;
 
   /// No description provided for @levelBeginner.
@@ -2480,10 +2480,16 @@ abstract class AppLocalizations {
   /// **'Biyometrik kilit'**
   String get biometricLock;
 
+  /// No description provided for @biometricLockYontem.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yontem, select, faceId{Face ID ile kilitle} touchId{Touch ID ile kilitle} biyometrik{Biyometrik kilit} other{Ekran kilidiyle kilitle}}'**
+  String biometricLockYontem(String yontem);
+
   /// No description provided for @downloadMyData.
   ///
   /// In tr, this message translates to:
-  /// **'Verilerimi İndir'**
+  /// **'Verilerimi indir'**
   String get downloadMyData;
 
   /// No description provided for @downloadMyDataSubtitle.
@@ -2495,7 +2501,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteMyAccount.
   ///
   /// In tr, this message translates to:
-  /// **'Hesabımı Sil'**
+  /// **'Hesabımı sil'**
   String get deleteMyAccount;
 
   /// No description provided for @deleteMyAccountSubtitle.
@@ -2513,8 +2519,92 @@ abstract class AppLocalizations {
   /// No description provided for @contactUs.
   ///
   /// In tr, this message translates to:
-  /// **'Bize Ulaş'**
+  /// **'Bize ulaş'**
   String get contactUs;
+
+  /// No description provided for @sssBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sık sorulanlar'**
+  String get sssBaslik;
+
+  /// No description provided for @sssFonSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon fiyatım neden gün içinde değişmiyor?'**
+  String get sssFonSoru;
+
+  /// No description provided for @sssFonCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEFAS fon fiyatını günde bir kez, iş günü akşamı açıklar. sandık o gün açıklanan fiyatı gösterir; fiyat gün içinde değişmez.'**
+  String get sssFonCevap;
+
+  /// No description provided for @sssSiklikSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar ne sıklıkta güncellenir?'**
+  String get sssSiklikSoru;
+
+  /// No description provided for @sssSiklikCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama açıkken fiyatlar yaklaşık 30 saniyede bir yenilenir. Listeyi aşağı çekerek hemen yenileyebilirsin. Borsa kapalıyken son kapanış fiyatı görünür.'**
+  String get sssSiklikCevap;
+
+  /// No description provided for @sssKriptoSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto fiyatları nereden geliyor?'**
+  String get sssKriptoSoru;
+
+  /// No description provided for @sssKriptoCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto fiyatları Binance\'ten gelir ve hafta sonu dahil her gün güncellenir.'**
+  String get sssKriptoCevap;
+
+  /// No description provided for @sssVeriSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilerim nerede saklanıyor, nasıl silerim?'**
+  String get sssVeriSoru;
+
+  /// No description provided for @sssVeriCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabın ve portföyün sandık\'ın bulut sunucularında saklanır; hangi ülkede tutulduğu Yasal belgeler\'deki Aydınlatma Metni\'nde yazar. Profil › Hesap & Güvenlik\'ten verilerini indirebilir ya da hesabını tüm verileriyle silebilirsin.'**
+  String get sssVeriCevap;
+
+  /// No description provided for @sssOrtakSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak portföy nasıl çalışır?'**
+  String get sssOrtakSoru;
+
+  /// No description provided for @sssOrtakCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Profil\'de Ortak portföy\'e dokun, kodunu yakınına gönder ya da onun kodunu gir. Onaydan sonra ikinizin portföyü tek ekranda birleşik görünür. İstediğin an ayrılabilirsin.'**
+  String get sssOrtakCevap;
+
+  /// No description provided for @sssPremiumSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'da neler var, nasıl iptal ederim?'**
+  String get sssPremiumSoru;
+
+  /// No description provided for @sssPremiumCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'un içeriği ve güncel fiyatı Profil\'deki Sandık Premium sayfasında yazar. Abonelik mağaza üzerinden yürür; iptal için App Store ya da Google Play\'deki abonelik ayarlarını kullan.'**
+  String get sssPremiumCevap;
+
+  /// No description provided for @sssBizeYaz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çözülmedi mi? Bize yaz'**
+  String get sssBizeYaz;
 
   /// No description provided for @replayTour.
   ///
@@ -5879,7 +5969,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifSubtitleIos.
   ///
   /// In tr, this message translates to:
-  /// **'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik'**
+  /// **'Sinyal, alarm, sessiz saat, Canlı Etkinlik'**
   String get notifSubtitleIos;
 
   /// No description provided for @notifSubtitleAndroid.
@@ -16445,29 +16535,17 @@ abstract class AppLocalizations {
   /// **'Alarm'**
   String get notifTypeAlarm;
 
+  /// No description provided for @ortakPortfoySatirAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir yakınınla portföyünü tek ekranda birleştir'**
+  String get ortakPortfoySatirAlt;
+
   /// No description provided for @ortakPortfoyKartBaslik.
   ///
   /// In tr, this message translates to:
   /// **'Ortak portföy'**
   String get ortakPortfoyKartBaslik;
-
-  /// No description provided for @ortakPortfoyKartGovde.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bir yakınınla portföyünü tek ekranda birleştir. İstediğin an ayrılabilirsin.'**
-  String get ortakPortfoyKartGovde;
-
-  /// No description provided for @ortakPortfoyDavetEt.
-  ///
-  /// In tr, this message translates to:
-  /// **'Davet et'**
-  String get ortakPortfoyDavetEt;
-
-  /// No description provided for @ortakPortfoyKodGir.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kod gir'**
-  String get ortakPortfoyKodGir;
 
   /// No description provided for @notifOpenAction.
   ///
@@ -17074,6 +17152,49 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}'**
   String kilometreTasiSiradakiEtiket(String baslik);
+
+  /// No description provided for @kilometreTasiKalan.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tutar} kaldı'**
+  String kilometreTasiKalan(String tutar);
+
+  /// No description provided for @kilometreTasiPaylasAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık ile birikimimi takip ediyorum'**
+  String get kilometreTasiPaylasAlt;
+
+  /// No description provided for @kilometreTasiPaylasNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kartta portföy tutarın yok; yalnız geçtiğin taş.'**
+  String get kilometreTasiPaylasNot;
+
+  /// No description provided for @kilometreTasiPaylasBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilometre taşını paylaş'**
+  String get kilometreTasiPaylasBaslik;
+
+  /// No description provided for @kilometreTasiPaylasMetni.
+  ///
+  /// In tr, this message translates to:
+  /// **'{baslik}. sandık ile birikimimi takip ediyorum: {link}'**
+  String kilometreTasiPaylasMetni(String baslik, String link);
+
+  /// No description provided for @kilometreTasiSiradakiIlerlemeEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
+  String kilometreTasiSiradakiIlerlemeEtiket(
+      String baslik, int yuzde, String kalan);
+
+  /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}'**
+  String kilometreTasiSiradakiYuzdeEtiket(String baslik, int yuzde);
 
   /// No description provided for @kilometreTaslariBaslik.
   ///

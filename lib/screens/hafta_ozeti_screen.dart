@@ -240,7 +240,7 @@ class _Satir extends StatelessWidget {
     final kod = notKodu(satir.anahtar);
     final not = this.not;
 
-    return InkWell(
+    return SandikTappable(
       onTap: () => pushGuarded(
         context,
         adaptiveRoute<void>(

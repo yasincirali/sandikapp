@@ -905,11 +905,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       label: baslik,
       hint: alt,
       excludeSemantics: true,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
+      child: SandikTappable(
+        // Titreşim önceden elle çağrılıyordu; seçim tepkisi `goz_alici`
+        // sessizliğinden bağımsız sürsün diye açıkça veriliyor.
+        haptic: SandikHaptic.selection,
+        onTap: onTap,
         child: _yolSatiriIcerik(ikon: ikon, baslik: baslik, alt: alt),
       ),
     );
@@ -984,8 +984,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(SandikRadius.md),
+          SandikTappable(
             onTap: _n.toggleNotes,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

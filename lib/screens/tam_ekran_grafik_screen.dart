@@ -1720,10 +1720,9 @@ class _AracDugmesi extends StatelessWidget {
       excludeSemantics: true,
       child: Tooltip(
         message: etiket,
-        child: InkWell(
+        child: SandikTappable(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(SandikRadius.sm),
-          child: Ink(
+          child: Container(
             width: SandikTouch.min,
             height: SandikTouch.min,
             decoration: BoxDecoration(
