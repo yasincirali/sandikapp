@@ -94,6 +94,15 @@ Herhangi bir UI değişikliğinden önce:
   `useGSAP`, `Lenis`, `motion/react` bu projeye **kurulmaz**
 - `animate`, `improve-animations`, `review-animations`, `find-animation-opportunities`
   — web varsayımlı; öneriyi Flutter'a çevirerek uygula
+- `unslop` — AI-slop denetimi (heydamir/unslop, CC BY 4.0, kurulum 2026-11-05; yasin:
+  "Birdie'deki slop kontrolünü Sandık'a da ekle, rapor çıkarsın, diğer MCP'lerle senkron
+  çalışsın"). Web için yazıldı: **yalnız `references/signs.md` denetim listesi ve
+  yargısı** alınır. Renk, tipografi, boşluk ve köşe tasarım sistemi (`context.c`,
+  `context.t`, `SandikSpace`, `SandikRadius`) kazanır; skill'in "yön belirle / yeni palet /
+  9 geçiş / hikâye videosu" adımları uygulanmaz. Sandık'ta "hafif slop / cilalama modu"
+  kabul edilir: yalnız listedeki işaretler düzeltilir. ui-ux-pro-mcp ile birlikte koşar:
+  unslop "ne AI kokuyor", ui-ux-pro "mobil kalıp ve HIG ne diyor". Ar-Ge turu her
+  tasarım bölümünde ikisini de kullanır.
 
 **Çakışma uyarısı:**
 - `ui-ux-pro-max` (skill) ile `ui-ux-pro-mcp` (MCP, `.mcp.json`) **aynı ürünün** iki

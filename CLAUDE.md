@@ -36,6 +36,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Navigasyon | `flutter-navigation` (**`flutter-expert` GoRouter referansı değil**) |
 | Animasyon / hareket | `flutter-animations`, `animate`, `apple-design`; denetim/eleştiri `design-motion-principles` |
 | Görsel tasarım / cila | `emil-design-eng`, `ui-ux-pro-max`, `frontend-design` |
+| AI-slop denetimi | `unslop` (yalnız `references/signs.md` listesi + ui-ux-pro-mcp; palet/tipografi tasarım sistemi kazanır) |
 | Flutter testi | `flutter-testing` (**`test-master` değil**) |
 | Test *stratejisi* / kapsam boşluğu | `test-master` |
 | Supabase şema / migration / RPC | `sql-pro` → yazım, `postgres-pro` → PG'ye özgü |
