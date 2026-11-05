@@ -226,7 +226,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     if (elde != null && DateTime.now().difference(elde.at) <= _donemTazelik) {
       return;
     }
-    unawaited(_donemYukle(p, anahtar));
+    CrashReporter.arkaPlan(_donemYukle(p, anahtar),
+        reason: 'BugunKarti.donemYukle');
   }
 
   Future<void> _donemYukle(SummaryPeriod p, String anahtar) async {
@@ -1050,7 +1051,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           final n = ref.read(hedefOnerisiProvider.notifier);
-          if (ref.read(hedefOnerisiProvider) == ham) unawaited(n.set(yeni.kod));
+          if (ref.read(hedefOnerisiProvider) == ham) {
+            CrashReporter.arkaPlan(n.set(yeni.kod),
+                reason: 'BugunKarti.hedefOnerisiGosterim');
+          }
         });
       }
     }
@@ -1063,7 +1067,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   void _hedefOnerisiniGuncelle(
       HedefOnerisiDurumu Function(HedefOnerisiDurumu) f) {
     final d = HedefOnerisiDurumu.coz(ref.read(hedefOnerisiProvider));
-    unawaited(ref.read(hedefOnerisiProvider.notifier).set(f(d).kod));
+    CrashReporter.arkaPlan(ref.read(hedefOnerisiProvider.notifier).set(f(d).kod),
+        reason: 'BugunKarti.hedefOnerisi');
   }
 
   Widget _hedefKutusu(HedefSatiri s, bool gizli) {
