@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
+import '../models/hedef_onerisi.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/bugun_service.dart' show HedefSatiri;
@@ -273,6 +274,70 @@ class _Onizleme extends StatelessWidget {
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Profil'deki "Portföy hedefi" satırı — yalnız Bugün kartındaki öneri
+/// sönmüşken ve hedef yokken (Ar-Ge 5 Kas 19:00 #2, müşteri YAP).
+///
+/// ## Neden
+/// Hedef sayfasının tek girişi Bugün kartındaki öneriydi. Öneri ✕ ile
+/// kapanınca ya da 30 gün sönünce hedef koymanın yolu kalmazdı. Satır o
+/// zaman belirir; öneri görünürken ya da hedef varken sıfır yükseklik
+/// (Profil düzeni değişmez; hedefi olanın kutusu kartta).
+class HedefProfilSatiri extends ConsumerWidget {
+  const HedefProfilSatiri({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hedefVar = ref.watch(portfolioGoalProvider) > 0;
+    final oneri = HedefOnerisiDurumu.coz(ref.watch(hedefOnerisiProvider));
+    if (hedefVar || oneri.gorunur(DateTime.now())) {
+      return const SizedBox.shrink();
+    }
+    final l = context.l10n;
+    final gizli = ref.watch(balanceHiddenProvider);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.lg),
+      child: SandikCard(
+        padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.md, vertical: SandikSpace.smd),
+        onTap: () => showHedefSheet(context, ref, gizli: gizli),
+        child: Semantics(
+          button: true,
+          child: Row(
+            children: [
+              Icon(Icons.flag_outlined, size: 22, color: context.c.amberText),
+              const SizedBox(width: SandikSpace.smd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.goalProfileRowTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: context.c.text90,
+                      ),
+                    ),
+                    Text(
+                      l.goalProfileRowSubtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: context.c.text58),
+            ],
+          ),
+        ),
       ),
     );
   }

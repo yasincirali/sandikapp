@@ -10508,4 +10508,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alarmSayaciSinirsiz => 'Unlimited ›';
+
+  @override
+  String get todayPeriodNoData => 'No data for this period';
+
+  @override
+  String todayPeriodSemantics(String name, int i, int n) {
+    return 'Period: $name, $i of $n';
+  }
+
+  @override
+  String get todayOpenInPerformance => 'Open in Performance';
+
+  @override
+  String get todayGoalHideSuggestion => 'Hide goal suggestion';
+
+  @override
+  String get goalProfileRowTitle => 'Portfolio goal';
+
+  @override
+  String get goalProfileRowSubtitle =>
+      'Pick an amount, see what\'s left on Home';
 }

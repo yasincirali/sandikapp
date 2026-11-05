@@ -5878,5 +5878,12 @@
   "allChangeFromPrice": "You did not add or withdraw money in this period; the whole change came from prices.",
   "alarmCaldiZaman": "Fired: {zaman}",
   "alarmSayaci": "Active alerts: {sayi}/{limit}",
-  "alarmSayaciSinirsiz": "Unlimited ›"
+  "alarmSayaciSinirsiz": "Unlimited ›",
+  "todayPeriodNoData": "No data for this period",
+  "todayPeriodSemantics": "Period: {name}, {i} of {n}",
+  "@todayPeriodSemantics": {"description": "Today card period segment screen reader label", "placeholders": {"name": {"type": "String"}, "i": {"type": "int"}, "n": {"type": "int"}}},
+  "todayOpenInPerformance": "Open in Performance",
+  "todayGoalHideSuggestion": "Hide goal suggestion",
+  "goalProfileRowTitle": "Portfolio goal",
+  "goalProfileRowSubtitle": "Pick an amount, see what's left on Home"
 }

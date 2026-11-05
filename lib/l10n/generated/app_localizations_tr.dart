@@ -10385,4 +10385,24 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get alarmSayaciSinirsiz => 'Sınırsız ›';
+
+  @override
+  String get todayPeriodNoData => 'Bu dönemin verisi yok';
+
+  @override
+  String todayPeriodSemantics(String name, int i, int n) {
+    return 'Dönem: $name, $n seçenekten $i';
+  }
+
+  @override
+  String get todayOpenInPerformance => 'Performans\'ta aç';
+
+  @override
+  String get todayGoalHideSuggestion => 'Hedef önerisini gizle';
+
+  @override
+  String get goalProfileRowTitle => 'Portföy hedefi';
+
+  @override
+  String get goalProfileRowSubtitle => 'Bir tutar seç, kalanı Ana sayfada gör';
 }

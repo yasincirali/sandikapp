@@ -499,6 +499,11 @@ final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool
 final yatayGrafikAcildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.yatayGrafikIpucu, false));
 
+/// Bugün kartındaki hedef önerisinin görünürlük durumu — ham kod; kural
+/// `HedefOnerisiDurumu` (saf, `hedef_onerisi_test`). Kişiye özel.
+final hedefOnerisiProvider = NotifierProvider<_StringPrefNotifier, String>(
+    () => _StringPrefNotifier(PrefKeys.hedefOnerisi, '', perUser: true));
+
 /// Baz para birimi (Faz 3.2) — `BaseCurrency.index` olarak saklanır; model
 /// ve kur eşlemesi `base_currency_provider.dart`'ta. Kişiye özel: aynı
 /// cihazı paylaşan iki kullanıcının tercihi karışmasın.

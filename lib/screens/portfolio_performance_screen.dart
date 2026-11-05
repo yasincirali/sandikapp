@@ -64,6 +64,7 @@ import '../services/leaderboard_service.dart';
 import '../services/birikim_serisi.dart';
 import '../services/contribution_history_service.dart';
 import '../services/insight_metrics_service.dart';
+import '../services/donem_ozeti_yukleyici.dart';
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart';
 import '../services/xirr_service.dart';
