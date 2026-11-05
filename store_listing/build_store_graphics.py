@@ -12,7 +12,8 @@ Play Console / App Store mağaza grafikleri üretici.
 Neden betik, neden Canva değil: ikisi de markanın türevi (aynı palet, aynı
 logo, aynı font). Elle çizilirse bir sonraki sürümde "hangi dosyadan
 üretmiştik" sorusu doğar ve palet kayar. Betik kaynağı tek yerde tutar;
-`assets/images/sandik_icon.png` değişirse ikisi de yeniden üretilir.
+`assets/images/sandik_icon.png` (logo) ya da `tool/ikon/sandik_icon_kare.png`
+(mağaza simgesi, köşesiz) değişirse yeniden üretilir.
 
 Kullanım:
     cd store_listing && python build_store_graphics.py
@@ -28,8 +29,8 @@ Aynı betikte çünkü aynı türev: palet, logo, font. Yalnız web görselleri
 için: `python build_store_graphics.py --og`.
 
 ⚠️ Play ikonu ALFA KANALI KABUL ETMEZ ve köşeleri kendi yuvarlar. Bu yüzden
-kaynak RGBA ikon marka zemini üzerine düzleştiriliyor ve köşe yuvarlama
-UYGULANMIYOR — iki kez yuvarlanmış köşe Play'de bozuk görünür.
+kaynak köşesiz, kenara kadar dolu kare — iki kez yuvarlanmış köşe Play'de
+bozuk görünür (2026-11-05'e kadar öyleydi, bkz. ikon_512).
 """
 
 import os
@@ -49,6 +50,8 @@ ROOT = os.path.dirname(HERE)
 OUT = os.path.join(HERE, "android", "graphics")
 
 SRC_ICON = os.path.join(ROOT, "assets", "images", "sandik_icon.png")
+# Mağaza simgesi kaynağı: köşesiz kare (uygulama ikonuyla aynı dosya).
+SRC_ICON_KARE = os.path.join(ROOT, "tool", "ikon", "sandik_icon_kare.png")
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")
 FONT_MED = os.path.join(ROOT, "assets", "fonts", "DMSans-Medium.ttf")
 
@@ -92,40 +95,18 @@ def dikey_gradyan(w: int, h: int) -> Image.Image:
 def ikon_512() -> str:
     """Play 'Uygulama simgesi': 512x512, 32-bit PNG, alfa YOK.
 
-    ⚠️ İki kez yuvarlanmış köşe tuzağı: kaynak PNG'nin köşeleri ZATEN
-    yuvarlak ve dışı şeffaf. Şeffaflığı koyu zemine düzleştirince ikonun
-    çevresinde koyu bir çerçeve kalıyor; Play kendi maskesini onun üstüne
-    uygulayınca logonun kenarları kesiliyor ve çirkin bir halka doğuyor.
-
-    Çözüm: opak pikselleri kırp (`getbbox`) ve tuvali TAM dolduracak
-    şekilde ölçekle. Böylece Play'in maskesi logonun kendi köşesiyle
-    çakışır, arada çerçeve kalmaz.
+    ⚠️ İki kez yuvarlanmış köşe tuzağı (2026-11-05'te kökünden çözüldü):
+    eskiden kaynak yuvarlak köşeli `sandik_icon.png` idi; kırpıp tuvale
+    yayınca logo köşesi (r≈%23) Play maskesinden (r=%20) daha yuvarlak
+    kalıyor, üst köşelerde kahverengi dolgu hilali görünüyordu (yasin:
+    "store da app icon kötü gözüküyor"). Artık kaynak köşesiz, kenara kadar
+    dolu kare (`tool/ikon/kare_ikon.py`); köşeyi yalnız Play yuvarlar.
+    Kırpma/dolgu gerekmiyor, yalnız ölçek.
     """
-    src = Image.open(SRC_ICON).convert("RGBA")
-
-    # Şeffaf kenar payını at — geriye yalnızca logonun kendisi kalsın.
-    kutu = src.getchannel("A").getbbox()
-    if kutu:
-        src = src.crop(kutu)
-
-    # Kare değilse ortadan kare yap (ölçekleme logoyu ezmesin).
-    if src.width != src.height:
-        k = max(src.size)
-        kare = Image.new("RGBA", (k, k), (0, 0, 0, 0))
-        kare.paste(src, ((k - src.width) // 2, (k - src.height) // 2), src)
-        src = kare
-
+    src = Image.open(SRC_ICON_KARE).convert("RGB")
     src = src.resize((512, 512), Image.LANCZOS)
-
-    # Alfayı düzleştir: Play alfa kanallı ikonu reddeder, şeffaf köşeler
-    # Console'da siyah basılır. Zemin logonun kendi alt rengi — kırpma
-    # sonrası görünür bir alan kalmıyor, yalnızca kenar yumuşatmasının
-    # (anti-aliasing) yarı saydam pikselleri buna karışıyor.
-    zemin = Image.new("RGB", (512, 512), (139, 69, 19))
-    zemin.paste(src, (0, 0), src)
-
     yol = os.path.join(OUT, "icon_512.png")
-    zemin.save(yol, "PNG")
+    src.save(yol, "PNG")
     return yol
 
 
@@ -312,7 +293,7 @@ def main() -> None:
                   f"{os.path.getsize(y) // 1024} KB")
         return
     os.makedirs(OUT, exist_ok=True)
-    for f in (SRC_ICON, FONT_BOLD, FONT_MED):
+    for f in (SRC_ICON, SRC_ICON_KARE, FONT_BOLD, FONT_MED):
         if not os.path.exists(f):
             print(f"HATA: bulunamadi -> {f}")
             sys.exit(1)
