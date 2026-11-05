@@ -10369,4 +10369,9 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get allChangeFromPrice =>
       'Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.';
+
+  @override
+  String alarmCaldiZaman(String zaman) {
+    return 'Çaldı: $zaman';
+  }
 }

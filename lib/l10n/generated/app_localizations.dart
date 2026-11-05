@@ -17134,6 +17134,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.'**
   String get allChangeFromPrice;
+
+  /// Çalmış tek seferlik alarmın çalma anı
+  ///
+  /// In tr, this message translates to:
+  /// **'Çaldı: {zaman}'**
+  String alarmCaldiZaman(String zaman);
 }
 
 class _AppLocalizationsDelegate

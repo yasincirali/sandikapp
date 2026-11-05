@@ -5874,5 +5874,6 @@
   "tlCurrencyLocked": "Funds and BIST stocks are recorded in TRY",
   "unitFundShare": "units",
   "fonGunlukTekFiyatNotu": "Fund prices are published once a day; there is no intraday movement.",
-  "allChangeFromPrice": "You did not add or withdraw money in this period; the whole change came from prices."
+  "allChangeFromPrice": "You did not add or withdraw money in this period; the whole change came from prices.",
+  "alarmCaldiZaman": "Fired: {zaman}"
 }

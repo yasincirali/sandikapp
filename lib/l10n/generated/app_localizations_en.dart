@@ -10492,4 +10492,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get allChangeFromPrice =>
       'You did not add or withdraw money in this period; the whole change came from prices.';
+
+  @override
+  String alarmCaldiZaman(String zaman) {
+    return 'Fired: $zaman';
+  }
 }

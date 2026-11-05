@@ -6601,5 +6601,7 @@
   "tlCurrencyLocked": "Fon ve BIST hissesi TL ile kaydedilir",
   "unitFundShare": "pay",
   "fonGunlukTekFiyatNotu": "Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez.",
-  "allChangeFromPrice": "Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan."
+  "allChangeFromPrice": "Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.",
+  "alarmCaldiZaman": "Çaldı: {zaman}",
+  "@alarmCaldiZaman": {"description": "Çalmış tek seferlik alarmın çalma anı", "placeholders": {"zaman": {"type": "String"}}}
 }
