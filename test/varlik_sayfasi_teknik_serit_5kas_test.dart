@@ -9,7 +9,7 @@ import 'helpers/kaynak.dart';
 
 /// Varlık sayfası ikinci tur (Ar-Ge 5 Kas 14:45, müşteri raporu 15:15):
 /// teknik şerit tek satır ve panelle aynı sayım (#1), "En büyük düşüş"
-/// günlükte ve ~%0'da gizli (#3), başlıktaki günlük tutar "/ lot" (#4).
+/// günlükte ve ~%0'da gizli (#3), dağılım çubuğu kalktı (#2), başlıktaki günlük tutar "/ lot" (#4).
 void main() {
   group('#4 başlıktaki tutarın birimi', () {
     late BuildContext ctx;
@@ -108,6 +108,12 @@ void main() {
     test('canlı sayım panelle aynı cümle', () {
       expect(serit, contains('buySellNeutralCounts'));
       expect(k.substring(son), contains('buySellNeutralCounts'));
+    });
+
+    test('#2 dağılım çubuğu (AL/SAT/NÖTR yüzdeleri) panelde yok', () {
+      // Sayım özet kartında ve şeritte; üçüncü tekrar kalktı.
+      expect(k, isNot(contains('SinyalDagilimi')));
+      expect(k, isNot(contains('detayli')));
     });
 
     test('sığmazsa sarar, kesilmez; ağırlık w600', () {
