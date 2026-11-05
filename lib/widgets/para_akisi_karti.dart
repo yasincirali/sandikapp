@@ -237,9 +237,8 @@ class KilitSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return InkWell(
+    return SandikTappable(
       onTap: () => PaywallScreen.show(context, source: kaynak),
-      borderRadius: SandikRadius.smAll,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: SandikTouch.min),
         child: Row(

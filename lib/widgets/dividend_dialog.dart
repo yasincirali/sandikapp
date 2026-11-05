@@ -267,9 +267,8 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
           ),
           const SizedBox(height: 12),
           // Ödeme tarihi — TRY karşılığı bu günün kuruyla sabitlenir.
-          InkWell(
+          SandikTappable(
             onTap: _pickDate,
-            borderRadius: BorderRadius.circular(SandikRadius.sm),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               child: Row(

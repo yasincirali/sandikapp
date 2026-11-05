@@ -194,7 +194,7 @@ class _Satir extends StatelessWidget {
     return Semantics(
       button: true,
       selected: secili,
-      child: InkWell(
+      child: SandikTappable(
         onTap: dokununca,
         child: Container(
           constraints: const BoxConstraints(minHeight: SandikTouch.min),

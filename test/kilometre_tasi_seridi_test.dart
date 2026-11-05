@@ -172,7 +172,8 @@ void main() {
       // 120 bin / 250 bin = %48; kalan 130 bin.
       expect(find.text('%48'), findsOneWidget);
       expect(find.text('130 bin ₺ kaldı'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Halka kendi çizimi (yükleniyor göstergesi değil, statik ölçü).
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(
           find.bySemanticsLabel(
               'Sıradaki kilometre taşı: 250 bin ₺, yüzde 48, 130 bin ₺ kaldı'),

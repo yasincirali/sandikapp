@@ -35,6 +35,8 @@ import '../services/share_card_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
+import '../widgets/bildirim_izni_uyarisi.dart';
+import '../widgets/sik_sorulanlar.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/sandik_segment.dart';
@@ -680,9 +682,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// yalnız "ne zaman / ne" satırları (alarmlar, sessiz saatler, brifing
   /// saati) açık durur; tek tek anahtarlar katlanır "Ayrıntılı"ya iner.
   /// HİÇBİR anahtar kalkmadı, tercih anahtarları değişmedi — yalnız sıra.
+  ///
+  /// Sayfa başlığının hemen altındaki ikinci "Bildirimler" grup başlığı
+  /// kalktı (Ar-Ge 5 Kas 21:20 tasarım, tekrar eden bilgi): bu liste yalnız
+  /// Bildirimler alt sayfasında çiziliyor, başlığı zaten üst barda.
   List<Widget> _bildirimler() => [
-            SandikSectionHeader(title: context.l10n.notificationsUpper),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            // İzin kapalıysa ayarların hiçbiri bildirim getirmez (Ar-Ge 5 Kas
+            // 21:20 #2). Satır Alarmlarım, alarm sheet'i ve sinyal ayarlarında
+            // 21 Eki'den beri vardı; Bildirimler sayfasında eksikti.
+            const BildirimIzniUyarisi(
+              padding: EdgeInsets.only(bottom: SandikSpace.smd),
+            ),
             BildirimOnAyarKarti(
               onPaywall: () {
                 AnalyticsService.instance
@@ -854,7 +865,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _SwitchTile(
               icon: Icons.fingerprint_rounded,
-              title: context.l10n.biometricLock,
+              // Satır cihazın yöntemini söyler (Ar-Ge 5 Kas 21:20 tasarım):
+              // "Face ID ile kilitle" "Biyometrik kilit"ten açık. Yöntem
+              // bilinmezken (ilk kare, sorgu düştü) eski genel ad kalır.
+              title: switch (ref.watch(kilitYontemiProvider).valueOrNull) {
+                final y? => context.l10n.biometricLockYontem(y.name),
+                null => context.l10n.biometricLock,
+              },
               subtitle:
                   context.l10n.biometricLockSubtitle,
               value: ref.watch(biometricLockProvider),
@@ -1068,6 +1085,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // kendini anlattığı satırlar (yenilikler, tanıtım turu) ve yasal
     // belgeler UYGULAMA HAKKINDA'da. 10 satır → 5 (Ar-Ge 29 Eki #2).
     return [
+      // Sık sorulanlar en üstte (Ar-Ge 5 Kas 21:20 #4): takılan kişi önce
+      // cevabı görür; çözülmezse cevabın altındaki bağlantı aynı formu açar.
+      SandikSectionHeader(title: context.l10n.sssBaslik),
+      const SizedBox(height: 12),
+      SikSorulanlar(onBizeYaz: _openFeedbackSheet),
+      const SizedBox(height: 28),
       SandikSectionHeader(title: context.l10n.supportUpper),
       const SizedBox(height: 12),
       iletisim,
@@ -2191,9 +2214,8 @@ class _TimeBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.c;
-    return InkWell(
+    return SandikTappable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(SandikRadius.md),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: context.surfaceCard(),

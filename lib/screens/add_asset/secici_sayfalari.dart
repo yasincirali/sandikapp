@@ -1100,7 +1100,7 @@ class _PickerRow extends StatelessWidget {
     return Semantics(
       button: true,
       selected: isSelected,
-      child: InkWell(
+      child: SandikTappable(
         onTap: onTap,
         child: Padding(
           padding: EdgeInsets.symmetric(

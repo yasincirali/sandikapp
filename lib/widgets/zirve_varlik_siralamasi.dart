@@ -250,9 +250,8 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
       button: widget.onKilitli != null,
       label: "Kilitli varlık $yuzde. Premium'da görünür.",
       excludeSemantics: true,
-      child: InkWell(
+      child: SandikTappable(
         onTap: widget.onKilitli,
-        borderRadius: BorderRadius.circular(SandikRadius.sm),
         child: govde,
       ),
     );

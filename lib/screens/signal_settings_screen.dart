@@ -914,7 +914,7 @@ class _FrequencyOption extends StatelessWidget {
           : null,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
+        child: SandikTappable(
           onTap: onTap,
           child: Column(
             children: [
@@ -954,7 +954,7 @@ class _FrequencyOption extends StatelessWidget {
                 ),
               ),
               if (hoursLabel != null)
-                InkWell(
+                SandikTappable(
                   onTap: onHoursTap,
                   child: Container(
                     constraints: const BoxConstraints(minHeight: 44),
@@ -1107,7 +1107,7 @@ class _IndicatorRow extends StatelessWidget {
   }
 
   Widget _satir(BuildContext context, String? ayarMetni) {
-    return InkWell(
+    return SandikTappable(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),

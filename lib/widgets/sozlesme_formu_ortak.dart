@@ -186,8 +186,7 @@ class SozlesmeTarihi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metin = DateFormat.yMMMd(context.l10n.localeName).format(tarih);
-    return InkWell(
-      borderRadius: SandikRadius.mdAll,
+    return SandikTappable(
       onTap: () async {
         final secim = await pickSandikDate(
           context,

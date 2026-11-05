@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -243,13 +245,14 @@ class _IlerlemeHalkasi extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // Kendi çizimi, `CircularProgressIndicator` değil: bu bir
+          // yükleniyor göstergesi değil, statik ölçü. Ham gösterge
+          // `yukleniyor_tek_davranis_test` kuralına takılır ve iOS'ta
+          // ekran okuyucuya "ilerleme" diye yanlış okunurdu.
           Positioned.fill(
-            child: CircularProgressIndicator(
-              value: oran,
-              strokeWidth: 3,
-              backgroundColor: c.overlay,
-              color: c.amberText,
-              strokeCap: StrokeCap.round,
+            child: CustomPaint(
+              painter: _HalkaBoyaci(
+                  oran: oran, iz: c.overlay, dolgu: c.amberText),
             ),
           ),
           FittedBox(
@@ -267,6 +270,35 @@ class _IlerlemeHalkasi extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HalkaBoyaci extends CustomPainter {
+  const _HalkaBoyaci(
+      {required this.oran, required this.iz, required this.dolgu});
+
+  final double oran;
+  final Color iz;
+  final Color dolgu;
+
+  static const double _kalinlik = 3;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = (size.shortestSide - _kalinlik) / 2;
+    final merkez = size.center(Offset.zero);
+    final kalem = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _kalinlik
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(merkez, r, kalem..color = iz);
+    if (oran <= 0) return;
+    canvas.drawArc(Rect.fromCircle(center: merkez, radius: r), -math.pi / 2,
+        2 * math.pi * oran.clamp(0.0, 1.0), false, kalem..color = dolgu);
+  }
+
+  @override
+  bool shouldRepaint(_HalkaBoyaci eski) =>
+      eski.oran != oran || eski.iz != iz || eski.dolgu != dolgu;
 }
 
 /// "Tümü": kazanılan bütün taşlar, en sonda sıradaki. Ayrı ekran değil,

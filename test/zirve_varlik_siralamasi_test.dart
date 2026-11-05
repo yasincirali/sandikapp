@@ -126,7 +126,8 @@ void main() {
     expect(acildi, 1);
     // Dokunma alanı ≥ 44.
     final inkwell = find.ancestor(
-        of: find.text(ZirveKiyas.kilitliYer), matching: find.byType(InkWell));
+        of: find.text(ZirveKiyas.kilitliYer),
+        matching: find.byType(SandikTappable));
     expect(
         tester.getSize(inkwell).height, greaterThanOrEqualTo(SandikTouch.min));
   });

@@ -42,6 +42,10 @@ Future<void> _pump(WidgetTester tester,
   // üstte Az/Dengeli/Çok ön ayarı var. Satırı görmek için grup açılır.
   await tester.scrollUntilVisible(find.text('Ayrıntılı'), 200,
       scrollable: find.byType(Scrollable).first);
+  // scrollUntilVisible kenarda durabilir (3.1× yazıda başlığın merkezi
+  // ekranın 9 pt altında kalıyordu); dokunmadan önce tam görünür yap.
+  await tester.ensureVisible(find.text('Ayrıntılı'));
+  await tester.pumpAndSettle();
   await tester.tap(find.text('Ayrıntılı'));
   await tester.pumpAndSettle();
 }

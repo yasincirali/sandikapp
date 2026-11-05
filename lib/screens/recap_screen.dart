@@ -312,8 +312,7 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
       padding: const EdgeInsets.only(bottom: 20),
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+        child: SandikTappable(
           onTap: () => RecapScreen.show(context, d, yil),
           child: Container(
             padding: const EdgeInsets.all(16),

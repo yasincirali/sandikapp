@@ -2188,24 +2188,21 @@ class _AlimGucuKutusu extends StatelessWidget {
 
     return Semantics(
       button: true,
-      // `excludeSemantics` içteki InkWell'in eylemini de gizler; dokunma
+      // `excludeSemantics` içteki dokunma algılayıcısının eylemini de gizler; dokunma
       // eylemi burada verilmezse ekran okuyucu kutuyu açamaz (2026-10-09).
       onTap: onTap,
       label: '${l10n.todayPurchasingQuestion} ${l10n.todayHundredBefore}'
           '${l10n.todayHundredAmount(yuzMetni)}. '
           '$hukum. $ayrinti, $pencereMetni',
       excludeSemantics: true,
-      // Kabuk `SandikCard` — piksel aynı. Dokunma `InkWell`: kartın hedef
-      // kutusu ripple kullanıyor; aynı panoda iki basma dili olmasın.
+      // Kabuk `SandikCard` — piksel aynı. Dokunma `SandikTappable`: hedef
+      // kutusuyla aynı basma dili (Ar-Ge 5 Kas #2: ripple iOS'ta bırakınca
+      // geliyordu, küçülme dokunur dokunmaz).
       child: SandikCard(
         padding: EdgeInsets.zero,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            child: govde,
-          ),
+        child: SandikTappable(
+          onTap: onTap,
+          child: govde,
         ),
       ),
     );
@@ -2374,9 +2371,8 @@ class _EylemKutusu extends StatelessWidget {
       child: Material(
         color: c.amberFill.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        child: InkWell(
+        child: SandikTappable(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 56),
             child: Padding(

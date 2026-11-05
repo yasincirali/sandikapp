@@ -498,7 +498,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // kartındaki öneri sönmüşken (Ar-Ge 5 Kas 19:00 #2).
                         const HedefProfilSatiri(),
                         const _PendingRequestsSection(),
-                        const SizedBox(height: 8),
+                        // Tek satırın üstünde ek boşluk yok: üstteki satır
+                        // (halka arz, hedef) alt boşluğunu kendisi taşır.
+                        if (!_ortaklikKisa(partnersAsync))
+                          const SizedBox(height: 8),
                         if (_ortaklikKisa(partnersAsync))
                           _buildOrtaklikKarti()
                         else ...[

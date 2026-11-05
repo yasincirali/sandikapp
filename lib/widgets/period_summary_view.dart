@@ -2656,43 +2656,40 @@ class _DerinlikBolumuState extends State<_DerinlikBolumu> {
           button: true,
           expanded: _acik,
           label: l10n.sectionDepth,
-          // Performans sekmesi CupertinoPageScaffold altında; InkWell'in
-          // mürekkep katmanı için Material atası şart, yoksa cihazda kırmızı
-          // "No Material widget found" (2026-09-21, ekran görüntüsü).
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: () => setState(() => _acik = !_acik),
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: SandikTouch.min),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SandikSectionHeader(title: l10n.sectionDepth),
-                          Text(
-                            l10n.sectionDepthHint,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.t.bodySmall
-                                ?.copyWith(color: context.c.text58),
-                          ),
-                        ],
-                      ),
+          // Performans sekmesi CupertinoPageScaffold altında. Eskiden InkWell
+          // vardı ve Material atası olmadan cihazda kırmızı "No Material
+          // widget found" basıyordu (2026-09-21); SandikTappable mürekkep
+          // katmanı istemez, Material sarmalı bu yüzden kalktı.
+          child: SandikTappable(
+            onTap: () => setState(() => _acik = !_acik),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SandikSectionHeader(title: l10n.sectionDepth),
+                        Text(
+                          l10n.sectionDepthHint,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ],
                     ),
-                    // Ok panelle aynı süre/eğride (animasyon denetimi
-                    // 2026-10-01: ok 180 ms, panel 240 ms'deydi).
-                    SandikAcilirOk(
-                      acik: _acik,
-                      child: Icon(Icons.expand_more_rounded,
-                          color: context.c.text58),
-                    ),
-                  ],
-                ),
+                  ),
+                  // Ok panelle aynı süre/eğride (animasyon denetimi
+                  // 2026-10-01: ok 180 ms, panel 240 ms'deydi).
+                  SandikAcilirOk(
+                    acik: _acik,
+                    child: Icon(Icons.expand_more_rounded,
+                        color: context.c.text58),
+                  ),
+                ],
               ),
             ),
           ),

@@ -1003,9 +1003,8 @@ class _BenzerlikRozeti extends StatelessWidget {
       child: Material(
         color: context.c.amberFill.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        child: InkWell(
+        child: SandikTappable(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: SandikTouch.min),
             child: Padding(

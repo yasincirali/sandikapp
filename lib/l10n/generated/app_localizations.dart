@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// No description provided for @investorLevelNote.
   ///
   /// In tr, this message translates to:
-  /// **'Yalnızca hangi metriklerin GÖSTERİLECEĞİNİ değiştirir; hesaplar ve verilerin aynı kalır.'**
+  /// **'Yalnızca hangi metriklerin gösterileceğini değiştirir; hesaplar ve verilerin aynı kalır.'**
   String get investorLevelNote;
 
   /// No description provided for @levelBeginner.
@@ -2480,10 +2480,16 @@ abstract class AppLocalizations {
   /// **'Biyometrik kilit'**
   String get biometricLock;
 
+  /// No description provided for @biometricLockYontem.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yontem, select, faceId{Face ID ile kilitle} touchId{Touch ID ile kilitle} biyometrik{Biyometrik kilit} other{Ekran kilidiyle kilitle}}'**
+  String biometricLockYontem(String yontem);
+
   /// No description provided for @downloadMyData.
   ///
   /// In tr, this message translates to:
-  /// **'Verilerimi İndir'**
+  /// **'Verilerimi indir'**
   String get downloadMyData;
 
   /// No description provided for @downloadMyDataSubtitle.
@@ -2495,7 +2501,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteMyAccount.
   ///
   /// In tr, this message translates to:
-  /// **'Hesabımı Sil'**
+  /// **'Hesabımı sil'**
   String get deleteMyAccount;
 
   /// No description provided for @deleteMyAccountSubtitle.
@@ -2513,8 +2519,92 @@ abstract class AppLocalizations {
   /// No description provided for @contactUs.
   ///
   /// In tr, this message translates to:
-  /// **'Bize Ulaş'**
+  /// **'Bize ulaş'**
   String get contactUs;
+
+  /// No description provided for @sssBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sık sorulanlar'**
+  String get sssBaslik;
+
+  /// No description provided for @sssFonSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon fiyatım neden gün içinde değişmiyor?'**
+  String get sssFonSoru;
+
+  /// No description provided for @sssFonCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEFAS fon fiyatını günde bir kez, iş günü akşamı açıklar. sandık o gün açıklanan fiyatı gösterir; fiyat gün içinde değişmez.'**
+  String get sssFonCevap;
+
+  /// No description provided for @sssSiklikSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar ne sıklıkta güncellenir?'**
+  String get sssSiklikSoru;
+
+  /// No description provided for @sssSiklikCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama açıkken fiyatlar yaklaşık 30 saniyede bir yenilenir. Listeyi aşağı çekerek hemen yenileyebilirsin. Borsa kapalıyken son kapanış fiyatı görünür.'**
+  String get sssSiklikCevap;
+
+  /// No description provided for @sssKriptoSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto fiyatları nereden geliyor?'**
+  String get sssKriptoSoru;
+
+  /// No description provided for @sssKriptoCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto fiyatları Binance\'ten gelir ve hafta sonu dahil her gün güncellenir.'**
+  String get sssKriptoCevap;
+
+  /// No description provided for @sssVeriSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilerim nerede saklanıyor, nasıl silerim?'**
+  String get sssVeriSoru;
+
+  /// No description provided for @sssVeriCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabın ve portföyün sandık\'ın bulut sunucularında saklanır; hangi ülkede tutulduğu Yasal belgeler\'deki Aydınlatma Metni\'nde yazar. Profil › Hesap & Güvenlik\'ten verilerini indirebilir ya da hesabını tüm verileriyle silebilirsin.'**
+  String get sssVeriCevap;
+
+  /// No description provided for @sssOrtakSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak portföy nasıl çalışır?'**
+  String get sssOrtakSoru;
+
+  /// No description provided for @sssOrtakCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Profil\'de Ortak portföy\'e dokun, kodunu yakınına gönder ya da onun kodunu gir. Onaydan sonra ikinizin portföyü tek ekranda birleşik görünür. İstediğin an ayrılabilirsin.'**
+  String get sssOrtakCevap;
+
+  /// No description provided for @sssPremiumSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'da neler var, nasıl iptal ederim?'**
+  String get sssPremiumSoru;
+
+  /// No description provided for @sssPremiumCevap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'un içeriği ve güncel fiyatı Profil\'deki Sandık Premium sayfasında yazar. Abonelik mağaza üzerinden yürür; iptal için App Store ya da Google Play\'deki abonelik ayarlarını kullan.'**
+  String get sssPremiumCevap;
+
+  /// No description provided for @sssBizeYaz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çözülmedi mi? Bize yaz'**
+  String get sssBizeYaz;
 
   /// No description provided for @replayTour.
   ///

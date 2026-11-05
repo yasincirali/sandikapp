@@ -321,7 +321,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get investorLevelNote =>
-      'Yalnızca hangi metriklerin GÖSTERİLECEĞİNİ değiştirir; hesaplar ve verilerin aynı kalır.';
+      'Yalnızca hangi metriklerin gösterileceğini değiştirir; hesaplar ve verilerin aynı kalır.';
 
   @override
   String get levelBeginner => 'Başlangıç';
@@ -1375,14 +1375,28 @@ class AppLocalizationsTr extends AppLocalizations {
   String get biometricLock => 'Biyometrik kilit';
 
   @override
-  String get downloadMyData => 'Verilerimi İndir';
+  String biometricLockYontem(String yontem) {
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID ile kilitle',
+        'touchId': 'Touch ID ile kilitle',
+        'biyometrik': 'Biyometrik kilit',
+        'other': 'Ekran kilidiyle kilitle',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get downloadMyData => 'Verilerimi indir';
 
   @override
   String get downloadMyDataSubtitle =>
       'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)';
 
   @override
-  String get deleteMyAccount => 'Hesabımı Sil';
+  String get deleteMyAccount => 'Hesabımı sil';
 
   @override
   String get deleteMyAccountSubtitle => 'Tüm verilerin kalıcı olarak silinir';
@@ -1391,7 +1405,55 @@ class AppLocalizationsTr extends AppLocalizations {
   String get supportUpper => 'Destek';
 
   @override
-  String get contactUs => 'Bize Ulaş';
+  String get contactUs => 'Bize ulaş';
+
+  @override
+  String get sssBaslik => 'Sık sorulanlar';
+
+  @override
+  String get sssFonSoru => 'Fon fiyatım neden gün içinde değişmiyor?';
+
+  @override
+  String get sssFonCevap =>
+      'TEFAS fon fiyatını günde bir kez, iş günü akşamı açıklar. sandık o gün açıklanan fiyatı gösterir; fiyat gün içinde değişmez.';
+
+  @override
+  String get sssSiklikSoru => 'Fiyatlar ne sıklıkta güncellenir?';
+
+  @override
+  String get sssSiklikCevap =>
+      'Uygulama açıkken fiyatlar yaklaşık 30 saniyede bir yenilenir. Listeyi aşağı çekerek hemen yenileyebilirsin. Borsa kapalıyken son kapanış fiyatı görünür.';
+
+  @override
+  String get sssKriptoSoru => 'Kripto fiyatları nereden geliyor?';
+
+  @override
+  String get sssKriptoCevap =>
+      'Kripto fiyatları Binance\'ten gelir ve hafta sonu dahil her gün güncellenir.';
+
+  @override
+  String get sssVeriSoru => 'Verilerim nerede saklanıyor, nasıl silerim?';
+
+  @override
+  String get sssVeriCevap =>
+      'Hesabın ve portföyün sandık\'ın bulut sunucularında saklanır; hangi ülkede tutulduğu Yasal belgeler\'deki Aydınlatma Metni\'nde yazar. Profil › Hesap & Güvenlik\'ten verilerini indirebilir ya da hesabını tüm verileriyle silebilirsin.';
+
+  @override
+  String get sssOrtakSoru => 'Ortak portföy nasıl çalışır?';
+
+  @override
+  String get sssOrtakCevap =>
+      'Profil\'de Ortak portföy\'e dokun, kodunu yakınına gönder ya da onun kodunu gir. Onaydan sonra ikinizin portföyü tek ekranda birleşik görünür. İstediğin an ayrılabilirsin.';
+
+  @override
+  String get sssPremiumSoru => 'Premium\'da neler var, nasıl iptal ederim?';
+
+  @override
+  String get sssPremiumCevap =>
+      'Premium\'un içeriği ve güncel fiyatı Profil\'deki Sandık Premium sayfasında yazar. Abonelik mağaza üzerinden yürür; iptal için App Store ya da Google Play\'deki abonelik ayarlarını kullan.';
+
+  @override
+  String get sssBizeYaz => 'Çözülmedi mi? Bize yaz';
 
   @override
   String get replayTour => 'Tanıtım turunu yeniden izle';

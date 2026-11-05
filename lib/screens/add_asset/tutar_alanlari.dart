@@ -722,8 +722,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         ? 'Bugün'
         : DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(SandikRadius.md),
+    return SandikTappable(
       onTap: () async {
         final picked = await pickSandikDate(
           context,
