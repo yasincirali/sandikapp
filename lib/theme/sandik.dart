@@ -563,6 +563,15 @@ enum SandikHaptic {
 /// [scale] 0.97 ve 110ms bilinçli seçim: daha derin/yavaş bir animasyon
 /// listede hızlı gezinirken yorucu oluyor, daha sığı fark edilmiyor.
 ///
+/// ## Tek basma bileşeni (Ar-Ge 5 Kas 22:40 #3)
+/// Eskiden yanında ikinci bir basma bileşeni (`SandikBasma`) vardı: aynı
+/// ölçekle küçülüyor, ayrıca soluyordu; titreşim ve semantik vermiyordu.
+/// Aynı iş iki sınıfta yaşayınca hangi yüzeyin seçili hâl/etiket taşıdığı
+/// rastgeleleşti. Şimdi tek sınıf: solma isteyen yüzey [soluk] açar.
+/// `SandikBasma`'dan taşınan çağrılar `haptic: SandikHaptic.none` verir ki
+/// eskiden titreşmeyen yüzey taşımayla titreşmeye başlamasın
+/// (`sandik_basma_ratchet_test` sınıfın geri gelmesini kilitler).
+///
 /// ```dart
 /// SandikTappable(
 ///   onTap: () => Navigator.push(...),
@@ -579,6 +588,7 @@ class SandikTappable extends StatefulWidget {
     this.semanticLabel,
     this.selected,
     this.haptic,
+    this.soluk = false,
   });
 
   /// `true` dönerse [haptic] verilmemiş, seçim kavramı olmayan dokunuş
@@ -590,6 +600,9 @@ class SandikTappable extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+
+  /// Basılıyken ölçek. Büyük yüzeylerde (kart) 0,97–0,98; küçük çiplerde
+  /// 0,94'e kadar inilebilir.
   final double scale;
   final String? semanticLabel;
 
@@ -608,32 +621,116 @@ class SandikTappable extends StatefulWidget {
   /// ister: seçim değişimi, başarı, hata. 63 satır/kartın her dokunuşta
   /// titremesi gürültüydü (HIG denetimi 2026-10-10). Ana eylemler
   /// ([SandikHaptic.medium]) ve yıkıcı onaylar açıkça yükseltir.
+  ///
+  /// [SandikHaptic.none] uzun basmayı da susturur: "bu yüzey titreşmez"
+  /// diyen çağıranın uzun basmada sürpriz bir darbe alması tutarsızdı
+  /// (`SandikBasma` taşıması, sekme çubuğu Profil uzun basması).
   final SandikHaptic? haptic;
+
+  /// Basılıyken küçülmeye ek olarak solma (saydamlık 0,82).
+  ///
+  /// ## Neden (animasyon denetimi, 2026-09-30)
+  /// Uygulamada 52 dokunma yüzeyi düz `GestureDetector`dı: basışa hiçbir
+  /// görsel tepki yoktu, tepki ancak iş bitince (sayfa açılınca, çip
+  /// renklenince) geliyordu. Kullanıcı "buton click net olmalı" dedi —
+  /// parmak değdiği an bir şey olmalı. Ripple (`InkWell`) bir `Material`
+  /// zemin ister ve yuvarlak köşeli, kenarlı kartlarda taşar; ölçek + solma
+  /// her şekle uyar ve iOS'taki basma hissine yakındır.
+  ///
+  /// ## Neden takılmaz
+  /// `ScaleTransition` + `FadeTransition`: kare başına `build` yok, `Opacity`
+  /// gibi ek çizim katmanı (saveLayer) yok — dönüşüm ve saydamlık bileşik
+  /// katmanda uygulanır.
+  ///
+  /// ## Hızlı dokunuş
+  /// Dokunuş basma süresinden kısa sürerse (`onTapDown` ile `onTapUp` aynı
+  /// karede) basılı hâl önce tamamlanır, SONRA bırakılır — yoksa geri
+  /// bildirim hiç görünmezdi.
+  ///
+  /// Hareketi azalt açıkken küçülme yok (hareket), yalnız solma (hareket
+  /// değil, durum). Süreler `SandikMotion.press` / `state`.
+  final bool soluk;
 
   @override
   State<SandikTappable> createState() => _SandikTappableState();
 }
 
-class _SandikTappableState extends State<SandikTappable> {
+class _SandikTappableState extends State<SandikTappable>
+    with SingleTickerProviderStateMixin {
   bool _down = false;
 
+  // Solma yolu ([SandikTappable.soluk]) için; yalnız gerektiğinde kurulur ki
+  // 100+ düz yüzey boşuna ticker taşımasın.
+  AnimationController? _c;
+  Animation<double>? _egri;
+  bool _basili = false;
+
+  bool get _etkin => widget.onTap != null || widget.onLongPress != null;
+
+  AnimationController get _kontrol => _c ??= AnimationController(
+        vsync: this,
+        duration: SandikMotion.press,
+        reverseDuration: SandikMotion.state,
+      );
+
+  Animation<double> get _egriAnim => _egri ??= CurvedAnimation(
+        parent: _kontrol,
+        curve: SandikMotion.enter,
+        reverseCurve: SandikMotion.move,
+      );
+
   void _set(bool v) {
-    if (widget.onTap == null && widget.onLongPress == null) return;
+    if (!_etkin) return;
     if (_down != v && mounted) setState(() => _down = v);
+  }
+
+  void _bas() {
+    if (!_etkin) return;
+    _basili = true;
+    _kontrol.forward().whenComplete(() {
+      // Parmak basma bitmeden kalktıysa şimdi bırak (hızlı dokunuş).
+      if (mounted && !_basili) _c?.reverse();
+    });
+  }
+
+  void _birak() {
+    _basili = false;
+    final c = _c;
+    if (c != null && !c.isAnimating) c.reverse();
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onTap != null || widget.onLongPress != null;
+    final enabled = _etkin;
     // Erişilebilirlik: "hareketi azalt" açıkken scale uygulanmaz.
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
-    Widget result = AnimatedScale(
-      scale: (_down && enabled && !reduceMotion) ? widget.scale : 1.0,
-      duration: SandikMotion.press,
-      curve: SandikMotion.enter,
-      child: widget.child,
-    );
+    Widget result;
+    if (widget.soluk) {
+      final egri = _egriAnim;
+      result = FadeTransition(
+        opacity: Tween<double>(begin: 1, end: 0.82).animate(egri),
+        child: reduceMotion
+            ? widget.child
+            : ScaleTransition(
+                scale: Tween<double>(begin: 1, end: widget.scale).animate(egri),
+                child: widget.child,
+              ),
+      );
+    } else {
+      result = AnimatedScale(
+        scale: (_down && enabled && !reduceMotion) ? widget.scale : 1.0,
+        duration: SandikMotion.press,
+        curve: SandikMotion.enter,
+        child: widget.child,
+      );
+    }
 
     if (widget.semanticLabel != null || widget.selected != null) {
       result = Semantics(
@@ -644,6 +741,7 @@ class _SandikTappableState extends State<SandikTappable> {
       );
     }
 
+    final sessiz = widget.haptic == SandikHaptic.none;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       // Haptic yalnızca eylem gerçekten varken tetiklenir; onTap null ise
@@ -664,12 +762,22 @@ class _SandikTappableState extends State<SandikTappable> {
           : () {
               // Uzun basma her zaman daha belirgin: kullanıcı bir eşiği
               // geçtiğini bilmeli, aksi halde ne zaman bırakacağını kestiremez.
-              SandikHaptic.medium.perform();
+              // İstisna: çağıran açıkça `SandikHaptic.none` dediyse sessiz.
+              if (!sessiz) SandikHaptic.medium.perform();
               widget.onLongPress!();
             },
-      onTapDown: (_) => _set(true),
-      onTapUp: (_) => _set(false),
-      onTapCancel: () => _set(false),
+      // Düz yol eski davranışı birebir korur (dinleyici hep bağlı, `_set`
+      // pasifken susar); solma yolu `SandikBasma` gibi pasifken dinleyici
+      // bağlamaz ki devre dışı yüzey üst öğenin dokunuşunu yutmasın.
+      onTapDown: widget.soluk
+          ? (enabled ? (_) => _bas() : null)
+          : (_) => _set(true),
+      onTapUp: widget.soluk
+          ? (enabled ? (_) => _birak() : null)
+          : (_) => _set(false),
+      onTapCancel: widget.soluk
+          ? (enabled ? _birak : null)
+          : () => _set(false),
       child: result,
     );
   }
@@ -1627,112 +1735,8 @@ class SandikCard extends StatelessWidget {
       child: child,
     );
     if (onTap == null) return box;
-    return SandikBasma(onTap: onTap, child: box);
-  }
-}
-
-/// Dokunma geri bildirimi — basılıyken hafif küçülme ve solma.
-///
-/// ## Neden (animasyon denetimi, 2026-09-30)
-/// Uygulamada 52 dokunma yüzeyi düz `GestureDetector`dı: basışa hiçbir
-/// görsel tepki yoktu, tepki ancak iş bitince (sayfa açılınca, çip
-/// renklenince) geliyordu. Kullanıcı "buton click net olmalı" dedi —
-/// parmak değdiği an bir şey olmalı. Ripple (`InkWell`) bir `Material`
-/// zemin ister ve yuvarlak köşeli, kenarlı kartlarda taşar; ölçek + solma
-/// her şekle uyar ve iOS'taki basma hissine yakındır.
-///
-/// ## Neden takılmaz
-/// `ScaleTransition` + `FadeTransition`: kare başına `build` yok, `Opacity`
-/// gibi ek çizim katmanı (saveLayer) yok — dönüşüm ve saydamlık bileşik
-/// katmanda uygulanır.
-///
-/// ## Hızlı dokunuş
-/// Dokunuş basma süresinden kısa sürerse (`onTapDown` ile `onTapUp` aynı
-/// karede) basılı hâl önce tamamlanır, SONRA bırakılır — yoksa geri
-/// bildirim hiç görünmezdi.
-///
-/// Hareketi azalt açıkken küçülme yok (hareket), yalnız solma (hareket
-/// değil, durum). Süreler `SandikMotion.press` / `state`.
-class SandikBasma extends StatefulWidget {
-  const SandikBasma({
-    super.key,
-    required this.child,
-    this.onTap,
-    this.onLongPress,
-    this.behavior = HitTestBehavior.opaque,
-    this.olcek = 0.97,
-  });
-
-  final Widget child;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-  final HitTestBehavior behavior;
-
-  /// Basılıyken ölçek. Büyük yüzeylerde (kart) 0,97–0,98; küçük çiplerde
-  /// 0,94'e kadar inilebilir.
-  final double olcek;
-
-  @override
-  State<SandikBasma> createState() => _SandikBasmaState();
-}
-
-class _SandikBasmaState extends State<SandikBasma>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: SandikMotion.press,
-    reverseDuration: SandikMotion.state,
-  );
-  late final Animation<double> _egri = CurvedAnimation(
-    parent: _c,
-    curve: SandikMotion.enter,
-    reverseCurve: SandikMotion.move,
-  );
-  late final Animation<double> _saydamlik =
-      Tween<double>(begin: 1, end: 0.82).animate(_egri);
-  late final Animation<double> _olcek =
-      Tween<double>(begin: 1, end: widget.olcek).animate(_egri);
-  bool _basili = false;
-
-  bool get _etkin => widget.onTap != null || widget.onLongPress != null;
-
-  void _bas(TapDownDetails _) {
-    if (!_etkin) return;
-    _basili = true;
-    _c.forward().whenComplete(() {
-      // Parmak basma bitmeden kalktıysa şimdi bırak (hızlı dokunuş).
-      if (mounted && !_basili) _c.reverse();
-    });
-  }
-
-  void _birak() {
-    _basili = false;
-    if (!_c.isAnimating) _c.reverse();
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final azalt = MediaQuery.disableAnimationsOf(context);
-    return GestureDetector(
-      behavior: widget.behavior,
-      onTapDown: _etkin ? _bas : null,
-      onTapUp: _etkin ? (_) => _birak() : null,
-      onTapCancel: _etkin ? _birak : null,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: FadeTransition(
-        opacity: _saydamlik,
-        child: azalt
-            ? widget.child
-            : ScaleTransition(scale: _olcek, child: widget.child),
-      ),
-    );
+    return SandikTappable(
+        onTap: onTap, soluk: true, haptic: SandikHaptic.none, child: box);
   }
 }
 

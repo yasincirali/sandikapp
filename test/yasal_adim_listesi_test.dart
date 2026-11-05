@@ -139,7 +139,7 @@ void main() {
             scrollable: find.byType(Scrollable).first);
         final dugme = find.ancestor(
             of: find.text(tr.yasalAdimOkuOnayla),
-            matching: find.byType(SandikBasma));
+            matching: find.byType(SandikTappable));
         expect(boyutu(dugme).height, greaterThanOrEqualTo(SandikTouch.min));
         expect(boyutu(dugme).width, greaterThanOrEqualTo(SandikTouch.min));
         await tester.scrollUntilVisible(
@@ -147,7 +147,7 @@ void main() {
             scrollable: find.byType(Scrollable).first);
         final digerBaslik = find.ancestor(
             of: find.text(tr.yasalAdimDigerBelgeler(3)),
-            matching: find.byType(SandikBasma));
+            matching: find.byType(SandikTappable));
         expect(boyutu(digerBaslik).height,
             greaterThanOrEqualTo(SandikTouch.min));
         expect(tester.takeException(), isNull);

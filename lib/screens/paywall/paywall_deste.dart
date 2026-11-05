@@ -721,9 +721,11 @@ class _PlanSekmeleri extends StatelessWidget {
           child: Semantics(
             button: true,
             selected: secili,
-            child: SandikBasma(
+            child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: () => onPlan(deger),
-              olcek: 0.98,
+              scale: 0.98,
               child: AnimatedContainer(
                 duration: SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,

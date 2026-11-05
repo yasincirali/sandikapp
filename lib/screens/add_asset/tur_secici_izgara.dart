@@ -290,8 +290,10 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
       selected: secili,
       label: context.l10n.assetTypeSemantics(etiket),
       excludeSemantics: true,
-      child: SandikBasma(
-        olcek: 0.95,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
+        scale: 0.95,
         onTap: () {
           SandikHaptic.selection.perform();
           widget.onKutu(k);
@@ -416,8 +418,10 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
       button: true,
       label: context.l10n.tekrarAlSemantik(a.sonuc.sembol, miktar),
       excludeSemantics: true,
-      child: SandikBasma(
-        olcek: 0.96,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
+        scale: 0.96,
         onTap: () {
           SandikHaptic.selection.perform();
           widget.onSonuc(a.sonuc);
@@ -535,8 +539,10 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
       button: true,
       label: '${s.sembol}, ${s.ad}, $pazar',
       excludeSemantics: true,
-      child: SandikBasma(
-        olcek: 0.98,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
+        scale: 0.98,
         onTap: () => widget.onSonuc(s),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: SandikSpace.xxl),

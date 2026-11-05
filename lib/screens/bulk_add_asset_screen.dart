@@ -720,7 +720,9 @@ class _BulkItemTile extends StatelessWidget {
         item.subCategory!,
     ].join(' · ');
 
-    return SandikBasma(
+    return SandikTappable(
+      soluk: true,
+      haptic: SandikHaptic.none,
       onTap: onEdit,
       child: SandikCard(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

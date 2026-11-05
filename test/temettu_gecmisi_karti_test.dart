@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/utils/friendly_error.dart' show SandikDiyalogKabugu;
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/services/temettu_gecmisi.dart';
@@ -211,7 +212,7 @@ void main() {
       );
       await t.tap(find.widgetWithText(TextButton, 'Kaydet'));
       await t.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(SandikDiyalogKabugu), findsOneWidget);
       final alan = t.widget<TextField>(find.byType(TextField));
       // Remote Config testte varsayılan: stopaj 0,15 (karar 8.1, mevzuat)
       // → alan NET ön dolu, kesinti ve net satırda. "Bilinmiyor" yolu
@@ -273,7 +274,7 @@ void main() {
       await t.tap(find.widgetWithText(FilledButton, 'Kaydet'));
       await t.pump();
       // Boş alan → geçerli tutar iste; diyalog açık kalır, addDividend yok.
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(SandikDiyalogKabugu), findsOneWidget);
       expect(find.text('Geçerli bir tutar gir'), findsOneWidget);
     });
 

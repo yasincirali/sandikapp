@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/main.dart';
 import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/utils/friendly_error.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/bildirim_izni.dart';
 import 'package:portfoy_takip/models/asset.dart';
@@ -219,6 +220,37 @@ void main() {
                   child: const SizedBox(
                     height: SandikTouch.min,
                     child: Text('THYAO'),
+                  ),
+                ),
+                // Solan basma (eski `SandikBasma`, Ar-Ge 5 Kas 22:40 #3).
+                SandikTappable(
+                  onTap: () {},
+                  soluk: true,
+                  haptic: SandikHaptic.none,
+                  semanticLabel: 'Solan satır',
+                  child: const SizedBox(
+                    height: SandikTouch.min,
+                    child: Text('ASELS'),
+                  ),
+                ),
+                const SizedBox(height: SandikSpace.md),
+                // Özel içerikli diyalog kabuğu (Ar-Ge 5 Kas 22:40 #7):
+                // içindeki düğme 44 pt, metin kontrastı kart zemininde.
+                SandikDiyalogKabugu(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Yatırım uyarısı',
+                          style: context.t.titleLarge
+                              ?.copyWith(color: context.c.text90)),
+                      const SizedBox(height: SandikSpace.sm),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                            onPressed: () {}, child: const Text('Kapat')),
+                      ),
+                    ],
                   ),
                 ),
                 // Anahtar etiketsiz tek başına durmaz: satır metniyle

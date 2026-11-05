@@ -521,8 +521,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // yabancı duruyor. HitTestBehavior.opaque, Column'un boş kalan alanının
     // da dokunmayı yakalamasını sağlar (tam 60pt yükseklikte hedef).
     return Expanded(
-      child: SandikBasma(
-        behavior: HitTestBehavior.opaque,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: () => _onItemTapped(index),
         // Çoklu hesap: Profil sekmesine uzun basma hesap listesini açar
         // (Instagram). Çubuğun görünüşü değişmez; bayrak kapalıyken no-op.

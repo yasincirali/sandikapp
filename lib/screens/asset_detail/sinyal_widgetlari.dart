@@ -243,7 +243,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
   /// zemin taşımaz.
   Widget _kabuk({required Color renk, required Widget child}) {
     // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı. Alt boşluk
-    // kartın DIŞINDA ama `SandikBasma`'nın İÇİNDE kalır: eski `margin`
+    // kartın DIŞINDA ama `SandikTappable`'ın İÇİNDE kalır: eski `margin`
     // dokunma alanına dahildi, öyle kalsın.
     final govde = Padding(
       padding: const EdgeInsets.only(bottom: SandikSpace.sm),
@@ -283,8 +283,9 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
       ),
     );
     if (widget.onTap == null) return govde;
-    return SandikBasma(
-      behavior: HitTestBehavior.opaque,
+    return SandikTappable(
+      soluk: true,
+      haptic: SandikHaptic.none,
       onTap: widget.onTap,
       child: govde,
     );
@@ -646,8 +647,9 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
           const SizedBox(height: SandikSpace.smd),
           Align(
             alignment: Alignment.centerLeft,
-            child: SandikBasma(
-              behavior: HitTestBehavior.opaque,
+            child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: () => setState(() => _deneme++),
               child: Container(
                 // HIG'in en küçük dokunma hedefi 44pt; metin 11pt olduğu

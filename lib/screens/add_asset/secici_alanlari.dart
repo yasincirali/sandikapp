@@ -17,7 +17,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
               button: true,
               selected: selected,
               label: opt.label,
-              child: SandikBasma(
+              child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: () {
                 SandikHaptic.selection.perform();
                 _yaz(_n.selectDoviz(opt));
@@ -96,7 +98,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
               button: true,
               selected: selected,
               label: context.l10n.quantitySemantics(v),
-              child: SandikBasma(
+              child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: () {
                 SandikHaptic.selection.perform();
                 _quantity.text = v;
@@ -188,7 +192,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
       label: ad == null
           ? context.l10n.pickUsStock
           : context.l10n.selectedUsStockSemantics(ad),
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: _showAbdPicker,
         child: _selectorContainer(
           cs: cs,
@@ -236,7 +242,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
       label: selectedName == null
           ? context.l10n.pickStock
           : 'Seçili hisse: $selectedName. Değiştirmek için çift dokun.',
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: _showBist100Picker,
         child: _selectorContainer(
           cs: cs,
@@ -278,7 +286,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
       label: _selectedFund == null
           ? context.l10n.pickFund
           : 'Seçili fon: ${_selectedFund!.name}. Değiştirmek için çift dokun.',
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: _showTefasPicker,
         child: _selectorContainer(
           cs: cs,
@@ -326,7 +336,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
       label: kod == null
           ? context.l10n.pickCryptoTap
           : context.l10n.cryptoSelectedSemantics(ad ?? kod),
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: _showKriptoPicker,
         child: _selectorContainer(
           cs: cs,
@@ -374,7 +386,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
       label: s == null
           ? context.l10n.pickEurobondTap
           : context.l10n.eurobondSelectedSemantics('${s.ad} (${s.isin})'),
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: _showEurobondPicker,
         child: _selectorContainer(
           cs: cs,

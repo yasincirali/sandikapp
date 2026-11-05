@@ -369,6 +369,112 @@ Future<T?> showSandikGecisli<T>({
   );
 }
 
+/// Marka diyalog kartının zemini — onay/bilgi kabuğu ([_SandikDialogShell])
+/// ve özel içerikli kabuk ([SandikDiyalogKabugu]) AYNI kartı çizer; yüzey,
+/// köşe, vurgu kenarı ve gölge tek yerde.
+BoxDecoration _diyalogKarti(BuildContext context, Color accent) =>
+    BoxDecoration(
+      color: context.isLight ? context.c.surface2 : context.c.surface1,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: accent.withValues(alpha: 0.30)),
+      boxShadow: [
+        BoxShadow(
+          color:
+              context.c.golge.withValues(alpha: context.isLight ? 0.14 : 0.35),
+          blurRadius: 30,
+          spreadRadius: -6,
+          offset: const Offset(0, 12),
+        ),
+        BoxShadow(
+          color: accent.withValues(alpha: 0.18),
+          blurRadius: 40,
+          spreadRadius: -12,
+        ),
+      ],
+    );
+
+/// Kendi içeriğini çizen diyaloğun marka kabuğu: [showSandikGecisli] ile
+/// açılır, içine form/metin/düğme konur.
+///
+/// ## Neden (Ar-Ge 5 Kas 22:40 #7, TASARIM_DILI §6.6)
+/// Geçiş markanınkiydi ama kart Material'ındı: Ayarlar'daki şifre ve yasal
+/// uyarı diyaloğu, temettü ve hızlı al/sat `AlertDialog`/`Dialog` kabuğunda
+/// açılıyordu — başka köşe, başka yüzey, vurgu kenarı ve gölge yok. Aynı
+/// uygulamada iki diyalog görünüşü yan yanaydı. Bu kabuk onay/bilgi
+/// diyaloğunun kartını ([_diyalogKarti]) paylaşır; içerik çağıranda kalır.
+///
+/// - **Klavye:** `AlertDialog`/`Dialog` klavye açılınca yukarı kayıyordu
+///   (`viewInsets`); bu kabuk da kayar, yoksa otomatik odaklı alanın
+///   altındaki "Kaydet" klavyenin arkasında kalırdı.
+/// - **Kaydırma:** [kaydir] açıkken (varsayılan) tüm kart kayar; başlığı ve
+///   düğme satırını sabit tutmak isteyen içerik [kaydir] `false` verip
+///   gövdesini kendisi `Flexible` + kaydırma içine alır (kart yüksekliği
+///   ekranla sınırlıdır).
+class SandikDiyalogKabugu extends StatelessWidget {
+  const SandikDiyalogKabugu({
+    super.key,
+    required this.child,
+    this.vurgu,
+    this.kaydir = true,
+    this.padding = const EdgeInsets.fromLTRB(24, 24, 24, 16),
+  });
+
+  final Widget child;
+
+  /// Kenar ve hale rengi. Verilmezse marka vurgusu (`amberText`); işlem
+  /// diyaloğu kendi anlamını verir (alış yeşil, satış kırmızı).
+  final Color? vurgu;
+  final bool kaydir;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final kart = Container(
+      constraints: const BoxConstraints(maxWidth: 360),
+      padding: padding,
+      decoration: _diyalogKarti(context, vurgu ?? context.c.amberText),
+      child: child,
+    );
+    return _KlavyePayi(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: SandikSpace.md,
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: kaydir ? SingleChildScrollView(child: kart) : kart,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Klavye açıkken diyaloğu klavyenin üstüne iter (`Dialog`'un
+/// `viewInsets` davranışı). `showGeneralDialog` sayfası bunu kendisi yapmaz;
+/// onay diyaloğuna alan (`detail`) konunca düğmeler klavyenin arkasında
+/// kalıyordu. Klavye yokken pay sıfır — görünüş değişmez.
+class _KlavyePayi extends StatelessWidget {
+  const _KlavyePayi({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AnimatedPadding(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        duration: SandikMotion.press,
+        curve: SandikMotion.enter,
+        child: MediaQuery.removeViewInsets(
+          context: context,
+          removeBottom: true,
+          child: child,
+        ),
+      );
+}
+
 /// Perde rengi — aydınlıkta hafif, karanlıkta koyu; iki dialog da bunu kullanır.
 /// Ton düz siyah değil, marka yeşiline çalar (`SandikPalette.golge`).
 Color _barrierColor(BuildContext context) =>
@@ -408,80 +514,64 @@ class _SandikDialogShell extends StatelessWidget {
     // Güvenli alan + kaydırma: büyük metin ölçeğinde ya da yatay küçük
     // ekranda kart ekran yüksekliğini aşarsa alt kısmı (düğmeler!) kesilip
     // ulaşılamaz oluyordu. Sığdığında kaydırma görünmez, kart ortada kalır.
-    return SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 32,
-            vertical: SandikSpace.md,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 360),
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-              decoration: BoxDecoration(
-                color:
-                    context.isLight ? context.c.surface2 : context.c.surface1,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: accent.withValues(alpha: 0.30)),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.c.golge
-                        .withValues(alpha: context.isLight ? 0.14 : 0.35),
-                    blurRadius: 30,
-                    spreadRadius: -6,
-                    offset: const Offset(0, 12),
-                  ),
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.18),
-                    blurRadius: 40,
-                    spreadRadius: -12,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: accent.withValues(alpha: 0.35)),
-                    ),
-                    child: Icon(icon, color: accent, size: 30),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: context.c.text90,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: context.t.bodyMedium?.copyWith(
-                      height: 1.4,
-                      color: context.c.text58,
-                    ),
-                  ),
-                  if (detail != null) ...[
-                    const SizedBox(height: 14),
-                    detail!,
-                  ],
-                  const SizedBox(height: 20),
-                  asyncActions ??
-                      _EylemSatiri(
-                        actions: actions ?? const [],
-                        labels: actionLabels ?? const [],
+    return _KlavyePayi(
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: SandikSpace.md,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 360),
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+                decoration: _diyalogKarti(context, accent),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border:
+                            Border.all(color: accent.withValues(alpha: 0.35)),
                       ),
-                ],
+                      child: Icon(icon, color: accent, size: 30),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: context.t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.c.text90,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: context.t.bodyMedium?.copyWith(
+                        height: 1.4,
+                        color: context.c.text58,
+                      ),
+                    ),
+                    if (detail != null) ...[
+                      const SizedBox(height: 14),
+                      detail!,
+                    ],
+                    const SizedBox(height: 20),
+                    asyncActions ??
+                        _EylemSatiri(
+                          actions: actions ?? const [],
+                          labels: actionLabels ?? const [],
+                        ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -674,8 +764,9 @@ class _DialogButton extends StatelessWidget {
     // kırpıyordu). 46 ≥ 44 pt dokunma alanı korunur.
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 46),
-      child: SandikBasma(
-        behavior: HitTestBehavior.opaque,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: onTap,
         child: Semantics(
           button: true,

@@ -200,10 +200,12 @@ class _BildirimSatiriState extends State<BildirimSatiri> {
       button: true,
       expanded: _acik,
       onTapHint: _acik ? l10n.notifCollapseHint : l10n.notifExpandHint,
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: _degistir,
         // Uzun satırda %3 küçülme metni titretir; açılır satır büyük yüzey.
-        olcek: 0.98,
+        scale: 0.98,
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
           // Zemin ve çerçeve NÖTR, renk yalnız simge dairesinde (Ar-Ge 2 Kas

@@ -1,8 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 
+/// `SandikTappable(soluk: true)` — eski `SandikBasma` davranışı (Ar-Ge 5 Kas
+/// 22:40 #3 ile tek bileşene katıldı; dosya eskiden `sandik_basma_test`).
+///
 /// Dokunma geri bildirimi (animasyon denetimi, 2026-09-30): basılıyken
 /// küçülme + solma, hızlı dokunuşta da görünür, hareketi azalt açıkken
 /// küçülme yok. Takılmama gerekçesi: Scale/FadeTransition — kare başına
@@ -14,7 +18,9 @@ void main() {
       home: MediaQuery(
         data: MediaQueryData(disableAnimations: azalt),
         child: Center(
-          child: SandikBasma(
+          child: SandikTappable(
+            soluk: true,
+            haptic: SandikHaptic.none,
             onTap: onTap ?? () {},
             child: Builder(builder: (_) {
               build?.call(++sayac);
@@ -88,7 +94,9 @@ void main() {
   testWidgets('onTap yoksa geri bildirim yok (devre dışı buton)', (t) async {
     await t.pumpWidget(const MaterialApp(
       home: Center(
-        child: SandikBasma(child: SizedBox(width: 120, height: 48, key: Key('hedef'))),
+        child: SandikTappable(
+            soluk: true,
+            child: SizedBox(width: 120, height: 48, key: Key('hedef'))),
       ),
     ));
     final g = await t.startGesture(t.getCenter(find.byKey(const Key('hedef'))));
@@ -96,5 +104,33 @@ void main() {
     await t.pump(SandikMotion.press);
     expect(olcek(t), 1);
     await g.up();
+  });
+
+  testWidgets('haptic: none — dokunma ve uzun basma titreşmez', (t) async {
+    final cagrilar = <MethodCall>[];
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform, (c) async {
+      cagrilar.add(c);
+      return null;
+    });
+    addTearDown(() => t.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    var uzun = 0;
+    await t.pumpWidget(MaterialApp(
+      home: Center(
+        child: SandikTappable(
+          soluk: true,
+          haptic: SandikHaptic.none,
+          onTap: () {},
+          onLongPress: () => uzun++,
+          child: const SizedBox(width: 120, height: 48, key: Key('hedef')),
+        ),
+      ),
+    ));
+    await t.tap(find.byKey(const Key('hedef')));
+    await t.longPress(find.byKey(const Key('hedef')));
+    await t.pumpAndSettle();
+    expect(uzun, 1);
+    expect(cagrilar.where((c) => c.method == 'HapticFeedback.vibrate'), isEmpty);
   });
 }

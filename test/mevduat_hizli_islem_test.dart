@@ -168,6 +168,11 @@ void main() {
 
     testWidgets('Sat "Hepsi": eldeki payın tamamı satılır', (tester) async {
       final k = await _ac(tester, QuickAdjustMode.remove);
+      // Çip şeridi yatay kayar; diyalog marka kabuğunda 360 pt'ye sınırlı
+      // (Ar-Ge 5 Kas 22:40 #7) — eski Material `Dialog` 800 pt test yüzeyinde
+      // 720 pt açılıyor, "Hepsi" çipi kaydırmadan görünüyordu.
+      await tester.ensureVisible(find.textContaining('Hepsi'));
+      await tester.pumpAndSettle();
       await tester.tap(find.textContaining('Hepsi'));
       await tester.pump();
       await _onayla(tester, 'Sat');

@@ -325,9 +325,14 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice;
     final total = qty * (_isAdd ? price : satisFiyati);
 
-    return Dialog(
-      backgroundColor: context.c.surface1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.lg)),
+    // Marka kabuğu (Ar-Ge 5 Kas 22:40 #7; eskiden Material `Dialog`): kart
+    // onay/bilgi diyaloğuyla aynı, kenar vurgusu işlemin rengi (al yeşil,
+    // sat kırmızı). İç pay ve kaydırma düzeni aşağıdaki `Padding`'de
+    // kaldı; kabuk klavye payını `Dialog` gibi kendisi verir.
+    return SandikDiyalogKabugu(
+      vurgu: accent,
+      kaydir: false,
+      padding: EdgeInsets.zero,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
@@ -416,19 +421,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 children: [
                   Text(context.l10n.quickHolding,
                       style: context.t.bodySmall?.copyWith(color: context.c.text36)),
-                  const Spacer(),
-                  Text(
+                  const SizedBox(width: SandikSpace.sm),
+                  // Esnek + sağa yaslı: kabuk 360 pt'de sınırlı (marka
+                  // kabuğu, Ar-Ge 5 Kas 22:40 #7); uzun "adet · ort." metni
+                  // dar ekranda ya da büyük yazıda satırı taşırmasın, kırılsın.
+                  Expanded(
+                    child: Text(
                     // Mevduatta pay ve "ort. 1,00 ₺" kullanıcıya bir şey
                     // söylemez; bakiye söyler.
                     _tutarla
                         ? fmtTRY(_bakiye, digits: 2)
                         : '${numFmt.format(asset.quantity)} $_unitLabel · '
                             '${context.l10n.quickAvgShort('${numFmt.format(asset.purchasePrice)} $_currencySymbol')}',
+                    textAlign: TextAlign.end,
                     style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
+                  ),
                   ),
                 ],
               ),
@@ -665,7 +676,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           for (final chip in chips)
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: SandikBasma(
+              child: SandikTappable(
+                soluk: true,
+                haptic: SandikHaptic.none,
                 onTap: () => setState(() {
                   _qtyCtrl.text = chip.deger;
                   _error = null;

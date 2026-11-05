@@ -265,7 +265,9 @@ extension _KimlikAlanlari on _AddAssetScreenState {
         if (!_sembolAlanlariAcik(hata: hata))
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: SandikBasma(
+            child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: () {
                 SandikHaptic.selection.perform();
                 _n.sembolleEkleAc();
@@ -368,7 +370,9 @@ extension _KimlikAlanlari on _AddAssetScreenState {
       button: true,
       label: context.l10n.altinTumTurlerSemantik,
       excludeSemantics: true,
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: _showGoldPicker,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -448,7 +452,9 @@ extension _KimlikAlanlari on _AddAssetScreenState {
       button: true,
       selected: selected,
       label: context.l10n.goldSemantics(g.label),
-      child: SandikBasma(
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: () {
           SandikHaptic.selection.perform();
           _selectGold(g);

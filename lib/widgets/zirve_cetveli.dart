@@ -256,8 +256,9 @@ class ZirveCetveli extends StatelessWidget {
                     '${ZirveKiyas.getiriParcasi(i.roi)}'
                 : '${i.sira}. portföy, ${ZirveKiyas.getiriParcasi(i.roi)}',
             child: ExcludeSemantics(
-              child: SandikBasma(
-                behavior: HitTestBehavior.opaque,
+              child: SandikTappable(
+                soluk: true,
+                haptic: SandikHaptic.none,
                 onTap: () => onSec(i.anahtar),
                 child: SizedBox(
                   key: ValueKey('zirve-dokun-${i.anahtar}'),
