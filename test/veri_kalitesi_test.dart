@@ -64,6 +64,19 @@ Asset _lot(
 List<Position> _poz(List<Asset> l) => aggregatePositions(l);
 
 void main() {
+  // Ar-Ge 5 Kas 20:45 #3: etiket gün yerine ay/yıl, tek satır.
+  test('eskiFiyatAySayisi: 30–59 gün 1 ay, 60+ N ay, 365+ yıldan eski', () {
+    expect(eskiFiyatAySayisi(30), 1);
+    expect(eskiFiyatAySayisi(59), 1);
+    expect(eskiFiyatAySayisi(60), 2);
+    expect(eskiFiyatAySayisi(200), 6);
+    expect(eskiFiyatAySayisi(364), 12);
+    expect(eskiFiyatAySayisi(365), isNull);
+    expect(eskiFiyatAySayisi(601), isNull);
+    expect(eskiFiyatAySayisi(5), 1); // eşik altı en az 1 ay
+    expect(eskiFiyatEsikGun, 30); // eşik değişmedi
+  });
+
   group('Asset.maliyetBilinmiyor (0162)', () {
     test('null iken anahtar gövdeye HİÇ yazılmaz (sütunsuz sunucu)', () {
       expect(_lot('a').toSupabase().containsKey('maliyet_bilinmiyor'),

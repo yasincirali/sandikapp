@@ -14,6 +14,7 @@ import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/en_cok_oynayan.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/sparkline_service.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -149,9 +150,11 @@ void main() {
     setUp(() => SharedPreferences.setMockInitialValues({}));
     tearDown(IntradaySeriesCache.instance.clear);
 
-    Future<void> pump(WidgetTester tester) async {
-      tester.view.physicalSize = const Size(390 * 3, 1600 * 3);
-      tester.view.devicePixelRatio = 3.0;
+    Future<void> pump(WidgetTester tester, {bool boyut = true}) async {
+      if (boyut) {
+        tester.view.physicalSize = const Size(390 * 3, 1600 * 3);
+        tester.view.devicePixelRatio = 3.0;
+      }
       addTearDown(tester.view.reset);
       final durum = PortfolioState(
           assets: [thy, asl], usdTry: 42, eurTry: 46, gbpTry: 54);
@@ -200,6 +203,40 @@ void main() {
       expect(find.text('Değişim yok'), findsOneWidget);
       // Sıra kullanıcının seçimi: mod geçişi satırları yer değiştirmez.
       expect(y(tester, 'THYAO') < y(tester, 'ASELS'), isTrue);
+      await tester.pumpWidget(const SizedBox());
+      SparklineService.instance.clear();
+    });
+
+    // Ar-Ge 5 Kas 20:45 #1: seçici liste başlığında, küçük; ayrı satır yok.
+    testWidgets('Toplam | Bugün liste başlığında, 44 pt dokunma alanıyla',
+        (tester) async {
+      await pump(tester);
+      expect(find.text('2 varlık'), findsOneWidget);
+      final baslik = tester.getCenter(find.text('2 varlık')).dy;
+      final secici = tester.getCenter(find.text('Toplam')).dy;
+      expect((baslik - secici).abs(), lessThan(4),
+          reason: 'seçici başlıkla aynı satırda');
+      // Başlık halkanın altında, listenin üstünde.
+      expect(baslik, lessThan(y(tester, 'THYAO')));
+      final segment = find
+          .ancestor(of: find.text('Toplam'), matching: find.byType(SizedBox))
+          .first;
+      expect(tester.getSize(segment).height,
+          greaterThanOrEqualTo(SandikTouch.min));
+      // Küçük: sayfa sekmesinden dar.
+      expect(tester.getSize(segment).width, lessThanOrEqualTo(168));
+      await tester.pumpWidget(const SizedBox());
+      SparklineService.instance.clear();
+    });
+
+    testWidgets('liste başlığı 320 pt × 2 yazıda taşmaz', (tester) async {
+      tester.view.physicalSize = const Size(320 * 3, 1600 * 3);
+      tester.view.devicePixelRatio = 3.0;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(tester, boyut: false);
+      expect(find.text('2 varlık'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       SparklineService.instance.clear();
     });

@@ -4652,6 +4652,17 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String pfAssetsHeader(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count varlık',
+      one: '1 varlık',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get pfTodayTraded => 'Bugün işlem var';
 
   @override
@@ -9487,6 +9498,20 @@ class AppLocalizationsTr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String vkFiyatAyOnce(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Fiyat $count ay önce girildi',
+      one: 'Fiyat 1 ay önce girildi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get vkFiyatYildanEski => 'Fiyat 1 yıldan eski';
 
   @override
   String fundPriceDate(String tarih) {

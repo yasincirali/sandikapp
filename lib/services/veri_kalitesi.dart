@@ -22,6 +22,21 @@ enum VeriEksigiTuru { alisFiyati, eskiFiyat }
 /// gösterip satırı gürültüye çevirirdi.
 const eskiFiyatEsikGun = 30;
 
+/// Eski fiyat etiketinin ay sayısı; `null` → bir yıldan eski.
+///
+/// ## Neden (Ar-Ge 5 Kas 20:45 #3, müşteri YAP)
+/// Etiket gün sayıyordu: "Fiyat 601 gün önce girildi" 390 pt'de iki satıra
+/// taşıyor, satırı büyütüyordu; 601 gün okunması zor bir sayı. iOS ve
+/// Kubera göreli zamanı kaba birimle yazar ("3 ay önce", "1 yıldan eski").
+/// Ay 30 gün sayılır (kesin takvim ayı gerekmez, etiket bir hatırlatma);
+/// eşiğin ([eskiFiyatEsikGun]) altında etiket zaten çıkmaz, çıkarsa en az
+/// 1 ay yazılır. 365 gün ve üstü tek cümle: yılı saymak bir şey katmaz.
+int? eskiFiyatAySayisi(int gun) {
+  if (gun >= 365) return null;
+  final ay = gun ~/ 30;
+  return ay < 1 ? 1 : ay;
+}
+
 class VeriEksigi {
   const VeriEksigi({
     required this.pozisyon,

@@ -225,7 +225,12 @@ void main() {
     expect(_lejant('Diğer (2)'), findsNothing);
   });
 
-  testWidgets('kartın boyu tür sayısından bağımsız', (tester) async {
+  // Ar-Ge 5 Kas 20:45 #2 (müşteri YAP): eskiden lejant HEP 4 satır yer
+  // tutardı ("boy tür sayısından bağımsız"); az türde kart halkanın ~1,7
+  // katıydı. Şimdi az türde kart halka boyunda; çok türde (birden çok
+  // lejant sayfası) 4 satırda sabit, sayfa çevirince boy oynamaz.
+  testWidgets('az türde kart halka boyunda, çok türde 4 satırda sabit',
+      (tester) async {
     Size kart() => tester.getSize(find
         .ancestor(
             of: find.byKey(const ValueKey('kucuk-halka-lejant')),
@@ -233,9 +238,13 @@ void main() {
         .first);
     await _pump(tester);
     final az = kart();
+    // Halka 120 + üst/alt dolgu 12 + kenar payı.
+    expect(az.height, lessThan(150));
     await tester.pumpWidget(const SizedBox());
     await _pump(tester, varliklar: _onTur);
-    expect(kart().height, az.height);
+    final cok = kart();
+    expect(cok.height, greaterThan(az.height));
+    expect(cok.height, lessThanOrEqualTo(4 * SandikTouch.min + 40));
   });
 
   testWidgets('halka dönerek dolar; hareketi azalt açıkken anında dolu',

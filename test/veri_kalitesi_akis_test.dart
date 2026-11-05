@@ -202,7 +202,7 @@ void main() {
       await t.pump(const Duration(milliseconds: 50));
     }
     expect(find.textContaining('Alış fiyatı eksik', findRichText: true), findsOneWidget);
-    expect(find.textContaining('Fiyat 32 gün önce girildi',
+    expect(find.textContaining('Fiyat 1 ay önce girildi',
             findRichText: true),
         findsOneWidget);
   });

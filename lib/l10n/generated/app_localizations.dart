@@ -7761,6 +7761,12 @@ abstract class AppLocalizations {
   /// **'Kartlarda gösterilen: {mode}'**
   String pfModeA11y(String mode);
 
+  /// No description provided for @pfAssetsHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 varlık} other{{count} varlık}}'**
+  String pfAssetsHeader(int count);
+
   /// No description provided for @pfTodayTraded.
   ///
   /// In tr, this message translates to:
@@ -15706,6 +15712,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{count, plural, =1{Fiyat 1 gün önce girildi} other{Fiyat {count} gün önce girildi}}'**
   String vkFiyatGunOnce(int count);
+
+  /// No description provided for @vkFiyatAyOnce.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{Fiyat 1 ay önce girildi} other{Fiyat {count} ay önce girildi}}'**
+  String vkFiyatAyOnce(int count);
+
+  /// No description provided for @vkFiyatYildanEski.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat 1 yıldan eski'**
+  String get vkFiyatYildanEski;
 
   /// Fonun gösterilen fiyatı bugünün değilse fiyatın günü (Fiyat 30 Eki)
   ///
