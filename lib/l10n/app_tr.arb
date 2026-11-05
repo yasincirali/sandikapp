@@ -6603,5 +6603,8 @@
   "fonGunlukTekFiyatNotu": "Fon fiyatı günde bir kez açıklanır; gün içi hareket gösterilmez.",
   "allChangeFromPrice": "Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.",
   "alarmCaldiZaman": "Çaldı: {zaman}",
-  "@alarmCaldiZaman": {"description": "Çalmış tek seferlik alarmın çalma anı", "placeholders": {"zaman": {"type": "String"}}}
+  "@alarmCaldiZaman": {"description": "Çalmış tek seferlik alarmın çalma anı", "placeholders": {"zaman": {"type": "String"}}},
+  "alarmSayaci": "Kurulu alarm: {sayi}/{limit}",
+  "@alarmSayaci": {"description": "Ücretsiz planda tavana yaklaşınca alarm sayacı", "placeholders": {"sayi": {"type": "int"}, "limit": {"type": "int"}}},
+  "alarmSayaciSinirsiz": "Sınırsız ›"
 }

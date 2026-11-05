@@ -10497,4 +10497,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String alarmCaldiZaman(String zaman) {
     return 'Fired: $zaman';
   }
+
+  @override
+  String alarmSayaci(int sayi, int limit) {
+    return 'Active alerts: $sayi/$limit';
+  }
+
+  @override
+  String get alarmSayaciSinirsiz => 'Unlimited ›';
 }

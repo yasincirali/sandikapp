@@ -17140,6 +17140,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çaldı: {zaman}'**
   String alarmCaldiZaman(String zaman);
+
+  /// Ücretsiz planda tavana yaklaşınca alarm sayacı
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurulu alarm: {sayi}/{limit}'**
+  String alarmSayaci(int sayi, int limit);
+
+  /// No description provided for @alarmSayaciSinirsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sınırsız ›'**
+  String get alarmSayaciSinirsiz;
 }
 
 class _AppLocalizationsDelegate

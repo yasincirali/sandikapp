@@ -10,6 +10,7 @@ import '../models/price_alert.dart';
 import '../models/seviye_alarmi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
 import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
@@ -28,6 +29,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/kapanan_satir.dart';
 import '../widgets/alarm_kur_sheet.dart';
+import 'paywall_screen.dart' show PaywallScreen;
 import '../widgets/sandik_baglam_menusu.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/tek_dokunus_alarm.dart'
@@ -302,6 +304,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               children: [
                 BildirimIzniUyarisi(
                   padding: EdgeInsets.fromLTRB(sh, SandikSpace.sm, sh, 0),
+                ),
+                _AlarmSayaci(
+                  padding: EdgeInsets.fromLTRB(sh, SandikSpace.xs, sh, 0),
                 ),
                 // Okuma hata verdi, liste cihazdaki son kopya (Ar-Ge 29 Eki
                 // 20:45 #3): alarm "kaybolmuş" görünmez ama bayat olduğu da
@@ -1221,6 +1226,69 @@ class _AdlandirDugmesi extends StatelessWidget {
         icon: Icon(Icons.edit_outlined, color: context.c.text36),
         tooltip: context.l10n.cizgiAlarmiAdlandir,
       );
+}
+
+// ── Ücretsiz plan alarm sayacı (müşteri raporu 5 Kas 09:15, yasin "evet") ─
+
+/// Sınıra yaklaşınca sayaç eşiği: tavanın dörtte üçü (20'de 15).
+int alarmSayaciEsigi(int limit) => (limit * 3 / 4).ceil();
+
+/// "Kurulu alarm: 16/20 · Sınırsız ›" — yalnız ücretsiz planda ve tavana
+/// yaklaşınca. Ücretsiz kullanıcı sınırı ancak 21. alarmı kurarken
+/// öğreniyordu; tam alarm kurarken duvara çarpmak kötü an, bu kişi de
+/// Premium'a en yakın kullanıcı. Eşik altında hiç çizilmez (liste sade
+/// kalır). Paywall kapalıyken (Android) ve Premium'da
+/// [priceAlertLimitProvider] sınırsız döner, satır çıkmaz. Sayım duvarın
+/// saydığıyla aynı ([etkinAlarmSayisi]): sayaç 20 derken duvar 19 demesin.
+class _AlarmSayaci extends ConsumerWidget {
+  const _AlarmSayaci({required this.padding});
+
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final limit = ref.watch(priceAlertLimitProvider);
+    // Sayımın girdileri izlenir ki silme/kurma satırı hemen günceller.
+    ref.watch(priceAlertsProvider);
+    ref.watch(yuzdeAlarmlariProvider);
+    ref.watch(gostergeAlarmlariProvider);
+    ref.watch(cizimAlarmlariProvider);
+    if (limit >= 1 << 20) return const SizedBox.shrink();
+    final sayi = etkinAlarmSayisi(ref);
+    if (sayi < alarmSayaciEsigi(limit)) return const SizedBox.shrink();
+    final c = context.c;
+    final l10n = context.l10n;
+    return Padding(
+      padding: padding,
+      child: Semantics(
+        button: true,
+        child: SandikTappable(
+          key: const ValueKey('alarmSayaci'),
+          onTap: () => PaywallScreen.show(context, source: 'alarm_sayaci'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.alarmSayaci(sayi, limit),
+                    style: context.t.bodySmall?.copyWith(
+                        color: c.text58,
+                        fontFeatures: const [FontFeature.tabularFigures()]),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.sm),
+                Text(
+                  l10n.alarmSayaciSinirsiz,
+                  style: context.t.labelLarge?.copyWith(color: c.amberText),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Çalanlar grubu başlığı (Ar-Ge 29 Eki 16:45 #2) ─────────────────────────

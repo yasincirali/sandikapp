@@ -10374,4 +10374,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String alarmCaldiZaman(String zaman) {
     return 'Çaldı: $zaman';
   }
+
+  @override
+  String alarmSayaci(int sayi, int limit) {
+    return 'Kurulu alarm: $sayi/$limit';
+  }
+
+  @override
+  String get alarmSayaciSinirsiz => 'Sınırsız ›';
 }
