@@ -12,7 +12,9 @@ enum AssetType {
   hisse('Hisse', Icons.show_chart_rounded, Sandik.amber, 'TRY'),      // Amber — marka CTA
   fon('Fon', Icons.pie_chart_rounded, Sandik.info, 'TRY'),           // Sky blue — nötr/finansal
   doviz('Döviz', Icons.attach_money_rounded, Color(0xFF7EC8A9), 'USD'),     // Soft mint — gain'den ayrık
-  altin('Altın', Icons.star_rounded, Sandik.gold, 'TRY'),            // Gold — altın karakteri
+  // Sikke (unslop 2026-11-05 #6): yıldız uygulamada "takip et" demek;
+  // altın satırı favori gibi okunuyordu.
+  altin('Altın', Icons.toll_rounded, Sandik.gold, 'TRY'),            // Gold — altın karakteri
   emtia('Emtia', Icons.inventory_2_rounded, Color(0xFFC97B4F), 'USD'),      // Copper — emtia sıcaklığı
   // Orkide — mevcut altı renge ve gain/loss'a uzak (2026-09-25 kripto planı).
   // Varsayılan para birimi TRY: fiyat sunucuda TL paritesinden (ya da

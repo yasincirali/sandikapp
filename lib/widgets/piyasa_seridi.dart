@@ -372,7 +372,10 @@ class _AramaCipi extends StatelessWidget {
       height: KayanBant.seritYuksekligi,
       padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md2),
       decoration: BoxDecoration(
-        color: context.c.amberFill.withValues(alpha: 0.12),
+        // Nötr yüzey, amber yalnız simgede (unslop 2026-11-05 #3, ui-ux-pro
+        // "eşit vurgu yok"): Ana sayfada logo, toplam, dönem çipi ve "Ara"
+        // aynı amberle yarışıyordu. Arama ikincil eylem.
+        color: context.c.surface2,
         borderRadius: cerceveli
             ? const BorderRadius.horizontal(right: kose)
             : const BorderRadius.all(kose),
@@ -393,9 +396,9 @@ class _AramaCipi extends StatelessWidget {
             Text(
               context.l10n.searchChip,
               style: context.t.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
-                color: context.c.amberText,
+                color: context.c.text90,
               ),
             ),
           ],

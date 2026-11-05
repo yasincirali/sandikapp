@@ -1031,7 +1031,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () => ReviewPromptService.instance.magazayiAc(),
     );
     final yenilikler = _SettingsTile(
-      icon: Icons.auto_awesome_outlined,
+      icon: Icons.new_releases_outlined,
       title: context.l10n.whatsNewTitle,
       subtitle: context.l10n.whatsNewSubtitle,
       // Elle açılışta TÜM liste gösterilir (otomatik açılışın

@@ -520,7 +520,7 @@ class _KarakterRozeti extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.auto_awesome_rounded, size: 14, color: p.gold),
+          Icon(Icons.person_rounded, size: 14, color: p.gold),
           const SizedBox(width: SandikSpace.xs),
           Flexible(
             child: Text(
