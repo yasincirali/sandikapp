@@ -471,7 +471,6 @@ extension _TutarAlanlari on _AddAssetScreenState {
                     style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.c.amberText,
-                      letterSpacing: 0.8,
                     )),
                 const SizedBox(height: 4),
                 Text(

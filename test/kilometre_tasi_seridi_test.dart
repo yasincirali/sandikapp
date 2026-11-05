@@ -134,7 +134,7 @@ void main() {
 
     testWidgets('kazanılanlar, sıradaki ve Tümü', (tester) async {
       await pump(tester);
-      expect(find.text('KİLOMETRE TAŞLARIN'), findsOneWidget);
+      expect(find.text('Kilometre taşların'), findsOneWidget);
       expect(find.text('100 bin ₺ geçildi'), findsOneWidget);
       // 10 bin vitrinde değil (aynı türün küçüğü), Tümü'nde.
       expect(find.text('10 bin ₺ geçildi'), findsNothing);
@@ -144,7 +144,8 @@ void main() {
 
       await tester.tap(find.text('Tümü ›'));
       await tester.pumpAndSettle();
-      expect(find.text('Kilometre taşların'), findsOneWidget);
+      // Şerit başlığı ve sayfa başlığı artık aynı yazım (2026-11-05).
+      expect(find.text('Kilometre taşların'), findsWidgets);
       expect(find.text('10 bin ₺ geçildi'), findsOneWidget);
       expect(find.text('Sıradaki: 250 bin ₺'), findsOneWidget);
     });

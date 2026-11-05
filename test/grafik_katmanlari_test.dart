@@ -113,7 +113,7 @@ void main() {
     await _pump(tester);
     expect(find.text('MA20'), findsWidgets);
     expect(find.text('LOG'), findsWidgets);
-    expect(find.text('MUM'), findsOneWidget);
+    expect(find.text('Mum'), findsOneWidget);
     expect(find.text('EMA50'), findsOneWidget);
     expect(find.text('EMA200'), findsOneWidget);
     expect(find.textContaining('ƒx'), findsNothing);
@@ -123,7 +123,7 @@ void main() {
   testWidgets('görünür ve Premium: çipler açılıp kapanır, tercih kalıcı',
       (tester) async {
     await _pump(tester, gorunur: true);
-    for (final c in ['MUM', 'EMA50', 'EMA200', 'MA20', 'LOG']) {
+    for (final c in ['Mum', 'EMA50', 'EMA200', 'MA20', 'LOG']) {
       expect(find.text(c), findsOneWidget, reason: '$c çipi yok');
     }
     expect(find.byIcon(Icons.lock_rounded), findsNothing);
@@ -136,7 +136,7 @@ void main() {
     await tester.tap(find.text('EMA200'));
     await tester.pump();
     expect(container.read(chartEma200Provider), isTrue);
-    await tester.tap(find.text('MUM'));
+    await tester.tap(find.text('Mum'));
     await tester.pump();
     expect(container.read(chartCandleProvider), isTrue);
     expect(tester.takeException(), isNull);
@@ -156,7 +156,7 @@ void main() {
     await tester.tap(find.text('EMA200'));
     await tester.pump();
     expect(container.read(chartEma200Provider), isTrue);
-    await tester.tap(find.text('MUM'));
+    await tester.tap(find.text('Mum'));
     await tester.pump();
     expect(container.read(chartCandleProvider), isTrue);
     await tester.tap(find.text('MA20'));

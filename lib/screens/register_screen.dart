@@ -801,7 +801,7 @@ class YasalKutuBaglantilari {
       decoration: TextDecoration.underline,
       decorationColor: context.c.amberText,
     );
-    final vurguluBaglanti = baglanti.copyWith(fontWeight: FontWeight.w800);
+    final vurguluBaglanti = baglanti.copyWith(fontWeight: FontWeight.w600);
     final parcalar = <InlineSpan>[];
     var i = 0;
     for (final m in RegExp('[$kosulAyraci$gizlilikAyraci$kvkkAyraci]')

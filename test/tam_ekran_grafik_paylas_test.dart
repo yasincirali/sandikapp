@@ -110,7 +110,7 @@ void main() {
 
     test('dönem: görünen pencerenin en yakın uygulama dönemi', () {
       int g(num n) => (n * _gun).round();
-      expect(gorunurDonemKimligi(0, g(1)), 'GÜNLÜK');
+      expect(gorunurDonemKimligi(0, g(1)), 'Günlük');
       expect(gorunurDonemKimligi(0, g(8)), '1H');
       expect(gorunurDonemKimligi(0, g(28)), '1A');
       expect(gorunurDonemKimligi(0, g(100)), '3A');

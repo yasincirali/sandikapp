@@ -441,7 +441,7 @@ class _Avatar extends StatelessWidget {
                             ? context.t.labelSmall
                             : context.t.titleSmall)
                         ?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       letterSpacing: 0,
                       height: 1,
                       color: on,

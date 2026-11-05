@@ -557,10 +557,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   Widget _sectionLabel(String text) => Text(
-        ustHarf(text, context.l10n),
+        text,
         style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
           color: context.c.text58,
         ),
       );
@@ -1105,7 +1104,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             // `foregroundColor`'ını ezer — koyu temada amber üstüne
             // beyaz "Ekle" 1,87:1 kalıyordu.
             style: context.t.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
                 color: context.c.onAmber),
           ),

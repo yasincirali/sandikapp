@@ -457,7 +457,7 @@ void main() {
 
       final deste = t.state<KartDestesiState>(find.byType(KartDestesi));
       expect(deste.onIndeks, 0);
-      expect(find.text('KARŞILAŞTIR'), findsOneWidget);
+      expect(find.text('Karşılaştır'), findsOneWidget);
 
       // Mağaza yanıt vermedi: RC fiyatı, deneme vaadi yok.
       expect(find.text('649,99₺/yıl'), findsOneWidget);

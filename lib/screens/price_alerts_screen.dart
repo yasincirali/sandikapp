@@ -1326,8 +1326,7 @@ class _CalanlarBasligi extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w600,
                     color: c.text58,
                   ),
                 ),

@@ -353,7 +353,7 @@ class HikayeSayfasi extends StatelessWidget {
                 baslik,
                 style: context.t.displaySmall?.copyWith(
                   color: renk,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   height: 1.05,
                 ),
               ),

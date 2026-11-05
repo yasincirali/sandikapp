@@ -1022,7 +1022,7 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
           Text(l.appName,
               style: context.t.titleMedium?.copyWith(
                   color: c.amberText,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   letterSpacing: -0.5)),
           const SizedBox(width: SandikSpace.md),
           Expanded(

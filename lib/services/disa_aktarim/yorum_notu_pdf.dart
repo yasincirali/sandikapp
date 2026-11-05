@@ -131,7 +131,7 @@ pw.Widget _meta(List<(String, String)> alanlar) => pw.Container(
                 children: [
                   pw.Text(trBuyuk(ad),
                       style: const pw.TextStyle(
-                          fontSize: 6.5, color: _gri, letterSpacing: 0.6)),
+                          fontSize: 6.5, color: _gri)),
                   pw.SizedBox(height: 1),
                   pw.Text(deger,
                       style: pw.TextStyle(
@@ -167,7 +167,7 @@ pw.Widget _gostergeler(List<YorumOlcumu> g) => pw.Container(
                   children: [
                     pw.Text(trBuyuk(YorumNotu.kisaAd(g[i])),
                         style: const pw.TextStyle(
-                            fontSize: 6.5, color: _gri, letterSpacing: 0.6)),
+                            fontSize: 6.5, color: _gri)),
                     pw.SizedBox(height: 2),
                     pw.Text(g[i].gosterim,
                         style: pw.TextStyle(
@@ -189,8 +189,7 @@ pw.Widget _bolumBasligi(String t) => pw.Container(
           border: pw.Border(bottom: pw.BorderSide(color: _cizgi, width: 0.8))),
       child: pw.Text(trBuyuk(t),
           style: pw.TextStyle(
-              fontSize: 7, fontWeight: pw.FontWeight.bold, color: _yesil,
-              letterSpacing: 0.8)),
+              fontSize: 7, fontWeight: pw.FontWeight.bold, color: _yesil)),
     );
 
 pw.Widget _degerlendirme(YorumNotu n) => pw.Column(

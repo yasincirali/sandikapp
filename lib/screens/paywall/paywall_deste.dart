@@ -506,7 +506,7 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                             child: Text(
                               fiyat,
                               style: t.displaySmall?.copyWith(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 color: c.gold,
                                 letterSpacing: -0.5,
                                 fontFeatures: const [
@@ -528,7 +528,7 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                               child: Text(
                                 l.prmYillikTasarruf('${widget.oran}'),
                                 style: t.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w600,
                                     letterSpacing: 0,
                                     color: c.onStatus),
                               ),
@@ -665,13 +665,12 @@ class _DesteBaslik extends StatelessWidget {
                           Text(l.sandikPremiumUpper,
                               style: t.labelMedium?.copyWith(
                                   color: c.onAmber,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.4)),
+                                  fontWeight: FontWeight.w600)),
                           const SizedBox(height: SandikSpace.xs2),
                           Text(l.pwdSlogan,
                               style: t.headlineLarge?.copyWith(
                                   color: c.onAmber,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                   height: 1.05,
                                   letterSpacing: -0.6)),
                         ],
@@ -783,7 +782,7 @@ class _DenemeCizelgesi extends StatelessWidget {
               children: [
                 Text(ust,
                     style: t.labelMedium?.copyWith(
-                        color: c.amberText, fontWeight: FontWeight.w800)),
+                        color: c.amberText, fontWeight: FontWeight.w600)),
                 const SizedBox(height: SandikSpace.xxs),
                 Text(alt,
                     style: t.bodyMedium?.copyWith(
@@ -866,8 +865,7 @@ class _KartIcerik extends StatelessWidget {
               child: Text(etiket,
                   style: t.labelMedium?.copyWith(
                       color: renk.vurgu,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2)),
+                      fontWeight: FontWeight.w600)),
             ),
             if (rozet != null)
               Container(
@@ -889,7 +887,7 @@ class _KartIcerik extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: t.headlineMedium?.copyWith(
                 color: renk.metin,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 height: 1.1,
                 letterSpacing: -0.3)),
         const SizedBox(height: SandikSpace.smd),

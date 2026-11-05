@@ -318,10 +318,10 @@ void main() {
     });
 
     test('Grafik sekmesi: ham sembol ve "işlem hacmi" dili kalmadı', () {
-      expect(trMetni('tradeVolumeUpper'), 'ALIM · SATIŞ');
+      expect(trMetni('tradeVolumeUpper'), 'Alım · satış');
       // 2026-10-04: "piyasanın kattığı" → "fiyat etkisi" (Özet köprüsü ve Bugün
       // kartıyla tek ad); anlam aynı: satır piyasa etkisini söyler.
-      expect(trMetni('changeByTypeUpper'), contains('FİYAT ETKİSİ'));
+      expect(trMetni('changeByTypeUpper'), contains('fiyat etkisi'));
       // Etiket gövdesi 2026-10-04'te `pozisyonEtiketi`'ne taşındı.
       final o = ekranKaynagiSync('lib/utils/pozisyon_etiketi.dart');
       expect(o.contains("'EUR' => l.marketEuro"), isTrue,

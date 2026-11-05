@@ -85,7 +85,7 @@ Future<void> terimSayfasiniAc(BuildContext context, RadarTerim terim,
             const SizedBox(height: SandikSpace.md),
             Text(baslik,
                 style: ctx.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800, color: ctx.c.text90)),
+                    fontWeight: FontWeight.w600, color: ctx.c.text90)),
             const SizedBox(height: SandikSpace.sm),
             Text(tanim, style: ctx.t.bodyMedium?.copyWith(color: ctx.c.text58)),
             if (ornek != null) ...[
@@ -329,11 +329,10 @@ class _KocState extends State<_Koc> {
           children: [
             const Center(child: SandikTutamac()),
             const SizedBox(height: SandikSpace.md),
-            Text(l.rdrNasilOkunur.toUpperCase(),
+            Text(l.rdrNasilOkunur,
                 style: context.t.labelLarge?.copyWith(
                     color: c.text58,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2)),
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: SandikSpace.xs),
             Text(l.rdrKocAdim('${_adim + 1}'),
                 style: context.t.bodySmall?.copyWith(color: c.text36)),

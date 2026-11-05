@@ -743,7 +743,6 @@ class _SoloRoiCard extends StatelessWidget {
                   context.l10n.yourReturnUpper,
                   style: context.t.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
                     color: context.c.text58,
                   ),
                 ),
@@ -1279,7 +1278,7 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
                       title,
                       style: context.t.bodyMedium?.copyWith(
                         fontSize: hero ? 14 : 13,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: context.c.text90,
                       ),
                       maxLines: 1,
@@ -1347,7 +1346,6 @@ class _Badge extends StatelessWidget {
           fontSize: 8,
           fontWeight: FontWeight.w900,
           color: color,
-          letterSpacing: 0.8,
         ),
       ),
     );

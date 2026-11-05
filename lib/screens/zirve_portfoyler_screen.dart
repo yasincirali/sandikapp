@@ -536,7 +536,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       ),
       const SizedBox(height: SandikSpace.lg),
       SandikSectionHeader(
-        title: 'HERKES AYNI ÇİZGİDE',
+        title: 'Herkes aynı çizgide',
         trailing: Text(
           'bir işarete dokun',
           style: context.t.bodySmall?.copyWith(color: context.c.text58),
@@ -567,7 +567,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       ),
       if (hedef != null) ...[
         const SizedBox(height: SandikSpace.lg),
-        SandikSectionHeader(title: 'SEN VE ${hedef.rank}. PORTFÖY'),
+        SandikSectionHeader(title: 'Sen ve ${hedef.rank}. portföy'),
         const SizedBox(height: SandikSpace.sm),
         _KiyasSecici(
           adaylar: adaylar,
@@ -632,7 +632,7 @@ class _Hero extends StatelessWidget {
           children: [
             Expanded(
               child: _Hucre(
-                etiket: 'SEN',
+                etiket: 'Sen',
                 senIsareti: true,
                 deger: senRoi,
                 alt: ZirveKiyas.konumCumlesi(
@@ -644,7 +644,7 @@ class _Hero extends StatelessWidget {
             const SizedBox(width: SandikSpace.sm),
             Expanded(
               child: _Hucre(
-                etiket: 'ZİRVE',
+                etiket: 'Zirve',
                 senIsareti: false,
                 deger: zirveRoi,
                 alt: benSira == 1 ? 'senin portföyün' : '1. portföy',
@@ -701,7 +701,7 @@ class _Hucre extends StatelessWidget {
               Text(
                 etiket,
                 style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text58,
                 ),
               ),
@@ -712,7 +712,7 @@ class _Hucre extends StatelessWidget {
             Text(
               '—',
               style: context.t.numMedium.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: renk,
               ),
             )
@@ -726,7 +726,7 @@ class _Hucre extends StatelessWidget {
               builder: (context, v, _) => Text(
                 ZirveKiyas.isaretliYuzde(v),
                 style: context.t.numMedium.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: v < 0 ? context.c.loss : context.c.gain,
                 ),
               ),
@@ -893,7 +893,7 @@ class _SeciliPortfoy extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: context.t.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: context.c.text90,
                             ),
                           ),
@@ -1022,7 +1022,7 @@ class _BenzerlikRozeti extends StatelessWidget {
                         TextSpan(
                           text: 'Seninle $yuzde benzer',
                           style: context.t.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: context.c.text90,
                           ),
                         ),
@@ -1133,7 +1133,7 @@ class _BosDurum extends StatelessWidget {
               Text(
                 'Zirve henüz belli değil',
                 style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text90,
                 ),
               ),
@@ -1216,7 +1216,7 @@ class _KatilimDurumu extends StatelessWidget {
                   child: Text(
                     'Neden henüz havuzda değilsin?',
                     style: context.t.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
                   ),
@@ -1376,7 +1376,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
                     Text(
                       baslik,
                       style: context.t.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: context.c.text90,
                       ),
                     ),
@@ -1413,7 +1413,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
           // Tür başlığı + o türün varlıkları, hepsi aynı ölçekte (toplam
           // portföyün payı; çubuk en büyük kaleme göre). Kıyas ("senden
           // farkı") ana ekranda; burada tekrar edilmez (2026-10-20).
-          const SandikSectionHeader(title: 'VARLIKLAR'),
+          const SandikSectionHeader(title: 'Varlıklar'),
           const SizedBox(height: SandikSpace.sm),
           if (!senMi && ZirveKiyas.ayrintiPaylasilmadi(pay, varlikDetay)) ...[
             const _AyrintiKapaliNotu(),
@@ -1437,7 +1437,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
           ),
           if (!senMi && s.benzerlik != null) ...[
             const SizedBox(height: SandikSpace.sm),
-            const SandikSectionHeader(title: 'SENİNLE ORTAK'),
+            const SandikSectionHeader(title: 'Seninle ortak'),
             const SizedBox(height: SandikSpace.sm),
             _OrtakVarliklar(
               benzerlik: s.benzerlik!,
@@ -1604,7 +1604,7 @@ class _YeniRizaKarti extends StatelessWidget {
           Text(
             "Zirve'de artık varlık oranları da görünüyor",
             style: context.t.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: context.c.text90,
             ),
           ),

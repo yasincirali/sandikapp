@@ -48,7 +48,7 @@ String grafikPaylasimKisaBaglanti() {
 /// yeni bir dönem dili icat edilmez, Performans ekranının adları kullanılır.
 String gorunurDonemKimligi(int basMs, int sonMs) {
   final gun = (sonMs - basMs).abs() / Duration.millisecondsPerDay;
-  if (gun < 2) return 'GÜNLÜK';
+  if (gun < 2) return 'Günlük';
   const donemler = <(String, double)>[
     ('1H', 7),
     ('1A', 30),

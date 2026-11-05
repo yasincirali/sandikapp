@@ -69,7 +69,7 @@ void main() {
       await _pump(tester, ShareCard(data: tam, tarih: DateTime(2026, 9, 14)));
       expect(tester.takeException(), isNull);
       expect(find.text('+%47,35'), findsOneWidget);
-      expect(find.text('PİYASA GETİRİM'), findsOneWidget);
+      expect(find.text('Piyasa getirim'), findsOneWidget);
       expect(find.text('Dengeli'), findsOneWidget, reason: 'karakter rozeti');
       expect(find.text('14 Eyl 2025 – 14 Eyl 2026'), findsOneWidget);
       // Enflasyon cümlesi reel getiriyi kuyruğunda taşır — iki sayı,
@@ -82,22 +82,22 @@ void main() {
       await _pump(tester, ShareCard(data: tam));
       expect(tester.takeException(), isNull);
       // İlk dört: en iyi, en zayıf, artıda gün, yatırımcı dilimi.
-      expect(find.text('EN İYİ'), findsOneWidget);
+      expect(find.text('En iyi'), findsOneWidget);
       expect(find.text('THYAO'), findsOneWidget);
       expect(find.text('+%82,2'), findsOneWidget);
-      expect(find.text('EN ZAYIF'), findsOneWidget);
+      expect(find.text('En zayıf'), findsOneWidget);
       expect(find.text('SISE'), findsOneWidget);
       expect(find.text('−%12,0'), findsOneWidget);
-      expect(find.text('ARTIDA GÜN'), findsOneWidget);
+      expect(find.text('Artıda gün'), findsOneWidget);
       expect(find.text('132/250'), findsOneWidget);
       expect(find.text('%53'), findsOneWidget, reason: 'oran alt satırda');
-      expect(find.text('YATIRIMCILARIN'), findsOneWidget);
+      expect(find.text('Yatırımcıların'), findsOneWidget);
       expect(find.text("%88'inden iyi"), findsOneWidget);
       // Beşinci ve sonrası çizilmez: 320 px'te altı kutu okunmaz.
-      expect(find.text('YILLIK GETİRİ'), findsNothing);
-      expect(find.text('EN DERİN DÜŞÜŞ'), findsNothing);
-      expect(find.text('EN SABIRLI'), findsNothing);
-      expect(find.text('TAKİP'), findsNothing);
+      expect(find.text('Yıllık getiri'), findsNothing);
+      expect(find.text('En derin düşüş'), findsNothing);
+      expect(find.text('En sabırlı'), findsNothing);
+      expect(find.text('Takip'), findsNothing);
     });
 
     testWidgets('ilk dört yoksa İleri ölçüler ve takip günü yer bulur',
@@ -118,14 +118,14 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       // Etiket 2026-10-04'e kadar "Yıllık (XIRR)" idi (sadeleştirme 2).
-      expect(find.text('YILLIK GETİRİ'), findsOneWidget);
+      expect(find.text('Yıllık getiri'), findsOneWidget);
       expect(find.text('+%41,2'), findsOneWidget);
-      expect(find.text('EN DERİN DÜŞÜŞ'), findsOneWidget);
+      expect(find.text('En derin düşüş'), findsOneWidget);
       expect(find.text('−%14,2'), findsOneWidget);
-      expect(find.text('EN SABIRLI'), findsOneWidget);
+      expect(find.text('En sabırlı'), findsOneWidget);
       expect(find.text('412 gün'), findsOneWidget);
       expect(find.text('Gram Altın'), findsOneWidget);
-      expect(find.text('TAKİP'), findsOneWidget);
+      expect(find.text('Takip'), findsOneWidget);
       expect(find.text('365 gün'), findsOneWidget);
     });
 
@@ -171,7 +171,7 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       expect(find.text('Altıncı'), findsOneWidget);
-      expect(find.text('SARININ GÜCÜNE İNANIYORSUN'), findsOneWidget);
+      expect(find.text('Sarının gücüne inanıyorsun'), findsOneWidget);
     });
 
     testWidgets('negatif ve enflasyon gerisinde', (tester) async {
@@ -196,7 +196,7 @@ void main() {
       await _pump(
           tester, ShareCard(data: const ShareCardData(baslik: 'Son 1 hafta')));
       expect(tester.takeException(), isNull);
-      expect(find.text('YATIRIMCILARIN'), findsNothing);
+      expect(find.text('Yatırımcıların'), findsNothing);
       expect(find.bySemanticsLabel('Dağılım'), findsNothing);
       expect(find.byIcon(Icons.shield_moon_rounded), findsNothing);
     });

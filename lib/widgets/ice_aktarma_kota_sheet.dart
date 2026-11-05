@@ -50,7 +50,7 @@ class IceAktarmaKotaSheet extends StatelessWidget {
             Text(l.iktKotaBaslik,
                 textAlign: TextAlign.center,
                 style: t.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.sm),
             Text(l.iktKotaGovde(bulunan, sigan),
                 textAlign: TextAlign.center,

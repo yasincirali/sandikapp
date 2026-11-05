@@ -955,7 +955,7 @@ class _PickerShellState extends State<_PickerShell> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.t.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.w800)),
+                            ?.copyWith(fontWeight: FontWeight.w600)),
                   ),
                 ),
                 const SizedBox(width: SandikSpace.sm),
@@ -1093,7 +1093,7 @@ class _PickerRow extends StatelessWidget {
       badgeText.length > 5 ? badgeText.substring(0, 4) : badgeText,
       maxLines: 1,
       style: context.t.labelLarge?.copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         color: isSelected ? color.metinTonu(context) : context.c.text90,
       ),
     );

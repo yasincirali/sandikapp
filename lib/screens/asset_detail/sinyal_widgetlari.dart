@@ -449,7 +449,6 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
                         .format(kayit!.detectedAt),
                     maxLines: 1,
                     style: context.t.labelSmall?.copyWith(
-                      letterSpacing: 0.8,
                       fontWeight: FontWeight.w700,
                       color: renk,
                     ),
@@ -743,8 +742,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
               child: Text(
                 context.l10n.technicalAnalysisUpper,
                 style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text58,
                 ),
               ),
@@ -832,11 +830,12 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                   children: [
                     Text(
                       signalLabel,
-                      style: context.t.headlineLarge?.copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
+                      // 20 pt w600 (Ar-Ge 5 Kas 14:45 tasarım #3): 26 pt
+                      // w800 harf aralıklı "YATAY" sayfanın en büyük yazısıydı,
+                      // fiyattan (24) büyük. En önemli sayı en büyük kalır.
+                      style: context.t.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                         color: signalColor,
-                        letterSpacing: 1,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -896,7 +895,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                   ? 'AL'
                   : ind.signal == SignalType.sell
                       ? 'SAT'
-                      : 'NÖTR';
+                      : 'Nötr';
 
               return Column(
                 children: [

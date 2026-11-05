@@ -17,7 +17,6 @@ import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_iyelik.dart';
 import '../widgets/ortak_secici.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
@@ -760,7 +759,6 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                       final hp = SandikSpace.screenH(context);
                       final ayAdi = DateFormat(
                           'LLLL yyyy', Localizations.localeOf(context).languageCode);
-                      final tr = Localizations.localeOf(context).languageCode == 'tr';
                       // Filtre değişince yeni sonuç kısa bir solmayla gelir
                       // (bkz. `_filtreGecisi`); iki liste üst üste kurulmaz.
                       return FadeTransition(
@@ -800,9 +798,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                                       right: SandikSpace.xxs,
                                       bottom: SandikSpace.sm),
                                   child: SandikSectionHeader(
-                                    title: tr
-                                        ? trBuyukHarf(baslik)
-                                        : baslik.toUpperCase(),
+                                    title: baslik,
                                     trailing: Text(
                                       context.l10n
                                           .nTransactions(g.kayitlar.length),
@@ -998,7 +994,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                 child: Text(
                   '$n',
                   style: context.t.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: context.c.onAmber,
                   ),
                 ),
@@ -1271,7 +1267,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                 // ezer — koyu temada amber üstüne beyaz 1,87:1. Pasifken
                 // (eşleşme yok) eski ton: soluk dolguda koyu yazı okunmazdı.
                 style: context.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: n == 0 ? null : context.c.onAmber),
               ),
             ),

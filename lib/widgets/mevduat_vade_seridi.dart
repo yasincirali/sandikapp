@@ -155,7 +155,7 @@ class MevduatVadeSeridi extends ConsumerWidget {
                 Text(
                   '+${baz.fmt(altTutar, digits: 2)}',
                   style: context.t.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800, color: context.c.gain),
+                      fontWeight: FontWeight.w600, color: context.c.gain),
                 ),
             ],
           ),

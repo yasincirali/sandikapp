@@ -275,7 +275,7 @@ void main() {
         expect(ozet.kalemler.length, greaterThan(MasrafKarti.kapaliKalem));
         await ciz(tester, ozet, koyu: koyu);
 
-        expect(find.text('MASRAFLAR'), findsOneWidget);
+        expect(find.text('Masraflar'), findsOneWidget);
         expect(find.text('Ödenen'), findsOneWidget);
         expect(find.text('Satarken tahmini'), findsOneWidget);
         // Kapalı: ilk üç kalem.

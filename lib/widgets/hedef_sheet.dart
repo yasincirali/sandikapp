@@ -21,7 +21,6 @@ import '../theme/sandik.dart';
 import 'review_prompt_sheet.dart';
 import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../utils/tr_format.dart';
-import '../utils/tr_iyelik.dart';
 
 /// Hazır hedef merdiveni (TRY). Basamaklar yukarı doğru genişler: 100
 /// binlik portföye 250 bin anlamlı bir hedef, 10 milyonluğa 25 milyon.
@@ -155,13 +154,12 @@ class _HedefSheetState extends State<_HedefSheet> {
             Padding(
               padding: const EdgeInsets.only(bottom: SandikSpace.xs),
               child: Text(
-                trBuyukHarf(widget.etiket!),
+                widget.etiket!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.labelSmall?.copyWith(
                   color: context.c.text58,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8,
                 ),
               ),
             ),

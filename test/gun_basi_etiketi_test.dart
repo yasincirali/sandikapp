@@ -29,23 +29,23 @@ void main() {
     expect(
         await etiket(t, DateTime(2026, 10, 29),
             gunIci: true, oncekiKapanis: true),
-        'ÖNCEKİ KAPANIŞ · ₺294,12');
+        'Önceki kapanış · ₺294,12');
   });
 
   testWidgets('portföy ve öteki türlerde "GÜN BAŞI", saat yazılmaz', (t) async {
     expect(await etiket(t, DateTime(2026, 10, 29), gunIci: true),
-        'GÜN BAŞI · ₺294,12');
+        'Gün başı · ₺294,12');
   });
 
   testWidgets('taban gün içinde sonra başlıyorsa saat kalır', (t) async {
     expect(
         await etiket(t, DateTime(2026, 10, 29, 14, 5),
             gunIci: true, oncekiKapanis: true),
-        'AÇILIŞ · 14:05 · ₺294,12');
+        'Açılış · 14:05 · ₺294,12');
   });
 
   testWidgets('gün içi dışında başlangıç tarihi', (t) async {
     expect(await etiket(t, DateTime(2026, 10, 1), gunIci: false),
-        startsWith('BAŞLANGIÇ · 1 '));
+        startsWith('Başlangıç · 1 '));
   });
 }

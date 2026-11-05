@@ -134,7 +134,6 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.6,
                         fontWeight: FontWeight.w700,
                         color: context.c.text36)),
                 const SizedBox(height: SandikSpace.xs),

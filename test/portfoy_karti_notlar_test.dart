@@ -108,7 +108,7 @@ void main() {
         _lot('a1', notes: 'Maaştan aldım', tarih: DateTime(2026, 1, 5)),
         _lot('a2', notes: 'Düşüşte ekledim', tarih: DateTime(2026, 6, 5)),
       ]);
-      expect(find.text('NOTLAR'), findsOneWidget);
+      expect(find.text('Notlar'), findsOneWidget);
       expect(find.text('Maaştan aldım'), findsOneWidget);
       expect(find.text('Düşüşte ekledim'), findsOneWidget);
       // En yeni önce.
@@ -126,7 +126,7 @@ void main() {
 
     testWidgets('notu olmayan pozisyonda bölüm hiç yok', (tester) async {
       await _pumpVeAc(tester, [_lot('a1')]);
-      expect(find.text('NOTLAR'), findsNothing);
+      expect(find.text('Notlar'), findsNothing);
     });
 
     testWidgets('3\'ten fazla not: en yeni 3 + "not daha"', (tester) async {
@@ -152,7 +152,7 @@ void main() {
         width: 320,
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('NOTLAR'), findsOneWidget);
+      expect(find.text('Notlar'), findsOneWidget);
     });
 
     testWidgets('nota dokununca not sayfası açılır', (tester) async {

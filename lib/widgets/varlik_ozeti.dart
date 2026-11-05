@@ -234,7 +234,6 @@ class VarlikFiyatBlogu extends StatelessWidget {
     final ust = Text(
       etiket,
       style: context.t.labelSmall?.copyWith(
-          letterSpacing: 0.9,
           fontWeight: FontWeight.w700,
           color: context.c.text36),
     );

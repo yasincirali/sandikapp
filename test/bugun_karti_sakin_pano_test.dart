@@ -121,10 +121,10 @@ void main() {
         (tester) async {
       await kur(tester, genislik: genislik);
       expect(tester.takeException(), isNull);
-      // Başlık: "BUGÜN · <tarih>" (sığmazsa "BUGÜN"); ölçüm bloğu; hedef.
+      // Başlık: "Bugün · <tarih>" (sığmazsa "Bugün"); ölçüm bloğu; hedef.
       expect(
           find.byWidgetPredicate(
-              (w) => w is SiganMetin && w.adaylar.last == 'BUGÜN'),
+              (w) => w is SiganMetin && w.adaylar.last == 'Bugün'),
           findsOneWidget);
       // Test yazı tipi (Ahem) gerçek yazıdan ~2 kat geniş: hangi yazımın
       // seçildiği ortama bağlı; kural "adaylardan biri TAM yazılır".

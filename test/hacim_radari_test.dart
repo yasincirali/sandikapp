@@ -183,7 +183,7 @@ void main() {
   testWidgets('kart (S4-B): cümle, sayı, gün kademesi, ölçek, seyir',
       (t) async {
     await _kur(t);
-    expect(find.text('HACİM RADARI'), findsOneWidget);
+    expect(find.text('Hacim radarı'), findsOneWidget);
     expect(
         find.text('22 Eyl günü bu hissede olağanın çok üstünde işlem yapıldı.'),
         findsOneWidget);
@@ -268,7 +268,7 @@ void main() {
 
   testWidgets('İngilizce: metinler çevrili', (t) async {
     await _kur(t, dil: const Locale('en'));
-    expect(find.text('VOLUME RADAR'), findsOneWidget);
+    expect(find.text('Volume radar'), findsOneWidget);
     expect(find.text('On 22 Sep this stock traded far more than usual.'),
         findsOneWidget);
   });
@@ -386,7 +386,7 @@ void main() {
       await kur(t,
           const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'kripto:btc'),
           ozet: kriptoOzet(), akis: saatlik());
-      expect(find.text('ALICI BASKISI'), findsOneWidget);
+      expect(find.text('Alıcı baskısı'), findsOneWidget);
       expect(find.text('22 Eyl günü alanlar satanlardan daha istekliydi.'),
           findsOneWidget);
       expect(find.text('Alıcı %52,0'), findsOneWidget);

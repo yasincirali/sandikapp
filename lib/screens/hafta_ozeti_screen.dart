@@ -209,8 +209,7 @@ class _AylikRaporSatiri extends StatelessWidget {
                 Text(l10n.anzAylikUpper,
                     style: t.labelSmall?.copyWith(
                         color: c.text58,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0)),
+                        fontWeight: FontWeight.w600)),
                 Text(l10n.rdrAylikRaporSatir(ay),
                     style: t.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700, color: c.text90)),

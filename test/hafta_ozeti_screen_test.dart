@@ -238,7 +238,7 @@ void main() {
     expect(find.text('Not: Fona geçen hafta +₺412,00M net para girdi.'),
         findsOneWidget);
     expect(find.text('Oku'), findsOneWidget);
-    expect(find.text('AYLIK RAPOR'), findsOneWidget);
+    expect(find.text('Aylık rapor'), findsOneWidget);
     expect(find.text('Eylül 2026 raporu'), findsOneWidget);
   });
 

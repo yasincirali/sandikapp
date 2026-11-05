@@ -480,7 +480,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refreshPrices => 'Refresh prices';
 
   @override
-  String get portfolioActivity => 'PORTFOLIO ACTIVITY';
+  String get portfolioActivity => 'Portfolio activity';
 
   @override
   String get seeAllTransactions => 'See all transactions';
@@ -521,7 +521,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noActiveSignals => 'No new notifications';
 
   @override
-  String get historyUpper => 'HISTORY';
+  String get historyUpper => 'History';
 
   @override
   String deleteHistoryCount(int count) {
@@ -543,7 +543,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteHistoryButton => 'Delete History';
 
   @override
-  String get signalNeutral => 'NEUTRAL';
+  String get signalNeutral => 'Neutral';
 
   @override
   String signalDeletedAt(String date) {
@@ -562,7 +562,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hideBalance => 'Hide balance';
 
   @override
-  String get sortCriterion => 'SORT BY';
+  String get sortCriterion => 'Sort by';
 
   @override
   String tabSemanticsCount(String label, int count) {
@@ -652,7 +652,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetFullName => 'Full Name';
 
   @override
-  String get fundReportTitleUpper => 'FUND REPORT CARD';
+  String get fundReportTitleUpper => 'Fund report card';
 
   @override
   String fundReportCategory(String category, String count) {
@@ -866,7 +866,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a quantity and the total cost appears here.';
 
   @override
-  String get totalCostUpper => 'TOTAL COST';
+  String get totalCostUpper => 'Total cost';
 
   @override
   String get transactionDate => 'Transaction date';
@@ -937,7 +937,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTypeDividend => 'Dividend';
 
   @override
-  String get dividendHistoryUpper => 'DIVIDENDS · LAST 12 MONTHS';
+  String get dividendHistoryUpper => 'Dividends · last 12 months';
 
   @override
   String dividendRecordedTotal(String amount) {
@@ -1240,7 +1240,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get periodDaily => 'DAILY';
+  String get periodDaily => 'Daily';
 
   @override
   String get period1W => '1W';
@@ -1316,7 +1316,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Note: your App Store / Google Play subscription is not cancelled when the account is deleted. Turn off renewal from the store\'s subscriptions page.';
 
   @override
-  String get deleteAccountUpper => 'DELETE ACCOUNT';
+  String get deleteAccountUpper => 'Delete account';
 
   @override
   String get accountDeletedTitle => 'Your account was deleted';
@@ -1347,7 +1347,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This can take a few seconds. Don\'t close the app.';
 
   @override
-  String get diagnosticsUpper => 'DIAGNOSTICS';
+  String get diagnosticsUpper => 'Diagnostics';
 
   @override
   String get pushDiagnostics => 'Push Diagnostics';
@@ -1357,7 +1357,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Where the notification chain is broken; device APNs/FCM token state';
 
   @override
-  String get notificationsUpper => 'NOTIFICATIONS';
+  String get notificationsUpper => 'Notifications';
 
   @override
   String get signalNotifications => 'Technical signal notifications';
@@ -1384,7 +1384,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Get notified when a new partner request arrives';
 
   @override
-  String get liveActivitiesUpper => 'LIVE ACTIVITIES';
+  String get liveActivitiesUpper => 'Live activities';
 
   @override
   String get biometricLock => 'Biometric lock';
@@ -1403,7 +1403,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteMyAccountSubtitle => 'All your data is permanently deleted';
 
   @override
-  String get supportUpper => 'SUPPORT';
+  String get supportUpper => 'Support';
 
   @override
   String get contactUs => 'Contact Us';
@@ -1428,7 +1428,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackDogrudanEposta => 'Write by email instead';
 
   @override
-  String get legalUpper => 'LEGAL';
+  String get legalUpper => 'Legal';
 
   @override
   String get privacyPolicy => 'Privacy Policy';
@@ -1579,10 +1579,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String get partnerActionsUpper => 'PARTNER ACTIONS';
+  String get partnerActionsUpper => 'Partner actions';
 
   @override
-  String get myPartnersUpper => 'MY PARTNERS';
+  String get myPartnersUpper => 'My partners';
 
   @override
   String get generateInviteCode => 'Generate Invite Code';
@@ -1632,7 +1632,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeWord => 'Remove';
 
   @override
-  String get pendingRequestsUpper => 'PENDING PARTNER REQUESTS';
+  String get pendingRequestsUpper => 'Pending partner requests';
 
   @override
   String get wantsToPartner => 'Wants to partner up';
@@ -1790,10 +1790,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retryLower => 'Try again';
 
   @override
-  String get raceUpper => 'RACE';
+  String get raceUpper => 'Race';
 
   @override
-  String get changeByTypeUpper => 'BY TYPE · PRICE EFFECT';
+  String get changeByTypeUpper => 'By type · price effect';
 
   @override
   String get noData => 'No data';
@@ -1824,7 +1824,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tradeVolumeUpper => 'BUYS · SELLS';
+  String get tradeVolumeUpper => 'Buys · sells';
 
   @override
   String crosshairNetBuy(String amount) {
@@ -2123,7 +2123,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nAssetsPeriod(int count, String period) {
-    return '$count ASSETS · $period';
+    return '$count assets · $period';
   }
 
   @override
@@ -2380,16 +2380,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'No one\'s asset list is shared; only return percentages are ranked.';
 
   @override
-  String get yourReturnUpper => 'RETURN ON YOUR PICKS';
+  String get yourReturnUpper => 'Return on your picks';
 
   @override
   String get dataNotReady => 'Data is not ready.';
 
   @override
-  String get leaderUpper => 'LEADER';
+  String get leaderUpper => 'Leader';
 
   @override
-  String get loadingUpper => 'LOADING';
+  String get loadingUpper => 'Loading';
 
   @override
   String get globalRanking => 'Global Ranking';
@@ -2398,7 +2398,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkingAnonPool => 'Checking the anonymous pool…';
 
   @override
-  String get comingSoonUpper => 'SOON';
+  String get comingSoonUpper => 'Soon';
 
   @override
   String get globalRankingSoon =>
@@ -2418,7 +2418,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get anonymousUpper => 'ANONYMOUS';
+  String get anonymousUpper => 'Anonymous';
 
   @override
   String get topPortfoliosSoon =>
@@ -2469,7 +2469,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get greatWord => 'Great';
 
   @override
-  String get sandikPremiumUpper => 'SANDIK PREMIUM';
+  String get sandikPremiumUpper => 'Sandık Premium';
 
   @override
   String get paywallHeadline => 'Track your portfolio\nin more depth';
@@ -2624,7 +2624,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewWord => 'View';
 
   @override
-  String get newUpper => 'NEW';
+  String get newUpper => 'New';
 
   @override
   String get racePitch =>
@@ -2952,19 +2952,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signalCalculating => 'Calculating signal…';
 
   @override
-  String get trendUp => 'UPTREND';
+  String get trendUp => 'Uptrend';
 
   @override
-  String get trendDown => 'DOWNTREND';
+  String get trendDown => 'Downtrend';
 
   @override
-  String get trendFlat => 'FLAT';
+  String get trendFlat => 'Flat';
 
   @override
-  String get sinyalAsiriSatim => 'OVERSOLD';
+  String get sinyalAsiriSatim => 'Oversold';
 
   @override
-  String get sinyalAsiriAlim => 'OVERBOUGHT';
+  String get sinyalAsiriAlim => 'Overbought';
 
   @override
   String indicatorsConfidence(int lehte, int total, int pct) {
@@ -2977,13 +2977,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get technicalOutlookUpper => 'TECHNICAL OUTLOOK · DAILY';
+  String get technicalOutlookUpper => 'Technical outlook · daily';
 
   @override
   String get technicalPrefix => 'Technical:';
 
   @override
-  String get nowUpper => 'NOW';
+  String get nowUpper => 'Now';
 
   @override
   String get arrowUp => '▲ up';
@@ -3006,7 +3006,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No indicators are selected for this asset type. Enable them from Profile → Signal Settings.';
 
   @override
-  String get technicalAnalysisUpper => 'TECHNICAL ANALYSIS · DAILY';
+  String get technicalAnalysisUpper => 'Technical analysis · daily';
 
   @override
   String nOfMIndicators(int on, int all) {
@@ -3345,7 +3345,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not remove it. Check your connection.';
 
   @override
-  String get currentPriceUpper => 'CURRENT PRICE';
+  String get currentPriceUpper => 'Current price';
 
   @override
   String periodNoChange(String period) {
@@ -3375,7 +3375,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get inYourPortfolioUpper => 'IN YOUR PORTFOLIO';
+  String get inYourPortfolioUpper => 'In your portfolio';
 
   @override
   String get searchAllAssetsHint =>
@@ -3818,12 +3818,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nThousandPeople(String n) {
-    return '${n}K PEOPLE';
+    return '${n}K people';
   }
 
   @override
   String nPeopleUpper(int n) {
-    return '$n PEOPLE';
+    return '$n people';
   }
 
   @override
@@ -3955,7 +3955,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shows or hides chart indicators and layers';
 
   @override
-  String get chartCandleChip => 'CANDLE';
+  String get chartCandleChip => 'Candle';
 
   @override
   String get chartIntervalM1 => '1m';
@@ -4073,16 +4073,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notifTypePartner => 'PARTNER';
+  String get notifTypePartner => 'Partner';
 
   @override
-  String get notifTypeDailyBrief => 'DAILY';
+  String get notifTypeDailyBrief => 'Daily';
 
   @override
-  String get notifTypeWeekly => 'WEEKLY';
+  String get notifTypeWeekly => 'Weekly';
 
   @override
-  String get notifTypeReminder => 'REMINDER';
+  String get notifTypeReminder => 'Reminder';
 
   @override
   String notifToday(String time) {
@@ -4368,7 +4368,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get partnerInviteSubject => 'sandık partner invite';
 
   @override
-  String get notifTypeMonthly => 'MONTHLY';
+  String get notifTypeMonthly => 'Monthly';
 
   @override
   String raceJoinedCount(int count, int min) {
@@ -4396,7 +4396,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketBitcoin => 'Bitcoin';
 
   @override
-  String get notifTypeWatchlist => 'WATCHLIST';
+  String get notifTypeWatchlist => 'Watchlist';
 
   @override
   String get notifTypeInflation => 'CPI';
@@ -4505,16 +4505,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get period5Y => '5Y';
 
   @override
-  String get vsPeriodReturnUpper => 'PERIOD RETURN';
+  String get vsPeriodReturnUpper => 'Period return';
 
   @override
-  String get vsTodayUpper => 'TODAY';
+  String get vsTodayUpper => 'Today';
 
   @override
-  String get vsMaxDrawdownUpper => 'MAX DRAWDOWN';
+  String get vsMaxDrawdownUpper => 'Max drawdown';
 
   @override
-  String get vsVolatilityUpper => 'VOLATILITY (ANNUAL)';
+  String get vsVolatilityUpper => 'Volatility (annual)';
 
   @override
   String get vsPeriodLow => 'Period low';
@@ -4533,7 +4533,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get adPositionUpper => 'YOUR POSITION';
+  String get adPositionUpper => 'Your position';
 
   @override
   String adPositionLine(String amount, String pct) {
@@ -4547,7 +4547,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartOpenLabel(String time, String value) {
-    return 'OPEN · $time · $value';
+    return 'Open · $time · $value';
   }
 
   @override
@@ -4575,17 +4575,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartPrevCloseLabel(String value) {
-    return 'PREV CLOSE · $value';
+    return 'Prev close · $value';
   }
 
   @override
   String chartDayStartLabel(String value) {
-    return 'DAY START · $value';
+    return 'Day start · $value';
   }
 
   @override
   String chartStartLabel(String date, String value) {
-    return 'START · $date · $value';
+    return 'Start · $date · $value';
   }
 
   @override
@@ -4697,7 +4697,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortTodayMoveSub => 'Biggest mover first';
 
   @override
-  String get chartNowLabel => 'NOW';
+  String get chartNowLabel => 'Now';
 
   @override
   String get vsWatch => 'Watch';
@@ -4750,10 +4750,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get searchRecentUpper => 'RECENTLY VIEWED';
+  String get searchRecentUpper => 'Recently viewed';
 
   @override
-  String get searchMarketsUpper => 'MARKETS';
+  String get searchMarketsUpper => 'Markets';
 
   @override
   String searchShowAll(int count) {
@@ -5028,7 +5028,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceYou => 'You';
 
   @override
-  String get raceYouTag => 'YOU';
+  String get raceYouTag => 'You';
 
   @override
   String get raceVs => 'VS';
@@ -5068,10 +5068,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterReset => 'Reset';
 
   @override
-  String get filterPeriodHeader => 'PERIOD';
+  String get filterPeriodHeader => 'Period';
 
   @override
-  String get filterTypeHeader => 'TYPE';
+  String get filterTypeHeader => 'Type';
 
   @override
   String filterShowN(int n) {
@@ -5330,7 +5330,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pensionVesting => 'Government contribution vesting';
 
   @override
-  String get currentValueUpper => 'CURRENT VALUE';
+  String get currentValueUpper => 'Current value';
 
   @override
   String get depositCardRate => 'Interest';
@@ -6194,22 +6194,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Performance is drawn as if you had held today\'s holdings for the whole period. When off, your actual history is shown.';
 
   @override
-  String get settingsGroupGeneral => 'GENERAL';
+  String get settingsGroupGeneral => 'General';
 
   @override
-  String get settingsGroupPortfolioView => 'PORTFOLIO VIEW';
+  String get settingsGroupPortfolioView => 'Portfolio view';
 
   @override
-  String get settingsGroupSecurityAccount => 'SECURITY & ACCOUNT';
+  String get settingsGroupSecurityAccount => 'Security & account';
 
   @override
-  String get settingsGroupData => 'DATA';
+  String get settingsGroupData => 'Data';
 
   @override
-  String get settingsGroupAbout => 'ABOUT THE APP';
+  String get settingsGroupAbout => 'About the app';
 
   @override
-  String get settingsAdvancedUpper => 'ADVANCED';
+  String get settingsAdvancedUpper => 'Advanced';
 
   @override
   String get settingsAdvancedSemantics => 'Advanced settings';
@@ -6363,7 +6363,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yasalBelgeYatirimUyarisi => 'Investment Disclaimer';
 
   @override
-  String get flowTitleUpper => 'MONEY FLOW';
+  String get flowTitleUpper => 'Money flow';
 
   @override
   String get flowLastWeekIn => 'Net inflow, latest week';
@@ -6482,7 +6482,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Highlights of the latest week in the assets you hold. Tap a row for details.';
 
   @override
-  String get weekFundsUpper => 'MONEY FLOW IN YOUR FUNDS';
+  String get weekFundsUpper => 'Money flow in your funds';
 
   @override
   String weekRowRange(String label, String range) {
@@ -6516,7 +6516,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weekLink => 'My funds this week';
 
   @override
-  String get volTitleUpper => 'VOLUME RADAR';
+  String get volTitleUpper => 'Volume radar';
 
   @override
   String volLastDay(String date) {
@@ -6567,7 +6567,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cryTitleUpper => 'BUYER PRESSURE';
+  String get cryTitleUpper => 'Buyer pressure';
 
   @override
   String cryShareLabel(String date) {
@@ -6608,7 +6608,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get weekVolumeUpper => 'UNUSUAL VOLUME';
+  String get weekVolumeUpper => 'Unusual volume';
 
   @override
   String weekVolumeRow(String date) {
@@ -7032,13 +7032,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrDonemUpper => 'PERIOD';
+  String get rdrDonemUpper => 'Period';
 
   @override
-  String get rdrBaglamUpper => 'CONTEXT';
+  String get rdrBaglamUpper => 'Context';
 
   @override
-  String get rdrSiraUpper => 'FLOW RANK IN CATEGORY';
+  String get rdrSiraUpper => 'Flow rank in category';
 
   @override
   String rdrSiraAlt(String kategori) {
@@ -7054,7 +7054,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrHareketlerUpper => 'BIG MOVES · LAST 30 DAYS';
+  String get rdrHareketlerUpper => 'Big moves · last 30 days';
 
   @override
   String rdrHisseSakin(String tarih) {
@@ -7106,7 +7106,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrOlagandisiUpper => 'UNUSUAL VOLUME DAYS · LAST 30 DAYS';
+  String get rdrOlagandisiUpper => 'Unusual volume days · last 30 days';
 
   @override
   String rdrKriptoAlici(String tarih) {
@@ -7149,7 +7149,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrSaatlikUpper => 'LAST 24 HOURS · NET BUYING BY HOUR';
+  String get rdrSaatlikUpper => 'Last 24 hours · net buying by hour';
 
   @override
   String rdrEnIstekliSaat(String aralik, String tutar) {
@@ -7171,7 +7171,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrIslemHacmiUpper => 'TRADING VOLUME · LAST 20 DAYS';
+  String get rdrIslemHacmiUpper => 'Trading volume · last 20 days';
 
   @override
   String rdrHaftaBaslikVar(String sayi) {
@@ -7433,7 +7433,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmGeriYukle => 'Restore purchases';
 
   @override
-  String get anzNotUpper => 'WEEKLY NOTE · AI';
+  String get anzNotUpper => 'Weekly note · AI';
 
   @override
   String anzMeta(String sayi, String aralik) {
@@ -7474,7 +7474,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get anzTesekkur => 'Thanks, we\'ll review the note.';
 
   @override
-  String get anzAylikUpper => 'MONTHLY REPORT';
+  String get anzAylikUpper => 'Monthly report';
 
   @override
   String anzAylikBaslik(String ay) {
@@ -7674,7 +7674,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usStockCurrencyLocked => 'US stocks are recorded in dollars';
 
   @override
-  String get costsUpper => 'COSTS';
+  String get costsUpper => 'Costs';
 
   @override
   String get costsPaid => 'Paid';
@@ -7779,7 +7779,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get bondInfoUpper => 'BOND DETAILS';
+  String get bondInfoUpper => 'Bond details';
 
   @override
   String get bondCleanPrice => 'Clean price';
@@ -7835,7 +7835,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bondIssuerCorporate => 'Corporate';
 
   @override
-  String get bondBankSellUpper => 'IF YOU SELL TO THE BANK';
+  String get bondBankSellUpper => 'If you sell to the bank';
 
   @override
   String get bondBankZiraat => 'Ziraat Bankası';
@@ -7900,13 +7900,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s7AramaIpucu => 'Search assets, symbols or actions';
 
   @override
-  String get s7VarliklarimUpper => 'MY ASSETS';
+  String get s7VarliklarimUpper => 'My assets';
 
   @override
-  String get s7PiyasaUpper => 'MARKET';
+  String get s7PiyasaUpper => 'Market';
 
   @override
-  String get s7EylemlerUpper => 'ACTIONS';
+  String get s7EylemlerUpper => 'Actions';
 
   @override
   String get s7EylemFiyatAlarmlari => 'Price alerts';
@@ -7936,10 +7936,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s7EylemAyarlar => 'Settings';
 
   @override
-  String get s4AnalysisUpper => 'ANALYSIS';
+  String get s4AnalysisUpper => 'Analysis';
 
   @override
-  String get s4HistoryDocsUpper => 'HISTORY & DOCUMENTS';
+  String get s4HistoryDocsUpper => 'History & documents';
 
   @override
   String get s4Details => 'Details';
@@ -8024,7 +8024,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'You\'ve set notifications one by one. Picking an option applies it to all of them.';
 
   @override
-  String get bildirimAyrintiliUpper => 'DETAILED';
+  String get bildirimAyrintiliUpper => 'Detailed';
 
   @override
   String get bildirimAyrintiliSemantik => 'Set notifications one by one';
@@ -8123,7 +8123,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdVarlikEtiket => 'ASSET LIMIT';
+  String get pwdVarlikEtiket => 'Asset limit';
 
   @override
   String pwdVarlikBaslik(int sayi) {
@@ -8139,7 +8139,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdSinyalEtiket => 'SIGNALS';
+  String get pwdSinyalEtiket => 'Signals';
 
   @override
   String get pwdSinyalBaslik =>
@@ -8149,7 +8149,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdSinyalPremium => '8 indicators, unlimited alerts';
 
   @override
-  String get pwdKarsEtiket => 'COMPARE';
+  String get pwdKarsEtiket => 'Compare';
 
   @override
   String pwdKarsRozet(int ucretsiz, int premium) {
@@ -8166,7 +8166,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdOrtakEtiket => 'PARTNERS';
+  String get pwdOrtakEtiket => 'Partners';
 
   @override
   String get pwdOrtakBaslik =>
@@ -8184,20 +8184,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdAkisEtiket => 'FUND FLOW';
+  String get pwdAkisEtiket => 'Fund flow';
 
   @override
   String get pwdAkisBaslik => 'Is money flowing into your fund? See 8 weeks.';
 
   @override
-  String get pwdHacimEtiket => 'VOLUME RADAR';
+  String get pwdHacimEtiket => 'Volume radar';
 
   @override
   String get pwdHacimBaslik =>
       'Is today\'s volume unusual? Compare with 20 days.';
 
   @override
-  String get pwdNotEtiket => 'WEEKLY NOTE';
+  String get pwdNotEtiket => 'Weekly note';
 
   @override
   String get pwdNotBaslik => 'The rest of your weekly note is Premium.';
@@ -8211,7 +8211,7 @@ class AppLocalizationsEn extends AppLocalizations {
       ' Which one stood out and what that tells you becomes readable in the rest of the note…';
 
   @override
-  String get pwdEkstreEtiket => 'STATEMENT';
+  String get pwdEkstreEtiket => 'Statement';
 
   @override
   String get pwdEkstreBaslik =>
@@ -8387,10 +8387,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yrExcel => 'Excel';
 
   @override
-  String get yrSatislarUpper => 'SALES';
+  String get yrSatislarUpper => 'Sales';
 
   @override
-  String get yrTemettulerUpper => 'DIVIDENDS';
+  String get yrTemettulerUpper => 'Dividends';
 
   @override
   String yrFiyatsiz(int count) {
@@ -8457,7 +8457,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get ttVarliklarUpper => 'ASSETS';
+  String get ttVarliklarUpper => 'Assets';
 
   @override
   String ttSatirAlt(String pay, String aylar) {
@@ -8517,7 +8517,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirOrtak => 'Partners';
 
   @override
-  String get pwdRaporEtiket => 'ANNUAL REPORT';
+  String get pwdRaporEtiket => 'Annual report';
 
   @override
   String get pwdRaporBaslik =>
@@ -8527,7 +8527,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdRaporPremium => 'monthly, annual, PDF, Excel';
 
   @override
-  String get pwdTemettuEtiket => 'DIVIDEND FORECAST';
+  String get pwdTemettuEtiket => 'Dividend forecast';
 
   @override
   String get pwdTemettuBaslik =>
@@ -8540,7 +8540,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdSinyalRozet => '8 indicators';
 
   @override
-  String get xrKartBaslikUpper => 'WHAT\'S INSIDE THE FUND';
+  String get xrKartBaslikUpper => 'What\'s inside the fund';
 
   @override
   String get xrSatirFonunIci => 'Inside the fund';
@@ -8633,7 +8633,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get xrToplamEtiket => 'Your portfolio today';
 
   @override
-  String get xrDagilimUpper => 'LOOK-THROUGH ALLOCATION';
+  String get xrDagilimUpper => 'Look-through allocation';
 
   @override
   String get xrDisi => 'Not covered';
@@ -8671,7 +8671,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get xrEkranKilitSatir => 'Portfolio X-Ray is in Premium';
 
   @override
-  String get xrOrtusmeUpper => 'HELD IN MORE THAN ONE PLACE';
+  String get xrOrtusmeUpper => 'Held in more than one place';
 
   @override
   String get xrOrtusmeAciklama =>
@@ -8698,7 +8698,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirXray => 'Fund X-Ray';
 
   @override
-  String get pwdXrayEtiket => 'FUND X-RAY';
+  String get pwdXrayEtiket => 'Fund X-Ray';
 
   @override
   String get pwdXrayBaslik =>
@@ -8860,7 +8860,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwOzEkstre => 'AI matching for your bank and brokerage statements';
 
   @override
-  String get pwdPortfoyEtiket => 'PORTFOLIOS';
+  String get pwdPortfoyEtiket => 'Portfolios';
 
   @override
   String get pwdPortfoyBaslik =>
@@ -8932,7 +8932,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get portfoyOrtakBolum => 'WHAT YOUR PARTNER SEES';
+  String get portfoyOrtakBolum => 'What your partner sees';
 
   @override
   String get portfoyAktarBaslik => 'How much should move?';
@@ -9256,7 +9256,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirOzelGosterge => 'Your own indicators (Pine)';
 
   @override
-  String get pwdOzelEtiket => 'YOUR INDICATOR';
+  String get pwdOzelEtiket => 'Your indicator';
 
   @override
   String get pwdOzelBaslik =>
@@ -9534,7 +9534,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your quantity in this asset changed after the comment was written.';
 
   @override
-  String get pwdZirveEtiket => 'TOP PORTFOLIOS';
+  String get pwdZirveEtiket => 'Top portfolios';
 
   @override
   String get pwdZirveBaslik =>
@@ -9685,7 +9685,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sigBos => 'Nothing left to show in the next two weeks.';
 
   @override
-  String get ziBaslikUpper => 'WHAT\'S INSIDE THE FUNDS';
+  String get ziBaslikUpper => 'What\'s inside the funds';
 
   @override
   String ziOzetHisse(String gorunen, String gercek) {
@@ -10026,7 +10026,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notifTypeAlarm => 'ALERT';
+  String get notifTypeAlarm => 'Alert';
 
   @override
   String get ortakPortfoyKartBaslik => 'Shared portfolio';
@@ -10420,7 +10420,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmOneriAciklama => 'We\'ll tell you if it moves 2% in a day';
 
   @override
-  String get kilometreTaslariUpper => 'YOUR MILESTONES';
+  String get kilometreTaslariUpper => 'Your milestones';
 
   @override
   String get kilometreTaslariTumu => 'All';

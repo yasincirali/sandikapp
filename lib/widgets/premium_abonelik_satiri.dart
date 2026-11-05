@@ -72,7 +72,7 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
                   children: [
                     Text(baslik,
                         style: t.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w800, color: c.text90)),
+                            fontWeight: FontWeight.w600, color: c.text90)),
                     if (alt != null)
                       Text(alt, style: t.bodySmall?.copyWith(color: c.text58)),
                   ],

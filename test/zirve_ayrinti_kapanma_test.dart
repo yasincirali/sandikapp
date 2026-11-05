@@ -124,7 +124,7 @@ void main() {
       await tester.fling(
           tutamak
               ? find.byType(SandikTutamac)
-              : find.textContaining('VARLIKLAR').first,
+              : find.textContaining('Varlıklar').first,
           const Offset(0, 500),
           2000);
       await _bekle(tester);

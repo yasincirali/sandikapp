@@ -264,7 +264,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                     Text(
                       context.l10n.compare,
                       style: context.t.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: context.c.text90,
                       ),
                     ),

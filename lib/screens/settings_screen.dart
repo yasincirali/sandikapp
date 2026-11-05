@@ -620,7 +620,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // geliştiricinin kendi cihazında yapılır.
             if (kDebugMode) ...[
               const SizedBox(height: 28),
-              const SandikSectionHeader(title: 'GELİŞTİRİCİ (DEBUG)'),
+              const SandikSectionHeader(title: 'Geliştirici (debug)'),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.bug_report_outlined,

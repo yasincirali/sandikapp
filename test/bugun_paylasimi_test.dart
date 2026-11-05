@@ -60,7 +60,7 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
     expect(find.text('+%0,84'), findsOneWidget);
-    expect(find.text('PORTFÖYÜM BUGÜN'), findsOneWidget);
+    expect(find.text('Portföyüm bugün'), findsOneWidget);
     for (final ad in ['Hisse', 'Altın', 'Fon']) {
       expect(find.text(ad), findsOneWidget, reason: ad);
     }

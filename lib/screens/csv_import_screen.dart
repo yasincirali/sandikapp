@@ -956,7 +956,7 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
           Text(
             l10n.importFixColumns,
             style: context.t.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800, color: context.c.text90),
+                fontWeight: FontWeight.w600, color: context.c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
           Flexible(

@@ -24,7 +24,6 @@ import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_katla.dart';
 import '../widgets/sinir_uyarisi.dart';
 import '../widgets/tur_filtre_cipleri.dart';
 import '../widgets/varlik_rozeti.dart';
@@ -287,9 +286,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                       else
                         for (final g in gruplar) ...[
                           _Baslik(SandikSectionHeader(
-                            title: buyukHarf(g.tur.labelOf(context.l10n),
-                                turkce: context.l10n.localeName
-                                    .startsWith('tr')),
+                            title: g.tur.labelOf(context.l10n),
                             trailing: g.kisaltildi
                                 ? _MetinDugmesi(
                                     metin: context.l10n.searchShowAll(g.toplam),

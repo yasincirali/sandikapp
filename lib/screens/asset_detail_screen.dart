@@ -2211,7 +2211,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     tipText,
                                     context.t.numSmall.copyWith(
                                       color: context.c.text90,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                     children: [
                                       TextSpan(

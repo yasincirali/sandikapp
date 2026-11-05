@@ -55,7 +55,7 @@ extension _SeciciAlanlari on _AddAssetScreenState {
                       opt.symbol,
                       style: context.t.headlineLarge?.copyWith(
                         fontSize: 22,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: selected
                             ? AssetType.doviz.onSurface(context)
                             : context.c.text90,
@@ -69,7 +69,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
                         color: selected
                             ? AssetType.doviz.onSurface(context)
                             : context.c.text58,
-                        letterSpacing: 0.6,
                       ),
                     ),
                   ],
@@ -463,9 +462,8 @@ extension _SeciciAlanlari on _AddAssetScreenState {
               // dolgu ham renkte kalır.
               child: Text(badgeText,
                   style: context.t.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: color.metinTonu(context),
-                      letterSpacing: 0.5)),
+                      fontWeight: FontWeight.w600,
+                      color: color.metinTonu(context))),
             ),
             const SizedBox(width: 10),
           ],

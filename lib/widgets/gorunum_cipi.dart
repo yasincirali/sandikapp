@@ -394,7 +394,7 @@ class _Avatar extends StatelessWidget {
           style: (boy >= 32 ? context.t.titleMedium : context.t.labelSmall)
               ?.copyWith(
             color: context.c.onStatus,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             height: 1,
           ),
         ),

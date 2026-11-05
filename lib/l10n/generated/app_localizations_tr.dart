@@ -481,7 +481,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get refreshPrices => 'Fiyatları yenile';
 
   @override
-  String get portfolioActivity => 'PORTFÖY HAREKETLERİ';
+  String get portfolioActivity => 'Portföy hareketleri';
 
   @override
   String get seeAllTransactions => 'Tüm hareketleri gör';
@@ -522,7 +522,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noActiveSignals => 'Yeni bildirim yok';
 
   @override
-  String get historyUpper => 'GEÇMİŞ';
+  String get historyUpper => 'Geçmiş';
 
   @override
   String deleteHistoryCount(int count) {
@@ -544,7 +544,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get deleteHistoryButton => 'Geçmişi Sil';
 
   @override
-  String get signalNeutral => 'NÖTR';
+  String get signalNeutral => 'Nötr';
 
   @override
   String signalDeletedAt(String date) {
@@ -563,7 +563,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get hideBalance => 'Bakiyeyi gizle';
 
   @override
-  String get sortCriterion => 'SIRALAMA KRİTERİ';
+  String get sortCriterion => 'Sıralama kriteri';
 
   @override
   String tabSemanticsCount(String label, int count) {
@@ -641,7 +641,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assetFullName => 'Tam Adı';
 
   @override
-  String get fundReportTitleUpper => 'FON KARNESİ';
+  String get fundReportTitleUpper => 'Fon karnesi';
 
   @override
   String fundReportCategory(String category, String count) {
@@ -854,7 +854,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Miktar girince toplam maliyet burada görünecek.';
 
   @override
-  String get totalCostUpper => 'TOPLAM MALİYET';
+  String get totalCostUpper => 'Toplam maliyet';
 
   @override
   String get transactionDate => 'İşlem tarihi';
@@ -924,7 +924,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notifTypeDividend => 'Temettü';
 
   @override
-  String get dividendHistoryUpper => 'SON 12 AY TEMETTÜ';
+  String get dividendHistoryUpper => 'Son 12 ay temettü';
 
   @override
   String dividendRecordedTotal(String amount) {
@@ -1301,7 +1301,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Not: App Store / Google Play aboneliğin hesap silinince kendiliğinden iptal olmaz. Yenilemeyi mağazanın abonelikler sayfasından kapat.';
 
   @override
-  String get deleteAccountUpper => 'HESABI SİL';
+  String get deleteAccountUpper => 'Hesabı sil';
 
   @override
   String get accountDeletedTitle => 'Hesabın silindi';
@@ -1332,7 +1332,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu işlem birkaç saniye sürebilir. Uygulamayı kapatma.';
 
   @override
-  String get diagnosticsUpper => 'TANILAMA';
+  String get diagnosticsUpper => 'Tanılama';
 
   @override
   String get pushDiagnostics => 'Push Teşhisi';
@@ -1342,7 +1342,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bildirim zincirinin neresi kopuk; cihaz APNs/FCM token durumu';
 
   @override
-  String get notificationsUpper => 'BİLDİRİMLER';
+  String get notificationsUpper => 'Bildirimler';
 
   @override
   String get signalNotifications => 'Teknik sinyal bildirimleri';
@@ -1369,7 +1369,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yeni ortaklık isteği geldiğinde bildirim al';
 
   @override
-  String get liveActivitiesUpper => 'CANLI ETKİNLİKLER';
+  String get liveActivitiesUpper => 'Canlı etkinlikler';
 
   @override
   String get biometricLock => 'Biyometrik kilit';
@@ -1388,7 +1388,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get deleteMyAccountSubtitle => 'Tüm verilerin kalıcı olarak silinir';
 
   @override
-  String get supportUpper => 'DESTEK';
+  String get supportUpper => 'Destek';
 
   @override
   String get contactUs => 'Bize Ulaş';
@@ -1413,7 +1413,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get feedbackDogrudanEposta => 'E-postayla yaz';
 
   @override
-  String get legalUpper => 'YASAL';
+  String get legalUpper => 'Yasal';
 
   @override
   String get privacyPolicy => 'Gizlilik Politikası';
@@ -1564,10 +1564,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settingsTitle => 'Ayarlar';
 
   @override
-  String get partnerActionsUpper => 'ORTAKLIK İŞLEMLERİ';
+  String get partnerActionsUpper => 'Ortaklık işlemleri';
 
   @override
-  String get myPartnersUpper => 'ORTAKLARIM';
+  String get myPartnersUpper => 'Ortaklarım';
 
   @override
   String get generateInviteCode => 'Davet Kodu Üret';
@@ -1617,7 +1617,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get removeWord => 'Kaldır';
 
   @override
-  String get pendingRequestsUpper => 'BEKLEYEN ORTAKLIK İSTEKLERİ';
+  String get pendingRequestsUpper => 'Bekleyen ortaklık istekleri';
 
   @override
   String get wantsToPartner => 'Ortaklık istiyor';
@@ -1775,10 +1775,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get retryLower => 'Tekrar dene';
 
   @override
-  String get raceUpper => 'YARIŞ';
+  String get raceUpper => 'Yarış';
 
   @override
-  String get changeByTypeUpper => 'TÜRE GÖRE · FİYAT ETKİSİ';
+  String get changeByTypeUpper => 'Türe göre · fiyat etkisi';
 
   @override
   String get noData => 'Veri yok';
@@ -1809,7 +1809,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get tradeVolumeUpper => 'ALIM · SATIŞ';
+  String get tradeVolumeUpper => 'Alım · satış';
 
   @override
   String crosshairNetBuy(String amount) {
@@ -2106,7 +2106,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String nAssetsPeriod(int count, String period) {
-    return '$count VARLIK · $period';
+    return '$count varlık · $period';
   }
 
   @override
@@ -2361,16 +2361,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kimsenin varlık listesi paylaşılmaz, yalnız getiri yüzdeleri sıralanır.';
 
   @override
-  String get yourReturnUpper => 'SEÇİMLERİNİN GETİRİSİ';
+  String get yourReturnUpper => 'Seçimlerinin getirisi';
 
   @override
   String get dataNotReady => 'Veri hazır değil.';
 
   @override
-  String get leaderUpper => 'LİDER';
+  String get leaderUpper => 'Lider';
 
   @override
-  String get loadingUpper => 'YÜKLENİYOR';
+  String get loadingUpper => 'Yükleniyor';
 
   @override
   String get globalRanking => 'Genel Sıralama';
@@ -2379,7 +2379,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get checkingAnonPool => 'Anonim havuz kontrol ediliyor…';
 
   @override
-  String get comingSoonUpper => 'YAKINDA';
+  String get comingSoonUpper => 'Yakında';
 
   @override
   String get globalRankingSoon =>
@@ -2399,7 +2399,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get anonymousUpper => 'ANONİM';
+  String get anonymousUpper => 'Anonim';
 
   @override
   String get topPortfoliosSoon =>
@@ -2451,7 +2451,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get greatWord => 'Harika';
 
   @override
-  String get sandikPremiumUpper => 'SANDIK PREMIUM';
+  String get sandikPremiumUpper => 'Sandık Premium';
 
   @override
   String get paywallHeadline => 'Portföyünü daha derinlemesine\ntakip et';
@@ -2606,7 +2606,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get viewWord => 'Gör';
 
   @override
-  String get newUpper => 'YENİ';
+  String get newUpper => 'Yeni';
 
   @override
   String get racePitch =>
@@ -2924,19 +2924,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get signalCalculating => 'Sinyal hesaplanıyor…';
 
   @override
-  String get trendUp => 'YUKARI TREND';
+  String get trendUp => 'Yukarı trend';
 
   @override
-  String get trendDown => 'AŞAĞI TREND';
+  String get trendDown => 'Aşağı trend';
 
   @override
-  String get trendFlat => 'YATAY';
+  String get trendFlat => 'Yatay';
 
   @override
-  String get sinyalAsiriSatim => 'AŞIRI SATIM';
+  String get sinyalAsiriSatim => 'Aşırı satım';
 
   @override
-  String get sinyalAsiriAlim => 'AŞIRI ALIM';
+  String get sinyalAsiriAlim => 'Aşırı alım';
 
   @override
   String indicatorsConfidence(int lehte, int total, int pct) {
@@ -2949,13 +2949,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get technicalOutlookUpper => 'TEKNİK GÖRÜNÜM · GÜNLÜK';
+  String get technicalOutlookUpper => 'Teknik görünüm · günlük';
 
   @override
   String get technicalPrefix => 'Teknik:';
 
   @override
-  String get nowUpper => 'ŞU AN';
+  String get nowUpper => 'Şu an';
 
   @override
   String get arrowUp => '▲ yukarı';
@@ -2978,7 +2978,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları\'ndan aktifleştir.';
 
   @override
-  String get technicalAnalysisUpper => 'TEKNİK ANALİZ · GÜNLÜK';
+  String get technicalAnalysisUpper => 'Teknik analiz · günlük';
 
   @override
   String nOfMIndicators(int on, int all) {
@@ -3318,7 +3318,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Takipten çıkarılamadı. Bağlantını kontrol et.';
 
   @override
-  String get currentPriceUpper => 'GÜNCEL FİYAT';
+  String get currentPriceUpper => 'Güncel fiyat';
 
   @override
   String periodNoChange(String period) {
@@ -3348,7 +3348,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get inYourPortfolioUpper => 'PORTFÖYÜNDE';
+  String get inYourPortfolioUpper => 'Portföyünde';
 
   @override
   String get searchAllAssetsHint =>
@@ -3790,12 +3790,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String nThousandPeople(String n) {
-    return '${n}K KİŞİ';
+    return '${n}K kişi';
   }
 
   @override
   String nPeopleUpper(int n) {
-    return '$n KİŞİ';
+    return '$n kişi';
   }
 
   @override
@@ -3925,7 +3925,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Gösterge ve grafik katmanlarını açar ya da kapatır';
 
   @override
-  String get chartCandleChip => 'MUM';
+  String get chartCandleChip => 'Mum';
 
   @override
   String get chartIntervalM1 => '1 dk';
@@ -4043,16 +4043,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get notifTypePartner => 'ORTAKLIK';
+  String get notifTypePartner => 'Ortaklık';
 
   @override
-  String get notifTypeDailyBrief => 'GÜNLÜK';
+  String get notifTypeDailyBrief => 'Günlük';
 
   @override
-  String get notifTypeWeekly => 'HAFTALIK';
+  String get notifTypeWeekly => 'Haftalık';
 
   @override
-  String get notifTypeReminder => 'HATIRLATMA';
+  String get notifTypeReminder => 'Hatırlatma';
 
   @override
   String notifToday(String time) {
@@ -4338,7 +4338,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get partnerInviteSubject => 'sandık ortak daveti';
 
   @override
-  String get notifTypeMonthly => 'AYLIK';
+  String get notifTypeMonthly => 'Aylık';
 
   @override
   String raceJoinedCount(int count, int min) {
@@ -4366,7 +4366,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get marketBitcoin => 'Bitcoin';
 
   @override
-  String get notifTypeWatchlist => 'TAKİP';
+  String get notifTypeWatchlist => 'Takip';
 
   @override
   String get notifTypeInflation => 'TÜFE';
@@ -4475,16 +4475,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get period5Y => '5 yıl';
 
   @override
-  String get vsPeriodReturnUpper => 'DÖNEM GETİRİSİ';
+  String get vsPeriodReturnUpper => 'Dönem getirisi';
 
   @override
-  String get vsTodayUpper => 'BUGÜN';
+  String get vsTodayUpper => 'Bugün';
 
   @override
-  String get vsMaxDrawdownUpper => 'EN BÜYÜK DÜŞÜŞ';
+  String get vsMaxDrawdownUpper => 'En büyük düşüş';
 
   @override
-  String get vsVolatilityUpper => 'OYNAKLIK (YILLIK)';
+  String get vsVolatilityUpper => 'Oynaklık (yıllık)';
 
   @override
   String get vsPeriodLow => 'Dönem düşüğü';
@@ -4503,7 +4503,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get adPositionUpper => 'POZİSYONUN';
+  String get adPositionUpper => 'Pozisyonun';
 
   @override
   String adPositionLine(String amount, String pct) {
@@ -4517,7 +4517,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String chartOpenLabel(String time, String value) {
-    return 'AÇILIŞ · $time · $value';
+    return 'Açılış · $time · $value';
   }
 
   @override
@@ -4545,17 +4545,17 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String chartPrevCloseLabel(String value) {
-    return 'ÖNCEKİ KAPANIŞ · $value';
+    return 'Önceki kapanış · $value';
   }
 
   @override
   String chartDayStartLabel(String value) {
-    return 'GÜN BAŞI · $value';
+    return 'Gün başı · $value';
   }
 
   @override
   String chartStartLabel(String date, String value) {
-    return 'BAŞLANGIÇ · $date · $value';
+    return 'Başlangıç · $date · $value';
   }
 
   @override
@@ -4667,7 +4667,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sortTodayMoveSub => 'En çok oynayan önce';
 
   @override
-  String get chartNowLabel => 'ŞİMDİ';
+  String get chartNowLabel => 'Şimdi';
 
   @override
   String get vsWatch => 'Takip et';
@@ -4720,10 +4720,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get searchRecentUpper => 'SON BAKTIKLARIN';
+  String get searchRecentUpper => 'Son baktıkların';
 
   @override
-  String get searchMarketsUpper => 'PİYASALAR';
+  String get searchMarketsUpper => 'Piyasalar';
 
   @override
   String searchShowAll(int count) {
@@ -4995,7 +4995,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get raceYou => 'Sen';
 
   @override
-  String get raceYouTag => 'SEN';
+  String get raceYouTag => 'Sen';
 
   @override
   String get raceVs => 'VS';
@@ -5035,10 +5035,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get filterReset => 'Sıfırla';
 
   @override
-  String get filterPeriodHeader => 'DÖNEM';
+  String get filterPeriodHeader => 'Dönem';
 
   @override
-  String get filterTypeHeader => 'TÜR';
+  String get filterTypeHeader => 'Tür';
 
   @override
   String filterShowN(int n) {
@@ -5296,7 +5296,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pensionVesting => 'Devlet katkısı hak ediş';
 
   @override
-  String get currentValueUpper => 'GÜNCEL DEĞER';
+  String get currentValueUpper => 'Güncel değer';
 
   @override
   String get depositCardRate => 'Faiz';
@@ -6135,22 +6135,22 @@ class AppLocalizationsTr extends AppLocalizations {
       'Performans, bugünkü varlıklarını dönem boyunca elinde tutmuşsun gibi çizilir. Kapalıyken gerçek geçmişin görünür.';
 
   @override
-  String get settingsGroupGeneral => 'GENEL';
+  String get settingsGroupGeneral => 'Genel';
 
   @override
-  String get settingsGroupPortfolioView => 'PORTFÖY GÖRÜNÜMÜ';
+  String get settingsGroupPortfolioView => 'Portföy görünümü';
 
   @override
-  String get settingsGroupSecurityAccount => 'GÜVENLİK VE HESAP';
+  String get settingsGroupSecurityAccount => 'Güvenlik ve hesap';
 
   @override
-  String get settingsGroupData => 'VERİ';
+  String get settingsGroupData => 'Veri';
 
   @override
-  String get settingsGroupAbout => 'UYGULAMA HAKKINDA';
+  String get settingsGroupAbout => 'Uygulama hakkında';
 
   @override
-  String get settingsAdvancedUpper => 'GELİŞMİŞ';
+  String get settingsAdvancedUpper => 'Gelişmiş';
 
   @override
   String get settingsAdvancedSemantics => 'Gelişmiş ayarlar';
@@ -6303,7 +6303,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yasalBelgeYatirimUyarisi => 'Yatırım Uyarısı';
 
   @override
-  String get flowTitleUpper => 'PARA AKIŞI';
+  String get flowTitleUpper => 'Para akışı';
 
   @override
   String get flowLastWeekIn => 'Son hafta net giriş';
@@ -6422,7 +6422,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.';
 
   @override
-  String get weekFundsUpper => 'FONLARINDA PARA AKIŞI';
+  String get weekFundsUpper => 'Fonlarında para akışı';
 
   @override
   String weekRowRange(String label, String range) {
@@ -6456,7 +6456,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get weekLink => 'Tüm fonlarımın haftası';
 
   @override
-  String get volTitleUpper => 'HACİM RADARI';
+  String get volTitleUpper => 'Hacim radarı';
 
   @override
   String volLastDay(String date) {
@@ -6507,7 +6507,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get cryTitleUpper => 'ALICI BASKISI';
+  String get cryTitleUpper => 'Alıcı baskısı';
 
   @override
   String cryShareLabel(String date) {
@@ -6548,7 +6548,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get weekVolumeUpper => 'OLAĞANDIŞI HACİM';
+  String get weekVolumeUpper => 'Olağandışı hacim';
 
   @override
   String weekVolumeRow(String date) {
@@ -6960,13 +6960,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get rdrDonemUpper => 'DÖNEM';
+  String get rdrDonemUpper => 'Dönem';
 
   @override
-  String get rdrBaglamUpper => 'BAĞLAM';
+  String get rdrBaglamUpper => 'Bağlam';
 
   @override
-  String get rdrSiraUpper => 'KATEGORİDE AKIŞ SIRASI';
+  String get rdrSiraUpper => 'Kategoride akış sırası';
 
   @override
   String rdrSiraAlt(String kategori) {
@@ -6982,7 +6982,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get rdrHareketlerUpper => 'BÜYÜK HAREKETLER · SON 30 GÜN';
+  String get rdrHareketlerUpper => 'Büyük hareketler · son 30 gün';
 
   @override
   String rdrHisseSakin(String tarih) {
@@ -7035,7 +7035,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get rdrOlagandisiUpper => 'OLAĞANDIŞI HACİM GÜNLERİ · SON 30 GÜN';
+  String get rdrOlagandisiUpper => 'Olağandışı hacim günleri · son 30 gün';
 
   @override
   String rdrKriptoAlici(String tarih) {
@@ -7078,7 +7078,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get rdrSaatlikUpper => 'SON 24 SAAT · SAAT SAAT NET ALIM';
+  String get rdrSaatlikUpper => 'Son 24 saat · saat saat net alım';
 
   @override
   String rdrEnIstekliSaat(String aralik, String tutar) {
@@ -7100,7 +7100,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get rdrIslemHacmiUpper => 'İŞLEM HACMİ · SON 20 GÜN';
+  String get rdrIslemHacmiUpper => 'İşlem hacmi · son 20 gün';
 
   @override
   String rdrHaftaBaslikVar(String sayi) {
@@ -7363,7 +7363,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmGeriYukle => 'Satın alımları geri yükle';
 
   @override
-  String get anzNotUpper => 'HAFTALIK NOT · YAPAY ZEKÂ';
+  String get anzNotUpper => 'Haftalık not · yapay zekâ';
 
   @override
   String anzMeta(String sayi, String aralik) {
@@ -7404,7 +7404,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get anzTesekkur => 'Teşekkürler, not incelenecek.';
 
   @override
-  String get anzAylikUpper => 'AYLIK RAPOR';
+  String get anzAylikUpper => 'Aylık rapor';
 
   @override
   String anzAylikBaslik(String ay) {
@@ -7605,7 +7605,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get usStockCurrencyLocked => 'ABD hissesi dolarla kaydedilir';
 
   @override
-  String get costsUpper => 'MASRAFLAR';
+  String get costsUpper => 'Masraflar';
 
   @override
   String get costsPaid => 'Ödenen';
@@ -7710,7 +7710,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get bondInfoUpper => 'TAHVİL BİLGİLERİ';
+  String get bondInfoUpper => 'Tahvil bilgileri';
 
   @override
   String get bondCleanPrice => 'Temiz fiyat';
@@ -7766,7 +7766,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get bondIssuerCorporate => 'Özel sektör';
 
   @override
-  String get bondBankSellUpper => 'BANKAYA SATARSAN';
+  String get bondBankSellUpper => 'Bankaya satarsan';
 
   @override
   String get bondBankZiraat => 'Ziraat Bankası';
@@ -7831,13 +7831,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s7AramaIpucu => 'Varlık, sembol ya da işlem ara';
 
   @override
-  String get s7VarliklarimUpper => 'VARLIKLARIM';
+  String get s7VarliklarimUpper => 'Varlıklarım';
 
   @override
-  String get s7PiyasaUpper => 'PİYASA';
+  String get s7PiyasaUpper => 'Piyasa';
 
   @override
-  String get s7EylemlerUpper => 'EYLEMLER';
+  String get s7EylemlerUpper => 'Eylemler';
 
   @override
   String get s7EylemFiyatAlarmlari => 'Fiyat alarmları';
@@ -7867,10 +7867,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s7EylemAyarlar => 'Ayarlar';
 
   @override
-  String get s4AnalysisUpper => 'ANALİZ';
+  String get s4AnalysisUpper => 'Analiz';
 
   @override
-  String get s4HistoryDocsUpper => 'GEÇMİŞ VE BELGELER';
+  String get s4HistoryDocsUpper => 'Geçmiş ve belgeler';
 
   @override
   String get s4Details => 'Ayrıntı';
@@ -7955,7 +7955,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bildirimleri tek tek ayarlamışsın. Bir seçenek seçersen hepsine uygulanır.';
 
   @override
-  String get bildirimAyrintiliUpper => 'AYRINTILI';
+  String get bildirimAyrintiliUpper => 'Ayrıntılı';
 
   @override
   String get bildirimAyrintiliSemantik => 'Bildirimleri tek tek ayarla';
@@ -8053,7 +8053,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get pwdVarlikEtiket => 'VARLIK SINIRI';
+  String get pwdVarlikEtiket => 'Varlık sınırı';
 
   @override
   String pwdVarlikBaslik(int sayi) {
@@ -8069,7 +8069,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get pwdSinyalEtiket => 'SİNYAL';
+  String get pwdSinyalEtiket => 'Sinyal';
 
   @override
   String get pwdSinyalBaslik =>
@@ -8079,7 +8079,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwdSinyalPremium => '8 gösterge, sınırsız bildirim';
 
   @override
-  String get pwdKarsEtiket => 'KARŞILAŞTIR';
+  String get pwdKarsEtiket => 'Karşılaştır';
 
   @override
   String pwdKarsRozet(int ucretsiz, int premium) {
@@ -8096,7 +8096,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get pwdOrtakEtiket => 'ORTAK';
+  String get pwdOrtakEtiket => 'Ortak';
 
   @override
   String get pwdOrtakBaslik =>
@@ -8108,19 +8108,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get pwdAkisEtiket => 'PARA AKIŞI';
+  String get pwdAkisEtiket => 'Para akışı';
 
   @override
   String get pwdAkisBaslik => 'Fonuna para giriyor mu, 8 haftada gör.';
 
   @override
-  String get pwdHacimEtiket => 'HACİM RADARI';
+  String get pwdHacimEtiket => 'Hacim radarı';
 
   @override
   String get pwdHacimBaslik => 'Bugünkü hacim olağandışı mı, 20 günle kıyasla.';
 
   @override
-  String get pwdNotEtiket => 'HAFTALIK NOT';
+  String get pwdNotEtiket => 'Haftalık not';
 
   @override
   String get pwdNotBaslik => 'Haftalık notun devamı Premium\'da.';
@@ -8133,7 +8133,7 @@ class AppLocalizationsTr extends AppLocalizations {
       ' Hangisinin öne çıktığı ve bunun ne anlattığı notun devamında okunur hâle gelir…';
 
   @override
-  String get pwdEkstreEtiket => 'EKSTRE';
+  String get pwdEkstreEtiket => 'Ekstre';
 
   @override
   String get pwdEkstreBaslik => 'Ekstreni yükle, satırları yapay zekâ eşlesin.';
@@ -8307,10 +8307,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yrExcel => 'Excel';
 
   @override
-  String get yrSatislarUpper => 'SATIŞLAR';
+  String get yrSatislarUpper => 'Satışlar';
 
   @override
-  String get yrTemettulerUpper => 'TEMETTÜLER';
+  String get yrTemettulerUpper => 'Temettüler';
 
   @override
   String yrFiyatsiz(int count) {
@@ -8375,7 +8375,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get ttVarliklarUpper => 'VARLIKLAR';
+  String get ttVarliklarUpper => 'Varlıklar';
 
   @override
   String ttSatirAlt(String pay, String aylar) {
@@ -8434,7 +8434,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirOrtak => 'Ortak';
 
   @override
-  String get pwdRaporEtiket => 'YILLIK RAPOR';
+  String get pwdRaporEtiket => 'Yıllık rapor';
 
   @override
   String get pwdRaporBaslik =>
@@ -8444,7 +8444,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwdRaporPremium => 'aylık, yıllık, PDF, Excel';
 
   @override
-  String get pwdTemettuEtiket => 'TEMETTÜ TAHMİNİ';
+  String get pwdTemettuEtiket => 'Temettü tahmini';
 
   @override
   String get pwdTemettuBaslik =>
@@ -8457,7 +8457,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwdSinyalRozet => '8 gösterge';
 
   @override
-  String get xrKartBaslikUpper => 'FONUN İÇİNDE NE VAR';
+  String get xrKartBaslikUpper => 'Fonun içinde ne var';
 
   @override
   String get xrSatirFonunIci => 'Fonun içi';
@@ -8550,7 +8550,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get xrToplamEtiket => 'Bugünkü portföyün';
 
   @override
-  String get xrDagilimUpper => 'GERÇEK DAĞILIM';
+  String get xrDagilimUpper => 'Gerçek dağılım';
 
   @override
   String get xrDisi => 'X-Ray dışı';
@@ -8588,7 +8588,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get xrEkranKilitSatir => 'Portföy X-Ray Premium\'da';
 
   @override
-  String get xrOrtusmeUpper => 'BİRDEN ÇOK YERDEN TUTTUKLARIN';
+  String get xrOrtusmeUpper => 'Birden çok yerden tuttukların';
 
   @override
   String get xrOrtusmeAciklama =>
@@ -8615,7 +8615,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirXray => 'Fon X-Ray';
 
   @override
-  String get pwdXrayEtiket => 'FON X-RAY';
+  String get pwdXrayEtiket => 'Fon X-Ray';
 
   @override
   String get pwdXrayBaslik =>
@@ -8777,7 +8777,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwOzEkstre => 'Banka ve aracı kurum ekstreni yapay zekâyla eşleme';
 
   @override
-  String get pwdPortfoyEtiket => 'PORTFÖY';
+  String get pwdPortfoyEtiket => 'Portföy';
 
   @override
   String get pwdPortfoyBaslik =>
@@ -8843,7 +8843,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get portfoyOrtakBolum => 'ORTAĞIN NE GÖRÜR';
+  String get portfoyOrtakBolum => 'Ortağın ne görür';
 
   @override
   String get portfoyAktarBaslik => 'Ne kadarı aktarılsın?';
@@ -9166,7 +9166,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirOzelGosterge => 'Kendi göstergen (Pine)';
 
   @override
-  String get pwdOzelEtiket => 'KENDİ GÖSTERGEN';
+  String get pwdOzelEtiket => 'Kendi göstergen';
 
   @override
   String get pwdOzelBaslik =>
@@ -9442,7 +9442,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu varlıktaki miktarın yorum yazıldıktan sonra değişti.';
 
   @override
-  String get pwdZirveEtiket => 'ZİRVE';
+  String get pwdZirveEtiket => 'Zirve';
 
   @override
   String get pwdZirveBaslik =>
@@ -9591,7 +9591,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sigBos => 'Önümüzdeki iki haftada gösterilecek gün kalmadı.';
 
   @override
-  String get ziBaslikUpper => 'FONLARIN İÇİNDE NE VAR';
+  String get ziBaslikUpper => 'Fonların içinde ne var';
 
   @override
   String ziOzetHisse(String gorunen, String gercek) {
@@ -9921,7 +9921,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get notifTypeAlarm => 'ALARM';
+  String get notifTypeAlarm => 'Alarm';
 
   @override
   String get ortakPortfoyKartBaslik => 'Ortak portföy';
@@ -10297,7 +10297,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get alarmOneriAciklama => 'Gün içinde %2 oynarsa haber verelim';
 
   @override
-  String get kilometreTaslariUpper => 'KİLOMETRE TAŞLARIN';
+  String get kilometreTaslariUpper => 'Kilometre taşların';
 
   @override
   String get kilometreTaslariTumu => 'Tümü';

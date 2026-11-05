@@ -155,7 +155,10 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
 İstek atan düğme `SandikAsyncButton`/`SandikAsyncTap`, alt sayfa `showSandikSheet`. Renk yalnızca `context.c.*`, tipografi `context.t.*`, boşluk
 `SandikSpace`, köşe `SandikRadius`, animasyon `SandikMotion.of(context)`. Ham `Colors.*`,
 `Color(0x…)`, `fontSize:`, `Duration(milliseconds:)` ekleme — `design_token_leak_test` ve
-`spacing_scale_test` sayıları **yalnızca azalabilir**. Kart için `SandikCard`, bölüm başlığı
+`spacing_scale_test` sayıları **yalnızca azalabilir**.
+Bölüm başlığı ve etiketler **cümle düzeninde**, ağırlık tavanı **w600**, büyük harf
+için harf aralığı yok (yasin 2026-11-05, unslop; istisna yarış/düello sahneleri ve
+ana sayfa toplam kartı). Yeni metni .arb'a BÜYÜK HARFLE yazma, `ustHarf` kullanma. Kart için `SandikCard`, bölüm başlığı
 için `SandikSectionHeader`; yeni `_SectionTitle` klonu yazma.
 Giriş alanı dolgusu/çerçevesi temadan gelir; ekranda `fillColor` yazma, kendi kutusundaki alana `filled: false` ver (`input_fill_consistency_test`).
 
@@ -257,7 +260,8 @@ eksikse özellik sessizce görünmez:
    (yalnızca Ayarlar'da).
 2. **Tanıtım turu** → ana yüzeylerden birini değiştiriyorsa
    `onboarding_screen.dart` → `_adimlariKur()` içine adım ekle
-   (`rozet: 'YENİ'`). Tur uygulamanın GÜNCEL hâlini anlatmalı.
+   (`rozet: 'Yeni'`, yalnız o sürümde; sonraki sürümde kaldır, 2026-11-05).
+   Tur uygulamanın GÜNCEL hâlini anlatmalı.
 3. **Yeni `TourTarget` eklediysen** onu bir ekranda `TourAnchor` ile
    işaretle — `onboarding_tour_test` işaretlenmemiş hedefi kırar.
 

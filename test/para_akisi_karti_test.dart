@@ -127,7 +127,7 @@ void main() {
   group('kart', () {
     testWidgets('cümle, sayı, ölçek, seyir ve kaynak', (t) async {
       await _kur(t);
-      expect(find.text('PARA AKIŞI'), findsOneWidget);
+      expect(find.text('Para akışı'), findsOneWidget);
       // Önceki haftaların |net| ortalaması ≈ ₺93 mn; 412 / 93 ≈ 4,4 kat.
       expect(find.text('Bu fona son hafta olağanın çok üstünde para girdi.'),
           findsOneWidget);
@@ -275,7 +275,7 @@ void main() {
           ozet: _ozet(
               ay1: const DonemAkisi(
                   para: 300e6, paraOrani: 0.025, toplamDegisim: 0.015)));
-      await t.scrollUntilVisible(find.text('DÖNEM'), 200);
+      await t.scrollUntilVisible(find.text('Dönem'), 200);
       expect(find.text('Son 1 ayda fon büyüklüğü +%1,5 değişti.'),
           findsOneWidget);
       expect(find.text('fiyat −%1,0'), findsOneWidget);
@@ -291,7 +291,7 @@ void main() {
         _s(5, 'EEE', 100e6),
         _s(9, 'TTE', 20e6, kendi: true),
       ]);
-      await t.scrollUntilVisible(find.text('KATEGORİDE AKIŞ SIRASI'), 200);
+      await t.scrollUntilVisible(find.text('Kategoride akış sırası'), 200);
       expect(find.text('TTE (bu fon)'), findsOneWidget);
       expect(find.text('14 fon içinde'), findsOneWidget);
       expect(
@@ -302,7 +302,7 @@ void main() {
 
     testWidgets('kategori sırası verisi yoksa bölüm yok', (t) async {
       await _kur(t, govde: detay());
-      expect(find.text('KATEGORİDE AKIŞ SIRASI'), findsNothing);
+      expect(find.text('Kategoride akış sırası'), findsNothing);
     });
 
     testWidgets('dar ekran + büyük yazı taşmaz (koç dahil)', (t) async {

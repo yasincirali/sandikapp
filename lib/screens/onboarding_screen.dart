@@ -268,7 +268,12 @@ class _Adim {
   /// Spot düşürülecek gerçek öğe; null ise kart ekranın ortasında durur.
   final TourTarget? hedef;
 
-  /// "BİZE ÖZEL" gibi üst etiket — başka uygulamalarda olmayanı işaretler.
+  /// "Bize özel" gibi üst etiket — başka uygulamalarda olmayanı işaretler.
+  ///
+  /// "YENİ" rozeti 11 adımdan kalktı (yasin 5 Kas 2026, unslop madde 4):
+  /// hepsi 10-11 Eki tur yeniden yazımında eklenmişti, yeni kullanıcıya
+  /// zaten her şey yeni; on adımda "yeni" olunca hiçbiri yeni değildi.
+  /// "Yeni" yalnız son sürümde eklenen adıma konur, sonraki sürümde kalkar.
   final String? rozet;
 
   /// Görev çağrısı ("Göz simgesine dokun") ve tamamlanınca onayı.
@@ -419,7 +424,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'vitrin',
       hedef: TourTarget.ilkVarlikVitrini,
-      rozet: 'YENİ',
       baslik: 'Neye sahipsin?',
       govde: 'Sahip olduğun şeyin kutusuna dokun, yalnızca miktarını yaz: '
           'gram altın, dolar, euro ve çeyrek altının fiyatı kutuda canlı '
@@ -454,7 +458,6 @@ List<_Adim> _adimlariKur() {
     const _Adim(
       id: 'yenile',
       hedef: TourTarget.yenileTusu,
-      rozet: 'YENİ',
       baslik: 'Her şeyi ara',
       govde: 'Piyasa şeridinin sağındaki "Ara" ile tek yerden ara: kendi varlıkların, piyasadaki '
           'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
@@ -502,7 +505,6 @@ List<_Adim> _adimlariKur() {
           'Eğri günün seyri; Hafta, Ay, Yıl çipleri Özet\'e götürür. '
           'Aşağıda en çok oynayanlar, 100 liranın bugünkü karşılığı ve '
           'hedefine kalan var.',
-      rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       // Ana ekran kartı yalnız aktif lot varken çizer (`home_screen.dart`).
@@ -528,7 +530,6 @@ List<_Adim> _adimlariKur() {
           'biçimde istekliyse. Dokununca Haftanın özeti açılır; her '
           'varlığın satırında ne olduğu kısa bir etiketle yazar, '
           'ayrıntısı varlığın sayfasında. Yatırım tavsiyesi değildir.',
-      rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
       kosul: (ref) =>
@@ -544,14 +545,12 @@ List<_Adim> _adimlariKur() {
           'devam eder. Bir süre dokunulmazsa durur, dokununca yeniden akar. '
           'Aradığın hisse, fon ya da altının sayfasında portföyüne '
           'eklemeden grafiğine ve istatistiklerine bak, istersen takibe al.',
-      rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
     ),
     _Adim(
       id: 'islem_notu',
       hedef: TourTarget.hareketler,
-      rozet: 'YENİ',
       baslik: 'İşlem notların',
       govde: 'Bir harekete dokun: o işleme not yaz ya da yazdığını oku '
           '("maaştan aldım", "hedef 400"). Notu olan işlemin tarihinin '
@@ -576,7 +575,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'bildirimler',
       hedef: TourTarget.bildirimCani,
-      rozet: 'YENİ',
       baslik: 'Bildirim merkezi',
       // 2026-10-27 (0169): alarm sayfasına "Günlük yüzde" kipi geldi
       // (altın, döviz, kripto); tur metni arayüzle birlikte değişir.
@@ -648,7 +646,7 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'takip',
       hedef: TourTarget.govdeSekmeleri,
-      rozet: 'BİZE ÖZEL',
+      rozet: 'Bize özel',
       baslik: 'Takip listesi',
       // 2026-10-26: alarm kurulu satırda çan + hedef fiyat; çan o varlığın
       // alarmlarını açar (tur metni arayüzle birlikte değişir).
@@ -681,7 +679,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'kripto',
       hedef: TourTarget.turSecici,
-      rozet: 'YENİ',
       baslik: 'Kripto da burada',
       // "Çiplerin sonunda" yazıyordu; 2026-09-25 sırasında Kripto Fon'dan
       // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`). 2026-09-29'dan
@@ -719,7 +716,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'mevduat_bes',
       hedef: TourTarget.turSecici,
-      rozet: 'YENİ',
       baslik: 'Mevduat ve BES',
       // Izgarada Mevduat ve BES "Birikim" grubunda. 2026-10-09: banka
       // listeden seçilir, faiz vadeye göre piyasa ortalamasıyla önerilir,
@@ -747,7 +743,7 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'hizli_giris',
       hedef: TourTarget.hizliGiris,
-      rozet: 'BİZE ÖZEL',
+      rozet: 'Bize özel',
       baslik: 'Cümleyle ekle',
       // Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
       // kalktı): aynı sayfa formun üstündeki "Yazarak ekle" düğmesiyle de
@@ -872,7 +868,7 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'kapsam',
       hedef: TourTarget.kapsamSecici,
-      rozet: 'BİZE ÖZEL',
+      rozet: 'Bize özel',
       // `performans_ayar_sade` (2026-10-04, madde 5; bayrak 2026-10-05'te
       // kalktı): mod anahtarı kapsam panelinden Ayarlar › Görünüm'e taşındı;
       // çip yalnız türü yazar, mod açıkken çipin altında "Bugünkü portföyle"
@@ -908,7 +904,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'zirve',
       hedef: TourTarget.zirveKarti,
-      rozet: 'YENİ',
       baslik: 'Zirvedeki portföyler',
       // 2026-09-29: kart Yarış ekranından Performans'a taşındı, kendi
       // ekranı ve cetveli var. Tur uygulamanın güncel hâlini anlatmalı.
@@ -970,7 +965,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'hesap_gecisi',
       hedef: TourTarget.hesapBasligi,
-      rozet: 'YENİ',
       baslik: 'Hesapların arasında geç',
       govde: 'Üstteki adına dokun: bu telefondaki hesapların listelenir, '
           'birine dokununca o hesaba geçersin. Öbür hesaplar açık kalır; '
@@ -984,7 +978,7 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'ortaklik',
       hedef: TourTarget.davetKodu,
-      rozet: 'BİZE ÖZEL',
+      rozet: 'Bize özel',
       baslik: 'Eşinle tek portföy',
       govde: 'Kodunu eşine gönder ya da onunkini gir. Karşı taraf '
           'onayladığında portföyleriniz tek ekranda birleşir; "Birlikte" '
@@ -1795,7 +1789,7 @@ class _AdimKarti extends StatelessWidget {
                       adim.baslik,
                       style: context.t.headlineSmall?.copyWith(
                         color: p.text90,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -2019,8 +2013,12 @@ class _GorevSeridi extends StatelessWidget {
   }
 }
 
-/// "BİZE ÖZEL" rozeti — yalnızca bizi ayırt eden özelliklerde; her adıma
+/// "Bize özel" rozeti — yalnızca bizi ayırt eden özelliklerde; her adıma
 /// konulsa hiçbir şey vurgulanmamış olurdu.
+///
+/// Sade metin (yasin 5 Kas 2026, unslop madde 4): amber degrade zemin,
+/// parıltı simgesi ve büyük harf "YENİ ✨" kalıbıydı; AI şablonu gibi
+/// okunuyordu. Şimdi tek renk küçük etiket, başlığın üstünde.
 class _Rozet extends StatelessWidget {
   const _Rozet({required this.metin});
 
@@ -2028,37 +2026,13 @@ class _Rozet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.c;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: SandikSpace.sm2, vertical: SandikSpace.xs2),
-        decoration: BoxDecoration(
-          // Zemin amberFill, metin onAmber — amberText bir METİN rengidir,
-          // zemin olarak kullanılırsa üstündeki yazı görünmez olur.
-          gradient: p.amberGradient,
-          borderRadius: BorderRadius.circular(SandikRadius.sm),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_awesome_rounded, size: 12, color: p.onAmber),
-            const SizedBox(width: SandikSpace.xs2),
-            Flexible(
-              child: Text(
-                metin,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.labelLarge?.copyWith(
-                  color: p.onAmber,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6,
-                ),
-              ),
-            ),
-          ],
-        ),
+    return Text(
+      metin,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.t.labelLarge?.copyWith(
+        color: context.c.amberText,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

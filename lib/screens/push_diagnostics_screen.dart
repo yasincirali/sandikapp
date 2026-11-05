@@ -841,8 +841,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             style: TextStyle(
                 color: context.c.amberText,
                 fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8)),
+                fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -971,8 +970,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
               style: TextStyle(
                   color: context.c.amberText,
                   fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8)),
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,

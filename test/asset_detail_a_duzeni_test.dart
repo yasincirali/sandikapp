@@ -90,15 +90,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('GÜNCEL FİYAT'), findsOneWidget);
+    expect(find.text('Güncel fiyat'), findsOneWidget);
     expect(find.textContaining('Pozisyonun:'), findsOneWidget);
     expect(find.text('5 yıl'), findsOneWidget);
     // Eski pozisyon bölümü yerinde (veri kaybı yok): başlık + adet satırı.
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
 
     // Güncel fiyat, sinyal/pozisyon bloğundan ÖNCE gelir (A düzeni).
-    final fiyatY = tester.getTopLeft(find.text('GÜNCEL FİYAT')).dy;
-    final pozisyonY = tester.getTopLeft(find.text('POZİSYONUN')).dy;
+    final fiyatY = tester.getTopLeft(find.text('Güncel fiyat')).dy;
+    final pozisyonY = tester.getTopLeft(find.text('Pozisyonun')).dy;
     expect(fiyatY, lessThan(pozisyonY));
     expect(tester.takeException(), isNull);
   });
@@ -179,8 +179,8 @@ void main() {
     // Başlık hemen, geri kalan tek iskelet.
     expect(find.text('THYAO'), findsOneWidget);
     expect(find.byType(VarlikIskeleti), findsOneWidget);
-    expect(find.text('GÜNCEL FİYAT'), findsNothing);
-    expect(find.text('POZİSYONUN'), findsNothing);
+    expect(find.text('Güncel fiyat'), findsNothing);
+    expect(find.text('Pozisyonun'), findsNothing);
 
     final now = DateTime.now();
     for (final c in bekleyen) {
@@ -194,8 +194,8 @@ void main() {
     // İskelet → ekran çapraz geçişi (2026-10-14).
     await tester.pump(SandikMotion.surface);
     expect(find.byType(VarlikIskeleti), findsNothing);
-    expect(find.text('GÜNCEL FİYAT'), findsOneWidget);
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Güncel fiyat'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
     await tester.pump(const Duration(seconds: 10));
   });
 

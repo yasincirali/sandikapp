@@ -1161,11 +1161,10 @@ class _IndicatorRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Text(
-                  'ÖNERİLEN',
+                  'Önerilen',
                   style: context.t.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: context.c.gain,
-                    letterSpacing: 0.8,
                   ),
                 ),
               ),
@@ -1182,11 +1181,10 @@ class _IndicatorRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text(
-                    'PREMIUM',
+                    'Premium',
                     style: context.t.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: context.c.amberText,
-                      letterSpacing: 0.8,
                     ),
                   ),
                 ),

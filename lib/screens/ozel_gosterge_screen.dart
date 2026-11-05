@@ -136,11 +136,10 @@ class OzelGostergeListesi extends ConsumerWidget {
                         ?.copyWith(color: context.c.text58)),
               ],
               const SizedBox(height: SandikSpace.lg),
-              Text(l.ozgSablondan.toUpperCase(),
+              Text(l.ozgSablondan,
                   style: context.t.labelSmall?.copyWith(
                       color: context.c.text58,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6)),
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: SandikSpace.sm),
               Wrap(
                 spacing: SandikSpace.sm,

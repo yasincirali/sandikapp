@@ -60,7 +60,7 @@ class YorumNotuSayfasi extends StatelessWidget {
               children: [
                 Text(ust.toUpperCase(),
                     style: t.labelSmall?.copyWith(
-                        color: c.text58, letterSpacing: 0.8, fontWeight: FontWeight.w600)),
+                        color: c.text58, fontWeight: FontWeight.w600)),
                 const SizedBox(height: SandikSpace.xxs),
                 Text(baslik,
                     style: t.titleLarge

@@ -300,7 +300,7 @@ class _TurBasligi extends StatelessWidget {
               child: Text(
                 ad,
                 style: context.t.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text90,
                 ),
               ),

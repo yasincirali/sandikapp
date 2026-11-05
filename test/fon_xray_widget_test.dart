@@ -126,13 +126,13 @@ void main() {
       await _kur(t, _kart(), gorunur: false, dag: _dag);
       expect(find.byType(SandikCard), findsNothing);
       expect(find.byType(PremiumKilitKarti), findsNothing);
-      expect(find.text('FONUN İÇİNDE NE VAR'), findsNothing);
+      expect(find.text('Fonun içinde ne var'), findsNothing);
       expect(_okuma, 0);
     });
 
     testWidgets('2) admin: çubuk, kovalar, kaynak ve tarih', (t) async {
       await _kur(t, _kart(), gorunur: true, dag: _dag);
-      expect(find.text('FONUN İÇİNDE NE VAR'), findsOneWidget);
+      expect(find.text('Fonun içinde ne var'), findsOneWidget);
       expect(find.byType(XrayCubugu), findsOneWidget);
       // Para piyasası (tpp + tr) en büyük kova, kaynaktaki toplamıyla.
       expect(find.text('Para piyasası / repo'), findsOneWidget);
@@ -167,7 +167,7 @@ void main() {
 
       await _kur(t, _kart(), gorunur: true, dag: null);
       expect(find.byType(SandikCard), findsNothing);
-      expect(find.text('FONUN İÇİNDE NE VAR'), findsNothing);
+      expect(find.text('Fonun içinde ne var'), findsNothing);
     });
 
     testWidgets('BES fonu da kart alır; hisse/mevduat almaz', (t) async {
@@ -469,7 +469,7 @@ void main() {
             ortusmeler: const [],
             kalemDonemi: null,
           )));
-      expect(find.text('BİRDEN ÇOK YERDEN TUTTUKLARIN'), findsNothing);
+      expect(find.text('Birden çok yerden tuttukların'), findsNothing);
       expect(find.text('X-Ray dışı'), findsNothing);
       expect(find.textContaining('TEFAS günlük'), findsNothing);
     });

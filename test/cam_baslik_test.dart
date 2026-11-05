@@ -395,7 +395,7 @@ void main() {
       await t.tap(find.byType(GostergelerDugmesi));
       await t.pump();
       await t.pump(const Duration(milliseconds: 400));
-      for (final c in ['MUM', 'LOG', 'MA20', 'EMA50', 'EMA200']) {
+      for (final c in ['Mum', 'LOG', 'MA20', 'EMA50', 'EMA200']) {
         expect(find.text(c), findsOneWidget, reason: '$c $bayrak');
       }
       double y(String c) => t.getTopLeft(find.text(c)).dy;

@@ -96,8 +96,8 @@ void main() {
     expect(find.text('Ortak portföy'), findsOneWidget);
     expect(find.text('Davet et'), findsOneWidget);
     expect(find.text('Kod gir'), findsOneWidget);
-    expect(find.text('ORTAKLIK İŞLEMLERİ'), findsNothing);
-    expect(find.text('ORTAKLARIM'), findsNothing);
+    expect(find.text('Ortaklık işlemleri'), findsNothing);
+    expect(find.text('Ortaklarım'), findsNothing);
     expect(find.text('Henüz ortağın yok'), findsNothing);
     expect(find.byType(TextField), findsNothing);
   });
@@ -107,17 +107,17 @@ void main() {
     await tester.tap(find.text('Kod gir'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.text('ORTAKLIK İŞLEMLERİ'), findsOneWidget);
+    expect(find.text('Ortaklık işlemleri'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('Ortak portföy'), findsNothing);
-    // Ortak yokken boş "ORTAKLARIM" kartı açılmış bölümde de yok.
-    expect(find.text('ORTAKLARIM'), findsNothing);
+    // Ortak yokken boş "Ortaklarım" kartı açılmış bölümde de yok.
+    expect(find.text('Ortaklarım'), findsNothing);
   });
 
   testWidgets('ortak varsa yerleşim eskisi gibi', (tester) async {
     await _profil(tester, ortaklar: _Dolu.new);
-    expect(find.text('ORTAKLIK İŞLEMLERİ'), findsOneWidget);
-    expect(find.text('ORTAKLARIM'), findsOneWidget);
+    expect(find.text('Ortaklık işlemleri'), findsOneWidget);
+    expect(find.text('Ortaklarım'), findsOneWidget);
     expect(find.text('Ortak portföy'), findsNothing);
   });
 

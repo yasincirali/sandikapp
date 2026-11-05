@@ -175,7 +175,7 @@
   "registerEmailInvalid": "Enter a valid email.",
   "registerPasswordsMismatch": "Passwords do not match.",
   "refreshPrices": "Refresh prices",
-  "portfolioActivity": "PORTFOLIO ACTIVITY",
+  "portfolioActivity": "Portfolio activity",
   "seeAllTransactions": "See all transactions",
   "seeAllCount": "See All ({count})",
   "@seeAllCount": {
@@ -201,7 +201,7 @@
   "clearVerb": "Clear",
   "clearAllUpper": "Clear",
   "noActiveSignals": "No new notifications",
-  "historyUpper": "HISTORY",
+  "historyUpper": "History",
   "deleteHistoryCount": "Permanently delete {count} notifications from history",
   "@deleteHistoryCount": {
     "placeholders": {
@@ -221,7 +221,7 @@
   },
   "permanentDeleteUpper": "Delete Permanently",
   "deleteHistoryButton": "Delete History",
-  "signalNeutral": "NEUTRAL",
+  "signalNeutral": "Neutral",
   "signalDeletedAt": "{date} · deleted",
   "@signalDeletedAt": {
     "placeholders": {
@@ -243,7 +243,7 @@
   },
   "showBalance": "Show balance",
   "hideBalance": "Hide balance",
-  "sortCriterion": "SORT BY",
+  "sortCriterion": "Sort by",
   "tabSemanticsCount": "{label}, {count} assets",
   "@tabSemanticsCount": {
     "placeholders": {
@@ -292,7 +292,7 @@
   "sortHighestFirst": "Highest First",
   "sortLowestFirst": "Lowest First",
   "assetFullName": "Full Name",
-  "fundReportTitleUpper": "FUND REPORT CARD",
+  "fundReportTitleUpper": "Fund report card",
   "fundReportCategory": "{category} · {count} funds",
   "@fundReportCategory": {
     "placeholders": {
@@ -471,7 +471,7 @@
   "commissionNote": "Trading commission is added to your cost, so profit/loss shows the real figure.",
   "totalCostTlEquivalent": "≈ {amount} · 1 {currency} = {rate}",
   "costPreviewHint": "Enter a quantity and the total cost appears here.",
-  "totalCostUpper": "TOTAL COST",
+  "totalCostUpper": "Total cost",
   "transactionDate": "Transaction date",
   "addNote": "Add a note",
   "notesHint": "Your notes...",
@@ -545,7 +545,7 @@
   "noteAddHint": "Why did you buy it, what's your target? Write a short note.",
   "alertTargetAtCurrent": "Target equals the current price, so the alert would fire right away. Enter a price above or below it.",
   "notifTypeDividend": "Dividend",
-  "dividendHistoryUpper": "DIVIDENDS · LAST 12 MONTHS",
+  "dividendHistoryUpper": "Dividends · last 12 months",
   "dividendRecordedTotal": "Recorded: {amount}",
   "@dividendRecordedTotal": {
     "placeholders": {
@@ -781,7 +781,7 @@
       }
     }
   },
-  "periodDaily": "DAILY",
+  "periodDaily": "Daily",
   "period1W": "1W",
   "period1M": "1M",
   "period3M": "3M",
@@ -811,7 +811,7 @@
   "confirmWithPassword": "Confirm with your password",
   "confirmWithPasswordBody": "For your security you need to confirm with your password.",
   "deleteAccountSubscriptionNote": "Note: your App Store / Google Play subscription is not cancelled when the account is deleted. Turn off renewal from the store's subscriptions page.",
-  "deleteAccountUpper": "DELETE ACCOUNT",
+  "deleteAccountUpper": "Delete account",
   "accountDeletedTitle": "Your account was deleted",
   "accountDeletedBody": "See you around.",
   "investmentDisclaimer": "Investment Advice Disclaimer",
@@ -821,10 +821,10 @@
   "send": "Send",
   "deletingAccount": "Deleting your account…",
   "deletingAccountBody": "This can take a few seconds. Don't close the app.",
-  "diagnosticsUpper": "DIAGNOSTICS",
+  "diagnosticsUpper": "Diagnostics",
   "pushDiagnostics": "Push Diagnostics",
   "pushDiagnosticsSubtitle": "Where the notification chain is broken; device APNs/FCM token state",
-  "notificationsUpper": "NOTIFICATIONS",
+  "notificationsUpper": "Notifications",
   "signalNotifications": "Technical signal notifications",
   "signalNotificationsSubtitle": "Get notified when a BUY/SELL indicator triggers",
   "signalSettings": "Signal settings",
@@ -832,13 +832,13 @@
   "priceAlerts": "Price alerts",
   "partnerInviteNotifications": "Partner invite notifications",
   "partnerInviteNotificationsSubtitle": "Get notified when a new partner request arrives",
-  "liveActivitiesUpper": "LIVE ACTIVITIES",
+  "liveActivitiesUpper": "Live activities",
   "biometricLock": "Biometric lock",
   "downloadMyData": "Download My Data",
   "downloadMyDataSubtitle": "Get all your data as a JSON file (KVKK Article 11)",
   "deleteMyAccount": "Delete My Account",
   "deleteMyAccountSubtitle": "All your data is permanently deleted",
-  "supportUpper": "SUPPORT",
+  "supportUpper": "Support",
   "contactUs": "Contact Us",
   "replayTour": "Replay the tour",
   "replayTourSubtitle": "Remind yourself what each screen does",
@@ -846,7 +846,7 @@
   "yasalBelgelerBaslik": "Legal documents",
   "yasalBelgelerAlt": "Privacy, terms, KVKK notice, explicit consent, investment disclaimer",
   "feedbackDogrudanEposta": "Write by email instead",
-  "legalUpper": "LEGAL",
+  "legalUpper": "Legal",
   "privacyPolicy": "Privacy Policy",
   "privacyPolicySubtitle": "How your data is processed",
   "termsOfUse": "Terms of Use",
@@ -919,8 +919,8 @@
   "cancelInviteBody": "Are you sure you want to cancel the partner request you sent?",
   "yesCancel": "Yes, cancel it",
   "settingsTitle": "Settings",
-  "partnerActionsUpper": "PARTNER ACTIONS",
-  "myPartnersUpper": "MY PARTNERS",
+  "partnerActionsUpper": "Partner actions",
+  "myPartnersUpper": "My partners",
   "generateInviteCode": "Generate Invite Code",
   "shareInviteCode": "Share invite code",
   "generateInviteCodeBody": "Send the code to your partner. Once they enter it, you get an approval request.",
@@ -955,7 +955,7 @@
     }
   },
   "removeWord": "Remove",
-  "pendingRequestsUpper": "PENDING PARTNER REQUESTS",
+  "pendingRequestsUpper": "Pending partner requests",
   "wantsToPartner": "Wants to partner up",
   "rejectRequest": "Reject partner request",
   "acceptRequest": "Accept partner request",
@@ -1049,8 +1049,8 @@
     }
   },
   "retryLower": "Try again",
-  "raceUpper": "RACE",
-  "changeByTypeUpper": "BY TYPE · PRICE EFFECT",
+  "raceUpper": "Race",
+  "changeByTypeUpper": "By type · price effect",
   "noData": "No data",
   "tooltipReturn": "\nReturn ",
   "tooltipBuy": "\nBuy  +",
@@ -1061,7 +1061,7 @@
   "@chartTxBuy": {"description": "Grafik crosshair: çubuğa düşen alım işlemi — zaman ve birim fiyat.", "placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
   "chartTxSell": "Sell {when} · {price}",
   "@chartTxSell": {"placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
-  "tradeVolumeUpper": "BUYS · SELLS",
+  "tradeVolumeUpper": "Buys · sells",
   "crosshairNetBuy": "Net buy +{amount}",
   "@crosshairNetBuy": {"placeholders": {"amount": {"type": "String"}}},
   "crosshairNetSell": "Net sell −{amount}",
@@ -1243,7 +1243,7 @@
     }
   },
   "notEnoughHistoryBody": "The summary appears on its own once this period fills up.",
-  "nAssetsPeriod": "{count} ASSETS · {period}",
+  "nAssetsPeriod": "{count} assets · {period}",
   "@nAssetsPeriod": {
     "placeholders": {
       "count": {
@@ -1433,13 +1433,13 @@
   "joinRace": "Join the Race",
   "addPartnerToRace": "Add a partner and race together",
   "raceNoListShared": "No one's asset list is shared; only return percentages are ranked.",
-  "yourReturnUpper": "RETURN ON YOUR PICKS",
+  "yourReturnUpper": "Return on your picks",
   "dataNotReady": "Data is not ready.",
-  "leaderUpper": "LEADER",
-  "loadingUpper": "LOADING",
+  "leaderUpper": "Leader",
+  "loadingUpper": "Loading",
   "globalRanking": "Global Ranking",
   "checkingAnonPool": "Checking the anonymous pool…",
-  "comingSoonUpper": "SOON",
+  "comingSoonUpper": "Soon",
   "globalRankingSoon": "Your rank opens once there are enough participants. Anonymous, KVKK compliant",
   "topPercentile": "You're in the top {pct}% of the {period} ranking",
   "@topPercentile": {
@@ -1461,7 +1461,7 @@
       }
     }
   },
-  "anonymousUpper": "ANONYMOUS",
+  "anonymousUpper": "Anonymous",
   "topPortfoliosSoon": "Top portfolios appear here once there are enough participants. The anonymous pool is forming…",
   "nthPortfolio": "Portfolio #{n}",
   "@nthPortfolio": {
@@ -1489,7 +1489,7 @@
   "premiumUnlocked": "Premium unlocked",
   "premiumUnlockedBody": "Unlimited assets, premium indicators and every Premium detail are now unlocked.",
   "greatWord": "Great",
-  "sandikPremiumUpper": "SANDIK PREMIUM",
+  "sandikPremiumUpper": "Sandık Premium",
   "paywallHeadline": "Track your portfolio\nin more depth",
   "paywallSubhead": "Unlimited assets, annual report, dividend forecast and technical signals. Portfolio tracking stays free.",
   "restorePurchase": "Restore purchase",
@@ -1641,7 +1641,7 @@
   "realisedFromSalesSemantics": "realised from sales ",
   "raceNoPartnerBody": "You have no partners yet. You can already see your own period return and global percentile.",
   "viewWord": "View",
-  "newUpper": "NEW",
+  "newUpper": "New",
   "racePitch": "A return ranking with your partners. Who is earning more?",
   "joinWord": "Join",
   "raceCalculating": "Calculating the race…",
@@ -1961,12 +1961,12 @@
     }
   },
   "signalCalculating": "Calculating signal…",
-  "trendUp": "UPTREND",
-  "trendDown": "DOWNTREND",
-  "trendFlat": "FLAT",
-  "sinyalAsiriSatim": "OVERSOLD",
+  "trendUp": "Uptrend",
+  "trendDown": "Downtrend",
+  "trendFlat": "Flat",
+  "sinyalAsiriSatim": "Oversold",
   "@sinyalAsiriSatim": {"description": "Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı satım bölgesinde (trend yönü değil)."},
-  "sinyalAsiriAlim": "OVERBOUGHT",
+  "sinyalAsiriAlim": "Overbought",
   "@sinyalAsiriAlim": {"description": "Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı alım bölgesinde (trend yönü değil)."},
   "indicatorsConfidence": "{lehte}/{total} indicators agree · {pct}% confidence",
   "@indicatorsConfidence": {
@@ -1990,16 +1990,16 @@
       }
     }
   },
-  "technicalOutlookUpper": "TECHNICAL OUTLOOK · DAILY",
+  "technicalOutlookUpper": "Technical outlook · daily",
   "technicalPrefix": "Technical:",
-  "nowUpper": "NOW",
+  "nowUpper": "Now",
   "arrowUp": "▲ up",
   "arrowDown": "▼ down",
   "arrowFlat": "◆ flat",
   "indicatorsCalculating": "Calculating indicators…",
   "indicatorsNoHistory": "This asset's price history could not be fetched, so indicators cannot be calculated.",
   "noIndicatorsSelected": "No indicators are selected for this asset type. Enable them from Profile → Signal Settings.",
-  "technicalAnalysisUpper": "TECHNICAL ANALYSIS · DAILY",
+  "technicalAnalysisUpper": "Technical analysis · daily",
   "nOfMIndicators": "{on}/{all} indicators on",
   "@nOfMIndicators": {
     "placeholders": {
@@ -2231,7 +2231,7 @@
   },
   "removeWord2": "Remove",
   "removeFromWatchlistFailed": "Could not remove it. Check your connection.",
-  "currentPriceUpper": "CURRENT PRICE",
+  "currentPriceUpper": "Current price",
   "periodNoChange": "{period} · no change",
   "@periodNoChange": {
     "placeholders": {
@@ -2253,7 +2253,7 @@
       }
     }
   },
-  "inYourPortfolioUpper": "IN YOUR PORTFOLIO",
+  "inYourPortfolioUpper": "In your portfolio",
   "searchAllAssetsHint": "Search stocks, funds, indices, commodities, currency or gold",
   "alreadyInPortfolio": "{name} is already in your portfolio",
   "@alreadyInPortfolio": {
@@ -2612,7 +2612,7 @@
   },
   "raceFooterGlobal": "The ranking is the return on your picks: the assets you held each day are valued at market prices, and when money was added doesn't matter. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.",
   "calculatingEllipsis": "Calculating…",
-  "nThousandPeople": "{n}K PEOPLE",
+  "nThousandPeople": "{n}K people",
   "@nThousandPeople": {
     "placeholders": {
       "n": {
@@ -2620,7 +2620,7 @@
       }
     }
   },
-  "nPeopleUpper": "{n} PEOPLE",
+  "nPeopleUpper": "{n} people",
   "@nPeopleUpper": {
     "placeholders": {
       "n": {
@@ -2719,7 +2719,7 @@
     "placeholders": { "n": { "type": "int" } }
   },
   "chartIndicatorsHint": "Shows or hides chart indicators and layers",
-  "chartCandleChip": "CANDLE",
+  "chartCandleChip": "Candle",
   "chartIntervalM1": "1m",
   "chartIntervalH1": "1h",
   "chartIntervalH4": "4h",
@@ -2797,10 +2797,10 @@
       }
     }
   },
-  "notifTypePartner": "PARTNER",
-  "notifTypeDailyBrief": "DAILY",
-  "notifTypeWeekly": "WEEKLY",
-  "notifTypeReminder": "REMINDER",
+  "notifTypePartner": "Partner",
+  "notifTypeDailyBrief": "Daily",
+  "notifTypeWeekly": "Weekly",
+  "notifTypeReminder": "Reminder",
   "notifToday": "Today {time}",
   "@notifToday": {
     "placeholders": {
@@ -3076,7 +3076,7 @@
     }
   },
   "partnerInviteSubject": "sandık partner invite",
-  "notifTypeMonthly": "MONTHLY",
+  "notifTypeMonthly": "Monthly",
   "raceJoinedCount": "{count} racing today · ranking opens at {min}",
   "@raceJoinedCount": {
     "placeholders": {
@@ -3101,7 +3101,7 @@
   "marketGold": "Gold (g)",
   "marketBist": "BIST 100",
   "marketBitcoin": "Bitcoin",
-  "notifTypeWatchlist": "WATCHLIST",
+  "notifTypeWatchlist": "Watchlist",
   "notifTypeInflation": "CPI",
   "alarmSuggest": "{name} added. Set a price alert?",
   "@alarmSuggest": {
@@ -3169,22 +3169,22 @@
   "priceDelayedSemantics": "Price delayed, last updated {time}",
   "@priceDelayedSemantics": {"placeholders": {"time": {"type": "String"}}},
   "period5Y": "5Y",
-  "vsPeriodReturnUpper": "PERIOD RETURN",
-  "vsTodayUpper": "TODAY",
-  "vsMaxDrawdownUpper": "MAX DRAWDOWN",
-  "vsVolatilityUpper": "VOLATILITY (ANNUAL)",
+  "vsPeriodReturnUpper": "Period return",
+  "vsTodayUpper": "Today",
+  "vsMaxDrawdownUpper": "Max drawdown",
+  "vsVolatilityUpper": "Volatility (annual)",
   "vsPeriodLow": "Period low",
   "vsPeriodHigh": "Period high",
   "vsRangePosition": "Price is at {pct}% of the period range",
   "@vsRangePosition": {"placeholders": {"pct": {"type": "String"}}},
   "vsDayRangePosition": "Price is at {pct}% of the day's range",
   "@vsDayRangePosition": {"placeholders": {"pct": {"type": "String"}}},
-  "adPositionUpper": "YOUR POSITION",
+  "adPositionUpper": "Your position",
   "adPositionLine": "Your position: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
   "adInflationThrough": "through {month} CPI",
   "@adInflationThrough": {"placeholders": {"month": {"type": "String"}}},
-  "chartOpenLabel": "OPEN · {time} · {value}",
+  "chartOpenLabel": "Open · {time} · {value}",
   "@chartOpenLabel": {
     "description": "Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.",
     "placeholders": {"time": {"type": "String"}, "value": {"type": "String"}}
@@ -3203,17 +3203,17 @@
       }
     }
   },
-  "chartPrevCloseLabel": "PREV CLOSE · {value}",
+  "chartPrevCloseLabel": "Prev close · {value}",
   "@chartPrevCloseLabel": {
     "description": "Gün içi grafikte gün başı çizgisinin etiketi, seanslı varlıkta (hisse): çizgi önceki kapanıştır.",
     "placeholders": {"value": {"type": "String"}}
   },
-  "chartDayStartLabel": "DAY START · {value}",
+  "chartDayStartLabel": "Day start · {value}",
   "@chartDayStartLabel": {
     "description": "Gün içi grafikte gün başı (00:00) çizgisinin etiketi.",
     "placeholders": {"value": {"type": "String"}}
   },
-  "chartStartLabel": "START · {date} · {value}",
+  "chartStartLabel": "Start · {date} · {value}",
   "@chartStartLabel": {
     "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
     "placeholders": {"date": {"type": "String"}, "value": {"type": "String"}}
@@ -3260,7 +3260,7 @@
   "pfTodayWaiting": "Waiting for data",
   "sortTodayMove": "Today's move",
   "sortTodayMoveSub": "Biggest mover first",
-  "chartNowLabel": "NOW",
+  "chartNowLabel": "Now",
   "vsWatch": "Watch",
   "vsSelect": "Select this",
   "vsGoToPosition": "Go to my position",
@@ -3279,8 +3279,8 @@
   "vsLoadFailed": "Couldn't load price history. Check your connection and pick the period again.",
   "vsSheetSemantics": "{name} asset page",
   "@vsSheetSemantics": {"placeholders": {"name": {"type": "String"}}},
-  "searchRecentUpper": "RECENTLY VIEWED",
-  "searchMarketsUpper": "MARKETS",
+  "searchRecentUpper": "Recently viewed",
+  "searchMarketsUpper": "Markets",
   "searchShowAll": "All ({count})",
   "searchInPortfolioTag": "In portfolio",
   "searchAssetsSemantics": "Search assets",
@@ -3406,7 +3406,7 @@
   "raceLiveSecondsAgo": "Live · updated {n}s ago",
   "raceLiveMinutesAgo": "Live · updated {n}m ago",
   "raceYou": "You",
-  "raceYouTag": "YOU",
+  "raceYouTag": "You",
   "raceVs": "VS",
   "raceGapToLeader": "{fark} pts behind the leader",
   "duelTied": "Neck and neck",
@@ -3416,8 +3416,8 @@
   "filterButton": "Filter",
   "filterButtonActive": "Filter, {n} active",
   "filterReset": "Reset",
-  "filterPeriodHeader": "PERIOD",
-  "filterTypeHeader": "TYPE",
+  "filterPeriodHeader": "Period",
+  "filterTypeHeader": "Type",
   "filterShowN": "Show {n} records",
   "filterNoMatch": "No matching records",
   "filterRemove": "Remove {ad} filter",
@@ -3495,7 +3495,7 @@
   "pensionReturn": "Return",
   "pensionIfLeave": "If you left today (before tax)",
   "pensionVesting": "Government contribution vesting",
-  "currentValueUpper": "CURRENT VALUE",
+  "currentValueUpper": "Current value",
   "depositCardRate": "Interest",
   "depositCardRateValue": "{rate}% gross · {wht}% withholding",
   "depositWithholdingManual": "You entered this rate; changing the term or date won't overwrite it.",
@@ -4021,12 +4021,12 @@
   "todaysPortfolioBadgeHint": "You can turn this view off in Settings › Appearance.",
   "todaysPortfolioSettingTitle": "Show with today's portfolio",
   "todaysPortfolioSettingSubtitle": "Performance is drawn as if you had held today's holdings for the whole period. When off, your actual history is shown.",
-  "settingsGroupGeneral": "GENERAL",
-  "settingsGroupPortfolioView": "PORTFOLIO VIEW",
-  "settingsGroupSecurityAccount": "SECURITY & ACCOUNT",
-  "settingsGroupData": "DATA",
-  "settingsGroupAbout": "ABOUT THE APP",
-  "settingsAdvancedUpper": "ADVANCED",
+  "settingsGroupGeneral": "General",
+  "settingsGroupPortfolioView": "Portfolio view",
+  "settingsGroupSecurityAccount": "Security & account",
+  "settingsGroupData": "Data",
+  "settingsGroupAbout": "About the app",
+  "settingsAdvancedUpper": "Advanced",
   "settingsAdvancedSemantics": "Advanced settings",
   "settingsThemeLabel": "Theme",
   "settingsBaseCurrencyLabel": "Base currency",
@@ -4070,7 +4070,7 @@
   "zorunluOkumaRizaVerKisa": "I give consent",
   "zorunluOkumaEksik": "To continue, read to the end and accept: {belgeler}",
   "yasalBelgeYatirimUyarisi": "Investment Disclaimer",
-  "flowTitleUpper": "MONEY FLOW",
+  "flowTitleUpper": "Money flow",
   "flowLastWeekIn": "Net inflow, latest week",
   "flowLastWeekOut": "Net outflow, latest week",
   "flowLastWeekFlat": "Net flow, latest week",
@@ -4198,7 +4198,7 @@
   },
   "weekTitle": "This week",
   "weekIntro": "Highlights of the latest week in the assets you hold. Tap a row for details.",
-  "weekFundsUpper": "MONEY FLOW IN YOUR FUNDS",
+  "weekFundsUpper": "Money flow in your funds",
   "weekRowRange": "{label} · {range}",
   "@weekRowRange": {
     "placeholders": {
@@ -4218,7 +4218,7 @@
   "weekEmptyNoData": "Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.",
   "weekFootnote": "Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio's weekly return is under Performance, Summary. Not investment advice.",
   "weekLink": "My funds this week",
-  "volTitleUpper": "VOLUME RADAR",
+  "volTitleUpper": "Volume radar",
   "volLastDay": "Traded value · {date}",
   "@volLastDay": {
     "placeholders": {
@@ -4285,7 +4285,7 @@
       }
     }
   },
-  "cryTitleUpper": "BUYER PRESSURE",
+  "cryTitleUpper": "Buyer pressure",
   "cryShareLabel": "Buyer share · {date}",
   "@cryShareLabel": {
     "placeholders": {
@@ -4345,7 +4345,7 @@
       }
     }
   },
-  "weekVolumeUpper": "UNUSUAL VOLUME",
+  "weekVolumeUpper": "Unusual volume",
   "weekVolumeRow": "Unusual volume · {date}",
   "@weekVolumeRow": {
     "placeholders": {
@@ -4573,9 +4573,9 @@
       "kat": {"type": "String"}
     }
   },
-  "rdrDonemUpper": "PERIOD",
-  "rdrBaglamUpper": "CONTEXT",
-  "rdrSiraUpper": "FLOW RANK IN CATEGORY",
+  "rdrDonemUpper": "Period",
+  "rdrBaglamUpper": "Context",
+  "rdrSiraUpper": "Flow rank in category",
   "rdrSiraAlt": "{kategori} · ranked by net flow the same week",
   "@rdrSiraAlt": {
     "placeholders": {
@@ -4589,7 +4589,7 @@
       "sayi": {"type": "String"}
     }
   },
-  "rdrHareketlerUpper": "BIG MOVES · LAST 30 DAYS",
+  "rdrHareketlerUpper": "Big moves · last 30 days",
   "rdrHisseSakin": "On {tarih} this stock traded a normal amount.",
   "@rdrHisseSakin": {
     "placeholders": {
@@ -4645,7 +4645,7 @@
       "tutar": {"type": "String"}
     }
   },
-  "rdrOlagandisiUpper": "UNUSUAL VOLUME DAYS · LAST 30 DAYS",
+  "rdrOlagandisiUpper": "Unusual volume days · last 30 days",
   "rdrKriptoAlici": "On {tarih} buyers were more eager than sellers.",
   "@rdrKriptoAlici": {
     "placeholders": {
@@ -4694,7 +4694,7 @@
       "yuzde": {"type": "String"}
     }
   },
-  "rdrSaatlikUpper": "LAST 24 HOURS · NET BUYING BY HOUR",
+  "rdrSaatlikUpper": "Last 24 hours · net buying by hour",
   "rdrEnIstekliSaat": "{aralik} buyers were most eager · {tutar} net buying",
   "@rdrEnIstekliSaat": {
     "placeholders": {
@@ -4715,7 +4715,7 @@
       "kod": {"type": "String"}
     }
   },
-  "rdrIslemHacmiUpper": "TRADING VOLUME · LAST 20 DAYS",
+  "rdrIslemHacmiUpper": "Trading volume · last 20 days",
   "rdrHaftaBaslikVar": "{sayi} of your assets had unusual moves in the last week.",
   "@rdrHaftaBaslikVar": {
     "placeholders": {
@@ -4891,7 +4891,7 @@
   },
   "prmYonet": "Manage",
   "prmGeriYukle": "Restore purchases",
-  "anzNotUpper": "WEEKLY NOTE · AI",
+  "anzNotUpper": "Weekly note · AI",
   "anzMeta": "{sayi} points · {aralik}",
   "@anzMeta": {
     "placeholders": {
@@ -4924,7 +4924,7 @@
   "anzYanlisIpucu": "Which number is wrong? (optional)",
   "anzGonder": "Send",
   "anzTesekkur": "Thanks, we'll review the note.",
-  "anzAylikUpper": "MONTHLY REPORT",
+  "anzAylikUpper": "Monthly report",
   "anzAylikBaslik": "{ay} report",
   "@anzAylikBaslik": {
     "placeholders": {
@@ -5026,7 +5026,7 @@
   "usSymbolHint": "Type a symbol (e.g. AAPL, BRK-B)",
   "selectedUsStockSemantics": "Selected US stock: {name}. Double tap to change.",
   "usStockCurrencyLocked": "US stocks are recorded in dollars",
-  "costsUpper": "COSTS",
+  "costsUpper": "Costs",
   "costsPaid": "Paid",
   "costsEstimatedOnSale": "Estimated on sale",
   "costTagPaid": "Paid",
@@ -5080,7 +5080,7 @@
   "eurobondAccruedLine": "Accrued interest: {accrued} · Paid: {paid}",
   "eurobondAccruedOnly": "Accrued interest: {accrued}",
   "eurobondTotalBreakdown": "{nominal} nominal × dirty {dirty}",
-  "bondInfoUpper": "BOND DETAILS",
+  "bondInfoUpper": "Bond details",
   "bondCleanPrice": "Clean price",
   "bondAccrued": "Accrued interest",
   "bondDirtyPrice": "Dirty price",
@@ -5096,7 +5096,7 @@
   "bondIssuer": "Issuer",
   "bondIssuerTreasury": "Turkish Treasury",
   "bondIssuerCorporate": "Corporate",
-  "bondBankSellUpper": "IF YOU SELL TO THE BANK",
+  "bondBankSellUpper": "If you sell to the bank",
   "bondBankZiraat": "Ziraat Bankası",
   "bondBankUpdated": "{bank} · {time}",
   "bondBankBid": "Bank bid",
@@ -5116,9 +5116,9 @@
   "typePickerHint247": "24/7",
   "s7AraSemantics": "Search",
   "s7AramaIpucu": "Search assets, symbols or actions",
-  "s7VarliklarimUpper": "MY ASSETS",
-  "s7PiyasaUpper": "MARKET",
-  "s7EylemlerUpper": "ACTIONS",
+  "s7VarliklarimUpper": "My assets",
+  "s7PiyasaUpper": "Market",
+  "s7EylemlerUpper": "Actions",
   "s7EylemFiyatAlarmlari": "Price alerts",
   "s7EylemSinyalAyarlari": "Signal settings",
   "s7EylemEkstreAktar": "Import statement (CSV)",
@@ -5128,8 +5128,8 @@
   "s7EylemTakipListesi": "Add to watchlist",
   "s7EylemBildirimler": "Notifications",
   "s7EylemAyarlar": "Settings",
-  "s4AnalysisUpper": "ANALYSIS",
-  "s4HistoryDocsUpper": "HISTORY & DOCUMENTS",
+  "s4AnalysisUpper": "Analysis",
+  "s4HistoryDocsUpper": "History & documents",
   "s4Details": "Details",
   "s4RowSignals": "Technical signals",
   "s4RowFundReport": "Fund report card",
@@ -5161,7 +5161,7 @@
   "bildirimOnAyarDengeliAciklama": "Recommended: your alerts, the daily brief, weekly and monthly summaries, strong signals twice a day.",
   "bildirimOnAyarCokAciklama": "Everything on; signals every 2 hours from 50% confidence.",
   "bildirimOnAyarOzelAciklama": "You've set notifications one by one. Picking an option applies it to all of them.",
-  "bildirimAyrintiliUpper": "DETAILED",
+  "bildirimAyrintiliUpper": "Detailed",
   "bildirimAyrintiliSemantik": "Set notifications one by one",
   "s5KategoriyeGoreOzellestir": "Customise by category",
   "s2Filtre": "Filter",
@@ -5188,29 +5188,29 @@
   "pwdIpucu": "Swipe left or right to see the other Premium features",
   "pwdUcretsiz": "Free: {deger}",
   "pwdPremium": "Premium: {deger}",
-  "pwdVarlikEtiket": "ASSET LIMIT",
+  "pwdVarlikEtiket": "Asset limit",
   "pwdVarlikBaslik": "{sayi} assets are free. The rest is Premium.",
   "pwdVarlikCubuk": "Free limit",
   "pwdVarlikUcretsiz": "{varlik} assets, {takip} watchlist",
-  "pwdSinyalEtiket": "SIGNALS",
+  "pwdSinyalEtiket": "Signals",
   "pwdSinyalBaslik": "Eight indicators, your own periods and alerts on every asset.",
   "pwdSinyalPremium": "8 indicators, unlimited alerts",
-  "pwdKarsEtiket": "COMPARE",
+  "pwdKarsEtiket": "Compare",
   "pwdKarsRozet": "{ucretsiz} → {premium} series",
   "pwdKarsBaslik": "See your portfolio next to gold, the dollar and the index.",
   "pwdSeri": "{sayi} series",
-  "pwdOrtakEtiket": "PARTNERS",
+  "pwdOrtakEtiket": "Partners",
   "pwdOrtakBaslik": "Your spouse, family and partners, more than one.",
   "pwdOrtakSayi": "{sayi, plural, =1{1 partner} other{{sayi} partners}}",
-  "pwdAkisEtiket": "FUND FLOW",
+  "pwdAkisEtiket": "Fund flow",
   "pwdAkisBaslik": "Is money flowing into your fund? See 8 weeks.",
-  "pwdHacimEtiket": "VOLUME RADAR",
+  "pwdHacimEtiket": "Volume radar",
   "pwdHacimBaslik": "Is today's volume unusual? Compare with 20 days.",
-  "pwdNotEtiket": "WEEKLY NOTE",
+  "pwdNotEtiket": "Weekly note",
   "pwdNotBaslik": "The rest of your weekly note is Premium.",
   "pwdNotIlk": "Money kept flowing into the funds in your portfolio this week.",
   "pwdNotDevam": " Which one stood out and what that tells you becomes readable in the rest of the note…",
-  "pwdEkstreEtiket": "STATEMENT",
+  "pwdEkstreEtiket": "Statement",
   "pwdEkstreBaslik": "Upload your statement and let AI match the lines.",
   "pwdEkstrePremium": "AI matching",
   "pwdYillikAlt": "Billed once a year · {aylik} a month",
@@ -5267,8 +5267,8 @@
   "yrMasraf": "Transaction fees",
   "yrPdf": "PDF",
   "yrExcel": "Excel",
-  "yrSatislarUpper": "SALES",
-  "yrTemettulerUpper": "DIVIDENDS",
+  "yrSatislarUpper": "Sales",
+  "yrTemettulerUpper": "Dividends",
   "yrFiyatsiz": "{count} older sales without a recorded sale price are not included.",
   "@yrFiyatsiz": {"placeholders": {"count": {"type": "int"}}},
   "yrDipnot": "Prepared from your records; not a tax return or tax advice. Ask your accountant about filing. Your partner's transactions are not included.",
@@ -5289,7 +5289,7 @@
   "ttBrutNot": "Gross; net not calculated because the withholding rate is unknown.",
   "ttNetNot": "Net after withholding · gross {brut}",
   "@ttNetNot": {"placeholders": {"brut": {"type": "String"}}},
-  "ttVarliklarUpper": "ASSETS",
+  "ttVarliklarUpper": "Assets",
   "ttSatirAlt": "{pay} per share · {aylar}",
   "@ttSatirAlt": {"placeholders": {"pay": {"type": "String"}, "aylar": {"type": "String"}}},
   "ttKural": "The forecast follows one rule: the dividends paid over the last 12 months, repeated in the same months at today's holdings. Company decisions, splits and bonus issues are not taken into account. BIST stocks only; not investment advice.",
@@ -5308,14 +5308,14 @@
   "prmMasrafPremium": "itemized",
   "prmSatirKars": "Compare",
   "prmSatirOrtak": "Partners",
-  "pwdRaporEtiket": "ANNUAL REPORT",
+  "pwdRaporEtiket": "Annual report",
   "pwdRaporBaslik": "Monthly and annual reports: gains, dividends and withholding in one document; send it to your accountant.",
   "pwdRaporPremium": "monthly, annual, PDF, Excel",
-  "pwdTemettuEtiket": "DIVIDEND FORECAST",
+  "pwdTemettuEtiket": "Dividend forecast",
   "pwdTemettuBaslik": "See how much dividend income the next 12 months bring, month by month.",
   "pwdTemettuPremium": "12-month forecast",
   "pwdSinyalRozet": "8 indicators",
-  "xrKartBaslikUpper": "WHAT'S INSIDE THE FUND",
+  "xrKartBaslikUpper": "What's inside the fund",
   "xrSatirFonunIci": "Inside the fund",
   "xrKaynakTefas": "TEFAS · {tarih}",
   "@xrKaynakTefas": {"placeholders": {"tarih": {"type": "String"}}},
@@ -5347,7 +5347,7 @@
   "xrEkranBaslik": "Portfolio X-Ray",
   "xrRaporAlt": "Where your money really is, inside your funds too",
   "xrToplamEtiket": "Your portfolio today",
-  "xrDagilimUpper": "LOOK-THROUGH ALLOCATION",
+  "xrDagilimUpper": "Look-through allocation",
   "xrDisi": "Not covered",
   "xrDisiAciklama": "Funds with no allocation data, and the gap in funds whose source doesn't add up to 100%. Not spread over other classes.",
   "xrDisiFonlar": "No allocation data: {fonlar}",
@@ -5359,7 +5359,7 @@
   "xrBosAlt": "Add a holding and your real allocation, inside funds too, shows up here.",
   "xrEkranKilitGovde": "The stocks, bonds, deposits and gold inside your funds, together with what you hold directly: where your money really is. From TEFAS's daily allocation, with date and source.",
   "xrEkranKilitSatir": "Portfolio X-Ray is in Premium",
-  "xrOrtusmeUpper": "HELD IN MORE THAN ONE PLACE",
+  "xrOrtusmeUpper": "Held in more than one place",
   "xrOrtusmeAciklama": "If you hold the same stock through several funds (or a fund and directly), your total exposure.",
   "xrOrtusmeKaynak": "via {n} holdings",
   "@xrOrtusmeKaynak": {"placeholders": {"n": {"type": "int"}}},
@@ -5368,7 +5368,7 @@
   "@xrKaynakKalemler": {"placeholders": {"donem": {"type": "String"}}},
   "pwOzXray": "Fund X-Ray: inside your funds and your real allocation",
   "prmSatirXray": "Fund X-Ray",
-  "pwdXrayEtiket": "FUND X-RAY",
+  "pwdXrayEtiket": "Fund X-Ray",
   "pwdXrayBaslik": "See what's inside your funds and where your money really is.",
   "pwdXrayPremium": "X-Ray and fee breakdown",
   "portfoyTumu": "All",
@@ -5422,7 +5422,7 @@
   "prmSatirPortfoy": "Portfolios",
   "pwdPortfoyPremium": "unlimited, partial transfer",
   "pwOzEkstre": "AI matching for your bank and brokerage statements",
-  "pwdPortfoyEtiket": "PORTFOLIOS",
+  "pwdPortfoyEtiket": "Portfolios",
   "pwdPortfoyBaslik": "A portfolio for every goal; your total stays in view.",
   "pwdPortfoySayi": "{sayi, plural, =1{1 portfolio} other{{sayi} portfolios}}",
   "@pwdPortfoySayi": {"placeholders": {"sayi": {"type": "int"}}},
@@ -5445,7 +5445,7 @@
   "@portfoyOrtakGoruyor": {"placeholders": {"ad": {"type": "String"}}},
   "portfoyOrtakGizli": "Hidden from {ad}",
   "@portfoyOrtakGizli": {"placeholders": {"ad": {"type": "String"}}},
-  "portfoyOrtakBolum": "WHAT YOUR PARTNER SEES",
+  "portfoyOrtakBolum": "What your partner sees",
   "portfoyAktarBaslik": "How much should move?",
   "portfoyAktarAciklama": "To {hedef}. You hold {miktar} here.",
   "@portfoyAktarAciklama": {"placeholders": {"hedef": {"type": "String"}, "miktar": {"type": "String"}}},
@@ -5539,7 +5539,7 @@
   "sgnParametreKilitli": "Period settings are in Premium",
   "sgnParametreAyarla": "{ad} settings",
   "prmSatirOzelGosterge": "Your own indicators (Pine)",
-  "pwdOzelEtiket": "YOUR INDICATOR",
+  "pwdOzelEtiket": "Your indicator",
   "pwdOzelBaslik": "Write your own indicator in Pine Script and run it on any asset, at the candle interval you pick.",
   "pwdOzelPremium": "20 indicators, any interval",
   "alarmLimitReached": "You can have up to {n} active alerts. Turn one off to add another.",
@@ -5613,7 +5613,7 @@
   "pyzGunIci": "Intraday periods aren't commented on. Pick a week or longer in the selector above.",
   "pyzSeciliMeta": "Written today at {saat} · can be rewritten tomorrow for the new window",
   "pyzVarlikEskidi": "Your quantity in this asset changed after the comment was written.",
-  "pwdZirveEtiket": "TOP PORTFOLIOS",
+  "pwdZirveEtiket": "Top portfolios",
   "pwdZirveBaslik": "See what the top portfolios hold, asset by asset.",
   "prmSatirZirve": "Top portfolios",
   "prmZirveUcretsiz": "Your own rank",
@@ -5654,7 +5654,7 @@
   "@sigSayfaNot": {"placeholders": {"gun": {"type": "int"}}},
   "sigKapat": "Hide this day",
   "sigBos": "Nothing left to show in the next two weeks.",
-  "ziBaslikUpper": "WHAT'S INSIDE THE FUNDS",
+  "ziBaslikUpper": "What's inside the funds",
   "ziOzetHisse": "Stocks are {gorunen} in the list, {gercek} with what the funds hold.",
   "@ziOzetHisse": {"placeholders": {"gorunen": {"type": "String"}, "gercek": {"type": "String"}}},
   "ziDogrudan": "Bought directly",
@@ -5751,7 +5751,7 @@
   "@yuzdeCipBugunCaldi": {"placeholders": {"etiket": {"type": "String"}}},
   "yuzdeAlarmHerGun": "{etiket} · every day",
   "yuzdeAlarmBugunCaldi": "Fired today · {pct} · re-arms tomorrow",
-  "notifTypeAlarm": "ALERT",
+  "notifTypeAlarm": "Alert",
   "ortakPortfoyKartBaslik": "Shared portfolio",
   "ortakPortfoyKartGovde": "Combine your portfolio with someone close on one screen. You can leave any time.",
   "ortakPortfoyDavetEt": "Invite",
@@ -5856,7 +5856,7 @@
   "alarmGrupSimdi": "now {fiyat}",
   "alarmOneriBaslik": "Quick start",
   "alarmOneriAciklama": "We'll tell you if it moves 2% in a day",
-  "kilometreTaslariUpper": "YOUR MILESTONES",
+  "kilometreTaslariUpper": "Your milestones",
   "kilometreTaslariTumu": "All",
   "kilometreTaslariTumuEtiket": "Show all milestones",
   "kilometreTasiSiradaki": "Next",
