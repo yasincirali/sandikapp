@@ -217,6 +217,11 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           canli: true,
           kayit: kayit,
           donus: ozet.donus,
+          sayimlar: (
+            yukari: ozet.buyCount,
+            asagi: ozet.sellCount,
+            notr: ozet.toplam - ozet.buyCount - ozet.sellCount,
+          ),
         );
       })(context, snap),
       ),
@@ -299,6 +304,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     required bool canli,
     required SignalAlert? kayit,
     bool donus = false,
+    ({int yukari, int asagi, int notr})? sayimlar,
   }) {
     // Yasal not: kesin "AL/SAT" yerine trend yönü ya da aşırılık bölgesi —
     // ekranın geri kalanıyla aynı dil (bkz. [sinyalGorunumu]). Kayıtlı
@@ -309,9 +315,15 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     final etiket = g.etiket;
     final ikon = g.ikon;
 
-    final detay = toplam > 0
-        ? context.l10n.indicatorsConfidence(lehte, toplam, guven.round())
-        : context.l10n.confidenceOnly(guven.round());
+    // Canlı yolda sayım panelin özet kartıyla birebir aynı cümle. Kayıtlı
+    // bildirimde nötr sayısı tutulmadığı için eski "x/y gösterge" kalır.
+    final sayim = sayimlar;
+    final detay = sayim != null
+        ? context.l10n
+            .buySellNeutralCounts(sayim.yukari, sayim.asagi, sayim.notr)
+        : toplam > 0
+            ? context.l10n.indicatorsConfidence(lehte, toplam, guven.round())
+            : context.l10n.confidenceOnly(guven.round());
 
     // Kayıtlı bildirim, CANLI özetten ayrı bir satırda durur. İkisi
     // çeliştiğinde (bildirim "yukarı" derken göstergeler bugün "aşağı"
@@ -357,45 +369,39 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Üst etiket: şeridin NE olduğunu söyler. Ekranın diğer
-                // kartlarında ("BUGÜN / lot", "1H DEĞİŞİM") aynı kalıp
-                // kullanılıyor — labelSmall + letterSpacing 0.8 + text36.
-                // Sayfayla ahengi kuran şey bu tekrar.
-                Text(
-                  context.l10n.technicalOutlookUpper,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelSmall?.copyWith(
-                    letterSpacing: 0.8,
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text36,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                // Ton düşürüldü: `w800` + `letterSpacing 0.6` idi ve
-                // kırmızı zeminle birleşince başlık bağırıyordu. Renk
-                // korundu (yön bilgisini o taşıyor), ağırlık ekranın
-                // diğer kart başlıklarıyla aynı seviyeye çekildi.
-                Text(
-                  etiket,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: renk,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                // İki satır: büyük yazı ölçeğinde "1/2 gösterge · güven %50"
-                // tek satırda "güven …" diye kesiliyordu — güven yüzdesi
-                // satırın tek sayısal bilgisiydi ve kayboluyordu (kullanıcı
-                // ekran görüntüsü 2026-09-18).
-                Text(
-                  detay,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      context.t.bodySmall?.copyWith(color: context.c.text58),
+                // Tek satır: "Teknik: YATAY  1 yukarı · 1 aşağı · 3 nötr"
+                // (Ar-Ge 5 Kas 14:45 #1). Eski üst etiket "TEKNİK GÖRÜNÜM ·
+                // GÜNLÜK" 390 pt'de "GÜN…" diye kesiliyordu ve sayım üç ayrı
+                // dilde yazıyordu (şerit "1/5 gösterge aynı yönde", panel
+                // "1 yukarı · 1 aşağı · 3 nötr"). Şerit artık panelin özet
+                // kartıyla aynı sayımı yazar; güven yüzdesi panelde.
+                // `Wrap`: sığmazsa sayım alt satıra iner, hiçbir parça
+                // kesilmez (Dynamic Type 2×). Ağırlık w600 (unslop: en
+                // fazla w600); renk yönü taşır, metin de yazılı.
+                Wrap(
+                  spacing: SandikSpace.sm,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          text: '${context.l10n.technicalPrefix} ',
+                          style: TextStyle(color: context.c.text58),
+                        ),
+                        TextSpan(text: etiket),
+                      ]),
+                      style: context.t.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: renk,
+                      ),
+                    ),
+                    Text(
+                      detay,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ],
                 ),
                 if (kayitSatiri != null) ...[
                   const SizedBox(height: 2),
@@ -422,32 +428,34 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           // "10 Eyl · 11:00" oluyor ve 320pt × 1.6 ölçekte taşıyordu.
           // Canlı hesapta "ŞU AN", kayıtta TAM tarih+saat — göreli ifade
           // soldaki "Son bildirim" satırında duruyor, mutlak olan burada.
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
-                decoration: BoxDecoration(
-                  color: renk.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
-                child: Text(
-                  canli
-                      ? context.l10n.nowUpper
-                      : DateFormat('d MMM · HH:mm', 'tr_TR')
-                          .format(kayit!.detectedAt),
-                  maxLines: 1,
-                  style: context.t.labelSmall?.copyWith(
-                    letterSpacing: 0.8,
-                    fontWeight: FontWeight.w700,
-                    color: renk,
+          //
+          // Canlı yolda pil YOK (Ar-Ge 5 Kas 14:45 #1): "ŞU AN" her açılışta
+          // aynıydı, bilgi taşımıyordu ve şeridi kalabalıklaştırıyordu. Pil
+          // yalnız kayıtlı bildirimde, o bildirimin tam zamanını yazar.
+          if (!canli)
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
+                  decoration: BoxDecoration(
+                    color: renk.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  ),
+                  child: Text(
+                    DateFormat('d MMM · HH:mm', 'tr_TR')
+                        .format(kayit!.detectedAt),
+                    maxLines: 1,
+                    style: context.t.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: renk,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           // Chevron sütunun ALTINDA değil YANINDA ve dikey ortada — "bu
           // karta dokunulabilir" işareti, zaman bilgisinin bir parçası
           // değil. Örnek tasarımda da ayrı bir sütun olarak duruyor.
@@ -480,33 +488,20 @@ class TechnicalSignalPanel extends ConsumerStatefulWidget {
   final AssetType type;
   final String? subCategory;
 
-  /// Dağılım görselleştirmesi (oran çubuğu + gruplu liste) çizilsin mi?
-  ///
-  /// YALNIZCA varlık performans ekranında `true`. Kullanıcı bunu oraya
-  /// istedi ve isteğin "sadece" kısmı bilinçli: takip listesi detayı,
-  /// sahip OLMADIĞIN bir varlığa hızlı bakış ekranıdır — orada özet + düz
-  /// liste yeterli, üç katmanlı bir dağılım paneli ekranı ağırlaştırır.
-  ///
-  /// Bayrak varsayılan olarak `false`: yeni bir çağrı yeri eklendiğinde
-  /// ağır sürüm kazara sızmasın.
-  final bool detayli;
-
   const TechnicalSignalPanel({
     super.key,
     required this.ticker,
     required this.type,
     this.subCategory,
-    this.detayli = false,
   });
 
   /// Sahip olunan bir varlıktan kurar — çağrı yerlerini kısaltır.
-  TechnicalSignalPanel.forAsset(Asset asset, {Key? key, bool detayli = false})
+  TechnicalSignalPanel.forAsset(Asset asset, {Key? key})
       : this(
           key: key,
           ticker: asset.ticker,
           type: asset.type,
           subCategory: asset.subCategory,
-          detayli: detayli,
         );
 
   @override
@@ -747,8 +742,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
               child: Text(
                 context.l10n.technicalAnalysisUpper,
                 style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text58,
                 ),
               ),
@@ -836,11 +830,12 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                   children: [
                     Text(
                       signalLabel,
-                      style: context.t.headlineLarge?.copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
+                      // 20 pt w600 (Ar-Ge 5 Kas 14:45 tasarım #3): 26 pt
+                      // w800 harf aralıklı "YATAY" sayfanın en büyük yazısıydı,
+                      // fiyattan (24) büyük. En önemli sayı en büyük kalır.
+                      style: context.t.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                         color: signalColor,
-                        letterSpacing: 1,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -876,25 +871,13 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         ),
         const SizedBox(height: 12),
 
-        // ── Dağılım çubuğu (YALNIZCA detaylı mod) ───────────────────────────
-        //
-        // Kullanıcı isteği (2026-09-10): "hangi algoritmalar al ve sat
-        // verenleri ve yüzdesi görsel olarak da tatmin edici ve göz alıcı
-        // şekilde SADECE varlık performans ekranına eklenmeli."
-        //
-        // İlk sürümde çubuğun ALTINA gruplu kutular konmuş, düz liste ise
-        // kaldırılmıştı. Kullanıcı bunu geri istedi (2026-09-10, ikinci
-        // bildirim): "hangi algoritmalar bunu dedi ekranın en altında
-        // görmeyi bekliyorum … tasarımı da store'da şu an olan şekliyle
-        // olmalı." Gruplu kutular düz listenin taşıdığı bilgiyi zaten
-        // tekrarlıyordu; kaldırıldı.
-        //
-        // Kalan iş bölümü net: çubuk ORANI verir (kaçı hangi yönde),
-        // altındaki liste KİMLİĞİ (hangi gösterge, hangi değer, ne diyor).
-        if (widget.detayli) ...[
-          SinyalDagilimi(indicators: indicators),
-          const SizedBox(height: SandikSpace.md),
-        ],
+        // Dağılım çubuğu ("AL %20·1 SAT %20·1 NÖTR %60·3") KALKTI (Ar-Ge
+        // 5 Kas 14:45 #2; yasin müşteri thread'ine bıraktı: "ihtiyacı varsa
+        // kalsın yoksa kaldır"). 2026-09-10'da "hangi algoritmalar al/sat
+        // dedi ve yüzdesi" isteğiyle eklenmişti; o isteğin "hangi" kısmını
+        // aşağıdaki düz liste, oran kısmını üstteki özet kart ("1 yukarı ·
+        // 1 aşağı · 3 nötr") ve şerit zaten veriyordu. Aynı sayım üç kez
+        // okunuyordu, "%20" de güven yüzdesiyle karışıyordu.
         // ── Gösterge listesi (düz) ──────────────────────────────────────────
         SandikCard(
           padding: EdgeInsets.zero,
@@ -912,7 +895,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                   ? 'AL'
                   : ind.signal == SignalType.sell
                       ? 'SAT'
-                      : 'NÖTR';
+                      : 'Nötr';
 
               return Column(
                 children: [
@@ -995,158 +978,3 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   }
 }
 
-/// Göstergelerin AL / SAT / NÖTR dağılımı — SEGMENT BAŞINA BİR GÖSTERGE.
-///
-/// ## Neden düz bir yüzde çubuğu değil
-/// Gösterge sayısı küçük (4–8). Sürekli bir yüzde çubuğu "%67" der ama
-/// kaç göstergeden geldiğini gizler; oysa "6 göstergeden 4'ü" ifadesi
-/// kullanıcının gerçekten kurduğu cümle. Her göstergeye bir hücre vermek
-/// aynı anda İKİ şeyi okutuyor: oran (yeşilin kapladığı alan) ve SAYI
-/// (hücreleri saymak). Aradaki 2px boşluk hücreleri ayırır.
-///
-/// ## Renk TEK BAŞINA anlam taşımaz
-/// Marka yeşili ile kırmızısı koyu temada deuteranopi altında ΔE ≈ 7,6
-/// ayrışıyor — yani kırmızı-yeşil renk körlüğünde birbirine yakın. Bu
-/// yüzden her hücre bir GLİF (▲ ▼ ◆) taşır, her grup metin başlıklıdır ve
-/// sayılar rakamla yazılır. Renk yalnızca hızlı taramaya yardım eder;
-/// bilgiyi tek başına taşımaz.
-class SinyalDagilimi extends StatelessWidget {
-  const SinyalDagilimi({super.key, required this.indicators});
-
-  final List<TechnicalIndicator> indicators;
-
-  static const _yukseklik = 14.0;
-  static const _bosluk = 2.0;
-
-  @override
-  Widget build(BuildContext context) {
-    if (indicators.isEmpty) return const SizedBox.shrink();
-
-    // Sıra SABİT: önce AL, sonra SAT, sonra NÖTR. Çubuk her varlıkta aynı
-    // şekilde okunmalı — sıralama gösterge kimliğine göre değişirse
-    // kullanıcı her ekranda yeniden yön bulmak zorunda kalır.
-    final al = indicators.where((i) => i.signal == SignalType.buy).toList();
-    final sat = indicators.where((i) => i.signal == SignalType.sell).toList();
-    final notr =
-        indicators.where((i) => i.signal == SignalType.neutral).toList();
-    final toplam = indicators.length;
-
-    final sirali = [...al, ...sat, ...notr];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── Oran çubuğu ──────────────────────────────────────────────────
-        ClipRRect(
-          borderRadius: BorderRadius.circular(SandikRadius.sm),
-          child: SizedBox(
-            height: _yukseklik,
-            child: Row(
-              children: [
-                for (var i = 0; i < sirali.length; i++) ...[
-                  if (i > 0) const SizedBox(width: _bosluk),
-                  Expanded(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _renk(context, sirali[i].signal),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: SandikSpace.sm2),
-
-        // ── Lejant ───────────────────────────────────────────────────────
-        //
-        // `Wrap`: dar ekranda ve büyük sistem yazı tipinde üç rozet tek
-        // satıra sığmaz; taşma çizgisi yerine alt satıra iner.
-        Wrap(
-          spacing: SandikSpace.smd,
-          runSpacing: SandikSpace.xs,
-          children: [
-            _lejant(context, SignalType.buy, al.length, toplam),
-            _lejant(context, SignalType.sell, sat.length, toplam),
-            if (notr.isNotEmpty)
-              _lejant(context, SignalType.neutral, notr.length, toplam),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _lejant(
-      BuildContext context, SignalType tur, int adet, int toplam) {
-    final renk = _renk(context, tur);
-    final yuzde = toplam > 0 ? (adet / toplam) * 100 : 0.0;
-    // ## Neden metin parçaları `Flexible`
-    //
-    // `Wrap` çocuklarına kendi genişliğini ÜST SINIR olarak verir; içerik
-    // o sınırı aşarsa `mainAxisSize.min` bir şey kurtarmaz ve satır taşar.
-    // Ölçüldü: 320pt ekranda 2,0× sistem yazı tipinde rozet 1,3px ve 30px
-    // taşıyordu (bkz. `sinyal_dagilimi_test.dart`).
-    //
-    // Çözüm metni KÜÇÜLTMEK değil (büyük yazı tipi bir erişilebilirlik
-    // ayarıdır, geri almak onu boşa çıkarır) — metin parçalarına esneme
-    // izni vermek. Pratikte ellipsis neredeyse hiç tetiklenmez; rozet
-    // kısa. Glif sabit kalır: kimliği o taşıyor.
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(_glif(tur),
-            style: context.t.bodySmall?.copyWith(
-                color: renk, fontWeight: FontWeight.w700, height: 1)),
-        const SizedBox(width: SandikSpace.xs2),
-        Flexible(
-          child: Text(
-            _etiket(tur),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.labelLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-              color: context.c.text58,
-            ),
-          ),
-        ),
-        const SizedBox(width: SandikSpace.xs2),
-        // Sayı METİN tokenıyla yazılır, seri rengiyle değil: rakamı
-        // renklendirmek onu "durum" gibi okutur, oysa burada sadece bir
-        // sayı var. Kimliği soldaki glif + renk taşıyor.
-        Flexible(
-          child: Text(
-            '%${yuzde.round()} · $adet',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.numSmall.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: context.c.text90,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  static Color _renk(BuildContext context, SignalType t) => switch (t) {
-        SignalType.buy => context.c.gain,
-        SignalType.sell => context.c.loss,
-        SignalType.neutral => context.c.text36,
-      };
-
-  static String _glif(SignalType t) => switch (t) {
-        SignalType.buy => '▲',
-        SignalType.sell => '▼',
-        SignalType.neutral => '◆',
-      };
-
-  static String _etiket(SignalType t) => switch (t) {
-        SignalType.buy => 'AL',
-        SignalType.sell => 'SAT',
-        SignalType.neutral => 'NÖTR',
-      };
-}

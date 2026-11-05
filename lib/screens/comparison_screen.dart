@@ -1391,7 +1391,6 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
           style: context.t.labelMedium?.copyWith(
             color: p.text36,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
           ),
         ),
       );
@@ -1488,7 +1487,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
               Expanded(
                 child: ListView(
                   children: [
-                    _sectionLabel(p, 'PORTFÖYLER'),
+                    _sectionLabel(p, 'Portföyler'),
                     for (final h in widget.portfolioOptions)
                       _tile(p, h, isPortfolio: true),
                     Padding(

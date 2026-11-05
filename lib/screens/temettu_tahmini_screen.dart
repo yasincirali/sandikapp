@@ -82,7 +82,7 @@ class _Govde extends StatelessWidget {
               const SizedBox(height: SandikSpace.xs),
               Text(fmtTRY(net ?? t.brutTry),
                   style: context.t.numLarge
-                      .copyWith(fontWeight: FontWeight.w800, color: c.gold)),
+                      .copyWith(fontWeight: FontWeight.w600, color: c.gold)),
               const SizedBox(height: SandikSpace.xxs),
               Text(
                 net == null

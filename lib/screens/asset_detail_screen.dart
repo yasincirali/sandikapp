@@ -2211,7 +2211,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     tipText,
                                     context.t.numSmall.copyWith(
                                       color: context.c.text90,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                     children: [
                                       TextSpan(
@@ -2498,7 +2498,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),
                   TechnicalSignalPanel.forAsset(widget.asset,
-                      key: _sinyalPaneliKey, detayli: true),
+                      key: _sinyalPaneliKey),
                   // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
                   // taşır (varlık sayfasıyla aynı). Sayfadaki TEK ibare
                   // budur — panel kendi içinde basmaz (#20: üç kez

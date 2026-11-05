@@ -122,7 +122,7 @@ class _Govde extends StatelessWidget {
               const SizedBox(height: SandikSpace.xs),
               Text(fmtTRY(x.toplam),
                   style: context.t.numLarge
-                      .copyWith(fontWeight: FontWeight.w800, color: c.text90)),
+                      .copyWith(fontWeight: FontWeight.w600, color: c.text90)),
               const SizedBox(height: SandikSpace.md),
               if (x.fonVar) ...[
                 cubukUstu(l.xrTuttuklarin, l.xrTurSayisi(gorunen.length)),

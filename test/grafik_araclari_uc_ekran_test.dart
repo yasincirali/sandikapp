@@ -134,7 +134,7 @@ void main() {
           .widgetList<GrafikCipi>(find.byType(GrafikCipi))
           .map((c) => c.label)
           .toList();
-      expect(etiketler, containsAll(['MUM', 'LOG', 'MA20', 'EMA50', 'EMA200']));
+      expect(etiketler, containsAll(['Mum', 'LOG', 'MA20', 'EMA50', 'EMA200']));
       expect(etiketler.where((e) => e.startsWith('ƒx')), isEmpty);
     });
 
@@ -145,7 +145,7 @@ void main() {
       final cipler =
           t.widgetList<GrafikCipi>(find.byType(GrafikCipi)).toList();
       expect(cipler.map((c) => c.label),
-          containsAll(['MUM', 'LOG', 'ƒx', 'MA20', 'EMA50', 'EMA200']));
+          containsAll(['Mum', 'LOG', 'ƒx', 'MA20', 'EMA50', 'EMA200']));
       for (final c in cipler) {
         expect(c.kilitli, c.label.startsWith('ƒx'), reason: c.label);
       }

@@ -139,7 +139,7 @@ class _Eylem extends StatelessWidget {
         ? Text(metin,
             textAlign: TextAlign.center,
             style: context.t.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w800, color: context.c.onAmber))
+                fontWeight: FontWeight.w600, color: context.c.onAmber))
         : Text(metin,
             textAlign: TextAlign.center,
             style:
@@ -282,7 +282,7 @@ class _MevduatGovdesi extends ConsumerWidget {
                 children: [
                   Text(l10n.depositMatured,
                       style: context.t.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: context.c.amberText)),
                   const SizedBox(height: SandikSpace.xs),
                   Text(l10n.depositMaturedBody,

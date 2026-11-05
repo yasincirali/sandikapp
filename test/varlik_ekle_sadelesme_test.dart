@@ -93,7 +93,7 @@ void main() {
     await _ac(tester);
     expect(find.byIcon(Icons.mic_none_rounded), findsNothing,
         reason: 'Başlıktaki mikrofon kalktı.');
-    expect(find.text('BAŞKA YOLDAN EKLE'), findsOneWidget);
+    expect(find.text('Başka yoldan ekle'), findsOneWidget);
     for (final t in [
       'Yazarak ekle',
       'Ekstreden aktar',
@@ -102,7 +102,7 @@ void main() {
       expect(find.text(t), findsOneWidget, reason: t);
     }
     // Kart tür seçicinin ALTINDA.
-    final kart = tester.getTopLeft(find.text('BAŞKA YOLDAN EKLE')).dy;
+    final kart = tester.getTopLeft(find.text('Başka yoldan ekle')).dy;
     final tur = tester
         .getTopLeft(find.byWidgetPredicate(
             (w) => w is TourAnchor && w.target == TourTarget.turSecici))
@@ -133,13 +133,13 @@ void main() {
       (tester) async {
     final handle = tester.ensureSemantics();
     await _ac(tester, varliklar: [_gram(10, 9), _gram(12, 10)]);
-    expect(find.text('TEKRAR AL'), findsOneWidget);
+    expect(find.text('Tekrar al'), findsOneWidget);
     final cip = find.bySemanticsLabel(
         RegExp(r'^Gram Altın \(24 Ayar\) tekrar al, son alım 12 gr'));
     expect(cip, findsOneWidget);
     await tester.tap(cip);
     await tester.pumpAndSettle();
-    expect(find.text('TEKRAR AL'), findsNothing,
+    expect(find.text('Tekrar al'), findsNothing,
         reason: 'Seçimden sonra ızgara katlanır.');
     expect(
         tester.getSemantics(
@@ -153,7 +153,7 @@ void main() {
   testWidgets('altını olmayan kullanıcıda tekrar al satırı yok',
       (tester) async {
     await _ac(tester);
-    expect(find.text('TEKRAR AL'), findsNothing);
+    expect(find.text('Tekrar al'), findsNothing);
   });
 
   testWidgets('miktar boşken içeriksiz maliyet kartı çizilmez',

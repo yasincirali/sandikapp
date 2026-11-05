@@ -761,15 +761,16 @@ extension SandikNumericText on TextTheme {
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 
-  /// Kart içi tutar (16pt, w800).
+  /// Kart içi tutar (16pt, w600; unslop 5 Kas 2026: ağırlık tavanı w600,
+  /// hiyerarşi boyuttan gelir).
   TextStyle get numMedium => (titleLarge ?? const TextStyle()).copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 
-  /// Hero/özet tutarı (24pt, w800).
+  /// Hero/özet tutarı (24pt, w600).
   TextStyle get numLarge => (headlineLarge ?? const TextStyle()).copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 }
@@ -1792,11 +1793,14 @@ class SandikSectionHeader extends StatelessWidget {
         // (arama ekranı "Tümü (n)", 2026-09-28).
         Flexible(
           fit: trailing != null ? FlexFit.tight : FlexFit.loose,
+          // Cümle düzeni, w600, harf aralığı yok (yasin 5 Kas 2026, unslop
+          // raporu madde 1; iOS Ayarlar/Cüzdan bölüm başlığı). Eskiden
+          // BÜYÜK HARF + w800 + 1.2 harf aralığıydı: her başlık bağırıyor,
+          // "AI şablonu" okunuyordu. Metinler .arb'da cümle düzeninde.
           child: Text(
             title,
             style: context.t.labelLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
               color: context.c.text58,
             ),
             maxLines: 1,

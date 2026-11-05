@@ -125,7 +125,7 @@ class _BildirimSatiriState extends State<BildirimSatiri> {
               ),
               child: Text(widget.rozet,
                   style: context.t.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: faded ? context.c.text36 : context.c.text58,
                       decoration: TextDecoration.none)),
             ),

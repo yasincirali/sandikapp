@@ -55,7 +55,7 @@ void main() {
     );
 
     Future<void> izgara(WidgetTester tester,
-        {bool? bugunGizli, int gun = 1}) async {
+        {bool? bugunGizli, int gun = 1, bool gunIci = false}) async {
       await tester.pumpWidget(MaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
@@ -66,26 +66,28 @@ void main() {
             bugunPct: 1.98,
             donemGetirisiGizli: true,
             bugunGizli: bugunGizli,
+            gunIci: gunIci,
           ),
         ),
       ));
     }
 
-    testWidgets('GÜNLÜK varlık sayfası: tek hücre "En büyük düşüş"',
+    // 5 Kas 14:45 #3: GÜNLÜK'te "En büyük düşüş" de düştü; ızgara boş.
+    testWidgets('Günlük varlık sayfası: ızgarada hücre kalmaz',
         (tester) async {
-      await izgara(tester, bugunGizli: true);
-      expect(find.text('DÖNEM GETİRİSİ'), findsNothing);
-      expect(find.text('BUGÜN'), findsNothing);
-      expect(find.text('EN BÜYÜK DÜŞÜŞ'), findsOneWidget);
+      await izgara(tester, bugunGizli: true, gunIci: true);
+      expect(find.text('Dönem getirisi'), findsNothing);
+      expect(find.text('Bugün'), findsNothing);
+      expect(find.text('En büyük düşüş'), findsNothing);
       // Oynaklık bilinmiyor: ne "—" kutusu ne açıklama notu.
-      expect(find.text('OYNAKLIK (YILLIK)'), findsNothing);
+      expect(find.text('Oynaklık (yıllık)'), findsNothing);
       expect(find.text('—'), findsNothing);
     });
 
     testWidgets('1 ay: Bugün kalır', (tester) async {
       await izgara(tester, bugunGizli: false, gun: 30);
-      expect(find.text('BUGÜN'), findsOneWidget);
-      expect(find.text('EN BÜYÜK DÜŞÜŞ'), findsOneWidget);
+      expect(find.text('Bugün'), findsOneWidget);
+      expect(find.text('En büyük düşüş'), findsOneWidget);
     });
 
     test('iskelet hücre sayısı ızgarayla aynı kuraldan', () {
@@ -113,7 +115,7 @@ void main() {
     });
   });
 
-  testWidgets('GÜNLÜK aralık çubuğu "Gün düşüğü/yükseği" der', (tester) async {
+  testWidgets('Günlük aralık çubuğu "Gün düşüğü/yükseği" der', (tester) async {
     Future<void> cubuk(bool gunIci) => tester.pumpWidget(MaterialApp(
           theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
           home: Scaffold(

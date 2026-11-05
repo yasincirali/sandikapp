@@ -379,7 +379,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                             ? context.l10n.buyAction
                             : context.l10n.sellAction,
                         style: context.t.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: context.c.text90,
                         ),
                       ),
@@ -561,7 +561,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       '${numFmt.format(total)} $_currencySymbol',
                       style: context.t.numSmall.copyWith(
                         fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: accent,
                       ),
                     ),
@@ -623,7 +623,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                             ? context.l10n.buyAction
                             : context.l10n.sellAction,
                         style: context.t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
                 ),

@@ -2510,7 +2510,7 @@ class _AssetLeadingIcon extends StatelessWidget {
             maxLines: 1,
             style: context.t.bodyMedium!.copyWith(
               fontSize: symbol.length > 1 ? 9 : 13,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: grup.onSurface(context),
               height: 1,
             ),
@@ -3486,10 +3486,9 @@ class _NotlarBolumu extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            ustHarf(l10n.notesSection, l10n),
+            l10n.notesSection,
             style: context.t.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
               color: context.c.text36,
             ),
           ),
@@ -3577,13 +3576,11 @@ class _DetailItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          // Düz `toUpperCase` Türkçe'de "MIKTAR", "ORT. MALIYET" veriyordu
-          // (bulgu #8); `ustHarf` dile göre i→İ çevirir, İngilizce'ye
-          // dokunmaz.
-          ustHarf(label, context.l10n),
+          // Cümle düzeninde, olduğu gibi (yasin 5 Kas 2026, unslop): eskiden
+          // `ustHarf` ile büyütülüyordu (bulgu #8 noktasız I bunun yüzündendi).
+          label,
           style: context.t.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
             color: context.c.text36,
           ),
         ),
@@ -3592,7 +3589,7 @@ class _DetailItem extends StatelessWidget {
           value,
           style: valueStyle.copyWith(
             fontSize: emphasize ? 15 : 13,
-            fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: FontWeight.w600,
             color: emphasize ? context.c.gold : context.c.text90,
             height: isText ? 1.35 : null, // sarma satırları sıkışmasın
           ),

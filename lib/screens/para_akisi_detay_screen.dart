@@ -435,7 +435,7 @@ class _KategoriSirasi extends ConsumerWidget {
     final kendi = liste.firstWhere((s) => s.kendi);
     Widget satir(KategoriSirasi s) {
       final stil = t.bodyMedium?.copyWith(
-          color: c.text90, fontWeight: s.kendi ? FontWeight.w800 : null);
+          color: c.text90, fontWeight: s.kendi ? FontWeight.w600 : null);
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
         child: Row(
@@ -454,7 +454,7 @@ class _KategoriSirasi extends ConsumerWidget {
             Text(isaretliTutar(s.netAkis),
                 style: t.numSmall.copyWith(
                     color: yonRengi(c, s.netAkis),
-                    fontWeight: s.kendi ? FontWeight.w800 : FontWeight.w600)),
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       );

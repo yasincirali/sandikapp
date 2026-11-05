@@ -9,6 +9,14 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — Android'de silip kurunca cihaz yine e-posta kodu ister (2026-11-05)
+
+**Ne:** yasin kuralı (5 Kas): "OTP alınmış cihazdan uygulama silinse de kod istememeli; kaldırılan cihaz yeniden OTP istemeli; liste distinct." iOS'ta cihaz kimliği Keychain'e taşındı (`CihazOturumuService.cihazKimligi`), silip kurmaya dayanıyor. Android'de Keystore ve SharedPreferences uygulamayla silinir (`allowBackup=false`), kimlik yeniden doğar.
+**Neden ertelendi:** kalıcı bir Android kaynağı (`ANDROID_ID` türevi) yeni bir cihaz tanımlayıcısı işlemek demek: KVKK/Gizlilik metnine yeni veri ("rastgele cihaz numarası" artık rastgele değil), "Onay sürümü" ve yeniden onay kapısı gerekir. Android şu an kapalı test.
+**Maliyet:** Kotlin kanalı (`com.sandik.app/ayarlar` → `ANDROID_ID`), kullanıcıya özel SHA-256 türevi, eski kimlik varsa korunur; yasal metin + migration.
+**Ne zaman:** Play herkese açık yayından önce, yasin onayıyla.
+**Mevcut çoğalmış satırlar:** sunucu aynı telefonu ayırt edemez (yalnız ad); kullanıcı "Kaldır"la temizler.
+
 ## 🟡 AÇIK — Geniş pencere ve önce-eski-seri v1'de bırakılanlar (2026-10-24, Ar-Ge §1/§3)
 
 `HistoryService.kaynakDonemGunu` / `darPencereyiKapsar` / `eldekiSeriyle`;

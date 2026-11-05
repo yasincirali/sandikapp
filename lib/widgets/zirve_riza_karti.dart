@@ -103,7 +103,7 @@ class ZirveRizaKarti extends StatelessWidget {
           Text(
             baslik,
             style: context.t.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: c.text90,
             ),
           ),

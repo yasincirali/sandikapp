@@ -473,7 +473,10 @@ class _YorumCercevesi extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome_rounded,
+              // Konuşma balonu: kart bir yorum; parıltı simgesi "AI süsü"
+              // kalıbıydı (unslop 2026-11-05 #5). Yapay zekâ olduğu başlıkta
+              // ve notta yazılı kalır.
+              Icon(Icons.chat_bubble_outline_rounded,
                   size: SandikSpace.md, color: c.amberText),
               const SizedBox(width: SandikSpace.xs),
               Expanded(

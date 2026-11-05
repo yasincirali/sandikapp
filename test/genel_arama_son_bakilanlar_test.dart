@@ -143,8 +143,8 @@ void main() {
     await _tohumla(const []);
     await _pump(t);
     expect(_bolum, findsNothing);
-    expect(find.text('SON BAKTIKLARIN'), findsNothing);
-    expect(find.text('EYLEMLER'), findsOneWidget);
+    expect(find.text('Son baktıkların'), findsNothing);
+    expect(find.text('Eylemler'), findsOneWidget);
   });
 
   testWidgets(
@@ -153,7 +153,7 @@ void main() {
     await _tohumla([_sise, _garan, _thyao, _asels]);
     await _pump(t);
     expect(_bolum, findsOneWidget);
-    expect(find.text('SON BAKTIKLARIN'), findsOneWidget);
+    expect(find.text('Son baktıkların'), findsOneWidget);
     expect(find.text('Aselsan'), findsOneWidget);
     expect(find.text('Şişecam'), findsOneWidget);
     // GARAN takipte, THYAO portföyde: listede yok.
@@ -165,8 +165,8 @@ void main() {
     expect(_kotasyonCagrilari, hasLength(1));
     expect(_kotasyonCagrilari.single.toSet(), {'SISE.IS', 'ASELS.IS'});
     // Bölüm eylemlerin üstünde.
-    expect(t.getTopLeft(find.text('SON BAKTIKLARIN')).dy,
-        lessThan(t.getTopLeft(find.text('EYLEMLER')).dy));
+    expect(t.getTopLeft(find.text('Son baktıkların')).dy,
+        lessThan(t.getTopLeft(find.text('Eylemler')).dy));
     // HIG: satır ≥44pt.
     final satir = find.byKey(ValueKey('son-bakilan-${_asels.key}'));
     expect(t.getSize(satir).height, greaterThanOrEqualTo(44));

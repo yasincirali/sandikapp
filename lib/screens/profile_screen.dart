@@ -568,8 +568,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               SandikSectionHeader(
-                                  title: context.l10n.settingsTitle
-                                      .toUpperCase()),
+                                  title: context.l10n.settingsTitle),
                               const SizedBox(height: SandikSpace.md),
                               const AyarGrupSatirlari(),
                             ],
@@ -1403,7 +1402,7 @@ class _ProfilePremiumBanner extends ConsumerWidget {
                 children: [
                   Text(context.l10n.sandikPremium,
                       style: context.t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: context.c.text90)),
                   const SizedBox(height: 2),
                   Text(
@@ -1460,7 +1459,7 @@ class _PremiumActiveBadge extends StatelessWidget {
               children: [
                 Text(context.l10n.premiumActive,
                     style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: context.c.text90)),
                 const SizedBox(height: 2),
                 Text(context.l10n.premiumActiveBody,

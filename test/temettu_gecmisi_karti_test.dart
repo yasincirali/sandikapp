@@ -115,7 +115,7 @@ void main() {
         ),
       );
       expect(cagri, 0);
-      expect(find.textContaining('TEMETT'), findsNothing);
+      expect(find.textContaining('temett'), findsNothing);
       expect(find.byType(SandikCard), findsNothing);
     });
 
@@ -169,7 +169,7 @@ void main() {
           olayCekici: (_) async => _olaylar,
         ),
       );
-      expect(find.textContaining('TEMETT'), findsOneWidget);
+      expect(find.text('Son 12 ay temettü'), findsOneWidget);
       expect(find.text(_g(_yakin)), findsOneWidget);
       expect(find.text(_g(_uzak)), findsOneWidget);
       // Pay tutarı kırpılmaz: 3,442 (3,44 değil).

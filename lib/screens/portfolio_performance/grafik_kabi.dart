@@ -1014,7 +1014,6 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 style: context.t.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: context.c.text58,
-                  letterSpacing: 1.2,
                 ),
               ),
             ),

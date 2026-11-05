@@ -40,9 +40,9 @@ Future<void> _pump(WidgetTester tester,
   await tester.pump(const Duration(milliseconds: 100));
   // Tek tek anahtarlar 2026-10-20'den beri "Ayrıntılı" grubunun içinde;
   // üstte Az/Dengeli/Çok ön ayarı var. Satırı görmek için grup açılır.
-  await tester.scrollUntilVisible(find.text('AYRINTILI'), 200,
+  await tester.scrollUntilVisible(find.text('Ayrıntılı'), 200,
       scrollable: find.byType(Scrollable).first);
-  await tester.tap(find.text('AYRINTILI'));
+  await tester.tap(find.text('Ayrıntılı'));
   await tester.pumpAndSettle();
 }
 

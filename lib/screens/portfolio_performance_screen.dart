@@ -46,7 +46,6 @@ import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/islem_noktalari.dart';
 import '../utils/sonuc_bellegi.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_iyelik.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
 import '../widgets/share_card.dart';

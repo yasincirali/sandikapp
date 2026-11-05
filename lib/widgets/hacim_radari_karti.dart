@@ -420,8 +420,7 @@ class KriptoBaskiKarti extends ConsumerWidget {
                     Text(l10n.rdrSaatlikUpper,
                         style: t.labelSmall?.copyWith(
                             color: c.text58,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0)),
+                            fontWeight: FontWeight.w600)),
                     const SizedBox(height: SandikSpace.sm),
                     SaatlikCubuklar(akis: saatlik, yari: SandikSpace.lgs),
                     const SizedBox(height: SandikSpace.xs),

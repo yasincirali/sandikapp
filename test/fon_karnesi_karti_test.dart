@@ -77,7 +77,7 @@ void main() {
   testWidgets('kart: kategori, sıra, ortanca ve puan farkı', (t) async {
     await _kur(t, kart);
     expect(find.byType(SandikCard), findsOneWidget);
-    expect(find.text('FON KARNESİ'), findsOneWidget);
+    expect(find.text('Fon karnesi'), findsOneWidget);
     expect(find.text('$_hisse · 4 fon'), findsOneWidget);
     expect(find.text('1 yıl'), findsOneWidget);
     expect(find.text('Yılbaşından beri'), findsOneWidget);
@@ -94,7 +94,7 @@ void main() {
   testWidgets('bayrak kapalıyken hiçbir şey çizilmez', (t) async {
     await _kur(t, kart, acik: false);
     expect(find.byType(SandikCard), findsNothing);
-    expect(find.text('FON KARNESİ'), findsNothing);
+    expect(find.text('Fon karnesi'), findsNothing);
   });
 
   testWidgets('fon değilse ya da karne kurulamıyorsa çizilmez', (t) async {

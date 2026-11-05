@@ -238,10 +238,9 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
         // `ustHarf`: Türkçe büyük harf ("Birikim" → "BİRİKİM"); bkz.
         // `_sectionLabel`.
         Text(
-          ustHarf(baslik(g), l),
+          baslik(g),
           style: context.t.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
             color: context.c.text36,
           ),
         ),
@@ -372,10 +371,9 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          ustHarf(l.tekrarAlBaslik, l),
+          l.tekrarAlBaslik,
           style: context.t.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
             color: context.c.text36,
           ),
         ),

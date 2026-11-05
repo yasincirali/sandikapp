@@ -208,7 +208,7 @@ pw.Widget _kutu((String, Object?) kalem) {
         pw.Text(PdfMarka.buyuk(ad),
             maxLines: 2,
             style: const pw.TextStyle(
-                fontSize: 6.3, color: PdfMarka.gri, letterSpacing: 0.5)),
+                fontSize: 6.3, color: PdfMarka.gri)),
         pw.SizedBox(height: 4),
         pw.Text(metin,
             maxLines: 1,
@@ -236,8 +236,7 @@ pw.Widget _oneCikanlar(List<String> cumleler) => pw.Container(
               style: pw.TextStyle(
                   fontSize: 7,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfMarka.kehribarKoyu,
-                  letterSpacing: 0.9)),
+                  color: PdfMarka.kehribarKoyu)),
           pw.SizedBox(height: 5),
           for (final c in cumleler)
             pw.Padding(

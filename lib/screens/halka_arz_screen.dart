@@ -119,7 +119,7 @@ class _Liste extends ConsumerWidget {
           ),
         for (final e in gorunum.gruplar.entries) ...[
           SandikSectionHeader(
-            title: ustHarf(_grupAdi(l, e.key), l),
+            title: _grupAdi(l, e.key),
             count: e.value.length,
           ),
           const SizedBox(height: SandikSpace.sm),
@@ -390,7 +390,7 @@ class HalkaArzDetay extends ConsumerWidget {
           Text(
             arz.kod,
             style: context.t.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: context.c.text90,
             ),
           ),
@@ -401,9 +401,9 @@ class HalkaArzDetay extends ConsumerWidget {
           ),
           const SizedBox(height: SandikSpace.xs),
           Text(
-            ustHarf(_grupAdi(l, durum), l),
+            _grupAdi(l, durum),
             style: context.t.labelLarge?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: context.c.amberText,
             ),
           ),
@@ -454,7 +454,7 @@ class HalkaArzDetay extends ConsumerWidget {
                   // `foregroundColor`'ını ezer — koyu temada amber üstüne
                   // beyaz 1,87:1 kalıyordu.
                   style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800, color: context.c.onAmber),
+                      fontWeight: FontWeight.w600, color: context.c.onAmber),
                 ),
               ),
             ),

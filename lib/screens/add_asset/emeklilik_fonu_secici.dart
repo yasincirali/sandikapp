@@ -233,7 +233,7 @@ class _SeciciState extends State<_Secici> {
                   width: 48,
                   child: Text(f.code,
                       style: context.t.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800, color: renk)),
+                          fontWeight: FontWeight.w600, color: renk)),
                 ),
                 const SizedBox(width: SandikSpace.sm),
                 Expanded(

@@ -200,11 +200,11 @@ void main() {
     testWidgets('beş durum grubu doğru sırada, sayılarıyla', (tester) async {
       await _ekran(tester, _servis(ag: _karma));
       final basliklar = [
-        'TALEP TOPLANIYOR',
-        'YAKLAŞAN',
-        'İŞLEM GÖRMEYİ BEKLİYOR',
-        'İŞLEM GÖRÜYOR',
-        'TARİHİ BELİRSİZ',
+        'Talep toplanıyor',
+        'Yaklaşan',
+        'İşlem görmeyi bekliyor',
+        'İşlem görüyor',
+        'Tarihi belirsiz',
       ];
       // Yalnız İLERİ kaydırarak hepsi bulunuyorsa sıra da doğrudur:
       // `scrollUntilVisible` geri gitmez.
@@ -217,8 +217,8 @@ void main() {
 
     testWidgets('grup sırası: talep en üstte, belirsiz en altta', (tester) async {
       await _ekran(tester, _servis(ag: _karma), genislik: 430);
-      final ilk = tester.getTopLeft(find.text('TALEP TOPLANIYOR')).dy;
-      final ikinci = tester.getTopLeft(find.text('YAKLAŞAN')).dy;
+      final ilk = tester.getTopLeft(find.text('Talep toplanıyor')).dy;
+      final ikinci = tester.getTopLeft(find.text('Yaklaşan')).dy;
       expect(ilk, lessThan(ikinci));
       expect(find.text('Talep: 28 Eyl - 30 Eyl'), findsOneWidget);
       expect(find.text('₺12,50'), findsOneWidget);
@@ -232,7 +232,7 @@ void main() {
       await _ekran(tester, _servis(gomulu: gercekAsset));
       expect(find.textContaining('Çevrimdışı'), findsOneWidget);
       // Gerçek verideki kayıtların hepsi 29 Eylül itibarıyla işlem görüyor.
-      expect(find.text('İŞLEM GÖRÜYOR'), findsOneWidget);
+      expect(find.text('İşlem görüyor'), findsOneWidget);
       expect(find.text('NETGL'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

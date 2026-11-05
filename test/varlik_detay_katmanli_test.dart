@@ -101,17 +101,17 @@ void main() {
       (tester) async {
     await _ac(tester);
 
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
     expect(find.text('Alış fiyatın (ortalama)'), findsOneWidget);
     expect(find.text('Ödediğin toplam'), findsOneWidget);
     expect(find.text('Ayrıntı'), findsNothing);
-    expect(find.text('ANALİZ'), findsNothing);
+    expect(find.text('Analiz'), findsNothing);
     expect(find.text('Teknik sinyaller'), findsNothing);
     // Sinyal kartı fiyatın altında, panel en altta, ikisi de açık.
     expect(find.byType(AssetSignalCard), findsOneWidget);
     expect(find.byType(TechnicalSignalPanel), findsOneWidget);
     expect(_y(tester, find.byType(AssetSignalCard)),
-        lessThan(_y(tester, find.text('POZİSYONUN'))));
+        lessThan(_y(tester, find.text('Pozisyonun'))));
     expect(find.byType(DisclaimerWidget), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
@@ -123,7 +123,7 @@ void main() {
     await _ac(tester);
 
     // Pozisyonun: üç sayı ilk bakışta; yedi satırın geri kalanı kapalı.
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
     expect(find.text('Bugünkü değer'), findsOneWidget);
     // Orta sütun ortalama maliyet (Ar-Ge 1 Kas 08:45 #3): toplam kâr/zarar
     // fiyatın altındaki "Pozisyonun" satırında zaten yazıyor.
@@ -137,16 +137,16 @@ void main() {
     expect(find.textContaining('kâr/zarar'), findsNothing);
 
     // Sinyal kartı üstten kalktı; Analiz'de kapalı satır.
-    expect(find.text('ANALİZ'), findsOneWidget);
+    expect(find.text('Analiz'), findsOneWidget);
     expect(find.text('Teknik sinyaller'), findsOneWidget);
     expect(find.byType(AssetSignalCard), findsNothing);
     expect(find.byType(TechnicalSignalPanel), findsNothing);
 
     // Sıra: Pozisyonun → Analiz; ibare en altta duruyor.
-    expect(_y(tester, find.text('POZİSYONUN')),
-        lessThan(_y(tester, find.text('ANALİZ'))));
+    expect(_y(tester, find.text('Pozisyonun')),
+        lessThan(_y(tester, find.text('Analiz'))));
     expect(find.byType(DisclaimerWidget), findsOneWidget);
-    expect(_y(tester, find.text('ANALİZ')),
+    expect(_y(tester, find.text('Analiz')),
         lessThan(_y(tester, find.byType(DisclaimerWidget))));
     expect(tester.takeException(), isNull);
 
@@ -170,7 +170,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(AssetSignalCard), findsOneWidget);
     expect(find.byType(TechnicalSignalPanel), findsOneWidget);
-    expect(_y(tester, find.text('ANALİZ')),
+    expect(_y(tester, find.text('Analiz')),
         lessThan(_y(tester, find.byType(TechnicalSignalPanel))));
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
@@ -195,7 +195,7 @@ void main() {
     await _ac(tester);
     // Kayıt yok: kart tek satır (Ar-Ge 1 Kas 08:45 #4).
     expect(find.text('Masraflar · kaydedilmemiş'), findsOneWidget);
-    expect(_y(tester, find.text('POZİSYONUN')),
+    expect(_y(tester, find.text('Pozisyonun')),
         lessThan(_y(tester, find.text('Masraflar · kaydedilmemiş'))));
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
@@ -222,9 +222,9 @@ void main() {
     // Başlangıç'ta o da gizli. Boş bölümün başlığı çizilmez.
     RemoteConfigService.testAcik = {_bayrak};
     await _ac(tester, seviye: YatirimciSeviyesi.baslangic);
-    expect(find.text('ANALİZ'), findsNothing);
+    expect(find.text('Analiz'), findsNothing);
     expect(find.byType(DisclaimerWidget), findsNothing);
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
   });

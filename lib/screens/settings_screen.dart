@@ -620,7 +620,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // geliştiricinin kendi cihazında yapılır.
             if (kDebugMode) ...[
               const SizedBox(height: 28),
-              const SandikSectionHeader(title: 'GELİŞTİRİCİ (DEBUG)'),
+              const SandikSectionHeader(title: 'Geliştirici (debug)'),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.bug_report_outlined,
@@ -1031,7 +1031,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () => ReviewPromptService.instance.magazayiAc(),
     );
     final yenilikler = _SettingsTile(
-      icon: Icons.auto_awesome_outlined,
+      icon: Icons.new_releases_outlined,
       title: context.l10n.whatsNewTitle,
       subtitle: context.l10n.whatsNewSubtitle,
       // Elle açılışta TÜM liste gösterilir (otomatik açılışın

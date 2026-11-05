@@ -361,7 +361,6 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.t.labelSmall?.copyWith(
-              letterSpacing: 0.8,
               fontWeight: FontWeight.w700,
               color: context.c.text36,
             ),

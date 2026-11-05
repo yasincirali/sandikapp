@@ -130,7 +130,7 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('Silinenler · 1'));
     await tester.pumpAndSettle();
-    expect(find.text('DÖNEM'), findsNothing, reason: 'sayfa açılmamalı');
+    expect(find.text('Dönem'), findsNothing, reason: 'sayfa açılmamalı');
     expect(find.text('1 kayıt'), findsOneWidget);
     expect(find.textContaining('Silinme:'), findsOneWidget);
 
@@ -144,8 +144,8 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('Filtrele'));
     await tester.pumpAndSettle();
-    expect(find.text('DÖNEM'), findsOneWidget);
-    expect(find.text('TÜR'), findsOneWidget);
+    expect(find.text('Dönem'), findsOneWidget);
+    expect(find.text('Tür'), findsOneWidget);
     expect(find.text('4 kaydı göster'), findsOneWidget);
 
     // Taslak: seçim listeye uygulanmaz, yalnızca düğmedeki sayıyı değiştirir.
@@ -158,7 +158,7 @@ void main() {
 
     await tester.tap(find.text('1 kaydı göster'));
     await tester.pumpAndSettle();
-    expect(find.text('DÖNEM'), findsNothing, reason: 'sayfa kapandı');
+    expect(find.text('Dönem'), findsNothing, reason: 'sayfa kapandı');
     expect(find.text('1 kayıt'), findsOneWidget);
     // Etkin filtreler satırda; rozet 2.
     expect(find.text('Son 7 gün'), findsOneWidget);

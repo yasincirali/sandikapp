@@ -139,7 +139,7 @@ void main() {
       expect(find.byType(GenelAramaScreen), findsOneWidget);
       // Boş sorguda dört sabit eylem; ana ekranın açıcıları ("Bildirimler",
       // "Tüm hareketler") "Tüm eylemler"in arkasında.
-      expect(find.text('EYLEMLER'), findsOneWidget);
+      expect(find.text('Eylemler'), findsOneWidget);
       expect(find.text('Bildirimler'), findsNothing);
       await t.tap(find.text('Tüm eylemler'));
       await t.pumpAndSettle();
@@ -174,14 +174,14 @@ void main() {
     testWidgets('boş sorgu: eylem önerileri; açıcısı verilmeyenler yok',
         (t) async {
       await _pump(t, ekran());
-      expect(find.text('EYLEMLER'), findsOneWidget);
+      expect(find.text('Eylemler'), findsOneWidget);
       expect(find.text('Fiyat alarmları'), findsOneWidget);
       expect(find.text('Ayarlar'), findsOneWidget);
       // Çağıran açıcı vermedi → listelenmez.
       expect(find.text('Bildirimler'), findsNothing);
       expect(find.text('Tüm hareketler'), findsNothing);
-      expect(find.text('VARLIKLARIM'), findsNothing);
-      expect(find.text('PİYASA'), findsNothing);
+      expect(find.text('Varlıklarım'), findsNothing);
+      expect(find.text('Piyasa'), findsNothing);
     });
 
     // Boş arama sadeleşmesi (2026-10-26): dört sabit + "Tüm eylemler".
@@ -308,10 +308,10 @@ void main() {
     testWidgets('"thy": kendi varlığı + piyasa sonucu', (t) async {
       await _pump(t, ekran());
       await yaz(t, 'thy');
-      expect(find.text('VARLIKLARIM'), findsOneWidget);
+      expect(find.text('Varlıklarım'), findsOneWidget);
       // Varlıklarım ve Piyasa satırı aynı alt satırı taşır.
       expect(find.text('THYAO · Hisse'), findsNWidgets(2));
-      expect(find.text('PİYASA'), findsOneWidget);
+      expect(find.text('Piyasa'), findsOneWidget);
       expect(find.text('Türk Hava Yolları'), findsNWidgets(2));
       expect(t.takeException(), isNull);
     });
@@ -321,7 +321,7 @@ void main() {
       await yaz(t, 'alarm');
       expect(find.text('Fiyat alarmları'), findsOneWidget);
       expect(find.text('Ayarlar'), findsNothing);
-      expect(find.text('VARLIKLARIM'), findsNothing);
+      expect(find.text('Varlıklarım'), findsNothing);
     });
 
     // Hızlı hesap (2026-10-24): "5 çeyrek" → en üstte "≈ ₺" satırı; fiyat

@@ -407,7 +407,9 @@ extension _TutarAlanlari on _AddAssetScreenState {
         ),
         child: Row(
           children: [
-            Icon(Icons.auto_awesome_rounded,
+            // Bilgi notu: "parıltı" simgesi yapay zekâ işi gibi okunuyordu
+            // (unslop 2026-11-05 #5); burada otomatik fiyat ataması anlatılıyor.
+            Icon(Icons.info_outline_rounded,
                 color: context.c.amberText, size: 20),
             const SizedBox(width: 12),
             Expanded(
@@ -469,7 +471,6 @@ extension _TutarAlanlari on _AddAssetScreenState {
                     style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.c.amberText,
-                      letterSpacing: 0.8,
                     )),
                 const SizedBox(height: 4),
                 Text(

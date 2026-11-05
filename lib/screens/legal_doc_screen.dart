@@ -303,7 +303,6 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                     style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.c.amberText,
-                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
@@ -480,7 +479,7 @@ class _DocH1 extends StatelessWidget {
         child: Text(
           text,
           style: context.t.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             color: context.c.text90,
             height: 1.2,
           ),

@@ -10,6 +10,7 @@ import '../models/price_alert.dart';
 import '../models/seviye_alarmi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
 import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
@@ -28,6 +29,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/kapanan_satir.dart';
 import '../widgets/alarm_kur_sheet.dart';
+import 'paywall_screen.dart' show PaywallScreen;
 import '../widgets/sandik_baglam_menusu.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/tek_dokunus_alarm.dart'
@@ -275,10 +277,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (final g in _grupla(calan)) ...[
-                        _grup(context, g, adaylar),
-                        const SizedBox(height: 10),
-                      ],
+                      _calanKarti(context, calan, adaylar),
+                      const SizedBox(height: 10),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
@@ -304,6 +304,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               children: [
                 BildirimIzniUyarisi(
                   padding: EdgeInsets.fromLTRB(sh, SandikSpace.sm, sh, 0),
+                ),
+                _AlarmSayaci(
+                  padding: EdgeInsets.fromLTRB(sh, SandikSpace.xs, sh, 0),
                 ),
                 // Okuma hata verdi, liste cihazdaki son kopya (Ar-Ge 29 Eki
                 // 20:45 #3): alarm "kaybolmuş" görünmez ama bayat olduğu da
@@ -414,6 +417,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     return gruplar.values.toList();
   }
 
+  static String _onEk(String? varlik, String baslik) =>
+      varlik == null || varlik.isEmpty ? baslik : '$varlik · $baslik';
+
   /// Bir varlığın grubu: başlıkta ad ve güncel fiyat, altında tek kartta
   /// satırlar (iOS gruplu liste kalıbı). Fiyat bir kez başlıkta yazar;
   /// satırlar yalnız hedefe mesafeyi söyler.
@@ -487,6 +493,37 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Çalanlar tek kartta, düz liste (müşteri raporu 5 Kas 09:15).
+  ///
+  /// Neden gruplanmıyor: Bekleyenler'deki varlık grubu (31 Eki) "altınım
+  /// ne zaman haber verecek" sorusuna cevap verir ve başlıktaki güncel
+  /// fiyat hedefe mesafeyi anlamlı kılar. Çalmış alarmda mesafe yok; her
+  /// varlığa ayrı başlık, ayrı kart iki çalmış alarmı bekleyenler kadar yer
+  /// kaplatıyordu. Güncel fiyatı "Yeniden kur" sayfası zaten yazıyor. Varlık
+  /// adı satır başlığına geçer ("Dolar · Çalıştı · ₺41,00"); sıra çalma
+  /// anına göre, en yeni üstte (liste öyle sıralı geliyor).
+  Widget _calanKarti(BuildContext context, List<_Satir> calan,
+      Map<String, AlarmAdayi> adaylar) {
+    return SandikCard(
+      key: const ValueKey('calanlarKarti'),
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < calan.length; i++)
+              _satir(context, calan[i],
+                  aday: adaylar[_sembol(calan[i])],
+                  ilk: i == 0,
+                  varlik: adaylar[_sembol(calan[i])]?.ad ??
+                      cizgiEtiketiniAyir(_etiket(calan[i])).varlik),
+          ],
+        ),
+      ),
     );
   }
 
@@ -607,12 +644,15 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     );
   }
 
+  /// [varlik] verilirse başlığın önüne yazılır (Çalanlar düz listesi).
   Widget _satir(BuildContext context, _Satir r,
-      {required AlarmAdayi? aday, required bool ilk}) {
+      {required AlarmAdayi? aday, required bool ilk, String? varlik}) {
     final l10n = context.l10n;
     final fiyat = aday?.guncelFiyat ?? 0;
     final g = r.g, cz = r.c, yuzde = r.y;
-    if (g != null || cz != null) return _seviyeSatiri(context, g, cz, fiyat, ilk);
+    if (g != null || cz != null) {
+      return _seviyeSatiri(context, g, cz, fiyat, ilk, varlik: varlik);
+    }
     if (yuzde != null) {
       final etiket = yuzdeAlarmEtiketi(l10n, yuzde.esikPct, yuzde.yon);
       final pct = yuzde.sonTetikPct;
@@ -645,7 +685,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     final bagFiyati = cizim == null ? null : baglar[cizim]?.fiyat;
     final tetiklendi = alarm.sondu;
     final sonCalis = alarm.tekrar ? alarm.sonCalis : null;
-    final hedef = fmtTRYFiyat(alarm.targetPrice);
+    final hedef = alarmFiyatMetni(alarm.targetPrice, alarm.symbol);
     final isim = cizim == null ? null : cizgiEtiketiniAyir(alarm.label).isim;
     final mesafe = tetiklendi
         ? null
@@ -677,15 +717,22 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       satir: (sil) => _AlarmSatiri(
         yon: alarm.isAbove ? _Yon.yukari : _Yon.asagi,
         sonuk: tetiklendi,
-        baslik: tetiklendi
-            ? l10n.alarmCalistiFiyat(hedef)
-            : alarm.isAbove
-                ? l10n.alarmKosulUst(hedef)
-                : l10n.alarmKosulAlt(hedef),
+        baslik: _onEk(
+            varlik,
+            tetiklendi
+                ? l10n.alarmCalistiFiyat(hedef)
+                : alarm.isAbove
+                    ? l10n.alarmKosulUst(hedef)
+                    : l10n.alarmKosulAlt(hedef)),
         altlar: [
           if (isim != null) '«$isim»',
           if (alarm.tekrar && !tetiklendi) l10n.alarmHerGeciste,
           if (sonCalis != null) l10n.alarmSonCaldi(fmtTarihSaat(sonCalis)),
+          // Çalmış tek seferlik alarmda ne zaman çaldığı (müşteri raporu
+          // 5 Kas 09:15): bildirimi kaçıran "Yeniden kur" kararını buna
+          // göre verir; tekrarlının "Son çaldı" satırıyla aynı kalıp.
+          if (tetiklendi && alarm.triggeredAt != null)
+            l10n.alarmCaldiZaman(fmtTarihSaat(alarm.triggeredAt!)),
         ],
         mesafe: mesafe,
         grafikte: cizim != null,
@@ -717,7 +764,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
 
   /// Gösterge ya da çizgi alarmının satırı (0170).
   Widget _seviyeSatiri(BuildContext context, GostergeAlarmi? g,
-      CizimAlarmi? cz, double fiyat, bool ilk) {
+      CizimAlarmi? cz, double fiyat, bool ilk, {String? varlik}) {
     final l10n = context.l10n;
     final String etiket;
     final SeviyeYon yon;
@@ -784,6 +831,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           ? l10n.seviyeAlarmCalistiSade
           : l10n.seviyeAlarmCalisti(
               fmtFiyat(tetik, symbol: alarmFiyatSimgesi(sembol) ?? '')));
+      final an = g?.triggeredAt ?? cz?.triggeredAt;
+      if (an != null) altlar.add(l10n.alarmCaldiZaman(fmtTarihSaat(an)));
     }
     return _kabuk(
       anahtar: anahtar,
@@ -798,7 +847,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           SeviyeYon.herIkisi => _Yon.ikisi,
         },
         sonuk: calisti,
-        baslik: etiket,
+        baslik: _onEk(varlik, etiket),
         altlar: altlar,
         mesafe: mesafe,
         grafikte: cz != null,
@@ -1179,6 +1228,69 @@ class _AdlandirDugmesi extends StatelessWidget {
       );
 }
 
+// ── Ücretsiz plan alarm sayacı (müşteri raporu 5 Kas 09:15, yasin "evet") ─
+
+/// Sınıra yaklaşınca sayaç eşiği: tavanın dörtte üçü (20'de 15).
+int alarmSayaciEsigi(int limit) => (limit * 3 / 4).ceil();
+
+/// "Kurulu alarm: 16/20 · Sınırsız ›" — yalnız ücretsiz planda ve tavana
+/// yaklaşınca. Ücretsiz kullanıcı sınırı ancak 21. alarmı kurarken
+/// öğreniyordu; tam alarm kurarken duvara çarpmak kötü an, bu kişi de
+/// Premium'a en yakın kullanıcı. Eşik altında hiç çizilmez (liste sade
+/// kalır). Paywall kapalıyken (Android) ve Premium'da
+/// [priceAlertLimitProvider] sınırsız döner, satır çıkmaz. Sayım duvarın
+/// saydığıyla aynı ([etkinAlarmSayisi]): sayaç 20 derken duvar 19 demesin.
+class _AlarmSayaci extends ConsumerWidget {
+  const _AlarmSayaci({required this.padding});
+
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final limit = ref.watch(priceAlertLimitProvider);
+    // Sayımın girdileri izlenir ki silme/kurma satırı hemen günceller.
+    ref.watch(priceAlertsProvider);
+    ref.watch(yuzdeAlarmlariProvider);
+    ref.watch(gostergeAlarmlariProvider);
+    ref.watch(cizimAlarmlariProvider);
+    if (limit >= 1 << 20) return const SizedBox.shrink();
+    final sayi = etkinAlarmSayisi(ref);
+    if (sayi < alarmSayaciEsigi(limit)) return const SizedBox.shrink();
+    final c = context.c;
+    final l10n = context.l10n;
+    return Padding(
+      padding: padding,
+      child: Semantics(
+        button: true,
+        child: SandikTappable(
+          key: const ValueKey('alarmSayaci'),
+          onTap: () => PaywallScreen.show(context, source: 'alarm_sayaci'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.alarmSayaci(sayi, limit),
+                    style: context.t.bodySmall?.copyWith(
+                        color: c.text58,
+                        fontFeatures: const [FontFeature.tabularFigures()]),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.sm),
+                Text(
+                  l10n.alarmSayaciSinirsiz,
+                  style: context.t.labelLarge?.copyWith(color: c.amberText),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── Çalanlar grubu başlığı (Ar-Ge 29 Eki 16:45 #2) ─────────────────────────
 
 /// "Çalanlar (N)" — dokununca grup açılır/kapanır. Tüm satır dokunma alanı
@@ -1214,8 +1326,7 @@ class _CalanlarBasligi extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w600,
                     color: c.text58,
                   ),
                 ),

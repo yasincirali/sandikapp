@@ -98,11 +98,11 @@ void main() {
         // Liste uzadıkça (2026-09: sessiz saatler satırı) başlık ilk
         // görünür alanın altına kayabilir; iddia yerleşime bakar,
         // viewport'a değil.
-        await scrollTo(tester, find.text('CANLI ETKİNLİKLER'));
+        await scrollTo(tester, find.text('Canlı etkinlikler'));
 
         // Kullanıcı iOS'ta gördüğü adla arar; başlık o adla eşleşmeli.
         // iOS'taki özelliğin adı ÇOĞUL: "Canlı Etkinlikler".
-        expect(find.text('CANLI ETKİNLİKLER'), findsOneWidget,
+        expect(find.text('Canlı etkinlikler'), findsOneWidget,
             reason: 'GİZLİLİK altına gömülüyse kullanıcı bulamıyor');
       });
     });
@@ -139,7 +139,7 @@ void main() {
       await tester.pumpWidget(host());
       await tester.pumpAndSettle();
 
-      expect(find.text('CANLI ETKİNLİKLER'), findsNothing);
+      expect(find.text('Canlı etkinlikler'), findsNothing);
       expect(find.text('Tutarları göster'), findsNothing);
     });
   });
@@ -164,8 +164,8 @@ void main() {
         // (iOS) sonra. Görünüm/Hesap/Yasal artık ayrı alt ekranlar
         // (bkz. settings_hub_test).
         const beklenen = [
-          'BİLDİRİMLER',
-          'CANLI ETKİNLİKLER',
+          'Bildirimler',
+          'Canlı etkinlikler',
         ];
 
         // `ListView` yalnızca GÖRÜNEN çocukları kurar, bu yüzden ekran
@@ -180,8 +180,10 @@ void main() {
 
         double? oncekiY;
         for (final baslik in beklenen) {
-          final finder = find.text(baslik);
-          expect(finder, findsOneWidget, reason: '$baslik bölümü yok');
+          // Başlıklar cümle düzeninde (2026-11-05); "Bildirimler" başlığı ile
+          // aynı adlı satır yan yana. Bölüm başlığı ilk eşleşmedir.
+          final finder = find.text(baslik).first;
+          expect(find.text(baslik), findsWidgets, reason: '$baslik bölümü yok');
 
           final y = tester.getTopLeft(finder).dy;
           if (oncekiY != null) {
@@ -221,18 +223,18 @@ void main() {
         await tester.pumpAndSettle();
         // Tek tek anahtarlar "Ayrıntılı" grubunda (2026-10-20); grup
         // açılınca da BİLDİRİMLER bölümünün içinde kalmalı.
-        await tester.tap(find.text('AYRINTILI'));
+        await tester.tap(find.text('Ayrıntılı'));
         await tester.pumpAndSettle();
 
-        final bildirimler = tester.getTopLeft(find.text('BİLDİRİMLER')).dy;
+        final bildirimler = tester.getTopLeft(find.text('Bildirimler').first).dy;
         final sinyalAyarlari =
             tester.getTopLeft(find.text('Sinyal ayarları')).dy;
         final sonrakiBolum =
-            tester.getTopLeft(find.text('CANLI ETKİNLİKLER')).dy;
+            tester.getTopLeft(find.text('Canlı etkinlikler')).dy;
 
         expect(sinyalAyarlari, greaterThan(bildirimler));
         expect(sinyalAyarlari, lessThan(sonrakiBolum),
-            reason: 'BİLDİRİMLER bölümünün İÇİNDE olmalı');
+            reason: 'Bildirimler bölümünün İÇİNDE olmalı');
       });
     });
   });

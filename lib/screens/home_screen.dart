@@ -1304,7 +1304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Text(
               initial,
               style: context.t.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w800, color: color),
+                  ?.copyWith(fontWeight: FontWeight.w600, color: color),
             ),
           ),
           const SizedBox(height: SandikSpace.sm),
@@ -1743,8 +1743,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                   Text(
                                     context.l10n.historyUpper,
                                     style: context.t.labelMedium?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 1.2,
+                                        fontWeight: FontWeight.w600,
                                         color: context.c.text58,
                                         decoration: TextDecoration.none),
                                   ),
@@ -1985,7 +1984,7 @@ class _SignalBadgeButton extends ConsumerWidget {
                   child: Text(
                     count > 9 ? '+9' : '$count',
                     style: context.t.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 0,
                         // `loss` DOLGU; üstüne yüzey metni (`text90`) değil
                         // dolgu mürekkebi gelir — light modda 2.89:1 idi.

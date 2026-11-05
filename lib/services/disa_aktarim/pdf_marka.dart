@@ -124,8 +124,7 @@ pw.Widget ustBantIcerigi({
               pw.Text(PdfMarka.buyuk(belgeTuru),
                   style: const pw.TextStyle(
                       fontSize: 7,
-                      color: PdfMarka.bantSoluk,
-                      letterSpacing: 0.9)),
+                      color: PdfMarka.bantSoluk)),
               pw.SizedBox(width: 8),
               premiumRozeti(),
             ],
@@ -158,8 +157,7 @@ pw.Widget premiumRozeti() => pw.Container(
           style: pw.TextStyle(
               fontSize: 6.5,
               fontWeight: pw.FontWeight.bold,
-              color: PdfMarka.yesil,
-              letterSpacing: 1)),
+              color: PdfMarka.yesil)),
     );
 
 /// İkinci ve sonraki sayfaların ince künyesi (ilk sayfada bant var, boş).
@@ -258,8 +256,7 @@ pw.Widget bolumBasligi(String t, {String? sag}) => pw.Container(
                 style: pw.TextStyle(
                     fontSize: 7.5,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfMarka.yesil,
-                    letterSpacing: 0.8)),
+                    color: PdfMarka.yesil)),
           ),
           if (sag != null)
             pw.Text(sag,

@@ -338,6 +338,11 @@ extension _DetayOzet on _AssetDetailScreenState {
       fark: mevduat || ilk == null ? null : canli - ilk,
       bicim: bicim,
       veriGelmedi: days == 0 && _gunIciVeriGelmedi && !mevduat,
+      // Tutar lot/pay başınadır; altındaki Pozisyonun tablosu toplamı yazar.
+      birim: widget.asset.type == AssetType.hisse ||
+              widget.asset.type == AssetType.fon
+          ? widget.asset.unitLabel
+          : null,
     );
 
     final pnlDuz =
@@ -453,6 +458,9 @@ extension _DetayOzet on _AssetDetailScreenState {
         donemGetirisiGizli: true,
         bugunGizli: days == 0,
         oynaklikVar: days >= DonemIstatistigi.oynaklikIcinAsgariDonemGun,
+        // Değer bilinmeden yalnız günlük kuralı uygulanır; ~%0 düşüş
+        // gelirse hücre düşer (nadir, küçük zıplama kabul).
+        dususVar: days != 0,
       );
       return [_istatistikIskeleti(hucre)];
     }
@@ -462,6 +470,15 @@ extension _DetayOzet on _AssetDetailScreenState {
     final dusuk = math.min(ist.dusuk, canli);
     final yuksek = math.max(ist.yuksek, canli);
     final aralik = yuksek - dusuk;
+    // GÜNLÜK'te ızgara boş kalabilir (Bugün = fiyat altı, düşüş ve oynaklık
+    // yok); o zaman çubuğun üstünde boşluk da kalmaz.
+    final izgaraDolu = DonemIstatistikIzgarasi.hucreSayisi(
+          donemGetirisiGizli: true,
+          bugunGizli: days == 0,
+          oynaklikVar: ist.oynaklikPct != null,
+          dususVar: DonemIstatistikIzgarasi.dususVar(ist, gunIci: days == 0),
+        ) >
+        0;
     return [
       DonemIstatistikIzgarasi(
         ist: ist,
@@ -469,6 +486,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         donemPct: pct,
         bugunPct: _gunIciDestekli ? _donemYuzdesi(0, canliBirim) : null,
         donemGetirisiGizli: true,
+        gunIci: days == 0,
       ),
       // Dip = zirve (elle fiyatlanan varlık, dönem boyunca kıpırdamamış
       // seri): çubuk "₺X — ₺X, %50 noktasında" der, yani hiçbir şey. Bilgi
@@ -477,7 +495,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       // kullanıcıya bir şey söylemez; değer zaten yalnız artar.
       if (aralik > 1e-9 * yuksek.abs() &&
           widget.asset.type != AssetType.mevduat) ...[
-        const SizedBox(height: SandikSpace.sm),
+        if (izgaraDolu) const SizedBox(height: SandikSpace.sm),
         DonemAralikCubugu(
           gunIci: days == 0,
           dusuk: dusuk,

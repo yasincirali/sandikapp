@@ -59,7 +59,7 @@ class PremiumHediyeSayfasi extends StatelessWidget {
             Text(l10n.prmHediyeBaslik,
                 textAlign: TextAlign.center,
                 style: t.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.sm),
             Text(l10n.prmHediyeGovde('$gun', tarih),
                 textAlign: TextAlign.center,
@@ -121,7 +121,7 @@ class PremiumHediyeBittiSayfasi extends StatelessWidget {
             Text(l10n.prmHediyeBittiBaslik,
                 textAlign: TextAlign.center,
                 style: t.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.sm),
             Text(
                 l10n.prmHediyeBittiGovde(

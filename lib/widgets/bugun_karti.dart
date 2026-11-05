@@ -42,7 +42,6 @@ import '../theme/sandik.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/pozisyon_etiketi.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_iyelik.dart';
 import 'aralik_cipi.dart' show AralikMetni;
 import 'bugun_paylasimi.dart';
 import 'hedef_sheet.dart';
@@ -1050,11 +1049,10 @@ class _KiyasBaslik extends StatelessWidget {
         children: [
           Expanded(
             child: SiganMetin(
-              [trBuyukHarf('$bas · $tarih'), trBuyukHarf(bas)],
+              ['$bas · $tarih', bas],
               style: context.t.labelSmall?.copyWith(
                 color: c.text58,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
               ),
             ),
           ),
@@ -1237,7 +1235,7 @@ class _HukumSatiri extends StatelessWidget {
             color: c.text58, fontWeight: FontWeight.w600, height: 1.1)
         : context.t.headlineSmall?.copyWith(
             color: c.text90,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             letterSpacing: -0.5,
             height: 1.1,
           );
@@ -1326,7 +1324,7 @@ class _DeltaRozeti extends StatelessWidget {
         curve: SandikMotion.move,
         style: (context.t.labelLarge ?? const TextStyle()).copyWith(
           color: yazi,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
           fontFeatures: const [FontFeature.tabularFigures()],
         ),
         child: Text(metin, maxLines: 1),
@@ -1920,7 +1918,7 @@ class _AlimGucuKutusu extends StatelessWidget {
                   text: l10n.todayHundredAmount(yuzMetni),
                   style: TextStyle(
                     color: renk,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),

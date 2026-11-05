@@ -983,7 +983,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioActivity.
   ///
   /// In tr, this message translates to:
-  /// **'PORTFÖY HAREKETLERİ'**
+  /// **'Portföy hareketleri'**
   String get portfolioActivity;
 
   /// No description provided for @seeAllTransactions.
@@ -1055,7 +1055,7 @@ abstract class AppLocalizations {
   /// No description provided for @historyUpper.
   ///
   /// In tr, this message translates to:
-  /// **'GEÇMİŞ'**
+  /// **'Geçmiş'**
   String get historyUpper;
 
   /// No description provided for @deleteHistoryCount.
@@ -1091,7 +1091,7 @@ abstract class AppLocalizations {
   /// No description provided for @signalNeutral.
   ///
   /// In tr, this message translates to:
-  /// **'NÖTR'**
+  /// **'Nötr'**
   String get signalNeutral;
 
   /// No description provided for @signalDeletedAt.
@@ -1121,7 +1121,7 @@ abstract class AppLocalizations {
   /// No description provided for @sortCriterion.
   ///
   /// In tr, this message translates to:
-  /// **'SIRALAMA KRİTERİ'**
+  /// **'Sıralama kriteri'**
   String get sortCriterion;
 
   /// No description provided for @tabSemanticsCount.
@@ -1253,7 +1253,7 @@ abstract class AppLocalizations {
   /// No description provided for @fundReportTitleUpper.
   ///
   /// In tr, this message translates to:
-  /// **'FON KARNESİ'**
+  /// **'Fon karnesi'**
   String get fundReportTitleUpper;
 
   /// No description provided for @fundReportCategory.
@@ -1583,7 +1583,7 @@ abstract class AppLocalizations {
   /// No description provided for @totalCostUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TOPLAM MALİYET'**
+  /// **'Toplam maliyet'**
   String get totalCostUpper;
 
   /// No description provided for @transactionDate.
@@ -1697,7 +1697,7 @@ abstract class AppLocalizations {
   /// No description provided for @dividendHistoryUpper.
   ///
   /// In tr, this message translates to:
-  /// **'SON 12 AY TEMETTÜ'**
+  /// **'Son 12 ay temettü'**
   String get dividendHistoryUpper;
 
   /// No description provided for @dividendRecordedTotal.
@@ -2345,7 +2345,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountUpper.
   ///
   /// In tr, this message translates to:
-  /// **'HESABI SİL'**
+  /// **'Hesabı sil'**
   String get deleteAccountUpper;
 
   /// No description provided for @accountDeletedTitle.
@@ -2405,7 +2405,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TANILAMA'**
+  /// **'Tanılama'**
   String get diagnosticsUpper;
 
   /// No description provided for @pushDiagnostics.
@@ -2423,7 +2423,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'BİLDİRİMLER'**
+  /// **'Bildirimler'**
   String get notificationsUpper;
 
   /// No description provided for @signalNotifications.
@@ -2471,7 +2471,7 @@ abstract class AppLocalizations {
   /// No description provided for @liveActivitiesUpper.
   ///
   /// In tr, this message translates to:
-  /// **'CANLI ETKİNLİKLER'**
+  /// **'Canlı etkinlikler'**
   String get liveActivitiesUpper;
 
   /// No description provided for @biometricLock.
@@ -2507,7 +2507,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportUpper.
   ///
   /// In tr, this message translates to:
-  /// **'DESTEK'**
+  /// **'Destek'**
   String get supportUpper;
 
   /// No description provided for @contactUs.
@@ -2555,7 +2555,7 @@ abstract class AppLocalizations {
   /// No description provided for @legalUpper.
   ///
   /// In tr, this message translates to:
-  /// **'YASAL'**
+  /// **'Yasal'**
   String get legalUpper;
 
   /// No description provided for @privacyPolicy.
@@ -2825,13 +2825,13 @@ abstract class AppLocalizations {
   /// No description provided for @partnerActionsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'ORTAKLIK İŞLEMLERİ'**
+  /// **'Ortaklık işlemleri'**
   String get partnerActionsUpper;
 
   /// No description provided for @myPartnersUpper.
   ///
   /// In tr, this message translates to:
-  /// **'ORTAKLARIM'**
+  /// **'Ortaklarım'**
   String get myPartnersUpper;
 
   /// No description provided for @generateInviteCode.
@@ -2915,7 +2915,7 @@ abstract class AppLocalizations {
   /// No description provided for @pendingRequestsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'BEKLEYEN ORTAKLIK İSTEKLERİ'**
+  /// **'Bekleyen ortaklık istekleri'**
   String get pendingRequestsUpper;
 
   /// No description provided for @wantsToPartner.
@@ -3185,13 +3185,13 @@ abstract class AppLocalizations {
   /// No description provided for @raceUpper.
   ///
   /// In tr, this message translates to:
-  /// **'YARIŞ'**
+  /// **'Yarış'**
   String get raceUpper;
 
   /// No description provided for @changeByTypeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TÜRE GÖRE · FİYAT ETKİSİ'**
+  /// **'Türe göre · fiyat etkisi'**
   String get changeByTypeUpper;
 
   /// No description provided for @noData.
@@ -3245,7 +3245,7 @@ abstract class AppLocalizations {
   /// No description provided for @tradeVolumeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'ALIM · SATIŞ'**
+  /// **'Alım · satış'**
   String get tradeVolumeUpper;
 
   /// No description provided for @crosshairNetBuy.
@@ -3761,7 +3761,7 @@ abstract class AppLocalizations {
   /// No description provided for @nAssetsPeriod.
   ///
   /// In tr, this message translates to:
-  /// **'{count} VARLIK · {period}'**
+  /// **'{count} varlık · {period}'**
   String nAssetsPeriod(int count, String period);
 
   /// No description provided for @chartLoadFailed.
@@ -4175,7 +4175,7 @@ abstract class AppLocalizations {
   /// No description provided for @yourReturnUpper.
   ///
   /// In tr, this message translates to:
-  /// **'SEÇİMLERİNİN GETİRİSİ'**
+  /// **'Seçimlerinin getirisi'**
   String get yourReturnUpper;
 
   /// No description provided for @dataNotReady.
@@ -4187,13 +4187,13 @@ abstract class AppLocalizations {
   /// No description provided for @leaderUpper.
   ///
   /// In tr, this message translates to:
-  /// **'LİDER'**
+  /// **'Lider'**
   String get leaderUpper;
 
   /// No description provided for @loadingUpper.
   ///
   /// In tr, this message translates to:
-  /// **'YÜKLENİYOR'**
+  /// **'Yükleniyor'**
   String get loadingUpper;
 
   /// No description provided for @globalRanking.
@@ -4211,7 +4211,7 @@ abstract class AppLocalizations {
   /// No description provided for @comingSoonUpper.
   ///
   /// In tr, this message translates to:
-  /// **'YAKINDA'**
+  /// **'Yakında'**
   String get comingSoonUpper;
 
   /// No description provided for @globalRankingSoon.
@@ -4241,7 +4241,7 @@ abstract class AppLocalizations {
   /// No description provided for @anonymousUpper.
   ///
   /// In tr, this message translates to:
-  /// **'ANONİM'**
+  /// **'Anonim'**
   String get anonymousUpper;
 
   /// No description provided for @topPortfoliosSoon.
@@ -4325,7 +4325,7 @@ abstract class AppLocalizations {
   /// No description provided for @sandikPremiumUpper.
   ///
   /// In tr, this message translates to:
-  /// **'SANDIK PREMIUM'**
+  /// **'Sandık Premium'**
   String get sandikPremiumUpper;
 
   /// No description provided for @paywallHeadline.
@@ -4571,7 +4571,7 @@ abstract class AppLocalizations {
   /// No description provided for @newUpper.
   ///
   /// In tr, this message translates to:
-  /// **'YENİ'**
+  /// **'Yeni'**
   String get newUpper;
 
   /// No description provided for @racePitch.
@@ -5027,31 +5027,31 @@ abstract class AppLocalizations {
   /// No description provided for @trendUp.
   ///
   /// In tr, this message translates to:
-  /// **'YUKARI TREND'**
+  /// **'Yukarı trend'**
   String get trendUp;
 
   /// No description provided for @trendDown.
   ///
   /// In tr, this message translates to:
-  /// **'AŞAĞI TREND'**
+  /// **'Aşağı trend'**
   String get trendDown;
 
   /// No description provided for @trendFlat.
   ///
   /// In tr, this message translates to:
-  /// **'YATAY'**
+  /// **'Yatay'**
   String get trendFlat;
 
   /// Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı satım bölgesinde (trend yönü değil).
   ///
   /// In tr, this message translates to:
-  /// **'AŞIRI SATIM'**
+  /// **'Aşırı satım'**
   String get sinyalAsiriSatim;
 
   /// Teknik özet: oyların çoğu aşırılık göstergelerinden ve fiyat aşırı alım bölgesinde (trend yönü değil).
   ///
   /// In tr, this message translates to:
-  /// **'AŞIRI ALIM'**
+  /// **'Aşırı alım'**
   String get sinyalAsiriAlim;
 
   /// No description provided for @indicatorsConfidence.
@@ -5069,13 +5069,19 @@ abstract class AppLocalizations {
   /// No description provided for @technicalOutlookUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TEKNİK GÖRÜNÜM · GÜNLÜK'**
+  /// **'Teknik görünüm · günlük'**
   String get technicalOutlookUpper;
+
+  /// No description provided for @technicalPrefix.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teknik:'**
+  String get technicalPrefix;
 
   /// No description provided for @nowUpper.
   ///
   /// In tr, this message translates to:
-  /// **'ŞU AN'**
+  /// **'Şu an'**
   String get nowUpper;
 
   /// No description provided for @arrowUp.
@@ -5117,7 +5123,7 @@ abstract class AppLocalizations {
   /// No description provided for @technicalAnalysisUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TEKNİK ANALİZ · GÜNLÜK'**
+  /// **'Teknik analiz · günlük'**
   String get technicalAnalysisUpper;
 
   /// No description provided for @nOfMIndicators.
@@ -5639,7 +5645,7 @@ abstract class AppLocalizations {
   /// No description provided for @currentPriceUpper.
   ///
   /// In tr, this message translates to:
-  /// **'GÜNCEL FİYAT'**
+  /// **'Güncel fiyat'**
   String get currentPriceUpper;
 
   /// No description provided for @periodNoChange.
@@ -5687,7 +5693,7 @@ abstract class AppLocalizations {
   /// No description provided for @inYourPortfolioUpper.
   ///
   /// In tr, this message translates to:
-  /// **'PORTFÖYÜNDE'**
+  /// **'Portföyünde'**
   String get inYourPortfolioUpper;
 
   /// No description provided for @searchAllAssetsHint.
@@ -6335,13 +6341,13 @@ abstract class AppLocalizations {
   /// No description provided for @nThousandPeople.
   ///
   /// In tr, this message translates to:
-  /// **'{n}K KİŞİ'**
+  /// **'{n}K kişi'**
   String nThousandPeople(String n);
 
   /// No description provided for @nPeopleUpper.
   ///
   /// In tr, this message translates to:
-  /// **'{n} KİŞİ'**
+  /// **'{n} kişi'**
   String nPeopleUpper(int n);
 
   /// No description provided for @toneTop5.
@@ -6563,7 +6569,7 @@ abstract class AppLocalizations {
   /// No description provided for @chartCandleChip.
   ///
   /// In tr, this message translates to:
-  /// **'MUM'**
+  /// **'Mum'**
   String get chartCandleChip;
 
   /// No description provided for @chartIntervalM1.
@@ -6768,25 +6774,25 @@ abstract class AppLocalizations {
   /// No description provided for @notifTypePartner.
   ///
   /// In tr, this message translates to:
-  /// **'ORTAKLIK'**
+  /// **'Ortaklık'**
   String get notifTypePartner;
 
   /// No description provided for @notifTypeDailyBrief.
   ///
   /// In tr, this message translates to:
-  /// **'GÜNLÜK'**
+  /// **'Günlük'**
   String get notifTypeDailyBrief;
 
   /// No description provided for @notifTypeWeekly.
   ///
   /// In tr, this message translates to:
-  /// **'HAFTALIK'**
+  /// **'Haftalık'**
   String get notifTypeWeekly;
 
   /// No description provided for @notifTypeReminder.
   ///
   /// In tr, this message translates to:
-  /// **'HATIRLATMA'**
+  /// **'Hatırlatma'**
   String get notifTypeReminder;
 
   /// No description provided for @notifToday.
@@ -7248,7 +7254,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifTypeMonthly.
   ///
   /// In tr, this message translates to:
-  /// **'AYLIK'**
+  /// **'Aylık'**
   String get notifTypeMonthly;
 
   /// No description provided for @raceJoinedCount.
@@ -7296,7 +7302,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifTypeWatchlist.
   ///
   /// In tr, this message translates to:
-  /// **'TAKİP'**
+  /// **'Takip'**
   String get notifTypeWatchlist;
 
   /// No description provided for @notifTypeInflation.
@@ -7482,25 +7488,25 @@ abstract class AppLocalizations {
   /// No description provided for @vsPeriodReturnUpper.
   ///
   /// In tr, this message translates to:
-  /// **'DÖNEM GETİRİSİ'**
+  /// **'Dönem getirisi'**
   String get vsPeriodReturnUpper;
 
   /// No description provided for @vsTodayUpper.
   ///
   /// In tr, this message translates to:
-  /// **'BUGÜN'**
+  /// **'Bugün'**
   String get vsTodayUpper;
 
   /// No description provided for @vsMaxDrawdownUpper.
   ///
   /// In tr, this message translates to:
-  /// **'EN BÜYÜK DÜŞÜŞ'**
+  /// **'En büyük düşüş'**
   String get vsMaxDrawdownUpper;
 
   /// No description provided for @vsVolatilityUpper.
   ///
   /// In tr, this message translates to:
-  /// **'OYNAKLIK (YILLIK)'**
+  /// **'Oynaklık (yıllık)'**
   String get vsVolatilityUpper;
 
   /// No description provided for @vsPeriodLow.
@@ -7530,7 +7536,7 @@ abstract class AppLocalizations {
   /// No description provided for @adPositionUpper.
   ///
   /// In tr, this message translates to:
-  /// **'POZİSYONUN'**
+  /// **'Pozisyonun'**
   String get adPositionUpper;
 
   /// No description provided for @adPositionLine.
@@ -7548,7 +7554,7 @@ abstract class AppLocalizations {
   /// Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.
   ///
   /// In tr, this message translates to:
-  /// **'AÇILIŞ · {time} · {value}'**
+  /// **'Açılış · {time} · {value}'**
   String chartOpenLabel(String time, String value);
 
   /// No description provided for @posQuantity.
@@ -7596,19 +7602,19 @@ abstract class AppLocalizations {
   /// Gün içi grafikte gün başı çizgisinin etiketi, seanslı varlıkta (hisse): çizgi önceki kapanıştır.
   ///
   /// In tr, this message translates to:
-  /// **'ÖNCEKİ KAPANIŞ · {value}'**
+  /// **'Önceki kapanış · {value}'**
   String chartPrevCloseLabel(String value);
 
   /// Gün içi grafikte gün başı (00:00) çizgisinin etiketi.
   ///
   /// In tr, this message translates to:
-  /// **'GÜN BAŞI · {value}'**
+  /// **'Gün başı · {value}'**
   String chartDayStartLabel(String value);
 
   /// Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.
   ///
   /// In tr, this message translates to:
-  /// **'BAŞLANGIÇ · {date} · {value}'**
+  /// **'Başlangıç · {date} · {value}'**
   String chartStartLabel(String date, String value);
 
   /// Varlık grafiğinin üstünde fiyat alarmı etiketi: hedef fiyat, yön işareti (▲/▼) ve koşul ya da konum metni.
@@ -7788,7 +7794,7 @@ abstract class AppLocalizations {
   /// No description provided for @chartNowLabel.
   ///
   /// In tr, this message translates to:
-  /// **'ŞİMDİ'**
+  /// **'Şimdi'**
   String get chartNowLabel;
 
   /// No description provided for @vsWatch.
@@ -7866,13 +7872,13 @@ abstract class AppLocalizations {
   /// No description provided for @searchRecentUpper.
   ///
   /// In tr, this message translates to:
-  /// **'SON BAKTIKLARIN'**
+  /// **'Son baktıkların'**
   String get searchRecentUpper;
 
   /// No description provided for @searchMarketsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'PİYASALAR'**
+  /// **'Piyasalar'**
   String get searchMarketsUpper;
 
   /// No description provided for @searchShowAll.
@@ -8346,7 +8352,7 @@ abstract class AppLocalizations {
   /// No description provided for @raceYouTag.
   ///
   /// In tr, this message translates to:
-  /// **'SEN'**
+  /// **'Sen'**
   String get raceYouTag;
 
   /// No description provided for @raceVs.
@@ -8406,13 +8412,13 @@ abstract class AppLocalizations {
   /// No description provided for @filterPeriodHeader.
   ///
   /// In tr, this message translates to:
-  /// **'DÖNEM'**
+  /// **'Dönem'**
   String get filterPeriodHeader;
 
   /// No description provided for @filterTypeHeader.
   ///
   /// In tr, this message translates to:
-  /// **'TÜR'**
+  /// **'Tür'**
   String get filterTypeHeader;
 
   /// No description provided for @filterShowN.
@@ -8880,7 +8886,7 @@ abstract class AppLocalizations {
   /// No description provided for @currentValueUpper.
   ///
   /// In tr, this message translates to:
-  /// **'GÜNCEL DEĞER'**
+  /// **'Güncel değer'**
   String get currentValueUpper;
 
   /// No description provided for @depositCardRate.
@@ -10243,37 +10249,37 @@ abstract class AppLocalizations {
   /// No description provided for @settingsGroupGeneral.
   ///
   /// In tr, this message translates to:
-  /// **'GENEL'**
+  /// **'Genel'**
   String get settingsGroupGeneral;
 
   /// No description provided for @settingsGroupPortfolioView.
   ///
   /// In tr, this message translates to:
-  /// **'PORTFÖY GÖRÜNÜMÜ'**
+  /// **'Portföy görünümü'**
   String get settingsGroupPortfolioView;
 
   /// No description provided for @settingsGroupSecurityAccount.
   ///
   /// In tr, this message translates to:
-  /// **'GÜVENLİK VE HESAP'**
+  /// **'Güvenlik ve hesap'**
   String get settingsGroupSecurityAccount;
 
   /// No description provided for @settingsGroupData.
   ///
   /// In tr, this message translates to:
-  /// **'VERİ'**
+  /// **'Veri'**
   String get settingsGroupData;
 
   /// No description provided for @settingsGroupAbout.
   ///
   /// In tr, this message translates to:
-  /// **'UYGULAMA HAKKINDA'**
+  /// **'Uygulama hakkında'**
   String get settingsGroupAbout;
 
   /// No description provided for @settingsAdvancedUpper.
   ///
   /// In tr, this message translates to:
-  /// **'GELİŞMİŞ'**
+  /// **'Gelişmiş'**
   String get settingsAdvancedUpper;
 
   /// No description provided for @settingsAdvancedSemantics.
@@ -10537,7 +10543,7 @@ abstract class AppLocalizations {
   /// No description provided for @flowTitleUpper.
   ///
   /// In tr, this message translates to:
-  /// **'PARA AKIŞI'**
+  /// **'Para akışı'**
   String get flowTitleUpper;
 
   /// No description provided for @flowLastWeekIn.
@@ -10711,7 +10717,7 @@ abstract class AppLocalizations {
   /// No description provided for @weekFundsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'FONLARINDA PARA AKIŞI'**
+  /// **'Fonlarında para akışı'**
   String get weekFundsUpper;
 
   /// Haftanın özeti satırı: 'Net çıkış · 28 Eyl - 2 Eki'.
@@ -10771,7 +10777,7 @@ abstract class AppLocalizations {
   /// No description provided for @volTitleUpper.
   ///
   /// In tr, this message translates to:
-  /// **'HACİM RADARI'**
+  /// **'Hacim radarı'**
   String get volTitleUpper;
 
   /// No description provided for @volLastDay.
@@ -10843,7 +10849,7 @@ abstract class AppLocalizations {
   /// No description provided for @cryTitleUpper.
   ///
   /// In tr, this message translates to:
-  /// **'ALICI BASKISI'**
+  /// **'Alıcı baskısı'**
   String get cryTitleUpper;
 
   /// No description provided for @cryShareLabel.
@@ -10898,7 +10904,7 @@ abstract class AppLocalizations {
   /// No description provided for @weekVolumeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'OLAĞANDIŞI HACİM'**
+  /// **'Olağandışı hacim'**
   String get weekVolumeUpper;
 
   /// No description provided for @weekVolumeRow.
@@ -11558,19 +11564,19 @@ abstract class AppLocalizations {
   /// No description provided for @rdrDonemUpper.
   ///
   /// In tr, this message translates to:
-  /// **'DÖNEM'**
+  /// **'Dönem'**
   String get rdrDonemUpper;
 
   /// No description provided for @rdrBaglamUpper.
   ///
   /// In tr, this message translates to:
-  /// **'BAĞLAM'**
+  /// **'Bağlam'**
   String get rdrBaglamUpper;
 
   /// No description provided for @rdrSiraUpper.
   ///
   /// In tr, this message translates to:
-  /// **'KATEGORİDE AKIŞ SIRASI'**
+  /// **'Kategoride akış sırası'**
   String get rdrSiraUpper;
 
   /// No description provided for @rdrSiraAlt.
@@ -11594,7 +11600,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrHareketlerUpper.
   ///
   /// In tr, this message translates to:
-  /// **'BÜYÜK HAREKETLER · SON 30 GÜN'**
+  /// **'Büyük hareketler · son 30 gün'**
   String get rdrHareketlerUpper;
 
   /// No description provided for @rdrHisseSakin.
@@ -11666,7 +11672,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrOlagandisiUpper.
   ///
   /// In tr, this message translates to:
-  /// **'OLAĞANDIŞI HACİM GÜNLERİ · SON 30 GÜN'**
+  /// **'Olağandışı hacim günleri · son 30 gün'**
   String get rdrOlagandisiUpper;
 
   /// No description provided for @rdrKriptoAlici.
@@ -11720,7 +11726,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrSaatlikUpper.
   ///
   /// In tr, this message translates to:
-  /// **'SON 24 SAAT · SAAT SAAT NET ALIM'**
+  /// **'Son 24 saat · saat saat net alım'**
   String get rdrSaatlikUpper;
 
   /// No description provided for @rdrEnIstekliSaat.
@@ -11750,7 +11756,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrIslemHacmiUpper.
   ///
   /// In tr, this message translates to:
-  /// **'İŞLEM HACMİ · SON 20 GÜN'**
+  /// **'İşlem hacmi · son 20 gün'**
   String get rdrIslemHacmiUpper;
 
   /// No description provided for @rdrHaftaBaslikVar.
@@ -12188,7 +12194,7 @@ abstract class AppLocalizations {
   /// No description provided for @anzNotUpper.
   ///
   /// In tr, this message translates to:
-  /// **'HAFTALIK NOT · YAPAY ZEKÂ'**
+  /// **'Haftalık not · yapay zekâ'**
   String get anzNotUpper;
 
   /// No description provided for @anzMeta.
@@ -12254,7 +12260,7 @@ abstract class AppLocalizations {
   /// No description provided for @anzAylikUpper.
   ///
   /// In tr, this message translates to:
-  /// **'AYLIK RAPOR'**
+  /// **'Aylık rapor'**
   String get anzAylikUpper;
 
   /// No description provided for @anzAylikBaslik.
@@ -12590,7 +12596,7 @@ abstract class AppLocalizations {
   /// No description provided for @costsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'MASRAFLAR'**
+  /// **'Masraflar'**
   String get costsUpper;
 
   /// No description provided for @costsPaid.
@@ -12758,7 +12764,7 @@ abstract class AppLocalizations {
   /// No description provided for @bondInfoUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TAHVİL BİLGİLERİ'**
+  /// **'Tahvil bilgileri'**
   String get bondInfoUpper;
 
   /// No description provided for @bondCleanPrice.
@@ -12854,7 +12860,7 @@ abstract class AppLocalizations {
   /// No description provided for @bondBankSellUpper.
   ///
   /// In tr, this message translates to:
-  /// **'BANKAYA SATARSAN'**
+  /// **'Bankaya satarsan'**
   String get bondBankSellUpper;
 
   /// No description provided for @bondBankZiraat.
@@ -12974,19 +12980,19 @@ abstract class AppLocalizations {
   /// No description provided for @s7VarliklarimUpper.
   ///
   /// In tr, this message translates to:
-  /// **'VARLIKLARIM'**
+  /// **'Varlıklarım'**
   String get s7VarliklarimUpper;
 
   /// No description provided for @s7PiyasaUpper.
   ///
   /// In tr, this message translates to:
-  /// **'PİYASA'**
+  /// **'Piyasa'**
   String get s7PiyasaUpper;
 
   /// No description provided for @s7EylemlerUpper.
   ///
   /// In tr, this message translates to:
-  /// **'EYLEMLER'**
+  /// **'Eylemler'**
   String get s7EylemlerUpper;
 
   /// No description provided for @s7EylemFiyatAlarmlari.
@@ -13046,13 +13052,13 @@ abstract class AppLocalizations {
   /// No description provided for @s4AnalysisUpper.
   ///
   /// In tr, this message translates to:
-  /// **'ANALİZ'**
+  /// **'Analiz'**
   String get s4AnalysisUpper;
 
   /// No description provided for @s4HistoryDocsUpper.
   ///
   /// In tr, this message translates to:
-  /// **'GEÇMİŞ VE BELGELER'**
+  /// **'Geçmiş ve belgeler'**
   String get s4HistoryDocsUpper;
 
   /// No description provided for @s4Details.
@@ -13202,7 +13208,7 @@ abstract class AppLocalizations {
   /// No description provided for @bildirimAyrintiliUpper.
   ///
   /// In tr, this message translates to:
-  /// **'AYRINTILI'**
+  /// **'Ayrıntılı'**
   String get bildirimAyrintiliUpper;
 
   /// No description provided for @bildirimAyrintiliSemantik.
@@ -13364,7 +13370,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdVarlikEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'VARLIK SINIRI'**
+  /// **'Varlık sınırı'**
   String get pwdVarlikEtiket;
 
   /// No description provided for @pwdVarlikBaslik.
@@ -13388,7 +13394,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdSinyalEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'SİNYAL'**
+  /// **'Sinyal'**
   String get pwdSinyalEtiket;
 
   /// No description provided for @pwdSinyalBaslik.
@@ -13406,7 +13412,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdKarsEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'KARŞILAŞTIR'**
+  /// **'Karşılaştır'**
   String get pwdKarsEtiket;
 
   /// No description provided for @pwdKarsRozet.
@@ -13430,7 +13436,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdOrtakEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'ORTAK'**
+  /// **'Ortak'**
   String get pwdOrtakEtiket;
 
   /// No description provided for @pwdOrtakBaslik.
@@ -13448,7 +13454,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdAkisEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'PARA AKIŞI'**
+  /// **'Para akışı'**
   String get pwdAkisEtiket;
 
   /// No description provided for @pwdAkisBaslik.
@@ -13460,7 +13466,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdHacimEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'HACİM RADARI'**
+  /// **'Hacim radarı'**
   String get pwdHacimEtiket;
 
   /// No description provided for @pwdHacimBaslik.
@@ -13472,7 +13478,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdNotEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'HAFTALIK NOT'**
+  /// **'Haftalık not'**
   String get pwdNotEtiket;
 
   /// No description provided for @pwdNotBaslik.
@@ -13496,7 +13502,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdEkstreEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'EKSTRE'**
+  /// **'Ekstre'**
   String get pwdEkstreEtiket;
 
   /// No description provided for @pwdEkstreBaslik.
@@ -13796,13 +13802,13 @@ abstract class AppLocalizations {
   /// No description provided for @yrSatislarUpper.
   ///
   /// In tr, this message translates to:
-  /// **'SATIŞLAR'**
+  /// **'Satışlar'**
   String get yrSatislarUpper;
 
   /// No description provided for @yrTemettulerUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TEMETTÜLER'**
+  /// **'Temettüler'**
   String get yrTemettulerUpper;
 
   /// No description provided for @yrFiyatsiz.
@@ -13916,7 +13922,7 @@ abstract class AppLocalizations {
   /// No description provided for @ttVarliklarUpper.
   ///
   /// In tr, this message translates to:
-  /// **'VARLIKLAR'**
+  /// **'Varlıklar'**
   String get ttVarliklarUpper;
 
   /// No description provided for @ttSatirAlt.
@@ -14024,7 +14030,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdRaporEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'YILLIK RAPOR'**
+  /// **'Yıllık rapor'**
   String get pwdRaporEtiket;
 
   /// No description provided for @pwdRaporBaslik.
@@ -14042,7 +14048,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdTemettuEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'TEMETTÜ TAHMİNİ'**
+  /// **'Temettü tahmini'**
   String get pwdTemettuEtiket;
 
   /// No description provided for @pwdTemettuBaslik.
@@ -14066,7 +14072,7 @@ abstract class AppLocalizations {
   /// No description provided for @xrKartBaslikUpper.
   ///
   /// In tr, this message translates to:
-  /// **'FONUN İÇİNDE NE VAR'**
+  /// **'Fonun içinde ne var'**
   String get xrKartBaslikUpper;
 
   /// No description provided for @xrSatirFonunIci.
@@ -14234,7 +14240,7 @@ abstract class AppLocalizations {
   /// No description provided for @xrDagilimUpper.
   ///
   /// In tr, this message translates to:
-  /// **'GERÇEK DAĞILIM'**
+  /// **'Gerçek dağılım'**
   String get xrDagilimUpper;
 
   /// No description provided for @xrDisi.
@@ -14294,7 +14300,7 @@ abstract class AppLocalizations {
   /// No description provided for @xrOrtusmeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'BİRDEN ÇOK YERDEN TUTTUKLARIN'**
+  /// **'Birden çok yerden tuttukların'**
   String get xrOrtusmeUpper;
 
   /// No description provided for @xrOrtusmeAciklama.
@@ -14336,7 +14342,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdXrayEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'FON X-RAY'**
+  /// **'Fon X-Ray'**
   String get pwdXrayEtiket;
 
   /// No description provided for @pwdXrayBaslik.
@@ -14612,7 +14618,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdPortfoyEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'PORTFÖY'**
+  /// **'Portföy'**
   String get pwdPortfoyEtiket;
 
   /// No description provided for @pwdPortfoyBaslik.
@@ -14708,7 +14714,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfoyOrtakBolum.
   ///
   /// In tr, this message translates to:
-  /// **'ORTAĞIN NE GÖRÜR'**
+  /// **'Ortağın ne görür'**
   String get portfoyOrtakBolum;
 
   /// No description provided for @portfoyAktarBaslik.
@@ -15200,7 +15206,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdOzelEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'KENDİ GÖSTERGEN'**
+  /// **'Kendi göstergen'**
   String get pwdOzelEtiket;
 
   /// No description provided for @pwdOzelBaslik.
@@ -15644,7 +15650,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdZirveEtiket.
   ///
   /// In tr, this message translates to:
-  /// **'ZİRVE'**
+  /// **'Zirve'**
   String get pwdZirveEtiket;
 
   /// No description provided for @pwdZirveBaslik.
@@ -15866,7 +15872,7 @@ abstract class AppLocalizations {
   /// No description provided for @ziBaslikUpper.
   ///
   /// In tr, this message translates to:
-  /// **'FONLARIN İÇİNDE NE VAR'**
+  /// **'Fonların içinde ne var'**
   String get ziBaslikUpper;
 
   /// No description provided for @ziOzetHisse.
@@ -16418,7 +16424,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifTypeAlarm.
   ///
   /// In tr, this message translates to:
-  /// **'ALARM'**
+  /// **'Alarm'**
   String get notifTypeAlarm;
 
   /// No description provided for @ortakPortfoyKartBaslik.
@@ -17018,7 +17024,7 @@ abstract class AppLocalizations {
   /// No description provided for @kilometreTaslariUpper.
   ///
   /// In tr, this message translates to:
-  /// **'KİLOMETRE TAŞLARIN'**
+  /// **'Kilometre taşların'**
   String get kilometreTaslariUpper;
 
   /// No description provided for @kilometreTaslariTumu.
@@ -17134,6 +17140,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.'**
   String get allChangeFromPrice;
+
+  /// Çalmış tek seferlik alarmın çalma anı
+  ///
+  /// In tr, this message translates to:
+  /// **'Çaldı: {zaman}'**
+  String alarmCaldiZaman(String zaman);
+
+  /// Ücretsiz planda tavana yaklaşınca alarm sayacı
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurulu alarm: {sayi}/{limit}'**
+  String alarmSayaci(int sayi, int limit);
+
+  /// No description provided for @alarmSayaciSinirsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sınırsız ›'**
+  String get alarmSayaciSinirsiz;
 }
 
 class _AppLocalizationsDelegate

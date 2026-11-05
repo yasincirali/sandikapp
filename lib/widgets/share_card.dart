@@ -394,7 +394,7 @@ class _Baslik extends StatelessWidget {
           'sandık',
           style: context.t.titleLarge?.copyWith(
             color: p.gold,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             letterSpacing: -0.5,
           ),
         ),
@@ -410,7 +410,6 @@ class _Baslik extends StatelessWidget {
                 textAlign: TextAlign.end,
                 style: context.t.labelLarge?.copyWith(
                   color: p.text58,
-                  letterSpacing: 0.4,
                 ),
               ),
               if (data.tarihAraligi != null)
@@ -459,12 +458,11 @@ class _Kahraman extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                ustHarf(etiket, context.l10n),
+                etiket,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.labelLarge?.copyWith(
                   color: p.text58,
-                  letterSpacing: 0.8,
                 ),
               ),
             ),
@@ -520,7 +518,7 @@ class _KarakterRozeti extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.auto_awesome_rounded, size: 14, color: p.gold),
+          Icon(Icons.person_rounded, size: 14, color: p.gold),
           const SizedBox(width: SandikSpace.xs),
           Flexible(
             child: Text(
@@ -642,12 +640,11 @@ class _KutuGorunumu extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            ustHarf(kutu.etiket, context.l10n),
+            kutu.etiket,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.t.labelSmall?.copyWith(
               color: p.text58,
-              letterSpacing: 0.6,
             ),
           ),
           const SizedBox(height: SandikSpace.xxs),

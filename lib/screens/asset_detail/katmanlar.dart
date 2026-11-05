@@ -222,7 +222,7 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
               const SizedBox(height: SandikSpace.sm),
               AssetSignalCard(asset: widget.asset, onTap: _sinyalPaneline),
               TechnicalSignalPanel.forAsset(widget.asset,
-                  key: _sinyalPaneliKey, detayli: true),
+                  key: _sinyalPaneliKey),
             ],
           ),
         ),

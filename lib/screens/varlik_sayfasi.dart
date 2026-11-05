@@ -684,8 +684,18 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       if (sonGuncelleme != null) SeriSonGuncelleme(zaman: sonGuncelleme),
       const SizedBox(height: SandikSpace.md),
       if (ist != null) ...[
-        _istatistikIzgarasi(ist, cizilen!),
-        const SizedBox(height: SandikSpace.sm),
+        // GÜNLÜK'te ızgara boş kalabilir (Ar-Ge 5 Kas 14:45 #3); boşluğu da.
+        if (DonemIstatistikIzgarasi.hucreSayisi(
+              donemGetirisiGizli: true,
+              bugunGizli: cizilen == 1,
+              oynaklikVar: ist.oynaklikPct != null,
+              dususVar:
+                  DonemIstatistikIzgarasi.dususVar(ist, gunIci: cizilen == 1),
+            ) >
+            0) ...[
+          _istatistikIzgarasi(ist, cizilen!),
+          const SizedBox(height: SandikSpace.sm),
+        ],
         _aralikCubugu(ist, bicim, gunIci: cizilen == 1),
         const SizedBox(height: SandikSpace.lg),
       ],
@@ -873,6 +883,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         // "Bugün" de aynı sayı (Ar-Ge 1 Kas 08:45 #3, yasin "yap").
         donemGetirisiGizli: true,
         bugunGizli: gun == 1,
+        gunIci: gun == 1,
       );
 
   /// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri.

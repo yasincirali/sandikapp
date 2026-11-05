@@ -352,8 +352,8 @@ void main() {
       return w;
     }
 
-    expect(kalinlik(l.tekOnayKosullarBaglanti), FontWeight.w800);
-    expect(kalinlik(l.tekOnayGizlilikBaglanti), isNot(FontWeight.w800));
+    expect(kalinlik(l.tekOnayKosullarBaglanti), FontWeight.w600);
+    expect(kalinlik(l.tekOnayGizlilikBaglanti), isNot(FontWeight.w600));
     expect(dugme(tester).onPressed, isNull);
     await kutuyuIsaretle(tester);
     await onayla(tester);

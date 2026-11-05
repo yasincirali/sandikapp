@@ -928,7 +928,6 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         kapaliEtiketi,
                         maxLines: 1,
                         style: context.t.labelSmall?.copyWith(
-                          letterSpacing: 0.6,
                           fontWeight: FontWeight.w700,
                           color: context.c.text36,
                         ),
@@ -1338,11 +1337,10 @@ class _DegisimKalemi extends StatelessWidget {
         Text(
           // Düz `toUpperCase` Türkçe'de "PIYASA ETKISI" verir; "i" → "İ"
           // için yerel yardımcı (ultrareview bulgusu, 2026-09-24).
-          trBuyukHarf(etiket),
+          etiket,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: context.t.labelSmall?.copyWith(
-            letterSpacing: 0.6,
             fontWeight: FontWeight.w700,
             color: context.c.text36,
           ),

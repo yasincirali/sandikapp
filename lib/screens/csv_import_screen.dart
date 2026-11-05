@@ -864,7 +864,7 @@ class _EslemeKarti extends StatelessWidget {
                 child: SandikAsyncButton.kompakt(
                   tur: SandikAsyncTur.metin,
                   onPressed: onAi,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  icon: const Icon(Icons.document_scanner_outlined, size: 18),
                   child: Text(context.l10n.importAiButton),
                 ),
               ),
@@ -956,7 +956,7 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
           Text(
             l10n.importFixColumns,
             style: context.t.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800, color: context.c.text90),
+                fontWeight: FontWeight.w600, color: context.c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
           Flexible(

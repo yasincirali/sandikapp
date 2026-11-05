@@ -234,7 +234,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       expect(tester.takeException(), isNull);
       // Kartın yüzdesi Bugün kartının yüzdesiyle aynı alan (changePct).
-      expect(find.text('PORTFÖYÜM BUGÜN'), findsOneWidget);
+      expect(find.text('Portföyüm bugün'), findsOneWidget);
       expect(find.textContaining('+%'), findsWidgets);
       // Görselde tutar yok — rozetteki "+₺240" yalnız arkadaki kartta.
       expect(find.textContaining('+₺240'), findsOneWidget);

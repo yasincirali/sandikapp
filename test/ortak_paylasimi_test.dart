@@ -188,7 +188,7 @@ void main() {
   group('Portföyler ekranı', () {
     testWidgets('bayrak kapalı: ortak satırı ve durum yazısı yok', (t) async {
       await _yonetim(t, _SahtePaylasimlar(const []));
-      expect(find.text('ORTAĞIN NE GÖRÜR'), findsNothing);
+      expect(find.text('Ortağın ne görür'), findsNothing);
       expect(find.textContaining('görüyor'), findsNothing);
     });
 
@@ -205,7 +205,7 @@ void main() {
                 ana: true,
                 portfoyIdler: {_a}),
           ]));
-      expect(find.text('ORTAĞIN NE GÖRÜR'), findsOneWidget);
+      expect(find.text('Ortağın ne görür'), findsOneWidget);
       expect(find.text('Ayşe görüyor'), findsNWidgets(2),
           reason: 'Ana ve Emeklilik');
       expect(find.text('Ayşe görmüyor'), findsOneWidget, reason: 'Çocuk');

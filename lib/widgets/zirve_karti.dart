@@ -160,7 +160,7 @@ class _ZirveKartiState extends State<ZirveKarti> {
               Text(
                 context.l10n.topPortfolios,
                 style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text90,
                 ),
               ),

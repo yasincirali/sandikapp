@@ -97,8 +97,7 @@ class ZirveAynaKiyas extends StatelessWidget {
                 'SEN',
                 textAlign: TextAlign.right,
                 style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w600,
                   color: context.c.amberText,
                 ),
               ),
@@ -108,8 +107,7 @@ class ZirveAynaKiyas extends StatelessWidget {
               child: Text(
                 trBuyuk(zirveAd),
                 style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text90,
                 ),
               ),

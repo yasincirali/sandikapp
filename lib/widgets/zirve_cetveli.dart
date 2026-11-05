@@ -232,7 +232,7 @@ class ZirveCetveli extends StatelessWidget {
                 curve: SandikMotion.enter,
                 style: (context.t.labelLarge ?? const TextStyle()).copyWith(
                   letterSpacing: 0,
-                  fontWeight: seciliMi ? FontWeight.w800 : FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                   color: seciliMi ? context.c.text90 : context.c.text58,
                 ),
                 // Sabit yükseklikli şeritte büyük yazı kesilmesin: sığmazsa

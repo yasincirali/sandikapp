@@ -395,7 +395,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               const SizedBox(height: 16),
               Text(context.l10n.premiumUnlocked,
                   style: context.t.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800, color: context.c.text90)),
+                      fontWeight: FontWeight.w600, color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
                 context.l10n.premiumUnlockedBody,
@@ -419,7 +419,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   // (açık tema denetimi 2026-10-08).
                   child: Text(context.l10n.greatWord,
                       style: context.t.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: context.c.onAmber)),
                 ),
               ),
@@ -484,8 +484,7 @@ class _HeroCard extends StatelessWidget {
             child: Text(
               context.l10n.sandikPremiumUpper,
               style: context.t.labelMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600,
                 color: context.c.amberText,
               ),
             ),
@@ -494,7 +493,7 @@ class _HeroCard extends StatelessWidget {
           Text(
             context.l10n.paywallHeadline,
             style: context.t.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: context.c.text90,
               height: 1.15,
             ),
@@ -691,7 +690,7 @@ class _KarsilastirmaTablosu extends StatelessWidget {
     }
 
     final baslik = t.labelSmall?.copyWith(
-        color: c.text58, fontWeight: FontWeight.w800, letterSpacing: 1.0);
+        color: c.text58, fontWeight: FontWeight.w600);
     return SandikCard(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.md, vertical: SandikSpace.sm),
@@ -707,9 +706,9 @@ class _KarsilastirmaTablosu extends StatelessWidget {
             const SizedBox.shrink(),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
-              child: Text(l.prmUcretsiz.toUpperCase(), style: baslik),
+              child: Text(l.prmUcretsiz, style: baslik),
             ),
-            Text(l.prmPremium.toUpperCase(),
+            Text(l.prmPremium,
                 style: baslik?.copyWith(color: c.amberText)),
           ]),
           for (final r in satirlar)
@@ -815,7 +814,7 @@ class _PlanCard extends StatelessWidget {
                     children: [
                       Text(title,
                           style: context.t.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: context.c.text90)),
                       if (badgeText != null) ...[
                         const SizedBox(width: 8),
@@ -831,7 +830,7 @@ class _PlanCard extends StatelessWidget {
                             badgeText!,
                             style: context.t.labelMedium?.copyWith(
                                 letterSpacing: 0,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 color: context.c.gain),
                           ),
                         ),
@@ -849,7 +848,7 @@ class _PlanCard extends StatelessWidget {
             Text(price,
                 style: context.t.numSmall.copyWith(
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: context.c.gold)),
           ],
         ),
@@ -914,7 +913,7 @@ class _BottomBar extends StatelessWidget {
                 // Renk açıkça `onAmber` — `text90` düğme rengini
                 // ezerdi (açık tema denetimi 2026-10-08).
                 style: context.t.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800, color: context.c.onAmber),
+                    fontWeight: FontWeight.w600, color: context.c.onAmber),
               ),
             ),
             if (geriYukleGoster) ...[

@@ -153,7 +153,7 @@ void main() {
 
     testWidgets('Premium görünmüyor: hiçbir şey, veri okunmaz', (t) async {
       await kur(t, gorunur: false);
-      expect(find.text('FONLARIN İÇİNDE NE VAR'), findsNothing);
+      expect(find.text('Fonların içinde ne var'), findsNothing);
       expect(okuma, 0);
     });
 
@@ -166,7 +166,7 @@ void main() {
 
     testWidgets('açık: sınıflar, kaynaklar ve özet cümlesi', (t) async {
       await kur(t, gorunur: true);
-      expect(find.text('FONLARIN İÇİNDE NE VAR'), findsOneWidget);
+      expect(find.text('Fonların içinde ne var'), findsOneWidget);
       expect(
           find.text('Hisse payı listede %30, fonların içindekilerle birlikte '
               '%55.'),
@@ -178,7 +178,7 @@ void main() {
 
     testWidgets('fon/BES yoksa çizilmez', (t) async {
       await kur(t, gorunur: true, pay: const {'hisse': 100});
-      expect(find.text('FONLARIN İÇİNDE NE VAR'), findsNothing);
+      expect(find.text('Fonların içinde ne var'), findsNothing);
     });
 
     testWidgets('×2 ve ×3,1 yazıda taşma yok', (t) async {

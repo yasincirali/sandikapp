@@ -249,7 +249,6 @@ class _List extends ConsumerWidget {
                     child: Text(
                       context.l10n.nAssetsPeriod(items.length, periodLabel),
                       style: context.t.labelSmall?.copyWith(
-                          letterSpacing: 0.8,
                           fontWeight: FontWeight.w700,
                           color: context.c.text36),
                     ),
@@ -465,11 +464,10 @@ class _ChartCard extends ConsumerWidget {
                   child: Text(
                     // Hangi portföyle kıyaslandığı BAŞLIKTA yazar — kullanıcı
                     // grafiğe bakarken seçiciye geri dönmek zorunda kalmasın.
-                    'DÖNEM BAŞINA GÖRE · $periodLabel · ${portfolioLabel.toUpperCase()}',
+                    'Dönem başına göre · $periodLabel · $portfolioLabel',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,
                         color: context.c.text36),
                   ),

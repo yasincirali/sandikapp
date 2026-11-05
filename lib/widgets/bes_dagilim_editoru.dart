@@ -170,7 +170,7 @@ class _FonSatiriGorunumu extends StatelessWidget {
               children: [
                 Text(satir.kod,
                     style: context.t.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w800, color: renk)),
+                        ?.copyWith(fontWeight: FontWeight.w600, color: renk)),
                 if (satir.ad.isNotEmpty)
                   Text(satir.ad,
                       maxLines: 1,

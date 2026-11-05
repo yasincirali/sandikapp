@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../demo/demo_modu.dart';
 import '../models/asset.dart';
+import '../models/asset_type.dart' show alarmFiyatSimgesi;
 import '../models/eurobond.dart' show eurobondOneki;
 import '../models/position.dart' show aggregatePositions;
 import '../models/price_alert.dart';
@@ -195,6 +196,16 @@ String? alarmSembolu(String ticker, String? subCategory) {
   return t.isEmpty ? null : t;
 }
 
+/// Alarmda yazan fiyat: varlığın kendi simgesiyle (müşteri raporu 5 Kas
+/// 09:15). Liste satırı, kurma sayfasının "Şu an" satırı ve "alarm kuruldu"
+/// onayı her sembolde lira biçimleyicisini kullanıyordu; ABD hissesinde grup
+/// başlığı "$228,52" derken satır "₺240,00" diyordu ve kişi lira mı dolar mı
+/// kurduğunu bilemiyordu. Push, çan ve grup başlığı zaten
+/// [alarmFiyatSimgesi]'ni kullanıyor; simgesi belirsiz sembolde (endeks)
+/// sayı simgesiz yazılır, yanlış simge simgesiz sayıdan kötüdür.
+String alarmFiyatMetni(double fiyat, String sembol) =>
+    fmtFiyat(fiyat, symbol: alarmFiyatSimgesi(sembol) ?? '');
+
 /// Hedef, kullanıcının GÖRDÜĞÜ güncel fiyata eşit mi.
 ///
 /// Yön güncel fiyattan türetildiği için "yönüne göre zaten geçmiş" hedef
@@ -350,8 +361,10 @@ Future<PriceAlert?> alarmKurAkisi(
     sandikSnack(
       context,
       sonuc.yon == 'above'
-          ? context.l10n.alertSetAbove(ad, fmtTRYFiyat(sonuc.hedef))
-          : context.l10n.alertSetBelow(ad, fmtTRYFiyat(sonuc.hedef)),
+          ? context.l10n.alertSetAbove(
+              ad, alarmFiyatMetni(sonuc.hedef, sonuc.aday.sembol))
+          : context.l10n.alertSetBelow(
+              ad, alarmFiyatMetni(sonuc.hedef, sonuc.aday.sembol)),
       kind: SandikSnackKind.success,
     );
     // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:
@@ -405,7 +418,7 @@ Future<void> alarmiYenidenKur(
     await n.rearm(alarm.id);
     SandikHaptic.selection.perform();
     if (!context.mounted) return;
-    final fiyat = fmtTRYFiyat(alarm.targetPrice);
+    final fiyat = alarmFiyatMetni(alarm.targetPrice, alarm.symbol);
     sandikSnack(
       context,
       alarm.isAbove
@@ -1074,7 +1087,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                 ],
                 Text(
                   fiyatVar
-                      ? context.l10n.currentlyPrice(fmtTRYFiyat(_secili.guncelFiyat))
+                      ? context.l10n.currentlyPrice(
+                          alarmFiyatMetni(_secili.guncelFiyat, _secili.sembol))
                       : context.l10n.currentPriceUnknown,
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
@@ -1146,7 +1160,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   // alış fiyatından. Renk yönü söyler, metin de söyler (renk
                   // körlüğü): "Maliyetim", "Maliyet +%20".
                   Text(
-                    context.l10n.alertCostRow(fmtTRYFiyat(maliyet!)),
+                    context.l10n.alertCostRow(
+                        alarmFiyatMetni(maliyet!, _secili.sembol)),
                     style: context.t.labelMedium?.copyWith(color: c.text58),
                   ),
                   const SizedBox(height: SandikSpace.xs),
