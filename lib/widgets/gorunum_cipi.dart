@@ -183,7 +183,6 @@ class GorunumCipi extends StatelessWidget {
     final secim = await showSandikSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

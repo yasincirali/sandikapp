@@ -68,7 +68,6 @@ List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
       tooltip: context.l10n.howReturnCalculated,
       onPressed: () => showSandikSheet<void>(
         context: context,
-        backgroundColor: context.c.surface1,
         isScrollControlled: true,
         useSafeArea: true,
         shape: const RoundedRectangleBorder(
@@ -332,10 +331,6 @@ class _RoiInfoSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: const SandikTutamac(),
-            ),
-            const SizedBox(height: 14),
             // Başlık + KAPAT.
             //
             // Sheet'in tek kapanma yolu aşağı sürüklemekti: yukarıdaki tutamak

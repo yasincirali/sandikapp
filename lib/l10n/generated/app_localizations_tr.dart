@@ -8373,10 +8373,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yrMasraf => 'İşlem masrafları';
 
   @override
-  String get yrPdf => 'PDF';
+  String get yrMusavireGonder => 'Mali müşavirime gönder';
 
   @override
-  String get yrExcel => 'Excel';
+  String get yrYalnizPdf => 'Yalnız PDF';
+
+  @override
+  String get yrYalnizExcel => 'Yalnız Excel';
 
   @override
   String get yrSatislarUpper => 'Satışlar';
@@ -10257,8 +10260,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get alarmTekrarAnahtar => 'Her geçişte haber ver';
 
   @override
-  String get alarmTekrarAciklama =>
-      'Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.';
+  String get alarmTekrarAciklama => 'Günde en çok 3 kez.';
+
+  @override
+  String alarmFiyatOzetYukselis(String name, String price) {
+    return '$name $price seviyesine çıkarsa haber vereceğiz.';
+  }
+
+  @override
+  String alarmFiyatOzetDusus(String name, String price) {
+    return '$name $price seviyesine inerse haber vereceğiz.';
+  }
+
+  @override
+  String alarmMaliyetin(String price) {
+    return 'Maliyetin $price';
+  }
 
   @override
   String alarmSonCaldi(String zaman) {
@@ -10516,4 +10533,38 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get goalProfileRowSubtitle => 'Bir tutar seç, kalanı Ana sayfada gör';
+
+  @override
+  String get goalDateTitle => 'Ne zamana kadar?';
+
+  @override
+  String get goalDateNone => 'Yok';
+
+  @override
+  String get goalDateOneYear => '1 yıl';
+
+  @override
+  String get goalDateYearEnd => 'Yıl sonu';
+
+  @override
+  String get goalDatePick => 'Tarih seç';
+
+  @override
+  String get goalDateLocked => 'Hedefine tarih koy, Premium ile';
+
+  @override
+  String get goalDateLockedLabel => 'Kilitli';
+
+  @override
+  String goalDateMonthly(String tutar) {
+    return 'Ayda yaklaşık $tutar eklersen yetişirsin';
+  }
+
+  @override
+  String get goalDateNoReturn => 'Getiri hariç';
+
+  @override
+  String goalDateBy(String tarih, String ek) {
+    return '$tarih\'$ek kadar';
+  }
 }

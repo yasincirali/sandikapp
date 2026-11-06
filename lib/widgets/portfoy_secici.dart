@@ -229,7 +229,6 @@ Future<void> showPortfoyAdiSayfasi(
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

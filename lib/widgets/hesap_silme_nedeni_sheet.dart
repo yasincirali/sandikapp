@@ -37,7 +37,6 @@ extension on HesapSilmeNedeni {
 
 Future<void> hesapSilindiSayfasi(BuildContext context) => showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       builder: (_) => const HesapSilmeNedeniSheet(),
     );
@@ -71,8 +70,6 @@ class HesapSilmeNedeniSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
             Row(
               children: [
                 Icon(Icons.check_circle_outline_rounded,

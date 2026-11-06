@@ -30,7 +30,7 @@ void main() {
           kim: 'yasin', olusturma: DateTime(2026, 11, 1, 18));
       final bytes = await pdfYaz(b,
           duz: await rootBundle.load('assets/fonts/DMSans-Regular.ttf'),
-          kalin: await rootBundle.load('assets/fonts/DMSans-Bold.ttf'),
+          kalin: await rootBundle.load('assets/fonts/DMSans-SemiBold.ttf'),
           logo: (await rootBundle.load('assets/images/sandik_icon.png')).buffer.asUint8List());
       expect(bytes.length, greaterThan(1000));
     });

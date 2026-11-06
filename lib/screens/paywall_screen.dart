@@ -377,8 +377,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SandikTutamac(),
-              const SizedBox(height: 24),
               Container(
                 width: 72,
                 height: 72,

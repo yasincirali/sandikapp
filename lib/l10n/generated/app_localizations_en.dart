@@ -8453,10 +8453,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yrMasraf => 'Transaction fees';
 
   @override
-  String get yrPdf => 'PDF';
+  String get yrMusavireGonder => 'Send to my accountant';
 
   @override
-  String get yrExcel => 'Excel';
+  String get yrYalnizPdf => 'PDF only';
+
+  @override
+  String get yrYalnizExcel => 'Excel only';
 
   @override
   String get yrSatislarUpper => 'Sales';
@@ -10379,8 +10382,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmTekrarAnahtar => 'Notify on every cross';
 
   @override
-  String get alarmTekrarAciklama =>
-      'If the price comes back and crosses again, we\'ll notify you again. At most 3 times a day.';
+  String get alarmTekrarAciklama => 'At most 3 times a day.';
+
+  @override
+  String alarmFiyatOzetYukselis(String name, String price) {
+    return 'We\'ll notify you if $name rises to $price.';
+  }
+
+  @override
+  String alarmFiyatOzetDusus(String name, String price) {
+    return 'We\'ll notify you if $name falls to $price.';
+  }
+
+  @override
+  String alarmMaliyetin(String price) {
+    return 'Your cost $price';
+  }
 
   @override
   String alarmSonCaldi(String zaman) {
@@ -10639,4 +10656,38 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get goalProfileRowSubtitle =>
       'Pick an amount, see what\'s left on Home';
+
+  @override
+  String get goalDateTitle => 'When by?';
+
+  @override
+  String get goalDateNone => 'None';
+
+  @override
+  String get goalDateOneYear => '1 year';
+
+  @override
+  String get goalDateYearEnd => 'Year end';
+
+  @override
+  String get goalDatePick => 'Pick a date';
+
+  @override
+  String get goalDateLocked => 'Set a date for your goal with Premium';
+
+  @override
+  String get goalDateLockedLabel => 'Locked';
+
+  @override
+  String goalDateMonthly(String tutar) {
+    return 'Add about $tutar a month to make it';
+  }
+
+  @override
+  String get goalDateNoReturn => 'Excludes returns';
+
+  @override
+  String goalDateBy(String tarih, String ek) {
+    return 'By $tarih';
+  }
 }

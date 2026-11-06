@@ -39,7 +39,6 @@ Future<void> showOzelGostergeSayfasi(
 }) =>
     showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius:
@@ -90,8 +89,6 @@ class OzelGostergeListesi extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Center(child: SandikTutamac()),
-              const SizedBox(height: SandikSpace.lg),
               Text(l.ozgBaslik,
                   style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700, color: context.c.text90)),

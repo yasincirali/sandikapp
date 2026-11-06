@@ -146,7 +146,6 @@ class _KapatTusu extends ConsumerWidget {
 /// düşer (sayfa sağlayıcıyı izler); tümü kapanınca boş cümlesi kalır.
 Future<void> gunlerSayfasiniAc(BuildContext context) => showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

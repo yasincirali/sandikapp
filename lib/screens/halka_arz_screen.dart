@@ -304,7 +304,6 @@ Future<void> halkaArzDetayiniAc(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: context.c.surface1,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (_) => HalkaArzDetay(arz: arz, durum: durum),
   );

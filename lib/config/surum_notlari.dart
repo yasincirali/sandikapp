@@ -143,6 +143,16 @@ const List<SurumNotu> surumNotlari = [
             'görüyorsun. Çan boşken tek dokunuşla fiyat alarmı kurabilirsin.',
         ikon: YenilikIkonu.bildirim,
       ),
+      // yasin 2026-11-06: hedefe tarih Premium (hedef ücretsiz kalır).
+      // Premium maddesi: paywall'ın açık olduğu platformda görünür.
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        bayrak: 'paywall_enabled',
+        baslik: 'Hedefine tarih koy',
+        aciklama: 'Hedef sayfasında ne zamana kadar istediğini seç; ayda ne '
+            'kadar eklemen gerektiğini gör. Getiri hesaba katılmaz. Premium '
+            'ile.',
+      ),
       // Ar-Ge 2 Kas 12:45 #1-#2, müşteri YAP. Premium maddesi: paywall'ın
       // kodda açık olduğu platformda görünür.
       Yenilik(

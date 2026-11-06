@@ -363,7 +363,6 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: context.c.surface1,
       shape: RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -374,8 +373,6 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SandikTutamac(),
-            const SizedBox(height: SandikSpace.md),
             SandikSectionHeader(title: sayfa.l10n.s3DagilimBaslik),
             const SizedBox(height: SandikSpace.md),
             _AssetTypeDonut(

@@ -23,7 +23,6 @@ Future<String?> emeklilikSirketiSec(BuildContext context, {String? secili}) =>
     showSandikSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

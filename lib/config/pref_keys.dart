@@ -149,6 +149,11 @@ class PrefKeys {
   /// taşınmaz. Ana ekrandaki "Bugün" kartı ilerlemeyi buradan okur.
   static const portfolioGoalTRY = 'portfolio_goal_try';
 
+  /// Hedefin günü (ms epoch, yerel gece yarısı; yok/0 = tarih yok). Hedefle
+  /// aynı kapsam soneki ve `perUser`. Premium (yasin 2026-11-06); anahtar
+  /// yoksa eski davranış birebir (tarih satırı ve aylık tutar çizilmez).
+  static const portfolioGoalDate = 'portfolio_goal_date_ms';
+
   /// Çan sayfasının en son açıldığı an (ms epoch; 0 = hiç açılmadı).
   /// Rozet yalnız bundan SONRA gelen aktif bildirimleri "yeni" sayar.
   /// Kişiye özel (`perUser`): A'nın gördüğü, B'nin rozetini düşürmez.

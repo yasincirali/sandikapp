@@ -934,10 +934,6 @@ class _ShareSheetState extends State<_ShareSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: const SandikTutamac(),
-            ),
-            const SizedBox(height: SandikSpace.md),
             Text(
               widget.sayfaBasligi ?? 'Özetini paylaş',
               style: context.t.headlineSmall?.copyWith(

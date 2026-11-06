@@ -39,7 +39,6 @@ Future<void> showOrtakPaylasimSayfasi(
   return showSandikSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(
       borderRadius:
           BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -130,8 +129,6 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
             Row(
               children: [
                 GorunumCipi.avatar(context, widget.ortak, boy: 40),

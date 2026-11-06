@@ -56,6 +56,7 @@ import '../services/donem_ozeti_yukleyici.dart';
 import '../services/history_service.dart' show PortfolioHistoryBreakdown;
 import '../models/asset.dart' show Asset;
 import '../models/hedef_onerisi.dart';
+import '../models/hedef_tarihi.dart' show yilYonelmeEki;
 import '../services/period_summary_service.dart'
     show PeriodSummary, SummaryPeriod;
 import 'sandik_segment.dart';
@@ -1102,11 +1103,18 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         onTap: hedefAc,
       );
     }
+    final kalan =
+        l10n.todayGoalLeftShort(gizli ? '••••' : fmtTRYCompactSade(s.kalan));
+    // Hedefin günü (Premium, 2026-11-06): uzun yazımda "· Ara 2027'ye
+    // kadar", sığmazsa eski kısa satır. Premium değilse ya da gün geçtiyse
+    // yazılmaz; kayıtlı gün yine durur.
+    final gun = _hedefGunuMetni();
     return _EylemKutusu(
       ikon: Icons.flag_outlined,
       baslik: l10n.todayGoalProgressTitle((s.oran * 100).floor()),
       alt: [
-        l10n.todayGoalLeftShort(gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
+        if (gun != null) '$kalan · $gun',
+        kalan,
       ],
       oran: s.oran,
       onTap: hedefAc,
@@ -1115,6 +1123,20 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
 
   String get _dil =>
       Localizations.localeOf(context).languageCode == 'en' ? 'en_US' : 'tr_TR';
+
+  /// Hedef satırındaki gün ("Ara 2027'ye kadar") ya da null: tarih yok,
+  /// özellik bu kullanıcıda açık değil ya da gün geçmiş.
+  String? _hedefGunuMetni() {
+    if (ref.watch(hedefTarihiDurumuProvider) != OzellikDurumu.acik) {
+      return null;
+    }
+    final t = ref.watch(kapsamHedefTarihiProvider(widget.hedefKapsami));
+    if (t == null) return null;
+    final now = BugunKarti.saat();
+    if (t.isBefore(dayKey(now))) return null;
+    return context.l10n
+        .goalDateBy(DateFormat.yMMM(_dil).format(t), yilYonelmeEki(t.year));
+  }
 
   /// Performans › Özet, verilen dönemde ([SummaryPeriod] indeksi — sayı
   /// değil adla verilir; 2026-09-28'de 3A eklenince 6A/1Y kaydı).

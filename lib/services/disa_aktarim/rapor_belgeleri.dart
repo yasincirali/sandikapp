@@ -143,8 +143,9 @@ RaporBelgesi yillikRaporBelgesi(
       ),
     ],
     dipnotlar: [
-      'Bu rapor sandık\'a girdiğin kayıtlardan hazırlandı. Vergi beyannamesi '
-          'ya da vergi tavsiyesi değildir; beyan için mali müşavirine danış.',
+      // "Tavsiye değildir" yarısı her sayfanın dipnotunda zaten var (müşteri
+      // raporu 6 Kas 15:15 #3); notlarda tekrar etmez. Müşavir cümlesi kalır.
+      'Beyan için mali müşavirine danış.',
       'Satış kârı: satış tutarı (kayıtlıysa satış günü kuruyla) − ağırlıklı '
           'ortalama alış maliyeti (alış kuruyla) − satış komisyonu.',
       'Temettünün net tutarı kayıtlıdır. Brüt ve stopaj geri hesaplanır: '
@@ -206,6 +207,10 @@ RaporBelgesi portfoyBelgesi({
           baslik: 'Varlık türlerine göre dağılım',
           tur: RaporGrafikTuru.dagilim,
           kalemler: turDegeri,
+          turler: {
+            for (final p in pozisyonlar)
+              p.representative.type.label: p.representative.type,
+          },
           not: 'güncel değer',
         ),
       if (pozisyonlar.isNotEmpty)

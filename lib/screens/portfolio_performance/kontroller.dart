@@ -423,7 +423,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
       builder: (_) => StatefulBuilder(
         builder: (sayfaCtx, yenile) => Consumer(
@@ -448,8 +447,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                       ? _filtreSayfasiYeni(sayfaCtx, sayfaRef, ortaklar,
                           araclar, bugunku, tazele)
                       : [
-                    const Center(child: SandikTutamac()),
-                    const SizedBox(height: SandikSpace.md),
                     Text(
                       l.s2Filtre,
                       style: context.t.titleLarge?.copyWith(
@@ -615,8 +612,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     final n = _filtreSayisi(ortaklar);
 
     return [
-      const Center(child: SandikTutamac()),
-      const SizedBox(height: SandikSpace.md),
       Row(
         children: [
           Expanded(

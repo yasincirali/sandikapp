@@ -250,7 +250,6 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
     final secim = await showSandikSheet<_SilmeSecimi>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -263,8 +262,6 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Center(child: SandikTutamac()),
-              const SizedBox(height: SandikSpace.md),
               Text(
                 l.portfoySilBaslik(p.ad),
                 style: ctx.t.titleLarge?.copyWith(

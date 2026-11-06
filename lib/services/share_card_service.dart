@@ -98,6 +98,21 @@ class ShareCardService {
         sharePositionOrigin: origin,
       );
 
+  /// Birden çok hazır dosyayı TEK paylaşım sayfasıyla paylaşır (yıllık
+  /// rapor PDF + Excel; e-postada iki ek). [dosyalar]: (yol, MIME).
+  static Future<void> shareFiles(
+    List<(String, String)> dosyalar, {
+    required String subject,
+    String? text,
+    Rect? origin,
+  }) =>
+      Share.shareXFiles(
+        [for (final (yol, mime) in dosyalar) XFile(yol, mimeType: mime)],
+        text: text,
+        subject: subject,
+        sharePositionOrigin: origin,
+      );
+
   /// Bir widget'ın ekrandaki dikdörtgeni — `sharePositionOrigin` için.
   ///
   /// Render nesnesi yoksa ya da henüz yerleşmediyse `null`: share_plus

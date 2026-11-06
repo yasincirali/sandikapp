@@ -276,7 +276,7 @@ void main() {
           varlikAdi: 'THYAO',
           donemAdi: YorumNotu.donemAdiOf(YorumTuru.secili, '3A')),
       duz: oku('assets/fonts/DMSans-Regular.ttf'),
-      kalin: oku('assets/fonts/DMSans-Bold.ttf'),
+      kalin: oku('assets/fonts/DMSans-SemiBold.ttf'),
       logo: File('assets/images/sandik_icon.png').readAsBytesSync(),
     );
     Directory('build/gorsel').createSync(recursive: true);

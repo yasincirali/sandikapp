@@ -14,7 +14,7 @@ import 'pdf_marka.dart';
 /// Düzen banka/aracı kurum araştırma notunu izler (yasin: "daha
 /// profesyonel görünüm"): künye (logo, belge adı, dönem/kapsam/tarih),
 /// tek cümlelik ana fikir, dört gösterge, solda konu başlıklı değerlendirme,
-/// sağda kıyas çubukları + puan farkları + tanımlar, altta kaynak ve "yatırım
+/// sağda kıyas çubukları + tek satırlık puan farkı cümleleri + tanımlar, altta kaynak ve "yatırım
 /// tavsiyesi değildir". Logo uygulama ikonu (`assets/images/sandik_icon.png`;
 /// yasin: "pdf'te logomuz olmalı").
 ///
@@ -129,9 +129,9 @@ pw.Widget _meta(List<(String, String)> alanlar) => pw.Container(
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text(trBuyuk(ad),
+                  pw.Text(ad,
                       style: const pw.TextStyle(
-                          fontSize: 6.5, color: _gri)),
+                          fontSize: 7.5, color: _gri)),
                   pw.SizedBox(height: 1),
                   pw.Text(deger,
                       style: pw.TextStyle(
@@ -165,9 +165,9 @@ pw.Widget _gostergeler(List<YorumOlcumu> g) => pw.Container(
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(trBuyuk(YorumNotu.kisaAd(g[i])),
+                    pw.Text(YorumNotu.kisaAd(g[i]),
                         style: const pw.TextStyle(
-                            fontSize: 6.5, color: _gri)),
+                            fontSize: 7.5, color: _gri)),
                     pw.SizedBox(height: 2),
                     pw.Text(g[i].gosterim,
                         style: pw.TextStyle(
@@ -187,9 +187,10 @@ pw.Widget _bolumBasligi(String t) => pw.Container(
       padding: const pw.EdgeInsets.only(bottom: 3),
       decoration: const pw.BoxDecoration(
           border: pw.Border(bottom: pw.BorderSide(color: _cizgi, width: 0.8))),
-      child: pw.Text(trBuyuk(t),
+      // Cümle düzeni (6 Kas 15:15 PDF #2): büyük harf etiket yok.
+      child: pw.Text(t,
           style: pw.TextStyle(
-              fontSize: 7, fontWeight: pw.FontWeight.bold, color: _yesil)),
+              fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: _yesil)),
     );
 
 pw.Widget _degerlendirme(YorumNotu n) => pw.Column(
@@ -238,29 +239,21 @@ pw.Widget _yanSutun(YorumNotu n) => pw.Column(
           _kiyasGrafigi(n.kiyaslar),
           pw.SizedBox(height: 14),
         ],
-        if (n.farklar.isNotEmpty) ...[
-          _bolumBasligi('Fark, puan'),
-          for (final f in n.farklar)
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(vertical: 3),
-              decoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(color: _cizgi, width: 0.6))),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Expanded(
-                      child: pw.Text(YorumNotu.kisaAd(f),
-                          style: const pw.TextStyle(fontSize: 7.6, color: _murekkep))),
-                  pw.SizedBox(width: 6),
-                  pw.Text(f.gosterim,
-                      style: pw.TextStyle(
-                          fontSize: 7.6, fontWeight: pw.FontWeight.bold,
-                          color: _isaretRengi(f.gosterim))),
-                ],
-              ),
+        // Puan farkı ayrı başlıklı blok değil, kıyas çubuklarının altında
+        // tek satır cümle (müşteri raporu 6 Kas 15:15 #4). Değeri olmayan
+        // fark satır üretmez.
+        for (final f in n.farklar)
+          if (YorumNotu.farkCumlesi(f) case final cumle?)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 4),
+              child: pw.Text(cumle,
+                  style: pw.TextStyle(
+                      fontSize: 7.6,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _isaretRengi(f.gosterim))),
             ),
-          pw.SizedBox(height: 14),
-        ],
+        if (n.farklar.any((f) => YorumNotu.farkCumlesi(f) != null))
+          pw.SizedBox(height: 10),
         pw.Container(
           color: _zemin,
           padding: const pw.EdgeInsets.all(8),

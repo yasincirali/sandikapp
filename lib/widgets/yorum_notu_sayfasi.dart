@@ -22,7 +22,6 @@ Future<void> showYorumNotu(BuildContext context, YorumNotu notu) =>
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
       builder: (_) => YorumNotuSayfasi(notu: notu),
     );
 
@@ -56,7 +55,7 @@ class YorumNotuSayfasi extends StatelessWidget {
           Expanded(
             child: ListView(
               controller: sc,
-              padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.lg),
+              padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.lg),
               children: [
                 Text(ust.toUpperCase(),
                     style: t.labelSmall?.copyWith(

@@ -940,10 +940,6 @@ class _PickerShellState extends State<_PickerShell> {
       builder: (ctx, sc) => Column(
         children: [
           // Ortak tutamaç (HIG denetimi 2026-10-10; elle çizilmiş kopyaydı).
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: SandikSpace.sm2),
-            child: SandikTutamac(),
-          ),
           Padding(
             padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.smd),
             child: Row(

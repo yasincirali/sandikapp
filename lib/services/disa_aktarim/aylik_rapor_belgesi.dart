@@ -116,7 +116,7 @@ RaporBelgesi aylikRaporBelgesi({
           'yatırdığın ya da çektiğin para getiri sayılmaz.',
       'TÜFE TÜİK\'ten alınır; bir ayın rakamı ertesi ayın 3\'ünde açıklanır.',
       'Varlık notları ayın kamuya açık piyasa verisinden yapay zekâ ile '
-          'yazılmıştır; tutar içermez. Yatırım tavsiyesi değildir.',
+          'yazılmıştır; tutar içermez.',
     ],
   );
 }

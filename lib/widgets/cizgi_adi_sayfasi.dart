@@ -35,7 +35,6 @@ Future<void> showCizgiAdiSayfasi(
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -150,8 +149,6 @@ class _CizgiAdiSayfasiState extends State<CizgiAdiSayfasi> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Center(child: SandikTutamac()),
-              SizedBox(height: kisa ? SandikSpace.xs : SandikSpace.sm),
               Text(
                 widget.baslik,
                 style: (kisa ? context.t.titleLarge : context.t.headlineSmall)

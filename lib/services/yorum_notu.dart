@@ -154,6 +154,23 @@ class YorumNotu {
     return o.ad;
   }
 
+  /// Puan farkının tek satırlık cümlesi: "Gram altın kıyasına göre −4,3
+  /// puan" (müşteri raporu 6 Kas 15:15, PDF #4). Önceden PDF'te "Fark,
+  /// puan" başlıklı ayrı bir blok vardı; tek sayı için grafik/tablo dili
+  /// ağırdı. Değer [YorumOlcumu.gosterim]'den gelir (sunucu/servis puan
+  /// biçimi, `puanGosterimi`); bilinmiyorsa (rakam yoksa) `null`, satır
+  /// yazılmaz — uydurma sayı yok.
+  static String? farkCumlesi(YorumOlcumu o) {
+    final g = o.gosterim.trim();
+    if (!RegExp(r'\d').hasMatch(g)) return null;
+    if (o.anahtar == 'tufe_fark') return 'TÜFE\'ye göre $g';
+    if (o.anahtar.endsWith('_fark')) {
+      final temel = _kiyasAdi(o.anahtar.substring(0, o.anahtar.length - 5));
+      if (temel != null) return '$temel kıyasına göre $g';
+    }
+    return '${kisaAd(o)}: $g';
+  }
+
   static const _kisaAdlar = {
     'getiri': 'Dönem getirisi',
     'degisim': 'Dönem değişimi',

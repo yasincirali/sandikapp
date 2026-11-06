@@ -13883,17 +13883,23 @@ abstract class AppLocalizations {
   /// **'İşlem masrafları'**
   String get yrMasraf;
 
-  /// No description provided for @yrPdf.
+  /// No description provided for @yrMusavireGonder.
   ///
   /// In tr, this message translates to:
-  /// **'PDF'**
-  String get yrPdf;
+  /// **'Mali müşavirime gönder'**
+  String get yrMusavireGonder;
 
-  /// No description provided for @yrExcel.
+  /// No description provided for @yrYalnizPdf.
   ///
   /// In tr, this message translates to:
-  /// **'Excel'**
-  String get yrExcel;
+  /// **'Yalnız PDF'**
+  String get yrYalnizPdf;
+
+  /// No description provided for @yrYalnizExcel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız Excel'**
+  String get yrYalnizExcel;
 
   /// No description provided for @yrSatislarUpper.
   ///
@@ -16928,8 +16934,26 @@ abstract class AppLocalizations {
   /// No description provided for @alarmTekrarAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.'**
+  /// **'Günde en çok 3 kez.'**
   String get alarmTekrarAciklama;
+
+  /// No description provided for @alarmFiyatOzetYukselis.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} {price} seviyesine çıkarsa haber vereceğiz.'**
+  String alarmFiyatOzetYukselis(String name, String price);
+
+  /// No description provided for @alarmFiyatOzetDusus.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} {price} seviyesine inerse haber vereceğiz.'**
+  String alarmFiyatOzetDusus(String name, String price);
+
+  /// No description provided for @alarmMaliyetin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetin {price}'**
+  String alarmMaliyetin(String price);
 
   /// No description provided for @alarmSonCaldi.
   ///
@@ -17333,6 +17357,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bir tutar seç, kalanı Ana sayfada gör'**
   String get goalProfileRowSubtitle;
+
+  /// No description provided for @goalDateTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne zamana kadar?'**
+  String get goalDateTitle;
+
+  /// No description provided for @goalDateNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yok'**
+  String get goalDateNone;
+
+  /// No description provided for @goalDateOneYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 yıl'**
+  String get goalDateOneYear;
+
+  /// No description provided for @goalDateYearEnd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl sonu'**
+  String get goalDateYearEnd;
+
+  /// No description provided for @goalDatePick.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarih seç'**
+  String get goalDatePick;
+
+  /// No description provided for @goalDateLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefine tarih koy, Premium ile'**
+  String get goalDateLocked;
+
+  /// No description provided for @goalDateLockedLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilitli'**
+  String get goalDateLockedLabel;
+
+  /// No description provided for @goalDateMonthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayda yaklaşık {tutar} eklersen yetişirsin'**
+  String goalDateMonthly(String tutar);
+
+  /// No description provided for @goalDateNoReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri hariç'**
+  String get goalDateNoReturn;
+
+  /// No description provided for @goalDateBy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih}\'{ek} kadar'**
+  String goalDateBy(String tarih, String ek);
 }
 
 class _AppLocalizationsDelegate

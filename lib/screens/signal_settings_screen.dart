@@ -452,7 +452,6 @@ class _CategorySection extends StatelessWidget {
   Future<void> _parametreSheet(BuildContext context, String id) async {
     final sonuc = await showSandikSheet<_ParametreSonucu>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       builder: (_) => _ParametreSayfasi(
         id: id,
@@ -513,8 +512,6 @@ class _ParametreSayfasiState extends State<_ParametreSayfasi> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
             Text(IndicatorId.labelOf(widget.id),
                 style: context.t.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
@@ -683,7 +680,6 @@ class _FrequencyRow extends StatelessWidget {
 
     final sonuc = await showSandikSheet<List<int>>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -699,10 +695,6 @@ class _FrequencyRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: const SandikTutamac(),
-                  ),
-                  const SizedBox(height: 16),
                   Text(
                     freq.hourCount == 1
                         ? 'Bildirim saatini seç'

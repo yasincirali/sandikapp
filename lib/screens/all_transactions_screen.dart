@@ -1011,8 +1011,6 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
             top: Radius.circular(SandikRadius.lg)),
@@ -1150,7 +1148,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
+          padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, SandikSpace.sm),
           child: Row(
             children: [
               Expanded(

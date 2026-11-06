@@ -79,7 +79,6 @@ String hesapAdi(AppUser u) =>
 Future<void> hesapSeciciniAc(BuildContext context, WidgetRef ref) {
   return showSandikSheet<void>(
     context: context,
-    backgroundColor: context.c.surface2,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (_) => HesapSeciciSayfasi(ustContext: context),
@@ -119,8 +118,6 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.sm),
             Row(
               children: [
                 Expanded(
@@ -427,7 +424,6 @@ Future<CokluCikis?> cokluCikisSor(
     BuildContext context, String ad, int hesapSayisi) {
   return showSandikSheet<CokluCikis>(
     context: context,
-    backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (ctx) => CokluCikisSayfasi(ad: ad, hesapSayisi: hesapSayisi),
   );
@@ -452,8 +448,6 @@ class CokluCikisSayfasi extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
             Semantics(
               header: true,
               child: Text('Çıkış yap',

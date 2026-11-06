@@ -86,7 +86,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '390');
     await tester.pump();
     expect(find.textContaining('güncel fiyata eşit'), findsNothing);
-    expect(find.textContaining('çıkınca haber vereceğiz'), findsOneWidget);
+    expect(find.textContaining('seviyesine çıkarsa haber vereceğiz'), findsOneWidget);
 
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();

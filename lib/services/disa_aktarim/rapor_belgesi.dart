@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../models/asset_type.dart';
+
 /// Dışa aktarılan belgenin biçimden bağımsız hâli (Premium, 2026-10-10).
 ///
 /// Aynı içerik iki biçime yazılır: Excel (`xlsx_yazici.dart`) ve PDF
@@ -95,6 +97,7 @@ class RaporGrafigi {
     required this.tur,
     required this.kalemler,
     this.not,
+    this.turler = const {},
   });
 
   final String baslik;
@@ -102,6 +105,13 @@ class RaporGrafigi {
 
   /// (etiket, TL değeri). Dağılımda pay buradan hesaplanır.
   final List<(String, double)> kalemler;
+
+  /// Dağılım satırının varlık türü (etiket → tür). PDF rengi buradan gelir,
+  /// satır SIRASINDAN değil (müşteri raporu 6 Kas 15:15 #1): önceki sıralı
+  /// palette en büyük kalem değişince renkler yer değiştiriyor, fon kâr
+  /// yeşili gibi okunuyordu. Etikete bağlı harita, çünkü yazıcı sıfır/eksi
+  /// kalemleri ayıklayınca sıra kayar. Türü olmayan satır nötr gri çizilir.
+  final Map<String, AssetType> turler;
 
   /// Başlığın sağındaki küçük açıklama ("açık pozisyonlar, TL").
   final String? not;

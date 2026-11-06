@@ -89,6 +89,36 @@ List<({int yuzde, double hedef})> maliyetHedefleri(
           (yuzde: y, hedef: maliyet * (1 + y / 100)),
     ];
 
+/// Fiyat kipinin canlı özeti (Ar-Ge 6 Kas 08:45 #1): yüzde kipindeki
+/// `alarmYuzdeOzet*` cümlesinin eşi. Kullanıcı yönü kafasında hesaplamasın;
+/// hedef yazılınca (ya da çipe basılınca) "THY ₺330,00 seviyesine çıkarsa
+/// haber vereceğiz." Tutar varlığın kendi simgesiyle ([alarmFiyatMetni]:
+/// ABD hissesinde "$", #293). Yön [PriceAlert.suggestDirection]'dan:
+/// kaydedilen yönle aynı kaynak, cümle başka bir şey söyleyemez.
+///
+/// `null`: hedef yok, güncel fiyat bilinmiyor (yön türetilemez; eski
+/// "Fiyat bu seviyeye çıkınca" cümlesi bu durumda da "çıkınca" diyordu)
+/// ya da hedef güncel fiyata eşit (orada uyarı satırı konuşur).
+String? alarmFiyatOzeti(AppLocalizations l10n, AlarmAdayi aday,
+    double? hedef) {
+  if (hedef == null || aday.guncelFiyat <= 0) return null;
+  if (alarmHedefiGuncelFiyatta(hedef, aday.guncelFiyat)) return null;
+  final yon = PriceAlert.suggestDirection(
+      currentPrice: aday.guncelFiyat, targetPrice: hedef);
+  final tutar = alarmFiyatMetni(hedef, aday.sembol);
+  return yon == 'above'
+      ? l10n.alarmFiyatOzetYukselis(aday.ad, tutar)
+      : l10n.alarmFiyatOzetDusus(aday.ad, tutar);
+}
+
+/// Hedefin güncel fiyata uzaklığı, alanın içinde: "+%5,6" / "−%3,2".
+/// [alarmFiyatOzeti] ile aynı koşullarda görünür.
+String? alarmFiyatUzakligi(AlarmAdayi aday, double? hedef) {
+  if (hedef == null || aday.guncelFiyat <= 0) return null;
+  if (alarmHedefiGuncelFiyatta(hedef, aday.guncelFiyat)) return null;
+  return fmtPctIsaretli((hedef / aday.guncelFiyat - 1) * 100, digits: 1);
+}
+
 /// Sheet'in döndürdüğü seçim.
 class AlarmKurulumu {
   final AlarmAdayi aday;
@@ -254,7 +284,6 @@ Future<PriceAlert?> alarmKurAkisi(
   GostergeAlarmi? gostergeKayit;
   final sonuc = await showSandikSheet<Object>(
     context: context,
-    backgroundColor: context.c.surface1,
     isScrollControlled: true,
     useSafeArea: true,
     shape: const RoundedRectangleBorder(
@@ -452,7 +481,6 @@ Future<bool> alarmDuzenleAkisi(
   var silinsin = false;
   final sonuc = await showSandikSheet<Object>(
     context: context,
-    backgroundColor: context.c.surface1,
     isScrollControlled: true,
     useSafeArea: true,
     shape: const RoundedRectangleBorder(
@@ -610,10 +638,6 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   bool get _yuzdeAcik => _etkinKip == _AlarmKipi.yuzde;
   bool get _gostergeAcik => _etkinKip == _AlarmKipi.gosterge;
 
-  /// Hızlı hedefler: güncel fiyatın ±%'si. Kullanıcı çoğu zaman "biraz
-  /// yükselince / düşünce" der, rakam hesaplamak istemez.
-  static const _hizliYuzdeler = [-10, -5, 5, 10];
-
   @override
   void initState() {
     super.initState();
@@ -635,55 +659,98 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
     return (v == null || v <= 0) ? null : v;
   }
 
-  void _hizli(int yuzde) => _hedefYaz(_secili.guncelFiyat * (1 + yuzde / 100));
-
   void _hedefYaz(double f) {
     // 1 ₺ altı (SHIB) 2 haneye yuvarlanınca hedef 0 olurdu.
     _controller.text = f >= 1 ? fmtNum(f, digits: 2) : fmtInputTr(f);
     setState(() => _hata = null);
   }
 
-  /// Hızlı hedef çipi — güncel ve maliyet satırının ortak kabuğu.
-  Widget _cip({
-    required String metin,
-    required String semantik,
-    required Color renk,
-    required VoidCallback onTap,
-  }) {
-    final c = context.c;
-    return Semantics(
-      button: true,
-      label: semantik,
-      excludeSemantics: true,
-      child: SandikTappable(
-        onTap: onTap,
-        // Çip içeriği kadar geniş (en az 44×44). `Container.alignment`
-        // Align'ı genişlik çarpanı olmadan kurar ve Wrap'in verdiği tüm
-        // genişliğe yayılır: yatay grafikten açılan sayfada dört ±% çipi
-        // alt alta tam genişlik diziliyor, "Alarm kur" 390 pt'lik ekranın
-        // altına itiliyordu (uçtan uca test 2026-10-29). widthFactor /
-        // heightFactor 1 → çip metni sarar, Wrap onları yan yana dizer.
-        child: Container(
-          constraints: const BoxConstraints(
-              minHeight: SandikTouch.min, minWidth: SandikTouch.min),
-          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
-          decoration: BoxDecoration(
-            color: c.surface2,
-            borderRadius: BorderRadius.circular(SandikRadius.sm),
-            border: Border.all(color: c.hairline),
-          ),
-          child: Align(
-            widthFactor: 1,
-            heightFactor: 1,
-            child: Text(
-              metin,
-              style: context.t.labelLarge?.copyWith(
-                color: renk,
-                fontWeight: FontWeight.w700,
+  /// Hızlı doldurma çipleri: TEK, yatay kayan satır (Ar-Ge 6 Kas 08:45 #3).
+  ///
+  /// Neden: güncel fiyatın ±%'si köşeli/renkli yazılı bir `Wrap`'te,
+  /// maliyet çipleri ayrı başlıklı ikinci bir satırdaydı; hedef sayfasının
+  /// çipleri ise pill. Aynı iş üç görünümdeydi (TASARIM_DILI §6.4). Artık
+  /// ortak seçilebilir çip ([SandikFiltreCipi]: pill, 44 pt, seçiliyken
+  /// amber + onay işareti) ve tek satır: sayfa bir satır kısalır, yatay
+  /// grafikten (390 pt) açılınca da satır kırılmaz (2026-10-29 e2e kaydı:
+  /// alt alta dizilen çipler "Alarm kur"u ekran dışına itiyordu).
+  ///
+  /// Güncelin ±%'si duruyor: kullanıcı çoğu zaman "biraz yükselince /
+  /// düşünce" der, rakam hesaplamak istemez.
+  ///
+  /// Sıra kullanıcının sorusuna göre: önce "maliyetime dönerse", sonra
+  /// yükseliş (güncelin +%5/+%10'u, maliyetin +%20'si), sonra düşüş. Yön
+  /// yalnız renkle verilmez: işaret (+/−), ok ikonu ve alttaki cümle.
+  /// Alandaki hedefe eşit çip SEÇİLİ görünür; eşitlik ekrandaki
+  /// hassasiyette ([fmtTRYFiyat]), [alarmHedefiGuncelFiyatta] ile aynı kural.
+  Widget _hizliCipler(
+      SandikPalette c, List<({int yuzde, double hedef})> maliyetCipleri) {
+    final l10n = context.l10n;
+    final g = _secili.guncelFiyat;
+    final yazilan = _hedef;
+    String? isaret(int y) => y == 0 ? null : (y > 0 ? '+' : '−');
+    ({String ad, String semantik, int yon, double hedef})? maliyet(int y) {
+      for (final h in maliyetCipleri) {
+        if (h.yuzde != y) continue;
+        return (
+          ad: y == 0
+              ? l10n.alertCostBreakEven
+              : l10n.alertCostPct('${isaret(y)}%${y.abs()}'),
+          semantik: y == 0
+              ? l10n.alertCostBreakEvenSemantics
+              : l10n.alertCostPctSemantics(
+                  y > 0 ? l10n.plusWord : l10n.minusWord, y.abs()),
+          yon: y.sign,
+          hedef: h.hedef,
+        );
+      }
+      return null;
+    }
+
+    ({String ad, String semantik, int yon, double hedef}) guncel(int y) => (
+          ad: '${isaret(y)}%${y.abs()}',
+          semantik: l10n.targetPctSemantics(
+              y > 0 ? l10n.plusWord : l10n.minusWord, y.abs()),
+          yon: y.sign,
+          hedef: g * (1 + y / 100),
+        );
+    final cipler = [
+      maliyet(0),
+      guncel(5),
+      guncel(10),
+      maliyet(20),
+      guncel(-5),
+      guncel(-10),
+      maliyet(-10),
+    ].whereType<({String ad, String semantik, int yon, double hedef})>();
+    return SingleChildScrollView(
+      key: const ValueKey('alarmHizliCipler'),
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: [
+          for (final (i, cip) in cipler.indexed) ...[
+            if (i > 0) const SizedBox(width: SandikSpace.xs2),
+            // Yatay kaydırmada genişlik sınırsız; ortak çipin içindeki
+            // `Flexible` sınır ister. Çip yazısı kısa, tavan yalnız güvenlik.
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 240),
+              child: SandikFiltreCipi(
+                ad: cip.ad,
+                semantik: cip.semantik,
+                secili: yazilan != null &&
+                    fmtTRYFiyat(yazilan) == fmtTRYFiyat(cip.hedef),
+                ikon: switch (cip.yon) {
+                  > 0 => Icons.arrow_upward_rounded,
+                  < 0 => Icons.arrow_downward_rounded,
+                  _ => null,
+                },
+                ikonRengi: cip.yon > 0 ? c.gain : c.loss,
+                onTap: () => _hedefYaz(cip.hedef),
               ),
             ),
-          ),
-        ),
+          ],
+        ],
       ),
     );
   }
@@ -854,8 +921,13 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                           color: c.text90, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: SandikSpace.xxs),
+                    // Tek satır (Ar-Ge 6 Kas, tasarım 4): yalnız sınır. Sınır
+                    // sunucuda `GUNLUK_TAVAN = 3` (_shared/fiyat_alarmi_tekrar.ts);
+                    // "geri dönüp yeniden geçerse" ayrıntısı alarm satırında.
                     Text(
                       l10n.alarmTekrarAciklama,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: context.t.bodySmall?.copyWith(color: c.text58),
                     ),
                   ],
@@ -1001,10 +1073,9 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   Widget build(BuildContext context) {
     final c = context.c;
     final hedef = _hedef;
-    final yon = hedef == null
-        ? null
-        : PriceAlert.suggestDirection(
-            currentPrice: _secili.guncelFiyat, targetPrice: hedef);
+    final ozet = alarmFiyatOzeti(context.l10n, _secili, hedef);
+    final uzaklik = alarmFiyatUzakligi(_secili, hedef);
+    final yukari = hedef != null && hedef > _secili.guncelFiyat;
     final fiyatVar = _secili.guncelFiyat > 0;
     final maliyet = _secili.maliyet;
     final maliyetCipleri = maliyet == null || maliyet <= 0 || !fiyatVar
@@ -1014,12 +1085,13 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         hedef != null && alarmHedefiGuncelFiyatta(hedef, _secili.guncelFiyat);
 
     final kisa = MediaQuery.sizeOf(context).height < 480;
+    // Klavye payı `showSandikSheet` kabuğunda (sheet standardı 2026-11-06);
+    // yatay pay standart ekran kenarı: hedef sayfasıyla aynı (Ar-Ge 6 Kas
+    // #2: alarm sabit 24, hedef `screenH` kullanıyordu).
+    final kenar = SandikSpace.screenH(context);
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            SandikSpace.lg, SandikSpace.sm2, SandikSpace.lg, SandikSpace.lg),
+        padding: EdgeInsets.fromLTRB(
+            kenar, SandikSpace.sm, kenar, SandikSpace.lg),
         // Kaydırılabilir: büyük yazıda (3,1×) form sayfa yüksekliğini aşıyor,
         // "Alarm kur" düğmesi ekranın altında kesiliyordu (büyük yazı
         // taraması 2026-10-12). Sığınca kaydırma yok, düzen aynı.
@@ -1036,18 +1108,13 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
-                const Center(child: SandikTutamac()),
-                const SizedBox(height: SandikSpace.sm),
-                Text(
-                    widget.duzenle
-                        ? context.l10n.alarmiDuzenle
-                        : widget.sabit
-                            ? context.l10n.alertForAsset(_secili.ad)
-                            : 'Alarm kur',
-                    style: context.t.headlineSmall?.copyWith(color: c.text90),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                // Başlık seçilen varlıkla değiştiği için kabuğun `baslik:`'ı
+                // değil, aynı stil bileşeni burada (sheet standardı).
+                SandikSheetBasligi(widget.duzenle
+                    ? context.l10n.alarmiDuzenle
+                    : widget.sabit
+                        ? context.l10n.alertForAsset(_secili.ad)
+                        : 'Alarm kur'),
                 const SizedBox(height: SandikSpace.md),
                 if (!widget.sabit) ...[
                   // `DropdownButton` + `value`: projede kararlı kalıp
@@ -1085,10 +1152,17 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   ),
                   const SizedBox(height: SandikSpace.xs2),
                 ],
+                // Maliyet bu satırda (tek çip satırı, 6 Kas): eskiden ikinci
+                // çip satırının başlığıydı ("Maliyetine göre · ₺200,00").
                 Text(
                   fiyatVar
-                      ? context.l10n.currentlyPrice(
-                          alarmFiyatMetni(_secili.guncelFiyat, _secili.sembol))
+                      ? [
+                          context.l10n.currentlyPrice(alarmFiyatMetni(
+                              _secili.guncelFiyat, _secili.sembol)),
+                          if (maliyetCipleri.isNotEmpty)
+                            context.l10n.alarmMaliyetin(
+                                alarmFiyatMetni(maliyet!, _secili.sembol)),
+                        ].join(' · ')
                       : context.l10n.currentPriceUnknown,
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
@@ -1133,64 +1207,17 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   decoration: InputDecoration(
                     labelText: 'Hedef fiyat',
                     errorText: _hata,
+                    suffixText: uzaklik,
+                    suffixStyle: context.t.titleSmall?.copyWith(
+                      color: yukari ? c.gain : c.loss,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   onChanged: (_) => setState(() => _hata = null),
                 ),
                 if (fiyatVar) ...[
                   const SizedBox(height: SandikSpace.smd),
-                  Wrap(
-                    spacing: SandikSpace.xs2,
-                    runSpacing: SandikSpace.xs2,
-                    children: [
-                      for (final y in _hizliYuzdeler)
-                        _cip(
-                          metin: '${y > 0 ? '+' : '−'}%${y.abs()}',
-                          semantik: context.l10n.targetPctSemantics(
-                              y > 0 ? context.l10n.plusWord : context.l10n.minusWord,
-                              y.abs()),
-                          renk: y > 0 ? c.gain : c.loss,
-                          onTap: () => _hizli(y),
-                        ),
-                    ],
-                  ),
-                ],
-                if (maliyetCipleri.isNotEmpty) ...[
-                  const SizedBox(height: SandikSpace.smd),
-                  // Maliyetine göre (2026-10-23): yüzde güncelden değil kendi
-                  // alış fiyatından. Renk yönü söyler, metin de söyler (renk
-                  // körlüğü): "Maliyetim", "Maliyet +%20".
-                  Text(
-                    context.l10n.alertCostRow(
-                        alarmFiyatMetni(maliyet!, _secili.sembol)),
-                    style: context.t.labelMedium?.copyWith(color: c.text58),
-                  ),
-                  const SizedBox(height: SandikSpace.xs),
-                  Wrap(
-                    spacing: SandikSpace.xs2,
-                    runSpacing: SandikSpace.xs2,
-                    children: [
-                      for (final h in maliyetCipleri)
-                        _cip(
-                          metin: h.yuzde == 0
-                              ? context.l10n.alertCostBreakEven
-                              : context.l10n.alertCostPct(
-                                  '${h.yuzde > 0 ? '+' : '−'}%${h.yuzde.abs()}'),
-                          semantik: h.yuzde == 0
-                              ? context.l10n.alertCostBreakEvenSemantics
-                              : context.l10n.alertCostPctSemantics(
-                                  h.yuzde > 0
-                                      ? context.l10n.plusWord
-                                      : context.l10n.minusWord,
-                                  h.yuzde.abs()),
-                          renk: h.yuzde == 0
-                              ? c.text90
-                              : h.yuzde > 0
-                                  ? c.gain
-                                  : c.loss,
-                          onTap: () => _hedefYaz(h.hedef),
-                        ),
-                    ],
-                  ),
+                  _hizliCipler(c, maliyetCipleri),
                 ],
                 const SizedBox(height: SandikSpace.smd),
                 // Eşit hedef: "çıkınca haber vereceğiz" demek yalan olurdu —
@@ -1200,11 +1227,10 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                     context.l10n.alertTargetAtCurrent,
                     style: context.t.bodyMedium?.copyWith(color: c.danger),
                   )
-                else if (yon != null && !esit)
+                else if (ozet != null)
                   Text(
-                    yon == 'above'
-                        ? context.l10n.notifyWhenAbove
-                        : context.l10n.notifyWhenBelow,
+                    ozet,
+                    key: const ValueKey('alarmFiyatOzeti'),
                     style: context.t.bodyMedium?.copyWith(color: c.amberText),
                   ),
                 const SizedBox(height: SandikSpace.sm),
@@ -1270,7 +1296,6 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               ),
           ],
         ),
-      ),
     );
   }
 }
