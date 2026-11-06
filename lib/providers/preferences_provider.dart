@@ -22,6 +22,7 @@ import '../services/ayar_olcumu.dart';
 import '../services/dil_olcumu.dart';
 import '../services/crash_reporter.dart';
 import '../theme/yazi_boyutu.dart';
+import '../utils/tr_format.dart' show dayKey;
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -696,7 +697,7 @@ class KapsamHedefTarihiNotifier extends FamilyNotifier<DateTime?, String> {
   /// [tarih] günün gece yarısına indirilir; null anahtarı siler.
   Future<void> set(DateTime? tarih) async {
     final gun =
-        tarih == null ? null : DateTime(tarih.year, tarih.month, tarih.day);
+        tarih == null ? null : dayKey(tarih);
     state = gun;
     if (DemoModu.aktif) return; // Demo (F1): yalnızca bellekte.
     try {

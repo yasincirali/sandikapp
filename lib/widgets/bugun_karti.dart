@@ -1133,7 +1133,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final t = ref.watch(kapsamHedefTarihiProvider(widget.hedefKapsami));
     if (t == null) return null;
     final now = BugunKarti.saat();
-    if (t.isBefore(DateTime(now.year, now.month, now.day))) return null;
+    if (t.isBefore(dayKey(now))) return null;
     return context.l10n
         .goalDateBy(DateFormat.yMMM(_dil).format(t), yilYonelmeEki(t.year));
   }

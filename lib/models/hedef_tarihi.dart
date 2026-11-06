@@ -1,3 +1,5 @@
+import '../utils/tr_format.dart';
+
 // Hedefe tarih (Premium, yasin 2026-11-06): "Ne zamana kadar?" seçimi ve
 // "ayda yaklaşık ₺X eklersen yetişirsin" hesabı.
 //
@@ -56,8 +58,8 @@ int? hedefAylikTutar({
   required DateTime bugun,
 }) {
   if (kalan <= 0) return null;
-  final gun = DateTime(tarih.year, tarih.month, tarih.day);
-  final bugunGun = DateTime(bugun.year, bugun.month, bugun.day);
+  final gun = dayKey(tarih);
+  final bugunGun = dayKey(bugun);
   if (gun.isBefore(bugunGun)) return null;
   return (kalan / hedefeKalanAy(gun, bugunGun)).ceil();
 }
