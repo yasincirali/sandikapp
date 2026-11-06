@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../config/magaza.dart';
+import '../../models/asset_type.dart';
 import '../../utils/tr_format.dart';
 import 'pdf_marka.dart';
 import 'rapor_belgeleri.dart' show teknikSembolMu;
@@ -118,9 +119,13 @@ Future<Uint8List> pdfYaz(
   return doc.save();
 }
 
-String _ilkHarfBuyuk(String s) => s.isEmpty
-    ? s
-    : PdfMarka.buyuk(s.substring(0, 1)) + s.substring(1);
+// Yalnız ilk harf, Türkçe büyük harfle (i → İ, ı → I).
+String _ilkHarfBuyuk(String s) {
+  if (s.isEmpty) return s;
+  final ilk = s.substring(0, 1);
+  final b = switch (ilk) { 'i' => 'İ', 'ı' => 'I', _ => ilk.toUpperCase() };
+  return b + s.substring(1);
+}
 
 final _tarih = DateFormat('dd.MM.yyyy');
 
@@ -205,10 +210,10 @@ pw.Widget _kutu((String, Object?) kalem) {
     child: pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(PdfMarka.buyuk(ad),
+        pw.Text(ad,
             maxLines: 2,
             style: const pw.TextStyle(
-                fontSize: 6.3, color: PdfMarka.gri)),
+                fontSize: 7.5, color: PdfMarka.gri)),
         pw.SizedBox(height: 4),
         pw.Text(metin,
             maxLines: 1,
@@ -232,9 +237,9 @@ pw.Widget _oneCikanlar(List<String> cumleler) => pw.Container(
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text('ÖNE ÇIKANLAR',
+          pw.Text('Öne çıkanlar',
               style: pw.TextStyle(
-                  fontSize: 7,
+                  fontSize: 8.5,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfMarka.kehribarKoyu)),
           pw.SizedBox(height: 5),
@@ -329,7 +334,7 @@ pw.Widget _grafik(RaporGrafigi g) => pw.Column(
       children: [
         bolumBasligi(g.baslik, sag: g.not),
         switch (g.tur) {
-          RaporGrafikTuru.dagilim => _dagilim(g.kalemler),
+          RaporGrafikTuru.dagilim => _dagilim(g.kalemler, g.turler),
           RaporGrafikTuru.cubuk => _cubuklar(g.kalemler),
         },
       ],
@@ -337,11 +342,13 @@ pw.Widget _grafik(RaporGrafigi g) => pw.Column(
 
 /// Tek yığılmış çubuk + lejant. Pay yalnız pozitif değerlerden; her
 /// kalemin yanında ad + yüzde + tutar (renk tek başına anlam taşımaz).
-pw.Widget _dagilim(List<(String, double)> kalemler) {
+/// Renk satırın TÜRÜNDEN ([turler], etiket → tür), sırasından değil.
+pw.Widget _dagilim(
+    List<(String, double)> kalemler, Map<String, AssetType> turler) {
   final pozitif = [for (final k in kalemler) if (k.$2 > 0) k];
   final toplam = pozitif.fold(0.0, (t, k) => t + k.$2);
   if (toplam <= 0) return pw.SizedBox();
-  PdfColor renk(int i) => PdfMarka.seri[i % PdfMarka.seri.length];
+  PdfColor renk(int i) => PdfMarka.turRengi(turler[pozitif[i].$1]);
   return pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [

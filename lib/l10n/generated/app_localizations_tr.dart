@@ -8373,10 +8373,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yrMasraf => 'İşlem masrafları';
 
   @override
-  String get yrPdf => 'PDF';
+  String get yrMusavireGonder => 'Mali müşavirime gönder';
 
   @override
-  String get yrExcel => 'Excel';
+  String get yrYalnizPdf => 'Yalnız PDF';
+
+  @override
+  String get yrYalnizExcel => 'Yalnız Excel';
 
   @override
   String get yrSatislarUpper => 'Satışlar';

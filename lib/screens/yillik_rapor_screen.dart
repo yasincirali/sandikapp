@@ -39,6 +39,7 @@ class YillikRaporScreen extends ConsumerStatefulWidget {
 
 class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
   int? _yil;
+  final _gonderKey = GlobalKey();
   final _pdfKey = GlobalKey();
   final _excelKey = GlobalKey();
 
@@ -119,28 +120,47 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
             ),
           ),
           const SizedBox(height: SandikSpace.md),
+          // Tek birincil eylem (müşteri raporu 6 Kas 15:15 #2): raporun asıl
+          // gittiği yer mali müşavir; PDF + Excel tek paylaşımda, e-postada
+          // iki ek. Tek biçim isteyen için altında küçük metin düğmeleri —
+          // her biri ≥44 pt (SandikTouch). Paylaşım sayfası iPad'de basılan
+          // düğmeye bağlanır (`originOf`).
+          SandikAsyncButton(
+            key: _gonderKey,
+            tur: SandikAsyncTur.dolu,
+            icon: const Icon(Icons.send_rounded),
+            onPressed: () => _paylas(
+                r,
+                oran,
+                const [DisaAktarimBicimi.pdf, DisaAktarimBicimi.excel],
+                ShareCardService.originOf(_gonderKey.currentContext)),
+            child: Text(l.yrMusavireGonder),
+          ),
+          const SizedBox(height: SandikSpace.xs),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
-                child: SandikAsyncButton(
-                  key: _pdfKey,
-                  tur: SandikAsyncTur.dolu,
-                  icon: const Icon(Icons.picture_as_pdf_rounded),
-                  onPressed: () => _paylas(r, oran, DisaAktarimBicimi.pdf,
-                      ShareCardService.originOf(_pdfKey.currentContext)),
-                  child: Text(l.yrPdf),
-                ),
+              SandikAsyncButton.kompakt(
+                key: _pdfKey,
+                tur: SandikAsyncTur.metin,
+                style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
+                onPressed: () => _paylas(r, oran, const [DisaAktarimBicimi.pdf],
+                    ShareCardService.originOf(_pdfKey.currentContext)),
+                child: Text(l.yrYalnizPdf),
               ),
-              const SizedBox(width: SandikSpace.sm),
-              Expanded(
-                child: SandikAsyncButton(
-                  key: _excelKey,
-                  tur: SandikAsyncTur.cerceve,
-                  icon: const Icon(Icons.table_chart_rounded),
-                  onPressed: () => _paylas(r, oran, DisaAktarimBicimi.excel,
-                      ShareCardService.originOf(_excelKey.currentContext)),
-                  child: Text(l.yrExcel),
-                ),
+              ExcludeSemantics(
+                child: Text('·', style: t.bodySmall?.copyWith(color: c.text58)),
+              ),
+              SandikAsyncButton.kompakt(
+                key: _excelKey,
+                tur: SandikAsyncTur.metin,
+                style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
+                onPressed: () => _paylas(
+                    r,
+                    oran,
+                    const [DisaAktarimBicimi.excel],
+                    ShareCardService.originOf(_excelKey.currentContext)),
+                child: Text(l.yrYalnizExcel),
               ),
             ],
           ),
@@ -200,8 +220,8 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
     );
   }
 
-  Future<void> _paylas(YillikRapor r, double? oran, DisaAktarimBicimi bicim,
-      Rect? kaynak) async {
+  Future<void> _paylas(YillikRapor r, double? oran,
+      List<DisaAktarimBicimi> bicimler, Rect? kaynak) async {
     final kullanici = ref.read(authProvider).valueOrNull;
     final belge = yillikRaporBelgesi(
       r,
@@ -211,7 +231,8 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
     );
     try {
       await DisaAktarimService.instance
-          .paylas(belge, bicim: bicim, tur: 'yillik_rapor', kaynak: kaynak);
+          .paylasBirlikte(belge,
+              bicimler: bicimler, tur: 'yillik_rapor', kaynak: kaynak);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'YillikRapor.paylas');
       if (mounted) showAppError(context, e);

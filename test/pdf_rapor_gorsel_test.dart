@@ -135,7 +135,7 @@ void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
   final dir = Directory('build/gorsel/pdf')..createSync(recursive: true);
   final duz = _oku('assets/fonts/DMSans-Regular.ttf');
-  final kalin = _oku('assets/fonts/DMSans-Bold.ttf');
+  final kalin = _oku('assets/fonts/DMSans-SemiBold.ttf');
 
   test('yıllık rapor', () async {
     final r = yillikRapor(

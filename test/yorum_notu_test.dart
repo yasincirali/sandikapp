@@ -169,7 +169,7 @@ void main() {
     final b = await yorumNotuPdf(
       _notu(),
       duz: oku('assets/fonts/DMSans-Regular.ttf'),
-      kalin: oku('assets/fonts/DMSans-Bold.ttf'),
+      kalin: oku('assets/fonts/DMSans-SemiBold.ttf'),
       logo: File('assets/images/sandik_icon.png').readAsBytesSync(),
       hazirlanma: DateTime(2026, 10, 14),
     );

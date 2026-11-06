@@ -13883,17 +13883,23 @@ abstract class AppLocalizations {
   /// **'İşlem masrafları'**
   String get yrMasraf;
 
-  /// No description provided for @yrPdf.
+  /// No description provided for @yrMusavireGonder.
   ///
   /// In tr, this message translates to:
-  /// **'PDF'**
-  String get yrPdf;
+  /// **'Mali müşavirime gönder'**
+  String get yrMusavireGonder;
 
-  /// No description provided for @yrExcel.
+  /// No description provided for @yrYalnizPdf.
   ///
   /// In tr, this message translates to:
-  /// **'Excel'**
-  String get yrExcel;
+  /// **'Yalnız PDF'**
+  String get yrYalnizPdf;
+
+  /// No description provided for @yrYalnizExcel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız Excel'**
+  String get yrYalnizExcel;
 
   /// No description provided for @yrSatislarUpper.
   ///

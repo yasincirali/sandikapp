@@ -107,7 +107,10 @@ void main() {
     expect(ozet['Gerçekleşen kâr/zarar (satışlar)'], const TlTutar(300));
     expect(ozet['Temettü (net, ele geçen)'], const TlTutar(85));
     expect((ozet['Temettü stopajı'] as TlTutar).deger, closeTo(15, 1e-9));
-    expect(b.dipnotlar.first, contains('vergi tavsiyesi değildir'));
+    // "Tavsiye değildir" her sayfanın dipnotunda; notlarda tekrar etmez
+    // (6 Kas 15:15 #3). Müşavir cümlesi kalır.
+    expect(b.dipnotlar.first, contains('mali müşavirine danış'));
+    expect(b.dipnotlar.join(' '), isNot(contains('tavsiyesi')));
     expect(b.dosyaAdi, 'sandık Yıllık Rapor 2025');
   });
 
@@ -136,7 +139,7 @@ void main() {
         ByteData.sublistView(File(yol).readAsBytesSync());
     final baytlar = await pdfYaz(_belge(),
         duz: oku('assets/fonts/DMSans-Regular.ttf'),
-        kalin: oku('assets/fonts/DMSans-Bold.ttf'),
+        kalin: oku('assets/fonts/DMSans-SemiBold.ttf'),
         logo: File('assets/images/sandik_icon.png').readAsBytesSync());
     expect(ascii.decode(baytlar.sublist(0, 5)), '%PDF-');
     expect(baytlar.length, greaterThan(1000));
@@ -336,7 +339,7 @@ void main() {
           ByteData.sublistView(File(yol).readAsBytesSync());
       final pdf = await pdfYaz(aylik(tufe: 2),
           duz: oku('assets/fonts/DMSans-Regular.ttf'),
-          kalin: oku('assets/fonts/DMSans-Bold.ttf'),
+          kalin: oku('assets/fonts/DMSans-SemiBold.ttf'),
           logo: File('assets/images/sandik_icon.png').readAsBytesSync());
       expect(ascii.decode(pdf.sublist(0, 5)), '%PDF-');
       final d = _ac(xlsxYaz(aylik()));

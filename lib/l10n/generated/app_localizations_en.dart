@@ -8453,10 +8453,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yrMasraf => 'Transaction fees';
 
   @override
-  String get yrPdf => 'PDF';
+  String get yrMusavireGonder => 'Send to my accountant';
 
   @override
-  String get yrExcel => 'Excel';
+  String get yrYalnizPdf => 'PDF only';
+
+  @override
+  String get yrYalnizExcel => 'Excel only';
 
   @override
   String get yrSatislarUpper => 'Sales';
