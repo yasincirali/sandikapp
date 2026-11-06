@@ -329,11 +329,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       // günün ilk açılışında 24 saatlik disk önbelleği eskiyse üç fon tipi
       // ağdan çekilirken kullanıcı fon seçicide bekliyordu. Seçici açılınca
       // aynı istek paylaşılır (`fetchAllFunds` uçuştaki isteği birleştirir).
-      // Hata yutulur: servis kendi içinde yedeğe düşer ve bildirir; seçici
+      // Hata çökme değil non-fatal kayıt: servis yedeğe düşer, seçici
       // açılınca yeniden dener.
-      unawaited(TefasService.instance
-          .fetchAllFunds()
-          .then<void>((_) {}, onError: (Object _) {}));
+      CrashReporter.arkaPlan(TefasService.instance.fetchAllFunds(),
+          reason: 'fon listesi ön yükleme');
       // Vazgeç onayının ölçütü: açılıştaki (hızlı seçim uygulanmış) hâl.
       _ilkMetinler = _kullaniciMetinleri();
       _metinler.addListener(_kirliliginiGuncelle);
