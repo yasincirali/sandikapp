@@ -305,7 +305,7 @@ class _VeriYok extends StatelessWidget {
         TextButton(
           style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
           onPressed: onRetry,
-          child: Text(context.l10n.retryLower),
+          child: Text(context.l10n.retry),
         ),
       ],
     );

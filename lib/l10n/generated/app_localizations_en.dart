@@ -412,7 +412,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get retry => 'Retry';
+  String get retry => 'Try again';
 
   @override
   String get cancel => 'Cancel';
@@ -1047,10 +1047,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fillTheForm => 'Fill the form';
 
   @override
-  String get bistStocks => 'BIST Stocks';
+  String get bistStocks => 'BIST stocks';
 
   @override
-  String get tefasFunds => 'TEFAS Funds';
+  String get pickerInPortfolio => 'In your portfolio';
+
+  @override
+  String pickerFundReturn1y(String pct) {
+    return '1Y $pct';
+  }
+
+  @override
+  String get tefasFunds => 'TEFAS funds';
 
   @override
   String get fundsLoading => 'Loading funds...';
@@ -1141,7 +1149,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fundsLoadFailed => 'Could not load funds';
 
   @override
-  String get searchEllipsis => 'Search...';
+  String get searchEllipsis => 'Search';
 
   @override
   String get clearSearch => 'Clear search';
@@ -1162,7 +1170,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickFund => 'Pick a fund';
 
   @override
-  String get pickFundTap => 'Tap to pick a fund...';
+  String get pickFundTap => 'Pick a fund';
 
   @override
   String get noResults => 'No results';
@@ -1866,9 +1874,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String intradayMissingBody(String names) {
     return 'Intraday prices could not be fetched for $names. These assets are drawn FLAT at their last known price. A flat line does not mean the market was quiet.';
   }
-
-  @override
-  String get retryLower => 'Try again';
 
   @override
   String get raceUpper => 'Race';
@@ -7748,7 +7753,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get usStocks => 'US Stocks';
+  String get usStocks => 'US stocks';
 
   @override
   String get pickUsStock => 'Pick a US stock';

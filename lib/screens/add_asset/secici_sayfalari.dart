@@ -176,7 +176,14 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
 class _Bist100Picker extends StatefulWidget {
   final String? selected;
   final void Function(String ticker) onSelect;
-  const _Bist100Picker({required this.selected, required this.onSelect});
+  /// Portföyde bugün tutulan BIST kodları (katalog anahtarı, `.IS`'li);
+  /// boş aramada "Portföyündekiler" bölümü.
+  final List<String> portfoyKodlari;
+  const _Bist100Picker({
+    required this.selected,
+    required this.onSelect,
+    this.portfoyKodlari = const [],
+  });
 
   @override
   State<_Bist100Picker> createState() => _Bist100PickerState();
@@ -200,17 +207,15 @@ class _Bist100PickerState extends State<_Bist100Picker> {
     if (mounted) setState(() {});
   }
 
-  List<MapEntry<String, String>> get _filtered {
-    final all = BistHisseKatalogu.instance.hisseler.entries.toList()
-      ..sort((a, b) => a.value.compareTo(b.value));
-    if (_q.isEmpty) return all;
-    final q = _q.toLowerCase();
-    return all
-        .where((e) =>
-            e.value.toLowerCase().contains(q) ||
-            e.key.toLowerCase().contains(q))
-        .toList();
-  }
+  List<MapEntry<String, String>> get _hepsi =>
+      BistHisseKatalogu.instance.hisseler.entries.toList()
+        ..sort((a, b) => a.value.compareTo(b.value));
+
+  // Türkçe katlama + kod tam eşleşmesi üstte: `seciciSuz` (2026-11-07).
+  // Kod `.IS`'siz karşılaştırılır: "thyao" THYAO.IS'e TAM eşit sayılır.
+  List<MapEntry<String, String>> _suz(List<MapEntry<String, String>> hepsi) =>
+      seciciSuz(hepsi, _q,
+          kod: (e) => e.key.replaceAll('.IS', ''), ad: (e) => e.value);
 
   @override
   void dispose() {
@@ -222,10 +227,12 @@ class _Bist100PickerState extends State<_Bist100Picker> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final filtered = _filtered;
+    final hepsi = _hepsi;
+    final filtered = _suz(hepsi);
+    final ust = portfoyBolumu(hepsi, widget.portfoyKodlari, _q,
+        kod: (e) => e.key);
     return _PickerShell(
       title: context.l10n.bistStocks,
-      count: filtered.length,
       color: AssetType.hisse.color,
       searchCtrl: _ctrl,
       onSearch: (v) => setState(() => _q = v),
@@ -233,10 +240,11 @@ class _Bist100PickerState extends State<_Bist100Picker> {
       cs: cs,
       child: filtered.isEmpty
           ? _emptySearch(context, _q, cs)
-          : ListView.builder(
-              itemCount: filtered.length,
-              itemBuilder: (_, i) {
-                final e = filtered[i];
+          : _seciciListesi(
+              context,
+              ust: ust,
+              liste: filtered,
+              satir: (e) {
                 final isSelected = e.key == widget.selected;
                 final ticker = e.key.replaceAll('.IS', '');
                 return _PickerRow(
@@ -263,7 +271,13 @@ class _Bist100PickerState extends State<_Bist100Picker> {
 class _AbdPicker extends StatefulWidget {
   final String? selected;
   final void Function(String ticker) onSelect;
-  const _AbdPicker({required this.selected, required this.onSelect});
+  /// Portföyde bugün tutulan ABD sembolleri; boş aramada üstte.
+  final List<String> portfoyKodlari;
+  const _AbdPicker({
+    required this.selected,
+    required this.onSelect,
+    this.portfoyKodlari = const [],
+  });
 
   @override
   State<_AbdPicker> createState() => _AbdPickerState();
@@ -273,20 +287,11 @@ class _AbdPickerState extends State<_AbdPicker> {
   final _ctrl = TextEditingController();
   String _q = '';
 
-  /// BIST seçicisiyle aynı kural (ad sırası, ad/sembol içinde arama). Sembol
-  /// sorgusu da Yahoo biçimine çevrilir: "brk.b" `BRK-B`'yi bulur.
-  List<MapEntry<String, String>> get _filtered {
-    final all = abdHisseleri.entries.toList()
-      ..sort((a, b) => a.value.compareTo(b.value));
-    if (_q.isEmpty) return all;
-    final q = _q.toLowerCase();
-    final sembol = abdSembolu(_q).toLowerCase();
-    return all
-        .where((e) =>
-            e.value.toLowerCase().contains(q) ||
-            e.key.toLowerCase().contains(sembol))
-        .toList();
-  }
+  /// BIST seçicisiyle aynı kural (`seciciSuz`: ad sırası, kod tam eşleşmesi
+  /// üstte, Türkçe katlama). Sembol sorgusu Yahoo biçimine çevrilir: "brk.b"
+  /// `BRK-B`'yi bulur.
+  List<MapEntry<String, String>> get _hepsi => abdHisseleri.entries.toList()
+    ..sort((a, b) => a.value.compareTo(b.value));
 
   @override
   void dispose() {
@@ -297,10 +302,13 @@ class _AbdPickerState extends State<_AbdPicker> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final filtered = _filtered;
+    final hepsi = _hepsi;
+    final filtered = seciciSuz(hepsi, _q,
+        kod: (e) => e.key, ad: (e) => e.value, kodSorgusu: abdSembolu);
+    final ust = portfoyBolumu(hepsi, widget.portfoyKodlari, _q,
+        kod: (e) => e.key);
     return _PickerShell(
       title: context.l10n.usStocks,
-      count: filtered.length,
       color: AssetType.hisse.color,
       searchCtrl: _ctrl,
       onSearch: (v) => setState(() => _q = v),
@@ -308,10 +316,11 @@ class _AbdPickerState extends State<_AbdPicker> {
       cs: cs,
       child: filtered.isEmpty
           ? _emptySearch(context, _q, cs)
-          : ListView.builder(
-              itemCount: filtered.length,
-              itemBuilder: (_, i) {
-                final e = filtered[i];
+          : _seciciListesi(
+              context,
+              ust: ust,
+              liste: filtered,
+              satir: (e) {
                 return _PickerRow(
                   badgeText: e.key.length > 5 ? e.key.substring(0, 4) : e.key,
                   title: e.value,
@@ -375,7 +384,6 @@ class _GoldPickerState extends State<_GoldPicker> {
     return _PickerShell(
       title: context.l10n.goldTypes,
       searchHint: context.l10n.goldSearchHint,
-      count: eslesen.length,
       color: AssetType.altin.color,
       searchCtrl: _ctrl,
       onSearch: (v) => setState(() => _q = v),
@@ -428,7 +436,14 @@ class _GoldPickerState extends State<_GoldPicker> {
 class _TefasPicker extends StatefulWidget {
   final String? selected;
   final void Function(TefasFund fund) onSelect;
-  const _TefasPicker({required this.selected, required this.onSelect});
+  /// Portföyde bugün tutulan fon kodları (`TEFAS:` öneksiz); boş aramada
+  /// "Portföyündekiler" bölümü.
+  final List<String> portfoyKodlari;
+  const _TefasPicker({
+    required this.selected,
+    required this.onSelect,
+    this.portfoyKodlari = const [],
+  });
 
   @override
   State<_TefasPicker> createState() => _TefasPickerState();
@@ -505,16 +520,10 @@ class _TefasPickerState extends State<_TefasPicker> {
     }
   }
 
-  List<TefasFund> get _filtered {
-    final all = _funds ?? [];
-    if (_q.isEmpty) return all;
-    final q = _q.toLowerCase();
-    return all
-        .where((f) =>
-            f.name.toLowerCase().contains(q) ||
-            f.code.toLowerCase().contains(q))
-        .toList();
-  }
+  // Türkçe katlama: "altın" ALTIN fonlarını, "is portfoy" İŞ PORTFÖY'ü bulur;
+  // kodu tam yazılan fon ilk satırda (`seciciSuz`, 2026-11-07).
+  List<TefasFund> get _filtered => seciciSuz(_funds ?? const <TefasFund>[], _q,
+      kod: (f) => f.code, ad: (f) => f.name);
 
   @override
   void dispose() {
@@ -526,11 +535,13 @@ class _TefasPickerState extends State<_TefasPicker> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final filtered = _filtered;
+    final ust = portfoyBolumu(_funds ?? const <TefasFund>[],
+        widget.portfoyKodlari, _q,
+        kod: (f) => f.code);
     final fmt = qtyFormatter(maxDigits: 6);
 
     return _PickerShell(
       title: context.l10n.tefasFunds,
-      count: filtered.length,
       color: AssetType.fon.color,
       searchCtrl: _ctrl,
       onSearch: (v) {
@@ -548,8 +559,10 @@ class _TefasPickerState extends State<_TefasPicker> {
       query: _q,
       cs: cs,
       // Yükleniyor/hata görünümü kripto ve eurobond seçicileriyle aynı
-      // (token'lı renk/tipografi, l10n "Tekrar Dene"); 2026-10-20'ye kadar bu
-      // seçici Material renkleri ve ham `fontSize` taşıyordu.
+      // (token'lı renk/tipografi, l10n "Tekrar dene"); 2026-10-20'ye kadar bu
+      // seçici Material renkleri ve ham `fontSize` taşıyordu. 2026-11-07
+      // (unslop): yükleniyor tek satır; "Lütfen bekle" ikinci satırı bir şey
+      // söylemiyordu.
       child: _funds == null && _error == null
           ? Center(
               child: Column(
@@ -560,12 +573,6 @@ class _TefasPickerState extends State<_TefasPicker> {
                   Text(context.l10n.fundsLoading,
                       style: context.t.bodyMedium
                           ?.copyWith(color: context.c.text58)),
-                  const SizedBox(height: SandikSpace.xs),
-                  Text(
-                    context.l10n.pleaseWait,
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text58),
-                  ),
                 ],
               ),
             )
@@ -589,10 +596,12 @@ class _TefasPickerState extends State<_TefasPicker> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: SandikSpace.md),
-                        FilledButton.icon(
+                        // İstek atan düğme: `SandikAsyncButton` (tasarım dili;
+                        // çift dokunuş iki istek atmaz, beklerken döner).
+                        SandikAsyncButton.kompakt(
                           onPressed: _load,
                           icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: Text(context.l10n.retry),
+                          child: Text(context.l10n.retry),
                         ),
                       ],
                     ),
@@ -600,17 +609,27 @@ class _TefasPickerState extends State<_TefasPicker> {
                 )
               : filtered.isEmpty
                   ? _emptySearch(context, _q, cs)
-                  : ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) {
-                        final f = filtered[i];
+                  : _seciciListesi(
+                      context,
+                      ust: ust,
+                      liste: filtered,
+                      satir: (f) {
                         final isSelected = f.code == widget.selected;
                         return _PickerRow(
                           badgeText: f.code,
                           title: f.name,
-                          subtitle: f.price > 0
-                              ? '₺ ${fmt.format(f.price)}'
-                              : context.l10n.priceNotAvailable,
+                          // Ad iki satır: benzer TEFAS adları ("… PARA
+                          // PİYASASI (TL) FONU" / "… SERBEST FON") tam
+                          // kesilen yerde ayrışıyordu (2026-11-07).
+                          baslikSatiri: 2,
+                          subtitle: fonAltBasligi(
+                                kurucu: f.managerName,
+                                getiri1y: f.return1y,
+                                yilEtiketi: context.l10n.pickerFundReturn1y,
+                              ) ??
+                              (f.price > 0
+                                  ? '₺ ${fmt.format(f.price)}'
+                                  : context.l10n.priceNotAvailable),
                           isSelected: isSelected,
                           color: AssetType.fon.color,
                           cs: cs,
@@ -652,7 +671,6 @@ class _KriptoPickerState extends ConsumerState<_KriptoPicker> {
 
     return _PickerShell(
       title: context.l10n.cryptoPickerTitle,
-      count: liste.length,
       color: renk,
       searchCtrl: _ctrl,
       searchHint: context.l10n.cryptoSearchHint,
@@ -795,7 +813,6 @@ class _EurobondPickerState extends ConsumerState<_EurobondPicker> {
 
     return _PickerShell(
       title: context.l10n.eurobondPickerTitle,
-      count: liste.length,
       color: renk,
       searchCtrl: _ctrl,
       searchHint: context.l10n.tickerHintEurobond,
@@ -894,19 +911,17 @@ class _EurobondPickerState extends ConsumerState<_EurobondPicker> {
 
 class _PickerShell extends StatefulWidget {
   final String title;
-  final int count;
   final Color color;
   final TextEditingController searchCtrl;
   final void Function(String) onSearch;
   final String query;
   final ColorScheme cs;
   final Widget child;
-  /// Arama kutusunun ipucu; verilmezse genel "Ara…".
+  /// Arama kutusunun ipucu; verilmezse genel "Ara".
   final String? searchHint;
 
   const _PickerShell({
     required this.title,
-    required this.count,
     required this.color,
     required this.searchCtrl,
     required this.onSearch,
@@ -954,18 +969,9 @@ class _PickerShellState extends State<_PickerShell> {
                             ?.copyWith(fontWeight: FontWeight.w600)),
                   ),
                 ),
-                const SizedBox(width: SandikSpace.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
-                  decoration: BoxDecoration(
-                    color: widget.color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                  child: Text('${widget.count}',
-                      style: context.t.labelLarge
-                          ?.copyWith(color: widget.color.metinTonu(context))),
-                ),
+                // Sayı rozeti 2026-11-07'de kalktı (unslop "glowing pills
+                // for counts"): yüklenirken ve hatada "0" diyordu, sonuç
+                // sayısı seçim yapan kullanıcıya iş görmüyordu.
               ],
             ),
           ),
@@ -1055,6 +1061,8 @@ class _PickerRow extends StatelessWidget {
   /// Verilirse rozetin yerine logo; yüklenemezse rozet metnine düşer.
   final String? logoUrl;
   final String title;
+  /// Başlığın satır sınırı; fon adları uzun olduğu için fonda 2.
+  final int baslikSatiri;
   final String subtitle;
   final bool isSelected;
   final Color color;
@@ -1072,6 +1080,7 @@ class _PickerRow extends StatelessWidget {
     required this.badgeText,
     this.logoUrl,
     required this.title,
+    this.baslikSatiri = 1,
     required this.subtitle,
     required this.isSelected,
     required this.color,
@@ -1138,7 +1147,7 @@ class _PickerRow extends StatelessWidget {
                     Text(title,
                         style: context.t.bodyLarge
                             ?.copyWith(fontWeight: FontWeight.w600),
-                        maxLines: 1,
+                        maxLines: baslikSatiri,
                         overflow: TextOverflow.ellipsis),
                     if (subtitle.isNotEmpty) ...[
                       const SizedBox(height: SandikSpace.xxs),
@@ -1182,3 +1191,35 @@ Widget _emptySearch(BuildContext context, String q, ColorScheme cs) => Center(
             style: context.t.bodyLarge?.copyWith(color: context.c.text58)),
       ),
     );
+
+/// Seçici listesi; boş aramada başta "Portföyündekiler" bölümü ([ust]).
+///
+/// Ar-Ge 0200 madde 2 (2026-11-07): ek alım yapan kullanıcı kodu yeniden
+/// aramasın. Bölüm aynı `_PickerRow` ile çizilir (yeni bileşen yok); ince
+/// çizgiyle tüm listeden ayrılır. [ust] boşsa düz liste, eskisiyle aynı.
+Widget _seciciListesi<T>(
+  BuildContext context, {
+  required List<T> ust,
+  required List<T> liste,
+  required Widget Function(T) satir,
+}) {
+  // Başlık + satırlar + ayraç.
+  final bolum = ust.isEmpty ? 0 : ust.length + 2;
+  final yatay = SandikSpace.screenH(context);
+  return ListView.builder(
+    itemCount: bolum + liste.length,
+    itemBuilder: (_, i) {
+      if (i >= bolum) return satir(liste[i - bolum]);
+      if (i == 0) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, 0),
+          child: SandikSectionHeader(title: context.l10n.pickerInPortfolio),
+        );
+      }
+      if (i == bolum - 1) {
+        return Divider(height: SandikSpace.md, color: context.c.hairline);
+      }
+      return satir(ust[i - 1]);
+    },
+  );
+}

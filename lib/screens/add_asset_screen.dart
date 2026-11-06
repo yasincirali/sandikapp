@@ -12,6 +12,7 @@ import '../models/emtia_katalogu.dart';
 import '../models/hizli_hesap.dart';
 import '../models/eurobond.dart';
 import '../models/ilk_varlik_secimi.dart';
+import '../models/secici_arama.dart';
 import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
@@ -324,6 +325,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       _hizliSecimiUygula();
       _refreshPricePreview();
       _eurobondYukle();
+      // Fon listesini arka planda ısıt (Ar-Ge 0200 madde 5, 2026-11-07):
+      // günün ilk açılışında 24 saatlik disk önbelleği eskiyse üç fon tipi
+      // ağdan çekilirken kullanıcı fon seçicide bekliyordu. Seçici açılınca
+      // aynı istek paylaşılır (`fetchAllFunds` uçuştaki isteği birleştirir).
+      // Hata yutulur: servis kendi içinde yedeğe düşer ve bildirir; seçici
+      // açılınca yeniden dener.
+      unawaited(TefasService.instance
+          .fetchAllFunds()
+          .then<void>((_) {}, onError: (Object _) {}));
       // Vazgeç onayının ölçütü: açılıştaki (hızlı seçim uygulanmış) hâl.
       _ilkMetinler = _kullaniciMetinleri();
       _metinler.addListener(_kirliliginiGuncelle);

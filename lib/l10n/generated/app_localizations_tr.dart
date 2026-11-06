@@ -413,7 +413,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get retry => 'Tekrar Dene';
+  String get retry => 'Tekrar dene';
 
   @override
   String get cancel => 'Vazgeç';
@@ -1033,10 +1033,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fillTheForm => 'Formu doldur';
 
   @override
-  String get bistStocks => 'BIST Hisseleri';
+  String get bistStocks => 'BIST hisseleri';
 
   @override
-  String get tefasFunds => 'TEFAS Fonları';
+  String get pickerInPortfolio => 'Portföyündekiler';
+
+  @override
+  String pickerFundReturn1y(String pct) {
+    return '1 yıl $pct';
+  }
+
+  @override
+  String get tefasFunds => 'TEFAS fonları';
 
   @override
   String get fundsLoading => 'Fonlar yükleniyor...';
@@ -1127,7 +1135,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fundsLoadFailed => 'Fonlar yüklenemedi';
 
   @override
-  String get searchEllipsis => 'Ara...';
+  String get searchEllipsis => 'Ara';
 
   @override
   String get clearSearch => 'Aramayı temizle';
@@ -1148,7 +1156,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pickFund => 'Fon seç';
 
   @override
-  String get pickFundTap => 'Fon seçmek için dokun...';
+  String get pickFundTap => 'Fon seç';
 
   @override
   String get noResults => 'Sonuç bulunamadı';
@@ -1851,9 +1859,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String intradayMissingBody(String names) {
     return '$names için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi. Çizginin düz olması piyasanın durgun olduğu anlamına gelmez.';
   }
-
-  @override
-  String get retryLower => 'Tekrar dene';
 
   @override
   String get raceUpper => 'Yarış';
@@ -7679,7 +7684,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get usStocks => 'ABD Hisseleri';
+  String get usStocks => 'ABD hisseleri';
 
   @override
   String get pickUsStock => 'ABD hissesi seç';

@@ -175,7 +175,7 @@ class _ChartPlaceholder extends StatelessWidget {
               SandikTappable(
                 onTap: onRetry,
                 haptic: SandikHaptic.medium,
-                semanticLabel: context.l10n.retryLower,
+                semanticLabel: context.l10n.retry,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: SandikSpace.lg,
@@ -189,7 +189,7 @@ class _ChartPlaceholder extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Tekrar Dene',
+                    'Tekrar dene',
                     style: context.t.bodyMedium?.copyWith(
                       color: context.c.amberText,
                       fontWeight: FontWeight.w600,

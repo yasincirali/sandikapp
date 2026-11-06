@@ -110,7 +110,7 @@ void main() {
 
   final hata = find.text('Grafik verisi alınamadı');
   final ozet = find.text('Nereden geldi');
-  Finder tekrar() => find.text('Tekrar Dene');
+  Finder tekrar() => find.text('Tekrar dene');
 
   testWidgets('istek asılı kalırsa süre sonunda hata + tekrar dene; '
       'geç gelen seri özeti çizer', (tester) async {
