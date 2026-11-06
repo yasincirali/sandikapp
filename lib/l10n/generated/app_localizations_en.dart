@@ -10379,8 +10379,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmTekrarAnahtar => 'Notify on every cross';
 
   @override
-  String get alarmTekrarAciklama =>
-      'If the price comes back and crosses again, we\'ll notify you again. At most 3 times a day.';
+  String get alarmTekrarAciklama => 'At most 3 times a day.';
+
+  @override
+  String alarmFiyatOzetYukselis(String name, String price) {
+    return 'We\'ll notify you if $name rises to $price.';
+  }
+
+  @override
+  String alarmFiyatOzetDusus(String name, String price) {
+    return 'We\'ll notify you if $name falls to $price.';
+  }
+
+  @override
+  String alarmMaliyetin(String price) {
+    return 'Your cost $price';
+  }
 
   @override
   String alarmSonCaldi(String zaman) {

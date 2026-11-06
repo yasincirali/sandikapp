@@ -16928,8 +16928,26 @@ abstract class AppLocalizations {
   /// No description provided for @alarmTekrarAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.'**
+  /// **'Günde en çok 3 kez.'**
   String get alarmTekrarAciklama;
+
+  /// No description provided for @alarmFiyatOzetYukselis.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} {price} seviyesine çıkarsa haber vereceğiz.'**
+  String alarmFiyatOzetYukselis(String name, String price);
+
+  /// No description provided for @alarmFiyatOzetDusus.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} {price} seviyesine inerse haber vereceğiz.'**
+  String alarmFiyatOzetDusus(String name, String price);
+
+  /// No description provided for @alarmMaliyetin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetin {price}'**
+  String alarmMaliyetin(String price);
 
   /// No description provided for @alarmSonCaldi.
   ///

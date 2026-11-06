@@ -10257,8 +10257,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get alarmTekrarAnahtar => 'Her geçişte haber ver';
 
   @override
-  String get alarmTekrarAciklama =>
-      'Fiyat geri dönüp yeniden geçerse yine haber veririz. Günde en çok 3 kez.';
+  String get alarmTekrarAciklama => 'Günde en çok 3 kez.';
+
+  @override
+  String alarmFiyatOzetYukselis(String name, String price) {
+    return '$name $price seviyesine çıkarsa haber vereceğiz.';
+  }
+
+  @override
+  String alarmFiyatOzetDusus(String name, String price) {
+    return '$name $price seviyesine inerse haber vereceğiz.';
+  }
+
+  @override
+  String alarmMaliyetin(String price) {
+    return 'Maliyetin $price';
+  }
 
   @override
   String alarmSonCaldi(String zaman) {
