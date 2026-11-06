@@ -9261,6 +9261,12 @@ abstract class AppLocalizations {
   /// **'Senin portföyün'**
   String get kiyasSenin;
 
+  /// Kıyas kartında TL mevduat satırı (TCMB haftalık ortalama faiz, stopaj düşülmüş)
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevduatta'**
+  String get kiyasMevduat;
+
   /// Kıyasla aradaki fark sıfıra yuvarlandığında
   ///
   /// In tr, this message translates to:

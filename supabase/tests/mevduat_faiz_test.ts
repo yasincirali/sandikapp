@@ -3,7 +3,7 @@
 // Kovalanan: EVDS haftalık biçimi (GG-AA-YYYY), boş/aralık dışı haftaların
 // atlanması (uydurma sayı yok) ve bayat serinin "güncel" sayılmaması.
 import { assertEquals } from 'jsr:@std/assert@1';
-import { bayatMi, evdsGunu, seriAdresi, sonFaiz } from '../functions/_shared/mevduat_faiz.ts';
+import { bayatMi, evdsGunu, seriAdresi, sonFaiz, tumFaizler } from '../functions/_shared/mevduat_faiz.ts';
 
 Deno.test('evdsGunu: haftalık GG-AA-YYYY ve ISO biçimi', () => {
   assertEquals(evdsGunu('03-10-2026'), '2026-10-03');
@@ -49,4 +49,21 @@ Deno.test('seriAdresi: parametreler yola gömülü, soru işareti yok, frequency
     u,
     'https://evds3.tcmb.gov.tr/igmevdsms-dis/series=TP.TRY.MT02&startDate=02-10-2026&endDate=09-10-2026&type=json',
   );
+});
+
+Deno.test('tumFaizler: geçerli haftalar artan sırada, boş/aralık dışı atlanır (0173)', () => {
+  const json = {
+    items: [
+      { Tarih: '10-10-2026', TP_TRY_MT02: '39,5' },
+      { Tarih: '03-10-2026', TP_TRY_MT02: '40.1' },
+      { Tarih: '17-10-2026', TP_TRY_MT02: '' },
+      { Tarih: '24-10-2026', TP_TRY_MT02: '900' },
+      { Tarih: 'bozuk', TP_TRY_MT02: '41' },
+    ],
+  };
+  assertEquals(tumFaizler(json, 'TP.TRY.MT02'), [
+    { tarih: '2026-10-03', faiz: 40.1 },
+    { tarih: '2026-10-10', faiz: 39.5 },
+  ]);
+  assertEquals(tumFaizler(null, 'TP.TRY.MT02'), []);
 });

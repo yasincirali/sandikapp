@@ -440,6 +440,7 @@ String kiyasVarligiAdi(KiyasVarligi k) => switch (k) {
       KiyasVarligi.dolar => 'Amerikan doları',
       KiyasVarligi.altin => 'gram altın',
       KiyasVarligi.bist100 => 'BIST 100',
+      KiyasVarligi.mevduat => 'TL mevduat',
     };
 
 const _aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];

@@ -381,10 +381,12 @@ void main() {
       }
 
       final s = await KiyasYukleyici.serileriGetir(SummaryPeriod.birYil,
-          getir: sahte);
-      expect(s.keys, KiyasVarligi.values);
-      expect(istekler.map((e) => e.$1),
-          KiyasVarligi.values.map((v) => v.sembol));
+          getir: sahte, faizGetir: (_, __) async => const []);
+      final fiyatTuru =
+          KiyasVarligi.values.where((v) => v.tur == KiyasSeriTuru.fiyat);
+      // Faiz geçmişi boş → mevduat satırı yok (uydurma sayı yok).
+      expect(s.keys, fiyatTuru);
+      expect(istekler.map((e) => e.$1), fiyatTuru.map((v) => v.sembol));
       expect(istekler.every((e) => e.$2 == 365 + KiyasYukleyici.kenarPayiGun),
           isTrue);
       expect(istekler.every((e) => e.$3 == ResolutionTier.daily), isTrue);
@@ -403,7 +405,7 @@ void main() {
       }
 
       final s = await KiyasYukleyici.serileriGetir(SummaryPeriod.birAy,
-          getir: sahte);
+          getir: sahte, faizGetir: (_, __) async => throw StateError('tablo yok'));
       expect(s.keys, [KiyasVarligi.bist100]);
     });
 

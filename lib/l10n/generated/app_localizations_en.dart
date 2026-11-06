@@ -5598,6 +5598,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kiyasSenin => 'Your portfolio';
 
   @override
+  String get kiyasMevduat => 'In a TL deposit';
+
+  @override
   String get kiyasBasaBas => 'Even';
 
   @override

@@ -5549,6 +5549,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kiyasSenin => 'Senin portföyün';
 
   @override
+  String get kiyasMevduat => 'Mevduatta';
+
+  @override
   String get kiyasBasaBas => 'Başa baş';
 
   @override
