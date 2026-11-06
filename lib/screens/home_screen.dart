@@ -884,7 +884,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                 ),
-                // Turun "Her şeyi ara" adımı hapın kendisini gösterir.
+                // Hap tur hedefi olarak işaretli kalır; 2026-11-06'dan beri
+                // arama "Gizle ve ara" adımında (göz tuşunu gösterir) anlatılır.
                 aramaSarici: (hap) =>
                     TourAnchor(target: TourTarget.yenileTusu, child: hap),
                 uyandirici: _seritUyandirici,

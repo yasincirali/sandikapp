@@ -882,6 +882,13 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             grafik: ZoomableChart(
             // Ekran okuyucu: portföy grafiği "fiyat grafiği" değildir.
             semanticLabel: context.l10n.chartPortfolioSemantics,
+            // Görünen aralık özeti; bakiye gizliyken yalnız yüzde (Ana
+            // ekran kuralı: tutar maskelenir, yüzde açık).
+            semanticValueBuilder: (a, b) => grafikOzetMetni(
+                context.l10n, gorunenAralikOzeti(crosshairSpots, a, b),
+                tutar: ref.read(balanceHiddenProvider)
+                    ? null
+                    : ref.read(gosterimBazParaProvider).fmt),
             fullMinX: minX,
             fullMaxX: maxX,
             // 328'den 296'ya (2026-09-15, "grafik layoutunun yüksekliği

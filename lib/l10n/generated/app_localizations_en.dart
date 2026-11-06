@@ -441,6 +441,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String quickBuyAvgCost(String yeni, String simdi) {
+    return 'Your new average cost $yeni (now $simdi)';
+  }
+
+  @override
+  String get quickSaleFundTaxNote =>
+      'Gross amount; fund withholding tax may be deducted from the gain.';
+
+  @override
   String get quickUnitPrice => 'Unit price';
 
   @override
@@ -9078,6 +9087,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String chartAssetSemantics(String name) {
     return '$name price chart';
+  }
+
+  @override
+  String chartComparisonSemantics(int count, int days) {
+    return '$count series, $days-day percent comparison';
+  }
+
+  @override
+  String chartSummaryUp(String yuzde) {
+    return 'Up $yuzde percent in the visible range';
+  }
+
+  @override
+  String chartSummaryDown(String yuzde) {
+    return 'Down $yuzde percent in the visible range';
+  }
+
+  @override
+  String get chartSummaryFlat => 'Unchanged in the visible range';
+
+  @override
+  String chartSummaryRange(String enDusuk, String enYuksek) {
+    return 'low $enDusuk, high $enYuksek';
+  }
+
+  @override
+  String chartSummarySeries(String seri, String ozet) {
+    return '$seri: $ozet';
   }
 
   @override

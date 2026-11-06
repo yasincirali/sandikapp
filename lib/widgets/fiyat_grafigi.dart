@@ -8,6 +8,7 @@ import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
 import '../utils/chart_line_width.dart';
+import '../utils/grafik_ozeti.dart';
 import '../utils/hareketli_ortalama.dart' show mumlariDonustur;
 import '../utils/mum_turetici.dart' show Mum;
 import '../utils/seans_sikistirma.dart';
@@ -137,6 +138,10 @@ class FiyatGrafigi extends StatelessWidget {
         ),
         grafik: ZoomableChart(
       semanticLabel: semanticLabel,
+      // Fiyat kamuya açık veri: bakiye gizliyken de tutar okunur.
+      semanticValueBuilder: (a, b) => grafikOzetMetni(
+          context.l10n, gorunenAralikOzeti(spots, geri(a), geri(b)),
+          tutar: bicim.format),
       height: height,
       fullMinX: tamMin,
       // Sağda küçük pay: "şimdi" noktası (r=6) ve ŞİMDİ etiketi eksen
