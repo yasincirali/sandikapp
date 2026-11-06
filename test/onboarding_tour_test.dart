@@ -456,7 +456,7 @@ void main() {
 
     testWidgets('geri, bir önceki adıma döner', (tester) async {
       await _pump(tester);
-      await _adimaGit(tester, 'Tutarları gizle');
+      await _adimaGit(tester, 'Gizle ve ara');
       await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await _bekle(tester);
       expect(find.text('Toplam net varlığın'), findsOneWidget);
@@ -491,8 +491,10 @@ void main() {
       var bugun = false, gizle = false, kripto = false;
       for (var i = 0; i < 8; i++) {
         if (find.text('Bugün ne oldu?').evaluate().isNotEmpty) bugun = true;
-        if (find.text('Tutarları gizle').evaluate().isNotEmpty) gizle = true;
-        if (find.text('Kripto da burada').evaluate().isNotEmpty) kripto = true;
+        if (find.text('Gizle ve ara').evaluate().isNotEmpty) gizle = true;
+        if (find.text('Kripto, mevduat ve BES').evaluate().isNotEmpty) {
+          kripto = true;
+        }
         if (find.text('Sandığımı Aç').evaluate().isNotEmpty) break;
         await _devam(tester);
       }
@@ -583,7 +585,7 @@ void main() {
     testWidgets('hedefe dokunuş alta ulaşır, hedef dışı yutulur',
         (tester) async {
       await _pump(tester);
-      await _adimaGit(tester, 'Tutarları gizle');
+      await _adimaGit(tester, 'Gizle ve ara');
 
       // Hedef DIŞI: yenile tuşu karartmanın altında; dokunuş ulaşmamalı.
       await tester.tap(find.text('yenile'), warnIfMissed: false);
@@ -653,13 +655,11 @@ void main() {
       expect(find.text('Varlık Ekle'), findsOneWidget,
           reason: 'Sahte AddAssetScreen rotası açılmalı.');
       // Kripto adımı (YENİ) tür çiplerini gösterir; dokunuşa kapalı.
-      expect(find.text('Kripto da burada'), findsOneWidget);
+      expect(find.text('Kripto, mevduat ve BES'), findsOneWidget);
       await tester.tap(find.text('türler'), warnIfMissed: false);
       await _bekle(tester);
       expect(_dokunus[TourTarget.turSecici], isNull);
-      await _devam(tester);
-      // Mevduat ve BES adımı (YENİ, 2026-09-30) aynı tür çiplerini gösterir.
-      expect(find.text('Mevduat ve BES'), findsOneWidget);
+      // Mevduat ve BES aynı adımda (2026-11-06 birleşti); ayrı adım yok.
       await _devam(tester);
       expect(find.text('Cümleyle ekle'), findsOneWidget);
 
@@ -818,7 +818,7 @@ void main() {
 
     testWidgets('"hareketi azalt" açıkken tur çalışır', (tester) async {
       await _pump(tester, hareketiAzalt: true);
-      await _adimaGit(tester, 'Tutarları gizle');
+      await _adimaGit(tester, 'Gizle ve ara');
       await tester.tap(find.text('gizle'));
       await tester.pump();
       await tester.pump();

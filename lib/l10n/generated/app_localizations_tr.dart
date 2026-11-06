@@ -442,6 +442,15 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String quickBuyAvgCost(String yeni, String simdi) {
+    return 'Yeni ortalama maliyetin $yeni (şimdi $simdi)';
+  }
+
+  @override
+  String get quickSaleFundTaxNote =>
+      'Brüt tutar; fon stopajı kârdan kesilebilir.';
+
+  @override
   String get quickUnitPrice => 'Birim fiyat';
 
   @override
@@ -8989,6 +8998,34 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String chartAssetSemantics(String name) {
     return '$name fiyat grafiği';
+  }
+
+  @override
+  String chartComparisonSemantics(int count, int days) {
+    return '$count seri, $days günlük yüzde karşılaştırması';
+  }
+
+  @override
+  String chartSummaryUp(String yuzde) {
+    return 'Görünen aralıkta yüzde $yuzde arttı';
+  }
+
+  @override
+  String chartSummaryDown(String yuzde) {
+    return 'Görünen aralıkta yüzde $yuzde azaldı';
+  }
+
+  @override
+  String get chartSummaryFlat => 'Görünen aralıkta değişmedi';
+
+  @override
+  String chartSummaryRange(String enDusuk, String enYuksek) {
+    return 'en düşük $enDusuk, en yüksek $enYuksek';
+  }
+
+  @override
+  String chartSummarySeries(String seri, String ozet) {
+    return '$seri: $ozet';
   }
 
   @override

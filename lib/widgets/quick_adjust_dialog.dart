@@ -109,6 +109,30 @@ SatisKarOnizleme? satisKarOnizleme({
   );
 }
 
+/// Hızlı Al önizlemesi: bu alımdan sonra pozisyonun ağırlıklı ortalama
+/// maliyeti, (eskiAdet × eskiMaliyet + yeniAdet × fiyat) / toplam adet.
+///
+/// Neden: "maliyetimi düşürür mü" sorusu alımdan ÖNCE sorulur; eskiden
+/// cevap yalnız kaydettikten sonra pozisyon kartında görünüyordu (Ar-Ge
+/// 6 Kas 22:30). Maliyet yolu [satisKarOnizleme] ile aynı: `purchasePrice`
+/// aktif lotların ortalaması; komisyon girmez.
+///
+/// `null` → satır çizilmez: miktar/fiyat boş ya da 0, eldeki adet 0 (yeni
+/// pozisyonda "şimdi" anlamsız) ya da bugünkü maliyet 0/bilinmiyor
+/// ("bilinmiyor" işaretli lotun tahmini maliyetinden ortalama uydurulmaz).
+double? yeniOrtalamaMaliyet({
+  required double eskiAdet,
+  required double? eskiMaliyet,
+  required double? yeniAdet,
+  required double? fiyat,
+}) {
+  if (yeniAdet == null || yeniAdet <= 0) return null;
+  if (fiyat == null || fiyat <= 0) return null;
+  if (eskiAdet <= 0) return null;
+  if (eskiMaliyet == null || eskiMaliyet <= 0) return null;
+  return (eskiAdet * eskiMaliyet + yeniAdet * fiyat) / (eskiAdet + yeniAdet);
+}
+
 Future<void> showQuickAdjustDialog(
   BuildContext context,
   WidgetRef ref, {
@@ -225,19 +249,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   /// maskelenir, yüzde açık kalır (Ana ekran kuralı). Kaydettikten sonra
   /// ayrıca toast yok (16 Eyl kararı, bkz. `_submit`).
   Widget _karSatiri(BuildContext context, SatisKarOnizleme k) {
-    final gizli = widget.ref.read(balanceHiddenProvider);
     final mutlak = k.tutar.abs();
     final isaret = mutlak == 0 ? '' : (k.zarar ? '\u2212' : '+');
-    final String tutar;
-    if (_currencySymbol == '₺') {
-      tutar = gizli
-          ? const BazPara.lira().gizliTutar
-          : '$isaret${fmtTRY(mutlak)}';
-    } else {
-      tutar = gizli
-          ? '•••• $_currencySymbol'
-          : '$isaret${qtyFormatter(maxDigits: 2).format(mutlak)} $_currencySymbol';
-    }
+    final tutar = _paraMetni(mutlak, isaret: isaret);
     final yuzde = fmtPctIsaretli(k.yuzde, digits: 1);
     final l = context.l10n;
     return Text(
@@ -247,6 +261,35 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         color: k.zarar ? context.c.loss : context.c.gain,
         fontWeight: FontWeight.w600,
       ),
+    );
+  }
+
+  /// Önizleme satırlarının ortak para biçimi: ₺ varlıkta `fmtTRY`, dövizli
+  /// varlıkta kendi para biriminde; bakiye gizliyken maskeli. [birim] birim
+  /// fiyat içindir (ortalama maliyet): `fmtTRY` 0 ondalıkla ₺41,23'ü ₺41
+  /// okuturdu.
+  String _paraMetni(double v, {String isaret = '', bool birim = false}) {
+    final gizli = widget.ref.read(balanceHiddenProvider);
+    if (_currencySymbol == '₺') {
+      if (gizli) return const BazPara.lira().gizliTutar;
+      return '$isaret${birim ? fmtTRYFiyat(v) : fmtTRY(v)}';
+    }
+    if (gizli) return '•••• $_currencySymbol';
+    final f = qtyFormatter(maxDigits: birim ? 4 : 2);
+    return '$isaret${f.format(v)} $_currencySymbol';
+  }
+
+  /// Hızlı Al'ın ortalama maliyet satırı. Renksiz: yeni ortalama iyi ya da
+  /// kötü değildir, bilgi verir (kâr satırının yeşil/kırmızısı burada yanlış
+  /// bir yargı ima ederdi).
+  Widget _ortalamaSatiri(BuildContext context, double yeni) {
+    return Text(
+      context.l10n.quickBuyAvgCost(
+        _paraMetni(yeni, birim: true),
+        _paraMetni(widget.asset.purchasePrice, birim: true),
+      ),
+      key: const ValueKey('alim_ortalama_onizleme'),
+      style: context.t.titleSmall?.copyWith(color: context.c.text58),
     );
   }
 
@@ -407,6 +450,17 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             satisFiyati: asset.currentPrice,
             ortalamaMaliyet: asset.purchasePrice,
           );
+    // Alım önizlemesi: girilen birim fiyatla (kaydedilecek olan) yeni
+    // ortalama. Satıştaki kâr satırıyla aynı maliyet kapısı.
+    final ortalamaOnizleme =
+        !_isAdd || _tutarla || asset.maliyetBilinmiyor == true
+            ? null
+            : yeniOrtalamaMaliyet(
+                eskiAdet: asset.quantity,
+                eskiMaliyet: asset.purchasePrice,
+                yeniAdet: qty,
+                fiyat: price,
+              );
 
     // Marka kabuğu (Ar-Ge 5 Kas 22:40 #7; eskiden Material `Dialog`): kart
     // onay/bilgi diyaloğuyla aynı, kenar vurgusu işlemin rengi (al yeşil,
@@ -664,9 +718,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               ),
             ],
 
+            if (ortalamaOnizleme != null) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _ortalamaSatiri(context, ortalamaOnizleme),
+            ],
+
             if (karOnizleme != null) ...[
               const SizedBox(height: SandikSpace.sm),
               _karSatiri(context, karOnizleme),
+              // Fon satışında kâr brüttür: stopaj fon türüne ve elde tutma
+              // süresine göre değişir, oranı yazmak uydurma sayı olurdu
+              // (fiyat kaynağı sözleşmesi ruhu). Yalnız uyarı.
+              if (asset.type == AssetType.fon) ...[
+                const SizedBox(height: SandikSpace.xs),
+                Text(
+                  context.l10n.quickSaleFundTaxNote,
+                  key: const ValueKey('satis_fon_stopaj_notu'),
+                  style: context.t.bodySmall?.copyWith(color: context.c.text58),
+                ),
+              ],
             ],
 
             if (_error != null) ...[

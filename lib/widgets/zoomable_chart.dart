@@ -153,6 +153,13 @@ class ZoomableChart extends StatefulWidget {
   /// gibi bir cümle verir; vermezse jenerik etiket okunur (çevrilmiş;
   /// eskiden sabit Türkçe "Fiyat grafiği" idi — HIG denetimi 2026-10-10).
   final String? semanticLabel;
+
+  /// Görünen pencerenin ekran okuyucu değeri ("görünen aralıkta yüzde 4,2
+  /// arttı; en düşük …"). Pencere bu widget'ın kendi koordinatında verilir;
+  /// seans sıkıştırması olan çağıran gerçek X'e kendisi çevirir. Metni
+  /// çağıran kurar (`grafikOzetMetni`) çünkü Y'nin birimi (₺, yüzde, log)
+  /// ve bakiye gizliliği yalnız orada bilinir. `null` → yalnız etiket.
+  final String? Function(double minX, double maxX)? semanticValueBuilder;
   final LineChartData Function(double minX, double maxX) builder;
   final double height;
 
@@ -254,6 +261,7 @@ class ZoomableChart extends StatefulWidget {
     this.plotPaddingRight = 0,
     this.plotPaddingLeft = 0,
     this.semanticLabel,
+    this.semanticValueBuilder,
     this.swapDuration = SandikMotion.state,
     this.swapCurve = SandikMotion.enter,
     this.imlecEtiketi,
@@ -718,6 +726,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
   Widget build(BuildContext context) {
     return Semantics(
       label: widget.semanticLabel ?? context.l10n.chartPriceSemantics,
+      value: widget.semanticValueBuilder?.call(_minX, _maxX),
       image: true,
       child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;

@@ -438,36 +438,31 @@ List<_Adim> _adimlariKur() {
       dokunulabilir: false,
       kosul: _bosPortfoy,
     ),
+    // 2026-11-06 (Ar-Ge 22:30): "Tutarları gizle" ve "Her şeyi ara" tek
+    // adımda — ikisi de ana ekranın üstündeki küçük araçlar ve art arda iki
+    // kısa adım turu uzatıyordu. Hedef göz tuşu: görev (gerçek tercihten
+    // okunur) onda. "Ara" hapı `TourTarget.yenileTusu` olarak işaretli kalır
+    // (ileride ayrı adım dönerse hedef hazır). Geçmiş: büyüteç 2026-10-30'da
+    // kalktı, arama şeritteki "Ara" hapında (UX raporu §3); bayrak
+    // `genel_arama` 2026-10-20'de emekliye ayrıldı, eski "Fiyatları yenile"
+    // adımı kalktı — yenileme bilgisi aşağı çekme cümlesinde yaşar.
+    // 2026-10-24 hızlı hesap ("5 çeyrek") metne girdi (tur metni arayüzle
+    // birlikte değişir).
     _Adim(
       id: 'gizle',
       hedef: TourTarget.gizleTusu,
-      baslik: 'Tutarları gizle',
-      govde: 'Otobüste ya da omzunun üstünden bakan biri varken tek dokunuş '
-          'yeter. Tekrar dokununca açılır.',
+      baslik: 'Gizle ve ara',
+      govde: 'Göz simgesi tutarları tek dokunuşla gizler; otobüste ya da '
+          'omzunun üstünden bakan biri varken işe yarar, tekrar dokununca '
+          'açılır. Piyasa şeridinin sağındaki "Ara" tek arama yeri: kendi '
+          'varlıkların, piyasadaki hisse, fon ve altınlar, uygulamadaki '
+          'yerler (fiyat alarmı, tüm hareketler, ayarlar…). "5 çeyrek" '
+          'yazarsan TL karşılığı en üstte çıkar. Fiyatlar arka planda '
+          'güncellenir; hemen tazelemek için ekranı aşağı çek.',
       gorev: 'Göz simgesine dokun',
       gorevBitti: 'Tutarlar gizlendi',
       bitti: (ref) => ref.read(balanceHiddenProvider),
       giris: (_) => _sekmeyeGec(0),
-    ),
-    // 2026-10-30: büyüteç kalktı, hedef şeritteki "Ara" hapı (UX raporu
-    // §3; tek arama girişi). Önce: üst çubukta yenile değil büyüteç durur (`home_screen`, sadeleştirme 2;
-    // bayrak `genel_arama` 2026-10-20'de emekliye ayrıldı, eski "Fiyatları
-    // yenile" adımı kalktı). Yenileme bilgisi kaybolmasın: aşağı çekme
-    // cümlesi metinde. 2026-10-24: aramadaki hızlı hesap ("5 çeyrek") da
-    // metne girdi (tur metni arayüzle birlikte değişir). 2026-10-26: boş
-    // aramadaki "Son baktıkların" bölümü de; aynı gün boş aramada eylemler
-    // dört sabit kısayola + "Tüm eylemler"e indi, metin onu da söyler.
-    const _Adim(
-      id: 'yenile',
-      hedef: TourTarget.yenileTusu,
-      baslik: 'Her şeyi ara',
-      govde: 'Piyasa şeridinin sağındaki "Ara" ile tek yerden ara: kendi varlıkların, piyasadaki '
-          'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
-          'ekstreden aktar, tüm hareketler, ayarlar…). "5 çeyrek" ya da '
-          '"100 dolar" yazarsan TL karşılığı en üstte çıkar; boşken son '
-          'baktığın varlıklar ve dört kısayol durur, kalanı "Tüm '
-          'eylemler"de. Fiyatlar arka '
-          'planda güncelleniyor; hemen tazelemek için ekranı aşağı çek.',
     ),
     // 1.2.0'da eklendi. Tur, uygulamanın GÜNCEL hâlini anlatmalı: yeni
     // kullanıcı yalnızca eski sürümde var olan özellikleri öğrenip en
@@ -680,67 +675,30 @@ List<_Adim> _adimlariKur() {
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
       devam: (_) => _varlikEkleAc(),
     ),
+    // 2026-11-06 (Ar-Ge 22:30): "Kripto da burada" ve "Mevduat ve BES" aynı
+    // hedefi (tür seçici) art arda iki uzun adımla gösteriyordu; tek adım.
+    // id 'kripto' kaldı: kısa tur (`_kisaAdimlar`) bu id'yi paylaşır, kripto
+    // ilk açılışta anlatılır (kullanıcı kararı 2026-09-25). Metnin geçmişi:
+    // 2026-10-08 çipler yerine arama + gruplu ızgara (bayrak
+    // `tur_secici_izgara` 2026-10-20'de emekli); 2026-10-31 "Tekrar al"
+    // çipleri; 2026-10-09 mevduatta banka listesi ve piyasa ortalaması faiz;
+    // 2026-10-29 BES şirketi listeden, sözleşme Portföy'de tek satır;
+    // otomatik katkı (0096). Ayrıntı (vade içi oran, fon değiştirme, devlet
+    // katkısı) kartın kendisinde; turda yalnız nerede ve ne girildiği.
     _Adim(
       id: 'kripto',
       hedef: TourTarget.turSecici,
-      baslik: 'Kripto da burada',
-      // "Çiplerin sonunda" yazıyordu; 2026-09-25 sırasında Kripto Fon'dan
-      // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`). 2026-09-29'dan
-      // beri çipler sarmalı (#29): Kripto dar ekranda Fon'la aynı satıra
-      // düşmeyebilir, bu yüzden metin konum ("Fon'un yanında") söylemez.
-      // 2026-10-08: çipler yerine arama + gruplu ızgara; metin aramayı ve
-      // grubu anlatır (tur metni arayüzle birlikte değişir). Bayrak
-      // `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı, çip metni kalktı.
-      // 2026-10-31: aramanın altına "Tekrar al" çipleri geldi (daha önce
-      // alınan en sık 3 varlık); metin onları da söyler.
-      govde: 'Üstteki aramaya sembolü ya da adı yaz (THYAO, BTC…): '
-              'sonuca dokununca tür de varlık da seçilir. Daha önce '
-              'aldıkların aramanın altında "Tekrar al" olarak durur; tek '
-              'dokunuşla miktara geçersin. Aramadan seçmek '
-              'istemezsen türler üç grupta durur; Kripto "Borsa ve fon" '
-              'grubunda. Seçince ızgara tek satıra katlanır, "Değiştir" '
-              'geri açar. Coin\'in fiyatı TL karşılığıyla kendiliğinden '
-              'gelir, miktar gerektiği kadar ondalıkla tutulur (0,00045 BTC '
-              'gibi); kripto 7/24 işlediği için grafikte hafta sonu da görünür.',
-      giris: (_) => _varlikEkleAc(),
-      dokunulabilir: false,
-    ),
-    // Mevduat ve BES (2026-09-30): tür seçicide Fon'un arkasına iki çip
-    // girdi (tur metni arayüzle birlikte değişir kuralı). Aynı hedefte
-    // ikinci adım: kripto adımı kendi özelliğini anlatmaya devam eder.
-    // 2026-10-01: BES formu ana para + getiri sorar, geçmiş düz çizilir
-    // (2026-10-04: düz çizgi kalktı, fonun gerçek serisi — metin buna göre),
-    // "Fon değiştir" eklendi — metin buna göre. Aynı gün: otomatik katkı
-    // (0096) formda ve kartta; son cümle onu anlatır.
-    // 2026-10-02: vadeli faiz vade sonunda eklenir, vade içinde oran
-    // karttan güncellenir — mevduat cümlesi buna göre.
-    // 2026-10-29: BES şirketi listeden seçilir (fon seçici o şirketin
-    // fonlarıyla açılır), sözleşme Portföy'de tek satır ve kartta fon
-    // dağılımı görünür — BES cümlesi buna göre (tur metni arayüzle değişir).
-    _Adim(
-      id: 'mevduat_bes',
-      hedef: TourTarget.turSecici,
-      baslik: 'Mevduat ve BES',
-      // Izgarada Mevduat ve BES "Birikim" grubunda. 2026-10-09: banka
-      // listeden seçilir, faiz vadeye göre piyasa ortalamasıyla önerilir,
-      // not yazılır — ilk cümle buna göre. (Bayraklar `tur_secici_izgara`
-      // ve `mevduat_banka_secici` 2026-10-20'de emekliye ayrıldı.)
-      govde: "Birikim grubunda Mevduat'ı seç: bankanı listeden seç, tutarı ve "
-          'vadeyi yaz; faiz piyasa ortalamasıyla gelir, sana özel oran '
-          'verildiyse değiştirirsin, istersen not eklersin. Net getiriyi '
-          'stopajıyla birlikte biz hesaplarız. Faiz vade sonunda (günlük faizli '
-          'hesapta her gün sonunda) eklenir; '
-          'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '
-          'son orana göre çıkar. Vade dolunca varlık sayfasından tek '
-          "dokunuşla yenilersin. BES'i seç: şirketini listeden seç, fon "
-          'listesi o şirketin fonlarıyla açılır; ana paranı, getirini ve fon '
-          'dağılımını gir. Portföy\'de sözleşmen tek satırdır; oka dokununca '
-          'fonlarını, paylarını ve getirilerini görürsün. Grafik ve dönem '
-          'getirileri emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu '
-          'değiştirince grafik yeni fonlarla devam eder; devlet '
-          'katkısı hak ediş oranıyla ayrı görünür. Katkı gününü yazıp '
-          'otomatik eklemeyi açarsan aylık katkın o gün kendiliğinden eklenir; '
-          'tutar farklıysa kartta tek dokunuşla düzeltirsin.',
+      baslik: 'Kripto, mevduat ve BES',
+      govde: 'Üstteki aramaya sembolü ya da adı yaz (THYAO, BTC…); sonuca '
+          'dokununca tür de varlık da seçilir. Daha önce aldıkların aramanın '
+          'altında "Tekrar al" olarak durur. Aramadan seçmek istemezsen '
+          'türler üç grupta: Kripto "Borsa ve fon"da, fiyatı TL karşılığıyla '
+          'gelir ve 7/24 işlediği için grafikte hafta sonu da görünür. '
+          'Mevduat ve BES "Birikim"de. Mevduatta bankanı seç, tutarı ve '
+          'vadeyi yaz; faiz piyasa ortalamasıyla gelir, net getiriyi '
+          "stopajıyla biz hesaplarız. BES'te şirketini seç, ana paranı, "
+          'getirini ve fon dağılımını gir; katkı gününü yazarsan aylık katkın '
+          'o gün kendiliğinden eklenir.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),

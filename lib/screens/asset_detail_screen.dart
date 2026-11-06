@@ -20,6 +20,7 @@ import '../theme/sandik.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../utils/grafik_ozeti.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -1816,6 +1817,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             child: ZoomableChart(
                             semanticLabel: context.l10n
                                 .chartAssetSemantics(_kimlik.kisaEtiket),
+                            // Görünen aralık özeti (Ar-Ge 6 Kas 22:30). Karşılaştırma
+                            // açıkken Y 100 tabanlı endeks: tutar okunmaz, oran
+                            // doğrudan; kapalıyken log ölçekten `fromY` ile çözülür.
+                            semanticValueBuilder: (cMin, cMax) =>
+                                grafikOzetMetni(
+                                    context.l10n,
+                                    gorunenAralikOzeti(
+                                        activeSeg.spots, geri(cMin), geri(cMax),
+                                        donustur: compareOn ? null : fromY),
+                                    tutar: compareOn
+                                        ? null
+                                        : tryFormatter(digits: 2).format),
                             fullMinX: tamMin,
                             fullMaxX: tamMax,
                             height: GrafikStili.grafikYuksekligi,

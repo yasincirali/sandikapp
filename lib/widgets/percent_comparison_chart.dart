@@ -4,10 +4,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
 import '../utils/chart_line_width.dart';
+import '../utils/grafik_ozeti.dart';
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
 import '../utils/mum_turetici.dart' show Mum;
@@ -135,8 +137,19 @@ class PercentComparisonChart extends StatelessWidget {
     // okumaya gerek kalmadı; [ZoomableChart] zaten kendi `LayoutBuilder`ını
     // kuruyor.
     return ZoomableChart(
-      semanticLabel:
-          '${ciz.cizilenler.length} seri, $periodDays günlük yüzde karşılaştırması',
+      semanticLabel: context.l10n
+          .chartComparisonSemantics(ciz.cizilenler.length, periodDays),
+      // Seri başına görünen aralık değişimi. Y "dönem başı 0" yüzdesi;
+      // pencere içi oran `100 + y` üzerinden (tutar yok: hepsi yüzde).
+      semanticValueBuilder: (a, b) => karsilastirmaOzeti(
+        context.l10n,
+        [
+          for (var i = 0; i < ciz.cizilenler.length; i++)
+            (labelOf(ciz.cizilenler[i]), ciz.bars[i].spots),
+        ],
+        a,
+        b,
+      ),
       height: height,
       fullMinX: ciz.minX,
       fullMaxX: ciz.maxX,

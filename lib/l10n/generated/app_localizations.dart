@@ -896,6 +896,18 @@ abstract class AppLocalizations {
   /// **'Bu satıştan zarar {tutar} · {yuzde}'**
   String quickSaleLoss(String tutar, String yuzde);
 
+  /// Hızlı Al: bu alımla oluşacak ağırlıklı ortalama maliyet ve bugünkü ortalama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni ortalama maliyetin {yeni} (şimdi {simdi})'**
+  String quickBuyAvgCost(String yeni, String simdi);
+
+  /// Hızlı Sat, yalnız TEFAS fonu: kâr satırı brüttür, oran yazılmaz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Brüt tutar; fon stopajı kârdan kesilebilir.'**
+  String get quickSaleFundTaxNote;
+
   /// No description provided for @quickUnitPrice.
   ///
   /// In tr, this message translates to:
@@ -14926,6 +14938,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{name} fiyat grafiği'**
   String chartAssetSemantics(String name);
+
+  /// No description provided for @chartComparisonSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} seri, {days} günlük yüzde karşılaştırması'**
+  String chartComparisonSemantics(int count, int days);
+
+  /// Grafik ekran okuyucu özeti: görünen pencerede artış.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görünen aralıkta yüzde {yuzde} arttı'**
+  String chartSummaryUp(String yuzde);
+
+  /// No description provided for @chartSummaryDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görünen aralıkta yüzde {yuzde} azaldı'**
+  String chartSummaryDown(String yuzde);
+
+  /// No description provided for @chartSummaryFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görünen aralıkta değişmedi'**
+  String get chartSummaryFlat;
+
+  /// No description provided for @chartSummaryRange.
+  ///
+  /// In tr, this message translates to:
+  /// **'en düşük {enDusuk}, en yüksek {enYuksek}'**
+  String chartSummaryRange(String enDusuk, String enYuksek);
+
+  /// Karşılaştırma grafiği: seri adı ve görünen aralık özeti.
+  ///
+  /// In tr, this message translates to:
+  /// **'{seri}: {ozet}'**
+  String chartSummarySeries(String seri, String ozet);
 
   /// No description provided for @cihazHesapAcikKalir.
   ///
