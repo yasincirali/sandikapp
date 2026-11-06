@@ -351,7 +351,7 @@ class YasalMetin {
 ///    DOKUNMA: `yasal_metinler` değişmezdir, eski onaylar o metni gösterir.
 /// 5. `flutter test test/yasal_metin_kilidi_test.dart
 ///    test/yasal_web_esleme_test.dart` yeşil olmalı.
-/// 6. Dağıtım sırası: migration iki sunucuda → `sema_esitlik.py` → ancak
+/// 6. Dağıtım sırası: migration Frankfurt'ta (2026-11-06'dan beri tek sunucu) → ancak
 ///    sonra bu istemci yayına (ters sırada yeni istemcinin onayı "yasal
 ///    metin yok" diye reddedilir ve kapı her açılışta yeniden sorar). Web
 ///    `main`'e girince Pages'te yayınlanır. Yeni sürüm yayına çıkınca eski

@@ -8,16 +8,19 @@
 # Otomatik tetik BİLİNÇLİ olarak yok: `main`'e her push'ta canlı şemaya
 # dokunmak istemiyoruz; migration'ı ne zaman koşacağına sen karar verirsin.
 #
-# **İKİ SUNUCU BİREBİR (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt
-# hep aynı şemayı taşır: varsayılan hedef `ikisi`. Sıra Frankfurt → Tokyo:
-# geçişe kadar Frankfurt canlı değil, kanarya odur — orada kırılan migration
-# Tokyo'ya hiç gitmez (fail-fast + max-parallel 1). Son iş `esitlik`
-# iki şemanın parmak izini karşılaştırır (tool/sema_esitlik.py); fark varsa
-# kırmızı. Tek hedef yalnız onarım (repair) gibi projeye özgü işler için.
+# **TEK SUNUCU: FRANKFURT (yasin 2026-11-06, "Tokyo'yu kapatalım").**
+# 2026-09-28'den geçişe kadar kural "iki sunucu birebir"di: varsayılan hedef
+# `ikisi`, sıra Frankfurt → Tokyo, sonda `esitlik` parmak izi kapısı. Geçiş
+# 18 Ekim'de bitti; Tokyo o geceden beri donmuş (cron'lar ve Data API kapalı),
+# verisi bayat olduğu için geri dönüş/yedek değeri de kalmadı ve duraklatılıp
+# silinecek. Duraklatılmış bir projeye deploy kırmızı döneceği için varsayılan
+# Frankfurt; `ikisi`, `esitlik` işi ve tek seferlik `frankfurt_esitle` işi
+# kaldırıldı. `tokyo` seçeneği yalnız Tokyo silinmeden geri açılırsa diye
+# duruyor (silinince bu seçenek ve `SUPABASE_DB_PASSWORD` de kalkar).
 #
 # Gerekli secret'lar (Settings → Secrets and variables → Actions):
-#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens. Tokyo'yu
-#                            (ve _EU yoksa Frankfurt'u da) gören hesaptan.
+#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens. _EU yoksa
+#                            Frankfurt'u gören hesaptan.
 #   SUPABASE_ACCESS_TOKEN_EU — isteğe bağlı: Frankfurt'u gören hesabın token'ı.
 #                            İki proje ayrı hesaptaysa şart (2026-10-01'de ortak
 #                            token Frankfurt'ta 403 aldı); yoksa ortağa düşülür.
@@ -31,10 +34,10 @@ on:
   workflow_dispatch:
     inputs:
       hedef:
-        description: "Hangi sunucu(lar): ikisi (varsayılan — iki sunucu birebir), frankfurt, tokyo"
+        description: "Hangi sunucu: frankfurt (canlı, varsayılan) ya da tokyo (yalnız silinmeden geri açılırsa)"
         type: choice
-        options: [ikisi, frankfurt, tokyo]
-        default: ikisi
+        options: [frankfurt, tokyo]
+        default: frankfurt
       migrations:
         description: "supabase db push (migration'ları koş)"
         type: boolean
@@ -67,10 +70,6 @@ on:
         description: "Taşıma öncesi parmak izi: fonksiyon kod özetleri + Auth ayarları (değer değil, özet). Yazmaz"
         type: boolean
         default: false
-      frankfurt_esitle:
-        description: "Frankfurt'u Tokyo'ya eşitle: kamuya açık değerli 4 ayar secret'ı + magic link konusu (yalnız Frankfurt'a YAZAR)"
-        type: boolean
-        default: false
       sql:
         description: "Salt okunur rapor sorgusu (Management API, read_only, tek ifade). Kişisel veri/Vault değeri döndüren sorgu reddedilir — log herkese açık"
         type: string
@@ -86,12 +85,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
-      # Sıra anlamlı: Frankfurt (kanarya) önce. Biri kırılırsa öbürü koşmaz —
-      # yarım uygulanmış bir migration iki sunucuyu AYRIŞTIRIR.
-      max-parallel: 1
-      fail-fast: true
+      # Tek hedef. Matris adı (`deploy (frankfurt)`) ve `matrix.hedef`'e bağlı
+      # adımlar değişmesin diye tek elemanlı matris olarak kaldı.
       matrix:
-        hedef: ${{ fromJSON(inputs.hedef == 'ikisi' && '["frankfurt","tokyo"]' || format('["{0}"]', inputs.hedef)) }}
+        hedef: ${{ fromJSON(format('["{0}"]', inputs.hedef)) }}
     env:
       # Frankfurt başka bir Supabase hesabında olabilir (2026-10-01: ortak
       # token Frankfurt'ta 403 aldı). `_EU` tanımlıysa Frankfurt onu kullanır,
@@ -105,15 +102,6 @@ jobs:
       - name: Secret kontrolü (fail-fast, sessiz atlama yok)
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "::error::SUPABASE_ACCESS_TOKEN secret'ı eksik"; exit 1; fi
-
-      # Defter onarımı projeye ÖZGÜDÜR: bir projede yanlış işaretlenen sürüm
-      # öbüründe doğru olabilir. İki hedefe birden onarım yazmak, doğru olan
-      # defteri bozar.
-      - name: Onarım tek hedefle yapılır
-        if: ${{ inputs.hedef == 'ikisi' && (inputs.repair != '' || inputs.unrepair != '') }}
-        run: |
-          echo "::error::repair/unrepair için hedef olarak tek sunucu seç (frankfurt ya da tokyo)."
-          exit 1
 
       # 0076'dan beri cron tetikleyicileri edge function adresini Vault'taki
       # `project_url`'den okur. Yoksa migration yalnız UYARI verir ve o
@@ -234,7 +222,7 @@ jobs:
 
       # Taşıma (docs/SUPABASE_FRANKFURT_TASIMA.md) öncesi "iki sunucu aynı
       # mı?" sorusunun şemanın dışında kalan iki yarısı: dağıtılmış fonksiyon
-      # KODU ve Auth ayarları. Şema parmak izi (esitlik işi) bunları görmez.
+      # KODU ve Auth ayarları. Şema parmak izi (eski `esitlik` işi) bunları görmezdi.
       # Repo herkese açık, log da açık: hiçbir DEĞER basılmaz. Fonksiyonda
       # Supabase'in paket özeti (ezbr_sha256), Auth'ta her alanın sha256'sının
       # ilk 12 hanesi — iki iş arasında satır satır karşılaştırılır.
@@ -283,88 +271,3 @@ jobs:
             supabase functions deploy "$f" --project-ref "$PROJECT_REF"
             echo "::endgroup::"
           done
-
-  # İki sunucu birebir mi? Deploy iki hedefe koştuysa şart; tek hedefte
-  # bilerek ayrıştırılmış olabilir (onarım), o yüzden yalnız uyarı değil
-  # hiç koşmaz — günlük `sema-esitlik.yml` onu da yakalar.
-  esitlik:
-    needs: deploy
-    if: ${{ inputs.hedef == 'ikisi' && !inputs.dry_run }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Şema parmak izi — Tokyo = Frankfurt
-        run: python3 tool/sema_esitlik.py --ayrinti
-      # Yalnız farklı satırlar (özetler; değer yok). Proje adresine/anahtarına
-      # bağlı alanlar (site_url vb.) beklenen farktır — karar taşıma belgesinde.
-      - uses: actions/download-artifact@v4
-        if: ${{ inputs.karsilastir && !cancelled() }}
-        with:
-          pattern: parmak-*
-          merge-multiple: true
-      - name: Taşıma parmak izi — Tokyo ile Frankfurt farkı
-        if: ${{ inputs.karsilastir && !cancelled() }}
-        run: |
-          diff parmak_tokyo.txt parmak_frankfurt.txt > fark.txt || true
-          if [ -s fark.txt ]; then
-            echo "Satır başı '-' = Tokyo, '+' = Frankfurt"
-            grep '^[<>]' fark.txt | sed 's/^</- /; s/^>/+ /'
-          else
-            echo "FARK YOK"
-          fi
-
-  # Taşıma öncesi tek seferlik eşitleme (docs/SUPABASE_FRANKFURT_TASIMA.md,
-  # "Eşleme ölçümü 2026-10-14"). YALNIZ Frankfurt'a yazar; Tokyo'yu okur.
-  # Kapsam bilerek dar:
-  #  * Ayar secret'ları sır değil (bayrak "1", tavan "10", tur üstü "3").
-  #    Değer koda yazılı ama Tokyo'daki özetle (sha256) EŞLEŞMEZSE yazılmaz —
-  #    Tokyo'da değer değiştiyse eski değeri Frankfurt'a taşımayız.
-  #  * Gerçek sırlar (DELETION_HASH_SALT, Telegram) Management API'den
-  #    okunamaz (yalnız özet döner) → elle, belgeye bak.
-  #  * Magic link konusu Tokyo'dan okunur, Frankfurt'a PATCH edilir; log'a
-  #    metin değil özet düşer.
-  frankfurt_esitle:
-    if: ${{ inputs.frankfurt_esitle }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    env:
-      TOKYO_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      EU_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU || secrets.SUPABASE_ACCESS_TOKEN }}
-      TOKYO: ybdbzouzhzwthjgwlbmk
-      EU: ynwymnpdiwudrlxfrmuo
-    steps:
-      - name: Ayar secret'ları (Tokyo özeti tutarsa)
-        run: |
-          api=https://api.supabase.com/v1/projects
-          curl -sS -f "$api/$TOKYO/secrets" -H "Authorization: Bearer $TOKYO_TOKEN" > tokyo.json
-          govde='[]'
-          for cift in FON_KALEM_ACIK=1 FON_KALEM_AYLIK_TAVAN_USD=10 FON_KALEM_TUR_USTU=3 PORTFOY_YORUM_ACIK=1; do
-            ad=${cift%%=*}; deger=${cift#*=}
-            beklenen=$(printf '%s' "$deger" | sha256sum | cut -d' ' -f1)
-            tokyo=$(jq -r --arg a "$ad" '.[] | select(.name==$a) | .value' tokyo.json)
-            if [ "$tokyo" = "$beklenen" ]; then
-              govde=$(jq -c --arg a "$ad" --arg d "$deger" '. + [{name:$a, value:$d}]' <<<"$govde")
-              echo "$ad: Tokyo özeti tutuyor → Frankfurt'a yazılacak"
-            else
-              echo "::warning::$ad: Tokyo'daki değer beklenenden farklı ya da yok — YAZILMADI"
-            fi
-          done
-          if [ "$govde" != "[]" ]; then
-            curl -sS -f -X POST "$api/$EU/secrets" -H "Authorization: Bearer $EU_TOKEN" \
-              -H "Content-Type: application/json" -d "$govde" -o /dev/null -w 'Frankfurt secrets HTTP %{http_code}\n'
-          fi
-
-      - name: Magic link konusu (Tokyo → Frankfurt)
-        run: |
-          api=https://api.supabase.com/v1/projects
-          konu=$(curl -sS -f "$api/$TOKYO/config/auth" -H "Authorization: Bearer $TOKYO_TOKEN" | jq -r '.mailer_subjects_magic_link // ""')
-          if [ -z "$konu" ]; then echo "::error::Tokyo'da konu boş"; exit 1; fi
-          curl -sS -f -X PATCH "$api/$EU/config/auth" -H "Authorization: Bearer $EU_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "$(jq -n --arg k "$konu" '{mailer_subjects_magic_link: $k}')" -o /dev/null -w 'Frankfurt auth HTTP %{http_code}\n'
-          yeni=$(curl -sS -f "$api/$EU/config/auth" -H "Authorization: Bearer $EU_TOKEN" | jq -r '.mailer_subjects_magic_link')
-          [ "$yeni" = "$konu" ] && echo "Magic link konusu artık aynı" || { echo "::error::Frankfurt'ta konu hâlâ farklı"; exit 1; }

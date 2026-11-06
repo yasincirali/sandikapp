@@ -390,6 +390,14 @@ Arada yeni projeye yazılan veri kaybolur — bu yüzden pencere kısa ve gece.
 
 ### Tokyo yedek olarak (kullanıcı kararı 2026-09-27: "silme, yedek olarak kullanırız")
 
+> **2026-11-06 güncel karar (yasin: "Tokyo'yu kapatalım, limitlerimizi etkiliyor"):**
+> Tokyo yedek rolünden çıkarıldı. `yedekle` (Frankfurt → Tokyo) hiç yazılmadı;
+> Tokyo 18 Ekim'in anlık görüntüsü olarak kaldı, yani yedek değil bayat kopya,
+> üstelik hesabını sonradan silenlerin verisini taşıyor. Sıra: deploy yalnız
+> Frankfurt (bu tarihte `supabase-deploy.yml`) → duraklat → ~30 gün sonra sil.
+> Yerine Frankfurt'un yerel yedeği: `tool/yedek/frankfurt_yedek.py`. Adımlar
+> `YAPMAN_GEREKENLER.md` "2026-11-06 Tokyo'yu kapatma". Aşağısı tarihçedir.
+
 **Neden değerli:** Frankfurt Free planda — **otomatik günlük yedek yok**. Başka
 kıtadaki ikinci proje bölgesel arızaya karşı da korur.
 
