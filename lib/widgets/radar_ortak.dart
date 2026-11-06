@@ -70,23 +70,17 @@ Future<void> terimSayfasiniAc(BuildContext context, RadarTerim terim,
   final (baslik, tanim) = terim.metin(l);
   return showSandikSheet<void>(
     context: context,
-    backgroundColor: context.c.surface2,
+    baslik: baslik,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (ctx) => SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), SandikSpace.md,
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), SandikSpace.sm,
             SandikSpace.screenH(ctx), SandikSpace.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
-            Text(baslik,
-                style: ctx.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600, color: ctx.c.text90)),
-            const SizedBox(height: SandikSpace.sm),
             Text(tanim, style: ctx.t.bodyMedium?.copyWith(color: ctx.c.text58)),
             if (ornek != null) ...[
               const SizedBox(height: SandikSpace.smd),
@@ -295,7 +289,6 @@ Future<void> radarKocunuGoster(BuildContext context, WidgetRef ref,
   if (!context.mounted) return;
   await showSandikSheet<void>(
     context: context,
-    backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (_) => const _Koc(),
   );
@@ -326,8 +319,6 @@ class _KocState extends State<_Koc> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
             Text(l.rdrNasilOkunur,
                 style: context.t.labelLarge?.copyWith(
                     color: c.text58,

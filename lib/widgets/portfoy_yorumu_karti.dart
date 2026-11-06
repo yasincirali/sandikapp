@@ -85,7 +85,6 @@ mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       final kabul = await showSandikSheet<bool>(
         context: context,
         isScrollControlled: true,
-        showDragHandle: true,
         builder: (ctx) => const _RizaSayfasi(),
       );
       if (kabul != true) return;
@@ -750,7 +749,7 @@ class _RizaSayfasi extends StatelessWidget {
     final yatay = SandikSpace.screenH(context);
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.md),
+        padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,

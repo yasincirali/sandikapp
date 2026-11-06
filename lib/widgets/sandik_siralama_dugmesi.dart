@@ -79,7 +79,6 @@ class SandikSiralamaDugmesi<T> extends StatelessWidget {
   void _ac(BuildContext context) {
     showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface1,
       shape: _ikon
           ? const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop)
           : null,

@@ -351,7 +351,6 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
   void _ayrintiAc(TopGainerAllocation? satir) {
     showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       useSafeArea: true,
       // Tavan şart (yasin 2026-10-21: "açılıyor ama kapatılamıyor, geri de
@@ -1360,10 +1359,6 @@ class _PortfoyAyrintisi extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Center(
-            child: const SandikTutamac(),
-          ),
-          const SizedBox(height: SandikSpace.md),
           Row(
             children: [
               _Madalya(sira: s?.rank),

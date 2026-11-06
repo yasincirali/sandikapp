@@ -52,7 +52,6 @@ Future<void> showIslemNotuSheet(
   final sonuc = await showSandikSheet<String>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
     ),
@@ -191,18 +190,7 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
-          const Center(child: SandikTutamac()),
-          const SizedBox(height: SandikSpace.md),
-          Text(
-            baslik,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.headlineSmall?.copyWith(
-              color: context.c.text90,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          SandikSheetBasligi(baslik),
           const SizedBox(height: SandikSpace.xs),
           Text(
             altBaslik,

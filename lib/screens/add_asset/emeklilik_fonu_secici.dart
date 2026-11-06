@@ -31,7 +31,6 @@ Future<TefasFund?> emeklilikFonuSec(
     showSandikSheet<TefasFund>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

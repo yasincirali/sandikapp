@@ -32,27 +32,63 @@ import 'yukleme_isareti.dart';
 /// sayfada SafeArea'nın üst payı hiçbir şey değiştirmez; yalnız tepeye
 /// dayanan sayfa durum çubuğunun altında durur. Bilerek tam ekrana
 /// uzanacak sayfa `useSafeArea: false` verir.
+///
+/// **Kabuk standardı (sheet standardı, 2026-11-06; Ar-Ge 2026-11-05 #1 ve
+/// 2026-11-06 #2).** 77 sheet beş farklı zeminde (surface2/surface1/
+/// colorScheme.surface/background/şeffaf) açılıyordu, tutamaç yalnız 41'inde
+/// vardı, başlık iki boyda yazılıyordu: kullanıcı aynı uygulamada farklı
+/// aileden alt sayfalar görüyordu. Artık kabuk tek yerden gelir:
+/// - **Zemin** varsayılanı `surface2`. Çağıran `backgroundColor:` yalnız
+///   bilinçli bir sahne için verir (şeffaf = kendi şeklini çizen sayfa);
+///   `sheet_standardi_test` bu sayının yalnız azalmasına izin verir.
+/// - **Tutamaç** kabuğun içinde, varsayılan açık (HIG denetimi 2026-10-10:
+///   sayfa aşağı kaydırarak kapandığını göstersin; eskiden her sayfa bunu
+///   kendi yorumuyla elle yazıyordu). Şeffaf zeminde varsayılan
+///   kapalıdır: o sayfalar tutamacı kendi şekillerinin içinde çizer, kabuk
+///   çizse şeklin üstünde boşlukta asılı kalırdı. Kabuk tutamaç çizerken
+///   içerikte kalmış bir [SandikTutamac] hiçbir şey çizmez (çift tutamaç
+///   olamaz).
+/// - **Başlık** [baslik] verilirse tek stilde ([SandikSheetBasligi]), altında
+///   en fazla bir satır [altMetin]. Başlığı duruma göre değişen sayfa
+///   (seçilen varlığın adı) aynı bileşeni kendi içinde kullanır.
+/// - **Klavye** payı kabukta (`isScrollControlled` sayfada): içerik `viewInsets.bottom` kadar yukarı itilir
+///   ve alttaki ağaçtan klavye payı silinir. Böylece birincil düğme klavyenin
+///   üstünde kalır; payı kendisi ekleyen eski sayfalar (builder `ctx`'i dahil,
+///   [Builder] kabuğun altında kurulur) sıfır okur, çift pay oluşmaz.
+/// - İçerik yatay payı [SandikSpace.screenH]; kabuk başlığı da bununla hizalı.
+/// - Material'ın `showDragHandle`'ı parametre olarak yok: 48 pt'lik kendi
+///   alanını çiziyor, kabuk tutamacıyla çift tutamaç olurdu (beş sayfa
+///   kullanıyordu, kabuğa taşındı).
 Future<T?> showSandikSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
+  String? baslik,
+  String? altMetin,
+  bool? tutamac,
   Color? backgroundColor,
   ShapeBorder? shape,
   bool isScrollControlled = false,
   bool? useSafeArea,
-  bool? showDragHandle,
   bool isDismissible = true,
   bool enableDrag = true,
   BoxConstraints? constraints,
 }) {
   final azalt = MediaQuery.disableAnimationsOf(context);
+  final zemin = backgroundColor ?? context.c.surface2;
+  final tutamacli = tutamac ?? zemin.a > 0;
   return showModalBottomSheet<T>(
     context: context,
-    builder: builder,
-    backgroundColor: backgroundColor,
+    builder: (_) => _SandikSheetKabugu(
+      baslik: baslik,
+      altMetin: altMetin,
+      tutamac: tutamacli,
+      klavyePayi: isScrollControlled,
+      builder: builder,
+    ),
+    backgroundColor: zemin,
     shape: shape,
     isScrollControlled: isScrollControlled,
     useSafeArea: useSafeArea ?? isScrollControlled,
-    showDragHandle: showDragHandle,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
     constraints: constraints,
@@ -65,6 +101,120 @@ Future<T?> showSandikSheet<T>({
             reverseCurve: SandikMotion.exit,
           ),
   );
+}
+
+/// [showSandikSheet]'in kabuğu: tutamaç, başlık ve klavye payı.
+class _SandikSheetKabugu extends StatelessWidget {
+  const _SandikSheetKabugu({
+    required this.baslik,
+    required this.altMetin,
+    required this.tutamac,
+    required this.klavyePayi,
+    required this.builder,
+  });
+
+  final String? baslik;
+  final String? altMetin;
+  final bool tutamac;
+
+  /// Yalnız `isScrollControlled` sayfada: yüksekliği 9/16 ile sınırlı sayfa
+  /// klavye payını taşıyamaz (içerik taşar). Klavyeli her sayfa zaten
+  /// kaydırma denetimli açılıyor; sınırlı sayfada davranış eskisi.
+  final bool klavyePayi;
+  final WidgetBuilder builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final klavye = klavyePayi ? MediaQuery.viewInsetsOf(context).bottom : 0.0;
+    Widget icerik = klavyePayi
+        ? MediaQuery.removeViewInsets(
+            context: context,
+            removeBottom: true,
+            child: Builder(builder: builder),
+          )
+        : Builder(builder: builder);
+    final baslik = this.baslik;
+    if (tutamac || baslik != null) {
+      if (tutamac) icerik = _KabukTutamaciVar(child: icerik);
+      icerik = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (tutamac)
+            const Padding(
+              padding: EdgeInsets.only(top: SandikSpace.sm2),
+              child: Center(child: SandikTutamac._kabuk()),
+            ),
+          if (baslik != null)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                SandikSpace.screenH(context),
+                SandikSpace.md,
+                SandikSpace.screenH(context),
+                0,
+              ),
+              child: SandikSheetBasligi(baslik, altMetin: altMetin),
+            ),
+          Flexible(child: icerik),
+        ],
+      );
+    }
+    return Padding(padding: EdgeInsets.only(bottom: klavye), child: icerik);
+  }
+}
+
+/// Kabuk tutamaç çizdiğinde içeriğe "tutamaç zaten var" der.
+class _KabukTutamaciVar extends InheritedWidget {
+  const _KabukTutamaciVar({required super.child});
+
+  @override
+  bool updateShouldNotify(_KabukTutamaciVar oldWidget) => false;
+}
+
+/// Alt sayfa başlığı — sheet'lerin TEK başlık stili.
+///
+/// Neden (sheet standardı 2026-11-06): başlık iki boyda (`headlineSmall`
+/// w700 / `titleLarge`) ve her sayfanın kendi `_baslik` metodunda yazılıyordu.
+/// Cümle düzeni, ağırlık w600 (yasin 5 Kas 2026 tavanı). [altMetin] en fazla
+/// bir satır: açıklama uzarsa yeri Sık sorulanlar'dır, başlığın altı değil.
+/// Başlık semantikte `header`; ekran okuyucu sayfaya girince önce bunu okur.
+class SandikSheetBasligi extends StatelessWidget {
+  const SandikSheetBasligi(this.baslik, {super.key, this.altMetin});
+
+  final String baslik;
+  final String? altMetin;
+
+  @override
+  Widget build(BuildContext context) {
+    final alt = altMetin;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            baslik,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.titleLarge?.copyWith(
+              color: context.c.text90,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        if (alt != null) ...[
+          const SizedBox(height: SandikSpace.xxs),
+          Text(
+            alt,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 /// Platforma uygun sayfa geçişi.
@@ -1747,18 +1897,33 @@ class SandikCard extends StatelessWidget {
 /// (aşağı çek, kapat) her sayfada biraz farklı görünüyordu (animasyon
 /// denetimi 2026-10-01). 36×4, `text36`: iki temada da okunur ama baskın
 /// değil.
+///
+/// Sheet standardından (2026-11-06) beri tutamacı [showSandikSheet]'in kabuğu
+/// çizer; bu sınıf yalnız şeffaf zeminli, kendi şeklini çizen sayfalar için
+/// doğrudan kullanılır (`sheet_standardi_test` kullanım sayısını kilitler).
+/// Kabuk tutamaç çizerken içerikte kalan bir kopya boş döner: çift tutamaç
+/// olamaz.
 class SandikTutamac extends StatelessWidget {
-  const SandikTutamac({super.key});
+  const SandikTutamac({super.key}) : _kabuktan = false;
+  const SandikTutamac._kabuk() : _kabuktan = true;
+
+  final bool _kabuktan;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: context.c.text36,
-          borderRadius: BorderRadius.circular(SandikSpace.xxs),
-        ),
-      );
+  Widget build(BuildContext context) {
+    if (!_kabuktan &&
+        context.getInheritedWidgetOfExactType<_KabukTutamaciVar>() != null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: context.c.text36,
+        borderRadius: BorderRadius.circular(SandikSpace.xxs),
+      ),
+    );
+  }
 }
 
 /// Bölüm başlığı + isteğe bağlı sayaç rozeti.

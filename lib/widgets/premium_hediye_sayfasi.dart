@@ -24,7 +24,6 @@ class PremiumHediyeSayfasi extends StatelessWidget {
   static Future<void> goster(BuildContext context, PremiumHakki hak) =>
       showSandikSheet<void>(
         context: context,
-        backgroundColor: context.c.surface2,
         isScrollControlled: true,
         shape:
             const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
@@ -51,8 +50,6 @@ class PremiumHediyeSayfasi extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.lg),
             Icon(Icons.card_giftcard_rounded,
                 color: c.amberText, size: SandikSpace.xxl),
             const SizedBox(height: SandikSpace.md),
@@ -93,7 +90,6 @@ class PremiumHediyeBittiSayfasi extends StatelessWidget {
 
   static Future<void> goster(BuildContext context) => showSandikSheet<void>(
         context: context,
-        backgroundColor: context.c.surface2,
         shape:
             const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
         builder: (_) => const PremiumHediyeBittiSayfasi(),
@@ -113,8 +109,6 @@ class PremiumHediyeBittiSayfasi extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.lg),
             Icon(Icons.hourglass_bottom_rounded,
                 color: c.amberText, size: SandikSpace.xxl),
             const SizedBox(height: SandikSpace.md),

@@ -124,7 +124,8 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Çoklu aç/kapa çip | `GrafikCipi` (çerçeve + onay işareti) |
 | Varlık türü süzgeci (sade çipler; elde olan önde, olmayan sonda pasif) | `TurFiltreCipleri` (Performans › Filtre; bayrak `goz_alici`) |
 | Açma/kapama | `Switch.adaptive` (açık track `amberText`) |
-| Sheet tutamacı | `SandikTutamac` |
+| Alt sayfa kabuğu (zemin, tutamaç, başlık, klavye payı) | `showSandikSheet` — zemin varsayılanı `surface2`, tutamaç kabukta (varsayılan açık; şeffaf zeminde kapalı), `baslik:` + en fazla bir satır `altMetin:`. Ekran `backgroundColor:`, `SandikTutamac`, kendi başlık stilini yazmaz. Başlığı duruma göre değişen sayfa (alarmda seçilen varlık) `SandikSheetBasligi`'ni içeride kullanır. İçerik yatay payı `SandikSpace.screenH`; birincil düğme en altta, klavye payı kabukta (`isScrollControlled` sayfada). Bilinçli istisnalar: şeffaf zeminli kendi şeklini çizen sayfalar (sinyaller, sembol arama, yenilikler, kilometre taşı, değerlendirme, widget kurulumu, demo kaydı, mod bilgisi), tam sayfa varlık görünümü ve anket (`background`), paywall kutlaması, ekleme seçicileri (`surface1`: satırdaki logo kutusu `surface2`), paylaşım kartı önizlemesi |
+| Sheet tutamacı | Kabuk çizer; `SandikTutamac` yalnız şeffaf zeminli sayfanın kendi şeklinin içinde |
 | Tarih seçici | `pickSandikDate` |
 | Giriş alanı | `context.inputDecoration(...)`; dolgu temadan, ekranda `fillColor` yok |
 | Sekme başlığı (içerik altından akar, kaydırınca kenar çizgisi + iOS'ta cam, başlık 0.88'e küçülür) | `SandikKaydirmaBasligi` (Portföy, Performans, Profil; bayrak `goz_alici`). Gövde payı `SandikKaydirmaBasligi.payIle` ile okunur — ekranın kendi `context`'i iskeletin üstündedir, pay 0 çıkar |
@@ -189,6 +190,7 @@ karede atlamaz (2026-10-20). Gezinti oku
 | Çift dokunma koruması | `navigasyon_korumasi_test` |
 | Tek yükleniyor davranışı | `yukleniyor_tek_davranis_test` |
 | Tek sheet açıcı, platform diyaloğu yok, düğme köşesi, ölçek dışı süre yok | `tasarim_dili_test` |
+| Sheet kabuğu: çağrı yerinde zemin ve elle tutamaç yalnız azalır, `showDragHandle` yok | `sheet_standardi_test` |
 | Açık tema kontrastı | `acik_tema_*_kontrast_test` |
 | Giriş alanı dolgusu | `input_fill_consistency_test` |
 | Çevrilmiş ekranlarda ham metin yok | `l10n_coverage_test` |
@@ -211,11 +213,18 @@ eklenir.
 2. ~~**Tek basma ilkeli.**~~ Yapıldı (Ar-Ge 5 Kas 21:10 #2 ve 22:40 #3):
    `InkWell` ve `SandikBasma` `SandikTappable`'a taşındı; solma
    `soluk: true`. Kilit `inkwell_ratchet_test`, `sandik_basma_ratchet_test`.
-3. **Sheet içeriği standardı.** Hareket artık tek (`showSandikSheet`), ama
-   zemin üç tonda (`surface1`/`surface2`/`background`), 15 sheet'te tutamaç
-   yok, başlık iki farklı stilde. Hedef: `showSandikSheet`'e `baslik:` ve
-   tutamaç gömülsün, zemin tek ton.
-4. **Ortak çip.** Hızlı tutar çipi bile üç ayrı uygulamada. Hedef: `SandikCip`.
+3. ~~**Sheet içeriği standardı.**~~ Kabuk yapıldı (Ar-Ge 5 Kas 22:40 #1,
+   6 Kas 08:45 #2): `showSandikSheet` zemini (`surface2`), tutamacı,
+   `baslik:`/`altMetin:`'i ve klavye payını tek yerden verir; 51 çağrının
+   zemini, 32 elle tutamaç ve 5 Material tutamacı kabuğa taşındı. Kilit
+   `sheet_standardi_test` (zemin 18, tutamaç 8; yalnız azalır). Kalan:
+   başlığını içeride elle yazan sayfalar adım adım `baslik:`'a ya da
+   `SandikSheetBasligi`'ne geçer (taşınanlar: raporlar, radar terimi,
+   portföy seçimi kabukta; hedef, alarm, işlem notu, elle fiyat, kısmi
+   aktarım içeride).
+4. **Ortak çip.** Hızlı doldurma çipi alarmda ve hedefte artık
+   `SandikFiltreCipi` (alarm: tek, yatay kayan satır; 6 Kas 08:45 #3).
+   Kalan: diğer hızlı tutar çipleri. Hedef: `SandikCip`.
 5. **Hata kanalı kuralı.** Aynı tür hata bazen diyalog, bazen snack. Kural
    önerisi: kullanıcının girdiği form başarısızsa diyalog, arka plan / tek
    satır eylem başarısızsa snack. Başarı mesajı: yalnız geri alınabilir
@@ -264,7 +273,7 @@ ya da sapma gerekçesiyle yazılır. Android'de Material karşılığı bozulmaz
 | 4 | **Renk körlüğü**: kazanç/kayıp yalnız renkle mi anlatılıyor? İşaret (+/−), ok ya da metin de var mı? | yön taşıyan yüzde `fmtPctIsaretli` (+%/−%), tutar U+2212 ile; işaret ya da ok renkle birlikte | aynı |
 | 5 | **Güvenli alan**: alt düğme, sheet içeriği, tam ekran içerik çentiğe/ana çubuğa girmiyor mu? Klavye açılınca eylem görünür mü? | `SafeArea`, `showSandikSheet`, `MediaQuery.viewInsets` | sistem gezinme çubuğu aynı |
 | 6 | **Standart gezinme**: geri kaydırma çalışıyor mu? `PopScope(canPop: false)` yalnız kaydedilmemiş veri/ödeme gibi gerçek risklerde mi? | `pushGuarded(adaptiveRoute)`; özel geri oku yok (`SandikAppBar`) | sistem geri tuşu/jesti aynı yolu izler |
-| 7 | **Sheet ve modal**: kısa, bağlamdan kopmayan iş sheet'te mi? Tutamaç ve aşağı kaydırarak kapama var mı? Tam ekran modal yalnız odak isteyen akışta mı? | `showSandikSheet` + `SandikTutamac`; tam ekran `modal` hareketi | Material bottom sheet aynı |
+| 7 | **Sheet ve modal**: kısa, bağlamdan kopmayan iş sheet'te mi? Tutamaç ve aşağı kaydırarak kapama var mı? Tam ekran modal yalnız odak isteyen akışta mı? | `showSandikSheet` (tutamaç kabukta); tam ekran `modal` hareketi | Material bottom sheet aynı |
 | 8 | **Haptic**: titreşim anlamlı anda mı (seçim, başarı, hata, eşik)? Kaydırma/imleç her adımda titretmiyor mu? | yalnız `SandikHaptic`; grafikte yalnız zirve/dip | Android titreşimi aynı çağrıdan |
 | 9 | **Erişilebilirlik etiketi**: yalnız ikonlu düğme/dokunulabilir öğe ne yaptığını söylüyor mu? Grafik/sayı kartı tek cümleyle okunuyor mu? Süs ikon `excludeSemantics` mi? | `IconButton.tooltip`, `SandikTappable.semanticLabel`, `SandikAsyncTap.semanticLabel`, `Semantics(label:)` | TalkBack aynı ağacı okur |
 | 10 | **Hareketi azalt**: "Hareketi azalt" açıkken kayma/ölçek kalkıyor mu? | `SandikMotion.*Of(context)`; `reduce_motion_coverage_test` | "Animasyonları kaldır" aynı bayrak |

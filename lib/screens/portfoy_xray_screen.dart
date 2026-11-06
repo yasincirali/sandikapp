@@ -337,7 +337,6 @@ class _SinifSatiri extends StatelessWidget {
         showSandikSheet<void>(
           context: context,
           isScrollControlled: true,
-          showDragHandle: true,
           builder: (_) => _KaynakSayfasi(
               x: x, kova: kova, ad: ad, renk: renk, tutar: tutar),
         );
@@ -431,7 +430,7 @@ class _KaynakSayfasi extends StatelessWidget {
         child: ListView(
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(
-              SandikSpace.lg, 0, SandikSpace.lg, SandikSpace.lg),
+              SandikSpace.lg, SandikSpace.md, SandikSpace.lg, SandikSpace.lg),
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,

@@ -129,7 +129,6 @@ class SandikBaglamMenusu extends StatelessWidget {
     SandikHaptic.medium.perform();
     final secilen = await showSandikSheet<SandikBaglamEylemi>(
       context: context,
-      backgroundColor: context.c.surface1,
       builder: (sayfa) => SafeArea(
         top: false,
         child: Padding(
@@ -138,7 +137,6 @@ class SandikBaglamMenusu extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SandikTutamac(),
               Padding(
                 padding: EdgeInsets.fromLTRB(SandikSpace.screenH(sayfa),
                     SandikSpace.xs, SandikSpace.screenH(sayfa), SandikSpace.sm),

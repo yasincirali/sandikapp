@@ -118,7 +118,6 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
     final gonderildi = await showSandikSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
       builder: (_) => _YanlisSayiSayfasi(gonder: _yanlisGonder),
     );

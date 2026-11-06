@@ -36,7 +36,6 @@ Future<void> showKismiAktarimSayfasi(
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -129,13 +128,7 @@ class _KismiAktarimIcerikState extends ConsumerState<KismiAktarimIcerik> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
-            Text(
-              l.portfoyAktarBaslik,
-              style: context.t.titleLarge?.copyWith(
-                  color: context.c.text90, fontWeight: FontWeight.w700),
-            ),
+            SandikSheetBasligi(l.portfoyAktarBaslik),
             const SizedBox(height: SandikSpace.xs),
             Text(
               l.portfoyAktarAciklama(widget.hedefAdi, _miktar(widget.toplam)),

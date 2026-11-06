@@ -125,7 +125,6 @@ extension _DetayEylemler on _AssetDetailScreenState {
     }
     showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

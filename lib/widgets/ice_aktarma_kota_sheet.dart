@@ -21,7 +21,6 @@ class IceAktarmaKotaSheet extends StatelessWidget {
           {required int bulunan, required int sigan}) async =>
       await showSandikSheet<IceAktarmaKotaSecimi>(
         context: context,
-        backgroundColor: context.c.surface2,
         shape:
             const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
         builder: (_) => IceAktarmaKotaSheet(bulunan: bulunan, sigan: sigan),
@@ -42,8 +41,6 @@ class IceAktarmaKotaSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.lg),
             Icon(Icons.inventory_2_outlined,
                 color: c.amberText, size: SandikSpace.xxl),
             const SizedBox(height: SandikSpace.md),

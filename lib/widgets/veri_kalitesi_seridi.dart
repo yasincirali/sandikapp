@@ -150,7 +150,6 @@ Future<bool?> showElleFiyatSayfasi(
   return showSandikSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (_) => ElleFiyatSayfasi(
       temsilci: eksik.pozisyon.representative,
@@ -218,13 +217,7 @@ class _ElleFiyatSayfasiState extends ConsumerState<ElleFiyatSayfasi> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Center(child: SandikTutamac()),
-          const SizedBox(height: SandikSpace.md),
-          Text(
-            l.vkFiyatBaslik(widget.temsilci.name),
-            style: context.t.headlineSmall
-                ?.copyWith(color: c.text90, fontWeight: FontWeight.w700),
-          ),
+          SandikSheetBasligi(l.vkFiyatBaslik(widget.temsilci.name)),
           const SizedBox(height: SandikSpace.xs),
           Text(
             l.vkFiyatAciklama(tarih),

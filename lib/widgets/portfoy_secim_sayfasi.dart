@@ -235,32 +235,23 @@ Future<String?> _portfoySor(
 }) =>
     showSandikSheet<String>(
       context: context,
+      baslik: baslik,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
       builder: (ctx) => SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), SandikSpace.md,
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), SandikSpace.xs,
               SandikSpace.screenH(ctx), SandikSpace.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Center(child: SandikTutamac()),
-              const SizedBox(height: SandikSpace.md),
-              Text(
-                baslik,
-                style: ctx.t.titleLarge?.copyWith(
-                    color: ctx.c.text90, fontWeight: FontWeight.w700),
-              ),
-              if (aciklama != null) ...[
-                const SizedBox(height: SandikSpace.xs),
+              if (aciklama != null)
                 Text(aciklama,
                     style: ctx.t.bodyMedium?.copyWith(color: ctx.c.text58)),
-              ],
               const SizedBox(height: SandikSpace.md),
               for (final s in secenekler) ...[
                 SandikTappable(

@@ -374,7 +374,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final result = await showSandikSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -967,7 +966,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -2289,7 +2287,6 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
     final mevcut = _slot ?? 'morning';
     final secim = await showSandikSheet<String>(
       context: context,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
@@ -2403,7 +2400,6 @@ class _BirikimHatirlatmaTileState
     final secim = await showSandikSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

@@ -26,7 +26,6 @@ extension _Kayit on _AddAssetScreenState {
       // Klavye + uzun önizleme sayfayı tepeye iterse durum çubuğunun
       // altına girmesin.
       useSafeArea: true,
-      backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(
           borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _QuickEntrySheet(

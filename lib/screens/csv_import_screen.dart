@@ -440,7 +440,6 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final kabul = await showSandikSheet<bool>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
       builder: (_) => const _AiRizaSayfasi(),
     );
     if (kabul != true) return false;
@@ -480,7 +479,6 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: context.c.surface1,
       builder: (_) => _EslemeSayfasi(anlam: ana),
     );
     if (yeni == null || !mounted) return;
@@ -1035,7 +1033,7 @@ class _AiRizaSayfasi extends StatelessWidget {
     final yatay = SandikSpace.screenH(context);
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.md),
+        padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,

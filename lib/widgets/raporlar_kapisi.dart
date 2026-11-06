@@ -96,8 +96,8 @@ Future<void> raporlarSayfasiniAc(BuildContext context,
     {required bool siralamaAcik}) {
   return showSandikSheet<void>(
     context: context,
+    baslik: context.l10n.s6Raporlar,
     isScrollControlled: true,
-    backgroundColor: context.c.surface1,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (sayfaCtx) => _RaporlarSayfasi(
       siralamaAcik: siralamaAcik,
@@ -221,14 +221,6 @@ class _RaporlarSayfasi extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
-            Text(
-              l.s6Raporlar,
-              style: context.t.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700, color: c.text90),
-            ),
-            const SizedBox(height: SandikSpace.sm),
             for (var i = 0; i < satirlar.length; i++) ...[
               if (i > 0) Divider(height: 1, thickness: 1, color: c.hairline),
               satirlar[i],

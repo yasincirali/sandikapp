@@ -69,7 +69,6 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
   final sonuc = await showSandikSheet<int>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(
       borderRadius:
           BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -148,9 +147,6 @@ class _HedefSheetState extends State<_HedefSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
-          const Center(child: SandikTutamac()),
-          const SizedBox(height: SandikSpace.md),
           if (widget.etiket != null)
             Padding(
               padding: const EdgeInsets.only(bottom: SandikSpace.xs),
@@ -164,13 +160,7 @@ class _HedefSheetState extends State<_HedefSheet> {
                 ),
               ),
             ),
-          Text(
-            l10n.goalTitle,
-            style: context.t.headlineSmall?.copyWith(
-              color: context.c.text90,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          SandikSheetBasligi(l10n.goalTitle),
           const SizedBox(height: SandikSpace.xs),
           Text(
             l10n.goalHint,

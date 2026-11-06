@@ -334,7 +334,6 @@ class _MevduatGovdesi extends ConsumerWidget {
     final sonuc = await showSandikSheet<_YeniDonem>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -376,7 +375,6 @@ class _MevduatGovdesi extends ConsumerWidget {
     final sonuc = await showSandikSheet<_YeniDonem>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -873,7 +871,6 @@ class _BesGovdesi extends ConsumerWidget {
     final sonuc = await showSandikSheet<({double tutar, double dk})>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -1027,7 +1024,6 @@ extension on _BesGovdesi {
     final sonuc = await showSandikSheet<({double tutar, bool plan})>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -1162,7 +1158,6 @@ extension on _BesGovdesi {
         await showSandikSheet<({List<FonPayi> dagilim, bool katki})>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

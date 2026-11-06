@@ -118,7 +118,6 @@ class KilometreTasiSeridi extends ConsumerWidget {
     return showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _TumuSayfasi(hepsi: hepsi, siradaki: siradaki),
     );
@@ -319,8 +318,6 @@ class _TumuSayfasi extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: SandikSpace.smd),
-          const Center(child: SandikTutamac()),
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 SandikSpace.lg, SandikSpace.md, SandikSpace.lg, SandikSpace.xs),
