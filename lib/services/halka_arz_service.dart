@@ -26,6 +26,21 @@ import 'package:path_provider/path_provider.dart';
 import '../models/halka_arz.dart';
 import 'crash_reporter.dart';
 
+/// Halka arz verisinin Profil girişini gösterecek kadar taze olup olmadığı.
+///
+/// Liste elle derleniyor (`docs/data/halka_arz.json`); derleme aksarsa
+/// Profil'deki giriş haftalarca eski "talep toplanıyor" kayıtlarına
+/// götürüyordu (Ar-Ge 6 Kas 20:04). Sınır 21 gün: tam 21 gün hâlâ taze,
+/// 22. gün bayat. Tarih bilinmiyorsa (eski dosya, bozuk alan) bayat sayılır —
+/// tazeliğini kanıtlayamayan veri giriş açmaz. Saf: "şimdi" dışarıdan gelir
+/// (`halkaArzSaatProvider`), test saatten bağımsız.
+const halkaArzTazelikSiniri = Duration(days: 21);
+
+bool halkaArzBayatMi(DateTime? guncelleme, DateTime simdi) {
+  if (guncelleme == null) return true;
+  return simdi.difference(guncelleme) > halkaArzTazelikSiniri;
+}
+
 class HalkaArzService {
   HalkaArzService({
     http.Client? client,

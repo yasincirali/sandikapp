@@ -884,6 +884,18 @@ abstract class AppLocalizations {
   /// **'ort. {price}'**
   String quickAvgShort(String price);
 
+  /// Hızlı Sat: satılan miktarın ortalama maliyete göre kârı (işaretli tutar ve yüzde).
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu satıştan kâr {tutar} · {yuzde}'**
+  String quickSaleGain(String tutar, String yuzde);
+
+  /// Hızlı Sat: satılan miktarın ortalama maliyete göre zararı (işaretli tutar ve yüzde).
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu satıştan zarar {tutar} · {yuzde}'**
+  String quickSaleLoss(String tutar, String yuzde);
+
   /// No description provided for @quickUnitPrice.
   ///
   /// In tr, this message translates to:
