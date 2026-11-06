@@ -1,6 +1,7 @@
 import 'crash_reporter.dart';
 import 'history_service.dart';
 import 'period_summary_service.dart' show SummaryPeriod;
+import 'supabase_service.dart';
 
 /// Kıyas serisi çekici imzası — `HistoryService.getSymbolHistory` ile aynı.
 /// Testler ağsız sahte seri verebilsin diye parametre.
@@ -10,7 +11,13 @@ typedef KiyasSeriGetirici = Future<Map<int, double>> Function(
   ResolutionTier? cozunurluk,
 });
 
-/// Kıyas kartının AĞA ÇIKAN tarafı: üç kıyas varlığının TL fiyat serisi.
+/// Mevduat faiz geçmişi çekici — `SupabaseService.mevduatFaizGecmisi` ile
+/// aynı. Testler ağsız sahte faiz verebilsin diye parametre.
+typedef KiyasFaizGetirici = Future<List<MevduatFaizNoktasi>> Function(
+    String dilim, DateTime baslangic);
+
+/// Kıyas kartının AĞA ÇIKAN tarafı: kıyas varlıklarının TL fiyat serisi
+/// (mevduatta faiz geçmişinden kurulan birikim endeksi).
 ///
 /// Hesap burada YOK — saf hesap `KiyasService`'te. Bu ayrım `RecapService`
 /// / `PeriodSummaryService` deseni: ağ çağıranın işi, hesap ağsız test
@@ -50,17 +57,32 @@ class KiyasYukleyici {
   ///
   /// Bir sembolün hatası diğerlerini düşürmez; Crashlytics'e non-fatal
   /// gider (servis katmanı catch'i sessiz kalmaz).
+  ///
+  /// Mevduat ([KiyasSeriTuru.mevduatFaizi]) fiyat değil faiz geçmişi okur
+  /// ve `mevduatKiyasSerisi` ile endekse çevirir; tablo boş/yok ya da
+  /// dönemi kapsamıyorsa satır yoktur, kullanıcıya hata gösterilmez.
   static Future<Map<KiyasVarligi, Map<int, double>>> serileriGetir(
     SummaryPeriod period, {
     KiyasSeriGetirici? getir,
+    KiyasFaizGetirici? faizGetir,
+    DateTime? simdi,
   }) async {
     if (period.intraday) return const {};
     final g = getir ?? HistoryService.instance.getSymbolHistory;
+    final fg = faizGetir ?? SupabaseService.instance.mevduatFaizGecmisi;
+    final now = simdi ?? DateTime.now();
     final katman = cozunurluk(period);
     final sonuclar = await Future.wait([
       for (final v in KiyasVarligi.values)
         () async {
           try {
+            if (v.tur == KiyasSeriTuru.mevduatFaizi) {
+              // Dönem başından ÖNCEKİ haftanın faizi de gerekir (o gün
+              // yürürlükteki oran); boşluk sınırı kadar geriden okunur.
+              final bas = now.subtract(Duration(
+                  days: period.days + kenarPayiGun + mevduatAzamiBoslukGun));
+              return (v, mevduatKiyasSerisi(await fg(v.sembol, bas), son: now));
+            }
             final s = await g(v.sembol,
                 periodDays: period.days + kenarPayiGun, cozunurluk: katman);
             return (v, s);

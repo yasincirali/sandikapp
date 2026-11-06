@@ -11,7 +11,8 @@ import '../utils/tr_format.dart';
 import 'sandik_skeleton.dart';
 
 /// **"Başka yere koysaydın"** — kullanıcının dönemi ile aynı paraların
-/// dolar / gram altın / BIST 100'e yatırılmış hâli (Özet sekmesi).
+/// dolar / gram altın / BIST 100'e yatırılmış ya da TL mevduata konmuş
+/// hâli (Özet sekmesi).
 ///
 /// Hesap `KiyasService`'te (kamu piyasası eşdeğeri; yöntem ve sınırlar
 /// orada), seriler `kiyasSerileriProvider`'dan. Bu widget yalnızca çizer.
@@ -81,6 +82,7 @@ String kiyasEtiketi(BuildContext context, KiyasVarligi v) {
     KiyasVarligi.dolar => l.marketDollar,
     KiyasVarligi.altin => l.marketGold,
     KiyasVarligi.bist100 => l.marketBist,
+    KiyasVarligi.mevduat => l.kiyasMevduat,
   };
 }
 

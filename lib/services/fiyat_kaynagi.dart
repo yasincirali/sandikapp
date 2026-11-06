@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
 import '../models/ohlc.dart';
+import 'mevduat_hesabi.dart' show bilinenStopaj;
 import 'price_service.dart';
 import 'crash_reporter.dart';
 import '../utils/tr_format.dart';
@@ -68,6 +69,11 @@ class FiyatKaynagi {
   /// gün içi yüzde sunucunun `kripto_fiyat` tablosundan, portföydeki
   /// BTC ile aynı sayı.
   static const String btcTry = 'KRIPTO:BTC';
+
+  /// Kıyas kartının "Mevduatta" satırının okuduğu TCMB vade dilimi
+  /// (`mevduat_faiz_gecmisi.vade_dilimi`, 0173). Gerekçe
+  /// [KiyasVarligi.mevduat].
+  static const String mevduatKiyasDilimi = 'ay1';
 
   /// Uygulamanın iç altın sembolleri (`ALTIN_GRAM`, `ALTIN_CEYREK`…)
   /// gerçek bir Yahoo/TEFAS sembolü DEĞİLDİR: hepsi gram22k serisinden
@@ -570,20 +576,129 @@ class FiyatKaynagi {
 /// kotasyona kalibre edilir (`altinKalibrasyonu`), dolar ve endeks TRY
 /// kotedir; hiçbir yerde ikinci bir kaynak karışmaz.
 ///
-/// ## Mevduat YOK (2026-10-01)
-/// Projede piyasa mevduat FAİZİ serisi yok: `MEVDUAT:` sembolleri
-/// kullanıcının kendi sözleşmesinin tahakkukudur, bir piyasa oranı değil.
-/// Sabit bir faiz yazmak (madde 3) uydurma sayıdır; seri eklenene kadar
-/// mevduat kıyası gösterilmez.
+/// ## Mevduat (2026-10-01 → 2026-11-07)
+/// 2026-10-01'de projede piyasa mevduat FAİZİ serisi yoktu: `MEVDUAT:`
+/// sembolleri kullanıcının kendi sözleşmesinin tahakkukudur, bir piyasa
+/// oranı değil; sabit bir faiz yazmak (madde 3) uydurma sayı olurdu ve
+/// satır gösterilmedi. 0173 ile sunucu TCMB EVDS haftalık ağırlıklı
+/// ortalama TL mevduat faizinin GEÇMİŞİNİ saklıyor (`mevduat-faiz`);
+/// [mevduat] o seriden kurulur. Ayrıntı [mevduatKiyasSerisi].
 enum KiyasVarligi {
   dolar(FiyatKaynagi.usdTry),
   altin(FiyatKaynagi.gramAltin24),
-  bist100(FiyatKaynagi.bist100);
+  bist100(FiyatKaynagi.bist100),
 
-  const KiyasVarligi(this.sembol);
+  /// "Mevduatta" — aynı paralar aynı günlerde TL mevduata konsaydı.
+  ///
+  /// ## Neden 'ay1' (1 aya kadar) dilimi
+  /// Nakit akışı keyfî günlerde gelir ve çıkar; buna en yakın gerçek ürün
+  /// her ay yenilenen kısa vadeli mevduattır (çekilen para en fazla bir
+  /// ay bağlı kalır). Uzun dilim, çekişin vade bozmadan mümkün olduğunu
+  /// varsayıp getiriyi şişirirdi.
+  ///
+  /// ## Katman (karar kaydı, 2026-11-06)
+  /// Satır kartın MEVCUT katmanını izler; yeni Premium kapısı yok (Ar-Ge
+  /// + rapor önerisi). yasin'in yanıtı BEKLENİYOR (6 Kas 2026): "kilitli"
+  /// derse kilit kartın satır döngüsünde tek koşulla eklenir.
+  mevduat(FiyatKaynagi.mevduatKiyasDilimi, tur: KiyasSeriTuru.mevduatFaizi);
 
-  /// Serinin çekileceği sembol.
+  const KiyasVarligi(this.sembol, {this.tur = KiyasSeriTuru.fiyat});
+
+  /// Fiyat türünde serinin çekileceği sembol; [KiyasSeriTuru.mevduatFaizi]
+  /// türünde `mevduat_faiz_gecmisi` vade dilimi.
   final String sembol;
+
+  /// Seri fiyat mı, yoksa fiyata çevrilecek faiz mi.
+  final KiyasSeriTuru tur;
+}
+
+/// Kıyas serisinin türü. Yükleyici buna göre kaynağı seçer; hesap
+/// (`KiyasService.kiyasla`) ikisinde de aynı fiyat serisini görür.
+enum KiyasSeriTuru {
+  /// `HistoryService.getSymbolHistory` fiyat serisi.
+  fiyat,
+
+  /// Haftalık yıllık faiz → [mevduatKiyasSerisi] birikim endeksi.
+  mevduatFaizi,
+}
+
+/// Bilinen bir haftanın yıllık brüt faizi (TCMB, %).
+typedef MevduatFaizNoktasi = ({DateTime hafta, double yillikFaiz});
+
+/// Haftalık faiz boşluğu bu kadarı aşarsa seri o noktada KOPAR.
+/// TCMB haftalık yayımlar ve bir hafta gecikir; 21 gün = iki yayın kaçmış.
+/// Daha uzun boşluğu "son faizle devam" diye köprülemek uydurma olurdu.
+const mevduatAzamiBoslukGun = 21;
+
+/// Mevduat faizlerini, kıyas hesabının fiyat gibi kullanacağı günlük
+/// TL BİRİKİM ENDEKSİNE çevirir (1 ₺'nin mevduatta büyümesi).
+///
+/// ## Neden fiyat serisi
+/// `KiyasService.kiyasla` alınan birim = tutar ÷ fiyat, son = birim × son
+/// fiyat hesaplar. Endeks bir "fiyat" olunca bu tam olarak "her akış o gün
+/// mevduata girer/çıkar, bugüne kadar faiz işler" demektir; hesap ve kart
+/// değişmeden aynı yoldan geçer.
+///
+/// ## Hesap
+/// Her hafta o haftanın faizi işler: net = brüt × (1 − stopaj), stopaj
+/// o hafta açılan/yenilenen 32 günlük mevduatın oranı (`bilinenStopaj`,
+/// `mevduatStopajTablosu` — mevduat varlığının kullandığı TEK tablo). Hafta
+/// içinde basit (`MevduatHesabi.donemNetFaizi` ile aynı formül), hafta
+/// sonunda bileşik. Aylık yenilemeye göre fark yılda ~0,1 puanın altında.
+///
+/// ## Uydurma sayı YOK — boş dönen durumlar
+/// * stopajı bilinmeyen haftalar (tablo öncesi) atılır; dönem başı o
+///   tarihten eskiyse seri dönemi kapsamaz ve satır çizilmez,
+/// * [mevduatAzamiBoslukGun]'ü aşan boşlukta yalnız SON kesintisiz parça
+///   kalır,
+/// * son faiz [son]'dan [mevduatAzamiBoslukGun] günden eskiyse seri boş
+///   (bayat faiz bugüne taşınmaz).
+Map<int, double> mevduatKiyasSerisi(
+  List<MevduatFaizNoktasi> faizler, {
+  required DateTime son,
+}) {
+  const gun = dayKey;
+  final sirali = [
+    for (final f in faizler)
+      if (f.yillikFaiz > 0 &&
+          f.yillikFaiz < 300 &&
+          f.yillikFaiz.isFinite &&
+          bilinenStopaj(gun(f.hafta), 32) != null)
+        (hafta: gun(f.hafta), yillikFaiz: f.yillikFaiz),
+  ]..sort((a, b) => a.hafta.compareTo(b.hafta));
+  if (sirali.isEmpty) return const {};
+
+  // Son kesintisiz parça.
+  var bas = sirali.length - 1;
+  while (bas > 0 &&
+      sirali[bas].hafta.difference(sirali[bas - 1].hafta).inDays <=
+          mevduatAzamiBoslukGun) {
+    bas--;
+  }
+  final parca = sirali.sublist(bas);
+  final sonGun = gun(son);
+  if (sonGun.difference(parca.last.hafta).inDays > mevduatAzamiBoslukGun ||
+      sonGun.isBefore(parca.first.hafta)) {
+    return const {};
+  }
+
+  final out = <int, double>{};
+  var taban = 1.0;
+  for (var i = 0; i < parca.length; i++) {
+    final h = parca[i];
+    final bitis = i + 1 < parca.length ? parca[i + 1].hafta : sonGun;
+    final net = h.yillikFaiz * (1 - bilinenStopaj(h.hafta, 32)! / 100);
+    final gunSayisi = bitis.difference(h.hafta).inDays;
+    // Takvim günü adımı (DateTime(y, m, d + k)): yaz saati geçişinde
+    // 24 saatlik adım günü kaydırırdı.
+    for (var k = 0; k < gunSayisi; k++) {
+      final d = DateTime(h.hafta.year, h.hafta.month, h.hafta.day + k);
+      out[d.millisecondsSinceEpoch] = taban * (1 + net / 100 * k / 365);
+    }
+    taban *= 1 + net / 100 * gunSayisi / 365;
+  }
+  out[sonGun.millisecondsSinceEpoch] = taban;
+  return out;
 }
 
 /// Altın gram22k serisinin hangi kaynaktan kurulduğu.

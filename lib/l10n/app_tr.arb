@@ -3844,6 +3844,8 @@
   "@kiyasAciklama": {"description": "Kıyas kartı açıklaması; satırların ne anlattığı"},
   "kiyasSenin": "Senin portföyün",
   "@kiyasSenin": {"description": "Kıyas kartında kullanıcının kendi satırı"},
+  "kiyasMevduat": "Mevduatta",
+  "@kiyasMevduat": {"description": "Kıyas kartında TL mevduat satırı (TCMB haftalık ortalama faiz, stopaj düşülmüş)"},
   "kiyasBasaBas": "Başa baş",
   "@kiyasBasaBas": {"description": "Kıyasla aradaki fark sıfıra yuvarlandığında"},
   "kiyasTemettuNotu": "Bu dönemdeki nakit temettüler iki tarafta da cebine giren para sayıldı.",

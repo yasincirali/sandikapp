@@ -49,6 +49,37 @@ export function sonFaiz(json: unknown, seri: string): FaizNoktasi | null {
   return son;
 }
 
+/// EVDS yanıtındaki TÜM geçerli noktalar, tarihe göre artan (0173 geçmiş
+/// tablosu). [sonFaiz] ile aynı süzgeç: boş/aralık dışı hafta ATLANIR —
+/// geçmişte boşluk kalır, uydurma değer yazılmaz. Aynı tarih iki kez
+/// gelirse sonuncusu kalır (upsert birincil anahtarı tekil olmalı).
+export function tumFaizler(json: unknown, seri: string): FaizNoktasi[] {
+  const govde = json as { items?: unknown } | null;
+  const items = Array.isArray(govde?.items) ? govde!.items : [];
+  const alan = seri.replaceAll('.', '_');
+  const harita = new Map<string, number>();
+  for (const raw of items) {
+    const item = raw as Record<string, unknown>;
+    const tarih = evdsGunu(String(item['Tarih'] ?? ''));
+    const ham = item[alan];
+    if (tarih === null || ham === null || ham === undefined || ham === '') continue;
+    const faiz = typeof ham === 'number' ? ham : Number(String(ham).trim().replace(',', '.'));
+    if (!Number.isFinite(faiz) || faiz <= FAIZ_ALT || faiz >= FAIZ_UST) continue;
+    harita.set(tarih, faiz);
+  }
+  return [...harita.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .map(([tarih, faiz]) => ({ tarih, faiz }));
+}
+
+/// Geçmiş tablosuna yazılan dilimler ve pencere (0173). Kıyas kartı
+/// yalnız 'ay1' okur (gerekçe `KiyasVarligi.mevduat`); diğer dilimler
+/// okuyan olmadan EVDS'ye 4 uzun istek daha atmasın diye eklenmedi.
+/// 2200 gün: kartın en uzun dönemi + kenar payı; her tur aynı pencereyi
+/// upsert eder, böylece ilk tur geçmişi doldurur, sonrakiler düzeltir.
+export const GECMIS_DILIMLERI = ['ay1'];
+export const GECMIS_GUN = 2200;
+
 /// EVDS tarih parametresi `GG-AA-YYYY`.
 export function evdsTarih(d: Date): string {
   const g = d.getUTCDate().toString().padStart(2, '0');

@@ -371,6 +371,17 @@ double onerilenStopaj(DateTime baslangic, int? gun) {
   return satir.uzun;
 }
 
+/// [onerilenStopaj]'in KESİN hâli: tarih tablonun en eski satırından
+/// önceyse `null`.
+///
+/// Form için öneri en eski satıra düşebilir (kullanıcı düzeltir); kıyas
+/// kartının "Mevduatta" satırında düzeltecek kullanıcı yok, tahmini oran
+/// uydurma sayı olurdu (CLAUDE.md "Fiyat kaynağı" madde 3).
+double? bilinenStopaj(DateTime baslangic, int? gun) =>
+    baslangic.isBefore(mevduatStopajTablosu.last.yururluk)
+        ? null
+        : onerilenStopaj(baslangic, gun);
+
 /// Hızlı Al/Sat'ta mevduat işleminin kaydedilecek payı ve birim fiyatı.
 ///
 /// ## Neden tutarla (kullanıcı bildirimi, 2026-10-08)

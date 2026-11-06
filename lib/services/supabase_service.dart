@@ -2185,6 +2185,33 @@ class SupabaseService {
     };
   }
 
+  /// [dilim] vade diliminin [baslangic]'tan bugüne TCMB haftalık faiz
+  /// geçmişi (0173; kıyas kartı "Mevduatta"). Tablo boşsa boş liste; tablo
+  /// yoksa (migration henüz gitmediyse) Postgrest hatası çağırana gider,
+  /// `KiyasYukleyici` yakalayıp satırı çizmez.
+  Future<List<({DateTime hafta, double yillikFaiz})>> mevduatFaizGecmisi(
+      String dilim, DateTime baslangic) async {
+    final bas = baslangic.toIso8601String().substring(0, 10);
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.mevduatFaizGecmisi',
+      table: 'mevduat_faiz_gecmisi',
+      op: 'SELECT',
+      request: {'vade_dilimi': dilim, 'hafta_gte': bas},
+      call: () => _db
+          .from('mevduat_faiz_gecmisi')
+          .select('hafta, yillik_faiz')
+          .eq('vade_dilimi', dilim)
+          .gte('hafta', bas)
+          .order('hafta', ascending: true),
+    );
+    return [
+      for (final r in rows)
+        if (DateTime.tryParse('${r['hafta']}') case final h?)
+          if ((r['yillik_faiz'] as num?)?.toDouble() case final f?)
+            (hafta: h, yillikFaiz: f),
+    ];
+  }
+
   // ── Fon X-Ray (0131, 0132) ───────────────────────────────────────────────
   // Sunucu TEFAS'tan günlük sınıf dağılımını (`fon-dagilim`) ve KAP'tan aylık
   // kalemleri (`fon-kalem-raporu`, bayraklı) yazar; telefon yalnız kendi
