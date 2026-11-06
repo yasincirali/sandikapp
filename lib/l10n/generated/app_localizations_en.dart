@@ -10653,4 +10653,38 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get goalProfileRowSubtitle =>
       'Pick an amount, see what\'s left on Home';
+
+  @override
+  String get goalDateTitle => 'When by?';
+
+  @override
+  String get goalDateNone => 'None';
+
+  @override
+  String get goalDateOneYear => '1 year';
+
+  @override
+  String get goalDateYearEnd => 'Year end';
+
+  @override
+  String get goalDatePick => 'Pick a date';
+
+  @override
+  String get goalDateLocked => 'Set a date for your goal with Premium';
+
+  @override
+  String get goalDateLockedLabel => 'Locked';
+
+  @override
+  String goalDateMonthly(String tutar) {
+    return 'Add about $tutar a month to make it';
+  }
+
+  @override
+  String get goalDateNoReturn => 'Excludes returns';
+
+  @override
+  String goalDateBy(String tarih, String ek) {
+    return 'By $tarih';
+  }
 }

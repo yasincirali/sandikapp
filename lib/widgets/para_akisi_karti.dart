@@ -11,6 +11,7 @@ import '../providers/premium_provider.dart';
 import '../screens/hafta_ozeti_screen.dart';
 import '../screens/para_akisi_detay_screen.dart';
 import '../screens/paywall_screen.dart';
+import '../services/analytics_service.dart';
 import '../services/fon_akisi.dart';
 import '../services/fon_karnesi.dart' show fonKoduOf;
 import '../services/radar_okuma.dart';
@@ -227,24 +228,45 @@ Color yonRengi(SandikPalette c, double v) => v > 0
 /// Kilitli içerik satırı (S12-B) — radar kartları ve not kutusu ortak
 /// kullanır: ne kilitli olduğunu somut söyler, satın alma ekranını açar.
 class KilitSatiri extends StatelessWidget {
-  const KilitSatiri({super.key, required this.metin, required this.kaynak});
+  const KilitSatiri(
+      {super.key,
+      required this.metin,
+      required this.kaynak,
+      this.ozellik,
+      this.kilitEtiketi});
 
   final String metin;
 
   /// Analitikte paywall'ın nereden açıldığı.
   final String kaynak;
 
+  /// Doluysa dokunuşta `premium_gate_shown` da yazılır (sinyal ayarlarındaki
+  /// kapı deseni: önce kapı olayı, sonra paywall). Eski çağrılar vermez,
+  /// olay serileri değişmez.
+  final String? ozellik;
+
+  /// Kilit ikonunun ekran okuyucu etiketi ("Kilitli"); verilmezse ikon
+  /// sessiz (eski davranış).
+  final String? kilitEtiketi;
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     return SandikTappable(
-      onTap: () => PaywallScreen.show(context, source: kaynak),
+      onTap: () {
+        if (ozellik != null) {
+          AnalyticsService.instance.logPremiumGateShown(feature: ozellik!);
+        }
+        PaywallScreen.show(context, source: kaynak);
+      },
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: SandikTouch.min),
         child: Row(
           children: [
             Icon(Icons.lock_outline_rounded,
-                size: SandikSpace.md, color: c.amberText),
+                size: SandikSpace.md,
+                color: c.amberText,
+                semanticLabel: kilitEtiketi),
             const SizedBox(width: SandikSpace.sm),
             Expanded(
               child: Text(metin,

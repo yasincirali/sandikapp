@@ -17351,6 +17351,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bir tutar seç, kalanı Ana sayfada gör'**
   String get goalProfileRowSubtitle;
+
+  /// No description provided for @goalDateTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne zamana kadar?'**
+  String get goalDateTitle;
+
+  /// No description provided for @goalDateNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yok'**
+  String get goalDateNone;
+
+  /// No description provided for @goalDateOneYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 yıl'**
+  String get goalDateOneYear;
+
+  /// No description provided for @goalDateYearEnd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl sonu'**
+  String get goalDateYearEnd;
+
+  /// No description provided for @goalDatePick.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarih seç'**
+  String get goalDatePick;
+
+  /// No description provided for @goalDateLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefine tarih koy, Premium ile'**
+  String get goalDateLocked;
+
+  /// No description provided for @goalDateLockedLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilitli'**
+  String get goalDateLockedLabel;
+
+  /// No description provided for @goalDateMonthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayda yaklaşık {tutar} eklersen yetişirsin'**
+  String goalDateMonthly(String tutar);
+
+  /// No description provided for @goalDateNoReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri hariç'**
+  String get goalDateNoReturn;
+
+  /// No description provided for @goalDateBy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih}\'{ek} kadar'**
+  String goalDateBy(String tarih, String ek);
 }
 
 class _AppLocalizationsDelegate

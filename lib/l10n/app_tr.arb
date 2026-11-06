@@ -6650,5 +6650,17 @@
   "todayOpenInPerformance": "Performans'ta aç",
   "todayGoalHideSuggestion": "Hedef önerisini gizle",
   "goalProfileRowTitle": "Portföy hedefi",
-  "goalProfileRowSubtitle": "Bir tutar seç, kalanı Ana sayfada gör"
+  "goalProfileRowSubtitle": "Bir tutar seç, kalanı Ana sayfada gör",
+  "goalDateTitle": "Ne zamana kadar?",
+  "goalDateNone": "Yok",
+  "goalDateOneYear": "1 yıl",
+  "goalDateYearEnd": "Yıl sonu",
+  "goalDatePick": "Tarih seç",
+  "goalDateLocked": "Hedefine tarih koy, Premium ile",
+  "goalDateLockedLabel": "Kilitli",
+  "goalDateMonthly": "Ayda yaklaşık {tutar} eklersen yetişirsin",
+  "@goalDateMonthly": {"placeholders": {"tutar": {"type": "String"}}},
+  "goalDateNoReturn": "Getiri hariç",
+  "goalDateBy": "{tarih}'{ek} kadar",
+  "@goalDateBy": {"placeholders": {"tarih": {"type": "String"}, "ek": {"type": "String"}}}
 }

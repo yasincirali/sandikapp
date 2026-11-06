@@ -10530,4 +10530,38 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get goalProfileRowSubtitle => 'Bir tutar seç, kalanı Ana sayfada gör';
+
+  @override
+  String get goalDateTitle => 'Ne zamana kadar?';
+
+  @override
+  String get goalDateNone => 'Yok';
+
+  @override
+  String get goalDateOneYear => '1 yıl';
+
+  @override
+  String get goalDateYearEnd => 'Yıl sonu';
+
+  @override
+  String get goalDatePick => 'Tarih seç';
+
+  @override
+  String get goalDateLocked => 'Hedefine tarih koy, Premium ile';
+
+  @override
+  String get goalDateLockedLabel => 'Kilitli';
+
+  @override
+  String goalDateMonthly(String tutar) {
+    return 'Ayda yaklaşık $tutar eklersen yetişirsin';
+  }
+
+  @override
+  String get goalDateNoReturn => 'Getiri hariç';
+
+  @override
+  String goalDateBy(String tarih, String ek) {
+    return '$tarih\'$ek kadar';
+  }
 }

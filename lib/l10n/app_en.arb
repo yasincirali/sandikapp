@@ -5916,5 +5916,15 @@
   "todayOpenInPerformance": "Open in Performance",
   "todayGoalHideSuggestion": "Hide goal suggestion",
   "goalProfileRowTitle": "Portfolio goal",
-  "goalProfileRowSubtitle": "Pick an amount, see what's left on Home"
+  "goalProfileRowSubtitle": "Pick an amount, see what's left on Home",
+  "goalDateTitle": "When by?",
+  "goalDateNone": "None",
+  "goalDateOneYear": "1 year",
+  "goalDateYearEnd": "Year end",
+  "goalDatePick": "Pick a date",
+  "goalDateLocked": "Set a date for your goal with Premium",
+  "goalDateLockedLabel": "Locked",
+  "goalDateMonthly": "Add about {tutar} a month to make it",
+  "goalDateNoReturn": "Excludes returns",
+  "goalDateBy": "By {tarih}"
 }

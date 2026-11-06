@@ -663,6 +663,57 @@ final kapsamHedefiProvider =
 /// Kendi görünümünün hedefi — `kapsamHedefiProvider('')`.
 final portfolioGoalProvider = kapsamHedefiProvider('');
 
+/// Hedefin günü ("Ne zamana kadar?", Premium — yasin 2026-11-06); null =
+/// tarih yok. Anahtar [KapsamHedefiNotifier] ile aynı kapsam düzeni: her
+/// kartın hedefi kendi gününü taşır. Yeni anahtar: var olan kullanıcıda
+/// yok → null, hiçbir şey değişmez. Premium bitse de değer silinmez;
+/// gösterimi [hedefTarihiDurumuProvider] keser (tekrar Premium olana geri
+/// gelir).
+class KapsamHedefTarihiNotifier extends FamilyNotifier<DateTime?, String> {
+  String get _key => _userKey(arg.isEmpty
+      ? PrefKeys.portfolioGoalDate
+      : '${PrefKeys.portfolioGoalDate}_$arg');
+
+  static DateTime? _coz(int? ms) =>
+      (ms == null || ms <= 0) ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+
+  @override
+  DateTime? build(String arg) {
+    final prefs = _prefsSync;
+    if (prefs != null) return _coz(prefs.getInt(_key));
+    _loadAsync();
+    return null;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = _coz(prefs.getInt(_key));
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  /// [tarih] günün gece yarısına indirilir; null anahtarı siler.
+  Future<void> set(DateTime? tarih) async {
+    final gun =
+        tarih == null ? null : DateTime(tarih.year, tarih.month, tarih.day);
+    state = gun;
+    if (DemoModu.aktif) return; // Demo (F1): yalnızca bellekte.
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      if (gun == null) {
+        await prefs.remove(_key);
+      } else {
+        await prefs.setInt(_key, gun.millisecondsSinceEpoch);
+      }
+    } catch (_) {}
+  }
+}
+
+final kapsamHedefTarihiProvider =
+    NotifierProvider.family<KapsamHedefTarihiNotifier, DateTime?, String>(
+        KapsamHedefTarihiNotifier.new);
+
 /// Kilit ekranı Live Activity'sinde para tutarı gösterilsin mi?
 ///
 /// **Varsayılan KAPALI.** Kilit ekranı telefon açılmadan görülebilen bir
@@ -843,6 +894,22 @@ final izinliGostergelerProvider = Provider<Set<String>>((ref) =>
 /// herkese açılan şeyi sonra kilitlemek, verileni geri almak olur.
 /// Paywall açıkken herkes görür; Premium erişimi olmayana kilitli.
 final gostergeParametreDurumuProvider = Provider<OzellikDurumu>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) {
+    return ref.watch(isPushAdminProvider).valueOrNull == true
+        ? OzellikDurumu.acik
+        : OzellikDurumu.gizli;
+  }
+  return ref.watch(premiumErisimProvider)
+      ? OzellikDurumu.acik
+      : OzellikDurumu.kilitli;
+});
+
+/// "Hedefe tarih" (ayda ≈₺X) bu kullanıcıda: hedefin kendisi ücretsiz,
+/// tarihi Premium (yasin 2026-11-06). Kural [gostergeParametreDurumuProvider]
+/// ile aynı: paywall kapalıyken yalnız admin görür (ödeme hazır olmadan
+/// herkese açılanı sonra kilitlemek verileni geri almak olur), açıkken
+/// herkes görür, Premium erişimi olmayana kilitli.
+final hedefTarihiDurumuProvider = Provider<OzellikDurumu>((ref) {
   if (!ref.watch(paywallVisibleProvider)) {
     return ref.watch(isPushAdminProvider).valueOrNull == true
         ? OzellikDurumu.acik
@@ -1726,6 +1793,7 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   biometricLockProvider,
   biometricLockOfferedProvider,
   kapsamHedefiProvider, // aile: Ben (`portfolioGoalProvider`) + kapsamlar
+  kapsamHedefTarihiProvider, // aile: hedefin günü, kapsam başına
   lockScreenAmountsProvider,
   liveActivityStartProvider,
   liveActivityEndProvider,
