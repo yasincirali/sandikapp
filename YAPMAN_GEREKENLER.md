@@ -4269,7 +4269,7 @@ Bunlar sonraki her şeyin temeli. Önce karar verelim ki ben de URL'leri / e-pos
 - **Tahmini maliyet:** Yıllık ~$15-100 (uzantıya göre)
 - **Süreç:** Whois bilgisi gizli olsun (privacy protection — çoğu kayıtçıda ücretsiz)
 
-⚠️ **Karar al ve bana söyle.** Şu an kodda `https://sandik.app/...` placeholder var; başka bir domain seçersen değiştireceğim.
+✅ Karar: alan adı yok; web adresleri `https://yasincirali.github.io/sandikapp/...` (GitHub Pages, `docs/`). Mağazaya `sandik.app` adresi GİRİLMEZ, açılmaz (yasin 7 Kas 00:43: mağaza linkleri açılmıyor).
 
 ### 1.2 İletişim E-posta
 
@@ -4437,11 +4437,11 @@ Google Play, hesap silme için **halka açık bir web URL** istiyor. Ek olarak p
 
 Aşağıdaki URL'ler **çalışır durumda** olmalı (Play Store reviewer click eder):
 
-- `https://sandik.app/privacy` (TR + EN dil seçici)
-- `https://sandik.app/terms`
-- `https://sandik.app/legal/kvkk`
-- `https://sandik.app/data-deletion` (form ile)
-- `https://sandik.app/legal/acik-riza`
+- `https://yasincirali.github.io/sandikapp/privacy/` (TR + EN dil seçici)
+- `https://yasincirali.github.io/sandikapp/terms/`
+- `https://yasincirali.github.io/sandikapp/legal/kvkk/`
+- `https://yasincirali.github.io/sandikapp/data-deletion/` (form ile)
+- `https://yasincirali.github.io/sandikapp/legal/acik-riza/`
 
 Tüm bu URL'ler kodda referans veriliyor (`lib/screens/settings_screen.dart` ve `register_screen.dart`).
 
@@ -4630,7 +4630,7 @@ Play Console → Create app:
   - App category: Finance
   - Tags: portfolio, finance, tracker
   - Contact details: support email + privacy policy URL + website
-- **Privacy policy:** `https://sandik.app/privacy` (sayfa hazır olmalı)
+- **Privacy policy:** `https://yasincirali.github.io/sandikapp/privacy/` (sayfa hazır olmalı)
 - **App content:**
   - Privacy policy URL ✓
   - Ads: No
@@ -4642,7 +4642,7 @@ Play Console → Create app:
   - Financial features: ✓ Manage personal finance / Track investments
 - **Account deletion:**
   - In-app deletion: ✓ Available
-  - Web URL: `https://sandik.app/data-deletion`
+  - Web URL: `https://yasincirali.github.io/sandikapp/data-deletion/`
 
 ### 6.4 Internal Testing Track
 
