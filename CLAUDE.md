@@ -214,15 +214,18 @@ Cron edge function'ları önce `cronSecretZorunlu()`, sonra `cronYetkisiVarMi()`
 **fail-closed** (`cron_fail_closed_test`); secret'sız `if (secret)` bloğu
 yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dönme**.
 
-**İki sunucu birebir (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt Supabase
-projeleri **aynı şemayı** taşır: her migration iki projeye birlikte gider
-(`supabase-deploy.yml` varsayılan hedef `ikisi`, sıra Frankfurt → Tokyo, sonda
-parmak izi kapısı). Panelden/SQL Editor'dan tek projede değişiklik yapma —
-gerekiyorsa migration'a yaz. Eşitlik: `python tool/sema_esitlik.py [--ayrinti]`
-(salt okunur) + günlük `sema-esitlik.yml`. Tek bilinçli fark cron `active`
-bayrağı (geçişe kadar Frankfurt'ta kapalı). `0000_base_schema.sql` Tokyo'nun
-tahminiydi; bir şeyi "Frankfurt'ta var" diye silmeden önce Tokyo'da da var mı bak
-(0077'nin ilk yazımı Tokyo'yu `user_push_tokens` indeksiz bırakacaktı).
+**Tek sunucu: Frankfurt (yasin 2026-11-06, "Tokyo'yu kapatalım").** Canlı proje
+Frankfurt (`ynwymnpdiwudrlxfrmuo`); migration ve fonksiyon yalnız oraya gider
+(`supabase-deploy.yml` varsayılan hedef `frankfurt`). Tokyo (`ybdbzouzhzwthjgwlbmk`)
+18 Ekim geçişinden beri donmuş, duraklatılıp silinecek; yeni işte Tokyo'yu hesaba
+katma. 2026-09-28'deki "iki sunucu birebir" kuralı (hedef `ikisi`, günlük
+`sema-esitlik.yml`, `tool/sema_esitlik.py` kapısı) bununla bitti; eski dokümanlarda
+"iki sunucu" geçen dağıtım adımları artık "Frankfurt" demektir. Panelden/SQL
+Editor'dan şema değiştirme kuralı sürer — gerekiyorsa migration'a yaz.
+Frankfurt Free planda otomatik yedek yok: yerel yedek `tool/yedek/frankfurt_yedek.py`
+(salt okuma; geri yükleme yalnız boş projeye). Uygulamadaki iki sunucu seçimi
+(`SunucuSecimi`, RC `sunucu`) 1.1.6 köprü build'leri için durur: RC `sunucu`
+**`frankfurt`'ta kalır**, `tokyo`'ya çevrilmez.
 
 **Yasal metin tek kaynak (kullanıcı kuralı, 2026-10-04).** Web ve uygulama yasal
 belgeleri her zaman aynı metindir: kaynak `legal/tr/*.md` (çevirisi `legal/en/*.md`);

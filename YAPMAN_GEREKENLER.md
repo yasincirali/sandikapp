@@ -12,6 +12,66 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-06 Tokyo'yu kapatma (duraklat → sil) + Frankfurt yerel yedeği
+
+Neden: Tokyo 18 Ekim'den beri donmuş; verisi bayat, geri dönüş/yedek değeri
+yok, Supabase limitlerini yiyor ve hesabını sonradan silenlerin verisi hâlâ
+Japonya'da. Bu PR deploy'u yalnız Frankfurt'a çevirdi, günlük "Şema eşitliği"
+kontrolünü kaldırdı ve yerel yedek aracını ekledi. Claude Supabase paneline ve
+GitHub secret'larına dokunamaz; aşağıdakiler senin.
+
+Sıra (PR birleştikten SONRA; önce duraklatırsan eski deploy varsayılanı kırmızı döner):
+1. [ ] **RevenueCat** › Project › Integrations › Webhooks: adres
+       `https://ynwymnpdiwudrlxfrmuo.supabase.co/functions/v1/revenuecat-webhook`
+       mi? Tokyo adresiyse Frankfurt'a çevir (yoksa satın almalar Premium'u açmaz).
+2. [ ] **Tokyo › Authentication › Users**, "Created" sırala: 18 Ekim 21:54 UTC (TR
+       19 Ekim 00:54) sonrasında açılmış hesap var mı? Varsa bunlar App
+       Store'daki 1.1.6'yı yeni kurup Remote Config gelmeden kaydolanlar;
+       Frankfurt'ta hesapları yok. Sayıyı Claude'a söyle (genelde 0).
+3. [ ] **İlk yerel yedek** (aşağıdaki "Frankfurt yedeği"), Tokyo'ya dokunmadan önce.
+4. [ ] **Tokyo › Project Settings › General › Pause project.** Free planda
+       90 gün içinde aynı yerden "Restore" ile geri açılır.
+5. [ ] **Remote Config** `sunucu` = `frankfurt` olarak KALIR (App Store'daki
+       1.1.6'nın birincil adresi Tokyo; yeni kurulumu RC Frankfurt'a taşıyor).
+       `min_build_*` değerlerine dokunma.
+6. [ ] **iOS 1.1.7 yayına çıktıktan ve ~30 gün sorunsuz geçtikten sonra**
+       (duraklatmadan en geç 90 gün içinde): Tokyo › Settings › **Delete project**.
+       Ardından GitHub › Settings › Secrets › Actions: **`SUPABASE_DB_PASSWORD`**
+       sil (yalnız Tokyo kullanıyordu). `SUPABASE_ACCESS_TOKEN(_EU)`,
+       `SUPABASE_URL(_EU)`, `SUPABASE_ANON_KEY(_EU)` KALIR (hepsi Frankfurt).
+       Sonra Claude'a "Tokyo silindi" de: deploy'daki `tokyo` seçeneğini,
+       `tool/sema_esitlik.py`'yi ve köprü kodunu temizler.
+7. [ ] Bilgi: Google/Apple giriş ayarlarında Tokyo'nun geri dönüş adresi
+       (`ybdbzouzhzwthjgwlbmk.supabase.co/auth/v1/callback`) kalabilir, zararsız;
+       istersen silme adımında kaldır.
+
+**Frankfurt yedeği (senin bilgisayarında, haftalık).** Frankfurt Free planda,
+Supabase otomatik yedek almıyor. Araç salt okur, `~/sandik-yedek/` altına
+tablo tablo sıkıştırılmış CSV + özet yazar, en yeni 8 yedeği tutar.
+Neden GitHub Actions değil: yedek tüm hesap verisini taşır; GitHub'ın
+makinesinde işlenmesi gizlilik metnine yeni bir üçüncü taraf ve herkese
+yeniden onay kapısı demek. Otomatik ve metin değiştirmeyen yol Supabase Pro
+(25 $/ay, günlük yedek).
+- [ ] Bir kez: `python -m pip install "psycopg[binary]>=3.2"` (taşımada kurulmuştu).
+- [ ] Panel › Frankfurt › Connect › **Session pooler** adresini al (taşımadaki
+      `YENI_DB_URL` ile aynı). Komut İstemi'nde:
+      ```
+      set YEDEK_DB_URL=postgresql://postgres.ynwymnpdiwudrlxfrmuo@<paneldeki-sunucu>:5432/postgres
+      set YEDEK_DB_SIFRE=<veritabanı şifresi>
+      cd C:\projects\PortfoyTakip
+      python tool\yedek\frankfurt_yedek.py al
+      python tool\yedek\frankfurt_yedek.py dogrula %USERPROFILE%\sandik-yedek\<son klasör>
+      ```
+      Çıktıda "YEDEK TAMAM … N tablo, M satır" görmelisin.
+- [ ] Haftalık zamanlama (isteğe bağlı): şifreyi kalıcı ortam değişkenine yaz
+      (`setx YEDEK_DB_URL ...`, `setx YEDEK_DB_SIFRE ...`), sonra
+      `schtasks /create /tn "sandik yedek" /sc weekly /d SUN /st 03:00 /tr "python C:\projects\PortfoyTakip\tool\yedek\frankfurt_yedek.py al"`.
+      Bilgisayar kapalıysa o hafta atlanır.
+- [ ] Felaket günü: yeni boş Supabase projesi → `supabase db push` (tüm
+      migration'lar) → `set HEDEF_DB_URL=...` → `python tool\yedek\frankfurt_yedek.py geri-yukle <klasör> --onay <yeni ref>`.
+      Araç dolu projeye yazmaz; herkes bir kez yeniden giriş yapar. Uygulamayı
+      yeni projeye çevirmek ayrıca RC/derleme işi, Claude'a söyle.
+
 ## ⏳ 2026-11-02 ASO: mağaza metinleri ve görünürlük (yasin "yapman gerekenleri yap")
 
 Plan: `/mnt/project-files/sandik-aso/ASO_2026_11.md`. Repo tarafı (Play

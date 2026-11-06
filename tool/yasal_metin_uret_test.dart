@@ -14,8 +14,8 @@
 ///    docs/_build_legal.py`; kutular için `disclaimerVersion` DEĞİL — kutu
 ///    sürümünü katalogda ayır).
 /// 2. `flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart`
-/// 3. `build/yasal_metin_ekleri.sql`'i yeni bir migration'a koy (iki
-///    sunucuya birlikte, `supabase-deploy.yml` hedef `ikisi`).
+/// 3. `build/yasal_metin_ekleri.sql`'i yeni bir migration'a koy
+///    (`supabase-deploy.yml`, hedef `frankfurt`; 2026-11-06'dan beri tek sunucu).
 /// 4. `flutter test test/yasal_metin_kilidi_test.dart` yeşil olmalı.
 ///
 /// `YASAL_CIKTI=yol` ile başka dosyaya yazılır; `YASAL_HEPSI=1` migration'da

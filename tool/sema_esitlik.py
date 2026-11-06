@@ -1,5 +1,10 @@
 """Tokyo ile Frankfurt şeması birebir aynı mı? (2026-09-28)
 
+EMEKLİ (2026-11-06, yasin "Tokyo'yu kapatalım"): Tokyo duraklatılıyor; deploy
+artık yalnız Frankfurt'a gider, `sema-esitlik.yml` ve deploy'daki `esitlik`
+kapısı kaldırıldı. Betik, Tokyo silinmeden önce son bir karşılaştırma için
+duruyor; Tokyo silinince bu dosya da silinebilir.
+
 Kullanıcı kuralı: iki sunucu hep senkron gider — bir migration birine
 uygulandıysa öbürüne de uygulanır. Bu betik `supabase/audit/sema_parmak_izi.sql`
 sorgusunu İKİ projede salt okunur koşar ve farkı listeler. Fark yoksa 0,
