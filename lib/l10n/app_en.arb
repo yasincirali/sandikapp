@@ -159,6 +159,8 @@
   "quickAllChip": "All ({qty})",
   "quickHolding": "Holding",
   "quickAvgShort": "avg. {price}",
+  "quickSaleGain": "Gain on this sale {tutar} · {yuzde}",
+  "quickSaleLoss": "Loss on this sale {tutar} · {yuzde}",
   "quickUnitPrice": "Unit price",
   "quickTotalCost": "Total cost",
   "delete": "Delete",

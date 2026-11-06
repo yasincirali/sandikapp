@@ -19,6 +19,7 @@ import '../models/asset_type.dart';
 import '../models/halka_arz.dart';
 import '../providers/halka_arz_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/halka_arz_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -519,6 +520,14 @@ class HalkaArzProfilSatiri extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref.watch(halkaArzEtkinProvider)) return const SizedBox.shrink();
+    // Bayat veri (21 günden eski ya da tarihsiz) girişi gizler; veri gelene
+    // kadar ve hata durumunda da yer kaplamaz — tazeliği bilinmeyen liste
+    // açılmaz (bkz. `halkaArzBayatMi`).
+    final guncelleme =
+        ref.watch(halkaArzGorunumuProvider).value?.guncelleme;
+    if (halkaArzBayatMi(guncelleme, ref.watch(halkaArzSaatProvider)())) {
+      return const SizedBox.shrink();
+    }
     final l = context.l10n;
     return Padding(
       padding: const EdgeInsets.only(bottom: SandikSpace.lg),

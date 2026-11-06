@@ -431,6 +431,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String quickSaleGain(String tutar, String yuzde) {
+    return 'Gain on this sale $tutar · $yuzde';
+  }
+
+  @override
+  String quickSaleLoss(String tutar, String yuzde) {
+    return 'Loss on this sale $tutar · $yuzde';
+  }
+
+  @override
   String get quickUnitPrice => 'Unit price';
 
   @override

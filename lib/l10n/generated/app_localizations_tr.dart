@@ -432,6 +432,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String quickSaleGain(String tutar, String yuzde) {
+    return 'Bu satıştan kâr $tutar · $yuzde';
+  }
+
+  @override
+  String quickSaleLoss(String tutar, String yuzde) {
+    return 'Bu satıştan zarar $tutar · $yuzde';
+  }
+
+  @override
   String get quickUnitPrice => 'Birim fiyat';
 
   @override

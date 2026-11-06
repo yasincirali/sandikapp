@@ -5,10 +5,12 @@ import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
 import '../services/mevduat_hesabi.dart';
 import '../services/sozlesme_deposu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'portfoy_secim_sayfasi.dart';
 import 'sandik_async_button.dart';
@@ -66,6 +68,45 @@ List<double> hizliMiktarOnerileri({
   if (!satis) return taban;
   // Kayan nokta payı: 10 − 1e-12 "10'dan küçük" sayılmasın.
   return [for (final v in taban) if (v < eldeki - 1e-9) v];
+}
+
+/// Hızlı Sat önizlemesi: bu satışın ortalama maliyete göre kârı/zararı.
+class SatisKarOnizleme {
+  const SatisKarOnizleme({required this.tutar, required this.yuzde});
+
+  /// Varlığın para biriminde, işaretli (zarar negatif).
+  final double tutar;
+
+  /// Ortalama maliyete göre yüzde, işaretli.
+  final double yuzde;
+
+  bool get zarar => tutar < 0;
+}
+
+/// (satış fiyatı − aktif lotların ortalama maliyeti) × miktar.
+///
+/// Maliyet yolu yıllık raporun gerçekleşen kârıyla aynı: satılan miktar
+/// `purchasePrice` (aktif lotların ağırlıklı ortalaması; hızlı işlem
+/// `asset`'i zaten pozisyonun `aktifLotlar` toplamı) ile maliyetlenir.
+/// Komisyon önizlemeye girmez — sat formunda komisyon alanı yok, rapor
+/// kaydedilen işlemin komisyonunu ayrıca düşer.
+///
+/// "Uydurma sayı yasak" (fiyat kaynağı sözleşmesi): miktar boş/0, satış
+/// fiyatı ya da maliyet bilinmiyorsa `null` — satır hiç çizilmez. Sat
+/// önizlemesinin `purchasePrice`'a düşen yedeği burada kullanılmaz; o yedek
+/// kârı sıfır gösterirdi.
+SatisKarOnizleme? satisKarOnizleme({
+  required double? miktar,
+  required double? satisFiyati,
+  required double? ortalamaMaliyet,
+}) {
+  if (miktar == null || miktar <= 0) return null;
+  if (satisFiyati == null || satisFiyati <= 0) return null;
+  if (ortalamaMaliyet == null || ortalamaMaliyet <= 0) return null;
+  return SatisKarOnizleme(
+    tutar: (satisFiyati - ortalamaMaliyet) * miktar,
+    yuzde: (satisFiyati / ortalamaMaliyet - 1) * 100,
+  );
 }
 
 Future<void> showQuickAdjustDialog(
@@ -175,6 +216,38 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       default:
         return '₺';
     }
+  }
+
+  /// Satış önizlemesinin kâr/zarar satırı. Anlamı işaret ve "kâr/zarar"
+  /// kelimesi taşır, renk yalnız pekiştirir (HIG: yalnız renkle anlam yok).
+  /// Tutar sayfanın toplam satırıyla aynı biçimde: ₺ varlıkta `fmtTRY`,
+  /// dövizli varlıkta kendi para biriminde. Bakiye gizliyken tutar
+  /// maskelenir, yüzde açık kalır (Ana ekran kuralı). Kaydettikten sonra
+  /// ayrıca toast yok (16 Eyl kararı, bkz. `_submit`).
+  Widget _karSatiri(BuildContext context, SatisKarOnizleme k) {
+    final gizli = widget.ref.read(balanceHiddenProvider);
+    final mutlak = k.tutar.abs();
+    final isaret = mutlak == 0 ? '' : (k.zarar ? '\u2212' : '+');
+    final String tutar;
+    if (_currencySymbol == '₺') {
+      tutar = gizli
+          ? const BazPara.lira().gizliTutar
+          : '$isaret${fmtTRY(mutlak)}';
+    } else {
+      tutar = gizli
+          ? '•••• $_currencySymbol'
+          : '$isaret${qtyFormatter(maxDigits: 2).format(mutlak)} $_currencySymbol';
+    }
+    final yuzde = fmtPctIsaretli(k.yuzde, digits: 1);
+    final l = context.l10n;
+    return Text(
+      k.zarar ? l.quickSaleLoss(tutar, yuzde) : l.quickSaleGain(tutar, yuzde),
+      key: const ValueKey('satis_kar_onizleme'),
+      style: context.t.titleSmall?.copyWith(
+        color: k.zarar ? context.c.loss : context.c.gain,
+        fontWeight: FontWeight.w600,
+      ),
+    );
   }
 
   Future<void> _submit() async {
@@ -324,6 +397,16 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     final satisFiyati =
         asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice;
     final total = qty * (_isAdd ? price : satisFiyati);
+    // Kâr önizlemesi yalnız satışta ve fiyatla girilen varlıkta (mevduatta
+    // alan tutardır). Fiyat yedeksiz okunur; maliyeti "bilinmiyor" işaretli
+    // lot tahmini maliyet taşıdığı için önizleme vermez.
+    final karOnizleme = _isAdd || _tutarla || asset.maliyetBilinmiyor == true
+        ? null
+        : satisKarOnizleme(
+            miktar: qty,
+            satisFiyati: asset.currentPrice,
+            ortalamaMaliyet: asset.purchasePrice,
+          );
 
     // Marka kabuğu (Ar-Ge 5 Kas 22:40 #7; eskiden Material `Dialog`): kart
     // onay/bilgi diyaloğuyla aynı, kenar vurgusu işlemin rengi (al yeşil,
@@ -579,6 +662,11 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   ],
                 ),
               ),
+            ],
+
+            if (karOnizleme != null) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _karSatiri(context, karOnizleme),
             ],
 
             if (_error != null) ...[
