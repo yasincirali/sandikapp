@@ -3755,7 +3755,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String quietHoursOn(String start, String end) {
-    return 'No notifications $start–$end';
+    return 'No notifications $start-$end';
   }
 
   @override

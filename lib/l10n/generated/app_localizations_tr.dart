@@ -3727,7 +3727,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String quietHoursOn(String start, String end) {
-    return '$start–$end arası bildirim gelmez';
+    return '$start-$end arası bildirim gelmez';
   }
 
   @override
