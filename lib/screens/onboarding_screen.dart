@@ -431,7 +431,7 @@ List<_Adim> _adimlariKur() {
           'gram altın, dolar, euro ve çeyrek altının fiyatı kutuda canlı '
           'durur, kaydettiğin an toplamın hesaplanır. Fon ve hissede '
           'listeden seçersin. Kripto, emtia, mevduat ve BES alttaki '
-          'bağlantıda; aracı kurum ekstren varsa "Ekstreden aktar" hepsini '
+          'bağlantıda; aracı kurum ekstren varsa "Ekstreden ekle" hepsini '
           'tek seferde getirir. İlk varlığından sonra burada toplam net '
           'varlığın görünür.',
       giris: (_) => _sekmeyeGec(0),
@@ -730,13 +730,14 @@ List<_Adim> _adimlariKur() {
       // 2026-10-01: ekstre dosyadan da okunuyor (PDF/Excel/CSV, evrensel
       // motor) — tur "dosyadan seç"i anlatır.
       // Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
-      // kalktı): hedef formdaki "Ekstreden aktar" düğmesi; metin oradan
-      // başlar.
+      // kalktı): hedef formdaki "Ekstreden ekle" düğmesi; metin oradan
+      // başlar. 2026-11-07: düğmenin adı her yüzeyde "Ekstreden ekle"
+      // (eski "Ekstreden aktar"); tur aynı adı söyler.
       // 2026-10-19: düğmenin altına "Ekran görüntüsünden ekle" geldi
       // (ücretsiz, bayraksız); tur ikisini birlikte anlatır.
       // 2026-10-31: üç yol formun sonundaki "Başka yoldan ekle" kartında,
       // alt alta; "altındaki" sözü karttaki sırayla hâlâ doğru.
-      govde: '"Başka yoldan ekle" kartındaki "Ekstreden aktar": aracı kurum '
+      govde: '"Başka yoldan ekle" kartındaki "Ekstreden ekle": aracı kurum '
           'ya da banka ekstreni (PDF, Excel '
           'veya CSV) dosyadan seç ya da tabloyu yapıştır; sütunlar '
           'kendiliğinden tanınır, alışlar ve satışlar tarihleriyle gelir, '
@@ -1052,9 +1053,10 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
       hedef: TourTarget.topluEkle,
       baslik: 'Hazırsın',
       // Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
-      // kalktı): hedef formdaki "Ekstreden aktar" düğmesi.
+      // kalktı): hedef formdaki "Ekstreden ekle" düğmesi (2026-11-07'ye
+      // kadar adı "Ekstreden aktar").
       // 2026-10-31: düğme formun sonundaki "Başka yoldan ekle" kartında.
-      govde: 'En hızlı yol: sayfanın altındaki "Ekstreden aktar". '
+      govde: 'En hızlı yol: sayfanın altındaki "Ekstreden ekle". '
           'Kurumunun PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
           'tarihiyle deftere girer. Ekstren yoksa kurum uygulamandaki portföy '
           'ekranının görüntüsünü "Ekran görüntüsünden ekle" ile seç. Tek tek '

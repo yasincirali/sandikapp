@@ -3151,7 +3151,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get csvImportTitle => 'Ekstreden içe aktar';
+  String get csvImportTitle => 'Ekstreden ekle';
 
   @override
   String get csvImportBody =>
@@ -3444,7 +3444,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.';
 
   @override
-  String get pasteFromStatement => 'Ekstreden içe aktar (PDF, Excel, CSV)';
+  String get pasteFromStatement => 'Ekstreden ekle';
 
   @override
   String saveAllCount(int n) {
@@ -6176,7 +6176,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get addByTyping => 'Yazarak ekle';
 
   @override
-  String get importFromStatement => 'Ekstreden aktar';
+  String get importFromStatement => 'Ekstreden ekle';
 
   @override
   String get orWithEmail => 'veya e-postayla';
@@ -8014,7 +8014,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s7EylemSinyalAyarlari => 'Sinyal ayarları';
 
   @override
-  String get s7EylemEkstreAktar => 'Ekstreden aktar (CSV)';
+  String get s7EylemEkstreAktar => 'Ekstreden ekle';
 
   @override
   String get s7EylemTopluEkle => 'Toplu ekle';

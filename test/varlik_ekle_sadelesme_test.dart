@@ -96,7 +96,7 @@ void main() {
     expect(find.text('Başka yoldan ekle'), findsOneWidget);
     for (final t in [
       'Yazarak ekle',
-      'Ekstreden aktar',
+      'Ekstreden ekle',
       'Ekran görüntüsünden ekle',
     ]) {
       expect(find.text(t), findsOneWidget, reason: t);

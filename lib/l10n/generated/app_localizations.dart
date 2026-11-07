@@ -5375,7 +5375,7 @@ abstract class AppLocalizations {
   /// No description provided for @csvImportTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Ekstreden içe aktar'**
+  /// **'Ekstreden ekle'**
   String get csvImportTitle;
 
   /// No description provided for @csvImportBody.
@@ -5825,7 +5825,7 @@ abstract class AppLocalizations {
   /// No description provided for @pasteFromStatement.
   ///
   /// In tr, this message translates to:
-  /// **'Ekstreden içe aktar (PDF, Excel, CSV)'**
+  /// **'Ekstreden ekle'**
   String get pasteFromStatement;
 
   /// No description provided for @saveAllCount.
@@ -10261,7 +10261,7 @@ abstract class AppLocalizations {
   /// No description provided for @importFromStatement.
   ///
   /// In tr, this message translates to:
-  /// **'Ekstreden aktar'**
+  /// **'Ekstreden ekle'**
   String get importFromStatement;
 
   /// No description provided for @orWithEmail.
@@ -13250,7 +13250,7 @@ abstract class AppLocalizations {
   /// No description provided for @s7EylemEkstreAktar.
   ///
   /// In tr, this message translates to:
-  /// **'Ekstreden aktar (CSV)'**
+  /// **'Ekstreden ekle'**
   String get s7EylemEkstreAktar;
 
   /// No description provided for @s7EylemTopluEkle.

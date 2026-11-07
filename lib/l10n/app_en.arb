@@ -2104,7 +2104,7 @@
       }
     }
   },
-  "csvImportTitle": "Import statement",
+  "csvImportTitle": "Add from statement",
   "csvImportBody": "Choose your broker or bank statement (PDF, Excel or CSV) or copy and paste the table. Column names and order don't matter: symbol, quantity, price, date and buy/sell are detected automatically. Buys and sells come in with their dates.",
   "pasteHere": "Paste here",
   "importPickFile": "Choose file (PDF, Excel, CSV)",
@@ -2280,7 +2280,7 @@
   "bulkScreenshotCostLater": "Cost could not be read for {count} holdings: they are saved at today's price; tap a row to enter its cost.",
   "bulkScreenshotNoQuantity": "Quantity not read, skipped: {codes}",
   "cartEmptyBody": "Use the + Add Asset button below to queue several assets and save them all at once.",
-  "pasteFromStatement": "Import statement (PDF, Excel, CSV)",
+  "pasteFromStatement": "Add from statement",
   "saveAllCount": "Save All ({n})",
   "@saveAllCount": {
     "placeholders": {
@@ -4035,7 +4035,7 @@
   "firstAssetOtherType": "Add another type",
   "addDetails": "Add details (fee, note)",
   "addByTyping": "Add by typing",
-  "importFromStatement": "Import statement",
+  "importFromStatement": "Add from statement",
   "orWithEmail": "or with email",
   "todayTopMoverLabel": "Biggest mover",
   "todayVsInflationYou": "Your return",
@@ -5195,7 +5195,7 @@
   "s7EylemlerUpper": "Actions",
   "s7EylemFiyatAlarmlari": "Price alerts",
   "s7EylemSinyalAyarlari": "Signal settings",
-  "s7EylemEkstreAktar": "Import statement (CSV)",
+  "s7EylemEkstreAktar": "Add from statement",
   "s7EylemTopluEkle": "Bulk add",
   "s7EylemTumHareketler": "All transactions",
   "s7EylemKarsilastir": "Compare",

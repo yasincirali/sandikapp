@@ -3180,7 +3180,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get csvImportTitle => 'Import statement';
+  String get csvImportTitle => 'Add from statement';
 
   @override
   String get csvImportBody =>
@@ -3472,7 +3472,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use the + Add Asset button below to queue several assets and save them all at once.';
 
   @override
-  String get pasteFromStatement => 'Import statement (PDF, Excel, CSV)';
+  String get pasteFromStatement => 'Add from statement';
 
   @override
   String saveAllCount(int n) {
@@ -6230,7 +6230,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addByTyping => 'Add by typing';
 
   @override
-  String get importFromStatement => 'Import statement';
+  String get importFromStatement => 'Add from statement';
 
   @override
   String get orWithEmail => 'or with email';
@@ -8084,7 +8084,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s7EylemSinyalAyarlari => 'Signal settings';
 
   @override
-  String get s7EylemEkstreAktar => 'Import statement (CSV)';
+  String get s7EylemEkstreAktar => 'Add from statement';
 
   @override
   String get s7EylemTopluEkle => 'Bulk add';

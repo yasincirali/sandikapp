@@ -9,7 +9,7 @@ import 'package:portfoy_takip/services/ekstre/tablo_okuyucular.dart';
 
 /// Mağaza görsellerinin demo portföyü (`store_listing/DEMO_PORTFOY.md` v4).
 ///
-/// Neden test: bu CSV'ler gerçek iPhone'da "Ekstreden içe aktar" ile
+/// Neden test: bu CSV'ler gerçek iPhone'da "Ekstreden ekle" ile
 /// yüklenir ve 5. kare o ekranın kendisidir. Ayrıştırıcı değişip bir satır
 /// yanlış türe düşerse (çıplak "BTC" fon, "Çeyrek Altın" gram) bunu çekim
 /// günü telefonda görmek yerine burada görelim.

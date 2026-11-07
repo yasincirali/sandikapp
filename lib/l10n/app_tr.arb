@@ -2126,7 +2126,7 @@
       }
     }
   },
-  "csvImportTitle": "Ekstreden içe aktar",
+  "csvImportTitle": "Ekstreden ekle",
   "csvImportBody": "Aracı kurum ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da tabloyu kopyalayıp yapıştır. Sütunların adı ve sırası önemli değil: sembol, adet, fiyat, tarih ve alış/satış kendiliğinden bulunur. Alışlar ve satışlar tarihleriyle birlikte gelir.",
   "pasteHere": "Buraya yapıştır",
   "importPickFile": "Dosyadan seç (PDF, Excel, CSV)",
@@ -2375,7 +2375,7 @@
     "placeholders": {"codes": {"type": "String"}}
   },
   "cartEmptyBody": "Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.",
-  "pasteFromStatement": "Ekstreden içe aktar (PDF, Excel, CSV)",
+  "pasteFromStatement": "Ekstreden ekle",
   "saveAllCount": "Tümünü kaydet ({n})",
   "@saveAllCount": {
     "placeholders": {
@@ -4352,7 +4352,7 @@
   "firstAssetOtherType": "Başka bir tür ekle",
   "addDetails": "Ayrıntı ekle (komisyon, not)",
   "addByTyping": "Yazarak ekle",
-  "importFromStatement": "Ekstreden aktar",
+  "importFromStatement": "Ekstreden ekle",
   "orWithEmail": "veya e-postayla",
   "todayTopMoverLabel": "En çok oynayan",
   "todayVsInflationYou": "Getirin",
@@ -5762,7 +5762,7 @@
   "s7EylemlerUpper": "Eylemler",
   "s7EylemFiyatAlarmlari": "Fiyat alarmları",
   "s7EylemSinyalAyarlari": "Sinyal ayarları",
-  "s7EylemEkstreAktar": "Ekstreden aktar (CSV)",
+  "s7EylemEkstreAktar": "Ekstreden ekle",
   "s7EylemTopluEkle": "Toplu ekle",
   "s7EylemTumHareketler": "Tüm hareketler",
   "s7EylemKarsilastir": "Karşılaştır",

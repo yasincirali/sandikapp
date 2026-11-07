@@ -226,7 +226,7 @@ void main() {
       expect(_vitrinde(find.text('Borsa İstanbul')), findsOneWidget);
       expect(_vitrinde(find.text('Fiyatlar canlı')), findsOneWidget);
       // Ekstre satırı.
-      expect(_vitrinde(find.text('Ekstreden aktar')), findsOneWidget);
+      expect(_vitrinde(find.text('Ekstreden ekle')), findsOneWidget);
       // "Diğerleri" bağlantısı (SiganMetin `find.text`'e görünmez).
       expect(find.bySemanticsLabel('Kripto, emtia, mevduat, BES ve diğerleri'),
           findsOneWidget);
