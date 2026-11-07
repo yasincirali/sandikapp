@@ -110,6 +110,28 @@ const List<SurumNotu> surumNotlari = [
     // 1.1.7 paywall derlemesiyle kapandı; sonrası buraya (koordinatör,
     // 1 Kas). Yama sürümü: yalnız Ayarlar'da görünür.
     yenilikler: [
+      // Ar-Ge 7 Kas 06:00 #4 (a) + #1: #306 Türkçe fon arama ve
+      // "Portföyündekiler"; fon karnesine TEFAS risk değeri (ücretsiz).
+      // En çok 6 madde kuralı: karne satırı ayrı madde olmaz, fon işiyle
+      // aynı maddeye girer.
+      Yenilik(
+        baslik: 'Varlık eklemek daha hızlı',
+        aciklama: 'Fonu Türkçe harflerle ya da koduyla bulursun; '
+            'portföyündekiler listenin başında. Fon karnesinde artık '
+            'TEFAS\'ın açıkladığı risk değeri de yazıyor.',
+      ),
+      // Ar-Ge 7 Kas 06:00 #4 (b) + #2: #305 "Mevduatta" kıyas satırı, #307
+      // kıyası paylaş (ayrı madde olmaz, cümle olarak girer) ve 0174 vade
+      // bildirimi (mevduat konusu, aynı madde).
+      Yenilik(
+        baslik: 'Mevduatta kalsaydı?',
+        aciklama: 'Özet\'teki "Başka yere koysaydın" kartında aynı paranın '
+            'TL mevduatta ne olacağını gösteren bir satır var: geçmiş faiz '
+            'oranlarıyla, stopaj düşülmüş. Karşılaştır\'da kıyası tek '
+            'dokunuşla paylaşabilirsin. Vadeli mevduatının vadesi dolunca '
+            'o sabah haber veririz.',
+        ikon: YenilikIkonu.para,
+      ),
       // yasin 2 Kas 07:09 (müşteri thread'i): AI yorumu bayraktan çıktı,
       // Premium'la gelir. Ücretsiz hesap kartı kilitli görür; not yine de
       // yazılır çünkü kart herkesin ekranında (Premium maddesi deseni).
@@ -128,40 +150,29 @@ const List<SurumNotu> surumNotlari = [
             'açarsın. Sıradaki taşa ne kadar kaldığını halkada görürsün, '
             'geçtiğin taşı tutar göstermeden paylaşabilirsin.',
       ),
-      // Ar-Ge 5 Kas 21:20 #1 ve #3, müşteri YAP.
+      // Ar-Ge 2 Kas 08:45 #1-#2 + Ar-Ge 5 Kas 21:20 #1/#3 (kilit örtüsü),
+      // müşteri YAP. 6 madde sınırı için iki ücretsiz küçük iyileştirme
+      // tek maddede. Kilit maddesinin sonundaki Yardım cümlesi konu dışıydı
+      // (Ar-Ge 7 Kas #4), çıktı.
       Yenilik(
-        baslik: 'Kilit açıkken portföyün gizli',
-        aciklama: 'Uygulama kilidi açıksa uygulamalar arasında geçerken '
-            'ekranın örtülür; tutarların görünmez. Yardım\'da sık sorulan '
-            'soruların cevapları var.',
-      ),
-      // Ar-Ge 2 Kas 08:45 #1-#2, müşteri YAP.
-      Yenilik(
-        baslik: 'Hedef ve alarm daha kolay',
-        aciklama: 'Hedef sayfasındaki hazır tutarlar artık portföyüne göre '
-            'geliyor ve yazdığın hedefin yüzde kaçında olduğunu hemen '
-            'görüyorsun. Çan boşken tek dokunuşla fiyat alarmı kurabilirsin.',
+        baslik: 'Hedef, alarm ve kilit',
+        aciklama: 'Hedef sayfasındaki hazır tutarlar portföyüne göre geliyor '
+            've yazdığın hedefin yüzde kaçında olduğunu hemen görüyorsun. '
+            'Çan boşken tek dokunuşla fiyat alarmı kurabilirsin. Uygulama '
+            'kilidi açıksa uygulamalar arasında geçerken tutarların görünmez.',
         ikon: YenilikIkonu.bildirim,
       ),
-      // yasin 2026-11-06: hedefe tarih Premium (hedef ücretsiz kalır).
-      // Premium maddesi: paywall'ın açık olduğu platformda görünür.
-      Yenilik(
-        ikon: YenilikIkonu.para,
-        bayrak: 'paywall_enabled',
-        baslik: 'Hedefine tarih koy',
-        aciklama: 'Hedef sayfasında ne zamana kadar istediğini seç; ayda ne '
-            'kadar eklemen gerektiğini gör. Getiri hesaba katılmaz. Premium '
-            'ile.',
-      ),
-      // Ar-Ge 2 Kas 12:45 #1-#2, müşteri YAP. Premium maddesi: paywall'ın
-      // kodda açık olduğu platformda görünür.
+      // yasin 2026-11-06 (hedefe tarih) + Ar-Ge 2 Kas 12:45 #1-#2 (aylık
+      // rapor). İkisi de Premium ve aynı bayrak: paywall'ın açık olduğu
+      // platformda görünür; 6 madde sınırı için tek maddede.
       Yenilik(
         ikon: YenilikIkonu.liste,
         bayrak: 'paywall_enabled',
-        baslik: 'Aylık rapor portföyünü anlatıyor',
-        aciklama: 'Aylık PDF raporunda artık ay sonu değerin, kârın, '
-            'yatırdığın para ve en çok kazandıran varlık var. Performans\'ta '
-            '1 ay seçiliyken rapora tek dokunuşla ulaşırsın.',
+        baslik: 'Hedefine tarih, raporuna özet',
+        aciklama: 'Hedef sayfasında ne zamana kadar istediğini seç; ayda ne '
+            'kadar eklemen gerektiğini gör (getiri hesaba katılmaz). Aylık '
+            'PDF raporunda ay sonu değerin, kârın, yatırdığın para ve en çok '
+            'kazandıran varlık var. Premium ile.',
       ),
     ],
   ),
