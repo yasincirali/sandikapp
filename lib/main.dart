@@ -197,14 +197,44 @@ void main() async {
     // `kSandikFontFamily` ile doğrudan kullanılır. google_fonts kaldırıldı
     // (2026-09-14) — ağ bağımlılığı ve aile adı eşleşme tuzağı da gitti.
 
-    await initializeDateFormatting('tr_TR');
-    // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
-    // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
-    await initPreferencesCache();
-    // Kayıt hunisi (0097): yeni kurulum mu? RetentionTracker kurulum
-    // gününü yazmadan ÖNCE (o deferred init'te) — yazdıktan sonra her cihaz
-    // "eski" görünürdü. Yalnızca tercih dosyası; ağ yok.
-    await HuniKaydi.instance.hazirla();
+    // Birbirini beklemeyen açılış işleri AYNI ANDA (2026-11-07, Ar-Ge 12:30):
+    // eskiden beşi ardı ardına bekleniyordu, soğuk açılış toplamlarını
+    // ödüyordu. Bağımsızlık tek tek doğrulandı:
+    //   - tarih biçimi: yalnız intl verisini yükler, tercih/ağ yok;
+    //   - tercih önbelleği, HuniKaydi, SurfaceTheme: üçü de
+    //     `SharedPreferences.getInstance()`i KENDİSİ çağırır. O çağrı tek
+    //     completer'la paylaşılır (aynı anda gelen çağrılar aynı örneği
+    //     bekler), yani biri diğerinin bittiğine güvenmez. HuniKaydi'nin
+    //     "RetentionTracker'dan ÖNCE" şartı sürer: RetentionTracker
+    //     ertelenen init'te, aşağıdaki `Future.wait` bittikten sonra koşar;
+    //   - Firebase.initializeApp: tercih okumaz. Crashlytics ve ertelenen
+    //     servisler ONA bağlı, onlar aşağıda sırayla kalır.
+    // Firebase'in hatası eskisi gibi aşağıdaki try/catch'e düşsün diye
+    // sonuç (hata dahil) burada yakalanıp orada yeniden fırlatılır; aksi
+    // halde `Future.wait` onu yukarı, zone'a taşır ve uygulama açılmazdı.
+    // Diğer dördünün hatası eskiden de zone'a gidiyordu; `Future.wait`
+    // hepsinin bitmesini bekleyip ilk hatayı fırlattığı için o da aynı.
+    final firebaseIlk = Firebase.initializeApp().then<(Object, StackTrace)?>(
+      (_) => null,
+      onError: (Object e, StackTrace st) => (e, st),
+    );
+    await Future.wait<void>([
+      initializeDateFormatting('tr_TR'),
+      // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
+      // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
+      initPreferencesCache(),
+      // Kayıt hunisi (0097): yeni kurulum mu? RetentionTracker kurulum
+      // gününü yazmadan ÖNCE (o deferred init'te) — yazdıktan sonra her
+      // cihaz "eski" görünürdü. Yalnızca tercih dosyası; ağ yok.
+      HuniKaydi.instance.hazirla(),
+      // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
+      //
+      // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
+      // varsayılanıyla doğar; açık temalı kullanıcı, portföy ilk kez
+      // yayınlanana kadar koyu palet görüyordu. Karar diskten okunur —
+      // yeniden ÇÖZÜLMEZ (bkz. `SurfaceTheme`).
+      SurfaceTheme.instance.restore(),
+    ]);
     // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
     // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
     HistoryService.kaliciDepo = SeriDiskDepo();
@@ -213,13 +243,6 @@ void main() async {
     PortfoySeriDepo.kaliciDepo = PortfoySeriDepo.varsayilanDepo();
     // Sistem bellek uyarısında süreli önbellekleri bırak (bkz. sınıf).
     BellekBaskisi.instance.baglan();
-    // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
-    //
-    // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
-    // varsayılanıyla doğar; açık temalı kullanıcı, portföy ilk kez
-    // yayınlanana kadar koyu palet görüyordu. Karar diskten okunur —
-    // yeniden ÇÖZÜLMEZ (bkz. `SurfaceTheme`).
-    await SurfaceTheme.instance.restore();
     // Arka plan işleyicisi KAYDEDİLMEZ (kaynak kullanımı denetimi,
     // 2026-10-12). İşleyici yalnızca Firebase'i başlatıp çıkıyordu; ama
     // kayıtlıyken firebase_messaging Android'de uygulama arka planda ya da
@@ -231,7 +254,10 @@ void main() async {
     // siler. Veri içerikli (data-only) push eklenirse kayıt geri gelmeli.
 
     try {
-      await Firebase.initializeApp();
+      final firebaseHatasi = await firebaseIlk;
+      if (firebaseHatasi != null) {
+        Error.throwWithStackTrace(firebaseHatasi.$1, firebaseHatasi.$2);
+      }
 
       // Crashlytics — debug build'de gönderim kapalı (gürültü olmasın)
       await FirebaseCrashlytics.instance
