@@ -854,6 +854,18 @@ abstract class AppLocalizations {
   /// **'Hepsi ({qty})'**
   String quickAllChip(String qty);
 
+  /// Hızlı Al: bu varlıktaki son alımın miktarını seçen çip (ör. Son alımın · 12 pay).
+  ///
+  /// In tr, this message translates to:
+  /// **'Son alımın · {miktar}'**
+  String quickLastBuyChip(String miktar);
+
+  /// Son alım çipinin ekran okuyucu etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son alımın, {miktar}'**
+  String quickLastBuyChipSemantics(String miktar);
+
   /// No description provided for @quickHolding.
   ///
   /// In tr, this message translates to:
@@ -1705,6 +1717,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Notu sil'**
   String get noteRemove;
+
+  /// Hareket notu sayfası: kendi alış hareketinde Hızlı Al'ı aynı miktarla, bugünün fiyatıyla açar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bunu tekrar al'**
+  String get txBuyAgain;
 
   /// No description provided for @noteNone.
   ///

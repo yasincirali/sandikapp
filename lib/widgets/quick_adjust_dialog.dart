@@ -8,6 +8,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/mevduat_hesabi.dart';
 import '../services/sozlesme_deposu.dart';
+import '../services/hizli_tekrar_al.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
@@ -42,11 +43,20 @@ enum QuickAdjustMode { add, remove }
 /// çipidir, ikinci kez yazılmaz); alışta türün makul adımları. Kripto
 /// ayrı: tam sayı adet nadirdir, 100 BTC öneri olmaz (Varlık Ekle
 /// formundaki `quantityPresets` ile aynı ölçek).
+///
+/// [sonAlim] (Ar-Ge 8 Kas #1): alışta kullanıcının bu varlıktaki son alım
+/// miktarı (`sonAlim` → `alimAlanDegeri`, ham defter). Verilirse ekran onu
+/// "Son alımın" çipi olarak BAŞA koyar ve çip sayısı aynı kalsın diye
+/// buradan bir standart öneri düşer: son alım standart bir değere eşitse
+/// o değer (aynı sayı iki çipte yazılmasın), değilse listenin SONUNCUSU
+/// (en büyük adım; aylık düzenli alımda en az kullanılan). Satışta yok
+/// sayılır: "son alımın" satış önerisi değildir.
 List<double> hizliMiktarOnerileri({
   required AssetType tur,
   required String birimTuru,
   required double eldeki,
   required bool satis,
+  double? sonAlim,
 }) {
   final List<double> taban;
   if (birimTuru == 'gram' || birimTuru == 'gr') {
@@ -66,7 +76,15 @@ List<double> hizliMiktarOnerileri({
   } else {
     taban = const [1, 5, 10, 100];
   }
-  if (!satis) return taban;
+  if (!satis) {
+    if (sonAlim == null || !(sonAlim > 0) || taban.isEmpty) return taban;
+    final esit = taban.indexWhere((v) => (v - sonAlim).abs() < 1e-9);
+    final dusen = esit >= 0 ? esit : taban.length - 1;
+    return [
+      for (var i = 0; i < taban.length; i++)
+        if (i != dusen) taban[i],
+    ];
+  }
   // Kayan nokta payı: 10 − 1e-12 "10'dan küçük" sayılmasın.
   return [for (final v in taban) if (v < eldeki - 1e-9) v];
 }
@@ -184,6 +202,7 @@ Future<void> showQuickAdjustDialog(
   WidgetRef ref, {
   required Asset asset,
   required QuickAdjustMode mode,
+  double? baslangicMiktar,
 }) async {
   if (DemoModu.yazmaKapisi('miktar')) return; // Demo: kaydetmek hesap ister (F1).
   // Çoklu portföy (0133): lotları birden çok portföyde olan pozisyonda önce
@@ -199,7 +218,8 @@ Future<void> showQuickAdjustDialog(
   return showSandikGecisli<void>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => _QuickAdjustDialog(asset: asset, mode: mode, ref: ref),
+    builder: (_) => _QuickAdjustDialog(
+        asset: asset, mode: mode, ref: ref, baslangicMiktar: baslangicMiktar),
   );
 }
 
@@ -208,10 +228,16 @@ class _QuickAdjustDialog extends StatefulWidget {
   final QuickAdjustMode mode;
   final WidgetRef ref;
 
+  /// Miktar alanının önden dolu değeri ("Bunu tekrar al", `hizli_tekrar_al.dart`).
+  /// Alanın biriminde: çoğu türde miktar, mevduatta TL tutarı. Fiyat yine
+  /// bugünün fiyatıdır (`initState`).
+  final double? baslangicMiktar;
+
   const _QuickAdjustDialog({
     required this.asset,
     required this.mode,
     required this.ref,
+    this.baslangicMiktar,
   });
 
   @override
@@ -249,9 +275,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   /// "Mevcut" satırı bunu yazar, `mevduatTutarIslemi` kuruş payıyla eşler.
   double get _bakiye => (widget.asset.quantity * _birim * 100).round() / 100;
 
+  /// Bu varlığın son alımının alan değeri (ham defter, silinen hariç) —
+  /// "Son alımın" çipi. Yalnız alışta; alış yoksa `null` → çip yok.
+  /// Diyalog açılışında bir kez okunur: açıkken defter değişmez (kayıt
+  /// diyaloğu kapatır).
+  late final double? _sonAlim = () {
+    if (!_isAdd) return null;
+    final defter =
+        widget.ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final son = sonAlim(defter, widget.asset);
+    return son == null ? null : alimAlanDegeri(son);
+  }();
+
   @override
   void initState() {
     super.initState();
+    final baslangic = widget.baslangicMiktar;
+    if (baslangic != null && baslangic > 0) {
+      _qtyCtrl.text = _fmt(baslangic);
+    }
     if (_isAdd && !_tutarla) {
       final currentPrice = widget.asset.currentPrice > 0
           ? widget.asset.currentPrice
@@ -1002,23 +1044,44 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     );
   }
 
+  /// Son alım çipinin miktarı birimiyle: "12 pay", "5 gr", "$100".
+  /// Mevduatta alan TL tutarı olduğundan tutar yazılır ("₺5.000").
+  String _sonAlimMetni(double v) => _tutarla
+      ? fmtTRY(v)
+      : widget.asset.miktarMetni(v, (d, o) => fmtNum(d, digits: o));
+
   Widget _quickChips() {
     // Öneriler `hizliMiktarOnerileri`'nden (saf, testli). Alanın metni ve
     // çipin yazısı AYNI Türkçe biçimde (`_fmt`): eski '0.1' ham yazımı
     // ekranda "0.1" görünüyordu.
     // Mevduatta alan tutar olduğu için çipler de bakiyeyle (₺) kurulur.
     final eldeki = _tutarla ? _bakiye : widget.asset.quantity;
-    final chips = <({String deger, String etiket})>[
+    final son = _sonAlim;
+    final chips = <({String deger, String etiket, String? ses})>[
+      // "Son alımın" BAŞTA (Ar-Ge 8 Kas #1); çip sayısı aynı kalır, bir
+      // standart öneri düşer (bkz. `hizliMiktarOnerileri`). Rozet yok.
+      if (son != null)
+        (
+          deger: _fmt(son),
+          etiket: context.l10n.quickLastBuyChip(_sonAlimMetni(son)),
+          // "·" ekran okuyucuda okunmaz ya da "nokta" okunur; virgüllü cümle.
+          ses: context.l10n.quickLastBuyChipSemantics(_sonAlimMetni(son)),
+        ),
       for (final v in hizliMiktarOnerileri(
         tur: widget.asset.type,
         birimTuru: widget.asset.unitType,
         eldeki: eldeki,
         satis: !_isAdd,
+        sonAlim: son,
       ))
-        (deger: _fmt(v), etiket: _fmt(v)),
+        (deger: _fmt(v), etiket: _fmt(v), ses: null),
       // Satışta TEK "Hepsi" — eldekinin tamamı (bkz. bulgu #9).
       if (!_isAdd && eldeki > 0)
-        (deger: _fmt(eldeki), etiket: context.l10n.quickAllChip(_fmt(eldeki))),
+        (
+          deger: _fmt(eldeki),
+          etiket: context.l10n.quickAllChip(_fmt(eldeki)),
+          ses: null,
+        ),
     ];
 
     // Sabit 32pt şerit kalktı (HIG denetimi 2026-10-10): hedef 32pt'de
@@ -1034,6 +1097,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               child: SandikTappable(
                 soluk: true,
                 haptic: SandikHaptic.none,
+                semanticLabel: chip.ses,
                 onTap: () => setState(() {
                   _qtyCtrl.text = chip.deger;
                   _error = null;
@@ -1050,13 +1114,16 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         color: context.c.overlay,
                         borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
-                      child: Text(
+                      child: ExcludeSemantics(
+                        excluding: chip.ses != null,
+                        child: Text(
                         chip.etiket,
                         style: context.t.numSmall.copyWith(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: context.c.text90,
                         ),
+                      ),
                       ),
                     ),
                   ),

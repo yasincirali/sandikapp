@@ -415,6 +415,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String quickLastBuyChip(String miktar) {
+    return 'Your last buy · $miktar';
+  }
+
+  @override
+  String quickLastBuyChipSemantics(String miktar) {
+    return 'Your last buy, $miktar';
+  }
+
+  @override
   String get quickHolding => 'Holding';
 
   @override
@@ -953,6 +963,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noteRemove => 'Remove note';
+
+  @override
+  String get txBuyAgain => 'Buy this again';
 
   @override
   String get noteNone => 'No note on this transaction.';

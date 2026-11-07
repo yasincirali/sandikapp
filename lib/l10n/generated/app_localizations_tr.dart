@@ -415,6 +415,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String quickLastBuyChip(String miktar) {
+    return 'Son alımın · $miktar';
+  }
+
+  @override
+  String quickLastBuyChipSemantics(String miktar) {
+    return 'Son alımın, $miktar';
+  }
+
+  @override
   String get quickHolding => 'Mevcut';
 
   @override
@@ -939,6 +949,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get noteRemove => 'Notu sil';
+
+  @override
+  String get txBuyAgain => 'Bunu tekrar al';
 
   @override
   String get noteNone => 'Bu işleme not yazılmamış.';
