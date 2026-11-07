@@ -236,6 +236,42 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   DateTime? _sonYukleme;
   static const _taptaze = Duration(seconds: 10);
 
+  /// Uygulama ön planda mı — yoklama yalnız öndeyken kurulur.
+  bool _onPlanda = true;
+
+  /// `build` her yeniden koştuğunda (ve dispose'da) artar. `await` dönüşünde
+  /// nesil değişmişse o tur artık geçersizdir: dispose edilmiş bir build'in
+  /// geç dönen yanıtı zamanlayıcıyı yeniden kurup sızdırmasın.
+  int _nesil = 0;
+
+  /// Yoklama kararı (2026-11-07, Ar-Ge 16:06#2): ortak listesi BOŞSA
+  /// zamanlayıcı kurulmaz. Yoklama yalnız karşı tarafın değişikliğini
+  /// yakalar (ortaklığı kaldırma, gizleme); ortağı olmayan hesapta
+  /// yakalanacak bir şey yoktur ama hesapların çoğunda dakikada iki sorgu
+  /// boşa gidiyordu. Ortak edinmek her zaman bu cihazdaki kullanıcının
+  /// eylemiyle olur (kod gönder → `refresh`, daveti kabul → `acceptInvite`
+  /// → `refresh`) ve o yollar listeyi tazeleyip yoklamayı başlatır; öne
+  /// dönüş turu da tazeler.
+  @visibleForTesting
+  static bool yoklamaGerekir({
+    required bool onPlanda,
+    required List<PartnerAccount> ortaklar,
+  }) =>
+      onPlanda && ortaklar.isNotEmpty;
+
+  /// Test gözlemi: zamanlayıcı kurulu mu.
+  @visibleForTesting
+  bool get yoklamaAcik => _pollTimer != null;
+
+  void _yoklamayiAyarla(List<PartnerAccount> ortaklar) {
+    if (yoklamaGerekir(onPlanda: _onPlanda, ortaklar: ortaklar)) {
+      // Kuruluysa yeniden kurma: her turda sıfırlamak periyodu kaydırır.
+      if (_pollTimer == null) _startPolling();
+    } else {
+      _stopPolling();
+    }
+  }
+
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(_pollInterval, (_) => _tick());
@@ -252,10 +288,15 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _onPlanda = true;
       final son = _sonYukleme;
       if (son == null || DateTime.now().difference(son) > _taptaze) _tick();
-      _startPolling();
+      // Eldeki listeye göre karar; `_tick` dönünce taze listeyle yeniden
+      // ayarlanır (arka plandayken ortak gelmiş/gitmiş olabilir).
+      // `this.state`: parametre adı `state` notifier durumunu gölgeliyor.
+      _yoklamayiAyarla(this.state.valueOrNull ?? const []);
     } else {
+      _onPlanda = false;
       _stopPolling();
     }
   }
@@ -271,16 +312,19 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
       WidgetsBinding.instance.addObserver(this);
       _observing = true;
     }
-    // Karşı taraf ortaklığı kaldırınca yansısın
-    _startPolling();
+    final nesil = ++_nesil;
     ref.onDispose(() {
+      _nesil++;
       _stopPolling();
       if (_observing) {
         WidgetsBinding.instance.removeObserver(this);
         _observing = false;
       }
     });
-    return _loadPartners(user.id);
+    final liste = await ortaklariYukle(user.id);
+    // Karşı taraf ortaklığı kaldırınca yansısın — yalnız ortak varsa.
+    if (nesil == _nesil) _yoklamayiAyarla(liste);
+    return liste;
   }
 
   Future<void> _tick() async {
@@ -290,13 +334,17 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
     // zone handler'ına düşüp ÇÖKME sayılıyordu (Crashlytics 2026-10-06,
     // PostgrestException 504). Yoklama turu düşerse eldeki liste kalır,
     // sonraki tur yeniden dener; hata non-fatal kaydedilir.
+    final nesil = _nesil;
     final List<PartnerAccount> fresh;
     try {
-      fresh = await _loadPartners(u.id);
+      fresh = await ortaklariYukle(u.id);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'PartnersNotifier._tick');
       return;
     }
+    if (nesil != _nesil) return;
+    // Son ortak gittiyse yoklama durur; ilk ortak geldiyse başlar.
+    _yoklamayiAyarla(fresh);
     // Sadece gerçekten değişiklik varsa state güncelle — gereksiz rebuild engellenir
     final current = state.valueOrNull ?? [];
     final changed = fresh.length != current.length ||
@@ -306,6 +354,12 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
         });
     if (changed) state = AsyncData(fresh);
   }
+
+  /// Sunucudan ortak listesi. Testte alt sınıf ezer (Supabase'siz).
+  @visibleForTesting
+  @protected
+  Future<List<PartnerAccount>> ortaklariYukle(String userId) =>
+      _loadPartners(userId);
 
   Future<List<PartnerAccount>> _loadPartners(String userId) async {
     _sonYukleme = DateTime.now();
@@ -342,8 +396,11 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   Future<void> refresh() async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
+    final nesil = _nesil;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _loadPartners(user.id));
+    state = await AsyncValue.guard(() => ortaklariYukle(user.id));
+    // Kod gönderip kabul edilen kullanıcıda ilk ortak burada gelir.
+    if (nesil == _nesil) _yoklamayiAyarla(state.valueOrNull ?? const []);
   }
 
   /// Kodu gönder — sadece invite'a to_user_id yazar, partnership kurmaz.
