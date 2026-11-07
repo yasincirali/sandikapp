@@ -6170,5 +6170,21 @@
   "disclaimerShort": "Not investment advice. Past returns do not predict future results.",
   "disclaimerDetails": "Details",
   "disclaimerDetailsHint": "Opens the full legal notice",
-  "disclaimerSheetTitle": "Legal notice"
+  "disclaimerSheetTitle": "Legal notice",
+  "digerIslemler": "More actions",
+  "bedelliBaslik": "Rights issue",
+  "bedelliSatirAlt": "Add the new shares if you used your subscription rights",
+  "bedelliAciklama": "New shares are added as a purchase at {birim} each",
+  "@bedelliAciklama": {"placeholders": {"birim": {"type": "String"}}},
+  "bedelliOran": "Rights ratio",
+  "bedelliOranIpucu": "e.g. 100",
+  "bedelliTarih": "Date you used the rights",
+  "bedelliOnizleme": "{yeni} new shares on your {elde}, {birim} each, {toplam} in total",
+  "@bedelliOnizleme": {"placeholders": {"elde": {"type": "String"}, "yeni": {"type": "String"}, "birim": {"type": "String"}, "toplam": {"type": "String"}}},
+  "bedelliYuvarlama": "{yeni} of your {hak} rights become shares; the fraction is rounded down",
+  "@bedelliYuvarlama": {"placeholders": {"hak": {"type": "String"}, "yeni": {"type": "String"}}},
+  "bedelliLotYok": "You held no shares on this date",
+  "bedelliKaydet": "Add shares",
+  "bedelliKaydedildi": "{yeni} new shares added",
+  "@bedelliKaydedildi": {"placeholders": {"yeni": {"type": "String"}}}
 }

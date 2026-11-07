@@ -6921,5 +6921,22 @@
   "@disclaimerShort": {"description": "Performans dipnotunun tek satırlık özeti; tam metin Ayrıntı ile açılır"},
   "disclaimerDetails": "Ayrıntı",
   "disclaimerDetailsHint": "Yasal uyarının tamamını açar",
-  "disclaimerSheetTitle": "Yasal uyarı"
+  "disclaimerSheetTitle": "Yasal uyarı",
+  "digerIslemler": "Diğer işlemler",
+  "bedelliBaslik": "Bedelli artırım",
+  "@bedelliBaslik": {"description": "Varlık sayfası ⋯ menüsü: bedelli sermaye artırımı (rüçhan hakkı kullanımı); işlem notu etiketi olarak da yazılır"},
+  "bedelliSatirAlt": "Rüçhan hakkını kullandıysan yeni lotları ekle",
+  "bedelliAciklama": "Yeni lotlar lot başı {birim} alış olarak eklenir",
+  "@bedelliAciklama": {"placeholders": {"birim": {"type": "String"}}},
+  "bedelliOran": "Artırım oranı",
+  "bedelliOranIpucu": "Ör. 100",
+  "bedelliTarih": "Hakkı kullandığın tarih",
+  "bedelliOnizleme": "Elindeki {elde} lota {yeni} yeni lot, lot başı {birim}, toplam {toplam}",
+  "@bedelliOnizleme": {"placeholders": {"elde": {"type": "String"}, "yeni": {"type": "String"}, "birim": {"type": "String"}, "toplam": {"type": "String"}}},
+  "bedelliYuvarlama": "{hak} hakkın {yeni} tanesi lot olur, kesir aşağı yuvarlanır",
+  "@bedelliYuvarlama": {"placeholders": {"hak": {"type": "String"}, "yeni": {"type": "String"}}},
+  "bedelliLotYok": "Bu tarihte elinde lot yok",
+  "bedelliKaydet": "Lotları ekle",
+  "bedelliKaydedildi": "{yeni} yeni lot eklendi",
+  "@bedelliKaydedildi": {"placeholders": {"yeni": {"type": "String"}}}
 }

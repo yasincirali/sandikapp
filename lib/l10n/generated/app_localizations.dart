@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr'),
+    Locale('tr')
   ];
 
   /// No description provided for @appName.
@@ -6895,11 +6895,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  );
+      String acilis, String yuksek, String dusuk, String kapanis);
 
   /// No description provided for @fullscreenChart.
   ///
@@ -9576,11 +9572,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  );
+      String date, String end, String change, String cpi);
 
   /// No description provided for @savingsRose.
   ///
@@ -11135,11 +11127,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  );
+      String amount, String times, String pct, String share);
 
   /// No description provided for @cryFootnote.
   ///
@@ -17638,10 +17626,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  );
+      String baslik, int yuzde, String kalan);
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -18038,12 +18023,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  );
+      String baslik, String dusuk, String yuksek, String bugun, String cumle);
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -18080,6 +18060,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yasal uyarı'**
   String get disclaimerSheetTitle;
+
+  /// No description provided for @digerIslemler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer işlemler'**
+  String get digerIslemler;
+
+  /// Varlık sayfası ⋯ menüsü: bedelli sermaye artırımı (rüçhan hakkı kullanımı); işlem notu etiketi olarak da yazılır
+  ///
+  /// In tr, this message translates to:
+  /// **'Bedelli artırım'**
+  String get bedelliBaslik;
+
+  /// No description provided for @bedelliSatirAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rüçhan hakkını kullandıysan yeni lotları ekle'**
+  String get bedelliSatirAlt;
+
+  /// No description provided for @bedelliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni lotlar lot başı {birim} alış olarak eklenir'**
+  String bedelliAciklama(String birim);
+
+  /// No description provided for @bedelliOran.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artırım oranı'**
+  String get bedelliOran;
+
+  /// No description provided for @bedelliOranIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ör. 100'**
+  String get bedelliOranIpucu;
+
+  /// No description provided for @bedelliTarih.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hakkı kullandığın tarih'**
+  String get bedelliTarih;
+
+  /// No description provided for @bedelliOnizleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Elindeki {elde} lota {yeni} yeni lot, lot başı {birim}, toplam {toplam}'**
+  String bedelliOnizleme(String elde, String yeni, String birim, String toplam);
+
+  /// No description provided for @bedelliYuvarlama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{hak} hakkın {yeni} tanesi lot olur, kesir aşağı yuvarlanır'**
+  String bedelliYuvarlama(String hak, String yeni);
+
+  /// No description provided for @bedelliLotYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu tarihte elinde lot yok'**
+  String get bedelliLotYok;
+
+  /// No description provided for @bedelliKaydet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lotları ekle'**
+  String get bedelliKaydet;
+
+  /// No description provided for @bedelliKaydedildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yeni} yeni lot eklendi'**
+  String bedelliKaydedildi(String yeni);
 }
 
 class _AppLocalizationsDelegate
@@ -18109,9 +18161,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
