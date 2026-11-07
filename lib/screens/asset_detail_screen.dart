@@ -21,6 +21,8 @@ import '../theme/sandik.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/kur_ayrismasi_satiri.dart';
 import '../widgets/bekleyen_fon_alimi_satiri.dart';
+import '../widgets/bedelli_artirim_sheet.dart';
+import '../models/bedelli_artirim.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/grafik_ozeti.dart';
@@ -909,6 +911,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           // pozisyonunda (işlem çubuğuyla aynı kapı) ve güncellenebilir
           // türde. Kilitliyken kilit ikonu, dokunuş paywall'a gider.
           if (_guncelleDugmesi(isOwnAsset) case final d?) d,
+          // "⋯" (bedelli artırım, Ar-Ge 2026-11-07): yalnız KENDİ açık BIST
+          // hissesi; kapı `_digerIslemlerDugmesi`.
+          if (_digerIslemlerDugmesi(isOwnAsset) case final d?) d,
         ],
       ),
       bottomNavigationBar: _islemCubugu(isOwnAsset),

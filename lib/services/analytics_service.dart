@@ -148,6 +148,7 @@ class AnalyticsService {
     'takip', // Takip listesi satırından
     'halka_arz', // Halka arz katılım kaydından
     'otomatik', // BES otomatik katkısı (kullanıcı eylemi değil)
+    'bedelli', // Varlık sayfası ⋯ → Bedelli artırım (1 ₺ alış lotu)
   };
 
   Future<void> logAssetUpdated({required String type}) =>

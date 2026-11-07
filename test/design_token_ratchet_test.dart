@@ -50,7 +50,9 @@ void main() {
     // 2026-10-20: gerçek 152 (~29'u PDF yazıcıları); eşik gerçeğe çekildi,
     // aynı gün karşılaştırma ekranının 17 ham boyutu token'a geçti → 135.
     // 2026-10-30: PDF yazıcıları (kâğıt ölçeği) sayımdan çıktı → 106.
-    expect(hits.length, lessThanOrEqualTo(106),
+    // 2026-11-07: gerçek 97'ye inmişti (eşik güncellenmemişti); Ayarlar
+    // "Gösterim aralığı" başlığı `titleMedium`'a geçti → 96.
+    expect(hits.length, lessThanOrEqualTo(96),
         reason: 'context.t.* kullan (ya da SandikTypography ölçeğine ekle):\n'
             '${hits.join('\n')}');
   });

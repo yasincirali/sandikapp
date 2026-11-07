@@ -222,6 +222,26 @@ extension _DetayEylemler on _AssetDetailScreenState {
     );
   }
 
+  /// Üst çubuktaki "⋯" (diğer işlemler); çizilmeyecekse `null`.
+  ///
+  /// Kapı [_islemCubugu] ile aynı (kendi + açık pozisyon): bedelli artırım
+  /// kullanıcının KENDİ pozisyonuna lot yazar, ortağın lotuna yazılamaz
+  /// (RLS). Yalnız BIST hissesi (`BedelliArtirim.uygunMu`). Menüde başka
+  /// satır olmadığı için öteki türlerde düğme hiç çizilmez; boş menü açan
+  /// düğme olmasın.
+  Widget? _digerIslemlerDugmesi(bool isOwnAsset) {
+    if (!isOwnAsset) return null;
+    final canli = _canli;
+    if (!canli.acik || !BedelliArtirim.uygunMu(canli.asset)) return null;
+    return IconButton(
+      key: const ValueKey('varlik-diger-islemler'),
+      tooltip: context.l10n.digerIslemler,
+      icon: Icon(Icons.more_horiz_rounded, color: context.c.text90),
+      onPressed: () => showVarlikDigerIslemler(context, ref,
+          varlik: _canli.asset, lotlar: _canli.lots),
+    );
+  }
+
   List<TransactionSegment> _convertHistoryToSegments(
     Map<int, double> history,
     DateTime startDate,
