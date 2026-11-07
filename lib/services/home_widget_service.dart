@@ -51,7 +51,7 @@ import 'crash_reporter.dart';
 ///
 /// Oturum kapanınca [clear] çağrılmalı: aksi halde çıkış yapan kullanıcının
 /// bakiyesi ana ekranda asılı kalır.
-class HomeWidgetService {
+class HomeWidgetService implements WidgetSabitleyici {
   HomeWidgetService._();
   static final instance = HomeWidgetService._();
 
@@ -1064,6 +1064,49 @@ class HomeWidgetService {
     }
   }
 
+  /// Android launcher'ı uygulama içinden widget yerleştirmeyi destekliyor mu
+  /// (Android 8+ ve launcher'a bağlı; Ar-Ge 7 Kas 14:30 #5).
+  ///
+  /// iOS'ta karşılığı YOK (WidgetKit uygulamaya yerleştirme izni vermez);
+  /// orada ve masaüstü/test ortamında kanal hiç çağrılmaz, `false` döner.
+  /// Kanal hatası Crashlytics'e non-fatal gider ve `false` döner: satır
+  /// gizlenir, kullanıcı bozuk bir düğme görmez.
+  @override
+  Future<bool> sabitlemeDestekleniyorMu() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await HomeWidget.isRequestPinWidgetSupported() ?? false;
+    } catch (e, st) {
+      CrashReporter.report(e, st,
+          reason: 'home_widget.isRequestPinWidgetSupported');
+      return false;
+    }
+  }
+
+  /// Sistemin "ana ekrana ekle" onay penceresini açar.
+  ///
+  /// Pinlenen sağlayıcı PORTFÖY widget'ı ([_androidProvider]): kurulum
+  /// sonrası seçim istemeden toplamı gösterir ve "widget'ı kurmak" diyen
+  /// kullanıcının kastettiği odur (`WidgetInstallSheet` metni de onu
+  /// anlatır). Tek varlık widget'ı (`SandikVarlikWidgetProvider`) önce varlık
+  /// seçtirir; tek dokunuşluk yolda ikinci bir soru olurdu, sistem widget
+  /// listesinden eklenmeye devam eder.
+  ///
+  /// Onay penceresinin sonucu uygulamaya dönmez (launcher kararı); `true`
+  /// yalnız isteğin gittiğini söyler. Hata → non-fatal + `false`, çağıran
+  /// elle adımları gösterir.
+  @override
+  Future<bool> sabitlemeIste() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      await HomeWidget.requestPinWidget(androidName: _androidProvider);
+      return true;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'home_widget.requestPinWidget');
+      return false;
+    }
+  }
+
   Future<void> _requestUpdate() async {
     await HomeWidget.updateWidget(
       name: _androidProvider,
@@ -1076,4 +1119,11 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(iOSName: _iOSKilitWidgetName);
     }
   }
+}
+
+/// Ana ekrana widget yerleştirme kapısı — Ayarlar satırı bunu görür, platform
+/// kanalını değil (test dikişi: `widgetSabitleyiciProvider` ezilir).
+abstract interface class WidgetSabitleyici {
+  Future<bool> sabitlemeDestekleniyorMu();
+  Future<bool> sabitlemeIste();
 }

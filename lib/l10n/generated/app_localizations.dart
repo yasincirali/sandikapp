@@ -2900,6 +2900,24 @@ abstract class AppLocalizations {
   /// **'Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.'**
   String get lockWidgetHowTo;
 
+  /// No description provided for @anaEkranWidgetBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekran widget\'ı'**
+  String get anaEkranWidgetBaslik;
+
+  /// No description provided for @anaEkranaWidgetEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekrana widget ekle'**
+  String get anaEkranaWidgetEkle;
+
+  /// No description provided for @anaEkranWidgetHowTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekrana eklemek için: ana ekranda boş bir yere basılı tut → + simgesine dokun → sandık\'ı seç.'**
+  String get anaEkranWidgetHowTo;
+
   /// No description provided for @partnerActivityNotifications.
   ///
   /// In tr, this message translates to:

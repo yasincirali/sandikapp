@@ -1654,6 +1654,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.';
 
   @override
+  String get anaEkranWidgetBaslik => 'Home screen widget';
+
+  @override
+  String get anaEkranaWidgetEkle => 'Add widget to home screen';
+
+  @override
+  String get anaEkranWidgetHowTo =>
+      'To add it to your home screen: touch and hold an empty area of the Home Screen → tap + → choose sandık.';
+
+  @override
   String get partnerActivityNotifications => 'Partner activity notifications';
 
   @override

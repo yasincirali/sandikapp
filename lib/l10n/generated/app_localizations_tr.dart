@@ -1638,6 +1638,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.';
 
   @override
+  String get anaEkranWidgetBaslik => 'Ana ekran widget\'ı';
+
+  @override
+  String get anaEkranaWidgetEkle => 'Ana ekrana widget ekle';
+
+  @override
+  String get anaEkranWidgetHowTo =>
+      'Ana ekrana eklemek için: ana ekranda boş bir yere basılı tut → + simgesine dokun → sandık\'ı seç.';
+
+  @override
   String get partnerActivityNotifications => 'Ortak hareketi bildirimleri';
 
   @override
