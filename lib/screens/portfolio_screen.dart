@@ -742,7 +742,20 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     displayAssets,
                                     bayrak: RemoteConfigService
                                         .instance.abdHisse);
-                                final filtre = _filteredType;
+                                // Tek tür (Ar-Ge 7 Kas 14:30 #1): "%100
+                                // Hisse" halkası bilgi vermez, süzgeç de bir
+                                // şey süzmez; halka çizilmez, liste yukarı
+                                // çıkar. Süzgeç de o hâlde yok sayılır:
+                                // kalan bir seçim (ör. son fonu satınca
+                                // "Fon" süzgeci) halkasız ekranda listeyi
+                                // görünmez biçimde boşaltmasın. Seçim
+                                // silinmez; ikinci tür gelince halka onu
+                                // yine gösterir.
+                                final dilimler = turDagilimi(
+                                    displayAssets, pState,
+                                    pazarAyir: pazarAyir);
+                                final halkaVar = dilimler.length >= 2;
+                                final filtre = halkaVar ? _filteredType : null;
                                 final secili = filtre == null ||
                                         pazarAyir ||
                                         filtre.abd == null
@@ -817,17 +830,16 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     // `portfoy_dagilim_cubugu` 2026-10-20'de
                                     // emekliye ayrıldı, ekrandaki eski büyük
                                     // halka kalktı.
-                                    _KucukHalka(
-                                      dilimler: turDagilimi(
-                                          displayAssets, pState,
-                                          pazarAyir: pazarAyir),
-                                      secili: secili,
-                                      baz: ref.watch(gosterimBazParaProvider),
-                                      onTypeSelected: (type) => setState(
-                                          () => _filteredType = type),
-                                      onHalka: () => _halkayiAc(
-                                          displayAssets, pState, pazarAyir),
-                                    ),
+                                    if (halkaVar)
+                                      _KucukHalka(
+                                        dilimler: dilimler,
+                                        secili: secili,
+                                        baz: ref.watch(gosterimBazParaProvider),
+                                        onTypeSelected: (type) => setState(
+                                            () => _filteredType = type),
+                                        onHalka: () => _halkayiAc(
+                                            displayAssets, pState, pazarAyir),
+                                      ),
                                     // Liste başlığı + küçük Toplam | Bugün
                                     // (Ar-Ge 5 Kas 20:45 #1, müşteri YAP).
                                     // Eskiden seçici halkanın altında, üstteki
