@@ -1005,6 +1005,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your yearly yield on cost is part of Premium';
 
   @override
+  String get fxSplitPrice => 'From price';
+
+  @override
+  String get fxSplitFx => 'From FX';
+
+  @override
+  String fxSplitA11y(String price, String fx) {
+    return 'Part of your gain from price $price, part from the exchange rate $fx.';
+  }
+
+  @override
+  String get fxSplitLocked =>
+      'How much of your gain is price and how much is FX: Premium';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot shares × $perShare';
   }

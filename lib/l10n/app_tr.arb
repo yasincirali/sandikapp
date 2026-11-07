@@ -608,6 +608,11 @@
   "dividendYieldOnCostA11y": "Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin {pct} kadarı. Maliyetine göre yıllık verim.",
   "@dividendYieldOnCostA11y": {"placeholders": {"pct": {"type": "String"}}},
   "dividendYieldOnCostLocked": "Maliyetine göre yıllık verimin Premium'da",
+  "fxSplitPrice": "Fiyattan",
+  "fxSplitFx": "Kurdan",
+  "fxSplitA11y": "Kârının fiyattan gelen kısmı {price}, kurdan gelen kısmı {fx}.",
+  "@fxSplitA11y": {"placeholders": {"price": {"type": "String"}, "fx": {"type": "String"}}},
+  "fxSplitLocked": "Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium'da",
   "dividendEventLine": "{lot} lot × {perShare}",
   "@dividendEventLine": {
     "placeholders": {

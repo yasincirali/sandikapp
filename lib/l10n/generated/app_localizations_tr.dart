@@ -992,6 +992,21 @@ class AppLocalizationsTr extends AppLocalizations {
       'Maliyetine göre yıllık verimin Premium\'da';
 
   @override
+  String get fxSplitPrice => 'Fiyattan';
+
+  @override
+  String get fxSplitFx => 'Kurdan';
+
+  @override
+  String fxSplitA11y(String price, String fx) {
+    return 'Kârının fiyattan gelen kısmı $price, kurdan gelen kısmı $fx.';
+  }
+
+  @override
+  String get fxSplitLocked =>
+      'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot lot × $perShare';
   }

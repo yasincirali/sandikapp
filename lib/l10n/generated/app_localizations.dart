@@ -1790,6 +1790,30 @@ abstract class AppLocalizations {
   /// **'Maliyetine göre yıllık verimin Premium\'da'**
   String get dividendYieldOnCostLocked;
 
+  /// No description provided for @fxSplitPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyattan'**
+  String get fxSplitPrice;
+
+  /// No description provided for @fxSplitFx.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurdan'**
+  String get fxSplitFx;
+
+  /// No description provided for @fxSplitA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kârının fiyattan gelen kısmı {price}, kurdan gelen kısmı {fx}.'**
+  String fxSplitA11y(String price, String fx);
+
+  /// No description provided for @fxSplitLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da'**
+  String get fxSplitLocked;
+
   /// No description provided for @dividendEventLine.
   ///
   /// In tr, this message translates to:

@@ -591,6 +591,11 @@
   "dividendYieldOnCostA11y": "Net dividends you recorded in the last 12 months are {pct} of your current cost. Yearly yield on cost.",
   "@dividendYieldOnCostA11y": {"placeholders": {"pct": {"type": "String"}}},
   "dividendYieldOnCostLocked": "Your yearly yield on cost is part of Premium",
+  "fxSplitPrice": "From price",
+  "fxSplitFx": "From FX",
+  "fxSplitA11y": "Part of your gain from price {price}, part from the exchange rate {fx}.",
+  "@fxSplitA11y": {"placeholders": {"price": {"type": "String"}, "fx": {"type": "String"}}},
+  "fxSplitLocked": "How much of your gain is price and how much is FX: Premium",
   "dividendEventLine": "{lot} shares × {perShare}",
   "@dividendEventLine": {
     "placeholders": {
