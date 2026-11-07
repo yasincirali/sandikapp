@@ -381,6 +381,11 @@ const _bugunSeciciCumlesi = ' Liste başlığının yanındaki "Toplam | Bugün"
     'kartlarda toplam kâr ya da bugünkü hareket görünür; sıralamada '
     '"Bugünkü hareket" en çok oynayanı öne alır.';
 
+// 7 Kas (Ar-Ge 18:06 #1): Altın süzgecinde liste başlığının altında
+// toplam gram satırı (tur metni arayüzle birlikte değişir).
+const _altinGramCumlesi = ' Altın türünü seçince altınlarının toplam '
+    'gramı ve 24 ayar karşılığı liste başlığının altında yazar.';
+
 List<_Adim> _adimlariKur() {
   // Vadeli mevduat 2026-09-14'te kaldırıldı; tür listesi artık sabit metin.
   return [
@@ -643,7 +648,8 @@ List<_Adim> _adimlariKur() {
           (_cokluPortfoyGorunur ? _portfoySeridiCumlesi : '') +
           // 1 Kas: Toplam | Bugün seçici (5 Kas: liste başlığında); kart alt satırı
           // türü değil fiyatı yazar (tur metni arayüzle birlikte değişir).
-          _bugunSeciciCumlesi,
+          _bugunSeciciCumlesi +
+          _altinGramCumlesi,
       gorev: 'Portföy sekmesine dokun',
       gorevBitti: 'Portföy açıldı',
       bitti: (_) => _sekmede(1),
