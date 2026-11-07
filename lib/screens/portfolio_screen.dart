@@ -1,4 +1,5 @@
 import 'dart:async' show FutureOr, unawaited;
+import '../widgets/bekleyen_fon_alimi_satiri.dart';
 import '../widgets/cevrimdisi_seridi.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import 'dart:math' as math;
@@ -2987,8 +2988,28 @@ class _AssetCardState extends State<_AssetCard>
                             // Kendi satırı: alt metnin sonuna eklenince
                             // 390pt'te "dünkü fi…" diye kırpılıyordu. Elle
                             // fiyatta TEFAS günü anlamsız; tam tarih detayda.
-                            if (a.type == AssetType.fon && !a.isManualPrice)
+                            if (a.type == AssetType.fon &&
+                                !a.isManualPrice) ...[
                               _FonFiyatGunuSatiri(ticker: a.ticker),
+                              // Tutarla bugün alınan fon: "Fiyat yarın
+                              // kesinleşir", alım gününün fiyatı gelince
+                              // tek dokunuşluk öneri (Ar-Ge 7 Kas 14:30 #1).
+                              // Kendi satırı: dünkü fiyat satırıyla aynı
+                              // kırpılma gerekçesi.
+                              BekleyenFonAlimiEtiketi(
+                                lotIdleri: [
+                                  for (final l in position.lots) l.id
+                                ],
+                                onEk: '',
+                                stil: context.t.bodySmall
+                                    ?.copyWith(color: context.c.text36),
+                              ),
+                              FonAlimOneriSatiri(
+                                lotIdleri: [
+                                  for (final l in position.lots) l.id
+                                ],
+                              ),
+                            ],
                             if (buyukYazi) ...[
                               const SizedBox(height: SandikSpace.xs),
                               tutarMetni,

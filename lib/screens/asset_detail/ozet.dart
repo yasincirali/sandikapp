@@ -45,6 +45,10 @@ typedef _PnlOzeti = ({
 const _kartBoslugu = EdgeInsets.only(top: SandikSpace.lg);
 
 extension _DetayOzet on _AssetDetailScreenState {
+  /// Pozisyonun canlı lot kimlikleri — bekleyen fon alımı işareti lot
+  /// kimliğiyle tutulur (Ar-Ge 7 Kas 14:30 #1).
+  List<String> get _fonLotIdleri => [for (final l in _canli.lots) l.id];
+
   /// Pozisyonun alış → bugün özeti (bkz. [_PnlOzeti]).
   _PnlOzeti _pnlOzeti(PortfolioState? pState) {
     // Canlı görünüm — açılış anının kopyası değil (bkz. `_canli`).
@@ -376,7 +380,15 @@ extension _DetayOzet on _AssetDetailScreenState {
       etiketYani: widget.asset.type == AssetType.kripto
           ? KriptoGecikmeEtiketi(sembol: widget.asset.ticker)
           : fonFiyatliMi(widget.asset.type) && !widget.asset.isManualPrice
-              ? FonFiyatGunuEtiketi(tarih: fonFiyatGunu(widget.asset.ticker))
+              // Tutarla bugün alınan fonda yanında "· Fiyat yarın
+              // kesinleşir" (Ar-Ge 7 Kas 14:30 #1); büyük yazıda sarar.
+              ? Wrap(
+                  spacing: SandikSpace.xs,
+                  children: [
+                    FonFiyatGunuEtiketi(tarih: fonFiyatGunu(widget.asset.ticker)),
+                    BekleyenFonAlimiEtiketi(lotIdleri: _fonLotIdleri),
+                  ],
+                )
               : null,
       fiyat: mevduat
           ? baz.fmt(pnl.currentValueTRY)
@@ -413,6 +425,10 @@ extension _DetayOzet on _AssetDetailScreenState {
       mainAxisSize: MainAxisSize.min,
       children: [
         blok,
+        // Alım gününün fiyatı geldiyse tek dokunuşluk adet önerisi; yoksa
+        // yer kaplamaz (Ar-Ge 7 Kas 14:30 #1).
+        if (widget.asset.type == AssetType.fon)
+          FonAlimOneriSatiri(lotIdleri: _fonLotIdleri),
         BozdurAlSatiri(
           ticker: widget.asset.ticker,
           paraBirimi: widget.asset.currency,

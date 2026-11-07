@@ -9808,6 +9808,22 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get fonFiyatYarinKesinlesir => 'Fiyat yarın kesinleşir';
+
+  @override
+  String fonAlimOneri(String adet) {
+    return 'Yeni fiyatla adet $adet olur';
+  }
+
+  @override
+  String fonAlimOneriSemantik(String adet) {
+    return 'Yeni fiyatla adet $adet olur. Güncellemek için dokun.';
+  }
+
+  @override
+  String get fonAlimYokSay => 'Yok say';
+
+  @override
   String vkFiyatBaslik(String name) {
     return '$name güncel fiyatı';
   }

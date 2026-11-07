@@ -713,6 +713,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// kategori, para birimi) `positionKey` kuralının kopyası olurdu.
   String? sonEklenenPozisyon;
 
+  /// Son eklenen lotun kimliği — ekleme formu "bekleyen fon alımı"
+  /// işaretini (Ar-Ge 7 Kas 14:30 #1) bu kimlikle kurar. [addAsset]'in
+  /// dönüş tipi değişmedi: onu ezen sahte notifier'lar bozulmasın; bu alan
+  /// yazılmadıysa (null) işaret kurulmaz, kayıt yine olur.
+  String? sonEklenenLotId;
+
   Future<void> addAsset({
     required String name,
     required String ticker,
@@ -857,6 +863,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
     await SupabaseService.instance.insertAsset(asset);
     sonEklenenPozisyon = positionKey(asset);
+    sonEklenenLotId = asset.id;
 
     unawaited(AnalyticsService.instance.logAssetAdded(
       type: type.name,

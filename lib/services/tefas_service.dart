@@ -138,6 +138,20 @@ class TefasService {
     return _priceCache[k]?.tarih;
   }
 
+  /// Fonun önbellekteki son fiyatı ve o fiyatın TEFAS günü; gün
+  /// bilinmiyorsa null (gününü bilmediğimiz fiyat "o günün fiyatı" diye
+  /// eşlenmez — bekleyen fon alımı önerisi, Ar-Ge 7 Kas 14:30 #1).
+  ({double fiyat, DateTime tarih})? tarihliFiyat(String kod) {
+    final k = kod
+        .trim()
+        .toUpperCase()
+        .replaceFirst(RegExp(r'^TEFAS:'), '');
+    final kayit = _priceCache[k];
+    final tarih = kayit?.tarih;
+    if (kayit == null || tarih == null || kayit.price <= 0) return null;
+    return (fiyat: kayit.price, tarih: tarih);
+  }
+
   /// Test: fiyat önbelleğine tarihli kayıt koyar.
   @visibleForTesting
   void fiyatTarihiYaz(String kod, double fiyat, DateTime? tarih) =>

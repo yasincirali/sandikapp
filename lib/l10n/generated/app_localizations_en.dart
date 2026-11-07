@@ -9907,6 +9907,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get fonFiyatYarinKesinlesir => 'Price settles tomorrow';
+
+  @override
+  String fonAlimOneri(String adet) {
+    return 'At the new price: $adet units';
+  }
+
+  @override
+  String fonAlimOneriSemantik(String adet) {
+    return 'At the new price: $adet units. Tap to update.';
+  }
+
+  @override
+  String get fonAlimYokSay => 'Dismiss';
+
+  @override
   String vkFiyatBaslik(String name) {
     return 'Current price of $name';
   }

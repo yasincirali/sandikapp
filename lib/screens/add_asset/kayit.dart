@@ -404,22 +404,56 @@ extension _Kayit on _AddAssetScreenState {
         if (alarmSembol != null && price > 0) {
           alarmAdayi = AlarmAdayi(alarmSembol, assetName, price);
         }
-        await ref.read(portfolioProvider.notifier).addAsset(
-              name: assetName,
-              ticker: ticker,
-              type: _type,
-              quantity: qty,
-              purchasePrice: price,
-              currency: _currency,
-              notes: _notes.text.trim(),
-              isManualPrice: manual,
-              subCategory: _subCategory,
-              unitType: _unitType,
-              addedDate: _addedDate,
-              commission: _parse(_commission.text) ?? 0,
-              portfoyId: _hedefPortfoy,
-              yol: widget.ekleYolu ?? 'form',
-            );
+        final portfoy = ref.read(portfolioProvider.notifier)
+          ..sonEklenenLotId = null;
+        await portfoy.addAsset(
+          name: assetName,
+          ticker: ticker,
+          type: _type,
+          quantity: qty,
+          purchasePrice: price,
+          currency: _currency,
+          notes: _notes.text.trim(),
+          isManualPrice: manual,
+          subCategory: _subCategory,
+          unitType: _unitType,
+          addedDate: _addedDate,
+          commission: _parse(_commission.text) ?? 0,
+          portfoyId: _hedefPortfoy,
+          yol: widget.ekleYolu ?? 'form',
+        );
+        // Fon + tutar kipi + bugün: adet bilinen (dünkü) fiyatla; alım
+        // gününün TEFAS fiyatı gelince satırda öneri (Ar-Ge 7 Kas 14:30
+        // #1). Kayıt aynı kalır, işaret yalnız bu cihazda.
+        final lotId = portfoy.sonEklenenLotId;
+        final tutar = _parse(_tutar.text);
+        final bilinenGun = TefasService.instance.fiyatTarihi(ticker);
+        if (lotId != null &&
+            tutar != null &&
+            price > 0 &&
+            fonAlimiIsaretlensinMi(
+              tur: _type,
+              tutarModu: _tutarModu,
+              fiyatGirildi: fiyatGirildi || manual,
+              islemTarihi: _addedDate,
+              simdi: DateTime.now(),
+              bilinenFiyatGunu: bilinenGun,
+            )) {
+          ref.read(bekleyenFonAlimlariProvider.notifier).ekle(
+                BekleyenFonAlimi(
+                  lotId: lotId,
+                  kod: ticker
+                      .trim()
+                      .toUpperCase()
+                      .replaceFirst('TEFAS:', ''),
+                  tutar: tutar,
+                  alimGunu: _addedDate,
+                  kayitAdet: qty,
+                  kayitFiyat: price,
+                  kayitFiyatGunu: bilinenGun,
+                ),
+              );
+        }
         // Kipe geçiş değil KAYIT sayılır: geçip vazgeçen merak etmiştir,
         // kaydeden kullanmıştır. 19 Kasım kararı "kullanılıyor mu"yu sorar.
         // Tutar gönderilmez, yalnız özellik kodu.

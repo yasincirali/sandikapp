@@ -16151,6 +16151,30 @@ abstract class AppLocalizations {
   /// **'{gun} fiyatı'**
   String fundPriceOfDay(String gun);
 
+  /// Tutarla bugün alınan fonun adedi dünkü fiyatla; alım gününün TEFAS fiyatı yarın gelir
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat yarın kesinleşir'**
+  String get fonFiyatYarinKesinlesir;
+
+  /// No description provided for @fonAlimOneri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni fiyatla adet {adet} olur'**
+  String fonAlimOneri(String adet);
+
+  /// No description provided for @fonAlimOneriSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni fiyatla adet {adet} olur. Güncellemek için dokun.'**
+  String fonAlimOneriSemantik(String adet);
+
+  /// No description provided for @fonAlimYokSay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yok say'**
+  String get fonAlimYokSay;
+
   /// No description provided for @vkFiyatBaslik.
   ///
   /// In tr, this message translates to:
