@@ -10,6 +10,7 @@ import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/elde_tutma.dart';
+import '../models/gunluk_getiri.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/kur_ayrismasi.dart';
 import '../models/portfoy.dart';
@@ -20,6 +21,7 @@ import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/elde_tutma_satiri.dart';
+import '../widgets/gunluk_getiri_satiri.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/kur_ayrismasi_satiri.dart';
 import '../widgets/bekleyen_fon_alimi_satiri.dart';
@@ -87,7 +89,7 @@ import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/sandik_cam.dart';
 import '../providers/fon_karnesi_provider.dart'
-    show fonKarnesiAcikProvider, fonKarnesiProvider;
+    show fonKarnesiAcikProvider, fonKarnesiProvider, paraPiyasasiFonuProvider;
 import '../providers/fon_akisi_provider.dart'
     show
         balinaRadariAcikProvider,
@@ -625,6 +627,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Elde tutma satırının hesabı (`eldeTutma`) — build'de değil: aynı lot
   /// listesi ve aynı değerle bir kez koşar (`_eldeTutma`, ozet.dart).
   ({List<Asset> lots, double deger, EldeTutma? sonuc})? _eldeTutmaOnbellek;
+
+  /// Para piyasası fonunun "günde ortalama ~₺X" hesabı (`gunlukOrtalamaGetiri`)
+  /// — build'de değil: aynı seriler, değer ve fiyatla bir kez koşar
+  /// (`_gunlukGetiri`, ozet.dart).
+  ({List<Map<int, double>?> seriler, double deger, double birim, double? sonuc})?
+      _gunlukGetiriOnbellek;
   List<Asset>? _canliKendi;
   Map<String, List<Asset>>? _canliOrtaklar;
 

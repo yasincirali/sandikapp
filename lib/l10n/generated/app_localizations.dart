@@ -1784,6 +1784,18 @@ abstract class AppLocalizations {
   /// **'{sure}dır tutuyorsun. Alış, satış ve temettüler hesaba katılınca yıllık ortalama getirin {pct}.'**
   String eldeTutmaA11y(String sure, String pct);
 
+  /// Para piyasası fonunun varlık ekranında pozisyon satırının altı. Tutar bugünkü payların son 30 günde günlük ortalama kazancı.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 30 günde günde ortalama ~{tutar}'**
+  String gunlukGetiriSatiri(String tutar);
+
+  /// No description provided for @gunlukGetiriA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 30 günde günde ortalama yaklaşık {tutar}.'**
+  String gunlukGetiriA11y(String tutar);
+
   /// No description provided for @eldeTutmaKilitli.
   ///
   /// In tr, this message translates to:
@@ -4343,7 +4355,7 @@ abstract class AppLocalizations {
   /// No description provided for @everyoneMeasuredSameBody.
   ///
   /// In tr, this message translates to:
-  /// **'Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.'**
+  /// **'Sen ve ortakların aynı formül ve aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.'**
   String everyoneMeasuredSameBody(int gun);
 
   /// No description provided for @planYearly.
@@ -10006,10 +10018,10 @@ abstract class AppLocalizations {
   /// **'Neler değişti'**
   String get yasalKapiNelerDegisti;
 
-  /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
+  /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yalnız en yeni sürümün değişikliğini anlatacak biçimde yeniden yazılır (eski sürümlerin notları silinir; tam geçmiş web'deki belge sürüm notunda); uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi. Sürüm 1.13: Zirve\'ye katıldıysan, artık portföyündeki varlıkların hangi hisse, kripto ya da altın olduğu da sembolüyle ve yalnızca oran olarak görünebilir; tutar, adet ve kimliğin yine görünmez. Bu yalnızca 20 Ekim 2026 Zirve onayını verenler için geçerli. Zirve\'deki ayrıntılı görünüm yeni katılanlar için Premium\'a bağlı olabilir. Sürüm 1.12: Yapay zekâ yorumu artık Performans\'ta ve varlık detayında seçtiğin dönemi de anlatabiliyor; yoruma enflasyon ve dolar, altın, BIST 100 kıyasları da giriyor. Yine yalnızca sen istersen çalışır, tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.11: İki isteğe bağlı yapay zekâ özelliği anlatıldı: Performans › Özet\'teki portföy yorumu ve ekstrenin kelimeleriyle okunması. İkisi de yalnızca sen istersen, ilk kullanımda ayrıca onayını alarak çalışır; tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.10: Uygulama uzun süre arka planda kalınca artık oturumun kapanmaz; uygulama kilidi açıksa yalnızca kilitlenir. Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.'**
+  /// **'Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.

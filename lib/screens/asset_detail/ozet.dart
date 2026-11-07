@@ -96,6 +96,44 @@ extension _DetayOzet on _AssetDetailScreenState {
     return sonuc;
   }
 
+  /// Para piyasası fonunda "Son 30 günde günde ortalama ~₺X" (müşteri raporu
+  /// 7 Kas 22:30 #1, ücretsiz). Yalnız bugün açık pozisyonda ve TEFAS
+  /// kategorisi bilinen para piyasası fonunda; kategori tahmin edilmez.
+  /// Seriler dönem çipleri için zaten yüklenen birim serilerdir (3A önce:
+  /// günlük çözünürlük, 30 günü kapsar); yeni istek yok.
+  double? _gunlukGetiri(_PnlOzeti pnl) {
+    if (!_canli.acik) return null;
+    final kod = fonKoduOf(tur: widget.asset.type, ticker: widget.asset.ticker);
+    if (kod == null || !ref.watch(paraPiyasasiFonuProvider(kod))) return null;
+    final seriler = [
+      _donemSerileri[SummaryPeriod.ucAy.days],
+      _donemSerileri[SummaryPeriod.birAy.days],
+      _donemSerileri[SummaryPeriod.altiAy.days],
+    ];
+    final o = _gunlukGetiriOnbellek;
+    if (o != null &&
+        o.deger == pnl.currentValueTRY &&
+        o.birim == pnl.currentUnitTRY &&
+        identical(o.seriler[0], seriler[0]) &&
+        identical(o.seriler[1], seriler[1]) &&
+        identical(o.seriler[2], seriler[2])) {
+      return o.sonuc;
+    }
+    final sonuc = gunlukOrtalamaGetiri(
+      seriler: seriler,
+      guncelBirim: pnl.currentUnitTRY,
+      guncelDegerTRY: pnl.currentValueTRY,
+      simdi: DateTime.now(),
+    );
+    _gunlukGetiriOnbellek = (
+      seriler: seriler,
+      deger: pnl.currentValueTRY,
+      birim: pnl.currentUnitTRY,
+      sonuc: sonuc,
+    );
+    return sonuc;
+  }
+
   /// Dönemin grafik penceresinin başı — grafikle AYNI kural (gün içi →
   /// çizilen seansın 00:00'ı, diğerleri Performans'ın takvim penceresi).
   DateTime _pencereBasi(int days, DateTime now, {DateTime? seansGunu}) =>
@@ -449,6 +487,10 @@ extension _DetayOzet on _AssetDetailScreenState {
       children: [
         blok,
         if (_eldeTutma(pnl) case final e?) EldeTutmaSatiri(ozet: e),
+        // Para piyasası fonunda günlük ortalama kazanç (ücretsiz); bakiye
+        // gizliyken ve sayı yokken satır kendi içinde susar.
+        if (widget.asset.type == AssetType.fon)
+          GunlukGetiriSatiri(tutarTRY: _gunlukGetiri(pnl), baz: baz),
         // Alım gününün fiyatı geldiyse tek dokunuşluk adet önerisi; yoksa
         // yer kaplamaz (Ar-Ge 7 Kas 14:30 #1).
         if (widget.asset.type == AssetType.fon)

@@ -342,7 +342,11 @@ class YasalMetin {
 ///    sorulmaz. Açık Rıza Metni'nde bu satır yoktur. Çevirisi olan belgelerde
 ///    `legal/en/<BELGE>.md`'yi de çevir; "**Version:**" ve "**Source:** TR
 ///    x" satırları yeni TR sürümünü yazsın. Kapının "Neler değişti" notunu
-///    (`yasalKapiDegisiklikNotu`, iki .arb + `flutter gen-l10n`) yaz.
+///    (`yasalKapiDegisiklikNotu`, iki .arb + `flutter gen-l10n`) yaz. Not
+///    YALNIZ en yeni sürümü anlatır: eski sürümlerin satırları silinir, yeni
+///    satır eklenmez (2026-11-07: 1.5 → 1.14 on notu art arda okutan kapı
+///    "okumadan geç"e itiyordu). Tam geçmiş web'deki belgenin sürüm
+///    notlarında kalır; not belgenin kendisi değildir.
 /// 2. `python docs/_build_legal.py` → web HTML'i + `lib/config/
 ///    yasal_belge_kaynaklari.g.dart` (uygulamanın sabiti).
 /// 3. `flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart`
