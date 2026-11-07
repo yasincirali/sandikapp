@@ -423,6 +423,28 @@ class SupabaseService {
     );
   }
 
+  /// Aylık notların haber satırları (0177 `varlik_analizi.haberler`).
+  /// Yalnız yayındaki satır ve Premium (aynı RLS); sütun yoksa (migration
+  /// gelmeden) PostgREST hata verir, çağıran boş sayar.
+  Future<List<Map<String, dynamic>>> aylikHaberler(
+    List<String> tickerlar, {
+    required DateTime donem,
+  }) {
+    final gun = _isoGun(donem);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.aylikHaberler',
+      table: 'varlik_analizi',
+      op: 'SELECT',
+      request: {'adet': tickerlar.length, 'donem': gun},
+      call: () => _db
+          .from('varlik_analizi')
+          .select('ticker, haberler')
+          .eq('tur', 'aylik')
+          .eq('donem', gun)
+          .inFilter('ticker', tickerlar),
+    );
+  }
+
   /// Kullanıcının bu nota önceki oyu ve yanlış sayı bildirimi; yoksa null.
   /// Ekran yeniden açıldığında 👍 boş görünmesin.
   Future<({int? oy, bool yanlisSayi})?> notGeriBildirimim({

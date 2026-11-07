@@ -93,12 +93,17 @@ class RaporMetinBolumu {
     this.maddeler = const [],
     this.grup,
     this.kisa = false,
+    this.haberler = const [],
   });
 
   final String baslik;
   final String? etiket;
   final String oz;
   final List<String> maddeler;
+
+  /// Maddelerin ardından haber satırları ve kaynak bağlantıları (aylık
+  /// rapor, 0177). PDF'te bağlantı tıklanır; Excel'de adres metin olarak.
+  final List<RaporHaberi> haberler;
 
   /// Bu bölümden ÖNCE basılan grup başlığı ("Önemli gelişmeler"); aynı
   /// grubun yalnız ilk bölümünde dolu (aylık rapor, 2026-11-07).
@@ -107,6 +112,18 @@ class RaporMetinBolumu {
   /// Kısa blok: öz cümle kalın değil, maddeler madde imsiz küçük satır —
   /// "her varlık tek satır" listesi tablo yerine (yasin 2026-11-07).
   final bool kisa;
+}
+
+/// Bir haber satırı: kendi cümlesiyle özet + yayın adı + https adresi.
+@immutable
+class RaporHaberi {
+  const RaporHaberi(
+      {required this.metin, required this.kaynak, required this.url});
+
+  /// "14 Ekim: … duyurdu." (tarih önde).
+  final String metin;
+  final String kaynak;
+  final String url;
 }
 
 /// Grafik türü: [dagilim] tek yığılmış çubuk + lejant (pay %), [cubuk]

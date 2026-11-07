@@ -353,6 +353,30 @@ List<pw.Widget> _tamBlok(RaporMetinBolumu m) => [
             ],
           ),
         ),
+      for (final h in m.haberler) ..._haberSatiri(h),
+    ];
+
+/// Haber satırı (0177): özet, altında tıklanır kaynak. Adres de yazılır ki
+/// basılı kâğıtta kaynak kaybolmasın.
+List<pw.Widget> _haberSatiri(RaporHaberi h) => [
+      pw.Padding(
+        padding: const pw.EdgeInsets.only(top: 6, left: 10.5),
+        child: pw.Text(h.metin,
+            style: const pw.TextStyle(
+                fontSize: 9, color: PdfMarka.murekkep, lineSpacing: 1.5)),
+      ),
+      pw.Padding(
+        padding: const pw.EdgeInsets.only(top: 1, left: 10.5),
+        child: pw.UrlLink(
+          destination: h.url,
+          child: pw.Text('Kaynak: ${h.kaynak} · ${h.url}',
+              style: const pw.TextStyle(
+                  fontSize: 7.2,
+                  color: PdfMarka.gri,
+                  decoration: pw.TextDecoration.underline,
+                  decorationColor: PdfMarka.cizgi)),
+        ),
+      ),
     ];
 
 // ── Grafikler ──────────────────────────────────────────────────────────────

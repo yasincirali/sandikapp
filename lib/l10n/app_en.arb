@@ -5104,6 +5104,26 @@
     }
   },
   "anzAylikHaberYok": "News and company announcements are not in this report: sandık has no licensed news source yet, so no news text is written.",
+  "anzAylikHaberDipnot": "News is summarised by AI from public sources, in its own words and without figures; see the source for details.",
+  "anzAylikHaberEtiket": "News · {tarih}",
+  "@anzAylikHaberEtiket": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "anzAylikHaberKaynak": "Source: {kaynak}",
+  "@anzAylikHaberKaynak": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "anzAylikHaberSemKaynak": "Open the {kaynak} page in the browser",
+  "@anzAylikHaberSemKaynak": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "anzAylikHaberAcilamadi": "Couldn't open the news page. Check your internet connection.",
   "anzAylikOnemliBaslik": "Key developments",
   "anzAylikTumBaslik": "Your assets this month",
   "anzAylikNeOldu": "Change this month {yuzde}, market effect {tutar}",

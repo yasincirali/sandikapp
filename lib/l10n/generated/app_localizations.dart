@@ -12683,6 +12683,36 @@ abstract class AppLocalizations {
   /// **'Haberler ve KAP duyuruları bu raporda yok: sandık\'ın lisanslı bir haber kaynağı henüz yok, haber metni yazılmaz.'**
   String get anzAylikHaberYok;
 
+  /// No description provided for @anzAylikHaberDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haberler kamuya açık kaynaklardan yapay zekâyla, kendi cümleleriyle ve rakamsız özetlendi; ayrıntı için kaynağa bak.'**
+  String get anzAylikHaberDipnot;
+
+  /// No description provided for @anzAylikHaberEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haber · {tarih}'**
+  String anzAylikHaberEtiket(String tarih);
+
+  /// No description provided for @anzAylikHaberKaynak.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: {kaynak}'**
+  String anzAylikHaberKaynak(String kaynak);
+
+  /// No description provided for @anzAylikHaberSemKaynak.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kaynak} sayfasını tarayıcıda aç'**
+  String anzAylikHaberSemKaynak(String kaynak);
+
+  /// No description provided for @anzAylikHaberAcilamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haber sayfası açılamadı. İnternet bağlantını kontrol et.'**
+  String get anzAylikHaberAcilamadi;
+
   /// No description provided for @anzAylikOnemliBaslik.
   ///
   /// In tr, this message translates to:

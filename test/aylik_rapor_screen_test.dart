@@ -288,6 +288,101 @@ void main() {
       expect(find.text(kod), findsOneWidget, reason: kod);
     }
   });
+  group('haber (0177)', () {
+    final haberli = AylikRaporOzeti(
+      bas: dolu.bas,
+      bit: dolu.bit,
+      surenAy: false,
+      varliklar: dolu.varliklar,
+      haberler: [
+        AyinHaberi(
+          tarih: DateTime(2026, 9, 14),
+          anahtar: 'THYAO.IS',
+          kod: 'THYAO',
+          metin: 'THYAO yeni geniş gövdeli uçak siparişini duyurdu.',
+          kaynak: 'Anadolu Ajansı',
+          url: Uri.parse('https://www.aa.com.tr/haber/1'),
+        ),
+      ],
+    );
+
+    testWidgets(
+      'haberli sakin varlık önemli gelişmelerde, kaynakla; "haber yok" yok',
+      (t) async {
+        await t.pumpWidget(ekran(ozet: haberli));
+        await t.pumpAndSettle();
+        final l10n = l(t);
+        final metin = find.text(
+          'THYAO yeni geniş gövdeli uçak siparişini duyurdu.',
+        );
+        expect(metin, findsOneWidget);
+        expect(
+          find.text(l10n.anzAylikHaberKaynak('Anadolu Ajansı')),
+          findsOneWidget,
+        );
+        // Haber, önemli gelişmeler başlığının altında (THYAO'nun notu sakin).
+        expect(
+          t.getTopLeft(find.text(l10n.anzAylikOnemliBaslik)).dy,
+          lessThan(t.getTopLeft(metin).dy),
+        );
+        await t.scrollUntilVisible(find.text(l10n.anzAylikHaberDipnot), 200);
+        expect(find.text(l10n.anzAylikHaberYok), findsNothing);
+      },
+    );
+
+    testWidgets('3.1x / 320 pt haberli kartta taşma yok', (t) async {
+      t.view.physicalSize = const Size(640, 844 * 2);
+      t.view.devicePixelRatio = 2;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(ekran(ozet: haberli, yazi: 3.1, genislik: 320));
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+      await t.drag(find.byType(ListView), const Offset(0, -3000));
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('kaynak bağlantısı dış adresi açar; açılamazsa uyarı; ≥44 pt', (
+      t,
+    ) async {
+      final acilan = <Uri>[];
+      var sonuc = true;
+      await t.pumpWidget(
+        MaterialApp(
+          theme: SandikApp.buildTheme(SandikPalette.light, Brightness.light),
+          locale: const Locale('tr'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: AyinHaberiSatiri(
+              haber: haberli.haberler.single,
+              acici: (u) async {
+                acilan.add(u);
+                return sonuc;
+              },
+            ),
+          ),
+        ),
+      );
+      final dugme = find.byType(TextButton);
+      expect(t.getSize(dugme).height, greaterThanOrEqualTo(44));
+      await t.tap(dugme);
+      await t.pump();
+      expect(acilan.single.toString(), 'https://www.aa.com.tr/haber/1');
+      expect(find.byType(SnackBar), findsNothing);
+      sonuc = false;
+      await t.tap(dugme);
+      await t.pump();
+      final l10n = AppLocalizations.of(
+        t.element(find.byType(AyinHaberiSatiri)),
+      )!;
+      expect(find.text(l10n.anzAylikHaberAcilamadi), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(l10n.anzAylikHaberSemKaynak('Anadolu Ajansı')),
+        findsOneWidget,
+      );
+    });
+  });
 }
 
 class _Portfoy extends PortfolioNotifier {

@@ -4,6 +4,7 @@ import 'package:portfoy_takip/providers/analiz_provider.dart';
 import 'package:portfoy_takip/services/aylik_rapor_kalemleri.dart';
 import 'package:portfoy_takip/services/aylik_rapor_ozeti.dart';
 import 'package:portfoy_takip/services/disa_aktarim/aylik_rapor_belgesi.dart';
+import 'package:portfoy_takip/services/disa_aktarim/rapor_belgesi.dart';
 import 'package:portfoy_takip/services/varlik_analizi.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -135,5 +136,82 @@ void main() {
     expect(b.bolumler[1].grup, 'Varlıklarının ayı');
     expect(b.bolumler[1].kisa, isTrue);
     expect(b.bolumler[2].grup, isNull);
+  });
+  group('haber (0177): önemli haber akışı olan varlık görünür', () {
+    AyinHaberi haber(String anahtar, String url) => AyinHaberi(
+      tarih: DateTime(2026, 10, 14),
+      anahtar: anahtar,
+      kod: notKodu(anahtar),
+      metin: '$anahtar yeni bir sermaye kararı açıkladı.',
+      kaynak: 'Anadolu Ajansı',
+      url: Uri.parse(url),
+    );
+    final notlar = [
+      not('THYAO.IS', 'sakin'),
+      not('HISSE:AAPL', 'hareketli'),
+      not('TEFAS:TTE', 'sakin'),
+    ];
+    final pozisyonlar = <String, NotPozisyonu>{
+      'p-thy': (notAnahtari: 'THYAO.IS', tur: AssetType.hisse, ad: 'THYAO'),
+    };
+
+    test(
+      'haberli sakin not önemliye girer, rozetlilerden sonra; haberi taşır',
+      () {
+        final r = raporKalemleri(
+          notlar: notlar,
+          varliklar: [varlik('p-thy', AssetType.hisse, 8)],
+          pozisyonlar: pozisyonlar,
+          varlikAdi: (v) => v.anahtar,
+          notAdi: notKodu,
+          haberler: [haber('THYAO.IS', 'https://aa.com.tr/a')],
+        );
+        expect(r.onemli.map((k) => k.not!.ticker), ['HISSE:AAPL', 'THYAO.IS']);
+        expect(r.onemli[1].haberler.single.url.host, 'aa.com.tr');
+        expect(r.onemli[0].haberler, isEmpty);
+        // Satırda tekrar yok; haberi olmayan sakin not satırda kalır.
+        expect(r.diger.map((k) => k.not?.ticker), [null, 'TEFAS:TTE']);
+      },
+    );
+
+    test('haber yoksa liste eskisiyle birebir aynı', () {
+      final r = raporKalemleri(
+        notlar: notlar,
+        varliklar: [varlik('p-thy', AssetType.hisse, 8)],
+        pozisyonlar: pozisyonlar,
+        varlikAdi: (v) => v.anahtar,
+        notAdi: notKodu,
+      );
+      expect(r.onemli.map((k) => k.not!.ticker), ['HISSE:AAPL']);
+      expect(r.diger.map((k) => k.not?.ticker), ['THYAO.IS', 'TEFAS:TTE']);
+    });
+
+    test('PDF: haber satırı önemli blokta, kaynak bağlantısıyla', () {
+      final b = aylikRaporBelgesi(
+        donem: DateTime(2026, 10),
+        notlar: const [
+          AylikRaporNotu(
+            kod: 'THYAO',
+            baslik: 'Sakin bir ay.',
+            haberler: [
+              RaporHaberi(
+                metin: '14 Ekim: THYAO yeni uçak siparişini duyurdu.',
+                kaynak: 'Anadolu Ajansı',
+                url: 'https://aa.com.tr/a',
+              ),
+            ],
+          ),
+        ],
+        satirlar: const [AylikRaporNotu(kod: 'TTE', baslik: 'x')],
+        ozetCumlesi: 'x',
+        eksikCumlesi: null,
+        kim: 'demo',
+        olusturma: DateTime(2026, 11, 1),
+        haberCumlesi: 'Haberler kamuya açık kaynaklardan…',
+      );
+      expect(b.bolumler[0].haberler.single.url, 'https://aa.com.tr/a');
+      expect(b.bolumler[1].haberler, isEmpty);
+      expect(b.dipnotlar.last, startsWith('Haberler kamuya'));
+    });
   });
 }

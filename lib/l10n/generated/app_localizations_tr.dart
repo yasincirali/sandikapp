@@ -7696,6 +7696,29 @@ class AppLocalizationsTr extends AppLocalizations {
       'Haberler ve KAP duyuruları bu raporda yok: sandık\'ın lisanslı bir haber kaynağı henüz yok, haber metni yazılmaz.';
 
   @override
+  String get anzAylikHaberDipnot =>
+      'Haberler kamuya açık kaynaklardan yapay zekâyla, kendi cümleleriyle ve rakamsız özetlendi; ayrıntı için kaynağa bak.';
+
+  @override
+  String anzAylikHaberEtiket(String tarih) {
+    return 'Haber · $tarih';
+  }
+
+  @override
+  String anzAylikHaberKaynak(String kaynak) {
+    return 'Kaynak: $kaynak';
+  }
+
+  @override
+  String anzAylikHaberSemKaynak(String kaynak) {
+    return '$kaynak sayfasını tarayıcıda aç';
+  }
+
+  @override
+  String get anzAylikHaberAcilamadi =>
+      'Haber sayfası açılamadı. İnternet bağlantını kontrol et.';
+
+  @override
   String get anzAylikOnemliBaslik => 'Önemli gelişmeler';
 
   @override

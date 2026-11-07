@@ -7772,6 +7772,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'News and company announcements are not in this report: sandık has no licensed news source yet, so no news text is written.';
 
   @override
+  String get anzAylikHaberDipnot =>
+      'News is summarised by AI from public sources, in its own words and without figures; see the source for details.';
+
+  @override
+  String anzAylikHaberEtiket(String tarih) {
+    return 'News · $tarih';
+  }
+
+  @override
+  String anzAylikHaberKaynak(String kaynak) {
+    return 'Source: $kaynak';
+  }
+
+  @override
+  String anzAylikHaberSemKaynak(String kaynak) {
+    return 'Open the $kaynak page in the browser';
+  }
+
+  @override
+  String get anzAylikHaberAcilamadi =>
+      'Couldn\'t open the news page. Check your internet connection.';
+
+  @override
   String get anzAylikOnemliBaslik => 'Key developments';
 
   @override

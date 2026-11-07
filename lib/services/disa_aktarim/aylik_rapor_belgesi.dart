@@ -18,6 +18,7 @@ class AylikRaporNotu {
     this.tur,
     this.neOldu,
     this.aralik,
+    this.haberler = const [],
   });
 
   /// Ekrandaki ad ('THYAO', 'TTE', 'Altın'); ham kod değil.
@@ -38,6 +39,9 @@ class AylikRaporNotu {
   final String? rozet;
   final String baslik;
   final List<String> maddeler;
+
+  /// Ayın haber satırları (0177), yalnız önemli gelişmeler bloğunda.
+  final List<RaporHaberi> haberler;
 }
 
 /// Aylık rapor PDF'inin içeriği (2026-10-31; müşteri raporu 31 Eki #1,
@@ -64,7 +68,9 @@ class AylikRaporNotu {
 /// "Aylık raporda neden sadece fonların raporları var": belge artık
 /// ekranla aynı üç sayısal bölümü taşır (ayın varlıkları, para girişi ve
 /// çıkışı, önemli gelişmeler; hesap `AylikRaporOzeti`'nde) ve başlığın
-/// altında kapsadığı günleri yazar. Haber metni yok; dipnot bunu söyler.
+/// altında kapsadığı günleri yazar. Haber (0177): önemli gelişmeler
+/// bloğunda kendi cümlesiyle özet + tıklanır kaynak; haber gelmediyse
+/// dipnot "haber yok" der ([haberCumlesi] çağırandan).
 RaporBelgesi aylikRaporBelgesi({
   required DateTime donem,
   required List<AylikRaporNotu> notlar,
@@ -151,6 +157,7 @@ RaporBelgesi aylikRaporBelgesi({
                   ...n.maddeler,
                   if (n.aralik != null) n.aralik!,
                 ],
+                haberler: n.haberler,
               ),
             for (final (i, n) in satirlar.indexed)
               RaporMetinBolumu(

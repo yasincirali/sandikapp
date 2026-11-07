@@ -1,7 +1,8 @@
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
-import '../providers/analiz_provider.dart' show notAnahtari, notKodu;
+import '../providers/analiz_provider.dart'
+    show aylikNotAnahtari, notAnahtari, notKodu;
 import 'aylik_rapor_ozeti.dart';
 import 'crash_reporter.dart';
 import 'fon_akisi.dart' show FonBalinaOlayi;
@@ -38,9 +39,11 @@ class AylikRaporYukleyici {
     final sonuclar = await Future.wait([
       _seriKismi(bas, son, lotlar, suren ? canliToplam : null),
       _olaylar(bas, bit, lotlar),
+      _haberler(bas, bit, lotlar),
     ]);
     final seri = sonuclar[0] as _SeriKismi?;
     final olay = sonuclar[1] as _Olaylar;
+    final haberler = sonuclar[2] as List<AyinHaberi>;
 
     final varliklar = seri?.varliklar ?? const <AyinVarligi>[];
     final olculen = {for (final v in varliklar) v.anahtar};
@@ -69,6 +72,7 @@ class AylikRaporYukleyici {
         dolarKodlari: olay.dolar,
         lotlar: lotlar,
       ),
+      haberler: haberler,
       fiyatTarihi: seri?.sonOlcum,
     );
   }
@@ -158,6 +162,35 @@ class AylikRaporYukleyici {
         }(),
     ]);
     return _Olaylar(fon, hacim, dolar);
+  }
+
+  /// Tutulan varlıkların aylık notlarındaki haber satırları (0177). Tek
+  /// sorgu (`in`), notun dönemi ayın 1'i. Okuma düşerse (sütun henüz yok,
+  /// ağ) haber yok sayılır ve rapor "haber yok" der; hata Crashlytics'e.
+  static Future<List<AyinHaberi>> _haberler(
+      DateTime bas, DateTime bit, List<Asset> lotlar) async {
+    final anahtarlar = <String>{
+      for (final p in aggregatePositions(aktifLotlar(lotlar)))
+        if (aylikNotAnahtari(
+                tur: p.representative.type,
+                ticker: p.representative.ticker,
+                elleFiyat: p.representative.isManualPrice)
+            case final String k)
+          k,
+    }.toList()
+      ..sort();
+    if (anahtarlar.isEmpty) return const [];
+    try {
+      final satirlar = await SupabaseService.instance
+          .aylikHaberler(anahtarlar.take(200).toList(), donem: bas);
+      return ayinHaberleri(bas: bas, bit: bit, satirlar: [
+        for (final r in satirlar)
+          if (r['ticker'] case final String t) (t, notKodu(t), r['haberler']),
+      ]);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AylikRapor.haber');
+      return const [];
+    }
   }
 }
 

@@ -5548,6 +5548,26 @@
     }
   },
   "anzAylikHaberYok": "Haberler ve KAP duyuruları bu raporda yok: sandık'ın lisanslı bir haber kaynağı henüz yok, haber metni yazılmaz.",
+  "anzAylikHaberDipnot": "Haberler kamuya açık kaynaklardan yapay zekâyla, kendi cümleleriyle ve rakamsız özetlendi; ayrıntı için kaynağa bak.",
+  "anzAylikHaberEtiket": "Haber · {tarih}",
+  "@anzAylikHaberEtiket": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "anzAylikHaberKaynak": "Kaynak: {kaynak}",
+  "@anzAylikHaberKaynak": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "anzAylikHaberSemKaynak": "{kaynak} sayfasını tarayıcıda aç",
+  "@anzAylikHaberSemKaynak": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "anzAylikHaberAcilamadi": "Haber sayfası açılamadı. İnternet bağlantını kontrol et.",
   "anzAylikOnemliBaslik": "Önemli gelişmeler",
   "anzAylikTumBaslik": "Varlıklarının ayı",
   "anzAylikNeOldu": "Ayın değişimi {yuzde}, piyasa etkisi {tutar}",

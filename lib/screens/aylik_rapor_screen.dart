@@ -51,8 +51,9 @@ import 'hafta_ozeti_screen.dart' show HaftaRozetCipi;
 /// döviz, mevduat hiç, notu çıkmayan hisse de yalnız "not çıkmadı"
 /// satırında görünüyordu. Artık notların ÜSTÜNDE üç sayısal bölüm var
 /// (ayın varlıkları, para girişi ve çıkışı, önemli gelişmeler;
-/// `AylikRaporOzeti`) ve en üstte kapsadığı günler. Haber metni yok:
-/// lisanslı kaynak yok, rapor bunu sonunda söyler. "Portföy getirisi
+/// `AylikRaporOzeti`) ve en üstte kapsadığı günler. Haber (0177): haberi
+/// olan varlık önemli gelişmelere girer, kartı kendi cümlesiyle özet ve
+/// kaynak bağlantısı taşır; haber gelmezse rapor sonunda "haber yok" der. "Portföy getirisi
 /// Performans'ta" kararı sürer: yüzde kutusu yalnız PDF'te (müşavir), ekran
 /// varlık bazında ay başı → ay sonu değişimi gösterir.
 class AylikRaporScreen extends ConsumerWidget {
@@ -157,6 +158,7 @@ class AylikRaporScreen extends ConsumerWidget {
               pozisyonlar: pozisyonlar,
               varlikAdi: (v) => pozisyonEtiketi(v.anahtar, v.tur, l10n, ad: v.ad),
               notAdi: notunAdi,
+              haberler: ozet?.haberler ?? const [],
             );
             void notuAc(AnalizOzeti n, String ad) => pushGuarded(
                   context,
@@ -275,11 +277,16 @@ class AylikRaporScreen extends ConsumerWidget {
                           style: t.bodySmall?.copyWith(color: c.text58)),
                     ],
                     const SizedBox(height: SandikSpace.md),
-                    // Haber yok (2026-11-07): yasin "önemli haber detayları"
-                    // istedi; lisanslı haber/KAP kaynağı yok
-                    // (`docs/KAP_VERI_LISANSI_2026_09.md`). Haber metni
-                    // uydurulmaz, eksiklik raporun kendisinde söylenir.
-                    Text(l10n.anzAylikHaberYok,
+                    // Haber (0177): sunucu kamuya açık haberi web aramasıyla
+                    // bulup rakamsız özetlediyse kartlarda kaynağıyla durur
+                    // ve dipnot nereden geldiğini söyler. Gelmediyse (bayrak
+                    // kapalı, haber yok) eski cümle: lisanslı haber/KAP
+                    // kaynağı yok (`docs/KAP_VERI_LISANSI_2026_09.md`),
+                    // eksiklik raporun kendisinde söylenir.
+                    Text(
+                        kalemler.onemli.any((k) => k.haberler.isNotEmpty)
+                            ? l10n.anzAylikHaberDipnot
+                            : l10n.anzAylikHaberYok,
                         style: t.bodySmall?.copyWith(color: c.text58)),
                     const SizedBox(height: SandikSpace.sm),
                     Text(l10n.anzAylikKaynak,
@@ -561,6 +568,13 @@ class _OnemliKart extends StatelessWidget {
           if (aralik != null) ...[
             const SizedBox(height: SandikSpace.xxs),
             Text(aralik, style: t.bodySmall?.copyWith(color: c.text58)),
+          ],
+          // Ayın haberleri (0177): notun altında, kaynak bağlantısıyla.
+          for (final h in kalem.haberler) ...[
+            const SizedBox(height: SandikSpace.sm),
+            Divider(height: 1, thickness: 1, color: c.hairline),
+            const SizedBox(height: SandikSpace.sm),
+            AyinHaberiSatiri(haber: h),
           ],
           Align(
             alignment: AlignmentDirectional.centerEnd,

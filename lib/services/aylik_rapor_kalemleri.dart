@@ -16,12 +16,16 @@ class RaporKalemi {
     required this.tur,
     this.varlik,
     this.not,
+    this.haberler = const [],
   });
 
   final String ad;
   final AssetType? tur;
   final AyinVarligi? varlik;
   final AnalizOzeti? not;
+
+  /// Notun ayın haber satırları (0177); yalnız [onemli] kalemde dolu.
+  final List<AyinHaberi> haberler;
 }
 
 /// Notun öne çıkıp çıkmadığı: rozeti bilinen ve `sakin` olmayan not.
@@ -44,14 +48,30 @@ bool notOnemli(AnalizOzeti n) {
 ///
 /// [pozisyonlar] `positionKey` → not karşılığı; [notAdi] eşleşmeyen notun
 /// adı.
+///
+/// Haber (0177, yasin: "önemli haber akışlarıyla önemli bilgi olan
+/// varlıklar görüntülenmeli"): notunun ayında haberi olan varlık da
+/// [onemli]'ye girer ve kartı haberleri taşır. Sıra: önce rozetliler
+/// (rozet önemi), sonra yalnız haberi olan sakin notlar. Haber verilmezse
+/// (bayrak kapalı, haber gelmedi) liste eskisiyle birebir aynı.
 ({List<RaporKalemi> onemli, List<RaporKalemi> diger}) raporKalemleri({
   required List<AnalizOzeti> notlar,
   required List<AyinVarligi> varliklar,
   required Map<String, NotPozisyonu> pozisyonlar,
   required String Function(AyinVarligi) varlikAdi,
   required String Function(String) notAdi,
+  List<AyinHaberi> haberler = const [],
 }) {
   final notMap = {for (final n in notlar) n.ticker: n};
+  final haberMap = <String, List<AyinHaberi>>{};
+  for (final h in haberler) {
+    (haberMap[h.anahtar] ??= []).add(h);
+  }
+  bool haberli(AnalizOzeti n) => haberMap[n.ticker]?.isNotEmpty ?? false;
+  // Haberli sakin not rozetliden sonra gelir (rozet önemi + 1 kademe).
+  int sira(AnalizOzeti n) => notOnemli(n)
+      ? haftaRozetiSunucudan(n.rozet)!.index
+      : HaftaRozeti.values.length;
   // Not → onu taşıyan pozisyon(lar) ve etiket.
   final notunVarliklari = <String, List<AyinVarligi>>{};
   for (final v in varliklar) {
@@ -63,12 +83,12 @@ bool notOnemli(AnalizOzeti n) {
     etiket.putIfAbsent(p.notAnahtari, () => p);
   }
 
-  final onemliNotlar = notlar.where(notOnemli).toList()
-    ..sort((a, b) {
-      final ra = haftaRozetiSunucudan(a.rozet)!.index;
-      final rb = haftaRozetiSunucudan(b.rozet)!.index;
-      return ra != rb ? ra - rb : a.ticker.compareTo(b.ticker);
-    });
+  final onemliNotlar =
+      notlar.where((n) => notOnemli(n) || haberli(n)).toList()
+        ..sort((a, b) {
+          final ra = sira(a), rb = sira(b);
+          return ra != rb ? ra - rb : a.ticker.compareTo(b.ticker);
+        });
   final onemli = [
     for (final n in onemliNotlar)
       RaporKalemi(
@@ -78,6 +98,7 @@ bool notOnemli(AnalizOzeti n) {
             ? notunVarliklari[n.ticker]!.single
             : null,
         not: n,
+        haberler: haberMap[n.ticker] ?? const [],
       ),
   ];
 

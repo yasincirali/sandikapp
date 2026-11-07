@@ -48,6 +48,8 @@ RaporTablosu _notTablosu(List<RaporMetinBolumu> bolumler) => RaporTablosu(
         for (final b in bolumler) ...[
           [b.baslik, b.etiket, b.oz],
           for (final m in b.maddeler) [b.baslik, null, m],
+          for (final h in b.haberler)
+            [b.baslik, 'Haber', '${h.metin} Kaynak: ${h.kaynak} ${h.url}'],
         ],
       ],
     );

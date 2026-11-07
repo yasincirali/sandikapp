@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 import '../l10n/generated/app_localizations_tr.dart';
 import '../models/asset_type.dart';
 import '../utils/pozisyon_etiketi.dart';
@@ -101,6 +103,15 @@ class AylikRaporDisaAktarim {
                         in tamNotlar[i]?.maddeler ?? const <NotMaddesi>[])
                       m.metin,
                   ],
+                  haberler: [
+                    for (final h in k.haberler)
+                      RaporHaberi(
+                        metin: '${DateFormat('d MMMM', 'tr_TR').format(h.tarih)}'
+                            ': ${h.metin}',
+                        kaynak: h.kaynak,
+                        url: h.url.toString(),
+                      ),
+                  ],
                 ),
             ]
           : [
@@ -161,9 +172,14 @@ class AylikRaporDisaAktarim {
         for (final g in ozet?.gelismeler ?? const <AyinGelismesi>[])
           (g.tarih, g.kod, gelismeCumlesi(tr, g)),
       ],
-      haberCumlesi: kalemler == null
-          ? tr.anzAylikHaberYok
-          : '${tr.anzAylikHaberYok} ${tr.anzAylikKaynak}.',
+      // "Haber yok" yalnız hiç haber gelmediğinde (0177); haber varsa
+      // dipnot nereden geldiğini ve rakam taşımadığını söyler.
+      haberCumlesi:
+          kalemler?.onemli.any((k) => k.haberler.isNotEmpty) ?? false
+              ? '${tr.anzAylikHaberDipnot} ${tr.anzAylikKaynak}.'
+              : kalemler == null
+                  ? tr.anzAylikHaberYok
+                  : '${tr.anzAylikHaberYok} ${tr.anzAylikKaynak}.',
     );
   }
 
