@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr'),
+    Locale('tr')
   ];
 
   /// No description provided for @appName.
@@ -563,7 +563,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHelpSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Bize ulaş, tanıtım turu, gizlilik ve koşullar'**
+  /// **'Sık sorulanlar, bize ulaş, yenilikler ve yasal belgeler'**
   String get settingsHelpSubtitle;
 
   /// No description provided for @themeSystem.
@@ -2671,12 +2671,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tanıtım turunu yeniden izle'**
   String get replayTour;
-
-  /// No description provided for @replayTourSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ekranların ne işe yaradığını hatırla'**
-  String get replayTourSubtitle;
 
   /// No description provided for @yasalBelgelerBaslik.
   ///
@@ -6517,23 +6511,13 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  );
+      String acilis, String yuksek, String dusuk, String kapanis);
 
   /// No description provided for @whatsNewTitle.
   ///
   /// In tr, this message translates to:
   /// **'Yenilikler'**
   String get whatsNewTitle;
-
-  /// No description provided for @whatsNewSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu sürümde neler değişti'**
-  String get whatsNewSubtitle;
 
   /// No description provided for @whatsNewEmpty.
   ///
@@ -6690,12 +6674,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'sandık\'ı değerlendir'**
   String get rateAppTitle;
-
-  /// No description provided for @rateAppSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Mağazada puan ver'**
-  String get rateAppSubtitle;
 
   /// No description provided for @todayMarketOnly.
   ///
@@ -8964,11 +8942,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  );
+      String date, String end, String change, String cpi);
 
   /// No description provided for @savingsRose.
   ///
@@ -10307,11 +10281,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  );
+      String amount, String times, String pct, String share);
 
   /// No description provided for @tekOnayGizlilikBaglanti.
   ///
@@ -16726,10 +16696,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  );
+      String baslik, int yuzde, String kalan);
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -17126,12 +17093,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  );
+      String baslik, String dusuk, String yuksek, String bugun, String cumle);
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -17269,9 +17231,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

@@ -1114,7 +1114,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final puan = _SettingsTile(
       icon: Icons.star_outline_rounded,
       title: context.l10n.rateAppTitle,
-      subtitle: context.l10n.rateAppSubtitle,
       // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
       // "Sonra" diye geçiştirdiyse puanı buradan verir.
       onTap: () => ReviewPromptService.instance.magazayiAc(),
@@ -1122,7 +1121,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final yenilikler = _SettingsTile(
       icon: Icons.new_releases_outlined,
       title: context.l10n.whatsNewTitle,
-      subtitle: context.l10n.whatsNewSubtitle,
       // Elle açılışta TÜM liste gösterilir (otomatik açılışın
       // `onemli` filtresi uygulanmaz): kullanıcı buraya bilerek
       // geliyor, yama sürümlerini de görebilmeli.
@@ -1142,7 +1140,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final tur = _SettingsTile(
       icon: Icons.explore_outlined,
       title: context.l10n.replayTour,
-      subtitle: context.l10n.replayTourSubtitle,
       // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
       // köke dönülür ve katman orada açılır.
       onTap: () => OnboardingScreen.yenidenBaslat(context),
@@ -1965,7 +1962,12 @@ class _LanguagePicker extends ConsumerWidget {
 class _SettingsTile extends StatefulWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
+
+  /// Alt metin yalnız başlığa bir şey ekliyorsa (Ar-Ge 7 Kas 20:30 #4):
+  /// "sandık'ı değerlendir / Mağazada puan ver" gibi başlığı tekrarlayan
+  /// alt metin satırı uzatıyor, 3.1×'te listeyi iki katına çıkarıyordu.
+  /// `null` → tek satırlı karo (iOS Ayarlar kalıbı).
+  final String? subtitle;
   final VoidCallback? onTap;
 
   /// İstek atan karo (ör. verilerimi indir). Verildiğinde [onTap] yok
@@ -1984,7 +1986,7 @@ class _SettingsTile extends StatefulWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.onTap,
     this.onTapAsync,
     this.destructive = false,
@@ -2054,12 +2056,14 @@ class _SettingsTileState extends State<_SettingsTile> {
                     style: context.t.bodyLarge
                         ?.copyWith(color: color, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: context.t.titleSmall?.copyWith(
-                        color: context.c.text58, fontWeight: FontWeight.w400),
-                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: context.t.titleSmall?.copyWith(
+                          color: context.c.text58, fontWeight: FontWeight.w400),
+                    ),
+                  ],
                 ],
               ),
             ),

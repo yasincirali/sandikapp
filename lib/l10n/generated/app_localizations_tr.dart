@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -257,7 +256,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsHelpSubtitle =>
-      'Bize ulaş, tanıtım turu, gizlilik ve koşullar';
+      'Sık sorulanlar, bize ulaş, yenilikler ve yasal belgeler';
 
   @override
   String get themeSystem => 'Sistem';
@@ -1415,12 +1414,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String biometricLockYontem(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Face ID ile kilitle',
-      'touchId': 'Touch ID ile kilitle',
-      'biyometrik': 'Biyometrik kilit',
-      'other': 'Ekran kilidiyle kilitle',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID ile kilitle',
+        'touchId': 'Touch ID ile kilitle',
+        'biyometrik': 'Biyometrik kilit',
+        'other': 'Ekran kilidiyle kilitle',
+      },
+    );
     return '$_temp0';
   }
 
@@ -1501,9 +1503,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get replayTour => 'Tanıtım turunu yeniden izle';
-
-  @override
-  String get replayTourSubtitle => 'Ekranların ne işe yaradığını hatırla';
 
   @override
   String get yasalBelgelerBaslik => 'Yasal belgeler';
@@ -3436,12 +3435,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Face ID ile koru',
-      'touchId': 'Touch ID ile koru',
-      'biyometrik': 'Biyometrik kilitle koru',
-      'other': 'Ekran kilidiyle koru',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID ile koru',
+        'touchId': 'Touch ID ile koru',
+        'biyometrik': 'Biyometrik kilitle koru',
+        'other': 'Ekran kilidiyle koru',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3458,12 +3460,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Face ID\'yi aç',
-      'touchId': 'Touch ID\'yi aç',
-      'biyometrik': 'Biyometrik kilidi aç',
-      'other': 'Uygulama kilidini aç',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID\'yi aç',
+        'touchId': 'Touch ID\'yi aç',
+        'biyometrik': 'Biyometrik kilidi aç',
+        'other': 'Uygulama kilidini aç',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3889,19 +3894,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  ) {
+      String acilis, String yuksek, String dusuk, String kapanis) {
     return 'A $acilis · Y $yuksek · D $dusuk · K $kapanis';
   }
 
   @override
   String get whatsNewTitle => 'Yenilikler';
-
-  @override
-  String get whatsNewSubtitle => 'Bu sürümde neler değişti';
 
   @override
   String get whatsNewEmpty => 'Bu sürüm için not yok.';
@@ -3993,9 +3991,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rateAppTitle => 'sandık\'ı değerlendir';
-
-  @override
-  String get rateAppSubtitle => 'Mağazada puan ver';
 
   @override
   String get todayMarketOnly => 'sadece fiyat etkisi';
@@ -5298,7 +5293,8 @@ class AppLocalizationsTr extends AppLocalizations {
       locale: localeName,
       other:
           '$count aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
-      one: 'BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
+      one:
+          'BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
     );
     return '$_temp0';
   }
@@ -5368,11 +5364,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  ) {
+      String date, String end, String change, String cpi) {
     return 'İlk alımından ($date) $end sonuna birikimin $change, enflasyon $cpi oldu.';
   }
 
@@ -6176,11 +6168,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  ) {
+      String amount, String times, String pct, String share) {
     return '$amount · ortalamanın $times katı · fiyat $pct · alıcı payı $share';
   }
 
@@ -8868,7 +8856,8 @@ class AppLocalizationsTr extends AppLocalizations {
       locale: localeName,
       other:
           'Bu varlığın $n hareketi (alış, satış, temettü) silinir, yerine buradaki bilgilerle tek bir kayıt kalır. Adım adım geçmiş artık bu varlıkta görünmez. Varlığı silip yeniden eklemekle aynıdır.',
-      one: 'Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.',
+      one:
+          'Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.',
     );
     return '$_temp0';
   }
@@ -10143,10 +10132,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  ) {
+      String baslik, int yuzde, String kalan) {
     return 'Sıradaki kilometre taşı: $baslik, yüzde $yuzde, $kalan kaldı';
   }
 
@@ -10415,12 +10401,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  ) {
+      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
     return '$baslik: en düşük $dusuk, en yüksek $yuksek, bugün $bugun. $cumle';
   }
 
@@ -10470,11 +10451,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String bedelliOnizleme(
-    String elde,
-    String yeni,
-    String birim,
-    String toplam,
-  ) {
+      String elde, String yeni, String birim, String toplam) {
     return 'Elindeki $elde lota $yeni yeni lot, lot başı $birim, toplam $toplam';
   }
 

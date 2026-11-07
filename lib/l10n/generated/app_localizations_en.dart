@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -256,7 +255,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lock, devices, data download, delete account';
 
   @override
-  String get settingsHelpSubtitle => 'Contact us, tour, privacy and terms';
+  String get settingsHelpSubtitle =>
+      'FAQ, contact us, what\'s new and legal documents';
 
   @override
   String get themeSystem => 'System';
@@ -1431,12 +1431,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String biometricLockYontem(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Lock with Face ID',
-      'touchId': 'Lock with Touch ID',
-      'biyometrik': 'Biometric lock',
-      'other': 'Lock with screen lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Lock with Face ID',
+        'touchId': 'Lock with Touch ID',
+        'biyometrik': 'Biometric lock',
+        'other': 'Lock with screen lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -1517,9 +1520,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get replayTour => 'Replay the tour';
-
-  @override
-  String get replayTourSubtitle => 'Remind yourself what each screen does';
 
   @override
   String get yasalBelgelerBaslik => 'Legal documents';
@@ -3463,12 +3463,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Protect with Face ID',
-      'touchId': 'Protect with Touch ID',
-      'biyometrik': 'Protect with biometrics',
-      'other': 'Protect with your screen lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Protect with Face ID',
+        'touchId': 'Protect with Touch ID',
+        'biyometrik': 'Protect with biometrics',
+        'other': 'Protect with your screen lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3485,12 +3488,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Turn on Face ID',
-      'touchId': 'Turn on Touch ID',
-      'biyometrik': 'Turn on biometric lock',
-      'other': 'Turn on app lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Turn on Face ID',
+        'touchId': 'Turn on Touch ID',
+        'biyometrik': 'Turn on biometric lock',
+        'other': 'Turn on app lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3919,19 +3925,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  ) {
+      String acilis, String yuksek, String dusuk, String kapanis) {
     return 'O $acilis · H $yuksek · L $dusuk · C $kapanis';
   }
 
   @override
   String get whatsNewTitle => 'What\'s New';
-
-  @override
-  String get whatsNewSubtitle => 'See what changed in this version';
 
   @override
   String get whatsNewEmpty => 'No notes for this version.';
@@ -4023,9 +4022,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rateAppTitle => 'Rate sandık';
-
-  @override
-  String get rateAppSubtitle => 'Leave a rating on the store';
 
   @override
   String get todayMarketOnly => 'price effect only';
@@ -5349,7 +5345,8 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$count monthly pension contributions were added automatically. You can update the amount on the pension card.',
-      one: 'Your pension contribution was added automatically. You can update the amount on the pension card.',
+      one:
+          'Your pension contribution was added automatically. You can update the amount on the pension card.',
     );
     return '$_temp0';
   }
@@ -5419,11 +5416,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  ) {
+      String date, String end, String change, String cpi) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
@@ -6236,11 +6229,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  ) {
+      String amount, String times, String pct, String share) {
     return '$amount · $times× the average · price $pct · buyer share $share';
   }
 
@@ -8964,7 +8953,8 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           'This asset\'s $n transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.',
-      one: 'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
+      one:
+          'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }
@@ -10271,10 +10261,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  ) {
+      String baslik, int yuzde, String kalan) {
     return 'Next milestone: $baslik, $yuzde percent, $kalan to go';
   }
 
@@ -10548,12 +10535,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  ) {
+      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
     return '$baslik: low $dusuk, high $yuksek, today $bugun. $cumle';
   }
 
@@ -10604,11 +10586,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String bedelliOnizleme(
-    String elde,
-    String yeni,
-    String birim,
-    String toplam,
-  ) {
+      String elde, String yeni, String birim, String toplam) {
     return '$yeni new shares on your $elde, $birim each, $toplam in total';
   }
 
