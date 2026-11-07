@@ -4805,6 +4805,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortTodayMoveSub => 'Biggest mover first';
 
   @override
+  String get sortName => 'Name';
+
+  @override
+  String get sortNameSub => 'A to Z';
+
+  @override
   String get chartNowLabel => 'Now';
 
   @override

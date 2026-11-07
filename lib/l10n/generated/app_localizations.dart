@@ -7935,6 +7935,18 @@ abstract class AppLocalizations {
   /// **'En çok oynayan önce'**
   String get sortTodayMoveSub;
 
+  /// No description provided for @sortName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ada göre'**
+  String get sortName;
+
+  /// No description provided for @sortNameSub.
+  ///
+  /// In tr, this message translates to:
+  /// **'A\'dan Z\'ye'**
+  String get sortNameSub;
+
   /// No description provided for @chartNowLabel.
   ///
   /// In tr, this message translates to:

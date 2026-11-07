@@ -3445,6 +3445,8 @@
   "pfTodayWaiting": "Veri bekleniyor",
   "sortTodayMove": "Bugünkü hareket",
   "sortTodayMoveSub": "En çok oynayan önce",
+  "sortName": "Ada göre",
+  "sortNameSub": "A'dan Z'ye",
   "chartNowLabel": "Şimdi",
   "vsWatch": "Takip et",
   "vsSelect": "Bunu seç",

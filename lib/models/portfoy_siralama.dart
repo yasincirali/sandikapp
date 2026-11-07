@@ -19,7 +19,18 @@ enum PortfoySiralama {
   /// KENDİLİĞİNDEN değiştirmez — satırlar yer değiştirince "nereye gitti"
   /// sorusu doğar. Gün içi verisi olmayan ya da bugün işlem gören satır
   /// sona, kendi içinde değere göre.
-  todayMoveDesc('bugun_hareket');
+  todayMoveDesc('bugun_hareket'),
+
+  /// Ada göre, Türkçe alfabe sırasıyla (Ar-Ge 7 Kas 08:03 #2). Sayısal
+  /// sıralamalar her gün değiştiği için satırlar zıplıyor; 20+ varlıkta
+  /// kullanıcı aradığını yerinden bulamıyordu. Ad = satırda görünen başlık
+  /// (kod ya da ad), karşılaştırma `trKarsilastir`.
+  ///
+  /// Eski sürüm uyumu: kod diske yazılır; bu değeri tanımayan eski build
+  /// [kodla]'da döngüden çıkıp [varsayilan]'a düşer (çökme yok, yalnız o
+  /// sürümde liste değere göre görünür). Tercih silinmez: yeni build'e
+  /// dönünce "ad_artan" yine okunur. Kilit `portfoy_siralama_test`.
+  nameAsc('ad_artan');
 
   const PortfoySiralama(this.kod);
 

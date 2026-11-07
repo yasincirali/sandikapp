@@ -4775,6 +4775,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sortTodayMoveSub => 'En çok oynayan önce';
 
   @override
+  String get sortName => 'Ada göre';
+
+  @override
+  String get sortNameSub => 'A\'dan Z\'ye';
+
+  @override
   String get chartNowLabel => 'Şimdi';
 
   @override
