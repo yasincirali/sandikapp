@@ -970,6 +970,20 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String dividendYieldOnCost(String pct) {
+    return 'Maliyetine göre yıllık verim $pct';
+  }
+
+  @override
+  String dividendYieldOnCostA11y(String pct) {
+    return 'Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin $pct kadarı. Maliyetine göre yıllık verim.';
+  }
+
+  @override
+  String get dividendYieldOnCostLocked =>
+      'Maliyetine göre yıllık verimin Premium\'da';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot lot × $perShare';
   }

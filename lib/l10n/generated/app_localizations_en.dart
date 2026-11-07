@@ -983,6 +983,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String dividendYieldOnCost(String pct) {
+    return 'Yearly yield on cost $pct';
+  }
+
+  @override
+  String dividendYieldOnCostA11y(String pct) {
+    return 'Net dividends you recorded in the last 12 months are $pct of your current cost. Yearly yield on cost.';
+  }
+
+  @override
+  String get dividendYieldOnCostLocked =>
+      'Your yearly yield on cost is part of Premium';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot shares × $perShare';
   }

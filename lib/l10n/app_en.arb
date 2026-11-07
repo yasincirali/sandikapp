@@ -583,6 +583,11 @@
       }
     }
   },
+  "dividendYieldOnCost": "Yearly yield on cost {pct}",
+  "@dividendYieldOnCost": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostA11y": "Net dividends you recorded in the last 12 months are {pct} of your current cost. Yearly yield on cost.",
+  "@dividendYieldOnCostA11y": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostLocked": "Your yearly yield on cost is part of Premium",
   "dividendEventLine": "{lot} shares × {perShare}",
   "@dividendEventLine": {
     "placeholders": {

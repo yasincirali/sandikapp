@@ -5,10 +5,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/utils/friendly_error.dart' show SandikDiyalogKabugu;
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/providers/preferences_provider.dart';
+import 'package:portfoy_takip/providers/premium_provider.dart';
+import 'package:portfoy_takip/widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'package:portfoy_takip/services/temettu_gecmisi.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/dividend_dialog.dart';
 import 'package:portfoy_takip/widgets/temettu_gecmisi_karti.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// "Son 12 ay temettü" kartı ve ön dolu temettü diyaloğu (plan §F5).
 ///
@@ -64,11 +68,13 @@ Future<void> _pump(
   Widget body, {
   double width = 375,
   double textScale = 1.0,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = Size(width * 3, 900 * 3);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
+    overrides: overrides,
     child: MaterialApp(
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -179,6 +185,78 @@ void main() {
       expect(find.text('Kaydedildi'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Kaydet'), findsOneWidget);
       expect(find.textContaining('Kaydettiğin: ₺106,25'), findsOneWidget);
+    });
+
+    group('maliyetine göre verim (Premium)', () {
+      // 100 lot × ₺250 = ₺25.000 maliyet; ₺1.050 net → %4,2.
+      final kayit = _satir(
+        id: 'd',
+        kind: AssetKind.dividend,
+        quantity: 0,
+        dividendAmount: 1050,
+        tarih: _uzak.add(const Duration(days: 1, hours: 9)),
+      );
+      Widget kart(List<Asset> defter) => TemettuGecmisiKarti(
+            varlik: alim,
+            defter: defter,
+            etkin: true,
+            olayCekici: (_) async => _olaylar,
+          );
+      List<Override> premium({required bool gorunur, required bool kilitli}) =>
+          [
+            premiumOzellikleriGorunurProvider.overrideWithValue(gorunur),
+            premiumKilitliProvider.overrideWithValue(kilitli),
+          ];
+
+      testWidgets('Premium: satır yüzdeyle, ekran okuyucuya tam cümle',
+          (t) async {
+        final h = t.ensureSemantics();
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: true, kilitli: false));
+        expect(find.text('Maliyetine göre yıllık verim %4,2'), findsOneWidget);
+        expect(
+            find.bySemanticsLabel(RegExp(
+                r'Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin %4,2')),
+            findsOneWidget);
+        h.dispose();
+      });
+
+      testWidgets('ücretsiz: sayı yok, kilit satırı (görünür + kilitli)',
+          (t) async {
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: true, kilitli: true));
+        expect(find.textContaining('%4,2'), findsNothing);
+        expect(find.byType(KilitSatiri), findsOneWidget);
+        expect(find.text("Maliyetine göre yıllık verimin Premium'da"),
+            findsOneWidget);
+      });
+
+      testWidgets('Premium özellikleri görünmüyorsa (paywall kapalı) yok',
+          (t) async {
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: false, kilitli: false));
+        expect(find.textContaining('verim'), findsNothing);
+        expect(find.byType(KilitSatiri), findsNothing);
+      });
+
+      testWidgets('12 ayda kayıt yoksa ne satır ne kilit', (t) async {
+        await _pump(t, kart([alim]),
+            overrides: premium(gorunur: true, kilitli: true));
+        expect(find.textContaining('verim'), findsNothing);
+        expect(find.byType(KilitSatiri), findsNothing);
+      });
+
+      testWidgets('bakiye gizliyken tutar maskeli, yüzde açık', (t) async {
+        SharedPreferences.setMockInitialValues({});
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: true, kilitli: false));
+        final c = ProviderScope.containerOf(
+            t.element(find.byType(TemettuGecmisiKarti)));
+        await c.read(balanceHiddenProvider.notifier).set(true);
+        await t.pump();
+        expect(find.textContaining('₺1.050'), findsNothing);
+        expect(find.text('Maliyetine göre yıllık verim %4,2'), findsOneWidget);
+      });
     });
 
     for (final (genislik, olcek) in [(320.0, 1.0), (320.0, 1.3)]) {

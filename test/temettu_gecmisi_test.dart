@@ -287,6 +287,74 @@ void main() {
     });
   });
 
+  group('maliyetine göre verim', () {
+    Asset temettu(double t, DateTime tarih, {String id = 'd1'}) => _satir(
+        id: id,
+        kind: AssetKind.dividend,
+        quantity: 0,
+        dividendAmount: t,
+        tarih: tarih);
+
+    test('son 12 ay net ÷ bugünkü maliyet: 42 / 1.000 = %4,2', () {
+      final d = [thyao, temettu(42, DateTime.utc(2025, 6, 18))];
+      expect(TemettuGecmisi.maliyeteGoreVerim(d, thyao, simdi: simdi),
+          closeTo(4.2, 1e-9));
+    });
+
+    test('satılan lotun maliyeti paydadan düşer', () {
+      final d = [
+        thyao,
+        _satir(
+            id: 's',
+            kind: AssetKind.sell,
+            quantity: 50,
+            tarih: DateTime.utc(2025, 7, 1)),
+        temettu(42, DateTime.utc(2025, 6, 18)),
+      ];
+      expect(TemettuGecmisi.maliyeteGoreVerim(d, thyao, simdi: simdi),
+          closeTo(8.4, 1e-9));
+    });
+
+    test('12 ayda kayıt yok → null (satır çizilmez, "%0" yazılmaz)', () {
+      expect(TemettuGecmisi.maliyeteGoreVerim([thyao], thyao, simdi: simdi),
+          isNull);
+      final eski = [thyao, temettu(42, DateTime.utc(2024, 6, 18))];
+      expect(TemettuGecmisi.maliyeteGoreVerim(eski, thyao, simdi: simdi),
+          isNull);
+    });
+
+    test('pozisyon kapalı (maliyet 0) → null', () {
+      final d = [
+        thyao,
+        _satir(
+            id: 's',
+            kind: AssetKind.sell,
+            quantity: 100,
+            tarih: DateTime.utc(2025, 7, 1)),
+        temettu(42, DateTime.utc(2025, 6, 18)),
+      ];
+      expect(TemettuGecmisi.maliyeteGoreVerim(d, thyao, simdi: simdi),
+          isNull);
+    });
+
+    test('başka sembolün temettüsü ve maliyeti karışmaz', () {
+      final d = [
+        thyao,
+        _satir(id: 'e', ticker: 'EREGL.IS', quantity: 1000),
+        temettu(42, DateTime.utc(2025, 6, 18)),
+        _satir(
+            id: 'd3',
+            ticker: 'EREGL.IS',
+            kind: AssetKind.dividend,
+            quantity: 0,
+            dividendAmount: 70,
+            tarih: DateTime.utc(2025, 6, 18)),
+      ];
+      expect(TemettuGecmisi.maliyeteGoreVerim(d, thyao, simdi: simdi),
+          closeTo(4.2, 1e-9));
+    });
+  });
+
   group('öneri tutarı', () {
     test('stopaj bilinmiyorsa tutar YOK (brüt "net" diye önerilmez, #12)', () {
       final t = TemettuGecmisi.oneriTutari(344.2, null);

@@ -600,6 +600,11 @@
       }
     }
   },
+  "dividendYieldOnCost": "Maliyetine göre yıllık verim {pct}",
+  "@dividendYieldOnCost": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostA11y": "Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin {pct} kadarı. Maliyetine göre yıllık verim.",
+  "@dividendYieldOnCostA11y": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostLocked": "Maliyetine göre yıllık verimin Premium'da",
   "dividendEventLine": "{lot} lot × {perShare}",
   "@dividendEventLine": {
     "placeholders": {

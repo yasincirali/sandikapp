@@ -1760,6 +1760,24 @@ abstract class AppLocalizations {
   /// **'Kaydettiğin: {amount}'**
   String dividendRecordedTotal(String amount);
 
+  /// No description provided for @dividendYieldOnCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre yıllık verim {pct}'**
+  String dividendYieldOnCost(String pct);
+
+  /// No description provided for @dividendYieldOnCostA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin {pct} kadarı. Maliyetine göre yıllık verim.'**
+  String dividendYieldOnCostA11y(String pct);
+
+  /// No description provided for @dividendYieldOnCostLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre yıllık verimin Premium\'da'**
+  String get dividendYieldOnCostLocked;
+
   /// No description provided for @dividendEventLine.
   ///
   /// In tr, this message translates to:
