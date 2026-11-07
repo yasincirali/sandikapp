@@ -6245,7 +6245,7 @@ abstract class AppLocalizations {
   /// No description provided for @quietHoursOn.
   ///
   /// In tr, this message translates to:
-  /// **'Brifing, özet, takvim ve alarm push\'ları {start}-{end} arası gönderilmez'**
+  /// **'{start}–{end} arası bildirim gelmez'**
   String quietHoursOn(String start, String end);
 
   /// No description provided for @quietHoursOff.

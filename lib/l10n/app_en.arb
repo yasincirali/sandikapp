@@ -2453,7 +2453,7 @@
   },
   "quietStart": "Quiet start",
   "quietEnd": "Quiet end",
-  "quietHoursOn": "Briefing, summary, calendar and alert pushes are not sent between {start} and {end}",
+  "quietHoursOn": "No notifications {start}–{end}",
   "@quietHoursOn": {
     "placeholders": {
       "start": {

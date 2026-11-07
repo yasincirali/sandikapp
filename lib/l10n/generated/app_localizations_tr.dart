@@ -3719,7 +3719,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String quietHoursOn(String start, String end) {
-    return 'Brifing, özet, takvim ve alarm push\'ları $start-$end arası gönderilmez';
+    return '$start–$end arası bildirim gelmez';
   }
 
   @override

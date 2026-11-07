@@ -2554,7 +2554,7 @@
   },
   "quietStart": "Sessizlik başlangıcı",
   "quietEnd": "Sessizlik bitişi",
-  "quietHoursOn": "Brifing, özet, takvim ve alarm push'ları {start}-{end} arası gönderilmez",
+  "quietHoursOn": "{start}–{end} arası bildirim gelmez",
   "@quietHoursOn": {
     "placeholders": {
       "start": {

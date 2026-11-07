@@ -2122,8 +2122,10 @@ class _LiveActivitySection extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
             child: Text(
               context.l10n.displayWindow,
-              style: TextStyle(
-                  color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+              // Ham boyut/ağırlık yerine tema ölçeği (2026-11-07): `titleMedium`
+              // aynı 14 pt, ağırlık w500 (w600 tavanının altında). Ağırlık
+              // elle ezilmedi ki sistem "Kalın Metin" ayarı buradan da geçsin.
+              style: context.t.titleMedium?.copyWith(color: p.text90),
             ),
           ),
           Row(
