@@ -8,6 +8,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../services/crash_reporter.dart';
 import '../services/tefas_service.dart';
+import '../utils/tr_format.dart' show dayKey;
 import 'add_asset_form_provider.dart' show tutardanAdet;
 import 'portfolio_provider.dart';
 
@@ -129,11 +130,8 @@ bool _ayniGun(DateTime a, DateTime b) {
   return x.year == y.year && x.month == y.month && x.day == y.day;
 }
 
-bool _gundenSonra(DateTime a, DateTime gun) {
-  final x = a.toLocal(), y = gun.toLocal();
-  return DateTime(x.year, x.month, x.day)
-      .isAfter(DateTime(y.year, y.month, y.day));
-}
+bool _gundenSonra(DateTime a, DateTime gun) =>
+    dayKey(a.toLocal()).isAfter(dayKey(gun.toLocal()));
 
 /// Kayıtta işaret kurulsun mu? Yalnız fon + tutar kipi + işlem tarihi
 /// bugün (hafta içi) + fiyatı kullanıcı yazmamış + bilinen fiyat bugünün

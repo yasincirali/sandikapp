@@ -1450,12 +1450,7 @@ class _AnaEkranWidgetBolumu extends ConsumerWidget {
             final gitti =
                 await ref.read(widgetSabitleyiciProvider).sabitlemeIste();
             if (gitti || !context.mounted) return;
-            await showSandikSheet<void>(
-              context: context,
-              backgroundColor: Colors.transparent,
-              isScrollControlled: true,
-              builder: (_) => const WidgetInstallSheet(),
-            );
+            await WidgetInstallSheet.goster(context);
           },
         ),
       ],
