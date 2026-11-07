@@ -90,7 +90,7 @@ void main() {
   }
 
   group('bölüm yerleşimi', () {
-    testWidgets('kendi başlığı altında ve iOS adıyla bulunur',
+    testWidgets('bildirim grubunun son kırılımı, iOS adıyla bulunur',
         (tester) async {
       await runAsIOS(() async {
         await tester.pumpWidget(host());
@@ -100,10 +100,18 @@ void main() {
         // viewport'a değil.
         await scrollTo(tester, find.text('Canlı etkinlikler'));
 
-        // Kullanıcı iOS'ta gördüğü adla arar; başlık o adla eşleşmeli.
+        // Kullanıcı iOS'ta gördüğü adla arar; alt başlık o adla eşleşmeli.
         // iOS'taki özelliğin adı ÇOĞUL: "Canlı Etkinlikler".
         expect(find.text('Canlı etkinlikler'), findsOneWidget,
             reason: 'GİZLİLİK altına gömülüyse kullanıcı bulamıyor');
+        // Ayrı bölüm başlığı kalktı (Ar-Ge 7 Kas 14:30 #6): bildirim
+        // grubunun içinde, alt başlık kademesinde durur.
+        expect(
+            find.ancestor(
+                of: find.text('Canlı etkinlikler'),
+                matching: find.byType(SandikSectionHeader)),
+            findsNothing,
+            reason: 'tek bileşen için ayrı bölüm başlığı açılmaz');
       });
     });
 
@@ -161,7 +169,7 @@ void main() {
 
         // 2026-09-14: Ayarlar hub'a bölündü; bu test Bildirimler bölümünü
         // kuruyor. Bölüm içi sıra: genel bildirimler önce, Canlı Etkinlik
-        // (iOS) sonra. Görünüm/Hesap/Yasal artık ayrı alt ekranlar
+        // (iOS) son kırılım (7 Kas 14:30: ayrı başlık değil, alt başlık). Görünüm/Hesap/Yasal artık ayrı alt ekranlar
         // (bkz. settings_hub_test).
         const beklenen = [
           'Bildirimler',

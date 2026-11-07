@@ -905,7 +905,7 @@
   "priceAlerts": "Fiyat alarmları",
   "partnerInviteNotifications": "Ortaklık daveti bildirimleri",
   "partnerInviteNotificationsSubtitle": "Yeni ortaklık isteği geldiğinde bildirim al",
-  "liveActivitiesUpper": "Canlı etkinlikler",
+  "canliEtkinlikAltBaslik": "Canlı etkinlikler",
   "biometricLock": "Biyometrik kilit",
   "biometricLockYontem": "{yontem, select, faceId{Face ID ile kilitle} touchId{Touch ID ile kilitle} biyometrik{Biyometrik kilit} other{Ekran kilidiyle kilitle}}",
   "@biometricLockYontem": {"placeholders": {"yontem": {"type": "String"}}},

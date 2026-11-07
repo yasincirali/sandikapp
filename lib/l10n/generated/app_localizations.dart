@@ -2612,11 +2612,11 @@ abstract class AppLocalizations {
   /// **'Yeni ortaklık isteği geldiğinde bildirim al'**
   String get partnerInviteNotificationsSubtitle;
 
-  /// No description provided for @liveActivitiesUpper.
+  /// No description provided for @canliEtkinlikAltBaslik.
   ///
   /// In tr, this message translates to:
   /// **'Canlı etkinlikler'**
-  String get liveActivitiesUpper;
+  String get canliEtkinlikAltBaslik;
 
   /// No description provided for @biometricLock.
   ///

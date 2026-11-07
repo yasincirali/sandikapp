@@ -710,12 +710,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               semantik: context.l10n.bildirimAyrintiliSemantik,
               children: _bildirimAnahtarlari(),
             ),
-            const SizedBox(height: 28),
-
-            // -- CANLI ETKİNLİKLER ---------------------------------
+            // -- CANLI ETKİNLİKLER (iOS) -----------------------------
             //
-            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
-            // Etkinlikler"): kullanıcı gördüğü adla arar.
+            // Ayrı bölüm başlığı kalktı, bildirim grubunun SON kırılımı oldu
+            // (Ar-Ge 7 Kas 14:30 #6): Canlı Etkinlik bir bildirim yüzeyi ve
+            // iOS'un kendi Ayarlar'ı da onu bildirimlerin altında tutar. Tek
+            // bileşen için açılan bölüm başlığı ve iki boşluk listeyi
+            // uzatıyordu. Alt başlık (Gizlilik ile aynı kademe) kalır: "Gün
+            // boyu göster" anahtarı neyi yönettiğini söyleyen bir ad olmadan
+            // okunmuyor; ad iOS'taki özellik adıyla EŞLEŞİR (cümle
+            // düzeninde), kullanıcı gördüğü adla arar.
             //
             // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
             // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
@@ -728,11 +732,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // ve `sync` ilk satırda döner (bkz. LiveActivityService).
             // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
             if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              SandikSectionHeader(title: context.l10n.liveActivitiesUpper),
-              const SizedBox(height: 12),
+              _SubSectionTitle(context.l10n.canliEtkinlikAltBaslik),
               const _LiveActivitySection(),
-              const SizedBox(height: 28),
             ],
+            const SizedBox(height: 28),
       ];
 
   /// Ön ayarın dokunmadığı, "ne zaman / ne" satırları: kullanıcının kendi

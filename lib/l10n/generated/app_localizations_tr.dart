@@ -1465,7 +1465,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yeni ortaklık isteği geldiğinde bildirim al';
 
   @override
-  String get liveActivitiesUpper => 'Canlı etkinlikler';
+  String get canliEtkinlikAltBaslik => 'Canlı etkinlikler';
 
   @override
   String get biometricLock => 'Biyometrik kilit';

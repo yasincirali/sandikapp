@@ -1481,7 +1481,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Get notified when a new partner request arrives';
 
   @override
-  String get liveActivitiesUpper => 'Live activities';
+  String get canliEtkinlikAltBaslik => 'Live activities';
 
   @override
   String get biometricLock => 'Biometric lock';

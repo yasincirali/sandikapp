@@ -888,7 +888,7 @@
   "priceAlerts": "Price alerts",
   "partnerInviteNotifications": "Partner invite notifications",
   "partnerInviteNotificationsSubtitle": "Get notified when a new partner request arrives",
-  "liveActivitiesUpper": "Live activities",
+  "canliEtkinlikAltBaslik": "Live activities",
   "biometricLock": "Biometric lock",
   "biometricLockYontem": "{yontem, select, faceId{Lock with Face ID} touchId{Lock with Touch ID} biyometrik{Biometric lock} other{Lock with screen lock}}",
   "@biometricLockYontem": {"placeholders": {"yontem": {"type": "String"}}},
