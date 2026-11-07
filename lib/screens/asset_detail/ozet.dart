@@ -446,8 +446,7 @@ extension _DetayOzet on _AssetDetailScreenState {
               ? Wrap(
                   spacing: SandikSpace.xs,
                   children: [
-                    FonFiyatGunuEtiketi(
-                        tarih: fonFiyatGunu(widget.asset.ticker)),
+                    FonFiyatGunuEtiketi(tarih: fonFiyatGunu(widget.asset.ticker)),
                     BekleyenFonAlimiEtiketi(lotIdleri: _fonLotIdleri),
                   ],
                 )
