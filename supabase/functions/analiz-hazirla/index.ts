@@ -23,6 +23,13 @@
 //   · Varlık üst sınırı `ANALIZ_VARLIK_USTU` (varsayılan 300), en çok
 //     tutulandan başlayarak.
 //
+//   · Aylık nota haber (0177): `ANALIZ_HABER_ACIK` function secret'ı tam "1"
+//     ise her varlık için AYRI bir haber batch'i gider (sunucu taraflı
+//     `web_search`, varlık başına en çok 2 arama; `_shared/analiz_haber.ts`).
+//     Kapalıyken (varsayılan) bu dosya #317 ile aynı işi yapar: tek not
+//     batch'i, aynı istekler. Haber, tavan tahminiyle birlikte aşılacaksa
+//     ya da model tavan yüzünden indiyse gönderilmez.
+//
 // Gövde: `{ tur: 'haftalik' | 'aylik', dry_run?: true, bugun?: 'YYYY-MM-DD' }`.
 // `dry_run` paketleri kurar, örnek bir istek döner, GÖNDERMEZ (anahtar
 // gerekmez). Yanıtta anahtar, ham Anthropic yanıtı, hata mesajı DÖNMEZ.
@@ -56,6 +63,7 @@ import {
   tavanaGoreModel,
   VarlikTuru,
 } from '../_shared/analiz.ts';
+import { haberAcikMi, haberGirdisi, haberIstegi, haberTavaniUygun } from '../_shared/analiz_haber.ts';
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -442,12 +450,21 @@ Deno.serve(async (request) => {
     const donem = aralik.baslangic;
     const client: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
-    if (!dryRun) {
-      const { data: onceki, error } = await client.from('analiz_batch')
-        .select('id').eq('tur', tur).eq('donem', donem).neq('durum', 'hata').limit(1);
+    // Haber yalnız aylık notta ve yalnız secret tam "1" iken (fail-closed).
+    const haberAcik = tur === 'aylik' && haberAcikMi(Deno.env.get('ANALIZ_HABER_ACIK'));
+
+    // Aynı dönem iki kez gönderilmez; not ve haber defteri ayrı (`amac`).
+    // Not gitmiş, haber gitmemişse (bayrak ay içinde açıldı, haber batch'i
+    // düştü) yalnız haber gider.
+    const defterdeVar = async (amac: 'not' | 'haber') => {
+      const { data, error } = await client.from('analiz_batch')
+        .select('id').eq('tur', tur).eq('donem', donem).eq('amac', amac).neq('durum', 'hata').limit(1);
       if (error) throw error;
-      if ((onceki ?? []).length > 0) return jsonResponse({ ok: true, atlandi: 'donem_gonderildi' });
-    }
+      return (data ?? []).length > 0;
+    };
+    const notGerekli = dryRun || !(await defterdeVar('not'));
+    const haberGerekli = haberAcik && (dryRun || !(await defterdeVar('haber')));
+    if (!notGerekli && !haberGerekli) return jsonResponse({ ok: true, atlandi: 'donem_gonderildi' });
 
     const ust = Number(Deno.env.get('ANALIZ_VARLIK_USTU') ?? '300') || 300;
     const secilen = await tutulanVarliklar(client, ust, tur);
@@ -455,6 +472,9 @@ Deno.serve(async (request) => {
     if (paketler.length === 0) return jsonResponse({ ok: true, varlik: secilen.length, istek: 0 });
 
     // Ay içi harcama (UTC ay başı; tavan kabaca, kuruş hassasiyeti gerekmez).
+    // Not maliyeti satırlarda; haber maliyeti (arama dahil) haber batch'inin
+    // defter satırında (0177). Haber sütunu okunamazsa (migration henüz
+    // yoksa) not yolu durmaz: haber maliyeti 0 sayılır, hata loglanır.
     const ayBasi = new Date();
     ayBasi.setUTCDate(1);
     ayBasi.setUTCHours(0, 0, 0, 0);
@@ -462,15 +482,34 @@ Deno.serve(async (request) => {
       client.from('varlik_analizi').select('maliyet_usd')
         .gte('olusturuldu', ayBasi.toISOString()).range(bas, son)
     );
-    const harcama = harcamalar.reduce((t, r) => t + Number(r.maliyet_usd ?? 0), 0);
+    let harcama = harcamalar.reduce((t, r) => t + Number(r.maliyet_usd ?? 0), 0);
+    try {
+      const haberler = await hepsi<{ maliyet_usd: number | null }>((bas, son) =>
+        client.from('analiz_batch').select('maliyet_usd').eq('amac', 'haber')
+          .gte('olusturuldu', ayBasi.toISOString()).range(bas, son)
+      );
+      harcama += haberler.reduce((t, r) => t + Number(r.maliyet_usd ?? 0), 0);
+    } catch (e) {
+      console.error('analiz-hazirla: haber harcamasi okunamadi', (e as { code?: string })?.code);
+    }
     const tavan = Number(Deno.env.get('ANALIZ_AYLIK_TAVAN_USD') ?? '50');
     const model = tavanaGoreModel(MODEL[tur], harcama, tavan);
+    // Model tavan yüzünden indiyse haber yok: arama ücreti modelden bağımsız
+    // ve tavan zaten aşılmış.
+    const haberGidecek = haberGerekli && model === MODEL[tur] &&
+      haberTavaniUygun(harcama, tavan, paketler.length);
+    if (haberGerekli && !haberGidecek) console.error('analiz-hazirla: haber tavan nedeniyle gonderilmedi');
 
     const istekler = paketler.map((p) => ({ custom_id: ozelKimlik(p.ticker), params: istekGovdesi(p, model) }));
+    const haberIstekleri = haberGidecek
+      ? paketler.map((p) => ({ custom_id: ozelKimlik(p.ticker), params: haberIstegi(p, aralik, model) }))
+      : [];
     if (dryRun) {
       return jsonResponse({
         ok: true, dry_run: true, tur, donem, aralik, model, varlik: secilen.length,
         istek: istekler.length, ornek: istekler[0],
+        // Bayrak kapalıyken alan hiç yok (yanıt #317 ile aynı).
+        ...(haberAcik ? { haber: { istek: haberIstekleri.length, ornek: haberIstekleri[0] ?? null } } : {}),
         // Yalnız piyasa ölçümleri; kişisel veri yok.
         paketler: paketler.map((p) => ({
           ticker: p.ticker, rozet: p.rozet, olaylar: p.olaylar,
@@ -480,22 +519,51 @@ Deno.serve(async (request) => {
     }
 
     const anthropic = new Anthropic({ apiKey });
-    // `output_config` SDK sürümünün tiplerinde olmayabilir; gövde API'ye aynen gider.
-    // deno-lint-ignore no-explicit-any
-    const batch = await anthropic.messages.batches.create({ requests: istekler as any });
+    let notIstek = 0;
+    if (notGerekli) {
+      // `output_config` SDK sürümünün tiplerinde olmayabilir; gövde API'ye aynen gider.
+      // deno-lint-ignore no-explicit-any
+      const batch = await anthropic.messages.batches.create({ requests: istekler as any });
 
-    const girdiler = Object.fromEntries(paketler.map((p) => [ozelKimlik(p.ticker), p]));
-    const { error: yazErr } = await client.from('analiz_batch').insert({
-      id: batch.id, tur, donem, istek_sayisi: istekler.length, girdiler, model,
-    });
-    if (yazErr) {
-      // Batch gitti ama defter yazılamadı: sonuç toplanamaz, boşa para.
-      // İptal et; bir sonraki tetik yeniden dener.
-      console.error('analiz-hazirla: analiz_batch yazilamadi', yazErr.code);
-      await anthropic.messages.batches.cancel(batch.id).catch(() => {});
-      return jsonResponse({ ok: false }, 500);
+      const girdiler = Object.fromEntries(paketler.map((p) => [ozelKimlik(p.ticker), p]));
+      const { error: yazErr } = await client.from('analiz_batch').insert({
+        id: batch.id, tur, donem, istek_sayisi: istekler.length, girdiler, model,
+      });
+      if (yazErr) {
+        // Batch gitti ama defter yazılamadı: sonuç toplanamaz, boşa para.
+        // İptal et; bir sonraki tetik yeniden dener.
+        console.error('analiz-hazirla: analiz_batch yazilamadi', yazErr.code);
+        await anthropic.messages.batches.cancel(batch.id).catch(() => {});
+        return jsonResponse({ ok: false }, 500);
+      }
+      notIstek = istekler.length;
     }
-    return jsonResponse({ ok: true, tur, donem, model, istek: istekler.length });
+
+    // Haber batch'i notun ardından ve ondan bağımsız: düşerse not etkilenmez,
+    // bir sonraki tetik yalnız haberi yeniden dener.
+    let haberIstek = 0;
+    if (haberIstekleri.length > 0) {
+      try {
+        // deno-lint-ignore no-explicit-any
+        const hb = await anthropic.messages.batches.create({ requests: haberIstekleri as any });
+        const girdiler = Object.fromEntries(paketler.map((p) => [ozelKimlik(p.ticker), haberGirdisi(p, aralik)]));
+        const { error: yazErr } = await client.from('analiz_batch').insert({
+          id: hb.id, tur, donem, istek_sayisi: haberIstekleri.length, girdiler, model, amac: 'haber',
+        });
+        if (yazErr) {
+          console.error('analiz-hazirla: haber defteri yazilamadi', yazErr.code);
+          await anthropic.messages.batches.cancel(hb.id).catch(() => {});
+        } else {
+          haberIstek = haberIstekleri.length;
+        }
+      } catch (e) {
+        console.error('analiz-hazirla: haber batch gonderilemedi', (e as { status?: number })?.status);
+      }
+    }
+    return jsonResponse({
+      ok: true, tur, donem, model, istek: notIstek,
+      ...(haberAcik ? { haber_istek: haberIstek } : {}),
+    });
   } catch (err) {
     console.error('analiz-hazirla', err);
     return jsonResponse({ ok: false }, 500);

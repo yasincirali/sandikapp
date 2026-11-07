@@ -599,7 +599,7 @@ Madde sırası: 1. madde "ne oldu" (dönemde fiyat ya da büyüklük nasıl değ
 
 Çıktı: "baslik" tek cümle (en çok 140 karakter), dönemin en önemli gözlemi. "maddeler" en az 1, en çok 4; her madde tek cümle (en çok 220 karakter) ve "kanit" alanında dayandığı ölçümlerin "anahtar" değerleri.`;
 
-const VARLIK_ADI: Record<VarlikTuru, string> = {
+export const VARLIK_ADI: Record<VarlikTuru, string> = {
   fon: 'yatırım fonu',
   hisse: 'Borsa İstanbul hissesi',
   kripto: 'kripto para',
@@ -847,14 +847,21 @@ export type Kullanim = {
   output_tokens?: number;
   cache_read_input_tokens?: number;
   cache_creation_input_tokens?: number;
+  /// Sunucu taraflı araç sayacı (aylık nottaki haber araması, 0177).
+  server_tool_use?: { web_search_requests?: number | null } | null;
 };
+
+/// Web araması liste fiyatı: 1.000 arama 10 $ (2026-11-07). Batch indirimi
+/// aramaya UYGULANMAZ ("Batch'te aynı fiyat"); yalnız token yarı fiyat.
+export const ARAMA_USD = 0.01;
 
 export function maliyetUsd(model: string, u: Kullanim, batch = true): number | null {
   const f = FIYAT[model];
   if (!f) return null;
   const t = (u.input_tokens ?? 0) * f[0] + (u.output_tokens ?? 0) * f[1] +
     (u.cache_read_input_tokens ?? 0) * f[2] + (u.cache_creation_input_tokens ?? 0) * f[3];
-  return Math.round((t / 1e6) * (batch ? 0.5 : 1) * 1e5) / 1e5;
+  const arama = Number(u.server_tool_use?.web_search_requests ?? 0) * ARAMA_USD;
+  return Math.round(((t / 1e6) * (batch ? 0.5 : 1) + arama) * 1e5) / 1e5;
 }
 
 /// Maliyet tavanı (N-04): ay içi harcama tavanı aştıysa model bir kademe iner.

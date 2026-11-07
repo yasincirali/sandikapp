@@ -12,6 +12,29 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-07 Aylık nota kamuya açık haber (0177 + `analiz-hazirla`/`analiz-topla`)
+
+Aylık rapordaki "Önemli gelişmeler" kartları, o ayın kamuya açık haberini
+yapay zekânın kendi cümlesiyle (rakamsız) ve kaynak bağlantısıyla gösterir.
+Sunucuda Anthropic web araması; varlık başına en çok 2 arama, ayrı batch.
+**Varsayılan KAPALI**: secret tanımlanmadıkça aylık not #317 ile birebir aynı.
+
+- [ ] Yayın sırası (Frankfurt, `supabase-deploy.yml` tek dağıtım yeter):
+      1) **0177** (yalnız ekler: `varlik_analizi.haberler/haber_red`,
+      `analiz_batch.amac/maliyet_usd`), 2) **`analiz-topla`**, 3) **`analiz-hazirla`**.
+      ⚠️ Yeni `analiz-hazirla` 0177'siz koşarsa dönem kontrolü (`amac`
+      sütunu) hata verir ve aylık not gitmez; migration önce gitmeli.
+      Eski istemci yeni sütunu hiç okumaz; uygulama build'i beklemez.
+- [ ] Açmak için Supabase › Edge Functions › Secrets: `ANALIZ_HABER_ACIK=1`
+      (tam "1"; başka her değer kapalı). Kapatmak: secret'ı sil ya da `0`.
+- [ ] Anthropic Console › Settings › Capabilities: web search organizasyonda
+      açık olmalı (kapalıysa aramalar hata döner, haber çıkmaz; not etkilenmez).
+- [ ] Maliyet: 300 varlıkta ayda ~12–18 $ (arama 6 $ + token). `ANALIZ_AYLIK_TAVAN_USD`
+      (varsayılan 50) haber maliyetini de sayar; tahminle aşılacaksa haber
+      batch'i gönderilmez, not yine gider.
+- [ ] İlk ay kontrolü: `select ticker, haber_red, jsonb_array_length(haberler) from varlik_analizi where tur = 'aylik' order by donem desc limit 50;`
+      ve `select id, istek_sayisi, maliyet_usd, durum from analiz_batch where amac = 'haber';`
+
 ## ⏳ 2026-11-07 Ortak destek adresi `support@murphysoft.app` (0175)
 
 Uygulama, yasal metinler (Gizlilik/KVKK 1.14, Koşullar 1.12, GDPR 1.7,
