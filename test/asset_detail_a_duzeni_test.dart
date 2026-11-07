@@ -95,8 +95,9 @@ void main() {
     expect(find.text('5 yıl'), findsOneWidget);
     // Eski pozisyon bölümü yerinde (veri kaybı yok): başlık + adet satırı.
     expect(find.text('Pozisyonun'), findsOneWidget);
-    // Seri gelmedi (testte ağ yok): yıllık aralık satırı hiç çizilmez.
-    expect(find.byType(YillikAralikSatiri), findsNothing);
+    // Seri gelmedi (testte ağ yok): "Aralık" kartı (52 hafta + dönem)
+    // hiç çizilmez.
+    expect(find.byType(AralikKarti), findsNothing);
 
     // Güncel fiyat, sinyal/pozisyon bloğundan ÖNCE gelir (A düzeni).
     final fiyatY = tester.getTopLeft(find.text('Güncel fiyat')).dy;
@@ -105,7 +106,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('pozisyon kartı: alış fiyatı, toplam ve dönem kâr/zararı düz dille',
+  testWidgets(
+      'pozisyon kartı: alış fiyatı, toplam ve dönem kâr/zararı düz dille',
       (tester) async {
     // Kullanıcı şartı (2026-09-28): "kaçtan aldığım, toplam kâr/zarar ve
     // dönem içindeki kâr/zarar KESİNLİKLE olmalı; okunaklı, basit
@@ -164,8 +166,8 @@ void main() {
       bekleyen.add(c);
       return c.future;
     };
-    addTearDown(() =>
-        HistoryService.seriCekici = HistoryService.varsayilanSeriCekici);
+    addTearDown(
+        () => HistoryService.seriCekici = HistoryService.varsayilanSeriCekici);
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
@@ -187,8 +189,14 @@ void main() {
     final now = DateTime.now();
     for (final c in bekleyen) {
       c.complete([
-        (now.subtract(const Duration(days: 2000)).millisecondsSinceEpoch, 280.0),
-        (now.subtract(const Duration(minutes: 5)).millisecondsSinceEpoch, 312.4),
+        (
+          now.subtract(const Duration(days: 2000)).millisecondsSinceEpoch,
+          280.0
+        ),
+        (
+          now.subtract(const Duration(minutes: 5)).millisecondsSinceEpoch,
+          312.4
+        ),
       ]);
     }
     await tester.pump(const Duration(milliseconds: 200));
@@ -210,10 +218,13 @@ void main() {
       home: Scaffold(
         body: Padding(
           padding: const EdgeInsets.all(24),
-          child: DonemAralikCubugu(
-            dusuk: 1234567.89,
-            yuksek: 9876543.21,
-            konum: 0.4,
+          child: AralikKarti(
+            donem: (
+              dusuk: 1234567.89,
+              yuksek: 9876543.21,
+              konum: 0.4,
+              bugun: 5555555.55,
+            ),
             bicim: tryFormatter(digits: 2),
           ),
         ),
@@ -222,13 +233,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  test('dönem seçici, ızgara ve aralık iki ekranda da ORTAK widget\'tan gelir', () {
+  test('dönem seçici, ızgara ve aralık iki ekranda da ORTAK widget\'tan gelir',
+      () {
     final sayfa = ekranKaynagiSync('lib/screens/varlik_sayfasi.dart');
     final detay = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
     for (final w in [
       'DonemSecici(',
       'DonemIstatistikIzgarasi(',
-      'DonemAralikCubugu(',
+      'AralikKarti(',
     ]) {
       expect(sayfa, contains(w), reason: 'varlık sayfası $w kullanmalı');
       expect(detay, contains(w), reason: 'varlık detayı $w kullanmalı');

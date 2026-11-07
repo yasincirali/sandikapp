@@ -13,7 +13,7 @@ import 'helpers/kaynak.dart';
 
 /// Varlık sayfası "yap" paketi (Ar-Ge 1 Kas 08:45, yasin "Yap dediklerini
 /// yap"): maliyet çizgisi, istatistik ızgarasında tekrar ve boş kutu,
-/// Bollinger "2σ", "Gün düşüğü/yükseği", teknik analiz başlığı.
+/// Bollinger "2σ", günlük aralık "Gün" satırı, teknik analiz başlığı.
 void main() {
   group('maliyet çizgisinin yeri', () {
     test('aralık içi / üstü / altı', () {
@@ -30,15 +30,15 @@ void main() {
       expect(maliyetCizgiKonumu(0, minY: 90, maxY: 110), isNull);
       expect(maliyetCizgiKonumu(double.nan, minY: 90, maxY: 110), isNull);
       expect(maliyetCizgiKonumu(100, minY: 110, maxY: 90), isNull);
-      expect(
-          maliyetCizgiKonumu(100, minY: 90, maxY: double.infinity), isNull);
+      expect(maliyetCizgiKonumu(100, minY: 90, maxY: double.infinity), isNull);
     });
 
     test('çizgi yalnız TRY ve ham fiyat kipinde (LOG/Karşılaştır yok)', () {
       final k = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
       expect(k, contains('_grafikMaliyeti('));
       expect(k, contains('_maliyetYatayCizgisi('));
-      final a = ekranKaynagiSync('lib/screens/asset_detail/alarm_cizgileri.dart');
+      final a =
+          ekranKaynagiSync('lib/screens/asset_detail/alarm_cizgileri.dart');
       expect(a, contains("currency != 'TRY'"));
       expect(a, contains('compareOn || logOn'));
     });
@@ -73,8 +73,7 @@ void main() {
     }
 
     // 5 Kas 14:45 #3: GÜNLÜK'te "En büyük düşüş" de düştü; ızgara boş.
-    testWidgets('Günlük varlık sayfası: ızgarada hücre kalmaz',
-        (tester) async {
+    testWidgets('Günlük varlık sayfası: ızgarada hücre kalmaz', (tester) async {
       await izgara(tester, bugunGizli: true, gunIci: true);
       expect(find.text('Dönem getirisi'), findsNothing);
       expect(find.text('Bugün'), findsNothing);
@@ -115,24 +114,27 @@ void main() {
     });
   });
 
-  testWidgets('Günlük aralık çubuğu "Gün düşüğü/yükseği" der', (tester) async {
-    Future<void> cubuk(bool gunIci) => tester.pumpWidget(MaterialApp(
+  testWidgets('Günlük aralık satırı "Gün" der, dönemde dönemin adı',
+      (tester) async {
+    Future<void> kart(bool gunIci) => tester.pumpWidget(MaterialApp(
           theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
           home: Scaffold(
-            body: DonemAralikCubugu(
-              dusuk: 100,
-              yuksek: 110,
-              konum: 0.4,
+            body: AralikKarti(
+              donem: (dusuk: 100, yuksek: 110, konum: 0.4, bugun: 104),
               bicim: NumberFormat.decimalPattern('tr_TR'),
               gunIci: gunIci,
+              donemAdi: '1 ay',
             ),
           ),
         ));
-    await cubuk(true);
-    expect(find.text('Gün düşüğü'), findsOneWidget);
-    expect(find.text('Gün yükseği'), findsOneWidget);
-    await cubuk(false);
-    expect(find.text('Dönem düşüğü'), findsOneWidget);
+    // "Dönem" bir günlük aralıkta yabancı geliyordu (1 Kas 08:45 #3);
+    // 7 Kas 14:00 #1'den beri satır başlığı bunu söyler.
+    await kart(true);
+    expect(find.text('Gün'), findsOneWidget);
+    expect(find.text('Fiyat gün aralığının %40 noktasında'), findsOneWidget);
+    await kart(false);
+    expect(find.text('1 ay'), findsOneWidget);
+    expect(find.text('Fiyat dönem aralığının %40 noktasında'), findsOneWidget);
   });
 
   test('Bollinger etiketi "2.0σ" değil "2σ"; döviz 1.5σ kalır', () {
@@ -144,7 +146,8 @@ void main() {
   });
 
   test('teknik analiz başlığı kırpılmaz; ayar bağlantısı 44 pt', () {
-    final k = ekranKaynagiSync('lib/screens/asset_detail/sinyal_widgetlari.dart');
+    final k =
+        ekranKaynagiSync('lib/screens/asset_detail/sinyal_widgetlari.dart');
     final i = k.indexOf('context.l10n.technicalAnalysisUpper');
     final pencere = k.substring(i - 200, i + 300);
     expect(pencere, isNot(contains('TextOverflow.ellipsis')));

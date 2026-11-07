@@ -662,7 +662,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     //
     // Ondalık [fiyatBicimi]'nden (2026-10-10): sabit 2 hane SHIB'i ₺0,00,
     // BES fonunu ₺0,18 yazıyordu; `goz_alici` açıkken kaynak hassasiyeti.
-    final bicim = fiyatBicimi(ist?.son ?? 0,
+    //
+    // Hane sayısı büyük fiyatın yazılışından (Ar-Ge 2026-11-07 14:00 #2,
+    // varlık detayıyla aynı kural): aralık uçları ve değişim tutarı da
+    // aynı haneyle — ₺263,9333 değil ₺263,93.
+    final bicim = ayniOndalikFiyatBicimi(ist?.son ?? 0,
         azami: k.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
     // Soluk: başka dönemin çizgisi (yeni dönem yolda) ya da eski kopya
     // (taze seri yolda).
@@ -890,16 +894,28 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         gunIci: gun == 1,
       );
 
-  /// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri.
+  /// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri — varlık
+  /// detayıyla AYNI "Aralık" kartı ([AralikKarti], Ar-Ge 7 Kas 14:00 #1).
+  /// 52 hafta satırı burada yok: bu sayfa yalnız seçili dönemin serisini
+  /// yükler; yıllık uçlar için ayrı istek açılmaz (varlık detayı kendi
+  /// birim serisinden hesaplar).
   Widget _aralikCubugu(DonemIstatistigi ist, NumberFormat bicim,
-          {bool gunIci = false}) =>
-      DonemAralikCubugu(
-        gunIci: gunIci,
+      {bool gunIci = false}) {
+    final i = varlikSayfasiDonemleri.indexOf(_cizilen ?? _gun);
+    return AralikKarti(
+      gunIci: gunIci,
+      donem: (
         dusuk: ist.dusuk,
         yuksek: ist.yuksek,
         konum: ist.konum,
-        bicim: bicim,
-      );
+        bugun: ist.son,
+      ),
+      donemAdi: i < 0
+          ? null
+          : donemEtiketi(context.l10n, SummaryPeriod.values[i].label),
+      bicim: bicim,
+    );
+  }
 
   // ── Alt çubuk ─────────────────────────────────────────────────────────────
 

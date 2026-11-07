@@ -4662,12 +4662,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vsVolatilityUpper => 'Volatility (annual)';
 
   @override
-  String get vsPeriodLow => 'Period low';
-
-  @override
-  String get vsPeriodHigh => 'Period high';
-
-  @override
   String vsRangePosition(String pct) {
     return 'Price is at $pct% of the period range';
   }
@@ -4790,12 +4784,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get posAvgCost => 'Average cost';
-
-  @override
-  String get vsDayLow => 'Day low';
-
-  @override
-  String get vsDayHigh => 'Day high';
 
   @override
   String get costsEmptyRow => 'Costs · not recorded';
@@ -11001,6 +10989,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hesapEkleSatiriAlt =>
       'Add a second account on this phone; your current one stays signed in';
+
+  @override
+  String get aralikBaslik => 'Range';
+
+  @override
+  String get aralikGun => 'Day';
+
+  @override
+  String get aralikDonem => 'Selected period';
+
+  @override
+  String get ya52Hafta => '52 weeks';
 
   @override
   String get yaBaslikYil => '52-week range';

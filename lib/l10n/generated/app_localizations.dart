@@ -7729,18 +7729,6 @@ abstract class AppLocalizations {
   /// **'Oynaklık (yıllık)'**
   String get vsVolatilityUpper;
 
-  /// No description provided for @vsPeriodLow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Dönem düşüğü'**
-  String get vsPeriodLow;
-
-  /// No description provided for @vsPeriodHigh.
-  ///
-  /// In tr, this message translates to:
-  /// **'Dönem yükseği'**
-  String get vsPeriodHigh;
-
   /// No description provided for @vsRangePosition.
   ///
   /// In tr, this message translates to:
@@ -7920,18 +7908,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ortalama maliyet'**
   String get posAvgCost;
-
-  /// No description provided for @vsDayLow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gün düşüğü'**
-  String get vsDayLow;
-
-  /// No description provided for @vsDayHigh.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gün yükseği'**
-  String get vsDayHigh;
 
   /// No description provided for @costsEmptyRow.
   ///
@@ -17864,6 +17840,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır'**
   String get hesapEkleSatiriAlt;
+
+  /// Varlık ekranı: gün/dönem ve 52 haftalık aralığı birleştiren kartın başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Aralık'**
+  String get aralikBaslik;
+
+  /// No description provided for @aralikGun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün'**
+  String get aralikGun;
+
+  /// No description provided for @aralikDonem.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili dönem'**
+  String get aralikDonem;
+
+  /// No description provided for @ya52Hafta.
+  ///
+  /// In tr, this message translates to:
+  /// **'52 hafta'**
+  String get ya52Hafta;
 
   /// No description provided for @yaBaslikYil.
   ///

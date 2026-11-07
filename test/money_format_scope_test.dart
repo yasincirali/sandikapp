@@ -103,7 +103,10 @@ void main() {
     expect(ad.contains('tryFormatter(digits: 0)'), isFalse);
     // 2026-10-10: birim fiyat ortak `fiyatBicimi`'nden (kaynak hassasiyeti,
     // `fiyat_hassasiyeti_test`); simgesi ₺ kalır, baz paraya çevrilmez.
-    expect(ad.contains('fiyatBicimi(birimFiyat'), isTrue,
+    // 2026-11-07: aynı kuralın "büyük fiyatla aynı hane" biçimi
+    // (`ayniOndalikFiyatBicimi`, içi `fiyatBicimi`).
+    expect(ad.contains(RegExp(r'ayniOndalikFiyatBicimi\(\s*birimFiyat')),
+        isTrue,
         reason: 'fiyat ipucu (₺) ortak fiyat biçiminden, çevrilmez');
   });
 }

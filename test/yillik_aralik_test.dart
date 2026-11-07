@@ -56,8 +56,8 @@ void main() {
     test('boş, tek nokta, ayı doldurmayan seri ve geçersiz değer → null', () {
       expect(YillikUclar.hesapla({}, simdi: _simdi), isNull);
       expect(
-          YillikUclar.hesapla(
-              {_simdi.millisecondsSinceEpoch: 10}, simdi: _simdi),
+          YillikUclar.hesapla({_simdi.millisecondsSinceEpoch: 10},
+              simdi: _simdi),
           isNull);
       expect(YillikUclar.hesapla(_haftalik(14, (i) => 10.0 + i), simdi: _simdi),
           isNull);
@@ -102,30 +102,75 @@ void main() {
     });
   });
 
-  group('YillikAralikSatiri', () {
-    testWidgets('cümle ve tek Semantics etiketi', (tester) async {
+  group('AralikKarti (Ar-Ge 7 Kas 14:00 #1)', () {
+    const yillik = YillikAralik(dusuk: 80, yuksek: 100, bugun: 92);
+    const DonemAraligi gun = (dusuk: 90, yuksek: 95, konum: 0.4, bugun: 92);
+
+    testWidgets('iki satır: "Gün" ve "52 hafta" alt alta, tek kart',
+        (tester) async {
       final handle = tester.ensureSemantics();
-      await tester.pumpWidget(_sar(YillikAralikSatiri(
-        aralik: const YillikAralik(dusuk: 80, yuksek: 100, bugun: 92),
+      await tester.pumpWidget(_sar(AralikKarti(
+        donem: gun,
+        yillik: yillik,
+        gunIci: true,
         bicim: fiyatBicimi(92),
       )));
-      expect(find.text('Yıllık aralık'), findsOneWidget);
+      expect(find.text('Aralık'), findsOneWidget);
+      expect(find.text('Gün'), findsOneWidget);
+      expect(find.text('52 hafta'), findsOneWidget);
+      // Gün üstte, 52 hafta altta.
+      expect(tester.getTopLeft(find.text('Gün')).dy,
+          lessThan(tester.getTopLeft(find.text('52 hafta')).dy));
+      // Yıllık cümle ve #312'nin ekran okuyucu etiketi birebir korunur.
       expect(find.text('Yılın en yükseğinin %8,0 altında'), findsOneWidget);
       expect(
         find.bySemanticsLabel(RegExp(
             r'^Yıllık aralık: en düşük ₺80,00, en yüksek ₺100,00, bugün ₺92,00')),
         findsOneWidget,
       );
+      // Gün satırı da tek etiket: başlık, uçlar, bugün, konum cümlesi.
+      expect(
+        find.bySemanticsLabel(
+            RegExp(r'^Gün: en düşük ₺90,00, en yüksek ₺95,00, bugün ₺92,00\. '
+                r'Fiyat gün aralığının %40 noktasında')),
+        findsOneWidget,
+      );
       handle.dispose();
     });
 
-    testWidgets('kısa seri ve dip tarafı', (tester) async {
-      await tester.pumpWidget(_sar(YillikAralikSatiri(
-        aralik: const YillikAralik(dusuk: 80, yuksek: 100, bugun: 88, ay: 7),
+    testWidgets('yalnız gün: 52 hafta satırı yok', (tester) async {
+      await tester.pumpWidget(
+          _sar(AralikKarti(donem: gun, gunIci: true, bicim: fiyatBicimi(92))));
+      expect(find.text('Gün'), findsOneWidget);
+      expect(find.text('52 hafta'), findsNothing);
+    });
+
+    testWidgets('dönem seçiliyken satır dönemin adını taşır', (tester) async {
+      await tester.pumpWidget(_sar(
+          AralikKarti(donem: gun, donemAdi: '1 ay', bicim: fiyatBicimi(92))));
+      expect(find.text('1 ay'), findsOneWidget);
+      expect(
+          find.text('Fiyat dönem aralığının %40 noktasında'), findsOneWidget);
+    });
+
+    testWidgets('yalnız 52 hafta: gün satırı yok; kısa seride "Son N ay"',
+        (tester) async {
+      await tester.pumpWidget(_sar(AralikKarti(
+        yillik: const YillikAralik(dusuk: 80, yuksek: 100, bugun: 88, ay: 7),
         bicim: fiyatBicimi(88),
       )));
+      expect(find.text('Aralık'), findsOneWidget);
+      expect(find.text('Gün'), findsNothing);
       expect(find.text('Son 7 ay'), findsOneWidget);
-      expect(find.text('Son 7 ayın en düşüğünün %10,0 üstünde'), findsOneWidget);
+      expect(
+          find.text('Son 7 ayın en düşüğünün %10,0 üstünde'), findsOneWidget);
+    });
+
+    testWidgets('hiçbiri yoksa kart hiç çizilmez', (tester) async {
+      await tester.pumpWidget(_sar(AralikKarti(bicim: fiyatBicimi(1))));
+      expect(find.text('Aralık'), findsNothing);
+      expect(AralikKarti.cizilir(), isFalse);
+      expect(AralikKarti.cizilir(yillik: yillik), isTrue);
     });
 
     testWidgets('3.1× yazı ve 320 pt\'de büyük tutarla taşmaz', (tester) async {
@@ -133,9 +178,16 @@ void main() {
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(_sar(
-        YillikAralikSatiri(
-          aralik: const YillikAralik(
+        AralikKarti(
+          donem: (
+            dusuk: 1234567.89,
+            yuksek: 9876543.21,
+            konum: 0.4,
+            bugun: 5555555.55
+          ),
+          yillik: const YillikAralik(
               dusuk: 1234567.89, yuksek: 9876543.21, bugun: 5555555.55, ay: 11),
+          gunIci: true,
           bicim: fiyatBicimi(5555555.55),
         ),
         olcek: 3.1,
@@ -144,17 +196,22 @@ void main() {
     });
   });
 
-  test('varlık ekranı: satır 1Y serisinden, yoksa yer kaplamaz, mevduatta yok',
-      () {
+  test('varlık ekranı: 52 hafta çiplerin altında değil, "Aralık" kartında', () {
     final kaynak = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
-    expect(kaynak, contains('_yillikAralikSatiri(pnl.currentUnitTRY)'));
+    // Dönem seçici grafiğe bitişik: aralarında yıllık satır yok.
+    expect(kaynak, isNot(contains('_yillikAralikSatiri(')));
+    expect(kaynak, isNot(contains('YillikAralikSatiri(')));
     expect(kaynak,
         contains('_yillikUclar = YillikUclar.hesapla(seri, simdi: now)'));
-    final i = kaynak.indexOf('Widget _yillikAralikSatiri(');
-    final govde = kaynak.substring(i, kaynak.indexOf('\n  }', i));
+    final i = kaynak.indexOf('YillikAralik? _yillikAralik(');
+    final govde = kaynak.substring(i, kaynak.indexOf(';', i));
     expect(govde, contains('AssetType.mevduat'));
-    expect(govde, contains('if (aralik == null) return const SizedBox.shrink()'));
-    // Ölçek büyük fiyatla aynı (fiyat kaynağı sözleşmesi 2).
-    expect(govde, contains('_birimBicimi('));
+    // Kart istatistiklerin içinde; ölçek ve hane büyük fiyatla aynı (fiyat
+    // kaynağı sözleşmesi 2).
+    final j = kaynak.indexOf('List<Widget> _aralikKarti(');
+    final kart = kaynak.substring(j, kaynak.indexOf('\n  }', j));
+    expect(kart, contains('AralikKarti('));
+    expect(kart, contains('_birimBicimi('));
+    expect(kaynak, contains('..._aralikKarti(canliBirim'));
   });
 }

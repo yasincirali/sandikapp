@@ -4631,12 +4631,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vsVolatilityUpper => 'Oynaklık (yıllık)';
 
   @override
-  String get vsPeriodLow => 'Dönem düşüğü';
-
-  @override
-  String get vsPeriodHigh => 'Dönem yükseği';
-
-  @override
   String vsRangePosition(String pct) {
     return 'Fiyat dönem aralığının %$pct noktasında';
   }
@@ -4759,12 +4753,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get posAvgCost => 'Ortalama maliyet';
-
-  @override
-  String get vsDayLow => 'Gün düşüğü';
-
-  @override
-  String get vsDayHigh => 'Gün yükseği';
 
   @override
   String get costsEmptyRow => 'Masraflar · kaydedilmemiş';
@@ -10869,6 +10857,18 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get hesapEkleSatiriAlt =>
       'Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır';
+
+  @override
+  String get aralikBaslik => 'Aralık';
+
+  @override
+  String get aralikGun => 'Gün';
+
+  @override
+  String get aralikDonem => 'Seçili dönem';
+
+  @override
+  String get ya52Hafta => '52 hafta';
 
   @override
   String get yaBaslikYil => 'Yıllık aralık';
