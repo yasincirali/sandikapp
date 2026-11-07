@@ -126,7 +126,7 @@ void main() {
     expect(find.text('Değiştir'), findsOneWidget);
     expect(_seciciIcinde(find.text('Fon')), findsOneWidget);
     expect(find.text('Ekle'), findsOneWidget, reason: 'Form görünür olmalı.');
-    expect(find.text('Fon seçmek için dokun...'), findsWidgets);
+    expect(find.text('Fon seç'), findsWidgets);
 
     await tester.tap(find.text('Değiştir'));
     await _yerles(tester);

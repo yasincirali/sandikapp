@@ -363,7 +363,19 @@ class TefasService {
 
   List<TefasFund>? _dkFonlari;
 
-  Future<List<TefasFund>> fetchAllFunds({bool forceRefresh = false}) async {
+  /// Uçuştaki liste isteği. Varlık Ekle açılışı listeyi arka planda ısıtır
+  /// (2026-11-07); kullanıcı fon seçiciyi o sürerken açarsa ikinci bir üçlü
+  /// ağ isteği başlamaz, aynı sonucu bekler. `forceRefresh` paylaşılmaz.
+  Future<List<TefasFund>>? _listeIstegi;
+
+  Future<List<TefasFund>> fetchAllFunds({bool forceRefresh = false}) {
+    if (forceRefresh) return _fetchAllFunds(forceRefresh: true);
+    if (_cacheValid) return Future.value(_cachedFunds!);
+    return _listeIstegi ??=
+        _fetchAllFunds().whenComplete(() => _listeIstegi = null);
+  }
+
+  Future<List<TefasFund>> _fetchAllFunds({bool forceRefresh = false}) async {
     // RAM cache taze → direkt döndür.
     if (!forceRefresh && _cacheValid) return _cachedFunds!;
 

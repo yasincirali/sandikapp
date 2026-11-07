@@ -203,7 +203,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
                     ),
                   ),
                   child: Text(
-                    'Tekrar Dene',
+                    'Tekrar dene',
                     style: context.t.titleMedium?.copyWith(
                       color: context.c.amberText,
                       fontWeight: FontWeight.w600,

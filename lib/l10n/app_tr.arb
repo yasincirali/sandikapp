@@ -161,7 +161,7 @@
       }
     }
   },
-  "retry": "Tekrar Dene",
+  "retry": "Tekrar dene",
   "cancel": "Vazgeç",
   "quickAllChip": "Hepsi ({qty})",
   "@quickAllChip": {"description": "Hızlı Al/Sat diyaloğu: eldeki miktarın tamamını seçen çip.", "placeholders": {"qty": {"type": "String"}}},
@@ -676,8 +676,17 @@
     }
   },
   "fillTheForm": "Formu doldur",
-  "bistStocks": "BIST Hisseleri",
-  "tefasFunds": "TEFAS Fonları",
+  "bistStocks": "BIST hisseleri",
+  "pickerInPortfolio": "Portföyündekiler",
+  "pickerFundReturn1y": "1 yıl {pct}",
+  "@pickerFundReturn1y": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "tefasFunds": "TEFAS fonları",
   "fundsLoading": "Fonlar yükleniyor...",
   "pleaseWait": "Lütfen bekle",
   "breakdownUpAmount": "artış {amount}",
@@ -750,14 +759,14 @@
   "demoSaveSheetContinue": "Örneğe devam et",
   "fundsEmptyRetry": "Fon listesi şu an alınamadı. Birazdan yeniden dene.",
   "fundsLoadFailed": "Fonlar yüklenemedi",
-  "searchEllipsis": "Ara...",
+  "searchEllipsis": "Ara",
   "clearSearch": "Aramayı temizle",
   "pickStockPrompt": "Listeden bir hisse seç ya da sembolünü yaz",
   "pickStock": "Hisse seç",
   "pickStockTap": "Hisse seçmek için dokun...",
   "pickFundPrompt": "Bir fon seç",
   "pickFund": "Fon seç",
-  "pickFundTap": "Fon seçmek için dokun...",
+  "pickFundTap": "Fon seç",
   "noResults": "Sonuç bulunamadı",
   "priceNotAvailable": "Fiyat bilgisi yok",
   "assetFallbackName": "Varlık",
@@ -1085,7 +1094,6 @@
       }
     }
   },
-  "retryLower": "Tekrar dene",
   "raceUpper": "Yarış",
   "changeByTypeUpper": "Türe göre · fiyat etkisi",
   "noData": "Veri yok",
@@ -5494,7 +5502,7 @@
       }
     }
   },
-  "usStocks": "ABD Hisseleri",
+  "usStocks": "ABD hisseleri",
   "pickUsStock": "ABD hissesi seç",
   "pickUsStockTap": "ABD hissesi seçmek için dokun...",
   "usSymbolHint": "Sembol yaz (örn: AAPL, BRK-B)",

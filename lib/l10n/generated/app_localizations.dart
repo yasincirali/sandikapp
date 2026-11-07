@@ -857,7 +857,7 @@ abstract class AppLocalizations {
   /// No description provided for @retry.
   ///
   /// In tr, this message translates to:
-  /// **'Tekrar Dene'**
+  /// **'Tekrar dene'**
   String get retry;
 
   /// No description provided for @cancel.
@@ -1853,13 +1853,25 @@ abstract class AppLocalizations {
   /// No description provided for @bistStocks.
   ///
   /// In tr, this message translates to:
-  /// **'BIST Hisseleri'**
+  /// **'BIST hisseleri'**
   String get bistStocks;
+
+  /// No description provided for @pickerInPortfolio.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyündekiler'**
+  String get pickerInPortfolio;
+
+  /// No description provided for @pickerFundReturn1y.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 yıl {pct}'**
+  String pickerFundReturn1y(String pct);
 
   /// No description provided for @tefasFunds.
   ///
   /// In tr, this message translates to:
-  /// **'TEFAS Fonları'**
+  /// **'TEFAS fonları'**
   String get tefasFunds;
 
   /// No description provided for @fundsLoading.
@@ -2009,7 +2021,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchEllipsis.
   ///
   /// In tr, this message translates to:
-  /// **'Ara...'**
+  /// **'Ara'**
   String get searchEllipsis;
 
   /// No description provided for @clearSearch.
@@ -2051,7 +2063,7 @@ abstract class AppLocalizations {
   /// No description provided for @pickFundTap.
   ///
   /// In tr, this message translates to:
-  /// **'Fon seçmek için dokun...'**
+  /// **'Fon seç'**
   String get pickFundTap;
 
   /// No description provided for @noResults.
@@ -3289,12 +3301,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{names} için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi. Çizginin düz olması piyasanın durgun olduğu anlamına gelmez.'**
   String intradayMissingBody(String names);
-
-  /// No description provided for @retryLower.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tekrar dene'**
-  String get retryLower;
 
   /// No description provided for @raceUpper.
   ///
@@ -12686,7 +12692,7 @@ abstract class AppLocalizations {
   /// No description provided for @usStocks.
   ///
   /// In tr, this message translates to:
-  /// **'ABD Hisseleri'**
+  /// **'ABD hisseleri'**
   String get usStocks;
 
   /// No description provided for @pickUsStock.

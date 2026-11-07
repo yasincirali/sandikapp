@@ -219,6 +219,8 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _AbdPicker(
         selected: abdSembolu(_ticker.text),
+        portfoyKodlari: _portfoyKodlari(
+            (a) => a.abdHissesi ? a.ticker.toUpperCase() : null),
         onSelect: (ticker) {
           _yaz(_n.selectAbdHisse(ticker));
           _schedulePricePreview();
@@ -269,6 +271,12 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _Bist100Picker(
         selected: _bist100SelectedTicker,
+        // Katalog anahtarı `.IS`'li; eski lotlarda sonek olmayabilir.
+        portfoyKodlari: _portfoyKodlari((a) {
+          if (a.type != AssetType.hisse || a.abdHissesi) return null;
+          final t = a.ticker.toUpperCase();
+          return t.endsWith('.IS') ? t : '$t.IS';
+        }),
         onSelect: (ticker) {
           _yaz(_n.selectBist100(ticker));
           _schedulePricePreview();
@@ -277,6 +285,12 @@ extension _SeciciAlanlari on _AddAssetScreenState {
       ),
     );
   }
+
+  /// Seçicinin "Portföyündekiler" bölümü için bugün tutulan kodlar
+  /// (`portfoydekiKodlar`: aktif lot, sahibe göre, değere göre sıralı).
+  /// Sayfa açılırken bir kez okunur; açıkken portföy değişmez.
+  List<String> _portfoyKodlari(String? Function(Asset) kod) => portfoydekiKodlar(
+      ref.read(portfolioProvider).valueOrNull?.assets ?? const [], kod);
 
   // ── TEFAS fon seçici ───────────────────────────────────────────────────────
 
@@ -313,6 +327,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _TefasPicker(
         selected: _selectedFund?.code,
+        portfoyKodlari: _portfoyKodlari((a) => a.type == AssetType.fon
+            ? a.ticker.replaceFirst('TEFAS:', '').toUpperCase()
+            : null),
         onSelect: (fund) {
           // Fon fiyatı alış fiyatına dolar (opsiyonel, kullanıcı silebilir).
           _yaz(_n.selectFund(fund, priceEmpty: _price.text.isEmpty));

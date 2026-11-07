@@ -154,7 +154,7 @@
       }
     }
   },
-  "retry": "Retry",
+  "retry": "Try again",
   "cancel": "Cancel",
   "quickAllChip": "All ({qty})",
   "quickHolding": "Holding",
@@ -659,8 +659,17 @@
     }
   },
   "fillTheForm": "Fill the form",
-  "bistStocks": "BIST Stocks",
-  "tefasFunds": "TEFAS Funds",
+  "bistStocks": "BIST stocks",
+  "pickerInPortfolio": "In your portfolio",
+  "pickerFundReturn1y": "1Y {pct}",
+  "@pickerFundReturn1y": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "tefasFunds": "TEFAS funds",
   "fundsLoading": "Loading funds...",
   "pleaseWait": "Please wait",
   "breakdownUpAmount": "up {amount}",
@@ -733,14 +742,14 @@
   "demoSaveSheetContinue": "Keep exploring",
   "fundsEmptyRetry": "We couldn't get the fund list right now. Try again in a moment.",
   "fundsLoadFailed": "Could not load funds",
-  "searchEllipsis": "Search...",
+  "searchEllipsis": "Search",
   "clearSearch": "Clear search",
   "pickStockPrompt": "Pick a stock from the list or type its symbol",
   "pickStock": "Pick a stock",
   "pickStockTap": "Tap to pick a stock...",
   "pickFundPrompt": "Pick a fund",
   "pickFund": "Pick a fund",
-  "pickFundTap": "Tap to pick a fund...",
+  "pickFundTap": "Pick a fund",
   "noResults": "No results",
   "priceNotAvailable": "No price information",
   "assetFallbackName": "Asset",
@@ -1068,7 +1077,6 @@
       }
     }
   },
-  "retryLower": "Try again",
   "raceUpper": "Race",
   "changeByTypeUpper": "By type · price effect",
   "noData": "No data",
@@ -5043,7 +5051,7 @@
   "portfolioGroupBistStock": "BIST stocks",
   "portfolioGroupUsStock": "US stocks",
   "stockMarketSemantics": "Stock market: {market}",
-  "usStocks": "US Stocks",
+  "usStocks": "US stocks",
   "pickUsStock": "Pick a US stock",
   "pickUsStockTap": "Tap to pick a US stock...",
   "usSymbolHint": "Type a symbol (e.g. AAPL, BRK-B)",

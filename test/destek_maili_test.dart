@@ -164,14 +164,14 @@ void main() {
       await t.pumpWidget(sahne());
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('hata-bize-yaz')), findsNothing);
-      expect(find.text('Tekrar Dene'), findsOneWidget);
+      expect(find.text('Tekrar dene'), findsOneWidget);
 
-      await t.tap(find.text('Tekrar Dene'));
+      await t.tap(find.text('Tekrar dene'));
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('hata-bize-yaz')), findsOneWidget);
       expect(find.text('Sorun sürüyorsa bize yaz'), findsOneWidget);
       // Ana eylem kalır.
-      expect(find.text('Tekrar Dene'), findsOneWidget);
+      expect(find.text('Tekrar dene'), findsOneWidget);
       // ≥44 pt ve etiketli.
       final r = t.getRect(find.byKey(const ValueKey('hata-bize-yaz')));
       expect(r.height, greaterThanOrEqualTo(44));
@@ -211,7 +211,7 @@ void main() {
 
       await t.pumpWidget(sahne());
       await t.pumpAndSettle();
-      await t.tap(find.text('Tekrar Dene'));
+      await t.tap(find.text('Tekrar dene'));
       await t.pumpAndSettle();
       // Testte e-posta eklentisi yok: açılış başarısız olur.
       await t.tap(find.byKey(const ValueKey('hata-bize-yaz')));
