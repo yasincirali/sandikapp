@@ -165,6 +165,10 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
                 _satir(_satirlar[i], tarih, tl),
               ],
               const SizedBox(height: SandikSpace.sm),
+              // Dipnot tek satır (2026-11-07): kaynak + "brüt" yeter. Eski
+              // 194 karakterlik paragraf %15 stopaj cümlesini tekrarlıyordu;
+              // stopajı kaydet akışı zaten söylüyor
+              // (`dividendWithholdingAssumed`), kartta ikinci kez yazılmaz.
               Text(
                 l.dividendSourceNote,
                 style: context.t.bodySmall?.copyWith(color: c.text36),
