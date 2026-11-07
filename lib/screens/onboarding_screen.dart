@@ -496,13 +496,16 @@ List<_Adim> _adimlariKur() {
       // ("simetri ve ahengi bozmayacak şekilde"); metin yeri öyle söyler.
       // 2026-11-05 (Ar-Ge 19:00 #1): dönem segmenti kartı yerinde çevirir,
       // Özet'e götürmez; metin öyle söyler.
+      // 2026-11-07 (Ar-Ge 14:15 #1): oynayanlar sırası yalnız en az iki
+      // oynayan varken; metin koşulu söyler (tek varlıkta sıra yok).
       govde: 'Günün hükmü tek kelimeyle (Yükseldi, Geriledi, Yerinde saydı) '
           've yanında tutar: yalnız fiyat etkisi, yatırdığın para sayılmaz. '
           'Başlık satırının sonundaki simge günün yüzdesini tutarsız bir '
           'görsel olarak '
           'paylaşır. '
           'Eğri günün seyri; Hafta, Ay, Yıl kartı yerinde o döneme çevirir. '
-          'Aşağıda en çok oynayanlar, 100 liranın bugünkü karşılığı ve '
+          'Aşağıda en çok oynayanlar (birden çok varlık oynadıysa), '
+          '100 liranın bugünkü karşılığı ve '
           'hedefine kalan var.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,

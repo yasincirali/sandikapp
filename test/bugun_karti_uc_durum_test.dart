@@ -191,17 +191,23 @@ void main() {
     }
   }
 
-  testWidgets('tek oynayan: çip tam genişlik, yetim satır yok', (tester) async {
+  // Ar-Ge 7 Kas 14:15 #1: tek oynayanda sıra başlıktaki tutarı ikinci kez
+  // yazıyordu; "en çok oynayanlar" en az iki varlık ister.
+  testWidgets('tek oynayan: sıra hiç çizilmez', (tester) async {
     await kur(tester, hareketler: {0: (1000.0, 1032.0)});
     expect(tester.takeException(), isNull);
-    expect(find.text('THYAO'), findsOneWidget);
-    expect(baslikVar, isTrue);
-    expect(find.text('Tümü'), findsOneWidget);
+    expect(baslikVar, isFalse);
+    expect(find.text('THYAO'), findsNothing);
+    expect(find.text('Tümü'), findsNothing);
+    expect(find.text('Paran fiyatlara yetişiyor mu?'), findsOneWidget);
   });
 
-  testWidgets('iki oynayan: yan yana, aynı satırda', (tester) async {
+  testWidgets('iki oynayan: sıra görünür, yan yana, aynı satırda',
+      (tester) async {
     await kur(tester, hareketler: {0: (1000.0, 1032.0), 1: (2000.0, 1900.0)});
     expect(tester.takeException(), isNull);
+    expect(baslikVar, isTrue);
+    expect(find.text('Tümü'), findsOneWidget);
     expect(tester.getTopLeft(find.text('THYAO')).dy,
         tester.getTopLeft(find.text('ASELS')).dy);
   });
