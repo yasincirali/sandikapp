@@ -1337,8 +1337,38 @@ abstract class AppLocalizations {
   /// No description provided for @fundReportFootnote.
   ///
   /// In tr, this message translates to:
-  /// **'Kaynak: TEFAS. Getiriler TEFAS\'ın açıkladığı rakamlardır; TEFAS\'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.'**
+  /// **'Kaynak: TEFAS. Geçmiş getiri geleceği göstermez.'**
   String get fundReportFootnote;
+
+  /// No description provided for @fundReportRisk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Risk değeri {value}/7 · {level}'**
+  String fundReportRisk(String value, String level);
+
+  /// No description provided for @fundReportRiskSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Risk değeri 7 üzerinden {value}, {level}'**
+  String fundReportRiskSemantics(String value, String level);
+
+  /// No description provided for @fundReportRiskLow.
+  ///
+  /// In tr, this message translates to:
+  /// **'düşük'**
+  String get fundReportRiskLow;
+
+  /// No description provided for @fundReportRiskMedium.
+  ///
+  /// In tr, this message translates to:
+  /// **'orta'**
+  String get fundReportRiskMedium;
+
+  /// No description provided for @fundReportRiskHigh.
+  ///
+  /// In tr, this message translates to:
+  /// **'yüksek'**
+  String get fundReportRiskHigh;
 
   /// No description provided for @fundReportPanelLine.
   ///

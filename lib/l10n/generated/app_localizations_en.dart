@@ -712,7 +712,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fundReportFootnote =>
-      'Source: TEFAS. Returns are as published by TEFAS; its calculation dates don\'t exactly match the chart\'s period, so they may differ slightly from the period return above. Compared with funds in the same category; past returns do not indicate future returns.';
+      'Source: TEFAS. Past returns do not indicate future returns.';
+
+  @override
+  String fundReportRisk(String value, String level) {
+    return 'Risk value $value/7 · $level';
+  }
+
+  @override
+  String fundReportRiskSemantics(String value, String level) {
+    return 'Risk value $value out of 7, $level';
+  }
+
+  @override
+  String get fundReportRiskLow => 'low';
+
+  @override
+  String get fundReportRiskMedium => 'medium';
+
+  @override
+  String get fundReportRiskHigh => 'high';
 
   @override
   String fundReportPanelLine(String count, String rank, String period) {

@@ -350,7 +350,32 @@
     }
   },
   "fundReportAtMedian": "At the median",
-  "fundReportFootnote": "Source: TEFAS. Returns are as published by TEFAS; its calculation dates don't exactly match the chart's period, so they may differ slightly from the period return above. Compared with funds in the same category; past returns do not indicate future returns.",
+  "fundReportFootnote": "Source: TEFAS. Past returns do not indicate future returns.",
+  "fundReportRisk": "Risk value {value}/7 · {level}",
+  "@fundReportRisk": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportRiskSemantics": "Risk value {value} out of 7, {level}",
+  "@fundReportRiskSemantics": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportRiskLow": "low",
+  "fundReportRiskMedium": "medium",
+  "fundReportRiskHigh": "high",
   "fundReportPanelLine": "#{rank} of {count} in its category ({period})",
   "@fundReportPanelLine": {
     "placeholders": {

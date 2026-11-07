@@ -91,6 +91,11 @@ class _FonKarnesiKartiState extends ConsumerState<FonKarnesiKarti> {
                   style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600, color: context.c.text90),
                 ),
+                if (karne.riskDegeri case final risk?)
+                  if (karne.riskSeviyesi case final seviye?) ...[
+                    const SizedBox(height: SandikSpace.xs),
+                    _RiskSatiri(deger: risk, seviye: seviye),
+                  ],
                 for (final d in karne.donemler) ...[
                   const SizedBox(height: SandikSpace.smd),
                   Divider(height: 1, thickness: 1, color: context.c.hairline),
@@ -106,6 +111,31 @@ class _FonKarnesiKartiState extends ConsumerState<FonKarnesiKarti> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Risk değeri 4/7 · orta" (2026-11-07). Anlam sayı ve kelimeyle verilir,
+/// renk yok: renk körü kullanıcı da aynı bilgiyi alır, karnenin tek renkli
+/// öğesi (ortancaya fark) gözde öne çıkmaya devam eder. Ekran okuyucu "/7"
+/// ve "·"yi kötü okur; ona tam cümle verilir.
+class _RiskSatiri extends StatelessWidget {
+  const _RiskSatiri({required this.deger, required this.seviye});
+
+  final int deger;
+  final RiskSeviyesi seviye;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final kelime = riskSeviyesiAdi(l10n, seviye);
+    return Semantics(
+      label: l10n.fundReportRiskSemantics('$deger', kelime),
+      excludeSemantics: true,
+      child: Text(
+        l10n.fundReportRisk('$deger', kelime),
+        style: context.t.bodyMedium?.copyWith(color: context.c.text58),
       ),
     );
   }
@@ -201,6 +231,12 @@ String donemAdi(AppLocalizations l10n, KarneDonemi d) => switch (d) {
       KarneDonemi.ay1 => l10n.fundReportPeriod1m,
       KarneDonemi.yilBasi => l10n.fundReportPeriodYtd,
       KarneDonemi.yil1 => l10n.fundReportPeriod1y,
+    };
+
+String riskSeviyesiAdi(AppLocalizations l10n, RiskSeviyesi s) => switch (s) {
+      RiskSeviyesi.dusuk => l10n.fundReportRiskLow,
+      RiskSeviyesi.orta => l10n.fundReportRiskMedium,
+      RiskSeviyesi.yuksek => l10n.fundReportRiskHigh,
     };
 
 /// Fon sayısı — binlik ayraçlı (katalog 1.069 fon; kategori de büyüyebilir).

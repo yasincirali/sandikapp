@@ -363,7 +363,32 @@
     }
   },
   "fundReportAtMedian": "Ortancayla aynı",
-  "fundReportFootnote": "Kaynak: TEFAS. Getiriler TEFAS'ın açıkladığı rakamlardır; TEFAS'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.",
+  "fundReportFootnote": "Kaynak: TEFAS. Geçmiş getiri geleceği göstermez.",
+  "fundReportRisk": "Risk değeri {value}/7 · {level}",
+  "@fundReportRisk": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportRiskSemantics": "Risk değeri 7 üzerinden {value}, {level}",
+  "@fundReportRiskSemantics": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportRiskLow": "düşük",
+  "fundReportRiskMedium": "orta",
+  "fundReportRiskHigh": "yüksek",
   "fundReportPanelLine": "Kategorisinde {count} fondan {rank}. ({period})",
   "@fundReportPanelLine": {
     "placeholders": {

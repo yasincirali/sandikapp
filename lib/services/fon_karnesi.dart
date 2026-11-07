@@ -66,6 +66,7 @@ class FonKarnesi {
     required this.kategori,
     required this.kategoriFonSayisi,
     required this.donemler,
+    this.riskDegeri,
   });
 
   final String fonKodu;
@@ -76,6 +77,16 @@ class FonKarnesi {
 
   /// Kıyası kurulabilen dönemler, [KarneDonemi] sırasıyla. Boş olmaz.
   final List<DonemSirasi> donemler;
+
+  /// TEFAS'ın açıkladığı risk değeri (1–7; 2026-11-07). Liste uç noktası
+  /// `riskDegeri` alanını zaten veriyordu ve diskte saklanıyordu ama hiçbir
+  /// yerde gösterilmiyordu. Yalnız 1–7 aralığındaysa dolu; boş, 0 ya da
+  /// aralık dışı değer `null` kalır ve satır çizilmez (uydurma sayı yasağı:
+  /// "bilinmiyor"u tahminle doldurmayız).
+  final int? riskDegeri;
+
+  /// [riskDegeri]'nin kelime karşılığı; değer yoksa `null`.
+  RiskSeviyesi? get riskSeviyesi => riskSeviyesiOf(riskDegeri);
 
   DonemSirasi? donem(KarneDonemi d) {
     for (final s in donemler) {
@@ -153,8 +164,25 @@ FonKarnesi? fonKarnesi(String fonKodu, List<TefasFund> tumFonlar) {
     kategori: kategori,
     kategoriFonSayisi: grup.length,
     donemler: donemler,
+    riskDegeri: riskSeviyesiOf(fon.riskLevel) == null ? null : fon.riskLevel,
   );
 }
+
+/// Risk değerinin kelime karşılığı (karnede "Risk değeri 4/7 · orta").
+enum RiskSeviyesi { dusuk, orta, yuksek }
+
+/// TEFAS risk değeri (1–7) → kelime. Eşikler ürün kararı (Ar-Ge turu
+/// 2026-11-07): 1–2 düşük, 3–4 orta, 5–7 yüksek. Kelime sayının YERİNE
+/// değil yanında yazılır; sayı TEFAS'ın, kelime yalnız okumayı kolaylaştırır.
+/// Aralık dışı (0, 8, null) `null`: ekranda satır yok, tahmin yok.
+/// Saf fonksiyon; `build()` dışında, test: `test/fon_karnesi_test.dart`.
+RiskSeviyesi? riskSeviyesiOf(int? deger) => switch (deger) {
+      null => null,
+      >= 1 && <= 2 => RiskSeviyesi.dusuk,
+      >= 3 && <= 4 => RiskSeviyesi.orta,
+      >= 5 && <= 7 => RiskSeviyesi.yuksek,
+      _ => null,
+    };
 
 /// Varlığın TEFAS fon kodu — fon değilse ya da kod yoksa `null`.
 ///

@@ -701,7 +701,26 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get fundReportFootnote =>
-      'Kaynak: TEFAS. Getiriler TEFAS\'ın açıkladığı rakamlardır; TEFAS\'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.';
+      'Kaynak: TEFAS. Geçmiş getiri geleceği göstermez.';
+
+  @override
+  String fundReportRisk(String value, String level) {
+    return 'Risk değeri $value/7 · $level';
+  }
+
+  @override
+  String fundReportRiskSemantics(String value, String level) {
+    return 'Risk değeri 7 üzerinden $value, $level';
+  }
+
+  @override
+  String get fundReportRiskLow => 'düşük';
+
+  @override
+  String get fundReportRiskMedium => 'orta';
+
+  @override
+  String get fundReportRiskHigh => 'yüksek';
 
   @override
   String fundReportPanelLine(String count, String rank, String period) {

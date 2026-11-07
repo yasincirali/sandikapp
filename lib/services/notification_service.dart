@@ -81,6 +81,12 @@ class NotificationService {
 
   /// Yıl sonu özeti anı (0087) — Profil sekmesindeki özet afişine gider.
   static const yilSonuOccasion = 'year_end_recap';
+
+  /// Mevduat vadesi doldu anı (0174) — Portföy sekmesine gider: "Vadesi
+  /// doldu" şeridi mevduat kartının panelinde. Sunucu tek mevduat dolduysa
+  /// `sozlesme_id` de yollar; bugün kullanılmaz (kartı açık getirmek ayrı
+  /// iş), anahtar eklemedir.
+  static const mevduatVadeOccasion = 'deposit_matured';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
 
@@ -690,6 +696,14 @@ class NotificationService {
         data['occasion']?.toString() == yilSonuOccasion) {
       MainNavigationScreen.sekmeIstegi.value =
           MainNavigationScreen.profilSekmesi;
+      return;
+    }
+    // Mevduat vadesi doldu → Portföy. Tanınmayan başka bir an (gelecekteki
+    // sunucu, eski build) aşağıdaki dallara uymaz ve uygulama yalnız açılır.
+    if (type == calendarNudgeType &&
+        data['occasion']?.toString() == mevduatVadeOccasion) {
+      MainNavigationScreen.sekmeIstegi.value =
+          MainNavigationScreen.portfoySekmesi;
       return;
     }
 

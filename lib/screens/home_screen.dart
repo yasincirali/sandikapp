@@ -397,6 +397,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // Yıl sonu özeti → Profil (özet afişi orada).
         MainNavigationScreen.sekmeIstegi.value =
             MainNavigationScreen.profilSekmesi;
+      case AppNotification.calendarNudge
+          when b.data['occasion']?.toString() ==
+              NotificationService.mevduatVadeOccasion:
+        // Push'la AYNI varış: Portföy (vade şeridi mevduat kartında).
+        MainNavigationScreen.sekmeIstegi.value =
+            MainNavigationScreen.portfoySekmesi;
       default:
         break;
     }
