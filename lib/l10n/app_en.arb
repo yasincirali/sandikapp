@@ -17,15 +17,12 @@
   "registerWelcome": "Welcome to your sandık.",
   "registerSubtitle": "Create your account in a few steps.",
   "fullName": "Full Name",
-  "fullNameRequired": "Enter your full name",
   "passwordRepeat": "Repeat Password",
   "passwordsMismatch": "Passwords do not match",
   "sifreKuralUzunluk": "At least 8 characters",
   "sifreKuralHarf": "At least one letter",
   "sifreKuralRakam": "At least one number",
   "haveAccountSignIn": "Already have an account? Sign in",
-  "exitAppTitle": "Exit the app",
-  "exitAppMessage": "Are you sure you want to exit?",
   "exit": "Exit",
   "tabHome": "Home",
   "tabPortfolio": "Portfolio",
@@ -184,23 +181,12 @@
   "offlinePricesUnknown": "No internet · showing last prices",
   "otpSentPrefix": "We sent the 6-digit code to\n",
   "otpSentSuffix": "",
-  "registerNameMissing": "Enter your full name.",
   "registerEmailInvalid": "Enter a valid email.",
   "registerPasswordsMismatch": "Passwords do not match.",
   "refreshPrices": "Refresh prices",
   "portfolioActivity": "Portfolio activity",
   "seeAllTransactions": "See all transactions",
-  "seeAllCount": "See All ({count})",
-  "@seeAllCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "signalDeleteFailed": "Could not delete the notification. Check your connection.",
-  "permanentDelete": "Delete permanently",
-  "cancelShort": "Cancel",
   "clearAllSignals": "Clear all signals",
   "clearAllLower": "Clear all",
   "clearAllSignalsBody": "{count} notifications will move to history. To delete them for good, use the \"Delete History\" button there.",
@@ -494,7 +480,6 @@
     }
   },
   "bulkAdd": "Bulk add",
-  "orNotInList": "or not in the list",
   "symbolHint": "Type a symbol (e.g. AAPL, THYAO.IS)",
   "companyNameHint": "Company name (optional, fetched from the symbol)",
   "goldSemantics": "{kind} gold",
@@ -507,7 +492,6 @@
   },
   "commissionNote": "Trading commission is added to your cost, so profit/loss shows the real figure.",
   "totalCostTlEquivalent": "≈ {amount} · 1 {currency} = {rate}",
-  "costPreviewHint": "Enter a quantity and the total cost appears here.",
   "totalCostUpper": "Total cost",
   "transactionDate": "Transaction date",
   "addNote": "Add a note",
@@ -714,7 +698,6 @@
   },
   "tefasFunds": "TEFAS funds",
   "fundsLoading": "Loading funds...",
-  "pleaseWait": "Please wait",
   "breakdownUpAmount": "up {amount}",
   "@breakdownUpAmount": {
     "placeholders": {
@@ -754,25 +737,6 @@
       }
     }
   },
-  "sinceCpiWindowBody": "The figure above includes this stretch; this card updates when {month} CPI is published ({date}).",
-  "@sinceCpiWindowBody": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "sinceCpiWindowBodyLate": "The figure above includes this stretch; this card updates once {month} CPI is loaded.",
-  "@sinceCpiWindowBodyLate": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
   "demoBannerTitle": "Sample portfolio",
   "demoBannerSubtitle": "Sample holdings, live prices",
   "demoCreateAccount": "Create account",
@@ -800,10 +764,8 @@
   "identityStock": "Stock",
   "identityFund": "Fund",
   "identityGoldKind": "Gold Type",
-  "pickGoldTap": "Tap to pick a gold type...",
   "goldSearchHint": "Search: quarter, 22 carat, reşat…",
   "goldTypes": "Gold Types",
-  "goldQuickPick": "Quick pick",
   "goldGroupGram": "Gram",
   "goldGroupZiynet": "Jewellery coins",
   "goldGroupSikke": "Historic coins",
@@ -819,14 +781,6 @@
   "commoditySelectedSemantics": "Selected commodity: {name}. Double tap to change.",
   "@commoditySelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
   "goldUnitOunce": "oz",
-  "goldSelectedSemantics": "Selected gold type: {kind}. Double tap to change.",
-  "@goldSelectedSemantics": {
-    "placeholders": {
-      "kind": {
-        "type": "String"
-      }
-    }
-  },
   "identityCurrency": "Currency",
   "identityCommodity": "Commodity",
   "noResultsFor": "No match for \"{q}\"",
@@ -884,7 +838,6 @@
   "signalNotifications": "Technical signal notifications",
   "signalNotificationsSubtitle": "Get notified when a BUY/SELL indicator triggers",
   "signalSettings": "Signal settings",
-  "signalSettingsSubtitle": "Indicator selection per asset type + Premium",
   "priceAlerts": "Price alerts",
   "partnerInviteNotifications": "Partner invite notifications",
   "partnerInviteNotificationsSubtitle": "Get notified when a new partner request arrives",
@@ -912,7 +865,6 @@
   "sssBizeYaz": "Still stuck? Write to us",
   "replayTour": "Replay the tour",
   "replayTourSubtitle": "Remind yourself what each screen does",
-  "feedbackSubtitle": "Send us your thoughts",
   "yasalBelgelerBaslik": "Legal documents",
   "yasalBelgelerAlt": "Privacy, terms, KVKK notice, explicit consent, investment disclaimer",
   "feedbackDogrudanEposta": "Write by email instead",
@@ -1016,7 +968,6 @@
     }
   },
   "cancelWord": "Cancel",
-  "noPartnersYet": "You have no partners yet",
   "removePartnerSemantics": "Remove partner",
   "removePartnerTitle": "Remove partnership",
   "removePartnerBody": "Are you sure you want to remove your partnership with {name}?",
@@ -1033,9 +984,6 @@
   "rejectRequest": "Reject partner request",
   "acceptRequest": "Accept partner request",
   "sandikPremium": "sandık Premium",
-  "premiumPitch": "Unlimited assets and premium indicators",
-  "premiumActive": "Premium active",
-  "premiumActiveBody": "All advanced features unlocked",
   "codeCopied": "Code generated and copied to clipboard",
   "tooManyFailedAttempts": "Too many failed attempts.\nYou can try again in {wait}.",
   "@tooManyFailedAttempts": {
@@ -1066,7 +1014,6 @@
     }
   },
   "requestPartnership": "Request partnership",
-  "generatingEllipsis": "Generating...",
   "generateCode": "Generate code",
   "tabChart": "Chart",
   "tabSummary": "Summary",
@@ -1110,18 +1057,8 @@
   },
   "simModeTitle": "Simulation Mode",
   "simModeBody": "How would the chart look if you had held today's net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.",
-  "portfolioPerformance": "Portfolio Performance",
   "chartDataFailed": "Could not load chart data",
   "chartDataFailedBody": "Price history could not be fetched. Check your connection and try again.",
-  "intradayMissingBody": "Intraday prices could not be fetched for {names}. These assets are drawn FLAT at their last known price. A flat line does not mean the market was quiet.",
-  "@intradayMissingBody": {
-    "placeholders": {
-      "names": {
-        "type": "String"
-      }
-    }
-  },
-  "raceUpper": "Race",
   "changeByTypeUpper": "By type · price effect",
   "noData": "No data",
   "tooltipReturn": "\nReturn ",
@@ -1211,9 +1148,6 @@
   },
   "whereItCameFrom": "Where it came from",
   "periodStart": "Period start",
-  "yourContribution": "Net contribution",
-  "marketWord": "Market",
-  "cashDividend": "Of which cash dividends",
   "commissionPaid": "Commission paid",
   "contributionNotReturn": "The percentage comes only from the price effect. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.",
   "annualRatePct": "{pct} a year",
@@ -1268,7 +1202,6 @@
     }
   },
   "periodCpi": "Inflation (CPI)",
-  "pointDifference": "Difference",
   "realReturn": "Real return",
   "cpiNotLoaded": "Inflation data has not loaded yet.",
   "cpiNotLoadedBody": "When the inflation index arrives, your portfolio's real return appears here. No estimated figure is shown.",
@@ -1338,14 +1271,6 @@
   },
   "portfolioLineInfoSim": "For weekly and longer periods the {name} line is a simulation: what would have happened had you held today's assets since the start of the period. Your buy and sell dates are ignored; it is not your realised return. This keeps it comparable with your watched assets over the same window.",
   "@portfolioLineInfoSim": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "openDetailSemantics": "Open {name} details",
-  "@openDetailSemantics": {
     "placeholders": {
       "name": {
         "type": "String"
@@ -1483,7 +1408,6 @@
   },
   "loadingEllipsis": "Loading…",
   "widenDateRangeHint": "Try widening the date range or clearing the search.",
-  "priceAlertsTitle": "Price Alerts",
   "quickActionSearch": "Search",
   "createAlert": "Create an alert",
   "noAlertsYet": "You have no alerts yet",
@@ -1525,24 +1449,6 @@
     }
   },
   "topPortfolios": "Top Portfolios",
-  "topGainersAllocation": "{period} top gainers' allocation",
-  "@topGainersAllocation": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
-  "anonymousUpper": "Anonymous",
-  "topPortfoliosSoon": "Top portfolios appear here once there are enough participants. The anonymous pool is forming…",
-  "nthPortfolio": "Portfolio #{n}",
-  "@nthPortfolio": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "selectedPeriodReturnBody": "The period is split into days. Each day, the assets you held that day are valued at market prices, and the daily returns are chained together.\n\nIf you sold one asset and bought another, each counts only on the days you held it. The 7D / 30D / 1Y choice above changes the result directly.",
   "depositsDontChangeRankBody": "What is measured is your picks: which assets you held, on which days. When and how much money you added does NOT affect the ratio; the same picks give the same percentage whether you hold 1 lot or 10,000.\n\nThe purchase price you entered is not used; everything is valued at market prices.",
   "everyoneMeasuredSameBody": "You and your partners are computed with the same formula and the same prices; the calculation happens on this device. Between partners the date you entered counts: history imported via CSV or statement counts right away.\n\nTo be ranked, at least {gun} days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.",
@@ -1554,7 +1460,6 @@
     }
   },
   "planYearly": "Yearly",
-  "planYearlySubtitle": "7 days free, then renews automatically",
   "planMonthly": "Monthly",
   "planMonthlySubtitle": "Cancel any time",
   "subscriptionTerms": "Payment is charged to your App Store account. The subscription renews automatically for the same period and price unless cancelled at least 24 hours before the period ends. Manage or cancel it under Settings › Apple ID › Subscriptions.",
@@ -1652,7 +1557,6 @@
       }
     }
   },
-  "lastYearInflation": "Over the last year, inflation-wise you are ",
   "pointsAhead": "{pts} points ahead",
   "@pointsAhead": {
     "placeholders": {
@@ -1809,9 +1713,7 @@
   "alarmKeep": "Keep alert",
   "alarmDeleteFailed": "Could not delete alerts",
   "assetDeleted": "Asset deleted",
-  "undoFailed": "Could not undo",
   "enterValidAmount": "Enter a valid amount",
-  "dividendSaved": "Dividend saved",
   "dividendPayDate": "Dividend payment date",
   "addDividend": "Add Dividend",
   "netAmountReceived": "{name} · net amount received",
@@ -1850,28 +1752,6 @@
       }
     }
   },
-  "boughtAmount": "Bought {qty} {unit}",
-  "@boughtAmount": {
-    "placeholders": {
-      "qty": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "soldAmount": "Sold {qty} {unit}",
-  "@soldAmount": {
-    "placeholders": {
-      "qty": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
   "transactionFailed": "Transaction failed. {error}",
   "@transactionFailed": {
     "placeholders": {
@@ -1882,7 +1762,6 @@
   },
   "sellAllWarning": "You are selling the whole position. It leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.",
   "saleValue": "Sale value",
-  "noPriceAlert": "No price alert",
   "nActiveAlerts": "{n, plural, =1{1 active price alert} other{{n} active price alerts}}",
   "@nActiveAlerts": {
     "placeholders": {
@@ -1982,8 +1861,6 @@
       }
     }
   },
-  "notifyWhenAbove": "We'll let you know when the price rises to this level.",
-  "notifyWhenBelow": "We'll let you know when the price falls to this level.",
   "setAlert": "Set alert",
   "alertSetBelow": "Alert set for {name}: falling below {price}",
   "@alertSetBelow": {
@@ -2062,9 +1939,7 @@
       }
     }
   },
-  "technicalOutlookUpper": "Technical outlook · daily",
   "technicalPrefix": "Technical:",
-  "nowUpper": "Now",
   "arrowUp": "▲ up",
   "arrowDown": "▼ down",
   "arrowFlat": "◆ flat",
@@ -2099,14 +1974,6 @@
     }
   },
   "confidenceWord": "confidence",
-  "csvRowsAddedToCart": "{n} rows added to the cart",
-  "@csvRowsAddedToCart": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "csvImportTitle": "Add from statement",
   "csvImportBody": "Choose your broker or bank statement (PDF, Excel or CSV) or copy and paste the table. Column names and order don't matter: symbol, quantity, price, date and buy/sell are detected automatically. Buys and sells come in with their dates.",
   "pasteHere": "Paste here",
@@ -2143,7 +2010,6 @@
   "importScreenshotAdd": "Add from screenshot",
   "importScreenshotFillCosts": "Fill costs from a screenshot",
   "importScreenshotHint": "Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.",
-  "importScreenshotReading": "Reading image…",
   "importScreenshotNone": "No holdings found in the image. Pick a screen that shows each holding's code or name, quantity and cost.",
   "importScreenshotNoCost": "No average cost found in the image; rows were left as they were.",
   "importScreenshotCostsApplied": "Average cost for {count} holdings taken from the screenshot.",
@@ -2293,15 +2159,6 @@
     }
   },
   "removeFromWatchlist": "Remove from watchlist",
-  "removeFromWatchlistConfirm": "Remove {name} from your watchlist?",
-  "@removeFromWatchlistConfirm": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "removeWord2": "Remove",
   "removeFromWatchlistFailed": "Could not remove it. Check your connection.",
   "currentPriceUpper": "Current price",
   "periodNoChange": "{period} · no change",
@@ -2314,31 +2171,11 @@
   },
   "unitPriceDiffNote": "The change is a unit price difference; you don't own this asset.",
   "notEnoughHistoryForAsset": "Not enough price history for this asset.",
-  "notInYourPortfolio": "This asset is not part of your portfolio.",
   "searchingEllipsis": "Searching…",
-  "startTypingToSearch": "Start typing to search.",
   "noResultForQuery": "No results for \"{q}\".",
   "@noResultForQuery": {
     "placeholders": {
       "q": {
-        "type": "String"
-      }
-    }
-  },
-  "inYourPortfolioUpper": "In your portfolio",
-  "searchAllAssetsHint": "Search stocks, funds, indices, commodities, currency or gold",
-  "alreadyInPortfolio": "{name} is already in your portfolio",
-  "@alreadyInPortfolio": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "addedToWatchlist": "{name} added to your watchlist",
-  "@addedToWatchlist": {
-    "placeholders": {
-      "name": {
         "type": "String"
       }
     }
@@ -2371,22 +2208,6 @@
     "placeholders": {
       "pts": {
         "type": "String"
-      }
-    }
-  },
-  "betterThanPctInvestors": "Better than {pct}% of investors",
-  "@betterThanPctInvestors": {
-    "placeholders": {
-      "pct": {
-        "type": "int"
-      }
-    }
-  },
-  "nDaysTracked": "{n} days tracked",
-  "@nDaysTracked": {
-    "placeholders": {
-      "n": {
-        "type": "int"
       }
     }
   },
@@ -2474,7 +2295,6 @@
       }
     }
   },
-  "realReturnPositive": "Your portfolio delivered a real return above inflation; your purchasing power grew.",
   "percentileSentence": "You are above {pct}% of participants.",
   "@percentileSentence": {
     "placeholders": {
@@ -2528,8 +2348,6 @@
       }
     }
   },
-  "realReturnNegative": "Your portfolio fell short of inflation; your purchasing power shrank.",
-  "realReturnEven": "Your portfolio kept pace with inflation; your purchasing power held steady.",
   "nPeopleParen": "({n} people)",
   "@nPeopleParen": {
     "placeholders": {
@@ -2584,17 +2402,8 @@
   },
   "noMatchingRecords": "No records match the filter",
   "noTransactionsYet": "No transactions yet",
-  "todaysBalanceChange": "Today's total change",
   "sinceDateToToday": "{date} → today",
   "@sinceDateToToday": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "balanceChangeSince": "Total change since {date}",
-  "@balanceChangeSince": {
     "placeholders": {
       "date": {
         "type": "String"
@@ -2609,15 +2418,6 @@
       }
     }
   },
-  "periodBalanceChange": "{period} total change",
-  "@periodBalanceChange": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
-  "marketOnlyRow": "Price effect only",
   "rowExpandedSemantics": "{label}, expanded. Double tap to collapse.",
   "@rowExpandedSemantics": {
     "placeholders": {
@@ -2660,22 +2460,6 @@
   },
   "flowSellLower": "sold {amount} in period",
   "@flowSellLower": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "flowSellUpper": "Sold {amount} in period",
-  "@flowSellUpper": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "flowBuyUpper": "Bought {amount} in period",
-  "@flowBuyUpper": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -2807,7 +2591,6 @@
   "chartIntervalSemantics": "Candle interval: {aralik} candles",
   "chartCandleFromCloses": "This asset publishes one price a day; candles are built from daily prices.",
   "chartOhlcLine": "O {acilis} · H {yuksek} · L {dusuk} · C {kapanis}",
-  "fullscreenChart": "Open chart full screen",
   "whatsNewTitle": "What's New",
   "@whatsNewTitle": {},
   "whatsNewSubtitle": "See what changed in this version",
@@ -2889,14 +2672,6 @@
   "rateAppTitle": "Rate sandık",
   "rateAppSubtitle": "Leave a rating on the store",
   "todayMarketOnly": "price effect only",
-  "todaySessionOpen": "Session open · closes {close}",
-  "@todaySessionOpen": {
-    "placeholders": {
-      "close": {
-        "type": "String"
-      }
-    }
-  },
   "todayOpensAt": "opens {when}",
   "@todayOpensAt": {
     "placeholders": {
@@ -2913,30 +2688,7 @@
   },
   "todayLoading": "Intraday data loading",
   "todayRealLabel": "Versus inflation",
-  "todayRealHint": "Yearly return minus CPI",
-  "todayWeekHint": "Market effect on your portfolio · summary ready",
   "todayGoalLabel": "Goal",
-  "todayGoalSetShort": "Pick an amount, see what's left daily",
-  "todayGoalAction": "Set",
-  "todayGoalLeftHint": "Left to {goal}",
-  "@todayGoalLeftHint": {
-    "placeholders": {
-      "goal": {
-        "type": "String"
-      }
-    }
-  },
-  "todayGoalValue": "{pct}% · {left}",
-  "@todayGoalValue": {
-    "placeholders": {
-      "pct": {
-        "type": "int"
-      },
-      "left": {
-        "type": "String"
-      }
-    }
-  },
   "todayGoalDone": "Reached",
   "todayGoalDoneHint": "Goal {goal} · pick a new one",
   "@todayGoalDoneHint": {
@@ -2946,7 +2698,6 @@
       }
     }
   },
-  "todayOpenAction": "Open",
   "todayTitle": "Today",
   "todayScopeOf": "{name}'s today",
   "@todayScopeOf": {
@@ -2978,7 +2729,6 @@
       }
     }
   },
-  "todayFlat": "No change today",
   "todayAt": "today at {time}",
   "@todayAt": {
     "placeholders": {
@@ -2987,87 +2737,6 @@
       }
     }
   },
-  "todayMarketClosed": "Market closed · opens {when}",
-  "@todayMarketClosed": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayGreenShare": "{green} of {total} holdings in the green",
-  "@todayGreenShare": {
-    "placeholders": {
-      "green": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "todayGoalSet": "Set a goal",
-  "todayGoalSetHint": "Pick a target for your portfolio and track what's left every day.",
-  "todayGoalProgress": "{pct}% to goal · {left} to go",
-  "@todayGoalProgress": {
-    "placeholders": {
-      "pct": {
-        "type": "int"
-      },
-      "left": {
-        "type": "String"
-      }
-    }
-  },
-  "todayGoalReached": "Goal reached: {goal}",
-  "@todayGoalReached": {
-    "placeholders": {
-      "goal": {
-        "type": "String"
-      }
-    }
-  },
-  "todayInDays": "in {n} days",
-  "@todayInDays": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "todayEventCpi": "TurkStat releases inflation {when}",
-  "@todayEventCpi": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventHoliday": "Exchange closed {when} (public holiday)",
-  "@todayEventHoliday": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventMonthEnd": "Month ends {when}; your monthly summary will be ready",
-  "@todayEventMonthEnd": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayMonthlySummary": "Your {month} summary is ready",
-  "@todayMonthlySummary": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
-  "todayMonthlySummaryHint": "Return, inflation gap and your best holding",
   "todayCloseAt": "closes {close}",
   "@todayCloseAt": {
     "placeholders": {
@@ -3077,7 +2746,6 @@
     }
   },
   "todayClosedShort": "Closed",
-  "todayMarketOnlyShort": "price effect",
   "todayGoalNewAction": "Pick a new one",
   "todayVerdictUp": "Up today",
   "todayVerdictDown": "Down today",
@@ -3111,10 +2779,7 @@
     }
   },
   "todayLast12Months": "last 12 months",
-  "todayMoveLabel": "Today's move",
-  "todayRealYearly": "yearly",
   "todayGoalSetAction": "Set a goal",
-  "todayGoalSetSub": "See what's left every day",
   "todayGoalProgressTitle": "{pct}% to goal",
   "@todayGoalProgressTitle": {
     "placeholders": {
@@ -3135,7 +2800,6 @@
   "goalHint": "Shows your progress on the home screen; it does not change any calculation.",
   "goalInvalid": "Enter a valid amount",
   "goalRemove": "Remove goal",
-  "goalSettingsSubtitle": "Pick a target; track progress on the Today card",
   "partnerInviteMessage": "Hi! I'd like to share my sandık portfolio with you.\n\nYour partner code: {code}\n\nInstall the app, then enter this code under Profile → \"Enter Partner Code\":\n{link}",
   "@partnerInviteMessage": {
     "placeholders": {
@@ -3149,25 +2813,6 @@
   },
   "partnerInviteSubject": "sandık partner invite",
   "notifTypeMonthly": "Monthly",
-  "raceJoinedCount": "{count} racing today · ranking opens at {min}",
-  "@raceJoinedCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "min": {
-        "type": "int"
-      }
-    }
-  },
-  "raceRunningCount": "{count} racing today",
-  "@raceRunningCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "marketDollar": "USD",
   "marketEuro": "EUR",
   "marketGold": "Gold (g)",
@@ -3185,48 +2830,14 @@
   },
   "alarmSuggestAction": "Set alert",
   "briefSlotTitle": "Brief time",
-  "briefSlotSubtitle": "When your daily portfolio move summary arrives",
   "briefSlotMorning": "Morning 09:45",
   "briefSlotEvening": "Evening 18:30 (close)",
-  "todayRealReturnAhead": "{pts} pts ahead of inflation · yearly",
-  "@todayRealReturnAhead": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "todayRealReturnBehind": "{pts} pts behind inflation · yearly",
-  "@todayRealReturnBehind": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeeklyUp": "Last week market +{pct} · summary ready",
-  "@todayWeeklyUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeeklyDown": "Last week market −{pct} · summary ready",
-  "@todayWeeklyDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
   "sectionResult": "What happened?",
   "sectionWhy": "Why?",
   "sectionDetail": "Details",
   "sectionDepth": "More",
   "sectionDepthHint": "Annual return, health, character",
   "myAlarms": "My alerts",
-  "viewChipLabel": "View",
   "identityCrypto": "Cryptocurrency",
   "pickCryptoTap": "Tap to pick a crypto",
   "pickCryptoPrompt": "Pick a cryptocurrency",
@@ -3343,7 +2954,6 @@
   "vsOwnedNote": "This asset is in your portfolio. Buy and sell from the position screen.",
   "vsRemovedFromWatchlist": "{name} removed from watchlist",
   "@vsRemovedFromWatchlist": {"placeholders": {"name": {"type": "String"}}},
-  "vsUndo": "Undo",
   "vsChartSemantics": "{name} price chart, {period}",
   "@vsChartSemantics": {"placeholders": {"name": {"type": "String"}, "period": {"type": "String"}}},
   "vsOpenDetailSemantics": "See {name} chart and statistics",
@@ -3502,7 +3112,6 @@
   "tickerHintDeposit": "Calculated from the contract",
   "tickerHintPension": "TEFAS pension fund code",
   "depositBank": "Bank",
-  "depositBankHint": "e.g. the name of your bank",
   "depositPrincipal": "Amount deposited",
   "depositRate": "Annual interest (gross, %)",
   "depositKindTerm": "Term deposit",
@@ -3524,13 +3133,11 @@
   "depositErrorDays": "Enter the term in days.",
   "depositErrorWithholding": "Withholding tax must be between 0 and 100.",
   "depositAccrualNote": "Interest is added to the principal at maturity; until then the value stays at the principal. If you break the term early, the bank may not pay the interest.",
-  "depositCardTitle": "Deposit",
   "depositPeriodN": "Period {n}",
   "depositDaysLeft": "{n} days to maturity",
   "depositMatured": "Matured",
   "depositMaturedBody": "Interest has been added. Enter the new rate to start the next period; otherwise the value stays as it is.",
   "depositThisPeriod": "This period, net",
-  "depositTotalReturn": "Total net return",
   "depositRenew": "Renew",
   "depositWithdraw": "Withdrawn",
   "depositRenewTitle": "New period",
@@ -3587,7 +3194,6 @@
   "pensionAddContribution": "Add this month's contribution",
   "pensionContributionTitle": "Add contribution",
   "pensionContributionAmount": "Contribution",
-  "pensionContributionGov": "Government contribution: {amount}",
   "pensionContributionGovCapped": "This year's government contribution limit is reached.",
   "pensionContributionSaved": "Contribution added",
   "pensionContributionDue": "This month's contribution isn't added yet.",
@@ -3656,7 +3262,6 @@
       }
     }
   },
-  "pensionFundsNow": "Today's allocation",
   "pensionFundsNowHint": "Shares use today's fund values; because prices move differently they can drift from your contribution instruction.",
   "pensionContributionPlan": "New contributions: {plan}",
   "@pensionContributionPlan": {
@@ -4028,21 +3633,14 @@
   "todaysReturn": "Today's return",
   "returnSince": "Return since {date}",
   "balanceChangeInclBuys": "Total change (incl. buys)",
-  "firstAssetPickTitle": "What are you saving in?",
-  "firstAssetPickHint": "Pick one, type the amount; the price fills itself.",
   "firstAssetGoldGram": "Gram gold",
   "firstAssetUsd": "Dollar",
   "firstAssetEur": "Euro",
-  "firstAssetFund": "A fund",
-  "firstAssetStock": "A stock",
-  "firstAssetOtherType": "Add another type",
   "addDetails": "Add details (fee, note)",
   "addByTyping": "Add by typing",
   "importFromStatement": "Add from statement",
   "orWithEmail": "or with email",
   "todayTopMoverLabel": "Biggest mover",
-  "todayVsInflationYou": "Your return",
-  "todayVsInflationCpi": "CPI",
   "vitrinWelcome": "Welcome",
   "vitrinTitle": "What do you own?",
   "vitrinHint": "Tap and type the amount. Prices are live; your sandık keeps itself up to date.",
@@ -4148,9 +3746,6 @@
   "zorunluOkumaEksik": "To continue, read to the end and accept: {belgeler}",
   "yasalBelgeYatirimUyarisi": "Investment Disclaimer",
   "flowTitleUpper": "Money flow",
-  "flowLastWeekIn": "Net inflow, latest week",
-  "flowLastWeekOut": "Net outflow, latest week",
-  "flowLastWeekFlat": "Net flow, latest week",
   "flowRange": "{from} - {to}",
   "@flowRange": {
     "placeholders": {
@@ -4165,22 +3760,8 @@
       "amount": {"type": "String"}
     }
   },
-  "flowWeekOf": "Week of {date}",
-  "@flowWeekOf": {
-    "placeholders": {
-      "date": {"type": "String"}
-    }
-  },
   "flowFundSize": "Fund size",
   "flowInvestors": "Investors",
-  "flowInvestorsDelta": "{count} ({delta})",
-  "@flowInvestorsDelta": {
-    "placeholders": {
-      "count": {"type": "String"},
-      "delta": {"type": "String"}
-    }
-  },
-  "flowEventsTitle": "Large moves · last 30 days",
   "flowEventIn": "Large inflow · {date}",
   "@flowEventIn": {
     "placeholders": {
@@ -4208,13 +3789,6 @@
     }
   },
   "flowNoEvents": "No unusually large inflow or outflow in the last 30 days.",
-  "flowExplain": "Net flow is money entering the fund minus money leaving it; price changes are not included.",
-  "flowFootnote": "Source: TEFAS · data as of {date}. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.",
-  "@flowFootnote": {
-    "placeholders": {
-      "date": {"type": "String"}
-    }
-  },
   "flowStreakIn": "Net inflow for {count} weeks in a row",
   "@flowStreakIn": {
     "placeholders": {
@@ -4244,21 +3818,6 @@
       }
     }
   },
-  "flowPeriodNote": "Percentages are the flow relative to fund size at the start of the period.",
-  "flowDecompose": "Fund size changed {total} over the last month: price effect {price}, money flow {flow}.",
-  "@flowDecompose": {
-    "placeholders": {
-      "total": {
-        "type": "String"
-      },
-      "price": {
-        "type": "String"
-      },
-      "flow": {
-        "type": "String"
-      }
-    }
-  },
   "flowEventEvidenceMulti": "{amount} · {pct} of fund size · {days} trading days in a row",
   "@flowEventEvidenceMulti": {
     "placeholders": {
@@ -4274,48 +3833,13 @@
     }
   },
   "weekTitle": "This week",
-  "weekIntro": "Highlights of the latest week in the assets you hold. Tap a row for details.",
-  "weekFundsUpper": "Money flow in your funds",
-  "weekRowRange": "{label} · {range}",
-  "@weekRowRange": {
-    "placeholders": {
-      "label": {
-        "type": "String"
-      },
-      "range": {
-        "type": "String"
-      }
-    }
-  },
-  "weekRowIn": "Net inflow",
-  "weekRowOut": "Net outflow",
-  "weekRowFlat": "Net flow",
-  "weekRowBigIn": "Large inflow this week",
-  "weekRowBigOut": "Large outflow this week",
   "weekEmptyNoData": "Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.",
-  "weekFootnote": "Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio's weekly return is under Performance, Summary. Not investment advice.",
   "weekLink": "My funds this week",
   "volTitleUpper": "Volume radar",
-  "volLastDay": "Traded value · {date}",
-  "@volLastDay": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "volVsAverage": "{times}× the average of the previous 20 days",
   "@volVsAverage": {
     "placeholders": {
       "times": {
-        "type": "String"
-      }
-    }
-  },
-  "volPriceSameDay": "Price that day {pct}",
-  "@volPriceSameDay": {
-    "placeholders": {
-      "pct": {
         "type": "String"
       }
     }
@@ -4329,8 +3853,6 @@
       }
     }
   },
-  "volExplain": "Traded value is the total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in or out.",
-  "volEventsTitle": "Unusual volume days · last 30 days",
   "volEventTitle": "Unusual volume · {date}",
   "@volEventTitle": {
     "placeholders": {
@@ -4354,43 +3876,9 @@
     }
   },
   "volNoEvents": "No unusual volume days in the last 30 days.",
-  "volFootnote": "Source: Yahoo Finance end-of-day data · as of {date}. This data cannot show who bought or sold. Not investment advice.",
-  "@volFootnote": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "cryTitleUpper": "Buyer pressure",
-  "cryShareLabel": "Buyer share · {date}",
-  "@cryShareLabel": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "cryShareAvg": "Average of the last 7 days {pct}",
-  "@cryShareAvg": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "cryExplain": "Buyer share is the part of the day's volume that came from market-order buyers. Above 50% means buyers were more eager, below means sellers were; it is not a measure of money flowing in.",
   "cryVolumeLabel": "Volume {amount}",
   "@cryVolumeLabel": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "cryChartCaption": "Daily volume (USDT) · last 20 days",
-  "cryChartSemantics": "Daily volume for the last 20 days. Latest day {amount}.",
-  "@cryChartSemantics": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -4410,23 +3898,6 @@
         "type": "String"
       },
       "share": {
-        "type": "String"
-      }
-    }
-  },
-  "cryFootnote": "Source: Binance, USDT pair · as of {date}. Covers trades on Binance only; this data cannot show who bought or sold. Not investment advice.",
-  "@cryFootnote": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "weekVolumeUpper": "Unusual volume",
-  "weekVolumeRow": "Unusual volume · {date}",
-  "@weekVolumeRow": {
-    "placeholders": {
-      "date": {
         "type": "String"
       }
     }
@@ -4947,7 +4418,6 @@
       "sayi": {"type": "int"}
     }
   },
-  "prmHediyeBittiBant": "Your gift ended; continue where you left off with Premium",
   "prmHediyeBittiGor": "See Premium",
   "prmHediyeBittiSonra": "Not now",
   "prmAbonelikAylik": "Premium · monthly",
@@ -5100,7 +4570,6 @@
     }
   },
   "anzAylikGelismeDipnot": "Fund flows from TEFAS, volume from Yahoo Finance and Binance; dividends from your own records.",
-  "anzAylikNotlarBaslik": "AI notes",
   "anzAylikNotlarAralik": "Notes are based on data from {aralik}.",
   "@anzAylikNotlarAralik": {
     "placeholders": {
@@ -5312,8 +4781,6 @@
   "typePickerHintBistOpen": "BIST open",
   "typePickerHintBistClosed": "BIST closed",
   "typePickerHint247": "24/7",
-  "s7AraSemantics": "Search",
-  "s7AramaIpucu": "Search assets, symbols or actions",
   "s7VarliklarimUpper": "My assets",
   "s7PiyasaUpper": "Market",
   "s7EylemlerUpper": "Actions",
@@ -5630,9 +5097,6 @@
   "ortakGorurAciklama": "{ad} sees what you pick as one list, without portfolio names. The rest never reaches their phone.",
   "@ortakGorurAciklama": {"placeholders": {"ad": {"type": "String"}}},
   "ortakGorurHepsi": "Everything",
-  "ortakGorurSecilenler": "Selected",
-  "ortakGorurHepsiAciklama": "All your portfolios, including ones you add later.",
-  "ortakGorurSeciliAciklama": "A new portfolio stays hidden until you pick it.",
   "ortakGorurYeniAciklama": "While all are on, portfolios you open later are visible too. Turn one off and new portfolios stay hidden until you turn them on.",
   "ortakGorurHicbiri": "If you pick none, {ad} sees none of your holdings; the partnership stays.",
   "@ortakGorurHicbiri": {"placeholders": {"ad": {"type": "String"}}},
@@ -5936,14 +5400,12 @@
   "softUpdateTitle": "A new version is ready",
   "softUpdateBody": "Update from the store for the latest fixes and features.",
   "softUpdateDismiss": "Dismiss for now",
-  "alertCostRow": "From your cost · {maliyet}",
   "alertCostBreakEven": "My cost",
   "alertCostPct": "Cost {pct}",
   "alertCostBreakEvenSemantics": "Set target to your cost",
   "alertCostPctSemantics": "Target your cost {sign} {pct} percent",
   "alarmModFiyat": "Price",
   "alarmModYuzde": "Daily %",
-  "alarmModSemantik": "Alert type: {tur}",
   "alarmYuzdeEsikBaslik": "How big a move today?",
   "alarmYuzdeEsikSemantik": "Daily {n} percent threshold",
   "alarmYuzdeYonBaslik": "Which direction?",
@@ -6076,10 +5538,8 @@
   "alarmOneriBaslik": "Quick start",
   "alarmOneriAciklama": "We'll tell you if it moves 2% in a day",
   "kilometreTaslariUpper": "Your milestones",
-  "kilometreTaslariTumu": "All",
   "kilometreTaslariTumuEtiket": "Show all milestones",
   "kilometreTasiSiradaki": "Next",
-  "kilometreTasiEtiket": "{baslik}, milestone",
   "kilometreTasiSiradakiEtiket": "Next milestone: {baslik}",
   "kilometreTasiKalan": "{tutar} to go",
   "kilometreTasiPaylasAlt": "Tracking my savings with sandık",

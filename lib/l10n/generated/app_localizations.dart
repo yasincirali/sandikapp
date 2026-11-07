@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr'),
+    Locale('tr')
   ];
 
   /// No description provided for @appName.
@@ -200,12 +200,6 @@ abstract class AppLocalizations {
   /// **'Ad soyad'**
   String get fullName;
 
-  /// No description provided for @fullNameRequired.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ad soyad gir'**
-  String get fullNameRequired;
-
   /// No description provided for @passwordRepeat.
   ///
   /// In tr, this message translates to:
@@ -241,18 +235,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Zaten hesabın var mı? Giriş yap'**
   String get haveAccountSignIn;
-
-  /// No description provided for @exitAppTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Uygulamadan çık'**
-  String get exitAppTitle;
-
-  /// No description provided for @exitAppMessage.
-  ///
-  /// In tr, this message translates to:
-  /// **'Uygulamadan çıkmak istediğine emin misin?'**
-  String get exitAppMessage;
 
   /// No description provided for @exit.
   ///
@@ -1022,12 +1004,6 @@ abstract class AppLocalizations {
   /// **'\nadresine gönderdik.'**
   String get otpSentSuffix;
 
-  /// No description provided for @registerNameMissing.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ad soyad gir.'**
-  String get registerNameMissing;
-
   /// No description provided for @registerEmailInvalid.
   ///
   /// In tr, this message translates to:
@@ -1058,29 +1034,11 @@ abstract class AppLocalizations {
   /// **'Tüm hareketleri gör'**
   String get seeAllTransactions;
 
-  /// No description provided for @seeAllCount.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tümünü gör ({count})'**
-  String seeAllCount(int count);
-
   /// No description provided for @signalDeleteFailed.
   ///
   /// In tr, this message translates to:
   /// **'Bildirim silinemedi. Bağlantını kontrol et.'**
   String get signalDeleteFailed;
-
-  /// No description provided for @permanentDelete.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kalıcı sil'**
-  String get permanentDelete;
-
-  /// No description provided for @cancelShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Vazgeç'**
-  String get cancelShort;
 
   /// No description provided for @clearAllSignals.
   ///
@@ -1628,12 +1586,6 @@ abstract class AppLocalizations {
   /// **'Toplu ekle'**
   String get bulkAdd;
 
-  /// No description provided for @orNotInList.
-  ///
-  /// In tr, this message translates to:
-  /// **'veya listede yok'**
-  String get orNotInList;
-
   /// No description provided for @symbolHint.
   ///
   /// In tr, this message translates to:
@@ -1663,12 +1615,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'≈ {amount} · 1 {currency} = {rate}'**
   String totalCostTlEquivalent(String amount, String currency, String rate);
-
-  /// No description provided for @costPreviewHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Miktar girince toplam maliyet burada görünecek.'**
-  String get costPreviewHint;
 
   /// No description provided for @totalCostUpper.
   ///
@@ -1988,12 +1934,6 @@ abstract class AppLocalizations {
   /// **'Fonlar yükleniyor...'**
   String get fundsLoading;
 
-  /// No description provided for @pleaseWait.
-  ///
-  /// In tr, this message translates to:
-  /// **'Lütfen bekle'**
-  String get pleaseWait;
-
   /// No description provided for @breakdownUpAmount.
   ///
   /// In tr, this message translates to:
@@ -2041,18 +1981,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{month} sonundan bugüne'**
   String sinceCpiWindowEnd(String month);
-
-  /// No description provided for @sinceCpiWindowBody.
-  ///
-  /// In tr, this message translates to:
-  /// **'Üstteki rakam bu süreyi içeriyor; {month} TÜFE\'si açıklanınca ({date}) bu kart güncellenir.'**
-  String sinceCpiWindowBody(String month, String date);
-
-  /// No description provided for @sinceCpiWindowBodyLate.
-  ///
-  /// In tr, this message translates to:
-  /// **'Üstteki rakam bu süreyi içeriyor; {month} TÜFE\'si yüklenince bu kart güncellenir.'**
-  String sinceCpiWindowBodyLate(String month);
 
   /// No description provided for @demoBannerTitle.
   ///
@@ -2216,12 +2144,6 @@ abstract class AppLocalizations {
   /// **'Altın türü'**
   String get identityGoldKind;
 
-  /// No description provided for @pickGoldTap.
-  ///
-  /// In tr, this message translates to:
-  /// **'Altın türü seçmek için dokun...'**
-  String get pickGoldTap;
-
   /// No description provided for @goldSearchHint.
   ///
   /// In tr, this message translates to:
@@ -2233,12 +2155,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Altın türleri'**
   String get goldTypes;
-
-  /// No description provided for @goldQuickPick.
-  ///
-  /// In tr, this message translates to:
-  /// **'Hızlı seçim'**
-  String get goldQuickPick;
 
   /// No description provided for @goldGroupGram.
   ///
@@ -2323,12 +2239,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'ons'**
   String get goldUnitOunce;
-
-  /// No description provided for @goldSelectedSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Seçili altın türü: {kind}. Değiştirmek için çift dokun.'**
-  String goldSelectedSemantics(String kind);
 
   /// No description provided for @identityCurrency.
   ///
@@ -2588,12 +2498,6 @@ abstract class AppLocalizations {
   /// **'Sinyal ayarları'**
   String get signalSettings;
 
-  /// No description provided for @signalSettingsSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Her varlık türü için gösterge seçimi + Premium'**
-  String get signalSettingsSubtitle;
-
   /// No description provided for @priceAlerts.
   ///
   /// In tr, this message translates to:
@@ -2749,12 +2653,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ekranların ne işe yaradığını hatırla'**
   String get replayTourSubtitle;
-
-  /// No description provided for @feedbackSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Görüşünü bize ilet'**
-  String get feedbackSubtitle;
 
   /// No description provided for @yasalBelgelerBaslik.
   ///
@@ -3122,12 +3020,6 @@ abstract class AppLocalizations {
   /// **'İptal'**
   String get cancelWord;
 
-  /// No description provided for @noPartnersYet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Henüz ortağın yok'**
-  String get noPartnersYet;
-
   /// No description provided for @removePartnerSemantics.
   ///
   /// In tr, this message translates to:
@@ -3182,24 +3074,6 @@ abstract class AppLocalizations {
   /// **'Sandık Premium'**
   String get sandikPremium;
 
-  /// No description provided for @premiumPitch.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sınırsız varlık ve premium göstergeler'**
-  String get premiumPitch;
-
-  /// No description provided for @premiumActive.
-  ///
-  /// In tr, this message translates to:
-  /// **'Premium aktif'**
-  String get premiumActive;
-
-  /// No description provided for @premiumActiveBody.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tüm gelişmiş özellikler açık'**
-  String get premiumActiveBody;
-
   /// No description provided for @codeCopied.
   ///
   /// In tr, this message translates to:
@@ -3253,12 +3127,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ortaklık iste'**
   String get requestPartnership;
-
-  /// No description provided for @generatingEllipsis.
-  ///
-  /// In tr, this message translates to:
-  /// **'Üretiliyor...'**
-  String get generatingEllipsis;
 
   /// No description provided for @generateCode.
   ///
@@ -3392,12 +3260,6 @@ abstract class AppLocalizations {
   /// **'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.'**
   String get simModeBody;
 
-  /// No description provided for @portfolioPerformance.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföy performans'**
-  String get portfolioPerformance;
-
   /// No description provided for @chartDataFailed.
   ///
   /// In tr, this message translates to:
@@ -3409,18 +3271,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fiyat geçmişi şu an getirilemedi. Bağlantını kontrol edip tekrar deneyebilirsin.'**
   String get chartDataFailedBody;
-
-  /// No description provided for @intradayMissingBody.
-  ///
-  /// In tr, this message translates to:
-  /// **'{names} için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi. Çizginin düz olması piyasanın durgun olduğu anlamına gelmez.'**
-  String intradayMissingBody(String names);
-
-  /// No description provided for @raceUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yarış'**
-  String get raceUpper;
 
   /// No description provided for @changeByTypeUpper.
   ///
@@ -3752,24 +3602,6 @@ abstract class AppLocalizations {
   /// **'Dönem başı'**
   String get periodStart;
 
-  /// No description provided for @yourContribution.
-  ///
-  /// In tr, this message translates to:
-  /// **'Net katkın'**
-  String get yourContribution;
-
-  /// No description provided for @marketWord.
-  ///
-  /// In tr, this message translates to:
-  /// **'Piyasa'**
-  String get marketWord;
-
-  /// No description provided for @cashDividend.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bunun nakit temettüsü'**
-  String get cashDividend;
-
   /// No description provided for @commissionPaid.
   ///
   /// In tr, this message translates to:
@@ -3835,12 +3667,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Enflasyon (TÜFE)'**
   String get periodCpi;
-
-  /// No description provided for @pointDifference.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aradaki fark'**
-  String get pointDifference;
 
   /// No description provided for @realReturn.
   ///
@@ -4021,12 +3847,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Haftalık ve daha uzun dönemlerde {name} çizgisi bir simülasyondur: bugünkü varlıklarını dönem başından beri tutsaydın ne olurdu. Alım-satım tarihlerin hesaba katılmaz; gerçekleşmiş getirin değildir. Böylece izlediğin varlıklarla aynı pencerede kıyaslanır.'**
   String portfolioLineInfoSim(String name);
-
-  /// No description provided for @openDetailSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'{name} detayını aç'**
-  String openDetailSemantics(String name);
 
   /// No description provided for @addToPortfolioSemantics.
   ///
@@ -4274,12 +4094,6 @@ abstract class AppLocalizations {
   /// **'Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.'**
   String get widenDateRangeHint;
 
-  /// No description provided for @priceAlertsTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fiyat alarmları'**
-  String get priceAlertsTitle;
-
   /// Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler).
   ///
   /// In tr, this message translates to:
@@ -4466,30 +4280,6 @@ abstract class AppLocalizations {
   /// **'Zirvedeki Portföyler'**
   String get topPortfolios;
 
-  /// No description provided for @topGainersAllocation.
-  ///
-  /// In tr, this message translates to:
-  /// **'{period} en çok kazananların dağılımı'**
-  String topGainersAllocation(String period);
-
-  /// No description provided for @anonymousUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Anonim'**
-  String get anonymousUpper;
-
-  /// No description provided for @topPortfoliosSoon.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yeterli katılımcı olunca zirve portföyler burada görünecek. Anonim havuz oluşuyor…'**
-  String get topPortfoliosSoon;
-
-  /// No description provided for @nthPortfolio.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n}. portföy'**
-  String nthPortfolio(int n);
-
   /// No description provided for @selectedPeriodReturnBody.
   ///
   /// In tr, this message translates to:
@@ -4513,12 +4303,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yıllık'**
   String get planYearly;
-
-  /// No description provided for @planYearlySubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'7 gün ücretsiz dene, sonra otomatik yenilenir'**
-  String get planYearlySubtitle;
 
   /// No description provided for @planMonthly.
   ///
@@ -4663,12 +4447,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'medyandan {pts} puan geride'**
   String medianBehind(String pts);
-
-  /// No description provided for @lastYearInflation.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son bir yılda enflasyonun '**
-  String get lastYearInflation;
 
   /// No description provided for @pointsAhead.
   ///
@@ -4928,23 +4706,11 @@ abstract class AppLocalizations {
   /// **'Varlık silindi'**
   String get assetDeleted;
 
-  /// No description provided for @undoFailed.
-  ///
-  /// In tr, this message translates to:
-  /// **'Geri alınamadı'**
-  String get undoFailed;
-
   /// No description provided for @enterValidAmount.
   ///
   /// In tr, this message translates to:
   /// **'Geçerli bir tutar gir'**
   String get enterValidAmount;
-
-  /// No description provided for @dividendSaved.
-  ///
-  /// In tr, this message translates to:
-  /// **'Temettü kaydedildi'**
-  String get dividendSaved;
 
   /// No description provided for @dividendPayDate.
   ///
@@ -5006,18 +4772,6 @@ abstract class AppLocalizations {
   /// **'Mevcut bakiyeyi ({amount}) aşamazsın'**
   String cannotExceedBalance(String amount);
 
-  /// No description provided for @boughtAmount.
-  ///
-  /// In tr, this message translates to:
-  /// **'{qty} {unit} alındı'**
-  String boughtAmount(String qty, String unit);
-
-  /// No description provided for @soldAmount.
-  ///
-  /// In tr, this message translates to:
-  /// **'{qty} {unit} satıldı'**
-  String soldAmount(String qty, String unit);
-
   /// No description provided for @transactionFailed.
   ///
   /// In tr, this message translates to:
@@ -5035,12 +4789,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Satış değeri'**
   String get saleValue;
-
-  /// No description provided for @noPriceAlert.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fiyat alarmı yok'**
-  String get noPriceAlert;
 
   /// No description provided for @nActiveAlerts.
   ///
@@ -5137,18 +4885,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hedef yüzde {sign} {pct}'**
   String targetPctSemantics(String sign, int pct);
-
-  /// No description provided for @notifyWhenAbove.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fiyat bu seviyeye çıkınca haber vereceğiz.'**
-  String get notifyWhenAbove;
-
-  /// No description provided for @notifyWhenBelow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fiyat bu seviyeye inince haber vereceğiz.'**
-  String get notifyWhenBelow;
 
   /// No description provided for @setAlert.
   ///
@@ -5300,23 +5036,11 @@ abstract class AppLocalizations {
   /// **'güven %{pct}'**
   String confidenceOnly(int pct);
 
-  /// No description provided for @technicalOutlookUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Teknik görünüm · günlük'**
-  String get technicalOutlookUpper;
-
   /// No description provided for @technicalPrefix.
   ///
   /// In tr, this message translates to:
   /// **'Teknik:'**
   String get technicalPrefix;
-
-  /// No description provided for @nowUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Şu an'**
-  String get nowUpper;
 
   /// No description provided for @arrowUp.
   ///
@@ -5383,12 +5107,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'güven'**
   String get confidenceWord;
-
-  /// No description provided for @csvRowsAddedToCart.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n} satır sepete eklendi'**
-  String csvRowsAddedToCart(int n);
 
   /// No description provided for @csvImportTitle.
   ///
@@ -5563,12 +5281,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.'**
   String get importScreenshotHint;
-
-  /// No description provided for @importScreenshotReading.
-  ///
-  /// In tr, this message translates to:
-  /// **'Görüntü okunuyor…'**
-  String get importScreenshotReading;
 
   /// No description provided for @importScreenshotNone.
   ///
@@ -5858,18 +5570,6 @@ abstract class AppLocalizations {
   /// **'Takipten çıkar'**
   String get removeFromWatchlist;
 
-  /// No description provided for @removeFromWatchlistConfirm.
-  ///
-  /// In tr, this message translates to:
-  /// **'{name} takip listenden kaldırılsın mı?'**
-  String removeFromWatchlistConfirm(String name);
-
-  /// No description provided for @removeWord2.
-  ///
-  /// In tr, this message translates to:
-  /// **'Çıkar'**
-  String get removeWord2;
-
   /// No description provided for @removeFromWatchlistFailed.
   ///
   /// In tr, this message translates to:
@@ -5900,53 +5600,17 @@ abstract class AppLocalizations {
   /// **'Bu varlık için yeterli fiyat geçmişi yok.'**
   String get notEnoughHistoryForAsset;
 
-  /// No description provided for @notInYourPortfolio.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu varlık portföyüne dahil değildir.'**
-  String get notInYourPortfolio;
-
   /// No description provided for @searchingEllipsis.
   ///
   /// In tr, this message translates to:
   /// **'Aranıyor…'**
   String get searchingEllipsis;
 
-  /// No description provided for @startTypingToSearch.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aramak için yazmaya başla.'**
-  String get startTypingToSearch;
-
   /// No description provided for @noResultForQuery.
   ///
   /// In tr, this message translates to:
   /// **'\"{q}\" için sonuç yok.'**
   String noResultForQuery(String q);
-
-  /// No description provided for @inYourPortfolioUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföyünde'**
-  String get inYourPortfolioUpper;
-
-  /// No description provided for @searchAllAssetsHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Hisse, fon, endeks, emtia, döviz veya altın ara'**
-  String get searchAllAssetsHint;
-
-  /// No description provided for @alreadyInPortfolio.
-  ///
-  /// In tr, this message translates to:
-  /// **'{name}, zaten portföyünde'**
-  String alreadyInPortfolio(String name);
-
-  /// No description provided for @addedToWatchlist.
-  ///
-  /// In tr, this message translates to:
-  /// **'{name} takibe alındı'**
-  String addedToWatchlist(String name);
 
   /// No description provided for @watchlistInListLabel.
   ///
@@ -6037,18 +5701,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Enflasyonun {pts} puan önünde'**
   String aheadOfInflationPts(String pts);
-
-  /// ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden
-  ///
-  /// In tr, this message translates to:
-  /// **'Yatırımcıların %{pct}\'{ek} iyi'**
-  String betterThanPctInvestors(int pct, String ek);
-
-  /// No description provided for @nDaysTracked.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n} gün takip'**
-  String nDaysTracked(int n);
 
   /// No description provided for @trackingWithSandik.
   ///
@@ -6266,12 +5918,6 @@ abstract class AppLocalizations {
   /// **'Bu dönem enflasyonun {pts} puan önünde.'**
   String aheadOfInflationPeriod(String pts);
 
-  /// No description provided for @realReturnPositive.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföyün enflasyonun üzerinde reel getiri sağladı, alım gücün arttı.'**
-  String get realReturnPositive;
-
   /// No description provided for @percentileSentence.
   ///
   /// In tr, this message translates to:
@@ -6367,18 +6013,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu dönem enflasyonun {pts} puan gerisinde.'**
   String behindInflationPeriod(String pts);
-
-  /// No description provided for @realReturnNegative.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföyün enflasyonun altında kaldı, alım gücün geriledi.'**
-  String get realReturnNegative;
-
-  /// No description provided for @realReturnEven.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföyün enflasyonla aynı oranda değerlendi, alım gücün korundu.'**
-  String get realReturnEven;
 
   /// No description provided for @nPeopleParen.
   ///
@@ -6476,41 +6110,17 @@ abstract class AppLocalizations {
   /// **'Henüz işlem yok'**
   String get noTransactionsYet;
 
-  /// No description provided for @todaysBalanceChange.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bugünkü toplam değişim'**
-  String get todaysBalanceChange;
-
   /// No description provided for @sinceDateToToday.
   ///
   /// In tr, this message translates to:
   /// **'{date} → bugün'**
   String sinceDateToToday(String date);
 
-  /// No description provided for @balanceChangeSince.
-  ///
-  /// In tr, this message translates to:
-  /// **'{date} toplam değişim'**
-  String balanceChangeSince(String date);
-
   /// No description provided for @periodChangeSim.
   ///
   /// In tr, this message translates to:
   /// **'{period} değişim · bugünkü portföyle'**
   String periodChangeSim(String period);
-
-  /// No description provided for @periodBalanceChange.
-  ///
-  /// In tr, this message translates to:
-  /// **'{period} toplam değişim'**
-  String periodBalanceChange(String period);
-
-  /// No description provided for @marketOnlyRow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sadece fiyat etkisi'**
-  String get marketOnlyRow;
 
   /// No description provided for @rowExpandedSemantics.
   ///
@@ -6547,18 +6157,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'dönem içi satış {amount}'**
   String flowSellLower(String amount);
-
-  /// No description provided for @flowSellUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Dönem içi satış {amount}'**
-  String flowSellUpper(String amount);
-
-  /// No description provided for @flowBuyUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Dönem içi alım {amount}'**
-  String flowBuyUpper(String amount);
 
   /// No description provided for @raceFooterGlobal.
   ///
@@ -6895,17 +6493,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  );
-
-  /// No description provided for @fullscreenChart.
-  ///
-  /// In tr, this message translates to:
-  /// **'Grafiği tam ekran aç'**
-  String get fullscreenChart;
+      String acilis, String yuksek, String dusuk, String kapanis);
 
   /// No description provided for @whatsNewTitle.
   ///
@@ -7087,12 +6675,6 @@ abstract class AppLocalizations {
   /// **'sadece fiyat etkisi'**
   String get todayMarketOnly;
 
-  /// No description provided for @todaySessionOpen.
-  ///
-  /// In tr, this message translates to:
-  /// **'Seans açık · {close} kapanış'**
-  String todaySessionOpen(String close);
-
   /// No description provided for @todayOpensAt.
   ///
   /// In tr, this message translates to:
@@ -7129,47 +6711,11 @@ abstract class AppLocalizations {
   /// **'Enflasyona göre'**
   String get todayRealLabel;
 
-  /// No description provided for @todayRealHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yıllık getirin ile TÜFE farkı'**
-  String get todayRealHint;
-
-  /// No description provided for @todayWeekHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Piyasanın portföyüne etkisi · özet hazır'**
-  String get todayWeekHint;
-
   /// No description provided for @todayGoalLabel.
   ///
   /// In tr, this message translates to:
   /// **'Hedef'**
   String get todayGoalLabel;
-
-  /// No description provided for @todayGoalSetShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tutar seç, kalanı her gün gör'**
-  String get todayGoalSetShort;
-
-  /// No description provided for @todayGoalAction.
-  ///
-  /// In tr, this message translates to:
-  /// **'Belirle'**
-  String get todayGoalAction;
-
-  /// No description provided for @todayGoalLeftHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'{goal} hedefe kalan'**
-  String todayGoalLeftHint(String goal);
-
-  /// No description provided for @todayGoalValue.
-  ///
-  /// In tr, this message translates to:
-  /// **'%{pct} · {left}'**
-  String todayGoalValue(int pct, String left);
 
   /// No description provided for @todayGoalDone.
   ///
@@ -7182,12 +6728,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hedefin {goal} · yenisini seç'**
   String todayGoalDoneHint(String goal);
-
-  /// No description provided for @todayOpenAction.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aç'**
-  String get todayOpenAction;
 
   /// No description provided for @todayTitle.
   ///
@@ -7213,89 +6753,11 @@ abstract class AppLocalizations {
   /// **'{amount} · %{pct} eksi'**
   String todayDown(String amount, String pct);
 
-  /// No description provided for @todayFlat.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bugün değişmedi'**
-  String get todayFlat;
-
   /// No description provided for @todayAt.
   ///
   /// In tr, this message translates to:
   /// **'bugün {time}'**
   String todayAt(String time);
-
-  /// No description provided for @todayMarketClosed.
-  ///
-  /// In tr, this message translates to:
-  /// **'Piyasa kapalı · {when} açılır'**
-  String todayMarketClosed(String when);
-
-  /// No description provided for @todayGreenShare.
-  ///
-  /// In tr, this message translates to:
-  /// **'{green}/{total} varlığın artıda'**
-  String todayGreenShare(int green, int total);
-
-  /// No description provided for @todayGoalSet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bir hedef belirle'**
-  String get todayGoalSet;
-
-  /// No description provided for @todayGoalSetHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföyün için bir tutar seç; ne kadar kaldığını her gün burada gör.'**
-  String get todayGoalSetHint;
-
-  /// No description provided for @todayGoalProgress.
-  ///
-  /// In tr, this message translates to:
-  /// **'Hedefe %{pct} · {left} kaldı'**
-  String todayGoalProgress(int pct, String left);
-
-  /// No description provided for @todayGoalReached.
-  ///
-  /// In tr, this message translates to:
-  /// **'Hedefine ulaştın: {goal}'**
-  String todayGoalReached(String goal);
-
-  /// No description provided for @todayInDays.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n} gün sonra'**
-  String todayInDays(int n);
-
-  /// No description provided for @todayEventCpi.
-  ///
-  /// In tr, this message translates to:
-  /// **'TÜİK enflasyonu {when} açıklıyor'**
-  String todayEventCpi(String when);
-
-  /// No description provided for @todayEventHoliday.
-  ///
-  /// In tr, this message translates to:
-  /// **'Borsa {when} kapalı (resmî tatil)'**
-  String todayEventHoliday(String when);
-
-  /// No description provided for @todayEventMonthEnd.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ay {when} bitiyor; aylık özetin hazır olacak'**
-  String todayEventMonthEnd(String when);
-
-  /// No description provided for @todayMonthlySummary.
-  ///
-  /// In tr, this message translates to:
-  /// **'{month} özetin hazır'**
-  String todayMonthlySummary(String month);
-
-  /// No description provided for @todayMonthlySummaryHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Getirin, enflasyon farkı ve en iyi varlığın'**
-  String get todayMonthlySummaryHint;
 
   /// No description provided for @todayCloseAt.
   ///
@@ -7308,12 +6770,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kapalı'**
   String get todayClosedShort;
-
-  /// No description provided for @todayMarketOnlyShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'fiyat etkisi'**
-  String get todayMarketOnlyShort;
 
   /// No description provided for @todayGoalNewAction.
   ///
@@ -7411,29 +6867,11 @@ abstract class AppLocalizations {
   /// **'son 12 ay'**
   String get todayLast12Months;
 
-  /// No description provided for @todayMoveLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Günün hareketi'**
-  String get todayMoveLabel;
-
-  /// No description provided for @todayRealYearly.
-  ///
-  /// In tr, this message translates to:
-  /// **'yıllık'**
-  String get todayRealYearly;
-
   /// No description provided for @todayGoalSetAction.
   ///
   /// In tr, this message translates to:
   /// **'Hedef belirle'**
   String get todayGoalSetAction;
-
-  /// No description provided for @todayGoalSetSub.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kalanı her gün gör'**
-  String get todayGoalSetSub;
 
   /// No description provided for @todayGoalProgressTitle.
   ///
@@ -7471,12 +6909,6 @@ abstract class AppLocalizations {
   /// **'Hedefi kaldır'**
   String get goalRemove;
 
-  /// No description provided for @goalSettingsSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör'**
-  String get goalSettingsSubtitle;
-
   /// No description provided for @partnerInviteMessage.
   ///
   /// In tr, this message translates to:
@@ -7494,18 +6926,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Aylık'**
   String get notifTypeMonthly;
-
-  /// No description provided for @raceJoinedCount.
-  ///
-  /// In tr, this message translates to:
-  /// **'{count} kişi bugün yarışta · sıralama {min} kişide açılır'**
-  String raceJoinedCount(int count, int min);
-
-  /// No description provided for @raceRunningCount.
-  ///
-  /// In tr, this message translates to:
-  /// **'{count} kişi bugün yarışıyor'**
-  String raceRunningCount(int count);
 
   /// No description provided for @marketDollar.
   ///
@@ -7567,12 +6987,6 @@ abstract class AppLocalizations {
   /// **'Brifing saati'**
   String get briefSlotTitle;
 
-  /// No description provided for @briefSlotSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföyündeki günlük hareket özeti ne zaman gelsin'**
-  String get briefSlotSubtitle;
-
   /// No description provided for @briefSlotMorning.
   ///
   /// In tr, this message translates to:
@@ -7584,30 +6998,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Akşam 18:30 (kapanış)'**
   String get briefSlotEvening;
-
-  /// No description provided for @todayRealReturnAhead.
-  ///
-  /// In tr, this message translates to:
-  /// **'{pts} puan enflasyonun önündesin · yıllık'**
-  String todayRealReturnAhead(String pts);
-
-  /// No description provided for @todayRealReturnBehind.
-  ///
-  /// In tr, this message translates to:
-  /// **'{pts} puan enflasyonun gerisindesin · yıllık'**
-  String todayRealReturnBehind(String pts);
-
-  /// No description provided for @todayWeeklyUp.
-  ///
-  /// In tr, this message translates to:
-  /// **'Geçen hafta piyasadan +{pct} · özetin hazır'**
-  String todayWeeklyUp(String pct);
-
-  /// No description provided for @todayWeeklyDown.
-  ///
-  /// In tr, this message translates to:
-  /// **'Geçen hafta piyasadan −{pct} · özetin hazır'**
-  String todayWeeklyDown(String pct);
 
   /// No description provided for @sectionResult.
   ///
@@ -7644,12 +7034,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Alarmlarım'**
   String get myAlarms;
-
-  /// No description provided for @viewChipLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Görünüm'**
-  String get viewChipLabel;
 
   /// No description provided for @identityCrypto.
   ///
@@ -8070,12 +7454,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{name} takipten çıkarıldı'**
   String vsRemovedFromWatchlist(String name);
-
-  /// No description provided for @vsUndo.
-  ///
-  /// In tr, this message translates to:
-  /// **'Geri al'**
-  String get vsUndo;
 
   /// No description provided for @vsChartSemantics.
   ///
@@ -8713,12 +8091,6 @@ abstract class AppLocalizations {
   /// **'Banka'**
   String get depositBank;
 
-  /// No description provided for @depositBankHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Örn. Enpara, Garanti BBVA'**
-  String get depositBankHint;
-
   /// No description provided for @depositPrincipal.
   ///
   /// In tr, this message translates to:
@@ -8845,12 +8217,6 @@ abstract class AppLocalizations {
   /// **'Faiz vade sonunda anaparaya eklenir; o güne kadar değer anaparada kalır. Vadeyi erken bozarsan banka faizi ödemeyebilir.'**
   String get depositAccrualNote;
 
-  /// No description provided for @depositCardTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Mevduat'**
-  String get depositCardTitle;
-
   /// No description provided for @depositPeriodN.
   ///
   /// In tr, this message translates to:
@@ -8880,12 +8246,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu dönem net'**
   String get depositThisPeriod;
-
-  /// No description provided for @depositTotalReturn.
-  ///
-  /// In tr, this message translates to:
-  /// **'Toplam net getiri'**
-  String get depositTotalReturn;
 
   /// No description provided for @depositRenew.
   ///
@@ -9223,12 +8583,6 @@ abstract class AppLocalizations {
   /// **'Katkı tutarı'**
   String get pensionContributionAmount;
 
-  /// No description provided for @pensionContributionGov.
-  ///
-  /// In tr, this message translates to:
-  /// **'Devlet katkısı: {amount}'**
-  String pensionContributionGov(String amount);
-
   /// No description provided for @pensionContributionGovCapped.
   ///
   /// In tr, this message translates to:
@@ -9511,12 +8865,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 fon} other{{count} fon}}'**
   String pensionFundCount(int count);
 
-  /// No description provided for @pensionFundsNow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bugünkü dağılım'**
-  String get pensionFundsNow;
-
   /// No description provided for @pensionFundsNowHint.
   ///
   /// In tr, this message translates to:
@@ -9588,11 +8936,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  );
+      String date, String end, String change, String cpi);
 
   /// No description provided for @savingsRose.
   ///
@@ -10212,18 +9556,6 @@ abstract class AppLocalizations {
   /// **'Toplam değişim (alımlar dahil)'**
   String get balanceChangeInclBuys;
 
-  /// No description provided for @firstAssetPickTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ne biriktiriyorsun?'**
-  String get firstAssetPickTitle;
-
-  /// No description provided for @firstAssetPickHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Seç, miktarını yaz; fiyat kendiliğinden gelir.'**
-  String get firstAssetPickHint;
-
   /// No description provided for @firstAssetGoldGram.
   ///
   /// In tr, this message translates to:
@@ -10241,24 +9573,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Euro'**
   String get firstAssetEur;
-
-  /// No description provided for @firstAssetFund.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bir fon'**
-  String get firstAssetFund;
-
-  /// No description provided for @firstAssetStock.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bir hisse'**
-  String get firstAssetStock;
-
-  /// No description provided for @firstAssetOtherType.
-  ///
-  /// In tr, this message translates to:
-  /// **'Başka bir tür ekle'**
-  String get firstAssetOtherType;
 
   /// No description provided for @addDetails.
   ///
@@ -10289,18 +9603,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'En çok oynayan'**
   String get todayTopMoverLabel;
-
-  /// No description provided for @todayVsInflationYou.
-  ///
-  /// In tr, this message translates to:
-  /// **'Getirin'**
-  String get todayVsInflationYou;
-
-  /// No description provided for @todayVsInflationCpi.
-  ///
-  /// In tr, this message translates to:
-  /// **'TÜFE'**
-  String get todayVsInflationCpi;
 
   /// No description provided for @vitrinWelcome.
   ///
@@ -10800,24 +10102,6 @@ abstract class AppLocalizations {
   /// **'Para akışı'**
   String get flowTitleUpper;
 
-  /// No description provided for @flowLastWeekIn.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son hafta net giriş'**
-  String get flowLastWeekIn;
-
-  /// No description provided for @flowLastWeekOut.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son hafta net çıkış'**
-  String get flowLastWeekOut;
-
-  /// No description provided for @flowLastWeekFlat.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son hafta net akış'**
-  String get flowLastWeekFlat;
-
   /// Para akışı kartında son haftanın tarih aralığı: '29 Eyl - 2 Eki'.
   ///
   /// In tr, this message translates to:
@@ -10836,12 +10120,6 @@ abstract class AppLocalizations {
   /// **'Son 8 haftanın haftalık net para akışı. Son hafta {amount}.'**
   String flowChartSemantics(String amount);
 
-  /// No description provided for @flowWeekOf.
-  ///
-  /// In tr, this message translates to:
-  /// **'{date} haftası'**
-  String flowWeekOf(String date);
-
   /// No description provided for @flowFundSize.
   ///
   /// In tr, this message translates to:
@@ -10853,18 +10131,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yatırımcı sayısı'**
   String get flowInvestors;
-
-  /// Yatırımcı sayısı ve bir önceki işlem gününe göre farkı: '40.518 (+12)'.
-  ///
-  /// In tr, this message translates to:
-  /// **'{count} ({delta})'**
-  String flowInvestorsDelta(String count, String delta);
-
-  /// No description provided for @flowEventsTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Büyük hareketler · son 30 gün'**
-  String get flowEventsTitle;
 
   /// No description provided for @flowEventIn.
   ///
@@ -10896,18 +10162,6 @@ abstract class AppLocalizations {
   /// **'Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.'**
   String get flowNoEvents;
 
-  /// No description provided for @flowExplain.
-  ///
-  /// In tr, this message translates to:
-  /// **'Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.'**
-  String get flowExplain;
-
-  /// No description provided for @flowFootnote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaynak: TEFAS · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.'**
-  String flowFootnote(String date);
-
   /// No description provided for @flowStreakIn.
   ///
   /// In tr, this message translates to:
@@ -10938,18 +10192,6 @@ abstract class AppLocalizations {
   /// **'{amount} · {pct}'**
   String flowPeriodValue(String amount, String pct);
 
-  /// No description provided for @flowPeriodNote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.'**
-  String get flowPeriodNote;
-
-  /// No description provided for @flowDecompose.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son 1 ayda fon büyüklüğü {total} değişti: fiyat etkisi {price}, para akışı {flow}.'**
-  String flowDecompose(String total, String price, String flow);
-
   /// No description provided for @flowEventEvidenceMulti.
   ///
   /// In tr, this message translates to:
@@ -10962,65 +10204,11 @@ abstract class AppLocalizations {
   /// **'Haftanın özeti'**
   String get weekTitle;
 
-  /// No description provided for @weekIntro.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.'**
-  String get weekIntro;
-
-  /// No description provided for @weekFundsUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fonlarında para akışı'**
-  String get weekFundsUpper;
-
-  /// Haftanın özeti satırı: 'Net çıkış · 28 Eyl - 2 Eki'.
-  ///
-  /// In tr, this message translates to:
-  /// **'{label} · {range}'**
-  String weekRowRange(String label, String range);
-
-  /// No description provided for @weekRowIn.
-  ///
-  /// In tr, this message translates to:
-  /// **'Net giriş'**
-  String get weekRowIn;
-
-  /// No description provided for @weekRowOut.
-  ///
-  /// In tr, this message translates to:
-  /// **'Net çıkış'**
-  String get weekRowOut;
-
-  /// No description provided for @weekRowFlat.
-  ///
-  /// In tr, this message translates to:
-  /// **'Net akış'**
-  String get weekRowFlat;
-
-  /// No description provided for @weekRowBigIn.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta büyük giriş var'**
-  String get weekRowBigIn;
-
-  /// No description provided for @weekRowBigOut.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta büyük çıkış var'**
-  String get weekRowBigOut;
-
   /// No description provided for @weekEmptyNoData.
   ///
   /// In tr, this message translates to:
   /// **'Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.'**
   String get weekEmptyNoData;
-
-  /// No description provided for @weekFootnote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.'**
-  String get weekFootnote;
 
   /// No description provided for @weekLink.
   ///
@@ -11034,23 +10222,11 @@ abstract class AppLocalizations {
   /// **'Hacim radarı'**
   String get volTitleUpper;
 
-  /// No description provided for @volLastDay.
-  ///
-  /// In tr, this message translates to:
-  /// **'Para hacmi · {date}'**
-  String volLastDay(String date);
-
   /// No description provided for @volVsAverage.
   ///
   /// In tr, this message translates to:
   /// **'Önceki 20 günün ortalamasının {times} katı'**
   String volVsAverage(String times);
-
-  /// No description provided for @volPriceSameDay.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aynı gün fiyat {pct}'**
-  String volPriceSameDay(String pct);
 
   /// No description provided for @volChartCaption.
   ///
@@ -11063,18 +10239,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Son 20 işlem gününün günlük para hacmi. Son gün {amount}.'**
   String volChartSemantics(String amount);
-
-  /// No description provided for @volExplain.
-  ///
-  /// In tr, this message translates to:
-  /// **'Para hacmi, o gün el değiştiren hisselerin toplam tutarıdır. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi ya da çıkışı demek değildir.'**
-  String get volExplain;
-
-  /// No description provided for @volEventsTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Olağandışı hacim günleri · son 30 gün'**
-  String get volEventsTitle;
 
   /// No description provided for @volEventTitle.
   ///
@@ -11094,35 +10258,11 @@ abstract class AppLocalizations {
   /// **'Son 30 günde olağandışı hacim günü yok.'**
   String get volNoEvents;
 
-  /// No description provided for @volFootnote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaynak: Yahoo Finance gün sonu verisi · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.'**
-  String volFootnote(String date);
-
   /// No description provided for @cryTitleUpper.
   ///
   /// In tr, this message translates to:
   /// **'Alıcı baskısı'**
   String get cryTitleUpper;
-
-  /// No description provided for @cryShareLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alıcı payı · {date}'**
-  String cryShareLabel(String date);
-
-  /// No description provided for @cryShareAvg.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son 7 günün ortalaması {pct}'**
-  String cryShareAvg(String pct);
-
-  /// No description provided for @cryExplain.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.'**
-  String get cryExplain;
 
   /// No description provided for @cryVolumeLabel.
   ///
@@ -11130,46 +10270,12 @@ abstract class AppLocalizations {
   /// **'İşlem hacmi {amount}'**
   String cryVolumeLabel(String amount);
 
-  /// No description provided for @cryChartCaption.
-  ///
-  /// In tr, this message translates to:
-  /// **'Günlük işlem hacmi (USDT) · son 20 gün'**
-  String get cryChartCaption;
-
-  /// No description provided for @cryChartSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son 20 günün günlük işlem hacmi. Son gün {amount}.'**
-  String cryChartSemantics(String amount);
-
   /// No description provided for @cryEventEvidence.
   ///
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  );
-
-  /// No description provided for @cryFootnote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaynak: Binance, USDT paritesi · veri tarihi {date}. Yalnız Binance\'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.'**
-  String cryFootnote(String date);
-
-  /// No description provided for @weekVolumeUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Olağandışı hacim'**
-  String get weekVolumeUpper;
-
-  /// No description provided for @weekVolumeRow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Olağandışı hacim · {date}'**
-  String weekVolumeRow(String date);
+      String amount, String times, String pct, String share);
 
   /// No description provided for @tekOnayGizlilikBaglanti.
   ///
@@ -12389,12 +11495,6 @@ abstract class AppLocalizations {
   /// **'Verilerinden hiçbiri silinmedi; {sayi} varlık ve temel özellikler ücretsiz kalır. Raporlar, sinyaller ve sınırsız varlık için Premium\'la kaldığın yerden devam edebilirsin.'**
   String prmHediyeBittiGovde(int sayi);
 
-  /// No description provided for @prmHediyeBittiBant.
-  ///
-  /// In tr, this message translates to:
-  /// **'Hediyen bitti; Premium\'la kaldığın yerden devam et'**
-  String get prmHediyeBittiBant;
-
   /// No description provided for @prmHediyeBittiGor.
   ///
   /// In tr, this message translates to:
@@ -12676,12 +11776,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fon akışı TEFAS, hacim Yahoo Finance ve Binance verisinden; temettüler kendi kayıtlarından.'**
   String get anzAylikGelismeDipnot;
-
-  /// No description provided for @anzAylikNotlarBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yapay zekâ notları'**
-  String get anzAylikNotlarBaslik;
 
   /// No description provided for @anzAylikNotlarAralik.
   ///
@@ -13426,18 +12520,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'7/24'**
   String get typePickerHint247;
-
-  /// No description provided for @s7AraSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ara'**
-  String get s7AraSemantics;
-
-  /// No description provided for @s7AramaIpucu.
-  ///
-  /// In tr, this message translates to:
-  /// **'Varlık, sembol ya da işlem ara'**
-  String get s7AramaIpucu;
 
   /// No description provided for @s7VarliklarimUpper.
   ///
@@ -15119,24 +14201,6 @@ abstract class AppLocalizations {
   /// **'Hepsi'**
   String get ortakGorurHepsi;
 
-  /// No description provided for @ortakGorurSecilenler.
-  ///
-  /// In tr, this message translates to:
-  /// **'Seçtiklerim'**
-  String get ortakGorurSecilenler;
-
-  /// No description provided for @ortakGorurHepsiAciklama.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bütün portföylerin, sonradan açacakların dahil.'**
-  String get ortakGorurHepsiAciklama;
-
-  /// No description provided for @ortakGorurSeciliAciklama.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yeni açtığın portföy, sen seçene kadar gizli kalır.'**
-  String get ortakGorurSeciliAciklama;
-
   /// No description provided for @ortakGorurYeniAciklama.
   ///
   /// In tr, this message translates to:
@@ -16805,12 +15869,6 @@ abstract class AppLocalizations {
   /// **'Şimdilik kapat'**
   String get softUpdateDismiss;
 
-  /// No description provided for @alertCostRow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Maliyetine göre · {maliyet}'**
-  String alertCostRow(String maliyet);
-
   /// No description provided for @alertCostBreakEven.
   ///
   /// In tr, this message translates to:
@@ -16846,12 +15904,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Günlük yüzde'**
   String get alarmModYuzde;
-
-  /// No description provided for @alarmModSemantik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alarm türü: {tur}'**
-  String alarmModSemantik(String tur);
 
   /// No description provided for @alarmYuzdeEsikBaslik.
   ///
@@ -17585,12 +16637,6 @@ abstract class AppLocalizations {
   /// **'Kilometre taşların'**
   String get kilometreTaslariUpper;
 
-  /// No description provided for @kilometreTaslariTumu.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tümü'**
-  String get kilometreTaslariTumu;
-
   /// No description provided for @kilometreTaslariTumuEtiket.
   ///
   /// In tr, this message translates to:
@@ -17602,12 +16648,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki'**
   String get kilometreTasiSiradaki;
-
-  /// No description provided for @kilometreTasiEtiket.
-  ///
-  /// In tr, this message translates to:
-  /// **'{baslik}, kilometre taşı'**
-  String kilometreTasiEtiket(String baslik);
 
   /// No description provided for @kilometreTasiSiradakiEtiket.
   ///
@@ -17650,10 +16690,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  );
+      String baslik, int yuzde, String kalan);
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -18050,12 +17087,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  );
+      String baslik, String dusuk, String yuksek, String bugun, String cumle);
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -18193,9 +17225,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
