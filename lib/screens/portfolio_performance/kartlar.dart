@@ -375,7 +375,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context) + kenar,
                   ustPay, SandikSpace.screenH(context) + kenar, SandikSpace.smd),
               children: [
-                _buildTekSatirKontroller(activePartners),
+                // İliştirilmişken (normal yazı) satır üst çubukta, listede
+                // yok — gerekçe `_kontrollerIlisik`.
+                if (!_kontrollerIlisik(context))
+                  _buildTekSatirKontroller(activePartners),
                 if (_simulate && !isIntraday) ...[
                   const SizedBox(height: SandikSpace.xs),
                   _buildBugunkuPortfoyRozeti(),
@@ -424,7 +427,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 ],
                 ...zirveBlogu(),
                 const SizedBox(height: SandikSpace.smd),
-                const DisclaimerWidget(),
+                const DisclaimerWidget(kisa: true),
                 const SizedBox(height: SandikSpace.md),
               ],
             )),
@@ -541,7 +544,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         secili: SummaryPeriod.fromIndex(_selectedPeriodIdx)),
                   ],
                   const SizedBox(height: 12),
-                  const DisclaimerWidget(),
+                  const DisclaimerWidget(kisa: true),
                   const SizedBox(height: 16),
                 ].map((w) => _SekmeSolmasi(
                     ozet: true, taze: _sekmeYeniDegisti, child: w))
@@ -606,7 +609,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   // (bkz. `analyze(..., allowSimulation)`) zaten kalıcı olarak
                   // "sinyal yok" gösteriyordu — yer kaplayan ölü bir yüzeydi.
                   const SizedBox(height: 12),
-                  const DisclaimerWidget(),
+                  const DisclaimerWidget(kisa: true),
                   const SizedBox(height: 16),
                 ].map((w) => _SekmeSolmasi(
                     ozet: false, taze: _sekmeYeniDegisti, child: w)),
@@ -1092,7 +1095,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     if (!tekAkis) return kart(null);
     return ValueListenableBuilder<VoidCallback?>(
       valueListenable: _ozetPaylasim,
-      builder: (context, paylas, _) => kart(paylas),
+      // Rakam yokken paylaş YOK (Ar-Ge 2026-11-07 12:15 #4): "Bugünün
+      // verisi henüz gelmedi" ya da "Değişim yok" yazarken paylaşılan kart
+      // boş bir yüzde taşırdı. Rakam gelince düğme aynı yere döner.
+      builder: (context, paylas, _) => kart(piyasaFlat ? null : paylas),
     );
   }
 

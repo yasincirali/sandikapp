@@ -6780,5 +6780,12 @@
   "yaDusukte": "{donem} en düşüğünde",
   "@yaDusukte": {"placeholders": {"donem": {"type": "String"}}},
   "yaSemantik": "{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}",
-  "@yaSemantik": {"description": "Ekran okuyucu için tek etiket", "placeholders": {"baslik": {"type": "String"}, "dusuk": {"type": "String"}, "yuksek": {"type": "String"}, "bugun": {"type": "String"}, "cumle": {"type": "String"}}}
+  "@yaSemantik": {"description": "Ekran okuyucu için tek etiket", "placeholders": {"baslik": {"type": "String"}, "dusuk": {"type": "String"}, "yuksek": {"type": "String"}, "bugun": {"type": "String"}, "cumle": {"type": "String"}}},
+  "noChangeBridgeToday": "Bugün para yatırmadın ya da çekmedin, fiyatlar da değişmedi.",
+  "noChangeBridgePeriod": "Bu dönemde para yatırmadın ya da çekmedin, fiyatlar da değişmedi.",
+  "disclaimerShort": "Yatırım tavsiyesi değildir. Geçmiş getiri geleceği göstermez.",
+  "@disclaimerShort": {"description": "Performans dipnotunun tek satırlık özeti; tam metin Ayrıntı ile açılır"},
+  "disclaimerDetails": "Ayrıntı",
+  "disclaimerDetailsHint": "Yasal uyarının tamamını açar",
+  "disclaimerSheetTitle": "Yasal uyarı"
 }

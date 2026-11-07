@@ -766,15 +766,20 @@ List<_Adim> _adimlariKur() {
       // kullanır, yoksa kullanıcı ekranda tarif edileni bulamaz.
       // Tek akış (bayrak `performans_tek_akis`, S2): Grafik | Özet anahtarı
       // yok, tek kaydırma. Bayrak kapalıyken eski metin birebir.
+      // 2026-11-07 (Ar-Ge 12:15 #3): tek akışta "Neden böyle?" başlığı
+      // yalnız "Ne oldu?" varken çizilir; tur başlık adı yerine kartları
+      // sayar ("Nereden geldi" kart başlığı kaldı).
       govde: PortfolioPerformanceScreen.tekAkisAcik
           ? 'Kazancın tek sayfada, yukarıdan aşağı: en üstte seçtiğin '
               'dönemde paranın getirisi (yüzde yalnızca fiyat etkisidir; '
               'yatırdığın para alttaki cümlede ayrı yazılır), altında '
-              'grafik, onun altında özet. Özet soru sırasıyla ilerler: '
-              '"Ne oldu?" (enflasyona göre kaç puan önde ya da geride '
-              'olduğun), "Neden böyle?" (nereden geldi, hangi varlıklar, '
-              'türe göre döküm) ve "Ayrıntılar" (birikim düzenin; istersen '
-              '"Daha fazlası"nı açarsın). Her yüzdenin yanındaki mavi çip '
+              'grafik, onun altında özet. Özet önce "Nereden geldi" '
+              'kartıyla değişimin ne kadarının fiyattan, ne kadarının '
+              'senin paran olduğunu, sonra hangi varlıklardan ve hangi '
+              'türden geldiğini gösterir; enflasyon verisi olan dönemde '
+              'üstte "Ne oldu?" kaç puan önde ya da geride olduğunu söyler. '
+              'En altta "Ayrıntılar" (birikim düzenin; istersen "Daha '
+              'fazlası"nı açarsın). Her yüzdenin yanındaki mavi çip '
               'ölçüldüğü aralığı yazar.'
           : 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
           'dönemi görebilirsin. Grafik kartında yüzde yalnızca fiyat '
@@ -802,8 +807,11 @@ List<_Adim> _adimlariKur() {
       // Filtre çipi; seçim kartı, grafiği ve özeti birlikte değiştirir.
       // Seçim ekranlar arasında taşınır (`donem_hafizasi`, bayrak
       // 2026-10-20'de emekliye ayrıldı) — tur bunu tek cümleyle söyler.
+      // 2026-11-07 (Ar-Ge 12:15 #1): satır başlığın altına iliştirildi,
+      // aşağı kaydırınca yerinde kalır; tur bunu söyler.
       govde: PortfolioPerformanceScreen.tekAkisAcik
-          ? 'Sayfanın en üstündeki seçici: "Bugün" gün içini saat saat '
+          ? 'Başlığın altındaki seçici, aşağı kaydırsan da yerinde kalır: '
+                  '"Bugün" gün içini saat saat '
                   'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
                   'geniş pencereler. Seçtiğin dönem üstteki kartı, grafiği '
                   've altındaki özeti birlikte değiştirir. Aynı seçici '
@@ -879,7 +887,8 @@ List<_Adim> _adimlariKur() {
       // değil düello arenası; metin arenayı anlatır — tur gerçek ekranın
       // üstünde çalışır. İki bayrak 2026-10-05'te kalktı, metin kalıcı.
       // Tek akış (S2): kart özetin altında, sayfanın sonunda; tür dökümü
-      // artık "Neden böyle?" bölümünde. Konum sözcüğü ona göre.
+      // artık özetin içinde ("Nereden geldi"nin altında). Konum sözcüğü
+      // ona göre.
       // 2026-10-19 (0158): tür dağılımı yerine varlık bazında oranlar.
       govde: '${PortfolioPerformanceScreen.tekAkisAcik ? 'Sayfanın sonundaki' : 'Tür dökümünün altındaki'}'
           ' kart, dönemin en iyi seçimlerini yapan '

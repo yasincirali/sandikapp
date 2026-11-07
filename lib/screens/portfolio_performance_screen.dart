@@ -796,6 +796,21 @@ class _PortfolioPerformanceScreenState
                   ],
                 ),
               ),
+              // Dönem seçici + Filtre üst çubuğa iliştirili (tek akış,
+              // normal yazı; gerekçe `_kontrollerIlisik`). Yan pay listeyle
+              // aynı: iPad sütununda satır içerikle hizalı kalır.
+              if (_kontrollerIlisik(context))
+                SandikIcerikSutunu.olc(
+                  builder: (context, kenar) => Padding(
+                    key: const ValueKey('performans_ilisik_kontroller'),
+                    padding: EdgeInsets.fromLTRB(
+                        SandikSpace.screenH(context) + kenar,
+                        0,
+                        SandikSpace.screenH(context) + kenar,
+                        SandikSpace.xs),
+                    child: _buildTekSatirKontroller(activePartners),
+                  ),
+                ),
             ],
           ),
           // ── Body ────────────────────────────────────────────────────

@@ -298,6 +298,26 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// arkasında. Çip seçili filtre SAYISINI yazar ("Filtre · 1"): görünmeyen
   /// filtre "portföyüm neden eksik" sınıfı hatanın kaynağıdır, sayı onu
   /// görünür tutar.
+  /// Kontrol satırı üst çubuğa iliştirilir mi (Ar-Ge 2026-11-07 12:15 #1).
+  ///
+  /// Satır listenin ilk çocuğuydu: aşağı inip tür dökümüne bakan kullanıcı
+  /// dönemi değiştirmek için başa dönmek zorundaydı. İliştirilince satır
+  /// başlıkla AYNI bloktadır (`SandikKaydirmaBasligi.baslik`): cam açıkken
+  /// içerik ikisinin altından akar, kapalıyken başlıkla birlikte sabit
+  /// durur. Yeni bir cam yüzey eklenmez, mevcut çubuk uzar. Kaydırmaya
+  /// bağlı bir geçiş YOK (satır hep orada), dolayısıyla hareketi azalt'ta
+  /// değişecek bir animasyon da yok.
+  ///
+  /// Büyük yazıda (ölçek > [_ilisikOlcekTavani]) iliştirme kalkar ve satır
+  /// listeyle akar: 3,1×'te başlık + satır ekranın üçte birini kalıcı
+  /// kaplardı, içerik penceresi bir iki satıra inerdi. Eşik 2,0: iOS'un
+  /// erişilebilirlik boylarının ortası; altında satır ~60 pt'yi geçmiyor.
+  bool _kontrollerIlisik(BuildContext context) =>
+      _tekAkis &&
+      MediaQuery.textScalerOf(context).scale(1) <= _ilisikOlcekTavani;
+
+  static const double _ilisikOlcekTavani = 2.0;
+
   Widget _buildTekSatirKontroller(List<AppUser> partners) {
     return Row(
       children: [
