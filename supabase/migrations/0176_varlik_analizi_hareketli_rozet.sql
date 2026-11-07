@@ -1,4 +1,4 @@
--- 0175 — Aylık notta "hareketli" rozeti (2026-11-07, yasin: "aylık raporda
+-- 0176 — Aylık notta "hareketli" rozeti (2026-11-07, yasin: "aylık raporda
 -- tüm varlıkları yapay zekâyla yorumlatmalıyız").
 --
 -- Aylık not artık akış/hacim verisi olmayan türleri de (yurt dışı hisse,
@@ -26,7 +26,7 @@ begin
        and conname = 'varlik_analizi_rozet_check'
        and pg_get_constraintdef(oid) like '%hareketli%'
   ) then
-    raise exception '0175: varlik_analizi_rozet_check hareketli icermiyor';
+    raise exception '0176: varlik_analizi_rozet_check hareketli icermiyor';
   end if;
-  raise notice '0175 tamam: varlik_analizi rozet kisiti hareketli ile genisledi.';
+  raise notice '0176 tamam: varlik_analizi rozet kisiti hareketli ile genisledi.';
 end $$;
