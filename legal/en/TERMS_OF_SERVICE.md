@@ -1,10 +1,10 @@
 # Terms of Service — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 20, 2026
-**Version:** 1.11
+**Last updated:** November 7, 2026
+**Version:** 1.12
 **Consent version:** 1.6
-**Source:** TR 1.11 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.12 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -99,7 +99,7 @@ The full text of this notice is shown to you during registration (and on the con
 - Do not share your password with anyone.
 - You are responsible for keeping your password secure.
 - Your account stays signed in on only one device at a time. When you sign in on a new device, a code sent to your email address is required and the session on the previous device ends. You can see and remove your registered devices in Settings.
-- If you suspect unauthorised access, change your password immediately and inform us at `sandikapp.destek@gmail.com`.
+- If you suspect unauthorised access, change your password immediately and inform us at `support@murphysoft.app`.
 - All actions performed through your account are deemed yours.
 
 ### 4.3 One Account
@@ -212,7 +212,7 @@ We are not responsible for service disruptions arising from causes beyond the Co
 
 ## 14. Notices
 
-All notices to us must be sent to `sandikapp.destek@gmail.com`.
+All notices to us must be sent to `support@murphysoft.app`.
 
 Notices to you may be sent by:
 - In-app notification
@@ -262,7 +262,7 @@ When we change these Terms or the other legal documents:
 
 `Yasin Çıralı`
 `Istanbul, Türkiye`
-Email: `sandikapp.destek@gmail.com`
+Email: `support@murphysoft.app`
 Web: `https://yasincirali.github.io/sandikapp`
 
 ---

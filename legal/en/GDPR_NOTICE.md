@@ -1,8 +1,8 @@
 # GDPR Notice — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 22, 2026
-**Version:** 1.6
+**Last updated:** November 7, 2026
+**Version:** 1.7
 
 > This document supplements the [Privacy Policy](https://yasincirali.github.io/sandikapp/privacy-en) and [Terms of Service](https://yasincirali.github.io/sandikapp/terms-en) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
 
@@ -13,9 +13,9 @@
 `Yasin Çıralı` is the controller of your personal data within the meaning of GDPR Article 4(7).
 
 - **Address:** `Istanbul, Türkiye`
-- **Email:** `sandikapp.destek@gmail.com`
+- **Email:** `support@murphysoft.app`
 - **EU representative (Art. 27):** Not appointed — see the distribution note below.
-- **Data Protection Officer (Art. 37):** Not appointed. Data protection contact: `sandikapp.destek@gmail.com`
+- **Data Protection Officer (Art. 37):** Not appointed. Data protection contact: `support@murphysoft.app`
 
 > **Distribution note.** The App is distributed **only in Türkiye**: its
 > availability on Google Play and the App Store is restricted to the Turkish
@@ -79,7 +79,7 @@ deleted; Japan benefits from the EU adequacy decision (Commission Implementing D
 
 **Risk assessment:** The U.S. is a recipient of the EU-U.S. Data Privacy Framework adequacy decision (10 July 2023). However, due to evolving CJEU jurisprudence, we additionally rely on SCCs and supplementary measures (encryption in transit and at rest, access controls, RLS).
 
-You may request a copy of the SCCs by emailing `sandikapp.destek@gmail.com`.
+You may request a copy of the SCCs by emailing `support@murphysoft.app`.
 
 ---
 
@@ -139,7 +139,7 @@ Find yours: https://edpb.europa.eu/about-edpb/about-edpb/members_en
 | Method | Address |
 |---|---|
 | In-app | Profile → Settings (Delete / Download) |
-| Email | `sandikapp.destek@gmail.com` |
+| Email | `support@murphysoft.app` |
 | Web form | `https://yasincirali.github.io/sandikapp/data-request` |
 
 **Identity verification:** We may ask you to verify your identity (e.g., confirm via the email associated with your account). If we have reasonable doubts about your identity, we may request additional information (Art. 12(6)).
@@ -161,7 +161,7 @@ If we detect a personal data breach likely to result in a risk to your rights an
 
 ## 10. Children (Art. 8)
 
-Our service is not directed to children under 16. We do not knowingly process data of children under 16 without parental consent. If you believe a child has provided data, contact us at `sandikapp.destek@gmail.com` for immediate deletion.
+Our service is not directed to children under 16. We do not knowingly process data of children under 16 without parental consent. If you believe a child has provided data, contact us at `support@murphysoft.app` for immediate deletion.
 
 ---
 
@@ -175,8 +175,8 @@ Material changes to the legal documents are announced in the App: on the next la
 
 | Role | Contact |
 |---|---|
-| Controller | `Yasin Çıralı` — `sandikapp.destek@gmail.com` |
-| Data Protection Officer (if appointed) | `Not appointed — inquiries to sandikapp.destek@gmail.com` |
+| Controller | `Yasin Çıralı` — `support@murphysoft.app` |
+| Data Protection Officer (if appointed) | `Not appointed — inquiries to support@murphysoft.app` |
 | EU Representative (Art. 27) | Not designated — distribution limited to Türkiye (see §1) |
 
 ---

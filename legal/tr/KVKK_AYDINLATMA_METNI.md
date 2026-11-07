@@ -1,8 +1,8 @@
 # KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 20 Ekim 2026
-**Sürüm:** 1.13
+**Son güncelleme:** 7 Kasım 2026
+**Sürüm:** 1.14
 **Onay sürümü:** 1.8
 
 ---
@@ -18,8 +18,8 @@
 | Vergi No | `Yok (bireysel geliştirici — ticari faaliyet başlatılmamıştır)` |
 | VERBİS No | `Kayıtlı değil (bireysel geliştirici; VERBİS kaydı ticari faaliyet başlangıcında yapılacaktır)` |
 | KEP Adresi | `Yok (bireysel geliştirici)` |
-| E-posta | `sandikapp.destek@gmail.com` |
-| Telefon | `E-posta ile iletişim: sandikapp.destek@gmail.com` |
+| E-posta | `support@murphysoft.app` |
+| Telefon | `E-posta ile iletişim: support@murphysoft.app` |
 
 ---
 
@@ -198,7 +198,7 @@ g) İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edil
 KVKK Madde 13 ve "Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ" uyarınca taleplerinizi şu yöntemlerden biriyle iletebilirsiniz:
 
 1. **Uygulama içi:** Profil → Ayarlar → "Hesabımı Sil" (anında silme) / "Verilerimi İndir" (JSON dosyası)
-2. **E-posta:** `sandikapp.destek@gmail.com` adresine, sistemimizde kayıtlı e-posta adresinizden, kimlik bilgileriniz (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileriniz ve talep konusunu açıkça belirten yazılı başvuru
+2. **E-posta:** `support@murphysoft.app` adresine, sistemimizde kayıtlı e-posta adresinizden, kimlik bilgileriniz (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileriniz ve talep konusunu açıkça belirten yazılı başvuru
 3. **Web formu:** `https://yasincirali.github.io/sandikapp/data-request`
 
 Başvurunuza **30 gün** içinde ücretsiz olarak yanıt veririz. KVK Kurulu'nun belirlediği tarifedeki ücretler haklı sebeplerle istenebilir (Tebliğ Madde 7).
@@ -264,4 +264,4 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**
+**`support@murphysoft.app`**

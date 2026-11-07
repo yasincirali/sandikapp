@@ -11,8 +11,8 @@ const yasalBelgeKaynaklari = <String, String>{
   'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 20 Ekim 2026
-**Sürüm:** 1.11
+**Son güncelleme:** 7 Kasım 2026
+**Sürüm:** 1.12
 **Onay sürümü:** 1.6
 
 ---
@@ -108,7 +108,7 @@ Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte a
 - Şifrenizi kimseyle paylaşmayın.
 - Şifrenizin güvenliğinden siz sorumlusunuz.
 - Hesabınız aynı anda yalnızca bir cihazda açık kalır. Yeni bir cihazda giriş yaptığınızda e-posta adresinize gelen kod istenir ve önceki cihazdaki oturum kapanır. Kayıtlı cihazlarınızı Ayarlar'dan görebilir ve silebilirsiniz.
-- Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi `sandikapp.destek@gmail.com` adresinden bilgilendirin.
+- Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi `support@murphysoft.app` adresinden bilgilendirin.
 - Hesap üzerinden gerçekleştirilen tüm işlemler size ait sayılır.
 
 ### 4.3 Tek Hesap
@@ -221,7 +221,7 @@ Doğal afet, savaş, terör, salgın hastalık, hükümet kararı, internet alty
 
 ## 14. Bildirimler
 
-Bize yapılacak tüm bildirimler `sandikapp.destek@gmail.com` adresine gönderilmelidir.
+Bize yapılacak tüm bildirimler `support@murphysoft.app` adresine gönderilmelidir.
 
 Size yapılacak bildirimler:
 - Uygulama içi bildirim
@@ -271,7 +271,7 @@ Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
 
 `Yasin Çıralı`
 `İstanbul, Türkiye`
-E-posta: `sandikapp.destek@gmail.com`
+E-posta: `support@murphysoft.app`
 Web: `https://yasincirali.github.io/sandikapp`
 
 ---
@@ -280,8 +280,8 @@ Web: `https://yasincirali.github.io/sandikapp`
   'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 20 Ekim 2026
-**Sürüm:** 1.13
+**Son güncelleme:** 7 Kasım 2026
+**Sürüm:** 1.14
 **Onay sürümü:** 1.8
 
 ---
@@ -291,7 +291,7 @@ Web: `https://yasincirali.github.io/sandikapp`
 Bu uygulamayı (**sandık**, "Uygulama") `Yasin Çıralı` ("biz", "Şirket") işletmektedir.
 
 - **Adres:** `İstanbul, Türkiye`
-- **E-posta:** `sandikapp.destek@gmail.com`
+- **E-posta:** `support@murphysoft.app`
 - **Web:** `https://yasincirali.github.io/sandikapp`
 - **VERBİS:** `Kayıtlı değil (bireysel geliştirici)` (uygulanabilirse)
 
@@ -517,7 +517,7 @@ Bize başvurarak şu haklarınızı kullanabilirsiniz:
 
 **Talep yöntemleri:**
 1. **Uygulama içi:** Profil → Ayarlar → "Hesabımı Sil" / "Verilerimi İndir"
-2. **E-posta:** `sandikapp.destek@gmail.com` adresine kimlik doğrulayıcı bilgilerle başvuru
+2. **E-posta:** `support@murphysoft.app` adresine kimlik doğrulayıcı bilgilerle başvuru
 3. **Web formu:** `https://yasincirali.github.io/sandikapp/data-request`
 
 KVKK Madde 13(2) uyarınca taleplerinize **30 gün** içinde yanıt veririz.
@@ -592,9 +592,9 @@ Bu politikada değişiklik yaptığımızda:
 
 Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
-- **E-posta:** `sandikapp.destek@gmail.com`
+- **E-posta:** `support@murphysoft.app`
 - **Adres:** `İstanbul, Türkiye`
-- **Veri Koruma Sorumlusu (DPO):** Atanmamıştır. Veri koruma iletişimi: `sandikapp.destek@gmail.com`
+- **Veri Koruma Sorumlusu (DPO):** Atanmamıştır. Veri koruma iletişimi: `support@murphysoft.app`
 
 ---
 
@@ -602,8 +602,8 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
   'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 20 Ekim 2026
-**Sürüm:** 1.13
+**Son güncelleme:** 7 Kasım 2026
+**Sürüm:** 1.14
 **Onay sürümü:** 1.8
 
 ---
@@ -619,8 +619,8 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 | Vergi No | `Yok (bireysel geliştirici — ticari faaliyet başlatılmamıştır)` |
 | VERBİS No | `Kayıtlı değil (bireysel geliştirici; VERBİS kaydı ticari faaliyet başlangıcında yapılacaktır)` |
 | KEP Adresi | `Yok (bireysel geliştirici)` |
-| E-posta | `sandikapp.destek@gmail.com` |
-| Telefon | `E-posta ile iletişim: sandikapp.destek@gmail.com` |
+| E-posta | `support@murphysoft.app` |
+| Telefon | `E-posta ile iletişim: support@murphysoft.app` |
 
 ---
 
@@ -799,7 +799,7 @@ g) İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edil
 KVKK Madde 13 ve "Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ" uyarınca taleplerinizi şu yöntemlerden biriyle iletebilirsiniz:
 
 1. **Uygulama içi:** Profil → Ayarlar → "Hesabımı Sil" (anında silme) / "Verilerimi İndir" (JSON dosyası)
-2. **E-posta:** `sandikapp.destek@gmail.com` adresine, sistemimizde kayıtlı e-posta adresinizden, kimlik bilgileriniz (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileriniz ve talep konusunu açıkça belirten yazılı başvuru
+2. **E-posta:** `support@murphysoft.app` adresine, sistemimizde kayıtlı e-posta adresinizden, kimlik bilgileriniz (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileriniz ve talep konusunu açıkça belirten yazılı başvuru
 3. **Web formu:** `https://yasincirali.github.io/sandikapp/data-request`
 
 Başvurunuza **30 gün** içinde ücretsiz olarak yanıt veririz. KVK Kurulu'nun belirlediği tarifedeki ücretler haklı sebeplerle istenebilir (Tebliğ Madde 7).
@@ -865,7 +865,7 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**''',
+**`support@murphysoft.app`**''',
   'legal/tr/ACIK_RIZA_METNI.md': r'''# Açık Rıza Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026

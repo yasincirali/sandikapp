@@ -1,8 +1,8 @@
 # Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 20 Ekim 2026
-**Sürüm:** 1.11
+**Son güncelleme:** 7 Kasım 2026
+**Sürüm:** 1.12
 **Onay sürümü:** 1.6
 
 ---
@@ -98,7 +98,7 @@ Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte a
 - Şifrenizi kimseyle paylaşmayın.
 - Şifrenizin güvenliğinden siz sorumlusunuz.
 - Hesabınız aynı anda yalnızca bir cihazda açık kalır. Yeni bir cihazda giriş yaptığınızda e-posta adresinize gelen kod istenir ve önceki cihazdaki oturum kapanır. Kayıtlı cihazlarınızı Ayarlar'dan görebilir ve silebilirsiniz.
-- Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi `sandikapp.destek@gmail.com` adresinden bilgilendirin.
+- Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi `support@murphysoft.app` adresinden bilgilendirin.
 - Hesap üzerinden gerçekleştirilen tüm işlemler size ait sayılır.
 
 ### 4.3 Tek Hesap
@@ -211,7 +211,7 @@ Doğal afet, savaş, terör, salgın hastalık, hükümet kararı, internet alty
 
 ## 14. Bildirimler
 
-Bize yapılacak tüm bildirimler `sandikapp.destek@gmail.com` adresine gönderilmelidir.
+Bize yapılacak tüm bildirimler `support@murphysoft.app` adresine gönderilmelidir.
 
 Size yapılacak bildirimler:
 - Uygulama içi bildirim
@@ -261,7 +261,7 @@ Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
 
 `Yasin Çıralı`
 `İstanbul, Türkiye`
-E-posta: `sandikapp.destek@gmail.com`
+E-posta: `support@murphysoft.app`
 Web: `https://yasincirali.github.io/sandikapp`
 
 ---

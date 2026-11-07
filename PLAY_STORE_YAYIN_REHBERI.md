@@ -435,7 +435,7 @@ Ardından gerçek cihazda: hesap aç → varlık ekle → varlığı sil → hes
 |---|---|
 | Veri sorumlusu | Yasin Çıralı (bireysel geliştirici) |
 | Adres | İstanbul, Türkiye |
-| E-posta | sandikapp.destek@gmail.com |
+| E-posta | support@murphysoft.app (2026-11-07; önce sandikapp.destek@gmail.com) |
 | Vergi No / KEP | Yok (bireysel geliştirici) |
 | VERBİS | Kayıtlı değil — ticari faaliyet başlangıcında yapılacak |
 | Yetkili mahkeme | İstanbul Anadolu Mahkemeleri ve İcra Daireleri |
