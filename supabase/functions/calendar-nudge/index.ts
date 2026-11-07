@@ -23,6 +23,9 @@
 // · Premium hediyesi bitiyor (0142): `occasion: premium_gift_ending`, her
 //   gün 12:15 TR; 90 günlük `erken_kullanici` hediyesinin 80. gününde tek
 //   push, yalnız abone OLMAYANA.
+// · Mevduat vadesi doldu (0174): `occasion: deposit_matured`, her gün 09:30
+//   TR; kullanıcı başına, açık mevduatının son döneminin vadesi bugün (ya
+//   da dün, kaçan tur) dolduysa tek push.
 // Yeni an gövdeden seçilir; TÜFE yolu olduğu gibi kalır.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -792,6 +795,281 @@ async function hediyeAni(p: {
   });
 }
 
+// ── Mevduat vadesi doldu (0174) ────────────────────────────────────────────
+//
+// Kullanıcı vadeli mevduatını girer, dönem `mevduat_donemleri.vade_sonu`da
+// biter. Uygulama vadesi dolan dönemde "Vadesi doldu" şeridini gösteriyordu
+// ama kullanıcı uygulamayı açmazsa bunu görmüyordu; yeni faizi girmeyince
+// mevduatın değeri donuk kalıyor ve portföy toplamı eskiyordu. Banka da
+// aynı gün haber verir; burada tek fark, bildirim kullanıcının KENDİ
+// girdiği tarihi taşır (bilgi taşıyan push, uydurma hatırlatma değil).
+//
+// Kararlar:
+//   · Hedef dönem: sözleşme `tur = 'mevduat'`, `kapandi IS NULL` ve dönem
+//     sözleşmenin EN SON dönemi (yeniden başlangıcı en büyük). Kullanıcı
+//     vade dolmadan yenilediyse yeni dönem vardır; eski dönemin vadesi için
+//     "yeni faizi gir" demek, zaten girene yanlış iş söylerdi.
+//   · Pencere iki gün (bugün ve dün, TR): cron bir gün kaçarsa ya da sessiz
+//     saat push'u atlattıysa ertesi sabah yakalanır. Defter
+//     (`mevduat_vade_bildirim_log`, dönem başına bir satır) ikinci push'u
+//     durdurur. Daha eskisi gönderilmez: haftalar sonra "vadesi doldu"
+//     bayat bir haberdir, şerit zaten uygulamada duruyor.
+//   · Kullanıcı başına TEK push, aynı gün iki mevduatı dolsa bile (bildirim
+//     bütçesi); defter ikisini birden işaretler.
+//   · Kişiye özel RAKAM yok (tutar, faiz): kilit ekranında görünür ve
+//     sunucudaki değer istemcinin canlı hesabıyla aynı olmayabilir.
+//   · Tercih: diğer takvim anlarıyla birebir — sessiz saatler
+//     (`sessizKullanicilar`), aynı `brief_channel` (Android'de kanal
+//     kapatılırsa susar), iOS'ta `passive`. Ayrı ayar yok.
+
+/// Gövdedeki an adı — `trigger_calendar_nudge_mevduat_vade()` yollar.
+export const MEVDUAT_VADE = 'deposit_matured';
+
+/// TR takvim günü `YYYY-MM-DD` (date kolonuyla karşılaştırma için).
+export function trGunMetni(now: Date): string {
+  const { yil, ay, gun } = trTarihi(now);
+  return `${yil}-${ay.toString().padStart(2, '0')}-${gun.toString().padStart(2, '0')}`;
+}
+
+/// Pencere: dün ve bugün (TR), kapsayıcı.
+export function vadePenceresi(now: Date): { bas: string; son: string } {
+  return {
+    bas: trGunMetni(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
+    son: trGunMetni(now),
+  };
+}
+
+export type VadeDonemi = {
+  id: string;
+  sozlesme_id: string;
+  user_id: string;
+  baslangic: string;
+};
+
+/// Hedef dönemler: açık mevduat sözleşmesinin SON dönemi olan ve defterde
+/// kaydı olmayanlar. Saf — sorgular çağıranda.
+///   · `acikMevduat`: `tur = 'mevduat'` ve `kapandi IS NULL` sözleşme id'leri.
+///   · `sonBaslangic`: sözleşme id → en büyük dönem başlangıcı (`YYYY-MM-DD`).
+export function vadeHedefleri(
+  donemler: VadeDonemi[],
+  acikMevduat: Set<string>,
+  sonBaslangic: Map<string, string>,
+  defter: Set<string>,
+): VadeDonemi[] {
+  return donemler.filter((d) =>
+    acikMevduat.has(d.sozlesme_id) &&
+    sonBaslangic.get(d.sozlesme_id) === d.baslangic &&
+    !defter.has(d.id)
+  );
+}
+
+export function vadeMesaji(): { title: string; body: string } {
+  return {
+    title: 'Mevduatının vadesi doldu',
+    body: 'Yeni faiz oranını girersen değeri güncel kalır.',
+  };
+}
+
+async function vadeAni(p: {
+  admin: SupabaseClient;
+  fcmProjectId: string;
+  fcmServiceAccountJson: string;
+  dryRun: boolean;
+  now: Date;
+}): Promise<Response> {
+  const { admin, now } = p;
+  const { bas, son } = vadePenceresi(now);
+
+  // 1) Penceredeki dönemler — sayfalı (max_rows 1000).
+  const donemler: VadeDonemi[] = [];
+  const SAYFA = 1000;
+  for (let i = 0;; i += SAYFA) {
+    const { data, error } = await admin
+      .from('mevduat_donemleri')
+      .select('id, sozlesme_id, user_id, baslangic')
+      .gte('vade_sonu', bas)
+      .lte('vade_sonu', son)
+      .order('id')
+      .range(i, i + SAYFA - 1);
+    if (error) throw new Error(`Donemler alinamadi: ${error.message}`);
+    const satirlar = (data ?? []) as VadeDonemi[];
+    for (const r of satirlar) {
+      donemler.push({
+        id: String(r.id),
+        sozlesme_id: String(r.sozlesme_id),
+        user_id: String(r.user_id),
+        baslangic: String(r.baslangic).slice(0, 10),
+      });
+    }
+    if (satirlar.length < SAYFA) break;
+  }
+  if (donemler.length === 0) {
+    return jsonResponse({ ok: true, occasion: MEVDUAT_VADE, reason: 'Vadesi dolan donem yok.', sent: 0 });
+  }
+
+  // 2) Sözleşmeler, son dönemler ve defter. Okunamıyorsa DUR: sözleşmeyi
+  //    okumadan göndermek kapanmış mevduata, defteri okumadan çift push.
+  const acikMevduat = new Set<string>();
+  const sonBaslangic = new Map<string, string>();
+  const defter = new Set<string>();
+  const sozlesmeIdleri = [...new Set(donemler.map((d) => d.sozlesme_id))];
+  for (const parca of parcala(sozlesmeIdleri)) {
+    const soz = await admin
+      .from('sozlesmeler')
+      .select('id')
+      .eq('tur', 'mevduat')
+      .is('kapandi', null)
+      .in('id', parca);
+    if (soz.error) throw new Error(`Sozlesmeler okunamadi: ${soz.error.message}`);
+    for (const r of (soz.data ?? []) as Array<{ id: string }>) acikMevduat.add(String(r.id));
+
+    const tum = await admin
+      .from('mevduat_donemleri')
+      .select('sozlesme_id, baslangic')
+      .in('sozlesme_id', parca);
+    if (tum.error) throw new Error(`Donem zinciri okunamadi: ${tum.error.message}`);
+    for (const r of (tum.data ?? []) as Array<{ sozlesme_id: string; baslangic: string }>) {
+      const id = String(r.sozlesme_id);
+      const b = String(r.baslangic).slice(0, 10);
+      const onceki = sonBaslangic.get(id);
+      // `YYYY-MM-DD` sözlük sırası = tarih sırası.
+      if (onceki === undefined || b > onceki) sonBaslangic.set(id, b);
+    }
+  }
+  for (const parca of parcala(donemler.map((d) => d.id))) {
+    const kayit = await admin
+      .from('mevduat_vade_bildirim_log')
+      .select('donem_id')
+      .in('donem_id', parca);
+    if (kayit.error) throw new Error(`Defter okunamadi: ${kayit.error.message}`);
+    for (const r of (kayit.data ?? []) as Array<{ donem_id: string }>) defter.add(String(r.donem_id));
+  }
+
+  const hedefDonemler = vadeHedefleri(donemler, acikMevduat, sonBaslangic, defter);
+  if (hedefDonemler.length === 0) {
+    return jsonResponse({
+      ok: true,
+      occasion: MEVDUAT_VADE,
+      reason: 'Hedef yok (kapali, yenilenmis ya da zaten bildirilen).',
+      sent: 0,
+    });
+  }
+  // Kullanıcı → o güne düşen dönemleri (tek push, hepsi deftere).
+  const kullaniciDonemleri = new Map<string, VadeDonemi[]>();
+  for (const d of hedefDonemler) {
+    const liste = kullaniciDonemleri.get(d.user_id) ?? [];
+    liste.push(d);
+    kullaniciDonemleri.set(d.user_id, liste);
+  }
+  const hedefKullanicilar = [...kullaniciDonemleri.keys()];
+
+  // 3) Token'lar.
+  const tokenRows: TokenRow[] = [];
+  for (const parca of parcala(hedefKullanicilar)) {
+    const { data } = await admin
+      .from('user_push_tokens')
+      .select('token, user_id, device_id, platform, updated_at')
+      .in('user_id', parca);
+    tokenRows.push(...((data ?? []) as TokenRow[]));
+    tokenRows.push(...await ekHesapSatirlari(admin, parca));
+  }
+  const hedefler = collapseTokens(tokenRows);
+  if (p.dryRun) {
+    return jsonResponse({
+      ok: true,
+      dry_run: true,
+      occasion: MEVDUAT_VADE,
+      would_send: hedefler.length,
+      users: hedefKullanicilar.length,
+    });
+  }
+  if (hedefler.length === 0) {
+    return jsonResponse({ ok: true, occasion: MEVDUAT_VADE, reason: 'Token yok.', sent: 0 });
+  }
+
+  const accessToken = await createAccessToken(
+    JSON.parse(p.fcmServiceAccountJson) as ServiceAccount,
+  );
+  const mesaj = vadeMesaji();
+  let sent = 0;
+  let skippedQuietHours = 0;
+  const failures: string[] = [];
+  const cankaydi = new Set<string>();
+  const gonderilenKullanicilar = new Set<string>();
+  const sessiz = await sessizKullanicilar(admin, hedefler.map((t) => t.user_id), now);
+  for (const t of hedefler) {
+    if (sessiz.has(t.user_id)) { skippedQuietHours += 1; continue; }
+    const liste = kullaniciDonemleri.get(t.user_id);
+    if (!liste) continue;
+    // Tek mevduat dolduysa sözleşme id'si de gider (yeni istemci o
+    // sözleşmeye götürebilsin); ikisi birden dolduysa yalnız an — uygulama
+    // Portföy'ü açar. Eski build `occasion`'ı tanımaz, uygulamayı açar.
+    const veri: Record<string, string> = { occasion: MEVDUAT_VADE };
+    if (liste.length === 1) veri.sozlesme_id = liste[0].sozlesme_id;
+    const kayitHatasi = await recordAppNotification(
+      admin,
+      appNotificationRow({
+        userId: t.user_id,
+        type: 'calendar_nudge',
+        title: mesaj.title,
+        body: mesaj.body,
+        data: veri,
+      }),
+      cankaydi,
+    );
+    if (kayitHatasi) failures.push(kayitHatasi);
+
+    const r = await sendFcmNotification({
+      accessToken,
+      projectId: p.fcmProjectId,
+      token: t.token,
+      hesap: ekHesap(t),
+      title: mesaj.title,
+      body: mesaj.body,
+      channelId: CHANNEL_ID,
+      onem: 'passive',
+      data: { type: 'calendar_nudge', ...veri },
+    });
+    if (r.ok) {
+      sent += 1;
+      gonderilenKullanicilar.add(t.user_id);
+    } else {
+      console.error('[calendar-nudge] vade FCM basarisiz:', r.rawText.slice(0, 500));
+      failures.push(`fcm: ${r.hataKodu}`);
+      if (r.shouldDeleteToken) {
+        await admin.from('user_push_tokens').delete().eq('token', t.token);
+      }
+    }
+  }
+
+  // Saklama: 60 günden eski kayıtlar. Defterin tek işi pencere (2 gün)
+  // içindeki ikinci push'u durdurmak; dönem silinince satır cascade gider.
+  try {
+    await admin
+      .from('mevduat_vade_bildirim_log')
+      .delete()
+      .lt('sent_at', new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString());
+  } catch (_) { /* bir sonraki koşuda yeniden denenir */ }
+
+  if (gonderilenKullanicilar.size > 0) {
+    try {
+      const satirlar = [...gonderilenKullanicilar].flatMap((u) =>
+        (kullaniciDonemleri.get(u) ?? []).map((d) => ({ donem_id: d.id, user_id: u }))
+      );
+      await admin.from('mevduat_vade_bildirim_log').upsert(satirlar, { onConflict: 'donem_id' });
+    } catch (_) { /* en kötü: ertesi sabah ikinci bildirim (pencere dün'ü kapsar) */ }
+  }
+
+  return jsonResponse({
+    ok: true,
+    occasion: MEVDUAT_VADE,
+    sent,
+    users: gonderilenKullanicilar.size,
+    skipped_quiet_hours: skippedQuietHours,
+    failures: failures.slice(0, 5),
+  });
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -842,6 +1120,15 @@ Deno.serve(async (request) => {
     }
     if (occasion === HEDIYE_BITIYOR) {
       return await hediyeAni({
+        admin,
+        fcmProjectId,
+        fcmServiceAccountJson,
+        dryRun,
+        now: new Date(),
+      });
+    }
+    if (occasion === MEVDUAT_VADE) {
+      return await vadeAni({
         admin,
         fcmProjectId,
         fcmServiceAccountJson,

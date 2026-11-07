@@ -19,6 +19,16 @@ hazır". Yalnız portföyünde kaydı olan kullanıcılara, TR tarihi
 gönderimi önler. Push'a dokunmak Profil sekmesini (özet afişi) açar. Gövdesiz
 çağrı eskisi gibi TÜFE günüdür.
 
+## Mevduat vadesi doldu (0174)
+
+Her gün 09:30 TR'de `trigger_calendar_nudge_mevduat_vade()` aynı fonksiyonu
+`{"occasion":"deposit_matured"}` ile çağırır. Hedef: açık (`kapandi` boş)
+mevduat sözleşmesinin **son** dönemi, `vade_sonu` bugün ya da dün (TR).
+Kullanıcı başına tek push ("Mevduatının vadesi doldu"), tutar/faiz yok.
+`mevduat_vade_bildirim_log(donem_id)` aynı dönemin ikinci push'unu önler;
+sessiz saatler ve `brief_channel` diğer anlarla aynı. Dokunuş Portföy
+sekmesini açar; eski build uygulamayı yalnız açar.
+
 ## Kişiselleştirme neden yok
 
 Bildirim **ulusal** rakamı taşır ("Enflasyon aylık %2,49 · yıllık %40,12"),

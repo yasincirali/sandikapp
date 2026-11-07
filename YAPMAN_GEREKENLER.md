@@ -12,6 +12,22 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-07 Mevduat vadesi doldu bildirimi (0174 + `calendar-nudge`)
+
+Vade gününün sabahı (09:30 TR) açık mevduatının son dönemi dolan
+kullanıcıya tek push. Ekleyerek: yeni defter tablosu, yeni tetikleyici ve
+cron işi `calendar-nudge-mevduat-vade`; mevcut anlar değişmez.
+
+- [ ] Yalnız Frankfurt'a, **migration ile fonksiyon AYNI dağıtımda**
+      (`supabase-deploy.yml` önce `db push`, sonra fonksiyonları yollar).
+      ⚠️ Migration gidip `calendar-nudge` fonksiyonu gitmezse eski fonksiyon
+      tanımadığı `deposit_matured` gövdesini TÜFE günü sayar; ayın defteri
+      ikinci TÜFE push'unu durdurur ama dağıtımı yarım bırakma.
+- [ ] Kontrol: `select jobname, schedule, active from cron.job where jobname = 'calendar-nudge-mevduat-vade';`
+      → `30 6 * * *`, `active = true`.
+- [ ] İsteğe bağlı kuru deneme: fonksiyona `{"occasion":"deposit_matured","dry_run":true}`
+      (x-cron-secret ile) → `would_send` / `users` sayısı döner, push gitmez.
+
 ## ⏳ 2026-11-06 Tokyo'yu kapatma (duraklat → sil) + Frankfurt yerel yedeği
 
 Neden: Tokyo 18 Ekim'den beri donmuş; verisi bayat, geri dönüş/yedek değeri
