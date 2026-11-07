@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:fl_chart/fl_chart.dart' show FlSpot;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
+import '../config/magaza.dart';
 import '../demo/demo_modu.dart';
 import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
@@ -18,6 +20,7 @@ import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
+import '../services/kiyas_paylasimi.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/remote_config_service.dart';
 import '../services/symbol_search_service.dart';
@@ -44,6 +47,8 @@ import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 import '../widgets/sandik_ikon_gecisi.dart';
+import '../widgets/sandik_paylas_dugmesi.dart';
+import '../widgets/share_card.dart' show KiyasPaylasKarti, kSandikMarka, showShareSheet;
 
 /// Ortak serisinin arama satırı adındaki ayraç: "Ayşe · tüm portföyü".
 /// Üretildiği yer ve adın ilk parçasını okuyan iki yer aynı sabiti kullanır;
@@ -420,8 +425,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
     return Scaffold(
       backgroundColor: p.background,
-      appBar: const SandikAppBar(
+      appBar: SandikAppBar(
         title: 'Karşılaştır',
+        actions: [_paylasDugmesi()],
       ),
       body: SafeArea(
         child: Column(
@@ -451,6 +457,61 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // ── Paylaş ────────────────────────────────────────────────────────────────
+
+  /// "Kıyası paylaş" (Ar-Ge 7 Kas 04:03, YAP 1). Premium DEĞİL: paylaşım
+  /// uygulamanın kendini tanıttığı yoldur; kıyası kilitlemek o yolu da
+  /// kilitlerdi. Ortak paylaş düğmesi (`SandikPaylasDugmesi`: 44 pt, gri
+  /// simge, tooltip = erişilebilirlik etiketi) app bar'ın tek eylemi.
+  ///
+  /// Kıyasta iki serinin verisi yokken ya da dönem değişip yeni seriler
+  /// beklenirken düğme KAPALI (gizli değil — app bar'ın yerleşimi oynamaz):
+  /// eski dönemin yüzdesini yeni dönemin adıyla paylaşmak yanlış olurdu.
+  Widget _paylasDugmesi() {
+    final paylasim = _donemBekliyor
+        ? null
+        : kiyasPaylasimiKur(
+            secili: _selected, seriler: _series, etiket: _displayTicker);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: SandikSpace.sm),
+      child: SandikPaylasDugmesi(
+        tooltip: context.l10n.kiyasPaylasTooltip,
+        hiza: Alignment.center,
+        onPressed: paylasim == null ? null : () => _paylas(paylasim),
+      ),
+    );
+  }
+
+  Future<void> _paylas(KiyasPaylasimi k) {
+    final l = context.l10n;
+    final donem = SummaryPeriod.fromIndex(_cizilenDonemIdx);
+    final donemAdi = donemEtiketi(l, donem.label);
+    // Tarih gün-ay-yıl, dönem özeti kartıyla aynı biçim (`ozet_yan_veri`).
+    // Gün içi kıyasta iki uç aynı gündür; "7 Kas – 7 Kas" yerine tek tarih.
+    final f = DateFormat('d MMM yyyy', 'tr_TR');
+    final bas = f.format(k.baslangic);
+    final bit = f.format(k.bitis);
+    final aralik = bas == bit ? bit : l.shareCardRange(bas, bit);
+    final baslik = l.kiyasPaylasKartBaslik(donemAdi);
+    return showShareSheet(
+      context,
+      kart: KiyasPaylasKarti(
+        baslik: baslik,
+        tarihAraligi: aralik,
+        satirlar: k.satirlar,
+      ),
+      not: l.kiyasPaylasNot,
+      sayfaBasligi: l.kiyasPaylasTooltip,
+      metin: l.kiyasPaylasMetni(
+        donemAdi,
+        k.ozetSatiri,
+        Magaza.indirBaglantisi(kaynak: 'share_card', kampanya: 'kiyas'),
+      ),
+      subject: '$kSandikMarka · $baslik',
+      analyticsPeriod: 'kiyas_${donem.name}',
     );
   }
 

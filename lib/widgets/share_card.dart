@@ -1057,3 +1057,102 @@ class KilometreTasiPaylasKarti extends StatelessWidget {
     );
   }
 }
+
+/// Karşılaştır paylaşım kartı (Ar-Ge 7 Kas 04:03, YAP 1 — ücretsiz).
+///
+/// Yeni görsel dil KURULMADI: dönem kartının boyu, zemini ve başlığı
+/// ([_Baslik]: marka + dönem + tarih aralığı) aynen; ortada kıyasın
+/// satırları. Satır = ad + işaretli yüzde. Yüzde yeşil/kırmızıdır ama anlam
+/// yalnız renkte değil, `+`/`−` işaretinde de durur (renk körlüğü, HIG).
+/// TUTAR YOK — satırlar `KiyasPaylasimi`'nden gelir ve o model ham fiyatı
+/// taşımaz.
+class KiyasPaylasKarti extends StatelessWidget {
+  const KiyasPaylasKarti({
+    super.key,
+    required this.baslik,
+    required this.tarihAraligi,
+    required this.satirlar,
+  });
+
+  final String baslik;
+  final String tarihAraligi;
+  final List<({String ad, double pct})> satirlar;
+
+  @override
+  Widget build(BuildContext context) {
+    const p = SandikPalette.dark;
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: Container(
+        width: ShareCard.width,
+        height: ShareCard.height,
+        padding: const EdgeInsets.all(ShareCard.kenar),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [p.background, p.surface1],
+          ),
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Baslik(
+              data: ShareCardData(baslik: baslik, tarihAraligi: tarihAraligi),
+            ),
+            // Beş seri + kıyas çipleri 1,3× ölçekte iç yüksekliği aşabilir;
+            // dönem kartındaki gibi orta bölüm küçülür, kart boyu sabit kalır.
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: SizedBox(
+                  width: ShareCard.icGenislik,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final s in satirlar)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: SandikSpace.sm),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  s.ad,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.t.titleMedium
+                                      ?.copyWith(color: p.text90),
+                                ),
+                              ),
+                              const SizedBox(width: SandikSpace.md),
+                              Text(
+                                fmtPctIsaretli(s.pct, digits: 1),
+                                style: context.t.titleLarge?.copyWith(
+                                  color: s.pct >= 0 ? p.gain : p.loss,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Text(
+              context.l10n.kiyasPaylasAlt,
+              textAlign: TextAlign.center,
+              style: context.t.bodySmall?.copyWith(color: p.text58),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

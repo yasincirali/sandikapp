@@ -1429,13 +1429,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get deleteMyAccountSubtitle => 'Tüm verilerin kalıcı olarak silinir';
 
   @override
-  String get supportUpper => 'Destek';
-
-  @override
   String get contactUs => 'Bize ulaş';
-
-  @override
-  String get sssBaslik => 'Sık sorulanlar';
 
   @override
   String get sssFonSoru => 'Fon fiyatım neden gün içinde değişmiyor?';
@@ -10622,4 +10616,26 @@ class AppLocalizationsTr extends AppLocalizations {
   String goalDateBy(String tarih, String ek) {
     return '$tarih\'$ek kadar';
   }
+
+  @override
+  String get kiyasPaylasTooltip => 'Kıyası paylaş';
+
+  @override
+  String kiyasPaylasKartBaslik(String donem) {
+    return '$donem kıyası';
+  }
+
+  @override
+  String get kiyasPaylasAlt => 'sandık ile kıyasladım';
+
+  @override
+  String get kiyasPaylasNot => 'Kartta tutar yok; yalnız dönem yüzdeleri.';
+
+  @override
+  String kiyasPaylasMetni(String donem, String ozet, String link) {
+    return '$donem kıyası: $ozet. sandık ile kıyasladım: $link';
+  }
+
+  @override
+  String get yardimVeDestek => 'Yardım ve destek';
 }

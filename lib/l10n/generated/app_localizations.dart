@@ -2546,23 +2546,11 @@ abstract class AppLocalizations {
   /// **'Tüm verilerin kalıcı olarak silinir'**
   String get deleteMyAccountSubtitle;
 
-  /// No description provided for @supportUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Destek'**
-  String get supportUpper;
-
   /// No description provided for @contactUs.
   ///
   /// In tr, this message translates to:
   /// **'Bize ulaş'**
   String get contactUs;
-
-  /// No description provided for @sssBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sık sorulanlar'**
-  String get sssBaslik;
 
   /// No description provided for @sssFonSoru.
   ///
@@ -17489,6 +17477,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{tarih}\'{ek} kadar'**
   String goalDateBy(String tarih, String ek);
+
+  /// No description provided for @kiyasPaylasTooltip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kıyası paylaş'**
+  String get kiyasPaylasTooltip;
+
+  /// No description provided for @kiyasPaylasKartBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} kıyası'**
+  String kiyasPaylasKartBaslik(String donem);
+
+  /// No description provided for @kiyasPaylasAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık ile kıyasladım'**
+  String get kiyasPaylasAlt;
+
+  /// No description provided for @kiyasPaylasNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kartta tutar yok; yalnız dönem yüzdeleri.'**
+  String get kiyasPaylasNot;
+
+  /// No description provided for @kiyasPaylasMetni.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} kıyası: {ozet}. sandık ile kıyasladım: {link}'**
+  String kiyasPaylasMetni(String donem, String ozet, String link);
+
+  /// No description provided for @yardimVeDestek.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yardım ve destek'**
+  String get yardimVeDestek;
 }
 
 class _AppLocalizationsDelegate

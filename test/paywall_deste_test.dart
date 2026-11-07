@@ -129,6 +129,9 @@ void main() {
           ekranKaynagiSync('lib/screens/asset_detail/grafik_katmanlari.dart'),
           isNot(contains('PaywallScreen')));
       kaynaklar.remove('invite'); // mağaza bağlantısı kaynağı, paywall değil
+      // Karşılaştır'daki kıyası paylaş kartının mağaza bağlantısı (7 Kas):
+      // `Magaza.indirBaglantisi(kaynak: 'share_card')`, paywall değil.
+      kaynaklar.remove('share_card');
       for (final k in kaynaklar) {
         if (bilerekGenel.contains(k)) continue;
         expect(kaynaktanKart(k), isNotNull, reason: 'eşlenmemiş kaynak: $k');
