@@ -133,8 +133,10 @@ class VarlikGuncelleUyarisi extends StatelessWidget {
                 children: [
                   Text(
                     l.varlikGuncelleUyariBaslik,
+                    // w600: unslop ağırlık tavanı (yasin 2026-11-05). Temada
+                    // 12 pt w600 stil yok; titleSmall (w500) bir kademe yükselir.
                     style: context.t.titleSmall?.copyWith(
-                        color: context.c.text90, fontWeight: FontWeight.w700),
+                        color: context.c.text90, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: SandikSpace.xs),
                   Text(
