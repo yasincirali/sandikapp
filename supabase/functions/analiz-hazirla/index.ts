@@ -34,9 +34,13 @@ import { acikPozisyonLotlari, PozisyonLot } from '../_shared/positions.ts';
 import { varlikKodu } from '../_shared/haftalik_akis.ts';
 import { trGun } from '../_shared/tefas_nav.ts';
 import { gunEkle } from '../_shared/balina.ts';
+import { fetchDatedSeries, fetchEurobondDated, Seri } from '../_shared/dated_history.ts';
+import { EUROBOND_ONEKI } from '../_shared/eurobond.ts';
+import { ONS_GRAM } from '../_shared/emtia_gram.ts';
 import {
   ayAraligi,
   FonGunu,
+  fiyatPaketi,
   fonPaketi,
   ONCEKI_HAFTA,
   haftaAraligi,
@@ -45,10 +49,12 @@ import {
   istekGovdesi,
   KategoriSirasi,
   NotTuru,
+  Olcum,
   OlaySatiri,
   ozelKimlik,
   Paket,
   tavanaGoreModel,
+  VarlikTuru,
 } from '../_shared/analiz.ts';
 
 function jsonResponse(body: unknown, status = 200) {
@@ -85,40 +91,105 @@ function parcala<T>(xs: T[], n = 100): T[][] {
   return out;
 }
 
-type Secilen = { ticker: string; varlik: 'fon' | 'hisse' | 'kripto'; tutan: number };
+/// Seçilen varlık. [seri]/[para] yalnız fiyat paketli türlerde: serinin
+/// sembolü (`dated_history.ts`) ve kote olduğu para.
+export type Secilen = {
+  ticker: string;
+  varlik: VarlikTuru;
+  tutan: number;
+  seri?: string;
+  para?: string;
+};
+
+/// Aylık nota 2026-11-07'de eklenen türler (yasin: "tüm varlıklar").
+/// Haftalık not bilerek eski kapsamda: istek "aylık rapor"du ve haftalık
+/// maliyet her hafta tekrarlanır. Dışarıda kalanlar ve neden:
+///   · mevduat — değeri sözleşme faizinden; piyasa hareketi yok, yorumu
+///     faiz oranının kendisi olurdu.
+///   · diğer ve elle fiyatlı lot — seri yok (veri yoksa not yok).
+///   · KRIPTO:USDT — dolara sabit; "değişim" kurdan ibaret (döviz notu var).
+export const AYLIK_EK_TURLER = ['altin', 'doviz', 'emtia', 'eurobond'] as const;
+
+/// Lot → not anahtarı ve ölçü. İstemci eşi `notAnahtari`
+/// (`lib/providers/analiz_provider.dart`); biçim iki yanda aynı olmalı.
+///   'THYAO.IS' · 'TEFAS:TTE' · 'KRIPTO:BTC'           (akış/hacim; eski)
+///   'HISSE:AAPL' · 'ALTIN:GRAM' · 'USDTRY=X' · 'SI=F' · 'GRAM:SI=F' ·
+///   'EUROBOND:XS…'                                     (fiyat; 2026-11-07)
+/// Yurt dışı hissede önek: 'F', 'GE' gibi kısa semboller `varlik_analizi`
+/// `length(ticker) >= 3` kısıtına takılırdı; önek türü de ayırır.
+export function lotSecimi(
+  lot: { type: string; ticker?: string | null; currency?: string | null; is_manual_price?: boolean | null },
+  tur: NotTuru,
+): Omit<Secilen, 'tutan'> | null {
+  const ham = String(lot.ticker ?? '').trim().toUpperCase();
+  const aylik = tur === 'aylik';
+  if (lot.type === 'hisse') {
+    if (ham.endsWith('.IS')) return { ticker: ham, varlik: 'hisse' };
+    if (!aylik || lot.is_manual_price === true) return null;
+    if (!/^[A-Z0-9.\-^=]{1,20}$/.test(ham)) return null;
+    const para = String(lot.currency ?? '').trim().toUpperCase() || 'USD';
+    return { ticker: `HISSE:${ham}`, varlik: 'yabanci_hisse', seri: ham, para };
+  }
+  if (lot.type === 'kripto') {
+    if (!ham.startsWith('KRIPTO:') || ham === 'KRIPTO:USDT') return null;
+    return { ticker: ham, varlik: 'kripto' };
+  }
+  if (lot.type === 'fon' || lot.type === 'bes') {
+    const kod = varlikKodu(ham);
+    if (!/^[A-Z0-9]{2,6}$/.test(kod)) return null;
+    return { ticker: `TEFAS:${kod}`, varlik: 'fon' };
+  }
+  if (!aylik || lot.is_manual_price === true) return null;
+  if (lot.type === 'altin') {
+    // Bütün altın türleri (gram, çeyrek, cumhuriyet…) aynı gram serisinin
+    // ağırlık katıdır: yüzde değişim aynı, tek not yeter (maliyet).
+    return { ticker: ALTIN_ANAHTARI, varlik: 'altin', seri: ALTIN_ANAHTARI, para: 'TRY' };
+  }
+  if (lot.type === 'doviz') {
+    if (!/^[A-Z]{3}TRY=X$/.test(ham)) return null;
+    return { ticker: ham, varlik: 'doviz', seri: ham, para: 'TRY' };
+  }
+  if (lot.type === 'emtia') {
+    if (!/^(GRAM:)?[A-Z0-9]{1,6}=F$/.test(ham)) return null;
+    return { ticker: ham, varlik: 'emtia', seri: ham, para: 'USD' };
+  }
+  if (lot.type === 'eurobond') {
+    if (!ham.startsWith(EUROBOND_ONEKI) || ham.length > 40) return null;
+    const para = String(lot.currency ?? '').trim().toUpperCase() || 'USD';
+    return { ticker: ham, varlik: 'eurobond', seri: ham, para };
+  }
+  return null;
+}
+
+export const ALTIN_ANAHTARI = 'ALTIN:GRAM';
 
 /// Açık pozisyonlardan varlık listesi; en çok kişinin tuttuğu önce.
-export async function tutulanVarliklar(client: SupabaseClient, ust: number): Promise<Secilen[]> {
-  const satirlar = await hepsi<PozisyonLot & { type: string }>((bas, son) =>
+export async function tutulanVarliklar(
+  client: SupabaseClient,
+  ust: number,
+  tur: NotTuru = 'haftalik',
+): Promise<Secilen[]> {
+  const turler = tur === 'aylik'
+    ? ['fon', 'bes', 'hisse', 'kripto', ...AYLIK_EK_TURLER]
+    : ['fon', 'bes', 'hisse', 'kripto'];
+  const satirlar = await hepsi<PozisyonLot & { type: string; is_manual_price?: boolean | null }>((bas, son) =>
     client.from('assets')
-      .select('id, user_id, type, ticker, name, sub_category, currency, quantity, kind, added_date, ref_asset_id')
-      .in('type', ['fon', 'bes', 'hisse', 'kripto'])
+      .select('id, user_id, type, ticker, name, sub_category, currency, quantity, kind, added_date, ref_asset_id, is_manual_price')
+      .in('type', turler)
       .is('deleted_at', null)
       .order('id')
       .range(bas, son)
   );
-  const tutanlar = new Map<string, { varlik: Secilen['varlik']; kisiler: Set<string> }>();
+  const tutanlar = new Map<string, { secim: Omit<Secilen, 'tutan'>; kisiler: Set<string> }>();
   for (const lot of acikPozisyonLotlari(satirlar)) {
-    const ham = String(lot.ticker ?? '').trim().toUpperCase();
-    let ticker: string;
-    let varlik: Secilen['varlik'];
-    if (lot.type === 'hisse') {
-      if (!ham.endsWith('.IS')) continue;
-      ticker = ham; varlik = 'hisse';
-    } else if (lot.type === 'kripto') {
-      if (!ham.startsWith('KRIPTO:') || ham === 'KRIPTO:USDT') continue;
-      ticker = ham; varlik = 'kripto';
-    } else {
-      const kod = varlikKodu(ham);
-      if (!/^[A-Z0-9]{2,6}$/.test(kod)) continue;
-      ticker = `TEFAS:${kod}`; varlik = 'fon';
-    }
-    const t = tutanlar.get(ticker) ?? { varlik, kisiler: new Set<string>() };
+    const secim = lotSecimi(lot, tur);
+    if (!secim) continue;
+    const t = tutanlar.get(secim.ticker) ?? { secim, kisiler: new Set<string>() };
     t.kisiler.add(String(lot.user_id));
-    tutanlar.set(ticker, t);
+    tutanlar.set(secim.ticker, t);
   }
-  return [...tutanlar.entries()]
-    .map(([ticker, t]) => ({ ticker, varlik: t.varlik, tutan: t.kisiler.size }))
+  return [...tutanlar.values()]
+    .map((t) => ({ ...t.secim, tutan: t.kisiler.size }))
     .sort((a, b) => b.tutan - a.tutan || a.ticker.localeCompare(b.ticker))
     .slice(0, ust);
 }
@@ -128,6 +199,7 @@ export async function paketleriKur(
   secilen: Secilen[],
   tur: NotTuru,
   aralik: { baslangic: string; bitis: string },
+  seriYukle: SeriYukleyici = (semboller) => serileriYukle(client, semboller),
 ): Promise<Paket[]> {
   // Dönem öncesi pay: fonda önceki gün (oran paydası, yatırımcı farkı);
   // haftalıkta ayrıca `akis_kati` için önceki 7 hafta. Hacimde 20 işlem
@@ -207,6 +279,8 @@ export async function paketleriKur(
   }
 
   const paketler: Paket[] = [];
+  // Akış/hacim paketi çıkmayan (aylıkta) ve zaten fiyat ölçülü varlıklar.
+  const fiyatla: Secilen[] = [];
   for (const s of secilen) {
     if (s.varlik === 'fon') {
       // Kategori sırası yalnız haftalıkta: RPC en çok 14 günlük aralık alır
@@ -226,13 +300,109 @@ export async function paketleriKur(
       const p = fonPaketi(s.ticker, tur, aralik, fonGunleri.get(s.ticker) ?? [],
         olaylar.get(s.ticker) ?? [], sira);
       if (p) paketler.push(p);
-    } else {
+      else if (tur === 'aylik') fiyatla.push(s);
+    } else if (s.varlik === 'hisse' || s.varlik === 'kripto') {
       const p = hacimPaketi(s.ticker, s.varlik, tur, aralik, hacimGunleri.get(s.ticker) ?? [],
         olaylar.get(s.ticker) ?? []);
       if (p) paketler.push(p);
+      else if (tur === 'aylik') fiyatla.push(s);
+    } else {
+      fiyatla.push(s);
     }
   }
+  if (fiyatla.length > 0) paketler.push(...await fiyatPaketleri(fiyatla, tur, aralik, seriYukle));
   return paketler;
+}
+
+/// Sembol kümesi → tarihli seri. Ağ işi; test sahte yükleyici verir.
+export type SeriYukleyici = (semboller: Set<string>) => Promise<Map<string, Seri>>;
+
+/// `loadDatedHistories` ile aynı (sembol başına tek istek, 8'li paralel,
+/// boş seri haritaya girmez); tek fark eurobond TEMİZ fiyattan
+/// (`fetchEurobondDated` [temiz] notu: kupon günü sahte düşüş olmasın).
+async function serileriYukle(client: SupabaseClient, semboller: Set<string>): Promise<Map<string, Seri>> {
+  const out = new Map<string, Seri>();
+  const liste = [...semboller];
+  for (let i = 0; i < liste.length; i += 8) {
+    const sonuc = await Promise.all(liste.slice(i, i + 8).map(async (sembol) => {
+      try {
+        const seri = sembol.startsWith(EUROBOND_ONEKI)
+          ? await fetchEurobondDated(client, sembol, fetch, true)
+          : await fetchDatedSeries(client, sembol);
+        return [sembol, seri] as const;
+      } catch (_) {
+        return [sembol, [] as Seri] as const;
+      }
+    }));
+    for (const [sembol, seri] of sonuc) if (seri.length > 0) out.set(sembol, seri);
+  }
+  return out;
+}
+
+const GC_F = 'GC=F';
+const USDTRY = 'USDTRY=X';
+
+/// Gram altın TL serisi: GC=F (USD/ons) × aynı günün USDTRY'si ÷ 31,1035.
+/// Kuru olmayan gün seriye girmez (uydurma nokta yok). Yalnız yüzde
+/// ölçüldüğü için 22/24 ayar ve ağırlık çarpanı sonucu değiştirmez.
+export function altinGramSerisi(ons: Seri, kur: Seri): Seri {
+  const gun = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  const kurGunu = new Map(kur.map(([t, v]) => [gun(t), v] as const));
+  const out: Seri = [];
+  for (const [t, v] of ons) {
+    const k = kurGunu.get(gun(t));
+    if (k !== undefined && k > 0) out.push([t, (v * k) / ONS_GRAM]);
+  }
+  return out;
+}
+
+function fiyatKaynagi(s: Secilen): Olcum['kaynak'] {
+  if (s.varlik === 'fon') return 'TEFAS';
+  if (s.varlik === 'kripto') return 'Binance';
+  if (s.varlik === 'eurobond') return 'Börse Frankfurt';
+  return 'Yahoo Finance';
+}
+
+/// Fiyat paketli varlıkların serilerini TEK seferde (sembol başına bir
+/// istek, 8'li paralel) çeker ve paketleri kurar. Seri boşsa paket yok.
+export async function fiyatPaketleri(
+  secilen: Secilen[],
+  tur: NotTuru,
+  aralik: { baslangic: string; bitis: string },
+  seriYukle: SeriYukleyici,
+): Promise<Paket[]> {
+  const semboller = new Set<string>();
+  for (const s of secilen) {
+    if (s.varlik === 'altin') { semboller.add(GC_F); semboller.add(USDTRY); continue; }
+    // Fon/hisse/kripto yedeği: not anahtarı zaten seri sembolüdür.
+    semboller.add(s.seri ?? s.ticker);
+    if (s.para && s.para !== 'TRY') semboller.add(`${s.para}TRY=X`);
+  }
+  const seriler = await seriYukle(semboller);
+  const out: Paket[] = [];
+  for (const s of secilen) {
+    const seri = s.varlik === 'altin'
+      ? altinGramSerisi(seriler.get(GC_F) ?? [], seriler.get(USDTRY) ?? [])
+      : seriler.get(s.seri ?? s.ticker) ?? [];
+    if (seri.length === 0) continue;
+    const para = s.para ?? 'TRY';
+    const p = fiyatPaketi({
+      ticker: s.ticker, kod: notKodu(s.ticker), varlik: s.varlik, tur, aralik, seri, para,
+      kur: para === 'TRY' ? null : seriler.get(`${para}TRY=X`) ?? null,
+      kaynak: fiyatKaynagi(s),
+    });
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+/// Modele ve `girdi.kod`'a giden kısa ad. Yalnız sembol: kullanıcının
+/// yazdığı varlık adı modele GİTMEZ (kişisel veri kuralı).
+export function notKodu(ticker: string): string {
+  if (ticker === ALTIN_ANAHTARI) return 'Gram altın';
+  const t = ticker.replace(/^(TEFAS|KRIPTO|HISSE|EUROBOND):/, '').replace(/\.IS$/, '');
+  const d = /^([A-Z]{3})TRY=X$/.exec(t);
+  return d ? `${d[1]}/TRY` : t;
 }
 
 Deno.serve(async (request) => {
@@ -280,7 +450,7 @@ Deno.serve(async (request) => {
     }
 
     const ust = Number(Deno.env.get('ANALIZ_VARLIK_USTU') ?? '300') || 300;
-    const secilen = await tutulanVarliklar(client, ust);
+    const secilen = await tutulanVarliklar(client, ust, tur);
     const paketler = await paketleriKur(client, secilen, tur, aralik);
     if (paketler.length === 0) return jsonResponse({ ok: true, varlik: secilen.length, istek: 0 });
 
