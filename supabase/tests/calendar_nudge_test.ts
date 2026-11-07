@@ -242,3 +242,12 @@ Deno.test('vade mesajı: tutar, faiz ya da tehdit yok', () => {
   assertEquals(m.body, 'Yeni faiz oranını girersen değeri güncel kalır.');
   assertEquals(/\d/.test(m.title + m.body), false);
 });
+
+Deno.test('dönem verilirse başlık hangi ayın enflasyonu olduğunu yazar', () => {
+  const m = buildInflationMessage(2.49, 40.12, '2026-10');
+  assertEquals(m.title, 'Ekim 2026 enflasyonu açıklandı: aylık %2,49 · yıllık %40,12');
+  assertEquals(
+    buildInflationMessage(2.49, null).title,
+    'Enflasyon açıklandı: aylık %2,49',
+  );
+});
