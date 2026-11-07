@@ -4607,6 +4607,48 @@ class AppLocalizationsTr extends AppLocalizations {
   String get hataAdresKopyalandi => 'Adres kopyalandı';
 
   @override
+  String get hataBaslik => 'Hata';
+
+  @override
+  String get hataBaglanti =>
+      'Bağlantı kurulamadı. İnternetini kontrol et; VPN kullanıyorsan kapatıp tekrar dene.';
+
+  @override
+  String get hataBilinmeyen => 'Bilinmeyen bir hata oluştu.';
+
+  @override
+  String get hataGenel => 'Bir şeyler ters gitti, tekrar dene.';
+
+  @override
+  String get hataVeriOkunamadi => 'Sunucudan gelen veri okunamadı.';
+
+  @override
+  String get hataKayitVar => 'Bu kayıt zaten var.';
+
+  @override
+  String get hataYetkiYok => 'Bu işlem için yetkin yok.';
+
+  @override
+  String get hataVeriIslemi => 'Veri işlemi başarısız oldu.';
+
+  @override
+  String get hataDosyaIslemi => 'Dosya işlemi başarısız oldu.';
+
+  @override
+  String get hataOturumDoldu => 'Oturumun süresi doldu. Tekrar giriş yap.';
+
+  @override
+  String get hataCokDeneme =>
+      'Çok fazla deneme. Lütfen birkaç dakika sonra tekrar dene.';
+
+  @override
+  String get hataIslemTamamlanamadi =>
+      'İşlem tamamlanamadı. Biraz sonra tekrar dene.';
+
+  @override
+  String get grafikYukleniyor => 'Grafik yükleniyor';
+
+  @override
   String get searchRecentRemove => 'Listeden kaldır';
 
   @override

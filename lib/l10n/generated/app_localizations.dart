@@ -7665,6 +7665,84 @@ abstract class AppLocalizations {
   /// **'Adres kopyalandı'**
   String get hataAdresKopyalandi;
 
+  /// No description provided for @hataBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hata'**
+  String get hataBaslik;
+
+  /// No description provided for @hataBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantı kurulamadı. İnternetini kontrol et; VPN kullanıyorsan kapatıp tekrar dene.'**
+  String get hataBaglanti;
+
+  /// No description provided for @hataBilinmeyen.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilinmeyen bir hata oluştu.'**
+  String get hataBilinmeyen;
+
+  /// No description provided for @hataGenel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir şeyler ters gitti, tekrar dene.'**
+  String get hataGenel;
+
+  /// No description provided for @hataVeriOkunamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sunucudan gelen veri okunamadı.'**
+  String get hataVeriOkunamadi;
+
+  /// No description provided for @hataKayitVar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kayıt zaten var.'**
+  String get hataKayitVar;
+
+  /// No description provided for @hataYetkiYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu işlem için yetkin yok.'**
+  String get hataYetkiYok;
+
+  /// No description provided for @hataVeriIslemi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Veri işlemi başarısız oldu.'**
+  String get hataVeriIslemi;
+
+  /// No description provided for @hataDosyaIslemi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dosya işlemi başarısız oldu.'**
+  String get hataDosyaIslemi;
+
+  /// No description provided for @hataOturumDoldu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oturumun süresi doldu. Tekrar giriş yap.'**
+  String get hataOturumDoldu;
+
+  /// No description provided for @hataCokDeneme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok fazla deneme. Lütfen birkaç dakika sonra tekrar dene.'**
+  String get hataCokDeneme;
+
+  /// No description provided for @hataIslemTamamlanamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem tamamlanamadı. Biraz sonra tekrar dene.'**
+  String get hataIslemTamamlanamadi;
+
+  /// No description provided for @grafikYukleniyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafik yükleniyor'**
+  String get grafikYukleniyor;
+
   /// No description provided for @searchRecentRemove.
   ///
   /// In tr, this message translates to:

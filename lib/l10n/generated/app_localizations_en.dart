@@ -4640,6 +4640,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hataAdresKopyalandi => 'Address copied';
 
   @override
+  String get hataBaslik => 'Error';
+
+  @override
+  String get hataBaglanti =>
+      'Couldn\'t connect. Check your internet; if you use a VPN, turn it off and try again.';
+
+  @override
+  String get hataBilinmeyen => 'An unknown error occurred.';
+
+  @override
+  String get hataGenel => 'Something went wrong, try again.';
+
+  @override
+  String get hataVeriOkunamadi => 'The data from the server couldn\'t be read.';
+
+  @override
+  String get hataKayitVar => 'This record already exists.';
+
+  @override
+  String get hataYetkiYok => 'You don\'t have permission for this.';
+
+  @override
+  String get hataVeriIslemi => 'The data operation failed.';
+
+  @override
+  String get hataDosyaIslemi => 'The file operation failed.';
+
+  @override
+  String get hataOturumDoldu => 'Your session has expired. Sign in again.';
+
+  @override
+  String get hataCokDeneme =>
+      'Too many attempts. Please try again in a few minutes.';
+
+  @override
+  String get hataIslemTamamlanamadi =>
+      'Couldn\'t complete the action. Try again in a little while.';
+
+  @override
+  String get grafikYukleniyor => 'Loading chart';
+
+  @override
   String get searchRecentRemove => 'Remove from list';
 
   @override

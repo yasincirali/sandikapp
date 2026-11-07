@@ -177,7 +177,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
             Icon(Icons.error_outline_rounded, color: context.c.loss, size: 40),
             const SizedBox(height: 16),
             Text(
-              friendlyError(widget.error),
+              friendlyError(widget.error, l10n: context.l10n),
               textAlign: TextAlign.center,
               style: context.t.titleMedium?.copyWith(color: context.c.text58),
             ),
@@ -189,7 +189,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
               SandikTappable(
                 onTap: _tekrarDene,
                 haptic: SandikHaptic.medium,
-                semanticLabel: 'Tekrar dene',
+                semanticLabel: context.l10n.retry,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: SandikSpace.lg,
@@ -203,7 +203,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
                     ),
                   ),
                   child: Text(
-                    'Tekrar dene',
+                    context.l10n.retry,
                     style: context.t.titleMedium?.copyWith(
                       color: context.c.amberText,
                       fontWeight: FontWeight.w600,
