@@ -1,4 +1,5 @@
 import 'dart:async' show FutureOr, unawaited;
+import '../widgets/cevrimdisi_seridi.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import 'dart:math' as math;
 
@@ -556,6 +557,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     onChanged: (i) => setState(() => _bodyTab = i),
                   ),
                 ),
+              ),
+              // "İnternet yok" satırı (2026-11-07): başlığın altında, liste
+              // ve takip listesinin üstünde; çevrimiçiyken boyutsuz.
+              CevrimdisiSeridi(
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
+                    SandikSpace.screenH(context), SandikSpace.sm),
               ),
             ],
           ),

@@ -482,6 +482,14 @@ class AppLocalizationsTr extends AppLocalizations {
       'Fiyatlar güncellenemedi, eski veriler gösteriliyor.';
 
   @override
+  String offlinePricesAt(String saat, String ek) {
+    return 'İnternet yok · fiyatlar $saat\'$ek hâli';
+  }
+
+  @override
+  String get offlinePricesUnknown => 'İnternet yok · son fiyatlar gösteriliyor';
+
+  @override
   String get otpSentPrefix => '6 haneli kodu\n';
 
   @override

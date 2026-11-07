@@ -481,6 +481,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prices could not be updated. Showing older data.';
 
   @override
+  String offlinePricesAt(String saat, String ek) {
+    return 'No internet · prices as of $saat';
+  }
+
+  @override
+  String get offlinePricesUnknown => 'No internet · showing last prices';
+
+  @override
   String get otpSentPrefix => 'We sent the 6-digit code to\n';
 
   @override

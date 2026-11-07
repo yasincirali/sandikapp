@@ -968,6 +968,18 @@ abstract class AppLocalizations {
   /// **'Fiyatlar güncellenemedi, eski veriler gösteriliyor.'**
   String get priceUpdateFailed;
 
+  /// No description provided for @offlinePricesAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'İnternet yok · fiyatlar {saat}\'{ek} hâli'**
+  String offlinePricesAt(String saat, String ek);
+
+  /// No description provided for @offlinePricesUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'İnternet yok · son fiyatlar gösteriliyor'**
+  String get offlinePricesUnknown;
+
   /// No description provided for @otpSentPrefix.
   ///
   /// In tr, this message translates to:
