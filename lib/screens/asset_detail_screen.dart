@@ -1504,9 +1504,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // `portfolio_performance/kartlar.dart`). Getiri
                         // satırı çipin altında kalır — veri kaybı yok.
                         _donemCipleri(pnl.currentUnitTRY),
-                        // 52 haftalık aralık (Ar-Ge 2026-11-07 #1, ücretsiz):
-                        // seçili dönemden bağımsız; seri yoksa hiç yer kaplamaz.
-                        _yillikAralikSatiri(pnl.currentUnitTRY),
+                        // Seçici grafiğe bitişik (Ar-Ge 7 Kas 14:00 #1):
+                        // 52 haftalık aralık buradan aşağıdaki "Aralık"
+                        // kartına indi (`_istatistikler`) — denetim
+                        // etkilediği grafiğin yanında durur.
                         const SizedBox(height: SandikSpace.sm),
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         // Sade Başlangıç'ta (`seviye_anketi`) gizli.
@@ -1796,9 +1797,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     // Birim fiyat kuralı (`fiyatBicimi`):
                                     // sabit 2 hane BES fonunu ₺0,03420 →
                                     // "0,03 ₺" yazıyordu (e2e 2026-10-29).
-                                    deger: fiyatBicimi(normBase,
-                                            azami: _canli
-                                                .asset.type.fiyatHassasiyeti)
+                                    // Hane başlıktaki fiyattan (Ar-Ge
+                                    // 7 Kas 14:00 #2): ₺303,1833 değil
+                                    // ₺303,18 (`_birimBicimi`).
+                                    deger: _birimBicimi(currentUnitTRY)
                                         .format(normBase),
                                     gunIci: isIntraday,
                                     // Hissede gün başı önceki kapanıştır

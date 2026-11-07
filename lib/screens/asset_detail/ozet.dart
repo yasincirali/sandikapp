@@ -286,8 +286,17 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// "+₺0,00"; 2026-10-04 kullanıcı bildirimi). 1 ₺ ve üstü yine 2 hane.
   ///
   /// `goz_alici` açıkken kaynak hassasiyeti ([fiyatBicimi]): fon ₺1,234567.
+  ///
+  /// Hane sayısı [birimFiyat]'ın EKRANDAKİ yazılışından gelir ve bu
+  /// biçimle yazılan her sayı aynı haneyi kullanır
+  /// ([ayniOndalikFiyatBicimi], Ar-Ge 2026-11-07 14:00 #2): başlık ₺312,40
+  /// yazarken aralık uçları ₺263,9333, önceki kapanış ₺303,1833, lot başı
+  /// değişim ₺9,2167 yazıyordu. Çağıranlar büyük fiyatı ([_PnlOzeti.
+  /// currentUnitTRY]) referans verir; kendi kendini biçimleyen sayıda
+  /// (ortalama maliyet) çıktı eskisiyle aynıdır.
   NumberFormat _birimBicimi(double birimFiyat) =>
-      fiyatBicimi(birimFiyat, azami: widget.asset.type.fiyatHassasiyeti);
+      ayniOndalikFiyatBicimi(birimFiyat,
+          azami: widget.asset.type.fiyatHassasiyeti);
 
   // ── Başlık ───────────────────────────────────────────────────────────────
 
@@ -436,22 +445,36 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   // ── Yıllık aralık ────────────────────────────────────────────────────────
 
-  /// 52 haftalık aralık satırı (Ar-Ge 2026-11-07 12:30 #1, ücretsiz — fon
-  /// risk satırı gibi eşitleyici, mevcut veri). Biçim büyük fiyatla AYNI
-  /// (`_birimBicimi`, birim TL seri + canlı birim fiyat): ekrandaki fiyatla
-  /// aynı ölçek. Mevduatta yok: birim değer yalnız artar, "yılın dibi"
-  /// bir şey söylemez (dönem çubuğuyla aynı kural).
-  Widget _yillikAralikSatiri(double canliBirim) {
-    if (widget.asset.type == AssetType.mevduat) return const SizedBox.shrink();
-    final aralik = _yillikUclar?.bugunle(canliBirim);
-    if (aralik == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: SandikSpace.sm),
-      child: YillikAralikSatiri(
-        aralik: aralik,
-        bicim: _birimBicimi(aralik.bugun),
+  /// 52 haftalık aralık (Ar-Ge 2026-11-07 12:30 #1, ücretsiz — fon risk
+  /// satırı gibi eşitleyici, mevcut veri). 14:00 #1'de dönem çiplerinin
+  /// altından "Aralık" kartına indi ([AralikKarti], [_istatistikler]).
+  /// Mevduatta yok: birim değer yalnız artar, "yılın dibi" bir şey
+  /// söylemez (dönem aralığıyla aynı kural). Seri yoksa `null` → satır yok.
+  YillikAralik? _yillikAralik(double canliBirim) =>
+      widget.asset.type == AssetType.mevduat
+          ? null
+          : _yillikUclar?.bugunle(canliBirim);
+
+  /// "Aralık" kartı — dönem satırı [donem], 52 hafta satırı seriden.
+  /// Biçim büyük fiyatla AYNI (`_birimBicimi`, canlı birim fiyat): ekrandaki
+  /// fiyatla aynı ölçek ve aynı ondalık.
+  List<Widget> _aralikKarti(double canliBirim,
+      {DonemAraligi? donem, bool ustBosluk = true, double? referans}) {
+    final yillik = _yillikAralik(canliBirim);
+    if (!AralikKarti.cizilir(donem: donem, yillik: yillik)) return const [];
+    final days = _periods[_selectedPeriodIdx].days;
+    return [
+      if (ustBosluk) const SizedBox(height: SandikSpace.sm),
+      AralikKarti(
+        donem: donem,
+        yillik: yillik,
+        gunIci: days == 0,
+        donemAdi:
+            donemEtiketi(context.l10n, _periods[_selectedPeriodIdx].label),
+        bicim: _birimBicimi(
+            referans ?? (canliBirim > 0 ? canliBirim : (yillik?.bugun ?? 0))),
       ),
-    );
+    ];
   }
 
   // ── İstatistikler ────────────────────────────────────────────────────────
@@ -471,7 +494,10 @@ extension _DetayOzet on _AssetDetailScreenState {
     final pct = _donemYuzdesi(days, canliBirim);
     // Veri gelmedi (GÜNLÜK seri tohum): beklenecek bir ölçüm yok, iskelet
     // sonsuza dek dönerdi. Bölüm çizilmez; başlık durumu cümleyle söyler.
-    if (days == 0 && _gunIciVeriGelmedi) return const [];
+    // 52 haftalık satır seriden bağımsız durur (kart yalnız onunla çizilir).
+    if (days == 0 && _gunIciVeriGelmedi) {
+      return _aralikKarti(canliBirim, ustBosluk: false);
+    }
     // Dönem yüzdesi yalnız fiyatın altında (madde 7, 2026-10-04; bayrak
     // `varlik_islem_cubugu` 2026-10-05'te kalktı); ızgara onu (GÜNLÜK'te
     // "Bugün"ü de) yazmaz — bkz. `DonemIstatistikIzgarasi.donemGetirisiGizli`.
@@ -487,7 +513,8 @@ extension _DetayOzet on _AssetDetailScreenState {
         // gelirse hücre düşer (nadir, küçük zıplama kabul).
         dususVar: days != 0,
       );
-      return [_istatistikIskeleti(hucre)];
+      // Dönem satırı seri gelince eklenir; 52 hafta beklemez.
+      return [_istatistikIskeleti(hucre), ..._aralikKarti(canliBirim)];
     }
     // Aralık canlı fiyatı da kapsar: seri haftalıkken bugünkü fiyat son
     // kapanışın dışına taşabilir; imleç yine çubuğun içinde doğru yerde.
@@ -504,6 +531,20 @@ extension _DetayOzet on _AssetDetailScreenState {
           dususVar: DonemIstatistikIzgarasi.dususVar(ist, gunIci: days == 0),
         ) >
         0;
+    // Dip = zirve (elle fiyatlanan varlık, dönem boyunca kıpırdamamış
+    // seri): satır "₺X — ₺X, %50 noktasında" der, yani hiçbir şey. Bilgi
+    // ızgarada zaten var (getiri %0, düşüş %0); boş çubuk gürültüdür.
+    // Mevduatta "dönem düşüğü/yükseği" birim değerdir (₺1,37 / ₺1,41) —
+    // kullanıcıya bir şey söylemez; değer zaten yalnız artar.
+    final DonemAraligi? donem =
+        aralik > 1e-9 * yuksek.abs() && widget.asset.type != AssetType.mevduat
+            ? (
+                dusuk: dusuk,
+                yuksek: yuksek,
+                konum: (canli - dusuk) / aralik,
+                bugun: canli,
+              )
+            : null;
     return [
       DonemIstatistikIzgarasi(
         ist: ist,
@@ -513,22 +554,8 @@ extension _DetayOzet on _AssetDetailScreenState {
         donemGetirisiGizli: true,
         gunIci: days == 0,
       ),
-      // Dip = zirve (elle fiyatlanan varlık, dönem boyunca kıpırdamamış
-      // seri): çubuk "₺X — ₺X, %50 noktasında" der, yani hiçbir şey. Bilgi
-      // ızgarada zaten var (getiri %0, düşüş %0); boş çubuk gürültüdür.
-      // Mevduatta "dönem düşüğü/yükseği" birim değerdir (₺1,37 / ₺1,41) —
-      // kullanıcıya bir şey söylemez; değer zaten yalnız artar.
-      if (aralik > 1e-9 * yuksek.abs() &&
-          widget.asset.type != AssetType.mevduat) ...[
-        if (izgaraDolu) const SizedBox(height: SandikSpace.sm),
-        DonemAralikCubugu(
-          gunIci: days == 0,
-          dusuk: dusuk,
-          yuksek: yuksek,
-          konum: (canli - dusuk) / aralik,
-          bicim: _birimBicimi(canli),
-        ),
-      ],
+      ..._aralikKarti(canliBirim,
+          donem: donem, ustBosluk: izgaraDolu, referans: canli),
     ];
   }
 
@@ -708,7 +735,7 @@ extension _DetayOzet on _AssetDetailScreenState {
     );
   }
 
-  /// [DonemIstatistikIzgarasi] + aralık çubuğunun yer tutucusu — aynı kart
+  /// [DonemIstatistikIzgarasi]'nın yer tutucusu — aynı kart
   /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni). [hucre] ızgaranın
   /// çizeceği hücre sayısı: ikişerli satır, tek kalan satırı doldurur.
   Widget _istatistikIskeleti(int hucre) {

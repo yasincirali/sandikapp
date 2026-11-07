@@ -139,6 +139,27 @@ void main() {
   });
   tearDown(() => RemoteConfigService.testAcik = {});
 
+  // Ar-Ge 7 Kas 14:30 #1: tek türde "%100 Hisse" halkası bilgi vermez,
+  // süzgeç bir şey süzmez; halka (ve büyük halka sayfasına giriş) yok.
+  testWidgets('tek tür: halka çizilmez, liste görünür', (tester) async {
+    await _pump(tester, varliklar: [
+      _lot('a', 'THYAO', AssetType.hisse, 10, 300),
+      _lot('c', 'ASELS', AssetType.hisse, 5, 100),
+    ]);
+    expect(tester.takeException(), isNull);
+    expect(_kucukHalka, findsNothing);
+    expect(find.byKey(const ValueKey('kucuk-halka-lejant')), findsNothing);
+    expect(find.text('%100,0'), findsNothing);
+    expect(_satir('THYAO'), findsWidgets);
+    expect(_satir('ASELS'), findsWidgets);
+  });
+
+  testWidgets('iki tür: halka ve lejant görünür', (tester) async {
+    await _pump(tester);
+    expect(_kucukHalka, findsOneWidget);
+    expect(find.byKey(const ValueKey('kucuk-halka-lejant')), findsOneWidget);
+  });
+
   testWidgets('küçük halka, lejantta yüzdeler, ortada toplam',
       (tester) async {
     await _pump(tester);

@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr'),
+    Locale('tr')
   ];
 
   /// No description provided for @appName.
@@ -6877,11 +6877,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  );
+      String acilis, String yuksek, String dusuk, String kapanis);
 
   /// No description provided for @fullscreenChart.
   ///
@@ -7729,18 +7725,6 @@ abstract class AppLocalizations {
   /// **'Oynaklık (yıllık)'**
   String get vsVolatilityUpper;
 
-  /// No description provided for @vsPeriodLow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Dönem düşüğü'**
-  String get vsPeriodLow;
-
-  /// No description provided for @vsPeriodHigh.
-  ///
-  /// In tr, this message translates to:
-  /// **'Dönem yükseği'**
-  String get vsPeriodHigh;
-
   /// No description provided for @vsRangePosition.
   ///
   /// In tr, this message translates to:
@@ -7920,18 +7904,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ortalama maliyet'**
   String get posAvgCost;
-
-  /// No description provided for @vsDayLow.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gün düşüğü'**
-  String get vsDayLow;
-
-  /// No description provided for @vsDayHigh.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gün yükseği'**
-  String get vsDayHigh;
 
   /// No description provided for @costsEmptyRow.
   ///
@@ -9582,11 +9554,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  );
+      String date, String end, String change, String cpi);
 
   /// No description provided for @savingsRose.
   ///
@@ -11141,11 +11109,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  );
+      String amount, String times, String pct, String share);
 
   /// No description provided for @cryFootnote.
   ///
@@ -17141,6 +17105,18 @@ abstract class AppLocalizations {
   /// **'Bekleyenler'**
   String get alarmBekleyenler;
 
+  /// No description provided for @bolumAcik.
+  ///
+  /// In tr, this message translates to:
+  /// **'açık'**
+  String get bolumAcik;
+
+  /// No description provided for @bolumKapali.
+  ///
+  /// In tr, this message translates to:
+  /// **'kapalı'**
+  String get bolumKapali;
+
   /// No description provided for @alarmCalanlar.
   ///
   /// In tr, this message translates to:
@@ -17542,10 +17518,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  );
+      String baslik, int yuzde, String kalan);
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -17865,6 +17838,30 @@ abstract class AppLocalizations {
   /// **'Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır'**
   String get hesapEkleSatiriAlt;
 
+  /// Varlık ekranı: gün/dönem ve 52 haftalık aralığı birleştiren kartın başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Aralık'**
+  String get aralikBaslik;
+
+  /// No description provided for @aralikGun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün'**
+  String get aralikGun;
+
+  /// No description provided for @aralikDonem.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili dönem'**
+  String get aralikDonem;
+
+  /// No description provided for @ya52Hafta.
+  ///
+  /// In tr, this message translates to:
+  /// **'52 hafta'**
+  String get ya52Hafta;
+
   /// No description provided for @yaBaslikYil.
   ///
   /// In tr, this message translates to:
@@ -17918,12 +17915,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  );
+      String baslik, String dusuk, String yuksek, String bugun, String cumle);
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -17989,9 +17981,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

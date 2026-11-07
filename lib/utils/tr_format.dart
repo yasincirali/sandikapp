@@ -75,8 +75,7 @@ String fmtTRY(double value, {int digits = 0}) {
 /// Birim FİYAT (tutar değil): 1 ₺ ve üstünde 2 ondalık, altında en az 4
 /// anlamlı hane (en çok 8 ondalık). SHIB ~0,0004 ₺ `fmtTRY(digits: 2)` ile
 /// "₺0,00" okunurdu — sıfır fiyatlı gibi. Toplam/değer için `fmtTRY` kalır.
-String fmtTRYFiyat(double value) =>
-    fmtTRY(value, digits: fiyatOndaligi(value));
+String fmtTRYFiyat(double value) => fmtTRY(value, digits: fiyatOndaligi(value));
 
 /// [fmtTRYFiyat]'ın ondalık kuralı — biçimleyiciyi kendisi kuran yerler
 /// (varlık ekranının birim fiyatı) aynı kuralı buradan alır.
@@ -110,6 +109,37 @@ NumberFormat fiyatBicimi(double ornek, {int? azami, String symbol = '₺'}) {
     ..minimumFractionDigits = 2
     ..maximumFractionDigits = math.max(2, azami);
 }
+
+/// [fiyat] ekranda [fiyatBicimi] ile yazılınca kaç ondalık görünür.
+///
+/// [azami] null → [fiyatOndaligi] (eski kural). Verilirse kaynak
+/// hassasiyetinin sondaki sıfırları atılmış hâli: ₺312,40 → 2, fon
+/// ₺1,234567 → 6. En az 2.
+int gosterilenFiyatOndaligi(double fiyat, {int? azami}) {
+  if (azami == null) return fiyatOndaligi(fiyat);
+  final metin = fiyatBicimi(fiyat, azami: azami).format(fiyat);
+  final virgul = metin.lastIndexOf(',');
+  if (virgul < 0) return 2;
+  final hane = RegExp(r'\d').allMatches(metin.substring(virgul + 1)).length;
+  return math.max(2, hane);
+}
+
+/// Büyük fiyatla AYNI ondalık sayısında sabit biçimleyici — seriden gelen
+/// fiyatlar (aralık uçları, önceki kapanış, lot başı değişim, imleç) için.
+///
+/// Neden (Ar-Ge 2026-11-07 14:00 #2, yasin "yap"): [fiyatBicimi] kaynak
+/// hassasiyetinde sondaki sıfırları atar; kaynaktan gelen ₺312,40 iki hane
+/// yazar ama hesaplanmış/düzeltilmiş seri noktası ₺263,9333 dört hane
+/// yazıyordu — aynı ekranda iki sayı biçimi. Hane sayısı [referans]
+/// fiyatın ekrandaki yazılışından gelir: hisse 2 kalır, ₺0,179147'lik fon
+/// ya da SHIB gibi düşük fiyatlı varlık kendi hassasiyetini korur
+/// ([fiyatOndaligi] / [azami]). Referansın kendisini biçimlerken çıktı
+/// [fiyatBicimi] ile birebir aynıdır.
+NumberFormat ayniOndalikFiyatBicimi(double referans,
+        {int? azami, String symbol = '₺'}) =>
+    tryFormatter(
+        digits: gosterilenFiyatOndaligi(referans, azami: azami),
+        symbol: symbol);
 
 /// [fiyatBicimi] ile tek fiyat metni.
 String fmtFiyat(double value, {int? azami, String symbol = '₺'}) =>
@@ -292,7 +322,8 @@ double? parseTrNumber(String text) {
   } else if (lastDot >= 0) {
     // Yalnızca nokta: binlik mi ondalık mı?
     final parts = s.split('.');
-    final bas = parts.first.startsWith('-') ? parts.first.substring(1) : parts.first;
+    final bas =
+        parts.first.startsWith('-') ? parts.first.substring(1) : parts.first;
     final ilkGrupGecerli =
         bas.isNotEmpty && bas.length <= 3 && !bas.startsWith('0');
     final allGroupsAreThree = parts.length > 1 &&
@@ -319,7 +350,8 @@ double? parseTrNumber(String text) {
 /// `₺1.234,56` üreten biçimlendirici. [symbol] yalnızca döviz cinsinden
 /// gösterilen takip kalemleri için değiştirilir.
 NumberFormat tryFormatter({int digits = 0, String symbol = '₺'}) =>
-    NumberFormat.currency(locale: 'tr_TR', symbol: symbol, decimalDigits: digits);
+    NumberFormat.currency(
+        locale: 'tr_TR', symbol: symbol, decimalDigits: digits);
 
 /// Miktar: trailing sıfır atan, en fazla [maxDigits] ondalıklı (`1.234,5`).
 NumberFormat qtyFormatter({int maxDigits = 4}) =>
@@ -439,3 +471,4 @@ String _ayAdi(int ay, String dil, bool kisa) {
   final t = en ? (kisa ? _ayEnKisa : _ayEn) : (kisa ? _ayTrKisa : _ayTr);
   return t[ay - 1];
 }
+

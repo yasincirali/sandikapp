@@ -496,13 +496,16 @@ List<_Adim> _adimlariKur() {
       // ("simetri ve ahengi bozmayacak şekilde"); metin yeri öyle söyler.
       // 2026-11-05 (Ar-Ge 19:00 #1): dönem segmenti kartı yerinde çevirir,
       // Özet'e götürmez; metin öyle söyler.
+      // 2026-11-07 (Ar-Ge 14:15 #1): oynayanlar sırası yalnız en az iki
+      // oynayan varken; metin koşulu söyler (tek varlıkta sıra yok).
       govde: 'Günün hükmü tek kelimeyle (Yükseldi, Geriledi, Yerinde saydı) '
           've yanında tutar: yalnız fiyat etkisi, yatırdığın para sayılmaz. '
           'Başlık satırının sonundaki simge günün yüzdesini tutarsız bir '
           'görsel olarak '
           'paylaşır. '
           'Eğri günün seyri; Hafta, Ay, Yıl kartı yerinde o döneme çevirir. '
-          'Aşağıda en çok oynayanlar, 100 liranın bugünkü karşılığı ve '
+          'Aşağıda en çok oynayanlar (birden çok varlık oynadıysa), '
+          '100 liranın bugünkü karşılığı ve '
           'hedefine kalan var.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
@@ -611,13 +614,17 @@ List<_Adim> _adimlariKur() {
       // 2026-10-20'de emekliye ayrıldı, eski "dağılım halkası" metni kalktı).
       // Bayrak `goz_alici` (2026-10-09): halkada dilime dokunmak o türü
       // seçer, seçili dilime ya da ortaya dokunmak büyütür.
+      // 2026-11-07 (Ar-Ge 14:30 #1): halka yalnız birden çok tür varken;
+      // metin koşulu söyler.
       govde: (RemoteConfigService.instance.gozAlici
-          ? 'Varlıklarının listesi ve tür dağılımı burada; halkadaki bir '
+          ? 'Varlıklarının listesi burada, birden çok türün varsa tür '
+              'dağılımı da; halkadaki bir '
               'dilime ya da yandaki türe dokununca liste o türe süzülür, '
               'halkanın ortasına dokununca büyür. Bir varlığa dokununca '
               'detayına inersin; alış, satış ve temettüyü oradaki alt '
               'çubuktan kaydedersin.'
-          : 'Varlıklarının listesi ve tür dağılımı burada; yandaki bir türe '
+          : 'Varlıklarının listesi burada, birden çok türün varsa tür '
+              'dağılımı da; yandaki bir türe '
               'dokununca liste o türe süzülür, türler sığmazsa lejant '
               'sayfalara bölünür ve alttaki noktalardan kaydırırsın; halkaya '
               'dokununca büyür. Bir varlığa dokununca '

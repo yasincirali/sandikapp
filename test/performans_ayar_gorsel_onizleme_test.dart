@@ -148,7 +148,7 @@ void main() {
   testWidgets('Ayarlar hub — Gelişmiş açık', (tester) async {
     await ciz(tester, 'ayar_sade_hub', const SettingsScreen(),
         sonra: () async {
-      await tester.tap(find.text('GELİŞMİŞ'));
+      await tester.tap(find.text('Gelişmiş'));
       await tester.pumpAndSettle();
     });
   });

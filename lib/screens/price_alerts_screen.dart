@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/alarm_mesafesi.dart';
 import '../models/asset.dart';
+import '../models/calanlar_yakinligi.dart';
 import '../models/position.dart';
 import '../models/asset_type.dart' show alarmFiyatSimgesi;
 import '../models/price_alert.dart';
@@ -138,8 +139,12 @@ List<AlarmAdayi> alarmAdaylari(WidgetRef ref) {
 }
 
 class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
-  /// Çalanlar grubu kapalı açılır: liste "neyi bekliyorum"u cevaplar.
-  bool _calanlarAcik = false;
+  /// Çalanlar grubunu kişi bu oturumda elle açtı/kapattı mı; `null` →
+  /// karar otomatik ([calanlarOneCiksin]): son 24 saatte çalma varsa açık ve
+  /// üstte, yoksa kapalı ve altta ("liste neyi bekliyorum'u cevaplar").
+  /// Elle seçim yalnız bu ekran açıkken korunur (kalıcı değil, Ar-Ge 7 Kas
+  /// 13:40 #2): ertesi açılışta yeni bir çalma yine öne çıkabilsin.
+  bool? _calanlarElle;
 
   @override
   void initState() {
@@ -262,18 +267,24 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             ]..sort((a, b) => _calmaAni(b)!.compareTo(_calmaAni(a)!));
             final sh = SandikSpace.screenH(context);
             final adaylar = {for (final a in _adaylar()) a.sembol: a};
-            final ogeler = <Widget>[
-              if (calan.isNotEmpty && bekleyen.isNotEmpty)
-                SandikSectionHeader(title: context.l10n.alarmBekleyenler),
-              for (final g in _grupla(bekleyen)) _grup(context, g, adaylar),
+            // Yeni çalma (son 24 saat) öne çıkar: grup en üstte ve açık
+            // (Ar-Ge 7 Kas 13:40 #2). Yer yalnız bu karardan; elle aç/kapa
+            // grubu yerinden oynatmaz (parmağın altındaki başlık kaçmasın).
+            // Açık gelişte panel doğrudan açık çizilir, açılış hareketi yok
+            // (`SandikAcilir` ilk değeri `acik`'tan alır).
+            final yeniCalma = calan.isNotEmpty &&
+                calanlarOneCiksin(
+                    _calmaAni(calan.first), ref.read(alarmSaatProvider)());
+            final calanlarAcik = _calanlarElle ?? yeniCalma;
+            final calanlar = <Widget>[
               if (calan.isNotEmpty) ...[
                 _CalanlarBasligi(
                   sayi: calan.length,
-                  acik: _calanlarAcik,
-                  onTap: () => setState(() => _calanlarAcik = !_calanlarAcik),
+                  acik: calanlarAcik,
+                  onTap: () => setState(() => _calanlarElle = !calanlarAcik),
                 ),
                 SandikAcilir(
-                  acik: _calanlarAcik,
+                  acik: calanlarAcik,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -296,6 +307,13 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                   ),
                 ),
               ],
+            ];
+            final ogeler = <Widget>[
+              if (yeniCalma) ...calanlar,
+              if (calan.isNotEmpty && bekleyen.isNotEmpty)
+                SandikSectionHeader(title: context.l10n.alarmBekleyenler),
+              for (final g in _grupla(bekleyen)) _grup(context, g, adaylar),
+              if (!yeniCalma) ...calanlar,
             ];
             // İzin reddedilmişse listedeki hiçbir alarm haber veremez
             // (Ar-Ge 16:45 #1, 2026-10-21). Liste kaydırılırken satır üstte
@@ -393,7 +411,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     );
     if (ok) {
       SandikHaptic.medium.perform();
-      if (mounted) setState(() => _calanlarAcik = false);
+      // Grup boşaldı; sonraki çalma yine otomatik karara bağlı.
+      if (mounted) setState(() => _calanlarElle = null);
     }
   }
 
@@ -1059,13 +1078,11 @@ class _AlarmSatiri extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final l10n = context.l10n;
-    final renk = sonuk
-        ? c.text36
-        : switch (yon) {
-            _Yon.yukari => c.gain,
-            _Yon.asagi => c.loss,
-            _Yon.ikisi => c.text58,
-          };
+    // Yön oku nötr (Ar-Ge 7 Kas 13:40 #1): yeşil/kırmızı uygulamada kâr/
+    // zarar demek; alım için kurulan "altına inince" alarmı kişi için iyi
+    // haber. Yön okun şeklinde ve satır metninde ("çıkınca/inince"), renk
+    // anlam taşımaz. Çalmış alarmda soluk.
+    final renk = sonuk ? c.text36 : c.text58;
     final m = mesafe;
     final mesafeMetni =
         m == null ? null : fmtPct(m, digits: alarmMesafesiHanesi(m));
@@ -1084,6 +1101,16 @@ class _AlarmSatiri extends StatelessWidget {
                   color: c.text90,
                   fontFeatures: const [FontFeature.tabularFigures()]),
             ),
+          );
+    // "Yeniden kur" da büyük yazıda başlığın altına iner (2026-11-07):
+    // Çalanlar artık yeni çalmada açık geliyor; 2× ve üstünde düğme satırı
+    // 320 pt'de sağdan taşırıyordu (eskiden kapalı grupta gözden kaçtı).
+    final yenidenKur = onRearm == null
+        ? null
+        : SandikAsyncButton.kompakt(
+            tur: SandikAsyncTur.metin,
+            onPressed: onRearm!,
+            child: Text(l10n.recreateAlert),
           );
     final govde = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -1119,6 +1146,7 @@ class _AlarmSatiri extends StatelessWidget {
                     ),
                   if (buyukYazi && mesafeYazisi != null) mesafeYazisi,
                   if (grafikte) const _GrafikteAcSatiri(),
+                  if (buyukYazi && yenidenKur != null) yenidenKur,
                 ],
               ),
             ),
@@ -1126,12 +1154,7 @@ class _AlarmSatiri extends StatelessWidget {
               const SizedBox(width: SandikSpace.sm),
               mesafeYazisi,
             ],
-            if (onRearm != null)
-              SandikAsyncButton.kompakt(
-                tur: SandikAsyncTur.metin,
-                onPressed: onRearm!,
-                child: Text(l10n.recreateAlert),
-              ),
+            if (!buyukYazi && yenidenKur != null) yenidenKur,
             if (onAdlandir != null) _AdlandirDugmesi(onPressed: onAdlandir!),
             // Dokunulabilir satır görünür ipucu taşır (yalnız basma
             // tepkisine bırakılmaz); çizgi satırının ipucu "Grafikte aç".
@@ -1296,6 +1319,11 @@ class _AlarmSayaci extends ConsumerWidget {
 /// "Çalanlar (N)" — dokununca grup açılır/kapanır. Tüm satır dokunma alanı
 /// (≥44 pt); açık/kapalı durumu ok yönüyle ve erişilebilirlikte `expanded`
 /// ile söylenir, yalnız hareketle değil.
+///
+/// iOS'ta Flutter `expanded`'ı VoiceOver'a taşımıyor (3.47, motor
+/// `SemanticsObject.mm`'de karşılığı yok); durum orada değer olarak
+/// ("açık"/"kapalı") okunur. Android'de TalkBack `expanded`'ı zaten
+/// "genişletildi" diye söyler; değer eklenirse iki kez duyulurdu.
 class _CalanlarBasligi extends StatelessWidget {
   const _CalanlarBasligi({
     required this.sayi,
@@ -1310,9 +1338,16 @@ class _CalanlarBasligi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final elma = switch (Theme.of(context).platform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => true,
+      _ => false,
+    };
     return Semantics(
       button: true,
       expanded: acik,
+      value: !elma
+          ? null
+          : (acik ? context.l10n.bolumAcik : context.l10n.bolumKapali),
       child: SandikTappable(
         key: const ValueKey('calanlarBasligi'),
         onTap: onTap,

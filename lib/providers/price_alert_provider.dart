@@ -10,6 +10,10 @@ import 'auth_provider.dart';
 final priceAlertServiceProvider =
     Provider<PriceAlertService>((_) => PriceAlertService.instance);
 
+/// Alarmlarım'ın saati: "Çalanlar son 24 saatte mi çaldı" kararı
+/// (`calanlarOneCiksin`) bunu okur. Testte sabit saatle değiştirilir.
+final alarmSaatProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
 /// Kullanıcının fiyat alarmları — tek kaynak.
 ///
 /// 2026-09-14: liste yalnızca `PriceAlertsScreen`'in kendi `Future`'ında

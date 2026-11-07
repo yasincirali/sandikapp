@@ -940,7 +940,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           onSec: _donemSec,
           onPerformans: () => _ozeteGit(periodIdx: _donem.index),
         ),
-        if (gunluk && oynayanlar.isNotEmpty) ...[
+        // En az iki oynayan (Ar-Ge 7 Kas 14:15 #1): tek varlıkta sıra,
+        // başlıktaki tutarı ikinci kez yazıyordu; "en çok" kıyas ister.
+        if (gunluk && oynayanlar.length >= 2) ...[
           // Başlık satırı 44pt dokunma yüksekliğinde ("Tümü"): üstünde ek
           // boşluk büyük görünüyordu (emülatör, 2026-10-09).
           const SizedBox(height: SandikSpace.xs),

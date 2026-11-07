@@ -75,8 +75,8 @@ void main() {
     test('eski kural birebir; ₺0,00 yok', () {
       expect(AssetType.fon.fiyatHassasiyeti, isNull);
       expect(takipFiyatMetni(_takip(AssetType.fon, 1.234567)), '₺1,23');
-      expect(takipFiyatMetni(_takip(AssetType.kripto, 0.000412)),
-          isNot('₺0,00'));
+      expect(
+          takipFiyatMetni(_takip(AssetType.kripto, 0.000412)), isNot('₺0,00'));
       expect(takipFiyatMetni(_takip(AssetType.bes, 0.179147)), '₺0,1791');
     });
     test('miktar eski kural', () {
@@ -91,8 +91,8 @@ void main() {
     test('takip satırı kaynak hassasiyetinde', () {
       expect(takipFiyatMetni(_takip(AssetType.fon, 1.234567)), '₺1,234567');
       expect(takipFiyatMetni(_takip(AssetType.hisse, 312.75)), '₺312,75');
-      expect(takipFiyatMetni(_takip(AssetType.kripto, 1.00000012)),
-          '₺1,00000012');
+      expect(
+          takipFiyatMetni(_takip(AssetType.kripto, 1.00000012)), '₺1,00000012');
     });
     test('miktar girildiği kadar, sıfırsız', () {
       final pay = _asset(AssetType.fon, 10.7538);
@@ -103,6 +103,52 @@ void main() {
           startsWith('2,5 '));
       expect(_asset(AssetType.hisse, 1500).miktarOndalik, 0);
       expect(pay.azamiOndalik, 8);
+    });
+  });
+
+  // Ar-Ge 2026-11-07 14:00 #2: seriden gelen fiyat (aralık ucu, önceki
+  // kapanış, lot başı değişim) büyük fiyatın HANE SAYISIYLA yazılır.
+  group('ayniOndalikFiyatBicimi', () {
+    test('hisse: başlık ₺312,40 iken seri noktası iki hane', () {
+      final f = ayniOndalikFiyatBicimi(312.40, azami: 4);
+      expect(f.format(312.40), '₺312,40');
+      expect(f.format(263.9333), '₺263,93');
+      expect(f.format(303.1833), '₺303,18');
+      expect(f.format(9.2167), '₺9,22');
+    });
+
+    test('referansın kendisi fiyatBicimi ile birebir aynı', () {
+      for (final (v, azami) in [
+        (312.40, 4),
+        (1.234567, 6),
+        (0.179147, 6),
+        (0.00041234, 8),
+        (312.4567, 4),
+        (0.179147, null),
+        (2500.0, null),
+      ]) {
+        expect(ayniOndalikFiyatBicimi(v, azami: azami).format(v),
+            fiyatBicimi(v, azami: azami).format(v),
+            reason: '$v / $azami');
+      }
+    });
+
+    test('hassas varlık bozulmaz: fon ve kripto kendi hanesini korur', () {
+      // Fon ₺1,234567 → 6 hane; seri noktası da 6.
+      expect(
+          ayniOndalikFiyatBicimi(1.234567, azami: 6).format(1.2), '₺1,200000');
+      // BES fonu ₺0,179147 (bayrak kapalı: fiyatOndaligi → 4 hane).
+      expect(ayniOndalikFiyatBicimi(0.179147).format(0.17), '₺0,1700');
+      // SHIB ~₺0,0004: ₺0,00 okunmaz.
+      expect(ayniOndalikFiyatBicimi(0.00041234, azami: 8).format(0.00039876),
+          '₺0,00039876');
+      expect(gosterilenFiyatOndaligi(0.00041234), fiyatOndaligi(0.00041234));
+    });
+
+    test('bayrak kapalıyken (azami null) eski kural birebir', () {
+      for (final v in [312.4, 0.5, 0.0004, 12345.678]) {
+        expect(gosterilenFiyatOndaligi(v), fiyatOndaligi(v));
+      }
     });
   });
 }
