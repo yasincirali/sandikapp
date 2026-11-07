@@ -73,6 +73,29 @@ extension _DetayOzet on _AssetDetailScreenState {
     );
   }
 
+  /// Elde tutma süresi ve yıllık ortalama getiri (Ar-Ge 7 Kas 20:30 #6).
+  /// Yalnız bugün açık pozisyonda (kapanmışta satır yok); mevduatın getirisi
+  /// sözleşmeden okunur, burada çizilmez. Lot listesi ya da değer
+  /// değişmedikçe hesap tekrar koşmaz.
+  EldeTutma? _eldeTutma(_PnlOzeti pnl) {
+    final canli = _canli;
+    if (!canli.acik || widget.asset.type == AssetType.mevduat) return null;
+    final o = _eldeTutmaOnbellek;
+    if (o != null &&
+        identical(o.lots, canli.lots) &&
+        o.deger == pnl.currentValueTRY) {
+      return o.sonuc;
+    }
+    final sonuc = eldeTutma(
+      lotlar: canli.lots,
+      guncelDegerTRY: pnl.currentValueTRY,
+      simdi: DateTime.now(),
+    );
+    _eldeTutmaOnbellek =
+        (lots: canli.lots, deger: pnl.currentValueTRY, sonuc: sonuc);
+    return sonuc;
+  }
+
   /// Dönemin grafik penceresinin başı — grafikle AYNI kural (gün içi →
   /// çizilen seansın 00:00'ı, diğerleri Performans'ın takvim penceresi).
   DateTime _pencereBasi(int days, DateTime now, {DateTime? seansGunu}) =>
@@ -425,6 +448,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       mainAxisSize: MainAxisSize.min,
       children: [
         blok,
+        if (_eldeTutma(pnl) case final e?) EldeTutmaSatiri(ozet: e),
         // Alım gününün fiyatı geldiyse tek dokunuşluk adet önerisi; yoksa
         // yer kaplamaz (Ar-Ge 7 Kas 14:30 #1).
         if (widget.asset.type == AssetType.fon)

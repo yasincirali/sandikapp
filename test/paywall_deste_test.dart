@@ -53,6 +53,8 @@ void main() {
         'portfoy_xray': PaywallKarti.xray,
         // Varlık detayında "Fiyattan · Kurdan" (2026-11-07).
         'kur_ayrismasi': PaywallKarti.xray,
+        // Varlık detayında yıllık ortalama getiri (Ar-Ge 7 Kas 20:30 #6).
+        'yillik_getiri': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
         // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
         // göreceği portföy → portföy kartı.

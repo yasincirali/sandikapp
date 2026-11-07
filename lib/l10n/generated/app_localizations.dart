@@ -563,7 +563,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHelpSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Bize ulaş, tanıtım turu, gizlilik ve koşullar'**
+  /// **'Sık sorulanlar, bize ulaş, yenilikler ve yasal belgeler'**
   String get settingsHelpSubtitle;
 
   /// No description provided for @themeSystem.
@@ -1760,6 +1760,36 @@ abstract class AppLocalizations {
   /// **'Maliyetine göre yıllık verimin Premium\'da'**
   String get dividendYieldOnCostLocked;
 
+  /// No description provided for @eldeTutmaSureYilAy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil} yıl {ay} ay'**
+  String eldeTutmaSureYilAy(String yil, String ay);
+
+  /// No description provided for @eldeTutmaSureYil.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil} yıl'**
+  String eldeTutmaSureYil(String yil);
+
+  /// No description provided for @eldeTutmaSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sure}dır tutuyorsun · yıllık ortalama {pct}'**
+  String eldeTutmaSatiri(String sure, String pct);
+
+  /// No description provided for @eldeTutmaA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sure}dır tutuyorsun. Alış, satış ve temettüler hesaba katılınca yıllık ortalama getirin {pct}.'**
+  String eldeTutmaA11y(String sure, String pct);
+
+  /// No description provided for @eldeTutmaKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık ortalama getirin Premium\'da'**
+  String get eldeTutmaKilitli;
+
   /// No description provided for @fxSplitPrice.
   ///
   /// In tr, this message translates to:
@@ -2543,8 +2573,32 @@ abstract class AppLocalizations {
   /// No description provided for @downloadMyDataSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)'**
+  /// **'Hareketlerini Excel, tüm verilerini JSON olarak al (KVKK Madde 11)'**
   String get downloadMyDataSubtitle;
+
+  /// No description provided for @downloadMyDataExcel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Excel (tüm hareketler)'**
+  String get downloadMyDataExcel;
+
+  /// No description provided for @downloadMyDataExcelSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her alış, satış ve temettü; tablo olarak açılır'**
+  String get downloadMyDataExcelSubtitle;
+
+  /// No description provided for @downloadMyDataJson.
+  ///
+  /// In tr, this message translates to:
+  /// **'JSON (tüm veriler)'**
+  String get downloadMyDataJson;
+
+  /// No description provided for @downloadMyDataJsonSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm kayıtlarının makine okunur tam kopyası'**
+  String get downloadMyDataJsonSubtitle;
 
   /// No description provided for @deleteMyAccount.
   ///
@@ -2647,12 +2701,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tanıtım turunu yeniden izle'**
   String get replayTour;
-
-  /// No description provided for @replayTourSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ekranların ne işe yaradığını hatırla'**
-  String get replayTourSubtitle;
 
   /// No description provided for @yasalBelgelerBaslik.
   ///
@@ -6501,12 +6549,6 @@ abstract class AppLocalizations {
   /// **'Yenilikler'**
   String get whatsNewTitle;
 
-  /// No description provided for @whatsNewSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu sürümde neler değişti'**
-  String get whatsNewSubtitle;
-
   /// No description provided for @whatsNewEmpty.
   ///
   /// In tr, this message translates to:
@@ -6662,12 +6704,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'sandık\'ı değerlendir'**
   String get rateAppTitle;
-
-  /// No description provided for @rateAppSubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Mağazada puan ver'**
-  String get rateAppSubtitle;
 
   /// No description provided for @todayMarketOnly.
   ///

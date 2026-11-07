@@ -255,7 +255,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lock, devices, data download, delete account';
 
   @override
-  String get settingsHelpSubtitle => 'Contact us, tour, privacy and terms';
+  String get settingsHelpSubtitle =>
+      'FAQ, contact us, what\'s new and legal documents';
 
   @override
   String get themeSystem => 'System';
@@ -990,6 +991,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your yearly yield on cost is part of Premium';
 
   @override
+  String eldeTutmaSureYilAy(String yil, String ay) {
+    return '$yil yr $ay mo';
+  }
+
+  @override
+  String eldeTutmaSureYil(String yil) {
+    return '$yil yr';
+  }
+
+  @override
+  String eldeTutmaSatiri(String sure, String pct) {
+    return 'Held for $sure · $pct a year on average';
+  }
+
+  @override
+  String eldeTutmaA11y(String sure, String pct) {
+    return 'You have held this for $sure. Counting your buys, sells and dividends, your average annual return is $pct.';
+  }
+
+  @override
+  String get eldeTutmaKilitli => 'Your average annual return is in Premium';
+
+  @override
   String get fxSplitPrice => 'From price';
 
   @override
@@ -1447,7 +1471,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadMyDataSubtitle =>
-      'Get all your data as a JSON file (KVKK Article 11)';
+      'Get your transactions as Excel, all your data as JSON (KVKK Article 11)';
+
+  @override
+  String get downloadMyDataExcel => 'Excel (all transactions)';
+
+  @override
+  String get downloadMyDataExcelSubtitle =>
+      'Every buy, sell and dividend; opens as a spreadsheet';
+
+  @override
+  String get downloadMyDataJson => 'JSON (all data)';
+
+  @override
+  String get downloadMyDataJsonSubtitle =>
+      'A complete machine-readable copy of your records';
 
   @override
   String get deleteMyAccount => 'Delete my account';
@@ -1505,9 +1543,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get replayTour => 'Replay the tour';
-
-  @override
-  String get replayTourSubtitle => 'Remind yourself what each screen does';
 
   @override
   String get yasalBelgelerBaslik => 'Legal documents';
@@ -3921,9 +3956,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatsNewTitle => 'What\'s New';
 
   @override
-  String get whatsNewSubtitle => 'See what changed in this version';
-
-  @override
   String get whatsNewEmpty => 'No notes for this version.';
 
   @override
@@ -4013,9 +4045,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rateAppTitle => 'Rate sandık';
-
-  @override
-  String get rateAppSubtitle => 'Leave a rating on the store';
 
   @override
   String get todayMarketOnly => 'price effect only';

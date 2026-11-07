@@ -256,7 +256,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsHelpSubtitle =>
-      'Bize ulaş, tanıtım turu, gizlilik ve koşullar';
+      'Sık sorulanlar, bize ulaş, yenilikler ve yasal belgeler';
 
   @override
   String get themeSystem => 'Sistem';
@@ -976,6 +976,29 @@ class AppLocalizationsTr extends AppLocalizations {
       'Maliyetine göre yıllık verimin Premium\'da';
 
   @override
+  String eldeTutmaSureYilAy(String yil, String ay) {
+    return '$yil yıl $ay ay';
+  }
+
+  @override
+  String eldeTutmaSureYil(String yil) {
+    return '$yil yıl';
+  }
+
+  @override
+  String eldeTutmaSatiri(String sure, String pct) {
+    return '${sure}dır tutuyorsun · yıllık ortalama $pct';
+  }
+
+  @override
+  String eldeTutmaA11y(String sure, String pct) {
+    return '${sure}dır tutuyorsun. Alış, satış ve temettüler hesaba katılınca yıllık ortalama getirin $pct.';
+  }
+
+  @override
+  String get eldeTutmaKilitli => 'Yıllık ortalama getirin Premium\'da';
+
+  @override
   String get fxSplitPrice => 'Fiyattan';
 
   @override
@@ -1431,7 +1454,21 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get downloadMyDataSubtitle =>
-      'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)';
+      'Hareketlerini Excel, tüm verilerini JSON olarak al (KVKK Madde 11)';
+
+  @override
+  String get downloadMyDataExcel => 'Excel (tüm hareketler)';
+
+  @override
+  String get downloadMyDataExcelSubtitle =>
+      'Her alış, satış ve temettü; tablo olarak açılır';
+
+  @override
+  String get downloadMyDataJson => 'JSON (tüm veriler)';
+
+  @override
+  String get downloadMyDataJsonSubtitle =>
+      'Tüm kayıtlarının makine okunur tam kopyası';
 
   @override
   String get deleteMyAccount => 'Hesabımı sil';
@@ -1489,9 +1526,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get replayTour => 'Tanıtım turunu yeniden izle';
-
-  @override
-  String get replayTourSubtitle => 'Ekranların ne işe yaradığını hatırla';
 
   @override
   String get yasalBelgelerBaslik => 'Yasal belgeler';
@@ -3891,9 +3925,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get whatsNewTitle => 'Yenilikler';
 
   @override
-  String get whatsNewSubtitle => 'Bu sürümde neler değişti';
-
-  @override
   String get whatsNewEmpty => 'Bu sürüm için not yok.';
 
   @override
@@ -3983,9 +4014,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rateAppTitle => 'sandık\'ı değerlendir';
-
-  @override
-  String get rateAppSubtitle => 'Mağazada puan ver';
 
   @override
   String get todayMarketOnly => 'sadece fiyat etkisi';

@@ -32,6 +32,8 @@ import '../services/surum_notu_service.dart';
 import '../services/review_prompt_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/data_export_service.dart';
+import '../services/disa_aktarim/disa_aktarim_service.dart';
+import '../services/disa_aktarim/hareket_dokumu.dart';
 import '../services/analytics_service.dart';
 import 'paywall_screen.dart';
 import '../services/share_card_service.dart';
@@ -246,12 +248,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// Kilit ve gösterge karonun kendisinde (`_SettingsTile.onTapAsync`, tek
   /// yükleniyor davranışı 2026-10-08); eski `_exporting` bayrağı kalktı.
+  ///
+  /// Ar-Ge 7 Kas 20:30 #1: karo önce biçim sorar (Excel hareketler / JSON
+  /// tüm veriler). Satır sayısı aynı kaldı; JSON yolu aynen. Sayfa açıkken
+  /// karo "yükleniyor"da durur: ikinci dokunuş ikinci sayfayı açmasın.
   Future<void> _exportData() async {
     // Dikdörtgen karo "yükleniyor" hâline geçmeden ÖNCE ölçülür: o anda
     // trailing değişiyor, ölçüm kararlı hâlden yapılsın. (`onTapAsync`
     // göstergeyi bir sonraki karede çizer; bu satır senkron koşar.)
     final origin = ShareCardService.originOf(_disaAktarKaroKey.currentContext);
+    final excel = await _indirmeBicimiSor();
+    if (excel == null || !mounted) return;
     try {
+      if (excel) {
+        await _hareketleriPaylas(origin);
+        return;
+      }
       await DataExportService.instance.exportAndShare(paylasimKaynagi: origin);
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): `exportAndShare`
       // sistem paylaşım sayfasını açıyor, kullanıcı dosyayı zaten orada
@@ -263,6 +275,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       showAppError(context, e);
     }
+  }
+
+  /// `true` Excel, `false` JSON, vazgeçilirse `null`.
+  Future<bool?> _indirmeBicimiSor() {
+    final l = context.l10n;
+    return showSandikSheet<bool>(
+      context: context,
+      baslik: l.downloadMyData,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), 0,
+              SandikSpace.screenH(ctx), SandikSpace.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SettingsTile(
+                icon: Icons.table_chart_outlined,
+                title: l.downloadMyDataExcel,
+                subtitle: l.downloadMyDataExcelSubtitle,
+                onTap: () => Navigator.pop(ctx, true),
+              ),
+              _SettingsTile(
+                icon: Icons.data_object_rounded,
+                title: l.downloadMyDataJson,
+                subtitle: l.downloadMyDataJsonSubtitle,
+                onTap: () => Navigator.pop(ctx, false),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tüm hareketlerin Excel'i (`hareketDokumuBelgesi`). Ücretsiz: veri
+  /// taşınabilirliği Premium'a konmaz. Yalnız kullanıcının kendi kayıtları
+  /// (ortak görünümde defter ortağın lotlarını da taşır; portföy dökümüyle
+  /// aynı süzgeç).
+  Future<void> _hareketleriPaylas(Rect? origin) async {
+    final durum = ref.read(portfolioProvider).valueOrNull;
+    final kullanici = ref.read(authProvider).valueOrNull;
+    if (durum == null || kullanici == null) return;
+    final belge = hareketDokumuBelgesi(
+      defter: [
+        for (final a in durum.assets)
+          if (a.userId == kullanici.id) a
+      ],
+      kim: kullanici.username ?? kullanici.email,
+      olusturma: DateTime.now(),
+    );
+    if (belge == null) {
+      if (mounted) sandikSnack(context, context.l10n.noTransactionsYet);
+      return;
+    }
+    await DisaAktarimService.instance.paylas(belge,
+        bicim: DisaAktarimBicimi.excel, tur: 'hareketler', kaynak: origin);
   }
 
   /// Yatırım uyarısı metni — marka kabuğunda (Ar-Ge 5 Kas 22:40 #7; eskiden
@@ -1045,7 +1114,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final puan = _SettingsTile(
       icon: Icons.star_outline_rounded,
       title: context.l10n.rateAppTitle,
-      subtitle: context.l10n.rateAppSubtitle,
       // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
       // "Sonra" diye geçiştirdiyse puanı buradan verir.
       onTap: () => ReviewPromptService.instance.magazayiAc(),
@@ -1053,7 +1121,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final yenilikler = _SettingsTile(
       icon: Icons.new_releases_outlined,
       title: context.l10n.whatsNewTitle,
-      subtitle: context.l10n.whatsNewSubtitle,
       // Elle açılışta TÜM liste gösterilir (otomatik açılışın
       // `onemli` filtresi uygulanmaz): kullanıcı buraya bilerek
       // geliyor, yama sürümlerini de görebilmeli.
@@ -1073,7 +1140,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final tur = _SettingsTile(
       icon: Icons.explore_outlined,
       title: context.l10n.replayTour,
-      subtitle: context.l10n.replayTourSubtitle,
       // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
       // köke dönülür ve katman orada açılır.
       onTap: () => OnboardingScreen.yenidenBaslat(context),
@@ -1896,7 +1962,12 @@ class _LanguagePicker extends ConsumerWidget {
 class _SettingsTile extends StatefulWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
+
+  /// Alt metin yalnız başlığa bir şey ekliyorsa (Ar-Ge 7 Kas 20:30 #4):
+  /// "sandık'ı değerlendir / Mağazada puan ver" gibi başlığı tekrarlayan
+  /// alt metin satırı uzatıyor, 3.1×'te listeyi iki katına çıkarıyordu.
+  /// `null` → tek satırlı karo (iOS Ayarlar kalıbı).
+  final String? subtitle;
   final VoidCallback? onTap;
 
   /// İstek atan karo (ör. verilerimi indir). Verildiğinde [onTap] yok
@@ -1915,7 +1986,7 @@ class _SettingsTile extends StatefulWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.onTap,
     this.onTapAsync,
     this.destructive = false,
@@ -1985,12 +2056,14 @@ class _SettingsTileState extends State<_SettingsTile> {
                     style: context.t.bodyLarge
                         ?.copyWith(color: color, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: context.t.titleSmall?.copyWith(
-                        color: context.c.text58, fontWeight: FontWeight.w400),
-                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: context.t.titleSmall?.copyWith(
+                          color: context.c.text58, fontWeight: FontWeight.w400),
+                    ),
+                  ],
                 ],
               ),
             ),
