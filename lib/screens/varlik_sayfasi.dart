@@ -22,6 +22,7 @@ import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/bozdur_al_satiri.dart';
@@ -572,17 +573,20 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
                   child: Column(children: [_tutamac(), _baslik()]),
                 ),
                 Expanded(
-                  child: ListView(
+                  // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): `kenar`
+                  // dar ekranda 0, liste birebir eskisi.
+                  child: SandikIcerikSutunu.olc(
+                    builder: (context, kenar) => ListView(
                     controller: sc,
                     padding: EdgeInsets.fromLTRB(
-                      SandikSpace.screenH(context),
+                      SandikSpace.screenH(context) + kenar,
                       SandikSpace.xs,
-                      SandikSpace.screenH(context),
+                      SandikSpace.screenH(context) + kenar,
                       // Alt çubuğun altında içerik kalmasın.
                       96 + MediaQuery.viewPaddingOf(context).bottom,
                     ),
                     children: _govde(),
-                  ),
+                  )),
                 ),
               ],
             ),

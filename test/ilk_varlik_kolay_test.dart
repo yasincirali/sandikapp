@@ -119,7 +119,7 @@ void main() {
         (tester) async {
       await _pump(tester, const AddAssetScreen());
       expect(find.text('Yazarak ekle'), findsOneWidget);
-      expect(find.text('Ekstreden aktar'), findsOneWidget);
+      expect(find.text('Ekstreden ekle'), findsOneWidget);
       // Form gövdesi tür seçilince açılır (tür ızgarası, 2026-10-20).
       await tester.tap(find.text('Hisse').last);
       await tester.pumpAndSettle();

@@ -3180,7 +3180,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get csvImportTitle => 'Import statement';
+  String get csvImportTitle => 'Add from statement';
 
   @override
   String get csvImportBody =>
@@ -3472,7 +3472,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use the + Add Asset button below to queue several assets and save them all at once.';
 
   @override
-  String get pasteFromStatement => 'Import statement (PDF, Excel, CSV)';
+  String get pasteFromStatement => 'Add from statement';
 
   @override
   String saveAllCount(int n) {
@@ -6230,7 +6230,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addByTyping => 'Add by typing';
 
   @override
-  String get importFromStatement => 'Import statement';
+  String get importFromStatement => 'Add from statement';
 
   @override
   String get orWithEmail => 'or with email';
@@ -8084,7 +8084,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s7EylemSinyalAyarlari => 'Signal settings';
 
   @override
-  String get s7EylemEkstreAktar => 'Import statement (CSV)';
+  String get s7EylemEkstreAktar => 'Add from statement';
 
   @override
   String get s7EylemTopluEkle => 'Bulk add';
@@ -10895,4 +10895,58 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hesapEkleSatiriAlt =>
       'Add a second account on this phone; your current one stays signed in';
+
+  @override
+  String get yaBaslikYil => '52-week range';
+
+  @override
+  String yaBaslikAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: 'Last $ay months',
+      one: 'Last month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get yaDonemYil => '52-week';
+
+  @override
+  String yaDonemAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: '$ay-month',
+      one: '1-month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yaYuksekAlti(String donem, String pct) {
+    return '$pct below the $donem high';
+  }
+
+  @override
+  String yaDusukUstu(String donem, String pct) {
+    return '$pct above the $donem low';
+  }
+
+  @override
+  String yaYuksekte(String donem) {
+    return 'At the $donem high';
+  }
+
+  @override
+  String yaDusukte(String donem) {
+    return 'At the $donem low';
+  }
+
+  @override
+  String yaSemantik(
+      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
+    return '$baslik: low $dusuk, high $yuksek, today $bugun. $cumle';
+  }
 }

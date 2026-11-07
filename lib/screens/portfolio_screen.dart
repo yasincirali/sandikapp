@@ -3,6 +3,7 @@ import '../widgets/cevrimdisi_seridi.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import 'dart:math' as math;
 
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_baglam_menusu.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -547,7 +548,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               // ── Gövde sekmesi ─────────────────────────────────────────────
               // Takip listesinin giriş noktası. Gövdenin en üstünde durur;
               // üst bar (sırala · karşılaştır · çıkış) kalabalıklaşmaz.
-              Padding(
+              SandikIcerikSutunu(child: Padding(
                 padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 8),
                 child: TourAnchor(
                   target: TourTarget.govdeSekmeleri,
@@ -557,19 +558,21 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     onChanged: (i) => setState(() => _bodyTab = i),
                   ),
                 ),
-              ),
+              )),
               // "İnternet yok" satırı (2026-11-07): başlığın altında, liste
               // ve takip listesinin üstünde; çevrimiçiyken boyutsuz.
-              CevrimdisiSeridi(
+              SandikIcerikSutunu(child: CevrimdisiSeridi(
                 padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
                     SandikSpace.screenH(context), SandikSpace.sm),
-              ),
+              )),
             ],
           ),
           // ── Body ──────────────────────────────────────────────────────
           // Takip listesi ayrı bir veri kümesi: bu ekranın hiçbir toplamına
           // girmez. Portföy özeti "Varlıklarım" dalının içinde kaldığı için
           // değişmez korunuyor.
+          // Takip listesi okunabilir sütunu kendi sliver'larında kurar
+          // (`watchlist_screen.dart`), kenardan kaydırma çalışsın.
           govde: _bodyTab == 1
               ? const WatchlistBody()
               : SandikKaydirmaBasligi.payIle((ustPay) => SandikIcerikGecisi(
@@ -604,7 +607,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     // Kaydırma paneli grubu listenin TAMAMINI sarar: kartlar
                     // artık doğrudan dış listenin çocukları (bkz. [_AssetList]).
                     child: SlidableAutoCloseBehavior(
-                    child: ListView(
+                    child: SandikIcerikSutunu.olc(builder: (context, kenar) => ListView(
                       // Varlıklarım ↔ Takip Listesi geçişinde liste sökülüp
                       // yeniden kuruluyor; anahtar konumu PageStorage'da
                       // tutar — geri dönünce kaldığı yerden devam eder
@@ -615,10 +618,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics()),
                       // Cam başlık açıkken ilk satır başlığın altında başlar (kapalıyken 0).
+                      // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3):
+                      // `kenar` dar ekranda 0, liste birebir eskisi.
                       padding: EdgeInsets.fromLTRB(
-                          SandikSpace.screenH(context),
+                          SandikSpace.screenH(context) + kenar,
                           SandikSpace.xs + ustPay,
-                          SandikSpace.screenH(context),
+                          SandikSpace.screenH(context) + kenar,
                           80),
                       children: [
                         if (activePartners.isNotEmpty)
@@ -912,7 +917,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
                       ],
-                    ),
+                    )),
                     ),
                   ),
                 ),

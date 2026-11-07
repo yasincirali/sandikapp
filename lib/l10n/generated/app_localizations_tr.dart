@@ -3151,7 +3151,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get csvImportTitle => 'Ekstreden içe aktar';
+  String get csvImportTitle => 'Ekstreden ekle';
 
   @override
   String get csvImportBody =>
@@ -3444,7 +3444,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.';
 
   @override
-  String get pasteFromStatement => 'Ekstreden içe aktar (PDF, Excel, CSV)';
+  String get pasteFromStatement => 'Ekstreden ekle';
 
   @override
   String saveAllCount(int n) {
@@ -6176,7 +6176,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get addByTyping => 'Yazarak ekle';
 
   @override
-  String get importFromStatement => 'Ekstreden aktar';
+  String get importFromStatement => 'Ekstreden ekle';
 
   @override
   String get orWithEmail => 'veya e-postayla';
@@ -8014,7 +8014,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s7EylemSinyalAyarlari => 'Sinyal ayarları';
 
   @override
-  String get s7EylemEkstreAktar => 'Ekstreden aktar (CSV)';
+  String get s7EylemEkstreAktar => 'Ekstreden ekle';
 
   @override
   String get s7EylemTopluEkle => 'Toplu ekle';
@@ -10769,4 +10769,56 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get hesapEkleSatiriAlt =>
       'Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır';
+
+  @override
+  String get yaBaslikYil => 'Yıllık aralık';
+
+  @override
+  String yaBaslikAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: 'Son $ay ay',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get yaDonemYil => 'Yılın';
+
+  @override
+  String yaDonemAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: 'Son $ay ayın',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yaYuksekAlti(String donem, String pct) {
+    return '$donem en yükseğinin $pct altında';
+  }
+
+  @override
+  String yaDusukUstu(String donem, String pct) {
+    return '$donem en düşüğünün $pct üstünde';
+  }
+
+  @override
+  String yaYuksekte(String donem) {
+    return '$donem en yükseğinde';
+  }
+
+  @override
+  String yaDusukte(String donem) {
+    return '$donem en düşüğünde';
+  }
+
+  @override
+  String yaSemantik(
+      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
+    return '$baslik: en düşük $dusuk, en yüksek $yuksek, bugün $bugun. $cumle';
+  }
 }

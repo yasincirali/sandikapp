@@ -188,7 +188,7 @@ void main() {
     const sabit = ['Fiyat alarmları', 'Takibe al', 'Toplu ekle', 'Ayarlar'];
     const kalan = [
       'Sinyal ayarları',
-      'Ekstreden aktar (CSV)',
+      'Ekstreden ekle',
       'Tüm hareketler',
       'Karşılaştır',
       'Bildirimler',

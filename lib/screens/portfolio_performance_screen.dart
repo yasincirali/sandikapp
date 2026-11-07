@@ -34,6 +34,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_acilir.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_paylas_dugmesi.dart';
 import '../widgets/sandik_segment.dart';
 import '../widgets/sekme_basa_don.dart';

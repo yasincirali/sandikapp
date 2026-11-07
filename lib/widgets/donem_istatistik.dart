@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
+import '../models/yillik_aralik.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -296,6 +297,123 @@ class DonemAralikCubugu extends StatelessWidget {
                   ? l.vsDayRangePosition('$konumYuzde')
                   : l.vsRangePosition('$konumYuzde'),
               style: context.t.bodySmall?.copyWith(color: context.c.text58)),
+        ],
+      ),
+    );
+  }
+}
+
+/// 52 haftalık aralık satırı — varlık ekranında dönem çiplerinin altında.
+///
+/// [DonemAralikCubugu]'nun kardeşi ama kart değil, tek ince çubuk: seçili
+/// dönemden bağımsız bir "yılın neresindeyim" bilgisi; kart kalabalığı
+/// eklemez. Konum yalnız renkle verilmez (renk körlüğü): çubuk nötr, nokta
+/// konumu gösterir, cümle ("Yılın en yükseğinin %8,4 altında") anlamı söyler.
+/// Ekran okuyucu tek etiket duyar: başlık, uçlar, bugün ve cümle.
+class YillikAralikSatiri extends StatelessWidget {
+  const YillikAralikSatiri({
+    super.key,
+    required this.aralik,
+    required this.bicim,
+  });
+
+  final YillikAralik aralik;
+
+  /// Büyük fiyatla aynı biçim (aynı birim, aynı ondalık).
+  final NumberFormat bicim;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final ay = aralik.ay;
+    final baslik = ay == null ? l.yaBaslikYil : l.yaBaslikAy(ay);
+    final donem = ay == null ? l.yaDonemYil : l.yaDonemAy(ay);
+    final cumle = aralik.yuksegeYakin
+        ? (aralik.uctaMi
+            ? l.yaYuksekte(donem)
+            : l.yaYuksekAlti(
+                donem, fmtPct(aralik.yuksektenUzaklikPct, digits: 1)))
+        : (aralik.uctaMi
+            ? l.yaDusukte(donem)
+            : l.yaDusukUstu(
+                donem, fmtPct(aralik.dusuktenUzaklikPct, digits: 1)));
+    final k = aralik.konum;
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: l.yaSemantik(baslik, bicim.format(aralik.dusuk),
+          bicim.format(aralik.yuksek), bicim.format(aralik.bugun), cumle),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(baslik,
+              style: context.t.labelSmall?.copyWith(color: context.c.text58)),
+          const SizedBox(height: SandikSpace.xs2),
+          LayoutBuilder(
+            builder: (context, c) => SizedBox(
+              height: SandikSpace.smd,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.centerLeft,
+                children: [
+                  Container(
+                    height: SandikSpace.xs2,
+                    decoration: BoxDecoration(
+                      color: context.c.hairline,
+                      borderRadius: BorderRadius.circular(SandikRadius.sm),
+                    ),
+                  ),
+                  Positioned(
+                    left: (c.maxWidth * k - SandikSpace.xs2)
+                        .clamp(0.0, c.maxWidth - SandikSpace.smd),
+                    child: Container(
+                      width: SandikSpace.smd,
+                      height: SandikSpace.smd,
+                      decoration: BoxDecoration(
+                        color: context.c.text90,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: SandikSpace.xs2),
+          // Büyük yazı tipinde iki tutar yan yana sığmayabilir: kırpılan
+          // fiyat yanlış okunur, küçülen okunur (dönem çubuğuyla aynı karar).
+          Row(
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(bicim.format(aralik.dusuk),
+                      maxLines: 1,
+                      style:
+                          context.t.numSmall.copyWith(color: context.c.text58)),
+                ),
+              ),
+              const SizedBox(width: SandikSpace.sm),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(bicim.format(aralik.yuksek),
+                      maxLines: 1,
+                      style:
+                          context.t.numSmall.copyWith(color: context.c.text58)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SandikSpace.xs),
+          Text(cumle,
+              style: context.t.bodySmall?.copyWith(color: context.c.text90)),
         ],
       ),
     );

@@ -54,6 +54,8 @@ import '../models/grafik_alarm_cizgisi.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 import '../models/varlik_kimligi.dart';
+import '../models/yillik_aralik.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../models/ozel_gosterge.dart';
 import '../providers/ozel_gosterge_provider.dart';
 import '../services/gosterge_betigi/betik.dart';
@@ -320,6 +322,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   final Map<int, Map<int, double>> _donemSerileri = {};
   final Map<int, double?> _donemIlk = {};
   final Map<int, DonemIstatistigi?> _donemIstatistikleri = {};
+
+  /// 52 haftalık aralığın seriden gelen uçları — 1Y dönem serisi
+  /// kaydedilirken BİR KEZ hesaplanır (`_donemKaydet`), build yalnız canlı
+  /// fiyatı ekler (bkz. `models/yillik_aralik.dart`).
+  YillikUclar? _yillikUclar;
   DateTime? _gunIciSeansOnbellek;
 
   /// GÜNLÜK seride tek gerçek nokta yok (`gunIciVerisiYokTurler`): seri son
@@ -921,7 +928,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       child: SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
-          child: Padding(
+          // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): kaydırma alanı
+          // kenara uzanır, içerik en fazla 720 pt; iPhone'da boşluk 0.
+          child: SandikIcerikSutunu(child: Padding(
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12,
                 SandikSpace.screenH(context), 24 + kapsulPayi),
             child: Column(
@@ -1495,6 +1504,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // `portfolio_performance/kartlar.dart`). Getiri
                         // satırı çipin altında kalır — veri kaybı yok.
                         _donemCipleri(pnl.currentUnitTRY),
+                        // 52 haftalık aralık (Ar-Ge 2026-11-07 #1, ücretsiz):
+                        // seçili dönemden bağımsız; seri yoksa hiç yer kaplamaz.
+                        _yillikAralikSatiri(pnl.currentUnitTRY),
                         const SizedBox(height: SandikSpace.sm),
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         // Sade Başlangıç'ta (`seviye_anketi`) gizli.
@@ -2527,7 +2539,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 ),
               ],
             ),
-          ),
+          )),
         ),
     ),
       );

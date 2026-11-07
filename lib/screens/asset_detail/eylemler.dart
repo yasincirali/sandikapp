@@ -59,6 +59,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
     _donemSerileri.clear();
     _donemIlk.clear();
     _donemIstatistikleri.clear();
+    _yillikUclar = null;
     _guncelle(() {
       _lastHistory = null;
       _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);

@@ -95,6 +95,8 @@ void main() {
     expect(find.text('5 yıl'), findsOneWidget);
     // Eski pozisyon bölümü yerinde (veri kaybı yok): başlık + adet satırı.
     expect(find.text('Pozisyonun'), findsOneWidget);
+    // Seri gelmedi (testte ağ yok): yıllık aralık satırı hiç çizilmez.
+    expect(find.byType(YillikAralikSatiri), findsNothing);
 
     // Güncel fiyat, sinyal/pozisyon bloğundan ÖNCE gelir (A düzeni).
     final fiyatY = tester.getTopLeft(find.text('Güncel fiyat')).dy;
