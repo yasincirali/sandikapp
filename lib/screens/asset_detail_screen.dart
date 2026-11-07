@@ -9,6 +9,7 @@ import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/elde_tutma.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/kur_ayrismasi.dart';
 import '../models/portfoy.dart';
@@ -18,6 +19,7 @@ import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../widgets/elde_tutma_satiri.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/kur_ayrismasi_satiri.dart';
 import '../widgets/bekleyen_fon_alimi_satiri.dart';
@@ -619,6 +621,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   }
 
   ({Asset asset, List<Asset> lots, bool acik})? _canliOnbellek;
+
+  /// Elde tutma satırının hesabı (`eldeTutma`) — build'de değil: aynı lot
+  /// listesi ve aynı değerle bir kez koşar (`_eldeTutma`, ozet.dart).
+  ({List<Asset> lots, double deger, EldeTutma? sonuc})? _eldeTutmaOnbellek;
   List<Asset>? _canliKendi;
   Map<String, List<Asset>>? _canliOrtaklar;
 

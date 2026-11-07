@@ -976,6 +976,29 @@ class AppLocalizationsTr extends AppLocalizations {
       'Maliyetine göre yıllık verimin Premium\'da';
 
   @override
+  String eldeTutmaSureYilAy(String yil, String ay) {
+    return '$yil yıl $ay ay';
+  }
+
+  @override
+  String eldeTutmaSureYil(String yil) {
+    return '$yil yıl';
+  }
+
+  @override
+  String eldeTutmaSatiri(String sure, String pct) {
+    return '${sure}dır tutuyorsun · yıllık ortalama $pct';
+  }
+
+  @override
+  String eldeTutmaA11y(String sure, String pct) {
+    return '${sure}dır tutuyorsun. Alış, satış ve temettüler hesaba katılınca yıllık ortalama getirin $pct.';
+  }
+
+  @override
+  String get eldeTutmaKilitli => 'Yıllık ortalama getirin Premium\'da';
+
+  @override
   String get fxSplitPrice => 'Fiyattan';
 
   @override

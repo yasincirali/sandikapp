@@ -1760,6 +1760,36 @@ abstract class AppLocalizations {
   /// **'Maliyetine göre yıllık verimin Premium\'da'**
   String get dividendYieldOnCostLocked;
 
+  /// No description provided for @eldeTutmaSureYilAy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil} yıl {ay} ay'**
+  String eldeTutmaSureYilAy(String yil, String ay);
+
+  /// No description provided for @eldeTutmaSureYil.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil} yıl'**
+  String eldeTutmaSureYil(String yil);
+
+  /// No description provided for @eldeTutmaSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sure}dır tutuyorsun · yıllık ortalama {pct}'**
+  String eldeTutmaSatiri(String sure, String pct);
+
+  /// No description provided for @eldeTutmaA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sure}dır tutuyorsun. Alış, satış ve temettüler hesaba katılınca yıllık ortalama getirin {pct}.'**
+  String eldeTutmaA11y(String sure, String pct);
+
+  /// No description provided for @eldeTutmaKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık ortalama getirin Premium\'da'**
+  String get eldeTutmaKilitli;
+
   /// No description provided for @fxSplitPrice.
   ///
   /// In tr, this message translates to:

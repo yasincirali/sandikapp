@@ -991,6 +991,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your yearly yield on cost is part of Premium';
 
   @override
+  String eldeTutmaSureYilAy(String yil, String ay) {
+    return '$yil yr $ay mo';
+  }
+
+  @override
+  String eldeTutmaSureYil(String yil) {
+    return '$yil yr';
+  }
+
+  @override
+  String eldeTutmaSatiri(String sure, String pct) {
+    return 'Held for $sure · $pct a year on average';
+  }
+
+  @override
+  String eldeTutmaA11y(String sure, String pct) {
+    return 'You have held this for $sure. Counting your buys, sells and dividends, your average annual return is $pct.';
+  }
+
+  @override
+  String get eldeTutmaKilitli => 'Your average annual return is in Premium';
+
+  @override
   String get fxSplitPrice => 'From price';
 
   @override

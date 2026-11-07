@@ -83,7 +83,10 @@ PaywallKarti? kaynaktanKart(String source) {
     'fon_xray' ||
     'portfoy_xray' ||
     'masraf_dokumu' ||
-    'kur_ayrismasi' =>
+    'kur_ayrismasi' ||
+    // Yıllık ortalama getiri (varlık detayı, Ar-Ge 7 Kas 20:30 #6): aynı
+    // soru, "kârım yılda ne ediyor".
+    'yillik_getiri' =>
       PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,
