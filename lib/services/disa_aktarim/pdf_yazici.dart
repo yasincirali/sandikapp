@@ -91,7 +91,7 @@ Future<Uint8List> pdfYaz(
         ],
         if (!b.tablolarOnce)
           for (final m in b.bolumler) ...[
-            pw.SizedBox(height: 14),
+            pw.SizedBox(height: m.kisa && m.grup == null ? 8 : 14),
             ..._metinBolumu(m),
           ],
         if (b.grafikler.isNotEmpty) ...[
@@ -109,7 +109,7 @@ Future<Uint8List> pdfYaz(
         ],
         if (b.tablolarOnce)
           for (final m in b.bolumler) ...[
-            pw.SizedBox(height: 14),
+            pw.SizedBox(height: m.kisa && m.grup == null ? 8 : 14),
             ..._metinBolumu(m),
           ],
         pw.SizedBox(height: 18),
@@ -284,6 +284,45 @@ pw.Widget _oneCikanlar(List<String> cumleler) => pw.Container(
 /// kalın, maddeler noktalı. Liste döner ki MultiPage uzun notu sayfalar
 /// arasında bölebilsin (tek `Column` sayfaya sığmazsa hata verir).
 List<pw.Widget> _metinBolumu(RaporMetinBolumu m) => [
+      if (m.grup != null)
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 8),
+          child: pw.Text(m.grup!,
+              style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfMarka.murekkep)),
+        ),
+      if (m.kisa) ..._kisaBlok(m) else ..._tamBlok(m),
+    ];
+
+/// Kısa blok: ad · tür ve değişim tek satırda, altında notun başlığı.
+List<pw.Widget> _kisaBlok(RaporMetinBolumu m) => [
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Expanded(
+            child: pw.Text(m.baslik,
+                style: pw.TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfMarka.murekkep)),
+          ),
+          if (m.etiket != null)
+            pw.Text(m.etiket!,
+                style: const pw.TextStyle(fontSize: 9, color: PdfMarka.murekkep)),
+        ],
+      ),
+      if (m.oz.isNotEmpty)
+        pw.Text(m.oz,
+            style: const pw.TextStyle(
+                fontSize: 9, color: PdfMarka.murekkep, lineSpacing: 1.4)),
+      for (final madde in m.maddeler)
+        pw.Text(madde,
+            style: const pw.TextStyle(fontSize: 7.5, color: PdfMarka.gri)),
+    ];
+
+List<pw.Widget> _tamBlok(RaporMetinBolumu m) => [
       bolumBasligi(m.baslik, sag: m.etiket),
       pw.Text(m.oz,
           style: pw.TextStyle(

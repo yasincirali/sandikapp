@@ -14,6 +14,7 @@ import '../widgets/sandik_error_view.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/tr_format.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import '../widgets/sandik_app_bar.dart';
@@ -165,7 +166,7 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
           if (widget.baslik != null)
             Text(widget.baslik!,
                 style: t.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
           const SizedBox(height: SandikSpace.md),
           KilitSatiri(metin: l10n.prmKilitNot, kaynak: 'analiz_notu'),
         ],
@@ -249,26 +250,31 @@ class _Not extends StatelessWidget {
     final yer = Localizations.localeOf(context).toString();
     final gunAy = DateFormat('d MMM', yer);
     final rozet = haftaRozetiSunucudan(not.rozet);
+    // Kapsanan günler EN ÜSTTE, yılıyla (yasin 2026-11-07: "not sayfası
+    // anlaşılır olmalı"; kullanıcı kuralı: her özet tarih aralığı yazar).
+    // Eski satırda veri aralığı yoksa dönemin günü.
     final aralik = not.baslangic != null && not.bitis != null
-        ? l10n.flowRange(gunAy.format(not.baslangic!), gunAy.format(not.bitis!))
-        : gunAy.format(not.donem);
+        ? fmtTarihAraligi(not.baslangic!, not.bitis!, dil: context.tarihDili)
+        : fmtTarih(not.donem, dil: context.tarihDili);
     final yatay = SandikSpace.screenH(context);
     return ListView(
       padding:
           EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.xl),
       children: [
-        if (rozet != null)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: HaftaRozetCipi(rozet: rozet),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(aralik,
+                  style: t.bodySmall?.copyWith(
+                      color: c.text58, fontWeight: FontWeight.w600)),
+            ),
+            if (rozet != null) HaftaRozetCipi(rozet: rozet),
+          ],
+        ),
         const SizedBox(height: SandikSpace.sm),
         Text(not.baslik,
             style: t.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
-        const SizedBox(height: SandikSpace.xs),
-        Text(l10n.anzMeta('${not.maddeler.length}', aralik),
-            style: t.bodySmall?.copyWith(color: c.text58)),
+                ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
         const SizedBox(height: SandikSpace.md),
         SandikCard(
           child: Column(
@@ -401,7 +407,7 @@ class _KanitCipi extends StatelessWidget {
           TextSpan(text: '${olcum.ad} · ', style: TextStyle(color: c.text58)),
           TextSpan(
               text: olcum.gosterim,
-              style: TextStyle(color: c.text90, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: c.text90, fontWeight: FontWeight.w600)),
           TextSpan(text: ' · $kaynak', style: TextStyle(color: c.text36)),
         ]),
         style: t.labelSmall,
@@ -444,7 +450,7 @@ class _YanlisSayiSayfasiState extends State<_YanlisSayiSayfasi> {
         children: [
           Text(l10n.anzYanlisSayi,
               style: context.t.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700, color: context.c.text90)),
+                  fontWeight: FontWeight.w600, color: context.c.text90)),
           const SizedBox(height: SandikSpace.sm),
           TextField(
             controller: _ctrl,

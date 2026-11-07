@@ -91,12 +91,22 @@ class RaporMetinBolumu {
     required this.oz,
     this.etiket,
     this.maddeler = const [],
+    this.grup,
+    this.kisa = false,
   });
 
   final String baslik;
   final String? etiket;
   final String oz;
   final List<String> maddeler;
+
+  /// Bu bölümden ÖNCE basılan grup başlığı ("Önemli gelişmeler"); aynı
+  /// grubun yalnız ilk bölümünde dolu (aylık rapor, 2026-11-07).
+  final String? grup;
+
+  /// Kısa blok: öz cümle kalın değil, maddeler madde imsiz küçük satır —
+  /// "her varlık tek satır" listesi tablo yerine (yasin 2026-11-07).
+  final bool kisa;
 }
 
 /// Grafik türü: [dagilim] tek yığılmış çubuk + lejant (pay %), [cubuk]

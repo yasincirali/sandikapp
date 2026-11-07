@@ -33,7 +33,7 @@ void main() {
   AnalizOzeti not(String t, String rozet) => AnalizOzeti(
       ticker: t,
       donem: ay,
-      baslik: '$t başlığı',
+      baslik: '${notKodu(t)} başlığı',
       rozet: rozet,
       maddeSayisi: 2,
       veriBaslangic: DateTime.utc(2026, 9, 1),
@@ -156,9 +156,9 @@ void main() {
     await t.pumpAndSettle();
     final l10n = l(t);
     expect(find.text(l10n.raporKapsam('1-30 Eylül 2026')), findsOneWidget);
-    // Notların veri aralığı da yazılır.
-    expect(find.text(l10n.anzAylikNotlarAralik('1-30 Eylül 2026')),
-        findsOneWidget);
+    // Her not kendi veri aralığını yazar (önemli kart + not satırları).
+    expect(find.text(l10n.anzAylikNotVerisi('1-30 Eylül 2026')),
+        findsWidgets);
     // Haber kaynağı yok: rapor bunu kendisi söyler, haber metni uydurmaz.
     await t.scrollUntilVisible(find.text(l10n.anzAylikHaberYok), 200);
     expect(find.text(l10n.anzAylikHaberYok), findsOneWidget);
@@ -167,7 +167,7 @@ void main() {
   testWidgets('sayısal veri yoksa yeni bölümler yok (uydurma yok)', (t) async {
     await t.pumpWidget(ekran(ozet: null));
     await t.pumpAndSettle();
-    expect(find.byType(AyinVarliklariBolumu), findsNothing);
+    expect(find.text(l(t).anzAylikNeOldu('+%8,2', '+₺820')), findsNothing);
     expect(find.byType(ParaAkisiBolumu), findsNothing);
     expect(find.byType(GelismelerBolumu), findsNothing);
     // Boş özet de bölüm çizmez.
@@ -177,22 +177,33 @@ void main() {
             bit: DateTime(2026, 9, 30),
             surenAy: false)));
     await t.pumpAndSettle();
-    expect(find.byType(AyinVarliklariBolumu), findsNothing);
     expect(find.byType(ParaAkisiBolumu), findsNothing);
     expect(find.byType(GelismelerBolumu), findsNothing);
   });
 
-  testWidgets('üç bölüm: notu olmayan altın da ayın varlıklarında', (t) async {
+  testWidgets('sıra: önemli gelişmeler, varlıkların ayı, para akışı, olaylar',
+      (t) async {
     await t.pumpWidget(ekran(ozet: dolu));
     await t.pumpAndSettle();
     final l10n = l(t);
-    expect(find.text(l10n.anzAylikVarliklarBaslik), findsOneWidget);
+    final onemli = find.text(l10n.anzAylikOnemliBaslik);
+    final tum = find.text(l10n.anzAylikTumBaslik);
+    expect(onemli, findsOneWidget);
+    expect(tum, findsOneWidget);
+    expect(t.getTopLeft(onemli).dy, lessThan(t.getTopLeft(tum).dy));
+    // Ham kod görünmez: 'TEFAS:TTE', 'THYAO.IS', 'KRIPTO:BTC' yazılmaz.
+    expect(find.textContaining('TEFAS:'), findsNothing);
+    expect(find.textContaining('.IS'), findsNothing);
+    expect(find.textContaining('KRIPTO:'), findsNothing);
+    // Önemli olmayan not satırda alt cümle olarak kalır.
+    expect(find.text('THYAO başlığı'), findsOneWidget);
     // Altının notu yok ama satırı var (yasin: "tüm varlıklar").
     final altinAdi = pozisyonEtiketi(positionKey(altin), AssetType.altin, l10n,
         ad: 'Gram altın');
     expect(find.text(altinAdi), findsOneWidget);
     expect(find.text(fmtPctIsaretli(-1.5, digits: 1)), findsOneWidget);
     expect(find.text('−₺150'), findsOneWidget);
+    await t.scrollUntilVisible(find.text(l10n.anzAylikAkisNet), 200);
     expect(find.text(l10n.anzAylikAkisBaslik), findsOneWidget);
     expect(find.text(l10n.anzAylikAkisNet), findsOneWidget);
     expect(find.text('+₺8.000'), findsOneWidget);
@@ -205,8 +216,8 @@ void main() {
     await t.pumpAndSettle();
     final l10n = l(t);
     expect(find.text(l10n.anzAylikBos), findsNothing);
-    expect(find.byType(AyinVarliklariBolumu), findsOneWidget);
-    expect(find.text(l10n.anzAylikNotlarBaslik), findsNothing);
+    expect(find.text(l10n.anzAylikTumBaslik), findsOneWidget);
+    expect(find.text(l10n.anzAylikOnemliBaslik), findsNothing);
   });
 
   testWidgets('ikisi de boşsa "hazır değil"', (t) async {
@@ -232,8 +243,8 @@ void main() {
   // Kök neden regresyonu (yasin 2026-11-07: "aylık raporda neden sadece
   // fonların raporları var"). Portföydeki hisse ve coin, raporun not
   // sorgusuna sunucunun yazdığı anahtar biçimiyle ('THYAO.IS',
-  // 'KRIPTO:BTC') girer ve notları kartlanır; altın gibi radar dışı varlık
-  // not sorgusuna girmez ama ayın varlıklarında satırı olur.
+  // 'KRIPTO:BTC') girer ve notları kartlanır. 2026-11-07'den beri ABD
+  // hissesi ('HISSE:AAPL'), altın ('ALTIN:GRAM') ve döviz de girer.
   testWidgets('portföydeki hisse ve coin raporun not sorgusuna girer',
       (t) async {
     String? sorgu;
@@ -241,6 +252,9 @@ void main() {
       lot('TEFAS:TTE', AssetType.fon),
       lot('THYAO.IS', AssetType.hisse),
       lot('KRIPTO:BTC', AssetType.kripto),
+      lot('AAPL', AssetType.hisse, ad: 'Apple'),
+      lot('USDTRY=X', AssetType.doviz, ad: 'ABD Doları'),
+      lot('MEVDUAT:abc', AssetType.mevduat, ad: 'Vadeli'),
       altin,
     ];
     await t.pumpWidget(ProviderScope(
@@ -263,10 +277,13 @@ void main() {
       ),
     ));
     await t.pumpAndSettle();
-    expect(sorgu, 'KRIPTO:BTC,TEFAS:TTE,THYAO.IS');
+    // 2026-11-07: ABD hissesi, altın ve döviz de aylık not sorgusunda;
+    // mevduat (piyasa hareketi yok) değil.
+    expect(sorgu,
+        'ALTIN:GRAM,HISSE:AAPL,KRIPTO:BTC,TEFAS:TTE,THYAO.IS,USDTRY=X');
     final l10n = l(t);
     expect(find.text(l10n.anzAylikOzetYok), findsOneWidget);
-    for (final kod in ['BTC', 'TTE', 'THYAO']) {
+    for (final kod in ['BTC', 'TTE', 'THYAO', 'AAPL']) {
       await t.scrollUntilVisible(find.text(kod), 200);
       expect(find.text(kod), findsOneWidget, reason: kod);
     }

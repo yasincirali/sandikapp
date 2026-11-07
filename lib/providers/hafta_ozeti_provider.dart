@@ -225,6 +225,9 @@ HaftaRozeti? haftaRozetiSunucudan(String? r) => switch (r) {
       'olagandisi_hacim' => HaftaRozeti.olagandisiHacim,
       'alici_istekli' => HaftaRozeti.aliciIstekli,
       'satici_istekli' => HaftaRozeti.saticiIstekli,
+      // Aylık notun fiyat paketi (0175, 2026-11-07): olağan oynaklığa göre
+      // büyük değişim, oynaklık sıçraması ya da 52 haftalık uç.
+      'hareketli' => HaftaRozeti.hareketli,
       'sakin' => HaftaRozeti.sakin,
       _ => null,
     };

@@ -5510,7 +5510,7 @@
     }
   },
   "anzAylikAkisDipnot": "Performans'taki köprüyle aynı hesap: alımda ödediğin, satışta eline geçen tutar; temettü portföyden cebine çıkan para.",
-  "anzAylikGelismeBaslik": "Önemli gelişmeler",
+  "anzAylikGelismeBaslik": "Ay içindeki olaylar",
   "anzAylikGelismeFonGiris": "Büyük para girişi {tutar}, fon büyüklüğünün {oran} kadarı",
   "@anzAylikGelismeFonGiris": {
     "placeholders": {
@@ -5548,6 +5548,23 @@
     }
   },
   "anzAylikHaberYok": "Haberler ve KAP duyuruları bu raporda yok: sandık'ın lisanslı bir haber kaynağı henüz yok, haber metni yazılmaz.",
+  "anzAylikOnemliBaslik": "Önemli gelişmeler",
+  "anzAylikTumBaslik": "Varlıklarının ayı",
+  "anzAylikNeOldu": "Ayın değişimi {yuzde}, piyasa etkisi {tutar}",
+  "@anzAylikNeOldu": {
+    "placeholders": {
+      "yuzde": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "anzAylikNotVerisi": "Not {aralik} verisinden",
+  "@anzAylikNotVerisi": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "anzAylikTumDipnot": "Yüzde ay başına göre değişim, tutar piyasanın senin pozisyonuna etkisi. Alttaki cümle yapay zekâ notunun başlığı; dokunursan notun tamamı açılır.",
+  "anzAylikKaynak": "Kaynaklar: fon akışı TEFAS · hisse, altın, döviz ve emtia fiyatı Yahoo Finance · kripto Binance · eurobond Börse Frankfurt · tavsiye değildir",
   "hkyDevam": "Devam",
   "hkyAtla": "Atla",
   "hkyAylikAcilis": "Ayın hikâyesi",
