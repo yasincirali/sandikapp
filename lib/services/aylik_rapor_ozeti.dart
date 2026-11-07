@@ -180,7 +180,7 @@ class AyinHaberi {
         ? kaynak.trim()
         : url.host.replaceFirst(RegExp(r'^www\.'), '');
     return AyinHaberi(
-      tarih: DateTime(tarih.year, tarih.month, tarih.day),
+      tarih: dayKey(tarih),
       anahtar: anahtar,
       kod: kod,
       metin: metin.trim(),
