@@ -13,6 +13,7 @@ import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'portfoy_secim_sayfasi.dart';
+import 'sandik_acilir.dart';
 import 'sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
@@ -133,6 +134,51 @@ double? yeniOrtalamaMaliyet({
   return (eskiAdet * eskiMaliyet + yeniAdet * fiyat) / (eskiAdet + yeniAdet);
 }
 
+/// Hızlı Al ters hesabı (Ar-Ge 2026-11-07 #3): ortalama maliyeti [hedef]'e
+/// çekmek için [fiyat]'tan kaç birim almak gerekir.
+///
+/// [yeniOrtalamaMaliyet]'in tersi: (q·a + n·p) / (q + n) = t →
+/// n = q·(a − t) / (t − p). Yalnız p < t < a iken anlamlı: hedef bugünkü
+/// ortalamanın altında olmalı (alım ortalamayı yalnız fiyata doğru çeker)
+/// ve alış fiyatının üstünde (ortalama fiyatın kendisine ancak sonsuz
+/// alımla iner). Aksi hâlde `null` → ekran "inilemez" der; öneri dili yok,
+/// yalnız hesap.
+///
+/// Sonuç [ondalik] haneye YUKARI yuvarlanır (BIST lotu 0 hane = tam sayı;
+/// kesirli birimde alanın kabul ettiği hassasiyet): aşağı yuvarlamak
+/// ortalamayı hedefin üstünde bırakırdı. Ekran "~" ile yazar.
+///
+/// Maliyet kapısı [yeniOrtalamaMaliyet] ile aynı: eldeki adet ya da
+/// ortalama 0/bilinmiyorsa `null`.
+double? hedefOrtalamaIcinAdet({
+  required double eldeki,
+  required double? ortalama,
+  required double? fiyat,
+  required double? hedef,
+  required int ondalik,
+}) {
+  if (eldeki <= 0 || ondalik < 0) return null;
+  if (ortalama == null || ortalama <= 0) return null;
+  if (fiyat == null || fiyat <= 0) return null;
+  if (hedef == null || hedef <= 0) return null;
+  if (!(fiyat < hedef && hedef < ortalama)) return null;
+  final n = eldeki * (ortalama - hedef) / (hedef - fiyat);
+  var olcek = 1;
+  for (var i = 0; i < ondalik; i++) {
+    olcek *= 10;
+  }
+  // Kayan nokta payı: tam 25 lotluk sonuç 25,0000000001 diye 26 olmasın.
+  // Tam sayı adımla bölmek (× 0,0001 yerine / 10.000) gürültü bırakmaz.
+  return (n * olcek - 1e-6).ceil() / olcek;
+}
+
+/// Ters hesabın miktar hassasiyeti (ondalık hane): BIST hissesi tam lot
+/// (0); ABD hissesi, fon, kripto, altın gibi kesirli birimde alanın
+/// gösterdiği hassasiyet ([Asset.azamiOndalik]; miktar alanı ondalığı her
+/// türde kabul ediyor).
+int hedefOrtalamaOndaligi(Asset a) =>
+    a.type == AssetType.hisse && !a.abdHissesi ? 0 : a.azamiOndalik;
+
 Future<void> showQuickAdjustDialog(
   BuildContext context,
   WidgetRef ref, {
@@ -175,6 +221,11 @@ class _QuickAdjustDialog extends StatefulWidget {
 class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   final _qtyCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
+  final _hedefCtrl = TextEditingController();
+
+  /// "Hedef ortalama" alanı açık mı (Hızlı Al ters hesabı). Kapalı başlar:
+  /// çoğu alım bu soruyu sormaz, sayfa iki alanla kalsın.
+  bool _hedefAcik = false;
   bool _saving = false;
   String? _error;
 
@@ -215,6 +266,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   void dispose() {
     _qtyCtrl.dispose();
     _priceCtrl.dispose();
+    _hedefCtrl.dispose();
     super.dispose();
   }
 
@@ -290,6 +342,125 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       ),
       key: const ValueKey('alim_ortalama_onizleme'),
       style: context.t.titleSmall?.copyWith(color: context.c.text58),
+    );
+  }
+
+  /// Hızlı Al ters hesabı: "Hedef ortalama" bağlantısı, açılınca tek alan
+  /// ve sonuç satırı. Sonuca dokunmak miktar alanını o sayıyla doldurur
+  /// (çip deseni). Renksiz ve öneri dilsiz: yalnız hesap
+  /// ([hedefOrtalamaIcinAdet]). Hedef boşken sonuç satırı yok; yazılmış
+  /// ama erişilemeyen hedefte (p < t < a değil) "inilemez" der.
+  Widget _hedefBolumu(BuildContext context,
+      {required double? hedef, required double? adet}) {
+    final l = context.l10n;
+    final c = context.c;
+    final ondalik = hedefOrtalamaOndaligi(widget.asset);
+    final adetMetni =
+        adet == null ? null : qtyFormatter(maxDigits: ondalik).format(adet);
+    final sonuc = hedef == null
+        ? null
+        : adetMetni == null
+            ? l.quickTargetAvgUnreachable
+            : l.quickTargetAvgResult(
+                _paraMetni(hedef, birim: true), adetMetni, _unitLabel);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Semantics(
+            expanded: _hedefAcik,
+            child: SandikTappable(
+              key: const ValueKey('hedef_ortalama_ac'),
+              haptic: SandikHaptic.none,
+              onTap: () => setState(() => _hedefAcik = !_hedefAcik),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: SandikTouch.min),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l.quickTargetAvg,
+                      style: context.t.titleSmall?.copyWith(
+                          color: c.amberText, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: SandikSpace.xs),
+                    SandikAcilirOk(
+                      acik: _hedefAcik,
+                      child: Icon(Icons.expand_more_rounded,
+                          size: SandikSpace.lgs, color: c.amberText),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        SandikAcilir(
+          acik: _hedefAcik,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const ValueKey('hedef_ortalama_alani'),
+                controller: _hedefCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                ],
+                style: context.t.numMedium
+                    .copyWith(fontWeight: FontWeight.w500, color: c.text90),
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: l.quickTargetAvgField,
+                  suffixText: _currencySymbol,
+                  suffixStyle: context.t.titleMedium?.copyWith(color: c.text58),
+                  // Dolgu/çerçeve temadan (`inputDecorationTheme`).
+                ),
+              ),
+              if (sonuc != null)
+                adet == null
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: SandikSpace.sm),
+                        child: Text(
+                          sonuc,
+                          key: const ValueKey('hedef_ortalama_sonuc'),
+                          style:
+                              context.t.titleSmall?.copyWith(color: c.text58),
+                        ),
+                      )
+                    : SandikTappable(
+                        haptic: SandikHaptic.none,
+                        semanticLabel: '$sonuc. ${l.quickTargetAvgFillHint}',
+                        onTap: () => setState(() {
+                          _qtyCtrl.text = _fmt(adet);
+                          _error = null;
+                        }),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                              minHeight: SandikTouch.min),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  sonuc,
+                                  key: const ValueKey('hedef_ortalama_sonuc'),
+                                  style: context.t.titleSmall
+                                      ?.copyWith(color: c.text90),
+                                ),
+                              ),
+                              const SizedBox(width: SandikSpace.xs),
+                              Icon(Icons.south_west_rounded,
+                                  size: SandikSpace.md, color: c.text58),
+                            ],
+                          ),
+                        ),
+                      ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -461,6 +632,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 yeniAdet: qty,
                 fiyat: price,
               );
+
+    // Ters hesap (Ar-Ge 2026-11-07 #3): ortalama önizlemesiyle AYNI maliyet
+    // kapısı (alım, fiyatla girilen varlık, maliyet biliniyor, elde var).
+    // Alış fiyatı yazılan fiyat; boşsa bugünkü fiyat.
+    final hedefKapisi = _isAdd &&
+        !_tutarla &&
+        asset.maliyetBilinmiyor != true &&
+        asset.quantity > 0 &&
+        asset.purchasePrice > 0;
+    final hedef = _parse(_hedefCtrl.text);
+    final hedefAdet = !hedefKapisi || hedef == null || hedef <= 0
+        ? null
+        : hedefOrtalamaIcinAdet(
+            eldeki: asset.quantity,
+            ortalama: asset.purchasePrice,
+            fiyat: price > 0 ? price : asset.currentPrice,
+            hedef: hedef,
+            ondalik: hedefOrtalamaOndaligi(asset),
+          );
 
     // Marka kabuğu (Ar-Ge 5 Kas 22:40 #7; eskiden Material `Dialog`): kart
     // onay/bilgi diyaloğuyla aynı, kenar vurgusu işlemin rengi (al yeşil,
@@ -721,6 +911,13 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             if (ortalamaOnizleme != null) ...[
               const SizedBox(height: SandikSpace.sm),
               _ortalamaSatiri(context, ortalamaOnizleme),
+            ],
+
+            if (hedefKapisi) ...[
+              const SizedBox(height: SandikSpace.xs),
+              _hedefBolumu(context,
+                  hedef: hedef != null && hedef > 0 ? hedef : null,
+                  adet: hedefAdet),
             ],
 
             if (karOnizleme != null) ...[

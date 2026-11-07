@@ -902,6 +902,36 @@ abstract class AppLocalizations {
   /// **'Yeni ortalama maliyetin {yeni} (şimdi {simdi})'**
   String quickBuyAvgCost(String yeni, String simdi);
 
+  /// No description provided for @quickTargetAvg.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef ortalama'**
+  String get quickTargetAvg;
+
+  /// No description provided for @quickTargetAvgField.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef ortalama maliyet'**
+  String get quickTargetAvgField;
+
+  /// Hızlı Al ters hesabı: hedef ortalamaya bu fiyattan ulaşmak için gereken miktar. Ek (-e/-a) sayının okunuşuna bağlı olduğu için 'seviyesine' denir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortalamayı {hedef} seviyesine indirmek için ~{adet} {birim}'**
+  String quickTargetAvgResult(String hedef, String adet, String birim);
+
+  /// No description provided for @quickTargetAvgUnreachable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu fiyattan bu ortalamaya inilemez.'**
+  String get quickTargetAvgUnreachable;
+
+  /// No description provided for @quickTargetAvgFillHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dokununca miktar alanına yazılır'**
+  String get quickTargetAvgFillHint;
+
   /// Hızlı Sat, yalnız TEFAS fonu: kâr satırı brüttür, oran yazılmaz.
   ///
   /// In tr, this message translates to:

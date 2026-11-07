@@ -447,6 +447,23 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get quickTargetAvg => 'Hedef ortalama';
+
+  @override
+  String get quickTargetAvgField => 'Hedef ortalama maliyet';
+
+  @override
+  String quickTargetAvgResult(String hedef, String adet, String birim) {
+    return 'Ortalamayı $hedef seviyesine indirmek için ~$adet $birim';
+  }
+
+  @override
+  String get quickTargetAvgUnreachable => 'Bu fiyattan bu ortalamaya inilemez.';
+
+  @override
+  String get quickTargetAvgFillHint => 'Dokununca miktar alanına yazılır';
+
+  @override
   String get quickSaleFundTaxNote =>
       'Brüt tutar; fon stopajı kârdan kesilebilir.';
 

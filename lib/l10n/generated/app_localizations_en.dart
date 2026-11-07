@@ -446,6 +446,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get quickTargetAvg => 'Target average';
+
+  @override
+  String get quickTargetAvgField => 'Target average cost';
+
+  @override
+  String quickTargetAvgResult(String hedef, String adet, String birim) {
+    return 'To bring your average down to $hedef: ~$adet $birim';
+  }
+
+  @override
+  String get quickTargetAvgUnreachable =>
+      'This average can\'t be reached at this price.';
+
+  @override
+  String get quickTargetAvgFillHint => 'Tap to fill the quantity';
+
+  @override
   String get quickSaleFundTaxNote =>
       'Gross amount; fund withholding tax may be deducted from the gain.';
 
