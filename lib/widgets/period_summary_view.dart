@@ -255,10 +255,19 @@ class PeriodSummaryView extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           ..._arali(g.sonuc),
         ],
+        // "Neden böyle?" yalnız önünde "Ne oldu?" varken (Ar-Ge 2026-11-07
+        // 12:15 #3, "bir kart, bir başlık"). Tek akışta ana rakam manşette
+        // olduğundan SONUÇ çoğu dönemde boş; o zaman bölüm başlığının hemen
+        // altında "Nereden geldi" kart başlığı duruyordu ve iki başlık tek
+        // kartı anlatıyordu. Bölüm başlığı iki bölümü AYIRMAK için vardır:
+        // ayıracağı bir şey yoksa çizilmez. SONUÇ doluyken (eski düzen ya da
+        // reel getiri kartı) iki bölüm yine başlıklarıyla ayrılır.
         if (g.neden.isNotEmpty) ...[
-          if (g.sonuc.isNotEmpty) const SizedBox(height: SandikSpace.md),
-          SandikSectionHeader(title: l10n.sectionWhy),
-          const SizedBox(height: SandikSpace.sm),
+          if (g.sonuc.isNotEmpty) ...[
+            const SizedBox(height: SandikSpace.md),
+            SandikSectionHeader(title: l10n.sectionWhy),
+            const SizedBox(height: SandikSpace.sm),
+          ],
           ..._arali(g.neden),
         ],
         // AYRINTI başlığı yalnızca birikim kartı varsa: Derinlik kendi
@@ -280,6 +289,12 @@ class PeriodSummaryView extends StatelessWidget {
       ],
     );
   }
+
+  /// "Nereden geldi" köprüsü yerine "değişim yok" cümlesi mi çizilir
+  /// (gerekçe `_KopruKarti.koprusuz`).
+  static bool koprusuzMu(PeriodSummary s,
+          {BazPara baz = const BazPara.lira()}) =>
+      _KopruKarti.koprusuz(s, baz);
 
   /// Blokların arasına standart boşluk.
   static List<Widget> _arali(List<Widget> bloklar) {
@@ -689,6 +704,19 @@ class _KopruKarti extends StatelessWidget {
   static double yatirdigin(PeriodSummary s) =>
       (s.katkiTRY ?? 0) + (s.temettuTRY ?? 0);
 
+  /// Köprü yerine "değişim yok" cümlesi mi? Para girip çıkmadı, temettü ve
+  /// komisyon yok, fiyat etkisi yazıldığında sıfır.
+  static bool koprusuz(PeriodSummary s, BazPara baz) {
+    final temettu = s.temettuTRY;
+    if (yatirdigin(s).abs() >= 0.005) return false;
+    if (temettu != null && temettu.abs() >= 0.005) return false;
+    if (s.komisyonTRY != null) return false;
+    // Maskesiz kopyayla: "bakiyeyi gizle" açıkken maske rakam taşımaz ve
+    // her dönemi "değişim yok" sayardı.
+    final yazi = BazPara(baz.birim, baz.kur).fmt((s.piyasaTRY ?? 0).abs());
+    return !RegExp(r'[1-9]').hasMatch(yazi);
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = summary;
@@ -714,17 +742,50 @@ class _KopruKarti extends StatelessWidget {
         : (s.isNegative ? context.c.loss : context.c.gain);
 
     final l = context.l10n;
+    final baslik = Text(
+      l.whereItCameFrom,
+      style: context.t.titleSmall?.copyWith(color: context.c.text58),
+    );
+    final kabuk = context.surfaceCard(radius: SandikRadius.lg);
+    const dolgu = EdgeInsets.symmetric(
+        horizontal: SandikSpace.md, vertical: SandikSpace.md2);
+
+    // Hiçbir şey değişmediyse köprü YOK (Ar-Ge 2026-11-07 12:15 #2). Hafta
+    // sonu ve açılıştan önce Bugün'de üç çubuk çiziliyordu: dönem başı
+    // ₺31.240, fiyat etkisi ₺0, bugün ₺31.240; altındaki not da "değişimin
+    // tamamı fiyattan" diyordu, oysa değişim yoktu. Para hareketi, temettü
+    // ve komisyon yoksa ve fiyat etkisi yazıldığında sıfıra yuvarlanıyorsa
+    // (`_CubukSatiri`'nın işaret kuralıyla aynı ölçüt) kart başlığıyla tek
+    // cümle kalır. Durum renkle değil cümleyle söylenir.
+    if (koprusuz(s, baz)) {
+      return Container(
+        key: const ValueKey('kopru_degisim_yok'),
+        width: double.infinity,
+        padding: dolgu,
+        decoration: kabuk,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            baslik,
+            const SizedBox(height: SandikSpace.sm),
+            Text(
+              s.period.intraday
+                  ? l.noChangeBridgeToday
+                  : l.noChangeBridgePeriod,
+              style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.md, vertical: SandikSpace.md2),
-      decoration: context.surfaceCard(radius: SandikRadius.lg),
+      padding: dolgu,
+      decoration: kabuk,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l.whereItCameFrom,
-            style: context.t.titleSmall?.copyWith(color: context.c.text58),
-          ),
+          baslik,
           const SizedBox(height: SandikSpace.smd),
           _CubukSatiri(
             baz: baz,

@@ -14,6 +14,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/bes_sozlesme_pozisyonu.dart';
 import 'package:portfoy_takip/models/position.dart';
+import 'package:portfoy_takip/widgets/disclaimer_widget.dart';
 import 'package:portfoy_takip/widgets/bes_fon_satiri.dart';
 import 'package:portfoy_takip/widgets/bildirim_izni_uyarisi.dart';
 import 'package:portfoy_takip/widgets/bildirim_satiri.dart';
@@ -297,6 +298,10 @@ void main() {
                 // Belge hazırlayan hâli (aylık rapor PDF'i, 2026-10-31).
                 SandikPaylasDugmesi.istekli(
                     onPaylas: (_) async {}, tooltip: 'PDF olarak paylaş'),
+                const SizedBox(height: SandikSpace.md),
+                // Performans dipnotunun kısa biçimi (2026-11-07): "Ayrıntı"
+                // bağlantısı 44 pt ve etiketli olmalı.
+                const DisclaimerWidget(kisa: true),
                 const SizedBox(height: SandikSpace.md),
                 // Varlık sayfasının Al · Sat · Temettü çubuğu: şerit ve
                 // (bayrak `goz_alici`) yüzen cam kapsül.

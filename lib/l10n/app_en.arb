@@ -6032,5 +6032,11 @@
   "yaDusukte": "At the {donem} low",
   "@yaDusukte": {"placeholders": {"donem": {"type": "String"}}},
   "yaSemantik": "{baslik}: low {dusuk}, high {yuksek}, today {bugun}. {cumle}",
-  "@yaSemantik": {"placeholders": {"baslik": {"type": "String"}, "dusuk": {"type": "String"}, "yuksek": {"type": "String"}, "bugun": {"type": "String"}, "cumle": {"type": "String"}}}
+  "@yaSemantik": {"placeholders": {"baslik": {"type": "String"}, "dusuk": {"type": "String"}, "yuksek": {"type": "String"}, "bugun": {"type": "String"}, "cumle": {"type": "String"}}},
+  "noChangeBridgeToday": "You did not add or withdraw money today, and prices did not change.",
+  "noChangeBridgePeriod": "You did not add or withdraw money in this period, and prices did not change.",
+  "disclaimerShort": "Not investment advice. Past returns do not predict future results.",
+  "disclaimerDetails": "Details",
+  "disclaimerDetailsHint": "Opens the full legal notice",
+  "disclaimerSheetTitle": "Legal notice"
 }

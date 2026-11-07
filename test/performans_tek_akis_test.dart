@@ -411,11 +411,14 @@ void main() {
             nedenEki: const Text('TÜR DÖKÜMÜ'),
           ));
       expect(find.textContaining('Paranın getirisi'), findsNothing);
-      expect(find.text(_tr.sectionWhy), findsOneWidget);
+      // "Neden böyle?" önünde "Ne oldu?" yokken çizilmez (Ar-Ge 2026-11-07
+      // 12:15 #3); "Nereden geldi" kart başlığı kalır.
+      expect(find.text(_tr.sectionWhy), findsNothing);
+      expect(find.text(_tr.whereItCameFrom), findsOneWidget);
       expect(find.text('TÜR DÖKÜMÜ'), findsOneWidget);
-      // Ek NEDEN'in içinde, başlığın altında.
+      // Ek NEDEN'in içinde, köprünün altında.
       expect(tester.getTopLeft(find.text('TÜR DÖKÜMÜ')).dy,
-          greaterThan(tester.getTopLeft(find.text(_tr.sectionWhy)).dy));
+          greaterThan(tester.getTopLeft(find.text(_tr.whereItCameFrom)).dy));
     });
   });
 
