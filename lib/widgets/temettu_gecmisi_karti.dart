@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/premium_provider.dart'
+    show premiumOzellikleriGorunurProvider;
 import '../services/analytics_service.dart';
 import '../services/fiyat_kaynagi.dart';
 import '../services/remote_config_service.dart';
@@ -15,6 +17,7 @@ import '../theme/sandik.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'dividend_dialog.dart';
+import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_skeleton.dart';
 
 /// Hisse varlık ekranında "Son 12 ay temettü" kartı (plan §F5, 1. aşama).
@@ -66,6 +69,10 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
   /// Olay × defter sonucu — build'de değil, veri ya da defter değişince.
   List<TemettuSatiri> _satirlar = const [];
   double _kaydedilen = 0;
+
+  /// Maliyetine göre yıllık verim (%); `null` → satır yok
+  /// (`TemettuGecmisi.maliyeteGoreVerim`).
+  double? _verim;
   bool _gosterildiLoglandi = false;
 
   @override
@@ -110,6 +117,11 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
       widget.varlik,
       simdi: DateTime.now(),
     );
+    _verim = TemettuGecmisi.maliyeteGoreVerim(
+      widget.defter,
+      widget.varlik,
+      simdi: DateTime.now(),
+    );
     if (!_gosterildiLoglandi && _satirlar.any((s) => !s.kaydedildi)) {
       _gosterildiLoglandi = true;
       unawaited(
@@ -140,6 +152,8 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
     final gizli = ref.watch(balanceHiddenProvider);
     String tl(double v) =>
         gizli ? const BazPara.lira().gizliTutar : fmtTRY(v, digits: 2);
+    final premiumGorunur = ref.watch(premiumOzellikleriGorunurProvider);
+    final premiumKilitli = ref.watch(premiumKilitliProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -159,12 +173,20 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
                       color: c.gain, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: SandikSpace.sm),
+                if (_verim != null && premiumGorunur) ...[
+                  _verimSatiri(_verim!, kilitli: premiumKilitli),
+                  const SizedBox(height: SandikSpace.sm),
+                ],
               ],
               for (var i = 0; i < _satirlar.length; i++) ...[
                 if (i > 0) Divider(height: SandikSpace.md, color: c.hairline),
                 _satir(_satirlar[i], tarih, tl),
               ],
               const SizedBox(height: SandikSpace.sm),
+              // Dipnot tek satır (2026-11-07): kaynak + "brüt" yeter. Eski
+              // 194 karakterlik paragraf %15 stopaj cümlesini tekrarlıyordu;
+              // stopajı kaydet akışı zaten söylüyor
+              // (`dividendWithholdingAssumed`), kartta ikinci kez yazılmaz.
               Text(
                 l.dividendSourceNote,
                 style: context.t.bodySmall?.copyWith(color: c.text36),
@@ -173,6 +195,38 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
           ),
         ),
       ],
+    );
+  }
+
+  /// "Maliyetine göre yıllık verim %4,2" (Ar-Ge 7 Kas 08:03 #1, Premium).
+  ///
+  /// Görünür + kilitli, diğer yeni Premium satırları gibi: paywall açıkken
+  /// herkes satırın VARLIĞINI görür, ücretsizde sayı yerine kilit satırı
+  /// (paywall temettü kartıyla açılır, kaynak `temettu_verimi`). Paywall
+  /// kapalıyken yalnız admin görür (`premiumOzellikleriGorunurProvider`).
+  /// Kilit satırı da ancak hesaplanacak sayı varken çıkar: kaydı olmayana
+  /// "Premium'da verimin var" demek boş vaat olurdu.
+  ///
+  /// Bakiye gizliyken yüzde açık kalır (Ana ekran kuralı, kaydedilen tutar
+  /// maskeli): oran tek başına portföy büyüklüğünü ele vermez.
+  Widget _verimSatiri(double verim, {required bool kilitli}) {
+    final l = context.l10n;
+    if (kilitli) {
+      return KilitSatiri(
+        metin: l.dividendYieldOnCostLocked,
+        kaynak: 'temettu_verimi',
+        ozellik: 'temettu_verimi',
+        kilitEtiketi: l.goalDateLockedLabel,
+      );
+    }
+    final pct = fmtPct(verim, digits: 1);
+    return Semantics(
+      label: l.dividendYieldOnCostA11y(pct),
+      excludeSemantics: true,
+      child: Text(
+        l.dividendYieldOnCost(pct),
+        style: context.t.bodySmall?.copyWith(color: context.c.text90),
+      ),
     );
   }
 

@@ -173,6 +173,9 @@
   "myAssets": "My Assets",
   "watchlist": "Watchlist",
   "priceUpdateFailed": "Prices could not be updated. Showing older data.",
+  "offlinePricesAt": "No internet · prices as of {saat}",
+  "@offlinePricesAt": {"placeholders": {"saat": {"type": "String"}, "ek": {"type": "String"}}},
+  "offlinePricesUnknown": "No internet · showing last prices",
   "otpSentPrefix": "We sent the 6-digit code to\n",
   "otpSentSuffix": "",
   "registerNameMissing": "Enter your full name.",
@@ -583,6 +586,11 @@
       }
     }
   },
+  "dividendYieldOnCost": "Yearly yield on cost {pct}",
+  "@dividendYieldOnCost": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostA11y": "Net dividends you recorded in the last 12 months are {pct} of your current cost. Yearly yield on cost.",
+  "@dividendYieldOnCostA11y": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostLocked": "Your yearly yield on cost is part of Premium",
   "dividendEventLine": "{lot} shares × {perShare}",
   "@dividendEventLine": {
     "placeholders": {
@@ -604,7 +612,7 @@
   },
   "dividendRecorded": "Recorded",
   "dividendRecordAction": "Record",
-  "dividendSourceNote": "Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; \"Save\" prefills the net after 15% withholding tax, which you can edit.",
+  "dividendSourceNote": "Source: Yahoo Finance · amounts are gross",
   "dividendSuggestionLine": "{ticker} · ex-date {date}",
   "@dividendSuggestionLine": {
     "placeholders": {
@@ -3313,6 +3321,8 @@
   "pfTodayWaiting": "Waiting for data",
   "sortTodayMove": "Today's move",
   "sortTodayMoveSub": "Biggest mover first",
+  "sortName": "Name",
+  "sortNameSub": "A to Z",
   "chartNowLabel": "Now",
   "vsWatch": "Watch",
   "vsSelect": "Select this",

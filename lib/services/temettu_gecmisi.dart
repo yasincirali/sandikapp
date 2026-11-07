@@ -4,7 +4,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/asset.dart';
-import '../models/position.dart' show positionKey;
+import '../models/position.dart'
+    show aggregatePositions, aktifLotlar, positionKey;
 import 'crash_reporter.dart';
 
 /// Temettü yakalama — istemci tarafı (plan §F5, ADR-2 A: Yahoo `events=div`).
@@ -286,6 +287,37 @@ abstract final class TemettuGecmisi {
       t += a.dividendAmount;
     }
     return t;
+  }
+
+  /// Maliyetine göre yıllık verim (%): son [pencereGun] günde KAYDEDİLMİŞ
+  /// net temettü ÷ bugünkü toplam maliyet × 100 (Ar-Ge 7 Kas 08:03 #1,
+  /// "yield on cost").
+  ///
+  /// Pay kaydedilen NET tutar: kullanıcının eline geçen; Yahoo'nun brüt
+  /// olayı değil (kaydedilmemiş olay "kazanılmış" sayılmaz). Payda bugünkü
+  /// mülkiyetin maliyeti — bugünü soran hesap, `aktifLotlar` (CLAUDE.md
+  /// "Kapanmış pozisyon"); satılan lotun maliyeti düşmüş, komisyon dahil,
+  /// varlığın para biriminde (temettü tutarıyla aynı birim).
+  ///
+  /// `null` = satır çizilmez: pencerede kayıt yok, pozisyon kapalı ya da
+  /// maliyet 0/bilinmiyor. Uydurma sayı yok — "%0,00" da yazılmaz, çünkü
+  /// kayıt yokluğu "verim sıfır" demek değil.
+  static double? maliyeteGoreVerim(
+    Iterable<Asset> defter,
+    Asset varlik, {
+    required DateTime simdi,
+  }) {
+    final net = kaydedilenToplam(defter, varlik, simdi: simdi);
+    if (!(net > 0)) return null;
+    final anahtar = positionKey(varlik);
+    final lotlar = aktifLotlar(_pozisyonSatirlari(defter, varlik));
+    for (final p in aggregatePositions(lotlar)) {
+      if (p.key != anahtar) continue;
+      final maliyet = p.totalCost;
+      if (!maliyet.isFinite || maliyet <= 0) return null;
+      return net / maliyet * 100;
+    }
+    return null;
   }
 
   /// Diyaloğa önerilecek tutar.

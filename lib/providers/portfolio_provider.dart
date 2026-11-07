@@ -12,6 +12,7 @@ import '../services/price_service.dart';
 import '../services/retention_tracker.dart';
 import '../services/sparkline_service.dart';
 import 'auth_provider.dart';
+import 'cevrimdisi_provider.dart';
 import 'preferences_provider.dart';
 import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
@@ -1622,6 +1623,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         }
       }
 
+      final sayacOnce = PriceService.instance.agSayaci.anlik();
       final quotes = await PriceService.instance
           .fetchQuotes(symbols.toList(), forceRefresh: force);
 
@@ -1631,6 +1633,22 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // eski snapshot ile ezilir.
       final current = state.valueOrNull ?? s;
       final baseAssets = current.assets;
+
+      // "İnternet yok" şeridi (2026-11-07): fetchQuotes kaynak hatalarını
+      // yutar, kopuk bağlantıda boş döner. Karar bu turun HTTP sayacından
+      // (bkz. `AgSayaci`). Son fiyat anı güncelleme döngüsünden ÖNCE
+      // okunur; bu turda fiyat yazılmadı, ekrandaki hâl o anın.
+      final sayacSonra = PriceService.instance.agSayaci.anlik();
+      final kopuk = turBaglantiKarari(
+          hata: sayacSonra.hata - sayacOnce.hata,
+          yanit: sayacSonra.yanit - sayacOnce.yanit);
+      if (kopuk == true) {
+        ref
+            .read(cevrimdisiProvider.notifier)
+            .agHatasi(sonFiyat: sonFiyatZamani(baseAssets));
+      } else if (kopuk == false) {
+        ref.read(cevrimdisiProvider.notifier).baglandi();
+      }
 
       final usd = quotes['USDTRY=X']?.regularMarketPrice ?? current.usdTry;
       final eur = quotes['EURTRY=X']?.regularMarketPrice ?? current.eurTry;
@@ -1764,6 +1782,13 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // o yüzden non-fatal olarak Crashlytics'e gider.
       CrashReporter.report(e, st, reason: 'PortfolioNotifier.refreshPrices');
       final current = state.valueOrNull ?? s;
+      // Ortak listesi / anlık görüntü yazımı ağ hatasıyla düştüyse aynı
+      // şerit (bkz. `cevrimdisiProvider`); başka hata genel şeritte kalır.
+      if (CrashReporter.agHatasiMi(e)) {
+        ref
+            .read(cevrimdisiProvider.notifier)
+            .agHatasi(sonFiyat: sonFiyatZamani(current.assets));
+      }
       state = AsyncData(current.copyWith(
         isLoading: false,
         errorMessage: 'Fiyatlar güncellenemedi. ${friendlyError(e)}',

@@ -139,11 +139,51 @@ class YahooQuote {
   String get companyName => shortName ?? longName ?? symbol;
 }
 
+/// PriceService'in HTTP sonuç sayacı — "İnternet yok" şeridi için.
+///
+/// Neden sayaç (2026-11-07, Ar-Ge #3): `fetchQuotes` kaynak hatalarını
+/// bilerek yutar (bir kaynak düşse de diğerleri fiyat versin), bu yüzden
+/// bağlantı kopukken tur hata FIRLATMADAN boş döner ve çağıran ağ hatasını
+/// göremez. Her istek bu sayaçtan geçer: ağ hatası (`agHatasiMi`) ve
+/// yanıt alınan istek ayrı sayılır. Tur öncesi ve sonrası anlık görüntü
+/// farkı "bu turda hiç yanıt yok, ağ hatası var" sorusunu yanıtlar
+/// (`turBaglantiKarari`). HTTP 4xx/5xx de yanıttır: sunucu kötü ama
+/// internet var — şerit "İnternet yok" demez.
+class AgSayaci {
+  int _hata = 0;
+  int _yanit = 0;
+
+  ({int hata, int yanit}) anlik() => (hata: _hata, yanit: _yanit);
+}
+
+class _SayacliIstemci extends http.BaseClient {
+  _SayacliIstemci(this._ic, this._sayac);
+  final http.Client _ic;
+  final AgSayaci _sayac;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    try {
+      final res = await _ic.send(request);
+      _sayac._yanit++;
+      return res;
+    } catch (e) {
+      if (CrashReporter.agHatasiMi(e)) _sayac._hata++;
+      rethrow;
+    }
+  }
+
+  @override
+  void close() => _ic.close();
+}
+
 class PriceService {
   static final PriceService instance = PriceService._();
   PriceService._();
 
-  final _client = http.Client();
+  /// Bkz. [AgSayaci].
+  final agSayaci = AgSayaci();
+  late final http.Client _client = _SayacliIstemci(http.Client(), agSayaci);
 
   static const _ua =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '

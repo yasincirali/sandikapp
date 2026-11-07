@@ -482,6 +482,14 @@ class AppLocalizationsTr extends AppLocalizations {
       'Fiyatlar güncellenemedi, eski veriler gösteriliyor.';
 
   @override
+  String offlinePricesAt(String saat, String ek) {
+    return 'İnternet yok · fiyatlar $saat\'$ek hâli';
+  }
+
+  @override
+  String get offlinePricesUnknown => 'İnternet yok · son fiyatlar gösteriliyor';
+
+  @override
   String get otpSentPrefix => '6 haneli kodu\n';
 
   @override
@@ -970,6 +978,20 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String dividendYieldOnCost(String pct) {
+    return 'Maliyetine göre yıllık verim $pct';
+  }
+
+  @override
+  String dividendYieldOnCostA11y(String pct) {
+    return 'Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin $pct kadarı. Maliyetine göre yıllık verim.';
+  }
+
+  @override
+  String get dividendYieldOnCostLocked =>
+      'Maliyetine göre yıllık verimin Premium\'da';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot lot × $perShare';
   }
@@ -986,8 +1008,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dividendRecordAction => 'Kaydet';
 
   @override
-  String get dividendSourceNote =>
-      'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; \"Kaydet\" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.';
+  String get dividendSourceNote => 'Kaynak: Yahoo Finance · tutarlar brüt';
 
   @override
   String dividendSuggestionLine(String ticker, String date) {
@@ -4774,6 +4795,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sortTodayMoveSub => 'En çok oynayan önce';
+
+  @override
+  String get sortName => 'Ada göre';
+
+  @override
+  String get sortNameSub => 'A\'dan Z\'ye';
 
   @override
   String get chartNowLabel => 'Şimdi';

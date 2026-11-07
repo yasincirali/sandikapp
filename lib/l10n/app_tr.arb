@@ -186,6 +186,9 @@
   "myAssets": "Varlıklarım",
   "watchlist": "Takip Listesi",
   "priceUpdateFailed": "Fiyatlar güncellenemedi, eski veriler gösteriliyor.",
+  "offlinePricesAt": "İnternet yok · fiyatlar {saat}'{ek} hâli",
+  "@offlinePricesAt": {"placeholders": {"saat": {"type": "String"}, "ek": {"type": "String"}}},
+  "offlinePricesUnknown": "İnternet yok · son fiyatlar gösteriliyor",
   "otpSentPrefix": "6 haneli kodu\n",
   "otpSentSuffix": "\nadresine gönderdik.",
   "registerNameMissing": "Ad soyad gir.",
@@ -600,6 +603,11 @@
       }
     }
   },
+  "dividendYieldOnCost": "Maliyetine göre yıllık verim {pct}",
+  "@dividendYieldOnCost": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostA11y": "Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin {pct} kadarı. Maliyetine göre yıllık verim.",
+  "@dividendYieldOnCostA11y": {"placeholders": {"pct": {"type": "String"}}},
+  "dividendYieldOnCostLocked": "Maliyetine göre yıllık verimin Premium'da",
   "dividendEventLine": "{lot} lot × {perShare}",
   "@dividendEventLine": {
     "placeholders": {
@@ -621,7 +629,7 @@
   },
   "dividendRecorded": "Kaydedildi",
   "dividendRecordAction": "Kaydet",
-  "dividendSourceNote": "Yahoo Finance'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; \"Kaydet\" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.",
+  "dividendSourceNote": "Kaynak: Yahoo Finance · tutarlar brüt",
   "dividendSuggestionLine": "{ticker} · hak tarihi {date}",
   "@dividendSuggestionLine": {
     "placeholders": {
@@ -3445,6 +3453,8 @@
   "pfTodayWaiting": "Veri bekleniyor",
   "sortTodayMove": "Bugünkü hareket",
   "sortTodayMoveSub": "En çok oynayan önce",
+  "sortName": "Ada göre",
+  "sortNameSub": "A'dan Z'ye",
   "chartNowLabel": "Şimdi",
   "vsWatch": "Takip et",
   "vsSelect": "Bunu seç",

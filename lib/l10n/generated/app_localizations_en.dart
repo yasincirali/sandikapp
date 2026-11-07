@@ -481,6 +481,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prices could not be updated. Showing older data.';
 
   @override
+  String offlinePricesAt(String saat, String ek) {
+    return 'No internet · prices as of $saat';
+  }
+
+  @override
+  String get offlinePricesUnknown => 'No internet · showing last prices';
+
+  @override
   String get otpSentPrefix => 'We sent the 6-digit code to\n';
 
   @override
@@ -983,6 +991,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String dividendYieldOnCost(String pct) {
+    return 'Yearly yield on cost $pct';
+  }
+
+  @override
+  String dividendYieldOnCostA11y(String pct) {
+    return 'Net dividends you recorded in the last 12 months are $pct of your current cost. Yearly yield on cost.';
+  }
+
+  @override
+  String get dividendYieldOnCostLocked =>
+      'Your yearly yield on cost is part of Premium';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot shares × $perShare';
   }
@@ -999,8 +1021,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dividendRecordAction => 'Record';
 
   @override
-  String get dividendSourceNote =>
-      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; \"Save\" prefills the net after 15% withholding tax, which you can edit.';
+  String get dividendSourceNote => 'Source: Yahoo Finance · amounts are gross';
 
   @override
   String dividendSuggestionLine(String ticker, String date) {
@@ -4804,6 +4825,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sortTodayMoveSub => 'Biggest mover first';
+
+  @override
+  String get sortName => 'Name';
+
+  @override
+  String get sortNameSub => 'A to Z';
 
   @override
   String get chartNowLabel => 'Now';

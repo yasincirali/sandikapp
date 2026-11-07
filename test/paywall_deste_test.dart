@@ -45,6 +45,8 @@ void main() {
         // (radar kapalıyken haftalık not kartı destede yoktu).
         'masraf_dokumu': PaywallKarti.xray,
         'temettu_tahmini': PaywallKarti.temettu,
+        // Temettü kartındaki "maliyetine göre verim" (2026-11-07).
+        'temettu_verimi': PaywallKarti.temettu,
         'aylik_rapor': PaywallKarti.rapor,
         // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
         'fon_xray': PaywallKarti.xray,
@@ -107,6 +109,8 @@ void main() {
         // Kendi göstergeni yaz (0141) ve ortak sınır uyarısı (takip, alarm).
         'lib/screens/asset_detail/ozel_gostergeler.dart',
         'lib/widgets/sinir_uyarisi.dart',
+        // Maliyetine göre temettü verimi (2026-11-07).
+        'lib/widgets/temettu_gecmisi_karti.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m

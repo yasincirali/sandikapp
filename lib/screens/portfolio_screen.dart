@@ -1,4 +1,5 @@
 import 'dart:async' show FutureOr, unawaited;
+import '../widgets/cevrimdisi_seridi.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import 'dart:math' as math;
 
@@ -39,6 +40,7 @@ import '../widgets/sekme_basa_don.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_katla.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
@@ -347,6 +349,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 : double.infinity;
             return pa.compareTo(pb);
           });
+      case PortfoySiralama.nameAsc:
+        return list..sort((a, b) => trKarsilastir(
+            _satirBasligi(a.representative), _satirBasligi(b.representative)));
     }
   }
 
@@ -552,6 +557,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     onChanged: (i) => setState(() => _bodyTab = i),
                   ),
                 ),
+              ),
+              // "İnternet yok" satırı (2026-11-07): başlığın altında, liste
+              // ve takip listesinin üstünde; çevrimiçiyken boyutsuz.
+              CevrimdisiSeridi(
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
+                    SandikSpace.screenH(context), SandikSpace.sm),
               ),
             ],
           ),
@@ -2920,7 +2931,7 @@ class _AssetCardState extends State<_AssetCard>
                                   child: VarlikBaslikHero(
                                     etiket: widget.heroEtiketi,
                                     child: Text(
-                                      a.showTicker ? a.displayTicker! : a.name,
+                                      _satirBasligi(a),
                                       maxLines: a.showTicker ? 1 : 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: context.t.titleMedium?.copyWith(
@@ -3718,10 +3729,17 @@ List<SandikSiralamaSecenegi<PortfoySiralama>> _siralamaSecenekleri(
             Icons.percent_rounded),
         (PortfoySiralama.todayMoveDesc, l.sortTodayMove, l.sortTodayMoveSub,
             Icons.bolt_rounded),
+        (PortfoySiralama.nameAsc, l.sortName, l.sortNameSub,
+            Icons.sort_by_alpha_rounded),
       ])
         SandikSiralamaSecenegi(
             deger: deger, baslik: baslik, altBaslik: alt, ikon: ikon),
     ];
+
+/// Portföy satırının başlığı: fon/hissede kod, diğerlerinde ad. "Ada göre"
+/// sıralama da bunu kullanır — kullanıcı satırda ne okuyorsa ona göre
+/// dizilir (THYAO "Türk Hava Yolları" diye değil, T'de durur).
+String _satirBasligi(Asset a) => a.showTicker ? a.displayTicker! : a.name;
 
 /// Portföy satırının alt metni: miktar · birim fiyat.
 ///

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../demo/demo_modu.dart';
+import '../providers/cevrimdisi_provider.dart';
 import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../providers/price_alert_notification_provider.dart';
 import '../providers/price_alert_provider.dart';
@@ -25,6 +26,7 @@ import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/cevrimdisi_seridi.dart';
 import '../widgets/guncelleme_karti.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/sandik_cam.dart';
@@ -798,8 +800,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // toplanıp 44pt'lik çukurlar oluşmaz (eski hâl: mini kart alt
           // 20 + başlık üst 24). Koşullu bloklar (Bugün, mini kartlar)
           // gizlenince ritim bozulmaz çünkü her blok kendi üstünü getirir.
-          // Offline / price error banner
-          if (myState.errorMessage != null)
+          // "İnternet yok · fiyatlar 14:32'deki hâli" (2026-11-07): ağ
+          // hatasında genel kutu yerine tek ince satır. Sliver koşulsuz
+          // (çevrimiçiyken boyutsuz) — girip çıkınca alttaki sliver
+          // indeksleri kaymasın. Toplam kartının üstünde, ayrı satır.
+          SliverToBoxAdapter(
+            key: const ValueKey('cevrimdisi-seridi'),
+            child: CevrimdisiSeridi(
+              padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0),
+            ),
+          ),
+          // Offline / price error banner — ağ dışı hatalar için. Bağlantı
+          // yokken yukarıdaki satır söyler; iki uyarı üst üste binmez.
+          if (myState.errorMessage != null &&
+              ref.watch(cevrimdisiProvider) == null)
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0),

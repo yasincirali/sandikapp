@@ -75,7 +75,8 @@ PaywallKarti? kaynaktanKart(String source) {
     // not kartına düşüyordu; radar kapalıyken kart destede yoktu).
     'yillik_rapor' || 'portfoy_disa_aktar' || 'aylik_rapor' =>
       PaywallKarti.rapor,
-    'temettu_tahmini' => PaywallKarti.temettu,
+    // Temettü kartındaki "maliyetine göre verim" kilidi (2026-11-07).
+    'temettu_tahmini' || 'temettu_verimi' => PaywallKarti.temettu,
     // Masraf dökümü "param gerçekte nereye gidiyor" sorusu: X-Ray'in yanı.
     'fon_xray' || 'portfoy_xray' || 'masraf_dokumu' => PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,

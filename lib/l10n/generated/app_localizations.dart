@@ -968,6 +968,18 @@ abstract class AppLocalizations {
   /// **'Fiyatlar güncellenemedi, eski veriler gösteriliyor.'**
   String get priceUpdateFailed;
 
+  /// No description provided for @offlinePricesAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'İnternet yok · fiyatlar {saat}\'{ek} hâli'**
+  String offlinePricesAt(String saat, String ek);
+
+  /// No description provided for @offlinePricesUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'İnternet yok · son fiyatlar gösteriliyor'**
+  String get offlinePricesUnknown;
+
   /// No description provided for @otpSentPrefix.
   ///
   /// In tr, this message translates to:
@@ -1760,6 +1772,24 @@ abstract class AppLocalizations {
   /// **'Kaydettiğin: {amount}'**
   String dividendRecordedTotal(String amount);
 
+  /// No description provided for @dividendYieldOnCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre yıllık verim {pct}'**
+  String dividendYieldOnCost(String pct);
+
+  /// No description provided for @dividendYieldOnCostA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin {pct} kadarı. Maliyetine göre yıllık verim.'**
+  String dividendYieldOnCostA11y(String pct);
+
+  /// No description provided for @dividendYieldOnCostLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre yıllık verimin Premium\'da'**
+  String get dividendYieldOnCostLocked;
+
   /// No description provided for @dividendEventLine.
   ///
   /// In tr, this message translates to:
@@ -1787,7 +1817,7 @@ abstract class AppLocalizations {
   /// No description provided for @dividendSourceNote.
   ///
   /// In tr, this message translates to:
-  /// **'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; \"Kaydet\" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.'**
+  /// **'Kaynak: Yahoo Finance · tutarlar brüt'**
   String get dividendSourceNote;
 
   /// No description provided for @dividendSuggestionLine.
@@ -7934,6 +7964,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'En çok oynayan önce'**
   String get sortTodayMoveSub;
+
+  /// No description provided for @sortName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ada göre'**
+  String get sortName;
+
+  /// No description provided for @sortNameSub.
+  ///
+  /// In tr, this message translates to:
+  /// **'A\'dan Z\'ye'**
+  String get sortNameSub;
 
   /// No description provided for @chartNowLabel.
   ///
