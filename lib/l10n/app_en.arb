@@ -6016,5 +6016,21 @@
   "premiumDurumAyrintiEtiket": "{durum}. Tap to manage your subscription",
   "@premiumDurumAyrintiEtiket": {"placeholders": {"durum": {"type": "String"}}},
   "hesapEkleSatiri": "Add account",
-  "hesapEkleSatiriAlt": "Add a second account on this phone; your current one stays signed in"
+  "hesapEkleSatiriAlt": "Add a second account on this phone; your current one stays signed in",
+  "yaBaslikYil": "52-week range",
+  "yaBaslikAy": "{ay, plural, =1{Last month} other{Last {ay} months}}",
+  "@yaBaslikAy": {"placeholders": {"ay": {"type": "int"}}},
+  "yaDonemYil": "52-week",
+  "yaDonemAy": "{ay, plural, =1{1-month} other{{ay}-month}}",
+  "@yaDonemAy": {"placeholders": {"ay": {"type": "int"}}},
+  "yaYuksekAlti": "{pct} below the {donem} high",
+  "@yaYuksekAlti": {"placeholders": {"donem": {"type": "String"}, "pct": {"type": "String"}}},
+  "yaDusukUstu": "{pct} above the {donem} low",
+  "@yaDusukUstu": {"placeholders": {"donem": {"type": "String"}, "pct": {"type": "String"}}},
+  "yaYuksekte": "At the {donem} high",
+  "@yaYuksekte": {"placeholders": {"donem": {"type": "String"}}},
+  "yaDusukte": "At the {donem} low",
+  "@yaDusukte": {"placeholders": {"donem": {"type": "String"}}},
+  "yaSemantik": "{baslik}: low {dusuk}, high {yuksek}, today {bugun}. {cumle}",
+  "@yaSemantik": {"placeholders": {"baslik": {"type": "String"}, "dusuk": {"type": "String"}, "yuksek": {"type": "String"}, "bugun": {"type": "String"}, "cumle": {"type": "String"}}}
 }

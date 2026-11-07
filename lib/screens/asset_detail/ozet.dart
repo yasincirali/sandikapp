@@ -103,6 +103,11 @@ extension _DetayOzet on _AssetDetailScreenState {
       periodDays: days,
       simdi: now,
     );
+    // Yıllık aralık 1Y serisinden — seçili dönemden bağımsız, çip değişince
+    // satır oynamaz. Yeni kaynak/istek yok: aynı birim seri.
+    if (days == SummaryPeriod.birYil.days) {
+      _yillikUclar = YillikUclar.hesapla(seri, simdi: now);
+    }
   }
 
   /// Seri dönemin başına ulaşmıyorsa kapsanan gün (`kapsamEksik`); mevduat
@@ -426,6 +431,26 @@ extension _DetayOzet on _AssetDetailScreenState {
       ],
       eksik: [for (final p in _periods) _donemKapsami(p.days) != null],
       onSec: _ortakDonemSec,
+    );
+  }
+
+  // ── Yıllık aralık ────────────────────────────────────────────────────────
+
+  /// 52 haftalık aralık satırı (Ar-Ge 2026-11-07 12:30 #1, ücretsiz — fon
+  /// risk satırı gibi eşitleyici, mevcut veri). Biçim büyük fiyatla AYNI
+  /// (`_birimBicimi`, birim TL seri + canlı birim fiyat): ekrandaki fiyatla
+  /// aynı ölçek. Mevduatta yok: birim değer yalnız artar, "yılın dibi"
+  /// bir şey söylemez (dönem çubuğuyla aynı kural).
+  Widget _yillikAralikSatiri(double canliBirim) {
+    if (widget.asset.type == AssetType.mevduat) return const SizedBox.shrink();
+    final aralik = _yillikUclar?.bugunle(canliBirim);
+    if (aralik == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: YillikAralikSatiri(
+        aralik: aralik,
+        bicim: _birimBicimi(aralik.bugun),
+      ),
     );
   }
 

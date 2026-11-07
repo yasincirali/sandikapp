@@ -6764,5 +6764,21 @@
   "premiumDurumAyrintiEtiket": "{durum}. Aboneliği yönetmek için dokun",
   "@premiumDurumAyrintiEtiket": {"placeholders": {"durum": {"type": "String"}}},
   "hesapEkleSatiri": "Hesap ekle",
-  "hesapEkleSatiriAlt": "Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır"
+  "hesapEkleSatiriAlt": "Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır",
+  "yaBaslikYil": "Yıllık aralık",
+  "yaBaslikAy": "{ay, plural, other{Son {ay} ay}}",
+  "@yaBaslikAy": {"description": "Varlık ekranı yıllık aralık satırı; seri bir yıldan kısaysa başlık", "placeholders": {"ay": {"type": "int"}}},
+  "yaDonemYil": "Yılın",
+  "yaDonemAy": "{ay, plural, other{Son {ay} ayın}}",
+  "@yaDonemAy": {"placeholders": {"ay": {"type": "int"}}},
+  "yaYuksekAlti": "{donem} en yükseğinin {pct} altında",
+  "@yaYuksekAlti": {"description": "donem = yaDonemYil ya da yaDonemAy; pct = %8,4", "placeholders": {"donem": {"type": "String"}, "pct": {"type": "String"}}},
+  "yaDusukUstu": "{donem} en düşüğünün {pct} üstünde",
+  "@yaDusukUstu": {"placeholders": {"donem": {"type": "String"}, "pct": {"type": "String"}}},
+  "yaYuksekte": "{donem} en yükseğinde",
+  "@yaYuksekte": {"placeholders": {"donem": {"type": "String"}}},
+  "yaDusukte": "{donem} en düşüğünde",
+  "@yaDusukte": {"placeholders": {"donem": {"type": "String"}}},
+  "yaSemantik": "{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}",
+  "@yaSemantik": {"description": "Ekran okuyucu için tek etiket", "placeholders": {"baslik": {"type": "String"}, "dusuk": {"type": "String"}, "yuksek": {"type": "String"}, "bugun": {"type": "String"}, "cumle": {"type": "String"}}}
 }

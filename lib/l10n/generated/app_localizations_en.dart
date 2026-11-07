@@ -10895,4 +10895,58 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hesapEkleSatiriAlt =>
       'Add a second account on this phone; your current one stays signed in';
+
+  @override
+  String get yaBaslikYil => '52-week range';
+
+  @override
+  String yaBaslikAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: 'Last $ay months',
+      one: 'Last month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get yaDonemYil => '52-week';
+
+  @override
+  String yaDonemAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: '$ay-month',
+      one: '1-month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yaYuksekAlti(String donem, String pct) {
+    return '$pct below the $donem high';
+  }
+
+  @override
+  String yaDusukUstu(String donem, String pct) {
+    return '$pct above the $donem low';
+  }
+
+  @override
+  String yaYuksekte(String donem) {
+    return 'At the $donem high';
+  }
+
+  @override
+  String yaDusukte(String donem) {
+    return 'At the $donem low';
+  }
+
+  @override
+  String yaSemantik(
+      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
+    return '$baslik: low $dusuk, high $yuksek, today $bugun. $cumle';
+  }
 }

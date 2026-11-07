@@ -17711,6 +17711,61 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır'**
   String get hesapEkleSatiriAlt;
+
+  /// No description provided for @yaBaslikYil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık aralık'**
+  String get yaBaslikYil;
+
+  /// Varlık ekranı yıllık aralık satırı; seri bir yıldan kısaysa başlık
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay, plural, other{Son {ay} ay}}'**
+  String yaBaslikAy(int ay);
+
+  /// No description provided for @yaDonemYil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılın'**
+  String get yaDonemYil;
+
+  /// No description provided for @yaDonemAy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay, plural, other{Son {ay} ayın}}'**
+  String yaDonemAy(int ay);
+
+  /// donem = yaDonemYil ya da yaDonemAy; pct = %8,4
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} en yükseğinin {pct} altında'**
+  String yaYuksekAlti(String donem, String pct);
+
+  /// No description provided for @yaDusukUstu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} en düşüğünün {pct} üstünde'**
+  String yaDusukUstu(String donem, String pct);
+
+  /// No description provided for @yaYuksekte.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} en yükseğinde'**
+  String yaYuksekte(String donem);
+
+  /// No description provided for @yaDusukte.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} en düşüğünde'**
+  String yaDusukte(String donem);
+
+  /// Ekran okuyucu için tek etiket
+  ///
+  /// In tr, this message translates to:
+  /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
+  String yaSemantik(
+      String baslik, String dusuk, String yuksek, String bugun, String cumle);
 }
 
 class _AppLocalizationsDelegate
