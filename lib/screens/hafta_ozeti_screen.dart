@@ -83,6 +83,8 @@ class HaftaOzetiScreen extends ConsumerWidget {
                   .valueOrNull ??
               const <String, AnalizOzeti>{};
           final olagandisi = tum.where((s) => s.rozet.olagandisi).length;
+          // Kapsam (2026-11-07): "son hafta" hangi günler, açık tarihle.
+          final kapsam = haftaAraligi(tum);
           final satirlar = sakinGoster
               ? tum
               : [
@@ -93,6 +95,15 @@ class HaftaOzetiScreen extends ConsumerWidget {
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
                 SandikSpace.md, SandikSpace.screenH(context), SandikSpace.xl),
             children: [
+              if (kapsam != null) ...[
+                Text(
+                  l10n.raporKapsam(fmtTarihAraligi(kapsam.$1, kapsam.$2,
+                      dil: context.tarihDili)),
+                  style: t.bodySmall?.copyWith(
+                      color: c.text58, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: SandikSpace.xxs),
+              ],
               Text(
                 olagandisi > 0
                     ? l10n.rdrHaftaBaslikVar('$olagandisi')

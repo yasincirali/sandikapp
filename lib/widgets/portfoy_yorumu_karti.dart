@@ -13,7 +13,7 @@ import '../services/remote_config_service.dart';
 import '../services/yorum_notu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart' show showSandikConfirm;
-import '../utils/tr_format.dart' show dayKey;
+import '../utils/tr_format.dart' show dayKey, fmtTarihAraligi;
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_async_button.dart';
 import 'sandik_segment.dart';
@@ -76,8 +76,8 @@ mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   /// Rıza yoksa önce sorar; paket [paket] ile o anda kurulur. Başarıda
   /// [yenile] kaydı yeniden okutur.
-  Future<void> yorumIste(
-      Future<PortfoyYorumPaketi?> Function() paket, void Function() yenile) async {
+  Future<void> yorumIste(Future<PortfoyYorumPaketi?> Function() paket,
+      void Function() yenile) async {
     setState(() => hata = null);
     final riza = await ref.read(portfoyYorumRizaProvider.future);
     if (riza != true) {
@@ -188,8 +188,10 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
             return Text(l.pyzVeriYok,
                 style: t.bodySmall?.copyWith(color: c.text58));
           }
-          final aralik = l.flowRange(
-              gunAy.format(d.paket.baslangic), gunAy.format(d.paket.bitis));
+          // Ortak kapsam biçimi (2026-11-07, `fmtTarihAraligi`): yıl da
+          // yazılır, aynı ay tekrar etmez.
+          final aralik = fmtTarihAraligi(d.paket.baslangic, d.paket.bitis,
+              dil: context.tarihDili, kisa: true);
           final kayit = d.kayit;
           final aciklama = tur == YorumTuru.secili
               ? l.pyzSeciliAciklama(aralik)
@@ -198,7 +200,8 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
           final meta = kayit == null
               ? null
               : tur == YorumTuru.secili
-                  ? l.pyzSeciliMeta(DateFormat.Hm(yer).format(kayit.olusturuldu))
+                  ? l.pyzSeciliMeta(
+                      DateFormat.Hm(yer).format(kayit.olusturuldu))
                   : l.pyzMeta(gunAy.format(kayit.olusturuldu),
                       gunAy.format(_siradaki(tur, d.paket.bitis)));
           return _YorumGovdesi(
@@ -331,9 +334,10 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
                 return Text(l.pyzVeriYok,
                     style: t.bodySmall?.copyWith(color: c.text58));
               }
-              final w = PeriodSummaryService.pencere(widget.period, DateTime.now());
-              final aralik =
-                  l.flowRange(gunAy.format(w.start), gunAy.format(anahtar.bitis));
+              final w =
+                  PeriodSummaryService.pencere(widget.period, DateTime.now());
+              final aralik = fmtTarihAraligi(w.start, anahtar.bitis,
+                  dil: context.tarihDili, kisa: true);
               final guncel = kayit != null &&
                   kayit.parmakIzi ==
                       varlikParmakIzi(widget.positionKey, widget.miktar);
@@ -342,7 +346,8 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
                 kayit: kayit,
                 meta: kayit == null
                     ? null
-                    : l.pyzSeciliMeta(DateFormat.Hm(yer).format(kayit.olusturuldu)),
+                    : l.pyzSeciliMeta(
+                        DateFormat.Hm(yer).format(kayit.olusturuldu)),
                 eskidi: kayit != null && !guncel && widget.veriHazir
                     ? l.pyzVarlikEskidi
                     : null,
@@ -390,7 +395,8 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
 /// rengi "destek = al, direnç = sat" diye okunurdu — "Seviye bilgisi"
 /// kararı tam olarak bunu dışarıda bırakıyor. Anlam yalnız sözcükte.
 class SeviyeSatiri extends StatelessWidget {
-  const SeviyeSatiri({super.key, required this.seviyeler, required this.fiyatYaz});
+  const SeviyeSatiri(
+      {super.key, required this.seviyeler, required this.fiyatYaz});
 
   final DestekDirenc seviyeler;
   final String Function(double) fiyatYaz;
@@ -411,12 +417,11 @@ class SeviyeSatiri extends StatelessWidget {
         child: Text.rich(
           TextSpan(children: [
             TextSpan(
-                text: '$ad  ',
-                style: t.bodySmall?.copyWith(color: c.text58)),
+                text: '$ad  ', style: t.bodySmall?.copyWith(color: c.text58)),
             TextSpan(
                 text: aralik(b),
-                style: t.bodyMedium?.copyWith(
-                    color: c.text90, fontWeight: FontWeight.w600)),
+                style: t.bodyMedium
+                    ?.copyWith(color: c.text90, fontWeight: FontWeight.w600)),
             TextSpan(
                 text: '  ${l.seviyeTemas(b.temas)}',
                 style: t.bodySmall?.copyWith(color: c.text58)),
@@ -749,7 +754,8 @@ class _RizaSayfasi extends StatelessWidget {
     final yatay = SandikSpace.screenH(context);
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.md),
+        padding:
+            EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
