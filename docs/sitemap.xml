@@ -2,6 +2,7 @@
 <!-- ÜRETİLDİ: python docs/_build_sitemap.py — elle düzenleme. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://yasincirali.github.io/sandikapp/</loc></url>
+  <url><loc>https://yasincirali.github.io/sandikapp/altin/</loc></url>
   <url><loc>https://yasincirali.github.io/sandikapp/data-deletion/</loc></url>
   <url><loc>https://yasincirali.github.io/sandikapp/data-request/</loc></url>
   <url><loc>https://yasincirali.github.io/sandikapp/enflasyon/</loc></url>

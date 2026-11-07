@@ -9,6 +9,7 @@ import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'supabase_service.dart';
 import '../demo/demo_modu.dart';
+import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/emtia_katalogu.dart';
 import '../models/eurobond.dart';
@@ -296,6 +297,42 @@ class PriceService {
   /// Altın ürününün gram cinsinden ağırlık çarpanı (çeyrek, yarım, ata...).
   /// Bilinmeyen sembolde 1.0 → gram altın gibi davranır.
   static double goldWeightFactor(String symbol) => _goldWeights[symbol] ?? 1.0;
+
+  /// Adedi GRAM olan altın ürünleri (24/22/18/14 ayar, has). Ürünün birimi
+  /// tür listesinden (`GoldSubCategory.unitType`) okunur, burada ikinci bir
+  /// liste tutulmaz: yeni gram ürün eklenince kendiliğinden girer.
+  static final Set<String> _gramBirimliAltinlar = {
+    for (final g in GoldSubCategory.values)
+      if (g.unitType == 'gr')
+        if (goldTickerMap[g.label] case final t?) t,
+  };
+
+  /// Bir altın kaleminin fiziksel gramı ve 24 ayar (has) karşılığı.
+  ///
+  /// ## Neden fiyat tablosundan (Ar-Ge 7 Kas 18:06 #1)
+  /// "Kaç gram altınım var" sorusunun cevabı fiyatın çarpanıyla AYNI
+  /// tablodan gelmeli: [_goldWeights] 22 ayar gram cinsindendir, yani
+  /// `adet × çarpan` kalemin 22 ayar gram karşılığıdır ve ×22/24 onu has
+  /// altına indirir. Ayrı bir ağırlık tablosu yazılsaydı biri düzeltilip
+  /// öteki kalınca ekran "1,75 gr" derken fiyat başka ağırlıkla hesaplanırdı.
+  /// Web hesaplayıcısı (`docs/altin/`) da aynı sayıları taşır
+  /// (`altin_web_agirlik_esleme_test`).
+  ///
+  /// Fiziksel gram: gram ürünlerde adedin kendisi (14 ayar 10 gr bilezik 10
+  /// gramdır), sikkelerde `adet × kalıp ağırlığı`.
+  ///
+  /// Tabloda olmayan sembol (ons `XAUUSD=X`, emtia, boş ticker) `null`:
+  /// bilinmeyen ağırlık uydurulmaz, kalem toplama girmez.
+  static ({double gram, double has})? altinGramKarsiligi(
+      String symbol, double adet) {
+    final carpan = _goldWeights[symbol];
+    if (carpan == null) return null;
+    final gram22 = adet * carpan;
+    return (
+      gram: _gramBirimliAltinlar.contains(symbol) ? adet : gram22,
+      has: gram22 * _goldPurityFactor,
+    );
+  }
 
   static const _tefasPrefix = 'TEFAS:';
 

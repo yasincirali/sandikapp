@@ -21,8 +21,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/sembol_alarmlari_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
+import '../widgets/altin_gram_satiri.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
+import '../models/altin_gram_ozeti.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
@@ -364,8 +366,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// aynı `_filteredType`. Halka mevcut süzgeçle açılır ki şeritte seçili
   /// tür halkada da seçili görünsün. Sayfa dilim seçilince kapanmaz: ortadaki
   /// tutar/yüzde halkanın asıl bilgisidir, kapanırsa görünmez.
-  void _halkayiAc(
-      List<Asset> varliklar, PortfolioState pState, bool pazarAyir) {
+  ///
+  /// [altinGram] dokunuş anında hesaplanır (build dışında); Altın dilimi
+  /// seçiliyken halkanın altında gram satırı olur.
+  void _halkayiAc(List<Asset> varliklar, PortfolioState pState,
+      bool pazarAyir, AltinGramOzeti? altinGram) {
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -388,6 +393,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               baz: ref.read(gosterimBazParaProvider),
               baslangicTuru: _filteredType,
               pazarAyir: pazarAyir,
+              altinGram: altinGram,
               onTypeSelected: (type) {
                 if (mounted) setState(() => _filteredType = type);
               },
@@ -839,7 +845,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                         onTypeSelected: (type) => setState(
                                             () => _filteredType = type),
                                         onHalka: () => _halkayiAc(
-                                            displayAssets, pState, pazarAyir),
+                                            displayAssets,
+                                            pState,
+                                            pazarAyir,
+                                            AltinGramOzeti.sahiplerdenHesapla(
+                                                ownerLots)),
                                       ),
                                     // Liste başlığı + küçük Toplam | Bugün
                                     // (Ar-Ge 5 Kas 20:45 #1, müşteri YAP).
@@ -869,6 +879,19 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                             )
                                           : null,
                                     ),
+                                    // Altın grubu seçiliyken toplam gram
+                                    // (Ar-Ge 7 Kas 18:06 #1). Hesap yalnız
+                                    // bu süzgeçte yapılır; satır kendi
+                                    // içinde gizli bakiyeye ve gramsız
+                                    // portföye (yalnız ons) susar.
+                                    if (secili?.tur == AssetType.altin)
+                                      AltinGramSatiri(
+                                        ozet: AltinGramOzeti
+                                            .sahiplerdenHesapla(ownerLots),
+                                        gizli: ref
+                                            .watch(gosterimBazParaProvider)
+                                            .gizli,
+                                      ),
                                     const SizedBox(height: SandikSpace.xs),
                                     ..._AssetList(
                                       bugun: _bugunModu
@@ -1891,13 +1914,17 @@ class _AssetTypeDonut extends StatefulWidget {
   /// `portfoy_dagilim_cubugu` emekliye ayrılınca 2026-10-20'de kalktı;
   /// halka artık yalnız bu sayfada.
   final PortfoyGrubu? baslangicTuru;
+
+  /// Altın diliminin gram satırı ([AltinGramSatiri]); `null` → satır yok.
+  final AltinGramOzeti? altinGram;
   const _AssetTypeDonut(
       {required this.assets,
       required this.pState,
       required this.baz,
       required this.onTypeSelected,
       this.pazarAyir = false,
-      this.baslangicTuru});
+      this.baslangicTuru,
+      this.altinGram});
 
   @override
   State<_AssetTypeDonut> createState() => _AssetTypeDonutState();
@@ -2067,6 +2094,15 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
             ],
           ),
         ),
+        // Altın dilimi seçiliyken toplam gram, tutarın hemen altında.
+        if (touched?.key.tur == AssetType.altin) ...[
+          const SizedBox(height: SandikSpace.sm),
+          AltinGramSatiri(
+            ozet: widget.altinGram,
+            gizli: widget.baz.gizli,
+            textAlign: TextAlign.center,
+          ),
+        ],
         const SizedBox(height: 28),
         // Kategori legend
         Wrap(

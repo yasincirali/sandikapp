@@ -45,6 +45,14 @@ String fmtNum(double value, {int digits = 2}) {
   return f.format(value);
 }
 
+/// Altın ağırlığı (gram), birimsiz: `1,75` / `42,6` / `1.250,0`.
+///
+/// 10 gramın altında iki ondalık (çeyrek 1,75 gr, has karşılığı 1,60 gr;
+/// tek ondalık "1,8" diye yuvarlayıp kalıbı yanlış söylerdi), üstünde tek
+/// ondalık: toplamda yüzde bir gram okunmaz, yalnız kalabalık yapar.
+/// Birim ("gr" / "g") dile göre .arb metninde yazılır.
+String fmtGram(double gram) => fmtNum(gram, digits: gram.abs() < 10 ? 2 : 1);
+
 /// Değişken ondalıklı sayı — 0 ondalık istenen değer için trailing sıfırları
 /// atar. `#,##0.####` gibi davranır.
 String fmtNumFlex(double value, {int maxDigits = 4}) {

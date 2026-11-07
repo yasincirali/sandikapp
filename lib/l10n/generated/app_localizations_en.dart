@@ -60,9 +60,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fullName => 'Full Name';
 
   @override
-  String get fullNameRequired => 'Enter your full name';
-
-  @override
   String get passwordRepeat => 'Repeat Password';
 
   @override
@@ -79,12 +76,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get haveAccountSignIn => 'Already have an account? Sign in';
-
-  @override
-  String get exitAppTitle => 'Exit the app';
-
-  @override
-  String get exitAppMessage => 'Are you sure you want to exit?';
 
   @override
   String get exit => 'Exit';
@@ -513,9 +504,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otpSentSuffix => '';
 
   @override
-  String get registerNameMissing => 'Enter your full name.';
-
-  @override
   String get registerEmailInvalid => 'Enter a valid email.';
 
   @override
@@ -531,19 +519,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seeAllTransactions => 'See all transactions';
 
   @override
-  String seeAllCount(int count) {
-    return 'See All ($count)';
-  }
-
-  @override
   String get signalDeleteFailed =>
       'Could not delete the notification. Check your connection.';
-
-  @override
-  String get permanentDelete => 'Delete permanently';
-
-  @override
-  String get cancelShort => 'Cancel';
 
   @override
   String get clearAllSignals => 'Clear all signals';
@@ -899,9 +876,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bulkAdd => 'Bulk add';
 
   @override
-  String get orNotInList => 'or not in the list';
-
-  @override
   String get symbolHint => 'Type a symbol (e.g. AAPL, THYAO.IS)';
 
   @override
@@ -921,10 +895,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String totalCostTlEquivalent(String amount, String currency, String rate) {
     return '≈ $amount · 1 $currency = $rate';
   }
-
-  @override
-  String get costPreviewHint =>
-      'Enter a quantity and the total cost appears here.';
 
   @override
   String get totalCostUpper => 'Total cost';
@@ -1134,9 +1104,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fundsLoading => 'Loading funds...';
 
   @override
-  String get pleaseWait => 'Please wait';
-
-  @override
   String breakdownUpAmount(String amount) {
     return 'up $amount';
   }
@@ -1167,16 +1134,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String sinceCpiWindowEnd(String month) {
     return 'Since end of $month';
-  }
-
-  @override
-  String sinceCpiWindowBody(String month, String date) {
-    return 'The figure above includes this stretch; this card updates when $month CPI is published ($date).';
-  }
-
-  @override
-  String sinceCpiWindowBodyLate(String month) {
-    return 'The figure above includes this stretch; this card updates once $month CPI is loaded.';
   }
 
   @override
@@ -1264,16 +1221,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get identityGoldKind => 'Gold Type';
 
   @override
-  String get pickGoldTap => 'Tap to pick a gold type...';
-
-  @override
   String get goldSearchHint => 'Search: quarter, 22 carat, reşat…';
 
   @override
   String get goldTypes => 'Gold Types';
-
-  @override
-  String get goldQuickPick => 'Quick pick';
 
   @override
   String get goldGroupGram => 'Gram';
@@ -1319,11 +1270,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goldUnitOunce => 'oz';
-
-  @override
-  String goldSelectedSemantics(String kind) {
-    return 'Selected gold type: $kind. Double tap to change.';
-  }
 
   @override
   String get identityCurrency => 'Currency';
@@ -1467,10 +1413,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signalSettings => 'Signal settings';
 
   @override
-  String get signalSettingsSubtitle =>
-      'Indicator selection per asset type + Premium';
-
-  @override
   String get priceAlerts => 'Price alerts';
 
   @override
@@ -1566,9 +1508,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get replayTourSubtitle => 'Remind yourself what each screen does';
-
-  @override
-  String get feedbackSubtitle => 'Send us your thoughts';
 
   @override
   String get yasalBelgelerBaslik => 'Legal documents';
@@ -1778,9 +1717,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelWord => 'Cancel';
 
   @override
-  String get noPartnersYet => 'You have no partners yet';
-
-  @override
   String get removePartnerSemantics => 'Remove partner';
 
   @override
@@ -1808,15 +1744,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sandikPremium => 'sandık Premium';
-
-  @override
-  String get premiumPitch => 'Unlimited assets and premium indicators';
-
-  @override
-  String get premiumActive => 'Premium active';
-
-  @override
-  String get premiumActiveBody => 'All advanced features unlocked';
 
   @override
   String get codeCopied => 'Code generated and copied to clipboard';
@@ -1850,9 +1777,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get requestPartnership => 'Request partnership';
-
-  @override
-  String get generatingEllipsis => 'Generating...';
 
   @override
   String get generateCode => 'Generate code';
@@ -1935,22 +1859,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'How would the chart look if you had held today\'s net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.';
 
   @override
-  String get portfolioPerformance => 'Portfolio Performance';
-
-  @override
   String get chartDataFailed => 'Could not load chart data';
 
   @override
   String get chartDataFailedBody =>
       'Price history could not be fetched. Check your connection and try again.';
-
-  @override
-  String intradayMissingBody(String names) {
-    return 'Intraday prices could not be fetched for $names. These assets are drawn FLAT at their last known price. A flat line does not mean the market was quiet.';
-  }
-
-  @override
-  String get raceUpper => 'Race';
 
   @override
   String get changeByTypeUpper => 'By type · price effect';
@@ -2139,15 +2052,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get periodStart => 'Period start';
 
   @override
-  String get yourContribution => 'Net contribution';
-
-  @override
-  String get marketWord => 'Market';
-
-  @override
-  String get cashDividend => 'Of which cash dividends';
-
-  @override
   String get commissionPaid => 'Commission paid';
 
   @override
@@ -2190,9 +2094,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get periodCpi => 'Inflation (CPI)';
-
-  @override
-  String get pointDifference => 'Difference';
 
   @override
   String get realReturn => 'Real return';
@@ -2300,11 +2201,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String portfolioLineInfoSim(String name) {
     return 'For weekly and longer periods the $name line is a simulation: what would have happened had you held today\'s assets since the start of the period. Your buy and sell dates are ignored; it is not your realised return. This keeps it comparable with your watched assets over the same window.';
-  }
-
-  @override
-  String openDetailSemantics(String name) {
-    return 'Open $name details';
   }
 
   @override
@@ -2467,9 +2363,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Try widening the date range or clearing the search.';
 
   @override
-  String get priceAlertsTitle => 'Price Alerts';
-
-  @override
   String get quickActionSearch => 'Search';
 
   @override
@@ -2573,23 +2466,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get topPortfolios => 'Top Portfolios';
 
   @override
-  String topGainersAllocation(String period) {
-    return '$period top gainers\' allocation';
-  }
-
-  @override
-  String get anonymousUpper => 'Anonymous';
-
-  @override
-  String get topPortfoliosSoon =>
-      'Top portfolios appear here once there are enough participants. The anonymous pool is forming…';
-
-  @override
-  String nthPortfolio(int n) {
-    return 'Portfolio #$n';
-  }
-
-  @override
   String get selectedPeriodReturnBody =>
       'The period is split into days. Each day, the assets you held that day are valued at market prices, and the daily returns are chained together.\n\nIf you sold one asset and bought another, each counts only on the days you held it. The 7D / 30D / 1Y choice above changes the result directly.';
 
@@ -2604,9 +2480,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planYearly => 'Yearly';
-
-  @override
-  String get planYearlySubtitle => '7 days free, then renews automatically';
 
   @override
   String get planMonthly => 'Monthly';
@@ -2702,9 +2575,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String medianBehind(String pts) {
     return '$pts points behind the median';
   }
-
-  @override
-  String get lastYearInflation => 'Over the last year, inflation-wise you are ';
 
   @override
   String pointsAhead(String pts) {
@@ -2888,13 +2758,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetDeleted => 'Asset deleted';
 
   @override
-  String get undoFailed => 'Could not undo';
-
-  @override
   String get enterValidAmount => 'Enter a valid amount';
-
-  @override
-  String get dividendSaved => 'Dividend saved';
 
   @override
   String get dividendPayDate => 'Dividend payment date';
@@ -2936,16 +2800,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String boughtAmount(String qty, String unit) {
-    return 'Bought $qty $unit';
-  }
-
-  @override
-  String soldAmount(String qty, String unit) {
-    return 'Sold $qty $unit';
-  }
-
-  @override
   String transactionFailed(String error) {
     return 'Transaction failed. $error';
   }
@@ -2956,9 +2810,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saleValue => 'Sale value';
-
-  @override
-  String get noPriceAlert => 'No price alert';
 
   @override
   String nActiveAlerts(int n) {
@@ -3036,14 +2887,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String targetPctSemantics(String sign, int pct) {
     return 'Target percent $sign $pct';
   }
-
-  @override
-  String get notifyWhenAbove =>
-      'We\'ll let you know when the price rises to this level.';
-
-  @override
-  String get notifyWhenBelow =>
-      'We\'ll let you know when the price falls to this level.';
 
   @override
   String get setAlert => 'Set alert';
@@ -3137,13 +2980,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get technicalOutlookUpper => 'Technical outlook · daily';
-
-  @override
   String get technicalPrefix => 'Technical:';
-
-  @override
-  String get nowUpper => 'Now';
 
   @override
   String get arrowUp => '▲ up';
@@ -3183,11 +3020,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confidenceWord => 'confidence';
-
-  @override
-  String csvRowsAddedToCart(int n) {
-    return '$n rows added to the cart';
-  }
 
   @override
   String get csvImportTitle => 'Add from statement';
@@ -3290,9 +3122,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importScreenshotHint =>
       'Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.';
-
-  @override
-  String get importScreenshotReading => 'Reading image…';
 
   @override
   String get importScreenshotNone =>
@@ -3493,14 +3322,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeFromWatchlist => 'Remove from watchlist';
 
   @override
-  String removeFromWatchlistConfirm(String name) {
-    return 'Remove $name from your watchlist?';
-  }
-
-  @override
-  String get removeWord2 => 'Remove';
-
-  @override
   String get removeFromWatchlistFailed =>
       'Could not remove it. Check your connection.';
 
@@ -3521,34 +3342,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not enough price history for this asset.';
 
   @override
-  String get notInYourPortfolio => 'This asset is not part of your portfolio.';
-
-  @override
   String get searchingEllipsis => 'Searching…';
-
-  @override
-  String get startTypingToSearch => 'Start typing to search.';
 
   @override
   String noResultForQuery(String q) {
     return 'No results for \"$q\".';
-  }
-
-  @override
-  String get inYourPortfolioUpper => 'In your portfolio';
-
-  @override
-  String get searchAllAssetsHint =>
-      'Search stocks, funds, indices, commodities, currency or gold';
-
-  @override
-  String alreadyInPortfolio(String name) {
-    return '$name is already in your portfolio';
-  }
-
-  @override
-  String addedToWatchlist(String name) {
-    return '$name added to your watchlist';
   }
 
   @override
@@ -3604,16 +3402,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String aheadOfInflationPts(String pts) {
     return '$pts points ahead of inflation';
-  }
-
-  @override
-  String betterThanPctInvestors(int pct, String ek) {
-    return 'Better than $pct% of investors';
-  }
-
-  @override
-  String nDaysTracked(int n) {
-    return '$n days tracked';
   }
 
   @override
@@ -3771,10 +3559,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get realReturnPositive =>
-      'Your portfolio delivered a real return above inflation; your purchasing power grew.';
-
-  @override
   String percentileSentence(int pct) {
     return 'You are above $pct% of participants.';
   }
@@ -3836,14 +3620,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get realReturnNegative =>
-      'Your portfolio fell short of inflation; your purchasing power shrank.';
-
-  @override
-  String get realReturnEven =>
-      'Your portfolio kept pace with inflation; your purchasing power held steady.';
-
-  @override
   String nPeopleParen(int n) {
     return '($n people)';
   }
@@ -3903,30 +3679,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTransactionsYet => 'No transactions yet';
 
   @override
-  String get todaysBalanceChange => 'Today\'s total change';
-
-  @override
   String sinceDateToToday(String date) {
     return '$date → today';
-  }
-
-  @override
-  String balanceChangeSince(String date) {
-    return 'Total change since $date';
   }
 
   @override
   String periodChangeSim(String period) {
     return '$period change · simulation';
   }
-
-  @override
-  String periodBalanceChange(String period) {
-    return '$period total change';
-  }
-
-  @override
-  String get marketOnlyRow => 'Price effect only';
 
   @override
   String rowExpandedSemantics(String label) {
@@ -3956,16 +3716,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String flowSellLower(String amount) {
     return 'sold $amount in period';
-  }
-
-  @override
-  String flowSellUpper(String amount) {
-    return 'Sold $amount in period';
-  }
-
-  @override
-  String flowBuyUpper(String amount) {
-    return 'Bought $amount in period';
   }
 
   @override
@@ -4168,9 +3918,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fullscreenChart => 'Open chart full screen';
-
-  @override
   String get whatsNewTitle => 'What\'s New';
 
   @override
@@ -4274,11 +4021,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayMarketOnly => 'price effect only';
 
   @override
-  String todaySessionOpen(String close) {
-    return 'Session open · closes $close';
-  }
-
-  @override
   String todayOpensAt(String when) {
     return 'opens $when';
   }
@@ -4299,29 +4041,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayRealLabel => 'Versus inflation';
 
   @override
-  String get todayRealHint => 'Yearly return minus CPI';
-
-  @override
-  String get todayWeekHint => 'Market effect on your portfolio · summary ready';
-
-  @override
   String get todayGoalLabel => 'Goal';
-
-  @override
-  String get todayGoalSetShort => 'Pick an amount, see what\'s left daily';
-
-  @override
-  String get todayGoalAction => 'Set';
-
-  @override
-  String todayGoalLeftHint(String goal) {
-    return 'Left to $goal';
-  }
-
-  @override
-  String todayGoalValue(int pct, String left) {
-    return '$pct% · $left';
-  }
 
   @override
   String get todayGoalDone => 'Reached';
@@ -4330,9 +4050,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String todayGoalDoneHint(String goal) {
     return 'Goal $goal · pick a new one';
   }
-
-  @override
-  String get todayOpenAction => 'Open';
 
   @override
   String get todayTitle => 'Today';
@@ -4353,68 +4070,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get todayFlat => 'No change today';
-
-  @override
   String todayAt(String time) {
     return 'today at $time';
   }
-
-  @override
-  String todayMarketClosed(String when) {
-    return 'Market closed · opens $when';
-  }
-
-  @override
-  String todayGreenShare(int green, int total) {
-    return '$green of $total holdings in the green';
-  }
-
-  @override
-  String get todayGoalSet => 'Set a goal';
-
-  @override
-  String get todayGoalSetHint =>
-      'Pick a target for your portfolio and track what\'s left every day.';
-
-  @override
-  String todayGoalProgress(int pct, String left) {
-    return '$pct% to goal · $left to go';
-  }
-
-  @override
-  String todayGoalReached(String goal) {
-    return 'Goal reached: $goal';
-  }
-
-  @override
-  String todayInDays(int n) {
-    return 'in $n days';
-  }
-
-  @override
-  String todayEventCpi(String when) {
-    return 'TurkStat releases inflation $when';
-  }
-
-  @override
-  String todayEventHoliday(String when) {
-    return 'Exchange closed $when (public holiday)';
-  }
-
-  @override
-  String todayEventMonthEnd(String when) {
-    return 'Month ends $when; your monthly summary will be ready';
-  }
-
-  @override
-  String todayMonthlySummary(String month) {
-    return 'Your $month summary is ready';
-  }
-
-  @override
-  String get todayMonthlySummaryHint =>
-      'Return, inflation gap and your best holding';
 
   @override
   String todayCloseAt(String close) {
@@ -4423,9 +4081,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayClosedShort => 'Closed';
-
-  @override
-  String get todayMarketOnlyShort => 'price effect';
 
   @override
   String get todayGoalNewAction => 'Pick a new one';
@@ -4480,16 +4135,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayLast12Months => 'last 12 months';
 
   @override
-  String get todayMoveLabel => 'Today\'s move';
-
-  @override
-  String get todayRealYearly => 'yearly';
-
-  @override
   String get todayGoalSetAction => 'Set a goal';
-
-  @override
-  String get todayGoalSetSub => 'See what\'s left every day';
 
   @override
   String todayGoalProgressTitle(int pct) {
@@ -4515,10 +4161,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalRemove => 'Remove goal';
 
   @override
-  String get goalSettingsSubtitle =>
-      'Pick a target; track progress on the Today card';
-
-  @override
   String partnerInviteMessage(String code, String link) {
     return 'Hi! I\'d like to share my sandık portfolio with you.\n\nYour partner code: $code\n\nInstall the app, then enter this code under Profile → \"Enter Partner Code\":\n$link';
   }
@@ -4528,16 +4170,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifTypeMonthly => 'Monthly';
-
-  @override
-  String raceJoinedCount(int count, int min) {
-    return '$count racing today · ranking opens at $min';
-  }
-
-  @override
-  String raceRunningCount(int count) {
-    return '$count racing today';
-  }
 
   @override
   String get marketDollar => 'USD';
@@ -4572,34 +4204,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get briefSlotTitle => 'Brief time';
 
   @override
-  String get briefSlotSubtitle =>
-      'When your daily portfolio move summary arrives';
-
-  @override
   String get briefSlotMorning => 'Morning 09:45';
 
   @override
   String get briefSlotEvening => 'Evening 18:30 (close)';
-
-  @override
-  String todayRealReturnAhead(String pts) {
-    return '$pts pts ahead of inflation · yearly';
-  }
-
-  @override
-  String todayRealReturnBehind(String pts) {
-    return '$pts pts behind inflation · yearly';
-  }
-
-  @override
-  String todayWeeklyUp(String pct) {
-    return 'Last week market +$pct · summary ready';
-  }
-
-  @override
-  String todayWeeklyDown(String pct) {
-    return 'Last week market −$pct · summary ready';
-  }
 
   @override
   String get sectionResult => 'What happened?';
@@ -4618,9 +4226,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myAlarms => 'My alerts';
-
-  @override
-  String get viewChipLabel => 'View';
 
   @override
   String get identityCrypto => 'Cryptocurrency';
@@ -4840,6 +4445,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String pfAltinGramSatiri(String gram, String has) {
+    return 'Total $gram g · $has g in 24K';
+  }
+
+  @override
+  String pfAltinGramSemantik(String gram, String has) {
+    return 'Your gold totals $gram grams, $has grams in 24 karat';
+  }
+
+  @override
   String get pfTodayTraded => 'Traded today';
 
   @override
@@ -4880,9 +4495,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String vsRemovedFromWatchlist(String name) {
     return '$name removed from watchlist';
   }
-
-  @override
-  String get vsUndo => 'Undo';
 
   @override
   String vsChartSemantics(String name, String period) {
@@ -5266,9 +4878,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get depositBank => 'Bank';
 
   @override
-  String get depositBankHint => 'e.g. the name of your bank';
-
-  @override
   String get depositPrincipal => 'Amount deposited';
 
   @override
@@ -5337,9 +4946,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Interest is added to the principal at maturity; until then the value stays at the principal. If you break the term early, the bank may not pay the interest.';
 
   @override
-  String get depositCardTitle => 'Deposit';
-
-  @override
   String depositPeriodN(int n) {
     return 'Period $n';
   }
@@ -5358,9 +4964,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositThisPeriod => 'This period, net';
-
-  @override
-  String get depositTotalReturn => 'Total net return';
 
   @override
   String get depositRenew => 'Renew';
@@ -5573,11 +5176,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pensionContributionAmount => 'Contribution';
 
   @override
-  String pensionContributionGov(String amount) {
-    return 'Government contribution: $amount';
-  }
-
-  @override
   String get pensionContributionGovCapped =>
       'This year\'s government contribution limit is reached.';
 
@@ -5760,9 +5358,6 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get pensionFundsNow => 'Today\'s allocation';
 
   @override
   String get pensionFundsNowHint =>
@@ -6197,13 +5792,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get balanceChangeInclBuys => 'Total change (incl. buys)';
 
   @override
-  String get firstAssetPickTitle => 'What are you saving in?';
-
-  @override
-  String get firstAssetPickHint =>
-      'Pick one, type the amount; the price fills itself.';
-
-  @override
   String get firstAssetGoldGram => 'Gram gold';
 
   @override
@@ -6211,15 +5799,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firstAssetEur => 'Euro';
-
-  @override
-  String get firstAssetFund => 'A fund';
-
-  @override
-  String get firstAssetStock => 'A stock';
-
-  @override
-  String get firstAssetOtherType => 'Add another type';
 
   @override
   String get addDetails => 'Add details (fee, note)';
@@ -6235,12 +5814,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayTopMoverLabel => 'Biggest mover';
-
-  @override
-  String get todayVsInflationYou => 'Your return';
-
-  @override
-  String get todayVsInflationCpi => 'CPI';
 
   @override
   String get vitrinWelcome => 'Welcome';
@@ -6533,15 +6106,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get flowTitleUpper => 'Money flow';
 
   @override
-  String get flowLastWeekIn => 'Net inflow, latest week';
-
-  @override
-  String get flowLastWeekOut => 'Net outflow, latest week';
-
-  @override
-  String get flowLastWeekFlat => 'Net flow, latest week';
-
-  @override
   String flowRange(String from, String to) {
     return '$from - $to';
   }
@@ -6555,23 +6119,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String flowWeekOf(String date) {
-    return 'Week of $date';
-  }
-
-  @override
   String get flowFundSize => 'Fund size';
 
   @override
   String get flowInvestors => 'Investors';
-
-  @override
-  String flowInvestorsDelta(String count, String delta) {
-    return '$count ($delta)';
-  }
-
-  @override
-  String get flowEventsTitle => 'Large moves · last 30 days';
 
   @override
   String flowEventIn(String date) {
@@ -6598,15 +6149,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'No unusually large inflow or outflow in the last 30 days.';
 
   @override
-  String get flowExplain =>
-      'Net flow is money entering the fund minus money leaving it; price changes are not included.';
-
-  @override
-  String flowFootnote(String date) {
-    return 'Source: TEFAS · data as of $date. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.';
-  }
-
-  @override
   String flowStreakIn(String count) {
     return 'Net inflow for $count weeks in a row';
   }
@@ -6628,15 +6170,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get flowPeriodNote =>
-      'Percentages are the flow relative to fund size at the start of the period.';
-
-  @override
-  String flowDecompose(String total, String price, String flow) {
-    return 'Fund size changed $total over the last month: price effect $price, money flow $flow.';
-  }
-
-  @override
   String flowEventEvidenceMulti(String amount, String pct, String days) {
     return '$amount · $pct of fund size · $days trading days in a row';
   }
@@ -6645,39 +6178,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weekTitle => 'This week';
 
   @override
-  String get weekIntro =>
-      'Highlights of the latest week in the assets you hold. Tap a row for details.';
-
-  @override
-  String get weekFundsUpper => 'Money flow in your funds';
-
-  @override
-  String weekRowRange(String label, String range) {
-    return '$label · $range';
-  }
-
-  @override
-  String get weekRowIn => 'Net inflow';
-
-  @override
-  String get weekRowOut => 'Net outflow';
-
-  @override
-  String get weekRowFlat => 'Net flow';
-
-  @override
-  String get weekRowBigIn => 'Large inflow this week';
-
-  @override
-  String get weekRowBigOut => 'Large outflow this week';
-
-  @override
   String get weekEmptyNoData =>
       'Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.';
-
-  @override
-  String get weekFootnote =>
-      'Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio\'s weekly return is under Performance, Summary. Not investment advice.';
 
   @override
   String get weekLink => 'My funds this week';
@@ -6686,18 +6188,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get volTitleUpper => 'Volume radar';
 
   @override
-  String volLastDay(String date) {
-    return 'Traded value · $date';
-  }
-
-  @override
   String volVsAverage(String times) {
     return '$times× the average of the previous 20 days';
-  }
-
-  @override
-  String volPriceSameDay(String pct) {
-    return 'Price that day $pct';
   }
 
   @override
@@ -6707,13 +6199,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String volChartSemantics(String amount) {
     return 'Daily traded value for the last 20 trading days. Latest day $amount.';
   }
-
-  @override
-  String get volExplain =>
-      'Traded value is the total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in or out.';
-
-  @override
-  String get volEventsTitle => 'Unusual volume days · last 30 days';
 
   @override
   String volEventTitle(String date) {
@@ -6729,26 +6214,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get volNoEvents => 'No unusual volume days in the last 30 days.';
 
   @override
-  String volFootnote(String date) {
-    return 'Source: Yahoo Finance end-of-day data · as of $date. This data cannot show who bought or sold. Not investment advice.';
-  }
-
-  @override
   String get cryTitleUpper => 'Buyer pressure';
-
-  @override
-  String cryShareLabel(String date) {
-    return 'Buyer share · $date';
-  }
-
-  @override
-  String cryShareAvg(String pct) {
-    return 'Average of the last 7 days $pct';
-  }
-
-  @override
-  String get cryExplain =>
-      'Buyer share is the part of the day\'s volume that came from market-order buyers. Above 50% means buyers were more eager, below means sellers were; it is not a measure of money flowing in.';
 
   @override
   String cryVolumeLabel(String amount) {
@@ -6756,30 +6222,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cryChartCaption => 'Daily volume (USDT) · last 20 days';
-
-  @override
-  String cryChartSemantics(String amount) {
-    return 'Daily volume for the last 20 days. Latest day $amount.';
-  }
-
-  @override
   String cryEventEvidence(
       String amount, String times, String pct, String share) {
     return '$amount · $times× the average · price $pct · buyer share $share';
-  }
-
-  @override
-  String cryFootnote(String date) {
-    return 'Source: Binance, USDT pair · as of $date. Covers trades on Binance only; this data cannot show who bought or sold. Not investment advice.';
-  }
-
-  @override
-  String get weekVolumeUpper => 'Unusual volume';
-
-  @override
-  String weekVolumeRow(String date) {
-    return 'Unusual volume · $date';
   }
 
   @override
@@ -7565,10 +7010,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get prmHediyeBittiBant =>
-      'Your gift ended; continue where you left off with Premium';
-
-  @override
   String get prmHediyeBittiGor => 'See Premium';
 
   @override
@@ -7755,9 +7196,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get anzAylikGelismeDipnot =>
       'Fund flows from TEFAS, volume from Yahoo Finance and Binance; dividends from your own records.';
-
-  @override
-  String get anzAylikNotlarBaslik => 'AI notes';
 
   @override
   String anzAylikNotlarAralik(String aralik) {
@@ -8207,12 +7645,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get typePickerHint247 => '24/7';
-
-  @override
-  String get s7AraSemantics => 'Search';
-
-  @override
-  String get s7AramaIpucu => 'Search assets, symbols or actions';
 
   @override
   String get s7VarliklarimUpper => 'My assets';
@@ -9207,17 +8639,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ortakGorurHepsi => 'Everything';
-
-  @override
-  String get ortakGorurSecilenler => 'Selected';
-
-  @override
-  String get ortakGorurHepsiAciklama =>
-      'All your portfolios, including ones you add later.';
-
-  @override
-  String get ortakGorurSeciliAciklama =>
-      'A new portfolio stays hidden until you pick it.';
 
   @override
   String get ortakGorurYeniAciklama =>
@@ -10291,11 +9712,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get softUpdateDismiss => 'Dismiss for now';
 
   @override
-  String alertCostRow(String maliyet) {
-    return 'From your cost · $maliyet';
-  }
-
-  @override
   String get alertCostBreakEven => 'My cost';
 
   @override
@@ -10316,11 +9732,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alarmModYuzde => 'Daily %';
-
-  @override
-  String alarmModSemantik(String tur) {
-    return 'Alert type: $tur';
-  }
 
   @override
   String get alarmYuzdeEsikBaslik => 'How big a move today?';
@@ -10812,18 +10223,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kilometreTaslariUpper => 'Your milestones';
 
   @override
-  String get kilometreTaslariTumu => 'All';
-
-  @override
   String get kilometreTaslariTumuEtiket => 'Show all milestones';
 
   @override
   String get kilometreTasiSiradaki => 'Next';
-
-  @override
-  String kilometreTasiEtiket(String baslik) {
-    return '$baslik, milestone';
-  }
 
   @override
   String kilometreTasiSiradakiEtiket(String baslik) {

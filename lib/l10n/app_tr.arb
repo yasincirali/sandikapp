@@ -17,15 +17,12 @@
   "registerWelcome": "Sandığına hoş geldin.",
   "registerSubtitle": "Birkaç adımda hesabını oluştur.",
   "fullName": "Ad soyad",
-  "fullNameRequired": "Ad soyad gir",
   "passwordRepeat": "Şifre tekrar",
   "passwordsMismatch": "Şifreler eşleşmiyor",
   "sifreKuralUzunluk": "En az 8 karakter",
   "sifreKuralHarf": "En az bir harf",
   "sifreKuralRakam": "En az bir rakam",
   "haveAccountSignIn": "Zaten hesabın var mı? Giriş yap",
-  "exitAppTitle": "Uygulamadan çık",
-  "exitAppMessage": "Uygulamadan çıkmak istediğine emin misin?",
   "exit": "Çık",
   "tabHome": "Ana",
   "tabPortfolio": "Portföy",
@@ -197,23 +194,12 @@
   "offlinePricesUnknown": "İnternet yok · son fiyatlar gösteriliyor",
   "otpSentPrefix": "6 haneli kodu\n",
   "otpSentSuffix": "\nadresine gönderdik.",
-  "registerNameMissing": "Ad soyad gir.",
   "registerEmailInvalid": "Geçerli bir e-posta gir.",
   "registerPasswordsMismatch": "Şifreler eşleşmiyor.",
   "refreshPrices": "Fiyatları yenile",
   "portfolioActivity": "Portföy hareketleri",
   "seeAllTransactions": "Tüm hareketleri gör",
-  "seeAllCount": "Tümünü gör ({count})",
-  "@seeAllCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "signalDeleteFailed": "Bildirim silinemedi. Bağlantını kontrol et.",
-  "permanentDelete": "Kalıcı sil",
-  "cancelShort": "Vazgeç",
   "clearAllSignals": "Tüm sinyalleri temizle",
   "clearAllLower": "Tümünü temizle",
   "clearAllSignalsBody": "{count} bildirim geçmişe taşınacak. Kalıcı silmek için geçmişteki \"Geçmişi Sil\" düğmesini kullan.",
@@ -507,7 +493,6 @@
     }
   },
   "bulkAdd": "Toplu ekle",
-  "orNotInList": "veya listede yok",
   "symbolHint": "Sembol yaz (örn: AAPL, THYAO.IS)",
   "companyNameHint": "Şirket adı (opsiyonel, sembolden otomatik çekilir)",
   "goldSemantics": "{kind} altın",
@@ -524,7 +509,6 @@
     "description": "Dövizli alımın toplam maliyet kartında TL karşılığı ve kullanılan kur",
     "placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}, "rate": {"type": "String"}}
   },
-  "costPreviewHint": "Miktar girince toplam maliyet burada görünecek.",
   "totalCostUpper": "Toplam maliyet",
   "transactionDate": "İşlem tarihi",
   "addNote": "Not ekle",
@@ -731,7 +715,6 @@
   },
   "tefasFunds": "TEFAS fonları",
   "fundsLoading": "Fonlar yükleniyor...",
-  "pleaseWait": "Lütfen bekle",
   "breakdownUpAmount": "artış {amount}",
   "@breakdownUpAmount": {
     "placeholders": {
@@ -771,25 +754,6 @@
       }
     }
   },
-  "sinceCpiWindowBody": "Üstteki rakam bu süreyi içeriyor; {month} TÜFE'si açıklanınca ({date}) bu kart güncellenir.",
-  "@sinceCpiWindowBody": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "sinceCpiWindowBodyLate": "Üstteki rakam bu süreyi içeriyor; {month} TÜFE'si yüklenince bu kart güncellenir.",
-  "@sinceCpiWindowBodyLate": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
   "demoBannerTitle": "Örnek portföy",
   "demoBannerSubtitle": "Varlıklar örnek, fiyatlar canlı",
   "demoCreateAccount": "Hesap oluştur",
@@ -817,10 +781,8 @@
   "identityStock": "Hisse",
   "identityFund": "Fon",
   "identityGoldKind": "Altın türü",
-  "pickGoldTap": "Altın türü seçmek için dokun...",
   "goldSearchHint": "Ara: çeyrek, 22 ayar, reşat…",
   "goldTypes": "Altın türleri",
-  "goldQuickPick": "Hızlı seçim",
   "goldGroupGram": "Gram",
   "goldGroupZiynet": "Ziynet",
   "goldGroupSikke": "Sikke",
@@ -836,14 +798,6 @@
   "commoditySelectedSemantics": "Seçili emtia: {name}. Değiştirmek için çift dokun.",
   "@commoditySelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
   "goldUnitOunce": "ons",
-  "goldSelectedSemantics": "Seçili altın türü: {kind}. Değiştirmek için çift dokun.",
-  "@goldSelectedSemantics": {
-    "placeholders": {
-      "kind": {
-        "type": "String"
-      }
-    }
-  },
   "identityCurrency": "Para birimi",
   "identityCommodity": "Emtia",
   "noResultsFor": "\"{q}\" bulunamadı",
@@ -901,7 +855,6 @@
   "signalNotifications": "Teknik sinyal bildirimleri",
   "signalNotificationsSubtitle": "AL/SAT göstergesi tetiklendiğinde bildirim al",
   "signalSettings": "Sinyal ayarları",
-  "signalSettingsSubtitle": "Her varlık türü için gösterge seçimi + Premium",
   "priceAlerts": "Fiyat alarmları",
   "partnerInviteNotifications": "Ortaklık daveti bildirimleri",
   "partnerInviteNotificationsSubtitle": "Yeni ortaklık isteği geldiğinde bildirim al",
@@ -929,7 +882,6 @@
   "sssBizeYaz": "Çözülmedi mi? Bize yaz",
   "replayTour": "Tanıtım turunu yeniden izle",
   "replayTourSubtitle": "Ekranların ne işe yaradığını hatırla",
-  "feedbackSubtitle": "Görüşünü bize ilet",
   "yasalBelgelerBaslik": "Yasal belgeler",
   "yasalBelgelerAlt": "Gizlilik, kullanım koşulları, KVKK, açık rıza, yatırım uyarısı",
   "feedbackDogrudanEposta": "E-postayla yaz",
@@ -1033,7 +985,6 @@
     }
   },
   "cancelWord": "İptal",
-  "noPartnersYet": "Henüz ortağın yok",
   "removePartnerSemantics": "Ortağı sil",
   "removePartnerTitle": "Ortaklığı kaldır",
   "removePartnerBody": "{name} ile ortaklığı kaldırmak istediğine emin misin?",
@@ -1050,9 +1001,6 @@
   "rejectRequest": "Ortaklık isteğini reddet",
   "acceptRequest": "Ortaklık isteğini kabul et",
   "sandikPremium": "Sandık Premium",
-  "premiumPitch": "Sınırsız varlık ve premium göstergeler",
-  "premiumActive": "Premium aktif",
-  "premiumActiveBody": "Tüm gelişmiş özellikler açık",
   "codeCopied": "Kod üretildi ve panoya kopyalandı",
   "tooManyFailedAttempts": "Çok fazla başarısız deneme.\n{wait} sonra tekrar deneyebilirsin.",
   "@tooManyFailedAttempts": {
@@ -1083,7 +1031,6 @@
     }
   },
   "requestPartnership": "Ortaklık iste",
-  "generatingEllipsis": "Üretiliyor...",
   "generateCode": "Kod üret",
   "tabChart": "Grafik",
   "tabSummary": "Özet",
@@ -1127,18 +1074,8 @@
   },
   "simModeTitle": "Bugünkü portföyle",
   "simModeBody": "Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.",
-  "portfolioPerformance": "Portföy performans",
   "chartDataFailed": "Grafik verisi alınamadı",
   "chartDataFailedBody": "Fiyat geçmişi şu an getirilemedi. Bağlantını kontrol edip tekrar deneyebilirsin.",
-  "intradayMissingBody": "{names} için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi. Çizginin düz olması piyasanın durgun olduğu anlamına gelmez.",
-  "@intradayMissingBody": {
-    "placeholders": {
-      "names": {
-        "type": "String"
-      }
-    }
-  },
-  "raceUpper": "Yarış",
   "changeByTypeUpper": "Türe göre · fiyat etkisi",
   "noData": "Veri yok",
   "tooltipReturn": "\nGetiri ",
@@ -1228,9 +1165,6 @@
   },
   "whereItCameFrom": "Nereden geldi",
   "periodStart": "Dönem başı",
-  "yourContribution": "Net katkın",
-  "marketWord": "Piyasa",
-  "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
   "contributionNotReturn": "Yüzde yalnızca fiyat etkisinden hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.",
   "annualRatePct": "{pct} yıllık",
@@ -1285,7 +1219,6 @@
     }
   },
   "periodCpi": "Enflasyon (TÜFE)",
-  "pointDifference": "Aradaki fark",
   "realReturn": "Reel getiri",
   "cpiNotLoaded": "TÜFE verisi henüz yüklenmedi.",
   "cpiNotLoadedBody": "Enflasyon endeksi geldiğinde portföyünün reel getirisi burada görünecek. Tahmini bir sayı gösterilmiyor.",
@@ -1355,14 +1288,6 @@
   },
   "portfolioLineInfoSim": "Haftalık ve daha uzun dönemlerde {name} çizgisi bir simülasyondur: bugünkü varlıklarını dönem başından beri tutsaydın ne olurdu. Alım-satım tarihlerin hesaba katılmaz; gerçekleşmiş getirin değildir. Böylece izlediğin varlıklarla aynı pencerede kıyaslanır.",
   "@portfolioLineInfoSim": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "openDetailSemantics": "{name} detayını aç",
-  "@openDetailSemantics": {
     "placeholders": {
       "name": {
         "type": "String"
@@ -1502,7 +1427,6 @@
   },
   "loadingEllipsis": "Yükleniyor…",
   "widenDateRangeHint": "Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.",
-  "priceAlertsTitle": "Fiyat alarmları",
   "quickActionSearch": "Ara",
   "@quickActionSearch": {
     "description": "Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler)."
@@ -1547,24 +1471,6 @@
     }
   },
   "topPortfolios": "Zirvedeki Portföyler",
-  "topGainersAllocation": "{period} en çok kazananların dağılımı",
-  "@topGainersAllocation": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
-  "anonymousUpper": "Anonim",
-  "topPortfoliosSoon": "Yeterli katılımcı olunca zirve portföyler burada görünecek. Anonim havuz oluşuyor…",
-  "nthPortfolio": "{n}. portföy",
-  "@nthPortfolio": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "selectedPeriodReturnBody": "Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki dönem seçimi sonucu doğrudan değiştirir.",
   "depositsDontChangeRankBody": "Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.",
   "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.",
@@ -1576,7 +1482,6 @@
     }
   },
   "planYearly": "Yıllık",
-  "planYearlySubtitle": "7 gün ücretsiz dene, sonra otomatik yenilenir",
   "planMonthly": "Aylık",
   "planMonthlySubtitle": "İstediğin zaman iptal edebilirsin",
   "subscriptionTerms": "Ödeme App Store hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Ayarlar › Apple ID › Abonelikler'den yönetebilir ya da iptal edebilirsin.",
@@ -1674,7 +1579,6 @@
       }
     }
   },
-  "lastYearInflation": "Son bir yılda enflasyonun ",
   "pointsAhead": "{pts} puan önündesin",
   "@pointsAhead": {
     "placeholders": {
@@ -1831,9 +1735,7 @@
   "alarmKeep": "Alarm kalsın",
   "alarmDeleteFailed": "Alarmlar silinemedi",
   "assetDeleted": "Varlık silindi",
-  "undoFailed": "Geri alınamadı",
   "enterValidAmount": "Geçerli bir tutar gir",
-  "dividendSaved": "Temettü kaydedildi",
   "dividendPayDate": "Temettü ödeme tarihi",
   "addDividend": "Temettü ekle",
   "netAmountReceived": "{name} · ele geçen net tutar",
@@ -1872,28 +1774,6 @@
       }
     }
   },
-  "boughtAmount": "{qty} {unit} alındı",
-  "@boughtAmount": {
-    "placeholders": {
-      "qty": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "soldAmount": "{qty} {unit} satıldı",
-  "@soldAmount": {
-    "placeholders": {
-      "qty": {
-        "type": "String"
-      },
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
   "transactionFailed": "İşlem başarısız. {error}",
   "@transactionFailed": {
     "placeholders": {
@@ -1904,7 +1784,6 @@
   },
   "sellAllWarning": "Tüm miktarı satıyorsun. Pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.",
   "saleValue": "Satış değeri",
-  "noPriceAlert": "Fiyat alarmı yok",
   "nActiveAlerts": "{n} aktif fiyat alarmı",
   "@nActiveAlerts": {
     "placeholders": {
@@ -2004,8 +1883,6 @@
       }
     }
   },
-  "notifyWhenAbove": "Fiyat bu seviyeye çıkınca haber vereceğiz.",
-  "notifyWhenBelow": "Fiyat bu seviyeye inince haber vereceğiz.",
   "setAlert": "Alarmı kur",
   "alertSetBelow": "{name} için alarm kuruldu: {price} altına inince",
   "@alertSetBelow": {
@@ -2084,9 +1961,7 @@
       }
     }
   },
-  "technicalOutlookUpper": "Teknik görünüm · günlük",
   "technicalPrefix": "Teknik:",
-  "nowUpper": "Şu an",
   "arrowUp": "▲ yukarı",
   "arrowDown": "▼ aşağı",
   "arrowFlat": "◆ yatay",
@@ -2121,14 +1996,6 @@
     }
   },
   "confidenceWord": "güven",
-  "csvRowsAddedToCart": "{n} satır sepete eklendi",
-  "@csvRowsAddedToCart": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "csvImportTitle": "Ekstreden ekle",
   "csvImportBody": "Aracı kurum ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da tabloyu kopyalayıp yapıştır. Sütunların adı ve sırası önemli değil: sembol, adet, fiyat, tarih ve alış/satış kendiliğinden bulunur. Alışlar ve satışlar tarihleriyle birlikte gelir.",
   "pasteHere": "Buraya yapıştır",
@@ -2165,7 +2032,6 @@
   "importScreenshotAdd": "Ekran görüntüsünden ekle",
   "importScreenshotFillCosts": "Maliyetleri ekran görüntüsünden doldur",
   "importScreenshotHint": "Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.",
-  "importScreenshotReading": "Görüntü okunuyor…",
   "importScreenshotNone": "Görüntüde varlık bulunamadı. Varlığın kodunun ya da adının, adedinin ve maliyetinin göründüğü ekranı seç.",
   "importScreenshotNoCost": "Görüntüde ortalama maliyet bulunamadı; satırlar olduğu gibi kaldı.",
   "importScreenshotCostsApplied": "{count} varlığın ortalama maliyeti ekran görüntüsünden yazıldı.",
@@ -2388,15 +2254,6 @@
     }
   },
   "removeFromWatchlist": "Takipten çıkar",
-  "removeFromWatchlistConfirm": "{name} takip listenden kaldırılsın mı?",
-  "@removeFromWatchlistConfirm": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "removeWord2": "Çıkar",
   "removeFromWatchlistFailed": "Takipten çıkarılamadı. Bağlantını kontrol et.",
   "currentPriceUpper": "Güncel fiyat",
   "periodNoChange": "{period} · değişim yok",
@@ -2409,31 +2266,11 @@
   },
   "unitPriceDiffNote": "Değişim birim fiyat farkıdır; bu varlığa sahip değilsin.",
   "notEnoughHistoryForAsset": "Bu varlık için yeterli fiyat geçmişi yok.",
-  "notInYourPortfolio": "Bu varlık portföyüne dahil değildir.",
   "searchingEllipsis": "Aranıyor…",
-  "startTypingToSearch": "Aramak için yazmaya başla.",
   "noResultForQuery": "\"{q}\" için sonuç yok.",
   "@noResultForQuery": {
     "placeholders": {
       "q": {
-        "type": "String"
-      }
-    }
-  },
-  "inYourPortfolioUpper": "Portföyünde",
-  "searchAllAssetsHint": "Hisse, fon, endeks, emtia, döviz veya altın ara",
-  "alreadyInPortfolio": "{name}, zaten portföyünde",
-  "@alreadyInPortfolio": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "addedToWatchlist": "{name} takibe alındı",
-  "@addedToWatchlist": {
-    "placeholders": {
-      "name": {
         "type": "String"
       }
     }
@@ -2466,26 +2303,6 @@
     "placeholders": {
       "pts": {
         "type": "String"
-      }
-    }
-  },
-  "betterThanPctInvestors": "Yatırımcıların %{pct}'{ek} iyi",
-  "@betterThanPctInvestors": {
-    "description": "ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden",
-    "placeholders": {
-      "pct": {
-        "type": "int"
-      },
-      "ek": {
-        "type": "String"
-      }
-    }
-  },
-  "nDaysTracked": "{n} gün takip",
-  "@nDaysTracked": {
-    "placeholders": {
-      "n": {
-        "type": "int"
       }
     }
   },
@@ -2575,7 +2392,6 @@
       }
     }
   },
-  "realReturnPositive": "Portföyün enflasyonun üzerinde reel getiri sağladı, alım gücün arttı.",
   "percentileSentence": "Katılımcıların %{pct} kadarının üstündesin.",
   "@percentileSentence": {
     "placeholders": {
@@ -2629,8 +2445,6 @@
       }
     }
   },
-  "realReturnNegative": "Portföyün enflasyonun altında kaldı, alım gücün geriledi.",
-  "realReturnEven": "Portföyün enflasyonla aynı oranda değerlendi, alım gücün korundu.",
   "nPeopleParen": "({n} kişi)",
   "@nPeopleParen": {
     "placeholders": {
@@ -2685,17 +2499,8 @@
   },
   "noMatchingRecords": "Filtreye uyan kayıt yok",
   "noTransactionsYet": "Henüz işlem yok",
-  "todaysBalanceChange": "Bugünkü toplam değişim",
   "sinceDateToToday": "{date} → bugün",
   "@sinceDateToToday": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "balanceChangeSince": "{date} toplam değişim",
-  "@balanceChangeSince": {
     "placeholders": {
       "date": {
         "type": "String"
@@ -2710,15 +2515,6 @@
       }
     }
   },
-  "periodBalanceChange": "{period} toplam değişim",
-  "@periodBalanceChange": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
-  "marketOnlyRow": "Sadece fiyat etkisi",
   "rowExpandedSemantics": "{label}, açık. Kapatmak için çift dokun.",
   "@rowExpandedSemantics": {
     "placeholders": {
@@ -2761,22 +2557,6 @@
   },
   "flowSellLower": "dönem içi satış {amount}",
   "@flowSellLower": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "flowSellUpper": "Dönem içi satış {amount}",
-  "@flowSellUpper": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "flowBuyUpper": "Dönem içi alım {amount}",
-  "@flowBuyUpper": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -2910,7 +2690,6 @@
   "chartCandleFromCloses": "Bu varlık günde tek fiyat yayımlar; mumlar günlük fiyatlardan kurulur.",
   "chartOhlcLine": "A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}",
   "@chartOhlcLine": {"description": "Crosshair: imlecin altındaki mumun açılış, en yüksek, en düşük, kapanış fiyatı.", "placeholders": {"acilis": {"type": "String"}, "yuksek": {"type": "String"}, "dusuk": {"type": "String"}, "kapanis": {"type": "String"}}},
-  "fullscreenChart": "Grafiği tam ekran aç",
   "whatsNewTitle": "Yenilikler",
   "@whatsNewTitle": {},
   "whatsNewSubtitle": "Bu sürümde neler değişti",
@@ -2996,14 +2775,6 @@
   "rateAppTitle": "sandık'ı değerlendir",
   "rateAppSubtitle": "Mağazada puan ver",
   "todayMarketOnly": "sadece fiyat etkisi",
-  "todaySessionOpen": "Seans açık · {close} kapanış",
-  "@todaySessionOpen": {
-    "placeholders": {
-      "close": {
-        "type": "String"
-      }
-    }
-  },
   "todayOpensAt": "{when} açılır",
   "@todayOpensAt": {
     "placeholders": {
@@ -3020,30 +2791,7 @@
   },
   "todayLoading": "Gün içi veri geliyor",
   "todayRealLabel": "Enflasyona göre",
-  "todayRealHint": "Yıllık getirin ile TÜFE farkı",
-  "todayWeekHint": "Piyasanın portföyüne etkisi · özet hazır",
   "todayGoalLabel": "Hedef",
-  "todayGoalSetShort": "Tutar seç, kalanı her gün gör",
-  "todayGoalAction": "Belirle",
-  "todayGoalLeftHint": "{goal} hedefe kalan",
-  "@todayGoalLeftHint": {
-    "placeholders": {
-      "goal": {
-        "type": "String"
-      }
-    }
-  },
-  "todayGoalValue": "%{pct} · {left}",
-  "@todayGoalValue": {
-    "placeholders": {
-      "pct": {
-        "type": "int"
-      },
-      "left": {
-        "type": "String"
-      }
-    }
-  },
   "todayGoalDone": "Ulaşıldı",
   "todayGoalDoneHint": "Hedefin {goal} · yenisini seç",
   "@todayGoalDoneHint": {
@@ -3053,7 +2801,6 @@
       }
     }
   },
-  "todayOpenAction": "Aç",
   "todayTitle": "Bugün",
   "todayScopeOf": "{name} bugünü",
   "@todayScopeOf": {
@@ -3086,7 +2833,6 @@
       }
     }
   },
-  "todayFlat": "Bugün değişmedi",
   "todayAt": "bugün {time}",
   "@todayAt": {
     "placeholders": {
@@ -3095,87 +2841,6 @@
       }
     }
   },
-  "todayMarketClosed": "Piyasa kapalı · {when} açılır",
-  "@todayMarketClosed": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayGreenShare": "{green}/{total} varlığın artıda",
-  "@todayGreenShare": {
-    "placeholders": {
-      "green": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "todayGoalSet": "Bir hedef belirle",
-  "todayGoalSetHint": "Portföyün için bir tutar seç; ne kadar kaldığını her gün burada gör.",
-  "todayGoalProgress": "Hedefe %{pct} · {left} kaldı",
-  "@todayGoalProgress": {
-    "placeholders": {
-      "pct": {
-        "type": "int"
-      },
-      "left": {
-        "type": "String"
-      }
-    }
-  },
-  "todayGoalReached": "Hedefine ulaştın: {goal}",
-  "@todayGoalReached": {
-    "placeholders": {
-      "goal": {
-        "type": "String"
-      }
-    }
-  },
-  "todayInDays": "{n} gün sonra",
-  "@todayInDays": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "todayEventCpi": "TÜİK enflasyonu {when} açıklıyor",
-  "@todayEventCpi": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventHoliday": "Borsa {when} kapalı (resmî tatil)",
-  "@todayEventHoliday": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventMonthEnd": "Ay {when} bitiyor; aylık özetin hazır olacak",
-  "@todayEventMonthEnd": {
-    "placeholders": {
-      "when": {
-        "type": "String"
-      }
-    }
-  },
-  "todayMonthlySummary": "{month} özetin hazır",
-  "@todayMonthlySummary": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
-  "todayMonthlySummaryHint": "Getirin, enflasyon farkı ve en iyi varlığın",
   "todayCloseAt": "{close} kapanış",
   "@todayCloseAt": {
     "placeholders": {
@@ -3185,7 +2850,6 @@
     }
   },
   "todayClosedShort": "Kapalı",
-  "todayMarketOnlyShort": "fiyat etkisi",
   "todayGoalNewAction": "Yenisini seç",
   "todayVerdictUp": "Yükseldi",
   "todayVerdictDown": "Geriledi",
@@ -3219,10 +2883,7 @@
     }
   },
   "todayLast12Months": "son 12 ay",
-  "todayMoveLabel": "Günün hareketi",
-  "todayRealYearly": "yıllık",
   "todayGoalSetAction": "Hedef belirle",
-  "todayGoalSetSub": "Kalanı her gün gör",
   "todayGoalProgressTitle": "Hedefe %{pct}",
   "@todayGoalProgressTitle": {
     "placeholders": {
@@ -3243,7 +2904,6 @@
   "goalHint": "Ana sayfada ilerlemeni gösterir; hesapları değiştirmez.",
   "goalInvalid": "Geçerli bir tutar gir",
   "goalRemove": "Hedefi kaldır",
-  "goalSettingsSubtitle": "Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör",
   "partnerInviteMessage": "Merhaba! sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\nOrtak kodun: {code}\n\nUygulamayı indir, Profil → \"Ortak Kodu Gir\" bölümünden bu kodu gir:\n{link}",
   "@partnerInviteMessage": {
     "placeholders": {
@@ -3257,25 +2917,6 @@
   },
   "partnerInviteSubject": "sandık ortak daveti",
   "notifTypeMonthly": "Aylık",
-  "raceJoinedCount": "{count} kişi bugün yarışta · sıralama {min} kişide açılır",
-  "@raceJoinedCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "min": {
-        "type": "int"
-      }
-    }
-  },
-  "raceRunningCount": "{count} kişi bugün yarışıyor",
-  "@raceRunningCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "marketDollar": "Dolar",
   "marketEuro": "Euro",
   "marketGold": "Gram altın",
@@ -3293,48 +2934,14 @@
   },
   "alarmSuggestAction": "Alarm kur",
   "briefSlotTitle": "Brifing saati",
-  "briefSlotSubtitle": "Portföyündeki günlük hareket özeti ne zaman gelsin",
   "briefSlotMorning": "Sabah 09:45",
   "briefSlotEvening": "Akşam 18:30 (kapanış)",
-  "todayRealReturnAhead": "{pts} puan enflasyonun önündesin · yıllık",
-  "@todayRealReturnAhead": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "todayRealReturnBehind": "{pts} puan enflasyonun gerisindesin · yıllık",
-  "@todayRealReturnBehind": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeeklyUp": "Geçen hafta piyasadan +{pct} · özetin hazır",
-  "@todayWeeklyUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeeklyDown": "Geçen hafta piyasadan −{pct} · özetin hazır",
-  "@todayWeeklyDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
   "sectionResult": "Ne oldu?",
   "sectionWhy": "Neden böyle?",
   "sectionDetail": "Ayrıntılar",
   "sectionDepth": "Daha fazlası",
   "sectionDepthHint": "Yıllık getiri, sağlık, karakter",
   "myAlarms": "Alarmlarım",
-  "viewChipLabel": "Görünüm",
   "identityCrypto": "Kripto para",
   "pickCryptoTap": "Kripto seçmek için dokun",
   "pickCryptoPrompt": "Bir kripto para seç",
@@ -3457,6 +3064,10 @@
   "@pfModeA11y": {"placeholders": {"mode": {"type": "String"}}},
   "pfAssetsHeader": "{count, plural, =1{1 varlık} other{{count} varlık}}",
   "@pfAssetsHeader": {"placeholders": {"count": {"type": "int"}}},
+  "pfAltinGramSatiri": "Toplam {gram} gr · 24 ayar karşılığı {has} gr",
+  "@pfAltinGramSatiri": {"placeholders": {"gram": {"type": "String"}, "has": {"type": "String"}}},
+  "pfAltinGramSemantik": "Altının toplamı {gram} gram, 24 ayar karşılığı {has} gram",
+  "@pfAltinGramSemantik": {"placeholders": {"gram": {"type": "String"}, "has": {"type": "String"}}},
   "pfTodayTraded": "Bugün işlem var",
   "pfTodayNoData": "Gün içi veri yok",
   "pfTodayWaiting": "Veri bekleniyor",
@@ -3471,7 +3082,6 @@
   "vsOwnedNote": "Bu varlık portföyünde. Al ve sat pozisyon ekranından yapılır.",
   "vsRemovedFromWatchlist": "{name} takipten çıkarıldı",
   "@vsRemovedFromWatchlist": {"placeholders": {"name": {"type": "String"}}},
-  "vsUndo": "Geri al",
   "vsChartSemantics": "{name} fiyat grafiği, {period}",
   "@vsChartSemantics": {"placeholders": {"name": {"type": "String"}, "period": {"type": "String"}}},
   "vsOpenDetailSemantics": "{name} grafiğini ve istatistiklerini gör",
@@ -3700,7 +3310,6 @@
   "tickerHintDeposit": "Sözleşmeden hesaplanır",
   "tickerHintPension": "TEFAS emeklilik fonu kodu",
   "depositBank": "Banka",
-  "depositBankHint": "Örn. Enpara, Garanti BBVA",
   "depositPrincipal": "Yatırdığın tutar",
   "depositRate": "Yıllık faiz (brüt, %)",
   "depositKindTerm": "Vadeli",
@@ -3729,7 +3338,6 @@
   "depositErrorDays": "Vadeyi gün olarak yaz.",
   "depositErrorWithholding": "Stopaj 0 ile 100 arasında olmalı.",
   "depositAccrualNote": "Faiz vade sonunda anaparaya eklenir; o güne kadar değer anaparada kalır. Vadeyi erken bozarsan banka faizi ödemeyebilir.",
-  "depositCardTitle": "Mevduat",
   "depositPeriodN": "{n}. dönem",
   "@depositPeriodN": {
     "placeholders": {
@@ -3749,7 +3357,6 @@
   "depositMatured": "Vadesi doldu",
   "depositMaturedBody": "Faiz eklendi. Yeni dönemi başlatmak için yeni faizi gir; girmezsen değer olduğu gibi kalır.",
   "depositThisPeriod": "Bu dönem net",
-  "depositTotalReturn": "Toplam net getiri",
   "depositRenew": "Yenile",
   "depositWithdraw": "Çektim",
   "depositRenewTitle": "Yeni dönem",
@@ -3842,14 +3449,6 @@
   "pensionAddContribution": "Bu ayın katkısını ekle",
   "pensionContributionTitle": "Katkı ekle",
   "pensionContributionAmount": "Katkı tutarı",
-  "pensionContributionGov": "Devlet katkısı: {amount}",
-  "@pensionContributionGov": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "pensionContributionGovCapped": "Bu yılın devlet katkısı sınırı doldu.",
   "pensionContributionSaved": "Katkı eklendi",
   "pensionContributionDue": "Bu ayın katkısı henüz eklenmedi.",
@@ -3951,7 +3550,6 @@
       }
     }
   },
-  "pensionFundsNow": "Bugünkü dağılım",
   "pensionFundsNowHint": "Paylar fonların bugünkü değerinden; fiyatlar farklı yürüdüğü için katkı talimatından ayrışabilir.",
   "pensionContributionPlan": "Yeni katkılar: {plan}",
   "@pensionContributionPlan": {
@@ -4341,21 +3939,14 @@
   "returnSince": "{date} itibarıyla getirin",
   "@returnSince": {"placeholders": {"date": {"type": "String"}}},
   "balanceChangeInclBuys": "Toplam değişim (alımlar dahil)",
-  "firstAssetPickTitle": "Ne biriktiriyorsun?",
-  "firstAssetPickHint": "Seç, miktarını yaz; fiyat kendiliğinden gelir.",
   "firstAssetGoldGram": "Gram altın",
   "firstAssetUsd": "Dolar",
   "firstAssetEur": "Euro",
-  "firstAssetFund": "Bir fon",
-  "firstAssetStock": "Bir hisse",
-  "firstAssetOtherType": "Başka bir tür ekle",
   "addDetails": "Ayrıntı ekle (komisyon, not)",
   "addByTyping": "Yazarak ekle",
   "importFromStatement": "Ekstreden ekle",
   "orWithEmail": "veya e-postayla",
   "todayTopMoverLabel": "En çok oynayan",
-  "todayVsInflationYou": "Getirin",
-  "todayVsInflationCpi": "TÜFE",
   "vitrinWelcome": "Hoş geldin",
   "vitrinTitle": "Neye sahipsin?",
   "vitrinHint": "Dokun, miktarını yaz. Fiyat canlı gelir, sandığın kendini günceller.",
@@ -4512,9 +4103,6 @@
   },
   "yasalBelgeYatirimUyarisi": "Yatırım Uyarısı",
   "flowTitleUpper": "Para akışı",
-  "flowLastWeekIn": "Son hafta net giriş",
-  "flowLastWeekOut": "Son hafta net çıkış",
-  "flowLastWeekFlat": "Son hafta net akış",
   "flowRange": "{from} - {to}",
   "@flowRange": {
     "description": "Para akışı kartında son haftanın tarih aralığı: '29 Eyl - 2 Eki'.",
@@ -4530,23 +4118,8 @@
       "amount": {"type": "String"}
     }
   },
-  "flowWeekOf": "{date} haftası",
-  "@flowWeekOf": {
-    "placeholders": {
-      "date": {"type": "String"}
-    }
-  },
   "flowFundSize": "Fon büyüklüğü",
   "flowInvestors": "Yatırımcı sayısı",
-  "flowInvestorsDelta": "{count} ({delta})",
-  "@flowInvestorsDelta": {
-    "description": "Yatırımcı sayısı ve bir önceki işlem gününe göre farkı: '40.518 (+12)'.",
-    "placeholders": {
-      "count": {"type": "String"},
-      "delta": {"type": "String"}
-    }
-  },
-  "flowEventsTitle": "Büyük hareketler · son 30 gün",
   "flowEventIn": "Büyük giriş · {date}",
   "@flowEventIn": {
     "placeholders": {
@@ -4575,13 +4148,6 @@
     }
   },
   "flowNoEvents": "Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.",
-  "flowExplain": "Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.",
-  "flowFootnote": "Kaynak: TEFAS · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.",
-  "@flowFootnote": {
-    "placeholders": {
-      "date": {"type": "String"}
-    }
-  },
   "flowStreakIn": "{count} haftadır üst üste net giriş",
   "@flowStreakIn": {
     "placeholders": {
@@ -4612,21 +4178,6 @@
       }
     }
   },
-  "flowPeriodNote": "Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.",
-  "flowDecompose": "Son 1 ayda fon büyüklüğü {total} değişti: fiyat etkisi {price}, para akışı {flow}.",
-  "@flowDecompose": {
-    "placeholders": {
-      "total": {
-        "type": "String"
-      },
-      "price": {
-        "type": "String"
-      },
-      "flow": {
-        "type": "String"
-      }
-    }
-  },
   "flowEventEvidenceMulti": "{amount} · fon büyüklüğüne oranı {pct} · {days} işlem günü üst üste",
   "@flowEventEvidenceMulti": {
     "placeholders": {
@@ -4642,49 +4193,13 @@
     }
   },
   "weekTitle": "Haftanın özeti",
-  "weekIntro": "Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.",
-  "weekFundsUpper": "Fonlarında para akışı",
-  "weekRowRange": "{label} · {range}",
-  "@weekRowRange": {
-    "description": "Haftanın özeti satırı: 'Net çıkış · 28 Eyl - 2 Eki'.",
-    "placeholders": {
-      "label": {
-        "type": "String"
-      },
-      "range": {
-        "type": "String"
-      }
-    }
-  },
-  "weekRowIn": "Net giriş",
-  "weekRowOut": "Net çıkış",
-  "weekRowFlat": "Net akış",
-  "weekRowBigIn": "Bu hafta büyük giriş var",
-  "weekRowBigOut": "Bu hafta büyük çıkış var",
   "weekEmptyNoData": "Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.",
-  "weekFootnote": "Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet'te. Yatırım tavsiyesi değildir.",
   "weekLink": "Tüm fonlarımın haftası",
   "volTitleUpper": "Hacim radarı",
-  "volLastDay": "Para hacmi · {date}",
-  "@volLastDay": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "volVsAverage": "Önceki 20 günün ortalamasının {times} katı",
   "@volVsAverage": {
     "placeholders": {
       "times": {
-        "type": "String"
-      }
-    }
-  },
-  "volPriceSameDay": "Aynı gün fiyat {pct}",
-  "@volPriceSameDay": {
-    "placeholders": {
-      "pct": {
         "type": "String"
       }
     }
@@ -4698,8 +4213,6 @@
       }
     }
   },
-  "volExplain": "Para hacmi, o gün el değiştiren hisselerin toplam tutarıdır. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi ya da çıkışı demek değildir.",
-  "volEventsTitle": "Olağandışı hacim günleri · son 30 gün",
   "volEventTitle": "Olağandışı hacim · {date}",
   "@volEventTitle": {
     "placeholders": {
@@ -4723,43 +4236,9 @@
     }
   },
   "volNoEvents": "Son 30 günde olağandışı hacim günü yok.",
-  "volFootnote": "Kaynak: Yahoo Finance gün sonu verisi · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.",
-  "@volFootnote": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "cryTitleUpper": "Alıcı baskısı",
-  "cryShareLabel": "Alıcı payı · {date}",
-  "@cryShareLabel": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "cryShareAvg": "Son 7 günün ortalaması {pct}",
-  "@cryShareAvg": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "cryExplain": "Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.",
   "cryVolumeLabel": "İşlem hacmi {amount}",
   "@cryVolumeLabel": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "cryChartCaption": "Günlük işlem hacmi (USDT) · son 20 gün",
-  "cryChartSemantics": "Son 20 günün günlük işlem hacmi. Son gün {amount}.",
-  "@cryChartSemantics": {
     "placeholders": {
       "amount": {
         "type": "String"
@@ -4779,23 +4258,6 @@
         "type": "String"
       },
       "share": {
-        "type": "String"
-      }
-    }
-  },
-  "cryFootnote": "Kaynak: Binance, USDT paritesi · veri tarihi {date}. Yalnız Binance'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.",
-  "@cryFootnote": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "weekVolumeUpper": "Olağandışı hacim",
-  "weekVolumeRow": "Olağandışı hacim · {date}",
-  "@weekVolumeRow": {
-    "placeholders": {
-      "date": {
         "type": "String"
       }
     }
@@ -5387,7 +4849,6 @@
       "sayi": {"type": "int"}
     }
   },
-  "prmHediyeBittiBant": "Hediyen bitti; Premium'la kaldığın yerden devam et",
   "prmHediyeBittiGor": "Premium'u gör",
   "prmHediyeBittiSonra": "Şimdi değil",
   "prmAbonelikAylik": "Premium · aylık",
@@ -5540,7 +5001,6 @@
     }
   },
   "anzAylikGelismeDipnot": "Fon akışı TEFAS, hacim Yahoo Finance ve Binance verisinden; temettüler kendi kayıtlarından.",
-  "anzAylikNotlarBaslik": "Yapay zekâ notları",
   "anzAylikNotlarAralik": "Notlar {aralik} verisinden yazıldı.",
   "@anzAylikNotlarAralik": {
     "placeholders": {
@@ -5875,8 +5335,6 @@
   "typePickerHintBistOpen": "BIST açık",
   "typePickerHintBistClosed": "BIST kapalı",
   "typePickerHint247": "7/24",
-  "s7AraSemantics": "Ara",
-  "s7AramaIpucu": "Varlık, sembol ya da işlem ara",
   "s7VarliklarimUpper": "Varlıklarım",
   "s7PiyasaUpper": "Piyasa",
   "s7EylemlerUpper": "Eylemler",
@@ -6256,9 +5714,6 @@
   "ortakGorurAciklama": "{ad} seçtiklerini tek liste olarak görür, portföy adlarını görmez. Seçmediklerin onun telefonuna hiç gitmez.",
   "@ortakGorurAciklama": {"placeholders": {"ad": {"type": "String"}}},
   "ortakGorurHepsi": "Hepsi",
-  "ortakGorurSecilenler": "Seçtiklerim",
-  "ortakGorurHepsiAciklama": "Bütün portföylerin, sonradan açacakların dahil.",
-  "ortakGorurSeciliAciklama": "Yeni açtığın portföy, sen seçene kadar gizli kalır.",
   "ortakGorurYeniAciklama": "Hepsi açıkken sonradan açacağın portföyler de görünür. Birini kapatırsan yeni portföyler sen açana kadar gizli kalır.",
   "ortakGorurHicbiri": "Hiçbirini seçmezsen {ad} varlıklarını göremez; ortaklık sürer.",
   "@ortakGorurHicbiri": {"placeholders": {"ad": {"type": "String"}}},
@@ -6616,8 +6071,6 @@
   "softUpdateTitle": "Yeni sürüm hazır",
   "softUpdateBody": "Son düzeltmeler ve yenilikler için mağazadan güncelle.",
   "softUpdateDismiss": "Şimdilik kapat",
-  "alertCostRow": "Maliyetine göre · {maliyet}",
-  "@alertCostRow": {"placeholders": {"maliyet": {"type": "String"}}},
   "alertCostBreakEven": "Maliyetim",
   "alertCostPct": "Maliyet {pct}",
   "@alertCostPct": {"placeholders": {"pct": {"type": "String"}}},
@@ -6626,8 +6079,6 @@
   "@alertCostPctSemantics": {"placeholders": {"sign": {"type": "String"}, "pct": {"type": "int"}}},
   "alarmModFiyat": "Fiyat",
   "alarmModYuzde": "Günlük yüzde",
-  "alarmModSemantik": "Alarm türü: {tur}",
-  "@alarmModSemantik": {"placeholders": {"tur": {"type": "String"}}},
   "alarmYuzdeEsikBaslik": "Bugün ne kadar oynarsa?",
   "alarmYuzdeEsikSemantik": "Günlük yüzde {n} eşiği",
   "@alarmYuzdeEsikSemantik": {"placeholders": {"n": {"type": "int"}}},
@@ -6805,11 +6256,8 @@
   "alarmOneriBaslik": "Hızlı başla",
   "alarmOneriAciklama": "Gün içinde %2 oynarsa haber verelim",
   "kilometreTaslariUpper": "Kilometre taşların",
-  "kilometreTaslariTumu": "Tümü",
   "kilometreTaslariTumuEtiket": "Tüm kilometre taşlarını göster",
   "kilometreTasiSiradaki": "Sıradaki",
-  "kilometreTasiEtiket": "{baslik}, kilometre taşı",
-  "@kilometreTasiEtiket": {"placeholders": {"baslik": {"type": "String"}}},
   "kilometreTasiSiradakiEtiket": "Sıradaki kilometre taşı: {baslik}",
   "@kilometreTasiSiradakiEtiket": {"placeholders": {"baslik": {"type": "String"}}},
   "kilometreTasiKalan": "{tutar} kaldı",
