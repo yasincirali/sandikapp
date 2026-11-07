@@ -80,17 +80,20 @@ Future<Uint8List> pdfYaz(
             logo: logoImg,
             belgeTuru: b.belgeTuru,
             baslik: _ilkHarfBuyuk(baslik),
-            alt: b.altBaslik),
+            alt: b.kapsam == null
+                ? b.altBaslik
+                : '${b.kapsam} · ${b.altBaslik}'),
         pw.SizedBox(height: 14 + 2.2 + 16),
         _gostergeler(pdfOzeti(b.ozet)),
         if (b.oneCikanlar.isNotEmpty) ...[
           pw.SizedBox(height: 14),
           _oneCikanlar(b.oneCikanlar),
         ],
-        for (final m in b.bolumler) ...[
-          pw.SizedBox(height: 14),
-          ..._metinBolumu(m),
-        ],
+        if (!b.tablolarOnce)
+          for (final m in b.bolumler) ...[
+            pw.SizedBox(height: 14),
+            ..._metinBolumu(m),
+          ],
         if (b.grafikler.isNotEmpty) ...[
           pw.SizedBox(height: 16),
           _grafikler(b.grafikler),
@@ -104,6 +107,11 @@ Future<Uint8List> pdfYaz(
           ] else
             ..._tablo(t),
         ],
+        if (b.tablolarOnce)
+          for (final m in b.bolumler) ...[
+            pw.SizedBox(height: 14),
+            ..._metinBolumu(m),
+          ],
         pw.SizedBox(height: 18),
         bolumBasligi('Notlar'),
         for (final d in b.dipnotlar)

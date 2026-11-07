@@ -25,6 +25,8 @@ class RaporBelgesi {
     this.grafikler = const [],
     this.bolumler = const [],
     this.kampanya = 'rapor',
+    this.kapsam,
+    this.tablolarOnce = false,
   });
 
   /// Belge başlığı ("sandık · 2025 yıllık rapor").
@@ -66,6 +68,18 @@ class RaporBelgesi {
   /// (belge türü; ör. `yillik_rapor`). Kaç kurulumu hangi belgenin
   /// getirdiği ölçülür; kişi ya da gönderen izlenmez.
   final String kampanya;
+
+  /// Belgenin KAPSADIĞI dönem, tam cümle ("Kapsam: 1–31 Ekim 2026"). Başlık
+  /// bloğunun alt satırının başına yazılır. yasin 2026-11-07: "tüm
+  /// raporlarda kapsadığı dataların zaman aralığı belirtilmeli". Her rapor
+  /// belgesi verir (`rapor_kapsam_satiri_test`); `null` yalnız eski çağrı
+  /// uyumu için.
+  final String? kapsam;
+
+  /// Tablolar metin bölümlerinden ÖNCE mi? Aylık raporda sayılar (ayın
+  /// varlıkları, para akışı) notlardan önce okunur; diğer belgeler eski
+  /// sırada kalır.
+  final bool tablolarOnce;
 }
 
 /// Bir metin bölümü: başlık ("THYAO"), isteğe bağlı durum etiketi

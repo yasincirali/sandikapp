@@ -7589,7 +7589,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String anzAylikEksik(String kodlar) {
-    return '$kodlar için bu ay not çıkmadı; sayıları kendi sayfalarında.';
+    return '$kodlar için bu ay yapay zekâ notu çıkmadı.';
   }
 
   @override
@@ -7601,6 +7601,101 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get anzAylikBos => 'Bu ayın raporu henüz hazır değil.';
+
+  @override
+  String raporKapsam(String aralik) {
+    return 'Kapsam: $aralik';
+  }
+
+  @override
+  String raporKapsamSuren(String aralik) {
+    return 'Kapsam: $aralik, bugüne kadar';
+  }
+
+  @override
+  String raporFiyatTarihi(String tarih) {
+    return 'Fiyatlar $tarih itibarıyla.';
+  }
+
+  @override
+  String get anzAylikVarliklarBaslik => 'Ayın varlıkları';
+
+  @override
+  String get anzAylikVarliklarDipnot =>
+      'Ay başına göre değişim; ay içindeki alım ve satımın etkisi ayıklandı.';
+
+  @override
+  String anzAylikOlculemeyen(String adlar) {
+    return '$adlar için fiyat serisi yok, değişimi yazılmadı.';
+  }
+
+  @override
+  String anzAylikSemVarlik(String ad, String yuzde, String tutar) {
+    return '$ad: ayın değişimi $yuzde, piyasa etkisi $tutar';
+  }
+
+  @override
+  String get anzAylikAkisBaslik => 'Para girişi ve çıkışı';
+
+  @override
+  String get anzAylikAkisAlim => 'Alımlar';
+
+  @override
+  String get anzAylikAkisSatis => 'Satışlar';
+
+  @override
+  String get anzAylikAkisTemettu => 'Temettü';
+
+  @override
+  String get anzAylikAkisNet => 'Net katkın';
+
+  @override
+  String anzAylikAkisAdet(int sayi) {
+    return '$sayi işlem';
+  }
+
+  @override
+  String get anzAylikAkisDipnot =>
+      'Performans\'taki köprüyle aynı hesap: alımda ödediğin, satışta eline geçen tutar; temettü portföyden cebine çıkan para.';
+
+  @override
+  String get anzAylikGelismeBaslik => 'Önemli gelişmeler';
+
+  @override
+  String anzAylikGelismeFonGiris(String tutar, String oran) {
+    return 'Büyük para girişi $tutar, fon büyüklüğünün $oran kadarı';
+  }
+
+  @override
+  String anzAylikGelismeFonCikis(String tutar, String oran) {
+    return 'Büyük para çıkışı $tutar, fon büyüklüğünün $oran kadarı';
+  }
+
+  @override
+  String anzAylikGelismeHacim(String tutar, String kat, String degisim) {
+    return 'Olağandışı hacim $tutar, ortalamanın $kat katı; fiyat $degisim';
+  }
+
+  @override
+  String anzAylikGelismeTemettu(String tutar) {
+    return 'Temettü $tutar';
+  }
+
+  @override
+  String get anzAylikGelismeDipnot =>
+      'Fon akışı TEFAS, hacim Yahoo Finance ve Binance verisinden; temettüler kendi kayıtlarından.';
+
+  @override
+  String get anzAylikNotlarBaslik => 'Yapay zekâ notları';
+
+  @override
+  String anzAylikNotlarAralik(String aralik) {
+    return 'Notlar $aralik verisinden yazıldı.';
+  }
+
+  @override
+  String get anzAylikHaberYok =>
+      'Haberler ve KAP duyuruları bu raporda yok: sandık\'ın lisanslı bir haber kaynağı henüz yok, haber metni yazılmaz.';
 
   @override
   String get hkyDevam => 'Devam';

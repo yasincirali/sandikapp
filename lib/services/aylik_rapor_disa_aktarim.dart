@@ -1,14 +1,16 @@
 import '../l10n/generated/app_localizations_tr.dart';
-import '../models/asset.dart';
+import '../models/asset_type.dart';
+import '../utils/pozisyon_etiketi.dart';
+import '../utils/tr_format.dart';
+import '../widgets/aylik_rapor_bolumleri.dart' show gelismeCumlesi;
+import 'aylik_rapor_ozeti.dart';
 import '../providers/analiz_provider.dart' show notKodu;
 import '../providers/hafta_ozeti_provider.dart'
     show HaftaRozeti, haftaRozetiSunucudan;
 import 'crash_reporter.dart';
 import 'disa_aktarim/aylik_rapor_belgesi.dart';
 import 'disa_aktarim/rapor_belgesi.dart';
-import 'history_service.dart';
 import 'inflation_service.dart';
-import 'period_summary_service.dart';
 import 'supabase_service.dart';
 import 'varlik_analizi.dart';
 
@@ -17,9 +19,11 @@ import 'varlik_analizi.dart';
 ///   - varlık notlarının TAMAMI (maddeler) — saklanan satır, yapay zekâ
 ///     yeniden çağrılmaz;
 ///   - ayın getirisi ve köprüsü (ay başı, yatırılan, piyasa, ay sonu, en
-///     iyi/en zayıf) — Performans'ın aylık özetiyle aynı hesap
-///     (`PeriodSummaryService.compute`, pencere ayın 1'inden ay sonuna ya da
-///     bugüne);
+///     iyi/en zayıf), ayın varlıkları, para girişi/çıkışı ve gelişmeler —
+///     ekranın elindeki `AylikRaporOzeti`'nden (2026-11-07; eskiden PDF
+///     getiriyi kendi hesaplıyordu, ekranla iki yol olurdu). Getiri
+///     Performans'ın aylık özetiyle aynı hesap (`PeriodSummaryService
+///     .compute`, pencere ayın 1'inden ay sonuna ya da bugüne);
 ///   - ayın TÜFE'si — endeksten tek bölme (`InflationService.changePct`).
 ///
 /// Bir okuma düşerse o parça çıkmaz, belge yine yazılır: not maddesi yoksa
@@ -35,23 +39,27 @@ class AylikRaporDisaAktarim {
     required DateTime donem,
     required List<AnalizOzeti> notlar,
     required List<String> eksik,
-    required List<Asset> lotlar,
+    required AylikRaporOzeti? ozet,
     required String kim,
-    double? canliToplam,
     DateTime? simdi,
   }) async {
     final now = simdi ?? DateTime.now();
     final tr = AppLocalizationsTr();
     final sonuclar = await Future.wait([
       Future.wait(notlar.map(_tamNot)),
-      _ayinGetirisi(donem, lotlar, now, canliToplam),
       _ayinTufesi(donem),
     ]);
     final tamNotlar = sonuclar[0] as List<VarlikNotu?>;
-    final ay = sonuclar[1] as PeriodSummary?;
+    final ay = ozet?.ay;
     final hareketli = notlar.where((n) => n.rozet != 'sakin').length;
+    final (bas, bit, suren) = AylikRaporOzeti.pencere(donem, now);
+    final aralik = fmtTarihAraligi(bas, bit);
+    final notAraligi = notVeriAraligi(notlar);
+    String etiket(String k, AssetType tur, String ad) =>
+        pozisyonEtiketi(k, tur, tr, ad: ad);
     return aylikRaporBelgesi(
       donem: donem,
+      kapsam: suren ? tr.raporKapsamSuren(aralik) : tr.raporKapsam(aralik),
       notlar: [
         for (var i = 0; i < notlar.length; i++)
           AylikRaporNotu(
@@ -64,6 +72,10 @@ class AylikRaporDisaAktarim {
             ],
           ),
       ],
+      notAraligiCumlesi: notAraligi == null
+          ? null
+          : tr.anzAylikNotlarAralik(
+              fmtTarihAraligi(notAraligi.$1, notAraligi.$2)),
       ozetCumlesi: hareketli > 0
           ? tr.anzAylikOzetVar('${notlar.length}', '$hareketli')
           : tr.anzAylikOzetYok,
@@ -71,7 +83,7 @@ class AylikRaporDisaAktarim {
       kim: kim,
       olusturma: now,
       getiriPct: ay?.getiriPct,
-      tufePct: sonuclar[2] as double?,
+      tufePct: sonuclar[1] as double?,
       portfoy: ay == null
           ? null
           : AyinPortfoyu(
@@ -79,14 +91,45 @@ class AylikRaporDisaAktarim {
               sonTRY: ay.sonTRY,
               katkiTRY: ay.katkiTRY,
               piyasaTRY: ay.piyasaTRY,
+              // `enIyi` adı ham `positionKey`'dir (compute'a etiket
+              // verilmedi); belgeye kısa adıyla yazılır.
               enIyi: ay.enIyi == null
                   ? null
-                  : (ay.enIyi!.name, ay.enIyi!.changePct),
+                  : (_kisaAd(ay.enIyi!.name), ay.enIyi!.changePct),
               enZayif: ay.enZayif == null
                   ? null
-                  : (ay.enZayif!.name, ay.enZayif!.changePct),
+                  : (_kisaAd(ay.enZayif!.name), ay.enZayif!.changePct),
             ),
+      varliklar: [
+        for (final v in ozet?.varliklar ?? const <AyinVarligi>[])
+          (etiket(v.anahtar, v.tur, v.ad), v.pct, v.piyasaTRY),
+      ],
+      olculemeyenCumlesi: (ozet?.olculemeyen.isEmpty ?? true)
+          ? null
+          : tr.anzAylikOlculemeyen(([
+              for (final (k, tur, ad) in ozet!.olculemeyen) etiket(k, tur, ad)
+            ]..sort())
+              .join(', ')),
+      fiyatCumlesi: ozet?.fiyatTarihi == null
+          ? null
+          : tr.raporFiyatTarihi(fmtTarih(ozet!.fiyatTarihi!, saat: true)),
+      akis: ozet?.akis,
+      gelismeler: [
+        for (final g in ozet?.gelismeler ?? const <AyinGelismesi>[])
+          (g.tarih, g.kod, gelismeCumlesi(tr, g)),
+      ],
+      haberCumlesi: tr.anzAylikHaberYok,
     );
+  }
+
+  /// `positionKey` ('hisse|THYAO.IS|TRY') → ekrandaki kısa ad. Tür bilinmez
+  /// (PeriodSummary yalnız adı taşır); sembol çekirdeği yeterli.
+  static String _kisaAd(String anahtar) {
+    final p = anahtar.split('|');
+    if (p.length < 2) return anahtar;
+    final tur = AssetType.values.where((t) => t.name == p[0]).firstOrNull;
+    return pozisyonEtiketi(
+        anahtar, tur ?? AssetType.diger, AppLocalizationsTr());
   }
 
   static Future<VarlikNotu?> _tamNot(AnalizOzeti o) async {
@@ -96,42 +139,6 @@ class AylikRaporDisaAktarim {
       return r == null ? null : VarlikNotu.satirdan(r);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'AylikRaporPdf.not');
-      return null;
-    }
-  }
-
-  /// [canliToplam]: bugünkü canlı kapsam toplamı (`DailySummary
-  /// .kapsamToplami`). Yalnız pencere BUGÜNDE bitiyorsa (süren ay) uç olarak
-  /// verilir; Performans'ın aylık özeti de ucu canlıya bağlar, verilmezse
-  /// bugünkü alımlar katkıda sayılıp değerde sayılmaz ve getiri ekrandan
-  /// farklı çıkar (`ozet_canli_uc_test`). Kapanmış ayda uç ay sonu slotudur.
-  static Future<PeriodSummary?> _ayinGetirisi(DateTime donem, List<Asset> lotlar,
-      DateTime now, double? canliToplam) async {
-    if (lotlar.isEmpty) return null;
-    final ayBasi = DateTime(donem.year, donem.month);
-    final aySonu = DateTime(donem.year, donem.month + 1)
-        .subtract(const Duration(seconds: 1));
-    final son = aySonu.isAfter(now) ? now : aySonu;
-    if (!son.isAfter(ayBasi)) return null;
-    try {
-      final gun = son.difference(ayBasi).inHours / 24;
-      final bd = await HistoryService.instance
-          .getPortfolioHistoryBreakdownAtResolution(
-        assets: lotlar,
-        from: ayBasi,
-        to: son,
-        tier: ResolutionTierMeta.pickForSpan(gun),
-      );
-      return PeriodSummaryService.compute(
-        period: SummaryPeriod.birAy,
-        assets: lotlar,
-        breakdown: bd,
-        now: son,
-        pencereBaslangici: ayBasi,
-        canliSon: identical(son, now) ? canliToplam : null,
-      );
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'AylikRaporPdf.getiri');
       return null;
     }
   }

@@ -5012,7 +5012,7 @@
       "sayi": {"type": "String"}
     }
   },
-  "anzAylikEksik": "No note this month for {kodlar}; their numbers are on their own pages.",
+  "anzAylikEksik": "No AI note this month for {kodlar}.",
   "anzAylikPdfPaylas": "Share report as PDF",
   "@anzAylikEksik": {
     "placeholders": {
@@ -5021,6 +5021,90 @@
   },
   "anzAylikOzetYok": "None of your assets had a notable month.",
   "anzAylikBos": "This month's report is not ready yet.",
+  "raporKapsam": "Covers {aralik}",
+  "@raporKapsam": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "raporKapsamSuren": "Covers {aralik}, to date",
+  "@raporKapsamSuren": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "raporFiyatTarihi": "Prices as of {tarih}.",
+  "@raporFiyatTarihi": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "anzAylikVarliklarBaslik": "Your assets this month",
+  "anzAylikVarliklarDipnot": "Change since the start of the month, net of buys and sells.",
+  "anzAylikOlculemeyen": "No price series for {adlar}, so no change is shown.",
+  "@anzAylikOlculemeyen": {
+    "placeholders": {
+      "adlar": {"type": "String"}
+    }
+  },
+  "anzAylikSemVarlik": "{ad}: change this month {yuzde}, market effect {tutar}",
+  "@anzAylikSemVarlik": {
+    "placeholders": {
+      "ad": {"type": "String"},
+      "yuzde": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "anzAylikAkisBaslik": "Money in and out",
+  "anzAylikAkisAlim": "Buys",
+  "anzAylikAkisSatis": "Sells",
+  "anzAylikAkisTemettu": "Dividends",
+  "anzAylikAkisNet": "Your net contribution",
+  "anzAylikAkisAdet": "{sayi, plural, =1{1 transaction} other{{sayi} transactions}}",
+  "@anzAylikAkisAdet": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "anzAylikAkisDipnot": "Same calculation as the bridge in Performance: what you paid on buys, what you received on sells; dividends count as money taken out.",
+  "anzAylikGelismeBaslik": "Notable events",
+  "anzAylikGelismeFonGiris": "Large inflow of {tutar}, {oran} of the fund's size",
+  "@anzAylikGelismeFonGiris": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "oran": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeFonCikis": "Large outflow of {tutar}, {oran} of the fund's size",
+  "@anzAylikGelismeFonCikis": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "oran": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeHacim": "Unusual volume of {tutar}, {kat}× the average; price {degisim}",
+  "@anzAylikGelismeHacim": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "kat": {"type": "String"},
+      "degisim": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeTemettu": "Dividend {tutar}",
+  "@anzAylikGelismeTemettu": {
+    "placeholders": {
+      "tutar": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeDipnot": "Fund flows from TEFAS, volume from Yahoo Finance and Binance; dividends from your own records.",
+  "anzAylikNotlarBaslik": "AI notes",
+  "anzAylikNotlarAralik": "Notes are based on data from {aralik}.",
+  "@anzAylikNotlarAralik": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "anzAylikHaberYok": "News and company announcements are not in this report: sandık has no licensed news source yet, so no news text is written.",
   "hkyDevam": "Continue",
   "hkyAtla": "Skip",
   "hkyAylikAcilis": "Your month",

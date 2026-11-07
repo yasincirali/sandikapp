@@ -12530,7 +12530,7 @@ abstract class AppLocalizations {
   /// No description provided for @anzAylikEksik.
   ///
   /// In tr, this message translates to:
-  /// **'{kodlar} için bu ay not çıkmadı; sayıları kendi sayfalarında.'**
+  /// **'{kodlar} için bu ay yapay zekâ notu çıkmadı.'**
   String anzAylikEksik(String kodlar);
 
   /// No description provided for @anzAylikPdfPaylas.
@@ -12550,6 +12550,144 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu ayın raporu henüz hazır değil.'**
   String get anzAylikBos;
+
+  /// No description provided for @raporKapsam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapsam: {aralik}'**
+  String raporKapsam(String aralik);
+
+  /// No description provided for @raporKapsamSuren.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapsam: {aralik}, bugüne kadar'**
+  String raporKapsamSuren(String aralik);
+
+  /// No description provided for @raporFiyatTarihi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar {tarih} itibarıyla.'**
+  String raporFiyatTarihi(String tarih);
+
+  /// No description provided for @anzAylikVarliklarBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayın varlıkları'**
+  String get anzAylikVarliklarBaslik;
+
+  /// No description provided for @anzAylikVarliklarDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay başına göre değişim; ay içindeki alım ve satımın etkisi ayıklandı.'**
+  String get anzAylikVarliklarDipnot;
+
+  /// No description provided for @anzAylikOlculemeyen.
+  ///
+  /// In tr, this message translates to:
+  /// **'{adlar} için fiyat serisi yok, değişimi yazılmadı.'**
+  String anzAylikOlculemeyen(String adlar);
+
+  /// No description provided for @anzAylikSemVarlik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad}: ayın değişimi {yuzde}, piyasa etkisi {tutar}'**
+  String anzAylikSemVarlik(String ad, String yuzde, String tutar);
+
+  /// No description provided for @anzAylikAkisBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para girişi ve çıkışı'**
+  String get anzAylikAkisBaslik;
+
+  /// No description provided for @anzAylikAkisAlim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alımlar'**
+  String get anzAylikAkisAlim;
+
+  /// No description provided for @anzAylikAkisSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satışlar'**
+  String get anzAylikAkisSatis;
+
+  /// No description provided for @anzAylikAkisTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü'**
+  String get anzAylikAkisTemettu;
+
+  /// No description provided for @anzAylikAkisNet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net katkın'**
+  String get anzAylikAkisNet;
+
+  /// No description provided for @anzAylikAkisAdet.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} işlem'**
+  String anzAylikAkisAdet(int sayi);
+
+  /// No description provided for @anzAylikAkisDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Performans\'taki köprüyle aynı hesap: alımda ödediğin, satışta eline geçen tutar; temettü portföyden cebine çıkan para.'**
+  String get anzAylikAkisDipnot;
+
+  /// No description provided for @anzAylikGelismeBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önemli gelişmeler'**
+  String get anzAylikGelismeBaslik;
+
+  /// No description provided for @anzAylikGelismeFonGiris.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük para girişi {tutar}, fon büyüklüğünün {oran} kadarı'**
+  String anzAylikGelismeFonGiris(String tutar, String oran);
+
+  /// No description provided for @anzAylikGelismeFonCikis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük para çıkışı {tutar}, fon büyüklüğünün {oran} kadarı'**
+  String anzAylikGelismeFonCikis(String tutar, String oran);
+
+  /// No description provided for @anzAylikGelismeHacim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Olağandışı hacim {tutar}, ortalamanın {kat} katı; fiyat {degisim}'**
+  String anzAylikGelismeHacim(String tutar, String kat, String degisim);
+
+  /// No description provided for @anzAylikGelismeTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü {tutar}'**
+  String anzAylikGelismeTemettu(String tutar);
+
+  /// No description provided for @anzAylikGelismeDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon akışı TEFAS, hacim Yahoo Finance ve Binance verisinden; temettüler kendi kayıtlarından.'**
+  String get anzAylikGelismeDipnot;
+
+  /// No description provided for @anzAylikNotlarBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ notları'**
+  String get anzAylikNotlarBaslik;
+
+  /// No description provided for @anzAylikNotlarAralik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Notlar {aralik} verisinden yazıldı.'**
+  String anzAylikNotlarAralik(String aralik);
+
+  /// No description provided for @anzAylikHaberYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haberler ve KAP duyuruları bu raporda yok: sandık\'ın lisanslı bir haber kaynağı henüz yok, haber metni yazılmaz.'**
+  String get anzAylikHaberYok;
 
   /// No description provided for @hkyDevam.
   ///
