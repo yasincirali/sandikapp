@@ -367,11 +367,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   .refreshPrices(force: true);
               if (mounted) _retryChartData();
             },
-            child: ListView(
+            child: SandikIcerikSutunu.olc(builder: (context, kenar) => ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               controller: _scrollController,
-              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), ustPay,
-                  SandikSpace.screenH(context), SandikSpace.smd),
+              // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): `kenar`
+              // dar ekranda 0, liste birebir eskisi.
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context) + kenar,
+                  ustPay, SandikSpace.screenH(context) + kenar, SandikSpace.smd),
               children: [
                 _buildTekSatirKontroller(activePartners),
                 if (_simulate && !isIntraday) ...[
@@ -425,7 +427,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 const DisclaimerWidget(),
                 const SizedBox(height: SandikSpace.md),
               ],
-            ),
+            )),
           ));
     }
 
@@ -440,7 +442,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 .refreshPrices(force: true);
             if (mounted) _retryChartData();
           },
-          child: ListView(
+          child: SandikIcerikSutunu.olc(builder: (context, kenar) => ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             controller: _scrollController,
             // Yan dolgu başlık çubuğuyla AYNI (`screenH`: 16, dar ekranda 12).
@@ -451,8 +453,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             // sekmede aynı çizgi (kullanıcı bildirimi 2026-09-28: "Performans
             // biraz daha boşluk bırakıp başlıyor"). Portföy'de ilk kontrol
             // başlığın 4pt alt dolgusundan hemen sonra; burada 12 daha vardı.
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), ustPay,
-                SandikSpace.screenH(context), SandikSpace.smd),
+            // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): `kenar` dar
+            // ekranda 0.
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context) + kenar,
+                ustPay, SandikSpace.screenH(context) + kenar, SandikSpace.smd),
             children: [
               // ── Kontroller: İKİ satır (+ ortak varsa kişi satırı) ────────────
               //
@@ -607,7 +611,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 ].map((w) => _SekmeSolmasi(
                     ozet: false, taze: _sekmeYeniDegisti, child: w)),
             ],
-          ),
+          )),
         ));
   }
 

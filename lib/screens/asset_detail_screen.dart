@@ -55,6 +55,7 @@ import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 import '../models/varlik_kimligi.dart';
 import '../models/yillik_aralik.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../models/ozel_gosterge.dart';
 import '../providers/ozel_gosterge_provider.dart';
 import '../services/gosterge_betigi/betik.dart';
@@ -927,7 +928,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       child: SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
-          child: Padding(
+          // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): kaydırma alanı
+          // kenara uzanır, içerik en fazla 720 pt; iPhone'da boşluk 0.
+          child: SandikIcerikSutunu(child: Padding(
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12,
                 SandikSpace.screenH(context), 24 + kapsulPayi),
             child: Column(
@@ -2536,7 +2539,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 ),
               ],
             ),
-          ),
+          )),
         ),
     ),
       );

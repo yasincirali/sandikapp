@@ -21,6 +21,7 @@ import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
 import '../widgets/bildirim_on_ayar_karti.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/hesap_silme_nedeni_sheet.dart';
 import '../widgets/seviye_anketi.dart';
@@ -519,9 +520,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             AbsorbPointer(
               absorbing: _deleting,
-              child: ListView(
+              child: SandikIcerikSutunu.olc(builder: (context, kenar) => ListView(
+                // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): `kenar`
+                // dar ekranda 0, liste birebir eskisi.
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    EdgeInsets.symmetric(horizontal: 20 + kenar, vertical: 12),
                 children: switch (bolum) {
                   null => _hub(),
                   SettingsBolum.gorunum => _gorunum(),
@@ -529,7 +532,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SettingsBolum.hesap => _hesap(),
                   SettingsBolum.yardim => _yardim(),
                 },
-              ),
+              )),
             ),
             // Örtü, kilidin GÖRÜNÜR karşılığı. AbsorbPointer tek başına
             // dokunuşu yutar ama ekran çalışır görünmeye devam eder;

@@ -25,6 +25,7 @@ import 'package:portfoy_takip/widgets/sandik_baglam_menusu.dart';
 import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
+import 'package:portfoy_takip/widgets/sandik_icerik_sutunu.dart';
 import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
 import 'package:portfoy_takip/widgets/sandik_paylas_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
@@ -350,6 +351,12 @@ void main() {
                   fiyatYaz: (v) => '₺${v.toStringAsFixed(2)}',
                 ),
                 const SizedBox(height: SandikSpace.md),
+                // Okunabilir içerik sütunu (2026-11-07): 390 pt'de no-op;
+                // içindeki metin ×2'de de taşmamalı.
+                const SandikIcerikSutunu(
+                  child: Text('Okunabilir sütunda uzun bir açıklama satırı'),
+                ),
+                const SizedBox(height: SandikSpace.md),
                 SandikSectionHeader(title: 'Bölüm'),
                 SizedBox(
                   height: 260,
@@ -450,6 +457,73 @@ void main() {
     await t.pumpWidget(vitrin(parlaklik: Brightness.dark, yaziOlcegi: 2));
     await t.pump();
     expect(t.takeException(), isNull);
+  });
+
+  group('okunabilir içerik sütunu (iPad, HIG readable width)', () {
+    const kutu = Key('sutun-icerik');
+    const sliverKutu = Key('sutun-sliver');
+
+    Future<void> ciz(WidgetTester t, double genislik) async {
+      t.view.physicalSize = Size(genislik, 1000);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Column(children: [
+            SizedBox(
+              height: 100,
+              child: SingleChildScrollView(
+                child: SandikIcerikSutunu(
+                  child: Container(key: kutu, height: 40),
+                ),
+              ),
+            ),
+            Expanded(
+              child: CustomScrollView(slivers: [
+                SandikIcerikSutunu.sliver(slivers: [
+                  SliverToBoxAdapter(
+                      child: Container(key: sliverKutu, height: 40)),
+                ]),
+              ]),
+            ),
+          ]),
+        ),
+      ));
+    }
+
+    testWidgets('1366 pt\'de içerik ≤ 720 ve ortada', (t) async {
+      await ciz(t, 1366);
+      for (final k in [kutu, sliverKutu]) {
+        final r = t.getRect(find.byKey(k));
+        expect(r.width, lessThanOrEqualTo(SandikIcerikSutunu.azamiGenislik));
+        expect(r.center.dx, closeTo(1366 / 2, 0.5));
+      }
+    });
+
+    testWidgets('390 pt\'de değişmez (iPhone düzeni birebir)', (t) async {
+      await ciz(t, 390);
+      for (final k in [kutu, sliverKutu]) {
+        final r = t.getRect(find.byKey(k));
+        expect(r.left, 0);
+        expect(r.width, 390);
+      }
+    });
+
+    test('sütun ana sekmelerde ve varlık ekranında kullanılır, Profil hariç',
+        () {
+      for (final f in [
+        'lib/screens/home_screen.dart',
+        'lib/screens/portfolio_screen.dart',
+        'lib/screens/portfolio_performance/kartlar.dart',
+        'lib/screens/settings_screen.dart',
+        'lib/screens/asset_detail_screen.dart',
+        'lib/screens/varlik_sayfasi.dart',
+        'lib/screens/watchlist_screen.dart',
+      ]) {
+        expect(File(f).readAsStringSync(), contains('SandikIcerikSutunu'),
+            reason: '$f okunabilir sütunu kullanmalı');
+      }
+    });
   });
 
   test('ikon düğmesinde ekran okuyucu etiketi (tooltip) var', () {

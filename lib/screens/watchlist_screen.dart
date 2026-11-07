@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import '../demo/demo_modu.dart';
 import '../widgets/varlik_rozeti.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart'
     show
@@ -231,6 +232,9 @@ class _List extends ConsumerWidget {
         physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics()),
         slivers: [
+          // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): Portföy'ün
+          // Varlıklarım listesiyle aynı genişlik; iPhone'da boşluk 0.
+          SandikIcerikSutunu.sliver(slivers: [
           // Grafik listeyle BİRLİKTE kayar (üstte sabit değil): dar ekranda
           // sabit bir grafik, listeye ayrılan alanın yarısını yerdi. Ekleme
           // satırı listede DEĞİL, gövdenin üstünde (`_AddHeader`).
@@ -278,6 +282,7 @@ class _List extends ConsumerWidget {
                     itemBuilder: (_, i) => satir(i),
                   ),
           ),
+          ]),
         ],
       ),
     );

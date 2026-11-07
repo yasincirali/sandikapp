@@ -28,6 +28,7 @@ import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
 import '../widgets/cevrimdisi_seridi.dart';
 import '../widgets/guncelleme_karti.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/radar_seridi.dart';
@@ -792,6 +793,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
+          // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): başlık çubuğu
+          // dışında her şey en fazla 720 pt, ortada; iPhone'da boşluk 0.
+          // Toplam kartının içi aynı, yalnız iPad'de genişliği sütun kadar.
+          SandikIcerikSutunu.sliver(slivers: [
           // ── Dikey ritim (2026-09-28, "bileşen araları tutarlı olmalı") ──
           // Blok → blok: `SandikSpace.md`. Bölüm başlığı: üstünde `lg`,
           // altında `smd` (hareket satırlarının kendi aralığı da 12 —
@@ -1302,6 +1307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: SandikSpace.xxl)),
+          ]),
         ],
       ),
     );
