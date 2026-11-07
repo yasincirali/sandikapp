@@ -1645,6 +1645,8 @@
       }
     }
   },
+  "ayNetKatki": "Net {tutar}",
+  "@ayNetKatki": {"description": "Tüm hareketler ay başlığı: alış - satış, işaretli tutar (ör. +₺12.400)", "placeholders": {"tutar": {"type": "String"}}},
   "txSell": "Satım",
   "txDividend": "Temettü",
   "txBuy": "Alım",

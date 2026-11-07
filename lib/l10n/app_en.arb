@@ -1617,6 +1617,8 @@
       }
     }
   },
+  "ayNetKatki": "Net {tutar}",
+  "@ayNetKatki": {"placeholders": {"tutar": {"type": "String"}}},
   "txSell": "Sale",
   "txDividend": "Dividend",
   "txBuy": "Purchase",
