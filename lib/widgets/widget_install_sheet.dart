@@ -53,13 +53,17 @@ class WidgetInstallSheet extends StatelessWidget {
     if (!context.mounted) return;
 
     unawaited(AnalyticsService.instance.logScreenView(screenName: 'widget_install_sheet'));
-    await showSandikSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => const WidgetInstallSheet(),
-    );
+    await goster(context);
   }
+
+  /// Sayfayı kapısız açar — Ayarlar'daki "Ana ekrana widget ekle" isteği
+  /// gidemezse elle adımlar için (Ar-Ge 7 Kas 14:30 #5).
+  static Future<void> goster(BuildContext context) => showSandikSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) => const WidgetInstallSheet(),
+      );
 
   /// Platforma özgü adımlar.
   ///

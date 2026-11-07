@@ -1,10 +1,10 @@
 # Privacy Policy — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 20, 2026
-**Version:** 1.13
+**Last updated:** November 7, 2026
+**Version:** 1.14
 **Consent version:** 1.8
-**Source:** TR 1.13 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.14 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -13,7 +13,7 @@
 This application (**sandık**, the "App") is operated by `Yasin Çıralı` ("we", "Company").
 
 - **Address:** `Istanbul, Türkiye`
-- **Email:** `sandikapp.destek@gmail.com`
+- **Email:** `support@murphysoft.app`
 - **Web:** `https://yasincirali.github.io/sandikapp`
 - **VERBIS:** `Not registered (individual developer)` (where applicable)
 
@@ -239,7 +239,7 @@ You may exercise the following rights by contacting us:
 
 **How to make a request:**
 1. **In-app:** Profile → Settings → "Delete Account" / "Download My Data"
-2. **Email:** Apply to `sandikapp.destek@gmail.com` with identifying information
+2. **Email:** Apply to `support@murphysoft.app` with identifying information
 3. **Web form:** `https://yasincirali.github.io/sandikapp/data-request`
 
 Under KVKK Article 13(2) we respond to your requests within **30 days**.
@@ -314,9 +314,9 @@ When we change this policy:
 
 For all questions, requests and complaints about data protection:
 
-- **Email:** `sandikapp.destek@gmail.com`
+- **Email:** `support@murphysoft.app`
 - **Address:** `Istanbul, Türkiye`
-- **Data Protection Officer (DPO):** Not appointed. Data protection contact: `sandikapp.destek@gmail.com`
+- **Data Protection Officer (DPO):** Not appointed. Data protection contact: `support@murphysoft.app`
 
 ---
 

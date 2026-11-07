@@ -32,7 +32,7 @@ Bu klasör, **sandık** uygulamasının App Store ve Google Play yayını için 
 
 ### 1. TODO Alanlarını Doldurun
 
-Tüm dokümanlarda `Yasin Çıralı`, `İstanbul, Türkiye`, `sandikapp.destek@gmail.com`, `Kayıtlı değil (bireysel geliştirici — VERBIS kaydı ticari faaliyet başlangıcında yapılacaktır)`, `İstanbul Anadolu Mahkemeleri ve İcra Daireleri` vb. placeholder'lar var. Production'a çıkmadan önce **mutlaka** gerçek değerlerle değiştirin.
+Tüm dokümanlarda `Yasin Çıralı`, `İstanbul, Türkiye`, `support@murphysoft.app`, `Kayıtlı değil (bireysel geliştirici — VERBIS kaydı ticari faaliyet başlangıcında yapılacaktır)`, `İstanbul Anadolu Mahkemeleri ve İcra Daireleri` vb. placeholder'lar var. Production'a çıkmadan önce **mutlaka** gerçek değerlerle değiştirin.
 
 ```bash
 # Yardımcı komut — placeholder'ları bul:

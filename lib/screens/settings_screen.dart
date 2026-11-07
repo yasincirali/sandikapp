@@ -20,6 +20,8 @@ import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
+import '../providers/widget_sabitleme_provider.dart';
+import '../widgets/widget_install_sheet.dart';
 import '../widgets/bildirim_on_ayar_karti.dart';
 import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_acilir.dart';
@@ -671,6 +673,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(height: 12),
         const _BugunkuPortfoyAnahtari(),
       ],
+      const _AnaEkranWidgetBolumu(),
       const SizedBox(height: 24),
     ];
   }
@@ -710,12 +713,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               semantik: context.l10n.bildirimAyrintiliSemantik,
               children: _bildirimAnahtarlari(),
             ),
-            const SizedBox(height: 28),
-
-            // -- CANLI ETKİNLİKLER ---------------------------------
+            // -- CANLI ETKİNLİKLER (iOS) -----------------------------
             //
-            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
-            // Etkinlikler"): kullanıcı gördüğü adla arar.
+            // Ayrı bölüm başlığı kalktı, bildirim grubunun SON kırılımı oldu
+            // (Ar-Ge 7 Kas 14:30 #6): Canlı Etkinlik bir bildirim yüzeyi ve
+            // iOS'un kendi Ayarlar'ı da onu bildirimlerin altında tutar. Tek
+            // bileşen için açılan bölüm başlığı ve iki boşluk listeyi
+            // uzatıyordu. Alt başlık (Gizlilik ile aynı kademe) kalır: "Gün
+            // boyu göster" anahtarı neyi yönettiğini söyleyen bir ad olmadan
+            // okunmuyor; ad iOS'taki özellik adıyla EŞLEŞİR (cümle
+            // düzeninde), kullanıcı gördüğü adla arar.
             //
             // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
             // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
@@ -728,11 +735,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // ve `sync` ilk satırda döner (bkz. LiveActivityService).
             // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
             if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              SandikSectionHeader(title: context.l10n.liveActivitiesUpper),
-              const SizedBox(height: 12),
+              _SubSectionTitle(context.l10n.canliEtkinlikAltBaslik),
               const _LiveActivitySection(),
-              const SizedBox(height: 28),
             ],
+            const SizedBox(height: 28),
       ];
 
   /// Ön ayarın dokunmadığı, "ne zaman / ne" satırları: kullanıcının kendi
@@ -1387,6 +1393,67 @@ class _SubSectionTitle extends StatelessWidget {
           color: context.c.text58,
         ),
       ),
+    );
+  }
+}
+
+/// Ana ekran widget'ı — "Portföy görünümü" grubunun son kırılımı (Ar-Ge
+/// 7 Kas 14:30 #5).
+///
+/// Neden Görünüm: widget portföyün uygulama DIŞINDAKİ görünüşü; tema
+/// seçimi de onu yönetiyor. Ayarlar'da widget'a ait başka satır yoktu,
+/// kullanıcı kurulumu internette arıyordu.
+///
+///   · Android: launcher destekliyorsa tek satır "Ana ekrana widget ekle";
+///     sistemin kendi onay penceresi açılır. Destek yoksa (ya da soru
+///     hata verdiyse) alt başlıkla birlikte HİÇ görünmez — çalışmayan
+///     düğme göstermek yanıltır. İstek giderken hata olursa elle adımlar
+///     (`WidgetInstallSheet`) açılır.
+///   · iOS: uygulamadan yerleştirme yok (WidgetKit izin vermez); düğme
+///     yerine tek satır adım, `lockWidgetHowTo` ile aynı dil.
+class _AnaEkranWidgetBolumu extends ConsumerWidget {
+  const _AnaEkranWidgetBolumu();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SubSectionTitle(l.anaEkranWidgetBaslik),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.sm),
+            child: Text(
+              l.anaEkranWidgetHowTo,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ),
+        ],
+      );
+    }
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return const SizedBox.shrink();
+    }
+    final destek = ref.watch(widgetSabitlemeDestegiProvider).valueOrNull;
+    if (destek != true) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SubSectionTitle(l.anaEkranWidgetBaslik),
+        _SettingsTile(
+          icon: Icons.widgets_outlined,
+          title: l.anaEkranaWidgetEkle,
+          subtitle: l.widgetInstallBody,
+          onTap: null,
+          onTapAsync: () async {
+            final gitti =
+                await ref.read(widgetSabitleyiciProvider).sabitlemeIste();
+            if (gitti || !context.mounted) return;
+            await WidgetInstallSheet.goster(context);
+          },
+        ),
+      ],
     );
   }
 }

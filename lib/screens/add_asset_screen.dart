@@ -17,6 +17,7 @@ import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/add_asset_form_provider.dart';
+import '../providers/bekleyen_fon_alimi_provider.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/eurobond_provider.dart';
 import '../providers/kripto_provider.dart';

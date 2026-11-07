@@ -1,7 +1,7 @@
 # Çerez ve Yerel Depolama Politikası — sandık
 
 **Yürürlük tarihi:** 5 Kasım 2026
-**Sürüm:** 1.3
+**Sürüm:** 1.4
 
 ---
 
@@ -110,4 +110,4 @@ Bu politikada değişiklik yapılırsa "Sürüm" numarası artırılır ve günc
 
 ## 7. İletişim
 
-Yerel depolamayla ilgili sorular için: `sandikapp.destek@gmail.com`
+Yerel depolamayla ilgili sorular için: `support@murphysoft.app`

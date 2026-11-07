@@ -986,8 +986,10 @@ List<_Adim> _adimlariKur() {
       // birlikte değişir); sürüm ve yardım satırları Yardım & yasal'da.
       // 7 Kas (Ar-Ge #4): bölüm adları .arb'da cümle düzenine geçti; metin
       // ekrandaki yazımı birebir anar.
+      // 7 Kas 14:30 (#5): Görünüm'ün sonunda ana ekran widget'ı satırı.
       govde: 'Profil\'in altındaki dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
-          'yatırımcı seviyesi ve "Bugünkü portföyle" görünümü), '
+          'yatırımcı seviyesi, "Bugünkü portföyle" görünümü ve ana ekran '
+          'widget\'ı), '
           'Bildirimler (tek dokunuşla Az, Dengeli ya da Çok; fiyat '
           'alarmları, günlük brifingin saati, sessiz saatler; tek tek '
           'ayarlar "Ayrıntılı"da), Hesap & güvenlik '

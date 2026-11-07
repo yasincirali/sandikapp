@@ -2612,11 +2612,11 @@ abstract class AppLocalizations {
   /// **'Yeni ortaklık isteği geldiğinde bildirim al'**
   String get partnerInviteNotificationsSubtitle;
 
-  /// No description provided for @liveActivitiesUpper.
+  /// No description provided for @canliEtkinlikAltBaslik.
   ///
   /// In tr, this message translates to:
   /// **'Canlı etkinlikler'**
-  String get liveActivitiesUpper;
+  String get canliEtkinlikAltBaslik;
 
   /// No description provided for @biometricLock.
   ///
@@ -2899,6 +2899,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.'**
   String get lockWidgetHowTo;
+
+  /// No description provided for @anaEkranWidgetBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekran widget\'ı'**
+  String get anaEkranWidgetBaslik;
+
+  /// No description provided for @anaEkranaWidgetEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekrana widget ekle'**
+  String get anaEkranaWidgetEkle;
+
+  /// No description provided for @anaEkranWidgetHowTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekrana eklemek için: ana ekranda boş bir yere basılı tut → + simgesine dokun → sandık\'ı seç.'**
+  String get anaEkranWidgetHowTo;
 
   /// No description provided for @partnerActivityNotifications.
   ///
@@ -10633,7 +10651,7 @@ abstract class AppLocalizations {
   /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.13: Zirve\'ye katıldıysan, artık portföyündeki varlıkların hangi hisse, kripto ya da altın olduğu da sembolüyle ve yalnızca oran olarak görünebilir; tutar, adet ve kimliğin yine görünmez. Bu yalnızca 20 Ekim 2026 Zirve onayını verenler için geçerli. Zirve\'deki ayrıntılı görünüm yeni katılanlar için Premium\'a bağlı olabilir. Sürüm 1.12: Yapay zekâ yorumu artık Performans\'ta ve varlık detayında seçtiğin dönemi de anlatabiliyor; yoruma enflasyon ve dolar, altın, BIST 100 kıyasları da giriyor. Yine yalnızca sen istersen çalışır, tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.11: İki isteğe bağlı yapay zekâ özelliği anlatıldı: Performans › Özet\'teki portföy yorumu ve ekstrenin kelimeleriyle okunması. İkisi de yalnızca sen istersen, ilk kullanımda ayrıca onayını alarak çalışır; tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.10: Uygulama uzun süre arka planda kalınca artık oturumun kapanmaz; uygulama kilidi açıksa yalnızca kilitlenir. Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.'**
+  /// **'Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi. Sürüm 1.13: Zirve\'ye katıldıysan, artık portföyündeki varlıkların hangi hisse, kripto ya da altın olduğu da sembolüyle ve yalnızca oran olarak görünebilir; tutar, adet ve kimliğin yine görünmez. Bu yalnızca 20 Ekim 2026 Zirve onayını verenler için geçerli. Zirve\'deki ayrıntılı görünüm yeni katılanlar için Premium\'a bağlı olabilir. Sürüm 1.12: Yapay zekâ yorumu artık Performans\'ta ve varlık detayında seçtiğin dönemi de anlatabiliyor; yoruma enflasyon ve dolar, altın, BIST 100 kıyasları da giriyor. Yine yalnızca sen istersen çalışır, tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.11: İki isteğe bağlı yapay zekâ özelliği anlatıldı: Performans › Özet\'teki portföy yorumu ve ekstrenin kelimeleriyle okunması. İkisi de yalnızca sen istersen, ilk kullanımda ayrıca onayını alarak çalışır; tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.10: Uygulama uzun süre arka planda kalınca artık oturumun kapanmaz; uygulama kilidi açıksa yalnızca kilitlenir. Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -16132,6 +16150,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{gun} fiyatı'**
   String fundPriceOfDay(String gun);
+
+  /// Tutarla bugün alınan fonun adedi dünkü fiyatla; alım gününün TEFAS fiyatı yarın gelir
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat yarın kesinleşir'**
+  String get fonFiyatYarinKesinlesir;
+
+  /// No description provided for @fonAlimOneri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni fiyatla adet {adet} olur'**
+  String fonAlimOneri(String adet);
+
+  /// No description provided for @fonAlimOneriSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni fiyatla adet {adet} olur. Güncellemek için dokun.'**
+  String fonAlimOneriSemantik(String adet);
+
+  /// No description provided for @fonAlimYokSay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yok say'**
+  String get fonAlimYokSay;
 
   /// No description provided for @vkFiyatBaslik.
   ///

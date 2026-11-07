@@ -12,6 +12,20 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-07 Ortak destek adresi `support@murphysoft.app` (0175)
+
+Uygulama, yasal metinler (Gizlilik/KVKK 1.14, Koşullar 1.12, GDPR 1.7,
+Depolama 1.4; yalnız "Sürüm", yeniden onay yok) ve site artık
+`support@murphysoft.app` gösteriyor. Mağaza panelleri Claude'un elinde değil:
+
+- [ ] **App Store Connect** › App Information / App Review Information:
+      destek (iletişim) e-postasını `support@murphysoft.app` yap.
+      Apple ID girişi (`sandikapp.destek@gmail.com`) **değişmez**.
+- [ ] **Play Console** › Mağaza ayarları › Mağaza girişi iletişim bilgileri:
+      e-posta `support@murphysoft.app`.
+- [ ] 0175'i Frankfurt'a yolla (yalnız ekler: üç Türkçe metin satırı).
+      Supabase SMTP göndericisi ve `config.toml` aynen kalır.
+
 ## ⏳ 2026-11-07 Mevduat vadesi doldu bildirimi (0174 + `calendar-nudge`)
 
 Vade gününün sabahı (09:30 TR) açık mevduatının son dönemi dolan

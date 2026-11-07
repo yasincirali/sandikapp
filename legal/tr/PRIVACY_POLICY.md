@@ -1,8 +1,8 @@
 # Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 20 Ekim 2026
-**Sürüm:** 1.13
+**Son güncelleme:** 7 Kasım 2026
+**Sürüm:** 1.14
 **Onay sürümü:** 1.8
 
 ---
@@ -12,7 +12,7 @@
 Bu uygulamayı (**sandık**, "Uygulama") `Yasin Çıralı` ("biz", "Şirket") işletmektedir.
 
 - **Adres:** `İstanbul, Türkiye`
-- **E-posta:** `sandikapp.destek@gmail.com`
+- **E-posta:** `support@murphysoft.app`
 - **Web:** `https://yasincirali.github.io/sandikapp`
 - **VERBİS:** `Kayıtlı değil (bireysel geliştirici)` (uygulanabilirse)
 
@@ -238,7 +238,7 @@ Bize başvurarak şu haklarınızı kullanabilirsiniz:
 
 **Talep yöntemleri:**
 1. **Uygulama içi:** Profil → Ayarlar → "Hesabımı Sil" / "Verilerimi İndir"
-2. **E-posta:** `sandikapp.destek@gmail.com` adresine kimlik doğrulayıcı bilgilerle başvuru
+2. **E-posta:** `support@murphysoft.app` adresine kimlik doğrulayıcı bilgilerle başvuru
 3. **Web formu:** `https://yasincirali.github.io/sandikapp/data-request`
 
 KVKK Madde 13(2) uyarınca taleplerinize **30 gün** içinde yanıt veririz.
@@ -313,9 +313,9 @@ Bu politikada değişiklik yaptığımızda:
 
 Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
-- **E-posta:** `sandikapp.destek@gmail.com`
+- **E-posta:** `support@murphysoft.app`
 - **Adres:** `İstanbul, Türkiye`
-- **Veri Koruma Sorumlusu (DPO):** Atanmamıştır. Veri koruma iletişimi: `sandikapp.destek@gmail.com`
+- **Veri Koruma Sorumlusu (DPO):** Atanmamıştır. Veri koruma iletişimi: `support@murphysoft.app`
 
 ---
 

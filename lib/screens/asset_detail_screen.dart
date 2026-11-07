@@ -20,6 +20,7 @@ import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/kur_ayrismasi_satiri.dart';
+import '../widgets/bekleyen_fon_alimi_satiri.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/grafik_ozeti.dart';

@@ -1481,7 +1481,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Get notified when a new partner request arrives';
 
   @override
-  String get liveActivitiesUpper => 'Live activities';
+  String get canliEtkinlikAltBaslik => 'Live activities';
 
   @override
   String get biometricLock => 'Biometric lock';
@@ -1652,6 +1652,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get lockWidgetHowTo =>
       'You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.';
+
+  @override
+  String get anaEkranWidgetBaslik => 'Home screen widget';
+
+  @override
+  String get anaEkranaWidgetEkle => 'Add widget to home screen';
+
+  @override
+  String get anaEkranWidgetHowTo =>
+      'To add it to your home screen: touch and hold an empty area of the Home Screen → tap + → choose sandık.';
 
   @override
   String get partnerActivityNotifications => 'Partner activity notifications';
@@ -6454,7 +6464,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.13: If you joined Zirve, the stocks, crypto or gold in your portfolio can now also appear by symbol, as percentages only; amounts, quantities and your identity stay hidden. This applies only if you accepted the 20 October 2026 Zirve consent. The detailed Zirve view may require Premium for new joiners. Version 1.12: The AI comment can now also describe the period you select in Performance and on the asset detail page, and it includes inflation and dollar, gold and BIST 100 comparisons. It still works only if you ask; amounts, quantities and identity details are not sent. Version 1.11: Two optional AI features are described: the portfolio comment in Performance › Summary and reading a statement by its words. Both work only if you ask, with your separate consent the first time you use them; amounts, quantities and identity details are not sent. Version 1.10: Leaving the app in the background for a long time no longer signs you out; if the app lock is on, it only locks. Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
+      'Version 1.14: Our support and contact address is now support@murphysoft.app; nothing changed in how your data is processed. Version 1.13: If you joined Zirve, the stocks, crypto or gold in your portfolio can now also appear by symbol, as percentages only; amounts, quantities and your identity stay hidden. This applies only if you accepted the 20 October 2026 Zirve consent. The detailed Zirve view may require Premium for new joiners. Version 1.12: The AI comment can now also describe the period you select in Performance and on the asset detail page, and it includes inflation and dollar, gold and BIST 100 comparisons. It still works only if you ask; amounts, quantities and identity details are not sent. Version 1.11: Two optional AI features are described: the portfolio comment in Performance › Summary and reading a statement by its words. Both work only if you ask, with your separate consent the first time you use them; amounts, quantities and identity details are not sent. Version 1.10: Leaving the app in the background for a long time no longer signs you out; if the app lock is on, it only locks. Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -9895,6 +9905,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String fundPriceOfDay(String gun) {
     return '$gun price';
   }
+
+  @override
+  String get fonFiyatYarinKesinlesir => 'Price settles tomorrow';
+
+  @override
+  String fonAlimOneri(String adet) {
+    return 'At the new price: $adet units';
+  }
+
+  @override
+  String fonAlimOneriSemantik(String adet) {
+    return 'At the new price: $adet units. Tap to update.';
+  }
+
+  @override
+  String get fonAlimYokSay => 'Dismiss';
 
   @override
   String vkFiyatBaslik(String name) {
