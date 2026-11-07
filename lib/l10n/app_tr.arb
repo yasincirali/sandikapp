@@ -6676,6 +6676,8 @@
   "cizimAlarmSeviyesiBitisli": "Çizgi şu an {fiyat} · {tarih} tarihine kadar",
   "@cizimAlarmSeviyesiBitisli": {"placeholders": {"fiyat": {"type": "String"}, "tarih": {"type": "String"}}},
   "alarmBekleyenler": "Bekleyenler",
+  "bolumAcik": "açık",
+  "bolumKapali": "kapalı",
   "alarmCalanlar": "Çalanlar ({n})",
   "@alarmCalanlar": {"placeholders": {"n": {"type": "int"}}},
   "alarmCalanlariTemizle": "Çalanları temizle",

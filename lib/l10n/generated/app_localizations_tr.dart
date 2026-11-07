@@ -10393,6 +10393,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get alarmBekleyenler => 'Bekleyenler';
 
   @override
+  String get bolumAcik => 'açık';
+
+  @override
+  String get bolumKapali => 'kapalı';
+
+  @override
   String alarmCalanlar(int n) {
     return 'Çalanlar ($n)';
   }

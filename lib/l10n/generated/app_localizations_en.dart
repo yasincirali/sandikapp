@@ -10522,6 +10522,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmBekleyenler => 'Waiting';
 
   @override
+  String get bolumAcik => 'expanded';
+
+  @override
+  String get bolumKapali => 'collapsed';
+
+  @override
   String alarmCalanlar(int n) {
     return 'Fired ($n)';
   }

@@ -17117,6 +17117,18 @@ abstract class AppLocalizations {
   /// **'Bekleyenler'**
   String get alarmBekleyenler;
 
+  /// No description provided for @bolumAcik.
+  ///
+  /// In tr, this message translates to:
+  /// **'açık'**
+  String get bolumAcik;
+
+  /// No description provided for @bolumKapali.
+  ///
+  /// In tr, this message translates to:
+  /// **'kapalı'**
+  String get bolumKapali;
+
   /// No description provided for @alarmCalanlar.
   ///
   /// In tr, this message translates to:
