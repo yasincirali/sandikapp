@@ -3923,8 +3923,8 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioLineInfoSim.
   ///
   /// In tr, this message translates to:
-  /// **'Haftalık ve daha uzun dönemlerde {name} çizgisi bir simülasyondur: bugünkü varlıklarını dönem başından beri tutsaydın ne olurdu. Alım-satım tarihlerin hesaba katılmaz; gerçekleşmiş getirin değildir. Böylece izlediğin varlıklarla aynı pencerede kıyaslanır.'**
-  String portfolioLineInfoSim(String name);
+  /// **'Bu çizgi bugünkü varlıklarını dönem başından tutsaydın ne olurdu, onu gösterir; gerçekleşmiş getirin değildir.'**
+  String get portfolioLineInfoSim;
 
   /// No description provided for @addToPortfolioSemantics.
   ///
@@ -4361,7 +4361,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectedPeriodReturnBody.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki dönem seçimi sonucu doğrudan değiştirir.'**
+  /// **'Dönem günlere bölünür; getiri, varlıkları elinde tuttuğun günlerden hesaplanır. Dönem seçimi sonucu değiştirir.'**
   String get selectedPeriodReturnBody;
 
   /// No description provided for @depositsDontChangeRankBody.
@@ -4763,7 +4763,7 @@ abstract class AppLocalizations {
   /// No description provided for @alarmAlsoDeleteBody.
   ///
   /// In tr, this message translates to:
-  /// **'{n, plural, =1{{name} silindi. Bu sembol için kurduğun alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilir.} other{{name} silindi. Bu sembol için kurduğun {n} alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilirler.}}'**
+  /// **'{n, plural, =1{{name} silindi. Alarmın duruyor ve fiyatı izlemeye devam eder.} other{{name} silindi. {n} alarmın duruyor ve fiyatı izlemeye devam eder.}}'**
   String alarmAlsoDeleteBody(int n, String name);
 
   /// No description provided for @alarmAlsoDeleteConfirm.

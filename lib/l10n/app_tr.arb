@@ -1308,14 +1308,7 @@
       }
     }
   },
-  "portfolioLineInfoSim": "Haftalık ve daha uzun dönemlerde {name} çizgisi bir simülasyondur: bugünkü varlıklarını dönem başından beri tutsaydın ne olurdu. Alım-satım tarihlerin hesaba katılmaz; gerçekleşmiş getirin değildir. Böylece izlediğin varlıklarla aynı pencerede kıyaslanır.",
-  "@portfolioLineInfoSim": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
+  "portfolioLineInfoSim": "Bu çizgi bugünkü varlıklarını dönem başından tutsaydın ne olurdu, onu gösterir; gerçekleşmiş getirin değildir.",
   "addToPortfolioSemantics": "{name} portföyüme ekle",
   "@addToPortfolioSemantics": {
     "placeholders": {
@@ -1493,7 +1486,7 @@
     }
   },
   "topPortfolios": "Zirvedeki Portföyler",
-  "selectedPeriodReturnBody": "Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki dönem seçimi sonucu doğrudan değiştirir.",
+  "selectedPeriodReturnBody": "Dönem günlere bölünür; getiri, varlıkları elinde tuttuğun günlerden hesaplanır. Dönem seçimi sonucu değiştirir.",
   "depositsDontChangeRankBody": "Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.",
   "everyoneMeasuredSameBody": "Sen ve ortakların aynı formül ve aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.",
   "@everyoneMeasuredSameBody": {
@@ -1737,7 +1730,7 @@
       }
     }
   },
-  "alarmAlsoDeleteBody": "{n, plural, =1{{name} silindi. Bu sembol için kurduğun alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilir.} other{{name} silindi. Bu sembol için kurduğun {n} alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilirler.}}",
+  "alarmAlsoDeleteBody": "{n, plural, =1{{name} silindi. Alarmın duruyor ve fiyatı izlemeye devam eder.} other{{name} silindi. {n} alarmın duruyor ve fiyatı izlemeye devam eder.}}",
   "@alarmAlsoDeleteBody": {
     "placeholders": {
       "n": {

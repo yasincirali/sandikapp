@@ -2257,9 +2257,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String portfolioLineInfoSim(String name) {
-    return 'For weekly and longer periods the $name line is a simulation: what would have happened had you held today\'s assets since the start of the period. Your buy and sell dates are ignored; it is not your realised return. This keeps it comparable with your watched assets over the same window.';
-  }
+  String get portfolioLineInfoSim =>
+      'This line shows what would have happened had you held today\'s assets since the start of the period; it is not your realised return.';
 
   @override
   String addToPortfolioSemantics(String name) {
@@ -2525,7 +2524,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectedPeriodReturnBody =>
-      'The period is split into days. Each day, the assets you held that day are valued at market prices, and the daily returns are chained together.\n\nIf you sold one asset and bought another, each counts only on the days you held it. The 7D / 30D / 1Y choice above changes the result directly.';
+      'The period is split into days; the return is calculated from the days you held each asset. The period choice changes the result.';
 
   @override
   String get depositsDontChangeRankBody =>
@@ -2793,9 +2792,9 @@ class AppLocalizationsEn extends AppLocalizations {
       n,
       locale: localeName,
       other:
-          '$name was deleted. The $n alerts you set for this symbol are still active. They can keep watching the price even though you no longer hold it.',
+          '$name was deleted. Your $n alerts are still active and keep watching the price.',
       one:
-          '$name was deleted. The alert you set for this symbol is still active. It can keep watching the price even though you no longer hold it.',
+          '$name was deleted. Your alert is still active and keeps watching the price.',
     );
     return '$_temp0';
   }

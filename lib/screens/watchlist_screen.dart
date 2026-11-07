@@ -398,7 +398,7 @@ class _PortfoyCizgisiBilgisi extends StatelessWidget {
     return Tooltip(
       message: gunIci
           ? context.l10n.portfolioLineInfoDaily(portfolioLabel)
-          : context.l10n.portfolioLineInfoSim(portfolioLabel),
+          : context.l10n.portfolioLineInfoSim,
       triggerMode: TooltipTriggerMode.tap,
       // Okuma süresi: iki cümlelik metin varsayılan 1.5 sn'de okunmuyor.
       showDuration: const Duration(seconds: 8),
