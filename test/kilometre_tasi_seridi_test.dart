@@ -113,7 +113,7 @@ void main() {
     });
   });
 
-  group('şerit', () {
+  group('satır (Profil yeniden tasarımı, 7 Kas)', () {
     final veri = MilestoneService.koleksiyon(
       kayitli: {
         'portfolio_value:10000',
@@ -125,16 +125,30 @@ void main() {
     );
 
     Future<ProviderContainer> pump(WidgetTester tester,
-        {bool gizli = false, double olcek = 1}) async {
+        {bool gizli = false,
+        double olcek = 1,
+        double genislik = 390,
+        ({
+          List<Milestone> kazanilan,
+          Milestone? siradaki,
+          double? ilerleme,
+          double? kalan,
+        })? ozel}) async {
       SharedPreferences.setMockInitialValues({});
+      tester.view.physicalSize = Size(genislik, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final v = ozel ?? veri;
       await tester.pumpWidget(ProviderScope(
-        overrides: [kilometreTaslariProvider.overrideWithValue(veri)],
+        overrides: [kilometreTaslariProvider.overrideWithValue(v)],
         child: MaterialApp(
           theme: ThemeData.dark(),
           home: MediaQuery(
-            data: MediaQueryData(textScaler: TextScaler.linear(olcek)),
+            data: MediaQueryData(
+                size: Size(genislik, 844),
+                textScaler: TextScaler.linear(olcek)),
             child: const Scaffold(
-              body: Padding(
+              body: SingleChildScrollView(
                 padding: EdgeInsets.all(16),
                 child: KilometreTasiSeridi(),
               ),
@@ -149,55 +163,94 @@ void main() {
       return c;
     }
 
-    testWidgets('kazanılanlar, sıradaki ve Tümü', (tester) async {
+    final satir = find.byKey(const ValueKey('kilometreTasiSatiri'));
+
+    testWidgets('sıradaki, kalan ve merdivendeki yer tek satırda',
+        (tester) async {
       await pump(tester);
       expect(find.text('Kilometre taşların'), findsOneWidget);
-      expect(find.text('100 bin ₺ geçildi'), findsOneWidget);
-      // 10 bin vitrinde değil (aynı türün küçüğü), Tümü'nde.
-      expect(find.text('10 bin ₺ geçildi'), findsNothing);
-      expect(find.text('5 gram altın'), findsOneWidget);
-      expect(find.text('Sıradaki'), findsOneWidget);
-      expect(find.text('250 bin ₺'), findsOneWidget);
-
-      await tester.tap(find.text('Tümü ›'));
-      await tester.pumpAndSettle();
-      // Şerit başlığı ve sayfa başlığı artık aynı yazım (2026-11-05).
-      expect(find.text('Kilometre taşların'), findsWidgets);
-      expect(find.text('10 bin ₺ geçildi'), findsOneWidget);
       expect(find.text('Sıradaki: 250 bin ₺'), findsOneWidget);
-    });
-
-    testWidgets('sıradaki taşta halka, yüzde ve kalan', (tester) async {
-      await pump(tester);
-      // 120 bin / 250 bin = %48; kalan 130 bin.
-      expect(find.text('%48'), findsOneWidget);
+      // 10 bin, 25 bin, 50 bin, 100 bin geçildi → merdivende 4 / 10.
+      expect(find.text('4 / 10'), findsOneWidget);
       expect(find.text('130 bin ₺ kaldı'), findsOneWidget);
-      // Halka kendi çizimi (yükleniyor göstergesi değil, statik ölçü).
+      // Rozet şeridi ve eşit kartlar yok; geçilen taş adı satırda yazmaz.
+      expect(find.text('100 bin ₺ geçildi'), findsNothing);
+      expect(find.text('Tümü ›'), findsNothing);
+      // Halka/gösterge değil, statik çubuk.
       expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(
-          find.bySemanticsLabel(
-              'Sıradaki kilometre taşı: 250 bin ₺, yüzde 48, 130 bin ₺ kaldı'),
+          find.bySemanticsLabel(RegExp(
+              r'^Sıradaki kilometre taşı: 250 bin ₺, yüzde 48, 130 bin ₺ kaldı\. '
+              r'10 portföy eşiğinden 4 tanesi geçildi\.')),
           findsOneWidget);
     });
 
-    testWidgets('bakiye gizliyken yüzde kalır, kalan yazılmaz',
+    testWidgets('dokununca tam liste açılır', (tester) async {
+      await pump(tester);
+      await tester.tap(satir);
+      await tester.pumpAndSettle();
+      expect(find.text('10 bin ₺ geçildi'), findsOneWidget);
+      expect(find.text('100 bin ₺ geçildi'), findsOneWidget);
+      expect(find.text('5 gram altın'), findsOneWidget);
+      expect(find.text('Sıradaki: 250 bin ₺'), findsWidgets);
+    });
+
+    testWidgets('bakiye gizliyken tutar yok; çubuk ve sayaç kalır',
         (tester) async {
       await pump(tester, gizli: true);
-      expect(find.text('%48'), findsOneWidget);
+      expect(find.textContaining('bin ₺'), findsNothing);
+      expect(find.textContaining('kaldı'), findsNothing);
+      expect(find.text('Sıradaki: Portföy eşiği'), findsOneWidget);
+      expect(find.text('4 / 10'), findsOneWidget);
+      expect(find.byType(FractionallySizedBox), findsOneWidget);
+      await tester.tap(satir);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('bin ₺'), findsNothing);
+      expect(find.text('5 gram altın'), findsOneWidget);
+    });
+
+    testWidgets('hepsi geçildiyse uydurma hedef yok', (tester) async {
+      await pump(tester,
+          ozel: MilestoneService.koleksiyon(
+              kayitli: const {}, bugun: const [], totalTRY: 20000000));
+      // Kazanılan yok, sıradaki yok → satır hiç çizilmez.
+      expect(satir, findsNothing);
+      final hepsi = MilestoneService.koleksiyon(
+          kayitli: {'portfolio_value:10000000'},
+          bugun: const [],
+          totalTRY: 20000000);
+      await pump(tester, ozel: hepsi);
+      expect(find.text('Bütün portföy eşiklerini geçtin'), findsOneWidget);
+      expect(find.text('10 / 10'), findsOneWidget);
+      expect(find.textContaining('kaldı'), findsNothing);
+      expect(find.byType(FractionallySizedBox), findsNothing);
+    });
+
+    testWidgets('toplam bilinmiyorsa çubuk ve kalan yok', (tester) async {
+      await pump(tester,
+          ozel: MilestoneService.koleksiyon(
+              kayitli: {'gold_count:ALTIN_GRAM:5'},
+              bugun: const [],
+              totalTRY: 0));
+      expect(find.text('Sıradaki: 10 bin ₺'), findsOneWidget);
+      expect(find.text('0 / 10'), findsOneWidget);
+      expect(find.byType(FractionallySizedBox), findsNothing);
       expect(find.textContaining('kaldı'), findsNothing);
     });
 
-    testWidgets('kutlamada Paylaş: tutarsız kart önizlemesi açılır',
+    testWidgets('kutlamada Paylaş: listeden açılır, tutarsız kart',
         (tester) async {
       await pump(tester);
+      await tester.tap(satir);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('5 gram altın'));
       await tester.pumpAndSettle();
+      expect(find.byType(MilestoneSheet), findsOneWidget);
+      expect(find.text('Toplam 5 gram altın biriktirdin.'), findsWidgets);
       await tester.tap(find.byKey(const ValueKey('kilometreTasiPaylas')));
       await tester.pumpAndSettle();
       expect(find.byType(KilometreTasiPaylasKarti), findsOneWidget);
-      expect(find.text('Kilometre taşını paylaş'), findsOneWidget);
-      expect(find.text('Kartta portföy tutarın yok; yalnız geçtiğin taş.'),
-          findsOneWidget);
       expect(
           find.descendant(
               of: find.byType(KilometreTasiPaylasKarti),
@@ -205,40 +258,30 @@ void main() {
           findsNothing);
     });
 
-    testWidgets('rozete dokununca kutlama sayfası yeniden açılır',
-        (tester) async {
-      await pump(tester);
-      await tester.tap(find.text('5 gram altın'));
+    testWidgets('Dynamic Type 3.1× ve 320 pt: taşma yok', (tester) async {
+      await pump(tester, olcek: 3.1, genislik: 320);
+      expect(tester.takeException(), isNull);
+      await tester.tap(satir);
       await tester.pumpAndSettle();
-      expect(find.byType(MilestoneSheet), findsOneWidget);
-      expect(find.text('Toplam 5 gram altın biriktirdin.'), findsOneWidget);
-    });
-
-    testWidgets('bakiye gizliyken tutar görünmez', (tester) async {
-      await pump(tester, gizli: true);
-      expect(find.textContaining('bin ₺'), findsNothing);
-      expect(find.text('Portföy eşiği geçildi'), findsOneWidget);
-      expect(find.text('5 gram altın'), findsOneWidget);
-      await tester.tap(find.text('Tümü ›'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('bin ₺'), findsNothing);
-    });
-
-    testWidgets('Dynamic Type 3.1×: taşma yok', (tester) async {
-      await pump(tester, olcek: 3.1);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('dokunma alanları ≥44 pt', (tester) async {
+    testWidgets('dokunma alanı ≥44 pt', (tester) async {
       await pump(tester);
-      for (final t in ['5 gram altın', 'Tümü ›']) {
-        final kutu = tester.getSize(find
-            .ancestor(of: find.text(t), matching: find.byType(GestureDetector))
-            .first);
-        expect(kutu.height, greaterThanOrEqualTo(44), reason: t);
-        expect(kutu.width, greaterThanOrEqualTo(44), reason: t);
-      }
+      final kutu = tester.getSize(satir);
+      expect(kutu.height, greaterThanOrEqualTo(44));
+      expect(kutu.width, greaterThanOrEqualTo(44));
     });
+  });
+
+  test('esikSayaci: merdivendeki yer, hepsi geçildiyse dolu', () {
+    final s = MilestoneService.esikSayaci(
+        MilestoneService.koleksiyon(
+                kayitli: const {}, bugun: const [], totalTRY: 2700000)
+            .siradaki);
+    expect((s.gecilen, s.toplam), (8, 10));
+    final h = MilestoneService.esikSayaci(null);
+    expect((h.gecilen, h.toplam), (10, 10));
   });
 
   test('şerit yalnız gösterir', () {

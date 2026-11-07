@@ -10,12 +10,15 @@ import '../services/hesap_kasasi.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart' show dayKey;
+import 'sandik_cam.dart';
 import 'uygulama_kabugu.dart' show HesapAvatari;
 
 /// Çoklu hesap arayüzü (bayrak `coklu_hesap`, 2026-10-10).
 ///
-/// Giriş noktası Profil'in kimlik kartındaki "Hesap ⌄" düğmesi (5 Kas
-/// 21:00; önce üst çubukta "Profil"in yerinde aktif hesabın adıydı). Alt gezinme çubuğu
+/// Giriş noktası Profil'in kimlik kartındaki "ad ⌄" (7 Kas; 5 Kas'ta ayrı
+/// "Hesap ⌄" düğmesi, daha önce üst çubukta aktif hesabın adıydı). Dokununca
+/// yüzen cam menü ([hesapMenusunuAc]); Profil sekmesine uzun basma ve
+/// "Hesapları düzenle" bugünkü alt sayfayı açar. Alt gezinme çubuğu
 /// değişmez (kullanıcı kuralı). Çıkış düğmesi yerinde kalır; birden fazla
 /// hesap varken iki seçenek sorar ([cokluCikisSor]).
 ///
@@ -25,44 +28,57 @@ import 'uygulama_kabugu.dart' show HesapAvatari;
 
 // ── Profil başlığı ───────────────────────────────────────────────────────────
 
-/// Hesap değiştirme düğmesi: "Hesap ⌄", Profil'in kimlik kartının sağında.
-/// Dokununca hesap listesi açılır.
+/// Kimlik kartındaki ad: "ad ⌄" (Profil yeniden tasarımı, yasin 7 Kas).
 ///
-/// ## Neden kartta (Ar-Ge 5 Kas 21:00 tasarım 3, müşteri YAP)
-/// İlk sürümde başlık "Profil"in yerinde aktif hesabın adıydı (Instagram
-/// yerleşimi); hemen altındaki kimlik kartı adı bir kez daha yazıyordu:
-/// aynı ad üst üste iki kez. Başlık yine "Profil" (dört sekmede aynı dil),
-/// hesap değiştirme adın yanında durur: neyi değiştirdiğin göz önünde.
+/// ## Neden adın kendisi (önce ayrı "Hesap ⌄" düğmesi)
+/// Kartın sağında yüzen küçük "Hesap ⌄" ne olduğunu da nerede bittiğini de
+/// söylemiyordu. Instagram, Gmail ve iOS hesabı adın yanındaki okla
+/// değiştirir: neyi değiştirdiğin zaten dokunduğun yazıdır.
+///
+/// ## Ok yalnız iki ve daha fazla hesapta
+/// Tek hesapta ad düz metindir, dokunulmaz: değiştirilecek bir şey yokken
+/// ok boş bir vaat olurdu. İkinci hesabı eklemenin yolu Profil › Ayarlar'daki
+/// "Hesap ekle" satırı (Ar-Ge 7 Kas); Profil sekmesine uzun basmak da
+/// eskisi gibi listeyi açar ([profilSekmesiUzunBasildi]).
+///
+/// Dokunma alanı adın ve okun tamamı (≥ 44 pt); ekran okuyucu "Hesap
+/// değiştir, şu an …" der (önceki düğmenin etiketi korunur).
 class HesapBasligi extends ConsumerWidget {
-  const HesapBasligi({super.key, this.stil});
+  const HesapBasligi({super.key, required this.ad, this.stil});
 
+  /// Kartta yazan ad (bugünkü `displayName`; değişmedi).
+  final String ad;
   final TextStyle? stil;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
-    final ad = user == null ? '' : hesapAdi(user);
+    final aktif = ref.watch(authProvider).valueOrNull;
+    final kayitli = ref.watch(kayitliHesaplarProvider);
+    final cokHesap = kayitli.any((h) => h.uid != aktif?.id);
+    final yazi = Text(
+      ad,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: stil,
+    );
+    if (!cokHesap) return yazi;
     return Semantics(
+      container: true,
       button: true,
       label: ad.isEmpty ? 'Hesap değiştir' : 'Hesap değiştir, şu an $ad',
       excludeSemantics: true,
       child: SandikTappable(
-        onTap: () => hesapSeciciniAc(context, ref),
+        onTap: () => hesapMenusunuAc(context),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
               minHeight: SandikTouch.min, minWidth: SandikTouch.min),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Hesap',
-                maxLines: 1,
-                style: stil ??
-                    context.t.labelLarge?.copyWith(
-                        color: context.c.text58, fontWeight: FontWeight.w600),
-              ),
+              Flexible(child: yazi),
+              const SizedBox(width: SandikSpace.xs),
               Icon(Icons.keyboard_arrow_down_rounded,
-                  color: context.c.text58, size: SandikSpace.lgs),
+                  color: context.c.text58, size: SandikSpace.lg),
             ],
           ),
         ),
@@ -71,12 +87,253 @@ class HesapBasligi extends ConsumerWidget {
   }
 }
 
+// ── Hesap menüsü (yüzen, cam) ────────────────────────────────────────────────
+
+/// Adın altından açılan yüzen hesap menüsü (Ar-Ge 7 Kas; önce alt sayfa).
+///
+/// ## Cam yalnız burada
+/// Cam bir malzemedir: arkasından içerik görünen yüzen katmanda anlam
+/// taşır (`docs/TASARIM_DILI.md` cam kuralı). Menü Profil'in üstünde
+/// yüzer, arkasında kart ve yazı durur; iOS 26'nın açılır menü kalıbı.
+/// Uygulamada başka yeni cam yok (yasin: "Liquid Glass yalnız hesap
+/// menüsünde"). Yüzey [SandikCamYuzey]: iOS'ta buzlu cam; Android, yüksek
+/// kontrast, iOS "Saydamlığı azalt" ve "Hareketi azalt" açıkken katı
+/// zemin (`surface2`).
+///
+/// ## Hareket
+/// Menü düğmeden doğar (sol üstten ölçek + solma), aynı yoldan kapanır.
+/// Hareketi azalt açıkken süre sıfır: ilk karede yerinde.
+///
+/// Satırlar ve geçiş mantığı alt sayfayla ortak ([hesabaGec],
+/// [hesapEklemeyiBaslat]); kaldırma için "Hesapları düzenle" bugünkü
+/// sayfayı açar.
+Future<void> hesapMenusunuAc(BuildContext context) {
+  final kutu = context.findRenderObject();
+  final kaynak = kutu is RenderBox && kutu.hasSize
+      ? kutu.localToGlobal(Offset.zero) & kutu.size
+      : Rect.zero;
+  final azalt = MediaQuery.disableAnimationsOf(context);
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Hesap menüsünü kapat',
+    barrierColor: context.c.golge
+        .withValues(alpha: context.isLight ? 0.18 : 0.32),
+    transitionDuration: SandikMotion.surfaceOf(context),
+    pageBuilder: (_, __, ___) =>
+        HesapMenusu(kaynak: kaynak, ustContext: context),
+    transitionBuilder: (ctx, anim, _, child) {
+      final egri = CurvedAnimation(
+          parent: anim,
+          curve: SandikMotion.enter,
+          reverseCurve: SandikMotion.exit);
+      if (azalt) return FadeTransition(opacity: egri, child: child);
+      return FadeTransition(
+        opacity: egri,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.92, end: 1).animate(egri),
+          alignment: Alignment(
+            // Ölçeğin çıkış noktası düğmenin kendisi.
+            (kaynak.center.dx / MediaQuery.sizeOf(ctx).width) * 2 - 1,
+            (kaynak.bottom / MediaQuery.sizeOf(ctx).height) * 2 - 1,
+          ),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// Menünün gövdesi; [kaynak] düğmenin ekran dikdörtgeni. Test ve görsel
+/// önizleme doğrudan kurar.
+class HesapMenusu extends ConsumerWidget {
+  const HesapMenusu(
+      {super.key, required this.kaynak, required this.ustContext});
+
+  final Rect kaynak;
+
+  /// Menü kapandıktan sonra hata/bilgi diyaloğu bu bağlamda açılır.
+  final BuildContext ustContext;
+
+  /// Menü genişliği; dar ekranda kenar payları içinde kalır.
+  static const double _genislik = 300;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.c;
+    final aktif = ref.watch(authProvider).valueOrNull;
+    final kayitli = ref.watch(kayitliHesaplarProvider);
+    final digerleri = [
+      for (final h in kayitli)
+        if (h.uid != aktif?.id) h,
+    ];
+    final dolu = digerleri.length + 1 >= HesapKasasi.enCok;
+    // Hareketi azalt da camı kapatır (Ar-Ge 7 Kas: "hareketi/şeffaflığı
+    // azalt açıkken katı"); Saydamlığı azalt ve yüksek kontrast
+    // `SandikCam.bulanik` içinde.
+    final kati = MediaQuery.disableAnimationsOf(context);
+
+    final liste = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (aktif != null)
+          _HesapSatiri(
+            ton: 0,
+            harf: KayitliHesap(
+                    uid: aktif.id,
+                    eposta: aktif.email,
+                    ad: hesapAdi(aktif),
+                    sonKullanim: DateTime.now())
+                .basHarf,
+            ad: hesapAdi(aktif),
+            alt: 'Bu cihazda açık',
+            secili: true,
+          ),
+        for (final (i, h) in digerleri.indexed)
+          _HesapSatiri(
+            ton: i + 1,
+            harf: h.basHarf,
+            ad: h.ad,
+            alt: h.oturumDustu
+                ? 'Tekrar giriş gerekli'
+                : 'Son açılış ${goreliZaman(h.sonKullanim, DateTime.now())}',
+            uyari: h.oturumDustu,
+            onTap: (yer) {
+              Navigator.of(context).pop();
+              hesabaGec(ustContext, h, aktif: aktif, ton: i + 1, kaynak: yer);
+            },
+          ),
+        Divider(color: c.hairline, height: SandikSpace.md),
+        _EylemSatiri(
+          ikon: Icons.add_rounded,
+          etiket: 'Hesap ekle',
+          alt: dolu
+              ? 'En fazla ${HesapKasasi.enCok} hesap'
+              : 'Mevcut hesabın açık kalır',
+          onTap: dolu
+              ? null
+              : () {
+                  Navigator.of(context).pop();
+                  hesapEklemeyiBaslat(ustContext, aktif);
+                },
+        ),
+        if (digerleri.isNotEmpty)
+          _EylemSatiri(
+            ikon: Icons.edit_outlined,
+            etiket: 'Hesapları düzenle',
+            alt: 'Bu cihazdan kaldır',
+            onTap: () {
+              Navigator.of(context).pop();
+              if (ustContext.mounted) hesapSeciciniAc(ustContext);
+            },
+          ),
+      ],
+    );
+
+    return SafeArea(
+      child: CustomSingleChildLayout(
+        delegate: _MenuYerlesimi(
+          kaynak: kaynak,
+          kenar: SandikSpace.screenH(context),
+          ustBosluk: MediaQuery.paddingOf(context).top,
+        ),
+        child: SizedBox(
+          width: _genislik,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: SandikRadius.lgAll,
+              boxShadow: [
+                // Yüzen katmanın tek derinlik ipucu; cam katıyken de menüyü
+                // kartlardan ayırır.
+                BoxShadow(
+                  color: c.golge.withValues(alpha: context.isLight ? 0.12 : 0.3),
+                  blurRadius: SandikSpace.lg,
+                  offset: const Offset(0, SandikSpace.sm),
+                ),
+              ],
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: SandikCamYuzey(
+                borderRadius: SandikRadius.lgAll,
+                renk: kati
+                    ? c.surface2
+                    : c.surface2.withValues(alpha: SandikCam.ortu),
+                opakRenk: c.surface2,
+                bulaniklikAcik: !kati,
+                kenar: Border.all(color: c.hairline),
+                child: Semantics(
+                  scopesRoute: true,
+                  namesRoute: true,
+                  explicitChildNodes: true,
+                  label: 'Hesaplar',
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.md, vertical: SandikSpace.xs),
+                    child: liste,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Menüyü düğmenin altına (yer yoksa üstüne) koyar; yatayda kenar
+/// paylarında tutar, dikeyde ekrana sığmazsa içerik kayar.
+class _MenuYerlesimi extends SingleChildLayoutDelegate {
+  _MenuYerlesimi(
+      {required this.kaynak, required this.kenar, required this.ustBosluk});
+
+  final Rect kaynak;
+  final double kenar;
+  final double ustBosluk;
+
+  static const double _ara = SandikSpace.xs;
+
+  // `SafeArea` içinde: global dikdörtgen üst güvenli alan kadar kayar.
+  Rect get _yerel => kaynak.shift(Offset(0, -ustBosluk));
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    final r = _yerel;
+    final alt = constraints.maxHeight - r.bottom - _ara - kenar;
+    final ust = r.top - _ara - kenar;
+    final yukseklik = (alt >= ust ? alt : ust)
+        .clamp(SandikTouch.min * 2, constraints.maxHeight);
+    return BoxConstraints(
+      maxWidth: (constraints.maxWidth - 2 * kenar)
+          .clamp(0.0, HesapMenusu._genislik),
+      maxHeight: yukseklik,
+    );
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size cocuk) {
+    final r = _yerel;
+    final x = r.left.clamp(kenar, size.width - cocuk.width - kenar);
+    final asagi = r.bottom + _ara;
+    final y = asagi + cocuk.height <= size.height - kenar
+        ? asagi
+        : (r.top - _ara - cocuk.height).clamp(0.0, size.height);
+    return Offset(x.toDouble(), y.toDouble());
+  }
+
+  @override
+  bool shouldRelayout(_MenuYerlesimi eski) =>
+      eski.kaynak != kaynak || eski.kenar != kenar || eski.ustBosluk != ustBosluk;
+}
+
 String hesapAdi(AppUser u) =>
     (u.username?.isNotEmpty ?? false) ? u.username! : u.displayName;
 
 // ── Hesap listesi ────────────────────────────────────────────────────────────
 
-Future<void> hesapSeciciniAc(BuildContext context, WidgetRef ref) {
+Future<void> hesapSeciciniAc(BuildContext context) {
   return showSandikSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -178,65 +435,16 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
     );
   }
 
-  Future<void> _gec(KayitliHesap h, int ton, Rect? kaynak) async {
+  void _gec(KayitliHesap h, int ton, Rect? kaynak) {
     final aktif = ref.read(authProvider).valueOrNull;
-    final ust = widget.ustContext;
     Navigator.of(context).pop();
-    if (h.oturumDustu) {
-      await _tekrarGiris(ust, h, aktif);
-      return;
-    }
-    try {
-      await HesapGecisi.instance
-          .gec(h.uid, aktif: aktif, kaynak: kaynak, ton: ton);
-    } on HesapOturumuDustu catch (e) {
-      if (!ust.mounted) return;
-      final tekrar = await showSandikConfirm(
-        context: ust,
-        title: 'Oturum kapanmış',
-        message: '${e.hesap.ad} hesabı başka bir cihazda açıldığı ya da '
-            'şifresi değiştiği için bu cihazdaki oturumu kapandı. Tekrar '
-            'giriş yapınca bu hesaba geçersin.',
-        confirmLabel: 'Tekrar giriş yap',
-      );
-      if (tekrar && ust.mounted) await _tekrarGiris(ust, e.hesap, aktif);
-    } catch (e) {
-      if (ust.mounted) showAppError(ust, e);
-    }
+    hesabaGec(widget.ustContext, h, aktif: aktif, ton: ton, kaynak: kaynak);
   }
 
-  Future<void> _tekrarGiris(
-      BuildContext ust, KayitliHesap h, AppUser? aktif) async {
-    if (aktif == null) return;
-    HesapGecisi.instance.onerilenEposta = h.eposta;
-    try {
-      await HesapGecisi.instance.eklemeyiBaslat(aktif);
-    } catch (e) {
-      HesapGecisi.instance.onerilenEposta = null;
-      if (ust.mounted) showAppError(ust, e);
-    }
-  }
-
-  // Ekleme ücretsiz (yasin 2026-10-10 akşam: "session switch özelliği de
-  // premium olmamalı"); #152'deki paywall dalı kalktı.
-  Future<void> _ekle() async {
+  void _ekle() {
     final aktif = ref.read(authProvider).valueOrNull;
-    final ust = widget.ustContext;
     Navigator.of(context).pop();
-    if (aktif == null) return;
-    try {
-      await HesapGecisi.instance.eklemeyiBaslat(aktif);
-    } on HesapSiniriDolu {
-      if (ust.mounted) {
-        await showAppInfo(ust,
-            title: 'Hesap sınırı',
-            message:
-                'Bu cihazda en fazla ${HesapKasasi.enCok} hesap açık tutulabilir. '
-                'Yeni hesap eklemek için önce birini listeden kaldır.');
-      }
-    } catch (e) {
-      if (ust.mounted) showAppError(ust, e);
-    }
+    hesapEklemeyiBaslat(widget.ustContext, aktif);
   }
 
   Future<void> _kaldir(KayitliHesap h) async {
@@ -250,6 +458,69 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
       destructive: true,
       islem: () => HesapGecisi.instance.kaldir(h.uid, aktif: aktif),
     );
+  }
+}
+
+// ── Ortak geçiş ve ekleme (sayfa, menü, Ayarlar satırı) ──────────────────────
+
+/// Kayıtlı hesaba geç. Menü/sayfa kapandıktan SONRA çağrılır; [ust] açık
+/// kalan ekranın bağlamı. Mantık 7 Kas'a kadar sayfanın içindeydi; menü
+/// ve sayfa aynısını kullansın diye buraya taşındı, davranış değişmedi.
+Future<void> hesabaGec(BuildContext ust, KayitliHesap h,
+    {required AppUser? aktif, required int ton, Rect? kaynak}) async {
+  if (h.oturumDustu) {
+    await _tekrarGiris(ust, h, aktif);
+    return;
+  }
+  try {
+    await HesapGecisi.instance
+        .gec(h.uid, aktif: aktif, kaynak: kaynak, ton: ton);
+  } on HesapOturumuDustu catch (e) {
+    if (!ust.mounted) return;
+    final tekrar = await showSandikConfirm(
+      context: ust,
+      title: 'Oturum kapanmış',
+      message: '${e.hesap.ad} hesabı başka bir cihazda açıldığı ya da '
+          'şifresi değiştiği için bu cihazdaki oturumu kapandı. Tekrar '
+          'giriş yapınca bu hesaba geçersin.',
+      confirmLabel: 'Tekrar giriş yap',
+    );
+    if (tekrar && ust.mounted) await _tekrarGiris(ust, e.hesap, aktif);
+  } catch (e) {
+    if (ust.mounted) showAppError(ust, e);
+  }
+}
+
+Future<void> _tekrarGiris(
+    BuildContext ust, KayitliHesap h, AppUser? aktif) async {
+  if (aktif == null) return;
+  HesapGecisi.instance.onerilenEposta = h.eposta;
+  try {
+    await HesapGecisi.instance.eklemeyiBaslat(aktif);
+  } catch (e) {
+    HesapGecisi.instance.onerilenEposta = null;
+    if (ust.mounted) showAppError(ust, e);
+  }
+}
+
+/// Hesap ekleme akışını başlat (menü, sayfa ve Ayarlar'daki "Hesap ekle").
+///
+/// Ekleme ücretsiz (yasin 2026-10-10 akşam: "session switch özelliği de
+/// premium olmamalı"); #152'deki paywall dalı kalktı.
+Future<void> hesapEklemeyiBaslat(BuildContext ust, AppUser? aktif) async {
+  if (aktif == null) return;
+  try {
+    await HesapGecisi.instance.eklemeyiBaslat(aktif);
+  } on HesapSiniriDolu {
+    if (ust.mounted) {
+      await showAppInfo(ust,
+          title: 'Hesap sınırı',
+          message:
+              'Bu cihazda en fazla ${HesapKasasi.enCok} hesap açık tutulabilir. '
+              'Yeni hesap eklemek için önce birini listeden kaldır.');
+    }
+  } catch (e) {
+    if (ust.mounted) showAppError(ust, e);
   }
 }
 
@@ -612,5 +883,5 @@ class CihazdakiHesaplar extends ConsumerWidget {
 void profilSekmesiUzunBasildi(BuildContext context, WidgetRef ref) {
   if (!ref.read(cokluHesapGorunurProvider)) return;
   SandikHaptic.medium.perform();
-  hesapSeciciniAc(context, ref);
+  hesapSeciciniAc(context);
 }

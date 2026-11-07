@@ -17633,6 +17633,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yardım ve destek'**
   String get yardimVeDestek;
+
+  /// No description provided for @kilometreTasiSiradakiSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki: {baslik}'**
+  String kilometreTasiSiradakiSatir(String baslik);
+
+  /// No description provided for @kilometreTasiHepsiGecildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bütün portföy eşiklerini geçtin'**
+  String get kilometreTasiHepsiGecildi;
+
+  /// No description provided for @kilometreTasiSayac.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gecilen} / {toplam}'**
+  String kilometreTasiSayac(int gecilen, int toplam);
+
+  /// No description provided for @kilometreTasiSayacEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{toplam} portföy eşiğinden {gecilen} tanesi geçildi'**
+  String kilometreTasiSayacEtiket(int gecilen, int toplam);
+
+  /// No description provided for @premiumDurum.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium'**
+  String get premiumDurum;
+
+  /// No description provided for @premiumDurumDetay.
+  ///
+  /// In tr, this message translates to:
+  /// **'{plan}, {detay}'**
+  String premiumDurumDetay(String plan, String detay);
+
+  /// No description provided for @premiumDurumYenilenir.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} tarihinde yenilenir'**
+  String premiumDurumYenilenir(String tarih);
+
+  /// No description provided for @premiumDurumBiter.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} tarihinde biter'**
+  String premiumDurumBiter(String tarih);
+
+  /// No description provided for @premiumDurumHediyeKalan.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} tarihinde biter, {gun} gün kaldı'**
+  String premiumDurumHediyeKalan(String tarih, int gun);
+
+  /// No description provided for @premiumDurumGec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'a geç'**
+  String get premiumDurumGec;
+
+  /// No description provided for @premiumDurumAyrintiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{durum}. Aboneliği yönetmek için dokun'**
+  String premiumDurumAyrintiEtiket(String durum);
+
+  /// No description provided for @hesapEkleSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap ekle'**
+  String get hesapEkleSatiri;
+
+  /// No description provided for @hesapEkleSatiriAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır'**
+  String get hesapEkleSatiriAlt;
 }
 
 class _AppLocalizationsDelegate

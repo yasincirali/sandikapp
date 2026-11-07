@@ -922,18 +922,22 @@ List<_Adim> _adimlariKur() {
       devam: (_) => _sekmeyeGec(4),
     ),
     // Çoklu hesap (yasin 2026-10-10 gece: "session switchi de tanıtım
-    // turuna ekleyelim"). "Hesap ⌄" yalnız bayrak açıkken kimlik kartında;
+    // turuna ekleyelim"). Ad düğmesi yalnız bayrak açıkken kimlik kartında;
     // kapalıyken hedef yok, adım gösterilmez.
     _Adim(
       id: 'hesap_gecisi',
       hedef: TourTarget.hesapBasligi,
       baslik: 'Hesapların arasında geç',
       // 5 Kas 21:00: düğme başlıktan kimlik kartına indi ("Hesap ⌄").
-      govde: 'Kartındaki "Hesap"a dokun: bu telefondaki hesapların listelenir, '
-          'birine dokununca o hesaba geçersin. Öbür hesaplar açık kalır; '
-          'şifre sorulmaz, Face ID ile girdiysen tekrar sorulmaz. "Hesap '
-          'ekle" ile 5 hesaba kadar ekleyebilirsin. Alttaki Profil tuşuna '
-          'uzun basmak da aynı listeyi açar.',
+      // 7 Kas: ayrı düğme kalktı, ad "ad ⌄" oldu; ok yalnız iki ve daha
+      // fazla hesapta, tek hesapta "Hesap ekle" Ayarlar'da. Hedef adın
+      // kendisi (TourAnchor hesapBasligi).
+      govde: 'İkinci hesabını aşağıdaki Ayarlar\'da "Hesap ekle" ile eklersin; '
+          '5 hesaba kadar. Birden fazla hesabın olunca adının yanında ok '
+          'çıkar: ada dokun, hesapların listelenir, birine dokununca o '
+          'hesaba geçersin. Öbür hesaplar açık kalır; şifre sorulmaz, Face '
+          'ID ile girdiysen tekrar sorulmaz. Alttaki Profil tuşuna uzun '
+          'basmak da aynı listeyi açar.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
       kosul: (ref) => ref.read(cokluHesapGorunurProvider),

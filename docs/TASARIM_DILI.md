@@ -130,7 +130,8 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Giriş alanı | `context.inputDecoration(...)`; dolgu temadan, ekranda `fillColor` yok |
 | Sekme başlığı (içerik altından akar, kaydırınca kenar çizgisi + iOS'ta cam, başlık 0.88'e küçülür) | `SandikKaydirmaBasligi` (Portföy, Performans, Profil; bayrak `goz_alici`). Gövde payı `SandikKaydirmaBasligi.payIle` ile okunur — ekranın kendi `context`'i iskeletin üstündedir, pay 0 çıkar |
 | Ana sayfa `SliverAppBar` zemini (aynı cam) | `SandikCamCubukZemini` |
-| Cam yüzey (iOS blur; Android, yüksek kontrast ve iOS "Saydamlığı azalt" opak) | `SandikCamYuzey` — yalnız içeriğin altından aktığı çubukta |
+| Cam yüzey (iOS blur; Android, yüksek kontrast ve iOS "Saydamlığı azalt" opak) | `SandikCamYuzey` — yalnız içeriğin altından aktığı çubukta ve yüzen hesap menüsünde |
+| Hesap değiştirme (Profil kimlik kartında "ad ⌄", ok yalnız ≥2 hesapta) | `HesapBasligi` → `hesapMenusunuAc` (yüzen cam menü); kaldırma ve uzun basma `hesapSeciciniAc` alt sayfası |
 | Varlık sayfası Al/Sat/Temettü | `PozisyonIslemCubugu(yuzen: SandikCam.acik)` — yüzen cam kapsül |
 | Satıra uzun bas kısayolu (iOS sistem bağlam menüsü, Android alt sayfa) | `SandikBaglamMenusu` — aynı eylemler satırda/detayda da durur; yıkıcı eylem en sonda, kırmızı |
 
@@ -142,7 +143,10 @@ aç/kapa grafik çipi. "Seçili" bilgisi etiketle aynı semantik düğümde okun
 iOS'ta da segment camın üstünde opak durur. Kilit: `secici_kurali_test`.
 
 **Cam kuralı (2026-10-12).** Cam bir *malzeme*dir, süs değil: yalnız arkasından
-içerik akan çubukta (sekme başlığı, yüzen kapsül) kullanılır. Sayı, toplam kart,
+içerik akan çubukta (sekme başlığı, yüzen kapsül) ve içeriğin üstünde yüzen
+hesap menüsünde (`hesapMenusunuAc`, Profil'de "ad ⌄"; yasin 2026-11-07: "Liquid
+Glass yalnız hesap menüsünde") kullanılır. Menü iOS'ta buzlu cam; Android, yüksek
+kontrast, "Saydamlığı azalt" ve "Hareketi azalt" açıkken katı `surface2`. Sayı, toplam kart,
 sheet ve kart arkasına blur konmaz. Bulanıklık yalnız iOS'ta ve içerik başlığın
 altına girdiğinde kurulur; Android, yüksek kontrast ve iOS "Saydamlığı azalt"ta opak ton geçişi. Efektler
 kaydırma konumunu izler (zamanlayıcı yok), yerleşimi değiştirmez; "hareketi azalt"

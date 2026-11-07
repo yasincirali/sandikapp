@@ -1738,7 +1738,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPartnersUpper => 'My partners';
 
   @override
-  String get generateInviteCode => 'Generate Invite Code';
+  String get generateInviteCode => 'Generate invite code';
 
   @override
   String get shareInviteCode => 'Share invite code';
@@ -1748,7 +1748,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Send the code to your partner. Once they enter it, you get an approval request.';
 
   @override
-  String get enterPartnerCode => 'Enter Partner Code';
+  String get enterPartnerCode => 'Enter partner code';
 
   @override
   String get enterPartnerCodeBody =>
@@ -1839,13 +1839,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get requestPartnership => 'Request Partnership';
+  String get requestPartnership => 'Request partnership';
 
   @override
   String get generatingEllipsis => 'Generating...';
 
   @override
-  String get generateCode => 'Generate Code';
+  String get generateCode => 'Generate code';
 
   @override
   String get tabChart => 'Chart';
@@ -10838,4 +10838,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yardimVeDestek => 'Help and support';
+
+  @override
+  String kilometreTasiSiradakiSatir(String baslik) {
+    return 'Next: $baslik';
+  }
+
+  @override
+  String get kilometreTasiHepsiGecildi =>
+      'You\'ve passed every portfolio threshold';
+
+  @override
+  String kilometreTasiSayac(int gecilen, int toplam) {
+    return '$gecilen / $toplam';
+  }
+
+  @override
+  String kilometreTasiSayacEtiket(int gecilen, int toplam) {
+    return '$gecilen of $toplam portfolio thresholds passed';
+  }
+
+  @override
+  String get premiumDurum => 'Premium';
+
+  @override
+  String premiumDurumDetay(String plan, String detay) {
+    return '$plan, $detay';
+  }
+
+  @override
+  String premiumDurumYenilenir(String tarih) {
+    return 'renews on $tarih';
+  }
+
+  @override
+  String premiumDurumBiter(String tarih) {
+    return 'ends on $tarih';
+  }
+
+  @override
+  String premiumDurumHediyeKalan(String tarih, int gun) {
+    return 'ends on $tarih, $gun days left';
+  }
+
+  @override
+  String get premiumDurumGec => 'Go Premium';
+
+  @override
+  String premiumDurumAyrintiEtiket(String durum) {
+    return '$durum. Tap to manage your subscription';
+  }
+
+  @override
+  String get hesapEkleSatiri => 'Add account';
+
+  @override
+  String get hesapEkleSatiriAlt =>
+      'Add a second account on this phone; your current one stays signed in';
 }
