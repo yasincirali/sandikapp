@@ -415,6 +415,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String quickLastBuyChip(String miktar) {
+    return 'Your last buy · $miktar';
+  }
+
+  @override
+  String quickLastBuyChipSemantics(String miktar) {
+    return 'Your last buy, $miktar';
+  }
+
+  @override
   String get quickHolding => 'Holding';
 
   @override
@@ -953,6 +963,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noteRemove => 'Remove note';
+
+  @override
+  String get txBuyAgain => 'Buy this again';
 
   @override
   String get noteNone => 'No note on this transaction.';
@@ -2668,6 +2681,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String ayNetKatki(String tutar) {
+    return 'Net $tutar';
+  }
+
+  @override
   String get txSell => 'Sale';
 
   @override
@@ -3071,7 +3089,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csvImportBody =>
-      'Choose your broker or bank statement (PDF, Excel or CSV) or copy and paste the table. Column names and order don\'t matter: symbol, quantity, price, date and buy/sell are detected automatically. Buys and sells come in with their dates.';
+      'Choose your statement or paste the table. We find the symbol, quantity, price and date.';
 
   @override
   String get pasteHere => 'Paste here';
@@ -8985,9 +9003,9 @@ class AppLocalizationsEn extends AppLocalizations {
       n,
       locale: localeName,
       other:
-          'This asset\'s $n transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.',
+          '$n transactions are deleted and a single record takes their place. Same as deleting and re-adding the asset.',
       one:
-          'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
+          '1 transaction is deleted and a single record takes its place. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }

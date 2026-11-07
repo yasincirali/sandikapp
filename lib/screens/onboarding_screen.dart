@@ -565,7 +565,10 @@ List<_Adim> _adimlariKur() {
           "miktarın ve tüm portföyünün nasıl değiştiği yazar (12 → 17 gr · "
           "Portföy ₺1,2M → ₺1,3M; Performans grafiğiyle aynı sayı). Notlar "
           "Portföy'de varlık kartını açınca da görünür, Tüm Hareketler'de "
-          "aranır.",
+          "aranır. Kendi alışında \"Bunu tekrar al\" aynı miktarı bugünün "
+          "fiyatıyla Hızlı Al'a taşır.",
+      // "Bunu tekrar al" cümlesi 2026-11-08 (Ar-Ge #1): not sayfasının altına
+      // satır eklendi; tur kuralı gereği bu adım onu da anlatır.
       // Bakiye cümlesi 2026-10-29: hedef yüzeyin satırına "önceki → sonraki"
       // bakiye eklendi; tur gerçek satırın üstünde çalıştığı için yeni
       // satırı anlatmayan metin onu açıklamasız bırakırdı (tur kuralı).

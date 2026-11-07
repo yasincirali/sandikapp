@@ -854,6 +854,18 @@ abstract class AppLocalizations {
   /// **'Hepsi ({qty})'**
   String quickAllChip(String qty);
 
+  /// Hızlı Al: bu varlıktaki son alımın miktarını seçen çip (ör. Son alımın · 12 pay).
+  ///
+  /// In tr, this message translates to:
+  /// **'Son alımın · {miktar}'**
+  String quickLastBuyChip(String miktar);
+
+  /// Son alım çipinin ekran okuyucu etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son alımın, {miktar}'**
+  String quickLastBuyChipSemantics(String miktar);
+
   /// No description provided for @quickHolding.
   ///
   /// In tr, this message translates to:
@@ -1705,6 +1717,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Notu sil'**
   String get noteRemove;
+
+  /// Hareket notu sayfası: kendi alış hareketinde Hızlı Al'ı aynı miktarla, bugünün fiyatıyla açar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bunu tekrar al'**
+  String get txBuyAgain;
 
   /// No description provided for @noteNone.
   ///
@@ -4580,6 +4598,12 @@ abstract class AppLocalizations {
   /// **'{n} hareket'**
   String nTransactions(int n);
 
+  /// Tüm hareketler ay başlığı: alış - satış, işaretli tutar (ör. +₺12.400)
+  ///
+  /// In tr, this message translates to:
+  /// **'Net {tutar}'**
+  String ayNetKatki(String tutar);
+
   /// No description provided for @txSell.
   ///
   /// In tr, this message translates to:
@@ -5177,7 +5201,7 @@ abstract class AppLocalizations {
   /// No description provided for @csvImportBody.
   ///
   /// In tr, this message translates to:
-  /// **'Aracı kurum ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da tabloyu kopyalayıp yapıştır. Sütunların adı ve sırası önemli değil: sembol, adet, fiyat, tarih ve alış/satış kendiliğinden bulunur. Alışlar ve satışlar tarihleriyle birlikte gelir.'**
+  /// **'Ekstreni seç ya da tabloyu yapıştır. Sembol, adet, fiyat ve tarihi biz buluruz.'**
   String get csvImportBody;
 
   /// No description provided for @pasteHere.
@@ -14732,7 +14756,7 @@ abstract class AppLocalizations {
   /// No description provided for @varlikGuncelleUyariGovde.
   ///
   /// In tr, this message translates to:
-  /// **'{n, plural, =1{Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.} other{Bu varlığın {n} hareketi (alış, satış, temettü) silinir, yerine buradaki bilgilerle tek bir kayıt kalır. Adım adım geçmiş artık bu varlıkta görünmez. Varlığı silip yeniden eklemekle aynıdır.}}'**
+  /// **'{n, plural, =1{1 hareketi silinir, yerine tek kayıt kalır. Varlığı silip yeniden eklemekle aynıdır.} other{{n} hareketi silinir, yerine tek kayıt kalır. Varlığı silip yeniden eklemekle aynıdır.}}'**
   String varlikGuncelleUyariGovde(int n);
 
   /// No description provided for @varlikGuncelleOnayBaslik.

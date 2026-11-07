@@ -19,10 +19,12 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/islem_notu.dart';
+import '../services/hizli_tekrar_al.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import 'quick_adjust_dialog.dart';
 import 'sandik_async_button.dart';
 import 'transaction_row.dart' show hareketTurEtiketi;
 
@@ -40,6 +42,16 @@ Future<void> showIslemNotuSheet(
   if (DemoModu.yazmaKapisi('not')) return; // Demo: not kaydı hesap ister (F1).
   final benimId = ref.read(authProvider).valueOrNull?.id;
   final duzenlenebilir = islemNotuDuzenlenebilir(asset, benimId: benimId);
+  // "Bunu tekrar al" (Ar-Ge 8 Kas #1): yalnız kendi, silinmemiş ALIŞ
+  // hareketinde ve pozisyon açıkken (`tekrarAlHedefi`). Pozisyon
+  // kullanıcının kendi defterinden (`portfolioProvider`); Tüm Hareketler'in
+  // "Birlikte" defteri ortak lot'larını da taşır.
+  final tekrarHedefi = tekrarAlHedefi(
+    ref.read(portfolioProvider).valueOrNull?.assets ?? const [],
+    asset,
+    benimId: benimId,
+  );
+  var tekrarAlIstendi = false;
   final l10n = context.l10n;
   // Notifier ŞİMDİ alınır: "Geri al" snackbar'ı çağıran ekran kapandıktan
   // sonra da dokunulabilir; o an `ref` ölmüş olabilir.
@@ -60,6 +72,7 @@ Future<void> showIslemNotuSheet(
       not: not,
       duzenlenebilir: duzenlenebilir,
       ortakKaydi: benimId != null && asset.userId != benimId,
+      tekrarAl: tekrarHedefi == null ? null : () => tekrarAlIstendi = true,
       kaydet: (metin) async {
         final yeni = metin.trim();
         // Değişmemiş not için istek gitmez (eski davranış).
@@ -68,6 +81,20 @@ Future<void> showIslemNotuSheet(
       },
     ),
   );
+  // Hızlı Al sayfa KAPANDIKTAN sonra açılır: iki modal üst üste binmez,
+  // geri hareketi Hızlı Al'dan hareket listesine döner. Kayıt mevcut Hızlı
+  // Al yolu; miktar o hareketinki, fiyat bugünün (diyalog kendisi doldurur).
+  if (tekrarAlIstendi && tekrarHedefi != null) {
+    if (!context.mounted) return;
+    await showQuickAdjustDialog(
+      context,
+      ref,
+      asset: tekrarHedefi.pozisyon,
+      mode: QuickAdjustMode.add,
+      baslangicMiktar: tekrarHedefi.miktar,
+    );
+    return;
+  }
   if (sonuc == null || !context.mounted) return;
   final yeni = sonuc.trim();
   if (yeni == (not ?? '')) return;
@@ -117,6 +144,7 @@ class IslemNotuSheet extends StatefulWidget {
     required this.duzenlenebilir,
     this.ortakKaydi = false,
     this.kaydet,
+    this.tekrarAl,
   });
 
   final Asset asset;
@@ -130,6 +158,12 @@ class IslemNotuSheet extends StatefulWidget {
   /// başarıda sayfa metinle kapanır; hata olursa açık kalır. `null` → eski
   /// davranış: sayfa metni hemen döndürür (widget testi bunu kullanır).
   final Future<void> Function(String metin)? kaydet;
+
+  /// Verilirse sayfanın altında "Bunu tekrar al" satırı çizilir; dokununca
+  /// bu çağrılır ve sayfa SONUÇSUZ kapanır (not yazılmaz, Hızlı Al'ı
+  /// çağıran açar). `null` → satır yok (satış, ortağın ya da silinmiş
+  /// hareket, kapanmış pozisyon; karar `tekrarAlHedefi`).
+  final VoidCallback? tekrarAl;
 
   @override
   State<IslemNotuSheet> createState() => _IslemNotuSheetState();
@@ -199,6 +233,7 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
           const SizedBox(height: SandikSpace.md),
           if (widget.duzenlenebilir) ..._duzenleme(context) else
             ..._saltOkunur(context),
+          if (widget.tekrarAl != null) ..._tekrarAlSatiri(context),
         ],
       ),
     );
@@ -239,6 +274,47 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
           child: Text(l10n.noteRemove,
               style: TextStyle(color: context.c.text58)),
         ),
+    ];
+  }
+
+  /// "Bunu tekrar al" satırı: kıl çizgisiyle nottan ayrılır, 44 pt satır.
+  /// Amber metin eylemi söyler (sayfadaki ikincil eylemlerin dili), ok
+  /// başka bir yüzeye geçileceğini; anlam yalnız renkte değil, metinde.
+  List<Widget> _tekrarAlSatiri(BuildContext context) {
+    final l10n = context.l10n;
+    return [
+      const SizedBox(height: SandikSpace.sm),
+      Divider(color: context.c.hairline, height: 1),
+      SandikTappable(
+        key: const ValueKey('tekrar_al_satiri'),
+        semanticLabel: l10n.txBuyAgain,
+        onTap: () {
+          widget.tekrarAl!();
+          Navigator.pop(context);
+        },
+        child: ExcludeSemantics(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Row(
+              children: [
+                Icon(Icons.replay_rounded,
+                    size: SandikSpace.lgs, color: context.c.amberText),
+                const SizedBox(width: SandikSpace.smd),
+                Expanded(
+                  child: Text(
+                    l10n.txBuyAgain,
+                    style: context.t.bodyLarge?.copyWith(
+                        color: context.c.amberText,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    size: SandikSpace.lgs, color: context.c.text36),
+              ],
+            ),
+          ),
+        ),
+      ),
     ];
   }
 

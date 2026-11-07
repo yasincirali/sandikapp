@@ -415,6 +415,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String quickLastBuyChip(String miktar) {
+    return 'Son alımın · $miktar';
+  }
+
+  @override
+  String quickLastBuyChipSemantics(String miktar) {
+    return 'Son alımın, $miktar';
+  }
+
+  @override
   String get quickHolding => 'Mevcut';
 
   @override
@@ -939,6 +949,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get noteRemove => 'Notu sil';
+
+  @override
+  String get txBuyAgain => 'Bunu tekrar al';
 
   @override
   String get noteNone => 'Bu işleme not yazılmamış.';
@@ -2647,6 +2660,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String ayNetKatki(String tutar) {
+    return 'Net $tutar';
+  }
+
+  @override
   String get txSell => 'Satım';
 
   @override
@@ -3042,7 +3060,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get csvImportBody =>
-      'Aracı kurum ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da tabloyu kopyalayıp yapıştır. Sütunların adı ve sırası önemli değil: sembol, adet, fiyat, tarih ve alış/satış kendiliğinden bulunur. Alışlar ve satışlar tarihleriyle birlikte gelir.';
+      'Ekstreni seç ya da tabloyu yapıştır. Sembol, adet, fiyat ve tarihi biz buluruz.';
 
   @override
   String get pasteHere => 'Buraya yapıştır';
@@ -8888,9 +8906,9 @@ class AppLocalizationsTr extends AppLocalizations {
       n,
       locale: localeName,
       other:
-          'Bu varlığın $n hareketi (alış, satış, temettü) silinir, yerine buradaki bilgilerle tek bir kayıt kalır. Adım adım geçmiş artık bu varlıkta görünmez. Varlığı silip yeniden eklemekle aynıdır.',
+          '$n hareketi silinir, yerine tek kayıt kalır. Varlığı silip yeniden eklemekle aynıdır.',
       one:
-          'Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.',
+          '1 hareketi silinir, yerine tek kayıt kalır. Varlığı silip yeniden eklemekle aynıdır.',
     );
     return '$_temp0';
   }

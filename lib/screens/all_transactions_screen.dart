@@ -22,6 +22,7 @@ import '../widgets/portfoy_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
 import '../widgets/tur_filtre_cipleri.dart';
+import '../services/contribution_history_service.dart';
 import '../services/islem_notu.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/islem_notu_sheet.dart';
@@ -99,6 +100,67 @@ List<HareketAyGrubu> hareketleriAylaGrupla(
 }
 
 DateTime _islemTarihi(Asset a) => a.addedDate;
+
+/// Ay başlığının sağ metni için ay başına özet: hareket sayısı ve net katkı.
+///
+/// ## Neden (Ar-Ge 8 Kas #2, müşteri YAP)
+/// Başlık "8 hareket" yazıyordu; kullanıcının sorusu "bu ay ne kadar para
+/// koydum". Net tutar [ContributionHistoryService.netKatki]'dan gelir
+/// (Performans'taki ay ortalamasıyla aynı satır kuralı). `net == null`:
+/// TL karşılığı bilinmeyen satır var, başlık eski "N hareket" metnine
+/// döner (uydurma sayı yasak).
+///
+/// [kayitlar] SÜZÜLMÜŞ listenin TAMAMI verilir, sayfalanmış dilim değil:
+/// tür/dönem/arama süzgeci varken görünen satırların toplamı, ama sayfa
+/// sınırı bir ayı ikiye bölse de başlık o ayın gerçek toplamını yazar
+/// (eskiden sayı da sayfa dilimini sayıyordu; şimdi ikisi de ayın tamamı).
+///
+/// [tarih] listedeki kapların bölündüğü anla AYNI olmalı (silinenlerde
+/// [silinmeAni]); yoksa sayı başka bir ayın kabına yazılır.
+Map<DateTime, ({int sayi, double? net})> ayBasligiOzetleri(
+  List<Asset> kayitlar, {
+  DateTime Function(Asset) tarih = _islemTarihi,
+}) {
+  return {
+    for (final g in hareketleriAylaGrupla(kayitlar, tarih: tarih))
+      g.ay: (
+        sayi: g.kayitlar.length,
+        net: ContributionHistoryService.netKatki(g.kayitlar),
+      ),
+  };
+}
+
+/// Ay başlığının görünen metni ve ekran okuyucu etiketi.
+///
+/// Silinenler görünümünde ve tutar bilinmiyorken eski "N hareket" kalır.
+/// İşaret "+" / "−" (U+2212, uygulamanın tutar dili) ile yazılır; renk
+/// anlam taşımaz. Bakiye gizliyken tutar maskelenir ([BazPara.gizliTutar]).
+/// Hareket sayısı her durumda etiketin içinde kalır.
+({String metin, String etiket}) ayBasligiMetni(
+  AppLocalizations l, {
+  required int sayi,
+  required double? net,
+  required bool silinenler,
+  required BazPara baz,
+  required bool gizli,
+}) {
+  final sayiMetni = l.nTransactions(sayi);
+  if (silinenler || net == null) return (metin: sayiMetni, etiket: sayiMetni);
+  final String tutar;
+  if (gizli || baz.gizli) {
+    tutar = baz.gizliTutar;
+  } else {
+    final govde = baz.fmt(net.abs());
+    // Sıfıra yuvarlanan tutar yön taşımaz: "+₺0" yazılmaz.
+    final sifir = govde == baz.fmt(0);
+    tutar = sifir ? govde : '${net > 0 ? '+' : '\u2212'}$govde';
+  }
+  final metin = l.ayNetKatki(tutar);
+  return (
+    metin: metin,
+    etiket: gizli || baz.gizli ? sayiMetni : '$sayiMetni, $metin',
+  );
+}
 
 /// Defteri iki kümeye ayırır: süren hareketler ve silinenler.
 ///
@@ -755,6 +817,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                         rows.take(shown).toList(),
                         tarih: _silinenler ? silinmeAni : _islemTarihi,
                       );
+                      // Ay başlığı özetleri süzülmüş listenin TAMAMINDAN
+                      // (sayfa dilimi değil; bkz. `ayBasligiOzetleri`).
+                      final ozetler = ayBasligiOzetleri(rows,
+                          tarih: _silinenler ? silinmeAni : _islemTarihi);
+                      final baz = ref.watch(bazParaProvider);
                       final dahaVar = shown < rows.length;
                       final hp = SandikSpace.screenH(context);
                       final ayAdi = DateFormat(
@@ -784,6 +851,15 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                           }
                           final g = gruplar[i];
                           final baslik = ayAdi.format(g.ay);
+                          final ozet = ozetler[g.ay];
+                          final sag = ayBasligiMetni(
+                            context.l10n,
+                            sayi: ozet?.sayi ?? g.kayitlar.length,
+                            net: ozet?.net,
+                            silinenler: _silinenler,
+                            baz: baz,
+                            gizli: hideBalance,
+                          );
                           return Padding(
                             padding: EdgeInsets.only(
                                 bottom: i == gruplar.length - 1
@@ -799,11 +875,20 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                                       bottom: SandikSpace.sm),
                                   child: SandikSectionHeader(
                                     title: baslik,
-                                    trailing: Text(
-                                      context.l10n
-                                          .nTransactions(g.kayitlar.length),
-                                      style: context.t.bodySmall
-                                          ?.copyWith(color: context.c.text36),
+                                    // Net tutar sayıyı yerinden etti;
+                                    // hareket sayısı etikette kalır.
+                                    trailing: Semantics(
+                                      label: sag.etiket,
+                                      excludeSemantics: true,
+                                      child: Text(
+                                        sag.metin,
+                                        style: context.t.bodySmall?.copyWith(
+                                          color: context.c.text36,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures()
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -819,7 +904,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                                         _hareketSatiri(
                                           g.kayitlar[k],
                                           ledger,
-                                          baz: ref.watch(bazParaProvider),
+                                          baz: baz,
                                           portfolioState:
                                               pState ?? const PortfolioState(),
                                           hideBalance: hideBalance,
