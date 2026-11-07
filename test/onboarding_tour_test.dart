@@ -650,7 +650,7 @@ void main() {
       await _bekle(tester);
       await _bekle(tester);
       // Görev tamamlandı ama tur ilerlemez; kripto adımına "Devam" götürür.
-      expect(find.text('Varlık Ekle açıldı'), findsOneWidget);
+      expect(find.text('Varlık ekle açıldı'), findsOneWidget);
       await _devam(tester);
       expect(find.text('Varlık Ekle'), findsOneWidget,
           reason: 'Sahte AddAssetScreen rotası açılmalı.');

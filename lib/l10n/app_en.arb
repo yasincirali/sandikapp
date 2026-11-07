@@ -494,7 +494,6 @@
     }
   },
   "bulkAdd": "Bulk add",
-  "quickEntryVoice": "Voice / Quick entry",
   "orNotInList": "or not in the list",
   "symbolHint": "Type a symbol (e.g. AAPL, THYAO.IS)",
   "companyNameHint": "Company name (optional, fetched from the symbol)",

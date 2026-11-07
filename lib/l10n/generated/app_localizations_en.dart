@@ -899,9 +899,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bulkAdd => 'Bulk add';
 
   @override
-  String get quickEntryVoice => 'Voice / Quick entry';
-
-  @override
   String get orNotInList => 'or not in the list';
 
   @override

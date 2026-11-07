@@ -130,7 +130,7 @@ void main() {
       await tester.ensureVisible(ayrinti);
       await tester.tap(ayrinti);
       await tester.pumpAndSettle();
-      expect(find.text('Komisyon / Masraf'), findsOneWidget);
+      expect(find.text('Komisyon / masraf'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -155,7 +155,7 @@ void main() {
             ),
           ));
       expect(find.text('Yazarak ekle'), findsNothing);
-      expect(find.text('Komisyon / Masraf'), findsOneWidget);
+      expect(find.text('Komisyon / masraf'), findsOneWidget);
     });
   });
 

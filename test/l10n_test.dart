@@ -51,7 +51,7 @@ void main() {
           return const SizedBox();
         }),
       ));
-      expect(gorulen, 'Giriş Yap');
+      expect(gorulen, 'Giriş yap');
     });
 
     testWidgets('en_US ile İngilizce', (tester) async {

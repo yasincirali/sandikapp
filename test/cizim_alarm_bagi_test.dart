@@ -447,7 +447,7 @@ void main() {
       expect(find.byType(PriceAlertsScreen), findsOneWidget);
       // (4) Başlık ve çizgi satırının seviyesi (ışın: bitiş yok).
       expect(find.text('Alarmlarım'), findsOneWidget);
-      expect(find.text('Fiyat Alarmları'), findsNothing);
+      expect(find.text('Fiyat alarmları'), findsNothing);
       expect(find.textContaining('Çizgi şu an ₺100'), findsOneWidget);
       expect(find.textContaining('tarihine kadar'), findsNothing);
     });

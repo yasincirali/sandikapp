@@ -671,7 +671,7 @@ List<_Adim> _adimlariKur() {
           'maliyet bugünkü satış fiyatından yazılır. Seçim listesindeki '
           'grafik simgesi, seçmeden önce varlığa bakmanı sağlar.',
       gorev: '+ tuşuna dokun',
-      gorevBitti: 'Varlık Ekle açıldı',
+      gorevBitti: 'Varlık ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
       devam: (_) => _varlikEkleAc(),
     ),
@@ -714,7 +714,7 @@ List<_Adim> _adimlariKur() {
       // sonundaki "Başka yoldan ekle" kartına indi; metin oradan başlar ve
       // sesli girişi klavyenin mikrofonuna bağlar.
       govde: 'Sayfanın altındaki "Başka yoldan ekle" kartında "Yazarak ekle" '
-          'Hızlı Giriş\'i açar: "10 gram altın 4500 lira" ya da '
+          'Hızlı giriş\'i açar: "10 gram altın 4500 lira" ya da '
           '"GARAN 500 adet" yazman yeter; klavyenin mikrofonuyla söyleyebilirsin '
           'de. Her satır ayrı bir varlık olur; fiyat yazmazsan güncel fiyat '
           'kendiliğinden çekilir.',
@@ -962,14 +962,16 @@ List<_Adim> _adimlariKur() {
       // başlıkları bulsun. 2026-10-20: Bildirimler tek soruyla açılır
       // (Az · Dengeli · Çok), tek tek anahtarlar "Ayrıntılı"da.
       // 1 Kas: ayarlar dişliden Profil'in altına indi (tur metni arayüzle
-      // birlikte değişir); sürüm ve yardım satırları Yardım & Yasal'da.
+      // birlikte değişir); sürüm ve yardım satırları Yardım & yasal'da.
+      // 7 Kas (Ar-Ge #4): bölüm adları .arb'da cümle düzenine geçti; metin
+      // ekrandaki yazımı birebir anar.
       govde: 'Profil\'in altındaki dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
           'yatırımcı seviyesi ve "Bugünkü portföyle" görünümü), '
           'Bildirimler (tek dokunuşla Az, Dengeli ya da Çok; fiyat '
           'alarmları, günlük brifingin saati, sessiz saatler; tek tek '
-          'ayarlar "Ayrıntılı"da), Hesap & Güvenlik '
+          'ayarlar "Ayrıntılı"da), Hesap & güvenlik '
           '(kullanıcı adın, kilit, kayıtlı cihazların, verilerin) ve '
-          'Yardım & Yasal. '
+          'Yardım & yasal. '
           'Bu turu da buradan yeniden izleyebilirsin. Çıkış yap en altta.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
@@ -984,7 +986,7 @@ List<_Adim> _adimlariKur() {
           'gelir. Yanlış girdiğin bir şeyi Portföy\'deki kartı kaydırarak '
           'düzeltebilir ya da silebilirsin.',
       gorev: 'İlk varlığını eklemek için + tuşuna dokun',
-      gorevBitti: 'Varlık Ekle açıldı',
+      gorevBitti: 'Varlık ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
       giris: (_) => _sekmeyeGec(0),
     ),

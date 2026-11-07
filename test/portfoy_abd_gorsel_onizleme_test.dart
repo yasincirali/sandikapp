@@ -173,9 +173,9 @@ void main() {
   testWidgets('sonra: küçük halka', (t) => ciz(t, 'abd_sonra_kucuk',
       bayraklar: {...kucuk, 'abd_hisse'}));
   testWidgets('sonra: ABD süzgeci', (t) => ciz(t, 'abd_sonra_abd_secili',
-      bayraklar: {...kucuk, 'abd_hisse'}, dokun: 'ABD Hisse'));
+      bayraklar: {...kucuk, 'abd_hisse'}, dokun: 'ABD hisse'));
   testWidgets('sonra: BIST süzgeci', (t) => ciz(t, 'abd_sonra_bist_secili',
-      bayraklar: {...kucuk, 'abd_hisse'}, dokun: 'BIST Hisse'));
+      bayraklar: {...kucuk, 'abd_hisse'}, dokun: 'BIST hisse'));
   testWidgets('sonra: açık tema', (t) => ciz(t, 'abd_sonra_kucuk_acik',
       bayraklar: {...kucuk, 'abd_hisse'}, acik: true));
 }

@@ -131,7 +131,7 @@ void main() {
       // Cümle düzeni (2026-11-05): başlık ızgaradaki kutuyla aynı ad.
       expect(find.text('Hisse'), findsWidgets);
       expect(find.text('HISSE'), findsNothing);
-      expect(find.text('Varlık Türü'), findsOneWidget);
+      expect(find.text('Varlık türü'), findsOneWidget);
     });
 
     testWidgets('sepet modu, 320pt', (tester) async {

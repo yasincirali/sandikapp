@@ -218,7 +218,7 @@ void main() {
         // Alt sayfanın kutu içi araması kuralı aynen geçerli.
         await tester.tap(find.text('Tümü'));
         await tester.pumpAndSettle();
-        expect(find.text('Altın Türleri'), findsOneWidget);
+        expect(find.text('Altın türleri'), findsOneWidget);
 
         // Alt sayfadaki arama: dolgu dıştaki kutuda, alanın kendisinde değil.
         final arama = find.descendant(
