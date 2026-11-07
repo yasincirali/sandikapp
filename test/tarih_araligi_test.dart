@@ -13,17 +13,17 @@ void main() {
   group('fmtTarihAraligi', () {
     test('aynı ay: gün aralığı bitişik, ay ve yıl bir kez', () {
       expect(fmtTarihAraligi(DateTime(2026, 10, 1), DateTime(2026, 10, 31)),
-          '1–31 Ekim 2026');
+          '1-31 Ekim 2026');
     });
 
     test('ay sınırı: yıl bir kez', () {
       expect(fmtTarihAraligi(DateTime(2026, 10, 27), DateTime(2026, 11, 2)),
-          '27 Ekim – 2 Kasım 2026');
+          '27 Ekim - 2 Kasım 2026');
     });
 
     test('yıl sınırı: iki uç tam', () {
       expect(fmtTarihAraligi(DateTime(2025, 12, 29), DateTime(2026, 1, 4)),
-          '29 Aralık 2025 – 4 Ocak 2026');
+          '29 Aralık 2025 - 4 Ocak 2026');
     });
 
     test('tek gün: aralık değil tarih', () {
@@ -36,25 +36,25 @@ void main() {
       expect(
           fmtTarihAraligi(
               DateTime(2026, 11, 2, 23, 59), DateTime(2026, 10, 27)),
-          '27 Ekim – 2 Kasım 2026');
+          '27 Ekim - 2 Kasım 2026');
     });
 
     test('kısa ay adı', () {
       expect(
           fmtTarihAraligi(DateTime(2026, 10, 27), DateTime(2026, 11, 2),
               kisa: true),
-          '27 Eki – 2 Kas 2026');
+          '27 Eki - 2 Kas 2026');
     });
 
     test('İngilizce', () {
       expect(
           fmtTarihAraligi(DateTime(2026, 10, 1), DateTime(2026, 10, 31),
               dil: 'en_US'),
-          '1–31 October 2026');
+          '1-31 October 2026');
       expect(
           fmtTarihAraligi(DateTime(2026, 10, 27), DateTime(2026, 11, 2),
               dil: 'en_US'),
-          '27 October – 2 November 2026');
+          '27 October - 2 November 2026');
     });
   });
 

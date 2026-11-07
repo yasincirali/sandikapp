@@ -178,8 +178,8 @@ const AY_ADLARI = [
 ];
 
 /**
- * Haftalık bildirimin kapsadığı günler, kısa: "31 Eki – 7 Kas", aynı ayda
- * "1–7 Kas" (yasin 2026-11-07, "zaman aralığı belirtilmeli"; uygulamadaki
+ * Haftalık bildirimin kapsadığı günler, kısa: "31 Eki - 7 Kas", aynı ayda
+ * "1-7 Kas" (yasin 2026-11-07, "zaman aralığı belirtilmeli"; uygulamadaki
  * `fmtTarihAraligi` ile aynı kural, yılsız: bildirim taze, yıl gürültü).
  * Europe/Istanbul günleri (UTC+3, DST yok).
  */
@@ -189,9 +189,9 @@ export function kisaAralik(fromMs: number, toMs: number): string {
   const a = new Date(fromMs + TR_OFFSET_MS);
   const b = new Date(toMs + TR_OFFSET_MS);
   if (a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear()) {
-    return `${a.getUTCDate()}–${b.getUTCDate()} ${KISA[b.getUTCMonth()]}`;
+    return `${a.getUTCDate()}-${b.getUTCDate()} ${KISA[b.getUTCMonth()]}`;
   }
-  return `${a.getUTCDate()} ${KISA[a.getUTCMonth()]} – ${b.getUTCDate()} ${KISA[b.getUTCMonth()]}`;
+  return `${a.getUTCDate()} ${KISA[a.getUTCMonth()]} - ${b.getUTCDate()} ${KISA[b.getUTCMonth()]}`;
 }
 
 /**
@@ -356,7 +356,7 @@ export function buildWeeklyMessage(
   const yukari = changePct >= 0;
   const mutlak = Math.abs(changePct).toFixed(1).replace('.', ',');
 
-  // [aralik] (2026-11-07): "Geçen hafta" hangi günler — "(31 Eki – 7 Kas)".
+  // [aralik] (2026-11-07): "Geçen hafta" hangi günler — "(31 Eki - 7 Kas)".
   // Verilmezse başlık birebir eski.
   const hafta = aralik === null ? 'Geçen hafta' : `Geçen hafta (${aralik})`;
   const baslik = yukari

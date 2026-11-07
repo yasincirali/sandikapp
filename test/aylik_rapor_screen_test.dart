@@ -155,9 +155,9 @@ void main() {
     await t.pumpWidget(ekran());
     await t.pumpAndSettle();
     final l10n = l(t);
-    expect(find.text(l10n.raporKapsam('1–30 Eylül 2026')), findsOneWidget);
+    expect(find.text(l10n.raporKapsam('1-30 Eylül 2026')), findsOneWidget);
     // Notların veri aralığı da yazılır.
-    expect(find.text(l10n.anzAylikNotlarAralik('1–30 Eylül 2026')),
+    expect(find.text(l10n.anzAylikNotlarAralik('1-30 Eylül 2026')),
         findsOneWidget);
     // Haber kaynağı yok: rapor bunu kendisi söyler, haber metni uydurmaz.
     await t.scrollUntilVisible(find.text(l10n.anzAylikHaberYok), 200);

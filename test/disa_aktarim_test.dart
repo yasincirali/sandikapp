@@ -319,7 +319,7 @@ void main() {
       final b = aylikRaporBelgesi(
         donem: DateTime(2026, 10),
         notlar: const [],
-        kapsam: 'Kapsam: 1–31 Ekim 2026',
+        kapsam: 'Kapsam: 1-31 Ekim 2026',
         ozetCumlesi: 'x',
         eksikCumlesi: null,
         kim: 'yasin',
@@ -333,7 +333,7 @@ void main() {
         fiyatCumlesi: 'Fiyatlar 31 Ekim 2026 18:00 itibarıyla.',
         haberCumlesi: 'Haberler bu raporda yok.',
       );
-      expect(b.kapsam, 'Kapsam: 1–31 Ekim 2026');
+      expect(b.kapsam, 'Kapsam: 1-31 Ekim 2026');
       expect(b.tablolarOnce, isTrue);
       expect([for (final t in b.tablolar) t.baslik],
           ['Ayın varlıkları', 'Para girişi ve çıkışı', 'Önemli gelişmeler']);
@@ -357,9 +357,9 @@ void main() {
 
     test('yıllık kapsam: kapanmış yıl tam, süren yıl bugüne kadar', () {
       expect(yillikKapsam(2025, DateTime(2026, 11, 7)),
-          'Kapsam: 1 Ocak – 31 Aralık 2025');
+          'Kapsam: 1 Ocak - 31 Aralık 2025');
       expect(yillikKapsam(2026, DateTime(2026, 11, 7)),
-          'Kapsam: 1 Ocak – 7 Kasım 2026, bugüne kadar');
+          'Kapsam: 1 Ocak - 7 Kasım 2026, bugüne kadar');
     });
 
     test('PDF özetinde sayaç ve sıfır masraf kutusu yok, Excel aynı', () {

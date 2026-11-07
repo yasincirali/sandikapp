@@ -369,8 +369,8 @@ String fmtTarihSaat(DateTime t, {bool yilsiz = false}) {
 }
 
 
-/// Bir raporun KAPSADIĞI tarih aralığı: "1–31 Ekim 2026",
-/// "27 Ekim – 2 Kasım 2026", "29 Aralık 2025 – 4 Ocak 2026"; tek gün
+/// Bir raporun KAPSADIĞI tarih aralığı: "1-31 Ekim 2026",
+/// "27 Ekim - 2 Kasım 2026", "29 Aralık 2025 - 4 Ocak 2026"; tek gün
 /// "6 Kasım 2026".
 ///
 /// ## Neden tek biçimleyici (yasin, 2026-11-07)
@@ -388,7 +388,7 @@ String fmtTarihSaat(DateTime t, {bool yilsiz = false}) {
 /// yerel veri yüklenmemişken `DateFormat` istisna fırlatırdı.
 ///
 /// [dil] `context.tarihDili` ('tr_TR' / 'en_US'); PDF'ler Türkçe.
-/// [kisa] ay adını kısaltır ("27 Eki – 2 Kas 2026"): dar satır ve bildirim.
+/// [kisa] ay adını kısaltır ("27 Eki - 2 Kas 2026"): dar satır ve bildirim.
 /// Uçlar takvim günüdür; saat atılır. Ters verilirse sıralanır.
 String fmtTarihAraligi(DateTime bas, DateTime bit,
     {String dil = 'tr_TR', bool kisa = false}) {
@@ -398,12 +398,12 @@ String fmtTarihAraligi(DateTime bas, DateTime bit,
   String ay(DateTime t) => _ayAdi(t.month, dil, kisa);
   if (a == b) return '${a.day} ${ay(a)} ${a.year}';
   if (a.year == b.year && a.month == b.month) {
-    return '${a.day}–${b.day} ${ay(b)} ${b.year}';
+    return '${a.day}-${b.day} ${ay(b)} ${b.year}';
   }
   if (a.year == b.year) {
-    return '${a.day} ${ay(a)} – ${b.day} ${ay(b)} ${b.year}';
+    return '${a.day} ${ay(a)} - ${b.day} ${ay(b)} ${b.year}';
   }
-  return '${a.day} ${ay(a)} ${a.year} – ${b.day} ${ay(b)} ${b.year}';
+  return '${a.day} ${ay(a)} ${a.year} - ${b.day} ${ay(b)} ${b.year}';
 }
 
 /// Tek takvim günü, rapor dilinde: "6 Kasım 2026". [saat] verilirse

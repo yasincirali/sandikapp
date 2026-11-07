@@ -335,21 +335,21 @@ Deno.test('kisaAralik: ay sınırında iki ay adı, aynı ayda tek', () => {
   // 31 Eki 12:00 TR → 7 Kas 12:00 TR
   const a = Date.UTC(2026, 9, 31, 9);
   const b = Date.UTC(2026, 10, 7, 9);
-  assertEquals(kisaAralik(a, b), '31 Eki – 7 Kas');
-  assertEquals(kisaAralik(Date.UTC(2026, 10, 1, 9), b), '1–7 Kas');
+  assertEquals(kisaAralik(a, b), '31 Eki - 7 Kas');
+  assertEquals(kisaAralik(Date.UTC(2026, 10, 1, 9), b), '1-7 Kas');
 });
 
 Deno.test('kisaAralik: TR gece yarısı sınırı (UTC 21:00 ertesi gündür)', () => {
   assertEquals(
     kisaAralik(Date.UTC(2026, 9, 31, 21, 30), Date.UTC(2026, 10, 7, 9)),
-    '1–7 Kas',
+    '1-7 Kas',
   );
 });
 
 Deno.test('aralık verilirse başlık hangi günleri yazar; verilmezse eski', () => {
   assertEquals(
-    buildWeeklyMessage(2.34, null, null, '31 Eki – 7 Kas').title,
-    '▲ Geçen hafta (31 Eki – 7 Kas) piyasadan %2,3',
+    buildWeeklyMessage(2.34, null, null, '31 Eki - 7 Kas').title,
+    '▲ Geçen hafta (31 Eki - 7 Kas) piyasadan %2,3',
   );
   assertEquals(buildWeeklyMessage(2.34, null).title, '▲ Geçen hafta piyasadan %2,3');
 });
