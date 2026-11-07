@@ -161,6 +161,14 @@ void main() {
     });
   });
 
+  test('silinenlerde kaplar silinme ayına göre; sayı aynı kaba yazılır', () {
+    final o = ayBasligiOzetleri([
+      _a('s1', t: DateTime(2026, 9, 3), silindi: DateTime(2026, 11, 2)),
+    ], tarih: silinmeAni);
+    expect(o.keys, [DateTime(2026, 11)]);
+    expect(o[DateTime(2026, 11)]!.sayi, 1);
+  });
+
   group('ayBasligiMetni', () {
     test('artı net: "Net +₺1.250", etikette sayı da var', () {
       final r = ayBasligiMetni(l,

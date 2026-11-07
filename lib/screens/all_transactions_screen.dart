@@ -114,10 +114,15 @@ DateTime _islemTarihi(Asset a) => a.addedDate;
 /// tür/dönem/arama süzgeci varken görünen satırların toplamı, ama sayfa
 /// sınırı bir ayı ikiye bölse de başlık o ayın gerçek toplamını yazar
 /// (eskiden sayı da sayfa dilimini sayıyordu; şimdi ikisi de ayın tamamı).
+///
+/// [tarih] listedeki kapların bölündüğü anla AYNI olmalı (silinenlerde
+/// [silinmeAni]); yoksa sayı başka bir ayın kabına yazılır.
 Map<DateTime, ({int sayi, double? net})> ayBasligiOzetleri(
-    List<Asset> kayitlar) {
+  List<Asset> kayitlar, {
+  DateTime Function(Asset) tarih = _islemTarihi,
+}) {
   return {
-    for (final g in hareketleriAylaGrupla(kayitlar))
+    for (final g in hareketleriAylaGrupla(kayitlar, tarih: tarih))
       g.ay: (
         sayi: g.kayitlar.length,
         net: ContributionHistoryService.netKatki(g.kayitlar),
@@ -814,7 +819,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                       );
                       // Ay başlığı özetleri süzülmüş listenin TAMAMINDAN
                       // (sayfa dilimi değil; bkz. `ayBasligiOzetleri`).
-                      final ozetler = ayBasligiOzetleri(rows);
+                      final ozetler = ayBasligiOzetleri(rows,
+                          tarih: _silinenler ? silinmeAni : _islemTarihi);
                       final baz = ref.watch(bazParaProvider);
                       final dahaVar = shown < rows.length;
                       final hp = SandikSpace.screenH(context);
