@@ -329,7 +329,7 @@ void main() {
       await bak(SettingsBolum.hesap,
           [_tr.settingsGroupSecurityAccount, _tr.settingsGroupData]);
       await bak(
-          SettingsBolum.yardim, [_tr.supportUpper, _tr.settingsGroupAbout]);
+          SettingsBolum.yardim, [_tr.yardimVeDestek, _tr.settingsGroupAbout]);
     });
 
     // Ar-Ge 29 Eki #2: Yardım 10 satırdan 5'e; hiçbir belge ya da yol

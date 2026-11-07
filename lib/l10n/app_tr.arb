@@ -870,9 +870,7 @@
   "downloadMyDataSubtitle": "Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)",
   "deleteMyAccount": "Hesabımı sil",
   "deleteMyAccountSubtitle": "Tüm verilerin kalıcı olarak silinir",
-  "supportUpper": "Destek",
   "contactUs": "Bize ulaş",
-  "sssBaslik": "Sık sorulanlar",
   "sssFonSoru": "Fon fiyatım neden gün içinde değişmiyor?",
   "sssFonCevap": "TEFAS fon fiyatını günde bir kez, iş günü akşamı açıklar. sandık o gün açıklanan fiyatı gösterir; fiyat gün içinde değişmez.",
   "sssSiklikSoru": "Fiyatlar ne sıklıkta güncellenir?",
@@ -6692,5 +6690,13 @@
   "@goalDateMonthly": {"placeholders": {"tutar": {"type": "String"}}},
   "goalDateNoReturn": "Getiri hariç",
   "goalDateBy": "{tarih}'{ek} kadar",
-  "@goalDateBy": {"placeholders": {"tarih": {"type": "String"}, "ek": {"type": "String"}}}
+  "@goalDateBy": {"placeholders": {"tarih": {"type": "String"}, "ek": {"type": "String"}}},
+  "kiyasPaylasTooltip": "Kıyası paylaş",
+  "kiyasPaylasKartBaslik": "{donem} kıyası",
+  "@kiyasPaylasKartBaslik": {"placeholders": {"donem": {"type": "String"}}},
+  "kiyasPaylasAlt": "sandık ile kıyasladım",
+  "kiyasPaylasNot": "Kartta tutar yok; yalnız dönem yüzdeleri.",
+  "kiyasPaylasMetni": "{donem} kıyası: {ozet}. sandık ile kıyasladım: {link}",
+  "@kiyasPaylasMetni": {"placeholders": {"donem": {"type": "String"}, "ozet": {"type": "String"}, "link": {"type": "String"}}},
+  "yardimVeDestek": "Yardım ve destek"
 }

@@ -1081,12 +1081,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return [
       // Sık sorulanlar en üstte (Ar-Ge 5 Kas 21:20 #4): takılan kişi önce
       // cevabı görür; çözülmezse cevabın altındaki bağlantı aynı formu açar.
-      SandikSectionHeader(title: context.l10n.sssBaslik),
+      // "Sık sorulanlar" ve "Destek" iki ayrı başlıktı; ikisi de tek işe,
+      // takılan kişiye yardıma hizmet ediyordu. Bir iş = bir başlık (Ar-Ge
+      // 7 Kas 04:03 #3): "Yardım ve destek" altında önce cevaplar, sonra
+      // bize yaz ve puan; ikinci başlık ve 28 pt boşluğu kalktı.
+      SandikSectionHeader(title: context.l10n.yardimVeDestek),
       const SizedBox(height: 12),
       SikSorulanlar(onBizeYaz: _openFeedbackSheet),
-      const SizedBox(height: 28),
-      SandikSectionHeader(title: context.l10n.supportUpper),
-      const SizedBox(height: 12),
+      const SizedBox(height: SandikSpace.sm),
       iletisim,
       puan,
       const SizedBox(height: 28),

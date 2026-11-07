@@ -87,9 +87,12 @@ void main() {
     await tester.pumpWidget(ayarlar(SettingsBolum.yardim));
     await tester.pumpAndSettle();
 
-    final sss = tester.getTopLeft(find.text(_tr.sssBaslik)).dy;
-    final destek = tester.getTopLeft(find.text(_tr.supportUpper)).dy;
-    expect(sss, lessThan(destek));
+    // Tek başlık (Ar-Ge 7 Kas 04:03 #3): "Yardım ve destek" altında önce
+    // sorular; eski ikinci "Destek" başlığı yok.
+    expect(find.text(_tr.yardimVeDestek), findsOneWidget);
+    final baslik = tester.getTopLeft(find.text(_tr.yardimVeDestek)).dy;
+    final ilkSoru = tester.getTopLeft(find.byKey(const ValueKey('sss0'))).dy;
+    expect(baslik, lessThan(ilkSoru));
     expect(find.text(_tr.sssFonCevap), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('sss0')));

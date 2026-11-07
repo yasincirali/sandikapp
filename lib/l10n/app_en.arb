@@ -853,9 +853,7 @@
   "downloadMyDataSubtitle": "Get all your data as a JSON file (KVKK Article 11)",
   "deleteMyAccount": "Delete my account",
   "deleteMyAccountSubtitle": "All your data is permanently deleted",
-  "supportUpper": "Support",
   "contactUs": "Contact us",
-  "sssBaslik": "Frequently asked",
   "sssFonSoru": "Why doesn't my fund price change during the day?",
   "sssFonCevap": "TEFAS publishes fund prices once a day, on business-day evenings. sandık shows that day's published price; it does not change during the day.",
   "sssSiklikSoru": "How often are prices updated?",
@@ -5946,5 +5944,11 @@
   "goalDateLockedLabel": "Locked",
   "goalDateMonthly": "Add about {tutar} a month to make it",
   "goalDateNoReturn": "Excludes returns",
-  "goalDateBy": "By {tarih}"
+  "goalDateBy": "By {tarih}",
+  "kiyasPaylasTooltip": "Share comparison",
+  "kiyasPaylasKartBaslik": "{donem} comparison",
+  "kiyasPaylasAlt": "Compared with sandık",
+  "kiyasPaylasNot": "No amounts on the card; only period percentages.",
+  "kiyasPaylasMetni": "{donem} comparison: {ozet}. Compared with sandık: {link}",
+  "yardimVeDestek": "Help and support"
 }
