@@ -4,12 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/l10n.dart';
-import '../models/asset.dart';
 import '../providers/auth_provider.dart';
-import '../providers/portfolio_provider.dart';
+import '../providers/aylik_rapor_provider.dart';
 import '../services/aylik_rapor_disa_aktarim.dart';
 import '../services/crash_reporter.dart';
-import '../services/daily_summary.dart';
+import '../services/aylik_rapor_ozeti.dart';
 import '../services/disa_aktarim/disa_aktarim_service.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/sandik_paylas_dugmesi.dart';
@@ -24,6 +23,8 @@ import '../widgets/sandik_cizimi.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
+import '../widgets/aylik_rapor_bolumleri.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'analiz_notu_screen.dart';
@@ -38,6 +39,19 @@ import 'hafta_ozeti_screen.dart' show HaftaRozetCipi;
 /// notu çıkmayan varlıklar sonda adlarıyla anılır.
 /// Sıra haftanın özetiyle aynı (rozet önemi), kullanıcı iki ekranı aynı
 /// mantıkla okur.
+///
+/// ## Kapsam genişledi (yasin 2026-11-07)
+/// *"aylık raporda neden sadece fonların raporları var tüm varlıkların …
+/// para giriş çıkışları … önemli haber detayları vs de olmalı"*. Not yalnız
+/// radar varlıklarına (fon, BIST hissesi, coin) yazılıyor ve kapıdan
+/// geçemeyen not yayımlanmıyor; rapor yalnız notlardan kurulunca altın,
+/// döviz, mevduat hiç, notu çıkmayan hisse de yalnız "not çıkmadı"
+/// satırında görünüyordu. Artık notların ÜSTÜNDE üç sayısal bölüm var
+/// (ayın varlıkları, para girişi ve çıkışı, önemli gelişmeler;
+/// `AylikRaporOzeti`) ve en üstte kapsadığı günler. Haber metni yok:
+/// lisanslı kaynak yok, rapor bunu sonunda söyler. "Portföy getirisi
+/// Performans'ta" kararı sürer: yüzde kutusu yalnız PDF'te (müşavir), ekran
+/// varlık bazında ay başı → ay sonu değişimi gösterir.
 class AylikRaporScreen extends ConsumerWidget {
   const AylikRaporScreen({super.key, required this.donem});
 
@@ -73,6 +87,8 @@ class AylikRaporScreen extends ConsumerWidget {
     final anahtarlar = ref.watch(tutulanNotAnahtarlariProvider);
     final notlar =
         ref.watch(notOzetleriProvider(notKumesi(anahtarlar, 'aylik')));
+    final ozetHal = ref.watch(aylikRaporOzetiProvider(donem));
+    final dil = context.tarihDili;
 
     return Scaffold(
       appBar: SandikAppBar(title: l10n.anzAylikBaslik(ay)),
@@ -102,7 +118,19 @@ class AylikRaporScreen extends ConsumerWidget {
                     (haftaRozetiSunucudan(b.rozet) ?? HaftaRozeti.sakin).index;
                 return ra != rb ? ra - rb : a.ticker.compareTo(b.ticker);
               });
-            if (buAy.isEmpty) return _Bos(metin: l10n.anzAylikBos);
+            final ozet = ozetHal.valueOrNull;
+            // Sayısal bölümler (2026-11-07) not çıkmayan ayda da raporu
+            // taşır: rapor ancak ikisi de boşsa "hazır değil" der. Bölümler
+            // yüklenirken boş durum gösterilmez (bir an sonra dolacak).
+            if (buAy.isEmpty && ozetHal.isLoading) {
+              return const Padding(
+                padding: EdgeInsets.all(SandikSpace.md),
+                child: SandikSkeletonList(rows: 3),
+              );
+            }
+            if (buAy.isEmpty && (ozet == null || ozet.bos)) {
+              return _Bos(metin: l10n.anzAylikBos);
+            }
             final hareketli = buAy.where((n) => n.rozet != 'sakin').length;
             // Tutup notu çıkmayan varlıklar (ay boyu veri yetmedi ya da not
             // sayı kapısından geçmedi). Sessizce düşerse titiz okur "5
@@ -112,6 +140,13 @@ class AylikRaporScreen extends ConsumerWidget {
               for (final k in anahtarlar)
                 if (!notlu.contains(k)) notKodu(k)
             ]..sort();
+            // Kapsam satırı (yasin 2026-11-07, "zaman aralığı belirtilmeli"):
+            // raporun saydığı günler açık tarihle. Pencere ekran ve PDF'te
+            // aynı kaynaktan (`AylikRaporOzeti.pencere`).
+            final (kBas, kBit, suren) =
+                AylikRaporOzeti.pencere(donem, DateTime.now());
+            final aralik = fmtTarihAraligi(kBas, kBit, dil: dil);
+            final notAraligi = notVeriAraligi(buAy);
             final yatay = SandikSpace.screenH(context);
             Widget liste({VoidCallback? onHikaye}) => ListView(
                   padding: EdgeInsets.fromLTRB(
@@ -139,13 +174,30 @@ class AylikRaporScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(
-                            hareketli > 0
-                                ? l10n.anzAylikOzetVar(
-                                    '${buAy.length}', '$hareketli')
-                                : l10n.anzAylikOzetYok,
-                            style: t.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700, color: c.text90),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                suren
+                                    ? l10n.raporKapsamSuren(aralik)
+                                    : l10n.raporKapsam(aralik),
+                                style: t.bodySmall?.copyWith(
+                                    color: c.text58,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: SandikSpace.xxs),
+                              Text(
+                                buAy.isEmpty
+                                    ? l10n.anzAylikOzetYok
+                                    : hareketli > 0
+                                        ? l10n.anzAylikOzetVar(
+                                            '${buAy.length}', '$hareketli')
+                                        : l10n.anzAylikOzetYok,
+                                style: t.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: c.text90),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: SandikSpace.xs),
@@ -155,27 +207,65 @@ class AylikRaporScreen extends ConsumerWidget {
                           hiza: AlignmentDirectional.topEnd,
                           tooltip: l10n.anzAylikPdfPaylas,
                           onPaylas: (kaynak) => _pdfPaylas(context, ref,
-                              notlar: buAy, eksik: eksik, kaynak: kaynak),
+                              notlar: buAy,
+                              eksik: eksik,
+                              ozet: ozet,
+                              kaynak: kaynak),
                         ),
                       ],
                     ),
-                    const SizedBox(height: SandikSpace.md),
-                    for (final n in buAy) ...[
-                      _VarlikKarti(not: n),
-                      const SizedBox(height: SandikSpace.smd),
+                    if (ozetHal.isLoading) ...[
+                      const SizedBox(height: SandikSpace.lg),
+                      // Liste içinde kaydırmasız blok (iç içe kaydırma yok).
+                      const SandikSkeleton(
+                          height: SandikTouch.min * 2,
+                          radius: SandikRadius.md),
+                    ] else if (ozet != null) ...[
+                      if (ozet.varliklar.isNotEmpty)
+                        AyinVarliklariBolumu(ozet: ozet),
+                      if (!ozet.akis.bos) ParaAkisiBolumu(akis: ozet.akis),
+                      if (ozet.gelismeler.isNotEmpty)
+                        GelismelerBolumu(gelismeler: ozet.gelismeler),
+                    ],
+                    if (buAy.isNotEmpty) ...[
+                      const SizedBox(height: SandikSpace.lg),
+                      SandikSectionHeader(title: l10n.anzAylikNotlarBaslik),
+                      if (notAraligi != null) ...[
+                        const SizedBox(height: SandikSpace.xxs),
+                        Text(
+                            l10n.anzAylikNotlarAralik(fmtTarihAraligi(
+                                notAraligi.$1, notAraligi.$2,
+                                dil: dil)),
+                            style: t.bodySmall?.copyWith(color: c.text58)),
+                      ],
+                      const SizedBox(height: SandikSpace.sm),
+                      for (final n in buAy) ...[
+                        _VarlikKarti(not: n),
+                        const SizedBox(height: SandikSpace.smd),
+                      ],
                     ],
                     if (eksik.isNotEmpty) ...[
+                      const SizedBox(height: SandikSpace.sm),
                       Text(l10n.anzAylikEksik(eksik.join(', ')),
                           style: t.bodySmall?.copyWith(color: c.text58)),
-                      const SizedBox(height: SandikSpace.sm),
                     ],
+                    const SizedBox(height: SandikSpace.md),
+                    // Haber yok (2026-11-07): yasin "önemli haber detayları"
+                    // istedi; lisanslı haber/KAP kaynağı yok
+                    // (`docs/KAP_VERI_LISANSI_2026_09.md`). Haber metni
+                    // uydurulmaz, eksiklik raporun kendisinde söylenir.
+                    Text(l10n.anzAylikHaberYok,
+                        style: t.bodySmall?.copyWith(color: c.text58)),
+                    const SizedBox(height: SandikSpace.sm),
                     Text(l10n.rdrHaftaKaynak,
                         style: t.bodySmall?.copyWith(color: c.text36)),
                   ],
                 );
             // Bayrak `goz_alici`: ayın ilk açılışında hikâye; kapalıyken
-            // birebir eski liste.
-            if (!RemoteConfigService.instance.gozAlici) return liste();
+            // birebir eski liste. Not yoksa hikâye yok (anlatacak not yok).
+            if (!RemoteConfigService.instance.gozAlici || buAy.isEmpty) {
+              return liste();
+            }
             return AylikHikayeKapisi(
               donem: donem,
               notlar: buAy,
@@ -188,33 +278,27 @@ class AylikRaporScreen extends ConsumerWidget {
     );
   }
 
-  /// Aylık raporun PDF'i: notların tamamı, ayın getirisi ve TÜFE'si
-  /// (`AylikRaporDisaAktarim`). Ekran Premium kilidinin ardında; buraya
-  /// kilitli kullanıcı gelmez.
+  /// Aylık raporun PDF'i: ekrandaki bölümlerin aynısı (kapsam, ayın
+  /// varlıkları, para girişi/çıkışı, gelişmeler, notların tamamı) + ayın
+  /// getirisi ve TÜFE'si (`AylikRaporDisaAktarim`). Sayısal bölümler ekranın
+  /// elindeki [ozet]'ten: PDF ikinci kez hesaplamaz, iki yüzey ayrışmaz.
+  /// Ekran Premium kilidinin ardında; buraya kilitli kullanıcı gelmez.
   Future<void> _pdfPaylas(
     BuildContext context,
     WidgetRef ref, {
     required List<AnalizOzeti> notlar,
     required List<String> eksik,
+    required AylikRaporOzeti? ozet,
     Rect? kaynak,
   }) async {
     final kullanici = ref.read(authProvider).valueOrNull;
-    final durum = ref.read(portfolioProvider).valueOrNull;
-    final lotlar = durum == null
-        ? const <Asset>[]
-        : [
-            for (final a in durum.assets)
-              if (a.userId == durum.ownerId && a.isActive) a
-          ];
     try {
       final belge = await AylikRaporDisaAktarim.belgeHazirla(
         donem: donem,
         notlar: notlar,
         eksik: eksik,
-        lotlar: lotlar,
+        ozet: ozet,
         kim: kullanici?.username ?? kullanici?.email ?? '',
-        canliToplam:
-            durum == null ? null : DailySummary.kapsamToplami(durum, lotlar),
       );
       await DisaAktarimService.instance.paylas(belge,
           bicim: DisaAktarimBicimi.pdf, tur: 'aylik_rapor', kaynak: kaynak);

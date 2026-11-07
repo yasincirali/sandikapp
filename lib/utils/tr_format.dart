@@ -368,3 +368,74 @@ String fmtTarihSaat(DateTime t, {bool yilsiz = false}) {
       : DateFormat(gun, 'tr_TR').format(y);
 }
 
+
+/// Bir raporun KAPSADIĞI tarih aralığı: "1-31 Ekim 2026",
+/// "27 Ekim - 2 Kasım 2026", "29 Aralık 2025 - 4 Ocak 2026"; tek gün
+/// "6 Kasım 2026".
+///
+/// ## Neden tek biçimleyici (yasin, 2026-11-07)
+/// *"varolan tüm raporlarda kapsadığı ve bilgileri verilen dataların zaman
+/// aralığı belirtilmeli … kafa karışıklığı olmamalı"*. Aylık rapor "Ekim
+/// 2026 raporu", haftanın özeti "son hafta", yıl özeti "bu yıl" diyordu;
+/// hangi günlerin sayıldığını hiçbiri yazmıyordu. Her yüzey kendi
+/// `DateFormat` kalıbını kursaydı biri "27.10 - 02.11", biri "27 Eki →
+/// 2 Kas" yazardı. Kural tek yerde: aynı ay ve yıl tekrar edilmez (gün
+/// aralığı tireyle bitişik), farklı ayda yalnız yıl birleşir, farklı yılda
+/// iki uç tam yazılır.
+///
+/// Ay adları sabit tablodan (`intl` yerel verisi değil): PDF kurucuları ve
+/// servisler saf, testleri `initializeDateFormatting` çağırmadan koşuyor;
+/// yerel veri yüklenmemişken `DateFormat` istisna fırlatırdı.
+///
+/// [dil] `context.tarihDili` ('tr_TR' / 'en_US'); PDF'ler Türkçe.
+/// [kisa] ay adını kısaltır ("27 Eki - 2 Kas 2026"): dar satır ve bildirim.
+/// Uçlar takvim günüdür; saat atılır. Ters verilirse sıralanır.
+String fmtTarihAraligi(DateTime bas, DateTime bit,
+    {String dil = 'tr_TR', bool kisa = false}) {
+  var a = dayKey(bas);
+  var b = dayKey(bit);
+  if (b.isBefore(a)) (a, b) = (b, a);
+  String ay(DateTime t) => _ayAdi(t.month, dil, kisa);
+  if (a == b) return '${a.day} ${ay(a)} ${a.year}';
+  if (a.year == b.year && a.month == b.month) {
+    return '${a.day}-${b.day} ${ay(b)} ${b.year}';
+  }
+  if (a.year == b.year) {
+    return '${a.day} ${ay(a)} - ${b.day} ${ay(b)} ${b.year}';
+  }
+  return '${a.day} ${ay(a)} ${a.year} - ${b.day} ${ay(b)} ${b.year}';
+}
+
+/// Tek takvim günü, rapor dilinde: "6 Kasım 2026". [saat] verilirse
+/// "6 Kasım 2026 18:00" — "fiyatlar … itibarıyla" gibi veri anı satırları
+/// için; saat bilinmiyorsa ([saatBiliniyor]) yazılmaz, uydurma "00:00" yok.
+String fmtTarih(DateTime t, {String dil = 'tr_TR', bool saat = false}) {
+  final y = t.toLocal();
+  final gun = '${y.day} ${_ayAdi(y.month, dil, false)} ${y.year}';
+  if (!saat || !saatBiliniyor(y)) return gun;
+  String iki(int v) => v.toString().padLeft(2, '0');
+  return '$gun ${iki(y.hour)}:${iki(y.minute)}';
+}
+
+const _ayTr = [
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', //
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+];
+const _ayTrKisa = [
+  'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', //
+  'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara',
+];
+const _ayEn = [
+  'January', 'February', 'March', 'April', 'May', 'June', //
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+const _ayEnKisa = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+String _ayAdi(int ay, String dil, bool kisa) {
+  final en = dil.startsWith('en');
+  final t = en ? (kisa ? _ayEnKisa : _ayEn) : (kisa ? _ayTrKisa : _ayTr);
+  return t[ay - 1];
+}

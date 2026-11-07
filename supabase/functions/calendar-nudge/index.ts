@@ -123,15 +123,29 @@ export function endeksAyGeri(
   return Number.isFinite(v) && v > 0 ? v : null;
 }
 
+const AY_ADLARI = [
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+];
+
+/// [donem] (2026-11-07, "zaman aralığı belirtilmeli"): açıklanan ayın
+/// endeks dönemi ('YYYY-MM…'); başlık hangi ayın enflasyonu olduğunu
+/// yazar ("Ekim 2026 enflasyonu açıklandı"). Verilmezse başlık birebir eski.
 export function buildInflationMessage(
   aylik: number | null,
   yillik: number | null,
+  donem: string | null = null,
 ): { title: string; body: string } {
   const parcalar: string[] = [];
   if (aylik !== null) parcalar.push(`aylık %${formatPct(aylik)}`);
   if (yillik !== null) parcalar.push(`yıllık %${formatPct(yillik)}`);
+  const m = donem === null ? null : /^(\d{4})-(\d{2})/.exec(donem);
+  const ay = m === null ? null : AY_ADLARI[Number(m[2]) - 1];
+  const bas = ay === undefined || ay === null
+    ? 'Enflasyon açıklandı'
+    : `${ay} ${m![1]} enflasyonu açıklandı`;
   return {
-    title: `Enflasyon açıklandı: ${parcalar.join(' · ')}`,
+    title: `${bas}: ${parcalar.join(' · ')}`,
     body: 'Portföyünün enflasyonun önünde mi olduğunu görmek için sandık\'ı aç.',
   };
 }
@@ -1201,7 +1215,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ ok: true, reason: 'Hesap yapilamadi.', sent: 0 });
     }
 
-    const mesaj = buildInflationMessage(aylik, yillik);
+    const mesaj = buildInflationMessage(aylik, yillik, sonPeriod);
 
     // ── Bu ay ZATEN gönderildi mi? ──────────────────────────────────────────
     //

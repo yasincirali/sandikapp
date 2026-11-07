@@ -118,7 +118,17 @@ class RecapData {
     this.inflationStart,
     this.inflationEnd,
     this.valueByType = const {},
+    this.olcumBaslangic,
+    this.olcumBitis,
   });
+
+  /// Özetin ÖLÇTÜĞÜ ilk ve son gün: dönemin ilk ve son anlık görüntüsü
+  /// (yasin 2026-11-07, "zaman aralığı belirtilmeli"). Başlık takvim yılını
+  /// söyler ama yıl ortasında başlayan kullanıcının ilk görüntüsü
+  /// Haziran'dadır ve süren yılda son görüntü bugündür; "Portföyün +%12"
+  /// rakamı hangi günleri ölçtüğünü yanında yazar. Görüntü yoksa `null`.
+  final DateTime? olcumBaslangic;
+  final DateTime? olcumBitis;
 
   /// Gösterilmeye değer mi?
   ///
@@ -330,6 +340,12 @@ class RecapService {
       // ölçtüğünü söylemiyor ve başlıktaki yıl yanıltıcı (alan notuna bak).
       inflationStart: inflationStart,
       inflationEnd: inflationEnd,
+      olcumBaslangic: sirali.isEmpty
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(sirali.first.ts),
+      olcumBitis: sirali.isEmpty
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(sirali.last.ts),
     );
   }
 

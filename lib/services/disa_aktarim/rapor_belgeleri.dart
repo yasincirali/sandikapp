@@ -14,6 +14,15 @@ import 'rapor_belgesi.dart';
 /// Belgeler Türkçedir: alıcısı çoğunlukla mali müşavir ve sütun adları
 /// Türk vergi diline göre seçildi (Gerçekleşen kâr/zarar, Stopaj). Saf.
 
+/// Yıllık raporun kapsam satırı: kapanmış yılda "1 Ocak – 31 Aralık 2025",
+/// süren yılda belge gününe kadar ("…, bugüne kadar").
+String yillikKapsam(int yil, DateTime olusturma) {
+  final bas = DateTime(yil);
+  final suren = olusturma.year == yil;
+  final bit = suren ? olusturma : DateTime(yil, 12, 31);
+  return 'Kapsam: ${fmtTarihAraligi(bas, bit)}${suren ? ', bugüne kadar' : ''}';
+}
+
 /// Yıllık kâr, temettü ve masraf raporu.
 RaporBelgesi yillikRaporBelgesi(
   YillikRapor r, {
@@ -46,6 +55,8 @@ RaporBelgesi yillikRaporBelgesi(
           not: 'ele geçen, TL',
         ),
     ],
+    // Kapsam (yasin 2026-11-07): takvim yılı; süren yılda bugüne kadar.
+    kapsam: yillikKapsam(r.yil, olusturma),
     baslik: 'sandık · ${r.yil} yıllık kâr, temettü ve masraf raporu',
     altBaslik: '$kim · oluşturma ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)}',
     dosyaAdi: belgeDosyaAdi('Yıllık Rapor', '${r.yil}'),
@@ -227,6 +238,13 @@ RaporBelgesi portfoyBelgesi({
           not: 'açık pozisyonlar, TL',
         ),
     ],
+    // Kapsam (2026-11-07): değerler belge anında, işlem listesi ilk
+    // kayıttan bugüne. Döküm bir "an" belgesi, ama işlem tablosu geçmişi
+    // taşır; ikisinin aralığı ayrı yazılır.
+    kapsam: islemler.isEmpty
+        ? 'Kapsam: değerler ${fmtTarih(olusturma, saat: true)} itibarıyla'
+        : 'Kapsam: değerler ${fmtTarih(olusturma, saat: true)} itibarıyla; '
+            'işlemler ${fmtTarihAraligi(islemler.last.addedDate, olusturma)}',
     baslik: 'sandık · portföy dökümü',
     altBaslik: '$kim · ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)} itibarıyla',
     dosyaAdi: belgeDosyaAdi('Portföy Dökümü', anDonemi(olusturma)),

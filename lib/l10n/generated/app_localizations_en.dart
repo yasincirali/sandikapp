@@ -7660,7 +7660,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String anzAylikEksik(String kodlar) {
-    return 'No note this month for $kodlar; their numbers are on their own pages.';
+    return 'No AI note this month for $kodlar.';
   }
 
   @override
@@ -7671,6 +7671,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get anzAylikBos => 'This month\'s report is not ready yet.';
+
+  @override
+  String raporKapsam(String aralik) {
+    return 'Covers $aralik';
+  }
+
+  @override
+  String raporKapsamSuren(String aralik) {
+    return 'Covers $aralik, to date';
+  }
+
+  @override
+  String raporFiyatTarihi(String tarih) {
+    return 'Prices as of $tarih.';
+  }
+
+  @override
+  String get anzAylikVarliklarBaslik => 'Your assets this month';
+
+  @override
+  String get anzAylikVarliklarDipnot =>
+      'Change since the start of the month, net of buys and sells.';
+
+  @override
+  String anzAylikOlculemeyen(String adlar) {
+    return 'No price series for $adlar, so no change is shown.';
+  }
+
+  @override
+  String anzAylikSemVarlik(String ad, String yuzde, String tutar) {
+    return '$ad: change this month $yuzde, market effect $tutar';
+  }
+
+  @override
+  String get anzAylikAkisBaslik => 'Money in and out';
+
+  @override
+  String get anzAylikAkisAlim => 'Buys';
+
+  @override
+  String get anzAylikAkisSatis => 'Sells';
+
+  @override
+  String get anzAylikAkisTemettu => 'Dividends';
+
+  @override
+  String get anzAylikAkisNet => 'Your net contribution';
+
+  @override
+  String anzAylikAkisAdet(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi transactions',
+      one: '1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get anzAylikAkisDipnot =>
+      'Same calculation as the bridge in Performance: what you paid on buys, what you received on sells; dividends count as money taken out.';
+
+  @override
+  String get anzAylikGelismeBaslik => 'Notable events';
+
+  @override
+  String anzAylikGelismeFonGiris(String tutar, String oran) {
+    return 'Large inflow of $tutar, $oran of the fund\'s size';
+  }
+
+  @override
+  String anzAylikGelismeFonCikis(String tutar, String oran) {
+    return 'Large outflow of $tutar, $oran of the fund\'s size';
+  }
+
+  @override
+  String anzAylikGelismeHacim(String tutar, String kat, String degisim) {
+    return 'Unusual volume of $tutar, $kat× the average; price $degisim';
+  }
+
+  @override
+  String anzAylikGelismeTemettu(String tutar) {
+    return 'Dividend $tutar';
+  }
+
+  @override
+  String get anzAylikGelismeDipnot =>
+      'Fund flows from TEFAS, volume from Yahoo Finance and Binance; dividends from your own records.';
+
+  @override
+  String get anzAylikNotlarBaslik => 'AI notes';
+
+  @override
+  String anzAylikNotlarAralik(String aralik) {
+    return 'Notes are based on data from $aralik.';
+  }
+
+  @override
+  String get anzAylikHaberYok =>
+      'News and company announcements are not in this report: sandık has no licensed news source yet, so no news text is written.';
 
   @override
   String get hkyDevam => 'Continue';

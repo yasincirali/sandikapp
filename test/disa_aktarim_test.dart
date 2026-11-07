@@ -8,6 +8,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/config/magaza.dart';
+import 'package:portfoy_takip/services/aylik_rapor_ozeti.dart';
 import 'package:portfoy_takip/services/disa_aktarim/aylik_rapor_belgesi.dart';
 import 'package:portfoy_takip/services/disa_aktarim/pdf_marka.dart';
 import 'package:portfoy_takip/services/disa_aktarim/pdf_yazici.dart';
@@ -308,6 +309,57 @@ void main() {
       const eksik = AyinPortfoyu(sonTRY: 501640, piyasaTRY: 11640);
       expect(eksik.kopruCumlesi, isNull);
       expect(eksik.enIyiCumlesi, isNull);
+    });
+
+    // yasin 2026-11-07: "tüm varlıkların … para giriş çıkışları, önemli
+    // … detaylar" + "zaman aralığı belirtilmeli". PDF ekranla aynı üç
+    // bölümü tablolar olarak, notlardan ÖNCE taşır; kapsam başlık altında,
+    // haber eksikliği dipnotta. Veri yoksa tablo yok.
+    test('aylık PDF: kapsam, üç sayısal tablo, haber dipnotu', () {
+      final b = aylikRaporBelgesi(
+        donem: DateTime(2026, 10),
+        notlar: const [],
+        kapsam: 'Kapsam: 1-31 Ekim 2026',
+        ozetCumlesi: 'x',
+        eksikCumlesi: null,
+        kim: 'yasin',
+        olusturma: DateTime(2026, 11, 1, 9),
+        varliklar: const [('THYAO', 8.2, 820), ('Gram altın', -1.5, -150)],
+        akis: const AyinParaAkisi(
+            alimTRY: 10000, alimSayisi: 2, temettuTRY: 250, temettuSayisi: 1),
+        gelismeler: [
+          (DateTime(2026, 10, 12), 'TTE', 'Büyük para girişi ₺85 Mn'),
+        ],
+        fiyatCumlesi: 'Fiyatlar 31 Ekim 2026 18:00 itibarıyla.',
+        haberCumlesi: 'Haberler bu raporda yok.',
+      );
+      expect(b.kapsam, 'Kapsam: 1-31 Ekim 2026');
+      expect(b.tablolarOnce, isTrue);
+      expect([for (final t in b.tablolar) t.baslik],
+          ['Ayın varlıkları', 'Para girişi ve çıkışı', 'Önemli gelişmeler']);
+      expect(b.tablolar[0].satirlar[1], ['Gram altın', '−%1,5', '−₺150']);
+      expect(b.tablolar[1].toplam, ['Net katkın', '', '+₺9.750']);
+      expect(b.tablolar[2].satirlar.single.first, '12 Ekim');
+      expect(b.dipnotlar, contains('Haberler bu raporda yok.'));
+      expect(b.dipnotlar.join(' '), contains('31 Ekim 2026 18:00'));
+
+      final bos = aylikRaporBelgesi(
+        donem: DateTime(2026, 10),
+        notlar: const [],
+        ozetCumlesi: 'x',
+        eksikCumlesi: null,
+        kim: 'yasin',
+        olusturma: DateTime(2026, 11, 1, 9),
+        akis: const AyinParaAkisi(),
+      );
+      expect(bos.tablolar, isEmpty);
+    });
+
+    test('yıllık kapsam: kapanmış yıl tam, süren yıl bugüne kadar', () {
+      expect(yillikKapsam(2025, DateTime(2026, 11, 7)),
+          'Kapsam: 1 Ocak - 31 Aralık 2025');
+      expect(yillikKapsam(2026, DateTime(2026, 11, 7)),
+          'Kapsam: 1 Ocak - 7 Kasım 2026, bugüne kadar');
     });
 
     test('PDF özetinde sayaç ve sıfır masraf kutusu yok, Excel aynı', () {

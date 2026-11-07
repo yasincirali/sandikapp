@@ -76,6 +76,7 @@ const _stiller = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 String _ozetSayfasi(RaporBelgesi b) {
   final satirlar = <List<(Object?, int?)>>[
     [(b.baslik, _sKalin)],
+    if (b.kapsam != null) [(b.kapsam, null)],
     [(b.altBaslik, null)],
     [],
     for (final (etiket, deger) in b.ozet) [(etiket, _sKalin), (deger, null)],

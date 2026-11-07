@@ -168,22 +168,30 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> balinaOlaylari(
     String ticker, {
     required DateTime baslangic,
+    DateTime? bitis,
   }) {
     final gun = _isoGun(baslangic);
     return _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.balinaOlaylari',
       table: 'balina_olay',
       op: 'SELECT',
-      request: {'ticker': ticker, 'tarih_gte': gun},
-      call: () => _db
-          .from('balina_olay')
-          .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
-          .eq('ticker', ticker)
-          // Tablo 0107'ten beri hisse olaylarını da taşıyor.
-          .inFilter('tur', ['fon_giris', 'fon_cikis'])
-          .gte('tarih', gun)
-          .order('tarih', ascending: false)
-          .limit(50),
+      request: {
+        'ticker': ticker,
+        'tarih_gte': gun,
+        if (bitis != null) 'tarih_lte': _isoGun(bitis),
+      },
+      call: () {
+        var q = _db
+            .from('balina_olay')
+            .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
+            .eq('ticker', ticker)
+            // Tablo 0107'ten beri hisse olaylarını da taşıyor.
+            .inFilter('tur', ['fon_giris', 'fon_cikis']).gte('tarih', gun);
+        // Aylık rapor (2026-11-07): ay kapandıysa üst sınır; verilmezse eski
+        // sorgu birebir.
+        if (bitis != null) q = q.lte('tarih', _isoGun(bitis));
+        return q.order('tarih', ascending: false).limit(50);
+      },
     );
   }
 
@@ -215,21 +223,30 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> hacimOlaylari(
     String sembol, {
     required DateTime baslangic,
+    DateTime? bitis,
   }) {
     final gun = _isoGun(baslangic);
     return _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.hacimOlaylari',
       table: 'balina_olay',
       op: 'SELECT',
-      request: {'ticker': sembol, 'tarih_gte': gun},
-      call: () => _db
-          .from('balina_olay')
-          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim')
-          .eq('ticker', sembol)
-          .inFilter('tur', ['hisse_hacim_yukselis', 'hisse_hacim_dusus'])
-          .gte('tarih', gun)
-          .order('tarih', ascending: false)
-          .limit(50),
+      request: {
+        'ticker': sembol,
+        'tarih_gte': gun,
+        if (bitis != null) 'tarih_lte': _isoGun(bitis),
+      },
+      call: () {
+        var q = _db
+            .from('balina_olay')
+            .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim')
+            .eq('ticker', sembol)
+            .inFilter('tur', ['hisse_hacim_yukselis', 'hisse_hacim_dusus']).gte(
+                'tarih', gun);
+        // Aylık rapor (2026-11-07): ay kapandıysa üst sınır; verilmezse eski
+        // sorgu birebir.
+        if (bitis != null) q = q.lte('tarih', _isoGun(bitis));
+        return q.order('tarih', ascending: false).limit(50);
+      },
     );
   }
 
@@ -259,21 +276,33 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> kriptoHacimOlaylari(
     String ticker, {
     required DateTime baslangic,
+    DateTime? bitis,
   }) {
     final gun = _isoGun(baslangic);
     return _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.kriptoHacimOlaylari',
       table: 'balina_olay',
       op: 'SELECT',
-      request: {'ticker': ticker, 'tarih_gte': gun},
-      call: () => _db
-          .from('balina_olay')
-          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim, alici_payi')
-          .eq('ticker', ticker)
-          .inFilter('tur', ['kripto_hacim_yukselis', 'kripto_hacim_dusus'])
-          .gte('tarih', gun)
-          .order('tarih', ascending: false)
-          .limit(50),
+      request: {
+        'ticker': ticker,
+        'tarih_gte': gun,
+        if (bitis != null) 'tarih_lte': _isoGun(bitis),
+      },
+      call: () {
+        var q = _db
+            .from('balina_olay')
+            .select(
+                'tarih, tur, tutar, ortalama_kati, fiyat_degisim, alici_payi')
+            .eq('ticker', ticker)
+            .inFilter('tur', [
+          'kripto_hacim_yukselis',
+          'kripto_hacim_dusus'
+        ]).gte('tarih', gun);
+        // Aylık rapor (2026-11-07): ay kapandıysa üst sınır; verilmezse eski
+        // sorgu birebir.
+        if (bitis != null) q = q.lte('tarih', _isoGun(bitis));
+        return q.order('tarih', ascending: false).limit(50);
+      },
     );
   }
 

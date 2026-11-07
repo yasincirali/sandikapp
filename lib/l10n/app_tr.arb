@@ -5456,7 +5456,7 @@
       "sayi": {"type": "String"}
     }
   },
-  "anzAylikEksik": "{kodlar} için bu ay not çıkmadı; sayıları kendi sayfalarında.",
+  "anzAylikEksik": "{kodlar} için bu ay yapay zekâ notu çıkmadı.",
   "anzAylikPdfPaylas": "Raporu PDF olarak paylaş",
   "@anzAylikEksik": {
     "placeholders": {
@@ -5465,6 +5465,90 @@
   },
   "anzAylikOzetYok": "Bu ay varlıklarında belirgin bir hareket olmadı.",
   "anzAylikBos": "Bu ayın raporu henüz hazır değil.",
+  "raporKapsam": "Kapsam: {aralik}",
+  "@raporKapsam": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "raporKapsamSuren": "Kapsam: {aralik}, bugüne kadar",
+  "@raporKapsamSuren": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "raporFiyatTarihi": "Fiyatlar {tarih} itibarıyla.",
+  "@raporFiyatTarihi": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "anzAylikVarliklarBaslik": "Ayın varlıkları",
+  "anzAylikVarliklarDipnot": "Ay başına göre değişim; ay içindeki alım ve satımın etkisi ayıklandı.",
+  "anzAylikOlculemeyen": "{adlar} için fiyat serisi yok, değişimi yazılmadı.",
+  "@anzAylikOlculemeyen": {
+    "placeholders": {
+      "adlar": {"type": "String"}
+    }
+  },
+  "anzAylikSemVarlik": "{ad}: ayın değişimi {yuzde}, piyasa etkisi {tutar}",
+  "@anzAylikSemVarlik": {
+    "placeholders": {
+      "ad": {"type": "String"},
+      "yuzde": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "anzAylikAkisBaslik": "Para girişi ve çıkışı",
+  "anzAylikAkisAlim": "Alımlar",
+  "anzAylikAkisSatis": "Satışlar",
+  "anzAylikAkisTemettu": "Temettü",
+  "anzAylikAkisNet": "Net katkın",
+  "anzAylikAkisAdet": "{sayi} işlem",
+  "@anzAylikAkisAdet": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "anzAylikAkisDipnot": "Performans'taki köprüyle aynı hesap: alımda ödediğin, satışta eline geçen tutar; temettü portföyden cebine çıkan para.",
+  "anzAylikGelismeBaslik": "Önemli gelişmeler",
+  "anzAylikGelismeFonGiris": "Büyük para girişi {tutar}, fon büyüklüğünün {oran} kadarı",
+  "@anzAylikGelismeFonGiris": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "oran": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeFonCikis": "Büyük para çıkışı {tutar}, fon büyüklüğünün {oran} kadarı",
+  "@anzAylikGelismeFonCikis": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "oran": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeHacim": "Olağandışı hacim {tutar}, ortalamanın {kat} katı; fiyat {degisim}",
+  "@anzAylikGelismeHacim": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "kat": {"type": "String"},
+      "degisim": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeTemettu": "Temettü {tutar}",
+  "@anzAylikGelismeTemettu": {
+    "placeholders": {
+      "tutar": {"type": "String"}
+    }
+  },
+  "anzAylikGelismeDipnot": "Fon akışı TEFAS, hacim Yahoo Finance ve Binance verisinden; temettüler kendi kayıtlarından.",
+  "anzAylikNotlarBaslik": "Yapay zekâ notları",
+  "anzAylikNotlarAralik": "Notlar {aralik} verisinden yazıldı.",
+  "@anzAylikNotlarAralik": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "anzAylikHaberYok": "Haberler ve KAP duyuruları bu raporda yok: sandık'ın lisanslı bir haber kaynağı henüz yok, haber metni yazılmaz.",
   "hkyDevam": "Devam",
   "hkyAtla": "Atla",
   "hkyAylikAcilis": "Ayın hikâyesi",

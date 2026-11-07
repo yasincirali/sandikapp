@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import '../../utils/tr_format.dart';
+import '../aylik_rapor_ozeti.dart' show AyinParaAkisi, isaretliTL;
 import '../inflation_service.dart';
 import '../tuik_takvimi.dart';
 import 'dosya_adi.dart';
@@ -44,9 +45,23 @@ class AylikRaporNotu {
 /// - Notlar saklanan satırdan okunur ("dönemlik çıktı bir kez üretilir").
 /// - Sıra ekranla aynı (rozet önemi); notu çıkmayan varlıklar adlarıyla
 ///   öne çıkanlarda anılır, sessizce düşmez.
+///
+/// ## Kapsam ve yeni bölümler (yasin 2026-11-07)
+/// "Aylık raporda neden sadece fonların raporları var": belge artık
+/// ekranla aynı üç sayısal bölümü taşır (ayın varlıkları, para girişi ve
+/// çıkışı, önemli gelişmeler; hesap `AylikRaporOzeti`'nde) ve başlığın
+/// altında kapsadığı günleri yazar. Haber metni yok; dipnot bunu söyler.
 RaporBelgesi aylikRaporBelgesi({
   required DateTime donem,
   required List<AylikRaporNotu> notlar,
+  String? kapsam,
+  String? notAraligiCumlesi,
+  List<(String, double, double)> varliklar = const [],
+  String? olculemeyenCumlesi,
+  String? fiyatCumlesi,
+  AyinParaAkisi? akis,
+  List<(DateTime, String, String)> gelismeler = const [],
+  String? haberCumlesi,
   required String ozetCumlesi,
   required String? eksikCumlesi,
   required String kim,
@@ -71,6 +86,8 @@ RaporBelgesi aylikRaporBelgesi({
     altBaslik:
         '$kim · oluşturma ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)}',
     dosyaAdi: belgeDosyaAdi('Aylık Rapor', ayDonemi(donem)),
+    kapsam: kapsam,
+    tablolarOnce: true,
     // Sıra (müşteri raporu 2 Kas 13:15 #1): ilk satır kişinin parası
     // (yüzde, TL kâr, ay sonu), ikinci satır kıyas (TÜFE, reel, yatırılan).
     // "Notu çıkan varlık" sayacı çıktı: aynı sayı öne çıkanların ilk
@@ -110,13 +127,63 @@ RaporBelgesi aylikRaporBelgesi({
           maddeler: n.maddeler,
         ),
     ],
-    tablolar: const [],
+    tablolar: [
+      if (varliklar.isNotEmpty)
+        RaporTablosu(
+          baslik: 'Ayın varlıkları',
+          sutunlar: const ['Varlık', 'Ayın değişimi', 'Piyasa etkisi'],
+          satirlar: [
+            for (final (ad, pct, tl) in varliklar)
+              [ad, fmtPctIsaretli(pct, digits: 1), isaretliTL(tl)],
+          ],
+        ),
+      if (akis != null && !akis.bos)
+        RaporTablosu(
+          baslik: 'Para girişi ve çıkışı',
+          sutunlar: const ['Kalem', 'İşlem', 'Tutar'],
+          satirlar: [
+            if (akis.alimSayisi > 0)
+              ['Alımlar', '${akis.alimSayisi}', isaretliTL(akis.alimTRY)],
+            if (akis.satisSayisi > 0)
+              ['Satışlar', '${akis.satisSayisi}', isaretliTL(-akis.satisTRY)],
+            if (akis.temettuSayisi > 0)
+              [
+                'Temettü',
+                '${akis.temettuSayisi}',
+                isaretliTL(-akis.temettuTRY)
+              ],
+          ],
+          toplam: ['Net katkın', '', isaretliTL(akis.netTRY)],
+        ),
+      if (gelismeler.isNotEmpty)
+        RaporTablosu(
+          baslik: 'Önemli gelişmeler',
+          sutunlar: const ['Tarih', 'Varlık', 'Ne oldu'],
+          satirlar: [
+            for (final (tarih, kod, cumle) in gelismeler)
+              [DateFormat('d MMMM', 'tr_TR').format(tarih), kod, cumle],
+          ],
+        ),
+    ],
     dipnotlar: [
+      if (fiyatCumlesi != null)
+        'Ayın varlıkları ay başına göre değişimdir; ay içindeki alım ve '
+            'satımın etkisi ayıklandı. $fiyatCumlesi',
+      if (olculemeyenCumlesi != null) olculemeyenCumlesi,
+      if (akis != null && !akis.bos)
+        'Para girişi ve çıkışı Performans\'taki köprüyle aynı hesaptır: '
+            'alımda ödediğin, satışta eline geçen tutar; temettü portföyden '
+            'cebine çıkan para.',
+      if (gelismeler.isNotEmpty)
+        'Gelişmeler: fon akışı TEFAS, hacim Yahoo Finance ve Binance '
+            'verisinden; temettüler kendi kayıtlarından.',
+      if (notAraligiCumlesi != null) notAraligiCumlesi,
       'Getiri, Performans\'taki aylık özetle aynı hesaptır: ayın içinde '
           'yatırdığın ya da çektiğin para getiri sayılmaz.',
       'TÜFE TÜİK\'ten alınır; bir ayın rakamı ertesi ayın 3\'ünde açıklanır.',
       'Varlık notları ayın kamuya açık piyasa verisinden yapay zekâ ile '
           'yazılmıştır; tutar içermez.',
+      if (haberCumlesi != null) haberCumlesi,
     ],
   );
 }

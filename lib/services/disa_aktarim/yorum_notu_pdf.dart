@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../config/magaza.dart';
+import '../../utils/tr_format.dart';
 import '../portfoy_yorumu_service.dart' show YorumKapsami, YorumOlcumu;
 import '../yorum_notu.dart';
 import 'pdf_marka.dart';
@@ -71,10 +72,12 @@ Future<Uint8List> yorumNotuPdf(
             logo: logoImg,
             belgeTuru: 'Yapay zekâ notu',
             baslik: belgeAdi,
-            alt: '${n.donemAdi} · kişisel kullanım içindir'),
+            // Kapsam (2026-11-07): göreli ad ("Son 3 ay") açık tarihle.
+            alt: '${n.donemAdi} (${fmtTarihAraligi(y.baslangic, y.bitis)}) · '
+                'kişisel kullanım içindir'),
         pw.SizedBox(height: 14 + 2.2 + 6),
         _meta([
-          ('Dönem', '${tarih.format(y.baslangic)} - ${tarih.format(y.bitis)}'),
+          ('Dönem', fmtTarihAraligi(y.baslangic, y.bitis)),
           ('Kapsam', n.kapsam == YorumKapsami.varlik ? (n.varlikAdi ?? 'Varlık') : 'Tüm portföy'),
           ('Hazırlanma', tarih.format(hazirlanma ?? y.olusturuldu)),
           ('Para birimi', 'Türk lirası'),
