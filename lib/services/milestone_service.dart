@@ -379,6 +379,22 @@ class MilestoneService {
     return '${bin < 1 ? 1 : bin} bin ₺';
   }
 
+  /// Profil satırındaki "8 / 10": portföy değeri merdiveninde kaçıncı
+  /// basamaktasın (Profil yeniden tasarımı, yasin 7 Kas).
+  ///
+  /// Payda [valueThresholds] uzunluğudur, uydurma bir "toplam rozet" sayısı
+  /// değil: altın adedi ve yaş taşlarının üst sınırı kişiye göre değişir,
+  /// onlarla kurulan bir payda her ay oynardı. Değer merdiveni herkes için
+  /// aynı ve sıradaki taş da ondan seçiliyor ([koleksiyon]); satırdaki iki
+  /// sayı aynı ölçekten konuşur. Sıradaki taşın altındaki bütün eşikler
+  /// geçilmiştir (bugün ya da sunucu kaydıyla); sıradaki yoksa hepsi.
+  static ({int gecilen, int toplam}) esikSayaci(Milestone? siradaki) {
+    final toplam = valueThresholds.length;
+    if (siradaki == null) return (gecilen: toplam, toplam: toplam);
+    final i = valueThresholds.indexOf(siradaki.rank);
+    return (gecilen: i < 0 ? 0 : i, toplam: toplam);
+  }
+
   /// Şeritte gösterilecekler: her türün (altında her altın cinsinin) en
   /// yükseği. "10 bin, 25 bin, 50 bin geçildi" yan yana tekrar olurdu;
   /// tamamı "Tümü" sayfasında.

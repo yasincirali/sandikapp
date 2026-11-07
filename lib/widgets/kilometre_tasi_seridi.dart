@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,16 +6,25 @@ import '../providers/kilometre_tasi_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/milestone_service.dart';
 import '../theme/sandik.dart';
-import '../utils/tr_format.dart' show fmtPct;
 import 'milestone_sheet.dart';
 
-/// Profil'de "Kilometre taşların" rozet şeridi (Ar-Ge 1 Kas 20:45 #1,
-/// müşteri raporu 21:15 YAP; yasin "önerini uygula": ücretsiz).
+/// Profil'de "Kilometre taşların" (Ar-Ge 1 Kas 20:45 #1, müşteri raporu
+/// 21:15 YAP; yasin "önerini uygula": ücretsiz).
 ///
 /// **Neden:** eşik geçildiğinde kutlama bir kez açılıyor, sonra hiçbir
-/// yerde görünmüyordu; kişinin kendi birikim hikâyesi kayboluyordu. Şerit
+/// yerde görünmüyordu; kişinin kendi birikim hikâyesi kayboluyordu. Satır
 /// yalnız GÖSTERİR: kutlamayı tetiklemez, kayıt yazmaz, sıklık kuralı
 /// (`MilestoneRepository.canCelebrate`) değişmez.
+///
+/// **Tek satır (Profil yeniden tasarımı, yasin 7 Kas):** önce yatay rozet
+/// şeridiydi; beşinci rozet ekran kenarında yarım kalıyor, sıradaki taşın
+/// ilerlemesi küçük bir halkada okunmuyordu. Taslaktaki "12 eşit kart"
+/// da reddedildi (aynı ağırlıkta 12 kart hiyerarşi kurmaz). Şimdi tek
+/// soru yanıtlanır: "sıradaki ne, ne kadar kaldı": "Sıradaki: 5 milyon ₺",
+/// ilerleme çubuğu, "2,3 milyon ₺ kaldı", sağda merdivendeki yer
+/// ("8 / 10", [MilestoneService.esikSayaci]). Geçilen taşlar altında küçük
+/// işaretler; satıra dokununca tam liste (sheet). Kutlamayı yeniden açma ve
+/// Paylaş o listeden (satıra dokun).
 ///
 /// **Ücretsiz:** rozet bir ödül; kilitli rozet ödüllendirmek yerine
 /// cezalandırır. Premium kapısı yok.
@@ -25,10 +32,12 @@ import 'milestone_sheet.dart';
 /// Kurallar:
 /// * Geçilen taş kalıcı (sunucu kaydı + bugünkü hesap,
 ///   `MilestoneService.koleksiyon`).
-/// * Bakiye gizliyken tutar taşıyan taş tutarsız yazılır
-///   (`MilestoneService.gizli`), açılan kutlama sayfası da.
-/// * Sıradaki taş dolu değil çerçeveli ve üstünde "Sıradaki" yazısı var:
-///   durum yalnız renkle verilmez.
+/// * Bakiye gizliyken tutar yazılmaz (`MilestoneService.gizli`, kalan
+///   tutar yok); çubuk ve "8 / 10" kalır: eşik de gizli olduğundan oran
+///   tutarı ele vermez (eski halkadaki yüzde kuralının aynısı).
+/// * Toplam bilinmiyorsa (≤ 0) çubuk ve kalan çizilmez; hepsi geçildiyse
+///   "Bütün portföy eşiklerini geçtin". Uydurma sayı yok.
+/// * Durum yalnız renkle verilmez: çubuğun yanında metin ve sayaç var.
 /// * Ton kutlamayla aynı (fintech, sakin); oyun dili yok.
 class KilometreTasiSeridi extends ConsumerWidget {
   const KilometreTasiSeridi({super.key});
@@ -47,65 +56,110 @@ class KilometreTasiSeridi extends ConsumerWidget {
     final siradaki =
         veri.siradaki == null ? null : goster(veri.siradaki!, siradaki: true);
     if (vitrin.isEmpty && siradaki == null) return const SizedBox.shrink();
-    final tumu = veri.kazanilan.length > vitrin.length;
+
+    final l = context.l10n;
+    final c = context.c;
+    final sayac = MilestoneService.esikSayaci(veri.siradaki);
+    // Çubuk yalnız sıradaki taş ve bilinen toplamla (uydurma oran yok).
+    final oran = siradaki == null ? null : veri.ilerleme;
+    // Bakiye gizliyken kalan TUTAR yazılmaz.
+    final kalan = siradaki == null || gizli || veri.kalan == null
+        ? null
+        : MilestoneService.kalanKisa(veri.kalan!);
+    final yuzde = oran == null ? null : (oran * 100).floor();
+    final baslik = siradaki == null
+        ? l.kilometreTasiHepsiGecildi
+        : l.kilometreTasiSiradakiSatir(siradaki.title);
+    final ust = siradaki == null
+        ? l.kilometreTasiHepsiGecildi
+        : yuzde == null
+            ? l.kilometreTasiSiradakiEtiket(siradaki.title)
+            : kalan == null
+                ? l.kilometreTasiSiradakiYuzdeEtiket(siradaki.title, yuzde)
+                : l.kilometreTasiSiradakiIlerlemeEtiket(
+                    siradaki.title, yuzde, kalan);
+    final etiket = '$ust. '
+        '${l.kilometreTasiSayacEtiket(sayac.gecilen, sayac.toplam)}. '
+        '${l.kilometreTaslariTumuEtiket}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: SandikSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SandikSectionHeader(
-            title: context.l10n.kilometreTaslariUpper,
-            trailing: tumu
-                ? SandikTappable(
-                    semanticLabel: context.l10n.kilometreTaslariTumuEtiket,
-                    onTap: () => _tumunuAc(context,
-                        [for (final m in veri.kazanilan) goster(m)], siradaki),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                          minHeight: SandikTouch.min,
-                          minWidth: SandikTouch.min),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        widthFactor: 1,
-                        child: ExcludeSemantics(
-                          child: Text(
-                            '${context.l10n.kilometreTaslariTumu} ›',
-                            style: context.t.labelLarge
-                                ?.copyWith(color: context.c.amberText),
-                          ),
-                        ),
+          SandikSectionHeader(title: l.kilometreTaslariUpper),
+          const SizedBox(height: SandikSpace.sm),
+          Semantics(
+            container: true,
+            button: true,
+            label: etiket,
+            excludeSemantics: true,
+            child: SandikCard(
+              key: const ValueKey('kilometreTasiSatiri'),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.md, vertical: SandikSpace.smd),
+              onTap: () => _tumunuAc(context,
+                  [for (final m in veri.kazanilan) goster(m)], siradaki),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Wrap, Row değil: büyük yazıda (3.1×, 320 pt) sayaç
+                  // başlığın altına iner; Row'da başlık harf harf
+                  // daralıyor, sayaç taşıyordu. Normal boyda ikisi aynı
+                  // satırda, sayaç sağda.
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: SandikSpace.sm,
+                    children: [
+                      Text(
+                        baslik,
+                        style: context.t.titleMedium?.copyWith(
+                            color: c.text90, fontWeight: FontWeight.w600),
                       ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              l.kilometreTasiSayac(
+                                  sayac.gecilen, sayac.toplam),
+                              style: context.t.labelLarge?.copyWith(
+                                  color: c.text58,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ]),
+                            ),
+                          ),
+                          Icon(Icons.chevron_right_rounded,
+                              color: c.text36, size: SandikSpace.lgs),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (oran != null) ...[
+                    const SizedBox(height: SandikSpace.sm),
+                    _IlerlemeCubugu(oran: oran),
+                  ],
+                  if (kalan != null) ...[
+                    const SizedBox(height: SandikSpace.xs2),
+                    Text(
+                      l.kilometreTasiKalan(kalan),
+                      style: context.t.bodySmall?.copyWith(color: c.text58),
                     ),
-                  )
-                : null,
-          ),
-          if (!tumu) const SizedBox(height: SandikSpace.sm),
-          // Yatay kaydırma: Dynamic Type büyüdükçe rozet aşağı uzar, satır
-          // taşmaz; sabit yükseklik yok.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final m in vitrin)
-                  _Rozet(
-                    m: m,
-                    onTap: () => MilestoneSheet.show(context, m, tekrar: true),
-                  ),
-                if (siradaki != null)
-                  _Rozet(
-                    m: siradaki,
-                    siradaki: true,
-                    ilerleme: veri.ilerleme,
-                    // Bakiye gizliyken kalan TUTAR yazılmaz; yüzde kalır
-                    // (eşik de gizli olduğundan yüzde tutarı ele vermez).
-                    kalan: gizli || veri.kalan == null
-                        ? null
-                        : MilestoneService.kalanKisa(veri.kalan!),
-                  ),
-              ],
+                  ],
+                  if (vitrin.isNotEmpty) ...[
+                    const SizedBox(height: SandikSpace.smd),
+                    Wrap(
+                      spacing: SandikSpace.xs2,
+                      runSpacing: SandikSpace.xs2,
+                      children: [
+                        for (final m in vitrin) _Isaret(m: m),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ],
@@ -124,184 +178,62 @@ class KilometreTasiSeridi extends ConsumerWidget {
   }
 }
 
-/// Tek rozet: 46 pt daire + iki satıra kadar etiket. Dokunma alanı
-/// sütunun tamamı (≥44 pt).
-class _Rozet extends StatelessWidget {
-  const _Rozet({
-    required this.m,
-    this.siradaki = false,
-    this.onTap,
-    this.ilerleme,
-    this.kalan,
-  });
+/// Sıradaki taşa ilerleme: ince yatay çubuk. Kendi çizimi,
+/// `LinearProgressIndicator` değil: bu bir yükleniyor göstergesi değil,
+/// statik ölçü (`yukleniyor_tek_davranis_test`; ekran okuyucu "ilerleme"
+/// diye yanlış okurdu). Hareket yok: değer her açılışta aynı yerde, dolma
+/// animasyonu süs olurdu.
+class _IlerlemeCubugu extends StatelessWidget {
+  const _IlerlemeCubugu({required this.oran});
 
-  final Milestone m;
-  final bool siradaki;
-  final VoidCallback? onTap;
-
-  /// Sıradaki taşta bugünkü toplam / eşik (Ar-Ge 5 Kas 21:00 #1). `null`
-  /// → toplam bilinmiyor, bayrak eskisi gibi.
-  final double? ilerleme;
-
-  /// "70 bin ₺"; bakiye gizliyken `null`.
-  final String? kalan;
-
-  static const double _cap = 46;
-  static const double _genislik = 84;
+  final double oran;
 
   @override
   Widget build(BuildContext context) {
-    final c = context.c;
-    final l = context.l10n;
-    final oran = siradaki ? ilerleme : null;
-    // Taban yüzde: eşiğe varmadan "%100" yazmasın.
-    final yuzde = oran == null ? null : (oran * 100).floor();
-    final etiket = !siradaki
-        ? l.kilometreTasiEtiket(m.title)
-        : yuzde == null
-            ? l.kilometreTasiSiradakiEtiket(m.title)
-            : kalan == null
-                ? l.kilometreTasiSiradakiYuzdeEtiket(m.title, yuzde)
-                : l.kilometreTasiSiradakiIlerlemeEtiket(
-                    m.title, yuzde, kalan!);
-    final govde = SizedBox(
-      width: _genislik,
-      child: Padding(
-        padding: const EdgeInsets.only(right: SandikSpace.sm),
-        child: Column(
-          children: [
-            if (yuzde != null)
-              _IlerlemeHalkasi(
-                  oran: oran!, yuzde: yuzde, cap: _cap)
-            else
-            Container(
-              width: _cap,
-              height: _cap,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: siradaki ? null : c.amberFill.withValues(alpha: 0.16),
-                border:
-                    siradaki ? Border.all(color: c.text36, width: 1.5) : null,
-              ),
-              child: Icon(
-                siradaki ? Icons.flag_outlined : MilestoneSheet.ikonu(m.kind),
-                size: SandikSpace.lg,
-                color: siradaki ? c.text58 : c.amberText,
-              ),
-            ),
-            const SizedBox(height: SandikSpace.xs2),
-            if (siradaki)
-              Text(
-                context.l10n.kilometreTasiSiradaki,
-                textAlign: TextAlign.center,
-                style: context.t.labelSmall?.copyWith(color: c.text36),
-              ),
-            Text(
-              m.title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: context.t.bodySmall
-                  ?.copyWith(color: siradaki ? c.text58 : c.text90),
-            ),
-            if (siradaki && kalan != null)
-              Text(
-                l.kilometreTasiKalan(kalan!),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.labelSmall?.copyWith(color: c.text36),
-              ),
-          ],
+    return ClipRRect(
+      borderRadius: SandikRadius.smAll,
+      child: SizedBox(
+        height: SandikSpace.xs2,
+        child: ColoredBox(
+          color: context.c.overlay,
+          child: FractionallySizedBox(
+            alignment: AlignmentDirectional.centerStart,
+            widthFactor: oran.clamp(0.0, 1.0),
+            child: ColoredBox(color: context.c.amberText),
+          ),
         ),
       ),
     );
-    final icerik = ExcludeSemantics(child: govde);
-    if (onTap == null) {
-      return Semantics(label: etiket, child: icerik);
-    }
-    return SandikTappable(semanticLabel: etiket, onTap: onTap, child: icerik);
   }
 }
 
-/// Sıradaki taşın ince ilerleme halkası, ortasında yüzde. Durum renkle
-/// değil yüzde metniyle de söylenir. Hareket yok: değer her açılışta
-/// aynı yerde, dolma animasyonu süs olurdu (hareketi azalt sorusu da
-/// böylece doğmaz).
-class _IlerlemeHalkasi extends StatelessWidget {
-  const _IlerlemeHalkasi(
-      {required this.oran, required this.yuzde, required this.cap});
+/// Geçilen taşın küçük işareti (her türün en yükseği). Etkileşimsiz:
+/// dokunma satırın tamamında; ad ve ayrıntı tam listede.
+class _Isaret extends StatelessWidget {
+  const _Isaret({required this.m});
 
-  final double oran;
-  final int yuzde;
-  final double cap;
+  final Milestone m;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return SizedBox.square(
-      dimension: cap,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Kendi çizimi, `CircularProgressIndicator` değil: bu bir
-          // yükleniyor göstergesi değil, statik ölçü. Ham gösterge
-          // `yukleniyor_tek_davranis_test` kuralına takılır ve iOS'ta
-          // ekran okuyucuya "ilerleme" diye yanlış okunurdu.
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _HalkaBoyaci(
-                  oran: oran, iz: c.overlay, dolgu: c.amberText),
-            ),
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Padding(
-              padding: const EdgeInsets.all(SandikSpace.xs2),
-              child: Text(
-                fmtPct(yuzde.toDouble(), digits: 0),
-                style: context.t.labelSmall?.copyWith(
-                    color: c.text90, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
+    return Container(
+      width: SandikSpace.lg,
+      height: SandikSpace.lg,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: c.amberFill.withValues(alpha: 0.16),
       ),
+      child: Icon(MilestoneSheet.ikonu(m.kind),
+          size: SandikSpace.md2, color: c.amberText),
     );
   }
 }
 
-class _HalkaBoyaci extends CustomPainter {
-  const _HalkaBoyaci(
-      {required this.oran, required this.iz, required this.dolgu});
-
-  final double oran;
-  final Color iz;
-  final Color dolgu;
-
-  static const double _kalinlik = 3;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final r = (size.shortestSide - _kalinlik) / 2;
-    final merkez = size.center(Offset.zero);
-    final kalem = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _kalinlik
-      ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(merkez, r, kalem..color = iz);
-    if (oran <= 0) return;
-    canvas.drawArc(Rect.fromCircle(center: merkez, radius: r), -math.pi / 2,
-        2 * math.pi * oran.clamp(0.0, 1.0), false, kalem..color = dolgu);
-  }
-
-  @override
-  bool shouldRepaint(_HalkaBoyaci eski) =>
-      eski.oran != oran || eski.iz != iz || eski.dolgu != dolgu;
-}
-
 /// "Tümü": kazanılan bütün taşlar, en sonda sıradaki. Ayrı ekran değil,
-/// sheet (sadeleştirme: yeni sayfa yok).
+/// sheet (sadeleştirme: yeni sayfa yok). Kazanılan satıra dokununca
+/// kutlama sayfası yeniden açılır (Paylaş orada); eski şeritte bu rozete
+/// dokunarak yapılıyordu, tek satıra geçince buraya taşındı.
 class _TumuSayfasi extends StatelessWidget {
   const _TumuSayfasi({required this.hepsi, this.siradaki});
 
@@ -343,7 +275,11 @@ class _TumuSayfasi extends StatelessWidget {
                   SandikSpace.lg,
                   SandikSpace.lg + MediaQuery.paddingOf(context).bottom),
               children: [
-                for (final m in hepsi) _Satir(m: m),
+                for (final m in hepsi)
+                  _Satir(
+                    m: m,
+                    onTap: () => MilestoneSheet.show(context, m, tekrar: true),
+                  ),
                 if (siradaki != null) _Satir(m: siradaki!, siradaki: true),
               ],
             ),
@@ -355,15 +291,16 @@ class _TumuSayfasi extends StatelessWidget {
 }
 
 class _Satir extends StatelessWidget {
-  const _Satir({required this.m, this.siradaki = false});
+  const _Satir({required this.m, this.siradaki = false, this.onTap});
 
   final Milestone m;
   final bool siradaki;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return ConstrainedBox(
+    final satir = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SandikTouch.min),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
@@ -399,6 +336,18 @@ class _Satir extends StatelessWidget {
           ],
         ),
       ),
+    );
+    if (onTap == null) {
+      return Semantics(
+        label: '${context.l10n.kilometreTasiSiradaki}: ${m.title}. ${m.body}',
+        excludeSemantics: true,
+        child: satir,
+      );
+    }
+    return SandikTappable(
+      semanticLabel: '${m.title}. ${m.body}',
+      onTap: onTap,
+      child: satir,
     );
   }
 }

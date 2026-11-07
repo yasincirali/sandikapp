@@ -10713,4 +10713,60 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yardimVeDestek => 'Yardım ve destek';
+
+  @override
+  String kilometreTasiSiradakiSatir(String baslik) {
+    return 'Sıradaki: $baslik';
+  }
+
+  @override
+  String get kilometreTasiHepsiGecildi => 'Bütün portföy eşiklerini geçtin';
+
+  @override
+  String kilometreTasiSayac(int gecilen, int toplam) {
+    return '$gecilen / $toplam';
+  }
+
+  @override
+  String kilometreTasiSayacEtiket(int gecilen, int toplam) {
+    return '$toplam portföy eşiğinden $gecilen tanesi geçildi';
+  }
+
+  @override
+  String get premiumDurum => 'Premium';
+
+  @override
+  String premiumDurumDetay(String plan, String detay) {
+    return '$plan, $detay';
+  }
+
+  @override
+  String premiumDurumYenilenir(String tarih) {
+    return '$tarih tarihinde yenilenir';
+  }
+
+  @override
+  String premiumDurumBiter(String tarih) {
+    return '$tarih tarihinde biter';
+  }
+
+  @override
+  String premiumDurumHediyeKalan(String tarih, int gun) {
+    return '$tarih tarihinde biter, $gun gün kaldı';
+  }
+
+  @override
+  String get premiumDurumGec => 'Premium\'a geç';
+
+  @override
+  String premiumDurumAyrintiEtiket(String durum) {
+    return '$durum. Aboneliği yönetmek için dokun';
+  }
+
+  @override
+  String get hesapEkleSatiri => 'Hesap ekle';
+
+  @override
+  String get hesapEkleSatiriAlt =>
+      'Bu telefona ikinci bir hesap ekle; mevcut hesabın açık kalır';
 }

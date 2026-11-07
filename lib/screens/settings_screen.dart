@@ -1145,7 +1145,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 /// #2, müşteri "yap"): bir ayara ulaşmak Profil → dişli → grup → satır
 /// üç dokunuştu, Profil ise yarı boştu. Grup sayfaları değişmedi.
 class AyarGrupSatirlari extends StatelessWidget {
-  const AyarGrupSatirlari({super.key});
+  const AyarGrupSatirlari({super.key, this.hesapEkle});
+
+  /// Verilirse "Hesap & güvenlik"in altında "Hesap ekle" satırı çıkar.
+  /// Profil tek hesaptayken verir (Ar-Ge 7 Kas: adın yanında ok yalnız iki
+  /// ve daha fazla hesapta; ikinci hesabın yolu bu satır). Ayarlar ekranının
+  /// kendisi vermez.
+  final VoidCallback? hesapEkle;
 
   void _ac(BuildContext context, SettingsBolum b) => pushGuarded(
         context,
@@ -1178,6 +1184,13 @@ class AyarGrupSatirlari extends StatelessWidget {
             subtitle: context.l10n.settingsAccountSubtitle,
             onTap: () => _ac(context, SettingsBolum.hesap),
           ),
+          if (hesapEkle != null)
+            _SettingsTile(
+              icon: Icons.person_add_alt_1_outlined,
+              title: context.l10n.hesapEkleSatiri,
+              subtitle: context.l10n.hesapEkleSatiriAlt,
+              onTap: hesapEkle!,
+            ),
           _SettingsTile(
             icon: Icons.help_outline_rounded,
             title: SettingsBolum.yardim.baslik(context),
