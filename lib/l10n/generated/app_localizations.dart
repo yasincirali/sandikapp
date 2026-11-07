@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr')
+    Locale('tr'),
   ];
 
   /// No description provided for @appName.
@@ -4343,7 +4343,7 @@ abstract class AppLocalizations {
   /// No description provided for @everyoneMeasuredSameBody.
   ///
   /// In tr, this message translates to:
-  /// **'Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.'**
+  /// **'Sen ve ortakların aynı formül ve aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.'**
   String everyoneMeasuredSameBody(int gun);
 
   /// No description provided for @planYearly.
@@ -6541,7 +6541,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis);
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  );
 
   /// No description provided for @whatsNewTitle.
   ///
@@ -8972,7 +8976,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi);
+    String date,
+    String end,
+    String change,
+    String cpi,
+  );
 
   /// No description provided for @savingsRose.
   ///
@@ -10006,10 +10014,10 @@ abstract class AppLocalizations {
   /// **'Neler değişti'**
   String get yasalKapiNelerDegisti;
 
-  /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
+  /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yalnız en yeni sürümün değişikliğini anlatacak biçimde yeniden yazılır (eski sürümlerin notları silinir; tam geçmiş web'deki belge sürüm notunda); uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi. Sürüm 1.13: Zirve\'ye katıldıysan, artık portföyündeki varlıkların hangi hisse, kripto ya da altın olduğu da sembolüyle ve yalnızca oran olarak görünebilir; tutar, adet ve kimliğin yine görünmez. Bu yalnızca 20 Ekim 2026 Zirve onayını verenler için geçerli. Zirve\'deki ayrıntılı görünüm yeni katılanlar için Premium\'a bağlı olabilir. Sürüm 1.12: Yapay zekâ yorumu artık Performans\'ta ve varlık detayında seçtiğin dönemi de anlatabiliyor; yoruma enflasyon ve dolar, altın, BIST 100 kıyasları da giriyor. Yine yalnızca sen istersen çalışır, tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.11: İki isteğe bağlı yapay zekâ özelliği anlatıldı: Performans › Özet\'teki portföy yorumu ve ekstrenin kelimeleriyle okunması. İkisi de yalnızca sen istersen, ilk kullanımda ayrıca onayını alarak çalışır; tutar, adet ve kimlik bilgilerin gönderilmez. Sürüm 1.10: Uygulama uzun süre arka planda kalınca artık oturumun kapanmaz; uygulama kilidi açıksa yalnızca kilitlenir. Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.'**
+  /// **'Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -10311,7 +10319,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-      String amount, String times, String pct, String share);
+    String amount,
+    String times,
+    String pct,
+    String share,
+  );
 
   /// No description provided for @tekOnayGizlilikBaglanti.
   ///
@@ -16726,7 +16738,10 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-      String baslik, int yuzde, String kalan);
+    String baslik,
+    int yuzde,
+    String kalan,
+  );
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -17123,7 +17138,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-      String baslik, String dusuk, String yuksek, String bugun, String cumle);
+    String baslik,
+    String dusuk,
+    String yuksek,
+    String bugun,
+    String cumle,
+  );
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -17261,8 +17281,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

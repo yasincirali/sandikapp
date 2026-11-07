@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1454,15 +1455,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String biometricLockYontem(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Lock with Face ID',
-        'touchId': 'Lock with Touch ID',
-        'biyometrik': 'Biometric lock',
-        'other': 'Lock with screen lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Lock with Face ID',
+      'touchId': 'Lock with Touch ID',
+      'biyometrik': 'Biometric lock',
+      'other': 'Lock with screen lock',
+    });
     return '$_temp0';
   }
 
@@ -2510,7 +2508,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String everyoneMeasuredSameBody(int gun) {
-    return 'You and your partners are computed with the same formula and the same prices; the calculation happens on this device. Between partners the date you entered counts: history imported via CSV or statement counts right away.\n\nTo be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.';
+    return 'You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nTo be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.';
   }
 
   @override
@@ -3486,15 +3484,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Protect with Face ID',
-        'touchId': 'Protect with Touch ID',
-        'biyometrik': 'Protect with biometrics',
-        'other': 'Protect with your screen lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Protect with Face ID',
+      'touchId': 'Protect with Touch ID',
+      'biyometrik': 'Protect with biometrics',
+      'other': 'Protect with your screen lock',
+    });
     return '$_temp0';
   }
 
@@ -3511,15 +3506,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Turn on Face ID',
-        'touchId': 'Turn on Touch ID',
-        'biyometrik': 'Turn on biometric lock',
-        'other': 'Turn on app lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Turn on Face ID',
+      'touchId': 'Turn on Touch ID',
+      'biyometrik': 'Turn on biometric lock',
+      'other': 'Turn on app lock',
+    });
     return '$_temp0';
   }
 
@@ -3948,7 +3940,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis) {
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  ) {
     return 'O $acilis · H $yuksek · L $dusuk · C $kapanis';
   }
 
@@ -5368,8 +5364,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$count monthly pension contributions were added automatically. You can update the amount on the pension card.',
-      one:
-          'Your pension contribution was added automatically. You can update the amount on the pension card.',
+      one: 'Your pension contribution was added automatically. You can update the amount on the pension card.',
     );
     return '$_temp0';
   }
@@ -5439,7 +5434,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi) {
+    String date,
+    String end,
+    String change,
+    String cpi,
+  ) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
@@ -6066,7 +6065,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.14: Our support and contact address is now support@murphysoft.app; nothing changed in how your data is processed. Version 1.13: If you joined Zirve, the stocks, crypto or gold in your portfolio can now also appear by symbol, as percentages only; amounts, quantities and your identity stay hidden. This applies only if you accepted the 20 October 2026 Zirve consent. The detailed Zirve view may require Premium for new joiners. Version 1.12: The AI comment can now also describe the period you select in Performance and on the asset detail page, and it includes inflation and dollar, gold and BIST 100 comparisons. It still works only if you ask; amounts, quantities and identity details are not sent. Version 1.11: Two optional AI features are described: the portfolio comment in Performance › Summary and reading a statement by its words. Both work only if you ask, with your separate consent the first time you use them; amounts, quantities and identity details are not sent. Version 1.10: Leaving the app in the background for a long time no longer signs you out; if the app lock is on, it only locks. Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
+      'Version 1.14: Our support and contact address is now support@murphysoft.app; nothing changed in how your data is processed.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -6252,7 +6251,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-      String amount, String times, String pct, String share) {
+    String amount,
+    String times,
+    String pct,
+    String share,
+  ) {
     return '$amount · $times× the average · price $pct · buyer share $share';
   }
 
@@ -8976,8 +8979,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           'This asset\'s $n transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.',
-      one:
-          'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
+      one: 'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }
@@ -10284,7 +10286,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String kilometreTasiSiradakiIlerlemeEtiket(
-      String baslik, int yuzde, String kalan) {
+    String baslik,
+    int yuzde,
+    String kalan,
+  ) {
     return 'Next milestone: $baslik, $yuzde percent, $kalan to go';
   }
 
@@ -10558,7 +10563,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String yaSemantik(
-      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
+    String baslik,
+    String dusuk,
+    String yuksek,
+    String bugun,
+    String cumle,
+  ) {
     return '$baslik: low $dusuk, high $yuksek, today $bugun. $cumle';
   }
 
@@ -10609,7 +10619,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String bedelliOnizleme(
-      String elde, String yeni, String birim, String toplam) {
+    String elde,
+    String yeni,
+    String birim,
+    String toplam,
+  ) {
     return '$yeni new shares on your $elde, $birim each, $toplam in total';
   }
 
