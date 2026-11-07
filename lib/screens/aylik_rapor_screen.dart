@@ -720,7 +720,7 @@ class _KalemSatiri extends StatelessWidget {
       label: etiket,
       button: true,
       excludeSemantics: true,
-      child: InkWell(onTap: () => ac(not, kalem.ad), child: satir),
+      child: SandikTappable(onTap: () => ac(not, kalem.ad), child: satir),
     );
   }
 }
