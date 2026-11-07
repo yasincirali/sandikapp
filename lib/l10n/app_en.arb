@@ -584,6 +584,8 @@
   "eldeTutmaSureYil": "{yil} yr",
   "eldeTutmaSatiri": "Held for {sure} · {pct} a year on average",
   "eldeTutmaA11y": "You have held this for {sure}. Counting your buys, sells and dividends, your average annual return is {pct}.",
+  "gunlukGetiriSatiri": "About {tutar} a day on average over the last 30 days",
+  "gunlukGetiriA11y": "Approximately {tutar} a day on average over the last 30 days.",
   "eldeTutmaKilitli": "Your average annual return is in Premium",
   "fxSplitPrice": "From price",
   "fxSplitFx": "From FX",
