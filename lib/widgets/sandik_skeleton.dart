@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 
 /// İçerik biçimli yükleme yer tutucusu (iskelet).
@@ -103,7 +104,7 @@ class SandikSkeletonList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Yükleniyor',
+      label: context.l10n.loadingUpper,
       liveRegion: true,
       child: ListView.separated(
         padding: padding,
@@ -162,7 +163,7 @@ class SandikSkeletonChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Grafik yükleniyor',
+      label: context.l10n.grafikYukleniyor,
       liveRegion: true,
       child: SizedBox(
         height: height,

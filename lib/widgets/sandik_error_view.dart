@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/destek.dart';
 import '../l10n/l10n.dart';
+import '../providers/cevrimdisi_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/destek_maili.dart';
@@ -79,6 +82,28 @@ abstract final class HataDenemeKaydi {
 /// `destek_maili.dart`). Ana eylem "Tekrar dene" kalır: bağlantı düğme
 /// değil, ikincil metin rengiyle yazılmış bir satır. Ne zaman görüneceği
 /// [HataDenemeKaydi]'nda.
+///
+/// ## Bağlantı dönünce bir kez kendiliğinden dener (rapor 2026-11-08 02:30 #1)
+/// Metroda "Bağlantı kurulamadı" düşen ekran, istasyondan çıkınca da düğme
+/// bekliyordu. Görünüm açıkken [cevrimdisiProvider] dolu → boş geçerse
+/// (ana sayfadaki "İnternet yok" şeridiyle AYNI sinyal: son fiyat turu ağ
+/// hatasıyla bitti → ilk yanıt alındı) [_tekrarDene] bir kez çağrılır;
+/// deneme düğmeyle aynı yoldan [HataDenemeKaydi]'na yazılır, yani yine
+/// hata gelirse "bize yaz" bağlantısı da düğmeyle aynı kuralla belirir.
+/// Kurallar:
+/// - Yalnız GEÇİŞ tetikler: görünüm kurulduğundan beri hiç çevrimdışı
+///   durum görmediyse (sunucu hatası, yetki hatası) kendiliğinden deneme
+///   yok; o hatayı bağlantının dönmesi düzeltmez.
+/// - Geçiş başına tek deneme, döngü yok: deneme başarısızsa görünüm yine
+///   düğmeyi bekler; bir sonraki deneme ancak yeni bir kopma → dönüş
+///   geçişiyle gelir. Pil ve istek sınırı korunur.
+/// - Görünüm aynı, ek satır yok: davranış açıklama istemiyor.
+///
+/// Neden `ConsumerStatefulWidget` değil: hata görünümü 20+ ekranda ve
+/// ProviderScope kurmayan widget testlerinde de çiziliyor. `ref` orada
+/// "No ProviderScope found" ile düşerdi. Kapsam [UncontrolledProviderScope]
+/// ile ARANIR; yoksa dinleme kurulmaz ve görünüm bugünkü gibi yalnız
+/// düğmeyle çalışır. Çağıranlarda değişiklik gerekmez.
 class SandikErrorView extends StatefulWidget {
   final Object error;
   final VoidCallback? onRetry;
@@ -124,6 +149,60 @@ class _SandikErrorViewState extends State<SandikErrorView> {
         HataDenemeKaydi.sonradanDenendiMi(_anahtar(context), _dogum)) {
       _dogum = HataDenemeKaydi.now();
     }
+  }
+
+  /// Bağlantı sinyalinin aboneliği; kapsam yoksa `null` (bkz. sınıf notu).
+  ProviderSubscription<CevrimdisiDurum?>? _baglantiAboneligi;
+  ProviderContainer? _kapsam;
+
+  /// Bu görünüm kurulduğundan beri (ya da son kendiliğinden denemeden
+  /// beri) çevrimdışı durum görüldü mü? Geçiş ancak bu doluyken tetikler.
+  bool _cevrimdisiGoruldu = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // `dependOn…`: kapsam değişirse (nadiren, iç içe ProviderScope) yeniden
+    // abone olunur. Kapsam yoksa sessizce düğmeyle yetinilir.
+    final kapsam = context
+        .dependOnInheritedWidgetOfExactType<UncontrolledProviderScope>()
+        ?.container;
+    if (identical(kapsam, _kapsam)) return;
+    _baglantiAboneligi?.close();
+    _baglantiAboneligi = null;
+    _kapsam = kapsam;
+    if (kapsam == null) return;
+    _baglantiAboneligi = kapsam.listen<CevrimdisiDurum?>(
+      cevrimdisiProvider,
+      _baglantiDegisti,
+      fireImmediately: true,
+    );
+  }
+
+  void _baglantiDegisti(CevrimdisiDurum? onceki, CevrimdisiDurum? simdi) {
+    if (simdi != null) {
+      _cevrimdisiGoruldu = true;
+      return;
+    }
+    if (onceki == null || !_cevrimdisiGoruldu || widget.onRetry == null) {
+      return;
+    }
+    // Geçiş tüketildi: aynı dönüşte ikinci deneme yok.
+    _cevrimdisiGoruldu = false;
+    // Sinyal fiyat turunun ortasında (bir Notifier'ın async gövdesinde)
+    // değişir; yeniden denemeyi oradan çağırmak başka bir sağlayıcıyı o
+    // turun içinde geçersiz kılardı. Bir sonraki kareden sonra, görünüm
+    // hâlâ ekrandaysa denenir.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _tekrarDene();
+    });
+    SchedulerBinding.instance.ensureVisualUpdate();
+  }
+
+  @override
+  void dispose() {
+    _baglantiAboneligi?.close();
+    super.dispose();
   }
 
   void _tekrarDene() {
@@ -177,7 +256,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
             Icon(Icons.error_outline_rounded, color: context.c.loss, size: 40),
             const SizedBox(height: 16),
             Text(
-              friendlyError(widget.error),
+              friendlyError(widget.error, l10n: context.l10n),
               textAlign: TextAlign.center,
               style: context.t.titleMedium?.copyWith(color: context.c.text58),
             ),
@@ -189,7 +268,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
               SandikTappable(
                 onTap: _tekrarDene,
                 haptic: SandikHaptic.medium,
-                semanticLabel: 'Tekrar dene',
+                semanticLabel: context.l10n.retry,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: SandikSpace.lg,
@@ -203,7 +282,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
                     ),
                   ),
                   child: Text(
-                    'Tekrar dene',
+                    context.l10n.retry,
                     style: context.t.titleMedium?.copyWith(
                       color: context.c.amberText,
                       fontWeight: FontWeight.w600,

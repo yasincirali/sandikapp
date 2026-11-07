@@ -1284,14 +1284,7 @@
       }
     }
   },
-  "portfolioLineInfoSim": "For weekly and longer periods the {name} line is a simulation: what would have happened had you held today's assets since the start of the period. Your buy and sell dates are ignored; it is not your realised return. This keeps it comparable with your watched assets over the same window.",
-  "@portfolioLineInfoSim": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
+  "portfolioLineInfoSim": "This line shows what would have happened had you held today's assets since the start of the period; it is not your realised return.",
   "addToPortfolioSemantics": "Add {name} to my portfolio",
   "@addToPortfolioSemantics": {
     "placeholders": {
@@ -1464,7 +1457,7 @@
     }
   },
   "topPortfolios": "Top Portfolios",
-  "selectedPeriodReturnBody": "The period is split into days. Each day, the assets you held that day are valued at market prices, and the daily returns are chained together.\n\nIf you sold one asset and bought another, each counts only on the days you held it. The 7D / 30D / 1Y choice above changes the result directly.",
+  "selectedPeriodReturnBody": "The period is split into days; the return is calculated from the days you held each asset. The period choice changes the result.",
   "depositsDontChangeRankBody": "What is measured is your picks: which assets you held, on which days. When and how much money you added does NOT affect the ratio; the same picks give the same percentage whether you hold 1 lot or 10,000.\n\nThe purchase price you entered is not used; everything is valued at market prices.",
   "everyoneMeasuredSameBody": "You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nTo be ranked, at least {gun} days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.",
   "@everyoneMeasuredSameBody": {
@@ -1708,7 +1701,7 @@
       }
     }
   },
-  "alarmAlsoDeleteBody": "{n, plural, =1{{name} was deleted. The alert you set for this symbol is still active. It can keep watching the price even though you no longer hold it.} other{{name} was deleted. The {n} alerts you set for this symbol are still active. They can keep watching the price even though you no longer hold it.}}",
+  "alarmAlsoDeleteBody": "{n, plural, =1{{name} was deleted. Your alert is still active and keeps watching the price.} other{{name} was deleted. Your {n} alerts are still active and keep watching the price.}}",
   "@alarmAlsoDeleteBody": {
     "placeholders": {
       "n": {
@@ -2998,6 +2991,19 @@
   "hataMailAcilamadi": "Couldn't open your email app. You can write to this address:",
   "hataAdresiKopyala": "Copy address",
   "hataAdresKopyalandi": "Address copied",
+  "hataBaslik": "Error",
+  "hataBaglanti": "Couldn't connect. Check your internet; if you use a VPN, turn it off and try again.",
+  "hataBilinmeyen": "An unknown error occurred.",
+  "hataGenel": "Something went wrong, try again.",
+  "hataVeriOkunamadi": "The data from the server couldn't be read.",
+  "hataKayitVar": "This record already exists.",
+  "hataYetkiYok": "You don't have permission for this.",
+  "hataVeriIslemi": "The data operation failed.",
+  "hataDosyaIslemi": "The file operation failed.",
+  "hataOturumDoldu": "Your session has expired. Sign in again.",
+  "hataCokDeneme": "Too many attempts. Please try again in a few minutes.",
+  "hataIslemTamamlanamadi": "Couldn't complete the action. Try again in a little while.",
+  "grafikYukleniyor": "Loading chart",
   "searchRecentRemove": "Remove from list",
   "searchAllActions": "All actions",
   "searchShortHint": "Stocks, funds, gold, FX, crypto",

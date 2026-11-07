@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/generated/app_localizations_tr.dart';
+import '../l10n/l10n.dart';
 import '../services/gorunen_hata.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_async_button.dart';
@@ -23,6 +25,11 @@ import '../widgets/custom_loading_indicator.dart';
 /// kullanıyorsa ikinci yarısı ona denemesi gereken şeyi söyler. Kesin
 /// olmayan bir teşhisi kesinmiş gibi yazmak ("VPN'inizi kapatın"), VPN'i
 /// olmayan kullanıcıyı yanlış yere bakmaya gönderirdi.
+///
+/// Dil (2026-11-08): ekranda gösterilen metin artık `hataBaglanti`
+/// anahtarından gelir; bu sabit TÜRKÇE metnin kaydı olarak durur ve
+/// `ortak_bilesen_ingilizce_test` iki metnin bayt bayt aynı kaldığını kilitler
+/// (eski testler ve destek akışı bu sabite bakıyor).
 const String kBaglantiHatasiMesaji =
     'Bağlantı kurulamadı. İnternetini kontrol et; '
     'VPN kullanıyorsan kapatıp tekrar dene.';
@@ -89,15 +96,33 @@ bool baglantiHatasiMi(Object? error) {
   return false;
 }
 
-/// Teknik hatayı kullanıcı dostu Türkçe mesaja çevirir.
+/// Teknik hatayı kullanıcı dostu mesaja çevirir.
 ///
 /// UI'da `Text('Hata: $e')` yerine `Text(friendlyError(e))` kullan —
 /// SocketException, TimeoutException, AuthApiException gibi düşük seviye
 /// mesajları kullanıcıya gösterme.
 ///
 /// `verbose: true` debug için orijinal mesajı parantez içinde ekler.
-String friendlyError(Object? error, {bool verbose = false}) {
-  if (error == null) return 'Bilinmeyen bir hata oluştu.';
+///
+/// ## Dil (rapor 2026-11-08 02:30 #3)
+/// İngilizce seçen kullanıcı ortak hata metnini Türkçe görüyordu. En sık
+/// görünen genel mesajlar (bağlantı, bilinmeyen, genel, veri, yetki, dosya,
+/// oturum, çok deneme, işlem tamamlanamadı) artık [l10n]'dan gelir.
+/// [l10n] verilmezse TÜRKÇE: `context.l10n`'un delegate'siz geri dönüşüyle
+/// aynı kural (`l10n.dart`). Servis katmanı, isolate ve testler gibi
+/// bağlamsız çağıranlar bugünkü Türkçe metni bayt bayt aynı alır; bağlamı
+/// olan ortak bileşenler (`SandikErrorView`, `sandikSnackError`,
+/// `showAppError`) `context.l10n` geçirir. Global bir "şu anki dil" durumu
+/// bilerek kurulmadı: hata metninin dili çağıranın ağacından gelsin, test
+/// sırası ya da dil değişimi anında eski değer kalmasın.
+/// Kalan özel mesajlar (giriş/kayıt ayrıntıları) sonraki turlarda.
+String friendlyError(
+  Object? error, {
+  bool verbose = false,
+  AppLocalizations? l10n,
+}) {
+  final l = l10n ?? AppLocalizationsTr();
+  if (error == null) return l.hataBilinmeyen;
 
   String message;
 
@@ -109,26 +134,26 @@ String friendlyError(Object? error, {bool verbose = false}) {
   if (error is KullaniciMesajli && error.message.trim().isNotEmpty) {
     message = error.message.trim();
   } else if (baglantiHatasiMi(error)) {
-    message = kBaglantiHatasiMesaji;
+    message = l.hataBaglanti;
   } else if (error is FormatException) {
-    message = 'Sunucudan gelen veri okunamadı.';
+    message = l.hataVeriOkunamadi;
   } else if (error is AuthApiException) {
-    message = _authMessage(error.message);
+    message = _authMessage(error.message, l);
   } else if (error is AuthException) {
-    message = _authMessage(error.toString());
+    message = _authMessage(error.toString(), l);
   } else if (error is PostgrestException) {
     // RLS/permission veya constraint hatası
     if (error.code == '23505') {
-      message = 'Bu kayıt zaten var.';
+      message = l.hataKayitVar;
     } else if (error.code == '42501' || error.message.contains('permission')) {
-      message = 'Bu işlem için yetkin yok.';
+      message = l.hataYetkiYok;
     } else {
-      message = 'Veri işlemi başarısız oldu.';
+      message = l.hataVeriIslemi;
     }
   } else if (error is StorageException) {
-    message = 'Dosya işlemi başarısız oldu.';
+    message = l.hataDosyaIslemi;
   } else {
-    message = _humanize(error.toString());
+    message = _humanize(error.toString(), l);
   }
 
   if (verbose) {
@@ -164,7 +189,7 @@ String hataSinifi(Object? error) {
   return 'diger';
 }
 
-String _authMessage(String raw) {
+String _authMessage(String raw, AppLocalizations l) {
   final lower = raw.toLowerCase();
   if (lower.contains('invalid login credentials') ||
       lower.contains('invalid_credentials') ||
@@ -182,14 +207,14 @@ String _authMessage(String raw) {
     return 'Kullanıcı bulunamadı.';
   }
   if (lower.contains('too many requests') || lower.contains('rate limit')) {
-    return 'Çok fazla deneme. Lütfen birkaç dakika sonra tekrar dene.';
+    return l.hataCokDeneme;
   }
   if (lower.contains('weak password') || lower.contains('password should')) {
     // AuthService.validatePassword ile aynı kural: 8 karakter + harf + rakam.
     return 'Şifre çok zayıf. En az 8 karakter, bir harf ve bir rakam kullan.';
   }
   if (lower.contains('jwt expired') || lower.contains('token expired')) {
-    return 'Oturumun süresi doldu. Tekrar giriş yap.';
+    return l.hataOturumDoldu;
   }
   // Girdi kaynaklı sunucu retleri (2026-09-29): kayıt formu bunları artık
   // basmadan önce gösteriyor, ama istemci kuralı sunucudan geride kalırsa
@@ -206,7 +231,7 @@ String _authMessage(String raw) {
   // bu metne düşülüyor, kullanıcı "kayıt olurken neden giriş?" diye
   // okuyordu (prod, 2026-09-29: "Kayıt hatası: Giriş işlemi başarısız
   // oldu"). Metin akıştan bağımsız.
-  return 'İşlem tamamlanamadı. Biraz sonra tekrar dene.';
+  return l.hataIslemTamamlanamadi;
 }
 
 /// Marka renkli hata dialogu.
@@ -217,8 +242,8 @@ void showAppError(BuildContext context, Object? error) {
   showSandikDialog(
     context: context,
     kind: SandikDialogKind.error,
-    title: 'Hata',
-    message: friendlyError(error),
+    title: context.l10n.hataBaslik,
+    message: friendlyError(error, l10n: context.l10n),
   );
 }
 
@@ -949,17 +974,17 @@ class _SandikDialogState extends State<_SandikDialog> {
   }
 }
 
-String _humanize(String raw) {
+String _humanize(String raw, AppLocalizations l) {
   final stripped =
       raw.replaceFirst(RegExp(r'^(Exception|Error|_TypeError):\s*'), '').trim();
   if (stripped.isEmpty || stripped.length > 120) {
-    return 'Bir şeyler ters gitti, tekrar dene.';
+    return l.hataGenel;
   }
   // Türkçe harf içeren mesajı geçir — kendi `Exception('…')`larımız için
   // eski sezgi. Uygulamanın AuthException'ı artık [KullaniciMesajli] ile
   // tür üzerinden geçer (U13); bu satır ona güvenmez.
   if (RegExp(r'[ğüşıöçĞÜŞİÖÇ]').hasMatch(stripped)) return stripped;
-  return 'Bir şeyler ters gitti, tekrar dene.';
+  return l.hataGenel;
 }
 
 /// Sandık diyaloglarının giriş/çıkışı — iki diyalog (onay, bilgi) AYNI geçiş.
