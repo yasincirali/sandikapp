@@ -9,6 +9,9 @@ import '../providers/aylik_rapor_provider.dart';
 import '../services/aylik_rapor_disa_aktarim.dart';
 import '../services/crash_reporter.dart';
 import '../services/aylik_rapor_ozeti.dart';
+import '../models/asset_type.dart';
+import '../services/aylik_rapor_kalemleri.dart';
+import '../utils/pozisyon_etiketi.dart';
 import '../services/disa_aktarim/disa_aktarim_service.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/sandik_paylas_dugmesi.dart';
@@ -48,8 +51,9 @@ import 'hafta_ozeti_screen.dart' show HaftaRozetCipi;
 /// döviz, mevduat hiç, notu çıkmayan hisse de yalnız "not çıkmadı"
 /// satırında görünüyordu. Artık notların ÜSTÜNDE üç sayısal bölüm var
 /// (ayın varlıkları, para girişi ve çıkışı, önemli gelişmeler;
-/// `AylikRaporOzeti`) ve en üstte kapsadığı günler. Haber metni yok:
-/// lisanslı kaynak yok, rapor bunu sonunda söyler. "Portföy getirisi
+/// `AylikRaporOzeti`) ve en üstte kapsadığı günler. Haber (0177): haberi
+/// olan varlık önemli gelişmelere girer, kartı kendi cümlesiyle özet ve
+/// kaynak bağlantısı taşır; haber gelmezse rapor sonunda "haber yok" der. "Portföy getirisi
 /// Performans'ta" kararı sürer: yüzde kutusu yalnız PDF'te (müşavir), ekran
 /// varlık bazında ay başı → ay sonu değişimi gösterir.
 class AylikRaporScreen extends ConsumerWidget {
@@ -136,17 +140,45 @@ class AylikRaporScreen extends ConsumerWidget {
             // sayı kapısından geçmedi). Sessizce düşerse titiz okur "5
             // varlığım var, rapor 3 diyor" diye takılır; adlarıyla söylenir.
             final notlu = {for (final n in buAy) n.ticker};
+            final pozisyonlar = ref.watch(notPozisyonlariProvider(l10n));
+            final adlar = {
+              for (final p in pozisyonlar.values) p.notAnahtari: p.ad
+            };
+            String notunAdi(String k) => adlar[k] ?? notAdi(k, l10n);
             final eksik = [
               for (final k in anahtarlar)
-                if (!notlu.contains(k)) notKodu(k)
+                if (!notlu.contains(k)) notunAdi(k)
             ]..sort();
+            // Sıra (yasin 2026-11-07, "anlaşılır olmalı"): önce önemli
+            // gelişmeler, sonra her varlık tek satır, en sonda kaynak ve
+            // kısıt. PDF aynı listeyi kullanır (`raporKalemleri`).
+            final kalemler = raporKalemleri(
+              notlar: buAy,
+              varliklar: ozet?.varliklar ?? const [],
+              pozisyonlar: pozisyonlar,
+              varlikAdi: (v) => pozisyonEtiketi(v.anahtar, v.tur, l10n, ad: v.ad),
+              notAdi: notunAdi,
+              haberler: ozet?.haberler ?? const [],
+            );
+            void notuAc(AnalizOzeti n, String ad) => pushGuarded(
+                  context,
+                  adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'analiz_notu'),
+                    builder: (_) => AnalizNotuScreen(
+                      ticker: n.ticker,
+                      tur: 'aylik',
+                      donem: n.donem,
+                      kod: ad,
+                      baslik: n.baslik,
+                    ),
+                  ),
+                );
             // Kapsam satırı (yasin 2026-11-07, "zaman aralığı belirtilmeli"):
             // raporun saydığı günler açık tarihle. Pencere ekran ve PDF'te
             // aynı kaynaktan (`AylikRaporOzeti.pencere`).
             final (kBas, kBit, suren) =
                 AylikRaporOzeti.pencere(donem, DateTime.now());
             final aralik = fmtTarihAraligi(kBas, kBit, dil: dil);
-            final notAraligi = notVeriAraligi(buAy);
             final yatay = SandikSpace.screenH(context);
             Widget liste({VoidCallback? onHikaye}) => ListView(
                   padding: EdgeInsets.fromLTRB(
@@ -208,6 +240,7 @@ class AylikRaporScreen extends ConsumerWidget {
                           tooltip: l10n.anzAylikPdfPaylas,
                           onPaylas: (kaynak) => _pdfPaylas(context, ref,
                               notlar: buAy,
+                              kalemler: kalemler,
                               eksik: eksik,
                               ozet: ozet,
                               kaynak: kaynak),
@@ -220,29 +253,23 @@ class AylikRaporScreen extends ConsumerWidget {
                       const SandikSkeleton(
                           height: SandikTouch.min * 2,
                           radius: SandikRadius.md),
-                    ] else if (ozet != null) ...[
-                      if (ozet.varliklar.isNotEmpty)
-                        AyinVarliklariBolumu(ozet: ozet),
+                    ],
+                    if (kalemler.onemli.isNotEmpty) ...[
+                      const SizedBox(height: SandikSpace.lg),
+                      SandikSectionHeader(title: l10n.anzAylikOnemliBaslik),
+                      const SizedBox(height: SandikSpace.sm),
+                      for (final k in kalemler.onemli) ...[
+                        _OnemliKart(kalem: k, ac: notuAc),
+                        const SizedBox(height: SandikSpace.smd),
+                      ],
+                    ],
+                    if (kalemler.diger.isNotEmpty)
+                      _VarlikAyiBolumu(
+                          kalemler: kalemler.diger, ozet: ozet, ac: notuAc),
+                    if (ozet != null) ...[
                       if (!ozet.akis.bos) ParaAkisiBolumu(akis: ozet.akis),
                       if (ozet.gelismeler.isNotEmpty)
                         GelismelerBolumu(gelismeler: ozet.gelismeler),
-                    ],
-                    if (buAy.isNotEmpty) ...[
-                      const SizedBox(height: SandikSpace.lg),
-                      SandikSectionHeader(title: l10n.anzAylikNotlarBaslik),
-                      if (notAraligi != null) ...[
-                        const SizedBox(height: SandikSpace.xxs),
-                        Text(
-                            l10n.anzAylikNotlarAralik(fmtTarihAraligi(
-                                notAraligi.$1, notAraligi.$2,
-                                dil: dil)),
-                            style: t.bodySmall?.copyWith(color: c.text58)),
-                      ],
-                      const SizedBox(height: SandikSpace.sm),
-                      for (final n in buAy) ...[
-                        _VarlikKarti(not: n),
-                        const SizedBox(height: SandikSpace.smd),
-                      ],
                     ],
                     if (eksik.isNotEmpty) ...[
                       const SizedBox(height: SandikSpace.sm),
@@ -250,14 +277,19 @@ class AylikRaporScreen extends ConsumerWidget {
                           style: t.bodySmall?.copyWith(color: c.text58)),
                     ],
                     const SizedBox(height: SandikSpace.md),
-                    // Haber yok (2026-11-07): yasin "önemli haber detayları"
-                    // istedi; lisanslı haber/KAP kaynağı yok
-                    // (`docs/KAP_VERI_LISANSI_2026_09.md`). Haber metni
-                    // uydurulmaz, eksiklik raporun kendisinde söylenir.
-                    Text(l10n.anzAylikHaberYok,
+                    // Haber (0177): sunucu kamuya açık haberi web aramasıyla
+                    // bulup rakamsız özetlediyse kartlarda kaynağıyla durur
+                    // ve dipnot nereden geldiğini söyler. Gelmediyse (bayrak
+                    // kapalı, haber yok) eski cümle: lisanslı haber/KAP
+                    // kaynağı yok (`docs/KAP_VERI_LISANSI_2026_09.md`),
+                    // eksiklik raporun kendisinde söylenir.
+                    Text(
+                        kalemler.onemli.any((k) => k.haberler.isNotEmpty)
+                            ? l10n.anzAylikHaberDipnot
+                            : l10n.anzAylikHaberYok,
                         style: t.bodySmall?.copyWith(color: c.text58)),
                     const SizedBox(height: SandikSpace.sm),
-                    Text(l10n.rdrHaftaKaynak,
+                    Text(l10n.anzAylikKaynak,
                         style: t.bodySmall?.copyWith(color: c.text36)),
                   ],
                 );
@@ -287,6 +319,7 @@ class AylikRaporScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     required List<AnalizOzeti> notlar,
+    required ({List<RaporKalemi> onemli, List<RaporKalemi> diger}) kalemler,
     required List<String> eksik,
     required AylikRaporOzeti? ozet,
     Rect? kaynak,
@@ -296,6 +329,7 @@ class AylikRaporScreen extends ConsumerWidget {
       final belge = await AylikRaporDisaAktarim.belgeHazirla(
         donem: donem,
         notlar: notlar,
+        kalemler: kalemler,
         eksik: eksik,
         ozet: ozet,
         kim: kullanici?.username ?? kullanici?.email ?? '',
@@ -438,7 +472,7 @@ class _AylikHikayeKapisiState extends State<AylikHikayeKapisi> {
               null => null,
             },
             ust: l10n.hkyAylikOneCikan,
-            baslik: notKodu(n.ticker),
+            baslik: notAdi(n.ticker, l10n),
             alt: n.baslik,
             renk: _rozetRengi(context, haftaRozetiSunucudan(n.rozet)),
           ),
@@ -478,58 +512,229 @@ class _Bos extends StatelessWidget {
         );
 }
 
-class _VarlikKarti extends StatelessWidget {
-  const _VarlikKarti({required this.not});
+/// Önemli gelişme kartı: varlığın adı ve türü, durum etiketi, "ne oldu"
+/// satırı (kullanıcının pozisyonu, istemci hesabı), notun başlığı ve
+/// notun dayandığı tarih aralığı. Ad kullanıcının tanıdığı ad; ham kod
+/// ('THYAO.IS', 'KRIPTO:BTC') görünmez.
+class _OnemliKart extends StatelessWidget {
+  const _OnemliKart({required this.kalem, required this.ac});
 
-  final AnalizOzeti not;
+  final RaporKalemi kalem;
+  final void Function(AnalizOzeti not, String ad) ac;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.c;
     final t = context.t;
-    final kod = notKodu(not.ticker);
+    final not = kalem.not!;
     final rozet = haftaRozetiSunucudan(not.rozet);
-    void ac() => pushGuarded(
-          context,
-          adaptiveRoute<void>(
-            settings: const RouteSettings(name: 'analiz_notu'),
-            builder: (_) => AnalizNotuScreen(
-              ticker: not.ticker,
-              tur: 'aylik',
-              donem: not.donem,
-              kod: kod,
-              baslik: not.baslik,
-            ),
-          ),
-        );
+    final v = kalem.varlik;
+    final aralik = _notAraligi(context, not);
     return SandikCard(
-      onTap: ac,
+      onTap: () => ac(not, kalem.ad),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(kod,
-                    style: t.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700, color: c.text90)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(kalem.ad,
+                        style: t.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600, color: c.text90)),
+                    if (kalem.tur case final tur?)
+                      Text(tur.labelOf(l10n),
+                          style: t.bodySmall?.copyWith(color: c.text58)),
+                  ],
+                ),
               ),
               if (rozet != null) HaftaRozetCipi(rozet: rozet),
             ],
           ),
+          if (v != null) ...[
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+                l10n.anzAylikNeOldu(fmtPctIsaretli(v.pct, digits: 1),
+                    isaretliTL(v.piyasaTRY)),
+                style: t.bodyMedium?.copyWith(
+                    color: c.text90, fontWeight: FontWeight.w600)),
+          ],
           const SizedBox(height: SandikSpace.xs),
           Text(not.baslik, style: t.bodyMedium?.copyWith(color: c.text90)),
+          if (aralik != null) ...[
+            const SizedBox(height: SandikSpace.xxs),
+            Text(aralik, style: t.bodySmall?.copyWith(color: c.text58)),
+          ],
+          // Ayın haberleri (0177): notun altında, kaynak bağlantısıyla.
+          for (final h in kalem.haberler) ...[
+            const SizedBox(height: SandikSpace.sm),
+            Divider(height: 1, thickness: 1, color: c.hairline),
+            const SizedBox(height: SandikSpace.sm),
+            AyinHaberiSatiri(haber: h),
+          ],
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: TextButton(
               style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
-              onPressed: ac,
+              onPressed: () => ac(not, kalem.ad),
               child: Text(l10n.anzNotuOku),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Not 1–31 Eki verisinden": her not kapsadığı günleri yazar (kullanıcı
+/// kuralı: her rapor/özet tarih aralığı yazar). Eski satırda veri aralığı
+/// yoksa null.
+String? _notAraligi(BuildContext context, AnalizOzeti n) {
+  final bas = n.veriBaslangic, bit = n.veriBitis;
+  if (bas == null || bit == null) return null;
+  return context.l10n
+      .anzAylikNotVerisi(fmtTarihAraligi(bas, bit, dil: context.tarihDili));
+}
+
+/// "Varlıklarının ayı": her pozisyon tek satır — ad ve tür, ayın yüzdesi
+/// ve piyasa etkisi; öne çıkmayan notun başlığı alt cümle. Notu olan satır
+/// dokununca notu açar (satır ≥ 44 pt).
+class _VarlikAyiBolumu extends StatelessWidget {
+  const _VarlikAyiBolumu(
+      {required this.kalemler, required this.ozet, required this.ac});
+
+  final List<RaporKalemi> kalemler;
+  final AylikRaporOzeti? ozet;
+  final void Function(AnalizOzeti not, String ad) ac;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    final dil = context.tarihDili;
+    final fiyat = ozet?.fiyatTarihi;
+    final olculemeyen = [
+      for (final (k, tur, ad) in ozet?.olculemeyen ?? const <(String, AssetType, String)>[])
+        pozisyonEtiketi(k, tur, l10n, ad: ad)
+    ]..sort();
+    final dipnotlar = [
+      l10n.anzAylikTumDipnot,
+      if (fiyat != null) l10n.raporFiyatTarihi(fmtTarih(fiyat, dil: dil, saat: true)),
+      if (olculemeyen.isNotEmpty)
+        l10n.anzAylikOlculemeyen(olculemeyen.join(', ')),
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SandikSectionHeader(title: l10n.anzAylikTumBaslik),
+          const SizedBox(height: SandikSpace.sm),
+          SandikCard(
+            padding: const EdgeInsets.symmetric(
+                horizontal: SandikSpace.md, vertical: SandikSpace.xs),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < kalemler.length; i++) ...[
+                  if (i > 0)
+                    Divider(height: 1, thickness: 1, color: c.hairline),
+                  _KalemSatiri(kalem: kalemler[i], ac: ac),
+                ],
+              ],
+            ),
+          ),
+          for (final d in dipnotlar) ...[
+            const SizedBox(height: SandikSpace.xs),
+            Text(d, style: t.bodySmall?.copyWith(color: c.text58)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _KalemSatiri extends StatelessWidget {
+  const _KalemSatiri({required this.kalem, required this.ac});
+
+  final RaporKalemi kalem;
+  final void Function(AnalizOzeti not, String ad) ac;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    final v = kalem.varlik;
+    final not = kalem.not;
+    final yuzde = v == null ? null : fmtPctIsaretli(v.pct, digits: 1);
+    final tutar = v == null ? null : isaretliTL(v.piyasaTRY);
+    final tur = kalem.tur?.labelOf(l10n);
+    final satir = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SandikTouch.min),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(kalem.ad,
+                      style: t.bodyMedium?.copyWith(color: c.text90)),
+                  if (tur != null)
+                    Text(tur, style: t.bodySmall?.copyWith(color: c.text58)),
+                  if (not != null) ...[
+                    const SizedBox(height: SandikSpace.xxs),
+                    Text(not.baslik,
+                        style: t.bodySmall?.copyWith(color: c.text90)),
+                    if (_notAraligi(context, not) case final a?)
+                      Text(a, style: t.bodySmall?.copyWith(color: c.text58)),
+                  ],
+                ],
+              ),
+            ),
+            if (v != null) ...[
+              const SizedBox(width: SandikSpace.sm),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(yuzde!,
+                        textAlign: TextAlign.end,
+                        style: t.numSmall
+                            .copyWith(color: context.signColor(v.pct))),
+                    Text(tutar!,
+                        textAlign: TextAlign.end,
+                        style: t.bodySmall?.copyWith(color: c.text58)),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+    final etiket = [
+      v == null ? kalem.ad : l10n.anzAylikSemVarlik(kalem.ad, yuzde!, tutar!),
+      if (not != null) not.baslik,
+    ].join('. ');
+    if (not == null) {
+      return Semantics(label: etiket, excludeSemantics: true, child: satir);
+    }
+    return Semantics(
+      label: etiket,
+      button: true,
+      excludeSemantics: true,
+      child: SandikTappable(onTap: () => ac(not, kalem.ad), child: satir),
     );
   }
 }

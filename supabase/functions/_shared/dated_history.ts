@@ -135,10 +135,16 @@ export async function fetchKriptoDated(
 /// Frankfurt `1D`); temiz kapanışa noktanın kendi gününün işlemiş faizi
 /// eklenir (istemci `PriceService._eurobondSerisi` ile aynı kural).
 /// Katalogda olmayan ISIN için Frankfurt'a gidilmez.
+///
+/// [temiz] true → işlemiş faiz EKLENMEZ (temiz fiyat / 100). Aylık not
+/// (2026-11-07) günlük değişim ölçer: kirli fiyat kupon günü kupon kadar
+/// düşer ve "ayın en zayıf günü" diye yanlış okunurdu. Yarış (değer) kirli
+/// fiyatla devam eder; varsayılan değişmedi.
 export async function fetchEurobondDated(
   client: SupabaseClient,
   symbol: string,
   f: typeof fetch = fetch,
+  temiz = false,
 ): Promise<Seri> {
   const isin = symbol.trim().toUpperCase().slice(EUROBOND_ONEKI.length);
   if (!symbol.trim().toUpperCase().startsWith(EUROBOND_ONEKI) || !isinGecerli(isin)) return [];
@@ -160,7 +166,7 @@ export async function fetchEurobondDated(
   );
   if (!res.ok) return [];
   return noktalariTopla(
-    bfGecmisiniCoz(await res.json()).map(([t, temiz]) => [t, birimDeger(s, temiz, t)]),
+    bfGecmisiniCoz(await res.json()).map(([t, kapanis]) => [t, temiz ? kapanis / 100 : birimDeger(s, kapanis, t)]),
   );
 }
 

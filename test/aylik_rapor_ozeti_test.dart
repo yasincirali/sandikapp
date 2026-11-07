@@ -262,4 +262,68 @@ void main() {
     expect(haftaAraligi([fon, hisse]),
         (DateTime(2026, 10, 31), DateTime(2026, 11, 6)));
   });
+  group('ayinHaberleri (0177)', () {
+    final bas = DateTime(2026, 10, 1);
+    final bit = DateTime(2026, 10, 31);
+    Map<String, Object?> h(
+      String url,
+      String tarih, {
+      String metin = 'Şirket yeni bir karar açıkladı.',
+      String? kaynak = 'Anadolu Ajansı',
+    }) => {'metin': metin, 'kaynak': kaynak, 'url': url, 'tarih': tarih};
+
+    test('pencere, sıra (yeniden eskiye), aynı bağlantı bir kez', () {
+      final r = ayinHaberleri(
+        bas: bas,
+        bit: bit,
+        satirlar: [
+          (
+            'THYAO.IS',
+            'THYAO',
+            [
+              h('https://a.com/1', '2026-10-03'),
+              h('https://a.com/2', '2026-10-20'),
+            ],
+          ),
+          (
+            'PGSUS.IS',
+            'PGSUS',
+            [
+              h('https://a.com/2', '2026-10-20'),
+              h('https://a.com/3', '2026-09-30'),
+            ],
+          ),
+        ],
+      );
+      expect(r.map((x) => x.url.toString()), [
+        'https://a.com/2',
+        'https://a.com/1',
+      ]);
+      expect(r.first.kod, 'THYAO');
+      expect(r.first.anahtar, 'THYAO.IS');
+    });
+
+    test('ikinci savunma: https olmayan, tarihsiz, boş metin düşer; kaynak yoksa alan adı', () {
+      final r = ayinHaberleri(
+        bas: bas,
+        bit: bit,
+        satirlar: [
+          (
+            'X',
+            'X',
+            [
+              h('http://a.com/1', '2026-10-03'),
+              h('javascript:alert(1)', '2026-10-03'),
+              h('https://a.com/2', 'dün'),
+              h('https://a.com/3', '2026-10-03', metin: ' '),
+              h('https://www.bloomberght.com/4', '2026-10-05', kaynak: null),
+              'bozuk',
+            ],
+          ),
+          ('Y', 'Y', null),
+        ],
+      );
+      expect(r.single.kaynak, 'bloomberght.com');
+    });
+  });
 }

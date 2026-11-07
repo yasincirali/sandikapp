@@ -15,15 +15,33 @@ class AylikRaporNotu {
     required this.baslik,
     this.rozet,
     this.maddeler = const [],
+    this.tur,
+    this.neOldu,
+    this.aralik,
+    this.haberler = const [],
   });
 
-  /// Ekrandaki kısa ad ('THYAO', 'TTE').
+  /// Ekrandaki ad ('THYAO', 'TTE', 'Altın'); ham kod değil.
   final String kod;
+
+  /// Türün adı ("Hisse", "Altın"); blok "ad · tür" ile başlar.
+  final String? tur;
+
+  /// "Ayın değişimi +%8,2, piyasa etkisi +₺820" — kullanıcının pozisyonu.
+  final String? neOldu;
+
+  /// "Not 1–31 Eki verisinden" (her not kapsadığı günleri yazar).
+  final String? aralik;
+
+  String get blokBasligi => tur == null ? kod : '$kod · $tur';
 
   /// Durum etiketinin METNİ ("Alıcı istekli"); sakin ya da rozetsizse null.
   final String? rozet;
   final String baslik;
   final List<String> maddeler;
+
+  /// Ayın haber satırları (0177), yalnız önemli gelişmeler bloğunda.
+  final List<RaporHaberi> haberler;
 }
 
 /// Aylık rapor PDF'inin içeriği (2026-10-31; müşteri raporu 31 Eki #1,
@@ -50,7 +68,9 @@ class AylikRaporNotu {
 /// "Aylık raporda neden sadece fonların raporları var": belge artık
 /// ekranla aynı üç sayısal bölümü taşır (ayın varlıkları, para girişi ve
 /// çıkışı, önemli gelişmeler; hesap `AylikRaporOzeti`'nde) ve başlığın
-/// altında kapsadığı günleri yazar. Haber metni yok; dipnot bunu söyler.
+/// altında kapsadığı günleri yazar. Haber (0177): önemli gelişmeler
+/// bloğunda kendi cümlesiyle özet + tıklanır kaynak; haber gelmediyse
+/// dipnot "haber yok" der ([haberCumlesi] çağırandan).
 RaporBelgesi aylikRaporBelgesi({
   required DateTime donem,
   required List<AylikRaporNotu> notlar,
@@ -69,7 +89,13 @@ RaporBelgesi aylikRaporBelgesi({
   double? getiriPct,
   double? tufePct,
   AyinPortfoyu? portfoy,
+  List<AylikRaporNotu> satirlar = const [],
 }) {
+  // Kalem düzeni (2026-11-07, yasin: "rapor pdf'i anlaşılır olmalı"):
+  // [satirlar] doluysa sıra ekranla aynı — önce önemli gelişmeler (rozetli
+  // notlar, tam blok), sonra her varlık kısa blok (tablo yerine), sonra
+  // para akışı/olay tabloları, en sonda notlar. Boşsa eski düzen.
+  final kalemDuzeni = satirlar.isNotEmpty;
   final ay = DateFormat('MMMM y', 'tr_TR').format(donem);
   final aciklama = TuikTakvimi.aciklamaTarihi(donem);
   final reel = getiriPct == null || tufePct == null
@@ -87,7 +113,7 @@ RaporBelgesi aylikRaporBelgesi({
         '$kim · oluşturma ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)}',
     dosyaAdi: belgeDosyaAdi('Aylık Rapor', ayDonemi(donem)),
     kapsam: kapsam,
-    tablolarOnce: true,
+    tablolarOnce: !kalemDuzeni,
     // Sıra (müşteri raporu 2 Kas 13:15 #1): ilk satır kişinin parası
     // (yüzde, TL kâr, ay sonu), ikinci satır kıyas (TÜFE, reel, yatırılan).
     // "Notu çıkan varlık" sayacı çıktı: aynı sayı öne çıkanların ilk
@@ -118,17 +144,42 @@ RaporBelgesi aylikRaporBelgesi({
       if (hareketli.isNotEmpty) 'Belirgin hareket: ${hareketli.join(', ')}.',
       if (eksikCumlesi != null) eksikCumlesi,
     ],
-    bolumler: [
-      for (final n in notlar)
-        RaporMetinBolumu(
-          baslik: n.kod,
-          etiket: n.rozet,
-          oz: n.baslik,
-          maddeler: n.maddeler,
-        ),
-    ],
+    bolumler: kalemDuzeni
+        ? [
+            for (final (i, n) in notlar.indexed)
+              RaporMetinBolumu(
+                grup: i == 0 ? 'Önemli gelişmeler' : null,
+                baslik: n.blokBasligi,
+                etiket: n.rozet,
+                oz: n.baslik,
+                maddeler: [
+                  if (n.neOldu != null) n.neOldu!,
+                  ...n.maddeler,
+                  if (n.aralik != null) n.aralik!,
+                ],
+                haberler: n.haberler,
+              ),
+            for (final (i, n) in satirlar.indexed)
+              RaporMetinBolumu(
+                grup: i == 0 ? 'Varlıklarının ayı' : null,
+                kisa: true,
+                baslik: n.blokBasligi,
+                etiket: n.neOldu,
+                oz: n.baslik,
+                maddeler: [if (n.aralik != null) n.aralik!],
+              ),
+          ]
+        : [
+            for (final n in notlar)
+              RaporMetinBolumu(
+                baslik: n.kod,
+                etiket: n.rozet,
+                oz: n.baslik,
+                maddeler: n.maddeler,
+              ),
+          ],
     tablolar: [
-      if (varliklar.isNotEmpty)
+      if (varliklar.isNotEmpty && !kalemDuzeni)
         RaporTablosu(
           baslik: 'Ayın varlıkları',
           sutunlar: const ['Varlık', 'Ayın değişimi', 'Piyasa etkisi'],
@@ -157,7 +208,7 @@ RaporBelgesi aylikRaporBelgesi({
         ),
       if (gelismeler.isNotEmpty)
         RaporTablosu(
-          baslik: 'Önemli gelişmeler',
+          baslik: kalemDuzeni ? 'Ay içindeki olaylar' : 'Önemli gelişmeler',
           sutunlar: const ['Tarih', 'Varlık', 'Ne oldu'],
           satirlar: [
             for (final (tarih, kod, cumle) in gelismeler)

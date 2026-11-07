@@ -5066,7 +5066,7 @@
     }
   },
   "anzAylikAkisDipnot": "Same calculation as the bridge in Performance: what you paid on buys, what you received on sells; dividends count as money taken out.",
-  "anzAylikGelismeBaslik": "Notable events",
+  "anzAylikGelismeBaslik": "Events during the month",
   "anzAylikGelismeFonGiris": "Large inflow of {tutar}, {oran} of the fund's size",
   "@anzAylikGelismeFonGiris": {
     "placeholders": {
@@ -5104,6 +5104,43 @@
     }
   },
   "anzAylikHaberYok": "News and company announcements are not in this report: sandık has no licensed news source yet, so no news text is written.",
+  "anzAylikHaberDipnot": "News is summarised by AI from public sources, in its own words and without figures; see the source for details.",
+  "anzAylikHaberEtiket": "News · {tarih}",
+  "@anzAylikHaberEtiket": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "anzAylikHaberKaynak": "Source: {kaynak}",
+  "@anzAylikHaberKaynak": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "anzAylikHaberSemKaynak": "Open the {kaynak} page in the browser",
+  "@anzAylikHaberSemKaynak": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "anzAylikHaberAcilamadi": "Couldn't open the news page. Check your internet connection.",
+  "anzAylikOnemliBaslik": "Key developments",
+  "anzAylikTumBaslik": "Your assets this month",
+  "anzAylikNeOldu": "Change this month {yuzde}, market effect {tutar}",
+  "@anzAylikNeOldu": {
+    "placeholders": {
+      "yuzde": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "anzAylikNotVerisi": "Note based on {aralik}",
+  "@anzAylikNotVerisi": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "anzAylikTumDipnot": "The percentage is the change since the start of the month; the amount is the market's effect on your position. The line below is the AI note's headline; tap to open the full note.",
+  "anzAylikKaynak": "Sources: fund flow TEFAS · stock, gold, FX and commodity prices Yahoo Finance · crypto Binance · eurobond Börse Frankfurt · not advice",
   "hkyDevam": "Continue",
   "hkyAtla": "Skip",
   "hkyAylikAcilis": "Your month",

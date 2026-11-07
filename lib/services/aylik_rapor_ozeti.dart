@@ -36,9 +36,18 @@ import 'varlik_analizi.dart' show AnalizOzeti;
 ///
 /// ## Uydurma yok
 /// Serisi olmayan varlığın satırı yazılmaz (adı "ölçülemeyen" listesinde
-/// söylenir), olay yoksa gelişme yok, akış yoksa bölüm yok. Haber metni
-/// HİÇ yok: Sandık'ın lisanslı haber/KAP kaynağı yok
-/// (`docs/KAP_VERI_LISANSI_2026_09.md`); rapor bunu sonunda açıkça yazar.
+/// söylenir), olay yoksa gelişme yok, akış yoksa bölüm yok.
+///
+/// ## Haber (0177, 2026-11-07)
+/// yasin: "önemli haber akışlarıyla önemli bilgi olan varlıklar
+/// görüntülenmeli". Sandık'ın lisanslı haber/KAP kaynağı hâlâ yok
+/// (`docs/KAP_VERI_LISANSI_2026_09.md`); haber metni KOPYALANMAZ. Sunucu
+/// (`analiz-hazirla`, `ANALIZ_HABER_ACIK=1`) kamuya açık haberleri
+/// Anthropic web aramasıyla bulur, kendi cümlesiyle ve RAKAMSIZ özetletir,
+/// kaynak adı ve bağlantıyı yanına koyar (`_shared/analiz_haber.ts`).
+/// Haberi olan varlık "Önemli gelişmeler" kartına girer ve kartı haberi
+/// kaynak bağlantısıyla gösterir; "haber yok" cümlesi yalnız hiç haber
+/// gelmediğinde yazılır.
 
 /// Bir varlığın ayı.
 class AyinVarligi {
@@ -126,6 +135,90 @@ class AyinGelismesi {
   final bool dolar;
 }
 
+/// Ayın tek haber satırı (sunucunun `varlik_analizi.haberler` öğesi).
+class AyinHaberi {
+  const AyinHaberi({
+    required this.tarih,
+    required this.anahtar,
+    required this.kod,
+    required this.metin,
+    required this.kaynak,
+    required this.url,
+  });
+
+  final DateTime tarih;
+
+  /// Aylık not anahtarı ('THYAO.IS', 'ALTIN:GRAM'); kart bununla eşlenir.
+  final String anahtar;
+
+  /// Türkçe kısa ad ('THYAO', 'Altın', 'USD/TRY').
+  final String kod;
+
+  /// Modelin kendi cümlesiyle, rakamsız özet (sunucu kapısından geçmiş).
+  final String metin;
+
+  /// Yayın adı ('Anadolu Ajansı'); boşsa alan adı.
+  final String kaynak;
+
+  /// Dış tarayıcıda açılan https adresi.
+  final Uri url;
+
+  /// Sunucu satırı → haber. Bozuk öğe `null` (sessiz düşer; sunucu
+  /// kapısı zaten süzdü, burası ikinci savunma: https olmayan bağlantı
+  /// asla açılmaz).
+  static AyinHaberi? satirdan(Object? ham,
+      {required String anahtar, required String kod}) {
+    if (ham is! Map) return null;
+    final metin = ham['metin'];
+    final kaynak = ham['kaynak'];
+    final url = Uri.tryParse('${ham['url'] ?? ''}');
+    final tarih = DateTime.tryParse('${ham['tarih'] ?? ''}');
+    if (metin is! String || metin.trim().isEmpty) return null;
+    if (url == null || url.scheme != 'https' || url.host.isEmpty) return null;
+    if (tarih == null) return null;
+    final ad = kaynak is String && kaynak.trim().isNotEmpty
+        ? kaynak.trim()
+        : url.host.replaceFirst(RegExp(r'^www\.'), '');
+    return AyinHaberi(
+      tarih: dayKey(tarih),
+      anahtar: anahtar,
+      kod: kod,
+      metin: metin.trim(),
+      kaynak: ad,
+      url: url,
+    );
+  }
+}
+
+/// Ayın haberleri — SAF. [satirlar]: `(anahtar, kod, haberler jsonb)`.
+/// Pencere dışı ve bozuk öğe düşer; yeniden eskiye, en çok [ust] satır.
+List<AyinHaberi> ayinHaberleri({
+  required DateTime bas,
+  required DateTime bit,
+  required List<(String, String, Object?)> satirlar,
+  int ust = 10,
+}) {
+  final a = dayKey(bas);
+  final b = dayKey(bit);
+  final out = <AyinHaberi>[];
+  final gorulen = <String>{};
+  for (final (anahtar, kod, liste) in satirlar) {
+    if (liste is! List) continue;
+    for (final ham in liste) {
+      final h = AyinHaberi.satirdan(ham, anahtar: anahtar, kod: kod);
+      if (h == null || h.tarih.isBefore(a) || h.tarih.isAfter(b)) continue;
+      // Aynı haber iki varlıkta (ör. iki banka hissesi) bir kez yazılır.
+      if (!gorulen.add(h.url.toString())) continue;
+      out.add(h);
+    }
+  }
+  out.sort((x, y) {
+    final t = y.tarih.compareTo(x.tarih);
+    return t != 0 ? t : x.kod.compareTo(y.kod);
+  });
+  return out.take(ust).toList();
+}
+
 /// Raporun sayısal bölümleri.
 class AylikRaporOzeti {
   const AylikRaporOzeti({
@@ -137,6 +230,7 @@ class AylikRaporOzeti {
     this.olculemeyen = const [],
     this.akis = const AyinParaAkisi(),
     this.gelismeler = const [],
+    this.haberler = const [],
     this.fiyatTarihi,
   });
 
@@ -156,10 +250,14 @@ class AylikRaporOzeti {
   final AyinParaAkisi akis;
   final List<AyinGelismesi> gelismeler;
 
+  /// Aylık notların haber satırları (0177). Boşsa rapor "haber yok" der.
+  final List<AyinHaberi> haberler;
+
   /// Fiyat serisinin pencere içindeki son ölçüm anı ("… itibarıyla").
   final DateTime? fiyatTarihi;
 
-  bool get bos => varliklar.isEmpty && akis.bos && gelismeler.isEmpty;
+  bool get bos =>
+      varliklar.isEmpty && akis.bos && gelismeler.isEmpty && haberler.isEmpty;
 
   /// Ayın 1'i ve raporun bittiği gün: kapanmış ayda ayın son günü, süren
   /// ayda bugün. Tek yerde ki ekran, PDF ve testler aynı ucu yazsın.

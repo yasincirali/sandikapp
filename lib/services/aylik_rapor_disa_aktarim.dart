@@ -1,9 +1,12 @@
+import 'package:intl/intl.dart';
+
 import '../l10n/generated/app_localizations_tr.dart';
 import '../models/asset_type.dart';
 import '../utils/pozisyon_etiketi.dart';
 import '../utils/tr_format.dart';
 import '../widgets/aylik_rapor_bolumleri.dart' show gelismeCumlesi;
 import 'aylik_rapor_ozeti.dart';
+import 'aylik_rapor_kalemleri.dart';
 import '../providers/analiz_provider.dart' show notKodu;
 import '../providers/hafta_ozeti_provider.dart'
     show HaftaRozeti, haftaRozetiSunucudan;
@@ -38,6 +41,7 @@ class AylikRaporDisaAktarim {
   static Future<RaporBelgesi> belgeHazirla({
     required DateTime donem,
     required List<AnalizOzeti> notlar,
+    ({List<RaporKalemi> onemli, List<RaporKalemi> diger})? kalemler,
     required List<String> eksik,
     required AylikRaporOzeti? ozet,
     required String kim,
@@ -45,8 +49,13 @@ class AylikRaporDisaAktarim {
   }) async {
     final now = simdi ?? DateTime.now();
     final tr = AppLocalizationsTr();
+    // Kalem düzeninde (ekranla aynı sıra) yalnız önemli notların maddeleri
+    // basılır; diğer varlıklar kısa blok (başlık yeter).
+    final tamOkunan = kalemler == null
+        ? notlar
+        : [for (final k in kalemler.onemli) k.not!];
     final sonuclar = await Future.wait([
-      Future.wait(notlar.map(_tamNot)),
+      Future.wait(tamOkunan.map(_tamNot)),
       _ayinTufesi(donem),
     ]);
     final tamNotlar = sonuclar[0] as List<VarlikNotu?>;
@@ -60,7 +69,52 @@ class AylikRaporDisaAktarim {
     return aylikRaporBelgesi(
       donem: donem,
       kapsam: suren ? tr.raporKapsamSuren(aralik) : tr.raporKapsam(aralik),
-      notlar: [
+      satirlar: kalemler == null
+          ? const []
+          : [
+              for (final k in kalemler.diger)
+                AylikRaporNotu(
+                  kod: k.ad,
+                  tur: k.tur?.labelOf(tr),
+                  baslik: k.not?.baslik ?? '',
+                  neOldu: k.varlik == null
+                      ? null
+                      : '${fmtPctIsaretli(k.varlik!.pct, digits: 1)} · '
+                          '${isaretliTL(k.varlik!.piyasaTRY)}',
+                  aralik: k.not == null ? null : _aralik(tr, k.not!),
+                ),
+            ],
+      notlar: kalemler != null
+          ? [
+              for (final (i, k) in kalemler.onemli.indexed)
+                AylikRaporNotu(
+                  kod: k.ad,
+                  tur: k.tur?.labelOf(tr),
+                  baslik: k.not!.baslik,
+                  rozet: _rozetMetni(tr, haftaRozetiSunucudan(k.not!.rozet)),
+                  neOldu: k.varlik == null
+                      ? null
+                      : tr.anzAylikNeOldu(
+                          fmtPctIsaretli(k.varlik!.pct, digits: 1),
+                          isaretliTL(k.varlik!.piyasaTRY)),
+                  aralik: _aralik(tr, k.not!),
+                  maddeler: [
+                    for (final m
+                        in tamNotlar[i]?.maddeler ?? const <NotMaddesi>[])
+                      m.metin,
+                  ],
+                  haberler: [
+                    for (final h in k.haberler)
+                      RaporHaberi(
+                        metin: '${DateFormat('d MMMM', 'tr_TR').format(h.tarih)}'
+                            ': ${h.metin}',
+                        kaynak: h.kaynak,
+                        url: h.url.toString(),
+                      ),
+                  ],
+                ),
+            ]
+          : [
         for (var i = 0; i < notlar.length; i++)
           AylikRaporNotu(
             kod: notKodu(notlar[i].ticker),
@@ -72,7 +126,7 @@ class AylikRaporDisaAktarim {
             ],
           ),
       ],
-      notAraligiCumlesi: notAraligi == null
+      notAraligiCumlesi: kalemler != null || notAraligi == null
           ? null
           : tr.anzAylikNotlarAralik(
               fmtTarihAraligi(notAraligi.$1, notAraligi.$2)),
@@ -118,9 +172,21 @@ class AylikRaporDisaAktarim {
         for (final g in ozet?.gelismeler ?? const <AyinGelismesi>[])
           (g.tarih, g.kod, gelismeCumlesi(tr, g)),
       ],
-      haberCumlesi: tr.anzAylikHaberYok,
+      // "Haber yok" yalnız hiç haber gelmediğinde (0177); haber varsa
+      // dipnot nereden geldiğini ve rakam taşımadığını söyler.
+      haberCumlesi:
+          kalemler?.onemli.any((k) => k.haberler.isNotEmpty) ?? false
+              ? '${tr.anzAylikHaberDipnot} ${tr.anzAylikKaynak}.'
+              : kalemler == null
+                  ? tr.anzAylikHaberYok
+                  : '${tr.anzAylikHaberYok} ${tr.anzAylikKaynak}.',
     );
   }
+
+  static String? _aralik(AppLocalizationsTr tr, AnalizOzeti n) =>
+      n.veriBaslangic == null || n.veriBitis == null
+          ? null
+          : tr.anzAylikNotVerisi(fmtTarihAraligi(n.veriBaslangic!, n.veriBitis!));
 
   /// `positionKey` ('hisse|THYAO.IS|TRY') → ekrandaki kısa ad. Tür bilinmez
   /// (PeriodSummary yalnız adı taşır); sembol çekirdeği yeterli.

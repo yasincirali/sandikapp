@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
 import '../services/aylik_rapor_ozeti.dart';
 import '../theme/sandik.dart';
 import '../utils/pozisyon_etiketi.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'hacim_radari_karti.dart' show kisaDolar;
 
@@ -195,6 +197,75 @@ String gelismeCumlesi(AppLocalizations l10n, AyinGelismesi g) {
           fmtPctIsaretli((g.fiyatDegisim ?? 0) * 100, digits: 1)),
     AyinGelismeTuru.temettu => l10n.anzAylikGelismeTemettu(fmtTRY(g.tutar)),
   };
+}
+
+/// Önemli gelişmeler kartındaki haber satırı (0177): tarih, modelin kendi
+/// cümlesiyle rakamsız özet ve kaynak bağlantısı. Bağlantı dış tarayıcıda
+/// açılır (`url_launcher`, KAP satırının deseni); açılamazsa uyarı.
+///
+/// HIG: bağlantı düğmesi ≥ 44 pt (`SandikTouch.minSize`), erişilebilirlik
+/// etiketi "… sayfasını tarayıcıda aç"; anlam yalnız renkle verilmez
+/// ("Kaynak:" metni + dış bağlantı simgesi); metin sarılır, Dynamic Type'ta
+/// taşma yok.
+class AyinHaberiSatiri extends StatelessWidget {
+  const AyinHaberiSatiri({super.key, required this.haber, this.acici});
+
+  final AyinHaberi haber;
+
+  /// Test için; verilmezse `launchUrl` (dış uygulama).
+  final Future<bool> Function(Uri)? acici;
+
+  Future<void> _ac(BuildContext context) async {
+    var ok = false;
+    try {
+      ok = await (acici ??
+          (u) => launchUrl(u, mode: LaunchMode.externalApplication))(haber.url);
+    } catch (_) {
+      // Tarayıcı yok / eklenti yanıt vermedi: aşağıdaki uyarı yeter;
+      // kullanıcı eylemine bağlı, raporlanacak bir arıza değil.
+      ok = false;
+    }
+    if (!ok && context.mounted) {
+      sandikSnack(context, context.l10n.anzAylikHaberAcilamadi,
+          kind: SandikSnackKind.warning);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    final gunAy = DateFormat('d MMMM', context.tarihDili);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l10n.anzAylikHaberEtiket(gunAy.format(haber.tarih)),
+            style: t.bodySmall
+                ?.copyWith(color: c.text58, fontWeight: FontWeight.w600)),
+        const SizedBox(height: SandikSpace.xxs),
+        Text(haber.metin, style: t.bodyMedium?.copyWith(color: c.text90)),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Semantics(
+            link: true,
+            label: l10n.anzAylikHaberSemKaynak(haber.kaynak),
+            excludeSemantics: true,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                  minimumSize: SandikTouch.minSize,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: SandikSpace.xs)),
+              onPressed: () => _ac(context),
+              icon: const Icon(Icons.open_in_new_rounded, size: 16),
+              label: Text(l10n.anzAylikHaberKaynak(haber.kaynak),
+                  overflow: TextOverflow.ellipsis, maxLines: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _Bolum extends StatelessWidget {
