@@ -719,8 +719,8 @@ class RemoteConfigService {
   // Release'te `_yerelAcik` boş, davranış değişmez.
   /// Paywall bu build'de görünür mü — KOD kararı, Remote Config okunmaz
   /// (yasin 2026-11-01: "rc flagleriyle yönetmemeye çalışalım burayı").
-  /// 1.1.7'nin paywall build'inden itibaren iOS'ta açık; Android RevenueCat zinciri (Play
-  /// abonelikleri + anahtar) kurulunca orada da açılır, web/masaüstünde yok.
+  /// 1.1.7'nin paywall build'inden itibaren iOS'ta açık; Android'de build'e
+  /// RevenueCat Android anahtarı girince açılır (2026-11-07), web/masaüstünde yok.
   /// Mağaza kullanıcısı ile inceleyici aynı kodu görür (App Store 2.3.1).
   /// Acil kapatma artık sunucuda (`premium_ayar.acil_kapali`, 0172):
   /// kilitler askıya alınır, ödeyenin hakkı korunur. Testte `testAcik`,
@@ -731,8 +731,38 @@ class RemoteConfigService {
       (!testKapali.contains('paywall_enabled') && paywallKodVarsayilani);
 
   /// Platforma göre kod varsayılanı (bkz. [paywallEnabled]).
-  static bool get paywallKodVarsayilani =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static bool get paywallKodVarsayilani => paywallPlatformdaAcik(
+        web: kIsWeb,
+        platform: defaultTargetPlatform,
+        androidAnahtariVar: _androidRcAnahtari.isNotEmpty,
+      );
+
+  /// Android'de paywall, build'e RevenueCat Android anahtarı girdiyse açılır
+  /// (yasin 2026-11-07: "Androidde açacağız"). Neden anahtara bağlı: kilit
+  /// görünüp satın alma "kullanılamıyor" demesin. Anahtar (GitHub secret
+  /// `REVENUECAT_ANDROID_KEY`) Play abonelikleri ve RevenueCat Android
+  /// uygulaması kurulduktan SONRA eklenir; o güne kadarki Android build'leri
+  /// eskisi gibi Premium'suz kalır, secret eklenince bir sonraki build açar.
+  /// Değer `SatinAlmaService` ile aynı dart-define (o servis bu dosyayı
+  /// içe aktardığı için burada yeniden okunur; döngü olmasın).
+  static const _androidRcAnahtari =
+      String.fromEnvironment('REVENUECAT_ANDROID_KEY');
+
+  /// Saf karar (test edilebilir): web/masaüstü hiç, iOS her zaman, Android
+  /// yalnız anahtarla.
+  @visibleForTesting
+  static bool paywallPlatformdaAcik({
+    required bool web,
+    required TargetPlatform platform,
+    required bool androidAnahtariVar,
+  }) {
+    if (web) return false;
+    return switch (platform) {
+      TargetPlatform.iOS => true,
+      TargetPlatform.android => androidAnahtariVar,
+      _ => false,
+    };
+  }
 
   /// Test kancası: kod varsayılanı açık olan bayrağı kapatır (`testAcik`'in
   /// tersi). Yalnız testte; release'te boş.

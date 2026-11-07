@@ -16,13 +16,25 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  test('iOS: paywall kodda açık, Android: kapalı', () {
+  test('iOS: paywall kodda açık, anahtarsız Android: kapalı', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     expect(RemoteConfigService.instance.paywallEnabled, isTrue);
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     expect(RemoteConfigService.instance.paywallEnabled, isFalse,
-        reason: 'Android RevenueCat zinciri yok; paywall görünürse satın '
-            'alınamaz');
+        reason: 'Test build\'inde REVENUECAT_ANDROID_KEY yok; paywall '
+            'görünürse satın alınamaz');
+  });
+
+  test('Android anahtarla açılır, web/masaüstü hiç açılmaz', () {
+    bool acik(TargetPlatform p, {bool web = false, required bool anahtar}) =>
+        RemoteConfigService.paywallPlatformdaAcik(
+            web: web, platform: p, androidAnahtariVar: anahtar);
+    expect(acik(TargetPlatform.android, anahtar: true), isTrue);
+    expect(acik(TargetPlatform.android, anahtar: false), isFalse);
+    expect(acik(TargetPlatform.iOS, anahtar: false), isTrue,
+        reason: 'iOS Android anahtarına bağlı değil');
+    expect(acik(TargetPlatform.iOS, web: true, anahtar: true), isFalse);
+    expect(acik(TargetPlatform.macOS, anahtar: true), isFalse);
   });
 
   test('testKapali iOS varsayılanını kapatır, testAcik her yerde açar', () {
