@@ -103,7 +103,7 @@ void main() {
     // "Tümü" çipinden açılır.
     await tester.tap(find.text('Tümü'));
     await tester.pumpAndSettle();
-    expect(find.text('Altın Türleri'), findsOneWidget);
+    expect(find.text('Altın türleri'), findsOneWidget);
     expect(find.text('Ziynet'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).last, 'gremse');
@@ -113,7 +113,7 @@ void main() {
 
     await tester.tap(find.text('Gremse Altın'));
     await tester.pumpAndSettle();
-    expect(find.text('Altın Türleri'), findsNothing);
+    expect(find.text('Altın türleri'), findsNothing);
     // Kısayolda olmayan tür satırın BAŞINA eklenir ve seçili görünür.
     expect(
         tester.getSemantics(find.bySemanticsLabel(RegExp('^Gremse Altın altın'))),

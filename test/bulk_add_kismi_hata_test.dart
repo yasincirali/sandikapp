@@ -100,7 +100,7 @@ void main() {
     ));
     await tester.pump();
 
-    await tester.tap(find.text('Tümünü Kaydet (3)'));
+    await tester.tap(find.text('Tümünü kaydet (3)'));
     await tester.pumpAndSettle();
 
     // Kaydedilenler sepetten düştü; yalnızca eklenemeyen kaldı.
@@ -123,7 +123,7 @@ void main() {
     }
     portfoy.basarisiz.clear();
 
-    await tester.tap(find.text('Tümünü Kaydet (1)'));
+    await tester.tap(find.text('Tümünü kaydet (1)'));
     await tester.pumpAndSettle();
 
     // Asıl iddia: Alfa ve Gama İKİNCİ kez eklenmedi.

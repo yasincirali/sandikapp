@@ -162,6 +162,12 @@
   "quickSaleGain": "Gain on this sale {tutar} · {yuzde}",
   "quickSaleLoss": "Loss on this sale {tutar} · {yuzde}",
   "quickBuyAvgCost": "Your new average cost {yeni} (now {simdi})",
+  "quickTargetAvg": "Target average",
+  "quickTargetAvgField": "Target average cost",
+  "quickTargetAvgResult": "To bring your average down to {hedef}: ~{adet} {birim}",
+  "@quickTargetAvgResult": {"placeholders": {"hedef": {"type": "String"}, "adet": {"type": "String"}, "birim": {"type": "String"}}},
+  "quickTargetAvgUnreachable": "This average can't be reached at this price.",
+  "quickTargetAvgFillHint": "Tap to fill the quantity",
   "quickSaleFundTaxNote": "Gross amount; fund withholding tax may be deducted from the gain.",
   "quickUnitPrice": "Unit price",
   "quickTotalCost": "Total cost",
@@ -488,7 +494,6 @@
     }
   },
   "bulkAdd": "Bulk add",
-  "quickEntryVoice": "Voice / Quick entry",
   "orNotInList": "or not in the list",
   "symbolHint": "Type a symbol (e.g. AAPL, THYAO.IS)",
   "companyNameHint": "Company name (optional, fetched from the symbol)",
@@ -591,6 +596,11 @@
   "dividendYieldOnCostA11y": "Net dividends you recorded in the last 12 months are {pct} of your current cost. Yearly yield on cost.",
   "@dividendYieldOnCostA11y": {"placeholders": {"pct": {"type": "String"}}},
   "dividendYieldOnCostLocked": "Your yearly yield on cost is part of Premium",
+  "fxSplitPrice": "From price",
+  "fxSplitFx": "From FX",
+  "fxSplitA11y": "Part of your gain from price {price}, part from the exchange rate {fx}.",
+  "@fxSplitA11y": {"placeholders": {"price": {"type": "String"}, "fx": {"type": "String"}}},
+  "fxSplitLocked": "How much of your gain is price and how much is FX: Premium",
   "dividendEventLine": "{lot} shares × {perShare}",
   "@dividendEventLine": {
     "placeholders": {

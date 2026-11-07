@@ -139,7 +139,7 @@ void main() {
     await _pump(tester);
     await filtreyiAc(tester);
     expect(find.text('Kripto'), findsOneWidget);
-    expect(find.text('ABD Hisse'), findsNothing);
+    expect(find.text('ABD hisse'), findsNothing);
   });
 
   testWidgets('goz_alici: defterdeki türler + BIST/ABD; ABD seçilince yalnız '
@@ -148,11 +148,11 @@ void main() {
     await _pump(tester);
     expect(find.text('AAPL'), findsOneWidget);
     await filtreyiAc(tester);
-    expect(find.text('BIST Hisse'), findsOneWidget);
-    expect(find.text('ABD Hisse'), findsOneWidget);
+    expect(find.text('BIST hisse'), findsOneWidget);
+    expect(find.text('ABD hisse'), findsOneWidget);
     expect(find.text('Kripto'), findsNothing,
         reason: 'Defterde kripto hareketi yok');
-    await tester.tap(find.text('ABD Hisse'));
+    await tester.tap(find.text('ABD hisse'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('1 kaydı göster'));
     await tester.pumpAndSettle();

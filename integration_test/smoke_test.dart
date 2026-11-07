@@ -221,7 +221,7 @@ void main() {
     OnboardingScreen.turuKapatTestIcin();
     await tester.pump();
     await tester.tap(anaEkranFab);
-    await _bekle(tester, find.text('Varlık Ekle'), neden: 'varlık ekleme ekranı');
+    await _bekle(tester, find.text('Varlık ekle'), neden: 'varlık ekleme ekranı');
 
     // "Diğer" türü: sembolsüz, elle fiyatlı — ağ araması yok, TEFAS/Yahoo
     // erişimi olmayan bir CI koşucusunda bile deterministik.

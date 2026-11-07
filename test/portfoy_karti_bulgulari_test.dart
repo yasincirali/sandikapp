@@ -132,10 +132,10 @@ void main() {
       await tester.pumpAndSettle();
       for (final e in [
         'Miktar',
-        'Ort. Maliyet',
-        'Toplam Maliyet',
-        'İlk Alış',
-        'Güncel Tutar',
+        'Ort. maliyet',
+        'Toplam maliyet',
+        'İlk alış',
+        'Güncel tutar',
       ]) {
         expect(find.text(e), findsOneWidget, reason: e);
       }

@@ -165,7 +165,7 @@ void main() {
     expect(find.text('Hızlı seçim'), findsNothing);
     await tester.tap(find.text('Tümü'));
     await tester.pumpAndSettle();
-    expect(find.text('Altın Türleri'), findsOneWidget);
+    expect(find.text('Altın türleri'), findsOneWidget);
   });
 
   testWidgets('2× metin: tekrar al ve altın satırı taşmaz', (tester) async {

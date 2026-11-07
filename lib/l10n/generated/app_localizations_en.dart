@@ -446,6 +446,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get quickTargetAvg => 'Target average';
+
+  @override
+  String get quickTargetAvgField => 'Target average cost';
+
+  @override
+  String quickTargetAvgResult(String hedef, String adet, String birim) {
+    return 'To bring your average down to $hedef: ~$adet $birim';
+  }
+
+  @override
+  String get quickTargetAvgUnreachable =>
+      'This average can\'t be reached at this price.';
+
+  @override
+  String get quickTargetAvgFillHint => 'Tap to fill the quantity';
+
+  @override
   String get quickSaleFundTaxNote =>
       'Gross amount; fund withholding tax may be deducted from the gain.';
 
@@ -881,9 +899,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bulkAdd => 'Bulk add';
 
   @override
-  String get quickEntryVoice => 'Voice / Quick entry';
-
-  @override
   String get orNotInList => 'or not in the list';
 
   @override
@@ -1003,6 +1018,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dividendYieldOnCostLocked =>
       'Your yearly yield on cost is part of Premium';
+
+  @override
+  String get fxSplitPrice => 'From price';
+
+  @override
+  String get fxSplitFx => 'From FX';
+
+  @override
+  String fxSplitA11y(String price, String fx) {
+    return 'Part of your gain from price $price, part from the exchange rate $fx.';
+  }
+
+  @override
+  String get fxSplitLocked =>
+      'How much of your gain is price and how much is FX: Premium';
 
   @override
   String dividendEventLine(String lot, String perShare) {

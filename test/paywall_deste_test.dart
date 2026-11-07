@@ -51,6 +51,8 @@ void main() {
         // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
         'fon_xray': PaywallKarti.xray,
         'portfoy_xray': PaywallKarti.xray,
+        // Varlık detayında "Fiyattan · Kurdan" (2026-11-07).
+        'kur_ayrismasi': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
         // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
         // göreceği portföy → portföy kartı.
@@ -111,6 +113,8 @@ void main() {
         'lib/widgets/sinir_uyarisi.dart',
         // Maliyetine göre temettü verimi (2026-11-07).
         'lib/widgets/temettu_gecmisi_karti.dart',
+        // Kur ayrışması satırı (2026-11-07).
+        'lib/widgets/kur_ayrismasi_satiri.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -126,6 +130,7 @@ void main() {
             'alarm_limit',
             'sinyal_gosterge',
             'gosterge_parametre',
+            'kur_ayrismasi',
           ]));
       // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
       // açmaz.

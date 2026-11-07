@@ -42,13 +42,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get forgotPassword => 'Şifremi unuttum';
 
   @override
-  String get signIn => 'Giriş Yap';
+  String get signIn => 'Giriş yap';
 
   @override
   String get noAccountRegister => 'Hesabın yok mu? Kayıt ol';
 
   @override
-  String get register => 'Kayıt Ol';
+  String get register => 'Kayıt ol';
 
   @override
   String get registerWelcome => 'Sandığına hoş geldin.';
@@ -57,13 +57,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get registerSubtitle => 'Birkaç adımda hesabını oluştur.';
 
   @override
-  String get fullName => 'Ad Soyad';
+  String get fullName => 'Ad soyad';
 
   @override
   String get fullNameRequired => 'Ad soyad gir';
 
   @override
-  String get passwordRepeat => 'Şifre Tekrar';
+  String get passwordRepeat => 'Şifre tekrar';
 
   @override
   String get passwordsMismatch => 'Şifreler eşleşmiyor';
@@ -152,16 +152,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Devam etmek için yasal uyarıyı kabul etmelisin.';
 
   @override
-  String get accept => 'Kabul Ediyorum';
+  String get accept => 'Kabul ediyorum';
 
   @override
-  String get forgotTitle => 'Şifremi Unuttum';
+  String get forgotTitle => 'Şifremi unuttum';
 
   @override
   String get forgotIntro => 'Kod göndereceğimiz e-posta adresini gir.';
 
   @override
-  String get sendCode => 'Kod Gönder';
+  String get sendCode => 'Kod gönder';
 
   @override
   String codeSentTo(String email) {
@@ -175,13 +175,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get codeInvalid => 'Kod eksik veya geçersiz';
 
   @override
-  String get newPassword => 'Yeni Şifre';
+  String get newPassword => 'Yeni şifre';
 
   @override
-  String get newPasswordRepeat => 'Yeni Şifre Tekrar';
+  String get newPasswordRepeat => 'Yeni şifre tekrar';
 
   @override
-  String get updatePassword => 'Şifreyi Güncelle';
+  String get updatePassword => 'Şifreyi güncelle';
 
   @override
   String get tryAnotherEmail => 'Farklı bir e-posta ile tekrar dene';
@@ -220,7 +220,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sending => 'Gönderiliyor…';
 
   @override
-  String get requestNewCode => 'Yeni Kod İste';
+  String get requestNewCode => 'Yeni kod iste';
 
   @override
   String get verify => 'Doğrula';
@@ -250,10 +250,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settingsNotifications => 'Bildirimler';
 
   @override
-  String get settingsAccount => 'Hesap & Güvenlik';
+  String get settingsAccount => 'Hesap & güvenlik';
 
   @override
-  String get settingsHelp => 'Yardım & Yasal';
+  String get settingsHelp => 'Yardım & yasal';
 
   @override
   String get settingsAppearanceSubtitle =>
@@ -357,7 +357,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get addAssetVazgecKal => 'Düzenlemeye dön';
 
   @override
-  String get addAssetTitle => 'Varlık Ekle';
+  String get addAssetTitle => 'Varlık ekle';
 
   @override
   String get editAsset => 'Düzenle';
@@ -372,7 +372,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get save => 'Kaydet';
 
   @override
-  String get assetType => 'Varlık Türü';
+  String get assetType => 'Varlık türü';
 
   @override
   String get assetName => 'Varlık adı';
@@ -387,7 +387,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get quantityInvalid => 'Geçerli miktar';
 
   @override
-  String get purchasePrice => 'Alış Fiyatı';
+  String get purchasePrice => 'Alış fiyatı';
 
   @override
   String get optional => '· opsiyonel';
@@ -399,7 +399,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get invalid => 'Geçersiz';
 
   @override
-  String get commission => 'Komisyon / Masraf';
+  String get commission => 'Komisyon / masraf';
 
   @override
   String get cannotBeNegative => 'Negatif olamaz';
@@ -447,6 +447,23 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get quickTargetAvg => 'Hedef ortalama';
+
+  @override
+  String get quickTargetAvgField => 'Hedef ortalama maliyet';
+
+  @override
+  String quickTargetAvgResult(String hedef, String adet, String birim) {
+    return 'Ortalamayı $hedef seviyesine indirmek için ~$adet $birim';
+  }
+
+  @override
+  String get quickTargetAvgUnreachable => 'Bu fiyattan bu ortalamaya inilemez.';
+
+  @override
+  String get quickTargetAvgFillHint => 'Dokununca miktar alanına yazılır';
+
+  @override
   String get quickSaleFundTaxNote =>
       'Brüt tutar; fon stopajı kârdan kesilebilir.';
 
@@ -475,7 +492,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get myAssets => 'Varlıklarım';
 
   @override
-  String get watchlist => 'Takip Listesi';
+  String get watchlist => 'Takip listesi';
 
   @override
   String get priceUpdateFailed =>
@@ -515,7 +532,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String seeAllCount(int count) {
-    return 'Tümünü Gör ($count)';
+    return 'Tümünü gör ($count)';
   }
 
   @override
@@ -565,10 +582,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get permanentDeleteUpper => 'Kalıcı Sil';
+  String get permanentDeleteUpper => 'Kalıcı sil';
 
   @override
-  String get deleteHistoryButton => 'Geçmişi Sil';
+  String get deleteHistoryButton => 'Geçmişi sil';
 
   @override
   String get signalNeutral => 'Nötr';
@@ -618,19 +635,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get lastMonth => 'Son 1 ay';
 
   @override
-  String get firstPurchase => 'İlk Alış';
+  String get firstPurchase => 'İlk alış';
 
   @override
-  String get avgCost => 'Ort. Maliyet';
+  String get avgCost => 'Ort. maliyet';
 
   @override
-  String get totalCost => 'Toplam Maliyet';
+  String get totalCost => 'Toplam maliyet';
 
   @override
-  String get currentValue => 'Güncel Tutar';
+  String get currentValue => 'Güncel tutar';
 
   @override
-  String get dividendReceived => 'Tahsil Edilen Temettü';
+  String get dividendReceived => 'Tahsil edilen temettü';
 
   @override
   String lotSummary(int buys, int sells) {
@@ -644,13 +661,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get sortMarketValue => 'Piyasa Değeri';
+  String get sortMarketValue => 'Piyasa değeri';
 
   @override
-  String get sortHighToLow => 'Büyükten Küçüğe';
+  String get sortHighToLow => 'Büyükten küçüğe';
 
   @override
-  String get sortLowToHigh => 'Küçükten Büyüğe';
+  String get sortLowToHigh => 'Küçükten büyüğe';
 
   @override
   String get sortGainTry => 'Kazanç (TL)';
@@ -659,13 +676,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sortGainPct => 'Kazanç (%)';
 
   @override
-  String get sortHighestFirst => 'En Yüksek Önce';
+  String get sortHighestFirst => 'En yüksek önce';
 
   @override
-  String get sortLowestFirst => 'En Düşük Önce';
+  String get sortLowestFirst => 'En düşük önce';
 
   @override
-  String get assetFullName => 'Tam Adı';
+  String get assetFullName => 'Tam adı';
 
   @override
   String get fundReportTitleUpper => 'Fon karnesi';
@@ -869,9 +886,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get bulkAdd => 'Toplu ekle';
 
   @override
-  String get quickEntryVoice => 'Sesli / Hızlı giriş';
-
-  @override
   String get orNotInList => 'veya listede yok';
 
   @override
@@ -992,6 +1006,21 @@ class AppLocalizationsTr extends AppLocalizations {
       'Maliyetine göre yıllık verimin Premium\'da';
 
   @override
+  String get fxSplitPrice => 'Fiyattan';
+
+  @override
+  String get fxSplitFx => 'Kurdan';
+
+  @override
+  String fxSplitA11y(String price, String fx) {
+    return 'Kârının fiyattan gelen kısmı $price, kurdan gelen kısmı $fx.';
+  }
+
+  @override
+  String get fxSplitLocked =>
+      'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot lot × $perShare';
   }
@@ -1042,7 +1071,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String moreNotesCount(int count) {
-    return '+$count not daha · Tüm Hareketler\'de';
+    return '+$count not daha · Tüm hareketler\'de';
   }
 
   @override
@@ -1054,7 +1083,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get quickEntryTitle => 'Hızlı Giriş';
+  String get quickEntryTitle => 'Hızlı giriş';
 
   @override
   String get quickEntryHelp =>
@@ -1217,7 +1246,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get identityFund => 'Fon';
 
   @override
-  String get identityGoldKind => 'Altın Türü';
+  String get identityGoldKind => 'Altın türü';
 
   @override
   String get pickGoldTap => 'Altın türü seçmek için dokun...';
@@ -1226,7 +1255,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get goldSearchHint => 'Ara: çeyrek, 22 ayar, reşat…';
 
   @override
-  String get goldTypes => 'Altın Türleri';
+  String get goldTypes => 'Altın türleri';
 
   @override
   String get goldQuickPick => 'Hızlı seçim';
@@ -1281,7 +1310,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get identityCurrency => 'Para Birimi';
+  String get identityCurrency => 'Para birimi';
 
   @override
   String get identityCommodity => 'Emtia';
@@ -1383,7 +1412,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get close => 'Kapat';
 
   @override
-  String get feedbackTitle => 'Şikayet & Tavsiye';
+  String get feedbackTitle => 'Şikayet & tavsiye';
 
   @override
   String get feedbackHint => 'Mesajını yaz…';
@@ -1402,7 +1431,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get diagnosticsUpper => 'Tanılama';
 
   @override
-  String get pushDiagnostics => 'Push Teşhisi';
+  String get pushDiagnostics => 'Push teşhisi';
 
   @override
   String get pushDiagnosticsSubtitle =>
@@ -1659,16 +1688,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get doneTitle => 'Tamamlandı';
 
   @override
-  String get alreadyPartners => 'Zaten Ortaksınız';
+  String get alreadyPartners => 'Zaten ortaksınız';
 
   @override
-  String get ownCode => 'Kendi Kodun';
+  String get ownCode => 'Kendi kodun';
 
   @override
-  String get expiredTitle => 'Süresi Doldu';
+  String get expiredTitle => 'Süresi doldu';
 
   @override
-  String get waitABit => 'Biraz Bekle';
+  String get waitABit => 'Biraz bekle';
 
   @override
   String get somethingWentWrong => 'Bir sorun oluştu';
@@ -1693,7 +1722,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get myPartnersUpper => 'Ortaklarım';
 
   @override
-  String get generateInviteCode => 'Davet Kodu Üret';
+  String get generateInviteCode => 'Davet kodu üret';
 
   @override
   String get shareInviteCode => 'Davet kodunu paylaş';
@@ -1703,7 +1732,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kodu ortağına gönder. Ortağın kodu girince sana onay isteği gelir.';
 
   @override
-  String get enterPartnerCode => 'Ortak Kodunu Gir';
+  String get enterPartnerCode => 'Ortak kodunu gir';
 
   @override
   String get enterPartnerCodeBody =>
@@ -1794,13 +1823,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get requestPartnership => 'Ortaklık İste';
+  String get requestPartnership => 'Ortaklık iste';
 
   @override
   String get generatingEllipsis => 'Üretiliyor...';
 
   @override
-  String get generateCode => 'Kod Üret';
+  String get generateCode => 'Kod üret';
 
   @override
   String get tabChart => 'Grafik';
@@ -1880,7 +1909,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.';
 
   @override
-  String get portfolioPerformance => 'Portföy Performans';
+  String get portfolioPerformance => 'Portföy performans';
 
   @override
   String get chartDataFailed => 'Grafik verisi alınamadı';
@@ -2299,7 +2328,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Portföyler hesaplanan serilerdir, piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.';
 
   @override
-  String get portfolioActivityTitle => 'Portföy Hareketleri';
+  String get portfolioActivityTitle => 'Portföy hareketleri';
 
   @override
   String get clearFilters => 'Filtreleri temizle';
@@ -2409,7 +2438,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.';
 
   @override
-  String get priceAlertsTitle => 'Fiyat Alarmları';
+  String get priceAlertsTitle => 'Fiyat alarmları';
 
   @override
   String get quickActionSearch => 'Ara';
@@ -2493,7 +2522,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get loadingUpper => 'Yükleniyor';
 
   @override
-  String get globalRanking => 'Genel Sıralama';
+  String get globalRanking => 'Genel sıralama';
 
   @override
   String get checkingAnonPool => 'Anonim havuz kontrol ediliyor…';
@@ -2584,7 +2613,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get restorePurchase => 'Satın alımı geri yükle';
 
   @override
-  String get recapTitle => 'sandık Özetin';
+  String get recapTitle => 'sandık özetin';
 
   @override
   String recapInYear(int year) {
@@ -2766,7 +2795,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Diğer periyotlarda daha üsttesin. Dokun, bak';
 
   @override
-  String get deleteAssetTitle => 'Varlığı Sil';
+  String get deleteAssetTitle => 'Varlığı sil';
 
   @override
   String deleteAssetMulti(String name, int n) {
@@ -2842,7 +2871,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dividendPayDate => 'Temettü ödeme tarihi';
 
   @override
-  String get addDividend => 'Temettü Ekle';
+  String get addDividend => 'Temettü ekle';
 
   @override
   String netAmountReceived(String name) {
@@ -3106,7 +3135,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get configureIndicators => 'Göstergeleri Ayarla';
+  String get configureIndicators => 'Göstergeleri ayarla';
 
   @override
   String buySellNeutralCounts(int buy, int sell, int neutral) {
@@ -3347,7 +3376,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get iktKotaVazgec => 'Vazgeç';
 
   @override
-  String get someAssetsNotAdded => 'Bazı Varlıklar Eklenemedi';
+  String get someAssetsNotAdded => 'Bazı varlıklar eklenemedi';
 
   @override
   String bulkAddSavingProgress(int saved, int total) {
@@ -3419,7 +3448,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String saveAllCount(int n) {
-    return 'Tümünü Kaydet ($n)';
+    return 'Tümünü kaydet ($n)';
   }
 
   @override
@@ -3515,7 +3544,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get partnershipRejectedShort => 'Ortaklık isteği reddedildi.';
 
   @override
-  String get partnershipApprovalTitle => 'Ortaklık Onayı';
+  String get partnershipApprovalTitle => 'Ortaklık onayı';
 
   @override
   String get partnershipApprovalBody =>
@@ -3988,7 +4017,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String recapShareTitle(int year) {
-    return 'sandık Özetim $year';
+    return 'sandık özetim $year';
   }
 
   @override
@@ -4553,7 +4582,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get viewChipLabel => 'Görünüm';
 
   @override
-  String get identityCrypto => 'Kripto Para';
+  String get identityCrypto => 'Kripto para';
 
   @override
   String get pickCryptoTap => 'Kripto seçmek için dokun';
@@ -4567,7 +4596,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get cryptoPickerTitle => 'Kripto Paralar';
+  String get cryptoPickerTitle => 'Kripto paralar';
 
   @override
   String get cryptoSearchHint => 'Ad ya da kod ara (BTC, Ethereum…)';
@@ -7713,10 +7742,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get stockMarketUs => 'ABD';
 
   @override
-  String get portfolioGroupBistStock => 'BIST Hisse';
+  String get portfolioGroupBistStock => 'BIST hisse';
 
   @override
-  String get portfolioGroupUsStock => 'ABD Hisse';
+  String get portfolioGroupUsStock => 'ABD hisse';
 
   @override
   String stockMarketSemantics(String market) {

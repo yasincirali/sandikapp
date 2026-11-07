@@ -65,6 +65,18 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
                 : _birimBicimi(pnl.anchorUnitTRY).format(pnl.anchorUnitTRY)),
         // Yalnız kendi varlığında: soru "benim param enflasyonu yendi mi?".
         enflasyon: isOwnAsset ? _enflasyonIsiAl() : null,
+        // Kur ayrışması (Ar-Ge 2026-11-07 #1): kartın yazdığı TL kârıyla
+        // AYNI görünüm varlığı ve AYNI kur (`_pnlOzeti` → `pState.toTRY`);
+        // iki etkinin toplamı o kâra eşit. Hesaplanamıyorsa satır yok;
+        // maliyeti bilinmeyen lotta da ("—" yazan ortalama maliyetle aynı
+        // kural, `alarmMaliyeti`) fiyat etkisi uydurma olurdu.
+        kurAyrismasi: pState == null || alarmMaliyeti(_canli.lots) == null
+            ? null
+            : kurAyrismasi(_canli.asset,
+                guncelKur: pozisyonKuru(_canli.asset.currency,
+                    usdTry: pState.usdTry,
+                    eurTry: pState.eurTry,
+                    gbpTry: pState.gbpTry)),
       ),
       // Eski yığındaki yeri: pozisyonun hemen altı. #113 (eurobond) ile #116
       // (bu düzen) aynı gün ayrı dallarda yazıldı; katmanlı gövdeye
@@ -255,7 +267,12 @@ class _KatmanliPozisyonKarti extends StatefulWidget {
     required this.ayrinti,
     this.ortalamaMaliyetMetni,
     this.enflasyon,
+    this.kurAyrismasi,
   });
+
+  /// Döviz cinsi pozisyonda "Fiyattan · Kurdan" (Premium); `null` → satır
+  /// yok (TL varlık ya da kur/alış kuru bilinmiyor, bkz. [kurAyrismasi]).
+  final KurAyrismasi? kurAyrismasi;
 
   /// Orta sütun (Ar-Ge 1 Kas 08:45 #3, yasin "yap"): "Toplam kâr/zarar"
   /// fiyatın altındaki "Pozisyonun" satırını tekrarlıyordu; yerine ortalama
@@ -350,6 +367,9 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
                     : _EnflasyonSatiri(sonuc: s.data!),
               ),
             ),
+          // Enflasyonun hemen altı: ikisi de "kâr gerçekte nereden" sorusu.
+          if (widget.kurAyrismasi case final ka?)
+            KurAyrismasiSatiri(ayrisma: ka, baz: widget.baz),
           _AcKapaSatiri(
             baslik: l.s4Details,
             acik: _acik,

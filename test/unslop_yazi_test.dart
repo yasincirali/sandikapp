@@ -58,6 +58,104 @@ void main() {
     expect(buyuk, isEmpty, reason: 'büyük harf metin: $buyuk');
   });
 
+  // Baş Harfi Büyük etiket ratchet'i (Ar-Ge 2026-11-07 #4). Yukarıdaki
+  // kilit yalnız TAMAMI BÜYÜK metni yakalıyordu; "Giriş Yap", "Varlık
+  // Ekle", "Fiyat Alarmları" gibi etiketler kalmıştı ve ekranlar arasında
+  // karışık görünüyordu. 63 etiket cümle düzenine geçti; sayı yalnız
+  // azalabilir (şu an 0). İngilizce .arb'a dokunulmaz: Title Case orada
+  // doğal.
+  //
+  // Kural: en çok 5 kelimelik (etiket boyu) değerde, bir parçanın
+  // (·:.!?,› ile ayrılır) ilk kelimesinden sonraki bir kelime büyük harfle
+  // başlıyorsa — kısaltma (BIST, TL, tek harf), özel ad ve belge adı hariç.
+  test('Baş Harfi Büyük etiket sayısı yalnız azalabilir', () {
+    // Özel adlar, markalar, belge ve kurum adları: büyük harfle kalır.
+    const ozelIfade = [
+      'Sandık Premium',
+      'Fon X-Ray',
+      'Portföy X-Ray',
+      'X-Ray',
+      'Kullanım Koşulları',
+      'Gizlilik Politikası',
+      'KVKK Aydınlatma Metni',
+      'KVKK Metni',
+      'Açık Rıza Metni',
+      'Yatırım Uyarısı',
+      'Yatırım Tavsiyesi Reddi',
+      // Yasal metin başlıkları: `tekOnayBaslik` onay metninin hash'ine girer
+      // (`yasal_metin_katalogu`), değişirse kayıtlı onaylar eşleşmez;
+      // "Yasal Uyarı" katalogdaki belgenin adı.
+      'Yasal Koşullar',
+      'Yasal Uyarı',
+      // Özelliğin adı; yasal metinler de bu adla anar.
+      'Zirvedeki Portföyler',
+      'Borsa İstanbul',
+      'Ziraat Bankası',
+      'Garanti BBVA',
+      'Anadolu Hayat',
+      'Petrol (Brent)',
+      'Yahoo Finance',
+      'KAP Portföy Dağılım Raporu',
+      'Pine Script',
+      'Para Politikası Kurulu',
+      'App Store',
+      'Google Play',
+    ];
+    // Tek kelimelik özel adlar; "Ayarlar" uygulamadaki ekranın adı
+    // ("Ayarlar › Görünüm" yol tarifi).
+    const ozelKelime = {
+      'Premium',
+      'Excel',
+      'Türkçedir',
+      'Sandık',
+      'Enpara',
+      'Pine',
+      'Ayarlar',
+      'Apple',
+      'Google',
+    };
+    const tavan = 0;
+    final harf = RegExp(r'[^\W\d_]', unicode: true);
+    final tr = jsonDecode(File('lib/l10n/app_tr.arb').readAsStringSync())
+        as Map<String, dynamic>;
+    final ihlal = <String>[];
+    tr.forEach((k, v) {
+      if (k.startsWith('@') || v is! String) return;
+      var t = v.replaceAll(RegExp(r'\{[^}]*\}'), ' ');
+      for (final p in ozelIfade) {
+        t = t.replaceAll(p, ' ');
+      }
+      final kelimeler =
+          t.split(RegExp(r'\s+')).where((w) => harf.hasMatch(w)).toList();
+      if (kelimeler.length > 5) return;
+      for (final parca in t.split(RegExp(r'[·:.!?,›]'))) {
+        final ws = parca
+            .split(RegExp(r'[\s/&+\-–—]+'))
+            // Yalnız baştaki/sondaki tırnak ve parantez: iç kesme işareti
+            // ("Premium'da") kökü ayırmak için aşağıda kullanılır.
+            .map((w) => w.replaceAll(
+                RegExp('^["\'“”‘’(«]+|["\'“”‘’)»]+\$'), ''))
+            .where((w) => harf.hasMatch(w))
+            .toList();
+        final buyukBaslayan = ws.skip(1).where((w) {
+          final kok = w.split(RegExp("['’]")).first;
+          if (kok.isEmpty) return false;
+          final ilk = kok.substring(0, 1);
+          if (ilk.toLowerCase() == ilk) return false;
+          if (kok.toUpperCase() == kok) return false; // kısaltma, tek harf
+          return !ozelKelime.contains(kok);
+        });
+        if (buyukBaslayan.isNotEmpty) {
+          ihlal.add('$k: $v');
+          break;
+        }
+      }
+    });
+    expect(ihlal.length, lessThanOrEqualTo(tavan),
+        reason: 'Baş Harfi Büyük etiket (cümle düzenine çevir ya da özel '
+            'adsa listeye ekle): $ihlal');
+  });
+
   test('bölüm başlığı w600, harf aralıksız', () {
     final k = File('lib/theme/sandik.dart').readAsStringSync();
     final bas = k.indexOf('class SandikSectionHeader');

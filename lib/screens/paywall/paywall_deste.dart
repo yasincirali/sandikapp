@@ -78,7 +78,13 @@ PaywallKarti? kaynaktanKart(String source) {
     // Temettü kartındaki "maliyetine göre verim" kilidi (2026-11-07).
     'temettu_tahmini' || 'temettu_verimi' => PaywallKarti.temettu,
     // Masraf dökümü "param gerçekte nereye gidiyor" sorusu: X-Ray'in yanı.
-    'fon_xray' || 'portfoy_xray' || 'masraf_dokumu' => PaywallKarti.xray,
+    // Kur ayrışması (varlık detayı, 2026-11-07) da aynı sorunun kâr tarafı:
+    // "kârım gerçekte nereden geliyor".
+    'fon_xray' ||
+    'portfoy_xray' ||
+    'masraf_dokumu' ||
+    'kur_ayrismasi' =>
+      PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,

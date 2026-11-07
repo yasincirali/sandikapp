@@ -167,7 +167,7 @@ abstract class AppLocalizations {
   /// No description provided for @signIn.
   ///
   /// In tr, this message translates to:
-  /// **'Giriş Yap'**
+  /// **'Giriş yap'**
   String get signIn;
 
   /// No description provided for @noAccountRegister.
@@ -179,7 +179,7 @@ abstract class AppLocalizations {
   /// No description provided for @register.
   ///
   /// In tr, this message translates to:
-  /// **'Kayıt Ol'**
+  /// **'Kayıt ol'**
   String get register;
 
   /// No description provided for @registerWelcome.
@@ -197,7 +197,7 @@ abstract class AppLocalizations {
   /// No description provided for @fullName.
   ///
   /// In tr, this message translates to:
-  /// **'Ad Soyad'**
+  /// **'Ad soyad'**
   String get fullName;
 
   /// No description provided for @fullNameRequired.
@@ -209,7 +209,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordRepeat.
   ///
   /// In tr, this message translates to:
-  /// **'Şifre Tekrar'**
+  /// **'Şifre tekrar'**
   String get passwordRepeat;
 
   /// No description provided for @passwordsMismatch.
@@ -377,13 +377,13 @@ abstract class AppLocalizations {
   /// No description provided for @accept.
   ///
   /// In tr, this message translates to:
-  /// **'Kabul Ediyorum'**
+  /// **'Kabul ediyorum'**
   String get accept;
 
   /// No description provided for @forgotTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Şifremi Unuttum'**
+  /// **'Şifremi unuttum'**
   String get forgotTitle;
 
   /// No description provided for @forgotIntro.
@@ -395,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @sendCode.
   ///
   /// In tr, this message translates to:
-  /// **'Kod Gönder'**
+  /// **'Kod gönder'**
   String get sendCode;
 
   /// No description provided for @codeSentTo.
@@ -419,19 +419,19 @@ abstract class AppLocalizations {
   /// No description provided for @newPassword.
   ///
   /// In tr, this message translates to:
-  /// **'Yeni Şifre'**
+  /// **'Yeni şifre'**
   String get newPassword;
 
   /// No description provided for @newPasswordRepeat.
   ///
   /// In tr, this message translates to:
-  /// **'Yeni Şifre Tekrar'**
+  /// **'Yeni şifre tekrar'**
   String get newPasswordRepeat;
 
   /// No description provided for @updatePassword.
   ///
   /// In tr, this message translates to:
-  /// **'Şifreyi Güncelle'**
+  /// **'Şifreyi güncelle'**
   String get updatePassword;
 
   /// No description provided for @tryAnotherEmail.
@@ -503,7 +503,7 @@ abstract class AppLocalizations {
   /// No description provided for @requestNewCode.
   ///
   /// In tr, this message translates to:
-  /// **'Yeni Kod İste'**
+  /// **'Yeni kod iste'**
   String get requestNewCode;
 
   /// No description provided for @verify.
@@ -557,13 +557,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAccount.
   ///
   /// In tr, this message translates to:
-  /// **'Hesap & Güvenlik'**
+  /// **'Hesap & güvenlik'**
   String get settingsAccount;
 
   /// No description provided for @settingsHelp.
   ///
   /// In tr, this message translates to:
-  /// **'Yardım & Yasal'**
+  /// **'Yardım & yasal'**
   String get settingsHelp;
 
   /// No description provided for @settingsAppearanceSubtitle.
@@ -749,7 +749,7 @@ abstract class AppLocalizations {
   /// No description provided for @addAssetTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Varlık Ekle'**
+  /// **'Varlık ekle'**
   String get addAssetTitle;
 
   /// No description provided for @editAsset.
@@ -779,7 +779,7 @@ abstract class AppLocalizations {
   /// No description provided for @assetType.
   ///
   /// In tr, this message translates to:
-  /// **'Varlık Türü'**
+  /// **'Varlık türü'**
   String get assetType;
 
   /// No description provided for @assetName.
@@ -809,7 +809,7 @@ abstract class AppLocalizations {
   /// No description provided for @purchasePrice.
   ///
   /// In tr, this message translates to:
-  /// **'Alış Fiyatı'**
+  /// **'Alış fiyatı'**
   String get purchasePrice;
 
   /// No description provided for @optional.
@@ -833,7 +833,7 @@ abstract class AppLocalizations {
   /// No description provided for @commission.
   ///
   /// In tr, this message translates to:
-  /// **'Komisyon / Masraf'**
+  /// **'Komisyon / masraf'**
   String get commission;
 
   /// No description provided for @cannotBeNegative.
@@ -902,6 +902,36 @@ abstract class AppLocalizations {
   /// **'Yeni ortalama maliyetin {yeni} (şimdi {simdi})'**
   String quickBuyAvgCost(String yeni, String simdi);
 
+  /// No description provided for @quickTargetAvg.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef ortalama'**
+  String get quickTargetAvg;
+
+  /// No description provided for @quickTargetAvgField.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef ortalama maliyet'**
+  String get quickTargetAvgField;
+
+  /// Hızlı Al ters hesabı: hedef ortalamaya bu fiyattan ulaşmak için gereken miktar. Ek (-e/-a) sayının okunuşuna bağlı olduğu için 'seviyesine' denir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortalamayı {hedef} seviyesine indirmek için ~{adet} {birim}'**
+  String quickTargetAvgResult(String hedef, String adet, String birim);
+
+  /// No description provided for @quickTargetAvgUnreachable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu fiyattan bu ortalamaya inilemez.'**
+  String get quickTargetAvgUnreachable;
+
+  /// No description provided for @quickTargetAvgFillHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dokununca miktar alanına yazılır'**
+  String get quickTargetAvgFillHint;
+
   /// Hızlı Sat, yalnız TEFAS fonu: kâr satırı brüttür, oran yazılmaz.
   ///
   /// In tr, this message translates to:
@@ -959,7 +989,7 @@ abstract class AppLocalizations {
   /// No description provided for @watchlist.
   ///
   /// In tr, this message translates to:
-  /// **'Takip Listesi'**
+  /// **'Takip listesi'**
   String get watchlist;
 
   /// No description provided for @priceUpdateFailed.
@@ -1031,7 +1061,7 @@ abstract class AppLocalizations {
   /// No description provided for @seeAllCount.
   ///
   /// In tr, this message translates to:
-  /// **'Tümünü Gör ({count})'**
+  /// **'Tümünü gör ({count})'**
   String seeAllCount(int count);
 
   /// No description provided for @signalDeleteFailed.
@@ -1115,13 +1145,13 @@ abstract class AppLocalizations {
   /// No description provided for @permanentDeleteUpper.
   ///
   /// In tr, this message translates to:
-  /// **'Kalıcı Sil'**
+  /// **'Kalıcı sil'**
   String get permanentDeleteUpper;
 
   /// No description provided for @deleteHistoryButton.
   ///
   /// In tr, this message translates to:
-  /// **'Geçmişi Sil'**
+  /// **'Geçmişi sil'**
   String get deleteHistoryButton;
 
   /// No description provided for @signalNeutral.
@@ -1205,31 +1235,31 @@ abstract class AppLocalizations {
   /// No description provided for @firstPurchase.
   ///
   /// In tr, this message translates to:
-  /// **'İlk Alış'**
+  /// **'İlk alış'**
   String get firstPurchase;
 
   /// No description provided for @avgCost.
   ///
   /// In tr, this message translates to:
-  /// **'Ort. Maliyet'**
+  /// **'Ort. maliyet'**
   String get avgCost;
 
   /// No description provided for @totalCost.
   ///
   /// In tr, this message translates to:
-  /// **'Toplam Maliyet'**
+  /// **'Toplam maliyet'**
   String get totalCost;
 
   /// No description provided for @currentValue.
   ///
   /// In tr, this message translates to:
-  /// **'Güncel Tutar'**
+  /// **'Güncel tutar'**
   String get currentValue;
 
   /// No description provided for @dividendReceived.
   ///
   /// In tr, this message translates to:
-  /// **'Tahsil Edilen Temettü'**
+  /// **'Tahsil edilen temettü'**
   String get dividendReceived;
 
   /// No description provided for @lotSummary.
@@ -1241,19 +1271,19 @@ abstract class AppLocalizations {
   /// No description provided for @sortMarketValue.
   ///
   /// In tr, this message translates to:
-  /// **'Piyasa Değeri'**
+  /// **'Piyasa değeri'**
   String get sortMarketValue;
 
   /// No description provided for @sortHighToLow.
   ///
   /// In tr, this message translates to:
-  /// **'Büyükten Küçüğe'**
+  /// **'Büyükten küçüğe'**
   String get sortHighToLow;
 
   /// No description provided for @sortLowToHigh.
   ///
   /// In tr, this message translates to:
-  /// **'Küçükten Büyüğe'**
+  /// **'Küçükten büyüğe'**
   String get sortLowToHigh;
 
   /// No description provided for @sortGainTry.
@@ -1271,19 +1301,19 @@ abstract class AppLocalizations {
   /// No description provided for @sortHighestFirst.
   ///
   /// In tr, this message translates to:
-  /// **'En Yüksek Önce'**
+  /// **'En yüksek önce'**
   String get sortHighestFirst;
 
   /// No description provided for @sortLowestFirst.
   ///
   /// In tr, this message translates to:
-  /// **'En Düşük Önce'**
+  /// **'En düşük önce'**
   String get sortLowestFirst;
 
   /// No description provided for @assetFullName.
   ///
   /// In tr, this message translates to:
-  /// **'Tam Adı'**
+  /// **'Tam adı'**
   String get assetFullName;
 
   /// No description provided for @fundReportTitleUpper.
@@ -1598,12 +1628,6 @@ abstract class AppLocalizations {
   /// **'Toplu ekle'**
   String get bulkAdd;
 
-  /// No description provided for @quickEntryVoice.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sesli / Hızlı giriş'**
-  String get quickEntryVoice;
-
   /// No description provided for @orNotInList.
   ///
   /// In tr, this message translates to:
@@ -1790,6 +1814,30 @@ abstract class AppLocalizations {
   /// **'Maliyetine göre yıllık verimin Premium\'da'**
   String get dividendYieldOnCostLocked;
 
+  /// No description provided for @fxSplitPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyattan'**
+  String get fxSplitPrice;
+
+  /// No description provided for @fxSplitFx.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurdan'**
+  String get fxSplitFx;
+
+  /// No description provided for @fxSplitA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kârının fiyattan gelen kısmı {price}, kurdan gelen kısmı {fx}.'**
+  String fxSplitA11y(String price, String fx);
+
+  /// No description provided for @fxSplitLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da'**
+  String get fxSplitLocked;
+
   /// No description provided for @dividendEventLine.
   ///
   /// In tr, this message translates to:
@@ -1865,7 +1913,7 @@ abstract class AppLocalizations {
   /// No description provided for @moreNotesCount.
   ///
   /// In tr, this message translates to:
-  /// **'+{count} not daha · Tüm Hareketler\'de'**
+  /// **'+{count} not daha · Tüm hareketler\'de'**
   String moreNotesCount(int count);
 
   /// No description provided for @searchAssetSymbolOrNote.
@@ -1883,7 +1931,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickEntryTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Hızlı Giriş'**
+  /// **'Hızlı giriş'**
   String get quickEntryTitle;
 
   /// No description provided for @quickEntryHelp.
@@ -2165,7 +2213,7 @@ abstract class AppLocalizations {
   /// No description provided for @identityGoldKind.
   ///
   /// In tr, this message translates to:
-  /// **'Altın Türü'**
+  /// **'Altın türü'**
   String get identityGoldKind;
 
   /// No description provided for @pickGoldTap.
@@ -2183,7 +2231,7 @@ abstract class AppLocalizations {
   /// No description provided for @goldTypes.
   ///
   /// In tr, this message translates to:
-  /// **'Altın Türleri'**
+  /// **'Altın türleri'**
   String get goldTypes;
 
   /// No description provided for @goldQuickPick.
@@ -2285,7 +2333,7 @@ abstract class AppLocalizations {
   /// No description provided for @identityCurrency.
   ///
   /// In tr, this message translates to:
-  /// **'Para Birimi'**
+  /// **'Para birimi'**
   String get identityCurrency;
 
   /// No description provided for @identityCommodity.
@@ -2471,7 +2519,7 @@ abstract class AppLocalizations {
   /// No description provided for @feedbackTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Şikayet & Tavsiye'**
+  /// **'Şikayet & tavsiye'**
   String get feedbackTitle;
 
   /// No description provided for @feedbackHint.
@@ -2507,7 +2555,7 @@ abstract class AppLocalizations {
   /// No description provided for @pushDiagnostics.
   ///
   /// In tr, this message translates to:
-  /// **'Push Teşhisi'**
+  /// **'Push teşhisi'**
   String get pushDiagnostics;
 
   /// No description provided for @pushDiagnosticsSubtitle.
@@ -2945,25 +2993,25 @@ abstract class AppLocalizations {
   /// No description provided for @alreadyPartners.
   ///
   /// In tr, this message translates to:
-  /// **'Zaten Ortaksınız'**
+  /// **'Zaten ortaksınız'**
   String get alreadyPartners;
 
   /// No description provided for @ownCode.
   ///
   /// In tr, this message translates to:
-  /// **'Kendi Kodun'**
+  /// **'Kendi kodun'**
   String get ownCode;
 
   /// No description provided for @expiredTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Süresi Doldu'**
+  /// **'Süresi doldu'**
   String get expiredTitle;
 
   /// No description provided for @waitABit.
   ///
   /// In tr, this message translates to:
-  /// **'Biraz Bekle'**
+  /// **'Biraz bekle'**
   String get waitABit;
 
   /// No description provided for @somethingWentWrong.
@@ -3011,7 +3059,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateInviteCode.
   ///
   /// In tr, this message translates to:
-  /// **'Davet Kodu Üret'**
+  /// **'Davet kodu üret'**
   String get generateInviteCode;
 
   /// No description provided for @shareInviteCode.
@@ -3029,7 +3077,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterPartnerCode.
   ///
   /// In tr, this message translates to:
-  /// **'Ortak Kodunu Gir'**
+  /// **'Ortak kodunu gir'**
   String get enterPartnerCode;
 
   /// No description provided for @enterPartnerCodeBody.
@@ -3185,7 +3233,7 @@ abstract class AppLocalizations {
   /// No description provided for @requestPartnership.
   ///
   /// In tr, this message translates to:
-  /// **'Ortaklık İste'**
+  /// **'Ortaklık iste'**
   String get requestPartnership;
 
   /// No description provided for @generatingEllipsis.
@@ -3197,7 +3245,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateCode.
   ///
   /// In tr, this message translates to:
-  /// **'Kod Üret'**
+  /// **'Kod üret'**
   String get generateCode;
 
   /// No description provided for @tabChart.
@@ -3329,7 +3377,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioPerformance.
   ///
   /// In tr, this message translates to:
-  /// **'Portföy Performans'**
+  /// **'Portföy performans'**
   String get portfolioPerformance;
 
   /// No description provided for @chartDataFailed.
@@ -4049,7 +4097,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioActivityTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Portföy Hareketleri'**
+  /// **'Portföy hareketleri'**
   String get portfolioActivityTitle;
 
   /// No description provided for @clearFilters.
@@ -4211,7 +4259,7 @@ abstract class AppLocalizations {
   /// No description provided for @priceAlertsTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Fiyat Alarmları'**
+  /// **'Fiyat alarmları'**
   String get priceAlertsTitle;
 
   /// Ana ekran ikonuna uzun basınca çıkan arama kısayolu (HizliEylemler).
@@ -4367,7 +4415,7 @@ abstract class AppLocalizations {
   /// No description provided for @globalRanking.
   ///
   /// In tr, this message translates to:
-  /// **'Genel Sıralama'**
+  /// **'Genel sıralama'**
   String get globalRanking;
 
   /// No description provided for @checkingAnonPool.
@@ -4517,7 +4565,7 @@ abstract class AppLocalizations {
   /// No description provided for @recapTitle.
   ///
   /// In tr, this message translates to:
-  /// **'sandık Özetin'**
+  /// **'sandık özetin'**
   String get recapTitle;
 
   /// No description provided for @recapInYear.
@@ -4799,7 +4847,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAssetTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Varlığı Sil'**
+  /// **'Varlığı sil'**
   String get deleteAssetTitle;
 
   /// No description provided for @deleteAssetMulti.
@@ -4889,7 +4937,7 @@ abstract class AppLocalizations {
   /// No description provided for @addDividend.
   ///
   /// In tr, this message translates to:
-  /// **'Temettü Ekle'**
+  /// **'Temettü ekle'**
   String get addDividend;
 
   /// No description provided for @netAmountReceived.
@@ -5303,7 +5351,7 @@ abstract class AppLocalizations {
   /// No description provided for @configureIndicators.
   ///
   /// In tr, this message translates to:
-  /// **'Göstergeleri Ayarla'**
+  /// **'Göstergeleri ayarla'**
   String get configureIndicators;
 
   /// No description provided for @buySellNeutralCounts.
@@ -5675,7 +5723,7 @@ abstract class AppLocalizations {
   /// No description provided for @someAssetsNotAdded.
   ///
   /// In tr, this message translates to:
-  /// **'Bazı Varlıklar Eklenemedi'**
+  /// **'Bazı varlıklar eklenemedi'**
   String get someAssetsNotAdded;
 
   /// No description provided for @bulkAddSavingProgress.
@@ -5783,7 +5831,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveAllCount.
   ///
   /// In tr, this message translates to:
-  /// **'Tümünü Kaydet ({n})'**
+  /// **'Tümünü kaydet ({n})'**
   String saveAllCount(int n);
 
   /// No description provided for @removeFromWatchlist.
@@ -5933,7 +5981,7 @@ abstract class AppLocalizations {
   /// No description provided for @partnershipApprovalTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Ortaklık Onayı'**
+  /// **'Ortaklık onayı'**
   String get partnershipApprovalTitle;
 
   /// No description provided for @partnershipApprovalBody.
@@ -6641,7 +6689,7 @@ abstract class AppLocalizations {
   /// No description provided for @recapShareTitle.
   ///
   /// In tr, this message translates to:
-  /// **'sandık Özetim {year}'**
+  /// **'sandık özetim {year}'**
   String recapShareTitle(int year);
 
   /// No description provided for @shareWord.
@@ -7584,7 +7632,7 @@ abstract class AppLocalizations {
   /// No description provided for @identityCrypto.
   ///
   /// In tr, this message translates to:
-  /// **'Kripto Para'**
+  /// **'Kripto para'**
   String get identityCrypto;
 
   /// No description provided for @pickCryptoTap.
@@ -7608,7 +7656,7 @@ abstract class AppLocalizations {
   /// No description provided for @cryptoPickerTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Kripto Paralar'**
+  /// **'Kripto paralar'**
   String get cryptoPickerTitle;
 
   /// No description provided for @cryptoSearchHint.
@@ -12734,13 +12782,13 @@ abstract class AppLocalizations {
   /// No description provided for @portfolioGroupBistStock.
   ///
   /// In tr, this message translates to:
-  /// **'BIST Hisse'**
+  /// **'BIST hisse'**
   String get portfolioGroupBistStock;
 
   /// No description provided for @portfolioGroupUsStock.
   ///
   /// In tr, this message translates to:
-  /// **'ABD Hisse'**
+  /// **'ABD hisse'**
   String get portfolioGroupUsStock;
 
   /// No description provided for @stockMarketSemantics.
