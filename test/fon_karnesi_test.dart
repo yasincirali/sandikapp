@@ -13,6 +13,7 @@ TefasFund _fon(
   double? ay1,
   double? yil1,
   double? yb,
+  int? risk,
 }) =>
     TefasFund(
       code: kod,
@@ -23,6 +24,7 @@ TefasFund _fon(
       return1m: ay1,
       return1y: yil1,
       returnYtd: yb,
+      riskLevel: risk,
       kategori: kategori,
     );
 
@@ -162,6 +164,36 @@ void main() {
       expect(fonKoduOf(tur: AssetType.hisse, ticker: 'THYAO.IS'), isNull);
       expect(fonKoduOf(tur: AssetType.fon, ticker: 'TEFAS:'), isNull);
       expect(fonKoduOf(tur: AssetType.fon, ticker: ''), isNull);
+    });
+  });
+
+  group('risk değeri (2026-11-07)', () {
+    test('1–2 düşük, 3–4 orta, 5–7 yüksek', () {
+      expect(riskSeviyesiOf(1), RiskSeviyesi.dusuk);
+      expect(riskSeviyesiOf(2), RiskSeviyesi.dusuk);
+      expect(riskSeviyesiOf(3), RiskSeviyesi.orta);
+      expect(riskSeviyesiOf(4), RiskSeviyesi.orta);
+      expect(riskSeviyesiOf(5), RiskSeviyesi.yuksek);
+      expect(riskSeviyesiOf(7), RiskSeviyesi.yuksek);
+    });
+
+    test('null ve aralık dışı değer kelimeye dönmez', () {
+      expect(riskSeviyesiOf(null), isNull);
+      expect(riskSeviyesiOf(0), isNull);
+      expect(riskSeviyesiOf(8), isNull);
+      expect(riskSeviyesiOf(-1), isNull);
+    });
+
+    test('karne geçerli değeri taşır, aralık dışını null yapar', () {
+      List<TefasFund> katalog(int? r) => [
+            _fon('AAA', yil1: 50, risk: r),
+            _fon('BBB', yil1: 40),
+          ];
+      expect(fonKarnesi('AAA', katalog(4))!.riskDegeri, 4);
+      expect(fonKarnesi('AAA', katalog(4))!.riskSeviyesi, RiskSeviyesi.orta);
+      expect(fonKarnesi('AAA', katalog(null))!.riskDegeri, isNull);
+      expect(fonKarnesi('AAA', katalog(0))!.riskDegeri, isNull);
+      expect(fonKarnesi('AAA', katalog(9))!.riskDegeri, isNull);
     });
   });
 }
