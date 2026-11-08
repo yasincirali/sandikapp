@@ -1626,7 +1626,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get showOnWeekendSubtitle =>
-      'Hafta sonu BIST kapalıdır. Portföyün yalnızca hisse ve fondan oluşuyorsa banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir; altın, döviz ya da kripto varsa canlı kalır.';
+      'Hafta sonu BIST kapalı. Yalnız hisse ve fon varsa son kapanış görünür; altın, döviz ya da kripto varsa canlı kalır.';
 
   @override
   String get showAmounts => 'Tutarları göster';
@@ -4847,6 +4847,28 @@ class AppLocalizationsTr extends AppLocalizations {
   String get ipoSourceFailed => 'Bağlantı açılamadı.';
 
   @override
+  String get ipoAddToCalendar => 'Takvime ekle';
+
+  @override
+  String get ipoAddToCalendarA11y =>
+      'Talep son günü ve işlem başlangıcını takvime ekle';
+
+  @override
+  String ipoCalendarDeadline(String kod) {
+    return '$kod talep son günü';
+  }
+
+  @override
+  String ipoCalendarFirstTrade(String kod) {
+    return '$kod işlem başlangıcı';
+  }
+
+  @override
+  String ipoCalendarSubject(String kod) {
+    return '$kod halka arz tarihleri';
+  }
+
+  @override
   String get ipoParticipate => 'Katıldım, portföye ekle';
 
   @override
@@ -6252,7 +6274,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get weekEmptyNoData =>
-      'Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.';
+      'Bu hafta gösterecek bir şey yok. Fonlarının para akışı ve hisse ya da kriptolarının hacmi, verisi gelince burada görünür.';
 
   @override
   String get weekLink => 'Tüm fonlarımın haftası';
@@ -6448,7 +6470,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get savingReminderSheetBody =>
-      'Seçtiğin gün, o ay portföyüne hiç ekleme yapmadıysan tek bir hatırlatma gelir. Ekleme yaptıysan gelmez. Seçtiğin gün o ayda yoksa (ör. Şubat\'ta 30) ayın son günü gelir.';
+      'O ay hiç ekleme yapmadıysan seçtiğin gün bir hatırlatma gelir. Gün o ayda yoksa ayın son günü gelir.';
 
   @override
   String savingReminderDay(String day) {

@@ -1643,7 +1643,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showOnWeekendSubtitle =>
-      'BIST is closed on weekends. If your portfolio is only stocks and funds, the banner shows the last close labelled \"Market closed\"; with gold, FX or crypto it stays live.';
+      'BIST is closed on weekends. With only stocks and funds you see the last close; with gold, FX or crypto it stays live.';
 
   @override
   String get showAmounts => 'Show amounts';
@@ -4883,6 +4883,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ipoSourceFailed => 'Couldn\'t open the link.';
 
   @override
+  String get ipoAddToCalendar => 'Add to calendar';
+
+  @override
+  String get ipoAddToCalendarA11y =>
+      'Add the last order day and first trading day to your calendar';
+
+  @override
+  String ipoCalendarDeadline(String kod) {
+    return '$kod IPO last order day';
+  }
+
+  @override
+  String ipoCalendarFirstTrade(String kod) {
+    return '$kod first trading day';
+  }
+
+  @override
+  String ipoCalendarSubject(String kod) {
+    return '$kod IPO dates';
+  }
+
+  @override
   String get ipoParticipate => 'I participated, add to portfolio';
 
   @override
@@ -6316,7 +6338,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weekEmptyNoData =>
-      'Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.';
+      'Nothing to show this week. Money flow in your funds and volume in your stocks or crypto show up here once data arrives.';
 
   @override
   String get weekLink => 'My funds this week';
@@ -6525,7 +6547,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savingReminderSheetBody =>
-      'On the day you pick, you get one reminder if you haven\'t added anything to your portfolio that month. If you have, nothing is sent. If the day doesn\'t exist that month (e.g. the 30th in February), it comes on the last day.';
+      'If you haven\'t added anything that month, you get a reminder on the day you pick. If that day doesn\'t exist that month, it comes on the last day.';
 
   @override
   String savingReminderDay(String day) {

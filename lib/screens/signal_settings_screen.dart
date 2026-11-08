@@ -282,7 +282,7 @@ class _PremiumCard extends StatelessWidget {
                   Text(
                     unlocked ? l10n.sgnPremiumAktif : l10n.sgnPremiumKilitBaslik,
                     style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
                   ),
@@ -310,7 +310,7 @@ class _PremiumCard extends StatelessWidget {
                 l10n.sgnPremiumGec,
                 style: context.t.labelMedium?.copyWith(
                   color: context.c.onAmber,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -373,7 +373,7 @@ class _CategorySection extends StatelessWidget {
                 Text(
                   type.labelOf(context.l10n),
                   style: context.t.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: context.c.text90,
                   ),
                 ),
@@ -514,7 +514,7 @@ class _ParametreSayfasiState extends State<_ParametreSayfasi> {
           children: [
             Text(IndicatorId.labelOf(widget.id),
                 style: context.t.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.xs),
             Text(l.sgnParametreAciklama(widget.type.labelOf(l)),
                 style: context.t.bodySmall
@@ -700,7 +700,7 @@ class _FrequencyRow extends StatelessWidget {
                         ? 'Bildirim saatini seç'
                         : 'İki bildirim saati seç',
                     style: context.t.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700, color: context.c.text90),
+                        fontWeight: FontWeight.w600, color: context.c.text90),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1271,7 +1271,7 @@ class _OnAyarKarti extends ConsumerWidget {
                   child: Text(
                     l10n.s5OnAyarOzel,
                     style: context.t.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.amberText,
                     ),
                   ),

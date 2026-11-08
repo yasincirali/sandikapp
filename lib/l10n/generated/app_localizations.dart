@@ -2867,7 +2867,7 @@ abstract class AppLocalizations {
   /// No description provided for @showOnWeekendSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Hafta sonu BIST kapalıdır. Portföyün yalnızca hisse ve fondan oluşuyorsa banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir; altın, döviz ya da kripto varsa canlı kalır.'**
+  /// **'Hafta sonu BIST kapalı. Yalnız hisse ve fon varsa son kapanış görünür; altın, döviz ya da kripto varsa canlı kalır.'**
   String get showOnWeekendSubtitle;
 
   /// No description provided for @showAmounts.
@@ -8091,6 +8091,36 @@ abstract class AppLocalizations {
   /// **'Bağlantı açılamadı.'**
   String get ipoSourceFailed;
 
+  /// No description provided for @ipoAddToCalendar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takvime ekle'**
+  String get ipoAddToCalendar;
+
+  /// No description provided for @ipoAddToCalendarA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Talep son günü ve işlem başlangıcını takvime ekle'**
+  String get ipoAddToCalendarA11y;
+
+  /// No description provided for @ipoCalendarDeadline.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} talep son günü'**
+  String ipoCalendarDeadline(String kod);
+
+  /// No description provided for @ipoCalendarFirstTrade.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} işlem başlangıcı'**
+  String ipoCalendarFirstTrade(String kod);
+
+  /// No description provided for @ipoCalendarSubject.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} halka arz tarihleri'**
+  String ipoCalendarSubject(String kod);
+
   /// No description provided for @ipoParticipate.
   ///
   /// In tr, this message translates to:
@@ -10417,7 +10447,7 @@ abstract class AppLocalizations {
   /// No description provided for @weekEmptyNoData.
   ///
   /// In tr, this message translates to:
-  /// **'Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.'**
+  /// **'Bu hafta gösterecek bir şey yok. Fonlarının para akışı ve hisse ya da kriptolarının hacmi, verisi gelince burada görünür.'**
   String get weekEmptyNoData;
 
   /// No description provided for @weekLink.
@@ -10724,7 +10754,7 @@ abstract class AppLocalizations {
   /// No description provided for @savingReminderSheetBody.
   ///
   /// In tr, this message translates to:
-  /// **'Seçtiğin gün, o ay portföyüne hiç ekleme yapmadıysan tek bir hatırlatma gelir. Ekleme yaptıysan gelmez. Seçtiğin gün o ayda yoksa (ör. Şubat\'ta 30) ayın son günü gelir.'**
+  /// **'O ay hiç ekleme yapmadıysan seçtiğin gün bir hatırlatma gelir. Gün o ayda yoksa ayın son günü gelir.'**
   String get savingReminderSheetBody;
 
   /// No description provided for @savingReminderDay.

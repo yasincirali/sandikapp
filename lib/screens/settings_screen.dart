@@ -466,7 +466,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   context.l10n.feedbackTitle,
                   style: context.t.headlineSmall?.copyWith(
                     color: context.c.text90,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -534,7 +534,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             {'type': type, 'body': controller.text.trim()},
                           ),
                   child: Text(context.l10n.send,
-                      style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
                 // Formsuz yazmak isteyene doğrudan e-posta (eski "Bize ulaş"
                 // satırının işi; satırlar birleşti, Ar-Ge 29 Eki #2).
@@ -1608,7 +1608,7 @@ class _ThemeModePicker extends ConsumerWidget {
                         style: context.t.labelLarge?.copyWith(
                           letterSpacing: 0,
                           fontWeight: current == mode
-                              ? FontWeight.w700
+                              ? FontWeight.w600
                               : FontWeight.w500,
                           color: current == mode
                               ? context.c.amberText
@@ -1718,7 +1718,7 @@ class _BaseCurrencyPicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == birim
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == birim
                                   ? context.c.amberText
@@ -1816,7 +1816,7 @@ class _InvestorLevelPicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == s
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == s
                                   ? context.c.amberText
@@ -1931,7 +1931,7 @@ class _LanguagePicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == kod
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == kod
                                   ? context.c.amberText
@@ -2463,7 +2463,7 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
                   l10n.briefSlotTitle,
                   style: ctx.t.titleMedium?.copyWith(
                     color: ctx.c.text90,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -2579,7 +2579,7 @@ class _BirikimHatirlatmaTileState
                   l10n.savingReminderTitle,
                   style: ctx.t.titleMedium?.copyWith(
                     color: ctx.c.text90,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -2966,7 +2966,7 @@ class _YaziBoyutuPicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == boyut
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == boyut
                                   ? context.c.amberText
