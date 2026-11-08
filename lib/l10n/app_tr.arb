@@ -947,7 +947,7 @@
   "showOnWeekend": "Hafta sonu da göster",
   "showOnWeekendSubtitle": "Hafta sonu BIST kapalıdır. Portföyün yalnızca hisse ve fondan oluşuyorsa banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir; altın, döviz ya da kripto varsa canlı kalır.",
   "showAmounts": "Tutarları göster",
-  "showAmountsSubtitle": "Canlı Etkinlik ve kilit ekranı widget'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.",
+  "showAmountsSubtitle": "Kilit ekranında ve Canlı Etkinlik'te tutarlar görünür. Kilit ekranı herkese açık olduğu için varsayılan kapalı.",
   "lockWidgetHowTo": "Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.",
   "anaEkranWidgetBaslik": "Ana ekran widget'ı",
   "anaEkranaWidgetEkle": "Ana ekrana widget ekle",
@@ -1721,7 +1721,7 @@
     }
   },
   "deleteAnyway": "Yine de sil",
-  "deleteAssetWarning": "Bu bir satış değil. Varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.",
+  "deleteAssetWarning": "Bu satış değil: varlık toplamlardan ve geçmiş grafikten çıkar, hareketleri \"Silinenler\"de kalır. Sattıysan \"Sat\"ı kullan.",
   "alarmAlsoDeleteTitle": "{n, plural, =1{Alarm da silinsin mi?} other{{n} alarm da silinsin mi?}}",
   "@alarmAlsoDeleteTitle": {
     "placeholders": {
@@ -1799,7 +1799,7 @@
       }
     }
   },
-  "sellAllWarning": "Tüm miktarı satıyorsun. Pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.",
+  "sellAllWarning": "Tümünü satıyorsun. Pozisyon listeden kalkar, satış ve kâr/zarar kaydı korunur.",
   "saleValue": "Satış değeri",
   "nActiveAlerts": "{n} aktif fiyat alarmı",
   "@nActiveAlerts": {

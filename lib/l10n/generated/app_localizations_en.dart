@@ -1644,7 +1644,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showAmountsSubtitle =>
-      'Applies to the Live Activity and the lock screen widget. When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.';
+      'Shows amounts on the lock screen and in the Live Activity. Off by default because the lock screen is visible to anyone.';
 
   @override
   String get lockWidgetHowTo =>
@@ -2773,7 +2773,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAssetWarning =>
-      'This is not a sale. The asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.';
+      'This is not a sale: the asset leaves your totals and the history chart, its transactions stay under \"Deleted\". If you sold it, use \"Sell\".';
 
   @override
   String alarmAlsoDeleteTitle(int n) {
@@ -2868,7 +2868,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sellAllWarning =>
-      'You are selling the whole position. It leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.';
+      'You are selling it all. The position leaves the list, the sale and profit/loss record are kept.';
 
   @override
   String get saleValue => 'Sale value';

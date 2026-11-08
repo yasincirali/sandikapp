@@ -2867,7 +2867,7 @@ abstract class AppLocalizations {
   /// No description provided for @showAmountsSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Canlı Etkinlik ve kilit ekranı widget\'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.'**
+  /// **'Kilit ekranında ve Canlı Etkinlik\'te tutarlar görünür. Kilit ekranı herkese açık olduğu için varsayılan kapalı.'**
   String get showAmountsSubtitle;
 
   /// No description provided for @lockWidgetHowTo.
@@ -4751,7 +4751,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAssetWarning.
   ///
   /// In tr, this message translates to:
-  /// **'Bu bir satış değil. Varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.'**
+  /// **'Bu satış değil: varlık toplamlardan ve geçmiş grafikten çıkar, hareketleri \"Silinenler\"de kalır. Sattıysan \"Sat\"ı kullan.'**
   String get deleteAssetWarning;
 
   /// No description provided for @alarmAlsoDeleteTitle.
@@ -4865,7 +4865,7 @@ abstract class AppLocalizations {
   /// No description provided for @sellAllWarning.
   ///
   /// In tr, this message translates to:
-  /// **'Tüm miktarı satıyorsun. Pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.'**
+  /// **'Tümünü satıyorsun. Pozisyon listeden kalkar, satış ve kâr/zarar kaydı korunur.'**
   String get sellAllWarning;
 
   /// No description provided for @saleValue.
