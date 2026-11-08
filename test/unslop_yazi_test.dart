@@ -156,6 +156,35 @@ void main() {
             'adsa listeye ekle): $ihlal');
   });
 
+  // Ağırlık tavanı w600 kararı (yasin 2026-11-05) yeni kodda uygulanıyor
+  // ama lib/'de yüzlerce eski w700 duruyor; hepsini tek seferde çevirmek
+  // tutar/rakam vurgularını da düzleştirirdi (onlar bilerek kalın). Bu
+  // yüzden toptan değişiklik yerine cırcır: sayı yalnız AZALABİLİR, etiket
+  // ve başlık çevrildikçe tavan düşürülür (2026-11-08: Ayarlar ve Sinyal
+  // ayarları satır/başlık etiketleri w600'e indi, 307 → 292).
+  // w800/w900 sayılmaz: yarış/düello sahneleri ve ana sayfa toplam kartı
+  // istisnası yukarıdaki testte ayrıca kilitli. Tüm lib/ dizini tarandığı
+  // için part dosyaları zaten dahil (`ekranKaynagiSync` tek ekran içindir).
+  test('FontWeight.w700 sayısı artmaz (cırcır)', () {
+    const tavan = 292;
+    var sayi = 0;
+    for (final f in Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))) {
+      final yol = f.path.replaceAll('\\', '/');
+      if (yol.contains('lib/l10n/generated/')) continue;
+      sayi += 'FontWeight.w700'.allMatches(f.readAsStringSync()).length;
+    }
+    expect(sayi, lessThanOrEqualTo(tavan),
+        reason: 'Yeni w700 eklendi ($sayi > $tavan). Etiket/başlık için '
+            'w600 kullan; tutar vurgusuysa mevcut stili yeniden kullan.');
+    if (sayi < tavan) {
+      // ignore: avoid_print
+      print('w700 sayısı $sayi; tavanı $tavan → $sayi düşür.');
+    }
+  });
+
   test('bölüm başlığı w600, harf aralıksız', () {
     final k = File('lib/theme/sandik.dart').readAsStringSync();
     final bas = k.indexOf('class SandikSectionHeader');
