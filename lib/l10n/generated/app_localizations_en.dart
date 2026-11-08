@@ -2329,6 +2329,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchlistRowFollowing => 'on your watchlist';
 
   @override
+  String get watchlistPeriodSinceAdded => 'Since added';
+
+  @override
+  String watchlistSinceDate(String tarih) {
+    return 'Since $tarih';
+  }
+
+  @override
+  String watchlistRowSinceUp(String tarih, String pct) {
+    return 'up $pct since $tarih';
+  }
+
+  @override
+  String watchlistRowSinceDown(String tarih, String pct) {
+    return 'down $pct since $tarih';
+  }
+
+  @override
+  String watchlistRowSinceFlat(String tarih) {
+    return 'unchanged since $tarih';
+  }
+
+  @override
+  String get watchlistRowSinceUnknown =>
+      'no closing price for the day it was added';
+
+  @override
   String notificationsNewCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

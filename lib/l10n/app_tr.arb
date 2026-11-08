@@ -1349,6 +1349,25 @@
     }
   },
   "watchlistRowFollowing": "takip ediliyor",
+  "watchlistPeriodSinceAdded": "Eklediğimden beri",
+  "watchlistSinceDate": "{tarih} beri",
+  "@watchlistSinceDate": {
+    "description": "Takip satırında yüzdenin altı. tarih ekiyle gelir: 12 Eyl'den",
+    "placeholders": {"tarih": {"type": "String"}}
+  },
+  "watchlistRowSinceUp": "{tarih} beri {pct} arttı",
+  "@watchlistRowSinceUp": {
+    "placeholders": {"tarih": {"type": "String"}, "pct": {"type": "String"}}
+  },
+  "watchlistRowSinceDown": "{tarih} beri {pct} düştü",
+  "@watchlistRowSinceDown": {
+    "placeholders": {"tarih": {"type": "String"}, "pct": {"type": "String"}}
+  },
+  "watchlistRowSinceFlat": "{tarih} beri değişmedi",
+  "@watchlistRowSinceFlat": {
+    "placeholders": {"tarih": {"type": "String"}}
+  },
+  "watchlistRowSinceUnknown": "eklendiği günün kapanışı bulunamadı",
   "notificationsNewCount": "{count, plural, =1{1 yeni bildirim} other{{count} yeni bildirim}}",
   "@notificationsNewCount": {
     "placeholders": {

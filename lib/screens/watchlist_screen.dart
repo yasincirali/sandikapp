@@ -165,13 +165,25 @@ class _PeriodToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+      // Son seçenek "Eklediğimden beri" (2026-11-08): ortak dönemi
+      // değiştirmez, yalnız takip satırlarının yüzdesini eklenme günü
+      // kapanışına bağlar (gerekçe `watchlistEklenmedenBeriProvider`).
       child: DonemSecici(
         donemler: SummaryPeriod.values,
-        secili: ref.watch(watchlistPeriodProvider),
+        sonEk: context.l10n.watchlistPeriodSinceAdded,
+        secili: ref.watch(watchlistEklenmedenBeriProvider)
+            ? SummaryPeriod.values.length
+            : ref.watch(watchlistPeriodProvider),
         // Ortak dönem yazılır; `watchlistPeriodProvider` ondan türediği
         // için kendiliğinden izler.
-        onSec: (i) => ref.read(seciliDonemProvider.notifier).state =
-            SummaryPeriod.values[i],
+        onSec: (i) {
+          final beri = i >= SummaryPeriod.values.length;
+          ref.read(watchlistEklenmedenBeriProvider.notifier).state = beri;
+          if (!beri) {
+            ref.read(seciliDonemProvider.notifier).state =
+                SummaryPeriod.values[i];
+          }
+        },
       ),
     );
   }
@@ -183,8 +195,9 @@ class _List extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final periodLabel =
-        watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
+    final periodLabel = ref.watch(watchlistEklenmedenBeriProvider)
+        ? context.l10n.watchlistPeriodSinceAdded
+        : watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
     // Ekrandaki sıra kullanıcının seçimiyle (2026-10-24, `takip_sirasi.dart`):
     // "Benim sıram" varsayılan, fiyat tazelenince satır yer değiştirmez.
     final mod = takipSiralamaOf(ref.watch(takipSiralamaProvider));
@@ -630,6 +643,16 @@ class _Row extends ConsumerWidget {
     final fiyatMetni = takipFiyatMetni(item);
     final l10n = context.l10n;
 
+    // "Eklediğimden beri" (2026-11-08): yüzde eklenme günü kapanışından
+    // (sağlayıcı yazar, `WatchlistNotifier._eklenmedenBeri`); burada
+    // yalnız tarih yazılır. Tarih bilinmiyorsa alt satır yok, yüzde "—".
+    final beri = ref.watch(watchlistEklenmedenBeriProvider);
+    final eklenme = beri ? item.addedAt : null;
+    final beriMetni = eklenme == null
+        ? null
+        : l10n.watchlistSinceDate(
+            tarihtenBeriParcasi(eklenme, dil: context.tarihDili));
+
     // Etkin fiyat alarmı (2026-10-26): kurulu ve bekleyen alarm satırda çan
     // + fiyata en yakın hedef olarak görünür; alarm ekranına gitmeden "bu
     // varlığa alarm kurmuş muydum, hangi fiyata" sorusu cevaplanır. Sembol
@@ -661,7 +684,9 @@ class _Row extends ConsumerWidget {
     final semantic = [
       item.name,
       if (item.currentPrice != null) fiyatMetni,
-      if (!isFlat)
+      if (beri)
+        _beriCumlesi(l10n, context.tarihDili, pct, isFlat)
+      else if (!isFlat)
         pct >= 0
             ? l10n.watchlistRowUp(fmtPct(pct.abs()))
             : l10n.watchlistRowDown(fmtPct(pct.abs())),
@@ -855,6 +880,15 @@ class _Row extends ConsumerWidget {
                             style: context.t.numSmall
                                 .copyWith(color: color, fontSize: 11),
                           ),
+                          // Yüzdenin hemen altında: "+%12,40 / 12 Eyl'den
+                          // beri" tek okumada "neye göre" sorusunu yanıtlar.
+                          if (beriMetni != null)
+                            Text(
+                              beriMetni,
+                              maxLines: 1,
+                              style: context.t.labelSmall
+                                  ?.copyWith(color: context.c.text36),
+                            ),
                         ],
                       ),
                     ),
@@ -918,6 +952,21 @@ class _Row extends ConsumerWidget {
           ),
         ),
     );
+  }
+
+  /// "Eklediğimden beri" kipinde satır cümlesinin yüzde parçası — tam
+  /// cümle: "12 Eylül'den beri %3,20 arttı". Ay adı tam yazılır, ekran
+  /// okuyucu "Eyl"i harf harf okumasın. Kapanış ya da tarih yoksa bunu
+  /// söyler; yüzde sessizce düşmez.
+  String _beriCumlesi(
+      AppLocalizations l10n, String dil, double? pct, bool isFlat) {
+    final eklenme = item.addedAt;
+    if (eklenme == null || pct == null) return l10n.watchlistRowSinceUnknown;
+    final tarih = tarihtenBeriParcasi(eklenme, dil: dil, kisa: false);
+    if (isFlat) return l10n.watchlistRowSinceFlat(tarih);
+    return pct >= 0
+        ? l10n.watchlistRowSinceUp(tarih, fmtPct(pct.abs()))
+        : l10n.watchlistRowSinceDown(tarih, fmtPct(pct.abs()));
   }
 
   Widget _adMetni(BuildContext context) => Text(

@@ -4040,6 +4040,42 @@ abstract class AppLocalizations {
   /// **'takip ediliyor'**
   String get watchlistRowFollowing;
 
+  /// No description provided for @watchlistPeriodSinceAdded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eklediğimden beri'**
+  String get watchlistPeriodSinceAdded;
+
+  /// Takip satırında yüzdenin altı. tarih ekiyle gelir: 12 Eyl'den
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri'**
+  String watchlistSinceDate(String tarih);
+
+  /// No description provided for @watchlistRowSinceUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri {pct} arttı'**
+  String watchlistRowSinceUp(String tarih, String pct);
+
+  /// No description provided for @watchlistRowSinceDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri {pct} düştü'**
+  String watchlistRowSinceDown(String tarih, String pct);
+
+  /// No description provided for @watchlistRowSinceFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri değişmedi'**
+  String watchlistRowSinceFlat(String tarih);
+
+  /// No description provided for @watchlistRowSinceUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'eklendiği günün kapanışı bulunamadı'**
+  String get watchlistRowSinceUnknown;
+
   /// No description provided for @notificationsNewCount.
   ///
   /// In tr, this message translates to:

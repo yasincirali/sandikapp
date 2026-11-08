@@ -665,10 +665,13 @@ List<_Adim> _adimlariKur() {
       baslik: 'Takip listesi',
       // 2026-10-26: alarm kurulu satırda çan + hedef fiyat; çan o varlığın
       // alarmlarını açar (tur metni arayüzle birlikte değişir).
+      // 2026-11-08: dönem seçicinin son seçeneği "Eklediğimden beri".
       govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin; portföyünün '
           'toplamına karışmaz. Bir satıra dokununca grafiği, dönem '
           'getirileri ve istatistikleri açılır, oradan portföyüne de '
-          'eklersin. Fiyat alarmı kurduğun satırda çan ve hedef fiyat '
+          'eklersin. Dönem seçicinin sonundaki "Eklediğimden beri" her '
+          'satırı eklediğin günden bugüne gösterir. Fiyat alarmı kurduğun '
+          'satırda çan ve hedef fiyat '
           'görünür; çana dokununca o varlığın alarmları açılır. Sayaç kaç '
           'yerin kaldığını gösterir.',
       giris: (_) => _sekmeyeGec(1),

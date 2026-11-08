@@ -2309,6 +2309,32 @@ class AppLocalizationsTr extends AppLocalizations {
   String get watchlistRowFollowing => 'takip ediliyor';
 
   @override
+  String get watchlistPeriodSinceAdded => 'Eklediğimden beri';
+
+  @override
+  String watchlistSinceDate(String tarih) {
+    return '$tarih beri';
+  }
+
+  @override
+  String watchlistRowSinceUp(String tarih, String pct) {
+    return '$tarih beri $pct arttı';
+  }
+
+  @override
+  String watchlistRowSinceDown(String tarih, String pct) {
+    return '$tarih beri $pct düştü';
+  }
+
+  @override
+  String watchlistRowSinceFlat(String tarih) {
+    return '$tarih beri değişmedi';
+  }
+
+  @override
+  String get watchlistRowSinceUnknown => 'eklendiği günün kapanışı bulunamadı';
+
+  @override
   String notificationsNewCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

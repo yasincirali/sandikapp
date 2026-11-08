@@ -1325,6 +1325,12 @@
     }
   },
   "watchlistRowFollowing": "on your watchlist",
+  "watchlistPeriodSinceAdded": "Since added",
+  "watchlistSinceDate": "Since {tarih}",
+  "watchlistRowSinceUp": "up {pct} since {tarih}",
+  "watchlistRowSinceDown": "down {pct} since {tarih}",
+  "watchlistRowSinceFlat": "unchanged since {tarih}",
+  "watchlistRowSinceUnknown": "no closing price for the day it was added",
   "notificationsNewCount": "{count, plural, =1{1 new notification} other{{count} new notifications}}",
   "@notificationsNewCount": {
     "placeholders": {
