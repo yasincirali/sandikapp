@@ -1920,7 +1920,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get simModeBody =>
-      'How would the chart look if you had held today\'s net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.';
+      'This is how the chart would look if you had held today\'s portfolio unchanged for the whole period. Past buys and sells are ignored.';
 
   @override
   String get chartDataFailed => 'Could not load chart data';
@@ -5732,7 +5732,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kayitliCihazlarAciklama =>
-      'Your account can be open on only one device at a time. When someone signs in from a device that isn\'t listed, a verification code is sent to your email. Remove any device you don\'t recognize and change your password.';
+      'Signing in from a device that isn\'t listed sends a code to your email. Remove any device you don\'t recognize and change your password.';
 
   @override
   String get buCihaz => 'This device';
@@ -8353,7 +8353,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ttKural =>
-      'The forecast follows one rule: the dividends paid over the last 12 months, repeated in the same months at today\'s holdings. Company decisions, splits and bonus issues are not taken into account. BIST stocks only; not investment advice.';
+      'BIST stocks only. Assumes the last 12 months\' dividends repeat in the same months at today\'s holdings. Splits and bonus issues are not taken into account; not investment advice.';
 
   @override
   String get pwOzRapor =>

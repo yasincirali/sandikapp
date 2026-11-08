@@ -1097,7 +1097,7 @@
     }
   },
   "simModeTitle": "Bugünkü portföyle",
-  "simModeBody": "Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.",
+  "simModeBody": "Bugünkü portföyünü dönem boyunca hiç değiştirmeden tutsaydın grafik böyle olurdu. Geçmiş alım ve satışlar yok sayılır.",
   "chartDataFailed": "Grafik verisi alınamadı",
   "chartDataFailedBody": "Fiyat geçmişi şu an getirilemedi. Bağlantını kontrol edip tekrar deneyebilirsin.",
   "changeByTypeUpper": "Türe göre · fiyat etkisi",
@@ -3912,7 +3912,7 @@
   "baskaCihazdaAcildi": "Hesabın başka bir cihazda açıldı. Bu cihazda oturum kapatıldı.",
   "kayitliCihazlar": "Giriş yaptığın cihazlar",
   "kayitliCihazlarAlt": "Hesabın aynı anda tek cihazda açık kalır",
-  "kayitliCihazlarAciklama": "Hesabın aynı anda yalnızca bir cihazda açık olabilir. Listede olmayan bir cihazdan giriş yapılınca e-postana doğrulama kodu gönderilir. Tanımadığın bir cihazı kaldır ve şifreni değiştir.",
+  "kayitliCihazlarAciklama": "Listede olmayan cihazdan girişte e-postana kod gelir. Tanımadığın cihazı kaldır ve şifreni değiştir.",
   "buCihaz": "Bu cihaz",
   "cihazSonKullanim": "Son kullanım: {tarih}",
   "@cihazSonKullanim": {
@@ -5625,7 +5625,7 @@
   "ttVarliklarUpper": "Varlıklar",
   "ttSatirAlt": "pay başına {pay} · {aylar}",
   "@ttSatirAlt": {"placeholders": {"pay": {"type": "String"}, "aylar": {"type": "String"}}},
-  "ttKural": "Tahmin tek bir kurala dayanır: son 12 ayda gerçekleşen temettü, bugünkü lotunla aynı aylarda tekrarlansa. Şirket kararları, bölünme ve bedelsiz hesaba katılmaz. Yalnız BIST hisseleri; yatırım tavsiyesi değildir.",
+  "ttKural": "Yalnız BIST hisseleri. Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.",
   "pwOzRapor": "Yıllık kâr, temettü ve stopaj raporu; portföyünü PDF ya da Excel olarak dışa aktar",
   "pwOzTemettu": "Önümüzdeki 12 ayın temettü tahmini, ay ay",
   "pwOzSinyalTam": "Teknik sinyaller: 8 gösterge, kendi periyotların ve seçtiğin sıklıkta bildirim",

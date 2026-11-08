@@ -3347,7 +3347,7 @@ abstract class AppLocalizations {
   /// No description provided for @simModeBody.
   ///
   /// In tr, this message translates to:
-  /// **'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.'**
+  /// **'Bugünkü portföyünü dönem boyunca hiç değiştirmeden tutsaydın grafik böyle olurdu. Geçmiş alım ve satışlar yok sayılır.'**
   String get simModeBody;
 
   /// No description provided for @chartDataFailed.
@@ -9415,7 +9415,7 @@ abstract class AppLocalizations {
   /// No description provided for @kayitliCihazlarAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Hesabın aynı anda yalnızca bir cihazda açık olabilir. Listede olmayan bir cihazdan giriş yapılınca e-postana doğrulama kodu gönderilir. Tanımadığın bir cihazı kaldır ve şifreni değiştir.'**
+  /// **'Listede olmayan cihazdan girişte e-postana kod gelir. Tanımadığın cihazı kaldır ve şifreni değiştir.'**
   String get kayitliCihazlarAciklama;
 
   /// No description provided for @buCihaz.
@@ -13694,7 +13694,7 @@ abstract class AppLocalizations {
   /// No description provided for @ttKural.
   ///
   /// In tr, this message translates to:
-  /// **'Tahmin tek bir kurala dayanır: son 12 ayda gerçekleşen temettü, bugünkü lotunla aynı aylarda tekrarlansa. Şirket kararları, bölünme ve bedelsiz hesaba katılmaz. Yalnız BIST hisseleri; yatırım tavsiyesi değildir.'**
+  /// **'Yalnız BIST hisseleri. Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.'**
   String get ttKural;
 
   /// No description provided for @pwOzRapor.
