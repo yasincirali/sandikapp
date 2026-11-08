@@ -1345,6 +1345,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get period6M => '6M';
 
   @override
+  String get periodYtd => 'YTD';
+
+  @override
+  String get periodYtdLong => 'Year to date';
+
+  @override
   String get period1Y => '1Y';
 
   @override
@@ -2075,6 +2081,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get last6MonthsPeriod => 'the last 6 months';
 
   @override
+  String get ytdExtremes => 'Year-to-date extremes';
+
+  @override
+  String get ytdPeriod => 'year to date';
+
+  @override
   String get sixMonthExtremes => 'Six-month extremes';
 
   @override
@@ -2555,7 +2567,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'What is measured is your picks: which assets you held, on which days. When and how much money you added does NOT affect the ratio; the same picks give the same percentage whether you hold 1 lot or 10,000.\n\nThe purchase price you entered is not used; everything is valued at market prices.';
+      'What counts is which assets you held, on which days. When and how much money you added does NOT affect the ratio; everything is valued at market prices.';
 
   @override
   String everyoneMeasuredSameBody(int gun) {
@@ -6630,14 +6642,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rdrTerimBuyukHareketTanim =>
-      'A day when money in or out is at least 3% of fund size and at least 4 times the fund\'s usual daily move. Both must hold; funds under ₺250M and money market funds are never flagged.';
+      'A day when far more money than usual flows into or out of the fund. Threshold: at least 3% of fund size and at least 4 times the usual daily move.';
 
   @override
   String get rdrTerimOlcek => 'Scale';
 
   @override
   String get rdrTerimOlcekTanim =>
-      'How big the number is against this asset\'s own history. For funds the last week is compared with the average of previous weeks; for stocks the last day\'s volume with the previous 20 days. For crypto it is how far the buyer share is from 50%: 2 points is active, 5 points very active. If a big move or unusual volume was flagged, the scale is at the top.';
+      'How big the number is against this asset\'s own history. For crypto, a buyer share 2 points from 50% is active, 5 points very active.';
 
   @override
   String get rdrTerimHacim => 'Trading value';
@@ -6665,7 +6677,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rdrTerimAliciPayiTanim =>
-      'How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow. Over several days it is volume weighted: a busier day counts more.';
+      'The share of volume from people buying right away with market orders. Above 50% buyers are more eager, below 50% sellers.';
 
   @override
   String get rdrTerimNetAlim => 'Net buying';
@@ -9411,6 +9423,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String pyzVarlikAciklama(String aralik) {
     return 'Explains what happened to this asset in the selected period ($aralik): its place in your portfolio and how it compares with inflation, the dollar, gold and BIST 100.';
   }
+
+  @override
+  String get pyzYilBasi =>
+      'Year to date isn\'t commented on. Pick 1Y or another period in the selector above.';
 
   @override
   String get pyzGunIci =>

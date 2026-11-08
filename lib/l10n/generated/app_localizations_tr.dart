@@ -1328,6 +1328,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get period6M => '6 ay';
 
   @override
+  String get periodYtd => 'YB';
+
+  @override
+  String get periodYtdLong => 'Yıl başından beri';
+
+  @override
   String get period1Y => '1 yıl';
 
   @override
@@ -2057,6 +2063,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get last6MonthsPeriod => 'son 6 ay';
 
   @override
+  String get ytdExtremes => 'Yılın uçları';
+
+  @override
+  String get ytdPeriod => 'yıl başından beri';
+
+  @override
   String get sixMonthExtremes => 'Altı ayın uçları';
 
   @override
@@ -2533,7 +2545,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.';
+      'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.';
 
   @override
   String everyoneMeasuredSameBody(int gun) {
@@ -6554,14 +6566,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rdrTerimBuyukHareketTanim =>
-      'Bir günde giren ya da çıkan paranın hem fon büyüklüğünün en az %3\'ü hem de fonun olağan günlük hareketinin en az 4 katı olması. İkisi birden olmadıkça işaretlenmez; ₺250 mn altındaki fonlarda ve para piyasası fonlarında hiç işaretlenmez.';
+      'Bir günde fona olağanın çok üstünde para girmesi ya da çıkması. Eşik: fon büyüklüğünün en az %3\'ü ve olağan günlük hareketin en az 4 katı.';
 
   @override
   String get rdrTerimOlcek => 'Ölçek';
 
   @override
   String get rdrTerimOlcekTanim =>
-      'Sayının bu varlığın kendi geçmişine göre büyüklüğü. Fonda son hafta önceki haftaların ortalamasıyla, hissede son günün hacmi önceki 20 günün ortalamasıyla kıyaslanır. Kriptoda alıcı payının %50\'den uzaklığına bakılır: 2 puan hareketli, 5 puan çok hareketli. O gün büyük hareket ya da olağandışı hacim işaretlendiyse ölçek en üsttedir.';
+      'Sayının bu varlığın kendi geçmişine göre ne kadar büyük olduğu. Kriptoda alıcı payı %50\'den 2 puan uzaksa hareketli, 5 puan uzaksa çok hareketli.';
 
   @override
   String get rdrTerimHacim => 'Para hacmi';
@@ -6589,7 +6601,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rdrTerimAliciPayiTanim =>
-      'İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir. Birden çok günde hacim ağırlıklıdır: işlemi çok olan gün daha çok sayılır.';
+      'İşlem hacminin piyasa emriyle hemen alanlardan gelen payı. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir.';
 
   @override
   String get rdrTerimNetAlim => 'Net alım';
@@ -9309,6 +9321,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String pyzVarlikAciklama(String aralik) {
     return 'Seçili dönemde ($aralik) bu varlıkta ne olduğunu; portföyündeki yeri, enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak anlatır.';
   }
+
+  @override
+  String get pyzYilBasi =>
+      'Yıl başından beri dönem yorumlanmaz. Yukarıdaki seçiciden 1 yıl ya da başka bir dönem seç.';
 
   @override
   String get pyzGunIci =>

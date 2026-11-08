@@ -250,8 +250,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// 3A ve tek kaynak (2026-09-28): liste uygulamanın tek dönem kümesinden
   /// ([SummaryPeriod]) türetilir; 3A Karşılaştır'da vardı, burada yoktu.
   /// 3A'nın dönem başı da takvimden (`_donemBaslangici` → `ucAy`).
+  ///
+  /// YB yok ([SummaryPeriod.sembolDonemleri], gerekçe enum'daki "YB"
+  /// notu): pencere gün sayısıyla (`_donemBaslangici(days)`) kuruluyor ve
+  /// soru portföyün sorusu. Ortak dönem YB iken 1Y gösterilir
+  /// (`gosterilebilirDonem`).
   static final List<({String label, int days})> _allPeriods = [
-    for (final p in SummaryPeriod.values) (label: p.label, days: p.days),
+    for (final p in SummaryPeriod.sembolDonemleri) (label: p.label, days: p.days),
   ];
 
   /// Bu varlık için gün içi fiyat verisi ANLAMLI mı?
@@ -274,7 +279,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Ortak dönem (`donem_hafizasi`) ham indeksle değil dönem DEĞERİYLE
   /// eşlenir: GÜNLÜK'süz listede indeksler bir kayıktır.
   List<SummaryPeriod> get _donemler => [
-        for (final p in SummaryPeriod.values)
+        for (final p in SummaryPeriod.sembolDonemleri)
           if (!p.intraday || _gunIciDestekli) p,
       ];
 
@@ -429,7 +434,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// kullanıcının istediği eşitlik (varlık ekranı ↔ Performans › tür filtresi,
   /// 2026-09-23) tanım gereği sağlanamıyordu.
   static DateTime _donemBaslangici(int days, DateTime now) {
-    for (final p in SummaryPeriod.values) {
+    for (final p in SummaryPeriod.sembolDonemleri) {
       if (!p.intraday && p.days == days) {
         return PeriodSummaryService.pencere(p, now).start;
       }

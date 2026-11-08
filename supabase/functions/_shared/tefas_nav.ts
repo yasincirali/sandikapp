@@ -11,8 +11,34 @@
 // anı kaydedersek gerçek bir yayın damgası üretmiş oluruz — cron sıklığı
 // kadar (30 dk) belirsiz, ama uydurma değil. Bkz. 0063_tefas_nav_gozlem.sql.
 
+import { bistTatilMi } from './piyasa_takvimi.ts';
+
 /// Bir TEFAS satırından süzülmüş NAV.
 export type NavSatiri = { tarih: string; fiyat: number };
+
+/// Tam gün BIST tatilinde turun yanıtı; tatil değilse `null` (tur koşar).
+///
+/// ## Neden (müşteri raporu 2026-11-08 #6)
+/// Tatilde TEFAS fiyat yayınlamaz, tur her yarım saatte bütün fon
+/// listesini boşuna sorardı (eskiden "kabul edilen bedel"): yılda ~14 gün
+/// × 32 tur × fon kodu kadar istek, Free plan Edge Function kotası.
+/// Takvim tek kaynaktan (`bist_tatil.ts` → `bistTatilMi`, istemciyle
+/// parite testli); listede olmayan gün açık sayılır, tahmini tatil yok.
+/// Arife (yarım gün) tam gün DEĞİL: o gün fiyat yayınlanır, tur koşar.
+///
+/// Yanıt başarılı turun alanlarıyla aynı (`ok`, `checked`, `asked`,
+/// `sightings`); `skipped` sayı yerine `'tatil'` der ki günlükte neden
+/// koşmadığı görünsün. Yanıtı okuyan istemci yok (pg_net cron).
+export function tatilAtlamaYaniti(now: Date): {
+  ok: true;
+  checked: 0;
+  asked: 0;
+  sightings: 0;
+  skipped: 'tatil';
+} | null {
+  if (!bistTatilMi(now)) return null;
+  return { ok: true, checked: 0, asked: 0, sightings: 0, skipped: 'tatil' };
+}
 
 /// Bir turda TEFAS'a sorulacak en fazla kod. Yayın öncesi turlarda her kod
 /// bir istek demek; 150 × 4'lü paralel ≈ 40 sn, edge function sınırının

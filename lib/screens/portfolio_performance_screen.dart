@@ -581,11 +581,21 @@ class _PortfolioPerformanceScreenState
   /// 2026-09-28): 3A ve 5Y eklendi, çünkü diğer ekranlarda vardı ve
   /// seçiciler birebir aynı olmalı. Özet sekmesi aynı indeksi paylaştığı
   /// için iki dizi zaten aynı kaynaktan gelmek zorunda.
-  static final List<({String label, int days, int? ayGeri, bool intraday})>
-      _periods = [
-    for (final p in SummaryPeriod.values)
-      (label: p.label, days: p.days, ayGeri: p.ayGeri, intraday: p.intraday),
-  ];
+  ///
+  /// Enum sırasında (indeks = `_selectedPeriodIdx`); şeridin görüntü
+  /// sırası ayrı (`SummaryPeriod.performansSirasi`). Sabit liste değil
+  /// erişimci: YB'nin günü takvimle büyür (`SummaryPeriod.days`), uygulama
+  /// günlerce açık kalsa da çizgi kalınlığı ve Zirve eşlemesi bugünü okur.
+  static List<({String label, int days, int? ayGeri, bool intraday})>
+      get _periods => [
+            for (final p in SummaryPeriod.values)
+              (
+                label: p.label,
+                days: p.days,
+                ayGeri: p.ayGeri,
+                intraday: p.intraday,
+              ),
+          ];
 
   // ── Logic ──────────────────────────────────────────────────────────────────
 
@@ -670,9 +680,13 @@ class _PortfolioPerformanceScreenState
     //
     // Gün başına çekmek ekseni kovalarla hizalıyor; tüm dönemler aynı
     // davranıyor.
+    // YB: 1 Ocak (`PeriodSummaryService.pencere` ile aynı gün; Özet ve
+    // grafik aynı pencereyi okur).
     final hamBaslangic = isIntraday
         ? dayKey(endDate)
-        : (donem.ayGeri != null
+        : SummaryPeriod.fromIndex(_selectedPeriodIdx).yilBasindan
+            ? yilBasiGunu(endDate)
+            : (donem.ayGeri != null
             ? PortfolioPerformanceScreen.donemBaslangici(endDate, donem.ayGeri!)
             : endDate.subtract(Duration(days: donem.days)));
     final startDate = isIntraday

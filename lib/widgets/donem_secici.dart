@@ -51,8 +51,9 @@ class DonemSecici extends StatelessWidget {
     this.sonEk,
   });
 
-  /// Gösterilecek dönemler — [SummaryPeriod.values] ya da (elle fiyatlanan
-  /// varlıkta GÜNLÜK'süz) bir alt kümesi. Başka liste yazılmaz.
+  /// Gösterilecek dönemler — Performans'ta [SummaryPeriod.performansSirasi],
+  /// sembol yüzeylerinde [SummaryPeriod.sembolDonemleri] ya da (elle
+  /// fiyatlanan varlıkta GÜNLÜK'süz) onun alt kümesi. Başka liste yazılmaz.
   final List<SummaryPeriod> donemler;
 
   /// [donemler] içindeki seçili indeks.
@@ -110,6 +111,11 @@ class DonemSecici extends StatelessWidget {
       for (final d in donemler) donemEtiketi(l, d.label),
       if (sonEk != null) sonEk!,
     ];
+    // Ekran okuyucu kısaltmayı değil adı okur ("YB" → "Yıl başından beri").
+    final adlar = [
+      for (final d in donemler) donemSemantigi(l, d.label),
+      if (sonEk != null) sonEk!,
+    ];
 
     // Kabuk, kayan zemin, dokunma, geçiş: ortak [SandikSegment]
     // (2026-10-01). Burada yalnız dönem içeriği ve getiri satırı kalır.
@@ -126,9 +132,9 @@ class DonemSecici extends StatelessWidget {
       semantik: (i) {
         final g = getiri == null || i >= getiri.length ? null : getiri[i];
         if (g != null && eksikMi(i)) {
-          return '${etiketler[i]}, ${l.periodNotEnoughData}';
+          return '${adlar[i]}, ${l.periodNotEnoughData}';
         }
-        return g == null ? etiketler[i] : '${etiketler[i]}, ${fmtPctIsaretli(g)}';
+        return g == null ? adlar[i] : '${adlar[i]}, ${fmtPctIsaretli(g)}';
       },
       // Tek FittedBox bütün sütunu küçültür: yedi segmentte dar genişlik ve
       // büyük metin ölçeğinde (x2, x3) iki satır kabuğa sığmayabilir;

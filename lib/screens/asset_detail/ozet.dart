@@ -510,8 +510,9 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// 2026-09-28). GÜNLÜK elle fiyatlanan varlıkta yine YOK
   /// (`_gunIciDestekli`) — orada gösterilecek bir gün içi seri yok.
   Widget _donemCipleri(double canliBirim) {
+    // YB yok: `_donemler` ile aynı küme (gerekçe enum'daki "YB" notu).
     final donemler = [
-      for (final p in SummaryPeriod.values)
+      for (final p in SummaryPeriod.sembolDonemleri)
         if (!p.intraday || _gunIciDestekli) p,
     ];
     return DonemSecici(

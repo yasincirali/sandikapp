@@ -146,8 +146,12 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// Gün değeri `sembolGunu`: GÜNLÜK `getSymbolHistory`'de `1d` aralığıdır.
   /// TÜFE aylık basamaktır; GÜNLÜK'te iki noktası olmaz ve satır "veri yok"
   /// der — uydurma düz çizgi çizilmez.
+  ///
+  /// YB yok ([SummaryPeriod.sembolDonemleri], gerekçe enum'daki "YB"
+  /// notu); ortak dönem YB iken 1Y çizilir ([SummaryPeriod.sembolKarsiligi]).
   static final _periods = <({String label, int days})>[
-    for (final p in SummaryPeriod.values) (label: p.label, days: p.sembolGunu),
+    for (final p in SummaryPeriod.sembolDonemleri)
+      (label: p.label, days: p.sembolGunu),
   ];
 
   /// Seri renkleri — marka paletinden, birbirinden ayırt edilebilir sırada.
@@ -181,8 +185,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     super.initState();
     final donem = widget.baslangicDonemi;
     if (donem != null) {
-      _periodIdx = donem.index;
-      _cizilenDonemIdx = donem.index;
+      _periodIdx = donem.sembolKarsiligi.index;
+      _cizilenDonemIdx = _periodIdx;
       // Tek dönem hafızası: açılışta istenen dönem ortak döneme de yazılır —
       // kullanıcı bu pencereye bakarken öteki yüzeyler de aynısını açar.
       // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
@@ -192,7 +196,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     } else {
       // Ortak dönem eski 3A varsayılanının yerine geçer (bayrak
       // `donem_hafizasi` 2026-10-20'de emekliye ayrıldı).
-      _periodIdx = ref.read(seciliDonemProvider).index;
+      _periodIdx = ref.read(seciliDonemProvider).sembolKarsiligi.index;
       _cizilenDonemIdx = _periodIdx;
     }
     // Varlık ekranından gelen satır İLK karede seçili olsun: kare sonrasına
@@ -370,7 +374,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   void _donemSec(int idx) {
     CrashReporter.arkaPlan(_changePeriod(idx),
         reason: 'comparison_screen._donemSec');
-    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[idx];
+    ref.read(seciliDonemProvider.notifier).state =
+        SummaryPeriod.sembolDonemleri[idx];
   }
 
   Future<void> _changePeriod(int idx) async {
@@ -417,8 +422,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     // Tek dönem hafızası: ortak dönem başka yüzeyde (bu ekranın üstünde
     // açılan varlık sayfası gibi) değişirse bu ekran da o döneme geçer.
     ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
-      if (yeni.index != _periodIdx) {
-        CrashReporter.arkaPlan(_changePeriod(yeni.index),
+      final idx = yeni.sembolKarsiligi.index;
+      if (idx != _periodIdx) {
+        CrashReporter.arkaPlan(_changePeriod(idx),
             reason: 'comparison_screen.ortakDonem');
       }
     });
@@ -524,7 +530,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       padding: const EdgeInsets.fromLTRB(
           SandikSpace.md, SandikSpace.sm, SandikSpace.md, 0),
       child: DonemSecici(
-        donemler: SummaryPeriod.values,
+        donemler: SummaryPeriod.sembolDonemleri,
         secili: _periodIdx,
         onSec: _donemSec,
       ),

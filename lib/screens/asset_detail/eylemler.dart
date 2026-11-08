@@ -162,7 +162,8 @@ extension _DetayEylemler on _AssetDetailScreenState {
     final varlik = _canli.asset;
     if (!ComparisonScreen.varligiAcabilir(varlik)) return false;
     final gun = _periods[_selectedPeriodIdx].days;
-    final donem = SummaryPeriod.values.where((p) => p.days == gun).firstOrNull;
+    final donem =
+        SummaryPeriod.sembolDonemleri.where((p) => p.days == gun).firstOrNull;
     pushGuarded(
       context,
       adaptiveRoute<void>(

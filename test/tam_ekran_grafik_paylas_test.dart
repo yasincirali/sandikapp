@@ -118,6 +118,39 @@ void main() {
       expect(gorunurDonemKimligi(0, g(400)), '1Y');
       expect(gorunurDonemKimligi(0, g(3000)), '5Y');
     });
+
+    test('YB takvimle tanınır: yılın ilk haftasından bugüne', () {
+      int t(int y, int a, int g) => DateTime(y, a, g).millisecondsSinceEpoch;
+      final bugun = DateTime(2026, 11, 8, 12);
+      // 1 Ocak tatil; ilk mum 2 Ocak'ta olabilir.
+      expect(gorunurDonemKimligi(t(2026, 1, 2), t(2026, 11, 7), bugun: bugun),
+          'YB');
+      expect(gorunurDonemKimligi(t(2026, 1, 1), t(2026, 11, 8), bugun: bugun),
+          'YB');
+      // Geçen yıldan başlayan pencere 1Y'dir.
+      expect(
+          gorunurDonemKimligi(t(2025, 11, 8), t(2026, 11, 8), bugun: bugun),
+          '1Y');
+      // Bugüne uzanmayan pencere (Ocak–Mart) uzunluk kuralına düşer.
+      expect(gorunurDonemKimligi(t(2026, 1, 2), t(2026, 3, 31), bugun: bugun),
+          '3A');
+      // Ocak'ın ilk günlerinde kısa pencere 1H kalır (en az iki hafta).
+      final ocak = DateTime(2027, 1, 8, 12);
+      expect(gorunurDonemKimligi(t(2027, 1, 1), t(2027, 1, 8), bugun: ocak),
+          '1H');
+      // `bugun` verilmezse eski uzunluk kuralı.
+      expect(gorunurDonemKimligi(t(2026, 1, 2), t(2026, 11, 7)), '1Y');
+      expect(
+          gorunurDonemEtiketi(AppLocalizationsTr(), t(2026, 1, 2),
+              t(2026, 11, 7),
+              bugun: bugun),
+          'YB');
+      expect(
+          gorunurDonemEtiketi(AppLocalizationsEn(), t(2026, 1, 2),
+              t(2026, 11, 7),
+              bugun: bugun),
+          'YTD');
+    });
   });
 
   // Uçtan uca test 2026-10-29: metin günlük mumlarda "3 ay" diyordu

@@ -601,30 +601,35 @@ void main() {
   // ══════════════════════════════════════════════════════════════════════
   group('dönem dizisi grafik sekmesiyle hizalı', () {
     test('sıra ve etiketler _periods ile birebir', () {
+      // YB (2026-11-08) SONA eklendi: 0–6'nın anlamı kaymaz.
       expect(
         SummaryPeriod.values.map((e) => e.label).toList(),
-        ['GÜNLÜK', '1H', '1A', '3A', '6A', '1Y', '5Y'],
+        ['GÜNLÜK', '1H', '1A', '3A', '6A', '1Y', '5Y', 'YB'],
         reason: 'iki sekme tek _selectedPeriodIdx paylaşıyor — sıra kayarsa '
             'Grafik\'te 6A seçen kullanıcı Özet\'te başka pencere görür',
       );
-      expect(SummaryPeriod.values.map((e) => e.days).toList(),
+      // YB'nin günü takvimle değişir (ayrı test: yil_basi_donemi_test).
+      expect(SummaryPeriod.values.take(7).map((e) => e.days).toList(),
           [0, 7, 30, 90, 180, 365, 1825]);
       // Eski kilit "3A EKLENMEYECEK"ti: yalnızca Grafik'e eklenirse indeks
       // kayardı. 2026-09-28 kullanıcı kararı ("seçimler aynı olmalı, data
       // kaybı olmasın") tüm ekranlara birleşim kümesini getirdi; Grafik
       // `_periods`'u artık bu enum'dan TÜRETİLDİĞİ için kayma imkânsız.
-      expect(SummaryPeriod.values.length, 7);
+      expect(SummaryPeriod.values.length, 8);
     });
 
     test('takvim dönemleri ayGeri taşır, 1H ve GÜNLÜK taşımaz', () {
       expect(SummaryPeriod.values.map((e) => e.ayGeri).toList(),
-          [null, null, 1, 3, 6, 12, 60]);
+          [null, null, 1, 3, 6, 12, 60, null]);
+      expect(SummaryPeriod.values.where((e) => e.yilBasindan).toList(),
+          [SummaryPeriod.yilBasi]);
     });
 
     test('fromIndex sınır dışını kırpar', () {
       expect(SummaryPeriod.fromIndex(0), SummaryPeriod.gunluk);
       expect(SummaryPeriod.fromIndex(5), SummaryPeriod.birYil);
-      expect(SummaryPeriod.fromIndex(99), SummaryPeriod.besYil);
+      expect(SummaryPeriod.fromIndex(6), SummaryPeriod.besYil);
+      expect(SummaryPeriod.fromIndex(99), SummaryPeriod.yilBasi);
       expect(SummaryPeriod.fromIndex(-1), SummaryPeriod.gunluk);
     });
 

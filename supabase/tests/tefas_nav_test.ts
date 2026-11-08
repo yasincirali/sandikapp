@@ -167,3 +167,53 @@ Deno.test('fonGunlukDegisimi: mükerrer gün tek sayılır; Türk biçimi ve vir
   ], '2026-10-16');
   assertEquals(Math.round(pct! * 10) / 10, 10);
 });
+
+// ── tatilAtlamaYaniti (müşteri raporu 2026-11-08 #6) ─────────────────────────
+// Tam gün BIST tatilinde tur TEFAS'a sormaz; arife ve olağan gün koşar.
+// Gün Istanbul takvimiyle: 28 Ekim 21:30Z = 29 Ekim 00:30 TR.
+
+import { tatilAtlamaYaniti } from '../functions/_shared/tefas_nav.ts';
+
+Deno.test('tam gün tatil: başarılı turun alanlarıyla, skipped "tatil"', () => {
+  // 29 Ekim 2026 Cumhuriyet Bayramı, 10:00 TR.
+  assertEquals(tatilAtlamaYaniti(new Date('2026-10-29T07:00:00Z')), {
+    ok: true,
+    checked: 0,
+    asked: 0,
+    sightings: 0,
+    skipped: 'tatil',
+  });
+  // Ramazan Bayramı 2. günü (dinî tam gün), 1 Ocak (sabit).
+  assertEquals(tatilAtlamaYaniti(new Date('2026-03-21T09:00:00Z'))?.skipped, 'tatil');
+  assertEquals(tatilAtlamaYaniti(new Date('2026-01-01T06:00:00Z'))?.skipped, 'tatil');
+});
+
+Deno.test('arife (yarım gün) ve olağan iş günü koşar', () => {
+  // 28 Ekim 2026 arife, 10:00 TR: fiyat yayınlanır.
+  assertEquals(tatilAtlamaYaniti(new Date('2026-10-28T07:00:00Z')), null);
+  // Kurban Bayramı arifesi 26 Mayıs 2026.
+  assertEquals(tatilAtlamaYaniti(new Date('2026-05-26T07:00:00Z')), null);
+  // Sıradan çarşamba.
+  assertEquals(tatilAtlamaYaniti(new Date('2026-11-04T07:00:00Z')), null);
+});
+
+Deno.test('tatil günü Istanbul gününe göre: gece yarısı sınırı', () => {
+  // 28 Ekim 20:59Z = 23:59 TR (arife) → koşar; 21:30Z = 29 Ekim 00:30 TR → atlanır.
+  assertEquals(tatilAtlamaYaniti(new Date('2026-10-28T20:59:00Z')), null);
+  assertEquals(tatilAtlamaYaniti(new Date('2026-10-28T21:30:00Z'))?.skipped, 'tatil');
+  // 29 Ekim 21:30Z = 30 Ekim 00:30 TR → iş günü.
+  assertEquals(tatilAtlamaYaniti(new Date('2026-10-29T21:30:00Z')), null);
+});
+
+Deno.test('observe-tefas-nav: tatil kapısı yetki kapısından SONRA', async () => {
+  const src = await Deno.readTextFile(
+    new URL('../functions/observe-tefas-nav/index.ts', import.meta.url),
+  );
+  const zorunlu = src.indexOf('cronSecretZorunlu(');
+  const yetki = src.indexOf('cronYetkisiVarMi(');
+  const tatil = src.indexOf('tatilAtlamaYaniti(');
+  const tefas = src.indexOf("from('assets')");
+  assertEquals(zorunlu >= 0 && zorunlu < yetki, true, 'fail-closed sıra');
+  assertEquals(yetki < tatil, true, 'tatil kapısı yetkiden sonra');
+  assertEquals(tatil < tefas, true, 'tatilde veritabanı/TEFAS işi başlamaz');
+});

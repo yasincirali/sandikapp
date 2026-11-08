@@ -399,6 +399,13 @@ class PeriodSummaryView extends StatelessWidget {
         reelYaDaTufe(context.l10n.last3MonthsPeriod);
         varlikKarti(context.l10n.threeMonthExtremes);
 
+      // YB (2026-11-08): 3A gibi yalnız her dönemde anlamlı parçalar.
+      // XIRR, karakter ve sabır kartları 1Y'nin hesap sözleşmesine bağlı;
+      // Ocak'ta birkaç günlük pencereye yıllık oran yazdırmak yanıltırdı.
+      case SummaryPeriod.yilBasi:
+        reelYaDaTufe(context.l10n.ytdPeriod);
+        varlikKarti(context.l10n.ytdExtremes);
+
       case SummaryPeriod.besYil:
         reelYaDaTufe(context.l10n.last5YearsPeriod);
         if (!anaRakamGizli && summary.sparkline.length >= 2) {

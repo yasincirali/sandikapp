@@ -169,19 +169,19 @@ class _PeriodToggle extends ConsumerWidget {
       // değiştirmez, yalnız takip satırlarının yüzdesini eklenme günü
       // kapanışına bağlar (gerekçe `watchlistEklenmedenBeriProvider`).
       child: DonemSecici(
-        donemler: SummaryPeriod.values,
+        donemler: SummaryPeriod.sembolDonemleri,
         sonEk: context.l10n.watchlistPeriodSinceAdded,
         secili: ref.watch(watchlistEklenmedenBeriProvider)
-            ? SummaryPeriod.values.length
+            ? SummaryPeriod.sembolDonemleri.length
             : ref.watch(watchlistPeriodProvider),
         // Ortak dönem yazılır; `watchlistPeriodProvider` ondan türediği
         // için kendiliğinden izler.
         onSec: (i) {
-          final beri = i >= SummaryPeriod.values.length;
+          final beri = i >= SummaryPeriod.sembolDonemleri.length;
           ref.read(watchlistEklenmedenBeriProvider.notifier).state = beri;
           if (!beri) {
             ref.read(seciliDonemProvider.notifier).state =
-                SummaryPeriod.values[i];
+                SummaryPeriod.sembolDonemleri[i];
           }
         },
       ),

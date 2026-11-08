@@ -2348,6 +2348,18 @@ abstract class AppLocalizations {
   /// **'6 ay'**
   String get period6M;
 
+  /// No description provided for @periodYtd.
+  ///
+  /// In tr, this message translates to:
+  /// **'YB'**
+  String get periodYtd;
+
+  /// No description provided for @periodYtdLong.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl başından beri'**
+  String get periodYtdLong;
+
   /// No description provided for @period1Y.
   ///
   /// In tr, this message translates to:
@@ -3614,6 +3626,18 @@ abstract class AppLocalizations {
   /// **'son 6 ay'**
   String get last6MonthsPeriod;
 
+  /// No description provided for @ytdExtremes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılın uçları'**
+  String get ytdExtremes;
+
+  /// No description provided for @ytdPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'yıl başından beri'**
+  String get ytdPeriod;
+
   /// No description provided for @sixMonthExtremes.
   ///
   /// In tr, this message translates to:
@@ -4403,7 +4427,7 @@ abstract class AppLocalizations {
   /// No description provided for @depositsDontChangeRankBody.
   ///
   /// In tr, this message translates to:
-  /// **'Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.'**
+  /// **'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.'**
   String get depositsDontChangeRankBody;
 
   /// No description provided for @everyoneMeasuredSameBody.
@@ -10898,7 +10922,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrTerimBuyukHareketTanim.
   ///
   /// In tr, this message translates to:
-  /// **'Bir günde giren ya da çıkan paranın hem fon büyüklüğünün en az %3\'ü hem de fonun olağan günlük hareketinin en az 4 katı olması. İkisi birden olmadıkça işaretlenmez; ₺250 mn altındaki fonlarda ve para piyasası fonlarında hiç işaretlenmez.'**
+  /// **'Bir günde fona olağanın çok üstünde para girmesi ya da çıkması. Eşik: fon büyüklüğünün en az %3\'ü ve olağan günlük hareketin en az 4 katı.'**
   String get rdrTerimBuyukHareketTanim;
 
   /// No description provided for @rdrTerimOlcek.
@@ -10910,7 +10934,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrTerimOlcekTanim.
   ///
   /// In tr, this message translates to:
-  /// **'Sayının bu varlığın kendi geçmişine göre büyüklüğü. Fonda son hafta önceki haftaların ortalamasıyla, hissede son günün hacmi önceki 20 günün ortalamasıyla kıyaslanır. Kriptoda alıcı payının %50\'den uzaklığına bakılır: 2 puan hareketli, 5 puan çok hareketli. O gün büyük hareket ya da olağandışı hacim işaretlendiyse ölçek en üsttedir.'**
+  /// **'Sayının bu varlığın kendi geçmişine göre ne kadar büyük olduğu. Kriptoda alıcı payı %50\'den 2 puan uzaksa hareketli, 5 puan uzaksa çok hareketli.'**
   String get rdrTerimOlcekTanim;
 
   /// No description provided for @rdrTerimHacim.
@@ -10958,7 +10982,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrTerimAliciPayiTanim.
   ///
   /// In tr, this message translates to:
-  /// **'İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir. Birden çok günde hacim ağırlıklıdır: işlemi çok olan gün daha çok sayılır.'**
+  /// **'İşlem hacminin piyasa emriyle hemen alanlardan gelen payı. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir.'**
   String get rdrTerimAliciPayiTanim;
 
   /// No description provided for @rdrTerimNetAlim.
@@ -15382,6 +15406,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Seçili dönemde ({aralik}) bu varlıkta ne olduğunu; portföyündeki yeri, enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak anlatır.'**
   String pyzVarlikAciklama(String aralik);
+
+  /// No description provided for @pyzYilBasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl başından beri dönem yorumlanmaz. Yukarıdaki seçiciden 1 yıl ya da başka bir dönem seç.'**
+  String get pyzYilBasi;
 
   /// Seçili dönem GÜNLÜK iken AI yorum kartı.
   ///
