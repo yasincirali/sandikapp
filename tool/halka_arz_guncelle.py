@@ -24,6 +24,11 @@ Kullanım:
     python tool/halka_arz_guncelle.py            # yazar
     python tool/halka_arz_guncelle.py --dry-run  # yalnız ne değişeceğini söyler
 Çıkış satırı `DEGISIKLIK_VAR` ya da `DEGISIKLIK_YOK` (iş akışı buna bakar).
+Başarılı taramada (en az bir şirket sayfası ayrıştırıldı) kayıtlar aynı kalsa
+da üst `guncelleme` bugüne çekilir → `DEGISIKLIK_VAR`; aynı gün tekrar koşuda
+`DEGISIKLIK_YOK`. Aday yoksa ya da aday var ama hiçbiri ayrıştırılamadıysa
+çıkış kodu 2 (iş akışı kırmızı).
+Test: `python -m unittest tool/halka_arz_guncelle_test.py` (ağsız).
 """
 from __future__ import annotations
 
@@ -37,7 +42,12 @@ from pathlib import Path
 
 KOK = Path(__file__).resolve().parent.parent
 JSON_YOLLARI = [KOK / 'docs/data/halka_arz.json', KOK / 'assets/data/halka_arz.json']
-SEMBOL_DOSYASI = KOK / 'lib/models/asset_categories.dart'
+# Sembol listesi 2026-10-10'da asset_categories.dart'tan bu dosyaya taşındı
+# (borsanın tamamı, alfabetik). Betik eski yolu gösterdiği için ilk gerçek
+# değişiklikte "halka arz bloğu bulunamadı" ile düşecekti; besleme o tarihten
+# beri hep DEGISIKLIK_YOK verdiğinden fark edilmedi (2026-11-08).
+SEMBOL_DOSYASI = KOK / 'lib/models/bist_hisseleri.dart'
+HARITA_BASI = 'const bist100StocksMap = <String, String>{\n'
 ANA_SAYFA = 'https://halkarz.com/'
 ADAY_SAYISI = 12
 UA = 'Mozilla/5.0 (compatible; sandik-halka-arz/1.0; +https://yasincirali.github.io/sandikapp/)'
@@ -195,28 +205,46 @@ def kisa_ad(sirket: str) -> str:
     return ad.replace('Gayrimenkul Yatırım Ortaklığı', 'GYO')
 
 
+def sembol_satiri(kod: str, ad: str) -> str:
+    """`dart format` biçimi: 80 sütunu aşan girdi değeri alt satıra iner."""
+    ad = ad.replace("'", "\\'")
+    tek = f"  '{kod}.IS': '{ad}',\n"
+    if len(tek) - 1 <= 80:
+        return tek
+    return f"  '{kod}.IS':\n      '{ad}',\n"
+
+
 def sembol_ekle(kodlar_adlar: list[tuple[str, str]], kuru: bool) -> list[str]:
     kaynak = SEMBOL_DOSYASI.read_text(encoding='utf-8')
     eklenen = []
-    satirlar = []
+    bas = kaynak.find(HARITA_BASI)
+    assert bas >= 0 and kaynak.count(HARITA_BASI) == 1, \
+        'bist_hisseleri.dart: bist100StocksMap bulunamadı'
+    govde_bas = bas + len(HARITA_BASI)
+    govde_son = kaynak.index('\n};', govde_bas) + 1
+    govde = kaynak[govde_bas:govde_son]
     for kod, ad in kodlar_adlar:
-        if f"'{kod}.IS'" in kaynak:
+        if f"'{kod}.IS'" in kaynak or kod in eklenen:
             continue
-        satirlar.append(f"  '{kod}.IS': '{kisa_ad(ad)}',\n")
+        # Liste alfabetik (dosya başındaki karar): yeni kod, anahtarı kendisinden
+        # büyük ilk girdinin önüne girer.
+        anahtar = f'{kod}.IS'
+        yer = len(govde)
+        for m in re.finditer(r"^  '([A-Z0-9]+\.IS)':", govde, flags=re.M):
+            if m.group(1) > anahtar:
+                yer = m.start()
+                break
+        govde = govde[:yer] + sembol_satiri(kod, kisa_ad(ad)) + govde[yer:]
         eklenen.append(kod)
-    if satirlar and not kuru:
-        # 2026 halka arz bloğunun başına (en yeni üstte) — blok yorumunun
-        # son satırından hemen sonra.
-        cipa = '  // test/halka_arz_veri_test.dart kilitler.\n'
-        assert kaynak.count(cipa) == 1, 'asset_categories.dart halka arz bloğu bulunamadı'
-        kaynak = kaynak.replace(cipa, cipa + ''.join(satirlar))
-        SEMBOL_DOSYASI.write_text(kaynak, encoding='utf-8')
+    if eklenen and not kuru:
+        kaynak = kaynak[:govde_bas] + govde + kaynak[govde_son:]
+        SEMBOL_DOSYASI.write_text(kaynak, encoding='utf-8', newline='\n')
     return eklenen
 
 
-def main() -> int:
-    kuru = '--dry-run' in sys.argv
-    bugun = dt.date.today().isoformat()
+def main(argv: list[str] | None = None, bugun: str | None = None) -> int:
+    kuru = '--dry-run' in (sys.argv[1:] if argv is None else argv)
+    bugun = bugun or dt.date.today().isoformat()
     ham = JSON_YOLLARI[0].read_text(encoding='utf-8').replace('\r\n', '\n')
     veri = json.loads(ham)
     mevcut = {k['kod']: k for k in veri['kayitlar']}
@@ -229,13 +257,17 @@ def main() -> int:
 
     yeniler: list[dict] = []
     guncellenen: list[str] = []
+    ayristirilan = 0
     for url in adaylar:
         try:
             k = kayit_kur(url, duz_metin(getir(url)), bugun)
         except Exception as e:  # tek sayfa hatası tüm koşuyu düşürmez
             print(f'uyarı: {url} okunamadı: {e}', file=sys.stderr)
             continue
-        if k is None or not tutarli_mi(k):
+        if k is None:
+            continue
+        ayristirilan += 1
+        if not tutarli_mi(k):
             continue
         eski = mevcut.get(k['kod'])
         if eski is None:
@@ -258,18 +290,49 @@ def main() -> int:
             eski['guncelleme'] = bugun
             guncellenen.append(k['kod'])
 
-    if not yeniler and not guncellenen:
+    # İş akışı günlüğünde teşhis satırı: "aday var, kayıt yok" ile "kayıt var,
+    # değişiklik yok" artık ayırt edilir (2026-11-08 öncesi ikisi de yalnız
+    # DEGISIKLIK_YOK yazıyordu).
+    print(f'aday: {len(adaylar)} · ayrıştırılan: {ayristirilan}')
+
+    # Aday sayfa var ama hiçbirinden kayıt çıkmadı → ayrıştırıcı bugünkü sayfa
+    # yapısını okuyamıyor. 2 ile çık ki iş akışı kırmızı dönsün (e-posta
+    # gider). Neden (Ar-Ge 2026-11-08): eski kod burada DEGISIKLIK_YOK yazıp
+    # 0 dönüyordu; besleme 2026-09-29'dan beri tazelenmedi, iş akışı her gün
+    # yeşildi ve `halkaArzBayatMi` (21 gün) Profil girişini sessizce gizledi.
+    # ADAY_SAYISI son 12 arzı aldığı için en az biri kodu açıklanmış arzdır;
+    # hepsi taslak çıkarsa da sayfa yapısından şüphelenmek doğru.
+    if ayristirilan == 0:
+        print('HATA: aday sayfalar var ama hiçbirinden kayıt ayrıştırılamadı: '
+              'şirket sayfası yapısı değişmiş olabilir.', file=sys.stderr)
+        return 2
+
+    # Tarama başarılı (en az bir sayfa okundu): üst `guncelleme` "kaynak bu gün
+    # kontrol edildi" demektir, kayıt listesi aynı kalsa da bugüne çekilir.
+    # Yoksa yeni arz olmayan haftalarda tarih eskir, `halkaArzBayatMi` çalışan
+    # bir beslemeyi ölü sanıp ekranı gizler (yasin raporu 2026-11-08 madde 1).
+    # Aynı gün ikinci koşu dosyaya dokunmaz → DEGISIKLIK_YOK, boş PR yok.
+    yalniz_tarih = not yeniler and not guncellenen
+    if yalniz_tarih and veri.get('guncelleme') == bugun:
         print('DEGISIKLIK_YOK')
         return 0
 
     yeniler.sort(key=lambda k: k['talep_baslangic'] or '', reverse=True)
     veri['kayitlar'] = yeniler + veri['kayitlar']
     veri['guncelleme'] = bugun
+    # Tarih-yalnız koşuda da çalışır: `halka_arz_veri_test` "derleme tarihine
+    # kadar işlem görmeye başlayan kod sembol listesinde" kuralını üst
+    # `guncelleme`ye göre ölçer; tarih ilerleyince yeni kod listeye girmeli.
     islemde = [(k['kod'], k['sirket']) for k in veri['kayitlar'] if k['islem_baslangic']]
     eklenen_sembol = sembol_ekle(islemde, kuru)
 
-    print(f"yeni: {[k['kod'] for k in yeniler]} · güncellenen: {guncellenen} · "
-          f"sembol eklenen: {eklenen_sembol}")
+    # `yeni:` öneki iş akışının PR başlığı/commit özeti için grep'lediği satır.
+    if yalniz_tarih and not eklenen_sembol:
+        print(f'yeni: yok · kaynak kontrol edildi, tarih {bugun} '
+              f'({ayristirilan} sayfa okundu)')
+    else:
+        print(f"yeni: {[k['kod'] for k in yeniler]} · güncellenen: {guncellenen} · "
+              f"sembol eklenen: {eklenen_sembol}")
     if not kuru:
         cikti = json.dumps(veri, ensure_ascii=False, indent=2) + '\n'
         for yol in JSON_YOLLARI:

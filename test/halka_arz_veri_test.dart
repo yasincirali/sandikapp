@@ -139,7 +139,7 @@ void main() {
       if (HalkaArz.isoGun(islem as String)!.isAfter(derleme)) continue;
       final sembol = '${k['kod']}.IS';
       expect(bist100StocksMap[sembol], isNotNull,
-          reason: '$sembol bist100StocksMap\'te yok — asset_categories.dart');
+          reason: '$sembol bist100StocksMap\'te yok — bist_hisseleri.dart');
     }
   });
 }
