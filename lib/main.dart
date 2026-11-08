@@ -1857,9 +1857,6 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // sınırı ağ trafiğini zaten kısıtlar.
       CrashReporter.arkaPlan(RemoteConfigService.instance.refresh(),
           reason: 'main.RemoteConfigService.refresh');
-      // Paywall ayarı sunucuda (0172): acil kapatma ya da hediye kesimi
-      // değiştiyse açık uygulama öne dönüşte görsün, soğuk açılışı beklemesin.
-      ref.invalidate(premiumSunucuAyariProvider);
       // Siri eylemi uygulama arkadayken bırakılmış olabilir (kanal
       // `geldi` haberini kaçırmış olabilir); öne dönüşte sorulur.
       CrashReporter.arkaPlan(SistemEylemleri.cek(),
@@ -1871,6 +1868,14 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       final bg = _backgroundedAt;
       final bosluk = bg == null ? null : DateTime.now().difference(bg);
       _backgroundedAt = null;
+      // Paywall ayarı sunucuda (0172): acil kapatma ya da kapı değiştiyse
+      // açık uygulama öne dönüşte görsün, soğuk açılışı beklemesin. Yalnız
+      // en az 5 dk arkada kalındıysa (2026-11-08): eskiden her öne dönüş
+      // (bildirim çekmecesi, uygulamalar arası geçiş) bir istekti. Acil
+      // kapatma en geç 5 dk + soğuk açılışta yansır.
+      if (premiumAyariTazelenmeli(bosluk)) {
+        ref.invalidate(premiumSunucuAyariProvider);
+      }
       // **Uzun boşluk oturumu KAPATMAZ (yasin'in hata bildirimi,
       // 2026-10-13):** *"uzun süre bekleyen session kapanıyor ve login
       // ekranına yönlendiriyor"*. Eskiden kilidi kapalı kullanıcı 10 dk

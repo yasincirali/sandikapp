@@ -104,8 +104,51 @@ class PremiumSunucuAyari {
   }
 }
 
-/// Sunucu ayarını oturum başına bir kez okur; hata → varsayılan +
-/// Crashlytics non-fatal (acil kapatma okunamazsa normal kural: kilit).
+/// Öne dönüşte sunucu ayarının yeniden okunması için arka planda geçmesi
+/// gereken en kısa süre (müşteri raporu 2026-11-08 #4).
+///
+/// Eskiden her öne dönüş (bildirim çekmecesi, uygulamalar arası geçiş)
+/// bir Supabase isteğiydi. Acil kapatma (`acil_kapali`) ve kapı en geç bu
+/// süre + soğuk açılışta yansır; soğuk açılış her zaman okur (sağlayıcı
+/// ilk izlendiğinde kurulur, hafızası boştur).
+const premiumAyarTazelemeEsigi = Duration(minutes: 5);
+
+/// Öne dönüşte [premiumSunucuAyariProvider] geçersiz kılınsın mı. Saf;
+/// [bosluk] arkada geçen süre, bilinmiyorsa (arkaya alınma görülmedi)
+/// `null` → tazeleme yok.
+bool premiumAyariTazelenmeli(Duration? bosluk) =>
+    bosluk != null && bosluk >= premiumAyarTazelemeEsigi;
+
+/// Okuma düştüğünde dönülecek ayar: son BAŞARILI okuma, hiç yoksa
+/// [PremiumSunucuAyari.varsayilan]. Saf.
+///
+/// Neden: zayıf bağlantıda öne dönen kullanıcının ayarı bir anlığına
+/// varsayılana düşüyordu (acil kapatma açıkken kilitler bir an geri
+/// geliyordu). Bilinen son değer, "hiç bilmiyorum"dan daha doğru.
+PremiumSunucuAyari premiumAyariHatada(PremiumSunucuAyari? sonBasarili) =>
+    sonBasarili ?? PremiumSunucuAyari.varsayilan;
+
+/// Sunucu ayarının okuyucusu; testte geçersiz kılınır.
+final premiumAyarOkuyucuProvider =
+    Provider<Future<Map<String, dynamic>> Function()>(
+        (_) => SupabaseService.instance.premiumAyarlari);
+
+/// Son başarılı okumanın kutusu — süreç boyunca yaşar ki
+/// [premiumSunucuAyariProvider] geçersiz kılınınca bilgi kaybolmasın.
+/// Ayar kullanıcıya değil uygulamaya ait (`premium_ayar` tek satır),
+/// hesap değişiminde taşınması doğru.
+class PremiumAyarHafizasi {
+  PremiumSunucuAyari? sonBasarili;
+}
+
+final premiumAyarHafizasiProvider =
+    Provider<PremiumAyarHafizasi>((_) => PremiumAyarHafizasi());
+
+/// Sunucu ayarını okur. Hata → son başarılı değer ([premiumAyariHatada]),
+/// hiç okunmadıysa varsayılan; ikisinde de Crashlytics non-fatal (acil
+/// kapatma hiç okunamazsa normal kural: kilit). Öne dönüşte yalnız
+/// [premiumAyarTazelemeEsigi] kadar arkada kalındıysa yeniden okunur
+/// (`main.dart`, [premiumAyariTazelenmeli]).
 /// `hediye_kesim` sunucudan gelir ama uygulama kararda KULLANMAZ (hediye
 /// kaldırıldı, 2026-11-01; bkz. `kilitlerAskidaProvider`). Oturum yokken
 /// varsayılan.
@@ -114,12 +157,15 @@ final premiumSunucuAyariProvider =
   if (!ref.watch(paywallVisibleProvider)) return PremiumSunucuAyari.varsayilan;
   final uid = ref.watch(authProvider).valueOrNull?.id;
   if (uid == null) return PremiumSunucuAyari.varsayilan;
+  final hafiza = ref.read(premiumAyarHafizasiProvider);
   try {
-    return PremiumSunucuAyari.satirdan(
-        await SupabaseService.instance.premiumAyarlari());
+    final ayar = PremiumSunucuAyari.satirdan(
+        await ref.read(premiumAyarOkuyucuProvider)());
+    hafiza.sonBasarili = ayar;
+    return ayar;
   } catch (e, st) {
     CrashReporter.report(e, st, reason: 'premiumSunucuAyariProvider');
-    return PremiumSunucuAyari.varsayilan;
+    return premiumAyariHatada(hafiza.sonBasarili);
   }
 });
 
