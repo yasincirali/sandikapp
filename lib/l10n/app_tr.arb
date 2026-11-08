@@ -947,7 +947,7 @@
   "startTime": "Başlangıç",
   "endTime": "Bitiş",
   "showOnWeekend": "Hafta sonu da göster",
-  "showOnWeekendSubtitle": "Hafta sonu BIST kapalıdır. Portföyün yalnızca hisse ve fondan oluşuyorsa banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir; altın, döviz ya da kripto varsa canlı kalır.",
+  "showOnWeekendSubtitle": "Hafta sonu BIST kapalı. Yalnız hisse ve fon varsa son kapanış görünür; altın, döviz ya da kripto varsa canlı kalır.",
   "showAmounts": "Tutarları göster",
   "showAmountsSubtitle": "Kilit ekranında ve Canlı Etkinlik'te tutarlar görünür. Kilit ekranı herkese açık olduğu için varsayılan kapalı.",
   "lockWidgetHowTo": "Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.",
@@ -4251,7 +4251,7 @@
     }
   },
   "weekTitle": "Haftanın özeti",
-  "weekEmptyNoData": "Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.",
+  "weekEmptyNoData": "Bu hafta gösterecek bir şey yok. Fonlarının para akışı ve hisse ya da kriptolarının hacmi, verisi gelince burada görünür.",
   "weekLink": "Tüm fonlarımın haftası",
   "volTitleUpper": "Hacim radarı",
   "volVsAverage": "Önceki 20 günün ortalamasının {times} katı",
@@ -4468,7 +4468,7 @@
           }
       }
   },
-  "savingReminderSheetBody": "Seçtiğin gün, o ay portföyüne hiç ekleme yapmadıysan tek bir hatırlatma gelir. Ekleme yaptıysan gelmez. Seçtiğin gün o ayda yoksa (ör. Şubat'ta 30) ayın son günü gelir.",
+  "savingReminderSheetBody": "O ay hiç ekleme yapmadıysan seçtiğin gün bir hatırlatma gelir. Gün o ayda yoksa ayın son günü gelir.",
   "savingReminderDay": "Ayın {day}. günü",
   "@savingReminderDay": {
       "placeholders": {
