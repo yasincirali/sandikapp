@@ -17,12 +17,15 @@
 //   · Bugün tarihli NAV'ı görülmüş kod o gün bir daha sorulmaz
 //     (`sorulacakKodlar`). Yayın sonrası turlar ~0 istek.
 //   · Tur başına en çok TUR_KOD_USTU kod, 4'lü paralel, 10 sn zaman aşımı.
-//   · Tatil/hafta içi yayınsız günlerde her tur tam liste — kabul edilen
-//     bedel; cron zaten hafta sonu koşmuyor.
+//   · Tam gün BIST tatilinde tur TEFAS'a hiç sormaz (`tatilAtlamaYaniti`,
+//     2026-11-08); eskiden her tur tam listeyi soruyordu ("kabul edilen
+//     bedel"). Arife yarım günü koşar (fiyat yayınlanır). Kalan bedel:
+//     takvimde olmayan yayınsız günler (ilan edilmemiş tatil) — orada
+//     tur yine tam liste sorar. Cron zaten hafta sonu koşmuyor.
 //
 // ── Yanıt ───────────────────────────────────────────────────────────────────
 // `{ ok, checked, asked, sightings, skipped }` — hata mesajı, token, ham
-// TEFAS yanıtı DÖNMEZ (CLAUDE.md sunucu kuralı).
+// TEFAS yanıtı DÖNMEZ (CLAUDE.md sunucu kuralı). Tatilde `skipped: 'tatil'`.
 //
 // Gövde: `{ "dry_run": true }` → TEFAS'a sorar ama tabloya yazmaz.
 
@@ -34,6 +37,7 @@ import {
   oncekiKontrol,
   sonNavSatiri,
   sorulacakKodlar,
+  tatilAtlamaYaniti,
   trGun,
 } from '../_shared/tefas_nav.ts';
 
@@ -100,6 +104,12 @@ Deno.serve(async (request) => {
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY runtime tarafından sağlanmadı.');
     }
+
+    // Tatil kapısı yetki kapısından SONRA: yetkisiz çağıran tatil günü de
+    // 401/503 alır, fail-closed sıra bozulmaz (cron_fail_closed_test).
+    // Tam gün tatilde TEFAS'a ve veritabanına hiç gidilmez.
+    const tatil = tatilAtlamaYaniti(new Date());
+    if (tatil) return jsonResponse(tatil);
 
     let dryRun = false;
     try {
