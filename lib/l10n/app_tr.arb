@@ -5625,7 +5625,7 @@
   "ttVarliklarUpper": "Varlıklar",
   "ttSatirAlt": "pay başına {pay} · {aylar}",
   "@ttSatirAlt": {"placeholders": {"pay": {"type": "String"}, "aylar": {"type": "String"}}},
-  "ttKural": "Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.",
+  "ttKural": "Yalnız BIST hisseleri. Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.",
   "pwOzRapor": "Yıllık kâr, temettü ve stopaj raporu; portföyünü PDF ya da Excel olarak dışa aktar",
   "pwOzTemettu": "Önümüzdeki 12 ayın temettü tahmini, ay ay",
   "pwOzSinyalTam": "Teknik sinyaller: 8 gösterge, kendi periyotların ve seçtiğin sıklıkta bildirim",

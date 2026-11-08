@@ -4988,7 +4988,7 @@
   "ttVarliklarUpper": "Assets",
   "ttSatirAlt": "{pay} per share · {aylar}",
   "@ttSatirAlt": {"placeholders": {"pay": {"type": "String"}, "aylar": {"type": "String"}}},
-  "ttKural": "Assumes the last 12 months' dividends repeat in the same months at today's holdings. Splits and bonus issues are not taken into account; not investment advice.",
+  "ttKural": "BIST stocks only. Assumes the last 12 months' dividends repeat in the same months at today's holdings. Splits and bonus issues are not taken into account; not investment advice.",
   "pwOzRapor": "Annual gains, dividends and withholding report; export your portfolio as PDF or Excel",
   "pwOzTemettu": "Dividend forecast for the next 12 months, month by month",
   "pwOzSinyalTam": "Technical signals: 8 indicators, your own periods and alerts at the frequency you choose",

@@ -8353,7 +8353,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ttKural =>
-      'Assumes the last 12 months\' dividends repeat in the same months at today\'s holdings. Splits and bonus issues are not taken into account; not investment advice.';
+      'BIST stocks only. Assumes the last 12 months\' dividends repeat in the same months at today\'s holdings. Splits and bonus issues are not taken into account; not investment advice.';
 
   @override
   String get pwOzRapor =>

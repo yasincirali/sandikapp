@@ -8261,7 +8261,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ttKural =>
-      'Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.';
+      'Yalnız BIST hisseleri. Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.';
 
   @override
   String get pwOzRapor =>

@@ -13694,7 +13694,7 @@ abstract class AppLocalizations {
   /// No description provided for @ttKural.
   ///
   /// In tr, this message translates to:
-  /// **'Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.'**
+  /// **'Yalnız BIST hisseleri. Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.'**
   String get ttKural;
 
   /// No description provided for @pwOzRapor.
