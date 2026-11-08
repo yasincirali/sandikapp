@@ -1627,7 +1627,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get showAmountsSubtitle =>
-      'Canlı Etkinlik ve kilit ekranı widget\'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.';
+      'Kilit ekranında ve Canlı Etkinlik\'te tutarlar görünür. Kilit ekranı herkese açık olduğu için varsayılan kapalı.';
 
   @override
   String get lockWidgetHowTo =>
@@ -2309,6 +2309,32 @@ class AppLocalizationsTr extends AppLocalizations {
   String get watchlistRowFollowing => 'takip ediliyor';
 
   @override
+  String get watchlistPeriodSinceAdded => 'Eklediğimden beri';
+
+  @override
+  String watchlistSinceDate(String tarih) {
+    return '$tarih beri';
+  }
+
+  @override
+  String watchlistRowSinceUp(String tarih, String pct) {
+    return '$tarih beri $pct arttı';
+  }
+
+  @override
+  String watchlistRowSinceDown(String tarih, String pct) {
+    return '$tarih beri $pct düştü';
+  }
+
+  @override
+  String watchlistRowSinceFlat(String tarih) {
+    return '$tarih beri değişmedi';
+  }
+
+  @override
+  String get watchlistRowSinceUnknown => 'eklendiği günün kapanışı bulunamadı';
+
+  @override
   String notificationsNewCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2752,7 +2778,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteAssetWarning =>
-      'Bu bir satış değil. Varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.';
+      'Bu satış değil: varlık toplamlardan ve geçmiş grafikten çıkar, hareketleri \"Silinenler\"de kalır. Sattıysan \"Sat\"ı kullan.';
 
   @override
   String alarmAlsoDeleteTitle(int n) {
@@ -2845,7 +2871,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sellAllWarning =>
-      'Tüm miktarı satıyorsun. Pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.';
+      'Tümünü satıyorsun. Pozisyon listeden kalkar, satış ve kâr/zarar kaydı korunur.';
 
   @override
   String get saleValue => 'Satış değeri';

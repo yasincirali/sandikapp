@@ -48,6 +48,7 @@ class DonemSecici extends StatelessWidget {
     required this.onSec,
     this.getiriler,
     this.eksik,
+    this.sonEk,
   });
 
   /// Gösterilecek dönemler — [SummaryPeriod.values] ya da (elle fiyatlanan
@@ -67,6 +68,14 @@ class DonemSecici extends StatelessWidget {
   /// (`DonemIstatistigi.kapsamEksik`); yüzde yerine "—" yazılır. Yüzde
   /// başka bir dönemin getirisi olurdu (8 aylık fonda "5Y").
   final List<bool>? eksik;
+
+  /// Dönem DIŞI son seçenek (takip listesinin "Eklediğimden beri",
+  /// 2026-11-08); verilirse [donemler]'in ardına tek segment eklenir ve
+  /// indeksi `donemler.length`'tır. Gün sayılı bir pencere olmadığı için
+  /// [donemler]'e girmez ("başka liste yazılmaz" kuralı korunur); ayrı bir
+  /// çip yerine aynı kabukta durur ki "hangi aralığa bakıyorum" sorusu tek
+  /// yerde yanıtlansın. [getiriler] ile birlikte verilmez.
+  final String? sonEk;
 
   /// Kabuğun tek satırlı yüksekliği (Performans'ın 2026-09-15 ölçüsü).
   static const double tekSatirYukseklik = 36;
@@ -96,12 +105,16 @@ class DonemSecici extends StatelessWidget {
       return ((tp.width + 2 * SandikSpace.sm2) * 100).round();
     }
 
-    final etiketler = [for (final d in donemler) donemEtiketi(l, d.label)];
+    assert(sonEk == null || getiriler == null);
+    final etiketler = [
+      for (final d in donemler) donemEtiketi(l, d.label),
+      if (sonEk != null) sonEk!,
+    ];
 
     // Kabuk, kayan zemin, dokunma, geçiş: ortak [SandikSegment]
     // (2026-10-01). Burada yalnız dönem içeriği ve getiri satırı kalır.
     return SandikSegment(
-      adet: donemler.length,
+      adet: etiketler.length,
       secili: secili,
       onSec: onSec,
       paylar: [for (final e in etiketler) pay(e)],

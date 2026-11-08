@@ -11,6 +11,8 @@ import '../services/supabase_service.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
 import '../widgets/watchlist_chart.dart' show WatchlistChart;
+import '../services/crash_reporter.dart';
+import 'add_asset_form_provider.dart' show addAssetPriceLookupProvider, AddAssetPriceLookup;
 import 'auth_provider.dart';
 import 'portfolio_provider.dart';
 import 'preferences_provider.dart';
@@ -273,6 +275,104 @@ final watchlistPeriods = <({String label, int days})>[
 final watchlistPeriodProvider =
     StateProvider<int>((ref) => ref.watch(seciliDonemProvider).index);
 
+/// Takip dönem seçicisinin son seçeneği "Eklediğimden beri" seçili mi
+/// (müşteri raporu 2026-11-08 #1, ücretsiz).
+///
+/// ## Neden ortak dönemin bir değeri değil
+/// [seciliDonemProvider] beş yüzeyin ortak dönemidir ve [SummaryPeriod]
+/// gün sayısı olan pencerelerdir; "eklediğimden beri" yalnız takip
+/// satırında anlamlıdır ve her satırda başka bir gündür. Enum'a eklemek
+/// Performans'ı, varlık sayfasını ve gün sayısı okuyan her yeri bu
+/// değeri bilmeye zorlardı. Ayrı bayrak: seçiliyken ortak dönem OLDUĞU
+/// GİBİ kalır (grafik, satıra dokununca açılan varlık sayfası onu
+/// kullanmaya devam eder), bir döneme dokununca bayrak iner.
+///
+/// Ortak dönem gibi yalnızca bellekte (gerekçe [seciliDonemProvider]):
+/// oturum içinde hatırlanır, `shared_preferences`'a yazılmaz; yani kayıtlı
+/// bir indeksin anlamı değişmez.
+final watchlistEklenmedenBeriProvider = StateProvider<bool>((ref) => false);
+
+/// "Eklediğimden beri" yüzdesi: eklenme gününün kapanışından güncel fiyata.
+///
+/// Saf; iki uçtan biri yoksa ya da ölçülmüş bir fiyat değilse (≤ 0, NaN)
+/// `null` → satır "—" (uydurma sayı yok, fiyat kaynağı sözleşmesi 3).
+/// Formül listenin geri kalanıyla aynı: (son − ilk) / ilk.
+double? eklenmedenBeriYuzde({
+  required double? eklenmeKapanisi,
+  required double? guncelFiyat,
+}) {
+  final k = eklenmeKapanisi;
+  final g = guncelFiyat;
+  if (k == null || g == null || !k.isFinite || !g.isFinite) return null;
+  if (k <= 0 || g <= 0) return null;
+  return (g - k) / k * 100;
+}
+
+/// Eklenme günü kapanışlarının oturum önbelleği.
+///
+/// Kapanış geçmiştir, değişmez: bulunan değer süreç boyunca bir kez
+/// çekilir. Aynı anda gelen iki istek (liste yeniden kurulurken) tek
+/// isteğe bağlanır. `null` ÖNBELLEĞE GİRMEZ: `fetchHistoricalClose` ağ
+/// hatasını da "bulunamadı"yı da `null` döndürür; zayıf bağlantıda bir
+/// kez düşen satır oturum boyunca "—" kalmasın, listenin bir sonraki
+/// kuruluşunda (dönem değişimi, yenileme) yeniden denenir.
+class EklenmeKapanisiOnbellegi {
+  final _bulunan = <String, double>{};
+  final _suren = <String, Future<double?>>{};
+
+  static String anahtar(String ticker, DateTime gun) =>
+      '${ticker.trim().toUpperCase()}|${dayKey(gun).toIso8601String()}';
+
+  Future<double?> getir(String ticker, DateTime gun,
+      Future<double?> Function(String ticker, DateTime gun) cek) {
+    final k = anahtar(ticker, gun);
+    final hazir = _bulunan[k];
+    if (hazir != null) return Future.value(hazir);
+    final suren = _suren[k];
+    if (suren != null) return suren;
+    final yeni = _cek(k, ticker, gun, cek);
+    _suren[k] = yeni;
+    return yeni;
+  }
+
+  Future<double?> _cek(String k, String ticker, DateTime gun,
+      Future<double?> Function(String ticker, DateTime gun) cek) async {
+    try {
+      final v = await cek(ticker, dayKey(gun));
+      if (v != null && v.isFinite && v > 0) _bulunan[k] = v;
+      return v;
+    } finally {
+      // `remove` geleceği döndürür (unawaited_futures); anahtarla süz.
+      _suren.removeWhere((a, _) => a == k);
+    }
+  }
+}
+
+final eklenmeKapanisiOnbellegiProvider =
+    Provider<EklenmeKapanisiOnbellegi>((_) => EklenmeKapanisiOnbellegi());
+
+/// "Eklediğimden beri" kipinde satırların yüzdesini yeniden yazar ve
+/// listeyi o yüzdeye göre sıralar (fiyatsızlar dipte, [_withPrices] ile
+/// aynı kural). [kapanislar] anahtarı [EklenmeKapanisiOnbellegi.anahtar];
+/// eklenme tarihi bilinmeyen ya da kapanışı bulunamayan satırın yüzdesi
+/// `null` olur — önceki dönemin yüzdesi satırda KALMAZ.
+List<WatchlistItem> eklenmedenBeriUygula(
+    List<WatchlistItem> items, Map<String, double?> kapanislar) {
+  final sonuc = [
+    for (final w in items)
+      w.donemDegisimiyle(w.addedAt == null
+          ? null
+          : eklenmedenBeriYuzde(
+              eklenmeKapanisi: kapanislar[
+                  EklenmeKapanisiOnbellegi.anahtar(w.ticker, w.addedAt!)],
+              guncelFiyat: w.currentPrice,
+            )),
+  ];
+  sonuc.sort((a, b) =>
+      (b.periodChangePct ?? -999).compareTo(a.periodChangePct ?? -999));
+  return sonuc;
+}
+
 /// Grafikteki portföy çizgisinin KİMİ gösterdiği.
 ///
 /// Uygulamanın geri kalanıyla AYNI sözleşme (`_view`, `OrtakSecici`):
@@ -324,6 +424,7 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
 
     // Dönem değişince fiyatlar yeniden hesaplanmalı — provider'ı izliyoruz.
     final periodIdx = ref.watch(watchlistPeriodProvider);
+    final eklenmedenBeri = ref.watch(watchlistEklenmedenBeriProvider);
 
     try {
       final items =
@@ -336,7 +437,8 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
       // `catch`'e DÜŞMEZ. O durumda provider hata durumuna geçer ve takip
       // listesi, boş liste yerine hata ekranı gösterirdi — koruma yazıldığı
       // gibi çalışmıyordu.
-      final sonuc = await _withPrices(items, watchlistPeriods[periodIdx].days);
+      var sonuc = await _withPrices(items, watchlistPeriods[periodIdx].days);
+      if (eklenmedenBeri) sonuc = await _eklenmedenBeri(sonuc);
       _veriSahibi = user.id;
       return sonuc;
     } catch (_) {
@@ -383,6 +485,39 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
     withPrices.sort((a, b) =>
         (b.periodChangePct ?? -999).compareTo(a.periodChangePct ?? -999));
     return withPrices;
+  }
+
+  /// "Eklediğimden beri": her satırın eklenme günü kapanışı.
+  ///
+  /// Güncel fiyat satırın gösterdiği fiyattır ([_withPrices], seçili ortak
+  /// dönemin serisinin son noktası): ekranda okunan fiyat ile yüzdenin
+  /// payı aynı sayı. Kapanış, geçmiş tarihli alımın maliyetini bulan yolun
+  /// AYNISINDAN gelir ([AddAssetPriceLookup.historicalClose] →
+  /// `PriceService.fetchHistoricalClose`): sembolün hangi kaynaktan
+  /// okunacağına orası karar verir, burada yeni bir sembol merdiveni yok.
+  /// Portföyde geçmiş tarihli bir lotun kâr/zararı da tam bu iki sayının
+  /// kıyasıdır.
+  Future<List<WatchlistItem>> _eklenmedenBeri(
+      List<WatchlistItem> items) async {
+    final onbellek = ref.read(eklenmeKapanisiOnbellegiProvider);
+    final lookup = ref.read(addAssetPriceLookupProvider);
+    final kapanislar = <String, double?>{};
+    await Future.wait([
+      for (final w in items)
+        if (w.addedAt != null)
+          () async {
+            final gun = w.addedAt!;
+            double? v;
+            try {
+              v = await onbellek.getir(w.ticker, gun, lookup.historicalClose);
+            } catch (e, st) {
+              CrashReporter.report(e, st,
+                  reason: 'WatchlistNotifier._eklenmedenBeri');
+            }
+            kapanislar[EklenmeKapanisiOnbellegi.anahtar(w.ticker, gun)] = v;
+          }(),
+    ]);
+    return eklenmedenBeriUygula(items, kapanislar);
   }
 
   /// Takibe alır. Zaten takiptaki varlık için hata fırlatır (sunucudaki

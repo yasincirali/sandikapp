@@ -457,6 +457,50 @@ String fmtTarih(DateTime t, {String dil = 'tr_TR', bool saat = false}) {
   return '$gun ${iki(y.hour)}:${iki(y.minute)}';
 }
 
+/// "… beri" cümlesinin tarih parçası: Türkçe "12 Eyl'den" (ayrılma hâli
+/// ekiyle), İngilizce "Sep 12". Yıl [bugun]ün yılından farklıysa eklenir:
+/// "12 Eyl 2025'ten" / "Sep 12, 2025".
+///
+/// ## Neden ek kodda (takip "Eklediğimden beri", 2026-11-08)
+/// Türkçe ayrılma eki kısaltmaya değil OKUNUŞA uyar: "Eyl" "Eylül" diye
+/// okunur, ek "-den" olur; "Ağu" "Ağustos" → "-tan". Ek ay adının (yıl
+/// varsa yılın okunuşunun) son hecesinden belirlenir; ".arb"a "{tarih}'den
+/// beri" yazmak Mart'ta "Mart'den" üretirdi. "12 Eyl itibarıyla" gibi ekten
+/// kaçan nötr kalıp da düşünüldü; kural kapalı bir küme (12 ay + rakam
+/// okunuşları) olduğu için doğru eki yazmak daha kısa ve doğal.
+///
+/// [kisa] `false` → tam ay adı ("12 Eylül'den"): ekran okuyucu cümlesi
+/// kısaltmayı harf harf okumasın.
+String tarihtenBeriParcasi(DateTime t,
+    {String dil = 'tr_TR', bool kisa = true, DateTime? bugun}) {
+  final y = t.toLocal();
+  final yilli = y.year != (bugun ?? DateTime.now()).year;
+  final ay = _ayAdi(y.month, dil, kisa);
+  if (dil.startsWith('en')) {
+    return yilli ? '$ay ${y.day}, ${y.year}' : '$ay ${y.day}';
+  }
+  if (yilli) return "${y.day} $ay ${y.year}'${_sayiAyrilmaEki(y.year)}";
+  return "${y.day} $ay'${_ayAyrilmaEki[y.month - 1]}";
+}
+
+/// Tam ay adının ayrılma eki (Ocak'tan, Nisan'dan, Eylül'den…).
+const _ayAyrilmaEki = [
+  'tan', 'tan', 'tan', 'dan', 'tan', 'dan', //
+  'dan', 'tan', 'den', 'den', 'dan', 'tan',
+];
+
+/// Bir sayının okunuşuna göre ayrılma eki: son sıfır olmayan basamağın
+/// okunuşu belirler (2025 "yirmi beş" → 'ten', 2026 "altı" → 'dan',
+/// 2030 "otuz" → 'dan', 2000 "bin" → 'den').
+String _sayiAyrilmaEki(int n) {
+  const birler = ['', 'den', 'den', 'ten', 'ten', 'ten', 'dan', 'den', 'den', 'dan'];
+  const onlar = ['', 'dan', 'den', 'dan', 'tan', 'den', 'tan', 'ten', 'den', 'dan'];
+  final m = n.abs();
+  if (m % 10 != 0) return birler[m % 10];
+  if ((m ~/ 10) % 10 != 0) return onlar[(m ~/ 10) % 10];
+  return 'den'; // yüz / bin
+}
+
 const _ayTr = [
   'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', //
   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',

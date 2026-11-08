@@ -2867,7 +2867,7 @@ abstract class AppLocalizations {
   /// No description provided for @showAmountsSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Canlı Etkinlik ve kilit ekranı widget\'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.'**
+  /// **'Kilit ekranında ve Canlı Etkinlik\'te tutarlar görünür. Kilit ekranı herkese açık olduğu için varsayılan kapalı.'**
   String get showAmountsSubtitle;
 
   /// No description provided for @lockWidgetHowTo.
@@ -4040,6 +4040,42 @@ abstract class AppLocalizations {
   /// **'takip ediliyor'**
   String get watchlistRowFollowing;
 
+  /// No description provided for @watchlistPeriodSinceAdded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eklediğimden beri'**
+  String get watchlistPeriodSinceAdded;
+
+  /// Takip satırında yüzdenin altı. tarih ekiyle gelir: 12 Eyl'den
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri'**
+  String watchlistSinceDate(String tarih);
+
+  /// No description provided for @watchlistRowSinceUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri {pct} arttı'**
+  String watchlistRowSinceUp(String tarih, String pct);
+
+  /// No description provided for @watchlistRowSinceDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri {pct} düştü'**
+  String watchlistRowSinceDown(String tarih, String pct);
+
+  /// No description provided for @watchlistRowSinceFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} beri değişmedi'**
+  String watchlistRowSinceFlat(String tarih);
+
+  /// No description provided for @watchlistRowSinceUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'eklendiği günün kapanışı bulunamadı'**
+  String get watchlistRowSinceUnknown;
+
   /// No description provided for @notificationsNewCount.
   ///
   /// In tr, this message translates to:
@@ -4751,7 +4787,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAssetWarning.
   ///
   /// In tr, this message translates to:
-  /// **'Bu bir satış değil. Varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.'**
+  /// **'Bu satış değil: varlık toplamlardan ve geçmiş grafikten çıkar, hareketleri \"Silinenler\"de kalır. Sattıysan \"Sat\"ı kullan.'**
   String get deleteAssetWarning;
 
   /// No description provided for @alarmAlsoDeleteTitle.
@@ -4865,7 +4901,7 @@ abstract class AppLocalizations {
   /// No description provided for @sellAllWarning.
   ///
   /// In tr, this message translates to:
-  /// **'Tüm miktarı satıyorsun. Pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.'**
+  /// **'Tümünü satıyorsun. Pozisyon listeden kalkar, satış ve kâr/zarar kaydı korunur.'**
   String get sellAllWarning;
 
   /// No description provided for @saleValue.

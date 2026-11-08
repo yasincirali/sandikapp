@@ -923,7 +923,7 @@
   "showOnWeekend": "Show on weekends too",
   "showOnWeekendSubtitle": "BIST is closed on weekends. If your portfolio is only stocks and funds, the banner shows the last close labelled \"Market closed\"; with gold, FX or crypto it stays live.",
   "showAmounts": "Show amounts",
-  "showAmountsSubtitle": "Applies to the Live Activity and the lock screen widget. When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.",
+  "showAmountsSubtitle": "Shows amounts on the lock screen and in the Live Activity. Off by default because the lock screen is visible to anyone.",
   "lockWidgetHowTo": "You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.",
   "anaEkranWidgetBaslik": "Home screen widget",
   "anaEkranaWidgetEkle": "Add widget to home screen",
@@ -1325,6 +1325,12 @@
     }
   },
   "watchlistRowFollowing": "on your watchlist",
+  "watchlistPeriodSinceAdded": "Since added",
+  "watchlistSinceDate": "Since {tarih}",
+  "watchlistRowSinceUp": "up {pct} since {tarih}",
+  "watchlistRowSinceDown": "down {pct} since {tarih}",
+  "watchlistRowSinceFlat": "unchanged since {tarih}",
+  "watchlistRowSinceUnknown": "no closing price for the day it was added",
   "notificationsNewCount": "{count, plural, =1{1 new notification} other{{count} new notifications}}",
   "@notificationsNewCount": {
     "placeholders": {
@@ -1692,7 +1698,7 @@
     }
   },
   "deleteAnyway": "Delete anyway",
-  "deleteAssetWarning": "This is not a sale. The asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.",
+  "deleteAssetWarning": "This is not a sale: the asset leaves your totals and the history chart, its transactions stay under \"Deleted\". If you sold it, use \"Sell\".",
   "alarmAlsoDeleteTitle": "{n, plural, =1{Delete the alert too?} other{Delete the {n} alerts too?}}",
   "@alarmAlsoDeleteTitle": {
     "placeholders": {
@@ -1770,7 +1776,7 @@
       }
     }
   },
-  "sellAllWarning": "You are selling the whole position. It leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.",
+  "sellAllWarning": "You are selling it all. The position leaves the list, the sale and profit/loss record are kept.",
   "saleValue": "Sale value",
   "nActiveAlerts": "{n, plural, =1{1 active price alert} other{{n} active price alerts}}",
   "@nActiveAlerts": {
