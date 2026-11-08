@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import csv
 import gzip
 import hashlib
 import json
@@ -73,6 +74,11 @@ AUTH_TABLOLARI = ("users", "identities")
 # Varsayılan dışarıda: hata/debug kaydı (en büyük tablo, 1–30 gün tutuluyor),
 # geri yüklenen projede anlamı yok.
 VARSAYILAN_HARIC = ("public.db_logs",)
+# CSV okuyucunun varsayılan alan sınırı 128 KB; jsonb/metin kolonlarında
+# (portföy yorumu, rapor gövdesi) daha uzun alan var — 2026-11-08 ilk gerçek
+# yedekte `dogrula` "field larger than field limit" ile düştü. sys.maxsize
+# Windows'ta C long'a sığmadığı için 2^31-1.
+csv.field_size_limit(2**31 - 1)
 BICIM = 1  # manifest biçimi; değişirse geri-yukle eskisini tanısın
 
 
@@ -234,7 +240,6 @@ def dogrula(args) -> None:
         if not yol.exists() or _ozet(yol) != t["sha256"]:
             print(f"  ✗ {t['ad']}: dosya yok ya da özeti tutmuyor"); hata += 1; continue
         with gzip.open(yol, "rt", encoding="utf-8", newline="") as f:
-            import csv
             satir = sum(1 for _ in csv.reader(f)) - 1  # başlık
         if satir != t["satir"]:
             print(f"  ✗ {t['ad']}: {t['satir']} beklenen, dosyada {satir}"); hata += 1

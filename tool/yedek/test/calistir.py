@@ -9,7 +9,7 @@ gereken durumları (yanlış ref, dolu hedef, onaysız yazma, bozuk dosya) dener
     # sunucu: YEDEK_TEST_TABAN (varsayılan postgresql://postgres:test@localhost:55432,
     # veri_tasima testindeki Docker postgres:17 ile aynı port)
 
-2026-11-06 ilk koşu (PostgreSQL 16): hepsi ✓.
+2026-11-06 ilk koşu (PostgreSQL 16): hepsi ✓. 2026-11-08: 200 KB'lık alan eklendi (gerçek yedekte dogrula CSV alan sınırına takılmıştı).
 """
 import gzip, os, pathlib, subprocess, sys, tempfile
 import psycopg
@@ -44,6 +44,8 @@ update public.profiles set ad = 'yasin, "tırnak"' where id = '00000000-0000-000
 insert into public.assets (user_id, ad, miktar, notlar, etiket) values
   ('00000000-0000-0000-0000-000000000001', 'THYAO', 10.5, '{"a": [1, 2]}', '{x,y}'),
   ('00000000-0000-0000-0000-000000000001', E'çok\\nsatır', null, null, null);
+insert into public.assets (user_id, ad, notlar) values
+  ('00000000-0000-0000-0000-000000000001', repeat('u', 200000), '{"uzun": true}');
 insert into public.db_logs (mesaj) select 'log' from generate_series(1, 5);
 """
 
@@ -112,7 +114,7 @@ def main():
                sorgu(HEDEF, "select ad, miktar, notlar, etiket, toplam from public.assets order by id")
                == sorgu(KAYNAK, "select ad, miktar, notlar, etiket, toplam from public.assets order by id"))
     kontrol_et("serial dizisi en büyük id'nin ötesinde",
-               sorgu(HEDEF, "insert into public.assets (ad) values ('yeni') returning id") == [(3,)])
+               sorgu(HEDEF, "insert into public.assets (ad) values ('yeni') returning id") == [(4,)])
     kontrol_et("oturumlar taşınmadı", sorgu(HEDEF, "select count(*) from auth.sessions") == [(0,)])
 
     kod, cikti = arac("geri-yukle", str(k), "--onay", "hedef_db")
