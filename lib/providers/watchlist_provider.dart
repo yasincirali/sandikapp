@@ -260,8 +260,12 @@ bool watchlistLimitiAsiliyorMu({
 /// geldi). Oradaki `intraday` bayrağı burada `days: 1`'e karşılık gelir
 /// ([SummaryPeriod.sembolGunu]): takip listesi gün içi 5 dakikalık grid
 /// çizmez, yalnızca "bugün ne oldu" yüzdesini gösterir.
+///
+/// YB yok ([SummaryPeriod.sembolDonemleri]; gerekçe enum'daki "YB" notu):
+/// takip satırı sembol serisini sabit aralıkla ister.
 final watchlistPeriods = <({String label, int days})>[
-  for (final p in SummaryPeriod.values) (label: p.label, days: p.sembolGunu),
+  for (final p in SummaryPeriod.sembolDonemleri)
+    (label: p.label, days: p.sembolGunu),
 ];
 
 /// Seçili dönem indeksi. Eskiden ekran-yerel, varsayılan 1A idi.
@@ -271,9 +275,11 @@ final watchlistPeriods = <({String label, int days})>[
 /// yeniden kurulur, okuyanlar (liste, grafik, varlık sayfası açılışı) aynı
 /// adla çalışmaya devam eder. Yazma o zaman ortak sağlayıcıya yapılır
 /// (bkz. `watchlist_screen.dart` `_PeriodToggle`). Takip her dönemi
-/// gösterebildiği için en yakın döneme düşme gerekmez.
-final watchlistPeriodProvider =
-    StateProvider<int>((ref) => ref.watch(seciliDonemProvider).index);
+/// gösterebildiği için en yakın döneme düşme gerekmez; tek istisna YB
+/// (yalnız Performans'ta): Takip onun yerine 1Y'yi çizer
+/// ([SummaryPeriod.sembolKarsiligi]), ortak değer YB olarak kalır.
+final watchlistPeriodProvider = StateProvider<int>(
+    (ref) => ref.watch(seciliDonemProvider).sembolKarsiligi.index);
 
 /// Takip dönem seçicisinin son seçeneği "Eklediğimden beri" seçili mi
 /// (müşteri raporu 2026-11-08 #1, ücretsiz).

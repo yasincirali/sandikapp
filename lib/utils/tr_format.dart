@@ -375,6 +375,12 @@ NumberFormat fixedFormatter(int digits) =>
 /// tek anlam: "aynı gün mü" ve "gün sayısı farkı" karşılaştırmaları buradan.
 DateTime dayKey(DateTime t) => DateTime(t.year, t.month, t.day);
 
+/// Takvim yılının ilk günü (yerel 1 Ocak 00:00) — YB dönemi başı.
+///
+/// [dayKey] ile aynı gerekçe: "yılın başı" tek isimle, tek yerde; dönem
+/// penceresi ve grafik ekseni aynı günü okusun.
+DateTime yilBasiGunu(DateTime t) => DateTime(t.year);
+
 /// İşlem damgası gerçek bir SAAT taşıyor mu?
 ///
 /// Tarih seçiciyle girilen işlem (`pickSandikDate`) yerel 00:00:00 olarak

@@ -1328,6 +1328,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get period6M => '6 ay';
 
   @override
+  String get periodYtd => 'YB';
+
+  @override
+  String get periodYtdLong => 'Yıl başından beri';
+
+  @override
   String get period1Y => '1 yıl';
 
   @override
@@ -2055,6 +2061,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get last6MonthsPeriod => 'son 6 ay';
+
+  @override
+  String get ytdExtremes => 'Yılın uçları';
+
+  @override
+  String get ytdPeriod => 'yıl başından beri';
 
   @override
   String get sixMonthExtremes => 'Altı ayın uçları';
@@ -9309,6 +9321,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String pyzVarlikAciklama(String aralik) {
     return 'Seçili dönemde ($aralik) bu varlıkta ne olduğunu; portföyündeki yeri, enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak anlatır.';
   }
+
+  @override
+  String get pyzYilBasi =>
+      'Yıl başından beri dönem yorumlanmaz. Yukarıdaki seçiciden 1 yıl ya da başka bir dönem seç.';
 
   @override
   String get pyzGunIci =>

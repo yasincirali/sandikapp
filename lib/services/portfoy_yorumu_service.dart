@@ -61,7 +61,11 @@ enum YorumKapsami { portfoy, varlik }
 
 /// GÜNLÜK yorumlanmaz: gün içi seri saatler içinde değişir, gün başına
 /// saklanan yorum onu bayat anlatırdı (sunucu da kabul etmez).
-bool seciliYorumlanabilir(SummaryPeriod p) => !p.intraday;
+///
+/// YB de yorumlanmaz (2026-11-08): sunucunun dönem tablosu
+/// (`_shared/portfoy_yorum.ts` `SECILI_DONEMLER`) onu tanımıyor ve isteği
+/// reddeder. Eklemek sunucu + kayıt anahtarı değişikliği; ayrı tur.
+bool seciliYorumlanabilir(SummaryPeriod p) => !p.intraday && !p.yilBasindan;
 
 /// [simdi]'den önceki son kapanmış dönem; uçlar yerel gün başı.
 ///

@@ -25,6 +25,23 @@ import '../utils/tr_format.dart';
 /// de bu diziden türediği için eşleme kendiliğinden korunuyor. Sıra
 /// değişirse indeksle açılan rotalar (`SummaryPeriod.birYil.index` gibi)
 /// adla yazıldığı için etkilenmez; sabit sayı YAZMA.
+///
+/// ## YB (yıl başından beri, müşteri raporu 2026-11-08 #2, ücretsiz)
+/// "Bu yıl ne kazandım" sorusu: 1Y geçen Kasım'dan ölçüyor, Yıllık rapor
+/// yıl bitince anlamlı. YB enum'un SONUNA eklendi: dönem hiçbir yerde
+/// kalıcı indeksle saklanmıyor (`seciliDonemProvider` yalnız bellekte),
+/// ama `values[i]` ile çalışan ekranlar ve `fromIndex` 0–6'nın anlamını
+/// korusun diye araya girmedi. Görüntü sırası ayrı: Performans şeridinde
+/// 1Y'nin hemen önünde ([performansSirasi]).
+///
+/// **Yalnız Performans'ta.** Takip, Karşılaştır, varlık sayfası ve varlık
+/// detayı SEMBOL serisini sabit gün aralığıyla ister (`sembolGunu`,
+/// Yahoo `1y`/`5y` aralıkları, `varlikSayfasiDonemleri`); değişken uzunlukta
+/// bir pencere orada yeni aralık, yeni önbellek anahtarı ve yeni getiri
+/// satırı demek. Soru da portföyün sorusu. O yüzeyler [sembolDonemleri]'ni
+/// çizer; ortak dönem YB iken en yakın dönemi, 1Y'yi gösterir
+/// ([sembolKarsiligi]) ve ortak değeri değiştirmez — Performans'a dönen
+/// kullanıcı YB'yi bulur.
 enum SummaryPeriod {
   gunluk('GÜNLÜK', 0, intraday: true),
   birHafta('1H', 7),
@@ -32,13 +49,34 @@ enum SummaryPeriod {
   ucAy('3A', 90, ayGeri: 3),
   altiAy('6A', 180, ayGeri: 6),
   birYil('1Y', 365, ayGeri: 12),
-  besYil('5Y', 1825, ayGeri: 60);
+  besYil('5Y', 1825, ayGeri: 60),
+  yilBasi('YB', 365, yilBasindan: true);
 
   final String label;
 
+  final int _gun;
+
   /// Pencerenin gün cinsinden uzunluğu. Veri katmanı (çözünürlük merdiveni,
-  /// önbellek anahtarı) gün cinsinden çalışıyor.
-  final int days;
+  /// önbellek anahtarı, TÜFE penceresi) gün cinsinden çalışıyor.
+  ///
+  /// YB'de sabit değil: 1 Ocak'tan bugüne ([yilBasindanGun]). Sabit 365
+  /// Ocak'ta haftalık çözünürlük (`pickForSpan`) ve 12 aylık TÜFE
+  /// penceresi seçtirirdi; yıl başından beri getiri geçen yılın
+  /// enflasyonuyla kıyaslanırdı.
+  int get days => yilBasindan ? yilBasindanGun(DateTime.now()) : _gun;
+
+  /// YB'nin gün değeri: 1 Ocak'tan [simdi]'ye geçen takvim günü, en az 7.
+  ///
+  /// Alt sınır 7: yılın ilk haftasında YB çözünürlükte ve çizgi
+  /// kalınlığında 1H gibi davranır; 2 günlük bir "dönem" 5 dakikalık
+  /// gün içi katmanını isterdi. Pencerenin BAŞI bundan etkilenmez, o her
+  /// zaman 1 Ocak'tır ([pencere]).
+  static int yilBasindanGun(DateTime simdi) =>
+      math.max(7, dayKey(simdi).difference(yilBasiGunu(simdi)).inDays);
+
+  /// Dönem başı TAKVİM YILININ başı mı (YB)? Başlangıç [ayGeri] ile değil
+  /// `yilBasiGunu` ile hesaplanır.
+  final bool yilBasindan;
 
   /// Dönem başı TAKVİMDEN mi hesaplanır: "1A" 30 gün değil, bir önceki
   /// ayın aynı günüdür (`donemBaslangici`). `null` → sabit gün (1H, GÜNLÜK).
@@ -47,12 +85,46 @@ enum SummaryPeriod {
   /// Gün içi (5 dk çözünürlük) dönem mi?
   final bool intraday;
 
-  const SummaryPeriod(this.label, this.days,
-      {this.ayGeri, this.intraday = false});
+  const SummaryPeriod(this.label, this._gun,
+      {this.ayGeri, this.intraday = false, this.yilBasindan = false});
 
   /// Sembol serisi isteyen yüzeylerin (Takip, Karşılaştır, varlık sayfası)
   /// gün değeri: GÜNLÜK orada `1` (Yahoo `1d`), Performans'ta `0` + gün içi.
-  int get sembolGunu => intraday ? 1 : days;
+  /// YB o yüzeylerde yok; karşılığı 1Y'nin günü ([sembolKarsiligi]).
+  int get sembolGunu => intraday ? 1 : sembolKarsiligi._gun;
+
+  /// YB'yi göstermeyen yüzeylerde (Takip, Karşılaştır, varlık ekranları)
+  /// bu dönemin yerine çizilen dönem: YB → 1Y, ötekiler kendisi.
+  ///
+  /// Neden 1Y: görüntü sırasında YB 6A ile 1Y arasında; eşitlikte uzun
+  /// dönem seçilir (`gosterilebilirDonem` kuralı) ve yıl sonuna doğru YB
+  /// zaten 1Y'ye yaklaşır.
+  SummaryPeriod get sembolKarsiligi => yilBasindan ? birYil : this;
+
+  /// Sembol serisi isteyen yüzeylerin dönemleri: YB hariç, enum sırası.
+  ///
+  /// YB enum'un sonunda olduğu için buradaki indeks [values] indeksiyle
+  /// BİREBİR aynı: `values[i]` yazan eski yerler kaymaz.
+  static final List<SummaryPeriod> sembolDonemleri = [
+    for (final p in values)
+      if (!p.yilBasindan) p,
+  ];
+
+  /// Performans dönem şeridinin GÖRÜNTÜ sırası: YB 1Y'nin hemen önünde.
+  ///
+  /// Seçili dönem yine enum değeridir (`seciliDonemProvider`); şerit bu
+  /// listedeki konumla çizer, dokunuşu enum'a geri çevirir. Sıra kısadan
+  /// uzuna okunur: Ekim'de YB ~10 ay, 1Y 12 ay.
+  static const List<SummaryPeriod> performansSirasi = [
+    gunluk,
+    birHafta,
+    birAy,
+    ucAy,
+    altiAy,
+    yilBasi,
+    birYil,
+    besYil,
+  ];
 
   /// Grafik sekmesinin `_periods` dizisindeki karşılığı.
   ///
@@ -457,7 +529,7 @@ class PeriodSummaryService {
 
   /// Dönemin pencere uçları.
   ///
-  /// 1A / 3A / 6A / 1Y / 5Y takvimden hesaplanır; 1H sabit yedi gündür (hafta kavramı
+  /// 1A / 3A / 6A / 1Y / 5Y takvimden hesaplanır, YB 1 Ocak'tan; 1H sabit yedi gündür (hafta kavramı
   /// takvim ayına bağlı değil). GÜNLÜK'te pencere ÇİZİLEN SEANS günüdür —
   /// bugün olmak zorunda değil: piyasa kapalıyken `HistoryService` son
   /// seansı döndürür ve hafta sonu çizilen eğri Cuma'nındır.
@@ -474,9 +546,12 @@ class PeriodSummaryService {
       );
     }
     final ayGeri = period.ayGeri;
-    final start = ayGeri == null
-        ? now.subtract(Duration(days: period.days))
-        : donemBaslangici(now, ayGeri);
+    // YB: 1 Ocak, yılın ilk günü de dahil (o gün pencere tek gündür).
+    final start = period.yilBasindan
+        ? yilBasiGunu(now)
+        : ayGeri == null
+            ? now.subtract(Duration(days: period.days))
+            : donemBaslangici(now, ayGeri);
     return (
       start: dayKey(start),
       end: now,
@@ -1240,6 +1315,7 @@ class PeriodSummaryService {
         SummaryPeriod.altiAy => 'Bu altı ay',
         SummaryPeriod.birYil => 'Bu yıl',
         SummaryPeriod.besYil => 'Bu beş yıl',
+        SummaryPeriod.yilBasi => 'Yıl başından beri',
       };
 
   static String tonCumlesi(PeriodSummary s, {double? uzunDonemPct}) {

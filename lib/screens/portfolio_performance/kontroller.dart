@@ -268,19 +268,27 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Dönem seçici — ortak [DonemSecici] (tek dönem kümesi ve tek görünüş,
   /// 2026-09-28). İçerik oranlı pay kararı ve gerekçesi o bileşene taşındı;
   /// bu ekran yalnızca seçimi ve gün içi zamanlayıcıyı yönetir.
+  ///
+  /// YB yalnız burada (gerekçe [SummaryPeriod] "YB" notu). Şerit GÖRÜNTÜ
+  /// sırasıyla çizilir (YB 1Y'nin önünde); `_selectedPeriodIdx` ise enum
+  /// indeksidir, dokunuş ona geri çevrilir. Sekiz segment 360pt'de de tek
+  /// satırda: pay ölçülen metinden, sığmayan etiket kırpılmaz, küçülür
+  /// (`DonemSecici`); hiçbir dönem düşmez.
   Widget _buildPeriodToggle() {
+    const sira = SummaryPeriod.performansSirasi;
     return DonemSecici(
-      donemler: SummaryPeriod.values,
-      secili: _selectedPeriodIdx,
+      donemler: sira,
+      secili: sira.indexOf(SummaryPeriod.fromIndex(_selectedPeriodIdx)),
       onSec: (i) {
-        _guncelle(() => _selectedPeriodIdx = i);
+        final donem = sira[i];
+        _guncelle(() => _selectedPeriodIdx = donem.index);
         _startIntradayTickIfNeeded();
         // Tek akışta Özet hep görünür; "Özet görüldü" ölçümü sekme
         // geçişinden değil dönem seçiminden gelir (eski düzende sekme
         // anahtarı yazıyordu, bkz. `_buildSurfaceToggle`).
         if (_tekAkis) {
           AnalyticsService.instance.logPeriodSummaryViewed(
-            period: SummaryPeriod.fromIndex(i).name,
+            period: donem.name,
           );
         }
       },

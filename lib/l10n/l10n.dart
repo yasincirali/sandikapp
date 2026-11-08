@@ -67,7 +67,18 @@ String donemEtiketi(AppLocalizations l, String kimlik) => switch (kimlik) {
       '6A' => l.period6M,
       '1Y' => l.period1Y,
       '5Y' => l.period5Y,
+      'YB' => l.periodYtd,
       _ => kimlik,
+    };
+
+/// Dönemin ekran okuyucu adı: kısaltma değil, sözcük (2026-11-08).
+///
+/// "YB" VoiceOver'da harf harf okunur ve ne olduğu anlaşılmaz; çip
+/// "Yıl başından beri" diye okunur. Diğer dönemlerin etiketi zaten
+/// okunabilir ("1 ay"), onlar [donemEtiketi]'ne düşer.
+String donemSemantigi(AppLocalizations l, String kimlik) => switch (kimlik) {
+      'YB' => l.periodYtdLong,
+      _ => donemEtiketi(l, kimlik),
     };
 
 /// Dile duyarlı BÜYÜK HARF.

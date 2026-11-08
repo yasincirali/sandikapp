@@ -2348,6 +2348,18 @@ abstract class AppLocalizations {
   /// **'6 ay'**
   String get period6M;
 
+  /// No description provided for @periodYtd.
+  ///
+  /// In tr, this message translates to:
+  /// **'YB'**
+  String get periodYtd;
+
+  /// No description provided for @periodYtdLong.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl başından beri'**
+  String get periodYtdLong;
+
   /// No description provided for @period1Y.
   ///
   /// In tr, this message translates to:
@@ -3613,6 +3625,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'son 6 ay'**
   String get last6MonthsPeriod;
+
+  /// No description provided for @ytdExtremes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılın uçları'**
+  String get ytdExtremes;
+
+  /// No description provided for @ytdPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'yıl başından beri'**
+  String get ytdPeriod;
 
   /// No description provided for @sixMonthExtremes.
   ///
@@ -15382,6 +15406,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Seçili dönemde ({aralik}) bu varlıkta ne olduğunu; portföyündeki yeri, enflasyon, dolar, altın ve BIST 100 ile kıyaslayarak anlatır.'**
   String pyzVarlikAciklama(String aralik);
+
+  /// No description provided for @pyzYilBasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl başından beri dönem yorumlanmaz. Yukarıdaki seçiciden 1 yıl ya da başka bir dönem seç.'**
+  String get pyzYilBasi;
 
   /// Seçili dönem GÜNLÜK iken AI yorum kartı.
   ///

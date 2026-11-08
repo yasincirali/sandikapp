@@ -33,9 +33,15 @@ final seciliDonemProvider =
 /// Performans'a döndüğünde seçtiği GÜNLÜK'ü bulmalı. Yakınlık enum
 /// sırasıyla ölçülür (dönemler kısadan uzuna sıralı); eşitlikte daha uzun
 /// dönem seçilir — GÜNLÜK'ün tek komşusu 1H olduğu için GÜNLÜK → 1H.
+///
+/// YB enum'un sonunda ama görüntüde 6A ile 1Y arasında; enum sırasıyla
+/// ölçülse en yakını 5Y çıkardı. Önce sembol karşılığına (1Y) çevrilir
+/// (`SummaryPeriod.sembolKarsiligi`, 2026-11-08).
 SummaryPeriod gosterilebilirDonem(
     SummaryPeriod istenen, List<SummaryPeriod> mevcut) {
   assert(mevcut.isNotEmpty);
+  if (mevcut.contains(istenen)) return istenen;
+  istenen = istenen.sembolKarsiligi;
   if (mevcut.contains(istenen)) return istenen;
   SummaryPeriod? en;
   int? enUzak;

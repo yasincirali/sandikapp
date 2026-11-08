@@ -136,8 +136,11 @@ bool _acik = false;
 /// (2026-09-28): önceden burada 3A yoktu, Performans'ta 5Y yoktu; seçiciler
 /// artık her ekranda birebir aynı. Servis `3mo`/`5y` aralıklarını zaten
 /// destekliyor (`HistoryService.rangeForPeriod`).
+///
+/// YB yok ([SummaryPeriod.sembolDonemleri], gerekçe enum'daki "YB" notu);
+/// ortak dönem YB iken `sembolGunu` 1Y'nin günüdür, sayfa 1Y açılır.
 final varlikSayfasiDonemleri = <int>[
-  for (final p in SummaryPeriod.values) p.sembolGunu,
+  for (final p in SummaryPeriod.sembolDonemleri) p.sembolGunu,
 ];
 
 /// Seri yükleyici — testte ağ yerine sahte seri verilir.
@@ -272,7 +275,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       Future.microtask(() {
         if (!mounted) return;
         ref.read(seciliDonemProvider.notifier).state =
-            SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(istenen!)];
+            SummaryPeriod.sembolDonemleri[varlikSayfasiDonemleri.indexOf(istenen!)];
       });
     }
     CrashReporter.arkaPlan(_ilkYukleme(), reason: 'VarlikSayfasi.ilkYukleme');
@@ -449,7 +452,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   /// seçimimiz olarak tanır, ikinci kez yüklemez.
   void _ortakDonemSec(int i) {
     _donemSec(varlikSayfasiDonemleri[i]);
-    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[i];
+    ref.read(seciliDonemProvider.notifier).state =
+        SummaryPeriod.sembolDonemleri[i];
   }
 
   void _boyutuDegistir() {
@@ -534,8 +538,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   String _donemEtiketi(int gun) => donemEtiketi(
       context.l10n,
-      SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(gun).clamp(
-              0, SummaryPeriod.values.length - 1)]
+      SummaryPeriod.sembolDonemleri[varlikSayfasiDonemleri.indexOf(gun).clamp(
+              0, SummaryPeriod.sembolDonemleri.length - 1)]
           .label);
 
   @override
@@ -868,7 +872,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   /// tek görünüş kararıyla kabuğa taşındı, 2026-09-28).
   Widget _donemCipleri() {
     return DonemSecici(
-      donemler: SummaryPeriod.values,
+      donemler: SummaryPeriod.sembolDonemleri,
       secili: varlikSayfasiDonemleri.indexOf(_gun),
       getiriler: [
         for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
@@ -912,7 +916,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       ),
       donemAdi: i < 0
           ? null
-          : donemEtiketi(context.l10n, SummaryPeriod.values[i].label),
+          : donemEtiketi(context.l10n, SummaryPeriod.sembolDonemleri[i].label),
       bicim: bicim,
     );
   }

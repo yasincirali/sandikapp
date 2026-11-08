@@ -828,21 +828,26 @@ List<_Adim> _adimlariKur() {
       // 2026-10-20'de emekliye ayrıldı) — tur bunu tek cümleyle söyler.
       // 2026-11-07 (Ar-Ge 12:15 #1): satır başlığın altına iliştirildi,
       // aşağı kaydırınca yerinde kalır; tur bunu söyler.
+      // 2026-11-08 (müşteri raporu 12:30 #2): YB çipi eklendi, yalnız
+      // Performans'ta (gerekçe `SummaryPeriod` "YB" notu); tur diğer
+      // ekranlarda olmadığını da söyler.
       govde: PortfolioPerformanceScreen.tekAkisAcik
           ? 'Başlığın altındaki seçici, aşağı kaydırsan da yerinde kalır: '
                   '"Bugün" gün içini saat saat '
                   'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
-                  'geniş pencereler. Seçtiğin dönem üstteki kartı, grafiği '
+                  'geniş pencereler, YB ise 1 Ocak\'tan bugüne. Seçtiğin '
+                  'dönem üstteki kartı, grafiği '
                   've altındaki özeti birlikte değiştirir. Aynı seçici '
-                  'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da '
-                  'var. Grafiği iki parmakla ya da çift dokunarak '
+                  'YB dışında aynı yerde Takip, Karşılaştır ve varlık '
+                  'ekranlarında da var. Grafiği iki parmakla ya da çift dokunarak '
                   'yakınlaştırabilir, bir noktaya '
                   'basılı tutarak o anın tarihini, saatini ve değerini '
                   'okuyabilirsin. Seçtiğin dönem her ekranda geçerli olur.'
           : 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
                   'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
-                  'geniş pencereler. Aynı seçici '
-                  'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
+                  'geniş pencereler, YB ise 1 Ocak\'tan bugüne. Aynı seçici '
+                  'YB dışında aynı yerde Takip, Karşılaştır ve varlık '
+                  'ekranlarında da var. '
                   'Grafiği iki parmakla ya da çift dokunarak '
                   'yakınlaştırabilir, bir noktaya '
                   'basılı tutarak o anın tarihini, saatini ve değerini '

@@ -177,7 +177,8 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
       govde = KilitSatiri(metin: l.pyzKilit, kaynak: 'portfoy_yorumu');
     } else if (tur == YorumTuru.secili &&
         !seciliYorumlanabilir(widget.secili!)) {
-      govde = Text(l.pyzGunIci, style: t.bodySmall?.copyWith(color: c.text58));
+      govde = Text(widget.secili!.yilBasindan ? l.pyzYilBasi : l.pyzGunIci,
+          style: t.bodySmall?.copyWith(color: c.text58));
     } else {
       govde = _durum().when(
         loading: () => const _YorumIskeleti(),

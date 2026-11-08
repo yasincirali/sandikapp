@@ -1345,6 +1345,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get period6M => '6M';
 
   @override
+  String get periodYtd => 'YTD';
+
+  @override
+  String get periodYtdLong => 'Year to date';
+
+  @override
   String get period1Y => '1Y';
 
   @override
@@ -2073,6 +2079,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get last6MonthsPeriod => 'the last 6 months';
+
+  @override
+  String get ytdExtremes => 'Year-to-date extremes';
+
+  @override
+  String get ytdPeriod => 'year to date';
 
   @override
   String get sixMonthExtremes => 'Six-month extremes';
@@ -9411,6 +9423,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String pyzVarlikAciklama(String aralik) {
     return 'Explains what happened to this asset in the selected period ($aralik): its place in your portfolio and how it compares with inflation, the dollar, gold and BIST 100.';
   }
+
+  @override
+  String get pyzYilBasi =>
+      'Year to date isn\'t commented on. Pick 1Y or another period in the selector above.';
 
   @override
   String get pyzGunIci =>

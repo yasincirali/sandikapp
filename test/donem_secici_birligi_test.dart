@@ -37,7 +37,8 @@ void main() {
   }
 
   test('küme eski beş listenin BİRLEŞİMİ — hiçbir dönem düşmedi', () {
-    final etiketler = SummaryPeriod.values.map((p) => p.label).toSet();
+    final etiketler =
+        SummaryPeriod.sembolDonemleri.map((p) => p.label).toSet();
     const eskiler = [
       ['GÜNLÜK', '1H', '1A', '6A', '1Y'], // Performans, Takip
       ['1H', '1A', '3A', '1Y', '5Y'], // Karşılaştır
@@ -49,8 +50,12 @@ void main() {
   });
 
   test('sembol yüzeyleri aynı sırada aynı günleri ister', () {
+    // YB yalnız Performans'ta (2026-11-08): sembol yüzeyleri
+    // `sembolDonemleri`ni çizer; o küme eski yedi dönemle birebir.
     expect(watchlistPeriods.map((p) => p.label).toList(),
-        SummaryPeriod.values.map((p) => p.label).toList());
+        SummaryPeriod.sembolDonemleri.map((p) => p.label).toList());
+    expect(SummaryPeriod.sembolDonemleri.map((p) => p.label).toList(),
+        ['GÜNLÜK', '1H', '1A', '3A', '6A', '1Y', '5Y']);
     expect(watchlistPeriods.map((p) => p.days).toList(),
         [1, 7, 30, 90, 180, 365, 1825]);
     expect(varlikSayfasiDonemleri, [1, 7, 30, 90, 180, 365, 1825]);

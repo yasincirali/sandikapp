@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import '../../config/magaza.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../l10n/l10n.dart' show donemEtiketi;
+import '../../utils/tr_format.dart' show dayKey, yilBasiGunu;
 
 /// Tam ekran grafiğin görsel paylaşımı: metin ve dönem (Ar-Ge 25 Eki §2,
 /// rapor 13:15 §1).
@@ -40,15 +41,24 @@ String grafikPaylasimKisaBaglanti() {
 }
 
 /// Ekranda görünen pencerenin dönem kimliği ('GÜNLÜK', '1H', '1A', '3A',
-/// '6A', '1Y', '5Y'); gösterim [donemEtiketi] üzerinden.
+/// '6A', 'YB', '1Y', '5Y'); gösterim [donemEtiketi] üzerinden.
 ///
 /// Tam ekranda dönem seçici yok — kullanıcı yakınlaştırıp kaydırarak
 /// pencereyi kendisi seçer. Paylaşımdaki "6A" bu pencerenin uzunluğuna EN
 /// YAKIN uygulama dönemidir (log ölçekte: 4 ay "3A"ya, 5 ay "6A"ya yakın);
 /// yeni bir dönem dili icat edilmez, Performans ekranının adları kullanılır.
-String gorunurDonemKimligi(int basMs, int sonMs) {
+///
+/// YB (2026-11-08) uzunlukla değil TAKVİMLE tanınır, o yüzden [bugun]
+/// ister: pencere bu yılın ilk haftasında başlıyor (1 Ocak tatil, ilk mum
+/// birkaç gün sonra olabilir), bugüne kadar uzanıyor ve en az iki hafta
+/// sürüyorsa "YB"dir. Kısa pencere 1H/1A olarak kalır; [bugun] verilmezse
+/// eski uzunluk kuralı birebir.
+String gorunurDonemKimligi(int basMs, int sonMs, {DateTime? bugun}) {
   final gun = (sonMs - basMs).abs() / Duration.millisecondsPerDay;
   if (gun < 2) return 'Günlük';
+  if (bugun != null && gun >= 14 && _yilBasindanMi(basMs, sonMs, bugun)) {
+    return 'YB';
+  }
   const donemler = <(String, double)>[
     ('1H', 7),
     ('1A', 30),
@@ -69,9 +79,24 @@ String gorunurDonemKimligi(int basMs, int sonMs) {
   return enIyi.$1;
 }
 
+bool _yilBasindanMi(int basMs, int sonMs, DateTime bugun) {
+  final a = DateTime.fromMillisecondsSinceEpoch(math.min(basMs, sonMs));
+  final b = DateTime.fromMillisecondsSinceEpoch(math.max(basMs, sonMs));
+  final yilBasi = yilBasiGunu(bugun);
+  final ilkHaftaSonu = yilBasi.add(const Duration(days: 7));
+  final basYilinIlkHaftasinda =
+      !a.isBefore(yilBasi) && a.isBefore(ilkHaftaSonu);
+  // "Bugüne kadar": son mum en çok 4 gün geride (hafta sonu ve bayramda
+  // son kapanış bugünden önce kalır).
+  final bugunuKapsiyor =
+      !b.isBefore(dayKey(bugun).subtract(const Duration(days: 4)));
+  return basYilinIlkHaftasinda && bugunuKapsiyor;
+}
+
 /// Kimliği ekran diline çevirir (TR "6 ay", EN "6M").
-String gorunurDonemEtiketi(AppLocalizations l, int basMs, int sonMs) =>
-    donemEtiketi(l, gorunurDonemKimligi(basMs, sonMs));
+String gorunurDonemEtiketi(AppLocalizations l, int basMs, int sonMs,
+        {DateTime? bugun}) =>
+    donemEtiketi(l, gorunurDonemKimligi(basMs, sonMs, bugun: bugun));
 
 /// Paylaşımda okunan pencere: görünen İLK ve SON mumun tarihi
 /// ("22 Ağu – 29 Eki 2026"; gün içi aralıkta saatle).
