@@ -4847,6 +4847,28 @@ class AppLocalizationsTr extends AppLocalizations {
   String get ipoSourceFailed => 'Bağlantı açılamadı.';
 
   @override
+  String get ipoAddToCalendar => 'Takvime ekle';
+
+  @override
+  String get ipoAddToCalendarA11y =>
+      'Talep son günü ve işlem başlangıcını takvime ekle';
+
+  @override
+  String ipoCalendarDeadline(String kod) {
+    return '$kod talep son günü';
+  }
+
+  @override
+  String ipoCalendarFirstTrade(String kod) {
+    return '$kod işlem başlangıcı';
+  }
+
+  @override
+  String ipoCalendarSubject(String kod) {
+    return '$kod halka arz tarihleri';
+  }
+
+  @override
   String get ipoParticipate => 'Katıldım, portföye ekle';
 
   @override

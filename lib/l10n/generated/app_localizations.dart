@@ -8091,6 +8091,36 @@ abstract class AppLocalizations {
   /// **'Bağlantı açılamadı.'**
   String get ipoSourceFailed;
 
+  /// No description provided for @ipoAddToCalendar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takvime ekle'**
+  String get ipoAddToCalendar;
+
+  /// No description provided for @ipoAddToCalendarA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'Talep son günü ve işlem başlangıcını takvime ekle'**
+  String get ipoAddToCalendarA11y;
+
+  /// No description provided for @ipoCalendarDeadline.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} talep son günü'**
+  String ipoCalendarDeadline(String kod);
+
+  /// No description provided for @ipoCalendarFirstTrade.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} işlem başlangıcı'**
+  String ipoCalendarFirstTrade(String kod);
+
+  /// No description provided for @ipoCalendarSubject.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} halka arz tarihleri'**
+  String ipoCalendarSubject(String kod);
+
   /// No description provided for @ipoParticipate.
   ///
   /// In tr, this message translates to:

@@ -263,6 +263,8 @@ void main() {
       expect(find.text('Katıldım, portföye ekle'), findsNothing);
       expect(find.textContaining('Dağıtım sonuçları'), findsOneWidget);
       expect(find.text('Kaynağı aç'), findsOneWidget);
+      // Talep tarihi bilinen kayıtta takvim düğmesi kaynağın yanında.
+      expect(find.text('Takvime ekle'), findsOneWidget);
     });
 
     testWidgets(

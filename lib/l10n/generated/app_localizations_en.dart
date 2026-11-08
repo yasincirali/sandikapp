@@ -4883,6 +4883,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ipoSourceFailed => 'Couldn\'t open the link.';
 
   @override
+  String get ipoAddToCalendar => 'Add to calendar';
+
+  @override
+  String get ipoAddToCalendarA11y =>
+      'Add the last order day and first trading day to your calendar';
+
+  @override
+  String ipoCalendarDeadline(String kod) {
+    return '$kod IPO last order day';
+  }
+
+  @override
+  String ipoCalendarFirstTrade(String kod) {
+    return '$kod first trading day';
+  }
+
+  @override
+  String ipoCalendarSubject(String kod) {
+    return '$kod IPO dates';
+  }
+
+  @override
   String get ipoParticipate => 'I participated, add to portfolio';
 
   @override

@@ -20,6 +20,10 @@ import '../models/halka_arz.dart';
 import '../providers/halka_arz_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/halka_arz_service.dart';
+import '../services/halka_arz_takvim.dart';
+import '../services/crash_reporter.dart';
+import '../services/share_card_service.dart';
+import '../utils/friendly_error.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -64,19 +68,19 @@ class _HalkaArzScreenState extends ConsumerState<HalkaArzScreen> {
         tamEkran: true,
         anahtar: SandikIcerikGecisi.hal([async]),
         child: async.when(
-        // Önceki değer varken (yenileme) iskelet yerine liste kalır.
-        skipLoadingOnRefresh: true,
-        loading: () => const SandikSkeletonList(rows: 5),
-        error: (e, _) => SandikErrorView(
-          error: e,
-          onRetry: () => ref.invalidate(halkaArzGorunumuProvider),
+          // Önceki değer varken (yenileme) iskelet yerine liste kalır.
+          skipLoadingOnRefresh: true,
+          loading: () => const SandikSkeletonList(rows: 5),
+          error: (e, _) => SandikErrorView(
+            error: e,
+            onRetry: () => ref.invalidate(halkaArzGorunumuProvider),
+          ),
+          data: (g) => RefreshIndicator.adaptive(
+            color: context.c.amberText,
+            onRefresh: _yenile,
+            child: _Liste(gorunum: g),
+          ),
         ),
-        data: (g) => RefreshIndicator.adaptive(
-          color: context.c.amberText,
-          onRefresh: _yenile,
-          child: _Liste(gorunum: g),
-        ),
-      ),
       ),
     );
   }
@@ -103,9 +107,7 @@ class _Liste extends ConsumerWidget {
         if (cevrimdisi) ...[
           _Not(
             ikon: Icons.cloud_off_outlined,
-            metin: tarih == null
-                ? l.ipoOfflineNoDate
-                : l.ipoOfflineNote(tarih),
+            metin: tarih == null ? l.ipoOfflineNoDate : l.ipoOfflineNote(tarih),
           ),
           const SizedBox(height: SandikSpace.md),
         ],
@@ -274,8 +276,7 @@ String? _talepAraligi(BuildContext context, HalkaArz a, {bool yil = false}) {
 }
 
 String _gunAy(BuildContext context, DateTime t, {bool yil = false}) =>
-    DateFormat(yil ? 'd MMM yyyy' : 'd MMM', context.l10n.localeName)
-        .format(t);
+    DateFormat(yil ? 'd MMM yyyy' : 'd MMM', context.l10n.localeName).format(t);
 
 String _grupAdi(AppLocalizations l, HalkaArzDurumu d) => switch (d) {
       HalkaArzDurumu.talepToplaniyor => l.ipoGroupTalep,
@@ -330,6 +331,30 @@ class HalkaArzDetay extends ConsumerWidget {
     if (!ok && context.mounted) {
       sandikSnack(context, context.l10n.ipoSourceFailed,
           kind: SandikSnackKind.warning);
+    }
+  }
+
+  /// `.ics` üretip paylaşır. [context] düğmenin kendi bağlamı: iPad'de
+  /// paylaşım sayfası düğmeye bağlansın (`originOf`).
+  Future<void> _takvimeEkle(BuildContext context) async {
+    final l = context.l10n;
+    final ics = halkaArzIcs(
+      arz: arz,
+      talepSonBaslik: l.ipoCalendarDeadline(arz.kod),
+      islemBaslik: l.ipoCalendarFirstTrade(arz.kod),
+      simdi: DateTime.now(),
+    );
+    if (ics == null) return;
+    try {
+      await halkaArzTakvimPaylas(
+        ics: ics,
+        kod: arz.kod,
+        konu: l.ipoCalendarSubject(arz.kod),
+        origin: ShareCardService.originOf(context),
+      );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'halka_arz_takvim');
+      if (context.mounted) showAppError(context, e);
     }
   }
 
@@ -460,14 +485,41 @@ class HalkaArzDetay extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: SandikSpace.sm),
-          TextButton.icon(
-            onPressed: () => _kaynagiAc(context),
-            style: TextButton.styleFrom(
-              minimumSize: SandikTouch.minSize,
-              foregroundColor: context.c.amberText,
-            ),
-            icon: const Icon(Icons.open_in_new_rounded, size: 18),
-            label: Text(l.ipoOpenSource),
+          // Wrap: büyük yazıda (Dynamic Type ×2) iki düğme yan yana
+          // sığmazsa alt satıra geçer, taşma yok.
+          Wrap(
+            spacing: SandikSpace.xs,
+            children: [
+              TextButton.icon(
+                onPressed: () => _kaynagiAc(context),
+                style: TextButton.styleFrom(
+                  minimumSize: SandikTouch.minSize,
+                  foregroundColor: context.c.amberText,
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                label: Text(l.ipoOpenSource),
+              ),
+              // İki tarih de bilinmiyorsa takvime eklenecek bir şey yok:
+              // düğme hiç çizilmez (uydurma tarih yazılmaz).
+              if (halkaArzTakvimeEklenebilir(arz))
+                Builder(
+                  builder: (bc) => Semantics(
+                    button: true,
+                    label: l.ipoAddToCalendarA11y,
+                    onTap: () => _takvimeEkle(bc),
+                    excludeSemantics: true,
+                    child: TextButton.icon(
+                      onPressed: () => _takvimeEkle(bc),
+                      style: TextButton.styleFrom(
+                        minimumSize: SandikTouch.minSize,
+                        foregroundColor: context.c.amberText,
+                      ),
+                      icon: const Icon(Icons.event_rounded, size: 18),
+                      label: Text(l.ipoAddToCalendar),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -523,8 +575,7 @@ class HalkaArzProfilSatiri extends ConsumerWidget {
     // Bayat veri (21 günden eski ya da tarihsiz) girişi gizler; veri gelene
     // kadar ve hata durumunda da yer kaplamaz — tazeliği bilinmeyen liste
     // açılmaz (bkz. `halkaArzBayatMi`).
-    final guncelleme =
-        ref.watch(halkaArzGorunumuProvider).value?.guncelleme;
+    final guncelleme = ref.watch(halkaArzGorunumuProvider).value?.guncelleme;
     if (halkaArzBayatMi(guncelleme, ref.watch(halkaArzSaatProvider)())) {
       return const SizedBox.shrink();
     }
@@ -536,7 +587,9 @@ class HalkaArzProfilSatiri extends ConsumerWidget {
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
         onTap: () => pushGuarded<void>(
           context,
-          adaptiveRoute<void>(settings: const RouteSettings(name: 'halka_arz'), builder: (_) => const HalkaArzScreen()),
+          adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'halka_arz'),
+              builder: (_) => const HalkaArzScreen()),
         ),
         child: Semantics(
           button: true,
