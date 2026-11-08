@@ -1903,7 +1903,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get simModeBody =>
-      'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.';
+      'Bugünkü portföyünü dönem boyunca hiç değiştirmeden tutsaydın grafik böyle olurdu. Geçmiş alım ve satışlar yok sayılır.';
 
   @override
   String get chartDataFailed => 'Grafik verisi alınamadı';
@@ -5676,7 +5676,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get kayitliCihazlarAciklama =>
-      'Hesabın aynı anda yalnızca bir cihazda açık olabilir. Listede olmayan bir cihazdan giriş yapılınca e-postana doğrulama kodu gönderilir. Tanımadığın bir cihazı kaldır ve şifreni değiştir.';
+      'Listede olmayan cihazdan girişte e-postana kod gelir. Tanımadığın cihazı kaldır ve şifreni değiştir.';
 
   @override
   String get buCihaz => 'Bu cihaz';
@@ -8261,7 +8261,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ttKural =>
-      'Tahmin tek bir kurala dayanır: son 12 ayda gerçekleşen temettü, bugünkü lotunla aynı aylarda tekrarlansa. Şirket kararları, bölünme ve bedelsiz hesaba katılmaz. Yalnız BIST hisseleri; yatırım tavsiyesi değildir.';
+      'Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.';
 
   @override
   String get pwOzRapor =>
