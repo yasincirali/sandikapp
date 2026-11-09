@@ -32,6 +32,7 @@ import 'package:portfoy_takip/widgets/sandik_paylas_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/sandik_siralama_dugmesi.dart';
 import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
+import 'package:portfoy_takip/widgets/sozlesme_formu_ortak.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 
 /// BES fon satırı (2026-10-29): Portföy sözleşme paneli + sözleşme kartı.
@@ -336,6 +337,14 @@ void main() {
                       child: Text('ASELS'),
                     ),
                   ),
+                ),
+                const SizedBox(height: SandikSpace.md),
+                // Sözleşme formlarının tarih alanı (2026-11-10): etiket üstte
+                // sarar; kutu 44 pt, etiketiyle birlikte okunur.
+                SozlesmeTarihi(
+                  etiket: 'Hakkı kullandığın tarih',
+                  tarih: DateTime(2026, 5, 1),
+                  degisti: (_) {},
                 ),
                 const SizedBox(height: SandikSpace.md),
                 for (final f in _besFonVitrini)

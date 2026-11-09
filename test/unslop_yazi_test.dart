@@ -161,12 +161,13 @@ void main() {
   // tutar/rakam vurgularını da düzleştirirdi (onlar bilerek kalın). Bu
   // yüzden toptan değişiklik yerine cırcır: sayı yalnız AZALABİLİR, etiket
   // ve başlık çevrildikçe tavan düşürülür (2026-11-08: Ayarlar ve Sinyal
-  // ayarları satır/başlık etiketleri w600'e indi, 307 → 292).
+  // ayarları satır/başlık etiketleri w600'e indi, 307 → 292; 2026-11-10:
+  // sözleşme tarih alanının tarihi, 292 → 291).
   // w800/w900 sayılmaz: yarış/düello sahneleri ve ana sayfa toplam kartı
   // istisnası yukarıdaki testte ayrıca kilitli. Tüm lib/ dizini tarandığı
   // için part dosyaları zaten dahil (`ekranKaynagiSync` tek ekran içindir).
   test('FontWeight.w700 sayısı artmaz (cırcır)', () {
-    const tavan = 292;
+    const tavan = 291;
     var sayi = 0;
     for (final f in Directory('lib')
         .listSync(recursive: true)

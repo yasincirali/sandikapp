@@ -25,12 +25,17 @@ abstract class SozlesmeFormu {
 
 /// Alan etiketi — genel formun `_fieldLabel`'ıyla aynı stil.
 class SozlesmeEtiketi extends StatelessWidget {
-  const SozlesmeEtiketi(this.metin, {super.key, this.ek});
+  const SozlesmeEtiketi(this.metin, {super.key, this.ek, this.sarar = false});
 
   final String metin;
 
   /// Etiketin yanında soluk not ("İsteğe bağlı").
   final String? ek;
+
+  /// Uzun etiket kesilmesin, alt satıra sarsın. Varsayılan tek satır
+  /// (form etiketleri kısa, ek notla yan yana); [SozlesmeTarihi] açar,
+  /// çünkü "Hakkı kullandığın tarih" büyük yazıda tek satıra sığmaz.
+  final bool sarar;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -40,8 +45,8 @@ class SozlesmeEtiketi extends StatelessWidget {
             Flexible(
               child: Text(
                 metin,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                maxLines: sarar ? null : 1,
+                overflow: sarar ? null : TextOverflow.ellipsis,
                 style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: context.c.text90,
@@ -168,7 +173,15 @@ class SozlesmeAlani extends StatelessWidget {
       );
 }
 
-/// Tarih satırı — genel formun tarih çipiyle aynı görünüm.
+/// Tarih alanı: etiket üstte (oran alanı gibi), kutuda yalnız tarih ve ok.
+///
+/// ## Neden etiket kutudan çıktı (müşteri raporu 2026-11-10 #2)
+/// Etiket ile tarih aynı satırda iki `Flexible` idi; 390 pt'de 1,0×'te bile
+/// "Hakkı kullandığın tarih" "Hakkı kulland…" diye kesiliyordu, büyük yazıda
+/// etiket tamamen kayboluyordu. Diğer alanlar (oran, stopaj) etiketi
+/// [SozlesmeEtiketi] ile üstte taşır; tarih de aynı dile geçti, etiket
+/// sarar ve kesilmez. Kutu tek dokunma hedefi kalır (44 pt); ekran okuyucu
+/// etiketi düğmenin adıyla birlikte okur, üstteki metin ikinci kez okunmaz.
 class SozlesmeTarihi extends StatelessWidget {
   const SozlesmeTarihi({
     super.key,
@@ -186,50 +199,51 @@ class SozlesmeTarihi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metin = DateFormat.yMMMd(context.l10n.localeName).format(tarih);
-    return SandikTappable(
-      onTap: () async {
-        final secim = await pickSandikDate(
-          context,
-          initialDate: tarih,
-          firstDate: ilk,
-          helpText: etiket,
-        );
-        if (secim != null) degisti(secim);
-      },
-      child: Container(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        padding: const EdgeInsets.symmetric(
-            horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: SandikRadius.mdAll,
-          border: Border.all(color: context.c.overlay),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.event_rounded, size: 16, color: context.c.text58),
-            const SizedBox(width: SandikSpace.sm2),
-            Flexible(
-              child: Text(etiket,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600, color: context.c.text90)),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ExcludeSemantics(child: SozlesmeEtiketi(etiket, sarar: true)),
+        SandikTappable(
+          semanticLabel: '$etiket, $metin',
+          onTap: () async {
+            final secim = await pickSandikDate(
+              context,
+              initialDate: tarih,
+              firstDate: ilk,
+              helpText: etiket,
+            );
+            if (secim != null) degisti(secim);
+          },
+          child: ExcludeSemantics(
+            child: Container(
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
+              decoration: BoxDecoration(
+                color: context.c.surface1,
+                borderRadius: SandikRadius.mdAll,
+                border: Border.all(color: context.c.overlay),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.event_rounded, size: 16, color: context.c.text58),
+                  const SizedBox(width: SandikSpace.sm2),
+                  Expanded(
+                    child: Text(metin,
+                        style: context.t.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: context.c.amberText)),
+                  ),
+                  const SizedBox(width: SandikSpace.xs),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 16, color: context.c.amberText),
+                ],
+              ),
             ),
-            const Spacer(),
-            Flexible(
-              child: Text(metin,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.amberText)),
-            ),
-            const SizedBox(width: SandikSpace.xs),
-            Icon(Icons.chevron_right_rounded,
-                size: 16, color: context.c.amberText),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
