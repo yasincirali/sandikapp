@@ -37,6 +37,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Animasyon / hareket | `flutter-animations`, `animate`, `apple-design`; denetim/eleştiri `design-motion-principles` |
 | Görsel tasarım / cila | `emil-design-eng`, `ui-ux-pro-max`, `frontend-design` |
 | AI-slop denetimi | `unslop` (yalnız `references/signs.md` listesi + ui-ux-pro-mcp; palet/tipografi tasarım sistemi kazanır) |
+| Düzyazıda AI kalıbı denetimi (İngilizce web/mağaza metni) | `no-ai-slop` (tespit ya da en az düzeltme; Türkçe anlatımda `ANLATIM_KURALLARI.md` kazanır) |
 | Flutter testi | `flutter-testing` (**`test-master` değil**) |
 | Test *stratejisi* / kapsam boşluğu | `test-master` |
 | Supabase şema / migration / RPC | `sql-pro` → yazım, `postgres-pro` → PG'ye özgü |

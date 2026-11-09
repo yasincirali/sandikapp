@@ -78,6 +78,18 @@ Herhangi bir UI değişikliğinden önce:
     (Openverse, Wikimedia, Met, AIC, archive.org) görsel indirir. Bu betikler yalnız
     yasin'e gösterilen web artifact'i/tanıtım sayfası için koşulur; uygulamaya giren
     hiçbir şey üretmez, `library/` paletleri/fontları **alınmaz** (amber/gold + DM Sans).
+  - **2026-11-10 güncelleme (yasin isteği, Murphysoft sitesi):** `design-taste-frontend`
+    depodaki `f6b7657` (tasteskill 2.5.1) ile değişti. Klasör 2,5 MB'tan 39 MB'a çıktı
+    (`assets/photos` 12 MB, `objects`, `layout`, `icons`). Frontmatter'da bir **Stop hook**
+    var: oturum biterken `scripts/gate.mjs --hook claude` koşar; `.taste-skill/` klasörü
+    olmayan dizinde bir şey yapmaz. Kapı yalnız web sayfası derlemesi içindir, uygulamaya
+    dokunmaz. Commit edilmedi; repoya girip girmeyeceği yasin'in kararı.
+- `no-ai-slop` (2026-11-10, yasin isteği; `github.com/petergyang/no-ai-slop` `000650b`, MIT;
+  LICENSE klasörde). Düzyazı editörü: yasaklı kelimeler ve kalıplar (ikili karşıtlık,
+  iki nokta üst üste ifşası, önem şişirmesi, uzun tire) için "düzenle" ve "tespit et" işleri.
+  `unslop` arayüz işaretlerine bakar, bu metne bakar; ikisi çakışmaz. Kapsam İngilizce metin
+  (web sayfası, mağaza metninin İngilizcesi); Türkçe anlatım için `ANLATIM_KURALLARI.md` geçerli.
+  Commit edilmedi.
     Flutter işinde değeri `references/tells.md` + `critique.md` + `app-screens.md`
     (şablon görünüm teşhisi). `high-end-visual-design` ve `redesign-existing-projects`
     depodan kalktı; kurulu kopyalar (1 Ekim hâli) yerinde bırakıldı.
