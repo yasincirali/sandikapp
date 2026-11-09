@@ -188,6 +188,8 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
         lotlar: widget.lotlar,
         oranYuzde: parseTrNumber(_oran.text),
         tarih: _tarih,
+        // Yeni ortalama, lotu kaydın gerçekten yazılacağı ana koyar.
+        kayitAni: _kayitTarihi,
       );
 
   /// Tarih seçici gece yarısını döner. Geçmiş günde lot öğlene yazılır:
@@ -228,6 +230,7 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
     // Önizleme yalnız oran yazılınca; tarihte lot yoksa onu söyler.
     String? onizleme;
     String? yuvarlama;
+    String? yeniOrtalama;
     if (hesap.eldekiLot <= 0) {
       onizleme = l10n.bedelliLotYok;
     } else if (oranVar) {
@@ -237,6 +240,9 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
         fmtTRY(BedelliArtirim.nominal),
         fmtTRY(hesap.toplamTutar),
       );
+      if (hesap.yeniOrtalama case final o?) {
+        yeniOrtalama = fmtTRYFiyat(o);
+      }
       if (hesap.yuvarlandi) {
         yuvarlama = l10n.bedelliYuvarlama(
           fmtNumFlex(hesap.hakSayisi),
@@ -281,6 +287,10 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
             ),
           ],
           if (yuvarlama != null) SozlesmeNotu(yuvarlama),
+          if (yeniOrtalama != null) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _YeniOrtalamaSatiri(yeniOrtalama),
+          ],
           const SizedBox(height: SandikSpace.lg),
           SandikAsyncButton.kompakt(
             key: const ValueKey('bedelli-kaydet'),
@@ -295,6 +305,36 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Yeni ortalama maliyetin ₺115,60 olur." — tutar w600 (müşteri raporu
+/// 2026-11-10 #1). Cümle tek parça: ekran okuyucu bütün okur; vurgu ağırlıkla,
+/// renkle değil. Tutar .arb cümlesinde arandığı için dil sırası serbest.
+class _YeniOrtalamaSatiri extends StatelessWidget {
+  const _YeniOrtalamaSatiri(this.tutar);
+
+  final String tutar;
+
+  @override
+  Widget build(BuildContext context) {
+    final cumle = context.l10n.bedelliYeniOrtalama(tutar);
+    final i = cumle.indexOf(tutar);
+    final stil = context.t.bodyLarge?.copyWith(color: context.c.text90);
+    return Text.rich(
+      key: const ValueKey('bedelli-yeni-ortalama'),
+      i < 0
+          ? TextSpan(text: cumle)
+          : TextSpan(children: [
+              TextSpan(text: cumle.substring(0, i)),
+              TextSpan(
+                text: tutar,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              TextSpan(text: cumle.substring(i + tutar.length)),
+            ]),
+      style: stil,
     );
   }
 }

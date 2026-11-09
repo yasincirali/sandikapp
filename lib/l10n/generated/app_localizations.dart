@@ -17419,6 +17419,12 @@ abstract class AppLocalizations {
   /// **'Elindeki {elde} lota {yeni} yeni lot, lot başı {birim}, toplam {toplam}'**
   String bedelliOnizleme(String elde, String yeni, String birim, String toplam);
 
+  /// Bedelli önizlemesinin altı: kayıttan sonra Portföy'deki lot başı ortalama maliyet; tutar vurgulu yazılır
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni ortalama maliyetin {tutar} olur.'**
+  String bedelliYeniOrtalama(String tutar);
+
   /// No description provided for @bedelliYuvarlama.
   ///
   /// In tr, this message translates to:

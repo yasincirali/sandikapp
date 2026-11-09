@@ -1,5 +1,6 @@
 import 'asset.dart';
 import 'asset_type.dart';
+import 'position.dart';
 
 /// Bedelli sermaye artırımı: rüçhan hakkını kullanan yatırımcının yeni
 /// lotları (Ar-Ge 2026-11-07 16:06#1, müşteri raporu 16:30 YAP 1).
@@ -25,6 +26,7 @@ class BedelliArtirim {
     required this.eldekiLot,
     required this.hakSayisi,
     required this.yeniLot,
+    this.yeniOrtalama,
   });
 
   /// BIST payının nominal değeri, lot başı ödenen tutar.
@@ -38,6 +40,23 @@ class BedelliArtirim {
 
   /// Kaydedilecek yeni lot sayısı — [hakSayisi]'nın tam kısmı.
   final int yeniLot;
+
+  /// Kayıttan sonra Portföy'ün göstereceği ortalama maliyet (lot başı ₺);
+  /// gösterilmeyecekse `null`.
+  ///
+  /// ## Neden Portföy'ün kendi hesabıyla (müşteri raporu 2026-11-10 #1)
+  /// Kullanıcı bedelliyi "ortalamam ne olacak" diye kaydediyor; önizleme
+  /// elle `(eski maliyet + yeni lot × 1 ₺) ÷ toplam lot` yazsaydı satıştan
+  /// sonra alım olan defterde Portföy'ün yürüyen ortalamasından
+  /// (`aggregatePositions`) ayrılabilirdi: sayfa bir sayı, kayıttan sonra
+  /// ekran başka sayı. Bu yüzden kaydedilecek lot defterin bir kopyasına
+  /// eklenip aynı fonksiyon koşulur; sıradan defterde sonuç yine o formüldür
+  /// (120 lot ₺287,50 + %150 → (34.500 + 180) ÷ 300 = ₺115,60).
+  ///
+  /// `null` (uydurma sayı yok): yeni lot yok, elde lot yok, alışlardan biri
+  /// "maliyet sonra" işaretli ya da bugünkü ortalama 0 (maliyet bilinmiyor),
+  /// ya da kaydedilecek lot başka bir pozisyona düşüyor (TRY dışı defter).
+  final double? yeniOrtalama;
 
   /// Ödenen toplam tutar (₺).
   double get toplamTutar => yeniLot * nominal;
@@ -58,10 +77,15 @@ class BedelliArtirim {
   /// [lotlar] pozisyonun defter satırları (alış, satış, temettü); silinmiş
   /// satır sayılmaz. Tarih gün hassasiyetlidir: o günün içindeki her alış
   /// ve satış sayılır (hak, kayıt günü sonundaki paya doğar).
+  ///
+  /// [kayitAni] lotun deftere yazılacağı an (sayfanın `_kayitTarihi`);
+  /// [yeniOrtalama] lotu bu ana koyar ki aynı gün sonraki bir satış
+  /// Portföy'deki gibi sıralansın. Verilmezse seçilen günün öğlesi.
   static BedelliArtirim hesapla({
     required Iterable<Asset> lotlar,
     required double? oranYuzde,
     required DateTime tarih,
+    DateTime? kayitAni,
   }) {
     final gunSonu = DateTime(tarih.year, tarih.month, tarih.day + 1);
     var elde = 0.0;
@@ -74,7 +98,58 @@ class BedelliArtirim {
     final oran = (oranYuzde ?? 0) > 0 ? oranYuzde! : 0.0;
     final hak = elde * oran / 100;
     final yeni = (hak + _kayanNoktaPayi).floor();
-    return BedelliArtirim._(eldekiLot: elde, hakSayisi: hak, yeniLot: yeni);
+    return BedelliArtirim._(
+      eldekiLot: elde,
+      hakSayisi: hak,
+      yeniLot: yeni,
+      yeniOrtalama: elde > 0
+          ? _yeniOrtalama(lotlar, yeni,
+              kayitAni ?? DateTime(tarih.year, tarih.month, tarih.day, 12))
+          : null,
+    );
+  }
+
+  /// [yeniOrtalama]'nın hesabı: kaydedilecek lotu (sayfanın `addAsset`
+  /// çağrısıyla aynı alanlar: TRY, 1 ₺, temsilci lotun sembolü/alt türü)
+  /// defterin kopyasına ekler, Portföy'ün `aggregatePositions`'ını koşar.
+  static double? _yeniOrtalama(
+      Iterable<Asset> lotlar, int yeniLot, DateTime an) {
+    if (yeniLot <= 0) return null;
+    final defter = lotlar.where((l) => l.isActive).toList();
+    final alislar = defter.where((l) => l.isBuy).toList();
+    if (alislar.isEmpty || alislar.any((l) => l.maliyetBilinmiyor == true)) {
+      return null;
+    }
+    final ornek = alislar.first;
+    final bedelli = Asset(
+      id: '_bedelli_onizleme',
+      userId: ornek.userId,
+      name: ornek.name,
+      ticker: ornek.ticker,
+      type: ornek.type,
+      quantity: yeniLot.toDouble(),
+      purchasePrice: nominal,
+      currency: 'TRY',
+      notes: '',
+      subCategory: ornek.subCategory,
+      unitType: ornek.unitType,
+      addedDate: an,
+    );
+    final anahtar = positionKey(bedelli);
+    Position? bul(List<Asset> l) {
+      for (final p in aggregatePositions(l)) {
+        if (p.key == anahtar) return p;
+      }
+      return null;
+    }
+
+    // Bugünkü pozisyon bu anahtarda yoksa yeni lot ayrı satıra düşer;
+    // "ortalaman şu olur" demek yanlış olurdu.
+    final once = bul(defter);
+    if (once == null || once.weightedPurchasePrice <= 0) return null;
+    final sonra = bul([...defter, bedelli]);
+    final ort = sonra?.weightedPurchasePrice;
+    return ort != null && ort > 0 ? ort : null;
   }
 
   /// Bedelli artırım yalnız BIST hissesinde anlamlı: ABD hissesinde rüçhan
