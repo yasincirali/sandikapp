@@ -213,6 +213,53 @@ void main() {
           reason: 'Eylül fon değişikliği ayı "katkı eklendi" göstermemeli');
     });
 
+    // Müşteri bildirimi 2026-11-09: silinen BES'e otomatik katkı yazılmaya
+    // devam ediyordu. `otomatikKatkilariIsle` bu okumaya göre anahtarı
+    // kapatır ve katkıyı atlar.
+    group('besBirikimiVar', () {
+      Future<bool> sor(List<Asset> lotlar) async {
+        final c = kap(lotlar, bes(son: DateTime(2026, 1, 1)));
+        await c.read(portfolioProvider.future);
+        await c.read(sozlesmeProvider.future);
+        return c.read(sozlesmeProvider.notifier).besBirikimiVar('b-1');
+      }
+
+      test('açık birikim: var', () async {
+        expect(await sor([lot('acilis', DateTime(2026, 1, 1))]), isTrue);
+      });
+
+      test('kökten silindi (lot kalmadı): yok', () async {
+        expect(await sor(const []), isFalse);
+      });
+
+      test('tamamı satıldı (net 0): yok', () async {
+        expect(
+          await sor([
+            lot('acilis', DateTime(2026, 1, 1)),
+            lot('satis', DateTime(2026, 10, 1), kind: AssetKind.sell),
+          ]),
+          isFalse,
+        );
+      });
+
+      test('yalnız devlet katkısı kaldı: yok', () async {
+        expect(await sor([lot('d', DateTime(2026, 1, 1), sub: 'dk')]),
+            isFalse);
+      });
+
+      test('kısmi satış ve fon değişikliği: var', () async {
+        final degisim = DateTime(2026, 9, 20, 10, 30);
+        expect(
+          await sor([
+            lot('acilis', DateTime(2026, 1, 1)),
+            lot('degisim-satis', degisim, kind: AssetKind.sell, qty: 40),
+            lot('degisim-alis', degisim, qty: 40),
+          ]),
+          isTrue,
+        );
+      });
+    });
+
     test('bekleyen günün katkı ve devlet katkısı lotları, tutarla', () async {
       final gun = DateTime(2026, 10, 15);
       final c = kap([

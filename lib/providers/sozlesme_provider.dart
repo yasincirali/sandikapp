@@ -540,6 +540,28 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
 
   bool _otomatikCalisiyor = false;
 
+  /// Kullanıcı bu BES'te BUGÜN kendi birikimini tutuyor mu.
+  ///
+  /// Müşteri bildirimi (2026-11-09): otomatik katkısı açık BES silindikten
+  /// sonra da her ay katkı yazılıyor, silinen BES portföye geri geliyordu.
+  /// Sözleşme satırı silmede ve satışta AÇIK kalır (`kapandi` yalnız mevduat
+  /// çekiminde dolar); otomatik iş yalnız ona bakıyordu. Karar (yasin):
+  /// *"satarak 0'landıysa ve kökten silindiyse otomatik eklemeyi de
+  /// silelim."*
+  ///
+  /// Bugünkü mülkiyet sorusu → `aktifLotlar`: silinen lot (`isActive`) ve
+  /// net miktarı 0'a düşen fon sayılmaz. Devlet katkısı lotu TEK BAŞINA
+  /// birikim saymaz: kendi fonlarını silip devlet katkısı satırını unutan
+  /// kullanıcıda da katkı durmalı. Fon değişikliği satış ve alışı tek
+  /// istekte yazar, net hiçbir an 0 görünmez.
+  bool besBirikimiVar(String sozlesmeId) => aktifLotlar([
+        for (final a in ref.read(portfolioProvider).valueOrNull?.assets ??
+            const <Asset>[])
+          if (a.sozlesmeId == sozlesmeId &&
+              a.subCategory != BesAltKategori.devletKatkisi)
+            a,
+      ]).isNotEmpty;
+
   /// Otomatik katkısı açık BES'lerde günü gelen katkıları yazar.
   ///
   /// Uygulama açılışında ve öne dönüşte çağrılır (`_AuthGate`); sunucuda
@@ -575,6 +597,12 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
       await ref.read(portfolioProvider.future);
       final uid = _kullanici();
       for (final s in adaylar) {
+        // Silinmiş ya da tamamı satılmış BES'e katkı yazılmaz; anahtar da
+        // kapanır (bkz. [besBirikimiVar]).
+        if (!besBirikimiVar(s.id)) {
+          await _sozlesmeYaz(s.kopya(otomatikKatki: false, bekleyenSil: true));
+          continue;
+        }
         final gunler = BesHesabi.otomatikKatkiGunleri(
           s: s,
           simdi: DateTime.now(),
