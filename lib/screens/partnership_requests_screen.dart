@@ -11,6 +11,7 @@ import 'paywall_screen.dart' show ortakSiniriPaywalliActi;
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
+import '../widgets/sandik_error_view.dart';
 import '../utils/polling.dart';
 import '../utils/sandik_snack.dart';
 import '../l10n/l10n.dart';
@@ -130,6 +131,11 @@ class _PartnershipRequestsScreenState
                 child:
                     SandikSkeletonList(rows: 2, padding: EdgeInsets.zero),
               )
+            // Hata BOŞ değildir (TASARIM_DILI §4 "Durumlar"; arayüz denetimi
+            // 2026-11-10): istek listesi alınamadığında eskiden "bekleyen
+            // istek yok" kartı çıkıyordu. Elde önceki liste varsa o kalır.
+            else if (invitesAsync.hasError && !invitesAsync.hasValue)
+              SandikErrorView(error: invitesAsync.error!, onRetry: _load)
             else if (pendingInvites.isEmpty)
               SandikCard(
                 padding: const EdgeInsets.all(24),

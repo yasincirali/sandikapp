@@ -598,51 +598,72 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// rozet, eğri, çipler, alım gücü kutusu, hedef satırı. Kart tek seferde,
   /// tüm veriyle gelir; parça parça büyümez. Ölçüler gerçek düzenle aynı ki
   /// yükleme bitince kart zıplamasın.
-  Widget _iskelet(BuildContext context) => Padding(
+  ///
+  /// Koşullu satırlar gerçek kartla AYNI sorulara bakar (arayüz denetimi
+  /// 2026-11-10). Eskiden eğri, alım gücü kutusu ve hedef satırı hep
+  /// çiziliyordu; hedefi olmayan, bakiyesi gizli ya da reel satırı kapalı
+  /// kullanıcıda kart her açılışta iskeletten ~260 pt kısa geliyor, ana
+  /// sayfanın kalanı yukarı kayıyordu. Yalnız YÜKLEMEDEN ÖNCE bilinen
+  /// sorular sorulur (tercih, bayrak); veri gelince belli olanlar
+  /// (reel penceresi kurulamadı, veri yok) için yer tutulmaya devam eder.
+  Widget _iskelet(BuildContext context) {
+    final egri = !ref.watch(balanceHiddenProvider);
+    final alimGucu = BugunYukleyici.reelBeklenir;
+    final hedef = ref.watch(kapsamHedefiProvider(widget.hedefKapsami)) > 0 ||
+        HedefOnerisiDurumu.coz(ref.watch(hedefOnerisiProvider))
+            .gorunur(BugunKarti.saat());
+    return Padding(
         padding: widget.padding,
         child: SandikCard(
           padding: const EdgeInsets.all(SandikSpace.md),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
+              const Row(
                 children: [
                   Expanded(child: SandikSkeleton(width: 160, height: 10)),
                   SizedBox(width: SandikSpace.sm),
                   SandikSkeleton(width: 56, height: 10),
                 ],
               ),
-              SizedBox(height: SandikSpace.md2),
-              Row(
+              const SizedBox(height: SandikSpace.md2),
+              const Row(
                 children: [
                   Flexible(child: SandikSkeleton(width: 150, height: 28)),
                   SizedBox(width: SandikSpace.sm2),
                   Flexible(child: SandikSkeleton(width: 72, height: 24)),
                 ],
               ),
-              SizedBox(height: SandikSpace.sm2),
-              SandikSkeleton(height: _egriYuksekligi),
-              SizedBox(height: SandikSpace.sm2),
+              if (egri) ...const [
+                SizedBox(height: SandikSpace.sm2),
+                SandikSkeleton(height: _egriYuksekligi),
+              ],
+              const SizedBox(height: SandikSpace.sm2),
               // Dönem segmenti (44 pt) + not/bağlantı satırı (44 pt).
-              SizedBox(
+              const SizedBox(
                 height: SandikTouch.min,
                 child: Center(child: SandikSkeleton(height: 32)),
               ),
-              SizedBox(
+              const SizedBox(
                 height: SandikTouch.min,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: SandikSkeleton(width: 96, height: 10),
                 ),
               ),
-              SizedBox(height: SandikSpace.md2),
-              SandikSkeleton(height: 112),
-              SizedBox(height: SandikSpace.md2),
-              SandikSkeleton(height: 56),
+              if (alimGucu) ...const [
+                SizedBox(height: SandikSpace.md2),
+                SandikSkeleton(height: 112),
+              ],
+              if (hedef) ...const [
+                SizedBox(height: SandikSpace.md2),
+                SandikSkeleton(height: 56),
+              ],
             ],
           ),
         ),
       );
+  }
 
   // İskelet sönerken kart belirir, boy farkı akar (2026-10-14). Eskiden iskelet tek karede gidiyor, kart sıfır opaklıktan
   // başlıyordu: arada boş bir an ve altındaki her şeyin zıplaması vardı.

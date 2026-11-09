@@ -92,6 +92,14 @@ abstract final class BugunYukleyici {
   @visibleForTesting
   static ReelGetiriSatiri? Function(PortfolioState state)? reelTest;
 
+  /// Reel (alım gücü) satırı HİÇ gelebilir mi — [reel]'in ilk kapısıyla aynı
+  /// soru, ağa çıkmadan. Kartın iskeleti buna bakar: satırın gelmeyeceği
+  /// kesinse yerini de tutmaz (arayüz denetimi 2026-11-10). `true` satırın
+  /// geleceğini garanti etmez (pencere/seri kurulamayabilir).
+  static bool get reelBeklenir =>
+      // ignore: invalid_use_of_visible_for_testing_member
+      reelTest != null || RemoteConfigService.instance.realReturnEnabled;
+
   static Future<ReelGetiriSatiri?> reel(
     PortfolioState state, {
     Duration enFazla = varsayilanButce,

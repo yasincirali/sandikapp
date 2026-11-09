@@ -834,6 +834,47 @@ class _SandikTappableState extends State<SandikTappable>
     if (_down != v && mounted) setState(() => _down = v);
   }
 
+  // ── Düz yol: hızlı dokunuş (arayüz denetimi 2026-11-10) ────────────────
+  // Kaydırılan listede dokunuş tanıyıcı `onTapDown`'u ~100 ms bekletir;
+  // parmak ondan önce kalkarsa `onTapDown` ile `onTapUp` AYNI karede gelir.
+  // Eskiden `_down` aynı karede açılıp kapanıyor, kart hiç kıpırdamıyordu
+  // (~116 yüzey; solma yolu bunu `_bas`/`_birak` ile zaten çözüyordu). Şimdi
+  // basma tamamlanır, SONRA bırakılır. Zamanlayıcı yok: bitişi örtük
+  // animasyonun `onEnd`'i haber verir.
+  bool _basmaTamam = false;
+  bool _birakBekliyor = false;
+
+  void _duzBas() {
+    _basmaTamam = false;
+    _birakBekliyor = false;
+    _set(true);
+  }
+
+  void _duzBirak() {
+    if (!_down) return;
+    if (_basmaTamam) {
+      _set(false);
+    } else {
+      _birakBekliyor = true;
+    }
+  }
+
+  // Jest iptali (kaydırma başladı): beklemeden bırak, yoksa kaydırırken
+  // satırlar tek tek basılıp kalkardı.
+  void _duzIptal() {
+    _birakBekliyor = false;
+    _set(false);
+  }
+
+  void _duzAnimasyonBitti() {
+    if (!_down) return;
+    _basmaTamam = true;
+    if (_birakBekliyor) {
+      _birakBekliyor = false;
+      _set(false);
+    }
+  }
+
   void _bas() {
     if (!_etkin) return;
     _basili = true;
@@ -874,11 +915,23 @@ class _SandikTappableState extends State<SandikTappable>
               ),
       );
     } else {
-      result = AnimatedScale(
-        scale: (_down && enabled && !reduceMotion) ? widget.scale : 1.0,
+      // Hareketi azalt açıkken küçülme yok; yerine solma (hareket değil,
+      // durum) — solma yoluyla aynı kural. Eskiden bu ayarda düz yol HİÇ
+      // geri bildirim vermiyordu. Ağaç iki durumda da aynı şekildedir
+      // (çocuk yeniden kurulmaz); saydamlık 1 iken ek çizim katmanı açılmaz.
+      final basili = _down && enabled;
+      result = AnimatedOpacity(
+        opacity: (basili && reduceMotion) ? 0.82 : 1.0,
         duration: SandikMotion.press,
         curve: SandikMotion.enter,
-        child: widget.child,
+        onEnd: reduceMotion ? _duzAnimasyonBitti : null,
+        child: AnimatedScale(
+          scale: (basili && !reduceMotion) ? widget.scale : 1.0,
+          duration: SandikMotion.press,
+          curve: SandikMotion.enter,
+          onEnd: reduceMotion ? null : _duzAnimasyonBitti,
+          child: widget.child,
+        ),
       );
     }
 
@@ -921,13 +974,13 @@ class _SandikTappableState extends State<SandikTappable>
       // bağlamaz ki devre dışı yüzey üst öğenin dokunuşunu yutmasın.
       onTapDown: widget.soluk
           ? (enabled ? (_) => _bas() : null)
-          : (_) => _set(true),
+          : (_) => _duzBas(),
       onTapUp: widget.soluk
           ? (enabled ? (_) => _birak() : null)
-          : (_) => _set(false),
+          : (_) => _duzBirak(),
       onTapCancel: widget.soluk
           ? (enabled ? _birak : null)
-          : () => _set(false),
+          : _duzIptal,
       child: result,
     );
   }
