@@ -486,11 +486,49 @@ Future<void> confirmAndLogout(BuildContext context, WidgetRef ref) async {
 /// Push teşhis ekranı görünürlüğü. Oturum değişince yeniden hesaplanır.
 /// Sunucudaki `is_push_admin()` RPC'sine bağlıdır (bkz. 0055 migration);
 /// hata durumunda false — tile gizlenir, teşhis RPC'leri zaten kendini korur.
+///
+/// ## Neden yeniden deneme (yasin 2026-11-10: "admin hesabımın premium
+/// üyeliği gitmiş")
+/// Admin hesabının Premium'u bir hak satırı değil, bu cevaptır
+/// (`effectivePremiumProvider`). Okuma eskiden TEK denemeydi ve her hata
+/// (zaman aşımı, kopan bağlantı) sessizce `false` olup oturum boyunca
+/// saklanıyordu: zayıf bağlantıda açılan uygulama, kapatılıp açılana kadar
+/// admin'i ücretsiz kullanıcı sayıyordu ve hiçbir yerde iz kalmıyordu.
+/// Hediye güvencesi 2026-11-01'de kalkınca bu, kilit olarak görünür oldu.
+/// Artık [adminMiOku] birkaç kez dener, hepsi düşerse Crashlytics'e yazar.
+///
+/// Son çare yine `false` (hata fırlatılmaz): Riverpod hata durumunda önceki
+/// değeri taşır, hesap değişiminde önceki hesabın `true`'su yeni hesaba
+/// sızardı.
 final isPushAdminProvider = FutureProvider<bool>((ref) async {
   final userId = ref.watch(authProvider).valueOrNull?.id;
   if (userId == null) return false;
-  return SupabaseService.instance.isPushAdmin();
+  return adminMiOku(SupabaseService.instance.isPushAdmin);
 });
+
+/// Başarısız admin okumasından sonraki denemelerin bekleme süreleri.
+/// Toplam deneme = uzunluk + 1.
+const adminOkumaAraliklari = [Duration(seconds: 2), Duration(seconds: 6)];
+
+/// [oku]'yu hata verdikçe [araliklar] kadar bekleyip yeniden dener; hepsi
+/// düşerse non-fatal bildirir ve `false` döner. `false` CEVABI hata
+/// değildir, yeniden denenmez. Saf (test: `admin_okuma_test`).
+Future<bool> adminMiOku(
+  Future<bool> Function() oku, {
+  List<Duration> araliklar = adminOkumaAraliklari,
+}) async {
+  for (var deneme = 0;; deneme++) {
+    try {
+      return await oku();
+    } catch (e, st) {
+      if (deneme >= araliklar.length) {
+        CrashReporter.report(e, st, reason: 'isPushAdminProvider');
+        return false;
+      }
+      await Future<void>.delayed(araliklar[deneme]);
+    }
+  }
+}
 
 // ── Bekleyen ortaklık istekleri — TEK kaynak ─────────────────────────────────
 
