@@ -298,7 +298,7 @@ void main() {
       expect(find.byType(BedelliArtirimSheet), findsNothing);
     });
 
-    testWidgets('düğme ve menü satırı en az 44 pt', (t) async {
+    testWidgets('düğme ve oran alanı en az 44 pt', (t) async {
       await ac(
           t,
           BedelliArtirimSheet(
@@ -308,20 +308,6 @@ void main() {
       expect(t.getSize(find.byKey(const ValueKey('bedelli-kaydet'))).height,
           greaterThanOrEqualTo(SandikTouch.min));
       expect(t.getSize(find.byKey(const ValueKey('bedelli-oran'))).height,
-          greaterThanOrEqualTo(SandikTouch.min));
-
-      await t.pumpWidget(MaterialApp(
-        theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
-        home: Scaffold(
-          body: MenuSatiri(
-              key: const ValueKey('satir'),
-              ikon: Icons.add_card_rounded,
-              baslik: 'Bedelli artırım',
-              altMetin: 'Rüçhan hakkını kullandıysan yeni lotları ekle',
-              onTap: () {}),
-        ),
-      ));
-      expect(t.getSize(find.byKey(const ValueKey('satir'))).height,
           greaterThanOrEqualTo(SandikTouch.min));
     });
 
@@ -347,6 +333,53 @@ void main() {
   });
 
   group('menü → sayfa → kayıt', () {
+    testWidgets('⋯ düğmeye bağlı menü açar: tek satır, 44 pt, etiketli',
+        (t) async {
+      final handle = t.ensureSemantics();
+      final lot = _lot(120, tarih: DateTime(2026, 1, 10));
+      await t.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith(_Auth.new),
+          portfolioProvider.overrideWith(_KayitYazan.new),
+        ],
+        child: MaterialApp(
+          theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topRight,
+              child: Consumer(
+                builder: (_, ref, __) => Builder(
+                  builder: (c) => IconButton(
+                    key: const ValueKey('dugme'),
+                    tooltip: 'Diğer işlemler',
+                    icon: const Icon(Icons.more_horiz_rounded),
+                    onPressed: () => showVarlikDigerIslemler(c, ref,
+                        varlik: lot, lotlar: [lot]),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await t.tap(find.byKey(const ValueKey('dugme')));
+      await t.pumpAndSettle();
+      // Alt sayfa yok: başlıklı "Diğer işlemler" sayfası açılmaz.
+      expect(find.byType(BottomSheet), findsNothing);
+      final satir = find.byKey(const ValueKey('menu-bedelli-artirim'));
+      expect(satir, findsOneWidget);
+      expect(find.text('Bedelli artırım'), findsOneWidget);
+      expect(t.getSize(satir).height, greaterThanOrEqualTo(SandikTouch.min));
+      // Menü düğmenin altında açılır.
+      expect(t.getRect(satir).top,
+          greaterThanOrEqualTo(t.getRect(find.byKey(const ValueKey('dugme'))).bottom - 1));
+      expect(
+          find.bySemanticsLabel(
+              'Bedelli artırım. Rüçhan hakkını kullandıysan yeni lotları ekle'),
+          findsOneWidget);
+      handle.dispose();
+    });
+
     testWidgets('alış lotu 1 ₺, not etiketi, BIST hissesine', (t) async {
       final portfoy = _KayitYazan();
       final lot = _lot(120, tarih: DateTime(2026, 1, 10));
@@ -359,10 +392,12 @@ void main() {
           theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
           home: Scaffold(
             body: Consumer(
-              builder: (c, ref, _) => TextButton(
-                onPressed: () => showVarlikDigerIslemler(c, ref,
-                    varlik: lot, lotlar: [lot]),
-                child: const Text('⋯'),
+              builder: (_, ref, __) => Builder(
+                builder: (c) => TextButton(
+                  onPressed: () => showVarlikDigerIslemler(c, ref,
+                      varlik: lot, lotlar: [lot]),
+                  child: const Text('⋯'),
+                ),
               ),
             ),
           ),
@@ -370,9 +405,10 @@ void main() {
       ));
       await t.tap(find.text('⋯'));
       await t.pumpAndSettle();
-      expect(find.text('Diğer işlemler'), findsOneWidget);
       await t.tap(find.byKey(const ValueKey('menu-bedelli-artirim')));
       await t.pumpAndSettle();
+      // Menü kapandı, tek modal: bedelli sayfası.
+      expect(find.byKey(const ValueKey('menu-bedelli-artirim')), findsNothing);
       await t.enterText(find.byKey(const ValueKey('bedelli-oran')), '100');
       await t.pump();
       await t.tap(find.byKey(const ValueKey('bedelli-kaydet')));
@@ -394,7 +430,7 @@ void main() {
     final kaynak = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
     expect(kaynak, contains('_digerIslemlerDugmesi(isOwnAsset)'));
     final govde = kaynak.substring(kaynak.indexOf('Widget? _digerIslemlerDugmesi'));
-    final ilk = govde.substring(0, govde.indexOf('return IconButton'));
+    final ilk = govde.substring(0, govde.indexOf('IconButton('));
     expect(ilk, contains('if (!isOwnAsset) return null;'));
     expect(ilk, contains('BedelliArtirim.uygunMu'));
     expect(ilk, contains('canli.acik'));

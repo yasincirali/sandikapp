@@ -230,16 +230,23 @@ extension _DetayEylemler on _AssetDetailScreenState {
   /// (RLS). Yalnız BIST hissesi (`BedelliArtirim.uygunMu`). Menüde başka
   /// satır olmadığı için öteki türlerde düğme hiç çizilmez; boş menü açan
   /// düğme olmasın.
+  ///
+  /// Dokununca düğmenin altında açılır menü (müşteri raporu 2026-11-10 #4;
+  /// eskiden tek satırlık alt sayfa, üstüne bedelli sayfası: iki modal).
+  /// `Builder`: menü konumunu düğmenin KENDİ bağlamından ölçer, ekranın
+  /// bağlamı tüm sayfanın kutusunu verirdi.
   Widget? _digerIslemlerDugmesi(bool isOwnAsset) {
     if (!isOwnAsset) return null;
     final canli = _canli;
     if (!canli.acik || !BedelliArtirim.uygunMu(canli.asset)) return null;
-    return IconButton(
-      key: const ValueKey('varlik-diger-islemler'),
-      tooltip: context.l10n.digerIslemler,
-      icon: Icon(Icons.more_horiz_rounded, color: context.c.text90),
-      onPressed: () => showVarlikDigerIslemler(context, ref,
-          varlik: _canli.asset, lotlar: _canli.lots),
+    return Builder(
+      builder: (dugme) => IconButton(
+        key: const ValueKey('varlik-diger-islemler'),
+        tooltip: context.l10n.digerIslemler,
+        icon: Icon(Icons.more_horiz_rounded, color: context.c.text90),
+        onPressed: () => showVarlikDigerIslemler(dugme, ref,
+            varlik: _canli.asset, lotlar: _canli.lots),
+      ),
     );
   }
 
