@@ -12,6 +12,26 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-10 ASO: anahtar kelime düzeltmesi, yeni 3. kare, bölgesel fiyat
+
+Dış bir ASO rehberiyle karşılaştırmadan çıkanlar; gerekçe ve ölçüm
+`store_listing/ios/ASO_2026_11.md` › "2026-11-10 düzeltmeleri". 1.1.7
+yeniden gönderilirken hepsi aynı oturumda girilebilir.
+
+- [ ] **Türkçe anahtar kelime**: eski değer 101 bayttı (sınır 100). Yeni
+      değer dosyada (`kâr` → `kar`).
+- [ ] **İngilizce (U.S.) anahtar kelime**: yeni değer dosyada (dört tekrar
+      çıktı; `halka,arz,gumus,bes,mevduat` girdi).
+- [ ] İstersen önce Apple Search Ads › anahtar kelime popülerliğinde
+      `halka arz`, `mevduat`, `bes`, `gümüş` bak; 5'in altında çıkanı
+      dosyadaki yedeklerle değiştir.
+- [ ] **3. ekran görüntüsü** yeniden üretildi ("Trendi tek bakışta gör"):
+      `store_listing/final/app_store/iphone_*/03_mum.png` ve
+      `final/google_play/telefon_1080x1920/03_mum.png`. Dört boyutta 03'ü
+      değiştir.
+- [ ] **Bölgesel fiyat**: ASC › Abonelikler › Abonelik fiyatları; Almanya,
+      Hollanda, Avusturya, Fransa, Belçika tutarlarına bak (ayrıntı dosyada).
+
 ## ⏳ 2026-11-07 Aylık nota kamuya açık haber (0177 + `analiz-hazirla`/`analiz-topla`)
 
 Aylık rapordaki "Önemli gelişmeler" kartları, o ayın kamuya açık haberini

@@ -44,6 +44,11 @@ SORGULAR = [
     # Yalnız en-US anahtar alanında olan kelimeler: Türkiye vitrini en-US
     # yerelleştirmesini indeksliyor mu, bunlarla ölçülür.
     "cpi", "wealth", "dividend tracker", "turkish stocks",
+    # 2026-11-10: şapkasız yazımlar (en-US alanı) ve düşük rekabetli uzun
+    # kuyruk adayları. "altın", "döviz", "hisse" gibi baş kelimelerde ilk
+    # 200'de yokuz; kazanılabilir olan bunlar, etkisi buradan izlenir.
+    "portfoy takip", "altin takip", "halka arz", "halka arz takip",
+    "gümüş", "mevduat takip", "bes takip",
 ]
 
 

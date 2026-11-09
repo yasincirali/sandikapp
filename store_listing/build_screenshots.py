@@ -319,7 +319,10 @@ REDACTIONS_V3 = {
 CAPTIONS_V4 = {
     "01": CAPTIONS_V3["01"],
     "02": ("Paran gerçekte\nne kazandırdı?", "Yeni alımın getiriye sayılmaz"),
-    "03": ("Mum grafik,\nEMA50 ve EMA200", "Log ölçek, istediğin aralıkta mum"),
+    # 2026-11-10: aramada görünen ilk üç kareden biri; başlık özelliği
+    # ("Mum grafik, EMA50 ve EMA200") değil faydayı söyler, özellik adı
+    # alt satıra indi (Apple başlık metnini de indeksliyor, kelimeler kalır).
+    "03": ("Trendi tek\nbakışta gör", "Mum grafik, EMA50 ve EMA200"),
     "04": ("Hisse, fon, altın,\ndöviz, kripto", "Hepsi tek toplamda, tek dağılımda"),
     "05": ("Almadığın varlığı\nda izle", "Takip listesi, portföyünle aynı grafikte"),
     "06": ("Hedef fiyata\ngelince haber al", "Fiyat alarmı: kendi hedefin ya da %5, %10"),
