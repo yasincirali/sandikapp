@@ -12,6 +12,26 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-10 ASO: anahtar kelime düzeltmesi, yeni 3. kare, bölgesel fiyat
+
+Dış bir ASO rehberiyle karşılaştırmadan çıkanlar; gerekçe ve ölçüm
+`store_listing/ios/ASO_2026_11.md` › "2026-11-10 düzeltmeleri". 1.1.7
+yeniden gönderilirken hepsi aynı oturumda girilebilir.
+
+- [ ] **Türkçe anahtar kelime**: eski değer 101 bayttı (sınır 100). Yeni
+      değer dosyada (`kâr` → `kar`).
+- [ ] **İngilizce (U.S.) anahtar kelime**: yeni değer dosyada (dört tekrar
+      çıktı; `halka,arz,gumus,bes,mevduat` girdi).
+- [ ] İstersen önce Apple Search Ads › anahtar kelime popülerliğinde
+      `halka arz`, `mevduat`, `bes`, `gümüş` bak; 5'in altında çıkanı
+      dosyadaki yedeklerle değiştir.
+- [ ] **3. ekran görüntüsü** yeniden üretildi ("Trendi tek bakışta gör"):
+      `store_listing/final/app_store/iphone_*/03_mum.png` ve
+      `final/google_play/telefon_1080x1920/03_mum.png`. Dört boyutta 03'ü
+      değiştir.
+- [ ] **Bölgesel fiyat**: ASC › Abonelikler › Abonelik fiyatları; Almanya,
+      Hollanda, Avusturya, Fransa, Belçika tutarlarına bak (ayrıntı dosyada).
+
 ## ⏳ 2026-11-07 Aylık nota kamuya açık haber (0177 + `analiz-hazirla`/`analiz-topla`)
 
 Aylık rapordaki "Önemli gelişmeler" kartları, o ayın kamuya açık haberini
@@ -583,6 +603,17 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
       Subscriptions" bölümünü boş bırak**; `sandik_premium_aylik/yillik`
       "Prepare for Submission"da bekler. Paywall kapalıyken inceleyici ürünü
       bulamaz → ret riski.
+- [ ] **Mağaza sayfası (2026-10-11 ASO denetimi):** görseller, video, etkinlik
+      görselleri ve metinler tek yerde: `store_listing/final/` (README orada).
+      1.1.6 sürüm sayfasında Türkçe **Keywords** alanını şununla değiştir
+      (eskisi 104 bayttı, kripto yoktu):
+      `sandik,borsa,bist,yatırım,döviz,dolar,kripto,tefas,kâr,zarar,tüfe,reel,getiri,birikim,varlık`
+      Promotional Text'teki Eylül TÜFE'sini (%29,73) göndermeden TÜİK'le teyit et.
+- [ ] **"Diller: İngilizce" düzeltmesi build ister:** `Info.plist`'e
+      `CFBundleLocalizations` (tr, en) eklendi (`store/set-d-ekran-goruntuleri`
+      dalı). Mağazaya giden 1.1.6 build'i bu değişiklikten ÖNCE alındıysa sayfa
+      bir sonraki build'e kadar "İngilizce" der — mümkünse dalı main'e alıp
+      gönderilecek build'i ondan üret.
 - [ ] Kontrol: admin OLMAYAN hesapta paywall, kilit, "Premium" yazısı, ƒx,
       Raporlar, X-Ray görünmez; mum/EMA/aralık görünür. Admin hesabın
       (`yonetici`) Premium ekranları paywall kapalıyken de görür; kendi

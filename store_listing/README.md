@@ -2,8 +2,12 @@
 
 ## Dosya Yapısı
 
+> **Yüklenecek her şey tek yerde: [`final/`](final/README.md)** — set D +
+> Play grafikleri, `python build_screenshots.py --v4` ile tazelenir.
+
 ```
 store_listing/
+  final/                   ← CONSOLE'A YÜKLENECEKLER (türetilmiş)
   tr-TR/ en-US/            ← mağazadan bağımsız metinler
     title.txt              (max 30 karakter)
     short_description.txt  (max 80 karakter)
@@ -16,7 +20,8 @@ store_listing/
       feature_graphic_1024x500.png  1024x500, alfa yok
     screenshots/
       set_a/1080x1920/   (7 kare)
-      set_b/1080x1920/   (8 kare)   ⚠️ ikisi karıştırılmaz
+      set_b/1080x1920/   (8 kare)   ⚠️ setler karıştırılmaz
+      set_c/  set_d/                set_d GÜNCEL (2026-10-11, güncel arayüz)
 
   ios/                     ← App Store Connect'e yüklenecekler (README.md)
     APP_STORE_1.1.3.md
@@ -25,7 +30,8 @@ store_listing/
       set_b/1242x2688/  set_b/1284x2778/
 
   screenshots/             ← GİRDİ (çıktı değil)
-    raw/ raw_v2/           ham telefon görüntüleri
+    raw/ raw_v2/ raw_v3/   ham telefon görüntüleri (eski setler)
+    raw_v4/                set D kaynağı — `python build_screenshots.py --v4`
     orig/                  eski 1125x2436 kareler, Play'e uymaz
     grid/                  hizalama denetimi için ızgara bindirmesi
 

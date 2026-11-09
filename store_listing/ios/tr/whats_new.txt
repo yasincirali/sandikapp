@@ -1,0 +1,13 @@
+Kripto, ABD hisseleri, Eurobond, vadeli mevduat ve BES artık portföyünde. Bugün kartı ve Performans da yenilendi.
+
+• Bugün kartı yenilendi: günün özeti tek kelimeyle, gün içi eğri ve en çok oynayan varlıkların. "Paran fiyatlara yetişiyor mu?" sorusunun cevabı her gün ana ekranda.
+• Paranın getirisi: Performans'ın ana rakamı eklediğin paranın ne zaman girdiğini hesaba katar, nakit temettülerini de içerir. Rakam öncekinden farklı görünebilir.
+• Kripto: Türk lirası paritesi olan tüm coin'ler ve en çok işlem gören 250 coin, fiyatı TL karşılığıyla.
+• ABD hisseleri ve ETF'ler, Eurobond, vadeli mevduat ve BES: hepsi aynı portföyde, aynı toplamda.
+• Mum grafik, EMA50 ve EMA200: aralığı 1 dakikadan 1 aya kadar sen seç.
+• Ekstreden içe aktar: aracı kurumunun PDF, Excel veya CSV ekstresini seç, işlemlerin kendiliğinden gelsin.
+• Kilit ekranında sandık: günün yönü, yüzdesi ve eğrisi widget'ta; Dinamik Ada'da yön halkası.
+• Masraflar kartı: komisyon, stopaj, fon yönetim ücreti ve alış-satış makası varlık sayfasında.
+• Fon karnesi, temettü hatırlatması ve halka arz takvimi.
+• Zirvedeki portföyler: dönemin en çok kazanan anonim portföyleri ve senden farkları.
+• Hesapların arasında geç: aynı telefonda 5 hesaba kadar, şifre sormadan.

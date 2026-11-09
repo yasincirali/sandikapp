@@ -37,6 +37,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Animasyon / hareket | `flutter-animations`, `animate`, `apple-design`; denetim/eleştiri `design-motion-principles` |
 | Görsel tasarım / cila | `emil-design-eng`, `ui-ux-pro-max`, `frontend-design` |
 | AI-slop denetimi | `unslop` (yalnız `references/signs.md` listesi + ui-ux-pro-mcp; palet/tipografi tasarım sistemi kazanır) |
+| Düzyazıda AI kalıbı denetimi (İngilizce web/mağaza metni) | `no-ai-slop` (tespit ya da en az düzeltme; Türkçe anlatımda `ANLATIM_KURALLARI.md` kazanır) |
 | Flutter testi | `flutter-testing` (**`test-master` değil**) |
 | Test *stratejisi* / kapsam boşluğu | `test-master` |
 | Supabase şema / migration / RPC | `sql-pro` → yazım, `postgres-pro` → PG'ye özgü |
@@ -53,6 +54,11 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Bir kararı zorlatma / pre-mortem | `the-fool` |
 | Video / tanıtım filmi / motion graphics | `remotion-motion-graphics` (**her video talebinde**; araç Remotion, npm'den) |
 | Anlatımlı tanıtım / launch videosu ("brag") | `brag` → Hyperframes (`npx hyperframes`); çıktı `store_listing/preview_video/brag-output/`. Türkçe ses Kokoro'da yok → **EMA Lightning** (yerel, Apache 2.0; `store_listing/preview_video/scripts/seslendir_ema.py`, 2026-10-10), edge-tts `tr-TR-*Neural` yalnız yedek. **Anlatım metni önce `store_listing/preview_video/ANLATIM_KURALLARI.md`** (kullanıcı kuralı 2026-10-10: doğal, basit, açıklayıcı; vurgu cümle kuruluşuyla) |
+| Mağaza listesi / ASO / mağaza metni ve görsel sırası | `aso` → `copywriting`, `copy-editing` |
+| Lansman, basın, sosyal medya, reklam | `launch`, `public-relations`, `social`, `ads`, `ad-creative` |
+| Paywall / fiyat / abonelik tutma | `paywalls`, `pricing`, `churn-prevention` (**iOS iptal akışı Apple'da**) |
+| Kayıt hunisi / ilk açılış / tavsiye | `signup`, `onboarding`, `referrals` |
+| Ürün analitiği / deney / kullanıcı araştırması | `analytics`, `ab-testing` (araç Remote Config), `customer-research`, `competitor-profiling` |
 | Uygulamayı çalıştırıp görme | `/run`, `tool/deploy_emulators.sh` |
 
 **Çakışma kuralı — skill CLAUDE.md'yi asla ezmez.** Skill ile bu dosya çeliştiğinde
@@ -63,6 +69,9 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 - `secure-code-guardian` → örnekleri web (Zod, CORS/CSP). Buradaki karşılığı
   **RLS + GRANT + `cronSecretZorunlu()` → `cronYetkisiVarMi()`**.
 - Web kaynaklı tasarım skill'leri → CSS/React sözdizimi **alınmaz**, yargısı alınır.
+- Pazarlama skill'leri (`marketingskills`) → SaaS/web varsayar. Mağaza görseli
+  **gerçek ekran**, metindeki rakam **gerçek çıktı** (uydurma sayı yasak);
+  bayrak arkasındaki özellik metne girmez; yatırım tavsiyesi gibi okunan vaat yok.
 
 Gerekçeler ve kurulmayanların listesi: `.claude/skills/SKILLS_README.md`.
 

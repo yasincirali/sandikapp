@@ -12,7 +12,8 @@ Kullanım:
 
 Girdi : screenshots/raw/NN_ad.png      (set A — varsayılan)
         screenshots/raw_v2/NN_ad.jpeg  (set B — `--v2`)
-        screenshots/raw_v3/NN_ad.jpg   (set C — `--v3`, GÜNCEL)
+        screenshots/raw_v3/NN_ad.jpg   (set C — `--v3`)
+        screenshots/raw_v4/NN_ad.png   (set D — `--v4`, GÜNCEL)
 
 Çıktı, mağaza başına ayrı klasöre:
     android/screenshots/<set>/1080x1920/   → Play Console
@@ -67,6 +68,15 @@ RAW_V2 = os.path.join(HERE, "screenshots", "raw_v2")
 # gösteriyor, rakamlar tutuyor.
 RAW_V3 = os.path.join(HERE, "screenshots", "raw_v3")
 
+# Dördüncü set (2026-10-11): gerçek cihazdan, GÜNCEL arayüzle.
+#
+# Set C'nin kareleri Eylül arayüzünü gösteriyor (Grafik/Özet sekmeli
+# Performans, eski ana ekran, başlıkta çıkış düğmesi); o yüzeyler artık
+# öyle değil. Mağaza görseli uygulamanın bugünkü hâlini göstermeli.
+# Portföy aynı demo portföy (DEMO_PORTFOY.md — Çeyrek Altın 20, DLY 32.000,
+# KCHOL 620) + kripto; tutarlar 11.10.2026 fiyatlarıyla (₺874.835).
+RAW_V4 = os.path.join(HERE, "screenshots", "raw_v4")
+
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")
 FONT_MED = os.path.join(ROOT, "assets", "fonts", "DMSans-Medium.ttf")
 
@@ -90,9 +100,17 @@ TAB_GREY = (108, 120, 115)
 # (genişlik, yükseklik, hangi mağaza) — mağaza etiketi çıktının hangi
 # klasöre yazılacağını belirler. Boyutu mağazasından ayırmak eski bir
 # hata kaynağıydı: 2,16:1 App Store kareleri Play'e yüklenince reddedilir.
+#
+# 2026-10-11: ASC ekran bölümlerini ayırıyor ve her bölüm yalnız kendi
+# boyutlarını kabul ediyor — 6.1"/6.3" bölümü 1284x2778'i reddetti
+# ("supported sizes: 1179x2556, 1206x2622"). 6.3" ve en büyük 6.9" eklendi;
+# ASC küçük ekranları büyükten ölçekleyebilir ama bölüm boş kalınca
+# hangisinin istendiği sürüme göre değişiyor, hepsi hazır dursun.
 TARGETS = [
-    (1242, 2688, "ios"),
-    (1284, 2778, "ios"),
+    (1320, 2868, "ios"),   # 6.9"
+    (1206, 2622, "ios"),   # 6.3" (6.1"/6.3" bölümü)
+    (1242, 2688, "ios"),   # 6.5"
+    (1284, 2778, "ios"),   # 6.5" (eski 6.7")
     (1080, 1920, "android"),
 ]
 
@@ -267,6 +285,65 @@ REDACTIONS_V3 = {
 }
 
 
+# ══ DÖRDÜNCÜ SET ═════════════════════════════════════════════════════════
+#
+# Sıra yine EN GÜÇLÜ İDDİA ÖNCE; Play en fazla 8 telefon görseli alır,
+# set bu yüzden 8 karede tutuldu (App Store'da 10'a kadar yer var).
+#
+#  01 ana       → ENFLASYON — ürünün ayırt edici iddiası. Set C'den taşındı
+#                 (kullanıcı kararı 2026-10-11): yeni ana ekran Pazar çekildi
+#                 (kırmızı "Geriledi", "100 liran bugün 100 lira" — TÜFE ile
+#                 başa baş), eskisi "31,49 puan enflasyonun önündesin" diyor.
+#                 Bedeli: eski arayüz ve başka toplam (₺973.501 — 04'te
+#                 ₺874.835). Sayı yamalanmaz; yeşil bir hafta içi günü
+#                 yeniden çekilince değiştir.
+#  02 getiri    → "paranın getirisi": yeni alımı getiriden ayırıyor
+#  03 mum       → mum + EMA50/200 + log (#175 ile herkese açık) — "ciddi araç"
+#  04 portföy   → kategori beklentisi: beş tür (kripto dahil) tek dağılımda.
+#                 01'in hemen yanına KONMAZ: iki farklı toplam (₺973.501 /
+#                 ₺874.835) aramada yan yana görünürdü. İlk üç karede tek
+#                 toplam rakamı kalsın diye 4'te.
+#  05 takip     → sahip olmadığını portföyünle aynı grafikte kıyasla
+#  06 alarm     → hedef fiyat alarmı, kısayollarıyla
+#  07 masraf    → komisyon/stopaj/BSMV şeffaflığı (SCREENSHOT_PLAN #3)
+#  08 paylaşım  → set C'den taşındı: kartta tutar YOK, toplam çelişmez
+#
+# ASO denetimi (aso skill, 2026-10-11) sırayı değiştirdi: aramada yalnız
+# ilk 3 kare görünür ve kullanıcıların ~%90'ı 3. kareden öteye kaydırmaz;
+# enflasyon 6. sırada gömülüydü. App Store'da video 1. yuvayı alır, aramada
+# video + 01 + 02 görünür. Başlıklar 2025'ten beri Apple'da dizinleniyor —
+# alt satırlara aranan kelimeler (takip listesi, fiyat alarmı) girdi.
+#
+# Set C'nin 02–05 ve 08'i taşınmadı: eski arayüz + başka toplam (₺973.501);
+# yeni karelerin karşılığını eski hâliyle gösterirlerdi.
+CAPTIONS_V4 = {
+    "01": CAPTIONS_V3["01"],
+    "02": ("Paran gerçekte\nne kazandırdı?", "Yeni alımın getiriye sayılmaz"),
+    # 2026-11-10: aramada görünen ilk üç kareden biri; başlık özelliği
+    # ("Mum grafik, EMA50 ve EMA200") değil faydayı söyler, özellik adı
+    # alt satıra indi (Apple başlık metnini de indeksliyor, kelimeler kalır).
+    "03": ("Trendi tek\nbakışta gör", "Mum grafik, EMA50 ve EMA200"),
+    "04": ("Hisse, fon, altın,\ndöviz, kripto", "Hepsi tek toplamda, tek dağılımda"),
+    "05": ("Almadığın varlığı\nda izle", "Takip listesi, portföyünle aynı grafikte"),
+    "06": ("Hedef fiyata\ngelince haber al", "Fiyat alarmı: kendi hedefin ya da %5, %10"),
+    "07": ("Komisyon, stopaj,\nBSMV açık açık", "Her masraf kalemi açıklamasıyla"),
+    "08": CAPTIONS_V3["07"],
+}
+
+# Durum çubuğuna dokunulmuyor: set C'deki kayıt rozeti burada yok, saat
+# (17:27–17:31) gerçek bir telefonun doğal parçası. "9:41" yaması SF Pro
+# yerine DM Sans ile yazılacağı için gözle belli olurdu.
+REDACTIONS_V4 = {
+    # Ortak seçicide gerçek test hesabının adı ("TestUser") — set C'deki
+    # gibi "Ayşe". Ölçüm (1125×2436): segment iç zemini y 0.209–0.254,
+    # etiket 0.741–0.871 × 0.226–0.236, renk (155,167,165).
+    "04": [(0.700, 0.2140, 0.210, 0.0350, "Ayşe", "c", 0.0098,
+            (155, 167, 165))],
+    "01": REDACTIONS_V3["01"],   # 9:41 + ortak seçicide "Ayşe"
+    "08": REDACTIONS_V3["07"],
+}
+
+
 def gradient(size):
     """Dikey degrade zemin."""
     w, h = size
@@ -381,7 +458,8 @@ def write_grid_overlays():
     out_dir = os.path.join(HERE, "screenshots", "grid")
     os.makedirs(out_dir, exist_ok=True)
 
-    src_dir = (RAW_V3 if "--v3" in sys.argv
+    src_dir = (RAW_V4 if "--v4" in sys.argv
+               else RAW_V3 if "--v3" in sys.argv
                else RAW_V2 if "--v2" in sys.argv else RAW)
     for name in sorted(f for f in os.listdir(src_dir)
                        if f.lower().endswith((".png", ".jpg", ".jpeg"))):
@@ -482,6 +560,123 @@ def compose(raw_path, caption, target, key=None, redactions=None):
     return canvas
 
 
+def kaydet(img, yol, deneme=8):
+    """PNG'yi geçici dosyaya yazıp yerine koyar; kilitliyse yeniden dener.
+
+    Windows Gezgini/Fotoğraflar açık klasördeki PNG'yi küçük resim için
+    anlık kilitliyor ve doğrudan yazma `OSError 22` ile düşüyordu
+    (2026-10-11) — koşu yarıda kalınca set yarı eski yarı yeni kalır.
+    """
+    import time
+
+    gecici = yol + ".tmp"
+    img.save(gecici, "PNG", optimize=True)
+    for i in range(deneme):
+        try:
+            os.replace(gecici, yol)
+            return
+        except OSError:
+            if i == deneme - 1:
+                raise
+            time.sleep(0.25 * (i + 1))
+
+
+# ── Mağaza final klasörü ─────────────────────────────────────────────────
+#
+# Console'a yüklenecek HER ŞEY tek yerde (kullanıcı isteği 2026-10-11):
+# dört set ve iki mağaza klasörü arasında "hangisi güncel" sorusu her
+# yüklemede yeniden soruluyordu. Klasör set D koşusunun yan ürünüdür —
+# elle kopyalanırsa set yeniden üretildiğinde sessizce eskir; bu yüzden
+# her `--v4` koşusunda silinip baştan yazılır.
+FINAL_OUT = os.path.join(HERE, "final")
+FINAL_HEDEFLER = [
+    # (kaynak, final altındaki klasör)
+    (os.path.join(ANDROID_OUT, "set_d", "1080x1920"),
+     os.path.join("google_play", "telefon_1080x1920")),
+    (os.path.join(IOS_OUT, "set_d", "1320x2868"),
+     os.path.join("app_store", "iphone_6.9_1320x2868")),
+    (os.path.join(IOS_OUT, "set_d", "1206x2622"),
+     os.path.join("app_store", "iphone_6.3_1206x2622")),
+    (os.path.join(IOS_OUT, "set_d", "1284x2778"),
+     os.path.join("app_store", "iphone_6.5_1284x2778")),
+    (os.path.join(IOS_OUT, "set_d", "1242x2688"),
+     os.path.join("app_store", "iphone_6.5_1242x2688")),
+]
+FINAL_GRAFIKLER = ["feature_graphic_1024x500.png", "icon_512.png"]
+
+# Daha önce üretilmiş, ekran görüntüsü DIŞINDAKİ mağaza varlıkları
+# (2026-10-11). Hepsi kendi hattının çıktısı; burada yalnızca toplanır.
+#
+# Önizleme videosu: açıklamalı mağaza sürümü (preview_video/README.md
+# "GÜNCEL", 886×1920, 28,0 sn). 30 sn'lik `sandik_onizleme_30sn.mp4`
+# ALINMADI: 30,06 sn — Apple'ın 15–30 sn sınırını aşıyor — ve "enflasyonun
+# gerisindesin" mesajı galerideki 01 ("önündesin") ile çelişiyor.
+# Play video dosyası almaz (YouTube bağlantısı ister), yalnız App Store.
+FINAL_EK = [
+    (os.path.join(HERE, "preview_video", "out",
+                  "sandik_preview_iphone_aciklamali.mp4"),
+     os.path.join("app_store", "onizleme_videosu",
+                  "sandik_onizleme_886x1920_28sn.mp4")),
+] + [
+    (os.path.join(HERE, "ios", "in_app_events", f),
+     os.path.join("app_store", "etkinlik_gorselleri", f))
+    for f in ("enflasyon_gunu_kart_1920x1080.png",
+              "enflasyon_gunu_detay_1080x1920.png",
+              "yil_sonu_ozeti_kart_1920x1080.png",
+              "yil_sonu_ozeti_detay_1080x1920.png")
+] + [
+    # Sürüm metinleri: kaynak kendi klasörlerinde, burada kopya.
+    (os.path.join(HERE, kaynak), os.path.join("metinler", hedef))
+    for kaynak, hedef in (
+        ("ios/tr/description.txt", "app_store_tr_description.txt"),
+        ("ios/en/description.txt", "app_store_en_description.txt"),
+        ("ios/tr/promotional_text.txt", "app_store_tr_promotional_text.txt"),
+        ("ios/en/promotional_text.txt", "app_store_en_promotional_text.txt"),
+        ("ios/tr/whats_new.txt", "app_store_tr_whats_new.txt"),
+        ("ios/en/whats_new.txt", "app_store_en_whats_new.txt"),
+        ("tr-TR/whats_new.txt", "google_play_tr_whats_new.txt"),
+        ("en-US/whats_new.txt", "google_play_en_whats_new.txt"),
+    )
+]
+
+
+def topla_final():
+    import shutil
+
+    for _, alt in FINAL_HEDEFLER:
+        shutil.rmtree(os.path.join(FINAL_OUT, alt), ignore_errors=True)
+    for kaynak, alt in FINAL_HEDEFLER:
+        hedef = os.path.join(FINAL_OUT, alt)
+        os.makedirs(hedef, exist_ok=True)
+        for f in sorted(os.listdir(kaynak)):
+            shutil.copy2(os.path.join(kaynak, f), os.path.join(hedef, f))
+
+    # Play grafikleri build_store_graphics.py'nin çıktısı; yoksa uyar,
+    # durma — ekran görüntüleri yine de tamamdır.
+    grafik_dir = os.path.join(HERE, "android", "graphics")
+    play_dir = os.path.join(FINAL_OUT, "google_play")
+    for g in FINAL_GRAFIKLER:
+        src = os.path.join(grafik_dir, g)
+        if os.path.exists(src):
+            shutil.copy2(src, os.path.join(play_dir, g))
+        else:
+            print("  ! %s yok — python build_store_graphics.py" % g)
+
+    for src, alt in FINAL_EK:
+        hedef = os.path.join(FINAL_OUT, alt)
+        if not os.path.exists(src):
+            print("  ! %s yok, atlandı" % os.path.relpath(src, HERE))
+            continue
+        os.makedirs(os.path.dirname(hedef), exist_ok=True)
+        # Video ~40 MB: değişmediyse yeniden kopyalama.
+        if (os.path.exists(hedef)
+                and os.path.getsize(hedef) == os.path.getsize(src)
+                and os.path.getmtime(hedef) >= os.path.getmtime(src)):
+            continue
+        shutil.copy2(src, hedef)
+    print("  final  -> %s" % FINAL_OUT)
+
+
 def main():
     if not os.path.isdir(RAW):
         sys.exit("Ham görüntü klasörü yok: %s" % RAW)
@@ -505,7 +700,10 @@ def main():
     # Setler AYRI portföylere ait; tek galeride karıştırmak "aynı portföy
     # tüm karelerde" tutarlılığını bozar. Bu yüzden set adı çıktı yolunda
     # kalır ve Console'a yalnızca biri yüklenir.
-    if "--v3" in sys.argv:
+    if "--v4" in sys.argv:
+        src_dir, set_adi = RAW_V4, "set_d"
+        captions, redactions = CAPTIONS_V4, REDACTIONS_V4
+    elif "--v3" in sys.argv:
         src_dir, set_adi = RAW_V3, "set_c"
         captions, redactions = CAPTIONS_V3, REDACTIONS_V3
     elif "--v2" in sys.argv:
@@ -550,13 +748,15 @@ def main():
             os.makedirs(out_dir, exist_ok=True)
             img = compose(os.path.join(src_dir, name), caption, (tw, th),
                           key=key, redactions=redactions)
-            img.save(os.path.join(out_dir, stem), "PNG", optimize=True)
+            kaydet(img, os.path.join(out_dir, stem))
             made += 1
         print("  + %s" % name)
 
     print("\n%d dosya uretildi (set: %s)" % (made, set_adi))
     print("  android -> %s" % os.path.join(ANDROID_OUT, set_adi))
     print("  ios     -> %s" % os.path.join(IOS_OUT, set_adi))
+    if set_adi == "set_d":
+        topla_final()
 
 
 if __name__ == "__main__":

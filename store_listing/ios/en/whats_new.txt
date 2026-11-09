@@ -1,0 +1,13 @@
+Crypto, US stocks, Eurobonds, time deposits and private pension (BES) now go in your portfolio. The Today card and Performance are redesigned too.
+
+• Redesigned Today card: the day in one word, the intraday curve and your biggest movers. "Is your money keeping up with prices?" answered on the home screen every day.
+• Your real return: the headline number on Performance accounts for when you added money and includes cash dividends. It may look different from before.
+• Crypto: every coin with a Turkish lira pair plus the 250 most-traded coins, priced in TRY.
+• US stocks and ETFs, Eurobonds, time deposits and BES, all in the same portfolio and the same total.
+• Candlestick charts with EMA50 and EMA200; pick any interval from 1 minute to 1 month.
+• Import from statement: choose your broker's PDF, Excel or CSV statement and your trades come in on their own.
+• sandık on your Lock Screen: the day's direction, percentage and curve as a widget, and a direction ring in the Dynamic Island.
+• Costs card: commissions, withholding tax, fund management fees and buy-sell spreads on each asset page.
+• Fund report card, dividend reminders and an IPO calendar.
+• Top portfolios: the period's best-performing anonymous portfolios and how you compare.
+• Switch between accounts: up to 5 accounts on one phone, no password prompt.
