@@ -32,6 +32,7 @@ Komutlar (sırası runbook'ta):
     python tool/tasima/veri_tasima.py bosalt --onay ynwymnpdiwudrlxfrmuo
     python tool/tasima/veri_tasima.py tasi   --onay ynwymnpdiwudrlxfrmuo
     python tool/tasima/veri_tasima.py tek-kullanici --email x@y.com --onay ynwymnpdiwudrlxfrmuo [--ortaklarla]
+    python tool/tasima/veri_tasima.py birlestir --kuru --onay ynwymnpdiwudrlxfrmuo   # K4: geçmiş kişilere dokunmaz
     python tool/tasima/veri_tasima.py tokyo-kapat --onay ybdbzouzhzwthjgwlbmk   # K4.2
     python tool/tasima/veri_tasima.py tokyo-ac    --onay ybdbzouzhzwthjgwlbmk   # geri dönüş
 """
@@ -508,6 +509,263 @@ def tek_kullanici(args) -> int:
     return 0
 
 
+# ── Birleştirme (K4, 18 Ekim 2026) ─────────────────────────────────────────
+#
+# yasin (18 Ekim): "Halihazırda geçmiş kişileri elleme." 14 Ekim'den beri
+# TestFlight testçileri Frankfurt'ta yaşıyor; `bosalt` + `tasi` onların
+# Frankfurt'ta yaptığı her şeyi Tokyo'nun eski hâliyle ezerdi. `birlestir`
+# yalnız GEÇMEMİŞ hesapları (ve ortak tabloları) Tokyo'dan yeniler:
+#
+#   * GEÇMİŞ kişi = Frankfurt'ta kesimden sonra giriş yapmış (son giriş
+#     zamanı ya da oturumu) ya da kesimden sonra Frankfurt'ta kayıt olmuş hesap. Satırlarına DOKUNULMAZ; Tokyo'daki
+#     satırları taşınmaz (Tokyo'da sonradan yazdıkları rapor edilir).
+#   * Bir satır, dolu her kullanıcı kolonu "yenilenecek" kümedeyse Tokyo'dan
+#     gelir. Geçmiş kişiyle ortak satır (ortaklık) Frankfurt'taki hâliyle kalır.
+#   * Kullanıcı kolonu olmayan tablolar (katalog, fiyat…) Tokyo'nun hâlidir.
+#   * Tokyo'da silinmiş hesap (Frankfurt'ta var, Tokyo'da yok, kesimden önce
+#     açılmış) Frankfurt'tan da silinir.
+#   * SAYI ÇAKIŞMASI: kopyadan (14 Ekim) beri iki sunucu dizileri AYNI
+#     değerden sürdürdü; geçmiş kişinin Frankfurt'ta aldığı id Tokyo'da başka
+#     bir satırın id'si olabilir. Çakışan geçmiş-kişi satırı yeni numara alır,
+#     ona FK ile bakan satırlar da güncellenir (aynı işlemde).
+#   * `--kuru`: hepsini yapar, raporlar, GERİ ALIR. Gerçek koşudan önce şart.
+
+GECIS_KESIM = "2026-10-14 21:00+00"   # K3 tam kopyasının bittiği an
+
+
+def kullanici_kolonlari(cur, sema: str, tablo: str) -> list[str]:
+    """FK ile auth.users'a bakan kolonlar + FK'sız `user_id` (uuid) kolonu.
+
+    FK'sız `user_id` tutan tablo (log, sayaç) da kullanıcının izini taşır;
+    ortak tablo sanılıp Tokyo'nunkiyle ezilirse geçmiş kişinin satırı giderdi."""
+    kol = kullanici_fk_kolonlari(cur, sema, tablo)
+    cur.execute("""select 1 from information_schema.columns
+                    where table_schema = %s and table_name = %s and column_name = 'user_id'
+                      and data_type = 'uuid'""", (sema, tablo))
+    if cur.fetchone() and "user_id" not in kol:
+        kol.append("user_id")
+    return kol
+
+
+def _hepsi_kumede(kolonlar_: list[str], kume: list[str]) -> sql.Composable:
+    """Dolu her kullanıcı kolonu kümede (hepsi boşsa da doğru: o satır ortaktır)."""
+    lit = sql.SQL("{}::uuid[]").format(sql.Literal(kume))
+    return sql.SQL(" and ").join(
+        sql.SQL("({c} is null or {c} = any({k}))").format(c=sql.Identifier(c), k=lit) for c in kolonlar_)
+
+
+def _tekil_sayi_anahtari(cur, sema: str, tablo: str) -> str | None:
+    """Tek kolonlu, diziden beslenen (serial/identity) birincil anahtar adı."""
+    cur.execute("""
+        select a.attname
+          from pg_constraint k
+          join pg_attribute a on a.attrelid = k.conrelid and a.attnum = k.conkey[1]
+         where k.contype = 'p' and array_length(k.conkey, 1) = 1
+           and k.conrelid = (quote_ident(%s) || '.' || quote_ident(%s))::regclass
+           and (a.attidentity <> ''
+                or pg_get_serial_sequence(quote_ident(%s) || '.' || quote_ident(%s), a.attname) is not null)
+    """, (sema, tablo, sema, tablo))
+    r = cur.fetchone()
+    return r[0] if r else None
+
+
+def _yeniden_numarala(yc, ec, sema: str, tablo: str, pk: str, gecmis: list[str],
+                      ukol: list[str], yenile: list[str]) -> int:
+    """Frankfurt'ta kalan (geçmiş kişi) satırlardan Tokyo'dan gelecek bir
+    satırla AYNI id'yi taşıyanlara yeni numara verir; FK ile bakanları taşır."""
+    ad = sql.SQL("{}.{}").format(sql.Identifier(sema), sql.Identifier(tablo))
+    yc.execute(sql.SQL("select {pk} from {ad}").format(pk=sql.Identifier(pk), ad=ad))
+    kalan = [r[0] for r in yc.fetchall()]
+    if not kalan:
+        return 0
+    ec.execute(sql.SQL("select {pk} from {ad} where {pk} = any(%s) and {k}").format(
+        pk=sql.Identifier(pk), ad=ad, k=_hepsi_kumede(ukol, yenile)), (kalan,))
+    cakisan = sorted(r[0] for r in ec.fetchall())
+    if not cakisan:
+        return 0
+    ec.execute(sql.SQL("select coalesce(max({}), 0) from {}").format(sql.Identifier(pk), ad))
+    yc.execute(sql.SQL("select coalesce(max({}), 0) from {}").format(sql.Identifier(pk), ad))
+    taban = max(ec.fetchone()[0], yc.fetchone()[0])
+    harita = [(eski, taban + i + 1) for i, eski in enumerate(cakisan)]
+    yc.execute("create temp table _harita (eski bigint primary key, yeni bigint) on commit drop")
+    with yc.copy("copy _harita from stdin") as c:
+        for e, y in harita:
+            c.write_row((e, y))
+    kol = [k for k in kolonlar(yc, sema, tablo)]
+    secim = sql.SQL(", ").join(
+        sql.SQL("h.yeni") if k == pk else sql.SQL("t.{}").format(sql.Identifier(k)) for k in kol)
+    # Sil + yeniden ekle (UPDATE değil): GENERATED ALWAYS kimlik kolonu
+    # güncellenemez; diğer benzersiz kısıtlar da arada çakışmaz.
+    yc.execute(sql.SQL("create temp table _tasinan on commit drop as "
+                       "select {s} from {ad} t join _harita h on h.eski = t.{pk}").format(
+        s=secim, ad=ad, pk=sql.Identifier(pk)))
+    yc.execute(sql.SQL("delete from {ad} t using _harita h where t.{pk} = h.eski").format(
+        ad=ad, pk=sql.Identifier(pk)))
+    yc.execute(sql.SQL("insert into {ad} ({k}) overriding system value select * from _tasinan").format(
+        ad=ad, k=sql.SQL(", ").join(map(sql.Identifier, kol))))
+    # Bu satıra FK ile bakanlar (yalnız tek kolonlu FK'lar; şemada başkası yok).
+    yc.execute("""
+        select n.nspname, c.relname, a.attname
+          from pg_constraint k
+          join pg_class c on c.oid = k.conrelid join pg_namespace n on n.oid = c.relnamespace
+          join pg_attribute a on a.attrelid = k.conrelid and a.attnum = k.conkey[1]
+         where k.contype = 'f' and array_length(k.conkey, 1) = 1
+           and k.confrelid = (quote_ident(%s) || '.' || quote_ident(%s))::regclass
+    """, (sema, tablo))
+    for rs, rt, rk in yc.fetchall():
+        yc.execute(sql.SQL("update {}.{} r set {k} = h.yeni from _harita h where r.{k} = h.eski").format(
+            sql.Identifier(rs), sql.Identifier(rt), k=sql.Identifier(rk)))
+    yc.execute("drop table _harita, _tasinan")
+    return len(harita)
+
+
+def birlestir(args) -> int:
+    """Geçmiş kişilere dokunmadan geri kalan herkesi Tokyo'dan yeniler."""
+    onay_iste(args, YENI_REF)
+    kesim = args.kesim or GECIS_KESIM
+    bas = time.monotonic()
+    with baglan("eski", anlik=True) as eski, baglan("yeni") as yeni:
+        ec, yc = eski.cursor(), yeni.cursor()
+
+        # 1) Kümeler.
+        ec.execute("select id::text from auth.users")
+        tokyo = {x for (x,) in ec.fetchall()}
+        # İki iz: son giriş zamanı (kopyayla Tokyo'nun kesimdeki değeri geldi;
+        # büyüğü Frankfurt'ta giriş demektir, çıkış yapınca da kalır) ve oturum.
+        yc.execute("""select id::text, created_at > %(k)s::timestamptz,
+                             coalesce(last_sign_in_at > %(k)s::timestamptz, false)
+                        from auth.users""", {"k": kesim})
+        satirlar = yc.fetchall()
+        frankfurt = {u: yeni_kayit for u, yeni_kayit, _ in satirlar}
+        yc.execute("select distinct user_id::text from auth.sessions where created_at > %s::timestamptz", (kesim,))
+        gecmis = sorted({x for (x,) in yc.fetchall() if x in frankfurt}
+                        | {u for u, yeni_kayit, girdi in satirlar if yeni_kayit or girdi})
+        yenile = sorted(tokyo - set(gecmis))
+        silinmis = sorted(u for u, yeni_kayit in frankfurt.items()
+                          if u not in tokyo and u not in gecmis)
+        print(f"Geçmiş kişi (dokunulmaz): {len(gecmis)}  ·  Tokyo'dan yenilenecek: {len(yenile)}"
+              f"  ·  Tokyo'da silinmiş, Frankfurt'tan da silinecek: {len(silinmis)}")
+        if args.gecmis_sayisi is not None and args.gecmis_sayisi != len(gecmis):
+            sys.exit(f"Geçmiş kişi sayısı {len(gecmis)}, beklenen {args.gecmis_sayisi} — DURDU. Hiçbir şey yazılmadı.")
+
+        # Geçmiş kişinin kesimden sonra TOKYO'ya yazdıkları (ör. Android'den):
+        # bunlar taşınmaz. Durdurmaz, söyler.
+        if gecmis:
+            lit = sql.SQL("{}::uuid[]").format(sql.Literal(gecmis))
+            ec.execute(sql.SQL("select count(*) from auth.users "
+                               "where last_sign_in_at > %s::timestamptz and id = any({})").format(lit), (kesim,))
+            tokyoda = ec.fetchone()[0]
+            if tokyoda:
+                print(f"  ! {tokyoda} geçmiş kişi kesimden sonra Tokyo'da da giriş yapmış — "
+                      "Tokyo'da yaptıkları TAŞINMAZ (Frankfurt'taki hâlleri kalır).")
+
+        yc.execute("set local session_replication_role = replica")
+        liste = tablolar(ec)
+        for sema, tablo in liste:
+            if not tablo_var_mi(yc, sema, tablo):
+                sys.exit(f"{sema}.{tablo}: Frankfurt'ta yok — önce `kontrol`. Hiçbir şey yazılmadı.")
+            k, h = kolonlar(ec, sema, tablo), kolonlar(yc, sema, tablo)
+            if any(c not in h for c in k):
+                sys.exit(f"{sema}.{tablo}: kolon uyuşmazlığı — önce `kontrol`. Hiçbir şey yazılmadı.")
+
+        # 2) Frankfurt'tan sil: yenilenecek + silinmiş hesapların satırları ve
+        #    ortak tablolar. Geçmiş kişinin satırı (ya da onunla ortak satır) kalır.
+        sil = sorted(set(yenile) | set(silinmis))
+        ukol: dict[tuple[str, str], list[str]] = {}
+        silinen = 0
+        for sema, tablo in liste:
+            if sema != "public":
+                continue
+            ukol[(sema, tablo)] = kullanici_kolonlari(ec, sema, tablo)
+            ad = sql.SQL("{}.{}").format(sql.Identifier(sema), sql.Identifier(tablo))
+            kosul = _hepsi_kumede(ukol[(sema, tablo)], sil) if ukol[(sema, tablo)] else sql.SQL("true")
+            yc.execute(sql.SQL("delete from {} where {}").format(ad, kosul))
+            silinen += yc.rowcount
+        for tablo in AUTH_ARTIKLARI:
+            if tablo_var_mi(yc, "auth", tablo):
+                kol = "id" if tablo == "users" else "user_id"
+                yc.execute(sql.SQL("select 1 from information_schema.columns where table_schema='auth' "
+                                   "and table_name={} and column_name={}").format(sql.Literal(tablo), sql.Literal(kol)))
+                if yc.fetchone():
+                    yc.execute(sql.SQL("delete from auth.{} where {}::text = any({}::text[])").format(
+                        sql.Identifier(tablo), sql.Identifier(kol), sql.Literal(sil)))
+                    silinen += yc.rowcount
+
+        # 3) Sayı çakışmaları — kopyadan ÖNCE (gelen satırlar eski numarayı alacak).
+        numara = []
+        for sema, tablo in liste:
+            if sema != "public" or not ukol[(sema, tablo)]:
+                continue
+            pk = _tekil_sayi_anahtari(yc, sema, tablo)
+            if pk:
+                n = _yeniden_numarala(yc, ec, sema, tablo, pk, gecmis, ukol[(sema, tablo)], yenile)
+                if n:
+                    numara.append((f"{sema}.{tablo}", n))
+
+        # 4) Kopyala.
+        ozet = []
+        lit = sql.SQL("{}::uuid[]").format(sql.Literal(yenile))
+        for sema, tablo in liste:
+            ad = sql.SQL("{}.{}").format(sql.Identifier(sema), sql.Identifier(tablo))
+            ortak = list(kolonlar(ec, sema, tablo))
+            if sema == "auth":
+                kol = "id" if tablo == "users" else "user_id"
+                kosul = sql.SQL("{} = any({})").format(sql.Identifier(kol), lit)
+            elif ukol[(sema, tablo)]:
+                kosul = _hepsi_kumede(ukol[(sema, tablo)], yenile)
+            else:
+                kosul = sql.SQL("true")
+            secim = sql.SQL(", ").join(map(sql.Identifier, ortak))
+            with ec.copy(sql.SQL("copy (select {} from {} where {}) to stdout").format(secim, ad, kosul)) as cikis, \
+                 yc.copy(sql.SQL("copy {} ({}) from stdin").format(ad, secim)) as giris:
+                for parca in cikis:
+                    giris.write(parca)
+            beklenen, eklenen = ec.rowcount, yc.rowcount
+            if eklenen != beklenen:
+                yeni.rollback()
+                sys.exit(f"{sema}.{tablo}: {beklenen} beklenen, {eklenen} yazıldı — GERİ ALINDI.")
+            ozet.append((f"{sema}.{tablo}", eklenen))
+
+        # 5) Diziler en büyük değerin ötesine (iki tarafın da).
+        yc.execute("""
+            select quote_ident(n.nspname) || '.' || quote_ident(c.relname), a.attname,
+                   pg_get_serial_sequence(quote_ident(n.nspname) || '.' || quote_ident(c.relname), a.attname)
+              from pg_attribute a join pg_class c on c.oid = a.attrelid join pg_namespace n on n.oid = c.relnamespace
+             where n.nspname = 'public' and c.relkind = 'r' and a.attnum > 0 and not a.attisdropped
+               and pg_get_serial_sequence(quote_ident(n.nspname) || '.' || quote_ident(c.relname), a.attname) is not null
+        """)
+        for tablo, kol, dizi in yc.fetchall():
+            yc.execute(sql.SQL("select max({}) from {}").format(sql.Identifier(kol), sql.SQL(tablo)))
+            en_buyuk = yc.fetchone()[0]
+            if en_buyuk is not None:
+                yc.execute("select setval(%s, greatest(%s, (select last_value from " + dizi + ")), true)",
+                           (dizi, en_buyuk))
+
+        # 6) Denetim: her Tokyo hesabı ya geçmiş kişi ya da Frankfurt'ta.
+        yc.execute("select count(*) from auth.users where id::text = any(%s)", (yenile,))
+        gelen = yc.fetchone()[0]
+        yc.execute("select count(*) from auth.users where id::text = any(%s)", (gecmis,))
+        kalan = yc.fetchone()[0]
+        if gelen != len(yenile) or kalan != len(gecmis):
+            yeni.rollback()
+            sys.exit(f"Hesap denetimi tutmadı (gelen {gelen}/{len(yenile)}, geçmiş {kalan}/{len(gecmis)}) — GERİ ALINDI.")
+
+        for ad_, n in ozet:
+            if n:
+                print(f"  {ad_:46} {n:>9}")
+        print(f"  Frankfurt'tan silinen satır: {silinen}")
+        for ad_, n in numara:
+            print(f"  yeni numara (çakışma): {ad_} {n} satır")
+        if args.kuru:
+            yeni.rollback()
+            print(f"\nKURU KOŞU TEMİZ — hiçbir şey yazılmadı ({time.monotonic() - bas:.1f} sn).")
+            return 0
+        yeni.commit()
+    print(f"\nBİRLEŞTİRİLDİ: {len(gecmis)} geçmiş kişiye dokunulmadı, {len(yenile)} hesap Tokyo'dan "
+          f"yenilendi ({time.monotonic() - bas:.1f} sn).")
+    return 0
+
+
 def tokyo_kapat(args) -> int:
     """K4.2 — Tokyo'da istemci rollerinin public erişimini keser.
 
@@ -553,13 +811,19 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     alt = p.add_subparsers(dest="komut", required=True)
     for ad, f in [("kontrol", kontrol), ("sayim", sayim), ("bosalt", bosalt),
-                  ("tasi", tasi), ("tek-kullanici", tek_kullanici),
+                  ("tasi", tasi), ("tek-kullanici", tek_kullanici), ("birlestir", birlestir),
                   ("tokyo-kapat", tokyo_kapat), ("tokyo-ac", tokyo_ac)]:
         s = alt.add_parser(ad)
         s.add_argument("--onay", default="")
         s.add_argument("--email", default="")
         s.add_argument("--ortaklarla", action="store_true",
                        help="tek-kullanici: ortaklık kurduğu hesapları da taşı")
+        s.add_argument("--kuru", action="store_true",
+                       help="birlestir: her şeyi yap, raporla, GERİ AL")
+        s.add_argument("--kesim", default="",
+                       help=f"birlestir: geçmiş kişi sınırı (varsayılan {GECIS_KESIM})")
+        s.add_argument("--gecmis-sayisi", type=int, default=None,
+                       help="birlestir: beklenen geçmiş kişi sayısı; tutmazsa durur")
         s.set_defaults(f=f)
     args = p.parse_args()
     if TEST:

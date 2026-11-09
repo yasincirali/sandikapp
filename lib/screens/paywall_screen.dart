@@ -5,11 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart' show Package;
 
+import '../models/asset.dart' show Asset;
+import '../models/asset_type.dart';
+import '../models/position.dart' show aktifLotlar;
+import '../providers/auth_provider.dart' show partnersProvider;
+import '../providers/portfolio_provider.dart' show portfolioProvider;
 import '../providers/preferences_provider.dart'
     show kKarsilastirmaEnFazla, ortakSiniriDoluProvider;
+import '../providers/signal_provider.dart' show activeSignalsProvider;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/remote_config_service.dart';
+import '../widgets/sandik_segment.dart';
 import '../services/satin_alma_service.dart';
 import '../services/yasal_metin_katalogu.dart' show YasalBelge;
 import '../theme/sandik.dart';
@@ -59,6 +66,7 @@ class PaywallScreen extends ConsumerStatefulWidget {
     AnalyticsService.instance.logPremiumUpgradeStarted(source: source);
     return Navigator.of(context).push<bool>(
       adaptiveRoute(
+        settings: const RouteSettings(name: 'paywall'),
         fullscreenDialog: true,
         builder: (_) => PaywallScreen(source: source),
       ),
@@ -107,6 +115,18 @@ int? tasarrufOrani(double aylik, double yillik) {
 String _birimsiz(String rcFiyat) => rcFiyat.split('/').first.trim();
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
+  /// Satın alma tamamlandı; `dispose`'daki "kapandı" olayı atılmaz.
+  bool _satinAlindi = false;
+
+  @override
+  void dispose() {
+    if (!_satinAlindi) {
+      unawaited(AnalyticsService.instance
+          .logPremiumPaywallKapandi(source: widget.source));
+    }
+    super.dispose();
+  }
+
   _Plan _selected = _Plan.yearly;
   bool _busy = false;
   MagazaTeklifi? _teklif;
@@ -150,8 +170,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     // yükleme ve fiyat/deneme okuması bu State'te kalır; yalnız görünüm
     // değişir. Ham fiyat metni verilir, birim eki (/ay, /yıl) gövdede.
     if (rc.paywallDeste) {
+      // Tetikleyicisiz girişte deste kullanıcının işine göre açılır
+      // ([paywallPersona]); sayım bugünkü mülkiyet (`aktifLotlar`).
+      final lotlar = aktifLotlar(
+          ref.watch(portfolioProvider).valueOrNull?.assets ?? const <Asset>[]);
+      final persona = paywallPersona(
+        fonSayisi: lotlar.where((a) => a.type == AssetType.fon).length,
+        hisseSayisi: lotlar.where((a) => a.type == AssetType.hisse).length,
+        sinyalVar: ref.watch(activeSignalsProvider).isNotEmpty,
+        ortakVar:
+            (ref.watch(partnersProvider).valueOrNull ?? const []).isNotEmpty,
+      );
       return _DesteGovdesi(
         source: widget.source,
+        persona: persona,
         yillik: _selected == _Plan.yearly,
         onPlan: (y) =>
             setState(() => _selected = y ? _Plan.yearly : _Plan.monthly),
@@ -283,7 +315,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         case SatinAlmaSonucu.basarili:
           unawaited(AnalyticsService.instance.logPremiumUpgradeCompleted(
             plan: _selected == _Plan.yearly ? 'yearly' : 'monthly',
+            source: widget.source,
+            deneme: denemeGunu(paket.storeProduct) != null,
           ));
+          _satinAlindi = true;
           await _showSuccessSheet();
           if (!mounted) return;
           Navigator.of(context).pop(true);
@@ -342,8 +377,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SandikTutamac(),
-              const SizedBox(height: 24),
               Container(
                 width: 72,
                 height: 72,
@@ -360,7 +393,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               const SizedBox(height: 16),
               Text(context.l10n.premiumUnlocked,
                   style: context.t.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800, color: context.c.text90)),
+                      fontWeight: FontWeight.w600, color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
                 context.l10n.premiumUnlockedBody,
@@ -384,7 +417,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   // (açık tema denetimi 2026-10-08).
                   child: Text(context.l10n.greatWord,
                       style: context.t.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: context.c.onAmber)),
                 ),
               ),
@@ -449,8 +482,7 @@ class _HeroCard extends StatelessWidget {
             child: Text(
               context.l10n.sandikPremiumUpper,
               style: context.t.labelMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600,
                 color: context.c.amberText,
               ),
             ),
@@ -459,7 +491,7 @@ class _HeroCard extends StatelessWidget {
           Text(
             context.l10n.paywallHeadline,
             style: context.t.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: context.c.text90,
               height: 1.15,
             ),
@@ -622,6 +654,9 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       (l.prmSatirOzelGosterge, null, null),
       (l.prmSatirKars, l.pwdSeri(seriSiniri), l.pwdSeri(kKarsilastirmaEnFazla)),
       (l.prmSatirOrtak, '$ortakSiniri', l.prmSinirsiz),
+      // Zirvedeki portföyler (0158): ücretsizde kendi sıran; Premium'da 1.
+      // portföyün varlık dağılımı ve seninle örtüşmesi.
+      (l.prmSatirZirve, l.prmZirveUcretsiz, l.prmZirvePremium),
       // Çoklu portföy (0133): ücretsiz 1 (Ana), yalnız bayrak açıkken.
       if (RemoteConfigService.instance.cokluPortfoy)
         (l.prmSatirPortfoy, '1', l.pwdPortfoyPremium),
@@ -653,7 +688,7 @@ class _KarsilastirmaTablosu extends StatelessWidget {
     }
 
     final baslik = t.labelSmall?.copyWith(
-        color: c.text58, fontWeight: FontWeight.w800, letterSpacing: 1.0);
+        color: c.text58, fontWeight: FontWeight.w600);
     return SandikCard(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.md, vertical: SandikSpace.sm),
@@ -669,9 +704,9 @@ class _KarsilastirmaTablosu extends StatelessWidget {
             const SizedBox.shrink(),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
-              child: Text(l.prmUcretsiz.toUpperCase(), style: baslik),
+              child: Text(l.prmUcretsiz, style: baslik),
             ),
-            Text(l.prmPremium.toUpperCase(),
+            Text(l.prmPremium,
                 style: baslik?.copyWith(color: c.amberText)),
           ]),
           for (final r in satirlar)
@@ -718,8 +753,20 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SandikBasma(
-      onTap: onTap,
+    // VoiceOver hangi planın seçili olduğunu okusun (HIG, seçici denetimi
+    // 2026-10-12): kart tek düğüm, "seçili" + radyo grubu.
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        inMutuallyExclusiveGroup: true,
+        child: SandikTappable(
+      soluk: true,
+      haptic: SandikHaptic.none,
+      onTap: () {
+        SandikHaptic.selection.perform();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: SandikMotion.stateOf(context),
         curve: SandikMotion.enter,
@@ -767,7 +814,7 @@ class _PlanCard extends StatelessWidget {
                     children: [
                       Text(title,
                           style: context.t.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: context.c.text90)),
                       if (badgeText != null) ...[
                         const SizedBox(width: 8),
@@ -783,7 +830,7 @@ class _PlanCard extends StatelessWidget {
                             badgeText!,
                             style: context.t.labelMedium?.copyWith(
                                 letterSpacing: 0,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 color: context.c.gain),
                           ),
                         ),
@@ -801,10 +848,12 @@ class _PlanCard extends StatelessWidget {
             Text(price,
                 style: context.t.numSmall.copyWith(
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: context.c.gold)),
           ],
         ),
+      ),
+    ),
       ),
     );
   }
@@ -864,7 +913,7 @@ class _BottomBar extends StatelessWidget {
                 // Renk açıkça `onAmber` — `text90` düğme rengini
                 // ezerdi (açık tema denetimi 2026-10-08).
                 style: context.t.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800, color: context.c.onAmber),
+                    fontWeight: FontWeight.w600, color: context.c.onAmber),
               ),
             ),
             if (geriYukleGoster) ...[

@@ -406,16 +406,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           horizontalLines: taban == null || _simulate
               ? const []
               : [
-                  GrafikStili.donemBasi(
-                    context,
-                    taban.first,
-                    etiket: GrafikStili.donemBasiEtiketi(
-                      context,
-                      an: DateTime.fromMillisecondsSinceEpoch(taban.firstTs!),
-                      deger: ref.read(gosterimBazParaProvider).fmt(taban.first),
-                      gunIci: intraday,
-                    ),
-                  ),
+                  GrafikStili.donemBasi(context, taban.first),
                 ],
           verticalLines: intraday
             // Gün içi grafikte dikey "ŞİMDİ" çizgisi KALDIRILDI
@@ -715,12 +706,16 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                         .millisecondsSinceEpoch;
                     final onSameDay = aDay == spotDayMs;
                     final onOrBefore = aDay <= spotDayMs;
+                    // Tutar `getiriAkisi` (2026-10-29): satış ele geçen
+                    // tutarla — YATIRDIĞIN başlığı, crosshair ve hareket
+                    // satırıyla aynı; eskiden maliyetle yazılıyordu.
+                    final akis = getiriAkisi(a);
                     if (a.isBuy) {
-                      if (onSameDay) dayBuyTRY += a.totalCostTRY;
-                      if (onOrBefore) cumBuyTRY += a.totalCostTRY;
+                      if (onSameDay) dayBuyTRY += akis;
+                      if (onOrBefore) cumBuyTRY += akis;
                     } else if (a.isSell) {
-                      if (onSameDay) daySellTRY += a.totalCostTRY;
-                      if (onOrBefore) cumSellTRY += a.totalCostTRY;
+                      if (onSameDay) daySellTRY -= akis;
+                      if (onOrBefore) cumSellTRY -= akis;
                     }
                   }
                 }
@@ -872,9 +867,28 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               alignment: Alignment.centerRight,
               child: _grafikAraclari(mumSec),
             ),
-          ZoomableChart(
+          // Dönem başı açıklaması çizim alanının üstünde, kartın üst
+          // dolgusunda (yasin 2026-10-12; bkz. `donemBasiUstte`).
+          GrafikStili.donemBasiUstte(
+            context,
+            etiket: taban == null || _simulate
+                ? null
+                : GrafikStili.donemBasiEtiketi(
+                    context,
+                    an: DateTime.fromMillisecondsSinceEpoch(taban.firstTs!),
+                    deger: ref.read(gosterimBazParaProvider).fmt(taban.first),
+                    gunIci: intraday,
+                  ),
+            grafik: ZoomableChart(
             // Ekran okuyucu: portföy grafiği "fiyat grafiği" değildir.
             semanticLabel: context.l10n.chartPortfolioSemantics,
+            // Görünen aralık özeti; bakiye gizliyken yalnız yüzde (Ana
+            // ekran kuralı: tutar maskelenir, yüzde açık).
+            semanticValueBuilder: (a, b) => grafikOzetMetni(
+                context.l10n, gorunenAralikOzeti(crosshairSpots, a, b),
+                tutar: ref.read(balanceHiddenProvider)
+                    ? null
+                    : ref.read(gosterimBazParaProvider).fmt),
             fullMinX: minX,
             fullMaxX: maxX,
             // 328'den 296'ya (2026-09-15, "grafik layoutunun yüksekliği
@@ -997,6 +1011,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               return out;
             },
           ),
+          ),
           if (showVolume) ...[
             const SizedBox(height: 8),
             Padding(
@@ -1006,7 +1021,6 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 style: context.t.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: context.c.text58,
-                  letterSpacing: 1.2,
                 ),
               ),
             ),

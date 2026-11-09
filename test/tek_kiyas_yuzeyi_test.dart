@@ -12,6 +12,7 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 import 'package:portfoy_takip/screens/comparison_screen.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 
 /// Sadeleştirme 2, madde 8 — tek kıyas yüzeyi (`tek_kiyas_yuzeyi`).
 ///
@@ -93,7 +94,7 @@ Future<void> _varlikEkrani(WidgetTester tester, Asset v) async {
 
 /// Varlık ekranının grafik altındaki "Karşılaştır" düğmesi.
 Future<void> _karsilastiraBas(WidgetTester tester) async {
-  final dugme = find.widgetWithText(InkWell, 'Karşılaştır');
+  final dugme = find.widgetWithText(SandikTappable, 'Karşılaştır');
   expect(dugme, findsOneWidget);
   await tester.ensureVisible(dugme);
   await tester.tap(dugme);

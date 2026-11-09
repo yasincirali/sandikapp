@@ -40,10 +40,15 @@ class AssetSparkline extends StatefulWidget {
 class _AssetSparklineState extends State<AssetSparkline> {
   List<double>? _series;
 
+  /// Seri önbellekten ilk karede geldiyse solma yok; yalnız soğuk yüklemede.
+  bool _onbellektenGeldi = false;
+
   @override
   void initState() {
     super.initState();
-    _load();
+    _series = SparklineService.instance.peek(widget.asset);
+    _onbellektenGeldi = _series != null;
+    if (_series == null) _load();
   }
 
   @override
@@ -53,8 +58,9 @@ class _AssetSparklineState extends State<AssetSparkline> {
     // sıralaması değişince) seriyi tazele.
     if (old.asset.ticker != widget.asset.ticker ||
         old.asset.type != widget.asset.type) {
-      _series = null;
-      _load();
+      _series = SparklineService.instance.peek(widget.asset);
+      _onbellektenGeldi = _series != null;
+      if (_series == null) _load();
     }
   }
 
@@ -79,7 +85,7 @@ class _AssetSparklineState extends State<AssetSparkline> {
 
     final color = widget.isPositive ? context.c.gain : context.c.loss;
 
-    return SizedBox(
+    final egri = SizedBox(
       width: widget.width,
       height: widget.height,
       child: RepaintBoundary(
@@ -90,6 +96,22 @@ class _AssetSparklineState extends State<AssetSparkline> {
           isComplex: false,
         ),
       ),
+    );
+    // Soğuk yüklemede seri bir kare sonra gelir: eğri boş kutuda birden
+    // belirmesin diye kısa bir solmayla gelir (2026-10-14). Önbellekten ilk
+    // karede gelen seri (kaydırıp geri dönülen satır) solmaz (2026-10-20);
+    // hareketi azalt açıkken de tek kare.
+    if (_onbellektenGeldi || MediaQuery.disableAnimationsOf(context)) {
+      return egri;
+    }
+    // `FadeTransition` değil `TweenAnimationBuilder` + `Opacity`: tek atış,
+    // 180 ms, satır başına bir kez; denetleyici kurmaya değmez.
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: SandikMotion.stateOf(context),
+      curve: SandikMotion.enter,
+      child: egri,
+      builder: (_, t, c) => Opacity(opacity: t, child: c),
     );
   }
 }

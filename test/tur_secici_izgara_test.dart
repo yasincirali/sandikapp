@@ -15,10 +15,9 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/tour_anchor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Varlık Ekle tür seçicisi "gruplu ızgara + arama" (bayrak
-/// `tur_secici_izgara`, 2026-10-08). Bayrak kapalıyken eski çip satırı
-/// (`asset_type_ekleme_sirasi_test` onu kilitler); açıkken arama + üç grup,
-/// seçimden sonra tek satır.
+/// Varlık Ekle tür seçicisi "gruplu ızgara + arama" (2026-10-08): arama +
+/// üç grup, seçimden sonra tek satır. Bayrak `tur_secici_izgara`
+/// 2026-10-20'de emekliye ayrıldı; eski çip satırı kalktı.
 
 class _BosPortfoy extends PortfolioNotifier {
   @override
@@ -48,11 +47,12 @@ final _tr28 = EurobondSozlesmesi(
 
 Future<void> _ac(
   WidgetTester tester, {
-  Set<String> bayraklar = const {'tur_secici_izgara', 'abd_hisse', 'eurobond'},
+  Set<String> bayraklar = const {'abd_hisse', 'eurobond'},
   Widget ekran = const AddAssetScreen(),
   double genislik = 375,
   double yukseklik = 812,
   double metinOlcegi = 1,
+  bool hareketiAzalt = false,
   ThemeData? tema,
 }) async {
   RemoteConfigService.testAcik = bayraklar;
@@ -72,8 +72,9 @@ Future<void> _ac(
     child: MaterialApp(
       theme: tema ?? ThemeData.dark(),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(textScaler: TextScaler.linear(metinOlcegi)),
+        data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(metinOlcegi),
+            disableAnimations: hareketiAzalt),
         child: child!,
       ),
       home: ekran,
@@ -89,8 +90,8 @@ Finder get _secici => find.byWidgetPredicate(
 Finder _seciciIcinde(Finder f) => find.descendant(of: _secici, matching: f);
 
 /// Yalnız `Text` (arama alanındaki yazı `EditableText`'tir, sayılmaz).
-Finder _metin(String s) => _seciciIcinde(
-    find.byWidgetPredicate((w) => w is Text && w.data == s));
+Finder _metin(String s) =>
+    _seciciIcinde(find.byWidgetPredicate((w) => w is Text && w.data == s));
 
 Future<void> _yerles(WidgetTester tester) async {
   await tester.pump();
@@ -105,9 +106,9 @@ void main() {
     expect(_seciciIcinde(find.byType(TurSeciciIzgara)), findsOneWidget);
     expect(_seciciIcinde(find.byType(Wrap)), findsNothing,
         reason: 'Bayrak açıkken eski çip satırı çizilmez.');
-    expect(find.text('BORSA VE FON'), findsOneWidget);
-    expect(find.text('DÖVİZ VE DEĞERLİ'), findsOneWidget);
-    expect(find.text('BİRİKİM'), findsOneWidget);
+    expect(find.text('Borsa ve fon'), findsOneWidget);
+    expect(find.text('Döviz ve değerli'), findsOneWidget);
+    expect(find.text('Birikim'), findsOneWidget);
     expect(_seciciIcinde(find.text('ABD hisse')), findsOneWidget);
     expect(_seciciIcinde(find.text('Eurobond')), findsOneWidget);
     expect(find.text('Ekle'), findsNothing,
@@ -121,17 +122,34 @@ void main() {
     await tester.tap(_seciciIcinde(find.text('Fon')));
     await _yerles(tester);
 
-    expect(find.text('BORSA VE FON'), findsNothing);
+    expect(find.text('Borsa ve fon'), findsNothing);
     expect(find.text('Değiştir'), findsOneWidget);
     expect(_seciciIcinde(find.text('Fon')), findsOneWidget);
     expect(find.text('Ekle'), findsOneWidget, reason: 'Form görünür olmalı.');
-    expect(find.text('Fon seçmek için dokun...'), findsWidgets);
+    expect(find.text('Fon seç'), findsWidgets);
 
     await tester.tap(find.text('Değiştir'));
     await _yerles(tester);
-    expect(find.text('BORSA VE FON'), findsOneWidget);
+    expect(find.text('Borsa ve fon'), findsOneWidget);
     expect(find.text('Ekle'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  // integration_test (2026-10-20) emülatörde hareketi azalt açık koşar;
+  // süre sıfırken AnimatedSize kendi layout'unda kendini kirletip assert
+  // atıyordu (bayrak emekliye ayrılınca ızgara CI'da da çizilmeye başladı).
+  testWidgets('hareketi azalt: katlanıp açılırken layout assert yok',
+      (tester) async {
+    await _ac(tester, hareketiAzalt: true);
+    await tester.tap(_seciciIcinde(find.text('Fon')));
+    await _yerles(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Değiştir'), findsOneWidget);
+
+    await tester.tap(find.text('Değiştir'));
+    await _yerles(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Borsa ve fon'), findsOneWidget);
   });
 
   testWidgets('ABD kutusu: hisse türü ABD pazarıyla, satırda "ABD hisse"',
@@ -151,7 +169,7 @@ void main() {
     await tester.enterText(_seciciIcinde(find.byType(TextField)), 'THYAO');
     await tester.pump();
 
-    expect(find.text('BORSA VE FON'), findsNothing,
+    expect(find.text('Borsa ve fon'), findsNothing,
         reason: 'Sorgu varken ızgara gizli.');
     final sonuc = _metin('THYAO');
     expect(sonuc, findsOneWidget);
@@ -170,7 +188,7 @@ void main() {
     // "Değiştir" aramayı boş açar.
     await tester.tap(find.text('Değiştir'));
     await _yerles(tester);
-    expect(find.text('BORSA VE FON'), findsOneWidget);
+    expect(find.text('Borsa ve fon'), findsOneWidget);
     final alan =
         tester.widget<TextField>(_seciciIcinde(find.byType(TextField)));
     expect(alan.controller!.text, isEmpty);
@@ -178,8 +196,7 @@ void main() {
 
   testWidgets('ISIN araması: katalogdaki eurobond seçilir', (tester) async {
     await _ac(tester);
-    await tester.enterText(
-        _seciciIcinde(find.byType(TextField)), 'US900123DF');
+    await tester.enterText(_seciciIcinde(find.byType(TextField)), 'US900123DF');
     await tester.pump();
     await tester.pump();
     final sonuc = _metin('US900123DF45');
@@ -195,11 +212,10 @@ void main() {
 
   testWidgets('eurobond bayrağı kapalı: ne kutu ne arama sonucu',
       (tester) async {
-    await _ac(tester, bayraklar: const {'tur_secici_izgara'});
+    await _ac(tester, bayraklar: const {});
     expect(_metin('Eurobond'), findsNothing);
     expect(_metin('ABD hisse'), findsNothing);
-    await tester.enterText(
-        _seciciIcinde(find.byType(TextField)), 'US900123DF');
+    await tester.enterText(_seciciIcinde(find.byType(TextField)), 'US900123DF');
     await tester.pump();
     expect(_metin('US900123DF45'), findsNothing);
     await tester.enterText(_seciciIcinde(find.byType(TextField)), '');
@@ -220,18 +236,10 @@ void main() {
       isManualPrice: false,
     );
     await _ac(tester, ekran: AddAssetScreen(editingAsset: lot));
-    expect(find.text('BORSA VE FON'), findsNothing);
+    expect(find.text('Borsa ve fon'), findsNothing);
     expect(find.text('Değiştir'), findsOneWidget);
     expect(_seciciIcinde(find.text('Kripto')), findsOneWidget);
     expect(find.text('Güncelle'), findsOneWidget);
-  });
-
-  testWidgets('bayrak kapalı: eski çip satırı, ızgara yok', (tester) async {
-    await _ac(tester, bayraklar: const {});
-    expect(find.byType(TurSeciciIzgara), findsNothing);
-    expect(_seciciIcinde(find.byType(Wrap)), findsOneWidget);
-    expect(find.text('BORSA VE FON'), findsNothing);
-    expect(find.text('Ekle'), findsOneWidget);
   });
 
   for (final (ad, tema) in [
@@ -243,7 +251,7 @@ void main() {
       await _ac(tester,
           genislik: 320, yukseklik: 640, metinOlcegi: 3.0, tema: tema);
       expect(tester.takeException(), isNull);
-      expect(find.text('BORSA VE FON'), findsOneWidget);
+      expect(find.text('Borsa ve fon'), findsOneWidget);
 
       await tester.ensureVisible(_seciciIcinde(find.text('Kripto')));
       await tester.pump();

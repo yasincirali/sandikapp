@@ -216,6 +216,27 @@ const Map<String, String> abdHisseleri = {
   'SMH': 'VanEck Semiconductor ETF',
   'ARKK': 'ARK Innovation ETF',
   'VNQ': 'Vanguard Real Estate ETF',
+  // ── ETF — tema (uzay, robotik, temiz enerji, siber güvenlik) ──────────
+  // yasin, 2026-10-23: "Tema Space Innovators ETF gibi varlıkları da
+  // içermeliyiz". Tema Space Innovators'ın Yahoo/NYSE Arca sembolü `NASA`
+  // (stockanalysis.com/etf/nasa); aynı adlı VanEck fonu Avrupa'da (JEDI/
+  // JEDG) işlem görür, ABD listesine girmez. Ad aramasında "uzay"/"space"
+  // geçsin diye adlar fonun resmi adıdır.
+  'NASA': 'Tema Space Innovators ETF',
+  'ARKX': 'ARK Space & Defense Innovation ETF',
+  'UFO': 'Procure Space ETF',
+  'ROKT': 'SPDR S&P Kensho Final Frontiers ETF',
+  'ITA': 'iShares U.S. Aerospace & Defense ETF',
+  'BOTZ': 'Global X Robotics & Artificial Intelligence ETF',
+  'ROBO': 'ROBO Global Robotics & Automation ETF',
+  'AIQ': 'Global X Artificial Intelligence & Technology ETF',
+  'ARKW': 'ARK Next Generation Internet ETF',
+  'ARKG': 'ARK Genomic Revolution ETF',
+  'ICLN': 'iShares Global Clean Energy ETF',
+  'TAN': 'Invesco Solar ETF',
+  'LIT': 'Global X Lithium & Battery Tech ETF',
+  'URA': 'Global X Uranium ETF',
+  'CIBR': 'First Trust NASDAQ Cybersecurity ETF',
   // ── ETF — kaldıraçlı ──────────────────────────────────────────────────
   'TQQQ': 'ProShares UltraPro QQQ (3x)',
   'SQQQ': 'ProShares UltraPro Short QQQ (-3x)',

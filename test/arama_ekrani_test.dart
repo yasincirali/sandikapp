@@ -69,7 +69,7 @@ void main() {
 
   testWidgets('boş sorgu: Piyasalar önerileri görünür', (t) async {
     await kur(t);
-    expect(find.text('PİYASALAR'), findsOneWidget);
+    expect(find.text('Piyasalar'), findsOneWidget);
     expect(find.text('BIST 100 Endeksi'), findsOneWidget);
     expect(find.text('Vazgeç'), findsOneWidget);
   });
@@ -78,7 +78,7 @@ void main() {
       (t) async {
     await kur(t);
     await yaz(t, 'altin');
-    expect(find.text('ALTIN'), findsWidgets, reason: 'grup başlığı');
+    expect(find.text('Altın'), findsWidgets, reason: 'grup başlığı');
     expect(find.text('Aranıyor…'), findsNothing);
     final tumu = find.textContaining(RegExp(r'^Tümü \(\d+\)$'));
     expect(tumu, findsWidgets);
@@ -93,7 +93,7 @@ void main() {
   testWidgets('bölüm başlığı Türkçe büyük harf: HİSSE, DÖVİZ', (t) async {
     await kur(t);
     await yaz(t, 'dolar');
-    expect(find.text('DÖVİZ'), findsOneWidget);
+    expect(find.text('Döviz'), findsOneWidget);
     expect(find.text('DÖVIZ'), findsNothing);
   });
 

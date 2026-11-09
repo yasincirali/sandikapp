@@ -305,39 +305,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('halkada DOKUNARAK seçilen dilim de sıfırlanır',
-        (tester) async {
-      // TestFlight (2026-10-10): liste "Tümü"ye döndü ama halkada "Altın"
-      // seçili kaldı — halka seçimi kendi içinde tutuyordu. Önceki test
-      // süzgeci geri çağrıyla kurduğu için halkanın iç durumunu görmedi;
-      // burada kullanıcı gibi halkanın lejantına dokunulur.
-      await kur(tester);
-      final halka = find.byWidgetPredicate(
-          (w) => w.runtimeType.toString() == '_AssetTypeDonut');
-      if (halka.evaluate().isEmpty) return; // bayrak: küçük halka denetimli
-      // Lejant satırı "Altın %63,0" (ad + pay tek metin).
-      final altin = find.descendant(
-          of: halka, matching: find.textContaining('Altın', findRichText: true));
-      await tester.tap(altin.first, warnIfMissed: false);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      double soluk() => tester
-          .widgetList<AnimatedOpacity>(find.descendant(
-              of: halka, matching: find.byType(AnimatedOpacity)))
-          .where((o) => o.opacity < 1)
-          .length
-          .toDouble();
-      expect(soluk(), greaterThan(0), reason: 'dokunuş dilimi seçmedi');
-      expect(find.textContaining('THYAO'), findsNothing);
-
-      VarlikEklendi.duyur(pozisyonAnahtari: 'hisse|THYAO.IS|TRY');
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(soluk(), 0, reason: 'halkada eski dilim seçili kaldı');
-      expect(find.textContaining('THYAO'), findsWidgets);
-      await tester.pump(const Duration(seconds: 3));
-      expect(tester.takeException(), isNull);
-    });
+    // "halkada DOKUNARAK seçilen dilim de sıfırlanır" (2026-10-10) kalktı:
+    // ekrandaki büyük halka `portfoy_dagilim_cubugu` emekliye ayrılınca
+    // (2026-10-20) kaldırıldı; halka artık yalnız alt sayfada, liste
+    // süzgecine kendi seçimini tutarak uyması gereken bir kopya yok.
 
     testWidgets('var olan pozisyona alış da satırı parlatır', (tester) async {
       await kur(tester);
@@ -353,7 +324,7 @@ void main() {
         (tester) async {
       // TestFlight (2026-10-10): "parçaya tıklayınca filtreliyor, tekrar
       // tıklayınca Tümü'ye geçmesi lazım ama detaylı sayfa açıyor."
-      RemoteConfigService.testAcik = {'goz_alici', 'portfoy_dagilim_cubugu'};
+      RemoteConfigService.testAcik = {'goz_alici'};
       addTearDown(() => RemoteConfigService.testAcik = {});
       await kur(tester);
       // 120pt halka kutusu; dilimler tepeden saat yönünde, büyükten küçüğe:

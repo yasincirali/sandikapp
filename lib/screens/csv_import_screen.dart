@@ -2,12 +2,17 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/bulk_cart_provider.dart';
 import '../providers/premium_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/csv_import_service.dart';
+import '../services/price_service.dart';
+import '../models/asset_type.dart' show tefasOneki;
+import '../services/ekstre/ekran_goruntusu.dart';
+import '../services/ekstre/ekran_okuyucu.dart';
 import '../services/ekstre/ekstre_ice_aktarma.dart';
 import '../services/remote_config_service.dart';
 import 'paywall_screen.dart';
@@ -61,6 +66,15 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// eylemin yapıldığı kartta kalır.
   String? _kartMesaji;
 
+  /// Metin yolu açık rızası verildi mi (0147). Yalnız rıza verildikten
+  /// sonra kartta "onayı geri çek" bağlantısı çıkar; sayfa açılışında
+  /// sunucuya sorulmaz (rıza ilk "Yapay zekâyla eşle"de istenir).
+  bool _aiRizasi = false;
+
+  /// Ekran görüntüsü okumasının sonucu (bayrak `ekran_goruntusu_maliyet`):
+  /// düğmenin altında satır içi, toast değil (bu ekranda toast yok).
+  String? _gorselMesaji;
+
   /// Adla yazılmış fonlar için TEFAS listesi alınamadı: her ad için ayrı
   /// "tanınmadı" demek yerine tek, nedenini söyleyen satır.
   bool _fonListesiAlinamadi = false;
@@ -99,6 +113,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             else
               for (final ad in e.cozulemeyenFonlar)
                 l.importFundNotRecognized(ad),
+            for (final ad in e.fiyatiAlinamayanlar)
+              l.importFundPriceMissing(ad),
             ...e.notlar,
           ],
         ));
@@ -111,7 +127,11 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
   Future<EkstreOkumaSonucu> _fonAdlariniCoz(EkstreOkumaSonucu s) async {
     _fonListesiAlinamadi = false;
-    if (s.cozulecekFonAdlari.isEmpty) return s;
+    // Hareketlerde geçen kod gerçek bir fon mu, liste söyler
+    // (`hareketKodlari`): dönemde tamamen satılmış fon varlık tablosunda
+    // yoktur, adını çözmek gerekmese de listeye bakılır.
+    final hareketIcin = _hareketlerle && s.hareketler.isNotEmpty;
+    if (s.cozulecekFonAdlari.isEmpty && !hareketIcin) return s;
     try {
       final fonlar = await TefasService.instance.fetchAllFunds();
       // `fetchAllFunds` ağ hatasını yutar ve BOŞ liste döner (fırlatmaz).
@@ -129,6 +149,46 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       _fonListesiAlinamadi = true;
       return s;
     }
+  }
+
+  /// Yalnız tutar yazan belge ("Varlık Geçmişi Formu", 2026-10-15): adet =
+  /// tutar ÷ belge günündeki fiyat. Fon fiyatı TEFAS serisinden (BES
+  /// sözleşmesinin geçmiş gün fiyatıyla aynı yol, en çok 7 gün geri);
+  /// hisse, altın, döviz, kripto ve kurlar toplu eklemenin geçmiş gün
+  /// kapanışından (`fetchHistoricalClose`). Alınamayan kalem eklenmez,
+  /// önizleme "fiyatı alınamadı" der.
+  Future<EkstreOkumaSonucu> _tutarFiyatlariniAl(EkstreOkumaSonucu s) async {
+    final gun = s.belgeTarihi;
+    final semboller = s.istenecekFiyatlar;
+    if (gun == null || semboller.isEmpty) return s;
+    final ay = (DateTime.now().difference(gun).inDays / 30).ceil();
+    final aralik = ay <= 1
+        ? '1mo'
+        : ay <= 3
+            ? '3mo'
+            : ay <= 6
+                ? '6mo'
+                : ay <= 12
+                    ? '1y'
+                    : '3y';
+    final fiyatlar = <String, double>{};
+    await Future.wait([
+      for (final sembol in semboller)
+        () async {
+          try {
+            final f = sembol.startsWith(tefasOneki)
+                ? gunFiyati(
+                    await PriceService.instance.fetchHistory(sembol, aralik),
+                    gun)
+                : await PriceService.instance
+                    .fetchHistoricalClose(sembol, gun);
+            if (f != null && f > 0) fiyatlar[sembol] = f;
+          } catch (e, st) {
+            CrashReporter.report(e, st, reason: 'ekstre_tutar_fiyati');
+          }
+        }(),
+    ]);
+    return s.fiyatlarla(fiyatlar);
   }
 
   /// Önizleme başlığı — sonuç gelince görünür alana kaydırılır.
@@ -199,8 +259,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     if (dosya == null || !mounted) return;
     setState(() => _okunuyor = true);
     try {
-      final sonuc =
-          await _fonAdlariniCoz(await ekstreyiOku(await dosya.readAsBytes()));
+      final sonuc = await _tutarFiyatlariniAl(
+          await _fonAdlariniCoz(await ekstreyiOku(await dosya.readAsBytes())));
       if (!mounted) return;
       _ekstre = sonuc;
       _dosyaAdi = dosya.name;
@@ -220,10 +280,98 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     }
   }
 
+  /// Ekran görüntüsünden adet ve ortalama maliyet (bayrak
+  /// `ekran_goruntusu_maliyet`, 2026-10-13; yasin: "bankalarda ekstrelerde
+  /// varlıkların ortalama maliyetleri, alım zamanları yazmıyor").
+  ///
+  /// Metin alanında ekstre varsa yalnız MALİYET yazılır (adet ekstreden
+  /// kalır, `maliyetleriUygula`); boşsa görüntünün kendisi kanonik metin
+  /// olur. Görüntü cihazda okunur (`ekran_okuyucu.dart`), sunucuya gitmez.
+  /// Premium: paywall açıkken ücretsizde paywall'a götürür.
+  Future<void> _ekranGoruntusuSec() async {
+    final l = context.l10n;
+    if (ref.read(radarKilitliProvider)) {
+      await PaywallScreen.show(context, source: 'ekran_goruntusu');
+      return;
+    }
+    final List<XFile> gorseller;
+    try {
+      gorseller = await ImagePicker().pickMultiImage();
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ekran_goruntusu_secici');
+      if (mounted) showAppError(context, e);
+      return;
+    }
+    if (gorseller.isEmpty || !mounted) return;
+    setState(() => _gorselMesaji = null);
+    try {
+      final fonlar = await _fonListesiSessiz();
+      final gruplar = <List<EkranVarligi>>[];
+      for (final g in gorseller) {
+        final hucreler = await ekranGoruntusunuOku(await g.readAsBytes());
+        gruplar.add(ekranGoruntusunuAnla(hucreler, fonlar: fonlar));
+      }
+      final varliklar = ekranVarliklariniBirlestir(gruplar);
+      if (!mounted) return;
+      final mesaj = <String>[];
+      final mevcut = _ctrl.text.trim();
+      if (varliklar.isEmpty) {
+        mesaj.add(l.importScreenshotNone);
+      } else if (mevcut.isNotEmpty) {
+        final r = maliyetleriUygula(mevcut, varliklar);
+        mesaj.add(r.uygulanan > 0
+            ? l.importScreenshotCostsApplied(r.uygulanan)
+            : l.importScreenshotNoCost);
+        if (r.bolunmus.isNotEmpty) {
+          mesaj.add(l.importScreenshotSkipped(r.bolunmus.join(', ')));
+        }
+        if (r.ekstredeYok.isNotEmpty) {
+          mesaj.add(l.importScreenshotNotInStatement(r.ekstredeYok.join(', ')));
+        }
+        if (r.uygulanan > 0) _ctrl.text = r.metin;
+      } else {
+        final metin = ekranKanonikMetni(varliklar);
+        if (metin.isEmpty) {
+          mesaj.add(l.importScreenshotNone);
+        } else {
+          _ctrl.text = metin;
+          mesaj.add(l.importScreenshotRead(
+              varliklar.where((v) => v.kod != null && v.adet != null).length));
+        }
+      }
+      for (final v in varliklar) {
+        if (v.kod == null && v.ad != null) {
+          mesaj.add(l.importFundNotRecognized(v.ad!));
+        }
+      }
+      setState(() => _gorselMesaji = mesaj.join('\n'));
+      if (_ctrl.text.trim().isNotEmpty) _parse();
+    } catch (e, st) {
+      if (e is! EkstreOkumaHatasi) {
+        CrashReporter.report(e, st, reason: 'ekran_goruntusu_okunamadi');
+      }
+      if (mounted) showAppError(context, e);
+    }
+  }
+
+  /// Görüntüdeki fon kodlarını ve adlarını tanımak için TEFAS listesi.
+  /// Alınamazsa boş: yalnız BIST hisseleri tanınır (hata göstermez,
+  /// tanınmayan fon adı zaten "tanınmadı" satırıyla görünür).
+  Future<List<({String kod, String unvan})>> _fonListesiSessiz() async {
+    try {
+      final fonlar = await TefasService.instance.fetchAllFunds();
+      return [for (final f in fonlar) (kod: f.code, unvan: f.name)];
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ekran_goruntusu_fon_listesi');
+      return const [];
+    }
+  }
+
   /// AI sütun eşleme (bayrak `ekstre_ai_esleme`, 0121). Belge cihazdan
   /// çıkmaz: yalnız anonim iskelet (`ekstreIskeleti`) gider, yalnız sütun
   /// numaraları döner; değerler yine belgeden okunur. Kullanıcı düğmeye
-  /// basmadan hiçbir şey gönderilmez.
+  /// basmadan hiçbir şey gönderilmez. Metin yolunda (`ekstre_metin_yolu`)
+  /// kelimeler de gider, rakamlar yine gitmez (`ekstreMetni`).
   Future<void> _aiIleEsle() async {
     final e = _ekstre;
     // Çift dokunuş koruması ve gösterge düğmede (SandikAsyncButton,
@@ -233,9 +381,21 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final l = context.l10n;
     setState(() => _kartMesaji = null);
     try {
-      final yanit =
-          await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
-      final yeni = e.aiEslemesiyle(yanit);
+      // Metin yolu (bayrak `ekstre_metin_yolu`, 0147): kelimeler açık,
+      // rakamlar maskeli; sunucu önce banka şablonu hafızasına bakar.
+      // Şablonun eşlemesi sağlamayı geçmezse bir kez şablonsuz sorulur.
+      final metinYolu = RemoteConfigService.instance.ekstreMetinYolu;
+      // Rıza işlemi isteyen kişiden, istediği anda (yasin 2026-10-13:
+      // "herkese peşinen değil de işlemi talep ettiklerinde sorsak").
+      if (metinYolu && !await _aiRizasiAl()) return;
+      final govde = metinYolu ? ekstreMetni(e) : ekstreIskeleti(e);
+      final ilk = await SupabaseService.instance.ekstreEsle(govde);
+      var yeni = e.aiEslemesiyle(ilk.tablolar, sablondan: ilk.sablondan);
+      if (yeni == null && ilk.sablondan) {
+        final ikinci = await SupabaseService.instance
+            .ekstreEsle(govde, sablonsuz: true);
+        yeni = e.aiEslemesiyle(ikinci.tablolar);
+      }
       if (!mounted) return;
       if (yeni == null) {
         setState(() => _kartMesaji = l.importAiNoMatch);
@@ -250,6 +410,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (!mounted) return;
       if (h.premium) {
         await PaywallScreen.show(context, source: 'ekstre_ai');
+      } else if (h.riza) {
+        // Rıza başka cihazda geri çekilmiş: bir sonraki dokunuşta sorulur.
+        setState(() {
+          _aiRizasi = false;
+          _kartMesaji = l.importAiRizaGerekli;
+        });
       } else {
         setState(
             () => _kartMesaji = h.kota ? l.importAiLimit : l.importAiFailed);
@@ -257,6 +423,43 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     } catch (err, st) {
       CrashReporter.report(err, st, reason: 'ekstre_ai_esleme');
       if (mounted) setState(() => _kartMesaji = l.importAiFailed);
+    }
+  }
+
+  /// Metin yolu açık rızası: kayıtlıysa sormaz; değilse sayfa açar,
+  /// kabul edilirse sunucuya yazar. Vazgeç / kapatma → `false`, hiçbir şey
+  /// gönderilmez.
+  Future<bool> _aiRizasiAl() async {
+    if (_aiRizasi) return true;
+    final svc = SupabaseService.instance;
+    if (await svc.ekstreAiRizasiVarMi() == true) {
+      if (mounted) setState(() => _aiRizasi = true);
+      return true;
+    }
+    if (!mounted) return false;
+    final kabul = await showSandikSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _AiRizaSayfasi(),
+    );
+    if (kabul != true) return false;
+    await svc.ekstreAiRizasiAyarla(true);
+    if (mounted) setState(() => _aiRizasi = true);
+    return true;
+  }
+
+  Future<void> _aiRizasiniGeriCek() async {
+    final l = context.l10n;
+    try {
+      await SupabaseService.instance.ekstreAiRizasiAyarla(false);
+      if (mounted) {
+        setState(() {
+          _aiRizasi = false;
+          _kartMesaji = l.importAiRizaGeriCekildi;
+        });
+      }
+    } catch (e) {
+      if (mounted) showAppError(context, e);
     }
   }
 
@@ -276,7 +479,6 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: context.c.surface1,
       builder: (_) => _EslemeSayfasi(anlam: ana),
     );
     if (yeni == null || !mounted) return;
@@ -331,6 +533,32 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   ? context.l10n.importReading
                   : context.l10n.importPickFile),
             ),
+            // Ekran görüntüsünden maliyet (bayrak `ekran_goruntusu_maliyet`).
+            // Metin doluysa (ekstre okundu) etiket "Maliyetleri … doldur".
+            if (RemoteConfigService.instance.ekranGoruntusuMaliyet) ...[
+              const SizedBox(height: SandikSpace.sm),
+              SandikAsyncButton(
+                tur: SandikAsyncTur.cerceve,
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                onPressed: _okunuyor ? null : _ekranGoruntusuSec,
+                child: Text(_ctrl.text.trim().isEmpty
+                    ? context.l10n.importScreenshotAdd
+                    : context.l10n.importScreenshotFillCosts),
+              ),
+              const SizedBox(height: SandikSpace.xs),
+              Text(
+                context.l10n.importScreenshotHint,
+                style: context.t.bodySmall?.copyWith(color: c.text58),
+              ),
+              if (_gorselMesaji != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: SandikSpace.xs),
+                  child: Text(
+                    _gorselMesaji!,
+                    style: context.t.bodySmall?.copyWith(color: c.text90),
+                  ),
+                ),
+            ],
             if (_ekstre != null) ...[
               const SizedBox(height: SandikSpace.md),
               _EslemeKarti(
@@ -344,6 +572,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 aiGorunur: ref.watch(premiumOzellikleriGorunurProvider) ||
                     RemoteConfigService.instance.ekstreAiEsleme,
                 mesaj: _kartMesaji,
+                onRizaGeriCek: _aiRizasi ? _aiRizasiniGeriCek : null,
                 onKopyala: _iskeletiKopyala,
               ),
             ],
@@ -482,6 +711,7 @@ class _EslemeKarti extends StatelessWidget {
     required this.aiGorunur,
     required this.mesaj,
     required this.onKopyala,
+    this.onRizaGeriCek,
   });
 
   final EkstreOkumaSonucu sonuc;
@@ -494,6 +724,9 @@ class _EslemeKarti extends StatelessWidget {
   final bool aiGorunur;
   final String? mesaj;
   final VoidCallback onKopyala;
+
+  /// Metin yolu rızası verilmişse geri çekme (0147); yoksa `null`.
+  final Future<void> Function()? onRizaGeriCek;
 
   @override
   Widget build(BuildContext context) {
@@ -544,6 +777,16 @@ class _EslemeKarti extends StatelessWidget {
             ),
           // Tarih sütunu olmayan döküm: satırlar ekstre gününü aldı ve maliyet
           // o günün fiyatı — kullanıcı K/Z'nin nereden başladığını bilsin.
+          if (tarih != null && sonuc.tutarKalemleri.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs),
+              child: Text(
+                context.l10n.importAmountOnly(DateFormat('d MMM yyyy',
+                        Localizations.localeOf(context).languageCode)
+                    .format(tarih)),
+                style: context.t.bodySmall?.copyWith(color: c.text58),
+              ),
+            ),
           if (tarih != null &&
               a != null &&
               !a.roller.containsKey(EkstreRol.tarih))
@@ -600,14 +843,18 @@ class _EslemeKarti extends StatelessWidget {
           // ayıklatamıyorum" dedi: motorun kendinden emin okuduğu ama
           // eksik/yanlış çıkardığı ekstrede kullanıcının elinde AI yolu
           // kalmıyordu. Motor emin olsa da kullanıcı isterse AI'a sorar.
-          if (aiGorunur && !sonuc.aiOnerisi) ...[
+          // Yalnız tutarlı belgede AI'ın bulacağı adet sütunu yok (2026-10-15).
+          if (aiGorunur && !sonuc.aiOnerisi && sonuc.tutarKalemleri.isEmpty) ...[
             const SizedBox(height: SandikSpace.xs),
             if (aiKilitli)
               KilitSatiri(
                   metin: context.l10n.prmKilitEkstreAi, kaynak: 'ekstre_ai')
             else ...[
               Text(
-                context.l10n.importAiHint,
+                // Metin yolunda "belge telefonundan çıkmaz" doğru değil.
+                RemoteConfigService.instance.ekstreMetinYolu
+                    ? context.l10n.importAiHintText
+                    : context.l10n.importAiHint,
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
               Align(
@@ -615,12 +862,21 @@ class _EslemeKarti extends StatelessWidget {
                 child: SandikAsyncButton.kompakt(
                   tur: SandikAsyncTur.metin,
                   onPressed: onAi,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  icon: const Icon(Icons.document_scanner_outlined, size: 18),
                   child: Text(context.l10n.importAiButton),
                 ),
               ),
             ],
           ],
+          if (onRizaGeriCek case final geriCek?)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SandikAsyncButton.kompakt(
+                tur: SandikAsyncTur.metin,
+                onPressed: geriCek,
+                child: Text(context.l10n.importAiRizaGeriCek),
+              ),
+            ),
           // Tanılama (bayrak `ekstre_tanilama`, 2026-10-05): motor dosyayı
           // tam anlamadıysa anonim iskelet kopyalanır; belge cihazdan çıkmaz,
           // kullanıcı metni kendisi gönderir. Anlaşılan dosyada gösterilmez.
@@ -698,7 +954,7 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
           Text(
             l10n.importFixColumns,
             style: context.t.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800, color: context.c.text90),
+                fontWeight: FontWeight.w600, color: context.c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
           Flexible(
@@ -719,6 +975,9 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
                         Expanded(
                           child: DropdownButton<int>(
                             isExpanded: true,
+                            // null: büyük yazıda satır büyür, metin dikeyde
+                            // kesilmez (büyük yazı taraması 2026-10-12).
+                            itemHeight: null,
                             value: _secim[r] ?? -1,
                             items: [
                               DropdownMenuItem(
@@ -755,6 +1014,49 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
             child: Text(l10n.importApply),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Metin yolu açık rızası (0147 `ekstre_ai_rizalari`), ilk "Yapay zekâyla
+/// eşle"de. Portföy yorumu rızası deseni (`portfoy_yorumu_karti.dart`):
+/// isteğe bağlı; "Vazgeç" ya da aşağı çekip kapatmak hiçbir şey göndermez.
+class _AiRizaSayfasi extends StatelessWidget {
+  const _AiRizaSayfasi();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    final yatay = SandikSpace.screenH(context);
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l.importAiRizaBaslik,
+                style: t.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+            const SizedBox(height: SandikSpace.sm),
+            Text(l.importAiRizaMetin,
+                style: t.bodyMedium?.copyWith(color: c.text58)),
+            const SizedBox(height: SandikSpace.lg),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l.importAiRizaKabul),
+            ),
+            const SizedBox(height: SandikSpace.sm),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(minimumSize: SandikTouch.minSize),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l.importAiRizaVazgec),
+            ),
+          ],
+        ),
       ),
     );
   }

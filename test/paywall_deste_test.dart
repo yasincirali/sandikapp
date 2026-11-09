@@ -38,16 +38,23 @@ void main() {
         'kripto_baski': PaywallKarti.hacim,
         'analiz_notu': PaywallKarti.not,
         'ekstre_ai': PaywallKarti.ekstre,
+        'ekran_goruntusu': PaywallKarti.ekstre,
         'yillik_rapor': PaywallKarti.rapor,
         'portfoy_disa_aktar': PaywallKarti.rapor,
         // Masraf dökümü X-Ray'in yanında; aylık rapor rapor kartında
         // (radar kapalıyken haftalık not kartı destede yoktu).
         'masraf_dokumu': PaywallKarti.xray,
         'temettu_tahmini': PaywallKarti.temettu,
+        // Temettü kartındaki "maliyetine göre verim" (2026-11-07).
+        'temettu_verimi': PaywallKarti.temettu,
         'aylik_rapor': PaywallKarti.rapor,
         // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
         'fon_xray': PaywallKarti.xray,
         'portfoy_xray': PaywallKarti.xray,
+        // Varlık detayında "Fiyattan · Kurdan" (2026-11-07).
+        'kur_ayrismasi': PaywallKarti.xray,
+        // Varlık detayında yıllık ortalama getiri (Ar-Ge 7 Kas 20:30 #6).
+        'yillik_getiri': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
         // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
         // göreceği portföy → portföy kartı.
@@ -106,6 +113,10 @@ void main() {
         // Kendi göstergeni yaz (0141) ve ortak sınır uyarısı (takip, alarm).
         'lib/screens/asset_detail/ozel_gostergeler.dart',
         'lib/widgets/sinir_uyarisi.dart',
+        // Maliyetine göre temettü verimi (2026-11-07).
+        'lib/widgets/temettu_gecmisi_karti.dart',
+        // Kur ayrışması satırı (2026-11-07).
+        'lib/widgets/kur_ayrismasi_satiri.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -121,24 +132,43 @@ void main() {
             'alarm_limit',
             'sinyal_gosterge',
             'gosterge_parametre',
+            'kur_ayrismasi',
           ]));
       // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
       // açmaz.
-      expect(ekranKaynagiSync('lib/screens/asset_detail/grafik_katmanlari.dart'),
+      expect(
+          ekranKaynagiSync('lib/screens/asset_detail/grafik_katmanlari.dart'),
           isNot(contains('PaywallScreen')));
       kaynaklar.remove('invite'); // mağaza bağlantısı kaynağı, paywall değil
+      // Karşılaştır'daki kıyası paylaş kartının mağaza bağlantısı (7 Kas):
+      // `Magaza.indirBaglantisi(kaynak: 'share_card')`, paywall değil.
+      kaynaklar.remove('share_card');
       for (final k in kaynaklar) {
         if (bilerekGenel.contains(k)) continue;
         expect(kaynaktanKart(k), isNotNull, reason: 'eşlenmemiş kaynak: $k');
       }
     });
 
-    test('varsayılan sıra, radar, ekstre ve portföy açıkken tüm kartlar',
-        () {
+    test('varsayılan sıra, radar, ekstre ve portföy açıkken tüm kartlar', () {
       expect(
           desteSirasi('profile_banner',
-              radar: true, ekstreAi: true, portfoy: true),
+              radar: true, ekstreAi: true, portfoy: true, zirve: true),
           PaywallKarti.values);
+    });
+
+    test('zirve kartı yalnız kapı canlıyken; zirve kaynağı onunla açılır', () {
+      expect(kaynaktanKart('zirve'), PaywallKarti.zirve);
+      expect(desteSirasi('profile_banner', radar: true, ekstreAi: true),
+          isNot(contains(PaywallKarti.zirve)));
+      // 2026-10-20 kuralı: kaynağın kartı her zaman destede; Zirve kilidine
+      // dokunan kullanıcı kapıyı zaten görmüştür.
+      expect(desteSirasi('zirve', radar: false, ekstreAi: false).first,
+          PaywallKarti.zirve,
+          reason: 'kaynağın kartı bayrak kapalı görünse de başta');
+      expect(
+          desteSirasi('zirve', radar: false, ekstreAi: false, zirve: true)
+              .first,
+          PaywallKarti.zirve);
     });
 
     test('çoklu hesap destede yok: ücretsiz (yasin 2026-10-10)', () {
@@ -150,9 +180,13 @@ void main() {
     test('portföy kartı yalnız coklu_portfoy açıkken (varsayılan yok)', () {
       expect(desteSirasi('profile_banner', radar: true, ekstreAi: true),
           isNot(contains(PaywallKarti.portfoy)));
+      // Kaynak `portfoy_limit` yalnız özellik canlıyken tetiklenebilir;
+      // bayrak kapalı görünse de kart başta (2026-10-20 kuralı: kaynağın
+      // kartı her zaman destede, yoksa kullanıcı neden burada olduğunu
+      // göremez). Eskiden varsayılan sıraya düşüyordu.
       expect(desteSirasi('portfoy_limit', radar: false, ekstreAi: false).first,
-          PaywallKarti.varlik,
-          reason: 'bayrak kapalıyken kaynak varsayılan sıraya düşer');
+          PaywallKarti.portfoy,
+          reason: 'dokunulan kilidin kartı bayrağa bakılmaksızın başta');
       expect(
           desteSirasi('portfoy_limit',
                   radar: false, ekstreAi: false, portfoy: true)
@@ -182,9 +216,77 @@ void main() {
       expect(s, isNot(contains(PaywallKarti.hacim)));
       expect(s, isNot(contains(PaywallKarti.not)));
       expect(s, isNot(contains(PaywallKarti.ekstre)));
-      // Radar kapalıyken radar kaynağı varsayılan sıraya düşer.
+      // Kaynağın kartı bayrağa bakılmaksızın destede ve başta: kullanıcı
+      // o kilide dokunduysa özellik canlıdır (paywall incelemesi, 2026-10-20).
       expect(desteSirasi('hacim_radari', radar: false, ekstreAi: false).first,
-          PaywallKarti.varlik);
+          PaywallKarti.hacim);
+    });
+
+    test(
+        'ekran görüntüsü kaynağı ekstre AI kapalıyken de ekstre kartıyla açılır',
+        () {
+      // `ekran_goruntusu` Premium kapısıyla (`radarKilitli`) açılır ama kartı
+      // ekstre; `ekstreAiEsleme` kapalıyken deste o kartsız açılıyor,
+      // kullanıcı neden burada olduğunu göremiyordu.
+      final s = desteSirasi('ekran_goruntusu', radar: true, ekstreAi: false);
+      expect(s.first, PaywallKarti.ekstre);
+      expect(s.where((k) => k == PaywallKarti.ekstre), hasLength(1));
+    });
+  });
+
+  group('persona — tetikleyicisiz girişte deste kullanıcının işiyle açılır',
+      () {
+    test('saf karar: sinyal > ortak > fon > genel', () {
+      expect(
+          paywallPersona(
+              fonSayisi: 5, hisseSayisi: 0, sinyalVar: true, ortakVar: true),
+          PaywallPersona.teknik);
+      expect(
+          paywallPersona(
+              fonSayisi: 5, hisseSayisi: 0, sinyalVar: false, ortakVar: true),
+          PaywallPersona.ortakli);
+      expect(
+          paywallPersona(
+              fonSayisi: 3, hisseSayisi: 3, sinyalVar: false, ortakVar: false),
+          PaywallPersona.fon);
+      expect(
+          paywallPersona(
+              fonSayisi: 2, hisseSayisi: 3, sinyalVar: false, ortakVar: false),
+          PaywallPersona.genel);
+      expect(
+          paywallPersona(
+              fonSayisi: 0, hisseSayisi: 0, sinyalVar: false, ortakVar: false),
+          PaywallPersona.genel);
+    });
+
+    test('fon yatırımcısı X-Ray, rapor, temettü ile açılır; gerisi varsayılan',
+        () {
+      final s = desteSirasi('profile_banner',
+          radar: false, ekstreAi: false, persona: PaywallPersona.fon);
+      expect(s.take(3),
+          [PaywallKarti.xray, PaywallKarti.rapor, PaywallKarti.temettu]);
+      expect(s[3], PaywallKarti.varlik);
+      expect(s.toSet().length, s.length);
+    });
+
+    test('teknik analizci sinyal ve kendi göstergesiyle açılır', () {
+      final s = desteSirasi('profile_banner',
+          radar: false, ekstreAi: false, persona: PaywallPersona.teknik);
+      expect(s.take(2), [PaywallKarti.sinyal, PaywallKarti.ozelGosterge]);
+    });
+
+    test('ortaklı: portföy kartı kapalıysa yalnız ortak öne gelir', () {
+      final s = desteSirasi('profile_banner',
+          radar: false, ekstreAi: false, persona: PaywallPersona.ortakli);
+      expect(s.first, PaywallKarti.ortak);
+      expect(s, isNot(contains(PaywallKarti.portfoy)));
+    });
+
+    test('tetikleyici varsa persona sırayı değiştirmez', () {
+      final s = desteSirasi('compare_series',
+          radar: false, ekstreAi: false, persona: PaywallPersona.fon);
+      expect(s.first, PaywallKarti.karsilastir);
+      expect(s[1], PaywallKarti.varlik);
     });
   });
 
@@ -369,7 +471,7 @@ void main() {
 
       final deste = t.state<KartDestesiState>(find.byType(KartDestesi));
       expect(deste.onIndeks, 0);
-      expect(find.text('KARŞILAŞTIR'), findsOneWidget);
+      expect(find.text('Karşılaştır'), findsOneWidget);
 
       // Mağaza yanıt vermedi: RC fiyatı, deneme vaadi yok.
       expect(find.text('649,99₺/yıl'), findsOneWidget);

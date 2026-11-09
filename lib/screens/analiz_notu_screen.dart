@@ -14,12 +14,14 @@ import '../widgets/sandik_error_view.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/tr_format.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'hafta_ozeti_screen.dart' show HaftaRozetCipi;
+import '../widgets/sandik_ikon_gecisi.dart';
 
 /// Yapay zekâ notu (S17-B, 2026-10-05) — madde + kanıt çipi + geri bildirim.
 ///
@@ -117,7 +119,6 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
     final gonderildi = await showSandikSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
       builder: (_) => _YanlisSayiSayfasi(gonder: _yanlisGonder),
     );
@@ -165,13 +166,17 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
           if (widget.baslik != null)
             Text(widget.baslik!,
                 style: t.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
           const SizedBox(height: SandikSpace.md),
           KilitSatiri(metin: l10n.prmKilitNot, kaynak: 'analiz_notu'),
         ],
       );
     } else {
-      govde = not!.when(
+      govde = SandikIcerikGecisi(
+        // Yükleme → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: SandikIcerikGecisi.hal([not!]),
+        child: not.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(SandikSpace.md),
           child: SandikSkeletonList(rows: 3),
@@ -191,6 +196,7 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
                 yanlisBildirildi: _yanlisBildirildi,
                 onYanlis: _yanlisSayi,
               ),
+      ),
       );
     }
 
@@ -244,26 +250,31 @@ class _Not extends StatelessWidget {
     final yer = Localizations.localeOf(context).toString();
     final gunAy = DateFormat('d MMM', yer);
     final rozet = haftaRozetiSunucudan(not.rozet);
+    // Kapsanan günler EN ÜSTTE, yılıyla (yasin 2026-11-07: "not sayfası
+    // anlaşılır olmalı"; kullanıcı kuralı: her özet tarih aralığı yazar).
+    // Eski satırda veri aralığı yoksa dönemin günü.
     final aralik = not.baslangic != null && not.bitis != null
-        ? l10n.flowRange(gunAy.format(not.baslangic!), gunAy.format(not.bitis!))
-        : gunAy.format(not.donem);
+        ? fmtTarihAraligi(not.baslangic!, not.bitis!, dil: context.tarihDili)
+        : fmtTarih(not.donem, dil: context.tarihDili);
     final yatay = SandikSpace.screenH(context);
     return ListView(
       padding:
           EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.xl),
       children: [
-        if (rozet != null)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: HaftaRozetCipi(rozet: rozet),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(aralik,
+                  style: t.bodySmall?.copyWith(
+                      color: c.text58, fontWeight: FontWeight.w600)),
+            ),
+            if (rozet != null) HaftaRozetCipi(rozet: rozet),
+          ],
+        ),
         const SizedBox(height: SandikSpace.sm),
         Text(not.baslik,
             style: t.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
-        const SizedBox(height: SandikSpace.xs),
-        Text(l10n.anzMeta('${not.maddeler.length}', aralik),
-            style: t.bodySmall?.copyWith(color: c.text58)),
+                ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
         const SizedBox(height: SandikSpace.md),
         SandikCard(
           child: Column(
@@ -295,18 +306,18 @@ class _Not extends StatelessWidget {
             IconButton(
               tooltip: l10n.anzYararli,
               onPressed: () => onOy(1),
-              icon: Icon(
+              icon: SandikIkonGecisi(
                   oy == 1 ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
-                  color: oy == 1 ? c.gain : c.text58),
+                  renk: oy == 1 ? c.gain : c.text58),
             ),
             IconButton(
               tooltip: l10n.anzYararsiz,
               onPressed: () => onOy(-1),
-              icon: Icon(
+              icon: SandikIkonGecisi(
                   oy == -1
                       ? Icons.thumb_down_alt
                       : Icons.thumb_down_alt_outlined,
-                  color: oy == -1 ? c.loss : c.text58),
+                  renk: oy == -1 ? c.loss : c.text58),
             ),
           ],
         ),
@@ -396,7 +407,7 @@ class _KanitCipi extends StatelessWidget {
           TextSpan(text: '${olcum.ad} · ', style: TextStyle(color: c.text58)),
           TextSpan(
               text: olcum.gosterim,
-              style: TextStyle(color: c.text90, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: c.text90, fontWeight: FontWeight.w600)),
           TextSpan(text: ' · $kaynak', style: TextStyle(color: c.text36)),
         ]),
         style: t.labelSmall,
@@ -439,7 +450,7 @@ class _YanlisSayiSayfasiState extends State<_YanlisSayiSayfasi> {
         children: [
           Text(l10n.anzYanlisSayi,
               style: context.t.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700, color: context.c.text90)),
+                  fontWeight: FontWeight.w600, color: context.c.text90)),
           const SizedBox(height: SandikSpace.sm),
           TextField(
             controller: _ctrl,

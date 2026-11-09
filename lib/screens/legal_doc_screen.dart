@@ -161,6 +161,7 @@ Future<void> belgeyiAc(BuildContext context, YasalBelge b) {
   return pushGuarded<void>(
     context,
     adaptiveRoute(
+      settings: const RouteSettings(name: 'legal_doc'),
       builder: (_) => LegalDocScreen(
         title: m.adaylar.first,
         icon: m.ikon,
@@ -177,6 +178,7 @@ Future<ZorunluOkumaSonucu?> zorunluOkumaAc(
     pushGuarded<ZorunluOkumaSonucu>(
       context,
       adaptiveRoute(
+        settings: const RouteSettings(name: 'legal_doc'),
         builder: (_) => LegalDocScreen(
           title: m.adaylar.first,
           icon: m.ikon,
@@ -301,7 +303,6 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                     style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.c.amberText,
-                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
@@ -387,8 +388,9 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
               container: true,
               button: true,
               enabled: active,
-              child: SandikBasma(
-                behavior: HitTestBehavior.opaque,
+              child: SandikTappable(
+                soluk: true,
+                haptic: SandikHaptic.none,
                 onTap: active
                     ? () => Navigator.pop(
                         context,
@@ -478,7 +480,7 @@ class _DocH1 extends StatelessWidget {
         child: Text(
           text,
           style: context.t.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             color: context.c.text90,
             height: 1.2,
           ),

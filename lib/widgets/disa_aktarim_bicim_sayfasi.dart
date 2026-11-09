@@ -11,7 +11,6 @@ Future<DisaAktarimBicimi?> disaAktarimBicimiSor(BuildContext context) {
   final l = context.l10n;
   return showSandikSheet<DisaAktarimBicimi>(
     context: context,
-    backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
     ),

@@ -124,6 +124,33 @@ HaftaSatiri hacimSatiri(Position p, String anahtar, HacimOzeti o,
   );
 }
 
+/// Haftanın özetinin KAPSADIĞI günler (yasin 2026-11-07, "zaman aralığı
+/// belirtilmeli"): satırların dayandığı en erken gün → en yeni veri günü.
+///
+/// Fonda "son hafta" akışı olan ilk gün → en yeni veri günü
+/// ([FonAkisOzeti.sonHaftaIlkGun] / [FonAkisOzeti.veriTarihi]); hisse ve
+/// coinde rozetin baktığı son 7 takvim günü (`sonHaftaHacimOlayi`,
+/// `aliciPayi7`) — son veri gününden 6 gün geri. Kaynaklar farklı günde
+/// güncellenir (TEFAS ertesi gün, Yahoo akşam); tek aralık hepsini kapsar,
+/// uydurma uç yok. Liste boşsa `null`.
+(DateTime, DateTime)? haftaAraligi(List<HaftaSatiri> liste) {
+  DateTime? bas, bit;
+  for (final s in liste) {
+    final (b, e) = switch (s) {
+      HaftaSatiri(fon: final f?) => (f.sonHaftaIlkGun, f.veriTarihi),
+      HaftaSatiri(hacim: final h?) => (
+          DateTime(h.sonGun.tarih.year, h.sonGun.tarih.month,
+              h.sonGun.tarih.day - 6),
+          h.sonGun.tarih
+        ),
+      _ => (null, null),
+    };
+    if (b != null && (bas == null || b.isBefore(bas))) bas = b;
+    if (e != null && (bit == null || e.isAfter(bit))) bit = e;
+  }
+  return bas == null || bit == null ? null : (bas, bit);
+}
+
 /// Önem sırası: rozet, sonra aynı rozette önem ölçüsü, eşitlikte kod.
 List<HaftaSatiri> haftaSirasi(List<HaftaSatiri> liste) =>
     [...liste]..sort((a, b) {
@@ -198,6 +225,9 @@ HaftaRozeti? haftaRozetiSunucudan(String? r) => switch (r) {
       'olagandisi_hacim' => HaftaRozeti.olagandisiHacim,
       'alici_istekli' => HaftaRozeti.aliciIstekli,
       'satici_istekli' => HaftaRozeti.saticiIstekli,
+      // Aylık notun fiyat paketi (0176, 2026-11-07): olağan oynaklığa göre
+      // büyük değişim, oynaklık sıçraması ya da 52 haftalık uç.
+      'hareketli' => HaftaRozeti.hareketli,
       'sakin' => HaftaRozeti.sakin,
       _ => null,
     };

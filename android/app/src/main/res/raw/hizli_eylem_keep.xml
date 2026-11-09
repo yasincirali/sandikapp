@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kısayol simgeleri yalnız adla (getIdentifier) çözülür; kaynak küçültücü
+     onları kullanılmıyor sanıp silmesin (quick_actions, 2026-10-19). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/hizli_ekle,@drawable/hizli_alarm,@drawable/hizli_arama" />

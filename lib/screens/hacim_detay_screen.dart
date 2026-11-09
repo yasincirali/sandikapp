@@ -11,6 +11,7 @@ import '../utils/tr_format.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/radar_ortak.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_skeleton.dart';
 
 /// Hacim / alıcı baskısı ayrıntı ekranı (S4-B + S5-A, 2026-10-05) — para
 /// akışı ayrıntısıyla aynı tek kaydırma düzeni: tepe (cümle, sayı, ölçek),
@@ -83,7 +84,11 @@ class _HacimDetayScreenState extends ConsumerState<HacimDetayScreen> {
           ),
         ],
       ),
-      body: ozet == null
+      body: SandikIcerikGecisi(
+        // Boş → içerik çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: ozet == null,
+        child: ozet == null
           ? const SizedBox.shrink()
           : ListView(
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
@@ -152,6 +157,7 @@ class _HacimDetayScreenState extends ConsumerState<HacimDetayScreen> {
                     kaynak: kaynak, tarih: gunAy.format(ozet.sonGun.tarih)),
               ],
             ),
+      ),
     );
   }
 }

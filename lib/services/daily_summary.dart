@@ -941,6 +941,7 @@ class IntradaySeriesCache {
     List<Asset>? kume,
     Map<String, Map<int, double>> byPosition = const {},
     Map<String, AssetType> positionType = const {},
+    Set<AssetType> gunIciVerisiYokTurler = const {},
   }) {
     final k = kume == null ? '' : anahtar(kume);
     _benAnahtari = k;
@@ -951,6 +952,7 @@ class IntradaySeriesCache {
         byPosition: byPosition,
         positionType: positionType,
         seansGunu: seansGunu,
+        gunIciVerisiYokTurler: gunIciVerisiYokTurler,
       )
       ..fetchedAt = fetchedAt
       ..ownerId = ownerId;

@@ -81,14 +81,19 @@ uygulamaya gömülü kopyaya (`assets/data/halka_arz.json`) düşer.
 09:30 TR'de `tool/halka_arz_guncelle.py`'yi koşar; aşağıdaki 1–3. adımları yapar
 (yeni arz, boş alanı dolan kayıt, işlem görmeye başlayan kodun sembol listesine
 eklenmesi), 4. adımdaki testi koşar ve değişiklik varsa PR açar — birleştirmek
-yeterli. Dolu bir alanın üstüne yazmaz; elle düzeltme kalıcıdır. Elle yol yalnızca
+yeterli. Başarılı taramada kayıt değişmese de kök `guncelleme` bugüne çekilir
+("kaynak kontrol edildi"; uygulama 21 günden eski dosyada girişi gizler), PR
+tek dalda (`otomatik/halka-arz`) güncellenir. Aday sayfa var ama hiçbiri
+ayrıştırılamazsa iş kırmızı biter: ayrıştırıcıyı sayfanın bugünkü yapısına göre
+düzelt (`python tool/halka_arz_guncelle.py --dry-run`, test
+`python -m unittest tool/halka_arz_guncelle_test.py`). Dolu bir alanın üstüne yazmaz; elle düzeltme kalıcıdır. Elle yol yalnızca
 kaynakta olmayan bir düzeltme için:
 
 1. Kaydı ekle/düzelt — her alan kaynaktan (SPK bülteni, KAP, izahname, aracı kurum
    ya da halkarz.com şirket sayfası). Bilinmeyen alan `null`; tahmin yazma. `kaynak`
    zorunlu, `kod` `.IS` eki OLMADAN. Kök ve kayıttaki `guncelleme` = derleme günü.
 2. Aynı içeriği `assets/data/halka_arz.json`'a kopyala (iki dosya birebir aynı olmalı).
-3. İşlem görmeye başlayan yeni kodu `lib/models/asset_categories.dart` →
+3. İşlem görmeye başlayan yeni kodu `lib/models/bist_hisseleri.dart` →
    `bist100StocksMap`'e ekle ("Katıldım" kaydı şirket adını oradan alır).
 4. `flutter test test/halka_arz_veri_test.dart` — şema, tarih sırası, fiyat > 0 ya
    da null, iki kopyanın eşitliği ve sembol listesi burada kilitli.

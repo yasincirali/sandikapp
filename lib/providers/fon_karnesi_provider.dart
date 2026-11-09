@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/emeklilik_sirketi.dart';
+import '../models/gunluk_getiri.dart' show paraPiyasasiKategorisiMi;
 import '../services/fon_karnesi.dart';
 import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
@@ -35,6 +37,23 @@ final fonKatalogProvider =
   return liste;
 });
 
+/// Emeklilik fonu kodu → kısa adı ("AH5" → "Altın Katılım"), katalogdan.
+///
+/// BES fon satırı (`BesFonSatiriGorunumu`, 2026-10-29) kodun yanına bunu
+/// yazar. Katalog yüklenmediyse ya da ağ yoksa boş harita: satır yalnız kodu
+/// gösterir, ad uydurulmaz. Harita burada bir kez kurulur, `build()` içinde
+/// yüzlerce unvan her çizimde ayrıştırılmaz.
+final emeklilikFonKisaAdlariProvider =
+    Provider.autoDispose<Map<String, String>>((ref) {
+  final katalog = ref.watch(fonKatalogProvider).valueOrNull;
+  if (katalog == null) return const {};
+  return {
+    for (final f in katalog)
+      if (f.fundType == 'EMK')
+        if (emeklilikFonuKisaAdi(f.name) case final ad?) f.code: ad,
+  };
+});
+
 /// Bir fonun karnesi. Hesap `build()` dışında, burada bir kez yapılır.
 ///
 /// Katalog yüklenirken `AsyncLoading`, karne kurulamıyorsa `data(null)`.
@@ -45,3 +64,17 @@ final fonKarnesiProvider = Provider.autoDispose
     .family<AsyncValue<FonKarnesi?>, String>((ref, fonKodu) => ref
         .watch(fonKatalogProvider)
         .whenData((liste) => fonKarnesi(fonKodu, liste)));
+
+/// Fon para piyasası kategorisinde mi (müşteri raporu 7 Kas 22:30 #1,
+/// "günde ortalama ~₺X" satırı). Fon karnesiyle AYNI katalog: yeni istek
+/// yok. Katalog yüklenmediyse, fon katalogda yoksa ya da kategorisi
+/// bilinmiyorsa `false`; kategori tahmin edilmez.
+final paraPiyasasiFonuProvider =
+    Provider.autoDispose.family<bool, String>((ref, fonKodu) {
+  final katalog = ref.watch(fonKatalogProvider).valueOrNull;
+  if (katalog == null) return false;
+  for (final f in katalog) {
+    if (f.code == fonKodu) return paraPiyasasiKategorisiMi(f.kategori);
+  }
+  return false;
+});

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../models/asset_type.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
@@ -38,25 +37,11 @@ class RemoteConfigService {
   // ── Default değerler ─────────────────────────────────────────────────────
   // Firebase Console'dan override edilene kadar bu değerler geçerli.
   static const _defaults = <String, dynamic>{
-    // Master kill switch: kullanıcının göreceği TÜM üyelik/ödeme ekranları,
-    // banner, chip, kilit overlay, paywall trigger'ları buna bağlı. false ise
-    // premium sistem uygulamada hiç yokmuş gibi davranır. RevenueCat entegrasyonu
-    // + store onayları tamamlanana kadar kapalı tutulur.
-    'paywall_enabled': false,
-
-    // ACİL DURUM anahtarı (2026-10-10 düzeltmesi, kritik bulgu Y1): false
-    // olunca paywall açık kalsa da KİMSE kilit görmez, sınırlar kalkar.
-    // Eskiden ters çalışıyordu (false = ödeyenler dahil herkes kilitli).
-    // Karar `kilitlerAskidaProvider`'da.
-    'premium_enabled': true,
-
-    // Erken kullanıcı hediyesinin KESİM anı (ISO tarih, ör. "2026-11-01").
-    // `erken_kullanici_hediyesi_ver(kesim, 90)` çağrısına verilen değerle
-    // AYNI girilir. Bu andan önce açılmış ve sunucuda hiç hak satırı olmayan
-    // hesap kilit görmez (hediye henüz verilmemiş demektir); boşken her
-    // hesap "eski" sayılır, yani satırsız kimse kilitlenmez. Güvenli taraf:
-    // sıra karışsa bile mevcut kullanıcı bir sabah kilit görmez.
-    'premium_hediye_kesim': '',
+    // `paywall_enabled`, `premium_enabled`, `premium_hediye_kesim` artık RC'de
+    // DEĞİL (yasin 2026-11-01: "rc flagleriyle yönetmemeye çalışalım"):
+    // görünürlük kodda (`paywallEnabled`), acil kapatma ve hediye kesimi
+    // sunucuda (`premium_ayar`, 0172; `premiumSunucuAyariProvider`).
+    // Konsoldaki eski anahtarlar 1.1.7 ve öncesi için kalır, buradan okunmaz.
 
     // Free tier varlık limiti. 20 → 7 (yasin, 2026-10-08: "ilk varlık
     // eklemeyi 7 varlık yapalım … premium istemeli"). 7 → 10 (yasin,
@@ -274,6 +259,15 @@ class RemoteConfigService {
     // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
     'balina_radari_acik': false,
 
+    // Kişiye özel AI portföy yorumu (0145, 2026-10-13): anahtar
+    // `portfoy_ai_yorumu` 2026-11-02'ye kadar burada KAPALI doğuyordu (yasal
+    // metin 0149 ile yayımlanana kadar). yasin 2 Kas: "kitleden bağımsız ...
+    // tüm free ve premium kişilerde olması gerektiği gibi durmalı" → anahtar
+    // kaldırıldı, kart `premiumOzellikleriGorunur` ile gelir (bkz.
+    // `portfoyAiYorumu`). Sunucudaki kapı durur: `portfoy-yorumla`
+    // `PORTFOY_YORUM_ACIK=1` secret'ı yokken 503 döner, kart "şu an
+    // kullanılamıyor" der.
+
     // Dövizli satışta ele geçen tutar SATIŞ GÜNÜNÜN kuruyla TL'ye çevrilsin
     // (2026-10-05, kullanıcı onayı). Eskiden alım kuruyla çevriliyordu:
     // dolar varlığın kur kazancı gerçekleşen kâra ve nakit akışına girmiyordu.
@@ -318,18 +312,13 @@ class RemoteConfigService {
     // Planı"). Yedisi de KAPALI doğar ve kapalıyken ilgili ekran birebir
     // eski; sunucu değişikliği yok. Önce yasin'in TestFlight cihazında açılır.
     //
-    // S1 — tek dönem hafızası: Performans, varlık detayı/sayfası, Takip
-    // listesi ve Karşılaştır aynı seçili dönemi paylaşır (bugün dördünün
-    // varsayılanı farklı: Bugün / 1 hf / 1 ay / 3 ay → sayılar "tutmuyor").
-    'donem_hafizasi': false,
+    // S1 — tek dönem hafızası (`donem_hafizasi`): emekliye ayrıldı, bkz.
+    // aşağıdaki "Emekliye ayrılan bayraklar (2026-10-20)".
     // S2 — Performans tek akış: Grafik | Özet sekmesi kalkar, ikisi tek
     // kaydırmada; kontrol satırı 3 → 1 (dönem + Filtre).
     'performans_tek_akis': false,
-    // S3 — Portföy: büyük halka yerine küçük halka + lejant (yasin'in
-    // seçimi "C", 2026-10-08; ilk ekranda daha çok varlık, vitrin hissi
-    // kalır). Ad tarihî: ilk taslak çubuktu, anahtar Console'da aynı kalsın.
-    // Büyük halka küçüğe dokununca açılır.
-    'portfoy_dagilim_cubugu': false,
+    // S3 — Portföy küçük halka + lejant (`portfoy_dagilim_cubugu`):
+    // emekliye ayrıldı, bkz. "Emekliye ayrılan bayraklar (2026-10-20)".
     // S4 — varlık detayı katmanlı sıra: fiyat+grafik → pozisyonun → analiz
     // (katlı) → geçmiş ve belgeler.
     'varlik_detay_katmanli': false,
@@ -338,8 +327,8 @@ class RemoteConfigService {
     // S6 — Performans başlığında "Raporlar" kapısı (hafta özeti, aylık
     // rapor, yıl özeti, Sıralama).
     'raporlar_kapisi': false,
-    // S7 — Ana ekranda genel arama (Yenile ikonunun yerine; varlık + eylem).
-    'genel_arama': false,
+    // S7 — Ana ekranda genel arama (`genel_arama`): emekliye ayrıldı, bkz.
+    // "Emekliye ayrılan bayraklar (2026-10-20)".
     // Paywall yeniden tasarımı (yasin 2026-10-08): sandık başlığı + sonsuz
     // kart destesi; deste kullanıcının dokunduğu kilidin kartıyla açılır.
     // Kapalıyken eski paywall birebir.
@@ -355,8 +344,11 @@ class RemoteConfigService {
     // Ekstre hesap hareketlerinden gerçek alış tarihi/fiyatı (2026-10-05,
     // yasin: "bunun içinden varlık alım satımları nasıl ayıklarsın").
     // Varlık satırı dönem içindeki alışlara bölünür; maliyet ekstre günü
-    // fiyatı yerine gerçek alış fiyatı olur (`hareket_tablosu.dart`). KAPALI
-    // doğar: içe aktarılan maliyeti değiştirir; kapalıyken çıktı birebir eski.
+    // fiyatı yerine gerçek alış fiyatı olur (`hareket_tablosu.dart`).
+    // 2026-10-13: satışlar ve dönemde tamamen satılmış fonlar da ayrı satır
+    // olarak gelir (yasin: "içinden varlık alım satımlarını çıkaramıyor").
+    // KAPALI doğar: içe aktarılan maliyeti değiştirir; kapalıyken çıktı
+    // birebir eski.
     'ekstre_hareketleri': false,
 
     // Ekstre AI sütun eşleme (2026-10-05, yasin kararı: "AI sütun eşleme").
@@ -365,6 +357,29 @@ class RemoteConfigService {
     // döner. KAPALI doğar: önce 0121 + fonksiyon iki sunucuya, Gizlilik 1.6
     // (0122) yayına; sonra açılır. Kapalıyken hiçbir istek atılmaz.
     'ekstre_ai_esleme': false,
+
+    // Ekstre METİN yolu + banka şablonu hafızası (2026-10-13, yasin:
+    // "eklenen pdf in içeriğini metin olarak apide ayıklatabilir miyiz",
+    // "bahsettiğimiz şekilde geliştirmeyi yap"). "Yapay zekâyla eşle"
+    // anonim iskelet yerine kelimeleri AÇIK metni yollar (rakamlar ve
+    // etiketli ad/adres yine maskeli, `ekstreMetni`); sunucu önce şablon
+    // hafızasına bakar (0147), sonra Haiku 5.5, gerekirse Sonnet 5.5.
+    // KAPALI doğar ve Gizlilik/Açık Rıza güncellenip yeniden onay alınmadan
+    // açılmaz: v1'in "belge telefonundan çıkmaz" sözü burada geçerli değil
+    // (kelimeler sunucu üzerinden Anthropic'e gider). Kapalıyken istek
+    // birebir eski v1 iskelet.
+    'ekstre_metin_yolu': false,
+
+    // Ekran görüntüsünden adet ve ortalama maliyet (2026-10-13, yasin:
+    // "bankalarda ekstrelerde varlıkların ortalama maliyetleri, alım
+    // zamanları yazmıyor"; muadil araştırmasından sonra seçenek "Ekran
+    // görüntüsü"). İçe aktarma ekranında "Ekran görüntüsünden ekle" /
+    // "Maliyetleri ekran görüntüsünden doldur": metin CİHAZDA okunur (iOS
+    // Vision, Android ML Kit; `ekran_okuyucu.dart`), hiçbir şey sunucuya
+    // gitmez, yasal metin değişmez. KAPALI doğar: önce TestFlight'ta gerçek
+    // banka/aracı kurum ekranlarıyla denenir. Kapalıyken düğme yok, ekran
+    // birebir eski. Premium (paywall açıkken ücretsizde kilitli).
+    'ekran_goruntusu_maliyet': false,
 
     // ABD hissesi (2026-10-08). Hisse türünde "BIST | ABD" seçimi, ABD
     // kataloğu (`abd_hisseleri.dart`) ve aramada ABD sonuçları. Veri yeni
@@ -382,14 +397,6 @@ class RemoteConfigService {
     // KAPALI doğar: ana yüzeyde yeni kart; kapalıyken ekran birebir eski.
     'varlik_masraflari': false,
 
-    // Varlık Ekle tür seçicisi: arama + gruplu ızgara (2026-10-08, yasin:
-    // "göz alıcı ama işlevsel" tür seçici). Tür sayısı 11'e çıktı (ABD,
-    // eurobond); çip yığını sayfanın ilk sorusunu kalabalıklaştırıyordu.
-    // Açıkken üstte arama (THYAO/Apple/BTC/ISIN → tür + kimlik tek dokunuşta),
-    // altında üç gruplu 4 sütunlu ızgara; seçimden sonra tek satıra katlanır.
-    // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
-    'tur_secici_izgara': false,
-
     // Göz alıcılık (2026-10-09, yasin: "uygulamayı göz alıcı hale
     // getirelim, fonksiyonelitesinden hiçbir şey kaybetmeden"; rapor
     // https://claude.ai/artifact/8Wuo6BMHugYnb2Z6LbC5RU). TEK bayrak, bütün
@@ -403,20 +410,25 @@ class RemoteConfigService {
     // KAPALI doğar: ana yüzeylerin görünüşü; kapalıyken birebir eski.
     'goz_alici': false,
 
-    // Mevduat banka seçici (2026-10-09, yasin: "banka listesi yasal
-    // yollardan ve ücretsiz bir API'den performansı etkilemeyecek şekilde
-    // çekilsin; seçilen bankanın aylık/yıllık brüt faizi varsayılan
-    // yazılsın, müşteriye özel oran verildiyse değiştirebilsin; mevduata
-    // not eklenebilsin"). TEK bayrak, üçü birden:
-    //  · banka listeden seçilir (0129 `mevduat_bankalari`, harf rozeti,
-    //    logo YOK — marka hakkı);
-    //  · yıllık brüt faiz vadeye göre TCMB haftalık ağırlıklı ortalamasıyla
-    //    dolar (0129 `mevduat_faiz_ortalama`; bankaya özel kaynak yok),
-    //    yanında aylık brüt; elle yazılan oranın üstüne bir daha yazılmaz;
-    //  · not alanı (lotun `notes` sütunu; şema değişmez).
-    // KAPALI doğar: 0129 + `mevduat-faiz` ilk turu iki sunucuda koşmadan
-    // açılırsa liste boş gelir ve form bugünkü serbest metne düşer.
-    'mevduat_banka_secici': false,
+    // Emekliye ayrılan bayraklar (2026-10-20, ar-ge raporu 2026-10-20_0915
+    // fikir 1, yasin "yap"). Beşi de mağazada (Console varsayılanı) uzun
+    // süredir AÇIK'tı; kapalı dalları ve bu anahtarlar koddan kalktı,
+    // özellik koşulsuz. Console anahtarı eski sürümler için duruyor (onlar
+    // hâlâ okuyor; silinirse kod varsayılanı `false`'a düşer ve eski
+    // build'de özellik kapanır). Gerekçeleri geldikleri yerde:
+    //  · `donem_hafizasi` (S1, 2026-10-08): Performans, varlık detayı/
+    //    sayfası, Takip ve Karşılaştır tek seçili dönemi paylaşır
+    //    (`secili_donem_provider.dart`).
+    //  · `portfoy_dagilim_cubugu` (S3, 2026-10-08, yasin'in seçimi "C"):
+    //    Portföy'de küçük halka + lejant; büyük halka dokununca açılır.
+    //  · `genel_arama` (S7, 2026-10-08): ana ekranda Yenile yerine genel
+    //    arama (varlık + eylem); yenileme aşağı çekmeyle.
+    //  · `tur_secici_izgara` (2026-10-08): Varlık Ekle'de arama + gruplu
+    //    tür ızgarası; eski çip `Wrap`'ı kalktı.
+    //  · `mevduat_banka_secici` (2026-10-09): banka listeden (0129
+    //    `mevduat_bankalari`, logo YOK — marka hakkı), yıllık brüt faiz
+    //    TCMB ortalamasından (elle yazılana dokunulmaz), not alanı. Liste
+    //    boş gelirse seçici sayfası elle banka adı yazdırır.
 
     // Fon X-Ray Katman A (2026-10-10): varlık kartında fonun ilk 10 kalemi
     // (KAP aylık Portföy Dağılım Raporu, beş kontrolden geçenler, 0132) ve
@@ -520,47 +532,98 @@ class RemoteConfigService {
   /// okunmaz (yalnız yerel `RC_ACIK` ve test kancası).
   bool get premiumOzellikleriGorunur => paywallEnabled || yonetici;
 
-  /// Uygulamanın hangi kanaldan kurulduğunu Remote Config'e özel sinyal
-  /// (`dagitim`) olarak bildirir. Console'da "TestFlight" koşulu bu sinyale
-  /// bağlanır: `dagitim` tam olarak `testflight`.
+  /// Test kitlesi HESAPLA seçilir: oturumdaki hesabın kimliği Remote
+  /// Config'e özel sinyal (`hesap`) olarak gider; Console'daki "Test
+  /// kitlesi" koşulu bu sinyali testçi hesap kimlikleri listesiyle eşler.
   ///
-  /// ## Neden (paywall kapıları incelemesi, 2026-10-11)
-  /// Koşul sürüme (1.1.6) bağlıydı. TestFlight'taki build ile mağazaya
-  /// çıkan build AYNI ikili dosyadır; sürüm ya da build numarası koşulu o
-  /// sürüm mağazaya çıktığı an bütün müşterileri de kapsar. O koşulda
-  /// `paywall_enabled` açık ve `premium_hediye_kesim` = 2020 olduğu için
-  /// mağaza kullanıcısının hepsi bir anda kilit görürdü. Ayrımı yalnız
-  /// çalışma anı yapabilir: iOS'ta makbuz adı (`sandboxReceipt` =
-  /// TestFlight), `package_info_plus` bunu `installerStore` olarak verir.
-  /// Android'de kapalı test ile üretim aynı mağazadan (Play) gelir, ayırt
-  /// edilemez; orada test kitlesi kullanıcı/cihaz listesiyle seçilir.
+  /// ## Neden (App Store 2.3.1(a), 2026-10-14)
+  /// 2026-10-11'de (#173) test kitlesi kurulum KANALIYLA seçiliyordu
+  /// (`dagitim` sinyali: TestFlight mı, mağaza mı). Apple bunu "inceleme
+  /// ortamını tespit edip Remote Config ile farklı davranma" sayıp
+  /// uygulamaları reddediyor (Guideline 2.3.1(a), "hidden features"):
+  /// inceleme cihazı da TestFlight gibi görünür, yani inceleyen kişi
+  /// mağaza kullanıcısının görmeyeceği değerleri (paywall, sunucu) görürdü.
+  /// Kural (CLAUDE.md "Mağaza incelemesi"): uygulama nereden kurulduğunu
+  /// hiçbir yere bildirmez ve buna göre davranmaz; ayrım kişiye göre
+  /// yapılır. İnceleme hesabı listede olmadığı için mağaza değerlerini alır.
   ///
-  /// Sinyal yazılamazsa (eski SDK, ağ) sessizce geçilir: koşul eşleşmez,
-  /// varsayılan değerler geçerli olur, yani güvenli taraf.
-  Future<void> _dagitimSinyaliniYaz() async {
+  /// Sürüm koşulu kullanılmaz: TestFlight build'i mağazaya çıkan ikilinin
+  /// aynısıdır, sürüm koşulu yayın anında bütün müşterileri kapsardı.
+  /// Kimlik Analytics'e zaten `setUserId` ile gidiyor; yeni bir alıcı yok.
+  ///
+  /// Giriş: sinyal yazılır ve hemen fetch edilir (15 dk aralığı beklenmez,
+  /// testçi Frankfurt'a girişten hemen sonra yönlensin; seyrek olay, kota
+  /// sorunu yok). Çıkış: sinyal boşaltılır, fetch zorlanmaz — oturum
+  /// tazelenirken anlık `null` sunucu bayrağını sallamasın; sıradaki olağan
+  /// fetch mağaza değerlerine döner. Sinyal yazılamazsa (eski SDK, ağ)
+  /// koşul eşleşmez, mağaza değerleri geçerli: güvenli taraf.
+  ///
+  /// RC açılışta ertelenmiş kurulur; oturum ondan önce gelirse değer
+  /// saklanır ve `init` onu ilk fetch'ten ÖNCE yazar (ikinci fetch yok).
+  Future<void> hesabiBildir(String? kullaniciId) async {
+    final deger = hesapSinyali(kullaniciId);
+    final rc = _rc;
+    if (rc == null || !_initialized) {
+      _bekleyenHesapSinyali = deger;
+      return;
+    }
+    if (deger == _sonHesapSinyali) return;
+    _sonHesapSinyali = deger;
     try {
-      final bilgi = await PackageInfo.fromPlatform();
-      await _rc!.setCustomSignals({
-        'dagitim': dagitimKanali(bilgi.installerStore, debug: kDebugMode),
-      });
+      await rc.setCustomSignals({hesapSinyaliAnahtari: deger});
+      if (deger.isEmpty) return;
+      await rc.setConfigSettings(RemoteConfigSettings(
+        fetchTimeout: const Duration(seconds: 10),
+        minimumFetchInterval: Duration.zero,
+      ));
+      await rc.fetchAndActivate();
+      _sunucuyaBildir();
     } catch (e, st) {
-      CrashReporter.report(e, st,
-          reason: 'remote_config_service.dagitimSinyali');
+      CrashReporter.report(e, st, reason: 'remote_config_service.hesabiBildir');
+    } finally {
+      if (deger.isNotEmpty) {
+        try {
+          await rc.setConfigSettings(_ayarlar);
+        } catch (_) {}
+      }
     }
   }
 
-  /// Saf: kurulum kaynağından RC `dagitim` sinyali.
-  @visibleForTesting
-  static String dagitimKanali(String? installerStore, {required bool debug}) {
-    if (debug) return 'debug';
-    return switch (installerStore) {
-      'com.apple.testflight' => 'testflight',
-      'com.apple' => 'app_store',
-      'com.apple.simulator' => 'simulator',
-      'com.android.vending' => 'play',
-      _ => 'diger',
-    };
+  String? _sonHesapSinyali;
+  String? _bekleyenHesapSinyali;
+
+  /// `init` içinde, ilk fetch'ten önce: erken gelen oturumun sinyali.
+  Future<void> _bekleyenHesabiYaz() async {
+    final deger = _bekleyenHesapSinyali;
+    if (deger == null) return;
+    try {
+      await _rc!.setCustomSignals({hesapSinyaliAnahtari: deger});
+      _sonHesapSinyali = deger;
+    } catch (e, st) {
+      CrashReporter.report(e, st,
+          reason: 'remote_config_service.bekleyenHesap');
+    }
   }
+
+  /// Console koşulunun eşlediği özel sinyal adı.
+  static const hesapSinyaliAnahtari = 'hesap';
+
+  /// Saf: oturumdaki hesaptan sinyal değeri (oturum yok → boş).
+  @visibleForTesting
+  static String hesapSinyali(String? kullaniciId) =>
+      kullaniciId?.trim().toLowerCase() ?? '';
+
+  /// Olağan fetch ayarı. Debug'da hemen; prod'da 15 dk. Eskiden 1 saatti.
+  /// Köprü sürümünde (K1) bu aralık, geçiş gecesi gerçek zamanlı bildirimi
+  /// KAÇIRAN açık bir uygulamanın dondurulmuş Tokyo'da en fazla ne kadar
+  /// kalacağıdır (ön plana dönüşte `refresh()`). 2026-09-27 emülatör
+  /// denemesinde gerçek zamanlı yol ulaşmadı; soğuk açılış yolu ~5 sn'de
+  /// çalıştı. 15 dk RC kotasının çok altında (istemci başına saatte 4 fetch).
+  static final _ayarlar = RemoteConfigSettings(
+    fetchTimeout: const Duration(seconds: 10),
+    minimumFetchInterval:
+        kDebugMode ? Duration.zero : const Duration(minutes: 15),
+  );
 
   bool _yerelVeyaTest(String anahtar) =>
       testAcik.contains(anahtar) || _yerelAcik.contains(anahtar);
@@ -573,25 +636,21 @@ class RemoteConfigService {
   /// Adıyla bayrak (sürüm notu maddesi gibi veri tarafından anılan
   /// bayraklar için). Varsayılanlarda olmayan ad → kapalı.
   bool bayrakAcik(String anahtar) =>
-      _defaults[anahtar] is bool && _bayrak(anahtar);
+      // Paywall RC'de değil (2026-11-01): sürüm notunun Premium maddeleri
+      // paywall'ın kodda açık olduğu platformda (iOS) görünür, Android'de
+      // RevenueCat kurulana kadar gizli kalır.
+      anahtar == 'paywall_enabled'
+          ? paywallEnabled
+          : _defaults[anahtar] is bool && _bayrak(anahtar);
 
   Future<void> init() async {
     if (_initialized) return;
     try {
       _rc = FirebaseRemoteConfig.instance;
-      await _rc!.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        // Debug'da hemen; prod'da 15 dk. Eskiden 1 saatti. Köprü sürümünde
-        // (K1) bu aralık, geçiş gecesi gerçek zamanlı bildirimi KAÇIRAN açık
-        // bir uygulamanın dondurulmuş Tokyo'da en fazla ne kadar kalacağıdır
-        // (ön plana dönüşte `refresh()`). 2026-09-27 emülatör denemesinde
-        // gerçek zamanlı yol ulaşmadı; soğuk açılış yolu ~5 sn'de çalıştı.
-        // 15 dk RC kotasının çok altında (istemci başına saatte 4 fetch).
-        minimumFetchInterval:
-            kDebugMode ? Duration.zero : const Duration(minutes: 15),
-      ));
+      // Aralığın gerekçesi `_ayarlar`'da.
+      await _rc!.setConfigSettings(_ayarlar);
       await _rc!.setDefaults(_defaults);
-      await _dagitimSinyaliniYaz();
+      await _bekleyenHesabiYaz();
       // Fetch başlat ama beklet — offline'da default'lar geçerli olur.
       // Bitince sunucu/güncelleme kararı yeniden değerlendirilir.
       CrashReporter.arkaPlan(
@@ -618,6 +677,12 @@ class RemoteConfigService {
             reason: 'remote_config_service.onConfigUpdated'),
       );
       _initialized = true;
+      // Kurulum sürerken gelen oturum değişimi kaçmasın.
+      final bekleyen = _bekleyenHesapSinyali;
+      if (bekleyen != null && bekleyen != _sonHesapSinyali) {
+        CrashReporter.arkaPlan(hesabiBildir(bekleyen),
+            reason: 'remote_config_service.bekleyenHesap.init');
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('RemoteConfigService init failed: $e');
     }
@@ -640,6 +705,7 @@ class RemoteConfigService {
     SunucuSecimi.instance.rcGuncellendi(
       istenen: rc.getString(SunucuSecimi.anahtar),
       minBuild: rc.getInt(SunucuSecimi.minBuildAnahtari),
+      onerilen: rc.getInt(SunucuSecimi.onerilenBuildAnahtari),
     );
   }
 
@@ -651,42 +717,73 @@ class RemoteConfigService {
   // `_bayrak` üstünden: yerel testte RC_ACIK ile açılabilsin (sunucu kapısı
   // açık bir yığında istemci kilidi kapalı kalınca not "açılamadı" diyordu).
   // Release'te `_yerelAcik` boş, davranış değişmez.
-  bool get paywallEnabled => _bayrak('paywall_enabled');
+  /// Paywall bu build'de görünür mü — KOD kararı, Remote Config okunmaz
+  /// (yasin 2026-11-01: "rc flagleriyle yönetmemeye çalışalım burayı").
+  /// 1.1.7'nin paywall build'inden itibaren iOS'ta açık; Android'de build'e
+  /// RevenueCat Android anahtarı girince açılır (2026-11-07), web/masaüstünde yok.
+  /// Mağaza kullanıcısı ile inceleyici aynı kodu görür (App Store 2.3.1).
+  /// Acil kapatma artık sunucuda (`premium_ayar.acil_kapali`, 0172):
+  /// kilitler askıya alınır, ödeyenin hakkı korunur. Testte `testAcik`,
+  /// yerelde `RC_ACIK` ile açılabilir; `testKapali` ile iOS'ta kapatılabilir.
+  bool get paywallEnabled =>
+      testAcik.contains('paywall_enabled') ||
+      _yerelAcik.contains('paywall_enabled') ||
+      (!testKapali.contains('paywall_enabled') && paywallKodVarsayilani);
 
-  bool get premiumEnabled =>
-      _rc?.getBool('premium_enabled') ?? _defaults['premium_enabled'] as bool;
+  /// Platforma göre kod varsayılanı (bkz. [paywallEnabled]).
+  static bool get paywallKodVarsayilani => paywallPlatformdaAcik(
+        web: kIsWeb,
+        platform: defaultTargetPlatform,
+        androidAnahtariVar: _androidRcAnahtari.isNotEmpty,
+      );
 
-  /// Hediye kesimi (bkz. `_defaults['premium_hediye_kesim']`); boş ya da
-  /// okunamazsa null.
-  DateTime? get premiumHediyeKesim {
-    final ham = (_rc?.getString('premium_hediye_kesim') ??
-            _defaults['premium_hediye_kesim'] as String)
-        .trim();
-    return ham.isEmpty ? null : DateTime.tryParse(ham);
+  /// Android'de paywall, build'e RevenueCat Android anahtarı girdiyse açılır
+  /// (yasin 2026-11-07: "Androidde açacağız"). Neden anahtara bağlı: kilit
+  /// görünüp satın alma "kullanılamıyor" demesin. Anahtar (GitHub secret
+  /// `REVENUECAT_ANDROID_KEY`) Play abonelikleri ve RevenueCat Android
+  /// uygulaması kurulduktan SONRA eklenir; o güne kadarki Android build'leri
+  /// eskisi gibi Premium'suz kalır, secret eklenince bir sonraki build açar.
+  /// Değer `SatinAlmaService` ile aynı dart-define (o servis bu dosyayı
+  /// içe aktardığı için burada yeniden okunur; döngü olmasın).
+  static const _androidRcAnahtari =
+      String.fromEnvironment('REVENUECAT_ANDROID_KEY');
+
+  /// Saf karar (test edilebilir): web/masaüstü hiç, iOS her zaman, Android
+  /// yalnız anahtarla.
+  @visibleForTesting
+  static bool paywallPlatformdaAcik({
+    required bool web,
+    required TargetPlatform platform,
+    required bool androidAnahtariVar,
+  }) {
+    if (web) return false;
+    return switch (platform) {
+      TargetPlatform.iOS => true,
+      TargetPlatform.android => androidAnahtariVar,
+      _ => false,
+    };
   }
 
-  int get freeAssetLimit =>
-      _rc?.getInt('free_asset_limit') ?? _defaults['free_asset_limit'] as int;
+  /// Test kancası: kod varsayılanı açık olan bayrağı kapatır (`testAcik`'in
+  /// tersi). Yalnız testte; release'te boş.
+  @visibleForTesting
+  static Set<String> testKapali = {};
+
+  // Ücretsiz sınırlar KOD sabiti (2026-11-01): Remote Config okunmaz,
+  // `_defaults` tek kaynak; değişiklik sürümle gelir (ölçüm 1 Aralık sonrası,
+  // `remote_config_defaults_test` dondurur).
+  int get freeAssetLimit => _defaults['free_asset_limit'] as int;
 
   int get freeSignalSlotsPerDay =>
-      _rc?.getInt('free_signal_slots_per_day') ??
       _defaults['free_signal_slots_per_day'] as int;
 
-  int get freeCompareSeries =>
-      _rc?.getInt('free_compare_series') ??
-      _defaults['free_compare_series'] as int;
+  int get freeCompareSeries => _defaults['free_compare_series'] as int;
 
-  int get freePartnerLimit =>
-      _rc?.getInt('free_partner_limit') ??
-      _defaults['free_partner_limit'] as int;
+  int get freePartnerLimit => _defaults['free_partner_limit'] as int;
 
-  int get freeWatchlistLimit =>
-      _rc?.getInt('free_watchlist_limit') ??
-      _defaults['free_watchlist_limit'] as int;
+  int get freeWatchlistLimit => _defaults['free_watchlist_limit'] as int;
 
-  int get paywallWatchlistLimit =>
-      _rc?.getInt('paywall_watchlist_limit') ??
-      _defaults['paywall_watchlist_limit'] as int;
+  int get paywallWatchlistLimit => _defaults['paywall_watchlist_limit'] as int;
 
   String get premiumPriceMonthly =>
       _rc?.getString('premium_price_monthly') ??
@@ -718,9 +815,7 @@ class RemoteConfigService {
       _rc?.getBool('real_return_enabled') ??
       _defaults['real_return_enabled'] as bool;
 
-  int get freePriceAlertLimit =>
-      _rc?.getInt('free_price_alert_limit') ??
-      _defaults['free_price_alert_limit'] as int;
+  int get freePriceAlertLimit => _defaults['free_price_alert_limit'] as int;
 
   bool get milestonesEnabled =>
       _rc?.getBool('milestones_enabled') ??
@@ -778,6 +873,12 @@ class RemoteConfigService {
   bool get balinaRadariAcik =>
       _yerelVeyaTest('balina_radari_acik') || premiumOzellikleriGorunur;
 
+  /// AI portföy yorumu kartı (0145). Paywall'un diğer özellikleri gibi
+  /// bayraksız: Premium görünürken herkese çıkar, ücretsiz hesap kilitli
+  /// görüp paywall'a gider (yasin 2026-11-02, "kitleden bağımsız"). Test
+  /// kitlesi ya da Console değeri okunmaz; gerekçe `_defaults` notunda.
+  bool get portfoyAiYorumu => premiumOzellikleriGorunur;
+
   /// Dövizli satışta satış günü kuru (0111). Gerekçe `_defaults`'ta.
   bool get satisGunuKuru => _bayrak('satis_gunu_kuru');
 
@@ -801,9 +902,7 @@ class RemoteConfigService {
   bool get varlikHeroGecisi => _bayrak('varlik_hero_gecisi');
 
   /// Sadeleştirme 2 bayrakları. Gerekçeler `_defaults`'ta.
-  bool get donemHafizasi => _bayrak('donem_hafizasi');
   bool get performansTekAkis => _bayrak('performans_tek_akis');
-  bool get portfoyDagilimCubugu => _bayrak('portfoy_dagilim_cubugu');
   bool get varlikDetayKatmanli => _bayrak('varlik_detay_katmanli');
   bool get sinyalOnAyar => _bayrak('sinyal_on_ayar');
 
@@ -812,7 +911,6 @@ class RemoteConfigService {
   /// herkese açılır; kapalıyken yalnız admin. Console değeri de okunur.
   bool get raporlarKapisi =>
       _bayrak('raporlar_kapisi') || premiumOzellikleriGorunur;
-  bool get genelArama => _bayrak('genel_arama');
 
   /// Kart desteli paywall. Gerekçe `_defaults`'ta.
   bool get paywallDeste => _bayrak('paywall_deste');
@@ -827,6 +925,12 @@ class RemoteConfigService {
   bool get ekstreAiEsleme =>
       _yerelVeyaTest('ekstre_ai_esleme') || premiumOzellikleriGorunur;
 
+  /// Ekstre metin yolu + şablon hafızası. Gerekçe `_defaults`'ta.
+  bool get ekstreMetinYolu => _bayrak('ekstre_metin_yolu');
+
+  /// Ekran görüntüsünden maliyet. Gerekçe `_defaults`'ta.
+  bool get ekranGoruntusuMaliyet => _bayrak('ekran_goruntusu_maliyet');
+
   /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
   bool get abdHisse => _bayrak('abd_hisse');
 
@@ -838,15 +942,8 @@ class RemoteConfigService {
   bool get varlikMasraflari =>
       _bayrak('varlik_masraflari') || premiumOzellikleriGorunur;
 
-  /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
-  bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
-
   /// Göz alıcılık paketleri (tek bayrak). Gerekçe `_defaults`'ta.
   bool get gozAlici => _bayrak('goz_alici');
-
-  /// Mevduat formunda banka seçici + faiz varsayılanı + not. Gerekçe
-  /// `_defaults`'ta.
-  bool get mevduatBankaSecici => _bayrak('mevduat_banka_secici');
 
   /// Fon X-Ray kalemleri ve örtüşme (Katman A). Gerekçe `_defaults`'ta.
   bool get fonXrayKalem => _bayrak('fon_xray_kalem');

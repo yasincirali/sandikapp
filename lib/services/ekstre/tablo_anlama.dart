@@ -90,6 +90,35 @@ class EkstreAnlami {
   /// `adKodlari`'ı); çözülmeyen ad asla sembol diye geçmez.
   final bool adlaTanimli;
 
+  /// Para birimi sütunu yok ama tutarlar dolar: fiyat/tutar başlığında ya
+  /// da hücrelerin çoğunda "$"/"USD" (yurt dışı aracı kurum dökümü, Midas
+  /// gibi; 2026-10-15). Kanonik çıktıya "USD" yazılır ki ABD hissesi BIST
+  /// hissesi ya da TEFAS fonu sanılmasın (`CsvImportService.abdSatiriMi`).
+  bool get dolarli {
+    if (roller.containsKey(EkstreRol.paraBirimi)) return false;
+    final sutunlar = [
+      for (final r in const [EkstreRol.fiyat, EkstreRol.tutar])
+        if (roller[r] case final int i) i,
+    ];
+    if (sutunlar.isEmpty) return false;
+    bool dolarMi(String h) {
+      final k = h.toUpperCase();
+      return k.contains(r'$') || RegExp(r'\bUSD\b').hasMatch(k);
+    }
+    if (sutunlar.any((i) => i < basliklar.length && dolarMi(basliklar[i]))) {
+      return true;
+    }
+    var dolu = 0, dolar = 0;
+    for (final satir in veri) {
+      for (final i in sutunlar) {
+        if (i >= satir.length || satir[i].trim().isEmpty) continue;
+        dolu++;
+        if (dolarMi(satir[i])) dolar++;
+      }
+    }
+    return dolu > 0 && dolar * 2 >= dolu;
+  }
+
   static const esik = 0.75;
   bool get eminDegil =>
       guven < esik || !roller.containsKey(EkstreRol.sembol) || !roller.containsKey(EkstreRol.adet);
@@ -132,6 +161,7 @@ class EkstreAnlami {
           if (r == EkstreRol.yon ||
               (r == EkstreRol.tarih && tarihEkle) ||
               (r == EkstreRol.tur && anlamlar.any((a) => a.adlaTanimli)) ||
+              (r == EkstreRol.paraBirimi && anlamlar.any((a) => a.dolarli)) ||
               anlamlar.any((a) => a.roller.containsKey(r)))
             r,
       ];
@@ -198,6 +228,8 @@ class EkstreAnlami {
                 : '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year}');
           case EkstreRol.yon:
             hucreler.add(satis ? 'Satış' : 'Alış');
+          case EkstreRol.paraBirimi when dolarli:
+            hucreler.add('USD');
           case EkstreRol.paraBirimi:
             final p = trKatla(h(r).trim());
             hucreler.add(p == 'tl' || p == 'ytl' ? 'TRY' : h(r).trim().toUpperCase());
@@ -817,8 +849,13 @@ EkstreAnlami? tabloyuAnla(EkstreTablosu tablo) {
       iliskiyle = true;
     }
     if (!roller.containsKey(EkstreRol.adet)) {
-      // Son çare: en çok tam sayı içeren boş sayısal sütun.
-      final kalan = sayisalSutunlar.where((c) => !kullanilan.contains(c)).toList()
+      // Son çare: en çok tam sayı içeren boş sayısal sütun. Para birimi
+      // yazan sütun ("31.240,00 TRY", "$1,000.00") adet olamaz, tutardır:
+      // yalnız tutar yazan dökümde (`tutar_tablosu.dart`, 2026-10-15)
+      // "THYAO  31.240,00 TRY" satırı 31.240 lot sanılıyordu.
+      final kalan = sayisalSutunlar
+          .where((c) => !kullanilan.contains(c) && !_paraIsaretli(veri, c))
+          .toList()
         ..sort((x, y) => profiller[y].oran(profiller[y].tam).compareTo(profiller[x].oran(profiller[x].tam)));
       if (kalan.isNotEmpty) {
         roller[EkstreRol.adet] = kalan.first;
@@ -977,4 +1014,18 @@ double _carpimOrani(List<double?> a, List<double?> b, List<double?> t) {
     if (((x * y).abs() - z.abs()).abs() <= z.abs() * 0.02 + 0.01) tutan++;
   }
   return dolu < 2 ? 0 : tutan / dolu;
+}
+
+/// Sütunun dolu hücrelerinin yarısı ya da fazlası para birimi yazıyor mu
+/// ("TRY", "TL", "USD", "\$", "€"…). Adet hücresi birim yazmaz.
+bool _paraIsaretli(List<List<String>> veri, int c) {
+  final isaret = RegExp(r'(\b(TRY|TL|USD|EUR|GBP|CHF)\b|[$€£₺])',
+      caseSensitive: false);
+  var dolu = 0, para = 0;
+  for (final s in veri) {
+    if (c >= s.length || s[c].trim().isEmpty) continue;
+    dolu++;
+    if (isaret.hasMatch(s[c])) para++;
+  }
+  return dolu > 0 && para * 2 >= dolu;
 }

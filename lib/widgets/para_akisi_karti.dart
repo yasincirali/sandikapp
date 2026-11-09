@@ -11,12 +11,14 @@ import '../providers/premium_provider.dart';
 import '../screens/hafta_ozeti_screen.dart';
 import '../screens/para_akisi_detay_screen.dart';
 import '../screens/paywall_screen.dart';
+import '../services/analytics_service.dart';
 import '../services/fon_akisi.dart';
 import '../services/fon_karnesi.dart' show fonKoduOf;
 import '../services/radar_okuma.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'radar_ortak.dart';
+import 'sandik_skeleton.dart';
 
 /// Para akışı kartı (Balina B1 2026-10-04; özet kart 2026-10-05, S1-B).
 ///
@@ -70,8 +72,13 @@ class ParaAkisiKarti extends ConsumerWidget {
   /// Kart çizildiğinde çevresine bırakılan boşluk; çizilmezse boşluk da yok.
   final EdgeInsetsGeometry dis;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(balinaRadariAcikProvider)) return const SizedBox.shrink();
     final kod = fonKoduOf(tur: tur, ticker: ticker);
     if (kod == null) return const SizedBox.shrink();
@@ -92,7 +99,7 @@ class ParaAkisiKarti extends ConsumerWidget {
 
     void ayrintiyaGit() => pushGuarded(
           context,
-          adaptiveRoute<void>(builder: (_) => ParaAkisiDetayScreen(kod: kod)),
+          adaptiveRoute<void>(settings: const RouteSettings(name: 'para_akisi_detay'), builder: (_) => ParaAkisiDetayScreen(kod: kod)),
         );
 
     return Padding(
@@ -183,6 +190,7 @@ class ParaAkisiKarti extends ConsumerWidget {
                       onPressed: () => pushGuarded(
                         context,
                         adaptiveRoute<void>(
+                            settings: const RouteSettings(name: 'hafta_ozeti'),
                             builder: (_) => const HaftaOzetiScreen()),
                       ),
                       child: Text(l10n.weekLink),
@@ -220,25 +228,45 @@ Color yonRengi(SandikPalette c, double v) => v > 0
 /// Kilitli içerik satırı (S12-B) — radar kartları ve not kutusu ortak
 /// kullanır: ne kilitli olduğunu somut söyler, satın alma ekranını açar.
 class KilitSatiri extends StatelessWidget {
-  const KilitSatiri({super.key, required this.metin, required this.kaynak});
+  const KilitSatiri(
+      {super.key,
+      required this.metin,
+      required this.kaynak,
+      this.ozellik,
+      this.kilitEtiketi});
 
   final String metin;
 
   /// Analitikte paywall'ın nereden açıldığı.
   final String kaynak;
 
+  /// Doluysa dokunuşta `premium_gate_shown` da yazılır (sinyal ayarlarındaki
+  /// kapı deseni: önce kapı olayı, sonra paywall). Eski çağrılar vermez,
+  /// olay serileri değişmez.
+  final String? ozellik;
+
+  /// Kilit ikonunun ekran okuyucu etiketi ("Kilitli"); verilmezse ikon
+  /// sessiz (eski davranış).
+  final String? kilitEtiketi;
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return InkWell(
-      onTap: () => PaywallScreen.show(context, source: kaynak),
-      borderRadius: SandikRadius.smAll,
+    return SandikTappable(
+      onTap: () {
+        if (ozellik != null) {
+          AnalyticsService.instance.logPremiumGateShown(feature: ozellik!);
+        }
+        PaywallScreen.show(context, source: kaynak);
+      },
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: SandikTouch.min),
         child: Row(
           children: [
             Icon(Icons.lock_outline_rounded,
-                size: SandikSpace.md, color: c.amberText),
+                size: SandikSpace.md,
+                color: c.amberText,
+                semanticLabel: kilitEtiketi),
             const SizedBox(width: SandikSpace.sm),
             Expanded(
               child: Text(metin,

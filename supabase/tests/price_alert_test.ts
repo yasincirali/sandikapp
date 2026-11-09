@@ -55,16 +55,32 @@ Deno.test('Türkçe binlik/ondalık ayıracı', ()=>{
   assertEquals(formatTRY(1234567.5), '1.234.567,50');
 });
 Deno.test('negatif değer işareti korur', ()=>assertEquals(formatTRY(-1234.5), '-1.234,50'));
+// 2026-10-29: 1'in altı 2 haneye yuvarlanıp "0,00" okunuyordu (SHIB).
+Deno.test('1 altı fiyat yuvarlanmaz', ()=>{
+  assertEquals(formatTRY(0.000412), '0,000412');
+  assertEquals(formatTRY(0.5), '0,50');
+  assertEquals(formatTRY(0.1791), '0,1791');
+});
 
 // ── buildAlertMessage ───────────────────────────────────────────────────
 Deno.test('yukarı alarm metni', ()=>{
   const m = buildAlertMessage('Gram Altın', 5412.37, 5400, 'above');
-  assertEquals(m.title, '▲ Gram Altın 5.400,00 seviyesine ulaştı');
-  assertOk(m.body.includes('5.412,37'));
+  assertEquals(m.title, '▲ Gram Altın ₺5.400,00 seviyesine ulaştı');
+  assertOk(m.body.includes('Şu an ₺5.412,37.'));
+  assertOk(m.body.includes('Tek seferlik alarmdı, kapatıldı.'));
 });
 Deno.test('aşağı alarm metni', ()=>{
   const m = buildAlertMessage('THYAO', 298.5, 300, 'below');
-  assertEquals(m.title, '▼ THYAO 300,00 seviyesinin altına indi');
+  assertEquals(m.title, '▼ THYAO ₺300,00 seviyesinin altına indi');
+});
+Deno.test('ABD hissesi alarmı dolarla; simge bilinmiyorsa simgesiz', ()=>{
+  const m = buildAlertMessage('Apple', 251.2, 250, 'above', '$');
+  assertEquals(m.title, '▲ Apple $250,00 seviyesine ulaştı');
+  assertOk(m.body.includes('Şu an $251,20.'));
+  const k = buildAlertCard('Apple', 251.2, 250, 'above', '$')!;
+  assertEquals(k.b, '$251,20');
+  assertEquals(k.a, 'Fiyat alarmı · hedef $250,00');
+  assertEquals(buildAlertMessage('X', 10, 9, 'above', null).title, '▲ X 9,00 seviyesine ulaştı');
 });
 Deno.test('SPK ibaresi her alarmda', ()=>{
   for (const d of ['above','below'])

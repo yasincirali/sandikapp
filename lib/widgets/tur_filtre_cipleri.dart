@@ -36,10 +36,22 @@ class TurFiltreCipleri extends StatelessWidget {
     required this.ozet,
     required this.turlar,
     required this.onSec,
+    this.siraOzeti,
   });
 
   final PortfoyGrubu? secili;
   final TurFiltreOzeti ozet;
+
+  /// Çip SIRASININ hesaplandığı özet; boşsa [ozet]. Pasiflik yine [ozet]ten.
+  ///
+  /// yasin 2026-10-12 (TestFlight): "filtreler değiştikçe hoplayıp zıplıyor,
+  /// yer değiştiriyor; sabit kalmalı." Sıra seçili kişinin/portföyün
+  /// özetinden kurulunca Kişi ya da Portföy değişince çipler yer
+  /// değiştiriyordu. Çağıran buraya kapsamdan BAĞIMSIZ (herkesin, tüm
+  /// portföylerin) özetini verir: sıra sayfa açıkken sabit kalır, seçili
+  /// kapsamda olmayan tür yerinde pasifleşir. Hiç kimsede olmayanlar yine
+  /// sonda ("olmayanlar pasif şekilde listenin sonunda" kuralı korunur).
+  final TurFiltreOzeti? siraOzeti;
 
   /// Gösterilecek türler (bayrakla kapalı tür çağıranda elenir).
   final List<PortfoyGrubu> turlar;
@@ -69,59 +81,118 @@ class TurFiltreCipleri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final s = sirala(turlar, ozet);
-    return Wrap(
-      spacing: SandikSpace.sm,
-      runSpacing: SandikSpace.sm,
-      children: [
-        _Cip(
-          ad: l.allTypes,
-          secili: secili == null,
-          onTap: () => onSec(null),
-        ),
-        for (final t in s.eldeki)
-          _Cip(
+    final s = sirala(turlar, siraOzeti ?? ozet);
+    bool elde(PortfoyGrubu t) => (ozet.adet[t] ?? 0) > 0;
+    SandikFiltreCipi cip(PortfoyGrubu t) => elde(t)
+        ? SandikFiltreCipi(
             ad: t.labelOf(l),
             secili: secili == t,
             onTap: () => onSec(t),
-          ),
-        for (final t in s.olmayan)
-          _Cip(
+          )
+        : SandikFiltreCipi(
             ad: t.labelOf(l),
             secili: secili == t,
             // Pasif — seçiliyse kaldırılabilsin diye etkin kalır.
             onTap: secili == t ? () => onSec(t) : null,
             pasifEtiket: secili == t ? null : l.s2FiltreYok,
-          ),
+          );
+    return Wrap(
+      spacing: SandikSpace.sm,
+      runSpacing: SandikSpace.sm,
+      children: [
+        SandikFiltreCipi(
+          ad: l.allTypes,
+          secili: secili == null,
+          onTap: () => onSec(null),
+        ),
+        for (final t in s.eldeki) cip(t),
+        for (final t in s.olmayan) cip(t),
       ],
     );
   }
 }
 
-class _Cip extends StatelessWidget {
-  const _Cip({
+/// Süzme çipi — uygulamanın TEK filtre çipi (seçici denetimi 2026-10-12).
+///
+/// Kural (`docs/TASARIM_DILI.md` §4): mod değiştirmek kayan segment
+/// ([SandikSegment]), liste süzmek bu çip, çoklu aç/kapa grafik çipi.
+/// Önceden aynı "süz" işi üç ayrı görünümle (köşe 14/20/22, dolgu üç ton)
+/// yapılıyordu; kullanıcı neyin süzgeç neyin mod olduğunu şekilden
+/// çıkaramıyordu.
+///
+/// Tam yuvarlak, 44 pt; seçiliyken amber dolgu + onay işareti (renk tek
+/// başına bilgi taşımaz). [ikon] seçili değilken başta durur, seçilince
+/// yerini onay işaretine bırakır.
+class SandikFiltreCipi extends StatelessWidget {
+  const SandikFiltreCipi({
+    super.key,
     required this.ad,
     required this.secili,
     required this.onTap,
     this.pasifEtiket,
+    this.ikon,
+    this.ikonRengi,
+    this.semantik,
   });
 
   final String ad;
+
+  /// Ekran okuyucu etiketi; verilmezse [ad]. "±%2" gibi simgeli etiket
+  /// sesli okunurken anlamını yitirir ("Günlük yüzde 2 eşiği" okunsun —
+  /// yüzde alarmı, 2026-10-27).
+  final String? semantik;
   final bool secili;
   final VoidCallback? onTap;
 
   /// Doluysa çip pasif (portföyde yok); ekran okuyucuya "Fon, yok" denir.
   final String? pasifEtiket;
 
+  /// Seçili değilken başta duran ikon (ör. tür ikonu).
+  final IconData? ikon;
+  final Color? ikonRengi;
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final pasif = pasifEtiket != null;
-    final yazi = secili
+    // Sabit genişlik (yasin 2026-10-12: "filtreler hoplayıp zıplıyor"):
+    // seçilince onay işareti ve kalın yazı çipi genişletiyor, `Wrap` satırı
+    // yeniden kırıp komşu çipleri kaydırıyordu. Artık iki hâl aynı eni
+    // tutar: baştaki ikon yuvası her zaman ayrılır (ikonsuz seçili olmayan
+    // çipte yuva iki yana bölünür, yazı ortada kalır) ve yazı kalınlığı
+    // seçimle değişmez — seçim dolgu, renk ve onay işaretiyle okunur.
+    final basIkon = secili ? Icons.check_rounded : ikon;
+    final renk = secili
         ? c.onAmber
         : pasif
             ? c.text36
             : c.text90;
+    const yuva = 16.0 + SandikSpace.xs2;
+    final yazi = Flexible(
+      child: Text(
+        ad,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.titleSmall
+            ?.copyWith(fontWeight: FontWeight.w600, color: renk),
+      ),
+    );
+    final icerik = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: basIkon != null
+          ? [
+              Icon(basIkon,
+                  size: 16, color: secili ? renk : (ikonRengi ?? c.text58)),
+              const SizedBox(width: SandikSpace.xs2),
+              yazi,
+            ]
+          : [
+              const SizedBox(width: yuva / 2),
+              yazi,
+              const SizedBox(width: yuva / 2),
+            ],
+    );
+
     final cip = AnimatedContainer(
       duration: SandikMotion.stateOf(context),
       curve: SandikMotion.enter,
@@ -137,26 +208,7 @@ class _Cip extends StatelessWidget {
         borderRadius: BorderRadius.circular(SandikTouch.min / 2),
         border: Border.all(color: secili ? c.amberFill : c.hairline),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (secili) ...[
-            Icon(Icons.check_rounded, size: 16, color: yazi),
-            const SizedBox(width: SandikSpace.xs2),
-          ],
-          Text(
-            ad,
-            style: context.t.titleSmall?.copyWith(
-              fontWeight: secili
-                  ? FontWeight.w700
-                  : pasif
-                      ? FontWeight.w500
-                      : FontWeight.w600,
-              color: yazi,
-            ),
-          ),
-        ],
-      ),
+      child: icerik,
     );
     if (pasif) {
       return Semantics(
@@ -170,8 +222,10 @@ class _Cip extends StatelessWidget {
     return SandikTappable(
       onTap: onTap,
       selected: secili,
-      semanticLabel: ad,
-      child: cip,
+      semanticLabel: semantik ?? ad,
+      // Etiket zaten [ad]; çipin kendi metni ikinci kez okunmasın
+      // ("Tümü, Tümü").
+      child: ExcludeSemantics(child: cip),
     );
   }
 }

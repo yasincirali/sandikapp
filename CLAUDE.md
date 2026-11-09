@@ -34,8 +34,9 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 |---|---|
 | Flutter UI / widget / ekran | `flutter-architecture`, `flutter-adaptive-ui`, `flutter-expert` ⚠️ |
 | Navigasyon | `flutter-navigation` (**`flutter-expert` GoRouter referansı değil**) |
-| Animasyon / hareket | `flutter-animations`, `animate`, `apple-design` |
+| Animasyon / hareket | `flutter-animations`, `animate`, `apple-design`; denetim/eleştiri `design-motion-principles` |
 | Görsel tasarım / cila | `emil-design-eng`, `ui-ux-pro-max`, `frontend-design` |
+| AI-slop denetimi | `unslop` (yalnız `references/signs.md` listesi + ui-ux-pro-mcp; palet/tipografi tasarım sistemi kazanır) |
 | Flutter testi | `flutter-testing` (**`test-master` değil**) |
 | Test *stratejisi* / kapsam boşluğu | `test-master` |
 | Supabase şema / migration / RPC | `sql-pro` → yazım, `postgres-pro` → PG'ye özgü |
@@ -65,7 +66,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
   Ayrıca ham `Colors.*` / `fontSize:` üretir — tasarım sistemi kuralı geçerlidir.
 - `test-master` → Flutter/Dart bilmez (k6/Artillery/OWASP odaklı).
 - `secure-code-guardian` → örnekleri web (Zod, CORS/CSP). Buradaki karşılığı
-  **RLS + GRANT + `requireCronSecret()`**.
+  **RLS + GRANT + `cronSecretZorunlu()` → `cronYetkisiVarMi()`**.
 - Web kaynaklı tasarım skill'leri → CSS/React sözdizimi **alınmaz**, yargısı alınır.
 - Pazarlama skill'leri (`marketingskills`) → SaaS/web varsayar. Mağaza görseli
   **gerçek ekran**, metindeki rakam **gerçek çıktı** (uydurma sayı yasak);
@@ -136,6 +137,20 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
 - **Riskli yeni davranış bayrakla açılır.** Varsayılanı kapalı Remote Config
   anahtarı (`RemoteConfigService`) arkasında gelir; bayrak kapalıyken eski
   davranış birebir korunur.
+  **Her yeni özellik bayrak istemez** (kullanıcı kuralı 2026-10-17: "her
+  özelliği kapatma, flagli olması gerekirse ben belirteceğim"). Bayrak
+  yasin istediğinde konur; küçük ayar satırı, düzeltme, mevcut veriye
+  dayanan ek bayraksız gelir. Riskli gördüğün yerde bayrağı kendiliğinden
+  koyma; özette öner, yasin karar verir.
+- **Mağaza incelemesi = mağaza kullanıcısı (kullanıcı kuralı 2026-10-14,
+  App Store 2.3.1(a)).** Uygulama nereden kurulduğunu (TestFlight, sandbox
+  makbuzu, simülatör, mağaza; `installerStore`, `appStoreReceiptURL`,
+  Play installer) okumaz, Remote Config'e/sunucuya bildirmez, buna göre
+  dallanmaz. Apple "inceleme ortamını tespit edip RC ile farklı davranma"yı
+  gizli özellik sayıp reddediyor. Bayraklar serbest; test kitlesi **hesapla**
+  seçilir (RC özel sinyali `hesap` = kullanıcı UUID'si, Console koşulu
+  "Test kitlesi"). İnceleme demo hesabı o listeye girmez, mağaza değerlerini
+  alır. Kilit `magaza_inceleme_esitligi_test`.
 - **Canlı veriye dokunulmaz.** Tokyo/Frankfurt projelerinde SQL Editor'dan veri
   değiştirme, toplu silme, canlı secret rotasyonu yok (bkz. "Asla kendiliğinden
   yapma"). Deneme yerel Supabase yığınında (`supabase start` + `seed.sql`) ya da
@@ -149,7 +164,10 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
 İstek atan düğme `SandikAsyncButton`/`SandikAsyncTap`, alt sayfa `showSandikSheet`. Renk yalnızca `context.c.*`, tipografi `context.t.*`, boşluk
 `SandikSpace`, köşe `SandikRadius`, animasyon `SandikMotion.of(context)`. Ham `Colors.*`,
 `Color(0x…)`, `fontSize:`, `Duration(milliseconds:)` ekleme — `design_token_leak_test` ve
-`spacing_scale_test` sayıları **yalnızca azalabilir**. Kart için `SandikCard`, bölüm başlığı
+`spacing_scale_test` sayıları **yalnızca azalabilir**.
+Bölüm başlığı ve etiketler **cümle düzeninde**, ağırlık tavanı **w600**, büyük harf
+için harf aralığı yok (yasin 2026-11-05, unslop; istisna yarış/düello sahneleri ve
+ana sayfa toplam kartı). Yeni metni .arb'a BÜYÜK HARFLE yazma, `ustHarf` kullanma. Kart için `SandikCard`, bölüm başlığı
 için `SandikSectionHeader`; yeni `_SectionTitle` klonu yazma.
 Giriş alanı dolgusu/çerçevesi temadan gelir; ekranda `fillColor` yazma, kendi kutusundaki alana `filled: false` ver (`input_fill_consistency_test`).
 
@@ -194,19 +212,28 @@ soran yerler (hareket listesi, `HistoryService`, dönem hesapları) ham defteri 
 
 **Sunucu.** Şema kaynağı `supabase/migrations/` (kök `supabase_schema.sql` yalnızca nottur).
 Her `SECURITY DEFINER` fonksiyonunda `SET search_path`. GRANT ve RLS ayrı şeylerdir; yeni
-RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 örnek). Cron
-edge function'ları `requireCronSecret()` ile **fail-closed**; secret'sız `if (secret)` bloğu
+RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 örnek).
+**Yeni tablo açık GRANT ister** (Supabase 2026-10-30; 0161): `public`'te yeni tablo/görünüm
+artık anon/authenticated/service_role'e otomatik açılmaz. Tabloyu yaratan migration aynı
+dosyada rol başına izni yazar: istemci okuyorsa `authenticated`, sunucu yazıyorsa
+`service_role`, anon'a yalnız giriş öncesi okunan tabloda; `serial` dizisine `usage, select`.
+Toptan `grant ... to anon` yazma. Kilit `tablo_izinleri_test`; 0000'ın taze-yığın bloğunu silme.
+Cron edge function'ları önce `cronSecretZorunlu()`, sonra `cronYetkisiVarMi()` ile
+**fail-closed** (`cron_fail_closed_test`); secret'sız `if (secret)` bloğu
 yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dönme**.
 
-**İki sunucu birebir (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt Supabase
-projeleri **aynı şemayı** taşır: her migration iki projeye birlikte gider
-(`supabase-deploy.yml` varsayılan hedef `ikisi`, sıra Frankfurt → Tokyo, sonda
-parmak izi kapısı). Panelden/SQL Editor'dan tek projede değişiklik yapma —
-gerekiyorsa migration'a yaz. Eşitlik: `python tool/sema_esitlik.py [--ayrinti]`
-(salt okunur) + günlük `sema-esitlik.yml`. Tek bilinçli fark cron `active`
-bayrağı (geçişe kadar Frankfurt'ta kapalı). `0000_base_schema.sql` Tokyo'nun
-tahminiydi; bir şeyi "Frankfurt'ta var" diye silmeden önce Tokyo'da da var mı bak
-(0077'nin ilk yazımı Tokyo'yu `user_push_tokens` indeksiz bırakacaktı).
+**Tek sunucu: Frankfurt (yasin 2026-11-06, "Tokyo'yu kapatalım").** Canlı proje
+Frankfurt (`ynwymnpdiwudrlxfrmuo`); migration ve fonksiyon yalnız oraya gider
+(`supabase-deploy.yml` varsayılan hedef `frankfurt`). Tokyo (`ybdbzouzhzwthjgwlbmk`)
+18 Ekim geçişinden beri donmuş, duraklatılıp silinecek; yeni işte Tokyo'yu hesaba
+katma. 2026-09-28'deki "iki sunucu birebir" kuralı (hedef `ikisi`, günlük
+`sema-esitlik.yml`, `tool/sema_esitlik.py` kapısı) bununla bitti; eski dokümanlarda
+"iki sunucu" geçen dağıtım adımları artık "Frankfurt" demektir. Panelden/SQL
+Editor'dan şema değiştirme kuralı sürer — gerekiyorsa migration'a yaz.
+Frankfurt Free planda otomatik yedek yok: yerel yedek `tool/yedek/frankfurt_yedek.py`
+(salt okuma; geri yükleme yalnız boş projeye). Uygulamadaki iki sunucu seçimi
+(`SunucuSecimi`, RC `sunucu`) 1.1.6 köprü build'leri için durur: RC `sunucu`
+**`frankfurt`'ta kalır**, `tokyo`'ya çevrilmez.
 
 **Yasal metin tek kaynak (kullanıcı kuralı, 2026-10-04).** Web ve uygulama yasal
 belgeleri her zaman aynı metindir: kaynak `legal/tr/*.md` (çevirisi `legal/en/*.md`);
@@ -219,7 +246,10 @@ ilgili md'yi günceller; "Sürüm" **ve** "Onay sürümü" artar, migration yaz�
 kapısı kullanıcıya sorar. Kişisel veri almayan kaynaklar (fiyat/piyasa verisi) metinde adıyla
 **sayılmaz** — "kamuya açık piyasa verisi sağlayıcıları" grubu kapsar; yeni fiyat kaynağı
 metne dokunmaz (kullanıcı kararı 2026-10-08). Esaslı olmayan düzeltmede yalnız "Sürüm" artar
-(md + migration yine gerekir), kapı açılmaz. Açık Rıza Metni'ne "Onay sürümü" yazılmaz.
+(md + migration yine gerekir), kapı açılmaz. İstisna (kullanıcı kararı 2026-10-13): isteğe bağlı bir
+özelliğin veri aktarımı için rıza **işlemi isteyen kullanıcıdan, ilk kullanımda** alınır
+(özelliğe ait rıza tablosu + RPC, fonksiyon rızasız isteği reddeder; örnek 0145, 0147);
+o zaman "Onay sürümü" artmaz, metne bilgi olarak eklenir ve yalnız "Sürüm" artar. Açık Rıza Metni'ne "Onay sürümü" yazılmaz.
 
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.
@@ -242,7 +272,8 @@ eksikse özellik sessizce görünmez:
    (yalnızca Ayarlar'da).
 2. **Tanıtım turu** → ana yüzeylerden birini değiştiriyorsa
    `onboarding_screen.dart` → `_adimlariKur()` içine adım ekle
-   (`rozet: 'YENİ'`). Tur uygulamanın GÜNCEL hâlini anlatmalı.
+   (`rozet: 'Yeni'`, yalnız o sürümde; sonraki sürümde kaldır, 2026-11-05).
+   Tur uygulamanın GÜNCEL hâlini anlatmalı.
 3. **Yeni `TourTarget` eklediysen** onu bir ekranda `TourAnchor` ile
    işaretle — `onboarding_tour_test` işaretlenmemiş hedefi kırar.
 
@@ -250,6 +281,15 @@ Gösterim kararı `SurumNotuService.yeniNotlar` saf fonksiyonundadır
 (`test/surum_notu_test.dart`): ilk kurulumda gösterilmez, aynı sürüm ikinci
 kez gösterilmez, atlanan sürümler birikir, notu yazılmamış sürümde susar.
 Bu kuralları değiştirirken testi de güncelle.
+
+**TestFlight notu (kullanıcı kuralı, 2026-10-19).** Her PR gövdesinde
+`## TestFlight'ta test et` bölümü olur (şablon `.github/pull_request_template.md`):
+testçinin anlayacağı sade dille (teknik terim, PR numarası, tablo/fonksiyon
+adı yok) ne değişti ve adım adım nasıl denenir, ne görmeli. Uygulamaya
+dokunmayan PR'da bölüm boş kalır. `ios-testflight.yml` → `tool/tf_notu.py`
+build'e giren PR'ların bu bölümünü TestFlight "What to Test" metnine yazar;
+bölümü olmayan uygulama PR'ında başlık son çare olarak görünür. Build'i
+yasin'e haber verirken de aynı dille yaz: ne çözdü, neyi nasıl test etsin.
 
 **Tur metni arayüzle birlikte değişir (kullanıcı kuralı, 2026-09-21).**
 Yukarıdaki üç ayak "tanıtımda göster" dendiğinde çalışır; bu kural
@@ -341,10 +381,22 @@ gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir. İstis
 
 ### Bulut oturumu (Claude Code web / Projects)
 Üç MCP sunucusu ve Flutter `tool/bulut_kurulum.sh` ile kurulur (Project settings ›
-Cloud environment › Setup script: `bash tool/bulut_kurulum.sh`). Sunucular `-s local`
-kapsamında Linux yollarıyla kaydedilir; `.mcp.json`'a dokunulmaz. Bulut grafiği
+Cloud environment › Setup script: `curl -fsSL https://raw.githubusercontent.com/yasincirali/sandikapp/main/tool/bulut_kurulum.sh | bash || true`;
+ortam tüm projelerde ortak). Sunucular Linux yollarıyla hem `-s local` (repo yolunda
+`.mcp.json`'ı ezer) hem `-s user` (thread'ler `/home/user`'da açılır; 2026-10-29) kapsamında
+kaydedilir; `.mcp.json`'a dokunulmaz. Konteynerdeki her repo codebase-memory grafiğine
+indekslenir; kod keşfinde önce graph (`search_graph`, `trace_path`), sonra grep. Betik her
+repodaki `.claude/skills/`'i `~/.claude/skills`'e kopyalar ki thread hangi klasörde açılırsa
+açılsın skill'ler görünsün (aynı ad: sandikapp'inki kalır). Bulut grafiği
 ADR'siz başlar (ADR'ler yerel grafikte). Emülatör yok (KVM yok); doğrulama
 `flutter analyze` + `flutter test`.
+Dördüncü sunucu **perplexity** (resmi `@perplexity-ai/mcp-server`, 2026-10-12;
+web araması/araştırma): yalnız ortamda `PERPLEXITY_API_KEY` varsa kaydedilir;
+anahtar repoya/kayda yazılmaz. Sorgu için ağ politikasında `api.perplexity.ai`
+izinli olmalı. Yerel `.mcp.json`'da yok (yasin isterse kendi makinesine ekler).
+Beşinci sunucu **ruflo** (`ruflo@3.56.10`, eski adı claude-flow; 2026-10-20): ajan/swarm
+orkestrasyonu + kalıcı hafıza, ~360 araç. `-s user` kapsamında kaydedilir ki tüm repolardaki
+thread'ler görsün; sürüm sabit, kendi kendini güncelleme ve daemon kapalı. Yerel `.mcp.json`'da yok.
 
 ---
 **Son güncelleme:** 2026-10-10 (Apple HIG kontrolü kuralı; 2026-10-08: yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat

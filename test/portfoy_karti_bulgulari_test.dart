@@ -131,11 +131,11 @@ void main() {
       await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded).first);
       await tester.pumpAndSettle();
       for (final e in [
-        'MİKTAR',
-        'ORT. MALİYET',
-        'TOPLAM MALİYET',
-        'İLK ALIŞ',
-        'GÜNCEL TUTAR',
+        'Miktar',
+        'Ort. maliyet',
+        'Toplam maliyet',
+        'İlk alış',
+        'Güncel tutar',
       ]) {
         expect(find.text(e), findsOneWidget, reason: e);
       }

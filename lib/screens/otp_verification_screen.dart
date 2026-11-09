@@ -315,7 +315,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 textAlign: TextAlign.center,
                 style: context.t.headlineLarge?.copyWith(
                   fontSize: 26,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text90,
                   letterSpacing: -0.5,
                 ),

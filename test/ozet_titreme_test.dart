@@ -31,7 +31,9 @@ void main() {
   test('Özet serisi bellekten EŞZAMANLI okunur (ilk karede iskelet yok)', () {
     expect(src.contains('_seri = widget.bellek.seriler.oku(_anahtar);'), isTrue,
         reason: 'initState belleği await etmeden okumalı');
-    expect(src.contains('await widget.bellek.seriler.yukle('), isTrue,
+    // 2026-10-19: istek önce alınır, sonra süreyle beklenir (asılı istek
+    // iskelette bırakmasın, `ozet_seri_hatasi_test`) — paylaşım aynı.
+    expect(src.contains('final istek = widget.bellek.seriler.yukle('), isTrue,
         reason: 'ekranın isteği ısıtmayla aynı uçuşan isteği paylaşmalı');
     // Bellekten çizilmiş seri boş tazelemeyle iskelete dönmemeli.
     expect(
@@ -50,7 +52,9 @@ void main() {
   });
 
   test('yan veri ilk ölçüme kadar iskelet; bellekte varsa beklemez', () {
-    expect(src.contains('if (!_hazir) return widget.iskelet;'), isTrue,
+    // 2026-10-14: iskelet → özet `SandikYuklemeGecisi` ile (kapı aynı).
+    expect(src.contains('yukleniyor: !_hazir, iskelet: widget.iskelet'),
+        isTrue,
         reason: 'kartlar özetten sonra belirip listeyi itmesin');
     expect(src.contains('_hazir = bellekte != null;'), isTrue);
     // İskelet sınırlı: ağ yavaşsa özet yine gelir.

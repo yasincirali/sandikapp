@@ -1,61 +1,55 @@
-Altın mı, dolar mı, hisse mi, kripto mu daha çok kazandırdı? sandık hepsini tek ekranda toplar ve sana tek bir şeyi net söyler: gerçekte ne kadar kazandın ve paran fiyatlara yetişti mi.
+Altın, dolar, fon ve hisse tek yerde. Enflasyonu geçip geçmediğini ve gerçek kârını gör.
+10 varlığa kadar ücretsiz; raporlar ve sınırsız takip Premium'da, yıllıkta 7 gün ücretsiz dene.
 
-Çoğu takip uygulaması alış fiyatını bugünkü fiyattan çıkarır ve buna "kâr" der. sandık komisyonu maliyete ekler, aldığın temettüyü kazanca yazar, eklediğin paranın ne zaman girdiğini hesaba katar. Gördüğün rakam, cebindeki rakamdır.
+Çoğu takip uygulaması alış fiyatını bugünkü fiyattan çıkarır ve buna "kâr" der. sandık komisyonu maliyete ekler, aldığın temettüyü kazanca yazar. Gördüğün rakam, cebindeki rakamdır.
 
-ENFLASYONA KARŞI GERÇEK GETİRİ
-• "Paran fiyatlara yetişiyor mu?" Geçen yılki 100 liranın bugün kaç lira ettiği her gün ana ekranda
-• Portföyün TÜİK'in açıkladığı TÜFE ile yan yana: kaç puan önde ya da geride olduğun ve hangi aylar arasında ölçüldüğü
-• Veri TÜİK ve TCMB kaynaklı
-
-HEPSİ TEK PORTFÖYDE
-• BIST hisseleri ve TEFAS fonları
-• ABD hisseleri ve ETF'ler; fiyat dolar, portföyde güncel kurla TL
-• Kripto: Türk lirası paritesi olan tüm coin'ler ve en çok işlem gören 250 coin
-• Döviz, altın (gram, çeyrek, yarım, tam, Cumhuriyet, ata), gümüş ve emtia
-• Eurobond: işlemiş faiz, vadeye getiri ve sıradaki kupon
-• Vadeli mevduat (stopajı düşülmüş net getiri) ve BES
+TAKİP
+• Hisse (BIST), yatırım fonu (TEFAS), döviz, altın, gümüş ve emtia tek toplamda
 • Fiyatlar kendiliğinden güncellenir; istersen kendi fiyatını girersin
+• Geçmiş tarihli alım gir ya da aracı kurum ekstresini yapıştırıp tek seferde içe aktar
+• Eşinle, ailenle veya iş ortağınla ortak portföy; herkesin katkısı ayrı hesaplanır
 
-KOLAY KAYIT
-• Ekstreden içe aktar: aracı kurumunun ya da bankanın PDF, Excel veya CSV ekstresini seç, sütunları sandık bulur
-• THYAO, Apple, BTC ya da ISIN yaz, varlığın türünü uygulama bulsun
-• Geçmiş tarihli alım gir; döviz varlıklarda alım günündeki kur kullanılır
-• Hissenin son 12 aylık temettüsü hazır gelir, yalnızca onaylarsın
+GERÇEK GETİRİ
+• Portföyün TÜİK'in açıkladığı TÜFE ile yan yana: 1 ay, 6 ay, 1 yıl
+• Senin getirin, enflasyon ve aradaki fark ayrı ayrı; geçtiysen yeşil, geçemediysen kırmızı
+• Veri TÜİK/TCMB kaynaklı, uydurma değil
+• Komisyon maliyete, nakit temettü kazanca yazılır; satıştan gerçekleşen kâr ayrı görünür
 
-GERÇEK KÂR/ZARAR
-• Alım komisyonu maliyete dahil, nakit temettüler kazanca yazılır
-• Masraflar kartı: komisyon, temettü stopajı, fon yönetim ücreti, altın ve dövizde alış-satış makası
-• Satışlardan gerçekleşen kâr ayrı görünür
+ALTIN VE DÖVİZ
+• Gram, çeyrek, yarım, tam, Cumhuriyet ve ata altın; USD, EUR, GBP
+• Altın ve dövizde "Bozdurursan / Alırsan" iki fiyat: kuyumcu farkını baştan gör
+• "5 çeyrek kaç TL?" Aramaya yaz, canlı fiyattan gör
+• Tutarları TL, USD, EUR veya gram altın bazında göster
 
-HER GÜN
-• Bugün kartı: günün özeti tek kelimeyle, gün içi eğri, en çok oynayan varlıkların ve hedefine kalan yol
-• Fiyat alarmı: hedef fiyata gelince bildirim
-• Sabah brifingi ve haftalık özet bildirimleri; sessiz saatleri sen seçersin
-• Kilit ekranı widget'ı, Dinamik Ada ve ana ekran widget'ı
+GRAFİK
+• Çizgi veya mum, hareketli ortalama, pinch zoom; gün, hafta, ay, yıl
+• Telefonu yan çevir: tam ekran grafikte trend çizgisi, yatay seviye ve dikdörtgen çiz
+• Çizdiğin grafiği paylaş
+• Portföyünü BIST 100, dolar ve altınla karşılaştır; hangi varlık ne kadar katkı yaptı, gör
 
-GRAFİK VE ANALİZ
-• Çizgi ya da mum grafik, EMA50 ve EMA200, logaritmik ölçek; aralık 1 dakikadan 1 aya
-• Gün, hafta, ay, yıl: istediğin aralıkta getiri
-• Portföyünü BIST 100, dolar ve altınla karşılaştır; almadığın varlıkları takip listesinde izle
-• Teknik göstergeler (RSI, MACD, Bollinger) sade bir özetle
-• Fon karnesi: fonun kendi kategorisindeki sırası ve ortancaya farkı
-• Halka arz takvimi; "Katıldım" dediğin lot portföyüne eklenir
-• Tutarları TL, USD, EUR ya da gram altın olarak gör
+BİLDİRİM VE WIDGET
+• Fiyat alarmı: hedef fiyata gelince bildirim; istersen her geçişte yeniden çalar
+• Altın, döviz ve kriptoda günlük yüzde alarmı: "bugün %2 oynarsa haber ver"
+• Kurduğun alarm varlık grafiğinde çizgi olarak görünür
+• Sabah brifingi ve haftalık özet; sessiz saatler senin elinde
+• Altın, dolar ya da istediğin fon için tek varlık widget'ı: ana ekranda ve kilit ekranında
+• Vitrin widget'ı: üç varlık alt alta, fiyat ve günlük değişim
+• Ana ekran widget'ı ve kilit ekranı canlı etkinliği
 
-ORTAK PORTFÖY VE PAYLAŞIM
-• Eşinle, ailenle ya da iş ortağınla aynı portföy; herkesin katkısı ayrı hesaplanır
-• Zirvedeki portföyler: dönemin en çok kazanan anonim portföyleri ve senden farkları. Katılım isteğe bağlı
-• Dönem özetini görsel kartla paylaş; kartta tutar görünmez, yalnızca yüzde
-• Aynı telefonda 5 hesaba kadar, şifre sormadan hesap değiştir
+Apple ile giriş, Face ID kilidi, bakiyeni tek dokunuşla gizleme. Hesabını ve tüm verini istediğin an silersin. KVKK ve GDPR uyumlu.
 
-GİZLİLİK VE GÜVENLİK
-• Apple veya Google ile giriş
-• Face ID / Touch ID kilidi; bakiyeni tek dokunuşla gizle
-• Uygulama, açık uygulamalar ekranında kendini gizler
-• Hesabını ve tüm verini istediğin an sil; verini JSON olarak indir
-• KVKK ve GDPR uyumlu
+PREMİUM (isteğe bağlı abonelik)
+• Sınırsız varlık, takip listesi, alarm, ortak ve portföy
+• Yıllık rapor, PDF ve Excel dışa aktarma, temettü tahmini
+• Fon X-Ray ve kalem kalem masraf dökümü
+• 8 teknik gösterge, sınırsız sinyal bildirimi, kendi göstergen (Pine)
+• Para akışı 8 hafta, hacim radarı 20 gün, haftalık notun tamamı, aylık rapor
+• Zirve'ye yeni katılım ve ilk portföyün dağılımı
+Ücretsiz katman portföy takibi için yeterlidir; Premium aylık ya da yıllık, yıllıkta 7 gün ücretsiz deneme. Fiyat satın alma ekranında yazar.
 
 Sandığını aç, ne kazandığını gör.
+
+Uygulamayı ararken "sandik" veya "sandık" — ikisi de bizi bulur.
 
 ---
 sandık yatırım tavsiyesi vermez. Gösterilen veriler bilgi amaçlıdır; yatırım kararlarınızda profesyonel danışmanlık alınız.

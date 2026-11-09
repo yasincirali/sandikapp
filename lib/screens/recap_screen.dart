@@ -40,7 +40,9 @@ class RecapScreen extends StatefulWidget {
   static Future<void> show(BuildContext context, RecapData d, int year) async {
     unawaited(AnalyticsService.instance.logRecapViewed(period: d.period));
     await Navigator.of(context).push(
-      adaptiveRoute<void>(builder: (_) => RecapScreen(data: d, year: year)),
+      adaptiveRoute<void>(
+          settings: const RouteSettings(name: 'recap'),
+          builder: (_) => RecapScreen(data: d, year: year)),
     );
     // Özet kapandı. Yıl artıdaysa değerlendirme istemi: kullanıcı az önce
     // kendi iyi yılını izledi. Ekside ("zor bir yıl" sayfası) sorulmaz;
@@ -59,11 +61,18 @@ class _RecapScreenState extends State<RecapScreen> {
   List<_Sayfa> _sayfalar(BuildContext context) {
     final d = widget.data;
     final c = context.c;
+    // Kapsam (yasin 2026-11-07, "zaman aralığı belirtilmeli"): başlık
+    // takvim yılını söyler; özetin ÖLÇTÜĞÜ günler ilk ve son anlık
+    // görüntüdür (yıl ortasında başlayan kullanıcı, süren yıl). Açılış ve
+    // portföy sayfası aralığı açık tarihle yazar.
+    final kapsam = (d.olcumBaslangic != null && d.olcumBitis != null)
+        ? '\n${context.l10n.raporKapsam(fmtTarihAraligi(d.olcumBaslangic!, d.olcumBitis!, dil: context.tarihDili))}'
+        : '';
     final out = <_Sayfa>[
       _Sayfa(
         ustBaslik: context.l10n.recapInYear(widget.year),
         baslik: context.l10n.recapTitle,
-        altBaslik: context.l10n.recapSubtitle,
+        altBaslik: context.l10n.recapSubtitle + kapsam,
         ikon: Icons.auto_stories_rounded,
         renk: c.amberText,
       ),
@@ -81,9 +90,11 @@ class _RecapScreenState extends State<RecapScreen> {
       final artis = d.changePct! >= 0;
       out.add(_Sayfa(
         ustBaslik: context.l10n.recapYourPortfolio,
-        baslik:
-            '${artis ? '+' : '−'}%${fmtNum(d.changePct!.abs(), digits: 1)}',
-        altBaslik: artis ? context.l10n.recapGrewThisYear : context.l10n.recapToughYear,
+        baslik: '${artis ? '+' : '−'}%${fmtNum(d.changePct!.abs(), digits: 1)}',
+        altBaslik: (artis
+                ? context.l10n.recapGrewThisYear
+                : context.l10n.recapToughYear) +
+            kapsam,
         ikon: artis ? Icons.trending_up_rounded : Icons.trending_down_rounded,
         renk: artis ? c.gain : c.loss,
       ));
@@ -130,8 +141,8 @@ class _RecapScreenState extends State<RecapScreen> {
         // "Yılın en iyisi" DEĞİL: elimizdeki ömürlük getiri, döneme ait
         // değil. Üç yıl önce alınmış bir varlığı "yılın yıldızı" diye
         // sunmak yanlış olurdu.
-        altBaslik:
-            context.l10n.recapReturnedPct(fmtNum(d.bestAsset!.changePct, digits: 1)),
+        altBaslik: context.l10n
+            .recapReturnedPct(fmtNum(d.bestAsset!.changePct, digits: 1)),
         ikon: Icons.workspace_premium_rounded,
         renk: c.gain,
       ));
@@ -312,8 +323,7 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
       padding: const EdgeInsets.only(bottom: 20),
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+        child: SandikTappable(
           onTap: () => RecapScreen.show(context, d, yil),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -336,8 +346,7 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
                       const SizedBox(height: 2),
                       Text(
                         context.l10n.recapCardSubtitle(d.character.label),
-                        style:
-                            context.t.bodyMedium?.copyWith(color: c.text58),
+                        style: context.t.bodyMedium?.copyWith(color: c.text58),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -375,8 +384,8 @@ Future<RecapData?> yillikOzetVerisi({
 
   List<({int ts, Map<String, double> values})> snapshots = const [];
   try {
-    snapshots = await SupabaseService.instance
-        .fetchSnapshots(baslangic, userId: me.id);
+    snapshots =
+        await SupabaseService.instance.fetchSnapshots(baslangic, userId: me.id);
   } catch (_) {
     // Snapshot çekilemezse özet yine kurulur; yalnızca değişim sayfası
     // eksilir. Boş dönmek, özeti tamamen kaçırmaktan iyidir.

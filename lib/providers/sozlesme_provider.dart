@@ -147,6 +147,8 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     required int? vadeGun,
     String not = '',
     String? portfoyId,
+    // Ölçüm (`asset_added.yol`): ekstreden açılan mevduat `ekstre`.
+    String yol = 'form',
   }) async {
     final uid = _kullanici();
     final bas = dayKey(baslangic);
@@ -194,7 +196,9 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     await SupabaseService.instance.insertSozlesme(s);
     try {
       await SupabaseService.instance.insertMevduatDonemi(d, uid);
-      await ref.read(portfolioProvider.notifier).sozlesmeLotlariniEkle([lot]);
+      await ref
+          .read(portfolioProvider.notifier)
+          .sozlesmeLotlariniEkle([lot], yol: yol);
     } catch (_) {
       await _geriAl(s.id);
       rethrow;
@@ -609,6 +613,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
                         adUret(s, kod, devlet: devlet),
                     not: not,
                   ),
+                  yol: 'otomatik',
                 );
             sonYazilan = gun;
             eklenen.add((sozlesmeId: s.id, gun: gun, tutar: tutar));

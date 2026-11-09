@@ -18,13 +18,14 @@ import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/fiyat_kaynagi.dart';
 import '../services/price_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/son_bakilanlar.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_katla.dart';
 import '../widgets/sinir_uyarisi.dart';
+import '../widgets/tur_filtre_cipleri.dart';
 import '../widgets/varlik_rozeti.dart';
 import '../widgets/sandik_async_button.dart';
 import 'varlik_sayfasi.dart';
@@ -285,9 +286,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                       else
                         for (final g in gruplar) ...[
                           _Baslik(SandikSectionHeader(
-                            title: buyukHarf(g.tur.labelOf(context.l10n),
-                                turkce: context.l10n.localeName
-                                    .startsWith('tr')),
+                            title: g.tur.labelOf(context.l10n),
                             trailing: g.kisaltildi
                                 ? _MetinDugmesi(
                                     metin: context.l10n.searchShowAll(g.toplam),
@@ -603,7 +602,7 @@ String? aramaSembolEtiketi(VarlikKimligi c) {
 String? aramaFiyatMetni(VarlikKimligi c, YahooQuote? q) {
   final f = q?.regularMarketPrice;
   if (f == null || !f.isFinite || f <= 0) return null;
-  if (bistEndeksiMi(c.ticker)) {
+  if (endeksMi(c.ticker)) {
     return fmtNum(f, digits: 0);
   }
   // Ondalık [fiyatBicimi]'nden (sabit 2 hane: SHIB "₺0,00").
@@ -671,19 +670,29 @@ class _TurCipi extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-        selected: secili,
-        child: SandikTappable(
-          onTap: onTap,
-          semanticLabel: metin,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: SandikTouch.min),
-            padding: const EdgeInsets.only(right: SandikSpace.xs2),
-            alignment: Alignment.center,
-            child: _CipGovdesi(metin: metin, secili: secili),
-          ),
-        ),
+  Widget build(BuildContext context) {
+    // `goz_alici` (seçici denetimi 2026-10-12): uygulamanın tek süzme çipi.
+    if (RemoteConfigService.instance.gozAlici) {
+      return Padding(
+        padding: const EdgeInsets.only(right: SandikSpace.xs2),
+        child: SandikFiltreCipi(ad: metin, secili: secili, onTap: onTap),
       );
+    }
+    // "Seçili" bilgisi etiketle AYNI düğümde (HIG, 2026-10-12): dışta ayrı
+    // bir `Semantics(selected:)` VoiceOver'a iki düğüm okutuyordu.
+    return SandikTappable(
+      onTap: onTap,
+      selected: secili,
+      semanticLabel: metin,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: SandikTouch.min),
+        padding: const EdgeInsets.only(right: SandikSpace.xs2),
+        alignment: Alignment.center,
+        child: ExcludeSemantics(
+            child: _CipGovdesi(metin: metin, secili: secili)),
+      ),
+    );
+  }
 }
 
 class _CipGovdesi extends StatelessWidget {

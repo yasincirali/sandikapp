@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/generated/app_localizations_tr.dart';
+import '../l10n/l10n.dart';
+import '../services/gorunen_hata.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -22,6 +25,11 @@ import '../widgets/custom_loading_indicator.dart';
 /// kullanıyorsa ikinci yarısı ona denemesi gereken şeyi söyler. Kesin
 /// olmayan bir teşhisi kesinmiş gibi yazmak ("VPN'inizi kapatın"), VPN'i
 /// olmayan kullanıcıyı yanlış yere bakmaya gönderirdi.
+///
+/// Dil (2026-11-08): ekranda gösterilen metin artık `hataBaglanti`
+/// anahtarından gelir; bu sabit TÜRKÇE metnin kaydı olarak durur ve
+/// `ortak_bilesen_ingilizce_test` iki metnin bayt bayt aynı kaldığını kilitler
+/// (eski testler ve destek akışı bu sabite bakıyor).
 const String kBaglantiHatasiMesaji =
     'Bağlantı kurulamadı. İnternetini kontrol et; '
     'VPN kullanıyorsan kapatıp tekrar dene.';
@@ -88,15 +96,33 @@ bool baglantiHatasiMi(Object? error) {
   return false;
 }
 
-/// Teknik hatayı kullanıcı dostu Türkçe mesaja çevirir.
+/// Teknik hatayı kullanıcı dostu mesaja çevirir.
 ///
 /// UI'da `Text('Hata: $e')` yerine `Text(friendlyError(e))` kullan —
 /// SocketException, TimeoutException, AuthApiException gibi düşük seviye
 /// mesajları kullanıcıya gösterme.
 ///
 /// `verbose: true` debug için orijinal mesajı parantez içinde ekler.
-String friendlyError(Object? error, {bool verbose = false}) {
-  if (error == null) return 'Bilinmeyen bir hata oluştu.';
+///
+/// ## Dil (rapor 2026-11-08 02:30 #3)
+/// İngilizce seçen kullanıcı ortak hata metnini Türkçe görüyordu. En sık
+/// görünen genel mesajlar (bağlantı, bilinmeyen, genel, veri, yetki, dosya,
+/// oturum, çok deneme, işlem tamamlanamadı) artık [l10n]'dan gelir.
+/// [l10n] verilmezse TÜRKÇE: `context.l10n`'un delegate'siz geri dönüşüyle
+/// aynı kural (`l10n.dart`). Servis katmanı, isolate ve testler gibi
+/// bağlamsız çağıranlar bugünkü Türkçe metni bayt bayt aynı alır; bağlamı
+/// olan ortak bileşenler (`SandikErrorView`, `sandikSnackError`,
+/// `showAppError`) `context.l10n` geçirir. Global bir "şu anki dil" durumu
+/// bilerek kurulmadı: hata metninin dili çağıranın ağacından gelsin, test
+/// sırası ya da dil değişimi anında eski değer kalmasın.
+/// Kalan özel mesajlar (giriş/kayıt ayrıntıları) sonraki turlarda.
+String friendlyError(
+  Object? error, {
+  bool verbose = false,
+  AppLocalizations? l10n,
+}) {
+  final l = l10n ?? AppLocalizationsTr();
+  if (error == null) return l.hataBilinmeyen;
 
   String message;
 
@@ -108,26 +134,26 @@ String friendlyError(Object? error, {bool verbose = false}) {
   if (error is KullaniciMesajli && error.message.trim().isNotEmpty) {
     message = error.message.trim();
   } else if (baglantiHatasiMi(error)) {
-    message = kBaglantiHatasiMesaji;
+    message = l.hataBaglanti;
   } else if (error is FormatException) {
-    message = 'Sunucudan gelen veri okunamadı.';
+    message = l.hataVeriOkunamadi;
   } else if (error is AuthApiException) {
-    message = _authMessage(error.message);
+    message = _authMessage(error.message, l);
   } else if (error is AuthException) {
-    message = _authMessage(error.toString());
+    message = _authMessage(error.toString(), l);
   } else if (error is PostgrestException) {
     // RLS/permission veya constraint hatası
     if (error.code == '23505') {
-      message = 'Bu kayıt zaten var.';
+      message = l.hataKayitVar;
     } else if (error.code == '42501' || error.message.contains('permission')) {
-      message = 'Bu işlem için yetkin yok.';
+      message = l.hataYetkiYok;
     } else {
-      message = 'Veri işlemi başarısız oldu.';
+      message = l.hataVeriIslemi;
     }
   } else if (error is StorageException) {
-    message = 'Dosya işlemi başarısız oldu.';
+    message = l.hataDosyaIslemi;
   } else {
-    message = _humanize(error.toString());
+    message = _humanize(error.toString(), l);
   }
 
   if (verbose) {
@@ -136,7 +162,34 @@ String friendlyError(Object? error, {bool verbose = false}) {
   return message;
 }
 
-String _authMessage(String raw) {
+/// [friendlyError]'in hangi dala düştüğü: kısa, sabit ASCII kod.
+///
+/// Neden (2026-10-24, hata ekranında "bize yaz"): destek e-postasına hata
+/// METNİ değil yalnız SINIFI yazılır. Ham hata metni sunucu yanıtı, sembol,
+/// tutar ya da e-posta taşıyabilir; kullanıcı onu kendi adıyla göndermiş
+/// olurdu. Sınıf ise "bağlantı mı, yetki mi, bizim hatamız mı" sorusuna
+/// yeter. Sıra [friendlyError] ile AYNI; ikisi ayrışırsa e-postadaki sınıf
+/// ekranda görülen mesajla çelişir (`destek_maili_test` kilitli).
+String hataSinifi(Object? error) {
+  if (error == null) return 'bilinmeyen';
+  if (error is KullaniciMesajli && error.message.trim().isNotEmpty) {
+    return 'uygulama_mesaji';
+  }
+  if (baglantiHatasiMi(error)) return 'baglanti';
+  if (error is FormatException) return 'veri_okuma';
+  if (error is AuthException) return 'kimlik';
+  if (error is PostgrestException) {
+    if (error.code == '23505') return 'kayit_var';
+    if (error.code == '42501' || error.message.contains('permission')) {
+      return 'yetki';
+    }
+    return 'veri_islemi';
+  }
+  if (error is StorageException) return 'dosya';
+  return 'diger';
+}
+
+String _authMessage(String raw, AppLocalizations l) {
   final lower = raw.toLowerCase();
   if (lower.contains('invalid login credentials') ||
       lower.contains('invalid_credentials') ||
@@ -154,14 +207,14 @@ String _authMessage(String raw) {
     return 'Kullanıcı bulunamadı.';
   }
   if (lower.contains('too many requests') || lower.contains('rate limit')) {
-    return 'Çok fazla deneme. Lütfen birkaç dakika sonra tekrar dene.';
+    return l.hataCokDeneme;
   }
   if (lower.contains('weak password') || lower.contains('password should')) {
     // AuthService.validatePassword ile aynı kural: 8 karakter + harf + rakam.
     return 'Şifre çok zayıf. En az 8 karakter, bir harf ve bir rakam kullan.';
   }
   if (lower.contains('jwt expired') || lower.contains('token expired')) {
-    return 'Oturumun süresi doldu. Tekrar giriş yap.';
+    return l.hataOturumDoldu;
   }
   // Girdi kaynaklı sunucu retleri (2026-09-29): kayıt formu bunları artık
   // basmadan önce gösteriyor, ama istemci kuralı sunucudan geride kalırsa
@@ -178,17 +231,19 @@ String _authMessage(String raw) {
   // bu metne düşülüyor, kullanıcı "kayıt olurken neden giriş?" diye
   // okuyordu (prod, 2026-09-29: "Kayıt hatası: Giriş işlemi başarısız
   // oldu"). Metin akıştan bağımsız.
-  return 'İşlem tamamlanamadı. Biraz sonra tekrar dene.';
+  return l.hataIslemTamamlanamadi;
 }
 
 /// Marka renkli hata dialogu.
 void showAppError(BuildContext context, Object? error) {
   if (!context.mounted) return;
+  // Hatayı gören kullanıcıya bu oturumda puan sorulmaz (`GorunenHata`).
+  GorunenHata.kaydet();
   showSandikDialog(
     context: context,
     kind: SandikDialogKind.error,
-    title: 'Hata',
-    message: friendlyError(error),
+    title: context.l10n.hataBaslik,
+    message: friendlyError(error, l10n: context.l10n),
   );
 }
 
@@ -296,6 +351,7 @@ Future<bool> showSandikConfirm({
                 ),
               ]
             : null,
+        actionLabels: [cancelLabel, confirmLabel],
         asyncActions: islem == null
             ? null
             : _OnayIslemEylemleri(
@@ -338,6 +394,112 @@ Future<T?> showSandikGecisli<T>({
   );
 }
 
+/// Marka diyalog kartının zemini — onay/bilgi kabuğu ([_SandikDialogShell])
+/// ve özel içerikli kabuk ([SandikDiyalogKabugu]) AYNI kartı çizer; yüzey,
+/// köşe, vurgu kenarı ve gölge tek yerde.
+BoxDecoration _diyalogKarti(BuildContext context, Color accent) =>
+    BoxDecoration(
+      color: context.isLight ? context.c.surface2 : context.c.surface1,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: accent.withValues(alpha: 0.30)),
+      boxShadow: [
+        BoxShadow(
+          color:
+              context.c.golge.withValues(alpha: context.isLight ? 0.14 : 0.35),
+          blurRadius: 30,
+          spreadRadius: -6,
+          offset: const Offset(0, 12),
+        ),
+        BoxShadow(
+          color: accent.withValues(alpha: 0.18),
+          blurRadius: 40,
+          spreadRadius: -12,
+        ),
+      ],
+    );
+
+/// Kendi içeriğini çizen diyaloğun marka kabuğu: [showSandikGecisli] ile
+/// açılır, içine form/metin/düğme konur.
+///
+/// ## Neden (Ar-Ge 5 Kas 22:40 #7, TASARIM_DILI §6.6)
+/// Geçiş markanınkiydi ama kart Material'ındı: Ayarlar'daki şifre ve yasal
+/// uyarı diyaloğu, temettü ve hızlı al/sat `AlertDialog`/`Dialog` kabuğunda
+/// açılıyordu — başka köşe, başka yüzey, vurgu kenarı ve gölge yok. Aynı
+/// uygulamada iki diyalog görünüşü yan yanaydı. Bu kabuk onay/bilgi
+/// diyaloğunun kartını ([_diyalogKarti]) paylaşır; içerik çağıranda kalır.
+///
+/// - **Klavye:** `AlertDialog`/`Dialog` klavye açılınca yukarı kayıyordu
+///   (`viewInsets`); bu kabuk da kayar, yoksa otomatik odaklı alanın
+///   altındaki "Kaydet" klavyenin arkasında kalırdı.
+/// - **Kaydırma:** [kaydir] açıkken (varsayılan) tüm kart kayar; başlığı ve
+///   düğme satırını sabit tutmak isteyen içerik [kaydir] `false` verip
+///   gövdesini kendisi `Flexible` + kaydırma içine alır (kart yüksekliği
+///   ekranla sınırlıdır).
+class SandikDiyalogKabugu extends StatelessWidget {
+  const SandikDiyalogKabugu({
+    super.key,
+    required this.child,
+    this.vurgu,
+    this.kaydir = true,
+    this.padding = const EdgeInsets.fromLTRB(24, 24, 24, 16),
+  });
+
+  final Widget child;
+
+  /// Kenar ve hale rengi. Verilmezse marka vurgusu (`amberText`); işlem
+  /// diyaloğu kendi anlamını verir (alış yeşil, satış kırmızı).
+  final Color? vurgu;
+  final bool kaydir;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final kart = Container(
+      constraints: const BoxConstraints(maxWidth: 360),
+      padding: padding,
+      decoration: _diyalogKarti(context, vurgu ?? context.c.amberText),
+      child: child,
+    );
+    return _KlavyePayi(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: SandikSpace.md,
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: kaydir ? SingleChildScrollView(child: kart) : kart,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Klavye açıkken diyaloğu klavyenin üstüne iter (`Dialog`'un
+/// `viewInsets` davranışı). `showGeneralDialog` sayfası bunu kendisi yapmaz;
+/// onay diyaloğuna alan (`detail`) konunca düğmeler klavyenin arkasında
+/// kalıyordu. Klavye yokken pay sıfır — görünüş değişmez.
+class _KlavyePayi extends StatelessWidget {
+  const _KlavyePayi({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AnimatedPadding(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        duration: SandikMotion.press,
+        curve: SandikMotion.enter,
+        child: MediaQuery.removeViewInsets(
+          context: context,
+          removeBottom: true,
+          child: child,
+        ),
+      );
+}
+
 /// Perde rengi — aydınlıkta hafif, karanlıkta koyu; iki dialog da bunu kullanır.
 /// Ton düz siyah değil, marka yeşiline çalar (`SandikPalette.golge`).
 Color _barrierColor(BuildContext context) =>
@@ -353,6 +515,7 @@ class _SandikDialogShell extends StatelessWidget {
     required this.title,
     required this.message,
     required this.actions,
+    this.actionLabels,
     this.detail,
     this.asyncActions,
   });
@@ -364,77 +527,77 @@ class _SandikDialogShell extends StatelessWidget {
   final Widget? detail;
   final List<Widget>? actions;
 
+  /// [actions] etiketleri, aynı sırada — eylem satırı sığma ölçümü.
+  final List<String>? actionLabels;
+
   /// [actions] yerine: kendi meşgul durumunu taşıyan eylem satırı
   /// (`showSandikConfirm(islem:)`).
   final Widget? asyncActions;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 360),
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-            decoration: BoxDecoration(
-              color: context.isLight ? context.c.surface2 : context.c.surface1,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: accent.withValues(alpha: 0.30)),
-              boxShadow: [
-                BoxShadow(
-                  color: context.c.golge
-                      .withValues(alpha: context.isLight ? 0.14 : 0.35),
-                  blurRadius: 30,
-                  spreadRadius: -6,
-                  offset: const Offset(0, 12),
-                ),
-                BoxShadow(
-                  color: accent.withValues(alpha: 0.18),
-                  blurRadius: 40,
-                  spreadRadius: -12,
-                ),
-              ],
+    // Güvenli alan + kaydırma: büyük metin ölçeğinde ya da yatay küçük
+    // ekranda kart ekran yüksekliğini aşarsa alt kısmı (düğmeler!) kesilip
+    // ulaşılamaz oluyordu. Sığdığında kaydırma görünmez, kart ortada kalır.
+    return _KlavyePayi(
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: SandikSpace.md,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent.withValues(alpha: 0.35)),
-                  ),
-                  child: Icon(icon, color: accent, size: 30),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 360),
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+                decoration: _diyalogKarti(context, accent),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border:
+                            Border.all(color: accent.withValues(alpha: 0.35)),
+                      ),
+                      child: Icon(icon, color: accent, size: 30),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: context.t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.c.text90,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: context.t.bodyMedium?.copyWith(
+                        height: 1.4,
+                        color: context.c.text58,
+                      ),
+                    ),
+                    if (detail != null) ...[
+                      const SizedBox(height: 14),
+                      detail!,
+                    ],
+                    const SizedBox(height: 20),
+                    asyncActions ??
+                        _EylemSatiri(
+                          actions: actions ?? const [],
+                          labels: actionLabels ?? const [],
+                        ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: context.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text90,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: context.t.bodyMedium?.copyWith(
-                    height: 1.4,
-                    color: context.c.text58,
-                  ),
-                ),
-                if (detail != null) ...[
-                  const SizedBox(height: 14),
-                  detail!,
-                ],
-                const SizedBox(height: 20),
-                asyncActions ?? _EylemSatiri(actions: actions ?? const []),
-              ],
+              ),
             ),
           ),
         ),
@@ -443,21 +606,70 @@ class _SandikDialogShell extends StatelessWidget {
   }
 }
 
+/// Eylem satırı: düğmeler yan yana sığmıyorsa ALT ALTA dizilir.
+///
+/// Eskiden her zaman `Row` + `Expanded` idi ve düğme yüksekliği 46 sabitti.
+/// Büyük metin ölçeğinde (Dynamic Type) "Oturumu kapat" yarım genişliğe
+/// sığmayıp iki satıra kırılıyor, ikinci satır kutunun dışına taşıp
+/// kesiliyordu (kilit ekranı, iPhone ekran görüntüsü 2026-10-15). iOS
+/// uyarıları da aynı şeyi yapar: etiket sığmazsa düğmeler dikey yığılır.
+/// Karar etiketin TEK SATIR genişliğiyle verilir; yığında onay üstte,
+/// vazgeç altta (HIG: iptal en altta, başparmağa yakın).
 class _EylemSatiri extends StatelessWidget {
-  const _EylemSatiri({required this.actions});
+  const _EylemSatiri({required this.actions, required this.labels});
 
   final List<Widget> actions;
 
+  /// [actions] ile aynı sırada etiketler — sığma ölçümü için.
+  final List<String> labels;
+
+  static const double _aralik = SandikSpace.sm2;
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < actions.length; i++) ...[
-          if (i > 0) const SizedBox(width: 10),
-          Expanded(child: actions[i]),
-        ],
-      ],
-    );
+    if (actions.length < 2) {
+      return Row(children: [for (final a in actions) Expanded(child: a)]);
+    }
+    return LayoutBuilder(builder: (context, constraints) {
+      final yarim = (constraints.maxWidth - _aralik * (actions.length - 1)) /
+              actions.length -
+          _DialogButton.yatayDolgu * 2;
+      final stil = _DialogButton.etiketStili(context, null);
+      final scaler = MediaQuery.textScalerOf(context);
+      final sigmiyor = labels.any((l) {
+        final tp = TextPainter(
+          text: TextSpan(text: l, style: stil),
+          textDirection: Directionality.of(context),
+          textScaler: scaler,
+          maxLines: 1,
+        )..layout();
+        final w = tp.width;
+        tp.dispose();
+        return w > yarim;
+      });
+      if (sigmiyor) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = actions.length - 1; i >= 0; i--) ...[
+              actions[i],
+              if (i > 0) const SizedBox(height: _aralik),
+            ],
+          ],
+        );
+      }
+      return IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < actions.length; i++) ...[
+              if (i > 0) const SizedBox(width: _aralik),
+              Expanded(child: actions[i]),
+            ],
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -510,7 +722,10 @@ class _OnayIslemEylemleriState extends State<_OnayIslemEylemleri> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !_mesgul,
-      child: _EylemSatiri(actions: [
+      child: _EylemSatiri(labels: [
+        widget.cancelLabel,
+        widget.confirmLabel,
+      ], actions: [
         Opacity(
           opacity: _mesgul ? 0.5 : 1,
           child: _DialogButton(
@@ -560,18 +775,34 @@ class _DialogButton extends StatelessWidget {
   /// `null` → dokunuşu sarmalayan alır (ör. [SandikAsyncTap]).
   final VoidCallback? onTap;
 
+  /// Etiketin kutu içi yatay boşluğu — [_EylemSatiri] sığma ölçümü de
+  /// bunu düşer.
+  static const double yatayDolgu = SandikSpace.smd;
+
+  static TextStyle? etiketStili(BuildContext context, Color? color) =>
+      context.t.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: color);
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 46,
-      child: SandikBasma(
-        behavior: HitTestBehavior.opaque,
+    // Yükseklik sabit DEĞİL, en az 46: büyük metinde etiket kırılırsa kutu
+    // büyür, metin kesilmez (eskiden `SizedBox(height: 46)` ikinci satırı
+    // kırpıyordu). 46 ≥ 44 pt dokunma alanı korunur.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 46),
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: onTap,
         child: Semantics(
           button: true,
           label: label,
+          excludeSemantics: true,
           child: Container(
             alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(
+              horizontal: yatayDolgu,
+              vertical: SandikSpace.sm,
+            ),
             decoration: BoxDecoration(
               color: filled ? color.withValues(alpha: 0.14) : null,
               borderRadius: SandikRadius.mdAll,
@@ -586,10 +817,8 @@ class _DialogButton extends StatelessWidget {
                   opacity: mesgul ? 0 : 1,
                   child: Text(
                     label,
-                    style: context.t.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
+                    textAlign: TextAlign.center,
+                    style: etiketStili(context, color),
                   ),
                 ),
                 if (mesgul)
@@ -619,6 +848,7 @@ Future<void> showSandikDialog({
   required String title,
   required String message,
   String actionLabel = 'Tamam',
+
   /// Verilirse [message] yerine kullanılır ve saniyede bir tazelenir —
   /// geri sayım gibi değişen içerikler için. `null` döndüğü an dialog
   /// otomatik kapanır.
@@ -731,6 +961,7 @@ class _SandikDialogState extends State<_SandikDialog> {
       icon: icon,
       title: title,
       message: message,
+      actionLabels: [actionLabel],
       actions: [
         _DialogButton(
           label: actionLabel,
@@ -743,18 +974,17 @@ class _SandikDialogState extends State<_SandikDialog> {
   }
 }
 
-String _humanize(String raw) {
-  final stripped = raw
-      .replaceFirst(RegExp(r'^(Exception|Error|_TypeError):\s*'), '')
-      .trim();
+String _humanize(String raw, AppLocalizations l) {
+  final stripped =
+      raw.replaceFirst(RegExp(r'^(Exception|Error|_TypeError):\s*'), '').trim();
   if (stripped.isEmpty || stripped.length > 120) {
-    return 'Bir şeyler ters gitti, tekrar dene.';
+    return l.hataGenel;
   }
   // Türkçe harf içeren mesajı geçir — kendi `Exception('…')`larımız için
   // eski sezgi. Uygulamanın AuthException'ı artık [KullaniciMesajli] ile
   // tür üzerinden geçer (U13); bu satır ona güvenmez.
   if (RegExp(r'[ğüşıöçĞÜŞİÖÇ]').hasMatch(stripped)) return stripped;
-  return 'Bir şeyler ters gitti, tekrar dene.';
+  return l.hataGenel;
 }
 
 /// Sandık diyaloglarının giriş/çıkışı — iki diyalog (onay, bilgi) AYNI geçiş.
@@ -770,8 +1000,7 @@ String _humanize(String raw) {
 /// easeOutCubic'i TERSTEN oynuyordu — diyalog neredeyse tam görünür kalıp
 /// son ~80 ms'de birden kayboluyordu; "kapat"a basınca ağır hissettiriyordu
 /// (animasyon denetimi 2026-10-01).
-Widget _diyalogGecisi(
-    BuildContext ctx, Animation<double> anim, Widget child) {
+Widget _diyalogGecisi(BuildContext ctx, Animation<double> anim, Widget child) {
   final egri = CurvedAnimation(
     parent: anim,
     curve: SandikMotion.enter,

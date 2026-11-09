@@ -24,7 +24,7 @@ Hesabınızı silmek için iki seçeneğiniz var:
 5. Hesabınız ve verileriniz **hemen** kalıcı olarak silinir
 
 **Seçenek 2 — E-posta İle:**
-Aşağıdaki bilgileri hesabınızın e-posta adresinden `sandikapp.destek@gmail.com` adresine gönderin:
+Aşağıdaki bilgileri hesabınızın e-posta adresinden `support@murphysoft.app` adresine gönderin:
 
 ```
 Konu: Hesap Silme Talebi
@@ -59,7 +59,7 @@ Silmeden önce verilerinizin bir kopyasını almak isterseniz: Profil → Ayarla
 Ayrıntı: Gizlilik Politikası §7.
 
 ### Soru?
-`sandikapp.destek@gmail.com` adresinden bize ulaşın.
+`support@murphysoft.app` adresinden bize ulaşın.
 
 ---
 
@@ -77,7 +77,7 @@ You have two options to delete your account:
 5. Your account and data are permanently deleted **immediately**
 
 **Option 2 — Via Email:**
-Send the following from your account email to `sandikapp.destek@gmail.com`:
+Send the following from your account email to `support@murphysoft.app`:
 
 ```
 Subject: Account Deletion Request
@@ -112,4 +112,4 @@ To keep a copy of your data before deleting: Profile → Settings → "Download 
 Details: Privacy Policy §7.
 
 ### Questions?
-Contact us at `sandikapp.destek@gmail.com`.
+Contact us at `support@murphysoft.app`.

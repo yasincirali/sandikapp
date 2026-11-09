@@ -1,10 +1,15 @@
 import 'dart:async';
+import '../widgets/hedef_sheet.dart' show HedefProfilSatiri;
+import '../widgets/kilometre_tasi_seridi.dart';
+import '../widgets/sandik_cam.dart';
 import '../widgets/hesap_secici.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import '../config/magaza.dart';
 import '../models/user_model.dart';
 import '../providers/hesap_provider.dart';
@@ -35,6 +40,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
+import '../widgets/sandik_paylas_dugmesi.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -89,7 +95,18 @@ Future<void> _showPartnerMsg(
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _codeCtrl = TextEditingController();
+  final _codeFocus = FocusNode();
   String? _generatedCode;
+
+  /// Ortağı olmayan kullanıcıda ortaklık bölümü tek karta iner (yasin
+  /// 2026-10-27, Ar-Ge 27 Eki #2): iki başlık + üç kart ("Davet kodu üret",
+  /// "Ortak kodu gir", "Henüz ortağın yok") boş Profil'in çoğunu kaplıyordu,
+  /// oysa ortak portföyü kullanıcıların çoğu kullanmıyor. Kartın düğmesine
+  /// basınca bu bayrak açılır ve bugünkü bölüm AYNI yerde açılır — alt
+  /// sayfa yerine yerinde açılma bilinçli: kod üretme/girme durumu
+  /// (`_generatedCode`, `_pendingInviteId`, hız sınırı) bu State'te yaşıyor,
+  /// sayfaya taşımak o durumu ikiye bölerdi.
+  bool _ortaklikAcik = false;
 
   /// Gönderim sürüyor mu. Tek yükleniyor davranışı (2026-10-08) düğmenin
   /// kendi kilidini [SandikAsyncButton]'a verdi; bu bayrak KALIR çünkü klavyenin
@@ -131,6 +148,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _rateLimitTicker?.cancel();
     _codeCtrl.dispose();
+    _codeFocus.dispose();
     _poll?.cancel();
     super.dispose();
   }
@@ -387,8 +405,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // tek yükleniyor davranışı); diğer düğmeler ve geri hareketi serbest.
     return CupertinoPageScaffold(
           backgroundColor: context.c.background,
-          child: SafeArea(
-            child: Column(
+          // Cam başlık (bayrak `goz_alici`, 2026-10-12); kapalıyken eski
+          // SafeArea > Column birebir.
+          child: SandikKaydirmaBasligi(
+            kimlik: 'profil',
+            baslik: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Header — ölçüler Performans ekranıyla BİREBİR
                 // (2026-09-28): dikey xs, `headlineMedium`.
@@ -398,63 +420,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       vertical: SandikSpace.xs),
                   child: Row(
                     children: [
-                      // Çoklu hesap (bayrak `coklu_hesap`): başlık aktif
-                      // hesabın adı + ok, dokununca hesap listesi
-                      // (Instagram yerleşimi). Kapalıyken birebir "Profil".
+                      // Başlık hep "Profil" (Ar-Ge 5 Kas 21:00 tasarım 3):
+                      // çoklu hesapta aktif hesabın adıydı, kimlik kartı adı
+                      // ikinci kez yazıyordu. Hesap değiştirme kartta
+                      // (`HesapBasligi`, "Hesap ⌄").
                       Expanded(
-                        child: ref.watch(cokluHesapGorunurProvider)
-                            ? Align(
-                                alignment: Alignment.centerLeft,
-                                child: TourAnchor(
-                                  target: TourTarget.hesapBasligi,
-                                  child: HesapBasligi(
-                                    stil: context.t.headlineMedium
-                                        ?.copyWith(color: context.c.text90),
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                'Profil',
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.fade,
-                                style: context.t.headlineMedium
-                                    ?.copyWith(color: context.c.text90),
-                              ),
+                        child: SandikKucululenBaslik(
+                          child: Text(
+                            'Profil',
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.fade,
+                            style: context.t.headlineMedium
+                                ?.copyWith(color: context.c.text90),
+                          ),
+                        ),
                       ),
                       // Tema hızlı geçişi buradaydı; 2026-10-04 sadeleştirmede
                       // kaldırıldı — tema YALNIZ Ayarlar'daki üçlü seçicide.
-                      // Aynı tercih iki yerde duruyordu ve "sistem" yalnız
-                      // Ayarlar'dan seçilebildiği için ikisi farklı şey
-                      // anlatıyordu.
-                      TourAnchor(
-                        target: TourTarget.ayarlar,
-                        child: CupertinoButton(
-                        minimumSize: SandikTouch.minSize,
-                        padding: EdgeInsets.zero,
-                        onPressed: () => pushGuarded(
-                                  context,
-                                  adaptiveRoute<void>(
-                                    builder: (_) => const SettingsScreen(),
-                                  ),
-                                ),
-                        child: _ActionIcon(
-                          icon: Icons.settings_outlined,
-                          color: context.c.text90,
-                          semanticLabel: context.l10n.settingsTitle,
-                        ),
-                        ),
-                      ),
-                      // Düğme aralığı her ekranda `SandikSpace.sm` (2026-09-28).
-                      const SizedBox(width: SandikSpace.sm),
-                      SandikLogoutButton(onPressed: _logout),
+                      //
+                      // Ayarlar dişlisi ve çıkış simgesi de buradaydı; 1 Kas
+                      // (Ar-Ge 20:45 #2-#3, müşteri "yap") ikisi de listeye
+                      // indi: ayar grupları sayfanın altında (bir dokunuş
+                      // eksi), çıkış en sonda metinle (yıkıcı eylem dişlinin
+                      // yanında yanlış dokunuşa açıktı).
+                      //
+                      // Başlık satırı yine 44 pt: öteki sekmelerin başlığı
+                      // düğmeli; yükseklik düşerse "dört sekmede aynı çizgi"
+                      // (2026-09-28) bozulur.
+                      const SizedBox(height: SandikTouch.min),
                     ],
                   ),
                 ),
+              ],
+            ),
                 // Body
-                Expanded(
-                    child: RefreshIndicator.adaptive(
+            govde: SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
       color: context.c.amberText,
+      edgeOffset: ustPay,
       onRefresh: () async {
         await ref.read(partnersProvider.notifier).refresh();
         CrashReporter.arkaPlan(
@@ -463,18 +466,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       },
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
+      // Liste kısa ama tur hedefi `ayarlar` en altta: tembel kurulumda
+      // ekran dışındaysa çapası hiç takılmaz, tur onu bulamazdı.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(4000),
                       // Üst dolgu 0: ilk kart başlık bloğunun hemen altında,
                       // dört sekmede aynı çizgi (2026-09-28).
                       padding: EdgeInsets.fromLTRB(
-                          SandikSpace.screenH(context), 0,
+                          SandikSpace.screenH(context),
+                          ustPay,
                           SandikSpace.screenH(context), SandikSpace.xs),
                       children: [
                         // Oturum çözülmeden bu ekran kurulmaz; null yalnızca
                         // çıkış anındaki son karede görülebilir.
                         if (user != null) _buildUserHeader(user),
-                        const SizedBox(height: 20),
-                        const _ProfilePremiumBanner(),
-                        const SizedBox(height: 24),
+                        // Premium durumu ayrı afişti; 7 Kas'ta kimlik
+                        // kartına tek satır olarak indi (_PremiumDurumSatiri).
+                        const SizedBox(height: SandikSpace.lg),
+                        // Kilometre taşları (Ar-Ge 1 Kas 20:45 #1, ücretsiz):
+                        // kimliğin hemen altında, tek satır. Boşken sıfır
+                        // yükseklik; alt boşluğunu kendisi taşır.
+                        const KilometreTasiSeridi(),
                         // Yıllık özet afişi. Kendi kendini kapatır: bayrak,
                         // takvim penceresi (26 Aralık–10 Ocak) ve verinin
                         // anlamlı olması. Yılın 11 ayı hiç görünmez.
@@ -482,23 +493,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Halka arz takvimi (F6). Bayrak kapalıyken sıfır
                         // yükseklik — Profil yerleşimi değişmez.
                         const HalkaArzProfilSatiri(),
+                        // Hedef sayfasının ikinci girişi: yalnız Bugün
+                        // kartındaki öneri sönmüşken (Ar-Ge 5 Kas 19:00 #2).
+                        const HedefProfilSatiri(),
                         const _PendingRequestsSection(),
-                        const SizedBox(height: 8),
+                        // Tek satırın üstünde ek boşluk yok: üstteki satır
+                        // (halka arz, hedef) alt boşluğunu kendisi taşır.
+                        if (!_ortaklikKisa(partnersAsync))
+                          const SizedBox(height: 8),
+                        if (_ortaklikKisa(partnersAsync))
+                          _buildOrtaklikKarti()
+                        else ...[
                         SandikSectionHeader(title: context.l10n.partnerActionsUpper),
                         const SizedBox(height: 16),
                         _buildInviteSection(),
+                        // Ortak yokken "ORTAKLARIM" + "Henüz ortağın yok"
+                        // kartı tekrar oluyordu (yukarıda zaten davet var);
+                        // yalnız ortak varken ya da yüklenirken çizilir.
+                        if (partnersAsync.valueOrNull?.isEmpty != true) ...[
                         const SizedBox(height: 32),
                         SandikSectionHeader(title: context.l10n.myPartnersUpper),
                         const SizedBox(height: 16),
-                        partnersAsync.when(
+                        SandikIcerikGecisi(
+                          // Yükleme → içerik çapraz solar (2026-10-14).
+                          anahtar: SandikIcerikGecisi.hal([partnersAsync]),
+                          child: partnersAsync.when(
                           loading: () => const SizedBox(
                             height: 140,
                             child: SandikSkeletonList(
                                 rows: 2, padding: EdgeInsets.zero),
                           ),
                           error: (e, _) => SandikErrorView(error: e),
+                          // Boş liste buraya gelmez (yukarıdaki koşul).
                           data: (partners) => partners.isEmpty
-                              ? _buildEmptyPartners()
+                              ? const SizedBox.shrink()
                               : Column(
                                   children: [
                                     ...partners
@@ -508,6 +536,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ],
                                 ),
                         ),
+                        ),
+                        ],
+                        ],
                         // Yüzdelik dilim şeridi 2026-09-21'de ana ekrandan
                         // buraya: sosyal karşılaştırma Yarış'ın yanında.
                         // Kapıları (bayrak, opt-in, k-anonimlik, yatırımcı
@@ -523,20 +554,61 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               padding: const EdgeInsets.only(top: 12),
                             );
                           }),
+                        const SizedBox(height: SandikSpace.xl),
+                        // Ayarlar: hub'ın dört grubu burada (`AyarGrupSatirlari`,
+                        // TEK yer). Tur hedefi `ayarlar` dişliden bu başlığa
+                        // taşındı.
+                        TourAnchor(
+                          target: TourTarget.ayarlar,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SandikSectionHeader(
+                                  title: context.l10n.settingsTitle),
+                              const SizedBox(height: SandikSpace.md),
+                              // Tek hesapta "Hesap ekle" burada (Ar-Ge 7 Kas):
+                              // adın yanında ok yok, ikinci hesabın yolu bu
+                              // satır. İki ve daha fazla hesapta menüde.
+                              AyarGrupSatirlari(
+                                hesapEkle: _tekHesapEklenebilir(user)
+                                    ? () => hesapEklemeyiBaslat(context, user)
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: SandikSpace.lg),
+                        SandikCard(
+                          padding: EdgeInsets.zero,
+                          child: SandikLogoutButton(
+                              onPressed: _logout, satir: true),
+                        ),
                         const SizedBox(height: 40),
                       ],
                     ),
-    ),
-                ),
-              ],
+    )),
             ),
-          ),
         );
   }
 
+  /// Çoklu hesap açık ve bu cihazda başka hesap yok: Ayarlar'da
+  /// "Hesap ekle" satırı görünür.
+  bool _tekHesapEklenebilir(AppUser? user) =>
+      user != null &&
+      ref.watch(cokluHesapGorunurProvider) &&
+      !ref.watch(kayitliHesaplarProvider).any((h) => h.uid != user.id);
+
+  /// Kimlik kartı: avatar, "ad ⌄", e-posta ve tek satır Premium durumu
+  /// (Profil yeniden tasarımı, yasin 7 Kas).
+  ///
+  /// Hesap değiştirme ayrı "Hesap ⌄" düğmesiydi; artık adın kendisi
+  /// ([HesapBasligi], ok yalnız iki ve daha fazla hesapta). Ayrı Premium
+  /// kartı da kalktı: durum adın altında tek satır ([_PremiumDurumSatiri]),
+  /// ekranın üstü bir kart kısaldı.
   Widget _buildUserHeader(AppUser user) {
+    final adStili = context.t.headlineMedium?.copyWith(color: context.c.text90);
     return SandikCard(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(SandikSpace.lg),
       radius: SandikRadius.lg,
       child: Row(
         children: [
@@ -558,15 +630,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user.displayName,
-                  style: context.t.headlineMedium?.copyWith(
-                      color: context.c.text90),
-                ),
+                // Çoklu hesap (bayrak `coklu_hesap`): ad hesap menüsünü
+                // açar. Kapalıyken ad birebir eski düz metin.
+                if (ref.watch(cokluHesapGorunurProvider))
+                  TourAnchor(
+                    target: TourTarget.hesapBasligi,
+                    child: HesapBasligi(ad: user.displayName, stil: adStili),
+                  )
+                else
+                  Text(user.displayName, style: adStili),
                 const SizedBox(height: 4),
                 Text(user.email,
                     style:
                         context.t.titleMedium?.copyWith(color: context.c.text36)),
+                const _PremiumDurumSatiri(),
               ],
             ),
           ),
@@ -619,13 +696,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       // `Builder`: `sharePositionOrigin` dokunulan DÜĞMENİN
                       // dikdörtgeninden üretilir, ekranın tamamından değil —
                       // iPad popover'ının oku düğmeyi göstersin.
+                      // Simge uygulamanın tek paylaş düğmesi (yasin
+                      // 2026-10-30, "her yerde aynı standart"): eskiden
+                      // amber Android `share_rounded`'dı ve etiketsizdi;
+                      // şimdi gri `ios_share` + erişilebilirlik etiketi.
                       Builder(
-                        builder: (dugmeContext) => CupertinoButton(
-                          minimumSize: SandikTouch.minSize,
-                          padding: EdgeInsets.zero,
+                        builder: (dugmeContext) => SandikPaylasDugmesi(
                           onPressed: () => _davetiPaylas(dugmeContext),
-                          child: Icon(Icons.share_rounded,
-                              color: context.c.amberText),
+                          tooltip: context.l10n.shareInviteCode,
                         ),
                       ),
                     ],
@@ -678,6 +756,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ] else ...[
                 TextField(
                   controller: _codeCtrl,
+                  focusNode: _codeFocus,
                   // Kilitliyken alan kapalı: kullanıcı boşuna yazıp
                   // yeni bir ret almasın.
                   enabled: _rateLimitRemaining == 0,
@@ -735,7 +814,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ? null
                       : _submitCode,
                   height: 46,
-                  style: _hafifDolguStili(context.c.gain),
+                  // Nötr (Ar-Ge 1 Kas 20:45 tasarım 4): yeşil bu uygulamada
+                  // kâr demek; ikincil düğme nötr, "Davet et" amber.
+                  style: _hafifDolguStili(context.c.text90),
                   child: Text(
                     _submitting
                         ? context.l10n.sendingEllipsis
@@ -745,7 +826,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     style: context.t.titleMedium?.copyWith(
                         color: _rateLimitRemaining > 0
                             ? context.c.text36
-                            : context.c.gain,
+                            : context.c.text90,
                         fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -806,21 +887,60 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildEmptyPartners() {
-    return SandikCard(
-      padding: const EdgeInsets.all(32),
-      bordered: false,
-      child: Column(
-        children: [
-          Icon(Icons.people_outline_rounded,
-              size: 48, color: context.c.text36),
-          const SizedBox(height: 16),
-          Text(
-            context.l10n.noPartnersYet,
-            style: context.t.titleMedium?.copyWith(color: context.c.text36),
-            textAlign: TextAlign.center,
+  /// Ortaklık bölümü tek karta insin mi? Yalnız ortak listesi YÜKLENMİŞ
+  /// ve boşken, kullanıcı bölümü açmamışken ve yarım kalmış bir akış yokken
+  /// (üretilmiş kod ya da yanıt bekleyen istek görünür kalmalı). Yüklenirken
+  /// eski yerleşim: ortağı olan kullanıcıda kart bir an görünüp kaybolmasın.
+  bool _ortaklikKisa(AsyncValue<List<PartnerAccount>> partnersAsync) =>
+      !_ortaklikAcik &&
+      _generatedCode == null &&
+      _pendingInviteId == null &&
+      partnersAsync.valueOrNull?.isEmpty == true;
+
+  /// Ortağı olmayana TEK SATIR (Ar-Ge 5 Kas 21:00 #2, müşteri YAP).
+  ///
+  /// Eskiden iki düğmeli kart (~140 pt) her açılışta Ayarlar'dan önce
+  /// duruyordu: özelliği bir kez öğrenen için kalıcı tanıtım. iOS Ayarlar
+  /// "Aile Paylaşımı" da tek satırdır, eylemler içeride. Satır "Halka
+  /// arzlar" kalıbında; dokununca bölüm açılır, "Kod üret" ve "Kod gir"
+  /// orada. Tur adımı `davetKodu` kısa hâlde bu satıra bağlanır.
+  Widget _buildOrtaklikKarti() {
+    final c = context.c;
+    return TourAnchor(
+      target: TourTarget.davetKodu,
+      child: SandikCard(
+        padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.md, vertical: SandikSpace.smd),
+        onTap: () => setState(() => _ortaklikAcik = true),
+        child: Semantics(
+          button: true,
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: Icon(Icons.people_outline_rounded,
+                    size: 22, color: c.amberText),
+              ),
+              const SizedBox(width: SandikSpace.smd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.ortakPortfoyKartBaslik,
+                      style: context.t.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600, color: c.text90),
+                    ),
+                    Text(
+                      context.l10n.ortakPortfoySatirAlt,
+                      style: context.t.bodySmall?.copyWith(color: c.text58),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: c.text58),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1195,134 +1315,147 @@ class _ActionIcon extends StatelessWidget {
   }
 }
 
-// ── Premium banner ────────────────────────────────────────────────────────
+// ── Premium durumu ───────────────────────────────────────────────────────────
 
-class _ProfilePremiumBanner extends ConsumerWidget {
-  const _ProfilePremiumBanner();
+/// Kimlik kartında tek satır Premium durumu (Profil yeniden tasarımı,
+/// yasin 7 Kas; önce ayrı "Premium aktif" kartı ya da "Premium'a geç" afişi).
+///
+/// - **Premium:** yalnız durum metni, vurgu yok: "Premium · yıllık,
+///   5 Kasım 2027 tarihinde yenilenir"; hak bilgisi yoksa (cihaz anahtarı)
+///   yalnız "Premium". Satın alınmış bir şeyi her açılışta vurgulamak
+///   gürültü olurdu.
+/// - **Sunucu hakkı varken satır dokunulabilir** ve bugünkü
+///   [PremiumAbonelikSatiri]'nı alt sayfada açar ("Yönet", "Satın alımları
+///   geri yükle", hediyenin son günlerinde "devam et"). Bunlar Profil'den
+///   kalkarsa aboneliği yönetmenin uygulamadaki tek yolu kaybolurdu
+///   (iptali zorlaştırmak; Apple 3.1.2). Görünüşte düğme yok, yalnız soluk ok.
+/// - **Ücretsiz:** "Premium'a geç ›" (paywall); kapılar birebir eski:
+///   paywall anahtarı kapalıyken ya da kilitler askıdayken satır yok,
+///   hediyesi bitmişin analitik kaynağı ayrı.
+class _PremiumDurumSatiri extends ConsumerWidget {
+  const _PremiumDurumSatiri();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Paywall master switch kapalıysa banner hiç gösterilmez.
+    // Paywall master switch kapalıysa satır hiç gösterilmez.
     if (!ref.watch(paywallVisibleProvider)) return const SizedBox.shrink();
-    final premium = ref.watch(effectivePremiumProvider);
-    if (premium) {
-      // Sunucu hakkı varsa (abonelik, erken kullanıcı hediyesi) türü ve
-      // bitişiyle tek satır (S14-A); yalnız cihaz anahtarı açıksa eski rozet.
+    final l10n = context.l10n;
+    final c = context.c;
+    if (ref.watch(effectivePremiumProvider)) {
       final hak = ref.watch(gecerliPremiumHakkiProvider);
-      return hak == null
-          ? const _PremiumActiveBadge()
-          : PremiumAbonelikSatiri(hak: hak);
-    }
-    // Kilitler askıdaysa (acil anahtar `premium_enabled=false` ya da
-    // hediyesi henüz yazılmamış eski hesap — `kilitlerAskidaProvider`)
-    // kullanıcı her şeyi zaten kullanıyor: "Premium'a geç" bandı satın
-    // alınan şeyin ne olduğunu söyleyemez. Bant yalnız kilit gerçekten
-    // varken çıkar.
-    if (!ref.watch(premiumKilitliProvider)) return const SizedBox.shrink();
-    return SandikBasma(
-      onTap: () {
-        AnalyticsService.instance
-            .logPremiumGateShown(feature: 'profile_banner');
-        PaywallScreen.show(context, source: 'profile_banner');
-      },
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              context.c.amberFill.withValues(alpha: 0.20),
-              context.c.gold.withValues(alpha: 0.08),
-            ],
+      final metin = premiumDurumMetni(context, hak, DateTime.now());
+      final yazi = Text(metin,
+          style: context.t.bodySmall?.copyWith(color: c.text58));
+      if (hak == null) {
+        return Padding(
+          padding: const EdgeInsets.only(top: SandikSpace.xs),
+          child: yazi,
+        );
+      }
+      return _satir(
+        context,
+        etiket: l10n.premiumDurumAyrintiEtiket(metin),
+        onTap: () => showSandikSheet<void>(
+          context: context,
+          baslik: l10n.sandikPremium,
+          builder: (_) => Padding(
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
+                SandikSpace.screenH(context), SandikSpace.lg),
+            child: PremiumAbonelikSatiri(hak: hak),
           ),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.amberFill.withValues(alpha: 0.40)),
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: context.c.amberFill.withValues(alpha: 0.20),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-              ),
-              child: Icon(Icons.workspace_premium_rounded,
-                  color: context.c.amberText, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(context.l10n.sandikPremium,
-                      style: context.t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: context.c.text90)),
-                  const SizedBox(height: 2),
-                  Text(
-                    context.l10n.premiumPitch,
-                    style: context.t.bodySmall?.copyWith(
-                        color: context.c.text58,
-                        height: 1.35),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: context.c.amberText),
+            Flexible(child: yazi),
+            Icon(Icons.chevron_right_rounded,
+                size: SandikSpace.md2, color: c.text36),
           ],
+        ),
+      );
+    }
+    // Kilitler askıdaysa (acil kapatma `premium_ayar.acil_kapali`,
+    // `kilitlerAskidaProvider`) kullanıcı her şeyi zaten kullanıyor:
+    // "Premium'a geç" satın alınan şeyin ne olduğunu söyleyemez. Satır
+    // yalnız kilit gerçekten varken çıkar.
+    if (!ref.watch(premiumKilitliProvider)) return const SizedBox.shrink();
+    // Hediyesi bitmiş kullanıcının kaynağı ayrı ki huni analitiğinde
+    // hediye sonrası dönüşüm görünsün.
+    final kaynak = ref.watch(hediyesiBitmisProvider) != null
+        ? 'hediye_bitti'
+        : 'profile_banner';
+    final metin = l10n.premiumDurumGec;
+    return _satir(
+      context,
+      etiket: metin,
+      onTap: () {
+        AnalyticsService.instance.logPremiumGateShown(feature: kaynak);
+        PaywallScreen.show(context, source: kaynak);
+      },
+      child: Row(
+        children: [
+          Icon(Icons.workspace_premium_rounded,
+              size: SandikSpace.md, color: c.amberText),
+          const SizedBox(width: SandikSpace.xs),
+          Flexible(
+            child: Text(metin,
+                style: context.t.labelLarge?.copyWith(
+                    color: c.amberText, fontWeight: FontWeight.w600)),
+          ),
+          Icon(Icons.chevron_right_rounded,
+              size: SandikSpace.md2, color: c.amberText),
+        ],
+      ),
+    );
+  }
+
+  /// Dokunulabilir satır: en az 44 pt yükseklik, tek semantik düğüm.
+  Widget _satir(BuildContext context,
+      {required String etiket,
+      required VoidCallback onTap,
+      required Widget child}) {
+    return Semantics(
+      container: true,
+      button: true,
+      label: etiket,
+      excludeSemantics: true,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            widthFactor: 1,
+            child: child,
+          ),
         ),
       ),
     );
   }
 }
 
-class _PremiumActiveBadge extends StatelessWidget {
-  const _PremiumActiveBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: context.c.gain.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.gain.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: context.c.gain.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-            ),
-            child: Icon(Icons.check_circle_outline_rounded,
-                color: context.c.gain, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.l10n.premiumActive,
-                    style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: context.c.text90)),
-                const SizedBox(height: 2),
-                Text(context.l10n.premiumActiveBody,
-                    style: context.t.bodySmall?.copyWith(color: context.c.text58)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+/// Premium satırının metni (saf; test doğrudan çağırır). Hak yoksa
+/// "Premium"; varsa tür ve tarih: mağaza aboneliği "yenilenir", hediye
+/// "biter, n gün kaldı", diğerleri "biter".
+@visibleForTesting
+String premiumDurumMetni(BuildContext context, PremiumHakki? hak, DateTime simdi) {
+  final l10n = context.l10n;
+  if (hak == null) return l10n.premiumDurum;
+  final plan = hak.hediye
+      ? l10n.prmAbonelikHediye
+      : hak.yillik
+          ? l10n.prmAbonelikYillik
+          : l10n.prmAbonelikAylik;
+  final b = hak.bitis;
+  if (b == null) return plan;
+  final tarih = DateFormat('d MMMM y', Localizations.localeOf(context).toString())
+      .format(b.toLocal());
+  final kalan = hak.hediye ? hak.kalanGun(simdi) : null;
+  final detay = hak.kaynak == 'revenuecat' && !hak.iptalEdildi
+      ? l10n.premiumDurumYenilenir(tarih)
+      : kalan != null
+          ? l10n.premiumDurumHediyeKalan(tarih, kalan)
+          : l10n.premiumDurumBiter(tarih);
+  return l10n.premiumDurumDetay(plan, detay);
 }

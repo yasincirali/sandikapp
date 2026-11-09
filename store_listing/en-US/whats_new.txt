@@ -1,7 +1,5 @@
-• Crypto, US stocks, Eurobonds, time deposits and private pension
-• Redesigned Today card: the day at a glance and "Is your money keeping up?"
-• Your real return: accounts for when you added money, dividends included
-• Candlestick charts with EMA50 and EMA200
-• Import from statement: PDF, Excel, CSV
-• Costs card, fund report card, dividend reminders, IPO calendar
-• Top portfolios and account switching
+• NEW: Single-asset widget: gram gold, dollar or a fund on your home screen
+• Alerts: one-tap daily 2% alert, price alerts that fire on every cross, alert line on the chart
+• Quick math in search: type "5 quarter gold" or "100 dollars", see it in lira
+• Silver, platinum and palladium; upcoming rate decisions and dividend dates on Home
+• Notifications in one setting: Less, Balanced, More

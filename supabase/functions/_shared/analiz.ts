@@ -32,7 +32,17 @@ import { isaretliTutar } from './haftalik_akis.ts';
 
 // ── Tipler ──────────────────────────────────────────────────────────────────
 
-export type VarlikTuru = 'fon' | 'hisse' | 'kripto';
+// 2026-11-07 (yasin, "tüm varlıklar"): aylık raporda akış/hacim verisi
+// olmayan türler fiyat serisinden ölçülür (`fiyatPaketi`).
+export type VarlikTuru =
+  | 'fon'
+  | 'hisse'
+  | 'kripto'
+  | 'yabanci_hisse'
+  | 'altin'
+  | 'doviz'
+  | 'emtia'
+  | 'eurobond';
 export type NotTuru = 'haftalik' | 'aylik';
 export type Rozet =
   | 'buyuk_giris'
@@ -40,6 +50,10 @@ export type Rozet =
   | 'olagandisi_hacim'
   | 'alici_istekli'
   | 'satici_istekli'
+  // Fiyat paketinin "önemli gelişme" rozeti (0180): aylık değişim olağan
+  // oynaklığın 2 katı ya da üstü, oynaklık sıçraması ya da 52 haftalık uç.
+  // İstemci eşi `HaftaRozeti.hareketli` (aynı ad, aynı orta kademe).
+  | 'hareketli'
   | 'sakin';
 
 export type Olcum = {
@@ -50,7 +64,7 @@ export type Olcum = {
   gosterim: string;
   /// Okunur ad ("Son hafta net akış").
   ad: string;
-  kaynak: 'TEFAS' | 'Yahoo Finance' | 'Binance';
+  kaynak: 'TEFAS' | 'Yahoo Finance' | 'Binance' | 'Börse Frankfurt';
   /// Verinin ait olduğu gün (ISO).
   tarih: string;
 };
@@ -70,6 +84,9 @@ export type Paket = {
   olcumler: Olcum[];
   /// Dönemdeki olaylar, düz Türkçe ("29 Eyl büyük giriş").
   olaylar: string[];
+  /// Yalnız fiyat paketinde: serinin kote olduğu para ('TRY', 'USD'…).
+  /// Akış/hacim paketinde yok (eski batch girdileri de böyle).
+  para?: string;
 };
 
 // ── Biçim (uygulamadaki fmtTRYCompact / fmtPct ile aynı) ───────────────────
@@ -357,6 +374,176 @@ export function hacimPaketi(
   };
 }
 
+// ── Fiyat paketi (2026-11-07, yasin: "tüm varlıklar") ──────────────────────
+//
+// Akış (TEFAS) ya da hacim (Yahoo/Binance) tablosu olmayan türler — yurt
+// dışı hisse, altın, döviz, emtia, eurobond — ve o tablolarda ay boyu satırı
+// çıkmayan fon/hisse/coin için TEK ölçü fiyattır. Seri, uygulamanın da
+// kullandığı sağlayıcıdan gelir (`dated_history.ts`, fiyat kaynağı sözleşmesi).
+//
+// ## Neden yalnız YÜZDE, fiyat düzeyi yok
+// Sunucunun altın serisi GC=F × USDTRY'dir; uygulama ekranda truncgil
+// kotasyonunu gösterir (sözleşme madde 2: ölçek ekranla aynı olmalı). Fiyat
+// düzeyi yazılsaydı nottaki "₺3.150" ekrandaki fiyatla çelişirdi. Oran
+// (değişim, oynaklık) kaynak farkında sönümlenir; not bu yüzden düzey yazmaz.
+//
+// ## "Önemli gelişme" veriden (rozet `hareketli`)
+// Haber kaynağı yok (KAP lisansı, `docs/KAP_VERI_LISANSI_2026_09.md`);
+// öne çıkma sinyali ölçümlerden türer ve türden bağımsızdır: değişim,
+// varlığın KENDİ olağan oynaklığıyla ölçülür (döviz için %4 büyük, kripto
+// için olağan). Eşikler `FIYAT_HAREKET_KATI`, `FIYAT_OYNAKLIK_KATI`.
+//
+// ## Neden TÜFE'ye göre reel getiri yok
+// Aylık iş ayın 1'i 06:00'da koşar; TÜİK o ayın TÜFE'sini ayın 3'ünde
+// açıklar. O an elde olan TÜFE başka bir ayındır; onunla "reel" yazmak
+// dönemi karıştırır (uydurma sayı). Reel getiri raporun sayısal bölümünde
+// (istemci, TÜFE açıklandıktan sonra) kalır.
+
+/// Olağan oynaklık için bakılan önceki işlem günü ve asgari gün.
+export const FIYAT_ONCEKI_GUN = 60;
+export const FIYAT_ASGARI_ONCEKI_GUN = 40;
+/// Dönemde en az bu kadar kapanış yoksa paket yok (yarım ay yorumlanmaz).
+export const FIYAT_ASGARI_GUN = 5;
+/// Rozet eşikleri: aylık değişim olağan aylık oynaklığın 2 katı; dönem
+/// oynaklığı önceki dönemin 2 katı.
+export const FIYAT_HAREKET_KATI = 2;
+export const FIYAT_OYNAKLIK_KATI = 2;
+/// 52 haftalık uç için serinin dönem sonundan en az bu kadar gün geriye
+/// uzanması gerekir (kısa seride "yılın zirvesi" uydurma olur).
+export const YILLIK_ASGARI_GUN = 330;
+
+const GUN_MS = 24 * 60 * 60 * 1000;
+const isoGun = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+function sapma(xs: number[]): number {
+  const ort = xs.reduce((a, b) => a + b, 0) / xs.length;
+  return Math.sqrt(xs.reduce((t, x) => t + (x - ort) ** 2, 0) / (xs.length - 1));
+}
+
+/// [ms, kapanış] serisinde gün ≤ [iso] olan SON kapanış; yoksa null.
+function gunundeki(seri: Array<[number, number]>, iso: string): number | null {
+  let out: number | null = null;
+  for (const [t, v] of seri) {
+    if (isoGun(t) <= iso) out = v;
+    else break;
+  }
+  return out;
+}
+
+/// Fiyat paketi. [seri] artan zamanlı [ms, kapanış]; [kur] serinin parası
+/// TL değilse `<PARA>TRY=X` serisi (TL bazında değişim için), değilse null.
+/// Dönemde [FIYAT_ASGARI_GUN]'den az kapanış ya da dönem öncesi kapanış
+/// yoksa `null` — veri yoksa not yok.
+export function fiyatPaketi(g: {
+  ticker: string;
+  kod: string;
+  varlik: VarlikTuru;
+  tur: NotTuru;
+  aralik: { baslangic: string; bitis: string };
+  seri: Array<[number, number]>;
+  para: string;
+  kur: Array<[number, number]> | null;
+  kaynak: Olcum['kaynak'];
+}): Paket | null {
+  const { aralik, kaynak } = g;
+  const sirali = [...g.seri].sort((a, b) => a[0] - b[0]);
+  const gunlu = sirali.map(([t, v]) => ({ tarih: isoGun(t), t, v }));
+  const donemde = gunlu.filter((x) => icinde(x.tarih, aralik.baslangic, aralik.bitis));
+  const once = gunlu.filter((x) => x.tarih < aralik.baslangic);
+  if (donemde.length < FIYAT_ASGARI_GUN || once.length === 0) return null;
+
+  const onceki = once[once.length - 1];
+  const son = donemde[donemde.length - 1];
+  const ilk = donemde[0];
+  const degisim = son.v / onceki.v - 1;
+  const o: Olcum[] = [{
+    anahtar: 'fiyat_degisim', ad: g.tur === 'aylik' ? 'Ay boyunca fiyat değişimi' : 'Hafta boyunca fiyat değişimi',
+    deger: degisim, gosterim: yuzde(degisim, true), kaynak, tarih: son.tarih,
+  }];
+
+  if (g.kur && g.para !== 'TRY') {
+    const kurSirali = [...g.kur].sort((a, b) => a[0] - b[0]);
+    const kOnce = gunundeki(kurSirali, onceki.tarih);
+    const kSon = gunundeki(kurSirali, son.tarih);
+    if (kOnce !== null && kSon !== null && kOnce > 0) {
+      const tl = (1 + degisim) * (kSon / kOnce) - 1;
+      o.push({ anahtar: 'tl_degisim', ad: 'TL bazında değişim (kur etkisi dahil)', deger: tl,
+        gosterim: yuzde(tl, true), kaynak: 'Yahoo Finance', tarih: son.tarih });
+    }
+  }
+
+  const enYuksek = donemde.reduce((m, x) => (x.v > m.v ? x : m));
+  const enDusuk = donemde.reduce((m, x) => (x.v < m.v ? x : m));
+  o.push({ anahtar: 'donem_araligi', ad: 'Ay içinde en yüksek ve en düşük kapanış arasındaki fark',
+    deger: enYuksek.v / enDusuk.v - 1, gosterim: yuzde(enYuksek.v / enDusuk.v - 1), kaynak, tarih: son.tarih });
+
+  // Günlük getiriler: dönemin ilk günü önceki kapanışa göre.
+  const zincir = [onceki, ...donemde];
+  const getiriler = zincir.slice(1).map((x, i) => ({ tarih: x.tarih, r: x.v / zincir[i].v - 1 }));
+  let rozet: Rozet = 'sakin';
+  const olayMetni: string[] = [];
+  if (getiriler.length >= FIYAT_ASGARI_GUN) {
+    const oyn = sapma(getiriler.map((x) => x.r));
+    o.push({ anahtar: 'oynaklik', ad: 'Günlük dalgalanma (oynaklık): fiyatın bir günde ortalama ne kadar oynadığı',
+      deger: oyn, gosterim: yuzde(oyn, false, 2), kaynak, tarih: son.tarih });
+    const enIyi = getiriler.reduce((m, x) => (x.r > m.r ? x : m));
+    const enKotu = getiriler.reduce((m, x) => (x.r < m.r ? x : m));
+    if (enIyi.r > 0) {
+      o.push({ anahtar: 'en_iyi_gun', ad: `En güçlü gün (${gunAy(enIyi.tarih)})`, deger: enIyi.r,
+        gosterim: yuzde(enIyi.r, true), kaynak, tarih: enIyi.tarih });
+    }
+    if (enKotu.r < 0) {
+      o.push({ anahtar: 'en_zayif_gun', ad: `En zayıf gün (${gunAy(enKotu.tarih)})`, deger: enKotu.r,
+        gosterim: yuzde(enKotu.r, true), kaynak, tarih: enKotu.tarih });
+    }
+
+    // Olağan oynaklık: dönemden önceki en çok 60 günlük değişim.
+    const oncekiZincir = once.slice(-(FIYAT_ONCEKI_GUN + 1));
+    const oncekiGetiri = oncekiZincir.slice(1).map((x, i) => x.v / oncekiZincir[i].v - 1);
+    if (oncekiGetiri.length >= FIYAT_ASGARI_ONCEKI_GUN) {
+      const olagan = sapma(oncekiGetiri);
+      if (olagan > 0) {
+        const oynKati = oyn / olagan;
+        o.push({ anahtar: 'onceki_oynaklik', ad: `Önceki ${oncekiGetiri.length} işlem gününde günlük dalgalanma`,
+          deger: olagan, gosterim: yuzde(olagan, false, 2), kaynak, tarih: once[once.length - 1].tarih });
+        o.push({ anahtar: 'oynaklik_kati', ad: 'Dalgalanmanın önceki döneme göre katı', deger: oynKati,
+          gosterim: kat(oynKati), kaynak, tarih: son.tarih });
+        // Değişimin, aynı gün sayısında olağan oynaklıkla beklenen
+        // hareketin (σ·√n) kaçı olduğu: türden bağımsız "büyüklük".
+        const hareketKati = Math.abs(degisim) / (olagan * Math.sqrt(getiriler.length));
+        o.push({ anahtar: 'hareket_kati', ad: 'Değişimin bu varlık için olağan harekete göre büyüklüğü',
+          deger: hareketKati, gosterim: kat(hareketKati), kaynak, tarih: son.tarih });
+        if (hareketKati >= FIYAT_HAREKET_KATI || oynKati >= FIYAT_OYNAKLIK_KATI) rozet = 'hareketli';
+      }
+    }
+  }
+
+  // 52 haftalık uç: dönem sonu kapanışı son bir yılın en yükseği/düşüğü mü.
+  const yilBasi = isoGun(new Date(`${aralik.bitis}T12:00:00Z`).getTime() - 364 * GUN_MS);
+  const uzanir = gunlu.length > 0 &&
+    new Date(`${aralik.bitis}T12:00:00Z`).getTime() - gunlu[0].t >= YILLIK_ASGARI_GUN * GUN_MS;
+  if (uzanir) {
+    const yil = gunlu.filter((x) => icinde(x.tarih, yilBasi, son.tarih));
+    const yilMax = Math.max(...yil.map((x) => x.v));
+    const yilMin = Math.min(...yil.map((x) => x.v));
+    if (son.v >= yilMax) {
+      olayMetni.push(`${gunAy(son.tarih)} kapanışı son 52 haftanın en yükseği`);
+      rozet = 'hareketli';
+    } else if (son.v <= yilMin) {
+      olayMetni.push(`${gunAy(son.tarih)} kapanışı son 52 haftanın en düşüğü`);
+      rozet = 'hareketli';
+    } else {
+      o.push({ anahtar: 'yillik_zirveye_uzaklik', ad: 'Son kapanışın 52 haftanın en yükseğine uzaklığı',
+        deger: son.v / yilMax - 1, gosterim: yuzde(son.v / yilMax - 1, true), kaynak, tarih: son.tarih });
+    }
+  }
+
+  return {
+    ticker: g.ticker, kod: g.kod, varlik: g.varlik, kategori: null, tur: g.tur,
+    baslangic: ilk.tarih, bitis: son.tarih, rozet, olcumler: o, olaylar: olayMetni, para: g.para,
+  };
+}
+
 /// Kripto rozet eşikleri: hacim ağırlıklı alıcı payı. %50 ± 5 puan "olağan"
 /// bandı; Binance'te büyük coinlerde günlük pay çoğunlukla %48–52 arasında.
 export const ALICI_ISTEKLI = 0.55;
@@ -403,21 +590,40 @@ Kesin kurallar:
 4. "Balina" deme. Verilerden kimin alıp sattığı bilinmez; özne her zaman varlığın kendisi ya da piyasadır ("fona para girdi", "hissede işlem hacmi arttı").
 5. Fon için "net akış" fona giren paradan çıkanın düşülmesidir; fiyat değişimi dahil değildir. Hisse ve kriptoda hacim, el değiştiren tutardır; para girişi değildir. Bunları karıştırma.
 6. Kripto alıcı payı, piyasa emriyle alan tarafın hacimdeki payıdır; %50'nin üstü alıcıların daha istekli olduğunu gösterir, para girişi değildir.
-7. Sade Türkçe, "sen" hitabı yok, ünlem yok, emoji yok. "Yatırım tavsiyesi değildir" yazma; uygulama kendisi ekler.
+7. Sade Türkçe, "sen" hitabı yok, ünlem yok, emoji yok. "Yatırım tavsiyesi değildir" yazma; uygulama kendisi ekler. Okur finans terimi bilmeyebilir: "volatilite", "standart sapma", "sigma", "momentum", "likidite", "spread" gibi terimleri kullanma. "Oynaklık" dersen aynı notta "dalgalanma" sözcüğüyle açıkla (ör. "oynaklık, yani fiyatın gün içi dalgalanması"). Ölçüm anahtarlarını (fiyat_degisim gibi) metne yazma.
 8. Dönem sakinse kısa yaz: başlık + 1 madde yeter.
-9. "Olağan", "hareketli", "olağandışı" sözcüklerini uygulamadaki rozetlerle aynı ölçekte kullan. Fonda akis_kati 1,5 katın altı olağan, 1,5 ile 3 kat arası hareketli, 3 kat ve üstü çok hareketli. Hisse ve kriptoda hacim_kati 1,3 katın altı olağan, 1,3 ile 2 kat arası hareketli, 2 kat ve üstü çok hareketli. Kriptoda alıcı payı %52 ile %55 arası hafif, %55 ve üstü belirgin alıcı ağırlığıdır (%48 ile %45 arası ve %45 altı satıcı için aynı). Kat ölçüsü yoksa bu sözcükleri kullanma. Bu eşik sayılarını metne yazma.
+9. "Olağan", "hareketli", "olağandışı" sözcüklerini uygulamadaki rozetlerle aynı ölçekte kullan. Fonda akis_kati 1,5 katın altı olağan, 1,5 ile 3 kat arası hareketli, 3 kat ve üstü çok hareketli. Hisse ve kriptoda hacim_kati 1,3 katın altı olağan, 1,3 ile 2 kat arası hareketli, 2 kat ve üstü çok hareketli. Kriptoda alıcı payı %52 ile %55 arası hafif, %55 ve üstü belirgin alıcı ağırlığıdır (%48 ile %45 arası ve %45 altı satıcı için aynı). Fiyat ölçümlü varlıkta (altın, döviz, emtia, yurt dışı hisse, eurobond ya da yalnız fiyatı olan fon, hisse, kripto) hareket_kati 1 katın altı olağan, 1 ile 2 kat arası belirgin, 2 kat ve üstü olağandışı büyüklükte bir değişimdir; oynaklik_kati 2 kat ve üstü oynaklığın belirgin arttığını gösterir. Kat ölçüsü yoksa bu sözcükleri kullanma. Bu eşik sayılarını metne yazma.
+10. Fiyat ölçümleri yalnız fiyat hareketini anlatır; para girişi ya da hacim değildir. Fiyat düzeyi (TL ya da dolar tutarı) yazma; ölçümlerde yoktur. "tl_degisim" kur etkisi dahil TL bazında değişimdir; "fiyat_degisim" varlığın kendi para birimindedir, ikisini karıştırma. Dönemdeki "52 haftanın en yükseği/en düşüğü" olayı varsa başlığa taşı.
+
+Madde sırası: 1. madde "ne oldu" (dönemde fiyat ya da büyüklük nasıl değişti), 2. madde "neye eşlik etti" (para akışı, hacim ya da dönemdeki olay; ölçümü yoksa yazma), varsa son madde "dikkat çeken" (oynaklık artışı, 52 haftalık uç gibi tek gözlem). Ölçümü olmayan maddeyi uydurma; sakin dönemde tek madde yeter.
 
 Çıktı: "baslik" tek cümle (en çok 140 karakter), dönemin en önemli gözlemi. "maddeler" en az 1, en çok 4; her madde tek cümle (en çok 220 karakter) ve "kanit" alanında dayandığı ölçümlerin "anahtar" değerleri.`;
+
+export const VARLIK_ADI: Record<VarlikTuru, string> = {
+  fon: 'yatırım fonu',
+  hisse: 'Borsa İstanbul hissesi',
+  kripto: 'kripto para',
+  yabanci_hisse: 'yurt dışı borsada işlem gören hisse',
+  altin: 'altın, gram fiyatı TL',
+  doviz: 'döviz kuru, TL karşılığı',
+  emtia: 'emtia',
+  eurobond: 'eurobond, temiz fiyat',
+};
 
 /// Bir paketin kullanıcı mesajı. Ölçümler JSON olarak gider (anahtar sırası
 /// sabit: önbellek değil ama tekrarlanabilirlik için).
 export function kullaniciMesaji(p: Paket): string {
   const varlikAdi = p.varlik === 'fon'
     ? `${p.kod} (yatırım fonu${p.kategori ? `, kategori: ${p.kategori}` : ''})`
-    : p.varlik === 'hisse' ? `${p.kod} (Borsa İstanbul hissesi)` : `${p.kod} (kripto para, Binance USDT paritesi)`;
+    : p.varlik === 'hisse'
+    ? `${p.kod} (Borsa İstanbul hissesi)`
+    : p.varlik === 'kripto'
+    ? `${p.kod} (kripto para${p.para ? '' : ', Binance USDT paritesi'})`
+    : `${p.kod} (${VARLIK_ADI[p.varlik]})`;
   const donem = p.tur === 'haftalik' ? 'hafta' : 'ay';
   return [
     `Varlık: ${varlikAdi}`,
+    ...(p.para ? [`Ölçü: fiyat serisi (${p.para} kote); akış ve hacim verisi yok`] : []),
     `Dönem (${donem}): ${gunAy(p.baslangic)} – ${gunAy(p.bitis)}`,
     `Dönemdeki olaylar: ${p.olaylar.length > 0 ? p.olaylar.join('; ') : 'yok'}`,
     'Ölçümler:',
@@ -427,7 +633,7 @@ export function kullaniciMesaji(p: Paket): string {
 }
 
 /// Batch isteğinin `params` gövdesi. Model ve efor çağırandan: haftalık not
-/// Sonnet 5.5 düşük efor, aylık rapor Opus 5.5 düşük efor; maliyet tavanı
+/// ve aylık rapor Sonnet 5.5 düşük efor (2026-10-12'ye kadar aylık Opus'tu); tavan
 /// aşılınca Haiku 4.5 (efor parametresi yok).
 export function istekGovdesi(p: Paket, model: string): Record<string, unknown> {
   const outputConfig: Record<string, unknown> = {
@@ -458,13 +664,13 @@ export type NotMaddesi = { metin: string; kanit: string[] };
 export type Not = { baslik: string; maddeler: NotMaddesi[] };
 
 /// Metindeki sayı parçaları: '412,00', '3,1', '48.210', '30', '2026'.
-function sayilar(metin: string): string[] {
+export function sayilar(metin: string): string[] {
   return metin.match(/\d+(?:[.,]\d+)*/g) ?? [];
 }
 
 /// Yasak ifadeler (Türkçe ekleriyle). Kelime sınırı: 'satış' (betimleyici)
 /// serbest, 'satın'/'satmalı' (eylem) yasak.
-const YASAK: RegExp[] = [
+export const YASAK: RegExp[] = [
   /(^|[^\p{L}])(al|sat)(ın|ınız|malı|malısın|manız|mak için|abilirsiniz|ın\.)([^\p{L}]|$)/iu,
   /satın al/iu,
   /hedef fiyat/iu,
@@ -478,6 +684,21 @@ const YASAK: RegExp[] = [
   /yükselecek|düşecek|artacak|azalacak|beklen(iyor|ir|ti)/iu,
   /balina/iu,
   /portföyüne ekle|pozisyon aç/iu,
+];
+
+/// Teknik terim kapısı (2026-11-07, yasin: "not sayfası anlaşılır
+/// olmalı"). Bu terimler hiç yazılmaz; "oynaklık" yalnız aynı notta
+/// "dalgalan…" ile açıklanırsa geçer. Ölçüm anahtarı (snake_case) metne
+/// sızarsa da red: okur `fiyat_degisim` görmemeli.
+export const TEKNIK: RegExp[] = [
+  /volatilite/iu,
+  /standart sapma/iu,
+  /sigma|σ/iu,
+  /momentum/iu,
+  /likidite/iu,
+  /spread/iu,
+  /z[- ]?skor/iu,
+  /[a-z]+_[a-z_]+/u,
 ];
 
 export type KapiSonucu = { gecti: true } | { gecti: false; neden: string };
@@ -526,6 +747,13 @@ export function kapidanGecir(n: unknown, p: Paket): KapiSonucu {
     for (const r of YASAK) {
       if (r.test(metin)) return { gecti: false, neden: `dil: ${r.source.slice(0, 40)}` };
     }
+    for (const r of TEKNIK) {
+      if (r.test(metin)) return { gecti: false, neden: `terim: ${r.source.slice(0, 40)}` };
+    }
+  }
+  const tumu = metinler.join(' ');
+  if (/oynaklı/iu.test(tumu) && !/dalgalan/iu.test(tumu)) {
+    return { gecti: false, neden: 'terim: oynaklik aciklanmadi' };
   }
   return { gecti: true };
 }
@@ -609,6 +837,9 @@ const FIYAT: Record<string, [number, number, number, number]> = {
   'claude-sonnet-5-5': [2, 10, 0.2, 2.5],
   'claude-opus-5-5': [4, 20, 0.2, 5],
   'claude-haiku-4-5': [1, 5, 0.1, 1.25],
+  // Haiku 5.5 (100K token altı istem). Önbellek oranları liste fiyatının
+  // standart katları (okuma %10, yazma %125) varsayımı; portföy yorumu (0145).
+  'claude-haiku-5-5': [0.1, 0.5, 0.01, 0.125],
 };
 
 export type Kullanim = {
@@ -616,14 +847,21 @@ export type Kullanim = {
   output_tokens?: number;
   cache_read_input_tokens?: number;
   cache_creation_input_tokens?: number;
+  /// Sunucu taraflı araç sayacı (aylık nottaki haber araması, 0177).
+  server_tool_use?: { web_search_requests?: number | null } | null;
 };
+
+/// Web araması liste fiyatı: 1.000 arama 10 $ (2026-11-07). Batch indirimi
+/// aramaya UYGULANMAZ ("Batch'te aynı fiyat"); yalnız token yarı fiyat.
+export const ARAMA_USD = 0.01;
 
 export function maliyetUsd(model: string, u: Kullanim, batch = true): number | null {
   const f = FIYAT[model];
   if (!f) return null;
   const t = (u.input_tokens ?? 0) * f[0] + (u.output_tokens ?? 0) * f[1] +
     (u.cache_read_input_tokens ?? 0) * f[2] + (u.cache_creation_input_tokens ?? 0) * f[3];
-  return Math.round((t / 1e6) * (batch ? 0.5 : 1) * 1e5) / 1e5;
+  const arama = Number(u.server_tool_use?.web_search_requests ?? 0) * ARAMA_USD;
+  return Math.round(((t / 1e6) * (batch ? 0.5 : 1) + arama) * 1e5) / 1e5;
 }
 
 /// Maliyet tavanı (N-04): ay içi harcama tavanı aştıysa model bir kademe iner.

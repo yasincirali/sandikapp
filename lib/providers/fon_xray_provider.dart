@@ -161,3 +161,23 @@ final portfoyXrayProvider =
         },
       ));
 });
+
+/// Zirvedeki bir portföyün fon ve BES kodlarının TEFAS dağılımları
+/// (`zirve_icerik.dart`; yasin 2026-10-20). Anahtar sıralı kodların `,`
+/// birleşimi: portföyler arasında geçerken aynı kod kümesi tekrar
+/// sorulmaz. Hata Crashlytics'e gider ve boş harita döner — bölüm ek
+/// bilgidir, Zirve ekranının işi değildir; boş haritada fonlar "içeriği
+/// bilinmeyen" görünür, sayı uydurulmaz.
+final zirveFonDagilimlariProvider = FutureProvider.autoDispose
+    .family<Map<String, FonDagilimi>, String>((ref, birlesik) async {
+  final kodlar = birlesik.isEmpty ? const <String>[] : birlesik.split(',');
+  if (kodlar.isEmpty) return const {};
+  try {
+    final l = await SupabaseService.instance.fonDagilimlari(kodlar);
+    _tut(ref);
+    return {for (final d in l) d.fonKodu: d};
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'zirveFonDagilimlariProvider');
+    return const {};
+  }
+});

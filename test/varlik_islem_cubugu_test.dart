@@ -201,28 +201,28 @@ void main() {
     testWidgets('varsayılan: 2×2, dönem getirisi dahil (birebir eski)',
         (tester) async {
       await izgara(tester, gizli: false, gun: 30);
-      expect(find.text('DÖNEM GETİRİSİ'), findsOneWidget);
-      expect(find.text('BUGÜN'), findsOneWidget);
-      expect(find.text('EN BÜYÜK DÜŞÜŞ'), findsOneWidget);
-      expect(find.text('OYNAKLIK (YILLIK)'), findsOneWidget);
+      expect(find.text('Dönem getirisi'), findsOneWidget);
+      expect(find.text('Bugün'), findsOneWidget);
+      expect(find.text('En büyük düşüş'), findsOneWidget);
+      expect(find.text('Oynaklık (yıllık)'), findsOneWidget);
     });
 
     testWidgets('gizli: dönem getirisi yok, diğer ölçüler kalır',
         (tester) async {
       await izgara(tester, gizli: true, gun: 30);
-      expect(find.text('DÖNEM GETİRİSİ'), findsNothing);
-      expect(find.text('BUGÜN'), findsOneWidget);
-      expect(find.text('EN BÜYÜK DÜŞÜŞ'), findsOneWidget);
-      expect(find.text('OYNAKLIK (YILLIK)'), findsOneWidget);
+      expect(find.text('Dönem getirisi'), findsNothing);
+      expect(find.text('Bugün'), findsOneWidget);
+      expect(find.text('En büyük düşüş'), findsOneWidget);
+      expect(find.text('Oynaklık (yıllık)'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('gizli + GÜNLÜK: "Bugün" de dönem yüzdesidir, o da düşer',
         (tester) async {
       await izgara(tester, gizli: true, gun: 0);
-      expect(find.text('DÖNEM GETİRİSİ'), findsNothing);
-      expect(find.text('BUGÜN'), findsNothing);
-      expect(find.text('EN BÜYÜK DÜŞÜŞ'), findsOneWidget);
+      expect(find.text('Dönem getirisi'), findsNothing);
+      expect(find.text('Bugün'), findsNothing);
+      expect(find.text('En büyük düşüş'), findsOneWidget);
     });
 
     test('dönem satırı yüzdesiz: yalnız tutar (piyasa etkisi)', () {

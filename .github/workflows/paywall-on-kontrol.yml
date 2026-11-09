@@ -1,0 +1,38 @@
+# Paywall açılışı ön kontrolü — elle tetiklenen, salt okunur (2026-11-01).
+#
+# Neden: `tool/paywall_on_kontrol.py` Frankfurt Management API anahtarı ister;
+# o anahtar yalnız Actions secret'ındadır (bulut thread'inde yok). Açılış günü
+# yasin ya da thread bu işi koşturup çıktıyı iş özetinde okur: hediye satırı
+# eksik eski kullanıcı sayısı, `kapi_acik`, hatırlatma cron'u, secret ADLARI.
+# Yazma yok; Remote Config satırları elle işaretlenir (betik başı).
+name: Paywall ön kontrol (Frankfurt)
+
+on:
+  workflow_dispatch:
+    inputs:
+      kesim:
+        description: 'Hediye kesimi (ISO, ör. 2026-11-05T00:00:00+03); boş = sayma'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  kontrol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
+      KESIM: ${{ inputs.kesim }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ön kontrol
+        run: |
+          set -o pipefail
+          if [ -n "$KESIM" ]; then
+            python3 tool/paywall_on_kontrol.py --kesim "$KESIM" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            python3 tool/paywall_on_kontrol.py | tee -a "$GITHUB_STEP_SUMMARY"
+          fi

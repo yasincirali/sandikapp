@@ -1,7 +1,7 @@
 # Çerez ve Yerel Depolama Politikası — sandık
 
-**Yürürlük tarihi:** 4 Ekim 2026
-**Sürüm:** 1.1
+**Yürürlük tarihi:** 5 Kasım 2026
+**Sürüm:** 1.4
 
 ---
 
@@ -19,7 +19,9 @@ Oturum token'ları (Supabase Auth) burada saklanır:
 
 - **Erişim token'ı (JWT):** 1 saat geçerli
 - **Yenileme token'ı:** her yenilemede değişir
-- Uygulama 10 dakikadan uzun arka planda kalırsa uygulama kilidi açıksa kilitlenir, değilse oturum kapanır
+- Oturum sen çıkış yapana kadar açık kalır; uygulama kilidi açıksa uygulama 30 saniyeden uzun arka planda kalınca kilitlenir
+
+iOS'ta hesabın **rastgele cihaz numarası** da burada tutulur (Android'de bölüm 2.2'de); uygulama silinip yeniden kurulduğunda aynı telefonun tekrar e-posta koduyla doğrulanmaması içindir. Cihazı "Giriş yaptığın cihazlar" listesinden kaldırırsanız numara sunucuda tanınmaz ve bir sonraki girişte kod istenir.
 
 Bu token'lar oturum açma için **zorunludur** (sözleşmenin ifası — KVKK 5(2)(c) / GDPR 6(1)(b)).
 
@@ -33,7 +35,7 @@ Bu token'lar oturum açma için **zorunludur** (sözleşmenin ifası — KVKK 5(
 | Tema, dil, yazı boyutu, görünüm tercihleri | Arayüz ayarları | Uygulama silinene kadar |
 | Bildirim, uygulama kilidi ve gizlilik (tutarları gizle) tercihleri | Kullanıcı tercihi | Uygulama silinene kadar |
 | Yasal metin ve yatırım uyarısı onay durumu (yerel kopya) | Onayı tekrar sormamak | Metnin sürümü değişene kadar |
-| Rastgele cihaz numarası ve kurulum numarası | Kayıtlı cihazlar ve kayıt hunisi | Uygulama silinene kadar |
+| Rastgele cihaz numarası (iOS'ta ayrıca Keychain'de) ve kurulum numarası | Kayıtlı cihazlar ve kayıt hunisi | Uygulama silinene kadar; iOS'ta cihaz numarasının Keychain kopyası telefon sıfırlanana kadar |
 
 ### 2.3 Önbellek
 
@@ -108,4 +110,4 @@ Bu politikada değişiklik yapılırsa "Sürüm" numarası artırılır ve günc
 
 ## 7. İletişim
 
-Yerel depolamayla ilgili sorular için: `sandikapp.destek@gmail.com`
+Yerel depolamayla ilgili sorular için: `support@murphysoft.app`

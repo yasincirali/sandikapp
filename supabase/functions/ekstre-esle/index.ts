@@ -16,15 +16,41 @@
 // 5. `ekstre_esleme_kaydi`'na yalnız sayaç/maliyet (iskelet ve yanıt YOK);
 //    40 günden eski satırlar aynı istekte silinir.
 //
-// Yanıt: { ok: true, tablolar: Esleme[] } ya da { ok: false, neden }.
+// Metin yolu (v2, 2026-10-13, 0147): önce banka şablonu hafızası
+// (`ekstre_sablonlari`) — tutarsa model ÇAĞRILMAZ, kota düşmez, maliyet 0.
+// Tutmazsa önce Haiku 5.5, hiç tablo bulamazsa bir kez Sonnet 5.5; bulunan
+// eşlemeler şablon olarak saklanır. `sablonsuz: true` = cihaz şablonun
+// verdiği eşlemeyi sağlamada reddetti: şablonun hata sayacı artar, model
+// sorulur. Metin yolu açık rıza ister (`ekstre_ai_rizalari`; yoksa 403
+// `riza`). v1 iskelet birebir eskisi gibi (Sonnet, şablon yok, rıza yok).
+//
+// Yanıt: { ok: true, tablolar: Esleme[], kaynak: 'ai' | 'sablon' } ya da
+// { ok: false, neden }.
 // `error.message` ve ham model yanıtı dönülmez (CLAUDE.md sunucu kuralı).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import Anthropic from 'npm:@anthropic-ai/sdk@0';
 import { maliyetUsd } from '../_shared/analiz.ts';
-import { ARAC, hataOzeti, istekGovdesi, iskeletiDogrula, yanitiDogrula } from '../_shared/ekstre_esleme.ts';
+import {
+  adayIzler,
+  ARAC,
+  type Esleme,
+  hataOzeti,
+  ILK_MODEL,
+  istekGovdesi,
+  iskeletiDogrula,
+  izOzeti,
+  SABLON_HATA_SINIRI,
+  type Sablon,
+  sablonlaEsle,
+  sablonRolleri,
+  tablolariAyikla,
+  YEDEK_MODEL,
+  yanitiDogrula,
+  yeniSablonlar,
+} from '../_shared/ekstre_esleme.ts';
 
-const MODEL = 'claude-sonnet-5-5';
+const MODEL = YEDEK_MODEL;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,7 +95,7 @@ Deno.serve(async (req: Request) => {
   }
   if (gorebilir !== true) return jsonResponse({ ok: false, neden: 'premium' }, 403);
 
-  let govde: { iskelet?: unknown };
+  let govde: { iskelet?: unknown; sablonsuz?: unknown };
   try {
     govde = await req.json();
   } catch {
@@ -78,14 +104,70 @@ Deno.serve(async (req: Request) => {
   const d = iskeletiDogrula(govde.iskelet);
   if (!d.gecti) return jsonResponse({ ok: false, neden: d.neden }, 400);
   const iskelet = govde.iskelet as string;
+  const metinYolu = d.surum === 'metin';
 
   const db = createClient(url, servis);
   try {
+    // Metin yolunda kelimeler modele gider: işlemi isteyen kullanıcının
+    // açık rızası şart (0147 `ekstre_ai_rizalari`, ilk kullanımda sorulur).
+    if (metinYolu) {
+      const { data: riza, error: re } = await db.from('ekstre_ai_rizalari')
+        .select('geri_cekildi_at').eq('user_id', userId).maybeSingle();
+      if (re) throw re;
+      if (!riza || riza.geri_cekildi_at !== null) {
+        return jsonResponse({ ok: false, neden: 'riza' }, 403);
+      }
+    }
+
+    // Şablon hafızası (yalnız metin yolu): iz → SHA-256 → saklı eşleme.
+    const tablolarMetni = metinYolu ? tablolariAyikla(iskelet) : [];
+    const adaylar = await Promise.all(
+      adayIzler(tablolarMetni).map(async (a) => ({ ...a, iz: await izOzeti(a.iz) })),
+    );
+    const sablonlar = new Map<string, Sablon>();
+    if (adaylar.length > 0) {
+      const { data: sr, error: se } = await db.from('ekstre_sablonlari')
+        .select('iz, roller, sutun_sayisi')
+        // Çok sayfalı PDF her sayfada aynı başlığı tekrarlar; tekil izler
+        // azdır. Üst sınır GET adresinin uzunluğu için (150 × 64 ≈ 10 KB).
+        .in('iz', [...new Set(adaylar.map((a) => a.iz))].slice(0, 150))
+        .lt('hata', SABLON_HATA_SINIRI);
+      if (se) throw se;
+      for (const r of sr ?? []) {
+        const roller = sablonRolleri(r.roller, Number(r.sutun_sayisi));
+        if (roller) sablonlar.set(r.iz, { roller, sutun_sayisi: Number(r.sutun_sayisi) });
+      }
+    }
+    const sablondan = sablonlaEsle(tablolarMetni, adaylar, sablonlar);
+    if (sablondan.kullanilan.length > 0) {
+      if (govde.sablonsuz === true) {
+        // Cihaz bu şablonların verdiği değerleri reddetti. Her (şablon,
+        // kullanıcı) bir kez sayılır (0159): tek kullanıcı tekrar tekrar
+        // bildirip ortak şablonu herkes için kapatamaz.
+        const { error: be } = await db.rpc('ekstre_sablon_hata_bildir', {
+          p_izler: sablondan.kullanilan, p_user_id: userId,
+        });
+        if (be) console.error('ekstre-esle sablon hata', hataOzeti(be));
+      } else {
+        await db.rpc('ekstre_sablon_say', { p_izler: sablondan.kullanilan, p_hata: false });
+        await db.from('ekstre_esleme_kaydi').insert({
+          user_id: userId,
+          model: 'sablon',
+          girdi_token: 0,
+          cikti_token: 0,
+          maliyet_usd: 0,
+          tablo_sayisi: sablondan.eslemeler.length,
+        });
+        return jsonResponse({ ok: true, tablolar: sablondan.eslemeler, kaynak: 'sablon' });
+      }
+    }
+
     const gunBasi = new Date();
     gunBasi.setUTCHours(0, 0, 0, 0);
     const { count, error: ce } = await db.from('ekstre_esleme_kaydi')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId).gte('olusturuldu', gunBasi.toISOString());
+      .eq('user_id', userId).gte('olusturuldu', gunBasi.toISOString())
+      .neq('model', 'sablon'); // şablon isteği modele gitmez, hak yemez
     if (ce) throw ce;
     const hak = Number(Deno.env.get('EKSTRE_GUNLUK_HAK') ?? '10') || 10;
     if ((count ?? 0) >= hak) return jsonResponse({ ok: false, neden: 'gunluk_hak' }, 429);
@@ -100,28 +182,86 @@ Deno.serve(async (req: Request) => {
     const tavan = Number(Deno.env.get('EKSTRE_AYLIK_TAVAN_USD') ?? '10');
     if (tavan > 0 && harcama >= tavan) return jsonResponse({ ok: false, neden: 'tavan' }, 429);
 
-    const yanit = await new Anthropic({ apiKey }).messages.create(
-      // deno-lint-ignore no-explicit-any
-      istekGovdesi(iskelet, MODEL) as any,
-    );
-    const arac = yanit.content.find((c) => c.type === 'tool_use' && c.name === ARAC.name);
-    const tablolar = yanitiDogrula(arac && 'input' in arac ? arac.input : null, d.tablolar);
+    // Atomik kapı (0159): sayım satırı modelden sonra yazıldığından eşzamanlı
+    // istekler günlük hakkı birlikte geçiyordu. Kapı okunamazsa model
+    // çağrılmaz (fail-closed).
+    const { data: izin, error: he } = await db.rpc('ai_hiz_kapisi', {
+      p_subject: userId, p_scope: 'ekstre_ai', p_max: hak, p_pencere_sn: 86400,
+    });
+    if (he) {
+      console.error('ekstre-esle hiz kapisi', hataOzeti(he));
+      return jsonResponse({ ok: false, neden: 'sunucu' }, 503);
+    }
+    if (izin !== true) return jsonResponse({ ok: false, neden: 'gunluk_hak' }, 429);
+
+    const anthropic = new Anthropic({ apiKey });
+    const sor = async (model: string) => {
+      const yanit = await anthropic.messages.create(
+        // deno-lint-ignore no-explicit-any
+        istekGovdesi(iskelet, model) as any,
+      );
+      const arac = yanit.content.find((c) => c.type === 'tool_use' && c.name === ARAC.name);
+      return {
+        tablolar: yanitiDogrula(arac && 'input' in arac ? arac.input : null, d.tablolar),
+        maliyet: maliyetUsd(model, {
+          input_tokens: yanit.usage?.input_tokens,
+          output_tokens: yanit.usage?.output_tokens,
+        }, false) ?? 0,
+        girdi: yanit.usage?.input_tokens ?? 0,
+        cikti: yanit.usage?.output_tokens ?? 0,
+      };
+    };
+    // v1: doğrudan Sonnet (eski davranış). v2: Haiku, boşsa bir kez Sonnet.
+    let sonModel = metinYolu ? ILK_MODEL : MODEL;
+    let sonuc = await sor(sonModel);
+    let maliyet = sonuc.maliyet, girdi = sonuc.girdi, cikti = sonuc.cikti;
+    if (metinYolu && sonuc.tablolar.length === 0) {
+      sonModel = YEDEK_MODEL;
+      sonuc = await sor(sonModel);
+      maliyet += sonuc.maliyet;
+      girdi += sonuc.girdi;
+      cikti += sonuc.cikti;
+    }
+    const tablolar: Esleme[] = sonuc.tablolar;
+
+    if (metinYolu) {
+      // Yalnız YENİ ya da kapanmış (hata ≥ sınır) şablon yazılır: çalışan bir
+      // ortak şablonun üstüne tek kullanıcının model çıktısı yazılmasın
+      // (2026-10-20). Yukarıda okunan `sablonlar` yalnız açık olanlardır.
+      for (const y of yeniSablonlar(tablolarMetni, tablolar)) {
+        const iz = await izOzeti(y.iz);
+        if (sablonlar.has(iz)) continue;
+        const { error: ye } = await db.from('ekstre_sablonlari').upsert({
+          iz,
+          roller: y.sablon.roller,
+          sutun_sayisi: y.sablon.sutun_sayisi,
+          model: sonModel,
+          guncellendi: new Date().toISOString(),
+          hata: 0,
+        }, { onConflict: 'iz' });
+        // Şablon yazılamazsa kullanıcı yine yanıtını alır; yalnız kod loga.
+        if (ye) {
+          console.error('ekstre-esle sablon', hataOzeti(ye));
+        } else {
+          // Kapanmış şablonun yerine yenisi geldi: eski ret bildirimleri
+          // yeni sürümü saymasın.
+          await db.from('ekstre_sablon_hata_bildirimleri').delete().eq('iz', iz);
+        }
+      }
+    }
 
     // Saklama 40 gün (Gizlilik 1.6 §7): kota yalnız bugünü ve bu ayı okur.
     const sinir = new Date(Date.now() - 40 * 86_400_000).toISOString();
     await db.from('ekstre_esleme_kaydi').delete().lt('olusturuldu', sinir);
     await db.from('ekstre_esleme_kaydi').insert({
       user_id: userId,
-      model: MODEL,
-      girdi_token: yanit.usage?.input_tokens ?? null,
-      cikti_token: yanit.usage?.output_tokens ?? null,
-      maliyet_usd: maliyetUsd(MODEL, {
-        input_tokens: yanit.usage?.input_tokens,
-        output_tokens: yanit.usage?.output_tokens,
-      }, false),
+      model: sonModel,
+      girdi_token: girdi,
+      cikti_token: cikti,
+      maliyet_usd: maliyet,
       tablo_sayisi: tablolar.length,
     });
-    return jsonResponse({ ok: true, tablolar });
+    return jsonResponse({ ok: true, tablolar, kaynak: 'ai' });
   } catch (e) {
     console.error('ekstre-esle', hataOzeti(e));
     return jsonResponse({ ok: false, neden: 'sunucu' }, 500);

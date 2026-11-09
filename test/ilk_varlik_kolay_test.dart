@@ -83,10 +83,12 @@ void main() {
       await _pump(tester,
           const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin));
       await tester.pump();
+      // 2026-10-31: seçim alanı kalktı; seçili tür çip satırında seçili
+      // görünür.
       expect(
-          find.bySemanticsLabel(
-              RegExp(r'Seçili altın türü: Gram Altın \(24 Ayar\)')),
-          findsOneWidget);
+          tester.getSemantics(
+              find.bySemanticsLabel(RegExp(r'^Gram Altın \(24 Ayar\) altın'))),
+          isSemantics(isSelected: true));
       expect(tester.takeException(), isNull);
     });
 
@@ -95,8 +97,9 @@ void main() {
           const AddAssetScreen(hizliSecim: IlkVarlikSecimi.ceyrekAltin));
       await tester.pump();
       expect(
-          find.bySemanticsLabel(RegExp(r'Seçili altın türü: Çeyrek Altın')),
-          findsOneWidget);
+          tester.getSemantics(
+              find.bySemanticsLabel(RegExp(r'^Çeyrek Altın altın'))),
+          isSemantics(isSelected: true));
       expect(tester.takeException(), isNull);
     });
 
@@ -116,7 +119,10 @@ void main() {
         (tester) async {
       await _pump(tester, const AddAssetScreen());
       expect(find.text('Yazarak ekle'), findsOneWidget);
-      expect(find.text('Ekstreden aktar'), findsOneWidget);
+      expect(find.text('Ekstreden ekle'), findsOneWidget);
+      // Form gövdesi tür seçilince açılır (tür ızgarası, 2026-10-20).
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
       expect(find.text('Not ekle'), findsNothing);
       final ayrinti = find.text('Ayrıntı ekle (komisyon, not)');
       expect(ayrinti, findsOneWidget);
@@ -124,7 +130,7 @@ void main() {
       await tester.ensureVisible(ayrinti);
       await tester.tap(ayrinti);
       await tester.pumpAndSettle();
-      expect(find.text('Komisyon / Masraf'), findsOneWidget);
+      expect(find.text('Komisyon / masraf'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -149,7 +155,7 @@ void main() {
             ),
           ));
       expect(find.text('Yazarak ekle'), findsNothing);
-      expect(find.text('Komisyon / Masraf'), findsOneWidget);
+      expect(find.text('Komisyon / masraf'), findsOneWidget);
     });
   });
 

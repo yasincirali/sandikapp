@@ -39,6 +39,15 @@ class PremiumHakki {
 
   bool get hediye => kaynak == 'erken_kullanici';
 
+  /// Bitişe kalan gün, yukarı yuvarlanır (bugün biten "0 gün" demesin);
+  /// süresizde null, bitmişte 0.
+  int? kalanGun(DateTime simdi) {
+    final b = bitis;
+    if (b == null) return null;
+    if (!b.isAfter(simdi)) return 0;
+    return (b.difference(simdi).inHours / 24).ceil().clamp(1, 1 << 30);
+  }
+
   /// Ürün kimliğinde 'yillik' / 'annual' geçiyorsa yıllık.
   bool get yillik {
     final u = (urun ?? '').toLowerCase();
@@ -61,16 +70,111 @@ class PremiumHakki {
   }
 }
 
+/// Sunucudaki paywall ayarları (`premium_ayar`, 0172). Remote Config'in
+/// `premium_enabled` / `premium_hediye_kesim` anahtarlarının yerini aldı
+/// (yasin 2026-11-01: paywall RC bayraklarıyla yönetilmez): kesim hediye
+/// SQL'iyle aynı yerde yazılır, acil kapatma tek UPDATE'tir.
+class PremiumSunucuAyari {
+  const PremiumSunucuAyari({
+    this.kapiAcik = false,
+    this.hediyeKesim,
+    this.acilKapali = false,
+  });
+
+  /// Sunucu ücretli içeriği kısıtlıyor mu (bilgi; kilit kararına girmez).
+  final bool kapiAcik;
+
+  /// Erken kullanıcı hediyesinin kesimi; verilmediyse null (herkes "eski").
+  final DateTime? hediyeKesim;
+
+  /// true → kilitler herkeste askıda, ödeyenin hakkı korunur.
+  final bool acilKapali;
+
+  /// Okunamayan ayar = güvenli taraf: kesim bilinmiyor, acil durum yok.
+  static const varsayilan = PremiumSunucuAyari();
+
+  static PremiumSunucuAyari satirdan(Map<String, dynamic> m) {
+    final kesimHam = m['hediye_kesim'];
+    return PremiumSunucuAyari(
+      kapiAcik: m['kapi_acik'] == true,
+      hediyeKesim:
+          kesimHam is String ? DateTime.tryParse(kesimHam)?.toUtc() : null,
+      acilKapali: m['acil_kapali'] == true,
+    );
+  }
+}
+
+/// Öne dönüşte sunucu ayarının yeniden okunması için arka planda geçmesi
+/// gereken en kısa süre (müşteri raporu 2026-11-08 #4).
+///
+/// Eskiden her öne dönüş (bildirim çekmecesi, uygulamalar arası geçiş)
+/// bir Supabase isteğiydi. Acil kapatma (`acil_kapali`) ve kapı en geç bu
+/// süre + soğuk açılışta yansır; soğuk açılış her zaman okur (sağlayıcı
+/// ilk izlendiğinde kurulur, hafızası boştur).
+const premiumAyarTazelemeEsigi = Duration(minutes: 5);
+
+/// Öne dönüşte [premiumSunucuAyariProvider] geçersiz kılınsın mı. Saf;
+/// [bosluk] arkada geçen süre, bilinmiyorsa (arkaya alınma görülmedi)
+/// `null` → tazeleme yok.
+bool premiumAyariTazelenmeli(Duration? bosluk) =>
+    bosluk != null && bosluk >= premiumAyarTazelemeEsigi;
+
+/// Okuma düştüğünde dönülecek ayar: son BAŞARILI okuma, hiç yoksa
+/// [PremiumSunucuAyari.varsayilan]. Saf.
+///
+/// Neden: zayıf bağlantıda öne dönen kullanıcının ayarı bir anlığına
+/// varsayılana düşüyordu (acil kapatma açıkken kilitler bir an geri
+/// geliyordu). Bilinen son değer, "hiç bilmiyorum"dan daha doğru.
+PremiumSunucuAyari premiumAyariHatada(PremiumSunucuAyari? sonBasarili) =>
+    sonBasarili ?? PremiumSunucuAyari.varsayilan;
+
+/// Sunucu ayarının okuyucusu; testte geçersiz kılınır.
+final premiumAyarOkuyucuProvider =
+    Provider<Future<Map<String, dynamic>> Function()>(
+        (_) => SupabaseService.instance.premiumAyarlari);
+
+/// Son başarılı okumanın kutusu — süreç boyunca yaşar ki
+/// [premiumSunucuAyariProvider] geçersiz kılınınca bilgi kaybolmasın.
+/// Ayar kullanıcıya değil uygulamaya ait (`premium_ayar` tek satır),
+/// hesap değişiminde taşınması doğru.
+class PremiumAyarHafizasi {
+  PremiumSunucuAyari? sonBasarili;
+}
+
+final premiumAyarHafizasiProvider =
+    Provider<PremiumAyarHafizasi>((_) => PremiumAyarHafizasi());
+
+/// Sunucu ayarını okur. Hata → son başarılı değer ([premiumAyariHatada]),
+/// hiç okunmadıysa varsayılan; ikisinde de Crashlytics non-fatal (acil
+/// kapatma hiç okunamazsa normal kural: kilit). Öne dönüşte yalnız
+/// [premiumAyarTazelemeEsigi] kadar arkada kalındıysa yeniden okunur
+/// (`main.dart`, [premiumAyariTazelenmeli]).
+/// `hediye_kesim` sunucudan gelir ama uygulama kararda KULLANMAZ (hediye
+/// kaldırıldı, 2026-11-01; bkz. `kilitlerAskidaProvider`). Oturum yokken
+/// varsayılan.
+final premiumSunucuAyariProvider =
+    FutureProvider<PremiumSunucuAyari>((ref) async {
+  if (!ref.watch(paywallVisibleProvider)) return PremiumSunucuAyari.varsayilan;
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  if (uid == null) return PremiumSunucuAyari.varsayilan;
+  final hafiza = ref.read(premiumAyarHafizasiProvider);
+  try {
+    final ayar = PremiumSunucuAyari.satirdan(
+        await ref.read(premiumAyarOkuyucuProvider)());
+    hafiza.sonBasarili = ayar;
+    return ayar;
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'premiumSunucuAyariProvider');
+    return premiumAyariHatada(hafiza.sonBasarili);
+  }
+});
+
 /// Oturumdaki kullanıcının hakları. autoDispose DEĞİL: kalıcı
 /// `effectivePremiumProvider` bunu izler; oturum değişince `authProvider`
 /// üzerinden yenilenir. Hata → boş liste + Crashlytics non-fatal:
-/// okuyamadığımız hak "Premium değil" sayılır. Kilit kararı ama bunun
-/// üstünde (`kilitlerAskidaProvider`, 2026-10-10): hesap hediye kesiminden
-/// eskiyse ve hak satırı okunamadıysa kilit GÖSTERİLMEZ — hediyesini almış
-/// olabilecek kullanıcıyı bir ağ hatası yüzünden kilitlemek, ücretli içeriği
-/// birkaç dakika açık bırakmaktan pahalı. Yeni hesap (kesimden sonra) yine
-/// kilit görür. Liste süresi geçmiş satırları da içerir: hediyesi biten
-/// hesap "satırı var" sayılır ve kilit döner.
+/// okuyamadığımız hak "Premium değil" sayılır (2026-11-01'e kadar hediye
+/// güvencesi bunu eski hesapta askıya alıyordu; hediye kalktı, kural tek).
+/// Liste süresi geçmiş satırları da içerir (abonelik yönetimi satırı için).
 final premiumHaklariProvider = FutureProvider<List<PremiumHakki>>((ref) async {
   if (!ref.watch(paywallVisibleProvider)) return const [];
   final uid = ref.watch(authProvider).valueOrNull?.id;
@@ -93,6 +197,24 @@ final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {
     ..sort((a, b) => sira.indexOf(a.kaynak).compareTo(sira.indexOf(b.kaynak)));
   return gecerli.isEmpty ? null : gecerli.first;
 });
+
+/// Hediyesi BİTMİŞ ve başka geçerli hakkı olmayan kullanıcı (paywall
+/// incelemesi, 2026-10-20). 90 günlük hediye herkese aynı gün verildiği için
+/// aynı günlerde biter; bitişi söylemeyen uygulama "bir sabah kilit"
+/// hissi yaratıyordu. Profil bandı ve açılıştaki tek seferlik sayfa bunu
+/// okur. Değer bitmiş hediyenin bitişidir (bir kez söyleme anahtarı).
+final hediyesiBitmisProvider = Provider<DateTime?>((ref) {
+  if (ref.watch(gecerliPremiumHakkiProvider) != null) return null;
+  final haklar = ref.watch(premiumHaklariProvider).valueOrNull ?? const [];
+  for (final h in haklar) {
+    if (h.hediye && h.bitis != null) return h.bitis;
+  }
+  return null;
+});
+
+/// Hediyesi son günlerinde (≤ [esik] gün) olan kullanıcı; yoksa null.
+/// Profil satırı "Premium'la devam et" düğmesini bu eşikte gösterir.
+const hediyeSonGunlerEsigi = 7;
 
 /// Premium'a özgü özellikler (radar, ekstre AI) görünür mü: paywall açıksa
 /// herkese (ücretsizde kilitli), kapalıyken yalnız admin hesabına. Gerekçe

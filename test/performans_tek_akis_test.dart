@@ -411,11 +411,14 @@ void main() {
             nedenEki: const Text('TÜR DÖKÜMÜ'),
           ));
       expect(find.textContaining('Paranın getirisi'), findsNothing);
-      expect(find.text(_tr.sectionWhy), findsOneWidget);
+      // "Neden böyle?" önünde "Ne oldu?" yokken çizilmez (Ar-Ge 2026-11-07
+      // 12:15 #3); "Nereden geldi" kart başlığı kalır.
+      expect(find.text(_tr.sectionWhy), findsNothing);
+      expect(find.text(_tr.whereItCameFrom), findsOneWidget);
       expect(find.text('TÜR DÖKÜMÜ'), findsOneWidget);
-      // Ek NEDEN'in içinde, başlığın altında.
+      // Ek NEDEN'in içinde, köprünün altında.
       expect(tester.getTopLeft(find.text('TÜR DÖKÜMÜ')).dy,
-          greaterThan(tester.getTopLeft(find.text(_tr.sectionWhy)).dy));
+          greaterThan(tester.getTopLeft(find.text(_tr.whereItCameFrom)).dy));
     });
   });
 
@@ -424,9 +427,11 @@ void main() {
     test('Performans, dönem ve kapsam adımları tek akışı anlatır', () {
       expect('PortfolioPerformanceScreen.tekAkisAcik'.allMatches(src).length,
           greaterThanOrEqualTo(4));
-      expect(src.contains('Seçtiğin dönem her ekranda geçerli olur.'), isTrue);
-      expect(src.contains('RemoteConfigService.instance.donemHafizasi'),
-          isTrue);
+      // `donem_hafizasi` 2026-10-20'de emekliye ayrıldı: cümle iki dalda da
+      // koşulsuz.
+      expect(
+          'Seçtiğin dönem her ekranda geçerli olur.'.allMatches(src).length,
+          greaterThanOrEqualTo(2));
     });
   });
 

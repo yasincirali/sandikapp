@@ -65,6 +65,61 @@ void main() {
     });
   });
 
+  // Boş arama sadeleşmesi (2026-10-26): dört sabit eylem + "Tüm eylemler".
+  group('aramaEylemDuzeni', () {
+    test('boş sorgu: sabit dört, bu sırayla; kalan tanım sırasıyla', () {
+      for (final q in ['', '   ']) {
+        final d = aramaEylemDuzeni(q);
+        expect(d.gorunen, [
+          AramaEylemi.fiyatAlarmlari,
+          AramaEylemi.takipListesi,
+          AramaEylemi.topluEkle,
+          AramaEylemi.ayarlar,
+        ]);
+        expect(d.kalan, [
+          AramaEylemi.sinyalAyarlari,
+          AramaEylemi.ekstreAktar,
+          AramaEylemi.tumHareketler,
+          AramaEylemi.karsilastir,
+          AramaEylemi.bildirimler,
+        ]);
+        // İkisi birlikte bütün eylemler, tekrar yok.
+        expect({...d.gorunen, ...d.kalan}, AramaEylemi.values.toSet());
+        expect(d.gorunen.length + d.kalan.length, AramaEylemi.values.length);
+      }
+    });
+
+    test('yazınca: eşleşen hepsi görünür, açılır kısım yok', () {
+      final d = aramaEylemDuzeni('a');
+      expect(d.gorunen, aramaEylemleriniSuz('a'));
+      expect(d.kalan, isEmpty);
+      // Sabit dörtte olmayan eylem de doğrudan gelir.
+      final s = aramaEylemDuzeni('sinyal');
+      expect(s.gorunen, [AramaEylemi.sinyalAyarlari]);
+      expect(s.kalan, isEmpty);
+      expect(aramaEylemDuzeni('xyzq').gorunen, isEmpty);
+    });
+
+    test('mevcut: açılamayan hedef ne sabitte ne kalanda', () {
+      final mevcut = {...AramaEylemi.values}
+        ..remove(AramaEylemi.bildirimler)
+        ..remove(AramaEylemi.ayarlar);
+      final d = aramaEylemDuzeni('', mevcut: mevcut);
+      expect(d.gorunen, [
+        AramaEylemi.fiyatAlarmlari,
+        AramaEylemi.takipListesi,
+        AramaEylemi.topluEkle,
+      ]);
+      expect(d.kalan, isNot(contains(AramaEylemi.bildirimler)));
+      expect(d.kalan, hasLength(4));
+    });
+
+    test('sabit liste dört eylem, kişiye göre değişmez (sabit const)', () {
+      expect(aramaSabitEylemler, hasLength(4));
+      expect(aramaEylemDuzeni('').gorunen, aramaEylemDuzeni('').gorunen);
+    });
+  });
+
   group('aramaPozisyonlari', () {
     Asset lot(String id, String ticker, String ad,
             {bool sell = false, double q = 10}) =>

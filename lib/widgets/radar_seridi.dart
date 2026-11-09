@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
+import '../providers/gunler_provider.dart';
 import '../providers/hafta_ozeti_provider.dart';
 import '../screens/hafta_ozeti_screen.dart';
 import '../theme/sandik.dart';
+import 'sandik_skeleton.dart';
 
 /// Ana ekran, Bugün kartının altında tek satırlık radar şeridi (S7-A,
 /// 2026-10-05): "N varlığında bu hafta olağandışı hareket var ›".
@@ -18,13 +20,26 @@ import '../theme/sandik.dart';
 ///
 /// Bayrak (`balina_radari_acik`) kapalıyken provider sorgu atmaz, 0 döner
 /// → şerit hiç yer kaplamaz; ana ekran eski hâliyle birebir.
+///
+/// Tek dürtü yuvasında (2026-10-24, [anaSayfaDurtusuProvider]): bilgi eksik
+/// satırı ya da iki gün içindeki takvim olayı görünürken susar; yumuşak
+/// güncelleme ve özellik önerisinden önce gelir. Gizlendiğinde sinyal
+/// kaybolmaz: Haftanın özeti'nde aynı sayı durur.
 class RadarSeridi extends ConsumerWidget {
   const RadarSeridi({super.key, this.padding = EdgeInsets.zero});
 
   final EdgeInsetsGeometry padding;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
+    if (ref.watch(anaSayfaDurtusuProvider) != AnaSayfaDurtusu.radar) {
+      return const SizedBox.shrink();
+    }
     final sayi = ref.watch(haftaOlagandisiSayisiProvider);
     if (sayi <= 0) return const SizedBox.shrink();
     final c = context.c;
@@ -36,7 +51,9 @@ class RadarSeridi extends ConsumerWidget {
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
         onTap: () => pushGuarded(
           context,
-          adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()),
+          adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'hafta_ozeti'),
+              builder: (_) => const HaftaOzetiScreen()),
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(

@@ -12,7 +12,9 @@ enum AssetType {
   hisse('Hisse', Icons.show_chart_rounded, Sandik.amber, 'TRY'),      // Amber — marka CTA
   fon('Fon', Icons.pie_chart_rounded, Sandik.info, 'TRY'),           // Sky blue — nötr/finansal
   doviz('Döviz', Icons.attach_money_rounded, Color(0xFF7EC8A9), 'USD'),     // Soft mint — gain'den ayrık
-  altin('Altın', Icons.star_rounded, Sandik.gold, 'TRY'),            // Gold — altın karakteri
+  // Sikke (unslop 2026-11-05 #6): yıldız uygulamada "takip et" demek;
+  // altın satırı favori gibi okunuyordu.
+  altin('Altın', Icons.toll_rounded, Sandik.gold, 'TRY'),            // Gold — altın karakteri
   emtia('Emtia', Icons.inventory_2_rounded, Color(0xFFC97B4F), 'USD'),      // Copper — emtia sıcaklığı
   // Orkide — mevcut altı renge ve gain/loss'a uzak (2026-09-25 kripto planı).
   // Varsayılan para birimi TRY: fiyat sunucuda TL paritesinden (ya da
@@ -323,6 +325,34 @@ String kotasyonSembolu(String ticker, String currency) {
   return _currencySymbols[currency.trim().toUpperCase()] ?? '₺';
 }
 
+/// Fiyat alarmı sembolünün (yalnız sembol, para birimi kaydı yok)
+/// kotasyon simgesi; bilinmiyorsa `null` (simgesiz yazılır).
+///
+/// Sunucudaki `_shared/fiyat_metni.ts › kotasyonSimgesi` eşi (2026-10-29):
+/// push ile çan satırı AYNI simgeyi yazsın. Çan satırı her alarmda "₺"
+/// basıyordu; ABD hissesi alarmının sayısı dolardı (canlı kotasyon,
+/// [kotasyonSembolu] ile aynı ilke). `price_alert_notifications` para
+/// birimi tutmaz (yeni kolon migration ister); sembol çoğu durumda yeter:
+/// `.IS`/altın/kur/fon/kripto TL, vadeli (`=F`) ve gram türevi dolar, son
+/// eksiz harf sembolü ABD borsası. Endeks puandır; başka son ek ve eurobond
+/// belirsizdir — yanlış simge simgesiz sayıdan kötüdür.
+String? alarmFiyatSimgesi(String sembol) {
+  final t = sembol.trim().toUpperCase();
+  if (t.isEmpty || bistEndeksiMi(t) || kureselEndeksMi(t)) return null;
+  if (t.endsWith('=X')) {
+    final cift = t.substring(0, t.length - 2);
+    return cift.length == 6 ? _currencySymbols[cift.substring(3)] : null;
+  }
+  if (t.startsWith('ALTIN_') ||
+      t.startsWith('TEFAS:') ||
+      t.startsWith('KRIPTO:') ||
+      t.endsWith('.IS')) {
+    return '₺';
+  }
+  if (t.endsWith('=F') || t.startsWith('GRAM:')) return '\$';
+  return RegExp(r'^[A-Z][A-Z\-]{0,5}$').hasMatch(t) ? '\$' : null;
+}
+
 /// SEMBOL SERİSİNDEN okunan fiyatın simgesi — her zaman ₺.
 ///
 /// ## Neden ayrı (seri denetimi, 2026-10-08)
@@ -354,3 +384,22 @@ bool bistEndeksiMi(String ticker) {
   if (t.endsWith('.IS')) return true;
   return t.length == 5 && !t.contains(RegExp(r'[.:=\-]'));
 }
+
+/// Küresel endeks mi (`^NDX`, `^GSPC`, `^GDAXI`)? Yahoo endeksleri `^` ile
+/// başlatır; hisse, fon, emtia ya da kur sembolü hiçbir zaman `^` taşımaz.
+///
+/// ## Neden ayrı kural (yasin, 2026-10-23: "Endeksleri ekle, US100 falan da
+/// nasdaq da olsun")
+/// Küresel endeks de PUANDIR, fiyat değil. Üstelik para birimi tek değil:
+/// DAX euro, FTSE sterlin, Nikkei yen piyasasının puanı. `getSymbolHistory`
+/// TL kote olmayan her sembolü USD sayıp o günün kuruyla çeviriyordu; DAX'ı
+/// dolar kuruyla TL'ye çevirmek uydurma bir sayı olurdu (fiyat kaynağı
+/// sözleşmesi madde 3). Endeks hiç çevrilmez, puanıyla çizilir; kıyas
+/// grafiği zaten yüzde değişimi karşılaştırır.
+bool kureselEndeksMi(String ticker) => ticker.trim().startsWith('^');
+
+/// BIST ya da küresel endeks mi? Gösteren her yüzey (takip satırı, arama
+/// satırı, varlık sayfası) puan biçimi ve "portföye eklenemez" kararı için
+/// buna sorar.
+bool endeksMi(String ticker) =>
+    bistEndeksiMi(ticker) || kureselEndeksMi(ticker);

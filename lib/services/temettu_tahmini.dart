@@ -55,11 +55,17 @@ class TahminSatiri {
     required this.brutTry,
     required this.netTry,
     required this.aylar,
+    this.hakGunleri = const [],
   });
 
   final String ad;
   final String sembol;
   final double lot;
+
+  /// Geçen yılın gerçekleşmiş hak günleri (TR takvimi, saatsiz). Ana
+  /// sayfadaki "seni ilgilendiren günler" satırı yıl dönümünü söyler
+  /// (`seni_ilgilendiren_gunler.dart`); tahminin kendisi yalnız ayı kullanır.
+  final List<DateTime> hakGunleri;
 
   /// Son 12 ayda pay başına brüt.
   final double brutPay;
@@ -128,6 +134,7 @@ TemettuTahmini temettuTahmini(
       brutTry: brut,
       netTry: TemettuGecmisi.oneriTutari(brut, stopaj).tutar,
       aylar: {for (final o in olaylar) o.hakTarihi.month}.toList()..sort(),
+      hakGunleri: [for (final o in olaylar) o.hakTarihi],
     ));
   }
   satirlar.sort((a, b) => b.brutTry.compareTo(a.brutTry));

@@ -15,14 +15,19 @@
 /// 2. **Yarım günler** (bayram arifeleri, 28 Ekim) öğleden sonra kapalıdır;
 ///    BIST bu günlerde 12:30'da kapanır.
 ///
-/// Sunucu tarafında bir "işlem günü" tablosu kurulursa bu liste oradan
-/// beslenir; o güne kadar tek kaynak burasıdır ve push sinyalleri hâlâ
-/// takvimi bilmez (yalnızca gösterim yüzeyleri).
+/// Sunucunun kopyası `supabase/functions/_shared/bist_tatil.ts` (Ar-Ge
+/// 29 Eki #1): kilit ekranı push'u, sinyal taraması, TEFAS gözlemi ve
+/// sabah brifingi tatili oradan bilir. İki liste `bist_tatil_parite_test`
+/// ile gün gün eşit tutulur; birini değiştiren ikisini birlikte değiştirir.
+/// Edge Function Dart okuyamadığı ve uygulama sabit listeyi senkron
+/// sorduğu için (asset okuması async) tek dosya yerine kilitli iki kopya.
 class BistTakvimi {
   const BistTakvimi._();
 
   /// Dinî bayram tarihlerinin girildiği son yıl. Her Aralık ayında bir
-  /// sonraki yılın ilanı gelince güncellenir (bkz. TECHNICAL_DEBT).
+  /// sonraki yılın ilanı gelince güncellenir (bkz. TECHNICAL_DEBT; 1 Aralık
+  /// hatırlatması `YAPMAN_GEREKENLER.md`). Tarihe bağlı test bilerek yok:
+  /// takvim yılına göre kırılan test CI'ı rastgele kırar.
   static const sonKapsananYil = 2026;
 
   /// Yarım gün kapanışı (dakika, gün başından).

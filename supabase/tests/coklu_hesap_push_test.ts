@@ -108,6 +108,7 @@ Deno.test('push gönderen her yüzey pasif hesap satırlarını okuyor', async (
     'temettu-yakala/index.ts',
     'send-partner-invite-push/index.ts',
     '_shared/watchlist_moves.ts',
+    '_shared/yuzde_alarmi.ts', // 0169
     '_shared/tufe_push.ts',
   ];
   for (const d of dosyalar) {

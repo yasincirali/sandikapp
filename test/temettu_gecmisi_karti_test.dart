@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/utils/friendly_error.dart' show SandikDiyalogKabugu;
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/providers/preferences_provider.dart';
+import 'package:portfoy_takip/providers/premium_provider.dart';
+import 'package:portfoy_takip/widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'package:portfoy_takip/services/temettu_gecmisi.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/dividend_dialog.dart';
 import 'package:portfoy_takip/widgets/temettu_gecmisi_karti.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// "Son 12 ay temettü" kartı ve ön dolu temettü diyaloğu (plan §F5).
 ///
@@ -63,11 +68,13 @@ Future<void> _pump(
   Widget body, {
   double width = 375,
   double textScale = 1.0,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = Size(width * 3, 900 * 3);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
+    overrides: overrides,
     child: MaterialApp(
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -88,6 +95,9 @@ Future<void> _pump(
     ),
   ));
   await tester.pump();
+  await tester.pump();
+  // Yükleme → içerik çapraz geçişi biter (2026-10-14).
+  await tester.pump(SandikMotion.surface);
   await tester.pump();
 }
 
@@ -112,7 +122,7 @@ void main() {
         ),
       );
       expect(cagri, 0);
-      expect(find.textContaining('TEMETT'), findsNothing);
+      expect(find.textContaining('temett'), findsNothing);
       expect(find.byType(SandikCard), findsNothing);
     });
 
@@ -166,7 +176,7 @@ void main() {
           olayCekici: (_) async => _olaylar,
         ),
       );
-      expect(find.textContaining('TEMETT'), findsOneWidget);
+      expect(find.text('Son 12 ay temettü'), findsOneWidget);
       expect(find.text(_g(_yakin)), findsOneWidget);
       expect(find.text(_g(_uzak)), findsOneWidget);
       // Pay tutarı kırpılmaz: 3,442 (3,44 değil).
@@ -175,6 +185,78 @@ void main() {
       expect(find.text('Kaydedildi'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Kaydet'), findsOneWidget);
       expect(find.textContaining('Kaydettiğin: ₺106,25'), findsOneWidget);
+    });
+
+    group('maliyetine göre verim (Premium)', () {
+      // 100 lot × ₺250 = ₺25.000 maliyet; ₺1.050 net → %4,2.
+      final kayit = _satir(
+        id: 'd',
+        kind: AssetKind.dividend,
+        quantity: 0,
+        dividendAmount: 1050,
+        tarih: _uzak.add(const Duration(days: 1, hours: 9)),
+      );
+      Widget kart(List<Asset> defter) => TemettuGecmisiKarti(
+            varlik: alim,
+            defter: defter,
+            etkin: true,
+            olayCekici: (_) async => _olaylar,
+          );
+      List<Override> premium({required bool gorunur, required bool kilitli}) =>
+          [
+            premiumOzellikleriGorunurProvider.overrideWithValue(gorunur),
+            premiumKilitliProvider.overrideWithValue(kilitli),
+          ];
+
+      testWidgets('Premium: satır yüzdeyle, ekran okuyucuya tam cümle',
+          (t) async {
+        final h = t.ensureSemantics();
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: true, kilitli: false));
+        expect(find.text('Maliyetine göre yıllık verim %4,2'), findsOneWidget);
+        expect(
+            find.bySemanticsLabel(RegExp(
+                r'Son 12 ayda kaydettiğin net temettü, bugünkü maliyetinin %4,2')),
+            findsOneWidget);
+        h.dispose();
+      });
+
+      testWidgets('ücretsiz: sayı yok, kilit satırı (görünür + kilitli)',
+          (t) async {
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: true, kilitli: true));
+        expect(find.textContaining('%4,2'), findsNothing);
+        expect(find.byType(KilitSatiri), findsOneWidget);
+        expect(find.text("Maliyetine göre yıllık verimin Premium'da"),
+            findsOneWidget);
+      });
+
+      testWidgets('Premium özellikleri görünmüyorsa (paywall kapalı) yok',
+          (t) async {
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: false, kilitli: false));
+        expect(find.textContaining('verim'), findsNothing);
+        expect(find.byType(KilitSatiri), findsNothing);
+      });
+
+      testWidgets('12 ayda kayıt yoksa ne satır ne kilit', (t) async {
+        await _pump(t, kart([alim]),
+            overrides: premium(gorunur: true, kilitli: true));
+        expect(find.textContaining('verim'), findsNothing);
+        expect(find.byType(KilitSatiri), findsNothing);
+      });
+
+      testWidgets('bakiye gizliyken tutar maskeli, yüzde açık', (t) async {
+        SharedPreferences.setMockInitialValues({});
+        await _pump(t, kart([alim, kayit]),
+            overrides: premium(gorunur: true, kilitli: false));
+        final c = ProviderScope.containerOf(
+            t.element(find.byType(TemettuGecmisiKarti)));
+        await c.read(balanceHiddenProvider.notifier).set(true);
+        await t.pump();
+        expect(find.textContaining('₺1.050'), findsNothing);
+        expect(find.text('Maliyetine göre yıllık verim %4,2'), findsOneWidget);
+      });
     });
 
     for (final (genislik, olcek) in [(320.0, 1.0), (320.0, 1.3)]) {
@@ -208,7 +290,7 @@ void main() {
       );
       await t.tap(find.widgetWithText(TextButton, 'Kaydet'));
       await t.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(SandikDiyalogKabugu), findsOneWidget);
       final alan = t.widget<TextField>(find.byType(TextField));
       // Remote Config testte varsayılan: stopaj 0,15 (karar 8.1, mevzuat)
       // → alan NET ön dolu, kesinti ve net satırda. "Bilinmiyor" yolu
@@ -270,7 +352,7 @@ void main() {
       await t.tap(find.widgetWithText(FilledButton, 'Kaydet'));
       await t.pump();
       // Boş alan → geçerli tutar iste; diyalog açık kalır, addDividend yok.
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(SandikDiyalogKabugu), findsOneWidget);
       expect(find.text('Geçerli bir tutar gir'), findsOneWidget);
     });
 

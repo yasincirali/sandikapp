@@ -27,7 +27,8 @@ enum AramaEylemi {
   ayarlar,
 }
 
-/// Eylemin arama anahtarları. Sıra = boş sorguda öneri sırası.
+/// Eylemin arama anahtarları. Sıra = yazınca sonuç sırası; boş sorguda
+/// "Tüm eylemler" altındaki sıra (önce [aramaSabitEylemler]).
 const Map<AramaEylemi, List<String>> aramaEylemAnahtarlari = {
   AramaEylemi.fiyatAlarmlari: [
     'fiyat alarmı',
@@ -127,6 +128,55 @@ List<AramaEylemi> aramaEylemleriniSuz(String sorgu,
     }
   }
   return sonuc;
+}
+
+/// Boş sorguda her zaman görünen dört eylem — bu sırayla.
+///
+/// ## Neden sabit (2026-10-26)
+/// Boş aramada dokuz satır, "Son baktıkların"ın altında ekranı dolduruyor
+/// ve aranan kısayolu satır kalabalığında kaybettiriyordu. Dördü en sık
+/// gidilen yerler (alarm, takip listesi, toplu ekle, ayarlar); kalanı tek
+/// "Tüm eylemler" satırının arkasında, aynı listede açılır.
+///
+/// Kişiye göre sıralama / kullanım sayacı BİLEREK YOK: yeri değişen satır
+/// alışkanlığı bozar — kullanıcı parmağını "üçüncü satır = toplu ekle"ye
+/// alıştırır, sayaç bir gün sırayı değiştirince yanlış yere dokunur. Liste
+/// hep aynı yerde durur; ayrıca cihazda kullanım kaydı tutmak gerekmez.
+/// Yazınca (sorgu dolu) bu ayrım yok: eşleşen bütün eylemler gelir.
+const List<AramaEylemi> aramaSabitEylemler = [
+  AramaEylemi.fiyatAlarmlari,
+  AramaEylemi.takipListesi,
+  AramaEylemi.topluEkle,
+  AramaEylemi.ayarlar,
+];
+
+/// Eylem listesinin ekrandaki düzeni: [gorunen] her zaman çizilir, [kalan]
+/// "Tüm eylemler" açılınca altında.
+///
+/// - Boş sorgu: [gorunen] = [aramaSabitEylemler] (bu sırayla), [kalan] =
+///   öteki eylemler tanım sırasıyla. "Tüm eylemler" yalnız [kalan] doluyken
+///   çizilir.
+/// - Dolu sorgu: [gorunen] = [aramaEylemleriniSuz] (eşleşen hepsi, bugünkü
+///   davranış), [kalan] boş — açılır satır yok.
+///
+/// [mevcut] ikisini de süzer (açıcısı verilmeyen hedef hiçbir yerde
+/// listelenmez). Açık/kapalı durumu burada değil: ekranın geçici durumu,
+/// kalıcı değil (her açılışta kapalı başlar).
+({List<AramaEylemi> gorunen, List<AramaEylemi> kalan}) aramaEylemDuzeni(
+    String sorgu,
+    {Set<AramaEylemi>? mevcut}) {
+  final hepsi = aramaEylemleriniSuz(sorgu, mevcut: mevcut);
+  if (sorgu.trim().isNotEmpty) return (gorunen: hepsi, kalan: const []);
+  return (
+    gorunen: [
+      for (final e in aramaSabitEylemler)
+        if (hepsi.contains(e)) e,
+    ],
+    kalan: [
+      for (final e in hepsi)
+        if (!aramaSabitEylemler.contains(e)) e,
+    ],
+  );
 }
 
 final _bosluk = RegExp(r'\s+');

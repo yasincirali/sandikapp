@@ -8,7 +8,10 @@ SurfaceFlinger'ın uygulama katmanında saydığı kareyi yazar.
 
 Kullanım:
   python tool/cpu_ekran.py [emulator-5556] [--kapi]
-  --kapi: Ana sekmesinde şeridin boşta durması beklenir (bostaSuresi + sönme),
+  --kapi: 2026-10-29'dan beri Ana sekmesinde şerit BİLEREK hep akar (yasin:
+          "bant hiç durmasın"; `PiyasaSeridi.bostaDurur`). Kapı bu yüzden
+          Ana yerine Portföy sekmesinde ölçer (orada sürekli çizim olmamalı).
+          Eski tanım: Ana sekmesinde şeridin boşta durması beklenir (bostaSuresi + sönme),
           sonra 8 sn'de ortalama kare/sn eşiğin üstündeyse 1 ile çıkar.
           Eşik 5 fps: 30 sn'lik fiyat nabzı bir iki kare üretebilir, sürekli
           akış 58 üretir; arada geniş boşluk var.
@@ -101,16 +104,16 @@ def main():
         print(f"{ad:<11} boşta {dt:.1f}s  toplam %{toplam:5.1f}  ui %{ui:5.1f}  raster %{raster:5.1f}  kare {f} ({f/dt:.0f} fps)")
     if not KAPI:
         return
-    sh(f"input tap {TAB['Ana'][0]} {TAB['Ana'][1]}")
-    print(f"kapı: Ana'da {BOSTA_BEKLEME} sn dokunmadan bekleniyor (şerit durmalı)…")
+    sh(f"input tap {TAB['Portföy'][0]} {TAB['Portföy'][1]}")
+    print(f"kapı: Portföy'de {BOSTA_BEKLEME} sn dokunmadan bekleniyor…")
     time.sleep(BOSTA_BEKLEME)
     dt, toplam, ui, raster, f = olc(p)
     fps = f / dt
-    print(f"Ana (boşta durma sonrası) toplam %{toplam:.1f}  ui %{ui:.1f}  raster %{raster:.1f}  kare {f} ({fps:.1f} fps)")
+    print(f"Portföy (boşta) toplam %{toplam:.1f}  ui %{ui:.1f}  raster %{raster:.1f}  kare {f} ({fps:.1f} fps)")
     if fps > KAPI_ESIK_FPS:
-        print(f"✗ KAPI: Ana ekran boşta {fps:.1f} fps çiziyor (eşik {KAPI_ESIK_FPS}). Sürekli animasyon var.")
+        print(f"✗ KAPI: Portföy boşta {fps:.1f} fps çiziyor (eşik {KAPI_ESIK_FPS}). Sürekli animasyon var.")
         sys.exit(1)
-    print("✓ KAPI: Ana ekran boşta uyuyor.")
+    print("✓ KAPI: Portföy boşta uyuyor.")
 
 
 main()

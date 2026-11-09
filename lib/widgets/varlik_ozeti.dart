@@ -110,6 +110,19 @@ class VarlikBasligi extends StatelessWidget {
   }
 }
 
+/// Seri dönemin başına ulaşmadığında başlıktaki dönem etiketi: "son 8 ay
+/// (veri bu kadar)" (2026-10-23). Yüzde verinin kapsadığı sürenin
+/// getirisidir; "5 yıl" yazmak başka bir dönemin sayısını o dönemin adıyla
+/// göstermek olurdu. "Kuruluştan beri" denmez: boşluk her zaman kuruluş
+/// değildir (kaynaktan yarım gelen seri de olabilir).
+String donemKapsamEtiketi(BuildContext context, int kapsananGun) {
+  final l = context.l10n;
+  final sure = kapsananGun < 60
+      ? l.durationDaysN(kapsananGun)
+      : l.durationMonthsN((kapsananGun / 30.44).round());
+  return l.periodCoverage(sure);
+}
+
 /// Fiyat bloğunun dönem değişimi satırı: metin ve rengi.
 typedef DonemDegisimSatiri = ({String metin, Color renk});
 
@@ -120,6 +133,14 @@ typedef DonemDegisimSatiri = ({String metin, Color renk});
 ///   · düz değişim → "1 yıl boyunca değişmedi", nötr renk. [duz] verilmezse
 ///     [donemDuzMu] (= `DonemIstatistigi.isFlat` eşiği).
 ///   · [fark] `null` → yalnız yüzde (mevduat: birim fark anlamsız).
+///   · [birim] verilirse fark "/ lot" gibi birimle yazılır: portföydeki
+///     hissede başlık "+₺9,22 · Bugün", hemen altındaki Pozisyonun tablosu
+///     "Bugün kâr/zarar +₺922" diyordu; iki "bugün" tutarı 100 kat farklı ve
+///     biri birimsizdi (Ar-Ge 5 Kas 14:45 #4). Yalnız hisse/fon verir: altın
+///     ve dövizde birim fiyatın kendisinde okunuyor.
+///   · [veriGelmedi] → "Bugünün verisi henüz gelmedi" (GÜNLÜK seri hiç
+///     gelmedi; Bugün kartıyla aynı cümle, UX raporu 30 Eki §1). Düz
+///     tohum seri "değişim yok" diye okunmasın.
 DonemDegisimSatiri donemDegisimSatiri(
   BuildContext context, {
   required double? pct,
@@ -127,8 +148,11 @@ DonemDegisimSatiri donemDegisimSatiri(
   required NumberFormat bicim,
   double? fark,
   bool? duz,
+  bool veriGelmedi = false,
+  String? birim,
 }) {
   final l = context.l10n;
+  if (veriGelmedi) return (metin: l.todayNoDataYet, renk: context.c.text58);
   if (pct == null) return (metin: ' ', renk: context.c.text36);
   if (duz ?? donemDuzMu(pct)) {
     return (metin: l.periodNoChange(donem), renk: context.c.text36);
@@ -139,7 +163,8 @@ DonemDegisimSatiri donemDegisimSatiri(
   }
   return (
     metin: '$yuzde · ${fark >= 0 ? '+' : '−'}'
-        '${bicim.format(fark.abs())} · $donem',
+        '${bicim.format(fark.abs())}${birim == null ? '' : ' / $birim'}'
+        ' · $donem',
     renk: context.signColor(pct),
   );
 }
@@ -204,12 +229,11 @@ class VarlikFiyatBlogu extends StatelessWidget {
     );
   }
 
-  Widget _kur(BuildContext context, String fiyat,
-      DonemDegisimSatiri degisim, Object? kimlik) {
+  Widget _kur(BuildContext context, String fiyat, DonemDegisimSatiri degisim,
+      Object? kimlik) {
     final ust = Text(
       etiket,
       style: context.t.labelSmall?.copyWith(
-          letterSpacing: 0.9,
           fontWeight: FontWeight.w700,
           color: context.c.text36),
     );
@@ -221,9 +245,13 @@ class VarlikFiyatBlogu extends StatelessWidget {
         if (yan == null)
           ust
         else
+          // Etiket de esnek: 3.1× yazıda 320 pt'te "GÜNCEL FİYAT" sabit
+          // genişlikle satırı taşırıyordu (fonun fiyat günü notu eklenince
+          // her fonda Row kuruluyor; 2026-10-31).
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ust,
+              Flexible(child: ust),
               const SizedBox(width: SandikSpace.sm),
               Flexible(child: yan),
             ],
@@ -269,8 +297,8 @@ class VarlikFiyatBlogu extends StatelessWidget {
     // başında, kenarları sönük, renk geçişi `flowOf` (hareketi azalt → anında).
     // Hare dönemin yönüdür: imleç gezinirken (değişim satırı tarihe
     // dönünce) sönmez.
-    final yonlu =
-        this.degisim.renk == context.c.gain || this.degisim.renk == context.c.loss;
+    final yonlu = this.degisim.renk == context.c.gain ||
+        this.degisim.renk == context.c.loss;
     final hedef = this.degisim.renk;
     return Stack(
       clipBehavior: Clip.none,

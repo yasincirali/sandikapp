@@ -28,15 +28,24 @@ String fonAdiAnahtari(String ad) {
 
 /// [ad] için [fonlar] (kod, unvan) içinden TEK eşleşen fonun kodu.
 String? fonKoduBul(String ad, Iterable<({String kod, String unvan})> fonlar) {
+  final adaylar = fonAdaylari(ad, fonlar);
+  return adaylar.length == 1 ? adaylar.single : null;
+}
+
+/// [ad]ın kelime öneki olduğu fonların kodları. Birebir aynı unvan varsa
+/// yalnız o (kısa unvan, uzun unvanın öneki de olabilir: "X FONU" ve
+/// "X FONU SERBEST"). Hareket okuyucu da kullanır: çözülemeyen bir adın
+/// adaylarından biri hareketlerde geçiyorsa o kodun bugünkü adedi
+/// bilinmiyor demektir (`hareketlerleIncelt`).
+Set<String> fonAdaylari(
+    String ad, Iterable<({String kod, String unvan})> fonlar) {
   final anahtar = fonAdiAnahtari(ad);
-  if (anahtar.isEmpty) return null;
+  if (anahtar.isEmpty) return const {};
   final kelimeler = anahtar.split(' ');
   final adaylar = <String>{};
   for (final f in fonlar) {
     final u = fonAdiAnahtari(f.unvan);
-    // Birebir aynı unvan her zaman kazanır (kısa unvan, uzun unvanın
-    // öneki de olabilir: "X FONU" ve "X FONU SERBEST").
-    if (u == anahtar) return f.kod.trim().toUpperCase();
+    if (u == anahtar) return {f.kod.trim().toUpperCase()};
     final uk = u.split(' ');
     if (uk.length < kelimeler.length) continue;
     var tutar = true;
@@ -48,5 +57,5 @@ String? fonKoduBul(String ad, Iterable<({String kod, String unvan})> fonlar) {
     }
     if (tutar) adaylar.add(f.kod.trim().toUpperCase());
   }
-  return adaylar.length == 1 ? adaylar.single : null;
+  return adaylar;
 }

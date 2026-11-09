@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -20,8 +22,10 @@ import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/analiz_notu_kutusu.dart';
+import '../widgets/bozdur_al_satiri.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
@@ -31,6 +35,7 @@ import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/seri_son_guncelleme.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
@@ -39,6 +44,8 @@ import 'asset_detail_screen.dart'
 import '../services/technical_analysis_service.dart'
     show kSinyalCozunurlugu, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
+import '../widgets/fon_fiyat_gunu_etiketi.dart';
+import '../widgets/sandik_ikon_gecisi.dart';
 
 /// Varlık sayfası — bir varlığı portföye EKLEMEDEN incelemek.
 ///
@@ -78,6 +85,11 @@ import 'pozisyona_git.dart';
 ///     gösterilmez.
 ///   · Çip altındaki getiriler o dönemin KENDİ serisinden gelir — başka bir
 ///     seriden türetilseydi çip ile başlık aynı dönem için iki sayı yazardı.
+///   · Önce eski seri, sonra taze (2026-10-24, Ar-Ge raporu §1): bellekte
+///     seri yoksa diskteki son ölçülmüş seri ([EldekiSeriYukleyici]) hemen
+///     SOLUK çizilir, taze seri gelince netleşir; istatistikler ve grafik
+///     göstergeleri taze seriden yeniden hesaplanır. Taze çekim düşerse eski
+///     seri net kalır, altında "Son güncelleme: …" ([SeriSonGuncelleme]).
 Future<void> showVarlikSayfasi(
   BuildContext context,
   VarlikKimligi kimlik, {
@@ -124,13 +136,28 @@ bool _acik = false;
 /// (2026-09-28): önceden burada 3A yoktu, Performans'ta 5Y yoktu; seçiciler
 /// artık her ekranda birebir aynı. Servis `3mo`/`5y` aralıklarını zaten
 /// destekliyor (`HistoryService.rangeForPeriod`).
+///
+/// YB yok ([SummaryPeriod.sembolDonemleri], gerekçe enum'daki "YB" notu);
+/// ortak dönem YB iken `sembolGunu` 1Y'nin günüdür, sayfa 1Y açılır.
 final varlikSayfasiDonemleri = <int>[
-  for (final p in SummaryPeriod.values) p.sembolGunu,
+  for (final p in SummaryPeriod.sembolDonemleri) p.sembolGunu,
 ];
 
 /// Seri yükleyici — testte ağ yerine sahte seri verilir.
 typedef SeriYukleyici = Future<Map<int, double>> Function(
     String ticker, int periodDays);
+
+/// Taze seri + tazeliği: `bayatZaman` doluysa ağ düştü ve seri son iyi
+/// kopyadan geldi (`HistoryService.getSymbolHistoryTazelikli`).
+typedef TazeSeriYukleyici
+    = Future<({Map<int, double> seri, DateTime? bayatZaman})> Function(
+        String ticker, int periodDays);
+
+/// Ağa çıkmadan eldeki (disk) son iyi seri; yoksa ya da çok eskiyse `null`
+/// (`HistoryService.getSymbolHistoryEldeki`).
+typedef EldekiSeriYukleyici
+    = Future<({Map<int, double> seri, DateTime zaman})?> Function(
+        String ticker, int periodDays);
 
 class VarlikSayfasi extends ConsumerStatefulWidget {
   const VarlikSayfasi({
@@ -141,6 +168,8 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
     this.baslangicDonemGun,
     this.onSec,
     this.seriYukleyici,
+    this.tazeYukleyici,
+    this.eldekiYukleyici,
   });
 
   final VarlikKimligi kimlik;
@@ -162,6 +191,12 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
 
   final SeriYukleyici? seriYukleyici;
 
+  /// Testte tazelik bilgisiyle sahte seri ([seriYukleyici]'nin yerine).
+  final TazeSeriYukleyici? tazeYukleyici;
+
+  /// Testte sahte eldeki seri. Verilmezse ve iki yükleyici de yoksa disk.
+  final EldekiSeriYukleyici? eldekiYukleyici;
+
   @override
   ConsumerState<VarlikSayfasi> createState() => _VarlikSayfasiState();
 }
@@ -181,12 +216,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   late int _gun = varlikSayfasiDonemleri.contains(widget.baslangicDonemGun)
       ? widget.baslangicDonemGun!
-      // `donem_hafizasi`: istek yoksa uygulamanın ortak dönemi (Sadeleştirme
-      // 2); bayrak kapalıyken eski varsayılan 1Y. Sayfa her dönemi
+      // Tek dönem hafızası: istek yoksa uygulamanın ortak dönemi
+      // (Sadeleştirme 2; bayrak `donem_hafizasi` 2026-10-20'de emekliye
+      // ayrıldı, eski 1Y varsayılanı kalktı). Sayfa her dönemi
       // gösterebildiği için en yakına düşme gerekmez.
-      : donemHafizasiAcik
-          ? ref.read(seciliDonemProvider).sembolGunu
-          : 365;
+      : ref.read(seciliDonemProvider).sembolGunu;
 
   /// Grafikte ŞU AN çizilen dönem. Yeni dönem yüklenirken eski çizgi soluk
   /// kalır — boş kutu ya da dönen tekerlek yerine bağlam.
@@ -197,6 +231,35 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   final Set<int> _yukleniyor = {};
   final Set<int> _hatali = {};
 
+  /// Dönemin ekrandaki serisi ESKİ bir kopyadan: o kopyanın ölçüldüğü an.
+  /// Taze seri gelince silinir; taze çekim düştüyse kalır ve grafiğin altına
+  /// "Son güncelleme" yazılır.
+  final Map<int, DateTime> _eskiZaman = {};
+
+  /// Eski seri çiziliyor, taze çekim sürüyor → grafik soluk.
+  final Set<int> _tazesiYolda = {};
+
+  bool get _agsizTest =>
+      widget.seriYukleyici != null || widget.tazeYukleyici != null;
+
+  TazeSeriYukleyici get _tazeYukleyici {
+    final t = widget.tazeYukleyici;
+    if (t != null) return t;
+    final s = widget.seriYukleyici;
+    if (s != null) {
+      return (tk, d) async => (seri: await s(tk, d), bayatZaman: null);
+    }
+    return (tk, d) => HistoryService.instance
+        .getSymbolHistoryTazelikli(tk, periodDays: d);
+  }
+
+  EldekiSeriYukleyici? get _eldekiYukleyici =>
+      widget.eldekiYukleyici ??
+      (_agsizTest
+          ? null
+          : (tk, d) => HistoryService.instance
+              .getSymbolHistoryEldeki(tk, periodDays: d));
+
   /// Açılış kapısı açıldı mı (bkz. `utils/acilis_kapisi.dart`): altı dönem
   /// ve sinyal serisi geldi ya da süre doldu. Bir kez `true` olur.
   bool _acildi = false;
@@ -204,15 +267,15 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   @override
   void initState() {
     super.initState();
-    // `donem_hafizasi`: açılışta istenen dönem (Takip satırı, derin bağlantı)
+    // Tek dönem hafızası: açılışta istenen dönem (Takip satırı, derin bağlantı)
     // ortak döneme de yazılır. Sağlayıcı kurulum sırasında değiştirilemez;
     // kareden sonra yazılır.
     final istenen = widget.baslangicDonemGun;
-    if (donemHafizasiAcik && varlikSayfasiDonemleri.contains(istenen)) {
+    if (varlikSayfasiDonemleri.contains(istenen)) {
       Future.microtask(() {
         if (!mounted) return;
         ref.read(seciliDonemProvider.notifier).state =
-            SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(istenen!)];
+            SummaryPeriod.sembolDonemleri[varlikSayfasiDonemleri.indexOf(istenen!)];
       });
     }
     CrashReporter.arkaPlan(_ilkYukleme(), reason: 'VarlikSayfasi.ilkYukleme');
@@ -260,33 +323,98 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         if (g != _gun) _yukle(g),
       // Panel seviye kapısının arkasında (Başlangıç'ta yok) — çizilmeyecek
       // panelin serisi de istenmez (varlık detayıyla aynı).
-      if (widget.seriYukleyici == null &&
+      if (!_agsizTest &&
           widget.kimlik.ticker.isNotEmpty &&
           ref.read(sinyalYuzeyiProvider) == SinyalYuzeyi.acik)
-        HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
-            periodDays: kSinyalPenceresiGun,
-                cozunurluk: kSinyalCozunurlugu),
+        _sinyalKapisi(),
     ]);
     if (!mounted) return;
     await rotaGecisiniBekle(context);
     if (mounted) setState(() => _acildi = true);
   }
 
-  Future<void> _yukle(int gun) async {
-    if (_seriler.containsKey(gun) || _yukleniyor.contains(gun)) return;
+  /// Sinyal panelinin serisi açılış kapısında. Eldeki kopyası varsa kapı
+  /// tazeyi BEKLEMEZ (önce-eski-seri): sayfa diskteki serilerle hemen açılır,
+  /// panel aynı serinin taze çekimini kendi yerinde bekler (uçuşan istek
+  /// tekilleştirilir). Kopya yoksa eskisi gibi tazeyi bekler.
+  Future<Object?> _sinyalKapisi() {
+    Future<Map<int, double>> seri() =>
+        HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
+            periodDays: kSinyalPenceresiGun, cozunurluk: kSinyalCozunurlugu);
+    final taze = seri();
+    final eldeki = HistoryService.eldekiSeriyle(seri);
+    return Future.any<Object?>([
+      taze,
+      eldeki.then<Object?>((e) => e == null ? taze : null),
+    ]);
+  }
+
+  /// Dönemi yükler. Dönen future dönem İLK KEZ çizilebilir olunca biter
+  /// (eski kopya ya da taze seri) — açılış kapısı tazeyi beklemesin; taze
+  /// çekim arkada sürer.
+  Future<void> _yukle(int gun) {
+    final elde = _seriler[gun]?.isNotEmpty ?? false;
+    // Boş gelen dönem yeniden denenir: tek bir boş yanıt (TEFAS sınırı,
+    // kesinti) dönemi sayfa kapanana kadar boş bırakıyordu (2026-10-23).
+    // Taze çekimi düşüp eski seriyle kalan dönem de seçilince yeniden dener.
+    if ((elde && !_eskiZaman.containsKey(gun)) || _yukleniyor.contains(gun)) {
+      return Future.value();
+    }
     setState(() {
       _yukleniyor.add(gun);
       _hatali.remove(gun);
     });
+    final ilk = Completer<void>();
+    void cizilebilir() {
+      if (!ilk.isCompleted) ilk.complete();
+    }
+
+    final eldeki = _eldekiYukleyici;
+    if (!elde && eldeki != null) {
+      eldeki(widget.kimlik.ticker, gun).then((e) {
+        // Taze seri önce geldiyse eski kopya yok sayılır.
+        if (e == null ||
+            !mounted ||
+            !_yukleniyor.contains(gun) ||
+            (_seriler[gun]?.isNotEmpty ?? false)) {
+          return;
+        }
+        setState(() {
+          _seriKoy(gun, e.seri);
+          _eskiZaman[gun] = e.zaman;
+          _tazesiYolda.add(gun);
+        });
+        cizilebilir();
+      }, onError: (Object e, StackTrace st) {
+        CrashReporter.report(e, st, reason: 'VarlikSayfasi.eldekiSeri');
+      });
+    }
+    CrashReporter.arkaPlan(_tazeYukle(gun).whenComplete(cizilebilir),
+        reason: 'VarlikSayfasi.tazeSeri');
+    return ilk.future;
+  }
+
+  Future<void> _tazeYukle(int gun) async {
     try {
-      final yukleyici = widget.seriYukleyici ??
-          (t, d) => HistoryService.instance.getSymbolHistory(t, periodDays: d);
-      final seri = await yukleyici(widget.kimlik.ticker, gun);
+      final r = await _tazeYukleyici(widget.kimlik.ticker, gun);
       if (!mounted) return;
       setState(() {
         _yukleniyor.remove(gun);
-        _seriler[gun] = seri;
-        _istatistik[gun] = DonemIstatistigi.hesapla(seri, periodDays: gun);
+        _tazesiYolda.remove(gun);
+        final eskiCiziliyor = _seriler[gun]?.isNotEmpty ?? false;
+        // Ağ boş döndü ve ekranda eski seri var: o kalır, "son güncelleme"
+        // yazılır. Boş seri eski ölçümü silmez.
+        if (r.seri.isNotEmpty || !eskiCiziliyor) {
+          // Yeni seri → istatistik ve grafik göstergeleri yeniden hesaplanır
+          // (`_seriKoy`; grafik katmanları `seri`'den çizer).
+          _seriKoy(gun, r.seri);
+          final z = r.bayatZaman;
+          if (z == null) {
+            _eskiZaman.remove(gun);
+          } else {
+            _eskiZaman[gun] = z;
+          }
+        }
         if (gun == _gun) _cizilen = gun;
       });
     } catch (e, st) {
@@ -296,9 +424,18 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       if (!mounted) return;
       setState(() {
         _yukleniyor.remove(gun);
+        _tazesiYolda.remove(gun);
         _hatali.add(gun);
       });
     }
+  }
+
+  /// Dönem serisini yazar ve istatistiği BİR KEZ hesaplar (build'de değil).
+  void _seriKoy(int gun, Map<int, double> seri) {
+    _seriler[gun] = seri;
+    _istatistik[gun] =
+        DonemIstatistigi.hesapla(seri, periodDays: gun, simdi: DateTime.now());
+    if (gun == _gun) _cizilen = gun;
   }
 
   void _donemSec(int gun) {
@@ -310,13 +447,13 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     CrashReporter.arkaPlan(_yukle(gun), reason: 'VarlikSayfasi.donemSec');
   }
 
-  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
-  /// eskisi gibi doğrudan [_donemSec]'i çağırır). Ortak döneme yazma
+  /// Seçiciden dönem seçimi (tek dönem hafızası). Ortak döneme yazma
   /// `_gun` güncellendikten SONRA: [build]'deki dinleyici değişikliği kendi
   /// seçimimiz olarak tanır, ikinci kez yüklemez.
   void _ortakDonemSec(int i) {
     _donemSec(varlikSayfasiDonemleri[i]);
-    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[i];
+    ref.read(seciliDonemProvider.notifier).state =
+        SummaryPeriod.sembolDonemleri[i];
   }
 
   void _boyutuDegistir() {
@@ -401,20 +538,18 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   String _donemEtiketi(int gun) => donemEtiketi(
       context.l10n,
-      SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(gun).clamp(
-              0, SummaryPeriod.values.length - 1)]
+      SummaryPeriod.sembolDonemleri[varlikSayfasiDonemleri.indexOf(gun).clamp(
+              0, SummaryPeriod.sembolDonemleri.length - 1)]
           .label);
 
   @override
   Widget build(BuildContext context) {
     final k = widget.kimlik;
-    // `donem_hafizasi`: ortak dönem başka yüzeyde değişirse sayfa da geçer.
-    if (donemHafizasiAcik) {
-      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
-        final gun = yeni.sembolGunu;
-        if (gun != _gun) _donemSec(gun);
-      });
-    }
+    // Tek dönem hafızası: ortak dönem başka yüzeyde değişirse sayfa da geçer.
+    ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+      final gun = yeni.sembolGunu;
+      if (gun != _gun) _donemSec(gun);
+    });
     return Semantics(
       label: context.l10n.vsSheetSemantics(k.name),
       container: true,
@@ -442,17 +577,20 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
                   child: Column(children: [_tutamac(), _baslik()]),
                 ),
                 Expanded(
-                  child: ListView(
+                  // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): `kenar`
+                  // dar ekranda 0, liste birebir eskisi.
+                  child: SandikIcerikSutunu.olc(
+                    builder: (context, kenar) => ListView(
                     controller: sc,
                     padding: EdgeInsets.fromLTRB(
-                      SandikSpace.screenH(context),
+                      SandikSpace.screenH(context) + kenar,
                       SandikSpace.xs,
-                      SandikSpace.screenH(context),
+                      SandikSpace.screenH(context) + kenar,
                       // Alt çubuğun altında içerik kalmasın.
                       96 + MediaQuery.viewPaddingOf(context).bottom,
                     ),
                     children: _govde(),
-                  ),
+                  )),
                 ),
               ],
             ),
@@ -501,7 +639,22 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   // ── Gövde ─────────────────────────────────────────────────────────────────
 
-  List<Widget> _govde() {
+  /// İskelet → sayfa çapraz solar, boy farkı akar
+  /// (2026-10-14; gerekçe [SandikYuklemeGecisi]). `stretch`: liste
+  /// öğeleri eskiden ListView'dan sıkı genişlik alıyordu, aynısı korunur.
+  List<Widget> _govde() => [
+        SandikYuklemeGecisi(
+          yukleniyor: !_acildi,
+          iskelet: const VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi),
+          icerik: (_) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: _govdeIcerik(),
+          ),
+        ),
+      ];
+
+  List<Widget> _govdeIcerik() {
     final k = widget.kimlik;
     final cizilen = _cizilen;
     final ist = cizilen == null ? null : _istatistik[cizilen];
@@ -513,15 +666,26 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     //
     // Ondalık [fiyatBicimi]'nden (2026-10-10): sabit 2 hane SHIB'i ₺0,00,
     // BES fonunu ₺0,18 yazıyordu; `goz_alici` açıkken kaynak hassasiyeti.
-    final bicim = fiyatBicimi(ist?.son ?? 0,
+    //
+    // Hane sayısı büyük fiyatın yazılışından (Ar-Ge 2026-11-07 14:00 #2,
+    // varlık detayıyla aynı kural): aralık uçları ve değişim tutarı da
+    // aynı haneyle — ₺263,9333 değil ₺263,93.
+    final bicim = ayniOndalikFiyatBicimi(ist?.son ?? 0,
         azami: k.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
-    final bayat = cizilen != null && cizilen != _gun;
+    // Soluk: başka dönemin çizgisi (yeni dönem yolda) ya da eski kopya
+    // (taze seri yolda).
+    final bayat = cizilen != null &&
+        (cizilen != _gun || _tazesiYolda.contains(cizilen));
+    final sonGuncelleme = cizilen == null || _tazesiYolda.contains(cizilen)
+        ? null
+        : _eskiZaman[cizilen];
 
-    if (!_acildi) {
-      return const [VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi)];
-    }
     return [
       _fiyatBlogu(ist, bicim, cizilen),
+      // Altın/döviz: "Bozdurursan · Alırsan · fark" (2026-10-25). Büyük
+      // fiyat serinin son noktası (alış) olarak kalır; satır ise iki sayıyı
+      // da AYNI kotasyon kaydından yazar. Kapı reddederse satır yok.
+      BozdurAlSatiri(ticker: k.ticker, paraBirimi: k.currency),
       const SizedBox(height: SandikSpace.smd),
       // Seçici grafiğin ÜSTÜNDE — Performans ve varlık detayıyla aynı sıra
       // (kullanıcı kararı 2026-09-28; gerekçe
@@ -529,11 +693,22 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       _donemCipleri(),
       const SizedBox(height: SandikSpace.sm),
       _grafik(ist, bicim, cizilen, bayat),
+      if (sonGuncelleme != null) SeriSonGuncelleme(zaman: sonGuncelleme),
       const SizedBox(height: SandikSpace.md),
       if (ist != null) ...[
-        _istatistikIzgarasi(ist, cizilen!),
-        const SizedBox(height: SandikSpace.sm),
-        _aralikCubugu(ist, bicim),
+        // GÜNLÜK'te ızgara boş kalabilir (Ar-Ge 5 Kas 14:45 #3); boşluğu da.
+        if (DonemIstatistikIzgarasi.hucreSayisi(
+              donemGetirisiGizli: true,
+              bugunGizli: cizilen == 1,
+              oynaklikVar: ist.oynaklikPct != null,
+              dususVar:
+                  DonemIstatistikIzgarasi.dususVar(ist, gunIci: cizilen == 1),
+            ) >
+            0) ...[
+          _istatistikIzgarasi(ist, cizilen!),
+          const SizedBox(height: SandikSpace.sm),
+        ],
+        _aralikCubugu(ist, bicim, gunIci: cizilen == 1),
         const SizedBox(height: SandikSpace.lg),
       ],
       FonKarnesiKarti(tur: k.type, ticker: k.ticker),
@@ -576,9 +751,29 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   /// Düz değişim `isFlat` ile (ızgara ve detay ekranıyla aynı eşik).
   Widget _fiyatBlogu(
       DonemIstatistigi? ist, NumberFormat bicim, int? cizilen) {
-    final donem = cizilen == null ? '' : _donemEtiketi(cizilen);
+    final kapsam = ist?.kapsananGun;
+    final donem = cizilen == null
+        ? ''
+        : kapsam != null
+            ? donemKapsamEtiketi(context, kapsam)
+            : _donemEtiketi(cizilen);
+    // Fonda gösterilen fiyatın GÜNÜ (müşteri raporu 30 Eki #2): önce canlı
+    // TEFAS kotasyonunun günü, yoksa çizilen serinin son noktası — büyük
+    // rakam (`ist.son`) o noktadır. Bugünün fiyatıysa etiket yer kaplamaz.
+    final k = widget.kimlik;
+    Widget? fonGunu;
+    if (fonFiyatliMi(k.type)) {
+      final seri = cizilen == null ? null : _seriler[cizilen];
+      final sonNokta = seri == null || seri.isEmpty
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+              seri.keys.reduce((a, b) => a > b ? a : b));
+      fonGunu = FonFiyatGunuEtiketi(
+          tarih: fonFiyatGunu(k.ticker) ?? sonNokta);
+    }
     return VarlikFiyatBlogu(
       etiket: context.l10n.currentPriceUpper,
+      etiketYani: fonGunu,
       kimlik: widget.kimlik.key,
       imlec: RemoteConfigService.instance.gozAlici ? _imlec : null,
       fiyat: ist == null ? '—' : bicim.format(ist.son),
@@ -590,11 +785,22 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         fark: ist?.fark,
         bicim: bicim,
         duz: ist?.isFlat,
+        // GÜNLÜK seri boş geldi (ağ yanıt verdi, nokta yok): boş satır
+        // yerine detay ekranı ve Bugün kartıyla aynı cümle.
+        veriGelmedi: cizilen == 1 && (_seriler[1]?.isEmpty ?? false),
       ),
     );
   }
 
+  /// İskelet/mesaj → grafik çapraz solar (2026-10-14).
   Widget _grafik(
+          DonemIstatistigi? ist, NumberFormat bicim, int? cizilen, bool bayat) =>
+      SandikIcerikGecisi(
+        anahtar: cizilen != null && _seriler[cizilen] != null && ist != null,
+        child: _grafikHam(ist, bicim, cizilen, bayat),
+      );
+
+  Widget _grafikHam(
       DonemIstatistigi? ist, NumberFormat bicim, int? cizilen, bool bayat) {
     final seri = cizilen == null ? null : _seriler[cizilen];
     if (seri == null || ist == null) {
@@ -666,14 +872,16 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   /// tek görünüş kararıyla kabuğa taşındı, 2026-09-28).
   Widget _donemCipleri() {
     return DonemSecici(
-      donemler: SummaryPeriod.values,
+      donemler: SummaryPeriod.sembolDonemleri,
       secili: varlikSayfasiDonemleri.indexOf(_gun),
       getiriler: [
         for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
       ],
-      onSec: donemHafizasiAcik
-          ? _ortakDonemSec
-          : (i) => _donemSec(varlikSayfasiDonemleri[i]),
+      eksik: [
+        for (final g in varlikSayfasiDonemleri)
+          _istatistik[g]?.kapsamEksik ?? false,
+      ],
+      onSec: _ortakDonemSec,
     );
   }
 
@@ -683,16 +891,35 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         gun: gun,
         donemPct: ist.degisimPct,
         bugunPct: _istatistik[1]?.degisimPct,
+        // Dönem getirisi fiyatın altında zaten yazıyor; GÜNLÜK'te (gun 1)
+        // "Bugün" de aynı sayı (Ar-Ge 1 Kas 08:45 #3, yasin "yap").
+        donemGetirisiGizli: true,
+        bugunGizli: gun == 1,
+        gunIci: gun == 1,
       );
 
-  /// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri.
-  Widget _aralikCubugu(DonemIstatistigi ist, NumberFormat bicim) =>
-      DonemAralikCubugu(
+  /// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri — varlık
+  /// detayıyla AYNI "Aralık" kartı ([AralikKarti], Ar-Ge 7 Kas 14:00 #1).
+  /// 52 hafta satırı burada yok: bu sayfa yalnız seçili dönemin serisini
+  /// yükler; yıllık uçlar için ayrı istek açılmaz (varlık detayı kendi
+  /// birim serisinden hesaplar).
+  Widget _aralikCubugu(DonemIstatistigi ist, NumberFormat bicim,
+      {bool gunIci = false}) {
+    final i = varlikSayfasiDonemleri.indexOf(_cizilen ?? _gun);
+    return AralikKarti(
+      gunIci: gunIci,
+      donem: (
         dusuk: ist.dusuk,
         yuksek: ist.yuksek,
         konum: ist.konum,
-        bicim: bicim,
-      );
+        bugun: ist.son,
+      ),
+      donemAdi: i < 0
+          ? null
+          : donemEtiketi(context.l10n, SummaryPeriod.sembolDonemleri[i].label),
+      bicim: bicim,
+    );
+  }
 
   // ── Alt çubuk ─────────────────────────────────────────────────────────────
 
@@ -709,6 +936,13 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final yukleniyor = portfoyYukleniyor(ref);
     final sahip = !yukleniyor && portfoydeMi(ref, k);
     final l = context.l10n;
+
+    // Endeks (BIST 100, US100, DAX…) puandır, satın alınamaz: portföye
+    // eklenecek bir şey yok. Yalnız takip düğmesi, tam genişlikte.
+    if (endeksMi(k.ticker) && widget.onSec == null) {
+      return _altCubukKabugu(
+          Row(children: [Expanded(child: _takipDugmesi(takipte))]));
+    }
 
     final Widget birincil;
     if (widget.onSec != null) {
@@ -740,28 +974,30 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // (çıkarabilmek için); yeni takip önerilmez — ikisi aynı şeyi izler.
     final takipDugmesi = !sahip || takipte || widget.onSec != null;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        SandikSpace.screenH(context),
-        SandikSpace.smd,
-        SandikSpace.screenH(context),
-        SandikSpace.smd + MediaQuery.viewPaddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: context.c.hairline)),
-      ),
-      child: Row(
-        children: [
-          if (takipDugmesi) ...[
-            _takipDugmesi(takipte),
-            const SizedBox(width: SandikSpace.sm),
-          ],
-          Expanded(child: birincil),
+    return _altCubukKabugu(Row(
+      children: [
+        if (takipDugmesi) ...[
+          _takipDugmesi(takipte),
+          const SizedBox(width: SandikSpace.sm),
         ],
-      ),
-    );
+        Expanded(child: birincil),
+      ],
+    ));
   }
+
+  Widget _altCubukKabugu(Widget icerik) => Container(
+        padding: EdgeInsets.fromLTRB(
+          SandikSpace.screenH(context),
+          SandikSpace.smd,
+          SandikSpace.screenH(context),
+          SandikSpace.smd + MediaQuery.viewPaddingOf(context).bottom,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(top: BorderSide(color: context.c.hairline)),
+        ),
+        child: icerik,
+      );
 
   /// Sayfayı kapatıp alttaki ekrandan rota iter. Sayfanın kendi bağlamı
   /// kapanınca geçersizleşir; rota ALTTAKİ ekranın bağlamından itilir.
@@ -810,8 +1046,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         child: SandikAsyncButton.kompakt(
           tur: SandikAsyncTur.cerceve,
           onPressed: () => _takipDegistir(takipte),
-          icon: Icon(takipte ? Icons.star_rounded : Icons.star_border_rounded,
-              size: 20, color: takipte ? context.c.gold : context.c.text90),
+          icon: SandikIkonGecisi(
+              takipte ? Icons.star_rounded : Icons.star_border_rounded,
+              boyut: 20, renk: takipte ? context.c.gold : context.c.text90),
           style: OutlinedButton.styleFrom(
             foregroundColor: context.c.text90,
             side: BorderSide(color: context.c.hairline),

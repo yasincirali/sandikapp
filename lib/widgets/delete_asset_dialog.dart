@@ -22,7 +22,9 @@ import 'alarm_kur_sheet.dart' show alarmSembolu;
 /// ekranı kapatır).
 ///
 /// [lots] içinde deleteLog izleri OLMAMALI — çağıran
-/// `position.lots.where((l) => !l.isDeleteLog)` ile süzer.
+/// `position.lots.where((l) => !l.isDeleteLog)` ile süzer. [parcalar]
+/// verilirse [lots]'u pozisyon başına bölünmüş hâlidir; silme parça parça
+/// yapılır (bkz. BES sözleşme satırı).
 ///
 /// ## Alarmlar (kullanıcı bildirimi, 2026-09-16)
 ///
@@ -44,6 +46,7 @@ Future<bool> confirmAndDeletePosition(
   WidgetRef ref, {
   required String name,
   required List<Asset> lots,
+  List<List<Asset>>? parcalar,
 }) async {
   if (DemoModu.yazmaKapisi('sil')) return false; // Demo defteri silinmez (F1).
   final multi = lots.length > 1;
@@ -93,7 +96,17 @@ Future<bool> confirmAndDeletePosition(
         // alma yeteneği korunuyor (silme yumuşak, `deleted_at`). Yalnızca
         // UI girişi kaldırıldı; geri alma tekrar istendiğinde sıfırdan
         // yazılmaz.
-        await notifier.deletePositionLots(lots);
+        // [parcalar]: BES sözleşme satırı (2026-10-29) — fon başına ayrı
+        // silme, yani fon başına bir "Silindi" kaydı. Tek çağrıda bütün
+        // lotlar verilseydi mezar taşı farklı fonların paylarını toplayıp
+        // tek fonun adıyla yazardı (anlamsız miktar). Onay yine TEK.
+        if (parcalar != null && parcalar.isNotEmpty) {
+          for (final p in parcalar) {
+            if (p.isNotEmpty) await notifier.deletePositionLots(p);
+          }
+        } else {
+          await notifier.deletePositionLots(lots);
+        }
         silindi = true;
       } catch (e) {
         if (context.mounted) sandikSnackError(context, e, prefix: 'Silinemedi');

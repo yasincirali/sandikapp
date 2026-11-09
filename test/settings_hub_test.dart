@@ -47,7 +47,7 @@ void main() {
     // Hub'da anahtar/seçici YOK — onlar alt ekranlarda.
     expect(find.text('Sistem'), findsNothing);
     expect(find.text('Sinyal ayarları'), findsNothing);
-    expect(find.text('Hesabımı Sil'), findsNothing);
+    expect(find.text('Hesabımı sil'), findsNothing);
     // Yarış anahtarı Ayarlar'dan çıktı (Lider tablosu ekranında).
     expect(find.textContaining('Yarış'), findsNothing);
   });
@@ -75,8 +75,8 @@ void main() {
     await tester.pumpWidget(host(bolum: SettingsBolum.hesap));
     await tester.pumpAndSettle();
     expect(find.text('Biyometrik kilit'), findsOneWidget);
-    expect(find.text('Verilerimi İndir'), findsOneWidget);
-    expect(find.text('Hesabımı Sil'), findsOneWidget);
+    expect(find.text('Verilerimi indir'), findsOneWidget);
+    expect(find.text('Hesabımı sil'), findsOneWidget);
     expect(find.text('Gizlilik Politikası'), findsNothing);
   });
 
@@ -86,8 +86,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(host(bolum: SettingsBolum.yardim));
     await tester.pumpAndSettle();
-    final destek = tester.getTopLeft(find.text('Bize Ulaş')).dy;
-    final yasal = tester.getTopLeft(find.text('Gizlilik Politikası')).dy;
+    final destek = tester.getTopLeft(find.text('Bize ulaş')).dy;
+    // Beş belge tek "Yasal belgeler" satırının arkasında (Ar-Ge 29 Eki #2).
+    final yasal = tester.getTopLeft(find.text(_tr.yasalBelgelerBaslik)).dy;
     expect(destek, lessThan(yasal));
     expect(find.text(_tr.replayTour), findsOneWidget);
   });

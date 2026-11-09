@@ -11,6 +11,7 @@ import '../providers/preferences_provider.dart';
 import '../providers/premium_provider.dart';
 import '../screens/ozel_gosterge_screen.dart';
 import '../screens/paywall_screen.dart';
+import '../screens/tam_ekran_grafik_screen.dart';
 import '../services/gosterge_betigi/betik.dart';
 import '../services/history_service.dart' show FiyatKaynagi;
 import '../services/mum_verisi.dart';
@@ -18,11 +19,13 @@ import '../services/mum_yukleyici.dart';
 import '../services/ozel_gosterge_calistirici.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_axis.dart' show gunIciSeansli;
 import '../utils/hareketli_ortalama.dart';
 import '../utils/mum_turetici.dart';
 import 'fiyat_grafigi.dart';
 import 'gosterge_cizimi.dart';
 import 'grafik_arac_cubugu.dart';
+import 'tam_ekran/yan_cevirince_tam_ekran.dart';
 
 /// Varlık sayfasının (aramadan, takipten, ekleme seçicisinden açılan;
 /// portföyde olmayan sembol) fiyat grafiği + araç çubuğu.
@@ -265,62 +268,80 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
         ? const <OzelSonuc>[]
         : ozelGostergeleriCalistir(acik, _ozelVeri!);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GrafikAracCubugu(
-          katmanlar: true,
-          ma20Acik: ma20On,
-          logAcik: logOn,
-          mumAcik: mumOn,
-          ema50Acik: ema50On,
-          ema200Acik: ema200On,
-          ozel: !ozelGorunur
-              ? null
-              : GrafikOzelCipi(
-                  acikSayi: sonuclar.length,
-                  kilitli: kilitli,
-                  onTap: () {
-                    if (kilitli) {
-                      PaywallScreen.show(context,
-                          source: 'grafik_ozel_gosterge');
-                      return;
-                    }
-                    showOzelGostergeSayfasi(context,
-                        onizleme: _ozelVeri, varlikAdi: widget.sembolEtiketi);
-                  },
-                ),
-          aralik: aralik,
-          gecerliAraliklar: gecerli,
-          pencereDakika: span,
-          kapanistan: !kaynak.gercekOhlc,
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        FiyatGrafigi(
-          seri: widget.seri,
-          periodDays: widget.periodDays,
-          bicim: widget.bicim,
-          imlecEtiketi: widget.imlecEtiketi,
-          ucTitresimi: widget.ucTitresimi,
-          semanticLabel: widget.semanticLabel,
-          onViewportChanged: (mn, mx) => _gorunum.value = (min: mn, max: mx),
-          // Dönem ya da sıklık değişince yakınlaştırma sıfırlanır.
-          sifirlamaAnahtari: '${widget.periodDays}|${aralik?.name}',
-          katmanlar: FiyatKatmanlari(
-            log: logOn,
-            mumlar: mumlar,
-            ortalamalar: ortalamalar,
-            ozelCizim: sonuclar.isEmpty
+    // Paneller ana grafikle aynı seans sıkıştırmasına oturur.
+    final sik = FiyatGrafigi.seansSikistirmasi(
+        seri: widget.seri, periodDays: widget.periodDays, mumlar: mumlar);
+    // Yan çevirince TradingView benzeri tam ekran (2026-10-23): aynı
+    // varlık, başlıktaki canlı fiyat ve seçili sıklıkla açılır.
+    return YanCevirinceTamEkran(
+      etkin: TamEkranGrafikEkrani.sunulur(a),
+      ac: (ctx) => TamEkranGrafikEkrani.ac(ctx,
+          varlik: a,
+          ad: widget.sembolEtiketi,
+          canliBirim: canli,
+          ilkAralik: aralik),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GrafikAracCubugu(
+            katmanlar: true,
+            ma20Acik: ma20On,
+            logAcik: logOn,
+            mumAcik: mumOn,
+            ema50Acik: ema50On,
+            ema200Acik: ema200On,
+            ozel: !ozelGorunur
                 ? null
-                : (toY, ofset) =>
-                    fiyatUstuCizimleri(context, sonuclar, toY, ofset: ofset),
-            ozelBant: sonuclar.isEmpty
-                ? null
-                : (toY) => fiyatUstuBantNoktalari(sonuclar, toY),
+                : GrafikOzelCipi(
+                    acikSayi: sonuclar.length,
+                    kilitli: kilitli,
+                    onTap: () {
+                      if (kilitli) {
+                        PaywallScreen.show(context,
+                            source: 'grafik_ozel_gosterge');
+                        return;
+                      }
+                      showOzelGostergeSayfasi(context,
+                          onizleme: _ozelVeri, varlikAdi: widget.sembolEtiketi);
+                    },
+                  ),
+            aralik: aralik,
+            gecerliAraliklar: gecerli,
+            pencereDakika: span,
+            kapanistan: !kaynak.gercekOhlc,
           ),
-        ),
-        OzelGostergeAltBolumu(sonuclar: sonuclar, gorunum: _gorunum),
-      ],
+          const SizedBox(height: SandikSpace.sm),
+          FiyatGrafigi(
+            seri: widget.seri,
+            periodDays: widget.periodDays,
+            bicim: widget.bicim,
+            imlecEtiketi: widget.imlecEtiketi,
+            ucTitresimi: widget.ucTitresimi,
+            semanticLabel: widget.semanticLabel,
+            onViewportChanged: (mn, mx) => _gorunum.value = (min: mn, max: mx),
+            seansli: gunIciSeansli(widget.type),
+            // Dönem ya da sıklık değişince yakınlaştırma sıfırlanır.
+            sifirlamaAnahtari: '${widget.periodDays}|${aralik?.name}',
+            katmanlar: FiyatKatmanlari(
+              log: logOn,
+              mumlar: mumlar,
+              ortalamalar: ortalamalar,
+              ozelCizim: sonuclar.isEmpty
+                  ? null
+                  : (toY, ofset) =>
+                      fiyatUstuCizimleri(context, sonuclar, toY, ofset: ofset),
+              ozelBant: sonuclar.isEmpty
+                  ? null
+                  : (toY) => fiyatUstuBantNoktalari(sonuclar, toY),
+            ),
+          ),
+          OzelGostergeAltBolumu(
+            sonuclar: sonuclar,
+            gorunum: _gorunum,
+            sikistirma: () => sik,
+          ),
+        ],
+      ),
     );
   }
 
@@ -344,6 +365,7 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
         imlecEtiketi: widget.imlecEtiketi,
         ucTitresimi: widget.ucTitresimi,
         semanticLabel: widget.semanticLabel,
+        seansli: gunIciSeansli(widget.type),
       );
 
   List<FlSpot> _ma20(List<FlSpot> spots) {

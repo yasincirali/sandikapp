@@ -1,7 +1,5 @@
-• Kripto, ABD hisseleri, Eurobond, vadeli mevduat ve BES portföyünde
-• Bugün kartı yenilendi: günün özeti ve "Paran fiyatlara yetişiyor mu?"
-• Paranın getirisi: eklediğin paranın zamanı hesaba katılır, temettü dahil
-• Mum grafik, EMA50 ve EMA200
-• Ekstreden içe aktar: PDF, Excel, CSV
-• Masraflar kartı, fon karnesi, temettü hatırlatması, halka arz takvimi
-• Zirvedeki portföyler ve hesaplar arası geçiş
+• YENİ: Tek varlık widget'ı: gram altın, dolar ya da fonun ana ekranda
+• Alarmlar: tek dokunuşla günlük %2 alarmı, her geçişte çalan fiyat alarmı, grafikte alarm çizgisi
+• Aramada hızlı hesap: "5 çeyrek" ya da "100 dolar" yaz, TL'sini gör
+• Gümüş, platin ve paladyum; yaklaşan faiz kararı ve temettü günleri ana sayfada
+• Bildirimler tek ayarda: Az, Dengeli, Çok

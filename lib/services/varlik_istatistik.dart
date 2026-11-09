@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'destek_direnc.dart';
+
 /// Bir fiyat serisinin dönem istatistikleri — varlık sayfasının sayıları.
 ///
 /// ## Neden saf fonksiyon
@@ -21,6 +23,8 @@ class DonemIstatistigi {
     required this.dusuk,
     required this.enBuyukDususPct,
     required this.oynaklikPct,
+    this.destekDirenc,
+    this.kapsananGun,
   });
 
   /// Dönem başı (serinin ilk noktası).
@@ -37,6 +41,18 @@ class DonemIstatistigi {
 
   /// Yıllıklaştırılmış oynaklık (%), yeterli gözlem yoksa `null`.
   final double? oynaklikPct;
+
+  /// Dönem serisinden destek/direnç bölgeleri (`destek_direnc.dart`); seri
+  /// kısaysa `null`. Bölge hesabı da istatistikle birlikte BİR KEZ yapılır
+  /// (build'de değil — CLAUDE.md katmanlama).
+  final DestekDirenc? destekDirenc;
+
+  /// Seri dönemin başına ulaşmıyorsa verinin kapsadığı gün sayısı; yeterli
+  /// ise (ya da kontrol edilmediyse) `null`. Bkz. [eksikKapsamGunu].
+  final int? kapsananGun;
+
+  /// Dönem çipi yüzde yerine "—" yazmalı mı.
+  bool get kapsamEksik => kapsananGun != null;
 
   /// Tutar farkı: son − ilk.
   double get fark => son - ilk;
@@ -63,10 +79,43 @@ class DonemIstatistigi {
   /// gerçeğin katları bir sayı üretir.
   static const oynaklikIcinAsgariDonemGun = 30;
 
-  /// [seri]: `epoch ms → fiyat`. [periodDays]: seçili dönem.
+  /// Kapsam kontrolünün başladığı dönem. GÜNLÜK ve 1H'de hafta sonu ve
+  /// bayram boşluğu dönemin büyük kısmı olabilir; orada "eksik" demek
+  /// yanlış alarm olurdu.
+  static const kapsamIcinAsgariDonemGun = 30;
+
+  /// Seri dönemin başına ulaşıyor mu (2026-10-23, Ar-Ge #1).
+  ///
+  /// Neden: yüzde serinin İLK noktasından hesaplanır. 8 aylık bir fonda ya
+  /// da yarım gelen bir seride "5Y" çipi aslında 8 ayın getirisini yazıyordu:
+  /// başka bir dönemin sayısı, dönem etiketiyle. "Uydurma sayı yasak"
+  /// kuralının etiket karşılığı.
+  ///
+  /// İlk nokta dönem başından dönemin %20'sinden (en az 10 gün) daha geç
+  /// başlıyorsa verinin kapsadığı gün sayısını döner; yeterliyse `null`.
+  /// Pay, kaynakların dönem başını birkaç gün kaçırmasını (hafta sonu,
+  /// bayram, haftalık seride ilk mumun konumu) eksik saymasın diye var.
+  static int? eksikKapsamGunu({
+    required int ilkTs,
+    required int periodDays,
+    required DateTime simdi,
+  }) {
+    if (periodDays < kapsamIcinAsgariDonemGun) return null;
+    const gunMs = 86400000;
+    final bas = simdi.millisecondsSinceEpoch - periodDays * gunMs;
+    final pay = math.max(periodDays * 0.2, 10.0) * gunMs;
+    if (ilkTs - bas <= pay) return null;
+    final kapsanan =
+        ((simdi.millisecondsSinceEpoch - ilkTs) / gunMs).floor();
+    return math.max(kapsanan, 1);
+  }
+
+  /// [seri]: `epoch ms → fiyat`. [periodDays]: seçili dönem. [simdi]
+  /// verilirse kapsam kontrolü yapılır ([eksikKapsamGunu]).
   static DonemIstatistigi? hesapla(
     Map<int, double> seri, {
     required int periodDays,
+    DateTime? simdi,
   }) {
     final ts = [
       for (final e in seri.entries)
@@ -95,6 +144,11 @@ class DonemIstatistigi {
       oynaklikPct: periodDays >= oynaklikIcinAsgariDonemGun
           ? yillikOynaklik(ts, fiyat)
           : null,
+      destekDirenc: DestekDirenc.hesapla(fiyat, fiyat.last),
+      kapsananGun: simdi == null
+          ? null
+          : eksikKapsamGunu(
+              ilkTs: ts.first, periodDays: periodDays, simdi: simdi),
     );
   }
 

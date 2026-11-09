@@ -61,13 +61,20 @@ import {
   pdfBaytlari,
   PdrSatiri,
   pdrSatirlari,
+  metinOzeti,
+  sigortaAtti,
+  tabloBolumu,
   oncekiAySonu,
   taramaKesinMi,
   taranacakGunler,
 } from '../_shared/fon_kalem.ts';
 import { pdfMetni } from '../_shared/pdf_metin.ts';
 
-const MODEL = 'claude-opus-5-5';
+// Sonnet 5.5 (yasin kararı 2026-10-12, Opus'tan indirildi): ilk ay 14 fonun
+// 13'ü kontrollerden düştü, Opus'un fon başına ~0,26 $'ı karşılık bulmadı.
+// Yanlış ayrıştırmayı model değil beş kontrol yakalar; daha ucuz model en
+// kötü ihtimalle geçen fon sayısını düşürür, yanlış veri yayımlatamaz.
+const MODEL = 'claude-sonnet-5-5';
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -205,6 +212,7 @@ async function fonuIsle(
     if (error) throw error;
   };
 
+  let yerTutuldu = false;
   try {
     const ek = await (await kapGet(`/tr/api/notification/attachment-detail/${index}`)).json().catch(() => null);
     const objId = ekPdfNesnesi(ek);
@@ -233,20 +241,60 @@ async function fonuIsle(
 
     const tefas = await ayaSonuTefas(kod, donem, bilinenTip);
 
-    // Opus 5.5: zorunlu araç seçimi (tool_choice any/tool) bu modelde 400
+    // Aynı belge daha önce geçtiyse modele gitme, sonucu kopyala (yasin
+    // 2026-10-12: "portföyde değişiklik yoksa kaydedilebilir"). Ölçüt metnin
+    // özeti: ağırlıklar fiyatla her ay oynadığından yeni ayın raporu çoğu
+    // zaman farklıdır; kopya yalnız birebir aynı belgede (yeniden yayımlanan
+    // ya da değişmeyen rapor) devreye girer. Yalnız `gecti` kopyalanır:
+    // red bir kontrol düzeltmesinden sonra geçebilir.
+    // TEFAS ay sonu satırı yoksa kontrol 3 kesin düşürür: modele para
+    // ödemeden red yaz (sonuç aynı, maliyet sıfır).
+    if (!tefas) {
+      await yaz('red', [], { kontrol: 'tefas', neden: 'tefas_satiri_yok', bildirim: index });
+      return { kod, sonuc: 'red', neden: 'tefas' };
+    }
+
+    const ozet = await metinOzeti(metin);
+    const { data: onceki } = await client.from('fon_kalemleri')
+      .select('donem, kalemler, dogrulama')
+      .eq('fon_kodu', kod).eq('durum', 'gecti').eq('dogrulama->>metin_ozeti', ozet)
+      .neq('donem', donem).limit(1).maybeSingle();
+    if (onceki) {
+      await yaz('gecti', onceki.kalemler as unknown[], {
+        ...(onceki.dogrulama as Record<string, unknown>),
+        bildirim: index,
+        maliyet_usd: 0,
+        kopya_donem: onceki.donem,
+      });
+      return { kod, sonuc: 'gecti', neden: 'ayni_belge', maliyet: 0 };
+    }
+
+    // Ücretli çağrıdan ÖNCE yer tut: fonksiyon model yanıtını beklerken
+    // ölürse (zaman aşımı, ağ) satır `red` kalır ve fon bu ay bir daha
+    // modele gitmez. Önceden "geçici" sayılıp günde dört tur yeniden
+    // deneniyordu; ödenen ama hiçbir yere yazılmayan harcama büyük
+    // olasılıkla buradan geldi (Ekim 2026: Anthropic faturası ~5,5 $,
+    // tabloda kayıtlı ~3,7 $; fark çıkarım, çağrı başına log yok).
+    // Yanıt gelince aşağıdaki yazım bu satırın üstüne yazar.
+    await yaz('red', [], { neden: 'yarida_kaldi', bildirim: index, model: MODEL });
+    yerTutuldu = true;
+
+    // Sonnet 5.5 (Opus 5.5 gibi): zorunlu araç seçimi (tool_choice any/tool) bu modelde 400
     // döner; yapılandırılmış çıktı (`output_config.format`) kullanılır.
     // Sunucu taraflı yedek (`fallbacks: 'default'`): güvenlik sınıflandırıcısı
     // bir kamu belgesini yanlışlıkla reddederse istek uygun modele yönlenir.
     // deno-lint-ignore no-explicit-any
     const yanit: any = await anthropic.beta.messages.create({
-      ...istekGovdesi(metin, kod, MODEL),
+      ...istekGovdesi(tabloBolumu(metin), kod, MODEL),
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       // deno-lint-ignore no-explicit-any
     } as any);
     const maliyet = maliyetUsd(String(yanit.model ?? MODEL), yanit.usage ?? {}, false);
     if (yanit.stop_reason === 'refusal' || yanit.stop_reason === 'max_tokens') {
-      await yaz('red', [], { neden: `model_${yanit.stop_reason}`, bildirim: index, maliyet_usd: maliyet, model: MODEL });
+      await yaz('red', [], {
+        neden: `model_${yanit.stop_reason}`, bildirim: index, maliyet_usd: maliyet, model: MODEL, metin_ozeti: ozet,
+      });
       return { kod, sonuc: 'red', neden: `model_${yanit.stop_reason}`, maliyet };
     }
     // deno-lint-ignore no-explicit-any
@@ -270,6 +318,7 @@ async function fonuIsle(
       tefas_tarih: tefas?.tarih ?? null,
       model: MODEL,
       maliyet_usd: maliyet,
+      metin_ozeti: ozet,
     };
     if (!s.gecti) {
       await yaz('red', [], { ...ortak, kontrol: s.kontrol, neden: s.neden });
@@ -278,6 +327,14 @@ async function fonuIsle(
     await yaz('gecti', s.kalemler, { ...ortak, kontroller: ['sema', 'metin', 'toplam', 'tefas', 'bant'] });
     return { kod, sonuc: 'gecti', maliyet };
   } catch (e) {
+    // API isteği durum koduyla reddettiyse (429, 5xx, 400) model çalışmadı,
+    // ücret yok: yer tutucu silinir, sonraki tur yeniden dener. Durum kodu
+    // yoksa (zaman aşımı, bağlantı koptu) yanıt ödenmiş olabilir; satır
+    // `red` kalır.
+    if (yerTutuldu && e instanceof Anthropic.APIError && typeof e.status === 'number') {
+      await client.from('fon_kalemleri').delete()
+        .eq('fon_kodu', kod).eq('donem', donem).eq('durum', 'red').then(() => {}, () => {});
+    }
     // Geçici: yazılmaz, sonraki tur dener. Ham mesaj loga da yazılmaz.
     console.error('[fon-kalem-raporu]', kod, e instanceof GeciciHata ? e.kod : hataOzeti(e));
     return { kod, sonuc: 'gecici', neden: e instanceof GeciciHata ? e.kod : 'sunucu' };
@@ -325,8 +382,11 @@ Deno.serve(async (request) => {
 
     const tutulan = await tutulanFonlar(client);
     const { data: islenmis, error: iErr } = await client.from('fon_kalemleri')
-      .select('fon_kodu').eq('donem', donem).limit(10000);
+      .select('fon_kodu, durum, dogrulama').eq('donem', donem).limit(10000);
     if (iErr) throw iErr;
+    if (sigortaAtti(islenmis ?? [])) {
+      return jsonResponse({ ok: true, donem, atlandi: 'sigorta' });
+    }
     const bitti = new Set((islenmis ?? []).map((r) => String(r.fon_kodu)));
     const bekleyen = [...tutulan].filter((k) => !bitti.has(k)).sort();
     if (bekleyen.length === 0) return jsonResponse({ ok: true, donem, bekleyen: 0, islenen: [] });

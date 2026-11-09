@@ -59,6 +59,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
     _donemSerileri.clear();
     _donemIlk.clear();
     _donemIstatistikleri.clear();
+    _yillikUclar = null;
     _guncelle(() {
       _lastHistory = null;
       _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
@@ -67,8 +68,8 @@ extension _DetayEylemler on _AssetDetailScreenState {
         reason: 'AssetDetail.sozlesmeTazele');
   }
 
-  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
-  /// eskisi gibi doğrudan [_selectPeriod]'u çağırır). Ortak döneme yazma
+  /// Seçiciden dönem seçimi; seçim uygulamanın ortak dönemine de yazılır
+  /// (`donem_hafizasi`, bayrak 2026-10-20'de emekliye ayrıldı). Ortak döneme yazma
   /// indeks güncellendikten SONRA: `build`'deki dinleyici değişikliği kendi
   /// seçimimiz olarak tanır, ikinci kez yüklemez.
   void _ortakDonemSec(int idx) {
@@ -125,7 +126,6 @@ extension _DetayEylemler on _AssetDetailScreenState {
     }
     showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -162,10 +162,12 @@ extension _DetayEylemler on _AssetDetailScreenState {
     final varlik = _canli.asset;
     if (!ComparisonScreen.varligiAcabilir(varlik)) return false;
     final gun = _periods[_selectedPeriodIdx].days;
-    final donem = SummaryPeriod.values.where((p) => p.days == gun).firstOrNull;
+    final donem =
+        SummaryPeriod.sembolDonemleri.where((p) => p.days == gun).firstOrNull;
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'comparison'),
         builder: (_) =>
             ComparisonScreen(baslangicVarligi: varlik, baslangicDonemi: donem),
       ),
@@ -192,6 +194,8 @@ extension _DetayEylemler on _AssetDetailScreenState {
     final canli = _canli;
     if (!canli.acik) return null;
     return PozisyonIslemCubugu(
+      // Yüzen cam kapsül (bayrak `goz_alici`); ekran `extendBody` verir.
+      yuzen: SandikCam.acik,
       islemler: pozisyonIslemleri(canli.asset),
       // Diyalog açıldığı andaki pozisyonu alır; fiyat turu araya girse de
       // kayıt diyaloğun gösterdiği miktar/fiyatla yapılır.
@@ -219,6 +223,26 @@ extension _DetayEylemler on _AssetDetailScreenState {
     );
   }
 
+  /// Üst çubuktaki "⋯" (diğer işlemler); çizilmeyecekse `null`.
+  ///
+  /// Kapı [_islemCubugu] ile aynı (kendi + açık pozisyon): bedelli artırım
+  /// kullanıcının KENDİ pozisyonuna lot yazar, ortağın lotuna yazılamaz
+  /// (RLS). Yalnız BIST hissesi (`BedelliArtirim.uygunMu`). Menüde başka
+  /// satır olmadığı için öteki türlerde düğme hiç çizilmez; boş menü açan
+  /// düğme olmasın.
+  Widget? _digerIslemlerDugmesi(bool isOwnAsset) {
+    if (!isOwnAsset) return null;
+    final canli = _canli;
+    if (!canli.acik || !BedelliArtirim.uygunMu(canli.asset)) return null;
+    return IconButton(
+      key: const ValueKey('varlik-diger-islemler'),
+      tooltip: context.l10n.digerIslemler,
+      icon: Icon(Icons.more_horiz_rounded, color: context.c.text90),
+      onPressed: () => showVarlikDigerIslemler(context, ref,
+          varlik: _canli.asset, lotlar: _canli.lots),
+    );
+  }
+
   List<TransactionSegment> _convertHistoryToSegments(
     Map<int, double> history,
     DateTime startDate,
@@ -233,6 +257,9 @@ extension _DetayEylemler on _AssetDetailScreenState {
 
     // [history] BİRİM fiyat serisidir (1 gram / 1 adet / 1 pay, TL) —
     // `FiyatKaynagi.birimVarlik` ile çekilir. Bölme YOK, miktar YOK.
+    // İstisna mevduat (2026-10-26): çağıran seriyi önceden TOPLAM TL
+    // tutarına çevirir (`MevduatHesabi.tutarSerisi`), override de pozisyon
+    // değeridir; buradaki kurallar aynen geçerli.
     //
     // ## Kaldırılanlar (kullanıcı kararı, 2026-09-23)
     // *"Zaman aralığına göre 1 gram ya da bir lot varlığın grafiğini

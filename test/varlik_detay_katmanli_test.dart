@@ -9,6 +9,7 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/models/yatirimci_seviyesi.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/config/pref_keys.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
@@ -87,7 +88,10 @@ double _y(WidgetTester tester, Finder f) => tester.getTopLeft(f.first).dy;
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
-    SharedPreferences.setMockInitialValues({});
+    // Yan çevirme ipucu (2026-10-29) bu testin konusu değil: görülmüş
+    // sayılır ki katmanlı düzenin satırları eski konumunda ölçülsün
+    // (ipucu `tam_ekran_grafik_test`'te kilitli).
+    SharedPreferences.setMockInitialValues({PrefKeys.yatayGrafikIpucu: true});
     await initPreferencesCache();
   });
 
@@ -97,17 +101,17 @@ void main() {
       (tester) async {
     await _ac(tester);
 
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
     expect(find.text('Alış fiyatın (ortalama)'), findsOneWidget);
     expect(find.text('Ödediğin toplam'), findsOneWidget);
     expect(find.text('Ayrıntı'), findsNothing);
-    expect(find.text('ANALİZ'), findsNothing);
+    expect(find.text('Analiz'), findsNothing);
     expect(find.text('Teknik sinyaller'), findsNothing);
     // Sinyal kartı fiyatın altında, panel en altta, ikisi de açık.
     expect(find.byType(AssetSignalCard), findsOneWidget);
     expect(find.byType(TechnicalSignalPanel), findsOneWidget);
     expect(_y(tester, find.byType(AssetSignalCard)),
-        lessThan(_y(tester, find.text('POZİSYONUN'))));
+        lessThan(_y(tester, find.text('Pozisyonun'))));
     expect(find.byType(DisclaimerWidget), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
@@ -119,26 +123,30 @@ void main() {
     await _ac(tester);
 
     // Pozisyonun: üç sayı ilk bakışta; yedi satırın geri kalanı kapalı.
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
     expect(find.text('Bugünkü değer'), findsOneWidget);
-    expect(find.text('Toplam kâr/zarar'), findsOneWidget);
+    // Orta sütun ortalama maliyet (Ar-Ge 1 Kas 08:45 #3): toplam kâr/zarar
+    // fiyatın altındaki "Pozisyonun" satırında zaten yazıyor.
+    expect(find.text('Ortalama maliyet'), findsOneWidget);
+    expect(find.text('Toplam kâr/zarar'), findsNothing);
     expect(find.text('Miktar'), findsOneWidget);
-    expect(find.textContaining('+₺6.165 · +%24,59'), findsOneWidget);
+    // Toplam kâr/zarar bir kez: fiyatın altındaki satırda.
+    expect(find.textContaining('+₺6.165'), findsOneWidget);
     expect(find.text('Alış fiyatın (ortalama)'), findsNothing);
     // Dönem kâr/zararı ilk bakışta tekrar etmez (fiyatın altında var).
-    expect(find.textContaining('kâr/zarar'), findsOneWidget);
+    expect(find.textContaining('kâr/zarar'), findsNothing);
 
     // Sinyal kartı üstten kalktı; Analiz'de kapalı satır.
-    expect(find.text('ANALİZ'), findsOneWidget);
+    expect(find.text('Analiz'), findsOneWidget);
     expect(find.text('Teknik sinyaller'), findsOneWidget);
     expect(find.byType(AssetSignalCard), findsNothing);
     expect(find.byType(TechnicalSignalPanel), findsNothing);
 
     // Sıra: Pozisyonun → Analiz; ibare en altta duruyor.
-    expect(_y(tester, find.text('POZİSYONUN')),
-        lessThan(_y(tester, find.text('ANALİZ'))));
+    expect(_y(tester, find.text('Pozisyonun')),
+        lessThan(_y(tester, find.text('Analiz'))));
     expect(find.byType(DisclaimerWidget), findsOneWidget);
-    expect(_y(tester, find.text('ANALİZ')),
+    expect(_y(tester, find.text('Analiz')),
         lessThan(_y(tester, find.byType(DisclaimerWidget))));
     expect(tester.takeException(), isNull);
 
@@ -152,8 +160,8 @@ void main() {
     ]) {
       expect(find.text(etiket), findsOneWidget, reason: '$etiket satırı yok');
     }
-    // Toplam (özet + ayrıntı) ve dönem satırı.
-    expect(find.textContaining('kâr/zarar'), findsNWidgets(3));
+    // Ayrıntıdaki toplam ve dönem satırı (özet kartta artık yok).
+    expect(find.textContaining('kâr/zarar'), findsNWidgets(2));
 
     // Analiz satırı yerinde açılır: kart + panel.
     await tester.ensureVisible(find.text('Teknik sinyaller'));
@@ -162,7 +170,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(AssetSignalCard), findsOneWidget);
     expect(find.byType(TechnicalSignalPanel), findsOneWidget);
-    expect(_y(tester, find.text('ANALİZ')),
+    expect(_y(tester, find.text('Analiz')),
         lessThan(_y(tester, find.byType(TechnicalSignalPanel))));
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
@@ -185,9 +193,10 @@ void main() {
     // birlikte açılınca kart kayboluyordu.
     RemoteConfigService.testAcik = {_bayrak, 'varlik_masraflari'};
     await _ac(tester);
-    expect(find.text('MASRAFLAR'), findsOneWidget);
-    expect(_y(tester, find.text('POZİSYONUN')),
-        lessThan(_y(tester, find.text('MASRAFLAR'))));
+    // Kayıt yok: kart tek satır (Ar-Ge 1 Kas 08:45 #4).
+    expect(find.text('Masraflar · kaydedilmemiş'), findsOneWidget);
+    expect(_y(tester, find.text('Pozisyonun')),
+        lessThan(_y(tester, find.text('Masraflar · kaydedilmemiş'))));
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
   });
@@ -213,9 +222,9 @@ void main() {
     // Başlangıç'ta o da gizli. Boş bölümün başlığı çizilmez.
     RemoteConfigService.testAcik = {_bayrak};
     await _ac(tester, seviye: YatirimciSeviyesi.baslangic);
-    expect(find.text('ANALİZ'), findsNothing);
+    expect(find.text('Analiz'), findsNothing);
     expect(find.byType(DisclaimerWidget), findsNothing);
-    expect(find.text('POZİSYONUN'), findsOneWidget);
+    expect(find.text('Pozisyonun'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 10));
   });

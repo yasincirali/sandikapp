@@ -45,6 +45,14 @@ String fmtNum(double value, {int digits = 2}) {
   return f.format(value);
 }
 
+/// Altın ağırlığı (gram), birimsiz: `1,75` / `42,6` / `1.250,0`.
+///
+/// 10 gramın altında iki ondalık (çeyrek 1,75 gr, has karşılığı 1,60 gr;
+/// tek ondalık "1,8" diye yuvarlayıp kalıbı yanlış söylerdi), üstünde tek
+/// ondalık: toplamda yüzde bir gram okunmaz, yalnız kalabalık yapar.
+/// Birim ("gr" / "g") dile göre .arb metninde yazılır.
+String fmtGram(double gram) => fmtNum(gram, digits: gram.abs() < 10 ? 2 : 1);
+
 /// Değişken ondalıklı sayı — 0 ondalık istenen değer için trailing sıfırları
 /// atar. `#,##0.####` gibi davranır.
 String fmtNumFlex(double value, {int maxDigits = 4}) {
@@ -75,8 +83,7 @@ String fmtTRY(double value, {int digits = 0}) {
 /// Birim FİYAT (tutar değil): 1 ₺ ve üstünde 2 ondalık, altında en az 4
 /// anlamlı hane (en çok 8 ondalık). SHIB ~0,0004 ₺ `fmtTRY(digits: 2)` ile
 /// "₺0,00" okunurdu — sıfır fiyatlı gibi. Toplam/değer için `fmtTRY` kalır.
-String fmtTRYFiyat(double value) =>
-    fmtTRY(value, digits: fiyatOndaligi(value));
+String fmtTRYFiyat(double value) => fmtTRY(value, digits: fiyatOndaligi(value));
 
 /// [fmtTRYFiyat]'ın ondalık kuralı — biçimleyiciyi kendisi kuran yerler
 /// (varlık ekranının birim fiyatı) aynı kuralı buradan alır.
@@ -110,6 +117,37 @@ NumberFormat fiyatBicimi(double ornek, {int? azami, String symbol = '₺'}) {
     ..minimumFractionDigits = 2
     ..maximumFractionDigits = math.max(2, azami);
 }
+
+/// [fiyat] ekranda [fiyatBicimi] ile yazılınca kaç ondalık görünür.
+///
+/// [azami] null → [fiyatOndaligi] (eski kural). Verilirse kaynak
+/// hassasiyetinin sondaki sıfırları atılmış hâli: ₺312,40 → 2, fon
+/// ₺1,234567 → 6. En az 2.
+int gosterilenFiyatOndaligi(double fiyat, {int? azami}) {
+  if (azami == null) return fiyatOndaligi(fiyat);
+  final metin = fiyatBicimi(fiyat, azami: azami).format(fiyat);
+  final virgul = metin.lastIndexOf(',');
+  if (virgul < 0) return 2;
+  final hane = RegExp(r'\d').allMatches(metin.substring(virgul + 1)).length;
+  return math.max(2, hane);
+}
+
+/// Büyük fiyatla AYNI ondalık sayısında sabit biçimleyici — seriden gelen
+/// fiyatlar (aralık uçları, önceki kapanış, lot başı değişim, imleç) için.
+///
+/// Neden (Ar-Ge 2026-11-07 14:00 #2, yasin "yap"): [fiyatBicimi] kaynak
+/// hassasiyetinde sondaki sıfırları atar; kaynaktan gelen ₺312,40 iki hane
+/// yazar ama hesaplanmış/düzeltilmiş seri noktası ₺263,9333 dört hane
+/// yazıyordu — aynı ekranda iki sayı biçimi. Hane sayısı [referans]
+/// fiyatın ekrandaki yazılışından gelir: hisse 2 kalır, ₺0,179147'lik fon
+/// ya da SHIB gibi düşük fiyatlı varlık kendi hassasiyetini korur
+/// ([fiyatOndaligi] / [azami]). Referansın kendisini biçimlerken çıktı
+/// [fiyatBicimi] ile birebir aynıdır.
+NumberFormat ayniOndalikFiyatBicimi(double referans,
+        {int? azami, String symbol = '₺'}) =>
+    tryFormatter(
+        digits: gosterilenFiyatOndaligi(referans, azami: azami),
+        symbol: symbol);
 
 /// [fiyatBicimi] ile tek fiyat metni.
 String fmtFiyat(double value, {int? azami, String symbol = '₺'}) =>
@@ -292,7 +330,8 @@ double? parseTrNumber(String text) {
   } else if (lastDot >= 0) {
     // Yalnızca nokta: binlik mi ondalık mı?
     final parts = s.split('.');
-    final bas = parts.first.startsWith('-') ? parts.first.substring(1) : parts.first;
+    final bas =
+        parts.first.startsWith('-') ? parts.first.substring(1) : parts.first;
     final ilkGrupGecerli =
         bas.isNotEmpty && bas.length <= 3 && !bas.startsWith('0');
     final allGroupsAreThree = parts.length > 1 &&
@@ -319,7 +358,8 @@ double? parseTrNumber(String text) {
 /// `₺1.234,56` üreten biçimlendirici. [symbol] yalnızca döviz cinsinden
 /// gösterilen takip kalemleri için değiştirilir.
 NumberFormat tryFormatter({int digits = 0, String symbol = '₺'}) =>
-    NumberFormat.currency(locale: 'tr_TR', symbol: symbol, decimalDigits: digits);
+    NumberFormat.currency(
+        locale: 'tr_TR', symbol: symbol, decimalDigits: digits);
 
 /// Miktar: trailing sıfır atan, en fazla [maxDigits] ondalıklı (`1.234,5`).
 NumberFormat qtyFormatter({int maxDigits = 4}) =>
@@ -334,6 +374,12 @@ NumberFormat fixedFormatter(int digits) =>
 /// `DateTime(t.year, t.month, t.day)` 38 yerde elle yazılıyordu. Tek isim,
 /// tek anlam: "aynı gün mü" ve "gün sayısı farkı" karşılaştırmaları buradan.
 DateTime dayKey(DateTime t) => DateTime(t.year, t.month, t.day);
+
+/// Takvim yılının ilk günü (yerel 1 Ocak 00:00) — YB dönemi başı.
+///
+/// [dayKey] ile aynı gerekçe: "yılın başı" tek isimle, tek yerde; dönem
+/// penceresi ve grafik ekseni aynı günü okusun.
+DateTime yilBasiGunu(DateTime t) => DateTime(t.year);
 
 /// İşlem damgası gerçek bir SAAT taşıyor mu?
 ///
@@ -366,5 +412,121 @@ String fmtTarihSaat(DateTime t, {bool yilsiz = false}) {
   return saatBiliniyor(y)
       ? DateFormat('$gun · HH:mm', 'tr_TR').format(y)
       : DateFormat(gun, 'tr_TR').format(y);
+}
+
+
+/// Bir raporun KAPSADIĞI tarih aralığı: "1-31 Ekim 2026",
+/// "27 Ekim - 2 Kasım 2026", "29 Aralık 2025 - 4 Ocak 2026"; tek gün
+/// "6 Kasım 2026".
+///
+/// ## Neden tek biçimleyici (yasin, 2026-11-07)
+/// *"varolan tüm raporlarda kapsadığı ve bilgileri verilen dataların zaman
+/// aralığı belirtilmeli … kafa karışıklığı olmamalı"*. Aylık rapor "Ekim
+/// 2026 raporu", haftanın özeti "son hafta", yıl özeti "bu yıl" diyordu;
+/// hangi günlerin sayıldığını hiçbiri yazmıyordu. Her yüzey kendi
+/// `DateFormat` kalıbını kursaydı biri "27.10 - 02.11", biri "27 Eki →
+/// 2 Kas" yazardı. Kural tek yerde: aynı ay ve yıl tekrar edilmez (gün
+/// aralığı tireyle bitişik), farklı ayda yalnız yıl birleşir, farklı yılda
+/// iki uç tam yazılır.
+///
+/// Ay adları sabit tablodan (`intl` yerel verisi değil): PDF kurucuları ve
+/// servisler saf, testleri `initializeDateFormatting` çağırmadan koşuyor;
+/// yerel veri yüklenmemişken `DateFormat` istisna fırlatırdı.
+///
+/// [dil] `context.tarihDili` ('tr_TR' / 'en_US'); PDF'ler Türkçe.
+/// [kisa] ay adını kısaltır ("27 Eki - 2 Kas 2026"): dar satır ve bildirim.
+/// Uçlar takvim günüdür; saat atılır. Ters verilirse sıralanır.
+String fmtTarihAraligi(DateTime bas, DateTime bit,
+    {String dil = 'tr_TR', bool kisa = false}) {
+  var a = dayKey(bas);
+  var b = dayKey(bit);
+  if (b.isBefore(a)) (a, b) = (b, a);
+  String ay(DateTime t) => _ayAdi(t.month, dil, kisa);
+  if (a == b) return '${a.day} ${ay(a)} ${a.year}';
+  if (a.year == b.year && a.month == b.month) {
+    return '${a.day}-${b.day} ${ay(b)} ${b.year}';
+  }
+  if (a.year == b.year) {
+    return '${a.day} ${ay(a)} - ${b.day} ${ay(b)} ${b.year}';
+  }
+  return '${a.day} ${ay(a)} ${a.year} - ${b.day} ${ay(b)} ${b.year}';
+}
+
+/// Tek takvim günü, rapor dilinde: "6 Kasım 2026". [saat] verilirse
+/// "6 Kasım 2026 18:00" — "fiyatlar … itibarıyla" gibi veri anı satırları
+/// için; saat bilinmiyorsa ([saatBiliniyor]) yazılmaz, uydurma "00:00" yok.
+String fmtTarih(DateTime t, {String dil = 'tr_TR', bool saat = false}) {
+  final y = t.toLocal();
+  final gun = '${y.day} ${_ayAdi(y.month, dil, false)} ${y.year}';
+  if (!saat || !saatBiliniyor(y)) return gun;
+  String iki(int v) => v.toString().padLeft(2, '0');
+  return '$gun ${iki(y.hour)}:${iki(y.minute)}';
+}
+
+/// "… beri" cümlesinin tarih parçası: Türkçe "12 Eyl'den" (ayrılma hâli
+/// ekiyle), İngilizce "Sep 12". Yıl [bugun]ün yılından farklıysa eklenir:
+/// "12 Eyl 2025'ten" / "Sep 12, 2025".
+///
+/// ## Neden ek kodda (takip "Eklediğimden beri", 2026-11-08)
+/// Türkçe ayrılma eki kısaltmaya değil OKUNUŞA uyar: "Eyl" "Eylül" diye
+/// okunur, ek "-den" olur; "Ağu" "Ağustos" → "-tan". Ek ay adının (yıl
+/// varsa yılın okunuşunun) son hecesinden belirlenir; ".arb"a "{tarih}'den
+/// beri" yazmak Mart'ta "Mart'den" üretirdi. "12 Eyl itibarıyla" gibi ekten
+/// kaçan nötr kalıp da düşünüldü; kural kapalı bir küme (12 ay + rakam
+/// okunuşları) olduğu için doğru eki yazmak daha kısa ve doğal.
+///
+/// [kisa] `false` → tam ay adı ("12 Eylül'den"): ekran okuyucu cümlesi
+/// kısaltmayı harf harf okumasın.
+String tarihtenBeriParcasi(DateTime t,
+    {String dil = 'tr_TR', bool kisa = true, DateTime? bugun}) {
+  final y = t.toLocal();
+  final yilli = y.year != (bugun ?? DateTime.now()).year;
+  final ay = _ayAdi(y.month, dil, kisa);
+  if (dil.startsWith('en')) {
+    return yilli ? '$ay ${y.day}, ${y.year}' : '$ay ${y.day}';
+  }
+  if (yilli) return "${y.day} $ay ${y.year}'${_sayiAyrilmaEki(y.year)}";
+  return "${y.day} $ay'${_ayAyrilmaEki[y.month - 1]}";
+}
+
+/// Tam ay adının ayrılma eki (Ocak'tan, Nisan'dan, Eylül'den…).
+const _ayAyrilmaEki = [
+  'tan', 'tan', 'tan', 'dan', 'tan', 'dan', //
+  'dan', 'tan', 'den', 'den', 'dan', 'tan',
+];
+
+/// Bir sayının okunuşuna göre ayrılma eki: son sıfır olmayan basamağın
+/// okunuşu belirler (2025 "yirmi beş" → 'ten', 2026 "altı" → 'dan',
+/// 2030 "otuz" → 'dan', 2000 "bin" → 'den').
+String _sayiAyrilmaEki(int n) {
+  const birler = ['', 'den', 'den', 'ten', 'ten', 'ten', 'dan', 'den', 'den', 'dan'];
+  const onlar = ['', 'dan', 'den', 'dan', 'tan', 'den', 'tan', 'ten', 'den', 'dan'];
+  final m = n.abs();
+  if (m % 10 != 0) return birler[m % 10];
+  if ((m ~/ 10) % 10 != 0) return onlar[(m ~/ 10) % 10];
+  return 'den'; // yüz / bin
+}
+
+const _ayTr = [
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', //
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+];
+const _ayTrKisa = [
+  'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', //
+  'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara',
+];
+const _ayEn = [
+  'January', 'February', 'March', 'April', 'May', 'June', //
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+const _ayEnKisa = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+String _ayAdi(int ay, String dil, bool kisa) {
+  final en = dil.startsWith('en');
+  final t = en ? (kisa ? _ayEnKisa : _ayEn) : (kisa ? _ayTrKisa : _ayTr);
+  return t[ay - 1];
 }
 

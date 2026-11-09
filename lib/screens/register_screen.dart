@@ -13,6 +13,7 @@ import 'package:flutter/material.dart'
         Icons,
         Material,
         RoundedRectangleBorder,
+        Scaffold,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/kullanici_adi.dart';
@@ -26,6 +27,7 @@ import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
@@ -352,6 +354,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       await pushGuarded(
         context,
         adaptiveRoute<void>(
+          settings: const RouteSettings(name: 'otp_verification'),
           builder: (_) => OtpVerificationScreen(
             email: emailForOtp,
             kayitOnayi: kayitOnayi,
@@ -422,24 +425,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     // sürüyor) düğmeyi pasifler.
     final isLoading = ref.watch(authProvider).isLoading;
 
-    return CupertinoPageScaffold(
+    // Üst çubuk `SandikAppBar` (Ar-Ge 5 Kas 22:40 #7, TASARIM_DILI §6.12):
+    // eskiden `CupertinoNavigationBar`dı — başlık 17/w600, geri oku 18pt
+    // text58; uygulamanın geri kalanındaki çubuktan farklı görünüyordu.
+    // Geri davranışı aynı (`Navigator.pop`); `Scaffold` klavye payını
+    // `CupertinoPageScaffold` gibi verir.
+    return Scaffold(
       backgroundColor: context.c.background,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: context.c.background,
-        border: null,
-        middle: Text(context.l10n.register,
-            style: context.t.headlineSmall?.copyWith(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: context.c.text90)),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.pop(context),
-          child: Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: context.c.text58),
-        ),
-      ),
-      child: Material(
+      appBar: SandikAppBar(title: context.l10n.register),
+      body: Material(
         color: context.c.background,
         child: SafeArea(
           // Bkz. login_screen: grup olmadan iOS "şifreyi kaydet?" istemi
@@ -800,7 +794,7 @@ class YasalKutuBaglantilari {
       decoration: TextDecoration.underline,
       decorationColor: context.c.amberText,
     );
-    final vurguluBaglanti = baglanti.copyWith(fontWeight: FontWeight.w800);
+    final vurguluBaglanti = baglanti.copyWith(fontWeight: FontWeight.w600);
     final parcalar = <InlineSpan>[];
     var i = 0;
     for (final m in RegExp('[$kosulAyraci$gizlilikAyraci$kvkkAyraci]')

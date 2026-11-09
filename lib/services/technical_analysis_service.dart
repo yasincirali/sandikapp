@@ -417,7 +417,11 @@ class TechnicalAnalysisService {
       {GostergeAyari? par}) {
     final period = par?['periyot'] ?? (type == AssetType.altin ? 14 : 20);
     final mult = type == AssetType.doviz ? 1.5 : 2.0;
-    final label = 'Bollinger ($period, $multσ)';
+    // "2.0σ" değil "2σ" (Ar-Ge 1 Kas 08:45 #3): double'ın ".0"ı ekranda
+    // gürültü. Sunucu portu (`_shared/technical_analysis.ts`) aynı metni
+    // üretir; altın vektörler ikisini karşılaştırır.
+    final label =
+        'Bollinger ($period, ${'$mult'.replaceFirst(RegExp(r'\.0$'), '')}σ)';
 
     if (prices.length < period) {
       return TechnicalIndicator(

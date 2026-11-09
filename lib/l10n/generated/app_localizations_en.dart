@@ -60,9 +60,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fullName => 'Full Name';
 
   @override
-  String get fullNameRequired => 'Enter your full name';
-
-  @override
   String get passwordRepeat => 'Repeat Password';
 
   @override
@@ -79,12 +76,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get haveAccountSignIn => 'Already have an account? Sign in';
-
-  @override
-  String get exitAppTitle => 'Exit the app';
-
-  @override
-  String get exitAppMessage => 'Are you sure you want to exit?';
 
   @override
   String get exit => 'Exit';
@@ -261,10 +252,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAccountSubtitle =>
-      'Biometric lock, registered devices, download your data, delete account';
+      'Lock, devices, data download, delete account';
 
   @override
-  String get settingsHelpSubtitle => 'Contact us, tour, privacy and terms';
+  String get settingsHelpSubtitle =>
+      'FAQ, contact us, what\'s new and legal documents';
 
   @override
   String get themeSystem => 'System';
@@ -320,7 +312,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get investorLevelNote =>
-      'Only changes WHICH metrics are shown; your calculations and data stay the same.';
+      'Only changes which metrics are shown; your calculations and data stay the same.';
 
   @override
   String get levelBeginner => 'Beginner';
@@ -341,6 +333,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noAssetsYet => 'No assets added yet';
+
+  @override
+  String get addAssetVazgecBaslik => 'Discard your changes?';
+
+  @override
+  String get addAssetVazgecMetin =>
+      'The quantity, commission or note you entered hasn\'t been saved. Leaving will discard it.';
+
+  @override
+  String get addAssetVazgecSil => 'Discard';
+
+  @override
+  String get addAssetVazgecKal => 'Keep editing';
 
   @override
   String get addAssetTitle => 'Add Asset';
@@ -399,7 +404,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get retry => 'Retry';
+  String get retry => 'Try again';
 
   @override
   String get cancel => 'Cancel';
@@ -410,12 +415,59 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String quickLastBuyChip(String miktar) {
+    return 'Your last buy · $miktar';
+  }
+
+  @override
+  String quickLastBuyChipSemantics(String miktar) {
+    return 'Your last buy, $miktar';
+  }
+
+  @override
   String get quickHolding => 'Holding';
 
   @override
   String quickAvgShort(String price) {
     return 'avg. $price';
   }
+
+  @override
+  String quickSaleGain(String tutar, String yuzde) {
+    return 'Gain on this sale $tutar · $yuzde';
+  }
+
+  @override
+  String quickSaleLoss(String tutar, String yuzde) {
+    return 'Loss on this sale $tutar · $yuzde';
+  }
+
+  @override
+  String quickBuyAvgCost(String yeni, String simdi) {
+    return 'Your new average cost $yeni (now $simdi)';
+  }
+
+  @override
+  String get quickTargetAvg => 'Target average';
+
+  @override
+  String get quickTargetAvgField => 'Target average cost';
+
+  @override
+  String quickTargetAvgResult(String hedef, String adet, String birim) {
+    return 'To bring your average down to $hedef: ~$adet $birim';
+  }
+
+  @override
+  String get quickTargetAvgUnreachable =>
+      'This average can\'t be reached at this price.';
+
+  @override
+  String get quickTargetAvgFillHint => 'Tap to fill the quantity';
+
+  @override
+  String get quickSaleFundTaxNote =>
+      'Gross amount; fund withholding tax may be deducted from the gain.';
 
   @override
   String get quickUnitPrice => 'Unit price';
@@ -449,13 +501,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prices could not be updated. Showing older data.';
 
   @override
+  String offlinePricesAt(String saat, String ek) {
+    return 'No internet · prices as of $saat';
+  }
+
+  @override
+  String get offlinePricesUnknown => 'No internet · showing last prices';
+
+  @override
   String get otpSentPrefix => 'We sent the 6-digit code to\n';
 
   @override
   String get otpSentSuffix => '';
-
-  @override
-  String get registerNameMissing => 'Enter your full name.';
 
   @override
   String get registerEmailInvalid => 'Enter a valid email.';
@@ -467,33 +524,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refreshPrices => 'Refresh prices';
 
   @override
-  String get portfolioActivity => 'PORTFOLIO ACTIVITY';
+  String get portfolioActivity => 'Portfolio activity';
 
   @override
   String get seeAllTransactions => 'See all transactions';
 
   @override
-  String seeAllCount(int count) {
-    return 'See All ($count)';
-  }
-
-  @override
   String get signalDeleteFailed =>
       'Could not delete the notification. Check your connection.';
-
-  @override
-  String get permanentDelete => 'Delete permanently';
-
-  @override
-  String signalDeleteChoice(int past, int active) {
-    return 'There are $past past and $active active notifications. What should be deleted?';
-  }
-
-  @override
-  String get cancelShort => 'Cancel';
-
-  @override
-  String get onlyHistory => 'History only';
 
   @override
   String get clearAllSignals => 'Clear all signals';
@@ -510,13 +548,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearVerb => 'Clear';
 
   @override
-  String get clearAllUpper => 'Clear All';
+  String get clearAllUpper => 'Clear';
 
   @override
-  String get noActiveSignals => 'No active signals right now';
+  String get noActiveSignals => 'No new notifications';
 
   @override
-  String get historyUpper => 'HISTORY';
+  String get historyUpper => 'History';
 
   @override
   String deleteHistoryCount(int count) {
@@ -538,7 +576,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteHistoryButton => 'Delete History';
 
   @override
-  String get signalNeutral => 'NEUTRAL';
+  String get signalNeutral => 'Neutral';
 
   @override
   String signalDeletedAt(String date) {
@@ -557,7 +595,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hideBalance => 'Hide balance';
 
   @override
-  String get sortCriterion => 'SORT BY';
+  String get sortCriterion => 'Sort by';
 
   @override
   String tabSemanticsCount(String label, int count) {
@@ -647,7 +685,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetFullName => 'Full Name';
 
   @override
-  String get fundReportTitleUpper => 'FUND REPORT CARD';
+  String get fundReportTitleUpper => 'Fund report card';
 
   @override
   String fundReportCategory(String category, String count) {
@@ -688,7 +726,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fundReportFootnote =>
-      'Source: TEFAS. Returns are as published by TEFAS; its calculation dates don\'t exactly match the chart\'s period, so they may differ slightly from the period return above. Compared with funds in the same category; past returns do not indicate future returns.';
+      'Source: TEFAS. Past returns do not indicate future returns.';
+
+  @override
+  String fundReportRisk(String value, String level) {
+    return 'Risk value $value/7 · $level';
+  }
+
+  @override
+  String fundReportRiskSemantics(String value, String level) {
+    return 'Risk value $value out of 7, $level';
+  }
+
+  @override
+  String get fundReportRiskLow => 'low';
+
+  @override
+  String get fundReportRiskMedium => 'medium';
+
+  @override
+  String get fundReportRiskHigh => 'high';
 
   @override
   String fundReportPanelLine(String count, String rank, String period) {
@@ -747,16 +804,87 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get miktarModuAdet => 'Units';
+
+  @override
+  String miktarModuTutar(String sembol) {
+    return 'Amount ($sembol)';
+  }
+
+  @override
+  String miktarModuSemantik(String mod) {
+    return 'Enter quantity as $mod';
+  }
+
+  @override
+  String get tutarAlani => 'Amount';
+
+  @override
+  String get tutarGecersiz => 'Enter a valid amount';
+
+  @override
+  String get tutarFiyatGerekli => 'A price is needed to work out units';
+
+  @override
+  String tutardanAdetSatiri(String miktar) {
+    return 'Calculated quantity: $miktar';
+  }
+
+  @override
+  String get tutardanAdetFiyatYok =>
+      'The quantity is worked out once a price is in. You can also enter the price yourself.';
+
+  @override
+  String get fonAdetIpucu =>
+      'If your bank shows a different number of units, correct it. If the fund was bought at the next day\'s price, pick that day as the date.';
+
+  @override
+  String fiyatBirimBasina(String fiyat) {
+    return '$fiyat per unit';
+  }
+
+  @override
+  String kuyumcuFarkiAltin(String fark, String tutar) {
+    return 'Dealer spread $fark. Sold today you\'d get $tutar.';
+  }
+
+  @override
+  String kuyumcuFarkiDoviz(String fark, String tutar) {
+    return 'Buy-sell spread $fark. Sold today you\'d get $tutar.';
+  }
+
+  @override
+  String get tegPaylas => 'Share chart';
+
+  @override
+  String tegPaylasimMetni(String ad, String donem) {
+    return '$ad · $donem · drawn with sandık';
+  }
+
+  @override
+  String tegPaylasimZamani(String zaman) {
+    return 'As of $zaman';
+  }
+
+  @override
+  String tegPaylasimDonem(String aralik, String tarihler) {
+    return '$aralik candles, $tarihler';
+  }
+
+  @override
+  String get tegYanCevirIpucu =>
+      'Turn your phone sideways for the detailed chart';
+
+  @override
+  String tegOzelPanelDikte(String ad) {
+    return '$ad · separate pane in portrait';
+  }
+
+  @override
   String get total => 'total';
 
   @override
   String get bulkAdd => 'Bulk add';
-
-  @override
-  String get quickEntryVoice => 'Voice / Quick entry';
-
-  @override
-  String get orNotInList => 'or not in the list';
 
   @override
   String get symbolHint => 'Type a symbol (e.g. AAPL, THYAO.IS)';
@@ -780,11 +908,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get costPreviewHint =>
-      'Enter a quantity and the total cost appears here.';
-
-  @override
-  String get totalCostUpper => 'TOTAL COST';
+  String get totalCostUpper => 'Total cost';
 
   @override
   String get transactionDate => 'Transaction date';
@@ -794,6 +918,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesHint => 'Your notes...';
+
+  @override
+  String txBalanceChange(String once, String sonra) {
+    return '$once → $sonra';
+  }
+
+  @override
+  String txBalanceSemantics(String once, String sonra) {
+    return 'Holding went from $once to $sonra';
+  }
+
+  @override
+  String txPortfolioValueChange(String once, String sonra) {
+    return 'Portfolio $once → $sonra';
+  }
+
+  @override
+  String txPortfolioValueSemantics(String once, String sonra) {
+    return 'Portfolio went from $once to $sonra';
+  }
 
   @override
   String get txHasNote => 'Has a note';
@@ -821,6 +965,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteRemove => 'Remove note';
 
   @override
+  String get txBuyAgain => 'Buy this again';
+
+  @override
   String get noteNone => 'No note on this transaction.';
 
   @override
@@ -835,12 +982,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTypeDividend => 'Dividend';
 
   @override
-  String get dividendHistoryUpper => 'DIVIDENDS · LAST 12 MONTHS';
+  String get dividendHistoryUpper => 'Dividends · last 12 months';
 
   @override
   String dividendRecordedTotal(String amount) {
     return 'Recorded: $amount';
   }
+
+  @override
+  String dividendYieldOnCost(String pct) {
+    return 'Yearly yield on cost $pct';
+  }
+
+  @override
+  String dividendYieldOnCostA11y(String pct) {
+    return 'Net dividends you recorded in the last 12 months are $pct of your current cost. Yearly yield on cost.';
+  }
+
+  @override
+  String get dividendYieldOnCostLocked =>
+      'Your yearly yield on cost is part of Premium';
+
+  @override
+  String eldeTutmaSureYilAy(String yil, String ay) {
+    return '$yil yr $ay mo';
+  }
+
+  @override
+  String eldeTutmaSureYil(String yil) {
+    return '$yil yr';
+  }
+
+  @override
+  String eldeTutmaSatiri(String sure, String pct) {
+    return 'Held for $sure · $pct a year on average';
+  }
+
+  @override
+  String eldeTutmaA11y(String sure, String pct) {
+    return 'You have held this for $sure. Counting your buys, sells and dividends, your average annual return is $pct.';
+  }
+
+  @override
+  String gunlukGetiriSatiri(String tutar) {
+    return 'About $tutar a day on average over the last 30 days';
+  }
+
+  @override
+  String gunlukGetiriA11y(String tutar) {
+    return 'Approximately $tutar a day on average over the last 30 days.';
+  }
+
+  @override
+  String get eldeTutmaKilitli => 'Your average annual return is in Premium';
+
+  @override
+  String get fxSplitPrice => 'From price';
+
+  @override
+  String get fxSplitFx => 'From FX';
+
+  @override
+  String fxSplitA11y(String price, String fx) {
+    return 'Part of your gain from price $price, part from the exchange rate $fx.';
+  }
+
+  @override
+  String get fxSplitLocked =>
+      'How much of your gain is price and how much is FX: Premium';
 
   @override
   String dividendEventLine(String lot, String perShare) {
@@ -859,8 +1068,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dividendRecordAction => 'Record';
 
   @override
-  String get dividendSourceNote =>
-      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; \"Save\" prefills the net after 15% withholding tax, which you can edit.';
+  String get dividendSourceNote => 'Source: Yahoo Finance · amounts are gross';
 
   @override
   String dividendSuggestionLine(String ticker, String date) {
@@ -926,16 +1134,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fillTheForm => 'Fill the form';
 
   @override
-  String get bistStocks => 'BIST Stocks';
+  String get bistStocks => 'BIST stocks';
 
   @override
-  String get tefasFunds => 'TEFAS Funds';
+  String get pickerInPortfolio => 'In your portfolio';
+
+  @override
+  String pickerFundReturn1y(String pct) {
+    return '1Y $pct';
+  }
+
+  @override
+  String get tefasFunds => 'TEFAS funds';
 
   @override
   String get fundsLoading => 'Loading funds...';
-
-  @override
-  String get pleaseWait => 'Please wait';
 
   @override
   String breakdownUpAmount(String amount) {
@@ -971,16 +1184,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String sinceCpiWindowBody(String month, String date) {
-    return 'The figure above includes this stretch; this card updates when $month CPI is published ($date).';
-  }
-
-  @override
-  String sinceCpiWindowBodyLate(String month) {
-    return 'The figure above includes this stretch; this card updates once $month CPI is loaded.';
-  }
-
-  @override
   String get demoBannerTitle => 'Sample portfolio';
 
   @override
@@ -1013,10 +1216,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get demoSaveSheetContinue => 'Keep exploring';
 
   @override
+  String get fundsEmptyRetry =>
+      'We couldn\'t get the fund list right now. Try again in a moment.';
+
+  @override
   String get fundsLoadFailed => 'Could not load funds';
 
   @override
-  String get searchEllipsis => 'Search...';
+  String get searchEllipsis => 'Search';
 
   @override
   String get clearSearch => 'Clear search';
@@ -1037,7 +1244,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickFund => 'Pick a fund';
 
   @override
-  String get pickFundTap => 'Tap to pick a fund...';
+  String get pickFundTap => 'Pick a fund';
 
   @override
   String get noResults => 'No results';
@@ -1061,16 +1268,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get identityGoldKind => 'Gold Type';
 
   @override
-  String get pickGoldTap => 'Tap to pick a gold type...';
-
-  @override
   String get goldSearchHint => 'Search: quarter, 22 carat, reşat…';
 
   @override
   String get goldTypes => 'Gold Types';
-
-  @override
-  String get goldQuickPick => 'Quick pick';
 
   @override
   String get goldGroupGram => 'Gram';
@@ -1088,12 +1289,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goldUnitGram => 'g';
 
   @override
-  String get goldUnitOunce => 'oz';
+  String get commodityUnitPound => 'lb';
 
   @override
-  String goldSelectedSemantics(String kind) {
-    return 'Selected gold type: $kind. Double tap to change.';
+  String get commodityUnitBarrel => 'bbl';
+
+  @override
+  String get commodityUnitMmbtu => 'MMBtu';
+
+  @override
+  String get commodityOther => 'Other (enter symbol)';
+
+  @override
+  String get pickCommodityPrompt =>
+      'Pick a commodity, or use Other to enter a symbol';
+
+  @override
+  String get pickCommodityTap => 'Pick a commodity';
+
+  @override
+  String get commodityOtherSelected => 'Other (enter the symbol below)';
+
+  @override
+  String commoditySelectedSemantics(String name) {
+    return 'Selected commodity: $name. Double tap to change.';
   }
+
+  @override
+  String get goldUnitOunce => 'oz';
 
   @override
   String get identityCurrency => 'Currency';
@@ -1107,7 +1330,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get periodDaily => 'DAILY';
+  String get periodDaily => 'Daily';
 
   @override
   String get period1W => '1W';
@@ -1120,6 +1343,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get period6M => '6M';
+
+  @override
+  String get periodYtd => 'YTD';
+
+  @override
+  String get periodYtdLong => 'Year to date';
 
   @override
   String get period1Y => '1Y';
@@ -1183,7 +1412,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Note: your App Store / Google Play subscription is not cancelled when the account is deleted. Turn off renewal from the store\'s subscriptions page.';
 
   @override
-  String get deleteAccountUpper => 'DELETE ACCOUNT';
+  String get deleteAccountUpper => 'Delete account';
 
   @override
   String get accountDeletedTitle => 'Your account was deleted';
@@ -1214,7 +1443,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This can take a few seconds. Don\'t close the app.';
 
   @override
-  String get diagnosticsUpper => 'DIAGNOSTICS';
+  String get diagnosticsUpper => 'Diagnostics';
 
   @override
   String get pushDiagnostics => 'Push Diagnostics';
@@ -1224,7 +1453,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Where the notification chain is broken; device APNs/FCM token state';
 
   @override
-  String get notificationsUpper => 'NOTIFICATIONS';
+  String get notificationsUpper => 'Notifications';
 
   @override
   String get signalNotifications => 'Technical signal notifications';
@@ -1237,10 +1466,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signalSettings => 'Signal settings';
 
   @override
-  String get signalSettingsSubtitle =>
-      'Indicator selection per asset type + Premium';
-
-  @override
   String get priceAlerts => 'Price alerts';
 
   @override
@@ -1251,41 +1476,115 @@ class AppLocalizationsEn extends AppLocalizations {
       'Get notified when a new partner request arrives';
 
   @override
-  String get liveActivitiesUpper => 'LIVE ACTIVITIES';
+  String get canliEtkinlikAltBaslik => 'Live activities';
 
   @override
   String get biometricLock => 'Biometric lock';
 
   @override
-  String get downloadMyData => 'Download My Data';
+  String biometricLockYontem(String yontem) {
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Lock with Face ID',
+        'touchId': 'Lock with Touch ID',
+        'biyometrik': 'Biometric lock',
+        'other': 'Lock with screen lock',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get downloadMyData => 'Download my data';
 
   @override
   String get downloadMyDataSubtitle =>
-      'Get all your data as a JSON file (KVKK Article 11)';
+      'Get your transactions as Excel, all your data as JSON (KVKK Article 11)';
 
   @override
-  String get deleteMyAccount => 'Delete My Account';
+  String get downloadMyDataExcel => 'Excel (all transactions)';
+
+  @override
+  String get downloadMyDataExcelSubtitle =>
+      'Every buy, sell and dividend; opens as a spreadsheet';
+
+  @override
+  String get downloadMyDataJson => 'JSON (all data)';
+
+  @override
+  String get downloadMyDataJsonSubtitle =>
+      'A complete machine-readable copy of your records';
+
+  @override
+  String get deleteMyAccount => 'Delete my account';
 
   @override
   String get deleteMyAccountSubtitle => 'All your data is permanently deleted';
 
   @override
-  String get supportUpper => 'SUPPORT';
+  String get contactUs => 'Contact us';
 
   @override
-  String get contactUs => 'Contact Us';
+  String get sssFonSoru => 'Why doesn\'t my fund price change during the day?';
+
+  @override
+  String get sssFonCevap =>
+      'TEFAS publishes fund prices once a day, on business-day evenings. sandık shows that day\'s published price; it does not change during the day.';
+
+  @override
+  String get sssSiklikSoru => 'How often are prices updated?';
+
+  @override
+  String get sssSiklikCevap =>
+      'While the app is open, prices refresh about every 30 seconds. Pull the list down to refresh right away. When the market is closed, the last close is shown.';
+
+  @override
+  String get sssKriptoSoru => 'Where do crypto prices come from?';
+
+  @override
+  String get sssKriptoCevap =>
+      'Crypto prices come from Binance and update every day, weekends included.';
+
+  @override
+  String get sssVeriSoru => 'Where is my data stored, and how do I delete it?';
+
+  @override
+  String get sssVeriCevap =>
+      'Your account and portfolio are stored on sandık\'s cloud servers; the Privacy Notice under Legal documents says which country they are kept in. From Profile › Account & Security you can download your data or delete your account with all its data.';
+
+  @override
+  String get sssOrtakSoru => 'How does the shared portfolio work?';
+
+  @override
+  String get sssOrtakCevap =>
+      'Tap Shared portfolio in Profile, send your code to someone close, or enter theirs. After approval, both portfolios appear combined on one screen. You can leave any time.';
+
+  @override
+  String get sssPremiumSoru => 'What\'s in Premium, and how do I cancel?';
+
+  @override
+  String get sssPremiumCevap =>
+      'Premium\'s features and current price are on the Sandık Premium page in Profile. The subscription runs through the store; to cancel, use the subscription settings in the App Store or Google Play.';
+
+  @override
+  String get sssBizeYaz => 'Still stuck? Write to us';
 
   @override
   String get replayTour => 'Replay the tour';
 
   @override
-  String get replayTourSubtitle => 'Remind yourself what each screen does';
+  String get yasalBelgelerBaslik => 'Legal documents';
 
   @override
-  String get feedbackSubtitle => 'Send us your thoughts';
+  String get yasalBelgelerAlt =>
+      'Privacy, terms, KVKK notice, explicit consent, investment disclaimer';
 
   @override
-  String get legalUpper => 'LEGAL';
+  String get feedbackDogrudanEposta => 'Write by email instead';
+
+  @override
+  String get legalUpper => 'Legal';
 
   @override
   String get privacyPolicy => 'Privacy Policy';
@@ -1344,18 +1643,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showOnWeekendSubtitle =>
-      'BIST is closed on weekends. If your portfolio is only stocks and funds, the banner shows the last close labelled \"Market closed\"; with gold, FX or crypto it stays live.';
+      'BIST is closed on weekends. With only stocks and funds you see the last close; with gold, FX or crypto it stays live.';
 
   @override
   String get showAmounts => 'Show amounts';
 
   @override
   String get showAmountsSubtitle =>
-      'Applies to the Live Activity and the lock screen widget. When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.';
+      'Shows amounts on the lock screen and in the Live Activity. Off by default because the lock screen is visible to anyone.';
 
   @override
   String get lockWidgetHowTo =>
       'You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.';
+
+  @override
+  String get anaEkranWidgetBaslik => 'Home screen widget';
+
+  @override
+  String get anaEkranaWidgetEkle => 'Add widget to home screen';
+
+  @override
+  String get anaEkranWidgetHowTo =>
+      'To add it to your home screen: touch and hold an empty area of the Home Screen → tap + → choose sandık.';
 
   @override
   String get partnerActivityNotifications => 'Partner activity notifications';
@@ -1363,6 +1672,39 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get partnerActivityNotificationsSubtitle =>
       'Mention it in the daily brief when your partner adds to their portfolio';
+
+  @override
+  String get summaryPushTitle => 'Period summary notifications';
+
+  @override
+  String get watchlistSortMine => 'My order';
+
+  @override
+  String get watchlistSortGainers => 'Top gainers';
+
+  @override
+  String get watchlistSortLosers => 'Top losers';
+
+  @override
+  String get watchlistSortMineHint => 'Long-press and drag to reorder';
+
+  @override
+  String get watchlistSortChangeHint => 'By change in the selected period';
+
+  @override
+  String watchlistSortSemantics(String secim) {
+    return 'Sort: $secim';
+  }
+
+  @override
+  String get watchlistMoveUp => 'Move up';
+
+  @override
+  String get watchlistMoveDown => 'Move down';
+
+  @override
+  String get summaryPushSubtitle =>
+      'Your weekly and monthly portfolio summary. The monthly inflation notice comes separately';
 
   @override
   String get quietHours => 'Quiet hours';
@@ -1403,20 +1745,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String get partnerActionsUpper => 'PARTNER ACTIONS';
+  String get partnerActionsUpper => 'Partner actions';
 
   @override
-  String get myPartnersUpper => 'MY PARTNERS';
+  String get myPartnersUpper => 'My partners';
 
   @override
-  String get generateInviteCode => 'Generate Invite Code';
+  String get generateInviteCode => 'Generate invite code';
+
+  @override
+  String get shareInviteCode => 'Share invite code';
 
   @override
   String get generateInviteCodeBody =>
       'Send the code to your partner. Once they enter it, you get an approval request.';
 
   @override
-  String get enterPartnerCode => 'Enter Partner Code';
+  String get enterPartnerCode => 'Enter partner code';
 
   @override
   String get enterPartnerCodeBody =>
@@ -1436,9 +1781,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelWord => 'Cancel';
 
   @override
-  String get noPartnersYet => 'You have no partners yet';
-
-  @override
   String get removePartnerSemantics => 'Remove partner';
 
   @override
@@ -1453,7 +1795,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeWord => 'Remove';
 
   @override
-  String get pendingRequestsUpper => 'PENDING PARTNER REQUESTS';
+  String get pendingRequestsUpper => 'Pending partner requests';
 
   @override
   String get wantsToPartner => 'Wants to partner up';
@@ -1466,15 +1808,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sandikPremium => 'sandık Premium';
-
-  @override
-  String get premiumPitch => 'Unlimited assets and premium indicators';
-
-  @override
-  String get premiumActive => 'Premium active';
-
-  @override
-  String get premiumActiveBody => 'All advanced features unlocked';
 
   @override
   String get codeCopied => 'Code generated and copied to clipboard';
@@ -1507,13 +1840,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get requestPartnership => 'Request Partnership';
+  String get requestPartnership => 'Request partnership';
 
   @override
-  String get generatingEllipsis => 'Generating...';
-
-  @override
-  String get generateCode => 'Generate Code';
+  String get generateCode => 'Generate code';
 
   @override
   String get tabChart => 'Chart';
@@ -1590,10 +1920,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get simModeBody =>
-      'How would the chart look if you had held today\'s net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.';
-
-  @override
-  String get portfolioPerformance => 'Portfolio Performance';
+      'This is how the chart would look if you had held today\'s portfolio unchanged for the whole period. Past buys and sells are ignored.';
 
   @override
   String get chartDataFailed => 'Could not load chart data';
@@ -1603,18 +1930,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Price history could not be fetched. Check your connection and try again.';
 
   @override
-  String intradayMissingBody(String names) {
-    return 'Intraday prices could not be fetched for $names. These assets are drawn FLAT at their last known price. A flat line does not mean the market was quiet.';
-  }
-
-  @override
-  String get retryLower => 'Try again';
-
-  @override
-  String get raceUpper => 'RACE';
-
-  @override
-  String get changeByTypeUpper => 'BY TYPE · PRICE EFFECT';
+  String get changeByTypeUpper => 'By type · price effect';
 
   @override
   String get noData => 'No data';
@@ -1645,7 +1961,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tradeVolumeUpper => 'BUYS · SELLS';
+  String get tradeVolumeUpper => 'Buys · sells';
 
   @override
   String crosshairNetBuy(String amount) {
@@ -1765,6 +2081,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get last6MonthsPeriod => 'the last 6 months';
 
   @override
+  String get ytdExtremes => 'Year-to-date extremes';
+
+  @override
+  String get ytdPeriod => 'year to date';
+
+  @override
   String get sixMonthExtremes => 'Six-month extremes';
 
   @override
@@ -1798,15 +2120,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get periodStart => 'Period start';
-
-  @override
-  String get yourContribution => 'Net contribution';
-
-  @override
-  String get marketWord => 'Market';
-
-  @override
-  String get cashDividend => 'Of which cash dividends';
 
   @override
   String get commissionPaid => 'Commission paid';
@@ -1851,9 +2164,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get periodCpi => 'Inflation (CPI)';
-
-  @override
-  String get pointDifference => 'Difference';
 
   @override
   String get realReturn => 'Real return';
@@ -1944,7 +2254,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nAssetsPeriod(int count, String period) {
-    return '$count ASSETS · $period';
+    return '$count assets · $period';
   }
 
   @override
@@ -1959,14 +2269,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String portfolioLineInfoSim(String name) {
-    return 'For weekly and longer periods the $name line is a simulation: what would have happened had you held today\'s assets since the start of the period. Your buy and sell dates are ignored; it is not your realised return. This keeps it comparable with your watched assets over the same window.';
-  }
-
-  @override
-  String openDetailSemantics(String name) {
-    return 'Open $name details';
-  }
+  String get portfolioLineInfoSim =>
+      'This line shows what would have happened had you held today\'s assets since the start of the period; it is not your realised return.';
 
   @override
   String addToPortfolioSemantics(String name) {
@@ -1982,13 +2286,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addToWatchlist => 'Add to watchlist';
-
-  @override
-  String get whyWatchlistUpper => 'WHY A WATCHLIST?';
-
-  @override
-  String get whyWatchlistBody =>
-      'You can follow an asset\'s price without buying it. The watchlist is not part of your portfolio; it does not affect your total value or profit/loss.';
 
   @override
   String get notInPortfolioNote =>
@@ -2042,6 +2339,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get watchlistRowFollowing => 'on your watchlist';
+
+  @override
+  String get watchlistPeriodSinceAdded => 'Since added';
+
+  @override
+  String watchlistSinceDate(String tarih) {
+    return 'Since $tarih';
+  }
+
+  @override
+  String watchlistRowSinceUp(String tarih, String pct) {
+    return 'up $pct since $tarih';
+  }
+
+  @override
+  String watchlistRowSinceDown(String tarih, String pct) {
+    return 'down $pct since $tarih';
+  }
+
+  @override
+  String watchlistRowSinceFlat(String tarih) {
+    return 'unchanged since $tarih';
+  }
+
+  @override
+  String get watchlistRowSinceUnknown =>
+      'no closing price for the day it was added';
 
   @override
   String notificationsNewCount(int count) {
@@ -2135,7 +2459,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Try widening the date range or clearing the search.';
 
   @override
-  String get priceAlertsTitle => 'Price Alerts';
+  String get quickActionSearch => 'Search';
 
   @override
   String get createAlert => 'Create an alert';
@@ -2205,16 +2529,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'No one\'s asset list is shared; only return percentages are ranked.';
 
   @override
-  String get yourReturnUpper => 'RETURN ON YOUR PICKS';
+  String get yourReturnUpper => 'Return on your picks';
 
   @override
   String get dataNotReady => 'Data is not ready.';
 
   @override
-  String get leaderUpper => 'LEADER';
+  String get leaderUpper => 'Leader';
 
   @override
-  String get loadingUpper => 'LOADING';
+  String get loadingUpper => 'Loading';
 
   @override
   String get globalRanking => 'Global Ranking';
@@ -2223,7 +2547,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkingAnonPool => 'Checking the anonymous pool…';
 
   @override
-  String get comingSoonUpper => 'SOON';
+  String get comingSoonUpper => 'Soon';
 
   @override
   String get globalRankingSoon =>
@@ -2238,40 +2562,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get topPortfolios => 'Top Portfolios';
 
   @override
-  String topGainersAllocation(String period) {
-    return '$period top gainers\' allocation';
-  }
-
-  @override
-  String get anonymousUpper => 'ANONYMOUS';
-
-  @override
-  String get topPortfoliosSoon =>
-      'Top portfolios appear here once there are enough participants. The anonymous pool is forming…';
-
-  @override
-  String nthPortfolio(int n) {
-    return 'Portfolio #$n';
-  }
-
-  @override
   String get selectedPeriodReturnBody =>
-      'The period is split into days. Each day, the assets you held that day are valued at market prices, and the daily returns are chained together.\n\nIf you sold one asset and bought another, each counts only on the days you held it. The 7D / 30D / 1Y choice above changes the result directly.';
+      'The period is split into days; the return is calculated from the days you held each asset. The period choice changes the result.';
 
   @override
   String get depositsDontChangeRankBody =>
-      'What is measured is your picks: which assets you held, on which days. When and how much money you added does NOT affect the ratio; the same picks give the same percentage whether you hold 1 lot or 10,000.\n\nThe purchase price you entered is not used; everything is valued at market prices.';
+      'What counts is which assets you held, on which days. When and how much money you added does NOT affect the ratio; everything is valued at market prices.';
 
   @override
   String everyoneMeasuredSameBody(int gun) {
-    return 'You and your partners are computed with the same formula and the same prices; the calculation happens on this device. Between partners the date you entered counts: history imported via CSV or statement counts right away.\n\nTo be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.';
+    return 'You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nTo be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.';
   }
 
   @override
   String get planYearly => 'Yearly';
-
-  @override
-  String get planYearlySubtitle => '7 days free, then renews automatically';
 
   @override
   String get planMonthly => 'Monthly';
@@ -2294,7 +2598,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get greatWord => 'Great';
 
   @override
-  String get sandikPremiumUpper => 'SANDIK PREMIUM';
+  String get sandikPremiumUpper => 'Sandık Premium';
 
   @override
   String get paywallHeadline => 'Track your portfolio\nin more depth';
@@ -2369,9 +2673,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get lastYearInflation => 'Over the last year, inflation-wise you are ';
-
-  @override
   String pointsAhead(String pts) {
     return '$pts points ahead';
   }
@@ -2418,6 +2719,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String ayNetKatki(String tutar) {
+    return 'Net $tutar';
+  }
+
+  @override
   String get txSell => 'Sale';
 
   @override
@@ -2449,7 +2755,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewWord => 'View';
 
   @override
-  String get newUpper => 'NEW';
+  String get newUpper => 'New';
 
   @override
   String get racePitch =>
@@ -2506,7 +2812,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAssetWarning =>
-      'This is not a sale. The asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.';
+      'This is not a sale: the asset leaves your totals and the history chart, its transactions stay under \"Deleted\". If you sold it, use \"Sell\".';
 
   @override
   String alarmAlsoDeleteTitle(int n) {
@@ -2525,9 +2831,9 @@ class AppLocalizationsEn extends AppLocalizations {
       n,
       locale: localeName,
       other:
-          '$name was deleted. The $n alerts you set for this symbol are still active. They can keep watching the price even though you no longer hold it.',
+          '$name was deleted. Your $n alerts are still active and keep watching the price.',
       one:
-          '$name was deleted. The alert you set for this symbol is still active. It can keep watching the price even though you no longer hold it.',
+          '$name was deleted. Your alert is still active and keeps watching the price.',
     );
     return '$_temp0';
   }
@@ -2553,13 +2859,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetDeleted => 'Asset deleted';
 
   @override
-  String get undoFailed => 'Could not undo';
-
-  @override
   String get enterValidAmount => 'Enter a valid amount';
-
-  @override
-  String get dividendSaved => 'Dividend saved';
 
   @override
   String get dividendPayDate => 'Dividend payment date';
@@ -2601,29 +2901,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String boughtAmount(String qty, String unit) {
-    return 'Bought $qty $unit';
-  }
-
-  @override
-  String soldAmount(String qty, String unit) {
-    return 'Sold $qty $unit';
-  }
-
-  @override
   String transactionFailed(String error) {
     return 'Transaction failed. $error';
   }
 
   @override
   String get sellAllWarning =>
-      'You are selling the whole position. It leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.';
+      'You are selling it all. The position leaves the list, the sale and profit/loss record are kept.';
 
   @override
   String get saleValue => 'Sale value';
-
-  @override
-  String get noPriceAlert => 'No price alert';
 
   @override
   String nActiveAlerts(int n) {
@@ -2703,14 +2990,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notifyWhenAbove =>
-      'We\'ll let you know when the price rises to this level.';
-
-  @override
-  String get notifyWhenBelow =>
-      'We\'ll let you know when the price falls to this level.';
-
-  @override
   String get setAlert => 'Set alert';
 
   @override
@@ -2777,19 +3056,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signalCalculating => 'Calculating signal…';
 
   @override
-  String get trendUp => 'UPTREND';
+  String get trendUp => 'Uptrend';
 
   @override
-  String get trendDown => 'DOWNTREND';
+  String get trendDown => 'Downtrend';
 
   @override
-  String get trendFlat => 'FLAT';
+  String get trendFlat => 'Flat';
 
   @override
-  String get sinyalAsiriSatim => 'OVERSOLD';
+  String get sinyalAsiriSatim => 'Oversold';
 
   @override
-  String get sinyalAsiriAlim => 'OVERBOUGHT';
+  String get sinyalAsiriAlim => 'Overbought';
 
   @override
   String indicatorsConfidence(int lehte, int total, int pct) {
@@ -2802,10 +3081,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get technicalOutlookUpper => 'TECHNICAL OUTLOOK · DAILY';
-
-  @override
-  String get nowUpper => 'NOW';
+  String get technicalPrefix => 'Technical:';
 
   @override
   String get arrowUp => '▲ up';
@@ -2828,11 +3104,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'No indicators are selected for this asset type. Enable them from Profile → Signal Settings.';
 
   @override
-  String get technicalAnalysisUpper => 'TECHNICAL ANALYSIS · DAILY';
+  String get technicalAnalysisUpper => 'Technical analysis · daily';
 
   @override
   String nOfMIndicators(int on, int all) {
-    return '· $on/$all indicators on';
+    return '$on/$all indicators on';
   }
 
   @override
@@ -2847,16 +3123,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confidenceWord => 'confidence';
 
   @override
-  String csvRowsAddedToCart(int n) {
-    return '$n rows added to the cart';
-  }
-
-  @override
-  String get csvImportTitle => 'Import statement';
+  String get csvImportTitle => 'Add from statement';
 
   @override
   String get csvImportBody =>
-      'Choose your broker or bank statement (PDF, Excel or CSV) or copy and paste the table. Column names and order don\'t matter: symbol, quantity, price, date and buy/sell are detected automatically. Buys and sells come in with their dates.';
+      'Choose your statement or paste the table. We find the symbol, quantity, price and date.';
 
   @override
   String get pasteHere => 'Paste here';
@@ -2895,6 +3166,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'Only the table layout is sent: names, numbers and amounts are hidden, the document never leaves your phone.';
 
   @override
+  String get importAiHintText =>
+      'Column and asset names in the table are sent to AI; amounts, quantities and account/ID numbers stay hidden.';
+
+  @override
+  String get importAiRizaBaslik => 'Read your statement with AI';
+
+  @override
+  String get importAiRizaMetin =>
+      'To find the columns, the words in the table (column and asset names) are sent through our server to Anthropic (USA). Amounts, quantities, account and ID numbers are not sent; labelled details such as name and address are hidden. The text sent is not stored. You can withdraw your consent from this screen at any time.';
+
+  @override
+  String get importAiRizaKabul => 'I agree';
+
+  @override
+  String get importAiRizaVazgec => 'Cancel';
+
+  @override
+  String get importAiRizaGeriCek => 'Withdraw AI consent';
+
+  @override
+  String get importAiRizaGeriCekildi =>
+      'Consent withdrawn. We\'ll ask again if you tap Map with AI.';
+
+  @override
+  String get importAiRizaGerekli =>
+      'Matching with AI needs your consent; tap the button again.';
+
+  @override
   String get importAiSuggested =>
       'AI suggested the columns; check the mapping and fix it if needed.';
 
@@ -2912,7 +3211,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String importTradesApplied(int count) {
-    return 'Actual purchase date and price for $count holdings taken from account transactions.';
+    return 'Buys and sells for $count holdings taken from account transactions with their actual dates and prices.';
+  }
+
+  @override
+  String get importScreenshotAdd => 'Add from screenshot';
+
+  @override
+  String get importScreenshotFillCosts => 'Fill costs from a screenshot';
+
+  @override
+  String get importScreenshotHint =>
+      'Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.';
+
+  @override
+  String get importScreenshotNone =>
+      'No holdings found in the image. Pick a screen that shows each holding\'s code or name, quantity and cost.';
+
+  @override
+  String get importScreenshotNoCost =>
+      'No average cost found in the image; rows were left as they were.';
+
+  @override
+  String importScreenshotCostsApplied(int count) {
+    return 'Average cost for $count holdings taken from the screenshot.';
+  }
+
+  @override
+  String importScreenshotRead(int count) {
+    return '$count holdings read from the screenshot; check them below.';
+  }
+
+  @override
+  String importScreenshotSkipped(String codes) {
+    return 'Holdings with separate buy/sell rows were left untouched: $codes';
+  }
+
+  @override
+  String importScreenshotNotInStatement(String codes) {
+    return 'Not in the statement, so not added: $codes';
   }
 
   @override
@@ -2928,6 +3265,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importFundListFailed =>
       'Couldn\'t load the TEFAS fund list; funds listed by name were skipped. Check your connection and pick the file again.';
+
+  @override
+  String importFundPriceMissing(String name) {
+    return '$name: couldn\'t get the price on the statement date, skipped.';
+  }
+
+  @override
+  String importAmountOnly(String date) {
+    return 'This document shows no quantities: each quantity is the amount divided by the unit price on $date. Cost is taken as that day\'s price.';
+  }
 
   @override
   String importDepositsFound(int n) {
@@ -2978,6 +3325,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get iktKotaBaslik => 'Free quota will be exceeded';
+
+  @override
+  String iktKotaGovde(int bulunan, int sigan) {
+    return 'Your cart has $bulunan items; $sigan fit the free quota. Add the rest now with Premium or later.';
+  }
+
+  @override
+  String get iktKotaPremium => 'Go Premium, add all';
+
+  @override
+  String iktKotaSiganlar(int sigan) {
+    return 'Save $sigan items, keep the rest in the cart';
+  }
+
+  @override
+  String get iktKotaVazgec => 'Cancel';
+
+  @override
   String get someAssetsNotAdded => 'Some Assets Could Not Be Added';
 
   @override
@@ -3024,11 +3390,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartEmpty => 'The cart is empty';
 
   @override
+  String get cartCostLater => 'Cost to be entered later';
+
+  @override
+  String bulkScreenshotAdded(int count) {
+    return '$count holdings added to the cart.';
+  }
+
+  @override
+  String bulkScreenshotCostLater(int count) {
+    return 'Cost could not be read for $count holdings: they are saved at today\'s price; tap a row to enter its cost.';
+  }
+
+  @override
+  String bulkScreenshotNoQuantity(String codes) {
+    return 'Quantity not read, skipped: $codes';
+  }
+
+  @override
   String get cartEmptyBody =>
       'Use the + Add Asset button below to queue several assets and save them all at once.';
 
   @override
-  String get pasteFromStatement => 'Import statement (PDF, Excel, CSV)';
+  String get pasteFromStatement => 'Add from statement';
 
   @override
   String saveAllCount(int n) {
@@ -3039,19 +3423,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeFromWatchlist => 'Remove from watchlist';
 
   @override
-  String removeFromWatchlistConfirm(String name) {
-    return 'Remove $name from your watchlist?';
-  }
-
-  @override
-  String get removeWord2 => 'Remove';
-
-  @override
   String get removeFromWatchlistFailed =>
       'Could not remove it. Check your connection.';
 
   @override
-  String get currentPriceUpper => 'CURRENT PRICE';
+  String get currentPriceUpper => 'Current price';
 
   @override
   String periodNoChange(String period) {
@@ -3067,34 +3443,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not enough price history for this asset.';
 
   @override
-  String get notInYourPortfolio => 'This asset is not part of your portfolio.';
-
-  @override
   String get searchingEllipsis => 'Searching…';
-
-  @override
-  String get startTypingToSearch => 'Start typing to search.';
 
   @override
   String noResultForQuery(String q) {
     return 'No results for \"$q\".';
-  }
-
-  @override
-  String get inYourPortfolioUpper => 'IN YOUR PORTFOLIO';
-
-  @override
-  String get searchAllAssetsHint =>
-      'Search stocks, funds, indices, commodities, currency or gold';
-
-  @override
-  String alreadyInPortfolio(String name) {
-    return '$name is already in your portfolio';
-  }
-
-  @override
-  String addedToWatchlist(String name) {
-    return '$name added to your watchlist';
   }
 
   @override
@@ -3153,16 +3506,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String betterThanPctInvestors(int pct, String ek) {
-    return 'Better than $pct% of investors';
-  }
-
-  @override
-  String nDaysTracked(int n) {
-    return '$n days tracked';
-  }
-
-  @override
   String get trackingWithSandik => 'tracked with sandık';
 
   @override
@@ -3199,18 +3542,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notifSubtitleIos =>
-      'Signals, price alerts, quiet hours, Live Activity';
+  String get notifSubtitleIos => 'Signals, alerts, quiet hours, Live Activity';
 
   @override
   String get notifSubtitleAndroid => 'Signals, price alerts, quiet hours';
 
   @override
   String get alertSetFromAssetScreen => 'Set from the bell on an asset screen';
-
-  @override
-  String get sessionTimedOut =>
-      'You were signed out for safety. Turn on the lock in Settings › Privacy and this will not happen again.';
 
   @override
   String lockOfferTitle(String yontem) {
@@ -3229,20 +3567,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get lockOfferBody =>
       'Your portfolio lives in your pocket. With the lock on, the app recognises you without getting in your way.';
-
-  @override
-  String get lockOfferBenefitStay => 'You stay signed in';
-
-  @override
-  String get lockOfferBenefitStayBody =>
-      'With the lock off, leaving the app for 10 minutes signs you out for safety and you have to enter your password again. With the lock on, your session stays put.';
-
-  @override
-  String get lockOfferBenefitPush => 'Your alerts keep coming';
-
-  @override
-  String get lockOfferBenefitPushBody =>
-      'Signing out also silences your price alerts and daily summary. With the lock on, they keep arriving.';
 
   @override
   String get lockOfferBenefitPrivacy => 'Your portfolio stays hidden';
@@ -3320,7 +3644,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String quietHoursOn(String start, String end) {
-    return 'Briefing, summary, calendar and alert pushes are not sent between $start and $end';
+    return 'No notifications $start-$end';
   }
 
   @override
@@ -3334,10 +3658,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String aheadOfInflationPeriod(String pts) {
     return 'This period you are $pts points ahead of inflation.';
   }
-
-  @override
-  String get realReturnPositive =>
-      'Your portfolio delivered a real return above inflation; your purchasing power grew.';
 
   @override
   String percentileSentence(int pct) {
@@ -3401,14 +3721,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get realReturnNegative =>
-      'Your portfolio fell short of inflation; your purchasing power shrank.';
-
-  @override
-  String get realReturnEven =>
-      'Your portfolio kept pace with inflation; your purchasing power held steady.';
-
-  @override
   String nPeopleParen(int n) {
     return '($n people)';
   }
@@ -3468,30 +3780,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTransactionsYet => 'No transactions yet';
 
   @override
-  String get todaysBalanceChange => 'Today\'s total change';
-
-  @override
   String sinceDateToToday(String date) {
     return '$date → today';
-  }
-
-  @override
-  String balanceChangeSince(String date) {
-    return 'Total change since $date';
   }
 
   @override
   String periodChangeSim(String period) {
     return '$period change · simulation';
   }
-
-  @override
-  String periodBalanceChange(String period) {
-    return '$period total change';
-  }
-
-  @override
-  String get marketOnlyRow => 'Price effect only';
 
   @override
   String rowExpandedSemantics(String label) {
@@ -3524,16 +3820,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String flowSellUpper(String amount) {
-    return 'Sold $amount in period';
-  }
-
-  @override
-  String flowBuyUpper(String amount) {
-    return 'Bought $amount in period';
-  }
-
-  @override
   String get raceFooterGlobal =>
       'The ranking is the return on your picks: the assets you held each day are valued at market prices, and when money was added doesn\'t matter. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
 
@@ -3542,12 +3828,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nThousandPeople(String n) {
-    return '${n}K PEOPLE';
+    return '${n}K people';
   }
 
   @override
   String nPeopleUpper(int n) {
-    return '$n PEOPLE';
+    return '$n people';
   }
 
   @override
@@ -3662,7 +3948,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chartTypeTooltip => 'Chart type';
 
   @override
-  String get chartCandleChip => 'CANDLE';
+  String get chartIndicatorsButton => 'Indicators';
+
+  @override
+  String chartIndicatorsOn(int n) {
+    return '$n on';
+  }
+
+  @override
+  String chartIndicatorsSemantics(int n) {
+    return 'Indicators, $n on';
+  }
+
+  @override
+  String get chartIndicatorsHint =>
+      'Shows or hides chart indicators and layers';
+
+  @override
+  String get chartCandleChip => 'Candle';
 
   @override
   String get chartIntervalM1 => '1m';
@@ -3716,13 +4019,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fullscreenChart => 'Open chart full screen';
-
-  @override
   String get whatsNewTitle => 'What\'s New';
-
-  @override
-  String get whatsNewSubtitle => 'See what changed in this version';
 
   @override
   String get whatsNewEmpty => 'No notes for this version.';
@@ -3780,16 +4077,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notifTypePartner => 'PARTNER';
+  String get notifTypePartner => 'Partner';
 
   @override
-  String get notifTypeDailyBrief => 'DAILY';
+  String get notifTypeDailyBrief => 'Daily';
 
   @override
-  String get notifTypeWeekly => 'WEEKLY';
+  String get notifTypeWeekly => 'Weekly';
 
   @override
-  String get notifTypeReminder => 'REMINDER';
+  String get notifTypeReminder => 'Reminder';
 
   @override
   String notifToday(String time) {
@@ -3816,15 +4113,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateAppTitle => 'Rate sandık';
 
   @override
-  String get rateAppSubtitle => 'Leave a rating on the store';
-
-  @override
   String get todayMarketOnly => 'price effect only';
-
-  @override
-  String todaySessionOpen(String close) {
-    return 'Session open · closes $close';
-  }
 
   @override
   String todayOpensAt(String when) {
@@ -3838,35 +4127,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayLiveWord => 'Live';
 
   @override
+  String get todayNoDataYet => 'Today\'s data hasn\'t arrived yet';
+
+  @override
   String get todayLoading => 'Intraday data loading';
 
   @override
   String get todayRealLabel => 'Versus inflation';
 
   @override
-  String get todayRealHint => 'Yearly return minus CPI';
-
-  @override
-  String get todayWeekHint => 'Market effect on your portfolio · summary ready';
-
-  @override
   String get todayGoalLabel => 'Goal';
-
-  @override
-  String get todayGoalSetShort => 'Pick an amount, see what\'s left daily';
-
-  @override
-  String get todayGoalAction => 'Set';
-
-  @override
-  String todayGoalLeftHint(String goal) {
-    return 'Left to $goal';
-  }
-
-  @override
-  String todayGoalValue(int pct, String left) {
-    return '$pct% · $left';
-  }
 
   @override
   String get todayGoalDone => 'Reached';
@@ -3875,9 +4145,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String todayGoalDoneHint(String goal) {
     return 'Goal $goal · pick a new one';
   }
-
-  @override
-  String get todayOpenAction => 'Open';
 
   @override
   String get todayTitle => 'Today';
@@ -3898,68 +4165,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get todayFlat => 'No change today';
-
-  @override
   String todayAt(String time) {
     return 'today at $time';
   }
-
-  @override
-  String todayMarketClosed(String when) {
-    return 'Market closed · opens $when';
-  }
-
-  @override
-  String todayGreenShare(int green, int total) {
-    return '$green of $total holdings in the green';
-  }
-
-  @override
-  String get todayGoalSet => 'Set a goal';
-
-  @override
-  String get todayGoalSetHint =>
-      'Pick a target for your portfolio and track what\'s left every day.';
-
-  @override
-  String todayGoalProgress(int pct, String left) {
-    return '$pct% to goal · $left to go';
-  }
-
-  @override
-  String todayGoalReached(String goal) {
-    return 'Goal reached: $goal';
-  }
-
-  @override
-  String todayInDays(int n) {
-    return 'in $n days';
-  }
-
-  @override
-  String todayEventCpi(String when) {
-    return 'TurkStat releases inflation $when';
-  }
-
-  @override
-  String todayEventHoliday(String when) {
-    return 'Exchange closed $when (public holiday)';
-  }
-
-  @override
-  String todayEventMonthEnd(String when) {
-    return 'Month ends $when; your monthly summary will be ready';
-  }
-
-  @override
-  String todayMonthlySummary(String month) {
-    return 'Your $month summary is ready';
-  }
-
-  @override
-  String get todayMonthlySummaryHint =>
-      'Return, inflation gap and your best holding';
 
   @override
   String todayCloseAt(String close) {
@@ -3968,9 +4176,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayClosedShort => 'Closed';
-
-  @override
-  String get todayMarketOnlyShort => 'price effect';
 
   @override
   String get todayGoalNewAction => 'Pick a new one';
@@ -4025,16 +4230,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayLast12Months => 'last 12 months';
 
   @override
-  String get todayMoveLabel => 'Today\'s move';
-
-  @override
-  String get todayRealYearly => 'yearly';
-
-  @override
   String get todayGoalSetAction => 'Set a goal';
-
-  @override
-  String get todayGoalSetSub => 'See what\'s left every day';
 
   @override
   String todayGoalProgressTitle(int pct) {
@@ -4050,17 +4246,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalTitle => 'Portfolio goal';
 
   @override
-  String get goalHint => 'Display only; it does not change any calculation.';
+  String get goalHint =>
+      'Shows your progress on the home screen; it does not change any calculation.';
 
   @override
   String get goalInvalid => 'Enter a valid amount';
 
   @override
   String get goalRemove => 'Remove goal';
-
-  @override
-  String get goalSettingsSubtitle =>
-      'Pick a target; track progress on the Today card';
 
   @override
   String partnerInviteMessage(String code, String link) {
@@ -4071,17 +4264,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get partnerInviteSubject => 'sandık partner invite';
 
   @override
-  String get notifTypeMonthly => 'MONTHLY';
-
-  @override
-  String raceJoinedCount(int count, int min) {
-    return '$count racing today · ranking opens at $min';
-  }
-
-  @override
-  String raceRunningCount(int count) {
-    return '$count racing today';
-  }
+  String get notifTypeMonthly => 'Monthly';
 
   @override
   String get marketDollar => 'USD';
@@ -4096,7 +4279,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketBist => 'BIST 100';
 
   @override
-  String get notifTypeWatchlist => 'WATCHLIST';
+  String get marketBitcoin => 'Bitcoin';
+
+  @override
+  String get notifTypeWatchlist => 'Watchlist';
 
   @override
   String get notifTypeInflation => 'CPI';
@@ -4113,34 +4299,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get briefSlotTitle => 'Brief time';
 
   @override
-  String get briefSlotSubtitle =>
-      'When your daily portfolio move summary arrives';
-
-  @override
   String get briefSlotMorning => 'Morning 09:45';
 
   @override
   String get briefSlotEvening => 'Evening 18:30 (close)';
-
-  @override
-  String todayRealReturnAhead(String pts) {
-    return '$pts pts ahead of inflation · yearly';
-  }
-
-  @override
-  String todayRealReturnBehind(String pts) {
-    return '$pts pts behind inflation · yearly';
-  }
-
-  @override
-  String todayWeeklyUp(String pct) {
-    return 'Last week market +$pct · summary ready';
-  }
-
-  @override
-  String todayWeeklyDown(String pct) {
-    return 'Last week market −$pct · summary ready';
-  }
 
   @override
   String get sectionResult => 'What happened?';
@@ -4159,9 +4321,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myAlarms => 'My alerts';
-
-  @override
-  String get viewChipLabel => 'View';
 
   @override
   String get identityCrypto => 'Cryptocurrency';
@@ -4205,22 +4364,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get period5Y => '5Y';
 
   @override
-  String get vsPeriodReturnUpper => 'PERIOD RETURN';
+  String get vsPeriodReturnUpper => 'Period return';
 
   @override
-  String get vsTodayUpper => 'TODAY';
+  String get vsTodayUpper => 'Today';
 
   @override
-  String get vsMaxDrawdownUpper => 'MAX DRAWDOWN';
+  String get vsMaxDrawdownUpper => 'Max drawdown';
 
   @override
-  String get vsVolatilityUpper => 'VOLATILITY (ANNUAL)';
-
-  @override
-  String get vsPeriodLow => 'Period low';
-
-  @override
-  String get vsPeriodHigh => 'Period high';
+  String get vsVolatilityUpper => 'Volatility (annual)';
 
   @override
   String vsRangePosition(String pct) {
@@ -4228,11 +4381,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get vsVolatilityShortNote =>
-      'Volatility is computed for periods of 1 month or longer.';
+  String vsDayRangePosition(String pct) {
+    return 'Price is at $pct% of the day\'s range';
+  }
 
   @override
-  String get adPositionUpper => 'YOUR POSITION';
+  String get adPositionUpper => 'Your position';
 
   @override
   String adPositionLine(String amount, String pct) {
@@ -4240,8 +4394,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String adInflationThrough(String month) {
+    return 'through $month CPI';
+  }
+
+  @override
   String chartOpenLabel(String time, String value) {
-    return 'OPEN · $time · $value';
+    return 'Open · $time · $value';
   }
 
   @override
@@ -4268,12 +4427,151 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String chartStartLabel(String date, String value) {
-    return 'START · $date · $value';
+  String chartPrevCloseLabel(String value) {
+    return 'Prev close · $value';
   }
 
   @override
-  String get chartNowLabel => 'NOW';
+  String chartDayStartLabel(String value) {
+    return 'Day start · $value';
+  }
+
+  @override
+  String chartStartLabel(String date, String value) {
+    return 'Start · $date · $value';
+  }
+
+  @override
+  String chartAlarmLabel(String price, String arrow, String detail) {
+    return '$price $arrow $detail';
+  }
+
+  @override
+  String chartAlarmMore(int count) {
+    return '+$count';
+  }
+
+  @override
+  String chartAlarmA11y(String price, String detail) {
+    return 'Price alert $price, $detail';
+  }
+
+  @override
+  String get chartAlarmRises => 'when it rises above';
+
+  @override
+  String get chartAlarmFalls => 'when it falls below';
+
+  @override
+  String get chartAlarmAboveChart => 'above the chart';
+
+  @override
+  String get chartAlarmBelowChart => 'below the chart';
+
+  @override
+  String chartCostLabel(String price) {
+    return 'Your cost $price';
+  }
+
+  @override
+  String chartCostOutside(String price, String detail) {
+    return 'Your cost $price $detail';
+  }
+
+  @override
+  String chartCostA11yAbove(String price, String pct) {
+    return 'Your average cost $price. Price is $pct above your cost.';
+  }
+
+  @override
+  String chartCostA11yBelow(String price, String pct) {
+    return 'Your average cost $price. Price is $pct below your cost.';
+  }
+
+  @override
+  String chartCostA11yAt(String price) {
+    return 'Your average cost $price. Price is at your cost.';
+  }
+
+  @override
+  String get configureShort => 'Adjust';
+
+  @override
+  String get posAvgCost => 'Average cost';
+
+  @override
+  String get costsEmptyRow => 'Costs · not recorded';
+
+  @override
+  String get costsHowToAdd => 'How to add';
+
+  @override
+  String get costsEmptyA11y =>
+      'No costs recorded. Open to see how to add them.';
+
+  @override
+  String pricesRefreshedAt(String time) {
+    return 'Prices updated · $time';
+  }
+
+  @override
+  String get todayGoalNone => 'No goal yet';
+
+  @override
+  String get pfModeTotal => 'Total';
+
+  @override
+  String get pfModeToday => 'Today';
+
+  @override
+  String pfModeA11y(String mode) {
+    return 'Cards show: $mode';
+  }
+
+  @override
+  String pfAssetsHeader(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count holdings',
+      one: '1 holding',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pfAltinGramSatiri(String gram, String has) {
+    return 'Total $gram g · $has g in 24K';
+  }
+
+  @override
+  String pfAltinGramSemantik(String gram, String has) {
+    return 'Your gold totals $gram grams, $has grams in 24 karat';
+  }
+
+  @override
+  String get pfTodayTraded => 'Traded today';
+
+  @override
+  String get pfTodayNoData => 'No intraday data';
+
+  @override
+  String get pfTodayWaiting => 'Waiting for data';
+
+  @override
+  String get sortTodayMove => 'Today\'s move';
+
+  @override
+  String get sortTodayMoveSub => 'Biggest mover first';
+
+  @override
+  String get sortName => 'Name';
+
+  @override
+  String get sortNameSub => 'A to Z';
+
+  @override
+  String get chartNowLabel => 'Now';
 
   @override
   String get vsWatch => 'Watch';
@@ -4292,9 +4590,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String vsRemovedFromWatchlist(String name) {
     return '$name removed from watchlist';
   }
-
-  @override
-  String get vsUndo => 'Undo';
 
   @override
   String vsChartSemantics(String name, String period) {
@@ -4326,10 +4621,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get searchRecentUpper => 'RECENTLY VIEWED';
+  String get searchRecentUpper => 'Recently viewed';
 
   @override
-  String get searchMarketsUpper => 'MARKETS';
+  String get searchMarketsUpper => 'Markets';
 
   @override
   String searchShowAll(int count) {
@@ -4344,6 +4639,92 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchChip => 'Search';
+
+  @override
+  String get aramaIpucuOrnekli => 'e.g. THYAO or 100 USD';
+
+  @override
+  String aramaHizliHesap(String miktar, String ad, String tutar) {
+    return '$miktar $ad ≈ $tutar';
+  }
+
+  @override
+  String get aramaHizliHesapEkle => 'Add to portfolio';
+
+  @override
+  String aramaHizliHesapTers(String tutar, String miktar, String ad) {
+    return '$tutar ≈ $miktar $ad';
+  }
+
+  @override
+  String get aramaHizliHesapKuyumcuSatis => 'At the jeweller\'s selling price';
+
+  @override
+  String get aramaHizliHesapSatis => 'At the selling price';
+
+  @override
+  String get hataBizeYaz => 'Still not working? Write to us';
+
+  @override
+  String get hataBizeYazEtiket => 'Still not working? Email us';
+
+  @override
+  String get hataMailAcilamadi =>
+      'Couldn\'t open your email app. You can write to this address:';
+
+  @override
+  String get hataAdresiKopyala => 'Copy address';
+
+  @override
+  String get hataAdresKopyalandi => 'Address copied';
+
+  @override
+  String get hataBaslik => 'Error';
+
+  @override
+  String get hataBaglanti =>
+      'Couldn\'t connect. Check your internet; if you use a VPN, turn it off and try again.';
+
+  @override
+  String get hataBilinmeyen => 'An unknown error occurred.';
+
+  @override
+  String get hataGenel => 'Something went wrong, try again.';
+
+  @override
+  String get hataVeriOkunamadi => 'The data from the server couldn\'t be read.';
+
+  @override
+  String get hataKayitVar => 'This record already exists.';
+
+  @override
+  String get hataYetkiYok => 'You don\'t have permission for this.';
+
+  @override
+  String get hataVeriIslemi => 'The data operation failed.';
+
+  @override
+  String get hataDosyaIslemi => 'The file operation failed.';
+
+  @override
+  String get hataOturumDoldu => 'Your session has expired. Sign in again.';
+
+  @override
+  String get hataCokDeneme =>
+      'Too many attempts. Please try again in a few minutes.';
+
+  @override
+  String get hataIslemTamamlanamadi =>
+      'Couldn\'t complete the action. Try again in a little while.';
+
+  @override
+  String get grafikYukleniyor => 'Loading chart';
+
+  @override
+  String get searchRecentRemove => 'Remove from list';
+
+  @override
+  String get searchAllActions => 'All actions';
 
   @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
@@ -4502,6 +4883,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ipoSourceFailed => 'Couldn\'t open the link.';
 
   @override
+  String get ipoAddToCalendar => 'Add to calendar';
+
+  @override
+  String get ipoAddToCalendarA11y =>
+      'Add the last order day and first trading day to your calendar';
+
+  @override
+  String ipoCalendarDeadline(String kod) {
+    return '$kod IPO last order day';
+  }
+
+  @override
+  String ipoCalendarFirstTrade(String kod) {
+    return '$kod first trading day';
+  }
+
+  @override
+  String ipoCalendarSubject(String kod) {
+    return '$kod IPO dates';
+  }
+
+  @override
   String get ipoParticipate => 'I participated, add to portfolio';
 
   @override
@@ -4560,7 +4963,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceYou => 'You';
 
   @override
-  String get raceYouTag => 'YOU';
+  String get raceYouTag => 'You';
 
   @override
   String get raceVs => 'VS';
@@ -4600,10 +5003,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterReset => 'Reset';
 
   @override
-  String get filterPeriodHeader => 'PERIOD';
+  String get filterPeriodHeader => 'Period';
 
   @override
-  String get filterTypeHeader => 'TYPE';
+  String get filterTypeHeader => 'Type';
 
   @override
   String filterShowN(int n) {
@@ -4632,9 +5035,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositBank => 'Bank';
-
-  @override
-  String get depositBankHint => 'e.g. the name of your bank';
 
   @override
   String get depositPrincipal => 'Amount deposited';
@@ -4705,9 +5105,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Interest is added to the principal at maturity; until then the value stays at the principal. If you break the term early, the bank may not pay the interest.';
 
   @override
-  String get depositCardTitle => 'Deposit';
-
-  @override
   String depositPeriodN(int n) {
     return 'Period $n';
   }
@@ -4726,9 +5123,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositThisPeriod => 'This period, net';
-
-  @override
-  String get depositTotalReturn => 'Total net return';
 
   @override
   String get depositRenew => 'Renew';
@@ -4862,7 +5256,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pensionVesting => 'Government contribution vesting';
 
   @override
-  String get currentValueUpper => 'CURRENT VALUE';
+  String get currentValueUpper => 'Current value';
 
   @override
   String get depositCardRate => 'Interest';
@@ -4939,11 +5333,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pensionContributionAmount => 'Contribution';
-
-  @override
-  String pensionContributionGov(String amount) {
-    return 'Government contribution: $amount';
-  }
 
   @override
   String get pensionContributionGovCapped =>
@@ -5039,6 +5428,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kiyasSenin => 'Your portfolio';
 
   @override
+  String get kiyasMevduat => 'In a TL deposit';
+
+  @override
   String get kiyasBasaBas => 'Even';
 
   @override
@@ -5065,6 +5457,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pensionAutoNote =>
       'On the contribution day we add your monthly contribution at that day\'s fund price, then ask you to confirm the amount. If off, we only remind you.';
+
+  @override
+  String chartLastUpdated(String time) {
+    return 'Last updated: $time · couldn\'t refresh right now';
+  }
 
   @override
   String get pensionAutoNeedsPlan =>
@@ -5109,6 +5506,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pensionAddExtraContribution => 'Add extra contribution';
+
+  @override
+  String pensionFundCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count funds',
+      one: '1 fund',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pensionFundsNowHint =>
+      'Shares use today\'s fund values; because prices move differently they can drift from your contribution instruction.';
+
+  @override
+  String pensionContributionPlan(String plan) {
+    return 'New contributions: $plan';
+  }
+
+  @override
+  String pensionFundRowSemantics(String code, String share, String amount) {
+    return '$code, $share of the contract, $amount';
+  }
+
+  @override
+  String get pensionPickCompany => 'Pick your pension company';
+
+  @override
+  String pensionCompanyUseTyped(String name) {
+    return 'Use \"$name\"';
+  }
+
+  @override
+  String get pensionCompanyListUnavailable =>
+      'The company list couldn\'t load right now. You can type the company name and use it.';
+
+  @override
+  String pensionCompanyFunds(String company) {
+    return '$company funds';
+  }
+
+  @override
+  String get pensionAllFunds => 'All funds';
 
   @override
   String cpiSentenceMonth(String month, String change, String cpi) {
@@ -5312,7 +5754,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kayitliCihazlarAciklama =>
-      'Your account can be open on only one device at a time. When someone signs in from a device that isn\'t listed, a verification code is sent to your email. Remove any device you don\'t recognize and change your password.';
+      'Signing in from a device that isn\'t listed sends a code to your email. Remove any device you don\'t recognize and change your password.';
 
   @override
   String get buCihaz => 'This device';
@@ -5509,13 +5951,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get balanceChangeInclBuys => 'Total change (incl. buys)';
 
   @override
-  String get firstAssetPickTitle => 'What are you saving in?';
-
-  @override
-  String get firstAssetPickHint =>
-      'Pick one, type the amount; the price fills itself.';
-
-  @override
   String get firstAssetGoldGram => 'Gram gold';
 
   @override
@@ -5525,34 +5960,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firstAssetEur => 'Euro';
 
   @override
-  String get firstAssetFund => 'A fund';
-
-  @override
-  String get firstAssetStock => 'A stock';
-
-  @override
-  String get firstAssetOtherType => 'Add another type';
-
-  @override
   String get addDetails => 'Add details (fee, note)';
 
   @override
   String get addByTyping => 'Add by typing';
 
   @override
-  String get importFromStatement => 'Import statement';
+  String get importFromStatement => 'Add from statement';
 
   @override
   String get orWithEmail => 'or with email';
 
   @override
   String get todayTopMoverLabel => 'Biggest mover';
-
-  @override
-  String get todayVsInflationYou => 'Your return';
-
-  @override
-  String get todayVsInflationCpi => 'CPI';
 
   @override
   String get vitrinWelcome => 'Welcome';
@@ -5590,6 +6010,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vitrinStatementHintShort => 'PDF, Excel or CSV in one go';
 
   @override
+  String get watchlistSuggestGold => 'Gram gold';
+
+  @override
+  String get watchlistSuggestUsd => 'US dollar';
+
+  @override
+  String get watchlistSuggestBist => 'BIST 100';
+
+  @override
+  String get watchlistSuggestGoldSemantics => 'Add gram gold to watchlist';
+
+  @override
+  String get watchlistSuggestUsdSemantics => 'Add US dollar to watchlist';
+
+  @override
+  String get watchlistSuggestBistSemantics => 'Add BIST 100 to watchlist';
+
+  @override
+  String get watchlistSuggestFailed =>
+      'Couldn\'t add to watchlist. Check your connection.';
+
+  @override
+  String watchlistAlertSet(String price) {
+    return 'alert set at $price';
+  }
+
+  @override
+  String watchlistYuzdeAlarmSet(String etiket) {
+    return '$etiket alert set';
+  }
+
+  @override
+  String get watchlistYuzdeAlarmCaldi => 'went off today, re-arms tomorrow';
+
+  @override
+  String watchlistAlertMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'and $count more alerts',
+      one: 'and 1 more alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String watchlistAlertExtra(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get watchlistOpenAlerts => 'Open alerts';
+
+  @override
   String get vitrinTapToAdd => 'Tap to add';
 
   @override
@@ -5619,22 +6093,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Performance is drawn as if you had held today\'s holdings for the whole period. When off, your actual history is shown.';
 
   @override
-  String get settingsGroupGeneral => 'GENERAL';
+  String get settingsGroupGeneral => 'General';
 
   @override
-  String get settingsGroupPortfolioView => 'PORTFOLIO VIEW';
+  String get settingsGroupPortfolioView => 'Portfolio view';
 
   @override
-  String get settingsGroupSecurityAccount => 'SECURITY & ACCOUNT';
+  String get settingsGroupSecurityAccount => 'Security & account';
 
   @override
-  String get settingsGroupData => 'DATA';
+  String get settingsGroupData => 'Data';
 
   @override
-  String get settingsGroupAbout => 'ABOUT THE APP';
+  String get settingsGroupAbout => 'About the app';
 
   @override
-  String get settingsAdvancedUpper => 'ADVANCED';
+  String get settingsAdvancedUpper => 'Advanced';
 
   @override
   String get settingsAdvancedSemantics => 'Advanced settings';
@@ -5722,7 +6196,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.9: When you delete your account, RevenueCat is also asked to delete your subscriber record. Deleting the account does not cancel the store subscription; you turn off renewal in the App Store or Google Play. Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
+      'Version 1.14: Our support and contact address is now support@murphysoft.app; nothing changed in how your data is processed.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -5788,16 +6262,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yasalBelgeYatirimUyarisi => 'Investment Disclaimer';
 
   @override
-  String get flowTitleUpper => 'MONEY FLOW';
-
-  @override
-  String get flowLastWeekIn => 'Net inflow, latest week';
-
-  @override
-  String get flowLastWeekOut => 'Net outflow, latest week';
-
-  @override
-  String get flowLastWeekFlat => 'Net flow, latest week';
+  String get flowTitleUpper => 'Money flow';
 
   @override
   String flowRange(String from, String to) {
@@ -5813,23 +6278,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String flowWeekOf(String date) {
-    return 'Week of $date';
-  }
-
-  @override
   String get flowFundSize => 'Fund size';
 
   @override
   String get flowInvestors => 'Investors';
-
-  @override
-  String flowInvestorsDelta(String count, String delta) {
-    return '$count ($delta)';
-  }
-
-  @override
-  String get flowEventsTitle => 'Large moves · last 30 days';
 
   @override
   String flowEventIn(String date) {
@@ -5856,15 +6308,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'No unusually large inflow or outflow in the last 30 days.';
 
   @override
-  String get flowExplain =>
-      'Net flow is money entering the fund minus money leaving it; price changes are not included.';
-
-  @override
-  String flowFootnote(String date) {
-    return 'Source: TEFAS · data as of $date. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.';
-  }
-
-  @override
   String flowStreakIn(String count) {
     return 'Net inflow for $count weeks in a row';
   }
@@ -5886,15 +6329,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get flowPeriodNote =>
-      'Percentages are the flow relative to fund size at the start of the period.';
-
-  @override
-  String flowDecompose(String total, String price, String flow) {
-    return 'Fund size changed $total over the last month: price effect $price, money flow $flow.';
-  }
-
-  @override
   String flowEventEvidenceMulti(String amount, String pct, String days) {
     return '$amount · $pct of fund size · $days trading days in a row';
   }
@@ -5903,59 +6337,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weekTitle => 'This week';
 
   @override
-  String get weekIntro =>
-      'Highlights of the latest week in the assets you hold. Tap a row for details.';
-
-  @override
-  String get weekFundsUpper => 'MONEY FLOW IN YOUR FUNDS';
-
-  @override
-  String weekRowRange(String label, String range) {
-    return '$label · $range';
-  }
-
-  @override
-  String get weekRowIn => 'Net inflow';
-
-  @override
-  String get weekRowOut => 'Net outflow';
-
-  @override
-  String get weekRowFlat => 'Net flow';
-
-  @override
-  String get weekRowBigIn => 'Large inflow this week';
-
-  @override
-  String get weekRowBigOut => 'Large outflow this week';
-
-  @override
   String get weekEmptyNoData =>
-      'Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.';
-
-  @override
-  String get weekFootnote =>
-      'Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio\'s weekly return is under Performance, Summary. Not investment advice.';
+      'Nothing to show this week. Money flow in your funds and volume in your stocks or crypto show up here once data arrives.';
 
   @override
   String get weekLink => 'My funds this week';
 
   @override
-  String get volTitleUpper => 'VOLUME RADAR';
-
-  @override
-  String volLastDay(String date) {
-    return 'Traded value · $date';
-  }
+  String get volTitleUpper => 'Volume radar';
 
   @override
   String volVsAverage(String times) {
     return '$times× the average of the previous 20 days';
-  }
-
-  @override
-  String volPriceSameDay(String pct) {
-    return 'Price that day $pct';
   }
 
   @override
@@ -5965,13 +6358,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String volChartSemantics(String amount) {
     return 'Daily traded value for the last 20 trading days. Latest day $amount.';
   }
-
-  @override
-  String get volExplain =>
-      'Traded value is the total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in or out.';
-
-  @override
-  String get volEventsTitle => 'Unusual volume days · last 30 days';
 
   @override
   String volEventTitle(String date) {
@@ -5987,26 +6373,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get volNoEvents => 'No unusual volume days in the last 30 days.';
 
   @override
-  String volFootnote(String date) {
-    return 'Source: Yahoo Finance end-of-day data · as of $date. This data cannot show who bought or sold. Not investment advice.';
-  }
-
-  @override
-  String get cryTitleUpper => 'BUYER PRESSURE';
-
-  @override
-  String cryShareLabel(String date) {
-    return 'Buyer share · $date';
-  }
-
-  @override
-  String cryShareAvg(String pct) {
-    return 'Average of the last 7 days $pct';
-  }
-
-  @override
-  String get cryExplain =>
-      'Buyer share is the part of the day\'s volume that came from market-order buyers. Above 50% means buyers were more eager, below means sellers were; it is not a measure of money flowing in.';
+  String get cryTitleUpper => 'Buyer pressure';
 
   @override
   String cryVolumeLabel(String amount) {
@@ -6014,30 +6381,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cryChartCaption => 'Daily volume (USDT) · last 20 days';
-
-  @override
-  String cryChartSemantics(String amount) {
-    return 'Daily volume for the last 20 days. Latest day $amount.';
-  }
-
-  @override
   String cryEventEvidence(
       String amount, String times, String pct, String share) {
     return '$amount · $times× the average · price $pct · buyer share $share';
-  }
-
-  @override
-  String cryFootnote(String date) {
-    return 'Source: Binance, USDT pair · as of $date. Covers trades on Binance only; this data cannot show who bought or sold. Not investment advice.';
-  }
-
-  @override
-  String get weekVolumeUpper => 'UNUSUAL VOLUME';
-
-  @override
-  String weekVolumeRow(String date) {
-    return 'Unusual volume · $date';
   }
 
   @override
@@ -6201,7 +6547,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savingReminderSheetBody =>
-      'On the day you pick, you get one reminder if you haven\'t added anything to your portfolio that month. If you have, nothing is sent. If the day doesn\'t exist that month (e.g. the 30th in February), it comes on the last day.';
+      'If you haven\'t added anything that month, you get a reminder on the day you pick. If that day doesn\'t exist that month, it comes on the last day.';
 
   @override
   String savingReminderDay(String day) {
@@ -6318,14 +6664,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rdrTerimBuyukHareketTanim =>
-      'A day when money in or out is at least 3% of fund size and at least 4 times the fund\'s usual daily move. Both must hold; funds under ₺250M and money market funds are never flagged.';
+      'A day when far more money than usual flows into or out of the fund. Threshold: at least 3% of fund size and at least 4 times the usual daily move.';
 
   @override
   String get rdrTerimOlcek => 'Scale';
 
   @override
   String get rdrTerimOlcekTanim =>
-      'How big the number is against this asset\'s own history. For funds the last week is compared with the average of previous weeks; for stocks the last day\'s volume with the previous 20 days. For crypto it is how far the buyer share is from 50%: 2 points is active, 5 points very active. If a big move or unusual volume was flagged, the scale is at the top.';
+      'How big the number is against this asset\'s own history. For crypto, a buyer share 2 points from 50% is active, 5 points very active.';
 
   @override
   String get rdrTerimHacim => 'Trading value';
@@ -6353,7 +6699,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rdrTerimAliciPayiTanim =>
-      'How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow. Over several days it is volume weighted: a busier day counts more.';
+      'The share of volume from people buying right away with market orders. Above 50% buyers are more eager, below 50% sellers.';
 
   @override
   String get rdrTerimNetAlim => 'Net buying';
@@ -6457,13 +6803,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrDonemUpper => 'PERIOD';
+  String get rdrDonemUpper => 'Period';
 
   @override
-  String get rdrBaglamUpper => 'CONTEXT';
+  String get rdrBaglamUpper => 'Context';
 
   @override
-  String get rdrSiraUpper => 'FLOW RANK IN CATEGORY';
+  String get rdrSiraUpper => 'Flow rank in category';
 
   @override
   String rdrSiraAlt(String kategori) {
@@ -6479,7 +6825,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrHareketlerUpper => 'BIG MOVES · LAST 30 DAYS';
+  String get rdrHareketlerUpper => 'Big moves · last 30 days';
 
   @override
   String rdrHisseSakin(String tarih) {
@@ -6531,7 +6877,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrOlagandisiUpper => 'UNUSUAL VOLUME DAYS · LAST 30 DAYS';
+  String get rdrOlagandisiUpper => 'Unusual volume days · last 30 days';
 
   @override
   String rdrKriptoAlici(String tarih) {
@@ -6574,7 +6920,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrSaatlikUpper => 'LAST 24 HOURS · NET BUYING BY HOUR';
+  String get rdrSaatlikUpper => 'Last 24 hours · net buying by hour';
 
   @override
   String rdrEnIstekliSaat(String aralik, String tutar) {
@@ -6596,7 +6942,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rdrIslemHacmiUpper => 'TRADING VOLUME · LAST 20 DAYS';
+  String get rdrIslemHacmiUpper => 'Trading volume · last 20 days';
 
   @override
   String rdrHaftaBaslikVar(String sayi) {
@@ -6807,6 +7153,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmTesekkurler => 'Thanks';
 
   @override
+  String prmHediyeKalan(String tarih, int gun) {
+    return 'Ends on $tarih · $gun days left';
+  }
+
+  @override
+  String get prmHediyeDevam => 'Continue with Premium';
+
+  @override
+  String get prmHediyeBittiBaslik => 'Your gift period has ended';
+
+  @override
+  String prmHediyeBittiGovde(int sayi) {
+    return 'None of your data was deleted; $sayi assets and the core features stay free. For reports, signals and unlimited assets you can pick up where you left off with Premium.';
+  }
+
+  @override
+  String get prmHediyeBittiGor => 'See Premium';
+
+  @override
+  String get prmHediyeBittiSonra => 'Not now';
+
+  @override
   String get prmAbonelikAylik => 'Premium · monthly';
 
   @override
@@ -6832,7 +7200,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmGeriYukle => 'Restore purchases';
 
   @override
-  String get anzNotUpper => 'WEEKLY NOTE · AI';
+  String get anzNotUpper => 'Weekly note · AI';
 
   @override
   String anzMeta(String sayi, String aralik) {
@@ -6873,7 +7241,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get anzTesekkur => 'Thanks, we\'ll review the note.';
 
   @override
-  String get anzAylikUpper => 'MONTHLY REPORT';
+  String get anzAylikUpper => 'Monthly report';
 
   @override
   String anzAylikBaslik(String ay) {
@@ -6887,14 +7255,162 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String anzAylikEksik(String kodlar) {
-    return 'No note this month for $kodlar; their numbers are on their own pages.';
+    return 'No AI note this month for $kodlar.';
   }
+
+  @override
+  String get anzAylikPdfPaylas => 'Share report as PDF';
 
   @override
   String get anzAylikOzetYok => 'None of your assets had a notable month.';
 
   @override
   String get anzAylikBos => 'This month\'s report is not ready yet.';
+
+  @override
+  String raporKapsam(String aralik) {
+    return 'Covers $aralik';
+  }
+
+  @override
+  String raporKapsamSuren(String aralik) {
+    return 'Covers $aralik, to date';
+  }
+
+  @override
+  String raporFiyatTarihi(String tarih) {
+    return 'Prices as of $tarih.';
+  }
+
+  @override
+  String get anzAylikVarliklarBaslik => 'Your assets this month';
+
+  @override
+  String get anzAylikVarliklarDipnot =>
+      'Change since the start of the month, net of buys and sells.';
+
+  @override
+  String anzAylikOlculemeyen(String adlar) {
+    return 'No price series for $adlar, so no change is shown.';
+  }
+
+  @override
+  String anzAylikSemVarlik(String ad, String yuzde, String tutar) {
+    return '$ad: change this month $yuzde, market effect $tutar';
+  }
+
+  @override
+  String get anzAylikAkisBaslik => 'Money in and out';
+
+  @override
+  String get anzAylikAkisAlim => 'Buys';
+
+  @override
+  String get anzAylikAkisSatis => 'Sells';
+
+  @override
+  String get anzAylikAkisTemettu => 'Dividends';
+
+  @override
+  String get anzAylikAkisNet => 'Your net contribution';
+
+  @override
+  String anzAylikAkisAdet(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi transactions',
+      one: '1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get anzAylikAkisDipnot =>
+      'Same calculation as the bridge in Performance: what you paid on buys, what you received on sells; dividends count as money taken out.';
+
+  @override
+  String get anzAylikGelismeBaslik => 'Events during the month';
+
+  @override
+  String anzAylikGelismeFonGiris(String tutar, String oran) {
+    return 'Large inflow of $tutar, $oran of the fund\'s size';
+  }
+
+  @override
+  String anzAylikGelismeFonCikis(String tutar, String oran) {
+    return 'Large outflow of $tutar, $oran of the fund\'s size';
+  }
+
+  @override
+  String anzAylikGelismeHacim(String tutar, String kat, String degisim) {
+    return 'Unusual volume of $tutar, $kat× the average; price $degisim';
+  }
+
+  @override
+  String anzAylikGelismeTemettu(String tutar) {
+    return 'Dividend $tutar';
+  }
+
+  @override
+  String get anzAylikGelismeDipnot =>
+      'Fund flows from TEFAS, volume from Yahoo Finance and Binance; dividends from your own records.';
+
+  @override
+  String anzAylikNotlarAralik(String aralik) {
+    return 'Notes are based on data from $aralik.';
+  }
+
+  @override
+  String get anzAylikHaberYok =>
+      'News and company announcements are not in this report: sandık has no licensed news source yet, so no news text is written.';
+
+  @override
+  String get anzAylikHaberDipnot =>
+      'News is summarised by AI from public sources, in its own words and without figures; see the source for details.';
+
+  @override
+  String anzAylikHaberEtiket(String tarih) {
+    return 'News · $tarih';
+  }
+
+  @override
+  String anzAylikHaberKaynak(String kaynak) {
+    return 'Source: $kaynak';
+  }
+
+  @override
+  String anzAylikHaberSemKaynak(String kaynak) {
+    return 'Open the $kaynak page in the browser';
+  }
+
+  @override
+  String get anzAylikHaberAcilamadi =>
+      'Couldn\'t open the news page. Check your internet connection.';
+
+  @override
+  String get anzAylikOnemliBaslik => 'Key developments';
+
+  @override
+  String get anzAylikTumBaslik => 'Your assets this month';
+
+  @override
+  String anzAylikNeOldu(String yuzde, String tutar) {
+    return 'Change this month $yuzde, market effect $tutar';
+  }
+
+  @override
+  String anzAylikNotVerisi(String aralik) {
+    return 'Note based on $aralik';
+  }
+
+  @override
+  String get anzAylikTumDipnot =>
+      'The percentage is the change since the start of the month; the amount is the market\'s effect on your position. The line below is the AI note\'s headline; tap to open the full note.';
+
+  @override
+  String get anzAylikKaynak =>
+      'Sources: fund flow TEFAS · stock, gold, FX and commodity prices Yahoo Finance · crypto Binance · eurobond Börse Frankfurt · not advice';
 
   @override
   String get hkyDevam => 'Continue';
@@ -7050,7 +7566,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get usStocks => 'US Stocks';
+  String get usStocks => 'US stocks';
 
   @override
   String get pickUsStock => 'Pick a US stock';
@@ -7070,7 +7586,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usStockCurrencyLocked => 'US stocks are recorded in dollars';
 
   @override
-  String get costsUpper => 'COSTS';
+  String get costsUpper => 'Costs';
 
   @override
   String get costsPaid => 'Paid';
@@ -7133,6 +7649,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bozdurAlSatiri(String alis, String satis, String fark) {
+    return 'Sell $alis · Buy $satis · spread $fark';
+  }
+
+  @override
+  String bozdurAlSatiriSemantik(String alis, String satis, String fark) {
+    return 'If you sell, you get $alis; if you buy, you pay $satis. The spread is $fark.';
+  }
+
+  @override
   String get eurobondIsinInvalid =>
       'This ISIN is invalid: the check digit doesn\'t match. A digit may be mistyped.';
 
@@ -7165,7 +7691,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get bondInfoUpper => 'BOND DETAILS';
+  String get bondInfoUpper => 'Bond details';
 
   @override
   String get bondCleanPrice => 'Clean price';
@@ -7221,7 +7747,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bondIssuerCorporate => 'Corporate';
 
   @override
-  String get bondBankSellUpper => 'IF YOU SELL TO THE BANK';
+  String get bondBankSellUpper => 'If you sell to the bank';
 
   @override
   String get bondBankZiraat => 'Ziraat Bankası';
@@ -7280,19 +7806,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get typePickerHint247 => '24/7';
 
   @override
-  String get s7AraSemantics => 'Search';
+  String get s7VarliklarimUpper => 'My assets';
 
   @override
-  String get s7AramaIpucu => 'Search assets, symbols or actions';
+  String get s7PiyasaUpper => 'Market';
 
   @override
-  String get s7VarliklarimUpper => 'MY ASSETS';
-
-  @override
-  String get s7PiyasaUpper => 'MARKET';
-
-  @override
-  String get s7EylemlerUpper => 'ACTIONS';
+  String get s7EylemlerUpper => 'Actions';
 
   @override
   String get s7EylemFiyatAlarmlari => 'Price alerts';
@@ -7301,7 +7821,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s7EylemSinyalAyarlari => 'Signal settings';
 
   @override
-  String get s7EylemEkstreAktar => 'Import statement (CSV)';
+  String get s7EylemEkstreAktar => 'Add from statement';
 
   @override
   String get s7EylemTopluEkle => 'Bulk add';
@@ -7322,10 +7842,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s7EylemAyarlar => 'Settings';
 
   @override
-  String get s4AnalysisUpper => 'ANALYSIS';
+  String get s4AnalysisUpper => 'Analysis';
 
   @override
-  String get s4HistoryDocsUpper => 'HISTORY & DOCUMENTS';
+  String get s4HistoryDocsUpper => 'History & documents';
 
   @override
   String get s4Details => 'Details';
@@ -7389,6 +7909,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get s5OnAyarOzelAciklama =>
       'Your categories have their own settings. Picking an option applies it to every category.';
+
+  @override
+  String get bildirimOnAyarSoru => 'How often should we notify you?';
+
+  @override
+  String get bildirimOnAyarAzAciklama =>
+      'Only the price alerts you set and the daily brief. Signals, period summaries and partner activity stay quiet.';
+
+  @override
+  String get bildirimOnAyarDengeliAciklama =>
+      'Recommended: your alerts, the daily brief, weekly and monthly summaries, strong signals twice a day.';
+
+  @override
+  String get bildirimOnAyarCokAciklama =>
+      'Everything on; signals every 2 hours from 50% confidence.';
+
+  @override
+  String get bildirimOnAyarOzelAciklama =>
+      'You\'ve set notifications one by one. Picking an option applies it to all of them.';
+
+  @override
+  String get bildirimAyrintiliUpper => 'Detailed';
+
+  @override
+  String get bildirimAyrintiliSemantik => 'Set notifications one by one';
 
   @override
   String get s5KategoriyeGoreOzellestir => 'Customise by category';
@@ -7484,7 +8029,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdVarlikEtiket => 'ASSET LIMIT';
+  String get pwdVarlikEtiket => 'Asset limit';
 
   @override
   String pwdVarlikBaslik(int sayi) {
@@ -7500,7 +8045,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdSinyalEtiket => 'SIGNALS';
+  String get pwdSinyalEtiket => 'Signals';
 
   @override
   String get pwdSinyalBaslik =>
@@ -7510,7 +8055,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdSinyalPremium => '8 indicators, unlimited alerts';
 
   @override
-  String get pwdKarsEtiket => 'COMPARE';
+  String get pwdKarsEtiket => 'Compare';
 
   @override
   String pwdKarsRozet(int ucretsiz, int premium) {
@@ -7527,7 +8072,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdOrtakEtiket => 'PARTNERS';
+  String get pwdOrtakEtiket => 'Partners';
 
   @override
   String get pwdOrtakBaslik =>
@@ -7545,20 +8090,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdAkisEtiket => 'FUND FLOW';
+  String get pwdAkisEtiket => 'Fund flow';
 
   @override
   String get pwdAkisBaslik => 'Is money flowing into your fund? See 8 weeks.';
 
   @override
-  String get pwdHacimEtiket => 'VOLUME RADAR';
+  String get pwdHacimEtiket => 'Volume radar';
 
   @override
   String get pwdHacimBaslik =>
       'Is today\'s volume unusual? Compare with 20 days.';
 
   @override
-  String get pwdNotEtiket => 'WEEKLY NOTE';
+  String get pwdNotEtiket => 'Weekly note';
 
   @override
   String get pwdNotBaslik => 'The rest of your weekly note is Premium.';
@@ -7572,7 +8117,7 @@ class AppLocalizationsEn extends AppLocalizations {
       ' Which one stood out and what that tells you becomes readable in the rest of the note…';
 
   @override
-  String get pwdEkstreEtiket => 'STATEMENT';
+  String get pwdEkstreEtiket => 'Statement';
 
   @override
   String get pwdEkstreBaslik =>
@@ -7617,7 +8162,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdIlkOdeme => 'First payment';
 
   @override
-  String get pwdGuvenTakip => 'Portfolio tracking stays free';
+  String pwdGuvenTakip(int sayi) {
+    return '$sayi assets stay free to track; your data is never deleted';
+  }
 
   @override
   String get pwdGuvenIptal => 'Cancel anytime, access until the period ends';
@@ -7740,16 +8287,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yrMasraf => 'Transaction fees';
 
   @override
-  String get yrPdf => 'PDF';
+  String get yrMusavireGonder => 'Send to my accountant';
 
   @override
-  String get yrExcel => 'Excel';
+  String get yrYalnizPdf => 'PDF only';
 
   @override
-  String get yrSatislarUpper => 'SALES';
+  String get yrYalnizExcel => 'Excel only';
 
   @override
-  String get yrTemettulerUpper => 'DIVIDENDS';
+  String get yrSatislarUpper => 'Sales';
+
+  @override
+  String get yrTemettulerUpper => 'Dividends';
 
   @override
   String yrFiyatsiz(int count) {
@@ -7816,7 +8366,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get ttVarliklarUpper => 'ASSETS';
+  String get ttVarliklarUpper => 'Assets';
 
   @override
   String ttSatirAlt(String pay, String aylar) {
@@ -7825,7 +8375,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ttKural =>
-      'The forecast follows one rule: the dividends paid over the last 12 months, repeated in the same months at today\'s holdings. Company decisions, splits and bonus issues are not taken into account. BIST stocks only; not investment advice.';
+      'BIST stocks only. Assumes the last 12 months\' dividends repeat in the same months at today\'s holdings. Splits and bonus issues are not taken into account; not investment advice.';
 
   @override
   String get pwOzRapor =>
@@ -7876,7 +8426,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirOrtak => 'Partners';
 
   @override
-  String get pwdRaporEtiket => 'ANNUAL REPORT';
+  String get pwdRaporEtiket => 'Annual report';
 
   @override
   String get pwdRaporBaslik =>
@@ -7886,7 +8436,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdRaporPremium => 'monthly, annual, PDF, Excel';
 
   @override
-  String get pwdTemettuEtiket => 'DIVIDEND FORECAST';
+  String get pwdTemettuEtiket => 'Dividend forecast';
 
   @override
   String get pwdTemettuBaslik =>
@@ -7899,7 +8449,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdSinyalRozet => '8 indicators';
 
   @override
-  String get xrKartBaslikUpper => 'WHAT\'S INSIDE THE FUND';
+  String get xrKartBaslikUpper => 'What\'s inside the fund';
 
   @override
   String get xrSatirFonunIci => 'Inside the fund';
@@ -7992,7 +8542,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get xrToplamEtiket => 'Your portfolio today';
 
   @override
-  String get xrDagilimUpper => 'LOOK-THROUGH ALLOCATION';
+  String get xrDagilimUpper => 'Look-through allocation';
 
   @override
   String get xrDisi => 'Not covered';
@@ -8030,7 +8580,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get xrEkranKilitSatir => 'Portfolio X-Ray is in Premium';
 
   @override
-  String get xrOrtusmeUpper => 'HELD IN MORE THAN ONE PLACE';
+  String get xrOrtusmeUpper => 'Held in more than one place';
 
   @override
   String get xrOrtusmeAciklama =>
@@ -8057,7 +8607,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirXray => 'Fund X-Ray';
 
   @override
-  String get pwdXrayEtiket => 'FUND X-RAY';
+  String get pwdXrayEtiket => 'Fund X-Ray';
 
   @override
   String get pwdXrayBaslik =>
@@ -8219,7 +8769,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwOzEkstre => 'AI matching for your bank and brokerage statements';
 
   @override
-  String get pwdPortfoyEtiket => 'PORTFOLIOS';
+  String get pwdPortfoyEtiket => 'Portfolios';
 
   @override
   String get pwdPortfoyBaslik =>
@@ -8248,17 +8798,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ortakGorurHepsi => 'Everything';
-
-  @override
-  String get ortakGorurSecilenler => 'Selected';
-
-  @override
-  String get ortakGorurHepsiAciklama =>
-      'All your portfolios, including ones you add later.';
-
-  @override
-  String get ortakGorurSeciliAciklama =>
-      'A new portfolio stays hidden until you pick it.';
 
   @override
   String get ortakGorurYeniAciklama =>
@@ -8291,7 +8830,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get portfoyOrtakBolum => 'WHAT YOUR PARTNER SEES';
+  String get portfoyOrtakBolum => 'What your partner sees';
 
   @override
   String get portfoyAktarBaslik => 'How much should move?';
@@ -8352,6 +8891,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String chartAssetSemantics(String name) {
     return '$name price chart';
+  }
+
+  @override
+  String chartComparisonSemantics(int count, int days) {
+    return '$count series, $days-day percent comparison';
+  }
+
+  @override
+  String chartSummaryUp(String yuzde) {
+    return 'Up $yuzde percent in the visible range';
+  }
+
+  @override
+  String chartSummaryDown(String yuzde) {
+    return 'Down $yuzde percent in the visible range';
+  }
+
+  @override
+  String get chartSummaryFlat => 'Unchanged in the visible range';
+
+  @override
+  String chartSummaryRange(String enDusuk, String enYuksek) {
+    return 'low $enDusuk, high $enYuksek';
+  }
+
+  @override
+  String chartSummarySeries(String seri, String ozet) {
+    return '$seri: $ozet';
   }
 
   @override
@@ -8538,9 +9105,9 @@ class AppLocalizationsEn extends AppLocalizations {
       n,
       locale: localeName,
       other:
-          'This asset\'s $n transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.',
+          '$n transactions are deleted and a single record takes their place. Same as deleting and re-adding the asset.',
       one:
-          'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
+          '1 transaction is deleted and a single record takes its place. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }
@@ -8615,7 +9182,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirOzelGosterge => 'Your own indicators (Pine)';
 
   @override
-  String get pwdOzelEtiket => 'YOUR INDICATOR';
+  String get pwdOzelEtiket => 'Your indicator';
 
   @override
   String get pwdOzelBaslik =>
@@ -8678,4 +9245,1521 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartIntervalM30Long => '30-minute';
+
+  @override
+  String get feedbackTypeComplaint => 'Complaint';
+
+  @override
+  String get feedbackTypeSuggestion => 'Suggestion';
+
+  @override
+  String get feedbackTypeOther => 'Other';
+
+  @override
+  String get searchTabAssets => 'Assets';
+
+  @override
+  String get xrTuttuklarin => 'What you hold';
+
+  @override
+  String xrTurSayisi(int n) {
+    return '$n types';
+  }
+
+  @override
+  String get xrIcAcilinca => 'With your funds opened up';
+
+  @override
+  String xrSinifSayisi(int n) {
+    return '$n classes';
+  }
+
+  @override
+  String xrIcgoru(String ad, String gorunen, String gercek) {
+    return 'Your $ad share looks like $gorunen; with your funds it is $gercek.';
+  }
+
+  @override
+  String get xrIcgoruHisse => 'stock';
+
+  @override
+  String get xrIcgoruAltin => 'gold';
+
+  @override
+  String get xrIcgoruDoviz => 'FX';
+
+  @override
+  String get xrIcgoruFaiz => 'interest-bearing';
+
+  @override
+  String get xrKaynakBaslik => 'Where this money comes from';
+
+  @override
+  String get xrKaynakNot =>
+      'Fund shares from TEFAS allocation. The total matches the amount above.';
+
+  @override
+  String xrSinifEtiket(String ad, String pay, String tutar) {
+    return '$ad, $pay, $tutar. Show sources.';
+  }
+
+  @override
+  String get pyzBaslik => 'AI commentary';
+
+  @override
+  String get pyzGecenHafta => 'Last week';
+
+  @override
+  String get pyzGecenAy => 'Last month';
+
+  @override
+  String get pyzTamaminiOku => 'Read in full';
+
+  @override
+  String get pyzNotPortfoy => 'Portfolio commentary';
+
+  @override
+  String get pyzNotVarlik => 'Asset commentary';
+
+  @override
+  String get pyzNotDegerlendirme => 'Assessment';
+
+  @override
+  String get pyzPdfPaylas => 'Share as PDF';
+
+  @override
+  String get pyzNotAlt => 'Written with AI · Not investment advice';
+
+  @override
+  String pyzAciklama(String donem) {
+    return 'Explains in a few points what happened in your portfolio during $donem, using your own data.';
+  }
+
+  @override
+  String get pyzYorumla => 'Comment on this period';
+
+  @override
+  String get pyzYeniden => 'Comment again';
+
+  @override
+  String get pyzEskidi =>
+      'Your portfolio for this period changed after this comment was written.';
+
+  @override
+  String get pyzVeriYok => 'Not enough data for this period yet.';
+
+  @override
+  String pyzMeta(String yazildi, String siradaki) {
+    return 'Written on $yazildi · next comment $siradaki';
+  }
+
+  @override
+  String get pyzUyari =>
+      'Not investment advice. This comment is written automatically by AI, looking only at your past data. Numbers come from the app\'s calculations; mistakes are still possible.';
+
+  @override
+  String get pyzRizaBaslik => 'Turn on AI commentary';
+
+  @override
+  String get pyzRizaMetin =>
+      'To write the comment, the percentages of your portfolio and assets (asset shares, returns, drawdowns, volatility, inflation and market comparisons) are sent via our server to Anthropic (USA). Amounts, quantities, your name and email are not sent. You can turn it off from this card at any time; turning it off deletes written comments.';
+
+  @override
+  String get pyzRizaUyari =>
+      'The comment describes the past; it never suggests buying, selling or holding.';
+
+  @override
+  String get pyzKatiliyorum => 'I agree';
+
+  @override
+  String get pyzSimdiDegil => 'Not now';
+
+  @override
+  String get pyzKapat => 'Turn off AI commentary';
+
+  @override
+  String get pyzKapatOnay =>
+      'Written comments are deleted and your portfolio percentages are no longer sent.';
+
+  @override
+  String get pyzHataKota =>
+      'You\'ve used today\'s comments, try again tomorrow.';
+
+  @override
+  String get pyzHataKotaAy =>
+      'You\'ve used this month\'s comments, try again next month.';
+
+  @override
+  String get pyzHataRed =>
+      'The comment couldn\'t be prepared right now. Try again a bit later.';
+
+  @override
+  String get pyzHataKapali => 'AI commentary is unavailable right now.';
+
+  @override
+  String get pyzHataGenel =>
+      'Couldn\'t get the comment. Check your connection and try again.';
+
+  @override
+  String get pyzKilit => 'AI commentary on your portfolio is part of Premium.';
+
+  @override
+  String get pyzDonemSecici => 'Comment period';
+
+  @override
+  String pyzSecili(String donem) {
+    return 'Selected ($donem)';
+  }
+
+  @override
+  String pyzSeciliAciklama(String aralik) {
+    return 'Explains, like an economist, what happened in your portfolio in the selected period ($aralik), comparing it with inflation, the dollar, gold and BIST 100.';
+  }
+
+  @override
+  String get seviyeDestek => 'Support';
+
+  @override
+  String get seviyeDirenc => 'Resistance';
+
+  @override
+  String get seviyeIcinde => 'Current zone';
+
+  @override
+  String seviyeTemas(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'turned $n times in the period',
+      one: 'turned once in the period',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeSatiri(String ad, String aralik, int n) {
+    return '$ad: $aralik, turned $n times in the period';
+  }
+
+  @override
+  String pyzVarlikAciklama(String aralik) {
+    return 'Explains what happened to this asset in the selected period ($aralik): its place in your portfolio and how it compares with inflation, the dollar, gold and BIST 100.';
+  }
+
+  @override
+  String get pyzYilBasi =>
+      'Year to date isn\'t commented on. Pick 1Y or another period in the selector above.';
+
+  @override
+  String get pyzGunIci =>
+      'Intraday periods aren\'t commented on. Pick a week or longer in the selector above.';
+
+  @override
+  String pyzSeciliMeta(String saat) {
+    return 'Written today at $saat · can be rewritten tomorrow for the new window';
+  }
+
+  @override
+  String get pyzVarlikEskidi =>
+      'Your quantity in this asset changed after the comment was written.';
+
+  @override
+  String get pwdZirveEtiket => 'Top portfolios';
+
+  @override
+  String get pwdZirveBaslik =>
+      'See what the top portfolios hold, asset by asset.';
+
+  @override
+  String get prmSatirZirve => 'Top portfolios';
+
+  @override
+  String get prmZirveUcretsiz => 'Your own rank';
+
+  @override
+  String get prmZirvePremium => 'No. 1\'s holdings + overlap';
+
+  @override
+  String vkSeritSayi(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Missing info on $count holdings',
+      one: 'Missing info on 1 holding',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get vkSeritAlt => 'Tap to complete them one by one';
+
+  @override
+  String get vkSeritKapat => 'Dismiss the missing info row';
+
+  @override
+  String get vkAlisFiyatiEksik => 'Purchase price missing';
+
+  @override
+  String vkFiyatGunOnce(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Price entered $count days ago',
+      one: 'Price entered 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String vkFiyatAyOnce(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Price entered $count months ago',
+      one: 'Price entered 1 month ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get vkFiyatYildanEski => 'Price over a year old';
+
+  @override
+  String fundPriceDate(String tarih) {
+    return 'Price $tarih';
+  }
+
+  @override
+  String get fundPriceYesterday => 'Yesterday\'s price';
+
+  @override
+  String fundPriceOfDay(String gun) {
+    return '$gun price';
+  }
+
+  @override
+  String get fonFiyatYarinKesinlesir => 'Price settles tomorrow';
+
+  @override
+  String fonAlimOneri(String adet) {
+    return 'At the new price: $adet units';
+  }
+
+  @override
+  String fonAlimOneriSemantik(String adet) {
+    return 'At the new price: $adet units. Tap to update.';
+  }
+
+  @override
+  String get fonAlimYokSay => 'Dismiss';
+
+  @override
+  String vkFiyatBaslik(String name) {
+    return 'Current price of $name';
+  }
+
+  @override
+  String vkFiyatAciklama(String date) {
+    return 'You enter this holding\'s price yourself; your total uses this number. Your last price is from $date.';
+  }
+
+  @override
+  String get vkHepsiTamam => 'All set, your total is up to date.';
+
+  @override
+  String get onerAlarmBaslik => 'Set a price alert';
+
+  @override
+  String get onerAlarmAlt =>
+      'We\'ll let you know when an asset reaches your price';
+
+  @override
+  String get onerTakipBaslik => 'Watch before you buy';
+
+  @override
+  String get onerTakipAlt =>
+      'Follow stocks and funds without adding them to your portfolio';
+
+  @override
+  String get onerOrtakBaslik => 'Add a partner, track together';
+
+  @override
+  String get onerOrtakAlt =>
+      'See your partner\'s or family\'s portfolio next to yours';
+
+  @override
+  String get onerZirveBaslik => 'What\'s in the top portfolios?';
+
+  @override
+  String get onerZirveAlt =>
+      'See how the best-performing portfolios are allocated';
+
+  @override
+  String get onerKapat => 'Hide this suggestion';
+
+  @override
+  String get sigBugun => 'Today';
+
+  @override
+  String get sigYarin => 'Tomorrow';
+
+  @override
+  String sigTcmb(String gun) {
+    return '$gun: CBRT rate decision';
+  }
+
+  @override
+  String sigFomc(String gun) {
+    return '$gun: Fed rate decision';
+  }
+
+  @override
+  String sigTemettu(String gun, String kod) {
+    return '$gun: $kod dividend day';
+  }
+
+  @override
+  String get sigTcmbAlt =>
+      'Central Bank of Türkiye, decision at 14:00 Türkiye time';
+
+  @override
+  String get sigFomcAlt =>
+      'US Federal Reserve, decision in the evening Türkiye time';
+
+  @override
+  String get sigTemettuAlt =>
+      'Paid on this day last year; this year\'s date may differ';
+
+  @override
+  String get sigSayfaBaslik => 'Upcoming days';
+
+  @override
+  String sigSayfaNot(int gun) {
+    return 'Next $gun days. Rate decision days come from official calendars, dividend days from last year\'s ex-dates. No outcome is predicted.';
+  }
+
+  @override
+  String get sigKapat => 'Hide this day';
+
+  @override
+  String get sigBos => 'Nothing left to show in the next two weeks.';
+
+  @override
+  String get ziBaslikUpper => 'What\'s inside the funds';
+
+  @override
+  String ziOzetHisse(String gorunen, String gercek) {
+    return 'Stocks are $gorunen in the list, $gercek with what the funds hold.';
+  }
+
+  @override
+  String get ziDogrudan => 'Bought directly';
+
+  @override
+  String get ziBilinmeyen => 'Funds with unknown contents';
+
+  @override
+  String get ziBilinmeyenAlt =>
+      'These funds don\'t publish their contents or are under 1%';
+
+  @override
+  String ziKaynak(String tarih) {
+    return 'Fund contents from TEFAS daily reports, $tarih. Shows what kind of assets the funds hold, not which individual stocks.';
+  }
+
+  @override
+  String get ziKilitBaslik => 'Inside the funds';
+
+  @override
+  String get ziKilitGovde =>
+      'Where a top portfolio\'s money really sits once its funds and pension funds are opened up: stocks, bonds, gold, currency, crypto… From TEFAS daily breakdowns.';
+
+  @override
+  String get ziKilitSatir => 'Inside the funds is Premium';
+
+  @override
+  String ziSatirEtiket(String ad, String pay, String kaynaklar) {
+    return '$ad $pay. $kaynaklar';
+  }
+
+  @override
+  String get ziAciklama =>
+      'Whatever the funds and pension funds invest in is added to that share. Under each line: where the share comes from.';
+
+  @override
+  String get ziGrupBistHisse => 'Turkish stocks';
+
+  @override
+  String get ziGrupYabanciHisse => 'Foreign stocks';
+
+  @override
+  String get ziGrupTahvil => 'Bonds and bills (TRY)';
+
+  @override
+  String get ziGrupDovizTahvil => 'Foreign-currency bonds';
+
+  @override
+  String get ziGrupNakit => 'Deposits and cash';
+
+  @override
+  String get ziGrupAltin => 'Gold and silver';
+
+  @override
+  String get ziGrupFon => 'Other funds';
+
+  @override
+  String get ziGrupGayrimenkul => 'Real estate';
+
+  @override
+  String get ziGrupDiger => 'Other';
+
+  @override
+  String get ziGrupDoviz => 'Currency';
+
+  @override
+  String get ziGrupKripto => 'Crypto';
+
+  @override
+  String get ziGrupEmtia => 'Commodities';
+
+  @override
+  String get biKapaliBaslik => 'Notifications are off';
+
+  @override
+  String get biKapaliAlt => 'We can\'t tell you when an alert or signal fires.';
+
+  @override
+  String get biAyarlariAc => 'Open Settings';
+
+  @override
+  String get biAyarlariAcSemantics =>
+      'Turn on Sandık notifications in phone settings';
+
+  @override
+  String get hsnSoru => 'If you like, tell us why you\'re leaving';
+
+  @override
+  String get hsnKullanmiyorum => 'I don\'t use it anymore';
+
+  @override
+  String get hsnEksikOzellik => 'A feature I need is missing';
+
+  @override
+  String get hsnFiyatSorunu => 'Prices are wrong or late';
+
+  @override
+  String get hsnBaskaUygulama => 'I switched to another app';
+
+  @override
+  String get hsnKapat => 'Close';
+
+  @override
+  String get tegKapat => 'Exit full screen';
+
+  @override
+  String get tegAracImlec => 'Cursor';
+
+  @override
+  String get tegAracTrend => 'Trend line';
+
+  @override
+  String get tegAracIsin => 'Ray';
+
+  @override
+  String get tegAracYatay => 'Horizontal line';
+
+  @override
+  String get tegAracYatayIsin => 'Horizontal ray';
+
+  @override
+  String get tegAracKutu => 'Rectangle';
+
+  @override
+  String get tegMiknatis =>
+      'Magnet: snap the drawing to the candle\'s open, high, low or close';
+
+  @override
+  String get tegMiknatisAcik => 'Magnet on';
+
+  @override
+  String get tegMiknatisKapali => 'Magnet off';
+
+  @override
+  String get tegGeriAl => 'Undo';
+
+  @override
+  String get tegHepsiniSil => 'Delete all drawings on this chart';
+
+  @override
+  String get tegCizimiSil => 'Delete drawing';
+
+  @override
+  String get tegIpucuTek => 'Tap the chart';
+
+  @override
+  String get tegIpucuIki => 'Tap two points or drag';
+
+  @override
+  String get tegIpucuIkinci => 'Tap the second point';
+
+  @override
+  String get tegCizildi => 'Drawn. Select it to move or delete';
+
+  @override
+  String get tegSilindi => 'Drawing deleted';
+
+  @override
+  String get tegHepsiSilindi => 'Drawings deleted. Undo to bring them back';
+
+  @override
+  String get tegGeriYok => 'Nothing to undo';
+
+  @override
+  String get tegSilinecekYok => 'No drawings to delete';
+
+  @override
+  String get tegGorunumSifir => 'View reset';
+
+  @override
+  String get tegYuklenemedi => 'Couldn\'t load candles. Tap to try again.';
+
+  @override
+  String get tegMumaGec => 'Switch to candles';
+
+  @override
+  String get tegCizgiyeGec => 'Switch to line';
+
+  @override
+  String tegGrafikSemantik(String ad, String aralik, String fiyat, int sayi) {
+    return '$ad, $aralik chart. Last $fiyat. $sayi drawings.';
+  }
+
+  @override
+  String get periodNotEnoughData => 'Not enough data for this period';
+
+  @override
+  String periodCoverage(String sure) {
+    return 'last $sure (all available data)';
+  }
+
+  @override
+  String durationDaysN(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationMonthsN(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get softUpdateTitle => 'A new version is ready';
+
+  @override
+  String get softUpdateBody =>
+      'Update from the store for the latest fixes and features.';
+
+  @override
+  String get softUpdateDismiss => 'Dismiss for now';
+
+  @override
+  String get alertCostBreakEven => 'My cost';
+
+  @override
+  String alertCostPct(String pct) {
+    return 'Cost $pct';
+  }
+
+  @override
+  String get alertCostBreakEvenSemantics => 'Set target to your cost';
+
+  @override
+  String alertCostPctSemantics(String sign, int pct) {
+    return 'Target your cost $sign $pct percent';
+  }
+
+  @override
+  String get alarmModFiyat => 'Price';
+
+  @override
+  String get alarmModYuzde => 'Daily %';
+
+  @override
+  String get alarmYuzdeEsikBaslik => 'How big a move today?';
+
+  @override
+  String alarmYuzdeEsikSemantik(int n) {
+    return 'Daily $n percent threshold';
+  }
+
+  @override
+  String get alarmYuzdeYonBaslik => 'Which direction?';
+
+  @override
+  String get alarmYonDusus => 'If it falls';
+
+  @override
+  String get alarmYonYukselis => 'If it rises';
+
+  @override
+  String get alarmYonIkisi => 'Either way';
+
+  @override
+  String alarmYuzdeOzetDusus(String name, int pct) {
+    return 'We\'ll let you know if $name falls $pct% today.';
+  }
+
+  @override
+  String alarmYuzdeOzetYukselis(String name, int pct) {
+    return 'We\'ll let you know if $name rises $pct% today.';
+  }
+
+  @override
+  String alarmYuzdeOzetIkisi(String name, int pct) {
+    return 'We\'ll let you know if $name moves $pct% either way today.';
+  }
+
+  @override
+  String get alarmYuzdeGundeBir =>
+      'Fires at most once a day and re-arms itself the next day.';
+
+  @override
+  String yuzdeAlarmEtiketDusus(String pct) {
+    return 'Daily $pct% drop';
+  }
+
+  @override
+  String yuzdeAlarmEtiketYukselis(String pct) {
+    return 'Daily $pct% rise';
+  }
+
+  @override
+  String yuzdeAlarmEtiketIkisi(String pct) {
+    return 'Daily $pct% move';
+  }
+
+  @override
+  String yuzdeAlarmKuruldu(String name, String etiket) {
+    return 'Alert set for $name: $etiket';
+  }
+
+  @override
+  String yuzdeAlarmSilSoru(String etiket) {
+    return 'Delete the $etiket alert? It will stop re-arming every day.';
+  }
+
+  @override
+  String yuzdeCipBugunCaldi(String etiket) {
+    return '$etiket · went off today';
+  }
+
+  @override
+  String yuzdeAlarmHerGun(String etiket) {
+    return '$etiket · every day';
+  }
+
+  @override
+  String yuzdeAlarmBugunCaldi(String pct) {
+    return 'Fired today · $pct · re-arms tomorrow';
+  }
+
+  @override
+  String get notifTypeAlarm => 'Alert';
+
+  @override
+  String get ortakPortfoySatirAlt => 'Combine portfolios with someone close';
+
+  @override
+  String get ortakPortfoyKartBaslik => 'Shared portfolio';
+
+  @override
+  String get notifOpenAction => 'Open';
+
+  @override
+  String get notifExpandHint => 'Show full text';
+
+  @override
+  String get notifCollapseHint => 'Collapse';
+
+  @override
+  String alarmTileBody(String price, String target) {
+    return '$price · target $target';
+  }
+
+  @override
+  String get alarmTileOneShot =>
+      'This was a one-time alarm and is now off. Open the asset to set it again.';
+
+  @override
+  String get alarmModGosterge => 'Indicator';
+
+  @override
+  String get alarmPremiumGerekli => 'Requires Premium';
+
+  @override
+  String get gostergeBbUst => 'Bollinger upper';
+
+  @override
+  String get gostergeBbAlt => 'Bollinger lower';
+
+  @override
+  String get gostergeBaslik => 'Which indicator?';
+
+  @override
+  String get gostergeYonYukari => 'Crosses up';
+
+  @override
+  String get gostergeYonAsagi => 'Crosses down';
+
+  @override
+  String gostergeOzetYukari(String name, String gosterge) {
+    return 'We\'ll notify you when $name crosses above $gosterge.';
+  }
+
+  @override
+  String gostergeOzetAsagi(String name, String gosterge) {
+    return 'We\'ll notify you when $name crosses below $gosterge.';
+  }
+
+  @override
+  String gostergeOzetIkisi(String name, String gosterge) {
+    return 'We\'ll notify you when $name crosses $gosterge in either direction.';
+  }
+
+  @override
+  String get gostergeNot =>
+      'Calculated from daily closes, with the live price for today (Bollinger 20 days, 2σ). One-time: it turns off after it fires.';
+
+  @override
+  String gostergeAlarmEtiketYukari(String gosterge) {
+    return '$gosterge · crosses up';
+  }
+
+  @override
+  String gostergeAlarmEtiketAsagi(String gosterge) {
+    return '$gosterge · crosses down';
+  }
+
+  @override
+  String gostergeAlarmEtiketIkisi(String gosterge) {
+    return '$gosterge · crosses';
+  }
+
+  @override
+  String gostergeAlarmKuruldu(String name, String etiket) {
+    return 'Alert set for $name: $etiket';
+  }
+
+  @override
+  String get cizimAlarmEtiketUst => 'Line alert · when above';
+
+  @override
+  String get cizimAlarmEtiketAlt => 'Line alert · when below';
+
+  @override
+  String get cizimAlarmEtiketIkisi => 'Line alert · when crossed';
+
+  @override
+  String seviyeAlarmCalisti(String fiyat) {
+    return 'Fired · $fiyat · one-time';
+  }
+
+  @override
+  String get seviyeAlarmCalistiSade => 'Fired · one-time';
+
+  @override
+  String get tegAlarmKur => 'Set an alert on this line';
+
+  @override
+  String get tegAlarmKurPremium => 'Set a line alert (Premium)';
+
+  @override
+  String get tegAlarmKaldir => 'Remove line alert';
+
+  @override
+  String get tegAlarmKaldirildi => 'Line alert removed';
+
+  @override
+  String get tegAlarmKurulduUst =>
+      'Alert set: we\'ll notify you when the price rises above the line';
+
+  @override
+  String get tegAlarmKurulduAlt =>
+      'Alert set: we\'ll notify you when the price falls below the line';
+
+  @override
+  String get tegAlarmKurulduIkisi =>
+      'Alert set: we\'ll notify you when the price crosses the line';
+
+  @override
+  String get tegAlarmBitti =>
+      'This line ends in the past. Draw a line or ray that reaches past today';
+
+  @override
+  String get tegAlarmYonsuz => 'This ray doesn\'t extend forward; no alert set';
+
+  @override
+  String get tegAlarmGecersiz => 'The line goes below zero; no alert set';
+
+  @override
+  String get tegAlarmSilindi =>
+      'Drawing deleted; its line alert was removed too';
+
+  @override
+  String get tegAlarmGeriGeldi => 'The line\'s alert is back too';
+
+  @override
+  String nActiveAlarmsAll(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n active alerts',
+      one: '1 active alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeAlarmOzetCipi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n indicator/line alerts',
+      one: '1 indicator/line alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String seviyeAlarmOzetCipiEtiket(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n indicator and line alerts',
+      one: '1 indicator or line alert',
+    );
+    return '$_temp0. View in My alerts';
+  }
+
+  @override
+  String cizimAlarmSeviyesi(String fiyat) {
+    return 'Line now at $fiyat';
+  }
+
+  @override
+  String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
+    return 'Line now at $fiyat · until $tarih';
+  }
+
+  @override
+  String get alarmBekleyenler => 'Waiting';
+
+  @override
+  String get bolumAcik => 'expanded';
+
+  @override
+  String get bolumKapali => 'collapsed';
+
+  @override
+  String alarmCalanlar(int n) {
+    return 'Fired ($n)';
+  }
+
+  @override
+  String get alarmCalanlariTemizle => 'Clear fired';
+
+  @override
+  String alarmCalanlariTemizleSoru(int n) {
+    return 'Delete $n fired alarms? Your waiting alarms stay.';
+  }
+
+  @override
+  String get cizgiAdiEtiket => 'Line name (optional)';
+
+  @override
+  String get cizgiAdiIpucu => 'e.g. Support 245, Breakout';
+
+  @override
+  String get cizgiAdiAciklama =>
+      'Shown with this name in the notification and My alarms.';
+
+  @override
+  String get cizgiAlarmiBaslik => 'Line alert';
+
+  @override
+  String get cizgiAlarmiAdlandir => 'Rename';
+
+  @override
+  String get cizgiAlarmiAdlandirBaslik => 'Line alert name';
+
+  @override
+  String get cizgiyiGrafikteAc => 'Open in chart';
+
+  @override
+  String get cizgiAlarmiAdlandi => 'Alert name saved';
+
+  @override
+  String tegAdliAlarmKurulduUst(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price rises above the line';
+  }
+
+  @override
+  String tegAdliAlarmKurulduAlt(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price falls below the line';
+  }
+
+  @override
+  String tegAdliAlarmKurulduIkisi(String ad) {
+    return '“$ad” alert set: we\'ll notify you when the price crosses the line';
+  }
+
+  @override
+  String tekDokunusYuzdeOneri(String name) {
+    return '$name added. Notify you if it moves 2% today?';
+  }
+
+  @override
+  String get tekDokunusYuzdeKur => 'Set';
+
+  @override
+  String tekDokunusYuzdeKuruldu(String name, String etiket) {
+    return '$name: $etiket alarm set. You can change it in My alarms.';
+  }
+
+  @override
+  String get alarmlarGuncellenemedi =>
+      'Couldn\'t refresh; showing the last known state. Pull down to retry.';
+
+  @override
+  String get alarmHerGeciste => 'on every cross';
+
+  @override
+  String get alarmTekrarAnahtar => 'Notify on every cross';
+
+  @override
+  String get alarmTekrarAciklama => 'At most 3 times a day.';
+
+  @override
+  String alarmFiyatOzetYukselis(String name, String price) {
+    return 'We\'ll notify you if $name rises to $price.';
+  }
+
+  @override
+  String alarmFiyatOzetDusus(String name, String price) {
+    return 'We\'ll notify you if $name falls to $price.';
+  }
+
+  @override
+  String alarmMaliyetin(String price) {
+    return 'Your cost $price';
+  }
+
+  @override
+  String alarmSonCaldi(String zaman) {
+    return 'Last fired: $zaman';
+  }
+
+  @override
+  String get alarmTileTekrar =>
+      'Every-cross alert: it stays on and notifies you again if the price comes back and crosses again.';
+
+  @override
+  String get todayShareTooltip => 'Share today';
+
+  @override
+  String get todayShareLabel => 'My portfolio today';
+
+  @override
+  String todayShareText(String pct, String tarih) {
+    return 'My portfolio today $pct · $tarih';
+  }
+
+  @override
+  String get notInvestmentAdvice => 'Not investment advice.';
+
+  @override
+  String get tekrarAlBaslik => 'Buy again';
+
+  @override
+  String tekrarAlSemantik(String ad, String miktar) {
+    return 'Buy $ad again, last purchase $miktar';
+  }
+
+  @override
+  String get baskaYoldanEkle => 'Other ways to add';
+
+  @override
+  String get yazarakEkleAlt => 'Type or say \"10 grams of gold 4500 lira\"';
+
+  @override
+  String get ekstredenAktarAlt => 'Broker statement: PDF, Excel or CSV';
+
+  @override
+  String get ekranGoruntusuAlt => 'Portfolio screen of your broker\'s app';
+
+  @override
+  String varlikEklendiBirDaha(String ad) {
+    return '$ad added';
+  }
+
+  @override
+  String get birTaneDahaEkle => 'Add another';
+
+  @override
+  String get altinTumTurler => 'All';
+
+  @override
+  String get altinTumTurlerSemantik => 'All gold types';
+
+  @override
+  String get varlikEklendiGenel => 'Added';
+
+  @override
+  String get veriBekleniyor => 'Waiting for data';
+
+  @override
+  String intradayMissingShort(String names) {
+    return '$names: shown at last known price';
+  }
+
+  @override
+  String get alarmSilindi => 'Alarm deleted';
+
+  @override
+  String get alarmiDuzenle => 'Edit alarm';
+
+  @override
+  String get alarmiSil => 'Delete alarm';
+
+  @override
+  String get alarmGuncellendi => 'Alarm updated';
+
+  @override
+  String alarmKaldi(String pct) {
+    return '$pct to go';
+  }
+
+  @override
+  String alarmKaldiSemantik(String pct) {
+    return '$pct to target';
+  }
+
+  @override
+  String alarmKosulUst(String fiyat) {
+    return 'Rises above · $fiyat';
+  }
+
+  @override
+  String alarmKosulAlt(String fiyat) {
+    return 'Falls below · $fiyat';
+  }
+
+  @override
+  String alarmCalistiFiyat(String fiyat) {
+    return 'Triggered · $fiyat';
+  }
+
+  @override
+  String alarmGrupSimdi(String fiyat) {
+    return 'now $fiyat';
+  }
+
+  @override
+  String get alarmOneriBaslik => 'Quick start';
+
+  @override
+  String get alarmOneriAciklama => 'We\'ll tell you if it moves 2% in a day';
+
+  @override
+  String get kilometreTaslariUpper => 'Your milestones';
+
+  @override
+  String get kilometreTaslariTumuEtiket => 'Show all milestones';
+
+  @override
+  String get kilometreTasiSiradaki => 'Next';
+
+  @override
+  String kilometreTasiSiradakiEtiket(String baslik) {
+    return 'Next milestone: $baslik';
+  }
+
+  @override
+  String kilometreTasiKalan(String tutar) {
+    return '$tutar to go';
+  }
+
+  @override
+  String get kilometreTasiPaylasAlt => 'Tracking my savings with sandık';
+
+  @override
+  String get kilometreTasiPaylasNot =>
+      'No portfolio amount on the card; just the milestone.';
+
+  @override
+  String get kilometreTasiPaylasBaslik => 'Share your milestone';
+
+  @override
+  String kilometreTasiPaylasMetni(String baslik, String link) {
+    return '$baslik. Tracking my savings with sandık: $link';
+  }
+
+  @override
+  String kilometreTasiSiradakiIlerlemeEtiket(
+      String baslik, int yuzde, String kalan) {
+    return 'Next milestone: $baslik, $yuzde percent, $kalan to go';
+  }
+
+  @override
+  String kilometreTasiSiradakiYuzdeEtiket(String baslik, int yuzde) {
+    return 'Next milestone: $baslik, $yuzde percent';
+  }
+
+  @override
+  String get kilometreTaslariBaslik => 'Your milestones';
+
+  @override
+  String get kilometreTaslariNot =>
+      'A milestone you pass stays yours, even if the market drops.';
+
+  @override
+  String get bosCanAciklama =>
+      'Set a price alert and we will tell you here and in a notification when it hits.';
+
+  @override
+  String goalPreview(String deger, String yuzde, String kalan) {
+    return 'Now $deger · $yuzde there · $kalan to go';
+  }
+
+  @override
+  String goalPreviewHidden(String yuzde) {
+    return '$yuzde there';
+  }
+
+  @override
+  String goalPreviewDone(String deger) {
+    return 'Now $deger · you have already passed this goal';
+  }
+
+  @override
+  String get goalPreviewDoneHidden => 'You have already passed this goal';
+
+  @override
+  String get pricePreviewToday =>
+      'Today\'s market price. This price will be saved';
+
+  @override
+  String fiyatBirimiyle(String fiyat, String birim) {
+    return '$fiyat per $birim';
+  }
+
+  @override
+  String get notInListAddBySymbol => 'Not in the list? Add by symbol';
+
+  @override
+  String get tlCurrencyLocked => 'Funds and BIST stocks are recorded in TRY';
+
+  @override
+  String get unitFundShare => 'units';
+
+  @override
+  String get fonGunlukTekFiyatNotu =>
+      'Fund prices are published once a day; there is no intraday movement.';
+
+  @override
+  String get allChangeFromPrice =>
+      'You did not add or withdraw money in this period; the whole change came from prices.';
+
+  @override
+  String alarmCaldiZaman(String zaman) {
+    return 'Fired: $zaman';
+  }
+
+  @override
+  String alarmSayaci(int sayi, int limit) {
+    return 'Active alerts: $sayi/$limit';
+  }
+
+  @override
+  String get alarmSayaciSinirsiz => 'Unlimited ›';
+
+  @override
+  String get todayPeriodNoData => 'No data for this period';
+
+  @override
+  String todayPeriodSemantics(String name, int i, int n) {
+    return 'Period: $name, $i of $n';
+  }
+
+  @override
+  String get todayOpenInPerformance => 'Open in Performance';
+
+  @override
+  String get todayGoalHideSuggestion => 'Hide goal suggestion';
+
+  @override
+  String get goalProfileRowTitle => 'Portfolio goal';
+
+  @override
+  String get goalProfileRowSubtitle =>
+      'Pick an amount, see what\'s left on Home';
+
+  @override
+  String get goalDateTitle => 'When by?';
+
+  @override
+  String get goalDateNone => 'None';
+
+  @override
+  String get goalDateOneYear => '1 year';
+
+  @override
+  String get goalDateYearEnd => 'Year end';
+
+  @override
+  String get goalDatePick => 'Pick a date';
+
+  @override
+  String get goalDateLocked => 'Set a date for your goal with Premium';
+
+  @override
+  String get goalDateLockedLabel => 'Locked';
+
+  @override
+  String goalDateMonthly(String tutar) {
+    return 'Add about $tutar a month to make it';
+  }
+
+  @override
+  String get goalDateNoReturn => 'Excludes returns';
+
+  @override
+  String goalDateBy(String tarih, String ek) {
+    return 'By $tarih';
+  }
+
+  @override
+  String get kiyasPaylasTooltip => 'Share comparison';
+
+  @override
+  String kiyasPaylasKartBaslik(String donem) {
+    return '$donem comparison';
+  }
+
+  @override
+  String get kiyasPaylasAlt => 'Compared with sandık';
+
+  @override
+  String get kiyasPaylasNot =>
+      'No amounts on the card; only period percentages.';
+
+  @override
+  String kiyasPaylasMetni(String donem, String ozet, String link) {
+    return '$donem comparison: $ozet. Compared with sandık: $link';
+  }
+
+  @override
+  String get yardimVeDestek => 'Help and support';
+
+  @override
+  String kilometreTasiSiradakiSatir(String baslik) {
+    return 'Next: $baslik';
+  }
+
+  @override
+  String get kilometreTasiHepsiGecildi =>
+      'You\'ve passed every portfolio threshold';
+
+  @override
+  String kilometreTasiSayac(int gecilen, int toplam) {
+    return '$gecilen / $toplam';
+  }
+
+  @override
+  String kilometreTasiSayacEtiket(int gecilen, int toplam) {
+    return '$gecilen of $toplam portfolio thresholds passed';
+  }
+
+  @override
+  String get premiumDurum => 'Premium';
+
+  @override
+  String premiumDurumDetay(String plan, String detay) {
+    return '$plan, $detay';
+  }
+
+  @override
+  String premiumDurumYenilenir(String tarih) {
+    return 'renews on $tarih';
+  }
+
+  @override
+  String premiumDurumBiter(String tarih) {
+    return 'ends on $tarih';
+  }
+
+  @override
+  String premiumDurumHediyeKalan(String tarih, int gun) {
+    return 'ends on $tarih, $gun days left';
+  }
+
+  @override
+  String get premiumDurumGec => 'Go Premium';
+
+  @override
+  String premiumDurumAyrintiEtiket(String durum) {
+    return '$durum. Tap to manage your subscription';
+  }
+
+  @override
+  String get hesapEkleSatiri => 'Add account';
+
+  @override
+  String get hesapEkleSatiriAlt =>
+      'Add a second account on this phone; your current one stays signed in';
+
+  @override
+  String get aralikBaslik => 'Range';
+
+  @override
+  String get aralikGun => 'Day';
+
+  @override
+  String get aralikDonem => 'Selected period';
+
+  @override
+  String get ya52Hafta => '52 weeks';
+
+  @override
+  String get yaBaslikYil => '52-week range';
+
+  @override
+  String yaBaslikAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: 'Last $ay months',
+      one: 'Last month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get yaDonemYil => '52-week';
+
+  @override
+  String yaDonemAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: '$ay-month',
+      one: '1-month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yaYuksekAlti(String donem, String pct) {
+    return '$pct below the $donem high';
+  }
+
+  @override
+  String yaDusukUstu(String donem, String pct) {
+    return '$pct above the $donem low';
+  }
+
+  @override
+  String yaYuksekte(String donem) {
+    return 'At the $donem high';
+  }
+
+  @override
+  String yaDusukte(String donem) {
+    return 'At the $donem low';
+  }
+
+  @override
+  String yaSemantik(
+      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
+    return '$baslik: low $dusuk, high $yuksek, today $bugun. $cumle';
+  }
+
+  @override
+  String get noChangeBridgeToday =>
+      'You did not add or withdraw money today, and prices did not change.';
+
+  @override
+  String get noChangeBridgePeriod =>
+      'You did not add or withdraw money in this period, and prices did not change.';
+
+  @override
+  String get disclaimerShort =>
+      'Not investment advice. Past returns do not predict future results.';
+
+  @override
+  String get disclaimerDetails => 'Details';
+
+  @override
+  String get disclaimerDetailsHint => 'Opens the full legal notice';
+
+  @override
+  String get disclaimerSheetTitle => 'Legal notice';
+
+  @override
+  String get digerIslemler => 'More actions';
+
+  @override
+  String get bedelliBaslik => 'Rights issue';
+
+  @override
+  String get bedelliSatirAlt =>
+      'Add the new shares if you used your subscription rights';
+
+  @override
+  String bedelliAciklama(String birim) {
+    return 'New shares are added as a purchase at $birim each';
+  }
+
+  @override
+  String get bedelliOran => 'Rights ratio';
+
+  @override
+  String get bedelliOranIpucu => 'e.g. 100';
+
+  @override
+  String get bedelliTarih => 'Date you used the rights';
+
+  @override
+  String bedelliOnizleme(
+      String elde, String yeni, String birim, String toplam) {
+    return '$yeni new shares on your $elde, $birim each, $toplam in total';
+  }
+
+  @override
+  String bedelliYuvarlama(String hak, String yeni) {
+    return '$yeni of your $hak rights become shares; the fraction is rounded down';
+  }
+
+  @override
+  String get bedelliLotYok => 'You held no shares on this date';
+
+  @override
+  String get bedelliKaydet => 'Add shares';
+
+  @override
+  String bedelliKaydedildi(String yeni) {
+    return '$yeni new shares added';
+  }
 }

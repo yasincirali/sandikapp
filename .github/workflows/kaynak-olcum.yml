@@ -25,6 +25,12 @@ jobs:
       - name: Mum (OHLC) kaynakları
         continue-on-error: true
         run: python3 tool/ohlc_olcum.py
+      # Hisse kotasyonu: v7 toplu uç kodu, 20 paralel grafik isteğinde
+      # 429, iki yüzde tanımının farkı (2026-10-30, `tool/yahoo_uc_olcum.py`).
+      # Seans içinde, birkaç saat arayla birkaç kez koşulur.
+      - name: Yahoo hisse uçları
+        continue-on-error: true
+        run: python3 tool/yahoo_uc_olcum.py
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x

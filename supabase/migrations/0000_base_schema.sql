@@ -36,6 +36,37 @@
 
 create extension if not exists "pgcrypto";
 
+-- ── Eski otomatik izinler, yalnızca TAZE yığında (2026-10-20) ──────────────
+-- Supabase 30 Ekim 2026'dan itibaren `public`'te yeni tabloya anon /
+-- authenticated / service_role için otomatik GRANT vermiyor; yerel
+-- `supabase start` / `db reset` de aynı varsayılanla açılacak. 0001–0157'nin
+-- çoğu tablo izni için bu otomatik GRANT'a dayanıyor (canlıda tablolar o
+-- izinlerle yaratıldı). Yeni varsayılanla taze yığın 0012'de kırılıyordu:
+-- "authenticated icin profiles.leaderboard_opt_in UPDATE GRANT eksik"
+-- (CLI 2.119, `auto_expose_new_tables = false` ile denendi). Eski
+-- migration'ları tek tek yamamak yerine canlının o günkü varsayılanı burada
+-- geri kurulur; 0161 sonda yeni kuralı (açık GRANT zorunlu) yeniden açar.
+-- Böylece taze yığın canlıyla aynı izinlere çıkar ve 0161'den sonraki her
+-- tablo açık GRANT ister.
+-- Koşul: `profiles` yoksa taze yığındır. Canlıda bu blok (`--include-all`
+-- ile koşsa bile) hiçbir şey yapmaz; otomatik izni canlıda geri açmaz.
+-- Fonksiyon varsayılanı da geri kurulur ve AÇIK kalır (0161 kapatmaz):
+-- Supabase'in revoke'u yalnız tablo + dizi; canlıda fonksiyonlar rollere
+-- otomatik EXECUTE almaya devam ediyor. CLI'ın kapalı modu fonksiyonu da
+-- kapatıyor; geri kurulmazsa `revoke ... from public` deyip service_role'e
+-- açık GRANT yazmayan RPC'ler taze yığında edge function'a kapanırdı.
+do $$
+begin
+  if to_regclass('public.profiles') is null then
+    alter default privileges for role postgres in schema public
+      grant select, insert, update, delete on tables to anon, authenticated, service_role;
+    alter default privileges for role postgres in schema public
+      grant usage, select on sequences to anon, authenticated, service_role;
+    alter default privileges for role postgres in schema public
+      grant execute on functions to anon, authenticated, service_role;
+  end if;
+end $$;
+
 -- ── Tablolar ────────────────────────────────────────────────────────────────
 
 create table if not exists public.profiles (

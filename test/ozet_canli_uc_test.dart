@@ -121,6 +121,8 @@ void main() {
     const istisna = {
       // Pencere GEÇMİŞTE biter (TÜFE'nin son açıklanan ayı).
       'lib/services/real_return_service.dart',
+      // Pencere GEÇMİŞTE biter: AI yorumu yalnız kapanmış hafta/ay (0145).
+      'lib/services/portfoy_yorumu_service.dart',
     };
     final dosyalar = Directory('lib')
         .listSync(recursive: true)

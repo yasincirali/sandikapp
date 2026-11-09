@@ -16,6 +16,9 @@ import '../services/tuik_takvimi.dart';
 import '../theme/sandik.dart';
 import 'aralik_cipi.dart';
 import 'sandik_acilir.dart';
+import 'sandik_paylas_dugmesi.dart';
+import 'sandik_bos_durum.dart';
+import '../services/remote_config_service.dart';
 import 'sandik_segment.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
@@ -235,14 +238,36 @@ class PeriodSummaryView extends StatelessWidget {
         // Ana rakam gizliyken (tek akış) SONUÇ boş kalabilir; boş başlık
         // çizilmez. Eski düzende ana rakam hep vardır — koşul hep doğru.
         if (g.sonuc.isNotEmpty) ...[
-          SandikSectionHeader(title: l10n.sectionResult),
+          // Paylaş "Ne oldu?" başlığının sağ ucunda (yasin 2026-10-30:
+          // "dikkat çekici olmasın, her yerde aynı standart"). Eskiden
+          // SONUÇ'un altında tam genişlik amber düğmeydi; bölümün en
+          // parlak öğesi paylaşım oluyordu. Artık kartların köşesindeki
+          // gri simgeyle aynı (`SandikPaylasDugmesi`): bloğun sağ üstü.
+          // Paylaşım kartı TUTAR İÇERMEZ (yüzde + etiket); metni
+          // `RecapService.shareText` üretir, düğme yalnız tetikler.
+          SandikSectionHeader(
+            title: l10n.sectionResult,
+            trailing: onShare == null
+                ? null
+                : SandikPaylasDugmesi(
+                    onPressed: onShare, tooltip: l10n.shareSummary),
+          ),
           const SizedBox(height: SandikSpace.sm),
           ..._arali(g.sonuc),
         ],
+        // "Neden böyle?" yalnız önünde "Ne oldu?" varken (Ar-Ge 2026-11-07
+        // 12:15 #3, "bir kart, bir başlık"). Tek akışta ana rakam manşette
+        // olduğundan SONUÇ çoğu dönemde boş; o zaman bölüm başlığının hemen
+        // altında "Nereden geldi" kart başlığı duruyordu ve iki başlık tek
+        // kartı anlatıyordu. Bölüm başlığı iki bölümü AYIRMAK için vardır:
+        // ayıracağı bir şey yoksa çizilmez. SONUÇ doluyken (eski düzen ya da
+        // reel getiri kartı) iki bölüm yine başlıklarıyla ayrılır.
         if (g.neden.isNotEmpty) ...[
-          if (g.sonuc.isNotEmpty) const SizedBox(height: SandikSpace.md),
-          SandikSectionHeader(title: l10n.sectionWhy),
-          const SizedBox(height: SandikSpace.sm),
+          if (g.sonuc.isNotEmpty) ...[
+            const SizedBox(height: SandikSpace.md),
+            SandikSectionHeader(title: l10n.sectionWhy),
+            const SizedBox(height: SandikSpace.sm),
+          ],
           ..._arali(g.neden),
         ],
         // AYRINTI başlığı yalnızca birikim kartı varsa: Derinlik kendi
@@ -264,6 +289,12 @@ class PeriodSummaryView extends StatelessWidget {
       ],
     );
   }
+
+  /// "Nereden geldi" köprüsü yerine "değişim yok" cümlesi mi çizilir
+  /// (gerekçe `_KopruKarti.koprusuz`).
+  static bool koprusuzMu(PeriodSummary s,
+          {BazPara baz = const BazPara.lira()}) =>
+      _KopruKarti.koprusuz(s, baz);
 
   /// Blokların arasına standart boşluk.
   static List<Widget> _arali(List<Widget> bloklar) {
@@ -334,8 +365,12 @@ class PeriodSummaryView extends StatelessWidget {
     }
 
     switch (summary.period) {
+      // Eğri kartı yalnız eski (Grafik | Özet sekmeli) düzende: tek akışta
+      // (`anaRakamGizli`) sayfanın başındaki büyük grafik aynı dönemi zaten
+      // çiziyor; küçük kopya yeni bir şey söylemeden köprü ile tür dökümünün
+      // arasına giriyordu (müşteri raporu 2 Kas 20:45 #1).
       case SummaryPeriod.gunluk:
-        if (summary.sparkline.length >= 2) {
+        if (!anaRakamGizli && summary.sparkline.length >= 2) {
           seyir.add(_GunIciEgriKarti(summary: summary));
         }
         varlikKarti(context.l10n.biggestMoverToday);
@@ -364,9 +399,16 @@ class PeriodSummaryView extends StatelessWidget {
         reelYaDaTufe(context.l10n.last3MonthsPeriod);
         varlikKarti(context.l10n.threeMonthExtremes);
 
+      // YB (2026-11-08): 3A gibi yalnız her dönemde anlamlı parçalar.
+      // XIRR, karakter ve sabır kartları 1Y'nin hesap sözleşmesine bağlı;
+      // Ocak'ta birkaç günlük pencereye yıllık oran yazdırmak yanıltırdı.
+      case SummaryPeriod.yilBasi:
+        reelYaDaTufe(context.l10n.ytdPeriod);
+        varlikKarti(context.l10n.ytdExtremes);
+
       case SummaryPeriod.besYil:
         reelYaDaTufe(context.l10n.last5YearsPeriod);
-        if (summary.sparkline.length >= 2) {
+        if (!anaRakamGizli && summary.sparkline.length >= 2) {
           seyir.add(_GunIciEgriKarti(
               summary: summary, baslik: context.l10n.fiveYearCurve));
         }
@@ -384,7 +426,7 @@ class PeriodSummaryView extends StatelessWidget {
 
       case SummaryPeriod.birYil:
         reelYaDaTufe(context.l10n.lastYearPeriod);
-        if (summary.sparkline.length >= 2) {
+        if (!anaRakamGizli && summary.sparkline.length >= 2) {
           seyir.add(_GunIciEgriKarti(
               summary: summary, baslik: context.l10n.yearCurve));
         }
@@ -402,12 +444,6 @@ class PeriodSummaryView extends StatelessWidget {
         if (enSabirli != null && enSabirliGun != null) {
           derinlik.add(_SabirKarti(varlik: enSabirli!, gun: enSabirliGun!));
         }
-    }
-
-    // Paylaş SONUÇ'un altında: paylaşılan şey ana rakam + reel hüküm, buton
-    // onların hemen yanında durur.
-    if (onShare != null) {
-      sonuc.add(_PaylasButonu(onShare: onShare!));
     }
 
     final neden = <Widget>[
@@ -526,8 +562,7 @@ class _AnaRakamKarti extends StatelessWidget {
           ? context.c.text58
           : (tufeFarki > 0 ? context.c.gain : context.c.loss);
       enflasyonSatiri = _KucukSatir(
-        etiket: l.vsInflationIn(AralikMetni.olculenAylar(
-            l, context.tarihDili,
+        etiket: l.vsInflationIn(AralikMetni.olculenAylar(l, context.tarihDili,
             bas: tufeBas, bitis: tufeBitis)),
         deger: deger,
         ton: ton,
@@ -676,6 +711,19 @@ class _KopruKarti extends StatelessWidget {
   static double yatirdigin(PeriodSummary s) =>
       (s.katkiTRY ?? 0) + (s.temettuTRY ?? 0);
 
+  /// Köprü yerine "değişim yok" cümlesi mi? Para girip çıkmadı, temettü ve
+  /// komisyon yok, fiyat etkisi yazıldığında sıfır.
+  static bool koprusuz(PeriodSummary s, BazPara baz) {
+    final temettu = s.temettuTRY;
+    if (yatirdigin(s).abs() >= 0.005) return false;
+    if (temettu != null && temettu.abs() >= 0.005) return false;
+    if (s.komisyonTRY != null) return false;
+    // Maskesiz kopyayla: "bakiyeyi gizle" açıkken maske rakam taşımaz ve
+    // her dönemi "değişim yok" sayardı.
+    final yazi = BazPara(baz.birim, baz.kur).fmt((s.piyasaTRY ?? 0).abs());
+    return !RegExp(r'[1-9]').hasMatch(yazi);
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = summary;
@@ -685,6 +733,8 @@ class _KopruKarti extends StatelessWidget {
     final piyasa = s.piyasaTRY!;
     final temettu = s.temettuTRY;
     final yatirilan = yatirdigin(s);
+    final paraHareketi = yatirilan.abs() >= 0.005;
+    final temettuVar = temettu != null && temettu.abs() >= 0.005;
 
     final enBuyuk = [
       bas.abs(),
@@ -699,17 +749,50 @@ class _KopruKarti extends StatelessWidget {
         : (s.isNegative ? context.c.loss : context.c.gain);
 
     final l = context.l10n;
+    final baslik = Text(
+      l.whereItCameFrom,
+      style: context.t.titleSmall?.copyWith(color: context.c.text58),
+    );
+    final kabuk = context.surfaceCard(radius: SandikRadius.lg);
+    const dolgu = EdgeInsets.symmetric(
+        horizontal: SandikSpace.md, vertical: SandikSpace.md2);
+
+    // Hiçbir şey değişmediyse köprü YOK (Ar-Ge 2026-11-07 12:15 #2). Hafta
+    // sonu ve açılıştan önce Bugün'de üç çubuk çiziliyordu: dönem başı
+    // ₺31.240, fiyat etkisi ₺0, bugün ₺31.240; altındaki not da "değişimin
+    // tamamı fiyattan" diyordu, oysa değişim yoktu. Para hareketi, temettü
+    // ve komisyon yoksa ve fiyat etkisi yazıldığında sıfıra yuvarlanıyorsa
+    // (`_CubukSatiri`'nın işaret kuralıyla aynı ölçüt) kart başlığıyla tek
+    // cümle kalır. Durum renkle değil cümleyle söylenir.
+    if (koprusuz(s, baz)) {
+      return Container(
+        key: const ValueKey('kopru_degisim_yok'),
+        width: double.infinity,
+        padding: dolgu,
+        decoration: kabuk,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            baslik,
+            const SizedBox(height: SandikSpace.sm),
+            Text(
+              s.period.intraday
+                  ? l.noChangeBridgeToday
+                  : l.noChangeBridgePeriod,
+              style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.md, vertical: SandikSpace.md2),
-      decoration: context.surfaceCard(radius: SandikRadius.lg),
+      padding: dolgu,
+      decoration: kabuk,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l.whereItCameFrom,
-            style: context.t.titleSmall?.copyWith(color: context.c.text58),
-          ),
+          baslik,
           const SizedBox(height: SandikSpace.smd),
           _CubukSatiri(
             baz: baz,
@@ -719,16 +802,21 @@ class _KopruKarti extends StatelessWidget {
             renk: context.c.text36,
             isaretli: false,
           ),
-          const SizedBox(height: SandikSpace.sm),
-          _CubukSatiri(
-            baz: baz,
-            etiket: l.investedRow,
-            deger: yatirilan,
-            oran: yatirilan.abs() / enBuyuk,
-            // MAVİ — getiri değil, kullanıcının kendi parası.
-            renk: context.c.info,
-            isaretli: true,
-          ),
+          // Para hareketi olmayan dönemde "Yatırdığın ₺0" boş çubukla
+          // çiziliyordu (müşteri raporu 2 Kas 20:45 #2). Satır yalnız para
+          // girip çıktıysa; köprü yine toplanır (baş + piyasa = şimdi).
+          if (paraHareketi) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _CubukSatiri(
+              baz: baz,
+              etiket: l.investedRow,
+              deger: yatirilan,
+              oran: yatirilan.abs() / enBuyuk,
+              // MAVİ — getiri değil, kullanıcının kendi parası.
+              renk: context.c.info,
+              isaretli: true,
+            ),
+          ],
           // Temettü kendi çubuğuyla (eksi): cebe giden para. Çubuk olarak
           // çizilmesi köprüyü BOZMAZ — artık "yatırdığın" temettüyü
           // içermiyor, dolayısıyla toplam = parçalar yine tutar.
@@ -787,8 +875,12 @@ class _KopruKarti extends StatelessWidget {
                   size: 13, color: context.c.text36),
               const SizedBox(width: SandikSpace.xs2),
               Expanded(
+                // Dipnot yatırılan parayı ve temettüyü açıklar; ikisi de
+                // yoksa tek cümle: değişimin tamamı fiyattan.
                 child: Text(
-                  l.contributionNotReturn,
+                  paraHareketi || temettuVar
+                      ? l.contributionNotReturn
+                      : l.allChangeFromPrice,
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ),
@@ -831,9 +923,8 @@ class _CubukSatiri extends StatelessWidget {
     // −₺0"; `isaretliYuzde` ile aynı kural).
     final mutlak = baz.fmt(deger.abs());
     final sifir = !RegExp(r'[1-9]').hasMatch(mutlak);
-    final yazi = isaretli && !sifir
-        ? '${deger >= 0 ? '+' : '−'}$mutlak'
-        : mutlak;
+    final yazi =
+        isaretli && !sifir ? '${deger >= 0 ? '+' : '−'}$mutlak' : mutlak;
 
     return Semantics(
       label: '$etiket $yazi',
@@ -1203,8 +1294,7 @@ class _ReelGetiriKartiState extends State<_ReelGetiriKarti> {
     // Ekranda "0,0 puan"a yuvarlanan fark yön söylemez — başa baş.
     final fark = w.fark;
     final puanMetni = fark == null ? null : fmtNum(fark.abs(), digits: 1);
-    final basaBas =
-        puanMetni != null && puanMetni == fmtNum(0, digits: 1);
+    final basaBas = puanMetni != null && puanMetni == fmtNum(0, digits: 1);
     final hukum = fark == null
         ? InflationService.hukum(w.reel)
         : basaBas
@@ -1268,8 +1358,8 @@ class _ReelGetiriKartiState extends State<_ReelGetiriKarti> {
         cumle = l.cpiSentenceYear(
             kisa.format(bas), kisa.format(bitis), degisim, cpi);
       } else {
-        cumle = l.cpiSentenceRange(uzunAy.format(ilkOlculenAy),
-            uzunAyYil.format(bitis), degisim, cpi);
+        cumle = l.cpiSentenceRange(
+            uzunAy.format(ilkOlculenAy), uzunAyYil.format(bitis), degisim, cpi);
       }
     }
     final hukumCumlesi = switch (hukum) {
@@ -1301,8 +1391,7 @@ class _ReelGetiriKartiState extends State<_ReelGetiriKarti> {
       // aynı soruyu aynı adla sormalı.
       baslik: l.todayRealLabel,
       cip: pencereBelli
-          ? AralikMetni.olculenAylar(l, dil,
-              bas: w.baslangic!, bitis: w.bitis!)
+          ? AralikMetni.olculenAylar(l, dil, bas: w.baslangic!, bitis: w.bitis!)
           : w.donemEtiketi,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1718,41 +1807,6 @@ class _SabirKarti extends StatelessWidget {
       );
 }
 
-/// Paylaş butonu — 1Y bloğu.
-///
-/// Paylaşım kartı TUTAR İÇERMEZ (yüzde + etiket yeter): tutarlı bir kart
-/// paylaşılmaz, tutarsız kart paylaşılır. Metni `RecapService.shareText`
-/// üretir; buton yalnızca tetikler.
-class _PaylasButonu extends StatelessWidget {
-  final VoidCallback onShare;
-
-  const _PaylasButonu({required this.onShare});
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: double.infinity,
-        child: TextButton.icon(
-          onPressed: onShare,
-          icon: Icon(Icons.ios_share_rounded,
-              size: 16, color: context.c.amberText),
-          label: Text(
-            context.l10n.shareSummary,
-            style: context.t.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: context.c.amberText,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            backgroundColor: context.c.surface1,
-            padding: const EdgeInsets.symmetric(vertical: SandikSpace.smd),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-            ),
-          ),
-        ),
-      );
-}
-
 /// Bağlam bloklarının ortak kabuğu.
 class _BaglamKarti extends StatelessWidget {
   final String baslik;
@@ -1886,15 +1940,14 @@ class ContributionKarti extends StatelessWidget {
   /// ayında ₺529.881. Haziran ayında ₺12.000 çektin."
   String _tekKatkiCumlesi(BuildContext context) {
     final l = context.l10n;
-    final katki = ozet.kovalar.firstWhere((k) => k.netTRY > 0,
-        orElse: () => ozet.kovalar.first);
+    final katki = ozet.kovalar
+        .firstWhere((k) => k.netTRY > 0, orElse: () => ozet.kovalar.first);
     final parcalar = [
       l.singleContribution(_donemIfadesi(context), _kovaIfadesi(context, katki),
           baz.fmt(katki.netTRY)),
       for (final k in ozet.kovalar)
         if (k.netTRY < -0.5)
-          l.singleWithdrawal(
-              _kovaIfadesi(context, k), baz.fmt(k.netTRY.abs())),
+          l.singleWithdrawal(_kovaIfadesi(context, k), baz.fmt(k.netTRY.abs())),
     ];
     return parcalar.join(' ');
   }
@@ -2074,13 +2127,14 @@ class _SeriBolumu extends StatelessWidget {
         ),
         const SizedBox(height: SandikSpace.xxs),
         Text(
-          seri.yenidenBasladi ? l.streakRestarted : l.streakMonths('${seri.guncel}'),
+          seri.yenidenBasladi
+              ? l.streakRestarted
+              : l.streakMonths('${seri.guncel}'),
           style: context.t.numMedium.copyWith(color: c.amberText),
         ),
         const SizedBox(height: SandikSpace.smd),
         Semantics(
-          label: l.streakStripSemantics(
-              '${seri.serit.length}', '$kaydedilen'),
+          label: l.streakStripSemantics('${seri.serit.length}', '$kaydedilen'),
           excludeSemantics: true,
           child: Row(
             children: [
@@ -2093,8 +2147,7 @@ class _SeriBolumu extends StatelessWidget {
                       const SizedBox(height: SandikSpace.xs),
                       Text(
                         DateFormat('MMMMM', dil).format(seri.serit[i].ay),
-                        style: context.t.labelSmall
-                            ?.copyWith(color: c.text36),
+                        style: context.t.labelSmall?.copyWith(color: c.text36),
                       ),
                     ],
                   ),
@@ -2108,7 +2161,8 @@ class _SeriBolumu extends StatelessWidget {
           spacing: SandikSpace.smd,
           runSpacing: SandikSpace.xs,
           children: [
-            _SeriLejant(durum: SeriAyDurumu.birikim, etiket: l.streakLegendSaving),
+            _SeriLejant(
+                durum: SeriAyDurumu.birikim, etiket: l.streakLegendSaving),
             _SeriLejant(durum: SeriAyDurumu.mola, etiket: l.streakLegendPause),
             _SeriLejant(durum: SeriAyDurumu.ara, etiket: l.streakLegendGap),
             _SeriLejant(durum: SeriAyDurumu.acik, etiket: l.streakLegendOpen),
@@ -2136,7 +2190,9 @@ class _SeriBolumu extends StatelessWidget {
         ],
         const SizedBox(height: SandikSpace.sm),
         Text(
-          besDahil ? '${l.streakExplain} ${l.streakBesIncluded}' : l.streakExplain,
+          besDahil
+              ? '${l.streakExplain} ${l.streakBesIncluded}'
+              : l.streakExplain,
           style: context.t.bodySmall?.copyWith(color: c.text36),
         ),
       ],
@@ -2611,7 +2667,22 @@ class _BosDurum extends StatelessWidget {
   const _BosDurum({required this.period});
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final metin =
+        context.l10n.notEnoughHistory(donemEtiketi(context.l10n, period.label));
+    // Bayrak `goz_alici`: ortak boş durum `SandikBosDurum` (Ar-Ge 5 Kas
+    // 22:40 #6). Metin ve alt satır stilleri bileşeninkiyle zaten aynıydı;
+    // değişen yalnız baştaki saat ikonunun yerine kapalı sandık ve iç pay
+    // (bileşen kendi `lg` payını taşır). Kapalıyken eski kart birebir.
+    if (RemoteConfigService.instance.gozAlici) {
+      return Container(
+        width: double.infinity,
+        decoration: context.surfaceCard(radius: SandikRadius.lg),
+        child: SandikBosDurum(
+            metin: metin, alt: context.l10n.notEnoughHistoryBody),
+      );
+    }
+    return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
             horizontal: SandikSpace.md, vertical: SandikSpace.lg),
@@ -2621,8 +2692,7 @@ class _BosDurum extends StatelessWidget {
             Icon(Icons.timelapse_rounded, size: 28, color: context.c.text36),
             const SizedBox(height: SandikSpace.smd),
             Text(
-              context.l10n
-                  .notEnoughHistory(donemEtiketi(context.l10n, period.label)),
+              metin,
               textAlign: TextAlign.center,
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
@@ -2635,6 +2705,7 @@ class _BosDurum extends StatelessWidget {
           ],
         ),
       );
+  }
 }
 
 /// Derinlik — katlanır bölüm (2026-09-21).
@@ -2670,43 +2741,40 @@ class _DerinlikBolumuState extends State<_DerinlikBolumu> {
           button: true,
           expanded: _acik,
           label: l10n.sectionDepth,
-          // Performans sekmesi CupertinoPageScaffold altında; InkWell'in
-          // mürekkep katmanı için Material atası şart, yoksa cihazda kırmızı
-          // "No Material widget found" (2026-09-21, ekran görüntüsü).
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: () => setState(() => _acik = !_acik),
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: SandikTouch.min),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SandikSectionHeader(title: l10n.sectionDepth),
-                          Text(
-                            l10n.sectionDepthHint,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.t.bodySmall
-                                ?.copyWith(color: context.c.text58),
-                          ),
-                        ],
-                      ),
+          // Performans sekmesi CupertinoPageScaffold altında. Eskiden InkWell
+          // vardı ve Material atası olmadan cihazda kırmızı "No Material
+          // widget found" basıyordu (2026-09-21); SandikTappable mürekkep
+          // katmanı istemez, Material sarmalı bu yüzden kalktı.
+          child: SandikTappable(
+            onTap: () => setState(() => _acik = !_acik),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SandikSectionHeader(title: l10n.sectionDepth),
+                        Text(
+                          l10n.sectionDepthHint,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ],
                     ),
-                    // Ok panelle aynı süre/eğride (animasyon denetimi
-                    // 2026-10-01: ok 180 ms, panel 240 ms'deydi).
-                    SandikAcilirOk(
-                      acik: _acik,
-                      child: Icon(Icons.expand_more_rounded,
-                          color: context.c.text58),
-                    ),
-                  ],
-                ),
+                  ),
+                  // Ok panelle aynı süre/eğride (animasyon denetimi
+                  // 2026-10-01: ok 180 ms, panel 240 ms'deydi).
+                  SandikAcilirOk(
+                    acik: _acik,
+                    child: Icon(Icons.expand_more_rounded,
+                        color: context.c.text58),
+                  ),
+                ],
               ),
             ),
           ),

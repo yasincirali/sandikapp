@@ -153,6 +153,13 @@ class ZoomableChart extends StatefulWidget {
   /// gibi bir cümle verir; vermezse jenerik etiket okunur (çevrilmiş;
   /// eskiden sabit Türkçe "Fiyat grafiği" idi — HIG denetimi 2026-10-10).
   final String? semanticLabel;
+
+  /// Görünen pencerenin ekran okuyucu değeri ("görünen aralıkta yüzde 4,2
+  /// arttı; en düşük …"). Pencere bu widget'ın kendi koordinatında verilir;
+  /// seans sıkıştırması olan çağıran gerçek X'e kendisi çevirir. Metni
+  /// çağıran kurar (`grafikOzetMetni`) çünkü Y'nin birimi (₺, yüzde, log)
+  /// ve bakiye gizliliği yalnız orada bilinir. `null` → yalnız etiket.
+  final String? Function(double minX, double maxX)? semanticValueBuilder;
   final LineChartData Function(double minX, double maxX) builder;
   final double height;
 
@@ -254,6 +261,7 @@ class ZoomableChart extends StatefulWidget {
     this.plotPaddingRight = 0,
     this.plotPaddingLeft = 0,
     this.semanticLabel,
+    this.semanticValueBuilder,
     this.swapDuration = SandikMotion.state,
     this.swapCurve = SandikMotion.enter,
     this.imlecEtiketi,
@@ -491,6 +499,68 @@ class _ZoomableChartState extends State<ZoomableChart> {
     widget.onViewportChanged?.call(widget.fullMinX, widget.fullMaxX);
   }
 
+  /// Son tek dokunuşun zamanı ve yeri — çift dokunuşu elle saymak için.
+  static final Stopwatch _saat = Stopwatch()..start();
+  Duration? _sonDokunusZamani;
+  Offset? _sonDokunusYeri;
+  double? _ciftDokunusPx;
+
+  void _dokunusBitti(TapUpDetails d) {
+    final simdi = _saat.elapsed;
+    final onceki = _sonDokunusZamani;
+    final oncekiYer = _sonDokunusYeri;
+    if (onceki != null &&
+        oncekiYer != null &&
+        simdi - onceki <= kDoubleTapTimeout &&
+        (d.localPosition - oncekiYer).distance <= kDoubleTapSlop) {
+      _sonDokunusZamani = null;
+      _sonDokunusYeri = null;
+      _ciftDokunusPx = d.localPosition.dx;
+      _ciftDokunus();
+      return;
+    }
+    _sonDokunusZamani = simdi;
+    _sonDokunusYeri = d.localPosition;
+  }
+
+  /// Çift dokunuş: yakın değilse dokunulan yere 2,5× yakınlaşır,
+  /// yakınsa tam aralığa döner.
+  ///
+  /// yasin 2026-10-12 (TestFlight): "zoom featurelarını da iyileştirebiliriz,
+  /// net ve doğru şekilde izlenebilmeli." Yakınlaşmanın tek yolu iki parmak,
+  /// dönmenin tek yolu köşedeki küçük "Sıfırla" idi. Çift dokunuş iOS'un
+  /// sistem kalıbı (Fotoğraflar, Haritalar) ve tek elle yapılır; tek
+  /// dokunuşun bu grafiklerde işi yok (yerleşik dokunuşlar kapalı, imleç
+  /// uzun basışta), yani bekletilen bir şey olmaz. Geçiş grafiğin kendi
+  /// morfuyla akar (hareketi azalt'ta anlık, bkz. build).
+  void _ciftDokunus() {
+    final fullWidth = widget.fullMaxX - widget.fullMinX;
+    if (fullWidth <= 0) return;
+    SandikHaptic.selection.perform();
+    if (_isZoomed) {
+      _reset();
+      return;
+    }
+    final px = _ciftDokunusPx;
+    final rel = px == null
+        ? 1.0
+        : ((px - _plotLeft) / _plotWidth).clamp(0.0, 1.0);
+    final odak = _minX + (_maxX - _minX) * rel;
+    final genislik = fullWidth / 2.5;
+    var lo = odak - genislik * rel;
+    var hi = lo + genislik;
+    if (lo < widget.fullMinX) {
+      lo = widget.fullMinX;
+      hi = lo + genislik;
+    }
+    if (hi > widget.fullMaxX) {
+      hi = widget.fullMaxX;
+      lo = hi - genislik;
+    }
+    _setViewport(lo, hi);
+    widget.onViewportChanged?.call(lo, hi);
+  }
+
   void _onScaleStart(ScaleStartDetails details) {
     _setInteracting(true);
     _startMinX = _minX;
@@ -656,6 +726,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
   Widget build(BuildContext context) {
     return Semantics(
       label: widget.semanticLabel ?? context.l10n.chartPriceSemantics,
+      value: widget.semanticValueBuilder?.call(_minX, _maxX),
       image: true,
       child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;
@@ -695,7 +766,8 @@ class _ZoomableChartState extends State<ZoomableChart> {
             // RepaintBoundary: imleç ve balon her karede değişirken çizgi
             // grafiği kendi katmanında kalır, yeniden boyanmaz.
             Positioned.fill(
-              child: RepaintBoundary(
+              child: _IlkCizim(
+                child: RepaintBoundary(
                 child: LineChart(
                   veri,
                   // Hareketi azalt açıkken morf da yok: `swapDuration`
@@ -709,6 +781,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
                       : widget.swapDuration,
                   curve: widget.swapCurve,
                 ),
+              ),
               ),
             ),
 
@@ -750,6 +823,17 @@ class _ZoomableChartState extends State<ZoomableChart> {
                           setState(() => _setInteracting(false));
                         };
                     },
+                  ),
+                  // Çift dokunuş elle sayılır (iki tek dokunuş, aralık
+                  // [kDoubleTapTimeout] ve yakınlık [kDoubleTapSlop]):
+                  // `DoubleTapGestureRecognizer` her dokunuşta bekleme
+                  // zamanlayıcısı kurar ve tek parmak kaydırmanın sonunda
+                  // bile asılı kalıyordu. Tek dokunuşun bu grafiklerde başka
+                  // işi yok, beklenecek bir şey de yok.
+                  TapGestureRecognizer: GestureRecognizerFactoryWithHandlers<
+                      TapGestureRecognizer>(
+                    TapGestureRecognizer.new,
+                    (instance) => instance.onTapUp = _dokunusBitti,
                   ),
                   if (_crosshairEnabled)
                     LongPressGestureRecognizer:
@@ -793,36 +877,49 @@ class _ZoomableChartState extends State<ZoomableChart> {
                 ),
               ),
 
-            // Reset chip'i sadece zoom'luyken üstte
+            // Reset chip'i sadece zoom'luyken üstte.
+            //
+            // Dokunma alanı 44 pt (HIG, 2026-10-12): görünen kapsül küçük
+            // kalır, çevresindeki saydam pay dokunuşu alır. Eskiden kapsülün
+            // kendisi (~26 pt) tek hedefti. Metin çevrilmiş, yazı tokenından.
             if (_isZoomed)
               Positioned(
-                top: 8,
-                right: 8,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(SandikRadius.lg),
+                top: 0,
+                right: 0,
+                child: Semantics(
+                  button: true,
+                  label: context.l10n.filterReset,
+                  excludeSemantics: true,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: _reset,
-                    onDoubleTap: _reset,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: context.c.golge.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(SandikRadius.lg),
-                        border: Border.all(
-                            color: context.c.text36),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.zoom_out_map_rounded,
-                              size: 14, color: context.c.text58),
-                          const SizedBox(width: 4),
-                          Text('Sıfırla',
-                              style: TextStyle(
-                                  fontSize: 11, color: context.c.text58)),
-                        ],
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                          minWidth: SandikTouch.min,
+                          minHeight: SandikTouch.min),
+                      child: Padding(
+                        padding: const EdgeInsets.all(SandikSpace.sm),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: context.c.golge.withValues(alpha: 0.45),
+                            borderRadius:
+                                BorderRadius.circular(SandikRadius.lg),
+                            border: Border.all(color: context.c.text36),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.zoom_out_map_rounded,
+                                  size: 14, color: context.c.text58),
+                              const SizedBox(width: 4),
+                              Text(context.l10n.filterReset,
+                                  style: context.t.labelSmall
+                                      ?.copyWith(color: context.c.text58)),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1001,4 +1098,46 @@ class _DashedLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DashedLinePainter old) => old.color != color;
+}
+
+/// Grafik ekrana İLK geldiğinde soldan sağa çizilerek açılır (2026-10-14): iskelet sönerken çizgi tek karede tam hâliyle
+/// beliriyordu. Ana sayfa Bugün eğrisiyle aynı dil ([SandikMotion.flow] +
+/// [SandikMotion.glide]). `TweenAnimationBuilder` yalnız ilk kurulumda
+/// oynar; dönem/filtre değişimi LineChart'ın kendi morfuyla akar, jest
+/// sırasında kutu dışına taşan bir şey yok.
+/// Hareketi azalt açıkken çocuk doğrudan döner.
+class _IlkCizim extends StatelessWidget {
+  const _IlkCizim({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final sure = SandikMotion.flowOf(context);
+    if (sure == Duration.zero) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: sure,
+      curve: SandikMotion.glide,
+      child: child,
+      // Ağaç biçimi sabit kalır: ClipRect'i söküp takmak LineChart'ın
+      // State'ini sıfırlardı. Oyun bitince kırpma kutunun kendisidir —
+      // çizim zaten kutusunda kalır (`grafik_tasma_ve_yogunluk_test`).
+      builder: (context, t, c) =>
+          ClipRect(clipper: _SoldanKirpici(t), child: c),
+    );
+  }
+}
+
+class _SoldanKirpici extends CustomClipper<Rect> {
+  const _SoldanKirpici(this.oran);
+
+  final double oran;
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTWH(0, 0, size.width * oran, size.height);
+
+  @override
+  bool shouldReclip(_SoldanKirpici eski) => eski.oran != oran;
 }

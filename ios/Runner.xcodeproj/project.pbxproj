@@ -12,6 +12,8 @@
 		5A0D1K0000000000000012 /* SandikLogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000004 /* SandikLogoMark.swift */; };
 		5A0D1K0000000000000033 /* SandikSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000034 /* SandikSparkline.swift */; };
 		5A0D1K0000000000000062 /* SandikHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000063 /* SandikHomeWidget.swift */; };
+		5A0D1K0000000000000070 /* SandikVarlikWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000071 /* SandikVarlikWidget.swift */; };
+		5A0D1K0000000000000072 /* SandikVitrinWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000073 /* SandikVitrinWidget.swift */; };
 		5A0D1K0000000000000013 /* SandikLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000005 /* SandikLiveActivity.swift */; };
 		5A0D1K0000000000000060 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000061 /* GoogleService-Info.plist */; };
 		5A0D1K0000000000000040 /* DMSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000041 /* DMSans-Regular.ttf */; };
@@ -20,6 +22,7 @@
 		5A0D1K0000000000000046 /* DMSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000047 /* DMSans-Bold.ttf */; };
 		5A0D1K0000000000000048 /* DMSans-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000049 /* DMSans-Black.ttf */; };
 		5A0D1K0000000000000014 /* SandikWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000006 /* SandikWidgetBundle.swift */; };
+		5E1A0E000000000000000001 /* SistemEylemleri.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0E000000000000000002 /* SistemEylemleri.swift */; };
 		5A0D1K0000000000000015 /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000009 /* LiveActivityPlugin.swift */; };
 		5A0D1K0000000000000016 /* SandikAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000002 /* SandikAttributes.swift */; };
 		5A0D1K0000000000000030 /* SandikWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000001 /* SandikWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -81,6 +84,8 @@
 		5A0D1K0000000000000004 /* SandikLogoMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLogoMark.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000034 /* SandikSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikSparkline.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000063 /* SandikHomeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikHomeWidget.swift; sourceTree = "<group>"; };
+		5A0D1K0000000000000071 /* SandikVarlikWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikVarlikWidget.swift; sourceTree = "<group>"; };
+		5A0D1K0000000000000073 /* SandikVitrinWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikVitrinWidget.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000005 /* SandikLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLiveActivity.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000061 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		5A0D1K0000000000000041 /* DMSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Regular.ttf; path = Fonts/DMSans-Regular.ttf; sourceTree = "<group>"; };
@@ -91,6 +96,7 @@
 		5A0D1K0000000000000006 /* SandikWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikWidgetBundle.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5A0D1K0000000000000008 /* SandikWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SandikWidget.entitlements; sourceTree = "<group>"; };
+		5E1A0E000000000000000002 /* SistemEylemleri.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SistemEylemleri.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000009 /* LiveActivityPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityPlugin.swift; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
@@ -136,6 +142,8 @@
 				5A0D1K0000000000000004 /* SandikLogoMark.swift */,
 				5A0D1K0000000000000034 /* SandikSparkline.swift */,
 				5A0D1K0000000000000063 /* SandikHomeWidget.swift */,
+				5A0D1K0000000000000071 /* SandikVarlikWidget.swift */,
+				5A0D1K0000000000000073 /* SandikVitrinWidget.swift */,
 				5A0D1K0000000000000005 /* SandikLiveActivity.swift */,
 				5A0D1K0000000000000006 /* SandikWidgetBundle.swift */,
 				5A0D1K0000000000000007 /* Info.plist */,
@@ -201,6 +209,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				5A0D1K0000000000000009 /* LiveActivityPlugin.swift */,
+				5E1A0E000000000000000002 /* SistemEylemleri.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
@@ -389,6 +398,8 @@
 				5A0D1K0000000000000012 /* SandikLogoMark.swift in Sources */,
 				5A0D1K0000000000000033 /* SandikSparkline.swift in Sources */,
 				5A0D1K0000000000000062 /* SandikHomeWidget.swift in Sources */,
+				5A0D1K0000000000000070 /* SandikVarlikWidget.swift in Sources */,
+				5A0D1K0000000000000072 /* SandikVitrinWidget.swift in Sources */,
 				5A0D1K0000000000000010 /* SandikAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -409,6 +420,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 				5A0D1K0000000000000015 /* LiveActivityPlugin.swift in Sources */,
+				5E1A0E000000000000000001 /* SistemEylemleri.swift in Sources */,
 				5A0D1K0000000000000016 /* SandikAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

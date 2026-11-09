@@ -409,6 +409,7 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
     required DateTime from,
     required DateTime to,
     required bool intraday,
+    List<Asset> hamDefter = const [],
   }) {
     final key = '${_view ?? "all"}$_portfoyAnahtari|${_typeFilter?.anahtar ?? "*"}'
         '|$_selectedPeriodIdx|$_simulate|${chartAssets.length}'
@@ -434,6 +435,10 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
         if (e.key >= fromMs && e.key <= toMs) e.key: e.value,
     };
     _zoomKey = key;
+    final disk = intraday
+        ? null
+        : _diskSerisi(
+            hamDefter: hamDefter, chartAssets: chartAssets, from: from, to: to);
     _zoomController = ZoomDataController(
       assets: chartAssets,
       initialFrom: from,
@@ -442,7 +447,88 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       // İki noktadan az kalırsa çizilecek bir şey yok — boş geç ki
       // "veri var" sanılıp bozuk bir çizgi gösterilmesin.
       seedData: seed.length >= 2 ? seed : const {},
+      eldekiSeri: disk?.oku,
+      tazeKaydet: disk?.yaz,
     );
     previous?.dispose();
+    _gunlukSeriyiYayinla();
+  }
+
+  /// Hareket satırlarının "Portföy önce → sonra" değeri bu ekranın ÇİZDİĞİ
+  /// günlük serinin noktalarını okur (`PerformansSeriYayini`, E2E
+  /// 2026-10-29: iki yüzey ayrı anlarda hesaplayınca canlı altın/kur
+  /// hizalaması yüzünden ayrışıyordu). Yalnız satırların sorduğu küme
+  /// yayınlanır: gerçek geçmiş, tür süzgeci yok, günlük katman, yükleme
+  /// bitmiş (tohum önceki katmanın verisi olabilir). Aksi halde yayın geri
+  /// çekilir; satırlar kendi serisine döner. Kapsam değişince eski kapsamın
+  /// yayını da çekilir.
+  void _gunlukSeriyiYayinla() {
+    final c = _zoomController;
+    if (c == null) return;
+    final kapsam = hareketKapsami(
+        kisi: _view, portfoy: ref.read(portfoyKapsamiProvider).secim);
+    final onceki = _yayinKapsami;
+    if (onceki != null && onceki != kapsam) {
+      PerformansSeriYayini.instance.yayinla(onceki, null);
+    }
+    _yayinKapsami = kapsam;
+    final uygun = !_simulate && _typeFilter == null;
+    void yayinla() {
+      if (!identical(_zoomController, c)) return;
+      PerformansSeriYayini.instance.yayinla(
+        kapsam,
+        uygun &&
+                c.settled &&
+                !c.loading &&
+                c.tier == ResolutionTier.daily &&
+                c.data.isNotEmpty
+            ? c.data
+            : null,
+      );
+    }
+
+    c.addListener(yayinla);
+    yayinla();
+  }
+
+  /// Önce-eski-seri (Ar-Ge 2026-10-25 §4, yasin onayı): Performans grafiği
+  /// soğuk açılışta diskteki son portföy serisiyle SOLUK açılır — yalnız
+  /// lot defteri aynıysa. Karar kaydı `PortfoySeriDepo`.
+  ///
+  /// Anahtar kapsamı (kullanıcı, kişi, portföy, tür, dönem, simülasyon),
+  /// imza defteri taşır: lot eklenir/satılır/silinir/düzenlenirse imza
+  /// değişir, kayıt dönmez, ekran bugünkü iskeletle açılır. Gün içi dönem
+  /// bu yoldan geçmez (zoom denetleyicisi zaten gün içinde kurulmaz).
+  ({
+    Future<({Map<int, double> seri, DateTime zaman})?> Function() oku,
+    void Function(Map<int, double>) yaz,
+  })? _diskSerisi({
+    required List<Asset> hamDefter,
+    required List<Asset> chartAssets,
+    required DateTime from,
+    required DateTime to,
+  }) {
+    if (PortfoySeriDepo.kaliciDepo == null ||
+        !PortfoySeriDepo.uygunMu(chartAssets)) {
+      return null;
+    }
+    final uid = ref.read(portfolioProvider).valueOrNull?.ownerId ?? '';
+    if (uid.isEmpty) return null;
+    final donem = _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx];
+    if (donem.intraday) return null;
+    final anahtar = 'perf|$uid|${_view ?? "all"}$_portfoyAnahtari'
+        '|${_typeFilter?.anahtar ?? "*"}|${SummaryPeriod.fromIndex(_selectedPeriodIdx).name}'
+        '|$_simulate';
+    final imza = PortfoySeriDepo.imza(hamDefter, chartAssets);
+    // Denetleyicinin ilk çözünürlüğüyle aynı seçim: tazelik sınırı ona bağlı.
+    final tier = ResolutionTierMeta.pickForSpan(
+        to.difference(from).inMinutes / (60.0 * 24.0));
+    return (
+      oku: () => PortfoySeriDepo.oku(
+          anahtar: anahtar, imza: imza, tier: tier, from: from, to: to),
+      yaz: (seri) => CrashReporter.arkaPlan(
+          PortfoySeriDepo.yaz(anahtar: anahtar, imza: imza, seri: seri),
+          reason: 'PerformanceScreen.diskSerisi'),
+    );
   }
 }

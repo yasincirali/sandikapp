@@ -50,7 +50,7 @@ akşam arama.
 | Fonksiyon | Vault adı | Gövde alanları |
 |---|---|---|
 | `analyze-signals` | `analyze_signals_cron_secret` | `slot` (`hourly`/`morning`/…), `dry_run` |
-| `check-price-alerts` | `price_alerts_cron_secret` | `dry_run`, `watchlist: true` (takip listesi turu) |
+| `check-price-alerts` | `price_alerts_cron_secret` | `dry_run`, `watchlist: true` (takip listesi turu), `turler: ["altin","doviz","kripto"]` (yalnız o türler; yoksa hepsi, 0168) |
 | `daily-brief` | `daily_brief_cron_secret` | `dry_run`, `slot: "evening"`, `min_move_pct` |
 | `weekly-summary` | `weekly_summary_cron_secret` | `dry_run`, `period: "month"`, `user_ids: [...]`, `min_move_pct` |
 | `fetch-inflation` | `inflation_fetch_cron_secret` | `dry_run` (TÜFE günü push'u bu turda) |

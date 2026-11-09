@@ -12,6 +12,541 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-07 Aylık nota kamuya açık haber (0177 + `analiz-hazirla`/`analiz-topla`)
+
+Aylık rapordaki "Önemli gelişmeler" kartları, o ayın kamuya açık haberini
+yapay zekânın kendi cümlesiyle (rakamsız) ve kaynak bağlantısıyla gösterir.
+Sunucuda Anthropic web araması; varlık başına en çok 2 arama, ayrı batch.
+**Varsayılan KAPALI**: secret tanımlanmadıkça aylık not #317 ile birebir aynı.
+
+- [ ] Yayın sırası (Frankfurt, `supabase-deploy.yml` tek dağıtım yeter):
+      1) **0177** (yalnız ekler: `varlik_analizi.haberler/haber_red`,
+      `analiz_batch.amac/maliyet_usd`), 2) **`analiz-topla`**, 3) **`analiz-hazirla`**.
+      ⚠️ Yeni `analiz-hazirla` 0177'siz koşarsa dönem kontrolü (`amac`
+      sütunu) hata verir ve aylık not gitmez; migration önce gitmeli.
+      Eski istemci yeni sütunu hiç okumaz; uygulama build'i beklemez.
+- [ ] Açmak için Supabase › Edge Functions › Secrets: `ANALIZ_HABER_ACIK=1`
+      (tam "1"; başka her değer kapalı). Kapatmak: secret'ı sil ya da `0`.
+- [ ] Anthropic Console › Settings › Capabilities: web search organizasyonda
+      açık olmalı (kapalıysa aramalar hata döner, haber çıkmaz; not etkilenmez).
+- [ ] Maliyet: 300 varlıkta ayda ~12–18 $ (arama 6 $ + token). `ANALIZ_AYLIK_TAVAN_USD`
+      (varsayılan 50) haber maliyetini de sayar; tahminle aşılacaksa haber
+      batch'i gönderilmez, not yine gider.
+- [ ] İlk ay kontrolü: `select ticker, haber_red, jsonb_array_length(haberler) from varlik_analizi where tur = 'aylik' order by donem desc limit 50;`
+      ve `select id, istek_sayisi, maliyet_usd, durum from analiz_batch where amac = 'haber';`
+
+## ⏳ 2026-11-07 Ortak destek adresi `support@murphysoft.app` (0175)
+
+Uygulama, yasal metinler (Gizlilik/KVKK 1.14, Koşullar 1.12, GDPR 1.7,
+Depolama 1.4; yalnız "Sürüm", yeniden onay yok) ve site artık
+`support@murphysoft.app` gösteriyor. Mağaza panelleri Claude'un elinde değil:
+
+- [ ] **App Store Connect** › App Information / App Review Information:
+      destek (iletişim) e-postasını `support@murphysoft.app` yap.
+      Apple ID girişi (`sandikapp.destek@gmail.com`) **değişmez**.
+- [ ] **Play Console** › Mağaza ayarları › Mağaza girişi iletişim bilgileri:
+      e-posta `support@murphysoft.app`.
+- [ ] 0175'i Frankfurt'a yolla (yalnız ekler: üç Türkçe metin satırı).
+      Supabase SMTP göndericisi ve `config.toml` aynen kalır.
+
+## ⏳ 2026-11-07 Mevduat vadesi doldu bildirimi (0174 + `calendar-nudge`)
+
+Vade gününün sabahı (09:30 TR) açık mevduatının son dönemi dolan
+kullanıcıya tek push. Ekleyerek: yeni defter tablosu, yeni tetikleyici ve
+cron işi `calendar-nudge-mevduat-vade`; mevcut anlar değişmez.
+
+- [ ] Yalnız Frankfurt'a, **migration ile fonksiyon AYNI dağıtımda**
+      (`supabase-deploy.yml` önce `db push`, sonra fonksiyonları yollar).
+      ⚠️ Migration gidip `calendar-nudge` fonksiyonu gitmezse eski fonksiyon
+      tanımadığı `deposit_matured` gövdesini TÜFE günü sayar; ayın defteri
+      ikinci TÜFE push'unu durdurur ama dağıtımı yarım bırakma.
+- [ ] Kontrol: `select jobname, schedule, active from cron.job where jobname = 'calendar-nudge-mevduat-vade';`
+      → `30 6 * * *`, `active = true`.
+- [ ] İsteğe bağlı kuru deneme: fonksiyona `{"occasion":"deposit_matured","dry_run":true}`
+      (x-cron-secret ile) → `would_send` / `users` sayısı döner, push gitmez.
+
+## ⏳ 2026-11-06 Tokyo'yu kapatma (duraklat → sil) + Frankfurt yerel yedeği
+
+Neden: Tokyo 18 Ekim'den beri donmuş; verisi bayat, geri dönüş/yedek değeri
+yok, Supabase limitlerini yiyor ve hesabını sonradan silenlerin verisi hâlâ
+Japonya'da. Bu PR deploy'u yalnız Frankfurt'a çevirdi, günlük "Şema eşitliği"
+kontrolünü kaldırdı ve yerel yedek aracını ekledi. Claude Supabase paneline ve
+GitHub secret'larına dokunamaz; aşağıdakiler senin.
+
+Sıra (PR birleştikten SONRA; önce duraklatırsan eski deploy varsayılanı kırmızı döner):
+1. [ ] **RevenueCat** › Project › Integrations › Webhooks: adres
+       `https://ynwymnpdiwudrlxfrmuo.supabase.co/functions/v1/revenuecat-webhook`
+       mi? Tokyo adresiyse Frankfurt'a çevir (yoksa satın almalar Premium'u açmaz).
+2. [ ] **Tokyo › Authentication › Users**, "Created" sırala: 18 Ekim 21:54 UTC (TR
+       19 Ekim 00:54) sonrasında açılmış hesap var mı? Varsa bunlar App
+       Store'daki 1.1.6'yı yeni kurup Remote Config gelmeden kaydolanlar;
+       Frankfurt'ta hesapları yok. Sayıyı Claude'a söyle (genelde 0).
+3. [ ] **İlk yerel yedek** (aşağıdaki "Frankfurt yedeği"), Tokyo'ya dokunmadan önce.
+4. [ ] **Tokyo › Project Settings › General › Pause project.** Free planda
+       90 gün içinde aynı yerden "Restore" ile geri açılır.
+5. [ ] **Remote Config** `sunucu` = `frankfurt` olarak KALIR (App Store'daki
+       1.1.6'nın birincil adresi Tokyo; yeni kurulumu RC Frankfurt'a taşıyor).
+       `min_build_*` değerlerine dokunma.
+6. [ ] **iOS 1.1.7 yayına çıktıktan ve ~30 gün sorunsuz geçtikten sonra**
+       (duraklatmadan en geç 90 gün içinde): Tokyo › Settings › **Delete project**.
+       Ardından GitHub › Settings › Secrets › Actions: **`SUPABASE_DB_PASSWORD`**
+       sil (yalnız Tokyo kullanıyordu). `SUPABASE_ACCESS_TOKEN(_EU)`,
+       `SUPABASE_URL(_EU)`, `SUPABASE_ANON_KEY(_EU)` KALIR (hepsi Frankfurt).
+       Sonra Claude'a "Tokyo silindi" de: deploy'daki `tokyo` seçeneğini,
+       `tool/sema_esitlik.py`'yi ve köprü kodunu temizler.
+7. [ ] Bilgi: Google/Apple giriş ayarlarında Tokyo'nun geri dönüş adresi
+       (`ybdbzouzhzwthjgwlbmk.supabase.co/auth/v1/callback`) kalabilir, zararsız;
+       istersen silme adımında kaldır.
+
+**Frankfurt yedeği (senin bilgisayarında, haftalık).** Frankfurt Free planda,
+Supabase otomatik yedek almıyor. Araç salt okur, `~/sandik-yedek/` altına
+tablo tablo sıkıştırılmış CSV + özet yazar, en yeni 8 yedeği tutar.
+Neden GitHub Actions değil: yedek tüm hesap verisini taşır; GitHub'ın
+makinesinde işlenmesi gizlilik metnine yeni bir üçüncü taraf ve herkese
+yeniden onay kapısı demek. Otomatik ve metin değiştirmeyen yol Supabase Pro
+(25 $/ay, günlük yedek).
+- [ ] Bir kez: `python -m pip install "psycopg[binary]>=3.2"` (taşımada kurulmuştu).
+- [ ] Panel › Frankfurt › Connect › **Session pooler** adresini al (taşımadaki
+      `YENI_DB_URL` ile aynı). Komut İstemi'nde:
+      ```
+      set YEDEK_DB_URL=postgresql://postgres.ynwymnpdiwudrlxfrmuo@<paneldeki-sunucu>:5432/postgres
+      set YEDEK_DB_SIFRE=<veritabanı şifresi>
+      cd C:\projects\PortfoyTakip
+      python tool\yedek\frankfurt_yedek.py al
+      python tool\yedek\frankfurt_yedek.py dogrula %USERPROFILE%\sandik-yedek\<son klasör>
+      ```
+      Çıktıda "YEDEK TAMAM … N tablo, M satır" görmelisin.
+- [ ] Haftalık zamanlama (isteğe bağlı): şifreyi kalıcı ortam değişkenine yaz
+      (`setx YEDEK_DB_URL ...`, `setx YEDEK_DB_SIFRE ...`), sonra
+      `schtasks /create /tn "sandik yedek" /sc weekly /d SUN /st 03:00 /tr "python C:\projects\PortfoyTakip\tool\yedek\frankfurt_yedek.py al"`.
+      Bilgisayar kapalıysa o hafta atlanır.
+- [ ] Felaket günü: yeni boş Supabase projesi → `supabase db push` (tüm
+      migration'lar) → `set HEDEF_DB_URL=...` → `python tool\yedek\frankfurt_yedek.py geri-yukle <klasör> --onay <yeni ref>`.
+      Araç dolu projeye yazmaz; herkes bir kez yeniden giriş yapar. Uygulamayı
+      yeni projeye çevirmek ayrıca RC/derleme işi, Claude'a söyle.
+
+## ⏳ 2026-11-02 ASO: mağaza metinleri ve görünürlük (yasin "yapman gerekenleri yap")
+
+Plan: `/mnt/project-files/sandik-aso/ASO_2026_11.md`. Repo tarafı (Play
+metinleri, iOS açıklama ilk satırları, girilecek ASC değerleri) bu PR'da;
+aşağıdakiler yalnız senin hesabınla yapılabiliyor. Önem sırasıyla:
+
+- [ ] **Play'de herkese açık yayın** (en büyük kaldıraç). Play'de 30 aramanın
+      hiçbirinde yokuz; Türkiye'de telefonların çoğu Android. Play metinleri
+      `store_listing/tr-TR/` (başlık, kısa açıklama, yenilikler bu PR'da güncel).
+- [ ] **1.1.7 App Store gönderiminde** `store_listing/ios/ASO_2026_11.md`
+      tablosundaki ad, alt başlık, anahtar kelime (TR + İngilizce) ve "Bu
+      sürümde yeni" metnini gir. Açıklama: `store_listing/ios/tr/description.txt`.
+- [ ] **Apple Search Ads marka kampanyası**: "sandık" (ı ile) aramasında
+      hiç çıkmıyoruz, metinle çözülmüyor. Exact match `sandık`, `sandık
+      uygulama`, `sandık portföy`; günlük tavan 50–100 ₺, 2 hafta sonra
+      kurulum başına maliyete bak.
+- [ ] **Aboneliği öne çıkar** (App Store Promotion) ve **3 özel ürün
+      sayfası** (altın, temettü, enflasyon): değerler aynı dosyada.
+- [ ] Mağazadaki her yoruma cevap ver (puan sayısı 11; rakip 203).
+
+## ⏳ 2026-11-05 Aralık "Enflasyon günü" görseli Ekim TÜFE'siyle yenilendi
+
+Görsel kaynağı (`store_listing/in_app_events_uretici/sahne.html`, `AYLIK`)
+artık Kasım 2025 – Ekim 2026 (TÜİK Ekim: aylık %2,58, yıllık %29,77). ASC'deki
+Aralık taslağı hâlâ Eylül verisiyle çizilmiş eski görseli taşıyor; onarıcı koşu
+tamamlanmış görsele dokunmadığı için yeni `gorsel_yenile` girdisi eklendi.
+Mağazaya hiçbir şey gönderilmedi.
+
+- [ ] **19 Kasım'dan önce** (yayın başlangıcı): Actions › "App Store
+      etkinlikleri (taslak)" › `uygula` ✔ + `gorsel_yenile` =
+      `enflasyon-gunu-2026-12`. Yalnız Aralık taslağının iki görseli silinip
+      yenisi yüklenir; incelemeye gönderilmez. İstersen Claude'a "Aralık
+      görselini yükle" de, o koşturur.
+- [ ] Taslak zaten incelemeye gönderildiyse Apple görseli değiştirmeye izin
+      vermez: ASC'de taslağı geri çek ya da görseli elle değiştir
+      (PNG'ler: iş özetinin artifact'i veya `node cek.mjs`).
+
+## ⏳ 2026-10-31 (onay senin) App Store tanıtım metni her ayın 3'ünde TÜFE ile
+
+Müşteri raporu 30 Eki #3 (yasin "yap"). İş `asc-tanitim-tufe.yml` her ayın
+3-5'inde koşar, metni iş özetine yazar. Kalıp
+`store_listing/ios/tr/tanitim_tufe.json`; `onay: false` iken mağazaya
+**yazmaz**.
+
+- [ ] 3 Kasım'daki ilk koşunun metnini oku (Actions › "App Store tanıtım
+      metni (TÜFE)" › özet); yıllık oranı TÜİK'in açıkladığıyla karşılaştır.
+- [ ] Uygunsa Claude'a "tanıtım metnini aç" de: `onay` true yapılır, iş
+      elle bir kez "uygula" ile koşulur, sonraki aylar kendiliğinden yazar.
+
+## ⏳ 2026-10-27 (karar senin) Avrupa'daki Türkler: sandık AB mağazalarında görünsün
+
+Ar-Ge 27 Eki #3, yasin: "yapılacaklara ekle". Apple, AB DSA "trader"
+beyanı olmayan uygulamayı AB ülkelerinin App Store'unda göstermiyor;
+beyan 2026-10-01'den beri bekliyor (aşağıdaki 2026-10-01 notu). Almanya,
+Hollanda, Avusturya, Fransa ve Belçika'da Türkiye'de altın/fon tutan büyük
+bir kitle var; uygulama hazır (euro baz para birimi, sunucu Frankfurt'ta).
+Kod değişikliği yok, uygulama ülkeye göre dallanmaz.
+
+- [ ] App Store Connect › Uygulama › **Fiyatlandırma ve Bulunabilirlik**:
+      AB ülkeleri açık mı bak.
+- [ ] Business › **Dijital Hizmetler Yasası**: tacir beyanını doldur.
+      ⚠️ Bireysel geliştiricide adres, telefon ve e-posta AB mağaza
+      sayfasında herkese görünür; görünmesini istemediğin bilgi için önce
+      şirket/iş adresi seçeneğine bak. Bu kişisel bir karar.
+- [ ] Beyan onaylanınca DE, NL, AT, FR, BE'yi bulunabilirliğe ekle.
+- [ ] AB vitrininde sayfanın hangi dilde göründüğüne bak (Türkçe metin
+      görünmüyorsa İngilizce metin zaten hazır). Sonucu thread'e yaz;
+      gerekirse GDPR cümlelerine bakılır.
+
+## ⏳ 2026-10-26 (isteğe bağlı) Fiyat alarmı Odak modunu da delsin
+
+Alarm bildirimi artık acil öncelikle gidiyor; Odak modu açıkken de
+görünmesi için iOS "Zaman Duyarlı Bildirimler" yeteneği gerekir. Kod
+eklenmedi: yetenek uygulama kimliğinde açılmadan eklenirse TestFlight
+imzası kırılır.
+
+- [ ] developer.apple.com › Identifiers › `com.sandik.app` › **Time Sensitive
+      Notifications** işaretle → Save. Profiller CI'da yeniden üretilir.
+- [ ] Bunu yaptığını thread'e yaz; yetki satırı ve `time-sensitive` önemi
+      küçük bir PR'la gelir.
+
+## ⏳ 2026-10-26 Google Search Console: web sitesini kaydet (3 Kasım TÜFE gününden ÖNCE)
+
+Site haritası (`docs/sitemap.xml`) ve paylaşım görselleri hazır. 3 Kasım'da TÜFE
+açıklanınca enflasyon sayfası aranacak; Google'ın sayfayı o güne kadar tanıması için:
+
+- [ ] search.google.com/search-console → **Mülk ekle** → **URL ön eki** (alan adı
+      değil): `https://yasincirali.github.io/sandikapp/`
+- [ ] Doğrulama yöntemi **HTML dosyası**: Google'ın verdiği `googleXXXX.html`
+      dosyasını indir, thread'e ver. Claude onu `docs/`'a ekler (PR + birleşme),
+      sayfa yayınlanınca Console'da **Doğrula**.
+- [ ] Doğrulandıktan sonra Console › **Site haritaları** → `sitemap.xml` yaz → Gönder.
+- [ ] (İsteğe bağlı) URL denetimi → `https://yasincirali.github.io/sandikapp/enflasyon/`
+      → **Dizine eklenmesini iste**.
+
+Not: `robots.txt` bu repodan yazılamaz. Google onu alan kökünde
+(`yasincirali.github.io/robots.txt`) arar; o dosya `yasincirali.github.io`
+reposuna aittir. Gerek de yok: robots.txt olmayınca her şey taranabilir sayılır;
+site haritası Console'dan gönderilir. `docs/indir/` `noindex` taşıdığı için
+haritada yok (yönlendirme kapısı, arama sonucunda yeri yok).
+
+## ⏳ 2026-10-24 Mağaza metni: yatay tam ekran grafik ve çizim (1.1.7 gönderiminde)
+
+> **2026-10-25 güncellemesi:** aynı dosyalara tek varlık widget'ı (ana ekran +
+> kilit ekranı, iOS) ve aramada hızlı hesap ("5 çeyrek kaç TL?") satırları
+> eklendi; tanıtım metni widget'ı öne alıyor. Karakterler: ASC açıklama
+> 3.140 / 3.308, Play 2.744 / 2.661, tanıtım 152 / 161. Aşağıdaki sayılar
+> 24 Ekim'indir; yapıştırma adımları aynı.
+>
+> **2026-10-25 akşam (sadeleştirme):** ASC açıklaması 45 maddeden 5 başlık
+> altında 20 maddeye indi; ilk iki satır altın/döviz sahibine konuşuyor
+> (kuyumcu alış-satış farkı, enflasyon, gerçek kâr). Yeni satırlar
+> "Bozdurursan / Alırsan" iki fiyat ve "Çizdiğin grafiği paylaş"; Play
+> metni kelimeleri koruyup yalnız bu iki satırı aldı. 1.1.7 gönderiminde
+> **dört dosyanın güncel hâlini** yapıştır (eski metni değil). Karakter:
+> ASC 2.375 / 2.322, Play 3.248 / 2.864 (sınır 4.000).
+>
+> **2026-10-30 (Ar-Ge 08:45 #2, "1,2,3 yap"):** 29 Ekim alarm paketi ve
+> Vitrin widget'ı eklendi. ASC açıklamasında BİLDİRİM bölümüne üç alarm
+> satırı (her geçişte, günlük yüzde, grafikte çizgi) ve Vitrin satırı; tanıtım
+> metni alarm ve Vitrin'i öne alıyor; Play "Yenilikler"de "tek dokunuşla
+> yeniden kur" satırı alarm satırına dönüştü. Karakter: ASC 2.363 / 2.506,
+> tanıtım 152 / 161 (sınır 170), Play notu 465 / 497 (sınır 500).
+> Uygulamadaki 1.1.7 notu da aynı (`surum_notlari.dart`, 8 madde).
+
+Metin repoda hazır; mağazadaki build'de olmayanı vaat etmemek için
+**yalnız özelliği taşıyan sürüm (1.1.7 ya da sonrası) gönderilirken**
+yapıştırılır (App Store 2.3.1(a), "mağaza incelemesi = mağaza kullanıcısı").
+
+- [ ] **ASC açıklama** (1.1.7 "Prepare for Submission" sayfasında):
+      Türkçe alana `store_listing/ios/tr/description.txt`, İngilizce (U.S.)
+      alana `store_listing/ios/en/description.txt` (yeni bölüm "YATAY TAM
+      EKRAN GRAFİK VE ÇİZİM"; 2.996 / 3.145 karakter, sınır 4.000).
+- [ ] **Play tam açıklama** (Android yayına çıktığında / 1.1.7 ile):
+      `store_listing/tr-TR/full_description.txt` ve `en-US/` (2.692 / 2.589).
+- [ ] **Tanıtım metni** (sürümsüz, anında değişir): 1.1.7 mağazada
+      **yayına çıktıktan sonra** `store_listing/ios/tr/promotional_text.txt`
+      (140/170) ve `ios/en/` (139/170). Önce yapıştırırsan eski sürümdeki
+      kullanıcı olmayan özelliği okur.
+- [ ] **Anahtar kelime önerisi** (yeni sürümle yayınlanır, 100 sınırı;
+      ASC sayacına bak, Türkçe harfleri bayt sayabilir):
+      - Türkçe: `sandik,borsa,bist,yatırım,döviz,dolar,kur,tefas,kâr,zarar,tüfe,reel,getiri,teknik,analiz,çizim`
+        (94; `birikim`, `varlık`, `gümüş` çıktı. Sayaç izin verirse sona `,trend`).
+        `teknik` + `analiz` ayrı: Apple birleştirir ("teknik analiz").
+      - İngilizce (U.S.): `portfoy,hisse takip,fon takip,kar zarar,reel getiri,tufe,gram altin,yatirim,teknik analiz,cizim`
+        (95; `borsa` Türkçe alanda var, `ons` ve `net worth` çıktı).
+      - Kelimeler `ASO_2026_09.md` kümesinin üstüne kuruldu; iki hafta sonra
+        `aso_siralama.py` ile "teknik analiz", "grafik çizim" sırasına bak.
+- [ ] **Görsel:** `store_listing/SCREENSHOT_PLAN.md` §7 (yatay grafik + iki
+      çizim, demo hesabı). Gerçek cihazda yan çevirip çek, galerinin sonuna koy.
+
+## ⏳ 2026-10-24 Altın, döviz ve kripto alarmları 5 dakikada (0168)
+
+İstemci değişmez; eski sürümler etkilenmez. Yeni cron işi
+`check-price-alerts-hizli` eski 30 dakikalık işin açık/kapalı durumunu alır
+(Frankfurt'ta kapalı, Tokyo'da açık doğar).
+
+- [ ] Sıra: önce `check-price-alerts` fonksiyonu (iki sunucu), sonra 0168
+      migration'ı. Ters sıra kırıcı değil: eski fonksiyon `turler`'i bilmez ve
+      5 dakikada bir HER alarmı değerlendirir (BIST/fon için gereksiz Yahoo/TEFAS
+      isteği), ama tek atış damgası tekrar bildirimi önler.
+- [ ] Bir gün sonra: `select jobname, status, count(*) from cron.job_run_details d
+      join cron.job j using (jobid) where j.jobname like 'check-price-alerts%'
+      and start_time > now() - interval '1 day' group by 1, 2;` → hızlı iş
+      ~140 satır, hepsi `succeeded`.
+
+## ⏳ 2026-10-23 Yumuşak güncelleme kartı (Remote Config)
+
+Yeni build'de ana sayfada kapatılabilir "Yeni sürüm hazır" kartı var. Hiçbir
+şeyi kilitlemez; zorunlu kapı (`min_build_*`) ayrı kalır. Anahtar tanımsızken
+kart görünmez, yani bugün hiçbir şey değişmez.
+
+- [ ] Console'da iki **sayı** anahtarı oluştur, varsayılan `0`:
+      `onerilen_build_ios`, `onerilen_build_android`.
+- [ ] Bir düzeltme mağazada **yayına çıktıktan sonra** (incelemede değil)
+      o build'in numarasını yaz ve Publish. iOS'ta build numarası
+      (ör. 1785274515), Android'de versionCode (ör. 248). İncelemedeki
+      build'i yazarsan kullanıcı mağazada güncelleme bulamaz.
+- Kartı kapatan kullanıcı aynı numarayı bir daha görmez; daha yeni bir
+  numara yazınca yeniden görür.
+
+## ⏳ 2026-10-22 Veritabanı: bir kez yer geri alma (isteğe bağlı)
+
+0167 Zirve varlık ölçümlerini 7 güne indirdi (okuyan her yer zaten son 24
+saate bakıyordu); tablo bundan sonra büyümez. Silinen ve şişmiş satırların
+yeri Postgres'in içinde kalır, diske dönmez. Diske geri vermek için Frankfurt
+SQL Editor'da **her satırı ayrı çalıştır** (birlikte çalışırsa 25001 hatası):
+
+- [ ] `vacuum full public.user_roi_snapshots;` (870 satır için 3,4 MB)
+- [ ] `vacuum full cron.job_run_details;` (9 satır için 3,1 MB)
+- [ ] `vacuum full public.zirve_allocation_snapshots;`
+
+Her biri saniyenin altında biter; veri değişmez. Sonra Actions ›
+"Veritabanı boyutu" çalıştırıp yeni boyuta bak.
+
+## ⏳ 2026-10-20 Bayrak emekliliği, 1. parti (yalnız kod)
+
+Mağazada uzun süredir açık beş bayrak koddan kalktı; özellik artık koşulsuz:
+`donem_hafizasi`, `portfoy_dagilim_cubugu`, `genel_arama`,
+`tur_secici_izgara`, `mevduat_banka_secici`. Yeni build'de davranış
+değişmez (zaten açıktı).
+
+- [ ] Console'da bu beş anahtarı **silme ve `true` bırak**: telefonlardaki
+      eski build'ler hâlâ okuyor; silinirse kod varsayılanı `false`'a düşer
+      ve eski sürümde özellik kapanır. Eski sürümler kullanımdan düşünce
+      (Analytics'te sürüm dağılımına bak) silinebilir.
+
+## ⏳ 2026-10-19 Zirve varlık oranları + Premium kapısı (0158, yasal metin 1.13)
+
+Zirvedeki portföyler varlık bazında (sembol + oran) görünür; içeride olanlar
+(`ilk_uye`) tam görür, yeni katılım ve ayrıntı Premium. Sunucu değişikliği
+ekleyerek: eski build eski RPC'yi okur, değişmez.
+
+Yayın sırası (birleştirmeden sonra, iki sunucu; Frankfurt canlı):
+1. [ ] Supabase deploy: migration **0158** (Frankfurt → Tokyo). `ilk_uye`
+       bayrağı o an rızası etkin olan herkese yazılır; geç kalınırsa arada
+       katılan da "ilk üye" sayılır (zararsız, yalnız cömert).
+   Aynı deploy'da **0162** (`assets.maliyet_bilinmiyor`, boş geçilebilir
+       kolon; yoksa uygulama sütunsuz yeniden dener, eski build görmez).
+2. [ ] Ardından `leaderboard-snapshot` fonksiyonu (iki sunucu). Önce fonksiyon
+       giderse yeni kolon olmadığı için yazma kırılır; sıra önemli.
+3. [ ] Yasal metin 1.13 (Gizlilik/KVKK), Koşullar 1.11, Açık Rıza 1.6, Zirve
+       rızası 2026-10-20: "Onay sürümü" artmadı, genel yeniden onay kapısı
+       açılmaz. Zirve katılımcısı listede yeni Zirve metnini bir kez onaylar;
+       onaylamayanın sembolleri başkasına görünmez.
+4. [ ] Karar bekliyor: Zirve rızasındaki sembol paylaşımı için avukat
+       görüşü istenecek mi (açık "Zirve rızası avukat" kararı).
+
+## ⏳ 2026-10-20 İyileştirme raporu: sunucu tarafı (0159 + iki fonksiyon)
+
+Rapor: https://claude.ai/artifact/UpzWDoUeGUn8yBozCCVde6
+
+- [ ] PR birleşince Actions › **Supabase deploy** (main, hedef `ikisi`,
+      migrations: true, functions: `portfoy-yorumla,ekstre-esle`). Sıra önemli
+      değil ama migration önce gider: iki fonksiyon 0159'un `ai_hiz_kapisi` ve
+      `ekstre_sablon_hata_bildir` RPC'lerini çağırır; RPC yoksa AI isteği 503
+      döner (para harcanmaz, kullanıcı "şu an olmadı" görür).
+- [ ] Deploy'dan sonra her iki projede bir kez (SQL Editor, tek ifade):
+      `vacuum full public.snapshots;` — 0159 35 günden eski anlık görüntüleri
+      günde bir noktaya indirir; silinen yer diske ancak vacuum'la döner.
+- [ ] Bilgi: `supabase-deploy.yml`'in `sql` girdisi artık gerçekten salt okunur
+      (`read_only`), tek ifade kabul eder ve e-posta/telefon gibi kişisel veri
+      kolonu adı geçen sorguyu çalıştırmaz (log herkese açık).
+- Eski sürümler etkilenmez: `db_logs` tavanı hata fırlatmaz, sessizce atlar;
+  anlık görüntü okuyan yüzeyler pencerenin ilk/son değerini kullanır.
+
+## ⏳ 2026-10-17 Dönem özeti anahtarı (bayraksız) + takip listesinde fon hareketi
+
+- [x] Remote Config'te bir şey yapma: anahtar bayraksız geldi (yasin
+      2026-10-17, "her özelliği kapatma"). Ayarlar › Bildirimler'de brifing
+      saatinin altında "Dönem özeti bildirimleri"; kapatınca haftalık + aylık
+      özet push'u gelmez. RC'de `ozet_bildirimi_anahtari` oluşturduysan silebilirsin.
+- [ ] Takip listesi fon hareketi bayraksız: `check-price-alerts` fonksiyonu
+      iki sunucuya dağıtılır (Claude, birleştirmeden sonra Supabase deploy). Fon izleyen
+      kullanıcı fon günde ≥%2 oynadığında hafta içi 18:25 TR'de mevcut
+      "Takip listende" push'unu alır; hisse eşiği %5 aynı.
+
+## ⏳ 2026-10-14 App Store 2.3.1(a): test kitlesi kurulum kanalıyla değil hesapla
+
+Apple "inceleme ortamını tespit edip Remote Config ile farklı davranma"yı
+gizli özellik sayıp reddediyor. #173'ten beri uygulama `dagitim` sinyaliyle
+TestFlight'ı ayırıyordu; inceleme cihazı da TestFlight gibi göründüğü için
+inceleyen kişi "TestFlight 1.1.6" değerlerini (paywall, Frankfurt) görürdü.
+Yeni build `dagitim` göndermez; oturumdaki hesabın UUID'sini `hesap`
+sinyali olarak gönderir. Yasal metin değişmez: hesap kimliği Firebase'e
+(Analytics) zaten gidiyor, Açık Rıza Metni "uzaktan ayar"ı sayıyor.
+
+Sıra (yeni build TestFlight'a çıkınca, mağazaya göndermeden ÖNCE):
+1. [ ] Testçi hesap UUID'lerini topla (Supabase › Authentication › Users,
+       e-postayla ara; salt okunur). Tokyo ve Frankfurt'ta UUID aynı.
+       **App Review demo hesabını listeye KOYMA.**
+2. [ ] Firebase › Remote Config › Conditions › **Yeni koşul "Test kitlesi"**:
+       Custom signal › anahtar `hesap` › *exactly matches* › UUID'ler
+       (küçük harf). Save.
+3. [ ] "TestFlight 1.1.6" koşulunda değeri olan HER parametreye aynı değeri
+       "Test kitlesi" koşulu için de gir (`sunucu`=frankfurt,
+       `premium_hediye_kesim`, `paywall_enabled`, test bayrakları…).
+       Koşul sırasında "Test kitlesi" üstte olsun. **Publish changes.**
+4. [ ] Yeni build'le TestFlight'ta giriş yap: birkaç saniye içinde
+       "yeniden başlat" (Frankfurt) gelmeli, test bayrakları açık olmalı.
+       Çıkış yapınca bir sonraki fetch'te mağaza değerlerine döner.
+5. [ ] Testçiler yeni build'e geçince "TestFlight 1.1.6" koşulunu ve ona
+       bağlı değerleri SİL (eski build'ler hâlâ `dagitim` gönderir;
+       silinince onlar mağaza değerlerini alır). Mağaza gönderiminden önce.
+6. [ ] Android testçileri de aynı listeye eklenebilir; ayrı "Android test"
+       koşulu artık gerekmez.
+
+## ⏳ 2026-10-13 Ekran görüntüsünden maliyet (bayrak `ekran_goruntusu_maliyet`, Premium)
+
+İçe aktarma ekranında "Ekran görüntüsünden ekle" (ekstre okunduysa "Maliyetleri
+ekran görüntüsünden doldur"): banka/aracı kurum uygulamasının portföy ekranından
+adet ve ortalama maliyet telefonda okunur (iOS Vision, Android ML Kit). Sunucu,
+migration ve yasal metin değişikliği YOK; görüntü telefondan çıkmaz.
+Ayrıntı: `docs/EKSTRE_MOTORU.md` "Ekran görüntüsünden maliyet".
+
+- [ ] TestFlight'ta dene: Remote Config `ekran_goruntusu_maliyet` (Boolean,
+      varsayılan `false`) → "TestFlight 1.1.6" koşulunda `true` → Publish.
+      Koşulun custom signal değeri `kapali` duruyorsa önce `testflight` yap.
+      Varsayılanı değiştirme.
+- [ ] Kendi banka/aracı kurum uygulamalarından birkaç ekran görüntüsüyle dene;
+      okunmayan bir düzen olursa görüntünün maskeli hâlini (ad/hesap no
+      kapalı) thread'e at, kuralı ona göre genişletirim.
+- [ ] Bilinen sınır: Android'de bankaların çoğu uygulamasında ekran görüntüsü
+      engelli (FLAG_SECURE); orada iPhone ya da aracı kurumun web ekranı gerekir.
+- [ ] İlk Android kurulumunda ML Kit modeli Play hizmetlerinden iner; inmeden
+      denenirse "Görüntü okunamadı" çıkar, biraz sonra yeniden dene.
+
+## ⏳ 2026-10-13 SANDIK X (Twitter) hesabı — günlük taslak + Telegram onayı (0146)
+
+Kod dalda, **her şey kapalı**: `x-paylas` `X_BOT_MODU` secret'ı olmadan 503 döner,
+uygulama hiçbir şey görmez, kullanıcı verisi kullanılmaz (yasal metin değişmez).
+Fizibilite + içerik kuralları: proje klasörü `twitter-bot/fizibilite.md`.
+Önizleme: https://claude.ai/artifact/GPwtuCmf67XGZnAA97G63J
+
+Akış: hafta içi TR 19:40 taslak (Cuma haftanın özeti, TÜİK günü TÜFE) → Telegram'da
+sana kart + metin + **Yayınla / Reddet** → onay X'e gider. 36 saatte onaylanmayan bayatlar.
+
+- [x] Birleşince Supabase deploy (hedef `ikisi`, `include_all=true` çünkü 0147/0148 önce girdi; migration 0146 + `x-paylas`, `x-onay`) — Claude yapar.
+- [ ] **Telegram (onay kanalı, 2 dk):** @BotFather → `/newbot` → token. Bota bir kez
+      `/start` yaz (bot sana ilk mesajı ancak böyle atabilir). Kendi sohbet kimliğin:
+      @userinfobot.
+- [ ] Supabase › Edge Functions › Secrets — **yalnız canlı proje (Tokyo)**; iki projede
+      birden açılırsa iki sunucu aynı Telegram botunun webhook'unu birbirinden kapar.
+      Frankfurt'a taşınırken secret'lar taşınır, webhook ilk turda kendini kaydeder.
+      `X_BOT_MODU=taslak`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`,
+      `TELEGRAM_WEBHOOK_SECRET` (32+ karakter, yalnız harf/rakam/`_`/`-`).
+      Bu aşamada onay **X'e göndermez**; 1–2 hafta taslakları beğen/reddet.
+- [ ] **X hesabı:** "sandık" hesabını aç; profil + kapak görseli `twitter-bot/gorseller/`.
+      Bio: "Piyasanın günlük özeti: fon akışı, enflasyon. Sayılarla, sade. Kaynaklar:
+      TEFAS, TÜİK. Yatırım tavsiyesi değildir." Ayarlar › Hesabın › Otomasyon'dan
+      **"Otomatik hesap" etiketini** kendi kişisel hesabına bağla (X kuralı).
+- [ ] **X Developer** (developer.x.com, bot hesabıyla giriş): uygulama oluştur, kullandıkça
+      öde kredisi yükle (10 $ ≈ 600 gönderi). User authentication › **Read and write**,
+      OAuth 1.0a. Keys and tokens: API Key/Secret + Access Token/Secret (bot hesabının).
+- [ ] Secrets (Tokyo): `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`,
+      sonra `X_BOT_MODU=yayin`. Bundan sonra "Yayınla" X'e atar.
+- [ ] İsteğe bağlı (2026-10-15): `X_BOT_MODU=otomatik` → taslak onaysız X'e gider, Telegram'a
+      yalnız "Otomatik yayınlandı: link" gelir. Geri dönüş: `yayin` (onaylı).
+- [ ] Sabah gönderisi (0153, 2026-10-15): hafta içi 09:30, Pazartesi haftanın takvimi, diğer
+      günler dünün fon getirileri. Ayar gerekmez; akşamla aynı `X_BOT_MODU`'yu kullanır.
+      Takvim yalnız `x_takvim` tablosundaki doğrulanmış olaylardan yazılır (Ekim–Aralık 2026:
+      TCMB ve Fed kararları, Enflasyon Raporu). TÜİK/BLS TÜFE günleri ve 2027 takvimi
+      eklenmedi: resmi takvimden doğrulanınca yeni migration ile eklenir (iki sunucu).
+      Olay olmayan Pazartesi fon getirisi atılır.
+- [ ] Petrol (0157, 2026-10-19): Cuma özetine Brent satırı için ücretsiz EIA anahtarı al
+      (https://www.eia.gov/opendata/register.php) ve **iki sunucuya** `EIA_API_KEY` olarak gir.
+      Anahtar yokken satır atlanır. ABD işsizlik/istihdam ve etiketler ayar istemez.
+- [ ] Altın/dolar (karar): `X_KUR_IZINLI=1` açılırsa Salı–Cuma sabah kartı "dünün piyasası"
+      olur (gram altın, dolar, euro + fon kategorileri) ve Cuma özetine kur satırları girer.
+      Veri truncgil'den; kamuya yeniden yayın hakkı belirsiz, karar senin.
+- [ ] İsteğe bağlı: `X_KUR_IZINLI=1` (haftalık karta gram altın/dolar/euro — truncgil
+      verisinin kamuya yayın hakkı belirsiz, kararı senin); `X_BOT_AI=0` (model yerine
+      şablon metin; maliyet sıfır).
+- [ ] Karar (önerilir): sermaye piyasası avukatına tek seferlik "olanı anlatan, yönlendirmeyen
+      otomatik veri hesabı" görüşü.
+
+## ⏳ 2026-10-13 Ekstre metin yolu + banka şablonu hafızası (0147, bayrak `ekstre_metin_yolu`, Premium)
+
+"Yapay zekâyla eşle" kelimeleri açık metni yollar (rakamlar yine gizli), önce Haiku 5.5;
+okunan banka düzeni şablon olarak saklanır, aynı düzen bir daha modele gitmez.
+Kapalıyken istek birebir eski (anonim iskelet, Sonnet). Ayrıntı: `docs/EKSTRE_MOTORU.md`.
+
+- [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `ekstre-esle`).
+- [x] **Yasal metin (2026-10-14, 0149):** Gizlilik 1.11 §5.4 + KVKK 1.11 §5.2 metin yolunu
+      ve banka şablonunu anlatır; yalnız "Sürüm" arttı, kimseye onay ekranı çıkmaz.
+      `ekstreAiRizaSurumu` = `2026-10-14`. Açık Rıza Metni'ne bölüm EKLENMEDİ: o belgede
+      "Onay sürümü" satırı yok, her sürüm artışı herkese rızayı yeniden okuturdu; rıza
+      zaten ilk kullanımda kartla alınıyor.
+- [ ] Önce yalnız kendi cihazında dene: Remote Config `ekstre_metin_yolu` (Boolean,
+      varsayılan `false`) → kendi test koşulunda `true`. Varsayılanı değiştirme.
+- [ ] Bakım: Supabase SQL (salt okunur) `select model, count(*), sum(maliyet_usd) from
+      ekstre_esleme_kaydi group by 1;` — `sablon` satırları modelsiz okunan dosyalardır.
+
+## ⏳ 2026-10-13 AI portföy yorumu — Özet'te geçen hafta / geçen ay (0145, Premium; bayrak 2026-11-02'de kalktı)
+
+Kod ve şema main'de. Uygulama tarafı 2026-11-02'den beri açık (Premium görür, ücretsiz
+kilitli görür); fonksiyon `PORTFOY_YORUM_ACIK` secret'ı olmadan 503 döner, kart "şu an
+kullanılamıyor" der. Yeniden onay kapısı açılmaz (rıza ilk kullanımda). Tasarım: https://claude.ai/artifact/DMeJXyFCGt2Ff4vjUgRb6z
+
+- [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations + fonksiyon `portfoy-yorumla`).
+- [x] **Yasal metin (2026-10-14, 0149):** Gizlilik 1.11 §5.5 (+ §3.2, §4, §5, §6, §7, §12),
+      KVKK 1.11 §5.2, Koşullar 1.9 (yatırım tavsiyesi değildir). Rıza ilk kullanımda kartla
+      alındığı için (13 Ekim istisnası) yalnız "Sürüm" arttı, "Onay sürümü" ve Açık Rıza
+      Metni aynı; kimseye yeniden onay ekranı çıkmaz. `portfoyYorumRizaSurumu` = `2026-10-14`.
+      Migration 0149 iki sunucuya gidince tamam.
+- [x] **30 örnek karşılaştırması → gerçek kullanımdan ölçüm (2026-10-14).** Ayrı test
+      koşulmuyor, GitHub'a anahtar eklenmiyor. TestFlight'ta birkaç hafta sonra Haiku'nun red
+      oranı `portfoy_yorumlari`'ndan (salt okunur SQL) ölçülür; %10'u geçerse haftalık
+      Sonnet'e geçer (`_shared/portfoy_yorum.ts` › `MODEL`).
+- [ ] **Seçili dönem + varlık detayı + ekonomist üslubu (2026-10-14, 0151 + 0152).** Kartın ilk
+      sekmesi Performans'ın seçili dönemi (1H…5Y), varlık detayında da aynı kart; yorum
+      enflasyon, dolar, altın, BIST 100 kıyası ve oynaklıkla yazılır (Sonnet 5.5). Yorum gün
+      başına saklanır, 7 gün tutulur. Günlük hak varsayılanı 3 → 10. Yasal metin Gizlilik/KVKK
+      1.12, Koşullar 1.10 (yalnız "Sürüm"). **Sıra:** birleşince Supabase deploy (hedef
+      `ikisi`, migrations **ve** fonksiyon `portfoy-yorumla` birlikte; önce 0151 sonra
+      fonksiyon). Fonksiyon 0151'siz giderse yeni kolonlara yazamaz; eski build'ler etkilenmez.
+- [ ] Supabase › Edge Functions › Secrets (iki proje): `PORTFOY_YORUM_ACIK=1`.
+      İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 10; 0151'e kadar 3), `PORTFOY_YORUM_AYLIK`
+      (kişi başı takvim ayında yeni yorum, varsayılan 30; yasin 2026-11-02), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
+      (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur). Aylık sınır fonksiyonla
+      gelir: birleşince Supabase deploy (functions açık) yoksa eski fonksiyon yalnız günlük sınırı uygular.
+- [x] ~~Firebase Remote Config: `portfoy_ai_yorumu`~~ **Bayrak kalktı (2026-11-02,
+      yasin: "kitleden bağımsız… tüm free ve premium kişilerde olması gerektiği gibi
+      durmalı").** Kart paywall'un diğer özellikleri gibi kodla gelir: Premium görür,
+      ücretsiz hesap kilitli görüp paywall'a gider. Console'daki anahtar artık okunmaz,
+      silinebilir. Sunucu kapısı durur: yukarıdaki `PORTFOY_YORUM_ACIK=1` secret'ı
+      girilmeden Premium kullanıcı "Yapay zekâ yorumu şu an kullanılamıyor" görür —
+      secret, paywall ön kontrolünde (`tool/paywall_on_kontrol.py`) zorunlu listede.
+
+## ⏳ 2026-10-12 Zirve: "Neden henüz havuzda değilsin?" kartı (0144)
+
+Yalnız ekleme; eski uygulama sürümleri etkilenmez, sıra serbest.
+- [ ] Birleşince Supabase deploy (hedef `ikisi`, migrations açık) → **0144** iki sunucuya.
+  Fonksiyon dağıtımı gerekmez. 0144 gitmeden yeni build kartı göstermez (eski ekran kalır).
+
+## ⏳ 2026-10-12 Perplexity MCP (bulut oturumları)
+
+Kurulum betiği hazır; çalışması için Project settings › Cloud environment › ortamın dişlisi:
+- [ ] **Ortam değişkeni** `PERPLEXITY_API_KEY` = Perplexity API anahtarın (perplexity.ai › API). Sohbete yapıştırma.
+- [ ] **Ağ erişimi:** Allowed domains'e `api.perplexity.ai` ekle (ya da daha geniş erişim seviyesi).
+- [ ] Sonra açılan yeni thread'de `perplexity` sunucusu ve 4 aracı (`perplexity_ask/_search/_reason/_research`) görünür.
+
 ## ⏳ 2026-10-11 Mağazaya 1.1.6: paywall KAPALI çıkış → sonra açılış → Frankfurt
 
 Senin kararın (11 Ekim): GİB 20/B yazısı ve banka hesabı bitene kadar
@@ -38,7 +573,10 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
       `portfoy_dagilim_cubugu`, `varlik_detay_katmanli`, `donem_hafizasi`,
       `sinyal_on_ayar`, `ekstre_hareketleri`, `satis_gunu_kuru`,
       `hafta_sonu_yurt_ici_seri`, `canli_etkinlik_dakikalik`
-      (`kayit_hunisi` senin kararın). TestFlight'ta hiç açık olmamış biri
+      (`kayit_hunisi` senin kararın). `tur_secici_izgara`,
+      `mevduat_banka_secici`, `genel_arama`, `portfoy_dagilim_cubugu`,
+      `donem_hafizasi` 2026-10-20'de koddan kalktı; Console'da eski
+      sürümler için `true` kalır. TestFlight'ta hiç açık olmamış biri
       varsa açmadan önce bir dene.
 - [ ] Sunucu `premium_ayar.kapi_acik` **false** kalır (dokunma).
 - [ ] App Store Connect'te sürüm sayfasındaki **"In-App Purchases and
@@ -63,20 +601,24 @@ denedin (koşul `kapali`, admin olmayan hesap): "bu versiyonla ok".
 
 **B. Paywall'ı açma (GİB yazısı + hesap hazır olunca)**
 
-1. [ ] Yeni bir mağaza sürümü gönder; "In-App Purchases and Subscriptions"
-       bölümüne iki ürünü ekle. İnceleme notu: paywall'a nasıl ulaşılır
-       (ör. bir test hesabı + Profil › Premium). İnceleyicinin paywall'ı
-       görebilmesi gerekir; nasıl açılacağını o gün birlikte planlarız
-       (Claude'a sor).
-2. [ ] Ürünler onaylanınca yukarıdaki **"PAYWALL AÇILIŞ GÜNÜ"** listesi
-       sırasıyla: hediye SQL (iki sunucu) → `premium_hediye_kesim` aynı tarih
-       → `paywall_enabled` önce %20 sonra herkes → en son
-       `update public.premium_ayar set kapi_acik = true;` (iki sunucu).
-3. [ ] Acil kapatma (ilk satıştan sonra): RC `premium_enabled = false` +
-       `kapi_acik = false`. `paywall_enabled = false` ödeyenden de Premium'u
-       alır; yalnız ilk satıştan önce kullanılır.
-4. [ ] TestFlight testçi kesimi (`2020-01-01`, yalnız TestFlight koşulunda)
-       yerine gerçek kesim; `testci_muafiyeti` satırlarına karar ver.
+2026-11-01 (yasin: "rc flagleriyle yönetmemeye çalışalım"): paywall artık
+Remote Config'le açılmaz. 1.1.7 build 1785274601'den itibaren kodda açık (iOS; Android
+RevenueCat kurulunca), acil kapatma sunucuda (0172). **Hediye yok** (yasin
+2026-11-01 22:53: eski kullanıcı da yeni gibi görür): hediye SQL'i ve kesim adımı
+kalktı; `erken_kullanici_hediyesi_ver` ve `hediye_kesim` kolonu durur, uygulama okumaz.
+Güncel adım listesi tek yerde: `/mnt/project-files/paywall/acilis_listesi_1.1.7.md`.
+
+1. [ ] Yeni 1.1.7 build'ini gönderirken "In-App Purchases and Subscriptions" bölümüne iki
+       ürünü ekle; demo hesabı sıradan hesap (kilitleri görür); inceleme notu:
+       Profil › Sandık Premium.
+2. [ ] Apple onaylayınca Release → en son
+       `update public.premium_ayar set kapi_acik = true;` (Frankfurt).
+3. [ ] Acil kapatma (ilk satıştan sonra):
+       `update public.premium_ayar set acil_kapali = true, kapi_acik = false;`
+       → kilitler kalkar, ödeyenin hakkı korunur.
+4. [ ] Balina/hacim radarı herkese açılacaksa `kripto-hacim-saatlik` işini
+       yeniden saatliğe al (0164 onu paywall kapalıyken 6 saate indirdi):
+       Claude'a "kripto hacmini saatliğe döndür" de, yeni migration yazar.
 
 **C. Tokyo → Frankfurt geçişi (1.1.6 mağazaya çıktıktan sonra)**
 
@@ -132,7 +674,7 @@ secret'ları) yerine BU geçer.
 
 1. [ ] **Hediyeyi ver** (Supabase SQL Editor, önce Tokyo sonra Frankfurt —
        iki sunucu birebir):
-       `select public.erken_kullanici_hediyesi_ver('<KESİM>', 90);`
+       `select public.erken_kullanici_hediyesi_ver('<KESİM>', 90, 14);`
        `<KESİM>` = açılış anı, ör. `2026-11-01T00:00:00+03`. Dönen sayı
        yaklaşık kayıtlı kullanıcı sayın olmalı.
 2. [ ] **Aynı kesimi Remote Config'e yaz:** `premium_hediye_kesim` (String)
@@ -533,7 +1075,7 @@ o koşmalı.
       `premium_ayar.kapi_acik` kapalıyken birebir eski davranır; erken
       dağıtmak güvenli.
 - [ ] Açılış sırası (değişmedi, kapının görevi büyüdü):
-      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
+      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90, 14);` →
       `paywall_enabled` (Remote Config, yayılsın) →
       `update public.premium_ayar set kapi_acik = true;`. Kapı artık
       sinyali de keser: açıkken yalnız Premium (hak ya da admin) sinyal alır.
@@ -582,8 +1124,8 @@ etkilemeden; seçilen bankanın aylık/yıllık brüt faizi varsayılan, müşte
       çıkan satırın seri kodu TCMB'de farklıdır; doğru kod EVDS katalogundan
       okunup tek UPDATE ile düzeltilir (deploy gerekmez). O satır düzelene
       kadar o vadede öneri yazılmaz, form bugünkü gibi boş gelir.
-- [ ] Remote Config'e `mevduat_banka_secici` (Boolean, varsayılan `false`,
-      TestFlight koşulu `true`). İlk tur `ok` vermeden açma: liste gelir ama
+- [x] ~~Remote Config'e `mevduat_banka_secici` (Boolean, varsayılan `false`,
+      TestFlight koşulu `true`).~~ Bayrak 2026-10-20'de koddan kalktı. İlk tur `ok` vermeden açma: liste gelir ama
       faiz önerisi boş kalır.
 - [ ] TestFlight'ta dene: Varlık Ekle → Mevduat → Banka alanına dokun →
       listeden seç; faiz ve aylık dolsun; vadeyi değiştir, faiz değişsin;
@@ -621,8 +1163,8 @@ kartına dokunulmadı.
       bağlanır. Açınca: Portföy listesinde ve hareketlerde hisse/fon/kripto
       satırında tür ikonu yerine sembol (ASE, DLY, BTC) rozeti; varlık
       sayfasındaki büyük fiyatta ve Portföy küçük halkasının ortasında
-      değişen hane döner, ₺ ve kuruş küçük ve soluk. Halka için
-      `portfoy_dagilim_cubugu` da açık olmalı.
+      değişen hane döner, ₺ ve kuruş küçük ve soluk. (Küçük halka
+      2026-10-20'den beri koşulsuz; `portfoy_dagilim_cubugu` kalktı.)
 - [ ] TestFlight'ta dene: piyasa açıkken bir hisse sayfasında fiyat yenilenince
       yalnız değişen hane dönmeli; iOS'ta "Hareketi azalt" açıkken dönmemeli.
 - 2026-10-09 B paketi + rozet yayılımı aynı bayrağa eklendi (yeni bayrak
@@ -750,6 +1292,8 @@ detayıyla aynı kural — hata düzeltmesi).
         aylık rapor, yıl özeti, Sıralama).
       - `genel_arama` — Ana ekranda Yenile yerine Ara (varlıklarım, piyasa,
         eylemler); yenileme aşağı çekerek.
+      (2026-10-20: `donem_hafizasi`, `portfoy_dagilim_cubugu`, `genel_arama`
+      koddan kalktı, koşulsuz.)
 - [ ] Denedikten sonra hangilerinin herkese açılacağını söyle; açılanlar için
       sürüm notu + tanıtım turu adımı (CLAUDE.md "Yenilikler") ayrıca yazılır.
 
@@ -815,9 +1359,8 @@ Sıra önemli:
 - [ ] Bayrakları önce kendi cihazında (TestFlight koşulu) aç:
       `abd_hisse` → `varlik_masraflari` → `eurobond`. `eurobond`'u fiyat
       tablosu dolmadan açma: eklenen lot fiyatsız kalır.
-- [ ] Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI): Varlık
-      Ekle'de arama + gruplu tür ızgarası. Sunucu işi yok; önce kendi
-      cihazında aç, kapalıyken çip satırı birebir eski.
+- [x] ~~Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI)~~:
+      bayrak 2026-10-20'de koddan kalktı, ızgara koşulsuz.
 - [ ] Karar (bende varsayılan): eurobond değeri **piyasa fiyatından**
       (Frankfurt temiz + işlemiş faiz); Ziraat alış fiyatı yalnız "bankaya
       satarsan" satırında. Banka alış fiyatıyla değerleme istersen söyle.
@@ -989,7 +1532,7 @@ Yayın sırası (sıra önemli):
       (`paywall_screen.dart`); RevenueCat SDK'sı senin kararını bekliyor.
       Sunucu hazır: `revenuecat-webhook` için `REVENUECAT_WEBHOOK_SECRET` ve
       `REVENUECAT_API_KEY`. Açılış günü sırası:
-      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
+      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90, 14);` →
       `paywall_enabled` (Remote Config, yayılsın) →
       `update public.premium_ayar set kapi_acik = true;`. Sıra önemli:
       kapı önce açılırsa bayrağı henüz almamış ücretsiz kullanıcı notu
@@ -1776,7 +2319,7 @@ girildiği an sayılır.
       hilesini önlemek. Aydınlatma metnine eklenmesi gerekip gerekmediğine
       bak (`legal/tr/KVKK_AYDINLATMA_METNI.md`, `ACIK_RIZA_METNI.md`).
 
-## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01) — kalan: `MATCH_PASSWORD_YENI`'yi sil
+## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01)
 
 Repo herkese açık; Fastfile keychain kilidini açarken `MATCH_PASSWORD`'ü
 iOS — TestFlight Actions günlüğüne açık metin bastı (fastlane özet tablosu,
@@ -1804,8 +2347,9 @@ okur, depoyu yeni parolayla şifreler, iki kez doğrular).
       durumda da günlüğü Claude'a ver.
 - [ ] İstersen eski iOS — TestFlight koşularının günlüklerini sil.
 - [x] Sonra Actions → iOS — TestFlight → Run workflow (main) ile doğrula.
-- [ ] **`MATCH_PASSWORD_YENI` secret'ını sil** (artık gereksiz; değeri
-      `MATCH_PASSWORD` ile aynı).
+- [x] **`MATCH_PASSWORD_YENI` secret'ını sil** — 2026-10-19 yasin: secret
+      zaten yok. Yalnız tek seferlik `match-parola-degistir.yml` onu okur;
+      bir sonraki parola değişiminde yeniden oluşturulur.
 
 > Kanıt (Claude): değişim koşusu 36892103259 — eski parolayla çözüldü, yeni
 > parolayla şifrelendi, kopyada ve depo yeniden indirildikten sonra yeni
@@ -3789,7 +4333,7 @@ Bunlar sonraki her şeyin temeli. Önce karar verelim ki ben de URL'leri / e-pos
 - **Tahmini maliyet:** Yıllık ~$15-100 (uzantıya göre)
 - **Süreç:** Whois bilgisi gizli olsun (privacy protection — çoğu kayıtçıda ücretsiz)
 
-⚠️ **Karar al ve bana söyle.** Şu an kodda `https://sandik.app/...` placeholder var; başka bir domain seçersen değiştireceğim.
+✅ Karar: alan adı yok; web adresleri `https://yasincirali.github.io/sandikapp/...` (GitHub Pages, `docs/`). Mağazaya `sandik.app` adresi GİRİLMEZ, açılmaz (yasin 7 Kas 00:43: mağaza linkleri açılmıyor).
 
 ### 1.2 İletişim E-posta
 
@@ -3957,11 +4501,11 @@ Google Play, hesap silme için **halka açık bir web URL** istiyor. Ek olarak p
 
 Aşağıdaki URL'ler **çalışır durumda** olmalı (Play Store reviewer click eder):
 
-- `https://sandik.app/privacy` (TR + EN dil seçici)
-- `https://sandik.app/terms`
-- `https://sandik.app/legal/kvkk`
-- `https://sandik.app/data-deletion` (form ile)
-- `https://sandik.app/legal/acik-riza`
+- `https://yasincirali.github.io/sandikapp/privacy/` (TR + EN dil seçici)
+- `https://yasincirali.github.io/sandikapp/terms/`
+- `https://yasincirali.github.io/sandikapp/legal/kvkk/`
+- `https://yasincirali.github.io/sandikapp/data-deletion/` (form ile)
+- `https://yasincirali.github.io/sandikapp/legal/acik-riza/`
 
 Tüm bu URL'ler kodda referans veriliyor (`lib/screens/settings_screen.dart` ve `register_screen.dart`).
 
@@ -4150,7 +4694,7 @@ Play Console → Create app:
   - App category: Finance
   - Tags: portfolio, finance, tracker
   - Contact details: support email + privacy policy URL + website
-- **Privacy policy:** `https://sandik.app/privacy` (sayfa hazır olmalı)
+- **Privacy policy:** `https://yasincirali.github.io/sandikapp/privacy/` (sayfa hazır olmalı)
 - **App content:**
   - Privacy policy URL ✓
   - Ads: No
@@ -4162,7 +4706,7 @@ Play Console → Create app:
   - Financial features: ✓ Manage personal finance / Track investments
 - **Account deletion:**
   - In-app deletion: ✓ Available
-  - Web URL: `https://sandik.app/data-deletion`
+  - Web URL: `https://yasincirali.github.io/sandikapp/data-deletion/`
 
 ### 6.4 Internal Testing Track
 

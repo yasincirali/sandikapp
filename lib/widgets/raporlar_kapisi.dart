@@ -18,6 +18,7 @@ import '../screens/yillik_rapor_screen.dart';
 import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import 'portfoy_dokumu.dart';
 
 /// Performans başlığındaki "Raporlar" kapısı (bayrak `raporlar_kapisi`,
 /// sadeleştirme 2 S6).
@@ -35,7 +36,8 @@ import '../theme/sandik.dart';
 /// Bir satır yalnızca o rapor BUGÜN başka bir yerden açılabiliyorsa görünür
 /// (koşullar `raporlar_provider.dart` ve [yilOzetiProvider] notlarında);
 /// kapı yeni bir erişim icat etmez. İstisna Yıllık rapor, Temettü
-/// tahmini ve Portföy X-Ray (Premium, 2026-10-10): yalnız bu kapıdan
+/// tahmini, Portföy X-Ray (Premium, 2026-10-10) ve Portföy dökümü
+/// (2026-10-31, Ayarlar'dan taşındı): yalnız bu kapıdan
 /// açılır ve Premium özellikleri görünürken hep vardır. Hiç satır yoksa düğme de yok. Demoda
 /// düğme hiç çizilmez: kupa da demoda yoktu (yarış sunucu havuzudur) ve
 /// öteki üç rapor da sunucu notlarından/anlık görüntülerden okunur.
@@ -94,8 +96,8 @@ Future<void> raporlarSayfasiniAc(BuildContext context,
     {required bool siralamaAcik}) {
   return showSandikSheet<void>(
     context: context,
+    baslik: context.l10n.s6Raporlar,
     isScrollControlled: true,
-    backgroundColor: context.c.surface1,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
     builder: (sayfaCtx) => _RaporlarSayfasi(
       siralamaAcik: siralamaAcik,
@@ -132,7 +134,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           baslik: l.weekTitle,
           alt: l.s6HaftaOzetiAlt,
           onTap: () => ac((ekran) => pushGuarded(ekran,
-              adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()))),
+              adaptiveRoute<void>(settings: const RouteSettings(name: 'hafta_ozeti'), builder: (_) => const HaftaOzetiScreen()))),
         ),
       // Tek anahtar: paywall kapalıyken (Console'da `raporlar_kapisi`
       // açık olsa da) yalnız admin görür.
@@ -143,7 +145,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           alt: l.yrSatirAlt,
           kilitli: kilitli,
           onTap: () => ac((ekran) => pushGuarded(ekran,
-              adaptiveRoute<void>(builder: (_) => const YillikRaporScreen()))),
+              adaptiveRoute<void>(settings: const RouteSettings(name: 'yillik_rapor'), builder: (_) => const YillikRaporScreen()))),
         ),
         _RaporSatiri(
           ikon: Icons.event_repeat_rounded,
@@ -153,6 +155,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
               adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'temettu_tahmini'),
                   builder: (_) => const TemettuTahminiScreen()))),
         ),
         // Portföy X-Ray (Premium, 2026-10-10): aynı kural — yalnız bu
@@ -164,7 +167,16 @@ class _RaporlarSayfasi extends ConsumerWidget {
           kilitli: kilitli,
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
-              adaptiveRoute<void>(builder: (_) => const PortfoyXrayScreen()))),
+              adaptiveRoute<void>(settings: const RouteSettings(name: 'portfoy_xray'), builder: (_) => const PortfoyXrayScreen()))),
+        ),
+        // Portföy dökümü (2026-10-31): Ayarlar › Veri'den buraya. Ekran
+        // değil eylem: biçim sorulur, belge paylaşılır; kilitliyse paywall.
+        _RaporSatiri(
+          ikon: Icons.description_rounded,
+          baslik: l.dsPortfoyBaslik,
+          alt: l.dsPortfoyAlt,
+          kilitli: kilitli,
+          onTap: () => ac((ekran) => portfoyDokumunuPaylas(ekran)),
         ),
       ],
       if (aylik != null)
@@ -176,6 +188,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
               adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'aylik_rapor'),
                   builder: (_) => AylikRaporScreen(donem: aylik)))),
         ),
       if (yil != null)
@@ -195,7 +208,7 @@ class _RaporlarSayfasi extends ConsumerWidget {
           alt: l.s6SiralamaAlt,
           // Kupayla aynı hedef: Sıralama › Ortaklarım.
           onTap: () => ac((ekran) => pushGuarded(
-              ekran, adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()))),
+              ekran, adaptiveRoute<void>(settings: const RouteSettings(name: 'yaris_giris_ekrani'), builder: (_) => yarisGirisEkrani()))),
         ),
     ];
 
@@ -208,20 +221,49 @@ class _RaporlarSayfasi extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
-            Text(
-              l.s6Raporlar,
-              style: context.t.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700, color: c.text90),
-            ),
-            const SizedBox(height: SandikSpace.sm),
             for (var i = 0; i < satirlar.length; i++) ...[
               if (i > 0) Divider(height: 1, thickness: 1, color: c.hairline),
               satirlar[i],
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Performans › 1A özetinin altındaki aylık rapor satırı (Ar-Ge 2 Kas
+/// 12:45 #2, müşteri raporu 13:15 YAP).
+///
+/// **Neden:** ayın 1'indeki aylık özet bildirimi Performans › 1A'yı
+/// açıyor; rapor ise yalnız başlıktaki Raporlar düğmesinin içindeydi.
+/// Raporun hazır olduğu an, kullanıcının zaten baktığı yerde görünür.
+/// Satır Raporlar'daki aylık rapor satırıyla AYNI bileşen ve aynı kural:
+/// dönem [aylikRaporDonemiProvider]'dan; kilitliyse kilit simgesi, ekran
+/// açılınca kilit kartı karşılar. Yeni ekran ya da bildirim yok.
+class AylikRaporSatiri extends ConsumerWidget {
+  const AylikRaporSatiri({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Demo: Raporlar düğmesi gibi gizli (rapor sunucu notlarından).
+    if (DemoModu.aktif) return const SizedBox.shrink();
+    final aylik = ref.watch(aylikRaporDonemiProvider);
+    if (aylik == null) return const SizedBox.shrink();
+    final l = context.l10n;
+    final dil = Localizations.localeOf(context).toString();
+    return SandikCard(
+      padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
+      child: _RaporSatiri(
+        ikon: Icons.summarize_rounded,
+        baslik: l.s6AylikRapor,
+        alt: l.anzAylikBaslik(DateFormat('MMMM y', dil).format(aylik)),
+        kilitli: ref.watch(premiumKilitliProvider),
+        onTap: () => pushGuarded(
+            context,
+            adaptiveRoute<void>(
+                settings: const RouteSettings(name: 'aylik_rapor'),
+                builder: (_) => AylikRaporScreen(donem: aylik))),
       ),
     );
   }

@@ -196,7 +196,7 @@ class _YenilikSatiri extends StatelessWidget {
       YenilikIkonu.liste => Icons.inbox_rounded,
       YenilikIkonu.ayar => Icons.tune_rounded,
       YenilikIkonu.guvenlik => Icons.lock_rounded,
-      YenilikIkonu.genel => Icons.auto_awesome_rounded,
+      YenilikIkonu.genel => Icons.new_releases_rounded,
     };
 
     return Row(

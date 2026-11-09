@@ -160,6 +160,43 @@ class RealReturnService {
     return (nominal: nominal, reel: s.reelGetiriPct);
   }
 
+  /// Tek varlığın "aldığımdan beri enflasyonu yendi mi?" cevabı.
+  ///
+  /// ## Neden (yasin 2026-10-22, Ar-Ge fikri 22 Eki #2)
+  /// Portföy düzeyinde reel getiri vardı; tek varlıkta yoktu. Oysa "bu
+  /// altın/fon gerçekten kazandırıyor mu?" sorusu o varlığın ekranında
+  /// soruluyor. Hesap portföy kartıyla AYNI yoldan geçer
+  /// ([RealReturnService.hizaliGetiri]: TÜFE penceresine hizalı, nakit
+  /// akışı düzeltmeli); yalnız pencere "son 12 ay" değil ilk alımın ayından
+  /// son açıklanan TÜFE ayına kadardır (`pencereKapsayan`, 5Y kartının
+  /// kısaltma kuralı).
+  ///
+  /// `null` döner (satır çizilmez, tahmin yürütülmez):
+  ///   · alış yok ya da bir tam TÜFE ayı geçmemiş,
+  ///   · endeks ilk alıma kadar geri gitmiyor — kısaltılmış pencere "aldığından
+  ///     beri" diye sunulamaz,
+  ///   · seri kurulamıyor.
+  static Future<RealReturn?> aldigindanBeri(
+    List<Asset> lotlar, {
+    DateTime? now,
+  }) async {
+    final ilk = PeriodSummaryService.ilkAlimTarihi(lotlar);
+    if (ilk == null) return null;
+    final bugun = now ?? DateTime.now();
+    // Gün sayısı ilk alımı kesin kapsasın diye bir ay pay; pencereyi asıl
+    // kesen `enErken` (ilk alımın bir önceki ay sonu).
+    final gun = bugun.difference(ilk).inDays + 31;
+    final w = await InflationService.instance
+        .pencereKapsayan(gun, now: now, enErken: ilk);
+    if (w == null) return null;
+    final ilkAlimAyi = DateTime(ilk.year, ilk.month - 1, 1);
+    if (w.ilkAy.isAfter(ilkAlimAyi)) return null;
+    final g = await RealReturnService.hizaliGetiri(lotlar, w);
+    if (g == null) return null;
+    return RealReturn(
+        nominal: g.nominal, inflation: w.pct, pencere: w, reel: g.reel);
+  }
+
   /// Nominal + TÜFE çifti. Biri eksikse `null`: eksik veriyle rozet
   /// çizmek, çizmemekten kötü.
   ///

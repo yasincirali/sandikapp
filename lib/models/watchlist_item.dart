@@ -31,7 +31,15 @@ class WatchlistItem {
   final String? subCategory;
 
   final String currency;
-  final DateTime addedAt;
+
+  /// Takibe alındığı an (sunucu `added_at`, `not null default now()`).
+  ///
+  /// Nullable (2026-11-08, "Eklediğimden beri"): yanıtta alan yoksa eskiden
+  /// `DateTime.now()` yazılıyordu. Tarih hiçbir yerde okunmadığı için
+  /// zararsızdı; "Eklediğimden beri" ise bu tarihin kapanışını ister ve
+  /// uydurma "bugün" yüzdeyi sessizce ~%0 gösterirdi. Bilinmiyorsa `null`,
+  /// satır "—" yazar.
+  final DateTime? addedAt;
 
   /// Canlı fiyat — DB'de TUTULMAZ, çalışma zamanında doldurulur.
   ///
@@ -80,25 +88,11 @@ class WatchlistItem {
   ///   · altın iç sembolü (`ALTIN_*`), emtia vadelisi (`GC=F`) ve BIST
   ///     endeksi → görünen ad: bu kodlar kullanıcıya hiçbir şey söylemez;
   ///   · kur çifti (`USDTRY=X`) → para kodu (`USD`).
-  String get kisaEtiket {
-    final t = ticker.trim();
-    final sub = subCategory?.trim();
-    String ad() {
-      if (sub != null && sub.isNotEmpty) return sub;
-      return name.trim().isNotEmpty ? name.trim() : t;
-    }
-
-    if (t.isEmpty) return ad();
-    final buyuk = t.toUpperCase();
-    if (buyuk.startsWith('ALTIN_') ||
-        buyuk.endsWith('=F') ||
-        bistEndeksiMi(t)) {
-      return name.trim().isNotEmpty ? name.trim() : ad();
-    }
-    if (buyuk.endsWith('TRY=X')) return buyuk.replaceAll('TRY=X', '');
-    final sade = t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');
-    return sade.length >= 2 ? sade : ad();
-  }
+  ///
+  /// Kural [kisaVarlikEtiketi]'nde: tek varlık widget'ının seçim listesi
+  /// portföy lot'larını da aynı kuralla adlandırır (2026-10-24).
+  String get kisaEtiket => kisaVarlikEtiketi(
+      ticker: ticker, name: name, subCategory: subCategory);
 
   WatchlistItem copyWith({
     double? currentPrice,
@@ -117,6 +111,22 @@ class WatchlistItem {
         periodChangePct: periodChangePct ?? this.periodChangePct,
       );
 
+  /// Dönem değişimini AÇIKÇA yazar — `null` dahil. [copyWith] `null`'ı
+  /// "değiştirme" sayar; "Eklediğimden beri" kapanışı bulunamayınca önceki
+  /// dönemin yüzdesi satırda kalmamalı (uydurma sayı).
+  WatchlistItem donemDegisimiyle(double? pct) => WatchlistItem(
+        id: id,
+        userId: userId,
+        ticker: ticker,
+        name: name,
+        type: type,
+        currency: currency,
+        addedAt: addedAt,
+        subCategory: subCategory,
+        currentPrice: currentPrice,
+        periodChangePct: pct,
+      );
+
   factory WatchlistItem.fromMap(Map<String, dynamic> m) => WatchlistItem(
         id: m['id'] as String,
         userId: m['user_id'] as String,
@@ -125,9 +135,9 @@ class WatchlistItem {
         type: AssetType.fromString((m['type'] as String?) ?? 'diger'),
         subCategory: m['sub_category'] as String?,
         currency: (m['currency'] as String?) ?? 'TRY',
-        addedAt: m['added_at'] != null
-            ? DateTime.parse(m['added_at'] as String)
-            : DateTime.now(),
+        addedAt: m['added_at'] is String
+            ? DateTime.tryParse(m['added_at'] as String)?.toLocal()
+            : null,
       );
 
   /// Sunucuya yazılacak alanlar. `id` ve `added_at` sunucuda üretilir;
@@ -141,4 +151,32 @@ class WatchlistItem {
           'sub_category': subCategory,
         'currency': currency,
       };
+}
+
+/// Takip satırı, grafik açıklaması ve tek varlık widget'ının kısa adı —
+/// kural için bkz. [WatchlistItem.kisaEtiket].
+///
+/// Üst düzey fonksiyon, çünkü widget'ın seçim listesi portföy lot'larını
+/// (`Asset`) da adlandırıyor; sahte bir `WatchlistItem` kurmak ya da kuralı
+/// kopyalamak yerine iki tip aynı fonksiyona sorar.
+String kisaVarlikEtiketi({
+  required String ticker,
+  required String name,
+  String? subCategory,
+}) {
+  final t = ticker.trim();
+  final sub = subCategory?.trim();
+  String ad() {
+    if (sub != null && sub.isNotEmpty) return sub;
+    return name.trim().isNotEmpty ? name.trim() : t;
+  }
+
+  if (t.isEmpty) return ad();
+  final buyuk = t.toUpperCase();
+  if (buyuk.startsWith('ALTIN_') || buyuk.endsWith('=F') || endeksMi(t)) {
+    return name.trim().isNotEmpty ? name.trim() : ad();
+  }
+  if (buyuk.endsWith('TRY=X')) return buyuk.replaceAll('TRY=X', '');
+  final sade = t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');
+  return sade.length >= 2 ? sade : ad();
 }

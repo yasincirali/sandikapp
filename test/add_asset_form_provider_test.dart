@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset_categories.dart';
@@ -7,6 +5,7 @@ import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
 import 'package:portfoy_takip/providers/bulk_cart_provider.dart';
 import 'package:portfoy_takip/services/tefas_service.dart';
+import 'helpers/kaynak.dart';
 
 /// Varlık ekleme formunun durum makinesi — Yahoo/TEFAS/Supabase olmadan
 /// (Faz 3.10). Ekran 37 `setState` ile bu kuralları widget ağacına gömmüştü;
@@ -302,7 +301,7 @@ void main() {
   });
 
   test('ekran durum alanı taşımaz — Faz 3.10 ratchet', () {
-    final src = File('lib/screens/add_asset_screen.dart').readAsStringSync();
+    final src = ekranKaynagiSync('lib/screens/add_asset_screen.dart');
     final govde = src.substring(
       src.indexOf('class _AddAssetScreenState'),
       src.indexOf('class _QuickEntrySheet'),

@@ -155,8 +155,7 @@ yatırım ve vadeli mevduatlar içeride olmalı."*
   "TEFAS Müşteriye Fon Satış YAY 29,00x1.739,18"). ⚠️ Tuzak: banka gözünden yazılır,
   **"Müşteriye Fon Satış" müşterinin ALIŞI**, "Müşteriden Fon Alış" SATIŞI. Hareketler
   okunacaksa yön bu kuralla çevrilmeli. Yalnız tutar veren "Varlık Geçmişi Formu"
-  (adet yok) desteklenmiyor — elle eşleme yedeğine düşer; adet = tutar ÷ o günün
-  fiyatı ile eklenebilir.
+  (adet yok) 2026-10-15'ten beri okunur: aşağıdaki bölüme bak.
 
 | Karar | Seçilen | Alternatif | Neden |
 |---|---|---|---|
@@ -193,6 +192,117 @@ kapsamalıyız" ve "bunun içinden varlık alım satımları nasıl ayıklarsın
   çıkmaz; kullanıcı metni kendisi gönderir. Sonraki adım (yasin kararı): bu iskelet, motor
   emin olmadığında sunucu üzerinden Claude'a gidip sütun eşlemesi alınacak (Gizlilik 1.6).
 
+## Hareketlerden alım VE satım (2026-10-13)
+
+yasin: "hesap varlık ekstresi yüklüyorum ama içinden varlık alım satımlarını
+çıkaramıyor" — DenizBank'ta da. Sebep: 2026-10-05 sürümü hareketi yalnız varlık
+tablosundaki satırın ALIŞINI inceltmek için kullanıyordu; satışı olan kod ve dönemde
+tamamen satılmış (varlık tablosunda olmayan) kod atlanıyordu. Hepsi hâlâ
+`ekstre_hareketleri` bayrağının arkasında; kapalıyken çıktı birebir eski.
+
+- **Açılış adedi** = dönem sonu adedi − dönem alışları + dönem satışları. Satışsız kodda
+  eskisi gibi kalan adet ekstre gününde kalır. Satışlı kodda açılış İLK HAREKET GÜNÜNE,
+  fiyatı BOŞ yazılır (toplu kayıt o günün kapanışını çeker; uydurma fiyat yok), ardından
+  bütün alış/satışlar tarih sırasıyla (aynı gün önce alış). Defter dönem sonunda varlık
+  tablosundaki adedi tutar; satışlar `IceAktarmaSatislari`'ndan geçer.
+- **Tutarsızlık = dokunma:** açılış negatifse ya da sıralı yürüyüşte bir satış eldekini
+  aşıyorsa kod eski hâliyle kalır (hareket başka hesaptan ya da liste eksik).
+- **Varlık tablosunda olmayan kod** yalnız gerçek varlıksa alınır: TEFAS listesinde fon
+  ya da BIST kataloğunda hisse (`hareketKodlari`). Süpürme fonu "FON5" yine girmez.
+  Varlık tablosu varsa dönem sonu adedi 0 sayılır; yoksa (yalnız hareket listesi)
+  açılış satışları karşılayan en küçük adettir. Çözülemeyen bir fon ADININ adayı olan
+  kod alınmaz: o fonun bugünkü adedi bilinmiyor, satışını eklemek elde duran fonu
+  kapanmış gösterirdi.
+- Ekran, hareketlerde kod varsa (bayrak açıkken) adla fon olmasa da TEFAS listesini çeker.
+
+## Tabloya yapışık başlık ve künye (2026-10-13)
+
+Örnek ekstre hazırlanırken görüldü: tablonun hemen üstündeki 14 pt başlık ve
+"Müşteri: …   Hesap No: …" künyesi tabloyla aynı bloğa düştü. Başlığın kelime
+arası tablo yazısının hücre eşiğini (sayfa medyanı × 0,9) aştığı için başlık
+hücrelere bölündü; künyenin parçalarıyla birlikte sütun bantlarını köprüledi
+ve "İşlem Tarihi Sembol" tek sütun oldu, tablo tanınmadı. İki düzeltme
+(`pdf_tablo.dart`): hücre eşiği kelimenin kendi boyuyla büyür; sütun bantları
+yalnız en dolu satırın %60'ı kadar hücresi olan asıl satırlardan kurulur.
+Regresyon: `test/fixtures/ekstre_pdf_kunyeli.json` (uydurma veri). Örnek PDF
+(kullanıcıya verilen): `/mnt/project-files/ekstre-ornek/sandik_ornek_ekstre.pdf`.
+
+## Metin yolu ve banka şablonu hafızası (2026-10-13, 0147, bayrak `ekstre_metin_yolu`)
+
+yasin'in DenizBank ekstresinde "Yapay zekâyla eşle" 0 tablo döndü (Tokyo
+`ekstre_esleme_kaydi` 2026-10-13 09:05, Sonnet, 2708 girdi token). v1 iskelette
+sözlük dışı her kelime A/a olduğundan model "Nominal Miktar" gibi başlıkları ve
+fon adlarını göremiyordu. Görsel okuma (PDF/görüntü API'ye) konuşuldu; metin
+5–10 kat ucuz olduğu için seçilmedi (yalnız metin katmanı olmayan taranmış PDF
+için ileride yedek). Qwen Flash ile Haiku 5.5 aynı fiyat bandında; ek sağlayıcı
+ve yurt dışı aktarım yükü yüzünden Claude'da kalındı.
+
+- **Metin (`ekstreMetni`, v2):** iskeletle aynı düzen; kelimeler AÇIK, rakamlar
+  9 (tutar, adet, IBAN, TCKN, hesap no cihazda kalır), e-posta ve etiketli
+  künye ("Sayın …", "Ad Soyad: …", "Adres" | değer) A/a. Etiketsiz yazılmış ad
+  geçebilir. Sunucu v1'deki maske denetimini v2'ye de uygular.
+- **Rıza işlemi isteyenden (yasin 2026-10-13: "herkese peşinen değil de işlemi
+  talep ettiklerinde sorsak"):** ilk "Yapay zekâyla eşle"de onay sayfası
+  (`_AiRizaSayfasi`), kayıt `ekstre_ai_rizalari` (metin sürümüyle), sunucu
+  rızasız metni 403 `riza` ile reddeder; kartta "onayı geri çek". Genel
+  "Onay sürümü" ARTMAZ, herkese onay ekranı çıkmaz.
+- **Model:** önce Haiku 5.5; hiç tablo bulamazsa bir kez Sonnet 5.5. v1 iskelet
+  eskisi gibi doğrudan Sonnet.
+- **Şablon hafızası (`ekstre_sablonlari`):** modelin eşlediği tablonun başlık
+  satırı izi (katlanmış hücreler, rakam `#`, `|` ile) SHA-256 olarak, sütun
+  rolleri ve sütun sayısıyla saklanır. Aynı iz + aynı sütun sayısı gelince model
+  çağrılmaz (kota düşmez, kayıtta `model = 'sablon'`, maliyet 0).
+- **Banka tasarımı değişirse:** başlık değişti → iz tutmaz → model bir kez →
+  yeni iz ayrı satır, eskisi kalır. Başlık aynı ama düzen kaymış → cihaz
+  sağlaması (`eslemeSaglamasi`: satırların yarısında adet × fiyat ≈ tutar %2,
+  artı içerik kapısı) reddeder → `sablonsuz` ile yeniden sorulur, şablonun
+  `hata` sayacı artar, modelin eşlemesi aynı ize yazılır. `hata >= 3` şablon
+  kullanılmaz.
+- **Bilinen sınırlar:** model aynı yanlış eşlemeyi verirse şablon her seferinde
+  sıfırlanır (maliyet şablonsuz durumla aynı, fazlası yok). Şablon modelden
+  gelir, kullanıcı yazamaz; ama kasıtlı hazırlanmış bir metin modeli yanıltıp
+  bir izi bozabilir — sağlama ve "kontrol et" uyarısı son savunma.
+
+## Ekran görüntüsünden maliyet (2026-10-13, bayrak `ekran_goruntusu_maliyet`)
+
+yasin: "bankalarda ekstrelerde varlıkların ortalama maliyetleri, alım zamanları
+yazmıyor". Banka varlık ekstresi o günün fotoğrafı: adet doğru gelir, maliyet
+ekstre gününün fiyatı olur. Hareketli ekstre yalnız dönem içini düzeltir.
+Muadiller (Greenline, Sharesight AI importer) portföy ekranının görüntüsünden
+içe aktarır; Türkiye'de hesap bağlama (açık bankacılık, MKK e-Yatırımcı)
+yatırım hesabına açık değil. Her banka/aracı kurum uygulaması portföy ekranında
+adet ve ortalama maliyeti zaten gösterir; yasin seçeneği "Ekran görüntüsü".
+
+- **Okuma cihazda:** iOS Apple Vision (`AppDelegate.swift` `OcrChannel`; sistemde
+  hazır, boyut eklemez), Android ML Kit Latin (`MainActivity.kt`, Play
+  hizmetlerindeki model; gömülü model APK'ya ~4 MB/mimari eklerdi).
+  `google_mlkit_text_recognition` eklentisi seçilmedi: iOS 15.5 alt sınırı ve
+  ~10 MB pod isterdi. Görüntü sunucuya gitmez, yasal metin değişmez. Seçici
+  `image_picker` (iOS PHPicker izin sormaz; `file_selector` iOS'ta Fotoğraflar'ı
+  açmaz).
+- **Anlama** (`ekran_goruntusu.dart`, saf): kelime kutuları hücreye bölünür
+  (boşluk > 0,8 × satır yüksekliği), hücreler satıra. Çapa = BIST kodu, hücrede
+  tek başına duran TEFAS kodu ya da TEFAS unvanına TEK eşleşen fon adı (alt
+  satıra taşan ad birleştirilir; kesik "…" ad önek olarak eşleşir). Değer üç
+  düzende bulunur: aynı hücrede ("100 Adet · Ort. 250,00"), etiketin sağında
+  ya da altında (kart), başlık satırının sütununda (tablo). Etiketsiz sayı,
+  yüzde, tarih, saat değer sayılmaz.
+- **"Maliyet" belirsiz:** tek başına "Maliyet" birim de toplam da olabilir.
+  Güncel değer ya da fiyat okunduysa birim fiyata (log uzaklığı) yakın olan
+  seçilir; okunmadıysa birim sayılır. "Toplam maliyet"/"Maliyet tutarı" adede
+  bölünür.
+- **Ekstreyle birleşme** (`maliyetleriUygula`): adet EKSTREDEN kalır, yalnız
+  fiyat yazılır, tutar boşalır. Kod metinde tek alış satırıysa yazılır;
+  hareketlerle bölünmüş ya da satışlı kod dokunulmaz (o fiyatlar gerçek işlem
+  fiyatı). Ekstrede olmayan kod eklenmez, önizleme söyler. Tarih ekstre günü
+  kalır: toplam K/Z doğru, Performans grafiği o günden başlar.
+- **Ekstre yoksa** görüntünün kendisi kanonik metin olur (`sembol adet fiyat
+  tur`), adedi okunmayan ya da kodu çözülmeyen varlık girmez.
+- **Sınırlar:** Android'de banka uygulamalarının çoğu ekran görüntüsünü engeller
+  (FLAG_SECURE). Yan yana kart ızgarası ve etiketsiz düzenler okunmaz. Görsel
+  AI yedeği yok (gerekirse metin yolunun rızasıyla eklenir). Testler
+  `test/ekran_goruntusu_test.dart` (liste, kart, tablo, birleşme).
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örneği: yalnız DenizBank** (PDF, 2026-10-03; kişisel veri olduğu için
@@ -207,3 +317,47 @@ kapsamalıyız" ve "bunun içinden varlık alım satımları nasıl ayıklarsın
 - **Sayfalar arası tablo birleştirme** yalnız birebir sütun uyumunda: DenizBank hareket
   listesi sayfa 3 ve 4'te ayrı tablo kalıyor (içe aktarılmadığı için etkisiz).
 - **Sonraki adım (E):** "ekstrem tanınmadı → örnek gönder" akışı (açık rızayla).
+
+## Yalnız tutar yazan belge (2026-10-15)
+
+DenizBank'ın aylık "Varlık Geçmişi Formu" fonu adıyla (sonda `---TR…` ISIN) ve
+yalnız TL karşılığıyla yazar; adet ve birim fiyat yoktur. Önceki sürüm onu elle
+eşleme yedeğine düşürüyordu ("Adet ← Sütun 2", "emin değiliz"), AI de adet
+sütunu bulamıyordu (yasin: "varlık tablosu bulamadı diyor").
+
+- **Tanıma** (`tutar_tablosu.dart` `tutarliKalemler`): iki dolu hücreli satır
+  ("ad", "86.520,05 TRY" / "$1,000.00") ya da üç hücre ("ad", "1,234.56", "USD").
+  Para birimi yazmayan tutar alınmaz. Grup başlığı ("Yatırım Fonları", ya da
+  tutarı altındaki satırların toplamı olan işaretsiz ad) ve "Toplam" alınmaz.
+  Yalnız sembol + adet tablosu yokken ve belge tarihi biliniyorken devreye girer.
+- **Tür** yalnız kesin işaretle (`tutarKalemiCoz`, sırayla): ISIN (`TRA…` pay
+  ISIN'i BIST kodundan hisse, diğeri fon) → "fon/fonu" kelimesi → "altın" (alt tür
+  tam kelimeyle; yazmıyorsa 24 ayar gram, banka altın hesabı) → kripto adı ya da
+  açık kripto biçimi → BIST kodu → döviz adı/kodu → USD tutarlı ABD sembolü
+  (yasin 2026-10-15: "sadece fonlar için değil, altın hisse döviz vs tüm
+  varlıklar"). Hesap numarası, "Vadesiz Mevduat" gibi işaretsiz ad alınmaz.
+- **Adet** = tutar ÷ belge günündeki fiyat. Tam sayı adet tutarı kuruş içinde
+  veriyorsa adet odur (fon payı, lot); değilse 4 ondalık (gram, kripto). Tutarın
+  parası fiyatın parasından farklıysa belge gününün kuruyla çevrilir (dolar
+  tutarlı altın); döviz hesabı kendi parasıyla yazılmışsa adet tutarın kendisi,
+  fiyat kur. Maliyet o günün fiyatı.
+- **Uydurma yok:** fon adı TEFAS unvanına tek aday olarak eşleşmezse ya da o
+  günün fiyatı/kuru alınamazsa satır eklenmez; önizleme "fiyatı alınamadı" der.
+- Fiyat ekranda alınır: fon `PriceService.fetchHistory('TEFAS:…')` + `gunFiyati`
+  (o gün ya da önceki 7 günün son fiyatı; BES sözleşmesiyle aynı yol), gerisi ve
+  kurlar `fetchHistoricalClose` (toplu eklemenin geçmiş gün kapanışı). Bu belgede
+  AI düğmesi gizli.
+- Başlıksız tabloda para birimi yazan sütun ("31.240,00 TRY") adet sanılmaz
+  (`_paraIsaretli`): "THYAO 31.240,00 TRY" satırı 31.240 lot olmuyor.
+
+## Yurt dışı aracı kurum dökümü (ABD hissesi, 2026-10-15)
+
+Midas gibi kurumların dökümünde USD'li "AAPL" önceden `AAPL.IS` (olmayan BIST
+hissesi), üç harfli "AMD" TEFAS fonu yazılıyordu. `CsvImportService.abdSatiriMi`:
+tür hücresi ABD/yurt dışı hisse diyorsa ya da para birimi USD ve sembol BIST/döviz
+kodu değil, hisse/ETF biçiminde (`AAPL`, `BRK.B`) ise satır ABD hissesi olur —
+ekleme formuyla aynı saklama (`abdSembolu`, alt kategori `abd`, USD). Para birimi
+sütunu yoksa fiyat/tutar hücrelerindeki `$`/`USD` işareti yeter
+(`EkstreAnlami.dolarli` kanonik metne `USD` yazar). USD işareti olmayan çıplak
+"AMD" eskisi gibi kalır. `abd_hisse` bayrağı kapalıysa satır eklenmez, önizleme
+nedenini söyler. Gerçek Midas örneği henüz yok; düzen gelince genişler.

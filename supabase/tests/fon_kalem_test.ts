@@ -24,6 +24,9 @@ import {
   pdrSatirlari,
   sayiOku,
   semaKontrolu,
+  metinOzeti,
+  sigortaAtti,
+  tabloBolumu,
   taramaKesinMi,
   taranacakGunler,
   tefasKontrolu,
@@ -103,7 +106,7 @@ Deno.test('kontrol 5 (şema): bozuk yanıtın tamamı reddedilir', () => {
     { kalemler: [...kalemler(), { ad: 'X', kod: '', tur: 'tahvil', agirlik: 1, agirlik_metni: '1,00' }] },
     { kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: '1,00', agirlik_metni: '1,00' }] },
     { kalemler: [{ ad: '', kod: '', tur: 'hisse', agirlik: 1, agirlik_metni: '1,00' }] },
-    { kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: 0, agirlik_metni: '0,00' }] },
+    { kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: -1, agirlik_metni: '-1,00' }] },
     { kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: 101, agirlik_metni: '101,00' }] },
     { kalemler: [{ ad: 'X', tur: 'hisse', agirlik: 1, agirlik_metni: '1,00' }] },
     { kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: 1, agirlik_metni: '' }] },
@@ -339,4 +342,56 @@ Deno.test('fon-kalem-raporu/index.ts: cron kapısı → bayrak → iş; ham hata
   assertEquals(src.includes('tool_choice'), false);
   // Kişi bilgisi seçilmez: assets sorgusu yalnız pozisyon kolonları.
   assert(src.includes(".select('id, user_id, type, ticker, sub_category, currency, quantity, kind, added_date, ref_asset_id')"));
+});
+
+// ── Harcama sigortası ───────────────────────────────────────────────────────
+
+Deno.test('sigorta: ücretli redler birikip geçen azsa dönem durur', () => {
+  const red = (usd?: number) => ({ durum: 'red', dogrulama: usd ? { maliyet_usd: usd } : { neden: 'metin_yok' } });
+  const gecti = { durum: 'gecti', dogrulama: { maliyet_usd: 0.3 } };
+  assertEquals(sigortaAtti([]), false);
+  assertEquals(sigortaAtti([red(0.2), red(0.2), red(0.2)]), false);
+  assertEquals(sigortaAtti([red(0.2), red(0.2), red(0.2), red(0.2)]), true);
+  // Ücretsiz redler (model çağrılmadı) sayılmaz.
+  assertEquals(sigortaAtti([red(), red(), red(), red(), red(0.2)]), false);
+  // Ekim 2026 turu: 13 ücretli red, 1 geçen → durur.
+  assertEquals(sigortaAtti([...Array(13)].map(() => red(0.25)).concat([gecti])), true);
+  // Geçme oranı yeterliyse durmaz.
+  assertEquals(sigortaAtti([red(0.2), red(0.2), red(0.2), red(0.2), gecti]), false);
+});
+
+Deno.test('şema: ağırlık reddi değeri nedene yazar', () => {
+  const s = semaKontrolu({ kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: -0.12, agirlik_metni: '-0,12' }] });
+  assertEquals(s.ok, false);
+  if (!s.ok) assertEquals(s.neden, 'agirlik:-0.12');
+});
+
+Deno.test('metinOzeti: boşluk farkı aynı özet, sayı farkı farklı özet', async () => {
+  const a = await metinOzeti('ASELS  30,00\n THYAO 40,50');
+  assertEquals(a, await metinOzeti('ASELS 30,00 THYAO 40,50'));
+  assert(a !== await metinOzeti('ASELS 30,01 THYAO 40,50'));
+  assertEquals(a.length, 64);
+});
+
+Deno.test('şema: 0,00 ağırlıklı satır belgeyi düşürmez, atlanır', () => {
+  const s = semaKontrolu({ kalemler: [...kalemler(), { ad: 'KÜSURAT', kod: '', tur: 'hisse', agirlik: 0, agirlik_metni: '0,00' }] });
+  assertEquals(s.ok, true);
+  if (s.ok) assertEquals(s.kalemler.length, kalemler().length);
+});
+
+Deno.test('kontrol 1: model borsa eki eklediyse kodun ilk parçası aranır', () => {
+  const ks = kalemler();
+  ks[2] = { ...ks[2], kod: 'THYAO TI' };
+  assertEquals(metinKontrolu(ks, RAPOR), null);
+  ks[2] = { ...ks[2], kod: 'YOKKOD TI' };
+  assert(metinKontrolu(ks, RAPOR)?.startsWith('kod_metinde_yok'));
+});
+
+Deno.test('tabloBolumu: yalnız portföy tablosu gider, bulunamazsa tüm metin', () => {
+  const tam = `KAPAK SAYFASI\n${RAPOR}IV-TEMETTÜ TABLOSU\nASELS 12,50 1.000,00\n`;
+  const b = tabloBolumu(tam);
+  assert(b.startsWith('FON PORTFÖY DEĞERİ TABLOSU'));
+  assert(b.includes('GENEL TOPLAM 100,00'));
+  assert(!b.includes('TEMETTÜ'));
+  assertEquals(tabloBolumu('başlıksız metin'), 'başlıksız metin');
 });

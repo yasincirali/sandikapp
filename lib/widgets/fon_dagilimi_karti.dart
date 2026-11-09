@@ -13,6 +13,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'premium_kilit_karti.dart';
+import 'sandik_skeleton.dart';
 
 /// "Fonun içinde ne var" — Fon X-Ray kartı (Premium, 2026-10-10).
 ///
@@ -64,8 +65,13 @@ class FonDagilimiKarti extends ConsumerWidget {
     return ref.watch(fonDagilimiProvider(kod)).valueOrNull != null;
   }
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(fonXrayGorunurProvider)) return const SizedBox.shrink();
     final kod = fonKoduOf(tur: tur, ticker: ticker);
     if (kod == null) return const SizedBox.shrink();
@@ -296,6 +302,9 @@ class XrayCubugu extends StatelessWidget {
             child: toplam <= 0
                 ? ColoredBox(color: c.hairline)
                 : Row(
+                    // Boş ColoredBox en küçük boya iner: dilimler yüksekliği almazsa
+                    // çubuk görünmez (X-Ray ekranında çizilmiyordu, 2026-10-12).
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       for (final (renk, v) in dilimler)
                         Expanded(

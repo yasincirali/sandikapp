@@ -1,0 +1,58 @@
+# App Store "Tanıtım metni" (TR): her ayın 3'ünde TÜFE cümlesiyle.
+#
+# Neden: müşteri raporu 30 Eki 21:15 #3 (yasin "yap"). Tanıtım metni
+# incelemesiz ve sürümsüz değişir; ayın 3'ü enflasyon merakının zirvesi.
+# `tool/asc_tanitim_tufe.py` TÜFE'yi `inflation_index`'ten okur (tufe-web.yml
+# ile aynı salt okunur sorgu ve secret), kalıbı
+# `store_listing/ios/tr/tanitim_tufe.json`'dan alır.
+#
+# Kalıpta `onay: false` iken iş HER ZAMAN kuru koşar: metni loga ve iş
+# özetine yazar, mağazaya dokunmaz (yasin ilk metni görüp onaylar). Geçen
+# ayın TÜFE'si henüz yoksa hiçbir şey yazmaz; 3, 4 ve 5'inde tekrar dener.
+# Mağazadaki metin aynıysa PATCH yok.
+name: App Store tanıtım metni (TÜFE)
+
+on:
+  schedule:
+    # 3-5'i 08:10 UTC (TR 11:10): fetch-inflation 10:05 TR çekiminden sonra.
+    - cron: "10 8 3-5 * *"
+  workflow_dispatch:
+    inputs:
+      uygula:
+        description: "Mağazaya yaz (kalıp onaylıysa; işaretsiz = kuru koşu)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: asc-tanitim-tufe
+  cancel-in-progress: false
+
+jobs:
+  tanitim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyjwt cryptography requests
+      - name: Testler
+        run: python -m unittest tool/asc_tanitim_tufe_test.py tool/tufe_web_test.py
+      - name: Tanıtım metni
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+        run: |
+          # Zamanlı koşu yazmayı dener; kalıp onaysızsa betik kendisi kuru kalır.
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.uygula }}" = "true" ]; then
+            python tool/asc_tanitim_tufe.py --uygula
+          else
+            python tool/asc_tanitim_tufe.py
+          fi

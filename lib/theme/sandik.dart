@@ -32,27 +32,63 @@ import 'yukleme_isareti.dart';
 /// sayfada SafeArea'nın üst payı hiçbir şey değiştirmez; yalnız tepeye
 /// dayanan sayfa durum çubuğunun altında durur. Bilerek tam ekrana
 /// uzanacak sayfa `useSafeArea: false` verir.
+///
+/// **Kabuk standardı (sheet standardı, 2026-11-06; Ar-Ge 2026-11-05 #1 ve
+/// 2026-11-06 #2).** 77 sheet beş farklı zeminde (surface2/surface1/
+/// colorScheme.surface/background/şeffaf) açılıyordu, tutamaç yalnız 41'inde
+/// vardı, başlık iki boyda yazılıyordu: kullanıcı aynı uygulamada farklı
+/// aileden alt sayfalar görüyordu. Artık kabuk tek yerden gelir:
+/// - **Zemin** varsayılanı `surface2`. Çağıran `backgroundColor:` yalnız
+///   bilinçli bir sahne için verir (şeffaf = kendi şeklini çizen sayfa);
+///   `sheet_standardi_test` bu sayının yalnız azalmasına izin verir.
+/// - **Tutamaç** kabuğun içinde, varsayılan açık (HIG denetimi 2026-10-10:
+///   sayfa aşağı kaydırarak kapandığını göstersin; eskiden her sayfa bunu
+///   kendi yorumuyla elle yazıyordu). Şeffaf zeminde varsayılan
+///   kapalıdır: o sayfalar tutamacı kendi şekillerinin içinde çizer, kabuk
+///   çizse şeklin üstünde boşlukta asılı kalırdı. Kabuk tutamaç çizerken
+///   içerikte kalmış bir [SandikTutamac] hiçbir şey çizmez (çift tutamaç
+///   olamaz).
+/// - **Başlık** [baslik] verilirse tek stilde ([SandikSheetBasligi]), altında
+///   en fazla bir satır [altMetin]. Başlığı duruma göre değişen sayfa
+///   (seçilen varlığın adı) aynı bileşeni kendi içinde kullanır.
+/// - **Klavye** payı kabukta (`isScrollControlled` sayfada): içerik `viewInsets.bottom` kadar yukarı itilir
+///   ve alttaki ağaçtan klavye payı silinir. Böylece birincil düğme klavyenin
+///   üstünde kalır; payı kendisi ekleyen eski sayfalar (builder `ctx`'i dahil,
+///   [Builder] kabuğun altında kurulur) sıfır okur, çift pay oluşmaz.
+/// - İçerik yatay payı [SandikSpace.screenH]; kabuk başlığı da bununla hizalı.
+/// - Material'ın `showDragHandle`'ı parametre olarak yok: 48 pt'lik kendi
+///   alanını çiziyor, kabuk tutamacıyla çift tutamaç olurdu (beş sayfa
+///   kullanıyordu, kabuğa taşındı).
 Future<T?> showSandikSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
+  String? baslik,
+  String? altMetin,
+  bool? tutamac,
   Color? backgroundColor,
   ShapeBorder? shape,
   bool isScrollControlled = false,
   bool? useSafeArea,
-  bool? showDragHandle,
   bool isDismissible = true,
   bool enableDrag = true,
   BoxConstraints? constraints,
 }) {
   final azalt = MediaQuery.disableAnimationsOf(context);
+  final zemin = backgroundColor ?? context.c.surface2;
+  final tutamacli = tutamac ?? zemin.a > 0;
   return showModalBottomSheet<T>(
     context: context,
-    builder: builder,
-    backgroundColor: backgroundColor,
+    builder: (_) => _SandikSheetKabugu(
+      baslik: baslik,
+      altMetin: altMetin,
+      tutamac: tutamacli,
+      klavyePayi: isScrollControlled,
+      builder: builder,
+    ),
+    backgroundColor: zemin,
     shape: shape,
     isScrollControlled: isScrollControlled,
     useSafeArea: useSafeArea ?? isScrollControlled,
-    showDragHandle: showDragHandle,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
     constraints: constraints,
@@ -65,6 +101,120 @@ Future<T?> showSandikSheet<T>({
             reverseCurve: SandikMotion.exit,
           ),
   );
+}
+
+/// [showSandikSheet]'in kabuğu: tutamaç, başlık ve klavye payı.
+class _SandikSheetKabugu extends StatelessWidget {
+  const _SandikSheetKabugu({
+    required this.baslik,
+    required this.altMetin,
+    required this.tutamac,
+    required this.klavyePayi,
+    required this.builder,
+  });
+
+  final String? baslik;
+  final String? altMetin;
+  final bool tutamac;
+
+  /// Yalnız `isScrollControlled` sayfada: yüksekliği 9/16 ile sınırlı sayfa
+  /// klavye payını taşıyamaz (içerik taşar). Klavyeli her sayfa zaten
+  /// kaydırma denetimli açılıyor; sınırlı sayfada davranış eskisi.
+  final bool klavyePayi;
+  final WidgetBuilder builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final klavye = klavyePayi ? MediaQuery.viewInsetsOf(context).bottom : 0.0;
+    Widget icerik = klavyePayi
+        ? MediaQuery.removeViewInsets(
+            context: context,
+            removeBottom: true,
+            child: Builder(builder: builder),
+          )
+        : Builder(builder: builder);
+    final baslik = this.baslik;
+    if (tutamac || baslik != null) {
+      if (tutamac) icerik = _KabukTutamaciVar(child: icerik);
+      icerik = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (tutamac)
+            const Padding(
+              padding: EdgeInsets.only(top: SandikSpace.sm2),
+              child: Center(child: SandikTutamac._kabuk()),
+            ),
+          if (baslik != null)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                SandikSpace.screenH(context),
+                SandikSpace.md,
+                SandikSpace.screenH(context),
+                0,
+              ),
+              child: SandikSheetBasligi(baslik, altMetin: altMetin),
+            ),
+          Flexible(child: icerik),
+        ],
+      );
+    }
+    return Padding(padding: EdgeInsets.only(bottom: klavye), child: icerik);
+  }
+}
+
+/// Kabuk tutamaç çizdiğinde içeriğe "tutamaç zaten var" der.
+class _KabukTutamaciVar extends InheritedWidget {
+  const _KabukTutamaciVar({required super.child});
+
+  @override
+  bool updateShouldNotify(_KabukTutamaciVar oldWidget) => false;
+}
+
+/// Alt sayfa başlığı — sheet'lerin TEK başlık stili.
+///
+/// Neden (sheet standardı 2026-11-06): başlık iki boyda (`headlineSmall`
+/// w700 / `titleLarge`) ve her sayfanın kendi `_baslik` metodunda yazılıyordu.
+/// Cümle düzeni, ağırlık w600 (yasin 5 Kas 2026 tavanı). [altMetin] en fazla
+/// bir satır: açıklama uzarsa yeri Sık sorulanlar'dır, başlığın altı değil.
+/// Başlık semantikte `header`; ekran okuyucu sayfaya girince önce bunu okur.
+class SandikSheetBasligi extends StatelessWidget {
+  const SandikSheetBasligi(this.baslik, {super.key, this.altMetin});
+
+  final String baslik;
+  final String? altMetin;
+
+  @override
+  Widget build(BuildContext context) {
+    final alt = altMetin;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            baslik,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.titleLarge?.copyWith(
+              color: context.c.text90,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        if (alt != null) ...[
+          const SizedBox(height: SandikSpace.xxs),
+          Text(
+            alt,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 /// Platforma uygun sayfa geçişi.
@@ -437,6 +587,11 @@ abstract final class SandikMotion {
   /// dilimin nereden nereye aktığını okumaya yetmiyordu.
   static const Duration flow = Duration(milliseconds: 560);
 
+  /// İskelet nabzının TAM döngüsü (soluk → parlak → soluk). Bir geçiş değil,
+  /// "bekliyorum" ritmi: yavaş ve dikkat çekmeyen. Tüm bloklar aynı saate
+  /// göre aynı fazda atar (`SandikSkeleton`, 2026-10-20).
+  static const Duration nabiz = Duration(milliseconds: 2200);
+
   /// Hafif taşarak yerine oturan varış — seçim imleci ve seçilen işaret.
   /// Yalnız küçük, tek bir öğede; listelerde ve metinde kullanılmaz.
   static const Curve spring = Curves.easeOutBack;
@@ -558,6 +713,15 @@ enum SandikHaptic {
 /// [scale] 0.97 ve 110ms bilinçli seçim: daha derin/yavaş bir animasyon
 /// listede hızlı gezinirken yorucu oluyor, daha sığı fark edilmiyor.
 ///
+/// ## Tek basma bileşeni (Ar-Ge 5 Kas 22:40 #3)
+/// Eskiden yanında ikinci bir basma bileşeni (`SandikBasma`) vardı: aynı
+/// ölçekle küçülüyor, ayrıca soluyordu; titreşim ve semantik vermiyordu.
+/// Aynı iş iki sınıfta yaşayınca hangi yüzeyin seçili hâl/etiket taşıdığı
+/// rastgeleleşti. Şimdi tek sınıf: solma isteyen yüzey [soluk] açar.
+/// `SandikBasma`'dan taşınan çağrılar `haptic: SandikHaptic.none` verir ki
+/// eskiden titreşmeyen yüzey taşımayla titreşmeye başlamasın
+/// (`sandik_basma_ratchet_test` sınıfın geri gelmesini kilitler).
+///
 /// ```dart
 /// SandikTappable(
 ///   onTap: () => Navigator.push(...),
@@ -574,6 +738,7 @@ class SandikTappable extends StatefulWidget {
     this.semanticLabel,
     this.selected,
     this.haptic,
+    this.soluk = false,
   });
 
   /// `true` dönerse [haptic] verilmemiş, seçim kavramı olmayan dokunuş
@@ -585,6 +750,9 @@ class SandikTappable extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+
+  /// Basılıyken ölçek. Büyük yüzeylerde (kart) 0,97–0,98; küçük çiplerde
+  /// 0,94'e kadar inilebilir.
   final double scale;
   final String? semanticLabel;
 
@@ -603,32 +771,116 @@ class SandikTappable extends StatefulWidget {
   /// ister: seçim değişimi, başarı, hata. 63 satır/kartın her dokunuşta
   /// titremesi gürültüydü (HIG denetimi 2026-10-10). Ana eylemler
   /// ([SandikHaptic.medium]) ve yıkıcı onaylar açıkça yükseltir.
+  ///
+  /// [SandikHaptic.none] uzun basmayı da susturur: "bu yüzey titreşmez"
+  /// diyen çağıranın uzun basmada sürpriz bir darbe alması tutarsızdı
+  /// (`SandikBasma` taşıması, sekme çubuğu Profil uzun basması).
   final SandikHaptic? haptic;
+
+  /// Basılıyken küçülmeye ek olarak solma (saydamlık 0,82).
+  ///
+  /// ## Neden (animasyon denetimi, 2026-09-30)
+  /// Uygulamada 52 dokunma yüzeyi düz `GestureDetector`dı: basışa hiçbir
+  /// görsel tepki yoktu, tepki ancak iş bitince (sayfa açılınca, çip
+  /// renklenince) geliyordu. Kullanıcı "buton click net olmalı" dedi —
+  /// parmak değdiği an bir şey olmalı. Ripple (`InkWell`) bir `Material`
+  /// zemin ister ve yuvarlak köşeli, kenarlı kartlarda taşar; ölçek + solma
+  /// her şekle uyar ve iOS'taki basma hissine yakındır.
+  ///
+  /// ## Neden takılmaz
+  /// `ScaleTransition` + `FadeTransition`: kare başına `build` yok, `Opacity`
+  /// gibi ek çizim katmanı (saveLayer) yok — dönüşüm ve saydamlık bileşik
+  /// katmanda uygulanır.
+  ///
+  /// ## Hızlı dokunuş
+  /// Dokunuş basma süresinden kısa sürerse (`onTapDown` ile `onTapUp` aynı
+  /// karede) basılı hâl önce tamamlanır, SONRA bırakılır — yoksa geri
+  /// bildirim hiç görünmezdi.
+  ///
+  /// Hareketi azalt açıkken küçülme yok (hareket), yalnız solma (hareket
+  /// değil, durum). Süreler `SandikMotion.press` / `state`.
+  final bool soluk;
 
   @override
   State<SandikTappable> createState() => _SandikTappableState();
 }
 
-class _SandikTappableState extends State<SandikTappable> {
+class _SandikTappableState extends State<SandikTappable>
+    with SingleTickerProviderStateMixin {
   bool _down = false;
 
+  // Solma yolu ([SandikTappable.soluk]) için; yalnız gerektiğinde kurulur ki
+  // 100+ düz yüzey boşuna ticker taşımasın.
+  AnimationController? _c;
+  Animation<double>? _egri;
+  bool _basili = false;
+
+  bool get _etkin => widget.onTap != null || widget.onLongPress != null;
+
+  AnimationController get _kontrol => _c ??= AnimationController(
+        vsync: this,
+        duration: SandikMotion.press,
+        reverseDuration: SandikMotion.state,
+      );
+
+  Animation<double> get _egriAnim => _egri ??= CurvedAnimation(
+        parent: _kontrol,
+        curve: SandikMotion.enter,
+        reverseCurve: SandikMotion.move,
+      );
+
   void _set(bool v) {
-    if (widget.onTap == null && widget.onLongPress == null) return;
+    if (!_etkin) return;
     if (_down != v && mounted) setState(() => _down = v);
+  }
+
+  void _bas() {
+    if (!_etkin) return;
+    _basili = true;
+    _kontrol.forward().whenComplete(() {
+      // Parmak basma bitmeden kalktıysa şimdi bırak (hızlı dokunuş).
+      if (mounted && !_basili) _c?.reverse();
+    });
+  }
+
+  void _birak() {
+    _basili = false;
+    final c = _c;
+    if (c != null && !c.isAnimating) c.reverse();
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onTap != null || widget.onLongPress != null;
+    final enabled = _etkin;
     // Erişilebilirlik: "hareketi azalt" açıkken scale uygulanmaz.
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
-    Widget result = AnimatedScale(
-      scale: (_down && enabled && !reduceMotion) ? widget.scale : 1.0,
-      duration: SandikMotion.press,
-      curve: SandikMotion.enter,
-      child: widget.child,
-    );
+    Widget result;
+    if (widget.soluk) {
+      final egri = _egriAnim;
+      result = FadeTransition(
+        opacity: Tween<double>(begin: 1, end: 0.82).animate(egri),
+        child: reduceMotion
+            ? widget.child
+            : ScaleTransition(
+                scale: Tween<double>(begin: 1, end: widget.scale).animate(egri),
+                child: widget.child,
+              ),
+      );
+    } else {
+      result = AnimatedScale(
+        scale: (_down && enabled && !reduceMotion) ? widget.scale : 1.0,
+        duration: SandikMotion.press,
+        curve: SandikMotion.enter,
+        child: widget.child,
+      );
+    }
 
     if (widget.semanticLabel != null || widget.selected != null) {
       result = Semantics(
@@ -639,6 +891,7 @@ class _SandikTappableState extends State<SandikTappable> {
       );
     }
 
+    final sessiz = widget.haptic == SandikHaptic.none;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       // Haptic yalnızca eylem gerçekten varken tetiklenir; onTap null ise
@@ -659,12 +912,22 @@ class _SandikTappableState extends State<SandikTappable> {
           : () {
               // Uzun basma her zaman daha belirgin: kullanıcı bir eşiği
               // geçtiğini bilmeli, aksi halde ne zaman bırakacağını kestiremez.
-              SandikHaptic.medium.perform();
+              // İstisna: çağıran açıkça `SandikHaptic.none` dediyse sessiz.
+              if (!sessiz) SandikHaptic.medium.perform();
               widget.onLongPress!();
             },
-      onTapDown: (_) => _set(true),
-      onTapUp: (_) => _set(false),
-      onTapCancel: () => _set(false),
+      // Düz yol eski davranışı birebir korur (dinleyici hep bağlı, `_set`
+      // pasifken susar); solma yolu `SandikBasma` gibi pasifken dinleyici
+      // bağlamaz ki devre dışı yüzey üst öğenin dokunuşunu yutmasın.
+      onTapDown: widget.soluk
+          ? (enabled ? (_) => _bas() : null)
+          : (_) => _set(true),
+      onTapUp: widget.soluk
+          ? (enabled ? (_) => _birak() : null)
+          : (_) => _set(false),
+      onTapCancel: widget.soluk
+          ? (enabled ? _birak : null)
+          : () => _set(false),
       child: result,
     );
   }
@@ -756,15 +1019,16 @@ extension SandikNumericText on TextTheme {
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 
-  /// Kart içi tutar (16pt, w800).
+  /// Kart içi tutar (16pt, w600; unslop 5 Kas 2026: ağırlık tavanı w600,
+  /// hiyerarşi boyuttan gelir).
   TextStyle get numMedium => (titleLarge ?? const TextStyle()).copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 
-  /// Hero/özet tutarı (24pt, w800).
+  /// Hero/özet tutarı (24pt, w600).
   TextStyle get numLarge => (headlineLarge ?? const TextStyle()).copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 }
@@ -1396,8 +1660,12 @@ class Sandik {
   //
   // Cam efekti (BackdropFilter) bir vurgu aracıdır — her yerde kullanılınca
   // vurgu olmaktan çıkar, geriye yalnızca katman kompozisyon maliyeti kalır.
-  // Ana sayfada 7 ayrı blur vardı; artık yalnızca hero kart bulanıklaştırılır,
-  // diğer yüzeyler aşağıdaki opak dekorasyonları kullanır.
+  // Ana sayfada 7 ayrı blur vardı; 2026-09-30'da hepsi kalktı (arkalarında
+  // akan içerik yoktu, hero kart dahil). Cam yalnız İÇERİĞİN ALTINDAN AKTIĞI
+  // çubuklarda geri döndü (2026-10-12, bayrak `goz_alici`): sekme başlığı ve
+  // varlık sayfasındaki yüzen kapsül — `lib/widgets/sandik_cam.dart`. Kart ve
+  // sayı arkasına blur konmaz; diğer yüzeyler aşağıdaki opak dekorasyonları
+  // kullanır.
 
   /// Liste satırı / ikincil kart — düz yüzey, kenarlıksız.
   ///
@@ -1478,10 +1746,16 @@ class SandikLogoutButton extends StatelessWidget {
   final Future<void> Function() onPressed;
   final bool disabled;
 
+  /// Metinli tam genişlik satır ("Çıkış yap"): Profil listesinin sonunda
+  /// (Ar-Ge 1 Kas 20:45 #3). Yıkıcı eylem başlıkta, dişlinin yanında
+  /// yanlış dokunuşa açıktı; iOS kalıbı listenin sonu, metinle.
+  final bool satir;
+
   const SandikLogoutButton({
     super.key,
     required this.onPressed,
     this.disabled = false,
+    this.satir = false,
   });
 
   @override
@@ -1506,13 +1780,39 @@ class SandikLogoutButton extends StatelessWidget {
       child: Semantics(
         button: true,
         label: context.l10n.signOutAction,
-        child: SizedBox(
-          width: SandikTouch.min,
-          height: SandikTouch.min,
-          child: Center(
-            child: Icon(Icons.logout_rounded, color: color, size: 20),
-          ),
-        ),
+        child: satir
+            ? ExcludeSemantics(
+                child: ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(minHeight: SandikTouch.min),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout_rounded,
+                            color: color, size: SandikSpace.lgs),
+                        const SizedBox(width: SandikSpace.sm),
+                        Flexible(
+                          child: Text(
+                            context.l10n.signOutAction,
+                            style: context.t.bodyLarge?.copyWith(
+                                color: color, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : SizedBox(
+                width: SandikTouch.min,
+                height: SandikTouch.min,
+                child: Center(
+                  child: Icon(Icons.logout_rounded, color: color, size: 20),
+                ),
+              ),
       ),
     );
   }
@@ -1585,112 +1885,8 @@ class SandikCard extends StatelessWidget {
       child: child,
     );
     if (onTap == null) return box;
-    return SandikBasma(onTap: onTap, child: box);
-  }
-}
-
-/// Dokunma geri bildirimi — basılıyken hafif küçülme ve solma.
-///
-/// ## Neden (animasyon denetimi, 2026-09-30)
-/// Uygulamada 52 dokunma yüzeyi düz `GestureDetector`dı: basışa hiçbir
-/// görsel tepki yoktu, tepki ancak iş bitince (sayfa açılınca, çip
-/// renklenince) geliyordu. Kullanıcı "buton click net olmalı" dedi —
-/// parmak değdiği an bir şey olmalı. Ripple (`InkWell`) bir `Material`
-/// zemin ister ve yuvarlak köşeli, kenarlı kartlarda taşar; ölçek + solma
-/// her şekle uyar ve iOS'taki basma hissine yakındır.
-///
-/// ## Neden takılmaz
-/// `ScaleTransition` + `FadeTransition`: kare başına `build` yok, `Opacity`
-/// gibi ek çizim katmanı (saveLayer) yok — dönüşüm ve saydamlık bileşik
-/// katmanda uygulanır.
-///
-/// ## Hızlı dokunuş
-/// Dokunuş basma süresinden kısa sürerse (`onTapDown` ile `onTapUp` aynı
-/// karede) basılı hâl önce tamamlanır, SONRA bırakılır — yoksa geri
-/// bildirim hiç görünmezdi.
-///
-/// Hareketi azalt açıkken küçülme yok (hareket), yalnız solma (hareket
-/// değil, durum). Süreler `SandikMotion.press` / `state`.
-class SandikBasma extends StatefulWidget {
-  const SandikBasma({
-    super.key,
-    required this.child,
-    this.onTap,
-    this.onLongPress,
-    this.behavior = HitTestBehavior.opaque,
-    this.olcek = 0.97,
-  });
-
-  final Widget child;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-  final HitTestBehavior behavior;
-
-  /// Basılıyken ölçek. Büyük yüzeylerde (kart) 0,97–0,98; küçük çiplerde
-  /// 0,94'e kadar inilebilir.
-  final double olcek;
-
-  @override
-  State<SandikBasma> createState() => _SandikBasmaState();
-}
-
-class _SandikBasmaState extends State<SandikBasma>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: SandikMotion.press,
-    reverseDuration: SandikMotion.state,
-  );
-  late final Animation<double> _egri = CurvedAnimation(
-    parent: _c,
-    curve: SandikMotion.enter,
-    reverseCurve: SandikMotion.move,
-  );
-  late final Animation<double> _saydamlik =
-      Tween<double>(begin: 1, end: 0.82).animate(_egri);
-  late final Animation<double> _olcek =
-      Tween<double>(begin: 1, end: widget.olcek).animate(_egri);
-  bool _basili = false;
-
-  bool get _etkin => widget.onTap != null || widget.onLongPress != null;
-
-  void _bas(TapDownDetails _) {
-    if (!_etkin) return;
-    _basili = true;
-    _c.forward().whenComplete(() {
-      // Parmak basma bitmeden kalktıysa şimdi bırak (hızlı dokunuş).
-      if (mounted && !_basili) _c.reverse();
-    });
-  }
-
-  void _birak() {
-    _basili = false;
-    if (!_c.isAnimating) _c.reverse();
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final azalt = MediaQuery.disableAnimationsOf(context);
-    return GestureDetector(
-      behavior: widget.behavior,
-      onTapDown: _etkin ? _bas : null,
-      onTapUp: _etkin ? (_) => _birak() : null,
-      onTapCancel: _etkin ? _birak : null,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: FadeTransition(
-        opacity: _saydamlik,
-        child: azalt
-            ? widget.child
-            : ScaleTransition(scale: _olcek, child: widget.child),
-      ),
-    );
+    return SandikTappable(
+        onTap: onTap, soluk: true, haptic: SandikHaptic.none, child: box);
   }
 }
 
@@ -1701,18 +1897,33 @@ class _SandikBasmaState extends State<SandikBasma>
 /// (aşağı çek, kapat) her sayfada biraz farklı görünüyordu (animasyon
 /// denetimi 2026-10-01). 36×4, `text36`: iki temada da okunur ama baskın
 /// değil.
+///
+/// Sheet standardından (2026-11-06) beri tutamacı [showSandikSheet]'in kabuğu
+/// çizer; bu sınıf yalnız şeffaf zeminli, kendi şeklini çizen sayfalar için
+/// doğrudan kullanılır (`sheet_standardi_test` kullanım sayısını kilitler).
+/// Kabuk tutamaç çizerken içerikte kalan bir kopya boş döner: çift tutamaç
+/// olamaz.
 class SandikTutamac extends StatelessWidget {
-  const SandikTutamac({super.key});
+  const SandikTutamac({super.key}) : _kabuktan = false;
+  const SandikTutamac._kabuk() : _kabuktan = true;
+
+  final bool _kabuktan;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: context.c.text36,
-          borderRadius: BorderRadius.circular(SandikSpace.xxs),
-        ),
-      );
+  Widget build(BuildContext context) {
+    if (!_kabuktan &&
+        context.getInheritedWidgetOfExactType<_KabukTutamaciVar>() != null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: context.c.text36,
+        borderRadius: BorderRadius.circular(SandikSpace.xxs),
+      ),
+    );
+  }
 }
 
 /// Bölüm başlığı + isteğe bağlı sayaç rozeti.
@@ -1751,11 +1962,14 @@ class SandikSectionHeader extends StatelessWidget {
         // (arama ekranı "Tümü (n)", 2026-09-28).
         Flexible(
           fit: trailing != null ? FlexFit.tight : FlexFit.loose,
+          // Cümle düzeni, w600, harf aralığı yok (yasin 5 Kas 2026, unslop
+          // raporu madde 1; iOS Ayarlar/Cüzdan bölüm başlığı). Eskiden
+          // BÜYÜK HARF + w800 + 1.2 harf aralığıydı: her başlık bağırıyor,
+          // "AI şablonu" okunuyordu. Metinler .arb'da cümle düzeninde.
           child: Text(
             title,
             style: context.t.labelLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
               color: context.c.text58,
             ),
             maxLines: 1,

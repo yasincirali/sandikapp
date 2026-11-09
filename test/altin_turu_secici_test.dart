@@ -10,8 +10,9 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/add_asset_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Varlık Ekle → Altın: seçim alanı + 5 kısayol + tüm türler alt sayfası
-/// (kullanıcı kararı 2026-09-25, alternatif C). Kısayol KURALI
+/// Varlık Ekle → Altın: 5 kısayol + "Tümü" alt sayfası, tek yatay satır
+/// (kullanıcı kararı 2026-09-25 alternatif C; seçim alanı 2026-10-31'de
+/// kalktı, müşteri raporu 31 Eki 13:15). Kısayol KURALI
 /// `altin_kisayollari_test`'te; burada ekranın o kuralı gösterdiği ve alt
 /// sayfadan seçimin forma yazıldığı doğrulanır.
 
@@ -98,9 +99,11 @@ void main() {
 
   testWidgets('alt sayfadan arayıp seçilen tür alana yazılır', (tester) async {
     await _pump(tester, const []);
-    await tester.tap(find.text('Altın türü seçmek için dokun...'));
+    // Seçim alanı 2026-10-31'de kalktı; alt sayfa satırın sonundaki
+    // "Tümü" çipinden açılır.
+    await tester.tap(find.text('Tümü'));
     await tester.pumpAndSettle();
-    expect(find.text('Altın Türleri'), findsOneWidget);
+    expect(find.text('Altın türleri'), findsOneWidget);
     expect(find.text('Ziynet'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).last, 'gremse');
@@ -110,9 +113,11 @@ void main() {
 
     await tester.tap(find.text('Gremse Altın'));
     await tester.pumpAndSettle();
-    expect(find.text('Altın Türleri'), findsNothing);
-    expect(find.bySemanticsLabel(RegExp('Seçili altın türü: Gremse Altın')),
-        findsOneWidget);
+    expect(find.text('Altın türleri'), findsNothing);
+    // Kısayolda olmayan tür satırın BAŞINA eklenir ve seçili görünür.
+    expect(
+        tester.getSemantics(find.bySemanticsLabel(RegExp('^Gremse Altın altın'))),
+        isSemantics(isSelected: true));
     expect(tester.takeException(), isNull);
   });
 }

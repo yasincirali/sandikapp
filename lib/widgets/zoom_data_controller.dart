@@ -17,6 +17,8 @@ class ZoomDataController extends ChangeNotifier {
     this.simulate = false,
     Map<int, double> seedData = const {},
     ResolutionTier? manualTier,
+    this.eldekiSeri,
+    this.tazeKaydet,
   }) {
     _from = initialFrom;
     _to = initialTo;
@@ -32,6 +34,65 @@ class ZoomDataController extends ChangeNotifier {
     _stale = seedData.isNotEmpty;
     // İlk yüklemeyi tetikle
     _reload(immediate: true);
+    // Önce eski seri: taze hesapla AYNI ANDA, yalnız tohum yoksa (soğuk
+    // açılış). Tohum varsa ekranda zaten bir ara kare var.
+    final eldeki = eldekiSeri;
+    if (eldeki != null && seedData.isEmpty) _eldekiyiGoster(eldeki);
+  }
+
+  /// Önce-eski-seri (Ar-Ge 2026-10-25 §4): diskteki son portföy serisi.
+  ///
+  /// Çağıran (Performans ekranı) yalnız AYNI lot defterinin, aynı kapsam ve
+  /// dönemin, tazelik sınırı içindeki serisini döndürür
+  /// (`PortfoySeriDepo`); burada yalnız gösterim kuralı var: taze sonuç
+  /// henüz gelmediyse soluk ([stale]) çizilir, gelince yerini alır.
+  final Future<({Map<int, double> seri, DateTime zaman})?> Function()?
+      eldekiSeri;
+
+  /// Taze ve TAM ölçülmüş (bileşenlerin hiçbiri son iyi kopyadan değil)
+  /// ilk pencere sonucu — çağıran diske yazar. Zoom/kaydırma ya da elle
+  /// bar seçimiyle gelen sonuç yazılmaz: soğuk açılışın penceresi değildir.
+  final void Function(Map<int, double> seri)? tazeKaydet;
+
+  /// Ekrandaki veri disk kopyasından mı (taze sonuç gelmedi ya da düştü)?
+  bool _diskten = false;
+  DateTime? _diskZamani;
+
+  /// Gösterilen seri ağdan TAZE değil, şu anda ölçülmüş de değil: taze çekim
+  /// düştü ve seri ya diskteki portföy kopyasından ya da bileşenlerin son iyi
+  /// kopyalarından kuruldu. Doluysa ekran net çizer ve altında "Son
+  /// güncelleme: …" yazar (`SeriSonGuncelleme`) — sonsuza dek soluk kalmaz,
+  /// eski veri de bugünkü sanılmaz.
+  DateTime? _sonGuncelleme;
+  DateTime? get sonGuncelleme => _sonGuncelleme;
+
+  Future<void> _eldekiyiGoster(
+      Future<({Map<int, double> seri, DateTime zaman})?> Function()
+          yukle) async {
+    final ilkIstek = _requestSeq;
+    final ({Map<int, double> seri, DateTime zaman})? e;
+    try {
+      e = await yukle();
+    } catch (_) {
+      return; // eski seri ikincil: ekran taze hesabı bekler
+    }
+    // Taze sonuç önce geldiyse, viewport değiştiyse ya da ekran kapandıysa
+    // eski kopya yok sayılır.
+    if (e == null ||
+        e.seri.length < 2 ||
+        _disposed ||
+        _settled ||
+        _requestSeq != ilkIstek ||
+        _data.isNotEmpty) {
+      return;
+    }
+    _data = e.seri;
+    _breakdown = const PortfolioHistoryBreakdown.empty();
+    _recomputeDataBounds();
+    _stale = true;
+    _diskten = true;
+    _diskZamani = e.zaman;
+    notifyListeners();
   }
 
   final List<Asset> assets;
@@ -169,25 +230,61 @@ class ZoomDataController extends ChangeNotifier {
       }
     });
     _graceTimer = graceTimer;
+    // İlk pencere mi (soğuk açılışın kaydedilebilir sonucu)?
+    final ilkPencere = _manualTier == null &&
+        _from == initialFrom &&
+        _to == initialTo;
     try {
-      final result = await HistoryService.instance
+      // `tazelikle`: hesap birebir aynı; yalnız bileşenlerden biri son iyi
+      // kopyadan geldiyse (ağ düştü) ölçüldüğü anı söyler.
+      final r = await HistoryService.tazelikle(() => HistoryService.instance
           .getPortfolioHistoryBreakdownAtResolution(
-        assets: assets,
-        from: _from,
-        to: _to,
-        tier: _tier,
-        simulate: simulate,
-      );
+            assets: assets,
+            from: _from,
+            to: _to,
+            tier: _tier,
+            simulate: simulate,
+          ));
+      final result = r.sonuc;
       // Sıra numarası eşleşmezse (viewport arada değişti) bu sonucu at.
       if (mySeq != _requestSeq) return;
+      if (_diskten && (result.total.length < 2 || r.bosBilesen)) {
+        // Taze hesap boş döndü ya da bir bileşeni HİÇ gelmedi (ağ düştü,
+        // son iyi kopyası da yok): motor o bileşeni `currentPrice`
+        // tohumuyla DÜZ çizer — ölçülmüş disk kopyasını düz çizgiyle ezmek
+        // tam da "grafik düz çizgiye döndü" şikâyetiydi (2026-10-03). Disk
+        // kopyası kalır, artık NET ve altında ne zaman ölçüldüğü yazılır.
+        // Varlık sayfasıyla aynı davranış.
+        _stale = false;
+        _sonGuncelleme = _diskZamani;
+        return;
+      }
       _data = result.total;
       // Toplam ve dağılım DAİMA birlikte atanır — ayrı atanırsa bir kare
       // boyunca eski dağılım yeni toplamla eşleşir ve tür dökümü tutmaz.
       _breakdown = result;
       _recomputeDataBounds();
       _stale = false;
+      _diskten = false;
+      _sonGuncelleme = result.total.isEmpty ? null : r.bayatZaman;
+      final kaydet = tazeKaydet;
+      // Yalnız TAM ölçüm yazılır: bileşenlerden biri son iyi kopyadan
+      // (bayat) ya da hiç gelmediyse (düz tohum) kayıt yapılmaz — disk
+      // kopyası "o gün bu defterle ölçülen seri" olarak kalsın.
+      if (kaydet != null &&
+          ilkPencere &&
+          r.bayatZaman == null &&
+          !r.bosBilesen &&
+          result.total.length >= 2) {
+        kaydet(result.total);
+      }
     } catch (_) {
-      // sessizce yok say — eski veri ekranda kalır
+      // sessizce yok say — eski veri ekranda kalır. Disk kopyasıysa net
+      // çizilir, "son güncelleme" ile (yukarıdaki boş sonuçla aynı karar).
+      if (mySeq == _requestSeq && _diskten) {
+        _stale = false;
+        _sonGuncelleme = _diskZamani;
+      }
     } finally {
       graceTimer.cancel();
       // `await`ten sonra buradayız — controller bu arada dispose edilmiş

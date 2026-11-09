@@ -50,6 +50,16 @@ ASSET_ID=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/assets" \
   | json 'd[0]["id"]')
 [[ -n "$ASSET_ID" ]] || { echo "asset id boş"; exit 1; }
 
+echo "== 3b) Lot bazlı satış (ref_asset_id, Ana portföy) — 0156"
+# ref_asset_id text, assets.id uuid: 0133 tetikleyicisi bunu karşılaştıramıyor
+# ve tek lottan satış/temettü/silme kaydını düşürüyordu (0156).
+SELL_ID=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/assets" \
+  "${AUTH[@]}" -H "Prefer: return=representation" \
+  -d "{\"user_id\":\"$UID_SMOKE\",\"name\":\"$NAME\",\"type\":\"diger\",\"quantity\":1,\"purchase_price\":100,\"current_price\":100,\"is_manual_price\":true,\"kind\":\"sell\",\"sell_price\":110,\"ref_asset_id\":\"$ASSET_ID\"}" \
+  | json 'd[0]["id"]')
+[[ -n "$SELL_ID" ]] || { echo "lot bazlı satış yazılamadı"; exit 1; }
+curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/assets?id=eq.$SELL_ID" "${AUTH[@]}" >/dev/null
+
 echo "== 4) Portföyü oku"
 COUNT=$(curl -sS -f "$SUPABASE_URL/rest/v1/assets?select=id&name=eq.$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "$NAME")" \
   "${AUTH[@]}" | json 'len(d)')

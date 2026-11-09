@@ -63,4 +63,82 @@ void main() {
     final s = SecureSessionStorage(vault: vault, persistSessionKey: key);
     expect(await s.hasAccessToken(), isFalse);
   });
+  group('KeychainKasasi: iOS ilk kilit açılışından sonra okunur (2026-10-13)',
+      () {
+    test('yeni katmanda varsa doğrudan döner', () async {
+      final ham = _KatmanliHam(katmanli: true)..yeni[key] = 'y';
+      expect(await KeychainKasasi(ham: ham).read(key), 'y');
+    });
+
+    test('eski (unlocked) kayıt okunur ve yeni katmana TAŞINIR', () async {
+      final ham = _KatmanliHam(katmanli: true)..eski[key] = 'oturum';
+      final k = KeychainKasasi(ham: ham);
+      expect(await k.read(key), 'oturum',
+          reason: 'güncelleme sonrası kullanıcı yeniden giriş yapmamalı');
+      expect(ham.yeni[key], 'oturum');
+      expect(ham.eski.containsKey(key), isFalse);
+    });
+
+    test('taşıma yazımı düşerse eski kayıt geri konur', () async {
+      final ham = _KatmanliHam(katmanli: true)
+        ..eski[key] = 'oturum'
+        ..yeniYazmaHatasi = true;
+      expect(await KeychainKasasi(ham: ham).read(key), 'oturum');
+      expect(ham.eski[key], 'oturum', reason: 'oturum kaybolmamalı');
+    });
+
+    test('yazma önce eski kaydı siler (Keychain "zaten var" hatası)',
+        () async {
+      final ham = _KatmanliHam(katmanli: true)..eski[key] = 'bayat';
+      await KeychainKasasi(ham: ham).write(key, 'taze');
+      expect(ham.eski.containsKey(key), isFalse,
+          reason: 'eski kopya kalırsa bayat yenileme anahtarı okunurdu');
+      expect(ham.yeni[key], 'taze');
+    });
+
+    test('silme iki katmandan da siler', () async {
+      final ham = _KatmanliHam(katmanli: true)
+        ..eski[key] = 'a'
+        ..yeni[key] = 'b';
+      await KeychainKasasi(ham: ham).delete(key);
+      expect(ham.eski, isEmpty);
+      expect(ham.yeni, isEmpty);
+    });
+
+    test('Android: tek katman, silip yazma yok', () async {
+      final ham = _KatmanliHam(katmanli: false);
+      final k = KeychainKasasi(ham: ham);
+      await k.write(key, 'v');
+      expect(await k.read(key), 'v');
+      expect(ham.eskiCagri, 0, reason: 'katman yoksa eski yol hiç çağrılmaz');
+    });
+  });
+}
+
+class _KatmanliHam implements KatmanliHamKasa {
+  _KatmanliHam({required this.katmanli});
+  @override
+  final bool katmanli;
+  final yeni = <String, String>{};
+  final eski = <String, String>{};
+  bool yeniYazmaHatasi = false;
+  int eskiCagri = 0;
+
+  Map<String, String> _m(bool y) {
+    if (!y) eskiCagri++;
+    return y ? yeni : eski;
+  }
+
+  @override
+  Future<String?> read(String key, {required bool yeni}) async =>
+      _m(yeni)[key];
+  @override
+  Future<void> write(String key, String value, {required bool yeni}) async {
+    if (yeni && yeniYazmaHatasi) throw StateError('keychain');
+    _m(yeni)[key] = value;
+  }
+
+  @override
+  Future<void> delete(String key, {required bool yeni}) async =>
+      _m(yeni).remove(key);
 }

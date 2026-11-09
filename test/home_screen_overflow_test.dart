@@ -13,6 +13,7 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/signal_provider.dart';
 import 'package:portfoy_takip/screens/home_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
+import 'helpers/yazi_olcegi.dart';
 
 /// Ana ekranın taşma regresyonu.
 ///
@@ -104,6 +105,7 @@ Future<void> _pump(
   List<SignalAlert> signals = const [],
 }) async {
   tester.view.physicalSize = Size(width * 3, 900 * 3);
+  yaziOlceginiUygula(tester);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
 
@@ -129,7 +131,9 @@ Future<void> _pump(
 /// iPhone SE (320) → iPhone 12 mini (375) → Pro Max (430) arası tarama.
 const _widths = <double>[320, 360, 375, 390, 430];
 
-void main() {
+void main() => yaziOlcegiEkseni(_govde);
+
+void _govde() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
     DbLogger.silentInTests = true;

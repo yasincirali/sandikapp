@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
+import '../models/yillik_aralik.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -23,7 +24,8 @@ import '../utils/tr_format.dart';
 /// ([DonemIstatistigi.isFlat] ile aynı eşik).
 bool donemDuzMu(double pct) => pct.abs() < 0.005;
 
-/// 2×2 istatistik ızgarası: dönem getirisi, bugün, en büyük düşüş, oynaklık.
+/// İstatistik ızgarası: dönem getirisi, bugün, en büyük düşüş, oynaklık.
+/// Fiyatın altında zaten yazan sayı ve bilinmeyen oynaklık hücre almaz.
 ///
 /// [donemPct] ve [bugunPct] çağırandan gelir: detay ekranı dönem yüzdesini
 /// canlı birim fiyata göre ölçer (grafiğin sağ ucu ve başlıktaki sayı ile
@@ -36,7 +38,39 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
     required this.donemPct,
     required this.bugunPct,
     this.donemGetirisiGizli = false,
+    this.bugunGizli,
+    this.gunIci = false,
   });
+
+  /// GÜNLÜK görünüm mü. Günlükte "En büyük düşüş" hücresi çizilmez.
+  final bool gunIci;
+
+  /// "En büyük düşüş" hücresi çizilir mi (Ar-Ge 5 Kas 14:45 #3). Bugün
+  /// görünümünde ve %0,05'in altında hücre "%0,00" yazıp ayrı kart
+  /// kaplıyordu; bilgi yoktu. Yahoo ve Midas günlükte drawdown göstermez.
+  /// Gizleme, uydurma sayı değil: değer bilinir ama söylenecek bir şey yok.
+  static bool dususVar(DonemIstatistigi ist, {required bool gunIci}) =>
+      !gunIci && ist.enBuyukDususPct.abs() >= 0.05;
+
+  /// Izgarada kaç hücre çizilir — iskelet de aynı sayıyı kullanır, yoksa
+  /// veri gelince kartın boyu zıplar (Ar-Ge 1 Kas 08:45 #3).
+  static int hucreSayisi({
+    required bool donemGetirisiGizli,
+    required bool bugunGizli,
+    required bool oynaklikVar,
+    bool dususVar = true,
+  }) =>
+      (donemGetirisiGizli ? 0 : 1) +
+      (bugunGizli ? 0 : 1) +
+      (dususVar ? 1 : 0) +
+      (oynaklikVar ? 1 : 0);
+
+  /// "Bugün" hücresi gizli mi. `null` → eski kural: dönem getirisi gizliyken
+  /// GÜNLÜK seçiliyse ([gun] 0) bugün aynı sayıdır, düşer. Varlık sayfası
+  /// GÜNLÜK'ü `gun == 1` ile taşıdığı için kendi kararını açıkça verir.
+  final bool? bugunGizli;
+
+  bool get _bugunGizli => bugunGizli ?? (donemGetirisiGizli && gun == 0);
 
   final DonemIstatistigi ist;
 
@@ -67,22 +101,27 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
           fmtPctIsaretli(donemPct),
           yon(donemPct),
         ),
-      if (!donemGetirisiGizli || gun != 0)
+      if (!_bugunGizli)
         (
           l.vsTodayUpper,
           bugun == null ? '—' : fmtPctIsaretli(bugun),
           bugun == null ? context.c.text58 : yon(bugun),
         ),
-      (
-        l.vsMaxDrawdownUpper,
-        fmtPctIsaretli(ist.enBuyukDususPct),
-        ist.enBuyukDususPct.abs() < 0.005 ? context.c.text58 : context.c.loss,
-      ),
-      (
-        l.vsVolatilityUpper,
-        ist.oynaklikPct == null ? '—' : fmtPct(ist.oynaklikPct!),
-        context.c.text90,
-      ),
+      if (dususVar(ist, gunIci: gunIci))
+        (
+          l.vsMaxDrawdownUpper,
+          fmtPctIsaretli(ist.enBuyukDususPct),
+          context.c.loss,
+        ),
+      // Oynaklık bilinmiyorsa hücre hiç yok (Ar-Ge 1 Kas 08:45 #3, yasin
+      // "yap"): "—" kutusu ve altındaki "kısa dönemde hesaplanmaz" notu yer
+      // kaplayıp bir şey söylemiyordu. Uydurma sayı da yazılmaz.
+      if (ist.oynaklikPct != null)
+        (
+          l.vsVolatilityUpper,
+          fmtPct(ist.oynaklikPct!),
+          context.c.text90,
+        ),
     ];
 
     Widget hucre((String, String, Color) h) => Expanded(
@@ -96,9 +135,7 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w700,
-                        color: context.c.text36)),
+                        fontWeight: FontWeight.w700, color: context.c.text36)),
                 const SizedBox(height: SandikSpace.xs),
                 FittedBox(
                   fit: BoxFit.scaleDown,
@@ -112,6 +149,7 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
           ),
         );
 
+    if (hucreler.isEmpty) return const SizedBox.shrink();
     final satirlar = <Widget>[
       for (var i = 0; i < hucreler.length; i += 2) ...[
         if (i > 0) const SizedBox(height: SandikSpace.sm),
@@ -127,68 +165,189 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...satirlar,
-        if (ist.oynaklikPct == null &&
-            gun < DonemIstatistigi.oynaklikIcinAsgariDonemGun) ...[
-          const SizedBox(height: SandikSpace.xs2),
-          Text(l.vsVolatilityShortNote,
-              style: context.t.bodySmall?.copyWith(color: context.c.text36)),
-        ],
-      ],
+      children: satirlar,
     );
   }
 }
 
-/// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri.
-class DonemAralikCubugu extends StatelessWidget {
-  const DonemAralikCubugu({
-    super.key,
-    required this.dusuk,
-    required this.yuksek,
-    required this.konum,
-    required this.bicim,
-  });
-
-  final double dusuk;
-  final double yuksek;
+/// Seçili dönemin aralığı — [AralikKarti]'nın "Gün"/dönem satırı. Sayılar
+/// çağırandan hazır gelir (bu dosyada hesap yok, bkz. dosya başı).
+typedef DonemAraligi = ({
+  double dusuk,
+  double yuksek,
 
   /// 0 = dönem dibi, 1 = zirvesi.
-  final double konum;
+  double konum,
+
+  /// Bugünkü fiyat — yalnız ekran okuyucu etiketinde.
+  double bugun,
+});
+
+/// "Aralık" kartı: seçili dönemin aralığı ("Gün" ya da "1 ay") ve 52
+/// haftalık aralık alt alta, AYNI çubuk görünümüyle.
+///
+/// ## Neden tek kart (Ar-Ge 2026-11-07 14:00 #1, yasin "yap")
+/// Yıllık aralık (#312) dönem çipleriyle grafiğin arasına girmişti: seçiciye
+/// dokunan kullanıcının gözü değişen grafiği bulmak için seçili dönemden
+/// bağımsız bir çubuğun üstünden atlıyordu. Gün aralığı ise sayfanın
+/// altında, başka görünüşte (renkli çubuk, kart) duruyordu. İkisi yan yana
+/// kıyaslanır; aynı görünen aynı davranır. Satırlar tek bileşeni
+/// ([_AralikSatiri]) paylaşır — ikinci çubuk klonu yazılmaz.
+///
+/// Çubuk nötrdür (#312 kararı, renk körlüğü): eski gün çubuğunun
+/// kırmızı→yeşil geçişi konumu renkle söylüyordu. Konumu nokta, anlamı
+/// cümle verir. Her satır ekran okuyucuya tek etiket olarak okunur
+/// (`yaSemantik`: başlık, uçlar, bugün, cümle).
+///
+/// Veri yoksa satır yok: [donem] null → dönem satırı yok, [yillik] null →
+/// 52 hafta satırı yok; ikisi de yoksa kart hiç yer kaplamaz.
+class AralikKarti extends StatelessWidget {
+  const AralikKarti({
+    super.key,
+    this.donem,
+    this.yillik,
+    required this.bicim,
+    this.gunIci = false,
+    this.donemAdi,
+  });
+
+  final DonemAraligi? donem;
+  final YillikAralik? yillik;
+
+  /// Büyük fiyatla aynı biçim (aynı birim, aynı ondalık).
   final NumberFormat bicim;
+
+  /// GÜNLÜK seçili mi: dönem satırı "Gün" der (Ar-Ge 1 Kas 08:45 #3 —
+  /// "Dönem" bir günlük aralıkta yabancı geliyordu).
+  final bool gunIci;
+
+  /// GÜNLÜK dışında dönem satırının başlığı ("1 ay"); null → "Seçili dönem".
+  final String? donemAdi;
+
+  /// Kart çizilir mi — çağıranın aradaki boşluğu da atlaması için.
+  static bool cizilir({DonemAraligi? donem, YillikAralik? yillik}) =>
+      donem != null || yillik != null;
 
   @override
   Widget build(BuildContext context) {
+    final d = donem;
+    final y = yillik;
+    if (d == null && y == null) return const SizedBox.shrink();
     final l = context.l10n;
-    final k = konum.clamp(0.0, 1.0);
-    final konumYuzde = (k * 100).round();
     return Container(
       padding: const EdgeInsets.all(SandikSpace.smd),
       decoration: context.surfaceCard(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Büyük sistem yazı tipinde iki etiket 320pt'ye sığmaz.
-          Row(
-            children: [
-              Expanded(
-                child: Text(l.vsPeriodLow,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.labelSmall
-                        ?.copyWith(color: context.c.text36)),
-              ),
-              const SizedBox(width: SandikSpace.sm),
-              Expanded(
-                child: Text(l.vsPeriodHigh,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: context.t.labelSmall
-                        ?.copyWith(color: context.c.text36)),
-              ),
-            ],
+          Text(l.aralikBaslik,
+              style: context.t.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600, color: context.c.text90)),
+          if (d != null) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _donemSatiri(context, d),
+          ],
+          if (y != null) ...[
+            SizedBox(height: d != null ? SandikSpace.md : SandikSpace.sm),
+            _yillikSatiri(context, y),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _donemSatiri(BuildContext context, DonemAraligi d) {
+    final l = context.l10n;
+    final k = d.konum.clamp(0.0, 1.0);
+    final konumYuzde = '${(k * 100).round()}';
+    final baslik = gunIci ? l.aralikGun : (donemAdi ?? l.aralikDonem);
+    final cumle = gunIci
+        ? l.vsDayRangePosition(konumYuzde)
+        : l.vsRangePosition(konumYuzde);
+    return _AralikSatiri(
+      baslik: baslik,
+      dusuk: bicim.format(d.dusuk),
+      yuksek: bicim.format(d.yuksek),
+      konum: k,
+      cumle: cumle,
+      semantik: l.yaSemantik(baslik, bicim.format(d.dusuk),
+          bicim.format(d.yuksek), bicim.format(d.bugun), cumle),
+    );
+  }
+
+  Widget _yillikSatiri(BuildContext context, YillikAralik a) {
+    final l = context.l10n;
+    final ay = a.ay;
+    // Ekran okuyucu etiketi #312'deki gibi "Yıllık aralık: …" kalır;
+    // görünen başlık kartın içinde "52 hafta" (kart zaten "Aralık" der).
+    final semantikBaslik = ay == null ? l.yaBaslikYil : l.yaBaslikAy(ay);
+    final baslik = ay == null ? l.ya52Hafta : l.yaBaslikAy(ay);
+    final donem = ay == null ? l.yaDonemYil : l.yaDonemAy(ay);
+    final cumle = a.yuksegeYakin
+        ? (a.uctaMi
+            ? l.yaYuksekte(donem)
+            : l.yaYuksekAlti(donem, fmtPct(a.yuksektenUzaklikPct, digits: 1)))
+        : (a.uctaMi
+            ? l.yaDusukte(donem)
+            : l.yaDusukUstu(donem, fmtPct(a.dusuktenUzaklikPct, digits: 1)));
+    return _AralikSatiri(
+      baslik: baslik,
+      dusuk: bicim.format(a.dusuk),
+      yuksek: bicim.format(a.yuksek),
+      konum: a.konum,
+      cumle: cumle,
+      semantik: l.yaSemantik(semantikBaslik, bicim.format(a.dusuk),
+          bicim.format(a.yuksek), bicim.format(a.bugun), cumle),
+    );
+  }
+}
+
+/// [AralikKarti]'nın tek satırı: başlık, nötr çubuk + konum noktası, uçlar,
+/// cümle. Ekran okuyucu tek etiket duyar ([semantik]).
+class _AralikSatiri extends StatelessWidget {
+  const _AralikSatiri({
+    required this.baslik,
+    required this.dusuk,
+    required this.yuksek,
+    required this.konum,
+    required this.cumle,
+    required this.semantik,
+  });
+
+  final String baslik;
+  final String dusuk;
+  final String yuksek;
+
+  /// 0 = dip, 1 = zirve.
+  final double konum;
+  final String cumle;
+  final String semantik;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = konum.clamp(0.0, 1.0);
+    Widget uc(String metin, Alignment hiza) => Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: hiza,
+            child: Text(metin,
+                maxLines: 1,
+                style: context.t.numSmall.copyWith(color: context.c.text90)),
           ),
+        );
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: semantik,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(baslik,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.t.labelSmall?.copyWith(color: context.c.text58)),
           const SizedBox(height: SandikSpace.xs2),
           LayoutBuilder(
             builder: (context, c) => SizedBox(
@@ -200,12 +359,8 @@ class DonemAralikCubugu extends StatelessWidget {
                   Container(
                     height: SandikSpace.xs2,
                     decoration: BoxDecoration(
+                      color: context.c.hairline,
                       borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      gradient: LinearGradient(colors: [
-                        context.c.loss.withValues(alpha: 0.7),
-                        context.c.amberFill.withValues(alpha: 0.7),
-                        context.c.gain.withValues(alpha: 0.7),
-                      ]),
                     ),
                   ),
                   Positioned(
@@ -228,35 +383,17 @@ class DonemAralikCubugu extends StatelessWidget {
             ),
           ),
           const SizedBox(height: SandikSpace.xs2),
-          // 320pt'de iki büyük tutar (ör. ₺1.234.567,89) yan yana sığmaz;
-          // kırpılan fiyat yanlış okunur, küçülen okunur.
+          // 320pt'de / büyük yazıda iki büyük tutar (ör. ₺1.234.567,89) yan
+          // yana sığmaz; kırpılan fiyat yanlış okunur, küçülen okunur.
           Row(
             children: [
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(bicim.format(dusuk),
-                      maxLines: 1,
-                      style:
-                          context.t.numSmall.copyWith(color: context.c.text90)),
-                ),
-              ),
+              uc(dusuk, Alignment.centerLeft),
               const SizedBox(width: SandikSpace.sm),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(bicim.format(yuksek),
-                      maxLines: 1,
-                      style:
-                          context.t.numSmall.copyWith(color: context.c.text90)),
-                ),
-              ),
+              uc(yuksek, Alignment.centerRight),
             ],
           ),
           const SizedBox(height: SandikSpace.xs),
-          Text(l.vsRangePosition('$konumYuzde'),
+          Text(cumle,
               style: context.t.bodySmall?.copyWith(color: context.c.text58)),
         ],
       ),

@@ -105,6 +105,197 @@ class SurumNotu {
 /// bu yana çıkanlar"ı bu listeden baştan itibaren toplar.
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
+    surum: '1.1.8',
+    tarih: 'Kasım 2026',
+    // 1.1.7 paywall derlemesiyle kapandı; sonrası buraya (koordinatör,
+    // 1 Kas). Yama sürümü: yalnız Ayarlar'da görünür.
+    yenilikler: [
+      // Ar-Ge 7 Kas 06:00 #4 (a) + #1: #306 Türkçe fon arama ve
+      // "Portföyündekiler"; fon karnesine TEFAS risk değeri (ücretsiz).
+      // En çok 6 madde kuralı: karne satırı ayrı madde olmaz, fon işiyle
+      // aynı maddeye girer.
+      Yenilik(
+        baslik: 'Varlık eklemek daha hızlı',
+        aciklama: 'Fonu Türkçe harflerle ya da koduyla bulursun; '
+            'portföyündekiler listenin başında. Fon karnesinde artık '
+            'TEFAS\'ın açıkladığı risk değeri de yazıyor.',
+      ),
+      // Ar-Ge 7 Kas 06:00 #4 (b) + #2: #305 "Mevduatta" kıyas satırı, #307
+      // kıyası paylaş (ayrı madde olmaz, cümle olarak girer) ve 0174 vade
+      // bildirimi (mevduat konusu, aynı madde).
+      Yenilik(
+        baslik: 'Mevduatta kalsaydı?',
+        aciklama: 'Özet\'teki "Başka yere koysaydın" kartında aynı paranın '
+            'TL mevduatta ne olacağını gösteren bir satır var: geçmiş faiz '
+            'oranlarıyla, stopaj düşülmüş. Karşılaştır\'da kıyası tek '
+            'dokunuşla paylaşabilirsin. Vadeli mevduatının vadesi dolunca '
+            'o sabah haber veririz.',
+        ikon: YenilikIkonu.para,
+      ),
+      // yasin 2 Kas 07:09 (müşteri thread'i): AI yorumu bayraktan çıktı,
+      // Premium'la gelir. Ücretsiz hesap kartı kilitli görür; not yine de
+      // yazılır çünkü kart herkesin ekranında (Premium maddesi deseni).
+      Yenilik(
+        baslik: 'Portföyüne yapay zekâ yorumu',
+        aciklama: 'Performans › Özet\'te ve varlık sayfasında seçili dönem '
+            'için kısa bir değerlendirme: enflasyon, dolar, altın ve BIST '
+            '100 ile kıyas. Sen istemeden yazılmaz; günde 10, ayda 30 yeni '
+            'yorum. Premium ile.',
+      ),
+      // Ar-Ge 1 Kas 20:45 #1, yasin "önerini uygula" (ücretsiz).
+      Yenilik(
+        baslik: 'Kilometre taşların',
+        aciklama: 'Profil\'de geçtiğin eşikler duruyor: 100 bin, ilk '
+            'çeyrek altın, portföyünün yaşı. Dokununca o anı yeniden '
+            'açarsın. Sıradaki taşa ne kadar kaldığını halkada görürsün, '
+            'geçtiğin taşı tutar göstermeden paylaşabilirsin.',
+      ),
+      // Ar-Ge 2 Kas 08:45 #1-#2 + Ar-Ge 5 Kas 21:20 #1/#3 (kilit örtüsü),
+      // müşteri YAP. 6 madde sınırı için iki ücretsiz küçük iyileştirme
+      // tek maddede. Kilit maddesinin sonundaki Yardım cümlesi konu dışıydı
+      // (Ar-Ge 7 Kas #4), çıktı.
+      Yenilik(
+        baslik: 'Hedef, alarm ve kilit',
+        aciklama: 'Hedef sayfasındaki hazır tutarlar portföyüne göre geliyor '
+            've yazdığın hedefin yüzde kaçında olduğunu hemen görüyorsun. '
+            'Çan boşken tek dokunuşla fiyat alarmı kurabilirsin. Uygulama '
+            'kilidi açıksa uygulamalar arasında geçerken tutarların görünmez.',
+        ikon: YenilikIkonu.bildirim,
+      ),
+      // yasin 2026-11-06 (hedefe tarih) + Ar-Ge 2 Kas 12:45 #1-#2 (aylık
+      // rapor). İkisi de Premium ve aynı bayrak: paywall'ın açık olduğu
+      // platformda görünür; 6 madde sınırı için tek maddede.
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        bayrak: 'paywall_enabled',
+        baslik: 'Hedefine tarih, raporuna özet',
+        aciklama: 'Hedef sayfasında ne zamana kadar istediğini seç; ayda ne '
+            'kadar eklemen gerektiğini gör (getiri hesaba katılmaz). Aylık '
+            'PDF raporunda ay sonu değerin, kârın, yatırdığın para ve en çok '
+            'kazandıran varlık var. Premium ile.',
+      ),
+    ],
+  ),
+  SurumNotu(
+    surum: '1.1.7',
+    tarih: 'Ekim 2026',
+    onemli: true,
+    // Müşteri raporu 2026-10-21 21:15 (yasin: "yapılmayan yap'ları yap"):
+    // 1.1.6 notundan sonra gelenler. Yalnız HERKESİN gördüğü özellikler:
+    // paywall kapalıyken yalnız admin'e görünenler (Zirve "fonların içi",
+    // Premium göstergeler, AI seviye bilgisi) yazılmaz. Ekran görüntüsünden
+    // ekleme, "Fotoğrafla ekle" hatası kapanana kadar bilerek dışarıda:
+    // vaat edilen ilk denemede çalışmazsa güven kaybı yazmamaktan büyük.
+    //
+    // 2026-10-25 (müşteri raporu 09:15, yasin "yap"): #239/#245 ile gelenler
+    // başa alındı. Çoğu bir hareketle açılıyor (yan çevir, uzun bas, widget
+    // ekle, aramaya yaz); anlatılmazsa bulunmuyor. Sayfa ilk altıyı gösterir
+    // (`YeniliklerSheet.oneCikanSayisi`), bu yüzden ilk altı yeni ve en çok
+    // kullanılacak olanlar. Not en fazla 8 madde: emtia, tek ayar, kısayol,
+    // bildirim uyarısı ve eksik maliyet maddeleri çıkarıldı (özellikler
+    // duruyor; not her şeyi değil, bulunması zor olanı anlatır). Satış
+    // fiyatından maliyet ayrı madde değil, tutar maddesinde tek cümle:
+    // "neden ilk gün eksideyim" sorusunun cevabı orada.
+    //
+    // 2026-10-30 (Ar-Ge 08:45 #2, yasin "yap"): 29 Ekim alarm paketi (#260:
+    // tek dokunuşla yüzde alarmı, "her geçişte", grafikte alarm çizgisi) ve
+    // vitrin widget'ı eklendi. Madde sayısı ARTMADI: "Daha hızlı alarmlar"
+    // tek "Alarmlar" maddesine dönüştü ve ikinci sıraya çıktı (hedef kitlenin
+    // en sık kullanacağı yeni şey; ilk altı kuralı), vitrin widget maddesine
+    // bir cümle olarak girdi. "Çalmış alarma dokununca yeniden kurulur"
+    // cümlesi çıktı: özellik duruyor, ama yeni üç şeyin yanında not uzardı.
+    //
+    // 2026-11-01 (yasin: paywall 1.1.7'de, Remote Config bayrağı yok, kodda
+    // açık): Premium maddesi BAŞA eklendi. `bayrak: 'paywall_enabled'`
+    // platforma bağlı: iOS'ta görünür, Android'de RevenueCat kurulana kadar
+    // hiç yok (sayaca girmez). Fiyat yazılmaz (mağaza gösterir). Ücretsiz
+    // sınırlar sayıyla verilir ki "bir sabah kilit" sürprizi olmasın.
+    // "Önceden kuranlara 90 gün hediye" maddesi aynı gün KALKTI (yasin: eski
+    // kullanıcı da yeni gibi görür; hediye yok).
+    baslik: 'Premium, alarmlar, widget\'lar',
+    yenilikler: [
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        bayrak: 'paywall_enabled',
+        baslik: 'sandık Premium',
+        aciklama: 'Sınırsız varlık, takip listesi, alarm, ortak ve portföy; '
+            'yıllık rapor, PDF ve Excel; fon X-Ray; 8 gösterge ve sınırsız '
+            'sinyal bildirimi; kendi göstergen. Aylık ya da yıllık, yıllıkta '
+            '7 gün ücretsiz. Profil › Sandık Premium\'dan bakarsın. Hiçbir '
+            'verin silinmez; 10 varlık, 5 takip, 20 alarm, 1 ortak ve temel '
+            'özellikler ücretsiz kalır.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'Tek varlık ve Vitrin widget\'ı (iPhone)',
+        aciklama: 'Gram altın, dolar ya da bir fon: ana ekranda ve kilit '
+            'ekranında tek başına görünür. Ana ekrana basılı tut, artıya '
+            'dokun, sandık\'ı seç ve "Tek varlık"ı ekle. Varlığı widget\'ı '
+            'düzenleyerek seçersin. Orta boy "Vitrin" üç varlığı alt alta '
+            'gösterir. Altın, döviz, kripto ve fonda uygulamayı açmasan da '
+            'fiyat kendiliğinden tazelenir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Alarmlar',
+        aciklama: 'Altın, dolar ya da kripto ekleyince "Bugün %2 oynarsa '
+            'haber verelim mi?" sorusu çıkar; "Kur"a dokunman yeter. Fiyat '
+            'alarmında "Her geçişte haber ver"i açarsan alarm çalınca '
+            'kapanmaz, fiyat yeniden geçerse yine haber verir (günde en çok '
+            '3 kez). Kurduğun alarm varlık grafiğinde kesikli çizgi olarak '
+            'görünür. Altın, döviz ve kripto alarmları 5 dakikada bir kontrol '
+            'edilir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Aramada hızlı hesap',
+        aciklama: 'Aramaya "5 çeyrek" ya da "100 dolar" yaz, TL karşılığı en '
+            'üstte çıkar. Dokununca ekleme sayfası dolu açılır. Arama boşken '
+            'son baktığın varlıklar orada durur.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Tutarla ekle',
+        aciklama: '"10.000 TL\'lik aldım" diye hatırlıyorsan Varlık Ekle\'de '
+            'Tutar\'ı seç, adedi uygulama hesaplasın. Altın ve dövizde fiyatı '
+            'boş bırakırsan maliyet kuyumcunun satış fiyatından yazılır; '
+            'bu yüzden yeni altın ilk gün kuyumcu farkı kadar eksi görünür. '
+            'Altın ve döviz sayfasında artık iki fiyat var: bozdurursan '
+            'eline geçen ve alırsan ödeyeceğin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Takip listesi senin sıranda',
+        aciklama: 'Satırı uzun basıp sürükle; fiyatlar değişse de yerinde '
+            'kalır. İstersen "En çok yükselen" ya da "En çok düşen" diye sırala. '
+            'Liste boşsa gram altın, dolar ya da BIST 100\'ü tek dokunuşla ekle. '
+            'Alarm kurduğun satırda çan ve hedef fiyat görünür.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Telefonu yan çevir',
+        aciklama: 'Varlık grafiği tam ekran açılır. Trend çizgisi, yatay '
+            'seviye ve dikdörtgen çizebilirsin; çizimlerin o varlıkta kalır. '
+            'Paylaş düğmesi grafiği çizimleriyle birlikte görsel olarak gönderir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Yaklaşan önemli günler',
+        aciklama: 'Ana sayfada, Bugün kartının altında önümüzdeki iki günün '
+            'önemli günü yazar: TCMB ya da ABD faiz kararı, elindeki bir '
+            'hissenin geçen yıl temettü dağıttığı gün. Dokununca iki '
+            'haftalık liste açılır.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Zirve yenilendi',
+        aciklama: 'Zirvedeki portföyler daha okunaklı: türler büyükten '
+            'küçüğe sıralı, hepsi aynı ölçekte. Ayrıntı sayfası aşağı '
+            'çekince kapanıyor.',
+      ),
+    ],
+  ),
+  SurumNotu(
     surum: '1.1.6',
     tarih: 'Ekim 2026',
     onemli: true,
@@ -138,7 +329,7 @@ const List<SurumNotu> surumNotlari = [
       // bayrağıyla görünür; kapalıyken madde sayılmaz.
       Yenilik(
         ikon: YenilikIkonu.liste,
-        bayrak: 'tur_secici_izgara',
+        // Bayrak `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı.
         baslik: 'Varlık eklemek daha kolay',
         aciklama: 'Ekleme sayfasının başında arama: THYAO, Apple, BTC ya da '
             'ISIN yaz, türü uygulama bulsun. Aranmayanlar üç grupta: Borsa '

@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
 import '../models/ohlc.dart';
+import 'mevduat_hesabi.dart' show bilinenStopaj;
 import 'price_service.dart';
 import 'crash_reporter.dart';
 import '../utils/tr_format.dart';
@@ -62,6 +63,17 @@ class FiyatKaynagi {
   /// (gerekçe `PiyasaSeridi.altinSembolu`): Türkiye'de "gram altın" 24
   /// ayar demektir. Serisi [altinGramSerisi]'nden ağırlık çarpanıyla türer.
   static const String gramAltin24 = 'ALTIN_GRAM24';
+
+  /// Bitcoin (TL). Piyasa bandının beşinci öğesi (yasin 2026-10-29: "BTC de
+  /// eklenmeli fiyat bandına"). Kripto kuralı geçerli ([kriptoMu]): fiyat ve
+  /// gün içi yüzde sunucunun `kripto_fiyat` tablosundan, portföydeki
+  /// BTC ile aynı sayı.
+  static const String btcTry = 'KRIPTO:BTC';
+
+  /// Kıyas kartının "Mevduatta" satırının okuduğu TCMB vade dilimi
+  /// (`mevduat_faiz_gecmisi.vade_dilimi`, 0173). Gerekçe
+  /// [KiyasVarligi.mevduat].
+  static const String mevduatKiyasDilimi = 'ay1';
 
   /// Uygulamanın iç altın sembolleri (`ALTIN_GRAM`, `ALTIN_CEYREK`…)
   /// gerçek bir Yahoo/TEFAS sembolü DEĞİLDİR: hepsi gram22k serisinden
@@ -187,6 +199,11 @@ class FiyatKaynagi {
       sym.endsWith('TRY=X') ||
       sym.startsWith('ALTIN_');
 
+  /// Seri çevrimsiz mi döner? TL kote semboller ([tlKote]) ve küresel
+  /// endeksler (`^NDX`): endeks puandır, kurla çevrilmez (gerekçe
+  /// `kureselEndeksMi`). `HistoryService` ve mum kaynağı aynı kuralı sorar.
+  static bool cevrimsiz(String sym) => tlKote(sym) || kureselEndeksMi(sym);
+
   /// [a]'nın GERÇEK mumlarının (OHLC) nereden çekileceği — mum aralığı
   /// seçicisi (yasin, 2026-10-10: "TradingView'deki gibi 1 dk, 1 saat,
   /// 4 saat, günlük, haftalık, aylık").
@@ -244,7 +261,7 @@ class FiyatKaynagi {
         return MumKaynagi(
           MumKaynakTuru.yahoo,
           sembol: t,
-          usdCevir: !tlKote(t),
+          usdCevir: !cevrimsiz(t),
           olcekAlt: kur ? kurKalibreAltSinir : null,
           olcekUst: kur ? kurKalibreUstSinir : null,
         );
@@ -257,6 +274,104 @@ class FiyatKaynagi {
   /// (`HistoryService.getSymbolHistory` sembol bazlı çalıştığı için orada
   /// ayrı bir kural var: TRY kote olmayan her şey USD kabul edilir.)
   static bool usdKote(Asset a) => a.currency.trim().toUpperCase() == 'USD';
+
+  /// Tek varlık widget'ının (iOS `SandikVarlikWidget`, 2026-10-24) bu
+  /// varlık için soracağı CANLI kotasyon sembolü; widget'a girmeyecekse
+  /// `null`.
+  ///
+  /// ## Neden burada (sözleşme madde 1)
+  /// Widget yeni bir fiyat yüzeyidir; sembolü kendisi seçseydi "dolar"ın
+  /// bir yerde `USDTRY=X`, başka yerde başka bir kod olduğu ayrışma sınıfı
+  /// geri gelirdi. Sembol portföy fiyat turunun (`refreshPrices`) ve takip
+  /// ekleme aramasının `PriceService.fetchQuotes`'a verdiği sembolün
+  /// aynısıdır; fon kodu [kanonikTicker] ile `TEFAS:` önekine oturur.
+  ///
+  /// ## Neden yalnız çevrimsiz semboller (madde 2 ve 3)
+  /// Widget kotasyonun sayısını olduğu gibi gösterir. USD kote bir sembolün
+  /// (ABD hissesi, emtia vadelisi, eurobond) sayısı dolardır; uygulamanın
+  /// takip listesi aynı varlığı TL seriyle gösteriyor. Widget'ta TL'ye
+  /// çevirmek ikinci bir kur hesabı ve günlük yüzdeye kur hareketini
+  /// karıştırmak demekti; dolar yazmak ise uygulamayla ayrışırdı. İlk
+  /// sürümde bu varlıklar seçim listesine girmez (gram altın, döviz, BIST,
+  /// fon, kripto ve endeksler girer). Mevduat ve "diğer" piyasa fiyatı
+  /// taşımaz; elle fiyatlanan kaydın yayımlanmış kotasyonu yoktur.
+  static String? widgetKotasyonSembolu({
+    required AssetType type,
+    required String ticker,
+    required bool isManualPrice,
+  }) {
+    if (isManualPrice) return null;
+    switch (type) {
+      case AssetType.mevduat:
+      case AssetType.diger:
+      case AssetType.eurobond:
+        return null;
+      default:
+        break;
+    }
+    final t = kanonikTicker(
+            type: type, ticker: ticker, isManualPrice: isManualPrice)
+        .trim()
+        .toUpperCase();
+    if (t.isEmpty || t.startsWith(mevduatOneki)) return null;
+    return cevrimsiz(t) ? t : null;
+  }
+
+  /// Widget'ın bu sembolün fiyatını uygulama açılmadan SUNUCUDAN
+  /// tazeleyip tazeleyemeyeceği (`widget-fiyat`, yasin onayı 2026-10-26).
+  ///
+  /// Yalnız sunucunun zaten canlı tuttuğu, uygulamanın gösterdiğiyle AYNI
+  /// kaynaktan gelen semboller: altın ayarları ve TL dövizler
+  /// (`yurt_ici_kotasyon`, truncgil — [PriceService.yurtIciSembolleri])
+  /// ve kripto (`kripto_fiyat`). Fon (müşteri raporu 2026-10-26 21:15 #2,
+  /// yasin "yap"): `tefas_nav_gozlem` — uygulamanın gösterdiği AYNI TEFAS
+  /// NAV'ı, sunucunun gözlem cron'u okur; widget günde bir tazeler. BIST
+  /// hisse ve endeks sunucuda canlı tutulmuyor; widget onları yalnız
+  /// uygulamanın yazdığı değerle gösterir.
+  /// Sunucu eşi `_shared/widget_fiyat.ts › widgetSembolTuru`; iki liste
+  /// `varlik_widget_sunucu_tazeleme_test` ile kilitli.
+  static bool widgetSunucuKapsamindaMi(String sembol) {
+    if (PriceService.yurtIciSembolleri.contains(sembol)) return true;
+    if (sembol.startsWith(tefasOneki)) {
+      return RegExp(r'^[A-Z0-9]{3}$')
+          .hasMatch(sembol.substring(tefasOneki.length));
+    }
+    if (!kriptoMu(sembol) || sembol != sembol.trim().toUpperCase()) {
+      return false;
+    }
+    return RegExp(r'^[A-Z0-9]{2,15}$')
+        .hasMatch(sembol.substring(kriptoOneki.length));
+  }
+
+  /// Bu sembole "günlük yüzde" alarmı kurulabilir mi (0169, Ar-Ge
+  /// 2026-10-27 §1, yasin onayı).
+  ///
+  /// Kapsam [widgetSunucuKapsamindaMi]'dan TÜRER, ayrı sembol listesi yok
+  /// (sözleşme madde 1): sunucu günlük yüzdeyi yalnız altın/TL döviz
+  /// (`yurt_ici_kotasyon.degisim_pct`) ve kripto (`kripto_fiyat`, gün
+  /// açılışına göre) için ölçüyor. Fon bu kapsamın içinde ama çıkarılır:
+  /// günde tek NAV var, "bugün %2 düşerse" gün içi bir soru ve sayı gün
+  /// içinde değişmez. BIST/endeks/emtia sunucuda canlı tutulmadığı için
+  /// zaten dışarıda; o varlıklarda yüzde sekmesi hiç görünmez (uydurma yok,
+  /// madde 3). Sunucu eşi `_shared/yuzde_alarmi.ts › yuzdeAlarmKaynagi`.
+  static bool yuzdeAlarmiKapsamindaMi(String sembol) =>
+      widgetSunucuKapsamindaMi(sembol) && !sembol.startsWith(tefasOneki);
+
+  /// Bu sembole gösterge alarmı (EMA/MA/Bollinger, 0170) kurulabilir mi.
+  ///
+  /// Sunucu seviyeyi günlük kapanışlardan, son nokta CANLI fiyat olarak
+  /// hesaplar; ikisi aynı kaynaktan ve aynı birimde gelmelidir (madde 2).
+  /// Altın ayarları ve truncgil'den fiyatlanan üç TL döviz ([yurtIciKayitli])
+  /// HARİÇ: canlı fiyat yurt içi kotasyon, günlük seri Yahoo (vadeli × kur);
+  /// aradaki yapısal fark "EMA50'yi kesti" kararını sahte kılardı (uydurma
+  /// yok, madde 3). Eurobond zaten alarm kuramaz (`alarmSembolu`). Sunucu eşi
+  /// `_shared/gosterge_alarmi.ts › gostergeAlarmKapsamindaMi`.
+  static bool gostergeAlarmiKapsamindaMi(String sembol) {
+    final t = sembol.trim().toUpperCase();
+    if (t.isEmpty) return false;
+    if (t.startsWith('ALTIN_') || yurtIciKayitli(t)) return false;
+    return !t.startsWith(eurobondOneki);
+  }
 
   /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
   /// aranmayacaksa `null`.
@@ -373,6 +488,30 @@ class FiyatKaynagi {
     return altinMi(t) || t == usdTry || t == 'EURTRY=X' || t == 'GBPTRY=X';
   }
 
+  /// Altının GÜNLÜK değeri her zaman yurt içi kayıttan mı kurulur?
+  ///
+  /// ## Neden (kullanıcı bildirimi 2026-10-19: "bir açtığımda portföyüm %1
+  /// eksi, bir açtığımda artı")
+  /// Altının gün içi serisi iki kaynaktan birleştiriliyordu: uçlar yurt
+  /// içi kotasyondan (`altinUrunUclari`), şekil uluslararası altından; bir
+  /// ayarın günlük yüzdesi o oturumda henüz gelmemişse aynı ayar eski sabit
+  /// çarpan yoluna düşüyordu ve gün başı uluslararası serinin ilk noktası
+  /// oluyordu. Ölçüldü (sunucu kaydı, 19 Ekim): Kapalıçarşı 17:00'de
+  /// kapanınca 22 ayar ve çeyrek +%0,01'de dondu, uluslararası altın −%0,5'e
+  /// indi. Hangi yolun seçildiği fiyatların geliş sırasına bağlı olduğu için
+  /// aynı portföy bir açılışta eksi, öbüründe artı gösteriyordu.
+  ///
+  /// Muadil uygulamaların kuralı tek kaynak: ürünün değeri ve günlük
+  /// değişimi yalnızca o ürünün kendi fiyatından. Sunucu ekrandaki
+  /// kotasyonu beş dakikada bir kaydettiği için (`yurt_ici_kotasyon`, 0101)
+  /// altının GÜNLÜK'ü hafta içi de bu kayıttan çizilir; uluslararası seri
+  /// günlük hesaba girmez. Kayıt yoksa (ağ, demo) eski yol kalır.
+  ///
+  /// Döviz bu karara girmez: hafta içi Yahoo kuru ile kotasyon aynı ölçekte
+  /// ve sorun yalnızca altının ayar primlerinde çıktı.
+  static bool altinYurtIciGunlukMu(Asset a) =>
+      a.type == AssetType.altin && yurtIciKayitli(a.ticker);
+
   /// Uluslararası seri bu kadar süredir nokta üretmiyorsa SUSMUŞ sayılır.
   ///
   /// Hafta içi döviz ve spot altın 5 dakikada bir nokta verir; tek boşluk
@@ -397,13 +536,17 @@ class FiyatKaynagi {
   /// bugünün gün başına karışırsa "bugün" yüzdesi yanlış güne bağlanır
   /// (`HistoryService._sonIyiOku` ile aynı kural). İki noktadan az kayıt
   /// şekil değildir. Damgalar [normalize] ile çağıranın ızgarasına oturur.
+  ///
+  /// [her zaman] `true` ise uluslararası serinin durumuna bakılmaz: altın
+  /// için kayıt, varsa, GÜNLÜK'ün TEK kaynağıdır (bkz. [altinYurtIciGunlukMu]).
   static Map<int, double>? yurtIciGunIciSekli({
     required Map<int, double> uluslararasi,
     required List<(int, double)> yurtIci,
     required DateTime simdi,
     required int Function(int ms) normalize,
+    bool herZaman = false,
   }) {
-    if (!uluslararasiSustu(uluslararasi, simdi)) return null;
+    if (!herZaman && !uluslararasiSustu(uluslararasi, simdi)) return null;
     final gunBasi = dayKey(simdi).millisecondsSinceEpoch;
     final simdiMs = simdi.millisecondsSinceEpoch;
     final out = <int, double>{};
@@ -433,20 +576,129 @@ class FiyatKaynagi {
 /// kotasyona kalibre edilir (`altinKalibrasyonu`), dolar ve endeks TRY
 /// kotedir; hiçbir yerde ikinci bir kaynak karışmaz.
 ///
-/// ## Mevduat YOK (2026-10-01)
-/// Projede piyasa mevduat FAİZİ serisi yok: `MEVDUAT:` sembolleri
-/// kullanıcının kendi sözleşmesinin tahakkukudur, bir piyasa oranı değil.
-/// Sabit bir faiz yazmak (madde 3) uydurma sayıdır; seri eklenene kadar
-/// mevduat kıyası gösterilmez.
+/// ## Mevduat (2026-10-01 → 2026-11-07)
+/// 2026-10-01'de projede piyasa mevduat FAİZİ serisi yoktu: `MEVDUAT:`
+/// sembolleri kullanıcının kendi sözleşmesinin tahakkukudur, bir piyasa
+/// oranı değil; sabit bir faiz yazmak (madde 3) uydurma sayı olurdu ve
+/// satır gösterilmedi. 0173 ile sunucu TCMB EVDS haftalık ağırlıklı
+/// ortalama TL mevduat faizinin GEÇMİŞİNİ saklıyor (`mevduat-faiz`);
+/// [mevduat] o seriden kurulur. Ayrıntı [mevduatKiyasSerisi].
 enum KiyasVarligi {
   dolar(FiyatKaynagi.usdTry),
   altin(FiyatKaynagi.gramAltin24),
-  bist100(FiyatKaynagi.bist100);
+  bist100(FiyatKaynagi.bist100),
 
-  const KiyasVarligi(this.sembol);
+  /// "Mevduatta" — aynı paralar aynı günlerde TL mevduata konsaydı.
+  ///
+  /// ## Neden 'ay1' (1 aya kadar) dilimi
+  /// Nakit akışı keyfî günlerde gelir ve çıkar; buna en yakın gerçek ürün
+  /// her ay yenilenen kısa vadeli mevduattır (çekilen para en fazla bir
+  /// ay bağlı kalır). Uzun dilim, çekişin vade bozmadan mümkün olduğunu
+  /// varsayıp getiriyi şişirirdi.
+  ///
+  /// ## Katman (karar kaydı, 2026-11-06)
+  /// Satır kartın MEVCUT katmanını izler; yeni Premium kapısı yok (Ar-Ge
+  /// + rapor önerisi). yasin'in yanıtı BEKLENİYOR (6 Kas 2026): "kilitli"
+  /// derse kilit kartın satır döngüsünde tek koşulla eklenir.
+  mevduat(FiyatKaynagi.mevduatKiyasDilimi, tur: KiyasSeriTuru.mevduatFaizi);
 
-  /// Serinin çekileceği sembol.
+  const KiyasVarligi(this.sembol, {this.tur = KiyasSeriTuru.fiyat});
+
+  /// Fiyat türünde serinin çekileceği sembol; [KiyasSeriTuru.mevduatFaizi]
+  /// türünde `mevduat_faiz_gecmisi` vade dilimi.
   final String sembol;
+
+  /// Seri fiyat mı, yoksa fiyata çevrilecek faiz mi.
+  final KiyasSeriTuru tur;
+}
+
+/// Kıyas serisinin türü. Yükleyici buna göre kaynağı seçer; hesap
+/// (`KiyasService.kiyasla`) ikisinde de aynı fiyat serisini görür.
+enum KiyasSeriTuru {
+  /// `HistoryService.getSymbolHistory` fiyat serisi.
+  fiyat,
+
+  /// Haftalık yıllık faiz → [mevduatKiyasSerisi] birikim endeksi.
+  mevduatFaizi,
+}
+
+/// Bilinen bir haftanın yıllık brüt faizi (TCMB, %).
+typedef MevduatFaizNoktasi = ({DateTime hafta, double yillikFaiz});
+
+/// Haftalık faiz boşluğu bu kadarı aşarsa seri o noktada KOPAR.
+/// TCMB haftalık yayımlar ve bir hafta gecikir; 21 gün = iki yayın kaçmış.
+/// Daha uzun boşluğu "son faizle devam" diye köprülemek uydurma olurdu.
+const mevduatAzamiBoslukGun = 21;
+
+/// Mevduat faizlerini, kıyas hesabının fiyat gibi kullanacağı günlük
+/// TL BİRİKİM ENDEKSİNE çevirir (1 ₺'nin mevduatta büyümesi).
+///
+/// ## Neden fiyat serisi
+/// `KiyasService.kiyasla` alınan birim = tutar ÷ fiyat, son = birim × son
+/// fiyat hesaplar. Endeks bir "fiyat" olunca bu tam olarak "her akış o gün
+/// mevduata girer/çıkar, bugüne kadar faiz işler" demektir; hesap ve kart
+/// değişmeden aynı yoldan geçer.
+///
+/// ## Hesap
+/// Her hafta o haftanın faizi işler: net = brüt × (1 − stopaj), stopaj
+/// o hafta açılan/yenilenen 32 günlük mevduatın oranı (`bilinenStopaj`,
+/// `mevduatStopajTablosu` — mevduat varlığının kullandığı TEK tablo). Hafta
+/// içinde basit (`MevduatHesabi.donemNetFaizi` ile aynı formül), hafta
+/// sonunda bileşik. Aylık yenilemeye göre fark yılda ~0,1 puanın altında.
+///
+/// ## Uydurma sayı YOK — boş dönen durumlar
+/// * stopajı bilinmeyen haftalar (tablo öncesi) atılır; dönem başı o
+///   tarihten eskiyse seri dönemi kapsamaz ve satır çizilmez,
+/// * [mevduatAzamiBoslukGun]'ü aşan boşlukta yalnız SON kesintisiz parça
+///   kalır,
+/// * son faiz [son]'dan [mevduatAzamiBoslukGun] günden eskiyse seri boş
+///   (bayat faiz bugüne taşınmaz).
+Map<int, double> mevduatKiyasSerisi(
+  List<MevduatFaizNoktasi> faizler, {
+  required DateTime son,
+}) {
+  const gun = dayKey;
+  final sirali = [
+    for (final f in faizler)
+      if (f.yillikFaiz > 0 &&
+          f.yillikFaiz < 300 &&
+          f.yillikFaiz.isFinite &&
+          bilinenStopaj(gun(f.hafta), 32) != null)
+        (hafta: gun(f.hafta), yillikFaiz: f.yillikFaiz),
+  ]..sort((a, b) => a.hafta.compareTo(b.hafta));
+  if (sirali.isEmpty) return const {};
+
+  // Son kesintisiz parça.
+  var bas = sirali.length - 1;
+  while (bas > 0 &&
+      sirali[bas].hafta.difference(sirali[bas - 1].hafta).inDays <=
+          mevduatAzamiBoslukGun) {
+    bas--;
+  }
+  final parca = sirali.sublist(bas);
+  final sonGun = gun(son);
+  if (sonGun.difference(parca.last.hafta).inDays > mevduatAzamiBoslukGun ||
+      sonGun.isBefore(parca.first.hafta)) {
+    return const {};
+  }
+
+  final out = <int, double>{};
+  var taban = 1.0;
+  for (var i = 0; i < parca.length; i++) {
+    final h = parca[i];
+    final bitis = i + 1 < parca.length ? parca[i + 1].hafta : sonGun;
+    final net = h.yillikFaiz * (1 - bilinenStopaj(h.hafta, 32)! / 100);
+    final gunSayisi = bitis.difference(h.hafta).inDays;
+    // Takvim günü adımı (DateTime(y, m, d + k)): yaz saati geçişinde
+    // 24 saatlik adım günü kaydırırdı.
+    for (var k = 0; k < gunSayisi; k++) {
+      final d = DateTime(h.hafta.year, h.hafta.month, h.hafta.day + k);
+      out[d.millisecondsSinceEpoch] = taban * (1 + net / 100 * k / 365);
+    }
+    taban *= 1 + net / 100 * gunSayisi / 365;
+  }
+  out[sonGun.millisecondsSinceEpoch] = taban;
+  return out;
 }
 
 /// Altın gram22k serisinin hangi kaynaktan kurulduğu.
@@ -604,6 +856,85 @@ const double altinKalibreUstSinir = 1.33;
 /// çevrilmiş parite) ve kalibrasyonla örtülmemelidir.
 const double kurKalibreAltSinir = 0.90;
 const double kurKalibreUstSinir = 1.11;
+
+// ── Boş fiyatlı yeni alımın maliyeti: satış fiyatı (2026-10-24) ─────────────
+//
+// ## Neden
+// Yurt içi kotasyonun iki yüzü var: ALIŞ (kuyumcu/banka senden alırken,
+// yani bozdurursan eline geçen) ve SATIŞ (sana satarken). Değer ve grafik
+// ALIŞ'la kalır (madde 2 — ekrandaki fiyat ile serinin ölçeği aynı). Ama
+// kullanıcı altını/dövizi SATIŞ'tan aldı; fiyatı boş bırakınca maliyeti
+// alıştan yazmak yeni varlığı %0 gösteriyordu, gerçekte kullanıcı makas
+// kadar geride. Banka altın hesapları maliyeti satış kurundan yazar.
+//
+// ## Neden bu kadar dar
+// Satış fiyatı yalnızca ŞU ANKİ kotasyondan bilinir: geçmiş günün satışı
+// kayıtlı değil (madde 3 — bilinmeyen sayı uydurulmaz). Elle girilen fiyat
+// kullanıcının gerçeğidir, eski kayıtlar olduğu gibi kalır. Kaynak AYNI
+// truncgil kaydı, yeni sağlayıcı yok (madde 1); hangi sembolün yurt içi
+// kotasyonla fiyatlandığına [FiyatKaynagi.yurtIciKayitli] karar verir.
+
+/// Satış ÷ alış oranının kabul sınırı. Yurt içi makas gram altında yüzde
+/// birkaç, ziynette biraz daha fazladır; %25'i aşan "makas" değil arızadır
+/// (yanlış alan, kayan anahtar) ve maliyete yazılmaz.
+const double satisMakasiUstSinir = 1.25;
+
+/// Fiyatı BOŞ bırakılmış yeni alımın maliyetine yazılacak satış fiyatı;
+/// kural uygulanmıyorsa `null` (çağıran bugünkü alış fiyatını kullanır).
+///
+/// Uygulanır: sembol yurt içi kotasyonlu (altın ayarları, USD/EUR/GBP),
+/// para birimi TRY (kotasyon TL'dir), alım BUGÜN, satış geçerli ve makas
+/// [satisMakasiUstSinir] içinde. Satış alışın altındaysa veri bozuktur.
+double? maliyetSatisFiyati({
+  required String ticker,
+  required String paraBirimi,
+  required DateTime tarih,
+  required double? alis,
+  required double? satis,
+  DateTime? now,
+}) {
+  if (!FiyatKaynagi.yurtIciKayitli(ticker)) return null;
+  if (paraBirimi.trim().toUpperCase() != 'TRY') return null;
+  if (dayKey(tarih) != dayKey(now ?? DateTime.now())) return null;
+  if (alis == null || satis == null) return null;
+  if (!alis.isFinite || !satis.isFinite || alis <= 0) return null;
+  if (satis < alis || satis / alis > satisMakasiUstSinir) return null;
+  return satis;
+}
+
+/// Varlık sayfası ve varlık detayındaki "Bozdurursan · Alırsan · fark"
+/// satırının satış fiyatı; satır gösterilmeyecekse `null` (2026-10-25).
+///
+/// Kendi kuralı YOK: [maliyetSatisFiyati] kapısını bugünün tarihiyle
+/// çağırır. Neden aynı kapı: formun maliyete yazdığı satış ile ekranın
+/// "alırsan" dediği sayı aynı koşullarda var olmalı; biri gösterip öbürü
+/// reddederse kullanıcı iki ekranda iki ayrı gerçek görür. Kapı reddederse
+/// (yurt dışı/USD-kote, satış yok, satış < alış, makas sınır dışı) satır
+/// HİÇ çizilmez — uydurma sayı yok (madde 3).
+double? gorunurSatisFiyati({
+  required String ticker,
+  required String paraBirimi,
+  required double? alis,
+  required double? satis,
+  DateTime? now,
+}) {
+  final bugun = now ?? DateTime.now();
+  return maliyetSatisFiyati(
+    ticker: ticker,
+    paraBirimi: paraBirimi,
+    tarih: bugun,
+    alis: alis,
+    satis: satis,
+    now: bugun,
+  );
+}
+
+/// Formdaki "kuyumcu farkı" yüzdesi: satıştan alınıp bugün alıştan
+/// bozdurulunca kaybedilen pay, `(satış - alış) / satış * 100`. Portföyde
+/// yeni varlığın ilk gün gördüğü eksi yüzdeyle AYNI sayı (maliyet satış,
+/// değer alış); satır o eksiyi açıklar.
+double kuyumcuFarkiYuzde({required double alis, required double satis}) =>
+    satis <= 0 ? 0 : (satis - alis) / satis * 100;
 
 /// Altın serisinin canlı fiyat ölçeğine çarpanı — [olcekCarpani] sarmalayıcısı.
 ///

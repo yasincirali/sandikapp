@@ -9,13 +9,98 @@ import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'supabase_service.dart';
 import '../demo/demo_modu.dart';
+import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/emtia_katalogu.dart';
 import '../models/eurobond.dart';
 import '../models/ohlc.dart';
 import 'mum_verisi.dart' show yahooOhlcCoz;
 import 'tefas_service.dart';
 import 'mevduat_hesabi.dart';
 import 'sozlesme_deposu.dart';
+
+/// Yahoo `v8/finance/chart` yanıtı → (ms, kapanış) noktaları.
+///
+/// ## Gün içinde önceki kapanış (2026-10-30, yasin: "bugün sayfası, canlı
+/// aktivite, Performans bugün ve varlık detay bugün tutarlı olmalı")
+/// Hisse/ETF/endeks gün içi serisi açılış seansının İLK 5 dakikalık
+/// barıyla başlıyordu. Gün içi motor bu ilk noktayı gün başı sayar
+/// (`HistoryService` › `assetSeedTRY`); açılıştaki sıçrama günün hiçbir
+/// yüzeyinde görünmüyordu. Ölçüldü (senaryo testi): önceki kapanış
+/// 294,12, ilk bar 296, canlı 300 → kotasyon, takip listesi ve brifing
+/// "+%2,0" derken varlık sayfası GÜNLÜK "+%1,35" yazıyor, Bugün kartı
+/// da açılış sıçramasını tutara katmıyordu. Döviz ve altın bu sorunu
+/// kotasyonun kendi gün başıyla çözmüştü (`dovizUrunBirimi`, yurt içi
+/// kayıt); hissede yoktu.
+///
+/// Çözüm: aynı yanıtın `meta.chartPreviousClose`'u, ilk barın bir slot
+/// ÖNCESİNE nokta olarak eklenir. Kaynak ve ölçek seriyle aynıdır (aynı
+/// sağlayıcı, aynı yanıt), uydurma değildir. Açılış sıçraması grafikte
+/// açılış anında bir basamak olur; şekil yayılmaz.
+///
+/// Yalnız seanslı enstrümanlar ([gunIci] ve `instrumentType` hisse, ETF,
+/// endeks): döviz ve vadeli 7/24'e yakın işler, gün başları kendi
+/// yolundan gelir.
+List<(int, double)> yahooSeriCoz(Map<String, dynamic> body,
+    {required bool gunIci}) {
+  final result =
+      (body['chart']?['result'] as List?)?.firstOrNull as Map<String, dynamic>?;
+  if (result == null) return [];
+
+  final timestamps = (result['timestamp'] as List?)?.cast<int>() ?? [];
+  final closes = (((result['indicators']?['quote'] as List?)?.firstOrNull
+          as Map<String, dynamic>?)?['close'] as List?)
+      ?.cast<dynamic>() ?? [];
+
+  final points = <(int, double)>[];
+  for (var i = 0; i < timestamps.length && i < closes.length; i++) {
+    final price = (closes[i] as num?)?.toDouble();
+    if (price != null && price > 0) {
+      points.add((timestamps[i] * 1000, price));
+    }
+  }
+  if (!gunIci || points.isEmpty) return points;
+  final meta = result['meta'] as Map<String, dynamic>?;
+  final tur = meta?['instrumentType'];
+  if (tur != 'EQUITY' && tur != 'ETF' && tur != 'INDEX') return points;
+  final onceki = (meta?['chartPreviousClose'] as num?)?.toDouble();
+  if (onceki == null || !onceki.isFinite || onceki <= 0) return points;
+  const slot = Duration(minutes: 5);
+  return [(points.first.$1 - slot.inMilliseconds, onceki), ...points];
+}
+
+/// Yahoo `v8/finance/chart` yanıtından kotasyon — 2026-10-31'den beri tek
+/// yol (toplu `v7/finance/quote` 401 döndüğü için kaldırıldı; bkz.
+/// `_fetchYahoo`).
+///
+/// ## Neden yüzde de (Ar-Ge 2026-10-30 12:45 #1, yasin "yap")
+/// Yedek yol yalnız fiyat yazıyordu. Toplu uç düşünce (çerez/crumb ister;
+/// çoğu istemcide 401 döndüğü biliniyor, ölçüm bekliyor) hisse günlük
+/// yüzdesiz kalıyordu: piyasa bandı ve tek varlık widget'ı yüzde
+/// göstermiyor, gün başı referansı (`gunlukReferansFiyat`) oluşmuyordu.
+/// Yüzde aynı yanıtın `meta.chartPreviousClose`'undan hesaplanır: sunucu
+/// (`_shared/live_prices.ts` › `fetchYahooQuote`) ve gün içi seri
+/// ([yahooSeriCoz]) de bu alanı kullanır, üç yüzey tanım gereği aynı
+/// sayıyı yazar. Önceki kapanış yoksa yüzde `null` (uydurma yok).
+YahooQuote? yahooGrafikKotasyonu(String symbol, Map<String, dynamic> body) {
+  final result =
+      (body['chart']?['result'] as List?)?.firstOrNull as Map<String, dynamic>?;
+  if (result == null) return null;
+  final m = result['meta'] as Map<String, dynamic>?;
+  final price = (m?['regularMarketPrice'] as num?)?.toDouble();
+  if (price == null) return null;
+  final onceki = (m?['chartPreviousClose'] as num?)?.toDouble();
+  return YahooQuote(
+    symbol: symbol,
+    regularMarketPrice: price,
+    currency: m?['currency'] as String?,
+    shortName: m?['shortName'] as String?,
+    regularMarketChangePercent:
+        onceki != null && onceki.isFinite && onceki > 0 && price > 0
+            ? (price / onceki - 1) * 100
+            : null,
+  );
+}
 
 class YahooQuote {
   final String symbol;
@@ -25,6 +110,13 @@ class YahooQuote {
   final String? shortName;
   final String? longName;
 
+  /// Yurt içi kotasyonun SATIŞ fiyatı (kuyumcu/bankanın sana sattığı) —
+  /// yalnız truncgil kaydı `Selling` taşıdığında dolu, öteki her kaynakta
+  /// `null`. [regularMarketPrice] ALIŞ'tır (bozdurursan eline geçen) ve
+  /// değer/grafik onunla kalır; bu alan yalnız boş fiyatlı yeni altın/döviz
+  /// alımının maliyet önerisidir (`maliyetSatisFiyati`, 2026-10-24).
+  final double? satisFiyati;
+
   const YahooQuote({
     required this.symbol,
     this.regularMarketPrice,
@@ -32,6 +124,7 @@ class YahooQuote {
     this.regularMarketChangePercent,
     this.shortName,
     this.longName,
+    this.satisFiyati,
   });
 
   factory YahooQuote.fromJson(Map<String, dynamic> j) => YahooQuote(
@@ -47,11 +140,51 @@ class YahooQuote {
   String get companyName => shortName ?? longName ?? symbol;
 }
 
+/// PriceService'in HTTP sonuç sayacı — "İnternet yok" şeridi için.
+///
+/// Neden sayaç (2026-11-07, Ar-Ge #3): `fetchQuotes` kaynak hatalarını
+/// bilerek yutar (bir kaynak düşse de diğerleri fiyat versin), bu yüzden
+/// bağlantı kopukken tur hata FIRLATMADAN boş döner ve çağıran ağ hatasını
+/// göremez. Her istek bu sayaçtan geçer: ağ hatası (`agHatasiMi`) ve
+/// yanıt alınan istek ayrı sayılır. Tur öncesi ve sonrası anlık görüntü
+/// farkı "bu turda hiç yanıt yok, ağ hatası var" sorusunu yanıtlar
+/// (`turBaglantiKarari`). HTTP 4xx/5xx de yanıttır: sunucu kötü ama
+/// internet var — şerit "İnternet yok" demez.
+class AgSayaci {
+  int _hata = 0;
+  int _yanit = 0;
+
+  ({int hata, int yanit}) anlik() => (hata: _hata, yanit: _yanit);
+}
+
+class _SayacliIstemci extends http.BaseClient {
+  _SayacliIstemci(this._ic, this._sayac);
+  final http.Client _ic;
+  final AgSayaci _sayac;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    try {
+      final res = await _ic.send(request);
+      _sayac._yanit++;
+      return res;
+    } catch (e) {
+      if (CrashReporter.agHatasiMi(e)) _sayac._hata++;
+      rethrow;
+    }
+  }
+
+  @override
+  void close() => _ic.close();
+}
+
 class PriceService {
   static final PriceService instance = PriceService._();
   PriceService._();
 
-  final _client = http.Client();
+  /// Bkz. [AgSayaci].
+  final agSayaci = AgSayaci();
+  late final http.Client _client = _SayacliIstemci(http.Client(), agSayaci);
 
   static const _ua =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -104,6 +237,13 @@ class PriceService {
     'ALTIN_BESLI': 'BESLIALTIN',
   };
 
+  /// truncgil'den fiyatlanan semboller (altın ayarları + TL dövizler) —
+  /// sunucunun `yurt_ici_kotasyon`'a yazdığı küme (`YURT_ICI_SEMBOLLER`).
+  /// Tek varlık widget'ının sunucu kapsamı buradan okunur
+  /// (`FiyatKaynagi.widgetSunucuKapsamindaMi`).
+  static Set<String> get yurtIciSembolleri =>
+      {..._truncgilGoldKeys.keys, ..._fxSymbols};
+
   // Fallback gold weights in 22K grams (used with Yahoo GC=F if truncgil fails)
   static const _goldWeights = <String, double>{
     'ALTIN_GRAM': 1.0,
@@ -135,6 +275,9 @@ class PriceService {
   /// Bir troy ons kaç gram — altın çevriminin sabiti.
   static const _gramsPerTroyOunce = 31.1035;
 
+  /// Gram emtia (`GRAM:SI=F`) fiyatı = ons kotasyonu ÷ bu değer.
+  static const gramsPerTroyOunce = _gramsPerTroyOunce;
+
   /// Türkiye'de "gram altın" 22 ayar üzerinden fiyatlanır; XAU ise 24 ayar
   /// saflıktadır. Bu oran saf ons fiyatını yerel gram fiyatına indirir.
   static const _goldPurityFactor = 22 / 24;
@@ -154,6 +297,42 @@ class PriceService {
   /// Altın ürününün gram cinsinden ağırlık çarpanı (çeyrek, yarım, ata...).
   /// Bilinmeyen sembolde 1.0 → gram altın gibi davranır.
   static double goldWeightFactor(String symbol) => _goldWeights[symbol] ?? 1.0;
+
+  /// Adedi GRAM olan altın ürünleri (24/22/18/14 ayar, has). Ürünün birimi
+  /// tür listesinden (`GoldSubCategory.unitType`) okunur, burada ikinci bir
+  /// liste tutulmaz: yeni gram ürün eklenince kendiliğinden girer.
+  static final Set<String> _gramBirimliAltinlar = {
+    for (final g in GoldSubCategory.values)
+      if (g.unitType == 'gr')
+        if (goldTickerMap[g.label] case final t?) t,
+  };
+
+  /// Bir altın kaleminin fiziksel gramı ve 24 ayar (has) karşılığı.
+  ///
+  /// ## Neden fiyat tablosundan (Ar-Ge 7 Kas 18:06 #1)
+  /// "Kaç gram altınım var" sorusunun cevabı fiyatın çarpanıyla AYNI
+  /// tablodan gelmeli: [_goldWeights] 22 ayar gram cinsindendir, yani
+  /// `adet × çarpan` kalemin 22 ayar gram karşılığıdır ve ×22/24 onu has
+  /// altına indirir. Ayrı bir ağırlık tablosu yazılsaydı biri düzeltilip
+  /// öteki kalınca ekran "1,75 gr" derken fiyat başka ağırlıkla hesaplanırdı.
+  /// Web hesaplayıcısı (`docs/altin/`) da aynı sayıları taşır
+  /// (`altin_web_agirlik_esleme_test`).
+  ///
+  /// Fiziksel gram: gram ürünlerde adedin kendisi (14 ayar 10 gr bilezik 10
+  /// gramdır), sikkelerde `adet × kalıp ağırlığı`.
+  ///
+  /// Tabloda olmayan sembol (ons `XAUUSD=X`, emtia, boş ticker) `null`:
+  /// bilinmeyen ağırlık uydurulmaz, kalem toplama girmez.
+  static ({double gram, double has})? altinGramKarsiligi(
+      String symbol, double adet) {
+    final carpan = _goldWeights[symbol];
+    if (carpan == null) return null;
+    final gram22 = adet * carpan;
+    return (
+      gram: _gramBirimliAltinlar.contains(symbol) ? adet : gram22,
+      has: gram22 * _goldPurityFactor,
+    );
+  }
 
   static const _tefasPrefix = 'TEFAS:';
 
@@ -366,6 +545,13 @@ class PriceService {
     _gunlukYaz(s, fiyat, gunlukPct);
   }
 
+  /// Testler için: ağa çıkmadan taze kotasyon önbelleği kurar (gram emtia
+  /// türetimi `fetchQuotes` içinde sınanabilsin diye).
+  @visibleForTesting
+  void testIcinOnbellegeYaz(YahooQuote q) {
+    _quoteCache[q.symbol.trim().toUpperCase()] = (quote: q, at: DateTime.now());
+  }
+
   /// Testler için: oturum belleğini sıfırlar (disk değil).
   @visibleForTesting
   void sonBilinenFiyatlariTemizle() {
@@ -453,6 +639,13 @@ class PriceService {
         .toSet()
         .toList();
     if (cleaned.isEmpty) return {};
+
+    // Gram emtia (`GRAM:SI=F`, `emtia_katalogu.dart`) kendi kotasyonu olan
+    // bir sembol değildir: ons tabanı çekilir, fiyat 31,1035'e bölünür;
+    // yüzde aynıdır. Taban da önbelleğe ve oturum belleğine girer.
+    if (cleaned.any((s) => emtiaGramTabani(s) != null)) {
+      return _gramKotasyonlari(cleaned, forceRefresh: forceRefresh);
+    }
 
     // Mevduat (`MEVDUAT:<id>`) ağa çıkmaz ve önbelleğe girmez: birim değer
     // sözleşmeden HESAPLANIR (`mevduat_hesabi.dart`), ucuzdur ve yenileme
@@ -643,6 +836,42 @@ class PriceService {
     results.addAll(cachedHits);
     results.addAll(mevduatSonucu);
     return results;
+  }
+
+  Future<Map<String, YahooQuote>> _gramKotasyonlari(
+    List<String> semboller, {
+    required bool forceRefresh,
+  }) async {
+    final gramlar = <String, String>{
+      for (final s in semboller)
+        if (emtiaGramTabani(s) case final t?) s: t,
+    };
+    final digerleri = semboller.where((s) => !gramlar.containsKey(s)).toSet();
+    final ham = await fetchQuotes(
+        [...digerleri, ...gramlar.values], forceRefresh: forceRefresh);
+    final out = <String, YahooQuote>{
+      for (final e in ham.entries)
+        if (digerleri.contains(e.key)) e.key: e.value,
+    };
+    for (final g in gramlar.entries) {
+      final q = ham[g.value];
+      final p = q?.regularMarketPrice;
+      // Taban fiyatsızsa gram da yok — uydurma yok (madde 3).
+      if (q == null || p == null || p <= 0) continue;
+      final gp = p / _gramsPerTroyOunce;
+      out[g.key] = YahooQuote(
+        symbol: g.key,
+        regularMarketPrice: gp,
+        currency: q.currency,
+        regularMarketChangePercent: q.regularMarketChangePercent,
+        shortName: q.shortName,
+        longName: q.longName,
+      );
+      _sonBilinenFiyat[g.key] = gp;
+      _yalnizDisktenBilinen.remove(g.key);
+      _gunlukYaz(g.key, gp, q.regularMarketChangePercent);
+    }
+    return out;
   }
 
   // ── Mevduat — sözleşmeden birim değer (0088) ───────────────────────────
@@ -950,6 +1179,24 @@ class PriceService {
         entry['Buying'] ??
         entry['Satış'] ??
         entry['Selling'];
+    return _truncgilSayi(raw);
+  }
+
+  /// truncgil kaydının SATIŞ alanı (2026-10-24, maliyet önerisi).
+  ///
+  /// Alış alanı YOKSA `null`: o kayıtta [_parseTruncgilValue] zaten satışa
+  /// düşmüştür, "alış = satış" gibi görünen sıfır makas uydurma olurdu.
+  /// Makasın makul olup olmadığına burada değil sözleşme karar verir
+  /// (`maliyetSatisFiyati`); burası yalnız sayıyı okur.
+  @visibleForTesting
+  static double? parseTruncgilSatis(dynamic entry) {
+    if (entry is! Map) return null;
+    if (entry['Alış'] == null && entry['Buying'] == null) return null;
+    final v = _truncgilSayi(entry['Satış'] ?? entry['Selling']);
+    return v > 0 ? v : null;
+  }
+
+  static double _truncgilSayi(dynamic raw) {
     if (raw == null) return 0;
     // v4: gerçek sayı — string ayrıştırması uygulanmamalı.
     if (raw is num) {
@@ -973,11 +1220,14 @@ class PriceService {
     if (eurTry > 0) _sonKaynak['EURTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
     if (gbpTry > 0) _sonKaynak['GBPTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
     return {
-      'USDTRY=X': _fxQ('USDTRY=X', usdTry, _truncgilChange(data['USD'])),
+      'USDTRY=X': _fxQ('USDTRY=X', usdTry, _truncgilChange(data['USD']),
+          parseTruncgilSatis(data['USD'])),
       if (eurTry > 0)
-        'EURTRY=X': _fxQ('EURTRY=X', eurTry, _truncgilChange(data['EUR'])),
+        'EURTRY=X': _fxQ('EURTRY=X', eurTry, _truncgilChange(data['EUR']),
+            parseTruncgilSatis(data['EUR'])),
       if (gbpTry > 0)
-        'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry, _truncgilChange(data['GBP'])),
+        'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry, _truncgilChange(data['GBP']),
+            parseTruncgilSatis(data['GBP'])),
     };
   }
 
@@ -1010,6 +1260,7 @@ class PriceService {
           currency: 'TRY',
           shortName: _goldLabel(sym),
           regularMarketChangePercent: _truncgilChange(data[key]),
+          satisFiyati: parseTruncgilSatis(data[key]),
         );
       }
     }
@@ -1057,11 +1308,14 @@ class PriceService {
     };
   }
 
-  YahooQuote _fxQ(String symbol, double price, [double? change]) => YahooQuote(
+  YahooQuote _fxQ(String symbol, double price,
+          [double? change, double? satis]) =>
+      YahooQuote(
         symbol: symbol,
         regularMarketPrice: price,
         currency: 'TRY',
         regularMarketChangePercent: change,
+        satisFiyati: satis,
       );
 
   // ── Gold fallback — XAU/TRY doğrudan, olmazsa GC=F × USD/TRY ─────────────
@@ -1239,39 +1493,16 @@ class PriceService {
 
   // ── Yahoo Finance — stocks, crypto, commodities ────────────────────────────
 
-  Future<Map<String, YahooQuote>> _fetchYahoo(List<String> symbols) async {
-    try {
-      final bulk = await _fetchBulk(symbols);
-      if (bulk.isNotEmpty) return bulk;
-    } catch (_) {}
-    return _fetchChartAll(symbols);
-  }
-
-  Future<Map<String, YahooQuote>> _fetchBulk(List<String> symbols) async {
-    final uri = Uri.https('query1.finance.yahoo.com', '/v7/finance/quote', {
-      'symbols': symbols.join(','),
-      'lang': 'en-US',
-      'region': 'US',
-      'corsDomain': 'finance.yahoo.com',
-      'fields':
-          'regularMarketPrice,currency,shortName,longName,regularMarketChangePercent',
-    });
-
-    final res = await _client
-        .get(uri, headers: {'User-Agent': _ua, 'Accept': 'application/json'})
-        .timeout(const Duration(seconds: 10));
-
-    if (res.statusCode != 200) throw Exception('Bulk HTTP ${res.statusCode}');
-
-    final parsed = jsonDecode(res.body) as Map<String, dynamic>;
-    final list = (parsed['quoteResponse']?['result'] as List?) ?? [];
-    if (list.isEmpty) throw Exception('Empty bulk');
-
-    return {
-      for (final q in list.cast<Map<String, dynamic>>())
-        (q['symbol'] as String).toUpperCase(): YahooQuote.fromJson(q),
-    };
-  }
+  /// Yahoo kotasyonları — sembol başına `v8/finance/chart`.
+  ///
+  /// Toplu `v7/finance/quote` isteği 2026-10-31'de KALDIRILDI (müşteri
+  /// raporu 30 Eki, yasin "yap"): uç çerez/crumb istiyor ve ölçümde her
+  /// fiyat turunda HTTP 401 döndü; her tur önce boşa bir istek atıp sonra
+  /// yine bu yola düşüyordu (fazladan gecikme + ağ). Yüzde de bu yoldan
+  /// geliyor (`yahooGrafikKotasyonu`, `chartPreviousClose`), yani toplu
+  /// ucun verdiği hiçbir alan kaybolmaz.
+  Future<Map<String, YahooQuote>> _fetchYahoo(List<String> symbols) =>
+      _fetchChartAll(symbols);
 
   Future<Map<String, YahooQuote>> _fetchChartAll(List<String> symbols) async {
     final quotes = await Future.wait(symbols.map(_fetchOneChart));
@@ -1294,21 +1525,8 @@ class PriceService {
 
       if (res.statusCode != 200) return null;
 
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
-      final result = (body['chart']?['result'] as List?)?.firstOrNull
-          as Map<String, dynamic>?;
-      if (result == null) return null;
-
-      final m = result['meta'] as Map<String, dynamic>?;
-      final price = (m?['regularMarketPrice'] as num?)?.toDouble();
-      if (price == null) return null;
-
-      return YahooQuote(
-        symbol: symbol,
-        regularMarketPrice: price,
-        currency: m?['currency'] as String?,
-        shortName: m?['shortName'] as String?,
-      );
+      return yahooGrafikKotasyonu(
+          symbol, jsonDecode(res.body) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }
@@ -1326,6 +1544,10 @@ class PriceService {
   /// TEFAS sembolleri (`TEFAS:XYZ`) için TefasService.fetchHistory kullanılır.
   Future<double?> fetchHistoricalClose(String symbol, DateTime date) async {
     if (symbol.trim().isEmpty) return null;
+    if (emtiaGramTabani(symbol) case final taban?) {
+      final ons = await fetchHistoricalClose(taban, date);
+      return ons == null ? null : ons / _gramsPerTroyOunce;
+    }
 
     // Altın iç sembolleri: önce XAUTRY=X dene; Yahoo bu sembolü 404 döner-
     // se GC=F (ons USD) × USDTRY=X ile hesapla — spot fallback'in birebir
@@ -1538,6 +1760,10 @@ class PriceService {
   /// çözünürlük için (HistoryService.getPortfolioHistoryAtResolution).
   Future<List<(int, double)>> fetchHistoryAtInterval(
       String symbol, String range, String interval) async {
+    if (emtiaGramTabani(symbol) case final taban?) {
+      final ons = await fetchHistoryAtInterval(taban, range, interval);
+      return [for (final p in ons) (p.$1, p.$2 / _gramsPerTroyOunce)];
+    }
     // TEFAS fonları için TEFAS history endpoint'i (interval yok, periyod ay).
     if (symbol.startsWith(_tefasPrefix)) {
       final code = symbol.replaceFirst(_tefasPrefix, '');
@@ -1584,24 +1810,8 @@ class PriceService {
 
     if (res.statusCode != 200) return [];
 
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final result =
-        (body['chart']?['result'] as List?)?.firstOrNull as Map<String, dynamic>?;
-    if (result == null) return [];
-
-    final timestamps = (result['timestamp'] as List?)?.cast<int>() ?? [];
-    final closes = (((result['indicators']?['quote'] as List?)?.firstOrNull
-            as Map<String, dynamic>?)?['close'] as List?)
-        ?.cast<dynamic>() ?? [];
-
-    final points = <(int, double)>[];
-    for (var i = 0; i < timestamps.length && i < closes.length; i++) {
-      final price = (closes[i] as num?)?.toDouble();
-      if (price != null && price > 0) {
-        points.add((timestamps[i] * 1000, price));
-      }
-    }
-    return points;
+    return yahooSeriCoz(jsonDecode(res.body) as Map<String, dynamic>,
+        gunIci: range == '1d');
   }
 
   /// Gerçek mumlar (OHLC) — Yahoo `v8/finance/chart`, [bas, son] penceresi
@@ -1614,6 +1824,20 @@ class PriceService {
   /// Yahoo boş döner, boş liste "mum yok" demektir.
   Future<List<OhlcBar>> fetchOhlc(
       String symbol, MumAraligi aralik, DateTime bas, DateTime son) async {
+    if (emtiaGramTabani(symbol) case final taban?) {
+      const k = _gramsPerTroyOunce;
+      return [
+        for (final b in await fetchOhlc(taban, aralik, bas, son))
+          OhlcBar(
+            t: b.t,
+            acilis: b.acilis / k,
+            enYuksek: b.enYuksek / k,
+            enDusuk: b.enDusuk / k,
+            kapanis: b.kapanis / k,
+            hacim: b.hacim,
+          ),
+      ];
+    }
     final uri = Uri.https('query1.finance.yahoo.com',
         '/v8/finance/chart/$symbol', {
       'interval': aralik.yahooInterval,

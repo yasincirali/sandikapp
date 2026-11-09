@@ -5,12 +5,16 @@ import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
 import '../services/mevduat_hesabi.dart';
 import '../services/sozlesme_deposu.dart';
+import '../services/hizli_tekrar_al.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'portfoy_secim_sayfasi.dart';
+import 'sandik_acilir.dart';
 import 'sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
@@ -39,11 +43,20 @@ enum QuickAdjustMode { add, remove }
 /// çipidir, ikinci kez yazılmaz); alışta türün makul adımları. Kripto
 /// ayrı: tam sayı adet nadirdir, 100 BTC öneri olmaz (Varlık Ekle
 /// formundaki `quantityPresets` ile aynı ölçek).
+///
+/// [sonAlim] (Ar-Ge 8 Kas #1): alışta kullanıcının bu varlıktaki son alım
+/// miktarı (`sonAlim` → `alimAlanDegeri`, ham defter). Verilirse ekran onu
+/// "Son alımın" çipi olarak BAŞA koyar ve çip sayısı aynı kalsın diye
+/// buradan bir standart öneri düşer: son alım standart bir değere eşitse
+/// o değer (aynı sayı iki çipte yazılmasın), değilse listenin SONUNCUSU
+/// (en büyük adım; aylık düzenli alımda en az kullanılan). Satışta yok
+/// sayılır: "son alımın" satış önerisi değildir.
 List<double> hizliMiktarOnerileri({
   required AssetType tur,
   required String birimTuru,
   required double eldeki,
   required bool satis,
+  double? sonAlim,
 }) {
   final List<double> taban;
   if (birimTuru == 'gram' || birimTuru == 'gr') {
@@ -63,16 +76,133 @@ List<double> hizliMiktarOnerileri({
   } else {
     taban = const [1, 5, 10, 100];
   }
-  if (!satis) return taban;
+  if (!satis) {
+    if (sonAlim == null || !(sonAlim > 0) || taban.isEmpty) return taban;
+    final esit = taban.indexWhere((v) => (v - sonAlim).abs() < 1e-9);
+    final dusen = esit >= 0 ? esit : taban.length - 1;
+    return [
+      for (var i = 0; i < taban.length; i++)
+        if (i != dusen) taban[i],
+    ];
+  }
   // Kayan nokta payı: 10 − 1e-12 "10'dan küçük" sayılmasın.
   return [for (final v in taban) if (v < eldeki - 1e-9) v];
 }
+
+/// Hızlı Sat önizlemesi: bu satışın ortalama maliyete göre kârı/zararı.
+class SatisKarOnizleme {
+  const SatisKarOnizleme({required this.tutar, required this.yuzde});
+
+  /// Varlığın para biriminde, işaretli (zarar negatif).
+  final double tutar;
+
+  /// Ortalama maliyete göre yüzde, işaretli.
+  final double yuzde;
+
+  bool get zarar => tutar < 0;
+}
+
+/// (satış fiyatı − aktif lotların ortalama maliyeti) × miktar.
+///
+/// Maliyet yolu yıllık raporun gerçekleşen kârıyla aynı: satılan miktar
+/// `purchasePrice` (aktif lotların ağırlıklı ortalaması; hızlı işlem
+/// `asset`'i zaten pozisyonun `aktifLotlar` toplamı) ile maliyetlenir.
+/// Komisyon önizlemeye girmez — sat formunda komisyon alanı yok, rapor
+/// kaydedilen işlemin komisyonunu ayrıca düşer.
+///
+/// "Uydurma sayı yasak" (fiyat kaynağı sözleşmesi): miktar boş/0, satış
+/// fiyatı ya da maliyet bilinmiyorsa `null` — satır hiç çizilmez. Sat
+/// önizlemesinin `purchasePrice`'a düşen yedeği burada kullanılmaz; o yedek
+/// kârı sıfır gösterirdi.
+SatisKarOnizleme? satisKarOnizleme({
+  required double? miktar,
+  required double? satisFiyati,
+  required double? ortalamaMaliyet,
+}) {
+  if (miktar == null || miktar <= 0) return null;
+  if (satisFiyati == null || satisFiyati <= 0) return null;
+  if (ortalamaMaliyet == null || ortalamaMaliyet <= 0) return null;
+  return SatisKarOnizleme(
+    tutar: (satisFiyati - ortalamaMaliyet) * miktar,
+    yuzde: (satisFiyati / ortalamaMaliyet - 1) * 100,
+  );
+}
+
+/// Hızlı Al önizlemesi: bu alımdan sonra pozisyonun ağırlıklı ortalama
+/// maliyeti, (eskiAdet × eskiMaliyet + yeniAdet × fiyat) / toplam adet.
+///
+/// Neden: "maliyetimi düşürür mü" sorusu alımdan ÖNCE sorulur; eskiden
+/// cevap yalnız kaydettikten sonra pozisyon kartında görünüyordu (Ar-Ge
+/// 6 Kas 22:30). Maliyet yolu [satisKarOnizleme] ile aynı: `purchasePrice`
+/// aktif lotların ortalaması; komisyon girmez.
+///
+/// `null` → satır çizilmez: miktar/fiyat boş ya da 0, eldeki adet 0 (yeni
+/// pozisyonda "şimdi" anlamsız) ya da bugünkü maliyet 0/bilinmiyor
+/// ("bilinmiyor" işaretli lotun tahmini maliyetinden ortalama uydurulmaz).
+double? yeniOrtalamaMaliyet({
+  required double eskiAdet,
+  required double? eskiMaliyet,
+  required double? yeniAdet,
+  required double? fiyat,
+}) {
+  if (yeniAdet == null || yeniAdet <= 0) return null;
+  if (fiyat == null || fiyat <= 0) return null;
+  if (eskiAdet <= 0) return null;
+  if (eskiMaliyet == null || eskiMaliyet <= 0) return null;
+  return (eskiAdet * eskiMaliyet + yeniAdet * fiyat) / (eskiAdet + yeniAdet);
+}
+
+/// Hızlı Al ters hesabı (Ar-Ge 2026-11-07 #3): ortalama maliyeti [hedef]'e
+/// çekmek için [fiyat]'tan kaç birim almak gerekir.
+///
+/// [yeniOrtalamaMaliyet]'in tersi: (q·a + n·p) / (q + n) = t →
+/// n = q·(a − t) / (t − p). Yalnız p < t < a iken anlamlı: hedef bugünkü
+/// ortalamanın altında olmalı (alım ortalamayı yalnız fiyata doğru çeker)
+/// ve alış fiyatının üstünde (ortalama fiyatın kendisine ancak sonsuz
+/// alımla iner). Aksi hâlde `null` → ekran "inilemez" der; öneri dili yok,
+/// yalnız hesap.
+///
+/// Sonuç [ondalik] haneye YUKARI yuvarlanır (BIST lotu 0 hane = tam sayı;
+/// kesirli birimde alanın kabul ettiği hassasiyet): aşağı yuvarlamak
+/// ortalamayı hedefin üstünde bırakırdı. Ekran "~" ile yazar.
+///
+/// Maliyet kapısı [yeniOrtalamaMaliyet] ile aynı: eldeki adet ya da
+/// ortalama 0/bilinmiyorsa `null`.
+double? hedefOrtalamaIcinAdet({
+  required double eldeki,
+  required double? ortalama,
+  required double? fiyat,
+  required double? hedef,
+  required int ondalik,
+}) {
+  if (eldeki <= 0 || ondalik < 0) return null;
+  if (ortalama == null || ortalama <= 0) return null;
+  if (fiyat == null || fiyat <= 0) return null;
+  if (hedef == null || hedef <= 0) return null;
+  if (!(fiyat < hedef && hedef < ortalama)) return null;
+  final n = eldeki * (ortalama - hedef) / (hedef - fiyat);
+  var olcek = 1;
+  for (var i = 0; i < ondalik; i++) {
+    olcek *= 10;
+  }
+  // Kayan nokta payı: tam 25 lotluk sonuç 25,0000000001 diye 26 olmasın.
+  // Tam sayı adımla bölmek (× 0,0001 yerine / 10.000) gürültü bırakmaz.
+  return (n * olcek - 1e-6).ceil() / olcek;
+}
+
+/// Ters hesabın miktar hassasiyeti (ondalık hane): BIST hissesi tam lot
+/// (0); ABD hissesi, fon, kripto, altın gibi kesirli birimde alanın
+/// gösterdiği hassasiyet ([Asset.azamiOndalik]; miktar alanı ondalığı her
+/// türde kabul ediyor).
+int hedefOrtalamaOndaligi(Asset a) =>
+    a.type == AssetType.hisse && !a.abdHissesi ? 0 : a.azamiOndalik;
 
 Future<void> showQuickAdjustDialog(
   BuildContext context,
   WidgetRef ref, {
   required Asset asset,
   required QuickAdjustMode mode,
+  double? baslangicMiktar,
 }) async {
   if (DemoModu.yazmaKapisi('miktar')) return; // Demo: kaydetmek hesap ister (F1).
   // Çoklu portföy (0133): lotları birden çok portföyde olan pozisyonda önce
@@ -88,7 +218,8 @@ Future<void> showQuickAdjustDialog(
   return showSandikGecisli<void>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => _QuickAdjustDialog(asset: asset, mode: mode, ref: ref),
+    builder: (_) => _QuickAdjustDialog(
+        asset: asset, mode: mode, ref: ref, baslangicMiktar: baslangicMiktar),
   );
 }
 
@@ -97,10 +228,16 @@ class _QuickAdjustDialog extends StatefulWidget {
   final QuickAdjustMode mode;
   final WidgetRef ref;
 
+  /// Miktar alanının önden dolu değeri ("Bunu tekrar al", `hizli_tekrar_al.dart`).
+  /// Alanın biriminde: çoğu türde miktar, mevduatta TL tutarı. Fiyat yine
+  /// bugünün fiyatıdır (`initState`).
+  final double? baslangicMiktar;
+
   const _QuickAdjustDialog({
     required this.asset,
     required this.mode,
     required this.ref,
+    this.baslangicMiktar,
   });
 
   @override
@@ -110,6 +247,11 @@ class _QuickAdjustDialog extends StatefulWidget {
 class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   final _qtyCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
+  final _hedefCtrl = TextEditingController();
+
+  /// "Hedef ortalama" alanı açık mı (Hızlı Al ters hesabı). Kapalı başlar:
+  /// çoğu alım bu soruyu sormaz, sayfa iki alanla kalsın.
+  bool _hedefAcik = false;
   bool _saving = false;
   String? _error;
 
@@ -133,9 +275,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   /// "Mevcut" satırı bunu yazar, `mevduatTutarIslemi` kuruş payıyla eşler.
   double get _bakiye => (widget.asset.quantity * _birim * 100).round() / 100;
 
+  /// Bu varlığın son alımının alan değeri (ham defter, silinen hariç) —
+  /// "Son alımın" çipi. Yalnız alışta; alış yoksa `null` → çip yok.
+  /// Diyalog açılışında bir kez okunur: açıkken defter değişmez (kayıt
+  /// diyaloğu kapatır).
+  late final double? _sonAlim = () {
+    if (!_isAdd) return null;
+    final defter =
+        widget.ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final son = sonAlim(defter, widget.asset);
+    return son == null ? null : alimAlanDegeri(son);
+  }();
+
   @override
   void initState() {
     super.initState();
+    final baslangic = widget.baslangicMiktar;
+    if (baslangic != null && baslangic > 0) {
+      _qtyCtrl.text = _fmt(baslangic);
+    }
     if (_isAdd && !_tutarla) {
       final currentPrice = widget.asset.currentPrice > 0
           ? widget.asset.currentPrice
@@ -150,6 +308,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   void dispose() {
     _qtyCtrl.dispose();
     _priceCtrl.dispose();
+    _hedefCtrl.dispose();
     super.dispose();
   }
 
@@ -175,6 +334,176 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       default:
         return '₺';
     }
+  }
+
+  /// Satış önizlemesinin kâr/zarar satırı. Anlamı işaret ve "kâr/zarar"
+  /// kelimesi taşır, renk yalnız pekiştirir (HIG: yalnız renkle anlam yok).
+  /// Tutar sayfanın toplam satırıyla aynı biçimde: ₺ varlıkta `fmtTRY`,
+  /// dövizli varlıkta kendi para biriminde. Bakiye gizliyken tutar
+  /// maskelenir, yüzde açık kalır (Ana ekran kuralı). Kaydettikten sonra
+  /// ayrıca toast yok (16 Eyl kararı, bkz. `_submit`).
+  Widget _karSatiri(BuildContext context, SatisKarOnizleme k) {
+    final mutlak = k.tutar.abs();
+    final isaret = mutlak == 0 ? '' : (k.zarar ? '\u2212' : '+');
+    final tutar = _paraMetni(mutlak, isaret: isaret);
+    final yuzde = fmtPctIsaretli(k.yuzde, digits: 1);
+    final l = context.l10n;
+    return Text(
+      k.zarar ? l.quickSaleLoss(tutar, yuzde) : l.quickSaleGain(tutar, yuzde),
+      key: const ValueKey('satis_kar_onizleme'),
+      style: context.t.titleSmall?.copyWith(
+        color: k.zarar ? context.c.loss : context.c.gain,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  /// Önizleme satırlarının ortak para biçimi: ₺ varlıkta `fmtTRY`, dövizli
+  /// varlıkta kendi para biriminde; bakiye gizliyken maskeli. [birim] birim
+  /// fiyat içindir (ortalama maliyet): `fmtTRY` 0 ondalıkla ₺41,23'ü ₺41
+  /// okuturdu.
+  String _paraMetni(double v, {String isaret = '', bool birim = false}) {
+    final gizli = widget.ref.read(balanceHiddenProvider);
+    if (_currencySymbol == '₺') {
+      if (gizli) return const BazPara.lira().gizliTutar;
+      return '$isaret${birim ? fmtTRYFiyat(v) : fmtTRY(v)}';
+    }
+    if (gizli) return '•••• $_currencySymbol';
+    final f = qtyFormatter(maxDigits: birim ? 4 : 2);
+    return '$isaret${f.format(v)} $_currencySymbol';
+  }
+
+  /// Hızlı Al'ın ortalama maliyet satırı. Renksiz: yeni ortalama iyi ya da
+  /// kötü değildir, bilgi verir (kâr satırının yeşil/kırmızısı burada yanlış
+  /// bir yargı ima ederdi).
+  Widget _ortalamaSatiri(BuildContext context, double yeni) {
+    return Text(
+      context.l10n.quickBuyAvgCost(
+        _paraMetni(yeni, birim: true),
+        _paraMetni(widget.asset.purchasePrice, birim: true),
+      ),
+      key: const ValueKey('alim_ortalama_onizleme'),
+      style: context.t.titleSmall?.copyWith(color: context.c.text58),
+    );
+  }
+
+  /// Hızlı Al ters hesabı: "Hedef ortalama" bağlantısı, açılınca tek alan
+  /// ve sonuç satırı. Sonuca dokunmak miktar alanını o sayıyla doldurur
+  /// (çip deseni). Renksiz ve öneri dilsiz: yalnız hesap
+  /// ([hedefOrtalamaIcinAdet]). Hedef boşken sonuç satırı yok; yazılmış
+  /// ama erişilemeyen hedefte (p < t < a değil) "inilemez" der.
+  Widget _hedefBolumu(BuildContext context,
+      {required double? hedef, required double? adet}) {
+    final l = context.l10n;
+    final c = context.c;
+    final ondalik = hedefOrtalamaOndaligi(widget.asset);
+    final adetMetni =
+        adet == null ? null : qtyFormatter(maxDigits: ondalik).format(adet);
+    final sonuc = hedef == null
+        ? null
+        : adetMetni == null
+            ? l.quickTargetAvgUnreachable
+            : l.quickTargetAvgResult(
+                _paraMetni(hedef, birim: true), adetMetni, _unitLabel);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Semantics(
+            expanded: _hedefAcik,
+            child: SandikTappable(
+              key: const ValueKey('hedef_ortalama_ac'),
+              haptic: SandikHaptic.none,
+              onTap: () => setState(() => _hedefAcik = !_hedefAcik),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: SandikTouch.min),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l.quickTargetAvg,
+                      style: context.t.titleSmall?.copyWith(
+                          color: c.amberText, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: SandikSpace.xs),
+                    SandikAcilirOk(
+                      acik: _hedefAcik,
+                      child: Icon(Icons.expand_more_rounded,
+                          size: SandikSpace.lgs, color: c.amberText),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        SandikAcilir(
+          acik: _hedefAcik,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const ValueKey('hedef_ortalama_alani'),
+                controller: _hedefCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                ],
+                style: context.t.numMedium
+                    .copyWith(fontWeight: FontWeight.w500, color: c.text90),
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: l.quickTargetAvgField,
+                  suffixText: _currencySymbol,
+                  suffixStyle: context.t.titleMedium?.copyWith(color: c.text58),
+                  // Dolgu/çerçeve temadan (`inputDecorationTheme`).
+                ),
+              ),
+              if (sonuc != null)
+                adet == null
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: SandikSpace.sm),
+                        child: Text(
+                          sonuc,
+                          key: const ValueKey('hedef_ortalama_sonuc'),
+                          style:
+                              context.t.titleSmall?.copyWith(color: c.text58),
+                        ),
+                      )
+                    : SandikTappable(
+                        haptic: SandikHaptic.none,
+                        semanticLabel: '$sonuc. ${l.quickTargetAvgFillHint}',
+                        onTap: () => setState(() {
+                          _qtyCtrl.text = _fmt(adet);
+                          _error = null;
+                        }),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                              minHeight: SandikTouch.min),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  sonuc,
+                                  key: const ValueKey('hedef_ortalama_sonuc'),
+                                  style: context.t.titleSmall
+                                      ?.copyWith(color: c.text90),
+                                ),
+                              ),
+                              const SizedBox(width: SandikSpace.xs),
+                              Icon(Icons.south_west_rounded,
+                                  size: SandikSpace.md, color: c.text58),
+                            ],
+                          ),
+                        ),
+                      ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _submit() async {
@@ -324,10 +653,55 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     final satisFiyati =
         asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice;
     final total = qty * (_isAdd ? price : satisFiyati);
+    // Kâr önizlemesi yalnız satışta ve fiyatla girilen varlıkta (mevduatta
+    // alan tutardır). Fiyat yedeksiz okunur; maliyeti "bilinmiyor" işaretli
+    // lot tahmini maliyet taşıdığı için önizleme vermez.
+    final karOnizleme = _isAdd || _tutarla || asset.maliyetBilinmiyor == true
+        ? null
+        : satisKarOnizleme(
+            miktar: qty,
+            satisFiyati: asset.currentPrice,
+            ortalamaMaliyet: asset.purchasePrice,
+          );
+    // Alım önizlemesi: girilen birim fiyatla (kaydedilecek olan) yeni
+    // ortalama. Satıştaki kâr satırıyla aynı maliyet kapısı.
+    final ortalamaOnizleme =
+        !_isAdd || _tutarla || asset.maliyetBilinmiyor == true
+            ? null
+            : yeniOrtalamaMaliyet(
+                eskiAdet: asset.quantity,
+                eskiMaliyet: asset.purchasePrice,
+                yeniAdet: qty,
+                fiyat: price,
+              );
 
-    return Dialog(
-      backgroundColor: context.c.surface1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.lg)),
+    // Ters hesap (Ar-Ge 2026-11-07 #3): ortalama önizlemesiyle AYNI maliyet
+    // kapısı (alım, fiyatla girilen varlık, maliyet biliniyor, elde var).
+    // Alış fiyatı yazılan fiyat; boşsa bugünkü fiyat.
+    final hedefKapisi = _isAdd &&
+        !_tutarla &&
+        asset.maliyetBilinmiyor != true &&
+        asset.quantity > 0 &&
+        asset.purchasePrice > 0;
+    final hedef = _parse(_hedefCtrl.text);
+    final hedefAdet = !hedefKapisi || hedef == null || hedef <= 0
+        ? null
+        : hedefOrtalamaIcinAdet(
+            eldeki: asset.quantity,
+            ortalama: asset.purchasePrice,
+            fiyat: price > 0 ? price : asset.currentPrice,
+            hedef: hedef,
+            ondalik: hedefOrtalamaOndaligi(asset),
+          );
+
+    // Marka kabuğu (Ar-Ge 5 Kas 22:40 #7; eskiden Material `Dialog`): kart
+    // onay/bilgi diyaloğuyla aynı, kenar vurgusu işlemin rengi (al yeşil,
+    // sat kırmızı). İç pay ve kaydırma düzeni aşağıdaki `Padding`'de
+    // kaldı; kabuk klavye payını `Dialog` gibi kendisi verir.
+    return SandikDiyalogKabugu(
+      vurgu: accent,
+      kaydir: false,
+      padding: EdgeInsets.zero,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
@@ -379,7 +753,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                             ? context.l10n.buyAction
                             : context.l10n.sellAction,
                         style: context.t.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: context.c.text90,
                         ),
                       ),
@@ -416,19 +790,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 children: [
                   Text(context.l10n.quickHolding,
                       style: context.t.bodySmall?.copyWith(color: context.c.text36)),
-                  const Spacer(),
-                  Text(
+                  const SizedBox(width: SandikSpace.sm),
+                  // Esnek + sağa yaslı: kabuk 360 pt'de sınırlı (marka
+                  // kabuğu, Ar-Ge 5 Kas 22:40 #7); uzun "adet · ort." metni
+                  // dar ekranda ya da büyük yazıda satırı taşırmasın, kırılsın.
+                  Expanded(
+                    child: Text(
                     // Mevduatta pay ve "ort. 1,00 ₺" kullanıcıya bir şey
                     // söylemez; bakiye söyler.
                     _tutarla
                         ? fmtTRY(_bakiye, digits: 2)
                         : '${numFmt.format(asset.quantity)} $_unitLabel · '
                             '${context.l10n.quickAvgShort('${numFmt.format(asset.purchasePrice)} $_currencySymbol')}',
+                    textAlign: TextAlign.end,
                     style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
+                  ),
                   ),
                 ],
               ),
@@ -561,13 +941,41 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       '${numFmt.format(total)} $_currencySymbol',
                       style: context.t.numSmall.copyWith(
                         fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: accent,
                       ),
                     ),
                   ],
                 ),
               ),
+            ],
+
+            if (ortalamaOnizleme != null) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _ortalamaSatiri(context, ortalamaOnizleme),
+            ],
+
+            if (hedefKapisi) ...[
+              const SizedBox(height: SandikSpace.xs),
+              _hedefBolumu(context,
+                  hedef: hedef != null && hedef > 0 ? hedef : null,
+                  adet: hedefAdet),
+            ],
+
+            if (karOnizleme != null) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _karSatiri(context, karOnizleme),
+              // Fon satışında kâr brüttür: stopaj fon türüne ve elde tutma
+              // süresine göre değişir, oranı yazmak uydurma sayı olurdu
+              // (fiyat kaynağı sözleşmesi ruhu). Yalnız uyarı.
+              if (asset.type == AssetType.fon) ...[
+                const SizedBox(height: SandikSpace.xs),
+                Text(
+                  context.l10n.quickSaleFundTaxNote,
+                  key: const ValueKey('satis_fon_stopaj_notu'),
+                  style: context.t.bodySmall?.copyWith(color: context.c.text58),
+                ),
+              ],
             ],
 
             if (_error != null) ...[
@@ -623,7 +1031,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                             ? context.l10n.buyAction
                             : context.l10n.sellAction,
                         style: context.t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
                 ),
@@ -636,23 +1044,44 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     );
   }
 
+  /// Son alım çipinin miktarı birimiyle: "12 pay", "5 gr", "$100".
+  /// Mevduatta alan TL tutarı olduğundan tutar yazılır ("₺5.000").
+  String _sonAlimMetni(double v) => _tutarla
+      ? fmtTRY(v)
+      : widget.asset.miktarMetni(v, (d, o) => fmtNum(d, digits: o));
+
   Widget _quickChips() {
     // Öneriler `hizliMiktarOnerileri`'nden (saf, testli). Alanın metni ve
     // çipin yazısı AYNI Türkçe biçimde (`_fmt`): eski '0.1' ham yazımı
     // ekranda "0.1" görünüyordu.
     // Mevduatta alan tutar olduğu için çipler de bakiyeyle (₺) kurulur.
     final eldeki = _tutarla ? _bakiye : widget.asset.quantity;
-    final chips = <({String deger, String etiket})>[
+    final son = _sonAlim;
+    final chips = <({String deger, String etiket, String? ses})>[
+      // "Son alımın" BAŞTA (Ar-Ge 8 Kas #1); çip sayısı aynı kalır, bir
+      // standart öneri düşer (bkz. `hizliMiktarOnerileri`). Rozet yok.
+      if (son != null)
+        (
+          deger: _fmt(son),
+          etiket: context.l10n.quickLastBuyChip(_sonAlimMetni(son)),
+          // "·" ekran okuyucuda okunmaz ya da "nokta" okunur; virgüllü cümle.
+          ses: context.l10n.quickLastBuyChipSemantics(_sonAlimMetni(son)),
+        ),
       for (final v in hizliMiktarOnerileri(
         tur: widget.asset.type,
         birimTuru: widget.asset.unitType,
         eldeki: eldeki,
         satis: !_isAdd,
+        sonAlim: son,
       ))
-        (deger: _fmt(v), etiket: _fmt(v)),
+        (deger: _fmt(v), etiket: _fmt(v), ses: null),
       // Satışta TEK "Hepsi" — eldekinin tamamı (bkz. bulgu #9).
       if (!_isAdd && eldeki > 0)
-        (deger: _fmt(eldeki), etiket: context.l10n.quickAllChip(_fmt(eldeki))),
+        (
+          deger: _fmt(eldeki),
+          etiket: context.l10n.quickAllChip(_fmt(eldeki)),
+          ses: null,
+        ),
     ];
 
     // Sabit 32pt şerit kalktı (HIG denetimi 2026-10-10): hedef 32pt'de
@@ -665,7 +1094,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           for (final chip in chips)
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: SandikBasma(
+              child: SandikTappable(
+                soluk: true,
+                haptic: SandikHaptic.none,
+                semanticLabel: chip.ses,
                 onTap: () => setState(() {
                   _qtyCtrl.text = chip.deger;
                   _error = null;
@@ -682,13 +1114,16 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         color: context.c.overlay,
                         borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
-                      child: Text(
+                      child: ExcludeSemantics(
+                        excluding: chip.ses != null,
+                        child: Text(
                         chip.etiket,
                         style: context.t.numSmall.copyWith(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: context.c.text90,
                         ),
+                      ),
                       ),
                     ),
                   ),

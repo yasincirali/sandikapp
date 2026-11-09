@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/price_alert.dart';
+import '../models/yuzde_alarmi.dart';
 import '../providers/price_alert_provider.dart';
+import '../providers/sembol_alarmlari_provider.dart';
+import '../providers/yuzde_alarmi_provider.dart';
+import '../screens/price_alerts_screen.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import 'alarm_kur_sheet.dart';
 import '../l10n/l10n.dart';
+import 'sandik_skeleton.dart';
 
 /// Varlık ekranındaki alarm şeridi — bu sembolün KURULU alarmları.
 ///
@@ -24,6 +29,14 @@ import '../l10n/l10n.dart';
 /// app bar'daki zil. Şerit yalnızca kurulu alarm varken görünür; sonuna
 /// küçük bir "+" çipi eklenir ki ikinci alarm mevcut olanların yanından
 /// kurulabilsin.
+///
+/// ## Gösterge ve çizgi alarmları (uçtan uca test, 2026-10-29)
+/// Şerit yalnız fiyat alarmlarını sayıyordu: EMA50 ve trend çizgisi alarmı
+/// olan THYAO'da "2 aktif fiyat alarmı" yazıyordu. Bu iki tür artık sayıya
+/// girer ("4 aktif alarm") ve tek bir özet çipiyle görünür; çipe dokunmak
+/// Alarmlarım'ı bu sembole süzülmüş açar. Tek tek çip yok: gösterge/çizgi
+/// alarmı şeritte silinip yeniden kurulacak bir eşik değil, kurulduğu yer
+/// (gösterge sayfası, yatay grafik) başka.
 class AlarmSeridi extends ConsumerWidget {
   final String sembol;
   final String ad;
@@ -35,12 +48,23 @@ class AlarmSeridi extends ConsumerWidget {
     required this.guncelFiyat,
   });
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     final c = context.c;
-    final alarmlar = ref.watch(symbolAlertsProvider(sembol));
+    // Dört tür tek yerden (`sembolAlarmlariProvider`, Ar-Ge 29 Eki 16:45
+    // #1): yüzde alarmı şeritte görünmüyordu, takip çanında görünüyordu.
+    final hepsi = ref.watch(sembolAlarmlariProvider(sembol));
+    final alarmlar = hepsi.fiyat;
+    final yuzdeler = hepsi.yuzde;
     final n = ref.read(priceAlertsProvider.notifier);
-    if (alarmlar.isEmpty) return const SizedBox.shrink();
+    final seviyeSayisi = hepsi.gosterge.length + hepsi.cizim.length;
+    if (hepsi.bos) return const SizedBox.shrink();
+    final aktif = hepsi.aktif;
 
     // Alt boşluk şeridin KENDİ sorumluluğu: üst ekran "şerit + SizedBox"
     // dizerse boş durumda boşluk tek başına kalır ve sinyal kartıyla periyot
@@ -49,8 +73,7 @@ class AlarmSeridi extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: SandikSpace.smd),
       child: Semantics(
         container: true,
-        label: context.l10n
-            .nActiveAlerts(alarmlar.where((a) => a.isActive).length),
+        label: context.l10n.nActiveAlarmsAll(aktif),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -63,10 +86,14 @@ class AlarmSeridi extends ConsumerWidget {
                   // Tetiklenmiş alarm dokununca yeniden kurulur; aktif alarm
                   // dokununca silme sorulur. İki durumun tek dokunuşu vardır,
                   // ikinci bir ikon şeridi sıkıştırırdı.
+                  // Tekrarlı alarm (0171) hiç "sönmüş" olmaz: çalmış olsa da
+                  // kendiliğinden nöbete döner, dokunuş silme sorar.
                   onTap: () async {
-                    if (a.triggeredAt != null) {
-                      if (alarmSiniriDoluysaUyar(context, ref)) return;
-                      await n.rearm(a.id);
+                    if (a.sondu) {
+                      // Fiyat eşiğin ötesindeyse eşik ön dolu sayfa;
+                      // değilse yeniden kur + onay (`alarmiYenidenKur`).
+                      await alarmiYenidenKur(context, ref, a,
+                          aday: AlarmAdayi(sembol, ad, guncelFiyat));
                       return;
                     }
                     final ok = await showSandikConfirm(
@@ -82,6 +109,65 @@ class AlarmSeridi extends ConsumerWidget {
                     );
                     if (ok) await n.delete(a.id);
                   },
+                ),
+              ],
+              // Yüzde alarmı: her biri bir çip. Dokununca silme sorulur;
+              // "yeniden kur" dalı yok, ertesi gün kendiliğinden nöbette.
+              for (final y in yuzdeler) ...[
+                if (alarmlar.isNotEmpty || y != yuzdeler.first)
+                  const SizedBox(width: SandikSpace.xs2),
+                _YuzdeCipi(
+                  alarm: y,
+                  onTap: () async {
+                    final etiket =
+                        yuzdeAlarmEtiketi(context.l10n, y.esikPct, y.yon);
+                    final ok = await showSandikConfirm(
+                      context: context,
+                      title: context.l10n.deleteAlertTitle,
+                      message: context.l10n.yuzdeAlarmSilSoru(etiket),
+                      confirmLabel: 'Sil',
+                      destructive: true,
+                    );
+                    if (!ok) return;
+                    try {
+                      await ref
+                          .read(yuzdeAlarmlariProvider.notifier)
+                          .delete(y.id);
+                    } catch (e) {
+                      if (context.mounted) showAppError(context, e);
+                    }
+                  },
+                ),
+              ],
+              if (seviyeSayisi > 0) ...[
+                if (alarmlar.isNotEmpty || yuzdeler.isNotEmpty)
+                  const SizedBox(width: SandikSpace.xs2),
+                _Cip(
+                  key: const ValueKey('alarmSeridiSeviyeOzeti'),
+                  onTap: () => pushGuarded(
+                    context,
+                    adaptiveRoute<void>(
+                      settings: const RouteSettings(name: 'price_alerts'),
+                      builder: (_) => PriceAlertsScreen(sembol: sembol),
+                    ),
+                  ),
+                  renk: c.text58,
+                  zemin: c.text58.withValues(alpha: 0.08),
+                  semanticLabel:
+                      context.l10n.seviyeAlarmOzetCipiEtiket(seviyeSayisi),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.show_chart_rounded,
+                          size: 16, color: c.text90),
+                      const SizedBox(width: SandikSpace.xs),
+                      Text(
+                        context.l10n.seviyeAlarmOzetCipi(seviyeSayisi),
+                        style: context.t.labelLarge?.copyWith(
+                            color: c.text90, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(width: SandikSpace.xs2),
@@ -112,18 +198,22 @@ class _AlarmCipi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final tetiklendi = alarm.triggeredAt != null;
+    final tetiklendi = alarm.sondu;
     final renk = tetiklendi ? c.text58 : (alarm.isAbove ? c.gain : c.loss);
     final fiyat = fmtTRYFiyat(alarm.targetPrice);
+    final etiket = tetiklendi
+        ? context.l10n.triggeredAlertSemantics(fiyat)
+        : (alarm.isAbove
+            ? context.l10n.alertAboveSemantics(fiyat)
+            : context.l10n.alertBelowSemantics(fiyat));
     return _Cip(
       onTap: onTap,
       renk: renk,
       zemin: renk.withValues(alpha: tetiklendi ? 0.06 : 0.12),
-      semanticLabel: tetiklendi
-          ? context.l10n.triggeredAlertSemantics(fiyat)
-          : (alarm.isAbove
-              ? context.l10n.alertAboveSemantics(fiyat)
-              : context.l10n.alertBelowSemantics(fiyat)),
+      // Tekrarlı alarm (0171): döngü ikonu + etikette "her geçişte".
+      semanticLabel: alarm.tekrar
+          ? '$etiket, ${context.l10n.alarmHerGeciste}'
+          : etiket,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -143,6 +233,50 @@ class _AlarmCipi extends StatelessWidget {
             const SizedBox(width: SandikSpace.xs),
             Icon(Icons.refresh_rounded, size: 14, color: c.text58),
           ],
+          if (alarm.tekrar) ...[
+            const SizedBox(width: SandikSpace.xs),
+            Icon(Icons.repeat_rounded, size: 14, color: c.text58),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Yüzde alarmı çipi: "Günlük %2 hareket". Bugün çaldıysa sönük ve
+/// "bugün çaldı" ekli; anlam renkte değil, metinde ve ikonda (onay işareti).
+class _YuzdeCipi extends StatelessWidget {
+  final YuzdeAlarmi alarm;
+  final VoidCallback onTap;
+  const _YuzdeCipi({required this.alarm, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final l10n = context.l10n;
+    final caldi = alarm.bugunCaldi(DateTime.now());
+    final etiket = yuzdeAlarmEtiketi(l10n, alarm.esikPct, alarm.yon);
+    final renk = caldi ? c.text58 : c.amberText;
+    return _Cip(
+      onTap: onTap,
+      renk: renk,
+      zemin: renk.withValues(alpha: caldi ? 0.06 : 0.12),
+      semanticLabel: [
+        l10n.watchlistYuzdeAlarmSet(etiket),
+        if (caldi) l10n.watchlistYuzdeAlarmCaldi,
+      ].join(', '),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(caldi ? Icons.check_rounded : Icons.percent_rounded,
+              size: 16, color: renk),
+          const SizedBox(width: SandikSpace.xs),
+          Text(
+            caldi ? l10n.yuzdeCipBugunCaldi(etiket) : etiket,
+            style: context.t.labelLarge?.copyWith(
+                color: caldi ? c.text58 : c.text90,
+                fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -156,6 +290,7 @@ class _Cip extends StatelessWidget {
   final String semanticLabel;
   final Widget child;
   const _Cip({
+    super.key,
     required this.onTap,
     required this.renk,
     required this.zemin,

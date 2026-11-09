@@ -33,6 +33,12 @@ class _SahteFiyat implements AddAssetPriceLookup {
   Future<String?> companyName(String ticker) async => null;
 }
 
+/// Canlı kotasyonu olan fiyat kapısı (fiyat kartı "Bugün" metni).
+class _SpotFiyat extends _SahteFiyat {
+  @override
+  Future<double?> spot(String ticker) async => 312.4;
+}
+
 /// Kaydı yakalar — ABD lot'unun sunucuya hangi alanlarla gideceği.
 class _KaydedenPortfoy extends PortfolioNotifier {
   final kayitlar = <Map<String, Object?>>[];
@@ -57,6 +63,8 @@ class _KaydedenPortfoy extends PortfolioNotifier {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    String yol = 'form',
+    bool maliyetBilinmiyor = false,
   }) async {
     kayitlar.add({
       'ticker': ticker,
@@ -356,12 +364,18 @@ void main() {
         ),
       ));
       await tester.pump();
+      // Hisse formu tür ızgarasından seçilince açılır (ızgara 2026-10-20'den
+      // beri koşulsuz); pazar seçimi o formun içinde.
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
       return portfoy;
     }
 
     testWidgets('bayrak KAPALI: pazar seçimi yok', (tester) async {
       await ac(tester);
-      expect(find.byType(SandikSegment), findsNothing);
+      // Formda başka bir segment de var (Adet / Tutar, 2026-10-24); ölçü
+      // pazar segmenti.
+      expect(find.widgetWithText(SandikSegment, 'ABD'), findsNothing);
       expect(find.text('ABD'), findsNothing);
     });
 
@@ -369,12 +383,15 @@ void main() {
         (tester) async {
       RemoteConfigService.testAcik = {'abd_hisse'};
       final portfoy = await ac(tester);
-      expect(find.byType(SandikSegment), findsOneWidget);
+      expect(find.widgetWithText(SandikSegment, 'ABD'), findsOneWidget);
 
       await tester.tap(find.text('ABD'));
       await tester.pumpAndSettle();
       expect(find.text('ABD hissesi seçmek için dokun...'), findsOneWidget);
 
+      // Sembol alanları katlı (müşteri raporu 2 Kas 17:15 #3).
+      await tester.tap(find.text('Listede yok mu? Sembolle ekle'));
+      await tester.pumpAndSettle();
       await tester.enterText(
           find.widgetWithText(TextFormField, 'Sembol yaz (örn: AAPL, BRK-B)'),
           'brk.b');
@@ -396,6 +413,64 @@ void main() {
       expect(k['currency'], 'USD');
       expect(k['subCategory'], 'abd');
       expect(k['name'], 'Berkshire Hathaway (B)');
+    });
+
+    // Müşteri raporu 2 Kas 17:15 (#2, #3): BIST hissesinde sembol alanları
+    // katlı, para birimi TL kilitli; listede olmayan sembol yazılınca
+    // ("Diğer Hisseler", yurt dışı olabilir) liste geri gelir.
+    testWidgets('BIST: sembol alanları katlı, TL kilitli', (tester) async {
+      await ac(tester);
+      expect(find.text('Listede yok mu? Sembolle ekle'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, 'Sembol yaz (örn: AAPL, THYAO.IS)'),
+          findsNothing);
+      expect(find.byType(DropdownButton<String>), findsNothing);
+      final bag = tester.getSize(find
+          .ancestor(
+              of: find.text('Listede yok mu? Sembolle ekle'),
+              matching: find.byType(ConstrainedBox))
+          .first);
+      expect(bag.height, greaterThanOrEqualTo(44));
+
+      await tester.tap(find.text('Listede yok mu? Sembolle ekle'));
+      await tester.pumpAndSettle();
+      expect(find.text('Listede yok mu? Sembolle ekle'), findsNothing);
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Sembol yaz (örn: AAPL, THYAO.IS)'),
+          'XYZ');
+      await tester.pump();
+      expect(find.byType(DropdownButton<String>), findsOneWidget,
+          reason: 'Diğer Hisseler kilitlenmez');
+    });
+
+    // Müşteri raporu 2 Kas 17:15 (#1): Bugün seçiliyken fiyat canlıdır;
+    // kart "Tarihli fiyat bulunamadı" demez, ₺ ve birimle yazar.
+    testWidgets('fiyat kartı Bugün: canlı fiyat cümlesi, ₺ / lot',
+        (tester) async {
+      tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          portfolioProvider.overrideWith(_KaydedenPortfoy.new),
+          addAssetPriceLookupProvider.overrideWithValue(_SpotFiyat()),
+        ],
+        child: MaterialApp(
+            theme: ThemeData.dark(), home: const AddAssetScreen()),
+      ));
+      await tester.pump();
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Listede yok mu? Sembolle ekle'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Sembol yaz (örn: AAPL, THYAO.IS)'),
+          'THYAO');
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Tarihli fiyat bulunamadı'), findsNothing);
+      expect(find.text('Bugünkü piyasa fiyatı. Kayıtta bu fiyat kullanılacak'),
+          findsOneWidget);
+      expect(find.text('₺312,4 / lot'), findsOneWidget);
     });
   });
 }

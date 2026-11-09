@@ -71,6 +71,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- ML Kit metin modeli Play hizmetlerinden kurulumda insin; ilk
+             "Ekran görüntüsünden ekle"de model yok hatası olmasın. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
         <!-- Bildirim görünümü. İkon beyaz siluet + şeffaf zemin olmalı (Android
              yalnızca alfa kanalını kullanır); renkli PNG düz kare olarak çıkar. -->
         <meta-data
@@ -106,6 +111,61 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/sandik_widget_info" />
         </receiver>
+
+        <!-- Tek varlık widget'ı (iOS SandikVarlikWidget'ın karşılığı,
+             2026-10-25). Portföy widget'ıyla aynı gerekçe: `exported=true`
+             zorunlu, yalnızca APPWIDGET_UPDATE dinler. -->
+        <receiver
+            android:name=".SandikVarlikWidgetProvider"
+            android:label="@string/varlik_widget_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sandik_varlik_widget_info" />
+        </receiver>
+
+        <!-- Tek varlık widget'ının seçim ekranı (`android:configure`).
+             `exported=true`: ekleme/düzenleme akışını launcher başlatır;
+             Activity gelen widget kimliğinin kendi sağlayıcısına ait
+             olduğunu doğrular. `taskAffinity`/`launchMode` BİLEREK yok:
+             launcher sonucu (RESULT_OK) bekler; ayrı görevde açılan
+             Activity'nin sonucu bazı launcher'larda hemen İPTAL döner ve
+             widget eklenmez. -->
+        <activity
+            android:name=".SandikVarlikSecimActivity"
+            android:exported="true"
+            android:label="@string/varlik_secim_baslik"
+            android:theme="@style/SandikVarlikSecimTheme">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Glance trampoline aktiviteleri DÜŞÜRÜLÜR (2026-10-14).
+             Uygulama Glance KULLANMAZ: widget düz RemoteViews
+             (SandikWidgetProvider), dokunuş HomeWidgetLaunchIntent ile
+             doğrudan MainActivity'ye gider. Bu iki aktivite yalnızca
+             home_widget eklentisinin taşıdığı glance-appwidget
+             bağımlılığından birleştirilmiş manifest'e giriyor.
+             Uygulamadaki hiçbir PendingIntent onları hedeflemediği hâlde
+             sistem (Son kullanılanlar'dan / görev geri yüklemesinde ayrı
+             taskAffinity'li singleInstance görevi yeniden açma) ya da Play
+             ön-lansman robotu onları ekstrasız başlatabiliyor ve
+             launchTrampolineAction requireNotNull ile düşüyor:
+             "List adapter activity trampoline invoked without specifying
+             target intent" (Crashlytics). Kodda yakalanacak yer yok —
+             aktivite kütüphanenin; kalıcı çözüm, kullanılmayan bileşeni
+             hiç kaydetmemek. Glance'e geçilirse bu iki satır kaldırılmalı
+             (glance_trampoline_manifest_test bunu hatırlatır). -->
+        <activity
+            android:name="androidx.glance.appwidget.action.ActionTrampolineActivity"
+            tools:node="remove" />
+        <activity
+            android:name="androidx.glance.appwidget.action.InvisibleActionTrampolineActivity"
+            tools:node="remove" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

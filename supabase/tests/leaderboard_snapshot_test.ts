@@ -26,6 +26,8 @@ import {
   seriSembolu,
   tekKullanici,
   fonDetayi,
+  piyasaSembolu,
+  varlikDetayi,
   varlikSayisi,
   yazimPlani,
   yarisAni,
@@ -462,4 +464,56 @@ Deno.test('tekKullanici: cron gövdesi, bozuk ya da boş değer tam koşu demek'
   assertEquals(tekKullanici({ user_id: "x' or 1=1" }), null);
   assertEquals(tekKullanici({ user_id: 42 }), null);
   assertEquals(tekKullanici(null), null);
+});
+
+// ── 0158: fon dışı varlık kırılımı ─────────────────────────────────────────
+Deno.test('varlikDetayi: sembol bazında pay; seri yoksa ve elle fiyatlıysa "diğer"', () => {
+  const seriler = new Map<string, Seri>([
+    ['THYAO.IS', seri([1, 300])],
+    ['BTCUSDT', seri([1, 2_000_000])],
+  ]);
+  const lots = [
+    lot({ id: 'h1', type: 'hisse', ticker: 'THYAO.IS', quantity: 10 }), // 3000
+    lot({ id: 'k1', type: 'kripto', ticker: 'BTCUSDT', quantity: 0.001 }), // 2000
+    // Elle fiyatlı: ticker kullanıcının uydurduğu ad olabilir → açık değil.
+    lot({ id: 'h2', type: 'hisse', ticker: 'EVIM', name: 'evim', quantity: 1,
+      is_manual_price: true, current_price: 4000 } as Partial<Lot> & { id: string; type: string }),
+    fonLot('AFT', 100, 10), // 1000, fon kendi sütununda
+  ];
+  const d = varlikDetayi(lots, seriler, NOW)!;
+  assertEquals(d, {
+    hisse: { 'THYAO.IS': 30, DIGER: 40 },
+    kripto: { BTCUSDT: 20 },
+  });
+  assertEquals(JSON.stringify(d).includes('EVIM'), false);
+  assertEquals(JSON.stringify(d).includes('evim'), false);
+});
+
+Deno.test('varlikDetayi: altın kodu alt kategoriden; %1 altı diğer; mevduat dışarıda', () => {
+  const lots = [
+    lot({ id: 'a1', type: 'altin', sub_category: 'Çeyrek Altın', quantity: 1,
+      is_manual_price: false } as Partial<Lot> & { id: string; type: string }),
+    lot({ id: 'm1', type: 'doviz', ticker: 'MEVDUAT:X', quantity: 1, current_price: 100 }),
+  ];
+  // Seri yok → değer yedek fiyattan; burada yalnız kod çözümü sınanır.
+  assertEquals(piyasaSembolu(lots[0], new Map()), 'ALTIN_CEYREK');
+  assertEquals(piyasaSembolu(lots[1], new Map()), null);
+  assertEquals(piyasaSembolu(lot({ id: 'x', type: 'hisse', ticker: 'thy ao' }),
+    new Map([['thy ao', seri([1, 1])]])), null);
+});
+
+Deno.test('varlikDetayi: yalnız fon varsa null', () => {
+  assertEquals(varlikDetayi([fonLot('AFT', 1, 1)], new Map(), NOW), null);
+});
+
+Deno.test('varlikDetayi: BES fon kodu açık (elle/sözleşme fiyatlı olsa da); serbest metin diğer', () => {
+  const lots = [
+    { ...fonLot('AEA', 100, 10), type: 'bes' } as Lot, // 1000
+    { ...fonLot('TEFAS:ahe', 50, 10), type: 'bes' } as Lot, // 500
+    { ...fonLot('benim bes', 50, 10), type: 'bes' } as Lot, // 500 → diğer
+  ];
+  const d = varlikDetayi(lots, new Map(), NOW)!;
+  assertEquals(d, { bes: { AEA: 50, AHE: 25, DIGER: 25 } });
+  assertEquals(JSON.stringify(d).includes('benim'), false);
+  assertEquals(JSON.stringify(d).includes('notu'), false);
 });

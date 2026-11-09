@@ -10,14 +10,22 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/destek.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
+import '../providers/bildirim_on_ayar_provider.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
+import '../providers/seviye_alarmi_provider.dart';
+import '../providers/yuzde_alarmi_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
+import '../providers/widget_sabitleme_provider.dart';
+import '../widgets/widget_install_sheet.dart';
+import '../widgets/bildirim_on_ayar_karti.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_acilir.dart';
+import '../widgets/hesap_silme_nedeni_sheet.dart';
 import '../widgets/seviye_anketi.dart';
 import '../widgets/yenilikler_sheet.dart';
 import '../services/surum_notu_service.dart';
@@ -25,16 +33,19 @@ import '../services/review_prompt_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/data_export_service.dart';
 import '../services/disa_aktarim/disa_aktarim_service.dart';
-import '../services/disa_aktarim/rapor_belgeleri.dart';
+import '../services/disa_aktarim/hareket_dokumu.dart';
 import '../services/analytics_service.dart';
-import '../widgets/disa_aktarim_bicim_sayfasi.dart';
 import 'paywall_screen.dart';
 import '../services/share_card_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
+import '../widgets/bildirim_izni_uyarisi.dart';
+import '../widgets/sik_sorulanlar.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_config_service.dart';
+import '../widgets/sandik_segment.dart';
+import '../widgets/sandik_cam.dart';
 import '../services/supabase_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
@@ -98,6 +109,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// nadir; ilk bakışta yer kaplamasın.
   bool _gelismisAcik = false;
 
+  /// Bildirimler'in "Ayrıntılı" grubu açık mı. Kapalı başlar: üstteki ön
+  /// ayar (Az · Dengeli · Çok) çoğu kullanıcıya yeter (2026-10-20).
+  bool _bildirimAyrintiAcik = false;
+
   // Ayarlar sadeleştirmesi (sadeleştirme listesi madde 10, 2026-10-04):
   // bölümler net başlıklı gruplara ayrılır, teknik satırlar hub'da katlanır
   // "Gelişmiş"e iner. HİÇBİR satır kalkmadı ve tercih anahtarları değişmedi
@@ -155,68 +170,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     // 2. Kademe — şifre doğrulama
+    //
+    // Marka onay kabuğu (Ar-Ge 5 Kas 22:40 #7): eskiden `AlertDialog`'du —
+    // yıkıcı onayın geri kalanı (1. kademe, sosyal hesap) markanın uyarı
+    // ikonlu kartındayken şifre adımı Material kartında açılıyordu. Alan
+    // `detail`'e girer; sonuç (`true` = sil) ve kapatılamazlık aynı.
     final passwordCtrl = TextEditingController();
     bool obscure = true;
-    final secondConfirm = await showSandikGecisli<bool>(
+    final secondConfirm = await showSandikConfirm(
       context: context,
+      title: context.l10n.confirmWithPassword,
+      message: context.l10n.confirmWithPasswordBody,
+      confirmLabel: context.l10n.deleteAccountUpper,
+      destructive: true,
       barrierDismissible: false,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          backgroundColor: context.c.surface2,
-          title: Text(context.l10n.confirmWithPassword,
-              style: TextStyle(color: context.c.text90)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.confirmWithPasswordBody,
-                style: TextStyle(color: context.c.text58, fontSize: 13),
+      detail: StatefulBuilder(
+        builder: (ctx, setLocal) => TextField(
+          controller: passwordCtrl,
+          obscureText: obscure,
+          autofocus: true,
+          style: TextStyle(color: context.c.text90),
+          decoration: context.inputDecoration(
+            context.l10n.passwordLabel,
+            prefixIcon: Icon(Icons.lock_outline_rounded,
+                color: context.c.text36, size: 20),
+            suffixIcon: IconButton(
+              tooltip: obscure
+                  ? context.l10n.passwordShow
+                  : context.l10n.passwordHide,
+              icon: Icon(
+                obscure
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: context.c.text36,
+                size: 20,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: passwordCtrl,
-                obscureText: obscure,
-                autofocus: true,
-                style: TextStyle(color: context.c.text90),
-                decoration: context.inputDecoration(
-                  context.l10n.passwordLabel,
-                  prefixIcon: Icon(Icons.lock_outline_rounded,
-                      color: context.c.text36, size: 20),
-                  suffixIcon: IconButton(
-                    tooltip: obscure
-                        ? context.l10n.passwordShow
-                        : context.l10n.passwordHide,
-                    icon: Icon(
-                      obscure
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: context.c.text36,
-                      size: 20,
-                    ),
-                    onPressed: () => setLocal(() => obscure = !obscure),
-                  ),
-                ),
-              ),
-            ],
+              onPressed: () => setLocal(() => obscure = !obscure),
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: Text('Vazgeç', style: TextStyle(color: context.c.text58)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: Text(context.l10n.deleteAccountUpper,
-                  style: TextStyle(
-                      color: context.c.loss, fontWeight: FontWeight.bold)),
-            ),
-          ],
         ),
       ),
     );
 
-    if (secondConfirm != true || !mounted || passwordCtrl.text.isEmpty) return;
+    if (!secondConfirm || !mounted || passwordCtrl.text.isEmpty) return;
     await _runDelete(password: passwordCtrl.text);
   }
 
@@ -232,11 +228,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Açık olabilecek modal'ları kapatıp root'a dön.
       Navigator.of(context).popUntil((r) => r.isFirst);
       if (!mounted) return;
-      await showAppSuccess(
-        context,
-        title: context.l10n.accountDeletedTitle,
-        message: context.l10n.accountDeletedBody,
-      );
+      // Başarı bilgisi + isteğe bağlı "neden?" tek sayfada (2026-10-21).
+      // Kimlik ÖNCE düşer: neden olayı silinen hesaba bağlanmasın.
+      await AnalyticsService.instance.setUserId(null);
+      if (!mounted) return;
+      await hesapSilindiSayfasi(context);
     } on SocialSignInCancelled {
       // Sağlayıcı ekranında vazgeçti — hata değil.
       if (mounted) setState(() => _deleting = false);
@@ -252,12 +248,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// Kilit ve gösterge karonun kendisinde (`_SettingsTile.onTapAsync`, tek
   /// yükleniyor davranışı 2026-10-08); eski `_exporting` bayrağı kalktı.
+  ///
+  /// Ar-Ge 7 Kas 20:30 #1: karo önce biçim sorar (Excel hareketler / JSON
+  /// tüm veriler). Satır sayısı aynı kaldı; JSON yolu aynen. Sayfa açıkken
+  /// karo "yükleniyor"da durur: ikinci dokunuş ikinci sayfayı açmasın.
   Future<void> _exportData() async {
     // Dikdörtgen karo "yükleniyor" hâline geçmeden ÖNCE ölçülür: o anda
     // trailing değişiyor, ölçüm kararlı hâlden yapılsın. (`onTapAsync`
     // göstergeyi bir sonraki karede çizer; bu satır senkron koşar.)
     final origin = ShareCardService.originOf(_disaAktarKaroKey.currentContext);
+    final excel = await _indirmeBicimiSor();
+    if (excel == null || !mounted) return;
     try {
+      if (excel) {
+        await _hareketleriPaylas(origin);
+        return;
+      }
       await DataExportService.instance.exportAndShare(paylasimKaynagi: origin);
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): `exportAndShare`
       // sistem paylaşım sayfasını açıyor, kullanıcı dosyayı zaten orada
@@ -271,78 +277,115 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  final _portfoyKaroKey = GlobalKey();
+  /// `true` Excel, `false` JSON, vazgeçilirse `null`.
+  Future<bool?> _indirmeBicimiSor() {
+    final l = context.l10n;
+    return showSandikSheet<bool>(
+      context: context,
+      baslik: l.downloadMyData,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), 0,
+              SandikSpace.screenH(ctx), SandikSpace.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SettingsTile(
+                icon: Icons.table_chart_outlined,
+                title: l.downloadMyDataExcel,
+                subtitle: l.downloadMyDataExcelSubtitle,
+                onTap: () => Navigator.pop(ctx, true),
+              ),
+              _SettingsTile(
+                icon: Icons.data_object_rounded,
+                title: l.downloadMyDataJson,
+                subtitle: l.downloadMyDataJsonSubtitle,
+                onTap: () => Navigator.pop(ctx, false),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-  /// Portföy dökümü (Premium): biçim sorulur, belge kurulur, paylaşılır.
-  Future<void> _portfoyuDisaAktar() async {
-    if (ref.read(premiumKilitliProvider)) {
-      unawaited(AnalyticsService.instance
-          .logPremiumGateShown(feature: 'portfoy_disa_aktar'));
-      await PaywallScreen.show(context, source: 'portfoy_disa_aktar');
-      return;
-    }
-    final origin = ShareCardService.originOf(_portfoyKaroKey.currentContext);
-    final bicim = await disaAktarimBicimiSor(context);
-    if (bicim == null || !mounted) return;
+  /// Tüm hareketlerin Excel'i (`hareketDokumuBelgesi`). Ücretsiz: veri
+  /// taşınabilirliği Premium'a konmaz. Yalnız kullanıcının kendi kayıtları
+  /// (ortak görünümde defter ortağın lotlarını da taşır; portföy dökümüyle
+  /// aynı süzgeç).
+  Future<void> _hareketleriPaylas(Rect? origin) async {
     final durum = ref.read(portfolioProvider).valueOrNull;
     final kullanici = ref.read(authProvider).valueOrNull;
     if (durum == null || kullanici == null) return;
-    final belge = portfoyBelgesi(
-      lotlar: [
+    final belge = hareketDokumuBelgesi(
+      defter: [
         for (final a in durum.assets)
           if (a.userId == kullanici.id) a
       ],
-      tlYap: durum.toTRY,
       kim: kullanici.username ?? kullanici.email,
       olusturma: DateTime.now(),
     );
-    try {
-      await DisaAktarimService.instance
-          .paylas(belge, bicim: bicim, tur: 'portfoy', kaynak: origin);
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'SettingsScreen.portfoyuDisaAktar');
-      if (!mounted) return;
-      showAppError(context, e);
+    if (belge == null) {
+      if (mounted) sandikSnack(context, context.l10n.noTransactionsYet);
+      return;
     }
+    await DisaAktarimService.instance.paylas(belge,
+        bicim: DisaAktarimBicimi.excel, tur: 'hareketler', kaynak: origin);
   }
 
+  /// Yatırım uyarısı metni — marka kabuğunda (Ar-Ge 5 Kas 22:40 #7; eskiden
+  /// `AlertDialog`). Başlık ve "Kapat" sabit, uzun metin aradaki alanda kayar
+  /// (`kaydir: false` + `Flexible`) — `AlertDialog`'daki düzenin aynısı.
   void _showDisclaimerText() {
     showSandikGecisli<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: context.c.surface2,
-        title: Row(
+      builder: (dialogCtx) => SandikDiyalogKabugu(
+        kaydir: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.gavel_rounded, color: context.c.amberText, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                context.l10n.investmentDisclaimer,
-                style: TextStyle(color: context.c.text90, fontSize: 16),
+            Row(
+              children: [
+                Icon(Icons.gavel_rounded, color: context.c.amberText, size: 20),
+                const SizedBox(width: SandikSpace.sm),
+                Expanded(
+                  child: Text(
+                    context.l10n.investmentDisclaimer,
+                    style:
+                        context.t.titleLarge?.copyWith(color: context.c.text90),
+                  ),
+                ),
+                Text(
+                  'v$disclaimerVersion',
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
+                ),
+              ],
+            ),
+            const SizedBox(height: SandikSpace.md),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Text(
+                  disclaimerText,
+                  style: context.t.bodyMedium?.copyWith(
+                    color: context.c.text90,
+                    height: 1.55,
+                  ),
+                ),
               ),
             ),
-            Text(
-              'v$disclaimerVersion',
-              style: TextStyle(color: context.c.text36, fontSize: 11),
+            const SizedBox(height: SandikSpace.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: Text(context.l10n.close,
+                    style: TextStyle(color: context.c.amberText)),
+              ),
             ),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Text(
-            disclaimerText,
-            style: TextStyle(
-              color: context.c.text90,
-              fontSize: 13,
-              height: 1.55,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.close, style: TextStyle(color: context.c.amberText)),
-          ),
-        ],
       ),
     );
   }
@@ -351,6 +394,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'legal_doc'),
         builder: (_) =>
             LegalDocScreen(title: title, blocks: blocks, icon: icon),
       ),
@@ -388,12 +432,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _openFeedbackSheet() async {
-    String type = 'Şikayet';
+    // Varsayılan "Tavsiye" (Ar-Ge 29 Eki #2): form "Şikayet" seçili
+    // açılıyordu; öneri yazmaya gelen kişiye ilk gösterilen şey şikâyetti.
+    String type = 'Tavsiye';
+    const turlar = ['Şikayet', 'Tavsiye', 'Diğer'];
+    final etiketler = [
+      context.l10n.feedbackTypeComplaint,
+      context.l10n.feedbackTypeSuggestion,
+      context.l10n.feedbackTypeOther,
+    ];
+    String etiket(String t) => etiketler[turlar.indexOf(t)];
     final controller = TextEditingController();
     final result = await showSandikSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -414,17 +466,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   context.l10n.feedbackTitle,
                   style: context.t.headlineSmall?.copyWith(
                     color: context.c.text90,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Tür tek seçimli bir mod: `goz_alici` açıkken uygulamanın
+                // segmenti (seçici denetimi 2026-10-12; Material çipi iOS'ta
+                // yabancıydı). Gönderilen değer Türkçe kalır (sunucu bunu
+                // okuyor); yalnız görünen ad çeviriden.
+                if (SandikCam.acik)
+                  SandikSegment(
+                    adet: turlar.length,
+                    secili: turlar.indexOf(type),
+                    onSec: (i) => setLocal(() => type = turlar[i]),
+                    oge: (_, i, __) => Text(etiket(turlar[i])),
+                  )
+                else
                 Row(
                   children: [
-                    for (final t in const ['Şikayet', 'Tavsiye', 'Diğer'])
+                    for (final t in turlar)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(t),
+                          label: Text(etiket(t)),
                           selected: type == t,
                           onSelected: (_) => setLocal(() => type = t),
                           selectedColor:
@@ -470,7 +534,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             {'type': type, 'body': controller.text.trim()},
                           ),
                   child: Text(context.l10n.send,
-                      style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                // Formsuz yazmak isteyene doğrudan e-posta (eski "Bize ulaş"
+                // satırının işi; satırlar birleşti, Ar-Ge 29 Eki #2).
+                const SizedBox(height: 4),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, const {'eposta': '1'}),
+                  child: Text(context.l10n.feedbackDogrudanEposta),
                 ),
               ],
             ),
@@ -478,6 +552,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       },
     );
+    if (result?['eposta'] != null) {
+      await _sendMail(subject: 'Sandık uygulama iletişim');
+      return;
+    }
     if (result != null) {
       await _sendMail(
         subject: '[${result['type']}] Sandık uygulama geri bildirim',
@@ -513,9 +591,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             AbsorbPointer(
               absorbing: _deleting,
-              child: ListView(
+              child: SandikIcerikSutunu.olc(builder: (context, kenar) => ListView(
+                // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): `kenar`
+                // dar ekranda 0, liste birebir eskisi.
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    EdgeInsets.symmetric(horizontal: 20 + kenar, vertical: 12),
                 children: switch (bolum) {
                   null => _hub(),
                   SettingsBolum.gorunum => _gorunum(),
@@ -523,7 +603,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SettingsBolum.hesap => _hesap(),
                   SettingsBolum.yardim => _yardim(),
                 },
-              ),
+              )),
             ),
             // Örtü, kilidin GÖRÜNÜR karşılığı. AbsorbPointer tek başına
             // dokunuşu yutar ama ekran çalışır görünmeye devam eder;
@@ -561,73 +641,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _bolumAc(SettingsBolum b) => pushGuarded(
-        context,
-        adaptiveRoute<void>(builder: (_) => SettingsScreen(bolum: b)),
-      );
 
   /// Hub: dört bölüm + (admin) tanılama + (debug) geliştirici + sürüm.
   List<Widget> _hub() => [
         const SizedBox(height: 4),
-        _SettingsTile(
-          icon: Icons.palette_outlined,
-          title: SettingsBolum.gorunum.baslik(context),
-          subtitle: context.l10n.settingsAppearanceSubtitle,
-          onTap: () => _bolumAc(SettingsBolum.gorunum),
-        ),
-        _SettingsTile(
-          icon: Icons.notifications_outlined,
-          title: SettingsBolum.bildirimler.baslik(context),
-          subtitle: defaultTargetPlatform == TargetPlatform.iOS
-              ? context.l10n.notifSubtitleIos
-              : context.l10n.notifSubtitleAndroid,
-          onTap: () => _bolumAc(SettingsBolum.bildirimler),
-        ),
-        _SettingsTile(
-          icon: Icons.shield_outlined,
-          title: SettingsBolum.hesap.baslik(context),
-          subtitle: context.l10n.settingsAccountSubtitle,
-          onTap: () => _bolumAc(SettingsBolum.hesap),
-        ),
-        _SettingsTile(
-          icon: Icons.help_outline_rounded,
-          title: SettingsBolum.yardim.baslik(context),
-          subtitle: context.l10n.settingsHelpSubtitle,
-          onTap: () => _bolumAc(SettingsBolum.yardim),
-        ),
-            ...() {
-              final teknik = _teknikBolumler();
-              if (teknik.isEmpty) return teknik;
-              // Teknik satırlar katlanır "Gelişmiş" grubunda:
-              // tanılama ve geliştirici araçları gündelik ayar değildir,
-              // hub'ın dört bölümüyle aynı ağırlıkta durmaları listeyi
-              // olduğundan kalabalık gösteriyordu (madde 10).
-              return <Widget>[
-                const SizedBox(height: 28),
-                _GelismisGrup(
-                  acik: _gelismisAcik,
-                  onDegis: () =>
-                      setState(() => _gelismisAcik = !_gelismisAcik),
-                  children: teknik,
-                ),
-              ];
-            }(),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
-              // için elle yazılan değer bayatlıyordu (gerçek 1.1.4 iken
-              // burada "1.0.0" görünüyordu). `PackageInfo` kurulu olanı
-              // söyler.
-              child: Text(
-                context.l10n.appVersionLabel(_surum ?? '…'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: context.c.text36,
-                  fontSize: 12,
-                ),
-              ),
-            ),
+        const AyarGrupSatirlari(),
+        ..._gelismisVeSurum(),
             const SizedBox(height: 40),
       ];
 
@@ -662,6 +681,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => pushGuarded(
                   context,
                   adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'push_diagnostics'),
                     builder: (_) => const PushDiagnosticsScreen(),
                   ),
                 ),
@@ -671,7 +691,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // geliştiricinin kendi cihazında yapılır.
             if (kDebugMode) ...[
               const SizedBox(height: 28),
-              const SandikSectionHeader(title: 'GELİŞTİRİCİ (DEBUG)'),
+              const SandikSectionHeader(title: 'Geliştirici (debug)'),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.bug_report_outlined,
@@ -722,13 +742,126 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(height: 12),
         const _BugunkuPortfoyAnahtari(),
       ],
+      const _AnaEkranWidgetBolumu(),
       const SizedBox(height: 24),
     ];
   }
 
+  /// Bildirimler bölümü (2026-10-20 düzeni): üstte tek soru — Az · Dengeli
+  /// · Çok ([BildirimOnAyarKarti], müşteri gözüyle rapor fikir 4). Altında
+  /// yalnız "ne zaman / ne" satırları (alarmlar, sessiz saatler, brifing
+  /// saati) açık durur; tek tek anahtarlar katlanır "Ayrıntılı"ya iner.
+  /// HİÇBİR anahtar kalkmadı, tercih anahtarları değişmedi — yalnız sıra.
+  ///
+  /// Sayfa başlığının hemen altındaki ikinci "Bildirimler" grup başlığı
+  /// kalktı (Ar-Ge 5 Kas 21:20 tasarım, tekrar eden bilgi): bu liste yalnız
+  /// Bildirimler alt sayfasında çiziliyor, başlığı zaten üst barda.
   List<Widget> _bildirimler() => [
-            SandikSectionHeader(title: context.l10n.notificationsUpper),
+            const SizedBox(height: 4),
+            // İzin kapalıysa ayarların hiçbiri bildirim getirmez (Ar-Ge 5 Kas
+            // 21:20 #2). Satır Alarmlarım, alarm sheet'i ve sinyal ayarlarında
+            // 21 Eki'den beri vardı; Bildirimler sayfasında eksikti.
+            const BildirimIzniUyarisi(
+              padding: EdgeInsets.only(bottom: SandikSpace.smd),
+            ),
+            BildirimOnAyarKarti(
+              onPaywall: () {
+                AnalyticsService.instance
+                    .logPremiumGateShown(feature: 'bildirim_on_ayar');
+                PaywallScreen.show(context, source: 'signal_on_ayar');
+              },
+            ),
             const SizedBox(height: 12),
+            ..._bildirimZamanSatirlari(),
+            const SizedBox(height: 16),
+            _GelismisGrup(
+              acik: _bildirimAyrintiAcik,
+              onDegis: () => setState(
+                  () => _bildirimAyrintiAcik = !_bildirimAyrintiAcik),
+              baslik: context.l10n.bildirimAyrintiliUpper,
+              semantik: context.l10n.bildirimAyrintiliSemantik,
+              children: _bildirimAnahtarlari(),
+            ),
+            // -- CANLI ETKİNLİKLER (iOS) -----------------------------
+            //
+            // Ayrı bölüm başlığı kalktı, bildirim grubunun SON kırılımı oldu
+            // (Ar-Ge 7 Kas 14:30 #6): Canlı Etkinlik bir bildirim yüzeyi ve
+            // iOS'un kendi Ayarlar'ı da onu bildirimlerin altında tutar. Tek
+            // bileşen için açılan bölüm başlığı ve iki boşluk listeyi
+            // uzatıyordu. Alt başlık (Gizlilik ile aynı kademe) kalır: "Gün
+            // boyu göster" anahtarı neyi yönettiğini söyleyen bir ad olmadan
+            // okunmuyor; ad iOS'taki özellik adıyla EŞLEŞİR (cümle
+            // düzeninde), kullanıcı gördüğü adla arar.
+            //
+            // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
+            // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
+            // Etkinlik'in ne göstereceğini belirler ve o özellik
+            // kapalıyken hiçbir şey ifade etmez. Android'in ayar
+            // kılavuzu da bunu söylüyor -- bir ayar, ait olduğu
+            // ÖZELLİĞİN altında durur.
+            //
+            // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
+            // ve `sync` ilk satırda döner (bkz. LiveActivityService).
+            // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
+            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+              _SubSectionTitle(context.l10n.canliEtkinlikAltBaslik),
+              const _LiveActivitySection(),
+            ],
+            const SizedBox(height: 28),
+      ];
+
+  /// Ön ayarın dokunmadığı, "ne zaman / ne" satırları: kullanıcının kendi
+  /// kurduğu alarmlar, sessiz saatler ve brifing saati. Az'da bile çalışan
+  /// şeyler oldukları için katlanmaz.
+  List<Widget> _bildirimZamanSatirlari() => [
+            // Alarm KURMA yeri varlık ekranıdır (zil ikonu); burada yalnızca
+            // liste. Alt satır aktif sayısını söyler ki hub'dan bakan kişi
+            // ekrana girmeden durumu görsün.
+            _SettingsTile(
+              icon: Icons.add_alert_outlined,
+              title: context.l10n.priceAlerts,
+              subtitle: () {
+                // Yüzde (0169), gösterge ve çizgi (0170) alarmları da
+                // sayılır: hepsi "kurduğum alarm".
+                final aktif = (ref
+                            .watch(priceAlertsProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0) +
+                    (ref
+                            .watch(yuzdeAlarmlariProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0) +
+                    (ref
+                            .watch(gostergeAlarmlariProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0) +
+                    (ref
+                            .watch(cizimAlarmlariProvider)
+                            .valueOrNull
+                            ?.where((a) => a.isActive)
+                            .length ??
+                        0);
+                return aktif == 0
+                    ? context.l10n.alertSetFromAssetScreen
+                    : '$aktif aktif alarm';
+              }(),
+              onTap: () => pushGuarded(
+                context,
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'price_alerts'), builder: (_) => const PriceAlertsScreen()),
+              ),
+            ),
+            const _QuietHoursTile(),
+            const _BriefSlotTile(),
+      ];
+
+  /// Tek tek bildirim anahtarları — "Ayrıntılı" altında.
+  List<Widget> _bildirimAnahtarlari() => [
             // Teknik sinyaller TEK satır (2026-09-21): anahtar bildirimi
             // açar/kapar, satırın kendisi ayarlara götürür. Eskiden iki
             // ayrı satırdı (bildirim anahtarı + ayar bağlantısı) ve aynı
@@ -739,7 +872,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: context.l10n.signalNotificationsSubtitle,
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'signal_settings'), builder: (_) => const SignalSettingsScreen()),
               ),
               trailing: Semantics(
                 label: context.l10n.signalNotifications,
@@ -756,30 +889,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
-            // Alarm KURMA yeri varlık ekranıdır (zil ikonu); burada yalnızca
-            // liste. Alt satır aktif sayısını söyler ki hub'dan bakan kişi
-            // ekrana girmeden durumu görsün.
-            _SettingsTile(
-              icon: Icons.add_alert_outlined,
-              title: context.l10n.priceAlerts,
-              subtitle: () {
-                final aktif = ref
-                        .watch(priceAlertsProvider)
-                        .valueOrNull
-                        ?.where((a) => a.isActive)
-                        .length ??
-                    0;
-                return aktif == 0
-                    ? context.l10n.alertSetFromAssetScreen
-                    : '$aktif aktif alarm';
-              }(),
-              onTap: () => pushGuarded(
-                context,
-                adaptiveRoute<void>(builder: (_) => const PriceAlertsScreen()),
-              ),
-            ),
-            const _QuietHoursTile(),
-            const SizedBox(height: 8),
             // Ortak bildirim anahtarları BURADA kalır, ortak yönetiminin
             // (Profil) yanına taşınmaz (sadeleştirme değerlendirmesi
             // 2026-10-04): kullanıcı "bildirimleri kapat"ı tek listede arar;
@@ -799,37 +908,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // yaramaz ve "bu ne?" sorusu doğurur.
             if (ref.watch(activePartnersProvider).isNotEmpty)
               const _PartnerActivitySwitch(),
-            const _BriefSlotTile(),
+            // Dönem özeti: ön ayarın yazdığı üç değerden biri (Az kapatır).
+            // Brifing saati 2026-10-20'de katlanmayan üst gruba çıktı.
+            // Bayraksız (yasin
+            // 2026-10-17: "her özelliği kapatma, flag gerekirse ben
+            // belirteceğim"); sunucu sütunu 0052'den beri okuyor.
+            const _OzetBildirimiSwitch(),
             if (ref.watch(balinaRadariAcikProvider)) const _RadarAyarlari(),
             // Maaş günü birikim hatırlatması (0119) — birikim serisiyle aynı
             // bayrak: seri görünmüyorken "serin ay ay sayılıyor" diyen bir
             // hatırlatma anlamsız olurdu.
             if (RemoteConfigService.instance.birikimSerisi)
               const _BirikimHatirlatmaTile(),
-            const SizedBox(height: 28),
-
-            // -- CANLI ETKİNLİKLER ---------------------------------
-            //
-            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
-            // Etkinlikler"): kullanıcı gördüğü adla arar.
-            //
-            // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
-            // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
-            // Etkinlik'in ne göstereceğini belirler ve o özellik
-            // kapalıyken hiçbir şey ifade etmez. Android'in ayar
-            // kılavuzu da bunu söylüyor -- bir ayar, ait olduğu
-            // ÖZELLİĞİN altında durur.
-            //
-            // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
-            // ve `sync` ilk satırda döner (bkz. LiveActivityService).
-            // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
-            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              SandikSectionHeader(title: context.l10n.liveActivitiesUpper),
-              const SizedBox(height: 12),
-              const _LiveActivitySection(),
-              const SizedBox(height: 28),
-            ],
-
       ];
 
   List<Widget> _hesap() {
@@ -843,12 +933,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   context.l10n.kullaniciAdiSecilmedi,
               onTap: () => pushGuarded(
                 context,
-                adaptiveRoute<void>(builder: (_) => const KullaniciAdiScreen()),
+                adaptiveRoute<void>(settings: const RouteSettings(name: 'kullanici_adi'), builder: (_) => const KullaniciAdiScreen()),
               ),
             ),
             _SwitchTile(
               icon: Icons.fingerprint_rounded,
-              title: context.l10n.biometricLock,
+              // Satır cihazın yöntemini söyler (Ar-Ge 5 Kas 21:20 tasarım):
+              // "Face ID ile kilitle" "Biyometrik kilit"ten açık. Yöntem
+              // bilinmezken (ilk kare, sorgu düştü) eski genel ad kalır.
+              title: switch (ref.watch(kilitYontemiProvider).valueOrNull) {
+                final y? => context.l10n.biometricLockYontem(y.name),
+                null => context.l10n.biometricLock,
+              },
               subtitle:
                   context.l10n.biometricLockSubtitle,
               value: ref.watch(biometricLockProvider),
@@ -892,6 +988,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => pushGuarded(
                 context,
                 adaptiveRoute<void>(
+                    settings: const RouteSettings(name: 'kayitli_cihazlar'),
                     builder: (_) => const KayitliCihazlarScreen()),
               ),
             ),
@@ -905,24 +1002,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: null,
               onTapAsync: _exportData,
             ),
-            // Premium dışa aktarım (2026-10-10): biçimli PDF/Excel. Üstteki
-            // JSON indirme KVKK md. 11 gereği herkese açık kalır; bu satır
-            // okunabilir belge içindir ve kilitliyken paywall'a götürür.
-            // Tek anahtar: paywall kapalıyken yalnız admin görür — bugün
-            // herkese ücretsiz verip yarın kilitlemek geri almak olurdu.
-            if (RemoteConfigService.instance.premiumOzellikleriGorunur)
-              _SettingsTile(
-                key: _portfoyKaroKey,
-                icon: Icons.ios_share_rounded,
-                title: context.l10n.dsPortfoyBaslik,
-                subtitle: context.l10n.dsPortfoyAlt,
-                trailing: ref.watch(premiumKilitliProvider)
-                    ? Icon(Icons.lock_outline_rounded,
-                        color: context.c.amberText, size: SandikSpace.md)
-                    : null,
-                onTap: null,
-                onTapAsync: _portfoyuDisaAktar,
-              ),
+            // Premium portföy dökümü (PDF/Excel) 2026-10-31'de Raporlar
+            // kapısına taşındı (`portfoyDokumunuPaylas`): burada yalnız
+            // KVKK ham veri indirmesi kalır, iki "indir" satırı karışmasın.
             _SettingsTile(
               icon: Icons.delete_forever_outlined,
               title: context.l10n.deleteMyAccount,
@@ -946,114 +1028,252 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ];
   }
 
+  /// Beş yasal belge tek satırın arkasında (Ar-Ge 29 Eki #2, yasin "yap").
+  /// Belgeler ve metinleri değişmedi, yalnız giriş: Yardım'da beş açıklamalı
+  /// satır alt alta, sayfanın yarısını kaplıyordu. Liste alt sayfada; bir
+  /// belgeye dokununca sayfa kapanır ve belge bugünkü gibi tam ekran açılır.
+  /// Gizlilik politikası uygulama içinden erişilebilir kalır (bir dokunuş
+  /// daha derinde).
+  void _yasalBelgeleriAc() {
+    final l = context.l10n;
+    void ac(VoidCallback git) {
+      Navigator.of(context).pop();
+      git();
+    }
+
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              SandikSpace.screenH(ctx), 20, SandikSpace.screenH(ctx), 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SandikSectionHeader(title: l.legalUpper),
+              const SizedBox(height: 12),
+              _SettingsTile(
+                icon: Icons.privacy_tip_outlined,
+                title: l.privacyPolicy,
+                subtitle: l.privacyPolicySubtitle,
+                onTap: () => ac(() => _showLegalDoc(l.privacyPolicy,
+                    LegalDocs.privacy, Icons.privacy_tip_outlined)),
+              ),
+              _SettingsTile(
+                icon: Icons.gavel_outlined,
+                title: l.termsOfUse,
+                subtitle: l.termsOfUseSubtitle,
+                onTap: () => ac(() => _showLegalDoc(
+                    l.termsOfUse, LegalDocs.terms, Icons.gavel_outlined)),
+              ),
+              _SettingsTile(
+                icon: Icons.shield_outlined,
+                title: l.kvkkNotice,
+                subtitle: l.kvkkNoticeSubtitle,
+                onTap: () => ac(() => _showLegalDoc(
+                    l.kvkkNotice, LegalDocs.kvkk, Icons.shield_outlined)),
+              ),
+              // 1.2 (2026-10-04): kayıtta onaylanan dört belgenin dördü de
+              // burada; hepsi `legal/tr/*.md`'den (web ile aynı metin).
+              _SettingsTile(
+                icon: Icons.public_rounded,
+                title: l.yasalBelgeAcikRiza,
+                subtitle: l.yasalBelgeAcikRizaAciklama,
+                onTap: () => ac(() => _showLegalDoc(l.yasalBelgeAcikRiza,
+                    LegalDocs.acikRiza, Icons.public_rounded)),
+              ),
+              _SettingsTile(
+                icon: Icons.gavel_rounded,
+                title: l.investmentDisclaimer,
+                subtitle: l.disclaimerSubtitle,
+                onTap: () => ac(_showDisclaimerText),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _yardim() {
+    // "Bize ulaş" ile "Şikayet & Tavsiye" tek satır (Ar-Ge 29 Eki #2): ikisi
+    // de e-posta açıyordu, biri boş, biri türü seçilmiş formla. Kişi hangisini
+    // seçeceğini bilmiyordu. Satır formu açar; formdan doğrudan e-postaya
+    // geçen bağlantı da var.
     final iletisim = _SettingsTile(
-              icon: Icons.mail_outline_rounded,
-              title: context.l10n.contactUs,
-              subtitle: _supportEmail,
-              onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
-            );
+      icon: Icons.mail_outline_rounded,
+      title: context.l10n.contactUs,
+      subtitle: _supportEmail,
+      onTap: _openFeedbackSheet,
+    );
     final puan = _SettingsTile(
-              icon: Icons.star_outline_rounded,
-              title: context.l10n.rateAppTitle,
-              subtitle: context.l10n.rateAppSubtitle,
-              // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
-              // "Sonra" diye geçiştirdiyse puanı buradan verir.
-              onTap: () => ReviewPromptService.instance.magazayiAc(),
-            );
+      icon: Icons.star_outline_rounded,
+      title: context.l10n.rateAppTitle,
+      // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
+      // "Sonra" diye geçiştirdiyse puanı buradan verir.
+      onTap: () => ReviewPromptService.instance.magazayiAc(),
+    );
     final yenilikler = _SettingsTile(
-              icon: Icons.auto_awesome_outlined,
-              title: context.l10n.whatsNewTitle,
-              subtitle: context.l10n.whatsNewSubtitle,
-              // Elle açılışta TÜM liste gösterilir (otomatik açılışın
-              // `onemli` filtresi uygulanmaz): kullanıcı buraya bilerek
-              // geliyor, yama sürümlerini de görebilmeli.
-              onTap: () async {
-                final notlar = await SurumNotuService.instance
-                    .gosterilecekler(otomatikAcilis: false);
-                // State'in kendi `mounted`'ı — `context.mounted` burada
-                // analyzer'ın istediği güvence değil.
-                if (!mounted) return;
-                if (notlar.isEmpty) {
-                  sandikSnack(context, context.l10n.whatsNewEmpty);
-                  return;
-                }
-                await YeniliklerSheet.goster(context, notlar);
-              },
-            );
+      icon: Icons.new_releases_outlined,
+      title: context.l10n.whatsNewTitle,
+      // Elle açılışta TÜM liste gösterilir (otomatik açılışın
+      // `onemli` filtresi uygulanmaz): kullanıcı buraya bilerek
+      // geliyor, yama sürümlerini de görebilmeli.
+      onTap: () async {
+        final notlar = await SurumNotuService.instance
+            .gosterilecekler(otomatikAcilis: false);
+        // State'in kendi `mounted`'ı — `context.mounted` burada
+        // analyzer'ın istediği güvence değil.
+        if (!mounted) return;
+        if (notlar.isEmpty) {
+          sandikSnack(context, context.l10n.whatsNewEmpty);
+          return;
+        }
+        await YeniliklerSheet.goster(context, notlar);
+      },
+    );
     final tur = _SettingsTile(
-              icon: Icons.explore_outlined,
-              title: context.l10n.replayTour,
-              subtitle: context.l10n.replayTourSubtitle,
-              // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
-              // köke dönülür ve katman orada açılır.
-              onTap: () => OnboardingScreen.yenidenBaslat(context),
-            );
-    final geriBildirim = _SettingsTile(
-              icon: Icons.rate_review_outlined,
-              title: context.l10n.feedbackTitle,
-              subtitle: context.l10n.feedbackSubtitle,
-              onTap: _openFeedbackSheet,
-            );
-    final yasal = <Widget>[
-            SandikSectionHeader(title: context.l10n.legalUpper),
-            const SizedBox(height: 12),
-            _SettingsTile(
-              icon: Icons.privacy_tip_outlined,
-              title: context.l10n.privacyPolicy,
-              subtitle: context.l10n.privacyPolicySubtitle,
-              onTap: () => _showLegalDoc(context.l10n.privacyPolicy,
-                  LegalDocs.privacy, Icons.privacy_tip_outlined),
-            ),
-            _SettingsTile(
-              icon: Icons.gavel_outlined,
-              title: context.l10n.termsOfUse,
-              subtitle: context.l10n.termsOfUseSubtitle,
-              onTap: () => _showLegalDoc(
-                  context.l10n.termsOfUse, LegalDocs.terms, Icons.gavel_outlined),
-            ),
-            _SettingsTile(
-              icon: Icons.shield_outlined,
-              title: context.l10n.kvkkNotice,
-              subtitle: context.l10n.kvkkNoticeSubtitle,
-              onTap: () => _showLegalDoc(context.l10n.kvkkNotice,
-                  LegalDocs.kvkk, Icons.shield_outlined),
-            ),
-            // 1.2 (2026-10-04): kayıtta onaylanan dört belgenin dördü de
-            // burada; hepsi `legal/tr/*.md`'den (web ile aynı metin).
-            _SettingsTile(
-              icon: Icons.public_rounded,
-              title: context.l10n.yasalBelgeAcikRiza,
-              subtitle: context.l10n.yasalBelgeAcikRizaAciklama,
-              onTap: () => _showLegalDoc(context.l10n.yasalBelgeAcikRiza,
-                  LegalDocs.acikRiza, Icons.public_rounded),
-            ),
-            _SettingsTile(
-              icon: Icons.gavel_rounded,
-              title: context.l10n.investmentDisclaimer,
-              subtitle: context.l10n.disclaimerSubtitle,
-              onTap: _showDisclaimerText,
-            ),
-            const SizedBox(height: 28),
-    ];
-    // "Bize yaz" türü satırlar (iletişim, geri bildirim, puan)
-    // DESTEK'te yan yana; uygulamanın kendini anlattığı satırlar
-    // (yenilikler, tanıtım turu) UYGULAMA HAKKINDA'da; yasal belgeler aynı.
+      icon: Icons.explore_outlined,
+      title: context.l10n.replayTour,
+      // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
+      // köke dönülür ve katman orada açılır.
+      onTap: () => OnboardingScreen.yenidenBaslat(context),
+    );
+    final yasal = _SettingsTile(
+      icon: Icons.gavel_outlined,
+      title: context.l10n.yasalBelgelerBaslik,
+      subtitle: context.l10n.yasalBelgelerAlt,
+      onTap: _yasalBelgeleriAc,
+    );
+    // "Bize yaz" türü satırlar (iletişim, puan) DESTEK'te; uygulamanın
+    // kendini anlattığı satırlar (yenilikler, tanıtım turu) ve yasal
+    // belgeler UYGULAMA HAKKINDA'da. 10 satır → 5 (Ar-Ge 29 Eki #2).
     return [
-      SandikSectionHeader(title: context.l10n.supportUpper),
+      // Sık sorulanlar en üstte (Ar-Ge 5 Kas 21:20 #4): takılan kişi önce
+      // cevabı görür; çözülmezse cevabın altındaki bağlantı aynı formu açar.
+      // "Sık sorulanlar" ve "Destek" iki ayrı başlıktı; ikisi de tek işe,
+      // takılan kişiye yardıma hizmet ediyordu. Bir iş = bir başlık (Ar-Ge
+      // 7 Kas 04:03 #3): "Yardım ve destek" altında önce cevaplar, sonra
+      // bize yaz ve puan; ikinci başlık ve 28 pt boşluğu kalktı.
+      SandikSectionHeader(title: context.l10n.yardimVeDestek),
       const SizedBox(height: 12),
+      SikSorulanlar(onBizeYaz: _openFeedbackSheet),
+      const SizedBox(height: SandikSpace.sm),
       iletisim,
-      geriBildirim,
       puan,
       const SizedBox(height: 28),
       SandikSectionHeader(title: context.l10n.settingsGroupAbout),
       const SizedBox(height: 12),
       yenilikler,
       tur,
-      const SizedBox(height: 28),
-      ...yasal,
+      yasal,
+      // Ayar grupları Profil'e taşınınca (Ar-Ge 1 Kas 20:45 #2) hub'a
+      // yalnız arama ve derin bağlantı gidiyor; sürüm satırı ve admin'in
+      // "Gelişmiş"i görünür kalsın diye Yardım'ın sonunda da var. Sürüm
+      // "Uygulama hakkında"nın doğal yeri (iOS Ayarlar › Genel › Hakkında).
+      ..._gelismisVeSurum(),
     ];
   }
+
+  /// Katlanır "Gelişmiş" (admin/debug) + kurulu sürüm. Hub ve Yardım ortak.
+  List<Widget> _gelismisVeSurum() => [
+        ...() {
+          final teknik = _teknikBolumler();
+          if (teknik.isEmpty) return teknik;
+          // Teknik satırlar katlanır "Gelişmiş" grubunda:
+          // tanılama ve geliştirici araçları gündelik ayar değildir,
+          // hub'ın dört bölümüyle aynı ağırlıkta durmaları listeyi
+          // olduğundan kalabalık gösteriyordu (madde 10).
+          return <Widget>[
+            const SizedBox(height: 28),
+            _GelismisGrup(
+              acik: _gelismisAcik,
+              onDegis: () => setState(() => _gelismisAcik = !_gelismisAcik),
+              children: teknik,
+            ),
+          ];
+        }(),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
+          // için elle yazılan değer bayatlıyordu (gerçek 1.1.4 iken
+          // burada "1.0.0" görünüyordu). `PackageInfo` kurulu olanı
+          // söyler.
+          child: Text(
+            context.l10n.appVersionLabel(_surum ?? '…'),
+            textAlign: TextAlign.center,
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          ),
+        ),
+      ];
+}
+
+/// Ayarların dört grubu (Görünüm, Bildirimler, Hesap, Yardım) — TEK yer.
+///
+/// Profil'in altında ve Ayarlar hub'ında aynı satırlar (Ar-Ge 1 Kas 20:45
+/// #2, müşteri "yap"): bir ayara ulaşmak Profil → dişli → grup → satır
+/// üç dokunuştu, Profil ise yarı boştu. Grup sayfaları değişmedi.
+class AyarGrupSatirlari extends StatelessWidget {
+  const AyarGrupSatirlari({super.key, this.hesapEkle});
+
+  /// Verilirse "Hesap & güvenlik"in altında "Hesap ekle" satırı çıkar.
+  /// Profil tek hesaptayken verir (Ar-Ge 7 Kas: adın yanında ok yalnız iki
+  /// ve daha fazla hesapta; ikinci hesabın yolu bu satır). Ayarlar ekranının
+  /// kendisi vermez.
+  final VoidCallback? hesapEkle;
+
+  void _ac(BuildContext context, SettingsBolum b) => pushGuarded(
+        context,
+        adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'settings'),
+            builder: (_) => SettingsScreen(bolum: b)),
+      );
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SettingsTile(
+            icon: Icons.palette_outlined,
+            title: SettingsBolum.gorunum.baslik(context),
+            subtitle: context.l10n.settingsAppearanceSubtitle,
+            onTap: () => _ac(context, SettingsBolum.gorunum),
+          ),
+          _SettingsTile(
+            icon: Icons.notifications_outlined,
+            title: SettingsBolum.bildirimler.baslik(context),
+            subtitle: defaultTargetPlatform == TargetPlatform.iOS
+                ? context.l10n.notifSubtitleIos
+                : context.l10n.notifSubtitleAndroid,
+            onTap: () => _ac(context, SettingsBolum.bildirimler),
+          ),
+          _SettingsTile(
+            icon: Icons.shield_outlined,
+            title: SettingsBolum.hesap.baslik(context),
+            subtitle: context.l10n.settingsAccountSubtitle,
+            onTap: () => _ac(context, SettingsBolum.hesap),
+          ),
+          if (hesapEkle != null)
+            _SettingsTile(
+              icon: Icons.person_add_alt_1_outlined,
+              title: context.l10n.hesapEkleSatiri,
+              subtitle: context.l10n.hesapEkleSatiriAlt,
+              onTap: hesapEkle!,
+            ),
+          _SettingsTile(
+            icon: Icons.help_outline_rounded,
+            title: SettingsBolum.yardim.baslik(context),
+            subtitle: context.l10n.settingsHelpSubtitle,
+            onTap: () => _ac(context, SettingsBolum.yardim),
+          ),
+        ],
+      );
 }
 
 /// Hub'ın katlanır "Gelişmiş" grubu (sadeleştirme madde 10, 2026-10-04).
@@ -1066,11 +1286,19 @@ class _GelismisGrup extends StatelessWidget {
     required this.acik,
     required this.onDegis,
     required this.children,
+    this.baslik,
+    this.semantik,
   });
 
   final bool acik;
   final VoidCallback onDegis;
   final List<Widget> children;
+
+  /// Başlık ve ekran okuyucu etiketi; verilmezse hub'ın "Gelişmiş"i.
+  /// Bildirimler'in "Ayrıntılı" grubu da aynı kabuğu kullanır (2026-10-20)
+  /// — iki ayrı katlanır başlık, iki ayrı hareket demekti.
+  final String? baslik;
+  final String? semantik;
 
   @override
   Widget build(BuildContext context) {
@@ -1080,14 +1308,14 @@ class _GelismisGrup extends StatelessWidget {
         Semantics(
           button: true,
           expanded: acik,
-          label: context.l10n.settingsAdvancedSemantics,
+          label: semantik ?? context.l10n.settingsAdvancedSemantics,
           child: ExcludeSemantics(
             child: CupertinoButton(
               minimumSize: SandikTouch.minSize,
               padding: EdgeInsets.zero,
               onPressed: onDegis,
               child: SandikSectionHeader(
-                title: context.l10n.settingsAdvancedUpper,
+                title: baslik ?? context.l10n.settingsAdvancedUpper,
                 trailing: SandikAcilirOk(
                   acik: acik,
                   child: Icon(Icons.expand_more_rounded,
@@ -1137,6 +1365,83 @@ class _BugunkuPortfoyAnahtari extends ConsumerWidget {
 ///
 /// Bir bölümde ikinci bir kırılım gerektiğinde kullanılır: Android'in ayar
 /// kılavuzu, yakından ilişkili ayarların grup başlığı almasını önerir.
+/// Ayarlar'ın ikonlu tek seçimli seçicileri — `goz_alici` açıkken
+/// uygulamanın kayan segmenti (seçici denetimi 2026-10-12).
+///
+/// Tema, baz para, yatırımcı seviyesi, dil ve yazı boyutu 8 Ekim tek seçici
+/// geçişinde kalmış, yerinde solan amber tonla elle yazılmışlardı: aynı
+/// "birini seç" işi uygulamanın geri kalanından farklı görünüyordu. İkon +
+/// yazı korunur; kabuk yüksekliği yazı boyutuyla büyür (Dynamic Type),
+/// taşacak olursa içerik küçülür ama kırpılmaz.
+class _AyarSegmenti extends StatelessWidget {
+  const _AyarSegmenti({
+    required this.adet,
+    required this.secili,
+    required this.onSec,
+    required this.etiket,
+    required this.ikon,
+    required this.semantik,
+    this.ikonBoyu,
+  });
+
+  final int adet;
+  final int secili;
+  final ValueChanged<int> onSec;
+  final String Function(int i) etiket;
+  final IconData Function(int i) ikon;
+  final String Function(int i) semantik;
+
+  /// Segment başına ikon boyu (yazı boyutu seçicisinde büyüyen ikon).
+  final double Function(int i)? ikonBoyu;
+
+  static const double _ikonKutusu = 25;
+
+  @override
+  Widget build(BuildContext context) {
+    final taban = context.t.labelLarge?.copyWith(letterSpacing: 0);
+    final yaziBoyu =
+        MediaQuery.textScalerOf(context).scale(taban?.fontSize ?? 14) *
+            (taban?.height ?? 1.3);
+    final yukseklik =
+        _ikonKutusu + SandikSpace.xs + yaziBoyu + 2 * SandikSpace.sm2;
+    return SandikSegment(
+      adet: adet,
+      secili: secili,
+      onSec: onSec,
+      yukseklik: yukseklik,
+      icBosluk: SandikSpace.xs,
+      metinStili: taban,
+      semantik: semantik,
+      oge: (ctx, i, sec) => FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: _ikonKutusu,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                // İkon rengi yazıyla aynı sürede geçer (segmentin metni
+                // `AnimatedDefaultTextStyle` ile geçiyor).
+                child: TweenAnimationBuilder<Color?>(
+                  tween:
+                      ColorTween(end: sec ? ctx.c.amberText : ctx.c.text36),
+                  duration: SandikMotion.stateOf(ctx),
+                  curve: SandikMotion.enter,
+                  builder: (_, renk, __) => Icon(ikon(i),
+                      size: ikonBoyu?.call(i) ?? 20, color: renk),
+                ),
+              ),
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            Text(etiket(i), maxLines: 1, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SubSectionTitle extends StatelessWidget {
   final String text;
   const _SubSectionTitle(this.text);
@@ -1154,6 +1459,67 @@ class _SubSectionTitle extends StatelessWidget {
           color: context.c.text58,
         ),
       ),
+    );
+  }
+}
+
+/// Ana ekran widget'ı — "Portföy görünümü" grubunun son kırılımı (Ar-Ge
+/// 7 Kas 14:30 #5).
+///
+/// Neden Görünüm: widget portföyün uygulama DIŞINDAKİ görünüşü; tema
+/// seçimi de onu yönetiyor. Ayarlar'da widget'a ait başka satır yoktu,
+/// kullanıcı kurulumu internette arıyordu.
+///
+///   · Android: launcher destekliyorsa tek satır "Ana ekrana widget ekle";
+///     sistemin kendi onay penceresi açılır. Destek yoksa (ya da soru
+///     hata verdiyse) alt başlıkla birlikte HİÇ görünmez — çalışmayan
+///     düğme göstermek yanıltır. İstek giderken hata olursa elle adımlar
+///     (`WidgetInstallSheet`) açılır.
+///   · iOS: uygulamadan yerleştirme yok (WidgetKit izin vermez); düğme
+///     yerine tek satır adım, `lockWidgetHowTo` ile aynı dil.
+class _AnaEkranWidgetBolumu extends ConsumerWidget {
+  const _AnaEkranWidgetBolumu();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SubSectionTitle(l.anaEkranWidgetBaslik),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.sm),
+            child: Text(
+              l.anaEkranWidgetHowTo,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ),
+        ],
+      );
+    }
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return const SizedBox.shrink();
+    }
+    final destek = ref.watch(widgetSabitlemeDestegiProvider).valueOrNull;
+    if (destek != true) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SubSectionTitle(l.anaEkranWidgetBaslik),
+        _SettingsTile(
+          icon: Icons.widgets_outlined,
+          title: l.anaEkranaWidgetEkle,
+          subtitle: l.widgetInstallBody,
+          onTap: null,
+          onTapAsync: () async {
+            final gitti =
+                await ref.read(widgetSabitleyiciProvider).sabitlemeIste();
+            if (gitti || !context.mounted) return;
+            await WidgetInstallSheet.goster(context);
+          },
+        ),
+      ],
     );
   }
 }
@@ -1186,6 +1552,16 @@ class _ThemeModePicker extends ConsumerWidget {
       (ThemeMode.dark, Icons.dark_mode_rounded, l.themeDark),
     ];
 
+    if (RemoteConfigService.instance.gozAlici) {
+      return _AyarSegmenti(
+        adet: options.length,
+        secili: options.indexWhere((o) => o.$1 == current),
+        onSec: (i) => ref.read(themeModeProvider.notifier).set(options[i].$1),
+        etiket: (i) => options[i].$3,
+        ikon: (i) => options[i].$2,
+        semantik: (i) => context.l10n.themeSemantics(options[i].$3),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(SandikSpace.xs),
       decoration: context.surfaceCard(),
@@ -1232,7 +1608,7 @@ class _ThemeModePicker extends ConsumerWidget {
                         style: context.t.labelLarge?.copyWith(
                           letterSpacing: 0,
                           fontWeight: current == mode
-                              ? FontWeight.w700
+                              ? FontWeight.w600
                               : FontWeight.w500,
                           color: current == mode
                               ? context.c.amberText
@@ -1290,6 +1666,19 @@ class _BaseCurrencyPicker extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: _options.length,
+            secili: _options.indexWhere((o) => o.$1 == current),
+            onSec: (i) => setBaseCurrency(ref, _options[i].$1),
+            etiket: (i) => _options[i].$1 == BaseCurrency.gold
+                ? context.l10n.assetTypeGold
+                : _options[i].$1.kod,
+            ikon: (i) => _options[i].$2,
+            semantik: (i) => context.l10n
+                .baseCurrencySemantics(bazBirimAdi(context.l10n, _options[i].$1)),
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),
@@ -1329,7 +1718,7 @@ class _BaseCurrencyPicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == birim
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == birim
                                   ? context.c.amberText
@@ -1378,6 +1767,17 @@ class _InvestorLevelPicker extends ConsumerWidget {
       children: [
         _SubSectionTitle(context.l10n.investorLevel),
         const SizedBox(height: 8),
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: YatirimciSeviyesi.values.length,
+            secili: current.index,
+            onSec: (i) => ref.read(investorLevelIndexProvider.notifier).set(i),
+            etiket: (i) => YatirimciSeviyesi.values[i].etiket(context),
+            ikon: (i) => YatirimciSeviyesi.values[i].ikon,
+            semantik: (i) => context.l10n
+                .levelSemantics(YatirimciSeviyesi.values[i].etiket(context)),
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),
@@ -1416,7 +1816,7 @@ class _InvestorLevelPicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == s
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == s
                                   ? context.c.amberText
@@ -1481,6 +1881,18 @@ class _LanguagePicker extends ConsumerWidget {
       children: [
         _SubSectionTitle(l.language),
         const SizedBox(height: 8),
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: options.length,
+            secili: options.indexWhere((o) => o.$1 == current),
+            onSec: (i) => ref
+                .read(localeProvider.notifier)
+                .set(LocaleNotifier.parse(options[i].$1)),
+            etiket: (i) => options[i].$3,
+            ikon: (i) => options[i].$2,
+            semantik: (i) => '${options[i].$3} ${l.language}',
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),
@@ -1519,7 +1931,7 @@ class _LanguagePicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == kod
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == kod
                                   ? context.c.amberText
@@ -1550,7 +1962,12 @@ class _LanguagePicker extends ConsumerWidget {
 class _SettingsTile extends StatefulWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
+
+  /// Alt metin yalnız başlığa bir şey ekliyorsa (Ar-Ge 7 Kas 20:30 #4):
+  /// "sandık'ı değerlendir / Mağazada puan ver" gibi başlığı tekrarlayan
+  /// alt metin satırı uzatıyor, 3.1×'te listeyi iki katına çıkarıyordu.
+  /// `null` → tek satırlı karo (iOS Ayarlar kalıbı).
+  final String? subtitle;
   final VoidCallback? onTap;
 
   /// İstek atan karo (ör. verilerimi indir). Verildiğinde [onTap] yok
@@ -1569,7 +1986,7 @@ class _SettingsTile extends StatefulWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.onTap,
     this.onTapAsync,
     this.destructive = false,
@@ -1639,12 +2056,14 @@ class _SettingsTileState extends State<_SettingsTile> {
                     style: context.t.bodyLarge
                         ?.copyWith(color: color, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: context.t.titleSmall?.copyWith(
-                        color: context.c.text58, fontWeight: FontWeight.w400),
-                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: context.t.titleSmall?.copyWith(
+                          color: context.c.text58, fontWeight: FontWeight.w400),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1776,8 +2195,10 @@ class _LiveActivitySection extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
             child: Text(
               context.l10n.displayWindow,
-              style: TextStyle(
-                  color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+              // Ham boyut/ağırlık yerine tema ölçeği (2026-11-07): `titleMedium`
+              // aynı 14 pt, ağırlık w500 (w600 tavanının altında). Ağırlık
+              // elle ezilmedi ki sistem "Kalın Metin" ayarı buradan da geçsin.
+              style: context.t.titleMedium?.copyWith(color: p.text90),
             ),
           ),
           Row(
@@ -1947,9 +2368,8 @@ class _TimeBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.c;
-    return InkWell(
+    return SandikTappable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(SandikRadius.md),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: context.surfaceCard(),
@@ -2027,7 +2447,6 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
     final mevcut = _slot ?? 'morning';
     final secim = await showSandikSheet<String>(
       context: context,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
@@ -2044,7 +2463,7 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
                   l10n.briefSlotTitle,
                   style: ctx.t.titleMedium?.copyWith(
                     color: ctx.c.text90,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -2141,7 +2560,6 @@ class _BirikimHatirlatmaTileState
     final secim = await showSandikSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -2161,7 +2579,7 @@ class _BirikimHatirlatmaTileState
                   l10n.savingReminderTitle,
                   style: ctx.t.titleMedium?.copyWith(
                     color: ctx.c.text90,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -2221,65 +2639,97 @@ class _BirikimHatirlatmaTileState
   }
 }
 
-/// Ortak hareketinin günlük brifingde anılması.
+/// Sunucuda duran (`profiles.*`) tek bir bildirim tercihi.
 ///
-/// Tercih SUNUCUDA (`profiles.partner_activity_push`) çünkü brifingi üreten
-/// edge function okuyor; cihaz tercihleri oradan görünmez. Bu yüzden diğer
-/// anahtarlar gibi bir `_BoolPrefNotifier` değil — ağ okuması gerektiriyor.
+/// Tercih SUNUCUDA çünkü push'u üreten edge function okuyor; cihaz
+/// tercihleri oradan görünmez. Bu yüzden diğer anahtarlar gibi bir
+/// `_BoolPrefNotifier` değil — ağ okuması gerektiriyor. Ortak hareketi
+/// (0049) ve dönem özeti (0052) aynı kabuğu paylaşır: ikinci bir kopya,
+/// okuma/yazma/geri alma davranışının sessizce ayrışması demekti.
+///
+/// 2026-10-20: değer artık anahtarın kendi `State`'inde değil, ortak
+/// [sunucuBildirimTercihleriProvider]'da — üstteki ön ayar kartı aynı iki
+/// sütuna yazıyor; ayrı kopya olsaydı "Ayrıntılı" açıkken ön ayar seçilince
+/// anahtar eski değerde kalırdı. Okuma bitene kadar AÇIK görünür (sunucu
+/// varsayılanı; "kapalı → açık" sıçraması yanıltırdı), yazma iyimser ve
+/// hatada geri alınır.
+class _SunucuTercihAnahtari extends ConsumerWidget {
+  const _SunucuTercihAnahtari({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.ortakHareketi,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  /// `true` → `partner_activity_push`, `false` → `weekly_summary_push`.
+  final bool ortakHareketi;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(sunucuBildirimTercihleriProvider).valueOrNull;
+    final deger =
+        t == null ? true : (ortakHareketi ? t.ortakHareketi : t.donemOzeti);
+    return _SwitchTile(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      value: deger,
+      onChanged: (v) async {
+        final n = ref.read(sunucuBildirimTercihleriProvider.notifier);
+        try {
+          await (ortakHareketi
+              ? n.ayarla(ortakHareketi: v)
+              : n.ayarla(donemOzeti: v));
+        } catch (_) {
+          if (!context.mounted) return;
+          sandikSnack(context, 'Ayar kaydedilemedi, tekrar dene.',
+              kind: SandikSnackKind.error);
+        }
+      },
+    );
+  }
+}
+
+/// Ortak hareketinin günlük brifingde anılması (`profiles.partner_activity_push`).
 ///
 /// **Mahremiyet notu:** bu bildirim yeni bir bilgi açmaz; ortağın lot'ları
 /// zaten karşı tarafta görünüyor. Anahtar, bilgiyi değil BİLDİRİMİ kapatır.
-class _PartnerActivitySwitch extends ConsumerStatefulWidget {
+class _PartnerActivitySwitch extends StatelessWidget {
   const _PartnerActivitySwitch();
 
   @override
-  ConsumerState<_PartnerActivitySwitch> createState() =>
-      _PartnerActivitySwitchState();
-}
-
-class _PartnerActivitySwitchState
-    extends ConsumerState<_PartnerActivitySwitch> {
-  /// null = henüz okunmadı. Okuma bitene kadar anahtar AÇIK görünür çünkü
-  /// sunucu varsayılanı da açık; "kapalı → açık" sıçraması yanıltırdı.
-  bool? _deger;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _oku());
-  }
-
-  Future<void> _oku() async {
-    final me = ref.read(authProvider).valueOrNull;
-    if (me == null) return;
-    final v = await SupabaseService.instance.getPartnerActivityPush(me.id);
-    if (mounted) setState(() => _deger = v);
-  }
-
-  Future<void> _yaz(bool v) async {
-    final me = ref.read(authProvider).valueOrNull;
-    if (me == null) return;
-    final onceki = _deger;
-    // İyimser güncelleme: anahtar hemen hareket etsin, hata olursa geri alsın.
-    setState(() => _deger = v);
-    try {
-      await SupabaseService.instance.setPartnerActivityPush(me.id, v);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _deger = onceki);
-      sandikSnack(context, 'Ayar kaydedilemedi, tekrar dene.',
-          kind: SandikSnackKind.error);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return _SwitchTile(
+    return _SunucuTercihAnahtari(
       icon: Icons.favorite_border_rounded,
       title: context.l10n.partnerActivityNotifications,
       subtitle: context.l10n.partnerActivityNotificationsSubtitle,
-      value: _deger ?? true,
-      onChanged: _yaz,
+      ortakHareketi: true,
+    );
+  }
+}
+
+/// Haftalık ve aylık dönem özeti push'u (`profiles.weekly_summary_push`).
+///
+/// Neden (TECHNICAL_DEBT "Dönem özeti push'unun istemcide kapatma anahtarı
+/// yok"): sütunu sunucu 0052'den beri okuyordu ama yazan bir anahtar yoktu;
+/// iOS'ta kanal kavramı olmadığından tek yol bildirimleri toptan kapatmaktı.
+/// Tek anahtar iki dönemi birlikte kapatır çünkü sunucuda sütun ortak —
+/// "haftalık"/"aylık" diye iki satır göstermek, ikisini birden değiştiren
+/// bir anahtarı yalan söyletirdi.
+class _OzetBildirimiSwitch extends StatelessWidget {
+  const _OzetBildirimiSwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    return _SunucuTercihAnahtari(
+      icon: Icons.event_note_outlined,
+      title: context.l10n.summaryPushTitle,
+      subtitle: context.l10n.summaryPushSubtitle,
+      ortakHareketi: false,
     );
   }
 }
@@ -2457,6 +2907,17 @@ class _YaziBoyutuPicker extends ConsumerWidget {
       children: [
         _SubSectionTitle(l.textSize),
         const SizedBox(height: 8),
+        if (RemoteConfigService.instance.gozAlici)
+          _AyarSegmenti(
+            adet: options.length,
+            secili: options.indexWhere((o) => o.$1 == current),
+            onSec: (i) => ref.read(yaziBoyutuIndexProvider.notifier).set(i),
+            etiket: (i) => options[i].$3,
+            ikon: (_) => Icons.text_fields_rounded,
+            ikonBoyu: (i) => options[i].$2,
+            semantik: (i) => l.textSizeSemantics(options[i].$3),
+          )
+        else
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
           decoration: context.surfaceCard(),
@@ -2505,7 +2966,7 @@ class _YaziBoyutuPicker extends ConsumerWidget {
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == boyut
-                                  ? FontWeight.w700
+                                  ? FontWeight.w600
                                   : FontWeight.w500,
                               color: current == boyut
                                   ? context.c.amberText

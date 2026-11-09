@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../l10n/l10n.dart';
+import '../models/grafik_alarm_cizgisi.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
+import '../utils/seans_sikistirma.dart';
+import '../utils/tr_format.dart';
 
 /// Fiyat ve değer grafiklerinin ORTAK görünümü — "Performans stili".
 ///
@@ -187,38 +191,278 @@ abstract final class GrafikStili {
         ),
       );
 
-  /// Dönem başı: yatay kesikli çizgi + etiket. Yüzde bu çizgiye göre
-  /// okunur. Etiket dönem başının TARİHİNİ ve DEĞERİNİ birlikte yazar
-  /// (ör. "BAŞLANGIÇ · 21 Eyl · 309,63 ₺"): varlık detayında tarih eskiden
-  /// ayrı bir dikey işaretteydi; dikey işaret kalkınca bilgi kaybolmasın
-  /// diye buraya taşındı (kullanıcı: "grafik üzeri data kaybı olmamalı").
-  static HorizontalLine donemBasi(BuildContext context, double y,
-          {String? etiket}) =>
+  /// Dönem başı: yatay kesikli çizgi. Yüzde bu çizgiye göre okunur.
+  ///
+  /// Etiket ("AÇILIŞ · 00:00 · 6.644,05 ₺") artık çizginin ÜSTÜNDE, çizim
+  /// alanının içinde DEĞİL: yasin 2026-10-12 (TestFlight, Gram Altın):
+  /// "açılış yazısını grafiği engellemeyecek şekilde gösterelim." Çizgi
+  /// verinin ortasından geçtiği için yazı mumların ve EMA'nın üstüne
+  /// biniyordu. Tarih ve değer kaybolmaz ("grafik üzeri data kaybı
+  /// olmamalı", 2026-09-28): kartın üst boşluğunda, çizgiyle aynı kesikli
+  /// işaretle [donemBasiUstte] yazar.
+  static HorizontalLine donemBasi(BuildContext context, double y) =>
       HorizontalLine(
         y: y,
         color: context.c.text36.withValues(alpha: 0.6),
         strokeWidth: 1,
         dashArray: const [4, 4],
-        label: HorizontalLineLabel(
-          show: etiket != null,
-          alignment: Alignment.topLeft,
-          padding: const EdgeInsets.only(left: SandikSpace.sm, bottom: 2),
-          style: context.t.labelSmall?.copyWith(
-            letterSpacing: 0,
-            fontWeight: FontWeight.w700,
-            color: context.c.text90.withValues(alpha: 0.75),
-          ),
-          labelResolver: (_) => etiket ?? '',
-        ),
       );
+
+  /// [grafik]'in üstüne, kartın üst dolgusuna ([kartDolgusu] üstü,
+  /// [SandikSpace.lgs]) dönem başı açıklamasını koyar: kesikli çizgi
+  /// işareti + [etiket]. Çizim alanına girmez; grafiğin boyu değişmez.
+  /// [etiket] boşsa grafik aynen döner.
+  ///
+  /// [sag]: aynı satırın SAĞ ucuna konan ikinci açıklama — fiyat alarmı
+  /// etiketi ([alarmEtiketi], Ar-Ge 29 Eki 20:45 #2). Kartın üstünde tek
+  /// satırlık boşluk var ([kartDolgusu] üstü); ikinci satır kart boyunu
+  /// değiştirir ve alarm listesi gelince yerleşim zıplardı. Yer darsa iki
+  /// yazı da kısalır (`…`), taşmaz.
+  static Widget donemBasiUstte(BuildContext context,
+      {required Widget grafik, String? etiket, Widget? sag}) {
+    final donemVar = etiket != null && etiket.isNotEmpty;
+    if (!donemVar && sag == null) return grafik;
+    final renk = context.c.text58;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        grafik,
+        Positioned(
+          top: -SandikSpace.lgs,
+          left: SandikSpace.sm,
+          right: yEkseniGenisligi,
+          height: SandikSpace.lgs,
+          child: LayoutBuilder(builder: (context, kutu) {
+            final genislik = kutu.maxWidth;
+            return IgnorePointer(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (donemVar)
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CustomPaint(
+                            size: const Size(14, 1),
+                            painter: _KesikliCizgi(context.c.text36),
+                          ),
+                          const SizedBox(width: SandikSpace.xs2),
+                          Flexible(
+                            child: Text(
+                              etiket,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _ustYazi(context, renk),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (donemVar && sag != null)
+                    const SizedBox(width: SandikSpace.sm),
+                  // Sağdaki (maliyet/alarm) önce kendi genişliğini alır, en
+                  // çok yarıdan biraz fazlası; dönem başı kalanı doldurur.
+                  // İkisi eşit Flexible iken kısa iki etiket birden
+                  // kırpılıyordu (maliyet etiketi, 2026-11-01).
+                  if (sag != null)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: genislik * 0.55),
+                      child: sag,
+                    ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  static TextStyle? _ustYazi(BuildContext context, Color renk) =>
+      context.t.labelSmall?.copyWith(
+        letterSpacing: 0,
+        fontWeight: FontWeight.w600,
+        color: renk,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
+  /// Fiyat alarmı: ince (1 px), dönem başından SIK kesikli yatay çizgi
+  /// (Ar-Ge 29 Eki 20:45 #2, yasin onayı). Renk alarm şeridinin çipiyle
+  /// aynı anlam: üstüne çıkınca gain, altına inince loss — ama anlam yalnız
+  /// renkte değil, kartın üstündeki etiket ▲/▼ ve fiille yazar.
+  /// Etiketi çizim alanına GİRMEZ ("yazı grafiği engellemesin", 2026-10-12);
+  /// açıklama [alarmEtiketi] ile kartın üst boşluğunda.
+  static HorizontalLine alarmCizgisi(BuildContext context, double y,
+          {required bool yukari}) =>
+      HorizontalLine(
+        y: y,
+        color:
+            (yukari ? context.c.gain : context.c.loss).withValues(alpha: 0.55),
+        strokeWidth: 1,
+        dashArray: const [2, 3],
+      );
+
+  /// Ortalama maliyet: ince (1 px), seyrek kesikli yatay çizgi, `info`
+  /// mavisi (Ar-Ge 1 Kas 08:45 #1, yasin "yap"). Mavi uygulamada "senin
+  /// paran" anlamında (Performans köprüsünde "Yatırdığın"); kâr/zarar rengi
+  /// değil, çünkü çizgi bir eşik değil, bir referans. Anlam yalnız renkte
+  /// değil: kartın üstündeki etiket "Maliyetin ₺…" yazar. Kesik deseni
+  /// alarmdan (2/3) ve dönem başından (4/4) ayrı: 6/4.
+  static HorizontalLine maliyetCizgisi(BuildContext context, double y) =>
+      HorizontalLine(
+        y: y,
+        color: context.c.info.withValues(alpha: 0.7),
+        strokeWidth: 1,
+        dashArray: const [6, 4],
+      );
+
+  /// Kartın üst boşluğundaki maliyet açıklaması: kısa mavi kesik işareti +
+  /// "Maliyetin ₺250,75" (aralık dışındaysa "· grafiğin altında").
+  /// Ekran okuyucu fiyatın maliyete uzaklığını da okur. [guncelFiyat]
+  /// bilinmiyorsa uzaklık söylenmez (uydurma yok).
+  static Widget maliyetEtiketi(BuildContext context,
+      {required double maliyet,
+      required AlarmCizgiKonumu konum,
+      double? guncelFiyat}) {
+    final l = context.l10n;
+    final fiyat = fmtTRYFiyat(maliyet);
+    final metin = switch (konum) {
+      AlarmCizgiKonumu.icinde => l.chartCostLabel(fiyat),
+      // Aralık dışı: ok yeter. Üst şeridi dönem başı ve alarm etiketiyle
+      // paylaşıyor; "· grafiğin altında" 390 pt'de iki etiketi de
+      // kırpıyordu. Ekran okuyucu konumu cümleyle duyar (aşağıda).
+      AlarmCizgiKonumu.ustunde => l.chartCostOutside(fiyat, '↑'),
+      AlarmCizgiKonumu.altinda => l.chartCostOutside(fiyat, '↓'),
+    };
+    final konumCumlesi = switch (konum) {
+      AlarmCizgiKonumu.icinde => null,
+      AlarmCizgiKonumu.ustunde => l.chartAlarmAboveChart,
+      AlarmCizgiKonumu.altinda => l.chartAlarmBelowChart,
+    };
+    final g = guncelFiyat;
+    final String okunus;
+    if (g == null || !g.isFinite || g <= 0) {
+      okunus = metin;
+    } else {
+      final fark = (g - maliyet) / maliyet * 100;
+      okunus = fark.abs() < 0.005
+          ? l.chartCostA11yAt(fiyat)
+          : fark > 0
+              ? l.chartCostA11yAbove(fiyat, fmtPct(fark))
+              : l.chartCostA11yBelow(fiyat, fmtPct(fark.abs()));
+    }
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: konumCumlesi == null
+          ? okunus
+          : '$okunus ${konumCumlesi[0].toUpperCase()}${konumCumlesi.substring(1)}.',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CustomPaint(
+            size: const Size(14, 1),
+            painter: _KesikliCizgi(context.c.info),
+          ),
+          const SizedBox(width: SandikSpace.xs2),
+          Flexible(
+            child: Text(
+              metin,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: _ustYazi(context, context.c.text58),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Kartın üst boşluğundaki fiyat alarmı açıklaması: zil + güncel fiyata
+  /// en yakın alarm ("₺4.300 ▲ üstüne çıkınca" ya da aralık dışındaysa
+  /// "₺4.300 ▲ grafiğin üstünde") + gösterilmeyenlerin sayısı ("+2").
+  ///
+  /// Neden tek alarm yazılı: satırda dönem başı açıklaması da var; üç
+  /// alarmın tamamı yazılsa ikisi de okunmaz `…` olurdu. Takip çanı da aynı
+  /// kalıpta (en yakın + "+N", 2026-10-26). Ekran okuyucu hepsini tek tek
+  /// okur. [alarmlar] boşsa `null` (satır yalnız dönem başıyla kalır).
+  static Widget? alarmEtiketi(
+      BuildContext context, List<GrafikAlarmCizgisi> alarmlar,
+      {bool kisa = false}) {
+    if (alarmlar.isEmpty) return null;
+    final l = context.l10n;
+    String ayrinti(GrafikAlarmCizgisi a) => switch (a.konum) {
+          AlarmCizgiKonumu.icinde =>
+            a.alarm.isAbove ? l.chartAlarmRises : l.chartAlarmFalls,
+          AlarmCizgiKonumu.ustunde => l.chartAlarmAboveChart,
+          AlarmCizgiKonumu.altinda => l.chartAlarmBelowChart,
+        };
+    final ilk = alarmlar.first;
+    final yukari = ilk.alarm.isAbove;
+    final renk = context.c.text58;
+    final stil = _ustYazi(context, renk);
+    // ▲/▼ alarm şeridinin çipiyle aynı işaret (yön), metin koşulu ya da
+    // konumu söyler: renk körlüğünde de okunur.
+    // [kisa]: satırda maliyet etiketi de var; koşul/konum metni düşer,
+    // fiyat ve yön kalır (ekran okuyucu yine tamını okur).
+    final metin = kisa
+        ? '${fmtTRYFiyat(ilk.alarm.targetPrice)} ${yukari ? '▲' : '▼'}'
+        : l.chartAlarmLabel(fmtTRYFiyat(ilk.alarm.targetPrice),
+            yukari ? '▲' : '▼', ayrinti(ilk));
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: [
+        for (final a in alarmlar)
+          l.chartAlarmA11y(fmtTRYFiyat(a.alarm.targetPrice), ayrinti(a)),
+      ].join('. '),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.notifications_none_rounded, size: 14, color: renk),
+          const SizedBox(width: SandikSpace.xs2),
+          Flexible(
+            child: Text(
+              metin,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: stil,
+            ),
+          ),
+          if (alarmlar.length > 1) ...[
+            const SizedBox(width: SandikSpace.xs2),
+            Text(l.chartAlarmMore(alarmlar.length - 1), style: stil),
+          ],
+        ],
+      ),
+    );
+  }
 
   /// Dönem başı etiketinin metni — üç grafikte AYNI biçim: gün içinde
   /// "AÇILIŞ · 09:55 · değer", diğer dönemlerde "BAŞLANGIÇ · 21 Eyl · değer".
+  ///
+  /// ## Gün başı 00:00'daysa saat yazılmaz (Ar-Ge 2026-10-30 12:45 #2)
+  /// Gün içi seri gece yarısından başlar ve ilk nokta günün tabanıdır:
+  /// hissede önceki kapanış (#262, `yahooSeriCoz`), dövizde kotasyonun
+  /// referansı, altında yurt içi kaydın ilk noktası. "AÇILIŞ · 00:00"
+  /// yanlış okunuyordu: borsa 10:00'da açılır ve çizgi açılış fiyatı
+  /// değildir. [oncekiKapanis] (seanslı varlık) "ÖNCEKİ KAPANIŞ", öteki
+  /// "GÜN BAŞI" yazar. Taban gün içinde sonra başlıyorsa (bugün eklenen
+  /// varlık) eski biçim kalır: o anın saati bilgi taşır.
   static String donemBasiEtiketi(BuildContext context,
-      {required DateTime an, required String deger, required bool gunIci}) {
+      {required DateTime an,
+      required String deger,
+      required bool gunIci,
+      bool oncekiKapanis = false}) {
     final l = context.l10n;
     // Tarih dili sözlükten: delegate yoksa sözlük Türkçe'ye düşer, tarih de.
     final tag = l.localeName.startsWith('en') ? 'en_US' : 'tr_TR';
+    if (gunIci && an.hour == 0 && an.minute == 0) {
+      return oncekiKapanis
+          ? l.chartPrevCloseLabel(deger)
+          : l.chartDayStartLabel(deger);
+    }
     return gunIci
         ? l.chartOpenLabel(DateFormat('HH:mm', tag).format(an), deger)
         : l.chartStartLabel(DateFormat('d MMM', tag).format(an), deger);
@@ -276,9 +520,8 @@ abstract final class GrafikStili {
   }) {
     final out = <LineChartBarData>[];
     for (final m in mumlar) {
-      final kovaPx = gorunurAralik == null
-          ? 8.0
-          : genislik * (m.kovaMs / gorunurAralik);
+      final kovaPx =
+          gorunurAralik == null ? 8.0 : genislik * (m.kovaMs / gorunurAralik);
       final govde = (kovaPx * 0.65).clamp(2.0, 14.0);
       final fitil = (govde * 0.25).clamp(1.0, 2.0);
       final renk = kapali
@@ -373,4 +616,125 @@ abstract final class GrafikStili {
         seri(dojiler, context.c.gain, govde, yuvarlak: true),
     ];
   }
+
+  /// Seans boşlukları sıkışmış grafik (yasin 2026-10-12, `SeansSikistirma`):
+  /// gerçek X'te kurulmuş [gercek] veriyi sıkışmış [cMin]–[cMax] eksenine
+  /// taşır ve alt ekseni yeniden yazar. Varlık detayı (kesirli gün) ve
+  /// varlık sayfası (epoch ms) AYNI kuralı kullanır; birim [birDakika] ve
+  /// [an] (gerçek X → yerel saat) ile verilir.
+  ///
+  /// Eksen: tick'ler gerçek saatin tam katına oturur ([taban]; kesilen her
+  /// boşluk tam saat olduğundan sıkışmış eksende de öyle kalır). Seans
+  /// başı TARİH ("13 Eki"), arası yuvarlak SAAT yazar; sığmayan yazı
+  /// çizilmez (`SeansSikistirma.eksenYazilari`). Atlanan her boşluğun
+  /// yerinde ince kesikli ayraç: zamanın orada sıçradığını gösterir —
+  /// renksiz okunur, yalnız çizgi biçimi (HIG: anlam yalnız renkte değil).
+  /// Ayraçlar birbirine [_ayracAsgariPx]'ten yakınsa çizilmez (1 ay ·
+  /// 30 dk'da 22 çizgi ızgara gibi okunurdu).
+  static LineChartData seansEkseni(
+    BuildContext context,
+    LineChartData gercek,
+    SeansSikistirma sik, {
+    required double cMin,
+    required double cMax,
+    required double taban,
+    required double birDakika,
+    required DateTime Function(double gercekX) an,
+    required double eksenPx,
+  }) {
+    final aralik = cMax - cMin;
+    final adimDk =
+        aralik <= 0 ? 60.0 : gunIciTickDk(aralik / birDakika).clamp(5.0, 60.0);
+    final adim = adimDk * birDakika;
+    final stil = eksenYazisi(context);
+    final olcek = MediaQuery.textScalerOf(context);
+    final etiketPx = xEtiketAraligi(
+        DateFormat('d MMM', 'tr_TR').format(DateTime(2026, 8, 28)),
+        stil: stil,
+        olcek: olcek);
+    final yazilar = sik.eksenYazilari(
+      cMin: cMin,
+      cMax: cMax,
+      adim: adim,
+      taban: taban,
+      eksenPx: eksenPx,
+      etiketPx: etiketPx,
+      an: an,
+      birDakika: birDakika,
+    );
+    final ayraclar = [
+      for (final s in sik.seansBaslari)
+        if (s > cMin && s < cMax) s,
+    ];
+    final ayracGoster = ayraclar.isNotEmpty &&
+        eksenPx / (ayraclar.length + 1) >= _ayracAsgariPx;
+    final m = sik.uygula(gercek, minX: cMin, maxX: cMax);
+    final b = gercek.titlesData.bottomTitles.sideTitles;
+    return m.copyWith(
+      baselineX: taban,
+      extraLinesData: ExtraLinesData(
+        horizontalLines: m.extraLinesData.horizontalLines,
+        extraLinesOnTop: m.extraLinesData.extraLinesOnTop,
+        // Ekranın kendi çizgileri ("şimdi") ÖNCE: fl_chart çizgileri sıra
+        // ile lerp eder; ayraç başa girince "şimdi"nin etiketi ayracınkiyle
+        // karışıp TextStyle lerp hatası veriyordu.
+        verticalLines: [
+          ...m.extraLinesData.verticalLines,
+          if (ayracGoster)
+            for (final x in ayraclar)
+              VerticalLine(
+                x: x,
+                // OPAK: fl_chart `extraLinesOnTop`ta dikey çizgileri her
+                // çubuktan sonra YENİDEN çizer; mum başına bir çubuk olan
+                // grafikte yarı saydam ayraç onlarca kat üst üste binip
+                // beyaz bir çizgiye dönüyordu (görsel denetim 2026-10-12).
+                color: Color.alphaBlend(context.c.hairline, context.c.surface1),
+                strokeWidth: 1,
+                dashArray: const [2, 4],
+              ),
+        ],
+      ),
+      titlesData: m.titlesData.copyWith(
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: b.showTitles,
+            reservedSize: b.reservedSize,
+            interval: adim,
+            getTitlesWidget: (value, meta) {
+              final k = ((value - taban) / adim).round();
+              final tarih = yazilar[k];
+              if (tarih == null) return const SizedBox.shrink();
+              final t = an(sik.geri(value));
+              return GrafikStili.xEtiketi(
+                  DateFormat(tarih ? 'd MMM' : 'HH:mm', 'tr_TR').format(t),
+                  stil: stil);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Seans ayraçlarının ortalama en az aralığı (piksel).
+  static const _ayracAsgariPx = 24.0;
+}
+
+/// Dönem başı açıklamasının işareti — çizimdeki kesikli çizginin aynısı.
+class _KesikliCizgi extends CustomPainter {
+  const _KesikliCizgi(this.renk);
+  final Color renk;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = renk
+      ..strokeWidth = 1;
+    final y = size.height / 2;
+    for (var x = 0.0; x < size.width; x += 8) {
+      canvas.drawLine(Offset(x, y), Offset((x + 4).clamp(0, size.width), y), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_KesikliCizgi old) => old.renk != renk;
 }

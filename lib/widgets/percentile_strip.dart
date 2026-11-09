@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
 import '../utils/tr_iyelik.dart';
+import 'sandik_skeleton.dart';
 
 /// Ana ekranda anonim yüzdelik dilim şeridi.
 ///
@@ -94,8 +95,13 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
     setState(() => _data = data);
   }
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SandikBelirme(child: _belirenGovde(context));
+
+  Widget _belirenGovde(BuildContext context) {
     final data = _data;
     if (data == null) return const SizedBox.shrink();
 

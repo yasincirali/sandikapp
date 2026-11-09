@@ -305,7 +305,11 @@ struct SandikHomeWidget: Widget {
                     SandikPalette.resolved(isLight: entry.isLight).background
                 }
         }
-        .configurationDisplayName("sandık")
+        // Galerideki ad işi söyler (Ar-Ge 2026-10-30 #3, yasin "yap"): iki
+        // ayrı widget'ın ikisi de "sandık" adını taşıyordu; yanlarında "Tek
+        // varlık" ve "Vitrin" var. Uygulama adı galeride zaten üstte yazar.
+        // `kind` DEĞİŞMEZ: kurulu widget'lar yerinde kalır.
+        .configurationDisplayName("Portföy")
         .description("Portföyünün toplamı ve günlük değişimi.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
@@ -753,7 +757,8 @@ struct SandikKilitWidget: Widget {
                 // iOS 17'de zorunlu; kilit ekranında zemin sistemindir.
                 .containerBackground(for: .widget) { Color.clear }
         }
-        .configurationDisplayName("sandık")
+        // Ad: bkz. `SandikHomeWidget` (Ar-Ge 2026-10-30 #3).
+        .configurationDisplayName("Portföy · kilit ekranı")
         .description("Günün değişimi kilit ekranında. Tutar yalnız izin verirsen görünür.")
         .supportedFamilies([.accessoryRectangular])
     }

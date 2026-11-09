@@ -12,7 +12,8 @@ Play Console / App Store mağaza grafikleri üretici.
 Neden betik, neden Canva değil: ikisi de markanın türevi (aynı palet, aynı
 logo, aynı font). Elle çizilirse bir sonraki sürümde "hangi dosyadan
 üretmiştik" sorusu doğar ve palet kayar. Betik kaynağı tek yerde tutar;
-`assets/images/sandik_icon.png` değişirse ikisi de yeniden üretilir.
+`assets/images/sandik_icon.png` (logo) ya da `tool/ikon/sandik_icon_kare.png`
+(mağaza simgesi, köşesiz) değişirse yeniden üretilir.
 
 Kullanım:
     cd store_listing && python build_store_graphics.py
@@ -21,9 +22,15 @@ Kullanım:
     icon_512.png              → Play Console "Uygulama simgesi"
     feature_graphic_1024x500.png → Play Console "Öne çıkan grafik"
 
+Çıktı: docs/img/ (2026-10-26, web paylaşım kartı, 1200x630, <300 KB)
+    og-ana.png                → docs/index.html og:image
+    og-enflasyon.png          → docs/enflasyon/index.html og:image
+Aynı betikte çünkü aynı türev: palet, logo, font. Yalnız web görselleri
+için: `python build_store_graphics.py --og`.
+
 ⚠️ Play ikonu ALFA KANALI KABUL ETMEZ ve köşeleri kendi yuvarlar. Bu yüzden
-kaynak RGBA ikon marka zemini üzerine düzleştiriliyor ve köşe yuvarlama
-UYGULANMIYOR — iki kez yuvarlanmış köşe Play'de bozuk görünür.
+kaynak köşesiz, kenara kadar dolu kare — iki kez yuvarlanmış köşe Play'de
+bozuk görünür (2026-11-05'e kadar öyleydi, bkz. ikon_512).
 """
 
 import os
@@ -43,6 +50,8 @@ ROOT = os.path.dirname(HERE)
 OUT = os.path.join(HERE, "android", "graphics")
 
 SRC_ICON = os.path.join(ROOT, "assets", "images", "sandik_icon.png")
+# Mağaza simgesi kaynağı: köşesiz kare (uygulama ikonuyla aynı dosya).
+SRC_ICON_KARE = os.path.join(ROOT, "tool", "ikon", "sandik_icon_kare.png")
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")
 FONT_MED = os.path.join(ROOT, "assets", "fonts", "DMSans-Medium.ttf")
 
@@ -86,40 +95,18 @@ def dikey_gradyan(w: int, h: int) -> Image.Image:
 def ikon_512() -> str:
     """Play 'Uygulama simgesi': 512x512, 32-bit PNG, alfa YOK.
 
-    ⚠️ İki kez yuvarlanmış köşe tuzağı: kaynak PNG'nin köşeleri ZATEN
-    yuvarlak ve dışı şeffaf. Şeffaflığı koyu zemine düzleştirince ikonun
-    çevresinde koyu bir çerçeve kalıyor; Play kendi maskesini onun üstüne
-    uygulayınca logonun kenarları kesiliyor ve çirkin bir halka doğuyor.
-
-    Çözüm: opak pikselleri kırp (`getbbox`) ve tuvali TAM dolduracak
-    şekilde ölçekle. Böylece Play'in maskesi logonun kendi köşesiyle
-    çakışır, arada çerçeve kalmaz.
+    ⚠️ İki kez yuvarlanmış köşe tuzağı (2026-11-05'te kökünden çözüldü):
+    eskiden kaynak yuvarlak köşeli `sandik_icon.png` idi; kırpıp tuvale
+    yayınca logo köşesi (r≈%23) Play maskesinden (r=%20) daha yuvarlak
+    kalıyor, üst köşelerde kahverengi dolgu hilali görünüyordu (yasin:
+    "store da app icon kötü gözüküyor"). Artık kaynak köşesiz, kenara kadar
+    dolu kare (`tool/ikon/kare_ikon.py`); köşeyi yalnız Play yuvarlar.
+    Kırpma/dolgu gerekmiyor, yalnız ölçek.
     """
-    src = Image.open(SRC_ICON).convert("RGBA")
-
-    # Şeffaf kenar payını at — geriye yalnızca logonun kendisi kalsın.
-    kutu = src.getchannel("A").getbbox()
-    if kutu:
-        src = src.crop(kutu)
-
-    # Kare değilse ortadan kare yap (ölçekleme logoyu ezmesin).
-    if src.width != src.height:
-        k = max(src.size)
-        kare = Image.new("RGBA", (k, k), (0, 0, 0, 0))
-        kare.paste(src, ((k - src.width) // 2, (k - src.height) // 2), src)
-        src = kare
-
+    src = Image.open(SRC_ICON_KARE).convert("RGB")
     src = src.resize((512, 512), Image.LANCZOS)
-
-    # Alfayı düzleştir: Play alfa kanallı ikonu reddeder, şeffaf köşeler
-    # Console'da siyah basılır. Zemin logonun kendi alt rengi — kırpma
-    # sonrası görünür bir alan kalmıyor, yalnızca kenar yumuşatmasının
-    # (anti-aliasing) yarı saydam pikselleri buna karışıyor.
-    zemin = Image.new("RGB", (512, 512), (139, 69, 19))
-    zemin.paste(src, (0, 0), src)
-
     yol = os.path.join(OUT, "icon_512.png")
-    zemin.save(yol, "PNG")
+    src.save(yol, "PNG")
     return yol
 
 
@@ -181,9 +168,132 @@ def feature_graphic() -> str:
     return yol
 
 
+# ── Web paylaşım kartları (og:image) ────────────────────────────────────────
+# 2026-10-26. Eskiden og:image kare uygulama ikonuydu; WhatsApp/X/LinkedIn
+# 1.91:1 kartı kırpıp bulanık küçük bir kare gösteriyordu. 1200x630 her
+# platformun "büyük kart" ölçüsü (twitter:card summary_large_image).
+#
+# Kurallar:
+# - Rakam YOK. Ne gerçek kullanıcı verisi ne "örnek" sayı: kart sayfadan
+#   koparılıp tek başına dolaşır, "örnek" notu onunla gitmez; görsel bir
+#   getiri vaadi gibi okunur (Play finansal politika + uydurma sayı yasak).
+# - Başlık sayfanın og:title'ıyla AYNI cümle: önizlemede başlık ile görsel
+#   iki farklı vaat vermesin.
+# - İmza öğesi: logodaki üç amber dalga (sandik_logo.svg geometrisi,
+#   periyot 256, genlik 25 birim). Sayfadaki "sandık katmanları"nın eşi.
+# - <300 KB: WhatsApp 300 KB üstü önizlemeyi düşürüyor. Bunun için palet
+#   kuantalama (gradyan + dalga birkaç düz renktir, kayıp görünmez).
+OG_OUT = os.path.join(ROOT, "docs", "img")
+OG_W, OG_H = 1200, 630
+OG_SINIR = 300 * 1024
+# Logodaki dalga renkleri (sandik_logo.svg), üstten alta.
+DALGA = [(226, 134, 31), (197, 99, 20), (153, 61, 10)]
+OG_KARTLAR = [
+    # (dosya, başlık, alt satır) — başlık = sayfanın og:title'ı.
+    ("og-ana.png", "Birikimin tek ekranda",
+     "Hisse, fon, döviz, altın ve BES bir arada"),
+    ("og-enflasyon.png", "Param enflasyona karşı ne oldu?",
+     "TÜİK TÜFE endeksiyle bugünkü karşılığı"),
+]
+
+
+def _dalga_katmani(img: Image.Image, taban_y: int, renk, alfa: int,
+                   faz: float) -> None:
+    """Logodaki S-eğrisi dalganın düz bant hâli, tuvalin altına."""
+    import math
+
+    katman = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(katman)
+    # SVG'de periyot 256/512 genişlik, genlik 25/512 → tuvale ölçekli.
+    periyot = OG_W / 2
+    genlik = OG_W * 25 / 512 / 2
+    noktalar = [
+        (x, taban_y + genlik * (1 - math.cos(2 * math.pi * (x / periyot) + faz)))
+        for x in range(0, OG_W + 1, 4)
+    ]
+    noktalar += [(OG_W, OG_H), (0, OG_H)]
+    d.polygon(noktalar, fill=(*renk, alfa))
+    img.alpha_composite(katman)
+
+
+def og_kart(dosya: str, baslik: str, alt: str) -> str:
+    img = dikey_gradyan(OG_W, OG_H).convert("RGBA")
+
+    # Dalgalar: alt üçte birde, yavaşça koyulaşan üç bant. Opaklık düşük
+    # tutulur ki metinle yarışmasın; imza, dikkat çekici süs değil.
+    for i, renk in enumerate(DALGA):
+        _dalga_katmani(img, 520 + i * 30, renk, 50 + i * 35, faz=i * 0.9)
+
+    d = ImageDraw.Draw(img)
+    kenar = 80
+
+    # Üst sol: logo + "sandık" kelime markası.
+    logo = Image.open(SRC_ICON).convert("RGBA")
+    kutu = logo.getchannel("A").getbbox()
+    if kutu:
+        logo = logo.crop(kutu)
+    boy = 88
+    logo = logo.resize((boy, boy), Image.LANCZOS)
+    img.alpha_composite(logo, (kenar, kenar))
+    f_marka = ImageFont.truetype(FONT_BOLD, 52)
+    ust, alt_ = f_marka.getbbox("sandık")[1], f_marka.getbbox("sandık")[3]
+    d.text((kenar + boy + 24, kenar + (boy - (alt_ - ust)) // 2 - ust),
+           "sandık", font=f_marka, fill=TEXT)
+
+    # Başlık: sığana kadar küçülen punto, gerekirse iki satır.
+    kullanilabilir = OG_W - 2 * kenar
+
+    def satirlara_bol(metin: str, f) -> list:
+        kelimeler, satirlar, simdiki = metin.split(), [], ""
+        for k in kelimeler:
+            aday = f"{simdiki} {k}".strip()
+            if d.textlength(aday, font=f) <= kullanilabilir:
+                simdiki = aday
+            else:
+                satirlar.append(simdiki)
+                simdiki = k
+        satirlar.append(simdiki)
+        return satirlar
+
+    for punto in range(84, 47, -4):
+        f_baslik = ImageFont.truetype(FONT_BOLD, punto)
+        satirlar = satirlara_bol(baslik, f_baslik)
+        if len(satirlar) <= 2:
+            break
+    satir_y = int(punto * 1.12)
+    y = 250 if len(satirlar) == 1 else 200
+    for satir in satirlar:
+        d.text((kenar, y), satir, font=f_baslik, fill=TEXT)
+        y += satir_y
+
+    f_alt = ImageFont.truetype(FONT_MED, 34)
+    d.text((kenar, y + 18), alt, font=f_alt, fill=AMBER)
+
+    yol = os.path.join(OG_OUT, dosya)
+    # Kuantalama: 128 renk gradyanı bantlamadan taşır, boyutu ~4x düşürür.
+    img.convert("RGB").quantize(colors=128, method=Image.MEDIANCUT,
+                                dither=Image.Dither.NONE).save(
+        yol, "PNG", optimize=True)
+    boyut = os.path.getsize(yol)
+    if boyut >= OG_SINIR:
+        raise SystemExit(f"HATA: {dosya} {boyut // 1024} KB >= 300 KB")
+    return yol
+
+
+def og_kartlari() -> list:
+    os.makedirs(OG_OUT, exist_ok=True)
+    return [og_kart(*k) for k in OG_KARTLAR]
+
+
 def main() -> None:
+    if "--og" in sys.argv:
+        for y in og_kartlari():
+            im = Image.open(y)
+            print(f"  + {os.path.basename(y):32s} {im.size[0]}x{im.size[1]} "
+                  f"{os.path.getsize(y) // 1024} KB")
+        return
     os.makedirs(OUT, exist_ok=True)
-    for f in (SRC_ICON, FONT_BOLD, FONT_MED):
+    for f in (SRC_ICON, SRC_ICON_KARE, FONT_BOLD, FONT_MED):
         if not os.path.exists(f):
             print(f"HATA: bulunamadi -> {f}")
             sys.exit(1)

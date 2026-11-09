@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tek varlık widget'ı — iOS `SandikVarlikWidget` (systemSmall) ile aynı sıra.
+
+    ┌────────────────────────┐
+    │ [logo] Gram altın      │
+    │        (uzun ad)       │
+    │                        │
+    │ ₺6.123,45              │
+    │ ▲ +%0,42  günlük       │
+    │                        │
+    │ 14:05 / Kapanış        │
+    └────────────────────────┘
+
+  Renkler ve zemin BURADAKİ değerlerde kalmaz: `SandikVarlikWidgetProvider`
+  uygulamanın tema tercihine göre yeniden basar (`values/widget_palette.xml`).
+  Buradakiler yalnız ilk çizimden önceki ve önizlemedeki hâldir.
+
+  Erişilebilirlik: kart TEK öğe okunur (kökün `contentDescription`'ı,
+  Kotlin'de kurulur); çocuk metinler `importantForAccessibility="no"`, yoksa
+  TalkBack aynı bilgiyi iki kez okurdu.
+
+  RemoteViews yalnız sabit bir view listesini çizer (`View`/`Space` YOK —
+  bkz. `sandik_widget.xml`); boşluk ağırlıklı `LinearLayout` ile verilir.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/varlik_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="14dp">
+
+    <!-- ── Başlık: logo + ad ──────────────────────────────────────── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="6dp"
+            android:src="@drawable/widget_logo"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/varlik_ad"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_brand"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="13sp"
+            android:fontFamily="@font/dm_sans_bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:importantForAccessibility="no" />
+    </LinearLayout>
+
+    <!-- Uzun ad (fonun tam adı, "Amerikan Doları"); yoksa GONE. -->
+    <TextView
+        android:id="@+id/varlik_alt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/widget_text_muted"
+        android:textSize="10sp"
+        android:fontFamily="@font/dm_sans_medium"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:importantForAccessibility="no" />
+
+    <!-- ── Fiyat + günlük değişim (dikeyde ortada) ───────────────── -->
+    <LinearLayout
+        android:id="@+id/varlik_icerik"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical">
+
+        <!-- Fiyat genişliği varlığa göre çok değişir (₺42,10 ↔ ₺3.500.000):
+             sabit yükseklik + autoSize ile sığdırılır, kesilmez. Yazı
+             boyutu büyütülmüşse (erişilebilirlik) de kutuya küçülerek
+             sığar. API 26 altında autoSize yok; tek satır + üç nokta. -->
+        <TextView
+            android:id="@+id/varlik_fiyat"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:gravity="center_vertical"
+            android:text="—"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="24sp"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="24sp"
+            android:autoSizeStepGranularity="1sp"
+            android:fontFamily="@font/dm_sans_bold"
+            android:fontFeatureSettings="tnum"
+            android:letterSpacing="-0.03"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:importantForAccessibility="no" />
+
+        <!-- Yön oku + işaretli yüzde + "günlük". Ok yalnız gerçek hareket
+             varken görünür (Kotlin gizler): sıfır bir yön taşımaz. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/varlik_ok"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="10sp"
+                android:fontFamily="@font/dm_sans_bold"
+                android:maxLines="1"
+                android:visibility="gone"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/varlik_degisim"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_text_muted"
+                android:textSize="13sp"
+                android:fontFamily="@font/dm_sans_semibold"
+                android:fontFeatureSettings="tnum"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/varlik_gunluk"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="@string/varlik_widget_gunluk"
+                android:textColor="@color/widget_text_muted"
+                android:textSize="10sp"
+                android:fontFamily="@font/dm_sans_medium"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Liste boş / seçilen varlık listede yok: yönlendirme metni.
+         Görünürken fiyat bloğu GONE ve bu metin onun yerini alır. -->
+    <TextView
+        android:id="@+id/varlik_bilgi"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="6dp"
+        android:gravity="bottom"
+        android:textColor="@color/widget_text_muted"
+        android:textSize="11sp"
+        android:fontFamily="@font/dm_sans_medium"
+        android:maxLines="4"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:importantForAccessibility="no" />
+
+    <!-- Yazım saati, "Kapanış" ya da 1 günden eski fiyatta tarih. -->
+    <TextView
+        android:id="@+id/varlik_zaman"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/widget_text_muted"
+        android:textSize="10sp"
+        android:fontFamily="@font/dm_sans_medium"
+        android:fontFeatureSettings="tnum"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:importantForAccessibility="no" />
+</LinearLayout>

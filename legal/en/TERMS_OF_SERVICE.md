@@ -1,10 +1,10 @@
 # Terms of Service — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** October 10, 2026
-**Version:** 1.8
+**Last updated:** November 7, 2026
+**Version:** 1.12
 **Consent version:** 1.6
-**Source:** TR 1.8 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.12 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -36,11 +36,13 @@ sandık is a personal portfolio tracking tool that lets users track the followin
 
 The App shows portfolio value, allocation and performance and, optionally, technical-analysis signals (Premium), price alerts and periodic summaries. You can enter assets manually, in bulk, or by importing a bank / brokerage statement. With the partnership feature two users can share their portfolios.
 
-**Top Portfolios (optional):** If you give explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); for the best-performing portfolios only the rank, return, type shares and TEFAS fund codes with their shares are shown to other participants, without identity or amounts; in return you see the same anonymous information about participants (details: Privacy Policy §5.1). You can leave at any time; not participating affects no other feature.
+**Top Portfolios (optional):** If you give explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); for the best-performing portfolios only the rank, return, type shares and each asset's TEFAS fund code or public market symbol with its share are shown to other participants, without identity, amounts or quantities; in return you see the same anonymous information about participants (details: Privacy Policy §5.1). Seeing the asset symbols of other portfolios and newly joining the pool may require a Premium membership. You can leave at any time; not participating affects no other feature.
 
 **Race (optional):** If you join the Race, your period return and asset-type shares are calculated daily on the server; your standing among participants is shown to you as a percentile, and you can compare your return with your partner. Your identity and amounts are not shown to other participants. You can leave the Race at any time.
 
 **Market movement and asset notes:** From public market data, the App shows money flowing into and out of funds (money flow), unusual trading volume in equities (volume radar) and buyer pressure in crypto. Weekly asset notes and a monthly report for the assets in your portfolio are prepared automatically with AI (details: Privacy Policy §5.3). Full notes and the monthly report may be available to Premium members; the free tier shows the first sentence of a note.
+
+**AI portfolio comment:** If you wish, you can have a short comment written that describes, with your own data, the period you select for your portfolio (Performance › Summary) or for one of your assets (asset detail page), or your last week or last month. The comment is written automatically with AI and only describes the past; it contains no buy, sell or hold suggestion. The feature is optional, your explicit consent is asked separately the first time you use it (details: Privacy Policy §5.5) and it is Premium content.
 
 ---
 
@@ -48,7 +50,7 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 
 This section applies once Premium is offered for sale in the App.
 
-**Scope.** Portfolio tracking is free. Premium includes features that are limited in the free tier or available only to subscribers (e.g. technical analysis signals and alerts, the annual gains, dividends and fees report, PDF and Excel export, the dividend forecast, fund content breakdown (X-Ray), the itemized fee breakdown, the full asset notes and monthly report, reading statements with AI). Which features are Premium is shown on the purchase screen before you buy. Some Premium features may appear in limited form in the free tier (e.g. the first sentence of a note).
+**Scope.** Portfolio tracking is free. Premium includes features that are limited in the free tier or available only to subscribers (e.g. technical analysis signals and alerts, the annual gains, dividends and fees report, PDF and Excel export, the dividend forecast, fund content breakdown (X-Ray), the itemized fee breakdown, the full asset notes and monthly report, reading statements with AI, the AI portfolio comment). Which features are Premium is shown on the purchase screen before you buy. Some Premium features may appear in limited form in the free tier (e.g. the first sentence of a note).
 
 **Price and payment.** The subscription is monthly or yearly. The price is the amount shown by the App Store or Google Play on the purchase screen (taxes included). Payment is collected by your device's store (Apple or Google), not by the Company; your card details never reach the Company.
 
@@ -76,6 +78,7 @@ This section applies once Premium is offered for sale in the App.
 - Prices, performance figures, signals and charts shown in the App are **for information only**.
 - No content constitutes **investment advice, a buy/sell recommendation or financial consultancy**.
 - Market-movement metrics (money flow, volume radar, buyer pressure) and **AI-written asset notes** describe past market data and do not predict the future. Notes are generated automatically and are not checked one by one by a person; although numbers are compared with the source data automatically, they may contain errors. Do not make a note the sole basis of an investment decision.
+- The **AI portfolio comment** is not personalised investment advice: it only describes what happened in your portfolio or one of your assets in a past period, does not assess the suitability of your portfolio and does not suggest a transaction. It is generated automatically, is not checked by a person and may contain errors.
 - We do not guarantee the accuracy, timeliness or completeness of data; data from third-party market-data providers is presented as is.
 - Make your investment decisions **after consulting an SPK-licensed brokerage or investment adviser**.
 - **The Company cannot be held liable for any profit or loss** arising from investment decisions you make based on data shown in the App.
@@ -96,7 +99,7 @@ The full text of this notice is shown to you during registration (and on the con
 - Do not share your password with anyone.
 - You are responsible for keeping your password secure.
 - Your account stays signed in on only one device at a time. When you sign in on a new device, a code sent to your email address is required and the session on the previous device ends. You can see and remove your registered devices in Settings.
-- If you suspect unauthorised access, change your password immediately and inform us at `sandikapp.destek@gmail.com`.
+- If you suspect unauthorised access, change your password immediately and inform us at `support@murphysoft.app`.
 - All actions performed through your account are deemed yours.
 
 ### 4.3 One Account
@@ -142,7 +145,7 @@ If these rules are breached, **your account may be closed without notice**.
 
 ## 7. Third-Party Services
 
-The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes), Anthropic (writing asset notes with AI; no personal data is sent), RevenueCat (Premium subscription verification), the App Store and Google Play (Premium payment) and public market-data providers (exchanges, banks, fund platforms, official institutions and exchange-rate and price data services). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
+The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes), Anthropic (writing asset notes with AI, no personal data is sent; with your explicit consent, the portfolio comment and reading statements), RevenueCat (Premium subscription verification), the App Store and Google Play (Premium payment) and public market-data providers (exchanges, banks, fund platforms, official institutions and exchange-rate and price data services). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
 
 The terms of use of third-party data providers, including information provided by market-data sources, apply. If data retrieval is temporarily blocked, alternative sources or manual data entry options may be offered.
 
@@ -209,7 +212,7 @@ We are not responsible for service disruptions arising from causes beyond the Co
 
 ## 14. Notices
 
-All notices to us must be sent to `sandikapp.destek@gmail.com`.
+All notices to us must be sent to `support@murphysoft.app`.
 
 Notices to you may be sent by:
 - In-app notification
@@ -259,7 +262,7 @@ When we change these Terms or the other legal documents:
 
 `Yasin Çıralı`
 `Istanbul, Türkiye`
-Email: `sandikapp.destek@gmail.com`
+Email: `support@murphysoft.app`
 Web: `https://yasincirali.github.io/sandikapp`
 
 ---

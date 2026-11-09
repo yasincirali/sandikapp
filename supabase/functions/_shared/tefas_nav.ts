@@ -11,8 +11,34 @@
 // anı kaydedersek gerçek bir yayın damgası üretmiş oluruz — cron sıklığı
 // kadar (30 dk) belirsiz, ama uydurma değil. Bkz. 0063_tefas_nav_gozlem.sql.
 
+import { bistTatilMi } from './piyasa_takvimi.ts';
+
 /// Bir TEFAS satırından süzülmüş NAV.
 export type NavSatiri = { tarih: string; fiyat: number };
+
+/// Tam gün BIST tatilinde turun yanıtı; tatil değilse `null` (tur koşar).
+///
+/// ## Neden (müşteri raporu 2026-11-08 #6)
+/// Tatilde TEFAS fiyat yayınlamaz, tur her yarım saatte bütün fon
+/// listesini boşuna sorardı (eskiden "kabul edilen bedel"): yılda ~14 gün
+/// × 32 tur × fon kodu kadar istek, Free plan Edge Function kotası.
+/// Takvim tek kaynaktan (`bist_tatil.ts` → `bistTatilMi`, istemciyle
+/// parite testli); listede olmayan gün açık sayılır, tahmini tatil yok.
+/// Arife (yarım gün) tam gün DEĞİL: o gün fiyat yayınlanır, tur koşar.
+///
+/// Yanıt başarılı turun alanlarıyla aynı (`ok`, `checked`, `asked`,
+/// `sightings`); `skipped` sayı yerine `'tatil'` der ki günlükte neden
+/// koşmadığı görünsün. Yanıtı okuyan istemci yok (pg_net cron).
+export function tatilAtlamaYaniti(now: Date): {
+  ok: true;
+  checked: 0;
+  asked: 0;
+  sightings: 0;
+  skipped: 'tatil';
+} | null {
+  if (!bistTatilMi(now)) return null;
+  return { ok: true, checked: 0, asked: 0, sightings: 0, skipped: 'tatil' };
+}
 
 /// Bir turda TEFAS'a sorulacak en fazla kod. Yayın öncesi turlarda her kod
 /// bir istek demek; 150 × 4'lü paralel ≈ 40 sn, edge function sınırının
@@ -83,6 +109,39 @@ export function sonNavSatiri(resultList: unknown): NavSatiri | null {
     if (en === null || tarih > en.tarih) en = { tarih, fiyat };
   }
   return en;
+}
+
+/// Bir fonun BUGÜNKÜ NAV'ının bir önceki NAV'a göre yüzde değişimi.
+///
+/// Takip listesi hareketi (`watchlist_moves.ts`) için: TEFAS canlı kotasyon
+/// taşımaz, ama `fonFiyatBilgiGetir` son bir ayın NAV satırlarını döner;
+/// son iki NAV tarihi günlük değişimdir (istemcinin 1G serisiyle aynı iki
+/// nokta). `null` dönen durumlar bilinçli:
+///   · En yeni NAV `bugun` tarihli değil (tatil, TEFAS henüz yayımlamadı) —
+///     dünkü hareketi bugün ikinci kez bildirmek olurdu.
+///   · Önceki NAV yok ya da geçersiz — uydurma değişim yazılmaz.
+/// Aynı tarihli mükerrer satırlar tek sayılır (`sonNavSatiri` ile aynı
+/// süzgeç: sıfır/negatif/NaN fiyat ve tanınmayan tarih atılır).
+export function fonGunlukDegisimi(resultList: unknown, bugun: string): number | null {
+  if (!Array.isArray(resultList)) return null;
+  const gunler = new Map<string, number>();
+  for (const row of resultList) {
+    if (row === null || typeof row !== 'object') continue;
+    const r = row as Record<string, unknown>;
+    const ham = r.fiyat ?? r.birimPayDegeri ?? r.FIYAT;
+    const fiyat = typeof ham === 'number' ? ham : Number(String(ham ?? '').replace(',', '.'));
+    if (!Number.isFinite(fiyat) || fiyat <= 0) continue;
+    const tarih = tefasTarihToIso(r.tarih ?? r.TARIH);
+    if (tarih === null) continue;
+    gunler.set(tarih, fiyat);
+  }
+  const tarihler = [...gunler.keys()].sort();
+  if (tarihler.length < 2) return null;
+  const son = tarihler[tarihler.length - 1];
+  if (son !== bugun) return null;
+  const onceki = gunler.get(tarihler[tarihler.length - 2])!;
+  const simdi = gunler.get(son)!;
+  return ((simdi - onceki) / onceki) * 100;
 }
 
 /// `assets.ticker` değerlerinden ('TEFAS:AFT') tekil, büyük harfli fon

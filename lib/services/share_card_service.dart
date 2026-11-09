@@ -62,9 +62,12 @@ class ShareCardService {
     required String text,
     required String subject,
     Rect? origin,
+    // Dosya adı paylaşıma göre: tam ekran grafik "sandik-thyao-grafik.png"
+    // verir (2026-10-29); özet kartları eski adla kalır.
+    String dosyaAdi = 'sandik-ozet.png',
   }) =>
       Share.shareXFiles(
-        [XFile.fromData(png, mimeType: 'image/png', name: 'sandik-ozet.png')],
+        [XFile.fromData(png, mimeType: 'image/png', name: dosyaAdi)],
         text: text,
         subject: subject,
         sharePositionOrigin: origin,
@@ -90,6 +93,21 @@ class ShareCardService {
   }) =>
       Share.shareXFiles(
         [XFile(path, mimeType: mimeType)],
+        text: text,
+        subject: subject,
+        sharePositionOrigin: origin,
+      );
+
+  /// Birden çok hazır dosyayı TEK paylaşım sayfasıyla paylaşır (yıllık
+  /// rapor PDF + Excel; e-postada iki ek). [dosyalar]: (yol, MIME).
+  static Future<void> shareFiles(
+    List<(String, String)> dosyalar, {
+    required String subject,
+    String? text,
+    Rect? origin,
+  }) =>
+      Share.shareXFiles(
+        [for (final (yol, mime) in dosyalar) XFile(yol, mimeType: mime)],
         text: text,
         subject: subject,
         sharePositionOrigin: origin,

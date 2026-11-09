@@ -1,9 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart'
-    show Color, GlobalKey, NavigatorState, VoidCallback;
+    show Color, GlobalKey, NavigatorState, RouteSettings, VoidCallback;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,11 +14,15 @@ import '../models/position.dart' show pozisyonGorunumu;
 import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/seviye_alarmi_provider.dart'
+    show cizimAlarmlariProvider, yatayAlarmBaglariProvider;
+import '../providers/watchlist_provider.dart' show watchlistProvider;
 import '../screens/main_navigation_screen.dart' show MainNavigationScreen;
 import '../screens/partnership_requests_screen.dart';
 import '../screens/portfolio_performance_screen.dart';
 import '../screens/asset_detail_screen.dart';
 import '../screens/hafta_ozeti_screen.dart';
+import '../screens/tam_ekran_grafik_screen.dart' show TamEkranGrafikEkrani;
 import 'remote_config_service.dart';
 import '../screens/asset_not_found_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
@@ -27,6 +32,7 @@ import '../config/pref_keys.dart';
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
 import '../widgets/dividend_dialog.dart' show showDividendDialog;
 import 'analytics_service.dart';
+import 'cizim_alarmi.dart' show cizgiGrafigi, yatayAlarmCizimi;
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'temettu_gecmisi.dart';
@@ -75,8 +81,30 @@ class NotificationService {
 
   /// Yıl sonu özeti anı (0087) — Profil sekmesindeki özet afişine gider.
   static const yilSonuOccasion = 'year_end_recap';
+
+  /// Mevduat vadesi doldu anı (0174) — Portföy sekmesine gider: "Vadesi
+  /// doldu" şeridi mevduat kartının panelinde. Sunucu tek mevduat dolduysa
+  /// `sozlesme_id` de yollar; bugün kullanılmaz (kartı açık getirmek ayrı
+  /// iş), anahtar eklemedir.
+  static const mevduatVadeOccasion = 'deposit_matured';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
+
+  /// Ön planda yeniden basılan genel push'un yükü: FCM `data` JSON olarak.
+  /// Dokunuş [handleRemoteMessageData]'ya gider — push'a dokunmakla AYNI
+  /// varış yeri (2026-10-29).
+  static const _pushDataPayloadPrefix = 'push_data:';
+
+  /// Kanal kimliği → kullanıcıya görünen ad; `_createAndroidChannels` ile
+  /// aynı adlar (bildirim ayrıntısı kanalı ilk kez yaratırsa da aynı ad
+  /// görünsün).
+  static const _kanalAdlari = <String, String>{
+    'alert_channel': 'Fiyat alarmları',
+    'brief_channel': 'Günlük brifing',
+    'summary_channel': 'Dönem özeti',
+    'signal_channel': 'Teknik sinyal bildirimleri',
+    'partner_invite_channel': 'Ortaklık bildirimleri',
+  };
 
   /// Navigator/portföy hazır değilken yeniden deneme aralığı.
   ///
@@ -475,7 +503,8 @@ class NotificationService {
     if (!await _prefEnabled(_kPartnerNotificationsKey)) return;
     if (!_initialized) await init();
 
-    const androidDetails = AndroidNotificationDetails(
+    final body = '$requesterName ortaklik kodunuzu girdi.';
+    final androidDetails = AndroidNotificationDetails(
       'partner_invite_channel',
       'Ortaklik Bildirimleri',
       channelDescription: 'Yeni ortaklik onay istekleri',
@@ -483,6 +512,8 @@ class NotificationService {
       priority: Priority.high,
       icon: 'ic_stat_sandik',
       color: Sandik.amber, // marka amber
+      // Genişletilince tam metin (2026-10-29): uzun adda tek satır kesiliyordu.
+      styleInformation: BigTextStyleInformation(body),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -494,8 +525,8 @@ class NotificationService {
     await _plugin.show(
       inviteId.hashCode,
       'Yeni ortaklik istegi',
-      '$requesterName ortaklik kodunuzu girdi.',
-      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      body,
+      NotificationDetails(android: androidDetails, iOS: iosDetails),
       payload: '$_partnerInvitePayloadPrefix$inviteId',
     );
   }
@@ -515,7 +546,7 @@ class NotificationService {
   }) async {
     if (!_initialized) await init();
 
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'signal_channel',
       'Teknik Sinyal Bildirimleri',
       channelDescription: 'Portföyünüzdeki varlıklar için trend bildirimleri',
@@ -523,6 +554,9 @@ class NotificationService {
       priority: Priority.high,
       icon: 'ic_stat_sandik',
       color: Sandik.amber, // marka amber
+      // Genişletilince tam gövde (2026-10-29, "tüm bildirimler push içinde
+      // okunabilir olmalı"): varsayılan stil gövdeyi tek satırda kesiyordu.
+      styleInformation: BigTextStyleInformation(body),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -535,11 +569,49 @@ class NotificationService {
       assetId.hashCode,
       title,
       body,
-      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      NotificationDetails(android: androidDetails, iOS: iosDetails),
       // PAYLOAD ŞART: bu alan boş bırakılmıştı, bu yüzden ön planda basılan
       // bildirime dokunmak hiçbir şey yapmıyordu. Tıklama bilgisiz kalıyordu
       // — hangi varlığa ait olduğu kayboluyordu.
       payload: assetId.isEmpty ? null : '$_signalPayloadPrefix$assetId',
+    );
+  }
+
+  /// Ön planda gelen genel push'u (alarm, takip listesi, brifing, özet…)
+  /// yerel bildirim olarak basar — yalnız Android (iOS sunumu değişmedi).
+  ///
+  /// Neden (2026-10-29): Android ön planda `notification` yükünü kendisi
+  /// göstermez; bu türler için dal yoktu ve uygulama açıkken gelen alarm
+  /// hiç görünmüyordu. Kanal sunucunun gönderdiği kanaldır: kullanıcının o
+  /// kanalı kapatması ön planda da geçerli kalır. Gövde `BigTextStyle`:
+  /// takip listesinin çoklu özeti ve brifing tek satıra sığmıyordu.
+  Future<void> showGenelBildirim({
+    required String title,
+    required String body,
+    required String channelId,
+    required Map<String, String> data,
+  }) async {
+    if (!_initialized) await init();
+    final androidDetails = AndroidNotificationDetails(
+      channelId,
+      _kanalAdlari[channelId] ?? 'sandık',
+      importance: channelId == 'alert_channel'
+          ? Importance.high
+          : Importance.defaultImportance,
+      priority: channelId == 'alert_channel'
+          ? Priority.high
+          : Priority.defaultPriority,
+      icon: 'ic_stat_sandik',
+      color: Sandik.amber,
+      styleInformation: BigTextStyleInformation(body),
+    );
+    await _plugin.show(
+      // Aynı tür + başlık ikinci kez gelirse üstüne yazar (çift satır yok).
+      Object.hash(data['type'], title),
+      title,
+      body,
+      NotificationDetails(android: androidDetails),
+      payload: '$_pushDataPayloadPrefix${jsonEncode(data)}',
     );
   }
 
@@ -626,6 +698,14 @@ class NotificationService {
           MainNavigationScreen.profilSekmesi;
       return;
     }
+    // Mevduat vadesi doldu → Portföy. Tanınmayan başka bir an (gelecekteki
+    // sunucu, eski build) aşağıdaki dallara uymaz ve uygulama yalnız açılır.
+    if (type == calendarNudgeType &&
+        data['occasion']?.toString() == mevduatVadeOccasion) {
+      MainNavigationScreen.sekmeIstegi.value =
+          MainNavigationScreen.portfoySekmesi;
+      return;
+    }
 
     // Fiyat alarmı: alarmın kurulduğu varlığın ekranı, GÜNLÜK sekmesinde.
     //
@@ -637,9 +717,27 @@ class NotificationService {
     // "hangi varlık?" sorusunu tekrar sordurtuyordu.
     //
     // Hedef sembolle taşınır (`asset_id` yok — bkz. [openPriceAlertAsset]).
+    //
+    // 2026-10-29 (yasin: "bildirime tıkladığımızda çizgiyi izleyebilelim"):
+    // çizgi alarmı (`cizim_id` / `cizim_alarm_id`) ya da yatay çizgiye bağlı
+    // fiyat alarmı (`alert_id`, bağ cihazda) çizgiyi yatay grafikte açar;
+    // çizgi bulunamazsa [openCizgi] eskisi gibi varlığa düşer. Anahtarlar
+    // eklemedir: eski build onları okumaz, varlığı açar.
     if (type == priceAlertType) {
       final symbol = data['symbol']?.toString();
       if (symbol == null || symbol.isEmpty) return;
+      final cizim = data['cizim_id']?.toString();
+      final cizimAlarmi = data['cizim_alarm_id']?.toString();
+      final alarm = data['alert_id']?.toString();
+      if ((cizim ?? '').isNotEmpty ||
+          (cizimAlarmi ?? '').isNotEmpty ||
+          (alarm ?? '').isNotEmpty) {
+        CrashReporter.arkaPlan(
+            openCizgi(symbol,
+                cizimId: cizim, cizimAlarmId: cizimAlarmi, alertId: alarm),
+            reason: 'notification.cizgiAc');
+        return;
+      }
       openPriceAlertAsset(symbol);
       return;
     }
@@ -666,6 +764,21 @@ class NotificationService {
 
   void _handleNotificationPayload(String? payload) {
     if (payload == null) return;
+
+    // Ön planda yeniden basılmış genel push: push'a dokunulmuş gibi
+    // (ölçüm dahil `handleRemoteMessageData` yapar).
+    if (payload.startsWith(_pushDataPayloadPrefix)) {
+      try {
+        final ham = jsonDecode(payload.substring(_pushDataPayloadPrefix.length));
+        if (ham is Map) {
+          handleRemoteMessageData(
+              ham.map((k, v) => MapEntry(k.toString(), v)));
+        }
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'notification.pushDataPayload');
+      }
+      return;
+    }
 
     // Dokunulan bildirimin tipi — hangi bildirim tipinin gerçekten
     // açıldığını ölçmek, hangisinin kapatılmayı hak ettiğini söyler.
@@ -738,7 +851,7 @@ class NotificationService {
       return;
     }
     navigator.push(
-        adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()));
+        adaptiveRoute<void>(settings: const RouteSettings(name: 'hafta_ozeti'), builder: (_) => const HaftaOzetiScreen()));
   }
 
   void _openOzet({int? periodIdx, int deneme = 0}) {
@@ -754,6 +867,7 @@ class NotificationService {
     }
     navigator.push(
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'portfolio_performance'),
         builder: (_) => PortfolioPerformanceScreen(
           showBackButton: true,
           initialOzet: true,
@@ -777,6 +891,7 @@ class NotificationService {
 
     navigator.push(
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'partnership_requests'),
         builder: (_) => PartnershipRequestsScreen(
           highlightInviteId: inviteId,
         ),
@@ -881,6 +996,7 @@ class NotificationService {
 
     navigator.push(
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'asset_detail'),
         builder: (_) => AssetDetailScreen(
           asset: gorunum?.asset ?? asset!,
           showBackButton: true,
@@ -978,6 +1094,97 @@ class NotificationService {
     );
   }
 
+  /// Çizgi alarmının çizgisini yatay grafikte açar (yasin 2026-10-29:
+  /// *"bildirime ve alarma tıkladığımızda çizgiyi izleyebilelim"*). Push,
+  /// çan satırı ve Alarmlarım aynı fonksiyondan geçer (tek varış yeri).
+  ///
+  /// Çizim kimliği sırayla: [cizimId] (yeni push / çan verisi) →
+  /// [cizimAlarmId] ile cihazdaki çizgi alarmı listesi (eski çan kaydı) →
+  /// [alertId] ile yatay çizgi bağı ([yatayAlarmCizimi]; bağ cihazda).
+  /// Hiçbiri yoksa ya da grafik açılamıyorsa (varlık yok, fiyat bilinmiyor,
+  /// mum kaynağı yok) [openPriceAlertAsset]: eski davranış birebir.
+  ///
+  /// Grafik doğrudan yatay açılır ([TamEkranGrafikEkrani.yatayaZorla]):
+  /// kullanıcı telefonu dik tutarken bildirime dokunur; kapatınca geldiği
+  /// ekrana döner.
+  Future<void> openCizgi(
+    String symbol, {
+    String? cizimId,
+    String? cizimAlarmId,
+    String? alertId,
+    VoidCallback? onNotFound,
+    int deneme = 0,
+  }) async {
+    void tekrar() => openCizgi(symbol,
+        cizimId: cizimId,
+        cizimAlarmId: cizimAlarmId,
+        alertId: alertId,
+        onNotFound: onNotFound,
+        deneme: deneme + 1);
+    if (kilitKapisi.ertele(() => openCizgi(symbol,
+        cizimId: cizimId,
+        cizimAlarmId: cizimAlarmId,
+        alertId: alertId,
+        onNotFound: onNotFound))) {
+      return;
+    }
+    final navigator = _navigatorKey?.currentState;
+    final context = navigator?.overlay?.context;
+    if (navigator == null || context == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(_yenidenDenemeAraligi, tekrar);
+      return;
+    }
+    final container = ProviderScope.containerOf(context, listen: false);
+    void varligaDus() => openPriceAlertAsset(symbol, onNotFound: onNotFound);
+
+    var id = (cizimId ?? '').isEmpty ? null : cizimId;
+    if (id == null && (cizimAlarmId ?? '').isNotEmpty) {
+      id = (container.read(cizimAlarmlariProvider).valueOrNull ?? const [])
+          .where((a) => a.id == cizimAlarmId)
+          .firstOrNull
+          ?.cizimId;
+    }
+    if (id == null && (alertId ?? '').isNotEmpty) {
+      final baglar = container.read(yatayAlarmBaglariProvider.notifier);
+      await baglar.yuklendi;
+      id = yatayAlarmCizimi(baglar.baglar, alertId);
+    }
+    if (id == null || id.isEmpty) {
+      varligaDus();
+      return;
+    }
+
+    // Soğuk açılış: portföy birkaç saniye sonra düşer ([openPriceAlertAsset]
+    // ile aynı bekleme). Boş portföy (yalnız takip listesi) beklenmez.
+    final assets = container.read(portfolioProvider).valueOrNull?.assets;
+    if (assets == null) {
+      if (deneme >= _yenidenDenemeSiniri) {
+        varligaDus();
+        return;
+      }
+      Future<void>.delayed(_yenidenDenemeAraligi, tekrar);
+      return;
+    }
+    final g = cizgiGrafigi(symbol,
+        varliklar: assets,
+        takip: container.read(watchlistProvider).valueOrNull ?? const []);
+    final ctx = _navigatorKey?.currentState?.overlay?.context;
+    if (g == null ||
+        ctx == null ||
+        !ctx.mounted ||
+        !TamEkranGrafikEkrani.sunulur(g.varlik)) {
+      varligaDus();
+      return;
+    }
+    await TamEkranGrafikEkrani.ac(ctx,
+        varlik: g.varlik,
+        ad: g.ad,
+        canliBirim: g.canliBirim,
+        odakCizim: id,
+        yatayaZorla: true);
+  }
+
   /// Temettü önerisinden (push ya da çan) ön dolu temettü diyaloğunu açar.
   ///
   /// Öneri `ticker` taşır, `asset_id` değil (sunucu pozisyonu sembolden
@@ -1040,6 +1247,7 @@ class NotificationService {
       return;
     }
     navigator.push(adaptiveRoute<void>(
+      settings: const RouteSettings(name: 'portfolio_performance'),
       builder: (_) => PortfolioPerformanceScreen(
         showBackButton: true,
         initialOzet: true,
@@ -1054,7 +1262,7 @@ class NotificationService {
     final navigator = _navigatorKey?.currentState;
     if (navigator == null) return;
     navigator.push(
-      adaptiveRoute<void>(builder: (_) => const AssetNotFoundScreen()),
+      adaptiveRoute<void>(settings: const RouteSettings(name: 'asset_not_found'), builder: (_) => const AssetNotFoundScreen()),
     );
   }
 }

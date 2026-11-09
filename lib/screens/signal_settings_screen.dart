@@ -6,6 +6,7 @@ import '../providers/preferences_provider.dart';
 import '../providers/sinyal_on_ayar_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
+import '../widgets/bildirim_izni_uyarisi.dart';
 import '../widgets/sandik_acilir.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
@@ -131,6 +132,9 @@ class SignalSettingsScreen extends ConsumerWidget {
         children: [
           const DisclaimerWidget(),
           const SizedBox(height: 16),
+          // Sinyal push'u izin yoksa hiç gelmez (Ar-Ge 16:45 #1, 2026-10-21).
+          const BildirimIzniUyarisi(
+              padding: EdgeInsets.only(bottom: SandikSpace.md)),
 
           // ── Premium kartı (paywall kapalıysa hiç gösterilmez) ────────────
           // Ücretsizde kilitler satırlarda (Premium gösterge, sıklık,
@@ -278,7 +282,7 @@ class _PremiumCard extends StatelessWidget {
                   Text(
                     unlocked ? l10n.sgnPremiumAktif : l10n.sgnPremiumKilitBaslik,
                     style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
                   ),
@@ -306,7 +310,7 @@ class _PremiumCard extends StatelessWidget {
                 l10n.sgnPremiumGec,
                 style: context.t.labelMedium?.copyWith(
                   color: context.c.onAmber,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -369,7 +373,7 @@ class _CategorySection extends StatelessWidget {
                 Text(
                   type.labelOf(context.l10n),
                   style: context.t.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: context.c.text90,
                   ),
                 ),
@@ -448,7 +452,6 @@ class _CategorySection extends StatelessWidget {
   Future<void> _parametreSheet(BuildContext context, String id) async {
     final sonuc = await showSandikSheet<_ParametreSonucu>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       builder: (_) => _ParametreSayfasi(
         id: id,
@@ -509,11 +512,9 @@ class _ParametreSayfasiState extends State<_ParametreSayfasi> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Center(child: SandikTutamac()),
-            const SizedBox(height: SandikSpace.md),
             Text(IndicatorId.labelOf(widget.id),
                 style: context.t.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.xs),
             Text(l.sgnParametreAciklama(widget.type.labelOf(l)),
                 style: context.t.bodySmall
@@ -679,7 +680,6 @@ class _FrequencyRow extends StatelessWidget {
 
     final sonuc = await showSandikSheet<List<int>>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -695,16 +695,12 @@ class _FrequencyRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: const SandikTutamac(),
-                  ),
-                  const SizedBox(height: 16),
                   Text(
                     freq.hourCount == 1
                         ? 'Bildirim saatini seç'
                         : 'İki bildirim saati seç',
                     style: context.t.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700, color: context.c.text90),
+                        fontWeight: FontWeight.w600, color: context.c.text90),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -910,7 +906,7 @@ class _FrequencyOption extends StatelessWidget {
           : null,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
+        child: SandikTappable(
           onTap: onTap,
           child: Column(
             children: [
@@ -950,7 +946,7 @@ class _FrequencyOption extends StatelessWidget {
                 ),
               ),
               if (hoursLabel != null)
-                InkWell(
+                SandikTappable(
                   onTap: onHoursTap,
                   child: Container(
                     constraints: const BoxConstraints(minHeight: 44),
@@ -1002,8 +998,13 @@ class _SaatChip extends StatelessWidget {
     return Semantics(
       selected: secili,
       button: true,
-      child: SandikBasma(
-        onTap: onTap,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
+        onTap: () {
+          SandikHaptic.selection.perform();
+          onTap();
+        },
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
@@ -1100,7 +1101,7 @@ class _IndicatorRow extends StatelessWidget {
   }
 
   Widget _satir(BuildContext context, String? ayarMetni) {
-    return InkWell(
+    return SandikTappable(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
@@ -1154,11 +1155,10 @@ class _IndicatorRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Text(
-                  'ÖNERİLEN',
+                  'Önerilen',
                   style: context.t.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: context.c.gain,
-                    letterSpacing: 0.8,
                   ),
                 ),
               ),
@@ -1175,11 +1175,10 @@ class _IndicatorRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text(
-                    'PREMIUM',
+                    'Premium',
                     style: context.t.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: context.c.amberText,
-                      letterSpacing: 0.8,
                     ),
                   ),
                 ),
@@ -1272,7 +1271,7 @@ class _OnAyarKarti extends ConsumerWidget {
                   child: Text(
                     l10n.s5OnAyarOzel,
                     style: context.t.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.amberText,
                     ),
                   ),

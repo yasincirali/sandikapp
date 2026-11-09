@@ -17,6 +17,9 @@ export type AppNotificationType =
   | 'watchlist_move' // 0068 — takip listesinde günlük büyük hareket
   | 'inflation_day' // 0068 — TÜİK açıklama günü
   | 'temettu' // 0086 — temettü önerisi (temettu-yakala)
+  | 'yuzde_alarm' // 0169 — günlük yüzde alarmı (check-price-alerts)
+  | 'gosterge_alarm' // 0170 — gösterge (EMA/MA/Bollinger) alarmı
+  | 'cizim_alarm' // 0170 — trend çizgisi / ışın alarmı
   | 'calendar_nudge';
 
 export interface AppNotificationRow {

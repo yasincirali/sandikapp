@@ -6,10 +6,12 @@ import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/emtia_katalogu.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
 import '../services/bist_hisse_katalogu.dart';
 import '../services/crash_reporter.dart';
+import '../services/fiyat_kaynagi.dart' show maliyetSatisFiyati;
 import '../services/fx_rate_migration_service.dart';
 import '../services/price_service.dart';
 import '../services/remote_config_service.dart';
@@ -164,8 +166,32 @@ abstract class AddAssetPriceLookup {
   Future<String?> companyName(String ticker);
 }
 
-class LivePriceLookup implements AddAssetPriceLookup {
+/// Yurt içi kotasyonun alış + satış çifti (aynı kayıttan, aynı an).
+typedef AlisSatis = ({double alis, double? satis});
+
+/// İsteğe bağlı yetenek: kotasyonu alış + satış olarak okuyabilen kapı
+/// (2026-10-24, boş fiyatlı altın/döviz maliyeti). Ayrı arayüz çünkü
+/// [AddAssetPriceLookup]'u uygulayan her test sahtesine yeni yöntem
+/// eklemek gerekmesin: yeteneği olmayan kapı satış bilmez, form bugünkü
+/// gibi alış fiyatını atar.
+abstract class SatisFiyatiOkuyucu {
+  /// Sembolün güncel alış (+ varsa satış) fiyatı; alış yoksa `null`.
+  Future<AlisSatis?> alisSatis(String ticker);
+}
+
+class LivePriceLookup implements AddAssetPriceLookup, SatisFiyatiOkuyucu {
   const LivePriceLookup();
+
+  /// Spot ile AYNI çağrı (`fetchQuotes`, aynı önbellek): satış alışla aynı
+  /// kayıttan gelir, iki ayrı anın fiyatı karışmaz.
+  @override
+  Future<AlisSatis?> alisSatis(String ticker) async {
+    final quotes = await PriceService.instance.fetchQuotes([ticker]);
+    final q = quotes[ticker.toUpperCase()];
+    final alis = q?.regularMarketPrice;
+    if (q == null || alis == null || alis <= 0) return null;
+    return (alis: alis, satis: q.satisFiyati);
+  }
 
   @override
   Future<double?> historicalClose(String ticker, DateTime date) =>
@@ -194,22 +220,53 @@ final addAssetPriceLookupProvider =
 
 /// Fiyat çözümü sonucu. [historical]: seçili tarihin kapanışı bulundu;
 /// [fallbackToSpot]: tarih geçmişti ama kapanış yoktu, güncel fiyat atandı.
-typedef FiyatSonucu = ({double? price, bool historical, bool fallbackToSpot});
+/// [price] her zaman piyasa (alış) fiyatıdır; [satis] yalnız sözleşme
+/// (`maliyetSatisFiyati`) maliyete satışı yazdığında dolu — kayıt
+/// `satis ?? price` yazar, "bugün bozdursan" satırı [price]'ı gösterir.
+typedef FiyatSonucu = ({
+  double? price,
+  bool historical,
+  bool fallbackToSpot,
+  double? satis,
+});
 
 /// Önizleme ve kayıt aynı kuralı kullanır: bugünse spot; geçmiş tarihse
 /// önce o günün kapanışı, yoksa spot'a düşülür. Ağ hatası fiyatsız döner —
 /// çağıran "bulunamadı" gösterir ya da manuel fiyata bırakır.
+///
+/// [satisParaBirimi]: yalnız YENİ kayıt verir (düzenleme, sepet, güncelleme
+/// vermez → bugünkü davranış). Verildiyse, alım bugünse ve kapı satış
+/// okuyabiliyorsa spot yerine alış + satış çifti okunur; maliyete satışın
+/// yazılıp yazılmayacağına sözleşme karar verir (`maliyetSatisFiyati`).
 Future<FiyatSonucu> fiyatBul({
   required AddAssetPriceLookup lookup,
   required String ticker,
   required DateTime date,
   DateTime? now,
+  String? satisParaBirimi,
 }) async {
-  final isToday = _ayniGun(date, now ?? DateTime.now());
+  final simdi = now ?? DateTime.now();
+  final isToday = _ayniGun(date, simdi);
   double? price;
+  double? satis;
   var historical = false;
   var fallback = false;
   try {
+    if (lookup case final SatisFiyatiOkuyucu okuyucu
+        when isToday && satisParaBirimi != null) {
+      final k = await okuyucu.alisSatis(ticker);
+      if (k != null && k.alis > 0) {
+        price = k.alis;
+        satis = maliyetSatisFiyati(
+          ticker: ticker,
+          paraBirimi: satisParaBirimi,
+          tarih: date,
+          alis: k.alis,
+          satis: k.satis,
+          now: simdi,
+        );
+      }
+    }
     if (!isToday) {
       final hist = await lookup.historicalClose(ticker, date);
       if (hist != null && hist > 0) {
@@ -227,7 +284,38 @@ Future<FiyatSonucu> fiyatBul({
   } catch (_) {
     // Fiyat isteğe bağlı: ağ yoksa kullanıcı elle girer; hata yutulur.
   }
-  return (price: price, historical: historical, fallbackToSpot: fallback);
+  return (
+    price: price,
+    historical: historical,
+    fallbackToSpot: fallback,
+    satis: satis,
+  );
+}
+
+// ─── Tutardan adet (2026-10-24) ──────────────────────────────────────────────
+
+/// Tutar kipinde adedi hesaplamak için birim fiyat: kullanıcının yazdığı
+/// fiyat, yoksa kayıtta atanacak fiyat (satış maliyeti varsa o, yoksa
+/// önizleme). Hiçbiri yoksa `null` — adet hesaplanmaz, uydurulmaz.
+double? tutarBirimFiyati({
+  required double? kullaniciFiyati,
+  required double? onizlemeFiyati,
+  required double? onizlemeSatis,
+}) {
+  if (kullaniciFiyati != null && kullaniciFiyati > 0) return kullaniciFiyati;
+  final atanan = onizlemeSatis ?? onizlemeFiyati;
+  return atanan != null && atanan > 0 && atanan.isFinite ? atanan : null;
+}
+
+/// "10.000 TL'lik aldım": adet = tutar ÷ birim fiyat, YUVARLANMADAN.
+/// Kayıt bugünkü gibi adet + fiyat olarak yazılır (şema değişmez); adet
+/// kırpılırsa adet × fiyat girilen tutarı tutmaz. Tutar ya da fiyat
+/// geçersizse `null`.
+double? tutardanAdet({required double? tutar, required double? birimFiyat}) {
+  if (tutar == null || birimFiyat == null) return null;
+  if (!tutar.isFinite || !birimFiyat.isFinite) return null;
+  if (tutar <= 0 || birimFiyat <= 0) return null;
+  return tutar / birimFiyat;
 }
 
 bool _ayniGun(DateTime a, DateTime b) =>
@@ -315,14 +403,19 @@ class AddAssetFormState {
     required this.addedDate,
     this.saving = false,
     this.previewPrice,
+    this.previewSatis,
     this.previewLoading = false,
     this.previewIsHistorical = false,
+    this.tutarModu = false,
     this.bist100Ticker,
     this.selectedFund,
     this.notesExpanded = false,
+    this.sembolleEkleAcik = false,
     this.denendi = false,
     this.abdAcik = false,
     this.turIzgarasiAcik = false,
+    this.turSecildi = false,
+    this.emtiaElle = false,
     this.eurobondSozlesmesi,
     this.eurobondFiyati,
   });
@@ -392,6 +485,16 @@ class AddAssetFormState {
       // varlık vitrini) türü zaten söylemiş: tekrar sormak bir adım fazla.
       turIzgarasiAcik:
           turIzgarasi && a == null && c == null && prefillType == null,
+      // Türü önceden belli form (düzenleme, sepet, ön seçim) "seçilmiş"
+      // doğar: "Değiştir"le açılan ızgarada o tür vurgulu görünür.
+      turSecildi:
+          !(turIzgarasi && a == null && c == null && prefillType == null),
+      // Listede olmayan eski emtia kaydı (serbest ad / bilinmeyen sembol)
+      // "Diğer" yolunda açılır; listedeki sembol seçili çiple.
+      emtiaElle: type == AssetType.emtia &&
+          (ticker.trim().isNotEmpty
+              ? emtiaSecenegi(ticker) == null
+              : (a?.name ?? c?.name ?? '').trim().isNotEmpty),
     );
   }
 
@@ -406,12 +509,25 @@ class AddAssetFormState {
   /// Kullanıcı kaydetmeden önce tahmini birim fiyat; kullanıcı fiyatı
   /// kendisi yazdıysa null kalır.
   final double? previewPrice;
+
+  /// Önizlemede maliyete yazılacak satış fiyatı (altın/döviz, bugün, yeni
+  /// kayıt); kural uygulanmıyorsa null. [previewPrice] o zaman alıştır
+  /// ("bugün bozdursan"). [previewPrice] her yazıldığında birlikte düşer.
+  final double? previewSatis;
   final bool previewLoading;
   final bool previewIsHistorical;
+
+  /// Miktar "Tutar (₺)" kipinde mi girilir (2026-10-24). Varsayılan Adet:
+  /// bugünkü kullanıcı formu değişmiş görmez. Kayıt yine adet + fiyattır.
+  final bool tutarModu;
 
   final String? bist100Ticker;
   final TefasFund? selectedFund;
   final bool notesExpanded;
+
+  /// Hisse formunda "Listede yok mu? Sembolle ekle" açıldı mı (müşteri
+  /// raporu 2 Kas 17:15 #3). Görünüm durumu; kayda girmez.
+  final bool sembolleEkleAcik;
 
   /// "Ekle"ye en az bir kez basıldı mı. Bundan sonra form her değişimde
   /// yeniden doğrulanır: uyarı, kullanıcı varlığı seçtiği anda kalkar (bir
@@ -424,13 +540,25 @@ class AddAssetFormState {
   /// edilebilir; form açıkken bayrak yenilense de form tutarlı kalır).
   final bool abdAcik;
 
-  /// Tür ızgarası açık mı (bayrak `tur_secici_izgara`). Açıkken ekran formun
-  /// gövdesini çizmez: önce "ne ekliyorsun", sonra ayrıntı. Seçimden sonra
-  /// ızgara tek satıra katlanır, "Değiştir" yeniden açar. Bayrak kapalıyken
-  /// hep `false` ve hiçbir yerde okunmaz (çip satırı birebir eski).
+  /// Tür ızgarası açık mı. Açıkken ekran formun gövdesini çizmez: önce "ne
+  /// ekliyorsun", sonra ayrıntı. Seçimden sonra ızgara tek satıra katlanır,
+  /// "Değiştir" yeniden açar. (Bayrak `tur_secici_izgara` 2026-10-20'de
+  /// emekliye ayrıldı; eski çip satırı kalktı.)
   /// `notesExpanded` gibi görünüm durumu burada: ekran `setState` taşımaz
   /// (Faz 3.10 ratchet).
   final bool turIzgarasiAcik;
+
+  /// Kullanıcı bu formda ızgaradan bir tür (ya da arama sonucu) seçti mi.
+  /// Yeni kayıt türü varsayılan hisseyle doğar; seçim yapılmadan ızgara
+  /// hiçbir kutuyu seçili çizmez (müşteri raporu 31 Eki 13:15). Izgara
+  /// katlanınca kalıcı olarak `true`: "Değiştir" ile geri açılan ızgarada
+  /// mevcut seçim görünür.
+  final bool turSecildi;
+
+  /// Emtia formunda "Diğer" (serbest ad + sembol) açık mı; kapalıyken emtia
+  /// `emtiaKatalogu` çiplerinden seçilir (2026-10-18). Görünüm durumu,
+  /// `turIzgarasiAcik` ile aynı gerekçeyle burada.
+  final bool emtiaElle;
 
   /// Seçili eurobondun sözleşmesi (katalogdan). Temiz → kirli çevirisi ve
   /// işlemiş faiz satırı buna bakar; kupon/vade kullanıcıdan alınmaz
@@ -599,6 +727,11 @@ class AddAssetFormState {
         return (subCategory ?? '').isEmpty ? KimlikEksigi.altin : null;
       case AssetType.doviz:
         return (subCategory ?? '').isEmpty ? KimlikEksigi.doviz : null;
+      case AssetType.emtia:
+        // "Diğer" yolunda ad alanının kendi doğrulayıcısı (`nameRequired`)
+        // var; listede seçim yapılmadan kayıt yok (2026-10-18).
+        if (emtiaElle) return null;
+        return emtiaSecenegi(tickerText) == null ? KimlikEksigi.emtia : null;
       default:
         return null;
     }
@@ -613,14 +746,19 @@ class AddAssetFormState {
     DateTime? addedDate,
     bool? saving,
     Object? previewPrice = _keep,
+    Object? previewSatis = _keep,
     bool? previewLoading,
     bool? previewIsHistorical,
+    bool? tutarModu,
     Object? bist100Ticker = _keep,
     Object? selectedFund = _keep,
     bool? notesExpanded,
+    bool? sembolleEkleAcik,
     bool? denendi,
     bool? abdAcik,
     bool? turIzgarasiAcik,
+    bool? turSecildi,
+    bool? emtiaElle,
     Object? eurobondSozlesmesi = _keep,
     Object? eurobondFiyati = _keep,
   }) =>
@@ -637,8 +775,15 @@ class AddAssetFormState {
         previewPrice: identical(previewPrice, _keep)
             ? this.previewPrice
             : previewPrice as double?,
+        // Önizleme fiyatı değişince eski satış ona ait değildir: açıkça
+        // verilmediyse birlikte düşer (tür/sembol değişiminde eski altının
+        // satışı yeni seçimde kalmasın).
+        previewSatis: identical(previewSatis, _keep)
+            ? (identical(previewPrice, _keep) ? this.previewSatis : null)
+            : previewSatis as double?,
         previewLoading: previewLoading ?? this.previewLoading,
         previewIsHistorical: previewIsHistorical ?? this.previewIsHistorical,
+        tutarModu: tutarModu ?? this.tutarModu,
         bist100Ticker: identical(bist100Ticker, _keep)
             ? this.bist100Ticker
             : bist100Ticker as String?,
@@ -646,9 +791,12 @@ class AddAssetFormState {
             ? this.selectedFund
             : selectedFund as TefasFund?,
         notesExpanded: notesExpanded ?? this.notesExpanded,
+        sembolleEkleAcik: sembolleEkleAcik ?? this.sembolleEkleAcik,
         denendi: denendi ?? this.denendi,
         abdAcik: abdAcik ?? this.abdAcik,
         turIzgarasiAcik: turIzgarasiAcik ?? this.turIzgarasiAcik,
+        turSecildi: turSecildi ?? this.turSecildi,
+        emtiaElle: emtiaElle ?? this.emtiaElle,
         eurobondSozlesmesi: identical(eurobondSozlesmesi, _keep)
             ? this.eurobondSozlesmesi
             : eurobondSozlesmesi as EurobondSozlesmesi?,
@@ -661,7 +809,7 @@ class AddAssetFormState {
 const _keep = Object();
 
 /// Kaydı engelleyen eksik seçim — ekran uyarı metnini buna göre seçer.
-enum KimlikEksigi { hisse, fon, altin, doviz, kripto, eurobond }
+enum KimlikEksigi { hisse, fon, altin, doviz, kripto, eurobond, emtia }
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
 
@@ -675,8 +823,14 @@ class AddAssetFormArgs {
     this.prefillTicker,
     this.prefillType,
     this.prefillDate,
+    this.satisMaliyeti = false,
   });
   final Asset? editingAsset;
+
+  /// Boş fiyatlı altın/döviz alımında maliyet satış fiyatından mı yazılır
+  /// (`fiyatBul.satisParaBirimi`). Yalnız YENİ kayıt formu açar; düzenleme,
+  /// sepet ve güncelleme bugünkü gibi alış fiyatını kullanır.
+  final bool satisMaliyeti;
   final BulkCartItem? cartInitial;
   final String? prefillTicker;
   final AssetType? prefillType;
@@ -704,7 +858,9 @@ class AddAssetFormNotifier
       prefillType: arg.prefillType,
       prefillDate: arg.prefillDate,
       abdAcik: RemoteConfigService.instance.abdHisse,
-      turIzgarasi: RemoteConfigService.instance.turSeciciIzgara,
+      // Bayrak `tur_secici_izgara` 2026-10-20'de emekliye ayrıldı: ızgara
+      // her zaman; eski çip satırı kalktı.
+      turIzgarasi: true,
     );
   }
 
@@ -729,16 +885,21 @@ class AddAssetFormNotifier
     _set(state.copyWith(currency: v));
   }
   void setDate(DateTime v) => _set(state.copyWith(addedDate: v));
+  void setTutarModu(bool v) {
+    if (state.tutarModu != v) _set(state.copyWith(tutarModu: v));
+  }
   void setManualPrice(bool v) => _set(state.copyWith(isManualPrice: v));
   void toggleNotes() =>
       _set(state.copyWith(notesExpanded: !state.notesExpanded));
+  void sembolleEkleAc() => _set(state.copyWith(sembolleEkleAcik: true));
 
-  /// Tür ızgarasını açar/katlar (bayrak `tur_secici_izgara`). Tür seçimi
+  /// Tür ızgarasını açar/katlar. Tür seçimi
   /// bunu KENDİLİĞİNDEN değiştirmez: hızlı giriş ve sepet geçişleri de
   /// `selectType` çağırıyor; katlamayı seçiciyi çizen ekran söyler.
   void turIzgarasi({required bool acik}) {
     if (state.turIzgarasiAcik != acik) {
-      _set(state.copyWith(turIzgarasiAcik: acik));
+      _set(state.copyWith(
+          turIzgarasiAcik: acik, turSecildi: state.turSecildi || !acik));
     }
   }
 
@@ -785,6 +946,29 @@ class AddAssetFormNotifier
   AlanYazimi selectGold(GoldSubCategory g) {
     _set(state.copyWith(subCategory: g.label, unitType: g.unitType));
     return AlanYazimi(name: g.label);
+  }
+
+  /// Emtia listesinden seçim (2026-10-18): ad + Yahoo sembolü birlikte
+  /// yazılır, fiyat sembolden otomatik gelir. Para birimine dokunulmaz —
+  /// serbest girişte de dokunulmuyordu; çeviri kayıt yolunda.
+  AlanYazimi selectEmtia(EmtiaSecenegi e) {
+    _set(state.copyWith(
+        isManualPrice: false,
+        emtiaElle: false,
+        unitType: emtiaUnitType(e.birim)));
+    return AlanYazimi(ticker: e.ticker, name: e.ad);
+  }
+
+  /// Emtia "Diğer": serbest ad + sembol. Listeden seçilmiş ad/sembol
+  /// taşınmaz — "Gümüş" adıyla başka sembol yanlış etiketli lot olurdu.
+  AlanYazimi emtiaDiger({required String tickerText}) {
+    if (state.emtiaElle) return AlanYazimi.yok;
+    final listeden = emtiaSecenegi(tickerText) != null;
+    _set(state.copyWith(
+        emtiaElle: true,
+        isManualPrice: listeden ? true : null,
+        unitType: listeden ? 'piece' : null));
+    return listeden ? const AlanYazimi(name: '', ticker: '') : AlanYazimi.yok;
   }
 
   /// Döviz her zaman TRY karşılığıyla kaydedilir; TRY'nin kendisi sembolsüz
@@ -931,6 +1115,9 @@ class AddAssetFormNotifier
   // Sembol/tarih değişince 400 ms debounce ile çalışır; sıra sayacı eski
   // isteğin sonucunu yutar. Kullanıcı fiyatı kendisi yazdıysa gösterilmez.
 
+  /// Satış maliyeti kuralının para birimi; kural bu formda kapalıysa null.
+  String? get satisParaBirimi => arg.satisMaliyeti ? state.currency : null;
+
   void schedulePreview({
     required double? userPrice,
     required String tickerText,
@@ -966,10 +1153,12 @@ class AddAssetFormNotifier
       ticker: ticker,
       date: state.addedDate,
       now: now,
+      satisParaBirimi: satisParaBirimi,
     );
     if (seq != _previewSeq || _disposed) return;
     _set(state.copyWith(
       previewPrice: sonuc.price,
+      previewSatis: sonuc.satis,
       previewIsHistorical: sonuc.historical,
       previewLoading: false,
     ));
@@ -984,6 +1173,7 @@ class AddAssetFormNotifier
         lookup: ref.read(addAssetPriceLookupProvider),
         ticker: ticker,
         date: state.addedDate,
+        satisParaBirimi: satisParaBirimi,
       );
     } finally {
       setSaving(false);

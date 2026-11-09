@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import 'friendly_error.dart';
 
@@ -58,7 +59,9 @@ void sandikSnack(
       (onUndo == null
           ? null
           : SnackBarAction(
-              label: 'Geri al',
+              // Anahtar teknik grafiğin "Geri al"ı ile ortak: iki yerde de
+              // anlam aynı (son eylemi geri al), çeviri ayrışmamalı.
+              label: context.l10n.tegGeriAl,
               textColor: ink ?? c.amberText,
               onPressed: onUndo,
             ));
@@ -119,7 +122,10 @@ void sandikSnackError(
   String? prefix,
   SnackBarAction? action,
 }) {
-  final reason = friendlyError(error);
+  // Silinen ekrandan gelen geç hata: dil aramadan önce dön (bağlamı
+  // ölü bir elemanda `Localizations` aranamaz).
+  if (!context.mounted) return;
+  final reason = friendlyError(error, l10n: context.l10n);
   final text = prefix == null || prefix.isEmpty ? reason : '$prefix. $reason';
   sandikSnack(context, text, kind: SandikSnackKind.error, action: action);
 }

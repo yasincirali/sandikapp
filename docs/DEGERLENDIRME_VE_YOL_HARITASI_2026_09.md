@@ -47,7 +47,7 @@ En kritik 5 madde (bu hafta):
 - **Parite/değişmez testleri.** İki render yolunun aynı sonucu verdiğini iddia eden testler (`chart_interaction_parity_test`, `partner_pnl_consistency_test`) ve Dart ile Deno arasında paylaşılan `ta_golden_vectors.json`. 28.707 satır test / 62.303 satır kaynak.
 - **Enum çözümlemesi hiç fırlatmıyor.** Her `fromString/fromDb` güvenli varsayılana düşüyor.
 - **Gizli anahtar disiplini istemcide doğru.** `String.fromEnvironment`, fallback literal yok, Firebase config yoksa sessiz no-op, `_ConfigErrorApp`.
-- **Android sertleştirmesi tamam.** `allowBackup=false`, `data_extraction_rules.xml`, `AD_ID` kaldırılmış, `FLAG_SECURE`, R8 minify, cleartext yok.
+- **Android sertleştirmesi tamam.** `allowBackup=false`, `data_extraction_rules.xml`, `AD_ID` kaldırılmış, R8 minify, cleartext yok. (`FLAG_SECURE` 2026-10-23'te yasin kararıyla kaldırıldı: ekran görüntüsü serbest.)
 - **Supabase tarafı uygulamadan daha temiz.** Her `SECURITY DEFINER` fonksiyonunda `search_path` set (47 migration'da sıfır eksik), her tabloda RLS, GRANT eksikse `raise exception` atan runtime assertion'lar (`0036`, `0042`, `0043`).
 - **Yorumlar karar kaydı niteliğinde.** `tr_format.dart:96-118` sessiz veri bozulması tablosu, `history_service.dart:255` TTL gerekçesi, `android-release.yml:44-51` Flutter pin gerekçesi. Kurumsal hafıza olarak nadir kalite.
 - **`TECHNICAL_DEBT.md` gerçek bir defter.** Neden ertelendi, maliyeti ne, kapanınca commit hash'i.

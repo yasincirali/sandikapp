@@ -43,10 +43,14 @@ extension L10nX on BuildContext {
 ///
 /// `birimEtiketi` (models/asset.dart) birimi VERİ olarak üretir ("adet",
 /// "gr", "lot", coin kodu) — model katmanı `BuildContext` bilmez. Yalnız
-/// Türkçe kelime olan "adet" çevrilir; "gr"/"kg"/"lot"/"BTC" iki dilde aynı.
+/// Türkçe kelime olan "adet" ve "pay" çevrilir; "gr"/"kg"/"lot"/"BTC" iki dilde aynı.
 /// İngilizce modda "15 adet" yazıyordu (emülatör testi #27).
-String birimMetni(AppLocalizations l, String birim) =>
-    birim == 'adet' ? l.unitPiece : birim;
+String birimMetni(AppLocalizations l, String birim) => switch (birim) {
+      'adet' => l.unitPiece,
+      // Fon payı (2 Kas 2026): Türkçe kelime, İngilizcede "units".
+      'pay' => l.unitFundShare,
+      _ => birim,
+    };
 
 /// Dönem kimliği → ekranda görünen etiket (3.20).
 ///
@@ -63,7 +67,18 @@ String donemEtiketi(AppLocalizations l, String kimlik) => switch (kimlik) {
       '6A' => l.period6M,
       '1Y' => l.period1Y,
       '5Y' => l.period5Y,
+      'YB' => l.periodYtd,
       _ => kimlik,
+    };
+
+/// Dönemin ekran okuyucu adı: kısaltma değil, sözcük (2026-11-08).
+///
+/// "YB" VoiceOver'da harf harf okunur ve ne olduğu anlaşılmaz; çip
+/// "Yıl başından beri" diye okunur. Diğer dönemlerin etiketi zaten
+/// okunabilir ("1 ay"), onlar [donemEtiketi]'ne düşer.
+String donemSemantigi(AppLocalizations l, String kimlik) => switch (kimlik) {
+      'YB' => l.periodYtdLong,
+      _ => donemEtiketi(l, kimlik),
     };
 
 /// Dile duyarlı BÜYÜK HARF.

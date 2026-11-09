@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset_type.dart';
 import '../models/ohlc.dart' show MumAraligi;
+import '../models/portfoy_siralama.dart';
 import '../models/signal_frequency.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
@@ -17,8 +18,11 @@ import '../config/pref_keys.dart';
 import '../demo/demo_modu.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/biometric_lock_service.dart';
+import '../services/ayar_olcumu.dart';
+import '../services/dil_olcumu.dart';
 import '../services/crash_reporter.dart';
 import '../theme/yazi_boyutu.dart';
+import '../utils/tr_format.dart' show dayKey;
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -114,6 +118,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti('tema'); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(_kThemeModeKey, _toString(mode));
@@ -152,11 +157,17 @@ class LocaleNotifier extends Notifier<Locale?> {
     final prefs = _prefsSync;
     if (prefs != null) {
       final raw = prefs.getString(PrefKeys.locale);
-      if (raw != null) return parse(raw);
+      if (raw != null) return _olc(parse(raw), raw);
     } else {
       _loadAsync();
     }
-    return const Locale('tr', 'TR');
+    return _olc(const Locale('tr', 'TR'), 'varsayilan');
+  }
+
+  /// Dil ölçümü (`DilOlcumu`, 2026-10-21); değeri olduğu gibi döndürür.
+  Locale? _olc(Locale? l, String tercih) {
+    DilOlcumu.yaz(l, tercih: tercih);
+    return l;
   }
 
   /// 'tr' → tr_TR, 'en' → en_US, 'system' → null (sistem), tanınmayan → tr.
@@ -179,15 +190,16 @@ class LocaleNotifier extends Notifier<Locale?> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(PrefKeys.locale);
-      if (raw != null) state = parse(raw);
+      if (raw != null) state = _olc(parse(raw), raw);
     } catch (_) {}
   }
 
   Future<void> set(Locale? locale) async {
-    state = locale;
+    state = _olc(locale, encode(locale));
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti('dil'); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(PrefKeys.locale, encode(locale));
@@ -247,12 +259,164 @@ class _IntPrefNotifier extends Notifier<int> {
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setInt(_key, value);
     } catch (_) {}
   }
 }
+
+/// `_BoolPrefNotifier`'in metin karşılığı (aynı desen, aynı demo kuralı).
+class _StringPrefNotifier extends Notifier<String> {
+  final String key;
+  final String defaultValue;
+  final bool perUser;
+
+  _StringPrefNotifier(this.key, this.defaultValue, {this.perUser = false});
+
+  String get _key => perUser ? _userKey(key) : key;
+
+  @override
+  String build() {
+    final prefs = _prefsSync;
+    if (prefs != null) {
+      final v = prefs.getString(_key);
+      if (v != null) return v;
+    } else {
+      _loadAsync();
+    }
+    return defaultValue;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getString(_key);
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(String value) async {
+    state = value;
+    if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setString(_key, value);
+    } catch (_) {}
+  }
+}
+
+/// Metin kümesi tercihi — [_BoolPrefNotifier] ile aynı desen (senkron
+/// okuma, demo'da diske yazmaz). Kişiye özel.
+class _KumePrefNotifier extends Notifier<Set<String>> {
+  _KumePrefNotifier(this.key);
+  final String key;
+
+  @override
+  Set<String> build() {
+    final prefs = _prefsSync;
+    if (prefs != null) return {...?prefs.getStringList(_userKey(key))};
+    _loadAsync();
+    return const {};
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getStringList(_userKey(key));
+      if (v != null) state = {...v};
+    } catch (_) {}
+  }
+
+  Future<void> set(Set<String> value) async {
+    state = value;
+    if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setStringList(_userKey(key), value.toList()..sort());
+    } catch (_) {}
+  }
+}
+
+/// "Bilgi eksik" satırının kapatıldığı andaki eksik anahtarları
+/// (`veri_kalitesi.dart`).
+final veriKalitesiKapatilanProvider =
+    NotifierProvider<_KumePrefNotifier, Set<String>>(
+        () => _KumePrefNotifier(PrefKeys.veriKalitesiKapatilan));
+
+/// Ana ekran özellik önerisi: kapatılan/dokunulan öneriler ve son kapatma
+/// zamanı (epoch ms, 0 = hiç). `ozellik_onerisi.dart`.
+final ozellikOnerisiKapatilanProvider =
+    NotifierProvider<_KumePrefNotifier, Set<String>>(
+        () => _KumePrefNotifier(PrefKeys.ozellikOnerisiKapatilan));
+final ozellikOnerisiSonKapatmaProvider =
+    NotifierProvider<_IntPrefNotifier, int>(() => _IntPrefNotifier(
+        PrefKeys.ozellikOnerisiSonKapatma, 0,
+        perUser: true));
+
+/// Yumuşak güncelleme kartının kapatıldığı önerilen build (0 = hiç).
+final guncellemeKapatilanBuildProvider =
+    NotifierProvider<_IntPrefNotifier, int>(
+        () => _IntPrefNotifier(PrefKeys.guncellemeKapatilanBuild, 0));
+
+/// Ana sayfa "seni ilgilendiren günler": kapatılan olay kimlikleri
+/// (`seni_ilgilendiren_gunler.dart`).
+final gunlerKapatilanProvider =
+    NotifierProvider<_KumePrefNotifier, Set<String>>(
+        () => _KumePrefNotifier(PrefKeys.gunlerKapatilan));
+
+/// Sıralı metin listesi tercihi — [_KumePrefNotifier] gibi, ama SIRA
+/// korunur ve "hiç kaydedilmedi" (`null`) boş listeden ayrılır: takip
+/// listesinin ilk açılışı ([takipSirasiProvider]) bugünkü sıradan kurulur,
+/// boş kayıt ise kullanıcının bilerek bıraktığı hâldir. Kişiye özel.
+class _SiraPrefNotifier extends Notifier<List<String>?> {
+  _SiraPrefNotifier(this.key);
+  final String key;
+
+  @override
+  List<String>? build() {
+    final prefs = _prefsSync;
+    if (prefs != null) return prefs.getStringList(_userKey(key));
+    _loadAsync();
+    return null;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getStringList(_userKey(key));
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(List<String> value) async {
+    state = value;
+    if (DemoModu.aktif) return;
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setStringList(_userKey(key), value);
+    } catch (_) {}
+  }
+}
+
+/// Takip listesi "benim sıram" (`takip_sirasi.dart`); null = hiç kurulmadı.
+final takipSirasiProvider = NotifierProvider<_SiraPrefNotifier, List<String>?>(
+    () => _SiraPrefNotifier(PrefKeys.takipSirasi));
+
+/// Takip listesi sıralama seçimi (`TakipSiralama.index`; 0 = benim sıram).
+final takipSiralamaProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.takipSiralama, 0, perUser: true));
+
+/// Portföy listesi sıralama seçimi (`PortfoySiralama.kod`). Eskiden yalnız
+/// ekranın State alanıydı, soğuk açılışta "Değere göre"ye dönüyordu (Ar-Ge
+/// 2026-10-25 #3). Metin + kod: enum sırası değişse de tercih bozulmaz.
+final portfoySiralamaProvider = NotifierProvider<_StringPrefNotifier, String>(
+    () => _StringPrefNotifier(
+        PrefKeys.portfoySiralama, PortfoySiralama.varsayilan.kod,
+        perUser: true));
 
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
@@ -293,6 +457,7 @@ class _BoolPrefNotifier extends Notifier<bool> {
     // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
     // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
     if (DemoModu.aktif) return;
+    AyarOlcumu.degisti(key); // yalnız ad, değer değil
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setBool(_key, value);
@@ -318,10 +483,27 @@ final partnerNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kBalanceHiddenKey, false));
 
+/// Portföy listesinde kartların ikinci sayısı bugünkü değişim mi (`true`)
+/// yoksa alıştan beri kâr/zarar mı (Ar-Ge 1 Kas 16:45 #1). Varsayılan
+/// Toplam: güncellemeyle gelen kullanıcının listesi değişmez.
+final portfoyBugunModuProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.portfoyBugunModu, false));
+
 /// Toplam kartındaki kaydırma ipucu bir kez gösterildi mi (cihaz tercihi;
 /// jest cihaza ait, kişiye değil). 2026-09-21.
 final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.kaydirmaIpucu, false));
+
+/// Yatay tam ekran grafik bir kez açıldı mı (yan çevirme ipucu artık
+/// gösterilmez; `YanCevirinceTamEkran`). Cihaz tercihi, kişiye özel değil:
+/// telefonu yan çevirmeyi öğrenen cihazdaki kişidir. 2026-10-29.
+final yatayGrafikAcildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.yatayGrafikIpucu, false));
+
+/// Bugün kartındaki hedef önerisinin görünürlük durumu — ham kod; kural
+/// `HedefOnerisiDurumu` (saf, `hedef_onerisi_test`). Kişiye özel.
+final hedefOnerisiProvider = NotifierProvider<_StringPrefNotifier, String>(
+    () => _StringPrefNotifier(PrefKeys.hedefOnerisi, '', perUser: true));
 
 /// Baz para birimi (Faz 3.2) — `BaseCurrency.index` olarak saklanır; model
 /// ve kur eşlemesi `base_currency_provider.dart`'ta. Kişiye özel: aynı
@@ -482,6 +664,57 @@ final kapsamHedefiProvider =
 /// Kendi görünümünün hedefi — `kapsamHedefiProvider('')`.
 final portfolioGoalProvider = kapsamHedefiProvider('');
 
+/// Hedefin günü ("Ne zamana kadar?", Premium — yasin 2026-11-06); null =
+/// tarih yok. Anahtar [KapsamHedefiNotifier] ile aynı kapsam düzeni: her
+/// kartın hedefi kendi gününü taşır. Yeni anahtar: var olan kullanıcıda
+/// yok → null, hiçbir şey değişmez. Premium bitse de değer silinmez;
+/// gösterimi [hedefTarihiDurumuProvider] keser (tekrar Premium olana geri
+/// gelir).
+class KapsamHedefTarihiNotifier extends FamilyNotifier<DateTime?, String> {
+  String get _key => _userKey(arg.isEmpty
+      ? PrefKeys.portfolioGoalDate
+      : '${PrefKeys.portfolioGoalDate}_$arg');
+
+  static DateTime? _coz(int? ms) =>
+      (ms == null || ms <= 0) ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+
+  @override
+  DateTime? build(String arg) {
+    final prefs = _prefsSync;
+    if (prefs != null) return _coz(prefs.getInt(_key));
+    _loadAsync();
+    return null;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = _coz(prefs.getInt(_key));
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  /// [tarih] günün gece yarısına indirilir; null anahtarı siler.
+  Future<void> set(DateTime? tarih) async {
+    final gun =
+        tarih == null ? null : dayKey(tarih);
+    state = gun;
+    if (DemoModu.aktif) return; // Demo (F1): yalnızca bellekte.
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      if (gun == null) {
+        await prefs.remove(_key);
+      } else {
+        await prefs.setInt(_key, gun.millisecondsSinceEpoch);
+      }
+    } catch (_) {}
+  }
+}
+
+final kapsamHedefTarihiProvider =
+    NotifierProvider.family<KapsamHedefTarihiNotifier, DateTime?, String>(
+        KapsamHedefTarihiNotifier.new);
+
 /// Kilit ekranı Live Activity'sinde para tutarı gösterilsin mi?
 ///
 /// **Varsayılan KAPALI.** Kilit ekranı telefon açılmadan görülebilen bir
@@ -549,11 +782,11 @@ final magazaPremiumProvider = StateProvider<bool>((_) => false);
 
 /// Kullanıcının göreceği tüm üyelik/ödeme UI'ları buna bağlı. false ise
 /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
-/// edilmez. Store + RevenueCat entegrasyonu hazır olunca Remote Config'ten
-/// true'ya çekilir.
+/// edilmez. Karar KODDA (`RemoteConfigService.paywallEnabled`: iOS açık,
+/// Android RevenueCat kurulunca); Remote Config okunmaz (2026-11-01).
 ///
-/// RC etkinleşince yeniden hesaplanır (`rcEtkinlesmeProvider`): açılış
-/// fetch'i ilk kareden sonra bittiğinde de yeni değer aynı oturumda yansır.
+/// `rcEtkinlesmeProvider` izlenmeye devam eder: yerel `RC_ACIK` ve test
+/// kancaları etkinleşme sayacıyla yeniden hesaplanır.
 final paywallVisibleProvider = Provider<bool>((ref) {
   ref.watch(rcEtkinlesmeProvider);
   return RemoteConfigService.instance.paywallEnabled;
@@ -596,59 +829,34 @@ final effectivePremiumProvider = Provider<bool>((ref) {
 
 /// Paywall açık olsa da kilitler bu kullanıcıda ASKIDA mı.
 ///
-/// İki durum (Premium netleştirmesi, 2026-10-10, kritik bulgu Y1):
+/// Tek durum: **acil durum** `premium_ayar.acil_kapali` = true (sunucu,
+/// 0172; eskiden RC `premium_enabled=false`). Eskiden bu anahtar TERS
+/// çalışıyordu: `effectivePremium`'u false yapıp ödeyenler dahil herkesi
+/// kilitliyordu, yani "bir şey ters giderse kapatırım" düğmesi yangını
+/// büyütüyordu. Artık açılınca kimse kilit görmez; sınırlar kalkar, satış
+/// ekranları açık kalır ama hiçbir şey alınmaz. Ücretli içerik yine
+/// sunucuda `premium_ayar.kapi_acik` ile korunur.
 ///
-/// 1. **Acil durum anahtarı** `premium_enabled` = false. Eskiden bu anahtar
-///    TERS çalışıyordu: `effectivePremium`'u false yapıp ödeyenler dahil
-///    herkesi kilitliyordu, yani "bir şey ters giderse kapatırım" düğmesi
-///    yangını büyütüyordu. Artık false olunca kimse kilit görmez; sınırlar
-///    kalkar, satış ekranları açık kalır ama hiçbir şey alınmaz.
-/// 2. **Hediye güvencesi.** Mevcut kullanıcıların 90 günlük hediyesi elle
-///    verilir (`erken_kullanici_hediyesi_ver`, 0116). Paywall hediyeden önce
-///    açılırsa o arada herkes kilitlenirdi. Kural: hesabı hediye kesiminden
-///    (`premium_hediye_kesim`) ESKİ olan ve sunucuda HİÇ hak satırı olmayan
-///    kullanıcı kilit görmez. Kesim boşsa her hesap "eski" sayılır: kesim
-///    girilene kadar satırsız kimse kilitlenmez (güvenli taraf). Haklar
-///    henüz okunmadıysa ya da okunamadıysa da kilit yok — sunucu cevabı
-///    gelene kadar mevcut kullanıcıyı kilitlememek, bir yeni kullanıcıya
-///    birkaç saniye kilitsiz ekran göstermekten ucuz. Ücretli içerik yine
-///    sunucuda `premium_ayar.kapi_acik` ile korunur.
+/// Hediye güvencesi KALKTI (yasin 2026-11-01: "paywall arkasındaki
+/// featurelar eski userlara da kapalı olduğundan ... eskilerine de normal
+/// insanlara nasıl gelirse öyle gelmeli"). 2026-10-10'dan 2026-11-01'e
+/// kadar kesimden eski ve hak satırı olmayan hesap kilit görmüyordu
+/// (90 gün hediye SQL'i koşulana kadar kimseyi kilitlememek için). Hediye
+/// verilmeyeceği için eski ve yeni hesap aynı kuralı görür: Premium hakkı
+/// yoksa kilit. Sunucu `hediye_kesim` kolonu ve `erken_kullanici_hediyesi_ver`
+/// durur (ileride kampanya olursa hak satırı yazar; uygulama hakkı okur),
+/// uygulama kesimi okumaz.
 ///
 /// Saf karar [kilitlerAskidaMi]'da (test edilir).
 final kilitlerAskidaProvider = Provider<bool>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return false;
-  ref.watch(rcEtkinlesmeProvider);
-  final rc = RemoteConfigService.instance;
-  // Oturum yokken hediye güvencesinin sorusu da yok (kilitli yüzey de yok).
-  final kullanici = ref.watch(authProvider).valueOrNull;
-  if (kullanici == null) return !rc.premiumEnabled;
-  final haklar = ref.watch(premiumHaklariProvider);
-  return kilitlerAskidaMi(
-    premiumEnabled: rc.premiumEnabled,
-    haklar: haklar.hasValue && !haklar.hasError ? haklar.value : null,
-    hesapOlusturma: kullanici.createdAt,
-    hediyeKesimi: rc.premiumHediyeKesim,
-  );
+  final ayar = ref.watch(premiumSunucuAyariProvider).valueOrNull ??
+      PremiumSunucuAyari.varsayilan;
+  return kilitlerAskidaMi(acilKapali: ayar.acilKapali);
 });
 
-/// [kilitlerAskidaProvider]'ın saf kararı. [haklar] null = henüz bilinmiyor.
-bool kilitlerAskidaMi({
-  required bool premiumEnabled,
-  required List<PremiumHakki>? haklar,
-  required DateTime? hesapOlusturma,
-  required DateTime? hediyeKesimi,
-}) {
-  if (!premiumEnabled) return true;
-  // Kesimden sonra açılmış hesap hediye almaz; normal kurallar.
-  if (hediyeKesimi != null &&
-      hesapOlusturma != null &&
-      !hesapOlusturma.isBefore(hediyeKesimi)) {
-    return false;
-  }
-  // Eski hesap: hak satırı (geçerli ya da bitmiş) varsa hediye verilmiştir.
-  if (haklar != null && haklar.isNotEmpty) return false;
-  return true;
-}
+/// [kilitlerAskidaProvider]'ın saf kararı: yalnız acil kapatma askıya alır.
+bool kilitlerAskidaMi({required bool acilKapali}) => acilKapali;
 
 /// Premium yüzeylere ve sınırsız kullanıma erişim: Premium hakkı ya da
 /// askıdaki kilitler. Bütün sınır provider'ları bunu okur.
@@ -687,6 +895,22 @@ final izinliGostergelerProvider = Provider<Set<String>>((ref) =>
 /// herkese açılan şeyi sonra kilitlemek, verileni geri almak olur.
 /// Paywall açıkken herkes görür; Premium erişimi olmayana kilitli.
 final gostergeParametreDurumuProvider = Provider<OzellikDurumu>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) {
+    return ref.watch(isPushAdminProvider).valueOrNull == true
+        ? OzellikDurumu.acik
+        : OzellikDurumu.gizli;
+  }
+  return ref.watch(premiumErisimProvider)
+      ? OzellikDurumu.acik
+      : OzellikDurumu.kilitli;
+});
+
+/// "Hedefe tarih" (ayda ≈₺X) bu kullanıcıda: hedefin kendisi ücretsiz,
+/// tarihi Premium (yasin 2026-11-06). Kural [gostergeParametreDurumuProvider]
+/// ile aynı: paywall kapalıyken yalnız admin görür (ödeme hazır olmadan
+/// herkese açılanı sonra kilitlemek verileni geri almak olur), açıkken
+/// herkes görür, Premium erişimi olmayana kilitli.
+final hedefTarihiDurumuProvider = Provider<OzellikDurumu>((ref) {
   if (!ref.watch(paywallVisibleProvider)) {
     return ref.watch(isPushAdminProvider).valueOrNull == true
         ? OzellikDurumu.acik
@@ -1464,6 +1688,15 @@ final premiumHediyeGosterildiProvider =
         PrefKeys.premiumHediyeGosterildi, false,
         perUser: true));
 
+/// Hangi bitiş tarihli hediyenin bittiği söylendi (ISO; boş = hiç).
+/// Paywall incelemesi (2026-10-20): 90 günlük hediye sessizce bitince
+/// kullanıcı bir sabah kilitlerle karşılaşıyordu; bitişte bir kez "hediyen
+/// bitti, verin yerinde, Premium'la devam" denir ve paywall teklif edilir.
+final premiumHediyeBittiSoylenenProvider =
+    NotifierProvider<_StringPrefNotifier, String>(() => _StringPrefNotifier(
+        PrefKeys.premiumHediyeBittiSoylenen, '',
+        perUser: true));
+
 // ─── Leaderboard opt-in ───────────────────────────────────────────────────────
 // Kullanıcı yarış (partner leaderboard) özelliğine katılmak için explicit
 // consent verir. Default kapalı (KVKK). Ortakların yarış'ında görünmek için
@@ -1561,6 +1794,7 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   biometricLockProvider,
   biometricLockOfferedProvider,
   kapsamHedefiProvider, // aile: Ben (`portfolioGoalProvider`) + kapsamlar
+  kapsamHedefTarihiProvider, // aile: hedefin günü, kapsam başına
   lockScreenAmountsProvider,
   liveActivityStartProvider,
   liveActivityEndProvider,
@@ -1573,4 +1807,7 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   premiumHediyeGosterildiProvider,
   gostergeParametreleriProvider,
   seciliPortfoyProvider,
+  takipSirasiProvider,
+  takipSiralamaProvider,
+  portfoySiralamaProvider,
 ];

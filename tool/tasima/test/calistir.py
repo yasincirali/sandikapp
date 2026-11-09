@@ -44,9 +44,18 @@ def usage(url, rol="anon"):
 
 
 # ── Düzenek ──
-subprocess.run(["docker", "rm", "-f", "tasima-pg"], capture_output=True)
-subprocess.run(["docker", "run", "-d", "--name", "tasima-pg", "-e", "POSTGRES_PASSWORD=test",
-                "-p", f"{PORT}:5432", "postgres:17"], check=True, capture_output=True)
+# Docker yoksa (bulut oturumu): TASIMA_PG_TABAN ile hazır bir sunucu verilir,
+# ör. postgresql://postgres:test@localhost:55432 (initdb ile açılmış).
+DOCKER = not os.environ.get("TASIMA_PG_TABAN")
+if not DOCKER:
+    TABAN = os.environ["TASIMA_PG_TABAN"]
+    KAYNAK, HEDEF = f"{TABAN}/kaynak_db", f"{TABAN}/hedef_db"
+    with psycopg.connect(f"{TABAN}/postgres", autocommit=True) as c:
+        c.execute("drop database if exists kaynak_db"); c.execute("drop database if exists hedef_db")
+else:
+    subprocess.run(["docker", "rm", "-f", "tasima-pg"], capture_output=True)
+    subprocess.run(["docker", "run", "-d", "--name", "tasima-pg", "-e", "POSTGRES_PASSWORD=test",
+                    "-p", f"{PORT}:5432", "postgres:17"], check=True, capture_output=True)
 for _ in range(60):
     try:
         psycopg.connect(f"{TABAN}/postgres", connect_timeout=2).close(); break
@@ -238,6 +247,100 @@ kontrol_et("pilotta Frankfurt'a eklenen satır yeniden koşuda silindi (kaynak e
            sorgu(HEDEF, "select count(*) from public.assets where ticker='PILOT'")[0][0] == 0)
 kontrol_et("kaynak hiç değişmedi", sorgu(KAYNAK, "select count(*) from public.assets")[0][0] == 4)
 
-subprocess.run(["docker", "rm", "-f", "tasima-pg"], capture_output=True)
+print("15) birlestir — geçmiş kişilere dokunmadan geri kalanı Tokyo'dan yenile (18 Ekim)")
+# 14 Ekim'in tam kopyası: Frankfurt = Tokyo, sonra iki taraf ayrı yaşadı.
+kod, _ = arac("bosalt", "--onay", "hedef_db")
+kod, _ = arac("tasi", "--onay", "hedef_db")
+kesim = sorgu(KAYNAK, "select now()::text")[0][0]
+time.sleep(0.2)
+OLU, DENIZ, YENI_FR = ("33333333-3333-3333-3333-333333333333", "44444444-4444-4444-4444-444444444444",
+                       "55555555-5555-5555-5555-555555555555")
+with psycopg.connect(HEDEF) as c:   # Frankfurt: ali TestFlight'tan geçti
+    c.execute(f"update auth.users set last_sign_in_at = now() where id = '{ALI}'")
+    fr_varlik = c.execute(f"insert into public.assets (user_id, tip, ticker, quantity) values "
+                          f"('{ALI}','hisse','FRANKFURT_ALI', 3) returning id").fetchone()[0]
+    fr_hareket = c.execute(f"insert into public.transactions (user_id, asset_id, miktar) values "
+                           f"('{ALI}', {fr_varlik}, 3) returning id").fetchone()[0]
+    c.execute(f"update public.assets set quantity = 999 where user_id = '{ALI}' and ticker = 'THYAO.IS'")
+    c.execute(f"insert into public.olay_sayaci (user_id, olay) values ('{ALI}', 'frankfurt')")
+    c.execute(f"insert into auth.users (id, email, raw_user_meta_data) values ('{YENI_FR}', 'yeni@fr.example', '{{}}')")
+    c.execute(f"insert into public.assets (user_id, tip, ticker) values ('{YENI_FR}','hisse','FR_KAYIT')")
+with psycopg.connect(KAYNAK) as c:  # Tokyo: mağaza kullanıcıları yaşamaya devam etti
+    tk_varlik = c.execute(f"insert into public.assets (user_id, tip, ticker, quantity) values "
+                          f"('{AYSE}','hisse','TOKYO_AYSE', 7) returning id").fetchone()[0]
+    tk_hareket = c.execute(f"insert into public.transactions (user_id, asset_id, miktar) values "
+                           f"('{AYSE}', {tk_varlik}, 7) returning id").fetchone()[0]
+    c.execute(f"insert into public.assets (user_id, tip, ticker) values ('{ALI}','hisse','TOKYO_ALI')")
+    c.execute(f"update auth.users set last_sign_in_at = now() where id = '{ALI}'")
+    c.execute(f"insert into auth.users (id, email, raw_user_meta_data) values ('{DENIZ}', 'deniz@example.com', '{{}}')")
+    c.execute(f"insert into public.assets (user_id, tip, ticker) values ('{DENIZ}','kripto','DENIZ_BTC')")
+    c.execute(f"insert into public.olay_sayaci (user_id, olay) values ('{AYSE}', 'tokyo')")
+    c.execute("update public.partnerships set status = 'tokyo-degisti'")
+    c.execute("insert into public.katalog values ('YENI', 'Tokyo kataloğu')")
+    c.execute(f"delete from public.assets where user_id = '{OLU}'")
+    c.execute(f"delete from auth.users where id = '{OLU}'")
+kontrol_et(f"düzenek gerçek çakışma kurdu (varlık id {fr_varlik} = {tk_varlik}, hareket {fr_hareket} = {tk_hareket})",
+           fr_varlik == tk_varlik and fr_hareket == tk_hareket)
+
+once = sorgu(HEDEF, "select md5(string_agg(t::text,'|' order by t::text)) from public.assets t")
+kod, out = arac("birlestir", "--kesim", kesim, "--kuru", "--onay", "hedef_db")
+kontrol_et("kuru koşu temiz", kod == 0 and "KURU KOŞU TEMİZ" in out)
+kontrol_et("kuru koşu hiçbir şey yazmadı",
+           sorgu(HEDEF, "select md5(string_agg(t::text,'|' order by t::text)) from public.assets t") == once)
+kontrol_et("geçmiş kişi sayısı raporlandı (ali + Frankfurt'ta kayıt olan = 2)", "Geçmiş kişi (dokunulmaz): 2" in out)
+kontrol_et("ali'nin Tokyo'daki girişi uyarıldı", "Tokyo'da da giriş" in out)
+kod, out = arac("birlestir", "--kesim", kesim, "--gecmis-sayisi", "5", "--onay", "hedef_db")
+kontrol_et("beklenen sayı tutmazsa durdu", kod != 0 and "DURDU" in out)
+kod, out = arac("birlestir", "--kesim", kesim)
+kontrol_et("onaysız reddedilir", kod != 0 and "--onay" in out)
+
+kod, out = arac("birlestir", "--kesim", kesim, "--gecmis-sayisi", "2", "--onay", "hedef_db")
+print("     " + (out.strip().splitlines()[-1] if out.strip() else ""))
+kontrol_et("çıkış 0", kod == 0 and "BİRLEŞTİRİLDİ" in out)
+a = lambda q: sorgu(HEDEF, q)
+kontrol_et("ali'nin Frankfurt'ta eklediği varlık KALDI",
+           a("select count(*) from public.assets where ticker='FRANKFURT_ALI'")[0][0] == 1)
+kontrol_et("ali'nin Frankfurt'taki düzenlemesi KALDI (999)",
+           a(f"select quantity from public.assets where user_id='{ALI}' and ticker='THYAO.IS'")[0][0] == 999)
+kontrol_et("ali'nin Tokyo'da eklediği GELMEDİ", a("select count(*) from public.assets where ticker='TOKYO_ALI'")[0][0] == 0)
+kontrol_et("ayşe'nin Tokyo varlığı Tokyo'daki numarasıyla geldi",
+           a("select id from public.assets where ticker='TOKYO_AYSE'")[0][0] == tk_varlik)
+yeni_no = a("select id from public.assets where ticker='FRANKFURT_ALI'")[0][0]
+kontrol_et(f"çakışan ali varlığı yeni numara aldı ({fr_varlik} → {yeni_no})", yeni_no != fr_varlik)
+kontrol_et("ali'nin hareketi yeni numaraya bağlı (FK taşındı)",
+           a(f"select asset_id from public.transactions where user_id='{ALI}'")[0][0] == yeni_no)
+kontrol_et("ayşe'nin hareketi kendi varlığına bağlı",
+           a(f"select asset_id from public.transactions where user_id='{AYSE}'")[0][0] == tk_varlik)
+kontrol_et("öksüz hareket yok",
+           a("select count(*) from public.transactions t where not exists "
+             "(select 1 from public.assets v where v.id = t.asset_id)")[0][0] == 0)
+kontrol_et("Tokyo'da yeni kayıt olan geldi",
+           a(f"select (select count(*) from auth.users where id='{DENIZ}'), "
+             "(select count(*) from public.assets where ticker='DENIZ_BTC')")[0] == (1, 1))
+kontrol_et("Frankfurt'ta kayıt olan geçmiş kişi KALDI",
+           a(f"select (select count(*) from auth.users where id='{YENI_FR}'), "
+             "(select count(*) from public.assets where ticker='FR_KAYIT')")[0] == (1, 1))
+kontrol_et("Tokyo'da silinen hesap Frankfurt'tan da silindi",
+           a(f"select (select count(*) from auth.users where id='{OLU}'), "
+             f"(select count(*) from public.assets where user_id='{OLU}')")[0] == (0, 0))
+kontrol_et("geçmiş kişiyle ortak ortaklık Frankfurt'taki hâliyle kaldı",
+           a("select string_agg(status, ',') from public.partnerships")[0][0] == "accepted")
+kontrol_et("ortak katalog Tokyo'dan geldi", a("select count(*) from public.katalog where kod='YENI'")[0][0] == 1)
+kontrol_et("FK'sız user_id tablosu: ali'nin Frankfurt satırı kaldı, ayşe'ninki Tokyo'dan geldi",
+           a("select string_agg(olay, ',' order by olay) from public.olay_sayaci")[0][0] == "frankfurt,tokyo")
+q = f"select md5(string_agg(t::text,'|' order by t::text)) from (select * from public.assets where user_id='{AYSE}') t"
+kontrol_et("ayşe'nin varlıkları Tokyo ile birebir", sorgu(KAYNAK, q) == sorgu(HEDEF, q))
+kontrol_et("ali'nin kimliği/profili yerinde",
+           a(f"select (select count(*) from auth.identities where user_id='{ALI}'), "
+             f"(select count(*) from public.profiles where id='{ALI}')")[0] == (1, 1))
+with psycopg.connect(HEDEF) as c:
+    son = c.execute(f"insert into public.assets (user_id, tip, ticker) values ('{AYSE}','hisse','SONRA') "
+                    "returning id").fetchone()[0]
+    son_h = c.execute(f"insert into public.transactions (user_id, miktar) values ('{AYSE}', 1) returning id").fetchone()[0]
+kontrol_et(f"diziler iki tarafın da ötesinde (varlık {son} > {yeni_no}, hareket {son_h})",
+           son > yeni_no and son_h > max(fr_hareket, tk_hareket))
+
+if DOCKER:
+    subprocess.run(["docker", "rm", "-f", "tasima-pg"], capture_output=True)
 print(f"\nSONUÇ: {'HEPSİ GEÇTİ' if basarisiz == 0 else f'{basarisiz} KIRIK'}")
 sys.exit(1 if basarisiz else 0)

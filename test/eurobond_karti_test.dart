@@ -108,7 +108,7 @@ void main() {
           nominal: 10000,
           simdi: _gun,
         ));
-    expect(find.text('TAHVİL BİLGİLERİ'), findsOneWidget);
+    expect(find.text('Tahvil bilgileri'), findsOneWidget);
     expect(find.text('104,125'), findsOneWidget); // temiz
     expect(find.text('%2,469'), findsOneWidget); // işlemiş faiz
     expect(find.text('106,594'), findsOneWidget); // kirli
@@ -118,7 +118,7 @@ void main() {
     expect(find.textContaining('gün kaldı'), findsOneWidget);
     expect(find.text('Hazine'), findsOneWidget);
 
-    expect(find.text('BANKAYA SATARSAN'), findsOneWidget);
+    expect(find.text('Bankaya satarsan'), findsOneWidget);
     expect(find.textContaining('Ziraat Bankası'), findsOneWidget);
     expect(find.text('105,900'), findsOneWidget);
     expect(find.text('107,400'), findsOneWidget);
@@ -135,7 +135,7 @@ void main() {
     expect(find.text('Temiz fiyat'), findsNothing);
     expect(find.text('Kirli fiyat'), findsNothing);
     expect(find.text('Vadeye getiri'), findsNothing);
-    expect(find.text('BANKAYA SATARSAN'), findsNothing);
+    expect(find.text('Bankaya satarsan'), findsNothing);
     expect(find.text('İşlemiş faiz'), findsOneWidget);
     expect(find.text('Özel sektör'), findsOneWidget);
     expect(find.textContaining('Stopaj %3'), findsOneWidget);

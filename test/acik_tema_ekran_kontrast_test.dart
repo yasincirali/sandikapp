@@ -112,7 +112,7 @@ void main() {
   // dışı tutar. Boş formda "Kayıt Ol" pasiftir: amber %45 dolgu, koyu
   // temada 2,25:1. Form dolunca %92 dolguya geçer ve eşiği geçer.
   const haric = {
-    'kayıt': {'Kayıt Ol'},
+    'kayıt': {'Kayıt ol'},
   };
 
   for (final b in Brightness.values) {

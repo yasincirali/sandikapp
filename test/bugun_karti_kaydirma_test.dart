@@ -5,6 +5,7 @@ import 'package:portfoy_takip/widgets/kaydirmali_gecis.dart';
 import 'package:portfoy_takip/widgets/sandik_skeleton.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:portfoy_takip/models/asset.dart';
@@ -147,6 +148,9 @@ void main() {
     // — `BugunYukleyici.varsayilanButce` — düşer), kaydırma ipucu bitsin.
     await tester.pump(const Duration(seconds: 12));
     await tester.pump(const Duration(seconds: 3));
+    // İskelet → kart çapraz geçişi biter (2026-10-14).
+    await tester.pump(SandikMotion.surface);
+    await tester.pump(SandikMotion.surface);
   }
 
   String? secili(WidgetTester tester) =>

@@ -2,7 +2,8 @@
 //
 // pg_cron cuma TR 10:15 (yedek pazartesi) `trigger_mevduat_faiz()` ile
 // çağırır. `mevduat_faiz_ortalama` tablosundaki her vade diliminin
-// `seri_kodu`nu EVDS'den okur, son geçerli haftayı yazar.
+// `seri_kodu`nu EVDS'den okur, son geçerli haftayı yazar; 0173'ten beri
+// kıyas dilimlerinin haftalık GEÇMİŞİNİ `mevduat_faiz_gecmisi`'ne upsert eder.
 //
 // ── Neden sunucuda ──────────────────────────────────────────────────────────
 // yasin (2026-10-09): "performansı etkilemeyecek şekilde". İstemci EVDS'ye
@@ -28,7 +29,15 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { bayatMi, EVDS_BASE, seriAdresi, sonFaiz } from '../_shared/mevduat_faiz.ts';
+import {
+  bayatMi,
+  EVDS_BASE,
+  GECMIS_DILIMLERI,
+  GECMIS_GUN,
+  seriAdresi,
+  sonFaiz,
+  tumFaizler,
+} from '../_shared/mevduat_faiz.ts';
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya.
@@ -174,6 +183,34 @@ Deno.serve(async (request) => {
           .update(satir)
           .eq('vade_dilimi', s.vade_dilimi);
         if (error) throw error;
+      }
+
+      // ── Geçmiş (0173, kıyas kartı "Mevduatta") ─────────────────────────
+      // EKLEME: son-hafta tablosunun yukarıdaki akışı ve yanıt biçimi aynen
+      // korunur. Geçmiş turunun hatası yalnız günlüğe gider, ana turu
+      // düşürmez; tablo henüz yoksa (migration gitmeden fonksiyon gitti)
+      // upsert hata verir ve yine yalnız günlüğe yazılır.
+      for (const d of (dilimler ?? []) as Dilim[]) {
+        if (!GECMIS_DILIMLERI.includes(d.vade_dilimi)) continue;
+        try {
+          const noktalar = tumFaizler(
+            await evdsGetir(seriAdresi(d.seri_kodu, simdi, GECMIS_GUN), evdsApiKey),
+            d.seri_kodu,
+          );
+          if (noktalar.length === 0) continue;
+          const { error } = await admin.from('mevduat_faiz_gecmisi').upsert(
+            noktalar.map((n) => ({
+              vade_dilimi: d.vade_dilimi,
+              hafta: n.tarih,
+              yillik_faiz: n.faiz,
+              guncellendi: guncellendi,
+            })),
+            { onConflict: 'vade_dilimi,hafta' },
+          );
+          if (error) console.error(`[mevduat-faiz] gecmis ${d.vade_dilimi} yazilamadi:`, error);
+        } catch (e) {
+          console.error(`[mevduat-faiz] gecmis ${d.seri_kodu} basarisiz:`, e);
+        }
       }
     }
 

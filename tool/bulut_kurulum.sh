@@ -9,20 +9,24 @@
 # proje kapsamını ezer (user kapsamı EZMEZ, denendi 2026-09-28).
 #
 # Kullanım: Project settings › Cloud environment › Setup script alanına
-#   bash tool/bulut_kurulum.sh
-# ya da (repo henüz klonlanmamışsa) bu dosyanın içeriğini yapıştır.
+#   curl -fsSL https://raw.githubusercontent.com/yasincirali/sandikapp/main/tool/bulut_kurulum.sh | bash || true
+# Ortam tüm projelerde ortaktır; sandikapp klonlanmayan projede de bu satır
+# çalışır (repo herkese açık). Repo varsa `bash tool/bulut_kurulum.sh` da olur.
 # Yeni oturumlar sunucuları açılışta görür; kurulumun yapıldığı oturum
 # görmez. Tekrar koşmak güvenli (idempotent). Yerel makinede koşulursa
 # hiçbir şey yapmadan çıkar (bkz. adım 0).
 #
 # Sürümler CI ile aynı: Flutter 3.47.2 (`ci.yml`), codebase-memory-mcp 0.9.0
-# (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0.
+# (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0, Perplexity MCP 1.3.0,
+# ruflo 3.56.10.
 set -uo pipefail
 
 REPO="${REPO:-/home/user/sandikapp}"
 FLUTTER_VER=3.47.2
 CBM_VER=0.9.0
 UIUX_VER=1.5.0
+PPLX_VER=1.3.0
+RUFLO_VER=3.56.10
 
 log() { echo "[bulut_kurulum] $*"; }
 
@@ -68,26 +72,111 @@ command -v ui-ux-pro-mcp >/dev/null 2>&1 \
   || npm i -g "ui-ux-pro-mcp@${UIUX_VER}" >/dev/null 2>&1 \
   || log "UYARI: ui-ux-pro-mcp kurulamadı"
 
-# 4) Kayıt — yalnız bu proje yolu için, local kapsam.
+# 3b) Perplexity MCP (resmi sunucu, github.com/perplexityai/modelcontextprotocol;
+# kullanıcı isteği 2026-10-12). Web araması/araştırma araçları: perplexity_ask,
+# _search, _reason, _research. Anahtar PERPLEXITY_API_KEY bulut ortam
+# değişkeninden okunur; repoya ve kayda YAZILMAZ (repo herkese açık). Sunucu
+# anahtarsız açılışta çıkıyor (exit 1), bu yüzden anahtar yoksa kayıt atlanır
+# ki her oturumda "failed to connect" gürültüsü olmasın. Ağ politikası
+# api.perplexity.ai'ye izin vermezse araçlar listelenir ama sorgu 403 alır.
+command -v perplexity-mcp >/dev/null 2>&1 \
+  || npm i -g "@perplexity-ai/mcp-server@${PPLX_VER}" >/dev/null 2>&1 \
+  || log "UYARI: Perplexity MCP kurulamadı"
+
+# 3c) ruflo MCP (github.com/ruvnet/ruflo, eski adı claude-flow; kullanıcı
+# isteği 2026-10-20: "tüm threadlerde kullanılabilir yap"). Ajan/swarm
+# orkestrasyonu, kalıcı vektör hafıza, iş akışı araçları (~360 araç).
+# README `npx -y ruflo@latest mcp start` diyor; bilerek kullanılmadı:
+# paket neredeyse her gün sürüm çıkarıyor, `@latest` her oturumda farklı
+# kod ve açılışta ~1 dk npm indirmesi demek. Sabit sürüm global kurulur.
+# Sürüm yükseltme elle: RUFLO_VER'i değiştir. Kendi kendini güncellemesi
+# (CLAUDE_FLOW_AUTO_UPDATE) ve arka plan daemon'u (RUFLO_DAEMON_AUTOSTART)
+# kayıtta kapatılır; anahtar istemez, kayda secret yazılmaz.
+{ command -v ruflo >/dev/null 2>&1 && ruflo --version 2>/dev/null | grep -q "v${RUFLO_VER}"; } \
+  || npm i -g "ruflo@${RUFLO_VER}" >/dev/null 2>&1 \
+  || log "UYARI: ruflo kurulamadı"
+
+# 4) Kayıt — local kapsam ($REPO yolu, `.mcp.json`'ı ezer) + user kapsamı (her yol).
 if command -v claude >/dev/null 2>&1; then
   ( cd "$REPO" 2>/dev/null || cd /
-    for s in codebase-memory-mcp dart ui-ux-pro-mcp; do
+    for s in codebase-memory-mcp dart ui-ux-pro-mcp perplexity ruflo; do  # ruflo: eski local kayıt
       claude mcp remove -s local "$s" >/dev/null 2>&1 || true
     done
     claude mcp add -s local codebase-memory-mcp -- /opt/cbm/codebase-memory-mcp >/dev/null
     claude mcp add -s local dart -- /opt/flutter/bin/dart mcp-server --force-roots-fallback >/dev/null
     claude mcp add -s local ui-ux-pro-mcp -- "$(command -v ui-ux-pro-mcp || echo ui-ux-pro-mcp)" >/dev/null
+    # Anahtar `-e` ile kayda gömülmez; sunucu oturumun ortamından okur.
+    if [ -n "${PERPLEXITY_API_KEY:-}" ] && command -v perplexity-mcp >/dev/null 2>&1; then
+      claude mcp add -s local perplexity -- "$(command -v perplexity-mcp)" >/dev/null \
+        && log "Perplexity MCP kaydedildi"
+    else
+      log "Perplexity MCP atlandı (PERPLEXITY_API_KEY ortamda yok)"
+    fi
+    # Aynı üç sunucu user kapsamında da (kullanıcı isteği 2026-10-29: "tüm
+    # threadlerde ve projelerde codebase-memory-mcp kullanalım"). Neden: proje
+    # thread'leri /home/user'da açılır, local kayıt ise yalnız $REPO yolunda
+    # okunur; codebase-memory hiçbir thread'e görünmüyordu (denendi). $REPO
+    # içinde local kayıt `.mcp.json`'ın Windows yolunu ezmeye devam eder,
+    # /home/user'da `.mcp.json` yok, user kaydı tek başına yeter.
+    for s in codebase-memory-mcp dart ui-ux-pro-mcp; do
+      claude mcp remove -s user "$s" >/dev/null 2>&1 || true
+    done
+    claude mcp add -s user codebase-memory-mcp -- /opt/cbm/codebase-memory-mcp >/dev/null
+    [ -x /opt/flutter/bin/dart ] \
+      && claude mcp add -s user dart -- /opt/flutter/bin/dart mcp-server --force-roots-fallback >/dev/null
+    command -v ui-ux-pro-mcp >/dev/null 2>&1 \
+      && claude mcp add -s user ui-ux-pro-mcp -- "$(command -v ui-ux-pro-mcp)" >/dev/null
+    # ruflo `.mcp.json`'da yok, bu yüzden user kapsamı yeter ve tercih edilir:
+    # sandikapp dışındaki repolarda (piggy-crew, warranty-vault, birdie-smash)
+    # ve /home/user'da açılan oturumlar da görür ("tüm threadler").
+    claude mcp remove -s user ruflo >/dev/null 2>&1 || true
+    if command -v ruflo >/dev/null 2>&1; then
+      # Ad `-e`'den önce: `-e` çok değerli, sonrasındaki adı da yutuyor (denendi).
+      claude mcp add -s user ruflo -e CLAUDE_FLOW_AUTO_UPDATE=false -e RUFLO_DAEMON_AUTOSTART=0 \
+        -- "$(command -v ruflo)" mcp start >/dev/null && log "ruflo MCP kaydedildi"
+    fi
   ) && log "MCP sunucuları kaydedildi" || log "UYARI: MCP kaydı başarısız"
 else
   log "UYARI: claude CLI yok, MCP kaydı atlandı"
 fi
 
-# 5) Kod grafiği (3 sn). Repo yoksa atlanır; oturumda `index_repository` ile yapılır.
-# Not: geliştiricinin ADR'leri yalnız yerel grafikte; bulut grafiği ADR'siz başlar.
-if [ -d "$REPO/lib" ] && [ -x /opt/cbm/codebase-memory-mcp ]; then
-  /opt/cbm/codebase-memory-mcp cli index_repository --repo-path "$REPO" >/dev/null 2>&1 \
-    && log "kod grafiği indekslendi" || log "UYARI: indeksleme başarısız"
+# 5) Kod grafiği. Konteynerdeki her git deposu (sandikapp, piggy-crew,
+# warranty-vault, birdie-smash…; 2026-10-29 önce yalnız $REPO'ydu) ayrı proje
+# olarak indekslenir; depo başına 1–3 sn. Olmayan atlanır; oturumda
+# `index_repository` ile yapılır. Geliştiricinin ADR'leri yalnız yerel
+# grafikte; bulut grafiği ADR'siz başlar.
+if [ -x /opt/cbm/codebase-memory-mcp ]; then
+  goruldu=" "
+  for d in "$REPO" /home/user/*/; do
+    d="${d%/}"
+    [ -d "$d/.git" ] || continue
+    case "$goruldu" in *" $d "*) continue ;; esac
+    goruldu="$goruldu$d "
+    /opt/cbm/codebase-memory-mcp cli index_repository --repo-path "$d" >/dev/null 2>&1 \
+      && log "kod grafiği indekslendi: $d" || log "UYARI: indeksleme başarısız: $d"
+  done
 fi
+
+# 5b) Skill'ler. Repo `.claude/skills/` yalnız oturum o repoda açılınca okunur;
+# proje thread'leri /home/user'da açıldığı için hiçbiri görünmüyordu (2026-10-29,
+# yasin: "ui-ux-pro-max tüm uygulamalarda, Unity oyuna Unity, Flutter'a Flutter
+# skill'leri"). Her repodaki skill kullanıcı klasörüne kopyalanır; aynı ad iki
+# repoda varsa önce gelen ($REPO = sandikapp) kalır. Hangi skill'in hangi işe
+# çağrılacağı yine her reponun CLAUDE.md yönlendirme tablosundadır.
+# Unity MCP burada kurulmaz: Editor'a bağlanır, bulutta Editor yok (araç hep
+# "bağlı değil" derdi). Unity MCP yasin'in PC'sinde, açık Editor'la çalışır.
+mkdir -p "$HOME/.claude/skills"
+for d in "$REPO" /home/user/*/; do
+  d="${d%/}"
+  [ -d "$d/.claude/skills" ] || continue
+  for sk in "$d"/.claude/skills/*/; do
+    sk="${sk%/}"; ad="$(basename "$sk")"
+    [ -f "$sk/SKILL.md" ] || continue
+    [ -e "$HOME/.claude/skills/$ad" ] && continue  # hesap/yerleşik skill'i ezme
+    cp -r "$sk" "$HOME/.claude/skills/$ad"
+  done
+done
+log "skill'ler kullanıcı klasöründe: $(ls "$HOME/.claude/skills" | wc -l)"
 
 # 6) Paketler — pubspec.lock'u değiştirirse geri al (yerel Flutter meta/matcher'ı kaydırır).
 if [ -f "$REPO/pubspec.yaml" ]; then

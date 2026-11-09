@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart'
-    show CupertinoThemeData, CupertinoTextThemeData;
+    show
+        CupertinoPageTransitionsBuilder,
+        CupertinoTextThemeData,
+        CupertinoThemeData;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +11,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +27,9 @@ import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
 import 'screens/otp_verification_screen.dart';
+import 'services/acilis_olcumu.dart';
 import 'services/bist_hisse_katalogu.dart';
+import 'services/ekran_olcumu.dart';
 import 'services/hesap_gecisi.dart';
 import 'widgets/uygulama_kabugu.dart';
 import 'services/cihaz_oturumu_service.dart' show CihazKapisi;
@@ -33,6 +37,7 @@ import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'providers/sozlesme_provider.dart';
+import 'providers/watchlist_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/karsilama_screen.dart';
 import 'screens/kullanici_adi_screen.dart';
@@ -47,6 +52,7 @@ import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'widgets/premium_hediye_sayfasi.dart';
 import 'widgets/klavye_kapatici.dart';
+import 'widgets/gizlilik_perdesi.dart';
 import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
 import 'services/deep_link_service.dart';
@@ -56,6 +62,7 @@ import 'widgets/sunucu_kapisi.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
+import 'services/saydamlik_tercihi.dart';
 import 'services/satin_alma_service.dart';
 import 'services/daily_summary.dart';
 import 'services/bugun_yukleyici.dart';
@@ -69,13 +76,17 @@ import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
+import 'services/varlik_widget_service.dart';
+import 'services/sistem_eylemleri.dart';
 import 'services/history_service.dart';
+import 'services/portfoy_seri_depo.dart';
 import 'services/seri_disk_depo.dart';
 import 'services/live_activity_service.dart';
 import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
+import 'services/bellek_baskisi.dart';
 import 'services/birikim_serisi.dart';
 import 'services/milestone_repository.dart';
 import 'services/milestone_service.dart';
@@ -176,6 +187,9 @@ Future<void> _initDeferredServices() async {
 
 void main() async {
   // Crashlytics + tüm async hatalar tek `runZonedGuarded` içinde toplanır
+  // Soğuk açılış saati (`AcilisOlcumu`): her `await`ten ÖNCE başlar ki
+  // ölçülen süre kullanıcının beklediği sürenin tamamı olsun.
+  AcilisOlcumu.instance.basla();
   await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
@@ -183,28 +197,67 @@ void main() async {
     // `kSandikFontFamily` ile doğrudan kullanılır. google_fonts kaldırıldı
     // (2026-09-14) — ağ bağımlılığı ve aile adı eşleşme tuzağı da gitti.
 
-    await initializeDateFormatting('tr_TR');
-    // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
-    // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
-    await initPreferencesCache();
-    // Kayıt hunisi (0097): yeni kurulum mu? RetentionTracker kurulum
-    // gününü yazmadan ÖNCE (o deferred init'te) — yazdıktan sonra her cihaz
-    // "eski" görünürdü. Yalnızca tercih dosyası; ağ yok.
-    await HuniKaydi.instance.hazirla();
+    // Birbirini beklemeyen açılış işleri AYNI ANDA (2026-11-07, Ar-Ge 12:30):
+    // eskiden beşi ardı ardına bekleniyordu, soğuk açılış toplamlarını
+    // ödüyordu. Bağımsızlık tek tek doğrulandı:
+    //   - tarih biçimi: yalnız intl verisini yükler, tercih/ağ yok;
+    //   - tercih önbelleği, HuniKaydi, SurfaceTheme: üçü de
+    //     `SharedPreferences.getInstance()`i KENDİSİ çağırır. O çağrı tek
+    //     completer'la paylaşılır (aynı anda gelen çağrılar aynı örneği
+    //     bekler), yani biri diğerinin bittiğine güvenmez. HuniKaydi'nin
+    //     "RetentionTracker'dan ÖNCE" şartı sürer: RetentionTracker
+    //     ertelenen init'te, aşağıdaki `Future.wait` bittikten sonra koşar;
+    //   - Firebase.initializeApp: tercih okumaz. Crashlytics ve ertelenen
+    //     servisler ONA bağlı, onlar aşağıda sırayla kalır.
+    // Firebase'in hatası eskisi gibi aşağıdaki try/catch'e düşsün diye
+    // sonuç (hata dahil) burada yakalanıp orada yeniden fırlatılır; aksi
+    // halde `Future.wait` onu yukarı, zone'a taşır ve uygulama açılmazdı.
+    // Diğer dördünün hatası eskiden de zone'a gidiyordu; `Future.wait`
+    // hepsinin bitmesini bekleyip ilk hatayı fırlattığı için o da aynı.
+    final firebaseIlk = Firebase.initializeApp().then<(Object, StackTrace)?>(
+      (_) => null,
+      onError: (Object e, StackTrace st) => (e, st),
+    );
+    await Future.wait<void>([
+      initializeDateFormatting('tr_TR'),
+      // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
+      // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
+      initPreferencesCache(),
+      // Kayıt hunisi (0097): yeni kurulum mu? RetentionTracker kurulum
+      // gününü yazmadan ÖNCE (o deferred init'te) — yazdıktan sonra her
+      // cihaz "eski" görünürdü. Yalnızca tercih dosyası; ağ yok.
+      HuniKaydi.instance.hazirla(),
+      // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
+      //
+      // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
+      // varsayılanıyla doğar; açık temalı kullanıcı, portföy ilk kez
+      // yayınlanana kadar koyu palet görüyordu. Karar diskten okunur —
+      // yeniden ÇÖZÜLMEZ (bkz. `SurfaceTheme`).
+      SurfaceTheme.instance.restore(),
+    ]);
     // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
     // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
     HistoryService.kaliciDepo = SeriDiskDepo();
-    // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
-    //
-    // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
-    // varsayılanıyla doğar; açık temalı kullanıcı, portföy ilk kez
-    // yayınlanana kadar koyu palet görüyordu. Karar diskten okunur —
-    // yeniden ÇÖZÜLMEZ (bkz. `SurfaceTheme`).
-    await SurfaceTheme.instance.restore();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Performans sekmesinin son portföy serisi — lot defterinin parmak
+    // iziyle; yalnız aynı defterde soluk açılış için (`PortfoySeriDepo`).
+    PortfoySeriDepo.kaliciDepo = PortfoySeriDepo.varsayilanDepo();
+    // Sistem bellek uyarısında süreli önbellekleri bırak (bkz. sınıf).
+    BellekBaskisi.instance.baglan();
+    // Arka plan işleyicisi KAYDEDİLMEZ (kaynak kullanımı denetimi,
+    // 2026-10-12). İşleyici yalnızca Firebase'i başlatıp çıkıyordu; ama
+    // kayıtlıyken firebase_messaging Android'de uygulama arka planda ya da
+    // kapalıyken gelen HER push için başsız bir Flutter motoru açar
+    // (`FlutterFirebaseMessagingReceiver`). Sunucu yalnız bildirim içerikli
+    // push gönderiyor (`_shared/fcm.ts`): bildirimi sistem gösterir,
+    // dokunuş `onMessageOpenedApp`/`getInitialMessage` ile gelir — ikisi de
+    // bu kayda bağlı değil. Eski sürümün sakladığı kaydı `MainActivity`
+    // siler. Veri içerikli (data-only) push eklenirse kayıt geri gelmeli.
 
     try {
-      await Firebase.initializeApp();
+      final firebaseHatasi = await firebaseIlk;
+      if (firebaseHatasi != null) {
+        Error.throwWithStackTrace(firebaseHatasi.$1, firebaseHatasi.$2);
+      }
 
       // Crashlytics — debug build'de gönderim kapalı (gürültü olmasın)
       await FirebaseCrashlytics.instance
@@ -244,8 +297,8 @@ void main() async {
       // gerekli değil:
       //   - RemotePushService: `start(userId)` zaten kendi içinde init()
       //     çağırıyor (auth gate'te, ilk frame'den sonra).
-      //   - AnalyticsService: `navigatorObserver` hiçbir yerde kullanılmıyor;
-      //     ilk event'e kadar hazır olması yeterli.
+      //   - AnalyticsService: ekran ölçümü (`EkranOlcumu`) servisi her
+      //     olayda o an çağırır; ilk event'e kadar hazır olması yeterli.
       //   - RemoteConfigService: getter'ları init edilmemişken default'lara
       //     düşer, yani erken okuma güvenli.
       // Hataları yutmuyoruz; yalnızca beklemiyoruz.
@@ -262,6 +315,11 @@ void main() async {
     // son değeriyle, ağ beklemeden; Firebase'den SONRA (RC onu ister),
     // Supabase'den ÖNCE. Adres ve oturum anahtarı buradan gelir; sabitleri
     // doğrudan kullanan başka yer YOK (`sunucu_secimi_test` kilitler).
+    // iOS "Saydamlığı azalt" — cam yüzeyler için; beklenmez, ilk karede
+    // değer gelmemişse yüzey bir an cam görünür, sonra opaklaşır.
+    CrashReporter.arkaPlan(SaydamlikTercihi.instance.baslat(),
+        reason: 'main.SaydamlikTercihi.baslat');
+
     final sunucu = await SunucuSecimi.instance.baslat();
     if (sunucu == null) {
       runApp(_ConfigErrorApp(
@@ -282,10 +340,13 @@ void main() async {
         ),
       ),
     );
-    await NotificationService.instance.init(navigatorKey: appNavigatorKey);
     // Önceki açılışlardan kalan huni olayları (ilk açılış dahil) — Supabase
     // ancak burada hazır. Beklenmez.
     CrashReporter.arkaPlan(HuniKaydi.instance.bosalt(), reason: 'main.HuniKaydi.bosalt');
+    // TEK çağrı (2026-10-20): #171'in birleştirmesinde bunun üstünde
+    // ertelemesiz ikinci bir `init` kalmıştı; `init` ilk çağrıda kilitlendiği
+    // için iOS izni yine açılışta soruluyor, bayrak etkisiz kalıyordu.
+    // `bildirim_init_tek_cagri_test` kilitler.
     await NotificationService.instance.init(
       navigatorKey: appNavigatorKey,
       // İzin ilk varlıktan sonra sorulur; açılışta değil (sadeleştirme 2).
@@ -294,6 +355,9 @@ void main() async {
     // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
     // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
     CrashReporter.arkaPlan(DeepLinkService.instance.init(), reason: 'main.DeepLinkService.init');
+    // Siri Kestirmeleri + Spotlight (iOS): soğuk açılışı başlatan eylem de
+    // burada alınır; hedefe gidiş derin bağlantıyla aynı yoldan.
+    CrashReporter.arkaPlan(SistemEylemleri.baslat(), reason: 'main.SistemEylemleri.baslat');
     // Yalnızca zemini şeffaf yap. İkon parlaklığı BURADA sabitlenmez:
     // `Brightness.light` (beyaz ikon) light temada açık zemin üzerinde
     // okunmuyordu. İkon rengi tema ile birlikte değişmeli, bu yüzden
@@ -316,6 +380,8 @@ void main() async {
       tema: (b) => SandikApp.buildTheme(
           b == Brightness.dark ? SandikPalette.dark : SandikPalette.light, b),
     ));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => AcilisOlcumu.instance.ilkKare());
   }, (error, stack) {
     // Zone-level: yakalanmayan async hataları.
     // `CrashReporter` Firebase kurulu değilse sessizce no-op'tur; ağ hatası
@@ -405,6 +471,8 @@ class SandikApp extends ConsumerWidget {
       title: 'sandık',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
+      // Hangi ekran açılıyor (sadeleştirme ölçüsü, bkz. `EkranOlcumu`).
+      navigatorObservers: [EkranOlcumu.instance],
       theme: buildTheme(SandikPalette.light, Brightness.light),
       darkTheme: buildTheme(SandikPalette.dark, Brightness.dark),
       themeMode: themeMode,
@@ -436,11 +504,14 @@ class SandikApp extends ConsumerWidget {
       // `SunucuKapisi` en dışta: zorunlu güncelleme / sunucu değişimi
       // ekranı her rotanın ve turun ÖNÜNE geçer (köprü sürümü, K1).
       // `YaziBoyutuKapsami` hepsinin dışında: kapı, tur ve her rota aynı
-      // yazı ölçeğini görür.
+      // yazı ölçeğini görür. `GizlilikPerdesi` kapının da üstünde: uygulama
+      // değiştirici görüntüsünde hiçbir yüzey açık kalmasın (kilit açıkken).
       builder: (context, child) => YaziBoyutuKapsami(
           boyut: yaziBoyutu,
-          child: SunucuKapisi(
-              child: KlavyeKapatici(child: OnboardingTourHost(child: child!)))),
+          child: GizlilikPerdesi(
+              child: SunucuKapisi(
+                  child: KlavyeKapatici(
+                      child: OnboardingTourHost(child: child!))))),
       home: const _AuthGate(),
     );
   }
@@ -553,6 +624,17 @@ class SandikApp extends ConsumerWidget {
       brightness: brightness,
       scaffoldBackgroundColor: p.background,
       textTheme: textTheme,
+
+      // Android geri jesti önizlemesi (Ar-Ge 5 Kas 21:10 #7, müşteri YAP).
+      // Manifestte `enableOnBackInvokedCallback` açıktı ama tema geçiş
+      // kurucusu vermiyordu: Android 14+ kullanıcı geri çekerken önceki
+      // sayfayı görmüyordu. Yalnız Android; iOS kendi kenar kaydırmasıyla
+      // (`CupertinoPageRoute`) aynen kalır. `_AlttanModalRoute` kendi
+      // geçişini çizer, etkilenmez.
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      }),
 
       // Cupertino köprüsü.
       //
@@ -805,7 +887,10 @@ enum BayatlikKarari {
   kilit,
 
   /// Uzun boşluk, aynı sürüm — gerçek terk ediş. Kilit açıksa kilitlenir,
-  /// değilse oturum kapanır (eski davranış).
+  /// değilse hiçbir şey sorulmaz. 2026-10-13'e kadar kilitsiz kullanıcının
+  /// oturumu burada KAPATILIYORDU; Android'de "uzun beklemede login
+  /// ekranı" hatasının yolu buydu (bkz. `_staleSessionAtLaunch.then`).
+  /// Artık `kilit` ile aynı sonucu verir; ayrım teşhis için duruyor.
   bayat,
 }
 
@@ -813,11 +898,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     with WidgetsBindingObserver {
   late final ProviderSubscription<AsyncValue<AppUser?>> _authSubscription;
   DateTime? _backgroundedAt;
+  /// Uzun boşluk eşiği. 2026-10-13'ten beri oturum KAPATMAZ: kilit açıksa
+  /// kilitler, hesap geçişinin cihaz doğrulamasını düşürür.
   static const _sessionTimeout = Duration(minutes: 10);
 
   /// Süreç arkadayken öldürüldüyse `_backgroundedAt` kaybolur; arkaya
-  /// alınma anı diske de yazılır ve açılışta okunur (2026-09 L2). Zaman
-  /// aşımı geçmişse ilk kullanıcı yayınında oturum kapatılır.
+  /// alınma anı diske de yazılır ve açılışta okunur (2026-09 L2). Boşluk
+  /// eşiği geçmişse ilk kullanıcı yayınında kilit açıksa kilitlenir.
   late final Future<BayatlikKarari> _staleSessionAtLaunch =
       _readStaleSessionAtLaunch();
   bool _staleSessionHandled = false;
@@ -833,8 +920,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
       // **GÜNCELLEME oturumu DÜŞÜRMEZ (kullanıcı isteği, 2026-09-23).**
       //
-      // Zaman aşımı bir GÜVENLİK özelliğidir: cihaz başkasının eline
-      // geçerse 10 dakika sonra oturum düşer. Ama güncelleme de aynı
+      // (Tarihçe: zaman aşımı o gün oturumu düşüren bir GÜVENLİK
+      // özelliğiydi; 2026-10-13'ten beri yalnız kilit açıksa kilitler.)
+      // Güncelleme de aynı
       // belirtiyi üretiyordu ve KULLANICI CİHAZIN BAŞINDA:
       //
       //   1. Uygulama arkaya alınır → `backgroundedAtMs` yazılır
@@ -1201,6 +1289,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _dataWaitTimer = null;
         _dataWaitExpired = false;
         AnalyticsService.instance.setUserId(null);
+        // Test kitlesi hesapla seçilir (App Store 2.3.1(a), 2026-10-14).
+        CrashReporter.arkaPlan(RemoteConfigService.instance.hesabiBildir(null),
+            reason: 'main.hesabiBildir.cikis');
         // Mağaza kimliğini de bırak: sıradaki hesap öncekinin aboneliğini
         // görmesin. Bayrak kapalıyken/yapılandırılmamışken no-op.
         CrashReporter.arkaPlan(SatinAlmaService.instance.cikis(),
@@ -1244,19 +1335,20 @@ class _AuthGateState extends ConsumerState<_AuthGate>
               }
               return;
             }
-            // **BİYOMETRİK AÇIKSA ÇIKIŞ YERİNE KİLİTLE.**
+            // **Terk ediş dalı: kilit var ya da hiçbir şey (2026-10-13).**
             //
             // Soğuk açılış dalı — süreç arkada öldürülmüşse buraya
-            // düşülür. `resumed` dalıyla AYNI kural: `logout()` token'ı
-            // kasadan siler ve Face ID onu geri getiremez; kilit ise
-            // token'ı yerinde bırakır.
+            // düşülür. Android kapalı betada bu dal "uzun süre bekleyince
+            // login ekranı" hatasının asıl yoluydu: sistem arkadaki süreci
+            // öldürür, açılışta damga 10 dk'yı geçmiş bulunur ve kilidi
+            // kapalı kullanıcı SESSİZCE çıkarılırdı (mesaj yalnız `resumed`
+            // dalındaydı). `resumed` dalıyla AYNI kural: oturum korunur;
+            // kilit açıksa Face ID sorulur.
             //
             // Kullanıcı isteği: *"son login olan hesap biyolojik login
             // işaretlediyse Face ID ile login olunmalı."*
             if (ref.read(biometricLockProvider)) {
               setState(() => _locked = true);
-            } else {
-              ref.read(authProvider.notifier).logout();
             }
           });
         }
@@ -1277,6 +1369,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         CrashReporter.arkaPlan(HesapGecisi.instance.aktifHesapGirdi(user),
             reason: 'main.HesapGecisi.aktifHesapGirdi');
         AnalyticsService.instance.setUserId(user.id);
+        CrashReporter.arkaPlan(
+            RemoteConfigService.instance.hesabiBildir(user.id),
+            reason: 'main.hesabiBildir.giris');
         // Mağaza aboneliği (RevenueCat): yalnız `paywall_enabled` açıkken ve
         // anahtar build'e girmişken bağlanır; değilse hiçbir şey yapmaz.
         // Hak değişince anlık köprü + sunucu haklarını tazele (webhook
@@ -1317,7 +1412,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // turunu görür, sürüm notunu görmez (`yeniNotlar` ilk kurulumda boş
         // döner). Karar `SurumNotuService`'te; burada yalnızca tetiklenir.
         CrashReporter.arkaPlan(
-            _yenilikleriKontrolEt().then((_) => _hediyeyiKontrolEt()),
+            _yenilikleriKontrolEt()
+                .then((_) => _hediyeyiKontrolEt())
+                .then((_) => _hediyeBitisiniKontrolEt()),
             reason: 'main._yenilikleriKontrolEt');
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
@@ -1461,6 +1558,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   Future<void> _yenilikleriKontrolEt() async {
     final notlar = await SurumNotuService.instance.gosterilecekler();
     if (notlar.isEmpty || !mounted) return;
+    // Bütün maddeler bayrak arkasında ve bayrak bu platformda kapalıysa
+    // (1.1.7 Premium notu Android'de) boş sayfa açılmaz; not "görüldü"
+    // sayılmaz, maddeler görünür olunca bir sonraki sürümle birlikte gelir.
+    final rc = RemoteConfigService.instance;
+    final gorunurVar = notlar.any((n) => n.yenilikler
+        .any((y) => y.bayrak == null || rc.bayrakAcik(y.bayrak!)));
+    if (!gorunurVar) return;
 
     // Ana ekran gerçekten kurulana kadar bekle. `_locked` ve
     // `_onboardingDone` build'de değerlendiriliyor; sheet yalnızca ikisi de
@@ -1512,6 +1616,35 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     await ref.read(premiumHediyeGosterildiProvider.notifier).set(true);
     if (!ctx.mounted) return;
     await PremiumHediyeSayfasi.goster(ctx, hak);
+  }
+
+  /// Hediye bittiyse bir kez söyle (paywall incelemesi, 2026-10-20).
+  /// Hediye sayfasıyla aynı bekleme kuralları; aynı bitiş için ikinci kez
+  /// açılmaz, hediye yeniden verilirse (yeni bitiş) yeniden söylenir.
+  Future<void> _hediyeBitisiniKontrolEt() async {
+    if (!mounted || !ref.read(paywallVisibleProvider)) return;
+    await ref.read(premiumHaklariProvider.future);
+    if (!mounted) return;
+    final bitis = ref.read(hediyesiBitmisProvider);
+    if (bitis == null) return;
+    final anahtar = bitis.toUtc().toIso8601String();
+    if (ref.read(premiumHediyeBittiSoylenenProvider) == anahtar) return;
+    for (var deneme = 0; deneme < 20; deneme++) {
+      if (!mounted) return;
+      if (_onboardingDone == true && _yasalKapilarGecildi && !_locked) break;
+      await Future<void>.delayed(_yenilikYoklamaAraligi);
+    }
+    if (!mounted ||
+        _locked ||
+        _onboardingDone != true ||
+        !_yasalKapilarGecildi) {
+      return;
+    }
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    await ref.read(premiumHediyeBittiSoylenenProvider.notifier).set(anahtar);
+    if (!ctx.mounted) return;
+    await PremiumHediyeBittiSayfasi.goster(ctx);
   }
 
   /// Kutlama sheet'inin açılabileceği TEK yer: ana ekran, üstünde hiçbir
@@ -1724,96 +1857,84 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // sınırı ağ trafiğini zaten kısıtlar.
       CrashReporter.arkaPlan(RemoteConfigService.instance.refresh(),
           reason: 'main.RemoteConfigService.refresh');
+      // Siri eylemi uygulama arkadayken bırakılmış olabilir (kanal
+      // `geldi` haberini kaçırmış olabilir); öne dönüşte sorulur.
+      CrashReporter.arkaPlan(SistemEylemleri.cek(),
+          reason: 'main.SistemEylemleri.cek');
       // Arkadayken olan bir sistem görünümü değişimi burada yakalanır:
       // önplanda olmadığı için `didChangePlatformBrightness` onu bilinçli
       // olarak yutmuştu.
       _applySurfaceTheme(trustDeviceBrightness: true);
       final bg = _backgroundedAt;
-      if (bg != null && DateTime.now().difference(bg) >= _sessionTimeout) {
-        _backgroundedAt = null;
-        // **BİYOMETRİK AÇIKSA ÇIKIŞ YERİNE KİLİTLE** (kullanıcı isteği,
-        // 2026-09-23): *"Cihaz/müşteri eşleşmesi varsa ve son login olan
-        // hesap biyolojik login işaretlediyse Face ID ile login olunmalı."*
-        //
-        // `logout()` Supabase oturumunu SİLER — token kasadan kalkar ve
-        // Face ID ile geri getirilemez; kullanıcı şifre girmek zorunda
-        // kalır. Oysa kilit zaten bu iş için var: token kasada durur,
-        // ekran kilitlenir, Face ID onu açar.
-        //
-        // Güvenlik zayıflamaz — aynı kapı korunur:
-        //   • Biyometrik AÇIK  → kilit ekranı; Face ID/PIN olmadan
-        //     içeri girilemez. Cihaz başkasının elindeyse yine giremez.
-        //   • Biyometrik KAPALI → eski davranış (çıkış), çünkü kilit
-        //     olmadan uygulama korumasız kalırdı.
-        //
-        // Ayrıca `LockScreen`, cihaz artık kimseyi doğrulayamıyorsa
-        // (ekran kilidi kaldırılmış) tercihi kapatıp içeri alıyor — yani
-        // kullanıcı dışarıda kilitli kalmaz.
-        // Uzun boşluk: cihazın başındaki kişi yeniden doğrulanmalı; hesap
-        // geçişi bu doğrulamaya güvenemez (`HesapGecisi.cihazDogrulandi`).
+      final bosluk = bg == null ? null : DateTime.now().difference(bg);
+      _backgroundedAt = null;
+      // Paywall ayarı sunucuda (0172): acil kapatma ya da kapı değiştiyse
+      // açık uygulama öne dönüşte görsün, soğuk açılışı beklemesin. Yalnız
+      // en az 5 dk arkada kalındıysa (2026-11-08): eskiden her öne dönüş
+      // (bildirim çekmecesi, uygulamalar arası geçiş) bir istekti. Acil
+      // kapatma en geç 5 dk + soğuk açılışta yansır.
+      if (premiumAyariTazelenmeli(bosluk)) {
+        ref.invalidate(premiumSunucuAyariProvider);
+      }
+      // **Uzun boşluk oturumu KAPATMAZ (yasin'in hata bildirimi,
+      // 2026-10-13):** *"uzun süre bekleyen session kapanıyor ve login
+      // ekranına yönlendiriyor"*. Eskiden kilidi kapalı kullanıcı 10 dk
+      // arkada kalınca `logout()` ile çıkarılıyordu (2026-09 L2 "güvenlik
+      // zaman aşımı"). Bu, kişisel portföy takibi için yanlış ödünleşimdi:
+      // her uzun boşlukta şifre/Google/Apple girişi isteniyor, `logout()`
+      // push token'ını da sunucudan siliyordu (bildirimler susuyordu).
+      // Instagram, Gmail, banka dışı finans uygulamaları da boşlukta çıkış
+      // yapmaz. Koruma isteyen kullanıcı için kilit var: token kasada
+      // kalır, Face ID / ekran kilidi açar.
+      //
+      // Uzun boşlukta yalnızca hesap geçişinin cihaz doğrulamasına
+      // güvenmesi biter (`HesapGecisi.cihazDogrulandi`): cihazın başındaki
+      // kişi değişmiş olabilir.
+      if (bosluk != null && bosluk >= _sessionTimeout) {
         HesapGecisi.instance.cihazDogrulandi = false;
-        final biyometrikAcik = ref.read(biometricLockProvider);
-        if (biyometrikAcik && ref.read(authProvider).valueOrNull != null) {
-          setState(() => _locked = true);
-        } else {
-          // **Kilitsiz kullanıcı: çıkış SESSİZ olmasın** (kullanıcı
-          // kararı, 2026-09-23). Kullanıcı şifre ekranıyla karşılaşınca
-          // bunun bir arıza mı yoksa güvenlik mi olduğunu bilmiyordu.
-          //
-          // Teklif damgası da SİLİNİR: kaybı bizzat yaşamış kullanıcıya
-          // kararını yeniden sormak dayatma değil. Bir kez "şimdi değil"
-          // demek, sonucunu görmeden verilmiş bir karardı.
-          _zamanAsimiBildir();
-          CrashReporter.arkaPlan(
-            ref.read(biometricLockOfferedProvider.notifier).set(false),
-            reason: 'main.teklifiYenidenAc',
-          );
-          // Oturumu kapat — auth state değişince LoginScreen'e döner
-          ref.read(authProvider.notifier).logout();
-        }
+      }
+      // Kısa arka plan dönüşleri (bildirim çekmecesi, gelen arama)
+      // kilit istemez; 30 sn üstü ister. Uzun boşluk da buradan kilitlenir
+      // — eskiden ayrı daldı ve o dal aşağıdaki tazelemeleri (alarm,
+      // bildirim merkezi, profil) atlıyordu.
+      if (bosluk != null &&
+          bosluk >= _lockAfter &&
+          ref.read(biometricLockProvider) &&
+          ref.read(authProvider).valueOrNull != null) {
+        HesapGecisi.instance.cihazDogrulandi = false;
+        setState(() => _locked = true);
+      }
+      // Öne dönüş açılış olarak sayılır; servis kısa arka plan
+      // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
+      CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'resume'), reason: 'main.RetentionTracker.recordLaunch');
+      // Fiyat alarmı bildirimleri SUNUCUDA yazılır (0065) ve uygulama
+      // arkadayken gelir; tazelenmezse kullanıcı push'u görüp uygulamayı
+      // açtığında çan sayfası boş kalırdı. Sinyal listesi kendi akışında
+      // zaten güncelleniyor.
+      if (ref.read(authProvider).valueOrNull != null) {
+        CrashReporter.arkaPlan(
+          ref.read(priceAlertNotificationProvider.notifier).refresh(), reason: 'main.ref.read'
+        );
+        // Genel bildirimler (aylık/haftalık özet, brifing, TÜFE, takip
+        // listesi, temettü, ortaklık — `app_notifications`, 0066) de
+        // sunucuda yazılır ve uygulama arkadayken gelir. 2026-10-06'ya
+        // kadar bu liste YALNIZCA açılışta okunuyordu: süreç arkada canlı
+        // kaldıysa sabah gelen aylık özet çan sayfasında hiç görünmüyordu
+        // (yasin: "aylık özeti kapattım, bildirim merkezinde göremedim").
+        CrashReporter.arkaPlan(
+          ref.read(appNotificationProvider.notifier).refresh(),
+          reason: 'main.genelBildirimTazele',
+        );
+      }
+      // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
+      // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
+      // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.
+      if (ref.read(authProvider).hasError &&
+          AuthService.instance.hasLocalSession) {
+        ref.invalidate(authProvider);
       } else {
-        // Kısa arka plan dönüşleri (bildirim çekmecesi, gelen arama)
-        // kilit istemez; 30 sn üstü ister.
-        if (bg != null &&
-            DateTime.now().difference(bg) >= _lockAfter &&
-            ref.read(biometricLockProvider) &&
-            ref.read(authProvider).valueOrNull != null) {
-          HesapGecisi.instance.cihazDogrulandi = false;
-          setState(() => _locked = true);
-        }
-        _backgroundedAt = null;
-        // Öne dönüş açılış olarak sayılır; servis kısa arka plan
-        // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
-        CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'resume'), reason: 'main.RetentionTracker.recordLaunch');
-        // Fiyat alarmı bildirimleri SUNUCUDA yazılır (0065) ve uygulama
-        // arkadayken gelir; tazelenmezse kullanıcı push'u görüp uygulamayı
-        // açtığında çan sayfası boş kalırdı. Sinyal listesi kendi akışında
-        // zaten güncelleniyor.
-        if (ref.read(authProvider).valueOrNull != null) {
-          CrashReporter.arkaPlan(
-            ref.read(priceAlertNotificationProvider.notifier).refresh(), reason: 'main.ref.read'
-          );
-          // Genel bildirimler (aylık/haftalık özet, brifing, TÜFE, takip
-          // listesi, temettü, ortaklık — `app_notifications`, 0066) de
-          // sunucuda yazılır ve uygulama arkadayken gelir. 2026-10-06'ya
-          // kadar bu liste YALNIZCA açılışta okunuyordu: süreç arkada canlı
-          // kaldıysa sabah gelen aylık özet çan sayfasında hiç görünmüyordu
-          // (yasin: "aylık özeti kapattım, bildirim merkezinde göremedim").
-          CrashReporter.arkaPlan(
-            ref.read(appNotificationProvider.notifier).refresh(),
-            reason: 'main.genelBildirimTazele',
-          );
-        }
-        // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
-        // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
-        // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.
-        if (ref.read(authProvider).hasError &&
-            AuthService.instance.hasLocalSession) {
-          ref.invalidate(authProvider);
-        } else {
-          // Offline'da minimal profille girildiyse gerçek profili tazele.
-          ref.read(authProvider.notifier).refreshProfileIfStale();
-        }
+        // Offline'da minimal profille girildiyse gerçek profili tazele.
+        ref.read(authProvider.notifier).refreshProfileIfStale();
       }
     }
   }
@@ -1870,9 +1991,36 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
       final uid = ref.read(authProvider).valueOrNull?.id;
       if (uid == null || next.isLoading || !next.hasValue) return;
+      // Açılış kopyası başka cihazda eklenmiş katkıları bilmeyebilir: katkı
+      // kararı sunucudan okunmuş defterle verilir (çift katkı yazılmasın).
+      if (next.valueOrNull?.onbellekKopyasi ?? false) return;
       if (_besOtomatikKullanici == uid) return;
       _besOtomatikKullanici = uid;
       _besOtomatikKatki();
+    });
+
+    // Spotlight dizini (iOS) açık pozisyonları izler. Yükleme karesi atlanır
+    // (kullanıcı değişiminde önceki kullanıcının portföyü taşınır, bkz.
+    // aşağıdaki "yerleşik veri" notu). Kilit açılıp kapanınca ve oturum
+    // kapanınca da yeniden eşitlenir; ayrıntı `SistemEylemleri`.
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
+      if (next.isLoading) return;
+      _spotlightEsitle();
+    });
+    ref.listen<bool>(biometricLockProvider, (_, __) => _spotlightEsitle());
+
+    // Tek varlık widget'ı (iOS 2026-10-24, Android 2026-10-25): seçim
+    // listesi portföy + takip listesinden kurulur. Portföy her fiyat turunda yayınlandığı için takip
+    // listesindeki değişiklik de en geç bir sonraki turda yazılır; takip
+    // listesine AYRI dinleyici bağlanmaz — bağlamak onu her açılışta
+    // yüklerdi (bkz. `VarlikWidgetService.guncelle`). Yükleme karesi
+    // atlanır (önceki kullanıcının defteri taşınabilir).
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
+      if (next.isLoading) return;
+      _varlikWidgetiniYaz(next.valueOrNull);
+    });
+    ref.listen(authProvider, (_, next) {
+      if (next.valueOrNull == null) _spotlightEsitle();
     });
 
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
@@ -2047,6 +2195,40 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (son == null || son.assets.isEmpty) return;
       _gunIciYuzeyleriniYaz(son);
     }(), reason: 'main.yuzeyYazimiTurSonu');
+  }
+
+  void _spotlightEsitle() {
+    final p = ref.read(portfolioProvider);
+    CrashReporter.arkaPlan(
+        SistemEylemleri.spotlightEsitle(
+          assets: p.isLoading ? null : p.valueOrNull?.assets,
+          userId: ref.read(authProvider).valueOrNull?.id,
+          kilitli: ref.read(biometricLockProvider),
+        ),
+        reason: 'main.SistemEylemleri.spotlight');
+  }
+
+  /// Tek varlık widget'ının (iOS + Android) seçim listesi ve fiyatları.
+  ///
+  /// Yalnız oturumdaki kullanıcının kendi lot'ları (ortak lot'u değil) ve
+  /// takip listesi — o da yalnız zaten yüklenmişse; yüklenmemişse servis
+  /// widget kuruluyken [takipYukle] ile ister. Servis iOS/Android dışında
+  /// no-op.
+  void _varlikWidgetiniYaz(PortfolioState? durum) {
+    if (!VarlikWidgetService.etkin) return;
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null) return;
+    final takip = ref.exists(watchlistProvider)
+        ? ref.read(watchlistProvider).valueOrNull
+        : null;
+    CrashReporter.arkaPlan(
+        VarlikWidgetService.instance.guncelle(
+          lotlar: (durum?.assets ?? const <Asset>[])
+              .where((a) => a.userId == uid),
+          takip: takip,
+          takipYukle: () => ref.read(watchlistProvider.future),
+        ),
+        reason: 'main.VarlikWidgetService.guncelle');
   }
 
   /// Ana ekran widget'ı + Live Activity yazımı (portföy dinleyicisinin
@@ -2447,22 +2629,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     );
   }
 
-  /// Zaman aşımı çıkışını kullanıcıya AÇIKLA.
-  ///
-  /// Sessiz çıkış kullanıcıya arıza gibi görünüyordu: uygulama açılıyor,
-  /// şifre isteniyor, neden belli değil. Mesaj hem nedeni söyler hem de
-  /// çözümü gösterir (Ayarlar'dan kilit).
-  ///
-  /// `logout()` ÖNCESİ çağrılır: sonrasında bu ağaç LoginScreen'e
-  /// döneceği için `context` artık bu Scaffold'a ait olmaz.
-  void _zamanAsimiBildir() {
-    if (!mounted) return;
-    sandikSnack(context, context.l10n.sessionTimedOut,
-        kind: SandikSnackKind.warning);
-  }
-
-  /// Tek cihaz çıkışını AÇIKLA — [_zamanAsimiBildir] ile aynı gerekçe:
-  /// sebepsiz giriş ekranı arıza gibi görünür. `logout()` ÖNCESİ çağrılır.
+  /// Tek cihaz çıkışını AÇIKLA: sebepsiz giriş ekranı arıza gibi görünür
+  /// (2026-09-23 kararı). `logout()` ÖNCESİ çağrılır.
   void _baskaCihazdaBildir() {
     if (!mounted) return;
     sandikSnack(context, context.l10n.baskaCihazdaAcildi,

@@ -23,6 +23,17 @@ class AppNotification {
   /// (`ticker`, `hak_tarihi`, `tutar_pay`, `lot`).
   static const temettu = 'temettu';
 
+  /// Günlük yüzde alarmı çaldı (0169, `check-price-alerts`); `data`
+  /// `symbol` + `yuzde_alarm_id`. Dokununca varlık ekranı (push'la aynı).
+  static const yuzdeAlarm = 'yuzde_alarm';
+
+  /// Gösterge alarmı çaldı (0170); `data` `symbol` + `gosterge_alarm_id`.
+  static const gostergeAlarm = 'gosterge_alarm';
+
+  /// Çizgi (trend/ışın) alarmı çaldı (0170); `data` `symbol` +
+  /// `cizim_alarm_id`. İkisi de dokununca varlık ekranı (push'la aynı).
+  static const cizimAlarm = 'cizim_alarm';
+
   final String id;
   final String type;
   final String title;

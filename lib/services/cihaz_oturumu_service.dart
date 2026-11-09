@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,6 +14,7 @@ import 'auth_service.dart';
 import 'crash_reporter.dart';
 import 'push_message_router.dart' show cihazKimligiUret;
 import 'remote_push_service.dart';
+import 'secure_session_storage.dart' show KeychainKasasi, SessionVault;
 import 'supabase_service.dart';
 
 /// Giriş sonrası cihaz kapısının kararı.
@@ -61,19 +63,84 @@ class CihazOturumuService {
   /// girişte yeni kimlik doğardı — kayıtlı cihaz her girişte yeniden kod
   /// isterdi. Bu kimlik çıkışta KALIR; anahtar kullanıcıya özeldir, böylece
   /// aynı telefondaki iki hesap sunucuda aynı kimlikle eşleştirilemez.
-  /// Uygulama silinince kaybolur → cihaz yeniden kod ister (istenen budur).
+  ///
+  /// **Uygulama silinse de kalır (yasin kararı 2026-11-05):** "OTP alınmış
+  /// cihazdan uygulama silinse de kod istememeli, ama eşleşmiş cihazdan
+  /// kaldırılan cihaz için tekrardan OTP istemeli; liste distinct olmalı."
+  /// Eskiden kimlik yalnız SharedPreferences'taydı ve "uygulama silinince
+  /// kaybolur → yeniden kod" bilinçli sayılmıştı. Ama oturum Keychain'de
+  /// durduğu için silip kurunca hesap AÇIK geliyor, yalnız telefon "yeni
+  /// cihaz" sayılıp kod istiyordu; kayıtlı listede aynı iPhone dört kez
+  /// birikti. Artık Apple platformlarında kimlik oturumla aynı kasada
+  /// ([KeychainKasasi], `first_unlock`) — silip kurmaya dayanır. "Kaldır"
+  /// kuralı sunucuda değişmez: satır silinince aynı kimlik `yeni` döner ve
+  /// kod istenir.
+  ///
+  /// Sıra: kasa → SharedPreferences (eski kurulumun kimliği kasaya taşınır,
+  /// kimse yeniden kod görmez) → yeni rastgele kimlik. Kasa okunamazsa
+  /// (iOS ilk kilit açılışından önce arka plan başlatması) ve elde yerel
+  /// kimlik de yoksa YENİ kimlik üretilmez: hata atılır, kapı "karar
+  /// verilemedi" yoluna düşer. Yoksa okunamayan kasanın yerine yeni kimlik
+  /// yazılır ve telefon bir kez daha çoğalırdı.
+  ///
+  /// Android'de kasa (Keystore) uygulamayla silinir; orada silip kurunca
+  /// kod yine istenir (açık iş, YAPMAN_GEREKENLER değil TECHNICAL_DEBT).
   Future<String> cihazKimligi(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     final anahtar = 'cihaz_kimligi_v1_$userId';
-    final mevcut = prefs.getString(anahtar);
-    if (mevcut != null && RegExp(r'^[0-9a-f]{32}$').hasMatch(mevcut)) {
-      return mevcut;
+    final yerel = prefs.getString(anahtar);
+    final yerelGecerli = cihazKimligiGecerli(yerel);
+    if (!_appleKasasi) {
+      if (yerelGecerli) return yerel!;
+      final yeni = _rastgeleKimlik();
+      await prefs.setString(anahtar, yeni);
+      return yeni;
     }
-    final r = Random.secure();
-    final yeni = cihazKimligiUret(() => r.nextInt(256));
-    await prefs.setString(anahtar, yeni);
-    return yeni;
+    String? kasadaki;
+    try {
+      kasadaki = await _kasa.read(anahtar);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'CihazOturumuService.kasaOku');
+      if (yerelGecerli) return yerel!;
+      throw StateError('cihaz kimliği okunamadı (kasa kilitli)');
+    }
+    if (cihazKimligiGecerli(kasadaki)) {
+      if (yerel != kasadaki) await prefs.setString(anahtar, kasadaki!);
+      return kasadaki!;
+    }
+    final kimlik = yerelGecerli ? yerel! : _rastgeleKimlik();
+    if (!yerelGecerli) await prefs.setString(anahtar, kimlik);
+    try {
+      await _kasa.write(anahtar, kimlik);
+    } catch (e, st) {
+      // Kasaya yazılamazsa bu kurulumda yerel kopya yeter; bir sonraki
+      // çağrı yeniden dener.
+      CrashReporter.report(e, st, reason: 'CihazOturumuService.kasaYaz');
+    }
+    return kimlik;
   }
+
+  static bool cihazKimligiGecerli(String? v) =>
+      v != null && RegExp(r'^[0-9a-f]{32}$').hasMatch(v);
+
+  String _rastgeleKimlik() {
+    final r = Random.secure();
+    return cihazKimligiUret(() => r.nextInt(256));
+  }
+
+  SessionVault? _kasaYerine;
+  bool? _appleYerine;
+
+  /// Test kancası: kasa ve platform (Apple mı) yerine geçenler.
+  @visibleForTesting
+  void testKasasi(SessionVault? kasa, {bool? apple}) {
+    _kasaYerine = kasa;
+    _appleYerine = apple;
+  }
+
+  SessionVault get _kasa => _kasaYerine ??= KeychainKasasi();
+  bool get _appleKasasi =>
+      _appleYerine ?? (!kIsWeb && (Platform.isIOS || Platform.isMacOS));
 
   /// Bu cihaz bu hesap için bir kez sunucuca onaylandı mı — ağ yokken
   /// kapının içeri alıp almayacağını bu belirler (yerel bilgi, kanıt değil;
@@ -151,8 +218,10 @@ class CihazOturumuService {
   /// Girişten sonra kapının kararı.
   Future<CihazKapisi> degerlendir(AppUser user) async {
     if (DemoModu.aktif) return CihazKapisi.serbest;
-    final cihazId = await cihazKimligi(user.id);
     try {
+      // Kimlik okunamazsa (kasa kilitli) aşağıdaki "karar verilemedi"
+      // yoluna düşer: yerelde onaylıysa içeri, değilse yeniden dene.
+      final cihazId = await cihazKimligi(user.id);
       final durum = await SupabaseService.instance.cihazDurumu(cihazId);
       if (durum == null) throw StateError('cihaz_durumu: beklenmeyen yanıt');
       switch (durum) {

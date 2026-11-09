@@ -26,8 +26,22 @@ class PrefKeys {
   static const partnerNotifications = 'pref_partner_notifications';
   static const balanceHidden = 'pref_balance_hidden';
 
+  /// Portföy listesi "Toplam | Bugün" modu (1 Kas 2026). Cihaz tercihi:
+  /// bakış alışkanlığı, hesaba değil.
+  static const portfoyBugunModu = 'pref_portfoy_bugun_modu';
+
   /// Toplam kartı kaydırma ipucu (tek seferlik göz kırpma) gösterildi mi.
   static const kaydirmaIpucu = 'pref_kaydirma_ipucu_gosterildi';
+
+  /// Dik grafiğin altındaki "Detaylı grafik için telefonu yan çevir" ipucu
+  /// artık gerekmiyor mu: kullanıcı yatay tam ekranı bir kez açtı
+  /// (2026-10-29). Cihaz tercihi — jest cihaza ait.
+  static const yatayGrafikIpucu = 'pref_yatay_grafik_ipucu_goruldu';
+
+  /// Bugün kartındaki "Hedefin yok · Hedef belirle" önerisinin durumu
+  /// (`HedefOnerisiDurumu.kod`; ✕ ve 3 gösterimde 30 gün sönme, 5 Kas
+  /// 2026). Kişiye özel: hedef hesabın, öneri de.
+  static const hedefOnerisi = 'pref_hedef_onerisi';
   static const lockScreenAmounts = 'pref_lockscreen_amounts';
   static const liveActivityStartMin = 'pref_live_activity_start_min';
   static const liveActivityEndMin = 'pref_live_activity_end_min';
@@ -42,6 +56,17 @@ class PrefKeys {
   static const chartEma50 = 'pref_chart_ema50';
   static const chartEma200 = 'pref_chart_ema200';
   static const chartCandle = 'pref_chart_candle';
+
+  /// Yatay tam ekran grafikteki çizimler (trend, ışın, yatay, dikdörtgen),
+  /// sembol başına JSON (2026-10-23). Cihazda kalır, hesaba yazılmaz:
+  /// cihazlar arası eşitleme ayrı (Premium) adım.
+  static const grafikCizimleri = 'pref_grafik_cizimleri_v1';
+
+  /// Yatay çizgi → fiyat alarmı bağı (2026-10-29): `{çizimId: {a: alarmId,
+  /// p: bağlandığı fiyat}}`. `price_alerts`'e çizim kolonu eklemek eski
+  /// build'lerin okuduğu tabloyu değiştirmek olurdu; çizim zaten cihazda
+  /// yaşadığı için bağ da cihazda (`CizimDeposu.alarmBaglari`).
+  static const grafikCizimAlarmBaglari = 'pref_grafik_cizim_alarm_baglari_v1';
   // `pref_chart_mum_araligi` (mum aralığı, PR #161) 2026-10-10 gece
   // okunmuyor: aralık artık dönemin TradingView varsayılanıyla açılır,
   // seçim oturumluk (`mumAraligiSecimiProvider`). Anahtar başka iş için
@@ -79,15 +104,17 @@ class PrefKeys {
   static const fxMigrationLastRunMs = 'fx_migration_last_run_ms';
 
   /// Uygulama arkaya alındığı an (ms). Süreç öldürülürse bellekteki
-  /// `_backgroundedAt` kaybolurdu ve 10 dk'lık oturum zaman aşımı hiç
-  /// işlemezdi (2026-09 L2); açılışta buradan okunur.
+  /// `_backgroundedAt` kaybolurdu ve uzun boşluk kilidi hiç işlemezdi
+  /// (2026-09 L2); açılışta buradan okunur. 2026-10-13'ten beri boşluk
+  /// oturumu kapatmaz, yalnız kilit açıksa kilitler.
   static const backgroundedAtMs = 'session_backgrounded_at_ms';
 
   /// Uygulama arkaya alınırken çalışan SÜRÜM (`1.1.6+7`).
   ///
   /// Zaman aşımı kontrolü bunu karşılaştırır: sürüm DEĞİŞTİYSE aradaki
-  /// boşluk bir güncellemedir, gerçek bir terk ediş değil — oturum
-  /// düşürülmez (bkz. `_AuthGateState._readStaleSessionAtLaunch`).
+  /// boşluk bir güncellemedir, gerçek bir terk ediş değil (bkz.
+  /// `_AuthGateState._readStaleSessionAtLaunch`; 2026-10-13'ten beri iki
+  /// sonuç da oturumu korur).
   static const backgroundedAtVersion = 'session_backgrounded_at_version';
 
   /// `RemotePushService` cihaz kimliği; çıkışta silinir (L14).
@@ -122,6 +149,11 @@ class PrefKeys {
   /// taşınmaz. Ana ekrandaki "Bugün" kartı ilerlemeyi buradan okur.
   static const portfolioGoalTRY = 'portfolio_goal_try';
 
+  /// Hedefin günü (ms epoch, yerel gece yarısı; yok/0 = tarih yok). Hedefle
+  /// aynı kapsam soneki ve `perUser`. Premium (yasin 2026-11-06); anahtar
+  /// yoksa eski davranış birebir (tarih satırı ve aylık tutar çizilmez).
+  static const portfolioGoalDate = 'portfolio_goal_date_ms';
+
   /// Çan sayfasının en son açıldığı an (ms epoch; 0 = hiç açılmadı).
   /// Rozet yalnız bundan SONRA gelen aktif bildirimleri "yeni" sayar.
   /// Kişiye özel (`perUser`): A'nın gördüğü, B'nin rozetini düşürmez.
@@ -144,8 +176,64 @@ class PrefKeys {
   /// Erken kullanıcı hediyesi sayfası gösterildi (bir kez). Kişiye özel.
   static const premiumHediyeGosterildi = 'pref_premium_hediye_gosterildi';
 
+  /// Hediyenin bittiği bir kez söylendi (kişiye özel; bitiş tarihine
+  /// bağlı: yeni hediye = yeni bitiş = yeniden söylenir).
+  static const premiumHediyeBittiSoylenen =
+      'pref_premium_hediye_bitti_soylenen';
+
   /// Portföy ve Performans'ta seçili portföy (çoklu portföy, 0133): `''`
   /// Tümü, `ana` Ana, uuid adlandırılmış portföy. Kişiye özel (`perUser`):
   /// portföy kimlikleri hesaba aittir, aynı cihazdaki başka hesapta anlamsız.
   static const seciliPortfoy = 'pref_secili_portfoy';
+
+  /// Ana ekrandaki "N varlıkta bilgi eksik" satırı kapatıldığında o anki
+  /// eksiklerin anahtarları (`VeriEksigi.anahtar`). Kişiye özel. Yeni bir
+  /// eksik çıkınca satır yeniden görünür; kapatılanlar bir daha sorulmaz.
+  static const veriKalitesiKapatilan = 'pref_veri_kalitesi_kapatilan';
+
+  /// Ana ekran özellik önerisi kartı (`ozellik_onerisi.dart`): kapatılan ya
+  /// da dokunulan önerilerin anahtarları (`OzellikOnerisi.anahtar`) ve son
+  /// kapatmanın zamanı (epoch ms; sıradaki öneri için bekleme). Kişiye özel.
+  static const ozellikOnerisiKapatilan = 'pref_ozellik_onerisi_kapatilan';
+  static const ozellikOnerisiSonKapatma = 'pref_ozellik_onerisi_son_kapatma';
+
+  /// Yumuşak güncelleme kartı (`guncelleme_karti.dart`): kapatıldığı
+  /// önerilen build numarası. Aynı build bir daha sorulmaz; Console'da daha
+  /// yeni bir build önerilince kart yeniden görünür. Cihaza özel (sürüm
+  /// hesaba değil kuruluma ait).
+  static const guncellemeKapatilanBuild = 'pref_guncelleme_kapatilan_build';
+
+  /// Ana sayfa "seni ilgilendiren günler" satırı (`seni_ilgilendiren_gunler.dart`):
+  /// kapatılan olayların kimlikleri (`GunOlayi.kimlik`, tarihli). Kişiye özel:
+  /// temettü günleri kullanıcının kendi hisselerinden gelir.
+  static const gunlerKapatilan = 'pref_gunler_kapatilan';
+
+  /// Takip listesi "benim sıram" (`takip_sirasi.dart`): watchlist satır
+  /// kimliklerinin sırası. Yoksa ilk açılışta bugünkü sıradan (değişime göre)
+  /// kurulur ve kaydedilir. Kişiye özel: kimlikler hesaba ait. Sunucuda
+  /// sıra alanı yok; sıra yalnız bu telefonda.
+  static const takipSirasi = 'pref_takip_sirasi';
+
+  /// Takip listesi sıralama seçimi — `TakipSiralama.index` (0 benim sıram,
+  /// 1 en çok yükselen, 2 en çok düşen). Kişiye özel.
+  static const takipSiralama = 'pref_takip_siralama';
+
+  /// Portföy listesi sıralama seçimi — `PortfoySiralama.kod`
+  /// (`deger_azalan`, `kar_azalan`…). Index DEĞİL kod: enum sırası değişince
+  /// tercih başka sıralamaya kaymasın. Yoksa / tanınmazsa "Değere göre".
+  /// Kişiye özel (çoklu hesapta her hesabın kendi seçimi).
+  static const portfoySiralama = 'pref_portfoy_siralama';
+
+  /// Özellik kullanım ölçümünün (`OzellikOlcumu`) tekilleştirme öneki:
+  /// `<önek><ozellik kodu>` → son sayıldığı TR günü (`2026-10-25`). Değer
+  /// kullanıcı verisi değil, "bugün bu olay gitti mi" işaretidir; silinirse
+  /// yalnız o günün olayı ikinci kez gider.
+  ///
+  /// Cihaza özel, `perUser` DEĞİL ve çıkışta silinmez (2026-10-25 kararı):
+  /// tercih değil, `kullaniciyaOzelTercihler` listesine girmez. Aynı gün
+  /// aynı telefonda hesap değiştiren kişinin ikinci hesabındaki ilk kullanım
+  /// sayılmaz; bu kaybı, her hesaba ayrı anahtar ve çıkış temizliği
+  /// karmaşasına değmez görüyoruz (ölçü "kaç kişi kullanıyor", kesin sayım
+  /// değil).
+  static const ozellikOlcumuPrefix = 'ozellik_olcumu_gun_';
 }

@@ -342,8 +342,10 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
           Semantics(
             button: true,
             expanded: _digerAcik,
-            child: SandikBasma(
-              olcek: 0.99,
+            child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
+              scale: 0.99,
               onTap: () => setState(() => _digerAcik = !_digerAcik),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -607,7 +609,9 @@ class _OkuDugmesi extends StatelessWidget {
       alignment: AlignmentDirectional.centerStart,
       child: Semantics(
         button: true,
-        child: SandikBasma(
+        child: SandikTappable(
+          soluk: true,
+          haptic: SandikHaptic.none,
           onTap: onTap,
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -669,8 +673,10 @@ class _BelgeBaglantisi extends StatelessWidget {
     final l = context.l10n;
     return Semantics(
       button: true,
-      child: SandikBasma(
-        olcek: 0.98,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
+        scale: 0.98,
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: SandikTouch.min),

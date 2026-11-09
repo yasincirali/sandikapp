@@ -152,7 +152,9 @@ void main() {
       final watchlist = _yorumsuz(
           await File('lib/screens/watchlist_screen.dart').readAsString());
       expect(watchlist.contains('class WatchlistBody'), isTrue);
-      expect(charts.contains('const Expanded(child: WatchlistBody())'), isTrue,
+      // 2026-10-12: gövde `SandikKaydirmaBasligi.govde` yuvasında (cam
+      // başlık); eskiden `Expanded(child: WatchlistBody())`.
+      expect(charts.contains('? const WatchlistBody()'), isTrue,
           reason: 'sekme bu gövdeyi kullanmalı');
     });
 
@@ -193,8 +195,11 @@ void main() {
       // Değişmez: bu ekranın toplamları yalnızca `assets`'ten gelir. Takip
       // listesi ayrı bir dal olduğu için özet widget'ı onunla hiç
       // karşılaşmaz.
-      expect(charts.contains('if (_bodyTab == 1)'), isTrue,
+      // Dal artık bir koşul ifadesi (`govde: _bodyTab == 1 ? … : …`).
+      expect(charts.contains('_bodyTab == 1'), isTrue,
           reason: 'iki veri kümesi aynı kaydırma alanında birleşmemeli');
+      expect(charts.contains('? const WatchlistBody()'), isTrue,
+          reason: 'takip dalı portföy listesinin yerine geçer');
     });
   });
 }

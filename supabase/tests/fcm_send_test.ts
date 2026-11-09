@@ -14,7 +14,12 @@ type Yakalanan = { url: string; body: Record<string, unknown> };
 
 async function gonder(
   yanit: { status: number; text: string },
-  ekstra: { priority?: 'high' | 'normal'; badge?: number; gorselUrl?: string } = {},
+  ekstra: {
+    priority?: 'high' | 'normal';
+    badge?: number;
+    gorselUrl?: string;
+    onem?: 'passive';
+  } = {},
 ): Promise<{ yakalanan: Yakalanan; sonuc: Awaited<ReturnType<typeof sendFcmNotification>> }> {
   const orijinal = globalThis.fetch;
   let yakalanan: Yakalanan | undefined;
@@ -52,7 +57,7 @@ Deno.test('varsayılan: normal öncelik, APNs 5, rozet yok (brifing davranışı
   const m = mesaj(yakalanan);
   assertEquals(m.android.priority, 'normal');
   assertEquals(m.apns.headers['apns-priority'], '5');
-  assertEquals(m.apns.payload.aps, { sound: 'default' });
+  assertEquals(m.apns.payload.aps, { sound: 'default', 'thread-id': 'signal_channel' });
   assertEquals(m.android.notification.channel_id, 'signal_channel');
   assertEquals(m.data, { type: 'signal_alert', asset_id: 'a1' });
 });
@@ -62,7 +67,7 @@ Deno.test('sinyal: high öncelik, APNs 10, rozet sayısı', async () => {
   const m = mesaj(yakalanan);
   assertEquals(m.android.priority, 'high');
   assertEquals(m.apns.headers['apns-priority'], '10');
-  assertEquals(m.apns.payload.aps, { sound: 'default', badge: 3 });
+  assertEquals(m.apns.payload.aps, { sound: 'default', badge: 3, 'thread-id': 'signal_channel' });
 });
 
 Deno.test('rozet 0 da gönderilir (okunmamış kalmadı → rozet temizlenir)', async () => {
@@ -128,7 +133,7 @@ Deno.test('kartsız gövde eskisiyle birebir: image / mutable-content / fcm_opti
   const { yakalanan } = await gonder({ status: 200, text: '{}' });
   const m = mesaj(yakalanan);
   assertEquals(m.notification, { title: 'Başlık', body: 'Gövde' });
-  assertEquals(m.apns.payload, { aps: { sound: 'default' } });
+  assertEquals(m.apns.payload, { aps: { sound: 'default', 'thread-id': 'signal_channel' } });
   assertEquals('fcm_options' in m.apns, false);
   assertEquals('image' in m.android.notification, false);
 });
@@ -138,6 +143,31 @@ Deno.test('kartlı gövde: Android notification.image, iOS mutable-content + fcm
   const { yakalanan } = await gonder({ status: 200, text: '{}' }, { gorselUrl: url, badge: 3 });
   const m = mesaj(yakalanan);
   assertEquals(m.notification, { title: 'Başlık', body: 'Gövde', image: url });
-  assertEquals(m.apns.payload.aps, { sound: 'default', badge: 3, 'mutable-content': 1 });
+  assertEquals(m.apns.payload.aps, {
+    sound: 'default',
+    badge: 3,
+    'mutable-content': 1,
+    'thread-id': 'signal_channel',
+  });
   assertEquals(m.apns.fcm_options, { image: url });
+});
+
+// Müşteri raporu 2026-10-26 21:15 #1: brifing/özet iOS'ta sessiz gelir,
+// bildirimler türe göre yığılır. Android gövdesi değişmez.
+Deno.test('onem passive: iOS interruption-level, Android aynı', async () => {
+  const { yakalanan } = await gonder({ status: 200, text: '{}' }, { onem: 'passive' });
+  const m = mesaj(yakalanan);
+  assertEquals(m.apns.payload.aps['interruption-level'], 'passive');
+  assertEquals(m.apns.headers['apns-priority'], '5');
+  assertEquals(m.android.priority, 'normal');
+});
+
+Deno.test('onem verilmezse interruption-level yazılmaz (sistem varsayılanı active)', async () => {
+  const { yakalanan } = await gonder({ status: 200, text: '{}' }, { priority: 'high' });
+  assertEquals('interruption-level' in mesaj(yakalanan).apns.payload.aps, false);
+});
+
+Deno.test('thread-id kanal kimliğidir (Bildirim Merkezi türe göre yığar)', async () => {
+  const { yakalanan } = await gonder({ status: 200, text: '{}' });
+  assertEquals(mesaj(yakalanan).apns.payload.aps['thread-id'], 'signal_channel');
 });

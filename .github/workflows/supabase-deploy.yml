@@ -8,16 +8,19 @@
 # Otomatik tetik BİLİNÇLİ olarak yok: `main`'e her push'ta canlı şemaya
 # dokunmak istemiyoruz; migration'ı ne zaman koşacağına sen karar verirsin.
 #
-# **İKİ SUNUCU BİREBİR (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt
-# hep aynı şemayı taşır: varsayılan hedef `ikisi`. Sıra Frankfurt → Tokyo:
-# geçişe kadar Frankfurt canlı değil, kanarya odur — orada kırılan migration
-# Tokyo'ya hiç gitmez (fail-fast + max-parallel 1). Son iş `esitlik`
-# iki şemanın parmak izini karşılaştırır (tool/sema_esitlik.py); fark varsa
-# kırmızı. Tek hedef yalnız onarım (repair) gibi projeye özgü işler için.
+# **TEK SUNUCU: FRANKFURT (yasin 2026-11-06, "Tokyo'yu kapatalım").**
+# 2026-09-28'den geçişe kadar kural "iki sunucu birebir"di: varsayılan hedef
+# `ikisi`, sıra Frankfurt → Tokyo, sonda `esitlik` parmak izi kapısı. Geçiş
+# 18 Ekim'de bitti; Tokyo o geceden beri donmuş (cron'lar ve Data API kapalı),
+# verisi bayat olduğu için geri dönüş/yedek değeri de kalmadı ve duraklatılıp
+# silinecek. Duraklatılmış bir projeye deploy kırmızı döneceği için varsayılan
+# Frankfurt; `ikisi`, `esitlik` işi ve tek seferlik `frankfurt_esitle` işi
+# kaldırıldı. `tokyo` seçeneği yalnız Tokyo silinmeden geri açılırsa diye
+# duruyor (silinince bu seçenek ve `SUPABASE_DB_PASSWORD` de kalkar).
 #
 # Gerekli secret'lar (Settings → Secrets and variables → Actions):
-#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens. Tokyo'yu
-#                            (ve _EU yoksa Frankfurt'u da) gören hesaptan.
+#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens. _EU yoksa
+#                            Frankfurt'u gören hesaptan.
 #   SUPABASE_ACCESS_TOKEN_EU — isteğe bağlı: Frankfurt'u gören hesabın token'ı.
 #                            İki proje ayrı hesaptaysa şart (2026-10-01'de ortak
 #                            token Frankfurt'ta 403 aldı); yoksa ortağa düşülür.
@@ -31,10 +34,10 @@ on:
   workflow_dispatch:
     inputs:
       hedef:
-        description: "Hangi sunucu(lar): ikisi (varsayılan — iki sunucu birebir), frankfurt, tokyo"
+        description: "Hangi sunucu: frankfurt (canlı, varsayılan) ya da tokyo (yalnız silinmeden geri açılırsa)"
         type: choice
-        options: [ikisi, frankfurt, tokyo]
-        default: ikisi
+        options: [frankfurt, tokyo]
+        default: frankfurt
       migrations:
         description: "supabase db push (migration'ları koş)"
         type: boolean
@@ -63,8 +66,12 @@ on:
         description: "Function secret ADLARINI listele (değer değil) — 'X secret'ı girildi mi?' sorusu için"
         type: boolean
         default: false
+      karsilastir:
+        description: "Taşıma öncesi parmak izi: fonksiyon kod özetleri + Auth ayarları (değer değil, özet). Yazmaz"
+        type: boolean
+        default: false
       sql:
-        description: "Salt okunur rapor sorgusu (Management API, tek SELECT). Vault DEĞERİ döndüren sorgu YAZMA — log'a düşer"
+        description: "Salt okunur rapor sorgusu (Management API, read_only, tek ifade). Kişisel veri/Vault değeri döndüren sorgu reddedilir — log herkese açık"
         type: string
         default: ""
 
@@ -78,12 +85,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
-      # Sıra anlamlı: Frankfurt (kanarya) önce. Biri kırılırsa öbürü koşmaz —
-      # yarım uygulanmış bir migration iki sunucuyu AYRIŞTIRIR.
-      max-parallel: 1
-      fail-fast: true
+      # Tek hedef. Matris adı (`deploy (frankfurt)`) ve `matrix.hedef`'e bağlı
+      # adımlar değişmesin diye tek elemanlı matris olarak kaldı.
       matrix:
-        hedef: ${{ fromJSON(inputs.hedef == 'ikisi' && '["frankfurt","tokyo"]' || format('["{0}"]', inputs.hedef)) }}
+        hedef: ${{ fromJSON(format('["{0}"]', inputs.hedef)) }}
     env:
       # Frankfurt başka bir Supabase hesabında olabilir (2026-10-01: ortak
       # token Frankfurt'ta 403 aldı). `_EU` tanımlıysa Frankfurt onu kullanır,
@@ -97,15 +102,6 @@ jobs:
       - name: Secret kontrolü (fail-fast, sessiz atlama yok)
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "::error::SUPABASE_ACCESS_TOKEN secret'ı eksik"; exit 1; fi
-
-      # Defter onarımı projeye ÖZGÜDÜR: bir projede yanlış işaretlenen sürüm
-      # öbüründe doğru olabilir. İki hedefe birden onarım yazmak, doğru olan
-      # defteri bozar.
-      - name: Onarım tek hedefle yapılır
-        if: ${{ inputs.hedef == 'ikisi' && (inputs.repair != '' || inputs.unrepair != '') }}
-        run: |
-          echo "::error::repair/unrepair için hedef olarak tek sunucu seç (frankfurt ya da tokyo)."
-          exit 1
 
       # 0076'dan beri cron tetikleyicileri edge function adresini Vault'taki
       # `project_url`'den okur. Yoksa migration yalnız UYARI verir ve o
@@ -197,13 +193,70 @@ jobs:
       # Salt okunur rapor — Management API'nin query ucu access token ile
       # çalışır, DB şifresi/pooler adresi gerektirmez. Çıktı Actions log'una
       # düşer: gizli değer döndüren sorgu yazma.
+      #
+      # 2026-10-20 incelemesi: "salt okunur" yalnız açıklamada yazıyordu;
+      # sorgu sahip yetkisiyle gidiyor, bir `delete`/`update` yazım hatası
+      # canlı veriyi değiştirebiliyordu ve repo herkese açık olduğu için
+      # kişisel veri (e-posta, telefon) dünyaya açık log'a düşebiliyordu.
+      # Üç kapı: (1) API'nin `read_only` bayrağı — sunucu yazmayı reddeder;
+      # (2) tek ifade — `;` ile ikinci ifade eklenemez (sondaki `;` serbest);
+      # (3) kişisel veri kolonu adı geçen sorgu çalışmaz — sayım için
+      # `count(*)` yeterli, kolonun kendisine gerek yok.
       - name: SQL raporu
         if: ${{ inputs.sql != '' }}
         env:
           SQL: ${{ inputs.sql }}
         run: |
-          body=$(jq -n --arg q "$SQL" '{query: $q}')
-          curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             -H "Content-Type: application/json"             -d "$body" | jq .
+          sorgu=$(printf '%s' "$SQL" | sed -e 's/[[:space:]]*;[[:space:]]*$//')
+          if printf '%s' "$sorgu" | grep -q ';'; then
+            echo "::error::Tek ifade çalışır; ';' ile ikinci ifade eklenemez."; exit 1
+          fi
+          if printf '%s' "$sorgu" | grep -Eiq '\b(email|phone|raw_user_meta_data|raw_app_meta_data|decrypted_secrets?|encrypted_password)\b'; then
+            echo "::error::Kişisel veri/gizli kolon adı geçen sorgu herkese açık log'a yazılmaz."; exit 1
+          fi
+          body=$(jq -n --arg q "$sorgu" '{query: $q, read_only: true}')
+          curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$body" | jq .
+
+      # Taşıma (docs/SUPABASE_FRANKFURT_TASIMA.md) öncesi "iki sunucu aynı
+      # mı?" sorusunun şemanın dışında kalan iki yarısı: dağıtılmış fonksiyon
+      # KODU ve Auth ayarları. Şema parmak izi (eski `esitlik` işi) bunları görmezdi.
+      # Repo herkese açık, log da açık: hiçbir DEĞER basılmaz. Fonksiyonda
+      # Supabase'in paket özeti (ezbr_sha256), Auth'ta her alanın sha256'sının
+      # ilk 12 hanesi — iki iş arasında satır satır karşılaştırılır.
+      # Mantıksal alanlar (sağlayıcı açık/kapalı) zaten sır değil, açık yazılır.
+      - name: Taşıma parmak izi (fonksiyon kodu + Auth ayarı, değersiz)
+        if: ${{ inputs.karsilastir }}
+        run: |
+          api="https://api.supabase.com/v1/projects/$PROJECT_REF"
+          h="Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+          {
+          curl -sS -f "$api/functions" -H "$h" \
+            | jq -r 'sort_by(.slug)[] | "fonksiyon \(.slug) | \(.status) | jwt=\(.verify_jwt) | \((.ezbr_sha256 // "-")[0:16])"'
+          curl -sS -f "$api/config/auth" -H "$h" \
+            | jq -r 'to_entries | sort_by(.key)[]
+                | select(.value != null and .value != "")
+                | if (.value|type) == "boolean" then "\(.key) = \(.value)"
+                  else "\(.key) = #\(.value|tojson)" end' \
+            | while IFS= read -r satir; do
+                case "$satir" in
+                  *" = #"*) k=${satir%% = #*}; v=${satir#* = #}
+                            printf '%s = %s\n' "$k" "$(printf '%s' "$v" | sha256sum | cut -c1-12)" ;;
+                  *) printf '%s\n' "$satir" ;;
+                esac
+              done | sed 's/^/auth /'
+          } > "parmak_${{ matrix.hedef }}.txt"
+          cat "parmak_${{ matrix.hedef }}.txt"
+
+      - name: Taşıma parmak izini sakla
+        if: ${{ inputs.karsilastir }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: parmak-${{ matrix.hedef }}
+          path: parmak_${{ matrix.hedef }}.txt
+          retention-days: 3
 
       - name: Edge Function'lar
         if: ${{ inputs.functions != 'none' && !inputs.dry_run }}
@@ -218,19 +271,3 @@ jobs:
             supabase functions deploy "$f" --project-ref "$PROJECT_REF"
             echo "::endgroup::"
           done
-
-  # İki sunucu birebir mi? Deploy iki hedefe koştuysa şart; tek hedefte
-  # bilerek ayrıştırılmış olabilir (onarım), o yüzden yalnız uyarı değil
-  # hiç koşmaz — günlük `sema-esitlik.yml` onu da yakalar.
-  esitlik:
-    needs: deploy
-    if: ${{ inputs.hedef == 'ikisi' && !inputs.dry_run }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Şema parmak izi — Tokyo = Frankfurt
-        run: python3 tool/sema_esitlik.py --ayrinti

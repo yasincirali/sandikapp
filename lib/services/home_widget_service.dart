@@ -17,6 +17,7 @@ import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 import 'deep_link_router.dart';
 import 'notification_service.dart';
+import 'ozellik_olcumu.dart';
 import 'remote_config_service.dart';
 import 'retention_tracker.dart';
 import 'surface_theme.dart';
@@ -36,14 +37,21 @@ import 'crash_reporter.dart';
 ///
 /// ## Gizlilik değişmezi
 /// Widget verisi **cihaz genelinde** okunabilir bir depoya yazılır (Android'de
-/// `SharedPreferences`, iOS'ta App Group). Bu yüzden buraya yalnızca ekranda
-/// zaten görünen ÖZET yazılır — varlık listesi, ticker, adet, kullanıcı id'si
-/// veya e-posta ASLA yazılmaz. Kullanıcı bakiyeyi gizlediyse
-/// ([hideBalance]) tutar da yazılmaz.
+/// `SharedPreferences`, iOS'ta App Group). Bu yüzden portföy özetine
+/// yalnızca ekranda zaten görünen ÖZET yazılır — varlık listesi, ticker,
+/// adet, kullanıcı id'si veya e-posta ASLA yazılmaz. Kullanıcı bakiyeyi
+/// gizlediyse ([hideBalance]) tutar da yazılmaz.
+///
+/// **Tek istisna, bilinçli (2026-10-24):** tek varlık widget'ının seçim
+/// listesi ([varlikListesiniYaz], `sandik_varliklar`) varlık ADLARINI ve
+/// piyasa fiyatlarını taşır — miktar, tutar, lot/kullanıcı kimliği ve
+/// "portföyde mi takipte mi" bilgisi olmadan. Önce yalnız iOS'ta; Android
+/// widget'ı gelince (2026-10-25) aynı anahtar, aynı sınırlarla Android'de de
+/// yazılır. Gerekçe ve sınırlar `VarlikWidgetService`'te.
 ///
 /// Oturum kapanınca [clear] çağrılmalı: aksi halde çıkış yapan kullanıcının
 /// bakiyesi ana ekranda asılı kalır.
-class HomeWidgetService {
+class HomeWidgetService implements WidgetSabitleyici {
   HomeWidgetService._();
   static final instance = HomeWidgetService._();
 
@@ -66,6 +74,46 @@ class HomeWidgetService {
   /// iOS'ta YALNIZ adı verilen türü yeniler (`reloadTimelines(ofKind:)`);
   /// bu yüzden [_requestUpdate] iOS'ta ikinci bir çağrı yapar.
   static const _iOSKilitWidgetName = 'SandikKilitWidget';
+
+  /// iOS tek varlık widget'ının `kind`'ı (`SandikVarlikWidget.swift`).
+  ///
+  /// Ayrı tür, ayrı yenileme: portföy özeti yazıldığında bu tür yenilenmez
+  /// (fiyatları ayrı turda, [varlikListesiniYaz] ile gelir); tema değişince
+  /// [applyTheme] üçünü birden yeniler.
+  static const iOSVarlikWidgetName = 'SandikVarlikWidget';
+
+  /// iOS vitrin widget'ının `kind`'ı (`SandikVitrinWidget.swift`; orta boy,
+  /// üç varlık, Ar-Ge 2026-10-29 §2). Tek varlık widget'ıyla AYNI paketi
+  /// ([kVarliklar]) okur; ayrı tür olduğu için ayrı yenilenir — `home_widget`
+  /// iOS'ta yalnız adı verilen türü yeniler. Android'de eşi yok (sonra).
+  static const iOSVitrinWidgetName = 'SandikVitrinWidget';
+
+  /// iOS mu? Vitrin türünün ek yenileme çağrısı yalnız iOS'ta (Android'de bu
+  /// tür yok; adsız çağrı orada hata olurdu). Test dikişi.
+  @visibleForTesting
+  static bool Function() iOSMu = () => Platform.isIOS;
+
+  /// Android tek varlık widget sağlayıcısının sınıf adı
+  /// (`SandikVarlikWidgetProvider.kt`) — `AndroidManifest.xml`'deki receiver
+  /// ile birebir aynı. iOS türü gibi ayrı yenilenir.
+  static const androidVarlikWidgetName = 'SandikVarlikWidgetProvider';
+
+  /// Tek varlık widget'ının seçim listesi + fiyatları — JSON (`v`, `saat`,
+  /// `ogeler`; biçim `varlikWidgetPaketi`). YENİ anahtar: eski anahtarların
+  /// hiçbiri ve biçimi değişmedi, eski build'in widget'ları bunu okumaz.
+  static const kVarliklar = 'sandik_varliklar';
+
+  /// Tek varlık widget'ının arka plan tazelemesi (`widget-fiyat`, yasin
+  /// onayı 2026-10-26): AKTİF sunucunun public URL'si ve anon anahtarı.
+  /// İkisi de uygulama paketinde zaten gömülü kamuya açık değerler; oturum
+  /// jetonu YAZILMAZ. YENİ anahtarlar: eski hiçbir anahtar değişmedi.
+  static const kWidgetApiUrl = 'sandik_widget_api_url';
+  static const kWidgetApiAnahtar = 'sandik_widget_api_anahtar';
+
+  /// Widget'ın sunucudan kendi çektiği son fiyatlar (yalnız native taraf
+  /// YAZAR; JSON `{sembol: {fiyat, zaman, degisim?}}`). Dart yalnız oturum
+  /// kapanınca boşaltır: seçili sembollerin adı sonraki oturuma kalmasın.
+  static const kVarlikCanli = 'sandik_varlik_canli';
 
   // Paylaşımlı depo anahtarları — native taraf bu adlarla okur.
   static const _kTotal = 'sandik_total';
@@ -206,7 +254,7 @@ class HomeWidgetService {
       await _ensureInit();
       final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
       if (uri == null) return false;
-      await RetentionTracker.instance.recordWidgetTap(surface: 'home_widget');
+      await _dokunusuSay(uri);
       // Dokunuş performans ekranına (günlük grafik) götürür. İstek
       // `MainNavigationScreen` daha kurulmadan yazılabilir; ekran
       // `initState`'te mevcut değeri de okuduğu için kaybolmaz.
@@ -229,8 +277,8 @@ class HomeWidgetService {
       await _ensureInit();
       _clickSub = HomeWidget.widgetClicked.listen((uri) {
         if (uri == null) return;
-        CrashReporter.arkaPlan(RetentionTracker.instance
-            .recordWidgetTap(surface: 'home_widget'), reason: 'home_widget_service.recordWidgetTap');
+        CrashReporter.arkaPlan(_dokunusuSay(uri),
+            reason: 'home_widget_service.recordWidgetTap');
         CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'widget'), reason: 'home_widget_service.RetentionTracker.recordLaunch');
         // Uygulama AÇIKKEN gelen dokunuş: yeni ekran push EDİLMEZ, yalnızca
         // sekme değişir. Push etmek, kullanıcı zaten uygulamadayken üst üste
@@ -241,6 +289,14 @@ class HomeWidgetService {
       // Widget atfı ikincil bir ölçüm — kurulamazsa uygulama etkilenmez.
       if (kDebugMode) debugPrint('startClickAttribution failed: $e');
     }
+  }
+
+  /// Dokunuşu ölçer: yüzey host'tan ([DeepLinkRouter.widgetYuzeyi]); tek
+  /// varlık widget'ı ayrıca özellik kullanımı olarak sayılır (günde bir).
+  Future<void> _dokunusuSay(Uri uri) async {
+    final yuzey = DeepLinkRouter.widgetYuzeyi(uri);
+    if (yuzey == 'varlik_widget') OzellikOlcumu.say(Ozellik.varlikWidget);
+    await RetentionTracker.instance.recordWidgetTap(surface: yuzey);
   }
 
   /// Dokunuşu hedef sekmeye çevirir.
@@ -320,17 +376,18 @@ class HomeWidgetService {
   }) async {
     try {
       await _ensureInit();
+      _toplanan = <String, Object?>{};
 
       // Tema, bakiye gizli olsun olmasın YAZILIR: gizli durumda da widget
       // çiziliyor ve o da uygulamanın temasını izlemeli.
-      await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
-      await HomeWidget.saveWidgetData<bool>(_kLockAmounts, lockScreenAmounts);
-      await HomeWidget.saveWidgetData<bool>(
+      await _yaz<bool>(_kIsLightTheme, themeIsLight);
+      await _yaz<bool>(_kLockAmounts, lockScreenAmounts);
+      await _yaz<bool>(
           _kCanliEtkinligiIzle, canliEtkinligiIzle);
       // Gizliyken de yazılır: gizli widget da "Piyasa kapalı" satırı çizer.
       final yalnizBorsa = yalnizcaBorsaVarliklardan(state.assets);
-      await HomeWidget.saveWidgetData<bool>(_kYalnizBorsa, yalnizBorsa);
-      await HomeWidget.saveWidgetData<bool>(
+      await _yaz<bool>(_kYalnizBorsa, yalnizBorsa);
+      await _yaz<bool>(
           _kGozAlici, RemoteConfigService.instance.gozAlici);
 
       if (hideBalance) {
@@ -359,9 +416,9 @@ class HomeWidgetService {
         // Ölçüm yoksa ya da sıfırsa nötr kabul edilir.
         final isPos = (summary.changeTRY ?? 0) >= 0;
 
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
             _kTotal, tryFmt.format(summary.totalTRY));
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
           _kChange,
           // Üç ayrı durum — kilit ekranıyla AYNI kural
           // (bkz. LiveActivityService._payload):
@@ -379,35 +436,35 @@ class HomeWidgetService {
                   : '${isPos ? '+' : '-'}'
                       '${tryFmt.format(summary.changeTRY!.abs())}',
         );
-        await HomeWidget.saveWidgetData<bool>(_kIsPositive, isPos);
+        await _yaz<bool>(_kIsPositive, isPos);
         // Nötr durum: ölçüm yok ya da ölçüm sıfır. İkisinde de kâr/zarar
         // rengi basılmamalı.
-        await HomeWidget.saveWidgetData<bool>(
+        await _yaz<bool>(
             _kIsFlat, !summary.hasChange || summary.isFlat);
         // Yüzde rozeti — tutardan ayrı alan (kilit ekranıyla aynı düzen).
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
           _kChangePct,
           !summary.hasChange || summary.isFlat
               ? ''
               : '${isPos ? '+' : '-'}'
                   '${fmtPct(summary.changePct!.abs(), digits: 2)} Günlük',
         );
-        await HomeWidget.saveWidgetData<bool>(_kHasData, true);
-        await HomeWidget.saveWidgetData<bool>(_kHidden, false);
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<bool>(_kHasData, true);
+        await _yaz<bool>(_kHidden, false);
+        await _yaz<String>(
             _kLockPct,
             summary.hasChange
                 ? fmtPctIsaretli(summary.changePct!, digits: 2)
                 : '—');
         // Tarih — kilit ekranıyla AYNI biçim. Widget günlerce ekranda
         // durur; rakamın hangi güne ait olduğu okunabilmeli.
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
             _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
         // Piyasa durumu — banner "Piyasa kapalı" derse kullanıcı rakamın
         // neden değişmediğini bilir. Kilit ekranıyla AYNI kural.
-        await HomeWidget.saveWidgetData<bool>(
+        await _yaz<bool>(
             _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
-        await HomeWidget.saveWidgetData<String>(
+        await _yaz<String>(
             _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
 
         // Gün içi sparkline — grafik PNG olarak çizilip yola yazılır.
@@ -431,10 +488,79 @@ class HomeWidgetService {
         );
       }
 
+      // Yalnız DEĞİŞEN anahtarlar yazılır; hiçbiri değişmediyse widget
+      // yenilenmez (bkz. [_toplanan]).
+      final toplanan = _toplanan!;
+      _toplanan = null;
+      final degisen = <String, Object?>{
+        for (final e in toplanan.entries)
+          if (!_sonYazilan.containsKey(e.key) ||
+              _sonYazilan[e.key] != e.value)
+            e.key: e.value,
+      };
+      if (degisen.isEmpty) return;
+      for (final e in degisen.entries) {
+        await HomeWidget.saveWidgetData(e.key, e.value);
+        _sonYazilan[e.key] = e.value;
+      }
       await _requestUpdate();
     } catch (e) {
+      // Yarım kalan yazımdan sonra cihazdaki değerler bilinmiyor: bir
+      // sonraki tur her anahtarı baştan yazsın.
+      _toplanan = null;
+      _sonYazilan.clear();
       if (kDebugMode) debugPrint('HomeWidget update failed: $e');
     }
+  }
+
+  /// Son çizilen sparkline PNG'sinin girdileri ve yolu.
+  String? _sonPngAnahtari;
+  String? _sonPngYolu;
+
+  /// Sparkline PNG'si çizilsin mi — yalnız Android okur. Test dikişi.
+  @visibleForTesting
+  static bool Function() pngCizilsinMi = () => !Platform.isIOS;
+  bool get _pngCiz => pngCizilsinMi();
+
+  /// Bu turda yazılacak anahtarlar — [_update] süresince dolu.
+  ///
+  /// ## Neden (kaynak kullanımı denetimi, 2026-10-12)
+  /// Portföy dinleyicisi her yayında (ön planda en az 30 sn'de bir) bu
+  /// servisi çağırıyor. Rakam değişmese de her turda 20 kanal çağrısı,
+  /// bir PNG çizimi ve iOS'ta iki zaman çizelgesi yenilemesi yapılıyordu
+  /// (test ortamında tur başına 14–20 ms). Değerler artık önce burada
+  /// toplanır, cihazdaki son değerle kıyaslanır ve yalnız farklı olanlar
+  /// yazılır.
+  ///
+  /// **Tazelik kaybı yok:** güncelleme saati (`HH:mm`) ve tarih de
+  /// kıyaslanan değerler arasında; rakam aynı kalsa bile dakika dönünce
+  /// saat yazılır ve widget yenilenir. Ekranda görünen her alan eskisi
+  /// kadar taze, yalnızca aynı değerin üstüne aynı değer yazılmıyor.
+  Map<String, Object?>? _toplanan;
+
+  /// Cihazın paylaşımlı deposuna bu süreçte en son yazılan değerler.
+  /// Süreç yeniden başlayınca boştur: ilk tur her şeyi yazar.
+  final Map<String, Object?> _sonYazilan = {};
+
+  /// Testler için: her test yeni (boş) bir sahte depo kurar; kıyas belleği
+  /// de sıfırlanmalı ki ilk yazım eksiksiz olsun (gerçekte depo yalnızca
+  /// `clear()` ile boşalır, o da belleği sıfırlıyor).
+  @visibleForTesting
+  void kiyasBelleginiSifirla() {
+    _sonYazilan.clear();
+    _sonPngAnahtari = null;
+    _sonPngYolu = null;
+  }
+
+  /// [_update] içindeki yazım: toplama açıksa biriktirir, değilse yazar.
+  Future<void> _yaz<T>(String id, T? data) async {
+    final t = _toplanan;
+    if (t != null) {
+      t[id] = data;
+      return;
+    }
+    await HomeWidget.saveWidgetData<T>(id, data);
+    _sonYazilan[id] = data;
   }
 
   /// Grafiği de tazeleyen sarmalayıcı — portföy dinleyicisinin çağırdığı yol.
@@ -490,22 +616,48 @@ class HomeWidgetService {
   }) async {
     // İki noktadan az veri çizgi oluşturmaz.
     if (values.length < 2) {
-      await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
+      await _yaz<int>(_kSparkPoints, values.length);
       // Seri de temizlenir: kalsaydı iOS widget'ı bugün ölçüm yokken
       // DÜNÜN eğrisini çizmeye devam ederdi.
-      await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
+      await _yaz<String>(_kSparkSeries, '');
       return;
     }
 
-    final path = await _renderSparkline(
-      values,
-      isPos: isPos,
-      isFlat: isFlat,
-      isMarketOpen: isMarketOpen,
-    );
-    if (path != null) {
-      await HomeWidget.saveWidgetData<String>(_kSparkline, path);
-      await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
+    // PNG yalnız Android içindir: iOS widget'ı eğriyi aşağıdaki sayı
+    // dizisinden kendisi çizer ve PNG'yi hiç okumaz (`SandikHomeWidget
+    // .swift`, kendi kabından uygulamanın dosyasını göremez). iOS'ta her
+    // turda 960×180 çizip kodlamak saf israftı (denetim 2026-10-12).
+    //
+    // Android'de de girdiler aynıysa yeniden çizilmez: çizim yalnızca
+    // seriye, yöne ve temaya bağlı; aynı girdi aynı PNG'yi üretir.
+    if (_pngCiz) {
+      final anahtar = '${values.join(',')}|$isPos|$isFlat|$isMarketOpen|'
+          '$themeIsLight';
+      final onceki = _sonPngYolu;
+      final String? path;
+      if (anahtar == _sonPngAnahtari &&
+          onceki != null &&
+          File(onceki).existsSync()) {
+        path = onceki;
+      } else {
+        path = await _renderSparkline(
+          values,
+          isPos: isPos,
+          isFlat: isFlat,
+          isMarketOpen: isMarketOpen,
+        );
+        _sonPngAnahtari = path == null ? null : anahtar;
+        _sonPngYolu = path;
+        // Dosya adı sabit: yol metni aynı kalsa da içerik değişti. Yol bu
+        // turda yeniden yazılsın ki widget yenilensin.
+        if (path != null) _sonYazilan.remove(_kSparkline);
+      }
+      if (path != null) {
+        await _yaz<String>(_kSparkline, path);
+        await _yaz<int>(_kSparkPoints, values.length);
+      }
+    } else {
+      await _yaz<int>(_kSparkPoints, values.length);
     }
 
     // iOS için ham seri. Normalize ORTAK katmanda yapılır ki kilit ekranı
@@ -513,7 +665,7 @@ class HomeWidgetService {
     // Üç ondalık yeter: seri 0…1 aralığında ve çizim birkaç yüz piksel
     // genişliğinde — daha fazlası yalnızca anahtarı şişirir.
     final seri = DailySummary.normalizeForSparkline(values);
-    await HomeWidget.saveWidgetData<String>(
+    await _yaz<String>(
       _kSparkSeries,
       seri.map((v) => v.toStringAsFixed(3)).join(','),
     );
@@ -722,8 +874,17 @@ class HomeWidgetService {
           isMarketOpen ? _sparkPalette.gain : _sparkPalette.text36;
       canvas.drawCircle(center, coreR, Paint()..color = dotColor);
 
-      final image = await recorder.endRecording().toImage(w.toInt(), h.toInt());
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      // Resim ve kayıt hemen bırakılır: 960×180 RGBA ~675 KB yerel bellek,
+      // çöp toplayıcıya bırakılınca her turda birikebiliyordu.
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(w.toInt(), h.toInt());
+      picture.dispose();
+      final ByteData? bytes;
+      try {
+        bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      } finally {
+        image.dispose();
+      }
       if (bytes == null) return null;
 
       final dir = await getApplicationSupportDirectory();
@@ -740,22 +901,22 @@ class HomeWidgetService {
   Future<void> _writeHidden() async {
     // Seri temizlenir: kalsaydı tutar gizliyken bile eğri portföyün
     // gün içi hareketini ele verirdi.
-    await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
-    await HomeWidget.saveWidgetData<String>(_kTotal, '••••••');
-    await HomeWidget.saveWidgetData<String>(_kChange, '');
-    await HomeWidget.saveWidgetData<bool>(_kIsPositive, true);
-    await HomeWidget.saveWidgetData<bool>(_kIsFlat, true);
-    await HomeWidget.saveWidgetData<String>(_kChangePct, '');
-    await HomeWidget.saveWidgetData<bool>(_kHasData, true);
+    await _yaz<String>(_kSparkSeries, '');
+    await _yaz<String>(_kTotal, '••••••');
+    await _yaz<String>(_kChange, '');
+    await _yaz<bool>(_kIsPositive, true);
+    await _yaz<bool>(_kIsFlat, true);
+    await _yaz<String>(_kChangePct, '');
+    await _yaz<bool>(_kHasData, true);
     // Kilit ekranı: yüzde de gizli (karar 4.5) — değer yazılmaz, bayrak
     // gizli der.
-    await HomeWidget.saveWidgetData<bool>(_kHidden, true);
-    await HomeWidget.saveWidgetData<String>(_kLockPct, '');
-    await HomeWidget.saveWidgetData<String>(
+    await _yaz<bool>(_kHidden, true);
+    await _yaz<String>(_kLockPct, '');
+    await _yaz<String>(
         _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
-    await HomeWidget.saveWidgetData<bool>(
+    await _yaz<bool>(
         _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
-    await HomeWidget.saveWidgetData<String>(
+    await _yaz<String>(
         _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
   }
 
@@ -779,7 +940,10 @@ class HomeWidgetService {
     try {
       await _ensureInit();
       await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
+      _sonYazilan[_kIsLightTheme] = themeIsLight;
       await _requestUpdate();
+      // Tek varlık widget'ı da aynı tema bayrağını okur.
+      await _varlikWidgetiniYenile();
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget applyTheme failed: $e');
     }
@@ -794,6 +958,10 @@ class HomeWidgetService {
       // hesabın gün içi grafiğini görürdü. Önbellek ORTAK olduğu için
       // Live Activity tarafı da bu temizlikten yararlanır.
       IntradaySeriesCache.instance.clear();
+      // Burada anahtarlar doğrudan siliniyor: kıyas belleği de sıfırlanır
+      // ki sonraki oturumun ilk yazımı eksiksiz olsun.
+      _sonYazilan.clear();
+      _sonPngAnahtari = null;
 
       await HomeWidget.saveWidgetData<String>(_kTotal, '');
       await HomeWidget.saveWidgetData<String>(_kChange, '');
@@ -803,9 +971,139 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>(_kDate, '');
       await HomeWidget.saveWidgetData<String>(_kUpdatedAt, '');
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, 0);
+      // Tek varlık widget'ının seçim listesi de: çıkan kullanıcının takip
+      // ve portföy adları sonraki oturuma kalmamalı. Boş metin = "liste
+      // yok" (Swift tarafı boşu ve bozuk JSON'u aynı okur).
+      await HomeWidget.saveWidgetData<String>(kVarliklar, '');
+      await HomeWidget.saveWidgetData<String>(kVarlikCanli, '');
       await _requestUpdate();
+      await _varlikWidgetiniYenile();
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget clear failed: $e');
+    }
+  }
+
+  /// Tek varlık widget'ının paketini yazar ve YALNIZ o türü yeniler.
+  ///
+  /// Paketi `VarlikWidgetService` kurar (seçim listesi + fiyat); bu metot
+  /// yalnız sözleşmenin yazma ucudur. Aynı paket ikinci kez yazılmaz.
+  Future<void> varlikListesiniYaz(String paket) async {
+    try {
+      await _ensureInit();
+      if (_sonYazilan[kVarliklar] == paket) return;
+      await HomeWidget.saveWidgetData<String>(kVarliklar, paket);
+      _sonYazilan[kVarliklar] = paket;
+      await HomeWidget.updateWidget(
+        androidName: androidVarlikWidgetName,
+        iOSName: iOSVarlikWidgetName,
+      );
+      // Vitrin aynı paketi okur (bkz. [iOSVitrinWidgetName]).
+      if (iOSMu()) {
+        await HomeWidget.updateWidget(iOSName: iOSVitrinWidgetName);
+      }
+    } catch (e) {
+      _sonYazilan.remove(kVarliklar);
+      if (kDebugMode) debugPrint('HomeWidget varlikListesiniYaz failed: $e');
+    }
+  }
+
+  /// Widget'ın arka planda çağıracağı sunucuyu yazar (bkz. [kWidgetApiUrl]).
+  /// Aynı değer ikinci kez yazılmaz; widget'ı yenilemez (sıradaki paket
+  /// yazımı yeniler).
+  Future<void> widgetSunucusunuYaz({
+    required String url,
+    required String anonKey,
+  }) async {
+    if (url.isEmpty || anonKey.isEmpty) return;
+    try {
+      await _ensureInit();
+      if (_sonYazilan[kWidgetApiUrl] != url) {
+        await HomeWidget.saveWidgetData<String>(kWidgetApiUrl, url);
+        _sonYazilan[kWidgetApiUrl] = url;
+      }
+      if (_sonYazilan[kWidgetApiAnahtar] != anonKey) {
+        await HomeWidget.saveWidgetData<String>(kWidgetApiAnahtar, anonKey);
+        _sonYazilan[kWidgetApiAnahtar] = anonKey;
+      }
+    } catch (e) {
+      _sonYazilan.remove(kWidgetApiUrl);
+      _sonYazilan.remove(kWidgetApiAnahtar);
+      if (kDebugMode) debugPrint('HomeWidget widgetSunucusunuYaz failed: $e');
+    }
+  }
+
+  /// Tek varlık widget'ı ana ekranda kurulu mu (iOS `WidgetCenter`,
+  /// Android `AppWidgetManager`)? Kurulu değilken `VarlikWidgetService`
+  /// fiyat için ağa çıkmaz.
+  ///
+  /// Android sınıf adı `ComponentName.shortClassName` olarak gelir
+  /// (`.SandikVarlikWidgetProvider`); son parça karşılaştırılır. Portföy
+  /// widget'ı (`SandikWidgetProvider`) burada SAYILMAZ; vitrin widget'ı
+  /// (aynı paketi okur, 2026-10-29) SAYILIR.
+  Future<bool> varlikWidgetiKuruluMu() async {
+    await _ensureInit();
+    final kurulu = await HomeWidget.getInstalledWidgets();
+    return kurulu.any((w) =>
+        w.iOSKind == iOSVarlikWidgetName ||
+        w.iOSKind == iOSVitrinWidgetName ||
+        w.androidClassName?.split('.').last == androidVarlikWidgetName);
+  }
+
+  /// Tek varlık widget'ını yeniler (tema değişimi, oturum kapanışı).
+  ///
+  /// Yalnız iOS ve Android'de: masaüstü/test ortamında çağrı yapılmaz
+  /// (önceden `Platform.isIOS` ile korunan çağrının iki platformlu hâli).
+  Future<void> _varlikWidgetiniYenile() async {
+    if (!(Platform.isIOS || Platform.isAndroid)) return;
+    await HomeWidget.updateWidget(
+      androidName: androidVarlikWidgetName,
+      iOSName: iOSVarlikWidgetName,
+    );
+    if (iOSMu()) {
+      await HomeWidget.updateWidget(iOSName: iOSVitrinWidgetName);
+    }
+  }
+
+  /// Android launcher'ı uygulama içinden widget yerleştirmeyi destekliyor mu
+  /// (Android 8+ ve launcher'a bağlı; Ar-Ge 7 Kas 14:30 #5).
+  ///
+  /// iOS'ta karşılığı YOK (WidgetKit uygulamaya yerleştirme izni vermez);
+  /// orada ve masaüstü/test ortamında kanal hiç çağrılmaz, `false` döner.
+  /// Kanal hatası Crashlytics'e non-fatal gider ve `false` döner: satır
+  /// gizlenir, kullanıcı bozuk bir düğme görmez.
+  @override
+  Future<bool> sabitlemeDestekleniyorMu() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await HomeWidget.isRequestPinWidgetSupported() ?? false;
+    } catch (e, st) {
+      CrashReporter.report(e, st,
+          reason: 'home_widget.isRequestPinWidgetSupported');
+      return false;
+    }
+  }
+
+  /// Sistemin "ana ekrana ekle" onay penceresini açar.
+  ///
+  /// Pinlenen sağlayıcı PORTFÖY widget'ı ([_androidProvider]): kurulum
+  /// sonrası seçim istemeden toplamı gösterir ve "widget'ı kurmak" diyen
+  /// kullanıcının kastettiği odur (`WidgetInstallSheet` metni de onu
+  /// anlatır). Tek varlık widget'ı (`SandikVarlikWidgetProvider`) önce varlık
+  /// seçtirir; tek dokunuşluk yolda ikinci bir soru olurdu, sistem widget
+  /// listesinden eklenmeye devam eder.
+  ///
+  /// Onay penceresinin sonucu uygulamaya dönmez (launcher kararı); `true`
+  /// yalnız isteğin gittiğini söyler. Hata → non-fatal + `false`, çağıran
+  /// elle adımları gösterir.
+  @override
+  Future<bool> sabitlemeIste() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      await HomeWidget.requestPinWidget(androidName: _androidProvider);
+      return true;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'home_widget.requestPinWidget');
+      return false;
     }
   }
 
@@ -821,4 +1119,11 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(iOSName: _iOSKilitWidgetName);
     }
   }
+}
+
+/// Ana ekrana widget yerleştirme kapısı — Ayarlar satırı bunu görür, platform
+/// kanalını değil (test dikişi: `widgetSabitleyiciProvider` ezilir).
+abstract interface class WidgetSabitleyici {
+  Future<bool> sabitlemeDestekleniyorMu();
+  Future<bool> sabitlemeIste();
 }

@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import '../models/asset.dart' show Asset, birimEtiketi;
 import '../providers/bulk_cart_provider.dart';
 import '../services/ice_aktarma_satislari.dart';
+import '../services/ice_aktarma_kotasi.dart';
+import '../services/analytics_service.dart';
+import '../widgets/ice_aktarma_kota_sheet.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/sozlesme_provider.dart';
 import '../models/gorunum_kapsami.dart';
@@ -25,6 +28,8 @@ import '../widgets/review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_eklendi.dart';
+import '../widgets/ekran_goruntusu_ekle.dart';
+import '../widgets/sandik_async_button.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
@@ -52,6 +57,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     await pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => AddAssetScreen(
           cartMode: true,
           cartInitial: existing,
@@ -60,16 +66,63 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     );
   }
 
+  /// Görüntü okunurken kayıt ve ikinci okuma kapalı.
+  bool _gorselOkunuyor = false;
+
+  /// Ekran görüntüsünden sepete (2026-10-19; akış
+  /// `ekranGoruntusundenSepete`). Okunurken kayıt kapalı: yarım okumayla
+  /// sepet kaydedilmesin.
+  Future<void> _ekranGoruntusundenEkle() async {
+    if (_saving) return;
+    setState(() => _gorselOkunuyor = true);
+    try {
+      await ekranGoruntusundenSepete(context, ref);
+    } finally {
+      if (mounted) setState(() => _gorselOkunuyor = false);
+    }
+  }
+
   Future<void> _saveAll() async {
     // Buton `_saving`'e bağlı ama devre dışı hâli bir sonraki karede
     // çizilir; aynı karedeki ikinci dokunuş ikinci bir toplu kayıt
     // başlatmasın.
     if (_saving) return;
-    final items = ref.read(bulkCartProvider);
+    var items = ref.read(bulkCartProvider);
     if (items.isEmpty) return;
     // Portföy kayıt başında sabitlenir: kayıt sürerken seçici kilitli, ama
     // alım ve satışlar aynı portföye yazılmalı.
     final hedef = _hedefPortfoy;
+
+    // ── 0) Kota kayıttan ÖNCE sorulur (paywall incelemesi, 2026-10-20) ────
+    // Eskiden kalemler paralel yazılır, kota kalem kalem kapıda durur ve
+    // 15 kalemlik ekstrenin ilk 10'u yazılıp gerisi sepette kalırdı; kullanıcı
+    // bunu ancak hata özetinden öğrenirdi. Şimdi "N kalem var, M'si sığıyor"
+    // denir ve kullanıcı seçer; kalem kalem kapı yarış ağı olarak kalır.
+    final kota = ref.read(varlikKotasiProvider);
+    final kayitli = ref.read(kotaAnahtarlariProvider);
+    if (kota != null && kayitli != null) {
+      final plan = iceAktarmaKotaPlani(
+          kalemler: items, kayitli: kayitli, sinir: kota.sinir);
+      if (plan.asiyor) {
+        unawaited(AnalyticsService.instance
+            .logPremiumGateShown(feature: 'bulk_add_quota_plan'));
+        final secim = await IceAktarmaKotaSheet.sor(context,
+            bulunan: items.length, sigan: plan.sigan.length);
+        if (!mounted) return;
+        switch (secim) {
+          case IceAktarmaKotaSecimi.vazgec:
+            return;
+          case IceAktarmaKotaSecimi.siganlar:
+            items = plan.sigan;
+          case IceAktarmaKotaSecimi.premium:
+            final upgraded = await PaywallScreen.show(context,
+                source: 'bulk_add_asset_limit');
+            if (!mounted || upgraded != true) return;
+            // Premium'a geçti: sınır kalktı, hepsi yazılır.
+        }
+        if (items.isEmpty) return;
+      }
+    }
 
     setState(() {
       _saving = true;
@@ -182,6 +235,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           unitType: item.unitType,
           addedDate: item.addedDate,
           portfoyId: hedef,
+          yol: item.yol,
+          // Ekran görüntüsünden maliyeti okunamayan kalem: lot o günün
+          // fiyatıyla yazılır ama işaretli kalır (0162) — ana ekrandaki
+          // "bilgi eksik" satırı maliyeti girmeyi hatırlatır.
+          maliyetBilinmiyor: item.maliyetSonra && item.price <= 0,
         );
         sepet.remove(item.id);
         if (mounted) setState(() => _saved++);
@@ -210,6 +268,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           baslangic: item.addedDate,
           vadeGun: m.vadeGun,
           portfoyId: hedef,
+          yol: item.yol,
         );
         sepet.remove(item.id);
         if (mounted) setState(() => _saved++);
@@ -355,13 +414,25 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           titleWidget:
               Text('Toplu Ekle${items.isEmpty ? '' : ' (${items.length})'}'),
           actions: [
+            // Sepet doluyken de ekran görüntüsü eklenebilir (boş hâlde
+            // düğme gövdede). Okunurken simge göstergeye döner.
+            if (!_saving && items.isNotEmpty)
+              SandikAsyncTap(
+                onTap: _ekranGoruntusundenEkle,
+                semanticLabel: context.l10n.importScreenshotAdd,
+                child: const SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Icon(Icons.add_photo_alternate_outlined),
+                ),
+              ),
             if (!_saving)
               IconButton(
                 tooltip: context.l10n.pasteCsv,
                 icon: const Icon(Icons.content_paste_go_rounded),
                 onPressed: () => pushGuarded(
                   context,
-                  adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+                  adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
                 ),
               ),
             if (items.isNotEmpty && !_saving)
@@ -385,9 +456,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
   }
 
   Widget _emptyState() {
+    // Kaydırılabilir: büyük yazıda (Dynamic Type ×2) üç öğe ve açıklama
+    // ekrana sığmıyor, taşma şeridi çıkıyordu (2026-10-19 önizlemesi).
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -416,10 +489,31 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                   ?.copyWith(color: context.c.text58, height: 1.4),
             ),
             const SizedBox(height: 16),
+            // Ekran görüntüsünden ekle (2026-10-19): elle girişin en
+            // kısa alternatifi, bu yüzden ilk sırada.
+            // Boy asgari (sabit değil): büyük yazıda etiket satır kırar,
+            // kırpılmaz.
+            SandikAsyncButton(
+              tur: SandikAsyncTur.cerceve,
+              height: null,
+              icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+              onPressed: _ekranGoruntusundenEkle,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child: Text(context.l10n.importScreenshotAdd),
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              context.l10n.importScreenshotHint,
+              textAlign: TextAlign.center,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+            const SizedBox(height: SandikSpace.md),
             OutlinedButton.icon(
               onPressed: () => pushGuarded(
                 context,
-                adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+                adaptiveRoute<bool>(settings: const RouteSettings(name: 'csv_import'), builder: (_) => const CsvImportScreen()),
               ),
               icon: const Icon(Icons.content_paste_go_rounded, size: 18),
               label: Text(context.l10n.pasteFromStatement),
@@ -480,9 +574,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 }),
                 bosluk: const EdgeInsets.only(bottom: SandikSpace.smd),
               ),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
+            // Asgari boy (sabit değil): büyük yazıda etiket kırpılmasın
+            // (HIG Dynamic Type, 2026-10-19 önizlemesi ×2'de taşıyordu).
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                  minWidth: double.infinity, minHeight: 48),
               child: OutlinedButton.icon(
                 onPressed: _saving ? null : () => _openAddForm(),
                 icon: Icon(Icons.add_rounded, color: context.c.amberText),
@@ -501,9 +597,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                  minWidth: double.infinity, minHeight: 52),
               // BİLİNÇLİ İSTİSNA (tek yükleniyor davranışı, 2026-10-08):
               // SandikAsyncButton DEĞİL. Meşgul düğme yalnız gösterge değil
               // "3/10 kaydediliyor" ilerlemesini de taşır; standart bileşen
@@ -511,7 +607,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               // ekranın tamamını kilitler (geri tuşu, satır düzenle/sil,
               // Varlık Ekle) — çift dokunuş koruması oradan gelir.
               child: FilledButton(
-                onPressed: _saving || items.isEmpty ? null : _saveAll,
+                onPressed: _saving || _gorselOkunuyor || items.isEmpty
+                    ? null
+                    : _saveAll,
                 style: FilledButton.styleFrom(
                   backgroundColor: context.c.amberFill,
                   foregroundColor: context.c.onAmber,
@@ -615,13 +713,16 @@ class _BulkItemTile extends StatelessWidget {
       if (item.satis) context.l10n.cartSellTag,
       '${_fmt(item.quantity)} ${_unitLabel()}',
       if (item.price > 0) '${_fmt(item.price)} ${item.currency}',
-      if (item.price <= 0) 'Fiyat otomatik',
+      // "Maliyet sonra girilecek" alt satırda kendi başına (kırpılmasın).
+      if (item.price <= 0 && !item.maliyetSonra) 'Fiyat otomatik',
       if (dateLabel != null) dateLabel,
       if (item.subCategory != null && item.subCategory!.isNotEmpty)
         item.subCategory!,
     ].join(' · ');
 
-    return SandikBasma(
+    return SandikTappable(
+      soluk: true,
+      haptic: SandikHaptic.none,
       onTap: onEdit,
       child: SandikCard(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -656,6 +757,20 @@ class _BulkItemTile extends StatelessWidget {
                               item.satis ? context.c.loss : context.c.text58),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
+                  // Ekran görüntüsünden gelen, maliyeti okunamayan satır
+                  // (2026-10-19). Ayrı satır: büyük yazıda ilk satır
+                  // kırpılınca bu uyarı kaybolmasın. Anlam metinde, renk
+                  // yalnız vurgu.
+                  if (item.maliyetSonra) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      context.l10n.cartCostLater,
+                      style: context.t.titleSmall
+                          ?.copyWith(color: context.c.amberText),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),

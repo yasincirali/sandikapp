@@ -1,3 +1,4 @@
+import '../services/fiyat_kaynagi.dart';
 import '../services/symbol_search_service.dart';
 import 'asset_categories.dart';
 import 'asset_type.dart';
@@ -153,6 +154,43 @@ class VarlikKimligi {
     final t = goldTickerMap[g.label];
     if (t == null) return null;
     return fromSymbolHit(SymbolHit(ticker: t, name: g.label, source: 'Altın'));
+  }
+
+  /// Takip listesi boş durumundaki öneri çipleri: gram altın, dolar,
+  /// BIST 100 (bu sırayla).
+  ///
+  /// Kimlik ELLE kurulmaz; aramanın yerleşik kayıtlarından ([goldTickerMap],
+  /// [SymbolSearchService.defaults]) [fromSymbolHit] ile üretilir. Çipten
+  /// alınan varlık aramadan alınanla aynı anahtara düşmeli — yoksa sunucu
+  /// iki ayrı kayıt kabul eder, ekran "zaten takipte"yi göremezdi. Sembol
+  /// seçimi [FiyatKaynagi]'nın sabitleri: "gram altın" 24 ayar
+  /// ([FiyatKaynagi.gramAltin24]; aramanın boş-sorgu önerisindeki 22 ayar
+  /// değil — Türkiye'de "gram altın" 24 ayar demek, piyasa bandı da bu).
+  /// Bulunamayan (katalogdan düşmüş) kayıt sessizce atlanır; uydurma
+  /// kimlik yazılmaz.
+  static List<VarlikKimligi> get takipOnerileri {
+    VarlikKimligi? yerlesik(String ticker) {
+      for (final h in SymbolSearchService.instance.defaults) {
+        if (h.ticker == ticker) return fromSymbolHit(h);
+      }
+      return null;
+    }
+
+    VarlikKimligi? altin(String ticker) {
+      for (final e in goldTickerMap.entries) {
+        if (e.value == ticker) {
+          return fromSymbolHit(
+              SymbolHit(ticker: ticker, name: e.key, source: 'Altın'));
+        }
+      }
+      return null;
+    }
+
+    return [
+      if (altin(FiyatKaynagi.gramAltin24) case final k?) k,
+      if (yerlesik(FiyatKaynagi.usdTry) case final k?) k,
+      if (yerlesik(FiyatKaynagi.bist100) case final k?) k,
+    ];
   }
 
   /// Varlık ekleme seçicilerinin kimlikleri — formun yazdığı sembolle AYNI

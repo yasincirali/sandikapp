@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:fl_chart/fl_chart.dart' show FlSpot;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
+import '../config/magaza.dart';
 import '../demo/demo_modu.dart';
 import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
@@ -18,6 +20,7 @@ import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
+import '../services/kiyas_paylasimi.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/remote_config_service.dart';
 import '../services/symbol_search_service.dart';
@@ -43,6 +46,9 @@ import 'add_asset_screen.dart';
 import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
+import '../widgets/sandik_ikon_gecisi.dart';
+import '../widgets/sandik_paylas_dugmesi.dart';
+import '../widgets/share_card.dart' show KiyasPaylasKarti, kSandikMarka, showShareSheet;
 
 /// Ortak serisinin arama satırı adındaki ayraç: "Ayşe · tüm portföyü".
 /// Üretildiği yer ve adın ilk parçasını okuyan iki yer aynı sabiti kullanır;
@@ -140,8 +146,12 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// Gün değeri `sembolGunu`: GÜNLÜK `getSymbolHistory`'de `1d` aralığıdır.
   /// TÜFE aylık basamaktır; GÜNLÜK'te iki noktası olmaz ve satır "veri yok"
   /// der — uydurma düz çizgi çizilmez.
+  ///
+  /// YB yok ([SummaryPeriod.sembolDonemleri], gerekçe enum'daki "YB"
+  /// notu); ortak dönem YB iken 1Y çizilir ([SummaryPeriod.sembolKarsiligi]).
   static final _periods = <({String label, int days})>[
-    for (final p in SummaryPeriod.values) (label: p.label, days: p.sembolGunu),
+    for (final p in SummaryPeriod.sembolDonemleri)
+      (label: p.label, days: p.sembolGunu),
   ];
 
   /// Seri renkleri — marka paletinden, birbirinden ayırt edilebilir sırada.
@@ -175,19 +185,18 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     super.initState();
     final donem = widget.baslangicDonemi;
     if (donem != null) {
-      _periodIdx = donem.index;
-      _cizilenDonemIdx = donem.index;
-      // `donem_hafizasi`: açılışta istenen dönem ortak döneme de yazılır —
+      _periodIdx = donem.sembolKarsiligi.index;
+      _cizilenDonemIdx = _periodIdx;
+      // Tek dönem hafızası: açılışta istenen dönem ortak döneme de yazılır —
       // kullanıcı bu pencereye bakarken öteki yüzeyler de aynısını açar.
       // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
-      if (donemHafizasiAcik) {
-        Future.microtask(() {
-          if (mounted) ref.read(seciliDonemProvider.notifier).state = donem;
-        });
-      }
-    } else if (donemHafizasiAcik) {
-      // Ortak dönem 3A varsayılanının yerine geçer (bayrak kapalıyken 3A).
-      _periodIdx = ref.read(seciliDonemProvider).index;
+      Future.microtask(() {
+        if (mounted) ref.read(seciliDonemProvider.notifier).state = donem;
+      });
+    } else {
+      // Ortak dönem eski 3A varsayılanının yerine geçer (bayrak
+      // `donem_hafizasi` 2026-10-20'de emekliye ayrıldı).
+      _periodIdx = ref.read(seciliDonemProvider).sembolKarsiligi.index;
       _cizilenDonemIdx = _periodIdx;
     }
     // Varlık ekranından gelen satır İLK karede seçili olsun: kare sonrasına
@@ -358,14 +367,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// grafiği iskelete düşürüyor, çizgiler sonra tek tek sıfırdan çiziliyordu
   /// — `LineChart` morfu kayboluyordu. İki dönemin serisi aynı eksende hiç
   /// karışmaz: yazma tek `setState`.
-  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
-  /// eskisi gibi doğrudan [_changePeriod]'u çağırır). Ortak döneme yazma `_changePeriod` alanı güncelledikten SONRA yapılır ki
+  /// Seçiciden dönem seçimi (tek dönem hafızası). Ortak döneme yazma
+  /// `_changePeriod` alanı güncelledikten SONRA yapılır ki
   /// [build]'deki dinleyici değişikliği kendi seçimimiz olarak tanıyıp
   /// ikinci kez çekmesin.
   void _donemSec(int idx) {
     CrashReporter.arkaPlan(_changePeriod(idx),
         reason: 'comparison_screen._donemSec');
-    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[idx];
+    ref.read(seciliDonemProvider.notifier).state =
+        SummaryPeriod.sembolDonemleri[idx];
   }
 
   Future<void> _changePeriod(int idx) async {
@@ -409,21 +419,21 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.c;
-    // `donem_hafizasi`: ortak dönem başka yüzeyde (bu ekranın üstünde açılan
-    // varlık sayfası gibi) değişirse bu ekran da o döneme geçer.
-    if (donemHafizasiAcik) {
-      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
-        if (yeni.index != _periodIdx) {
-          CrashReporter.arkaPlan(_changePeriod(yeni.index),
-              reason: 'comparison_screen.ortakDonem');
-        }
-      });
-    }
+    // Tek dönem hafızası: ortak dönem başka yüzeyde (bu ekranın üstünde
+    // açılan varlık sayfası gibi) değişirse bu ekran da o döneme geçer.
+    ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+      final idx = yeni.sembolKarsiligi.index;
+      if (idx != _periodIdx) {
+        CrashReporter.arkaPlan(_changePeriod(idx),
+            reason: 'comparison_screen.ortakDonem');
+      }
+    });
 
     return Scaffold(
       backgroundColor: p.background,
-      appBar: const SandikAppBar(
+      appBar: SandikAppBar(
         title: 'Karşılaştır',
+        actions: [_paylasDugmesi()],
       ),
       body: SafeArea(
         child: Column(
@@ -456,6 +466,61 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     );
   }
 
+  // ── Paylaş ────────────────────────────────────────────────────────────────
+
+  /// "Kıyası paylaş" (Ar-Ge 7 Kas 04:03, YAP 1). Premium DEĞİL: paylaşım
+  /// uygulamanın kendini tanıttığı yoldur; kıyası kilitlemek o yolu da
+  /// kilitlerdi. Ortak paylaş düğmesi (`SandikPaylasDugmesi`: 44 pt, gri
+  /// simge, tooltip = erişilebilirlik etiketi) app bar'ın tek eylemi.
+  ///
+  /// Kıyasta iki serinin verisi yokken ya da dönem değişip yeni seriler
+  /// beklenirken düğme KAPALI (gizli değil — app bar'ın yerleşimi oynamaz):
+  /// eski dönemin yüzdesini yeni dönemin adıyla paylaşmak yanlış olurdu.
+  Widget _paylasDugmesi() {
+    final paylasim = _donemBekliyor
+        ? null
+        : kiyasPaylasimiKur(
+            secili: _selected, seriler: _series, etiket: _displayTicker);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: SandikSpace.sm),
+      child: SandikPaylasDugmesi(
+        tooltip: context.l10n.kiyasPaylasTooltip,
+        hiza: Alignment.center,
+        onPressed: paylasim == null ? null : () => _paylas(paylasim),
+      ),
+    );
+  }
+
+  Future<void> _paylas(KiyasPaylasimi k) {
+    final l = context.l10n;
+    final donem = SummaryPeriod.fromIndex(_cizilenDonemIdx);
+    final donemAdi = donemEtiketi(l, donem.label);
+    // Tarih gün-ay-yıl, dönem özeti kartıyla aynı biçim (`ozet_yan_veri`).
+    // Gün içi kıyasta iki uç aynı gündür; "7 Kas – 7 Kas" yerine tek tarih.
+    final f = DateFormat('d MMM yyyy', 'tr_TR');
+    final bas = f.format(k.baslangic);
+    final bit = f.format(k.bitis);
+    final aralik = bas == bit ? bit : l.shareCardRange(bas, bit);
+    final baslik = l.kiyasPaylasKartBaslik(donemAdi);
+    return showShareSheet(
+      context,
+      kart: KiyasPaylasKarti(
+        baslik: baslik,
+        tarihAraligi: aralik,
+        satirlar: k.satirlar,
+      ),
+      not: l.kiyasPaylasNot,
+      sayfaBasligi: l.kiyasPaylasTooltip,
+      metin: l.kiyasPaylasMetni(
+        donemAdi,
+        k.ozetSatiri,
+        Magaza.indirBaglantisi(kaynak: 'share_card', kampanya: 'kiyas'),
+      ),
+      subject: '$kSandikMarka · $baslik',
+      analyticsPeriod: 'kiyas_${donem.name}',
+    );
+  }
+
   // ── Periyot seçici ────────────────────────────────────────────────────────
 
   /// Ortak [DonemSecici] (tek görünüş, 2026-09-28). Eski amber dolgulu
@@ -465,16 +530,23 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       padding: const EdgeInsets.fromLTRB(
           SandikSpace.md, SandikSpace.sm, SandikSpace.md, 0),
       child: DonemSecici(
-        donemler: SummaryPeriod.values,
+        donemler: SummaryPeriod.sembolDonemleri,
         secili: _periodIdx,
-        onSec: donemHafizasiAcik ? _donemSec : _changePeriod,
+        onSec: _donemSec,
       ),
     );
   }
 
   // ── Grafik ────────────────────────────────────────────────────────────────
 
-  Widget _chartCard(SandikPalette p) {
+  /// İskelet → grafik çapraz solar (2026-10-14).
+  Widget _chartCard(SandikPalette p) => SandikYuklemeGecisi(
+        yukleniyor: _selected.isNotEmpty && _series.isEmpty,
+        iskelet: const SandikSkeletonChart(height: 260),
+        icerik: (_) => _chartCardHam(p),
+      );
+
+  Widget _chartCardHam(SandikPalette p) {
     if (_selected.isEmpty) return _emptyState(p);
 
     if (_series.isEmpty) {
@@ -739,14 +811,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           Icon(Icons.insights_rounded, size: 40, color: p.text36),
           const SizedBox(height: 12),
           Text(context.l10n.addAssetsToCompare,
-              style: TextStyle(color: p.text58, fontSize: 14)),
+              style: context.t.titleMedium?.copyWith(color: p.text58)),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               context.l10n.addAssetsToCompareBody,
               textAlign: TextAlign.center,
-              style: TextStyle(color: p.text36, fontSize: 12),
+              style: context.t.titleSmall
+                  ?.copyWith(color: p.text36, fontWeight: FontWeight.w400),
             ),
           ),
         ],
@@ -827,37 +900,43 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                                   Flexible(
                                     child: Text(_displayTicker(hit),
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
+                                        style: context.t.titleMedium?.copyWith(
                                             color: p.text90,
-                                            fontSize: 14,
                                             fontWeight: FontWeight.w600)),
                                   ),
                                   if (isOwned) ...[
                                     const SizedBox(width: 6),
                                     // Kullanıcının sahip olduğu varlıklar işaretlenir:
                                     // grafikte "benim" ile "olsaydı" ayrımı kritik.
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            p.amberFill.withValues(alpha: 0.18),
-                                        borderRadius: BorderRadius.circular(
-                                            SandikRadius.sm),
+                                    // 9 → 11 pt (HIG alt sınırı, 2026-10-20).
+                                    // Dar kartta sembolle yeri paylaşır;
+                                    // sığmazsa üç noktayla kısalır, taşmaz.
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: p.amberFill
+                                              .withValues(alpha: 0.18),
+                                          borderRadius: BorderRadius.circular(
+                                              SandikRadius.sm),
+                                        ),
+                                        child: Text(context.l10n.inMyPortfolio,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: context.t.labelLarge
+                                                ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: p.amberText)),
                                       ),
-                                      child: Text(context.l10n.inMyPortfolio,
-                                          style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w700,
-                                              color: p.amberText)),
                                     ),
                                   ],
                                 ],
                               ),
                               Text(hit.name,
                                   overflow: TextOverflow.ellipsis,
-                                  style:
-                                      TextStyle(color: p.text58, fontSize: 11)),
+                                  style: context.t.bodySmall
+                                      ?.copyWith(color: p.text58)),
                             ],
                           ),
                         ),
@@ -871,7 +950,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 const CustomLoadingIndicator(size: 16)
               else if (isFailed)
                 Text(context.l10n.noDataShort,
-                    style: TextStyle(color: p.text36, fontSize: 11))
+                    style: context.t.bodySmall?.copyWith(color: p.text36))
               else if (norm != null)
                 _returnBadge(p, norm.totalReturnPct),
               // Varlık sayfası: bu varlığın kendi fiyat grafiği ve dönem
@@ -934,8 +1013,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
               foregroundColor: p.amberText,
               side: BorderSide(color: p.hairline),
               padding: const EdgeInsets.symmetric(vertical: 8),
-              textStyle:
-                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              textStyle: context.t.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -987,7 +1066,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         backgroundColor: background,
         foregroundColor: foreground,
         padding: const EdgeInsets.symmetric(vertical: 8),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        textStyle:
+            context.t.titleSmall?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -1014,12 +1094,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(isPos ? '▲' : '▼', style: TextStyle(color: color, fontSize: 9)),
+        // Yön işareti 9 → 11 pt (HIG alt sınırı, 2026-10-20); yön ayrıca
+        // işaretle de okunur, yalnız renkle değil.
+        Text(isPos ? '▲' : '▼',
+            style: context.t.bodySmall?.copyWith(color: color)),
         const SizedBox(width: 3),
         Text(
           fmtPct(pct.abs(), digits: 2),
-          style: TextStyle(
-              color: color, fontSize: 13, fontWeight: FontWeight.w700),
+          style: context.t.bodyMedium
+              ?.copyWith(color: color, fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -1089,10 +1172,12 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     await pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => AddAssetScreen(
           prefillTicker: hit.ticker,
           prefillName: hit.name,
           prefillType: _typeOf(hit.ticker),
+          ekleYolu: 'arama',
         ),
       ),
     );
@@ -1178,8 +1263,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(on ? Icons.check_rounded : Icons.add_rounded,
-                        size: 14, color: on ? p.amberText : p.text58),
+                    SandikIkonGecisi(on ? Icons.check_rounded : Icons.add_rounded,
+                        boyut: 14, renk: on ? p.amberText : p.text58),
                     const SizedBox(width: SandikSpace.xs),
                     Text(
                       b.name,
@@ -1268,7 +1353,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   Widget _disclaimer(SandikPalette p) {
     return Text(
       context.l10n.comparisonDisclaimer,
-      style: TextStyle(color: p.text36, fontSize: 11, height: 1.4),
+      style: context.t.bodySmall?.copyWith(color: p.text36, height: 1.4),
     );
   }
 }
@@ -1286,20 +1371,22 @@ class _SheetTabs extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onChanged;
 
-  static const _labels = ['Varlıklar', 'Ortaklar'];
-
   @override
-  Widget build(BuildContext context) => SandikSegment(
-        adet: _labels.length,
+  Widget build(BuildContext context) {
+    // Çeviriden (seçici denetimi 2026-10-12): İngilizce'de Türkçe kalıyordu.
+    final labels = [context.l10n.searchTabAssets, context.l10n.scopePartners];
+    return SandikSegment(
+        adet: labels.length,
         secili: selected,
         onSec: onChanged,
         oge: (_, i, __) => Text(
-          _labels[i],
+          labels[i],
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
         ),
       );
+  }
 }
 
 // ── Arama sayfası ───────────────────────────────────────────────────────────
@@ -1368,11 +1455,9 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
         padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 6),
         child: Text(
           text,
-          style: TextStyle(
+          style: context.t.labelMedium?.copyWith(
             color: p.text36,
-            fontSize: 10,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
           ),
         ),
       );
@@ -1387,14 +1472,16 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
         // Portföy serilerinde sanal ticker (PORTFOLIO:MINE) kullanıcıya
         // gösterilmez — anlamsız bir teknik dize olurdu.
         isPortfolio ? _portfolioTitle(h) : h.ticker,
-        style: TextStyle(
-            color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+        style: context.t.titleMedium
+            ?.copyWith(color: p.text90, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(h.name,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: p.text58, fontSize: 12)),
-      trailing: Text(h.source, style: TextStyle(color: p.text36, fontSize: 11)),
+          style: context.t.titleSmall
+              ?.copyWith(color: p.text58, fontWeight: FontWeight.w400)),
+      trailing: Text(h.source,
+          style: context.t.bodySmall?.copyWith(color: p.text36)),
       onTap: () => Navigator.pop(context, h),
     );
   }
@@ -1443,7 +1530,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                   style: TextStyle(color: p.text90),
                   decoration: InputDecoration(
                     hintText: context.l10n.searchAssetsHint,
-                    hintStyle: TextStyle(color: p.text36, fontSize: 14),
+                    hintStyle:
+                        context.t.titleMedium?.copyWith(color: p.text36),
                     prefixIcon: Icon(Icons.search_rounded, color: p.text58),
                     // Dolgu ve çerçeve tema varsayılanından
                     // (`inputDecorationTheme` = `inputFill` kuralı).
@@ -1466,15 +1554,15 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
               Expanded(
                 child: ListView(
                   children: [
-                    _sectionLabel(p, 'PORTFÖYLER'),
+                    _sectionLabel(p, 'Portföyler'),
                     for (final h in widget.portfolioOptions)
                       _tile(p, h, isPortfolio: true),
                     Padding(
                       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
                       child: Text(
                         context.l10n.portfolioSeriesNote,
-                        style: TextStyle(
-                            color: p.text36, fontSize: 11, height: 1.4),
+                        style: context.t.bodySmall
+                            ?.copyWith(color: p.text36, height: 1.4),
                       ),
                     ),
                   ],

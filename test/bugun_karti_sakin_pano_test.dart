@@ -59,7 +59,11 @@ class _FakePortfolio extends PortfolioNotifier {
 /// Seçilen (ekranda TAM yazılan) metne göre bulur.
 Finder sigan(String metin) => find.byElementPredicate((e) {
       final r = e.renderObject;
-      return r is SiganMetinRender && r.secilen == metin;
+      // Yalnız SiganMetin öğesi: üstündeki Flexible da aynı render
+      // nesnesini gösterir, iki kez sayılırdı.
+      return e.widget is SiganMetin &&
+          r is SiganMetinRender &&
+          r.secilen == metin;
     });
 
 void main() {
@@ -117,10 +121,10 @@ void main() {
         (tester) async {
       await kur(tester, genislik: genislik);
       expect(tester.takeException(), isNull);
-      // Başlık: "BUGÜN · <tarih>" (sığmazsa "BUGÜN"); ölçüm bloğu; hedef.
+      // Başlık: "Bugün · <tarih>" (sığmazsa "Bugün"); ölçüm bloğu; hedef.
       expect(
           find.byWidgetPredicate(
-              (w) => w is SiganMetin && w.adaylar.last == 'BUGÜN'),
+              (w) => w is SiganMetin && w.adaylar.last == 'Bugün'),
           findsOneWidget);
       // Test yazı tipi (Ahem) gerçek yazıdan ~2 kat geniş: hangi yazımın
       // seçildiği ortama bağlı; kural "adaylardan biri TAM yazılır".
@@ -128,9 +132,10 @@ void main() {
       // çiplerinin sağında.
       // Not artık düz `Text`; sığmazsa alt satıra düşer (`Wrap`).
       expect(find.text('sadece fiyat etkisi'), findsOneWidget);
-      // Seri çekici boş dönüyor: gün başı = canlı toplam, hüküm "Yerinde
-      // saydı" (sayı uydurulmaz, ₺0).
-      expect(find.text('Yerinde saydı'), findsOneWidget);
+      // Seri çekici boş dönüyor: gün içi seride gerçek nokta yok. Hüküm
+      // "Yerinde saydı · ₺0" değil, veri gelmedi (UX raporu 30 Eki §1).
+      expect(find.text('Bugünün verisi henüz gelmedi'), findsOneWidget);
+      expect(find.text('Yerinde saydı'), findsNothing);
       expect(sigan('Hedef belirle'), findsOneWidget);
       // D'nin dönen bilgi kutuları H'de yok.
       expect(sigan('Artıdaki varlık'), findsNothing);

@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'analytics_service.dart';
 import 'crash_reporter.dart';
 
 /// Adı devlet katkısı fonu mu?
@@ -116,7 +118,44 @@ class TefasService {
   // Kod → (price, timestamp). refreshPrices sırasında yazılır, TTL bitene
   // kadar hem RAM hem disk'ten servis eder. Portföyde 20 fon varsa 20
   // ayrı HTTP isteği yerine cache'ten anında geliyor.
-  final Map<String, ({double price, DateTime ts})> _priceCache = {};
+  final Map<String, ({double price, DateTime ts, DateTime? tarih})>
+      _priceCache = {};
+
+  /// Fonun son fiyatının TEFAS'taki GÜNÜ (fiyatın ait olduğu gün, çekildiği
+  /// an değil). Bilinmiyorsa null (eski önbellek kaydı, elle fiyat).
+  ///
+  /// Neden (müşteri raporu 30 Eki 21:15 #2, yasin "yap"): fon günde bir
+  /// fiyat yayımlar, bugünün fiyatı akşam/ertesi sabah gelir. Pazartesi
+  /// sabahı görünen "+%0,4" Cuma'nın değişimidir; akşam sayı değişince
+  /// "sabah başka diyordu" denir. Ekran fiyatın hangi güne ait olduğunu
+  /// söylesin diye tarih burada tutulur. TTL'e bakmaz: tarih fiyatla
+  /// birlikte eskir, fiyat ekranda durdukça tarihi de doğrudur.
+  DateTime? fiyatTarihi(String kod) {
+    final k = kod
+        .trim()
+        .toUpperCase()
+        .replaceFirst(RegExp(r'^TEFAS:'), '');
+    return _priceCache[k]?.tarih;
+  }
+
+  /// Fonun önbellekteki son fiyatı ve o fiyatın TEFAS günü; gün
+  /// bilinmiyorsa null (gününü bilmediğimiz fiyat "o günün fiyatı" diye
+  /// eşlenmez — bekleyen fon alımı önerisi, Ar-Ge 7 Kas 14:30 #1).
+  ({double fiyat, DateTime tarih})? tarihliFiyat(String kod) {
+    final k = kod
+        .trim()
+        .toUpperCase()
+        .replaceFirst(RegExp(r'^TEFAS:'), '');
+    final kayit = _priceCache[k];
+    final tarih = kayit?.tarih;
+    if (kayit == null || tarih == null || kayit.price <= 0) return null;
+    return (fiyat: kayit.price, tarih: tarih);
+  }
+
+  /// Test: fiyat önbelleğine tarihli kayıt koyar.
+  @visibleForTesting
+  void fiyatTarihiYaz(String kod, double fiyat, DateTime? tarih) =>
+      _priceCache[kod] = (price: fiyat, ts: DateTime.now(), tarih: tarih);
   bool _priceDiskLoaded = false;
 
   static const _baseUrl = 'https://www.tefas.gov.tr';
@@ -169,14 +208,36 @@ class TefasService {
       _cacheTime != null &&
       DateTime.now().difference(_cacheTime!) < _ramCacheTtl;
 
+  /// Katalog dosyası `Caches` klasöründe (denetim 2026-10-12): yeniden
+  /// indirilebilen veri iCloud yedeğine girmesin, sistem gerekince
+  /// boşaltabilsin. Eski konumdaki (Application Support) dosya bir kez
+  /// yeni yere taşınır; taşınamazsa yerinde kalır, katalog ağdan gelir.
   Future<File?> _katalogDosyasi() async {
     try {
-      final klasor = await getApplicationSupportDirectory();
-      return File('${klasor.path}/$_dosyaAdi');
+      final klasor = await getApplicationCacheDirectory();
+      final dosya = File('${klasor.path}/$_dosyaAdi');
+      if (!_eskiKonumBakildi) {
+        _eskiKonumBakildi = true;
+        try {
+          final eski = File(
+              '${(await getApplicationSupportDirectory()).path}/$_dosyaAdi');
+          if (await eski.exists()) {
+            if (await dosya.exists()) {
+              await eski.delete();
+            } else {
+              await klasor.create(recursive: true);
+              await eski.rename(dosya.path);
+            }
+          }
+        } catch (_) {} // taşıma yalnızca verim
+      }
+      return dosya;
     } catch (_) {
       return null; // test ortamı / eklenti yok → yalnız RAM önbelleği
     }
   }
+
+  bool _eskiKonumBakildi = false;
 
   /// Eski tercih anahtarlarını bir kez sil — içerik taşınmaz (24 saatlik
   /// önbellek, ağdan yeniden gelir); amaç tercih dosyasını küçültmek.
@@ -256,7 +317,14 @@ class TefasService {
         final t = DateTime.fromMillisecondsSinceEpoch(ts);
         // TTL geçmişse ignore et — eski fiyat kullanma.
         if (now.difference(t) > _pricesCacheTtl) continue;
-        _priceCache[entry.key] = (price: p, ts: t);
+        // `d` (fiyat günü) 2026-10-31'de eklendi; eski kayıtta yok → null,
+        // ekran tarih yazmaz (uydurma gün yok).
+        final d = v['d'] as int?;
+        _priceCache[entry.key] = (
+          price: p,
+          ts: t,
+          tarih: d == null ? null : DateTime.fromMillisecondsSinceEpoch(d),
+        );
       }
     } catch (_) {
       // Bozuk cache — sessizce yok say.
@@ -271,6 +339,8 @@ class TefasService {
         map[entry.key] = {
           'p': entry.value.price,
           'ts': entry.value.ts.millisecondsSinceEpoch,
+          if (entry.value.tarih != null)
+            'd': entry.value.tarih!.millisecondsSinceEpoch,
         };
       }
       await prefs.setString(_prefsPricesKey, jsonEncode(map));
@@ -307,7 +377,19 @@ class TefasService {
 
   List<TefasFund>? _dkFonlari;
 
-  Future<List<TefasFund>> fetchAllFunds({bool forceRefresh = false}) async {
+  /// Uçuştaki liste isteği. Varlık Ekle açılışı listeyi arka planda ısıtır
+  /// (2026-11-07); kullanıcı fon seçiciyi o sürerken açarsa ikinci bir üçlü
+  /// ağ isteği başlamaz, aynı sonucu bekler. `forceRefresh` paylaşılmaz.
+  Future<List<TefasFund>>? _listeIstegi;
+
+  Future<List<TefasFund>> fetchAllFunds({bool forceRefresh = false}) {
+    if (forceRefresh) return _fetchAllFunds(forceRefresh: true);
+    if (_cacheValid) return Future.value(_cachedFunds!);
+    return _listeIstegi ??=
+        _fetchAllFunds().whenComplete(() => _listeIstegi = null);
+  }
+
+  Future<List<TefasFund>> _fetchAllFunds({bool forceRefresh = false}) async {
     // RAM cache taze → direkt döndür.
     if (!forceRefresh && _cacheValid) return _cachedFunds!;
 
@@ -409,7 +491,9 @@ class TefasService {
         final p = entry.value;
         if (p != null && p > 0) {
           result[entry.key] = p;
-          _priceCache[entry.key] = (price: p, ts: now);
+          // Fiyat günü `_fetchPriceRow`'da yazıldı; burada ezilmesin.
+          _priceCache[entry.key] =
+              (price: p, ts: now, tarih: _priceCache[entry.key]?.tarih);
           dirty = true;
         }
       }
@@ -578,7 +662,11 @@ class TefasService {
       }
       if (latest == null || price == null) return null;
 
-      _priceCache[normalized] = (price: price, ts: DateTime.now());
+      _priceCache[normalized] = (
+        price: price,
+        ts: DateTime.now(),
+        tarih: tefasTarihi(latest['tarih']?.toString() ?? ''),
+      );
       CrashReporter.arkaPlan(_savePricesToDisk(), reason: 'tefas_service._savePricesToDisk');
 
       return (
@@ -591,35 +679,88 @@ class TefasService {
   }
 
   /// Tarihsel NAV verisi — performans grafikleri için.
-  /// [periyod]: 1, 3, 6, 12, 36, 60 (ay)
+  ///
+  /// [periyod] (ay) yalnız bir İPUCU: istek iki kovadan birine gider
+  /// ([tefasGecmisKovasi]) ve aynı kovadaki her dönem tek yanıtı paylaşır.
+  ///
+  /// ## Neden kova (2026-10-23, yasin: AFT/DLY'de 6A·1Y·5Y "%0")
+  /// Varlık sayfası açılışta yedi dönemi + sinyal serisini AYNI ANDA ister;
+  /// fon için bu, TEFAS'a 8 ayrı POST demekti. TEFAS'ın dakikada ~6 istek
+  /// sınırını aşınca hata değil BOŞ 200 döndüğü bildiriliyor (üçüncü taraf
+  /// istemci notu, doğrulanmadı). Kuyruğun sonundaki 6A/1Y/5Y boş kalıyordu.
+  /// Artık bir fon için en fazla iki istek gider; dönemleri çağıranın
+  /// `clipToPeriod`'u keser. Seri ölçeği değişmez: aynı uç, aynı alan.
   Future<List<(int, double)>> fetchHistory(
     String code, {
     int periyod = 3,
-  }) async {
+  }) {
+    final kova = tefasGecmisKovasi(periyod);
+    final anahtar = '${code.trim().toUpperCase()}|$kova';
+    final onbellek = _gecmisOnbellek[anahtar];
+    if (onbellek != null &&
+        DateTime.now().difference(onbellek.ts) < _gecmisTtl) {
+      return Future.value(onbellek.noktalar);
+    }
+    final ucusan = _gecmisUcusan[anahtar];
+    if (ucusan != null) return ucusan;
+    final istek = gecmisCekici(code, kova).then((noktalar) {
+      // Boş yanıt önbelleğe GİRMEZ: sınır aşımıysa bir sonraki deneme
+      // gerçek seriyi alabilmeli.
+      if (noktalar.isNotEmpty) {
+        _gecmisOnbellek[anahtar] = (noktalar: noktalar, ts: DateTime.now());
+      }
+      return noktalar;
+    });
+    _gecmisUcusan[anahtar] = istek;
+    return istek.whenComplete(() => _gecmisUcusan.remove(anahtar));
+  }
+
+  /// NAV günde bir kez değişir; 15 dakika yeni yayını en geç o kadar
+  /// geciktirir, karşılığında sayfa/ekran geçişlerinde TEFAS'a hiç gidilmez.
+  static const _gecmisTtl = Duration(minutes: 15);
+  final Map<String, ({List<(int, double)> noktalar, DateTime ts})>
+      _gecmisOnbellek = {};
+  final Map<String, Future<List<(int, double)>>> _gecmisUcusan = {};
+
+  /// Ağ çekimi — testler ağsız davranışı ölçmek için değiştirir.
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(String code, int periyod)
+      gecmisCekici = _agdanGecmis;
+
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(String, int)
+      get varsayilanGecmisCekici => _agdanGecmis;
+
+  @visibleForTesting
+  void gecmisOnbeleginiTemizle() {
+    _gecmisOnbellek.clear();
+    _gecmisUcusan.clear();
+  }
+
+  /// Ağ çekiminin sonucu — testler sayar, üretimde analitiğe gider.
+  @visibleForTesting
+  static void Function(String sonuc, int periyod) gecmisSonucuKaydi =
+      (sonuc, periyod) => unawaited(AnalyticsService.instance
+          .logTefasGecmis(sonuc: sonuc, periyod: periyod));
+
+  static void _gecmisSonucu(String sonuc, int periyod) =>
+      gecmisSonucuKaydi(sonuc, periyod);
+
+  static Future<List<(int, double)>> _agdanGecmis(
+      String code, int periyod) async {
     try {
       final body = jsonEncode({'fonKodu': code, 'dil': 'TR', 'periyod': periyod});
-      final res = await _client
+      final res = await instance._client
           .post(Uri.parse('$_baseUrl$_priceEndpoint'),
               headers: _headers, body: body)
           .timeout(const Duration(seconds: 12));
 
-      if (res.statusCode != 200) return [];
-      final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
-      final items = (data['resultList'] as List?) ?? [];
-
-      final points = <(int, double)>[];
-      for (final row in items.cast<Map<String, dynamic>>()) {
-        final dateStr = row['tarih'] as String? ?? '';
-        final price = double.tryParse(row['fiyat']?.toString() ?? '');
-        if (price == null || price <= 0) continue;
-        final dt = DateTime.tryParse(dateStr);
-        if (dt != null) points.add((dt.millisecondsSinceEpoch, price));
-      }
-
-      points.sort((a, b) => a.$1.compareTo(b.$1));
-      return points;
-    } catch (e) {
-      _log('fetchHistory error: $e');
+      final yanit = tefasGecmisYaniti(res.statusCode, res.bodyBytes);
+      _gecmisSonucu(yanit.sonuc, periyod);
+      return yanit.noktalar;
+    } catch (e, st) {
+      _gecmisSonucu('hata', periyod);
+      CrashReporter.report(e, st, reason: 'TefasService.fetchHistory');
       return [];
     }
   }
@@ -769,4 +910,53 @@ class TefasService {
       return true;
     }());
   }
+}
+
+/// TEFAS geçmiş isteğinin kovası (ay): 3 aya kadar 3, üstü 60.
+///
+/// İki kova, çünkü portföy yenilemesi her tikte kısa seriyi ister ('5d'):
+/// onu 5 yıllık yanıta bağlamak sık yolu gereksiz ağırlaştırırdı.
+int tefasGecmisKovasi(int periyod) => periyod <= 3 ? 3 : 60;
+
+/// Geçmiş yanıtını sonucu ile çözer: `dolu`, `bos` ya da `http`.
+///
+/// Sınır aşımında TEFAS'ın gövdeyi boş ya da boş listeyle döndüğü bildiriliyor
+/// (doğrulanmadı): ikisi de `bos` sayılır ki sayaç bunu ayırsın. Çözülemeyen
+/// gövde istisna fırlatır; çağıran onu `hata` sayar.
+({List<(int, double)> noktalar, String sonuc}) tefasGecmisYaniti(
+    int durum, List<int> govde) {
+  if (durum != 200) return (noktalar: const [], sonuc: 'http');
+  if (govde.isEmpty) return (noktalar: const [], sonuc: 'bos');
+  final noktalar = tefasGecmisSatirlari(utf8.decode(govde));
+  return (noktalar: noktalar, sonuc: noktalar.isEmpty ? 'bos' : 'dolu');
+}
+
+/// TEFAS `tarih` alanı: ISO (`2026-10-30`) ya da epoch ms (`"1761782400000"`).
+/// Çözülemezse null — gün uydurulmaz.
+DateTime? tefasTarihi(String s) =>
+    DateTime.tryParse(s) ??
+    switch (int.tryParse(s)) {
+      final ms? => DateTime.fromMillisecondsSinceEpoch(ms),
+      null => null,
+    };
+
+/// `fonFiyatBilgiGetir` gövdesinden (tarih, fiyat) noktaları, tarih sıralı.
+///
+/// Fiyat alanı `fiyat`, yoksa `birimPayDegeri` — `_fetchPriceRow` ile aynı
+/// okuma (geçmiş yalnız `fiyat`'a bakıyordu). Sıfır/negatif fiyat düşer:
+/// uydurma sayı yok.
+List<(int, double)> tefasGecmisSatirlari(String govde) {
+  final data = jsonDecode(govde) as Map<String, dynamic>;
+  final items = (data['resultList'] as List?) ?? const [];
+  final points = <(int, double)>[];
+  for (final row in items.cast<Map<String, dynamic>>()) {
+    final dateStr = row['tarih']?.toString() ?? '';
+    final raw = row['fiyat'] ?? row['birimPayDegeri'];
+    final price = double.tryParse(raw?.toString() ?? '');
+    if (price == null || price <= 0) continue;
+    final dt = tefasTarihi(dateStr);
+    if (dt != null) points.add((dt.millisecondsSinceEpoch, price));
+  }
+  points.sort((a, b) => a.$1.compareTo(b.$1));
+  return points;
 }

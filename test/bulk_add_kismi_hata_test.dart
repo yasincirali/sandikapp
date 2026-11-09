@@ -48,6 +48,8 @@ class _SahtePortfoy extends PortfolioNotifier {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    String yol = 'form',
+    bool maliyetBilinmiyor = false,
   }) async {
     if (basarisiz.contains(name)) throw Exception('ağ koptu');
     eklenen.add(name);
@@ -98,7 +100,7 @@ void main() {
     ));
     await tester.pump();
 
-    await tester.tap(find.text('Tümünü Kaydet (3)'));
+    await tester.tap(find.text('Tümünü kaydet (3)'));
     await tester.pumpAndSettle();
 
     // Kaydedilenler sepetten düştü; yalnızca eklenemeyen kaldı.
@@ -121,7 +123,7 @@ void main() {
     }
     portfoy.basarisiz.clear();
 
-    await tester.tap(find.text('Tümünü Kaydet (1)'));
+    await tester.tap(find.text('Tümünü kaydet (1)'));
     await tester.pumpAndSettle();
 
     // Asıl iddia: Alfa ve Gama İKİNCİ kez eklenmedi.

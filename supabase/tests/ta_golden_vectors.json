@@ -142,7 +142,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 91.187724,
           "signal": "neutral",
           "description": "%B: 91 (bant içi)"
@@ -333,7 +333,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 91.187724,
           "signal": "neutral",
           "description": "%B: 91 (bant içi)"
@@ -524,7 +524,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
+          "name": "Bollinger (14, 2σ)",
           "value": 90.311289,
           "signal": "neutral",
           "description": "%B: 90 (bant içi)"
@@ -906,7 +906,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 91.187724,
           "signal": "neutral",
           "description": "%B: 91 (bant içi)"
@@ -1097,7 +1097,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 8.812276,
           "signal": "neutral",
           "description": "%B: 9 (bant içi)"
@@ -1288,7 +1288,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 8.812276,
           "signal": "neutral",
           "description": "%B: 9 (bant içi)"
@@ -1479,7 +1479,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
+          "name": "Bollinger (14, 2σ)",
           "value": 9.688711,
           "signal": "neutral",
           "description": "%B: 10 (bant içi)"
@@ -1861,7 +1861,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 8.812276,
           "signal": "neutral",
           "description": "%B: 9 (bant içi)"
@@ -2052,7 +2052,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "%B: 50 (bant içi)"
@@ -2243,7 +2243,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "%B: 50 (bant içi)"
@@ -2434,7 +2434,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
+          "name": "Bollinger (14, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "%B: 50 (bant içi)"
@@ -2816,7 +2816,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "%B: 50 (bant içi)"
@@ -3007,7 +3007,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 43.7674,
           "signal": "neutral",
           "description": "%B: 44 (bant içi)"
@@ -3198,7 +3198,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 43.7674,
           "signal": "neutral",
           "description": "%B: 44 (bant içi)"
@@ -3389,7 +3389,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
+          "name": "Bollinger (14, 2σ)",
           "value": 62.441609,
           "signal": "neutral",
           "description": "%B: 62 (bant içi)"
@@ -3771,7 +3771,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 43.7674,
           "signal": "neutral",
           "description": "%B: 44 (bant içi)"
@@ -3962,7 +3962,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": -6.151435,
           "signal": "buy",
           "description": "Alt bandın altında: potansiyel dönüş"
@@ -4153,7 +4153,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": -6.151435,
           "signal": "buy",
           "description": "Alt bandın altında: potansiyel dönüş"
@@ -4344,7 +4344,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
+          "name": "Bollinger (14, 2σ)",
           "value": 4.159036,
           "signal": "neutral",
           "description": "%B: 4 (bant içi)"
@@ -4726,7 +4726,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": -6.151435,
           "signal": "buy",
           "description": "Alt bandın altında: potansiyel dönüş"
@@ -4917,7 +4917,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 105.963943,
           "signal": "sell",
           "description": "Üst bandın üzerinde: potansiyel düzeltme"
@@ -5108,7 +5108,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 105.963943,
           "signal": "sell",
           "description": "Üst bandın üzerinde: potansiyel düzeltme"
@@ -5299,7 +5299,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
+          "name": "Bollinger (14, 2σ)",
           "value": 95.777716,
           "signal": "neutral",
           "description": "%B: 96 (bant içi)"
@@ -5681,7 +5681,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 105.963943,
           "signal": "sell",
           "description": "Üst bandın üzerinde: potansiyel düzeltme"
@@ -5757,7 +5757,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -5833,7 +5833,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -5909,7 +5909,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (14, 2.0σ)",
+          "name": "Bollinger (14, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "Yetersiz veri"
@@ -6061,7 +6061,7 @@
         },
         {
           "id": "bollinger",
-          "name": "Bollinger (20, 2.0σ)",
+          "name": "Bollinger (20, 2σ)",
           "value": 50.0,
           "signal": "neutral",
           "description": "Yetersiz veri"

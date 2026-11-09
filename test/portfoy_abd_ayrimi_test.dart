@@ -148,55 +148,62 @@ void main() {
   });
 
   testWidgets('bayrak kapalı: tek "Hisse" satırı', (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     expect(find.text('Hisse'), findsOneWidget);
     expect(find.text('%85,0'), findsOneWidget);
-    expect(find.text('ABD Hisse'), findsNothing);
+    expect(find.text('ABD hisse'), findsNothing);
   });
 
   testWidgets('bayrak açık: BIST ve ABD ayrı satır, ayrı süzer',
       (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu', 'abd_hisse'};
+    RemoteConfigService.testAcik = {'abd_hisse'};
     await _pump(tester);
-    expect(find.text('BIST Hisse'), findsOneWidget);
-    expect(find.text('ABD Hisse'), findsOneWidget);
+    expect(find.text('BIST hisse'), findsOneWidget);
+    expect(find.text('ABD hisse'), findsOneWidget);
     expect(find.text('%50,0'), findsOneWidget);
     expect(find.text('%35,0'), findsOneWidget);
 
-    await tester.tap(find.text('ABD Hisse'));
+    await tester.tap(find.text('ABD hisse'));
     await tester.pumpAndSettle();
     expect(_satir('AAPL'), findsWidgets);
     expect(_satir('THYAO'), findsNothing);
     expect(_satir('AFT'), findsNothing);
 
-    await tester.tap(find.text('BIST Hisse'));
+    await tester.tap(find.text('BIST hisse'));
     await tester.pumpAndSettle();
     expect(_satir('THYAO'), findsWidgets);
     expect(_satir('AAPL'), findsNothing);
 
     // Aynı satıra ikinci dokunuş süzgeci kaldırır.
-    await tester.tap(find.text('BIST Hisse'));
+    await tester.tap(find.text('BIST hisse'));
     await tester.pumpAndSettle();
     expect(_satir('AAPL'), findsWidgets);
     expect(_satir('AFT'), findsWidgets);
   });
 
   testWidgets('bayrak açık, ABD hissesi yok: "Hisse" kalır', (tester) async {
-    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu', 'abd_hisse'};
+    RemoteConfigService.testAcik = {'abd_hisse'};
     await _pump(tester, varliklar: [_thy, _fon]);
     expect(find.text('Hisse'), findsOneWidget);
-    expect(find.text('BIST Hisse'), findsNothing);
+    expect(find.text('BIST hisse'), findsNothing);
   });
 
   testWidgets('büyük halka da iki dilim ve ayrı süzer', (tester) async {
     RemoteConfigService.testAcik = {'abd_hisse'};
     await _pump(tester);
+    // Büyük halka yalnız alt sayfada (`portfoy_dagilim_cubugu` 2026-10-20'de
+    // emekliye ayrıldı; küçük halkaya dokununca açılır).
+    await tester.tap(find.bySemanticsLabel('Dağılımı büyük halkada aç'));
+    await tester.pumpAndSettle();
     final pasta = tester.widget<PieChart>(find.byType(PieChart));
     expect(pasta.data.sections.length, 3);
     expect(pasta.data.sections[1].color, Sandik.abdHisse);
 
-    await tester.tap(find.textContaining('ABD Hisse'));
+    await tester.tap(find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.textContaining('ABD hisse')));
+    await tester.pumpAndSettle();
+    Navigator.of(tester.element(find.byType(BottomSheet))).pop();
     await tester.pumpAndSettle();
     expect(_satir('THYAO'), findsNothing);
     expect(_satir('AAPL'), findsWidgets);

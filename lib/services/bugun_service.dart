@@ -145,6 +145,16 @@ abstract final class BugunService {
     return dk >= seansAcilisDk && dk < kapanis;
   }
 
+  /// Bugünkü seansın kapanış anı; işlem günü değilse `null`. Eşik
+  /// [seansAcikMi] ile aynı (yarım günde 12:30).
+  static DateTime? seansKapanisi(DateTime now) {
+    if (!islemGunuMu(now)) return null;
+    final kapanis = BistTakvimi.yarimGunMu(now)
+        ? BistTakvimi.yarimGunKapanisDk
+        : seansKapanisDk;
+    return dayKey(now).add(Duration(minutes: kapanis));
+  }
+
   /// Bir sonraki seans açılışı (10:00). Bugün açılış öncesiyse bugün.
   static DateTime sonrakiAcilis(DateTime now) {
     var gun = dayKey(now);

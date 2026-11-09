@@ -55,6 +55,28 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
             : widget.asset.miktarMetni(
                 _canli.asset.quantity, (v, d) => fmtNum(v, digits: d)),
         ayrinti: ayrinti,
+        // Mevduatta birim değer (₺1,37) bir şey söylemez: orada toplam
+        // kâr/zarar kalır. Maliyet bilinmiyorsa "—" (uydurma yok); sayı
+        // grafikteki maliyet çizgisiyle aynı kaynaktan (`alarmMaliyeti`).
+        ortalamaMaliyetMetni: birimGizli
+            ? null
+            : (alarmMaliyeti(_canli.lots) == null || pnl.anchorUnitTRY <= 0
+                ? '—'
+                : _birimBicimi(pnl.anchorUnitTRY).format(pnl.anchorUnitTRY)),
+        // Yalnız kendi varlığında: soru "benim param enflasyonu yendi mi?".
+        enflasyon: isOwnAsset ? _enflasyonIsiAl() : null,
+        // Kur ayrışması (Ar-Ge 2026-11-07 #1): kartın yazdığı TL kârıyla
+        // AYNI görünüm varlığı ve AYNI kur (`_pnlOzeti` → `pState.toTRY`);
+        // iki etkinin toplamı o kâra eşit. Hesaplanamıyorsa satır yok;
+        // maliyeti bilinmeyen lotta da ("—" yazan ortalama maliyetle aynı
+        // kural, `alarmMaliyeti`) fiyat etkisi uydurma olurdu.
+        kurAyrismasi: pState == null || alarmMaliyeti(_canli.lots) == null
+            ? null
+            : kurAyrismasi(_canli.asset,
+                guncelKur: pozisyonKuru(_canli.asset.currency,
+                    usdTry: pState.usdTry,
+                    eurTry: pState.eurTry,
+                    gbpTry: pState.gbpTry)),
       ),
       // Eski yığındaki yeri: pozisyonun hemen altı. #113 (eurobond) ile #116
       // (bu düzen) aynı gün ayrı dallarda yazıldı; katmanlı gövdeye
@@ -63,6 +85,10 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
       _eurobondKarti(),
       const SizedBox(height: SandikSpace.lg),
       ..._istatistikler(pnl.currentUnitTRY),
+      // AI yorumu (0151): istatistiklerin hemen altında, katmana gömülmez —
+      // yasin'in istediği "seçili dönemin yorumu" dönem seçicisiyle aynı
+      // görünür alanda durmalı.
+      _aiYorumu(isOwnAsset: isOwnAsset, pState: pState),
 
       // ── 3. Analiz ── (başlık yalnız en az bir kart varsa)
       if (analiz.isNotEmpty) ...[
@@ -122,6 +148,29 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
         const DisclaimerWidget(),
       ],
     ];
+  }
+
+  /// "Aldığından beri enflasyona göre" hesabı — lot defteri değişmedikçe
+  /// AYNI iş döner; `build()` her kurulumda yeniden hesap başlatmaz.
+  /// Parmak izi `RealReturnService._hafizaAnahtari` ile aynı alanlar (fiyat
+  /// girmez: pencere geçmişte biter, canlı fiyat sonucu değiştirmez).
+  Future<RealReturn?> _enflasyonIsiAl() {
+    final lotlar = _seriDefteri;
+    final anahtar = ([
+      for (final a in lotlar)
+        '${a.id}:${a.kind.name}:${a.quantity}:'
+            '${a.addedDate.millisecondsSinceEpoch}'
+    ]..sort())
+        .join(',');
+    if (anahtar != _enflasyonAnahtari || _enflasyonIsi == null) {
+      _enflasyonAnahtari = anahtar;
+      _enflasyonIsi = RealReturnService.aldigindanBeri(lotlar)
+          .catchError((Object e, StackTrace st) {
+        CrashReporter.report(e, st, reason: 'varlik_enflasyon_satiri');
+        return null;
+      });
+    }
+    return _enflasyonIsi!;
   }
 
   /// Bu varlıkta GERÇEKTEN çizilecek analiz kartları, eski sırayla.
@@ -185,7 +234,7 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
               const SizedBox(height: SandikSpace.sm),
               AssetSignalCard(asset: widget.asset, onTap: _sinyalPaneline),
               TechnicalSignalPanel.forAsset(widget.asset,
-                  key: _sinyalPaneliKey, detayli: true),
+                  key: _sinyalPaneliKey),
             ],
           ),
         ),
@@ -203,7 +252,8 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
   }
 }
 
-/// Pozisyonun özet kartı: bugünkü değer, toplam kâr/zarar, miktar — ve
+/// Pozisyonun özet kartı: bugünkü değer, ortalama maliyet (mevduatta
+/// toplam kâr/zarar), miktar — ve
 /// "Ayrıntı" ile açılan eski yedi satır.
 ///
 /// Dönem kâr/zararı yalnız ayrıntıda: seçili dönemin yüzdesi fiyatın
@@ -215,10 +265,26 @@ class _KatmanliPozisyonKarti extends StatefulWidget {
     required this.pnl,
     required this.miktarMetni,
     required this.ayrinti,
+    this.ortalamaMaliyetMetni,
+    this.enflasyon,
+    this.kurAyrismasi,
   });
+
+  /// Döviz cinsi pozisyonda "Fiyattan · Kurdan" (Premium); `null` → satır
+  /// yok (TL varlık ya da kur/alış kuru bilinmiyor, bkz. [kurAyrismasi]).
+  final KurAyrismasi? kurAyrismasi;
+
+  /// Orta sütun (Ar-Ge 1 Kas 08:45 #3, yasin "yap"): "Toplam kâr/zarar"
+  /// fiyatın altındaki "Pozisyonun" satırını tekrarlıyordu; yerine ortalama
+  /// maliyet. `null` → eski sütun (mevduat: birim değer anlamsız).
+  final String? ortalamaMaliyetMetni;
 
   final BazPara baz;
   final _PnlOzeti pnl;
+
+  /// "Aldığından beri enflasyona göre" — `null` iş yok (ortağın varlığı);
+  /// iş `null` dönerse satır hiç açılmaz (uydurma yok).
+  final Future<RealReturn?>? enflasyon;
 
   /// `null` → miktar sütunu yok (mevduat).
   final String? miktarMetni;
@@ -278,13 +344,32 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
             children: [
               sayi(l.posCurrentValue, tutar.format(pnl.currentValueTRY)),
               const SizedBox(width: SandikSpace.smd),
-              sayi(l.posTotalPnl, k?.metin ?? l.noChange, renk: kRenk),
+              if (widget.ortalamaMaliyetMetni case final m?)
+                sayi(l.posAvgCost, m)
+              else
+                sayi(l.posTotalPnl, k?.metin ?? l.noChange, renk: kRenk),
               if (widget.miktarMetni case final m?) ...[
                 const SizedBox(width: SandikSpace.smd),
                 sayi(l.posQuantity, m),
               ],
             ],
           ),
+          // Enflasyon satırı (yasin 2026-10-22, artifact seçeneği A): üç
+          // sayının altında, yeni kart/başlık yok. Hesap bitince açılır
+          // (`SandikAcilir`: hareketi azalt'ta anında); sonuç yoksa hiç.
+          if (widget.enflasyon case final isi?)
+            FutureBuilder<RealReturn?>(
+              future: isi,
+              builder: (context, s) => SandikAcilir(
+                acik: s.data != null,
+                child: s.data == null
+                    ? const SizedBox.shrink()
+                    : _EnflasyonSatiri(sonuc: s.data!),
+              ),
+            ),
+          // Enflasyonun hemen altı: ikisi de "kâr gerçekte nereden" sorusu.
+          if (widget.kurAyrismasi case final ka?)
+            KurAyrismasiSatiri(ayrisma: ka, baz: widget.baz),
           _AcKapaSatiri(
             baslik: l.s4Details,
             acik: _acik,
@@ -299,6 +384,57 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Enflasyonun X puan önünde · Eylül TÜFE'sine kadar".
+///
+/// Anlam kelimede ("önünde/gerisinde") ve ok ikonunun yönünde; renk tek
+/// başına bir şey söylemez (HIG renk körlüğü). Puan = nominal − TÜFE,
+/// portföy kartları ve paylaşım kartıyla aynı dil (`aheadOfInflationPts`).
+/// Dokunulmaz; ekran okuyucu tek cümle okur.
+class _EnflasyonSatiri extends StatelessWidget {
+  const _EnflasyonSatiri({required this.sonuc});
+
+  final RealReturn sonuc;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final puan = sonuc.puan;
+    final onde = puan >= 0;
+    final dil = Localizations.localeOf(context).toLanguageTag();
+    final ay = DateFormat('MMMM', dil).format(sonuc.pencere.sonAy);
+    final hukum = onde
+        ? l.aheadOfInflationPts(fmtNum(puan, digits: 1))
+        : l.behindInflationPts(fmtNum(puan.abs(), digits: 1));
+    final metin = '$hukum · ${l.adInflationThrough(ay)}';
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Semantics(
+        container: true,
+        label: metin,
+        excludeSemantics: true,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              onde ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+              size: 16,
+              color: onde ? c.gain : c.loss,
+            ),
+            const SizedBox(width: SandikSpace.xs),
+            Expanded(
+              child: Text(
+                metin,
+                style: context.t.labelSmall?.copyWith(color: c.text58),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

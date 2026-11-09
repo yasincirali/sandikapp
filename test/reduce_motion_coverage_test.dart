@@ -118,7 +118,10 @@ void main() {
       final widgetPattern = RegExp(
         r'Animated(?:Container|Opacity|Switcher|Positioned|DefaultTextStyle'
         r'|Size|Scale|Rotation|Align|Padding|CrossFade|Slide'
-        r'|FractionallySizedBox)\(',
+        r'|FractionallySizedBox)\('
+        // 2026-10-20 hareket denetimi: açık animasyon `TweenAnimationBuilder`
+        // desene girmiyordu (~18 yer elle korunuyordu; sıradaki kaçardı).
+        r'|TweenAnimationBuilder(?:<[^>]*>)?\(',
       );
       final durationPattern = RegExp(r'duration:\s*([^,\n]+)');
 
@@ -161,6 +164,7 @@ void main() {
           // denetlenir, o yüzden ilk eşleşmeyi almak yeterli.
           final d = durationPattern.firstMatch(body)?.group(1)?.trim() ?? '';
           final guarded = d.contains('Of(context)') ||
+              RegExp(r'SandikMotion\.\w+Of\(').hasMatch(d) ||
               d.contains('SandikMotion.of(') ||
               manualGuard;
 

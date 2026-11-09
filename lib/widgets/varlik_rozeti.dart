@@ -61,7 +61,7 @@ class VarlikRozeti extends StatelessWidget {
               sembol,
               maxLines: 1,
               style: context.t.labelSmall?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 letterSpacing: 0,
                 height: 1,
                 color: type.onSurface(context),

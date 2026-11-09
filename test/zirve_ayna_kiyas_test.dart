@@ -24,11 +24,14 @@ void main() {
     String ad = '2. portföy',
     double zirveRoi = 2.8,
     bool hareketiAzalt = false,
+    double olcek = 1.0,
   }) {
     return MaterialApp(
       theme: ThemeData.dark(),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(disableAnimations: hareketiAzalt),
+        data: MediaQuery.of(context).copyWith(
+            disableAnimations: hareketiAzalt,
+            textScaler: TextScaler.linear(olcek)),
         child: child!,
       ),
       home: Scaffold(
@@ -61,32 +64,61 @@ void main() {
     expect(find.text('SEN'), findsOneWidget);
     expect(find.text('2. PORTFÖY'), findsOneWidget);
     expect(
-        find.text('En büyük fark fon: sende %28, onda %6. '
+        find.text('En büyük fark fon: sende %28,3, onda %5,9. '
             'Getiride o 6,1 puan önde.'),
         findsOneWidget);
-    expect(find.bySemanticsLabel('Altın: sende %72, onda %56'),
+    expect(find.bySemanticsLabel('Altın: sende %71,7, onda %55,7'),
         findsOneWidget);
     // Sende olmayan tür: sol taraf tire.
-    expect(find.bySemanticsLabel('Kripto: sende —, onda %18'),
-        findsOneWidget);
+    expect(
+        find.bySemanticsLabel('Kripto: sende —, onda %17,9'), findsOneWidget);
   });
 
   testWidgets('fon satırının altında fon fon, "Diğer" sonda', (tester) async {
     await pump(tester, kur());
-    expect(find.bySemanticsLabel('TTE: sende %28, onda —'), findsOneWidget);
+    expect(find.bySemanticsLabel('TTE: sende %28,3, onda —'), findsOneWidget);
     expect(find.bySemanticsLabel('AFT: sende —, onda %5,1'), findsOneWidget);
-    expect(find.bySemanticsLabel('Diğer: sende —, onda %0,8'),
-        findsOneWidget);
+    expect(find.bySemanticsLabel('Diğer: sende —, onda %0,8'), findsOneWidget);
     final tte = tester.getTopLeft(find.byKey(const ValueKey('ayna-fon-TTE')));
     final diger = tester.getTopLeft(
         find.byKey(const ValueKey('ayna-fon-${ZirveKiyas.fonDiger}')));
     expect(tte.dy, lessThan(diger.dy));
   });
 
+  testWidgets('satırlar farkın büyüklüğüne göre sıralı', (tester) async {
+    await pump(tester, kur());
+    // |fark|: fon 22,4 · kripto 17,9 · altın 16 · hisse 12,9 · döviz 7,6.
+    double y(String t) => tester.getTopLeft(find.byKey(ValueKey('ayna-$t'))).dy;
+    expect(y('fon'), lessThan(y('kripto')));
+    expect(y('kripto'), lessThan(y('altin')));
+    expect(y('altin'), lessThan(y('hisse')));
+    expect(y('hisse'), lessThan(y('doviz')));
+    // Fon kırılımı fon satırının hemen altında kalır.
+    expect(
+        y('fon'),
+        lessThan(
+            tester.getTopLeft(find.byKey(const ValueKey('ayna-fon-TTE'))).dy));
+    expect(tester.getTopLeft(find.byKey(const ValueKey('ayna-fon-TTE'))).dy,
+        lessThan(y('kripto')));
+  });
+
+  for (final olcek in [2.0, 3.1]) {
+    testWidgets('yazı ×$olcek: taşma yok, sayılar okunur', (tester) async {
+      tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(kur(olcek: olcek));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.bySemanticsLabel('Altın: sende %71,7, onda %55,7'),
+          findsOneWidget);
+    });
+  }
+
   double sagCubuk(WidgetTester tester, String tur) {
     final satir = find.byKey(ValueKey('ayna-$tur'));
-    final kutular = find.descendant(
-        of: satir, matching: find.byType(AnimatedContainer));
+    final kutular =
+        find.descendant(of: satir, matching: find.byType(AnimatedContainer));
     // İki çubuk: 0 sen (sol), 1 o (sağ).
     return tester.getSize(kutular.at(1)).width;
   }

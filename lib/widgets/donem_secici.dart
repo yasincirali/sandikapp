@@ -47,10 +47,13 @@ class DonemSecici extends StatelessWidget {
     required this.secili,
     required this.onSec,
     this.getiriler,
+    this.eksik,
+    this.sonEk,
   });
 
-  /// Gösterilecek dönemler — [SummaryPeriod.values] ya da (elle fiyatlanan
-  /// varlıkta GÜNLÜK'süz) bir alt kümesi. Başka liste yazılmaz.
+  /// Gösterilecek dönemler — Performans'ta [SummaryPeriod.performansSirasi],
+  /// sembol yüzeylerinde [SummaryPeriod.sembolDonemleri] ya da (elle
+  /// fiyatlanan varlıkta GÜNLÜK'süz) onun alt kümesi. Başka liste yazılmaz.
   final List<SummaryPeriod> donemler;
 
   /// [donemler] içindeki seçili indeks.
@@ -61,6 +64,19 @@ class DonemSecici extends StatelessWidget {
   /// Verilirse her segmentin altında o dönemin getirisi (yüzde). `null`
   /// eleman → henüz yok; satır boş yer tutar, yerleşim zıplamaz.
   final List<double?>? getiriler;
+
+  /// [getiriler] ile hizalı: `true` → seri o dönemin başına ulaşmıyor
+  /// (`DonemIstatistigi.kapsamEksik`); yüzde yerine "—" yazılır. Yüzde
+  /// başka bir dönemin getirisi olurdu (8 aylık fonda "5Y").
+  final List<bool>? eksik;
+
+  /// Dönem DIŞI son seçenek (takip listesinin "Eklediğimden beri",
+  /// 2026-11-08); verilirse [donemler]'in ardına tek segment eklenir ve
+  /// indeksi `donemler.length`'tır. Gün sayılı bir pencere olmadığı için
+  /// [donemler]'e girmez ("başka liste yazılmaz" kuralı korunur); ayrı bir
+  /// çip yerine aynı kabukta durur ki "hangi aralığa bakıyorum" sorusu tek
+  /// yerde yanıtlansın. [getiriler] ile birlikte verilmez.
+  final String? sonEk;
 
   /// Kabuğun tek satırlı yüksekliği (Performans'ın 2026-09-15 ölçüsü).
   static const double tekSatirYukseklik = 36;
@@ -75,6 +91,10 @@ class DonemSecici extends StatelessWidget {
     final olcek = MediaQuery.textScalerOf(context);
     final yon = Directionality.of(context);
     final getiri = getiriler;
+    bool eksikMi(int i) {
+      final e = eksik;
+      return e != null && i < e.length && e[i];
+    }
 
     int pay(String etiket) {
       final tp = TextPainter(
@@ -86,12 +106,21 @@ class DonemSecici extends StatelessWidget {
       return ((tp.width + 2 * SandikSpace.sm2) * 100).round();
     }
 
-    final etiketler = [for (final d in donemler) donemEtiketi(l, d.label)];
+    assert(sonEk == null || getiriler == null);
+    final etiketler = [
+      for (final d in donemler) donemEtiketi(l, d.label),
+      if (sonEk != null) sonEk!,
+    ];
+    // Ekran okuyucu kısaltmayı değil adı okur ("YB" → "Yıl başından beri").
+    final adlar = [
+      for (final d in donemler) donemSemantigi(l, d.label),
+      if (sonEk != null) sonEk!,
+    ];
 
     // Kabuk, kayan zemin, dokunma, geçiş: ortak [SandikSegment]
     // (2026-10-01). Burada yalnız dönem içeriği ve getiri satırı kalır.
     return SandikSegment(
-      adet: donemler.length,
+      adet: etiketler.length,
       secili: secili,
       onSec: onSec,
       paylar: [for (final e in etiketler) pay(e)],
@@ -102,13 +131,17 @@ class DonemSecici extends StatelessWidget {
           : SandikTouch.min + SandikSpace.sm,
       semantik: (i) {
         final g = getiri == null || i >= getiri.length ? null : getiri[i];
-        return g == null ? etiketler[i] : '${etiketler[i]}, ${fmtPctIsaretli(g)}';
+        if (g != null && eksikMi(i)) {
+          return '${adlar[i]}, ${l.periodNotEnoughData}';
+        }
+        return g == null ? adlar[i] : '${adlar[i]}, ${fmtPctIsaretli(g)}';
       },
       // Tek FittedBox bütün sütunu küçültür: yedi segmentte dar genişlik ve
       // büyük metin ölçeğinde (x2, x3) iki satır kabuğa sığmayabilir;
       // kırpmak yerine küçülür.
       oge: (context, i, _) {
         final g = getiri == null || i >= getiri.length ? null : getiri[i];
+        final yok = g != null && eksikMi(i);
         return FittedBox(
           fit: BoxFit.scaleDown,
           child: Column(
@@ -117,12 +150,16 @@ class DonemSecici extends StatelessWidget {
               Text(etiketler[i], maxLines: 1, softWrap: false),
               if (getiri != null)
                 Text(
-                  g == null ? ' ' : fmtPctIsaretli(g, digits: 1),
+                  g == null
+                      ? ' '
+                      : yok
+                          ? '—'
+                          : fmtPctIsaretli(g, digits: 1),
                   maxLines: 1,
                   softWrap: false,
                   style: context.t.labelSmall?.copyWith(
                     fontFeatures: const [FontFeature.tabularFigures()],
-                    color: g == null || donemDuzMu(g)
+                    color: g == null || yok || donemDuzMu(g)
                         ? context.c.text36
                         : context.signColor(g),
                   ),

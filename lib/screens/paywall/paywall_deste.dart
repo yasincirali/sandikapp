@@ -36,6 +36,11 @@ enum PaywallKarti {
   ozelGosterge,
   karsilastir,
   ortak,
+  // Zirvedeki portföylerin varlık varlık oranları + seninle ortakları
+  // (0158, yasin 2026-10-19). Yalnız Zirve'nin Premium kapısı canlıyken
+  // destede (`desteSirasi(zirve:)`); vitrinden açılan paywall bu kartla
+  // başlar.
+  zirve,
   // Çoklu portföy (0133): yalnız `coklu_portfoy` açıkken destede.
   portfoy,
   // Çoklu hesap kartı (#152) kalktı: hesap ekleme/geçiş ücretsiz
@@ -70,12 +75,23 @@ PaywallKarti? kaynaktanKart(String source) {
     // not kartına düşüyordu; radar kapalıyken kart destede yoktu).
     'yillik_rapor' || 'portfoy_disa_aktar' || 'aylik_rapor' =>
       PaywallKarti.rapor,
-    'temettu_tahmini' => PaywallKarti.temettu,
+    // Temettü kartındaki "maliyetine göre verim" kilidi (2026-11-07).
+    'temettu_tahmini' || 'temettu_verimi' => PaywallKarti.temettu,
     // Masraf dökümü "param gerçekte nereye gidiyor" sorusu: X-Ray'in yanı.
-    'fon_xray' || 'portfoy_xray' || 'masraf_dokumu' => PaywallKarti.xray,
+    // Kur ayrışması (varlık detayı, 2026-11-07) da aynı sorunun kâr tarafı:
+    // "kârım gerçekte nereden geliyor".
+    'fon_xray' ||
+    'portfoy_xray' ||
+    'masraf_dokumu' ||
+    'kur_ayrismasi' ||
+    // Yıllık ortalama getiri (varlık detayı, Ar-Ge 7 Kas 20:30 #6): aynı
+    // soru, "kârım yılda ne ediyor".
+    'yillik_getiri' =>
+      PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
+    'zirve' => PaywallKarti.zirve,
     // Kısmi aktarım ve ortağın göreceği portföyü seçmek de çoklu portföyün
     // Premium yarısı (#148); kart aynı.
     'portfoy_limit' ||
@@ -85,33 +101,90 @@ PaywallKarti? kaynaktanKart(String source) {
     'para_akisi_karti' => PaywallKarti.akis,
     'hacim_radari' || 'kripto_baski' => PaywallKarti.hacim,
     'analiz_notu' => PaywallKarti.not,
-    'ekstre_ai' => PaywallKarti.ekstre,
+    // Ekran görüntüsünden maliyet de ekstre içe aktarmanın parçası.
+    'ekstre_ai' || 'ekran_goruntusu' => PaywallKarti.ekstre,
     _ => null,
   };
 }
 
+/// Kullanıcının paywall'a tetikleyicisiz geldiği (profil bandı, ayarlar)
+/// durumda destenin hangi işle açılacağı (paywall incelemesi, 2026-10-20).
+///
+/// Tetikleyici varsa dokunulan kilidin kartı önde; yoksa eskiden herkes
+/// aynı varsayılan sırayı görüyordu. Portföyü fon ağırlıklı olana X-Ray ve
+/// rapor, sinyal kuranla teknik analiz, ortağı olana ortak/portföy kartı
+/// önce gelir; gerisi varsayılan sırada. Saf karar [paywallPersona]'da.
+enum PaywallPersona { genel, fon, teknik, ortakli }
+
+/// Saf: ne tür yatırımcı. Sinyal kurmuş olmak en güçlü işaret (bilinçli bir
+/// kurulum); sonra ortak; sonra fon ağırlığı (fon ≥ hisse ve en az bir fon).
+PaywallPersona paywallPersona({
+  required int fonSayisi,
+  required int hisseSayisi,
+  required bool sinyalVar,
+  required bool ortakVar,
+}) {
+  if (sinyalVar) return PaywallPersona.teknik;
+  if (ortakVar) return PaywallPersona.ortakli;
+  if (fonSayisi > 0 && fonSayisi >= hisseSayisi) return PaywallPersona.fon;
+  return PaywallPersona.genel;
+}
+
+/// Persona'nın öne aldığı kartlar (sırayla).
+List<PaywallKarti> _personaOncelik(PaywallPersona p) => switch (p) {
+      PaywallPersona.fon => const [
+          PaywallKarti.xray,
+          PaywallKarti.rapor,
+          PaywallKarti.temettu
+        ],
+      PaywallPersona.teknik => const [
+          PaywallKarti.sinyal,
+          PaywallKarti.ozelGosterge
+        ],
+      PaywallPersona.ortakli => const [PaywallKarti.ortak, PaywallKarti.portfoy],
+      PaywallPersona.genel => const [],
+    };
+
 /// Saf: destenin kart sırası. Açık olmayan özelliğin kartı çıkar; kaynağın
-/// kartı (destede varsa) başa alınır, gerisi varsayılan sırada.
+/// kartı başa alınır, gerisi varsayılan sırada. Kaynak yoksa (bilinmeyen
+/// giriş) [persona]'nın kartları öne gelir.
+///
+/// Kaynağın kartı HER ZAMAN destededir, bayrağı kapalı görünse bile:
+/// kullanıcı o kilide dokunduysa özellik canlıdır. Ekran görüntüsünden
+/// maliyet (`ekran_goruntusu`) Premium kapısıyla (`radarKilitli`) açılır
+/// ama kartı ekstre kartı; `ekstreAiEsleme` kapalıyken deste o kartsız
+/// açılıyor, kullanıcı neden burada olduğunu göremiyordu (paywall
+/// incelemesi, 2026-10-20).
 List<PaywallKarti> desteSirasi(
   String source, {
   required bool radar,
   required bool ekstreAi,
   // Varsayılan kapalı: bayrak açılmadan satılmaz (açılmamış şey satılmaz).
   bool portfoy = false,
+  // Zirve Premium kapısı (0158) canlı mı. Varsayılan kapalı: kapı yokken
+  // kart satılmaz.
+  bool zirve = false,
+  PaywallPersona persona = PaywallPersona.genel,
 }) {
+  final bas = kaynaktanKart(source);
   final acik = [
     for (final k in PaywallKarti.values)
-      if (switch (k) {
-        PaywallKarti.akis || PaywallKarti.hacim || PaywallKarti.not => radar,
-        PaywallKarti.ekstre => ekstreAi,
-        PaywallKarti.portfoy => portfoy,
-        _ => true,
-      })
+      if (k == bas ||
+          switch (k) {
+            PaywallKarti.akis ||
+            PaywallKarti.hacim ||
+            PaywallKarti.not =>
+              radar,
+            PaywallKarti.ekstre => ekstreAi,
+            PaywallKarti.portfoy => portfoy,
+            PaywallKarti.zirve => zirve,
+            _ => true,
+          })
         k,
   ];
-  final bas = kaynaktanKart(source);
-  if (bas == null || !acik.contains(bas)) return acik;
-  return [bas, ...acik.where((k) => k != bas)];
+  if (bas != null) return [bas, ...acik.where((k) => k != bas)];
+  final once = _personaOncelik(persona).where(acik.contains).toList();
+  return [...once, ...acik.where((k) => !once.contains(k))];
 }
 
 /// Kart renkleri. Kartlar marka yüzeyleridir; iki temada da aynı görünür
@@ -157,9 +230,11 @@ class _DesteGovdesi extends StatefulWidget {
     required this.busy,
     required this.onSatinAl,
     required this.onGeriYukle,
+    this.persona = PaywallPersona.genel,
   });
 
   final String source;
+  final PaywallPersona persona;
   final bool yillik;
   final ValueChanged<bool> onPlan;
 
@@ -197,7 +272,11 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
     final sira = desteSirasi(widget.source,
         radar: rc.balinaRadariAcik,
         ekstreAi: rc.ekstreAiEsleme,
-        portfoy: rc.cokluPortfoy);
+        portfoy: rc.cokluPortfoy,
+        // Paywall yalnız `paywall_enabled` açıkken açılır; o an Zirve'nin
+        // Premium kapısı da canlıdır (yeni katılım + varlık ayrıntısı).
+        zirve: true,
+        persona: widget.persona);
     return _kartlar = [for (final k in sira) _kart(context, k)];
   }
 
@@ -288,6 +367,21 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           _OrtakGorseli(renk: _KartRengi.yesil),
           l.pwdOrtakSayi(rc.freePartnerLimit),
           l.prmSinirsiz,
+        ),
+      // Zirve: ücretsizde kendi sıran ve tür payları; Premium'da zirvedeki
+      // portföylerin varlık varlık oranları ve seninle ortakları (0158).
+      PaywallKarti.zirve => (
+          _KartRengi.amber,
+          l.pwdZirveEtiket,
+          l.pwdZirveBaslik,
+          null,
+          _Cubuklar(
+              degerler: const [92, 64, 48, 38, 22],
+              vurgulu: 1,
+              aralik: SandikSpace.sm,
+              renk: _KartRengi.amber),
+          l.prmZirveUcretsiz,
+          l.prmZirvePremium,
         ),
       // Çoklu portföy: ücretsizde 1 (Ana), Premium sınırsız
       // (`portfoyLimitProvider`).
@@ -422,7 +516,7 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                             child: Text(
                               fiyat,
                               style: t.displaySmall?.copyWith(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 color: c.gold,
                                 letterSpacing: -0.5,
                                 fontFeatures: const [
@@ -444,7 +538,7 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                               child: Text(
                                 l.prmYillikTasarruf('${widget.oran}'),
                                 style: t.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w600,
                                     letterSpacing: 0,
                                     color: c.onStatus),
                               ),
@@ -460,7 +554,12 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                         _DenemeCizelgesi(gun: deneme),
                       ],
                       const SizedBox(height: SandikSpace.md2),
-                      _GuvenSatiri(metin: l.pwdGuvenTakip),
+                      // Varlık kartındaki "N varlık ücretsiz" ile aynı sayı:
+                      // "takip her zaman ücretsiz" cümlesi sınırla
+                      // çelişiyordu (paywall incelemesi, 2026-10-20).
+                      _GuvenSatiri(
+                          metin: l.pwdGuvenTakip(
+                              RemoteConfigService.instance.freeAssetLimit)),
                       const SizedBox(height: SandikSpace.sm),
                       _GuvenSatiri(metin: l.pwdGuvenIptal),
                       const SizedBox(height: SandikSpace.lgs),
@@ -576,13 +675,12 @@ class _DesteBaslik extends StatelessWidget {
                           Text(l.sandikPremiumUpper,
                               style: t.labelMedium?.copyWith(
                                   color: c.onAmber,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.4)),
+                                  fontWeight: FontWeight.w600)),
                           const SizedBox(height: SandikSpace.xs2),
                           Text(l.pwdSlogan,
                               style: t.headlineLarge?.copyWith(
                                   color: c.onAmber,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                   height: 1.05,
                                   letterSpacing: -0.6)),
                         ],
@@ -615,13 +713,29 @@ class _PlanSekmeleri extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final l = context.l10n;
+    // `goz_alici` (seçici denetimi 2026-10-12): plan seçimi bir mod; tüm
+    // uygulamadaki kayan segment. Dolu amber burada fiyat kartıyla ve
+    // satın al düğmesiyle yarışıyordu; vurgu satın al düğmesinde kalır.
+    if (RemoteConfigService.instance.gozAlici) {
+      return SandikSegment(
+        adet: 2,
+        secili: yillik ? 0 : 1,
+        onSec: (i) => onPlan(i == 0),
+        yukseklik: SandikTouch.min + SandikSpace.sm,
+        icBosluk: SandikSpace.xs,
+        metinStili: context.t.titleSmall,
+        oge: (_, i, __) => Text(i == 0 ? l.planYearly : l.planMonthly),
+      );
+    }
     Widget sekme(String metin, bool secili, bool deger) => Expanded(
           child: Semantics(
             button: true,
             selected: secili,
-            child: SandikBasma(
+            child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
               onTap: () => onPlan(deger),
-              olcek: 0.98,
+              scale: 0.98,
               child: AnimatedContainer(
                 duration: SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
@@ -680,7 +794,7 @@ class _DenemeCizelgesi extends StatelessWidget {
               children: [
                 Text(ust,
                     style: t.labelMedium?.copyWith(
-                        color: c.amberText, fontWeight: FontWeight.w800)),
+                        color: c.amberText, fontWeight: FontWeight.w600)),
                 const SizedBox(height: SandikSpace.xxs),
                 Text(alt,
                     style: t.bodyMedium?.copyWith(
@@ -763,8 +877,7 @@ class _KartIcerik extends StatelessWidget {
               child: Text(etiket,
                   style: t.labelMedium?.copyWith(
                       color: renk.vurgu,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2)),
+                      fontWeight: FontWeight.w600)),
             ),
             if (rozet != null)
               Container(
@@ -786,7 +899,7 @@ class _KartIcerik extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: t.headlineMedium?.copyWith(
                 color: renk.metin,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 height: 1.1,
                 letterSpacing: -0.3)),
         const SizedBox(height: SandikSpace.smd),

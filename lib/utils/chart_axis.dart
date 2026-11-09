@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:intl/intl.dart';
+import '../models/asset_type.dart';
 import 'tr_format.dart';
 
 /// Çizgi grafiklerin ORTAK eksen ve odak cebiri.
@@ -225,11 +226,34 @@ const double gunIciAsgariBantOrani = 0.005;
 /// biri. Asıl taban [gorunurYBandi]'nın `asgariBantOrani`'dır (%2, gün içi
 /// %0,5); bu değer yalnız sıfır genişlikli bandı önler. ₺1 sabiti ucuz
 /// varlıkları düzleştiriyordu (bkz. [gorunurYBandi] notu).
-double fiyatAsgariAraligi({required bool log, required double ortalama}) {
-  if (log) return 1e-3;
+///
+/// [gunIci] LOG'da gün içi tabanını ([gunIciAsgariBantOrani], %0,5) log
+/// birimine çevirir: log10(1,005). Bkz. [fiyatAsgariBantOrani].
+double fiyatAsgariAraligi({
+  required bool log,
+  required double ortalama,
+  bool gunIci = false,
+}) {
+  if (log) {
+    return gunIci
+        ? math.log(1 + gunIciAsgariBantOrani) / math.ln10
+        : 1e-3;
+  }
   final o = ortalama.abs();
   return o > 0 ? o * 1e-3 : 1.0;
 }
+
+/// Tek varlığın FİYAT grafiğinde [gorunurYBandi]'nın `asgariBantOrani`'sı.
+///
+/// **LOG'da 0 (TestFlight bulgusu 2026-10-12, Gram Altın · Bugün · LOG):**
+/// oran ortalamayla çarpılır; LOG'da ortalama log10(fiyat)'tır (₺6.600 →
+/// 3,82) ve %0,5 × 3,82 = 0,019 log birimi ≈ fiyatın %4,5'i demekti. Gün
+/// içi %1,5'lik hareket kartın beşte birine sıkışıyor, eksen ₺6,61K–₺6,92K
+/// gibi verinin çok üstüne çıkıyordu. LOG'da taban log biriminde
+/// [fiyatAsgariAraligi]'ndan gelir (gün içi log10(1,005) — doğrusalla aynı
+/// %0,5).
+double fiyatAsgariBantOrani({required bool gunIci, required bool log}) =>
+    log ? 0.0 : (gunIci ? gunIciAsgariBantOrani : 0.02);
 
 /// Fiyat bandı + göstergeler: gösterge bandın İÇİNDEYSE bant aynen kalır,
 /// DIŞINA taşarsa bant onu da kapsayacak şekilde yeniden kurulur.
@@ -268,6 +292,23 @@ double fiyatAsgariAraligi({required bool log, required double ortalama}) {
 /// bundan sık etiketler yan yana sıkışıyor.
 const double gunIciEksenAdimiDk = 240.0;
 
+/// Varlık grafiğinde gün içi X tick adımı — dakika; görünür pencereye göre.
+///
+/// Yuvarlak saat adımları (15 dk … 12 sa): tick'ler 06:00 · 12:00 gibi okunur
+/// saatlere düşer. Hedef ~4 bölme; zoom'da pencere daraldıkça adım da
+/// incelir (2 saatlik pencerede 30 dk). Eskiden `span/5` kesirli güne
+/// "yuvarlanıyordu": 0,2 gün = 4 sa 48 dk → 04:48 · 09:36 gibi etiketler
+/// (TestFlight bulgusu 2026-10-12). Sıkışan etiketleri [xEtiketiAtlanir]
+/// ayrıca seyreltir.
+double gunIciTickDk(double gorunurDk) {
+  const adimlar = [15.0, 30.0, 60.0, 120.0, 180.0, 240.0, 360.0, 720.0];
+  final hedef = gorunurDk / 4;
+  for (final a in adimlar) {
+    if (a >= hedef) return a;
+  }
+  return 1440.0 * (hedef / 1440).ceilToDouble();
+}
+
 /// Gün içi ("GÜNLÜK") X ekseninin SAĞ ucu — gün başlangıcından dakika.
 ///
 /// Son nokta viewport'un ~%82'sinde tutulur: sağında %18 pay kalır ki
@@ -287,8 +328,35 @@ const double gunIciEksenAdimiDk = 240.0;
 /// fl_chart'ı düşürür.
 ///
 /// [sonNoktaDk] serinin son noktasının gün başından dakika cinsinden uzaklığı.
-double gunIciEksenSonuDk(double sonNoktaDk) =>
-    sonNoktaDk > 0 ? sonNoktaDk / _gunIciSonNoktaKonumu : 240.0;
+///
+/// [basDk] eksenin sol ucu ([gunIciEksenBasiDk]); %82 kuralı o uçtan
+/// itibaren uygulanır. Varsayılan 0 (00:00) eski davranışın birebiri.
+double gunIciEksenSonuDk(double sonNoktaDk, {double basDk = 0}) =>
+    sonNoktaDk > basDk
+        ? basDk + (sonNoktaDk - basDk) / _gunIciSonNoktaKonumu
+        : basDk + 240.0;
+
+/// Gün içi ("GÜNLÜK") X ekseninin SOL ucu — gün başlangıcından dakika.
+///
+/// **Hisse seanstan başlar (yasin 2026-10-30, karar kartı "Seanstan
+/// başlasın").** 2026-09-10 kuralı "GÜNLÜK 00:00'dan başlasın" idi; hissede
+/// gece veri olmadığı için öğlen bakan kişi grafiğin yarısını boş görüyor,
+/// günün hareketi sağa sıkışıyordu. Muadillerin hepsi BIST günlüğünü seans
+/// saatiyle çizer. Hissede eksen serinin İLK noktasında başlar: o nokta
+/// önceki kapanıştır ve ilk mumun bir slot öncesindedir (`yahooSeriCoz`,
+/// #262), yani açılış basamağı ve referans çizgisi görünür kalır.
+///
+/// Altın, döviz, kripto, fon ve Performans 00:00'da kalır ([seansli]
+/// `false`): 7/24'e yakın işleyen seride gece de hareket vardır.
+///
+/// Takvim varsayımı yok: sol uç VERİDEN gelir. Hafta sonu ve tatilde seri
+/// son seansı döndürür; eksen o seansın önceki kapanışından başlar.
+double gunIciEksenBasiDk(double ilkNoktaDk, {required bool seansli}) =>
+    seansli && ilkNoktaDk > 0 && ilkNoktaDk < 24 * 60 ? ilkNoktaDk : 0;
+
+/// GÜNLÜK eksende seanstan başlayan varlık türü ([gunIciEksenBasiDk]).
+/// Varlık detayı ve varlık sayfası (takip listesi) bu tek karardan okur.
+bool gunIciSeansli(AssetType tur) => tur == AssetType.hisse;
 
 /// Son noktanın gün içi viewport'taki yeri — bkz. [gunIciEksenSonuDk].
 const double _gunIciSonNoktaKonumu = 0.82;
@@ -321,6 +389,7 @@ const double gunIciCokGunEsigi = 1 / _gunIciSonNoktaKonumu;
   required double ilkMs,
   required double sonMs,
   required int periodDays,
+  bool seansli = false,
 }) {
   const dkMs = 60 * 1000.0;
   const gunMs = 24 * 60 * dkMs;
@@ -333,10 +402,16 @@ const double gunIciCokGunEsigi = 1 / _gunIciSonNoktaKonumu;
     final geceYarisi = dayKey(son);
     final bas = geceYarisi.millisecondsSinceEpoch.toDouble();
     final sonDk = (sonMs - bas) / dkMs;
+    final basDk = gunIciEksenBasiDk((ilkMs - bas) / dkMs, seansli: seansli);
+    final sagDk = gunIciEksenSonuDk(sonDk, basDk: basDk);
     return (
-      min: bas,
-      max: bas + gunIciEksenSonuDk(sonDk) * dkMs,
-      interval: gunIciEksenAdimiDk * dkMs,
+      min: bas + basDk * dkMs,
+      max: bas + sagDk * dkMs,
+      // Seanstan başlayan pencere birkaç saattir; sabit 4 saatlik adım tek
+      // etiket bırakıyordu (önizleme 2026-10-30). Adım pencereye göre,
+      // varlık detayıyla aynı kural (`gunIciTickDk`).
+      interval: (basDk > 0 ? gunIciTickDk(sagDk - basDk) : gunIciEksenAdimiDk) *
+          dkMs,
       baseline: bas,
       gunIci: true,
     );

@@ -12,6 +12,7 @@ import '../services/price_service.dart';
 import '../services/retention_tracker.dart';
 import '../services/sparkline_service.dart';
 import 'auth_provider.dart';
+import 'cevrimdisi_provider.dart';
 import 'preferences_provider.dart';
 import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
@@ -20,6 +21,8 @@ import '../services/crash_reporter.dart';
 import '../services/varlik_yeniden_kur.dart';
 import '../services/daily_summary.dart';
 import '../services/fx_rate_migration_service.dart';
+import '../services/acilis_olcumu.dart';
+import '../services/gorunen_hata.dart';
 import '../services/portfolio_cache.dart';
 import '../services/remote_config_service.dart';
 import '../services/tazelik_ritmi.dart';
@@ -59,10 +62,19 @@ Set<String> kotaAnahtarlari(Iterable<Asset> lotlar, String userId) => {
 final varlikKotasiProvider = Provider<({int kullanilan, int sinir})?>((ref) {
   final sinir = ref.watch(assetLimitProvider);
   if (sinir >= (1 << 30)) return null;
+  final anahtarlar = ref.watch(kotaAnahtarlariProvider);
+  if (anahtarlar == null) return null;
+  return (kullanilan: anahtarlar.length, sinir: sinir);
+});
+
+/// Bugünkü kota anahtarları (oturum yoksa null). Toplu kayıt öncesi plan
+/// (`iceAktarmaKotaPlani`) hangi kalemlerin YENİ varlık olduğunu bununla
+/// ayırır; sayım `addAsset` kapısıyla aynı.
+final kotaAnahtarlariProvider = Provider<Set<String>?>((ref) {
   final uid = ref.watch(authProvider).valueOrNull?.id;
   if (uid == null) return null;
   final lotlar = ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
-  return (kullanilan: kotaAnahtarlari(lotlar, uid).length, sinir: sinir);
+  return kotaAnahtarlari(lotlar, uid);
 });
 
 /// Saf: [yeni] pozisyonu eklemek kotayı aşıyor mu; aşıyorsa kullanılan
@@ -203,6 +215,20 @@ class PortfolioState {
   /// taşır — onlar hiçbir yüzeye itilmez.
   final String ownerId;
 
+  /// Bu state açılışta diskteki SON BİLİNEN kopyadan mı kuruldu (bu
+  /// oturumda henüz fiyat turu bitmedi)?
+  ///
+  /// Neden (müşteri raporu 30 Eki 21:15 #1, yasin "yap"): uygulama günde
+  /// birkaç kez "bugün ne oldu" için açılıyor ve her seferinde sunucu
+  /// yanıtına kadar iskelet görülüyordu. Artık son görülen portföy anında
+  /// çizilir, defter ve fiyatlar arkadan gelir. Ama kopyadaki fiyat dünün
+  /// olabilir: GÜNÜN yüzdesini ve hükmünü söyleyen yüzeyler (Bugün kartı)
+  /// bu bayrak düşene kadar iskelette kalır — dünkü fiyatla "Yükseldi"
+  /// yazmak, kapattığımız "veri gelmedi" sorununun tersi olurdu. İlk fiyat
+  /// turu bitince (başarılı ya da değil) düşer; başarısızsa eski çevrimdışı
+  /// davranışı birebir sürer.
+  final bool onbellekKopyasi;
+
   const PortfolioState({
     this.assets = const [],
     this.isLoading = false,
@@ -213,6 +239,7 @@ class PortfolioState {
     this.gbpTry = 1.0,
     this.goldGramTry = 0,
     this.ownerId = '',
+    this.onbellekKopyasi = false,
   });
 
   PortfolioState copyWith({
@@ -226,6 +253,7 @@ class PortfolioState {
     double? gbpTry,
     double? goldGramTry,
     String? ownerId,
+    bool? onbellekKopyasi,
   }) =>
       PortfolioState(
         assets: assets ?? this.assets,
@@ -237,6 +265,7 @@ class PortfolioState {
         gbpTry: gbpTry ?? this.gbpTry,
         goldGramTry: goldGramTry ?? this.goldGramTry,
         ownerId: ownerId ?? this.ownerId,
+        onbellekKopyasi: onbellekKopyasi ?? this.onbellekKopyasi,
       );
 
   double toTRY(double amount, String currency) {
@@ -426,6 +455,21 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) return const PortfolioState();
 
+    // Açılışta son bilinen portföy anında (bkz. [PortfolioState.onbellekKopyasi]).
+    // Süreç başına kullanıcı başına BİR kez: oturum içindeki yeniden kurulum
+    // (token yenileme vb.) kopyaya geri dönüp ekrandaki taze fiyatı eskisiyle
+    // ezmesin. Defter sunucudan açılış fiyat turunun başında okunur
+    // (`_fiyatTuru` → [_defteriTazele]; `_sonDefterOkuma` null → bayat).
+    if (_kopyaVerilen != user.id) {
+      _kopyaVerilen = user.id;
+      final kopya = await acilisKopyasi(user.id);
+      if (kopya != null) {
+        _sonDefterOkuma = null;
+        AcilisOlcumu.instance.defterHazir(onbellekten: true, kopya: true);
+        return kopya;
+      }
+    }
+
     final List<Asset> assets;
     try {
       assets = await SupabaseService.instance.fetchByUser(user.id);
@@ -443,15 +487,64 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       if (cached == null) rethrow;
       CrashReporter.report(e, st,
           reason: 'PortfolioNotifier.build (önbellekten açıldı)');
+      AcilisOlcumu.instance.defterHazir(onbellekten: true);
+      // "Çevrimdışı" şeridi görünür: bu oturumda puan istenmez.
+      GorunenHata.kaydet();
+      // Son bilinen kurlarla (yoksa eski davranış: 1.0): dövizli varlık
+      // çevrimdışında ×1 kurla yanlış toplam vermesin.
+      final kur = await PortfolioCache.kurOku(user.id);
       return PortfolioState(
         assets: cached,
         errorMessage: 'Çevrimdışı. Son bilinen veriler gösteriliyor.',
         ownerId: user.id,
+        usdTry: kur?.usd ?? 1.0,
+        eurTry: kur?.eur ?? 1.0,
+        gbpTry: kur?.gbp ?? 1.0,
+        goldGramTry: kur?.altin ?? 0,
       );
+    }
+    // Boş defter ölçülmez: fiyat turu olmaz, "toplam" da yok.
+    if (assets.isNotEmpty) {
+      AcilisOlcumu.instance.defterHazir(onbellekten: false);
     }
     return PortfolioState(
       assets: assets,
       ownerId: user.id,
+    );
+  }
+
+  /// Bu süreçte açılış kopyası verilmiş kullanıcı (bkz. [build]).
+  String? _kopyaVerilen;
+
+  /// Açılış kopyası: diskteki son defter + son kurlar. Kurulamazsa null ve
+  /// [build] eski yoldan (sunucuyu bekleyerek) açar:
+  /// - kopya yok ya da boş (yeni kullanıcı, çıkış sonrası),
+  /// - dövizli/altın bazlı gösterim gerekiyor ama son kur bilinmiyor
+  ///   (uydurma kur yok: ×1.0 ile toplam yanlış çizilirdi).
+  ///
+  /// Kopya kullanıcı kimliğiyle anahtarlı ([PortfolioCache]); ortakların
+  /// defteri kopyaya girmez, onlar fiyat turunda sunucudan gelir (izin geri
+  /// alınmış olabilir).
+  @visibleForTesting
+  Future<PortfolioState?> acilisKopyasi(String uid) async {
+    final varliklar = await PortfolioCache.read(uid);
+    if (varliklar == null || !varliklar.any((a) => a.isActive)) return null;
+    final kur = await PortfolioCache.kurOku(uid);
+    final dovizli = varliklar.any((a) =>
+        a.isActive && a.currency.toUpperCase() != 'TRY');
+    final altinBaz =
+        BaseCurrency.fromIndex(ref.read(baseCurrencyIndexProvider)) ==
+            BaseCurrency.gold;
+    if ((dovizli || altinBaz) && kur == null) return null;
+    if (altinBaz && (kur?.altin ?? 0) <= 0) return null;
+    return PortfolioState(
+      assets: varliklar,
+      ownerId: uid,
+      usdTry: kur?.usd ?? 1.0,
+      eurTry: kur?.eur ?? 1.0,
+      gbpTry: kur?.gbp ?? 1.0,
+      goldGramTry: kur?.altin ?? 0,
+      onbellekKopyasi: true,
     );
   }
 
@@ -620,6 +713,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// kategori, para birimi) `positionKey` kuralının kopyası olurdu.
   String? sonEklenenPozisyon;
 
+  /// Son eklenen lotun kimliği — ekleme formu "bekleyen fon alımı"
+  /// işaretini (Ar-Ge 7 Kas 14:30 #1) bu kimlikle kurar. [addAsset]'in
+  /// dönüş tipi değişmedi: onu ezen sahte notifier'lar bozulmasın; bu alan
+  /// yazılmadıysa (null) işaret kurulmaz, kayıt yine olur.
+  String? sonEklenenLotId;
+
   Future<void> addAsset({
     required String name,
     required String ticker,
@@ -636,6 +735,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    // Ölçüm: `asset_added.yol` (bkz. `AnalyticsService.eklemeYollari`).
+    String yol = 'form',
+    // Alış fiyatı okunamadı, [purchasePrice] o günün fiyatı (0162). Yalnız
+    // `true` iken lota yazılır; aksi hâlde lot işaretsiz (eski gövde).
+    bool maliyetBilinmiyor = false,
   }) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -685,6 +789,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         commission: commission,
         sozlesmeId: sozlesmeId,
         portfoyId: portfoyId,
+        yol: yol,
+        maliyetBilinmiyor: maliyetBilinmiyor,
       );
     } finally {
       // Yazım bitince lot `state`'te; anahtarı oradan sayılır.
@@ -714,6 +820,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     required double commission,
     required String? sozlesmeId,
     required String? portfoyId,
+    required String yol,
+    required bool maliyetBilinmiyor,
   }) async {
     final fxRate = await _alisKuru(currency, addedDate, currentState);
 
@@ -747,6 +855,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // sözleşmesinin portföyünde kalır. Bayrak kapalıyken hep Ana (null).
       portfoyId: _yazilacakPortfoy(
           portfoyId: portfoyId, sozlesmeId: sozlesmeId, s: currentState),
+      maliyetBilinmiyor: maliyetBilinmiyor ? true : null,
     );
     if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
       asset.purchasePrice = asset.currentPrice;
@@ -754,10 +863,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
     await SupabaseService.instance.insertAsset(asset);
     sonEklenenPozisyon = positionKey(asset);
+    sonEklenenLotId = asset.id;
 
     unawaited(AnalyticsService.instance.logAssetAdded(
       type: type.name,
       subCategory: subCategory,
+      yol: yol,
     ));
 
     // Aktivasyon eşikleri: ilk varlık ve üçüncü varlık D30 tutunmanın en
@@ -804,7 +915,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// taşıdığı (formda seçilen) portföy. BES'in sonraki katkısı, otomatik
   /// katkı ve fon değişimi böylece başka bir ekrandan seçim istemeden
   /// sözleşmeyi izler.
-  Future<void> sozlesmeLotlariniEkle(List<Asset> lots) async {
+  Future<void> sozlesmeLotlariniEkle(List<Asset> lots,
+      {String yol = 'form'}) async {
     if (lots.isEmpty) return;
     final currentState = state.valueOrNull ?? const PortfolioState();
     lots = [
@@ -839,7 +951,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     sonEklenenPozisyon = positionKey(lots.first);
 
     for (final a in {for (final l in lots) l.type}) {
-      unawaited(AnalyticsService.instance.logAssetAdded(type: a.name));
+      unawaited(AnalyticsService.instance.logAssetAdded(type: a.name, yol: yol));
     }
 
     final current = state.valueOrNull;
@@ -1221,6 +1333,21 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     ));
   }
 
+  /// Elle fiyatlanan pozisyonun güncel fiyatını yazar — "bilgi eksik"
+  /// akışının fiyat sayfası (`veri_kalitesi_seridi.dart`, 2026-10-20).
+  ///
+  /// Pozisyonun değeri temsilci lotun fiyatından okunur
+  /// (`Position.totalValue`); yine de TÜM elle fiyatlı alım lotları yazılır
+  /// ki sonradan eklenen lot temsilci olunca eski fiyat geri gelmesin.
+  /// [updateManualPrice] üzerinden: demo kipi aynı kapıda durur.
+  Future<void> elleFiyatiGuncelle(List<Asset> lotlar, double fiyat) async {
+    for (final l in lotlar) {
+      if (l.isBuy && l.isActive && l.isManualPrice) {
+        await updateManualPrice(l, fiyat);
+      }
+    }
+  }
+
   // ---- Price refresh -------------------------------------------------------
 
   /// Süren fiyat turu — aynı anda gelen ikinci istek buna KATILIR.
@@ -1373,6 +1500,16 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       if (!baglantiHatasiMi(e)) {
         CrashReporter.report(e, st, reason: 'PortfolioNotifier._defteriTazele');
       }
+      // Açılış kopyasıyla açılmıştık ve sunucuya ulaşılamadı: eski
+      // çevrimdışı açılışla aynı şerit (ve bu oturumda puan istenmez).
+      final simdiki = state.valueOrNull;
+      if (simdiki != null && simdiki.onbellekKopyasi) {
+        GorunenHata.kaydet();
+        final yeni = simdiki.copyWith(
+            errorMessage: 'Çevrimdışı. Son bilinen veriler gösteriliyor.');
+        state = AsyncData(yeni);
+        return yeni;
+      }
       return state.valueOrNull ?? s;
     }
   }
@@ -1393,6 +1530,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           x.notes != y.notes ||
           x.addedDate != y.addedDate ||
           x.isManualPrice != y.isManualPrice ||
+          // Başka cihazda maliyet girildi: "bilgi eksik" burada da kalksın.
+          x.maliyetBilinmiyor != y.maliyetBilinmiyor ||
           (x.isManualPrice && x.currentPrice != y.currentPrice)) {
         return false;
       }
@@ -1491,6 +1630,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         }
       }
 
+      final sayacOnce = PriceService.instance.agSayaci.anlik();
       final quotes = await PriceService.instance
           .fetchQuotes(symbols.toList(), forceRefresh: force);
 
@@ -1500,6 +1640,22 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // eski snapshot ile ezilir.
       final current = state.valueOrNull ?? s;
       final baseAssets = current.assets;
+
+      // "İnternet yok" şeridi (2026-11-07): fetchQuotes kaynak hatalarını
+      // yutar, kopuk bağlantıda boş döner. Karar bu turun HTTP sayacından
+      // (bkz. `AgSayaci`). Son fiyat anı güncelleme döngüsünden ÖNCE
+      // okunur; bu turda fiyat yazılmadı, ekrandaki hâl o anın.
+      final sayacSonra = PriceService.instance.agSayaci.anlik();
+      final kopuk = turBaglantiKarari(
+          hata: sayacSonra.hata - sayacOnce.hata,
+          yanit: sayacSonra.yanit - sayacOnce.yanit);
+      if (kopuk == true) {
+        ref
+            .read(cevrimdisiProvider.notifier)
+            .agHatasi(sonFiyat: sonFiyatZamani(baseAssets));
+      } else if (kopuk == false) {
+        ref.read(cevrimdisiProvider.notifier).baglandi();
+      }
 
       final usd = quotes['USDTRY=X']?.regularMarketPrice ?? current.usdTry;
       final eur = quotes['EURTRY=X']?.regularMarketPrice ?? current.eurTry;
@@ -1594,9 +1750,19 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         assets: updated,
         isLoading: false,
         lastUpdated: DateTime.now(),
+        onbellekKopyasi: false,
       );
 
       state = AsyncData(finalState);
+      AcilisOlcumu.instance.fiyatHazir(basarili: true);
+      // Açılış kopyası bir sonraki soğuk açılışta bu kurlarla çizilir.
+      final kurSahibi = ref.read(authProvider).valueOrNull?.id;
+      if (kurSahibi != null && finalState.ownerId == kurSahibi) {
+        CrashReporter.arkaPlan(
+            PortfolioCache.kurYaz(kurSahibi,
+                usd: usd, eur: eur, gbp: gbp, altin: gold),
+            reason: 'portfolio_provider.PortfolioCache.kurYaz');
+      }
 
       // NOT: Burada `allPartnerAssetsProvider.reload()` ÇAĞRILMAZ. O metot
       // DB'den yeniden çeker ve yukarıda uygulanan canlı fiyatları geri alır.
@@ -1623,10 +1789,24 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // o yüzden non-fatal olarak Crashlytics'e gider.
       CrashReporter.report(e, st, reason: 'PortfolioNotifier.refreshPrices');
       final current = state.valueOrNull ?? s;
+      // Ortak listesi / anlık görüntü yazımı ağ hatasıyla düştüyse aynı
+      // şerit (bkz. `cevrimdisiProvider`); başka hata genel şeritte kalır.
+      if (CrashReporter.agHatasiMi(e)) {
+        ref
+            .read(cevrimdisiProvider.notifier)
+            .agHatasi(sonFiyat: sonFiyatZamani(current.assets));
+      }
       state = AsyncData(current.copyWith(
         isLoading: false,
         errorMessage: 'Fiyatlar güncellenemedi. ${friendlyError(e)}',
+        // Tur bitti: kopya bayrağı düşer, Bugün kartı eski çevrimdışı
+        // davranışıyla (son bilinen fiyatlar + şerit) çizilir.
+        onbellekKopyasi: false,
       ));
+      AcilisOlcumu.instance.fiyatHazir(basarili: false);
+      // Kullanıcı Ana sayfada "Fiyatlar güncellenemedi" şeridini görür:
+      // bu oturumda puan istenmez (`GorunenHata`).
+      GorunenHata.kaydet();
     }
   }
 

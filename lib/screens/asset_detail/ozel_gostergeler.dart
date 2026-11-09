@@ -164,7 +164,12 @@ extension _OzelGostergeler on _AssetDetailScreenState {
   /// Grafiğin altındaki bölüm (lejant + paneller) — ortak widget.
   List<Widget> _ozelAltBolum(List<_OzelSonuc> sonuclar) => sonuclar.isEmpty
       ? const []
-      : [OzelGostergeAltBolumu(sonuclar: sonuclar, gorunum: _ozelGorunum)];
+      : [
+          OzelGostergeAltBolumu(
+              sonuclar: sonuclar,
+              gorunum: _ozelGorunum,
+              sikistirma: () => _seansSik),
+        ];
 
   /// Araç çubuğundaki `ƒx` çipi. Kilitliyse paywall; değilse göstergeler
   /// sayfası (grafiğin o anki çubuklarıyla — düzenleyici önizlemesi için).

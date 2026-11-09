@@ -47,7 +47,14 @@ class EkstreOkumaHatasi implements KullaniciMesajli {
 /// hakkı henüz bilmiyordu) — paywall açılır. Diğer her durumda genel
 /// mesaj. Ham sunucu yanıtı gösterilmez.
 class EkstreAiHatasi implements Exception {
-  const EkstreAiHatasi({this.kota = false, this.premium = false});
+  const EkstreAiHatasi({
+    this.kota = false,
+    this.premium = false,
+    this.riza = false,
+  });
   final bool kota;
   final bool premium;
+
+  /// Metin yolunda açık rıza yok ya da geri çekilmiş (0147, 403 `riza`).
+  final bool riza;
 }

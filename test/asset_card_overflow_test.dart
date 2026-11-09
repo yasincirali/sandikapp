@@ -8,6 +8,7 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/portfolio_screen.dart';
+import 'helpers/yazi_olcegi.dart';
 
 /// Portföy ekranındaki varlık kartlarının taşma regresyonu.
 ///
@@ -99,6 +100,7 @@ Future<void> _pumpScreen(
   double width = 375,
 }) async {
   tester.view.physicalSize = Size(width * 3, 900 * 3);
+  yaziOlceginiUygula(tester);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
 
@@ -120,7 +122,9 @@ Future<void> _pumpScreen(
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-void main() {
+void main() => yaziOlcegiEkseni(_govde);
+
+void _govde() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
   });
@@ -128,9 +132,7 @@ void main() {
   group('varlık kartı — taşma', () {
     final portfolio = [
       _asset(
-          name: 'Türk Hava Yolları',
-          ticker: 'THYAO.IS',
-          type: AssetType.hisse),
+          name: 'Türk Hava Yolları', ticker: 'THYAO.IS', type: AssetType.hisse),
       _asset(
         name: 'Yapı Kredi Portföy Teknoloji Değişken Fon',
         ticker: 'TEFAS:YKT',

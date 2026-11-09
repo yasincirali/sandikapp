@@ -112,7 +112,7 @@ void main() {
   test('Portföy: karşılaştır/sırala düğmeleri ve kart oku etiketli', () {
     final k = ekranKaynagiSync('lib/screens/portfolio_screen.dart');
     expect(k, contains('semanticLabel: context.l10n.compare'));
-    expect(k, contains('semanticLabel: context.l10n.sortAssetsSemantics'));
+    expect(k, contains('semantikEtiket: context.l10n.sortAssetsSemantics'));
     expect(k, contains('context.l10n.showDetailsSemantics'));
     expect(k, contains('expanded: expanded'));
   });

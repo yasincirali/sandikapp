@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../theme/sandik.dart';
 import 'dividend_dialog.dart';
 import 'quick_adjust_dialog.dart';
+import 'sandik_cam.dart';
 
 /// Bir pozisyona yazılan üç işlem: alış, satış, temettü.
 ///
@@ -59,10 +60,22 @@ class PozisyonIslemCubugu extends StatelessWidget {
     super.key,
     required this.islemler,
     required this.onIslem,
+    this.yuzen = false,
   });
 
   final List<PozisyonIslemi> islemler;
   final ValueChanged<PozisyonIslemi> onIslem;
+
+  /// Yüzen kapsül (bayrak `goz_alici`, cam/HIG incelemesi 2026-10-12):
+  /// kenarlardan içeride, köşeleri yuvarlak; iOS'ta buzlu cam, Android'de
+  /// opak. Sayfa altından akar, son ~70 pt artık hep kapalı değil. Ekran
+  /// `Scaffold.extendBody` verir ve içeriğine [MediaQuery.paddingOf] alt
+  /// payı kadar boşluk bırakır. `false` → ekrana yapışık eski şerit.
+  final bool yuzen;
+
+  /// Yüzen kapsülün iç dolgusu: düğme köşesi (`md`) + bu = kapsül köşesi
+  /// (`lg`), iç içe köşeler eş merkezli görünür.
+  static const double _kapsulDolgu = SandikRadius.lg - SandikRadius.md;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +99,29 @@ class PozisyonIslemCubugu extends StatelessWidget {
           onPressed: () => onIslem(i),
         ),
       ));
+    }
+    if (yuzen) {
+      final alt = MediaQuery.viewPaddingOf(context).bottom;
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          SandikSpace.screenH(context),
+          0,
+          SandikSpace.screenH(context),
+          // Ana çubuğu olan cihazda onun hemen üstü; olmayanda kenardan
+          // `sm` (kapsül ekranın dibine yapışmasın).
+          alt > 0 ? alt : SandikSpace.sm,
+        ),
+        child: SandikCamYuzey(
+          borderRadius: SandikRadius.lgAll,
+          renk: context.c.surface1.withValues(alpha: SandikCam.ortu),
+          opakRenk: context.c.surface1,
+          kenar: Border.all(color: context.c.hairline),
+          child: Padding(
+            padding: const EdgeInsets.all(_kapsulDolgu),
+            child: Row(children: cocuklar),
+          ),
+        ),
+      );
     }
     return Container(
       padding: EdgeInsets.fromLTRB(

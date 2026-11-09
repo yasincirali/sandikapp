@@ -13,6 +13,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_error_view.dart';
+import '../widgets/sandik_skeleton.dart';
 
 /// Ayarlar › Hesap › Kayıtlı cihazlar (0098).
 ///
@@ -60,7 +61,11 @@ class _KayitliCihazlarScreenState extends ConsumerState<KayitliCihazlarScreen> {
       backgroundColor: context.c.background,
       appBar: SandikAppBar(title: context.l10n.kayitliCihazlar),
       body: SafeArea(
-        child: veri.when(
+        child: SandikIcerikGecisi(
+          // Yükleme → içerik çapraz solar (2026-10-14).
+          tamEkran: true,
+          anahtar: SandikIcerikGecisi.hal([veri]),
+          child: veri.when(
           loading: () => const Center(child: CustomLoadingIndicator()),
           error: (e, _) => SandikErrorView(
             error: e,
@@ -99,6 +104,7 @@ class _KayitliCihazlarScreenState extends ConsumerState<KayitliCihazlarScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

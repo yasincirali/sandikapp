@@ -10,6 +10,7 @@ import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
+import 'helpers/yazi_olcegi.dart';
 
 /// Varlık performans ekranının taşma regresyonu.
 ///
@@ -82,6 +83,7 @@ Future<void> _pump(
   List<Asset>? lots,
 }) async {
   tester.view.physicalSize = Size(width * 3, 900 * 3);
+  yaziOlceginiUygula(tester);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
 
@@ -106,7 +108,9 @@ Future<void> _pump(
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-void main() {
+void main() => yaziOlcegiEkseni(_govde);
+
+void _govde() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
     SharedPreferences.setMockInitialValues({});

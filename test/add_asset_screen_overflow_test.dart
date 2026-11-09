@@ -121,12 +121,17 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('bölüm başlıkları Türkçe büyük harf (noktalı İ)', (tester) async {
+    testWidgets('bölüm başlıkları cümle düzeninde, noktasız I yok', (tester) async {
       // Düz `toUpperCase` "HISSE" / "KRIPTO PARA" basıyordu; `ustHarf` şart.
       await _pump(tester, const AddAssetScreen());
-      expect(find.text('HİSSE'), findsOneWidget);
+      // Bölüm başlığı tür seçilince görünür (tür ızgarası koşulsuz,
+      // 2026-10-20).
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
+      // Cümle düzeni (2026-11-05): başlık ızgaradaki kutuyla aynı ad.
+      expect(find.text('Hisse'), findsWidgets);
       expect(find.text('HISSE'), findsNothing);
-      expect(find.text('VARLIK TÜRÜ'), findsOneWidget);
+      expect(find.text('Varlık türü'), findsOneWidget);
     });
 
     testWidgets('sepet modu, 320pt', (tester) async {

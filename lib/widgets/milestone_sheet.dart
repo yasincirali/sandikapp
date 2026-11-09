@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../config/magaza.dart';
+import '../l10n/l10n.dart';
 import '../services/analytics_service.dart';
 import '../services/milestone_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import 'sandik_cizimi.dart';
+import 'share_card.dart';
 
 /// Kilometre taşı kutlaması.
 ///
@@ -20,9 +23,14 @@ class MilestoneSheet extends StatelessWidget {
 
   const MilestoneSheet({super.key, required this.milestone});
 
-  static Future<void> show(BuildContext context, Milestone m) {
-    AnalyticsService.instance
-        .logMilestoneReached(kind: m.kind, value: m.value);
+  /// [tekrar]: Profil rozet şeridinden yeniden açılış. `milestone_reached`
+  /// yazılmaz; o olay eşiğin GEÇİLDİĞİ anı sayar, tekrar bakmayı değil.
+  static Future<void> show(BuildContext context, Milestone m,
+      {bool tekrar = false}) {
+    if (!tekrar) {
+      AnalyticsService.instance
+          .logMilestoneReached(kind: m.kind, value: m.value);
+    }
     return showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -31,7 +39,34 @@ class MilestoneSheet extends StatelessWidget {
     );
   }
 
-  IconData get _ikon => switch (milestone.kind) {
+  IconData get _ikon => ikonu(milestone.kind);
+
+  Future<void> _paylas(BuildContext context) {
+    final l = context.l10n;
+    return showShareSheet(
+      context,
+      kart: KilometreTasiPaylasKarti(
+        baslik: milestone.title,
+        cizim: const SandikCizimi(
+          zemin: SandikZemini.yuzey,
+          dokunulabilir: false,
+        ),
+      ),
+      not: l.kilometreTasiPaylasNot,
+      sayfaBasligi: l.kilometreTasiPaylasBaslik,
+      metin: l.kilometreTasiPaylasMetni(
+        milestone.title,
+        Magaza.indirBaglantisi(
+            kaynak: 'share_card', kampanya: 'kilometre_tasi'),
+      ),
+      subject: milestone.title,
+      analyticsPeriod: 'kilometre_tasi',
+    );
+  }
+
+  /// Taş türünün simgesi — kutlama ve Profil rozet şeridi aynı simgeyi
+  /// kullanır.
+  static IconData ikonu(String kind) => switch (kind) {
         'portfolio_age' => Icons.hourglass_bottom_rounded,
         'gold_count' => Icons.star_rounded,
         'diversification' => Icons.pie_chart_rounded,
@@ -87,6 +122,17 @@ class MilestoneSheet extends StatelessWidget {
             ),
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Devam'),
+          ),
+          // Paylaş (Ar-Ge 5 Kas 21:00 #3): ikincil, birincil eylemin
+          // altında. Kart tutar göstermez (`KilometreTasiPaylasKarti`);
+          // paylaşım sonrası puan isteği `showShareSheet`'in kendi kapısında
+          // (sıklık kuralı aynı oturumda ikinci istemi engeller).
+          const SizedBox(height: SandikSpace.sm),
+          TextButton.icon(
+            key: const ValueKey('kilometreTasiPaylas'),
+            onPressed: () => _paylas(context),
+            icon: const Icon(Icons.ios_share_rounded, size: 18),
+            label: Text(context.l10n.shareWord),
           ),
         ],
       ),

@@ -127,10 +127,10 @@ void main() {
 
   group('Material atası olmayan iskele', () {
     // Performans sekmesi CupertinoPageScaffold altında yaşar; Derinlik
-    // başlığındaki InkWell Material atası bulamayınca cihazda kırmızı
+    // başlığındaki eski InkWell Material atası bulamayınca cihazda kırmızı
     // "No Material widget found" bastı (2026-09-21, ekran görüntüsü).
-    // Widget kendi Material'ını taşımalı — burada iskele kasıtlı olarak
-    // Material vermez.
+    // Başlık artık SandikTappable (Ar-Ge 5 Kas #2) ve Material istemez —
+    // iskele kasıtlı olarak Material vermez ki bu kopmasın.
     testWidgets('Derinlik başlığı Cupertino iskelesinde çizilir ve açılır',
         (t) async {
       t.view.physicalSize = const Size(390, 1400);
@@ -158,9 +158,9 @@ void main() {
       );
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
-      expect(find.byType(InkWell), findsOneWidget);
+      expect(find.byType(SandikTappable), findsOneWidget);
 
-      await t.tap(find.byType(InkWell));
+      await t.tap(find.byType(SandikTappable));
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
     });

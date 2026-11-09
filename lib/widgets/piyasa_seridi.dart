@@ -1,4 +1,4 @@
-// Ana ekranın üstündeki piyasa bandı — dolar, euro, gram altın, BIST 100.
+// Ana ekranın üstündeki piyasa bandı — dolar, euro, gram altın, BIST 100, Bitcoin.
 //
 // Neden var (2026-09-20, günlük giriş turu): Türkiye'de bir finans
 // uygulamasına her gün girmenin ezici sebebi "dolar/altın ne oldu"; portföyü
@@ -30,7 +30,8 @@
 // görsel olarak hiçbir şey değiştirmediği için "yakaladın" bilgisi oradan
 // gelir.
 //
-// ## Boşta durma: kimse bakmazken akmaz (2026-10-01, CPU/GPU raporu)
+// ## Boşta durma: KAPALI (2026-10-29, yasin: bant hiç durmasın; bkz.
+// [PiyasaSeridi.bostaDurur]). Aşağısı 2026-10-01 gerekçesi, kayıt için:
 // Cihaz ölçümü: Ana ekran boşta dururken bant 58 fps çiziyor ve
 // emülatörde bir çekirdeğin %64'ünü tutuyordu; Portföy ve Performans
 // sekmeleri boşta sıfırdı. Bant tek başına ekranı ve GPU'yu hiç uyutmuyordu
@@ -92,17 +93,31 @@ import 'package:flutter/scheduler.dart';
 
 import '../l10n/l10n.dart';
 import '../services/crash_reporter.dart';
+import '../services/fiyat_kaynagi.dart';
 import '../services/price_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'sandik_skeleton.dart';
 
 class PiyasaSeridi extends StatefulWidget {
-  const PiyasaSeridi({super.key, this.padding = EdgeInsets.zero, this.onAra});
+  const PiyasaSeridi({
+    super.key,
+    this.padding = EdgeInsets.zero,
+    this.onAra,
+    this.aramaSarici,
+    this.uyandirici,
+  });
 
   final EdgeInsets padding;
 
+  /// Her bildirimde boşta durmuş bant yeniden akar (bkz. [KayanBant.uyandirici]).
+  final Listenable? uyandirici;
+
   /// Verilirse bandın sağ ucunda arama büyüteci çizilir.
   final VoidCallback? onAra;
+
+  /// "Ara" hapını saran parça (ana ekran: tur çapası). `null` → olduğu gibi.
+  final Widget Function(Widget hap)? aramaSarici;
 
   /// Sırası sabit: en çok bakılan en solda.
   ///
@@ -125,6 +140,10 @@ class PiyasaSeridi extends StatefulWidget {
     'EURTRY=X',
     altinSembolu,
     'XU100.IS',
+    // Bitcoin (2026-10-29, yasin): kripto tutan kullanıcı da "BTC ne oldu"ya
+    // bandın ilk bakışında cevap bulsun. En sağda: Türk kullanıcısının ilk
+    // sorusu yine dolar/altın; bant 5 öğeyle ~21 sn'de bir tur atar.
+    FiyatKaynagi.btcTry,
   ];
 
   /// Banttaki "Gram altın" — 24 ayar (bkz. [semboller]).
@@ -152,6 +171,16 @@ class PiyasaSeridi extends StatefulWidget {
   /// hissini verir; üçüncü turu kimse izlemez. 30 sn'lik fiyat nabzından
   /// uzun olması bilinçli — nabız bandı uyandırmaz ama zamanlama çakışmasın.
   static const bostaSuresi = Duration(seconds: 35);
+
+  /// Boşta durma açık mı (2026-10-29, yasin: "bant hiç durmasın" —
+  /// "3 özelliği de yap"). 1 Ekim CPU kararı bant boşta 35 sn sonra
+  /// dursun diyordu; kullanıcı bunu "bant donuyor" diye okudu. Artık bant
+  /// ekrandayken HEP akar. CPU korumasının asıl yarısı yerinde kalır:
+  /// sekme gizli, bant ekran dışı (`TickerMode`) ya da uygulama arka
+  /// plandayken kare üretilmez. Mekanizma silinmedi: pil/ısı şikâyeti
+  /// gelirse tek satırla geri açılır; testler onu bu bayrakla sınar.
+  @visibleForTesting
+  static bool bostaDurur = false;
 
   /// Boşta durma yavaşlamasının zaman sabiti (sn). 0,6 sn: bant ~2 sn'de
   /// (≈ 3 zaman sabiti) görünür biçimde durur, "fren" değil "sönme".
@@ -221,13 +250,25 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
     try {
       final q = await PriceService.instance.fetchQuotes(PiyasaSeridi.semboller);
       if (!mounted) return;
-      setState(() => _kotasyon = q);
+      // BİRLEŞTİR, değiştirme (2026-10-29, "bant bazen duruyor"):
+      // `fetchQuotes` kaynak hatasını yutup EKSİK harita döner, istisna
+      // atmaz. Eskiden o eksik harita bandı değiştiriyordu: Yahoo bir tur
+      // düşünce BIST bant dışına çıkıyor, hepsi düşünce bant tamamen
+      // kayboluyor ve sonraki başarıda baştan kuruluyordu. Şimdi gelmeyen
+      // sembolün son bilinen değeri kalır; yalnız geçerli fiyat üzerine yazar.
+      setState(() => _kotasyon = {
+            ..._kotasyon,
+            for (final e in q.entries)
+              if ((e.value.regularMarketPrice ?? 0) > 0) e.key: e.value,
+          });
     } catch (e, st) {
       // Bant ikincil: kaynak düşerse son bilinen değer kalır, yoksa hiç
       // çizilmez. Sessiz kalmasın diye non-fatal raporlanır.
       CrashReporter.report(e, st, reason: 'PiyasaSeridi.yukle');
     }
   }
+
+  Widget _sar(Widget hap) => widget.aramaSarici?.call(hap) ?? hap;
 
   @override
   Widget build(BuildContext context) {
@@ -240,22 +281,29 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
               'USDTRY=X' => l10n.marketDollar,
               'EURTRY=X' => l10n.marketEuro,
               PiyasaSeridi.altinSembolu => l10n.marketGold,
+              FiyatKaynagi.btcTry => l10n.marketBitcoin,
               _ => l10n.marketBist,
             },
-            // Endeks puan, diğerleri ₺: endekste kuruş anlamsız.
-            deger:
-                s == 'XU100.IS' ? fmtNum(f, digits: 0) : fmtNum(f, digits: 2),
+            // Endeks puan, diğerleri ₺: endekste kuruş anlamsız. BTC
+            // milyonlarca ₺; kuruş yalnız gürültü.
+            deger: s == 'XU100.IS' || s == FiyatKaynagi.btcTry
+                ? fmtNum(f, digits: 0)
+                : fmtNum(f, digits: 2),
             degisimPct: _kotasyon[s]?.regularMarketChangePercent,
           ),
     ];
     final ara = widget.onAra;
     if (ogeler.isEmpty) {
       if (ara == null) return const SizedBox.shrink();
-      return Padding(
-        padding: widget.padding,
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: PiyasaAramaDugmesi(onTap: ara, cerceveli: false),
+      // Arama düğmesi → dolu şerit çapraz solar (2026-10-14). İki dal aynı yuvada, geçiş State'i korunur.
+      return SandikIcerikGecisi(
+        anahtar: true,
+        child: Padding(
+          padding: widget.padding,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: _sar(PiyasaAramaDugmesi(onTap: ara, cerceveli: false)),
+          ),
         ),
       );
     }
@@ -264,13 +312,22 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
     // ucu (köşeleri sağda yuvarlak) çizer; ikisi 44pt'lik ortak kutuda
     // ortalanır, görünen şerit 36pt. Kart tek Container olsaydı çipin
     // 44pt dokunma alanı 36pt'lik klibin dışında kalırdı (HIG #37).
-    return Padding(
-      padding: widget.padding,
-      child: Row(
-        children: [
-          Expanded(child: KayanBant(ogeler: ogeler, sagKose: ara == null)),
-          if (ara != null) PiyasaAramaDugmesi(onTap: ara),
-        ],
+    return SandikIcerikGecisi(
+      anahtar: false,
+      child: Padding(
+        padding: widget.padding,
+        child: Row(
+          children: [
+            Expanded(
+              child: KayanBant(
+                ogeler: ogeler,
+                sagKose: ara == null,
+                uyandirici: widget.uyandirici,
+              ),
+            ),
+            if (ara != null) _sar(PiyasaAramaDugmesi(onTap: ara)),
+          ],
+        ),
       ),
     );
   }
@@ -315,7 +372,10 @@ class _AramaCipi extends StatelessWidget {
       height: KayanBant.seritYuksekligi,
       padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md2),
       decoration: BoxDecoration(
-        color: context.c.amberFill.withValues(alpha: 0.12),
+        // Nötr yüzey, amber yalnız simgede (unslop 2026-11-05 #3, ui-ux-pro
+        // "eşit vurgu yok"): Ana sayfada logo, toplam, dönem çipi ve "Ara"
+        // aynı amberle yarışıyordu. Arama ikincil eylem.
+        color: context.c.surface2,
         borderRadius: cerceveli
             ? const BorderRadius.horizontal(right: kose)
             : const BorderRadius.all(kose),
@@ -323,20 +383,26 @@ class _AramaCipi extends StatelessWidget {
             ? Border(top: cizgi, right: cizgi, bottom: cizgi, left: cizgi)
             : Border.fromBorderSide(cizgi),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.search_rounded, size: 16, color: context.c.amberText),
-          const SizedBox(width: SandikSpace.xs2),
-          Text(
-            context.l10n.searchChip,
-            style: context.t.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-              color: context.c.amberText,
+      // scaleDown: çip yüksekliği şeritle eşit ve sabit (yan yana
+      // bitişikler); büyük yazıda (2×+) "Ara" dikeyde kesiliyordu (büyük
+      // yazı taraması 2026-10-12). Sığdığı sürece ölçek 1, görünüm aynı.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_rounded, size: 16, color: context.c.amberText),
+            const SizedBox(width: SandikSpace.xs2),
+            Text(
+              context.l10n.searchChip,
+              style: context.t.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+                color: context.c.text90,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -349,9 +415,22 @@ class _AramaCipi extends StatelessWidget {
 /// değeri bir [ValueNotifier]'da yaşar: kare başına `setState` yok, widget
 /// ağacı hiç yeniden kurulmaz.
 class KayanBant extends StatefulWidget {
-  const KayanBant({super.key, required this.ogeler, this.sagKose = true});
+  const KayanBant({
+    super.key,
+    required this.ogeler,
+    this.sagKose = true,
+    this.uyandirici,
+  });
 
   final List<PiyasaOgesi> ogeler;
+
+  /// Dışarıdan uyandırma (2026-10-29, yasin: "ana sayfa fiyat bandı duruyor
+  /// bazen"). Bant 35 sn dokunulmazsa CPU için durur (dosya başı "Boşta
+  /// durma"); ama yalnız BANDIN ÜSTÜNE dokunuş onu uyandırıyordu. Ana
+  /// sayfayı kaydıran kullanıcı ekrandadır, bant ise donmuş görünüyordu.
+  /// Ana sayfa kaydırması bu bildirimi atar: durmuş (ya da durmaya
+  /// giren) bant akmaya döner; akarken hiçbir şey yapmaz, faz bozulmaz.
+  final Listenable? uyandirici;
 
   /// Sağ köşeler de yuvarlak mı. Yanında "Ara" çipi varken `false`: şerit
   /// çipe düz kenarla bitişir, yuvarlağı çip tamamlar.
@@ -426,6 +505,24 @@ class KayanBantState extends State<KayanBant>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.uyandirici?.addListener(_distanUyandir);
+  }
+
+  @override
+  void didUpdateWidget(KayanBant oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.uyandirici != widget.uyandirici) {
+      oldWidget.uyandirici?.removeListener(_distanUyandir);
+      widget.uyandirici?.addListener(_distanUyandir);
+    }
+  }
+
+  /// Yalnız durmuş ya da yavaşlayarak duran bandı uyandırır. Akan bandı
+  /// her kaydırma karesinde yeniden başlatmak fazı titretirdi.
+  void _distanUyandir() {
+    if (_ticker.isActive && _hedefHiz != 0) return;
+    if (!TickerMode.valuesOf(context).enabled) return;
+    _uyandir();
   }
 
   @override
@@ -487,7 +584,8 @@ class KayanBantState extends State<KayanBant>
   /// hâli: hız üstel söner, kayma asimptotik yerleşir, ticker durur.
   void _kare(Duration gecen) {
     final hedef = _hedefHiz;
-    final tau = hedef == 0 ? PiyasaSeridi.durusSabiti : PiyasaSeridi.devirSabiti;
+    final tau =
+        hedef == 0 ? PiyasaSeridi.durusSabiti : PiyasaSeridi.devirSabiti;
     final t = (gecen - _fazT0).inMicroseconds / 1e6;
     final sonum = math.exp(-t / tau);
     _sonHiz = hedef + (_baslangicHizi - hedef) * sonum;
@@ -502,7 +600,7 @@ class KayanBantState extends State<KayanBant>
       }
       return;
     }
-    if (gecen - _fazT0 >= PiyasaSeridi.bostaSuresi) {
+    if (PiyasaSeridi.bostaDurur && gecen - _fazT0 >= PiyasaSeridi.bostaSuresi) {
       _fazaGec(gecen, hiz: _sonHiz, hedef: 0);
     }
   }
@@ -528,9 +626,21 @@ class KayanBantState extends State<KayanBant>
   void _birak(LongPressEndDetails d) {
     setState(() => _tutuluyor = false);
     if (MediaQuery.disableAnimationsOf(context)) return;
-    final v = (-d.velocity.pixelsPerSecond.dx).clamp(
-        -PiyasaSeridi.azamiDevirHizi, PiyasaSeridi.azamiDevirHizi);
+    final v = (-d.velocity.pixelsPerSecond.dx)
+        .clamp(-PiyasaSeridi.azamiDevirHizi, PiyasaSeridi.azamiDevirHizi);
     _baslat(hiz: v.toDouble());
+  }
+
+  /// Tutuş iptal (2026-10-29, "bant bazen duruyor"): parmak basılıyken
+  /// uygulama arka plana gider, bildirim perdesi ya da arama gelirse
+  /// Flutter `onLongPressEnd` yerine `onLongPressCancel` çağırır. Bu yol
+  /// yokken [_tutuluyor] sonsuza dek `true` kalıyor, her uyandırma yolu
+  /// erken dönüyor ve bant yeni bir uzun basışa kadar KALICI duruyordu.
+  void _tutusIptal() {
+    if (!_tutuluyor) return;
+    setState(() => _tutuluyor = false);
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    _baslat(hiz: 0);
   }
 
   /// Hareketi azalt açıkken bant hiç akmaz; uzun basış beklemeden doğrudan
@@ -542,6 +652,7 @@ class KayanBantState extends State<KayanBant>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.uyandirici?.removeListener(_distanUyandir);
     _ticker.dispose();
     _kaydirma.dispose();
     super.dispose();
@@ -560,54 +671,55 @@ class KayanBantState extends State<KayanBant>
       child: Listener(
         onPointerDown: (_) => _uyandir(),
         child: GestureDetector(
-        onLongPressStart: _tut,
-        onLongPressMoveUpdate: _tutarkenKaydir,
-        onLongPressEnd: _birak,
-        onHorizontalDragUpdate: hareketiAzalt ? _surukle : null,
-        behavior: HitTestBehavior.opaque,
-        // Dokunma alanı 44pt (HIG); görünen şerit 36pt, kutuda ortalı —
-        // 4pt'lik dikey tamponlar ana sayfa dolgusuyla birlikte 12pt üst
-        // boşluğu verir (seçenek C, 2026-09-28). Önceki sürüm 30pt bandı
-        // kutunun üstüne yaslıyordu; şerit kartı artık başlıktan ayrı
-        // durduğu için ortalama doğru.
-        child: Container(
-          height: 44,
-          alignment: Alignment.center,
+          onLongPressStart: _tut,
+          onLongPressMoveUpdate: _tutarkenKaydir,
+          onLongPressEnd: _birak,
+          onLongPressCancel: _tutusIptal,
+          onHorizontalDragUpdate: hareketiAzalt ? _surukle : null,
+          behavior: HitTestBehavior.opaque,
+          // Dokunma alanı 44pt (HIG); görünen şerit 36pt, kutuda ortalı —
+          // 4pt'lik dikey tamponlar ana sayfa dolgusuyla birlikte 12pt üst
+          // boşluğu verir (seçenek C, 2026-09-28). Önceki sürüm 30pt bandı
+          // kutunun üstüne yaslıyordu; şerit kartı artık başlıktan ayrı
+          // durduğu için ortalama doğru.
           child: Container(
-            height: KayanBant.seritYuksekligi,
-            // Şerit kartı: surface1 zemin, saç teli kenar, sol köşeler
-            // yuvarlak; sağ köşeler çip yoksa. Metin kenardan taşmasın
-            // diye klip — akan öğe köşeden çıkarken kırpılır.
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: context.c.surface1,
-              borderRadius: widget.sagKose
-                  ? BorderRadius.circular(SandikRadius.md)
-                  : const BorderRadius.horizontal(
-                      left: Radius.circular(SandikRadius.md)),
-              border: widget.sagKose
-                  ? Border.all(color: context.c.hairline)
-                  : Border(
-                      left: BorderSide(color: context.c.hairline),
-                      top: BorderSide(color: context.c.hairline),
-                      bottom: BorderSide(color: context.c.hairline),
+            height: 44,
+            alignment: Alignment.center,
+            child: Container(
+              height: KayanBant.seritYuksekligi,
+              // Şerit kartı: surface1 zemin, saç teli kenar, sol köşeler
+              // yuvarlak; sağ köşeler çip yoksa. Metin kenardan taşmasın
+              // diye klip — akan öğe köşeden çıkarken kırpılır.
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: context.c.surface1,
+                borderRadius: widget.sagKose
+                    ? BorderRadius.circular(SandikRadius.md)
+                    : const BorderRadius.horizontal(
+                        left: Radius.circular(SandikRadius.md)),
+                border: widget.sagKose
+                    ? Border.all(color: context.c.hairline)
+                    : Border(
+                        left: BorderSide(color: context.c.hairline),
+                        top: BorderSide(color: context.c.hairline),
+                        bottom: BorderSide(color: context.c.hairline),
+                      ),
+              ),
+              // RepaintBoundary: bant her karede boyanır; sınır olmadan hero
+              // kart ve üst çubuk da her karede yeniden boyanırdı (GPU).
+              child: RepaintBoundary(
+                child: ExcludeSemantics(
+                  child: _Bant(
+                    kaydirma: _kaydirma,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [for (final o in ogeler) _Oge(oge: o)],
                     ),
-            ),
-            // RepaintBoundary: bant her karede boyanır; sınır olmadan hero
-            // kart ve üst çubuk da her karede yeniden boyanırdı (GPU).
-            child: RepaintBoundary(
-              child: ExcludeSemantics(
-                child: _Bant(
-                  kaydirma: _kaydirma,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [for (final o in ogeler) _Oge(oge: o)],
                   ),
                 ),
               ),
             ),
           ),
-        ),
         ),
       ),
     );

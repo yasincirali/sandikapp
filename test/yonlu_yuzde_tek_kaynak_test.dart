@@ -261,11 +261,13 @@ void main() {
     });
   });
 
-  test('#15 fon karnesi dipnotu getirinin kaynağını ve farkı söyler', () {
+  // 2026-11-07: dipnot iki cümleye indi ("Kaynak: TEFAS. Geçmiş getiri
+  // geleceği göstermez."). #15'in "dönem getirisinden farklı olabilir"
+  // açıklaması ürün kararıyla çıktı; kaynağı söyleme şartı kalır.
+  test('#15 fon karnesi dipnotu getirinin kaynağını söyler', () {
     final tr = lookupAppLocalizations(const Locale('tr')).fundReportFootnote;
-    expect(tr, contains("TEFAS'ın açıkladığı"));
-    expect(tr, contains('dönem getirisinden'));
+    expect(tr, contains('Kaynak: TEFAS'));
     final en = lookupAppLocalizations(const Locale('en')).fundReportFootnote;
-    expect(en, contains('published by TEFAS'));
+    expect(en, contains('Source: TEFAS'));
   });
 }

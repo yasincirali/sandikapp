@@ -25,6 +25,7 @@
 library;
 
 import '../utils/tr_format.dart';
+import '../models/asset_categories.dart' show goldTickerMap;
 
 /// Sunucunun snapshot aldığı dönemlerden ekranda sunulanlar.
 ///
@@ -84,6 +85,21 @@ class ZirveIsaret {
 }
 
 /// Eksen aralığı: sıfır daima içinde, iki uçta pay var.
+/// Çağıranın Zirve şartlarının dolacağı anlar (0144 `zirve_katilim_durumum`).
+/// Tarihler UTC; null → o şartın verisi yok (ör. hiç varlık yok).
+typedef ZirveKatilimDurumu = ({
+  DateTime? hesapHazir,
+  DateTime? varlikHazir,
+  DateTime? olcumHazir,
+  int? varlikSayisi,
+  bool olculdu,
+  bool havuzda,
+});
+
+/// Ekrandaki bir şart satırı. [tamam] ikon ŞEKLİYLE de söylenir (renk
+/// körlüğü, HIG): yalnız renge yüklenmez.
+typedef ZirveSarti = ({String metin, bool tamam});
+
 typedef ZirveEksen = ({double lo, double hi});
 
 abstract final class ZirveKiyas {
@@ -281,15 +297,16 @@ abstract final class ZirveKiyas {
     return en;
   }
 
-  /// "En büyük fark altın: sende %18, onda %56."
+  /// "En büyük fark altın: sende %18, onda %55,7." — sayılar hemen altındaki
+  /// ayna satırlarıyla aynı biçimde ([pay]); cümle ile satır çelişmesin.
   static String enBuyukFarkCumlesi(
     Map<String, double> senPay,
     Map<String, double> zirvePay,
   ) {
     final f = enBuyukFark(senPay, zirvePay);
     if (f == null) return '';
-    return 'En büyük fark ${turAd(f.tur)}: sende %${f.sen.round()}, '
-        'onda %${f.zirve.round()}.';
+    return 'En büyük fark ${turAd(f.tur)}: sende ${pay(f.sen)}, '
+        'onda ${pay(f.zirve)}.';
   }
 
   // ── Fon kırılımı (0084) ────────────────────────────────────────────────
@@ -355,8 +372,170 @@ abstract final class ZirveKiyas {
     return parca.join(' · ');
   }
 
+  /// Pay sayısının TEK biçimi (2026-10-20 okunaklılık turu): en fazla bir
+  /// ondalık, sondaki sıfır yazılmaz — "%7", "%6", "%12,5". Eskiden 10'un
+  /// altı bir ondalıkla yazılıyordu; aynı listede "%7" ile "%6,0" yan yana
+  /// duruyordu.
   static String _payYazisi(double v) =>
-      fmtNum(v, digits: v < 10 ? 1 : 0);
+      fmtNumFlex((v * 10).round() / 10, maxDigits: 1);
+
+  /// "%21", "%6", "%12,5" — Zirve'deki her pay bu biçimle yazılır.
+  static String pay(double v) => '%${_payYazisi(v)}';
+
+  // ── Varlık kırılımı (0158) ─────────────────────────────────────────────
+
+  /// Sunucu vitrininde gizlenen kodun öneki (`?1`, `?2`… — 0158
+  /// `zirve_detay_maske`). Gerçek sembol hiçbir zaman `?` ile başlamaz.
+  static bool kilitliMi(String kod) => kod.startsWith('?');
+
+  /// Sahibi varlık ayrıntısını paylaşmayı onaylamamış portföy mü (yasin
+  /// 2026-10-21: "bazılarını detaylı, bazısını kategorisel görüyorum").
+  /// 0158: `varlik_detay` yalnız 2026-10-20 rıza metnini onaylayan
+  /// sahibinde döner; eski metin "sembol hiçbir koşulda paylaşılmaz"
+  /// dediği için diğerlerinde boş gelir. Boşluk, sembolü olabilecek bir
+  /// tür varken anlamlıdır: fon kendi sütununda (`fon_detay`, eski rızayla
+  /// da açık), mevduat sunucuda hiç kırılmaz, BES kodu 2026-10-20'den önce
+  /// yazılmıyordu — yalnız bunlardan oluşan portföyde not çıkmaz.
+  static bool ayrintiPaylasilmadi(
+          Map<String, double> pay, Map<String, Map<String, double>> varlik) =>
+      varlik.isEmpty &&
+      pay.entries.any((e) =>
+          e.value > 0 && !const {'fon', 'bes', 'mevduat'}.contains(e.key));
+
+  static final _piyasaSembolu = RegExp(r'^[A-Z0-9.=_:-]{1,20}$');
+
+  static bool mevduatMi(String? ticker) =>
+      (ticker ?? '').trim().toUpperCase().startsWith('MEVDUAT:');
+
+  /// Fon dışı varlığın gösterilebilir sembolü; sunucudaki `piyasaSembolu`
+  /// ile aynı kalıp. Altında kod alt kategoriden (`goldTickerMap`) de
+  /// çözülür. Uymayan her şey [fonDiger].
+  static String varlikAnahtari(String tur, String? ticker, String? alt) {
+    var kod = (ticker ?? '').trim();
+    if (tur == 'altin' && !kod.startsWith('ALTIN_') && kod != 'XAUUSD=X') {
+      kod = goldTickerMap[(alt ?? '').trim()] ?? '';
+    }
+    kod = kod.toUpperCase();
+    return _piyasaSembolu.hasMatch(kod) ? kod : fonDiger;
+  }
+
+  static final _altinAdi = {
+    for (final e in goldTickerMap.entries) e.value: e.key,
+  };
+
+  /// Sembolün ekranda okunan adı: "THYAO.IS" → "THYAO", "BTCUSDT" → "BTC",
+  /// "USDTRY=X" → "USD", "ALTIN_CEYREK" → "Çeyrek Altın". Kilitli kod ve
+  /// [fonDiger] için "Diğer".
+  static String varlikAdi(String kod) {
+    if (kod == fonDiger || kilitliMi(kod)) return 'Diğer';
+    final altin = _altinAdi[kod];
+    if (altin != null) return altin;
+    var k = kod;
+    if (k.endsWith('.IS')) k = k.substring(0, k.length - 3);
+    final kur = RegExp(r'^([A-Z]{3})TRY=X$').firstMatch(k);
+    if (kur != null) return kur.group(1)!;
+    for (final son in const ['USDT', 'TRY', 'USD']) {
+      if (k.length > son.length + 1 &&
+          k.endsWith(son) &&
+          !k.contains('.') &&
+          !k.contains('=')) {
+        return k.substring(0, k.length - son.length);
+      }
+    }
+    if (k.endsWith('=F') || k.endsWith('=X')) k = k.substring(0, k.length - 2);
+    return k;
+  }
+
+  /// Fon + diğer türlerin kalemleri tek listede, büyükten küçüğe; kilitliler
+  /// yerinde kalır (oranları açık), "diğer"ler ayrı toplanır.
+  static List<({String tur, String kod, double pay})> tumKalemler(
+      Map<String, double> fon, Map<String, Map<String, double>> varlik) {
+    final l = [
+      for (final e in fon.entries)
+        if (e.key != fonDiger && e.value > 0)
+          (tur: 'fon', kod: e.key, pay: e.value),
+      for (final t in varlik.entries)
+        for (final e in t.value.entries)
+          if (e.key != fonDiger && e.value > 0)
+            (tur: t.key, kod: e.key, pay: e.value),
+    ]..sort((a, b) => b.pay.compareTo(a.pay));
+    return l;
+  }
+
+  /// "THYAO %18 · BTC %12 · •••• %9 · diğer %21" — seçili portföy bloğunun
+  /// tek satırı. Kilitli kalem "••••" ile yazılır (sembol cihaza hiç gelmez).
+  static String ayrintiOzeti(
+      Map<String, double> fon, Map<String, Map<String, double>> varlik,
+      {int enFazla = 4}) {
+    final l = tumKalemler(fon, varlik);
+    if (l.isEmpty) return '';
+    final gorunen = l.take(enFazla).toList();
+    final toplam = [
+      ...fon.values,
+      for (final t in varlik.values) ...t.values,
+    ].fold<double>(0, (s, v) => s + v);
+    final kalan =
+        toplam - gorunen.fold<double>(0, (s, e) => s + e.pay);
+    final parca = [
+      for (final e in gorunen)
+        '${kilitliMi(e.kod) ? kilitliYer : (e.tur == 'fon' ? e.kod : varlikAdi(e.kod))} '
+            '%${_payYazisi(e.pay)}',
+      if (kalan >= 0.05) 'diğer %${_payYazisi(kalan)}',
+    ];
+    return parca.join(' · ');
+  }
+
+  /// Kilitli kalemin yer tutucusu (ekran okuyucu "Premium'da görünür" duyar).
+  static const kilitliYer = '••••';
+
+  /// İki portföyün ortak açık kalemleri, ortak payı büyükten küçüğe
+  /// (benzerlik = Σ min; sunucu `zirve_benzerlik_hesapla` ile aynı kural).
+  static List<({String tur, String kod, double sen, double zirve})>
+      ortakKalemler({
+    required Map<String, double> senFon,
+    required Map<String, Map<String, double>> senVarlik,
+    required Map<String, double> zirveFon,
+    required Map<String, Map<String, double>> zirveVarlik,
+  }) {
+    Map<String, double> duz(
+        Map<String, double> f, Map<String, Map<String, double>> v) => {
+          for (final e in f.entries)
+            if (e.key != fonDiger) 'fon:${e.key}': e.value,
+          for (final t in v.entries)
+            for (final e in t.value.entries)
+              if (e.key != fonDiger && !kilitliMi(e.key))
+                '${t.key}:${e.key}': e.value,
+        };
+    final a = duz(senFon, senVarlik);
+    final b = duz(zirveFon, zirveVarlik);
+    final l = [
+      for (final k in a.keys)
+        if (b.containsKey(k))
+          (
+            tur: k.substring(0, k.indexOf(':')),
+            kod: k.substring(k.indexOf(':') + 1),
+            sen: a[k]!,
+            zirve: b[k]!,
+          ),
+    ]..sort((x, y) => (y.sen < y.zirve ? y.sen : y.zirve)
+        .compareTo(x.sen < x.zirve ? x.sen : x.zirve));
+    return l;
+  }
+
+  /// "Seninle %24 benzer: aynı varlıkların ortak payı." / ortak yoksa
+  /// "Seninle ortak varlığı yok."
+  static String benzerlikCumlesi(double b) => b < 0.05
+      ? 'Seninle ortak varlığı yok.'
+      : 'Seninle %${_payYazisi(b)} benzer: aynı varlıklarda ortak payınız.';
+
+  /// Σ min(sen, zirve) — [ortakKalemler] üzerinden, 1 ondalık.
+  static double benzerlik(
+          List<({String tur, String kod, double sen, double zirve})> ortak) =>
+      (ortak.fold<double>(
+                  0, (s, e) => s + (e.sen < e.zirve ? e.sen : e.zirve)) *
+              10)
+          .round() /
+      10;
 
   /// Ayna kıyasındaki fon satırlarının sırası: iki taraftaki kodların
   /// birleşimi, büyük olan payına göre büyükten küçüğe; [fonDiger] sonda.
@@ -425,5 +604,142 @@ abstract final class ZirveKiyas {
       yerlesen.add((x: konumlar[i], kat: kat));
     }
     return katlar;
+  }
+
+  // ── Katılım şartları (0144, kullanıcı bulgusu 2026-10-12) ─────────────────
+  //
+  // yasin eski tarihli varlıklarla üç hesap açtı; havuz artmadı çünkü hesap
+  // 7 günlük değildi ve ekran bu şartı hiç söylemiyordu. Havuzda olmayan
+  // katılımcı artık şartlarını ve dolacakları günü görür. Kural sunucuda
+  // (0091 `zirve_havuzu_uygun`, 0085 `zirve_havuz`, leaderboard-snapshot
+  // `donemTwr`); burada yalnız anlatılır.
+
+  /// Türkiye saati (UTC+3, yaz saati yok) — ölçüm saatleri bu saatle yazılır.
+  static const _trFark = Duration(hours: 3);
+
+  static const _aylar = [
+    'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+  ];
+
+  /// Ay adına bulunma eki: "Ekim'de", "Kasım'da", "Mart'ta".
+  static const _aylarDe = [
+    "Ocak'ta", "Şubat'ta", "Mart'ta", "Nisan'da", "Mayıs'ta", "Haziran'da",
+    "Temmuz'da", "Ağustos'ta", "Eylül'de", "Ekim'de", "Kasım'da", "Aralık'ta",
+  ];
+
+  /// "19 Ekim'de" — tarih Türkiye saatine göre.
+  static String gunde(DateTime an) {
+    final tr = an.toUtc().add(_trFark);
+    return '${tr.day} ${_aylarDe[tr.month - 1]}';
+  }
+
+  /// "19 Ekim" — tarih Türkiye saatine göre.
+  static String gun(DateTime an) {
+    final tr = an.toUtc().add(_trFark);
+    return '${tr.day} ${_aylar[tr.month - 1]}';
+  }
+
+  /// Sunucu ölçümü (leaderboard-snapshot cron'u, 0082) 10:00 ve 15:00 TR =
+  /// 07:00 ve 12:00 UTC. [an]'dan SONRAKİ ilk ölçüm.
+  static DateTime sonrakiOlcum(DateTime an) {
+    final u = an.toUtc();
+    for (var g = 0; g < 2; g++) {
+      for (final saat in const [7, 12]) {
+        final t = DateTime.utc(u.year, u.month, u.day + g, saat);
+        if (t.isAfter(u)) return t;
+      }
+    }
+    return DateTime.utc(u.year, u.month, u.day + 2, 7);
+  }
+
+  /// İlk varlık şartı: 5 günlük varlık (0091) ve asgari ölçüm süresi (0128)
+  /// aynı ilk alımdan sayılır; ekranda tek satır, geç dolan tarihle.
+  static DateTime? _varlikTarihi(ZirveKatilimDurumu d) {
+    final a = d.varlikHazir;
+    final b = d.olcumHazir;
+    if (a == null || b == null) return a ?? b;
+    return a.isAfter(b) ? a : b;
+  }
+
+  /// Havuza giriş şartları, kullanıcının okuyacağı sırayla.
+  static List<ZirveSarti> katilimSartlari(
+    ZirveKatilimDurumu d, {
+    required DateTime simdi,
+    required int asgariGun,
+    required ZirveDonem donem,
+  }) {
+    bool doldu(DateTime t) => !t.isAfter(simdi);
+    final hesap = d.hesapHazir;
+    final varlik = _varlikTarihi(d);
+    final n = d.varlikSayisi;
+    return [
+      if (hesap != null)
+        doldu(hesap)
+            ? (metin: 'Hesabın en az 7 günlük', tamam: true)
+            : (
+                metin: 'Hesabın en az 7 günlük olmalı · ${gunde(hesap)} tamam',
+                tamam: false,
+              ),
+      if (varlik == null)
+        (metin: 'Portföyüne en az bir varlık eklemelisin', tamam: false)
+      else if (doldu(varlik))
+        (metin: 'İlk varlığını $asgariGun günden önce edinmişsin', tamam: true)
+      else
+        (
+          metin: 'İlk varlığını edinmenin üzerinden $asgariGun gün geçmeli · '
+              '${gunde(varlik)} tamam',
+          tamam: false,
+        ),
+      if (n != null && n >= 2)
+        (metin: 'En az 2 farklı varlığın var', tamam: true)
+      else if (n != null)
+        (metin: 'En az 2 farklı varlığın olmalı · şu an $n', tamam: false)
+      else
+        (
+          metin: 'En az 2 farklı varlığın olmalı · ilk ölçümde sayılır',
+          tamam: false,
+        ),
+      d.olculdu
+          ? (metin: '${donem.ad} getirin ölçüldü', tamam: true)
+          : (
+              metin: '${donem.ad} getirin henüz ölçülmedi · ölçüm her gün '
+                  '10:00 ve 15:00',
+              tamam: false,
+            ),
+    ];
+  }
+
+  /// Şartlar yolunda giderse havuza en erken ne zaman girilir; bilinemiyorsa
+  /// (varlık yok, 2'den az varlık) null.
+  ///
+  /// Hesap ve 5 gün şartı OKUMA anında bakılır (0091): getiri zaten
+  /// ölçülüyorsa gün dolunca hemen girer. Asgari ölçüm süresi ise ölçümde
+  /// bakılır (`donemTwr`): dolduktan sonraki ilk ölçümde girer.
+  static DateTime? tahminiGiris(ZirveKatilimDurumu d, {required DateTime simdi}) {
+    final hesap = d.hesapHazir;
+    final varlik = d.varlikHazir;
+    final olcum = d.olcumHazir;
+    if (hesap == null || varlik == null || olcum == null) return null;
+    final n = d.varlikSayisi;
+    if (n != null && n < 2) return null;
+    // Süre dolmuş ama bu dönem ölçülemiyor (ör. fiyatı bilinen gün yok):
+    // ne zaman düzeleceği bilinmez, tarih uydurulmaz.
+    if (!olcum.isAfter(simdi) && !d.olculdu) return null;
+    var giris = olcum.isAfter(simdi) ? sonrakiOlcum(olcum) : simdi;
+    for (final t in [hesap, varlik]) {
+      if (t.isAfter(giris)) giris = t;
+    }
+    return giris.isAfter(simdi) ? giris : null;
+  }
+
+  /// Kartın özet cümlesi.
+  static String girisCumlesi(ZirveKatilimDurumu d, {required DateTime simdi}) {
+    final t = tahminiGiris(d, simdi: simdi);
+    if (t == null) {
+      return 'Eksik şartlar tamamlanınca portföyün havuza kendiliğinden girer.';
+    }
+    return 'Başka bir şey değişmezse portföyün ${gunde(t)} havuza '
+        'kendiliğinden girer.';
   }
 }

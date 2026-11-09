@@ -33,6 +33,8 @@ class _SayanPortfoy extends PortfolioNotifier {
     double commission = 0,
     String? sozlesmeId,
     String? portfoyId,
+    String yol = 'form',
+    bool maliyetBilinmiyor = false,
   }) async {
     ekleme++;
   }
@@ -74,8 +76,17 @@ void main() {
           KimlikEksigi.kripto);
     });
 
-    test('emtia serbest adlıdır — kuralı ad alanında', () {
-      expect(bos(AssetType.emtia).kimlikEksigi(tickerText: ''), isNull);
+    // 2026-10-18: emtia listeden seçilir (yasin: "free text yerine");
+    // serbest ad yalnız "Diğer" yolunda ve kuralı orada ad alanında.
+    test('emtia listeden seçilmeden kayıt yok; Diğer yolunda ad kuralı', () {
+      expect(bos(AssetType.emtia).kimlikEksigi(tickerText: ''),
+          KimlikEksigi.emtia);
+      expect(bos(AssetType.emtia).kimlikEksigi(tickerText: 'NG=F'), isNull);
+      expect(
+          bos(AssetType.emtia)
+              .copyWith(emtiaElle: true)
+              .kimlikEksigi(tickerText: ''),
+          isNull);
     });
 
     test('düzenleme muaf: eski sembolsüz kayıt düzeltilebilir', () {
@@ -171,6 +182,10 @@ void main() {
         ),
       ));
       await tester.pump();
+      // Hisse formu tür ızgarasından açılır (ızgara 2026-10-20'den beri
+      // koşulsuz).
+      await tester.tap(find.text('Hisse').last);
+      await tester.pumpAndSettle();
 
       // Açılışta uyarı yok — boş form suçlanmaz.
       const uyari = 'Listeden bir hisse seç ya da sembolünü yaz';

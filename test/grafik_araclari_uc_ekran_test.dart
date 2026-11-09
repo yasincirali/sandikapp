@@ -120,6 +120,10 @@ void main() {
         ),
       ));
       await t.pump(const Duration(milliseconds: 100));
+      // Çipler "Göstergeler" düğmesinin ardında (UX raporu 30 Eki §2).
+      await t.tap(find.byType(GostergelerDugmesi));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 400));
     }
 
     testWidgets('paywall kapalı, admin değil: mum ve EMA var, ƒx yok',
@@ -130,7 +134,7 @@ void main() {
           .widgetList<GrafikCipi>(find.byType(GrafikCipi))
           .map((c) => c.label)
           .toList();
-      expect(etiketler, containsAll(['MUM', 'LOG', 'MA20', 'EMA50', 'EMA200']));
+      expect(etiketler, containsAll(['Mum', 'LOG', 'MA20', 'EMA50', 'EMA200']));
       expect(etiketler.where((e) => e.startsWith('ƒx')), isEmpty);
     });
 
@@ -141,7 +145,7 @@ void main() {
       final cipler =
           t.widgetList<GrafikCipi>(find.byType(GrafikCipi)).toList();
       expect(cipler.map((c) => c.label),
-          containsAll(['MUM', 'LOG', 'ƒx', 'MA20', 'EMA50', 'EMA200']));
+          containsAll(['Mum', 'LOG', 'ƒx', 'MA20', 'EMA50', 'EMA200']));
       for (final c in cipler) {
         expect(c.kilitli, c.label.startsWith('ƒx'), reason: c.label);
       }

@@ -1,0 +1,48 @@
+/// Portföy listesi sıralama seçimi (Portföy sekmesi, sağ üstteki düğme).
+///
+/// Neden ayrı dosya ve `kod` (Ar-Ge 2026-10-25 12:45 #3, kabul 13:15 #2):
+/// seçim artık kalıcı (`portfoySiralamaProvider`, kişiye özel). Diske enum
+/// SIRASI (`index`) değil bu kararlı kod yazılır — sıra değişir ya da araya
+/// seçenek girerse kullanıcının tercihi başka bir sıralamaya kaymaz.
+/// Tanınmayan / boş kod bugünkü varsayılana ([varsayilan], "Değere göre ·
+/// yüksekten düşüğe") düşer; kimse bir şey kaybetmez.
+enum PortfoySiralama {
+  valueDesc('deger_azalan'),
+  valueAsc('deger_artan'),
+  gainDesc('kar_azalan'),
+  gainAsc('kar_artan'),
+  gainPctDesc('kar_yuzde_azalan'),
+  gainPctAsc('kar_yuzde_artan'),
+
+  /// Bugünkü hareket, en çok oynayan önce (Ar-Ge 1 Kas 16:45 #1, yasin
+  /// "yap"). Kendi seçeneği: Bugün moduna geçmek kullanıcının sırasını
+  /// KENDİLİĞİNDEN değiştirmez — satırlar yer değiştirince "nereye gitti"
+  /// sorusu doğar. Gün içi verisi olmayan ya da bugün işlem gören satır
+  /// sona, kendi içinde değere göre.
+  todayMoveDesc('bugun_hareket'),
+
+  /// Ada göre, Türkçe alfabe sırasıyla (Ar-Ge 7 Kas 08:03 #2). Sayısal
+  /// sıralamalar her gün değiştiği için satırlar zıplıyor; 20+ varlıkta
+  /// kullanıcı aradığını yerinden bulamıyordu. Ad = satırda görünen başlık
+  /// (kod ya da ad), karşılaştırma `trKarsilastir`.
+  ///
+  /// Eski sürüm uyumu: kod diske yazılır; bu değeri tanımayan eski build
+  /// [kodla]'da döngüden çıkıp [varsayilan]'a düşer (çökme yok, yalnız o
+  /// sürümde liste değere göre görünür). Tercih silinmez: yeni build'e
+  /// dönünce "ad_artan" yine okunur. Kilit `portfoy_siralama_test`.
+  nameAsc('ad_artan');
+
+  const PortfoySiralama(this.kod);
+
+  /// Diske yazılan kararlı ad. Değiştirilmez; yeni seçenek yeni kod alır.
+  final String kod;
+
+  static const varsayilan = PortfoySiralama.valueDesc;
+
+  static PortfoySiralama kodla(String? kod) {
+    for (final s in values) {
+      if (s.kod == kod) return s;
+    }
+    return varsayilan;
+  }
+}

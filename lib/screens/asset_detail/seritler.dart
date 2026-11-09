@@ -187,7 +187,7 @@ class _PozisyonSatiri extends StatelessWidget {
                 maxLines: 1,
                 style: context.t.numSmall.copyWith(
                     color: degerRengi,
-                    fontWeight: vurgulu ? FontWeight.w800 : FontWeight.w600),
+                    fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -300,9 +300,8 @@ class _CompareStrip extends StatelessWidget {
             onTap: onAddPressed,
             child: Material(
               color: Colors.transparent,
-              child: InkWell(
+              child: SandikTappable(
                 onTap: onAddPressed,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -329,7 +328,6 @@ class _CompareStrip extends StatelessWidget {
                         style: context.t.labelLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: context.c.text58,
-                          letterSpacing: 0.4,
                         ),
                       ),
                     ],
@@ -395,7 +393,6 @@ class _LegendBadge extends StatelessWidget {
             style: context.t.labelLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: color,
-              letterSpacing: 0.4,
             ),
           ),
           if (onRemove != null) ...[

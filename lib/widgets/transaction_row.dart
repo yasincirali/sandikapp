@@ -24,8 +24,9 @@ import '../l10n/l10n.dart';
 /// (şerit + pil + işaret hepsi "alım" diyordu) ve her satır ayrı kutu
 /// olduğu için göz kayıtları birlikte okuyamıyordu. Yeni satır DÜZ:
 /// arka planı ve kenarı yok, çağıran taraf bir kaba (SandikCard) koyar ve
-/// satırlar arasına [HareketAyraci] çizer (iOS gruplu liste). Tek renk
-/// sinyali tutarın kendisi; işlem türü ve miktar sağ altta düz metin.
+/// satırlar arasına [HareketAyraci] çizer (iOS gruplu liste). İşlem türü
+/// ve miktar sağ altta düz metin. Tutar 2026-11-01'den beri nötr (yalnız
+/// temettü amber): renk kâr/zarara ayrıldı, bkz. `tutarRengi`.
 class TransactionRow extends StatelessWidget {
   const TransactionRow({
     super.key,
@@ -36,6 +37,8 @@ class TransactionRow extends StatelessWidget {
     this.yilGoster = true,
     this.silinenGorunumu = false,
     this.not,
+    this.bakiye,
+    this.portfoyDegeri,
     this.onTap,
   });
 
@@ -70,6 +73,31 @@ class TransactionRow extends StatelessWidget {
   /// bozulurdu. İkon satır yüksekliğini değiştirmez; metin dokununca açılan
   /// not sayfasında okunur.
   final String? not;
+
+  /// Bu işlemden hemen önce ve sonra pozisyonda tutulan miktar — çağıran
+  /// `hareketBakiyeleri(...)` ile TÜM kapsam defterinden hesaplar (satır
+  /// saf kalır, defteri görmez). `null` ise ikinci satır çizilmez.
+  ///
+  /// Kullanıcı isteği (2026-10-29): "Portföy hareketlerinde önceki ve
+  /// sonraki bakiye de yazmalı." Tarihin ALTINDA, solda ikinci küçük satır:
+  /// sağ kolon 116pt sabit ve tutar + tür etiketiyle dolu; oraya eklenseydi
+  /// "Alım · 5 gr" ile "12 → 17 gr" iki miktar yan yana karışırdı. Solda
+  /// isim alanı esnek; satır bir metin satırı uzar, gruplu liste ritmi
+  /// tüm bakiyeli satırlarda aynı kalır.
+  final ({double once, double sonra})? bakiye;
+
+  /// İşlemden hemen önce ve sonra kapsamın TOPLAM portföy değeri (TRY) —
+  /// çağıran `hareketPortfoyDegerleriProvider`'dan okur; satır hesaplamaz.
+  ///
+  /// yasin (2026-10-29): "alım satım öncesi ve sonrası toplam bakiyeleri
+  /// görelim … tutarsızlık olmamalı". Sayı Performans grafiğinin o işlemi
+  /// içeren noktasıdır (karar kaydı `hareketPortfoyDegerleri`). Bakiye
+  /// satırının devamında, "Portföy" önekiyle: varlığın değeri sanılmasın.
+  /// Sağ kolon 116pt kalır; sığmazsa `Wrap` bütün parçayı alt satıra
+  /// indirir. Kompakt yazılır (₺1,24M) — satırın ikinci bilgisi, kuruş
+  /// gürültü olurdu; ekran okuyucu tam tutarı okur. Bakiye gizliyse ya da
+  /// değer yoksa (seri yüklenmedi, pencere dışı) yalnız miktar.
+  final ({double once, double sonra})? portfoyDegeri;
 
   /// Satıra dokununca — işlem notu sayfası. `null` ise satır eskisi gibi
   /// dokunulmaz (ör. ortak kaydının notu yoksa açılacak bir şey yok).
@@ -109,15 +137,20 @@ class TransactionRow extends StatelessWidget {
         isDividend ? asset.dividendAmount : asset.quantity * unitPrice;
     final txValueTRY = portfolioState.toTRY(txValue, asset.currency);
 
-    // Tek renk sinyali: tutar. Alım yeşil, satım kırmızı, temettü amber,
-    // silme kaydı soluk. Başka hiçbir öğe renkle tür anlatmaz — eski
-    // tasarımda şerit + pil + tutar üçü birden anlatıyordu.
+    // Tutar NÖTR (yasin 1 Kas 2026: "global örneklere bak, yap diyorsa
+    // ekle"; 28 Eyl'deki "tek renk sinyali: tutar" kararının yerine).
+    // Alım yeşil yazılınca uygulamanın geri kalanındaki "yeşil = kazandın"
+    // anlamıyla çakışıyordu: alım kazanç değil, paranın varlığa geçişi.
+    // Robinhood, Freetrade, Trade Republic işlem geçmişinde alım/satım
+    // nötr; yeşil/kırmızı yalnız fiyat performansında. Tür metinle (sağ
+    // altta "Alım · 100 lot") okunur; renk körlüğüne de daha uygun.
+    // İstisnalar: temettü gerçekten gelen para, amber ve "+" kalır; silme
+    // kaydı soluk.
     final Color tutarRengi = isDelete || silinenGorunumu
         ? context.c.text58
-        : (isSell
-            ? context.c.loss
-            : (isDividend ? context.c.amberText : context.c.gain));
-    final String sign = isSell || isDelete ? '−' : '+';
+        : (isDividend ? context.c.amberText : context.c.text90);
+    // İşaret yalnız temettüde: alımdaki "+" de kazanç gibi okunuyordu.
+    final String sign = isDividend && !isDelete ? '+' : '';
 
     final String turEtiketi = hareketTurEtiketi(l10n, asset);
 
@@ -131,10 +164,19 @@ class TransactionRow extends StatelessWidget {
     final String sagAltEtiket =
         isVoided ? '$turEtiketi · ${l10n.txVoided}' : turEtiketi;
 
+    // Portföy önce → sonra satırı, metin kolonu yerine satırın TAM
+    // genişliğinde (tutar kolonunun altına da uzanır): tutarlar kısaltmasız
+    // yazıldığı için (yasin 2026-10-30) 116 pt'lik sağ kolonun yanındaki dar
+    // alanda büyük yazıda kesiliyordu.
+    final portfoySatiri = silinenGorunumu ? null : _portfoySatiri(context);
     final row = Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: yatayBosluk, vertical: SandikSpace.smd),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+      Row(
         // Avatar, metin bloğu ve tutar kolonu ortak eksende hizalansın.
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -191,12 +233,16 @@ class TransactionRow extends StatelessWidget {
                         yilsiz: !yilGoster)),
                     notIsareti: not != null,
                   ),
-                ] else
+                ] else ...[
                   _tarihSatiri(
                     context,
                     fmtTarihSaat(asset.addedDate, yilsiz: !yilGoster),
                     notIsareti: not != null,
                   ),
+                  if (bakiye case final b?)
+                    if (hareketBakiyeMetni(l10n, asset, b) case final m?)
+                      _bakiyeSatiri(context, m),
+                ],
               ],
             ),
           ),
@@ -247,6 +293,14 @@ class TransactionRow extends StatelessWidget {
           ),
         ],
       ),
+          if (portfoySatiri != null)
+            Padding(
+              padding: const EdgeInsets.only(
+                  left: avatarCap + avatarAraligi, top: SandikSpace.xxs),
+              child: portfoySatiri,
+            ),
+        ],
+      ),
     );
 
     final Widget gorunen =
@@ -262,6 +316,57 @@ class TransactionRow extends StatelessWidget {
       child: gorunen,
     );
   }
+
+  /// Bakiye satırı: işlemden önce → sonra miktar.
+  Widget _bakiyeSatiri(
+          BuildContext context, ({String gorunen, String okunan}) m) =>
+      Padding(
+        padding: const EdgeInsets.only(top: SandikSpace.xxs),
+        child: Semantics(
+          label: m.okunan,
+          excludeSemantics: true,
+          child: _bakiyeMetni(context, m.gorunen),
+        ),
+      );
+
+  /// Portföy önce → sonra (yasin 2026-10-29), TAM tutar (2026-10-30: "tam
+  /// yazılmalı, karmaşa olmamalı"): Performans ipucuyla aynı biçim (₺,
+  /// kuruşsuz). Okun iki yanı bölünmez boşluk: dar ekranda ya da büyük
+  /// yazıda satır yalnız "Portföy"den sonra kırılır, iki tutar ayrılmaz.
+  /// Bakiye gizliyken ya da değer bilinmiyorsa (92 günden eski) yok.
+  Widget? _portfoySatiri(BuildContext context) {
+    final p = hideBalance || baz.gizli ? null : portfoyDegeri;
+    final l10n = context.l10n;
+    // Bakiye satırı çıkan hareketlerde (alım/satım; temettüde değil).
+    final b = bakiye;
+    if (p == null || b == null || hareketBakiyeMetni(l10n, asset, b) == null) {
+      return null;
+    }
+    return Semantics(
+      label: l10n.txPortfolioValueSemantics(baz.fmt(p.once), baz.fmt(p.sonra)),
+      excludeSemantics: true,
+      child: _bakiyeMetni(
+        context,
+        l10n.txPortfolioValueChange(baz.fmt(p.once), baz.fmt(p.sonra)),
+        satir: 3,
+      ),
+    );
+  }
+
+  /// Bakiye satırının bir parçası. Tarihten bir ton açık (text58 > text36):
+  /// satırın ikinci bilgisi, ama tutarla yarışmaz. Alt alta sayılar hizalı
+  /// okunsun diye tabular figür. İki satıra kadar kırılır; daha uzunu
+  /// (aşırı büyük yazı) kırpılır, taşmaz.
+  Widget _bakiyeMetni(BuildContext context, String metin, {int satir = 2}) =>
+      Text(
+        metin,
+        maxLines: satir,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.labelSmall?.copyWith(
+          color: context.c.text58,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      );
 
   /// Tarih satırı; [notIsareti] ise sonunda not ikonu.
   ///
@@ -336,7 +441,7 @@ class _Avatar extends StatelessWidget {
                             ? context.t.labelSmall
                             : context.t.titleSmall)
                         ?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       letterSpacing: 0,
                       height: 1,
                       color: on,
@@ -405,4 +510,51 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
       ? '${asset.unitLabel}$miktar'
       : '$miktar ${birimMetni(l10n, asset.unitLabel)}';
   return '${asset.isSell ? l10n.txSell : l10n.txBuy} · $miktarMetni';
+}
+
+/// "12 → 17 gr" ve ekran okuyucu cümlesi; gösterilmeyecekse `null`.
+///
+/// Birim kuralı [hareketTurEtiketi] ile aynı (`qtyFormatter` +
+/// `azamiOndalik`, döviz sembolü önde): satırın sağındaki "Alım · 5 gr" ile
+/// soldaki bakiye aynı sayı dilini konuşur. Sonek birim yalnız sonda
+/// ("12 → 17 gr"); önek sembol iki sayıda da ("$100 → $150") çünkü
+/// "$100 → 150" ikinci sayıyı birimsiz bırakır. Mevduat/BES ve silme/
+/// temettü için `null` (2026-10-29) — `hareketBakiyeleri` onlara zaten
+/// bakiye üretmez; bu ikinci kapı satırın kendi başına da doğru kalması
+/// için.
+///
+/// İlk alımda (önceki bakiye 0) da `null` (UX raporu 30 Eki §4, yasin
+/// "yap"): "0 → 550 lot" sağdaki "Alım · 550 lot"u ikinci kez söylüyordu;
+/// bilgi yalnız bakiye ÖNCEDEN varken yenidir. Portföy önce → sonra satırı
+/// ayrıdır, kalır.
+({String gorunen, String okunan})? hareketBakiyeMetni(
+  AppLocalizations l10n,
+  Asset asset,
+  ({double once, double sonra}) bakiye,
+) {
+  if (asset.isDeleteLog || asset.isDividend || asset.isDeleted) return null;
+  if (asset.type == AssetType.mevduat || asset.type == AssetType.bes) {
+    return null;
+  }
+  final fmt = qtyFormatter(maxDigits: asset.azamiOndalik);
+  // Biçimlenmiş 0 ("0", "$0"): sayının kendisi değil gösterilen değer —
+  // 0,00001 BTC "0" yazılırsa o da yeni bilgi taşımaz.
+  if (bakiye.once.abs() < 1e-9 || fmt.format(bakiye.once) == fmt.format(0)) {
+    return null;
+  }
+  final once = fmt.format(bakiye.once);
+  final sonra = fmt.format(bakiye.sonra);
+  if (asset.unitIsPrefix) {
+    final b = asset.unitLabel;
+    final gorunen = l10n.txBalanceChange('$b$once', '$b$sonra');
+    return (
+      gorunen: gorunen,
+      okunan: l10n.txBalanceSemantics('$b$once', '$b$sonra'),
+    );
+  }
+  final birim = birimMetni(l10n, asset.unitLabel);
+  return (
+    gorunen: l10n.txBalanceChange(once, '$sonra $birim'),
+    okunan: l10n.txBalanceSemantics('$once $birim', '$sonra $birim'),
+  );
 }

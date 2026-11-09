@@ -24,7 +24,6 @@ Future<MevduatBankaSecimi?> mevduatBankasiSec(
     showSandikSheet<MevduatBankaSecimi>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -194,7 +193,7 @@ class _Satir extends StatelessWidget {
     return Semantics(
       button: true,
       selected: secili,
-      child: InkWell(
+      child: SandikTappable(
         onTap: dokununca,
         child: Container(
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -257,7 +256,7 @@ class MevduatBankaRozeti extends StatelessWidget {
               harfler,
               maxLines: 1,
               style: context.t.labelSmall?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 letterSpacing: 0,
                 height: 1,
                 color: tur.onSurface(context),

@@ -23,8 +23,11 @@ void main() {
   const scale = <int>{2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 48};
 
   /// Tema tanımının kendisi ham sayı kullanmak zorunda.
+  /// PDF yazıcıları kâğıt çizer, ekran ölçeği orada geçersiz (2026-10-30).
   bool skip(String path) =>
-      path.endsWith('sandik.dart') || path.endsWith('main.dart');
+      path.endsWith('sandik.dart') ||
+      path.endsWith('main.dart') ||
+      path.replaceAll(r'\', '/').contains('lib/services/disa_aktarim/');
 
   List<({String file, int line, int value})> collect() {
     final out = <({String file, int line, int value})>[];
@@ -56,7 +59,8 @@ void main() {
     // 2026-08-10 ölçümü: ölçek genişletildikten SONRA kalan tam sayı.
     // Boşluk bırakılmadı — gevşek eşik cırcırı işlevsiz kılar.
     // Kalanlar: 3 (×14), 28 (×13), 18 (×9), 22, 36, 40, 44, 46, 1, 5.
-    const esik = 48;
+    // 2026-10-30: PDF yazıcıları sayımdan çıktı → 40.
+    const esik = 40;
 
     final offenders = collect();
 

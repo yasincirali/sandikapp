@@ -2,11 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/price_alert.dart';
 import '../services/price_alert_service.dart';
+import '../services/alarm_onbellegi.dart';
+import 'alarm_disk_ilk.dart';
 import 'auth_provider.dart';
 
 /// Servis kapısı — testte sahte `PriceAlertStore`'lu servisle değiştirilir.
 final priceAlertServiceProvider =
     Provider<PriceAlertService>((_) => PriceAlertService.instance);
+
+/// Alarmlarım'ın saati: "Çalanlar son 24 saatte mi çaldı" kararı
+/// (`calanlarOneCiksin`) bunu okur. Testte sabit saatle değiştirilir.
+final alarmSaatProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 
 /// Kullanıcının fiyat alarmları — tek kaynak.
 ///
@@ -18,11 +24,31 @@ final priceAlertServiceProvider =
 class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
   PriceAlertService get _svc => ref.read(priceAlertServiceProvider);
 
+  /// Liste SUNUCUDAN geldi mi. Cihaz kopyası gösterilirken `false`:
+  /// yatay çizgi eşitlemesi "Alarmlarım'dan silinmiş" sonucunu ancak
+  /// sunucunun listesinden çıkarır (kopyada henüz olmayan alarm bağı
+  /// yanlışlıkla çözülmesin).
+  bool _sunucudan = false;
+
   @override
   Future<List<PriceAlert>> build() async {
+    _sunucudan = false;
     final me = ref.watch(authProvider).valueOrNull;
     if (me == null) return const [];
-    return _svc.fetchAll(me.id);
+    Future<List<PriceAlert>> sunucu() async {
+      final l = await _svc.fetchAll(me.id);
+      // Okuma hata verip kopyaya düştüyse liste yine sunucunun değil.
+      _sunucudan = !AlarmOnbellegi.bayat.value;
+      return l;
+    }
+
+    return diskIlkYukle(
+      ref: ref,
+      disk: () => _svc.onbellektenGetir(me.id),
+      sunucu: sunucu,
+      taze: (l) => state = AsyncData(l),
+      neden: 'priceAlerts.arkaPlanOkuma',
+    );
   }
 
   Future<void> refresh() async {
@@ -44,23 +70,52 @@ class PriceAlertsNotifier extends AsyncNotifier<List<PriceAlert>> {
     ]);
   }
 
-  Future<void> rearm(String id) async {
-    await _svc.rearm(id);
-    // Sunucu satırı döndürmez; yerel kopya yamayla aynı şekle getirilir.
+  /// Bilinen liste (yüklenmemişse boş) — `state` korumalı; çizim
+  /// eşitlemesi ([cizimAlarmlariniEsitle]) ekrandan bağımsız okur.
+  List<PriceAlert> get liste => state.valueOrNull ?? const [];
+
+  /// Liste sunucudan geldi mi (gelmeden "alarm yok" sonucu çıkarılmaz).
+  bool get yuklendi => state.hasValue && _sunucudan;
+
+  /// Yatay çizgi taşındı: alarm yeni seviyeye geçer (aynı satır).
+  Future<void> hedefiGuncelle(String id, double hedef, String yon) async {
+    await _svc.hedefiGuncelle(id, hedef, yon);
+    state = AsyncData([
+      for (final a in state.valueOrNull ?? const <PriceAlert>[])
+        a.id == id ? a.copyWith(targetPrice: hedef, direction: yon) : a,
+    ]);
+  }
+
+  /// Nöbetteki alarmın hedefini, yönünü ve tekrarını değiştirir (aynı satır).
+  Future<void> duzenle(String id,
+      {required double hedef,
+      required String yon,
+      required bool tekrar}) async {
+    await _svc.duzenle(id, hedef: hedef, yon: yon, tekrar: tekrar);
     state = AsyncData([
       for (final a in state.valueOrNull ?? const <PriceAlert>[])
         a.id == id
-            ? PriceAlert(
-                id: a.id,
-                userId: a.userId,
-                symbol: a.symbol,
-                label: a.label,
-                targetPrice: a.targetPrice,
-                direction: a.direction,
-                enabled: true,
-                createdAt: a.createdAt,
-              )
+            ? a.copyWith(targetPrice: hedef, direction: yon, tekrar: tekrar)
             : a,
+    ]);
+  }
+
+  /// Okunan adı değiştirir (yatay çizgiye bağlı alarm, 2026-10-29).
+  Future<void> etiketiGuncelle(String id, String label) async {
+    await _svc.etiketiGuncelle(id, label);
+    state = AsyncData([
+      for (final a in state.valueOrNull ?? const <PriceAlert>[])
+        a.id == id ? a.copyWith(label: label) : a,
+    ]);
+  }
+
+  Future<void> rearm(String id) async {
+    await _svc.rearm(id);
+    // Sunucu satırı döndürmez; yerel kopya yamayla aynı şekle getirilir.
+    // `copyWith`: elle kurulan kopya 0171'in `tekrar`ını düşürüyordu.
+    state = AsyncData([
+      for (final a in state.valueOrNull ?? const <PriceAlert>[])
+        a.id == id ? a.copyWith(enabled: true, damgasiz: true) : a,
     ]);
   }
 }

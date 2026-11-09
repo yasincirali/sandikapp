@@ -100,7 +100,7 @@ class PortfoySecici extends ConsumerWidget {
           secili: false,
           onTap: () => pushGuarded(
             context,
-            adaptiveRoute<void>(builder: (_) => const PortfoyYonetimiScreen()),
+            adaptiveRoute<void>(settings: const RouteSettings(name: 'portfoy_yonetimi'), builder: (_) => const PortfoyYonetimiScreen()),
           ),
         ),
     ];
@@ -229,7 +229,6 @@ Future<void> showPortfoyAdiSayfasi(
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),

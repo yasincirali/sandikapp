@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 
 import 'crash_reporter.dart';
 import 'huni_kaydi.dart';
+import 'ozellik_olcumu.dart' show Ozellik;
 
 /// Merkezi analytics servisi. Tüm event log'ları buradan geçer.
 ///
@@ -14,6 +17,11 @@ class AnalyticsService {
 
   FirebaseAnalytics? _analytics;
   bool _initialized = false;
+  final Completer<void> _hazir = Completer<void>();
+
+  /// [init] bitti (başarılı ya da değil). Ertelenmiş başlatmadan ÖNCE
+  /// üretilen tek seferlik olaylar (`AcilisOlcumu`) bunu bekler.
+  Future<void> get hazir => _hazir.future;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -24,6 +32,8 @@ class AnalyticsService {
       _initialized = true;
     } catch (e) {
       if (kDebugMode) debugPrint('AnalyticsService init failed: $e');
+    } finally {
+      if (!_hazir.isCompleted) _hazir.complete();
     }
   }
 
@@ -52,6 +62,28 @@ class AnalyticsService {
     } catch (_) {}
   }
 
+  // ── Ar-Ge ölçümleri (2026-10-21) ────────────────────────────────────────
+  /// Hesap silindikten sonra isteğe bağlı seçilen neden; yalnız sabit kod
+  /// (`hesap_silme_nedeni_sheet.dart`). Kimlik çağıran tarafta düşürülür.
+  Future<void> logHesapSilmeNedeni(String kod) =>
+      _log('hesap_silme_nedeni', {'neden': kod});
+
+  /// Bir ayar değişti — yalnız anahtarın GÖVDESİ, değer asla
+  /// (`AyarOlcumu`). 19 Kasım "dokunulmayan ayar" kararının verisi.
+  Future<void> logAyarDegisti(String anahtar) =>
+      _log('ayar_degisti', {'anahtar': anahtar});
+
+  /// Soğuk açılış süreleri (`AcilisOlcumu`, Ar-Ge 23 Eki): ms, platform,
+  /// defterin kaynağı. Kişisel veri yok.
+  Future<void> logAcilisSuresi(Map<String, Object> parametreler) =>
+      _log('acilis_suresi', parametreler);
+
+  /// Ekran-içi özellik kullanıldı (Ar-Ge 25 Eki §3). Yalnız sabit kod
+  /// ([Ozellik]); tekilleştirme (TR gününe göre günde bir) `OzellikOlcumu`'da.
+  /// Doğrudan çağırma: `OzellikOlcumu.say` kullan.
+  Future<void> logOzellikKullanildi(Ozellik ozellik) =>
+      _log('ozellik_kullanildi', {'ozellik': ozellik.kod});
+
   // ── Auth ────────────────────────────────────────────────────────────────
   Future<void> logLogin({required String method}) =>
       _log('login', {'method': method});
@@ -70,15 +102,54 @@ class AnalyticsService {
   Future<void> logOnboardingSkipped(int atStep) =>
       _log('onboarding_skipped', {'at_step': atStep});
 
+  // ── Tam tanıtım turu (Ayarlar › "Tanıtım turunu yeniden izle") ─────────
+  //
+  // Neden ayrı olaylar (2026-10-20, Ar-Ge 17:15 #2): yukarıdaki üç olay
+  // kısa (ilk açılış) ve tam turu AYIRMIYOR. "28 adımlık turu ekran başı
+  // ipucuna çevirelim mi" kararı yalnız tam turun kaç kişi tarafından
+  // başlatılıp kaçıncı adımda bırakıldığını soruyor. Davranış değişmez;
+  // `adim` 0 tabanlı (`onboarding_skipped.at_step` ile aynı), `adim_sayisi`
+  // turun o sürümdeki uzunluğu (adımlar eklenip çıktıkça oran okunabilsin).
+  Future<void> logTamTurBasladi({required int adimSayisi}) =>
+      _log('tam_tur_basladi', {'adim_sayisi': adimSayisi});
+
+  Future<void> logTamTurAtlandi(
+          {required int adim, required int adimSayisi}) =>
+      _log('tam_tur_atlandi', {'adim': adim, 'adim_sayisi': adimSayisi});
+
+  Future<void> logTamTurBitti({required int adimSayisi}) =>
+      _log('tam_tur_bitti', {'adim_sayisi': adimSayisi});
+
   // ── Portföy ─────────────────────────────────────────────────────────────
+  /// [yol]: varlığın hangi ekleme yolundan geldiği (2026-10-20, Ar-Ge
+  /// 13:15 #4 "ekleme yollarını say"; 19 Kasım sadeleştirme kararını
+  /// besler). Değerler [eklemeYollari]; kişisel veri yok.
   Future<void> logAssetAdded({
     required String type,
     String? subCategory,
+    String? yol,
   }) =>
       _log('asset_added', {
         'asset_type': type,
         if (subCategory != null) 'sub_category': subCategory,
+        if (yol != null) 'yol': yol,
       });
+
+  /// `asset_added.yol` değer kümesi — sabit ve küçük, Analytics panosunda
+  /// kırılım olarak okunur. Sesli giriş ayrı bir yol değildir: klavye
+  /// diktesi Hızlı Giriş'e yazar (`hizli_metin`).
+  static const eklemeYollari = {
+    'form', // Varlık Ekle formu (+ Al/Sat hızlı düzeltme, "Varlığı güncelle")
+    'hizli_metin', // "Yazarak ekle" çok satırlı hızlı giriş
+    'toplu', // Toplu Ekle'de elle eklenen kalem
+    'ekstre', // Ekstre / metin / dosya içe aktarma
+    'ekran_goruntusu', // Aracı kurum ekranının görüntüsünden
+    'arama', // Arama sonucu / Karşılaştır'dan "Portföyüme ekle"
+    'takip', // Takip listesi satırından
+    'halka_arz', // Halka arz katılım kaydından
+    'otomatik', // BES otomatik katkısı (kullanıcı eylemi değil)
+    'bedelli', // Varlık sayfası ⋯ → Bedelli artırım (1 ₺ alış lotu)
+  };
 
   Future<void> logAssetUpdated({required String type}) =>
       _log('asset_updated', {'asset_type': type});
@@ -124,8 +195,25 @@ class AnalyticsService {
   Future<void> logPremiumUpgradeStarted({required String source}) =>
       _log('premium_upgrade_started', {'source': source});
 
-  Future<void> logPremiumUpgradeCompleted({required String plan}) =>
-      _log('premium_upgrade_completed', {'plan': plan});
+  /// Huni kapı → paywall → satın alma TEK kaynak parametresiyle bağlanır
+  /// (paywall incelemesi, 2026-10-20): `premium_gate_shown.feature` =
+  /// `premium_upgrade_started.source` = buradaki `source`. Böylece hangi
+  /// kilidin para ettiği kaynak başına okunur; `deneme` mağazanın deneme
+  /// süresiyle başladığını söyler (deneme → ücretli dönüşüm ayrı sorulur).
+  Future<void> logPremiumUpgradeCompleted({
+    required String plan,
+    String source = '',
+    bool deneme = false,
+  }) =>
+      _log('premium_upgrade_completed', {
+        'plan': plan,
+        if (source.isNotEmpty) 'source': source,
+        'deneme': deneme ? 1 : 0,
+      });
+
+  /// Paywall satın alınmadan kapandı (huni sızıntısı, kaynak başına).
+  Future<void> logPremiumPaywallKapandi({required String source}) =>
+      _log('premium_paywall_closed', {'source': source});
 
   /// Premium dışa aktarım (2026-10-10): hangi belge, hangi biçim. Tutar ya
   /// da içerik gönderilmez.
@@ -226,6 +314,16 @@ class AnalyticsService {
         'timed_out': timedOut ? 1 : 0,
       });
 
+  /// TEFAS fon geçmişi çekiminin sonucu (`TefasService`, 2026-10-23).
+  ///
+  /// #240 fon başına isteği ikiye indirdi; bu sayaç bunun yetip yetmediğini
+  /// gösterir. `dolu` dışındaki oran yüksek kalırsa fon geçmişi sunucu
+  /// önbelleğine (`fon-seri`) alınır (Ar-Ge 23 Eki 20:45 #2). Fon kodu
+  /// YAZILMAZ: soru "ne sıklıkla", "hangi fon" değil.
+  /// [sonuc]: dolu | bos | http | hata. [periyod]: istenen kova (3 / 60).
+  Future<void> logTefasGecmis({required String sonuc, required int periyod}) =>
+      _log('tefas_gecmis', {'sonuc': sonuc, 'periyod': periyod});
+
   /// [type]: signal_alert | partner_invite | daily_brief | price_alert
   Future<void> logPushOpened({required String type, int? minutesSinceSent}) =>
       _log('push_opened', {
@@ -249,7 +347,8 @@ class AnalyticsService {
   }) =>
       _log('widget_installed', {'platform': platform, 'size': size});
 
-  /// [surface]: home_widget | lock_widget | live_activity
+  /// [surface]: home_widget | lock_widget | live_activity | varlik_widget
+  /// (iOS tek varlık widget'ı, 2026-10-25; `DeepLinkRouter.widgetYuzeyi`).
   Future<void> logWidgetTapped({required String surface}) =>
       _log('widget_tapped', {'surface': surface});
 
@@ -340,6 +439,19 @@ class AnalyticsService {
   }
 
   Future<void> logDemoOpened() => _log('demo_opened');
+
+  /// Ana ekran özellik önerisi kartı (`ozellik_onerisi.dart`): hangi öneri,
+  /// `ac` (dokundu) ya da `kapat`. Gösterim sayılmaz: her açılışta olay
+  /// basardı; dönüşüm `ac` / ekran görüntülemeyle okunur.
+  Future<void> logOzellikOnerisi(
+          {required String oneri, required String eylem}) =>
+      _log('ozellik_onerisi', {'oneri': oneri, 'eylem': eylem});
+
+  /// Ana sayfa "seni ilgilendiren günler" satırı: olay türü (`tcmb`, `fomc`,
+  /// `temettu`; sembol değil) ve `ac` / `kapat`. Gösterim sayılmaz
+  /// (`logOzellikOnerisi` ile aynı gerekçe).
+  Future<void> logGunlerSatiri({required String tur, required String eylem}) =>
+      _log('gunler_satiri', {'tur': tur, 'eylem': eylem});
 
   /// Demo'dan hesap oluşturmaya geçti (`from`: hangi eylem tetikledi).
   Future<void> logDemoConverted({required String from}) =>

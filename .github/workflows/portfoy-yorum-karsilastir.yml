@@ -1,0 +1,44 @@
+# AI portföy yorumu: haftalık yorum için Haiku 5.5 / Sonnet 5.5 karşılaştırması
+# (2026-10-14, `tool/portfoy_yorum_karsilastir.ts`).
+#
+# Neden: `portfoy_ai_yorumu` bayrağı açılmadan önce 30 örnek yan yana
+# (yasin, 12 Eki: Haiku reddi %10'u geçerse haftalık Sonnet'e geçer). Bulut
+# geliştirme kabında Anthropic anahtarı yok; anahtar yalnız Supabase
+# secret'larında. Bu iş GitHub secret'ı `ANTHROPIC_API_KEY` ile koşar.
+#
+# Public repo: log ve artifact herkese açık. Örnekler sentetik (gerçek
+# portföy yok); anahtar yalnız ortam değişkeni, hiçbir çıktıya yazılmaz.
+name: Portföy yorumu model karşılaştırması
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  karsilastir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: 30 örnek, iki model
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: deno run --allow-net=api.anthropic.com --allow-env=ANTHROPIC_API_KEY --allow-write=. --allow-read tool/portfoy_yorum_karsilastir.ts portfoy_yorum_karsilastirma.md
+      - name: Özet
+        if: always()
+        run: |
+          if [ -f portfoy_yorum_karsilastirma.md ]; then
+            sed -n '1,/^## Red/p' portfoy_yorum_karsilastirma.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portfoy-yorum-karsilastirma
+          path: portfoy_yorum_karsilastirma.md
+          if-no-files-found: ignore
+          retention-days: 14

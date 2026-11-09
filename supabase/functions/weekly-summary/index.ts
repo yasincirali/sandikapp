@@ -178,6 +178,23 @@ const AY_ADLARI = [
 ];
 
 /**
+ * Haftalık bildirimin kapsadığı günler, kısa: "31 Eki - 7 Kas", aynı ayda
+ * "1-7 Kas" (yasin 2026-11-07, "zaman aralığı belirtilmeli"; uygulamadaki
+ * `fmtTarihAraligi` ile aynı kural, yılsız: bildirim taze, yıl gürültü).
+ * Europe/Istanbul günleri (UTC+3, DST yok).
+ */
+export function kisaAralik(fromMs: number, toMs: number): string {
+  const TR_OFFSET_MS = 3 * 3600_000;
+  const KISA = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  const a = new Date(fromMs + TR_OFFSET_MS);
+  const b = new Date(toMs + TR_OFFSET_MS);
+  if (a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear()) {
+    return `${a.getUTCDate()}-${b.getUTCDate()} ${KISA[b.getUTCMonth()]}`;
+  }
+  return `${a.getUTCDate()} ${KISA[a.getUTCMonth()]} - ${b.getUTCDate()} ${KISA[b.getUTCMonth()]}`;
+}
+
+/**
  * GEÇEN takvim ayının penceresi, Europe/Istanbul (UTC+3, DST yok).
  *
  * `now` 1 Eylül 06:30 UTC ise → 1 Ağustos 00:00 TR … 1 Eylül 00:00 TR.
@@ -334,13 +351,17 @@ export function buildWeeklyMessage(
   changePct: number,
   uzunDonemPct: number | null,
   akisCumlesi: string | null = null,
+  aralik: string | null = null,
 ): { title: string; body: string } {
   const yukari = changePct >= 0;
   const mutlak = Math.abs(changePct).toFixed(1).replace('.', ',');
 
+  // [aralik] (2026-11-07): "Geçen hafta" hangi günler — "(31 Eki - 7 Kas)".
+  // Verilmezse başlık birebir eski.
+  const hafta = aralik === null ? 'Geçen hafta' : `Geçen hafta (${aralik})`;
   const baslik = yukari
-    ? `▲ Geçen hafta piyasadan %${mutlak}`
-    : `▼ Geçen hafta piyasadan −%${mutlak}`;
+    ? `▲ ${hafta} piyasadan %${mutlak}`
+    : `▼ ${hafta} piyasadan −%${mutlak}`;
 
   // Kayıpta bağlam; kazançta sade. Kazancı uzun pencereyle "ama" diye
   // dengelemek kutlamayı azarlamaya çevirirdi.
@@ -832,7 +853,8 @@ Deno.serve(async (request) => {
         ? buildMonthlyMessage(ay.ayAdi, degisim, uzunDonemPct, ayTufe)
         : yalnizAkis
         ? yalnizAkisMesaji(akisCumlesi!)
-        : buildWeeklyMessage(degisim ?? 0, uzunDonemPct, akisCumlesi);
+        : buildWeeklyMessage(degisim ?? 0, uzunDonemPct, akisCumlesi,
+          kisaAralik(fromMs, toMs));
 
       if (dryRun) {
         sent += 1;
@@ -868,6 +890,9 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
+        // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+        // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+        onem: 'passive',
         data: aylik
           ? { type: bildirimTipi, sent_on: bugun, ay: ay.donem.slice(0, 7) }
           : akisCumlesi !== null
@@ -936,6 +961,9 @@ Deno.serve(async (request) => {
           title: tm.title,
           body: tm.body,
           channelId: CHANNEL_ID,
+          // Brifing/özet acil değil: iOS'ta sessiz, Bildirim Özeti'ne düşer
+          // (müşteri raporu 2026-10-26 21:15 #1, `_shared/fcm.ts` › onem).
+          onem: 'passive',
           data: { type: 'inflation_day', period: ay.donem },
         });
         if (r.ok) {

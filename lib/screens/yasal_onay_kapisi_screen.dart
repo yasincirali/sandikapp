@@ -370,8 +370,10 @@ class _NelerDegistiState extends State<_NelerDegisti> {
           Semantics(
             button: true,
             expanded: _acik,
-            child: SandikBasma(
-              olcek: 0.99,
+            child: SandikTappable(
+              soluk: true,
+              haptic: SandikHaptic.none,
+              scale: 0.99,
               onTap: () => setState(() => _acik = !_acik),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: SandikTouch.min),

@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Input alanlarının Apple HIG beklentilerine uyduğunu koruyan testler.
 ///
@@ -9,7 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// davranışını etkiler; test ortamında iOS Keychain / SMS akışı yoktur.
 /// Amaç: bir alan eklenirken bu özelliklerin unutulmasını yakalamak.
 void main() {
-  String oku(String yol) => File(yol).readAsStringSync();
+  // Part'lar dahil: ekran bölününce aranan desen part dosyasında olabilir.
+  String oku(String yol) => ekranKaynagiSync(yol);
 
   group('Kimlik ekranları — otomatik doldurma', () {
     test('login: e-posta ve şifre autofill ipuçlarına sahip', () {

@@ -268,19 +268,27 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Dönem seçici — ortak [DonemSecici] (tek dönem kümesi ve tek görünüş,
   /// 2026-09-28). İçerik oranlı pay kararı ve gerekçesi o bileşene taşındı;
   /// bu ekran yalnızca seçimi ve gün içi zamanlayıcıyı yönetir.
+  ///
+  /// YB yalnız burada (gerekçe [SummaryPeriod] "YB" notu). Şerit GÖRÜNTÜ
+  /// sırasıyla çizilir (YB 1Y'nin önünde); `_selectedPeriodIdx` ise enum
+  /// indeksidir, dokunuş ona geri çevrilir. Sekiz segment 360pt'de de tek
+  /// satırda: pay ölçülen metinden, sığmayan etiket kırpılmaz, küçülür
+  /// (`DonemSecici`); hiçbir dönem düşmez.
   Widget _buildPeriodToggle() {
+    const sira = SummaryPeriod.performansSirasi;
     return DonemSecici(
-      donemler: SummaryPeriod.values,
-      secili: _selectedPeriodIdx,
+      donemler: sira,
+      secili: sira.indexOf(SummaryPeriod.fromIndex(_selectedPeriodIdx)),
       onSec: (i) {
-        _guncelle(() => _selectedPeriodIdx = i);
+        final donem = sira[i];
+        _guncelle(() => _selectedPeriodIdx = donem.index);
         _startIntradayTickIfNeeded();
         // Tek akışta Özet hep görünür; "Özet görüldü" ölçümü sekme
         // geçişinden değil dönem seçiminden gelir (eski düzende sekme
         // anahtarı yazıyordu, bkz. `_buildSurfaceToggle`).
         if (_tekAkis) {
           AnalyticsService.instance.logPeriodSummaryViewed(
-            period: SummaryPeriod.fromIndex(i).name,
+            period: donem.name,
           );
         }
       },
@@ -298,6 +306,26 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// arkasında. Çip seçili filtre SAYISINI yazar ("Filtre · 1"): görünmeyen
   /// filtre "portföyüm neden eksik" sınıfı hatanın kaynağıdır, sayı onu
   /// görünür tutar.
+  /// Kontrol satırı üst çubuğa iliştirilir mi (Ar-Ge 2026-11-07 12:15 #1).
+  ///
+  /// Satır listenin ilk çocuğuydu: aşağı inip tür dökümüne bakan kullanıcı
+  /// dönemi değiştirmek için başa dönmek zorundaydı. İliştirilince satır
+  /// başlıkla AYNI bloktadır (`SandikKaydirmaBasligi.baslik`): cam açıkken
+  /// içerik ikisinin altından akar, kapalıyken başlıkla birlikte sabit
+  /// durur. Yeni bir cam yüzey eklenmez, mevcut çubuk uzar. Kaydırmaya
+  /// bağlı bir geçiş YOK (satır hep orada), dolayısıyla hareketi azalt'ta
+  /// değişecek bir animasyon da yok.
+  ///
+  /// Büyük yazıda (ölçek > [_ilisikOlcekTavani]) iliştirme kalkar ve satır
+  /// listeyle akar: 3,1×'te başlık + satır ekranın üçte birini kalıcı
+  /// kaplardı, içerik penceresi bir iki satıra inerdi. Eşik 2,0: iOS'un
+  /// erişilebilirlik boylarının ortası; altında satır ~60 pt'yi geçmiyor.
+  bool _kontrollerIlisik(BuildContext context) =>
+      _tekAkis &&
+      MediaQuery.textScalerOf(context).scale(1) <= _ilisikOlcekTavani;
+
+  static const double _ilisikOlcekTavani = 2.0;
+
   Widget _buildTekSatirKontroller(List<AppUser> partners) {
     return Row(
       children: [
@@ -423,7 +451,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
       builder: (_) => StatefulBuilder(
         builder: (sayfaCtx, yenile) => Consumer(
@@ -448,8 +475,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                       ? _filtreSayfasiYeni(sayfaCtx, sayfaRef, ortaklar,
                           araclar, bugunku, tazele)
                       : [
-                    const Center(child: SandikTutamac()),
-                    const SizedBox(height: SandikSpace.md),
                     Text(
                       l.s2Filtre,
                       style: context.t.titleLarge?.copyWith(
@@ -592,6 +617,15 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     final ozet = TurFiltreOzeti.hesapla(
         sahipLotlari, pState?.toTRY ?? (t, _) => t,
         pazarAyir: pazarAyir);
+    // Çip SIRASI kapsamdan bağımsız: herkesin tüm portföyleri (yasin
+    // 2026-10-12, "filtreler yer değiştiriyor, sabit kalmalı"). Kişi ya da
+    // portföy değişince çipler yerinde kalır, yalnız pasiflik değişir.
+    final siraOzeti = pState == null
+        ? null
+        : TurFiltreOzeti.hesapla(
+            [pState.assets, ...ortakVarliklari.values],
+            pState.toTRY,
+            pazarAyir: pazarAyir);
     final secili = _typeFilter?.uyarla(pazarAyir: pazarAyir);
     final turlar = [
       for (final g in PortfoyGrubu.listesi(AssetType.values,
@@ -606,8 +640,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     final n = _filtreSayisi(ortaklar);
 
     return [
-      const Center(child: SandikTutamac()),
-      const SizedBox(height: SandikSpace.md),
       Row(
         children: [
           Expanded(
@@ -671,6 +703,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       TurFiltreCipleri(
         secili: secili,
         ozet: ozet,
+        siraOzeti: siraOzeti,
         turlar: turlar,
         onSec: (t) {
           _guncelle(() {

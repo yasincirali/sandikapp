@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../demo/demo_modu.dart';
 import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
+import '../services/para_agirlikli_getiri.dart' show getiriAkisi;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart'
@@ -21,6 +22,7 @@ import '../providers/base_currency_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
+import '../utils/grafik_ozeti.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
@@ -29,8 +31,11 @@ import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_acilir.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
+import '../widgets/sandik_paylas_dugmesi.dart';
 import '../widgets/sandik_segment.dart';
 import '../widgets/sekme_basa_don.dart';
 import 'main_navigation_screen.dart' show MainNavigationScreen;
@@ -43,15 +48,16 @@ import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/islem_noktalari.dart';
 import '../utils/sonuc_bellegi.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_iyelik.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
 import '../widgets/share_card.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/seri_son_guncelleme.dart';
 import '../services/analytics_service.dart';
 import '../services/daily_summary.dart';
 import '../services/history_service.dart';
+import '../services/portfoy_seri_depo.dart';
 import '../services/inflation_service.dart';
 import '../services/tazelik_ritmi.dart';
 import '../services/real_return_service.dart';
@@ -60,12 +66,14 @@ import '../services/leaderboard_service.dart';
 import '../services/birikim_serisi.dart';
 import '../services/contribution_history_service.dart';
 import '../services/insight_metrics_service.dart';
+import '../services/donem_ozeti_yukleyici.dart';
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart';
 import '../services/xirr_service.dart';
 import '../services/remote_config_service.dart';
 import '../providers/secili_donem_provider.dart';
 import '../widgets/period_summary_view.dart';
+import '../widgets/portfoy_yorumu_karti.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
 import '../widgets/grafik_stili.dart';
@@ -79,6 +87,7 @@ import '../services/mum_verisi.dart'
 import '../models/ohlc.dart';
 import '../providers/preferences_provider.dart'
     show
+        balanceHiddenProvider,
         bugunkuPortfoyleProvider,
         leaderboardOptInProvider,
         mumAraligiSecimiProvider,
@@ -98,6 +107,7 @@ import '../widgets/gorunum_cipi.dart';
 import '../widgets/tur_filtre_cipleri.dart';
 import '../services/tur_filtre_ozeti.dart';
 import '../widgets/kiyas_karti.dart';
+import '../widgets/sandik_cam.dart';
 import '../services/kiyas_service.dart';
 import '../providers/kiyas_provider.dart';
 
@@ -111,6 +121,15 @@ part 'portfolio_performance/ozet_yan_veri.dart';
 part 'portfolio_performance/ozet_bellek.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
+  /// Özet'in kanonik serisini çeken fonksiyonun test yerine geçeni
+  /// (`test/ozet_seri_hatasi_test.dart`): ağın asılı kaldığı, hata verdiği
+  /// ya da boş döndüğü hâller motorun kendi geri düşüşlerinden geçmeden
+  /// sınansın. `null` = gerçek motor.
+  @visibleForTesting
+  static Future<PortfolioHistoryBreakdown> Function(
+      SummaryPeriod period, List<Asset> chartAssets, bool simulate)?
+      ozetSerisiTestCekici;
+
   final String? initialView;
   final AssetType? initialTypeFilter;
 
@@ -223,8 +242,6 @@ class _PortfolioPerformanceScreenState
   /// panel kapalıyken de çipin üstünde yazılı (bkz. `_buildScopeBar`).
   bool _kapsamAcik = false;
 
-  int _yerelDonemIdx = 0; // Günlük (intraday)
-
   /// Açılış isteğiyle gelen dönem, ortak döneme yazılana kadar (bkz.
   /// [initState]). Sağlayıcı kurulum sırasında değiştirilemediği için yazma
   /// bir mikro görev sonra olur; o arada ilk kare isteneni çizmeli.
@@ -232,22 +249,16 @@ class _PortfolioPerformanceScreenState
 
   /// Seçili dönem indeksi ([SummaryPeriod.values] sırası).
   ///
-  /// `donem_hafizasi` (Sadeleştirme 2) açıkken alan değil uygulamanın ortak
-  /// dönemidir ([seciliDonemProvider]); kapalıyken eski ekran alanı
-  /// ([_yerelDonemIdx], varsayılan GÜNLÜK). Erişimci olarak yazıldı ki part
+  /// Alan değil uygulamanın ortak dönemidir ([seciliDonemProvider];
+  /// `donem_hafizasi` Sadeleştirme 2, bayrak 2026-10-20'de emekliye ayrıldı,
+  /// ekran-yerel dönem kaldırıldı). Erişimci olarak yazıldı ki part
   /// dosyalarındaki okuma/yazma yerleri (seçici, Bugün kartı isteği) hiç
   /// değişmeden ortak döneme bağlansın. Yeniden çizim `build`'deki
   /// `ref.watch` ile gelir.
-  int get _selectedPeriodIdx {
-    if (!donemHafizasiAcik) return _yerelDonemIdx;
-    return _bekleyenAcilisDonemi ?? ref.read(seciliDonemProvider).index;
-  }
+  int get _selectedPeriodIdx =>
+      _bekleyenAcilisDonemi ?? ref.read(seciliDonemProvider).index;
 
   set _selectedPeriodIdx(int i) {
-    if (!donemHafizasiAcik) {
-      _yerelDonemIdx = i;
-      return;
-    }
     _bekleyenAcilisDonemi = null;
     ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.fromIndex(i);
   }
@@ -260,6 +271,10 @@ class _PortfolioPerformanceScreenState
   /// BOŞ — zoom ve Özet anahtarları bayrak öncesiyle birebir aynı metin
   /// kalır; portföy seçiliyse `|p:<seçim>`. `build` her karede yazar.
   String _portfoyAnahtari = '';
+
+  /// Günlük seriyi yayınladığımız kapsam (`_gunlukSeriyiYayinla`); ekran
+  /// kapanınca ya da kapsam değişince yayın geri çekilir.
+  HareketKapsami? _yayinKapsami;
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
   //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
   //
@@ -360,6 +375,12 @@ class _PortfolioPerformanceScreenState
   /// titremesini önler. Gerekçe `_OzetBellek` notunda.
   final _ozetBellek = _OzetBellek();
 
+  /// Tek akışta Özet'in paylaşım eylemi dönem kartının ikonuna buradan
+  /// ulaşır (UX raporu 30 Eki §6): paylaşım metnini Özet ölçer (TÜFE,
+  /// XIRR, seviye kapıları onda), düğme ise kartın sağ üstünde durur.
+  /// `null` → paylaşılacak ölçülmüş bir sayı yok, ikon çizilmez.
+  final _ozetPaylasim = _PaylasimKanali();
+
   // Ana grafik + volume subchart aynı X viewport'unu paylaşsın diye
   // ortak controller. Grafiğin fullMinX/fullMaxX'i period değiştikçe
   // güncellenir; ZoomableChart bunu dinler.
@@ -388,19 +409,15 @@ class _PortfolioPerformanceScreenState
     // ekranı hiç açılmaz hale getirmemeli.
     if (widget.initialPeriodIdx != null) {
       final istenen = widget.initialPeriodIdx!.clamp(0, _periods.length - 1);
-      if (donemHafizasiAcik) {
-        // Ortak dönem kurulum sırasında yazılamaz (Riverpod); istek bir
-        // mikro görev sonra ortak döneme geçer, o zamana dek ilk kare onu
-        // çizer.
-        _bekleyenAcilisDonemi = istenen;
-        Future.microtask(() {
-          if (mounted && _bekleyenAcilisDonemi != null) {
-            _selectedPeriodIdx = _bekleyenAcilisDonemi!;
-          }
-        });
-      } else {
-        _selectedPeriodIdx = istenen;
-      }
+      // Ortak dönem kurulum sırasında yazılamaz (Riverpod); istek bir
+      // mikro görev sonra ortak döneme geçer, o zamana dek ilk kare onu
+      // çizer.
+      _bekleyenAcilisDonemi = istenen;
+      Future.microtask(() {
+        if (mounted && _bekleyenAcilisDonemi != null) {
+          _selectedPeriodIdx = _bekleyenAcilisDonemi!;
+        }
+      });
     }
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
@@ -492,6 +509,7 @@ class _PortfolioPerformanceScreenState
 
   @override
   void dispose() {
+    _ozetPaylasim.dispose();
     // Dinleyici STATİK bir `ValueNotifier`'a bağlı: kaldırılmazsa ekran
     // yeniden kurulduğunda üst üste birikir ve tek dokunuş birden çok kez
     // işlenir (aynı gerekçe `MainNavigationScreen.dispose`).
@@ -500,6 +518,9 @@ class _PortfolioPerformanceScreenState
     _gorunurluk?.removeListener(_gorunurlukDegisti);
     IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     _nabziBirak?.call();
+    if (_yayinKapsami case final k?) {
+      PerformansSeriYayini.instance.yayinla(k, null);
+    }
     _zoomController?.dispose();
     _viewport?.dispose();
     _basaDonBirak?.call();
@@ -560,11 +581,21 @@ class _PortfolioPerformanceScreenState
   /// 2026-09-28): 3A ve 5Y eklendi, çünkü diğer ekranlarda vardı ve
   /// seçiciler birebir aynı olmalı. Özet sekmesi aynı indeksi paylaştığı
   /// için iki dizi zaten aynı kaynaktan gelmek zorunda.
-  static final List<({String label, int days, int? ayGeri, bool intraday})>
-      _periods = [
-    for (final p in SummaryPeriod.values)
-      (label: p.label, days: p.days, ayGeri: p.ayGeri, intraday: p.intraday),
-  ];
+  ///
+  /// Enum sırasında (indeks = `_selectedPeriodIdx`); şeridin görüntü
+  /// sırası ayrı (`SummaryPeriod.performansSirasi`). Sabit liste değil
+  /// erişimci: YB'nin günü takvimle büyür (`SummaryPeriod.days`), uygulama
+  /// günlerce açık kalsa da çizgi kalınlığı ve Zirve eşlemesi bugünü okur.
+  static List<({String label, int days, int? ayGeri, bool intraday})>
+      get _periods => [
+            for (final p in SummaryPeriod.values)
+              (
+                label: p.label,
+                days: p.days,
+                ayGeri: p.ayGeri,
+                intraday: p.intraday,
+              ),
+          ];
 
   // ── Logic ──────────────────────────────────────────────────────────────────
 
@@ -599,14 +630,12 @@ class _PortfolioPerformanceScreenState
     // da çağrılıyor); değişince ekran yeniden kurulsun diye burada izlenir.
     ref.watch(bugunkuPortfoyleProvider);
     ref.watch(seviyeGorunurlukProvider);
-    // `donem_hafizasi`: seçili dönem ortak sağlayıcıda ([_selectedPeriodIdx]
-    // erişimcisi). Başka yüzeyde (varlık detayı, Takip…) değişince ekran
-    // yeniden kurulur ve gün içi nabız yeni döneme göre bağlanır/bırakılır.
-    if (donemHafizasiAcik) {
-      ref.watch(seciliDonemProvider);
-      ref.listen<SummaryPeriod>(
-          seciliDonemProvider, (_, __) => _startIntradayTickIfNeeded());
-    }
+    // Seçili dönem ortak sağlayıcıda ([_selectedPeriodIdx] erişimcisi).
+    // Başka yüzeyde (varlık detayı, Takip…) değişince ekran yeniden kurulur
+    // ve gün içi nabız yeni döneme göre bağlanır/bırakılır.
+    ref.watch(seciliDonemProvider);
+    ref.listen<SummaryPeriod>(
+        seciliDonemProvider, (_, __) => _startIntradayTickIfNeeded());
     // Portföy kapsamı (0133): "Ben"de uygulanır; görünmüyorsa HEP Tümü.
     // Değişince gün içi tohumu atılır — kişi kapsamıyla aynı gerekçe
     // (`_gunIciTohumuAt`): başka bir kümenin karesi bu kümenin özeti
@@ -651,9 +680,13 @@ class _PortfolioPerformanceScreenState
     //
     // Gün başına çekmek ekseni kovalarla hizalıyor; tüm dönemler aynı
     // davranıyor.
+    // YB: 1 Ocak (`PeriodSummaryService.pencere` ile aynı gün; Özet ve
+    // grafik aynı pencereyi okur).
     final hamBaslangic = isIntraday
         ? dayKey(endDate)
-        : (donem.ayGeri != null
+        : SummaryPeriod.fromIndex(_selectedPeriodIdx).yilBasindan
+            ? yilBasiGunu(endDate)
+            : (donem.ayGeri != null
             ? PortfolioPerformanceScreen.donemBaslangici(endDate, donem.ayGeri!)
             : endDate.subtract(Duration(days: donem.days)));
     final startDate = isIntraday
@@ -665,8 +698,12 @@ class _PortfolioPerformanceScreenState
           color: context.c.text90, decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
         backgroundColor: context.c.background,
-        child: SafeArea(
-          child: Column(
+        // Cam başlık (bayrak `goz_alici`, 2026-10-12); kapalıyken eski
+        // SafeArea > Column birebir.
+        child: SandikKaydirmaBasligi(
+          kimlik: 'performans',
+          baslik: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // ── Header ──────────────────────────────────────────────────
               // Başlık çubuğu 2026-09-15'te iki kez inceldi: 20/12 →
@@ -695,6 +732,7 @@ class _PortfolioPerformanceScreenState
                       ),
                     ],
                     Expanded(
+                      child: SandikKucululenBaslik(
                       child: Text(
                         context.l10n.performanceTitle,
                         // Tek satır, kenarda solar: sarmalasa başlık çubuğu
@@ -704,6 +742,7 @@ class _PortfolioPerformanceScreenState
                         overflow: TextOverflow.fade,
                         style: context.t.headlineMedium
                             ?.copyWith(color: context.c.text90),
+                      ),
                       ),
                     ),
                     // Kişi seçimi 2026-09-15'te bir süre buradaydı (çip,
@@ -744,6 +783,7 @@ class _PortfolioPerformanceScreenState
                               context,
                               // Sıralama › Ortaklarım.
                               adaptiveRoute<void>(
+                                  settings: const RouteSettings(name: 'yaris_giris_ekrani'),
                                   builder: (_) => yarisGirisEkrani()),
                             ),
                             // Üst çubuk düğmeleri her ekranda aynı kabuk
@@ -770,8 +810,28 @@ class _PortfolioPerformanceScreenState
                   ],
                 ),
               ),
-              // ── Body ────────────────────────────────────────────────────
-              Expanded(
+              // Dönem seçici + Filtre üst çubuğa iliştirili (tek akış,
+              // normal yazı; gerekçe `_kontrollerIlisik`). Yan pay listeyle
+              // aynı: iPad sütununda satır içerikle hizalı kalır.
+              if (_kontrollerIlisik(context))
+                SandikIcerikSutunu.olc(
+                  builder: (context, kenar) => Padding(
+                    key: const ValueKey('performans_ilisik_kontroller'),
+                    padding: EdgeInsets.fromLTRB(
+                        SandikSpace.screenH(context) + kenar,
+                        0,
+                        SandikSpace.screenH(context) + kenar,
+                        SandikSpace.xs),
+                    child: _buildTekSatirKontroller(activePartners),
+                  ),
+                ),
+            ],
+          ),
+          // ── Body ────────────────────────────────────────────────────
+          govde: SandikKaydirmaBasligi.payIle((ustPay) => SandikIcerikGecisi(
+                // Yükleyici → gövde çapraz solar (2026-10-14).
+                tamEkran: true,
+                anahtar: SandikIcerikGecisi.hal([pStateAsync, partnerAssetsAsync]),
                 child: pStateAsync.when(
                   // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
                   // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
@@ -779,10 +839,17 @@ class _PortfolioPerformanceScreenState
                   // boşalıp doluyordu (titreme bulgusu 2026-10-02). Ana ekran aynı
                   // şeyi `valueOrNull` ile baştan beri yapıyor.
                   skipLoadingOnReload: true,
-                  loading: () => const SandikLoadingScreen(),
-                  error: (e, _) => SandikErrorView(
-                      error: e,
-                      onRetry: () => ref.invalidate(portfolioProvider)),
+                  loading: () => Padding(
+                      padding: EdgeInsets.only(
+                          top: ustPay),
+                      child: const SandikLoadingScreen()),
+                  error: (e, _) => Padding(
+                    padding: EdgeInsets.only(
+                        top: ustPay),
+                    child: SandikErrorView(
+                        error: e,
+                        onRetry: () => ref.invalidate(portfolioProvider)),
+                  ),
                   data: (pState) => partnerAssetsAsync.when(
                     // Aynı gerekçe: `activePartnersProvider` her tazelendiğinde
                     // bu sağlayıcı yeniden kurulur (`PartnerAssetsNotifier`).
@@ -865,17 +932,24 @@ class _PortfolioPerformanceScreenState
                       // gösteriyordu (kullanıcı bildirimi 2026-09-22).
                       const isRenderable = FiyatKaynagi.seriyeGirer;
 
-                      final chartAssetsRenderable = [
-                        for (final a in chartAssets)
-                          if (isRenderable(a)) a
-                      ];
-                      final filteredOwnerLotsRenderable = [
-                        for (final lots in filteredOwnerLots)
-                          [
-                            for (final a in lots)
-                              if (isRenderable(a)) a
-                          ]
-                      ];
+                      // Süzgeç TEK kaynaktan (`performansSeriDefterleri`,
+                      // 2026-10-29): hareket satırının "Portföy önce →
+                      // sonra" değeri aynı girdiyle aynı motoru çağırır;
+                      // burada ayrı bir kopya kalsaydı iki yüzey ilk
+                      // değişiklikte ayrışırdı. Sonuç eskisiyle birebir
+                      // (aynı lotlar, aynı sıra).
+                      final filteredOwnerLotsRenderable =
+                          performansSeriDefterleri(ownerLots,
+                              suzgec: _typeFilter?.kapsar);
+                      final chartAssetsRenderable = _simulate
+                          ? [
+                              for (final a in chartAssets)
+                                if (isRenderable(a)) a
+                            ]
+                          : [
+                              for (final l in filteredOwnerLotsRenderable)
+                                ...l
+                            ];
 
                       // TradingView "auto range": kullanıcı seçilen periyot
                       // içinde hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün
@@ -913,6 +987,9 @@ class _PortfolioPerformanceScreenState
                           from: effectiveStart,
                           to: endDate,
                           intraday: false,
+                          // Ham defter (kapanmış/silinmiş dahil): önce-eski-
+                          // seri parmak izi (`_diskSerisi`).
+                          hamDefter: [for (final l in ownerLots) ...l],
                         );
                       }
 
@@ -1070,16 +1147,16 @@ class _PortfolioPerformanceScreenState
                             stale: stale,
                             settled: settled,
                             breakdown: breakdown,
+                            sonGuncelleme:
+                                stale ? null : controller?.sonGuncelleme,
                           );
                         },
                       );
                     },
                   ),
                 ),
-              ),
-            ],
+              )),
           ),
-        ),
       ),
     );
   }

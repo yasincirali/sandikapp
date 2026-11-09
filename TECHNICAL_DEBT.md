@@ -9,6 +9,78 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — Android'de silip kurunca cihaz yine e-posta kodu ister (2026-11-05)
+
+**Ne:** yasin kuralı (5 Kas): "OTP alınmış cihazdan uygulama silinse de kod istememeli; kaldırılan cihaz yeniden OTP istemeli; liste distinct." iOS'ta cihaz kimliği Keychain'e taşındı (`CihazOturumuService.cihazKimligi`), silip kurmaya dayanıyor. Android'de Keystore ve SharedPreferences uygulamayla silinir (`allowBackup=false`), kimlik yeniden doğar.
+**Neden ertelendi:** kalıcı bir Android kaynağı (`ANDROID_ID` türevi) yeni bir cihaz tanımlayıcısı işlemek demek: KVKK/Gizlilik metnine yeni veri ("rastgele cihaz numarası" artık rastgele değil), "Onay sürümü" ve yeniden onay kapısı gerekir. Android şu an kapalı test.
+**Maliyet:** Kotlin kanalı (`com.sandik.app/ayarlar` → `ANDROID_ID`), kullanıcıya özel SHA-256 türevi, eski kimlik varsa korunur; yasal metin + migration.
+**Ne zaman:** Play herkese açık yayından önce, yasin onayıyla.
+**Mevcut çoğalmış satırlar:** sunucu aynı telefonu ayırt edemez (yalnız ad); kullanıcı "Kaldır"la temizler.
+
+## 🟡 AÇIK — Geniş pencere ve önce-eski-seri v1'de bırakılanlar (2026-10-24, Ar-Ge §1/§3)
+
+`HistoryService.kaynakDonemGunu` / `darPencereyiKapsar` / `eldekiSeriyle`;
+2026-10-25: `PortfoySeriDepo`, `getPortfolioHistoryHourlyBreakdownEldeki`.
+
+- **Yahoo pencere modeli canlıda yeniden ölçülmedi.** Eşitlik kararı,
+  sağlayıcının pencereyle örtüşen her barı verdiği (kısmi ilk haftalık mum,
+  `period1`'e damgalı) modele dayanıyor; kanıt 2026-09-03 ölçümü (`6mo|1wk`
+  28, `1y|1wk` 54 nokta). Bulut oturumunda Yahoo'ya çıkış yok. Maliyet: model
+  yanlışsa 1A/1Y pencerenin ilk mumu dar istekten bir gün/hafta farklı
+  olabilir. Ne zaman: bir sonraki GitHub Actions ölçüm turunda
+  `1mo|1d`↔`3mo|1d` ve `1y|1wk`↔`5y|1wk` kırpılmışlarını gerçek API'de
+  karşılaştır.
+- **Kripto, altın, eurobond, mevduat birleştirilmedi** (gerekçe kod yorumunda).
+  Kripto için sunucu `kripto-seri` dar dönemi kısmi mumla verseydi birleşirdi.
+- ~~**Varlık detayı gün içi (GÜNLÜK) önce-eski-seri yolunda değil**~~
+  KAPANDI (2026-10-25, yasin onayı, commit 8459c6a): üç kaynağın üçü de
+  eldeki-kipte ağa çıkmaz (`getPortfolioHistoryHourlyBreakdownEldeki`).
+  `seriCek` yalnız bugünün kopyası; yurt içi kayıt artık diske de yazılıyor
+  (anahtar günü taşır, `yurtici|…`) ve eldeki-kipte bellek/diskteki BUGÜNÜN
+  kaydı okunur; çizilen seans bugün değilse eski seri yok. Kalan:
+  - **TEFAS yayın gözlemi diske yazılmadı**: yalnız bellekte bugün alınmışsa
+    kullanılır, yoksa bileşen eksik → eski seri gösterilmez. Gözlem
+    `(int, double)` seri değil (`TefasNavGozlem`: dört alan); depoya ayrı
+    biçim eklemek kazancına göre fazla (fonun GÜNLÜK'ü tek basamak, `5d` NAV +
+    gözlem iki hızlı istek). Maliyet: TEFAS fonlu varlığın GÜNLÜK'ü soğuk
+    açılışta eskisi gibi taze seriyi bekler. Ne zaman: `slow_history_fetch`
+    fon GÜNLÜK'ünde uzun bekleme gösterirse gözlem için küçük JSON kaydı.
+  - **Hafta sonu GÜNLÜK eski seriyle açılmaz**: seans Cuma, "yalnız bugünden"
+    kuralı onu dışarıda bırakır (bilerek; dünün serisi bugünün grafiği değil).
+  - Eldeki-kipteki GÜNLÜK, `PriceService`'in o anki bellek değerlerini
+    (günlük referans/yüzde, canlı kur) okur; soğuk açılışta fiyat turu
+    bitmeden hesaplanırsa uçlar taze hesaptan biraz farklı olabilir. Soluk
+    çizilir ve taze seri gelince yerine geçer; sayı basılmaz.
+- ~~**Performans sekmesi önce-eski-seri yolunda değil**~~ KAPANDI
+  (2026-10-25, Ar-Ge 10-25 §4, yasin onayı, commit 8459c6a):
+  `PortfoySeriDepo` ekranın son çizdiği portföy serisini lot defterinin
+  parmak iziyle (ham defter: kapanmış/silinmiş dahil + motora giden liste)
+  ve kapsam/dönem anahtarıyla saklar; yalnız AYNI izde, ≤7 gün (1H ≤1 gün)
+  soluk açılır, gün içi dönem hiç. Motor ikinci kipte koşmaz. Kalan:
+  - **Özet sekmesi** (`_OzetSerisi`) diskten açılmıyor: kendi kanonik serisi
+    var, bellek önbelleği (`_OzetBellek`) aynı oturumda zaten anında. Grafik
+    sekmesi diskten açılır.
+  - **Tür dökümü kartı** disk kopyasıyla görünmez: kopya yalnız toplamı
+    taşır (dağılım saklanmadı — boyut ve "yanlış kırılım gösterme" kuralı).
+    Taze çekim düşerse kart boş kalır, grafik ve dönem kartı net.
+  - **Sözleşmeli lot (mevduat/BES) içeren kapsam** bu yola girmez: seri
+    sözleşmenin faiz/vade koşullarından gelir, o koşullar lot satırında
+    değil, parmak izi göremez.
+  - Bileşenlerden biri hiç gelmediyse (`tazelikle.bosBilesen`) sonuç diske
+    yazılmaz; hep boş dönen bir bileşeni olan portföy (ör. kapanmış ve
+    sağlayıcıdan düşmüş hisse) eski seriyle hiç açılmaz. Bilerek: yanlış
+    "yenilenemedi" demektense iskelet.
+- **Sinyal paneli** eski seriyle açılmıyor: kapı onu beklemez, panel kendi
+  yerinde taze seriyi bekler.
+
+## ✅ KAPANDI — ~~Cam yüzeyler iOS "Saydamlığı azalt"ı okumuyor~~ (2026-10-12, bayrak `goz_alici`)
+
+Açıldığı gün kapandı: `goz_alici` mağaza sürümünde varsayılan açılacağı için
+beklenmedi. `AppDelegate.swift` → `SaydamlikChannel` (ilk değer + değişim
+bildirimi) → `lib/services/saydamlik_tercihi.dart` → `SandikCam.bulanik`.
+Ayar açıkken cam yerine opak zemin; uygulama açıkken değişince hemen uyar
+(`cam_baslik_test`).
+
 ## 🟡 AÇIK — Gösterge denetiminde (2026-10-11) bilerek bırakılanlar
 
 Rapor: https://claude.ai/artifact/PtmrdPz5fDLBKmnx9SrReC. 17 bulgunun 14'ü aynı
@@ -454,7 +526,15 @@ Hızlı "Al" kopyaları ayırt edilemiyor — iki alışta aynı not görünür.
 
 ---
 
-## 🟡 AÇIK — "Geçen hafta" şeridi önbellekten BAŞKA bir hafta gösteriyor
+## ✅ KAPANDI (2026-10-17 kayıt düzeltmesi) — "Geçen hafta" şeridi önbellekten BAŞKA bir hafta gösteriyor
+
+**KAPANDI:** yüzey kalktı. Şerit (`WeeklySummaryChip`) 2026-10-04 sadeleştirme
+C'de, Bugün kartının haftalık satırı ve `_haftalikYukle` 2026-10-08'de
+silindi (bkz. "RealReturnStrip / WeeklySummaryChip ana ekrandan kalktı" ve
+"Bugün kartı çizmediği satırları hesaplıyor"). Ana ekranda haftalık rakam
+çizen bir yer kalmadı; aşağıdaki iki küçük notun dosyası
+(`period_summary_view.dart`) da yok. Kayıt AÇIK kalmıştı.
+
 
 **Ne (2026-09-27 emülatör regresyon turu, Pazar, gerçek hesap):** Ana ekran
 "Geçen hafta, piyasanın portföyüne etkisi" şeridi soğuk açılışta önbellekten
@@ -506,7 +586,12 @@ eşitle.
 
 ---
 
-## 🟡 AÇIK — Giriş alanı dolgusu on yerde hâlâ elle seçiliyor
+## ✅ KAPANDI — Giriş alanı dolgusu on yerde hâlâ elle seçiliyor
+
+> **2026-10-20 doğrulama (iyileştirme raporu):** `lib/` içinde tema dışı
+> `fillColor` grep'i 0; kural `input_fill_consistency_test` ile kilitli
+> (CLAUDE.md "Giriş alanı dolgusu temadan gelir"). Aşağıdaki metin kayıttır.
+
 
 **Ne:** 2026-09-25'te tema `inputFill` tek kaynak oldu (light: `surface2`,
 dark: siyah %18) ve üç arama alanı ona bağlandı (seçici alt sayfası, takibe
@@ -848,7 +933,17 @@ yazmalarından tüm servis çağrılarına genişleterek).
 
 ---
 
-## 🟡 AÇIK — Dönem özeti push'unun istemcide kapatma anahtarı yok
+## ✅ KAPANDI (2026-10-17, bayraksız) — Dönem özeti push'unun istemcide kapatma anahtarı yok
+
+**KAPANDI:** Ayarlar › Bildirimler'de brifing saatinin altında "Dönem özeti
+bildirimleri" anahtarı `profiles.weekly_summary_push`'u yazar (sunucu 0052'den
+beri okuyordu; migration yok). Tek anahtar haftalık + aylık ikisini birden
+kapatır çünkü sütun ortak. Ortak hareketi anahtarıyla aynı kabuk
+(`_SunucuTercihAnahtari`). Bayrak yok (ilk sürümde vardı; yasin bayrağı gereksiz buldu, kaldırıldı). "Proaktif bildirimler"
+grubu (brifing / TÜFE günü / takip hareketi için ayrı anahtar) hâlâ açık
+karar: üç ayrı satır Ayarlar'ı şişirir; `push_opened` verisiyle bakılır.
+Kilit `ozet_bildirimi_anahtari_test`.
+
 
 **Ne.** Haftalık (0052) ve aylık (0067) özet push'u `profiles.weekly_summary_push`
 sütununu okuyor ama Ayarlar › Bildirimler'de bu sütunu yazan bir anahtar
@@ -873,7 +968,18 @@ aynı tur.
 
 ---
 
-## 🟡 AÇIK — Takip listesi hareketi fonları (TEFAS) kapsamıyor
+## ✅ KAPANDI (2026-10-17) — Takip listesi hareketi fonları (TEFAS) kapsamıyor
+
+**KAPANDI:** canlı kotasyonun TEFAS yolu (`live_prices.ts` `fetchTefasLast`)
+artık aynı yanıttaki son iki NAV'dan günlük değişimi de döner
+(`fonGunlukDegisimi`, `_shared/tefas_nav.ts`); `watchlist_moves.ts` fon/BES
+satırlarını hisselerle aynı yoldan geçirir. Eşik fonda %2, hissede %5. En yeni NAV bugün tarihli değilse (tatil, henüz
+yayımlanmadı) fon o gün sayılmaz — dünkü hareket ikinci kez bildirilmez.
+`tefas_nav_gozlem` kullanılmadı: o tablo yalnız portföyde TUTULAN fonları
+gözlüyor, takip listesindekileri değil. Fon başına tek istek, 4'lü paralel
+(alarm turuyla aynı). `fetchLiveQuotes`'un başka tüketicisi yalnız fiyat
+okur; değişim alanı yalnız takip hareketinde kullanılır. Kilit `watchlist_moves_test`, `tefas_nav_test`.
+
 
 **Ne.** `watchlist_moves.ts` günlük değişimi canlı kotasyondan okuyor;
 TEFAS tek NAV döndürür, dünkü NAV ayrı istektir. Fon izleyen kullanıcı bu
@@ -2404,8 +2510,11 @@ kapsam-dışı yıl davranışını kilitler.
 
 **Kalan (bakım):** her Aralık ayında bir sonraki yılın Resmî Gazete
 takvimini `_diniTamGun` / `_diniYarimGun`'a girip `sonKapsananYil`'i
-artır. Sunucu (push sinyalleri) hâlâ takvimi bilmez — "işlem günü"
-tablosu gelirse iki taraf da oradan beslenir.
+artır; aynı günleri sunucunun kopyası
+`supabase/functions/_shared/bist_tatil.ts`'e de yaz (`bist_tatil_parite_test`
+farkı kırar). **2026-10-29:** sunucu da takvimi biliyor: kilit ekranı push'u
+(`push-live-activity`), sinyal taraması, TEFAS akış gözlemi ve sabah/akşam
+brifinginin hisse mesajı tatilde susar (Ar-Ge 29 Eki #1).
 
 **Karar tarihi:** 2026-08-13
 

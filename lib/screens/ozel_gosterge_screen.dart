@@ -39,7 +39,6 @@ Future<void> showOzelGostergeSayfasi(
 }) =>
     showSandikSheet<void>(
       context: context,
-      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius:
@@ -59,6 +58,7 @@ class OzelGostergeListesi extends ConsumerWidget {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'ozel_gosterge_editor'),
         fullscreenDialog: true,
         builder: (_) => OzelGostergeEditorScreen(
           gosterge: g,
@@ -89,8 +89,6 @@ class OzelGostergeListesi extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Center(child: SandikTutamac()),
-              const SizedBox(height: SandikSpace.lg),
               Text(l.ozgBaslik,
                   style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700, color: context.c.text90)),
@@ -135,11 +133,10 @@ class OzelGostergeListesi extends ConsumerWidget {
                         ?.copyWith(color: context.c.text58)),
               ],
               const SizedBox(height: SandikSpace.lg),
-              Text(l.ozgSablondan.toUpperCase(),
+              Text(l.ozgSablondan,
                   style: context.t.labelSmall?.copyWith(
                       color: context.c.text58,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6)),
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: SandikSpace.sm),
               Wrap(
                 spacing: SandikSpace.sm,

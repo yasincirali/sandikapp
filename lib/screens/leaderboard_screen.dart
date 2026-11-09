@@ -68,7 +68,6 @@ List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
       tooltip: context.l10n.howReturnCalculated,
       onPressed: () => showSandikSheet<void>(
         context: context,
-        backgroundColor: context.c.surface1,
         isScrollControlled: true,
         useSafeArea: true,
         shape: const RoundedRectangleBorder(
@@ -121,7 +120,13 @@ class YarisGovdesi extends ConsumerWidget {
         },
       );
     }
-    return Column(
+    // Alt açıklama bloğu (paranın getirisi + teaser + dipnot) en fazla
+    // gövdenin [_altBlokOrani]'na kadar büyür, fazlası kendi içinde kayar.
+    // Neden: dipnot ~210 karakter; cihazda büyük yazı (2×–3,1×) açıkken bu
+    // sabit blok tek başına ekranı aşıyor, sıralama listesini sıfır
+    // yüksekliğe ezip altını kesiyordu (büyük yazı taraması 2026-10-12).
+    // Normal yazıda blok sınırın çok altında kalır; düzen aynıdır.
+    return LayoutBuilder(builder: (context, kisit) => Column(
       children: [
         // Dönem seçici "Herkes" sekmesiyle AYNI bileşen (`ZirveDonemSecici`,
         // 1H · 1A · 1Y, kayan hap) — sekme değişince seçici yerinde kalır,
@@ -168,6 +173,13 @@ class YarisGovdesi extends ConsumerWidget {
                   pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
                 ),
         ),
+        ConstrainedBox(
+          constraints:
+              BoxConstraints(maxHeight: kisit.maxHeight * _altBlokOrani),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
         // Kendi satırının ek bilgisi (R1): paranın getirisi —
         // Performans ile aynı sayı. Sıralama seçimleri ölçer.
         if (me != null && pState != null)
@@ -201,9 +213,16 @@ class YarisGovdesi extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
         ),
+              ],
+            ),
+          ),
+        ),
       ],
-    );
+    ));
   }
+
+  /// Alt açıklama bloğunun gövdeye oranla tavanı (gerekçe `build`'de).
+  static const double _altBlokOrani = 0.4;
 }
 
 /// Yarış dönemleri. Gün sayıları `ZirveDonem` ile BİREBİR (7 · 30 · 365):
@@ -312,10 +331,6 @@ class _RoiInfoSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: const SandikTutamac(),
-            ),
-            const SizedBox(height: 14),
             // Başlık + KAPAT.
             //
             // Sheet'in tek kapanma yolu aşağı sürüklemekti: yukarıdaki tutamak
@@ -466,11 +481,18 @@ class _OptInPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    // Kaydırılabilir + en az gövde boyu: normal yazıda ortada durur, büyük
+    // yazıda (2×–3,1×) davet metni ve "Yarışa katıl" düğmesi ekranın altında
+    // kesilmek yerine kaydırılarak ulaşılır (büyük yazı taraması 2026-10-12).
+    return LayoutBuilder(builder: (context, kisit) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: kisit.maxHeight),
+        child: Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.emoji_events_outlined,
                 size: 48, color: context.c.amberText),
@@ -506,7 +528,9 @@ class _OptInPrompt extends StatelessWidget {
           ],
         ),
       ),
-    );
+        ),
+      ),
+    ));
   }
 }
 
@@ -714,7 +738,6 @@ class _SoloRoiCard extends StatelessWidget {
                   context.l10n.yourReturnUpper,
                   style: context.t.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
                     color: context.c.text58,
                   ),
                 ),
@@ -966,7 +989,11 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   Widget build(BuildContext context) {
     return FutureBuilder<List<_LeaderboardRow>>(
       future: _future,
-      builder: (context, snap) {
+      builder: (context, snap) => SandikIcerikGecisi(
+        // İskelet → sıralama çapraz solar (2026-10-14).
+        tamEkran: true,
+        anahtar: (snap.data ?? _staleRows) == null,
+        child: ((BuildContext context, AsyncSnapshot<List<_LeaderboardRow>> snap) {
         final isLoading = snap.connectionState == ConnectionState.waiting;
         // Öncelik: fresh Future data > stale cache > spinner
         final rows = snap.data ?? _staleRows;
@@ -1026,7 +1053,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
               ),
           ],
         );
-      },
+      })(context, snap),
+      ),
     );
   }
 }
@@ -1245,7 +1273,7 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
                       title,
                       style: context.t.bodyMedium?.copyWith(
                         fontSize: hero ? 14 : 13,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: context.c.text90,
                       ),
                       maxLines: 1,
@@ -1313,7 +1341,6 @@ class _Badge extends StatelessWidget {
           fontSize: 8,
           fontWeight: FontWeight.w900,
           color: color,
-          letterSpacing: 0.8,
         ),
       ),
     );

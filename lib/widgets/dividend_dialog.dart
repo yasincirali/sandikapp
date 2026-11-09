@@ -220,131 +220,154 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
     final a = widget.asset;
     final dateFmt = DateFormat('dd/MM/yyyy', 'tr_TR');
 
-    return AlertDialog(
-      // Öneri satırları içeriği uzatır; küçük ekranda + klavye açıkken
-      // taşmasın. Önerisiz (elle) açılış eskisi gibi.
-      scrollable: widget.oneri != null,
-      backgroundColor: context.c.surface2,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SandikRadius.md)),
-      title: Row(
-        children: [
-          Icon(Icons.savings_outlined, color: context.c.gain, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(context.l10n.addDividend,
-                style: context.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700, color: context.c.text90)),
+    // Marka kabuğu (Ar-Ge 5 Kas 22:40 #7; eskiden `AlertDialog`): kart
+    // onay/bilgi diyaloğuyla aynı, vurgu kazanç yeşili (temettü = gelir).
+    // Başlık + gövde kayar, düğme satırı sabit: öneri satırları içeriği
+    // uzatır, küçük ekranda + klavye açıkken taşmasın (eski
+    // `scrollable: oneri != null`; önerisiz açılış sığdığı için aynı görünür).
+    final baslik = Row(
+      children: [
+        Icon(Icons.savings_outlined, color: context.c.gain, size: 22),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(context.l10n.addDividend,
+              style: context.t.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700, color: context.c.text90)),
+        ),
+      ],
+    );
+    final govde = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.l10n.netAmountReceived(a.displayTicker ?? a.name),
+          style: context.t.bodySmall?.copyWith(color: context.c.text58),
+        ),
+        if (widget.oneri != null) ..._oneriSatirlari(widget.oneri!, dateFmt),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _amount,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
+          style: context.t.titleMedium?.copyWith(color: context.c.text90),
+          decoration: InputDecoration(
+            hintText: '0',
+            suffixText: a.currency,
+            suffixStyle: context.t.titleSmall?.copyWith(
+                color: context.c.text58, fontWeight: FontWeight.w700),
+            // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
+          ),
+          onSubmitted: (_) => _saving ? null : _save(),
+        ),
+        const SizedBox(height: 12),
+        // Ödeme tarihi — TRY karşılığı bu günün kuruyla sabitlenir.
+        SandikTappable(
+          onTap: _pickDate,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Row(
+              children: [
+                Icon(Icons.event_outlined, size: 18, color: context.c.text58),
+                const SizedBox(width: 8),
+                // Flexible: dar ekran + büyük metinde tarih satırı taşıyordu
+                // (temettü önerisi testinde yakalandı, 2026-09-29).
+                Flexible(
+                  child: Text(context.l10n.paymentDate(dateFmt.format(_paidAt)),
+                      style: context.t.bodyMedium
+                          ?.copyWith(color: context.c.text90)),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (widget.oneri != null) ...[
+          const SizedBox(height: 6),
+          // Tutarın ne olduğunu SÖYLE: net öneri mi (varsayılan oranla),
+          // yoksa boş alan + brüt dayanak mı. Kullanıcı düzeltmeden
+          // kaydederse bile neyi onayladığını bilir.
+          //
+          // Net öneride kesinti TUTARI ve net de yazılır (karar 8.2,
+          // 2026-09-30): yalnız oranı yazmak hesabı kullanıcıya bırakıyordu,
+          // "gizli kesinti" okunmasın. Sayılar alandaki öneriyle aynı
+          // kaynaktan (`oneriTutari`); kullanıcı alanı değiştirirse satır
+          // önerinin dayanağı olarak kalır.
+          Text(
+            _oneriNet
+                ? context.l10n.dividendWithholdingAssumed(
+                    fmtPct(widget.stopaj! * 100, digits: 0),
+                    fmtTRY(widget.oneri!.brut * widget.stopaj!, digits: 2),
+                    fmtTRY(
+                        TemettuGecmisi.oneriTutari(
+                                widget.oneri!.brut, widget.stopaj)
+                            .tutar!,
+                        digits: 2))
+                : context.l10n
+                    .dividendEnterNet(fmtTRY(widget.oneri!.brut, digits: 2)),
+            style: context.t.bodySmall?.copyWith(color: context.c.amberText),
           ),
         ],
-      ),
-      content: Column(
+        const SizedBox(height: 6),
+        Text(
+          context.l10n.dividendNote,
+          style: context.t.bodySmall?.copyWith(color: context.c.text36),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 10),
+          Text(_error!,
+              style: context.t.bodySmall?.copyWith(color: context.c.danger)),
+        ],
+      ],
+    );
+    return SandikDiyalogKabugu(
+      vurgu: context.c.gain,
+      kaydir: false,
+      child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            context.l10n.netAmountReceived(a.displayTicker ?? a.name),
-            style: context.t.bodySmall?.copyWith(color: context.c.text58),
-          ),
-          if (widget.oneri != null) ..._oneriSatirlari(widget.oneri!, dateFmt),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _amount,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-            ],
-            style: context.t.titleMedium?.copyWith(color: context.c.text90),
-            decoration: InputDecoration(
-              hintText: '0',
-              suffixText: a.currency,
-              suffixStyle: context.t.titleSmall?.copyWith(
-                  color: context.c.text58, fontWeight: FontWeight.w700),
-              // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
-            ),
-            onSubmitted: (_) => _saving ? null : _save(),
-          ),
-          const SizedBox(height: 12),
-          // Ödeme tarihi — TRY karşılığı bu günün kuruyla sabitlenir.
-          InkWell(
-            onTap: _pickDate,
-            borderRadius: BorderRadius.circular(SandikRadius.sm),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-              child: Row(
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.event_outlined,
-                      size: 18, color: context.c.text58),
-                  const SizedBox(width: 8),
-                  // Flexible: dar ekran + büyük metinde tarih satırı taşıyordu
-                  // (temettü önerisi testinde yakalandı, 2026-09-29).
-                  Flexible(
-                    child: Text(context.l10n.paymentDate(dateFmt.format(_paidAt)),
-                        style: context.t.bodyMedium
-                            ?.copyWith(color: context.c.text90)),
-                  ),
+                  baslik,
+                  const SizedBox(height: SandikSpace.md),
+                  govde,
                 ],
               ),
             ),
           ),
-          if (widget.oneri != null) ...[
-            const SizedBox(height: 6),
-            // Tutarın ne olduğunu SÖYLE: net öneri mi (varsayılan oranla),
-            // yoksa boş alan + brüt dayanak mı. Kullanıcı düzeltmeden
-            // kaydederse bile neyi onayladığını bilir.
-            //
-            // Net öneride kesinti TUTARI ve net de yazılır (karar 8.2,
-            // 2026-09-30): yalnız oranı yazmak hesabı kullanıcıya bırakıyordu,
-            // "gizli kesinti" okunmasın. Sayılar alandaki öneriyle aynı
-            // kaynaktan (`oneriTutari`); kullanıcı alanı değiştirirse satır
-            // önerinin dayanağı olarak kalır.
-            Text(
-              _oneriNet
-                  ? context.l10n.dividendWithholdingAssumed(
-                      fmtPct(widget.stopaj! * 100, digits: 0),
-                      fmtTRY(widget.oneri!.brut * widget.stopaj!, digits: 2),
-                      fmtTRY(
-                          TemettuGecmisi.oneriTutari(
-                                  widget.oneri!.brut, widget.stopaj)
-                              .tutar!,
-                          digits: 2))
-                  : context.l10n
-                      .dividendEnterNet(fmtTRY(widget.oneri!.brut, digits: 2)),
-              style: context.t.bodySmall?.copyWith(color: context.c.amberText),
-            ),
-          ],
-          const SizedBox(height: 6),
-          Text(
-            context.l10n.dividendNote,
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          const SizedBox(height: SandikSpace.md),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: SandikSpace.sm,
+            runSpacing: SandikSpace.sm,
+            children: [
+              TextButton(
+                onPressed: _saving ? null : () => Navigator.pop(context),
+                child: const Text('İptal'),
+              ),
+              // Gösterge + çift dokunuş kilidi standart bileşende (tek yükleniyor
+              // davranışı, 2026-10-08; eski elle yazılmış 18pt gösterge kalktı).
+              // `_saving` kalır: kayıt sürerken İptal ve klavye "gönder"i pasif.
+              SandikAsyncButton.kompakt(
+                style: FilledButton.styleFrom(
+                  backgroundColor: context.c.gain,
+                  foregroundColor: context.c.onStatus,
+                ),
+                onPressed: _save,
+                mesgul: _saving,
+                child: const Text('Kaydet'),
+              ),
+            ],
           ),
-          if (_error != null) ...[
-            const SizedBox(height: 10),
-            Text(_error!,
-                style: context.t.bodySmall
-                    ?.copyWith(color: context.c.danger)),
-          ],
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('İptal'),
-        ),
-        // Gösterge + çift dokunuş kilidi standart bileşende (tek yükleniyor
-        // davranışı, 2026-10-08; eski elle yazılmış 18pt gösterge kalktı).
-        // `_saving` kalır: kayıt sürerken İptal ve klavye "gönder"i pasif.
-        SandikAsyncButton.kompakt(
-          style: FilledButton.styleFrom(
-            backgroundColor: context.c.gain,
-            foregroundColor: context.c.onStatus,
-          ),
-          onPressed: _save,
-          mesgul: _saving,
-          child: const Text('Kaydet'),
-        ),
-      ],
     );
   }
 }

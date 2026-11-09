@@ -52,6 +52,8 @@ class ShareCardData {
     this.enSabirliGun,
     this.takipGunu,
     this.dagilim = const {},
+    this.dagilimOranGizli = false,
+    this.dipnotlar = const [],
   });
 
   /// "Son 1 yıl", "2026 Özetim".
@@ -94,6 +96,20 @@ class ShareCardData {
   /// Tür dağılımı — yalnızca oran olarak çizilir.
   final Map<AssetType, double> dagilim;
 
+  /// Dağılım yalnız TÜR ADIYLA mı çizilsin (Bugün kartı, 2026-10-30)?
+  ///
+  /// Dönem özeti kartı payı yazar ("Hisse %60"); Bugün kartından açılan
+  /// paylaşımda şerit ve yüzde payı yok, yalnız "Altın · Fon · Hisse"
+  /// (müşteri raporu 30 Eki 17:15 §1: "şerit oran sızdırmaz"). Günün
+  /// yüzdesi her gün paylaşılabilir; her gün değişen pay dizisi ise
+  /// portföyün bileşimini zamanla açık eder.
+  final bool dagilimOranGizli;
+
+  /// Kartın ortasının en altına küçük yazılan satırlar (Bugün kartında
+  /// kısa indirme bağlantısı ve "Yatırım tavsiyesi değildir"). Boşsa yer
+  /// ayrılmaz; dönem özeti kartının bütçesi değişmez.
+  final List<String> dipnotlar;
+
   bool get bos =>
       degisimPct == null &&
       karakter == null &&
@@ -118,6 +134,9 @@ class ShareCardData {
 /// 4. Dağılım şeridi + açıklama — kartın "kimlik" parçası; iki kişinin
 ///    kartı aynı yüzdeyle bile farklı görünür.
 /// 5. Alt bilgi — "sandık ile takip ediyorum" + tarih.
+/// Paylaşım kartlarındaki marka adı (tek yer; kartlar aynı yazar).
+const kSandikMarka = 'sandık';
+
 class ShareCard extends StatelessWidget {
   const ShareCard({super.key, required this.data, this.tarih});
 
@@ -297,7 +316,20 @@ class ShareCard extends StatelessWidget {
                           ],
                           if (dagilim.isNotEmpty) ...[
                             const SizedBox(height: SandikSpace.sm2),
-                            _DagilimSeridi(oranlar: dagilim),
+                            _DagilimSeridi(
+                                oranlar: dagilim,
+                                oranGizli: d.dagilimOranGizli),
+                          ],
+                          if (d.dipnotlar.isNotEmpty) ...[
+                            const SizedBox(height: SandikSpace.sm2),
+                            for (final n in d.dipnotlar)
+                              Text(
+                                n,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.t.bodySmall
+                                    ?.copyWith(color: p.text58, height: 1.3),
+                              ),
                           ],
                           const SizedBox(height: SandikSpace.sm),
                         ],
@@ -362,10 +394,10 @@ class _Baslik extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'sandık',
+          kSandikMarka,
           style: context.t.titleLarge?.copyWith(
             color: p.gold,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             letterSpacing: -0.5,
           ),
         ),
@@ -381,7 +413,6 @@ class _Baslik extends StatelessWidget {
                 textAlign: TextAlign.end,
                 style: context.t.labelLarge?.copyWith(
                   color: p.text58,
-                  letterSpacing: 0.4,
                 ),
               ),
               if (data.tarihAraligi != null)
@@ -430,12 +461,11 @@ class _Kahraman extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                ustHarf(etiket, context.l10n),
+                etiket,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.labelLarge?.copyWith(
                   color: p.text58,
-                  letterSpacing: 0.8,
                 ),
               ),
             ),
@@ -491,7 +521,7 @@ class _KarakterRozeti extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.auto_awesome_rounded, size: 14, color: p.gold),
+          Icon(Icons.person_rounded, size: 14, color: p.gold),
           const SizedBox(width: SandikSpace.xs),
           Flexible(
             child: Text(
@@ -613,12 +643,11 @@ class _KutuGorunumu extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            ustHarf(kutu.etiket, context.l10n),
+            kutu.etiket,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.t.labelSmall?.copyWith(
               color: p.text58,
-              letterSpacing: 0.6,
             ),
           ),
           const SizedBox(height: SandikSpace.xxs),
@@ -659,8 +688,12 @@ class _KutuGorunumu extends StatelessWidget {
 /// aynı (amber = hisse, mavi = fon…). Koyu zemin için seçilmiş tonlar,
 /// kart da koyu; light varyanta gerek yok.
 class _DagilimSeridi extends StatelessWidget {
-  const _DagilimSeridi({required this.oranlar});
+  const _DagilimSeridi({required this.oranlar, this.oranGizli = false});
   final List<({AssetType tur, double pay})> oranlar;
+
+  /// Şerit çizilmez, açıklamada pay yazmaz; yalnız tür adları
+  /// ([ShareCardData.dagilimOranGizli]).
+  final bool oranGizli;
 
   @override
   Widget build(BuildContext context) {
@@ -672,6 +705,7 @@ class _DagilimSeridi extends StatelessWidget {
         // Ayrı bir "DAĞILIM" başlığı yok: açıklama satırı (Hisse %60 …)
         // zaten ne olduğunu söylüyor; başlık 4:5'te 19 px'e mal oluyordu.
         // Erişilebilirlik için etiket `Semantics`'te.
+        if (!oranGizli) ...[
         Semantics(
           label: l.shareCardAllocation,
           child: ClipRRect(
@@ -697,6 +731,7 @@ class _DagilimSeridi extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SandikSpace.xs),
+        ],
         Wrap(
           spacing: SandikSpace.sm2,
           runSpacing: SandikSpace.xxs,
@@ -715,7 +750,9 @@ class _DagilimSeridi extends StatelessWidget {
                   ),
                   const SizedBox(width: SandikSpace.xs),
                   Text(
-                    '${o.tur.labelOf(l)} %${fmtNum(o.pay * 100, digits: 0)}',
+                    oranGizli
+                        ? o.tur.labelOf(l)
+                        : '${o.tur.labelOf(l)} %${fmtNum(o.pay * 100, digits: 0)}',
                     style: context.t.bodySmall?.copyWith(
                       color: p.text90,
                       height: 1.2,
@@ -736,13 +773,20 @@ class _DagilimSeridi extends StatelessWidget {
 /// veriyordu — kullanıcı ne paylaştığını görmüyordu ve sonuç "arkası boş"
 /// hissi veriyordu (2026-09-14 geri bildirimi). Şimdi kart önce gösterilir;
 /// görsel varsayılan yol, metin yedek (görsel almayan hedefler için).
+/// [kart] verilirse dönem kartı ([ShareCard]) yerine o çizilir ve PNG ondan
+/// alınır (kilometre taşı kartı, 5 Kas 21:00); [not] önizleme altındaki
+/// açıklamanın yerine geçer. Biri [data], biri [kart] verilmeli.
 Future<void> showShareSheet(
   BuildContext context, {
-  required ShareCardData data,
+  ShareCardData? data,
+  Widget? kart,
+  String? not,
   required String metin,
   required String subject,
   required String analyticsPeriod,
+  String? sayfaBasligi,
 }) async {
+  assert(data != null || kart != null);
   final key = GlobalKey();
   // Sheet içinde bir paylaşım GERÇEKLEŞTİ mi — değerlendirme istemi bunu
   // sheet kapandıktan sonra sorar. Sheet'in üstüne açmak iki katman
@@ -758,9 +802,12 @@ Future<void> showShareSheet(
     builder: (sheetCtx) => _ShareSheet(
       boundaryKey: key,
       data: data,
+      kart: kart,
+      not: not,
       metin: metin,
       subject: subject,
       analyticsPeriod: analyticsPeriod,
+      sayfaBasligi: sayfaBasligi,
       onPaylasildi: () => paylasildi = true,
     ),
   );
@@ -776,13 +823,26 @@ class _ShareSheet extends StatefulWidget {
     required this.boundaryKey,
     required this.data,
     required this.metin,
+    this.kart,
+    this.not,
     required this.subject,
     required this.onPaylasildi,
     required this.analyticsPeriod,
+    this.sayfaBasligi,
   });
 
   final GlobalKey boundaryKey;
-  final ShareCardData data;
+
+  /// Sayfanın başlığı; verilmezse "Özetini paylaş" (dönem özeti). Bugün
+  /// kartı "Bugünü paylaş" verir (2026-10-30) — özet açılmıyor.
+  final String? sayfaBasligi;
+  final ShareCardData? data;
+
+  /// Dönem kartı yerine çizilecek kart (bkz. [showShareSheet]).
+  final Widget? kart;
+
+  /// Önizleme altındaki açıklama; verilmezse "Kartta tutar yok…".
+  final String? not;
   final String metin;
   final String subject;
   final String analyticsPeriod;
@@ -874,12 +934,8 @@ class _ShareSheetState extends State<_ShareSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: const SandikTutamac(),
-            ),
-            const SizedBox(height: SandikSpace.md),
             Text(
-              'Özetini paylaş',
+              widget.sayfaBasligi ?? 'Özetini paylaş',
               style: context.t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: c.text90,
@@ -887,7 +943,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             ),
             const SizedBox(height: SandikSpace.xs),
             Text(
-              context.l10n.shareCardNoAmounts,
+              widget.not ?? context.l10n.shareCardNoAmounts,
               style: context.t.bodySmall?.copyWith(color: c.text58),
             ),
             const SizedBox(height: SandikSpace.md),
@@ -898,7 +954,7 @@ class _ShareSheetState extends State<_ShareSheet> {
                 fit: BoxFit.scaleDown,
                 child: RepaintBoundary(
                   key: widget.boundaryKey,
-                  child: ShareCard(data: widget.data),
+                  child: widget.kart ?? ShareCard(data: widget.data!),
                 ),
               ),
             ),
@@ -915,6 +971,184 @@ class _ShareSheetState extends State<_ShareSheet> {
               onPressed: _mesgul ? null : _metin,
               icon: const Icon(Icons.notes_rounded, size: 18),
               label: Text(context.l10n.shareAsText),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Kilometre taşı paylaşım kartı (Ar-Ge 5 Kas 21:00 #3, müşteri YAP).
+///
+/// Kutlama kullanıcının en mutlu anıydı ama paylaşma yolu yoktu; Strava,
+/// Duolingo ve Midas'ın "yılın" kartları paylaşılabilir. Kart dönem
+/// kartıyla aynı boyda ve zeminde (320×400, koyu palet): marka, sandık
+/// çizimi, taşın başlığı ve tek cümle. Portföy toplamı YOK; taş başlığı
+/// ("250 bin ₺ geçildi") bir eşiktir ve bakiye gizliyken zaten tutarsız
+/// gelir (`MilestoneService.gizli`).
+class KilometreTasiPaylasKarti extends StatelessWidget {
+  const KilometreTasiPaylasKarti({super.key, required this.baslik, this.cizim});
+
+  final String baslik;
+
+  /// Ortadaki çizim (milestone sayfası sandık çizimini verir).
+  final Widget? cizim;
+
+  @override
+  Widget build(BuildContext context) {
+    const p = SandikPalette.dark;
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: Container(
+        width: ShareCard.width,
+        height: ShareCard.height,
+        padding: const EdgeInsets.all(ShareCard.kenar),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [p.background, p.surface1],
+          ),
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              kSandikMarka,
+              style: context.t.titleLarge?.copyWith(
+                color: p.gold,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+              ),
+            ),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: SizedBox(
+                  width: ShareCard.icGenislik,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (cizim != null) cizim!,
+                      const SizedBox(height: SandikSpace.lg),
+                      Text(
+                        baslik,
+                        textAlign: TextAlign.center,
+                        style: context.t.headlineMedium?.copyWith(
+                            color: p.text90, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: SandikSpace.sm),
+                      Text(
+                        context.l10n.kilometreTasiPaylasAlt,
+                        textAlign: TextAlign.center,
+                        style: context.t.bodyMedium?.copyWith(color: p.text58),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Karşılaştır paylaşım kartı (Ar-Ge 7 Kas 04:03, YAP 1 — ücretsiz).
+///
+/// Yeni görsel dil KURULMADI: dönem kartının boyu, zemini ve başlığı
+/// ([_Baslik]: marka + dönem + tarih aralığı) aynen; ortada kıyasın
+/// satırları. Satır = ad + işaretli yüzde. Yüzde yeşil/kırmızıdır ama anlam
+/// yalnız renkte değil, `+`/`−` işaretinde de durur (renk körlüğü, HIG).
+/// TUTAR YOK — satırlar `KiyasPaylasimi`'nden gelir ve o model ham fiyatı
+/// taşımaz.
+class KiyasPaylasKarti extends StatelessWidget {
+  const KiyasPaylasKarti({
+    super.key,
+    required this.baslik,
+    required this.tarihAraligi,
+    required this.satirlar,
+  });
+
+  final String baslik;
+  final String tarihAraligi;
+  final List<({String ad, double pct})> satirlar;
+
+  @override
+  Widget build(BuildContext context) {
+    const p = SandikPalette.dark;
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: Container(
+        width: ShareCard.width,
+        height: ShareCard.height,
+        padding: const EdgeInsets.all(ShareCard.kenar),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [p.background, p.surface1],
+          ),
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Baslik(
+              data: ShareCardData(baslik: baslik, tarihAraligi: tarihAraligi),
+            ),
+            // Beş seri + kıyas çipleri 1,3× ölçekte iç yüksekliği aşabilir;
+            // dönem kartındaki gibi orta bölüm küçülür, kart boyu sabit kalır.
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: SizedBox(
+                  width: ShareCard.icGenislik,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final s in satirlar)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: SandikSpace.sm),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  s.ad,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.t.titleMedium
+                                      ?.copyWith(color: p.text90),
+                                ),
+                              ),
+                              const SizedBox(width: SandikSpace.md),
+                              Text(
+                                fmtPctIsaretli(s.pct, digits: 1),
+                                style: context.t.titleLarge?.copyWith(
+                                  color: s.pct >= 0 ? p.gain : p.loss,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Text(
+              context.l10n.kiyasPaylasAlt,
+              textAlign: TextAlign.center,
+              style: context.t.bodySmall?.copyWith(color: p.text58),
             ),
           ],
         ),

@@ -108,6 +108,45 @@ class ContributionHistoryService {
     );
   }
 
+  /// Bir hareket kümesinin net katkısı (TRY): alım − satış, temettü yok.
+  ///
+  /// Tüm hareketler ekranının ay başlığındaki "Net +₺X" bu sayıdır
+  /// (Ar-Ge 8 Kas #2). Satır başına kural [PeriodSummaryService.flowOf] —
+  /// Performans'taki "Katkı yaptığın ay ortalaması" ([buckets] →
+  /// `netInflow`) ile AYNI fonksiyon; iki ekran aynı ay için farklı sayı
+  /// söylemesin diye ikinci bir akış tanımı yazılmadı. Alım komisyon dahil
+  /// alış günü kuruyla, satış ele geçen tutarla satış günü kuruyla çevrilir.
+  ///
+  /// Tek fark bir KAPI, tanım değil: kayıtlardan birinin TL karşılığı
+  /// bilinmiyorsa ([tlKarsiligiBilinir] yanlış) `null` döner ve başlık
+  /// sayı yazmaz. Performans ortalamada o satırı ham haliyle sayar; tek
+  /// ayın başlığında ise yanlış kurla toplanmış bir tutar doğrudan okunur
+  /// (uydurma sayı yasak). Silinen kayıt ve mezar taşı `flowOf`'ta zaten 0.
+  static double? netKatki(Iterable<Asset> kayitlar) {
+    var toplam = 0.0;
+    for (final a in kayitlar) {
+      if (!a.isActive || a.isDividend) continue;
+      if (!a.isBuy && !a.isSell) continue;
+      if (!tlKarsiligiBilinir(a)) return null;
+      final f = PeriodSummaryService.flowOf(a);
+      if (!f.isFinite) return null;
+      toplam += f;
+    }
+    return toplam;
+  }
+
+  /// Alım/satış satırının TL karşılığı güvenilir mi?
+  ///
+  /// TL cinsi kayıt (BIST, fon, altın, TL kotasyonlu döviz) her zaman.
+  /// Dövizli kayıtta ilgili kur (alımda alış kuru, satışta [Asset.satisKuru])
+  /// pozitif ve 1,0'dan farklı olmalı: kaydedilmemiş kur `Asset`'te 1,0
+  /// olarak durur — `kurAyrismasi` ile aynı "bilinmiyor" okuması.
+  static bool tlKarsiligiBilinir(Asset a) {
+    if (a.currency.toUpperCase() == 'TRY') return true;
+    final kur = a.isSell ? a.satisKuru : a.purchaseFxRate;
+    return kur.isFinite && kur > 0 && kur != 1.0;
+  }
+
   /// Tek çağrıda kova + özet.
   static ContributionSummary? compute(
     List<Asset> assets, {

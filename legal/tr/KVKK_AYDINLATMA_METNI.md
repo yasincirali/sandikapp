@@ -1,8 +1,8 @@
 # KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 10 Ekim 2026
-**Sürüm:** 1.9
+**Son güncelleme:** 7 Kasım 2026
+**Sürüm:** 1.14
 **Onay sürümü:** 1.8
 
 ---
@@ -18,8 +18,8 @@
 | Vergi No | `Yok (bireysel geliştirici — ticari faaliyet başlatılmamıştır)` |
 | VERBİS No | `Kayıtlı değil (bireysel geliştirici; VERBİS kaydı ticari faaliyet başlangıcında yapılacaktır)` |
 | KEP Adresi | `Yok (bireysel geliştirici)` |
-| E-posta | `sandikapp.destek@gmail.com` |
-| Telefon | `E-posta ile iletişim: sandikapp.destek@gmail.com` |
+| E-posta | `support@murphysoft.app` |
+| Telefon | `E-posta ile iletişim: support@murphysoft.app` |
 
 ---
 
@@ -38,9 +38,11 @@
 - Portföy varlık kayıtları (sembol, tür, miktar, alış fiyatı, komisyon, para birimi, tarih, not), vadeli mevduat ve BES sözleşme bilgileri, temettü kayıtları
 - Takip listesi, fiyat alarmları, bildirim tercihleri, hedef tutarı
 - Portföy anlık görüntüleri (saatlik toplam değer)
-- Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)
+- Dönemsel getiri yüzdesi, varlık türü payları ve varlık bazında paylar (fonlarda TEFAS kodu, diğer varlıklarda kamuya açık piyasa sembolü) (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)
 - Dönemsel getiri yüzdesi ve varlık türü payları (Yarış; yalnızca katılırsanız)
 - Ortaklık bağlantıları ve davet kodları
+- Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): portföyün ya da bir varlığın yorumlanan dönemindeki getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları, yazılan yorum
+- Yapay zekâ özelliklerinin rıza kayıtları (portföy yorumu, ekstrenin yapay zekâyla okunması): verildiği ve geri çekildiği zaman, gösterilen metnin sürümü
 - Varlık notlarına geri bildirim (isteğe bağlı): oy, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama
 - Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı (ödeme ve kart bilgisi işlenmez)
 - Abonelik verisi (yalnızca Premium satın alırsanız): mağaza işlem kaydı, ürün (aylık ya da yıllık), başlangıç ve bitiş tarihleri, iptal durumu, test satın alımı olup olmadığı
@@ -73,6 +75,7 @@
 | Performans grafiklerinin hesaplanması | 2.3 |
 | Premium aboneliğin doğrulanması ve Premium içeriğe erişimin tanınması | 2.3 |
 | Varlık notlarının doğruluğunun ölçülmesi ve iyileştirilmesi | 2.3 |
+| Yapay zekâ portföy yorumu ve ekstrenin yapay zekâyla okunması (isteğinizle) | 2.3 |
 | Ortaklık özelliği (kullanıcılar arası paylaşım) | 2.1, 2.3 |
 | Push bildirim ve kilit ekranı canlı etkinliği | 2.2, 2.3 |
 | Yasal yükümlülüklerin yerine getirilmesi ve onayların kanıtlanması (yasal metin onayları, mahkeme/savcılık talepleri) | 2.5, 2.4 |
@@ -85,7 +88,7 @@
 ## 4. Kişisel Verilerin Toplanma Yöntemi ve Hukuki Sebebi
 
 ### 4.1 Toplanma Yöntemi
-- **Doğrudan kullanıcıdan:** Kayıt formu, Apple/Google ile giriş, varlık ekleme ve ekstre içe aktarma (ekstre dosyası yalnızca cihazda okunur, sunucuya gönderilmez; "Yapay zekâyla eşle"yi seçerseniz yalnızca tablonun anonim iskeleti gönderilir), profil ve bildirim ayarları
+- **Doğrudan kullanıcıdan:** Kayıt formu, Apple/Google ile giriş, varlık ekleme ve ekstre içe aktarma (ekstre dosyası yalnızca cihazda okunur, sunucuya gönderilmez; "Yapay zekâyla eşle"yi seçerseniz tablonun anonim iskeleti ya da açık rıza verdiyseniz rakamları maskelenmiş tablo kelimeleri gönderilir), yapay zekâ portföy yorumu (yalnızca açık rıza verip yorum isterseniz, cihazda hesaplanan dönem ölçümleri), profil ve bildirim ayarları
 - **Otomatik:** Oturum açma anında IP/cihaz bilgisi, push token kaydı, kayıtlı cihaz bilgisi, hata kayıtları ve hata raporları, kullanım istatistikleri, kayıt hunisi adımları
 
 ### 4.2 Hukuki Sebep (KVKK Madde 5 ve 6)
@@ -96,6 +99,8 @@
 | Portföy verileri | KVKK 5(2)(c) — sözleşmenin ifası |
 | Yarış ölçümleri (getiri %, tür payı %) | KVKK 5(2)(c) — isteğe bağlı özelliğin ifası (katılırsanız) |
 | Zirve havuzu ölçümleri (getiri %, tür payı %) | KVKK 5(1) — açık rıza (uygulama içinde, isteğe bağlı; her an geri alınabilir) |
+| Yapay zekâ portföy yorumu ve ekstrenin kelimeleriyle okunması | KVKK 5(1) — açık rıza (özelliği ilk kullandığınızda uygulama içinde, isteğe bağlı; her an geri alınabilir) |
+| Yapay zekâ özelliklerinin rıza kayıtları | KVKK 5(2)(e) — bir hakkın tesisi, kullanılması veya korunması (rızanın ispatı) |
 | Push token | KVKK 5(2)(c) — bildirim izni verdiğinizde istediğiniz bildirimlerin teslimi |
 | Premium hakkı ve abonelik verisi | KVKK 5(2)(c) — sözleşmenin kurulması ve ifası |
 | Varlık notlarına geri bildirim | KVKK 5(2)(f) — meşru menfaat (notların doğruluğu); yalnızca siz gönderirseniz |
@@ -122,6 +127,7 @@ Yurt içinde üçüncü kişilere aktarım yapılmamaktadır. Ortaklık kurduğu
 | Google LLC (Gmail e-posta altyapısı) | ABD / Küresel | E-posta adresi, doğrulama kodu | Kod e-postalarının teslimi | KVKK 9(1) — açık rıza |
 | Apple Inc. (Apple Push Notification service) | ABD / Küresel | Bildirim içeriği, canlı etkinlik token'ı ve kilit ekranı özeti | iPhone'a teslim | KVKK 9(1) — açık rıza |
 | Apple Inc. / Google LLC (Apple ile Giriş, Google ile Giriş — seçerseniz) | ABD / Küresel | Giriş sırasında sağlayıcıyla doğrulama | Kimlik doğrulama | KVKK 9(1) — açık rıza |
+| Anthropic PBC (yalnızca açık rıza verip yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız) | ABD | Portföy yorumu: yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları (%), enflasyon ve piyasa kıyasları. Ekstre: tablodaki kelimeler (bütün rakamlar ile etiketli ad, adres ve e-posta maskeli). Tutar, adet, ad, e-posta ve hesap numarası gönderilmez | Yorumun yazılması; ekstre sütunlarının bulunması | KVKK 9(1) — açık rıza (uygulama içinde, özelliğe özel) |
 | RevenueCat, Inc. (yalnızca Premium satın alırsanız) | ABD | Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı ve makbuzu, cihaz ve uygulama sürümü, IP adresi | Satın almanın mağazayla doğrulanması ve Premium hakkının sunucumuza bildirilmesi | KVKK 9(1) — açık rıza |
 
 Premium ödemesini Apple ya da Google tahsil eder; kart ve ödeme bilgileriniz bize ulaşmaz, bunları mağaza kendi başına veri sorumlusu olarak işler.
@@ -130,7 +136,9 @@ Kamuya açık piyasa verisi sağlayıcılarına (borsalar, bankalar, fon platfor
 
 Varlık notlarını ve aylık raporu yazan yapay zekâ sağlayıcısına (Anthropic PBC, ABD) kişisel veri aktarılmaz: sunucumuz yalnızca varlığın sembolünü ve kamuya açık piyasa ölçümlerini (fiyat, işlem hacmi, fon büyüklüğü, para akışı, yatırımcı sayısı) gönderir; kimin hangi varlığı tuttuğu, miktar ve tutar gönderilmez. Notu okumanız yapay zekâya istek göndermez.
 
-Ekstre içe aktarmada "Yapay zekâyla eşle"yi seçerseniz aynı sağlayıcıya ekstredeki tabloların anonim iskeleti gönderilir: sütun başlıkları ve genel finans kelimeleri kalır; ad, numara, tutar ve tarihler maskelenir. Bu iskelet kişisel veri içermez ve saklanmaz.
+Ekstre içe aktarmada "Yapay zekâyla eşle"yi seçerseniz aynı sağlayıcıya ekstredeki tabloların anonim iskeleti gönderilir: sütun başlıkları ve genel finans kelimeleri kalır; ad, numara, tutar ve tarihler maskelenir. Bu iskelet kişisel veri içermez ve saklanmaz. Uygulama ilk kullanımda ayrıca açık rızanızı isterse ve verirseniz, iskelet yerine tablodaki kelimeler (sütun başlıkları, varlık ve kurum adları) gönderilir; bütün rakamlar ile e-posta ve etiketli ad, adres bilgileri maskelenir, ancak etiketsiz yazılmış bir ad maskelenmeyebilir. Gönderilen metin saklanmaz; yalnızca tablo düzeninin tek yönlü izi ve sütun numaraları, kullanıcıya bağlanmadan banka şablonu olarak tutulur.
+
+Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın hesapladığı dönem ölçümleri (portföyünüzün ya da bir varlığınızın getiri, düşüş ve oynaklık yüzdeleri, varlık adları ya da sembolleri ve payları, enflasyon ve piyasa kıyasları) aynı sağlayıcıya gönderilir; tutar, adet ve kimlik bilgisi gönderilmez. Yazılan yorum ve ölçümler size özel olarak saklanır (Gizlilik Politikası §5.5). Bu iki özelliğin açık rızası kayıttaki Açık Rıza Metni'nden ayrı olarak, özelliği ilk kullandığınızda uygulama içinde alınır; vermezseniz bu veriler gönderilmez, uygulamanın diğer özellikleri etkilenmez.
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
@@ -138,7 +146,7 @@ Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ek
 
 ### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
 
-Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.
+Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve varlıkların kamuya açık kimliği ile portföy içindeki payı (fonlarda TEFAS fon kodu; hisse, kripto, altın, döviz, emtia ve tahvillerde kamuya açık piyasa sembolü, ör. "THYAO %18, BTC %12"; payı %1'in altındaki, elle fiyatlanan ya da kamuya açık sembolü olmayan kalemler türünün içinde toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Fon dışındaki varlıkların sembolleri yalnızca bu açıklamanın 20 Ekim 2026 sürümünü onaylamış katılımcılar için gösterilir; daha önceki sürümü onaylayanlarda yalnızca tür payları ve fon kodları görünür. Karşılığında siz de katılan kullanıcıların hangi varlıkları hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; portföyünüzün listedeki portföylerle ortak varlıklarının toplam payı (benzerlik yüzdesi) yalnızca size gösterilir. Bu karşılaştırma hizmeti yalnızca katılanlara açıktır; diğer portföylerin varlık sembollerini görmek ve havuza yeni katılmak Premium üyelik gerektirebilir, bu sizin hangi bilgilerinizin gösterildiğini değiştirmez. Ad, e-posta, kullanıcı adı, tutar, miktar ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.
 
 ---
 
@@ -154,6 +162,8 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Varlık notlarına geri bildirimler | Hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Ekstre sütun eşleme istek kayıtları (zaman, model, maliyet) | 40 gün | KVKK 5(2)(f) meşru menfaat (kötüye kullanım ve maliyet sınırı) |
+| Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model, maliyet) | Her kullanıcı için geçen hafta/ay yorumlarında son 4 hafta ve son 12 ay, seçilen dönem yorumlarında son 7 gün; rıza geri alınınca ya da hesap silinince hemen | KVKK 5(1) açık rıza |
+| Yapay zekâ özelliklerinin rıza kayıtları | Hesap silinene kadar | KVKK 5(2)(e) |
 | Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. Aynı anda RevenueCat'teki abone kaydınızın silinmesi RevenueCat'ten istenir; ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır. Hesap silme mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play'den kapatırsınız | Sözleşme süresi |
 | Push token | Çıkış yapılana ya da token geçersizleşene (uygulama silinene) kadar | Sözleşme süresi |
 | Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
@@ -188,7 +198,7 @@ g) İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edil
 KVKK Madde 13 ve "Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ" uyarınca taleplerinizi şu yöntemlerden biriyle iletebilirsiniz:
 
 1. **Uygulama içi:** Profil → Ayarlar → "Hesabımı Sil" (anında silme) / "Verilerimi İndir" (JSON dosyası)
-2. **E-posta:** `sandikapp.destek@gmail.com` adresine, sistemimizde kayıtlı e-posta adresinizden, kimlik bilgileriniz (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileriniz ve talep konusunu açıkça belirten yazılı başvuru
+2. **E-posta:** `support@murphysoft.app` adresine, sistemimizde kayıtlı e-posta adresinizden, kimlik bilgileriniz (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileriniz ve talep konusunu açıkça belirten yazılı başvuru
 3. **Web formu:** `https://yasincirali.github.io/sandikapp/data-request`
 
 Başvurunuza **30 gün** içinde ücretsiz olarak yanıt veririz. KVK Kurulu'nun belirlediği tarifedeki ücretler haklı sebeplerle istenebilir (Tebliğ Madde 7).
@@ -214,7 +224,7 @@ KVKK Madde 12 uyarınca aldığımız önlemler:
 - Bcrypt ile şifre hash'leme
 - Row-Level Security (RLS) ile yetkisiz erişim engeli
 - Rate limiting ile brute-force saldırı koruması
-- Oturum token'ının cihazın güvenli anahtar deposunda saklanması; 10 dakikadan uzun arka planda kalınca kilit ya da oturum kapanışı
+- Oturum token'ının cihazın güvenli anahtar deposunda saklanması; uygulama kilidi açıksa arka planda kalınca kilitlenme
 - Hesabın aynı anda tek cihazda açık kalması; yeni cihazda e-posta kodu
 - Production loglarında PII maskeleme
 
@@ -254,4 +264,4 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**
+**`support@murphysoft.app`**

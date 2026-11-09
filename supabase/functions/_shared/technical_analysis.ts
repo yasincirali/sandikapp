@@ -222,7 +222,8 @@ export function bollingerBands(
   const mult = type === 'doviz' ? 1.5 : 2.0;
   // Dart `double` her zaman ondalık basar (2.0 → "2.0"); JS `Number` basmaz
   // (2.0 → "2"). Etiket kullanıcıya görünüyor, birebir eşleşmeli.
-  const label = `Bollinger (${period}, ${mult.toFixed(1)}σ)`;
+  // "2σ", "1.5σ": Dart portuyla aynı ("2.0σ" gürültüydü, 2026-11-01).
+  const label = `Bollinger (${period}, ${String(mult)}σ)`;
 
   if (prices.length < period) {
     return { name: label, value: 50, signal: 'neutral', description: 'Yetersiz veri' };

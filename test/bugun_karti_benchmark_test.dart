@@ -12,6 +12,7 @@ import 'package:portfoy_takip/services/bugun_yukleyici.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/tr_format.dart' show dayKey;
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
@@ -59,7 +60,11 @@ class _FakePortfolio extends PortfolioNotifier {
 
 Finder sigan(String metin) => find.byElementPredicate((e) {
       final r = e.renderObject;
-      return r is SiganMetinRender && r.secilen == metin;
+      // Yalnız SiganMetin öğesi: üstündeki Flexible da aynı render
+      // nesnesini gösterir, iki kez sayılırdı.
+      return e.widget is SiganMetin &&
+          r is SiganMetinRender &&
+          r.secilen == metin;
     });
 
 void main() {
@@ -114,7 +119,8 @@ void main() {
     Future<void> kur(WidgetTester tester,
         {required double genislik,
         bool azalt = false,
-        bool dusus = false}) async {
+        bool dusus = false,
+        bool veriYok = false}) async {
       tester.view.physicalSize = Size(genislik * 3, 1200 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -130,9 +136,14 @@ void main() {
       final kThy = positionKey(_defter[0]);
       final kAsl = positionKey(_defter[1]);
       IntradaySeriesCache.instance.seedForTest(
-        series: dusus
-            ? {ms(10): 41700, ms(15): 41000}
-            : {ms(10): 41000, ms(15): 41700},
+        // Veri yok: seri son bilinen fiyatın düz taşınması (canlı toplam
+        // 41.240), hisse için tek gerçek nokta yok.
+        series: veriYok
+            ? {ms(10): 41240, ms(15): 41240}
+            : dusus
+                ? {ms(10): 41700, ms(15): 41000}
+                : {ms(10): 41000, ms(15): 41700},
+        gunIciVerisiYokTurler: veriYok ? {AssetType.hisse} : const {},
         fetchedAt: DateTime.now(),
         seansGunu: gun,
         kume: kume,
@@ -197,6 +208,49 @@ void main() {
       });
     }
 
+    testWidgets('paylaş düğmesi: 44 pt, etiketli; yalnız yüzdeyi açar',
+        (tester) async {
+      await kur(tester, genislik: 320);
+      final dugme = find.byTooltip('Bugünü paylaş');
+      expect(dugme, findsOneWidget);
+      final boyut = tester.getSize(dugme);
+      expect(boyut.width, greaterThanOrEqualTo(44));
+      expect(boyut.height, greaterThanOrEqualTo(44));
+      // Yer (yasin 2026-10-31, "simetri ve ahengi bozmayacak şekilde"):
+      // başlık satırının sonu — hüküm satırında değil; simge durum
+      // metniyle aynı dikey ortada, sağ kenarı içeriğin sağ kenarında
+      // (kartın iç dolgusunun bittiği çizgi).
+      final hukumY = tester.getCenter(find.text('Yükseldi')).dy;
+      expect(tester.getCenter(dugme).dy, lessThan(hukumY - 20));
+      final simge = tester.getRect(find.byIcon(Icons.adaptive.share));
+      final durum = tester.getRect(find.byWidgetPredicate(
+          (w) => w is SiganMetin && w.adaylar.first.startsWith('Canlı')));
+      expect(simge.center.dy, moreOrLessEquals(durum.center.dy, epsilon: 1));
+      final kart = tester.getRect(find.byType(SandikCard).first);
+      expect(simge.right,
+          moreOrLessEquals(kart.right - SandikSpace.md, epsilon: 1));
+      await tester.tap(dugme);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+      // Kartın yüzdesi Bugün kartının yüzdesiyle aynı alan (changePct).
+      expect(find.text('Portföyüm bugün'), findsOneWidget);
+      expect(find.textContaining('+%'), findsWidgets);
+      // Görselde tutar yok — rozetteki "+₺240" yalnız arkadaki kartta.
+      expect(find.textContaining('+₺240'), findsOneWidget);
+    });
+
+    // UX raporu 30 Eki §1: veri gelmeyince "Yerinde saydı · ₺0" değil.
+    testWidgets('gün içi veri gelmedi: "Yerinde saydı" yok, rozet/paylaş yok',
+        (tester) async {
+      await kur(tester, genislik: 390, veriYok: true);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Bugünün verisi henüz gelmedi'), findsOneWidget);
+      expect(find.text('Yerinde saydı'), findsNothing);
+      expect(find.textContaining('₺0'), findsNothing);
+      expect(find.byTooltip('Bugünü paylaş'), findsNothing);
+    });
+
     testWidgets('düşüşte hüküm "Geriledi", rozet eksi tutar', (tester) async {
       await kur(tester, genislik: 390, dusus: true);
       expect(tester.takeException(), isNull);
@@ -241,7 +295,7 @@ void main() {
       expect(src.contains('_HukumSatiri('), isTrue);
       expect(src.contains('_DeltaRozeti('), isTrue);
       expect(src.contains('_GunIciEgri('), isTrue);
-      expect(src.contains('_DonemCipleri('), isTrue);
+      expect(src.contains('_DonemSegmenti('), isTrue);
       expect(src.contains('_OynayanlarSirasi('), isTrue);
       expect(src.contains('_AlimGucuKutusu('), isTrue);
       expect(src.contains('_EylemKutusu('), isTrue);
@@ -257,16 +311,22 @@ void main() {
       expect(src.contains('_Izgara'), isFalse);
     });
 
-    test('dönem çipleri yeni seri çekmez — Özet kısayolu', () {
-      // Gün içi tek seri kuralı (2026-10-02): kart kendi seri merdivenini
-      // kurmaz; çip `_ozeteGit` ile Özet'e gider.
-      expect(
-          src.contains(
-              '_DonemCipleri(onSec: (p) => _ozeteGit(periodIdx: p.index))'),
+    test('dönem segmenti kartı yerinde çevirir, seri Özet\'in kaynağından',
+        () {
+      // Ar-Ge 5 Kas 19:00 #1: segment Özet'e götürmez, kartı o döneme
+      // çevirir. Kart kendi seri merdivenini KURMAZ: dönem serisi ve özeti
+      // Özet'in kanonik fonksiyonundan (`DonemOzetiYukleyici`), gün içi seri
+      // yine BugunYukleyici / IntradaySeriesCache'ten (kural 2026-10-02).
+      expect(src.contains('onSec: _donemSec'), isTrue);
+      expect(src.contains('DonemOzetiYukleyici.seri(p, lotlar)'), isTrue);
+      expect(src.contains('DonemOzetiYukleyici.ozet('), isTrue);
+      expect(src.contains('HistoryService.instance'), isFalse,
+          reason: 'kart HistoryService\'e doğrudan gitmez');
+      expect(src.contains('PeriodSummaryService.compute'), isFalse,
+          reason: 'dönem hesabı Özet\'le ortak yükleyicide');
+      // Performans'a kısayol kaybolmadı: seçili dönemle açılır.
+      expect(src.contains('onPerformans: () => _ozeteGit(periodIdx: _donem.index)'),
           isTrue);
-      expect(src.contains('HistoryService.'), isFalse,
-          reason:
-              'kart seriyi yalnız BugunYukleyici / IntradaySeriesCache\'ten alır');
     });
 
     test('oynayanlar sırası ≤3, aynı kural (enCokOynayanlar)', () {

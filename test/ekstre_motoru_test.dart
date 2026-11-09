@@ -244,6 +244,36 @@ void main() {
         ('ALTIN_GRAM', 12.5, 2850.0),
       ]);
     });
+    // Tablonun hemen üstünde büyük puntolu başlık ve "Müşteri: …   Hesap
+    // No: …" künyesi aynı bloğa düşüyordu; parçaları sütun bantlarını
+    // köprüleyip "İşlem Tarihi Sembol" tek sütun oldu, tablo tanınmadı
+    // (2026-10-13). Fikstür: fpdf2 + DejaVu, pypdfium2 kutuları; uydurma veri.
+    test('tabloya yapışık başlık ve künye sütunları birleştirmez', () {
+      final ham = jsonDecode(File('test/fixtures/ekstre_pdf_kunyeli.json')
+          .readAsStringSync()) as List;
+      final k = [
+        for (final e in ham.cast<List<Object?>>())
+          PdfKarakter(e[0] as String, (e[1] as num).toDouble(),
+              (e[2] as num).toDouble(), (e[3] as num).toDouble(),
+              (e[4] as num).toDouble()),
+      ];
+      final p = pdfSonucu([k]);
+      final s = ekstreyiAnla(EkstreBicimi.pdf, p.tablolar, p.metin);
+      expect(s.ana!.eminDegil, isFalse);
+      final r = CsvImportService.parse(s.kanonikMetin());
+      expect(r.errors, isEmpty);
+      expect(
+          r.rows.map((x) => (x.ticker, x.quantity, x.price, x.satis)), [
+        ('THYAO.IS', 100.0, 285.40, false),
+        ('ASELS.IS', 250.0, 58.10, false),
+        ('TEFAS:TTE', 1500.0, 4.21573, false),
+        ('TEFAS:MAC', 40.0, 312.8845, false),
+        ('THYAO.IS', 40.0, 301.25, true),
+        ('ASELS.IS', 100.0, 61.35, false),
+        ('TEFAS:TTE', 500.0, 4.48021, true),
+        ('ALTIN_GRAM', 5.0, 4215.0, false),
+      ]);
+    });
   });
 
   group('güven ve hata', () {

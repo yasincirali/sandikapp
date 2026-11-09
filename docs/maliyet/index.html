@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ortalama maliyet hesaplama: hisse, fon, altın · sandık</title>
+<meta name="description" content="Alışlarının adet ve fiyatını yaz, ortalama maliyetini gör. Ortalamayı istediğin seviyeye indirmek için bugünkü fiyattan kaç adet alman gerektiğini hesapla. Ücretsiz, kayıt yok, hiçbir şey gönderilmez.">
+<meta property="og:title" content="Ortalama maliyet hesaplayıcı">
+<meta property="og:description" content="Ortalama maliyetin ve ortalamayı düşürmek için gereken adet.">
+<meta property="og:image" content="https://yasincirali.github.io/sandikapp/img/og-ana.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="sandık logosu">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yasincirali.github.io/sandikapp/maliyet/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://yasincirali.github.io/sandikapp/img/og-ana.png">
+<meta name="twitter:image:alt" content="sandık logosu">
+<link rel="canonical" href="https://yasincirali.github.io/sandikapp/maliyet/">
+<meta name="theme-color" content="#0A1E15">
+<meta name="apple-itunes-app" content="app-id=6786837699">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/sandik-icon.png">
+<!--
+  Ortalama maliyet hesaplayıcısı (2026-11-07, Ar-Ge 2026-11-07_2207 #4,
+  rapor 2230 YAP). "Ortalama maliyet hesaplama", "hisse maliyet düşürme
+  hesaplama" sürekli aranan sorgular; aracı kurum siteleri tek alış satırı
+  alıyor, ters hesaba az yer veriyor. Cevabın altında uygulamaya çağırır.
+  - İskelet ve stil altın sayfasının (docs/altin/) aynısı; yalnız satır
+    ekle/sil ve ters hesap için birkaç sınıf eklendi.
+  - Fiyat YOK: kullanıcı kendi alışlarını ve bugünkü fiyatı yazar. Fiyat
+    verisi lisans ve "uydurma sayı" sorusunu getirirdi; sunucu yok.
+  - Ortalama: toplam tutar / toplam adet (komisyon hariç).
+  - Ters hesap uygulamanın Hızlı Al ters hesabıyla AYNI aritmetik
+    (`hedefOrtalamaIcinAdet`, lib/widgets/quick_adjust_dialog.dart):
+    n = adet × (ort − hedef) / (hedef − fiyat), yalnız fiyat < hedef < ort
+    iken anlamlı; aksi hâlde sayı yerine tek açıklama cümlesi. Sonuç tam
+    adede YUKARI yuvarlanır (aşağı yuvarlamak ortalamayı hedefin üstünde
+    bırakırdı). test/maliyet_web_test.dart sayfadaki örneği uygulamanın
+    fonksiyonuyla karşılaştırır.
+  - Sayı girişi Türkçe: virgül ondalık, nokta binlik (altın sayfasının
+    sayiOku'su).
+  - Hesap tarayıcıda; analytics yok, harici kaynak yok, kişisel veri yok.
+    Mağaza bağlantısı kampanya etiketli (utm_medium=maliyet).
+  - Tavsiye dili yok: "almalısın" yazılmaz, yalnız hesap. Uzun tire yok.
+-->
+<style>
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-SemiBold.ttf') format('truetype'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-ExtraBold.ttf') format('truetype'); font-weight: 800; font-display: swap; }
+
+:root {
+  color-scheme: dark;
+  --orman: #0A1E15;
+  --kasa: #112E28;
+  --derin: #1A3D2E;
+  --metin: rgba(255, 255, 255, 0.92);
+  --soluk: rgba(255, 255, 255, 0.68);
+  --silik: rgba(255, 255, 255, 0.5);
+  --cizgi: rgba(255, 255, 255, 0.08);
+  --parlak: rgba(255, 255, 255, 0.12);
+  --amber: #F5A623;
+  --altin: #F5C842;
+  --kayip: #FF6B52;
+  --gece: rgba(2, 12, 8, 0.7);
+  --yay: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--orman);
+  color: var(--metin);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; }
+.sayi { font-variant-numeric: tabular-nums; }
+.kap { max-width: 760px; margin: 0 auto; padding-inline: 24px; }
+
+.ada {
+  position: sticky;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  z-index: 10;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 14px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 8px 10px 8px 12px;
+  border-radius: 999px;
+  background: rgba(17, 46, 40, 0.72);
+  border: 1px solid var(--parlak);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+.ada .marka { display: flex; align-items: center; gap: 8px; min-height: 44px; text-decoration: none; font-weight: 800; letter-spacing: -0.02em; color: var(--altin); }
+.ada .marka img { width: 26px; height: 26px; border-radius: 7px; }
+.ada nav a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--soluk); font-size: 14px; padding: 0 12px; border-radius: 999px; }
+@media (hover: hover) and (pointer: fine) { .ada nav a:hover { color: var(--metin); } }
+
+header.bas { padding-block: 64px 32px; }
+h1 { font-size: clamp(2.2rem, 7vw, 3.6rem); font-weight: 800; line-height: 1.02; letter-spacing: -0.04em; text-wrap: balance; }
+h1 span { color: var(--altin); }
+.giris { margin-top: 18px; font-size: 1.12rem; color: var(--soluk); max-width: 44ch; }
+
+.tepsi { padding: 8px; border-radius: 34px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--cizgi); }
+.tepsi + .tepsi { margin-top: 18px; }
+.cekirdek {
+  padding: 28px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--derin), var(--kasa));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 40px 90px -40px var(--gece);
+}
+
+.alanlar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.alan { display: grid; gap: 8px; align-content: start; }
+.alan label { font-size: 14px; font-weight: 600; color: var(--soluk); }
+.girdi {
+  display: flex; align-items: center;
+  border-radius: 16px;
+  background: rgba(10, 30, 21, 0.6);
+  border: 1px solid var(--cizgi);
+  transition: border-color 300ms var(--yay), box-shadow 300ms var(--yay);
+}
+.girdi:focus-within { border-color: rgba(245, 166, 35, 0.6); box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.12); }
+.girdi input, .girdi select {
+  flex: 1; min-width: 0; width: 100%; min-height: 52px;
+  background: transparent; border: 0; outline: 0;
+  color: var(--metin);
+  font: inherit; font-size: 1.2rem; font-weight: 700;
+  padding: 12px 16px;
+  font-variant-numeric: tabular-nums;
+}
+.girdi select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+.girdi select option { background: var(--kasa); color: var(--metin); }
+.girdi span { padding-right: 16px; color: var(--silik); font-weight: 700; }
+.alan small { color: var(--silik); font-size: 13px; }
+.alan small.hata { color: var(--kayip); }
+
+.sonuc .etiket { font-size: 15px; color: var(--soluk); font-weight: 600; }
+.sonuc .buyuk { font-size: clamp(2.4rem, 9vw, 3.6rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; margin-top: 8px; color: var(--altin); overflow-wrap: anywhere; }
+.sonuc .aciklama { margin-top: 16px; color: var(--metin); }
+.sonuc .aciklama b { font-weight: 700; }
+.sonuc .bos { color: var(--soluk); }
+
+.cagri { margin-top: 40px; display: grid; gap: 16px; justify-items: start; }
+.cagri h2 { font-size: clamp(1.4rem, 4.5vw, 1.8rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; text-wrap: balance; }
+.cagri p { color: var(--soluk); max-width: 46ch; }
+.dugme {
+  display: inline-flex; align-items: center; gap: 14px;
+  min-height: 54px;
+  padding: 8px 8px 8px 24px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: var(--kasa);
+  font-weight: 700; font-size: 1.05rem;
+  text-decoration: none;
+  transition: transform 500ms var(--yay);
+  box-shadow: 0 18px 50px -18px rgba(245, 166, 35, 0.55);
+}
+.dugme .ok { width: 38px; height: 38px; border-radius: 999px; background: rgba(17, 46, 40, 0.14); display: grid; place-items: center; }
+.dugme:active { transform: scale(0.98); }
+.dugme:focus-visible, .ada a:focus-visible, .ikincil:focus-visible { outline: 3px solid var(--altin); outline-offset: 4px; }
+.ikincil { display: inline-flex; align-items: center; min-height: 44px; color: var(--soluk); font-size: 0.95rem; }
+
+
+.notlar { margin-top: 48px; display: grid; gap: 8px; color: var(--silik); font-size: 0.92rem; }
+
+footer { margin-top: 64px; border-top: 1px solid var(--cizgi); padding-block: 32px calc(48px + env(safe-area-inset-bottom, 0px)); font-size: 0.9rem; color: var(--silik); }
+footer nav { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+footer nav a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--soluk); }
+footer nav a:hover { color: var(--metin); text-decoration: underline; }
+footer p { margin-top: 12px; }
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .kap { padding-inline: 16px; }
+  header.bas { padding-block: 44px 24px; }
+  .alanlar { grid-template-columns: minmax(0, 1fr); }
+  .cekirdek { padding: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .girdi, .dugme { transition: none; }
+}
+
+.tablo-kap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+caption { text-align: left; font-size: 15px; font-weight: 600; color: var(--soluk); padding-bottom: 12px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--cizgi); vertical-align: top; }
+thead th { font-size: 14px; font-weight: 600; color: var(--soluk); }
+tbody th { font-weight: 600; }
+td { color: var(--metin); white-space: nowrap; }
+h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spacing: -0.02em; margin: 40px 0 16px; }
+
+.satirlar { display: grid; gap: 12px; }
+.satir { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; gap: 12px; align-items: end; }
+.satir .alan label { font-size: 13px; }
+.sil {
+  width: 44px; height: 52px; border-radius: 14px;
+  background: transparent; border: 1px solid var(--cizgi);
+  color: var(--soluk); font: inherit; font-size: 1.3rem; cursor: pointer;
+}
+.sil:disabled { opacity: 0.35; cursor: default; }
+.ekle {
+  margin-top: 16px; min-height: 44px; padding: 0 18px;
+  border-radius: 999px; background: transparent;
+  border: 1px solid var(--parlak); color: var(--metin);
+  font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) { .sil:not(:disabled):hover, .ekle:hover { border-color: rgba(245, 166, 35, 0.6); color: var(--metin); } }
+.sil:focus-visible, .ekle:focus-visible { outline: 3px solid var(--altin); outline-offset: 3px; }
+.ozet-satir { margin-top: 10px; color: var(--soluk); }
+.alt-baslik { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<div class="ada">
+  <a class="marka" href="../" aria-label="sandık ana sayfa"><img src="../img/sandik-icon.png" alt="" width="26" height="26">sandık</a>
+  <nav aria-label="Site">
+    <a href="../">Ana sayfa</a>
+  </nav>
+</div>
+
+<main class="kap">
+  <header class="bas">
+    <h1>Ortalama <span>maliyetin</span> ne?</h1>
+    <p class="giris">Her alışın adedini ve fiyatını yaz. Ortalama maliyetini ve ortalamayı istediğin seviyeye indirmek için kaç adet daha alman gerektiğini gör.</p>
+  </header>
+
+  <div class="tepsi">
+    <form class="cekirdek" id="alislar-form" novalidate aria-labelledby="alislar-baslik">
+      <h2 class="alt-baslik" id="alislar-baslik">Alışların</h2>
+      <div class="satirlar" id="satirlar"></div>
+      <button type="button" class="ekle" id="ekle">Alış ekle</button>
+    </form>
+  </div>
+
+  <div class="tepsi">
+    <section class="cekirdek sonuc" aria-labelledby="ort-etiket">
+      <div aria-live="polite" aria-atomic="true">
+        <p class="etiket" id="ort-etiket">Ortalama maliyet</p>
+        <p class="buyuk sayi" id="ortalama">&nbsp;</p>
+        <p class="aciklama" id="ort-aciklama">Adet ve fiyat yaz.</p>
+      </div>
+    </section>
+  </div>
+
+  <h2 class="bolum" id="ters-baslik">Ortalamayı düşürmek için kaç adet?</h2>
+  <div class="tepsi">
+    <form class="cekirdek" id="ters-form" novalidate aria-labelledby="ters-baslik">
+      <div class="alanlar">
+        <div class="alan">
+          <label for="fiyat">Bugünkü fiyat</label>
+          <div class="girdi"><input id="fiyat" name="fiyat" inputmode="decimal" autocomplete="off" aria-describedby="fiyat-not"><span aria-hidden="true">₺</span></div>
+          <small id="fiyat-not">Şu an alabileceğin fiyat, örneğin 18,40</small>
+        </div>
+        <div class="alan">
+          <label for="hedef">Hedef ortalama</label>
+          <div class="girdi"><input id="hedef" name="hedef" inputmode="decimal" autocomplete="off" aria-describedby="hedef-not"><span aria-hidden="true">₺</span></div>
+          <small id="hedef-not">Ortalamanı indirmek istediğin seviye</small>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="tepsi">
+    <section class="cekirdek sonuc" aria-labelledby="adet-etiket">
+      <div aria-live="polite" aria-atomic="true">
+        <p class="etiket" id="adet-etiket">Gereken ek alım</p>
+        <p class="buyuk sayi" id="gereken">&nbsp;</p>
+        <p class="aciklama" id="ters-aciklama">Bugünkü fiyatı ve hedef ortalamayı yaz.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="cagri" aria-labelledby="cagri-baslik">
+    <h2 id="cagri-baslik">Ortalamanı her alışta sandık tutsun</h2>
+    <p>Hisse, fon ve altın alışlarını sandık'a ekle; ortalama maliyetin, kâr ve zararın ve ortalamayı bir seviyeye çekmek için gereken adet her alışta kendiliğinden güncellenir.</p>
+    <a class="dugme" href="https://apps.apple.com/tr/app/id6786837699?utm_source=web&amp;utm_medium=maliyet&amp;utm_campaign=hesaplayici">
+      App Store'dan indir
+      <span class="ok" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11L11 5M6 5h5v5"/></svg>
+      </span>
+    </a>
+    <a class="ikincil" href="../indir/?utm_source=web&amp;utm_medium=maliyet&amp;utm_campaign=hesaplayici">Android için indirme sayfası</a>
+  </section>
+
+  <h2 class="bolum">Nasıl hesaplanır?</h2>
+  <div class="notlar">
+    <p>Ortalama maliyet, alışların toplam tutarının toplam adede bölümüdür. 100 adedi 20 liradan, 50 adedi 26 liradan aldıysan toplam 3.300 lira ödemişsin; 150 adede bölünce ortalama 22 lira.</p>
+    <p id="ornek" data-adet="200" data-ort="25" data-fiyat="18" data-hedef="22" data-sonuc="150">Ters hesap: elinde ortalaması 25 lira olan 200 adet varsa ve fiyat 18 liraysa, ortalamayı 22 liraya indirmek için 150 adet daha alman gerekir. Formül: adet × (ortalama − hedef) ÷ (hedef − fiyat), tam adede yukarı yuvarlanır.</p>
+    <p>Alım ortalamayı yalnız fiyata doğru çeker: hedef, bugünkü ortalamanın altında ve fiyatın üstünde olmalı.</p>
+    <p>Komisyon ve vergi hesaba girmez. Fiyat gösterilmez. Hesap tarayıcında yapılır, hiçbir yere gönderilmez. Yatırım tavsiyesi değildir.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="kap">
+    <nav aria-label="Hukuki metinler">
+      <a href="../">sandık</a>
+      <a href="../privacy/">Gizlilik Politikası</a>
+      <a href="../terms/">Kullanım Koşulları</a>
+    </nav>
+    <p>© 2026 sandık. Yatırım tavsiyesi değildir.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var satirlarEl = document.getElementById('satirlar');
+  var ekleEl = document.getElementById('ekle');
+  var ortEl = document.getElementById('ortalama');
+  var ortAciklamaEl = document.getElementById('ort-aciklama');
+  var fiyatEl = document.getElementById('fiyat');
+  var hedefEl = document.getElementById('hedef');
+  var gerekenEl = document.getElementById('gereken');
+  var tersAciklamaEl = document.getElementById('ters-aciklama');
+  var sayac = 0;
+
+  // Altın sayfasıyla aynı okuyucu: virgül ondalık, nokta binlik.
+  function sayiOku(s) {
+    var t = String(s).trim().replace(/\s/g, '').replace(/₺/g, '');
+    if (t === '') return NaN;
+    if (t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.');
+    var n = Number(t);
+    return isFinite(n) ? n : NaN;
+  }
+
+  function sayi(n, d) {
+    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+  }
+  // Fiyat: 1 liranın altında dört ondalık (kuruşluk fon fiyatı), üstünde iki.
+  function tl(n) { return '₺' + sayi(n, Math.abs(n) < 1 ? 4 : 2); }
+  function adet(n) {
+    return new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 4 }).format(n);
+  }
+
+  function satirEkle(a, f) {
+    sayac += 1;
+    var no = sayac;
+    var satir = document.createElement('div');
+    satir.className = 'satir';
+    satir.innerHTML =
+      '<div class="alan"><label for="a' + no + '">Adet</label>' +
+      '<div class="girdi"><input id="a' + no + '" class="adet" inputmode="decimal" autocomplete="off"></div></div>' +
+      '<div class="alan"><label for="f' + no + '">Alış fiyatı</label>' +
+      '<div class="girdi"><input id="f' + no + '" class="fiyat" inputmode="decimal" autocomplete="off"><span aria-hidden="true">₺</span></div></div>' +
+      '<button type="button" class="sil" aria-label="Bu alışı sil">×</button>';
+    satir.querySelector('.adet').value = a || '';
+    satir.querySelector('.fiyat').value = f || '';
+    satir.querySelector('.sil').addEventListener('click', function () {
+      satir.remove();
+      ciz();
+      var ilk = satirlarEl.querySelector('input');
+      if (ilk) ilk.focus();
+    });
+    satirlarEl.appendChild(satir);
+    return satir;
+  }
+
+  // Dolu ve geçerli satırlardan toplam; yarım satır (yalnız adet) yok sayılır,
+  // geçersiz sayı varsa hesap durur ki yanlış ortalama yazılmasın.
+  function alislar() {
+    var toplamAdet = 0, toplamTutar = 0, sayilan = 0, hatali = false;
+    Array.prototype.forEach.call(satirlarEl.querySelectorAll('.satir'), function (s) {
+      var aEl = s.querySelector('.adet'), fEl = s.querySelector('.fiyat');
+      var bosA = aEl.value.trim() === '', bosF = fEl.value.trim() === '';
+      aEl.removeAttribute('aria-invalid');
+      fEl.removeAttribute('aria-invalid');
+      if (bosA && bosF) return;
+      var a = sayiOku(aEl.value), f = sayiOku(fEl.value);
+      if (!(a > 0)) { if (!bosA) { aEl.setAttribute('aria-invalid', 'true'); hatali = true; } return; }
+      if (!(f > 0)) { if (!bosF) { fEl.setAttribute('aria-invalid', 'true'); hatali = true; } return; }
+      toplamAdet += a;
+      toplamTutar += a * f;
+      sayilan += 1;
+    });
+    return { adet: toplamAdet, tutar: toplamTutar, sayilan: sayilan, hatali: hatali };
+  }
+
+  function ciz() {
+    var silDugmeleri = satirlarEl.querySelectorAll('.sil');
+    Array.prototype.forEach.call(silDugmeleri, function (b) { b.disabled = silDugmeleri.length < 2; });
+
+    var t = alislar();
+    var ort = t.adet > 0 ? t.tutar / t.adet : NaN;
+    if (t.hatali || !(ort > 0)) {
+      ortEl.textContent = '\u00a0';
+      ortAciklamaEl.className = 'aciklama bos';
+      ortAciklamaEl.textContent = t.hatali
+        ? 'Bir satırda geçerli olmayan bir sayı var. Adet ve fiyat sıfırdan büyük olmalı, örneğin 12,5.'
+        : 'Adet ve fiyat yaz.';
+    } else {
+      ortEl.textContent = tl(ort);
+      ortAciklamaEl.className = 'aciklama';
+      ortAciklamaEl.textContent = t.sayilan + ' alış, toplam ' + adet(t.adet) + ' adet, ödenen ' + tl(t.tutar) + '.';
+    }
+    tersCiz(t.hatali ? NaN : t.adet, t.hatali ? NaN : ort);
+  }
+
+  function aciklamaYaz(metin) {
+    gerekenEl.textContent = '\u00a0';
+    tersAciklamaEl.className = 'aciklama bos';
+    tersAciklamaEl.textContent = metin;
+  }
+
+  // Uygulamanın `hedefOrtalamaIcinAdet` hesabı (0 ondalık): fiyat < hedef < ort.
+  function tersCiz(eldeki, ort) {
+    var fiyat = sayiOku(fiyatEl.value);
+    var hedef = sayiOku(hedefEl.value);
+    if (!(eldeki > 0) || !(ort > 0)) return aciklamaYaz('Önce yukarıya en az bir alışını yaz.');
+    if (!(fiyat > 0) || !(hedef > 0)) return aciklamaYaz('Bugünkü fiyatı ve hedef ortalamayı sıfırdan büyük bir sayı olarak yaz.');
+    if (hedef >= ort) return aciklamaYaz('Hedef, bugünkü ortalaman olan ' + tl(ort) + ' değerinin altında olmalı; bu hesap ortalamayı düşürmek içindir.');
+    if (hedef <= fiyat) return aciklamaYaz('Ortalama, alış fiyatına ancak sonsuz alımla iner; hedefi bugünkü fiyat olan ' + tl(fiyat) + ' değerinin üstünde seç.');
+    var n = eldeki * (ort - hedef) / (hedef - fiyat);
+    // Kayan nokta payı: tam 150 adet 150,0000001 diye 151 olmasın.
+    var gereken = Math.ceil(n - 1e-6);
+    var yeniOrt = (eldeki * ort + gereken * fiyat) / (eldeki + gereken);
+    gerekenEl.textContent = '~' + adet(gereken) + ' adet';
+    tersAciklamaEl.className = 'aciklama';
+    tersAciklamaEl.innerHTML = '';
+    var p1 = document.createElement('span');
+    p1.textContent = tl(fiyat) + ' fiyattan ' + adet(gereken) + ' adet daha alırsan ' + tl(gereken * fiyat) + ' ödersin ve ortalaman ';
+    var b1 = document.createElement('b'); b1.textContent = tl(yeniOrt);
+    var p2 = document.createElement('span'); p2.textContent = ' olur; elinde toplam ' + adet(eldeki + gereken) + ' adet bulunur.';
+    [p1, b1, p2].forEach(function (x) { tersAciklamaEl.appendChild(x); });
+  }
+
+  ekleEl.addEventListener('click', function () {
+    var s = satirEkle();
+    s.querySelector('.adet').focus();
+    ciz();
+  });
+  satirlarEl.addEventListener('input', ciz);
+  fiyatEl.addEventListener('input', ciz);
+  hedefEl.addEventListener('input', ciz);
+  satirEkle();
+  satirEkle();
+  ciz();
+})();
+</script>
+</body>
+</html>

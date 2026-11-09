@@ -22,6 +22,9 @@ concurrency:
 # yazma izni gerekir. Varsayılan token salt okunur olabilir.
 permissions:
   contents: write
+  # tool/tf_notu.py: önceki başarılı koşuyu ve birleşen PR'ları okur.
+  actions: read
+  pull-requests: read
 
 jobs:
   build_and_upload:
@@ -96,6 +99,14 @@ jobs:
             --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
             --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID \
             --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY
+
+      # "What to Test": build'e giren PR'ların başlığı + "TestFlight'ta test
+      # et" bölümü (yasin 2026-10-19). Hata upload'ı düşürmez; betik yazamazsa
+      # Fastfile eski metne düşer.
+      - name: TestFlight notu (birleşen PR'lardan)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tool/tf_notu.py ios/fastlane/tf_notu.txt || true
 
       - name: Fastlane beta (match + gym + TestFlight)
         working-directory: ios

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../demo/demo_modu.dart';
 import '../models/ozel_gosterge.dart';
@@ -167,22 +168,30 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> balinaOlaylari(
     String ticker, {
     required DateTime baslangic,
+    DateTime? bitis,
   }) {
     final gun = _isoGun(baslangic);
     return _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.balinaOlaylari',
       table: 'balina_olay',
       op: 'SELECT',
-      request: {'ticker': ticker, 'tarih_gte': gun},
-      call: () => _db
-          .from('balina_olay')
-          .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
-          .eq('ticker', ticker)
-          // Tablo 0107'ten beri hisse olaylarını da taşıyor.
-          .inFilter('tur', ['fon_giris', 'fon_cikis'])
-          .gte('tarih', gun)
-          .order('tarih', ascending: false)
-          .limit(50),
+      request: {
+        'ticker': ticker,
+        'tarih_gte': gun,
+        if (bitis != null) 'tarih_lte': _isoGun(bitis),
+      },
+      call: () {
+        var q = _db
+            .from('balina_olay')
+            .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
+            .eq('ticker', ticker)
+            // Tablo 0107'ten beri hisse olaylarını da taşıyor.
+            .inFilter('tur', ['fon_giris', 'fon_cikis']).gte('tarih', gun);
+        // Aylık rapor (2026-11-07): ay kapandıysa üst sınır; verilmezse eski
+        // sorgu birebir.
+        if (bitis != null) q = q.lte('tarih', _isoGun(bitis));
+        return q.order('tarih', ascending: false).limit(50);
+      },
     );
   }
 
@@ -214,21 +223,30 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> hacimOlaylari(
     String sembol, {
     required DateTime baslangic,
+    DateTime? bitis,
   }) {
     final gun = _isoGun(baslangic);
     return _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.hacimOlaylari',
       table: 'balina_olay',
       op: 'SELECT',
-      request: {'ticker': sembol, 'tarih_gte': gun},
-      call: () => _db
-          .from('balina_olay')
-          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim')
-          .eq('ticker', sembol)
-          .inFilter('tur', ['hisse_hacim_yukselis', 'hisse_hacim_dusus'])
-          .gte('tarih', gun)
-          .order('tarih', ascending: false)
-          .limit(50),
+      request: {
+        'ticker': sembol,
+        'tarih_gte': gun,
+        if (bitis != null) 'tarih_lte': _isoGun(bitis),
+      },
+      call: () {
+        var q = _db
+            .from('balina_olay')
+            .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim')
+            .eq('ticker', sembol)
+            .inFilter('tur', ['hisse_hacim_yukselis', 'hisse_hacim_dusus']).gte(
+                'tarih', gun);
+        // Aylık rapor (2026-11-07): ay kapandıysa üst sınır; verilmezse eski
+        // sorgu birebir.
+        if (bitis != null) q = q.lte('tarih', _isoGun(bitis));
+        return q.order('tarih', ascending: false).limit(50);
+      },
     );
   }
 
@@ -258,21 +276,33 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> kriptoHacimOlaylari(
     String ticker, {
     required DateTime baslangic,
+    DateTime? bitis,
   }) {
     final gun = _isoGun(baslangic);
     return _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.kriptoHacimOlaylari',
       table: 'balina_olay',
       op: 'SELECT',
-      request: {'ticker': ticker, 'tarih_gte': gun},
-      call: () => _db
-          .from('balina_olay')
-          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim, alici_payi')
-          .eq('ticker', ticker)
-          .inFilter('tur', ['kripto_hacim_yukselis', 'kripto_hacim_dusus'])
-          .gte('tarih', gun)
-          .order('tarih', ascending: false)
-          .limit(50),
+      request: {
+        'ticker': ticker,
+        'tarih_gte': gun,
+        if (bitis != null) 'tarih_lte': _isoGun(bitis),
+      },
+      call: () {
+        var q = _db
+            .from('balina_olay')
+            .select(
+                'tarih, tur, tutar, ortalama_kati, fiyat_degisim, alici_payi')
+            .eq('ticker', ticker)
+            .inFilter('tur', [
+          'kripto_hacim_yukselis',
+          'kripto_hacim_dusus'
+        ]).gte('tarih', gun);
+        // Aylık rapor (2026-11-07): ay kapandıysa üst sınır; verilmezse eski
+        // sorgu birebir.
+        if (bitis != null) q = q.lte('tarih', _isoGun(bitis));
+        return q.order('tarih', ascending: false).limit(50);
+      },
     );
   }
 
@@ -337,6 +367,19 @@ class SupabaseService {
     );
   }
 
+  /// Sunucudaki paywall ayarları (0172 `premium_ayarlari()`): kapı, hediye
+  /// kesimi, acil kapatma. Remote Config'in yerini aldı (2026-11-01).
+  Future<Map<String, dynamic>> premiumAyarlari() {
+    return _log.log<Map<String, dynamic>>(
+      source: 'SupabaseService.premiumAyarlari',
+      table: 'premium_ayar',
+      op: 'RPC',
+      request: const {},
+      call: () async => Map<String, dynamic>.from(
+          (await _db.rpc<dynamic>('premium_ayarlari')) as Map),
+    );
+  }
+
   /// Varlıkların en yeni yayındaki notunun başlığı (0117 `analiz_ozetleri`;
   /// ücretsiz katmanın gördüğü kısım).
   Future<List<Map<String, dynamic>>> analizOzetleri(
@@ -377,6 +420,28 @@ class SupabaseService {
           .eq('tur', tur)
           .eq('donem', gun)
           .maybeSingle(),
+    );
+  }
+
+  /// Aylık notların haber satırları (0177 `varlik_analizi.haberler`).
+  /// Yalnız yayındaki satır ve Premium (aynı RLS); sütun yoksa (migration
+  /// gelmeden) PostgREST hata verir, çağıran boş sayar.
+  Future<List<Map<String, dynamic>>> aylikHaberler(
+    List<String> tickerlar, {
+    required DateTime donem,
+  }) {
+    final gun = _isoGun(donem);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.aylikHaberler',
+      table: 'varlik_analizi',
+      op: 'SELECT',
+      request: {'adet': tickerlar.length, 'donem': gun},
+      call: () => _db
+          .from('varlik_analizi')
+          .select('ticker, haberler')
+          .eq('tur', 'aylik')
+          .eq('donem', gun)
+          .inFilter('ticker', tickerlar),
     );
   }
 
@@ -627,6 +692,38 @@ class SupabaseService {
     );
   }
 
+  /// Haftalık (0052) ve aylık (0067) dönem özeti push'u. Sütun ortak:
+  /// `weekly-summary` iki dönemde de `weekly_summary_push = false`'u atlar.
+  ///
+  /// Okuma hatasında `true` — sunucu varsayılanı açık; ağ hatası yüzünden
+  /// anahtarın kapalı görünmesi "kapattım" yanılgısı verirdi
+  /// (`getPartnerActivityPush` ile aynı gerekçe).
+  Future<bool> getWeeklySummaryPush(String userId) async {
+    try {
+      final row = await _db
+          .from('profiles')
+          .select('weekly_summary_push')
+          .eq('id', userId)
+          .maybeSingle();
+      return row?['weekly_summary_push'] != false;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'getWeeklySummaryPush');
+      return true;
+    }
+  }
+
+  Future<void> setWeeklySummaryPush(String userId, bool enabled) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setWeeklySummaryPush',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'weekly_summary_push': enabled},
+      call: () => _db
+          .from('profiles')
+          .update({'weekly_summary_push': enabled}).eq('id', userId),
+    );
+  }
+
   /// Brifing saati (0068): 'morning' (09:45) | 'evening' (18:30).
   /// Okuma hatasında 'morning' — sunucu varsayılanı; anahtar yanlış
   /// tarafta görünmesin.
@@ -758,13 +855,47 @@ class SupabaseService {
 
   Future<void> insertAsset(Asset asset) async {
     final body = asset.toSupabase();
-    await _log.log<void>(
-      source: 'SupabaseService.insertAsset',
-      table: 'assets',
-      op: 'INSERT',
-      request: {'id': body['id'], 'user_id': body['user_id'], 'ticker': body['ticker']},
-      call: () => _db.from('assets').insert(body),
+    await sutunsuzYenidenDene(
+      body,
+      (b) => _log.log<void>(
+        source: 'SupabaseService.insertAsset',
+        table: 'assets',
+        op: 'INSERT',
+        request: {'id': b['id'], 'user_id': b['user_id'], 'ticker': b['ticker']},
+        call: () => _db.from('assets').insert(b),
+      ),
     );
+  }
+
+  /// Sunucuda henüz olmayabilecek İSTEĞE BAĞLI varlık sütunları — yazım
+  /// "bilinmeyen sütun" (PGRST204 / 42703) ile düşerse bunlar gövdeden
+  /// çıkarılıp BİR KEZ yeniden denenir.
+  ///
+  /// ## Neden (0162, 2026-10-20)
+  /// `maliyet_bilinmiyor` bayraksız gelir; build migration'dan önce
+  /// kullanıcıya ulaşırsa ekran görüntüsünden maliyetsiz ekleme PGRST204 ile
+  /// tamamen düşerdi ("akışı bozma", yasin). Yeniden denemede kayıt eskisi
+  /// gibi yazılır, yalnız işaret kalıcı olmaz. Liste DAR tutulur: zorunlu
+  /// bir sütunun eksikliği burada yutulmaz, hata yukarı çıkar.
+  static const istegeBagliVarlikSutunlari = ['maliyet_bilinmiyor'];
+
+  /// [yaz] gövdeyle çağrılır; bilinmeyen sütun hatasında
+  /// [istegeBagliVarlikSutunlari] çıkarılmış kopyayla bir kez daha. Saf
+  /// akış (test: `veri_kalitesi_test`).
+  @visibleForTesting
+  static Future<void> sutunsuzYenidenDene(
+    Map<String, dynamic> body,
+    Future<void> Function(Map<String, dynamic>) yaz,
+  ) async {
+    try {
+      await yaz(body);
+    } on PostgrestException catch (e) {
+      final sutunYok = e.code == 'PGRST204' || e.code == '42703';
+      final cikacak =
+          istegeBagliVarlikSutunlari.where(body.containsKey).toList();
+      if (!sutunYok || cikacak.isEmpty) rethrow;
+      await yaz({...body}..removeWhere((k, _) => cikacak.contains(k)));
+    }
   }
 
   /// Partner kodundan gelen varlığı içe aktar — zaten varsa güncelle (resync)
@@ -797,12 +928,15 @@ class SupabaseService {
   /// tuzağa düşmesin.
   Future<void> updateAsset(Asset asset) async {
     final body = asset.toSupabase()..remove('deleted_at');
-    await _log.log<void>(
-      source: 'SupabaseService.updateAsset',
-      table: 'assets',
-      op: 'UPDATE',
-      request: {'id': asset.id, 'ticker': body['ticker']},
-      call: () => _db.from('assets').update(body).eq('id', asset.id),
+    await sutunsuzYenidenDene(
+      body,
+      (b) => _log.log<void>(
+        source: 'SupabaseService.updateAsset',
+        table: 'assets',
+        op: 'UPDATE',
+        request: {'id': asset.id, 'ticker': b['ticker']},
+        call: () => _db.from('assets').update(b).eq('id', asset.id),
+      ),
     );
   }
 
@@ -2102,6 +2236,33 @@ class SupabaseService {
     };
   }
 
+  /// [dilim] vade diliminin [baslangic]'tan bugüne TCMB haftalık faiz
+  /// geçmişi (0173; kıyas kartı "Mevduatta"). Tablo boşsa boş liste; tablo
+  /// yoksa (migration henüz gitmediyse) Postgrest hatası çağırana gider,
+  /// `KiyasYukleyici` yakalayıp satırı çizmez.
+  Future<List<({DateTime hafta, double yillikFaiz})>> mevduatFaizGecmisi(
+      String dilim, DateTime baslangic) async {
+    final bas = baslangic.toIso8601String().substring(0, 10);
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.mevduatFaizGecmisi',
+      table: 'mevduat_faiz_gecmisi',
+      op: 'SELECT',
+      request: {'vade_dilimi': dilim, 'hafta_gte': bas},
+      call: () => _db
+          .from('mevduat_faiz_gecmisi')
+          .select('hafta, yillik_faiz')
+          .eq('vade_dilimi', dilim)
+          .gte('hafta', bas)
+          .order('hafta', ascending: true),
+    );
+    return [
+      for (final r in rows)
+        if (DateTime.tryParse('${r['hafta']}') case final h?)
+          if ((r['yillik_faiz'] as num?)?.toDouble() case final f?)
+            (hafta: h, yillikFaiz: f),
+    ];
+  }
+
   // ── Fon X-Ray (0131, 0132) ───────────────────────────────────────────────
   // Sunucu TEFAS'tan günlük sınıf dağılımını (`fon-dagilim`) ve KAP'tan aylık
   // kalemleri (`fon-kalem-raporu`, bayraklı) yazar; telefon yalnız kendi
@@ -2246,32 +2407,75 @@ class SupabaseService {
   // ── Edge Functions ────────────────────────────────────────────────────────
 
   /// Ekstre AI sütun eşleme (0121, `ekstre-esle`). [iskelet] ANONİM
-  /// tanılama iskeletidir (`ekstreIskeleti`); günlüğe yalnız uzunluğu
-  /// yazılır. Yanıt `tablolar` listesi; 2xx dışında `FunctionException`.
-  Future<List<Map<String, dynamic>>> ekstreEsle(String iskelet) async {
+  /// tanılama iskeletidir (`ekstreIskeleti`) ya da metin yolunda
+  /// (`ekstreMetni`, 0147) rakamları maskeli metin; günlüğe yalnız uzunluğu
+  /// yazılır. [sablonsuz]: sunucunun şablondan verdiği eşleme cihazdaki
+  /// sağlamayı geçmedi — şablon atlanır, model sorulur. Yanıt `tablolar` ve
+  /// eşlemenin şablondan gelip gelmediği; 2xx dışında `EkstreAiHatasi`.
+  Future<({List<Map<String, dynamic>> tablolar, bool sablondan})> ekstreEsle(
+    String iskelet, {
+    bool sablonsuz = false,
+  }) async {
     final FunctionResponse res;
     try {
       res = await _log.log(
         source: 'SupabaseService.ekstreEsle',
         table: 'functions/ekstre-esle',
         op: 'FUNCTION',
-        request: {'uzunluk': iskelet.length},
+        request: {'uzunluk': iskelet.length, 'sablonsuz': sablonsuz},
         timeout: const Duration(seconds: 60),
         call: () => _db.functions.invoke(
           'ekstre-esle',
-          body: {'iskelet': iskelet},
+          body: {'iskelet': iskelet, if (sablonsuz) 'sablonsuz': true},
         ),
       );
     } on FunctionException catch (e, st) {
       if (e.status != 429 && e.status != 403) {
         CrashReporter.report(e, st, reason: 'ekstre_esle_${e.status}');
       }
-      throw EkstreAiHatasi(kota: e.status == 429, premium: e.status == 403);
+      final d = e.details;
+      final riza = e.status == 403 && d is Map && d['neden'] == 'riza';
+      throw EkstreAiHatasi(
+        kota: e.status == 429,
+        premium: e.status == 403 && !riza,
+        riza: riza,
+      );
     }
-    final t = (res.data is Map) ? (res.data as Map)['tablolar'] : null;
-    if (t is! List) return const [];
-    return [for (final x in t) if (x is Map) Map<String, dynamic>.from(x)];
+    final govde = res.data is Map ? res.data as Map : const <String, dynamic>{};
+    final t = govde['tablolar'];
+    return (
+      tablolar: t is List
+          ? [for (final x in t) if (x is Map) Map<String, dynamic>.from(x)]
+          : const <Map<String, dynamic>>[],
+      sablondan: govde['kaynak'] == 'sablon',
+    );
   }
+
+  /// Ekstre metin yolu açık rızası (0147 `ekstre_ai_rizalari`). Hata →
+  /// `null` (ekran rıza varsaymaz, sorar).
+  Future<bool?> ekstreAiRizasiVarMi() async {
+    try {
+      final uid = _db.auth.currentUser?.id;
+      if (uid == null) return null;
+      final rows = await _db
+          .from('ekstre_ai_rizalari')
+          .select('geri_cekildi_at, metin_surumu')
+          .eq('user_id', uid);
+      if (rows.isEmpty) return false;
+      return rows.first['geri_cekildi_at'] == null &&
+          rows.first['metin_surumu'] == ekstreAiRizaSurumu;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ekstre_ai_rizasi_okunamadi');
+      return null;
+    }
+  }
+
+  /// Rıza ver / geri çek. Metin değişince [ekstreAiRizaSurumu] artar ve
+  /// kayıtlı sürüm eskiyse ekran yeniden sorar.
+  Future<void> ekstreAiRizasiAyarla(bool ver) => _db.rpc<dynamic>(
+        'ekstre_ai_rizasi_ayarla',
+        params: {'p_ver': ver, 'p_metin_surumu': ekstreAiRizaSurumu},
+      );
 
   Future<void> sendPartnerInvitePush(String inviteId) async {
     final response = await _log.log(
@@ -2860,3 +3064,10 @@ Map<String, Map<String, int>>? gostergeParametreleriniOku(Object? ham) {
   });
   return out.isEmpty ? null : out;
 }
+
+/// Ekstre metin yolu rıza metninin sürümü (`importAiRizaMetin`; sunucu
+/// kaydı `ekstre_ai_rizalari.metin_surumu`). Kart metni değişince artar.
+///
+/// 2026-10-14: taslak → yayın. Metin yolu Gizlilik 1.11 §5.4 ve KVKK 1.11
+/// §5.2'ye yazıldı (0149); rıza ilk kullanımda bu kartla alınır.
+const ekstreAiRizaSurumu = '2026-10-14';

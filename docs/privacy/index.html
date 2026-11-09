@@ -6,8 +6,8 @@
 <title>Gizlilik Politikası — sandık</title>
 <meta name="description" content="Sandık uygulamasının gizlilik politikası — KVKK ve GDPR uyumlu.">
 <meta name="sandik-kaynak" content="legal/tr/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="71f33490ff95af12354e52b1dad5d19869fa5ec66d58cd4213db688ff1fe8816">
-<meta name="sandik-govde-sha256" content="2310f291ab993ba299eedeca9570e32b5c2a3b53950e626a264d5a246dcbf0f7">
+<meta name="sandik-kaynak-sha256" content="3aa2b120edbabd132b234359c85248a3c3adbf8209b2f0ee10cca5ccae69aced">
+<meta name="sandik-govde-sha256" content="cac296de8d9633ad65ce73b3bc9e42d9a7e45071972138d1775b204b549b1206">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -66,15 +66,15 @@ button:hover { opacity: 0.9; }
 <!-- sandik-govde:basla -->
 <h1>Gizlilik Politikası — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 8 Ekim 2026
-<strong>Son güncelleme:</strong> 10 Ekim 2026
-<strong>Sürüm:</strong> 1.9
+<strong>Son güncelleme:</strong> 7 Kasım 2026
+<strong>Sürüm:</strong> 1.14
 <strong>Onay sürümü:</strong> 1.8</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
 <p>Bu uygulamayı (<strong>sandık</strong>, "Uygulama") <code>Yasin Çıralı</code> ("biz", "Şirket") işletmektedir.</p>
 <ul>
 <li><strong>Adres:</strong> <code>İstanbul, Türkiye</code></li>
-<li><strong>E-posta:</strong> <code>sandikapp.destek@gmail.com</code></li>
+<li><strong>E-posta:</strong> <code>support@murphysoft.app</code></li>
 <li><strong>Web:</strong> <code>https://yasincirali.github.io/sandikapp</code></li>
 <li><strong>VERBİS:</strong> <code>Kayıtlı değil (bireysel geliştirici)</code> (uygulanabilirse)</li>
 </ul>
@@ -139,7 +139,7 @@ button:hover { opacity: 0.9; }
 <td>Performans grafikleri</td>
 </tr>
 <tr>
-<td>Dönemsel getiri (%), varlık türü payları (%) ve fon kodu bazında paylar (%) — sunucuda hesaplanır</td>
+<td>Dönemsel getiri (%), varlık türü payları (%) ve varlık bazında paylar (%; fonlarda TEFAS kodu, diğer varlıklarda kamuya açık piyasa sembolü) — sunucuda hesaplanır</td>
 <td>Zirvedeki Portföyler (anonim karşılaştırma, bkz. §5.1; yalnızca açık rıza verirseniz)</td>
 </tr>
 <tr>
@@ -155,12 +155,20 @@ button:hover { opacity: 0.9; }
 <td>Notların kalitesini ölçmek, hatalı notları bulup düzeltmek (bkz. §5.3)</td>
 </tr>
 <tr>
+<td>Yapay zekâ portföy yorumu (isteğe bağlı; yalnızca açık rıza verip yorum isterseniz): yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları (dolar, altın, BIST 100), yazılan yorum</td>
+<td>Performans › Özet'te ve varlık detayında seçtiğiniz dönemi, geçen haftayı ya da geçen ayı anlatan yorum (bkz. §5.5)</td>
+</tr>
+<tr>
+<td>Yapay zekâ özelliklerinin rıza kayıtları (portföy yorumu, ekstrenin yapay zekâyla okunması): verildiği ve geri çekildiği zaman, size gösterilen metnin sürümü</td>
+<td>Rızanın ispatı ve rızası olmayan isteğin sunucuda reddedilmesi</td>
+</tr>
+<tr>
 <td>Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı, yenilemenin kapatılıp kapatılmadığı</td>
 <td>Premium içeriğe erişimin sunucuda doğrulanması. Ödeme ve kart bilgisi bize ulaşmaz; tahsilatı Apple ya da Google yapar</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Ekstre içe aktarma:</strong> İçe aktardığınız banka veya aracı kurum ekstresi (PDF, Excel, CSV) yalnızca cihazınızda okunur; dosya sunucuya gönderilmez ve saklanmaz. Yalnızca sizin onayladığınız varlık kayıtları kaydedilir. Uygulama ekstrenin sütunlarından emin olamazsa ve siz "Yapay zekâyla eşle"ye basarsanız, tablonun anonim iskeleti (bkz. §5.4) sunucumuz üzerinden yapay zekâya gönderilir; dosyanın kendisi yine gönderilmez.</p>
+<p><strong>Ekstre içe aktarma:</strong> İçe aktardığınız banka veya aracı kurum ekstresi (PDF, Excel, CSV) yalnızca cihazınızda okunur; dosya sunucuya gönderilmez ve saklanmaz. Yalnızca sizin onayladığınız varlık kayıtları kaydedilir. Uygulama ekstrenin sütunlarından emin olamazsa ve siz "Yapay zekâyla eşle"ye basarsanız, tablonun anonim iskeleti ya da onay verdiyseniz tablodaki kelimeler (bkz. §5.4) sunucumuz üzerinden yapay zekâya gönderilir; dosyanın kendisi yine gönderilmez.</p>
 <h3>3.3 Cihaz ve Bildirim Verileri</h3>
 <table>
 <thead>
@@ -284,10 +292,12 @@ button:hover { opacity: 0.9; }
 <li>Yasal yükümlülüklerimizi yerine getirmek ve onaylarınızı kanıtlamak (yasal metin onayları, yetkili merci talepleri)</li>
 <li>Hata teşhisi ve servis kalitesinin iyileştirilmesi; kullanım istatistikleri</li>
 <li>Hesap güvenliği (tek aktif cihaz, yeni cihazda e-posta kodu) ile kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)</li>
-<li>Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)</li>
+<li>Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini, varlık türü dağılımını ve varlık bazında paylarını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)</li>
 <li>Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek</li>
 <li>Premium: satın aldığınız aboneliği doğrulamak ve Premium içeriğe erişim hakkınızı tanımak</li>
 <li>Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek</li>
+<li>Yapay zekâ portföy yorumu: istediğinizde portföyünüzün ya da bir varlığınızın seçtiğiniz dönemini, geçen haftayı ya da geçen ayı kendi verinizle anlatan yorumu yazmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)</li>
+<li>Ekstrenin yapay zekâyla okunması: istediğinizde ekstredeki tabloların sütunlarını bulmak (KVKK 5(1) — açık rıza; isteğe bağlı, özelliği ilk kullandığınızda uygulama içinde verilir)</li>
 </ol>
 <hr />
 <h2>5. Verilerin Paylaşıldığı Üçüncü Taraflar (Veri İşleyenler)</h2>
@@ -307,7 +317,7 @@ button:hover { opacity: 0.9; }
 <td>Supabase Inc.</td>
 <td>Tüm hesap ve uygulama verileri, güvenlik kayıtları</td>
 <td>Saklama, kimlik doğrulama</td>
-<td>Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde</td>
+<td>Almanya (AWS Frankfurt, AB); taşıma öncesi kopya silinene kadar Japonya'da (AWS Tokyo)</td>
 </tr>
 <tr>
 <td>Push bildirimi</td>
@@ -382,8 +392,15 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Ekstre sütun eşleme (yapay zekâ; yalnızca siz isterseniz)</td>
 <td>Anthropic PBC</td>
-<td>Ekstredeki tabloların anonim iskeleti: sütun başlıkları ve genel finans kelimeleri; ad, numara, tutar ve tarihler maskeli</td>
+<td>Ekstredeki tabloların anonim iskeleti (sütun başlıkları ve genel finans kelimeleri; ad, numara, tutar ve tarihler maskeli) ya da açık rıza verdiyseniz tablodaki kelimeler (sütun ve varlık adları; bütün rakamlar ile etiketli ad, adres ve e-posta maskeli)</td>
 <td>Hangi sütunun sembol, adet, fiyat olduğunu bulmak (bkz. §5.4)</td>
+<td>ABD</td>
+</tr>
+<tr>
+<td>Portföy yorumu (yapay zekâ; yalnızca açık rıza verip yorum isterseniz)</td>
+<td>Anthropic PBC</td>
+<td>Yorumlanan dönemin getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%), aynı dönemdeki enflasyon ve piyasa kıyasları; tutar, adet, adınız, e-postanız ve hesap numaranız gönderilmez</td>
+<td>Portföyünüzün ya da bir varlığınızın geçmiş dönemini anlatan yorumu yazmak (bkz. §5.5)</td>
 <td>ABD</td>
 </tr>
 </tbody>
@@ -391,7 +408,7 @@ button:hover { opacity: 0.9; }
 <p><strong>Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.</strong> Premium ödemesini tahsil eden Apple ve Google, ödeme bilgileriniz için kendi başına veri sorumlusudur.</p>
 <p>Piyasa verisi sağlayıcıları kişisel veri almadığı için tek tek sayılmaz; yeni bir fiyat kaynağı eklemek bu politikayı değiştirmez. Kişisel veri alan yeni bir sağlayıcı ise ancak bu tabloya eklenerek kullanılır.</p>
 <h3>5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)</h3>
-<p>Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.</p>
+<p>Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve varlıkların kamuya açık kimliği ile portföy içindeki payı (fonlarda TEFAS fon kodu; hisse, kripto, altın, döviz, emtia ve tahvillerde kamuya açık piyasa sembolü, ör. "THYAO %18, BTC %12"; payı %1'in altındaki, elle fiyatlanan ya da kamuya açık sembolü olmayan kalemler türünün içinde toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Fon dışındaki varlıkların sembolleri yalnızca bu açıklamanın 20 Ekim 2026 sürümünü onaylamış katılımcılar için gösterilir; daha önceki sürümü onaylayanlarda yalnızca tür payları ve fon kodları görünür. Karşılığında siz de katılan kullanıcıların hangi varlıkları hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; portföyünüzün listedeki portföylerle ortak varlıklarının toplam payı (benzerlik yüzdesi) yalnızca size gösterilir. Bu karşılaştırma hizmeti yalnızca katılanlara açıktır; diğer portföylerin varlık sembollerini görmek ve havuza yeni katılmak Premium üyelik gerektirebilir, bu sizin hangi bilgilerinizin gösterildiğini değiştirmez. Ad, e-posta, kullanıcı adı, tutar, miktar ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.</p>
 <h3>5.2 Ortağınızla ve Yarış'ta Paylaşım</h3>
 <p>Ortaklık kurduğunuz kullanıcı, kullanıcı adınızı, portföyünüzdeki varlıkları, miktarları ve performansı görür. Yarış'ta diğer katılımcılara kimliğiniz ve tutarlarınız gösterilmez; size yalnızca kendi yüzdelik diliminiz gösterilir, ortağınızla getirilerinizi karşılaştırabilirsiniz.</p>
 <h3>5.3 Yapay Zekâ ile Hazırlanan Varlık Notları</h3>
@@ -401,15 +418,23 @@ button:hover { opacity: 0.9; }
 <h3>5.4 Ekstre Sütunlarının Yapay Zekâ ile Eşlenmesi</h3>
 <p>Ekstre dosyası her zaman cihazınızda okunur. Uygulama, tanımadığı bir düzende hangi sütunun sembol, adet ya da fiyat olduğundan emin olamazsa size "Yapay zekâyla eşle" seçeneğini gösterir. Bu seçeneğe <strong>siz basmadıkça</strong> hiçbir şey gönderilmez. Bu seçenek Premium içeriktir.</p>
 <p>Basarsanız cihazınız tablonun anonim bir iskeletini çıkarır ve sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderir. İskelette tablonun düzeni, sütun başlıkları ve genel finans kelimeleri ("Pay Adedi", "Birim Fiyat", "PORTFÖY") bulunur; ad, müşteri ve hesap numarası, T.C. kimlik numarası, adres, tutar ve tarihler maskelenir (her harf "A", her rakam "9" olur). Sunucumuz maskelenmemiş rakam içeren bir iskeleti modele göndermeden reddeder. Model yalnızca hangi sütunun ne olduğunu söyler; değerler yine cihazınızda dosyadan okunur ve eklemeden önce size gösterilir.</p>
-<p>İskelet ve modelin yanıtı saklanmaz. Kötüye kullanımı ve maliyeti sınırlamak için yalnızca isteğin zamanı, kullanılan model ve maliyeti hesabınızla birlikte 40 gün tutulur.</p>
+<p><strong>Tablodaki kelimelerle okuma (açık rıza verirseniz).</strong> Anonim iskelette kelimeler de maskelendiği için model bazı ekstrelerde sütun başlıklarını ve fon adlarını tanıyamaz. Bu yüzden uygulama, "Yapay zekâyla eşle"ye ilk bastığınızda ayrı bir kartla açık rızanızı ister. Rıza verirseniz iskelet yerine tablodaki kelimeler (sütun başlıkları, varlık ve kurum adları) açık olarak gönderilir; bütün rakamlar (tutar, adet, fiyat, IBAN, T.C. kimlik, hesap, müşteri ve telefon numaraları) "9" ile, e-posta adresleri ve "Sayın", "Ad Soyad", "Adres" gibi etiketlerden sonra gelen bilgiler "A" ile maskelenir. Etiketsiz yazılmış bir ad maskelenmeyebilir; bu yüzden bu yol yalnızca rızanızla kullanılır. Rıza vermezseniz anonim iskelet yolu kullanılır. Rızanızı aynı ekrandaki "Yapay zekâ onayını geri çek" ile istediğiniz an geri alabilirsiniz; sonraki isteklerde kelimeler gönderilmez.</p>
+<p>Sunucumuz bir tablonun başlık satırından tek yönlü bir iz (özet) çıkarır ve modelin bu tablo için bulduğu sütun sırasını o izle birlikte saklar (banka şablonu). Aynı düzende bir tablo yeniden geldiğinde model çağrılmaz. Şablon yalnızca iz ile sütun numaralarından oluşur; tablonun metni, değerleri ve kimin yüklediği tutulmaz.</p>
+<p>İskelet, gönderilen metin ve modelin yanıtı saklanmaz. Kötüye kullanımı ve maliyeti sınırlamak için yalnızca isteğin zamanı, kullanılan model ve maliyeti hesabınızla birlikte 40 gün tutulur.</p>
+<h3>5.5 Yapay Zekâ ile Portföy Yorumu</h3>
+<p>Performans › Özet'te portföyünüzün, varlık detayında ise o varlığın seçtiğiniz dönemini (son 1 hafta ile son 5 yıl arası) anlatan kısa bir yorum isteyebilirsiniz; Performans › Özet'te geçen hafta ve geçen ay da yorumlanabilir. Bu özellik isteğe bağlıdır ve Premium içeriktir. İlk kullandığınızda uygulama ayrı bir kartla açık rızanızı ister; rıza vermezseniz hiçbir şey gönderilmez.</p>
+<p>Rıza verip "Bu dönemi yorumla"ya bastığınızda cihazınız yorumlanan dönemin ölçümlerini hesaplar: getiri, düşüş ve oynaklık yüzdeleri, varlıklarınızın adları ya da sembolleri ve portföydeki payları (%); bunların yanında aynı dönemde enflasyonun (TÜFE) ve dolar, altın ve BIST 100'ün yüzde değişimi gibi kamuya açık piyasa kıyasları. Bu ölçümler sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderilir. Tutar, adet, adınız, e-postanız, kullanıcı adınız ve hesap numaranız gönderilmez; sunucumuz para birimi ya da dört haneli bir sayı içeren isteği modele göndermeden reddeder.</p>
+<p>Yorum yazıldıktan sonra kaydedilir ve yeniden açtığınızda veritabanından okunur, modele istek gitmez: geçen hafta ve geçen ay yorumu dönem boyunca, seçtiğiniz dönemin yorumu yazıldığı gün boyunca. Yorumla birlikte gönderilen ölçümler, kullanılan model ve maliyet de saklanır; varlık yorumunda varlığın kendisi yerine varlık anahtarının geri çevrilemeyen bir özeti saklanır. Yorumunuzu yalnızca siz görürsünüz. Saklama: her kullanıcı için geçen hafta ve geçen ay yorumlarında son 4 haftanın ve son 12 ayın, seçtiğiniz dönem yorumlarında son 7 günün yorumları; eskileri otomatik silinir.</p>
+<p>Yorum geçmişi anlatır; al, sat ya da tut önerisi içermez ve yatırım tavsiyesi değildir. Yorumlar otomatik üretilir ve yayımlanmadan önce otomatik denetlenir (sayılar gönderilen ölçümlerle karşılaştırılır, yönlendiren ya da geleceğe dair dil içeren yorum gösterilmez); bir insan tek tek okumaz, hata içerebilir.</p>
+<p>Rızanızı aynı karttaki "Yapay zekâ yorumunu kapat" ile istediğiniz an geri alabilirsiniz; geri aldığınızda yazılmış yorumlarınız silinir ve ölçümleriniz artık gönderilmez.</p>
 <hr />
 <h2>6. Yurt Dışına Veri Aktarımı</h2>
-<p>Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş, e-posta ve mağaza ödeme hizmetleri de küresel altyapıda çalışır. Premium satın alırsanız abonelik kaydınız RevenueCat (ABD) üzerinden doğrulanır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
+<p>Supabase veritabanı Almanya'da (AWS Frankfurt, AB; taşıma öncesi kopya silinene kadar Japonya'da, AWS Tokyo), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş, e-posta ve mağaza ödeme hizmetleri de küresel altyapıda çalışır. Premium satın alırsanız abonelik kaydınız RevenueCat (ABD) üzerinden doğrulanır. Yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız ilgili veriler Anthropic'e (ABD) gönderilir; bu aktarım, özelliği ilk kullandığınızda uygulama içinde ayrıca verdiğiniz açık rızaya dayanır (bkz. §5.4, §5.5). KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
 <ul>
 <li><strong>AB üyesi kullanıcılar için:</strong> Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.</li>
 <li><strong>Türk kullanıcılar için:</strong> KVKK Madde 9(1) kapsamında <strong>açık rıza</strong> alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.</li>
 </ul>
-<p>Aktarım yapılan ülkeler (Supabase: Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde; Firebase ve RevenueCat: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı <strong>açık rızanıza</strong> dayanmaktadır.</p>
+<p>Aktarım yapılan ülkeler (Supabase: Almanya (AWS Frankfurt, AB); taşıma öncesi kopya silinene kadar Japonya'da (AWS Tokyo); Firebase ve RevenueCat: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı <strong>açık rızanıza</strong> dayanmaktadır.</p>
 <hr />
 <h2>7. Veri Saklama Süreleri</h2>
 <table>
@@ -453,8 +478,20 @@ button:hover { opacity: 0.9; }
 <td>Hesap silinene kadar; hesabı silince hemen. Aynı anda RevenueCat'teki abone kaydınızın silinmesi RevenueCat'ten istenir; ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır. Hesap silme mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play'den kapatırsınız</td>
 </tr>
 <tr>
-<td>Ekstre sütun eşleme istek kayıtları (yalnızca zaman, model ve maliyet; iskelet ve yanıt saklanmaz)</td>
+<td>Ekstre sütun eşleme istek kayıtları (yalnızca zaman, model ve maliyet; iskelet, gönderilen metin ve yanıt saklanmaz)</td>
 <td>40 gün</td>
+</tr>
+<tr>
+<td>Ekstre banka şablonları (başlık satırının tek yönlü izi ve sütun numaraları; kullanıcıya bağlı değil)</td>
+<td>Kurumun tablo düzeni kullanıldıkça; hatalı bulunan şablon kullanılmaz</td>
+</tr>
+<tr>
+<td>Yapay zekâ portföy yorumları (yorum, gönderilen ölçümler, model ve maliyet)</td>
+<td>Her kullanıcı için geçen hafta/ay yorumlarında son 4 hafta ve son 12 ay, seçilen dönem yorumlarında son 7 gün; rıza geri alınınca ya da hesap silinince hemen</td>
+</tr>
+<tr>
+<td>Yapay zekâ özelliklerinin rıza kayıtları</td>
+<td>Hesap silinene kadar (geri çekme zamanı da kaydedilir)</td>
 </tr>
 <tr>
 <td>Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı)</td>
@@ -517,7 +554,7 @@ button:hover { opacity: 0.9; }
 </ul>
 <p><strong>Talep yöntemleri:</strong>
 1. <strong>Uygulama içi:</strong> Profil → Ayarlar → "Hesabımı Sil" / "Verilerimi İndir"
-2. <strong>E-posta:</strong> <code>sandikapp.destek@gmail.com</code> adresine kimlik doğrulayıcı bilgilerle başvuru
+2. <strong>E-posta:</strong> <code>support@murphysoft.app</code> adresine kimlik doğrulayıcı bilgilerle başvuru
 3. <strong>Web formu:</strong> <code>https://yasincirali.github.io/sandikapp/data-request</code></p>
 <p>KVKK Madde 13(2) uyarınca taleplerinize <strong>30 gün</strong> içinde yanıt veririz.</p>
 <p><strong>Şikayet hakkı:</strong> Cevap memnun edici değilse:
@@ -535,7 +572,7 @@ button:hover { opacity: 0.9; }
 <li><strong>Saklama:</strong> Supabase tarafında at-rest şifreleme (AES-256)</li>
 <li><strong>Erişim:</strong> Row-Level Security (RLS) ile her kullanıcı yalnızca kendi verisine (ve ortaklık kurduğu kullanıcının paylaşılan portföyüne) erişebilir</li>
 <li><strong>Şifre:</strong> Bcrypt hash (Supabase Auth)</li>
-<li><strong>Oturum:</strong> 1 saat geçerli erişim token'ı ve her yenilemede değişen yenileme token'ı; token cihazın güvenli anahtar deposunda (Keychain / Android Keystore) saklanır. Uygulama 10 dakikadan uzun arka planda kalırsa uygulama kilidi açıksa kilitlenir, değilse oturum kapanır. Hesap aynı anda tek cihazda açık kalır; yeni cihazda e-posta kodu istenir</li>
+<li><strong>Oturum:</strong> 1 saat geçerli erişim token'ı ve her yenilemede değişen yenileme token'ı; token cihazın güvenli anahtar deposunda (Keychain / Android Keystore) saklanır. Oturum sen çıkış yapana kadar açık kalır; uygulama kilidi açıksa uygulama 30 saniyeden uzun arka planda kalınca kilitlenir. Hesap aynı anda tek cihazda açık kalır; yeni cihazda e-posta kodu istenir</li>
 <li><strong>Kötüye kullanım:</strong> Sunucu tarafında istek sınırlaması (rate limiting)</li>
 <li><strong>Loglama:</strong> Üretimde sadece hatalar; hassas alanlar (e-posta, şifre, token, IP) maskelenir</li>
 <li><strong>Geliştirici erişimi:</strong> Veritabanına teknik erişim yalnızca geliştiricidedir ve yalnızca destek, hata teşhisi ve yasal yükümlülükler için kullanılır. Yönetim paneli (yetkisi sunucuda denetlenir) hata kayıtlarını, oturum açma güvenlik kayıtlarını, kayıt hunisini ve hesap bilgisini (e-posta, ad, varlık sayısı) gösterir; portföy içeriğini göstermez</li>
@@ -556,7 +593,7 @@ button:hover { opacity: 0.9; }
 <p>Çıkış yaptığınızda oturum token'ı, size ait önbellek ve tercihler ile widget verisi cihazdan silinir. Uygulamada Firebase Analytics (kullanım istatistiği) ve Crashlytics (hata raporu) bulunur (bkz. §3.5); reklam SDK'sı ve reklam kimliği yoktur. Ayrıntı: Çerez ve Yerel Depolama Politikası.</p>
 <hr />
 <h2>12. Yatırım Tavsiyesi Reddi (Disclaimer)</h2>
-<p><strong>sandık</strong> bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal, grafikler, piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı) ve yapay zekâ ile hazırlanan varlık notları bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.</p>
+<p><strong>sandık</strong> bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal, grafikler, piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı), yapay zekâ ile hazırlanan varlık notları ve portföy yorumları bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.</p>
 <p>Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.</p>
 <hr />
 <h2>13. Politikada Değişiklikler</h2>
@@ -570,9 +607,9 @@ button:hover { opacity: 0.9; }
 <h2>14. İletişim</h2>
 <p>Veri korumayla ilgili tüm soru, talep ve şikayetler için:</p>
 <ul>
-<li><strong>E-posta:</strong> <code>sandikapp.destek@gmail.com</code></li>
+<li><strong>E-posta:</strong> <code>support@murphysoft.app</code></li>
 <li><strong>Adres:</strong> <code>İstanbul, Türkiye</code></li>
-<li><strong>Veri Koruma Sorumlusu (DPO):</strong> Atanmamıştır. Veri koruma iletişimi: <code>sandikapp.destek@gmail.com</code></li>
+<li><strong>Veri Koruma Sorumlusu (DPO):</strong> Atanmamıştır. Veri koruma iletişimi: <code>support@murphysoft.app</code></li>
 </ul>
 <hr />
 <p><em>Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.</em></p>

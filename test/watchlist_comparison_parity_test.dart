@@ -53,7 +53,9 @@ void main() {
 
     test('arama sayfasında gerçek bir sekme var', () {
       expect(karsilastir.contains('class _SheetTabs'), isTrue);
-      expect(karsilastir.contains("'Varlıklar', 'Ortaklar'"), isTrue);
+      // Sekme adları 2026-10-12'den beri l10n'dan gelir (Varlıklar / Ortaklar).
+      expect(karsilastir.contains('l10n.searchTabAssets'), isTrue);
+      expect(karsilastir.contains('l10n.scopePartners'), isTrue);
     });
 
     test('ortak portföyleri artık sorguya BAĞLI DEĞİL', () {

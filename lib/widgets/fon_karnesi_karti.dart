@@ -8,6 +8,7 @@ import '../services/analytics_service.dart';
 import '../services/fon_karnesi.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'sandik_skeleton.dart';
 
 /// Fon karnesi kartı (F4, 2026-09-29) — fonun kendi kategorisindeki yeri.
 ///
@@ -54,8 +55,13 @@ class _FonKarnesiKartiState extends ConsumerState<FonKarnesiKarti> {
   // Olay kart başına BİR kez: kaydırma/yeniden çizim sayıyı şişirmesin.
   bool _bildirildi = false;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SandikBelirme(child: _belirenGovde(context));
+
+  Widget _belirenGovde(BuildContext context) {
     if (!ref.watch(fonKarnesiAcikProvider)) return const SizedBox.shrink();
     final kod = fonKoduOf(tur: widget.tur, ticker: widget.ticker);
     if (kod == null) return const SizedBox.shrink();
@@ -85,6 +91,11 @@ class _FonKarnesiKartiState extends ConsumerState<FonKarnesiKarti> {
                   style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600, color: context.c.text90),
                 ),
+                if (karne.riskDegeri case final risk?)
+                  if (karne.riskSeviyesi case final seviye?) ...[
+                    const SizedBox(height: SandikSpace.xs),
+                    _RiskSatiri(deger: risk, seviye: seviye),
+                  ],
                 for (final d in karne.donemler) ...[
                   const SizedBox(height: SandikSpace.smd),
                   Divider(height: 1, thickness: 1, color: context.c.hairline),
@@ -100,6 +111,31 @@ class _FonKarnesiKartiState extends ConsumerState<FonKarnesiKarti> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Risk değeri 4/7 · orta" (2026-11-07). Anlam sayı ve kelimeyle verilir,
+/// renk yok: renk körü kullanıcı da aynı bilgiyi alır, karnenin tek renkli
+/// öğesi (ortancaya fark) gözde öne çıkmaya devam eder. Ekran okuyucu "/7"
+/// ve "·"yi kötü okur; ona tam cümle verilir.
+class _RiskSatiri extends StatelessWidget {
+  const _RiskSatiri({required this.deger, required this.seviye});
+
+  final int deger;
+  final RiskSeviyesi seviye;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final kelime = riskSeviyesiAdi(l10n, seviye);
+    return Semantics(
+      label: l10n.fundReportRiskSemantics('$deger', kelime),
+      excludeSemantics: true,
+      child: Text(
+        l10n.fundReportRisk('$deger', kelime),
+        style: context.t.bodyMedium?.copyWith(color: context.c.text58),
       ),
     );
   }
@@ -165,8 +201,13 @@ class FonKarnesiSatiri extends ConsumerWidget {
   final AssetType tur;
   final String ticker;
 
+  // Veri gelince yükseklik akarak belirir
+  // (2026-10-14; bkz. [SandikBelirme]).
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SandikBelirme(child: _belirenGovde(context, ref));
+
+  Widget _belirenGovde(BuildContext context, WidgetRef ref) {
     if (!ref.watch(fonKarnesiAcikProvider)) return const SizedBox.shrink();
     final kod = fonKoduOf(tur: tur, ticker: ticker);
     if (kod == null) return const SizedBox.shrink();
@@ -190,6 +231,12 @@ String donemAdi(AppLocalizations l10n, KarneDonemi d) => switch (d) {
       KarneDonemi.ay1 => l10n.fundReportPeriod1m,
       KarneDonemi.yilBasi => l10n.fundReportPeriodYtd,
       KarneDonemi.yil1 => l10n.fundReportPeriod1y,
+    };
+
+String riskSeviyesiAdi(AppLocalizations l10n, RiskSeviyesi s) => switch (s) {
+      RiskSeviyesi.dusuk => l10n.fundReportRiskLow,
+      RiskSeviyesi.orta => l10n.fundReportRiskMedium,
+      RiskSeviyesi.yuksek => l10n.fundReportRiskHigh,
     };
 
 /// Fon sayısı — binlik ayraçlı (katalog 1.069 fon; kategori de büyüyebilir).

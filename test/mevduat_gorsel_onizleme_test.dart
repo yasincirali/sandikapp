@@ -19,8 +19,8 @@ import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Mevduat banka seçicinin (bayrak `mevduat_banka_secici`) önce/sonra
-/// görselleri — `build/gorsel/`. Assert etmez (`gorsel` etiketi CI'da
+/// Mevduat banka seçicinin görselleri (bayrak `mevduat_banka_secici`
+/// 2026-10-20'de emekliye ayrıldı; "önce" karesi eski formla birlikte kalktı) — `build/gorsel/`. Assert etmez (`gorsel` etiketi CI'da
 /// atlanır). Elle: flutter test --tags gorsel test/mevduat_gorsel_onizleme_test.dart
 ///
 /// Faiz ortalaması ÖRNEK veridir (TCMB değeri değil): görsel, formun
@@ -67,11 +67,9 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Future<void> ciz(WidgetTester tester, String ad,
-      {required bool bayrak,
-      bool acik = false,
+      {bool acik = false,
       double yukseklik = 1180,
       Future<void> Function()? sonra}) async {
-    RemoteConfigService.testAcik = bayrak ? {'mevduat_banka_secici'} : {};
     tester.view.physicalSize = Size(390 * 2, yukseklik * 2);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(tester.view.reset);
@@ -134,16 +132,8 @@ void main() {
     await bekle(tester);
   }
 
-  testWidgets('önce: bugünkü form', (tester) async {
-    await ciz(tester, '1_once', bayrak: false, sonra: () async {
-      await tester.enterText(find.byType(TextField).first, 'Akbank');
-      await tester.enterText(find.byType(TextField).at(1), '250.000');
-      FocusManager.instance.primaryFocus?.unfocus();
-    });
-  });
-
   testWidgets('sonra: banka seçici', (tester) async {
-    await ciz(tester, '2_secici', bayrak: true, yukseklik: 844,
+    await ciz(tester, '2_secici', yukseklik: 844,
         sonra: () async {
       await tester.tap(find.byType(TextField).first);
       await bekle(tester);
@@ -151,12 +141,12 @@ void main() {
   });
 
   testWidgets('sonra: banka seçildi, faiz önerildi, not', (tester) async {
-    await ciz(tester, '3_doldu', bayrak: true,
+    await ciz(tester, '3_doldu',
         sonra: () => doldur(tester, 'Akbank'));
   });
 
   testWidgets('sonra: kendi oranı', (tester) async {
-    await ciz(tester, '4_elle', bayrak: true, sonra: () async {
+    await ciz(tester, '4_elle', sonra: () async {
       await doldur(tester, 'Akbank');
       await tester.enterText(find.byType(TextField).at(2), '45');
       FocusManager.instance.primaryFocus?.unfocus();
@@ -164,12 +154,12 @@ void main() {
   });
 
   testWidgets('sonra: katılım bankası', (tester) async {
-    await ciz(tester, '5_katilim', bayrak: true,
+    await ciz(tester, '5_katilim',
         sonra: () => doldur(tester, 'Kuveyt Türk'));
   });
 
   testWidgets('sonra: açık tema', (tester) async {
-    await ciz(tester, '6_acik', bayrak: true, acik: true,
+    await ciz(tester, '6_acik', acik: true,
         sonra: () => doldur(tester, 'Garanti BBVA'));
   });
 }

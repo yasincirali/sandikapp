@@ -6,7 +6,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/sozlesme.dart';
+import 'package:portfoy_takip/providers/fon_karnesi_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/services/tefas_service.dart';
 import 'package:portfoy_takip/providers/sozlesme_provider.dart';
 import 'package:portfoy_takip/utils/money_format.dart';
 import 'package:portfoy_takip/widgets/mevduat_vade_seridi.dart';
@@ -81,7 +83,10 @@ void main() {
   );
 
   Future<void> ac(WidgetTester tester, Asset varlik,
-      {double olcek = 1, MevduatDonemi? donem, Widget? govde}) async {
+      {double olcek = 1,
+      MevduatDonemi? donem,
+      Widget? govde,
+      List<TefasFund> katalog = const []}) async {
     await initializeDateFormatting('tr_TR');
     tester.view.physicalSize = const Size(320 * 3, 1400 * 3);
     tester.view.devicePixelRatio = 3.0;
@@ -89,6 +94,8 @@ void main() {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         portfolioProvider.overrideWith(() => _Portfoy(lotlar)),
+        // Fon kısa adları katalogdan (2026-10-29); test ağa çıkmasın.
+        fonKatalogProvider.overrideWith((ref) async => katalog),
         sozlesmeProvider.overrideWith(() => _Sozlesmeler(SozlesmeState(
               sozlesmeler: {mid: mevduat, bid: bes},
               donemler: {
@@ -172,6 +179,35 @@ void main() {
         reason: '7. yıl: %35, $sure sonra %60');
     expect(find.text('Bu ayın katkısı henüz eklenmedi.'), findsOneWidget);
     expect(find.text('Bu ayın katkısını ekle'), findsOneWidget);
+  });
+
+  // Fon dağılımı bölümü (2026-10-29, yasin: "içerden varlık dağılımı
+  // değiştirilebilmeli"): fon fon pay + tutar, katkı talimatı ayrı satır,
+  // "Fon değiştir" bölümün altında ve TEK.
+  testWidgets('BES: fon dağılımı bölümü, kısa ad ve tek "Fon değiştir"',
+      (tester) async {
+    await ac(tester, lotlar[1], katalog: const [
+      TefasFund(
+          code: 'AH5',
+          name: 'ANADOLU HAYAT EMEKLİLİK A.Ş. ALTIN KATILIM EMEKLİLİK '
+              'YATIRIM FONU',
+          price: 0,
+          fundType: 'EMK',
+          managerName: ''),
+    ]);
+    expect(find.text('Fon dağılımı'), findsOneWidget);
+    expect(find.text('AH5'), findsOneWidget);
+    expect(find.text('AEK'), findsOneWidget);
+    expect(find.text('Altın Katılım'), findsOneWidget);
+    expect(find.text('Devlet katkısı'), findsOneWidget);
+    expect(find.text('Yeni katkılar: AH5 %100'), findsOneWidget);
+    expect(find.text('Fon değiştir'), findsOneWidget);
+    // 10000×0,03 = ₺300 ve 2000×0,03 = ₺60 → %83 / %17.
+    expect(find.textContaining('%83'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Fon değiştir')).dy,
+      greaterThan(tester.getTopLeft(find.text('AEK')).dy),
+    );
   });
 
   for (final i in [0, 1]) {

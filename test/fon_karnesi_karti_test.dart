@@ -15,7 +15,8 @@ import 'helpers/kaynak.dart';
 /// provider override'larıyla verilir — testte ağ yok.
 const _hisse = 'Hisse Senedi Şemsiye Fonu';
 
-TefasFund _fon(String kod, double? yil1, {double? ay1, double? yb}) =>
+TefasFund _fon(String kod, double? yil1,
+        {double? ay1, double? yb, int? risk}) =>
     TefasFund(
       code: kod,
       name: '$kod Fonu',
@@ -25,6 +26,7 @@ TefasFund _fon(String kod, double? yil1, {double? ay1, double? yb}) =>
       return1m: ay1,
       return1y: yil1,
       returnYtd: yb,
+      riskLevel: risk,
       kategori: _hisse,
     );
 
@@ -77,7 +79,7 @@ void main() {
   testWidgets('kart: kategori, sıra, ortanca ve puan farkı', (t) async {
     await _kur(t, kart);
     expect(find.byType(SandikCard), findsOneWidget);
-    expect(find.text('FON KARNESİ'), findsOneWidget);
+    expect(find.text('Fon karnesi'), findsOneWidget);
     expect(find.text('$_hisse · 4 fon'), findsOneWidget);
     expect(find.text('1 yıl'), findsOneWidget);
     expect(find.text('Yılbaşından beri'), findsOneWidget);
@@ -94,7 +96,7 @@ void main() {
   testWidgets('bayrak kapalıyken hiçbir şey çizilmez', (t) async {
     await _kur(t, kart, acik: false);
     expect(find.byType(SandikCard), findsNothing);
-    expect(find.text('FON KARNESİ'), findsNothing);
+    expect(find.text('Fon karnesi'), findsNothing);
   });
 
   testWidgets('fon değilse ya da karne kurulamıyorsa çizilmez', (t) async {
@@ -155,5 +157,35 @@ void main() {
         contains('FonKarnesiKarti('));
     expect(ekranKaynagiSync('lib/screens/portfolio_screen.dart'),
         contains('FonKarnesiSatiri('));
+  });
+
+  group('risk satırı (2026-11-07)', () {
+    final riskli = [
+      _fon('AAA', 50, ay1: 1, yb: 20),
+      _fon('BBB', 40, ay1: 3, yb: 10),
+      _fon('CCC', 30, ay1: 2, yb: 30, risk: 4),
+      _fon('DDD', 10, ay1: 4, yb: 5),
+    ];
+
+    testWidgets('değer varsa sayı ve kelimeyle yazılır, etiket tam cümle',
+        (t) async {
+      final h = t.ensureSemantics();
+      await _kur(t, kart, katalog: riskli);
+      expect(find.text('Risk değeri 4/7 · orta'), findsOneWidget);
+      expect(find.bySemanticsLabel('Risk değeri 7 üzerinden 4, orta'),
+          findsOneWidget);
+      h.dispose();
+    });
+
+    testWidgets('değer yoksa satır çizilmez', (t) async {
+      await _kur(t, kart);
+      expect(find.textContaining('Risk değeri'), findsNothing);
+    });
+
+    testWidgets('dipnot iki cümle', (t) async {
+      await _kur(t, kart);
+      expect(find.text('Kaynak: TEFAS. Geçmiş getiri geleceği göstermez.'),
+          findsOneWidget);
+    });
   });
 }

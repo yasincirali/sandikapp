@@ -308,12 +308,52 @@ class HistoryService {
   Future<List<(int, double)>> _yurtIciGetir(String sembol, DateTime gun) async {
     final key = '$sembol|${gun.toIso8601String()}';
     final c = _yurtIciCache[key];
+    final eldeki = Zone.current[_eldekiKipi];
+    if (eldeki is _SeriTazelikKaydi) return _yurtIciEldeki(key, c, eldeki);
     if (c != null && DateTime.now().difference(c.$1) < _yurtIciCacheTtl) {
       return c.$2;
     }
     final seri = await yurtIciKaynagi(sembol, gun);
     _yurtIciCache.removeWhere((k, _) => !k.endsWith('|${gun.toIso8601String()}'));
     _yurtIciCache[key] = (DateTime.now(), seri);
+    // Diskte de dursun: gün içi önce-eski-seri soğuk açılışta bu kaydı
+    // okur (2026-10-25). Anahtar GÜNÜ taşır — dünün kaydı bugün okunmaz.
+    // Boş kayıt yazılmaz (depo zaten yazmaz): "kayıt yok" ölçüm değildir.
+    final depo = kaliciDepo;
+    if (depo != null && seri.isNotEmpty && !DemoModu.aktif) {
+      CrashReporter.arkaPlan(depo.yaz('$_yurtIciDiskOneki$key', seri),
+          reason: 'history_service.yurtIciDiske');
+    }
+    return seri;
+  }
+
+  static const _yurtIciDiskOneki = 'yurtici|';
+
+  /// Eldeki-kipte yurt içi kayıt (önce-eski-seri GÜNLÜK, 2026-10-25): ağa
+  /// çıkmaz. Bellekteki kayıt (TTL'e bakmadan; anahtar zaten günü taşır)
+  /// ya da diskteki bugünün kaydı; ikisi de yoksa ya da ölçüldüğü an bugün
+  /// değilse bileşen EKSİK — eski seri gösterilmez. Kaydı atlayıp hesabı
+  /// sürdürmek altını ya da dövizi BAŞKA bir kaynaktan çizerdi (merdiven
+  /// `FiyatKaynagi.yurtIciGunIciSekli`), yani başka bir sayı.
+  Future<List<(int, double)>> _yurtIciEldeki(String key,
+      (DateTime, List<(int, double)>)? c, _SeriTazelikKaydi kayit) async {
+    var at = c?.$1;
+    var seri = c?.$2;
+    if (seri == null) {
+      final depo = kaliciDepo;
+      final k = depo == null || DemoModu.aktif
+          ? null
+          : await depo.okuKayit('$_yurtIciDiskOneki$key');
+      at = k?.at;
+      seri = k?.noktalar;
+    }
+    if (seri == null ||
+        at == null ||
+        !bayatKullanilirMi(range: '1d', olculdu: at)) {
+      kayit.eksik = true;
+      return const [];
+    }
+    kayit.bayat(at);
     return seri;
   }
 
@@ -330,6 +370,24 @@ class HistoryService {
     if (fonKodlari.isEmpty) return const {};
     final key = (fonKodlari.toList()..sort()).join(',');
     final at = _gozlemCacheAt;
+    // Eldeki-kip (önce-eski-seri GÜNLÜK, 2026-10-25): ağa çıkmaz. Yalnız
+    // bellekte bugün alınmış AYNI kümenin gözlemi kullanılır; yoksa bileşen
+    // EKSİK. Gözlemsiz hesap basamağı sabit saate çizerdi — başka bir seri.
+    // Diske yazılmaz (bkz. TECHNICAL_DEBT "önce-eski-seri"): soğuk açılışta
+    // TEFAS fonlu GÜNLÜK bu yüzden taze seriyi bekler.
+    final eldeki = Zone.current[_eldekiKipi];
+    if (eldeki is _SeriTazelikKaydi) {
+      final c = _gozlemCache;
+      if (c == null ||
+          key != _gozlemCacheKey ||
+          at == null ||
+          !bayatKullanilirMi(range: '1d', olculdu: at)) {
+        eldeki.eksik = true;
+        return const {};
+      }
+      eldeki.bayat(at);
+      return c;
+    }
     if (_gozlemCache != null &&
         key == _gozlemCacheKey &&
         at != null &&
@@ -405,7 +463,24 @@ class HistoryService {
     _bosYanitAt.clear();
     _ucusanIstekler.clear();
     _sonIyi.clear();
+    _sonIyiAt.clear();
     _yurtIciCache.clear();
+    // Gözlem de bellekte: "soğuk açılış" (oturum kapanışı, test) onu da
+    // bırakır; GÜNLÜK eldeki-kip yalnız bellekteki gözlemi kullanır.
+    instance._gozlemCache = null;
+    instance._gozlemCacheAt = null;
+  }
+
+  /// Sistem bellek uyarısında (`didHaveMemoryPressure`) çağrılır.
+  ///
+  /// Yalnızca süreli önbellek bırakılır; son iyi seri (`_sonIyi`), boş yanıt
+  /// kaydı ve uçuştaki istekler KALIR: kaynak yanıt vermezse grafik yine son
+  /// ölçülmüş seriyle çizilir, eşzamanlı istekler ikiye bölünmez. Sonraki
+  /// okuma aynı kaynaktan yeniden çeker; ekrandaki seriler kendi kopyalarını
+  /// tuttuğu için görünen hiçbir rakam değişmez.
+  static void bellekBaskisi() {
+    _cache.clear();
+    _cacheAt.clear();
   }
 
   /// TTL'in dolmasını taklit eder: taze önbellek ve negatif önbellek
@@ -442,10 +517,17 @@ class HistoryService {
   /// `main()` gerçek depoyu bağlar.
   static SeriDiskDepo? kaliciDepo;
 
+  /// [_sonIyi] girişinin ÖLÇÜLDÜĞÜ an: ağdan gelince `now`, diskten
+  /// okununca dosyanın yazıldığı an. Önce-eski-seri yolu tazelik sınırını
+  /// ([bayatKullanilirMi]) ve "son güncelleme" satırını buradan okur.
+  static final Map<String, DateTime> _sonIyiAt = {};
+
   static void _sonIyiYaz(String key, String sym, List<(int, double)> pts) {
     _sonIyi.remove(key);
     _sonIyi[key] = pts;
+    _sonIyiAt[key] = DateTime.now();
     while (_sonIyi.length > _cacheMaxEntries) {
+      _sonIyiAt.remove(_sonIyi.keys.first);
       _sonIyi.remove(_sonIyi.keys.first);
     }
     // Mevduat serisi ağdan gelmez, sözleşmeden hesaplanır (düşmez) ve
@@ -469,9 +551,15 @@ class HistoryService {
     if (seri == null) {
       final depo = kaliciDepo;
       if (depo == null || DemoModu.aktif) return const [];
-      seri = await depo.oku(key);
-      if (seri == null) return const [];
-      _sonIyi[key] = seri;
+      final kayit = await depo.okuKayit(key);
+      if (kayit == null) return const [];
+      // Disk okunurken ağdan taze seri gelmiş olabilir: onu ezme.
+      seri = _sonIyi[key];
+      if (seri == null) {
+        seri = kayit.noktalar;
+        _sonIyi[key] = seri;
+        _sonIyiAt[key] = kayit.at;
+      }
     }
     if (range == '1d' && !_bugunIcinde(seri)) return const [];
     return seri;
@@ -547,6 +635,31 @@ class HistoryService {
   @visibleForTesting
   static DateTime Function() gunIciSaat = DateTime.now;
 
+  /// GÜNLÜK (gün içi) dökümün ağa çıkmayan, eldeki son iyi serilerden
+  /// kurulan hâli (önce-eski-seri, 2026-10-25; bkz. [eldekiSeriyle]).
+  ///
+  /// Üç kaynağın üçü de eldeki-kipte: sembol serileri (`seriCek`, yalnız
+  /// bugünün kopyası — [_bugunIcinde] + [bayatKullanilirMi]), yurt içi kayıt
+  /// (bellek ya da diskteki BUGÜNÜN kaydı) ve TEFAS yayın gözlemi (yalnız
+  /// bellekte bugün alınmışsa). Biri yoksa `null`. Çizilen seans bugün
+  /// değilse de `null` (hafta sonu Cuma'yı çizen seri "bugünün" serisi
+  /// değil; GÜNLÜK eski seri yalnız bugünden).
+  Future<({PortfolioHistoryBreakdown sonuc, DateTime zaman})?>
+      getPortfolioHistoryHourlyBreakdownEldeki(List<Asset> assets) async {
+    final r = await eldekiSeriyle(
+        () => getPortfolioHistoryHourlyBreakdown(assets, 24));
+    if (r == null || r.sonuc.total.length < 2) return null;
+    final seans = r.sonuc.seansGunu;
+    final bugun = dayKey(gunIciSaat());
+    if (seans == null || dayKey(seans) != bugun) return null;
+    return r;
+  }
+
+  /// Dar/geniş pencere kararının "şimdi"si ([darPencereyiKapsar]) — eşitlik
+  /// testi sahte sağlayıcının saatini verir.
+  @visibleForTesting
+  static DateTime Function() pencereSaati = DateTime.now;
+
   static Future<List<(int, double)>> _agdanCek(
           String sym, String range, String? interval) =>
       interval == null
@@ -557,11 +670,41 @@ class HistoryService {
   ///
   /// Hata ve zaman aşımı BOŞ LİSTE döner (karar, istisna değil): çağıran
   /// yedek kaynağa ya da `currentPrice` seed'ine düşer.
+  ///
+  /// İki bölge kipi ([eldekiSeriyle], [tazelikle]) bu kapıda okunur; ikisi
+  /// de yoksa davranış birebir eskisi.
   Future<List<(int, double)>> seriCek(String sym, String range,
       {String? interval}) {
     final key = interval == null ? '${sym}_$range' : '${sym}_${range}_$interval';
-    // Gün içi seriler daha çabuk eskir (bkz. `_intradayCacheTtl`).
-    final cached = _cacheGet(key, ttl: range == '1d' ? _intradayCacheTtl : null);
+    final eldeki = Zone.current[_eldekiKipi];
+    if (eldeki is _SeriTazelikKaydi) {
+      return _eldekiSeri(key, range, interval, eldeki);
+    }
+    final cekim = _seriCekKapi(sym, range, interval, key);
+    final iz = Zone.current[_tazelikIzi];
+    if (iz is! _SeriTazelikKaydi) return cekim;
+    return cekim.then((pts) {
+      // Taze = süreli önbellekte (bu çekimden ya da TTL içindeki öncekinden).
+      // Değilse dönen dolu seri son iyi kopyadır: çekim boş, hatalı ya da
+      // zaman aşımlı döndü.
+      if (pts.isNotEmpty && _cacheGet(key, ttl: _seriTtl(range)) == null) {
+        iz.bayat(_sonIyiAt[key]);
+      }
+      // Hiç seri yok (ağ düştü, son iyi kopya da yok): hesap bu bileşeni
+      // `currentPrice` tohumuyla DÜZ çizer. Performans'ın disk kopyası bu
+      // sonucu "taze" sayıp yerine koymasın (`ZoomDataController`).
+      if (pts.isEmpty) iz.bosBilesen = true;
+      return pts;
+    });
+  }
+
+  /// Gün içi seriler daha çabuk eskir (bkz. `_intradayCacheTtl`).
+  static Duration? _seriTtl(String range) =>
+      range == '1d' ? _intradayCacheTtl : null;
+
+  Future<List<(int, double)>> _seriCekKapi(
+      String sym, String range, String? interval, String key) {
+    final cached = _cacheGet(key, ttl: _seriTtl(range));
     if (cached != null) return Future.value(cached);
 
     final bosAt = _bosYanitAt[key];
@@ -612,6 +755,138 @@ class HistoryService {
       _bosYanitAt[key] = DateTime.now();
       return _sonIyiOku(key, range);
     }
+  }
+
+  // ── ÖNCE ESKİ SERİ, SONRA TAZE (stale-while-revalidate, 2026-10-24) ─────
+  //
+  // Ar-Ge raporu 2026-10-24 §1 (YAP): soğuk açılışta bellek boş; varlık
+  // sayfası ve varlık grafiği ağ yanıtı gelene kadar (en çok 8 sn) iskelet
+  // gösteriyordu. Diskteki son iyi seri ise yalnız çekim DÜŞERSE okunuyordu.
+  // Şimdi ekran iki işi AYNI ANDA başlatır:
+  //   · [eldekiSeriyle]: aynı hesap, ama her `seriCek` ağa ÇIKMADAN yalnız
+  //     eldeki (bellek/disk) son iyi seriyi okur → soluk çizilir,
+  //   · [tazelikle]: normal çekim; dönen serinin son iyi kopyadan mı geldiğini
+  //     (ağ düştü) söyler → ekran "son güncelleme: …" yazar, sonsuza dek
+  //     soluk kalmaz.
+  //
+  // Neden `Zone`: hesap motoru (dönüşüm, altın merdiveni, portföy motoru)
+  // tek satır değişmeden iki kipte koşar; yeni bir "eldeki" kopyası
+  // yazılsaydı iki merdiven ayrışırdı (bu projede tekrar eden hata sınıfı).
+  //
+  // Uydurma sayı yok: gösterilen her nokta aynı kaynaktan ÖLÇÜLMÜŞ eski
+  // veridir. Bir bileşen eksik ya da çok eskiyse ([bayatKullanilirMi]) hiç
+  // gösterilmez — eksik bileşenle hesap başka bir sayı üretirdi (ör. spot
+  // altın yokken vadeli merdivene düşmek).
+  //
+  // Kapsam: tek varlık sayfası ve varlık detay grafiği (GÜNLÜK dahil,
+  // 2026-10-25: yurt içi kayıt ve TEFAS gözlemi de eldeki-kipte, bkz.
+  // [getPortfolioHistoryHourlyBreakdownEldeki]). Performans sekmesinin
+  // portföy serisi bu kipi KULLANMAZ: orada eski seri ile yeni lotlar
+  // karışabilirdi (rapor maddesi). O sekme 2026-10-25'ten beri ekranın son
+  // çizdiği portföy serisini lot defterinin parmak iziyle saklar ve yalnız
+  // aynı defterde soluk açar (`PortfoySeriDepo`) — motor ikinci kipte koşmaz.
+
+  static final Object _eldekiKipi = Object();
+  static final Object _tazelikIzi = Object();
+
+  /// Günlük/haftalık eski seri en fazla bu kadar eski olabilir (rapor:
+  /// "haftalar önceki bir seri soluk da olsa yanıltır"). Disk zaten 7
+  /// günden eskisini okumaz (`SeriDiskDepo.azamiYas`); kural burada da
+  /// açıkça durur ki depo sınırı değişirse ekran sessizce bayatlamasın.
+  static const bayatAzamiYas = Duration(days: 7);
+
+  /// Saatlik ve daha ince seri (1H dönemi): yedi günlük pencerede yedi
+  /// günlük eski seri pencerenin tamamını kaydırır. Bir gün.
+  static const bayatSaatlikAzamiYas = Duration(days: 1);
+
+  /// Eski seri gösterilebilir mi? Gün içi (`1d`) yalnız bugünün kopyası
+  /// ([_bugunIcinde], `_sonIyiOku` uygular); saatlik bir gün; kalanı yedi gün.
+  @visibleForTesting
+  static bool bayatKullanilirMi({
+    required String range,
+    String? interval,
+    required DateTime olculdu,
+    DateTime? simdi,
+  }) {
+    if (range == '1d') {
+      final s = simdi ?? gunIciSaat();
+      return olculdu.year == s.year &&
+          olculdu.month == s.month &&
+          olculdu.day == s.day;
+    }
+    final yas = (simdi ?? DateTime.now()).difference(olculdu);
+    final saatlik = interval == '1h' ||
+        interval == '15m' ||
+        interval == '1m' ||
+        (interval == null && range == '5d');
+    return yas <= (saatlik ? bayatSaatlikAzamiYas : bayatAzamiYas);
+  }
+
+  /// Eldeki-kipte `seriCek`: ağ yok, uçuşan istek/negatif önbellek kaydı yok.
+  Future<List<(int, double)>> _eldekiSeri(String key, String range,
+      String? interval, _SeriTazelikKaydi kayit) async {
+    final cached = _cacheGet(key, ttl: _seriTtl(range));
+    if (cached != null) return cached;
+    final seri = await _sonIyiOku(key, range);
+    final at = _sonIyiAt[key];
+    if (seri.isEmpty ||
+        at == null ||
+        !bayatKullanilirMi(range: range, interval: interval, olculdu: at)) {
+      kayit.eksik = true;
+      return const [];
+    }
+    kayit.bayat(at);
+    return seri;
+  }
+
+  static _SeriTazelikKaydi? _ustKayit() {
+    final e = Zone.current[_eldekiKipi];
+    if (e is _SeriTazelikKaydi) return e;
+    final t = Zone.current[_tazelikIzi];
+    return t is _SeriTazelikKaydi ? t : null;
+  }
+
+  /// [hesap]'ı (varsa) açık kipin AYRI bir kaydıyla koşar; çağıran sonucu
+  /// kullanırsa kaydı üstekine [_SeriTazelikKaydi.ekle] ile katar.
+  static Future<(T, _SeriTazelikKaydi?)> _altKayitla<T>(
+      Future<T> Function() hesap) async {
+    final eldeki = Zone.current[_eldekiKipi] is _SeriTazelikKaydi;
+    if (!eldeki && _ustKayit() == null) return (await hesap(), null);
+    final alt = _SeriTazelikKaydi();
+    final r = await runZoned(hesap,
+        zoneValues: {eldeki ? _eldekiKipi : _tazelikIzi: alt});
+    return (r, alt);
+  }
+
+  /// [hesap]'ı ağa çıkmadan, yalnız eldeki son iyi serilerle koşar.
+  ///
+  /// Dönen `zaman` kullanılan EN ESKİ bileşenin ölçüldüğü an. Bileşenlerden
+  /// biri yoksa ya da tazelik sınırını aşıyorsa `null` (ekran iskelette
+  /// kalır); hepsi zaten süreli önbellekteyse de `null` (taze yol anında
+  /// döner, eski kopyaya gerek yok).
+  static Future<({T sonuc, DateTime zaman})?> eldekiSeriyle<T>(
+      Future<T> Function() hesap) async {
+    final kayit = _SeriTazelikKaydi();
+    final sonuc =
+        await runZoned(hesap, zoneValues: {_eldekiKipi: kayit});
+    final zaman = kayit.enEski;
+    if (kayit.eksik || zaman == null) return null;
+    return (sonuc: sonuc, zaman: zaman);
+  }
+
+  /// [hesap]'ı normal koşar; dönen seri son iyi kopyadan geldiyse (ağ
+  /// boş/hatalı/zaman aşımı) `bayatZaman` o kopyanın ölçüldüğü an.
+  /// `bosBilesen`: bileşenlerden biri HİÇ gelmedi (son iyi kopyası da yok);
+  /// sonuç o bileşeni düz tohumla taşır, tam ölçüm değildir.
+  static Future<({T sonuc, DateTime? bayatZaman, bool bosBilesen})>
+      tazelikle<T>(Future<T> Function() hesap) async {
+    final kayit = _SeriTazelikKaydi();
+    final sonuc = await runZoned(hesap, zoneValues: {_tazelikIzi: kayit});
+    return (
+      sonuc: sonuc,
+      bayatZaman: kayit.enEski,
+      bosBilesen: kayit.bosBilesen,
+    );
   }
 
   /// Verilen varlıkların ilgili periyot için (örn. 365 gün) geçmiş fiyatlarını
@@ -1477,20 +1752,29 @@ class HistoryService {
     // uç taşıması da gerekmez. Karar `FiyatKaynagi.yurtIciGunIciSekli`'nde.
     //
     // Hafta içi seri canlıyken sorgu HİÇ atılmaz; davranış birebir eski.
+    //
+    // Altın bu bayraktan bağımsız: GÜNLÜK'ü hafta içi de kayıttan kurulur
+    // (`FiyatKaynagi.altinYurtIciGunlukMu`, 2026-10-19 — aynı portföy iki
+    // açılışta zıt işaret gösteriyordu).
     final yurtIciSlots = <String, Map<int, double>>{};
-    if (yurtIciSekilAcik()) {
-      final adaylar = <String, Map<int, double>>{};
-      for (final a in assets) {
-        if (!a.isBuy || a.quantity <= 0) continue;
-        if (!FiyatKaynagi.yurtIciKayitli(a.ticker)) continue;
-        if (a.type == AssetType.altin) {
-          adaylar[a.ticker] = goldSlots;
-        } else if (a.type == AssetType.doviz) {
-          adaylar[a.ticker] = tickerSlots[a.ticker] ?? const {};
+    // Bayraktan bağımsız kayıtla çizilen altınlar — geçmiş seans çizilirken
+    // (kayıt yalnızca bugünü taşır) eski yola bırakılır.
+    final altinKaydiZorunlu = <String>{};
+    final dovizKaydi = yurtIciSekilAcik();
+    final adaylar = <String, ({Map<int, double> seri, bool herZaman})>{};
+    for (final a in assets) {
+      if (!a.isBuy || a.quantity <= 0) continue;
+      if (!FiyatKaynagi.yurtIciKayitli(a.ticker)) continue;
+      if (FiyatKaynagi.altinYurtIciGunlukMu(a)) {
+        adaylar[a.ticker] = (seri: goldSlots, herZaman: true);
+      } else if (dovizKaydi && a.type == AssetType.doviz) {
+        final seri = tickerSlots[a.ticker] ?? const <int, double>{};
+        if (FiyatKaynagi.uluslararasiSustu(seri, now)) {
+          adaylar[a.ticker] = (seri: seri, herZaman: false);
         }
       }
-      adaylar.removeWhere(
-          (_, seri) => !FiyatKaynagi.uluslararasiSustu(seri, now));
+    }
+    if (adaylar.isNotEmpty) {
       final gunBasi = dayKey(now);
       final kayitlar = await Future.wait([
         for (final s in adaylar.keys) _yurtIciGetir(s, gunBasi),
@@ -1498,12 +1782,16 @@ class HistoryService {
       var i = 0;
       for (final e in adaylar.entries) {
         final sekil = FiyatKaynagi.yurtIciGunIciSekli(
-          uluslararasi: e.value,
+          uluslararasi: e.value.seri,
           yurtIci: kayitlar[i++],
           simdi: now,
           normalize: normalizeSlot,
+          herZaman: e.value.herZaman,
         );
-        if (sekil != null) yurtIciSlots[e.key] = sekil;
+        if (sekil != null) {
+          yurtIciSlots[e.key] = sekil;
+          if (e.value.herZaman) altinKaydiZorunlu.add(e.key);
+        }
       }
     }
 
@@ -1786,7 +2074,10 @@ class HistoryService {
     //
     // Seed önceliği:
     //   1. Yahoo intraday map'inin en erken (bugüne ait ilk) noktası —
-    //      dünkü kapanışa en yakın değer.
+    //      dünkü kapanışa en yakın değer. Hisse/ETF/endekste bu nokta
+    //      artık dünkü kapanışın KENDİSİ (`yahooSeriCoz`, 2026-10-30):
+    //      ilk bar gün başı sayılınca açılış sıçraması hiçbir "bugün"
+    //      yüzeyine girmiyordu.
     //   2. Yoksa currentPrice (canlı — genelde intraday map ile aynı
     //      mertebede).
     double? assetSeedTRY(Asset a) {
@@ -1951,7 +2242,10 @@ class HistoryService {
           expected++;
           double? v;
 
-          final yurtIci = yurtIciSlots[a.ticker];
+          final yurtIci =
+              gecmisSeans && altinKaydiZorunlu.contains(a.ticker)
+                  ? null
+                  : yurtIciSlots[a.ticker];
           if (yurtIci != null) {
             // Ekrandaki kotasyonun kendi kaydı: birim fiyat doğrudan TL.
             // Kayıttan önceki slot (gece yarısını geçen ilk tur gelmeden)
@@ -2392,6 +2686,9 @@ class HistoryService {
       for (final p in pts) {
         map[tier.normalizeTs(p.$1)] = p.$2;
       }
+      // Eldeki-kip (`eldekiSeriyle`) eski seriyi TAZE gibi önbelleğe
+      // yazmasın: aynı anda koşan taze hesap onu okuyup ağa çıkmazdı.
+      if (Zone.current[_eldekiKipi] != null) return map;
       // Yeniden ekle: `Map` ekleme sırasını korur, bu yüzden var olan
       // anahtarı önce SİLMEZSEK LRU sırası güncellenmez ve sık kullanılan
       // bir giriş en eski sayılıp atılabilir.
@@ -2878,8 +3175,36 @@ class HistoryService {
     if (sym.isEmpty) return {};
 
     final tier = cozunurluk ?? tierForPeriod(periodDays);
-    final range = rangeForPeriod(periodDays);
+    final darRange = rangeForPeriod(periodDays);
+    // Aynı katmanın geniş penceresinden kırp ([kaynakDonemGunu]); kırpılmış
+    // seri dar isteğin kapsadığı pencerenin içindeyse ([darPencereyiKapsar])
+    // ikisi birebir aynıdır, dar istek atılmaz. Değilse (hafta sonu, uzun
+    // tatil, boş yanıt) dar istek eskisi gibi atılır. Çözünürlük açıkça
+    // verildiyse (kıyas kartı, sinyal serisi) yalnız dar yol.
+    if (cozunurluk == null) {
+      final genisRange = rangeForPeriod(kaynakDonemGunu(sym, periodDays));
+      if (genisRange != darRange) {
+        // Geniş deneme kendi tazelik kaydıyla: dar isteğe düşülürse onun
+        // bayatlığı/eksiği ekrana yansımasın (bkz. [eldekiSeriyle]).
+        final (kirpilmis, kayit) = await _altKayitla(
+            () => _sembolSerisi(sym, periodDays, tier, genisRange));
+        if (!(kayit?.eksik ?? false) &&
+            darPencereyiKapsar(kirpilmis,
+                darRange: darRange,
+                simdi: pencereSaati(),
+                haftalik: tier == ResolutionTier.weekly)) {
+          if (kayit != null) _ustKayit()?.ekle(kayit);
+          return kirpilmis;
+        }
+      }
+    }
+    return _sembolSerisi(sym, periodDays, tier, darRange);
+  }
 
+  /// [getSymbolHistory]'nin gövdesi: [range] penceresinden çekip çevirir ve
+  /// [periodDays]'e kırpar.
+  Future<Map<int, double>> _sembolSerisi(
+      String sym, int periodDays, ResolutionTier tier, String range) async {
     // Interval'i KATMAN belirler, range değil. Eskiden interval
     // `PriceService._intervalFor(range)`'dan türüyordu ve katmanla
     // çelişebiliyordu: `days<=2` beş dakikalık bucket isterken ağdan saatlik
@@ -2959,13 +3284,141 @@ class HistoryService {
     return clipToPeriod(out, periodDays);
   }
 
+  /// [getSymbolHistory] eski seri + taze çekim tazeliği (bkz. [tazelikle]).
+  /// `bayatZaman` doluysa ağ düştü ve seri son iyi kopyadan geldi.
+  Future<({Map<int, double> seri, DateTime? bayatZaman})>
+      getSymbolHistoryTazelikli(String symbol, {required int periodDays}) async {
+    final r = await tazelikle(
+        () => getSymbolHistory(symbol, periodDays: periodDays));
+    return (seri: r.sonuc, bayatZaman: r.sonuc.isEmpty ? null : r.bayatZaman);
+  }
+
+  /// [getSymbolHistory]'nin ağa çıkmayan, eldeki son iyi serilerden kurulan
+  /// hâli (bkz. [eldekiSeriyle]). Yoksa, eskiyse ya da iki noktadan kısaysa
+  /// `null`.
+  Future<({Map<int, double> seri, DateTime zaman})?> getSymbolHistoryEldeki(
+      String symbol, {required int periodDays}) async {
+    final r = await eldekiSeriyle(
+        () => getSymbolHistory(symbol, periodDays: periodDays));
+    if (r == null || r.sonuc.length < 2) return null;
+    return (seri: r.sonuc, zaman: r.zaman);
+  }
+
+  /// Dönemin serisinin hangi PENCEREDEN kırpılabileceği (gün) — Ar-Ge
+  /// 2026-10-24 §3, rapor §2 YAP: "7 dönem için 7 yerine 4 istek".
+  ///
+  /// Varlık sayfası yedi dönemi aynı anda ister ve aynı katmandaki dönemler
+  /// aynı veriyi farklı pencerelerle tekrar çekiyordu: 1A (`1mo|1d`) 3A'nın
+  /// (`3mo|1d`) içinde; 6A ve 1Y (`6mo|1wk`, `1y|1wk`) 5Y'nin (`5y|1wk`)
+  /// içinde. Katman (interval) DEĞİŞMEZ, yalnız range genişler. Paralel
+  /// çağrı kararı (2026-09-28) korunur. Varlık detayı haftalıkta zaten `5y`
+  /// kullandığı için önbellek iki ekran arasında paylaşılır.
+  ///
+  /// ## Nokta eşitliği şartı (`donem_kovasi_esitlik_test`)
+  /// Rapor: "kırpılmış seri bugünkü ayrı istekle birebir aynı olmalı (ilk mum
+  /// hizası dahil); eşit değilse o dönem ayrı istekte kalsın." Kırpma son
+  /// VERİ noktasına çapalanır, dar istek ise `simdi`'den takvimle geri sayar
+  /// (Yahoo ilk mumu kısmi verip `period1`'e damgalar — ölçüm 2026-09-03:
+  /// `6mo|1wk` 28, `1y|1wk` 54 nokta, yalnız bu modelle tutuyor). İkisi
+  /// çoğu gün aynı pencereyi verir, ama son nokta `simdi`'den gerideyse
+  /// (hafta sonu, tatil) ya da ay kısaysa (Mart'ta `1mo` = 28 gün) dar
+  /// istek pencerenin ilk bir-iki mumunu GETİRMEZ. Bu yüzden geniş seri
+  /// koşulsuz kullanılmaz: [darPencereyiKapsar] kırpılmış serinin ilk
+  /// noktası dar isteğin başlangıcından sonra mı diye bakar; öyleyse dar
+  /// isteğin mumları geniş serinin aynı mumlarıdır (birebir), değilse dar
+  /// istek ayrıca atılır. Hafta içi 7 dönem 4 istekle gelir; hafta sonu
+  /// 1A ve 1Y çoğunlukla kendi isteğine düşer (5-6 istek).
+  ///
+  /// ## Hiç birleştirilmeyenler (eşitlik kurulamıyor)
+  ///   · Kripto: Binance `startTime`'dan SONRAKİ ilk tam mumu verir, kısmi
+  ///     mum yok; sunucu `1y`'yi 366 gün sayar. Dar pencere başı geniş
+  ///     serinin kesiminden bağımsız kayar.
+  ///   · Altın (`ALTIN_*`): spot/vadeli seçimi pencerenin SÜRESİNE bakar
+  ///     ([altinGramSerisi], %80 kapsam); 5 yıllık pencerede spot yetersiz
+  ///     kalıp vadeliye düşerse 6A başka bir kaynaktan çizilirdi.
+  ///   · Eurobond: sunucu serisinin geniş penceredeki sınırı ölçülmedi.
+  ///   · Mevduat: seri sözleşmeden, pencere BAŞINDAN adım adım üretilir;
+  ///     haftalık adımın günü pencereyle kayar, değerler eşleşmez.
+  /// TEFAS ağ katmanında zaten aynı kovadan (`tefasGecmisKovasi`) aynı ham
+  /// yanıtı paylaşıyor; burada da eşit.
+  @visibleForTesting
+  static int kaynakDonemGunu(String sym, int periodDays) {
+    final s = sym.trim().toUpperCase();
+    if (s.startsWith('ALTIN_') ||
+        FiyatKaynagi.kriptoMu(s) ||
+        FiyatKaynagi.eurobondMu(s) ||
+        s.startsWith(mevduatOneki)) {
+      return periodDays;
+    }
+    switch (tierForPeriod(periodDays)) {
+      case ResolutionTier.daily:
+        return rangeForPeriod(periodDays) == '1mo' ? 90 : periodDays;
+      case ResolutionTier.weekly:
+        return 1825;
+      default:
+        return periodDays;
+    }
+  }
+
+  /// Geniş pencereden kırpılmış seri, dar isteğin ([darRange]) vereceği
+  /// seriyle birebir aynı mı?
+  ///
+  /// Sağlayıcı pencereyle ÖRTÜŞEN her barı verir (ölçülen model: dar
+  /// pencerenin ilk haftalık mumu kısmi, `period1`'e damgalı). Bu yüzden:
+  ///   · günlükte kırpılmış serinin ilk GÜNÜ dar pencerenin başlangıç
+  ///     gününden önce değilse kesimdeki her gün dar pencerede de var,
+  ///   · haftalıkta ([haftalik]) ilk nokta haftanın PAZARTESİSİDİR; dar
+  ///     pencerenin başı o haftanın içine düşse de dar istek o haftayı kısmi
+  ///     ilk mum olarak verir, kapanışı haftanın kapanışıdır (aynı sayı).
+  ///     Koşul: o haftanın cuması dar pencerenin başlangıç gününden önce
+  ///     değil (cumartesi/pazar başlayan dar pencerede o hafta YOKTUR — 1Y
+  ///     pazar günü).
+  /// İki seri aynı son noktaya çapalı. Koşul sağlanmazsa ya da seri iki
+  /// noktadan kısaysa `false` → dar istek.
+  @visibleForTesting
+  static bool darPencereyiKapsar(Map<int, double> kirpilmis,
+      {required String darRange,
+      required DateTime simdi,
+      bool haftalik = false}) {
+    if (kirpilmis.length < 2) return false;
+    final bas = darPencereBasi(darRange, simdi);
+    if (bas == null) return false;
+    final ilk = DateTime.fromMillisecondsSinceEpoch(
+        kirpilmis.keys.reduce((a, b) => a < b ? a : b));
+    final ilkGun = DateTime(ilk.year, ilk.month, ilk.day + (haftalik ? 4 : 0));
+    return !ilkGun.isBefore(dayKey(bas));
+  }
+
+  /// Dar isteğin başlangıcı — TEMKİNLİ (en geç olası) tahmin: takvimle
+  /// geri sayım ile sabit gün sayımının GEÇ olanı. Sağlayıcı pencereyi
+  /// hangisiyle sayarsa saysın gerçek başlangıç bundan geç olamaz; tahmin
+  /// yanılırsa sonuç yalnız gereksiz bir dar istektir, yanlış sayı değil.
+  @visibleForTesting
+  static DateTime? darPencereBasi(String range, DateTime simdi) {
+    final (ay, gun) = switch (range) {
+      '1mo' => (1, 30),
+      '3mo' => (3, 91),
+      '6mo' => (6, 181),
+      '1y' => (12, 365),
+      _ => (0, 0),
+    };
+    if (ay == 0) return null;
+    final hedef = DateTime(simdi.year, simdi.month - ay, 1);
+    final sonGun = DateTime(hedef.year, hedef.month + 1, 0).day;
+    final takvim = DateTime(hedef.year, hedef.month,
+        simdi.day > sonGun ? sonGun : simdi.day, simdi.hour, simdi.minute,
+        simdi.second);
+    final sabit = simdi.subtract(Duration(days: gun));
+    return takvim.isAfter(sabit) ? takvim : sabit;
+  }
+
   /// Sembol TRY cinsinden mi kote?
   ///
   /// BIST sembolleri `.IS` ile biter, TEFAS fonları `TEFAS:` önekli, TRY
   /// pariteleri `TRY=X` ile biter, kripto `KRIPTO:` önekli (sunucu TL
   /// verir). Kalan her şey (ABD hisseleri, emtia) USD kabul edilir —
   /// Yahoo'nun varsayılanı budur.
-  static bool _isTryQuoted(String sym) => FiyatKaynagi.tlKote(sym);
+  static bool _isTryQuoted(String sym) => FiyatKaynagi.cevrimsiz(sym);
 
   /// Periyoda uygun Yahoo range.
   ///
@@ -3318,4 +3771,31 @@ Map<int, double> smoothSpikes(
     }
   }
   return points;
+}
+
+/// Bir hesap boyunca `seriCek` çağrılarının tazelik kaydı (bkz.
+/// [HistoryService.eldekiSeriyle], [HistoryService.tazelikle]).
+class _SeriTazelikKaydi {
+  /// Kullanılan son iyi kopyalardan EN ESKİSİNİN ölçüldüğü an.
+  DateTime? enEski;
+
+  /// Eldeki-kipte bir bileşen yoktu ya da çok eskiydi.
+  bool eksik = false;
+
+  /// Taze kipte bir bileşenin çekimi boş döndü (son iyi kopya da yok).
+  /// [eksik]'ten ayrı: eldeki-kip kararlarına (geniş pencere denemesi)
+  /// karışmaz.
+  bool bosBilesen = false;
+
+  void bayat(DateTime? at) {
+    if (at == null) return;
+    final e = enEski;
+    if (e == null || at.isBefore(e)) enEski = at;
+  }
+
+  void ekle(_SeriTazelikKaydi alt) {
+    bayat(alt.enEski);
+    eksik = eksik || alt.eksik;
+    bosBilesen = bosBilesen || alt.bosBilesen;
+  }
 }

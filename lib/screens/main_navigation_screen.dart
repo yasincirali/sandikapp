@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 import '../theme/yazi_boyutu.dart';
 import '../widgets/hesap_secici.dart' show profilSekmesiUzunBasildi;
 import '../widgets/sekme_basa_don.dart';
-import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmKurAkisi;
+import '../widgets/tek_dokunus_alarm.dart';
+import '../providers/yuzde_alarmi_provider.dart';
 import '../widgets/review_prompt_sheet.dart';
 import '../widgets/tour_anchor.dart';
 import 'home_screen.dart';
@@ -17,6 +17,9 @@ import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
+import '../models/tekrar_al.dart' show birTaneDahaOnerilsinMi;
+import '../services/bugun_service.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../services/tazelik_ritmi.dart';
 import '../services/crash_reporter.dart';
 import '../services/notification_service.dart';
@@ -24,6 +27,10 @@ import '../services/remote_config_service.dart';
 import '../services/review_prompt_service.dart';
 import '../l10n/l10n.dart';
 import '../services/varlik_eklendi.dart';
+import '../services/ekran_olcumu.dart';
+import '../services/hizli_eylemler.dart';
+import 'genel_arama_screen.dart';
+import 'price_alerts_screen.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -38,6 +45,10 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   /// Alt menüdeki "Portföy" sekmesi `PortfolioScreen`'dir (indeks 1);
   /// "Performans" sekmesi `PortfolioPerformanceScreen` indeks 3'tedir.
   static const performansSekmesi = 3;
+
+  /// Portföy sekmesi (Varlıklarım | Takip Listesi) — iOS tek varlık
+  /// widget'ının dokunuşu buraya gider (`DeepLinkRouter.varlikWidgetHost`).
+  static const portfoySekmesi = 1;
 
   /// Profil sekmesi — yıllık özet afişi (`RecapBanner`) burada; yıl sonu
   /// anı bildirimi (0087) buraya gider.
@@ -88,11 +99,23 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // o yüzden dinleyiciyi bağlamakla yetinmeyip mevcut değeri de bir kez
     // okuyoruz. Yalnızca dinleseydik, uygulama kapalıyken yapılan dokunuş
     // sessizce kaybolurdu.
+    // Ekran ölçümü: açılış sekmesi de bir görüntülemedir.
+    EkranOlcumu.instance.sekmeDegisti(_currentIndex);
     MainNavigationScreen.sekmeIstegi.addListener(_sekmeIstegiGeldi);
     VarlikEklendi.kanal.addListener(_varlikEklendi);
     if (MainNavigationScreen.sekmeIstegi.value != null) {
       Future.microtask(_sekmeIstegiGeldi);
     }
+
+    // İkon kısayolu (bkz. `HizliEylemler`): sekme isteğiyle aynı desen —
+    // kabuk kurulmadan (kilit, giriş) gelen istek burada uygulanır.
+    HizliEylemler.istek.addListener(_hizliEylemGeldi);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      CrashReporter.arkaPlan(HizliEylemler.kur(context.l10n),
+          reason: 'MainNavigation.hizliEylemler');
+      _hizliEylemGeldi();
+    });
 
     // Ortak nabzın fiyat turu BURADAN bağlanır — tek sahip.
     //
@@ -101,10 +124,21 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // tazelenmesini o ekranın dönem seçimine borçluydu. Bu ekran oturum
     // boyunca ağaçta kalır; nabız her attığında önce bu tur koşar, sonra
     // yüzeyler aynı fiyatla tazelenir (bkz. `TazelikNabzi.fiyatTuruBagla`).
-    _fiyatTuruBagi = TazelikRitmi.nabiz.fiyatTuruBagla(() async {
-      if (!mounted) return;
-      await ref.read(portfolioProvider.notifier).refreshPrices(nabiz: true);
-    });
+    _fiyatTuruBagi = TazelikRitmi.nabiz.fiyatTuruBagla(
+      () async {
+        if (!mounted) return;
+        await ref.read(portfolioProvider.notifier).refreshPrices(nabiz: true);
+      },
+      // Yalnız borsa portföyü + seans dışı ya da yalnız fon/BES: tur 5 dk'da
+      // bir (gerekçe `TazelikRitmi.sakinTur`, kural `fiyatTuruSakinMi`).
+      sakinMi: () {
+        if (!mounted) return false;
+        final varliklar = ref.read(portfolioProvider).valueOrNull?.assets;
+        if (varliklar == null) return false;
+        return fiyatTuruSakinMi(varliklar,
+            seansAcik: BugunService.seansAcikMi(DateTime.now()));
+      },
+    );
 
     // İlk açılışta fiyatları yükle
     // Açılış turu artık SPLASH'ta koşar (`_AuthGateState._acilisiIsit`);
@@ -151,7 +185,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // birikir ve tek dokunuş birden çok kez işlenir.
     MainNavigationScreen.sekmeIstegi.removeListener(_sekmeIstegiGeldi);
     VarlikEklendi.kanal.removeListener(_varlikEklendi);
+    HizliEylemler.istek.removeListener(_hizliEylemGeldi);
     _fiyatTuruBagi?.call();
+    EkranOlcumu.instance.sekmelerKapandi();
     super.dispose();
   }
 
@@ -215,9 +251,44 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     });
   }
 
+  /// İkon kısayolu: isteği TÜKETİR ve ilgili ekranı açar. Açılan ekranlar
+  /// uygulamadaki giriş noktalarıyla aynı (Ekle düğmesi, Fiyat alarmları,
+  /// arama); kısayol yeni bir kapı açmaz. "Alarm kur" alarmlar ekranını
+  /// açar: soğuk açılışta portföy henüz yüklenmemiş olabilir, aday listesi
+  /// boş kalıp "önce varlık ekle" derdi; ekranın kendi "Alarm kur"
+  /// düğmesi listeyi hazır veriyle kurar.
+  void _hizliEylemGeldi() {
+    final e = HizliEylemler.istek.value;
+    if (e == null || !mounted) return;
+    HizliEylemler.istek.value = null;
+    switch (e) {
+      case HizliEylem.varlikEkle:
+        CrashReporter.arkaPlan(_showAddAsset(),
+            reason: 'MainNavigation.hizliEylem.ekle');
+      case HizliEylem.alarmKur:
+        pushGuarded(
+          context,
+          adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'price_alerts'),
+            builder: (_) => const PriceAlertsScreen(),
+          ),
+        );
+      case HizliEylem.arama:
+        pushGuarded(
+          context,
+          adaptiveRoute<void>(
+            settings: const RouteSettings(name: 'genel_arama'),
+            builder: (_) => const GenelAramaScreen(),
+            fullscreenDialog: true,
+          ),
+        );
+    }
+  }
+
   void _sekmeyeGec(int i) {
     setState(() => _currentIndex = i);
     MainNavigationScreen.aktifSekme.value = i;
+    EkranOlcumu.instance.sekmeDegisti(i);
   }
 
   void _onItemTapped(int index) {
@@ -258,12 +329,67 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final added = await pushGuarded<Object>(
       context,
       adaptiveRoute(
+        settings: const RouteSettings(name: 'add_asset'),
         builder: (_) => const AddAssetScreen(),
         fullscreenDialog: true,
       ),
     );
     if (!mounted) return;
-    if (added is AlarmAdayi) {
+    // "Bir tane daha ekle" (müşteri raporu 31 Eki 13:15, yasin "yap"):
+    // portföyünü KURAN kullanıcıda (kendi açık pozisyonu 5'ten az) kayıt
+    // sonu bildirimi alarm önerisi yerine Varlık Ekle'yi yeniden açar.
+    // Kural ve "neden koşullu" `birTaneDahaOnerilsinMi`'de. Bildirim, Portföy
+    // satırının parlamasından (`VarlikEklendi`) SONRA gelir: önce ödül anı,
+    // sonra sıradaki adım. Hareketi azalt açıkken bekleme sıfırdır
+    // (`SandikMotion.surfaceOf`), parlama da yoktur; yalnız bildirim kalır.
+    final durum = ref.read(portfolioProvider).valueOrNull;
+    if ((added == true || added is AlarmAdayi) &&
+        durum != null &&
+        birTaneDahaOnerilsinMi(durum.assets, sahip: durum.ownerId)) {
+      final bekle = SandikMotion.surfaceOf(context);
+      final l10n = context.l10n;
+      final mesaj = added is AlarmAdayi
+          ? l10n.varlikEklendiBirDaha(added.ad)
+          : l10n.varlikEklendiGenel;
+      CrashReporter.arkaPlan(
+        () async {
+          if (bekle > Duration.zero) await Future<void>.delayed(bekle);
+          if (!mounted) return;
+          sandikSnack(
+            context,
+            mesaj,
+            action: SnackBarAction(
+              label: l10n.birTaneDahaEkle,
+              onPressed: () {
+                if (!mounted) return;
+                CrashReporter.arkaPlan(_showAddAsset(),
+                    reason: 'main_navigation.birTaneDaha');
+              },
+            ),
+          );
+        }(),
+        reason: 'main_navigation.birTaneDahaSnack',
+      );
+    } else if (added is AlarmAdayi &&
+        yuzdeAlarmiOnerilsinMi(
+            added, ref.read(yuzdeAlarmlariProvider).valueOrNull ?? const [])) {
+      // Altın/döviz/kripto: soru snack'in kendisinde, "Kur" sayfa açmadan
+      // ±%2 yüzde alarmı kurar (Ar-Ge 29 Eki 12:45 #1).
+      sandikSnack(
+        context,
+        context.l10n.tekDokunusYuzdeOneri(added.ad),
+        action: SnackBarAction(
+          label: context.l10n.tekDokunusYuzdeKur,
+          onPressed: () {
+            if (!mounted) return;
+            CrashReporter.arkaPlan(
+              tekDokunusYuzdeAlarmiKur(context, ref, added),
+              reason: 'main_navigation.tekDokunusYuzde',
+            );
+          },
+        ),
+      );
+    } else if (added is AlarmAdayi) {
       sandikSnack(
         context,
         context.l10n.alarmSuggest(added.ad),
@@ -291,6 +417,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (added == true || added is AlarmAdayi) {
       setState(() => _currentIndex = _portfolioTab);
       MainNavigationScreen.aktifSekme.value = _portfolioTab;
+      EkranOlcumu.instance.sekmeDegisti(_portfolioTab);
     }
     CrashReporter.arkaPlan(
       ref.read(portfolioProvider.notifier).refreshPrices(),
@@ -315,31 +442,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  Future<void> _confirmExit() async {
-    final confirm = await showSandikConfirm(
-      context: context,
-      title: context.l10n.exitAppTitle,
-      message: context.l10n.exitAppMessage,
-      confirmLabel: context.l10n.exit,
-      destructive: true,
-    );
-    if (confirm) {
-      SandikHaptic.heavy.perform();
-      // Uygulamayı kapat. `Navigator.of(context).pop()` DEĞİL: kök
-      // navigator'da tek route varken pop hiçbir şey yapmıyordu — kullanıcı
-      // "Çık"a basıyor, uygulama açık kalıyordu. SystemNavigator.pop()
-      // Android'de aktiviteyi kapatır; iOS'ta HIG gereği no-op'tur (iOS'ta
-      // zaten sistem geri tuşu olmadığından bu diyalog açılmaz).
-      unawaited(SystemNavigator.pop());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Android geri tuşu (2026-10-20, Material kalıbı): başka sekmedeyken
+    // önce Ana sayfa'ya döner; Ana sayfa'da uygulamadan çıkar. Eskiden her
+    // sekmede "Çıkmak istiyor musun?" diyaloğu açılıyordu — Material'de
+    // kök ekranda onay bir karşı-kalıp ve `canPop: false` Android 14+
+    // öngörülü geri hareketini (ana ekrana kayan önizleme) kapatıyordu.
+    // iOS'ta sistem geri tuşu yok; davranış değişmez.
     return PopScope(
-      canPop: false,
+      canPop: _currentIndex == 0,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _confirmExit();
+        if (!didPop) _sekmeyeGec(0);
       },
       child: Scaffold(
         backgroundColor: context.c.background,
@@ -407,8 +521,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // yabancı duruyor. HitTestBehavior.opaque, Column'un boş kalan alanının
     // da dokunmayı yakalamasını sağlar (tam 60pt yükseklikte hedef).
     return Expanded(
-      child: SandikBasma(
-        behavior: HitTestBehavior.opaque,
+      child: SandikTappable(
+        soluk: true,
+        haptic: SandikHaptic.none,
         onTap: () => _onItemTapped(index),
         // Çoklu hesap: Profil sekmesine uzun basma hesap listesini açar
         // (Instagram). Çubuğun görünüşü değişmez; bayrak kapalıyken no-op.

@@ -183,7 +183,6 @@ class GorunumCipi extends StatelessWidget {
     final secim = await showSandikSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
@@ -394,7 +393,7 @@ class _Avatar extends StatelessWidget {
           style: (boy >= 32 ? context.t.titleMedium : context.t.labelSmall)
               ?.copyWith(
             color: context.c.onStatus,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             height: 1,
           ),
         ),
@@ -592,11 +591,11 @@ class _Satir extends StatelessWidget {
       button: true,
       selected: secili,
       label: '$ad${tutar == null ? '' : ', $tutar'}',
-      // `excludeSemantics` InkWell'in eylemini de siliyor — eylem açıkça
+      // `excludeSemantics` dokunma algılayıcısının eylemini de siliyor — eylem açıkça
       // verilmezse satır okunur ama seçilemez (emülatör testi #28).
       onTap: onTap,
       excludeSemantics: true,
-      child: InkWell(
+      child: SandikTappable(
         onTap: onTap,
         child: Container(
           constraints: const BoxConstraints(minHeight: 56),

@@ -110,6 +110,10 @@ export function pozisyonAnahtari(a: PozisyonLot): string {
       // Fon kodu + alt kategori (katki / dk): kendi katkın ile devlet
       // katkısı aynı fonda olsa da ayrı pozisyondur. Dart eşi
       // `positionKey` › `AssetType.bes` (0088, 2026-09-30).
+      // Bilinçli fark (2026-10-29): Dart anahtarı sözleşme kimliğini de
+      // taşır (iki sözleşmedeki aynı fon ayrı satır). Burada eklenmedi:
+      // sunucu yalnız toplam/sayım yapar, birleşme toplamı değiştirmez ve
+      // edge function dağıtımı gerektirmeyen istemci düzeltmesi yeterli.
       core = `${ticker}|sub:${alt.toLowerCase()}`;
       break;
     default: // emtia, diger, kripto, mevduat (`MEVDUAT:<sözleşme id>`)

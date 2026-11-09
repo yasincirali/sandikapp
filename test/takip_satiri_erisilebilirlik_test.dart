@@ -88,7 +88,12 @@ void main() {
       isSemantics(
         isButton: true,
         hasTapAction: true,
-        customActions: [const CustomSemanticsAction(label: 'Takipten çıkar')],
+        // "Benim sıram"da (varsayılan, 2026-10-24) Şişe Cam ikinci ve son
+        // satır: sürüklemenin ekran okuyucu karşılığı yalnız "Yukarı taşı".
+        customActions: [
+          const CustomSemanticsAction(label: 'Takipten çıkar'),
+          const CustomSemanticsAction(label: 'Yukarı taşı'),
+        ],
       ),
       reason: 'Satır TalkBack\'te etkinleştirilebilmeli (clickable=true) '
           've kaydırarak silme özel eylem olarak da sunulmalı.',

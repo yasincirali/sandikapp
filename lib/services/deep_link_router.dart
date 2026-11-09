@@ -52,6 +52,26 @@ class DeepLinkRouter {
   /// kullanıcıya boş/yarım bir özet gösterilmez.
   static const yilOzetiHost = 'yil-ozeti';
 
+  /// Tek varlık widget'ı dokunuşu — Swift `varlikWidgetClickURL` ve Kotlin
+  /// `SandikVarlikWidgetProvider.VARLIK_WIDGET_CLICK_URI` ile birebir aynı
+  /// (`sandik://varlik-widget?homeWidget=1`). Varlık kimliği taşımaz (iOS
+  /// ile aynı): dokunuş seçili varlığa değil listeye götürür.
+  ///
+  /// Portföy sekmesine gider (Varlıklarım | Takip Listesi): widget'ın seçim
+  /// listesi bu iki listeden kurulur. Performans'ın GÜNLÜK görünümüne
+  /// GİTMEZ — o portföy toplamını anlatır, tek bir varlığı değil.
+  static const varlikWidgetHost = 'varlik-widget';
+
+  /// Widget dokunuşunun analitik yüzeyi (`widget_tapped.surface`).
+  ///
+  /// İki widget da aynı `HomeWidget` akışından gelir; yalnız host ayırır.
+  /// Tek varlık widget'ı ayrı sayılmazsa 19 Kasım turunda ana ekran
+  /// widget'ının kullanımına karışırdı.
+  static String widgetYuzeyi(Uri? uri) =>
+      uri != null && uri.scheme == 'sandik' && uri.host == varlikWidgetHost
+          ? 'varlik_widget'
+          : 'home_widget';
+
   /// `sandik://enflasyon` mu?
   static bool reelGetiriIster(Uri? uri) =>
       uri != null && uri.scheme == 'sandik' && uri.host == enflasyonHost;
@@ -90,6 +110,7 @@ class DeepLinkRouter {
     return switch (uri.host) {
       widgetHost || liveActivityHost => MainNavigationScreen.performansSekmesi,
       yilOzetiHost => MainNavigationScreen.profilSekmesi,
+      varlikWidgetHost => MainNavigationScreen.portfoySekmesi,
       _ => null,
     };
   }

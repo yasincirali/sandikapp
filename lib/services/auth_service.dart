@@ -17,6 +17,9 @@ import 'social_auth_service.dart';
 import 'supabase_service.dart';
 import '../utils/friendly_error.dart';
 import 'crash_reporter.dart';
+import 'portfoy_seri_depo.dart';
+import 'son_bakilanlar.dart';
+import 'alarm_onbellegi.dart';
 
 const _uuid = Uuid();
 const _savedEmailKey = 'saved_email';
@@ -924,8 +927,84 @@ class AuthService {
 
   // ── Logout ────────────────────────────────────────────────────────────────
 
+  // ── Çıkış bekçisi (2026-10-13) ──────────────────────────────────────────
+  //
+  // yasin'in hata bildirimi: *"login ekranında yanlış şifre girilmesine
+  // rağmen giriş yapıyor"*. Yol: soğuk açılışta erişim anahtarının süresi
+  // dolmuştur ve gotrue yenilemeyi ARKADA başlatır (`recoverSession`,
+  // beklenmez). O sırada çıkış yapılırsa (eski 10 dk zaman aşımı çıkışı
+  // tam bunu yapıyordu) `signOut` yerel oturumu siler, ama süren yenileme
+  // dönünce gotrue `_saveSession` ile oturumu GERİ YAZAR ve kasaya kaydeder.
+  // Uygulama "kullanıcı yok" der, giriş ekranını gösterir; istemcide ise
+  // geçerli bir oturum durur. Yanlış şifre `AsyncError` üretir, `_AuthGate`
+  // "hata + yerel oturum var" görünce bunu çevrimdışı sanıp yeniden dener
+  // ve hayalet oturumla içeri alır (bir sonraki soğuk açılış da öyle).
+  //
+  // Bekçi: çıkıştan sonraki kısa pencerede AYNI kullanıcı için gelen
+  // `tokenRefreshed` hayalettir ve yerelde silinir. Gerçek yeniden giriş
+  // `signedIn` yayar ve bekçiyi kapatır; hesap geçişi çıkan hesaba dönemez
+  // (çıkışta kasadan silinir).
+  StreamSubscription<AuthState>? _cikisBekcisi;
+  String? _cikanUid;
+  DateTime? _cikisZamani;
+  static const _bekciPenceresi = Duration(minutes: 2);
+
+  @visibleForTesting
+  static bool hayaletYenilemeMi({
+    required AuthChangeEvent olay,
+    required String? oturumUid,
+    required String? cikanUid,
+    required DateTime? cikisZamani,
+    required DateTime simdi,
+  }) =>
+      olay == AuthChangeEvent.tokenRefreshed &&
+      cikanUid != null &&
+      oturumUid == cikanUid &&
+      cikisZamani != null &&
+      simdi.difference(cikisZamani) < _bekciPenceresi;
+
+  void _bekciyiKur(String? uid) {
+    _cikanUid = uid;
+    _cikisZamani = DateTime.now();
+    _cikisBekcisi ??= _client.auth.onAuthStateChange.listen((d) {
+      if (d.event == AuthChangeEvent.signedIn) {
+        _cikanUid = null;
+        return;
+      }
+      if (!hayaletYenilemeMi(
+        olay: d.event,
+        oturumUid: d.session?.user.id,
+        cikanUid: _cikanUid,
+        cikisZamani: _cikisZamani,
+        simdi: DateTime.now(),
+      )) {
+        return;
+      }
+      _cikanUid = null;
+      CrashReporter.report(
+          StateError('çıkıştan sonra oturum geri yazıldı'), StackTrace.current,
+          reason: 'AuthService.cikisBekcisi');
+      CrashReporter.arkaPlan(_client.auth.signOut(scope: SignOutScope.local),
+          reason: 'AuthService.cikisBekcisi.signOut');
+    }, onError: (Object _) {});
+  }
+
+  /// Giriş ekranında (uygulamada kullanıcı yokken) istemcide oturum
+  /// kalmışsa hayalettir; yerelde silinir. Başarısız giriş denemesinden
+  /// sonra çağrılır ki hata hiçbir yolda eski oturuma kapı açmasın.
+  Future<void> hayaletOturumuTemizle() async {
+    if (_client.auth.currentSession == null) return;
+    CrashReporter.report(
+        StateError('giriş ekranında yerel oturum vardı'), StackTrace.current,
+        reason: 'AuthService.hayaletOturumuTemizle');
+    try {
+      await _client.auth.signOut(scope: SignOutScope.local);
+    } catch (_) {}
+  }
+
   Future<void> logout() async {
     final uid = _client.auth.currentUser?.id;
+    _bekciyiKur(uid);
     try {
       await _log.log<void>(
         source: 'AuthService.logout',
@@ -961,6 +1040,13 @@ class AuthService {
     // Çevrimdışı defter de kullanıcıya ait: aynı cihazdaki bir sonraki
     // hesap öncekinin portföyünü görmemeli.
     if (uid != null) await PortfolioCache.clear(uid);
+    // Aramadaki "Son baktıkların" da o hesabın izi (kullanıcı kararı
+    // 2026-10-26): çıkışta cihazda kalmaz.
+    if (uid != null) await SonBakilanlar.instance.sil(uid);
+    // Performans grafiğinin disk kopyası da o hesabın toplamlarıdır.
+    await PortfoySeriDepo.temizle();
+    // Alarm listelerinin cihaz kopyası da o hesabın (Ar-Ge 29 Eki 20:45 #3).
+    await AlarmOnbellegi.temizle();
     await SocialAuthService.instance.signOutGoogle();
     // Yerel deneme sayaçları ve push cihaz kimliği kullanıcıya özgü izdir;
     // aynı cihazdaki bir sonraki hesaba taşınmasın (2026-09 L14).

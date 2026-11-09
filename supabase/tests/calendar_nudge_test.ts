@@ -25,6 +25,10 @@ import {
   hediyeMesaji,
   hediyePenceresi,
   monthlyInflation,
+  trGunMetni,
+  vadeHedefleri,
+  vadeMesaji,
+  vadePenceresi,
 } from '../functions/calendar-nudge/index.ts';
 
 /// Kayan nokta: 102/100-1 tam olarak 0.02 değildir.
@@ -198,4 +202,52 @@ Deno.test('hediye mesajı: TR tarihi, rakam ya da tehdit yok', () => {
   assertEquals(m.body.includes('12 Ocak'), true);
   assertEquals(m.body.includes('olduğu gibi kalır'), true);
   assertEquals(hediyeBitisTarihi(new Date('2026-02-28T12:00:00Z')), '28 Şubat');
+});
+
+Deno.test('vade penceresi: dün ve bugün, TR takvimi', () => {
+  // 2026-11-06 22:30 UTC = 7 Kasım 01:30 TR → bugün 7, dün 6.
+  const now = new Date('2026-11-06T22:30:00Z');
+  assertEquals(trGunMetni(now), '2026-11-07');
+  assertEquals(vadePenceresi(now), { bas: '2026-11-06', son: '2026-11-07' });
+  // Yıl sınırı.
+  assertEquals(
+    vadePenceresi(new Date('2027-01-01T06:30:00Z')),
+    { bas: '2026-12-31', son: '2027-01-01' },
+  );
+});
+
+Deno.test('vade hedefleri: kapalı, yenilenmiş ve bildirilmiş dönem çıkar', () => {
+  const d = (id: string, soz: string, bas: string) => ({
+    id, sozlesme_id: soz, user_id: `u-${soz}`, baslangic: bas,
+  });
+  const donemler = [
+    d('d1', 's1', '2026-08-07'), // açık, son dönem → hedef
+    d('d2', 's2', '2026-08-07'), // sözleşme kapalı
+    d('d3', 's3', '2026-08-07'), // yenilenmiş (daha yeni dönem var)
+    d('d4', 's4', '2026-08-07'), // zaten bildirildi
+  ];
+  const acik = new Set(['s1', 's3', 's4']);
+  const son = new Map([
+    ['s1', '2026-08-07'],
+    ['s3', '2026-11-01'],
+    ['s4', '2026-08-07'],
+  ]);
+  const hedef = vadeHedefleri(donemler, acik, son, new Set(['d4']));
+  assertEquals(hedef.map((h) => h.id), ['d1']);
+});
+
+Deno.test('vade mesajı: tutar, faiz ya da tehdit yok', () => {
+  const m = vadeMesaji();
+  assertEquals(m.title, 'Mevduatının vadesi doldu');
+  assertEquals(m.body, 'Yeni faiz oranını girersen değeri güncel kalır.');
+  assertEquals(/\d/.test(m.title + m.body), false);
+});
+
+Deno.test('dönem verilirse başlık hangi ayın enflasyonu olduğunu yazar', () => {
+  const m = buildInflationMessage(2.49, 40.12, '2026-10');
+  assertEquals(m.title, 'Ekim 2026 enflasyonu açıklandı: aylık %2,49 · yıllık %40,12');
+  assertEquals(
+    buildInflationMessage(2.49, null).title,
+    'Enflasyon açıklandı: aylık %2,49',
+  );
 });

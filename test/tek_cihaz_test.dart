@@ -7,6 +7,8 @@ import 'package:portfoy_takip/models/kayitli_cihaz.dart';
 import 'package:portfoy_takip/providers/cihaz_provider.dart';
 import 'package:portfoy_takip/screens/otp_verification_screen.dart';
 import 'package:portfoy_takip/services/cihaz_oturumu_service.dart';
+import 'package:portfoy_takip/services/secure_session_storage.dart'
+    show SessionVault;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -17,6 +19,28 @@ import 'helpers/kaynak.dart';
 /// Sunucu kuralları (kodsuz kayıt reddi, yerinden edilen cihazın geri
 /// kapamaması, yatay erişim) yerel Supabase'de gerçek GoTrue token'larıyla
 /// doğrulandı (2026-10-03); burada istemcinin yönlendirmesi sınanır.
+/// Keychain yerine bellek; [kilitli] → iOS ilk kilit açılışından önceki gibi
+/// okuma/yazma hata verir. Kasa uygulama silinince silinmez: testte
+/// "silip kurmak" = SharedPreferences'ı boşaltıp aynı kasayı tutmak.
+class _Kasa implements SessionVault {
+  final m = <String, String>{};
+  bool kilitli = false;
+  @override
+  Future<String?> read(String key) async {
+    if (kilitli) throw StateError('kilitli');
+    return m[key];
+  }
+
+  @override
+  Future<void> write(String key, String value) async {
+    if (kilitli) throw StateError('kilitli');
+    m[key] = value;
+  }
+
+  @override
+  Future<void> delete(String key) async => m.remove(key);
+}
+
 class _SahteKapi extends CihazKapisiNotifier {
   int gonderim = 0;
   final dogrulanan = <String>[];
@@ -35,7 +59,54 @@ class _SahteKapi extends CihazKapisiNotifier {
 }
 
 void main() {
+  group('cihaz kimliği Keychain\'de (yasin 2026-11-05)', () {
+    late _Kasa kasa;
+    setUp(() {
+      kasa = _Kasa();
+      CihazOturumuService.instance.testKasasi(kasa, apple: true);
+    });
+    tearDown(() => CihazOturumuService.instance.testKasasi(null));
+
+    test('uygulama silinip kurulunca aynı kimlik (yeniden kod yok)',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = CihazOturumuService.instance;
+      final once = await s.cihazKimligi('u');
+      SharedPreferences.setMockInitialValues({}); // silip kurmak
+      expect(await s.cihazKimligi('u'), once);
+    });
+
+    test('eski kurulumun kimliği kasaya taşınır, değişmez', () async {
+      const eski = '0123456789abcdef0123456789abcdef';
+      SharedPreferences.setMockInitialValues({'cihaz_kimligi_v1_u': eski});
+      expect(await CihazOturumuService.instance.cihazKimligi('u'), eski);
+      expect(kasa.m['cihaz_kimligi_v1_u'], eski);
+    });
+
+    test('kasa kilitliyken yerel kimlik varsa o, yoksa yeni üretilmez',
+        () async {
+      const eski = 'fedcba9876543210fedcba9876543210';
+      SharedPreferences.setMockInitialValues({'cihaz_kimligi_v1_u': eski});
+      kasa.kilitli = true;
+      final s = CihazOturumuService.instance;
+      expect(await s.cihazKimligi('u'), eski);
+      SharedPreferences.setMockInitialValues({});
+      await expectLater(s.cihazKimligi('u'), throwsStateError);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('cihaz_kimligi_v1_u'), isNull,
+          reason: 'okunamayan kasanın yerine kimlik yazılmasın');
+    });
+
+    test('hesaba özel: iki hesap aynı kasada ayrı kimlik', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = CihazOturumuService.instance;
+      expect(await s.cihazKimligi('a'), isNot(await s.cihazKimligi('b')));
+    });
+  });
+
   group('cihaz kimliği', () {
+    setUp(() => CihazOturumuService.instance.testKasasi(null, apple: false));
+    tearDown(() => CihazOturumuService.instance.testKasasi(null));
     test('kalıcı, 32 hex, kullanıcıya özel', () async {
       SharedPreferences.setMockInitialValues({});
       final s = CihazOturumuService.instance;

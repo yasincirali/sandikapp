@@ -24,7 +24,12 @@
 --     cron_gateway_jwt) ve log'a düşmemeli.
 with
 tablolar as (
-  select 'tablo' tur, c.relname ad,
+  -- `::text` şart: union'ın sütun tipini ilk CTE belirler; `relname` `name`
+  -- tipinde (63 bayt) olduğundan bütün anahtarlar 63'te kesiliyordu.
+  -- `tablo.kisit_adi` 63'ü aşınca aynı tablonun PK'si ve FK'si tek anahtara
+  -- düşüp karşılaştırıcı rastgele birini seçiyordu: iki sunucu birebirken
+  -- "ŞEMA FARKLI" (2026-10-20, ekstre_sablon_hata_bildirimleri).
+  select 'tablo' tur, c.relname::text ad,
          (string_agg(a.attname || ':' || format_type(a.atttypid, a.atttypmod)
                || ':' || a.attnotnull::text
                || ':' || coalesce(pg_get_expr(d.adbin, d.adrelid), '')

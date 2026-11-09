@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
+import '../models/position.dart';
 import '../models/asset_type.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/user_model.dart';
+import '../providers/hareket_portfoy_degeri_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -15,11 +17,12 @@ import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_iyelik.dart';
 import '../widgets/ortak_secici.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
+import '../widgets/tur_filtre_cipleri.dart';
+import '../services/contribution_history_service.dart';
 import '../services/islem_notu.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/islem_notu_sheet.dart';
@@ -97,6 +100,67 @@ List<HareketAyGrubu> hareketleriAylaGrupla(
 }
 
 DateTime _islemTarihi(Asset a) => a.addedDate;
+
+/// Ay başlığının sağ metni için ay başına özet: hareket sayısı ve net katkı.
+///
+/// ## Neden (Ar-Ge 8 Kas #2, müşteri YAP)
+/// Başlık "8 hareket" yazıyordu; kullanıcının sorusu "bu ay ne kadar para
+/// koydum". Net tutar [ContributionHistoryService.netKatki]'dan gelir
+/// (Performans'taki ay ortalamasıyla aynı satır kuralı). `net == null`:
+/// TL karşılığı bilinmeyen satır var, başlık eski "N hareket" metnine
+/// döner (uydurma sayı yasak).
+///
+/// [kayitlar] SÜZÜLMÜŞ listenin TAMAMI verilir, sayfalanmış dilim değil:
+/// tür/dönem/arama süzgeci varken görünen satırların toplamı, ama sayfa
+/// sınırı bir ayı ikiye bölse de başlık o ayın gerçek toplamını yazar
+/// (eskiden sayı da sayfa dilimini sayıyordu; şimdi ikisi de ayın tamamı).
+///
+/// [tarih] listedeki kapların bölündüğü anla AYNI olmalı (silinenlerde
+/// [silinmeAni]); yoksa sayı başka bir ayın kabına yazılır.
+Map<DateTime, ({int sayi, double? net})> ayBasligiOzetleri(
+  List<Asset> kayitlar, {
+  DateTime Function(Asset) tarih = _islemTarihi,
+}) {
+  return {
+    for (final g in hareketleriAylaGrupla(kayitlar, tarih: tarih))
+      g.ay: (
+        sayi: g.kayitlar.length,
+        net: ContributionHistoryService.netKatki(g.kayitlar),
+      ),
+  };
+}
+
+/// Ay başlığının görünen metni ve ekran okuyucu etiketi.
+///
+/// Silinenler görünümünde ve tutar bilinmiyorken eski "N hareket" kalır.
+/// İşaret "+" / "−" (U+2212, uygulamanın tutar dili) ile yazılır; renk
+/// anlam taşımaz. Bakiye gizliyken tutar maskelenir ([BazPara.gizliTutar]).
+/// Hareket sayısı her durumda etiketin içinde kalır.
+({String metin, String etiket}) ayBasligiMetni(
+  AppLocalizations l, {
+  required int sayi,
+  required double? net,
+  required bool silinenler,
+  required BazPara baz,
+  required bool gizli,
+}) {
+  final sayiMetni = l.nTransactions(sayi);
+  if (silinenler || net == null) return (metin: sayiMetni, etiket: sayiMetni);
+  final String tutar;
+  if (gizli || baz.gizli) {
+    tutar = baz.gizliTutar;
+  } else {
+    final govde = baz.fmt(net.abs());
+    // Sıfıra yuvarlanan tutar yön taşımaz: "+₺0" yazılmaz.
+    final sifir = govde == baz.fmt(0);
+    tutar = sifir ? govde : '${net > 0 ? '+' : '\u2212'}$govde';
+  }
+  final metin = l.ayNetKatki(tutar);
+  return (
+    metin: metin,
+    etiket: gizli || baz.gizli ? sayiMetni : '$sayiMetni, $metin',
+  );
+}
 
 /// Defteri iki kümeye ayırır: süren hareketler ve silinenler.
 ///
@@ -297,6 +361,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
 
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+
+  /// Satırların "önceki → sonraki" bakiyesi (2026-10-29). Süzülmüş listeden
+  /// değil `_ledger`'dan (tüm kapsam) hesaplanır: "son 7 gün" süzgecinde
+  /// eski alımlar listede yoktur ama bakiyeye girmeleri gerekir. Arama
+  /// kutusuna her harf `build` tetikler; defter değişmedikçe önbellekten.
+  final _bakiyeOnbellegi = HareketBakiyeOnbellegi();
 
   @override
   void initState() {
@@ -502,6 +572,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     required BazPara baz,
     required PortfolioState portfolioState,
     required bool hideBalance,
+    required Map<String, ({double once, double sonra})> bakiyeler,
+    required Map<String, ({double once, double sonra})> portfoyDegerleri,
   }) {
     final not = islemNotu(a, defter);
     final benimId = ref.watch(authProvider).valueOrNull?.id;
@@ -515,6 +587,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       yilGoster: _silinenler,
       silinenGorunumu: _silinenler,
       not: not,
+      // Silinenler alanı "artık portföyde olmayan" kayıtları anlatır;
+      // bakiye süren defterin hikâyesi, orada yazılmaz.
+      bakiye: _silinenler ? null : bakiyeler[a.id],
+      // Kapsamın TOPLAM portföyü (tür/arama süzgeci uygulanmaz): Performans
+      // aynı kişi + portföy seçiminde bu sayıyı gösterir.
+      portfoyDegeri: _silinenler ? null : portfoyDegerleri[a.id],
       onTap: acilir
           ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
           : null,
@@ -532,6 +610,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     // Not görünürlüğü (eski kopya ayıklaması) tüm defterle karar verir,
     // filtrelenmiş sayfayla değil — bkz. `islemNotu`.
     final ledger = _ledger;
+    final bakiyeler = _bakiyeOnbellegi.hesapla(ledger);
+    final portfoyDegerleri = ref.watch(hareketPortfoyDegerleriProvider(
+        hareketKapsami(
+            kisi: _view, portfoy: ref.watch(portfoyKapsamiProvider).secim)));
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     ref.listen(activePartnersProvider, (_, next) {
@@ -735,11 +817,15 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                         rows.take(shown).toList(),
                         tarih: _silinenler ? silinmeAni : _islemTarihi,
                       );
+                      // Ay başlığı özetleri süzülmüş listenin TAMAMINDAN
+                      // (sayfa dilimi değil; bkz. `ayBasligiOzetleri`).
+                      final ozetler = ayBasligiOzetleri(rows,
+                          tarih: _silinenler ? silinmeAni : _islemTarihi);
+                      final baz = ref.watch(bazParaProvider);
                       final dahaVar = shown < rows.length;
                       final hp = SandikSpace.screenH(context);
                       final ayAdi = DateFormat(
                           'LLLL yyyy', Localizations.localeOf(context).languageCode);
-                      final tr = Localizations.localeOf(context).languageCode == 'tr';
                       // Filtre değişince yeni sonuç kısa bir solmayla gelir
                       // (bkz. `_filtreGecisi`); iki liste üst üste kurulmaz.
                       return FadeTransition(
@@ -765,6 +851,15 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                           }
                           final g = gruplar[i];
                           final baslik = ayAdi.format(g.ay);
+                          final ozet = ozetler[g.ay];
+                          final sag = ayBasligiMetni(
+                            context.l10n,
+                            sayi: ozet?.sayi ?? g.kayitlar.length,
+                            net: ozet?.net,
+                            silinenler: _silinenler,
+                            baz: baz,
+                            gizli: hideBalance,
+                          );
                           return Padding(
                             padding: EdgeInsets.only(
                                 bottom: i == gruplar.length - 1
@@ -779,14 +874,21 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                                       right: SandikSpace.xxs,
                                       bottom: SandikSpace.sm),
                                   child: SandikSectionHeader(
-                                    title: tr
-                                        ? trBuyukHarf(baslik)
-                                        : baslik.toUpperCase(),
-                                    trailing: Text(
-                                      context.l10n
-                                          .nTransactions(g.kayitlar.length),
-                                      style: context.t.bodySmall
-                                          ?.copyWith(color: context.c.text36),
+                                    title: baslik,
+                                    // Net tutar sayıyı yerinden etti;
+                                    // hareket sayısı etikette kalır.
+                                    trailing: Semantics(
+                                      label: sag.etiket,
+                                      excludeSemantics: true,
+                                      child: Text(
+                                        sag.metin,
+                                        style: context.t.bodySmall?.copyWith(
+                                          color: context.c.text36,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures()
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -802,10 +904,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                                         _hareketSatiri(
                                           g.kayitlar[k],
                                           ledger,
-                                          baz: ref.watch(bazParaProvider),
+                                          baz: baz,
                                           portfolioState:
                                               pState ?? const PortfolioState(),
                                           hideBalance: hideBalance,
+                                          bakiyeler: bakiyeler,
+                                          portfoyDegerleri: portfoyDegerleri,
                                         ),
                                       ],
                                     ],
@@ -833,15 +937,17 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     final etiket = sayi > 0
         ? '${context.l10n.deletedFilter} · $sayi'
         : context.l10n.deletedFilter;
-    return Semantics(
-      selected: secili,
-      child: SandikTappable(
+    // "Seçili" etiketle aynı düğümde, metin ikinci kez okunmaz (seçici
+    // denetimi 2026-10-12).
+    return SandikTappable(
         semanticLabel: etiket,
+        selected: secili,
         onTap: () => setState(() {
           _silinenler = !_silinenler;
           _resetPaging();
         }),
-        child: AnimatedContainer(
+        child: ExcludeSemantics(
+          child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(
@@ -865,7 +971,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
             ],
           ),
         ),
-      ),
+        ),
     );
   }
 
@@ -973,7 +1079,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                 child: Text(
                   '$n',
                   style: context.t.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: context.c.onAmber,
                   ),
                 ),
@@ -990,8 +1096,6 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
             top: Radius.circular(SandikRadius.lg)),
@@ -1129,7 +1233,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
+          padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, SandikSpace.sm),
           child: Row(
             children: [
               Expanded(
@@ -1246,7 +1350,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                 // ezer — koyu temada amber üstüne beyaz 1,87:1. Pasifken
                 // (eşleşme yok) eski ton: soluk dolguda koyu yazı okunmazdı.
                 style: context.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: n == 0 ? null : context.c.onAmber),
               ),
             ),
@@ -1295,13 +1399,25 @@ class _SecimKutusu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final metinRengi = secili ? renk : context.c.text58;
-    return Semantics(
-      selected: secili,
-      child: SandikTappable(
-        semanticLabel: etiket,
+    // `goz_alici` (seçici denetimi 2026-10-12): uygulamanın tek süzme çipi;
+    // tür ikonu seçili değilken başta, seçilince onay işareti.
+    if (RemoteConfigService.instance.gozAlici) {
+      return SandikFiltreCipi(
+        ad: etiket,
+        secili: secili,
         onTap: onTap,
-        child: AnimatedContainer(
+        ikon: ikon,
+        ikonRengi: ikon == null ? null : renk,
+      );
+    }
+    final metinRengi = secili ? renk : context.c.text58;
+    // "Seçili" bilgisi etiketle AYNI düğümde (HIG, 2026-10-12).
+    return SandikTappable(
+        semanticLabel: etiket,
+        selected: secili,
+        onTap: onTap,
+        child: ExcludeSemantics(
+          child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -1331,7 +1447,7 @@ class _SecimKutusu extends StatelessWidget {
             ],
           ),
         ),
-      ),
+        ),
     );
   }
 }

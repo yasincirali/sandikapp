@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import '../demo/demo_modu.dart';
 import '../widgets/varlik_rozeti.dart';
+import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart'
     show
@@ -10,6 +11,8 @@ import 'package:flutter/material.dart'
         Colors,
         Dismissible,
         DismissDirection,
+        Material,
+        MaterialType,
         RefreshIndicator;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,21 +23,33 @@ import '../models/varlik_kimligi.dart';
 import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart'
     show activePartnersProvider, authProvider;
-import '../providers/preferences_provider.dart' show watchlistLimitProvider;
+import '../providers/preferences_provider.dart'
+    show takipSiralamaProvider, watchlistLimitProvider;
+import '../models/yuzde_alarmi.dart';
+import '../providers/sembol_alarmlari_provider.dart';
 import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../services/fiyat_kaynagi.dart';
+import '../services/ozellik_olcumu.dart';
+import '../services/takip_sirasi.dart';
+import '../widgets/alarm_kur_sheet.dart' show alarmSembolu, yuzdeAlarmEtiketi;
+import '../widgets/sandik_async_button.dart';
+import '../widgets/sandik_siralama_dugmesi.dart';
+import '../widgets/sinir_uyarisi.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/ortak_secici.dart';
+import '../widgets/sandik_cam.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
 import 'add_asset_screen.dart';
 import 'add_watchlist_screen.dart';
+import 'price_alerts_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
@@ -67,14 +82,24 @@ class WatchlistBody extends ConsumerWidget {
     final async = ref.watch(watchlistProvider);
     final eskiyiGoster = _eskiVeriyiGoster(ref, async);
 
-    return Column(
+    // Cam başlık açıkken (Portföy, `goz_alici`) sabit üst kısım başlığın
+    // altında başlar; kapalıyken pay 0, yerleşim birebir.
+    return Padding(
+      padding: EdgeInsets.only(top: SandikKaydirmaBasligi.ustPay(context)),
+      child: Column(
       children: [
         const _AddHeader(),
         const SizedBox(height: SandikSpace.sm),
         const _PeriodToggle(),
         const SizedBox(height: SandikSpace.sm),
         Expanded(
-          child: async.when(
+          child: SandikIcerikGecisi(
+            // Yükleme → içerik çapraz solar (2026-10-14).
+            tamEkran: true,
+            anahtar: async.isLoading && !(eskiyiGoster && async.hasValue)
+              ? 'yukleniyor'
+              : SandikIcerikGecisi.hal([async]),
+            child: async.when(
             // Dönem değişiminde eski liste SOLUK kalır, iskelete düşmez
             // (animasyon denetimi 2026-10-01): her dönem dokunuşunda liste
             // ve grafik iskelete dönüp geri geliyor, yerleşim iki kez
@@ -92,9 +117,11 @@ class WatchlistBody extends ConsumerWidget {
               child: items.isEmpty ? const _EmptyState() : _List(items: items),
             ),
           ),
+          ),
         ),
         const _FooterNote(),
       ],
+      ),
     );
   }
 }
@@ -138,17 +165,23 @@ class _PeriodToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+      // Son seçenek "Eklediğimden beri" (2026-11-08): ortak dönemi
+      // değiştirmez, yalnız takip satırlarının yüzdesini eklenme günü
+      // kapanışına bağlar (gerekçe `watchlistEklenmedenBeriProvider`).
       child: DonemSecici(
-        donemler: SummaryPeriod.values,
-        secili: ref.watch(watchlistPeriodProvider),
-        // Bayrak açıkken ortak dönem yazılır; `watchlistPeriodProvider`
-        // ondan türediği için kendiliğinden izler.
+        donemler: SummaryPeriod.sembolDonemleri,
+        sonEk: context.l10n.watchlistPeriodSinceAdded,
+        secili: ref.watch(watchlistEklenmedenBeriProvider)
+            ? SummaryPeriod.sembolDonemleri.length
+            : ref.watch(watchlistPeriodProvider),
+        // Ortak dönem yazılır; `watchlistPeriodProvider` ondan türediği
+        // için kendiliğinden izler.
         onSec: (i) {
-          if (donemHafizasiAcik) {
+          final beri = i >= SummaryPeriod.sembolDonemleri.length;
+          ref.read(watchlistEklenmedenBeriProvider.notifier).state = beri;
+          if (!beri) {
             ref.read(seciliDonemProvider.notifier).state =
-                SummaryPeriod.values[i];
-          } else {
-            ref.read(watchlistPeriodProvider.notifier).state = i;
+                SummaryPeriod.sembolDonemleri[i];
           }
         },
       ),
@@ -162,8 +195,40 @@ class _List extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final periodLabel =
-        watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
+    final periodLabel = ref.watch(watchlistEklenmedenBeriProvider)
+        ? context.l10n.watchlistPeriodSinceAdded
+        : watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
+    // Ekrandaki sıra kullanıcının seçimiyle (2026-10-24, `takip_sirasi.dart`):
+    // "Benim sıram" varsayılan, fiyat tazelenince satır yer değiştirmez.
+    final mod = takipSiralamaOf(ref.watch(takipSiralamaProvider));
+    final gorunen =
+        ref.watch(siraliTakipListesiProvider).valueOrNull ?? items;
+    final benim = mod == TakipSiralama.benim;
+    final h = SandikSpace.screenH(context);
+
+    // Satır + alt boşluk. Sürüklenebilir listede ayırıcı yok; boşluk satırın
+    // kendi payı ki sürüklenen öğeyle birlikte taşınsın.
+    Widget satir(int i) {
+      final w = gorunen[i];
+      final govde = Padding(
+        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+        child: _Row(
+          item: w,
+          sira: benim ? i : null,
+          toplam: gorunen.length,
+          tasi: benim
+              ? (hedef) => takipSirasiniTasi(ref, gorunen, i, hedef)
+              : null,
+        ),
+      );
+      return KeyedSubtree(
+        key: ValueKey('takip-sira-${w.id}'),
+        // Uzun basıp sürükle: satırın her yeri (tutamaç ayrıca anında).
+        child: benim
+            ? ReorderableDelayedDragStartListener(index: i, child: govde)
+            : govde,
+      );
+    }
 
     return RefreshIndicator.adaptive(
       color: context.c.amberText,
@@ -172,37 +237,149 @@ class _List extends ConsumerWidget {
         ref.invalidate(watchlistProvider);
         await ref.read(watchlistProvider.future);
       },
-      child: ListView.separated(
-      // Segment geçişinde konum korunur (bkz. Portföy `PageStorageKey`).
-      key: const PageStorageKey('portfoy-takip-listesi'),
-      // Aynı ekranın Varlıklarım listesiyle AYNI fizik: Android'de biri
-      // yaylanıp öteki esniyordu (animasyon denetimi 2026-10-01).
-      physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics()),
-      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 12),
-      // +2: grafik kartı ve sayı başlığı. Ekleme satırı artık listede
-      // DEĞİL, gövdenin üstünde (`_AddHeader`).
-      itemCount: items.length + 2,
-      separatorBuilder: (_, __) => const SizedBox(height: SandikSpace.sm),
-      itemBuilder: (context, i) {
-        // Grafik listeyle BİRLİKTE kayar (üstte sabit değil): dar ekranda
-        // sabit bir grafik, listeye ayrılan alanın yarısını yerdi.
-        if (i == 0) return const _ChartCard();
-        if (i == 1) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 4),
-            child: Text(
-              context.l10n.nAssetsPeriod(items.length, periodLabel),
-              style: context.t.labelSmall?.copyWith(
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text36),
+      child: CustomScrollView(
+        // Segment geçişinde konum korunur (bkz. Portföy `PageStorageKey`).
+        key: const PageStorageKey('portfoy-takip-listesi'),
+        // Aynı ekranın Varlıklarım listesiyle AYNI fizik: Android'de biri
+        // yaylanıp öteki esniyordu (animasyon denetimi 2026-10-01).
+        physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics()),
+        slivers: [
+          // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): Portföy'ün
+          // Varlıklarım listesiyle aynı genişlik; iPhone'da boşluk 0.
+          SandikIcerikSutunu.sliver(slivers: [
+          // Grafik listeyle BİRLİKTE kayar (üstte sabit değil): dar ekranda
+          // sabit bir grafik, listeye ayrılan alanın yarısını yerdi. Ekleme
+          // satırı listede DEĞİL, gövdenin üstünde (`_AddHeader`).
+          SliverPadding(
+            padding:
+                EdgeInsets.fromLTRB(h, SandikSpace.xs, h, SandikSpace.sm),
+            sliver: const SliverToBoxAdapter(child: _ChartCard()),
+          ),
+          // Sayı başlığı + sıralama seçimi (2026-10-24).
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(h, 0, h, SandikSpace.xs),
+            sliver: SliverToBoxAdapter(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.nAssetsPeriod(items.length, periodLabel),
+                      style: context.t.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: context.c.text36),
+                    ),
+                  ),
+                  _SiralamaDugmesi(secili: mod),
+                ],
+              ),
             ),
-          );
-        }
-        return _Row(item: items[i - 2]);
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(h, 0, h, SandikSpace.xs),
+            sliver: benim
+                ? SliverReorderableList(
+                    itemCount: gorunen.length,
+                    itemBuilder: (_, i) => satir(i),
+                    onReorderStart: (_) => SandikHaptic.selection.perform(),
+                    // `onReorderItem` hedefi öğe çıkarıldıktan SONRAKİ konum
+                    // olarak verir; [siraTasi] da onu ister (eski
+                    // `onReorder`'ın −1 düzeltmesi gerekmez).
+                    onReorderItem: (eski, yeni) =>
+                        takipSirasiniTasi(ref, gorunen, eski, yeni),
+                    proxyDecorator: (child, _, anim) =>
+                        _SurukleGolgesi(animasyon: anim, child: child),
+                  )
+                : SliverList.builder(
+                    itemCount: gorunen.length,
+                    itemBuilder: (_, i) => satir(i),
+                  ),
+          ),
+          ]),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sürüklenen satırın görünüşü: zemin + hafif gölge, başka süs yok. Hareketi
+/// azalt açıkken gölge animasyonsuz, baştan tam.
+class _SurukleGolgesi extends StatelessWidget {
+  const _SurukleGolgesi({required this.animasyon, required this.child});
+
+  final Animation<double> animasyon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final azalt = MediaQuery.disableAnimationsOf(context);
+    return AnimatedBuilder(
+      animation: animasyon,
+      builder: (context, child) => Material(
+        type: MaterialType.transparency,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            color: context.c.surface1,
+            boxShadow: [
+              BoxShadow(
+                color: context.c.overlay,
+                blurRadius: SandikSpace.md * (azalt ? 1 : animasyon.value),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Takip listesi sıralama seçimi: başlık satırının sağında seçili sıranın
+/// adı; dokununca üç seçenekli alt sayfa. Düğme ve sayfa ortak bileşenden
+/// (`SandikSiralamaDugmesi.etiketli`, 2026-10-25 — eskiden Portföy'ün
+/// `_SortButton`/`_SortSheet` kalıbının kopyasıydı). Kayan segment DEĞİL
+/// (kabul raporu 13:15 #2): üç seçenek liste başında yer kaplamasın; seçim
+/// ekranın ne gösterdiğini değiştirmez, yalnız sırasını.
+class _SiralamaDugmesi extends ConsumerWidget {
+  const _SiralamaDugmesi({required this.secili});
+
+  final TakipSiralama secili;
+
+  static String etiket(AppLocalizations l, TakipSiralama m) => switch (m) {
+        TakipSiralama.benim => l.watchlistSortMine,
+        TakipSiralama.yukselen => l.watchlistSortGainers,
+        TakipSiralama.dusen => l.watchlistSortLosers,
+      };
+
+  static IconData ikon(TakipSiralama m) => switch (m) {
+        TakipSiralama.benim => Icons.drag_indicator_rounded,
+        TakipSiralama.yukselen => Icons.trending_up_rounded,
+        TakipSiralama.dusen => Icons.trending_down_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    return SandikSiralamaDugmesi<TakipSiralama>.etiketli(
+      secenekler: [
+        for (final m in TakipSiralama.values)
+          SandikSiralamaSecenegi(
+            deger: m,
+            baslik: etiket(l, m),
+            altBaslik: m == TakipSiralama.benim
+                ? l.watchlistSortMineHint
+                : l.watchlistSortChangeHint,
+            ikon: ikon(m),
+          ),
+      ],
+      secili: secili,
+      semantikEtiket: l.watchlistSortSemantics(etiket(l, secili)),
+      onSec: (m) {
+        ref.read(takipSiralamaProvider.notifier).set(m.index);
+        OzellikOlcumu.say(Ozellik.takipSirasi);
       },
-    ),
     );
   }
 }
@@ -234,7 +411,7 @@ class _PortfoyCizgisiBilgisi extends StatelessWidget {
     return Tooltip(
       message: gunIci
           ? context.l10n.portfolioLineInfoDaily(portfolioLabel)
-          : context.l10n.portfolioLineInfoSim(portfolioLabel),
+          : context.l10n.portfolioLineInfoSim,
       triggerMode: TooltipTriggerMode.tap,
       // Okuma süresi: iki cümlelik metin varsayılan 1.5 sn'de okunmuyor.
       showDuration: const Duration(seconds: 8),
@@ -305,11 +482,10 @@ class _ChartCard extends ConsumerWidget {
                   child: Text(
                     // Hangi portföyle kıyaslandığı BAŞLIKTA yazar — kullanıcı
                     // grafiğe bakarken seçiciye geri dönmek zorunda kalmasın.
-                    'DÖNEM BAŞINA GÖRE · $periodLabel · ${portfolioLabel.toUpperCase()}',
+                    'Dönem başına göre · $periodLabel · $portfolioLabel',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,
                         color: context.c.text36),
                   ),
@@ -324,7 +500,12 @@ class _ChartCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: SandikSpace.sm),
-          async.when(
+          SandikIcerikGecisi(
+            // Yükleme → içerik çapraz solar (2026-10-14).
+            anahtar: async.isLoading && !(eskiyiGoster && async.hasValue)
+                ? 'yukleniyor'
+                : SandikIcerikGecisi.hal([async]),
+            child: async.when(
             // Dönem değişiminde eski grafik soluk kalır ve yenisine MORF
             // eder; iskelete düşüp sıfırdan çizilmez (bkz. `WatchlistBody`).
             skipLoadingOnReload: eskiyiGoster,
@@ -398,6 +579,7 @@ class _ChartCard extends ConsumerWidget {
               );
             },
           ),
+          ),
         ],
       ),
     );
@@ -438,7 +620,15 @@ class _ChartCard extends ConsumerWidget {
 
 class _Row extends ConsumerWidget {
   final WatchlistItem item;
-  const _Row({required this.item});
+
+  /// "Benim sıram"da satırın konumu; null = sürükleme kapalı (yükselen/düşen).
+  final int? sira;
+  final int toplam;
+
+  /// Satırı verilen konuma taşı (erişilebilirlik eylemleri); null = kapalı.
+  final ValueChanged<int>? tasi;
+
+  const _Row({required this.item, this.sira, this.toplam = 0, this.tasi});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -453,15 +643,63 @@ class _Row extends ConsumerWidget {
     final fiyatMetni = takipFiyatMetni(item);
     final l10n = context.l10n;
 
+    // "Eklediğimden beri" (2026-11-08): yüzde eklenme günü kapanışından
+    // (sağlayıcı yazar, `WatchlistNotifier._eklenmedenBeri`); burada
+    // yalnız tarih yazılır. Tarih bilinmiyorsa alt satır yok, yüzde "—".
+    final beri = ref.watch(watchlistEklenmedenBeriProvider);
+    final eklenme = beri ? item.addedAt : null;
+    final beriMetni = eklenme == null
+        ? null
+        : l10n.watchlistSinceDate(
+            tarihtenBeriParcasi(eklenme, dil: context.tarihDili));
+
+    // Etkin fiyat alarmı (2026-10-26): kurulu ve bekleyen alarm satırda çan
+    // + fiyata en yakın hedef olarak görünür; alarm ekranına gitmeden "bu
+    // varlığa alarm kurmuş muydum, hangi fiyata" sorusu cevaplanır. Sembol
+    // alarm kurarkenki kuralla (`alarmSembolu`) eşlenir; veri zaten
+    // yüklenmiş `priceAlertsProvider`'dan — yeni sunucu çağrısı yok.
+    // Günlük yüzde alarmı da çanda (2026-10-29, `takipCaniOzeti`): fiyat
+    // alarmı yoksa "±%2", varsa "+N" sayısına girer.
+    final alarmKodu = alarmSembolu(item.ticker, item.subCategory);
+    final alarm = alarmKodu == null
+        ? null
+        : () {
+            final hepsi = ref.watch(sembolAlarmlariProvider(alarmKodu));
+            return takipCaniOzeti(hepsi.fiyat, hepsi.yuzde,
+                sembol: alarmKodu,
+                guncelFiyat: item.currentPrice,
+                ekSayi: hepsi.gosterge.where((a) => a.isActive).length +
+                    hepsi.cizim.where((a) => a.isActive).length);
+          }();
+    final yuzdeAlarm = alarm?.yuzde;
+    final yuzdeCaldi = yuzdeAlarm?.bugunCaldi(DateTime.now()) ?? false;
+    final hedefMetni = alarm == null
+        ? null
+        : alarm.fiyat != null
+            ? takipFiyatBicimi(item, alarm.fiyat!.targetPrice)
+            : yuzdeKisaMetni(yuzdeAlarm!);
+
     // Ekran okuyucu için tek parça cümle — parçalı okunursa yön bilgisi
     // yalnızca renkte kalırdı.
     final semantic = [
       item.name,
       if (item.currentPrice != null) fiyatMetni,
-      if (!isFlat)
+      if (beri)
+        _beriCumlesi(l10n, context.tarihDili, pct, isFlat)
+      else if (!isFlat)
         pct >= 0
             ? l10n.watchlistRowUp(fmtPct(pct.abs()))
             : l10n.watchlistRowDown(fmtPct(pct.abs())),
+      if (alarm != null)
+        [
+          if (alarm.fiyat != null)
+            l10n.watchlistAlertSet(hedefMetni!)
+          else
+            l10n.watchlistYuzdeAlarmSet(
+                yuzdeAlarmEtiketi(l10n, yuzdeAlarm!.esikPct, yuzdeAlarm.yon)),
+          if (yuzdeCaldi) l10n.watchlistYuzdeAlarmCaldi,
+          if (alarm.digerSayisi > 0) l10n.watchlistAlertMore(alarm.digerSayisi),
+        ].join(' '),
       l10n.watchlistRowFollowing,
     ].join(', ');
 
@@ -484,9 +722,17 @@ class _Row extends ConsumerWidget {
       container: true,
       button: true,
       label: semantic,
+      // Sürükleme ekran okuyucuda yapılamaz; aynı iş "yukarı/aşağı taşı"
+      // eylemleriyle (yalnız "Benim sıram"da, uçta olmayan yönde).
       customSemanticsActions: {
         CustomSemanticsAction(label: l10n.removeFromWatchlist): () =>
             _remove(context, ref),
+        if (sira != null && tasi != null && sira! > 0)
+          CustomSemanticsAction(label: l10n.watchlistMoveUp): () =>
+              tasi!(sira! - 1),
+        if (sira != null && tasi != null && sira! < toplam - 1)
+          CustomSemanticsAction(label: l10n.watchlistMoveDown): () =>
+              tasi!(sira! + 1),
       },
       child: Dismissible(
           key: ValueKey(item.id),
@@ -569,30 +815,43 @@ class _Row extends ConsumerWidget {
                   VarlikRozeti(type: item.type, ticker: item.ticker),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: ExcludeSemantics(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.displayLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.t.bodyMedium
-                                ?.copyWith(color: context.c.text90),
-                          ),
-                          // Kısa ad zaten görünen adsa (endeks, altın, emtia)
-                          // ikinci satır aynı metni tekrar ederdi.
-                          if (item.displayLabel != item.name)
-                            Text(
-                              item.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.t.bodySmall?.copyWith(
-                                  color: context.c.text36, fontSize: 11),
+                    child: alarm == null
+                        ? ExcludeSemantics(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _adMetni(context),
+                                // Kısa ad zaten görünen adsa (endeks, altın,
+                                // emtia) ikinci satır aynı metni tekrar ederdi.
+                                if (item.displayLabel != item.name)
+                                  _uzunAdMetni(context),
+                              ],
                             ),
-                        ],
-                      ),
-                    ),
+                          )
+                        // Alarmlı satır: çan kendi düğümü olduğundan
+                        // `ExcludeSemantics` yalnız metinleri sarar. `Wrap`:
+                        // çan ada sığarsa yanında, sığmazsa (dar ekran, büyük
+                        // yazı 3.1×) alt satıra iner — ad çan için kısalmaz.
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: SandikSpace.xs,
+                                children: [
+                                  ExcludeSemantics(child: _adMetni(context)),
+                                  _TakipAlarmCani(
+                                    sembol: alarmKodu!,
+                                    hedefMetni: hedefMetni!,
+                                    digerSayisi: alarm.digerSayisi,
+                                    bugunCaldi: yuzdeCaldi,
+                                  ),
+                                ],
+                              ),
+                              if (item.displayLabel != item.name)
+                                ExcludeSemantics(child: _uzunAdMetni(context)),
+                            ],
+                          ),
                   ),
                   const SizedBox(width: 8),
                   // Expanded (sıkı), Flexible (gevşek) DEĞİL: gevşek hâlde
@@ -621,6 +880,15 @@ class _Row extends ConsumerWidget {
                             style: context.t.numSmall
                                 .copyWith(color: color, fontSize: 11),
                           ),
+                          // Yüzdenin hemen altında: "+%12,40 / 12 Eyl'den
+                          // beri" tek okumada "neye göre" sorusunu yanıtlar.
+                          if (beriMetni != null)
+                            Text(
+                              beriMetni,
+                              maxLines: 1,
+                              style: context.t.labelSmall
+                                  ?.copyWith(color: context.c.text36),
+                            ),
                         ],
                       ),
                     ),
@@ -644,10 +912,12 @@ class _Row extends ConsumerWidget {
                     onTap: () => pushGuarded(
                       context,
                       adaptiveRoute<void>(
+                        settings: const RouteSettings(name: 'add_asset'),
                         builder: (_) => AddAssetScreen(
                           prefillTicker: item.ticker,
                           prefillName: item.name,
                           prefillType: item.type,
+                          ekleYolu: 'takip',
                         ),
                       ),
                     ),
@@ -661,6 +931,21 @@ class _Row extends ConsumerWidget {
                     ),
                   ),
                   ),
+                  // Sürükleme tutamacı (yalnız "Benim sıram"): 44 pt, anında
+                  // sürükler; satırın kendisi uzun basışla sürüklenir.
+                  // Ekran okuyucuda gizli: aynı iş satırın "yukarı/aşağı
+                  // taşı" eylemlerinde.
+                  if (sira != null)
+                    ReorderableDragStartListener(
+                      index: sira!,
+                      child: ExcludeSemantics(
+                        child: SizedBox.square(
+                          dimension: SandikTouch.min,
+                          child: Icon(Icons.drag_handle_rounded,
+                              color: context.c.text36),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -668,6 +953,36 @@ class _Row extends ConsumerWidget {
         ),
     );
   }
+
+  /// "Eklediğimden beri" kipinde satır cümlesinin yüzde parçası — tam
+  /// cümle: "12 Eylül'den beri %3,20 arttı". Ay adı tam yazılır, ekran
+  /// okuyucu "Eyl"i harf harf okumasın. Kapanış ya da tarih yoksa bunu
+  /// söyler; yüzde sessizce düşmez.
+  String _beriCumlesi(
+      AppLocalizations l10n, String dil, double? pct, bool isFlat) {
+    final eklenme = item.addedAt;
+    if (eklenme == null || pct == null) return l10n.watchlistRowSinceUnknown;
+    final tarih = tarihtenBeriParcasi(eklenme, dil: dil, kisa: false);
+    if (isFlat) return l10n.watchlistRowSinceFlat(tarih);
+    return pct >= 0
+        ? l10n.watchlistRowSinceUp(tarih, fmtPct(pct.abs()))
+        : l10n.watchlistRowSinceDown(tarih, fmtPct(pct.abs()));
+  }
+
+  Widget _adMetni(BuildContext context) => Text(
+        item.displayLabel,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+      );
+
+  Widget _uzunAdMetni(BuildContext context) => Text(
+        item.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.bodySmall
+            ?.copyWith(color: context.c.text36, fontSize: 11),
+      );
 
   /// Takipten çıkarır.
   ///
@@ -697,11 +1012,156 @@ class _Row extends ConsumerWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+/// Takip satırındaki alarm çanı: zil + fiyata en yakın hedef (+N).
+///
+/// Ayrı dokunma hedefi (≥44 pt, kendi semantik düğümü): satırın dokunuşu
+/// varlık sayfasını açar, çanınki o varlığın alarmlarını. Anlam renkte
+/// değil: zil ikonu + hedef metni; renk yalnız token (`amberText`, Portföy
+/// kartındaki alarm rozetiyle aynı dil).
+class _TakipAlarmCani extends StatelessWidget {
+  final String sembol;
+  final String hedefMetni;
+  final int digerSayisi;
+
+  /// Öndeki yüzde alarmı bugün çaldı: zil boş çizgili ve sönük. Anlam
+  /// yalnız renkte değil, ikon biçiminde ve satırın cümlesinde de.
+  final bool bugunCaldi;
+
+  const _TakipAlarmCani({
+    required this.sembol,
+    required this.hedefMetni,
+    required this.digerSayisi,
+    this.bugunCaldi = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final renk = bugunCaldi ? context.c.text36 : context.c.amberText;
+    final metin = digerSayisi > 0
+        ? '$hedefMetni ${l10n.watchlistAlertExtra(digerSayisi)}'
+        : hedefMetni;
+    return Semantics(
+      container: true,
+      child: SandikTappable(
+        semanticLabel: l10n.watchlistOpenAlerts,
+        onTap: () {
+          OzellikOlcumu.say(Ozellik.takipAlarmCani);
+          pushGuarded(
+            context,
+            adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'price_alerts'),
+              builder: (_) => PriceAlertsScreen(sembol: sembol),
+            ),
+          );
+        },
+        // Görsel küçük, dokunma alanı 44×44 (şeffaf dolgu;
+        // `touch_target_size_test`).
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+              minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+          child: ExcludeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                    bugunCaldi
+                        ? Icons.notifications_none_rounded
+                        : Icons.notifications_active_rounded,
+                    size: 14,
+                    color: renk),
+                const SizedBox(width: SandikSpace.xxs),
+                Flexible(
+                  child: Text(
+                    metin,
+                    style: context.t.numSmall.copyWith(color: renk),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Boş takip listesi: başlık, tek cümle açıklama, öneri çipleri, Varlık Ekle.
+///
+/// "NEDEN TAKİP LİSTESİ?" kutusu kaldırıldı (2026-10-25): `noWatchlistBody`
+/// aynı şeyi tek cümlede söylüyordu; boş ekranda iki açıklama okutmak yerine
+/// ilk takibi tek dokunuşa indiren üç öneri çipi kondu.
+class _EmptyState extends ConsumerStatefulWidget {
+  const _EmptyState();
+
+  @override
+  ConsumerState<_EmptyState> createState() => _EmptyStateState();
+}
+
+class _EmptyStateState extends ConsumerState<_EmptyState> {
+  /// Bu oturumda çipten eklenenler. Liste dolunca boş durum zaten gider;
+  /// bu küme sunucu yanıtı ile listenin tazelenmesi arasındaki anda (ya da
+  /// tazeleme başarısız olursa) çipin ikinci kez dokunulmasını önler.
+  final Set<String> _eklenen = {};
+
+  /// Öneri çipinden takibe alma — `AddWatchlistScreen._add` ile AYNI yol:
+  /// aynı kimlik (`VarlikKimligi`), aynı `watchlistProvider.add` (limit
+  /// kapısı orada), aynı hata ayrımı. Başarı toast'ı yok (2026-09-16 kararı):
+  /// onay çipin kaybolması ve satırın listeye gelmesi.
+  Future<void> _ekle(VarlikKimligi k) async {
+    // Demo (F1): takibe almak bir yazma; Varlık Ekle düğmesiyle aynı kapı.
+    if (DemoModu.yazmaKapisi('takip')) return;
+    OzellikOlcumu.say(Ozellik.takipOnerisi);
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    try {
+      await ref
+          .read(watchlistProvider.notifier)
+          .add(k.toWatchlistItem(userId: user.id));
+      if (mounted) setState(() => _eklenen.add(k.key));
+    } on WatchlistLimitException catch (e) {
+      if (!mounted) return;
+      takipSiniriUyarisi(context, ref, e.limit);
+    } on DemoYazmaEngeli {
+      return; // Mesajı `DemoModu.yazmaEngeli` dinleyicisi gösterdi.
+    } catch (_) {
+      if (!mounted) return;
+      sandikSnack(context, context.l10n.watchlistSuggestFailed,
+          kind: SandikSnackKind.error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final takipte = {
+      for (final w in ref.watch(watchlistProvider).valueOrNull ?? const [])
+        w.key,
+    };
+    final l = context.l10n;
+    // Etiketler sembole göre: kimlik listesi sırayı ve varlığı belirler,
+    // ekran yalnız adını koyar.
+    final etiketler = <String, (String, String)>{
+      FiyatKaynagi.gramAltin24: (
+        l.watchlistSuggestGold,
+        l.watchlistSuggestGoldSemantics,
+      ),
+      FiyatKaynagi.usdTry: (
+        l.watchlistSuggestUsd,
+        l.watchlistSuggestUsdSemantics,
+      ),
+      FiyatKaynagi.bist100: (
+        l.watchlistSuggestBist,
+        l.watchlistSuggestBistSemantics,
+      ),
+    };
+    final oneriler = [
+      for (final k in VarlikKimligi.takipOnerileri)
+        if (etiketler[k.ticker] != null &&
+            !takipte.contains(k.key) &&
+            !_eklenen.contains(k.key))
+          k,
+    ];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
       child: Column(
@@ -721,6 +1181,23 @@ class _EmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
+          if (oneriler.isNotEmpty) ...[
+            const SizedBox(height: SandikSpace.md),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: SandikSpace.sm,
+              runSpacing: SandikSpace.sm,
+              children: [
+                for (final k in oneriler)
+                  _OneriCipi(
+                    key: ValueKey('takip_onerisi_${k.ticker}'),
+                    ad: etiketler[k.ticker]!.$1,
+                    semanticLabel: etiketler[k.ticker]!.$2,
+                    onTap: () => _ekle(k),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: SandikSpace.md),
           SandikTappable(
             semanticLabel: context.l10n.addToWatchlist,
@@ -730,6 +1207,7 @@ class _EmptyState extends StatelessWidget {
                 : pushGuarded(
                     context,
                     adaptiveRoute<void>(
+                      settings: const RouteSettings(name: 'add_watchlist'),
                       builder: (_) => const AddWatchlistScreen(),
                       fullscreenDialog: true,
                     ),
@@ -747,35 +1225,65 @@ class _EmptyState extends StatelessWidget {
                       color: context.c.onStatus, fontWeight: FontWeight.w700)),
             ),
           ),
-          const SizedBox(height: SandikSpace.lg),
-          // Değer önerisini AÇIKÇA söyler — kullanıcı özelliği keşfetmek
-          // zorunda kalmasın.
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.whyWatchlistUpper,
-                  style: context.t.labelSmall?.copyWith(
-                      letterSpacing: 0.9,
-                      fontWeight: FontWeight.w700,
-                      color: context.c.text36),
-                ),
-                const SizedBox(height: SandikSpace.sm),
-                Text(
-                  context.l10n.whyWatchlistBody,
-                  style: context.t.bodySmall
-                      ?.copyWith(color: context.c.text58, height: 1.5),
-                ),
-              ],
-            ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+/// Öneri çipi — `SandikFiltreCipi`'nin seçili olmayan hâliyle aynı hap
+/// (tam yuvarlak, 44 pt, `surface2` + `hairline`), başta "+" ikonu.
+///
+/// Neden `SandikFiltreCipi` değil: o çip SÜZER ve "seçili" taşır; bu çip
+/// istek atar. İstek atan hedef `SandikAsyncTap` (TASARIM_DILI "bir iş = bir
+/// bileşen"): çift dokunma yutulur, iş sürerken etiketin yerinde gösterge
+/// döner, hap yerinde kalır (`zemin:`) — boy değişmez. "+" ikonu eylemi
+/// renksiz de anlatır; seçili hâli yok, dokununca kaybolur.
+class _OneriCipi extends StatelessWidget {
+  const _OneriCipi({
+    super.key,
+    required this.ad,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  final String ad;
+  final String semanticLabel;
+  final Future<void> Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return SandikAsyncTap(
+      onTap: onTap,
+      semanticLabel: semanticLabel,
+      zemin: BoxDecoration(
+        color: c.surface2,
+        borderRadius: BorderRadius.circular(SandikTouch.min / 2),
+        border: Border.all(color: c.hairline),
+      ),
+      // Etiket [semanticLabel]; çipin metni ikinci kez okunmasın.
+      child: ExcludeSemantics(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, size: 16, color: c.text58),
+              const SizedBox(width: SandikSpace.xs2),
+              Flexible(
+                child: Text(
+                  ad,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600, color: c.text90),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -806,6 +1314,7 @@ class _AddHeader extends ConsumerWidget {
     pushGuarded(
       context,
       adaptiveRoute<void>(
+        settings: const RouteSettings(name: 'add_watchlist'),
         builder: (_) => const AddWatchlistScreen(),
         fullscreenDialog: true,
       ),
@@ -1005,7 +1514,7 @@ extension on WatchlistItem {
 }
 
 /// Satırdaki fiyat metni. Endeks puandır: para simgesi ve kuruş yok
-/// (arama satırı ve piyasa bandıyla aynı kural, `bistEndeksiMi`).
+/// (arama satırı ve piyasa bandıyla aynı kural, `endeksMi`).
 ///
 /// Diğerleri ₺ ile ([sembolSerisiSimgesi], seri denetimi 2026-10-08):
 /// `currentPrice` sembol serisinin son noktasıdır ve seri her sembolde TL'dir
@@ -1017,7 +1526,14 @@ extension on WatchlistItem {
 String takipFiyatMetni(WatchlistItem item) {
   final f = item.currentPrice;
   if (f == null) return '—';
-  if (bistEndeksiMi(item.ticker)) return fmtNum(f, digits: 0);
+  return takipFiyatBicimi(item, f);
+}
+
+/// [item]'ın fiyat biçimiyle herhangi bir fiyat (alarm hedefi dahil): satırdaki
+/// güncel fiyat ile çanın hedefi aynı biçimde okunsun — biri "₺4.300,00",
+/// öbürü "4.300" olsaydı iki sayı kıyaslanamazdı.
+String takipFiyatBicimi(WatchlistItem item, double f) {
+  if (endeksMi(item.ticker)) return fmtNum(f, digits: 0);
   // Sabit 2 hane SHIB'i "₺0,00" yazıyordu — ondalık [fiyatBicimi]'nden.
   return fmtFiyat(f,
       azami: item.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
