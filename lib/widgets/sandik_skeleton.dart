@@ -9,7 +9,7 @@ import '../theme/sandik.dart';
 /// Finans panosunda ortada dönen bir halka "bozuk" okunur; içeriğin
 /// geleceği yerde soluk bloklar ise "geliyor" der ve yerleşim zıplamaz.
 ///
-/// Hareket: opaklık 0,45 ↔ 0,9 arasında yumuşak nabız. Sistem "hareketi
+/// Hareket: opaklık 0,6 ↔ 1 arasında yumuşak nabız. Sistem "hareketi
 /// azalt" açıksa nabız YOK — sabit blok (`MediaQuery.disableAnimationsOf`).
 /// Shimmer (kayan parlama) bilerek seçilmedi: bir paket daha ve koyu yeşil
 /// zeminde amber parlama gürültü yapıyordu.
@@ -43,14 +43,21 @@ class _SandikSkeletonState extends State<SandikSkeleton>
   );
   late final Animation<double> _alpha = _ctrl
       .drive(CurveTween(curve: const _Ucgen()))
-      .drive(Tween<double>(begin: 0.45, end: 0.9));
+      .drive(Tween<double>(begin: _enSonuk, end: 1));
+
+  /// Nabzın alt sınırı. Aralık 0,45 ↔ 0,9'dan daraltıldı (arayüz denetimi
+  /// 2026-11-10): iki katlık parlaklık salınımı yükleme ekranını "yanıp
+  /// sönüyor" gibi okutuyordu.
+  static const double _enSonuk = 0.6;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context)) {
       _ctrl.stop();
-      _ctrl.value = 0.5;
+      // Üçgen eğri 0,5'te TEPE yapar: eskiden hareketi azalt açıkken blok en
+      // parlak karede sabitleniyordu. 0,25 = aralığın ortası.
+      _ctrl.value = 0.25;
     } else if (!_ctrl.isAnimating) {
       final dongu = SandikMotion.nabiz.inMilliseconds;
       _ctrl.value =
@@ -81,7 +88,11 @@ class _SandikSkeletonState extends State<SandikSkeleton>
           height: widget.height,
           decoration: BoxDecoration(
             // hairline zaten yarı saydam; iki kat üst üste bloğu belirginleştirir.
-            color: Color.alphaBlend(color, color.withValues(alpha: 1)),
+            // Zemin de YARI SAYDAM olmalı (arayüz denetimi 2026-11-10): eskiden
+            // `color.withValues(alpha: 1)` üstüne karıştırılıyordu; opak zemine
+            // karışan renk opak çıkar, blok koyu temada tam beyaz, açık temada
+            // neredeyse siyah oluyordu ("shimmer" şikâyeti).
+            color: iskeletRengi(color),
             borderRadius: BorderRadius.circular(widget.radius),
           ),
         ),
@@ -89,6 +100,11 @@ class _SandikSkeletonState extends State<SandikSkeleton>
     );
   }
 }
+
+/// İskelet bloğunun rengi: ince çizgi tonunun iki katı, hâlâ yarı saydam.
+/// Testten de okunur (`iskelet_rengi_test`): blok hiçbir temada opak olmaz.
+@visibleForTesting
+Color iskeletRengi(Color hairline) => Color.alphaBlend(hairline, hairline);
 
 /// Satır listesi iskeleti — sol ikon, iki satır metin, sağda tutar.
 class SandikSkeletonList extends StatelessWidget {
