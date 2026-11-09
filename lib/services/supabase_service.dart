@@ -3026,16 +3026,18 @@ class SupabaseService {
   /// Ayarlar ekranı "GELİŞTİRİCİ → Push Teşhisi" tile'ını yalnızca bu true
   /// dönerse gösterir. Sunucu tarafı koruma (RPC'lerdeki `is_push_admin()`
   /// kontrolü) DEĞİŞMEDİ; bu yalnızca admin olmayan kullanıcıya boş bir
-  /// teşhis ekranı göstermemek için. Hata ya da eski migration'da (0055
-  /// koşulmamışsa GRANT yok → yetki hatası) sessizce false.
+  /// teşhis ekranı göstermemek için.
+  ///
+  /// Hata FIRLATIR (2026-11-10'a kadar sessizce false dönüyordu): admin'in
+  /// Premium'u da bu cevaba bağlı, yutulan tek bir zaman aşımı oturum
+  /// boyunca "admin değil" demekti. Yeniden deneme ve son çare `false`
+  /// çağıranda (`isPushAdminProvider` → `adminMiOku`).
   Future<bool> isPushAdmin() async {
     if (_uid == null) return false;
-    try {
-      final r = await _db.rpc<dynamic>('is_push_admin').timeout(DbLogger.defaultTimeout);
-      return r == true;
-    } catch (_) {
-      return false;
-    }
+    final r = await _db
+        .rpc<dynamic>('is_push_admin')
+        .timeout(DbLogger.defaultTimeout);
+    return r == true;
   }
 }
 
