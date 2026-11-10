@@ -117,6 +117,9 @@ RaporBelgesi? hareketDokumuBelgesi({
     kapsam: 'Kapsam: $aralik',
     altBaslik:
         '$kim · ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)} itibarıyla',
+    // PDF bandında tarih kapsam satırında bir kez; bantta yalnız kişi
+    // (2026-11-10). Excel altBaslik'ı yazar.
+    bantAlt: kim,
     dosyaAdi: belgeDosyaAdi(
         'Tüm Hareketler', '${gunDonemi(ilk)} - ${gunDonemi(bit)}'),
     ozet: [

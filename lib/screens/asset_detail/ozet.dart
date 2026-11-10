@@ -376,6 +376,20 @@ extension _DetayOzet on _AssetDetailScreenState {
             context.l10n.assetPerformanceSemantics(widget.asset.name),
       );
 
+  /// Başlık ve büyük fiyat uzun basınca kodu/fiyatı kopyalar
+  /// ([KopyalaUzunBasma], 2026-11-10). Fiyat [_fiyatBlogu]'nun yazdığı
+  /// dizgenin aynısı (aynı `_birimBicimi(canli)`). Mevduatta yok: kod
+  /// sözleşme adıdır, büyük sayı birim fiyat değil kişisel bakiye.
+  Widget _kopyalanir(_PnlOzeti pnl, Widget child) {
+    if (widget.asset.type == AssetType.mevduat) return child;
+    final canli = pnl.currentUnitTRY;
+    return KopyalaUzunBasma(
+      kod: _kimlik.kisaEtiket,
+      fiyat: canli > 0 ? _birimBicimi(canli).format(canli) : null,
+      child: child,
+    );
+  }
+
   /// Takip listesi ve varlık sayfasıyla AYNI anahtar (`VarlikKimligi.key`).
   VarlikKimligi get _kimlik {
     final a = widget.asset;

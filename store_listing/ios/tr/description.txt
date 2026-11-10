@@ -40,10 +40,10 @@ Apple ile giriş, Face ID kilidi, bakiyeni tek dokunuşla gizleme. Hesabını ve
 
 PREMİUM (isteğe bağlı abonelik)
 • Sınırsız varlık, takip listesi, alarm, ortak ve portföy
-• Yıllık rapor, PDF ve Excel dışa aktarma, temettü tahmini
+• Aylık ve yıllık rapor PDF ve Excel olarak: gerçekleşen kâr, net temettü, stopaj, masraf; temettü tahmini
 • Fon X-Ray ve kalem kalem masraf dökümü
 • 8 teknik gösterge, sınırsız sinyal bildirimi, kendi göstergen (Pine)
-• Para akışı 8 hafta, hacim radarı 20 gün, haftalık notun tamamı, aylık rapor
+• Para akışı 8 hafta, hacim radarı 20 gün, haftalık notun tamamı
 • Zirve'ye yeni katılım ve ilk portföyün dağılımı
 Ücretsiz katman portföy takibi için yeterlidir; Premium aylık ya da yıllık, yıllıkta 7 gün ücretsiz deneme. Fiyat satın alma ekranında yazar.
 

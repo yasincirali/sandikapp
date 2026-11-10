@@ -30,8 +30,8 @@ import 'rapor_belgesi.dart';
 /// 3. **Öne çıkanlar:** kayıtlardan hesaplanan düz cümleler (yorum).
 /// 4. **Grafikler:** dağılım çubuğu ve varlık bazında yatay çubuklar.
 /// 5. **Tablolar:** yalnız bilgi taşıyan sütunlar (tümü boş sütun, hepsi
-///    TL olan "Para birimi", hepsi 1 olan "Kur" PDF'te gizlenir — Excel'de
-///    durur); sembol adın altında küçük satır; sütun genişliği içeriğe
+///    TL olan "Para birimi", hepsi 1 olan "Kur", tümü ₺0 olan tutar
+///    sütunu PDF'te gizlenir — Excel'de durur; `pdfGizliSutunlar`); sembol adın altında küçük satır; sütun genişliği içeriğe
 ///    göre; kâr/zarar sütunu renkli ve işaretli; toplam satırı kalın.
 /// 6. **Notlar:** dipnotlar küçük, en sonda.
 ///
@@ -80,11 +80,14 @@ Future<Uint8List> pdfYaz(
             logo: logoImg,
             belgeTuru: b.belgeTuru,
             baslik: _ilkHarfBuyuk(baslik),
-            alt: b.kapsam == null
-                ? b.altBaslik
-                : '${b.kapsam} · ${b.altBaslik}'),
+            alt: pdfBantAltSatiri(b)),
         pw.SizedBox(height: 14 + 2.2 + 16),
         _gostergeler(pdfOzeti(b.ozet)),
+        if (b.ozetNotu != null) ...[
+          pw.SizedBox(height: 6),
+          pw.Text(b.ozetNotu!,
+              style: const pw.TextStyle(fontSize: 7.5, color: PdfMarka.gri)),
+        ],
         if (b.oneCikanlar.isNotEmpty) ...[
           pw.SizedBox(height: 14),
           _oneCikanlar(b.oneCikanlar),
@@ -105,7 +108,7 @@ Future<Uint8List> pdfYaz(
             pw.Text('Kayıt yok.',
                 style: const pw.TextStyle(fontSize: 8.5, color: PdfMarka.gri)),
           ] else
-            ..._tablo(t),
+            ..._tablo(t.pdf ?? t),
         ],
         if (b.tablolarOnce)
           for (final m in b.bolumler) ...[
@@ -125,6 +128,14 @@ Future<Uint8List> pdfYaz(
     ),
   );
   return doc.save();
+}
+
+/// Bandın alt satırı: "Kapsam … · kim · …". [RaporBelgesi.bantAlt] varsa
+/// kapsamdan sonra o (yalnız kişi adı; tarih kapsamda bir kez, 2026-11-10),
+/// yoksa eski davranış [RaporBelgesi.altBaslik].
+String pdfBantAltSatiri(RaporBelgesi b) {
+  final ek = b.bantAlt ?? b.altBaslik;
+  return b.kapsam == null ? ek : '${b.kapsam} · $ek';
 }
 
 // Yalnız ilk harf, Türkçe büyük harfle (i → İ, ı → I).
@@ -169,17 +180,30 @@ bool _yonlu(String etiket) => etiket.toLowerCase().contains('kâr/zarar');
 /// açıyordu. Sıfır komisyon kutusu da çıkar (girmeyen herkeste "₺0,00").
 /// Süzme YALNIZ burada: `RaporBelgesi.ozet` Excel'de de okunur, müşavir
 /// için sayı sütunu orada kalır.
+///
+/// Değeri olmayan kutu ("—" ya da `null`) da çıkar (2026-11-10): aylık
+/// raporda açıklanmamış TÜFE kutusu rakam yerine çizgi taşıyor, ikinci
+/// sırayı yarım bırakıyordu. Gerekçe cümlesi varsa
+/// [RaporBelgesi.ozetNotu] kutuların altında yazar.
 List<(String, Object?)> pdfOzeti(List<(String, Object?)> ozet) => [
       for (final k in ozet)
-        if (!k.$1.trim().endsWith(' sayısı') &&
+        if (k.$2 != null &&
+            k.$2 != '—' &&
+            !k.$1.trim().endsWith(' sayısı') &&
             !(k.$1.contains('masraf') &&
                 k.$2 is TlTutar &&
                 (k.$2 as TlTutar).deger.abs() < 0.005))
           k,
     ];
 
+/// Gösterge ızgarasının sütun sayısı: 4 kutu tek sırada 4 sütun (TÜFE'si
+/// açıklanmamış aylık rapor: 3 + 1 yarım sıra yerine), diğer her sayıda
+/// eskisi gibi 3 (5–6 kutu iki dolu sıraya yakın; 4'ten geniş sıra A4'te
+/// tutarı sıkıştırır).
+int gostergeSutunSayisi(int kutu) => kutu == 4 ? 4 : 3;
+
 pw.Widget _gostergeler(List<(String, Object?)> ozet) {
-  const sutun = 3;
+  final sutun = gostergeSutunSayisi(ozet.length);
   final satirlar = <pw.Widget>[];
   for (var i = 0; i < ozet.length; i += sutun) {
     final parca = ozet.sublist(i, math.min(i + sutun, ozet.length));
@@ -543,17 +567,25 @@ pw.Widget _cubuklar(List<(String, double)> kalemler) {
 
 // ── Tablo ──────────────────────────────────────────────────────────────────
 
-/// Tablo + (varsa) gizlenen sütunların notu.
-List<pw.Widget> _tablo(RaporTablosu t) {
-  final n = t.sutunlar.length;
+/// PDF'te bilgi taşımayan sütunlar (Excel'de kalır) ve tablonun altına
+/// yazılan notlar. [t] boş olmayan tablo.
+///
+/// - Tümü boş sütun; hepsi aynı "Para birimi" (notla); hepsi 1 "Kur".
+/// - Tümü sıfır TL tutar sütunu (2026-11-10): komisyon girmeyen herkeste
+///   satış tablosu her satırda "₺0,00" yazıyordu. Yönlü (kâr/zarar) sütun
+///   HARİÇ: sıfır kâr bir sonuçtur, boşluk değil.
+/// - Gizlenen komisyon sütunu (boş ya da sıfır) tek dipnotla anılır:
+///   "Komisyon girilmemiş." Not yalnız komisyona: diğer sıfır/boş sütunlar
+///   (temettüsüz brüt, notsuz satır) okurun soracağı bir eksik değil; genel
+///   "X sütunu gizlendi" mekanizması her belgeye gürültü eklerdi.
+({Set<int> gizli, List<String> notlar}) pdfGizliSutunlar(RaporTablosu t) {
   Object? hucre(List<Object?> r, int i) => i < r.length ? r[i] : null;
   bool hepsi(int i, bool Function(Object?) f) =>
       t.satirlar.every((r) => f(hucre(r, i)));
-
-  // PDF'te bilgi taşımayan sütunlar gizlenir (Excel'de kalır).
   final gizli = <int>{};
   final notlar = <String>[];
-  for (var i = 0; i < n; i++) {
+  var komisyonNotu = false;
+  for (var i = 0; i < t.sutunlar.length; i++) {
     final ad = t.sutunlar[i];
     if (hepsi(i, (h) => h == null)) {
       gizli.add(i);
@@ -565,8 +597,24 @@ List<pw.Widget> _tablo(RaporTablosu t) {
       }
     } else if (ad == 'Kur' && hepsi(i, (h) => h == null || h == 1 || h == 1.0)) {
       gizli.add(i);
+    } else if (!_yonlu(ad) &&
+        hepsi(i, (h) => h is TlTutar && h.deger.abs() < 0.005)) {
+      gizli.add(i);
+    }
+    if (gizli.contains(i) && ad.startsWith('Komisyon') && !komisyonNotu) {
+      komisyonNotu = true;
+      notlar.add('Komisyon girilmemiş.');
     }
   }
+  return (gizli: gizli, notlar: notlar);
+}
+
+/// Tablo + (varsa) gizlenen sütunların notu.
+List<pw.Widget> _tablo(RaporTablosu t) {
+  final n = t.sutunlar.length;
+  Object? hucre(List<Object?> r, int i) => i < r.length ? r[i] : null;
+
+  final (:gizli, :notlar) = pdfGizliSutunlar(t);
   // Sembol, adın altında küçük satır olarak yazılır.
   final adSutunu = t.sutunlar.indexOf('Varlık');
   final sembolSutunu = t.sutunlar.indexOf('Sembol');
@@ -633,8 +681,9 @@ List<pw.Widget> _tablo(RaporTablosu t) {
           if (!teknikSembolMu(sembol)) ...[
             pw.SizedBox(height: 1),
             pw.Text(sembol,
-                style:
-                    const pw.TextStyle(fontSize: 6.3, color: PdfMarka.gri)),
+                // Küçük metin tabanı 7 pt (2026-11-10; 6,3 basılıda
+                // okunmuyordu).
+                style: const pw.TextStyle(fontSize: 7, color: PdfMarka.gri)),
           ],
         ],
       );
@@ -651,7 +700,7 @@ List<pw.Widget> _tablo(RaporTablosu t) {
           tutar,
           pw.SizedBox(height: 1),
           pw.Text(yuzde,
-              style: const pw.TextStyle(fontSize: 6.3, color: PdfMarka.gri)),
+              style: const pw.TextStyle(fontSize: 7, color: PdfMarka.gri)),
         ],
       );
     }
@@ -676,7 +725,7 @@ List<pw.Widget> _tablo(RaporTablosu t) {
           child: pw.Text(t.sutunlar[i],
               textAlign: sagaYasli(i) ? pw.TextAlign.right : pw.TextAlign.left,
               style: pw.TextStyle(
-                  fontSize: 6.6,
+                  fontSize: 7,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfMarka.yesil)),
         ),
@@ -731,7 +780,7 @@ List<pw.Widget> _tablo(RaporTablosu t) {
       pw.Padding(
         padding: const pw.EdgeInsets.only(top: 4),
         child: pw.Text(not,
-            style: const pw.TextStyle(fontSize: 6.8, color: PdfMarka.gri)),
+            style: const pw.TextStyle(fontSize: 7, color: PdfMarka.gri)),
       ),
   ];
 }

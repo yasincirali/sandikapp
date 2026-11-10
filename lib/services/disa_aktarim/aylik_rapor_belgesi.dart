@@ -58,6 +58,7 @@ class AylikRaporNotu {
 /// - Uydurma sayı yok. Ayın getirisi hesaplanamadıysa getiri ve reel getiri
 ///   kutusu çıkmaz. Ayın TÜFE'si henüz açıklanmadıysa kutu boş ya da tahmini
 ///   değil, açıklanacağı günü yazar ("3 Kasım'da açıklanır", `TuikTakvimi`).
+///   PDF'te kutu hiç çizilmez; gün kutuların altında tek cümle (2026-11-10).
 /// - Getiri Performans'ın aylık özetiyle AYNI hesap (`PeriodSummaryService`,
 ///   yatırılan para sayılmaz); burada yeni formül yok.
 /// - Notlar saklanan satırdan okunur ("dönemlik çıktı bir kez üretilir").
@@ -114,6 +115,7 @@ RaporBelgesi aylikRaporBelgesi({
     dosyaAdi: belgeDosyaAdi('Aylık Rapor', ayDonemi(donem)),
     kapsam: kapsam,
     tablolarOnce: !kalemDuzeni,
+    ozetNotu: tufePct == null ? tufeAciklanmadiCumlesi(donem) : null,
     // Sıra (müşteri raporu 2 Kas 13:15 #1): ilk satır kişinin parası
     // (yüzde, TL kâr, ay sonu), ikinci satır kıyas (TÜFE, reel, yatırılan).
     // "Notu çıkan varlık" sayacı çıktı: aynı sayı öne çıkanların ilk
@@ -125,6 +127,8 @@ RaporBelgesi aylikRaporBelgesi({
       if (portfoy?.sonTRY != null) ('Ay sonu değer', TlTutar(portfoy!.sonTRY!)),
       // Açıklanmamış TÜFE: kutuya cümle değil "—"; günü etikette küçük
       // yazılır (Ar-Ge 2 Kas 12:45 tasarım #4: rakam puntosunda cümle).
+      // 2026-11-10: bu satır yalnız Excel'de görünür; PDF "—" kutusunu
+      // çizmez (ikinci sıra yarım kalıyordu), günü [ozetNotu] cümlesi yazar.
       if (tufePct != null)
         ('Ayın TÜFE\'si', fmtPct(tufePct))
       else
@@ -238,6 +242,24 @@ RaporBelgesi aylikRaporBelgesi({
     ],
   );
 }
+
+/// "Ekim TÜFE'si 3 Kasım'da açıklanır." — aylık rapor PDF'inde gösterge
+/// kutularının altındaki cümle (2026-11-10). Gün `TuikTakvimi`'nden; o
+/// sınıf her ay için günü bildiğinden "henüz açıklanmadı" gibi günsüz bir
+/// yedek cümleye gerek yok. Bulunma eki ayın adına göre (Kasım'da,
+/// Aralık'ta, Eylül'de): sabit "'da" Aralık'ta yanlış okunurdu.
+String tufeAciklanmadiCumlesi(DateTime donem) {
+  final aciklama = TuikTakvimi.aciklamaTarihi(donem);
+  final ay = DateFormat('MMMM', 'tr_TR').format(donem);
+  final gun = DateFormat('d MMMM', 'tr_TR').format(aciklama);
+  return "$ay TÜFE'si $gun${_bulunmaEki(aciklama.month)} açıklanır.";
+}
+
+// Ay adının bulunma eki (ünlü uyumu + sert ünsüz benzeşmesi).
+String _bulunmaEki(int ay) => const [
+      "'ta", "'ta", "'ta", "'da", "'ta", "'da", //
+      "'da", "'ta", "'de", "'de", "'da", "'ta",
+    ][ay - 1];
 
 /// Aylık raporun "ayın portföyü" sayıları (müşteri raporu 2 Kas 13:15 #1,
 /// Ar-Ge 12:45 #1). Hepsi Performans › 1A özetinin AYNI hesabından

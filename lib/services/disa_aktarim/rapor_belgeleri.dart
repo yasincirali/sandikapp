@@ -247,6 +247,9 @@ RaporBelgesi portfoyBelgesi({
             'işlemler ${fmtTarihAraligi(islemler.last.addedDate, olusturma)}',
     baslik: 'sandık · portföy dökümü',
     altBaslik: '$kim · ${DateFormat('dd.MM.yyyy HH:mm').format(olusturma)} itibarıyla',
+    // PDF bandında an kapsam satırında zaten yazıyor; bantta yalnız kişi
+    // (2026-11-10, aynı saat iki kez okunuyordu). Excel altBaslik'ı yazar.
+    bantAlt: kim,
     dosyaAdi: belgeDosyaAdi('Portföy Dökümü', anDonemi(olusturma)),
     ozet: [
       ('Toplam değer', TlTutar(toplamDeger)),
@@ -345,6 +348,7 @@ RaporBelgesi portfoyBelgesi({
               a.isDividend ? a.dividendAmount : null,
             ],
         ],
+        pdf: _islemlerPdf(islemler, islemAdi),
       ),
     ],
     dipnotlar: [
@@ -352,6 +356,61 @@ RaporBelgesi portfoyBelgesi({
       'Yalnız senin kayıtların; ortak portföydeki ortağının varlıkları dahil değil.',
       'Tüm verilerinin makine okunur tam kopyası Ayarlar › Verilerini indir '
           '(JSON) yolundadır.',
+    ],
+  );
+}
+
+/// Portföy dökümü işlem tablosunun PDF görünümü (2026-11-10): "Temettü
+/// (net)" yerine tek "Tutar (TL)" sütunu. Excel ayrı sütunları korur.
+///
+/// Tutar uygulamanın mevcut TL çevrimleriyle, yeni formül yok:
+/// - alış: miktar × alış fiyatı × alış kuru (`totalCostTRY`'nin komisyonsuz
+///   hâli; komisyon kendi sütununda),
+/// - satış: miktar × satış fiyatı × satış kuru (`satisKuru`, `sellProceedsTRY`
+///   ile aynı kur; komisyon düşülmez, kendi sütununda),
+/// - temettü: ele geçen net tutar, ödeme günü kuruyla (`dividendTRY`).
+/// Satış fiyatı kayıtlı değilse ya da alışın maliyeti bilinmiyorsa hücre
+/// boş ("—"): maliyetle doldurmak uydurma sayı olurdu.
+RaporTablosu _islemlerPdf(
+    List<Asset> islemler, String Function(Asset) islemAdi) {
+  TlTutar? tutar(Asset a) {
+    if (a.isDividend) return TlTutar(a.dividendTRY);
+    if (a.isSell) {
+      final f = a.sellPrice;
+      return f == null ? null : TlTutar(a.quantity * f * a.satisKuru);
+    }
+    if (a.maliyetBilinmiyor == true) return null;
+    return TlTutar(a.quantity * a.purchasePrice * a.purchaseFxRate);
+  }
+
+  return RaporTablosu(
+    baslik: 'İşlemler',
+    sutunlar: const [
+      'Tarih',
+      'İşlem',
+      'Varlık',
+      'Sembol',
+      'Miktar',
+      'Fiyat',
+      'Para birimi',
+      'Kur',
+      'Komisyon',
+      'Tutar (TL)',
+    ],
+    satirlar: [
+      for (final a in islemler)
+        [
+          a.addedDate,
+          islemAdi(a),
+          a.name,
+          sadeSembol(a.ticker),
+          a.isDividend ? null : a.quantity,
+          a.isSell ? a.sellPrice : (a.isDividend ? null : a.purchasePrice),
+          a.currency,
+          a.isSell ? a.satisKuru : a.purchaseFxRate,
+          a.commission == 0 ? null : a.commission,
+          tutar(a),
+        ],
     ],
   );
 }

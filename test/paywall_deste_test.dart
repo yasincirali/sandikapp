@@ -48,6 +48,8 @@ void main() {
         // Temettü kartındaki "maliyetine göre verim" (2026-11-07).
         'temettu_verimi': PaywallKarti.temettu,
         'aylik_rapor': PaywallKarti.rapor,
+        // Varlık grafiğinin geçmiş fiyat tablosu (2026-11-10).
+        'gecmis_fiyatlar': PaywallKarti.rapor,
         // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
         'fon_xray': PaywallKarti.xray,
         'portfoy_xray': PaywallKarti.xray,
@@ -117,6 +119,8 @@ void main() {
         'lib/widgets/temettu_gecmisi_karti.dart',
         // Kur ayrışması satırı (2026-11-07).
         'lib/widgets/kur_ayrismasi_satiri.dart',
+        // Geçmiş fiyat tablosu (2026-11-10).
+        'lib/widgets/gecmis_fiyatlar.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
