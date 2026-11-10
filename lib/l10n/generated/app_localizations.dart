@@ -6200,6 +6200,24 @@ abstract class AppLocalizations {
   /// **' · {n} gösteriliyor'**
   String nShown(int n);
 
+  /// No description provided for @hareketToplamAlim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alım {tutar}'**
+  String hareketToplamAlim(String tutar);
+
+  /// No description provided for @hareketToplamSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış {tutar}'**
+  String hareketToplamSatis(String tutar);
+
+  /// No description provided for @hareketToplamTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü {tutar}'**
+  String hareketToplamTemettu(String tutar);
+
   /// No description provided for @noMatchingRecords.
   ///
   /// In tr, this message translates to:

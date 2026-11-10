@@ -2392,6 +2392,12 @@
       }
     }
   },
+  "hareketToplamAlim": "Bought {tutar}",
+  "@hareketToplamAlim": {"placeholders": {"tutar": {"type": "String"}}},
+  "hareketToplamSatis": "Sold {tutar}",
+  "@hareketToplamSatis": {"placeholders": {"tutar": {"type": "String"}}},
+  "hareketToplamTemettu": "Dividends {tutar}",
+  "@hareketToplamTemettu": {"placeholders": {"tutar": {"type": "String"}}},
   "noMatchingRecords": "No records match the filter",
   "noTransactionsYet": "No transactions yet",
   "sinceDateToToday": "{date} → today",

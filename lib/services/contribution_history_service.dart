@@ -135,6 +135,49 @@ class ContributionHistoryService {
     return toplam;
   }
 
+  /// Hareket listesinin toplam satırı (TRY): alım, satış, temettü ayrı.
+  ///
+  /// ## Neden (müşteri 2026-11-10)
+  /// Tüm hareketler ekranında filtre/arama sonrası "bu aralıkta ne kadar
+  /// aldım, ne kadar sattım" sorusu satır satır toplanıyordu. Tutar her
+  /// kaydın KENDİ günündeki değeridir, fiyat yeniden çekilmez: alım
+  /// komisyon dahil alış günü kuruyla ([Asset.totalCostTRY]), satış ele
+  /// geçen tutar satış günü kuruyla ([Asset.sellProceedsTRY]), temettü ödeme
+  /// günü kuruyla ([Asset.dividendTRY]). Ay başlığındaki [netKatki] ile aynı
+  /// kurallar; iki satır aynı kaydı farklı tutarla saymaz.
+  ///
+  /// Tek kayıt bile TL karşılığı bilinmiyorsa `null`: eksik kayıtla toplanmış
+  /// bir tutar "hepsi bu" gibi okunur (uydurma sayı yasak). Bilinenlerin
+  /// toplamını "eksik" notuyla göstermek yerine satırı gizlemek seçildi;
+  /// ikinci bir açıklama metni sade ekrana yük olurdu. Silinen kayıt ve
+  /// mezar taşı sayılmaz.
+  static ({double alim, double satis, double temettu})? hareketToplamlari(
+      Iterable<Asset> kayitlar) {
+    var alim = 0.0, satis = 0.0, temettu = 0.0;
+    for (final a in kayitlar) {
+      if (!a.isActive || a.isDeleteLog) continue;
+      if (!a.isBuy && !a.isSell && !a.isDividend) continue;
+      if (!tlKarsiligiBilinir(a)) return null;
+      final double t;
+      if (a.isBuy) {
+        t = a.totalCostTRY;
+      } else if (a.isSell) {
+        t = a.sellProceedsTRY;
+      } else {
+        t = a.dividendTRY;
+      }
+      if (!t.isFinite) return null;
+      if (a.isBuy) {
+        alim += t;
+      } else if (a.isSell) {
+        satis += t;
+      } else {
+        temettu += t;
+      }
+    }
+    return (alim: alim, satis: satis, temettu: temettu);
+  }
+
   /// Alım/satış satırının TL karşılığı güvenilir mi?
   ///
   /// TL cinsi kayıt (BIST, fon, altın, TL kotasyonlu döviz) her zaman.

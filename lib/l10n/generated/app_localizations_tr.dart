@@ -3713,6 +3713,21 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String hareketToplamAlim(String tutar) {
+    return 'Alım $tutar';
+  }
+
+  @override
+  String hareketToplamSatis(String tutar) {
+    return 'Satış $tutar';
+  }
+
+  @override
+  String hareketToplamTemettu(String tutar) {
+    return 'Temettü $tutar';
+  }
+
+  @override
   String get noMatchingRecords => 'Filtreye uyan kayıt yok';
 
   @override

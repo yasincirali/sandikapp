@@ -2509,6 +2509,12 @@
       }
     }
   },
+  "hareketToplamAlim": "Alım {tutar}",
+  "@hareketToplamAlim": {"placeholders": {"tutar": {"type": "String"}}},
+  "hareketToplamSatis": "Satış {tutar}",
+  "@hareketToplamSatis": {"placeholders": {"tutar": {"type": "String"}}},
+  "hareketToplamTemettu": "Temettü {tutar}",
+  "@hareketToplamTemettu": {"placeholders": {"tutar": {"type": "String"}}},
   "noMatchingRecords": "Filtreye uyan kayıt yok",
   "noTransactionsYet": "Henüz işlem yok",
   "sinceDateToToday": "{date} → bugün",

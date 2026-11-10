@@ -3739,6 +3739,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String hareketToplamAlim(String tutar) {
+    return 'Bought $tutar';
+  }
+
+  @override
+  String hareketToplamSatis(String tutar) {
+    return 'Sold $tutar';
+  }
+
+  @override
+  String hareketToplamTemettu(String tutar) {
+    return 'Dividends $tutar';
+  }
+
+  @override
   String get noMatchingRecords => 'No records match the filter';
 
   @override
