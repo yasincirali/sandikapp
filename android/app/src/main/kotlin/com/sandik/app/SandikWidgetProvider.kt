@@ -106,10 +106,17 @@ class SandikWidgetProvider : AppWidgetProvider() {
         // kullanır (kaynak kullanımı denetimi, 2026-10-12). Önceden döngü
         // içinde her örnek için ayrı çözülüyordu: 960×180 ARGB ~675 KB'lık
         // bitmap örnek sayısı kadar. `lazy`: veri yoksa hiç çözülmez.
+        // Hedef genişlik: en geniş widget örneğinin px karşılığı (Play uyarısı,
+        // 2026-11-10: tam çözünürlük gereksiz bellek). Bilinmezse 0 → küçültme yok.
+        val yogunluk = context.resources.displayMetrics.density
+        val hedefGenislikPx = appWidgetIds.maxOfOrNull {
+            (appWidgetManager.getAppWidgetOptions(it)
+                .getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0) * yogunluk).toInt()
+        } ?: 0
         val sparkBitmap: Bitmap? by lazy {
             val sparkPath = data.getString("sandik_sparkline", null)
             val sparkPoints = data.readIntCompat("sandik_spark_points")
-            if (sparkPoints >= 2 && sparkPath != null) decodeIfExists(sparkPath) else null
+            if (sparkPoints >= 2 && sparkPath != null) decodeIfExists(sparkPath, hedefGenislikPx) else null
         }
 
         appWidgetIds.forEach { widgetId ->
@@ -315,9 +322,26 @@ class SandikWidgetProvider : AppWidgetProvider() {
      * ayrı ayrı ele alınır. Grafik ikincildir — çizilemezse widget yine
      * tutarı gösterir.
      */
-    private fun decodeIfExists(path: String): Bitmap? = try {
+    /**
+     * Sparkline PNG'sini widget'ın gerçek ihtiyacına göre küçülterek açar.
+     *
+     * **Neden:** RemoteViews bitmap'i Binder ile taşır (~1 MB sınır) ve
+     * tam çözünürlük gereksiz bellek tutuyordu (Play uyarısı, 2026-11-10).
+     * Hedef: en geniş widget örneğinin px genişliği; ondan küçük
+     * çözünürlüğe inilmez (keskinlik korunur). Yalnızca 2'nin kuvveti küçültülür; görünüm ve sözleşme değişmez.
+     */
+    private fun kucultuluCoz(path: String, hedefGenislikPx: Int): Bitmap? {
+        val sinir = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, sinir)
+        var ornek = 1
+        while (hedefGenislikPx > 0 && sinir.outWidth / (ornek * 2) >= hedefGenislikPx) ornek *= 2
+        val secenek = BitmapFactory.Options().apply { inSampleSize = ornek }
+        return BitmapFactory.decodeFile(path, secenek)
+    }
+
+    private fun decodeIfExists(path: String, hedefGenislikPx: Int): Bitmap? = try {
         val file = File(path)
-        if (file.exists()) BitmapFactory.decodeFile(path) else null
+        if (file.exists()) kucultuluCoz(path, hedefGenislikPx) else null
     } catch (e: Exception) {
         null
     }
