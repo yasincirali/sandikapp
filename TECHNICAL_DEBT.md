@@ -433,7 +433,10 @@ maliyeti ağır bastı. Aşağıdaki koşul yalnız ileride yeniden açılırsa 
 
 ---
 
-## 🟡 AÇIK — `hareket_filtre_kaydirma_test` main'de kırık (2026-10-02)
+## ✅ KAPANDI — `hareket_filtre_kaydirma_test` main'de kırık (2026-10-02)
+
+**Kapanış (bu commit):** 10 Kas 2026: main'de geçiyor, CI yeşil; neden
+kendiliğinden düzeldiği kaydedilmedi.
 
 **Ne:** "filtre değişince liste başa kayar" testi `origin/main`'de (21e5ae3)
 geçmiyor: Silinenler çipine dokununca ofset 0 beklenirken 1512 kalıyor.
@@ -808,7 +811,25 @@ log drain'i bir tabloya akıtılırsa. İkisi de bugünkü ihtiyacın çok üst�
 
 ---
 
-## 🟡 AÇIK — İki test cihaz saatine bağlı: gece yarısı–seans arası kırmızı
+## ✅ KAPANDI — İki test cihaz saatine bağlı: gece yarısı–seans arası kırmızı
+
+**Kapanış (2026-11-10, bu commit).** Saat fikstürden servise taşındı:
+- `IntradaySeriesCache.breakdown` varsayılan saatini `DateTime.now()` yerine
+  `HistoryService.gunIciSaat()`'ten okur (üretimde ikisi aynı:
+  `DateTime.now`). Seriyi kuran motor ile önbelleğin gün/tazelik kararı artık
+  tek saatte; kanca bu yüzden `@visibleForTesting` değil.
+- `HomeWidgetService.update`/`updateWithChart` `now:` alır (Live Activity'nin
+  `sync(now:)` deseni); dört ayrı `DateTime.now()` tek `simdi`'ye indi.
+  Verilmezse yazma anında `DateTime.now()` — üretim davranışı aynı.
+- Fikstürler sabit: `live_activity_session_test` `_duringSession` =
+  2026-11-10 Salı 14:30 + `setUp`'ta `gunIciSaat` o ana sabitlenir (fikstürün
+  tam seans günü olduğu ayrı testte kilitli); `home_widget_privacy_test` Salı
+  14:00'ı `now:` ile verir.
+Doğrulama: iki test ve `IntradaySeriesCache`/`gunIciSaat`/widget/Live Activity
+dokunan tüm testler `TZ` ile duvar saati Salı 23:58, Çarşamba 00:00, 00:02,
+02:30, 02:59 ve Salı 09:57'ye zorlanarak koşuldu; hepsi yeşil.
+
+**Kapanış öncesi kayıt:**
 
 **Ne:** `live_activity_session_test` ("ömürlük getiri günlük diye gösterilmez")
 ve `home_widget_privacy_test` ("gün içi seri VARKEN…") fikstürü `DateTime.now()`

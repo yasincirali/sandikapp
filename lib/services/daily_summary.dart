@@ -913,7 +913,12 @@ class IntradaySeriesCache {
     Duration? azamiYas,
     bool zorla = false,
   }) async {
-    final ts = now ?? DateTime.now();
+    // Varsayılan saat gün içi motorunun saatidir ([HistoryService.gunIciSaat],
+    // üretimde `DateTime.now`). Seriyi o motor kuruyor; önbelleğin "aynı
+    // gün mü / taze mi" kararı başka saatten okunursa test saati sabitlediğinde
+    // seri bir güne, damga başka güne düşer ve gece koşularında yüzde "—"
+    // dönerdi (`TECHNICAL_DEBT.md`: "İki test cihaz saatine bağlı", 2026-11-10).
+    final ts = now ?? HistoryService.gunIciSaat();
     final y = _yuvalar.putIfAbsent(anahtar(assets), _GunIciYuva.new);
 
     final zorlaTaze =

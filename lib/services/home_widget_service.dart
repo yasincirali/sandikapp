@@ -346,10 +346,18 @@ class HomeWidgetService implements WidgetSabitleyici {
   /// [intraday] verilirse gün içi sparkline da çizilir (bkz. [_renderSparkline]).
   /// Sessizce başarısız olur: ana ekran widget'ı ikincil bir yüzeydir,
   /// yazma hatası uygulamanın akışını bozmamalı.
+  ///
+  /// [now] özetin, tarih satırının ve piyasa durumunun TEK saati —
+  /// `LiveActivityService.sync(now:)` ile aynı desen. Üretimde verilmez
+  /// (`DateTime.now()`); test seans içi sabit bir an verir. Önceden burada
+  /// dört ayrı `DateTime.now()` vardı ve test fikstürü de seriyi
+  /// `DateTime.now()`'a göre kuruyordu: gece yarısı–seans arası koşularda
+  /// sonuç duvar saatine bağlıydı (`TECHNICAL_DEBT.md`, 2026-11-10).
   Future<void> update(
     PortfolioState state, {
     required bool hideBalance,
     Map<int, double>? intraday,
+    DateTime? now,
   }) {
     // Yazmalar SIRAYA alınır.
     //
@@ -363,6 +371,7 @@ class HomeWidgetService implements WidgetSabitleyici {
           state,
           hideBalance: hideBalance,
           intraday: intraday,
+          now: now,
         ));
     return _writeQueue;
   }
@@ -373,7 +382,11 @@ class HomeWidgetService implements WidgetSabitleyici {
     PortfolioState state, {
     required bool hideBalance,
     Map<int, double>? intraday,
+    DateTime? now,
   }) async {
+    // Yazma sırası geldiğinde okunur (kuyrukta beklerken değil) — üretimde
+    // davranış eskisiyle aynı.
+    final simdi = now ?? DateTime.now();
     try {
       await _ensureInit();
       _toplanan = <String, Object?>{};
@@ -406,7 +419,7 @@ class HomeWidgetService implements WidgetSabitleyici {
         final summary = DailySummary.from(
           state: state,
           series: intraday ?? const {},
-          now: DateTime.now(),
+          now: simdi,
           // Çizilen seans bugün olmayabilir (hafta sonu → Cuma). Uygulamanın
           // günlük grafiği de ekseni bu güne kurar.
           seansGunu: IntradaySeriesCache.instance.seansGunu,
@@ -459,13 +472,13 @@ class HomeWidgetService implements WidgetSabitleyici {
         // Tarih — kilit ekranıyla AYNI biçim. Widget günlerce ekranda
         // durur; rakamın hangi güne ait olduğu okunabilmeli.
         await _yaz<String>(
-            _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
+            _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(simdi));
         // Piyasa durumu — banner "Piyasa kapalı" derse kullanıcı rakamın
         // neden değişmediğini bilir. Kilit ekranıyla AYNI kural.
         await _yaz<bool>(
-            _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
+            _kMarketOpen, DailySummary.isMarketOpen(simdi));
         await _yaz<String>(
-            _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
+            _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(simdi));
 
         // Gün içi sparkline — grafik PNG olarak çizilip yola yazılır.
         // RemoteViews custom view çizemez, bu yüzden native taraf hazır
@@ -484,7 +497,7 @@ class HomeWidgetService implements WidgetSabitleyici {
           // Karışık portföyde nokta canlı kalır: borsa kapalı olsa da
           // altın/döviz/kripto rakamı hareket ettiriyor.
           isMarketOpen:
-              DailySummary.isMarketOpen(DateTime.now()) || !yalnizBorsa,
+              DailySummary.isMarketOpen(simdi) || !yalnizBorsa,
         );
       }
 
@@ -575,6 +588,7 @@ class HomeWidgetService implements WidgetSabitleyici {
   Future<void> updateWithChart(
     PortfolioState state, {
     required bool hideBalance,
+    DateTime? now,
   }) async {
     // Seri ORTAK önbellekten gelir — Live Activity ile aynı kaynak.
     //
@@ -589,9 +603,9 @@ class HomeWidgetService implements WidgetSabitleyici {
     // Bakiye gizliyken grafik zaten çizilmeyecek; boşuna ağ turu atma.
     final series = hideBalance
         ? const <int, double>{}
-        : await IntradaySeriesCache.instance.get(state);
+        : await IntradaySeriesCache.instance.get(state, now: now);
 
-    await update(state, hideBalance: hideBalance, intraday: series);
+    await update(state, hideBalance: hideBalance, intraday: series, now: now);
   }
 
   /// Gün içi seriyi sparkline PNG'sine çevirip yolunu paylaşımlı depoya yazar.
