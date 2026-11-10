@@ -110,3 +110,85 @@ String? fonAltBasligi({
   if (k.isEmpty) return g;
   return g == null ? k : '$k · $g';
 }
+
+/// "Bunu mu demek istedin?" önerileri: arama boş döndüğünde sorguya bir
+/// harf uzaklıktaki kodlar ya da adında bir harf uzaklıkla başlayan sözcük
+/// bulunanlar (müşteri işi 10 Kas).
+///
+/// ## Neden
+/// "THYO" yazan THYAO'yu, "ASLES" yazan ASELS'i "Sonuç bulunamadı"
+/// ekranında arıyordu; hızlı yazmada bir harf atlamak, fazladan basmak ya
+/// da iki harfi yer değiştirmek en sık hata. Uzaklık Damerau-Levenshtein
+/// (bitişik iki harfin yer değiştirmesi tek hata sayılır, OSA biçimi).
+///
+/// ## Kurallar
+/// - Sorgu en az 3 harf: 2 harfte bir harf uzaklık katalogun yarısını
+///   getirir; öneri gürültü olur.
+/// - En çok [adet] (3) öneri; sıra önce uzaklık, sonra kod (katlanmış):
+///   aynı sorgu her seferinde aynı önerileri aynı sırada verir.
+/// - Katlama [seciciSuz] ile aynı (`trKatla`): "turk" ile "Türk" eşittir.
+/// - Ad eşleşmesi sözcük BAŞI: "aselsn" "Aselsan"ı bulur, adın ortasındaki
+///   rastgele bir dizi öneri sebebi olmaz.
+List<T> yakinOneriler<T>(
+  Iterable<T> hepsi,
+  String sorgu, {
+  required String Function(T) kod,
+  required String Function(T) ad,
+  int adet = 3,
+}) {
+  final q = trKatla(sorgu.trim());
+  if (q.length < 3 || adet <= 0) return const [];
+  final adaylar = <(int, String, T)>[];
+  final gorulen = <String>{};
+  for (final o in hepsi) {
+    final k = trKatla(kod(o));
+    if (k.isEmpty || !gorulen.add(k)) continue;
+    var d = _yakinlik(q, k);
+    if (d > 1) {
+      for (final w in trKatla(ad(o)).split(_sozcukAyraci)) {
+        if (w.length < q.length - 1) continue;
+        for (var n = q.length - 1; n <= q.length + 1 && n <= w.length; n++) {
+          final dw = _yakinlik(q, w.substring(0, n));
+          if (dw < d) d = dw;
+        }
+        if (d <= 1) break;
+      }
+    }
+    if (d <= 1) adaylar.add((d, k, o));
+  }
+  adaylar.sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2.compareTo(b.$2));
+  return [for (final a in adaylar.take(adet)) a.$3];
+}
+
+final _sozcukAyraci = RegExp(r'[^a-z0-9]+');
+
+/// Damerau-Levenshtein (OSA) uzaklığı; uzunluk farkı 1'i aşarsa hesap
+/// yapılmadan "uzak" (2) döner: yalnız ≤ 1 sorulur, katalog ~2.000 öğe.
+int _yakinlik(String a, String b) {
+  if ((a.length - b.length).abs() > 1) return 2;
+  final m = a.length, n = b.length;
+  final d = List.generate(m + 1, (i) => List<int>.filled(n + 1, 0));
+  for (var i = 0; i <= m; i++) {
+    d[i][0] = i;
+  }
+  for (var j = 0; j <= n; j++) {
+    d[0][j] = j;
+  }
+  for (var i = 1; i <= m; i++) {
+    for (var j = 1; j <= n; j++) {
+      final maliyet = a[i - 1] == b[j - 1] ? 0 : 1;
+      var v = d[i - 1][j] + 1;
+      if (d[i][j - 1] + 1 < v) v = d[i][j - 1] + 1;
+      if (d[i - 1][j - 1] + maliyet < v) v = d[i - 1][j - 1] + maliyet;
+      if (i > 1 &&
+          j > 1 &&
+          a[i - 1] == b[j - 2] &&
+          a[i - 2] == b[j - 1] &&
+          d[i - 2][j - 2] + 1 < v) {
+        v = d[i - 2][j - 2] + 1;
+      }
+      d[i][j] = v;
+    }
+  }
+  return d[m][n];
+}

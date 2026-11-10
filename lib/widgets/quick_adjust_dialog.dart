@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/kapanis_ozeti.dart';
+import '../models/position.dart' show positionKey;
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/mevduat_hesabi.dart';
@@ -13,6 +15,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
+import 'kapanis_ozeti_sheet.dart';
 import 'portfoy_secim_sayfasi.dart';
 import 'sandik_acilir.dart';
 import 'sandik_async_button.dart';
@@ -215,12 +218,18 @@ Future<void> showQuickAdjustDialog(
     if (pozisyon == null || !context.mounted) return;
     asset = pozisyon;
   }
-  return showSandikGecisli<void>(
+  final ozet = await showSandikGecisli<KapanisOzeti>(
     context: context,
     barrierDismissible: true,
     builder: (_) => _QuickAdjustDialog(
         asset: asset, mode: mode, ref: ref, baslangicMiktar: baslangicMiktar),
   );
+  // "Tümünü sat" kaydedildiyse diyalog kapanış özetiyle döner; özet diyalog
+  // KAPANDIKTAN sonra açılır (iki katman modal olmasın).
+  if (ozet != null && context.mounted) {
+    await showKapanisOzeti(context, ozet,
+        tutarGizli: ref.read(balanceHiddenProvider));
+  }
 }
 
 class _QuickAdjustDialog extends StatefulWidget {
@@ -533,6 +542,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       _error = null;
     });
 
+    KapanisOzeti? ozet;
     try {
       final asset = widget.asset;
       final notifier = widget.ref.read(portfolioProvider.notifier);
@@ -556,18 +566,22 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           portfoyId: asset.portfoyId,
         );
       } else {
+        final tumu = (qty - asset.quantity).abs() < 0.0001;
+        final baslangic = DateTime.now();
         await notifier.addSellTransaction(
           asset: asset,
           quantity: qty,
           sellPrice: asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice,
         );
+        if (tumu) ozet = _kapanisOzeti(qty, baslangic);
       }
 
       if (!mounted) return;
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): sheet kapanıyor ve
       // varlığın miktarı arkadaki listede anında değişiyor — onay zaten
       // ekranda. Hata yolu sessiz değil; `_error` ile sheet içinde kalır.
-      Navigator.pop(context);
+      // Tümünü satışta kapanış özeti döner (`showQuickAdjustDialog` açar).
+      Navigator.pop(context, ozet);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -575,6 +589,26 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         _error = context.l10n.transactionFailed(friendlyError(e));
       });
     }
+  }
+
+  /// "Tümünü sat" kaydından sonra kapanış özeti. Satış satırı defterden
+  /// okunur (satış günü kuru ve kimlik sağlayıcının yazdığı gibi); bulunamazsa
+  /// (demo, yazılamamış satır) özet yok: tahmini satırla sayı uydurulmaz.
+  /// [baslangic]: kayıttan hemen önce; eski aynı miktarlı satış seçilmesin.
+  /// Mevduat buraya gelmez (`_tutarlaKaydet`): getirisi sözleşmeden okunur.
+  KapanisOzeti? _kapanisOzeti(double qty, DateTime baslangic) {
+    final defter =
+        widget.ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final anahtar = positionKey(widget.asset);
+    final esik = baslangic.subtract(const Duration(seconds: 1));
+    for (final a in defter) {
+      if (!a.isSell || positionKey(a) != anahtar) continue;
+      if ((a.quantity - qty).abs() > 1e-9) continue;
+      final yazildi = a.createdAt;
+      if (yazildi == null || yazildi.isBefore(esik)) continue;
+      return kapanisOzeti(defter: defter, satis: a);
+    }
+    return null;
   }
 
   /// Mevduat: yazılan tutar alışın maliyeti / satışın değeri olur; pay

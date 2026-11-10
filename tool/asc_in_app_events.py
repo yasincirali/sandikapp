@@ -164,11 +164,21 @@ def main():
     tanim = json.load(open(os.path.join(KLASOR, "etkinlikler.json"), encoding="utf-8"))
     if args.gorsel_yenile and args.gorsel_yenile not in {e["referans"] for e in tanim["etkinlikler"]}:
         sys.exit(f"--gorsel-yenile: '{args.gorsel_yenile}' etkinlikler.json'da yok.")
+    # Görseli olmayan etkinlik ATLANIR, koşu durmaz (2026-11-10): Ocak
+    # "hedef" etkinliği görselinden önce listeye girdi; eskiden tek eksik
+    # PNG bütün koşuyu durdurur ve Aralık etkinliklerinin kurulumunu da
+    # engellerdi. Atlanan etkinlik raporlanır; görsel gelince sonraki koşu
+    # kurar (idempotent).
+    gorselsiz = set()
     for e in tanim["etkinlikler"]:
         for tur, ek in GORSEL_TURLERI.items():
             yol = os.path.join(KLASOR, f"{e['gorsel']}_{ek}.png")
             if not os.path.exists(yol):
-                sys.exit(f"Görsel yok: {yol} (önce store_listing/in_app_events_uretici: node cek.mjs)")
+                gorselsiz.add(e["referans"])
+                print(f"! {e['referans']}: görsel yok: {yol} "
+                      "(önce store_listing/in_app_events_uretici: node cek.mjs) — atlanacak")
+    if args.gorsel_yenile in gorselsiz:
+        sys.exit(f"--gorsel-yenile: '{args.gorsel_yenile}' için görsel yok.")
 
     asc = Asc()
     uygulamalar = asc.get("/apps", **{"filter[bundleId]": BUNDLE_ID})["data"]
@@ -187,6 +197,9 @@ def main():
 
     for e in tanim["etkinlikler"]:
         ref = e["referans"]
+        if ref in gorselsiz:
+            print(f"- {ref}: görseli olmadığı için atlandı")
+            continue
         kullanilacak = [d for d in e["metin"] if d in diller]
         if ref in mevcut:
             yenile = ref == args.gorsel_yenile

@@ -534,8 +534,12 @@ extension on _AddAssetScreenState {
     return showSandikConfirm(
       context: context,
       title: l.varlikGuncelleOnayBaslik(widget.yerineGecenLotlar!.length),
-      message: l.varlikGuncelleOnayGovde(
-          widget.editingAsset!.name, widget.yerineGecenLotlar!.length),
+      // Gövde kısa (2026-11-10): kaç hareketin gideceğini başlık, yerine
+      // ne kalacağını formdaki uyarı kutusu zaten söylüyor. "Geri alınamaz"
+      // doğru: silme yumuşak ama kullanıcıya geri yükleme girişi yok
+      // (`delete_asset_dialog.dart`, 2026-09-16 kararı); Silinenler
+      // yalnız gösterir.
+      message: l.varlikGuncelleOnayGovde,
       confirmLabel: l.update,
       cancelLabel: l.cancelWord,
       destructive: true,

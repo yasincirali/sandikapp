@@ -26,8 +26,13 @@ class BistTakvimi {
 
   /// Dinî bayram tarihlerinin girildiği son yıl. Her Aralık ayında bir
   /// sonraki yılın ilanı gelince güncellenir (bkz. TECHNICAL_DEBT; 1 Aralık
-  /// hatırlatması `YAPMAN_GEREKENLER.md`). Tarihe bağlı test bilerek yok:
-  /// takvim yılına göre kırılan test CI'ı rastgele kırar.
+  /// hatırlatması `YAPMAN_GEREKENLER.md`).
+  ///
+  /// Eskiden "tarihe bağlı test bilerek yok" denmişti (CI'ı rastgele
+  /// kırmasın diye). 10 Kas 2026'da değişti: hatırlatma kaçırılabiliyordu.
+  /// `takvim_kapsam_kapisi_test` 1 Aralık'tan sonra sonraki yıl girilmemişse
+  /// BİLEREK kırılır ve mesajında ne yapılacağını yazar; kırılma rastgele
+  /// değil, yılda bir ve önceden bilinen bir tarihte.
   static const sonKapsananYil = 2026;
 
   /// Yarım gün kapanışı (dakika, gün başından).

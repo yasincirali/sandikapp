@@ -1151,21 +1151,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fundsLoading => 'Loading funds...';
 
   @override
-  String breakdownUpAmount(String amount) {
-    return 'up $amount';
-  }
-
-  @override
-  String breakdownDownAmount(String amount) {
-    return 'down $amount';
-  }
-
-  @override
   String get nominalReturnInWindow => 'Your return in this window';
-
-  @override
-  String get cpiWindowNote =>
-      'CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.';
 
   @override
   String rangeChip(String start, String end) {
@@ -1451,9 +1437,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pushDiagnosticsSubtitle =>
       'Where the notification chain is broken; device APNs/FCM token state';
-
-  @override
-  String get notificationsUpper => 'Notifications';
 
   @override
   String get signalNotifications => 'Technical signal notifications';
@@ -2571,7 +2554,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String everyoneMeasuredSameBody(int gun) {
-    return 'You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nTo be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.';
+    return 'Everyone is measured with the same formula and the same prices. To be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings, the return of a buy or sell dated more than 3 days back is measured from the day it was entered.';
   }
 
   @override
@@ -2856,9 +2839,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmDeleteFailed => 'Could not delete alerts';
 
   @override
-  String get assetDeleted => 'Asset deleted';
-
-  @override
   String get enterValidAmount => 'Enter a valid amount';
 
   @override
@@ -2911,17 +2891,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saleValue => 'Sale value';
-
-  @override
-  String nActiveAlerts(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n active price alerts',
-      one: '1 active price alert',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get deleteAlertTitle => 'Delete alert';
@@ -3222,7 +3191,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importScreenshotHint =>
-      'Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.';
+      'Pick a screenshot of the portfolio screen showing quantity and average cost. Images are read on your phone.';
 
   @override
   String get importScreenshotNone =>
@@ -3533,10 +3502,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myMarketReturn => 'My market return';
 
   @override
-  String get dataExported =>
-      'Your data was prepared as a JSON file and shared.';
-
-  @override
   String mailAppFailed(String email) {
     return 'Could not open your mail app. Please write to $email.';
   }
@@ -3771,6 +3736,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String nShown(int n) {
     return ' · $n shown';
+  }
+
+  @override
+  String hareketToplamAlim(String tutar) {
+    return 'Bought $tutar';
+  }
+
+  @override
+  String hareketToplamSatis(String tutar) {
+    return 'Sold $tutar';
+  }
+
+  @override
+  String hareketToplamTemettu(String tutar) {
+    return 'Dividends $tutar';
   }
 
   @override
@@ -4152,16 +4132,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String todayScopeOf(String name) {
     return '$name\'s today';
-  }
-
-  @override
-  String todayUp(String amount, String pct) {
-    return '$amount · up $pct%';
-  }
-
-  @override
-  String todayDown(String amount, String pct) {
-    return '$amount · down $pct%';
   }
 
   @override
@@ -5496,10 +5466,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count monthly pension contributions were added automatically. You can update the amount on the pension card.',
-      one:
-          'Your pension contribution was added automatically. You can update the amount on the pension card.',
+      other: '$count monthly pension contributions were added.',
+      one: 'Your pension contribution was added.',
     );
     return '$_temp0';
   }
@@ -9124,17 +9092,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String varlikGuncelleOnayGovde(String name, int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other:
-          '$n transactions of \"$name\" will be deleted and replaced by a single record with these details. This can\'t be undone.',
-      one:
-          '\"$name\" will be deleted and added again with these details. This can\'t be undone.',
-    );
-    return '$_temp0';
-  }
+  String get varlikGuncelleOnayGovde => 'This can\'t be undone.';
 
   @override
   String get sgnPremiumGostergeSatiri =>
@@ -9565,6 +9523,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vkHepsiTamam => 'All set, your total is up to date.';
+
+  @override
+  String vkFiyatGelmiyor(int gun) {
+    return 'No price for $gun days';
+  }
+
+  @override
+  String vkFiyatGelmiyorBaslik(String name) {
+    return 'No price for $name';
+  }
+
+  @override
+  String get vkFiyatGelmiyorAciklama =>
+      'The fund may have closed or merged into another fund. You can enter a price yourself or record a sale.';
 
   @override
   String get onerAlarmBaslik => 'Set a price alert';
@@ -10435,6 +10407,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'A milestone you pass stays yours, even if the market drops.';
 
   @override
+  String kilometreKarZirvesiBaslik(String tutar) {
+    return 'Your total gain is at its highest: $tutar';
+  }
+
+  @override
+  String get kilometreKarZirvesiGovde =>
+      'Gain is your portfolio value minus the net amount you put in.';
+
+  @override
+  String get kilometreKarZirvesiPaylas => 'My total gain is at its highest';
+
+  @override
   String get bosCanAciklama =>
       'Set a price alert and we will tell you here and in a notification when it hits.';
 
@@ -10568,6 +10552,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String kiyasPaylasMetni(String donem, String ozet, String link) {
     return '$donem comparison: $ozet. Compared with sandık: $link';
+  }
+
+  @override
+  String get takipPaylasTooltip => 'Share watchlist';
+
+  @override
+  String get takipPaylasKartBaslik => 'My watchlist';
+
+  @override
+  String get takipPaylasAlt => 'Tracking with sandık';
+
+  @override
+  String get takipPaylasNot =>
+      'No amounts or quantities on the card; only change since added.';
+
+  @override
+  String takipPaylasMetni(String ozet, String link) {
+    return 'My watchlist since I added each: $ozet. Tracking with sandık: $link Not investment advice.';
   }
 
   @override
@@ -10767,4 +10769,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String bedelliKaydedildi(String yeni) {
     return '$yeni new shares added';
   }
+
+  @override
+  String get kapanisBaslik => 'Position closed';
+
+  @override
+  String kapanisTuttun(String ad, String adBelirtme, String sure) {
+    return 'You held $ad for $sure';
+  }
+
+  @override
+  String kapanisSureAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: '$ay months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String kapanisSureGun(int gun) {
+    String _temp0 = intl.Intl.pluralLogic(
+      gun,
+      locale: localeName,
+      other: '$gun days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get kapanisSureBirGundenKisa => 'less than a day';
+
+  @override
+  String get kapanisGerceklesenKar => 'Realised gain';
+
+  @override
+  String get kapanisGerceklesenZarar => 'Realised loss';
+
+  @override
+  String kapanisYillik(String pct) {
+    return 'Average per year $pct';
+  }
+
+  @override
+  String get kapanisZarar => 'This position closed at a loss.';
+
+  @override
+  String get kapanisMaliyetBilinmiyor =>
+      'The cost is unknown, so gain and loss were not calculated.';
+
+  @override
+  String get kapanisYillikRapor => 'See in yearly report';
+
+  @override
+  String get kapanisTamam => 'OK';
+
+  @override
+  String get kapanisPaylas => 'Share';
+
+  @override
+  String get kapanisPaylasEtiketi => 'Realised return';
+
+  @override
+  String kapanisPaylasMetni(String ad, String pct) {
+    return 'Closed my $ad position at $pct';
+  }
+
+  @override
+  String get aramaOneriBaslik => 'Did you mean?';
+
+  @override
+  String aramaOneriSemantik(String kod, String ad) {
+    return 'Suggestion: $kod, $ad';
+  }
+
+  @override
+  String get zirveGuvenKuresel =>
+      'Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
+
+  @override
+  String get zirveGuvenOrtaklar => 'Nobody\'s asset list is visible.';
+
+  @override
+  String get zirveNasilOlculur => 'How is it measured?';
 }

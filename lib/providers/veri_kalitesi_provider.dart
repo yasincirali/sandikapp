@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/position.dart';
+import '../services/tefas_service.dart';
 import '../services/veri_kalitesi.dart';
 import 'auth_provider.dart';
 import 'portfolio_provider.dart';
@@ -23,8 +24,15 @@ final veriEksikleriProvider = Provider<List<VeriEksigi>>((ref) {
   final pozisyonlar = aggregatePositions(
       aktifLotlar(lotlar.where((a) => a.userId == uid)).toList());
   return veriEksikleri(pozisyonlar,
-      simdi: ref.watch(veriKalitesiSaatProvider)());
+      simdi: ref.watch(veriKalitesiSaatProvider)(),
+      fonFiyatTarihi: ref.watch(fonFiyatTarihiOkuyucuProvider));
 });
+
+/// Fon kodu → son TEFAS fiyatının günü. Fiyat turu `portfolioProvider`'ı
+/// yeniden yazdığında [veriEksikleriProvider] yeniden okur, gün de tazelenir.
+/// Test override eder (TefasService tekil önbelleği yerine sabit gün).
+final fonFiyatTarihiOkuyucuProvider = Provider<DateTime? Function(String)>(
+    (ref) => TefasService.instance.fiyatTarihi);
 
 /// Pozisyon anahtarı → kendi pozisyonunun eksikleri (Portföy satırı
 /// etiketi). Ana ekrandaki satırla AYNI liste; tek hesap. Anahtar sahip

@@ -90,6 +90,8 @@ import 'services/bellek_baskisi.dart';
 import 'services/birikim_serisi.dart';
 import 'services/milestone_repository.dart';
 import 'services/milestone_service.dart';
+import 'services/donem_ozeti_yukleyici.dart';
+import 'services/period_summary_service.dart' show SummaryPeriod;
 import 'services/review_prompt_service.dart';
 import 'services/retention_tracker.dart';
 import 'services/surface_theme.dart';
@@ -1010,6 +1012,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// İlk YERLEŞİK ölçüm sessiz kayıttır, kutlama değil (2026-09-27).
   String? _kilometreTasiSessizKullanici;
 
+  /// Kâr zirvesi denetiminin son zamanı. Portföy her yayında
+  /// değerlendirilir ama 3 aylık seri her fiyat tikinde yeniden
+  /// hesaplanmamalı; zirve dakikalar içinde değişen bir şey değil.
+  DateTime? _karZirvesiSonDenetim;
+  static const _karZirvesiDenetimAraligi = Duration(minutes: 30);
+
   /// Son build'de kilit ekranı mı gösterildi, oturum var mıydı — geçişleri
   /// (kilitlendi / çıkış yapıldı) yakalamak için. Bkz. [_kokeDon].
   bool _kilitGosteriliyor = false;
@@ -1703,7 +1711,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       now: now,
       seri: seri,
     );
-    if (gecilenler.isEmpty) return;
+    // Kâr zirvesi eşiklerden bağımsız: 10 bin ₺'nin altındaki portföy de
+    // kâr rekoru kırabilir. Yarım saatte bir bakılır.
+    final sonKar = _karZirvesiSonDenetim;
+    final karSirasi =
+        sonKar == null || now.difference(sonKar) >= _karZirvesiDenetimAraligi;
+    if (gecilenler.isEmpty && !karSirasi) return;
 
     final repo = MilestoneRepository.instance;
     final onceden = await repo.fetchReached(user.id);
@@ -1713,6 +1726,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     final yeniler = gecilenler
         .where((m) => !onceden.contains('${m.kind}:${m.value}'))
         .toList();
+
+    if (karSirasi) {
+      _karZirvesiSonDenetim = now;
+      final kar = await _karZirvesiOlc(state, onceden, now);
+      if (!ayniKullanici()) return;
+      if (kar != null && kar.ilk) {
+        // İlk kayıt tabandır, kutlanmaz (`MilestoneService.karZirvesi`).
+        await repo.recordReached(user.id, [kar.tas]);
+      } else if (kar != null) {
+        yeniler.add(kar.tas);
+      }
+    }
     final girisSonrasi = _kilometreTasiSessizKullanici == user.id;
     if (girisSonrasi) _kilometreTasiSessizKullanici = null;
     if (yeniler.isEmpty) return;
@@ -1748,6 +1773,33 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // budur; karar ve sıklık `ReviewPromptService`'te.
     if (ctx.mounted) {
       await ReviewPromptSheet.belkiGoster(ctx, ReviewAni.kilometreTasi);
+    }
+  }
+
+  /// Kâr zirvesi ölçümü — Performans › Özet'in 3 aylık kanonik serisiyle
+  /// (`DonemOzetiYukleyici.seri`, aynı lotlar ve aynı motor). Haftalık
+  /// sınır doluysa ağa çıkmaz. Seri son iyi kopyadan geldiyse ya da bir
+  /// bileşeni hiç gelmediyse eksik sayılır: zirve uydurma sayıyla ilan
+  /// edilmez.
+  Future<({Milestone tas, bool ilk})?> _karZirvesiOlc(
+      PortfolioState state, Set<String> onceden, DateTime now) async {
+    if (!MilestoneService.karZirvesiBekleyebilir(onceden, now)) return null;
+    try {
+      final r = await HistoryService.tazelikle(() => DonemOzetiYukleyici.seri(
+            SummaryPeriod.ucAy,
+            DonemOzetiYukleyici.seriLotlari(state),
+            now: now,
+          ));
+      return MilestoneService.karZirvesi(
+        seri: r.sonuc.total,
+        lotlar: DonemOzetiYukleyici.hesapLotlari(state),
+        kayitli: onceden,
+        now: now,
+        eksikBilesen: r.bosBilesen || r.bayatZaman != null,
+      );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'main._karZirvesiOlc');
+      return null;
     }
   }
 

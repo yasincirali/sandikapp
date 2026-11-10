@@ -891,6 +891,15 @@ void _akisTestleri() {
     expect(kaynak.contains('widget.onComplete()'), isTrue);
   });
 
+  test('tur adımı rozeti yalnız "Yeni" (Bize özel kalktı, 10 Kas)', () {
+    final rozetler = RegExp(r"rozet:\s*'([^']*)'")
+        .allMatches(kaynak)
+        .map((m) => m[1])
+        .where((r) => r != 'Yeni')
+        .toList();
+    expect(rozetler, isEmpty, reason: 'Yeni dışı rozet: $rozetler');
+  });
+
   test('"Atla" hâlâ var — tur zorunlu değil', () {
     expect(kaynak.contains("'Atla'"), isTrue);
   });

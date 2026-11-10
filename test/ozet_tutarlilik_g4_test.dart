@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -124,18 +123,12 @@ void main() {
               ozet(tufePct: 1.85, nominal: 8.14, reel: 6.18, pencere: false),
         ),
       );
-      expect(find.text(trMetni('cpiWindowNote')), findsNothing);
       expect(find.textContaining('ayında birikimin'), findsNothing);
       await t.tap(find.text('Nasıl hesaplandı'));
       await t.pumpAndSettle();
       expect(find.text(trMetni('nominalReturn')), findsOneWidget);
     });
 
-    test('not iki dilde de "farklı aralık" der', () {
-      expect(trMetni('cpiWindowNote'), contains('farklı'));
-      expect(lookupAppLocalizations(const Locale('en')).cpiWindowNote,
-          contains('different windows'));
-    });
   });
 
   group('#11 tür dökümü ekran okuyucu metni', () {
@@ -153,8 +146,6 @@ void main() {
       expect(src, contains('flowSellBalance('));
       // Ham Türkçe literal kalmadı.
       expect(src.contains("'değişim yok'"), isFalse);
-      expect(trMetni('breakdownDownAmount'), startsWith('azalış'));
-      expect(trMetni('breakdownUpAmount'), startsWith('artış'));
     });
   });
 

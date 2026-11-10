@@ -203,69 +203,80 @@ class NotificationService {
         AndroidFlutterLocalNotificationsPlugin>();
     if (android == null) return; // iOS/diğer platform — kanal kavramı yok
 
-    // Teknik sinyal bildirimleri (sunucudan FCM ile gelir).
-    await android.createNotificationChannel(
-      const AndroidNotificationChannel(
-        'signal_channel',
-        'Teknik sinyal bildirimleri',
-        description: 'Portföyündeki varlıklar için trend bildirimleri',
-        importance: Importance.high,
+    // Kanallar sırayla değil birlikte kuruluyor (2026-11-10): her biri
+    // ayrı bir platform kanalı çağrısı ve `main.dart` bu init'i runApp'ten
+    // önce bekliyor; sıralı beş `await` açılışa beş gidiş-dönüş ekliyordu.
+    // Güvenli çünkü kanallar birbirinden bağımsız ve `createNotificationChannel`
+    // idempotent (aynı kimlik adı/açıklamayı günceller, kullanıcı ayarına
+    // dokunmaz); sıranın Android tarafında anlamı yok. Kazancı bulutta
+    // ölçemedik (cihaz/emülatör yok); ölçüm gerçek cihazda yapılmalı.
+    // initialize ve getNotificationAppLaunchDetails yine sırayla bekleniyor:
+    // bildirimden açılış yönlendirmesi değişmedi.
+    await Future.wait(<Future<void>>[
+      // Teknik sinyal bildirimleri (sunucudan FCM ile gelir).
+      android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'signal_channel',
+          'Teknik sinyal bildirimleri',
+          description: 'Portföyündeki varlıklar için trend bildirimleri',
+          importance: Importance.high,
+        ),
       ),
-    );
 
-    // Ortaklık davetleri.
-    await android.createNotificationChannel(
-      const AndroidNotificationChannel(
-        'partner_invite_channel',
-        'Ortaklık bildirimleri',
-        description: 'Yeni ortaklık onay istekleri',
-        importance: Importance.max,
+      // Ortaklık davetleri.
+      android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'partner_invite_channel',
+          'Ortaklık bildirimleri',
+          description: 'Yeni ortaklık onay istekleri',
+          importance: Importance.max,
+        ),
       ),
-    );
 
-    // Fiyat alarmları (sunucudan FCM ile gelir).
-    //
-    // AYRI kanal ve YÜKSEK önem: bu, kullanıcının KENDİSİNİN kurduğu tek
-    // bildirim. Brifingi kapatan biri alarmlarını açık tutabilmeli, ve
-    // istediği bir bildirimin sessizce bildirim gölgesine düşmesi
-    // beklentiyi bozar.
-    await android.createNotificationChannel(
-      const AndroidNotificationChannel(
-        'alert_channel',
-        'Fiyat alarmları',
-        description: 'Kurduğun fiyat hedefine ulaşıldığında',
-        importance: Importance.high,
+      // Fiyat alarmları (sunucudan FCM ile gelir).
+      //
+      // AYRI kanal ve YÜKSEK önem: bu, kullanıcının KENDİSİNİN kurduğu tek
+      // bildirim. Brifingi kapatan biri alarmlarını açık tutabilmeli, ve
+      // istediği bir bildirimin sessizce bildirim gölgesine düşmesi
+      // beklentiyi bozar.
+      android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'alert_channel',
+          'Fiyat alarmları',
+          description: 'Kurduğun fiyat hedefine ulaşıldığında',
+          importance: Importance.high,
+        ),
       ),
-    );
 
-    // Sabah brifingi (sunucudan FCM ile gelir).
-    //
-    // AYRI kanal olması kasıtlı: kullanıcı brifingi kapatıp sinyalleri açık
-    // tutabilmeli. Tek kanal, tek "kapat" düğmesi demek olurdu ve
-    // rahatsız olan kullanıcı bütün bildirimleri birden kaybederdi.
-    //
-    // `defaultImportance`: brifing bilgilendirir, uyarmaz — ses ve
-    // kesme (heads-up) hak etmiyor.
-    await android.createNotificationChannel(
-      const AndroidNotificationChannel(
-        'brief_channel',
-        'Günlük brifing',
-        description: 'Portföyündeki günlük hareket özeti',
-        importance: Importance.defaultImportance,
+      // Sabah brifingi (sunucudan FCM ile gelir).
+      //
+      // AYRI kanal olması kasıtlı: kullanıcı brifingi kapatıp sinyalleri açık
+      // tutabilmeli. Tek kanal, tek "kapat" düğmesi demek olurdu ve
+      // rahatsız olan kullanıcı bütün bildirimleri birden kaybederdi.
+      //
+      // `defaultImportance`: brifing bilgilendirir, uyarmaz — ses ve
+      // kesme (heads-up) hak etmiyor.
+      android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'brief_channel',
+          'Günlük brifing',
+          description: 'Portföyündeki günlük hareket özeti',
+          importance: Importance.defaultImportance,
+        ),
       ),
-    );
-    // Haftalık/aylık özet (`weekly-summary` fonksiyonu `summary_channel`
-    // gönderiyor). Kanal istemcide KAYITLI DEĞİLDİ (2026-09-20'ye kadar):
-    // Android bilinmeyen kanalı varsayılana düşürüyor, kullanıcı özeti
-    // ayrı kapatamıyordu. Brifingle aynı önem: kesme hak etmez.
-    await android.createNotificationChannel(
-      const AndroidNotificationChannel(
-        'summary_channel',
-        'Dönem özeti',
-        description: 'Haftalık ve aylık portföy özeti',
-        importance: Importance.defaultImportance,
+      // Haftalık/aylık özet (`weekly-summary` fonksiyonu `summary_channel`
+      // gönderiyor). Kanal istemcide KAYITLI DEĞİLDİ (2026-09-20'ye kadar):
+      // Android bilinmeyen kanalı varsayılana düşürüyor, kullanıcı özeti
+      // ayrı kapatamıyordu. Brifingle aynı önem: kesme hak etmez.
+      android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'summary_channel',
+          'Dönem özeti',
+          description: 'Haftalık ve aylık portföy özeti',
+          importance: Importance.defaultImportance,
+        ),
       ),
-    );
+    ]);
   }
 
   /// Bildirim iznini kullanıcıya sor. Onboarding tamamlandıktan sonra çağır.
@@ -1254,6 +1265,19 @@ class NotificationService {
         initialPeriodIdx: SummaryPeriod.birYil.index,
       ),
     ));
+  }
+
+  /// `sandik://hedef` (Ocak In-App Event): portföy hedefi sayfası.
+  ///
+  /// Sayfa `WidgetRef` ister (hedef tercihleri provider'da); bu servis
+  /// Riverpod kapsamı dışında. Bu yüzden istek kabuğa bırakılır:
+  /// Ana sayfa sekmesi + [MainNavigationScreen.hedefIstegi]. Kabuk henüz
+  /// kurulmadıysa (giriş, açılış) istek bekler ve kurulunca uygulanır;
+  /// kilitliyse kilit açılınca (diğer derin bağlantılarla aynı kapı).
+  void openHedef() {
+    if (kilitKapisi.ertele(openHedef)) return;
+    MainNavigationScreen.sekmeIstegi.value = 0;
+    MainNavigationScreen.hedefIstegi.value = true;
   }
 
   /// Dış bağlantının hedefi bulunamadığında hata ekranı. Navigator hazır

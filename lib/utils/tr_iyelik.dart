@@ -35,6 +35,32 @@ String trIyelik(String ad) {
   return "$t'${unluyleBitiyor ? 'n' : ''}$ek";
 }
 
+/// Türkçe belirtme (-i hâli) eki — "THYAO" → "THYAO'yu", "Gram Altın" →
+/// "Gram Altın'ı".
+///
+/// Neden var (kapanış özeti, 2026-11-10): "{ad}'yu 3 ay tuttun" cümlesi
+/// adın son ünlüsüne göre ı/i/u/ü alır, ünlüyle biten adda araya "y"
+/// girer; tek şablon adların çoğunda yanlış çıkar ("Altın'yu").
+/// [trIyelik] ile aynı kapsam: yalnız özel ad, kesmeyle, yumuşama yok.
+String trBelirtme(String ad) {
+  final t = ad.trim();
+  if (t.isEmpty) return t;
+  final kucuk = t.replaceAll('I', 'ı').replaceAll('İ', 'i').toLowerCase();
+  const unluler = 'aeıioöuü';
+  String? sonUnlu;
+  for (var i = kucuk.length - 1; i >= 0; i--) {
+    if (unluler.contains(kucuk[i])) {
+      sonUnlu = kucuk[i];
+      break;
+    }
+  }
+  final kalin = sonUnlu != null && 'aıou'.contains(sonUnlu);
+  final yuvarlak = sonUnlu != null && 'ouöü'.contains(sonUnlu);
+  final ek = kalin ? (yuvarlak ? 'u' : 'ı') : (yuvarlak ? 'ü' : 'i');
+  final unluyleBitiyor = unluler.contains(kucuk[kucuk.length - 1]);
+  return "$t'${unluyleBitiyor ? 'y' : ''}$ek";
+}
+
 /// Sayının iyelik + ayrılma eki, kesmesiz: 30 → "undan" ("%30'undan"),
 /// 20 → "sinden", 3 → "ünden", 100 → "ünden".
 ///

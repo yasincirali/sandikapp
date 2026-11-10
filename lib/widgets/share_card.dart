@@ -1066,17 +1066,31 @@ class KilometreTasiPaylasKarti extends StatelessWidget {
 /// yalnız renkte değil, `+`/`−` işaretinde de durur (renk körlüğü, HIG).
 /// TUTAR YOK — satırlar `KiyasPaylasimi`'nden gelir ve o model ham fiyatı
 /// taşımaz.
+///
+/// Takip listesi paylaşımı (müşteri 2026-11-10) aynı kartı kullanır: satır
+/// yapısı (ad + işaretli yüzde, tutar yok) birebir aynı, yalnız alt imza
+/// ([alt]) ve yatırım tavsiyesi notu ([uyari]) farklı. İkinci bir kart
+/// sınıfı aynı düzenin kopyası olurdu.
 class KiyasPaylasKarti extends StatelessWidget {
   const KiyasPaylasKarti({
     super.key,
     required this.baslik,
     required this.tarihAraligi,
     required this.satirlar,
+    this.alt,
+    this.uyari,
   });
 
   final String baslik;
   final String tarihAraligi;
   final List<({String ad, double pct})> satirlar;
+
+  /// Alt imza; verilmezse kıyasınki ("sandık ile kıyasladım").
+  final String? alt;
+
+  /// İmzanın altında küçük not (takip listesi: "Yatırım tavsiyesi
+  /// değildir."); `null` → yok.
+  final String? uyari;
 
   @override
   Widget build(BuildContext context) {
@@ -1146,10 +1160,16 @@ class KiyasPaylasKarti extends StatelessWidget {
               ),
             ),
             Text(
-              context.l10n.kiyasPaylasAlt,
+              alt ?? context.l10n.kiyasPaylasAlt,
               textAlign: TextAlign.center,
               style: context.t.bodySmall?.copyWith(color: p.text58),
             ),
+            if (uyari case final u?)
+              Text(
+                u,
+                textAlign: TextAlign.center,
+                style: context.t.labelSmall?.copyWith(color: p.text36),
+              ),
           ],
         ),
       ),

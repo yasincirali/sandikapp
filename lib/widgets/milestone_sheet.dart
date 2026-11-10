@@ -6,6 +6,7 @@ import '../services/analytics_service.dart';
 import '../services/milestone_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import 'sandik_cizimi.dart';
 import 'share_card.dart';
 
@@ -41,12 +42,38 @@ class MilestoneSheet extends StatelessWidget {
 
   IconData get _ikon => ikonu(milestone.kind);
 
+  /// Sayfanın yazdığı başlık ve gövde.
+  ///
+  /// Kâr zirvesi (`profit_high`) İngilizce arayüzde de doğru çıksın diye
+  /// `context.l10n`'dan yazılır; tutar taşın [Milestone.rank]'ıdır. Diğer
+  /// taşların metni şimdilik servisteki Türkçe metindir (çevirisi ayrı iş).
+  /// Bakiye gizleme bu sayfada tutarı örtmez: portföy değeri taşı da
+  /// tutarını burada açık yazar; örtme yalnız Profil şeridinde
+  /// (`MilestoneService.gizli`) ve kâr zirvesi şeride girmez.
+  ({String baslik, String govde, String paylas}) _metin(BuildContext context) {
+    if (milestone.kind != MilestoneService.karZirvesiTuru) {
+      return (
+        baslik: milestone.title,
+        govde: milestone.body,
+        paylas: milestone.title,
+      );
+    }
+    final l = context.l10n;
+    return (
+      baslik: l.kilometreKarZirvesiBaslik(fmtTRY(milestone.rank)),
+      govde: l.kilometreKarZirvesiGovde,
+      // Paylaşım kartı tutar göstermez (`kilometreTasiPaylasNot`).
+      paylas: l.kilometreKarZirvesiPaylas,
+    );
+  }
+
   Future<void> _paylas(BuildContext context) {
     final l = context.l10n;
+    final baslik = _metin(context).paylas;
     return showShareSheet(
       context,
       kart: KilometreTasiPaylasKarti(
-        baslik: milestone.title,
+        baslik: baslik,
         cizim: const SandikCizimi(
           zemin: SandikZemini.yuzey,
           dokunulabilir: false,
@@ -55,11 +82,11 @@ class MilestoneSheet extends StatelessWidget {
       not: l.kilometreTasiPaylasNot,
       sayfaBasligi: l.kilometreTasiPaylasBaslik,
       metin: l.kilometreTasiPaylasMetni(
-        milestone.title,
+        baslik,
         Magaza.indirBaglantisi(
             kaynak: 'share_card', kampanya: 'kilometre_tasi'),
       ),
-      subject: milestone.title,
+      subject: baslik,
       analyticsPeriod: 'kilometre_tasi',
     );
   }
@@ -77,6 +104,7 @@ class MilestoneSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final metin = _metin(context);
     return Container(
       decoration: BoxDecoration(
         color: c.surface1,
@@ -103,13 +131,13 @@ class MilestoneSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            milestone.title,
+            metin.baslik,
             textAlign: TextAlign.center,
             style: context.t.headlineMedium?.copyWith(color: c.text90),
           ),
           const SizedBox(height: 8),
           Text(
-            milestone.body,
+            metin.govde,
             textAlign: TextAlign.center,
             style: context.t.bodyLarge?.copyWith(color: c.text58),
           ),

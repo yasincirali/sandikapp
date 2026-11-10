@@ -3310,6 +3310,8 @@ class _VeriEksigiEtiketi extends ConsumerWidget {
                   null => l.vkFiyatYildanEski,
                   final ay => l.vkFiyatAyOnce(ay),
                 },
+          // Takvim günü: "9 gündür" kullanıcının saydığı gün; eşik iş günü.
+          VeriEksigiTuru.fiyatGelmiyor => l.vkFiyatGelmiyor(e.gun ?? 0),
         },
     ].join(' · ');
     final stil = context.t.bodySmall

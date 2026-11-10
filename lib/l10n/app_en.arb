@@ -710,24 +710,7 @@
   },
   "tefasFunds": "TEFAS funds",
   "fundsLoading": "Loading funds...",
-  "breakdownUpAmount": "up {amount}",
-  "@breakdownUpAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "breakdownDownAmount": "down {amount}",
-  "@breakdownDownAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "nominalReturnInWindow": "Your return in this window",
-  "cpiWindowNote": "CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.",
   "rangeChip": "{start} - {end}",
   "@rangeChip": {
     "placeholders": {
@@ -848,7 +831,6 @@
   "diagnosticsUpper": "Diagnostics",
   "pushDiagnostics": "Push Diagnostics",
   "pushDiagnosticsSubtitle": "Where the notification chain is broken; device APNs/FCM token state",
-  "notificationsUpper": "Notifications",
   "signalNotifications": "Technical signal notifications",
   "signalNotificationsSubtitle": "Get notified when a BUY/SELL indicator triggers",
   "signalSettings": "Signal settings",
@@ -1469,7 +1451,7 @@
   "topPortfolios": "Top Portfolios",
   "selectedPeriodReturnBody": "The period is split into days; the return is calculated from the days you held each asset. The period choice changes the result.",
   "depositsDontChangeRankBody": "What counts is which assets you held, on which days. When and how much money you added does NOT affect the ratio; everything is valued at market prices.",
-  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nTo be ranked, at least {gun} days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.",
+  "everyoneMeasuredSameBody": "Everyone is measured with the same formula and the same prices. To be ranked, at least {gun} days must have passed since you acquired your first asset. In anonymous rankings, the return of a buy or sell dated more than 3 days back is measured from the day it was entered.",
   "@everyoneMeasuredSameBody": {
     "placeholders": {
       "gun": {
@@ -1732,7 +1714,6 @@
   },
   "alarmKeep": "Keep alert",
   "alarmDeleteFailed": "Could not delete alerts",
-  "assetDeleted": "Asset deleted",
   "enterValidAmount": "Enter a valid amount",
   "dividendPayDate": "Dividend payment date",
   "addDividend": "Add Dividend",
@@ -1782,14 +1763,6 @@
   },
   "sellAllWarning": "You are selling it all. The position leaves the list, the sale and profit/loss record are kept.",
   "saleValue": "Sale value",
-  "nActiveAlerts": "{n, plural, =1{1 active price alert} other{{n} active price alerts}}",
-  "@nActiveAlerts": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "deleteAlertTitle": "Delete alert",
   "deleteAlertAbove": "Delete the alert for rising above {price}?",
   "@deleteAlertAbove": {
@@ -2029,7 +2002,7 @@
   },
   "importScreenshotAdd": "Add from screenshot",
   "importScreenshotFillCosts": "Fill costs from a screenshot",
-  "importScreenshotHint": "Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.",
+  "importScreenshotHint": "Pick a screenshot of the portfolio screen showing quantity and average cost. Images are read on your phone.",
   "importScreenshotNone": "No holdings found in the image. Pick a screen that shows each holding's code or name, quantity and cost.",
   "importScreenshotNoCost": "No average cost found in the image; rows were left as they were.",
   "importScreenshotCostsApplied": "Average cost for {count} holdings taken from the screenshot.",
@@ -2246,7 +2219,6 @@
   },
   "assetNotFound": "Asset not found",
   "myMarketReturn": "My market return",
-  "dataExported": "Your data was prepared as a JSON file and shared.",
   "mailAppFailed": "Could not open your mail app. Please write to {email}.",
   "@mailAppFailed": {
     "placeholders": {
@@ -2420,6 +2392,12 @@
       }
     }
   },
+  "hareketToplamAlim": "Bought {tutar}",
+  "@hareketToplamAlim": {"placeholders": {"tutar": {"type": "String"}}},
+  "hareketToplamSatis": "Sold {tutar}",
+  "@hareketToplamSatis": {"placeholders": {"tutar": {"type": "String"}}},
+  "hareketToplamTemettu": "Dividends {tutar}",
+  "@hareketToplamTemettu": {"placeholders": {"tutar": {"type": "String"}}},
   "noMatchingRecords": "No records match the filter",
   "noTransactionsYet": "No transactions yet",
   "sinceDateToToday": "{date} → today",
@@ -2720,28 +2698,6 @@
   "@todayScopeOf": {
     "placeholders": {
       "name": {
-        "type": "String"
-      }
-    }
-  },
-  "todayUp": "{amount} · up {pct}%",
-  "@todayUp": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayDown": "{amount} · down {pct}%",
-  "@todayDown": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "pct": {
         "type": "String"
       }
     }
@@ -3290,7 +3246,7 @@
   "pensionAutoUpdateTitle": "Update automatic contribution",
   "pensionAutoUpdatePlan": "Use this amount for the coming months too",
   "pensionAutoUpdated": "Contribution updated",
-  "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added automatically. You can update the amount on the pension card.} other{{count} monthly pension contributions were added automatically. You can update the amount on the pension card.}}",
+  "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added.} other{{count} monthly pension contributions were added.}}",
   "pensionAddExtraContribution": "Add extra contribution",
   "pensionFundCount": "{count, plural, =1{1 fund} other{{count} funds}}",
   "@pensionFundCount": {
@@ -5232,8 +5188,7 @@
   "@varlikGuncelleUyariGovde": {"placeholders": {"n": {"type": "int"}}},
   "varlikGuncelleOnayBaslik": "{n, plural, =1{Rewrite the record?} other{Delete {n} transactions?}}",
   "@varlikGuncelleOnayBaslik": {"placeholders": {"n": {"type": "int"}}},
-  "varlikGuncelleOnayGovde": "{n, plural, =1{\"{name}\" will be deleted and added again with these details. This can't be undone.} other{{n} transactions of \"{name}\" will be deleted and replaced by a single record with these details. This can't be undone.}}",
-  "@varlikGuncelleOnayGovde": {"placeholders": {"name": {"type": "String"}, "n": {"type": "int"}}},
+  "varlikGuncelleOnayGovde": "This can't be undone.",
   "sgnPremiumGostergeSatiri": "EMA, Stochastic, Trend Strength, Williams %R, CCI and unlimited alerts in Premium",
   "sgnAyarAciklamaUcretsiz": "Pick which indicators produce signals for each asset type. RSI, MACD and Bollinger are free, with one alert a day.",
   "sgnParametreAciklama": "For {tur}. The value you set is used on screen and in alerts.",
@@ -5345,6 +5300,11 @@
   "vkFiyatBaslik": "Current price of {name}",
   "vkFiyatAciklama": "You enter this holding's price yourself; your total uses this number. Your last price is from {date}.",
   "vkHepsiTamam": "All set, your total is up to date.",
+  "vkFiyatGelmiyor": "No price for {gun} days",
+  "@vkFiyatGelmiyor": {"placeholders": {"gun": {"type": "int"}}},
+  "vkFiyatGelmiyorBaslik": "No price for {name}",
+  "@vkFiyatGelmiyorBaslik": {"placeholders": {"name": {"type": "String"}}},
+  "vkFiyatGelmiyorAciklama": "The fund may have closed or merged into another fund. You can enter a price yourself or record a sale.",
   "onerAlarmBaslik": "Set a price alert",
   "onerAlarmAlt": "We'll let you know when an asset reaches your price",
   "onerTakipBaslik": "Watch before you buy",
@@ -5589,6 +5549,9 @@
   "kilometreTasiSiradakiYuzdeEtiket": "Next milestone: {baslik}, {yuzde} percent",
   "kilometreTaslariBaslik": "Your milestones",
   "kilometreTaslariNot": "A milestone you pass stays yours, even if the market drops.",
+  "kilometreKarZirvesiBaslik": "Your total gain is at its highest: {tutar}",
+  "kilometreKarZirvesiGovde": "Gain is your portfolio value minus the net amount you put in.",
+  "kilometreKarZirvesiPaylas": "My total gain is at its highest",
   "bosCanAciklama": "Set a price alert and we will tell you here and in a notification when it hits.",
   "goalPreview": "Now {deger} · {yuzde} there · {kalan} to go",
   "goalPreviewHidden": "{yuzde} there",
@@ -5626,6 +5589,12 @@
   "kiyasPaylasAlt": "Compared with sandık",
   "kiyasPaylasNot": "No amounts on the card; only period percentages.",
   "kiyasPaylasMetni": "{donem} comparison: {ozet}. Compared with sandık: {link}",
+  "takipPaylasTooltip": "Share watchlist",
+  "takipPaylasKartBaslik": "My watchlist",
+  "takipPaylasAlt": "Tracking with sandık",
+  "takipPaylasNot": "No amounts or quantities on the card; only change since added.",
+  "takipPaylasMetni": "My watchlist since I added each: {ozet}. Tracking with sandık: {link} Not investment advice.",
+  "@takipPaylasMetni": {"placeholders": {"ozet": {"type": "String"}, "link": {"type": "String"}}},
   "yardimVeDestek": "Help and support",
   "kilometreTasiSiradakiSatir": "Next: {baslik}",
   "@kilometreTasiSiradakiSatir": {"placeholders": {"baslik": {"type": "String"}}},
@@ -5691,5 +5660,31 @@
   "bedelliLotYok": "You held no shares on this date",
   "bedelliKaydet": "Add shares",
   "bedelliKaydedildi": "{yeni} new shares added",
-  "@bedelliKaydedildi": {"placeholders": {"yeni": {"type": "String"}}}
+  "@bedelliKaydedildi": {"placeholders": {"yeni": {"type": "String"}}},
+  "kapanisBaslik": "Position closed",
+  "kapanisTuttun": "You held {ad} for {sure}",
+  "@kapanisTuttun": {"placeholders": {"ad": {"type": "String"}, "adBelirtme": {"type": "String"}, "sure": {"type": "String"}}},
+  "kapanisSureAy": "{ay, plural, =1{1 month} other{{ay} months}}",
+  "@kapanisSureAy": {"placeholders": {"ay": {"type": "int"}}},
+  "kapanisSureGun": "{gun, plural, =1{1 day} other{{gun} days}}",
+  "@kapanisSureGun": {"placeholders": {"gun": {"type": "int"}}},
+  "kapanisSureBirGundenKisa": "less than a day",
+  "kapanisGerceklesenKar": "Realised gain",
+  "kapanisGerceklesenZarar": "Realised loss",
+  "kapanisYillik": "Average per year {pct}",
+  "@kapanisYillik": {"placeholders": {"pct": {"type": "String"}}},
+  "kapanisZarar": "This position closed at a loss.",
+  "kapanisMaliyetBilinmiyor": "The cost is unknown, so gain and loss were not calculated.",
+  "kapanisYillikRapor": "See in yearly report",
+  "kapanisTamam": "OK",
+  "kapanisPaylas": "Share",
+  "kapanisPaylasEtiketi": "Realised return",
+  "kapanisPaylasMetni": "Closed my {ad} position at {pct}",
+  "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}},
+  "aramaOneriBaslik": "Did you mean?",
+  "aramaOneriSemantik": "Suggestion: {kod}, {ad}",
+  "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}},
+  "zirveGuvenKuresel": "Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.",
+  "zirveGuvenOrtaklar": "Nobody's asset list is visible.",
+  "zirveNasilOlculur": "How is it measured?"
 }

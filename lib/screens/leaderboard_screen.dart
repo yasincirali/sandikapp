@@ -122,7 +122,8 @@ class YarisGovdesi extends ConsumerWidget {
     }
     // Alt açıklama bloğu (paranın getirisi + teaser + dipnot) en fazla
     // gövdenin [_altBlokOrani]'na kadar büyür, fazlası kendi içinde kayar.
-    // Neden: dipnot ~210 karakter; cihazda büyük yazı (2×–3,1×) açıkken bu
+    // Neden: dipnot ~210 karakterdi (10 Kas'tan beri tek cümle + "Nasıl
+    // ölçülür?" satırı, `_YarisDipnotu`; sınır yine büyük yazı için durur); cihazda büyük yazı (2×–3,1×) açıkken bu
     // sabit blok tek başına ekranı aşıyor, sıralama listesini sıfır
     // yüksekliğe ezip altını kesiyordu (büyük yazı taraması 2026-10-12).
     // Normal yazıda blok sınırın çok altında kalır; düzen aynıdır.
@@ -200,19 +201,7 @@ class YarisGovdesi extends ConsumerWidget {
           if (RemoteConfigService.instance.percentileStripEnabled)
             _GlobalPercentileTeaser(periodDays: periodDays),
         ],
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Text(
-            activePartners.isEmpty
-                ? context.l10n.raceFooterGlobal
-                : context.l10n.raceFooterPartners,
-            style: context.t.labelMedium?.copyWith(
-              letterSpacing: 0,
-              color: context.c.text36,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
+        _YarisDipnotu(ortakli: activePartners.isNotEmpty),
               ],
             ),
           ),
@@ -223,6 +212,103 @@ class YarisGovdesi extends ConsumerWidget {
 
   /// Alt açıklama bloğunun gövdeye oranla tavanı (gerekçe `build`'de).
   static const double _altBlokOrani = 0.4;
+}
+
+/// Sıralamanın dipnotu: her zaman görünen tek güven cümlesi + "Nasıl
+/// ölçülür?" satırı (müşteri işi 10 Kas).
+///
+/// ## Neden
+/// Listenin altında ~210 karakterlik dipnot duruyordu; ekranı açan herkes
+/// her seferinde aynı paragrafı görüyor, sıralama listesi büyük yazıda
+/// sıkışıyordu. Okunan kısım güven sözü (anonim, tutar paylaşılmaz): o
+/// cümle aynı sözcüklerle görünür kalır. Ölçüm ayrıntısı (dipnotun kendisi,
+/// "herkes aynı ölçülür", "paranın getirisi farkı") bir dokunuşla alt
+/// sayfada, metinler DEĞİŞMEDEN.
+///
+/// Ortaklı sıralamada sıralama anonim değildir (ortaklar birbirini görür);
+/// güven cümlesi o dipnotun kendi sözüdür ("kimsenin varlık listesi
+/// görünmez").
+class _YarisDipnotu extends StatelessWidget {
+  const _YarisDipnotu({required this.ortakli});
+
+  final bool ortakli;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final stil =
+        context.t.labelMedium?.copyWith(letterSpacing: 0, color: c.text36);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), SandikSpace.sm,
+          SandikSpace.screenH(context), SandikSpace.sm),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            ortakli ? l.zirveGuvenOrtaklar : l.zirveGuvenKuresel,
+            key: const ValueKey('yaris_guven_cumlesi'),
+            style: stil,
+            textAlign: TextAlign.center,
+          ),
+          SandikTappable(
+            key: const ValueKey('yaris_nasil_olculur'),
+            haptic: SandikHaptic.none,
+            semanticLabel: l.zirveNasilOlculur,
+            onTap: () => _nasilOlculurAc(context),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Büyük yazıda dar ekranda satıra sığmazsa sarar.
+                  Flexible(
+                    child: Text(l.zirveNasilOlculur,
+                        style: stil?.copyWith(
+                            color: c.text58, fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: SandikSpace.xs),
+                  Icon(Icons.chevron_right_rounded,
+                      size: SandikSpace.md, color: c.text58),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _nasilOlculurAc(BuildContext context) => showSandikSheet<void>(
+        context: context,
+        baslik: context.l10n.zirveNasilOlculur,
+        isScrollControlled: true,
+        builder: (ctx) {
+          final l = ctx.l10n;
+          final stil = ctx.t.bodyMedium?.copyWith(color: ctx.c.text58);
+          return SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), 0,
+                  SandikSpace.screenH(ctx), SandikSpace.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ortakli ? l.raceFooterPartners : l.raceFooterGlobal,
+                      style: stil),
+                  const SizedBox(height: SandikSpace.md),
+                  Text(
+                      l.everyoneMeasuredSameBody(
+                          LeaderboardService.instance.asgariGun),
+                      style: stil),
+                  const SizedBox(height: SandikSpace.md),
+                  Text(l.rankVsPortfolioNote, style: stil),
+                ],
+              ),
+            ),
+          );
+        },
+      );
 }
 
 /// Yarış dönemleri. Gün sayıları `ZirveDonem` ile BİREBİR (7 · 30 · 365):

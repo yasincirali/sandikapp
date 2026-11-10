@@ -1135,21 +1135,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fundsLoading => 'Fonlar yükleniyor...';
 
   @override
-  String breakdownUpAmount(String amount) {
-    return 'artış $amount';
-  }
-
-  @override
-  String breakdownDownAmount(String amount) {
-    return 'azalış $amount';
-  }
-
-  @override
   String get nominalReturnInWindow => 'Bu aralıkta senin getirin';
-
-  @override
-  String get cpiWindowNote =>
-      'TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.';
 
   @override
   String rangeChip(String start, String end) {
@@ -1434,9 +1420,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pushDiagnosticsSubtitle =>
       'Bildirim zincirinin neresi kopuk; cihaz APNs/FCM token durumu';
-
-  @override
-  String get notificationsUpper => 'Bildirimler';
 
   @override
   String get signalNotifications => 'Teknik sinyal bildirimleri';
@@ -2549,7 +2532,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String everyoneMeasuredSameBody(int gun) {
-    return 'Sen ve ortakların aynı formül ve aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az $gun gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.';
+    return 'Herkes aynı formül ve aynı fiyatlarla ölçülür. Sıralamaya girmek için ilk varlığını edinmenin üzerinden en az $gun gün geçmeli. Anonim sıralamalarda 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.';
   }
 
   @override
@@ -2832,9 +2815,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get alarmDeleteFailed => 'Alarmlar silinemedi';
 
   @override
-  String get assetDeleted => 'Varlık silindi';
-
-  @override
   String get enterValidAmount => 'Geçerli bir tutar gir';
 
   @override
@@ -2887,11 +2867,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get saleValue => 'Satış değeri';
-
-  @override
-  String nActiveAlerts(int n) {
-    return '$n aktif fiyat alarmı';
-  }
 
   @override
   String get deleteAlertTitle => 'Alarmı sil';
@@ -3191,7 +3166,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get importScreenshotHint =>
-      'Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.';
+      'Portföy ekranının görüntüsünü seç; adet ve ortalama maliyet görünsün. Görüntüler telefonunda okunur.';
 
   @override
   String get importScreenshotNone =>
@@ -3501,10 +3476,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get myMarketReturn => 'Piyasa getirim';
 
   @override
-  String get dataExported =>
-      'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.';
-
-  @override
   String mailAppFailed(String email) {
     return 'Mail uygulaması açılamadı. Lütfen $email adresine yaz.';
   }
@@ -3739,6 +3710,21 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String nShown(int n) {
     return ' · $n gösteriliyor';
+  }
+
+  @override
+  String hareketToplamAlim(String tutar) {
+    return 'Alım $tutar';
+  }
+
+  @override
+  String hareketToplamSatis(String tutar) {
+    return 'Satış $tutar';
+  }
+
+  @override
+  String hareketToplamTemettu(String tutar) {
+    return 'Temettü $tutar';
   }
 
   @override
@@ -4118,16 +4104,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String todayScopeOf(String name) {
     return '$name bugünü';
-  }
-
-  @override
-  String todayUp(String amount, String pct) {
-    return '$amount · %$pct artıda';
-  }
-
-  @override
-  String todayDown(String amount, String pct) {
-    return '$amount · %$pct eksi';
   }
 
   @override
@@ -5441,10 +5417,8 @@ class AppLocalizationsTr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
-      one:
-          'BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
+      other: '$count aylık BES katkın eklendi.',
+      one: 'BES katkın eklendi.',
     );
     return '$_temp0';
   }
@@ -9024,17 +8998,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String varlikGuncelleOnayGovde(String name, int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other:
-          '\"$name\" için $n hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.',
-      one:
-          '\"$name\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.',
-    );
-    return '$_temp0';
-  }
+  String get varlikGuncelleOnayGovde => 'Bu işlem geri alınamaz.';
 
   @override
   String get sgnPremiumGostergeSatiri =>
@@ -9463,6 +9427,20 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get vkHepsiTamam => 'Bilgiler tamam, toplamın güncel.';
+
+  @override
+  String vkFiyatGelmiyor(int gun) {
+    return 'Fiyatı $gun gündür gelmiyor';
+  }
+
+  @override
+  String vkFiyatGelmiyorBaslik(String name) {
+    return '$name fiyatı gelmiyor';
+  }
+
+  @override
+  String get vkFiyatGelmiyorAciklama =>
+      'Fon kapanmış ya da başka fonla birleşmiş olabilir. Elle fiyat girebilir ya da satış kaydedebilirsin.';
 
   @override
   String get onerAlarmBaslik => 'Fiyat alarmı kur';
@@ -10303,6 +10281,18 @@ class AppLocalizationsTr extends AppLocalizations {
       'Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.';
 
   @override
+  String kilometreKarZirvesiBaslik(String tutar) {
+    return 'Toplam kârın en yüksek seviyesinde: $tutar';
+  }
+
+  @override
+  String get kilometreKarZirvesiGovde =>
+      'Kâr, portföy değerinden yatırdığın net tutar çıkarılarak bulunur.';
+
+  @override
+  String get kilometreKarZirvesiPaylas => 'Toplam kârım en yüksek seviyesinde';
+
+  @override
   String get bosCanAciklama =>
       'Fiyat alarmı kurduğunda, hedefe gelince burada ve bildirimde haber veririz.';
 
@@ -10434,6 +10424,24 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String kiyasPaylasMetni(String donem, String ozet, String link) {
     return '$donem kıyası: $ozet. sandık ile kıyasladım: $link';
+  }
+
+  @override
+  String get takipPaylasTooltip => 'Takip listesini paylaş';
+
+  @override
+  String get takipPaylasKartBaslik => 'Takip listem';
+
+  @override
+  String get takipPaylasAlt => 'sandık ile takip ediyorum';
+
+  @override
+  String get takipPaylasNot =>
+      'Kartta tutar ve adet yok; yalnız eklediğimden beri yüzdeler.';
+
+  @override
+  String takipPaylasMetni(String ozet, String link) {
+    return 'Takip listem, eklediğimden beri: $ozet. sandık ile takip ediyorum: $link Yatırım tavsiyesi değildir.';
   }
 
   @override
@@ -10629,4 +10637,78 @@ class AppLocalizationsTr extends AppLocalizations {
   String bedelliKaydedildi(String yeni) {
     return '$yeni yeni lot eklendi';
   }
+
+  @override
+  String get kapanisBaslik => 'Pozisyon kapandı';
+
+  @override
+  String kapanisTuttun(String ad, String adBelirtme, String sure) {
+    return '$adBelirtme $sure tuttun';
+  }
+
+  @override
+  String kapanisSureAy(int ay) {
+    return '$ay ay';
+  }
+
+  @override
+  String kapanisSureGun(int gun) {
+    return '$gun gün';
+  }
+
+  @override
+  String get kapanisSureBirGundenKisa => 'bir günden kısa';
+
+  @override
+  String get kapanisGerceklesenKar => 'Gerçekleşen kâr';
+
+  @override
+  String get kapanisGerceklesenZarar => 'Gerçekleşen zarar';
+
+  @override
+  String kapanisYillik(String pct) {
+    return 'Yıllık ortalama $pct';
+  }
+
+  @override
+  String get kapanisZarar => 'Bu pozisyon zararla kapandı.';
+
+  @override
+  String get kapanisMaliyetBilinmiyor =>
+      'Maliyeti bilinmediği için kâr ve zarar hesaplanmadı.';
+
+  @override
+  String get kapanisYillikRapor => 'Yıllık raporda gör';
+
+  @override
+  String get kapanisTamam => 'Tamam';
+
+  @override
+  String get kapanisPaylas => 'Paylaş';
+
+  @override
+  String get kapanisPaylasEtiketi => 'Gerçekleşen getiri';
+
+  @override
+  String kapanisPaylasMetni(String ad, String pct) {
+    return '$ad pozisyonumu $pct getiriyle kapattım';
+  }
+
+  @override
+  String get aramaOneriBaslik => 'Bunu mu demek istedin?';
+
+  @override
+  String aramaOneriSemantik(String kod, String ad) {
+    return 'Öneri: $kod, $ad';
+  }
+
+  @override
+  String get zirveGuvenKuresel =>
+      'Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
+
+  @override
+  String get zirveGuvenOrtaklar => 'Kimsenin varlık listesi görünmez.';
+
+  @override
+  String get zirveNasilOlculur => 'Nasıl ölçülür?';
 }

@@ -379,6 +379,78 @@ List<WatchlistItem> eklenmedenBeriUygula(
   return sonuc;
 }
 
+/// Satırların eklenme günü kapanışları ([EklenmeKapanisiOnbellegi]
+/// anahtarıyla). "Eklediğimden beri" kipi ve takip listesi paylaşımı aynı
+/// yoldan okur: kapanış geçmiş tarihli alımın maliyetini bulan yolla aynı
+/// ([AddAssetPriceLookup.historicalClose]); sembol merdiveni burada kurulmaz.
+/// Bulunamayan ya da hata veren satırın değeri `null`.
+Future<Map<String, double?>> eklenmeKapanislari(
+    Ref ref, List<WatchlistItem> items) async {
+  final onbellek = ref.read(eklenmeKapanisiOnbellegiProvider);
+  final lookup = ref.read(addAssetPriceLookupProvider);
+  final kapanislar = <String, double?>{};
+  await Future.wait([
+    for (final w in items)
+      if (w.addedAt != null)
+        () async {
+          final gun = w.addedAt!;
+          double? v;
+          try {
+            v = await onbellek.getir(w.ticker, gun, lookup.historicalClose);
+          } catch (e, st) {
+            CrashReporter.report(e, st, reason: 'eklenmeKapanislari');
+          }
+          kapanislar[EklenmeKapanisiOnbellegi.anahtar(w.ticker, gun)] = v;
+        }(),
+  ]);
+  return kapanislar;
+}
+
+/// Takip listesi paylaşım kartının en çok satır sayısı. Kart 320×400;
+/// altı satır 1,3× yazıda da küçülmeden sığar, daha fazlası listeyi okunmaz
+/// bir tabloya çevirirdi.
+const takipPaylasimAzami = 6;
+
+/// Paylaşım kartının satırları — SAF (`takip_paylas_test`).
+///
+/// [sirali] ekrandaki sıradır (kullanıcının seçtiği sıralama), [yuzdeler]
+/// satır kimliği → "eklediğimden beri" yüzdesi. Yüzdesi bilinmeyen satır
+/// DÜŞER ("—" bir paylaşım kartında bilgi taşımaz, uydurma sayı da yazılmaz);
+/// ilk [takipPaylasimAzami] satır alınır. Tutar ve adet bu modelde YOK:
+/// kart yalnız ad ve yüzde görür.
+List<({String ad, double pct})> takipPaylasimSatirlari(
+    List<WatchlistItem> sirali, Map<String, double?> yuzdeler) {
+  final sonuc = <({String ad, double pct})>[];
+  for (final w in sirali) {
+    final p = yuzdeler[w.id];
+    if (p == null || !p.isFinite) continue;
+    sonuc.add((ad: w.name.isNotEmpty ? w.name : w.ticker, pct: p));
+    if (sonuc.length == takipPaylasimAzami) break;
+  }
+  return sonuc;
+}
+
+/// Paylaşım kartının satırları; liste boşsa ya da hiçbir satırın yüzdesi
+/// yoksa boş liste → paylaş düğmesi çizilmez.
+///
+/// "Eklediğimden beri" kipindeyken yüzde zaten satırlardadır, ek istek
+/// yok. Başka dönemdeyken kapanışlar aynı oturum önbelleğinden okunur
+/// ([eklenmeKapanislari]); satır başına oturumda bir istek, sonra bellekte.
+/// Güncel fiyat satırın gösterdiği fiyattır (ekrandaki ile karttaki aynı).
+final takipPaylasimSatirlariProvider =
+    FutureProvider<List<({String ad, double pct})>>((ref) async {
+  final sirali = ref.watch(siraliTakipListesiProvider).valueOrNull;
+  if (sirali == null || sirali.isEmpty) return const [];
+  final List<WatchlistItem> beri;
+  if (ref.watch(watchlistEklenmedenBeriProvider)) {
+    beri = sirali;
+  } else {
+    beri = eklenmedenBeriUygula(sirali, await eklenmeKapanislari(ref, sirali));
+  }
+  return takipPaylasimSatirlari(
+      sirali, {for (final w in beri) w.id: w.periodChangePct});
+});
+
 /// Grafikteki portföy çizgisinin KİMİ gösterdiği.
 ///
 /// Uygulamanın geri kalanıyla AYNI sözleşme (`_view`, `OrtakSecici`):
@@ -504,27 +576,8 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
   /// Portföyde geçmiş tarihli bir lotun kâr/zararı da tam bu iki sayının
   /// kıyasıdır.
   Future<List<WatchlistItem>> _eklenmedenBeri(
-      List<WatchlistItem> items) async {
-    final onbellek = ref.read(eklenmeKapanisiOnbellegiProvider);
-    final lookup = ref.read(addAssetPriceLookupProvider);
-    final kapanislar = <String, double?>{};
-    await Future.wait([
-      for (final w in items)
-        if (w.addedAt != null)
-          () async {
-            final gun = w.addedAt!;
-            double? v;
-            try {
-              v = await onbellek.getir(w.ticker, gun, lookup.historicalClose);
-            } catch (e, st) {
-              CrashReporter.report(e, st,
-                  reason: 'WatchlistNotifier._eklenmedenBeri');
-            }
-            kapanislar[EklenmeKapanisiOnbellegi.anahtar(w.ticker, gun)] = v;
-          }(),
-    ]);
-    return eklenmedenBeriUygula(items, kapanislar);
-  }
+          List<WatchlistItem> items) async =>
+      eklenmedenBeriUygula(items, await eklenmeKapanislari(ref, items));
 
   /// Takibe alır. Zaten takiptaki varlık için hata fırlatır (sunucudaki
   /// unique index) — çağıran bunu kullanıcıya gösterir.

@@ -57,6 +57,11 @@ enum ReviewAni {
 
   /// Yıllık özet ("sandık Özeti") kapatıldıktan sonra, yıl artıdaysa.
   ozetGoruldu,
+
+  /// "Tümünü sat" sonrası kapanış özeti kapatıldıktan sonra, pozisyon en az
+  /// %5 kazançla kapandıysa (`kapanisDegerlendirmeEsigiPct`). Küçük kazanç
+  /// ve zarar mutlu an sayılmaz; paylaşıldıysa istemi paylaşım sorar.
+  kapanis,
 }
 
 /// Kullanıcının istemle geçmişte ne yaptığı — karar fonksiyonunun girdisi.

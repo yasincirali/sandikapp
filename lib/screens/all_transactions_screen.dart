@@ -162,6 +162,37 @@ Map<DateTime, ({int sayi, double? net})> ayBasligiOzetleri(
   );
 }
 
+/// Sonuç sayacının yanındaki toplam: "Alım ₺X · Satış ₺Y · Temettü ₺Z".
+///
+/// Sıfır parça yazılmaz ("Satış ₺0" bilgi taşımaz); hiçbir parça yoksa
+/// `null`. Silinenler görünümünde (silinen kayıt para hareketi değil) ve
+/// bakiye gizliyken satır hiç çıkmaz: maskeli "Alım ••••" sayaca yük olur,
+/// ay başlıkları zaten maskeli. TL karşılığı bilinmeyen kayıt varsa
+/// [ContributionHistoryService.hareketToplamlari] `null` döner, satır yine
+/// çıkmaz. Para [BazPara] ile yazılır: aynı ekrandaki ay başlığı "Net"
+/// tutarıyla aynı birim (TL tabanında `fmtTRY`).
+String? hareketToplamMetni(
+  AppLocalizations l, {
+  required ({double alim, double satis, double temettu})? toplamlar,
+  required bool silinenler,
+  required BazPara baz,
+  required bool gizli,
+}) {
+  if (toplamlar == null || silinenler || gizli || baz.gizli) return null;
+  final sifir = baz.fmt(0);
+  String? parca(double t, String Function(String) etiket) {
+    final govde = baz.fmt(t);
+    return govde == sifir ? null : etiket(govde);
+  }
+
+  final parcalar = [
+    parca(toplamlar.alim, l.hareketToplamAlim),
+    parca(toplamlar.satis, l.hareketToplamSatis),
+    parca(toplamlar.temettu, l.hareketToplamTemettu),
+  ].whereType<String>().toList();
+  return parcalar.isEmpty ? null : parcalar.join(' · ');
+}
+
 /// Defteri iki kümeye ayırır: süren hareketler ve silinenler.
 ///
 /// **Kullanıcı kararı 2026-09-29:** silinen varlık ana sayfadaki "Portföy
@@ -631,6 +662,14 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     final silinenSayisi = ayrim.silinen.length;
     final toplam = rows.length;
     final shown = _visible.clamp(0, rows.length);
+    // Süzülmüş listenin TAMAMI (sayfa dilimi değil), ay başlıklarıyla aynı.
+    final toplamMetni = hareketToplamMetni(
+      context.l10n,
+      toplamlar: ContributionHistoryService.hareketToplamlari(rows),
+      silinenler: _silinenler,
+      baz: ref.watch(bazParaProvider),
+      gizli: hideBalance,
+    );
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -756,13 +795,26 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    toplam == 0
-                        ? context.l10n.noRecords
-                        : '${context.l10n.nRecords(toplam)}'
-                            '${shown < rows.length ? context.l10n.nShown(shown) : ''}',
-                    style:
-                        context.t.bodySmall?.copyWith(color: context.c.text36),
+                  // Toplam ayrı metin: dar ekranda ya da büyük yazıda sayacın
+                  // altına iner, sayaç kırpılmaz. Sayaç metni kendi başına
+                  // kalır (testler ve ekran okuyucu "N kayıt"ı tek okur).
+                  child: Wrap(
+                    children: [
+                      Text(
+                        toplam == 0
+                            ? context.l10n.noRecords
+                            : '${context.l10n.nRecords(toplam)}'
+                                '${shown < rows.length ? context.l10n.nShown(shown) : ''}',
+                        style: context.t.bodySmall
+                            ?.copyWith(color: context.c.text36),
+                      ),
+                      if (toplam > 0 && toplamMetni != null)
+                        Text(
+                          ' · $toplamMetni',
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text36),
+                        ),
+                    ],
                   ),
                 ),
                 if (_hasActiveFilter)
