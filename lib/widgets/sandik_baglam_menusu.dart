@@ -14,6 +14,8 @@ class SandikBaglamEylemi {
     required this.ikon,
     required this.onSec,
     this.yikici = false,
+    this.altMetin,
+    this.anahtar,
   });
 
   final String etiket;
@@ -22,6 +24,102 @@ class SandikBaglamEylemi {
 
   /// Sil gibi geri alınamayan eylem: kırmızı ve listenin sonunda.
   final bool yikici;
+
+  /// Yalnız [showSandikAcilirMenu]: etiketin altında bir satır açıklama
+  /// (iOS açılır menüsündeki alt başlık gibi). Ekran okuyucu etiketle
+  /// birlikte okur.
+  final String? altMetin;
+
+  /// Yalnız [showSandikAcilirMenu]: satırın anahtarı (testler bulsun).
+  final Key? anahtar;
+}
+
+/// Bir düğmeye DOKUNUNCA, düğmenin altında açılan menü (varlık ekranının
+/// "⋯"si, müşteri raporu 2026-11-10 #4).
+///
+/// ## Neden alt sayfa değil
+/// "⋯" tek satırlık bir "Diğer işlemler" alt sayfası açıyor, satıra
+/// dokununca onun üstüne bedelli sayfası açılıyordu: iki modal üst üste,
+/// geri hareketi önce boş menüye dönüyordu. Düğmeye bağlı menü HIG'in
+/// "pull-down menu" kalıbıdır (iOS'ta "⋯" düğmesinin sistem davranışı) ve
+/// Material'in açılır menüsüdür; menü kapanınca sayfa tek modal olarak
+/// açılır. [SandikBaglamMenusu]'nün uzun basma kısayolundan farkı: bu
+/// birincil yol, bayrağa (`goz_alici`) bağlı DEĞİL ve dokunmayla açılır.
+///
+/// [dugme] düğmenin kendi bağlamı (konum oradan ölçülür; `Builder` ile
+/// verilir). Satırlar en az 44 pt; yıkıcı eylem kırmızı ve sonda. Seçilen
+/// eylem menü kapandıktan SONRA çağrılır, iki rota üst üste binmez.
+Future<void> showSandikAcilirMenu(
+  BuildContext dugme, {
+  required List<SandikBaglamEylemi> eylemler,
+}) async {
+  if (eylemler.isEmpty) return;
+  final kutu = dugme.findRenderObject() as RenderBox?;
+  final ust =
+      Navigator.of(dugme).overlay?.context.findRenderObject() as RenderBox?;
+  if (kutu == null || ust == null || !kutu.hasSize) return;
+  final sirali = [
+    ...eylemler.where((e) => !e.yikici),
+    ...eylemler.where((e) => e.yikici),
+  ];
+  // Menünün üst kenarı düğmenin alt kenarı: düğmeyi örtmez, bağı görünür.
+  final sol = kutu.localToGlobal(Offset(0, kutu.size.height), ancestor: ust);
+  final sag =
+      kutu.localToGlobal(kutu.size.bottomRight(Offset.zero), ancestor: ust);
+  final c = dugme.c;
+  final t = dugme.t;
+  final hareketYok = MediaQuery.disableAnimationsOf(dugme);
+  final secilen = await showMenu<SandikBaglamEylemi>(
+    context: dugme,
+    position: RelativeRect.fromRect(
+        Rect.fromPoints(sol, sag), Offset.zero & ust.size),
+    color: c.surface2,
+    shape: RoundedRectangleBorder(
+      borderRadius: SandikRadius.mdAll,
+      side: BorderSide(color: c.hairline),
+    ),
+    popUpAnimationStyle: hareketYok ? AnimationStyle.noAnimation : null,
+    items: [
+      for (final e in sirali)
+        PopupMenuItem<SandikBaglamEylemi>(
+          key: e.anahtar,
+          value: e,
+          height: SandikTouch.min,
+          child: Semantics(
+            label: e.altMetin == null ? e.etiket : '${e.etiket}. ${e.altMetin}',
+            excludeSemantics: true,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+              child: Row(
+                children: [
+                  Icon(e.ikon,
+                      size: SandikSpace.lgs,
+                      color: e.yikici ? c.danger : c.text90),
+                  const SizedBox(width: SandikSpace.smd),
+                  Flexible(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(e.etiket,
+                            style: t.bodyLarge?.copyWith(
+                                color: e.yikici ? c.danger : c.text90)),
+                        if (e.altMetin != null) ...[
+                          const SizedBox(height: SandikSpace.xxs),
+                          Text(e.altMetin!,
+                              style: t.bodySmall?.copyWith(color: c.text58)),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
+  secilen?.onSec();
 }
 
 /// Satıra uzun basınca açılan kısayol menüsü (bayrak `goz_alici`, cam/HIG

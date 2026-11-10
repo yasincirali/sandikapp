@@ -20,42 +20,41 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'sandik_async_button.dart';
+import 'sandik_baglam_menusu.dart';
 import 'sozlesme_formu_ortak.dart';
 
 /// Varlık ekranının "⋯" menüsü. Bugün tek satır (bedelli artırım);
-/// bedelsiz/bölünme düzeltmesi geldiğinde aynı sayfaya satır olarak girer
-/// (fikir 6 Kas 20:04#1). Menü ayrı sayfa çünkü ekranda `PopupMenuButton`
-/// yok (`varlik_islem_cubugu_test` madde 11) ve platform menüsü iOS'ta
-/// yabancı durur; satırlar 44 pt.
+/// bedelsiz/bölünme düzeltmesi geldiğinde aynı menüye satır olarak girer
+/// (fikir 6 Kas 20:04#1).
+///
+/// Menü düğmeye bağlı açılır menüdür (`showSandikAcilirMenu`, müşteri
+/// raporu 2026-11-10 #4): eskiden tek satırlık "Diğer işlemler" alt sayfası
+/// açıyor, satır onun üstüne bedelli sayfasını açıyordu (iki modal üst
+/// üste). Ekranda `PopupMenuButton` yine yok (`varlik_islem_cubugu_test`
+/// madde 11: oradaki karar hiç çizilmeyen Sil menüsüydü); satırlar 44 pt.
+/// [dugme] "⋯" düğmesinin kendi bağlamı, menü onun altında açılır.
 Future<void> showVarlikDigerIslemler(
-  BuildContext context,
+  BuildContext dugme,
   WidgetRef ref, {
   required Asset varlik,
   required List<Asset> lotlar,
-}) async {
-  final secim = await showSandikSheet<bool>(
-    context: context,
-    baslik: context.l10n.digerIslemler,
-    builder: (sayfa) => Padding(
-      padding: EdgeInsets.fromLTRB(
-        SandikSpace.screenH(sayfa),
-        SandikSpace.sm,
-        SandikSpace.screenH(sayfa),
-        SandikSpace.lg,
-      ),
-      child: SingleChildScrollView(
-        child: MenuSatiri(
-          key: const ValueKey('menu-bedelli-artirim'),
-          ikon: Icons.add_card_rounded,
-          baslik: sayfa.l10n.bedelliBaslik,
-          altMetin: sayfa.l10n.bedelliSatirAlt,
-          onTap: () => Navigator.pop(sayfa, true),
-        ),
-      ),
+}) {
+  final l10n = dugme.l10n;
+  return showSandikAcilirMenu(dugme, eylemler: [
+    SandikBaglamEylemi(
+      anahtar: const ValueKey('menu-bedelli-artirim'),
+      ikon: Icons.add_card_rounded,
+      etiket: l10n.bedelliBaslik,
+      altMetin: l10n.bedelliSatirAlt,
+      // Menü kapandıktan sonra çağrılır; düğme o an ağaçta.
+      onSec: () {
+        if (!dugme.mounted) return;
+        CrashReporter.arkaPlan(
+            showBedelliArtirimSheet(dugme, ref, varlik: varlik, lotlar: lotlar),
+            reason: 'bedelli.menu');
+      },
     ),
-  );
-  if (secim != true || !context.mounted) return;
-  await showBedelliArtirimSheet(context, ref, varlik: varlik, lotlar: lotlar);
+  ]);
 }
 
 /// Bedelli artırım sayfasını açar; kullanıcı kaydederse lotu yazar.
@@ -100,57 +99,6 @@ Future<void> showBedelliArtirimSheet(
       kind: SandikSnackKind.success);
 }
 
-/// Menü sayfasının satırı: ikon, başlık, bir satır açıklama, ok. 44 pt.
-class MenuSatiri extends StatelessWidget {
-  const MenuSatiri({
-    super.key,
-    required this.ikon,
-    required this.baslik,
-    required this.altMetin,
-    required this.onTap,
-  });
-
-  final IconData ikon;
-  final String baslik;
-  final String altMetin;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => SandikTappable(
-        onTap: onTap,
-        semanticLabel: '$baslik. $altMetin',
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
-            child: Row(
-              children: [
-                Icon(ikon, size: 22, color: context.c.text90),
-                const SizedBox(width: SandikSpace.smd),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(baslik,
-                          style: context.t.bodyLarge
-                              ?.copyWith(color: context.c.text90)),
-                      const SizedBox(height: SandikSpace.xxs),
-                      Text(altMetin,
-                          style: context.t.bodySmall
-                              ?.copyWith(color: context.c.text58)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: SandikSpace.sm),
-                Icon(Icons.chevron_right_rounded,
-                    size: 20, color: context.c.text58),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
 /// Sayfanın gövdesi. Açık sınıf: widget testi doğrudan pump edebilsin.
 class BedelliArtirimSheet extends StatefulWidget {
   const BedelliArtirimSheet({
@@ -188,6 +136,8 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
         lotlar: widget.lotlar,
         oranYuzde: parseTrNumber(_oran.text),
         tarih: _tarih,
+        // Yeni ortalama, lotu kaydın gerçekten yazılacağı ana koyar.
+        kayitAni: _kayitTarihi,
       );
 
   /// Tarih seçici gece yarısını döner. Geçmiş günde lot öğlene yazılır:
@@ -228,6 +178,7 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
     // Önizleme yalnız oran yazılınca; tarihte lot yoksa onu söyler.
     String? onizleme;
     String? yuvarlama;
+    String? yeniOrtalama;
     if (hesap.eldekiLot <= 0) {
       onizleme = l10n.bedelliLotYok;
     } else if (oranVar) {
@@ -237,6 +188,9 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
         fmtTRY(BedelliArtirim.nominal),
         fmtTRY(hesap.toplamTutar),
       );
+      if (hesap.yeniOrtalama case final o?) {
+        yeniOrtalama = fmtTRYFiyat(o);
+      }
       if (hesap.yuvarlandi) {
         yuvarlama = l10n.bedelliYuvarlama(
           fmtNumFlex(hesap.hakSayisi),
@@ -281,6 +235,10 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
             ),
           ],
           if (yuvarlama != null) SozlesmeNotu(yuvarlama),
+          if (yeniOrtalama != null) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _YeniOrtalamaSatiri(yeniOrtalama),
+          ],
           const SizedBox(height: SandikSpace.lg),
           SandikAsyncButton.kompakt(
             key: const ValueKey('bedelli-kaydet'),
@@ -295,6 +253,36 @@ class _BedelliArtirimSheetState extends State<BedelliArtirimSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Yeni ortalama maliyetin ₺115,60 olur." — tutar w600 (müşteri raporu
+/// 2026-11-10 #1). Cümle tek parça: ekran okuyucu bütün okur; vurgu ağırlıkla,
+/// renkle değil. Tutar .arb cümlesinde arandığı için dil sırası serbest.
+class _YeniOrtalamaSatiri extends StatelessWidget {
+  const _YeniOrtalamaSatiri(this.tutar);
+
+  final String tutar;
+
+  @override
+  Widget build(BuildContext context) {
+    final cumle = context.l10n.bedelliYeniOrtalama(tutar);
+    final i = cumle.indexOf(tutar);
+    final stil = context.t.bodyLarge?.copyWith(color: context.c.text90);
+    return Text.rich(
+      key: const ValueKey('bedelli-yeni-ortalama'),
+      i < 0
+          ? TextSpan(text: cumle)
+          : TextSpan(children: [
+              TextSpan(text: cumle.substring(0, i)),
+              TextSpan(
+                text: tutar,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              TextSpan(text: cumle.substring(i + tutar.length)),
+            ]),
+      style: stil,
     );
   }
 }

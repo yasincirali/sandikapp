@@ -10748,6 +10748,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bedelliYeniOrtalama(String tutar) {
+    return 'Your new average cost will be $tutar.';
+  }
+
+  @override
   String bedelliYuvarlama(String hak, String yeni) {
     return '$yeni of your $hak rights become shares; the fraction is rounded down';
   }

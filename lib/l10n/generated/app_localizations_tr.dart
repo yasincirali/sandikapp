@@ -10610,6 +10610,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String bedelliYeniOrtalama(String tutar) {
+    return 'Yeni ortalama maliyetin $tutar olur.';
+  }
+
+  @override
   String bedelliYuvarlama(String hak, String yeni) {
     return '$hak hakkın $yeni tanesi lot olur, kesir aşağı yuvarlanır';
   }

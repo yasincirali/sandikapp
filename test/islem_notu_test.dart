@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/user_model.dart';
@@ -9,6 +10,7 @@ import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/services/islem_notu.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/utils/tr_format.dart';
 import 'package:portfoy_takip/widgets/islem_notu_sheet.dart';
 import 'package:portfoy_takip/widgets/transaction_row.dart';
 
@@ -22,6 +24,10 @@ Asset _kayit(
   String userId = 'u1',
   String ticker = 'THYAO.IS',
   DateTime? silindi,
+  double fiyat = 300,
+  double quantity = 10,
+  double? sellPrice,
+  bool? maliyetBilinmiyor,
 }) =>
     Asset(
       id: id,
@@ -29,14 +35,16 @@ Asset _kayit(
       name: 'Türk Hava Yolları',
       ticker: ticker,
       type: AssetType.hisse,
-      quantity: 10,
-      purchasePrice: 300,
+      quantity: quantity,
+      purchasePrice: fiyat,
       currency: 'TRY',
       notes: notes,
       isManualPrice: false,
       addedDate: DateTime(2026, 3, 12),
       kind: kind,
       deletedAt: silindi,
+      sellPrice: sellPrice,
+      maliyetBilinmiyor: maliyetBilinmiyor,
     );
 
 Future<void> _pump(WidgetTester tester, Widget w) => tester.pumpWidget(
@@ -196,6 +204,38 @@ void main() {
     });
   });
 
+  group('alt başlık: birim fiyat', () {
+    final l10n = AppLocalizationsTr();
+    late final tarih = fmtTarihSaat(DateTime(2026, 3, 12));
+
+    test('alış: "Alım · 120 lot × ₺287,50 · tarih"', () {
+      expect(islemNotuAltBasligi(l10n, _kayit('a', quantity: 120, fiyat: 287.5)),
+          'Alım · 120 lot × ₺287,50 · $tarih');
+    });
+
+    test('satış satış fiyatıyla', () {
+      expect(
+          islemNotuAltBasligi(
+              l10n,
+              _kayit('s',
+                  kind: AssetKind.sell, quantity: 20, sellPrice: 310)),
+          'Satım · 20 lot × ₺310,00 · $tarih');
+    });
+
+    test('fiyat bilinmiyorsa parça yok', () {
+      expect(
+          islemNotuAltBasligi(
+              l10n, _kayit('a', quantity: 120, maliyetBilinmiyor: true)),
+          'Alım · 120 lot · $tarih');
+      expect(islemNotuAltBasligi(l10n, _kayit('b', quantity: 120, fiyat: 0)),
+          'Alım · 120 lot · $tarih');
+      expect(
+          islemNotuAltBasligi(
+              l10n, _kayit('s', kind: AssetKind.sell, quantity: 20)),
+          'Satım · 20 lot · $tarih');
+    });
+  });
+
   group('IslemNotuSheet', () {
     testWidgets('düzenlenebilir: alan notla dolu, Kaydet metni döndürür',
         (tester) async {
@@ -228,9 +268,52 @@ void main() {
       expect(find.widgetWithText(TextField, 'maaştan'), findsOneWidget);
       expect(find.text('Notu sil'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'ikramiyeden');
+      // Kaydet değişiklik görülünce açılır (bir kare sonra).
+      await tester.pump();
       await tester.tap(find.text('Kaydet'));
       await tester.pumpAndSettle();
       expect(sonuc, 'ikramiyeden');
+    });
+
+    testWidgets('Kaydet metin asıl nottan farklı olana dek kapalı',
+        (tester) async {
+      await _pump(
+          tester,
+          IslemNotuSheet(
+              asset: _kayit('a', notes: 'maaştan'),
+              not: 'maaştan',
+              duzenlenebilir: true));
+      FilledButton dugme() => tester.widget<FilledButton>(find.descendant(
+          of: find.byKey(const ValueKey('islem-notu-kaydet')),
+          matching: find.byType(FilledButton)));
+      expect(dugme().onPressed, isNull);
+      // Yalnız boşluk eklemek değişiklik değildir (kırpılmış karşılaştırma).
+      await tester.enterText(find.byType(TextField), 'maaştan  ');
+      await tester.pump();
+      expect(dugme().onPressed, isNull);
+      await tester.enterText(find.byType(TextField), 'ikramiyeden');
+      await tester.pump();
+      expect(dugme().onPressed, isNotNull);
+      // Asıl nota dönünce yine kapanır.
+      await tester.enterText(find.byType(TextField), 'maaştan');
+      await tester.pump();
+      expect(dugme().onPressed, isNull);
+      // Boşaltmak da değişikliktir (silme).
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      expect(dugme().onPressed, isNotNull);
+    });
+
+    testWidgets('notsuz kayıtta Kaydet yazınca açılır', (tester) async {
+      await _pump(tester,
+          IslemNotuSheet(asset: _kayit('a'), not: null, duzenlenebilir: true));
+      FilledButton dugme() => tester.widget<FilledButton>(find.descendant(
+          of: find.byKey(const ValueKey('islem-notu-kaydet')),
+          matching: find.byType(FilledButton)));
+      expect(dugme().onPressed, isNull);
+      await tester.enterText(find.byType(TextField), 'maaştan');
+      await tester.pump();
+      expect(dugme().onPressed, isNotNull);
     });
 
     testWidgets('notsuz kayıtta "Notu sil" yok', (tester) async {
@@ -335,6 +418,8 @@ void main() {
       await tester.tap(find.text('aç'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'ikramiyeden');
+      // Kaydet değişiklik görülünce açılır (bir kare sonra).
+      await tester.pump();
       await tester.tap(find.text('Kaydet'));
       await tester.pumpAndSettle();
       expect(portfoy.yazilan, ['ikramiyeden']);

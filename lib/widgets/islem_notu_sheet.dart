@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
+import '../models/asset_type.dart' show AssetType, kotasyonSembolu;
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
@@ -135,6 +136,34 @@ Future<void> _notuGeriYaz(
   }
 }
 
+/// Sayfanın alt başlığı: "Alım · 120 lot × ₺287,50 · 12 Mar 2026 14:05".
+///
+/// Birim fiyat (müşteri raporu 2026-11-10 #3): not çoğu zaman "neden bu
+/// fiyattan aldım" sorusuna cevaptır; fiyat yazmayınca kullanıcı hangi
+/// alım olduğunu hareket listesine dönüp bakıyordu. Fiyat kaydın kendi
+/// para birimiyle, birim fiyat kuralıyla (`fmtFiyat`) yazılır. Bilinmiyorsa
+/// parça hiç yazılmaz (uydurma sayı yok): "maliyet sonra" işaretli alış,
+/// satış fiyatı olmayan satış, temettü/silme kaydı ve miktarı gösterilmeyen
+/// mevduat ("Alım × ₺…" anlamsız olurdu).
+String islemNotuAltBasligi(AppLocalizations l10n, Asset a) {
+  final tur = hareketTurEtiketi(l10n, a);
+  final tarih = fmtTarihSaat(a.addedDate);
+  final fiyat = _birimFiyat(a);
+  if (fiyat == null) return '$tur · $tarih';
+  final metin = fmtFiyat(fiyat, symbol: kotasyonSembolu('', a.currency));
+  return '$tur × $metin · $tarih';
+}
+
+double? _birimFiyat(Asset a) {
+  if (a.isDividend || a.isDeleteLog || a.type == AssetType.mevduat) {
+    return null;
+  }
+  final fiyat = a.isSell
+      ? a.sellPrice
+      : (a.maliyetBilinmiyor == true ? null : a.purchasePrice);
+  return fiyat != null && fiyat > 0 ? fiyat : null;
+}
+
 /// Sayfanın gövdesi. Açık sınıf: widget testi doğrudan pump edebilsin.
 class IslemNotuSheet extends StatefulWidget {
   const IslemNotuSheet({
@@ -171,7 +200,18 @@ class IslemNotuSheet extends StatefulWidget {
 
 class _IslemNotuSheetState extends State<IslemNotuSheet> {
   late final TextEditingController _ctrl =
-      TextEditingController(text: widget.not ?? '');
+      TextEditingController(text: widget.not ?? '')..addListener(_degisti);
+
+  /// Kaydet yalnız metin asıl nottan farklıyken açık (müşteri raporu
+  /// 2026-11-10 #3): değişmemiş notta basınca hiçbir şey yazılmadan
+  /// "Not kaydedildi" hissi veriyordu. Karşılaştırma `showIslemNotuSheet`'in
+  /// erken dönüşüyle aynı (kırpılmış metin == not), ikisi ayrı karar vermesin.
+  bool _degismis = false;
+
+  void _degisti() {
+    final d = _ctrl.text.trim() != (widget.not ?? '');
+    if (d != _degismis) setState(() => _degismis = d);
+  }
 
   @override
   void dispose() {
@@ -210,8 +250,7 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
     final l10n = context.l10n;
     final a = widget.asset;
     final baslik = a.showTicker ? a.displayTicker! : a.name;
-    final altBaslik =
-        '${hareketTurEtiketi(l10n, a)} · ${fmtTarihSaat(a.addedDate)}';
+    final altBaslik = islemNotuAltBasligi(l10n, a);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -258,14 +297,17 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
             widget.not == null ? l10n.noteAddHint : l10n.notesHint),
       ),
       const SizedBox(height: SandikSpace.md),
+      // Kapalıyken temanın kapalı düğme rengi (`styleFrom` yalnız açık
+      // hâli boyar): soluk düğme metinle de "değişiklik yok" der.
       SandikAsyncButton.kompakt(
+        key: const ValueKey('islem-notu-kaydet'),
         style: FilledButton.styleFrom(
           backgroundColor: context.c.amberFill,
           foregroundColor: context.c.onAmber,
         ),
-        onPressed: () => _bitir(_ctrl.text),
+        onPressed: _degismis ? () => _bitir(_ctrl.text) : null,
         child: Text(l10n.save,
-            style: const TextStyle(fontWeight: FontWeight.w700)),
+            style: const TextStyle(fontWeight: FontWeight.w600)),
       ),
       if (widget.not != null)
         SandikAsyncButton.kompakt(

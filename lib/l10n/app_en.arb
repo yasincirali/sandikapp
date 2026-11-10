@@ -5684,6 +5684,8 @@
   "bedelliTarih": "Date you used the rights",
   "bedelliOnizleme": "{yeni} new shares on your {elde}, {birim} each, {toplam} in total",
   "@bedelliOnizleme": {"placeholders": {"elde": {"type": "String"}, "yeni": {"type": "String"}, "birim": {"type": "String"}, "toplam": {"type": "String"}}},
+  "bedelliYeniOrtalama": "Your new average cost will be {tutar}.",
+  "@bedelliYeniOrtalama": {"placeholders": {"tutar": {"type": "String"}}},
   "bedelliYuvarlama": "{yeni} of your {hak} rights become shares; the fraction is rounded down",
   "@bedelliYuvarlama": {"placeholders": {"hak": {"type": "String"}, "yeni": {"type": "String"}}},
   "bedelliLotYok": "You held no shares on this date",

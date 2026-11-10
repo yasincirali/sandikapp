@@ -6,6 +6,7 @@ import 'package:portfoy_takip/main.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/bedelli_artirim.dart';
+import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
@@ -23,6 +24,8 @@ Asset _lot(
   String ticker = 'THYAO.IS',
   String? subCategory,
   DateTime? silindi,
+  double fiyat = 300,
+  bool? maliyetBilinmiyor,
 }) =>
     Asset(
       id: 'l-${adet.toString()}-${tarih.toIso8601String()}-${kind.name}',
@@ -31,7 +34,7 @@ Asset _lot(
       ticker: ticker,
       type: AssetType.hisse,
       quantity: adet,
-      purchasePrice: 300,
+      purchasePrice: fiyat,
       currency: 'TRY',
       notes: '',
       isManualPrice: false,
@@ -39,6 +42,7 @@ Asset _lot(
       kind: kind,
       subCategory: subCategory,
       deletedAt: silindi,
+      maliyetBilinmiyor: maliyetBilinmiyor,
     );
 
 void main() {
@@ -113,6 +117,65 @@ void main() {
       expect(h.yeniLot, 50);
     });
 
+    group('yeni ortalama maliyet', () {
+      test('örnek: 120 lot ₺287,50 + %150 → ₺115,60 (Portföy ile aynı)', () {
+        final lotlar = [_lot(120, tarih: DateTime(2026, 1, 10), fiyat: 287.5)];
+        final h = BedelliArtirim.hesapla(
+            lotlar: lotlar, oranYuzde: 150, tarih: DateTime(2026, 5, 1));
+        expect(h.yeniLot, 180);
+        expect(h.yeniOrtalama, closeTo(115.6, 1e-9));
+        // Kayıttan sonra Portföy'ün göstereceği ortalama: aynı lot setine
+        // sayfanın yazdığı alış eklenince `aggregatePositions` aynı sayıyı
+        // vermeli.
+        final kayit = Asset(
+          id: 'yeni',
+          userId: 'u1',
+          name: 'Türk Hava Yolları',
+          ticker: 'THYAO.IS',
+          type: AssetType.hisse,
+          quantity: 180,
+          purchasePrice: BedelliArtirim.nominal,
+          currency: 'TRY',
+          notes: 'Bedelli artırım',
+          addedDate: DateTime(2026, 5, 1, 12),
+        );
+        final p = aggregatePositions([...lotlar, kayit]).single;
+        expect(p.weightedPurchasePrice, closeTo(h.yeniOrtalama!, 1e-9));
+      });
+
+      test('satış sonrası defterde yürüyen ortalamayı izler', () {
+        // 100 @ ₺200, 50 sat → elde 50 @ ₺200; %100 → 50 @ ₺1.
+        // Yürüyen: (50 × 200 + 50) ÷ 100 = ₺100,50.
+        final h = BedelliArtirim.hesapla(lotlar: [
+          _lot(100, tarih: DateTime(2026, 1, 1), fiyat: 200),
+          _lot(50, kind: AssetKind.sell, tarih: DateTime(2026, 2, 1)),
+        ], oranYuzde: 100, tarih: DateTime(2026, 3, 1));
+        expect(h.yeniOrtalama, closeTo(100.5, 1e-9));
+      });
+
+      test('uydurma sayı yok: lot yok, yeni lot yok, maliyet bilinmiyor', () {
+        final lotYok = BedelliArtirim.hesapla(
+            lotlar: [_lot(10, tarih: DateTime(2026, 6, 1))],
+            oranYuzde: 100,
+            tarih: DateTime(2026, 5, 1));
+        expect(lotYok.yeniOrtalama, isNull);
+        final oransiz = BedelliArtirim.hesapla(
+            lotlar: [_lot(10, tarih: DateTime(2026, 1, 1))],
+            oranYuzde: null,
+            tarih: DateTime(2026, 5, 1));
+        expect(oransiz.yeniOrtalama, isNull);
+        final isaretli = BedelliArtirim.hesapla(lotlar: [
+          _lot(10, tarih: DateTime(2026, 1, 1), maliyetBilinmiyor: true),
+        ], oranYuzde: 100, tarih: DateTime(2026, 5, 1));
+        expect(isaretli.yeniOrtalama, isNull);
+        final sifir = BedelliArtirim.hesapla(
+            lotlar: [_lot(10, tarih: DateTime(2026, 1, 1), fiyat: 0)],
+            oranYuzde: 100,
+            tarih: DateTime(2026, 5, 1));
+        expect(sifir.yeniOrtalama, isNull);
+      });
+    });
+
     test('yalnız BIST hissesi uygun', () {
       expect(BedelliArtirim.uygunMu(_lot(1, tarih: DateTime(2026))), isTrue);
       expect(
@@ -182,11 +245,19 @@ void main() {
               find.descendant(of: dugme, matching: find.byType(FilledButton)))
           .onPressed, isNull);
       expect(find.byKey(const ValueKey('bedelli-onizleme')), findsNothing);
+      expect(find.byKey(const ValueKey('bedelli-yeni-ortalama')), findsNothing);
 
       await t.enterText(find.byKey(const ValueKey('bedelli-oran')), '100');
       await t.pump();
       expect(find.text('Elindeki 120 lota 120 yeni lot, lot başı ₺1, toplam ₺120'),
           findsOneWidget);
+      // 120 @ ₺300 + 120 @ ₺1 → ₺150,50; tutar w600 vurgulu.
+      final satir = find.byKey(const ValueKey('bedelli-yeni-ortalama'));
+      expect(t.widget<Text>(satir).textSpan!.toPlainText(),
+          'Yeni ortalama maliyetin ₺150,50 olur.');
+      final parcalar = (t.widget<Text>(satir).textSpan! as TextSpan).children!;
+      expect((parcalar[1] as TextSpan).text, '₺150,50');
+      expect((parcalar[1] as TextSpan).style?.fontWeight, FontWeight.w600);
       expect(t.widget<FilledButton>(
               find.descendant(of: dugme, matching: find.byType(FilledButton)))
           .onPressed, isNotNull);
@@ -227,7 +298,7 @@ void main() {
       expect(find.byType(BedelliArtirimSheet), findsNothing);
     });
 
-    testWidgets('düğme ve menü satırı en az 44 pt', (t) async {
+    testWidgets('düğme ve oran alanı en az 44 pt', (t) async {
       await ac(
           t,
           BedelliArtirimSheet(
@@ -237,20 +308,6 @@ void main() {
       expect(t.getSize(find.byKey(const ValueKey('bedelli-kaydet'))).height,
           greaterThanOrEqualTo(SandikTouch.min));
       expect(t.getSize(find.byKey(const ValueKey('bedelli-oran'))).height,
-          greaterThanOrEqualTo(SandikTouch.min));
-
-      await t.pumpWidget(MaterialApp(
-        theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
-        home: Scaffold(
-          body: MenuSatiri(
-              key: const ValueKey('satir'),
-              ikon: Icons.add_card_rounded,
-              baslik: 'Bedelli artırım',
-              altMetin: 'Rüçhan hakkını kullandıysan yeni lotları ekle',
-              onTap: () {}),
-        ),
-      ));
-      expect(t.getSize(find.byKey(const ValueKey('satir'))).height,
           greaterThanOrEqualTo(SandikTouch.min));
     });
 
@@ -276,6 +333,53 @@ void main() {
   });
 
   group('menü → sayfa → kayıt', () {
+    testWidgets('⋯ düğmeye bağlı menü açar: tek satır, 44 pt, etiketli',
+        (t) async {
+      final handle = t.ensureSemantics();
+      final lot = _lot(120, tarih: DateTime(2026, 1, 10));
+      await t.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith(_Auth.new),
+          portfolioProvider.overrideWith(_KayitYazan.new),
+        ],
+        child: MaterialApp(
+          theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topRight,
+              child: Consumer(
+                builder: (_, ref, __) => Builder(
+                  builder: (c) => IconButton(
+                    key: const ValueKey('dugme'),
+                    tooltip: 'Diğer işlemler',
+                    icon: const Icon(Icons.more_horiz_rounded),
+                    onPressed: () => showVarlikDigerIslemler(c, ref,
+                        varlik: lot, lotlar: [lot]),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await t.tap(find.byKey(const ValueKey('dugme')));
+      await t.pumpAndSettle();
+      // Alt sayfa yok: başlıklı "Diğer işlemler" sayfası açılmaz.
+      expect(find.byType(BottomSheet), findsNothing);
+      final satir = find.byKey(const ValueKey('menu-bedelli-artirim'));
+      expect(satir, findsOneWidget);
+      expect(find.text('Bedelli artırım'), findsOneWidget);
+      expect(t.getSize(satir).height, greaterThanOrEqualTo(SandikTouch.min));
+      // Menü düğmenin altında açılır.
+      expect(t.getRect(satir).top,
+          greaterThanOrEqualTo(t.getRect(find.byKey(const ValueKey('dugme'))).bottom - 1));
+      expect(
+          find.bySemanticsLabel(
+              'Bedelli artırım. Rüçhan hakkını kullandıysan yeni lotları ekle'),
+          findsOneWidget);
+      handle.dispose();
+    });
+
     testWidgets('alış lotu 1 ₺, not etiketi, BIST hissesine', (t) async {
       final portfoy = _KayitYazan();
       final lot = _lot(120, tarih: DateTime(2026, 1, 10));
@@ -288,10 +392,12 @@ void main() {
           theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
           home: Scaffold(
             body: Consumer(
-              builder: (c, ref, _) => TextButton(
-                onPressed: () => showVarlikDigerIslemler(c, ref,
-                    varlik: lot, lotlar: [lot]),
-                child: const Text('⋯'),
+              builder: (_, ref, __) => Builder(
+                builder: (c) => TextButton(
+                  onPressed: () => showVarlikDigerIslemler(c, ref,
+                      varlik: lot, lotlar: [lot]),
+                  child: const Text('⋯'),
+                ),
               ),
             ),
           ),
@@ -299,9 +405,10 @@ void main() {
       ));
       await t.tap(find.text('⋯'));
       await t.pumpAndSettle();
-      expect(find.text('Diğer işlemler'), findsOneWidget);
       await t.tap(find.byKey(const ValueKey('menu-bedelli-artirim')));
       await t.pumpAndSettle();
+      // Menü kapandı, tek modal: bedelli sayfası.
+      expect(find.byKey(const ValueKey('menu-bedelli-artirim')), findsNothing);
       await t.enterText(find.byKey(const ValueKey('bedelli-oran')), '100');
       await t.pump();
       await t.tap(find.byKey(const ValueKey('bedelli-kaydet')));
@@ -323,7 +430,7 @@ void main() {
     final kaynak = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
     expect(kaynak, contains('_digerIslemlerDugmesi(isOwnAsset)'));
     final govde = kaynak.substring(kaynak.indexOf('Widget? _digerIslemlerDugmesi'));
-    final ilk = govde.substring(0, govde.indexOf('return IconButton'));
+    final ilk = govde.substring(0, govde.indexOf('IconButton('));
     expect(ilk, contains('if (!isOwnAsset) return null;'));
     expect(ilk, contains('BedelliArtirim.uygunMu'));
     expect(ilk, contains('canli.acik'));

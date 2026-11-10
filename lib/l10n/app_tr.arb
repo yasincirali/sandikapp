@@ -6440,6 +6440,8 @@
   "bedelliTarih": "Hakkı kullandığın tarih",
   "bedelliOnizleme": "Elindeki {elde} lota {yeni} yeni lot, lot başı {birim}, toplam {toplam}",
   "@bedelliOnizleme": {"placeholders": {"elde": {"type": "String"}, "yeni": {"type": "String"}, "birim": {"type": "String"}, "toplam": {"type": "String"}}},
+  "bedelliYeniOrtalama": "Yeni ortalama maliyetin {tutar} olur.",
+  "@bedelliYeniOrtalama": {"description": "Bedelli önizlemesinin altı: kayıttan sonra Portföy'deki lot başı ortalama maliyet; tutar vurgulu yazılır", "placeholders": {"tutar": {"type": "String"}}},
   "bedelliYuvarlama": "{hak} hakkın {yeni} tanesi lot olur, kesir aşağı yuvarlanır",
   "@bedelliYuvarlama": {"placeholders": {"hak": {"type": "String"}, "yeni": {"type": "String"}}},
   "bedelliLotYok": "Bu tarihte elinde lot yok",
