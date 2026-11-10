@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// çağırdığı fonksiyon) ve `legal/tr/*.md` (kullanıcıya verilen söz). Biri
 /// değişip öteki unutulursa hiçbir test kırılmıyordu; 0114 `cleanup_db_logs`'u
 /// yeniden yazarken 0097'nin eklediği kayıt hunisi silmesini düşürdü ve bu
-/// ancak bu tablo yazılırken görüldü (aşağıda `_bilinenAykirilar`).
+/// ancak bu tablo yazılırken görüldü (0180 düzeltti; `_bilinenAykirilar`).
 ///
 /// Kilit dört yönlüdür:
 ///  1. Migration'daki GÜNCEL süre (son tanım kazanır) tablodakiyle aynı mı.
@@ -108,7 +108,8 @@ const _tablo = <_Saklama>[
   _Saklama(
     isAdi: 'db-logs-retention', tablo: 'db_logs',
     // Hatalar 30 gün, başarılı satırlar 1 gün (0114); üst sınır 30 gün.
-    migrasyon: '0114', sure: '30 days', yasalSure: '30 days',
+    // 0180 aynı kuralı huni silmesiyle birlikte yeniden yazdı.
+    migrasyon: '0180', sure: '30 days', yasalSure: '30 days',
     ifadeler: [
       (_gp, 'Yapısal hata kayıtları (db_logs, yalnızca hatalar) | 30 gün'),
       (_kvkk, 'Hata kayıtları (db_logs, yalnızca hatalar) | 30 gün'),
@@ -117,8 +118,8 @@ const _tablo = <_Saklama>[
   _Saklama(
     isAdi: 'db-logs-retention', tablo: 'huni_olaylari',
     // 0097 bu silmeyi cleanup_db_logs'a ekledi; 0114 fonksiyonu yeniden
-    // yazarken düşürdü. Bugün kayıt hunisi hiç silinmiyor → _bilinenAykirilar.
-    migrasyon: null, sure: null, yasalSure: '400 days',
+    // yazarken düşürdü (satırlar süresiz kalıyordu); 0180 geri getirdi.
+    migrasyon: '0180', sure: '400 days', yasalSure: '400 days',
     ifadeler: [
       (_gp, 'Kayıt hunisi adımları | 400 gün'),
       (_kvkk, 'Kayıt hunisi adımları | 400 gün'),
@@ -239,9 +240,8 @@ const _tablo = <_Saklama>[
 /// DÜZELTİLMEDİ (görev "önce yalnız test"); düzeltme ayrı PR'da. Düzeltilince
 /// tablo satırı kırılır ve buradan da silinir (aşağıdaki test bunu ister).
 const _bilinenAykirilar = <String>{
-  // Yasal metin "Kayıt hunisi adımları | 400 gün" diyor; 0114'ten beri
-  // huni_olaylari'ni silen bir iş yok, satırlar süresiz kalıyor.
-  'db-logs-retention/huni_olaylari',
+  // Boş. İlk kayıt: 'db-logs-retention/huni_olaylari' (0114 silmeyi
+  // düşürmüştü), 0180'de düzeldi.
 };
 
 void main() {
