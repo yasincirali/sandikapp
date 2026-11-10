@@ -115,15 +115,72 @@ void main() {
         () => expect(kur(islem: _dun), isFalse));
     test('bilinen fiyat zaten bugünün → hayır (adet doğru)',
         () => expect(kur(bilinen: simdi), isFalse));
-    test('hafta sonu alımı hayır (o günün TEFAS fiyatı yok)', () {
+    // 2026-11-10: hafta sonu/tatil alımı artık işaretlenir; fiyat günü
+    // sonraki BIST iş günü (`fonFiyatGunu`). Eskiden "hayır"dı.
+    test('hafta sonu alımı evet, fiyat günü Pazartesi', () {
       final cumartesi = DateTime(2026, 11, 7, 11);
-      expect(kur(islem: cumartesi, simdiyi: cumartesi), isFalse);
+      expect(kur(islem: cumartesi, simdiyi: cumartesi), isTrue);
+      expect(fonFiyatGunu(cumartesi), DateTime(2026, 11, 9));
+      expect(fonFiyatGunu(DateTime(2026, 11, 8, 22)), DateTime(2026, 11, 9));
+      // Bilinen fiyat zaten Pazartesi'nin olamaz ama olursa adet doğrudur.
+      expect(
+          kur(
+              islem: cumartesi,
+              simdiyi: cumartesi,
+              bilinen: DateTime(2026, 11, 9)),
+          isFalse);
+    });
+    test('iş günü alımı kendi gününde (kesim saati sınırı aynen)', () {
+      expect(fonFiyatGunu(DateTime(2026, 11, 5, 17)), DateTime(2026, 11, 5));
+    });
+    test('bayram içinde girilen → bayram sonrası ilk iş günü', () {
+      // 2027 Ramazan Bayramı 9–11 Mart (Salı–Perşembe) → 12 Mart Cuma.
+      final bayram = DateTime(2027, 3, 10, 11);
+      expect(kur(islem: bayram, simdiyi: bayram), isTrue);
+      expect(fonFiyatGunu(bayram), DateTime(2027, 3, 12));
+      // 2026 Kurban Bayramı 27–30 Mayıs (Çarşamba–Cumartesi) + Pazar →
+      // 1 Haziran Pazartesi.
+      expect(fonFiyatGunu(DateTime(2026, 5, 28, 9)), DateTime(2026, 6, 1));
+      // Yılbaşı 2027 (Cuma) → 4 Ocak Pazartesi.
+      expect(fonFiyatGunu(DateTime(2027, 1, 1, 12)), DateTime(2027, 1, 4));
+    });
+    test('takvimin kapsamadığı yılda eski davranış', () {
+      final cumartesi2028 = DateTime(2028, 3, 4, 11);
+      expect(fonFiyatGunu(cumartesi2028), isNull);
+      expect(kur(islem: cumartesi2028, simdiyi: cumartesi2028), isFalse);
+      // Hafta içi o günle eşlenir (dinî bayram bilinmez, uydurulmaz).
+      final carsamba2028 = DateTime(2028, 3, 1, 11);
+      expect(fonFiyatGunu(carsamba2028), DateTime(2028, 3, 1));
+      expect(kur(islem: carsamba2028, simdiyi: carsamba2028, bilinen: _dun),
+          isTrue);
+      // 31 Ara 2027 Cuma → sonraki iş günü 2028'de; hafta sonu girişi
+      // kapsanmayan yıla taşınırsa işaret yok.
+      expect(fonFiyatGunu(DateTime(2028, 1, 1)), isNull);
     });
   });
 
   group('hangi fiyat eşleşir', () {
     test('alım gününün fiyatı eşleşir', () {
       expect(alimGunuFiyati(_isaret(), fiyat: 2.56, tarih: _alim), 2.56);
+    });
+    test('Cumartesi girilen alım Pazartesi fiyatıyla eşlenir', () {
+      final isaret = BekleyenFonAlimi(
+        lotId: 'lot1',
+        kod: 'AFT',
+        tutar: _tutar,
+        alimGunu: fonFiyatGunu(DateTime(2026, 11, 7, 11))!,
+        kayitAdet: 4000,
+        kayitFiyat: _dunkuFiyat,
+        kayitFiyatGunu: DateTime(2026, 11, 6),
+      );
+      expect(
+          alimGunuFiyati(isaret, fiyat: 2.56, tarih: DateTime(2026, 11, 9, 18)),
+          2.56);
+      // Cuma'nın (kayıttaki) fiyatı ve Salı'nınki öneri üretmez.
+      expect(alimGunuFiyati(isaret, fiyat: 2.5, tarih: DateTime(2026, 11, 6)),
+          isNull);
+      expect(alimGunuFiyati(isaret, fiyat: 2.6, tarih: DateTime(2026, 11, 10)),
+          isNull);
     });
     test('başka günün fiyatı EŞLEŞMEZ (dün de ertesi gün de)', () {
       expect(alimGunuFiyati(_isaret(), fiyat: 2.5, tarih: _dun), isNull);
