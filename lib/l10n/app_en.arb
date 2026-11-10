@@ -2675,6 +2675,24 @@
     }
   },
   "todayClosedWord": "Market closed",
+  "todayHalfDayClose": "Markets close at {time} today.",
+  "@todayHalfDayClose": {
+    "description": "Bugün kartı: arife (yarım gün) sabahı, seans kapanmadan",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "todayHolidayTomorrow": "Markets are closed tomorrow. Next trading day: {date}.",
+  "@todayHolidayTomorrow": {
+    "description": "Bugün kartı: resmî tatilden önceki iş günü; date = tatil sonrası ilk işlem günü",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "todayLiveWord": "Live",
   "todayNoDataYet": "Today's data hasn't arrived yet",
   "@todayNoDataYet": {

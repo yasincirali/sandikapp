@@ -103,4 +103,87 @@ void main() {
       expect(const HedefSatiri(hedefTRY: 0, deger: 766876).belirlenmedi, isTrue);
     });
   });
+
+  group('tatil öncesi notu', () {
+    TatilOncesiSatiri? not(DateTime t) => BugunService.tatilOncesiSatiri(t);
+
+    test('30 Ara: not yok — 31 Ara açık (takvimde yarım gün değil)', () {
+      expect(not(DateTime(2026, 12, 30, 11)), isNull);
+    });
+
+    test('31 Ara: yarın Yılbaşı → sonraki işlem günü 4 Ocak Pazartesi', () {
+      for (final saat in [9, 11, 15, 19]) {
+        final n = not(DateTime(2026, 12, 31, saat))!;
+        expect(n.arife, isFalse);
+        expect(n.sonrakiIslemGunu, DateTime(2027, 1, 4));
+        expect(n.sonrakiIslemGunu!.weekday, DateTime.monday);
+      }
+    });
+
+    test(
+        '2027 Ramazan arifesi: sabah 12:30 kapanışı, öğleden sonra yarın kapalı',
+        () {
+      final sabah = not(DateTime(2027, 3, 8, 9))!;
+      expect(sabah.arife, isTrue);
+      expect(sabah.kapanis, DateTime(2027, 3, 8, 12, 30));
+      expect(not(DateTime(2027, 3, 8, 12, 29))!.arife, isTrue);
+      final ogle = not(DateTime(2027, 3, 8, 12, 30))!;
+      expect(ogle.arife, isFalse);
+      // Bayram 9–11 Mart (Salı–Perşembe) → Cuma.
+      expect(ogle.sonrakiIslemGunu, DateTime(2027, 3, 12));
+    });
+
+    test('28 Ekim: sabah arife, öğleden sonra 30 Ekim Cuma', () {
+      expect(not(DateTime(2026, 10, 28, 10, 15))!.arife, isTrue);
+      expect(not(DateTime(2026, 10, 28, 13))!.sonrakiIslemGunu,
+          DateTime(2026, 10, 30));
+    });
+
+    test('tatil içinde, hafta sonu öncesinde ve sıradan günde not yok', () {
+      expect(not(DateTime(2027, 3, 10, 9)), isNull); // bayram içi
+      expect(not(DateTime(2026, 12, 25, 9)), isNull); // Cuma → Cumartesi
+      // Cuma 14 May 2027: ertesi gün Cumartesi (arife hafta sonuna düşüyor).
+      expect(not(DateTime(2027, 5, 14, 9)), isNull);
+      expect(not(DateTime(2026, 9, 22, 9)), isNull);
+    });
+
+    test('takvimin kapsamadığı yılda not yok', () {
+      // 30 Ağustos 2028 Zafer Bayramı (Çarşamba) — sabit tatil ama 2028'in
+      // dinî bayramları bilinmiyor; "sonraki işlem günü" uydurulmaz.
+      expect(not(DateTime(2028, 8, 29, 9)), isNull);
+    });
+
+    test('hesapla: karışık portföyde not taşınır', () {
+      final v = BugunService.hesapla(
+        toplamDeger: 0,
+        ozet: null,
+        hedefTRY: 0,
+        now: DateTime(2026, 12, 31, 19),
+      );
+      expect(v.takvimNotu?.sonrakiIslemGunu, DateTime(2027, 1, 4));
+    });
+
+    test('hesapla: kapalı satırı tatil sonrası açılışı söylüyorsa not çıkmaz',
+        () {
+      final aksam = BugunService.hesapla(
+        toplamDeger: 0,
+        ozet: null,
+        hedefTRY: 0,
+        now: DateTime(2026, 12, 31, 19),
+        yalnizcaBorsa: true,
+      );
+      expect(aksam.birincil, isA<PiyasaKapaliSatiri>());
+      expect(aksam.takvimNotu, isNull);
+      // Açılış öncesi: kapalı satırı bugün 10:00'ı söyler, not tamamlar.
+      final sabah = BugunService.hesapla(
+        toplamDeger: 0,
+        ozet: null,
+        hedefTRY: 0,
+        now: DateTime(2026, 12, 31, 8),
+        yalnizcaBorsa: true,
+      );
+      expect(sabah.birincil, isA<PiyasaKapaliSatiri>());
+      expect(sabah.takvimNotu, isNotNull);
+    });
+  });
 }

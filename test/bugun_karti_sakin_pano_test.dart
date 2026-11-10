@@ -220,4 +220,34 @@ void main() {
               'Açılış seviyesi serinin ilk noktası — DailySummary ile aynı');
     });
   });
+
+  group('takvim notu (2026-11-10)', () {
+    void saatKur(DateTime t) {
+      BugunKarti.saat = () => t;
+      HistoryService.gunIciSaat = () => t;
+    }
+
+    testWidgets('tatilden önceki iş günü: yarın kapalı + sonraki işlem günü',
+        (tester) async {
+      saatKur(DateTime(2026, 12, 31, 15));
+      await kur(tester, genislik: 320);
+      expect(tester.takeException(), isNull);
+      expect(
+          find.text(
+              'Yarın borsa kapalı. Sonraki işlem günü: 4 Ocak Pazartesi.'),
+          findsOneWidget);
+    });
+
+    testWidgets('arife sabahı: yarım gün kapanış saati', (tester) async {
+      saatKur(DateTime(2027, 3, 8, 9));
+      await kur(tester, genislik: 390);
+      expect(find.text("Bugün borsa 12:30'da kapanır."), findsOneWidget);
+    });
+
+    testWidgets('sıradan günde not yok', (tester) async {
+      await kur(tester, genislik: 390);
+      expect(find.textContaining('borsa kapalı'), findsNothing);
+      expect(find.textContaining('kapanır.'), findsNothing);
+    });
+  });
 }

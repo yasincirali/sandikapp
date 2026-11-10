@@ -6789,6 +6789,18 @@ abstract class AppLocalizations {
   /// **'Piyasa kapalı'**
   String get todayClosedWord;
 
+  /// Bugün kartı: arife (yarım gün) sabahı, seans kapanmadan
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün borsa {time}\'da kapanır.'**
+  String todayHalfDayClose(String time);
+
+  /// Bugün kartı: resmî tatilden önceki iş günü; date = tatil sonrası ilk işlem günü
+  ///
+  /// In tr, this message translates to:
+  /// **'Yarın borsa kapalı. Sonraki işlem günü: {date}.'**
+  String todayHolidayTomorrow(String date);
+
   /// No description provided for @todayLiveWord.
   ///
   /// In tr, this message translates to:

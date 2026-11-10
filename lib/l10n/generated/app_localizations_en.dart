@@ -4101,6 +4101,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayClosedWord => 'Market closed';
 
   @override
+  String todayHalfDayClose(String time) {
+    return 'Markets close at $time today.';
+  }
+
+  @override
+  String todayHolidayTomorrow(String date) {
+    return 'Markets are closed tomorrow. Next trading day: $date.';
+  }
+
+  @override
   String get todayLiveWord => 'Live';
 
   @override

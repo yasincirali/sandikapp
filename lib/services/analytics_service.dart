@@ -411,7 +411,8 @@ class AnalyticsService {
   // olmamalı — tekrar eleme `BugunKarti`'nda).
   //
   // [kind]: degisim | kapali | yesil | hedef | hedef_yok | olay_tuik |
-  //         olay_tatil | olay_aysonu | aylik
+  //         olay_tatil | olay_aysonu | aylik | tatil_oncesi | arife
+  //         (son ikisi 2026-11-10, takvim notu)
   Future<void> logTodayRowShown({required String kind}) =>
       _log('today_row_shown', {'kind': kind});
 

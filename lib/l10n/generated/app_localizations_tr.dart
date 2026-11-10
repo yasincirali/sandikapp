@@ -4073,6 +4073,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayClosedWord => 'Piyasa kapalı';
 
   @override
+  String todayHalfDayClose(String time) {
+    return 'Bugün borsa $time\'da kapanır.';
+  }
+
+  @override
+  String todayHolidayTomorrow(String date) {
+    return 'Yarın borsa kapalı. Sonraki işlem günü: $date.';
+  }
+
+  @override
   String get todayLiveWord => 'Canlı';
 
   @override

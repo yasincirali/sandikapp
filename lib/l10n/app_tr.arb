@@ -2798,6 +2798,24 @@
     }
   },
   "todayClosedWord": "Piyasa kapalı",
+  "todayHalfDayClose": "Bugün borsa {time}'da kapanır.",
+  "@todayHalfDayClose": {
+    "description": "Bugün kartı: arife (yarım gün) sabahı, seans kapanmadan",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "todayHolidayTomorrow": "Yarın borsa kapalı. Sonraki işlem günü: {date}.",
+  "@todayHolidayTomorrow": {
+    "description": "Bugün kartı: resmî tatilden önceki iş günü; date = tatil sonrası ilk işlem günü",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "todayLiveWord": "Canlı",
   "todayNoDataYet": "Bugünün verisi henüz gelmedi",
   "@todayNoDataYet": {
