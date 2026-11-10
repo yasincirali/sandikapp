@@ -624,16 +624,20 @@ hâlâ BIST'ten okuyor:
    Pencere bilinçli: TR 22:00–08:00 bildirim yasağı (RETENTION_STRATEJISI §7)
    ve kullanıcı sessiz saatleri (0057). Gece turu eklemek bu politikayı
    değiştirmek demek; ürün kararı, kod kararı değil.
-2. **Ana ekran widget'ı / Live Activity** `DailySummary.isMarketOpen`'ı
-   kullanıyor (`home_widget_service.dart`). Yalnız kripto tutan kullanıcı
-   hafta sonu "piyasa kapalı" görür, oysa değer oynuyor.
+2. ~~**Ana ekran widget'ı / Live Activity** `DailySummary.isMarketOpen`'ı
+   kullanıyor. Yalnız kripto tutan kullanıcı hafta sonu "piyasa kapalı"
+   görür.~~ **KAPANDI (2026-10-01, kayıt 2026-11-10'da düzeltildi):**
+   istemci `sandik_yalniz_borsa` / Live Activity `yalnizBorsa` yazıyor
+   (`yalnizcaBorsaVarliklardan`); iOS (`kapaliGoster`) ve Android
+   (`SandikWidgetProvider`) "Piyasa kapalı"yı yalnız borsa ürünü tutan
+   portföyde gösterir. `sandik_market_open` yalnız BIST seansını anlatır
+   (kilit widget'ı geri sayımı).
 3. **Toz miktar:** pozisyon epsilon'u `1e-7`; 10 satoshi altı BTC kalıntısı
    kapanmış pozisyon sayılır. Borsalardaki dust'tan küçük, bilinçli kabul.
 
 **Maliyet:** (1) nadir ama sessiz kaçan alarm; (2) yanlış rozet metni, tutar
 doğru. **Ne zaman:** (1) kullanıcı gece alarmı isterse "kripto için sessiz
-saat istisnası" kararıyla; (2) widget'a portföy türleri geçirildiğinde
-(`piyasaKapaliEtiketi` zaten türe bakıyor, aynı kural oraya taşınır).
+saat istisnası" kararıyla; (2) kapandı.
 
 ## 🟡 AÇIK — GÜNLÜK piyasa etkisi, gün başında elde OLMAYAN alımı iki kez düşüyor
 
