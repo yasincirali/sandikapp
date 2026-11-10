@@ -152,6 +152,15 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         tabanMs: ep.firstTs!,
         intraday: isIntraday,
         canliDeger: (lotlar) => DailySummary.kapsamToplami(pState, lotlar),
+        // Bugün: altın satırları serinin taban slotu yerine aynı kotasyonun
+        // gün başı referansından ölçülür (2026-11-10). Simülasyonda akış
+        // yok, eski yol kalır.
+        gunIciUclar: isIntraday && !_simulate
+            ? (lotlar) => DailySummary.gunIciAltinUclari(lotlar,
+                acilisMs: ep.firstTs!,
+                seansGunu: cizimBaslangici,
+                now: endDate)
+            : null,
       );
     }
 

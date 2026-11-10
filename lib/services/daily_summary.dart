@@ -536,6 +536,80 @@ class DailySummary {
         DateTime(seansGunu.year, seansGunu.month, seansGunu.day, 23, 59, 59));
   }
 
+  /// Altın lot'larının GÜNLÜK dönem başı ve sonu — İKİSİ DE aynı kotasyondan:
+  /// baş = açılışta eldeki miktar × `gunlukReferansFiyat`, son = bugünkü
+  /// miktar × o kotasyonun fiyatı (`sonBilinenFiyat`). Kullanılamıyorsa
+  /// `null`; çağıran eski yoldan (seri başı → canlı toplam) devam eder.
+  ///
+  /// ## Neden (kullanıcı bildirimi 2026-11-10, Performans › Bugün › Altın)
+  /// Aynı anda Yarım −%0,31, Ata −%1,34, Çeyrek −%0,75, 22 ayar −%2,70
+  /// görünüyordu; truncgil hepsine yaklaşık aynı günlük değişimi diyordu.
+  /// Tür dökümü satırının başı gün içi serinin taban slotundaki değeriydi:
+  /// o slotta yurt içi kaydı (`yurt_ici_kotasyon`) olan ayar KAYITTAN, kaydı
+  /// henüz başlamamış ayar `assetSeedTRY`'den (referans ya da spot × çarpan
+  /// × kalibrasyon) geliyordu. Sonu ise `lot.currentPrice` — üçüncü bir an.
+  /// Ayar başına başka bir kaynak karışınca her satır farklı bir "gün başı"
+  /// ölçüyordu. Referans aynı kotasyonun fiyatı ve yüzdesinden yazıldığı
+  /// için (`PriceService._gunlukYaz`) satırın yüzdesi tanım gereği o ayarın
+  /// kendi günlük değişimidir; tüm ayarlar birlikte hareket eder.
+  ///
+  /// Akış kuralı [gunIciKatki] ile AYNI eşik: açılış slotundan önce girilen
+  /// lot baştadır, sonra girilen katkıdadır — ikisinde birden olamaz.
+  ///
+  /// **Ya hep ya hiç:** kümede tek bir lot bile referans/kotasyon taşımıyorsa,
+  /// yurt içi kayıtlı altın değilse ya da TRY kote değilse `null`. Eksik
+  /// ayarı seriden, kalanını referanstan kurmak ayrışmanın ta kendisiydi;
+  /// sayı da uydurulmaz. Geçmiş seans çizilirken (hafta sonu → Cuma)
+  /// bugünün referansı o seansı ölçmez, yine `null`.
+  static ({double first, double last})? gunIciAltinUclari(
+    List<Asset> lotlar, {
+    required int acilisMs,
+    required DateTime seansGunu,
+    required DateTime now,
+    double? Function(String ticker)? referans,
+    double? Function(String ticker)? fiyat,
+  }) {
+    if (lotlar.isEmpty) return null;
+    if (dayKey(seansGunu).isBefore(dayKey(now))) return null;
+    final ref = referans ?? PriceService.instance.gunlukReferansFiyat;
+    final canli = fiyat ?? PriceService.instance.sonBilinenFiyat;
+    final esikMs = acilisMs + gunIciSlot.inMilliseconds;
+    final acilisMiktari = <String, double>{};
+    final simdiMiktari = <String, double>{};
+    for (final a in lotlar) {
+      if (!FiyatKaynagi.altinYurtIciGunlukMu(a)) return null;
+      if (a.currency != 'TRY') return null;
+      // Motorun `signedQtyOnSlot` kuralı: temettü/mezar taşı ve silinmiş
+      // lot miktara girmez.
+      if (a.isQuantityNeutral || a.isDeleted || !a.isActive) continue;
+      final q = a.isSell ? -a.quantity : a.quantity;
+      final t = a.ticker.trim().toUpperCase();
+      simdiMiktari[t] = (simdiMiktari[t] ?? 0) + q;
+      if (a.addedDate.millisecondsSinceEpoch < esikMs) {
+        acilisMiktari[t] = (acilisMiktari[t] ?? 0) + q;
+      }
+    }
+    double first = 0;
+    double last = 0;
+    for (final e in simdiMiktari.entries) {
+      final acilis = acilisMiktari[e.key] ?? 0;
+      if (acilis.abs() > 1e-12) {
+        final r = ref(e.key);
+        if (r == null || !r.isFinite || r <= 0) return null;
+        first += acilis * r;
+      }
+      if (e.value.abs() > 1e-12) {
+        final p = canli(e.key);
+        if (p == null || !p.isFinite || p <= 0) return null;
+        last += e.value * p;
+      }
+    }
+    if (first < 0) first = 0;
+    if (last < 0) last = 0;
+    if (first <= 0 && last <= 0) return null;
+    return (first: first, last: last);
+  }
+
   /// GÜNLÜK piyasa etkisinin yüzdesi — para ağırlıklı (2026-10-01).
   ///
   /// Akış kümesi [gunIciKatki] ile AYNI (açılış slotundan sonra, çizilen
