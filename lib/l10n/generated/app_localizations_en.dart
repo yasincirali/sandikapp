@@ -9079,17 +9079,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String varlikGuncelleOnayGovde(String name, int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other:
-          '$n transactions of \"$name\" will be deleted and replaced by a single record with these details. This can\'t be undone.',
-      one:
-          '\"$name\" will be deleted and added again with these details. This can\'t be undone.',
-    );
-    return '$_temp0';
-  }
+  String get varlikGuncelleOnayGovde => 'This can\'t be undone.';
 
   @override
   String get sgnPremiumGostergeSatiri =>

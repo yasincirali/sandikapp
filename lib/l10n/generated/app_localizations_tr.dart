@@ -8985,17 +8985,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String varlikGuncelleOnayGovde(String name, int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other:
-          '\"$name\" için $n hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.',
-      one:
-          '\"$name\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.',
-    );
-    return '$_temp0';
-  }
+  String get varlikGuncelleOnayGovde => 'Bu işlem geri alınamaz.';
 
   @override
   String get sgnPremiumGostergeSatiri =>

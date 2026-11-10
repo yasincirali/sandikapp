@@ -14882,8 +14882,8 @@ abstract class AppLocalizations {
   /// No description provided for @varlikGuncelleOnayGovde.
   ///
   /// In tr, this message translates to:
-  /// **'{n, plural, =1{\"{name}\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.} other{\"{name}\" için {n} hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.}}'**
-  String varlikGuncelleOnayGovde(String name, int n);
+  /// **'Bu işlem geri alınamaz.'**
+  String get varlikGuncelleOnayGovde;
 
   /// No description provided for @sgnPremiumGostergeSatiri.
   ///
