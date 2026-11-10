@@ -734,24 +734,7 @@
   },
   "tefasFunds": "TEFAS fonları",
   "fundsLoading": "Fonlar yükleniyor...",
-  "breakdownUpAmount": "artış {amount}",
-  "@breakdownUpAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "breakdownDownAmount": "azalış {amount}",
-  "@breakdownDownAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "nominalReturnInWindow": "Bu aralıkta senin getirin",
-  "cpiWindowNote": "TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.",
   "rangeChip": "{start} - {end}",
   "@rangeChip": {
     "placeholders": {
@@ -872,7 +855,6 @@
   "diagnosticsUpper": "Tanılama",
   "pushDiagnostics": "Push teşhisi",
   "pushDiagnosticsSubtitle": "Bildirim zincirinin neresi kopuk; cihaz APNs/FCM token durumu",
-  "notificationsUpper": "Bildirimler",
   "signalNotifications": "Teknik sinyal bildirimleri",
   "signalNotificationsSubtitle": "AL/SAT göstergesi tetiklendiğinde bildirim al",
   "signalSettings": "Sinyal ayarları",
@@ -1774,7 +1756,6 @@
   },
   "alarmKeep": "Alarm kalsın",
   "alarmDeleteFailed": "Alarmlar silinemedi",
-  "assetDeleted": "Varlık silindi",
   "enterValidAmount": "Geçerli bir tutar gir",
   "dividendPayDate": "Temettü ödeme tarihi",
   "addDividend": "Temettü ekle",
@@ -1824,14 +1805,6 @@
   },
   "sellAllWarning": "Tümünü satıyorsun. Pozisyon listeden kalkar, satış ve kâr/zarar kaydı korunur.",
   "saleValue": "Satış değeri",
-  "nActiveAlerts": "{n} aktif fiyat alarmı",
-  "@nActiveAlerts": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "deleteAlertTitle": "Alarmı sil",
   "deleteAlertAbove": "{price} üstüne çıkınca alarmı silinsin mi?",
   "@deleteAlertAbove": {
@@ -2361,7 +2334,6 @@
   },
   "assetNotFound": "Varlık bulunamadı",
   "myMarketReturn": "Piyasa getirim",
-  "dataExported": "Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.",
   "mailAppFailed": "Mail uygulaması açılamadı. Lütfen {email} adresine yaz.",
   "@mailAppFailed": {
     "placeholders": {
@@ -2844,28 +2816,6 @@
     "description": "Bugün kartının başındaki kapsam etiketi; Türkçede name ilgi ekiyle gelir (Ayşe'nin).",
     "placeholders": {
       "name": {
-        "type": "String"
-      }
-    }
-  },
-  "todayUp": "{amount} · %{pct} artıda",
-  "@todayUp": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayDown": "{amount} · %{pct} eksi",
-  "@todayDown": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "pct": {
         "type": "String"
       }
     }

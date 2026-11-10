@@ -1135,21 +1135,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fundsLoading => 'Fonlar yükleniyor...';
 
   @override
-  String breakdownUpAmount(String amount) {
-    return 'artış $amount';
-  }
-
-  @override
-  String breakdownDownAmount(String amount) {
-    return 'azalış $amount';
-  }
-
-  @override
   String get nominalReturnInWindow => 'Bu aralıkta senin getirin';
-
-  @override
-  String get cpiWindowNote =>
-      'TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.';
 
   @override
   String rangeChip(String start, String end) {
@@ -1434,9 +1420,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pushDiagnosticsSubtitle =>
       'Bildirim zincirinin neresi kopuk; cihaz APNs/FCM token durumu';
-
-  @override
-  String get notificationsUpper => 'Bildirimler';
 
   @override
   String get signalNotifications => 'Teknik sinyal bildirimleri';
@@ -2832,9 +2815,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get alarmDeleteFailed => 'Alarmlar silinemedi';
 
   @override
-  String get assetDeleted => 'Varlık silindi';
-
-  @override
   String get enterValidAmount => 'Geçerli bir tutar gir';
 
   @override
@@ -2887,11 +2867,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get saleValue => 'Satış değeri';
-
-  @override
-  String nActiveAlerts(int n) {
-    return '$n aktif fiyat alarmı';
-  }
 
   @override
   String get deleteAlertTitle => 'Alarmı sil';
@@ -3499,10 +3474,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get myMarketReturn => 'Piyasa getirim';
-
-  @override
-  String get dataExported =>
-      'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.';
 
   @override
   String mailAppFailed(String email) {
@@ -4118,16 +4089,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String todayScopeOf(String name) {
     return '$name bugünü';
-  }
-
-  @override
-  String todayUp(String amount, String pct) {
-    return '$amount · %$pct artıda';
-  }
-
-  @override
-  String todayDown(String amount, String pct) {
-    return '$amount · %$pct eksi';
   }
 
   @override

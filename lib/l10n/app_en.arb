@@ -710,24 +710,7 @@
   },
   "tefasFunds": "TEFAS funds",
   "fundsLoading": "Loading funds...",
-  "breakdownUpAmount": "up {amount}",
-  "@breakdownUpAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "breakdownDownAmount": "down {amount}",
-  "@breakdownDownAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "nominalReturnInWindow": "Your return in this window",
-  "cpiWindowNote": "CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.",
   "rangeChip": "{start} - {end}",
   "@rangeChip": {
     "placeholders": {
@@ -848,7 +831,6 @@
   "diagnosticsUpper": "Diagnostics",
   "pushDiagnostics": "Push Diagnostics",
   "pushDiagnosticsSubtitle": "Where the notification chain is broken; device APNs/FCM token state",
-  "notificationsUpper": "Notifications",
   "signalNotifications": "Technical signal notifications",
   "signalNotificationsSubtitle": "Get notified when a BUY/SELL indicator triggers",
   "signalSettings": "Signal settings",
@@ -1732,7 +1714,6 @@
   },
   "alarmKeep": "Keep alert",
   "alarmDeleteFailed": "Could not delete alerts",
-  "assetDeleted": "Asset deleted",
   "enterValidAmount": "Enter a valid amount",
   "dividendPayDate": "Dividend payment date",
   "addDividend": "Add Dividend",
@@ -1782,14 +1763,6 @@
   },
   "sellAllWarning": "You are selling it all. The position leaves the list, the sale and profit/loss record are kept.",
   "saleValue": "Sale value",
-  "nActiveAlerts": "{n, plural, =1{1 active price alert} other{{n} active price alerts}}",
-  "@nActiveAlerts": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "deleteAlertTitle": "Delete alert",
   "deleteAlertAbove": "Delete the alert for rising above {price}?",
   "@deleteAlertAbove": {
@@ -2246,7 +2219,6 @@
   },
   "assetNotFound": "Asset not found",
   "myMarketReturn": "My market return",
-  "dataExported": "Your data was prepared as a JSON file and shared.",
   "mailAppFailed": "Could not open your mail app. Please write to {email}.",
   "@mailAppFailed": {
     "placeholders": {
@@ -2720,28 +2692,6 @@
   "@todayScopeOf": {
     "placeholders": {
       "name": {
-        "type": "String"
-      }
-    }
-  },
-  "todayUp": "{amount} · up {pct}%",
-  "@todayUp": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayDown": "{amount} · down {pct}%",
-  "@todayDown": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "pct": {
         "type": "String"
       }
     }

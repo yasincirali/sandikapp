@@ -19,12 +19,13 @@ import 'helpers/kaynak.dart';
 /// tanımlayıcı olarak geçmiyorsa ölü sayılır. Getter'lar dinamik çağrılamaz
 /// (Dart'ta yansıma yok), o yüzden ad araması kesindir.
 ///
-/// ## Kalanlar (9) bilerek
-/// Yalnız testin okuduğu anahtarlar (`breakdownUpAmount`,
-/// `breakdownDownAmount`, `cpiWindowNote`, `notificationsUpper`,
-/// `assetDeleted`, `nActiveAlerts`, `dataExported`, `todayUp`, `todayDown`):
-/// metin sözleşmesini kilitleyen testler var; anahtarı silmek o testleri
-/// de yeniden yazmayı gerektirir. Ayrı bir turda test ile birlikte gider.
+/// ## Kalanlar sıfır (10 Kas 2026)
+/// 7 Kas'ta bırakılan 9 anahtar (`breakdownUpAmount`, `breakdownDownAmount`,
+/// `cpiWindowNote`, `notificationsUpper`, `assetDeleted`, `nActiveAlerts`,
+/// `dataExported`, `todayUp`, `todayDown`) yalnız testlerin okuduğu
+/// metinlerdi; ekranda karşılıkları yoktu. Silindi, onları okuyan test
+/// satırları kaldırıldı ya da canlı anahtara (`settingsNotifications`)
+/// çevrildi. Tavan artık sıfır: test için anahtar tutulmaz.
 void main() {
   test('ölü .arb anahtarı sayısı artmamalı', () {
     final sozluk = jsonDecode(File('lib/l10n/app_tr.arb').readAsStringSync())
@@ -47,8 +48,8 @@ void main() {
       for (final k in anahtarlar)
         if (!tanimlayicilar.contains(k)) k,
     ];
-    // 2026-11-07: 167 → 9. Yalnız aşağı.
-    expect(olu.length, lessThanOrEqualTo(9),
+    // 2026-11-07: 167 → 9; 2026-11-10: 9 → 0. Ölü anahtar yok.
+    expect(olu, isEmpty,
         reason: 'Kullanılmayan anahtarı iki .arb\'dan sil ve gen-l10n koş:\n'
             '${olu.join('\n')}');
   });

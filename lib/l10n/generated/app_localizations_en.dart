@@ -1151,21 +1151,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fundsLoading => 'Loading funds...';
 
   @override
-  String breakdownUpAmount(String amount) {
-    return 'up $amount';
-  }
-
-  @override
-  String breakdownDownAmount(String amount) {
-    return 'down $amount';
-  }
-
-  @override
   String get nominalReturnInWindow => 'Your return in this window';
-
-  @override
-  String get cpiWindowNote =>
-      'CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.';
 
   @override
   String rangeChip(String start, String end) {
@@ -1451,9 +1437,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pushDiagnosticsSubtitle =>
       'Where the notification chain is broken; device APNs/FCM token state';
-
-  @override
-  String get notificationsUpper => 'Notifications';
 
   @override
   String get signalNotifications => 'Technical signal notifications';
@@ -2856,9 +2839,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmDeleteFailed => 'Could not delete alerts';
 
   @override
-  String get assetDeleted => 'Asset deleted';
-
-  @override
   String get enterValidAmount => 'Enter a valid amount';
 
   @override
@@ -2911,17 +2891,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saleValue => 'Sale value';
-
-  @override
-  String nActiveAlerts(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n active price alerts',
-      one: '1 active price alert',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get deleteAlertTitle => 'Delete alert';
@@ -3531,10 +3500,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myMarketReturn => 'My market return';
-
-  @override
-  String get dataExported =>
-      'Your data was prepared as a JSON file and shared.';
 
   @override
   String mailAppFailed(String email) {
@@ -4152,16 +4117,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String todayScopeOf(String name) {
     return '$name\'s today';
-  }
-
-  @override
-  String todayUp(String amount, String pct) {
-    return '$amount · up $pct%';
-  }
-
-  @override
-  String todayDown(String amount, String pct) {
-    return '$amount · down $pct%';
   }
 
   @override

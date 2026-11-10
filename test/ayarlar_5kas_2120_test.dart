@@ -132,6 +132,6 @@ void main() {
     await tester.pumpWidget(ayarlar(SettingsBolum.bildirimler));
     await tester.pumpAndSettle();
     // Üst barda bir kez; liste içinde grup başlığı olarak tekrar etmez.
-    expect(find.text(_tr.notificationsUpper), findsOneWidget);
+    expect(find.text(_tr.settingsNotifications), findsOneWidget);
   });
 }

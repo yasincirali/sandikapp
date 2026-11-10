@@ -1994,29 +1994,11 @@ abstract class AppLocalizations {
   /// **'Fonlar yükleniyor...'**
   String get fundsLoading;
 
-  /// No description provided for @breakdownUpAmount.
-  ///
-  /// In tr, this message translates to:
-  /// **'artış {amount}'**
-  String breakdownUpAmount(String amount);
-
-  /// No description provided for @breakdownDownAmount.
-  ///
-  /// In tr, this message translates to:
-  /// **'azalış {amount}'**
-  String breakdownDownAmount(String amount);
-
   /// No description provided for @nominalReturnInWindow.
   ///
   /// In tr, this message translates to:
   /// **'Bu aralıkta senin getirin'**
   String get nominalReturnInWindow;
-
-  /// No description provided for @cpiWindowNote.
-  ///
-  /// In tr, this message translates to:
-  /// **'TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.'**
-  String get cpiWindowNote;
 
   /// No description provided for @rangeChip.
   ///
@@ -2545,12 +2527,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bildirim zincirinin neresi kopuk; cihaz APNs/FCM token durumu'**
   String get pushDiagnosticsSubtitle;
-
-  /// No description provided for @notificationsUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bildirimler'**
-  String get notificationsUpper;
 
   /// No description provided for @signalNotifications.
   ///
@@ -4844,12 +4820,6 @@ abstract class AppLocalizations {
   /// **'Alarmlar silinemedi'**
   String get alarmDeleteFailed;
 
-  /// No description provided for @assetDeleted.
-  ///
-  /// In tr, this message translates to:
-  /// **'Varlık silindi'**
-  String get assetDeleted;
-
   /// No description provided for @enterValidAmount.
   ///
   /// In tr, this message translates to:
@@ -4933,12 +4903,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Satış değeri'**
   String get saleValue;
-
-  /// No description provided for @nActiveAlerts.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n} aktif fiyat alarmı'**
-  String nActiveAlerts(int n);
 
   /// No description provided for @deleteAlertTitle.
   ///
@@ -5893,12 +5857,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Piyasa getirim'**
   String get myMarketReturn;
-
-  /// No description provided for @dataExported.
-  ///
-  /// In tr, this message translates to:
-  /// **'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.'**
-  String get dataExported;
 
   /// No description provided for @mailAppFailed.
   ///
@@ -6872,18 +6830,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{name} bugünü'**
   String todayScopeOf(String name);
-
-  /// No description provided for @todayUp.
-  ///
-  /// In tr, this message translates to:
-  /// **'{amount} · %{pct} artıda'**
-  String todayUp(String amount, String pct);
-
-  /// No description provided for @todayDown.
-  ///
-  /// In tr, this message translates to:
-  /// **'{amount} · %{pct} eksi'**
-  String todayDown(String amount, String pct);
 
   /// No description provided for @todayAt.
   ///

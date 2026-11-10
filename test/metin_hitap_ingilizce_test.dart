@@ -92,7 +92,6 @@ void main() {
     test('çoğul: alarm ve bildirim sayısı', () {
       expect(en.activeAlertsCount(1), '1 active price alert');
       expect(en.activeAlertsCount(3), '3 active price alerts');
-      expect(en.nActiveAlerts(1), '1 active price alert');
       expect(en.notificationsNewCount(1), '1 new notification');
       expect(en.notificationsNewCount(4), '4 new notifications');
       expect(tr.notificationsNewCount(4), '4 yeni bildirim');
