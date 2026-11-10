@@ -4409,7 +4409,7 @@ abstract class AppLocalizations {
   /// No description provided for @everyoneMeasuredSameBody.
   ///
   /// In tr, this message translates to:
-  /// **'Sen ve ortakların aynı formül ve aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.'**
+  /// **'Herkes aynı formül ve aynı fiyatlarla ölçülür. Sıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmeli. Anonim sıralamalarda 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.'**
   String everyoneMeasuredSameBody(int gun);
 
   /// No description provided for @planYearly.
@@ -5387,7 +5387,7 @@ abstract class AppLocalizations {
   /// No description provided for @importScreenshotHint.
   ///
   /// In tr, this message translates to:
-  /// **'Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.'**
+  /// **'Portföy ekranının görüntüsünü seç; adet ve ortalama maliyet görünsün. Görüntüler telefonunda okunur.'**
   String get importScreenshotHint;
 
   /// No description provided for @importScreenshotNone.
@@ -9036,7 +9036,7 @@ abstract class AppLocalizations {
   /// No description provided for @pensionAutoSnack.
   ///
   /// In tr, this message translates to:
-  /// **'{count, plural, =1{BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.} other{{count} aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.}}'**
+  /// **'{count, plural, =1{BES katkın eklendi.} other{{count} aylık BES katkın eklendi.}}'**
   String pensionAutoSnack(int count);
 
   /// No description provided for @pensionAddExtraContribution.

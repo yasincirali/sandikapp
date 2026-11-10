@@ -2532,7 +2532,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String everyoneMeasuredSameBody(int gun) {
-    return 'Sen ve ortakların aynı formül ve aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az $gun gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.';
+    return 'Herkes aynı formül ve aynı fiyatlarla ölçülür. Sıralamaya girmek için ilk varlığını edinmenin üzerinden en az $gun gün geçmeli. Anonim sıralamalarda 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.';
   }
 
   @override
@@ -3166,7 +3166,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get importScreenshotHint =>
-      'Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.';
+      'Portföy ekranının görüntüsünü seç; adet ve ortalama maliyet görünsün. Görüntüler telefonunda okunur.';
 
   @override
   String get importScreenshotNone =>
@@ -5402,10 +5402,8 @@ class AppLocalizationsTr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
-      one:
-          'BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
+      other: '$count aylık BES katkın eklendi.',
+      one: 'BES katkın eklendi.',
     );
     return '$_temp0';
   }

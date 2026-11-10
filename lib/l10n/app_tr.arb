@@ -1493,7 +1493,7 @@
   "topPortfolios": "Zirvedeki Portföyler",
   "selectedPeriodReturnBody": "Dönem günlere bölünür; getiri, varlıkları elinde tuttuğun günlerden hesaplanır. Dönem seçimi sonucu değiştirir.",
   "depositsDontChangeRankBody": "Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.",
-  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formül ve aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.",
+  "everyoneMeasuredSameBody": "Herkes aynı formül ve aynı fiyatlarla ölçülür. Sıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmeli. Anonim sıralamalarda 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.",
   "@everyoneMeasuredSameBody": {
     "placeholders": {
       "gun": {
@@ -2044,7 +2044,7 @@
   },
   "importScreenshotAdd": "Ekran görüntüsünden ekle",
   "importScreenshotFillCosts": "Maliyetleri ekran görüntüsünden doldur",
-  "importScreenshotHint": "Bankanın ya da aracı kurumun uygulamasında portföy ekranının görüntüsünü al; adet ve ortalama maliyet görünsün. Birden çok görüntü seçebilirsin, görüntüler telefonunda okunur.",
+  "importScreenshotHint": "Portföy ekranının görüntüsünü seç; adet ve ortalama maliyet görünsün. Görüntüler telefonunda okunur.",
   "importScreenshotNone": "Görüntüde varlık bulunamadı. Varlığın kodunun ya da adının, adedinin ve maliyetinin göründüğü ekranı seç.",
   "importScreenshotNoCost": "Görüntüde ortalama maliyet bulunamadı; satırlar olduğu gibi kaldı.",
   "importScreenshotCostsApplied": "{count} varlığın ortalama maliyeti ekran görüntüsünden yazıldı.",
@@ -3541,7 +3541,7 @@
   "pensionAutoUpdateTitle": "Otomatik katkıyı güncelle",
   "pensionAutoUpdatePlan": "Sonraki aylar da bu tutarla eklensin",
   "pensionAutoUpdated": "Katkı güncellendi",
-  "pensionAutoSnack": "{count, plural, =1{BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.} other{{count} aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.}}",
+  "pensionAutoSnack": "{count, plural, =1{BES katkın eklendi.} other{{count} aylık BES katkın eklendi.}}",
   "@pensionAutoSnack": {
     "placeholders": {
       "count": {

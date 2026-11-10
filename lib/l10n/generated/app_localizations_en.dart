@@ -2554,7 +2554,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String everyoneMeasuredSameBody(int gun) {
-    return 'You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nTo be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.';
+    return 'Everyone is measured with the same formula and the same prices. To be ranked, at least $gun days must have passed since you acquired your first asset. In anonymous rankings, the return of a buy or sell dated more than 3 days back is measured from the day it was entered.';
   }
 
   @override
@@ -3191,7 +3191,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importScreenshotHint =>
-      'Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.';
+      'Pick a screenshot of the portfolio screen showing quantity and average cost. Images are read on your phone.';
 
   @override
   String get importScreenshotNone =>
@@ -5451,10 +5451,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count monthly pension contributions were added automatically. You can update the amount on the pension card.',
-      one:
-          'Your pension contribution was added automatically. You can update the amount on the pension card.',
+      other: '$count monthly pension contributions were added.',
+      one: 'Your pension contribution was added.',
     );
     return '$_temp0';
   }

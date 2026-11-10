@@ -1451,7 +1451,7 @@
   "topPortfolios": "Top Portfolios",
   "selectedPeriodReturnBody": "The period is split into days; the return is calculated from the days you held each asset. The period choice changes the result.",
   "depositsDontChangeRankBody": "What counts is which assets you held, on which days. When and how much money you added does NOT affect the ratio; everything is valued at market prices.",
-  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nTo be ranked, at least {gun} days must have passed since you acquired your first asset. In anonymous rankings (Top portfolios, global), the return of a buy or sell entered with a date more than 3 days in the past is measured from the day it was entered.",
+  "everyoneMeasuredSameBody": "Everyone is measured with the same formula and the same prices. To be ranked, at least {gun} days must have passed since you acquired your first asset. In anonymous rankings, the return of a buy or sell dated more than 3 days back is measured from the day it was entered.",
   "@everyoneMeasuredSameBody": {
     "placeholders": {
       "gun": {
@@ -2002,7 +2002,7 @@
   },
   "importScreenshotAdd": "Add from screenshot",
   "importScreenshotFillCosts": "Fill costs from a screenshot",
-  "importScreenshotHint": "Take a screenshot of the portfolio screen in your bank or broker app, showing quantity and average cost. You can pick several; they are read on your phone.",
+  "importScreenshotHint": "Pick a screenshot of the portfolio screen showing quantity and average cost. Images are read on your phone.",
   "importScreenshotNone": "No holdings found in the image. Pick a screen that shows each holding's code or name, quantity and cost.",
   "importScreenshotNoCost": "No average cost found in the image; rows were left as they were.",
   "importScreenshotCostsApplied": "Average cost for {count} holdings taken from the screenshot.",
@@ -3240,7 +3240,7 @@
   "pensionAutoUpdateTitle": "Update automatic contribution",
   "pensionAutoUpdatePlan": "Use this amount for the coming months too",
   "pensionAutoUpdated": "Contribution updated",
-  "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added automatically. You can update the amount on the pension card.} other{{count} monthly pension contributions were added automatically. You can update the amount on the pension card.}}",
+  "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added.} other{{count} monthly pension contributions were added.}}",
   "pensionAddExtraContribution": "Add extra contribution",
   "pensionFundCount": "{count, plural, =1{1 fund} other{{count} funds}}",
   "@pensionFundCount": {
