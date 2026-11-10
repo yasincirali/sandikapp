@@ -13,14 +13,17 @@
 /// Kurallar istemciyle aynı: yalnız ilan edilmiş günler; kapsanmayan yılda
 /// dinî bayram bilinmez ve o gün açık sayılır (uydurma tatil yok). Aralık'ta
 /// sonraki yılın ilanı gelince iki dosya birlikte güncellenir.
+/// 2027 bayramları: yasin 10 Kas 2026'da iletilen resmî tatil listesi.
 export const BIST_TATIL = {
-  "sonKapsananYil": 2026,
+  "sonKapsananYil": 2027,
   "sabitTamGun": ["01-01", "04-23", "05-01", "05-19", "07-15", "08-30", "10-29"],
   "sabitYarimGun": ["10-28"],
   "diniTamGun": {
-    "2026": ["03-20", "03-21", "03-22", "05-27", "05-28", "05-29", "05-30"]
+    "2026": ["03-20", "03-21", "03-22", "05-27", "05-28", "05-29", "05-30"],
+    "2027": ["03-09", "03-10", "03-11", "05-16", "05-17", "05-18", "05-19"]
   },
   "diniYarimGun": {
-    "2026": ["03-19", "05-26"]
+    "2026": ["03-19", "05-26"],
+    "2027": ["03-08", "05-15"]
   }
 } as const;

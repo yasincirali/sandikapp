@@ -64,10 +64,13 @@ Deno.test('seans: tatilde kapalı, 28 Ekim 12:30 sonrası kapalı, normal gün a
 });
 
 Deno.test('kapsanmayan yılda dinî bayram bilinmez (uydurma tatil yok)', () => {
-  // 2027 Ramazan Bayramı listede yok → açık gün sayılır.
-  assertEquals(bistTatilMi(new Date('2027-03-10T08:00:00Z')), false);
+  // 2028 Ramazan Bayramı (yaklaşık 27–29 Şubat) listede yok → açık gün sayılır.
+  assertEquals(bistTatilMi(new Date('2028-02-28T08:00:00Z')), false);
+  // 2027 ilan edildi (yasin 10 Kas 2026): Ramazan Bayramı 2. gün kapalı.
+  assertEquals(bistTatilMi(new Date('2027-03-10T08:00:00Z')), true);
   // Sabit tatil her yıl geçerli.
-  assertEquals(bistTatilMi(new Date('2027-04-23T08:00:00Z')), true);
+  assertEquals(bistTatilMi(new Date('2028-04-24T08:00:00Z')), false);
+  assertEquals(bistTatilMi(new Date('2028-04-23T08:00:00Z')), true);
   // TR gece yarısı: 28 Ekim 21:30 UTC = 29 Ekim 00:30 TR → tatil.
   assertEquals(bistTatilMi(new Date('2026-10-28T21:30:00Z')), true);
 });
