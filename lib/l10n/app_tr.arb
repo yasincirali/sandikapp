@@ -4883,6 +4883,7 @@
   },
   "prmYonet": "Yönet",
   "prmGeriYukle": "Satın alımları geri yükle",
+  "prmIptalIpucu": "İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.",
   "anzNotUpper": "Haftalık not · yapay zekâ",
   "anzMeta": "{sayi} madde · {aralik}",
   "@anzMeta": {

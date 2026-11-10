@@ -33,7 +33,7 @@ class BistTakvimi {
   /// `takvim_kapsam_kapisi_test` 1 Aralık'tan sonra sonraki yıl girilmemişse
   /// BİLEREK kırılır ve mesajında ne yapılacağını yazar; kırılma rastgele
   /// değil, yılda bir ve önceden bilinen bir tarihte.
-  static const sonKapsananYil = 2026;
+  static const sonKapsananYil = 2027;
 
   /// Yarım gün kapanışı (dakika, gün başından).
   static const yarimGunKapanisDk = 12 * 60 + 30;
@@ -57,13 +57,19 @@ class BistTakvimi {
   ///
   /// 2026: Ramazan Bayramı 20–22 Mart (arife 19 Mart), Kurban Bayramı
   /// 27–30 Mayıs (arife 26 Mayıs).
+  /// 2027: Ramazan Bayramı 9–11 Mart (arife 8 Mart), Kurban Bayramı
+  /// 16–19 Mayıs (arife 15 Mayıs; 19 Mayıs sabit tatille çakışır). 2027
+  /// resmî tatil listesi, yasin 10 Kas 2026'da iletti (bulut resmî kaynağa
+  /// ulaşamıyordu).
   static const _diniTamGun = <int, List<(int, int)>>{
     2026: [(3, 20), (3, 21), (3, 22), (5, 27), (5, 28), (5, 29), (5, 30)],
+    2027: [(3, 9), (3, 10), (3, 11), (5, 16), (5, 17), (5, 18), (5, 19)],
   };
 
   /// Dinî bayram arifeleri — öğleden sonra kapalı.
   static const _diniYarimGun = <int, List<(int, int)>>{
     2026: [(3, 19), (5, 26)],
+    2027: [(3, 8), (5, 15)],
   };
 
   static bool _icerir(List<(int, int)> liste, DateTime t) =>

@@ -17,10 +17,14 @@ import '../theme/sandik.dart';
 /// - "Satın alımları geri yükle" hakları sunucudan yeniden okur. Abonelik
 ///   durumu RevenueCat webhook'uyla sunucuya yazılır (0116); başka cihazda
 ///   alınmış abonelik de böylece görünür.
+/// - Sunucu hakkı henüz yoksa da (`hak == null`: mağaza alımı webhook'tan
+///   önce, yönetici) satır açılır ve "Yönet" görünür (yasin 10 Kas: "premium
+///   müşteri premium'u nasıl iptal ediyor?"). Abonelik yoksa mağaza sayfası
+///   boş gelir, zararı yok; varsa iptalin yolu kapanmamış olur.
 class PremiumAbonelikSatiri extends ConsumerWidget {
   const PremiumAbonelikSatiri({super.key, required this.hak});
 
-  final PremiumHakki hak;
+  final PremiumHakki? hak;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,23 +33,29 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
     final t = context.t;
     final tarihBicimi =
         DateFormat('d MMMM y', Localizations.localeOf(context).toString());
-    final baslik = hak.hediye
+    final hak = this.hak;
+    final baslik = hak == null
+        ? l10n.premiumDurum
+        : hak.hediye
         ? l10n.prmAbonelikHediye
         : hak.yillik
             ? l10n.prmAbonelikYillik
             : l10n.prmAbonelikAylik;
-    final bitis =
-        hak.bitis == null ? null : tarihBicimi.format(hak.bitis!.toLocal());
-    final magaza = switch (hak.magaza) {
+    final bitis = hak?.bitis == null
+        ? null
+        : tarihBicimi.format(hak!.bitis!.toLocal());
+    final magaza = switch (hak?.magaza) {
       'app_store' || 'APP_STORE' => 'App Store',
       'play_store' || 'PLAY_STORE' => 'Google Play',
       _ => null,
     };
     // Hediyede kalan gün de yazılır ve son günlerde "devam et" düğmesi
     // çıkar: bitiş sessiz olmasın (paywall incelemesi, 2026-10-20).
-    final kalan = hak.hediye ? hak.kalanGun(DateTime.now()) : null;
+    final kalan =
+        hak != null && hak.hediye ? hak.kalanGun(DateTime.now()) : null;
+    final yonet = hak == null || hak.kaynak == 'revenuecat';
     final String? alt;
-    if (bitis == null) {
+    if (hak == null || bitis == null) {
       alt = null;
     } else if (hak.kaynak == 'revenuecat' &&
         !hak.iptalEdildi &&
@@ -89,7 +99,7 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
                 onPressed: () => ref.invalidate(premiumHaklariProvider),
                 child: Text(l10n.prmGeriYukle),
               ),
-              if (hak.kaynak == 'revenuecat')
+              if (yonet)
                 TextButton(
                   style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
                   onPressed: AbonelikYonetimi.ac,
@@ -105,6 +115,9 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
                 ),
             ],
           ),
+          if (yonet)
+            Text(l10n.prmIptalIpucu,
+                style: t.bodySmall?.copyWith(color: c.text58)),
         ],
       ),
     );

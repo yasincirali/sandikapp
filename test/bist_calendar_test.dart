@@ -39,6 +39,20 @@ void main() {
       expect(BistTakvimi.yarimGunMu(DateTime(2026, 3, 18)), isFalse);
     });
 
+    test('2027 dinî bayramlar ve arifeleri', () {
+      // Ramazan 9–11 Mart (arife 8), Kurban 16–19 Mayıs (arife 15).
+      for (final d in [9, 10, 11]) {
+        expect(BistTakvimi.tatilMi(DateTime(2027, 3, d)), isTrue, reason: '3-$d');
+      }
+      for (final d in [16, 17, 18, 19]) {
+        expect(BistTakvimi.tatilMi(DateTime(2027, 5, d)), isTrue, reason: '5-$d');
+      }
+      expect(BistTakvimi.yarimGunMu(DateTime(2027, 3, 8)), isTrue);
+      expect(BistTakvimi.yarimGunMu(DateTime(2027, 5, 15)), isTrue);
+      expect(BistTakvimi.tatilMi(DateTime(2027, 3, 12)), isFalse);
+      expect(BistTakvimi.tatilMi(DateTime(2027, 5, 20)), isFalse);
+    });
+
     test('kapsanmayan yılda dinî bayram BİLİNMEZ — açık sayılır', () {
       final y = BistTakvimi.sonKapsananYil + 1;
       expect(BistTakvimi.yilKapsaniyor(y), isFalse);

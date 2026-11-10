@@ -257,6 +257,16 @@ void main() {
       expect(find.text('Premium'), findsOneWidget);
       expect(find.text('Premium aktif'), findsNothing);
       expect(find.text("Premium'a geç"), findsNothing);
+      // Hak bilgisi yokken de dokunulur ve "Yönet" açılır (yasin 10 Kas:
+      // iptalin uygulamadaki yolu her Premium kullanıcıda olmalı).
+      await tester.tap(find.text('Premium'));
+      await tester.pumpAndSettle();
+      expect(find.text('Yönet'), findsOneWidget);
+      expect(find.text('Satın alımları geri yükle'), findsOneWidget);
+      expect(
+          find.text(
+              'İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.'),
+          findsOneWidget);
     });
 
     testWidgets('abonelikte tür ve yenileme; dokununca yönetim sayfası',

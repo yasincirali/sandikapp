@@ -7168,6 +7168,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmGeriYukle => 'Restore purchases';
 
   @override
+  String get prmIptalIpucu =>
+      'Cancel or change your plan on the store\'s subscription page.';
+
+  @override
   String get anzNotUpper => 'Weekly note · AI';
 
   @override
