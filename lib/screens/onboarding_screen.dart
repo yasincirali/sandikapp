@@ -241,6 +241,9 @@ class _Adim {
     required this.baslik,
     required this.govde,
     this.hedef,
+    // Bu sürümde "Yeni" adımı yok; alan bir sonraki sürümün yeni adımı
+    // için durur (CLAUDE.md "Yenilikler / tanıtım" madde 2).
+    // ignore: unused_element_parameter
     this.rozet,
     this.gorev,
     this.gorevBitti,
@@ -268,12 +271,15 @@ class _Adim {
   /// Spot düşürülecek gerçek öğe; null ise kart ekranın ortasında durur.
   final TourTarget? hedef;
 
-  /// "Bize özel" gibi üst etiket — başka uygulamalarda olmayanı işaretler.
+  /// Üst etiket: yalnız `'Yeni'`, yalnız son sürümde eklenen adıma konur,
+  /// sonraki sürümde kalkar.
   ///
   /// "YENİ" rozeti 11 adımdan kalktı (yasin 5 Kas 2026, unslop madde 4):
   /// hepsi 10-11 Eki tur yeniden yazımında eklenmişti, yeni kullanıcıya
   /// zaten her şey yeni; on adımda "yeni" olunca hiçbiri yeni değildi.
-  /// "Yeni" yalnız son sürümde eklenen adıma konur, sonraki sürümde kalkar.
+  /// Dört "Bize özel" etiketi de kalktı (müşteri raporu 10 Kas 2026): kendi
+  /// ağzımızdan "başka uygulamada yok" demek pazarlama diliydi, turu
+  /// anlatmıyordu; özellik kendini anlatır. Kilit `onboarding_tour_test`.
   final String? rozet;
 
   /// Görev çağrısı ("Göz simgesine dokun") ve tamamlanınca onayı.
@@ -661,7 +667,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'takip',
       hedef: TourTarget.govdeSekmeleri,
-      rozet: 'Bize özel',
       baslik: 'Takip listesi',
       // 2026-10-26: alarm kurulu satırda çan + hedef fiyat; çan o varlığın
       // alarmlarını açar (tur metni arayüzle birlikte değişir).
@@ -724,7 +729,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'hizli_giris',
       hedef: TourTarget.hizliGiris,
-      rozet: 'Bize özel',
       baslik: 'Cümleyle ekle',
       // Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
       // kalktı): aynı sayfa formun üstündeki "Yazarak ekle" düğmesiyle de
@@ -863,7 +867,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'kapsam',
       hedef: TourTarget.kapsamSecici,
-      rozet: 'Bize özel',
       // `performans_ayar_sade` (2026-10-04, madde 5; bayrak 2026-10-05'te
       // kalktı): mod anahtarı kapsam panelinden Ayarlar › Görünüm'e taşındı;
       // çip yalnız türü yazar, mod açıkken çipin altında "Bugünkü portföyle"
@@ -979,7 +982,6 @@ List<_Adim> _adimlariKur() {
     _Adim(
       id: 'ortaklik',
       hedef: TourTarget.davetKodu,
-      rozet: 'Bize özel',
       baslik: 'Eşinle tek portföy',
       // 5 Kas 21:00: ortağı yokken kart tek satır; dokununca eylemler.
       govde: 'Buradan kodunu eşine gönderir ya da onunkini girersin. Karşı taraf '
@@ -2020,7 +2022,7 @@ class _GorevSeridi extends StatelessWidget {
   }
 }
 
-/// "Bize özel" rozeti — yalnızca bizi ayırt eden özelliklerde; her adıma
+/// Adım rozeti — bugün yalnız "Yeni" (son sürümde eklenen adım); her adıma
 /// konulsa hiçbir şey vurgulanmamış olurdu.
 ///
 /// Sade metin (yasin 5 Kas 2026, unslop madde 4): amber degrade zemin,
