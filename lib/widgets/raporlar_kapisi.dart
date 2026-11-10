@@ -53,6 +53,13 @@ class RaporlarDugmesi extends ConsumerWidget {
     if (DemoModu.aktif) return const SizedBox.shrink();
     final hafta = ref.watch(balinaRadariAcikProvider);
     final yil = ref.watch(yilOzetiProvider).valueOrNull;
+    // Aylık rapor dönemini düğme çizilirken ısıt (yasin 10 Kas: "Raporlar
+    // menüsü pürüzsüz açılmıyor, kademeli açılıyor"). Dönem iki zincirli
+    // istekten (haftanın özeti → aylık notlar) gelir; sayfa açıldıktan sonra
+    // varınca satır sonradan ekleniyor ve sayfa basamak basamak uzuyordu.
+    // Düğme dinledikçe autoDispose sağlayıcı canlı kalır, dokunulduğunda
+    // satır hazırdır. Görünürlük koşulu değişmez (aşağıdaki not).
+    ref.watch(aylikRaporDonemiProvider);
     // Yıllık rapor ve temettü tahmini (Premium, 2026-10-10) Premium
     // özellikleri görünürken (tek anahtar `paywall_enabled` ya da admin)
     // her zaman vardır; kilitliyse satır paywall'a götürür.
@@ -133,8 +140,11 @@ class _RaporlarSayfasi extends ConsumerWidget {
           ikon: Icons.radar_rounded,
           baslik: l.weekTitle,
           alt: l.s6HaftaOzetiAlt,
-          onTap: () => ac((ekran) => pushGuarded(ekran,
-              adaptiveRoute<void>(settings: const RouteSettings(name: 'hafta_ozeti'), builder: (_) => const HaftaOzetiScreen()))),
+          onTap: () => ac((ekran) => pushGuarded(
+              ekran,
+              adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'hafta_ozeti'),
+                  builder: (_) => const HaftaOzetiScreen()))),
         ),
       // Tek anahtar: paywall kapalıyken (Console'da `raporlar_kapisi`
       // açık olsa da) yalnız admin görür.
@@ -144,8 +154,11 @@ class _RaporlarSayfasi extends ConsumerWidget {
           baslik: l.yrBaslik,
           alt: l.yrSatirAlt,
           kilitli: kilitli,
-          onTap: () => ac((ekran) => pushGuarded(ekran,
-              adaptiveRoute<void>(settings: const RouteSettings(name: 'yillik_rapor'), builder: (_) => const YillikRaporScreen()))),
+          onTap: () => ac((ekran) => pushGuarded(
+              ekran,
+              adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'yillik_rapor'),
+                  builder: (_) => const YillikRaporScreen()))),
         ),
         _RaporSatiri(
           ikon: Icons.event_repeat_rounded,
@@ -167,7 +180,9 @@ class _RaporlarSayfasi extends ConsumerWidget {
           kilitli: kilitli,
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
-              adaptiveRoute<void>(settings: const RouteSettings(name: 'portfoy_xray'), builder: (_) => const PortfoyXrayScreen()))),
+              adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'portfoy_xray'),
+                  builder: (_) => const PortfoyXrayScreen()))),
         ),
         // Portföy dökümü (2026-10-31): Ayarlar › Veri'den buraya. Ekran
         // değil eylem: biçim sorulur, belge paylaşılır; kilitliyse paywall.
@@ -208,7 +223,10 @@ class _RaporlarSayfasi extends ConsumerWidget {
           alt: l.s6SiralamaAlt,
           // Kupayla aynı hedef: Sıralama › Ortaklarım.
           onTap: () => ac((ekran) => pushGuarded(
-              ekran, adaptiveRoute<void>(settings: const RouteSettings(name: 'yaris_giris_ekrani'), builder: (_) => yarisGirisEkrani()))),
+              ekran,
+              adaptiveRoute<void>(
+                  settings: const RouteSettings(name: 'yaris_giris_ekrani'),
+                  builder: (_) => yarisGirisEkrani()))),
         ),
     ];
 
@@ -217,15 +235,23 @@ class _RaporlarSayfasi extends ConsumerWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
             SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < satirlar.length; i++) ...[
-              if (i > 0) Divider(height: 1, thickness: 1, color: c.hairline),
-              satirlar[i],
+        // Isıtmaya rağmen geç gelen satır (ilk açılış, yavaş bağlantı) sayfayı
+        // sıçratmasın: boy değişimi tek yumuşak harekete dönüşür. Hareketi
+        // azalt açıkken süre sıfır (`stateOf`).
+        child: AnimatedSize(
+          duration: SandikMotion.stateOf(context),
+          curve: SandikMotion.move,
+          alignment: Alignment.topCenter,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < satirlar.length; i++) ...[
+                if (i > 0) Divider(height: 1, thickness: 1, color: c.hairline),
+                satirlar[i],
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

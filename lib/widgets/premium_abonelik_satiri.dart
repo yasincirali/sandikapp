@@ -37,13 +37,12 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
     final baslik = hak == null
         ? l10n.premiumDurum
         : hak.hediye
-        ? l10n.prmAbonelikHediye
-        : hak.yillik
-            ? l10n.prmAbonelikYillik
-            : l10n.prmAbonelikAylik;
-    final bitis = hak?.bitis == null
-        ? null
-        : tarihBicimi.format(hak!.bitis!.toLocal());
+            ? l10n.prmAbonelikHediye
+            : hak.yillik
+                ? l10n.prmAbonelikYillik
+                : l10n.prmAbonelikAylik;
+    final bitis =
+        hak?.bitis == null ? null : tarihBicimi.format(hak!.bitis!.toLocal());
     final magaza = switch (hak?.magaza) {
       'app_store' || 'APP_STORE' => 'App Store',
       'play_store' || 'PLAY_STORE' => 'Google Play',
@@ -69,7 +68,12 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
     final sonGunler = kalan != null && kalan <= hediyeSonGunlerEsigi;
 
     return SandikCard(
+      // `min`: kart alt sayfada açılır (Profil › Premium satırı). Varsayılan
+      // `max` sütun, sayfanın 9/16 sınırına kadar uzayıp altında boş bir
+      // kutu bırakıyordu (yasin 10 Kas ekran görüntüsü: "Premium'u olan
+      // kullanıcıda bu şekilde gözüküyor").
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
