@@ -16,6 +16,8 @@
 /// (bir önceki kapanışa) göredir; sayfanın dipnotu bunu söyler.
 library;
 
+import '../utils/tr_format.dart' show dayKey;
+
 /// Tablonun bir satırı. [degisimPct] önceki kapanışa göre yüzde; önceki
 /// kapanış yoksa (dönemin ilk günü) ya da sıfır/negatifse `null`.
 class GunlukKapanis {
@@ -55,7 +57,7 @@ List<GunlukKapanis> gunlukKapanislar(
     final v = seri[ms]!;
     if (!v.isFinite || v <= 0) continue;
     final t = DateTime.fromMillisecondsSinceEpoch(ms);
-    gunSonu[DateTime(t.year, t.month, t.day)] = v;
+    gunSonu[dayKey(t)] = v;
   }
   final gunler = gunSonu.keys.toList()..sort();
   final satirlar = <GunlukKapanis>[];
