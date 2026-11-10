@@ -10427,6 +10427,24 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get takipPaylasTooltip => 'Takip listesini paylaş';
+
+  @override
+  String get takipPaylasKartBaslik => 'Takip listem';
+
+  @override
+  String get takipPaylasAlt => 'sandık ile takip ediyorum';
+
+  @override
+  String get takipPaylasNot =>
+      'Kartta tutar ve adet yok; yalnız eklediğimden beri yüzdeler.';
+
+  @override
+  String takipPaylasMetni(String ozet, String link) {
+    return 'Takip listem, eklediğimden beri: $ozet. sandık ile takip ediyorum: $link Yatırım tavsiyesi değildir.';
+  }
+
+  @override
   String get yardimVeDestek => 'Yardım ve destek';
 
   @override

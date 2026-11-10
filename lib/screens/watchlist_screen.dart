@@ -35,7 +35,11 @@ import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
 import '../services/takip_sirasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu, yuzdeAlarmEtiketi;
+import '../config/magaza.dart';
 import '../widgets/sandik_async_button.dart';
+import '../widgets/sandik_paylas_dugmesi.dart';
+import '../widgets/share_card.dart'
+    show KiyasPaylasKarti, kSandikMarka, showShareSheet;
 import '../widgets/sandik_siralama_dugmesi.dart';
 import '../widgets/sinir_uyarisi.dart';
 import '../widgets/sandik_bos_durum.dart';
@@ -271,6 +275,7 @@ class _List extends ConsumerWidget {
                     ),
                   ),
                   _SiralamaDugmesi(secili: mod),
+                  const _TakipPaylasDugmesi(),
                 ],
               ),
             ),
@@ -298,6 +303,61 @@ class _List extends ConsumerWidget {
           ]),
         ],
       ),
+    );
+  }
+}
+
+/// "Takip listesini paylaş" (müşteri 2026-11-10).
+///
+/// Takip bir segment, kendi app bar'ı yok: düğme ortak standartla
+/// ([SandikPaylasDugmesi], 44 pt, `Icons.adaptive.share`, tooltip =
+/// erişilebilirlik etiketi) yüzeyin başlık satırının SON öğesi, sıralama
+/// seçiminin yanında. Kart her zaman "eklediğimden beri" yüzdesini taşır,
+/// ekrandaki dönem ne olursa olsun: paylaşılan şey "takibe aldığımdan beri
+/// ne oldu" sorusunun cevabı, dönem yüzdesi kıyas ekranının işi. Satır
+/// seçimi yok: ilk altı satır ekrandaki sırayla (kullanıcı sıralamayla
+/// seçer). Paylaşılacak satır yoksa (liste boş, hiçbir satırın yüzdesi
+/// bilinmiyor) düğme çizilmez. Premium değil: kıyas paylaşımı gibi
+/// uygulamanın kendini tanıttığı yol.
+class _TakipPaylasDugmesi extends ConsumerWidget {
+  const _TakipPaylasDugmesi();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final satirlar =
+        ref.watch(takipPaylasimSatirlariProvider).valueOrNull ?? const [];
+    if (satirlar.isEmpty) return const SizedBox.shrink();
+    return SandikPaylasDugmesi(
+      tooltip: context.l10n.takipPaylasTooltip,
+      hiza: Alignment.center,
+      onPressed: () => _paylas(context, satirlar),
+    );
+  }
+
+  Future<void> _paylas(
+      BuildContext context, List<({String ad, double pct})> satirlar) {
+    final l = context.l10n;
+    final baslik = l.takipPaylasKartBaslik;
+    final ozet = satirlar
+        .map((s) => '${s.ad} ${fmtPctIsaretli(s.pct, digits: 1)}')
+        .join(' · ');
+    return showShareSheet(
+      context,
+      kart: KiyasPaylasKarti(
+        baslik: baslik,
+        tarihAraligi: l.watchlistPeriodSinceAdded,
+        satirlar: satirlar,
+        alt: l.takipPaylasAlt,
+        uyari: l.notInvestmentAdvice,
+      ),
+      not: l.takipPaylasNot,
+      sayfaBasligi: l.takipPaylasTooltip,
+      metin: l.takipPaylasMetni(
+        ozet,
+        Magaza.indirBaglantisi(kaynak: 'share_card', kampanya: 'takip_paylas'),
+      ),
+      subject: '$kSandikMarka · $baslik',
+      analyticsPeriod: 'takip_eklenmeden_beri',
     );
   }
 }

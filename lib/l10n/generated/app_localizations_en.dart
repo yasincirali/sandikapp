@@ -10555,6 +10555,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get takipPaylasTooltip => 'Share watchlist';
+
+  @override
+  String get takipPaylasKartBaslik => 'My watchlist';
+
+  @override
+  String get takipPaylasAlt => 'Tracking with sandık';
+
+  @override
+  String get takipPaylasNot =>
+      'No amounts or quantities on the card; only change since added.';
+
+  @override
+  String takipPaylasMetni(String ozet, String link) {
+    return 'My watchlist since I added each: $ozet. Tracking with sandık: $link Not investment advice.';
+  }
+
+  @override
   String get yardimVeDestek => 'Help and support';
 
   @override

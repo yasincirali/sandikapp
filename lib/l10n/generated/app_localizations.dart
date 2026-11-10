@@ -17172,6 +17172,36 @@ abstract class AppLocalizations {
   /// **'{donem} kıyası: {ozet}. sandık ile kıyasladım: {link}'**
   String kiyasPaylasMetni(String donem, String ozet, String link);
 
+  /// No description provided for @takipPaylasTooltip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip listesini paylaş'**
+  String get takipPaylasTooltip;
+
+  /// No description provided for @takipPaylasKartBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip listem'**
+  String get takipPaylasKartBaslik;
+
+  /// No description provided for @takipPaylasAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık ile takip ediyorum'**
+  String get takipPaylasAlt;
+
+  /// No description provided for @takipPaylasNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kartta tutar ve adet yok; yalnız eklediğimden beri yüzdeler.'**
+  String get takipPaylasNot;
+
+  /// No description provided for @takipPaylasMetni.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip listem, eklediğimden beri: {ozet}. sandık ile takip ediyorum: {link} Yatırım tavsiyesi değildir.'**
+  String takipPaylasMetni(String ozet, String link);
+
   /// No description provided for @yardimVeDestek.
   ///
   /// In tr, this message translates to:
