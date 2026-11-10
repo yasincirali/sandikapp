@@ -31,6 +31,7 @@ import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/katmanli_fiyat_grafigi.dart';
 import '../widgets/fon_karnesi_karti.dart';
+import '../widgets/gecmis_fiyatlar.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/grafik_stili.dart';
@@ -694,6 +695,17 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       const SizedBox(height: SandikSpace.sm),
       _grafik(ist, bicim, cizilen, bayat),
       if (sonGuncelleme != null) SeriSonGuncelleme(zaman: sonGuncelleme),
+      // Geçmiş fiyat tablosu (Premium, 2026-11-10) — varlık detayıyla ORTAK
+      // satır; çizilen dönemin serisi ve büyük fiyatın biçimi. Soluk
+      // (başka dönemin) çizgi varken satır yok: tablo seçili dönem adıyla
+      // çelişmesin.
+      if (!bayat && cizilen != null && _seriler[cizilen] != null)
+        GecmisFiyatlarSatiri(
+          seri: _seriler[cizilen]!,
+          bicim: bicim,
+          donemEtiketi: _donemEtiketi(cizilen),
+          gunIci: cizilen == 1,
+        ),
       const SizedBox(height: SandikSpace.md),
       if (ist != null) ...[
         // GÜNLÜK'te ızgara boş kalabilir (Ar-Ge 5 Kas 14:45 #3); boşluğu da.

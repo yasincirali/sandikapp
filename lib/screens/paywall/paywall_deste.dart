@@ -80,7 +80,12 @@ PaywallKarti? kaynaktanKart(String source) {
   return switch (source) {
     // Aylık rapor da rapor kartında (eskiden radar bayrağına bağlı haftalık
     // not kartına düşüyordu; radar kapalıyken kart destede yoktu).
-    'yillik_rapor' || 'portfoy_disa_aktar' || 'aylik_rapor' =>
+    // Varlık grafiğinin "Tablo olarak gör" sayfası (2026-11-10): gün sonu
+    // kapanışlarını satır satır okumak rapor/dışa aktarma işinin yanı.
+    'yillik_rapor' ||
+    'portfoy_disa_aktar' ||
+    'aylik_rapor' ||
+    'gecmis_fiyatlar' =>
       PaywallKarti.rapor,
     // Temettü kartındaki "maliyetine göre verim" kilidi (2026-11-07).
     'temettu_tahmini' || 'temettu_verimi' => PaywallKarti.temettu,

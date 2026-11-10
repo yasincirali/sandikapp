@@ -1059,6 +1059,54 @@ class AppLocalizationsEn extends AppLocalizations {
       'How much of your gain is price and how much is FX: Premium';
 
   @override
+  String get gecmisFiyatlarSatiri => 'View as table';
+
+  @override
+  String get gecmisFiyatlarKilitli => 'Price history table is in Premium';
+
+  @override
+  String get gecmisFiyatlarBaslik => 'Price history';
+
+  @override
+  String gecmisFiyatlarAltMetin(String donem, String sayi) {
+    return '$donem · $sayi closes, newest first';
+  }
+
+  @override
+  String get gecmisFiyatlarTarih => 'Date';
+
+  @override
+  String get gecmisFiyatlarKapanis => 'Close';
+
+  @override
+  String get gecmisFiyatlarDegisim => 'Change';
+
+  @override
+  String get gecmisFiyatlarDipnot =>
+      'Close is the day\'s last price; today\'s row is the latest price. Change is against the row below.';
+
+  @override
+  String gecmisFiyatlarSatirA11y(String tarih, String fiyat, String degisim) {
+    return '$tarih, close $fiyat, $degisim';
+  }
+
+  @override
+  String gecmisFiyatlarArtis(String yuzde) {
+    return 'up $yuzde from the previous close';
+  }
+
+  @override
+  String gecmisFiyatlarDusus(String yuzde) {
+    return 'down $yuzde from the previous close';
+  }
+
+  @override
+  String get gecmisFiyatlarDegismedi => 'same as the previous close';
+
+  @override
+  String get gecmisFiyatlarOncekiYok => 'no previous close';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot shares × $perShare';
   }

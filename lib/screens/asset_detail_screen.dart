@@ -23,6 +23,7 @@ import '../theme/sandik.dart';
 import '../widgets/elde_tutma_satiri.dart';
 import '../widgets/gunluk_getiri_satiri.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
+import '../widgets/gecmis_fiyatlar.dart';
 import '../widgets/kur_ayrismasi_satiri.dart';
 import '../widgets/bekleyen_fon_alimi_satiri.dart';
 import '../widgets/bedelli_artirim_sheet.dart';
@@ -2469,6 +2470,21 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         YanCevirIpucu(
                             etkin:
                                 TamEkranGrafikEkrani.sunulur(_canli.asset)),
+                        // Geçmiş fiyat tablosu (Premium, 2026-11-10):
+                        // grafiğin çizdiği seri, büyük fiyatın biçimi. Bayat
+                        // seri başka dönemin kırpılmış kopyası — tablo dönem
+                        // adıyla çelişmesin diye o arada satır yok. Mevduatta
+                        // çizgi birim fiyat değil toplam tutar, "kapanış"
+                        // anlamsız.
+                        if (!isStale &&
+                            widget.asset.type != AssetType.mevduat)
+                          GecmisFiyatlarSatiri(
+                            seri: historyMap,
+                            bicim: _birimBicimi(currentUnitTRY),
+                            donemEtiketi: donemEtiketi(context.l10n,
+                                _periods[_selectedPeriodIdx].label),
+                            gunIci: isIntraday,
+                          ),
                         ..._ozelAltBolum(ozelSonuclar),
                       ],
                     );

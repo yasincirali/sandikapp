@@ -1044,6 +1044,54 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da';
 
   @override
+  String get gecmisFiyatlarSatiri => 'Tablo olarak gör';
+
+  @override
+  String get gecmisFiyatlarKilitli => 'Geçmiş fiyat tablosu Premium\'da';
+
+  @override
+  String get gecmisFiyatlarBaslik => 'Geçmiş fiyatlar';
+
+  @override
+  String gecmisFiyatlarAltMetin(String donem, String sayi) {
+    return '$donem · $sayi kapanış, en yeni üstte';
+  }
+
+  @override
+  String get gecmisFiyatlarTarih => 'Tarih';
+
+  @override
+  String get gecmisFiyatlarKapanis => 'Kapanış';
+
+  @override
+  String get gecmisFiyatlarDegisim => 'Değişim';
+
+  @override
+  String get gecmisFiyatlarDipnot =>
+      'Kapanış o günün son fiyatı; bugünün satırı son fiyattır. Değişim bir önceki kapanışa (alttaki satır) göre.';
+
+  @override
+  String gecmisFiyatlarSatirA11y(String tarih, String fiyat, String degisim) {
+    return '$tarih, kapanış $fiyat, $degisim';
+  }
+
+  @override
+  String gecmisFiyatlarArtis(String yuzde) {
+    return 'önceki kapanışa göre $yuzde artış';
+  }
+
+  @override
+  String gecmisFiyatlarDusus(String yuzde) {
+    return 'önceki kapanışa göre $yuzde düşüş';
+  }
+
+  @override
+  String get gecmisFiyatlarDegismedi => 'önceki kapanışla aynı';
+
+  @override
+  String get gecmisFiyatlarOncekiYok => 'önceki kapanış yok';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot lot × $perShare';
   }

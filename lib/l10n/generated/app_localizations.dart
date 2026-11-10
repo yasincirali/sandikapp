@@ -1856,6 +1856,84 @@ abstract class AppLocalizations {
   /// **'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da'**
   String get fxSplitLocked;
 
+  /// Varlık grafiğinin altındaki satır; seçili dönemin gün sonu fiyatlarını tablo olarak açar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tablo olarak gör'**
+  String get gecmisFiyatlarSatiri;
+
+  /// No description provided for @gecmisFiyatlarKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçmiş fiyat tablosu Premium\'da'**
+  String get gecmisFiyatlarKilitli;
+
+  /// No description provided for @gecmisFiyatlarBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçmiş fiyatlar'**
+  String get gecmisFiyatlarBaslik;
+
+  /// No description provided for @gecmisFiyatlarAltMetin.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} · {sayi} kapanış, en yeni üstte'**
+  String gecmisFiyatlarAltMetin(String donem, String sayi);
+
+  /// No description provided for @gecmisFiyatlarTarih.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarih'**
+  String get gecmisFiyatlarTarih;
+
+  /// No description provided for @gecmisFiyatlarKapanis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapanış'**
+  String get gecmisFiyatlarKapanis;
+
+  /// No description provided for @gecmisFiyatlarDegisim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değişim'**
+  String get gecmisFiyatlarDegisim;
+
+  /// No description provided for @gecmisFiyatlarDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapanış o günün son fiyatı; bugünün satırı son fiyattır. Değişim bir önceki kapanışa (alttaki satır) göre.'**
+  String get gecmisFiyatlarDipnot;
+
+  /// No description provided for @gecmisFiyatlarSatirA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih}, kapanış {fiyat}, {degisim}'**
+  String gecmisFiyatlarSatirA11y(String tarih, String fiyat, String degisim);
+
+  /// No description provided for @gecmisFiyatlarArtis.
+  ///
+  /// In tr, this message translates to:
+  /// **'önceki kapanışa göre {yuzde} artış'**
+  String gecmisFiyatlarArtis(String yuzde);
+
+  /// No description provided for @gecmisFiyatlarDusus.
+  ///
+  /// In tr, this message translates to:
+  /// **'önceki kapanışa göre {yuzde} düşüş'**
+  String gecmisFiyatlarDusus(String yuzde);
+
+  /// No description provided for @gecmisFiyatlarDegismedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'önceki kapanışla aynı'**
+  String get gecmisFiyatlarDegismedi;
+
+  /// No description provided for @gecmisFiyatlarOncekiYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'önceki kapanış yok'**
+  String get gecmisFiyatlarOncekiYok;
+
   /// No description provided for @dividendEventLine.
   ///
   /// In tr, this message translates to:
