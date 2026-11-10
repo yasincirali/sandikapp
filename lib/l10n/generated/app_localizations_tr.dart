@@ -7100,6 +7100,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmGeriYukle => 'Satın alımları geri yükle';
 
   @override
+  String get prmIptalIpucu =>
+      'İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.';
+
+  @override
   String get anzNotUpper => 'Haftalık not · yapay zekâ';
 
   @override

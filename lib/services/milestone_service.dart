@@ -420,6 +420,17 @@ class MilestoneService {
   /// gövdesi tutarsız yazılır (müşteri raporu 1 Kas 21:15 koşulu). Altın
   /// adedi, yaş ve tür sayısı tutar değildir, aynen kalır.
   static Milestone gizli(Milestone m, {bool siradaki = false}) {
+    // Kâr zirvesinin başlığı tutar taşır ("...: ₺X"); bakiye gizliyken o da
+    // çıkar (10 Kas: rozet adları Profil satırında görünür oldu).
+    if (m.kind == 'profit_high') {
+      return Milestone(
+        kind: m.kind,
+        value: m.value,
+        rank: m.rank,
+        title: 'Toplam kârın en yüksek seviyesinde',
+        body: 'Bakiye gizliyken tutar gösterilmez.',
+      );
+    }
     if (m.kind != 'portfolio_value') return m;
     return Milestone(
       kind: m.kind,

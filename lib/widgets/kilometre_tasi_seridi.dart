@@ -207,8 +207,13 @@ class _IlerlemeCubugu extends StatelessWidget {
   }
 }
 
-/// Geçilen taşın küçük işareti (her türün en yükseği). Etkileşimsiz:
-/// dokunma satırın tamamında; ad ve ayrıntı tam listede.
+/// Geçilen taşın etiketi (her türün en yükseği): ikon + ad. Etkileşimsiz:
+/// dokunma satırın tamamında; ayrıntı tam listede.
+///
+/// Önce yalnız ikondu; yasin 10 Kas ekran görüntüsünde "neler bunlar?" diye
+/// sordu: kum saati, kumbara, yükselen çizgi ve pasta grafiği ad olmadan
+/// bir şey anlatmıyordu. Ad, tam listedeki başlığın aynısı (bakiye gizliyken
+/// [MilestoneService.gizli] tutarı çıkarmış hâli).
 class _Isaret extends StatelessWidget {
   const _Isaret({required this.m});
 
@@ -218,14 +223,24 @@ class _Isaret extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     return Container(
-      width: SandikSpace.lg,
-      height: SandikSpace.lg,
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: SandikRadius.lgAll,
         color: c.amberFill.withValues(alpha: 0.16),
       ),
-      child: Icon(MilestoneSheet.ikonu(m.kind),
-          size: SandikSpace.md2, color: c.amberText),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(MilestoneSheet.ikonu(m.kind),
+              size: SandikSpace.md, color: c.amberText),
+          const SizedBox(width: SandikSpace.xs),
+          Flexible(
+            child: Text(m.title,
+                style: context.t.labelMedium?.copyWith(color: c.text90)),
+          ),
+        ],
+      ),
     );
   }
 }

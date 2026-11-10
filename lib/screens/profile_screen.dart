@@ -1320,11 +1320,11 @@ class _ActionIcon extends StatelessWidget {
 /// Kimlik kartında tek satır Premium durumu (Profil yeniden tasarımı,
 /// yasin 7 Kas; önce ayrı "Premium aktif" kartı ya da "Premium'a geç" afişi).
 ///
-/// - **Premium:** yalnız durum metni, vurgu yok: "Premium · yıllık,
-///   5 Kasım 2027 tarihinde yenilenir"; hak bilgisi yoksa (cihaz anahtarı)
-///   yalnız "Premium". Satın alınmış bir şeyi her açılışta vurgulamak
-///   gürültü olurdu.
-/// - **Sunucu hakkı varken satır dokunulabilir** ve bugünkü
+/// - **Premium (yasin 10 Kas):** amber ikon + amber "Premium", yanında soluk
+///   ayrıntı: "Premium · Yıllık, 5 Kasım 2027 tarihinde yenilenir"; hak
+///   bilgisi yoksa yalnız "Premium". (7 Kas'ta vurgusuzdu; yasin düz gri
+///   satırı Premium'a yakışmaz bulup işaretledi.)
+/// - **Satır her zaman dokunulabilir** ve bugünkü
 ///   [PremiumAbonelikSatiri]'nı alt sayfada açar ("Yönet", "Satın alımları
 ///   geri yükle", hediyenin son günlerinde "devam et"). Bunlar Profil'den
 ///   kalkarsa aboneliği yönetmenin uygulamadaki tek yolu kaybolurdu
@@ -1342,16 +1342,21 @@ class _PremiumDurumSatiri extends ConsumerWidget {
     final l10n = context.l10n;
     final c = context.c;
     if (ref.watch(effectivePremiumProvider)) {
+      // Premium satırı Premium gibi görünür ve her zaman dokunulabilir
+      // (yasin 10 Kas, ekran görüntüsünde düz gri "Premium"u işaretledi:
+      // "bu kısmı premiuma göre yapmalıyız", "premiumu iptal nasıl
+      // ediyor?"). 7 Kas'taki "vurgu yok" kararı bununla değişti: amber
+      // ikon ve "Premium" w600 amber, ayrıntı soluk. Sunucu hakkı yokken de
+      // (mağaza alımı webhook'tan önce, yönetici) sheet açılır, "Yönet"
+      // oradadır; önceden bu durumda satır dokunulmazdı ve iptalin
+      // uygulamadaki yolu yoktu.
       final hak = ref.watch(gecerliPremiumHakkiProvider);
       final metin = premiumDurumMetni(context, hak, DateTime.now());
-      final yazi = Text(metin,
-          style: context.t.bodySmall?.copyWith(color: c.text58));
-      if (hak == null) {
-        return Padding(
-          padding: const EdgeInsets.only(top: SandikSpace.xs),
-          child: yazi,
-        );
-      }
+      // Metin "Premium · yıllık, ..." biçiminde; baştaki "Premium" amber,
+      // geri kalanı soluk yazılır. Çeviride önek yoksa metin bütün soluk.
+      final onek = l10n.premiumDurum;
+      final vurgulu = metin.startsWith(onek);
+      final ek = vurgulu ? metin.substring(onek.length) : ' · $metin';
       return _satir(
         context,
         etiket: l10n.premiumDurumAyrintiEtiket(metin),
@@ -1366,9 +1371,27 @@ class _PremiumDurumSatiri extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Flexible(child: yazi),
+            Icon(Icons.workspace_premium_rounded,
+                size: SandikSpace.md, color: c.amberText),
+            const SizedBox(width: SandikSpace.xs),
+            Flexible(
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(
+                    text: onek,
+                    style: context.t.labelLarge?.copyWith(
+                        color: c.amberText, fontWeight: FontWeight.w600),
+                  ),
+                  if (ek.isNotEmpty)
+                    TextSpan(
+                      text: ek,
+                      style: context.t.bodySmall?.copyWith(color: c.text58),
+                    ),
+                ]),
+              ),
+            ),
             Icon(Icons.chevron_right_rounded,
-                size: SandikSpace.md2, color: c.text36),
+                size: SandikSpace.md2, color: c.amberText),
           ],
         ),
       );

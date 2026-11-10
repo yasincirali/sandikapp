@@ -11753,6 +11753,12 @@ abstract class AppLocalizations {
   /// **'Satın alımları geri yükle'**
   String get prmGeriYukle;
 
+  /// No description provided for @prmIptalIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.'**
+  String get prmIptalIpucu;
+
   /// No description provided for @anzNotUpper.
   ///
   /// In tr, this message translates to:

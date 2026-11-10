@@ -110,6 +110,14 @@ void main() {
       expect('${g.title} ${g.body}', isNot(contains('100')));
       final altin = MilestoneService.anahtardan('gold_count', 'ALTIN_GRAM:5')!;
       expect(MilestoneService.gizli(altin).title, altin.title);
+      // Kâr zirvesinin başlığı tutar taşır; adı satırda görünür oldu.
+      const kar = Milestone(
+          kind: 'profit_high',
+          value: 'x',
+          rank: 123456,
+          title: 'Toplam kârın en yüksek seviyesinde: ₺123.456',
+          body: '');
+      expect(MilestoneService.gizli(kar).title, isNot(contains('₺')));
     });
   });
 
@@ -173,8 +181,10 @@ void main() {
       // 10 bin, 25 bin, 50 bin, 100 bin geçildi → merdivende 4 / 10.
       expect(find.text('4 / 10'), findsOneWidget);
       expect(find.text('130 bin ₺ kaldı'), findsOneWidget);
-      // Rozet şeridi ve eşit kartlar yok; geçilen taş adı satırda yazmaz.
-      expect(find.text('100 bin ₺ geçildi'), findsNothing);
+      // Eşit kartlar yok. Geçilen taşın adı ikonuyla satırda yazar
+      // (yasin 10 Kas: yalnız ikon "neler bunlar?" sorusunu doğuruyordu).
+      expect(find.text('100 bin ₺ geçildi'), findsOneWidget);
+      expect(find.text('5 gram altın'), findsOneWidget);
       expect(find.text('Tümü ›'), findsNothing);
       // Halka/gösterge değil, statik çubuk.
       expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -191,8 +201,9 @@ void main() {
       await tester.tap(satir);
       await tester.pumpAndSettle();
       expect(find.text('10 bin ₺ geçildi'), findsOneWidget);
-      expect(find.text('100 bin ₺ geçildi'), findsOneWidget);
-      expect(find.text('5 gram altın'), findsOneWidget);
+      // Satırdaki etiket + listedeki satır.
+      expect(find.text('100 bin ₺ geçildi'), findsNWidgets(2));
+      expect(find.text('5 gram altın'), findsNWidgets(2));
       expect(find.text('Sıradaki: 250 bin ₺'), findsWidgets);
     });
 
@@ -207,7 +218,7 @@ void main() {
       await tester.tap(satir);
       await tester.pumpAndSettle();
       expect(find.textContaining('bin ₺'), findsNothing);
-      expect(find.text('5 gram altın'), findsOneWidget);
+      expect(find.text('5 gram altın'), findsNWidgets(2));
     });
 
     testWidgets('hepsi geçildiyse uydurma hedef yok', (tester) async {
@@ -244,7 +255,7 @@ void main() {
       await pump(tester);
       await tester.tap(satir);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('5 gram altın'));
+      await tester.tap(find.text('5 gram altın').last);
       await tester.pumpAndSettle();
       expect(find.byType(MilestoneSheet), findsOneWidget);
       expect(find.text('Toplam 5 gram altın biriktirdin.'), findsWidgets);
