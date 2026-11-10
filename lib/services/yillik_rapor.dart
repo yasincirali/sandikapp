@@ -156,6 +156,25 @@ class YillikRapor {
   double get masrafTry => alimKomisyonuTry + satisKomisyonuTry;
 }
 
+/// Tek satış satırının rapor karşılığı; satış fiyatı yoksa `null`
+/// (uydurulmaz). Kapanış özeti (`kapanis_ozeti.dart`, "Tümünü sat" sonrası)
+/// gerçekleşen kârı BURADAN okur: rapordaki satırla özet aynı sayıyı
+/// yazsın, formül iki yerde yaşamasın.
+YillikSatis? yillikSatisSatiri(Asset a) {
+  if (!a.isSell || a.sellPrice == null) return null;
+  return YillikSatis(
+    tarih: a.addedDate,
+    ad: a.name,
+    ticker: a.ticker,
+    tur: a.type,
+    yurtDisi: a.abdHissesi,
+    miktar: a.quantity,
+    satisTry: a.sellPrice! * a.quantity * a.satisKuru,
+    maliyetTry: a.purchasePrice * a.quantity * a.purchaseFxRate,
+    komisyonTry: a.commission * a.satisKuru,
+  );
+}
+
 /// Raporda yılı olan bütün yıllar (yeniden eskiye). Seçici bunları sunar;
 /// kaydı olmayan yıl listelenmez.
 List<int> raporYillari(Iterable<Asset> lotlar, String userId) {
@@ -190,17 +209,7 @@ YillikRapor yillikRapor({
         fiyatsiz++;
         continue;
       }
-      satislar.add(YillikSatis(
-        tarih: a.addedDate,
-        ad: a.name,
-        ticker: a.ticker,
-        tur: a.type,
-        yurtDisi: a.abdHissesi,
-        miktar: a.quantity,
-        satisTry: a.sellPrice! * a.quantity * a.satisKuru,
-        maliyetTry: a.purchasePrice * a.quantity * a.purchaseFxRate,
-        komisyonTry: a.commission * a.satisKuru,
-      ));
+      satislar.add(yillikSatisSatiri(a)!);
     } else if (a.isDividend) {
       final double? oran;
       if (a.type != AssetType.hisse) {

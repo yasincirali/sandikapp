@@ -17448,6 +17448,96 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{yeni} yeni lot eklendi'**
   String bedelliKaydedildi(String yeni);
+
+  /// No description provided for @kapanisBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pozisyon kapandı'**
+  String get kapanisBaslik;
+
+  /// No description provided for @kapanisTuttun.
+  ///
+  /// In tr, this message translates to:
+  /// **'{adBelirtme} {sure} tuttun'**
+  String kapanisTuttun(String ad, String adBelirtme, String sure);
+
+  /// No description provided for @kapanisSureAy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay} ay'**
+  String kapanisSureAy(int ay);
+
+  /// No description provided for @kapanisSureGun.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} gün'**
+  String kapanisSureGun(int gun);
+
+  /// No description provided for @kapanisSureBirGundenKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'bir günden kısa'**
+  String get kapanisSureBirGundenKisa;
+
+  /// No description provided for @kapanisGerceklesenKar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekleşen kâr'**
+  String get kapanisGerceklesenKar;
+
+  /// No description provided for @kapanisGerceklesenZarar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekleşen zarar'**
+  String get kapanisGerceklesenZarar;
+
+  /// No description provided for @kapanisYillik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık ortalama {pct}'**
+  String kapanisYillik(String pct);
+
+  /// No description provided for @kapanisZarar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu pozisyon zararla kapandı.'**
+  String get kapanisZarar;
+
+  /// No description provided for @kapanisMaliyetBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyeti bilinmediği için kâr ve zarar hesaplanmadı.'**
+  String get kapanisMaliyetBilinmiyor;
+
+  /// No description provided for @kapanisYillikRapor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık raporda gör'**
+  String get kapanisYillikRapor;
+
+  /// No description provided for @kapanisTamam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamam'**
+  String get kapanisTamam;
+
+  /// No description provided for @kapanisPaylas.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylaş'**
+  String get kapanisPaylas;
+
+  /// No description provided for @kapanisPaylasEtiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekleşen getiri'**
+  String get kapanisPaylasEtiketi;
+
+  /// No description provided for @kapanisPaylasMetni.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} pozisyonumu {pct} getiriyle kapattım'**
+  String kapanisPaylasMetni(String ad, String pct);
 }
 
 class _AppLocalizationsDelegate

@@ -10629,4 +10629,60 @@ class AppLocalizationsTr extends AppLocalizations {
   String bedelliKaydedildi(String yeni) {
     return '$yeni yeni lot eklendi';
   }
+
+  @override
+  String get kapanisBaslik => 'Pozisyon kapandı';
+
+  @override
+  String kapanisTuttun(String ad, String adBelirtme, String sure) {
+    return '$adBelirtme $sure tuttun';
+  }
+
+  @override
+  String kapanisSureAy(int ay) {
+    return '$ay ay';
+  }
+
+  @override
+  String kapanisSureGun(int gun) {
+    return '$gun gün';
+  }
+
+  @override
+  String get kapanisSureBirGundenKisa => 'bir günden kısa';
+
+  @override
+  String get kapanisGerceklesenKar => 'Gerçekleşen kâr';
+
+  @override
+  String get kapanisGerceklesenZarar => 'Gerçekleşen zarar';
+
+  @override
+  String kapanisYillik(String pct) {
+    return 'Yıllık ortalama $pct';
+  }
+
+  @override
+  String get kapanisZarar => 'Bu pozisyon zararla kapandı.';
+
+  @override
+  String get kapanisMaliyetBilinmiyor =>
+      'Maliyeti bilinmediği için kâr ve zarar hesaplanmadı.';
+
+  @override
+  String get kapanisYillikRapor => 'Yıllık raporda gör';
+
+  @override
+  String get kapanisTamam => 'Tamam';
+
+  @override
+  String get kapanisPaylas => 'Paylaş';
+
+  @override
+  String get kapanisPaylasEtiketi => 'Gerçekleşen getiri';
+
+  @override
+  String kapanisPaylasMetni(String ad, String pct) {
+    return '$ad pozisyonumu $pct getiriyle kapattım';
+  }
 }

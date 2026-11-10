@@ -10767,4 +10767,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String bedelliKaydedildi(String yeni) {
     return '$yeni new shares added';
   }
+
+  @override
+  String get kapanisBaslik => 'Position closed';
+
+  @override
+  String kapanisTuttun(String ad, String adBelirtme, String sure) {
+    return 'You held $ad for $sure';
+  }
+
+  @override
+  String kapanisSureAy(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other: '$ay months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String kapanisSureGun(int gun) {
+    String _temp0 = intl.Intl.pluralLogic(
+      gun,
+      locale: localeName,
+      other: '$gun days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get kapanisSureBirGundenKisa => 'less than a day';
+
+  @override
+  String get kapanisGerceklesenKar => 'Realised gain';
+
+  @override
+  String get kapanisGerceklesenZarar => 'Realised loss';
+
+  @override
+  String kapanisYillik(String pct) {
+    return 'Average per year $pct';
+  }
+
+  @override
+  String get kapanisZarar => 'This position closed at a loss.';
+
+  @override
+  String get kapanisMaliyetBilinmiyor =>
+      'The cost is unknown, so gain and loss were not calculated.';
+
+  @override
+  String get kapanisYillikRapor => 'See in yearly report';
+
+  @override
+  String get kapanisTamam => 'OK';
+
+  @override
+  String get kapanisPaylas => 'Share';
+
+  @override
+  String get kapanisPaylasEtiketi => 'Realised return';
+
+  @override
+  String kapanisPaylasMetni(String ad, String pct) {
+    return 'Closed my $ad position at $pct';
+  }
 }
