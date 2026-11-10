@@ -4424,12 +4424,6 @@ abstract class AppLocalizations {
   /// **'Aylık'**
   String get planMonthly;
 
-  /// No description provided for @planMonthlySubtitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'İstediğin zaman iptal edebilirsin'**
-  String get planMonthlySubtitle;
-
   /// No description provided for @subscriptionTerms.
   ///
   /// In tr, this message translates to:
@@ -4459,18 +4453,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sandık Premium'**
   String get sandikPremiumUpper;
-
-  /// No description provided for @paywallHeadline.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföyünü daha derinlemesine\ntakip et'**
-  String get paywallHeadline;
-
-  /// No description provided for @paywallSubhead.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sınırsız varlık, yıllık rapor, temettü tahmini ve teknik sinyaller. Portföy takibi her zaman ücretsiz.'**
-  String get paywallSubhead;
 
   /// No description provided for @restorePurchase.
   ///
@@ -11501,59 +11483,11 @@ abstract class AppLocalizations {
   /// **'Haftanın özetinde hareketsiz geçen varlıkları da listele.'**
   String get rdrAyarSakinGosterAlt;
 
-  /// No description provided for @prmUcretsiz.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ücretsiz'**
-  String get prmUcretsiz;
-
-  /// No description provided for @prmPremium.
-  ///
-  /// In tr, this message translates to:
-  /// **'Premium'**
-  String get prmPremium;
-
-  /// No description provided for @prmSatirVarlik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Varlık'**
-  String get prmSatirVarlik;
-
-  /// No description provided for @prmSatirAkis.
-  ///
-  /// In tr, this message translates to:
-  /// **'Para akışı'**
-  String get prmSatirAkis;
-
-  /// No description provided for @prmSatirHacim.
-  ///
-  /// In tr, this message translates to:
-  /// **'Hacim radarı'**
-  String get prmSatirHacim;
-
-  /// No description provided for @prmSatirNot.
-  ///
-  /// In tr, this message translates to:
-  /// **'Haftalık not'**
-  String get prmSatirNot;
-
-  /// No description provided for @prmSatirAylik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aylık rapor'**
-  String get prmSatirAylik;
-
   /// No description provided for @prmSinirsiz.
   ///
   /// In tr, this message translates to:
   /// **'sınırsız'**
   String get prmSinirsiz;
-
-  /// No description provided for @prmSatirSinyal.
-  ///
-  /// In tr, this message translates to:
-  /// **'Teknik sinyaller'**
-  String get prmSatirSinyal;
 
   /// No description provided for @prmSinyalUcretsiz.
   ///
@@ -11561,35 +11495,11 @@ abstract class AppLocalizations {
   /// **'3 gösterge, günde 1 bildirim'**
   String get prmSinyalUcretsiz;
 
-  /// No description provided for @prmSinyalPremium.
-  ///
-  /// In tr, this message translates to:
-  /// **'8 gösterge, sınırsız'**
-  String get prmSinyalPremium;
-
-  /// No description provided for @prmSatirTakip.
-  ///
-  /// In tr, this message translates to:
-  /// **'Takip listesi'**
-  String get prmSatirTakip;
-
   /// No description provided for @prmYillikTasarruf.
   ///
   /// In tr, this message translates to:
   /// **'%{oran} tasarruf'**
   String prmYillikTasarruf(String oran);
-
-  /// No description provided for @prmVarErisim.
-  ///
-  /// In tr, this message translates to:
-  /// **'Var'**
-  String get prmVarErisim;
-
-  /// No description provided for @prmYokErisim.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yok'**
-  String get prmYokErisim;
 
   /// No description provided for @prmAkisUcretsiz.
   ///
@@ -11650,12 +11560,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yapay zekâyla eşleme Premium\'da'**
   String get prmKilitEkstreAi;
-
-  /// No description provided for @prmSatirEkstreAi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ekstreyi yapay zekâyla okutma'**
-  String get prmSatirEkstreAi;
 
   /// No description provided for @prmHediyeBaslik.
   ///
@@ -12161,24 +12065,6 @@ abstract class AppLocalizations {
   /// **'Premium\'a geç'**
   String get sgnPremiumGec;
 
-  /// No description provided for @pwOzSinirsiz.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sınırsız varlık ve tüm varlık türleri'**
-  String get pwOzSinirsiz;
-
-  /// No description provided for @pwOzKarsilastir.
-  ///
-  /// In tr, this message translates to:
-  /// **'Karşılaştır\'da 5 seriye kadar'**
-  String get pwOzKarsilastir;
-
-  /// No description provided for @pwOzOrtak.
-  ///
-  /// In tr, this message translates to:
-  /// **'Birden fazla ortakla portföy paylaşımı'**
-  String get pwOzOrtak;
-
   /// No description provided for @cmpSinirPremium.
   ///
   /// In tr, this message translates to:
@@ -12190,12 +12076,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'En fazla 5 varlık'**
   String get cmpSinirDolu;
-
-  /// No description provided for @pwOzRadar.
-  ///
-  /// In tr, this message translates to:
-  /// **'Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı'**
-  String get pwOzRadar;
 
   /// No description provided for @pwFiyatAylik.
   ///
@@ -12209,29 +12089,11 @@ abstract class AppLocalizations {
   /// **'{fiyat}/yıl'**
   String pwFiyatYillik(String fiyat);
 
-  /// No description provided for @pwDenemeAltyazi.
-  ///
-  /// In tr, this message translates to:
-  /// **'{gun} gün ücretsiz, sonra otomatik yenilenir'**
-  String pwDenemeAltyazi(int gun);
-
-  /// No description provided for @pwYenilenirAltyazi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Otomatik yenilenir, istediğin zaman iptal edebilirsin'**
-  String get pwYenilenirAltyazi;
-
   /// No description provided for @pwDenemeDugme.
   ///
   /// In tr, this message translates to:
   /// **'{gun} gün ücretsiz dene'**
   String pwDenemeDugme(int gun);
-
-  /// No description provided for @pwAboneOl.
-  ///
-  /// In tr, this message translates to:
-  /// **'Abone ol'**
-  String get pwAboneOl;
 
   /// No description provided for @pwKosulAndroid.
   ///
@@ -13697,96 +13559,6 @@ abstract class AppLocalizations {
   /// **'Yalnız BIST hisseleri. Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.'**
   String get ttKural;
 
-  /// No description provided for @pwOzRapor.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yıllık kâr, temettü ve stopaj raporu; portföyünü PDF ya da Excel olarak dışa aktar'**
-  String get pwOzRapor;
-
-  /// No description provided for @pwOzTemettu.
-  ///
-  /// In tr, this message translates to:
-  /// **'Önümüzdeki 12 ayın temettü tahmini, ay ay'**
-  String get pwOzTemettu;
-
-  /// No description provided for @pwOzSinyalTam.
-  ///
-  /// In tr, this message translates to:
-  /// **'Teknik sinyaller: 8 gösterge, kendi periyotların ve seçtiğin sıklıkta bildirim'**
-  String get pwOzSinyalTam;
-
-  /// No description provided for @pwOzMasraf.
-  ///
-  /// In tr, this message translates to:
-  /// **'Varlık başına kalem kalem masraf dökümü'**
-  String get pwOzMasraf;
-
-  /// No description provided for @prmSatirAlarm.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fiyat alarmı'**
-  String get prmSatirAlarm;
-
-  /// No description provided for @prmSatirYillik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yıllık rapor'**
-  String get prmSatirYillik;
-
-  /// No description provided for @prmSatirDisaAktar.
-  ///
-  /// In tr, this message translates to:
-  /// **'Dışa aktarma'**
-  String get prmSatirDisaAktar;
-
-  /// No description provided for @prmDisaAktarUcretsiz.
-  ///
-  /// In tr, this message translates to:
-  /// **'JSON'**
-  String get prmDisaAktarUcretsiz;
-
-  /// No description provided for @prmDisaAktarPremium.
-  ///
-  /// In tr, this message translates to:
-  /// **'PDF + Excel'**
-  String get prmDisaAktarPremium;
-
-  /// No description provided for @prmSatirTemettu.
-  ///
-  /// In tr, this message translates to:
-  /// **'Temettü tahmini'**
-  String get prmSatirTemettu;
-
-  /// No description provided for @prmSatirMasraf.
-  ///
-  /// In tr, this message translates to:
-  /// **'Masraflar'**
-  String get prmSatirMasraf;
-
-  /// No description provided for @prmMasrafUcretsiz.
-  ///
-  /// In tr, this message translates to:
-  /// **'toplam'**
-  String get prmMasrafUcretsiz;
-
-  /// No description provided for @prmMasrafPremium.
-  ///
-  /// In tr, this message translates to:
-  /// **'kalem kalem'**
-  String get prmMasrafPremium;
-
-  /// No description provided for @prmSatirKars.
-  ///
-  /// In tr, this message translates to:
-  /// **'Karşılaştır'**
-  String get prmSatirKars;
-
-  /// No description provided for @prmSatirOrtak.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ortak'**
-  String get prmSatirOrtak;
-
   /// No description provided for @pwdRaporEtiket.
   ///
   /// In tr, this message translates to:
@@ -14087,18 +13859,6 @@ abstract class AppLocalizations {
   /// **'Kalemler: KAP Portföy Dağılım Raporları · {donem} sonu'**
   String xrKaynakKalemler(String donem);
 
-  /// No description provided for @pwOzXray.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fon X-Ray: fonlarının içi ve portföyünün gerçek dağılımı'**
-  String get pwOzXray;
-
-  /// No description provided for @prmSatirXray.
-  ///
-  /// In tr, this message translates to:
-  /// **'Fon X-Ray'**
-  String get prmSatirXray;
-
   /// No description provided for @pwdXrayEtiket.
   ///
   /// In tr, this message translates to:
@@ -14351,29 +14111,11 @@ abstract class AppLocalizations {
   /// **'Hangi portföydeki pozisyon taşınsın?'**
   String get portfoyKaynakSec;
 
-  /// No description provided for @pwOzPortfoy.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı; aralarında kısmi aktarım ve ortağın hangisini göreceğini seçme'**
-  String get pwOzPortfoy;
-
-  /// No description provided for @prmSatirPortfoy.
-  ///
-  /// In tr, this message translates to:
-  /// **'Portföy'**
-  String get prmSatirPortfoy;
-
   /// No description provided for @pwdPortfoyPremium.
   ///
   /// In tr, this message translates to:
   /// **'sınırsız, kısmi aktarım'**
   String get pwdPortfoyPremium;
-
-  /// No description provided for @pwOzEkstre.
-  ///
-  /// In tr, this message translates to:
-  /// **'Banka ve aracı kurum ekstreni yapay zekâyla eşleme'**
-  String get pwOzEkstre;
 
   /// No description provided for @pwdPortfoyEtiket.
   ///
@@ -14867,12 +14609,6 @@ abstract class AppLocalizations {
   /// **'Ayrı paneldeki işaretler (plotshape) gösterilmez.'**
   String get ozgNotPaneldeIsaret;
 
-  /// No description provided for @pwOzOzelGosterge.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kendi göstergeni yaz: Pine Script ile, seçtiğin zaman aralığında'**
-  String get pwOzOzelGosterge;
-
   /// No description provided for @varlikGuncelleBaslik.
   ///
   /// In tr, this message translates to:
@@ -14974,12 +14710,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad} ayarları'**
   String sgnParametreAyarla(String ad);
-
-  /// No description provided for @prmSatirOzelGosterge.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kendi göstergen (Pine)'**
-  String get prmSatirOzelGosterge;
 
   /// No description provided for @pwdOzelEtiket.
   ///
@@ -15442,12 +15172,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Zirvedeki portföyler neye yatırıyor, varlık varlık gör.'**
   String get pwdZirveBaslik;
-
-  /// No description provided for @prmSatirZirve.
-  ///
-  /// In tr, this message translates to:
-  /// **'Zirvedeki portföyler'**
-  String get prmSatirZirve;
 
   /// No description provided for @prmZirveUcretsiz.
   ///

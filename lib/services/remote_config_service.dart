@@ -329,10 +329,10 @@ class RemoteConfigService {
     'raporlar_kapisi': false,
     // S7 — Ana ekranda genel arama (`genel_arama`): emekliye ayrıldı, bkz.
     // "Emekliye ayrılan bayraklar (2026-10-20)".
-    // Paywall yeniden tasarımı (yasin 2026-10-08): sandık başlığı + sonsuz
-    // kart destesi; deste kullanıcının dokunduğu kilidin kartıyla açılır.
-    // Kapalıyken eski paywall birebir.
-    'paywall_deste': false,
+    // `paywall_deste` (kart desteli paywall, 2026-10-08): emekliye ayrıldı,
+    // 10 Kas 2026'dan beri deste tek tasarım (yasin "Deste her yerde";
+    // açılışta RC gelmeden eski liste görünüyordu). Console'daki değer
+    // artık okunmaz, silinebilir.
 
     // Ekstre tanılama iskeleti (2026-10-05, yasin: "tüm banka ve aracı
     // kurumları kapsamalıyız"). Motor bir ekstreyi tam anlayamadığında eşleme
@@ -912,8 +912,6 @@ class RemoteConfigService {
   bool get raporlarKapisi =>
       _bayrak('raporlar_kapisi') || premiumOzellikleriGorunur;
 
-  /// Kart desteli paywall. Gerekçe `_defaults`'ta.
-  bool get paywallDeste => _bayrak('paywall_deste');
 
   /// Ekstre tanılama iskeleti düğmesi. Gerekçe `_defaults`'ta.
   bool get ekstreTanilama => _bayrak('ekstre_tanilama');
