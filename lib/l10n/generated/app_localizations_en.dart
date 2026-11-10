@@ -9525,6 +9525,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vkHepsiTamam => 'All set, your total is up to date.';
 
   @override
+  String vkFiyatGelmiyor(int gun) {
+    return 'No price for $gun days';
+  }
+
+  @override
+  String vkFiyatGelmiyorBaslik(String name) {
+    return 'No price for $name';
+  }
+
+  @override
+  String get vkFiyatGelmiyorAciklama =>
+      'The fund may have closed or merged into another fund. You can enter a price yourself or record a sale.';
+
+  @override
   String get onerAlarmBaslik => 'Set a price alert';
 
   @override

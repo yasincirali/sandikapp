@@ -9429,6 +9429,20 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vkHepsiTamam => 'Bilgiler tamam, toplamın güncel.';
 
   @override
+  String vkFiyatGelmiyor(int gun) {
+    return 'Fiyatı $gun gündür gelmiyor';
+  }
+
+  @override
+  String vkFiyatGelmiyorBaslik(String name) {
+    return '$name fiyatı gelmiyor';
+  }
+
+  @override
+  String get vkFiyatGelmiyorAciklama =>
+      'Fon kapanmış ya da başka fonla birleşmiş olabilir. Elle fiyat girebilir ya da satış kaydedebilirsin.';
+
+  @override
   String get onerAlarmBaslik => 'Fiyat alarmı kur';
 
   @override

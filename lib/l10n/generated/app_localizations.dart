@@ -15557,6 +15557,24 @@ abstract class AppLocalizations {
   /// **'Bilgiler tamam, toplamın güncel.'**
   String get vkHepsiTamam;
 
+  /// No description provided for @vkFiyatGelmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatı {gun} gündür gelmiyor'**
+  String vkFiyatGelmiyor(int gun);
+
+  /// No description provided for @vkFiyatGelmiyorBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyatı gelmiyor'**
+  String vkFiyatGelmiyorBaslik(String name);
+
+  /// No description provided for @vkFiyatGelmiyorAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon kapanmış ya da başka fonla birleşmiş olabilir. Elle fiyat girebilir ya da satış kaydedebilirsin.'**
+  String get vkFiyatGelmiyorAciklama;
+
   /// No description provided for @onerAlarmBaslik.
   ///
   /// In tr, this message translates to:

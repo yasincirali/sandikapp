@@ -1,5 +1,7 @@
 import '../models/asset.dart';
+import '../models/asset_type.dart';
 import '../models/position.dart';
+import 'bist_calendar.dart';
 import '../utils/tr_format.dart' show dayKey;
 
 /// Pozisyonun hesabını sessizce yanlış gösteren eksik bilgi.
@@ -15,7 +17,39 @@ import '../utils/tr_format.dart' show dayKey;
 ///   eskiyse toplam bayat bir sayıyla toplanır.
 /// Rapor "iki ayrı uyarı olmasın" dedi: ikisi tek satırda sayılır
 /// ("N varlıkta bilgi eksik"), Portföy satırı hangisi olduğunu söyler.
-enum VeriEksigiTuru { alisFiyati, eskiFiyat }
+/// · [fiyatGelmiyor] (müşteri 2026-11-10): TEFAS'tan fiyatı gelen fonun son
+///   fiyatı [fiyatGelmiyorEsikIsGunu] BIST iş gününden eski. Fon kapanmış
+///   ya da başka fonla birleşmişse TEFAS fiyat yayımlamayı keser; değer son
+///   fiyatta donar ve kullanıcı bunu fark etmez. Elle fiyat ([eskiFiyat])
+///   değil: kullanıcı bir şey girmedi, kaynak sustu.
+enum VeriEksigiTuru { alisFiyati, eskiFiyat, fiyatGelmiyor }
+
+/// Fon fiyatı kaç BIST iş gününden eskiyse "fiyatı gelmiyor" sayılır.
+///
+/// Fon günde bir fiyat yayımlar, bugünün fiyatı akşam ya da ertesi sabah
+/// gelir: olağan gecikme 1 iş günü, uzun bayramda da tatil günleri
+/// sayılmadığı için büyümez. 7 iş günü (takvimde 9-10 gün) TEFAS'ın geçici
+/// aksamasını uyarıya çevirmeyecek kadar uzun, kapanan fonu haftalarca
+/// sessiz bırakmayacak kadar kısa.
+const fiyatGelmiyorEsikIsGunu = 7;
+
+/// [tarih] ile [simdi] arasındaki BIST iş günü sayısı: [tarih]'ten SONRA,
+/// bugün DAHİL. Hafta sonu ve [BistTakvimi.tatilMi] sayılmaz; yarım gün
+/// (arife) iş günüdür, fon o gün de fiyat yayımlar. Cuma fiyatı Pazartesi
+/// 1 iş günü eskidir.
+int bistIsGunuFarki(DateTime tarih, DateTime simdi) {
+  final bugun = dayKey(simdi);
+  final t0 = dayKey(tarih.toLocal());
+  var g = DateTime(t0.year, t0.month, t0.day + 1);
+  var sayi = 0;
+  while (!g.isAfter(bugun)) {
+    if (g.weekday < DateTime.saturday && !BistTakvimi.tatilMi(g)) sayi++;
+    // Takvim günü ekleyerek (Duration değil): yaz saati geçişinde gün
+    // kaymasın.
+    g = DateTime(g.year, g.month, g.day + 1);
+  }
+  return sayi;
+}
 
 /// Elle girilen fiyat kaç günden eskiyse "bilgi eksik" sayılır. Aylık
 /// güncelleme makul bir alışkanlık; daha kısa eşik her hafta aynı uyarıyı
@@ -49,6 +83,8 @@ class VeriEksigi {
   final VeriEksigiTuru tur;
 
   /// [VeriEksigiTuru.eskiFiyat]: fiyatın girildiği günden bu yana gün.
+  /// [VeriEksigiTuru.fiyatGelmiyor]: son fon fiyatının gününden bu yana
+  /// TAKVİM günü (kullanıcıya "N gündür" diye okunur; iş günü eşikte).
   final int? gun;
 
   /// [VeriEksigiTuru.alisFiyati]: maliyeti bilinmeyen lotlar (düzenleme
@@ -71,9 +107,16 @@ DateTime elleFiyatTarihi(Asset a) => a.lastUpdated ?? a.createdAt ?? a.addedDate
 /// hesaplanır, "elle fiyat" ya da "maliyet" kavramı kullanıcının girdiği
 /// bir sayı değildir. Bir pozisyon iki eksiği birden taşıyabilir; sayı
 /// pozisyon başına bir kez sayılır ([eksikPozisyonSayisi]).
+///
+/// [fonFiyatTarihi]: TEFAS fonunun son fiyatının günü (fon kodu → gün;
+/// `TefasService.fiyatTarihi`). Verilmezse ya da gün bilinmiyorsa
+/// [VeriEksigiTuru.fiyatGelmiyor] hiç sayılmaz: gününü bilmediğimiz fiyatı
+/// "gelmiyor" diye işaretlemek uydurma olurdu. [pozisyonlar] bugünkü
+/// mülkiyettir (çağıran `aktifLotlar` ile süzer); kapanmış fon sorulmaz.
 List<VeriEksigi> veriEksikleri(
   List<Position> pozisyonlar, {
   required DateTime simdi,
+  DateTime? Function(String fonKodu)? fonFiyatTarihi,
 }) {
   final bugun = dayKey(simdi);
   final sonuc = <VeriEksigi>[];
@@ -97,9 +140,29 @@ List<VeriEksigi> veriEksikleri(
         sonuc.add(VeriEksigi(
             pozisyon: p, tur: VeriEksigiTuru.eskiFiyat, gun: gun));
       }
+    } else if (r.type == AssetType.fon && fonFiyatTarihi != null) {
+      final t = r.ticker.trim().isEmpty ? null : fonFiyatTarihi(r.ticker);
+      if (t != null &&
+          bistIsGunuFarki(t, simdi) > fiyatGelmiyorEsikIsGunu) {
+        sonuc.add(VeriEksigi(
+          pozisyon: p,
+          tur: VeriEksigiTuru.fiyatGelmiyor,
+          gun: _takvimGunu(t, simdi),
+        ));
+      }
     }
   }
   return sonuc;
+}
+
+/// [t]'den [simdi]'ye takvim günü; UTC gün başlarıyla, yaz saati geçişi
+/// 23 saatlik günü 0'a yuvarlamasın (`fonFiyatGunFarki` ile aynı yol).
+int _takvimGunu(DateTime t, DateTime simdi) {
+  final a = t.toLocal();
+  final b = simdi.toLocal();
+  return DateTime.utc(b.year, b.month, b.day)
+      .difference(DateTime.utc(a.year, a.month, a.day))
+      .inDays;
 }
 
 /// Satırdaki sayı: eksiği olan POZİSYON sayısı ("2 varlıkta").

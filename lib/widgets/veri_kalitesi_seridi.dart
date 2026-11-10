@@ -19,8 +19,8 @@ import 'sandik_skeleton.dart';
 /// Ana ekran, Bugün kartının altında tek satır: "N varlıkta bilgi eksik".
 ///
 /// ## Neden şerit (yasin onayı 2026-10-20; Ar-Ge 13:15 #1 + 17:15 #3)
-/// Eksik bilgi (okunamayan alış fiyatı, 30 günden eski elle fiyat) toplamı
-/// ya da kâr/zararı sessizce yanlış gösteriyor. Ana sayfa toplam kartına
+/// Eksik bilgi (okunamayan alış fiyatı, 30 günden eski elle fiyat, fiyatı
+/// gelmeyen fon) toplamı ya da kâr/zararı sessizce yanlış gösteriyor. Ana sayfa toplam kartına
 /// dokunulmaz (yasin kuralı); satır yalnız SÖYLENECEK bir şey varken çıkar,
 /// [RadarSeridi] ile aynı kalıp. Kapatılabilir: kapatıldığı andaki
 /// eksikler bir daha sorulmaz, yeni bir eksik çıkınca satır geri gelir
@@ -132,12 +132,62 @@ Future<void> veriKalitesiAkisi(BuildContext context, WidgetRef ref) async {
       case VeriEksigiTuru.eskiFiyat:
         final kaydedildi = await showElleFiyatSayfasi(context, ref, e);
         if (kaydedildi != true) return;
+      case VeriEksigiTuru.fiyatGelmiyor:
+        final anlasildi = await showFiyatGelmiyorSayfasi(context, e);
+        if (anlasildi != true) return;
     }
   }
   if (context.mounted && ref.read(veriEksikleriProvider).isEmpty) {
     sandikSnack(context, context.l10n.vkHepsiTamam,
         kind: SandikSnackKind.success);
   }
+}
+
+/// Fiyatı gelmeyen fon (müşteri 2026-11-10): ne olmuş olabileceği ve
+/// kullanıcının elindeki iki yol, tek cümlede.
+///
+/// Bilgi sayfası, form değil: fonun fiyatı TEFAS'tan geliyor, elle fiyat
+/// sayfası ([ElleFiyatSayfasi]) yalnız elle fiyatlı lotlara yazar. Elle
+/// fiyata geçmek ya da satış kaydetmek varlığın kendi ekranındaki mevcut
+/// akışlarla yapılır; burada ikinci bir yol açılmadı. "Anladım" akışı
+/// sürdürür, aşağı kaydırıp kapatmak durdurur (diğer adımlarla aynı).
+Future<bool?> showFiyatGelmiyorSayfasi(BuildContext context, VeriEksigi eksik) {
+  return showSandikSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
+    builder: (ctx) {
+      final l = ctx.l10n;
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          SandikSpace.screenH(ctx),
+          SandikSpace.sm2,
+          SandikSpace.screenH(ctx),
+          SandikSpace.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SandikSheetBasligi(
+                l.vkFiyatGelmiyorBaslik(eksik.pozisyon.representative.name)),
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              l.vkFiyatGelmiyorAciklama,
+              style: ctx.t.bodyMedium?.copyWith(color: ctx.c.text58),
+            ),
+            const SizedBox(height: SandikSpace.md),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(SandikTouch.min)),
+              child: Text(l.gotIt),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 /// Elle fiyatlı pozisyonun güncel fiyatı — tek alan, tek düğme.
