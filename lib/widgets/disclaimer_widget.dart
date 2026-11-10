@@ -5,13 +5,17 @@ import '../l10n/l10n.dart';
 
 /// Yasal uyarı — sinyal/analiz içeren her ekranın altına eklenir.
 ///
-/// **Kısa biçim ([kisa], yalnız Performans; Ar-Ge 2026-11-07 12:15 #5).**
+/// **Kısa biçim ([kisa]; Ar-Ge 2026-11-07 12:15 #5, yayılım 2026-11-10).**
 /// Beş satırlık tam metin her girişte sayfanın sonunu kaplıyordu; Fon
 /// karnesindeki dipnot gibi iki kısa cümleye iner ve sağında "Ayrıntı"
 /// durur. Tam metin KAYBOLMAZ: aynı [disclaimerText] bir dokunuşla alt
-/// sayfada açılır. Ortak bileşen olduğu için öteki ekranlara yayılması
-/// ayrı karar ister (öneri yalnız Performans); varsayılan uzun biçim
-/// birebir eskisi.
+/// sayfada açılır. İlk turda yalnız Performans'taydı; 2026-11-10'da
+/// çan sayfası ve varlık ekranlarına da yayıldı (aynı tam metin beş
+/// yerde kutuydu). Uzun biçim (varsayılan, birebir eskisi) yalnız sinyal
+/// ayarında kalır: orası teknik sinyalin kendisini anlatan ekran.
+///
+/// Anahtarların `performans_` öneki tarihseldir (testler o adla bulur);
+/// artık her kısa ibare aynı anahtarı taşır.
 ///
 /// Kısa satır normal yazıda tek satırdır. Büyük yazıda (metin ölçeği
 /// > [_tekSatirOlcegi]) sarmalanır: tek satıra zorlamak yasal cümleyi
@@ -19,7 +23,7 @@ import '../l10n/l10n.dart';
 class DisclaimerWidget extends StatelessWidget {
   const DisclaimerWidget({super.key, this.kisa = false});
 
-  /// Tek satır + "Ayrıntı" (Performans).
+  /// Tek satır + "Ayrıntı" (sinyal ayarı dışındaki her ekran).
   final bool kisa;
 
   static const double _tekSatirOlcegi = 1.3;

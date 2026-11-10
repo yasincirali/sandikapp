@@ -2556,9 +2556,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
                   // taşır (varlık sayfasıyla aynı). Sayfadaki TEK ibare
                   // budur — panel kendi içinde basmaz (#20: üç kez
-                  // tekrarlanıyordu).
+                  // tekrarlanıyordu). Kısa biçim (2026-11-10): aynı tam
+                  // metin beş yerde kutuydu; Performans gibi tek satır +
+                  // "Ayrıntı", tam kutu yalnız sinyal ayarında.
                   const SizedBox(height: SandikSpace.sm),
-                  const DisclaimerWidget(),
+                  const DisclaimerWidget(kisa: true),
                 ],
                 ], // eski yığın (katmanlı değil)
                     ],

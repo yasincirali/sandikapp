@@ -298,19 +298,24 @@ void main() {
       expect(find.text(_tr.disclaimerDetails), findsNothing);
     });
 
-    test('kısa biçim yalnız Performans\'ta', () {
-      final perf = ekranKaynagiSync(
-          'lib/screens/portfolio_performance_screen.dart');
-      expect(perf, contains('DisclaimerWidget(kisa: true)'));
+    // 2026-11-10: kısa biçim Performans'tan çan sayfasına ve varlık
+    // ekranlarına yayıldı (aynı tam metin beş yerde kutuydu). Tam kutu
+    // yalnız sinyal ayarında kalır: teknik sinyalin kendisini anlatan ekran.
+    test('kısa biçim her yerde, tam kutu yalnız sinyal ayarında', () {
       for (final f in [
+        'lib/screens/portfolio_performance_screen.dart',
         'lib/screens/home_screen.dart',
         'lib/screens/asset_detail_screen.dart',
         'lib/screens/varlik_sayfasi.dart',
-        'lib/screens/signal_settings_screen.dart',
       ]) {
-        expect(ekranKaynagiSync(f).contains('kisa: true'), isFalse,
-            reason: f);
+        final k = ekranKaynagiSync(f);
+        expect(k, contains('DisclaimerWidget(kisa: true)'), reason: f);
+        expect(k.contains('DisclaimerWidget()'), isFalse, reason: f);
       }
+      final sinyal =
+          ekranKaynagiSync('lib/screens/signal_settings_screen.dart');
+      expect(sinyal, contains('const DisclaimerWidget()'));
+      expect(sinyal.contains('kisa: true'), isFalse);
     });
   });
 

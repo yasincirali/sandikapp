@@ -142,10 +142,12 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
 
       // Yasal ibare sayfanın EN ALTINDA, sinyal paneli katlı olsa da:
       // AL/SAT gösteren yüzey (kapalı satır da onun girişidir) ibareyi
-      // taşır. Sayfadaki tek ibare budur (#20).
+      // taşır. Sayfadaki tek ibare budur (#20). Kısa biçim (2026-11-10):
+      // aynı tam metin beş yerde kutuydu; Performans gibi tek satır +
+      // "Ayrıntı", tam kutu yalnız sinyal ayarında.
       if (_sinyalYuzeyleri) ...[
         const SizedBox(height: SandikSpace.lg),
-        const DisclaimerWidget(),
+        const DisclaimerWidget(kisa: true),
       ],
     ];
   }

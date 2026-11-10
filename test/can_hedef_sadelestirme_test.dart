@@ -100,11 +100,13 @@ void main() {
           reason: 'boş çanda yeşil onay yok');
     });
 
-    test('yasal uyarı tam metin, sayfanın dibine sabit değil', () {
-      expect(k, contains('const DisclaimerWidget()'));
+    // 2026-11-10: tam kutu yerine kısa biçim (tek satır + "Ayrıntı"; tam
+    // metin alt sayfada). Sabitlenmeme kuralı aynı.
+    test('yasal uyarı kısa biçimde, sayfanın dibine sabit değil', () {
+      expect(k, contains('const DisclaimerWidget(kisa: true)'));
       expect(
           k.contains(
-              'child: DisclaimerWidget(),\n              ),\n            ],'),
+              'child: DisclaimerWidget(kisa: true),\n              ),\n            ],'),
           isFalse);
     });
   });
