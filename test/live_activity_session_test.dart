@@ -11,6 +11,7 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/services/bist_calendar.dart';
 import 'package:portfoy_takip/services/daily_summary.dart'
     show IntradaySeriesCache;
+import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/live_activity_service.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 
@@ -79,29 +80,24 @@ PortfolioState _state() => PortfolioState(
       gbpTry: 54.0,
     );
 
-/// Seans içi bir an — hafta içi bir günün 14:30'u.
+/// Seans içi bir an — tam seans günü olan bir Salı'nın 14:30'u. SABİT.
 ///
-/// **BUGÜNE göre hesaplanır, sabit tarih DEĞİL.** Önceden
-/// `DateTime(2026, 8, 11, 14, 30)` sabitiydi ve tarih geçince test kendi
-/// kendine kırıldı: gün içi seri `DateTime.now()` ile üretiliyor, yani
-/// "bugün" ile karşılaştırılan an geçmişte kalınca seri boş dönüyor ve
-/// yüzde "%0,00" yerine "—" oluyordu. Kod doğruydu, fikstür bayattı.
+/// ## Neden sabit (2026-11-10, `TECHNICAL_DEBT.md`: "İki test cihaz saatine
+/// bağlı")
+/// İlk hâli `DateTime(2026, 8, 11, 14, 30)` sabitiydi ve tarih geçince
+/// kırıldı: gün içi seri servis içinde `DateTime.now()` ile kuruluyordu,
+/// "bugün" geçmişte kalınca seri boş dönüyor, yüzde "%0,00" yerine "—"
+/// oluyordu. O zaman fikstür BUGÜNE bağlandı (hafta sonu, tatil, yarım gün
+/// geriye atlanarak) — bu da sonucu duvar saatine bağladı: gece yarısı–seans
+/// arası, tatil ve hafta sonu koşuları ayrı ayrı kırıldı (2026-09-21,
+/// 2026-09-26, 2026-10-03, 28/29 Ekim).
 ///
-/// Hafta sonu kaydırması şart: `isMarketOpen` Cts/Paz'ı eler, o günlerde
-/// seans hiç açılmaz ve seans-içi varsayan testler düşer.
-// Tam seans günü olmalı: 28 Ekim 2026 (yarım gün, 12:30 kapanış) ve 29 Ekim
-// (tatil) bugünü sabit alan eski hâli kırdı. Hafta sonu, tatil ve yarım gün
-// geriye atlanır; 14:30 yalnız tam günde seans içidir.
-final _duringSession = () {
-  var d = DateTime.now();
-  while (d.weekday == DateTime.saturday ||
-      d.weekday == DateTime.sunday ||
-      BistTakvimi.tatilMi(d) ||
-      BistTakvimi.yarimGunMu(d)) {
-    d = d.subtract(const Duration(days: 1));
-  }
-  return DateTime(d.year, d.month, d.day, 14, 30);
-}();
+/// Kalıcı çözüm saati fikstürden servise taşımak: `sync(now:)` seriye kadar
+/// iner (`IntradaySeriesCache.get(now:)`), önbelleğin ve gün içi motorunun
+/// varsayılan saati `HistoryService.gunIciSaat`; [setUp] onu bu ana sabitler.
+/// Böylece testin sonucu koşulduğu saatten bağımsızdır (`TZ` ile gece 03:00
+/// ve 00:02'ye zorlanarak doğrulandı).
+final _duringSession = DateTime(2026, 11, 10, 14, 30);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -121,8 +117,22 @@ void main() {
     channel = _FakeLiveActivityChannel()..install();
     // Servis singleton — önceki testin `_sessionActive` durumu taşmasın.
     LiveActivityService.instance.resetForTest();
+    // Gün içi motoru da fikstürün anına bakar (bkz. [_duringSession]).
+    HistoryService.gunIciSaat = () => _duringSession;
   });
-  tearDown(() => channel.remove());
+  tearDown(() {
+    channel.remove();
+    HistoryService.gunIciSaat = DateTime.now;
+  });
+
+  test('fikstür anı tam seans günü ve seans içinde', () {
+    // Sabit tarih takvime sonradan tatil olarak girerse seans-içi varsayan
+    // testler sebebi belirsiz biçimde düşerdi; burada açıkça söylenir.
+    expect(_duringSession.weekday, DateTime.tuesday);
+    expect(BistTakvimi.tatilMi(_duringSession), isFalse);
+    expect(BistTakvimi.yarimGunMu(_duringSession), isFalse);
+    expect(LiveActivityService.isMarketOpen(_duringSession), isTrue);
+  });
 
   group('seans saatleri', () {
     test('hafta içi 10:00-18:10 arası AÇIK', () {

@@ -632,7 +632,11 @@ class HistoryService {
   /// gün başından birkaç saat sonrasına ihtiyaç duyuyor; duvar saatine
   /// bağlı kalsaydı gece yarısına yakın koşularda atlanır ya da kırmızı
   /// olurdu (`TECHNICAL_DEBT.md`: "İki test cihaz saatine bağlı").
-  @visibleForTesting
+  ///
+  /// `@visibleForTesting` DEĞİL (2026-11-10): `IntradaySeriesCache` de
+  /// varsayılan saatini buradan okur — seriyi bu motor kuruyor, önbelleğin
+  /// gün/tazelik kararı başka saatten okunmamalı. Üretimde yalnız OKUNUR;
+  /// değiştiren tek yer testlerdir.
   static DateTime Function() gunIciSaat = DateTime.now;
 
   /// GÜNLÜK (gün içi) dökümün ağa çıkmayan, eldeki son iyi serilerden

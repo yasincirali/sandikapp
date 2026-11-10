@@ -169,7 +169,13 @@ void main() {
       // Bugün alım yok, dolayısıyla net akış sıfır: değişim +₺2.000.
       // Slotlar GEÇMİŞTE olmalı: `dayValues` gelecekteki slotları atar
       // (kaynak 24 saatlik grid üretir, günün geri kalanı henüz olmamıştır).
-      final now = DateTime.now();
+      //
+      // An SABİT ve servise `now:` ile verilir (2026-11-10). Önceden
+      // `DateTime.now()` idi; servis de kendi `DateTime.now()`'ını okuyordu,
+      // yani sonuç duvar saatine bağlıydı — gece yarısını kesen koşuda
+      // slotlardan biri dünde kalıyordu (`TECHNICAL_DEBT.md`: "İki test
+      // cihaz saatine bağlı"). Seans içi bir Salı 14:00.
+      final now = DateTime(2026, 11, 10, 14, 0);
       final series = {
         now.subtract(const Duration(minutes: 20)).millisecondsSinceEpoch:
             28000.0,
@@ -181,6 +187,7 @@ void main() {
         _stateWithValue(),
         hideBalance: false,
         intraday: series,
+        now: now,
       );
 
       final change = channel.saved['sandik_change'] as String;
