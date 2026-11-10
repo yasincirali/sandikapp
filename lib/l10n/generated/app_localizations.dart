@@ -17538,6 +17538,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad} pozisyonumu {pct} getiriyle kapattım'**
   String kapanisPaylasMetni(String ad, String pct);
+
+  /// No description provided for @aramaOneriBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bunu mu demek istedin?'**
+  String get aramaOneriBaslik;
+
+  /// No description provided for @aramaOneriSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Öneri: {kod}, {ad}'**
+  String aramaOneriSemantik(String kod, String ad);
 }
 
 class _AppLocalizationsDelegate

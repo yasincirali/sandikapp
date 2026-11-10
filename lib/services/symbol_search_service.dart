@@ -7,6 +7,7 @@ import '../models/asset_type.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/emtia_katalogu.dart';
+import '../models/secici_arama.dart' show yakinOneriler;
 import 'bist_hisse_katalogu.dart';
 import 'supabase_service.dart';
 import 'tefas_service.dart';
@@ -565,6 +566,34 @@ class SymbolSearchService {
             ticker: 'THYAO.IS', name: 'Türk Hava Yolları', source: 'BIST'),
         SymbolHit(ticker: 'GARAN.IS', name: 'Garanti BBVA', source: 'BIST'),
       ];
+
+  /// "Bunu mu demek istedin?" (müşteri işi 10 Kas): arama boş dönünce
+  /// sorguya bir harf uzaklıktaki semboller (`yakinOneriler`, Varlık Ekle
+  /// seçicileriyle aynı kural). Havuz aramanın kendi havuzu: yerleşik
+  /// listeler, bayrak açıksa ABD, önbellekteki TEFAS fonları (arama az önce
+  /// yüklediği için ağa çıkmaz; hata → fonsuz). Kripto ve Eurobond katalogu
+  /// sunucudan sorgulanır, yerel bir kod listesi yok; öneriye girmez.
+  Future<List<SymbolHit>> oneriAra(String query) async {
+    final havuz = <SymbolHit>[..._builtIn, if (_abdAcik) ..._abd];
+    try {
+      final funds = await TefasService.instance.fetchAllFunds();
+      for (final f in funds) {
+        havuz.add(
+            SymbolHit(ticker: 'TEFAS:${f.code}', name: f.name, source: 'Fon'));
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('TEFAS öneri havuzu yüklenemedi: $e');
+    }
+    return yakinOneriler(havuz, query,
+        kod: (h) => aramaKodu(h.ticker), ad: (h) => h.name);
+  }
+
+  /// Sembolün kullanıcının yazdığı kod biçimi: `THYAO.IS` → `THYAO`,
+  /// `TEFAS:AFT` → `AFT`, `EURTRY=X` → `EURTRY`.
+  static String aramaKodu(String ticker) => ticker
+      .replaceFirst('TEFAS:', '')
+      .replaceFirst(RegExp(r'\.IS$'), '')
+      .replaceFirst(RegExp(r'=X$'), '');
 
   /// Yerleşik listelerde ada, ticker'a VEYA takma ada göre arar. [k]
   /// katlanmış sorgudur.

@@ -10835,4 +10835,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String kapanisPaylasMetni(String ad, String pct) {
     return 'Closed my $ad position at $pct';
   }
+
+  @override
+  String get aramaOneriBaslik => 'Did you mean?';
+
+  @override
+  String aramaOneriSemantik(String kod, String ad) {
+    return 'Suggestion: $kod, $ad';
+  }
 }

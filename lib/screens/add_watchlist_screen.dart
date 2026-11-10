@@ -24,6 +24,7 @@ import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import '../widgets/arama_onerileri.dart';
 import '../widgets/sinir_uyarisi.dart';
 import '../widgets/tur_filtre_cipleri.dart';
 import '../widgets/varlik_rozeti.dart';
@@ -91,6 +92,10 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
 
   Timer? _debounce;
 
+  /// Boş sonuçta "Bunu mu demek istedin?" önerileri (`oneriAra`). Yalnız
+  /// en son aramanın önerisi; sorgu değişince sıfırlanır.
+  List<SymbolHit> _oneriler = const [];
+
   @override
   void initState() {
     super.initState();
@@ -134,14 +139,22 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       setState(() {
         _loading = true;
         _results = yerel;
+        _oneriler = const [];
       });
     }
     try {
       final hits = await SymbolSearchService.instance.search(q);
       if (!mounted || id != _seq) return;
       final sonuc = kimlikler(hits);
+      // Boş sonuçta yakın kodlar; havuz aramanın havuzu (fon listesi az önce
+      // yüklendi, ağa çıkılmaz). Sonuç varken öneri yok.
+      final oneriler = sonuc.isEmpty
+          ? await SymbolSearchService.instance.oneriAra(q)
+          : const <SymbolHit>[];
+      if (!mounted || id != _seq) return;
       setState(() {
         _results = sonuc;
+        _oneriler = oneriler;
         _loading = false;
         // Seçili tür yeni sonuçta yoksa çip boşa düşmesin.
         if (_tur != null && !sonuc.any((c) => c.type == _tur)) _tur = null;
@@ -273,7 +286,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                               title: context.l10n.searchMarketsUpper)),
                           for (final c in _results) satir(c),
                         ],
-                      ] else if (gruplar.isEmpty && !_loading)
+                      ] else if (gruplar.isEmpty && !_loading) ...[
                         Padding(
                           padding: const EdgeInsets.only(top: SandikSpace.xxl),
                           child: Text(
@@ -282,7 +295,22 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                             style: context.t.bodyMedium
                                 ?.copyWith(color: context.c.text58),
                           ),
-                        )
+                        ),
+                        if (_oneriler.isNotEmpty) ...[
+                          const SizedBox(height: SandikSpace.lg),
+                          // Dokunmak sorguyu öneriyle değiştirir: sonuç
+                          // normal satır olarak gelir (fiyatı, takip "+"sı,
+                          // portföy etiketiyle); ikinci bir satır türü yok.
+                          AramaOnerileri(oneriler: [
+                            for (final h in _oneriler)
+                              (
+                                kod: SymbolSearchService.aramaKodu(h.ticker),
+                                ad: h.name,
+                                onTap: () => _oneriSec(h),
+                              ),
+                          ]),
+                        ],
+                      ]
                       else
                         for (final g in gruplar) ...[
                           _Baslik(SandikSectionHeader(
@@ -306,6 +334,18 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
         ),
       ),
     );
+  }
+
+  void _oneriSec(SymbolHit h) {
+    final kod = SymbolSearchService.aramaKodu(h.ticker);
+    _ctrl.value = TextEditingValue(
+        text: kod, selection: TextSelection.collapsed(offset: kod.length));
+    _debounce?.cancel();
+    setState(() {
+      _q = kod;
+      _oneriler = const [];
+    });
+    _ara(kod);
   }
 
   Future<void> _sonBakilanlariTemizle() async {

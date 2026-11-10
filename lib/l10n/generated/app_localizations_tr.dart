@@ -10685,4 +10685,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String kapanisPaylasMetni(String ad, String pct) {
     return '$ad pozisyonumu $pct getiriyle kapattım';
   }
+
+  @override
+  String get aramaOneriBaslik => 'Bunu mu demek istedin?';
+
+  @override
+  String aramaOneriSemantik(String kod, String ad) {
+    return 'Öneri: $kod, $ad';
+  }
 }

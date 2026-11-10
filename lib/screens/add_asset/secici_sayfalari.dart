@@ -239,7 +239,16 @@ class _Bist100PickerState extends State<_Bist100Picker> {
       query: _q,
       cs: cs,
       child: filtered.isEmpty
-          ? _emptySearch(context, _q, cs)
+          ? _emptySearch(context, _q, cs, oneriler: [
+              for (final e in yakinOneriler(hepsi, _q,
+                  kod: (e) => e.key.replaceAll('.IS', ''),
+                  ad: (e) => e.value))
+                (
+                  kod: e.key.replaceAll('.IS', ''),
+                  ad: e.value,
+                  onTap: () => widget.onSelect(e.key),
+                ),
+            ])
           : _seciciListesi(
               context,
               ust: ust,
@@ -315,7 +324,11 @@ class _AbdPickerState extends State<_AbdPicker> {
       query: _q,
       cs: cs,
       child: filtered.isEmpty
-          ? _emptySearch(context, _q, cs)
+          ? _emptySearch(context, _q, cs, oneriler: [
+              for (final e in yakinOneriler(hepsi, _q,
+                  kod: (e) => e.key, ad: (e) => e.value))
+                (kod: e.key, ad: e.value, onTap: () => widget.onSelect(e.key)),
+            ])
           : _seciciListesi(
               context,
               ust: ust,
@@ -608,7 +621,12 @@ class _TefasPickerState extends State<_TefasPicker> {
                   ),
                 )
               : filtered.isEmpty
-                  ? _emptySearch(context, _q, cs)
+                  ? _emptySearch(context, _q, cs, oneriler: [
+                      for (final f in yakinOneriler(
+                          _funds ?? const <TefasFund>[], _q,
+                          kod: (f) => f.code, ad: (f) => f.name))
+                        (kod: f.code, ad: f.name, onTap: () => widget.onSelect(f)),
+                    ])
                   : _seciciListesi(
                       context,
                       ust: ust,
@@ -1182,13 +1200,31 @@ class _PickerRow extends StatelessWidget {
   }
 }
 
-Widget _emptySearch(BuildContext context, String q, ColorScheme cs) => Center(
-      child: Padding(
+/// Boş arama. [oneriler] verilirse altında "Bunu mu demek istedin?"
+/// (`yakinOneriler`; kod kataloğu olan seçicilerde: BIST, ABD, TEFAS).
+/// Kaydırılabilir: büyük yazıda öneriler ekrana sığmayabilir.
+Widget _emptySearch(BuildContext context, String q, ColorScheme cs,
+        {List<({String kod, String ad, VoidCallback onTap})> oneriler =
+            const []}) =>
+    Center(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(SandikSpace.lg),
-        child: Text(
-            q.isEmpty ? context.l10n.noResults : context.l10n.noResultsFor(q),
-            textAlign: TextAlign.center,
-            style: context.t.bodyLarge?.copyWith(color: context.c.text58)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+                q.isEmpty
+                    ? context.l10n.noResults
+                    : context.l10n.noResultsFor(q),
+                textAlign: TextAlign.center,
+                style:
+                    context.t.bodyLarge?.copyWith(color: context.c.text58)),
+            if (oneriler.isNotEmpty) ...[
+              const SizedBox(height: SandikSpace.lg),
+              AramaOnerileri(oneriler: oneriler),
+            ],
+          ],
+        ),
       ),
     );
 

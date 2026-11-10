@@ -43,6 +43,7 @@ import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'bulk_add_asset_screen.dart';
 import 'csv_import_screen.dart';
 import 'varlik_sayfasi.dart';
+import '../widgets/arama_onerileri.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';

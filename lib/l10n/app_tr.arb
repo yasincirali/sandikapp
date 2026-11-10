@@ -6467,5 +6467,8 @@
   "kapanisPaylas": "Paylaş",
   "kapanisPaylasEtiketi": "Gerçekleşen getiri",
   "kapanisPaylasMetni": "{ad} pozisyonumu {pct} getiriyle kapattım",
-  "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}}
+  "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}},
+  "aramaOneriBaslik": "Bunu mu demek istedin?",
+  "aramaOneriSemantik": "Öneri: {kod}, {ad}",
+  "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}}
 }

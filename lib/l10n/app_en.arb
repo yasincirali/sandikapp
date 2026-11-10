@@ -5711,5 +5711,8 @@
   "kapanisPaylas": "Share",
   "kapanisPaylasEtiketi": "Realised return",
   "kapanisPaylasMetni": "Closed my {ad} position at {pct}",
-  "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}}
+  "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}},
+  "aramaOneriBaslik": "Did you mean?",
+  "aramaOneriSemantik": "Suggestion: {kod}, {ad}",
+  "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}}
 }
