@@ -1622,6 +1622,18 @@ abstract class AppLocalizations {
   /// **'Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.'**
   String get commissionNote;
 
+  /// No description provided for @commissionGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşçilik / masraf'**
+  String get commissionGold;
+
+  /// No description provided for @commissionNoteGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kuyumcuya ödediğin işçiliği buraya yaz; gram fiyatı piyasa fiyatıyla kalır, kâr/zarar doğru başlar.'**
+  String get commissionNoteGold;
+
   /// Dövizli alımın toplam maliyet kartında TL karşılığı ve kullanılan kur
   ///
   /// In tr, this message translates to:

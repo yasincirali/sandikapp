@@ -903,6 +903,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Trading commission is added to your cost, so profit/loss shows the real figure.';
 
   @override
+  String get commissionGold => 'Workmanship / fees';
+
+  @override
+  String get commissionNoteGold =>
+      'Enter the jeweller\'s workmanship fee here; the gram price stays at the market price so profit/loss starts right.';
+
+  @override
   String totalCostTlEquivalent(String amount, String currency, String rate) {
     return '≈ $amount · 1 $currency = $rate';
   }

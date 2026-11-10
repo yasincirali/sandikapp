@@ -508,6 +508,8 @@
     }
   },
   "commissionNote": "Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.",
+  "commissionGold": "İşçilik / masraf",
+  "commissionNoteGold": "Kuyumcuya ödediğin işçiliği buraya yaz; gram fiyatı piyasa fiyatıyla kalır, kâr/zarar doğru başlar.",
   "totalCostTlEquivalent": "≈ {amount} · 1 {currency} = {rate}",
   "@totalCostTlEquivalent": {
     "description": "Dövizli alımın toplam maliyet kartında TL karşılığı ve kullanılan kur",
