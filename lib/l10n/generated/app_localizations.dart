@@ -17550,6 +17550,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Öneri: {kod}, {ad}'**
   String aramaOneriSemantik(String kod, String ad);
+
+  /// No description provided for @zirveGuvenKuresel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.'**
+  String get zirveGuvenKuresel;
+
+  /// No description provided for @zirveGuvenOrtaklar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kimsenin varlık listesi görünmez.'**
+  String get zirveGuvenOrtaklar;
+
+  /// No description provided for @zirveNasilOlculur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Nasıl ölçülür?'**
+  String get zirveNasilOlculur;
 }
 
 class _AppLocalizationsDelegate

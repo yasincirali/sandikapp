@@ -6470,5 +6470,8 @@
   "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}},
   "aramaOneriBaslik": "Bunu mu demek istedin?",
   "aramaOneriSemantik": "Öneri: {kod}, {ad}",
-  "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}}
+  "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}},
+  "zirveGuvenKuresel": "Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
+  "zirveGuvenOrtaklar": "Kimsenin varlık listesi görünmez.",
+  "zirveNasilOlculur": "Nasıl ölçülür?"
 }

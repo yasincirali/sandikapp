@@ -10843,4 +10843,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String aramaOneriSemantik(String kod, String ad) {
     return 'Suggestion: $kod, $ad';
   }
+
+  @override
+  String get zirveGuvenKuresel =>
+      'Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
+
+  @override
+  String get zirveGuvenOrtaklar => 'Nobody\'s asset list is visible.';
+
+  @override
+  String get zirveNasilOlculur => 'How is it measured?';
 }

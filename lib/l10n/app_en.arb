@@ -5714,5 +5714,8 @@
   "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}},
   "aramaOneriBaslik": "Did you mean?",
   "aramaOneriSemantik": "Suggestion: {kod}, {ad}",
-  "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}}
+  "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}},
+  "zirveGuvenKuresel": "Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.",
+  "zirveGuvenOrtaklar": "Nobody's asset list is visible.",
+  "zirveNasilOlculur": "How is it measured?"
 }

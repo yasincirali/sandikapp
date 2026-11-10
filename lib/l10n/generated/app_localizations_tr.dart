@@ -10693,4 +10693,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String aramaOneriSemantik(String kod, String ad) {
     return 'Öneri: $kod, $ad';
   }
+
+  @override
+  String get zirveGuvenKuresel =>
+      'Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
+
+  @override
+  String get zirveGuvenOrtaklar => 'Kimsenin varlık listesi görünmez.';
+
+  @override
+  String get zirveNasilOlculur => 'Nasıl ölçülür?';
 }
