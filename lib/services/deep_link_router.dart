@@ -52,6 +52,12 @@ class DeepLinkRouter {
   /// kullanıcıya boş/yarım bir özet gösterilmez.
   static const yilOzetiHost = 'yil-ozeti';
 
+  /// App Store In-App Event "2027 hedefini koy" (Ocak etkinliği, 10 Kas):
+  /// portföy hedefi sayfası (`showHedefSheet`, kapsam portföy). Sekme
+  /// değil bir sayfa açtığı için [hedefSekme]'ye girmez; köprü
+  /// ([hedefSayfasiIster]) Ana sayfaya geçip sayfayı kabuktan açtırır.
+  static const hedefHost = 'hedef';
+
   /// Tek varlık widget'ı dokunuşu — Swift `varlikWidgetClickURL` ve Kotlin
   /// `SandikVarlikWidgetProvider.VARLIK_WIDGET_CLICK_URI` ile birebir aynı
   /// (`sandik://varlik-widget?homeWidget=1`). Varlık kimliği taşımaz (iOS
@@ -71,6 +77,10 @@ class DeepLinkRouter {
       uri != null && uri.scheme == 'sandik' && uri.host == varlikWidgetHost
           ? 'varlik_widget'
           : 'home_widget';
+
+  /// `sandik://hedef` mi?
+  static bool hedefSayfasiIster(Uri? uri) =>
+      uri != null && uri.scheme == 'sandik' && uri.host == hedefHost;
 
   /// `sandik://enflasyon` mu?
   static bool reelGetiriIster(Uri? uri) =>

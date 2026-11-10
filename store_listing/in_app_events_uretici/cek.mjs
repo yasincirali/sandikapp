@@ -22,7 +22,7 @@ const sv = http.createServer((q, s) => {
 
 const out = process.argv[2] ?? path.join(kok, '..', 'ios', 'in_app_events');
 const b = await chromium.launch({ ...(process.env.CHROME ? { executablePath: process.env.CHROME } : {}) });
-for (const [s, ad] of [['enf', 'enflasyon_gunu'], ['yil', 'yil_sonu_ozeti']]) {
+for (const [s, ad] of [['enf', 'enflasyon_gunu'], ['yil', 'yil_sonu_ozeti'], ['hedef', 'hedef_2027']]) {
   for (const [w, h, ek] of [[1920, 1080, 'kart_1920x1080'], [1080, 1920, 'detay_1080x1920']]) {
     const p = await b.newPage({ viewport: { width: w, height: h } });
     p.on('console', m => console.log(s, m.text()));

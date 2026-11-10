@@ -20,8 +20,9 @@ import 'notification_service.dart';
 /// doldurur — Navigator'ı değiştirmez, yalnızca URI akışı verir.
 ///
 /// ## Kapsam
-/// `asset`, `enflasyon` ve `yil-ozeti` host'ları ele alınır (son ikisi App
-/// Store In-App Event bağlantıları, karar 6.1). `widget` / `live-activity` host'ları
+/// `asset`, `enflasyon`, `yil-ozeti` ve `hedef` host'ları ele alınır (son
+/// üçü App Store In-App Event bağlantıları, karar 6.1; `hedef` Ocak
+/// etkinliği, 10 Kas). `widget` / `live-activity` host'ları
 /// `HomeWidgetService` tarafından zaten karşılanıyor; aynı intent'i iki
 /// dinleyicinin işlemesi sekmeyi iki kez değiştirirdi (zararsız ama
 /// gereksiz) — bu yüzden burada bilinçli olarak yok sayılır.
@@ -37,6 +38,7 @@ class DeepLinkService {
               onNotFound: NotificationService.instance.showAssetNotFound,
             )),
         _openReel = NotificationService.instance.openReelGetiri,
+        _openHedef = NotificationService.instance.openHedef,
         _sekmeyeGit = ((i) => MainNavigationScreen.sekmeIstegi.value = i);
 
   /// Test için: hedef eylemler enjekte edilebilir.
@@ -44,14 +46,17 @@ class DeepLinkService {
   DeepLinkService.withHandler(
     this._openAsset, {
     void Function()? openReel,
+    void Function()? openHedef,
     void Function(int sekme)? sekmeyeGit,
   })  : _openReel = openReel ?? (() {}),
+        _openHedef = openHedef ?? (() {}),
         _sekmeyeGit = sekmeyeGit ?? ((_) {});
 
   static final DeepLinkService instance = DeepLinkService._();
 
   final void Function(String assetId) _openAsset;
   final void Function() _openReel;
+  final void Function() _openHedef;
   final void Function(int sekme) _sekmeyeGit;
   StreamSubscription<Uri>? _sub;
 
@@ -87,6 +92,10 @@ class DeepLinkService {
     }
     if (DeepLinkRouter.reelGetiriIster(uri)) {
       _openReel();
+      return true;
+    }
+    if (DeepLinkRouter.hedefSayfasiIster(uri)) {
+      _openHedef();
       return true;
     }
     // Yalnız etkinlik host'u: `widget` / `live-activity` sekme eşlemesi

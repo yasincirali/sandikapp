@@ -17,6 +17,9 @@ import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart' show balanceHiddenProvider;
+import '../services/daily_summary.dart';
+import '../widgets/hedef_sheet.dart' show showHedefSheet;
 import '../models/tekrar_al.dart' show birTaneDahaOnerilsinMi;
 import '../services/bugun_service.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
@@ -70,6 +73,12 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   /// bu ekranın state'ine erişemez; [sekmeIstegi] ile aynı kanal.
   static final aktifSekme = ValueNotifier<int>(0);
 
+  /// Portföy hedefi sayfasını açma isteği (`sandik://hedef`, Ocak In-App
+  /// Event). Sayfa `WidgetRef` istediği için kabuk açar; [sekmeIstegi] ile
+  /// aynı desen: soğuk açılışta kabuk kurulmadan yazılan istek `initState`
+  /// içinde okunur, tüketilince `false`.
+  static final hedefIstegi = ValueNotifier<bool>(false);
+
   @override
   ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
@@ -110,8 +119,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // İkon kısayolu (bkz. `HizliEylemler`): sekme isteğiyle aynı desen —
     // kabuk kurulmadan (kilit, giriş) gelen istek burada uygulanır.
     HizliEylemler.istek.addListener(_hizliEylemGeldi);
+    MainNavigationScreen.hedefIstegi.addListener(_hedefIstegiGeldi);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _hedefIstegiGeldi();
       CrashReporter.arkaPlan(HizliEylemler.kur(context.l10n),
           reason: 'MainNavigation.hizliEylemler');
       _hizliEylemGeldi();
@@ -186,6 +197,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     MainNavigationScreen.sekmeIstegi.removeListener(_sekmeIstegiGeldi);
     VarlikEklendi.kanal.removeListener(_varlikEklendi);
     HizliEylemler.istek.removeListener(_hizliEylemGeldi);
+    MainNavigationScreen.hedefIstegi.removeListener(_hedefIstegiGeldi);
     _fiyatTuruBagi?.call();
     EkranOlcumu.instance.sekmelerKapandi();
     super.dispose();
@@ -283,6 +295,22 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           ),
         );
     }
+  }
+
+  /// Bekleyen hedef isteğini uygular: portföy kapsamının hedef sayfası,
+  /// Bugün kartı ve Profil satırıyla aynı `showHedefSheet`. Toplam ve
+  /// bakiye gizleme o yüzeylerdeki gibi verilir (önizleme aynı sayı).
+  void _hedefIstegiGeldi() {
+    if (!MainNavigationScreen.hedefIstegi.value || !mounted) return;
+    MainNavigationScreen.hedefIstegi.value = false;
+    final durum = ref.read(portfolioProvider).valueOrNull;
+    final toplam = durum == null ? null : DailySummary.liveTotalTRY(durum);
+    CrashReporter.arkaPlan(
+      showHedefSheet(context, ref,
+          deger: toplam != null && toplam > 0 ? toplam : null,
+          gizli: ref.read(balanceHiddenProvider)),
+      reason: 'MainNavigation.hedefIstegi',
+    );
   }
 
   void _sekmeyeGec(int i) {

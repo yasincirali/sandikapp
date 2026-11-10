@@ -12,6 +12,20 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-10 Ocak etkinliği "2027 hedefini koy" (`sandik://hedef`)
+
+Yeni In-App Event taslağı `store_listing/ios/in_app_events/etkinlikler.json`
+› `hedef-2027-01`: etkinlik 11–25 Ocak 2027, yayın başlangıcı 4 Ocak,
+bağlantı portföy hedefi sayfasını açar. Görsel sahnesi `sahne.html`
+(`hedef`, metinsiz, tutar ima etmez); PNG'leri iş akışı kendisi üretir.
+Mağazaya hiçbir şey gönderilmedi.
+
+- [ ] Bağlantının çalıştığı build (`sandik://hedef`) mağazada olmalı;
+      eski sürümde bağlantı uygulamayı yalnız açar.
+- [ ] **4 Ocak'tan önce** (inceleme süresi için en geç 1 Ocak): Actions ›
+      "App Store etkinlikleri (taslak)" › `uygula` ✔. Taslak kurulur,
+      incelemeye gönderilmez; ASC'de görsel ve metni gör, sonra gönder.
+
 ## ⏳ 2026-11-10 ASO: anahtar kelime düzeltmesi, yeni 3. kare, bölgesel fiyat
 
 Dış bir ASO rehberiyle karşılaştırmadan çıkanlar; gerekçe ve ölçüm

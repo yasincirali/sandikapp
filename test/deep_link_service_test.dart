@@ -42,6 +42,20 @@ void main() {
     expect(sekmeler, [MainNavigationScreen.profilSekmesi]);
   });
 
+  test('sandik://hedef hedef sayfasını açar (kilit ve kabuk kapısından)',
+      () {
+    var hedef = 0;
+    final s = DeepLinkService.withHandler((_) {}, openHedef: () => hedef++);
+    expect(s.handle(Uri.parse('sandik://hedef')), isTrue);
+    expect(hedef, 1);
+    // Varsayılan eylem kilit kapısından geçer ve isteği kabuğa bırakır.
+    final ns =
+        File('lib/services/notification_service.dart').readAsStringSync();
+    expect(ns.contains('if (kilitKapisi.ertele(openHedef)) return;'), isTrue);
+    expect(ns.contains('MainNavigationScreen.hedefIstegi.value = true;'),
+        isTrue);
+  });
+
   test('tanınmayan şema / bozuk yol hiçbir şey yapmaz', () {
     final acilan = <String>[];
     final s = DeepLinkService.withHandler(acilan.add);

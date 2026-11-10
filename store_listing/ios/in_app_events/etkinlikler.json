@@ -69,6 +69,29 @@
           "uzun": "Your investor type, the year's return, how you did against inflation and your top asset, on shareable cards."
         }
       }
+    },
+    {
+      "referans": "hedef-2027-01",
+      "rozet": "SPECIAL_EVENT",
+      "amac": "APPROPRIATE_FOR_ALL_USERS",
+      "oncelik": "NORMAL",
+      "derin_baglanti": "sandik://hedef",
+      "yayin_baslangic": "2027-01-04T07:00:00Z",
+      "etkinlik_baslangic": "2027-01-11T07:00:00Z",
+      "etkinlik_bitis": "2027-01-25T20:59:00Z",
+      "gorsel": "hedef_2027",
+      "metin": {
+        "tr": {
+          "ad": "2027 hedefini koy",
+          "kisa": "Hedefini koy, ilerlemeni gör.",
+          "uzun": "Portföyün için bir hedef tutarı belirle. sandık bugün nerede olduğunu ve hedefe ne kadar kaldığını gösterir."
+        },
+        "en-US": {
+          "ad": "Set your 2027 goal",
+          "kisa": "Set a goal, see your progress.",
+          "uzun": "Pick a target amount for your portfolio. sandık shows where you are today and how far you have to go."
+        }
+      }
     }
   ]
 }

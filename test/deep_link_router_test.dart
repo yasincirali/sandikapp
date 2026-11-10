@@ -100,4 +100,18 @@ void main() {
           'performans ekranı değil: "${satirlar[MainNavigationScreen.performansSekmesi]}"',
     );
   });
+  // Ocak In-App Event (10 Kas): `sandik://hedef` portföy hedefi sayfası.
+  test('sandik://hedef hedef sayfasını ister, sekme eşlemesine girmez', () {
+    expect(DeepLinkRouter.hedefSayfasiIster(Uri.parse('sandik://hedef')),
+        isTrue);
+    expect(DeepLinkRouter.hedefSayfasiIster(Uri.parse('https://x.com/hedef')),
+        isFalse);
+    expect(DeepLinkRouter.hedefSayfasiIster(Uri.parse('sandik://enflasyon')),
+        isFalse);
+    expect(DeepLinkRouter.hedefSayfasiIster(null), isFalse);
+    // Sayfa kabuktan açılır; GÜNLÜK görünüm ya da sekme isteği üretmez.
+    expect(DeepLinkRouter.hedefSekme(Uri.parse('sandik://hedef')), isNull);
+    expect(DeepLinkRouter.gunlukGorunumIster(Uri.parse('sandik://hedef')),
+        isFalse);
+  });
 }

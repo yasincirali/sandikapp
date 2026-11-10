@@ -12,6 +12,9 @@
     yeşili sütunlar, TEK amber odak.
   * Uydurma sayı yok: enflasyon sahnesi TÜİK verisi (AYLIK), yıl sonu sahnesi
     kişiye özel olduğundan VERİ İMA ETMEZ (12 eşit dilimli yıl halkası).
+  * Hedef sahnesi (Ocak "2027 hedefini koy", 2026-11-10): hedef kişiye
+    özel, tutar ve oran İMA EDİLMEZ. Eşit adımlı ince yol + yolun sonunda
+    tek amber hedef halkası; dolu kısım yalnız "yol" fikri, eksen/ölçek yok.
 -->
 <html><head><meta charset="utf-8">
 <style>html,body{margin:0;background:#0B211C}svg{display:block}</style>
@@ -100,6 +103,29 @@ if (SAHNE === 'enf') {
   p(`<circle cx="${cx(N)}" cy="${oy}" r="${sg * .34}" fill="url(#altin)"/>`);
   // İnce halka: nokta "bekliyor" hissi, tek çizgi.
   p(`<circle cx="${cx(N)}" cy="${oy}" r="${sg * .58}" fill="none" stroke="${AMBER}" stroke-opacity=".45" stroke-width="${Math.max(2, W * .0014)}"/>`);
+} else if (SAHNE === 'hedef') {
+  // Hedef: soldan sağa eşit aralıklı yol noktaları (yılın 12 ayı), ilk
+  // yarısı kazanç yeşili, kalanı soluk; yolun sonunda amber hedef halkası.
+  // Noktalar eşit büyüklükte: büyüme ya da tutar ima etmez.
+  const my = dikey ? (kutu.y0 + kutu.y1) / 2 : kutu.y0 + (kutu.y1 - kutu.y0) * .55;
+  const gen = kutu.x1 - kutu.x0;
+  const R = Math.min(gen, kutu.y1 - kutu.y0) * (dikey ? .11 : .20);
+  const hedefX = kutu.x1 - R; // halka kutunun içinde kalır (dikeyde taşıyordu)
+  const N = 12, bas = kutu.x0 + gen * .04, son = hedefX - R * 1.5;
+  const adim = (son - bas) / (N - 1);
+  const kal = Math.max(3, W * .0026);
+  const yari = Math.floor(N / 2);
+  p(`<line x1="${bas}" y1="${my}" x2="${hedefX - R}" y2="${my}" stroke="rgba(214,240,226,0.22)" stroke-width="${kal}" stroke-linecap="round"/>`);
+  p(`<line x1="${bas}" y1="${my}" x2="${bas + adim * (yari - 1)}" y2="${my}" stroke="${KAZANC}" stroke-width="${kal * 1.6}" stroke-linecap="round"/>`);
+  const r = Math.max(5, adim * .14);
+  for (let i = 0; i < N; i++) {
+    const dolu = i < yari;
+    p(`<circle cx="${bas + adim * i}" cy="${my}" r="${r}" fill="${dolu ? KAZANC : 'none'}" stroke="${dolu ? KAZANC : SOLUK}" stroke-opacity="${dolu ? 1 : .5}" stroke-width="${Math.max(2, W * .0014)}"/>`);
+  }
+  // Hedef: dış ince halka, iç dolu amber; tek odak, parlamasız.
+  p(`<circle cx="${hedefX}" cy="${my}" r="${R}" fill="none" stroke="${AMBER}" stroke-opacity=".45" stroke-width="${Math.max(2, W * .0016)}"/>`);
+  p(`<circle cx="${hedefX}" cy="${my}" r="${R * .62}" fill="none" stroke="${AMBER}" stroke-opacity=".75" stroke-width="${Math.max(2, W * .0018)}"/>`);
+  p(`<circle cx="${hedefX}" cy="${my}" r="${R * .3}" fill="url(#altin)"/>`);
 } else {
   // Yıl sonu: 12 eşit dilimli halka (yılın ayları), Aralık altın ve halkadan
   // hafifçe dışarı taşmış; merkezde tek amber nokta. Veri ima etmez.

@@ -1256,6 +1256,19 @@ class NotificationService {
     ));
   }
 
+  /// `sandik://hedef` (Ocak In-App Event): portföy hedefi sayfası.
+  ///
+  /// Sayfa `WidgetRef` ister (hedef tercihleri provider'da); bu servis
+  /// Riverpod kapsamı dışında. Bu yüzden istek kabuğa bırakılır:
+  /// Ana sayfa sekmesi + [MainNavigationScreen.hedefIstegi]. Kabuk henüz
+  /// kurulmadıysa (giriş, açılış) istek bekler ve kurulunca uygulanır;
+  /// kilitliyse kilit açılınca (diğer derin bağlantılarla aynı kapı).
+  void openHedef() {
+    if (kilitKapisi.ertele(openHedef)) return;
+    MainNavigationScreen.sekmeIstegi.value = 0;
+    MainNavigationScreen.hedefIstegi.value = true;
+  }
+
   /// Dış bağlantının hedefi bulunamadığında hata ekranı. Navigator hazır
   /// değilse çağrılmaz — [openAssetPerformance] bunu zaten garanti eder.
   void showAssetNotFound() {
