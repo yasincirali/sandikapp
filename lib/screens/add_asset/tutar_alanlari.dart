@@ -254,13 +254,23 @@ extension _TutarAlanlari on _AddAssetScreenState {
   // ── Komisyon / masraf (opsiyonel) ─────────────────────────────────────────
   // Komisyon maliyete girmezse kâr olduğundan yüksek görünür. İşlem başına
   // toplam tutar girilir (birim başına değil) ve varlığın para birimindedir.
+  //
+  // Altında (fiziki altın, `AssetType.altin`) aynı alan "İşçilik / masraf"
+  // adını alır: kuyumcudan alan kişi işçiliği "komisyon" diye düşünmez ve
+  // gram fiyatına gömerek yazıyordu; o zaman maliyet piyasanın üstünde
+  // başlar, ilk gün zarar görünür. Alan ve maliyet hesabı aynı, yalnız ad
+  // ve not değişir.
   Widget _commissionBlock(ColorScheme cs) {
+    final altin = _s.isAltin;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Flexible(child: _fieldLabel(context.l10n.commission)),
+            Flexible(
+                child: _fieldLabel(altin
+                    ? context.l10n.commissionGold
+                    : context.l10n.commission)),
             const SizedBox(width: 6),
             Flexible(
               child: Text(context.l10n.optional,
@@ -292,7 +302,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         ),
         const SizedBox(height: 6),
         Text(
-          context.l10n.commissionNote,
+          altin ? context.l10n.commissionNoteGold : context.l10n.commissionNote,
           style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
       ],

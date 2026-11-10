@@ -85,6 +85,15 @@ Future<void> _ac(WidgetTester tester,
 
 double _y(WidgetTester tester, Finder f) => tester.getTopLeft(f.first).dy;
 
+/// Pozisyon kartının "Ayrıntı" düğmesi. Yasal ibarenin kısa biçimi de
+/// (2026-11-10) "Ayrıntı" bağlantısı taşıyor; katman testi onu saymaz.
+Finder _katmanAyrintisi() => find.byElementPredicate((e) {
+      final w = e.widget;
+      return w is Text &&
+          w.data == 'Ayrıntı' &&
+          e.findAncestorWidgetOfExactType<DisclaimerWidget>() == null;
+    });
+
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
@@ -104,7 +113,7 @@ void main() {
     expect(find.text('Pozisyonun'), findsOneWidget);
     expect(find.text('Alış fiyatın (ortalama)'), findsOneWidget);
     expect(find.text('Ödediğin toplam'), findsOneWidget);
-    expect(find.text('Ayrıntı'), findsNothing);
+    expect(_katmanAyrintisi(), findsNothing);
     expect(find.text('Analiz'), findsNothing);
     expect(find.text('Teknik sinyaller'), findsNothing);
     // Sinyal kartı fiyatın altında, panel en altta, ikisi de açık.
@@ -151,7 +160,9 @@ void main() {
     expect(tester.takeException(), isNull);
 
     // Ayrıntı açılır: eski yedi satır (dönem satırı dahil) yerinde.
-    await tester.tap(find.text('Ayrıntı'));
+    await tester.ensureVisible(_katmanAyrintisi());
+    await tester.pumpAndSettle(const Duration(milliseconds: 50));
+    await tester.tap(_katmanAyrintisi());
     await tester.pumpAndSettle(const Duration(milliseconds: 50));
     for (final etiket in [
       'Alış fiyatın (ortalama)',

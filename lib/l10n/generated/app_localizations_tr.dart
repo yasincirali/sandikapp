@@ -889,6 +889,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.';
 
   @override
+  String get commissionGold => 'İşçilik / masraf';
+
+  @override
+  String get commissionNoteGold =>
+      'Kuyumcuya ödediğin işçiliği buraya yaz; gram fiyatı piyasa fiyatıyla kalır, kâr/zarar doğru başlar.';
+
+  @override
   String totalCostTlEquivalent(String amount, String currency, String rate) {
     return '≈ $amount · 1 $currency = $rate';
   }
@@ -4064,6 +4071,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get todayClosedWord => 'Piyasa kapalı';
+
+  @override
+  String todayHalfDayClose(String time) {
+    return 'Bugün borsa $time\'da kapanır.';
+  }
+
+  @override
+  String todayHolidayTomorrow(String date) {
+    return 'Yarın borsa kapalı. Sonraki işlem günü: $date.';
+  }
 
   @override
   String get todayLiveWord => 'Canlı';

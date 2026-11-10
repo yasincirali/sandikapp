@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../services/bist_calendar.dart';
+import '../services/bugun_service.dart' show BugunService;
 import '../services/crash_reporter.dart';
 import '../services/tefas_service.dart';
 import '../utils/tr_format.dart' show dayKey;
@@ -35,8 +37,16 @@ import 'portfolio_provider.dart';
 /// - Bilinen sınır: kesim saatinden (çoğu fonda 13:30) sonra verilen emir
 ///   ertesi günün fiyatına gider; uygulama emrin saatini bilmez. Öneri
 ///   yine alım gününün fiyatını söyler, kullanıcı "Yok say" ile kapatır.
-///   Hafta sonu alımı işaretlenmez: o günün TEFAS fiyatı yoktur ve hangi
-///   iş gününe gideceği tatil takvimi olmadan kesin bilinemez.
+/// - Hafta sonu / resmî tatil alımı (2026-11-10, takvim artık istemcide —
+///   `BistTakvimi`): o günün TEFAS fiyatı yoktur; emir sonraki BIST iş
+///   gününün fiyatından gerçekleşir. İşaretin "alım günü" o iş gününe
+///   kaydırılır ([fonFiyatGunu]); öneri o günün fiyatı gelince çıkar,
+///   gelmeden yine yok. Kaydın kendi tarihi (lotun `addedDate`'i)
+///   DEĞİŞMEZ — kullanıcının girdiği gün. Eskiden hafta sonu alımı hiç
+///   işaretlenmiyordu: hangi iş gününe gideceği tatil takvimi olmadan
+///   kesin bilinemezdi. Takvimin kapsamadığı yılda ([BistTakvimi.
+///   sonKapsananYil] sonrası) bu hâlâ doğru; orada eski davranış sürer
+///   (hafta sonu işaretlenmez, hafta içi o günle eşlenir).
 @immutable
 class BekleyenFonAlimi {
   const BekleyenFonAlimi({
@@ -58,7 +68,9 @@ class BekleyenFonAlimi {
   /// Kullanıcının girdiği tutar — Güncelle'de değişmeyen şey.
   final double tutar;
 
-  /// Alım (= kayıt) günü, yerel takvim günü.
+  /// Fiyatın eşleneceği gün, yerel takvim günü: iş günü alımında kayıt
+  /// günü, hafta sonu/tatil alımında sonraki BIST iş günü ([fonFiyatGunu],
+  /// 2026-11-10). Ad eski (JSON `g`), anlam "alımın fiyat günü".
   final DateTime alimGunu;
 
   /// Kayıttaki adet ve birim fiyat: lot sonradan düzenlenirse (biri
@@ -133,10 +145,33 @@ bool _ayniGun(DateTime a, DateTime b) {
 bool _gundenSonra(DateTime a, DateTime gun) =>
     dayKey(a.toLocal()).isAfter(dayKey(gun.toLocal()));
 
+/// Bu gün verilen fon alımı hangi günün TEFAS fiyatından gerçekleşir?
+/// İş günüyse kendisi; hafta sonu ya da resmî tatilse sonraki BIST iş
+/// günü (gün başı). Takvimin kapsamadığı yılda dinî bayram bilinmez: hafta
+/// içi gün olduğu gibi döner (eski davranış), hafta sonu `null` — hedef
+/// gün uydurulmaz, işaret kurulmaz.
+///
+/// Kesim saati burada YOK (bilinen sınır, yukarıda): iş günü kesimden
+/// sonra verilen emir de o günle eşlenir.
+DateTime? fonFiyatGunu(DateTime islem) {
+  var gun = dayKey(islem.toLocal());
+  final haftaSonu = gun.weekday >= DateTime.saturday;
+  if (!BistTakvimi.yilKapsaniyor(gun.year)) return haftaSonu ? null : gun;
+  for (var i = 0; i < 20; i++) {
+    if (BugunService.islemGunuMu(gun)) {
+      // Yıl sınırını geçtiyse (31 Ara → Ocak) o yıl da kapsanmalı.
+      return BistTakvimi.yilKapsaniyor(gun.year) ? gun : null;
+    }
+    gun = DateTime(gun.year, gun.month, gun.day + 1);
+  }
+  return null;
+}
+
 /// Kayıtta işaret kurulsun mu? Yalnız fon + tutar kipi + işlem tarihi
-/// bugün (hafta içi) + fiyatı kullanıcı yazmamış + bilinen fiyat bugünün
-/// değil. Fiyatı kullanıcı yazdıysa onu biliyordur; bilinen fiyat zaten
-/// bugünün fiyatıysa adet doğrudur.
+/// bugün + fiyat günü belli ([fonFiyatGunu]; hafta sonu/tatilde sonraki iş
+/// günü) + fiyatı kullanıcı yazmamış + bilinen fiyat o günün değil.
+/// Fiyatı kullanıcı yazdıysa onu biliyordur; bilinen fiyat zaten o günün
+/// fiyatıysa adet doğrudur.
 bool fonAlimiIsaretlensinMi({
   required AssetType tur,
   required bool tutarModu,
@@ -147,9 +182,9 @@ bool fonAlimiIsaretlensinMi({
 }) {
   if (tur != AssetType.fon || !tutarModu || fiyatGirildi) return false;
   if (!_ayniGun(islemTarihi, simdi)) return false;
-  final g = simdi.toLocal().weekday;
-  if (g == DateTime.saturday || g == DateTime.sunday) return false;
-  if (bilinenFiyatGunu != null && _ayniGun(bilinenFiyatGunu, simdi)) {
+  final hedef = fonFiyatGunu(simdi);
+  if (hedef == null) return false;
+  if (bilinenFiyatGunu != null && _ayniGun(bilinenFiyatGunu, hedef)) {
     return false;
   }
   return true;

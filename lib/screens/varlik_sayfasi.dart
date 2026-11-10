@@ -732,9 +732,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
           type: k.type,
           subCategory: k.subCategory,
         ),
-      // AL/SAT sinyali gösteren her yüzey yasal ibareyi de taşır.
+      // AL/SAT sinyali gösteren her yüzey yasal ibareyi de taşır. Kısa
+      // biçim (2026-11-10): aynı tam metin beş yerde kutuydu; Performans
+      // gibi tek satır + "Ayrıntı", tam kutu yalnız sinyal ayarında.
       const SizedBox(height: SandikSpace.sm),
-      const DisclaimerWidget(),
+      const DisclaimerWidget(kisa: true),
       const SizedBox(height: SandikSpace.md),
       Text(
         portfoydeMi(ref, k)

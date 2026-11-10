@@ -239,4 +239,42 @@ void main() {
           findsOneWidget);
     });
   });
+
+  // Altında komisyon alanı "İşçilik / masraf" adını alır (kuyumcu işçiliği
+  // gram fiyatına gömülmesin); öteki türlerde metin aynen kalır.
+  group('komisyon alanı etiketi', () {
+    Future<void> ayrintiyiAc(WidgetTester tester) async {
+      final ac = find.text('Ayrıntı ekle (komisyon, not)');
+      await tester.ensureVisible(ac);
+      await tester.tap(ac);
+      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+    }
+
+    testWidgets('altında işçilik etiketi ve notu', (tester) async {
+      await _ac(tester,
+          kapi: _SatisliKapi(),
+          ekran: const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin));
+      await ayrintiyiAc(tester);
+      expect(find.text('İşçilik / masraf'), findsOneWidget);
+      expect(
+          find.text('Kuyumcuya ödediğin işçiliği buraya yaz; gram fiyatı '
+              'piyasa fiyatıyla kalır, kâr/zarar doğru başlar.'),
+          findsOneWidget);
+      expect(find.text('Komisyon / masraf'), findsNothing);
+    });
+
+    testWidgets('hissede eski komisyon etiketi', (tester) async {
+      await _ac(tester,
+          kapi: _SpotKapi(100),
+          ekran: const AddAssetScreen(
+              prefillTicker: 'AAPL', prefillType: AssetType.hisse));
+      await ayrintiyiAc(tester);
+      expect(find.text('Komisyon / masraf'), findsOneWidget);
+      expect(
+          find.text('Alım-satım komisyonu maliyete eklenir; kâr/zarar '
+              'gerçek rakamı gösterir.'),
+          findsOneWidget);
+      expect(find.text('İşçilik / masraf'), findsNothing);
+    });
+  });
 }

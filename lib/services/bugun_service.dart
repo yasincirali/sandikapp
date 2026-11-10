@@ -42,6 +42,31 @@ class PiyasaKapaliSatiri extends BugunSatiri {
   final DateTime sonrakiAcilis;
 }
 
+/// Takvim notu — tatilden önceki iş günü ya da arife sabahı (2026-11-10).
+///
+/// Neden: tatil günü Bugün kartı "Piyasa kapalı" diyordu ama bunu kullanıcı
+/// ancak o sabah görüyordu; alım/satım planı olan biri bir gün önce bilmek
+/// ister. `BistTakvimi` istemcide olduğundan bilgi uydurmadan verilebilir.
+/// Tek satır, yalnız o gün; hesap [BugunService.tatilOncesiSatiri].
+///
+/// [kapanis] doluysa arife ("bugün 12:30'da kapanır"), değilse "yarın
+/// kapalı" ve [sonrakiIslemGunu] tatil sonrası ilk işlem günüdür. Fon kesim
+/// saati yazılmaz: fonun kendi kesimi var, borsa saatiyle karışır.
+class TatilOncesiSatiri extends BugunSatiri {
+  const TatilOncesiSatiri.arife({required DateTime this.kapanis})
+      : sonrakiIslemGunu = null;
+  const TatilOncesiSatiri.yarinKapali({required DateTime this.sonrakiIslemGunu})
+      : kapanis = null;
+
+  /// Yarım günün kapanış anı (arife); "yarın kapalı" satırında null.
+  final DateTime? kapanis;
+
+  /// Tatil sonrası ilk işlem günü (gün başı); arifede null.
+  final DateTime? sonrakiIslemGunu;
+
+  bool get arife => kapanis != null;
+}
+
 /// Portföy hedefi: `hedefTRY <= 0` ise "hedef belirle" çağrısıdır.
 class HedefSatiri extends BugunSatiri {
   const HedefSatiri({required this.hedefTRY, required this.deger});
@@ -105,6 +130,7 @@ class BugunKartiVerisi {
     required this.hedef,
     this.reel,
     this.kapaliSoylenir = false,
+    this.takvimNotu,
   });
 
   /// Günün hareketi ya da "piyasa kapalı"; seri yoksa `null`.
@@ -122,6 +148,10 @@ class BugunKartiVerisi {
   /// Karışık portföyde altın/döviz/kripto hafta sonu ve gece de işler;
   /// başlık orada kapalılık değil canlılık söyler.
   final bool kapaliSoylenir;
+
+  /// Tatil öncesi / arife notu; çoğu gün null. Birincil satırın yerini
+  /// almaz, altında ayrı tek satırdır (birincil günün hareketini söyler).
+  final TatilOncesiSatiri? takvimNotu;
 }
 
 abstract final class BugunService {
@@ -170,6 +200,46 @@ abstract final class BugunService {
     return bugunAcilis.add(const Duration(days: 1));
   }
 
+  /// Tatil öncesi / arife notu ya da null — SAF, en fazla bir satır.
+  ///
+  /// Kurallar (2026-11-10):
+  ///   · Bugün işlem günü olmalı; tatil ya da hafta sonu içinde not yok.
+  ///   · Arife (yarım gün) kapanıştan ÖNCE: "bugün 12:30'da kapanır".
+  ///     Kapanıştan sonra ertesi gün tatilse "yarın kapalı"ya döner —
+  ///     sabah daha acil olan söylenir, öğleden sonra sıradaki.
+  ///   · Yarın RESMÎ tatilse (hafta sonu değil — hafta sonunu herkes bilir,
+  ///     her Cuma satır çıkması gürültü olurdu): "yarın kapalı" + sonraki
+  ///     işlem günü, takvimden yürüyerek.
+  ///   · Takvimin kapsamadığı yılda (bugünün ya da sonraki işlem gününün
+  ///     yılı) not yok: dinî bayram orada BİLİNMEZ, "sonraki işlem günü"
+  ///     uydurma olur (`BistTakvimi` kural 1).
+  static TatilOncesiSatiri? tatilOncesiSatiri(DateTime now) {
+    if (!BistTakvimi.yilKapsaniyor(now.year) || !islemGunuMu(now)) {
+      return null;
+    }
+    final gun = dayKey(now);
+    if (BistTakvimi.yarimGunMu(now)) {
+      final kapanis =
+          gun.add(const Duration(minutes: BistTakvimi.yarimGunKapanisDk));
+      if (now.isBefore(kapanis)) {
+        return TatilOncesiSatiri.arife(kapanis: kapanis);
+      }
+    }
+    final yarin = DateTime(gun.year, gun.month, gun.day + 1);
+    if (yarin.weekday >= DateTime.saturday || !BistTakvimi.tatilMi(yarin)) {
+      return null;
+    }
+    var sonraki = yarin;
+    for (var i = 0; i < 20; i++) {
+      sonraki = DateTime(sonraki.year, sonraki.month, sonraki.day + 1);
+      if (islemGunuMu(sonraki)) {
+        if (!BistTakvimi.yilKapsaniyor(sonraki.year)) return null;
+        return TatilOncesiSatiri.yarinKapali(sonrakiIslemGunu: sonraki);
+      }
+    }
+    return null;
+  }
+
   /// Kartı kurar.
   ///
   /// [ozet] gün içi seri henüz gelmediyse `null`; o zaman birincil satır
@@ -201,11 +271,24 @@ abstract final class BugunService {
       birincil = PiyasaKapaliSatiri(sonrakiAcilis: sonrakiAcilis(now));
     }
 
+    // Takvim notu "Piyasa kapalı" satırıyla çakışmasın: kapanıştan sonra
+    // kapalı satırı başlıkta zaten tatil sonrası açılışı söylüyor
+    // ("Pazartesi 10:00 açılır"); aynı bilgiyi ikinci kez yazmayız. Açılış
+    // öncesinde kapalı satırı BUGÜN 10:00'ı söyler — not tamamlayıcıdır.
+    var takvimNotu = tatilOncesiSatiri(now);
+    if (takvimNotu != null &&
+        !takvimNotu.arife &&
+        birincil is PiyasaKapaliSatiri &&
+        dayKey(birincil.sonrakiAcilis) != dayKey(now)) {
+      takvimNotu = null;
+    }
+
     return BugunKartiVerisi(
       birincil: birincil,
       hedef: HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger),
       reel: reel,
       kapaliSoylenir: yalnizcaBorsa,
+      takvimNotu: takvimNotu,
     );
   }
 }

@@ -424,7 +424,9 @@ extension _Kayit on _AddAssetScreenState {
         );
         // Fon + tutar kipi + bugün: adet bilinen (dünkü) fiyatla; alım
         // gününün TEFAS fiyatı gelince satırda öneri (Ar-Ge 7 Kas 14:30
-        // #1). Kayıt aynı kalır, işaret yalnız bu cihazda.
+        // #1). Kayıt aynı kalır, işaret yalnız bu cihazda. Hafta sonu /
+        // tatil alımında işaret sonraki BIST iş gününün fiyatını bekler
+        // (`fonFiyatGunu`, 2026-11-10); lotun tarihi girilen gün kalır.
         final lotId = portfoy.sonEklenenLotId;
         final tutar = _parse(_tutar.text);
         final bilinenGun = TefasService.instance.fiyatTarihi(ticker);
@@ -447,7 +449,7 @@ extension _Kayit on _AddAssetScreenState {
                       .toUpperCase()
                       .replaceFirst('TEFAS:', ''),
                   tutar: tutar,
-                  alimGunu: _addedDate,
+                  alimGunu: fonFiyatGunu(_addedDate) ?? _addedDate,
                   kayitAdet: qty,
                   kayitFiyat: price,
                   kayitFiyatGunu: bilinenGun,

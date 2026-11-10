@@ -1831,11 +1831,12 @@ class _SignalsBottomSheet extends ConsumerWidget {
                           ],
                           // Uyarı listenin SONUNDA, kaydırmayla gelir (Ar-Ge
                           // 2 Kas 08:45 tasarım 1): sayfanın dibine sabitken
-                          // son kartı kesiyordu. Tek satıra katlanmadı: bu
-                          // sayfa sinyal gösteriyor, tam metin görünür kalır
-                          // (`signal_disclaimer_coverage_test`).
+                          // son kartı kesiyordu. Kısa biçim (2026-11-10):
+                          // aynı tam metin beş yerde kutuydu; Performans
+                          // gibi tek satır + "Ayrıntı" (tam metin alt
+                          // sayfada). Tam kutu yalnız sinyal ayarında.
                           const SizedBox(height: SandikSpace.xs),
-                          const DisclaimerWidget(),
+                          const DisclaimerWidget(kisa: true),
                         ],
                       ),
                     ),
@@ -1845,7 +1846,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
                       SandikSpace.screenH(context), SandikSpace.md),
-                  child: const DisclaimerWidget(),
+                  child: const DisclaimerWidget(kisa: true),
                 )
               else
                 const SizedBox(height: SandikSpace.xs),

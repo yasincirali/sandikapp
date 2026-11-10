@@ -1622,6 +1622,18 @@ abstract class AppLocalizations {
   /// **'Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.'**
   String get commissionNote;
 
+  /// No description provided for @commissionGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşçilik / masraf'**
+  String get commissionGold;
+
+  /// No description provided for @commissionNoteGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kuyumcuya ödediğin işçiliği buraya yaz; gram fiyatı piyasa fiyatıyla kalır, kâr/zarar doğru başlar.'**
+  String get commissionNoteGold;
+
   /// Dövizli alımın toplam maliyet kartında TL karşılığı ve kullanılan kur
   ///
   /// In tr, this message translates to:
@@ -6776,6 +6788,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Piyasa kapalı'**
   String get todayClosedWord;
+
+  /// Bugün kartı: arife (yarım gün) sabahı, seans kapanmadan
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün borsa {time}\'da kapanır.'**
+  String todayHalfDayClose(String time);
+
+  /// Bugün kartı: resmî tatilden önceki iş günü; date = tatil sonrası ilk işlem günü
+  ///
+  /// In tr, this message translates to:
+  /// **'Yarın borsa kapalı. Sonraki işlem günü: {date}.'**
+  String todayHolidayTomorrow(String date);
 
   /// No description provided for @todayLiveWord.
   ///

@@ -935,6 +935,15 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           veriYok: gunluk ? veriYok : donemVeriYok,
           veriYokMetni: gunluk ? null : context.l10n.todayPeriodNoData,
         ),
+        // Tatil öncesi / arife notu (2026-11-10): yalnız Bugün görünümünde —
+        // dönem görünümü geçmişi anlatır, yarının takvimi orada yersiz.
+        if (gunluk && veri.takvimNotu != null) ...[
+          const SizedBox(height: SandikSpace.xs),
+          Text(
+            _takvimNotuMetni(veri.takvimNotu!),
+            style: context.t.labelMedium?.copyWith(color: context.c.text58),
+          ),
+        ],
         if (seriCiz || (!gizli && egriBekliyor)) ...[
           // Seri açılış fiyat turunu bekliyorsa (`_turBitinceYukle`) eğrinin
           // yeri İSKELETLE tutulur. Eskiden hiç yer ayrılmıyordu; tur bitince
@@ -989,6 +998,23 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ..._hedefBolumu(veri.hedef, gizli),
       ],
     );
+  }
+
+  /// "Bugün borsa 12:30'da kapanır." / "Yarın borsa kapalı. Sonraki işlem
+  /// günü: 4 Ocak Pazartesi." Saat ve gün hesaptan (`BistTakvimi`); burada
+  /// yalnız biçim.
+  String _takvimNotuMetni(TatilOncesiSatiri n) {
+    final l10n = context.l10n;
+    final kapanis = n.kapanis;
+    if (kapanis != null) {
+      return l10n.todayHalfDayClose(DateFormat.Hm().format(kapanis));
+    }
+    // Tarih dili cümlenin dilinden (`tarihDili`), `_dil`'den değil: l10n
+    // delegesi yokken cümle Türkçe'ye düşer, gün adı da Türkçe kalsın.
+    final dil = context.tarihDili;
+    final desen = dil == 'en_US' ? 'EEEE, MMMM d' : 'd MMMM EEEE';
+    return l10n.todayHolidayTomorrow(
+        DateFormat(desen, dil).format(n.sonrakiIslemGunu!));
   }
 
   /// Dönem görünümünün başlık adayları: "Hafta · 29 Eki 26 - bugün" →
@@ -1198,6 +1224,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   void _gosterimiOlc(BugunKartiVerisi veri, bool oynayanVar, DateTime now) {
     final turler = [
       if (veri.birincil != null) _tur(veri.birincil!),
+      if (veri.takvimNotu != null) _tur(veri.takvimNotu!),
       if (veri.reel != null) _tur(veri.reel!),
       if (oynayanVar) 'oynayan',
       _tur(veri.hedef),
@@ -1215,6 +1242,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         PiyasaKapaliSatiri() => 'kapali',
         HedefSatiri() => s.belirlenmedi ? 'hedef_yok' : 'hedef',
         ReelGetiriSatiri() => 'reel',
+        // Arife ve "yarın kapalı" ayrı türler: hangisinin işe yaradığı ayrı
+        // ölçülsün (2026-11-10).
+        TatilOncesiSatiri() => s.arife ? 'arife' : 'tatil_oncesi',
       };
 
   /// Dokunuş ölçümü — satırın kendi eylemini sarar.
