@@ -23,5 +23,10 @@
     <style name="SandikVarlikSecimTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/widget_bg</item>
         <item name="android:windowLightStatusBar">true</item>
+        <!-- Çubuklar şeffaf: zemin decor'dan görünür. Kodda `Window.setStatusBarColor`/
+             `setNavigationBarColor` çağrılmaz (Android 15'te kullanımdan kalktı, Play
+             uyarısı 2026-11-10); tema özniteliği aynı görünümü her sürümde verir. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

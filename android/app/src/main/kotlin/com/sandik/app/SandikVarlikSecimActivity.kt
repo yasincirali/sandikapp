@@ -147,10 +147,10 @@ class SandikVarlikSecimActivity : Activity() {
         findViewById<TextView>(R.id.secim_aciklama).setTextColor(getColor(p.textMuted))
         findViewById<TextView>(R.id.secim_bos).setTextColor(getColor(p.textMuted))
 
-        // Android 15+ kenardan kenara: çubuklar şeffaf, zemin decor'dan
-        // görünür; bu iki satır orada etkisizdir, altında çubuğu boyar.
-        window.statusBarColor = zemin
-        window.navigationBarColor = zemin
+        // Çubukların şeffaflığı temadan gelir (SandikVarlikSecimTheme):
+        // zemin decor'dan görünür. `Window.setStatusBarColor` /
+        // `setNavigationBarColor` Android 15'te kullanımdan kalktığı için
+        // (Play uyarısı, 2026-11-10) kodda çağrılmaz.
 
         // Açık zeminde KOYU ikon, koyu zeminde açık ikon.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
