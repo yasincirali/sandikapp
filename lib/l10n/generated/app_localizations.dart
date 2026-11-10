@@ -16956,6 +16956,24 @@ abstract class AppLocalizations {
   /// **'Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.'**
   String get kilometreTaslariNot;
 
+  /// Kâr zirvesi kilometre taşının başlığı; tutar fmtTRY ile.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam kârın en yüksek seviyesinde: {tutar}'**
+  String kilometreKarZirvesiBaslik(String tutar);
+
+  /// No description provided for @kilometreKarZirvesiGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kâr, portföy değerinden yatırdığın net tutar çıkarılarak bulunur.'**
+  String get kilometreKarZirvesiGovde;
+
+  /// Paylaşım kartı başlığı; kart tutar göstermez.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam kârım en yüksek seviyesinde'**
+  String get kilometreKarZirvesiPaylas;
+
   /// No description provided for @bosCanAciklama.
   ///
   /// In tr, this message translates to:

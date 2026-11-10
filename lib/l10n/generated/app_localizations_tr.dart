@@ -10303,6 +10303,18 @@ class AppLocalizationsTr extends AppLocalizations {
       'Geçtiğin eşik kalıcıdır; piyasa düşse de taş yerinde kalır.';
 
   @override
+  String kilometreKarZirvesiBaslik(String tutar) {
+    return 'Toplam kârın en yüksek seviyesinde: $tutar';
+  }
+
+  @override
+  String get kilometreKarZirvesiGovde =>
+      'Kâr, portföy değerinden yatırdığın net tutar çıkarılarak bulunur.';
+
+  @override
+  String get kilometreKarZirvesiPaylas => 'Toplam kârım en yüksek seviyesinde';
+
+  @override
   String get bosCanAciklama =>
       'Fiyat alarmı kurduğunda, hedefe gelince burada ve bildirimde haber veririz.';
 

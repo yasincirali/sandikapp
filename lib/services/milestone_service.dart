@@ -1,11 +1,13 @@
 import '../models/asset.dart';
 import '../models/position.dart';
+import '../utils/tr_format.dart';
 import 'birikim_serisi.dart';
+import 'para_agirlikli_getiri.dart' show getiriAkisi;
 
 /// Geçilen bir kilometre taşı.
 class Milestone {
   /// `portfolio_value` | `gold_count` | `portfolio_age` | `diversification`
-  /// | `contribution_streak`
+  /// | `contribution_streak` | `profit_high`
   final String kind;
 
   /// Eşiğin kimliği — aynı eşik iki kez kutlanmasın diye.
@@ -288,6 +290,10 @@ class MilestoneService {
       case 'contribution_streak':
         final ay = int.tryParse(value.replaceAll('m', ''));
         return ay != null && streakMonths.contains(ay) ? _seriTasi(ay) : null;
+      // `profit_high` bilerek rozete dönmez: "en yüksek seviyesinde" bir
+      // ANIN cümlesidir, kalıcı bir eşik değil. Şeritte haftalar sonra
+      // aynı cümleyi göstermek, kâr o zirveden inmişken yanlış olurdu.
+      // Kayıt yalnız bir sonraki zirvenin kıyas tabanıdır ([karZirvesi]).
     }
     return null;
   }
@@ -436,6 +442,152 @@ class MilestoneService {
     return '${(v / 1000).toStringAsFixed(0)} bin ₺';
   }
 
+  // ---------------------------------------------------------------------
+  // Toplam kâr zirvesi (müşteri raporu 10 Kas; ücretsiz)
+  // ---------------------------------------------------------------------
+
+  /// Kâr zirvesi taşının türü. Sunucu `milestones.kind` sütununda serbest
+  /// metin; şema değişmedi. Eski sürüm bu türü tanımaz ve [anahtardan]
+  /// `null` döndüğü için yok sayar (geri uyumlu).
+  static const karZirvesiTuru = 'profit_high';
+
+  /// Seri en az bu kadar geriye gitmeli. Birkaç günlük portföyde her
+  /// küçük oynama "en yüksek kâr" olurdu; an değil gürültü.
+  static const karZirvesiAsgariGecmis = Duration(days: 30);
+
+  /// Yeni kâr önceki zirveyi en az %5 aşmalı. Zirveye yakın gezinen
+  /// portföy her gün bir kuruş yeni rekor kırar; eşiksiz taş her hafta
+  /// gelir ve anlamını yitirirdi.
+  static const karZirvesiArtis = 1.05;
+
+  /// İki kâr zirvesi kaydı arasında en az bu kadar süre. Aylık kutlama
+  /// sınırı (`MilestoneRepository.canCelebrate`) ayrıca geçerli; bu sınır
+  /// sessiz kayıtların da sıklığını tutar.
+  static const karZirvesiAraligi = Duration(days: 7);
+
+  /// Günlük ızgarada iki nokta arasında kabul edilen en büyük boşluk.
+  /// Izgara hafta sonunu da üretir (`HistoryService.gridSlotlari`); daha
+  /// büyük boşluk eksik veridir.
+  static const _karAzamiBosluk = Duration(days: 2);
+
+  /// Kayıtlı kâr zirvelerinin en yükseği ve en son kaydın günü.
+  ///
+  /// Kayıt biçimi `profit_high:YYYY-MM-DD:tutar` (tutar tam ₺, eksi
+  /// olabilir). Ayrı bir tercih anahtarı yerine mevcut `milestones`
+  /// tablosu kullanıldı: diğer taşlar gibi cihazlar arası taşınır, yeni
+  /// kalıcılık katmanı ve göç gerekmez. Bozuk satır yok sayılır.
+  static ({double? zirve, DateTime? sonGun}) karZirvesiKaydi(
+      Set<String> kayitli) {
+    double? zirve;
+    DateTime? sonGun;
+    const onek = '$karZirvesiTuru:';
+    for (final k in kayitli) {
+      if (!k.startsWith(onek)) continue;
+      final parca = k.substring(onek.length);
+      final i = parca.lastIndexOf(':');
+      if (i <= 0) continue;
+      final gun = DateTime.tryParse(parca.substring(0, i));
+      final tutar = double.tryParse(parca.substring(i + 1));
+      if (gun == null || tutar == null) continue;
+      if (zirve == null || tutar > zirve) zirve = tutar;
+      if (sonGun == null || gun.isAfter(sonGun)) sonGun = gun;
+    }
+    return (zirve: zirve, sonGun: sonGun);
+  }
+
+  /// Haftalık sınır dolmadı mı? Çağıran seriyi indirmeden önce bakar;
+  /// sınır doluysa ağa hiç çıkılmaz.
+  static bool karZirvesiBekleyebilir(Set<String> kayitli, DateTime now) {
+    final son = karZirvesiKaydi(kayitli).sonGun;
+    return son == null || dayKey(now).difference(son) >= karZirvesiAraligi;
+  }
+
+  /// Toplam kâr yeni bir zirvede mi?
+  ///
+  /// **Kâr = portföy değeri − net yatırılan**, Performans grafiğinin
+  /// "Yatırdığın" çizgisiyle aynı tanım: değer [seri]'den (Performans'ın
+  /// kanonik serisi, `DonemOzetiYukleyici.seri`; yeni fiyat merdiveni
+  /// kurulmaz, fiyat kaynağı sözleşmesi), net yatırılan [lotlar]ın serinin
+  /// son gününe kadarki `getiriAkisi` toplamı (alım +, satış ele geçen −,
+  /// nakit temettü −). Para yatırmak değeri de net yatırılanı da aynı
+  /// tutarda artırır; kâr değişmez, taş açılmaz ("birikimi kutla, işlemi
+  /// değil" ilkesinin piyasa tarafı: kutlanan şey piyasanın getirisi).
+  ///
+  /// `null` döner (taş yok) eğer:
+  /// * [eksikBilesen] (bir bileşenin fiyatı hiç gelmedi, seri tohumla
+  ///   taşındı) ya da seride boşluk, sıfır, sonsuz değer var — uydurma
+  ///   sayıyla zirve ilan edilmez;
+  /// * seri [karZirvesiAsgariGecmis]'ten kısa ya da son noktası bayat;
+  /// * son kayıt [karZirvesiAraligi] içinde;
+  /// * önceki zirve varken yeni kâr ≤ 0 ya da ≤ zirve × [karZirvesiArtis].
+  ///
+  /// Hiç kayıt yoksa `ilk: true` döner: taban kaydedilir, kutlanmaz.
+  /// Özelliğin ilk açıldığı gün kârda olan herkese "zirvedesin" demek bir
+  /// an değil, veri girişi olurdu (`ayir` içindeki `ilkKez` ile aynı ilke).
+  static ({Milestone tas, bool ilk})? karZirvesi({
+    required Map<int, double> seri,
+    required List<Asset> lotlar,
+    required Set<String> kayitli,
+    required DateTime now,
+    bool eksikBilesen = false,
+  }) {
+    if (eksikBilesen || seri.isEmpty) return null;
+    final ts = seri.keys.toList()..sort();
+    // Baştaki sıfırlar veri yokluğudur (ilk alımdan önce); sonrasındaki
+    // her nokta ölçüm olmalı.
+    var bas = 0;
+    while (bas < ts.length && (seri[ts[bas]] ?? 0) <= 0) {
+      bas++;
+    }
+    if (bas >= ts.length) return null;
+    for (var i = bas; i < ts.length; i++) {
+      final y = seri[ts[i]];
+      if (y == null || !y.isFinite || y <= 0) return null;
+      if (i > bas &&
+          ts[i] - ts[i - 1] > _karAzamiBosluk.inMilliseconds) {
+        return null;
+      }
+    }
+    final ilkAn = DateTime.fromMillisecondsSinceEpoch(ts[bas]);
+    final sonAn = DateTime.fromMillisecondsSinceEpoch(ts.last);
+    if (sonAn.difference(ilkAn) < karZirvesiAsgariGecmis) return null;
+    if (dayKey(now).difference(dayKey(sonAn)) > _karAzamiBosluk) return null;
+
+    final kayit = karZirvesiKaydi(kayitli);
+    if (!karZirvesiBekleyebilir(kayitli, now)) return null;
+
+    final sonGunMs = dayKey(sonAn).millisecondsSinceEpoch;
+    var net = 0.0;
+    for (final a in lotlar) {
+      if (dayKey(a.addedDate).millisecondsSinceEpoch <= sonGunMs) {
+        net += getiriAkisi(a);
+      }
+    }
+    final kar = seri[ts.last]! - net;
+    final tas = _karTasi(dayKey(now), kar.roundToDouble());
+
+    final zirve = kayit.zirve;
+    if (zirve == null) return (tas: tas, ilk: true);
+    if (kar <= 0 || kar <= zirve * karZirvesiArtis) return null;
+    return (tas: tas, ilk: false);
+  }
+
+  static Milestone _karTasi(DateTime gun, double kar) {
+    final g = '${gun.year.toString().padLeft(4, '0')}-'
+        '${gun.month.toString().padLeft(2, '0')}-'
+        '${gun.day.toString().padLeft(2, '0')}';
+    // Başlık ve gövde burada Türkçe yedektir; kutlama sayfası bu türü
+    // `context.l10n` ile yazar (İngilizce arayüz), tutar [rank]'tan.
+    return Milestone(
+      kind: karZirvesiTuru,
+      value: '$g:${kar.toStringAsFixed(0)}',
+      rank: kar,
+      title: 'Toplam kârın en yüksek seviyesinde: ${fmtTRY(kar)}',
+      body: 'Kâr, portföy değerinden yatırdığın net tutar çıkarılarak '
+          'bulunur.',
+    );
+  }
+
   /// Kutlanacak TEK eşik.
   ///
   /// Ayda en fazla bir kutlama yapılır (bkz. RETENTION_STRATEJISI.md §5.E);
@@ -530,7 +682,9 @@ class MilestoneService {
       'gold_count',
       'diversification',
     ];
-    for (final kind in oncelik) {
+    // `profit_high` en sonda: piyasanın getirdiği bir an, kullanıcının
+    // kendi birikiminden (değer, altın, çeşitlilik) önce gelmez.
+    for (final kind in [...oncelik, karZirvesiTuru]) {
       final eslesen = yeniler.where((m) => m.kind == kind).toList();
       if (eslesen.isEmpty) continue;
       // Aynı türde birden çok yeni eşik varsa en yükseği kutlanır.

@@ -10435,6 +10435,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'A milestone you pass stays yours, even if the market drops.';
 
   @override
+  String kilometreKarZirvesiBaslik(String tutar) {
+    return 'Your total gain is at its highest: $tutar';
+  }
+
+  @override
+  String get kilometreKarZirvesiGovde =>
+      'Gain is your portfolio value minus the net amount you put in.';
+
+  @override
+  String get kilometreKarZirvesiPaylas => 'My total gain is at its highest';
+
+  @override
   String get bosCanAciklama =>
       'Set a price alert and we will tell you here and in a notification when it hits.';
 
