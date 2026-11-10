@@ -1,20 +1,21 @@
 package com.sandik.app
 
-import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsetsController
 import android.widget.BaseAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 
 /**
  * Tek varlık widget'ının seçim ekranı — iOS'taki App Intents "Varlık seç"
@@ -36,7 +37,16 @@ import android.widget.TextView
  * başlatır). Bu yüzden gelen widget kimliğinin BU sağlayıcıya ait olduğu
  * doğrulanır; değilse ekran hiçbir şey yazmadan kapanır.
  */
-class SandikVarlikSecimActivity : Activity() {
+class SandikVarlikSecimActivity : ComponentActivity() {
+
+    private companion object {
+        /**
+         * Açık temada, açık ikon çizemeyen eski sürümlerde (API < 23)
+         * beyaz ikonun okunması için çubuğa düşen yarı saydam perde.
+         * androidx'in varsayılan perdesiyle aynı ton.
+         */
+        val ESKI_SURUM_PERDESI = Color.argb(0x80, 0x1B, 0x1B, 0x1B)
+    }
 
     private var widgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
@@ -78,8 +88,21 @@ class SandikVarlikSecimActivity : Activity() {
         Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
 
     private fun kur() {
-        setContentView(R.layout.sandik_varlik_secim)
         val p = WidgetPaleti(SandikVarlikWidgetProvider.acikTemaMi(this))
+        // Kenardan kenara her sürümde (Play "uçtan uca ekran" uyarısı,
+        // 2026-11-11): çubuklar şeffaf, zemin decor'dan görünür, içerik
+        // kökteki `fitsSystemWindows` ile çubukların altına girmez. İkon
+        // rengi sistemin değil UYGULAMANIN temasına göre: açık zeminde koyu
+        // ikon. Eski `statusBarColor`/`navigationBarColor` boyaması ve elle
+        // ikon bayrakları bunun yerine geçti (Android 15'te kullanımdan
+        // kalktılar).
+        val stil = if (p.acik) {
+            SystemBarStyle.light(Color.TRANSPARENT, ESKI_SURUM_PERDESI)
+        } else {
+            SystemBarStyle.dark(Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(statusBarStyle = stil, navigationBarStyle = stil)
+        setContentView(R.layout.sandik_varlik_secim)
         temayiUygula(p)
 
         val paket = SandikVarlikWidgetProvider.paketiOku(this)
@@ -146,27 +169,6 @@ class SandikVarlikSecimActivity : Activity() {
         findViewById<TextView>(R.id.secim_baslik).setTextColor(getColor(p.textPrimary))
         findViewById<TextView>(R.id.secim_aciklama).setTextColor(getColor(p.textMuted))
         findViewById<TextView>(R.id.secim_bos).setTextColor(getColor(p.textMuted))
-
-        // Android 15+ kenardan kenara: çubuklar şeffaf, zemin decor'dan
-        // görünür; bu iki satır orada etkisizdir, altında çubuğu boyar.
-        window.statusBarColor = zemin
-        window.navigationBarColor = zemin
-
-        // Açık zeminde KOYU ikon, koyu zeminde açık ikon.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val maske = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
-                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-            window.insetsController?.setSystemBarsAppearance(if (p.acik) maske else 0, maske)
-        } else {
-            var bayrak = window.decorView.systemUiVisibility
-            bayrak = if (p.acik) bayrak or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                     else bayrak and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                bayrak = if (p.acik) bayrak or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-                         else bayrak and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-            }
-            window.decorView.systemUiVisibility = bayrak
-        }
     }
 
     private inner class SecimAdapter(

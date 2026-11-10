@@ -102,6 +102,11 @@ tasks.matching { it.name.contains("Release") && it.name.startsWith("package") }
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    // `enableEdgeToEdge()` / `SystemBarStyle` (MainActivity ve widget seçim
+    // ekranı, Play "uçtan uca ekran" uyarısı 2026-11-11). Flutter'ın fragment
+    // bağımlılığı activity'yi zaten getiriyor; sürümü açık yazıyoruz ki
+    // API'nin bulunduğu en düşük sürümün altına inmesin.
+    implementation("androidx.activity:activity-ktx:1.9.3")
     // Ekran görüntüsünden metin (bayrak `ekran_goruntusu_maliyet`, 2026-10-13).
     // Play hizmetlerindeki model: APK'ya ~4 MB/mimari eklemez (gömülü
     // `com.google.mlkit:text-recognition` ekler). Model kurulumda iner

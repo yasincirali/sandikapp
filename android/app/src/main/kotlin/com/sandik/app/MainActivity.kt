@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -22,6 +23,13 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { !flutterReady }
+        // Kenardan kenara her sürümde (Play "uçtan uca ekran tüm
+        // kullanıcılara gösterilmeyebilir" önerisi, 2026-11-11). SDK 35+
+        // hedefli uygulama Android 15+'ta zaten böyle çiziliyor; Flutter
+        // ekranları çubuk boşluğunu `MediaQuery.padding` / `SafeArea` ile
+        // alıyor. Bu çağrı aynı görünümü Android 14 ve altına da getirir;
+        // çubuk ikon rengini Flutter'ın `SystemUiOverlayStyle`'ı ezer.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         firebaseArkaPlanKaydiniSil()
         // FLAG_SECURE bilerek YOK (yasin kararı 2026-10-23; eski denetim E5'te

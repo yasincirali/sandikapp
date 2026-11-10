@@ -31,6 +31,9 @@ import java.io.File
 class SandikWidgetProvider : AppWidgetProvider() {
 
     companion object {
+        /** Dart'ın sparkline PNG genişliği (`home_widget_service.dart`, 960×180). */
+        private const val SPARK_HEDEF_GENISLIK = 960
+
         /**
          * Widget dokunuşunun taşıdığı URI. Dart tarafındaki
          * `HomeWidgetService.widgetClickUri` ile BİREBİR aynı olmalı —
@@ -316,8 +319,21 @@ class SandikWidgetProvider : AppWidgetProvider() {
      * tutarı gösterir.
      */
     private fun decodeIfExists(path: String): Bitmap? = try {
-        val file = File(path)
-        if (file.exists()) BitmapFactory.decodeFile(path) else null
+        if (!File(path).exists()) {
+            null
+        } else {
+            // Önce yalnız boyut okunur, sonra en fazla [SPARK_HEDEF_GENISLIK]
+            // genişliğe inecek kadar alt örneklenir (Play "bit eşlem alt
+            // örnekleme" önerisi, 2026-11-11). Dart bugün tam 960 px yazıyor,
+            // yani bugünkü dosyada örnekleme 1'dir ve görünüm aynı kalır;
+            // ileride daha büyük bir PNG yazılırsa widget süreci tam
+            // çözünürlüğü belleğe almaz.
+            val sinir = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, sinir)
+            var ornek = 1
+            while (sinir.outWidth / (ornek * 2) >= SPARK_HEDEF_GENISLIK) ornek *= 2
+            BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = ornek })
+        }
     } catch (e: Exception) {
         null
     }
