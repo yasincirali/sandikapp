@@ -29,6 +29,16 @@ class _TypeBreakdownCard extends StatefulWidget {
   /// serinin son noktası kullanılır.
   final double Function(List<Asset> lotlar)? canliDeger;
 
+  /// GÜNLÜK dönemde altın kümesinin TEK kotasyondan dönem başı/sonu
+  /// (`DailySummary.gunIciAltinUclari`). `null` dönerse satır eski yoldan
+  /// ([_TypeBreakdownCard.tabanMs] slotu → [canliDeger]) kurulur.
+  ///
+  /// Tür başlığı için `null` dönmüşse ürün satırlarında da kullanılmaz:
+  /// başlığı seriden, çocukları referanstan kurmak açılan türün toplamını
+  /// başlıktan ayırırdı (2026-11-10).
+  final ({double first, double last})? Function(List<Asset> lotlar)?
+      gunIciUclar;
+
   const _TypeBreakdownCard({
     required this.baz,
     required this.breakdown,
@@ -41,6 +51,7 @@ class _TypeBreakdownCard extends StatefulWidget {
     required this.tabanMs,
     this.intraday = false,
     this.canliDeger,
+    this.gunIciUclar,
   });
 
   @override
@@ -196,7 +207,10 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     for (final tur in turler) {
       final e = MapEntry(tur, widget.breakdown.byType[tur]);
       final turLot = turLotlari[e.key] ?? const <Asset>[];
-      final ep = _endpoints(e.value, turLot);
+      // GÜNLÜK altın: baş ve son aynı kotasyondan — bkz.
+      // `DailySummary.gunIciAltinUclari` (2026-11-10, ayarlar ayrışıyordu).
+      final turUc = widget.gunIciUclar?.call(turLot);
+      final ep = turUc ?? _endpoints(e.value, turLot);
       if (ep == null) continue;
       sumFirst += ep.first;
       sumLast += ep.last;
@@ -221,7 +235,8 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       for (final pk in pozisyonlar) {
         final p = MapEntry(pk, widget.breakdown.byPosition[pk]);
         final pozLot = pozisyonLotlari[p.key] ?? const <Asset>[];
-        final pep = _endpoints(p.value, pozLot);
+        final pep = (turUc != null ? widget.gunIciUclar!(pozLot) : null) ??
+            _endpoints(p.value, pozLot);
         if (pep == null) continue;
         kids.add(_BreakdownRow(
           // Ad, sembolü anlamsız olan pozisyonlar için (mevduat: sözleşme

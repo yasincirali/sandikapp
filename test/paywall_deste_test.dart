@@ -453,16 +453,15 @@ void main() {
           ),
         );
 
-    testWidgets('kapalıyken eski paywall: deste yok', (t) async {
+    testWidgets('bayraksız da deste: tek tasarım (yasin 10 Kas)', (t) async {
+      RemoteConfigService.testAcik = {};
       await t.pumpWidget(ekran('compare_series'));
       await t.pumpAndSettle();
-      expect(find.byType(KartDestesi), findsNothing);
-      expect(find.text('Satın alımı geri yükle'), findsOneWidget);
+      expect(find.byType(KartDestesi), findsOneWidget);
     });
 
     testWidgets('açıkken deste kaynağın kartıyla açılır, fiyat en büyük',
         (t) async {
-      RemoteConfigService.testAcik = {'paywall_deste'};
       t.view.physicalSize = const Size(1170, 2532);
       t.view.devicePixelRatio = 3;
       addTearDown(t.view.reset);

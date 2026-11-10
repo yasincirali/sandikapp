@@ -2564,9 +2564,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planMonthly => 'Monthly';
 
   @override
-  String get planMonthlySubtitle => 'Cancel any time';
-
-  @override
   String get subscriptionTerms =>
       'Payment is charged to your App Store account. The subscription renews automatically for the same period and price unless cancelled at least 24 hours before the period ends. Manage or cancel it under Settings › Apple ID › Subscriptions.';
 
@@ -2582,13 +2579,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sandikPremiumUpper => 'Sandık Premium';
-
-  @override
-  String get paywallHeadline => 'Track your portfolio\nin more depth';
-
-  @override
-  String get paywallSubhead =>
-      'Unlimited assets, annual report, dividend forecast and technical signals. Portfolio tracking stays free.';
 
   @override
   String get restorePurchase => 'Restore purchase';
@@ -7028,51 +7018,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rdrAyarSakinGosterAlt => 'Also list assets that had a quiet week.';
 
   @override
-  String get prmUcretsiz => 'Free';
-
-  @override
-  String get prmPremium => 'Premium';
-
-  @override
-  String get prmSatirVarlik => 'Assets';
-
-  @override
-  String get prmSatirAkis => 'Money flow';
-
-  @override
-  String get prmSatirHacim => 'Volume radar';
-
-  @override
-  String get prmSatirNot => 'Weekly note';
-
-  @override
-  String get prmSatirAylik => 'Monthly report';
-
-  @override
   String get prmSinirsiz => 'unlimited';
-
-  @override
-  String get prmSatirSinyal => 'Technical signals';
 
   @override
   String get prmSinyalUcretsiz => '3 indicators, 1 alert a day';
 
   @override
-  String get prmSinyalPremium => '8 indicators, unlimited';
-
-  @override
-  String get prmSatirTakip => 'Watchlist';
-
-  @override
   String prmYillikTasarruf(String oran) {
     return 'Save $oran%';
   }
-
-  @override
-  String get prmVarErisim => 'Included';
-
-  @override
-  String get prmYokErisim => 'Not included';
 
   @override
   String get prmAkisUcretsiz => 'last week';
@@ -7105,9 +7059,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get prmKilitEkstreAi => 'AI mapping is in Premium';
-
-  @override
-  String get prmSatirEkstreAi => 'Read statements with AI';
 
   @override
   String get prmHediyeBaslik => 'You\'re one of our first users';
@@ -7437,23 +7388,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sgnPremiumGec => 'Go Premium';
 
   @override
-  String get pwOzSinirsiz => 'Unlimited assets of every type';
-
-  @override
-  String get pwOzKarsilastir => 'Up to 5 series in Compare';
-
-  @override
-  String get pwOzOrtak => 'Share your portfolio with more than one partner';
-
-  @override
   String get cmpSinirPremium => 'Up to 5 series with Premium';
 
   @override
   String get cmpSinirDolu => 'At most 5 assets';
-
-  @override
-  String get pwOzRadar =>
-      'Full money-flow and volume-radar detail, the whole weekly note';
 
   @override
   String pwFiyatAylik(String fiyat) {
@@ -7466,20 +7404,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String pwDenemeAltyazi(int gun) {
-    return '$gun days free, then renews automatically';
-  }
-
-  @override
-  String get pwYenilenirAltyazi => 'Renews automatically, cancel anytime';
-
-  @override
   String pwDenemeDugme(int gun) {
     return 'Try $gun days free';
   }
-
-  @override
-  String get pwAboneOl => 'Subscribe';
 
   @override
   String get pwKosulAndroid =>
@@ -8350,54 +8277,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'BIST stocks only. Assumes the last 12 months\' dividends repeat in the same months at today\'s holdings. Splits and bonus issues are not taken into account; not investment advice.';
 
   @override
-  String get pwOzRapor =>
-      'Annual gains, dividends and withholding report; export your portfolio as PDF or Excel';
-
-  @override
-  String get pwOzTemettu =>
-      'Dividend forecast for the next 12 months, month by month';
-
-  @override
-  String get pwOzSinyalTam =>
-      'Technical signals: 8 indicators, your own periods and alerts at the frequency you choose';
-
-  @override
-  String get pwOzMasraf => 'Item-by-item fee breakdown per asset';
-
-  @override
-  String get prmSatirAlarm => 'Price alerts';
-
-  @override
-  String get prmSatirYillik => 'Annual report';
-
-  @override
-  String get prmSatirDisaAktar => 'Export';
-
-  @override
-  String get prmDisaAktarUcretsiz => 'JSON';
-
-  @override
-  String get prmDisaAktarPremium => 'PDF + Excel';
-
-  @override
-  String get prmSatirTemettu => 'Dividend forecast';
-
-  @override
-  String get prmSatirMasraf => 'Fees';
-
-  @override
-  String get prmMasrafUcretsiz => 'totals';
-
-  @override
-  String get prmMasrafPremium => 'itemized';
-
-  @override
-  String get prmSatirKars => 'Compare';
-
-  @override
-  String get prmSatirOrtak => 'Partners';
-
-  @override
   String get pwdRaporEtiket => 'Annual report';
 
   @override
@@ -8572,13 +8451,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwOzXray =>
-      'Fund X-Ray: inside your funds and your real allocation';
-
-  @override
-  String get prmSatirXray => 'Fund X-Ray';
-
-  @override
   String get pwdXrayEtiket => 'Fund X-Ray';
 
   @override
@@ -8728,17 +8600,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portfoyKaynakSec => 'Move the position from which portfolio?';
 
   @override
-  String get pwOzPortfoy =>
-      'Unlimited portfolios: retirement, your kid, experiments kept apart; partial transfers between them and choosing what your partner sees';
-
-  @override
-  String get prmSatirPortfoy => 'Portfolios';
-
-  @override
   String get pwdPortfoyPremium => 'unlimited, partial transfer';
-
-  @override
-  String get pwOzEkstre => 'AI matching for your bank and brokerage statements';
 
   @override
   String get pwdPortfoyEtiket => 'Portfolios';
@@ -9059,10 +8921,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Markers (plotshape) in a separate pane are not shown.';
 
   @override
-  String get pwOzOzelGosterge =>
-      'Write your own indicators in Pine Script, on any chart interval';
-
-  @override
   String get varlikGuncelleBaslik => 'Update asset';
 
   @override
@@ -9139,9 +8997,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String sgnParametreAyarla(String ad) {
     return '$ad settings';
   }
-
-  @override
-  String get prmSatirOzelGosterge => 'Your own indicators (Pine)';
 
   @override
   String get pwdOzelEtiket => 'Your indicator';
@@ -9431,9 +9286,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pwdZirveBaslik =>
       'See what the top portfolios hold, asset by asset.';
-
-  @override
-  String get prmSatirZirve => 'Top portfolios';
 
   @override
   String get prmZirveUcretsiz => 'Your own rank';

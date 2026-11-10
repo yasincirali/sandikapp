@@ -292,10 +292,6 @@ void main() {
           ek: _ucretsiz());
     });
   }
-  testWidgets('klasik paywall: liste ve tablo', (t) async {
-    await ciz(t, 'pn_paywall_tablo', const PaywallScreen(source: 'settings'),
-        ek: _ucretsiz(), boy: 2600, deste: false);
-  });
 
   // ── Üç ekran tutarlılığı (2026-10-10 gece) ────────────────────────────
   // Gerçek mum yerine yapay OHLC (ağ yok): mum yapay serinin (çizgi,

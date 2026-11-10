@@ -2542,9 +2542,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get planMonthly => 'Aylık';
 
   @override
-  String get planMonthlySubtitle => 'İstediğin zaman iptal edebilirsin';
-
-  @override
   String get subscriptionTerms =>
       'Ödeme App Store hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Ayarlar › Apple ID › Abonelikler\'den yönetebilir ya da iptal edebilirsin.';
 
@@ -2560,13 +2557,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sandikPremiumUpper => 'Sandık Premium';
-
-  @override
-  String get paywallHeadline => 'Portföyünü daha derinlemesine\ntakip et';
-
-  @override
-  String get paywallSubhead =>
-      'Sınırsız varlık, yıllık rapor, temettü tahmini ve teknik sinyaller. Portföy takibi her zaman ücretsiz.';
 
   @override
   String get restorePurchase => 'Satın alımı geri yükle';
@@ -6960,51 +6950,15 @@ class AppLocalizationsTr extends AppLocalizations {
       'Haftanın özetinde hareketsiz geçen varlıkları da listele.';
 
   @override
-  String get prmUcretsiz => 'Ücretsiz';
-
-  @override
-  String get prmPremium => 'Premium';
-
-  @override
-  String get prmSatirVarlik => 'Varlık';
-
-  @override
-  String get prmSatirAkis => 'Para akışı';
-
-  @override
-  String get prmSatirHacim => 'Hacim radarı';
-
-  @override
-  String get prmSatirNot => 'Haftalık not';
-
-  @override
-  String get prmSatirAylik => 'Aylık rapor';
-
-  @override
   String get prmSinirsiz => 'sınırsız';
-
-  @override
-  String get prmSatirSinyal => 'Teknik sinyaller';
 
   @override
   String get prmSinyalUcretsiz => '3 gösterge, günde 1 bildirim';
 
   @override
-  String get prmSinyalPremium => '8 gösterge, sınırsız';
-
-  @override
-  String get prmSatirTakip => 'Takip listesi';
-
-  @override
   String prmYillikTasarruf(String oran) {
     return '%$oran tasarruf';
   }
-
-  @override
-  String get prmVarErisim => 'Var';
-
-  @override
-  String get prmYokErisim => 'Yok';
 
   @override
   String get prmAkisUcretsiz => 'son hafta';
@@ -7037,9 +6991,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get prmKilitEkstreAi => 'Yapay zekâyla eşleme Premium\'da';
-
-  @override
-  String get prmSatirEkstreAi => 'Ekstreyi yapay zekâyla okutma';
 
   @override
   String get prmHediyeBaslik => 'İlk kullanıcılarımızdansın';
@@ -7364,23 +7315,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sgnPremiumGec => 'Premium\'a geç';
 
   @override
-  String get pwOzSinirsiz => 'Sınırsız varlık ve tüm varlık türleri';
-
-  @override
-  String get pwOzKarsilastir => 'Karşılaştır\'da 5 seriye kadar';
-
-  @override
-  String get pwOzOrtak => 'Birden fazla ortakla portföy paylaşımı';
-
-  @override
   String get cmpSinirPremium => 'Premium ile 5 seriye kadar';
 
   @override
   String get cmpSinirDolu => 'En fazla 5 varlık';
-
-  @override
-  String get pwOzRadar =>
-      'Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı';
 
   @override
   String pwFiyatAylik(String fiyat) {
@@ -7393,21 +7331,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String pwDenemeAltyazi(int gun) {
-    return '$gun gün ücretsiz, sonra otomatik yenilenir';
-  }
-
-  @override
-  String get pwYenilenirAltyazi =>
-      'Otomatik yenilenir, istediğin zaman iptal edebilirsin';
-
-  @override
   String pwDenemeDugme(int gun) {
     return '$gun gün ücretsiz dene';
   }
-
-  @override
-  String get pwAboneOl => 'Abone ol';
 
   @override
   String get pwKosulAndroid =>
@@ -8264,53 +8190,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yalnız BIST hisseleri. Son 12 ayın temettüsü bugünkü lotunla aynı aylarda tekrarlanırsa. Bölünme ve bedelsiz hesaba katılmaz; yatırım tavsiyesi değildir.';
 
   @override
-  String get pwOzRapor =>
-      'Yıllık kâr, temettü ve stopaj raporu; portföyünü PDF ya da Excel olarak dışa aktar';
-
-  @override
-  String get pwOzTemettu => 'Önümüzdeki 12 ayın temettü tahmini, ay ay';
-
-  @override
-  String get pwOzSinyalTam =>
-      'Teknik sinyaller: 8 gösterge, kendi periyotların ve seçtiğin sıklıkta bildirim';
-
-  @override
-  String get pwOzMasraf => 'Varlık başına kalem kalem masraf dökümü';
-
-  @override
-  String get prmSatirAlarm => 'Fiyat alarmı';
-
-  @override
-  String get prmSatirYillik => 'Yıllık rapor';
-
-  @override
-  String get prmSatirDisaAktar => 'Dışa aktarma';
-
-  @override
-  String get prmDisaAktarUcretsiz => 'JSON';
-
-  @override
-  String get prmDisaAktarPremium => 'PDF + Excel';
-
-  @override
-  String get prmSatirTemettu => 'Temettü tahmini';
-
-  @override
-  String get prmSatirMasraf => 'Masraflar';
-
-  @override
-  String get prmMasrafUcretsiz => 'toplam';
-
-  @override
-  String get prmMasrafPremium => 'kalem kalem';
-
-  @override
-  String get prmSatirKars => 'Karşılaştır';
-
-  @override
-  String get prmSatirOrtak => 'Ortak';
-
-  @override
   String get pwdRaporEtiket => 'Yıllık rapor';
 
   @override
@@ -8485,13 +8364,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get pwOzXray =>
-      'Fon X-Ray: fonlarının içi ve portföyünün gerçek dağılımı';
-
-  @override
-  String get prmSatirXray => 'Fon X-Ray';
-
-  @override
   String get pwdXrayEtiket => 'Fon X-Ray';
 
   @override
@@ -8641,17 +8513,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get portfoyKaynakSec => 'Hangi portföydeki pozisyon taşınsın?';
 
   @override
-  String get pwOzPortfoy =>
-      'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı; aralarında kısmi aktarım ve ortağın hangisini göreceğini seçme';
-
-  @override
-  String get prmSatirPortfoy => 'Portföy';
-
-  @override
   String get pwdPortfoyPremium => 'sınırsız, kısmi aktarım';
-
-  @override
-  String get pwOzEkstre => 'Banka ve aracı kurum ekstreni yapay zekâyla eşleme';
 
   @override
   String get pwdPortfoyEtiket => 'Portföy';
@@ -8965,10 +8827,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Ayrı paneldeki işaretler (plotshape) gösterilmez.';
 
   @override
-  String get pwOzOzelGosterge =>
-      'Kendi göstergeni yaz: Pine Script ile, seçtiğin zaman aralığında';
-
-  @override
   String get varlikGuncelleBaslik => 'Varlığı güncelle';
 
   @override
@@ -9045,9 +8903,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String sgnParametreAyarla(String ad) {
     return '$ad ayarları';
   }
-
-  @override
-  String get prmSatirOzelGosterge => 'Kendi göstergen (Pine)';
 
   @override
   String get pwdOzelEtiket => 'Kendi göstergen';
@@ -9335,9 +9190,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pwdZirveBaslik =>
       'Zirvedeki portföyler neye yatırıyor, varlık varlık gör.';
-
-  @override
-  String get prmSatirZirve => 'Zirvedeki portföyler';
 
   @override
   String get prmZirveUcretsiz => 'Kendi sıran';

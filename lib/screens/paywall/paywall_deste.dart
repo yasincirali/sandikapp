@@ -1,18 +1,25 @@
 part of '../paywall_screen.dart';
 
-// ── Kart desteli paywall (bayrak `paywall_deste`, yasin 2026-10-08) ───────
+// ── Kart desteli paywall (yasin 2026-10-08; 10 Kas'tan beri tek tasarım) ──
 //
 // Son hâl prototipi: https://claude.ai/artifact/Fwm1QWqhox792DBk32HEPJ.
 // Amber sandık başlığı, sonsuz kart destesi, Yıllık/Aylık sekmesi, büyük
 // fiyat, varsa deneme zaman çizelgesi, iki güven satırı ve yapışkan düğme.
-// Bayrak kapalıyken eski paywall birebir çizilir (`_PaywallScreenState.build`).
+// 10 Kas 2026'ya kadar `paywall_deste` bayrağı kapalıyken eski liste
+// çiziliyordu; yasin "Deste her yerde" dedi, liste silindi.
 //
 // Kurallar (müşteri gözüyle analiz, 2026-10-08):
 //  - Deste kullanıcının DOKUNDUĞU kilidin kartıyla açılır ([desteSirasi]);
 //    neden burada olduğunu ilk kart söyler.
 //  - Kartlardaki sınırlar Remote Config'ten okunur; uygulamada gerçekten
 //    kilitli olmayan bir şey kart olmaz (radar kartları `balinaRadariAcik`,
-//    ekstre kartı `ekstreAiEsleme` açıkken). Bkz. `_FeatureList` uyarısı.
+//    ekstre kartı `ekstreAiEsleme` açıkken).
+//  - ⚠️ KARTA YALNIZCA UYGULAMADA GERÇEKTEN KİLİTLİ OLAN ÖZELLİK YAZILIR
+//    (silinen liste görünümündeki uyarı): ücretsizde de açık bir şey
+//    "parası alınıp verilmeyen" vaattir, yazılmamış özellik App Store
+//    2.3.1 ihlalidir. Kaldırılanlar ("Aylık AI portföy raporu", "Fiyat
+//    alarmları", "Yıllık vergi PDF raporu", "5 yıl grafik") kilidi
+//    yazılmadan geri gelmez.
 //  - Ödenecek tutar ekrandaki en büyük metindir; deneme yalnız mağaza bir
 //    deneme döndürdüyse gösterilir ve hatırlatma vaat edilmez (gönderen
 //    bir servis yok).
