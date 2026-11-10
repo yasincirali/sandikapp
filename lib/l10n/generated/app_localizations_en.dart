@@ -1107,6 +1107,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gecmisFiyatlarOncekiYok => 'no previous close';
 
   @override
+  String get kopyalaKod => 'Copy code';
+
+  @override
+  String get kopyalaFiyat => 'Copy price';
+
+  @override
+  String get kopyalandi => 'Copied';
+
+  @override
+  String get kopyalaIpucu => 'copy options';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot shares × $perShare';
   }

@@ -1092,6 +1092,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get gecmisFiyatlarOncekiYok => 'önceki kapanış yok';
 
   @override
+  String get kopyalaKod => 'Kodu kopyala';
+
+  @override
+  String get kopyalaFiyat => 'Fiyatı kopyala';
+
+  @override
+  String get kopyalandi => 'Kopyalandı';
+
+  @override
+  String get kopyalaIpucu => 'kopyalama seçenekleri';
+
+  @override
   String dividendEventLine(String lot, String perShare) {
     return '$lot lot × $perShare';
   }

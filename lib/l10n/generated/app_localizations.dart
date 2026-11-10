@@ -1934,6 +1934,30 @@ abstract class AppLocalizations {
   /// **'önceki kapanış yok'**
   String get gecmisFiyatlarOncekiYok;
 
+  /// No description provided for @kopyalaKod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kodu kopyala'**
+  String get kopyalaKod;
+
+  /// No description provided for @kopyalaFiyat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatı kopyala'**
+  String get kopyalaFiyat;
+
+  /// No description provided for @kopyalandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kopyalandı'**
+  String get kopyalandi;
+
+  /// Ekran okuyucunun uzun basma ipucu: varlık kodu ve fiyatı kopyalanabilir.
+  ///
+  /// In tr, this message translates to:
+  /// **'kopyalama seçenekleri'**
+  String get kopyalaIpucu;
+
   /// No description provided for @dividendEventLine.
   ///
   /// In tr, this message translates to:

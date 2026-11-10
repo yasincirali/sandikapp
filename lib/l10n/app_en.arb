@@ -612,6 +612,10 @@
   "gecmisFiyatlarDusus": "down {yuzde} from the previous close",
   "gecmisFiyatlarDegismedi": "same as the previous close",
   "gecmisFiyatlarOncekiYok": "no previous close",
+  "kopyalaKod": "Copy code",
+  "kopyalaFiyat": "Copy price",
+  "kopyalandi": "Copied",
+  "kopyalaIpucu": "copy options",
   "dividendEventLine": "{lot} shares × {perShare}",
   "@dividendEventLine": {
     "placeholders": {

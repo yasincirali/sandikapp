@@ -641,6 +641,11 @@
   "@gecmisFiyatlarDusus": {"placeholders": {"yuzde": {"type": "String"}}},
   "gecmisFiyatlarDegismedi": "önceki kapanışla aynı",
   "gecmisFiyatlarOncekiYok": "önceki kapanış yok",
+  "kopyalaKod": "Kodu kopyala",
+  "kopyalaFiyat": "Fiyatı kopyala",
+  "kopyalandi": "Kopyalandı",
+  "kopyalaIpucu": "kopyalama seçenekleri",
+  "@kopyalaIpucu": {"description": "Ekran okuyucunun uzun basma ipucu: varlık kodu ve fiyatı kopyalanabilir."},
   "dividendEventLine": "{lot} lot × {perShare}",
   "@dividendEventLine": {
     "placeholders": {
