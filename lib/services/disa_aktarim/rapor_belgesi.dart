@@ -27,6 +27,8 @@ class RaporBelgesi {
     this.kampanya = 'rapor',
     this.kapsam,
     this.tablolarOnce = false,
+    this.ozetNotu,
+    this.bantAlt,
   });
 
   /// Belge başlığı ("sandık · 2025 yıllık rapor").
@@ -80,6 +82,20 @@ class RaporBelgesi {
   /// varlıkları, para akışı) notlardan önce okunur; diğer belgeler eski
   /// sırada kalır.
   final bool tablolarOnce;
+
+  /// PDF'te gösterge kutularının altına yazılan tek cümle (yalnız PDF;
+  /// Excel yazmaz). Aylık raporda açıklanmamış TÜFE için (2026-11-10):
+  /// "—" kutusu ikinci sırayı yarım bırakıyordu; kutu PDF'te çizilmez
+  /// (`pdfOzeti`), açıklanma günü burada cümleyle yazılır. Excel'in Özet
+  /// sayfası değişmesin diye `ozet`teki satır olduğu gibi kalır.
+  final String? ozetNotu;
+
+  /// PDF bandının alt satırında kapsamdan sonra yazılan kısım (yalnız PDF;
+  /// `null` → [altBaslik]). 2026-11-10: portföy dökümü ve hareket dökümünde
+  /// kapsam satırı tarihi zaten taşıyor, [altBaslik] ("kim · tarih
+  /// itibarıyla") aynı anı ikinci kez yazıyordu; bantta yalnız kişi adı
+  /// kalır. Excel'in Özet sayfası [altBaslik]'ı yazmaya devam eder.
+  final String? bantAlt;
 }
 
 /// Bir metin bölümü: başlık ("THYAO"), isteğe bağlı durum etiketi
@@ -165,6 +181,7 @@ class RaporTablosu {
     required this.sutunlar,
     required this.satirlar,
     this.toplam,
+    this.pdf,
   });
 
   /// Excel'de sayfa adı da budur (31 karaktere kısaltılır).
@@ -174,6 +191,13 @@ class RaporTablosu {
 
   /// İsteğe bağlı toplam satırı (sütun sayısıyla aynı uzunlukta).
   final List<Object?>? toplam;
+
+  /// PDF'te bu tablonun YERİNE basılan görünüm (`null` → bu tablo). Excel
+  /// her zaman bu tabloyu yazar. Neden (2026-11-10): portföy dökümünün
+  /// işlem tablosunda "Temettü (net)" sütunu yalnız temettü satırında
+  /// doluydu; PDF'te tek "Tutar (TL)" sütunu okunur, müşavirin Excel'inde
+  /// ayrı sütunlar kalır.
+  final RaporTablosu? pdf;
 }
 
 /// TL tutarı: Excel'de sayı, PDF'te `fmtTRY`.
