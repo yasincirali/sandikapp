@@ -51,14 +51,34 @@ extension _AlarmCizgileri on _AssetDetailScreenState {
   }
 
   /// Çizim alanındaki kesikli çizgiler — yalnız görünen Y aralığındakiler.
+  ///
+  /// Anahtarlı ([KayanYatayCizgi], 2026-11-11): alarm kurulunca/
+  /// düzenlenince çizgi anında belirip zıplıyordu; artık seviye değişince
+  /// eski seviyeden kayar, yeni alarm [sonFiyat]tan (grafiğin son noktası,
+  /// aynı Y uzayı) hedefe kayar, silinen söner. Dönem değişiminde kaymaz:
+  /// kararı `ZoomableChart._kayanCizgiler` verir.
   List<HorizontalLine> _alarmYatayCizgileri(
-          List<GrafikAlarmCizgisi> cizgiler) =>
+          List<GrafikAlarmCizgisi> cizgiler, {double? sonFiyat}) =>
       [
         for (final a in cizgiler)
           if (a.cizilir)
-            GrafikStili.alarmCizgisi(context, a.alarm.targetPrice,
-                yukari: a.alarm.isAbove),
+            _kayanAlarmCizgisi(
+                GrafikStili.alarmCizgisi(context, a.alarm.targetPrice,
+                    yukari: a.alarm.isAbove),
+                a.alarm.id,
+                sonFiyat),
       ];
+
+  static KayanYatayCizgi _kayanAlarmCizgisi(
+          HorizontalLine c, String id, double? sonFiyat) =>
+      KayanYatayCizgi(
+        anahtar: (tur: 'alarm', id: id),
+        y: c.y,
+        dogumY: sonFiyat,
+        color: c.color,
+        strokeWidth: c.strokeWidth,
+        dashArray: c.dashArray,
+      );
 
   /// Grafikteki ortalama maliyet (Ar-Ge 1 Kas 08:45 #1, yasin "yap").
   ///

@@ -2217,7 +2217,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                         context, anchorY),
                                     // Kurulu fiyat alarmları (Ar-Ge 29 Eki
                                     // 20:45 #2); açıklaması kartın üstünde.
-                                    ..._alarmYatayCizgileri(alarmCizgileri),
+                                    ..._alarmYatayCizgileri(alarmCizgileri,
+                                        sonFiyat: lastSpot?.y),
                                     // Ortalama maliyet (Ar-Ge 1 Kas
                                     // 08:45 #1); açıklaması kartın üstünde.
                                     ..._maliyetYatayCizgisi(grafikMaliyeti,
