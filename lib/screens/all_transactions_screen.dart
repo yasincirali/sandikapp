@@ -592,6 +592,72 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       _range != _DateRange.all ||
       _query.trim().isNotEmpty;
 
+  /// Bir ayın kabı: yapışkan başlık + satırların kartı.
+  ///
+  /// Başlık `PinnedHeaderSliver` içinde, grup `SliverMainAxisGroup` olduğu
+  /// için yalnız KENDİ ayının satırları boyunca yapışık kalır; ay bitince
+  /// sonraki ayın başlığı onu yukarı iter (iOS gruplu liste başlığı). Zemin
+  /// opak `context.c.background`: alttan kayan satır başlığın içinden
+  /// görünmesin. Başlığın yüksekliği sabit değil, içeriği kadar — Dynamic
+  /// Type ×2'de satır sarar, taşmaz. Aylar arası boşluk grubun SON öğesi
+  /// (başlığın altında değil): yapışık başlık boşlukla birlikte itilmez,
+  /// kartın bittiği yerde bırakır.
+  Widget _ayGrubu(
+    HareketAyGrubu g, {
+    required String baslik,
+    required ({String metin, String etiket}) sag,
+    required bool sonGrup,
+    required double hp,
+    required Widget Function(Asset) satir,
+  }) {
+    return SliverMainAxisGroup(slivers: [
+      PinnedHeaderSliver(
+        child: ColoredBox(
+          color: context.c.background,
+          child: Padding(
+            padding: EdgeInsets.only(
+                left: hp + SandikSpace.xxs,
+                right: hp + SandikSpace.xxs,
+                bottom: SandikSpace.sm),
+            child: SandikSectionHeader(
+              title: baslik,
+              // Net tutar sayıyı yerinden etti; hareket sayısı etikette kalır.
+              trailing: Semantics(
+                label: sag.etiket,
+                excludeSemantics: true,
+                child: Text(
+                  sag.metin,
+                  style: context.t.bodySmall?.copyWith(
+                    color: context.c.text36,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      SliverPadding(
+        padding: EdgeInsets.only(
+            left: hp, right: hp, bottom: sonGrup ? 0 : SandikSpace.lg),
+        sliver: SliverToBoxAdapter(
+          child: SandikCard(
+            padding: EdgeInsets.zero,
+            radius: SandikRadius.lg,
+            child: Column(
+              children: [
+                for (var k = 0; k < g.kayitlar.length; k++) ...[
+                  if (k > 0) const HareketAyraci(),
+                  satir(g.kayitlar[k]),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
+
   /// Hareket satırı + işlem notu bağlantısı.
   ///
   /// Not görünürlüğü ve düzenlenebilirlik tek yerden (`islem_notu.dart`);
@@ -880,98 +946,75 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                           'LLLL yyyy', Localizations.localeOf(context).languageCode);
                       // Filtre değişince yeni sonuç kısa bir solmayla gelir
                       // (bkz. `_filtreGecisi`); iki liste üst üste kurulmaz.
+                      //
+                      // Yapışkan ay başlığı (2026-11-11): her ay bir
+                      // `SliverMainAxisGroup`; başlığı `PinnedHeaderSliver`.
+                      // Uzun bir ayın ortasında hangi ayda olduğun
+                      // görünmüyordu — iOS'un gruplu liste başlığı kalıbı
+                      // gibi başlık o ayın satırları boyunca üstte kalır, ay
+                      // bitince bir sonrakinin başlığı onu yukarı iter. Grup
+                      // dışında ayrı bir "şu an hangi ay" durumu tutulmaz;
+                      // iterek değişmeyi sliver düzeni kendisi yapar.
+                      //
+                      // Yatay boşluk kaplara değil satır kutularına verilir
+                      // (SliverPadding yalnız dikey): yapışık başlığın zemini
+                      // kenardan kenara uzansın, kenar boşluğunda alttan
+                      // kayan bir şey görünmesin. Zemin ekranın zemini
+                      // (`context.c.background`) ve opak.
                       return FadeTransition(
                         opacity: _filtreSolma,
-                        child: ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        controller: _scrollCtrl,
-                        padding: EdgeInsets.fromLTRB(hp, 16, hp, 32),
-                        // +1: son satırda "yükleniyor" göstergesi (daha var ise).
-                        itemCount: gruplar.length + (dahaVar ? 1 : 0),
-                        itemBuilder: (ctx, i) {
-                          if (i >= gruplar.length) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              child: Center(
-                                child: Text(
-                                  context.l10n.loadingEllipsis,
-                                  style: context.t.bodySmall
-                                      ?.copyWith(color: context.c.text36),
-                                ),
-                              ),
-                            );
-                          }
-                          final g = gruplar[i];
-                          final baslik = ayAdi.format(g.ay);
-                          final ozet = ozetler[g.ay];
-                          final sag = ayBasligiMetni(
-                            context.l10n,
-                            sayi: ozet?.sayi ?? g.kayitlar.length,
-                            net: ozet?.net,
-                            silinenler: _silinenler,
-                            baz: baz,
-                            gizli: hideBalance,
-                          );
-                          return Padding(
-                            padding: EdgeInsets.only(
-                                bottom: i == gruplar.length - 1
-                                    ? 0
-                                    : SandikSpace.lg),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: SandikSpace.xxs,
-                                      right: SandikSpace.xxs,
-                                      bottom: SandikSpace.sm),
-                                  child: SandikSectionHeader(
-                                    title: baslik,
-                                    // Net tutar sayıyı yerinden etti;
-                                    // hareket sayısı etikette kalır.
-                                    trailing: Semantics(
-                                      label: sag.etiket,
-                                      excludeSemantics: true,
-                                      child: Text(
-                                        sag.metin,
-                                        style: context.t.bodySmall?.copyWith(
-                                          color: context.c.text36,
-                                          fontFeatures: const [
-                                            FontFeature.tabularFigures()
-                                          ],
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          controller: _scrollCtrl,
+                          slivers: [
+                            SliverPadding(
+                              padding: const EdgeInsets.only(top: 16, bottom: 32),
+                              sliver: SliverMainAxisGroup(slivers: [
+                                for (var i = 0; i < gruplar.length; i++)
+                                  _ayGrubu(
+                                    gruplar[i],
+                                    baslik: ayAdi.format(gruplar[i].ay),
+                                    sag: ayBasligiMetni(
+                                      context.l10n,
+                                      sayi: ozetler[gruplar[i].ay]?.sayi ??
+                                          gruplar[i].kayitlar.length,
+                                      net: ozetler[gruplar[i].ay]?.net,
+                                      silinenler: _silinenler,
+                                      baz: baz,
+                                      gizli: hideBalance,
+                                    ),
+                                    sonGrup: i == gruplar.length - 1,
+                                    hp: hp,
+                                    satir: (h) => _hareketSatiri(
+                                      h,
+                                      ledger,
+                                      baz: baz,
+                                      portfolioState:
+                                          pState ?? const PortfolioState(),
+                                      hideBalance: hideBalance,
+                                      bakiyeler: bakiyeler,
+                                      portfoyDegerleri: portfoyDegerleri,
+                                    ),
+                                  ),
+                                // Son satırda "yükleniyor" göstergesi (daha var ise).
+                                if (dahaVar)
+                                  SliverToBoxAdapter(
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.symmetric(vertical: 20),
+                                      child: Center(
+                                        child: Text(
+                                          context.l10n.loadingEllipsis,
+                                          style: context.t.bodySmall?.copyWith(
+                                              color: context.c.text36),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                SandikCard(
-                                  padding: EdgeInsets.zero,
-                                  radius: SandikRadius.lg,
-                                  child: Column(
-                                    children: [
-                                      for (var k = 0;
-                                          k < g.kayitlar.length;
-                                          k++) ...[
-                                        if (k > 0) const HareketAyraci(),
-                                        _hareketSatiri(
-                                          g.kayitlar[k],
-                                          ledger,
-                                          baz: baz,
-                                          portfolioState:
-                                              pState ?? const PortfolioState(),
-                                          hideBalance: hideBalance,
-                                          bakiyeler: bakiyeler,
-                                          portfoyDegerleri: portfoyDegerleri,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              ]),
                             ),
-                          );
-                        },
-                      ),
+                          ],
+                        ),
                       );
                     }),
                   ),

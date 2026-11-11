@@ -63,7 +63,7 @@ class _FakePartners extends PartnersNotifier {
 }
 
 double _ofset(WidgetTester tester) =>
-    tester.widget<ListView>(find.byType(ListView).last).controller!.offset;
+    tester.widget<ScrollView>(find.byType(CustomScrollView).last).controller!.offset;
 
 void main() {
   setUpAll(() async {
@@ -95,7 +95,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final liste = find.byType(ListView).last;
+    final liste = find.byType(CustomScrollView).last;
     await tester.drag(liste, const Offset(0, -1500));
     await tester.pumpAndSettle();
     expect(_ofset(tester), greaterThan(0), reason: 'ön koşul: aşağıdayız');
@@ -104,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(_ofset(tester), 0, reason: 'yeni sonuç kümesi baştan görünmeli');
 
-    await tester.drag(find.byType(ListView).last, const Offset(0, -1500));
+    await tester.drag(find.byType(CustomScrollView).last, const Offset(0, -1500));
     await tester.pumpAndSettle();
     expect(_ofset(tester), greaterThan(0));
 
