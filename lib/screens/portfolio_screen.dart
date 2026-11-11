@@ -1082,7 +1082,7 @@ class _SayiRozeti extends StatelessWidget {
         child: Text(
           '$sayi',
           style: context.t.labelSmall?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: context.c.amberText,
           ),
         ),
@@ -1511,7 +1511,7 @@ class _KucukHalkaState extends State<_KucukHalka>
             ParaMetni(
               widget.baz.fmt(toplam),
               stil: context.t.numMedium.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: renk,
               ),
             )
@@ -1521,7 +1521,7 @@ class _KucukHalkaState extends State<_KucukHalka>
                   ? widget.baz.fmt(toplam)
                   : fmtPct(d.pay * 100, digits: 1),
               style: context.t.numMedium.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: renk,
               ),
             ),
@@ -1746,12 +1746,12 @@ class _LejantSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final etiketStili = context.t.bodyMedium?.copyWith(
-      fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+      fontWeight: secili ? FontWeight.w600 : FontWeight.w500,
       color: secili ? renk : context.c.text58,
     );
     final degerStili = (ikiSatir ? context.t.bodySmall : context.t.bodyMedium)
         ?.copyWith(
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       color: secili ? renk : context.c.text90,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
@@ -2098,7 +2098,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                           centerValue,
                           style: context.t.numLarge.copyWith(
                             fontSize: centerPct != null ? 16 : 22,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             color: centerColor,
                           ),
                         ),
@@ -2177,7 +2177,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                         '${e.value.key.labelOf(context.l10n)} $pct',
                         style: context.t.bodyMedium?.copyWith(
                           fontWeight:
-                              isTouched ? FontWeight.w700 : FontWeight.w500,
+                              isTouched ? FontWeight.w600 : FontWeight.w500,
                           color:
                               isTouched ? e.value.key.color : context.c.text58,
                         ),
@@ -2966,7 +2966,7 @@ class _AssetCardState extends State<_AssetCard>
                     tutarYazisi,
                     maxLines: 1,
                     style: context.t.numMedium.copyWith(
-                        fontWeight: FontWeight.w700, color: context.c.text90),
+                        fontWeight: FontWeight.w600, color: context.c.text90),
                   );
                   // Fiyat turu tutarı değiştirince kısa ton + ▲/▼ (Ar-Ge
                   // 11 Kas 18:04 #2). Kimlik adet ve gösterim birimini
@@ -3027,7 +3027,7 @@ class _AssetCardState extends State<_AssetCard>
                                       maxLines: a.showTicker ? 1 : 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: context.t.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w600,
                                         color: context.c.text90,
                                         height: 1.25,
                                         letterSpacing:
@@ -3742,7 +3742,7 @@ class _NotlarBolumu extends ConsumerWidget {
           Text(
             l10n.notesSection,
             style: context.t.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: context.c.text36,
             ),
           ),
@@ -3834,7 +3834,7 @@ class _DetailItem extends StatelessWidget {
           // `ustHarf` ile büyütülüyordu (bulgu #8 noktasız I bunun yüzündendi).
           label,
           style: context.t.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: context.c.text36,
           ),
         ),

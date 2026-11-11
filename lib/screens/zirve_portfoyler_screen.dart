@@ -1568,6 +1568,9 @@ class _OrtakVarliklar extends StatelessWidget {
                   'sende ${ZirveKiyas.pay(o.sen)} · '
                   'onda ${ZirveKiyas.pay(o.zirve)}',
                   style: context.t.numSmall.copyWith(
+                    // Zirve sahnesi w600 istisnası: numSmall w600'e indi
+                    // (2026-11-11), sahne eski ağırlığını korur.
+                    fontWeight: FontWeight.w700,
                     color: context.c.text58,
                   ),
                 ),

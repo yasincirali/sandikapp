@@ -450,7 +450,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
                         .format(kayit!.detectedAt),
                     maxLines: 1,
                     style: context.t.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: renk,
                     ),
                   ),
@@ -668,7 +668,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                       child: Text(
                         'Tekrar dene',
                         style: context.t.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: p.amberText,
                         ),
                       ),
@@ -858,7 +858,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                     // Güven skoru (%) — tabular figür, değişince zıplamasın.
                     style: context.t.numLarge.copyWith(
                       fontSize: 22,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: signalColor,
                     ),
                   ),
@@ -946,7 +946,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                           child: Text(
                             lbl,
                             style: context.t.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               color: c,
                             ),
                           ),

@@ -753,6 +753,9 @@ class _KursuSutunu extends StatelessWidget {
           child: YuvarlananMetin(
             _yuzde(roi),
             stil: context.t.numSmall.copyWith(
+              // Yarış sahnesi w600 tavanının istisnası (yasin 2026-11-05):
+              // numSmall w600'e indi (2026-11-11), sahne eski ağırlığını korur.
+              fontWeight: FontWeight.w700,
               color: roi >= 0 ? context.c.gain : context.c.loss,
             ),
           ),
@@ -1185,7 +1188,11 @@ class _CanliSatirState extends State<_CanliSatir>
                           ? Text(
                               l.noData,
                               style:
-                                  context.t.numSmall.copyWith(color: roiRengi),
+                                  context.t.numSmall.copyWith(
+                                // Yarış sahnesi istisnası; yukarıdaki not.
+                                fontWeight: FontWeight.w700,
+                                color: roiRengi,
+                              ),
                             )
                           : YuvarlananMetin(
                               _yuzde(roi),

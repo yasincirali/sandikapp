@@ -218,6 +218,10 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
                 Text(
                   yuzde,
                   style: context.t.numSmall.copyWith(
+                    // Zirve sahnesi w600 tavanının istisnası (yasin
+                    // 2026-11-05): numSmall w600'e indi (2026-11-11), sahne
+                    // eski ağırlığını korur.
+                    fontWeight: FontWeight.w700,
                     color: diger ? context.c.text58 : context.c.text90,
                   ),
                 ),

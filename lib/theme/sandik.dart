@@ -1076,9 +1076,12 @@ extension SandikBoldText on TextTheme {
 /// Para tutarları ve yüzdeler listede alt alta geldiğinde rakamlar aynı
 /// genişlikte olmalı; aksi halde kolonlar oynak görünür.
 extension SandikNumericText on TextTheme {
-  /// Liste satırı tutarı (13pt, w700) — [FontFeature.tabularFigures] ile.
+  /// Liste satırı tutarı (13pt, w600) — [FontFeature.tabularFigures] ile.
+  /// 2026-11-11: w700 → w600 (ağırlık tavanı, yasin 2026-11-05; unslop).
+  /// Yarış/Zirve sahneleri istisna olduğu için orada açık w700 yazılı; ana
+  /// sayfa toplam kartı (`PortfolioSummaryWidget`) ağırlığı zaten açık verir.
   TextStyle get numSmall => (bodyMedium ?? const TextStyle()).copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 

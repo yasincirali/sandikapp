@@ -329,7 +329,7 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
                 child: Text(deger,
                     maxLines: 1,
                     style: context.t.numSmall.copyWith(
-                        color: renk ?? c.text90, fontWeight: FontWeight.w700)),
+                        color: renk ?? c.text90, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
