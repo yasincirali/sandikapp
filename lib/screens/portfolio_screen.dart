@@ -42,6 +42,7 @@ import '../services/sparkline_service.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../widgets/sekme_basa_don.dart';
+import '../widgets/sekme_yigini.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
@@ -451,8 +452,23 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
       }
     });
 
+    // Boşta önceden kurulum (Ar-Ge 11 Kas 18:04 #3, `SekmeYigini`): sekme
+    // Offstage kuruldu ama kullanıcı henüz görmedi. Bu sürede YENİ ağ
+    // isteği başlatan parçalar kurulmaz: takip sayacı (takip listesi),
+    // alarm rozeti (yüzde/gösterge/çizim alarm listeleri), sparkline ön
+    // yüklemesi, Bugün serisi isteği, portföy listesi (çoklu portföy),
+    // özellik önerisi. Portföy defteri ve ortak varlıkları splash'ta
+    // (`_warmUpData`) zaten bellekte; geri kalan her şey yerel. Kullanıcı
+    // sekmeye geçince işaret düşer ve bu parçalar o an kurulur — ağ
+    // isteklerinin zamanı birebir eskisi gibi "ilk ziyaret".
+    final onKurulum = SekmeOnKurulumu.bekliyor(context);
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
-    final portfoyKapsami = ref.watch(portfoyKapsamiProvider);
+    // Önceden kurulumda portföy listesi canlı değilse kapsam "Tümü"
+    // (özellik görünmeyen kullanıcıda zaten budur); listeyi bu yüzden
+    // çekmeyiz.
+    final portfoyKapsami = onKurulum && !ref.exists(portfoylerProvider)
+        ? (secim: PortfoySecimi.tumu, bilinen: const <String>{})
+        : ref.watch(portfoyKapsamiProvider);
     // Portföyler arası taşıma yalnız özellik görünürken (bayrak + Premium
     // görünürlüğü); kapalıyken kaydırma paneli birebir eski. Ve yalnız
     // taşınacak İKİNCİ bir portföy varken (yasin 2026-10-10: "2. portföyü
@@ -460,7 +476,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     // gidecek yeri olmayan bir düğmeydi; dokununca yeni portföy açma
     // akışına (ücretsizde paywall'a) düşüyordu. Portföy açmanın yeri Portföy
     // Yönetimi; ilk adlandırılmış portföy açılınca Taşı kendiliğinden gelir.
-    final tasimaAcik = ref.watch(cokluPortfoyGorunurProvider) &&
+    final tasimaAcik = !onKurulum &&
+        ref.watch(cokluPortfoyGorunurProvider) &&
         tasinacakPortfoyVar(ref.watch(portfoylerProvider).valueOrNull);
     final guncelleDurumu = ref.watch(varlikGuncellemeProvider);
 
@@ -563,7 +580,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   target: TourTarget.govdeSekmeleri,
                   child: _BodyTabs(
                     selected: _bodyTab,
-                    count: ref.watch(watchlistCountProvider),
+                    count: onKurulum ? 0 : ref.watch(watchlistCountProvider),
                     onChanged: (i) => setState(() => _bodyTab = i),
                   ),
                 ),
@@ -648,7 +665,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         // kişi seçicinin ALTINDA. Ortağın lotları hiçbir
                         // portföye girmez; Birlikte kullanıcı toplamıdır.
                         // Bayrak kapalıyken sıfır boy (yerleşim birebir).
-                        if (_view == '')
+                        if (_view == '' && !onKurulum)
                           PortfoySecici(
                             bosluk: EdgeInsets.only(
                                 top: activePartners.isNotEmpty
@@ -663,7 +680,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         // kapatma kaydı: burada kapatılan Ana sayfadan da
                         // kalkar. Ortağın görünümünde öneri yok (kendi
                         // hesabının özellikleri).
-                        if (_view == '')
+                        if (_view == '' && !onKurulum)
                           const OzellikOnerisiKarti(
                               padding: EdgeInsets.only(top: SandikSpace.sm)),
                         // Üstte seçici yokken sekmelerle halka arasında
@@ -803,7 +820,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                   final bd = IntradaySeriesCache.instance
                                       .onbellekte(kume);
                                   if (bd == null) {
-                                    _bugunVerisiniIste(pState);
+                                    if (!onKurulum) _bugunVerisiniIste(pState);
                                   } else {
                                     gunDegisimi = pozisyonGunDegisimleri(bd,
                                         lotlar: kume, now: DateTime.now());
@@ -825,9 +842,13 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 // sonra doluyordu (bkz. `prefetch`). Yalnız
                                 // EKRANDAKİ sırayla ilk kartlar (1 Kas):
                                 // halka süzgeci ve sıralama dahil.
-                                SparklineService.instance.prefetch(
-                                    filteredPositions
-                                        .map((p) => p.asDisplayAsset()));
+                                // Önceden kurulumda ertelenir: sekme
+                                // görülünce bu builder yeniden koşar.
+                                if (!onKurulum) {
+                                  SparklineService.instance.prefetch(
+                                      filteredPositions
+                                          .map((p) => p.asDisplayAsset()));
+                                }
 
                                 return <Widget>[
                                     // Sadeleştirme 2: ~390pt'lik halka
@@ -3385,7 +3406,10 @@ class _AlarmRozeti extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = sembol;
-    if (s == null) return const SizedBox.shrink();
+    // Önceden kurulumda alarm listeleri çekilmesin (bkz. `SekmeOnKurulumu`).
+    if (s == null || SekmeOnKurulumu.bekliyor(context)) {
+      return const SizedBox.shrink();
+    }
     // Dört alarm türü birlikte (Ar-Ge 29 Eki 16:45 #1): rozet yalnız fiyat
     // alarmını sayıyordu; yüzde ya da gösterge alarmı olan kartta zil yoktu.
     final aktif = ref.watch(sembolAlarmlariProvider(s)).aktif;

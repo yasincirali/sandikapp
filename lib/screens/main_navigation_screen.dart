@@ -5,6 +5,7 @@ import '../theme/sandik.dart';
 import '../theme/yazi_boyutu.dart';
 import '../widgets/hesap_secici.dart' show profilSekmesiUzunBasildi;
 import '../widgets/sekme_basa_don.dart';
+import '../widgets/sekme_yigini.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmKurAkisi;
 import '../widgets/tek_dokunus_alarm.dart';
@@ -485,8 +486,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       },
       child: Scaffold(
         backgroundColor: context.c.background,
-        body: _SekmeYigini(
+        // Yığın ve kararları `widgets/sekme_yigini.dart`'ta. Portföy boşta
+        // önceden kurulur (Ar-Ge 11 Kas 18:04 #3); Performans kurulmaz
+        // (seri hesabı + ağ).
+        body: SekmeYigini(
           index: _currentIndex,
+          onKurulacak: _portfolioTab,
           children: _screens,
         ),
         bottomNavigationBar: _buildBottomBar(),
@@ -645,82 +650,6 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Sekmeleri ağaçta tutan [IndexedStack] — geçiş ANLIK.
-///
-/// Neden düz `AnimatedSwitcher` değil: AnimatedSwitcher eski çocuğu ağaçtan
-/// söker, bu da her sekme dönüşünde ekranların baştan kurulmasına (scroll
-/// pozisyonu sıfırlanması, provider'ların yeniden tetiklenmesi) yol açardı.
-/// Burada tüm ekranlar `IndexedStack` gibi ağaçta kalır. State koruması
-/// aynen sürer.
-///
-/// ## Neden çapraz sönüm KALDIRILDI (hareket denetimi, 2026-09-29)
-/// Eskiden giden sekme 260 ms'de sönerken gelen belirirdi. Sekme çubuğu
-/// uygulamanın en sık dokunulan öğesi (günde onlarca kez) ve geçişin
-/// ortasında iki TAM EKRAN yarı saydam üst üste görünüyordu; tam ekran
-/// opaklık animasyonu da her karede iki ekranı ara katmana boyuyordu.
-/// iOS'ta sekme geçişi anlıktır (HIG, Tab bars). Sık tekrarlanan eylem
-/// hareket istemez; "hangi sekmedeyim" bilgisini sekme çubuğu verir.
-/// Pasif sekme `Offstage`: ağaçta kalır, çizilmez, dokunuş almaz.
-/// Ekran okuyucu ağacı için `ExcludeSemantics` ayrıca korunur.
-class _SekmeYigini extends StatefulWidget {
-  const _SekmeYigini({
-    required this.index,
-    required this.children,
-  });
-
-  final int index;
-  final List<Widget> children;
-
-  @override
-  State<_SekmeYigini> createState() => _SekmeYiginiState();
-}
-
-class _SekmeYiginiState extends State<_SekmeYigini> {
-  /// Henüz hiç görüntülenmemiş sekmeler inşa edilmez — ilk açılışta beş
-  /// ekranın birden kurulması gecikme yaratırdı. IndexedStack'in kendi
-  /// davranışı da budur (lazy değil ama görünmeyen çocuk layout almaz),
-  /// burada açıkça yönetiyoruz.
-  late final Set<int> _visited = {widget.index};
-
-  @override
-  void didUpdateWidget(covariant _SekmeYigini oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!_visited.contains(widget.index)) {
-      _visited.add(widget.index);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: List.generate(widget.children.length, (i) {
-        final isActive = i == widget.index;
-
-        // Hiç ziyaret edilmemiş sekmeyi inşa etme.
-        if (!_visited.contains(i)) {
-          return const SizedBox.shrink();
-        }
-
-        return Offstage(
-          offstage: !isActive,
-          child: IgnorePointer(
-            ignoring: !isActive,
-            // Pasif sekmeler ağaçta kalır (state korunur) ama ne çizim
-            // maliyeti üretir ne de erişilebilirlik ağacını kirletir.
-            child: TickerMode(
-              enabled: isActive,
-              child: ExcludeSemantics(
-                excluding: !isActive,
-                child: widget.children[i],
-              ),
-            ),
-          ),
-        );
-      }),
     );
   }
 }

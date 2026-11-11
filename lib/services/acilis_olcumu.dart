@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:firebase_core/firebase_core.dart';
@@ -42,6 +43,20 @@ class AcilisOlcumu {
   int? _defterMs;
   String? _defterKaynagi;
   bool _gonderildi = false;
+  Completer<void> _bitti = Completer<void>();
+
+  /// Ölçüm sürüyor mu: saat başladı, olay henüz gitmedi.
+  bool get suruyor => _saat.isRunning && !_gonderildi;
+
+  /// Ölçüm bitene kadar bekler — boşta işler (Portföy sekmesinin önceden
+  /// kurulumu, Ar-Ge 11 Kas 18:04 #3) ölçülen süreye karışmasın diye.
+  /// Ölçüm hiç başlamadıysa (sıcak dönüş, test) hemen döner. Defter
+  /// gelmeyen açılışta (oturum yok, boş portföy) olay hiç gitmez; [tavan]
+  /// sonunda yine döner ki önceden kurulum sonsuza dek beklemesin.
+  Future<void> bekle({Duration tavan = const Duration(seconds: 8)}) {
+    if (!suruyor) return Future<void>.value();
+    return _bitti.future.timeout(tavan, onTimeout: () {});
+  }
 
   /// Test: gönderimi yakalar. Üretimde Analytics + Crashlytics.
   @visibleForTesting
@@ -76,6 +91,7 @@ class AcilisOlcumu {
     if (defter == null) return;
     _gonderildi = true;
     _saat.stop();
+    if (!_bitti.isCompleted) _bitti.complete();
     final p = parametreler(
       ilkKareMs: _ilkKareMs,
       defterMs: defter,
@@ -148,6 +164,7 @@ class AcilisOlcumu {
     _defterMs = null;
     _defterKaynagi = null;
     _gonderildi = false;
+    _bitti = Completer<void>();
     gonderTest = null;
   }
 }
