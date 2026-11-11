@@ -2831,190 +2831,48 @@ class HistoryService {
             assets: assets, gramSerisi: goldMap, kaynak: debugSonAltinKaynagi);
     double goldKal(String ticker) => altinKalibre[ticker] ?? 1.0;
 
-    // Signed quantity per slot
-    double signedQtyOnSlot(Asset a, int slotTs) {
-      // Temettü nakit hareketidir, miktara girmez. deleteLog da mezar taşı.
-      // Bu satır olmadan aşağıdaki `isSell ? -q : +q` temettüyü alım sayardı.
-      if (a.isQuantityNeutral) return 0.0;
-      // Yumuşak silinmiş lot grafiğe girmez: silinen varlık "hiç olmamış"
-      // sayılır. Kayıt ledger'da durur (hareket geçmişi için) ama miktarı
-      // hiçbir günde sayılmaz.
-      if (a.isDeleted) return 0.0;
-      if (simulate) return a.isSell ? -a.quantity : a.quantity;
-      // slotTs tier bucket başlangıcı. Bir varlığın o slot'ta olabilmesi
-      // için addedDate <= slotTs olmalı — böylece slot başlangıcından SONRA
-      // alınan varlık (örn. çarşamba alım vs pazartesi slot) o slot'a
-      // dahil edilmez, bir sonraki bucket'a girer. Yanlış "erken katılım"
-      // grafiği geçmişte yapay yükseltirdi.
-      final addedMs = a.addedDate.millisecondsSinceEpoch;
-      if (addedMs > slotTs) return 0.0;
-      return a.isSell ? -a.quantity : a.quantity;
-    }
-
-    // Grid: from..to arası tier step'inde tüm slot'lar
-    final result = <int, double>{};
-    // Tür ve pozisyon dağılımı — `result` ile AYNI döngüde birikir
-    // (bkz. sınıf notu). Ayrı bir geçişte hesaplanırsa toplamlar ayrışır.
-    final byType = <AssetType, Map<int, double>>{};
-    final byPosition = <String, Map<int, double>>{};
-    final positionType = <String, AssetType>{};
-    final stepMs = _tierStepMs(tier);
-    int cursor = normalizedFrom;
-    while (cursor <= normalizedTo) {
-      // Gelecek slotları atla
-      if (cursor > nowTs) break;
-      // Haftalık intraday'de hafta sonu atla (Cts/Paz)
-      if (tier == ResolutionTier.hourly) {
-        final wd = DateTime.fromMillisecondsSinceEpoch(cursor).weekday;
-        if (wd == DateTime.saturday || wd == DateTime.sunday) {
-          cursor += stepMs;
-          continue;
-        }
-      }
-
-      double total = 0.0;
-      bool anyCovered = false;
-      // Bu slot'ta portföyde HİÇ kayıt var mıydı? (net miktar sıfır olsa
-      // bile). `anyCovered`'dan farkı: o "fiyatlanabilir pozisyon bulundu"
-      // der, bu "o tarihte bir portföy vardı" der.
-      //
-      // **Neden gerekli (kullanıcı bildirimi, 2026-09-16):** portföyün
-      // tamamı satıldığında her varlık için `qty == 0` oluyor, hiçbiri
-      // `anyCovered`'ı true yapmıyor ve SLOT SERİYE HİÇ GİRMİYORDU. Grafik
-      // satış gününden önce bitiyor, son değerde asılı kalıyordu — ölçüldü:
-      // seri 14.09'da ₺330.804'te bitmiş, satışın yapıldığı 16.09 slotu
-      // yok. Kullanıcı "varlığımın 0'a indiğini görmüyorum" dedi; haklıydı,
-      // düşüş çizilmiyordu çünkü o gün seride yoktu.
-      bool anyLedger = false;
-      // Bu slot'un tür ve pozisyon kırılımı. `total`a giren her `v` ikisine
-      // de girer — tek yerden beslendikleri için toplamları ayrışamaz.
-      final slotByType = <AssetType, double>{};
-      final slotByPosition = <String, double>{};
-      for (final a in assets) {
-        // Defterde o tarihte kayıt var mı — miktarı sıfırlanmış olsa bile.
-        // Silinmiş ve miktar-nötr (temettü/mezar taşı) satırlar sayılmaz:
-        // ilki "hiç olmamış", ikincisi zaten miktar taşımıyor.
-        if (!a.isDeleted &&
-            !a.isQuantityNeutral &&
-            a.addedDate.millisecondsSinceEpoch <= cursor) {
-          anyLedger = true;
-        }
-        final qty = signedQtyOnSlot(a, cursor);
-        if (qty == 0) continue;
-        double? v;
-        if (a.type == AssetType.altin) {
-          // Altın için _pastOrNull yerine _closestOrNull — cursor'dan önce
-          // veri yoksa serinin en yakın gelecek noktasına düş. Böylece yeni
-          // eklenmiş bir altın için düz plato + dik sıçrama olmaz.
-          final gram = _closestOrNull(goldMap, cursor);
-          if (gram != null) {
-            v = gram * goldFactor(a.ticker) * goldKal(a.ticker) * qty;
-          }
-        } else if (a.type == AssetType.hisse ||
-            a.type == AssetType.emtia ||
-            a.type == AssetType.kripto ||
-            FiyatKaynagi.eurobondSerili(a) ||
-            a.type == AssetType.doviz ||
-            a.type.fiyatlamaTuru == AssetType.fon) {
-          final map = tickerMaps[a.ticker] ?? {};
-          final price = _closestOrNull(map, cursor);
-          if (price != null) {
-            double p = price;
-            var kurVar = true;
-            if (a.currency == 'USD') {
-              final usdRate = _closestOrNull(usdMap, cursor) ?? canliKur();
-              if (usdRate == null || usdRate <= 0) {
-                kurVar = false;
-              } else {
-                p *= usdRate;
-              }
-            }
-            v = kurVar ? p * qty : null;
-          }
-        }
-        // Son çare: canlı fiyat (Yahoo serisi tamamen boşsa). Bunun yerine
-        // artık nadiren buraya düşülür çünkü _closestOrNull mevcut serideki
-        // herhangi bir noktayı bulur.
-        if (v == null && a.currentPrice > 0) {
-          // Sabit 40.0 kaldırıldı: USD kote varlık ancak gerçek bir kur
-          // varken seed'lenir, yoksa o slotta ölçülemez sayılır.
-          final kur = a.currency == 'USD' ? canliKur() : null;
-          if (a.currency != 'USD') {
-            v = a.currentPrice * qty;
-          } else if (kur != null && kur > 0) {
-            v = a.currentPrice * kur * qty;
-          }
-        }
-        // Bir asset için hiç fiyat yoksa (kurucu-fon YLB(0.00) gibi) O
-        // ASSET'İ o slot'ta yok say — diğer varlıklar toplama girmeye devam
-        // etsin. Aksi halde tek eksik varlık için tüm grafik boş kalır.
-        if (v == null) continue;
-        total += v;
-        slotByType[a.type] = (slotByType[a.type] ?? 0) + v;
-        // Aynı ürünün farklı lot'ları tek satırda toplanır (ekrandaki
-        // pozisyon kavramıyla aynı), ama SAHİP ayrımı korunur: `positionKey`
-        // sahip taşımadığı için burada ortakların aynı hissesi tek satıra
-        // düşer — bu kart zaten sekme başına ayrı çizilir, sekme içinde
-        // birleşmeleri doğrudur.
-        final pk = positionKey(a);
-        slotByPosition[pk] = (slotByPosition[pk] ?? 0) + v;
-        positionType[pk] = a.type;
-        anyCovered = true;
-      }
-      // `anyLedger` tek başına da yeter: o tarihte portföy VARDI ve net
-      // değeri sıfırdı. Sıfır bir ölçümdür, ölçüm yokluğu değil — grafik
-      // düşüşü çizebilmeli.
-      if (anyCovered || anyLedger) {
-        // Negatif toplam kırpılırsa dağılım da AYNI ORANDA kırpılmalı;
-        // aksi halde `Σ byType != total` olur ve tür dökümü üst kartı
-        // tutmaz. Pratikte buraya nadiren düşülür (satış lot'ları alımı
-        // aşarsa), ama değişmez koşulsuz korunmalı.
-        if (total < 0) {
-          total = 0;
-          slotByType.clear();
-          slotByPosition.clear();
-        }
-        result[cursor] = total;
-        for (final e in slotByType.entries) {
-          (byType[e.key] ??= <int, double>{})[cursor] = e.value;
-        }
-        for (final e in slotByPosition.entries) {
-          (byPosition[e.key] ??= <int, double>{})[cursor] = e.value;
-        }
-      }
-      cursor += stepMs;
-    }
-
-    // Outlier smoothing: tek nokta V-dip artefaktları (Yahoo veri gecikmesi
-    // veya eksik slot) yumuşat. Komşu iki nokta birbirine yakınken ortadaki
-    // >%1.5 sapıyorsa yerine ortalama koy.
-    //
-    // Düzeltilen slot'lar geri bildirilir: smoothing YALNIZCA `result`u
-    // değiştirir, dağılıma dokunmazsa `Σ byType != total` olur ve tür dökümü
-    // üst kartı tutmaz. Aşağıda dağılım aynı oranda ölçeklenir.
-    final smoothed = _smoothOutliers(result);
-    for (final ts in smoothed.keys) {
-      final before = smoothed[ts]!;
-      final after = result[ts]!;
-      // Sıfırdan ölçeklenemez; o slot'ta dağılım zaten anlamsızdır.
-      if (before <= 0) continue;
-      final factor = after / before;
-      for (final series in byType.values) {
-        final v = series[ts];
-        if (v != null) series[ts] = v * factor;
-      }
-      for (final series in byPosition.values) {
-        final v = series[ts];
-        if (v != null) series[ts] = v * factor;
-      }
-    }
-
-    return PortfolioHistoryBreakdown(
-      total: result,
-      byType: byType,
-      byPosition: byPosition,
-      positionType: positionType,
+    // Birleştirme girdisi DÜZ VERİDİR (Asset değil): Asset'e, fiyat
+    // kaynağına ve kalibrasyona bakan her karar burada, ana iş parçacığında
+    // bir kez verilir; döngü yalnız sayı ve harita görür. Böylece aynı saf
+    // fonksiyon ayrı isolate'te de koşabilir (bkz. [portfoySerisiniBirlestir]).
+    final kur = canliKur();
+    final girdi = PortfoyBirlesimGirdisi(
+      lotlar: [
+        for (final a in assets)
+          PortfoyBirlesimLotu(
+            tur: a.type,
+            ticker: a.ticker,
+            pozisyon: positionKey(a),
+            isaretliMiktar: a.isSell ? -a.quantity : a.quantity,
+            eklenmeMs: a.addedDate.millisecondsSinceEpoch,
+            silinmis: a.isDeleted,
+            miktarNotr: a.isQuantityNeutral,
+            seriliFiyat: a.type == AssetType.hisse ||
+                a.type == AssetType.emtia ||
+                a.type == AssetType.kripto ||
+                FiyatKaynagi.eurobondSerili(a) ||
+                a.type == AssetType.doviz ||
+                a.type.fiyatlamaTuru == AssetType.fon,
+            usd: a.currency == 'USD',
+            guncelFiyat: a.currentPrice,
+            altinAgirligi:
+                a.type == AssetType.altin ? goldFactor(a.ticker) : 1.0,
+            altinKalibrasyonu:
+                a.type == AssetType.altin ? goldKal(a.ticker) : 1.0,
+          ),
+      ],
+      tickerSerileri: tickerMaps,
+      usdSerisi: usdMap,
+      altinGramSerisi: goldMap,
+      bas: normalizedFrom,
+      son: normalizedTo,
+      simdi: nowTs,
+      adimMs: _tierStepMs(tier),
+      haftaSonuAtla: tier == ResolutionTier.hourly,
+      simulate: simulate,
+      canliKur: kur,
     );
+    return portfoySerisiniBirlestirUygun(girdi);
   }
 
   /// In-place outlier smoothing — tek nokta V-dip / N-tepe artefaktlarını
@@ -3023,7 +2881,7 @@ class HistoryService {
   /// Değiştirilen slot'ları `ts → ÖNCEKİ değer` olarak döndürür. Çağıran bu
   /// bilgiyle tür dağılımını aynı oranda ölçekler; aksi halde toplam düzeltilip
   /// dağılım ham kalır ve `Σ byType != total` olur.
-  Map<int, double> _smoothOutliers(Map<int, double> points) {
+  static Map<int, double> _smoothOutliers(Map<int, double> points) {
     final changed = <int, double>{};
     if (points.length < 3) return changed;
     final keys = points.keys.toList()..sort();
@@ -3092,7 +2950,7 @@ class HistoryService {
     return best;
   }
 
-  double? _pastOrNull(Map<int, double> map, int targetTs) {
+  static double? _pastOrNull(Map<int, double> map, int targetTs) {
     if (map.isEmpty) return null;
     final exact = map[targetTs];
     if (exact != null) return exact;
@@ -3104,7 +2962,7 @@ class HistoryService {
   /// pastOrNull null döndüyse "en yakın ileri nokta" ile fallback. Böylece
   /// eski tarihlere sabit 40.0 kur atamak yerine serinin en yakın gerçek
   /// değerini kullanırız → grafik ani sıçrama üretmez.
-  double? _closestOrNull(Map<int, double> map, int targetTs) {
+  static double? _closestOrNull(Map<int, double> map, int targetTs) {
     final past = _pastOrNull(map, targetTs);
     if (past != null) return past;
     if (map.isEmpty) return null;
@@ -3802,4 +3660,334 @@ class _SeriTazelikKaydi {
     eksik = eksik || alt.eksik;
     bosBilesen = bosBilesen || alt.bosBilesen;
   }
+}
+
+// ── Portföy serisi birleştirmesi (saf, isolate'e taşınabilir) ──────────────
+//
+// Neden ayrı (2026-11-11, ölçüldü): Performans'ta dönem değişince
+// `getPortfolioHistoryBreakdownAtResolution` serileri paralel çektikten
+// sonra her slot × her lot için fiyat arıyor. 40 varlık (120 lot) × 5 yıl
+// günlük (1825 slot) girdide yalnız bu adım `flutter test` (JIT) altında
+// 45–108 ms sürdü (8 tur, ortanca ~58 ms; çekim önbellekten dönen tam
+// çağrı 84–134 ms, ilk çağrı 579 ms). AOT birkaç kat hızlı olsa da 16 ms'lik
+// kare bütçesinin üstünde kalır: dönem çipinin animasyonu ve grafik geçişi
+// takılıyordu. Büyük
+// girdide birleştirme `Isolate.run`'a gider; küçük girdide isolate kurma
+// ve harita kopyalama maliyeti kazancı aşar, aynı fonksiyon senkron koşar.
+//
+// Girdi yalnız düz veri taşır (Asset yok): Asset'e, fiyat kaynağına,
+// altın ağırlığına ve kalibrasyona bakan kararlar çağıranda, ana iş
+// parçacığında verilir. Sonuç isolate'li ve isolate'siz yolda BİREBİR
+// aynıdır (`portfoy_birlestirme_isolate_test`).
+
+/// Birleştirmenin gördüğü tek lot — Asset'in döngünün okuduğu alanları.
+@immutable
+class PortfoyBirlesimLotu {
+  final AssetType tur;
+  final String ticker;
+
+  /// `positionKey(asset)` — ürün dökümünün anahtarı.
+  final String pozisyon;
+
+  /// Satışta eksi, alışta artı miktar.
+  final double isaretliMiktar;
+  final int eklenmeMs;
+  final bool silinmis;
+
+  /// Temettü / mezar taşı: miktara girmez.
+  final bool miktarNotr;
+
+  /// Ticker serisinden fiyatlanan tür mü (hisse, emtia, kripto, serili
+  /// eurobond, döviz, fon). Altın ayrı dal: gram serisinden.
+  final bool seriliFiyat;
+  final bool usd;
+  final double guncelFiyat;
+
+  /// Altında `goldWeightFactor` ve canlı ölçek kalibrasyonu; diğerlerinde
+  /// kullanılmaz. Ayrı tutulur: çarpım sırası eskisiyle aynı kalsın diye
+  /// (`gram × ağırlık × kalibrasyon × miktar`; önceden çarpmak son basamağı
+  /// oynatabilirdi).
+  final double altinAgirligi;
+  final double altinKalibrasyonu;
+
+  const PortfoyBirlesimLotu({
+    required this.tur,
+    required this.ticker,
+    required this.pozisyon,
+    required this.isaretliMiktar,
+    required this.eklenmeMs,
+    required this.silinmis,
+    required this.miktarNotr,
+    required this.seriliFiyat,
+    required this.usd,
+    required this.guncelFiyat,
+    required this.altinAgirligi,
+    required this.altinKalibrasyonu,
+  });
+}
+
+@immutable
+class PortfoyBirlesimGirdisi {
+  final List<PortfoyBirlesimLotu> lotlar;
+  final Map<String, Map<int, double>> tickerSerileri;
+  final Map<int, double> usdSerisi;
+  final Map<int, double> altinGramSerisi;
+
+  /// Tier'a normalize edilmiş ızgara başı/sonu ve "şimdi" (ms).
+  final int bas;
+  final int son;
+  final int simdi;
+  final int adimMs;
+
+  /// Saatlik tier'da Cts/Paz slotları atlanır.
+  final bool haftaSonuAtla;
+  final bool simulate;
+
+  /// `HistoryService.canliKur()` — çağıranda bir kez okunur (closure
+  /// isolate'e gönderilemez; döngü boyunca değeri zaten değişmez).
+  final double? canliKur;
+
+  const PortfoyBirlesimGirdisi({
+    required this.lotlar,
+    required this.tickerSerileri,
+    required this.usdSerisi,
+    required this.altinGramSerisi,
+    required this.bas,
+    required this.son,
+    required this.simdi,
+    required this.adimMs,
+    required this.haftaSonuAtla,
+    required this.simulate,
+    required this.canliKur,
+  });
+
+  /// İş büyüklüğü: döngünün iç adım sayısı (slot × lot).
+  int get isBuyuklugu {
+    if (adimMs <= 0) return 0;
+    final ust = son < simdi ? son : simdi;
+    if (ust < bas) return 0;
+    return ((ust - bas) ~/ adimMs + 1) * lotlar.length;
+  }
+}
+
+/// Bu iş büyüklüğünün (slot × lot) altında birleştirme senkron koşar.
+///
+/// Ölçüm (2026-11-11, `flutter test` JIT, `portfoy_birlestirme_isolate_test`):
+///   · 15 varlık × 1 yıl (365 × 45 ≈ 16 bin adım): senkron 2,3–4,1 ms,
+///     isolate toplam 3,2–5,3 ms → isolate burada KAYIP (kurma + kopya).
+///   · 40 × 5 yıl (1826 × 120 ≈ 219 bin adım): senkron 45–108 ms, isolate
+///     toplam 50–96 ms ama ana iş parçacığının senkron payı ~1–10 ms.
+/// Adım başına ~0,25–0,5 µs → 30 bin adım JIT'te ~8–15 ms: kare bütçesinin
+/// altında kalan girdi senkron koşar, üstü isolate'e gider. AOT'de eşiğin
+/// altı daha da hızlıdır.
+const int portfoyBirlesimIsolateEsigi = 30000;
+
+/// Büyük girdide [portfoySerisiniBirlestir]'i ayrı isolate'te, küçük
+/// girdide ve web'de senkron koşar. Sonuç iki yolda birebir aynıdır.
+Future<PortfolioHistoryBreakdown> portfoySerisiniBirlestirUygun(
+    PortfoyBirlesimGirdisi girdi) async {
+  // Web'de `Isolate.run` yok (dart:isolate desteklenmez): senkron.
+  if (kIsWeb || girdi.isBuyuklugu < portfoyBirlesimIsolateEsigi) {
+    return portfoySerisiniBirlestir(girdi);
+  }
+  return portfoySerisiniBirlestirIsolateda(girdi);
+}
+
+/// [portfoySerisiniBirlestir]'i ayrı isolate'te koşar. `compute` yerli
+/// platformda `Isolate.run`'dır; `dart:isolate` doğrudan içe aktarılmaz ki
+/// web derlemesi kırılmasın. Top-level: gönderilen yalnız [girdi]'dir
+/// (servis örneği yakalansaydı gönderilemezdi).
+@visibleForTesting
+Future<PortfolioHistoryBreakdown> portfoySerisiniBirlestirIsolateda(
+        PortfoyBirlesimGirdisi girdi) =>
+    compute(portfoySerisiniBirlestir, girdi);
+
+/// Slot ızgarasında her lotu fiyatlayıp toplamı, tür ve pozisyon dökümünü
+/// AYNI döngüde biriktirir (bkz. `getPortfolioHistoryBreakdownAtResolution`
+/// sınıf notu: `total[ts] == Σ byType[t]![ts]` yapısal olarak doğrudur).
+/// Saf: yalnız [girdi]'yi okur, yan etkisi yok.
+PortfolioHistoryBreakdown portfoySerisiniBirlestir(
+    PortfoyBirlesimGirdisi girdi) {
+  final goldMap = girdi.altinGramSerisi;
+  final usdMap = girdi.usdSerisi;
+  final tickerMaps = girdi.tickerSerileri;
+  final simulate = girdi.simulate;
+
+  // Signed quantity per slot
+  double signedQtyOnSlot(PortfoyBirlesimLotu a, int slotTs) {
+    // Temettü nakit hareketidir, miktara girmez. deleteLog da mezar taşı.
+    // Bu satır olmadan aşağıdaki `isSell ? -q : +q` temettüyü alım sayardı.
+    if (a.miktarNotr) return 0.0;
+    // Yumuşak silinmiş lot grafiğe girmez: silinen varlık "hiç olmamış"
+    // sayılır. Kayıt ledger'da durur (hareket geçmişi için) ama miktarı
+    // hiçbir günde sayılmaz.
+    if (a.silinmis) return 0.0;
+    if (simulate) return a.isaretliMiktar;
+    // slotTs tier bucket başlangıcı. Bir varlığın o slot'ta olabilmesi
+    // için addedDate <= slotTs olmalı — böylece slot başlangıcından SONRA
+    // alınan varlık (örn. çarşamba alım vs pazartesi slot) o slot'a
+    // dahil edilmez, bir sonraki bucket'a girer. Yanlış "erken katılım"
+    // grafiği geçmişte yapay yükseltirdi.
+    if (a.eklenmeMs > slotTs) return 0.0;
+    return a.isaretliMiktar;
+  }
+
+  // Grid: from..to arası tier step'inde tüm slot'lar
+  final result = <int, double>{};
+  // Tür ve pozisyon dağılımı — `result` ile AYNI döngüde birikir
+  // (bkz. sınıf notu). Ayrı bir geçişte hesaplanırsa toplamlar ayrışır.
+  final byType = <AssetType, Map<int, double>>{};
+  final byPosition = <String, Map<int, double>>{};
+  final positionType = <String, AssetType>{};
+  final stepMs = girdi.adimMs;
+  int cursor = girdi.bas;
+  while (cursor <= girdi.son) {
+    // Gelecek slotları atla
+    if (cursor > girdi.simdi) break;
+    // Haftalık intraday'de hafta sonu atla (Cts/Paz)
+    if (girdi.haftaSonuAtla) {
+      final wd = DateTime.fromMillisecondsSinceEpoch(cursor).weekday;
+      if (wd == DateTime.saturday || wd == DateTime.sunday) {
+        cursor += stepMs;
+        continue;
+      }
+    }
+
+    double total = 0.0;
+    bool anyCovered = false;
+    // Bu slot'ta portföyde HİÇ kayıt var mıydı? (net miktar sıfır olsa
+    // bile). `anyCovered`'dan farkı: o "fiyatlanabilir pozisyon bulundu"
+    // der, bu "o tarihte bir portföy vardı" der.
+    //
+    // **Neden gerekli (kullanıcı bildirimi, 2026-09-16):** portföyün
+    // tamamı satıldığında her varlık için `qty == 0` oluyor, hiçbiri
+    // `anyCovered`'ı true yapmıyor ve SLOT SERİYE HİÇ GİRMİYORDU. Grafik
+    // satış gününden önce bitiyor, son değerde asılı kalıyordu — ölçüldü:
+    // seri 14.09'da ₺330.804'te bitmiş, satışın yapıldığı 16.09 slotu
+    // yok. Kullanıcı "varlığımın 0'a indiğini görmüyorum" dedi; haklıydı,
+    // düşüş çizilmiyordu çünkü o gün seride yoktu.
+    bool anyLedger = false;
+    // Bu slot'un tür ve pozisyon kırılımı. `total`a giren her `v` ikisine
+    // de girer — tek yerden beslendikleri için toplamları ayrışamaz.
+    final slotByType = <AssetType, double>{};
+    final slotByPosition = <String, double>{};
+    for (final a in girdi.lotlar) {
+      // Defterde o tarihte kayıt var mı — miktarı sıfırlanmış olsa bile.
+      // Silinmiş ve miktar-nötr (temettü/mezar taşı) satırlar sayılmaz:
+      // ilki "hiç olmamış", ikincisi zaten miktar taşımıyor.
+      if (!a.silinmis && !a.miktarNotr && a.eklenmeMs <= cursor) {
+        anyLedger = true;
+      }
+      final qty = signedQtyOnSlot(a, cursor);
+      if (qty == 0) continue;
+      double? v;
+      if (a.tur == AssetType.altin) {
+        // Altın için _pastOrNull yerine _closestOrNull — cursor'dan önce
+        // veri yoksa serinin en yakın gelecek noktasına düş. Böylece yeni
+        // eklenmiş bir altın için düz plato + dik sıçrama olmaz.
+        final gram = HistoryService._closestOrNull(goldMap, cursor);
+        if (gram != null) {
+          v = gram * a.altinAgirligi * a.altinKalibrasyonu * qty;
+        }
+      } else if (a.seriliFiyat) {
+        final map = tickerMaps[a.ticker] ?? const <int, double>{};
+        final price = HistoryService._closestOrNull(map, cursor);
+        if (price != null) {
+          double p = price;
+          var kurVar = true;
+          if (a.usd) {
+            final usdRate =
+                HistoryService._closestOrNull(usdMap, cursor) ?? girdi.canliKur;
+            if (usdRate == null || usdRate <= 0) {
+              kurVar = false;
+            } else {
+              p *= usdRate;
+            }
+          }
+          v = kurVar ? p * qty : null;
+        }
+      }
+      // Son çare: canlı fiyat (Yahoo serisi tamamen boşsa). Bunun yerine
+      // artık nadiren buraya düşülür çünkü _closestOrNull mevcut serideki
+      // herhangi bir noktayı bulur.
+      if (v == null && a.guncelFiyat > 0) {
+        // Sabit 40.0 kaldırıldı: USD kote varlık ancak gerçek bir kur
+        // varken seed'lenir, yoksa o slotta ölçülemez sayılır.
+        final kur = a.usd ? girdi.canliKur : null;
+        if (!a.usd) {
+          v = a.guncelFiyat * qty;
+        } else if (kur != null && kur > 0) {
+          v = a.guncelFiyat * kur * qty;
+        }
+      }
+      // Bir asset için hiç fiyat yoksa (kurucu-fon YLB(0.00) gibi) O
+      // ASSET'İ o slot'ta yok say — diğer varlıklar toplama girmeye devam
+      // etsin. Aksi halde tek eksik varlık için tüm grafik boş kalır.
+      if (v == null) continue;
+      total += v;
+      slotByType[a.tur] = (slotByType[a.tur] ?? 0) + v;
+      // Aynı ürünün farklı lot'ları tek satırda toplanır (ekrandaki
+      // pozisyon kavramıyla aynı), ama SAHİP ayrımı korunur: `positionKey`
+      // sahip taşımadığı için burada ortakların aynı hissesi tek satıra
+      // düşer — bu kart zaten sekme başına ayrı çizilir, sekme içinde
+      // birleşmeleri doğrudur.
+      final pk = a.pozisyon;
+      slotByPosition[pk] = (slotByPosition[pk] ?? 0) + v;
+      positionType[pk] = a.tur;
+      anyCovered = true;
+    }
+    // `anyLedger` tek başına da yeter: o tarihte portföy VARDI ve net
+    // değeri sıfırdı. Sıfır bir ölçümdür, ölçüm yokluğu değil — grafik
+    // düşüşü çizebilmeli.
+    if (anyCovered || anyLedger) {
+      // Negatif toplam kırpılırsa dağılım da AYNI ORANDA kırpılmalı;
+      // aksi halde `Σ byType != total` olur ve tür dökümü üst kartı
+      // tutmaz. Pratikte buraya nadiren düşülür (satış lot'ları alımı
+      // aşarsa), ama değişmez koşulsuz korunmalı.
+      if (total < 0) {
+        total = 0;
+        slotByType.clear();
+        slotByPosition.clear();
+      }
+      result[cursor] = total;
+      for (final e in slotByType.entries) {
+        (byType[e.key] ??= <int, double>{})[cursor] = e.value;
+      }
+      for (final e in slotByPosition.entries) {
+        (byPosition[e.key] ??= <int, double>{})[cursor] = e.value;
+      }
+    }
+    cursor += stepMs;
+  }
+
+  // Outlier smoothing: tek nokta V-dip artefaktları (Yahoo veri gecikmesi
+  // veya eksik slot) yumuşat. Komşu iki nokta birbirine yakınken ortadaki
+  // >%1.5 sapıyorsa yerine ortalama koy.
+  //
+  // Düzeltilen slot'lar geri bildirilir: smoothing YALNIZCA `result`u
+  // değiştirir, dağılıma dokunmazsa `Σ byType != total` olur ve tür dökümü
+  // üst kartı tutmaz. Aşağıda dağılım aynı oranda ölçeklenir.
+  final smoothed = HistoryService._smoothOutliers(result);
+  for (final ts in smoothed.keys) {
+    final before = smoothed[ts]!;
+    final after = result[ts]!;
+    // Sıfırdan ölçeklenemez; o slot'ta dağılım zaten anlamsızdır.
+    if (before <= 0) continue;
+    final factor = after / before;
+    for (final series in byType.values) {
+      final v = series[ts];
+      if (v != null) series[ts] = v * factor;
+    }
+    for (final series in byPosition.values) {
+      final v = series[ts];
+      if (v != null) series[ts] = v * factor;
+    }
+  }
+
+  return PortfolioHistoryBreakdown(
+    total: result,
+    byType: byType,
+    byPosition: byPosition,
+    positionType: positionType,
+  );
 }
