@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import '../widgets/sandik_yenile.dart';
-import 'package:flutter/foundation.dart' show SynchronousFuture, listEquals;
+import 'package:flutter/foundation.dart'
+    show SynchronousFuture, debugPrint, kDebugMode, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,6 +203,102 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
     this.gelenAlarmId,
   });
 
+
+  // ── Basma anında ön istek (2026-11-11) ──────────────────────────────────
+  // Satıra dokunulunca seri isteği eskiden `initState`'te başlıyordu: geçiş
+  // animasyonu (~350 ms) boyunca ağ boştaydı. Satır artık parmak değdiği an
+  // (`onTapDown`) [seriyiOnIste] çağırır; ekran açılınca AYNI çağrıyı yapar
+  // ve `HistoryService.seriCek`'in uçuşan istek birleştirmesi
+  // (`_ucusanIstekler`) ya da süreli önbelleği ikinci GET'i keser. Bunun
+  // tutması için ön istek ekranın ilk açılıştaki seçimini ve fonksiyonunu
+  // KOPYALAMAZ, paylaşır: [ilkDonemGunu] ve [_donemSerisi] ekranın da
+  // kullandığı tek yer. Sembol kararı yine `FiyatKaynagi.birimVarlik`'te.
+
+  /// Elle fiyatlanan varlığın ("Ev", "Araba") piyasa serisi yok — gerekçe
+  /// `_AssetDetailScreenState._gunIciDestekli`.
+  static bool _gunIciDestekliMi(Asset a) =>
+      !a.isManualPrice && a.type != AssetType.diger;
+
+  static List<SummaryPeriod> _donemlerOf(bool gunIciDestekli) => [
+        for (final p in SummaryPeriod.sembolDonemleri)
+          if (!p.intraday || gunIciDestekli) p,
+      ];
+
+  /// Ekranın [initialPeriodDays] verilmeden açıldığında seçeceği dönemin
+  /// gün sayısı — `initState`'teki `_ortakDonemIdx` ile aynı süzgeç ve eşleme.
+  static int ilkDonemGunu(Asset asset, SummaryPeriod ortakDonem) {
+    final donemler = _donemlerOf(_gunIciDestekliMi(asset));
+    return gosterilebilirDonem(ortakDonem, donemler).days;
+  }
+
+  /// Varlık ekranının ilk açılışta isteyeceği birim seriyi şimdiden başlatır;
+  /// sonuç beklenmez ve atılır (değeri `HistoryService` önbelleğinde kalır).
+  ///
+  /// Hata sessiz: `seriCek` hatayı zaten boş listeye çevirir ve süreli
+  /// önbelleğe yazmaz; ekran normal yolunu dener. Hesap katmanının nadir
+  /// istisnası burada yalnız debug log'a düşer — Crashlytics'e DEĞİL: aynı
+  /// hesabı ekran saniyeler içinde kendisi yapıp hatasını
+  /// `CrashReporter.report` ile bildiriyor; ön istek de bildirse her arıza
+  /// iki kez sayılır, kaydırırken iptal edilen basmalar da gürültü ekler.
+  /// Basma kaydırmayla iptal edilirse istek yine gider (tek GET, kabul).
+  static void seriyiOnIste(Asset asset, SummaryPeriod ortakDonem) {
+    final Future<void> istek;
+    try {
+      istek = _donemSerisi(
+          [FiyatKaynagi.birimVarlik(asset)], ilkDonemGunu(asset, ortakDonem));
+    } catch (e) {
+      if (kDebugMode) debugPrint('seriyiOnIste(${asset.ticker}): $e');
+      return;
+    }
+    istek.then<void>((_) {}, onError: (Object e) {
+      if (kDebugMode) debugPrint('seriyiOnIste(${asset.ticker}): $e');
+    });
+  }
+
+  /// Seçili dönemin BAŞLANGICI — Performans ekranıyla AYNI pencere.
+  ///
+  /// Eskiden `now − gün` idi (gün ortasından başlayan, "1A" = 30 gün).
+  /// Performans ise takvimden ve gün başından sayıyor (`PeriodSummaryService
+  /// .pencere`: "1A" = bir önceki ayın aynı günü, 00:00). İki ekran farklı
+  /// dönem başı kullanınca aynı "1A" farklı iki fiyattan ölçülüyordu ve
+  /// kullanıcının istediği eşitlik (varlık ekranı ↔ Performans › tür filtresi,
+  /// 2026-09-23) tanım gereği sağlanamıyordu.
+  static DateTime _donemBaslangici(int days, DateTime now) {
+    for (final p in SummaryPeriod.sembolDonemleri) {
+      if (!p.intraday && p.days == days) {
+        return PeriodSummaryService.pencere(p, now).start;
+      }
+    }
+    return dayKey(now.subtract(Duration(days: days)));
+  }
+
+  /// [a]'nın BİRİM fiyat serisi (1 gram / 1 adet / 1 pay, TL) — seçili
+  /// dönem için, Performans ekranıyla AYNI motor ve çözünürlükten.
+  ///
+  /// Motor: gün içi → `...HourlyBreakdown` (Performans GÜNLÜK), diğerleri →
+  /// `...BreakdownAtResolution` + `pickForSpan` (Performans'ın
+  /// `ZoomDataController`'ı). Eskiden bu ekran `getPortfolioHistory(days)`
+  /// kullanıyordu: farklı tarih kapısı (gün/saate YUVARLANMIŞ `addedDate`)
+  /// ve farklı son-nokta kuralı. Aynı ürün iki ekranda iki motordan
+  /// geçince uçlar da ayrışıyordu.
+  static Future<PortfolioHistoryBreakdown> _donemSerisi(
+      List<Asset> defter, int days) {
+    if (days == 0) {
+      // Tur beklemesi çağıranda (`_loadHistory`), defter kurulmadan önce.
+      return HistoryService.instance
+          .getPortfolioHistoryHourlyBreakdown(defter, 24);
+    }
+    final now = DateTime.now();
+    final from = _donemBaslangici(days, now);
+    return HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
+      assets: defter,
+      from: from,
+      to: now,
+      tier: ResolutionTierMeta.pickForSpan(
+          now.difference(from).inMinutes / (60.0 * 24.0)),
+    );
+  }
+
   @override
   ConsumerState<AssetDetailScreen> createState() => _AssetDetailScreenState();
 }
@@ -292,9 +389,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Fon DAHİLDİR: TEFAS gün içi NAV yayınlamasa da seri, gün içinde bir
   /// basamak olarak fonun günlük NAV değişimini taşır
   /// (bkz. `HistoryService.gunIciFonBirimFiyati`).
-  bool get _gunIciDestekli =>
-      !widget.asset.isManualPrice &&
-      widget.asset.type != AssetType.diger;
+  bool get _gunIciDestekli => AssetDetailScreen._gunIciDestekliMi(widget.asset);
 
   List<({String label, int days})> get _periods =>
       _gunIciDestekli ? _allPeriods : _allPeriods.sublist(1);
@@ -302,10 +397,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// [_periods]'un [SummaryPeriod] karşılığı — aynı süzgeç, aynı sıra.
   /// Ortak dönem (`donem_hafizasi`) ham indeksle değil dönem DEĞERİYLE
   /// eşlenir: GÜNLÜK'süz listede indeksler bir kayıktır.
-  List<SummaryPeriod> get _donemler => [
-        for (final p in SummaryPeriod.sembolDonemleri)
-          if (!p.intraday || _gunIciDestekli) p,
-      ];
+  List<SummaryPeriod> get _donemler =>
+      AssetDetailScreen._donemlerOf(_gunIciDestekli);
 
   /// Ortak dönemin bu ekrandaki indeksi; yoksa en yakın dönemin.
   int _ortakDonemIdx(SummaryPeriod d) =>
@@ -454,48 +547,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     _nabziBirak = TazelikRitmi.nabiz.dinle(_nabizGeldi);
   }
 
-  /// Seçili dönemin BAŞLANGICI — Performans ekranıyla AYNI pencere.
-  ///
-  /// Eskiden `now − gün` idi (gün ortasından başlayan, "1A" = 30 gün).
-  /// Performans ise takvimden ve gün başından sayıyor (`PeriodSummaryService
-  /// .pencere`: "1A" = bir önceki ayın aynı günü, 00:00). İki ekran farklı
-  /// dönem başı kullanınca aynı "1A" farklı iki fiyattan ölçülüyordu ve
-  /// kullanıcının istediği eşitlik (varlık ekranı ↔ Performans › tür filtresi,
-  /// 2026-09-23) tanım gereği sağlanamıyordu.
-  static DateTime _donemBaslangici(int days, DateTime now) {
-    for (final p in SummaryPeriod.sembolDonemleri) {
-      if (!p.intraday && p.days == days) {
-        return PeriodSummaryService.pencere(p, now).start;
-      }
-    }
-    return dayKey(now.subtract(Duration(days: days)));
-  }
+  /// Bkz. [AssetDetailScreen._donemSerisi] — ön istek (`seriyiOnIste`) ile
+  /// AYNI fonksiyon olsun diye widget sınıfında duruyor; part'lardaki
+  /// `extension`lar static üyeye niteliksiz erişemediği için bu ince sarmal.
+  Future<PortfolioHistoryBreakdown> _donemSerisi(List<Asset> defter, int days) =>
+      AssetDetailScreen._donemSerisi(defter, days);
 
-  /// [a]'nın BİRİM fiyat serisi (1 gram / 1 adet / 1 pay, TL) — seçili
-  /// dönem için, Performans ekranıyla AYNI motor ve çözünürlükten.
-  ///
-  /// Motor: gün içi → `...HourlyBreakdown` (Performans GÜNLÜK), diğerleri →
-  /// `...BreakdownAtResolution` + `pickForSpan` (Performans'ın
-  /// `ZoomDataController`'ı). Eskiden bu ekran `getPortfolioHistory(days)`
-  /// kullanıyordu: farklı tarih kapısı (gün/saate YUVARLANMIŞ `addedDate`)
-  /// ve farklı son-nokta kuralı. Aynı ürün iki ekranda iki motordan
-  /// geçince uçlar da ayrışıyordu.
-  Future<PortfolioHistoryBreakdown> _donemSerisi(List<Asset> defter, int days) {
-    if (days == 0) {
-      // Tur beklemesi çağıranda (`_loadHistory`), defter kurulmadan önce.
-      return HistoryService.instance
-          .getPortfolioHistoryHourlyBreakdown(defter, 24);
-    }
-    final now = DateTime.now();
-    final from = _donemBaslangici(days, now);
-    return HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
-      assets: defter,
-      from: from,
-      to: now,
-      tier: ResolutionTierMeta.pickForSpan(
-          now.difference(from).inMinutes / (60.0 * 24.0)),
-    );
-  }
+  /// Bkz. [AssetDetailScreen._donemBaslangici] (part'lar bu adla çağırır).
+  static DateTime _donemBaslangici(int days, DateTime now) =>
+      AssetDetailScreen._donemBaslangici(days, now);
 
   /// Son başlatılan yüklemenin sırası — geç dönen ESKİ bir dönemin sonucu
   /// yenisinin alanlarını ezmesin (hızlı sekme değişimi).

@@ -36,6 +36,7 @@ import '../models/sozlesme.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/secili_donem_provider.dart';
 import '../providers/sozlesme_provider.dart';
 import '../services/en_cok_oynayan.dart';
 import '../services/sparkline_service.dart';
@@ -945,6 +946,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                                   heroEtiketi: hero,
                                                 )),
                                       ),
+                                      // Basma anında seri ön isteği: geçiş
+                                      // animasyonu boyunca ağ boş kalmasın.
+                                      onBasildi: (p) =>
+                                          AssetDetailScreen.seriyiOnIste(
+                                              p.asDisplayAsset(),
+                                              ref.read(seciliDonemProvider)),
                                       onDelete: (p) =>
                                           _confirmDelete(context, ref, p),
                                       // Varlık ekranının işlem çubuğuyla
@@ -2223,6 +2230,10 @@ class _AssetList {
   final void Function(Position, Object? heroEtiketi) onTap;
   final void Function(Position) onDelete;
 
+  /// Satıra parmak değdiği an — varlık ekranının serisini ön ister
+  /// (`AssetDetailScreen.seriyiOnIste`); [onTap] ile AYNI pozisyonu alır.
+  final void Function(Position)? onBasildi;
+
   /// `varlik_hero_gecisi` (yol haritası 2.14).
   final bool heroAcik;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
@@ -2253,6 +2264,7 @@ class _AssetList {
     required this.currentUserId,
     this.bugun,
     required this.onTap,
+    this.onBasildi,
     required this.onDelete,
     required this.onAdd,
     required this.onRemove,
@@ -2318,6 +2330,10 @@ class _AssetList {
           // önce kendi parçası, yoksa ilk sahibinki.
           onTap: (p) => onTap(
               kendi ?? (p is BirlesikPozisyon ? p.parcalar.first : p), hero),
+          onBasildi: onBasildi == null
+              ? null
+              : (p) => onBasildi!(
+                  kendi ?? (p is BirlesikPozisyon ? p.parcalar.first : p)),
           onDelete: (_) => onDelete(kendi!),
           onAdd: (_) => onAdd(kendi!),
           onRemove: (_) => onRemove(kendi!),
@@ -2865,6 +2881,9 @@ class _AssetCard extends StatefulWidget {
   /// Başlık uçuşu etiketi (`varlik_baslik_hero.dart`); `null` → uçuş yok.
   final Object? heroEtiketi;
   final void Function(Position) onTap;
+
+  /// Bkz. `_AssetList.onBasildi`.
+  final void Function(Position)? onBasildi;
   final void Function(Position) onDelete;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
   // KAPANDIKTAN sonra kapanabilsin diye tip `void` değil `FutureOr<void>`.
@@ -2888,6 +2907,7 @@ class _AssetCard extends StatefulWidget {
     this.heroEtiketi,
     this.bugun,
     required this.onTap,
+    this.onBasildi,
     required this.onDelete,
     required this.onAdd,
     required this.onRemove,
@@ -2940,6 +2960,9 @@ class _AssetCardState extends State<_AssetCard>
         children: [
           SandikTappable(
             onTap: () => onTap(position),
+            onBasildi: widget.onBasildi == null
+                ? null
+                : () => widget.onBasildi!(position),
             child: Padding(
               padding: const EdgeInsets.all(cardPad),
               // Kolon genişlikleri satırın GERÇEK genişliğinden hesaplanır —

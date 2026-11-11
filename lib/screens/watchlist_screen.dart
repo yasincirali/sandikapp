@@ -903,6 +903,14 @@ class _Row extends ConsumerWidget {
               baslangicDonemGun:
                   watchlistPeriods[ref.read(watchlistPeriodProvider)].days,
             ),
+            // Parmak değdiği an sayfanın ilk serisi istenir: sheet açılış
+            // animasyonu boyunca ağ boş kalmasın. Sembol ve dönem `onTap`
+            // ile AYNI (tek uçuş, `VarlikSayfasi.seriyiOnIste`).
+            onBasildi: () => VarlikSayfasi.seriyiOnIste(
+              VarlikKimligi.fromWatchlistItem(item).ticker,
+              watchlistPeriods[ref.read(watchlistPeriodProvider)].days,
+              ref.read(seciliDonemProvider),
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               decoration: BoxDecoration(
