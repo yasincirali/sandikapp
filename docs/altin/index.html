@@ -40,6 +40,17 @@
   - Hesap tarayıcıda; analytics yok, harici kaynak yok. Mağaza bağlantısı
     kampanya etiketli (utm_medium=altin) ki kanal ölçülsün.
   - Stil enflasyon sayfasının tokenlarıyla aynı; uzun tire yok.
+  - "Has altın primi" bölümü (2026-11-11): formül yalnız DEĞİŞKENLE
+    anlatılır (H, O, K). Gerçek fiyat ya da örnek sayı yazılmaz: sayfa
+    fiyatsızdır (test TL simgesini de kırar) ve sabit örnek sayı birkaç
+    hafta içinde gerçek fiyattan uzaklaşıp "uydurma sayı" olurdu. Tek
+    sabit 31,1035 gram/ons, fiziksel birim. Çağrı cümlesi uygulamada prim
+    satırı VAR demez: uygulama içi prim satırı yazılmadı, çünkü ons
+    fiyatı uygulamada truncgil'den değil Yahoo'dan (XAUUSD=X / XAUTRY=X)
+    geliyor; HAS ile aynı yanıttan gelmeyen ons, ölçek sözleşmesini
+    (fiyat_kaynagi.dart kural 2) bozar. Çağrı yalnız gerçekten görünen
+    şeyi (has altın, dolar, altınların değeri) söyler. "Pahalı/ucuz"
+    gibi tavsiye gibi okunan kelime yok; primli/iskontolu yalnız işarettir.
 -->
 <style>
 @font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
@@ -193,6 +204,21 @@ thead th { font-size: 14px; font-weight: 600; color: var(--soluk); }
 tbody th { font-weight: 600; }
 td { color: var(--metin); white-space: nowrap; }
 h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spacing: -0.02em; margin: 40px 0 16px; }
+
+.prim p + p, .prim .formul + p, .prim p + .formul, .prim p + dl, .prim dl + p { margin-top: 14px; }
+.prim dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; color: var(--soluk); }
+.prim dt { font-weight: 700; color: var(--altin); font-variant-numeric: tabular-nums; }
+.formul {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(10, 30, 21, 0.6);
+  border: 1px solid var(--cizgi);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.formul .etiket { display: block; font-size: 14px; font-weight: 600; color: var(--soluk); margin-bottom: 4px; }
+.prim .cagri { margin-top: 24px; }
 </style>
 </head>
 <body>
@@ -277,10 +303,39 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
     </div>
   </div>
 
+
+  <h2 class="bolum" id="prim-baslik">Has altın primi nedir, nasıl hesaplanır?</h2>
+  <div class="tepsi">
+    <section class="cekirdek prim" aria-labelledby="prim-baslik">
+      <p>Has altının yurt içindeki gram fiyatı, uluslararası ons fiyatının TL'ye çevrilmiş gram karşılığıyla her zaman aynı olmaz. Aradaki farkın yüzdesine has altın primi denir. Yurt içi fiyat ons karşılığının üstündeyse altın <b>primli</b>, altındaysa <b>iskontolu</b> işlem görüyordur.</p>
+      <p>Hesap için üç fiyat gerekir:</p>
+      <dl>
+        <dt>H</dt><dd>Has altının yurt içi gram fiyatı (TL)</dd>
+        <dt>O</dt><dd>Altının ons fiyatı (dolar)</dd>
+        <dt>K</dt><dd>Dolar kuru (TL)</dd>
+      </dl>
+      <p>Bir ons 31,1035 gramdır. Önce onsun TL'deki gram karşılığı bulunur, sonra yurt içi fiyat buna bölünür:</p>
+      <p class="formul"><span class="etiket">Ons karşılığı (gram, TL)</span>O × K ÷ 31,1035</p>
+      <p class="formul"><span class="etiket">Has altın primi</span>H ÷ (O × K ÷ 31,1035) − 1</p>
+      <p>Sonuç artıysa yurt içi fiyat ons karşılığından o yüzde kadar yüksektir, eksiyse o yüzde kadar düşüktür. Sıfıra çok yakınsa iki fiyat aynı demektir.</p>
+      <p>Farkı ithalat maliyeti, yurt içi arz ve talep, alış ile satış fiyatı arasındaki makas ve fiyatların farklı anlarda okunması oluşturur. Üç fiyatın aynı kaynaktan ve aynı anda alınması önemlidir; farklı saatlerden ya da farklı sağlayıcılardan gelen fiyatlarla hesaplanan prim, gerçekte olmayan bir fark gösterebilir.</p>
+      <div class="cagri">
+        <p>Uygulamada canlı gör: sandık'ta has altının ve doların güncel fiyatını, altınlarının bugünkü değeriyle birlikte takip edebilirsin.</p>
+        <a class="dugme" href="https://apps.apple.com/tr/app/id6786837699?utm_source=web&amp;utm_medium=altin&amp;utm_campaign=has_prim">
+          App Store'dan indir
+          <span class="ok" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11L11 5M6 5h5v5"/></svg>
+          </span>
+        </a>
+        <a class="ikincil" href="../indir/?utm_source=web&amp;utm_medium=altin&amp;utm_campaign=has_prim">Android için indirme sayfası</a>
+      </div>
+    </section>
+  </div>
+
   <div class="notlar">
     <p>Ağırlıklar standart kalıp ağırlıklarıdır: çeyrek 1,75 gram, cumhuriyet ve ata 7,216 gram, ziynet tam 7,016 gram. Tek tek sikkede küçük farklar olabilir.</p>
     <p>24 ayar karşılığı, altının içindeki saf altındır: 22 ayarda ağırlığın 22/24'ü, 18 ayarda 18/24'ü.</p>
-    <p>Fiyat gösterilmez. Hesap tarayıcında yapılır, hiçbir yere gönderilmez. Yatırım tavsiyesi değildir.</p>
+    <p>Fiyat gösterilmez; prim formülü değişkenlerle anlatılır. Hesap tarayıcında yapılır, hiçbir yere gönderilmez. Yatırım tavsiyesi değildir.</p>
   </div>
 </main>
 
