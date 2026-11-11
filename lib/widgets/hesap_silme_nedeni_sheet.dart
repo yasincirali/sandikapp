@@ -106,7 +106,7 @@ class HesapSilmeNedeniSheet extends StatelessWidget {
             TextButton(
               style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(l.hsnKapat),
+              child: Text(l.close),
             ),
           ],
         ),

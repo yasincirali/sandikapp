@@ -1137,7 +1137,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
-                    child: Text(context.l10n.cancelWord,
+                    child: Text(context.l10n.cancel,
                         style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: context.c.text90)),

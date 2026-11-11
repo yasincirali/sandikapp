@@ -1015,7 +1015,6 @@
       }
     }
   },
-  "cancelWord": "İptal",
   "removePartnerSemantics": "Ortağı sil",
   "removePartnerTitle": "Ortaklığı kaldır",
   "removePartnerBody": "{name} ile ortaklığı kaldırmak istediğine emin misin?",
@@ -2048,7 +2047,6 @@
   "importAiRizaBaslik": "Ekstreni yapay zekâyla oku",
   "importAiRizaMetin": "Sütunları bulmak için tablodaki kelimeler (sütun ve varlık adları) sunucumuz üzerinden Anthropic'e (ABD) gönderilir. Tutar, adet, hesap ve kimlik numaraları gönderilmez; ad ve adres gibi etiketli bilgiler gizlenir. Gönderilen metin saklanmaz. Onayını bu ekrandan istediğin zaman geri çekebilirsin.",
   "importAiRizaKabul": "Onaylıyorum",
-  "importAiRizaVazgec": "Vazgeç",
   "importAiRizaGeriCek": "Yapay zekâ onayını geri çek",
   "importAiRizaGeriCekildi": "Onayını geri çektin. Yapay zekâyla eşle'ye yeniden basarsan tekrar sorarız.",
   "importAiRizaGerekli": "Yapay zekâyla eşleme için onayın gerekiyor; düğmeye yeniden bas.",
@@ -2215,7 +2213,6 @@
       "sigan": {"type": "int"}
     }
   },
-  "iktKotaVazgec": "Vazgeç",
   "someAssetsNotAdded": "Bazı varlıklar eklenemedi",
   "bulkAddSavingProgress": "Kaydediliyor {saved} / {total}",
   "@bulkAddSavingProgress": {
@@ -3175,7 +3172,6 @@
   "kullaniciAdiHataBilinmiyor": "Kaydedilemedi. Biraz sonra tekrar dene.",
   "kullaniciAdiUygun": "Bu ad kullanılabilir.",
   "kullaniciAdiDevam": "Devam et",
-  "kullaniciAdiKaydet": "Kaydet",
   "kullaniciAdiKaydedildi": "Kullanıcı adın güncellendi.",
   "kullaniciAdiSecilmedi": "Henüz seçilmedi",
   "kullaniciAdiCikis": "Çıkış yap",
@@ -5801,12 +5797,10 @@
   "ozgOnizlemeYok": "Önizleme için bir varlığın grafiğinden aç.",
   "ozgFonksiyonlar": "Fonksiyonlar",
   "ozgGuvenlik": "Kod yalnız telefonunda, kapalı bir yorumlayıcıda çalışır. İnternete, dosyalara ya da hesabına erişemez.",
-  "ozgKaydet": "Kaydet",
   "ozgSil": "Göstergeyi sil",
   "ozgSilBaslik": "Gösterge silinsin mi?",
   "ozgSilMesaj": "{ad} kalıcı olarak silinir.",
   "@ozgSilMesaj": {"placeholders": {"ad": {"type": "String"}}},
-  "ozgSilOnay": "Sil",
   "ozgVazgecBaslik": "Değişiklikler kaydedilmedi",
   "ozgVazgecMesaj": "Çıkarsan yazdıkların kaybolur.",
   "ozgVazgecOnay": "Çık",
@@ -5839,7 +5833,6 @@
   "@sgnParametreAciklama": {"placeholders": {"tur": {"type": "String"}}},
   "sgnParametreSiraHatasi": "Kısa/hızlı değer, uzun/yavaş değerden küçük olmalı.",
   "sgnParametreVarsayilan": "Varsayılana dön",
-  "sgnParametreKaydet": "Kaydet",
   "sgnParametreVarsayilanDeger": "Varsayılan {deger}",
   "@sgnParametreVarsayilanDeger": {"placeholders": {"deger": {"type": "int"}}},
   "sgnParametreAzalt": "Azalt",
@@ -6045,7 +6038,6 @@
   "hsnEksikOzellik": "Aradığım özellik yok",
   "hsnFiyatSorunu": "Fiyatlar yanlış ya da geç",
   "hsnBaskaUygulama": "Başka uygulamaya geçtim",
-  "hsnKapat": "Kapat",
   "tegKapat": "Tam ekrandan çık",
   "tegAracImlec": "İmleç",
   "tegAracTrend": "Trend çizgisi",
@@ -6436,7 +6428,6 @@
   "kapanisMaliyetBilinmiyor": "Maliyeti bilinmediği için kâr ve zarar hesaplanmadı.",
   "kapanisYillikRapor": "Yıllık raporda gör",
   "kapanisTamam": "Tamam",
-  "kapanisPaylas": "Paylaş",
   "kapanisPaylasEtiketi": "Gerçekleşen getiri",
   "kapanisPaylasMetni": "{ad} pozisyonumu {pct} getiriyle kapattım",
   "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}},

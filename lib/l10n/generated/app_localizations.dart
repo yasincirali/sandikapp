@@ -3194,12 +3194,6 @@ abstract class AppLocalizations {
   /// **'{name} onayı bekleniyor...'**
   String awaitingApproval(String name);
 
-  /// No description provided for @cancelWord.
-  ///
-  /// In tr, this message translates to:
-  /// **'İptal'**
-  String get cancelWord;
-
   /// No description provided for @removePartnerSemantics.
   ///
   /// In tr, this message translates to:
@@ -5414,12 +5408,6 @@ abstract class AppLocalizations {
   /// **'Onaylıyorum'**
   String get importAiRizaKabul;
 
-  /// No description provided for @importAiRizaVazgec.
-  ///
-  /// In tr, this message translates to:
-  /// **'Vazgeç'**
-  String get importAiRizaVazgec;
-
   /// No description provided for @importAiRizaGeriCek.
   ///
   /// In tr, this message translates to:
@@ -5647,12 +5635,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{sigan} kalemi kaydet, kalanı sepette bırak'**
   String iktKotaSiganlar(int sigan);
-
-  /// No description provided for @iktKotaVazgec.
-  ///
-  /// In tr, this message translates to:
-  /// **'Vazgeç'**
-  String get iktKotaVazgec;
 
   /// No description provided for @someAssetsNotAdded.
   ///
@@ -7970,12 +7952,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Devam et'**
   String get kullaniciAdiDevam;
-
-  /// No description provided for @kullaniciAdiKaydet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaydet'**
-  String get kullaniciAdiKaydet;
 
   /// No description provided for @kullaniciAdiKaydedildi.
   ///
@@ -14621,12 +14597,6 @@ abstract class AppLocalizations {
   /// **'Kod yalnız telefonunda, kapalı bir yorumlayıcıda çalışır. İnternete, dosyalara ya da hesabına erişemez.'**
   String get ozgGuvenlik;
 
-  /// No description provided for @ozgKaydet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaydet'**
-  String get ozgKaydet;
-
   /// No description provided for @ozgSil.
   ///
   /// In tr, this message translates to:
@@ -14644,12 +14614,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad} kalıcı olarak silinir.'**
   String ozgSilMesaj(String ad);
-
-  /// No description provided for @ozgSilOnay.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sil'**
-  String get ozgSilOnay;
 
   /// No description provided for @ozgVazgecBaslik.
   ///
@@ -14800,12 +14764,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Varsayılana dön'**
   String get sgnParametreVarsayilan;
-
-  /// No description provided for @sgnParametreKaydet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaydet'**
-  String get sgnParametreKaydet;
 
   /// No description provided for @sgnParametreVarsayilanDeger.
   ///
@@ -15748,12 +15706,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Başka uygulamaya geçtim'**
   String get hsnBaskaUygulama;
-
-  /// No description provided for @hsnKapat.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kapat'**
-  String get hsnKapat;
 
   /// No description provided for @tegKapat.
   ///
@@ -17430,12 +17382,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tamam'**
   String get kapanisTamam;
-
-  /// No description provided for @kapanisPaylas.
-  ///
-  /// In tr, this message translates to:
-  /// **'Paylaş'**
-  String get kapanisPaylas;
 
   /// No description provided for @kapanisPaylasEtiketi.
   ///

@@ -263,7 +263,7 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
             onPressed: _denetim.kaydedilebilir ? _kaydet : null,
             child: Text(zorunlu
                 ? context.l10n.kullaniciAdiDevam
-                : context.l10n.kullaniciAdiKaydet),
+                : context.l10n.save),
           ),
         ],
       ),

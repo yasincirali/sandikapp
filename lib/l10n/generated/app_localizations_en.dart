@@ -1828,9 +1828,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cancelWord => 'Cancel';
-
-  @override
   String get removePartnerSemantics => 'Remove partner';
 
   @override
@@ -3206,9 +3203,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importAiRizaKabul => 'I agree';
 
   @override
-  String get importAiRizaVazgec => 'Cancel';
-
-  @override
   String get importAiRizaGeriCek => 'Withdraw AI consent';
 
   @override
@@ -3365,9 +3359,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String iktKotaSiganlar(int sigan) {
     return 'Save $sigan items, keep the rest in the cart';
   }
-
-  @override
-  String get iktKotaVazgec => 'Cancel';
 
   @override
   String get someAssetsNotAdded => 'Some Assets Could Not Be Added';
@@ -4812,9 +4803,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kullaniciAdiDevam => 'Continue';
-
-  @override
-  String get kullaniciAdiKaydet => 'Save';
 
   @override
   String get kullaniciAdiKaydedildi => 'Your username was updated.';
@@ -8928,9 +8916,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The code runs only on your phone, in a closed interpreter. It cannot reach the internet, your files or your account.';
 
   @override
-  String get ozgKaydet => 'Save';
-
-  @override
   String get ozgSil => 'Delete indicator';
 
   @override
@@ -8940,9 +8925,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String ozgSilMesaj(String ad) {
     return '$ad will be deleted permanently.';
   }
-
-  @override
-  String get ozgSilOnay => 'Delete';
 
   @override
   String get ozgVazgecBaslik => 'Changes not saved';
@@ -9052,9 +9034,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnParametreVarsayilan => 'Reset to default';
-
-  @override
-  String get sgnParametreKaydet => 'Save';
 
   @override
   String sgnParametreVarsayilanDeger(int deger) {
@@ -9654,9 +9633,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hsnBaskaUygulama => 'I switched to another app';
-
-  @override
-  String get hsnKapat => 'Close';
 
   @override
   String get tegKapat => 'Exit full screen';
@@ -10779,9 +10755,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kapanisTamam => 'OK';
-
-  @override
-  String get kapanisPaylas => 'Share';
 
   @override
   String get kapanisPaylasEtiketi => 'Realised return';

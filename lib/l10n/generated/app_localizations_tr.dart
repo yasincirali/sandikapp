@@ -1811,9 +1811,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get cancelWord => 'İptal';
-
-  @override
   String get removePartnerSemantics => 'Ortağı sil';
 
   @override
@@ -3180,9 +3177,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get importAiRizaKabul => 'Onaylıyorum';
 
   @override
-  String get importAiRizaVazgec => 'Vazgeç';
-
-  @override
   String get importAiRizaGeriCek => 'Yapay zekâ onayını geri çek';
 
   @override
@@ -3340,9 +3334,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String iktKotaSiganlar(int sigan) {
     return '$sigan kalemi kaydet, kalanı sepette bırak';
   }
-
-  @override
-  String get iktKotaVazgec => 'Vazgeç';
 
   @override
   String get someAssetsNotAdded => 'Bazı varlıklar eklenemedi';
@@ -4782,9 +4773,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get kullaniciAdiDevam => 'Devam et';
-
-  @override
-  String get kullaniciAdiKaydet => 'Kaydet';
 
   @override
   String get kullaniciAdiKaydedildi => 'Kullanıcı adın güncellendi.';
@@ -8834,9 +8822,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kod yalnız telefonunda, kapalı bir yorumlayıcıda çalışır. İnternete, dosyalara ya da hesabına erişemez.';
 
   @override
-  String get ozgKaydet => 'Kaydet';
-
-  @override
   String get ozgSil => 'Göstergeyi sil';
 
   @override
@@ -8846,9 +8831,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String ozgSilMesaj(String ad) {
     return '$ad kalıcı olarak silinir.';
   }
-
-  @override
-  String get ozgSilOnay => 'Sil';
 
   @override
   String get ozgVazgecBaslik => 'Değişiklikler kaydedilmedi';
@@ -8958,9 +8940,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sgnParametreVarsayilan => 'Varsayılana dön';
-
-  @override
-  String get sgnParametreKaydet => 'Kaydet';
 
   @override
   String sgnParametreVarsayilanDeger(int deger) {
@@ -9556,9 +9535,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get hsnBaskaUygulama => 'Başka uygulamaya geçtim';
-
-  @override
-  String get hsnKapat => 'Kapat';
 
   @override
   String get tegKapat => 'Tam ekrandan çık';
@@ -10635,9 +10611,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get kapanisTamam => 'Tamam';
-
-  @override
-  String get kapanisPaylas => 'Paylaş';
 
   @override
   String get kapanisPaylasEtiketi => 'Gerçekleşen getiri';

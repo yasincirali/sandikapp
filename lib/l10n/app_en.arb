@@ -985,7 +985,6 @@
       }
     }
   },
-  "cancelWord": "Cancel",
   "removePartnerSemantics": "Remove partner",
   "removePartnerTitle": "Remove partnership",
   "removePartnerBody": "Are you sure you want to remove your partnership with {name}?",
@@ -2000,7 +1999,6 @@
   "importAiRizaBaslik": "Read your statement with AI",
   "importAiRizaMetin": "To find the columns, the words in the table (column and asset names) are sent through our server to Anthropic (USA). Amounts, quantities, account and ID numbers are not sent; labelled details such as name and address are hidden. The text sent is not stored. You can withdraw your consent from this screen at any time.",
   "importAiRizaKabul": "I agree",
-  "importAiRizaVazgec": "Cancel",
   "importAiRizaGeriCek": "Withdraw AI consent",
   "importAiRizaGeriCekildi": "Consent withdrawn. We'll ask again if you tap Map with AI.",
   "importAiRizaGerekli": "Matching with AI needs your consent; tap the button again.",
@@ -2106,7 +2104,6 @@
       "sigan": {"type": "int"}
     }
   },
-  "iktKotaVazgec": "Cancel",
   "someAssetsNotAdded": "Some Assets Could Not Be Added",
   "bulkAddSavingProgress": "Saving {saved} / {total}",
   "@bulkAddSavingProgress": {
@@ -3020,7 +3017,6 @@
   "kullaniciAdiHataBilinmiyor": "Couldn't save. Try again in a moment.",
   "kullaniciAdiUygun": "This name is available.",
   "kullaniciAdiDevam": "Continue",
-  "kullaniciAdiKaydet": "Save",
   "kullaniciAdiKaydedildi": "Your username was updated.",
   "kullaniciAdiSecilmedi": "Not chosen yet",
   "kullaniciAdiCikis": "Sign out",
@@ -5150,11 +5146,9 @@
   "ozgOnizlemeYok": "Open from an asset chart to see a preview.",
   "ozgFonksiyonlar": "Functions",
   "ozgGuvenlik": "The code runs only on your phone, in a closed interpreter. It cannot reach the internet, your files or your account.",
-  "ozgKaydet": "Save",
   "ozgSil": "Delete indicator",
   "ozgSilBaslik": "Delete this indicator?",
   "ozgSilMesaj": "{ad} will be deleted permanently.",
-  "ozgSilOnay": "Delete",
   "ozgVazgecBaslik": "Changes not saved",
   "ozgVazgecMesaj": "If you leave, your changes are lost.",
   "ozgVazgecOnay": "Leave",
@@ -5183,7 +5177,6 @@
   "sgnParametreAciklama": "For {tur}. The value you set is used on screen and in alerts.",
   "sgnParametreSiraHatasi": "The short/fast value must be smaller than the long/slow value.",
   "sgnParametreVarsayilan": "Reset to default",
-  "sgnParametreKaydet": "Save",
   "sgnParametreVarsayilanDeger": "Default {deger}",
   "sgnParametreAzalt": "Decrease",
   "sgnParametreArtir": "Increase",
@@ -5352,7 +5345,6 @@
   "hsnEksikOzellik": "A feature I need is missing",
   "hsnFiyatSorunu": "Prices are wrong or late",
   "hsnBaskaUygulama": "I switched to another app",
-  "hsnKapat": "Close",
   "tegKapat": "Exit full screen",
   "tegAracImlec": "Cursor",
   "tegAracTrend": "Trend line",
@@ -5668,7 +5660,6 @@
   "kapanisMaliyetBilinmiyor": "The cost is unknown, so gain and loss were not calculated.",
   "kapanisYillikRapor": "See in yearly report",
   "kapanisTamam": "OK",
-  "kapanisPaylas": "Share",
   "kapanisPaylasEtiketi": "Realised return",
   "kapanisPaylasMetni": "Closed my {ad} position at {pct}",
   "@kapanisPaylasMetni": {"placeholders": {"ad": {"type": "String"}, "pct": {"type": "String"}}},

@@ -62,7 +62,7 @@ Future<bool> confirmAndDeletePosition(
         ? context.l10n.deleteAssetMulti(name, lots.length)
         : context.l10n.deleteAssetSingle(name),
     confirmLabel: context.l10n.deleteAnyway,
-    cancelLabel: context.l10n.cancelWord,
+    cancelLabel: context.l10n.cancel,
     destructive: true,
     detail: Container(
       padding: const EdgeInsets.all(12),

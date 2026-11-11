@@ -1053,7 +1053,7 @@ class _AiRizaSayfasi extends StatelessWidget {
             OutlinedButton(
               style: OutlinedButton.styleFrom(minimumSize: SandikTouch.minSize),
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l.importAiRizaVazgec),
+              child: Text(l.cancel),
             ),
           ],
         ),

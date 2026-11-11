@@ -350,11 +350,11 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
             children: [
               TextButton(
                 onPressed: _saving ? null : () => Navigator.pop(context),
-                child: const Text('İptal'),
+                child: Text(context.l10n.cancel),
               ),
               // Gösterge + çift dokunuş kilidi standart bileşende (tek yükleniyor
               // davranışı, 2026-10-08; eski elle yazılmış 18pt gösterge kalktı).
-              // `_saving` kalır: kayıt sürerken İptal ve klavye "gönder"i pasif.
+              // `_saving` kalır: kayıt sürerken Vazgeç ve klavye "gönder"i pasif.
               SandikAsyncButton.kompakt(
                 style: FilledButton.styleFrom(
                   backgroundColor: context.c.gain,

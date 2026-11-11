@@ -360,7 +360,7 @@ class _OzelGostergeEditorScreenState
         context: context,
         title: l.ozgSilBaslik,
         message: l.ozgSilMesaj(g.ad),
-        confirmLabel: l.ozgSilOnay,
+        confirmLabel: l.delete,
         destructive: true,
         islem: () => ref.read(ozelGostergelerProvider.notifier).sil(g.id),
       );
@@ -575,7 +575,7 @@ class _OzelGostergeEditorScreenState
                     kenar, SandikSpace.sm, kenar, SandikSpace.sm),
                 child: SandikAsyncButton(
                   onPressed: hata == null ? _kaydet : null,
-                  child: Text(l.ozgKaydet),
+                  child: Text(l.save),
                 ),
               ),
             ),

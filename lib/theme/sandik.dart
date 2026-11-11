@@ -269,7 +269,7 @@ Future<DateTime?> pickSandikDate(
     firstDate: first,
     lastDate: last,
     helpText: helpText ?? l10n.datePickerHelp,
-    cancelText: l10n.cancelWord,
+    cancelText: l10n.cancel,
     confirmText: l10n.datePickerConfirm,
     builder: (ctx, child) {
       // Palet AKTİF TEMADAN okunur. Eskiden burada sabit `ColorScheme.dark`

@@ -543,7 +543,7 @@ extension on _AddAssetScreenState {
       // yalnız gösterir.
       message: l.varlikGuncelleOnayGovde,
       confirmLabel: l.update,
-      cancelLabel: l.cancelWord,
+      cancelLabel: l.cancel,
       destructive: true,
     );
   }

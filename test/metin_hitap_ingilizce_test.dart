@@ -70,7 +70,7 @@ void main() {
       expect(m.datePickerHelpText, 'Tarih seç');
       expect(m.dateInputLabel, 'Tarih gir');
       expect(m.formatMonthYear(DateTime(2026, 3)), 'Mart 2026');
-      expect(m.cancelButtonLabel, 'İptal');
+      expect(m.cancelButtonLabel, 'Vazgeç');
     });
 
     test('main.dart: sen delegate\'i Global delegate\'lerden ÖNCE', () {

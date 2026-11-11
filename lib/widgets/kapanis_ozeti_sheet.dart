@@ -54,7 +54,7 @@ Future<void> showKapanisOzeti(
         metin: kapanisPaylasimMetni(l, ad: ozet.ad, karPct: pct),
         subject: l.kapanisBaslik,
         analyticsPeriod: 'kapanis',
-        sayfaBasligi: l.kapanisPaylas,
+        sayfaBasligi: l.shareWord,
       );
       return;
     case _Secim.rapor:
@@ -203,7 +203,7 @@ class KapanisOzetiSayfasi extends StatelessWidget {
                       key: const ValueKey('kapanis_paylas'),
                       onPressed: () => Navigator.pop(context, _Secim.paylas),
                       icon: const Icon(Icons.ios_share_rounded),
-                      label: Text(l.kapanisPaylas),
+                      label: Text(l.shareWord),
                     ),
                   ),
                   const SizedBox(width: SandikSpace.sm),
