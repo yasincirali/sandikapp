@@ -4803,9 +4803,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kullaniciAdiDevam => 'Devam et';
 
   @override
-  String get kullaniciAdiKaydedildi => 'Kullanıcı adın güncellendi.';
-
-  @override
   String get kullaniciAdiSecilmedi => 'Henüz seçilmedi';
 
   @override
@@ -5159,9 +5156,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositRateUpdate => 'Oranı güncelle';
-
-  @override
-  String get depositRateSaved => 'Oran güncellendi';
 
   @override
   String get depositWithdrawTitle => 'Parayı çektin mi?';
@@ -8891,9 +8885,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get ozgKaydedildi => 'Gösterge kaydedildi';
-
-  @override
   String get ozgNotCizimNesnesi =>
       'label, line, box ve table çizimleri gösterilmez; kodun geri kalanı çalışır.';
 
@@ -10011,9 +10002,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cizgiyiGrafikteAc => 'Grafikte aç';
 
   @override
-  String get cizgiAlarmiAdlandi => 'Alarmın adı kaydedildi';
-
-  @override
   String tegAdliAlarmKurulduUst(String ad) {
     return '«$ad» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz';
   }
@@ -10145,9 +10133,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get alarmiSil => 'Alarmı sil';
-
-  @override
-  String get alarmGuncellendi => 'Alarm güncellendi';
 
   @override
   String alarmKaldi(String pct) {

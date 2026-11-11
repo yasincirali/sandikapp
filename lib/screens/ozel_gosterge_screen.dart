@@ -261,6 +261,8 @@ class OzelGostergeEditorScreen extends ConsumerStatefulWidget {
 
 class _OzelGostergeEditorScreenState
     extends ConsumerState<OzelGostergeEditorScreen> {
+  /// Kaydet düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3/#6).
+  final _basari = SandikBasariSinyali();
   late final TextEditingController _ad;
   late final TextEditingController _kod;
   late final String _ilkAd;
@@ -326,7 +328,6 @@ class _OzelGostergeEditorScreenState
   }
 
   Future<void> _kaydet() async {
-    final l = context.l10n;
     if (!OzelGosterge.adGecerli(_ad.text)) {
       setState(() => _adHatasi = true);
       return;
@@ -342,7 +343,10 @@ class _OzelGostergeEditorScreenState
         await n.kaydet(g.kopya(ad: _ad.text.trim(), kod: _kod.text));
       }
       if (!mounted) return;
-      sandikSnack(context, l.ozgKaydedildi, kind: SandikSnackKind.success);
+      // "Gösterge kaydedildi" snack'ı kalktı (Ar-Ge 11 Kas 19:04 #6): editör
+      // kapanınca gösterge alttaki listede görünür. Onay düğmede ✓.
+      await _basari.goster();
+      if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {
       if (mounted) showAppError(context, e);
@@ -574,6 +578,7 @@ class _OzelGostergeEditorScreenState
                 padding: EdgeInsets.fromLTRB(
                     kenar, SandikSpace.sm, kenar, SandikSpace.sm),
                 child: SandikAsyncButton(
+                  basari: _basari,
                   onPressed: hata == null ? _kaydet : null,
                   child: Text(l.save),
                 ),

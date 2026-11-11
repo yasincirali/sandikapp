@@ -175,7 +175,7 @@ başlık küçülmesini kapatır.
 | Sandık çizimi | `SandikCizimi` (paywall, boş durum, kilometre taşı); zemin `amber`/`yuzey` |
 | Kart kart anlatım (hikâye) | `HikayeAkisi` + `HikayeSayfasi` (aylık hikâye ve yıllık özet; sayfa başına tek büyük öğe). |
 | Hata (eylem sonrası) | `showAppError` |
-| Kısa bilgi / geri al | `sandikSnack` |
+| Kısa bilgi / geri al | `sandikSnack` (başarı türü yalnız `onUndo:`/`action:` ile; §6/5) |
 | Kullanıcıya metin | `friendlyError(e)`; ham `$e` yok |
 
 ### Metin ve sayı
@@ -208,6 +208,7 @@ karede atlamaz (2026-10-20). Gezinti oku
 | Çift dokunma koruması | `navigasyon_korumasi_test` |
 | Tek yükleniyor davranışı | `yukleniyor_tek_davranis_test` |
 | Düğme başarı durumu (✓, kilit, hareketi azalt) | `sandik_async_basari_test` |
+| Başarı snack'ı yalnız geri al / eylem düğmesiyle | `snack_basari_kurali_test` |
 | Tek sheet açıcı, platform diyaloğu yok, düğme köşesi, ölçek dışı süre yok | `tasarim_dili_test` |
 | Sheet kabuğu: çağrı yerinde zemin ve elle tutamaç yalnız azalır, `showDragHandle` yok | `sheet_standardi_test` |
 | Açık tema kontrastı | `acik_tema_*_kontrast_test` |
@@ -249,7 +250,12 @@ eklenir.
    satır eylem başarısızsa snack. Başarı mesajı: yalnız geri alınabilir
    eylemde snack, diğerlerinde sessiz. Sessizliğin "kaydetti mi?" kuşkusunu
    sayfayı kapatan düğmede ✓ durumu giderir (`SandikAsyncButton(basari:)`,
-   Ar-Ge 11 Kas 19:04 #3; §4 Düğmeler).
+   Ar-Ge 11 Kas 19:04 #3; §4 Düğmeler). Başarı snack'ı yalnız `onUndo:` ya da
+   eylem düğmesiyle (`action:`); sonucu ekranda görünen geri alınamaz eylem
+   snack değil `SandikHaptic.basari` alır (Ar-Ge #6: alarm düzenleme,
+   özel gösterge, vadesiz oran, kullanıcı adı, çizgi alarmı adı kalktı).
+   Bilgi taşıyanlar ve henüz incelenmeyenler gerekçeli izin listesinde
+   (`snack_basari_kurali_test`, yalnız azalır).
 6. ~~**Kalan ham `AlertDialog`/`Dialog`**~~ Yapıldı (Ar-Ge 5 Kas 22:40 #7):
    Ayarlar şifre adımı `showSandikConfirm(detail:)`; yasal uyarı, temettü ve
    hızlı al/sat `SandikDiyalogKabugu`.

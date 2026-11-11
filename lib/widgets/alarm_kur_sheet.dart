@@ -519,12 +519,11 @@ Future<bool> alarmDuzenleAkisi(
     sil!();
     return false;
   }
+  // "Alarm güncellendi" snack'ı kalktı (Ar-Ge 11 Kas 19:04 #6): yeni hedef
+  // alarm satırında/şeridinde hemen görünür, geri alınacak bir şey yok.
+  // Onay sayfanın Kaydet düğmesinde ✓ + başarı titreşimi (yazma `kur:`
+  // ile sayfanın içinde koşar).
   if (sonuc is! AlarmKurulumu) return false;
-  SandikHaptic.selection.perform();
-  if (context.mounted) {
-    sandikSnack(context, context.l10n.alarmGuncellendi,
-        kind: SandikSnackKind.success);
-  }
   return true;
 }
 

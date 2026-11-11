@@ -8001,12 +8001,6 @@ abstract class AppLocalizations {
   /// **'Devam et'**
   String get kullaniciAdiDevam;
 
-  /// No description provided for @kullaniciAdiKaydedildi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kullanıcı adın güncellendi.'**
-  String get kullaniciAdiKaydedildi;
-
   /// No description provided for @kullaniciAdiSecilmedi.
   ///
   /// In tr, this message translates to:
@@ -8612,12 +8606,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Oranı güncelle'**
   String get depositRateUpdate;
-
-  /// No description provided for @depositRateSaved.
-  ///
-  /// In tr, this message translates to:
-  /// **'Oran güncellendi'**
-  String get depositRateSaved;
 
   /// No description provided for @depositWithdrawTitle.
   ///
@@ -14711,12 +14699,6 @@ abstract class AppLocalizations {
   /// **'{ad} göstergesi, ayrı panel'**
   String ozgPanelSemantik(String ad);
 
-  /// No description provided for @ozgKaydedildi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gösterge kaydedildi'**
-  String get ozgKaydedildi;
-
   /// No description provided for @ozgNotCizimNesnesi.
   ///
   /// In tr, this message translates to:
@@ -16469,12 +16451,6 @@ abstract class AppLocalizations {
   /// **'Grafikte aç'**
   String get cizgiyiGrafikteAc;
 
-  /// No description provided for @cizgiAlarmiAdlandi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alarmın adı kaydedildi'**
-  String get cizgiAlarmiAdlandi;
-
   /// No description provided for @tegAdliAlarmKurulduUst.
   ///
   /// In tr, this message translates to:
@@ -16684,12 +16660,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Alarmı sil'**
   String get alarmiSil;
-
-  /// No description provided for @alarmGuncellendi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alarm güncellendi'**
-  String get alarmGuncellendi;
 
   /// No description provided for @alarmKaldi.
   ///

@@ -4833,9 +4833,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kullaniciAdiDevam => 'Continue';
 
   @override
-  String get kullaniciAdiKaydedildi => 'Your username was updated.';
-
-  @override
   String get kullaniciAdiSecilmedi => 'Not chosen yet';
 
   @override
@@ -5191,9 +5188,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositRateUpdate => 'Update rate';
-
-  @override
-  String get depositRateSaved => 'Rate updated';
 
   @override
   String get depositWithdrawTitle => 'Did you withdraw the money?';
@@ -8985,9 +8979,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get ozgKaydedildi => 'Indicator saved';
-
-  @override
   String get ozgNotCizimNesnesi =>
       'label, line, box and table drawings are not shown; the rest of the code runs.';
 
@@ -10137,9 +10128,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cizgiyiGrafikteAc => 'Open in chart';
 
   @override
-  String get cizgiAlarmiAdlandi => 'Alert name saved';
-
-  @override
   String tegAdliAlarmKurulduUst(String ad) {
     return '“$ad” alert set: we\'ll notify you when the price rises above the line';
   }
@@ -10271,9 +10259,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alarmiSil => 'Delete alarm';
-
-  @override
-  String get alarmGuncellendi => 'Alarm updated';
 
   @override
   String alarmKaldi(String pct) {
