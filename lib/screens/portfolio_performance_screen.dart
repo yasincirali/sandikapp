@@ -579,6 +579,14 @@ class _PortfolioPerformanceScreenState
   /// getirilmez.
   Widget? _sonGrafik;
 
+  /// Dönem kartının (manşet + alt kat) son dolu hâli; [_sonGrafik] ile aynı
+  /// gerekçe ve aynı ömür. Seri beklenirken kart `SizedBox.shrink`'e
+  /// düşüyordu: ilk kez açılan Bugün'de (tohum yok) grafik ~200 pt yukarı
+  /// kayıp seri gelince geri iniyordu (yasin 2026-11-11: "varlık detaydaki
+  /// gibi sabit kalmalı"; `donem_gecisi_yerlesim_test` bekleme karelerini
+  /// de ölçer). Beklerken eski kart soluk olarak yerinde kalır.
+  Widget? _sonDonemKarti;
+
   // days=0 && intraday=true → günlük (24 saat, 5 dk çözünürlük).
   /// [ayGeri] dolu ise dönem başı TAKVİMDEN hesaplanır: "1 ay" 30 gün
   /// değil, bir önceki ayın AYNI günüdür.

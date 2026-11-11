@@ -293,6 +293,67 @@ void main() {
       await _yerles(tester, 12);
     });
 
+    // Yerleşmiş hâl yetmez: bekleme kareleri de ölçülür (yasin 2026-11-11,
+    // "varlık detaydaki gibi seçimden sonra sabit kalmalı"). İlk kez açılan
+    // Bugün'de seri beklenirken dönem kartı boşa düşüyor, grafik ~200 pt
+    // yukarı kayıp seri gelince geri iniyordu; eski kodda kırmızı.
+    testWidgets('Performans (${olcek}x): bekleme karelerinde de yerinde',
+        (tester) async {
+      tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith(_FakeAuth.new),
+          portfolioProvider.overrideWith(() => _FakePortfolio([
+                _lot(),
+                _lot(gunOnce: 60, id: 'lot-2', adet: 900),
+              ])),
+          partnersProvider.overrideWith(_FakePartners.new),
+          allPartnerAssetsProvider.overrideWith(_FakePartnerAssets.new),
+        ],
+        child: MaterialApp(
+          builder: (c, w) => _olcekli(olcek, w!),
+          home: PortfolioPerformanceScreen(
+            initialPeriodIdx: SummaryPeriod.birAy.index,
+          ),
+        ),
+      ));
+      await _yerles(tester);
+      final grafik = find.byType(ZoomableChart);
+      final secici = find.byType(DonemSecici).first;
+      final ilkGrafik = tester.getRect(grafik);
+      final ilkSecici = tester.getRect(secici);
+      final ilkState = tester.state(grafik);
+      final etiketler = _etiketler(tester);
+      for (final e in [...etiketler, etiketler.first]) {
+        // Yeni çekimler kare 10'a kadar bekler: seri yokken ara kareler.
+        kapi.tut = true;
+        await tester.tap(find
+            .descendant(of: find.byType(DonemSecici), matching: find.text(e))
+            .first);
+        for (var k = 0; k < 24; k++) {
+          if (k == 10) kapi.birak();
+          await tester.pump(const Duration(milliseconds: 16));
+          expect(grafik, findsOneWidget, reason: '$e kare $k: grafik söküldü');
+          final r = tester.getRect(grafik);
+          expect((r.top - ilkGrafik.top).abs(), lessThanOrEqualTo(0.5),
+              reason: '$e kare $k: grafik ${ilkGrafik.top} -> ${r.top} kaydı');
+          expect((r.height - ilkGrafik.height).abs(), lessThanOrEqualTo(0.5),
+              reason: '$e kare $k: grafik boyu değişti');
+          expect(tester.getRect(secici).top, ilkSecici.top,
+              reason: '$e kare $k: dönem seçici kaydı');
+          expect(identical(tester.state(grafik), ilkState), isTrue,
+              reason: '$e kare $k: grafik yeniden kuruldu (morf yerine '
+                  'ilk çizim)');
+        }
+        await _yerles(tester, 20);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await _yerles(tester, 12);
+    });
+
     testWidgets('Varlık detayı (${olcek}x): grafik ve dönem değişimi yerinde',
         (tester) async {
       tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
