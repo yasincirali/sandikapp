@@ -1,4 +1,5 @@
 import 'dart:async' show FutureOr, unawaited;
+import '../widgets/sandik_yenile.dart';
 import '../widgets/degisim_parlamasi.dart';
 import '../widgets/bekleyen_fon_alimi_satiri.dart';
 import '../widgets/cevrimdisi_seridi.dart';
@@ -14,7 +15,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart'
     show
-        RefreshIndicator,
         Material,
         MaterialType;
 import 'package:flutter/material.dart' show Icons;
@@ -36,6 +36,7 @@ import '../models/sozlesme.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/secili_donem_provider.dart';
 import '../providers/sozlesme_provider.dart';
 import '../services/en_cok_oynayan.dart';
 import '../services/sparkline_service.dart';
@@ -623,7 +624,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         error: e,
                         onRetry: () => ref.invalidate(portfolioProvider)),
                   ),
-                  data: (pState) => RefreshIndicator.adaptive(
+                  data: (pState) => SandikYenile(
                     color: context.c.amberText,
                     edgeOffset: ustPay,
                     // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
@@ -945,6 +946,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                                   heroEtiketi: hero,
                                                 )),
                                       ),
+                                      // Basma anında seri ön isteği: geçiş
+                                      // animasyonu boyunca ağ boş kalmasın.
+                                      onBasildi: (p) =>
+                                          AssetDetailScreen.seriyiOnIste(
+                                              p.asDisplayAsset(),
+                                              ref.read(seciliDonemProvider)),
                                       onDelete: (p) =>
                                           _confirmDelete(context, ref, p),
                                       // Varlık ekranının işlem çubuğuyla
@@ -1082,7 +1089,7 @@ class _SayiRozeti extends StatelessWidget {
         child: Text(
           '$sayi',
           style: context.t.labelSmall?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: context.c.amberText,
           ),
         ),
@@ -1511,7 +1518,7 @@ class _KucukHalkaState extends State<_KucukHalka>
             ParaMetni(
               widget.baz.fmt(toplam),
               stil: context.t.numMedium.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: renk,
               ),
             )
@@ -1521,7 +1528,7 @@ class _KucukHalkaState extends State<_KucukHalka>
                   ? widget.baz.fmt(toplam)
                   : fmtPct(d.pay * 100, digits: 1),
               style: context.t.numMedium.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: renk,
               ),
             ),
@@ -1746,12 +1753,12 @@ class _LejantSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final etiketStili = context.t.bodyMedium?.copyWith(
-      fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+      fontWeight: secili ? FontWeight.w600 : FontWeight.w500,
       color: secili ? renk : context.c.text58,
     );
     final degerStili = (ikiSatir ? context.t.bodySmall : context.t.bodyMedium)
         ?.copyWith(
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       color: secili ? renk : context.c.text90,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
@@ -2098,7 +2105,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                           centerValue,
                           style: context.t.numLarge.copyWith(
                             fontSize: centerPct != null ? 16 : 22,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             color: centerColor,
                           ),
                         ),
@@ -2177,7 +2184,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                         '${e.value.key.labelOf(context.l10n)} $pct',
                         style: context.t.bodyMedium?.copyWith(
                           fontWeight:
-                              isTouched ? FontWeight.w700 : FontWeight.w500,
+                              isTouched ? FontWeight.w600 : FontWeight.w500,
                           color:
                               isTouched ? e.value.key.color : context.c.text58,
                         ),
@@ -2223,6 +2230,10 @@ class _AssetList {
   final void Function(Position, Object? heroEtiketi) onTap;
   final void Function(Position) onDelete;
 
+  /// Satıra parmak değdiği an — varlık ekranının serisini ön ister
+  /// (`AssetDetailScreen.seriyiOnIste`); [onTap] ile AYNI pozisyonu alır.
+  final void Function(Position)? onBasildi;
+
   /// `varlik_hero_gecisi` (yol haritası 2.14).
   final bool heroAcik;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
@@ -2253,6 +2264,7 @@ class _AssetList {
     required this.currentUserId,
     this.bugun,
     required this.onTap,
+    this.onBasildi,
     required this.onDelete,
     required this.onAdd,
     required this.onRemove,
@@ -2302,8 +2314,43 @@ class _AssetList {
     // Etiket GÖSTERİLEN satırın anahtarından: tekil (`ValueKey` ile aynı),
     // açılan pozisyon ortak satırda farklı olsa da.
     final hero = heroAcik ? varlikHeroEtiketi(position.key) : null;
-    return _YeniVarlikParlamasi(
-        key: ValueKey(position.key),
+    // Fiyat turu tek varlığın fiyatını değiştirdiğinde tüm satırlar yeniden
+    // kuruluyordu (ölçüm 2026-11-11, 20 pozisyon, 390×844: görünen 10 kart,
+    // tur başına ~876 eleman). İmza satırın gösterdiği her girdiyi DEĞER
+    // olarak taşır; eşitse önceki kart nesnesi aynen döner ve Flutter alt
+    // ağaca inmez. Riverpod `select` yerine imza: satırın pozisyonu
+    // ortak/portföy kapsamı ve birleştirmeyle `build`'de türetiliyor; satır
+    // kendi dilimini sağlayıcıdan okusaydı bu türetmeyi her satırda tekrar
+    // etmek gerekirdi. Kapanışlar (`kendi`) imza eşitken eşdeğerdir: lot
+    // değerleri imzada, `Asset` nesneleri de turda yerinde güncellenir.
+    final imza = _SatirImzasi([
+      position.runtimeType,
+      position.key,
+      position.totalQuantity,
+      position.weightedPurchasePrice,
+      position.weightedFxRate,
+      position.latestAddedDate,
+      position.totalCommission,
+      position.totalDividend,
+      position.representative.degerImzasi,
+      for (final l in position.lots) l.degerImzasi,
+      // Kart yalnız `pState.toTRY` okur: satırın kendi para birimlerinin
+      // kuru. USD kuru oynayınca yalnız USD satırları yeniden kurulur.
+      for (final c in {for (final l in position.lots) l.currency})
+        (c, pState.toTRY(1, c)),
+      baz.birim, baz.kur, baz.gizli,
+      kendi != null, currentUserId, hero,
+      bugun?.hucre(position.key).bekleniyor,
+      bugun?.hucre(position.key).degisim?.degisimPct,
+      bugun?.hucre(position.key).degisim?.degisimTRY,
+      bugun?.hucre(position.key).degisim?.islemVar,
+      onTasi != null, onGuncelle != null,
+      position.key == vurgulanan, vurguNo,
+    ]);
+    return _ImzaliSatir(
+      key: ValueKey(position.key),
+      imza: imza,
+      kur: () => _YeniVarlikParlamasi(
         aktif: position.key == vurgulanan,
         tetik: vurguNo,
         child: _AssetCard(
@@ -2318,6 +2365,10 @@ class _AssetList {
           // önce kendi parçası, yoksa ilk sahibinki.
           onTap: (p) => onTap(
               kendi ?? (p is BirlesikPozisyon ? p.parcalar.first : p), hero),
+          onBasildi: onBasildi == null
+              ? null
+              : (p) => onBasildi!(
+                  kendi ?? (p is BirlesikPozisyon ? p.parcalar.first : p)),
           onDelete: (_) => onDelete(kendi!),
           onAdd: (_) => onAdd(kendi!),
           onRemove: (_) => onRemove(kendi!),
@@ -2331,7 +2382,54 @@ class _AssetList {
               ? null
               : (_) => onGuncelle!(kendi),
         ),
-      );
+      ),
+    );
+  }
+}
+
+/// [_ImzaliSatir]'ın değer eşitliği: liste öğe öğe karşılaştırılır.
+class _SatirImzasi {
+  const _SatirImzasi(this.alanlar);
+  final List<Object?> alanlar;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _SatirImzasi && listEquals(other.alanlar, alanlar);
+
+  @override
+  int get hashCode => Object.hashAll(alanlar);
+}
+
+/// İmzası değişmeyen satırda önceki alt ağacı AYNI nesneyle döndürür:
+/// `Element.updateChild` özdeş widget'ta yeniden kurmaz. Tema/yazı boyutu
+/// gibi miras alınan değişiklikler alt ağaca bağımlılık yoluyla yine ulaşır;
+/// [kur] bu yüzden `context` okumamalı (bkz. `_AssetList._kart`).
+class _ImzaliSatir extends StatefulWidget {
+  const _ImzaliSatir({super.key, required this.imza, required this.kur});
+  final Object imza;
+  final Widget Function() kur;
+
+  @override
+  State<_ImzaliSatir> createState() => _ImzaliSatirState();
+}
+
+class _ImzaliSatirState extends State<_ImzaliSatir> {
+  Widget? _cocuk;
+  Object? _imza;
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    _cocuk = null; // sıcak yeniden yüklemede kod değişmiş olabilir
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_cocuk == null || _imza != widget.imza) {
+      _imza = widget.imza;
+      _cocuk = widget.kur();
+    }
+    return _cocuk!;
   }
 }
 
@@ -2865,6 +2963,9 @@ class _AssetCard extends StatefulWidget {
   /// Başlık uçuşu etiketi (`varlik_baslik_hero.dart`); `null` → uçuş yok.
   final Object? heroEtiketi;
   final void Function(Position) onTap;
+
+  /// Bkz. `_AssetList.onBasildi`.
+  final void Function(Position)? onBasildi;
   final void Function(Position) onDelete;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
   // KAPANDIKTAN sonra kapanabilsin diye tip `void` değil `FutureOr<void>`.
@@ -2888,6 +2989,7 @@ class _AssetCard extends StatefulWidget {
     this.heroEtiketi,
     this.bugun,
     required this.onTap,
+    this.onBasildi,
     required this.onDelete,
     required this.onAdd,
     required this.onRemove,
@@ -2940,6 +3042,9 @@ class _AssetCardState extends State<_AssetCard>
         children: [
           SandikTappable(
             onTap: () => onTap(position),
+            onBasildi: widget.onBasildi == null
+                ? null
+                : () => widget.onBasildi!(position),
             child: Padding(
               padding: const EdgeInsets.all(cardPad),
               // Kolon genişlikleri satırın GERÇEK genişliğinden hesaplanır —
@@ -2966,7 +3071,7 @@ class _AssetCardState extends State<_AssetCard>
                     tutarYazisi,
                     maxLines: 1,
                     style: context.t.numMedium.copyWith(
-                        fontWeight: FontWeight.w700, color: context.c.text90),
+                        fontWeight: FontWeight.w600, color: context.c.text90),
                   );
                   // Fiyat turu tutarı değiştirince kısa ton + ▲/▼ (Ar-Ge
                   // 11 Kas 18:04 #2). Kimlik adet ve gösterim birimini
@@ -3027,7 +3132,7 @@ class _AssetCardState extends State<_AssetCard>
                                       maxLines: a.showTicker ? 1 : 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: context.t.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w600,
                                         color: context.c.text90,
                                         height: 1.25,
                                         letterSpacing:
@@ -3329,11 +3434,17 @@ class _VeriEksigiEtiketi extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eksikler = pozisyonunEksikleri(
-      ref.watch(pozisyonEksikleriProvider),
-      position,
-      ref.watch(authProvider.select((u) => u.valueOrNull?.id)),
-    );
+    final uid = ref.watch(authProvider.select((u) => u.valueOrNull?.id));
+    // Yalnız bu satırın dilimi, değer olarak: eksik haritası her fiyat
+    // turunda yeniden kuruluyor; tüm haritayı izlemek her satırın etiketini
+    // her turda yeniden kuruyordu (ölçüm 2026-11-11, bkz. `_ImzaliSatir`).
+    final eksikler = ref
+        .watch(pozisyonEksikleriProvider.select((m) => _SatirImzasi([
+              for (final e in pozisyonunEksikleri(m, position, uid))
+                (tur: e.tur, gun: e.gun),
+            ])))
+        .alanlar
+        .cast<({VeriEksigiTuru tur, int? gun})>();
     if (eksikler.isEmpty) return const SizedBox.shrink();
     final l = context.l10n;
     final metin = [
@@ -3742,7 +3853,7 @@ class _NotlarBolumu extends ConsumerWidget {
           Text(
             l10n.notesSection,
             style: context.t.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: context.c.text36,
             ),
           ),
@@ -3834,7 +3945,7 @@ class _DetailItem extends StatelessWidget {
           // `ustHarf` ile büyütülüyordu (bulgu #8 noktasız I bunun yüzündendi).
           label,
           style: context.t.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: context.c.text36,
           ),
         ),

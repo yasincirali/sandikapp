@@ -8,6 +8,7 @@
 // Giriş noktası Profil'deki [HalkaArzProfilSatiri]; bayrak
 // (`ipo_calendar_enabled`) kapalıyken satır hiç çizilmez, ekran erişilmez.
 import 'dart:async';
+import '../widgets/sandik_yenile.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,7 +76,7 @@ class _HalkaArzScreenState extends ConsumerState<HalkaArzScreen> {
             error: e,
             onRetry: () => ref.invalidate(halkaArzGorunumuProvider),
           ),
-          data: (g) => RefreshIndicator.adaptive(
+          data: (g) => SandikYenile(
             color: context.c.amberText,
             onRefresh: _yenile,
             child: _Liste(gorunum: g),

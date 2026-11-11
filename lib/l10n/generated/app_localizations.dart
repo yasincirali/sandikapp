@@ -16884,6 +16884,18 @@ abstract class AppLocalizations {
   /// **'Çaldı: {zaman}'**
   String alarmCaldiZaman(String zaman);
 
+  /// Alarm bildiriminden açılan varlık sayfasının bandı
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmın çaldı: {fiyat} üstü'**
+  String alarmCaldiBandiUst(String fiyat);
+
+  /// Alarm bildiriminden açılan varlık sayfasının bandı
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmın çaldı: {fiyat} altı'**
+  String alarmCaldiBandiAlt(String fiyat);
+
   /// Ücretsiz planda tavana yaklaşınca alarm sayacı
   ///
   /// In tr, this message translates to:

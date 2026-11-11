@@ -382,7 +382,7 @@ class _CompareStrip extends StatelessWidget {
                       Text(
                         compare == null ? 'Karşılaştır' : 'Değiştir',
                         style: context.t.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: context.c.text58,
                         ),
                       ),
@@ -447,7 +447,7 @@ class _LegendBadge extends StatelessWidget {
           Text(
             label,
             style: context.t.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: color,
             ),
           ),

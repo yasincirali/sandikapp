@@ -10414,6 +10414,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String alarmCaldiBandiUst(String fiyat) {
+    return 'Your alert went off: above $fiyat';
+  }
+
+  @override
+  String alarmCaldiBandiAlt(String fiyat) {
+    return 'Your alert went off: below $fiyat';
+  }
+
+  @override
   String alarmSayaci(int sayi, int limit) {
     return 'Active alerts: $sayi/$limit';
   }

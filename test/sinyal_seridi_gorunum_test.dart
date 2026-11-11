@@ -71,7 +71,8 @@ void main() {
     test('başlık ağırlığı ölçülü — w800 değil', () {
       expect(satir.contains('fontWeight: FontWeight.w800'), isFalse,
           reason: 'Başlık yine en kalın ağırlıkta; ekranda bağırıyor.');
-      expect(satir.contains('fontWeight: FontWeight.w700'), isTrue);
+      // 2026-11-11: ağırlık tavanı w600 (yasin 2026-11-05; unslop), w700 → w600.
+      expect(satir.contains('fontWeight: FontWeight.w600'), isTrue);
     });
 
     test('ikon yumuşak daire içinde — çıplak değil', () {

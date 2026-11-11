@@ -749,7 +749,17 @@ class SandikTappable extends StatefulWidget {
     this.selected,
     this.haptic,
     this.soluk = false,
+    this.onBasildi,
   });
+
+  /// Parmak değdiği an (`onTapDown`), dokunuş kesinleşmeden. Yalnız yüzey
+  /// etkinken ([onTap]/[onLongPress] dolu) çağrılır.
+  ///
+  /// Neden (2026-11-11): satır → varlık ekranı geçişinde seri isteği ekran
+  /// kurulunca başlıyordu; geçiş animasyonu boyunca ağ boştu. Çağıran burada
+  /// ön isteği başlatır (`AssetDetailScreen.seriyiOnIste`). Kaydırmayla iptal
+  /// edilen basmada da çağrılmış olur — ucuz, yan etkisiz iş için kullan.
+  final VoidCallback? onBasildi;
 
   /// `true` dönerse [haptic] verilmemiş, seçim kavramı olmayan dokunuş
   /// titreşmez. `main` Remote Config `goz_alici`'ye bağlar; bayrak kapalıyken
@@ -983,8 +993,16 @@ class _SandikTappableState extends State<SandikTappable>
       // pasifken susar); solma yolu `SandikBasma` gibi pasifken dinleyici
       // bağlamaz ki devre dışı yüzey üst öğenin dokunuşunu yutmasın.
       onTapDown: widget.soluk
-          ? (enabled ? (_) => _bas() : null)
-          : (_) => _duzBas(),
+          ? (enabled
+              ? (_) {
+                  _bas();
+                  widget.onBasildi?.call();
+                }
+              : null)
+          : (_) {
+              _duzBas();
+              if (_etkin) widget.onBasildi?.call();
+            },
       onTapUp: widget.soluk
           ? (enabled ? (_) => _birak() : null)
           : (_) => _duzBirak(),
@@ -1076,9 +1094,12 @@ extension SandikBoldText on TextTheme {
 /// Para tutarları ve yüzdeler listede alt alta geldiğinde rakamlar aynı
 /// genişlikte olmalı; aksi halde kolonlar oynak görünür.
 extension SandikNumericText on TextTheme {
-  /// Liste satırı tutarı (13pt, w700) — [FontFeature.tabularFigures] ile.
+  /// Liste satırı tutarı (13pt, w600) — [FontFeature.tabularFigures] ile.
+  /// 2026-11-11: w700 → w600 (ağırlık tavanı, yasin 2026-11-05; unslop).
+  /// Yarış/Zirve sahneleri istisna olduğu için orada açık w700 yazılı; ana
+  /// sayfa toplam kartı (`PortfolioSummaryWidget`) ağırlığı zaten açık verir.
   TextStyle get numSmall => (bodyMedium ?? const TextStyle()).copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 

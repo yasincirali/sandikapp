@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/sandik_yenile.dart';
 import 'dart:math' as math;
 import '../demo/demo_modu.dart';
 import '../services/crash_reporter.dart';
@@ -12,7 +13,6 @@ import 'package:flutter/material.dart'
         LinearProgressIndicator,
         Icons,
         TextStyle,
-        RefreshIndicator,
         Switch,
         TextButton,
         FilledButton,

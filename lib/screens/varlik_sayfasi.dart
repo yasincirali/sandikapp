@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -174,6 +175,43 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
     this.eldekiYukleyici,
   });
 
+  /// Sayfanın ilk açılışta çizdiği dönem (gün).
+  ///
+  /// İstenen dönem ([baslangicDonemGun]) geçerliyse o; değilse tek dönem
+  /// hafızası: uygulamanın ortak dönemi (Sadeleştirme 2; bayrak
+  /// `donem_hafizasi` 2026-10-20'de emekliye ayrıldı, eski 1Y varsayılanı
+  /// kalktı). Sayfa her dönemi gösterebildiği için en yakına düşme gerekmez.
+  /// Ön istek ([seriyiOnIste]) de buradan okur ki iki yer ayrışmasın.
+  static int ilkGun(int? baslangicDonemGun, SummaryPeriod ortakDonem) =>
+      varlikSayfasiDonemleri.contains(baslangicDonemGun)
+          ? baslangicDonemGun!
+          : ortakDonem.sembolGunu;
+
+  /// Takip satırına parmak değdiği an (`onTapDown`) sayfanın ilk dönem
+  /// serisini başlatır; sonuç beklenmez (2026-11-11).
+  ///
+  /// Neden: istek eskiden sayfa kurulunca başlıyordu, sheet açılış
+  /// animasyonu boyunca ağ boştu. Sayfa açılınca AYNI çağrıyı
+  /// (`getSymbolHistory`, aynı sembol ve gün) yapar; `HistoryService.seriCek`
+  /// uçuşan isteği paylaştırır ya da süreli önbellekten verir, ikinci GET
+  /// olmaz. Sembolün hangi seriden besleneceğine servis karar verir.
+  ///
+  /// Hata sessiz: servis hatayı boş seriye çevirir ve süreli önbelleğe
+  /// yazmaz, sayfa normal yolunu dener. Buradaki nadir istisna yalnız debug
+  /// log'a düşer, Crashlytics'e değil — sayfa aynı çekimin hatasını kendisi
+  /// bildiriyor (`VarlikSayfasi._yukle`); iki kez sayılmasın, kaydırırken
+  /// iptal edilen basmalar gürültü eklemesin.
+  static void seriyiOnIste(String ticker, int? baslangicDonemGun,
+      SummaryPeriod ortakDonem) {
+    if (ticker.trim().isEmpty) return;
+    HistoryService.instance
+        .getSymbolHistory(ticker,
+            periodDays: ilkGun(baslangicDonemGun, ortakDonem))
+        .then<void>((_) {}, onError: (Object e) {
+      if (kDebugMode) debugPrint('VarlikSayfasi.seriyiOnIste($ticker): $e');
+    });
+  }
+
   final VarlikKimligi kimlik;
 
   /// Sayfanın ALTINDAKİ ekranın bağlamı. Sayfa kapandıktan sonra "Portföye
@@ -216,13 +254,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   final _sayfa = DraggableScrollableController();
 
-  late int _gun = varlikSayfasiDonemleri.contains(widget.baslangicDonemGun)
-      ? widget.baslangicDonemGun!
-      // Tek dönem hafızası: istek yoksa uygulamanın ortak dönemi
-      // (Sadeleştirme 2; bayrak `donem_hafizasi` 2026-10-20'de emekliye
-      // ayrıldı, eski 1Y varsayılanı kalktı). Sayfa her dönemi
-      // gösterebildiği için en yakına düşme gerekmez.
-      : ref.read(seciliDonemProvider).sembolGunu;
+  late int _gun = VarlikSayfasi.ilkGun(
+      widget.baslangicDonemGun, ref.read(seciliDonemProvider));
 
   /// Grafikte ŞU AN çizilen dönem. Yeni dönem yüklenirken eski çizgi soluk
   /// kalır — boş kutu ya da dönen tekerlek yerine bağlam.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/sandik_yenile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../demo/demo_modu.dart';
@@ -681,7 +682,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ortakVar: allActivePartners.isNotEmpty,
     );
 
-    return RefreshIndicator.adaptive(
+    return SandikYenile(
       color: context.c.amberText,
       // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
       // Çan listeleri de tazelenir (2026-10-06): "aşağı çektim, yeni

@@ -74,6 +74,22 @@ def pr_metni(no: int, baslik: str, govde: str, dosyalar: list[str]) -> str | Non
     return f"• {baslik.strip()}"
 
 
+# ASC "What to Test" emoji sayılan karakteri reddeder ve upload_to_testflight
+# changelog adımında düşer (11 Kas 2026, #348 gövdesindeki "✓": "Text for
+# whatsNew contains invalid characters"). Bilinenler kelimeye çevrilir, kalan
+# emoji/dingbat aralığı atılır. ▲/▼ (U+25B2/25BC) #347'de kabul edildi, kalır.
+_KELIME = {"✓": "onay işareti", "✔": "onay işareti", "✗": "çarpı",
+           "✕": "çarpı", "✘": "çarpı", "⚠": "uyarı"}
+_EMOJI = re.compile("[\u2600-\u27BF\U0001F000-\U0001FFFF\uFE0F\u200D]")
+
+
+def asc_temiz(metin: str) -> str:
+    """ASC'nin kabul ettiği metin: emoji/dingbat yok."""
+    for k, v in _KELIME.items():
+        metin = metin.replace(k, v)
+    return re.sub(r"[ \t]{2,}", " ", _EMOJI.sub("", metin))
+
+
 def notu_kur(prler: list[dict]) -> str:
     """prler: [{no, baslik, govde, dosyalar}] → What to Test metni."""
     if not prler:
@@ -84,7 +100,7 @@ def notu_kur(prler: list[dict]) -> str:
     if not bloklar:
         return ("Bu sürümde uygulamada görünen bir değişiklik yok. "
                 "Her zamanki gibi kullanmaya devam et.")
-    metin = "Bu sürümde bunları dene:\n\n" + "\n\n".join(bloklar)
+    metin = asc_temiz("Bu sürümde bunları dene:\n\n" + "\n\n".join(bloklar))
     return metin if len(metin) <= LIMIT else metin[: LIMIT - 1] + "…"
 
 

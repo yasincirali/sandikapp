@@ -17,6 +17,23 @@ part of '../asset_detail_screen.dart';
 /// - Etiket çizim alanına girmez (2026-10-12): kartın üst boşluğunda, dönem
 ///   başı açıklamasıyla aynı satırın sağında (`GrafikStili.donemBasiUstte`).
 extension _AlarmCizgileri on _AssetDetailScreenState {
+  /// Bu varlığın alarm adayı — zil ve "Alarmın çaldı" bandının "Yeniden
+  /// kur"u AYNI adayla açar (aynı sayfa, aynı çipler). Maliyet çipleri
+  /// yalnız KENDİ açık pozisyonunda: ortağın maliyeti bu kullanıcının
+  /// alarm sorusu değildir. Yalnız [_alarmSembolu] doluyken çağrılır.
+  AlarmAdayi _alarmAdayi({required bool kendi}) => AlarmAdayi(
+      _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice,
+      maliyet: kendi && _canli.acik ? alarmMaliyeti(_canli.lots) : null,
+      yil52: _alarmYil52);
+
+  /// Alarmdan açılışta bant ([AssetDetailScreen.gelenAlarmId]); alarm
+  /// kurulamayan varlıkta (mevduat, BES) ya da kimliksiz açılışta `null`.
+  Widget? _alarmCaldiBandi(bool kendi) {
+    final id = widget.gelenAlarmId;
+    if (id == null || id.isEmpty || _alarmSembolu == null) return null;
+    return AlarmCaldiBandi(alarmId: id, aday: _alarmAdayi(kendi: kendi));
+  }
+
   /// Grafikte gösterilmeye aday fiyat alarmları — LOG/Karşılaştır'da ve
   /// alarm kurulamayan varlıkta (mevduat, BES; `_alarmSembolu`) boş.
   List<PriceAlert> _grafikAlarmAdaylari({
@@ -34,14 +51,34 @@ extension _AlarmCizgileri on _AssetDetailScreenState {
   }
 
   /// Çizim alanındaki kesikli çizgiler — yalnız görünen Y aralığındakiler.
+  ///
+  /// Anahtarlı ([KayanYatayCizgi], 2026-11-11): alarm kurulunca/
+  /// düzenlenince çizgi anında belirip zıplıyordu; artık seviye değişince
+  /// eski seviyeden kayar, yeni alarm [sonFiyat]tan (grafiğin son noktası,
+  /// aynı Y uzayı) hedefe kayar, silinen söner. Dönem değişiminde kaymaz:
+  /// kararı `ZoomableChart._kayanCizgiler` verir.
   List<HorizontalLine> _alarmYatayCizgileri(
-          List<GrafikAlarmCizgisi> cizgiler) =>
+          List<GrafikAlarmCizgisi> cizgiler, {double? sonFiyat}) =>
       [
         for (final a in cizgiler)
           if (a.cizilir)
-            GrafikStili.alarmCizgisi(context, a.alarm.targetPrice,
-                yukari: a.alarm.isAbove),
+            _kayanAlarmCizgisi(
+                GrafikStili.alarmCizgisi(context, a.alarm.targetPrice,
+                    yukari: a.alarm.isAbove),
+                a.alarm.id,
+                sonFiyat),
       ];
+
+  static KayanYatayCizgi _kayanAlarmCizgisi(
+          HorizontalLine c, String id, double? sonFiyat) =>
+      KayanYatayCizgi(
+        anahtar: (tur: 'alarm', id: id),
+        y: c.y,
+        dogumY: sonFiyat,
+        color: c.color,
+        strokeWidth: c.strokeWidth,
+        dashArray: c.dashArray,
+      );
 
   /// Grafikteki ortalama maliyet (Ar-Ge 1 Kas 08:45 #1, yasin "yap").
   ///

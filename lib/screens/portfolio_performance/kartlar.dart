@@ -397,7 +397,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // `period_summary_enabled` kapalıyken) aşağıdaki eski düzen birebir
     // çizilir.
     if (_tekAkis) {
-      return SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
+      return SandikKaydirmaBasligi.payIle((ustPay) => SandikYenile(
             color: context.c.amberText,
             // Cam başlık açıkken (`goz_alici`) pay başlığın boyu; kapalıyken 0.
             edgeOffset: ustPay,
@@ -474,7 +474,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ));
     }
 
-    return SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
+    return SandikKaydirmaBasligi.payIle((ustPay) => SandikYenile(
           color: context.c.amberText,
           // Cam başlık açıkken (`goz_alici`) pay başlığın boyu; kapalıyken 0.
           edgeOffset: ustPay,

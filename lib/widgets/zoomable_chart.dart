@@ -276,7 +276,8 @@ class ZoomableChart extends StatefulWidget {
   State<ZoomableChart> createState() => _ZoomableChartState();
 }
 
-class _ZoomableChartState extends State<ZoomableChart> {
+class _ZoomableChartState extends State<ZoomableChart>
+    with SingleTickerProviderStateMixin {
   // Controller yoksa iç state — verildiyse controller kaynak.
   double _localMinX = 0;
   double _localMaxX = 0;
@@ -537,6 +538,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
   /// yalnız sonucu çizer.
   ({LineChartData cizim, Duration sure}) _cizimSec(
       BuildContext context, LineChartData veri) {
+    _sakinKare = false;
     final hareketVar = !MediaQuery.disableAnimationsOf(context) &&
         widget.swapDuration > Duration.zero;
     // Süren köprü: hedef aynıysa ve parmak ekranda değilse devam.
@@ -558,6 +560,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
     final donem = _donemDegisti && degisti;
     if (degisti) _donemDegisti = false;
     if (!degisti || _interacting || !hareketVar) {
+      _sakinKare = !degisti && !_interacting && hareketVar && onceki != null;
       return (cizim: veri, sure: Duration.zero);
     }
     // İlk kurulum: LineChart ilk karede zaten tween kurmaz; süre eskisi gibi
@@ -593,6 +596,143 @@ class _ZoomableChartState extends State<ZoomableChart> {
     });
     return (cizim: kopru.eski, sure: Duration.zero);
   }
+
+  // ── Kayan yatay çizgiler (alarm seviyesi, 2026-11-11) ──────────────────
+  //
+  // Alarm kurulunca/düzenlenince çizgisi yeni seviyede anında beliriyordu:
+  // `_karsilastir` ek çizgilere bakmaz (bakması da yetmezdi — fl_chart
+  // listeleri sıra numarasıyla eşler, çizgi sayısı değişince lerp etmez).
+  // [KayanYatayCizgi] anahtar taşır; aynı anahtar yeni y ile gelince çizgi
+  // DEĞER uzayında eskisinden kayar, piksel dönüşümü fl_chart'ta kalır.
+  //
+  // Kayma YALNIZ "sakin" karede başlar: grafiğin geri kalanı (eksen,
+  // noktalar, çubuk sayısı) değişmemiş, jest yok, hareketi azalt kapalı,
+  // grafik daha önce çizilmiş. Dönem değişimi, yakınlaştırma, LOG/
+  // Karşılaştır geçişi noktaları değiştirir → çizgi anında yeni ölçekte
+  // yerini alır (dönem morfu/köprüsü onu ölçekle birlikte taşır); aralığa
+  // giren/çıkan alarm çizgisi de bu yüzden kaymaz, yalnız seviyesi
+  // değişen kayar. Sakin karede kaybolan anahtar silinmiştir: söner.
+
+  /// Bu karede grafiğin geri kalanı değişmedi mi (bkz. [_cizimSec]).
+  bool _sakinKare = false;
+
+  /// Build sürerken denetleyici bildirimi setState istemesin.
+  bool _kurulumda = false;
+
+  AnimationController? _kayma;
+  final Map<Object, double> _kaymaBas = {};
+  final Map<Object, double> _kaymaHedef = {};
+  final Map<Object, HorizontalLine> _sonenler = {};
+
+  double _kaymaT() => SandikMotion.move.transform(_kayma?.value ?? 1);
+
+  double _gorunenY(Object k) {
+    final hedef = _kaymaHedef[k]!;
+    final bas = _kaymaBas[k];
+    if (bas == null || !(_kayma?.isAnimating ?? false)) return hedef;
+    return bas + (hedef - bas) * _kaymaT();
+  }
+
+  static HorizontalLine _cizgiKopyasi(HorizontalLine c,
+          {required double y, double opaklik = 1}) =>
+      HorizontalLine(
+        y: y,
+        label: c.label,
+        color: c.color?.withValues(alpha: (c.color!.a * opaklik)),
+        gradient: c.gradient,
+        strokeWidth: c.strokeWidth,
+        dashArray: c.dashArray,
+        image: c.image,
+        sizedPicture: c.sizedPicture,
+        strokeCap: c.strokeCap,
+      );
+
+  LineChartData _kayanCizgiler(BuildContext context, LineChartData d) {
+    final cizgiler = d.extraLinesData.horizontalLines;
+    final kayanlar = <Object, KayanYatayCizgi>{
+      for (final c in cizgiler)
+        if (c is KayanYatayCizgi) c.anahtar: c,
+    };
+    if (kayanlar.isEmpty && _kaymaHedef.isEmpty && _sonenler.isEmpty) {
+      return d;
+    }
+
+    var degisim = false;
+    for (final e in kayanlar.entries) {
+      if (_kaymaHedef[e.key] != e.value.y) degisim = true;
+    }
+    for (final k in _kaymaHedef.keys) {
+      if (!kayanlar.containsKey(k)) degisim = true;
+    }
+
+    if (degisim) {
+      final sure = SandikMotion.stateOf(context);
+      final kaydir = _sakinKare && sure > Duration.zero;
+      if (!kaydir) {
+        _kayma?.stop();
+        _kaymaBas.clear();
+        _sonenler.clear();
+      } else {
+        // Yeni başlangıç: her çizginin ŞU AN göründüğü yer (süren kayma
+        // yarıda kesilirse oradan devam eder, geri sıçramaz).
+        final bas = <Object, double>{};
+        for (final e in kayanlar.entries) {
+          bas[e.key] = _kaymaHedef.containsKey(e.key)
+              ? _gorunenY(e.key)
+              : (e.value.dogumY ?? e.value.y);
+        }
+        for (final k in _kaymaHedef.keys) {
+          if (!kayanlar.containsKey(k) && _sonCizgi.containsKey(k)) {
+            _sonenler[k] = _cizgiKopyasi(_sonCizgi[k]!, y: _gorunenY(k));
+          }
+        }
+        _kaymaBas
+          ..clear()
+          ..addAll(bas);
+        final c = _kayma ??= AnimationController(vsync: this)
+          ..addListener(() {
+            if (mounted && !_kurulumda) setState(() {});
+          })
+          ..addStatusListener((st) {
+            if (st == AnimationStatus.completed && mounted) {
+              setState(() {
+                _kaymaBas.clear();
+                _sonenler.clear();
+              });
+            }
+          });
+        c.duration = sure;
+        c.forward(from: 0);
+      }
+      _kaymaHedef
+        ..clear()
+        ..addAll({for (final e in kayanlar.entries) e.key: e.value.y});
+      _sonCizgi
+        ..clear()
+        ..addAll(kayanlar);
+    }
+
+    final suruyor = _kayma?.isAnimating ?? false;
+    if (!suruyor) return d;
+    final t = _kaymaT();
+    return d.copyWith(
+      extraLinesData: ExtraLinesData(
+          verticalLines: d.extraLinesData.verticalLines,
+          extraLinesOnTop: d.extraLinesData.extraLinesOnTop,
+          horizontalLines: [
+            for (final c in cizgiler)
+              if (c is KayanYatayCizgi)
+                _cizgiKopyasi(c, y: _gorunenY(c.anahtar))
+              else
+                c,
+            for (final c in _sonenler.values)
+              _cizgiKopyasi(c, y: c.y, opaklik: 1 - t),
+          ]),
+    );
+  }
+
+  /// Son hedef çizgiler (sönen çizginin rengi/deseni buradan).
+  final Map<Object, KayanYatayCizgi> _sonCizgi = {};
 
   void _setInteracting(bool v) {
     if (_interacting == v) return;
@@ -667,6 +807,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
   @override
   void dispose() {
     _kopruBitis?.cancel();
+    _kayma?.dispose();
     widget.viewportController?.removeListener(_onControllerChanged);
     super.dispose();
   }
@@ -929,7 +1070,13 @@ class _ZoomableChartState extends State<ZoomableChart> {
       image: true,
       child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;
-      final secim = _cizimSec(context, _grafikVerisi());
+      final ham = _cizimSec(context, _grafikVerisi());
+      _kurulumda = true;
+      final secim = (
+        cizim: _kayanCizgiler(context, ham.cizim),
+        sure: ham.sure,
+      );
+      _kurulumda = false;
       final solan = _solan;
       return SizedBox(
         height: widget.height,
@@ -1363,4 +1510,28 @@ class _SoldanKirpici extends CustomClipper<Rect> {
 
   @override
   bool shouldReclip(_SoldanKirpici eski) => eski.oran != oran;
+}
+
+/// Anahtarlı yatay çizgi: aynı [anahtar] yeni `y` ile gelince
+/// [ZoomableChart] çizgiyi değer uzayında eskisinden kaydırır (bkz.
+/// `_kayanCizgiler`). Alarm seviyesi için (2026-11-11).
+// Üst sınıfın `image`/`sizedPicture` alanları fl_chart'ta final değil;
+// bu sınıf yeni değişken alan eklemiyor.
+// ignore: must_be_immutable
+class KayanYatayCizgi extends HorizontalLine {
+  KayanYatayCizgi({
+    required this.anahtar,
+    required super.y,
+    this.dogumY,
+    super.color,
+    super.strokeWidth,
+    super.dashArray,
+  });
+
+  /// Kimlik (alarm kimliği): seviye değişse de aynı çizgi.
+  final Object anahtar;
+
+  /// İlk kez göründüğünde (yeni kurulan alarm) buradan kayar — son fiyat.
+  /// `null` → yerinde belirir.
+  final double? dogumY;
 }

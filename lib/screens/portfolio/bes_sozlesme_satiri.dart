@@ -93,7 +93,7 @@ class _BesSozlesmeSatiriState extends ConsumerState<_BesSozlesmeSatiri> {
                   tryFmt.format(degerTRY),
                   maxLines: 1,
                   style: context.t.numMedium.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.text90),
+                      fontWeight: FontWeight.w600, color: context.c.text90),
                 );
                 final karZarar = a.purchasePrice > 0 && a.currentPrice > 0
                     ? _GainLossLine(
@@ -118,7 +118,7 @@ class _BesSozlesmeSatiriState extends ConsumerState<_BesSozlesmeSatiri> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: context.t.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               color: context.c.text90,
                               height: 1.25,
                               letterSpacing: -0.2,

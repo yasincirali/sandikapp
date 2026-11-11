@@ -222,7 +222,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
             c.ticker,
             style: context.t.titleMedium?.copyWith(
               color: context.c.text90,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
           subtitle: Text(
@@ -336,7 +336,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 labelColor: context.c.amberText,
                 unselectedLabelColor: context.c.text58,
                 labelStyle: context.t.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                    ?.copyWith(fontWeight: FontWeight.w600),
                 tabs: [
                   Tab(text: context.l10n.myPortfolioTab),
                   Tab(text: context.l10n.otherTab),

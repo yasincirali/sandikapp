@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/sandik_yenile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -71,7 +72,7 @@ class _KayitliCihazlarScreenState extends ConsumerState<KayitliCihazlarScreen> {
             error: e,
             onRetry: () => ref.invalidate(kayitliCihazlarProvider),
           ),
-          data: (v) => RefreshIndicator.adaptive(
+          data: (v) => SandikYenile(
             onRefresh: () => ref.refresh(kayitliCihazlarProvider.future),
             child: ListView(
               padding: EdgeInsets.symmetric(
