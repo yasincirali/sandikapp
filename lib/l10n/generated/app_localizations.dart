@@ -17526,6 +17526,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İşlem tarihi {tarih}, değiştir'**
   String tarihCipiSeciliTarihSemantik(String tarih);
+
+  /// iOS sayı klavyesi üstü çubuk: sonraki giriş alanına geç
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonraki'**
+  String get klavyeSonraki;
+
+  /// iOS sayı klavyesi üstü çubuk: klavyeyi kapat
+  ///
+  /// In tr, this message translates to:
+  /// **'Bitti'**
+  String get klavyeBitti;
 }
 
 class _AppLocalizationsDelegate

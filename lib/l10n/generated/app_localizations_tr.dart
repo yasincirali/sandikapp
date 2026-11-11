@@ -10709,4 +10709,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String tarihCipiSeciliTarihSemantik(String tarih) {
     return 'İşlem tarihi $tarih, değiştir';
   }
+
+  @override
+  String get klavyeSonraki => 'Sonraki';
+
+  @override
+  String get klavyeBitti => 'Bitti';
 }

@@ -5694,5 +5694,9 @@
   "tarihCipiSonIsGunuSemantik": "{gun}, last trading day",
   "@tarihCipiSonIsGunuSemantik": {"placeholders": {"gun": {"type": "String"}}},
   "tarihCipiSeciliTarihSemantik": "Transaction date {tarih}, change",
-  "@tarihCipiSeciliTarihSemantik": {"placeholders": {"tarih": {"type": "String"}}}
+  "@tarihCipiSeciliTarihSemantik": {"placeholders": {"tarih": {"type": "String"}}},
+  "klavyeSonraki": "Next",
+  "@klavyeSonraki": {"description": "iOS sayı klavyesi üstü çubuk: sonraki giriş alanına geç"},
+  "klavyeBitti": "Done",
+  "@klavyeBitti": {"description": "iOS sayı klavyesi üstü çubuk: klavyeyi kapat"}
 }

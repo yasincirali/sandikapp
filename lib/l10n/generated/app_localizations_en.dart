@@ -10854,4 +10854,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String tarihCipiSeciliTarihSemantik(String tarih) {
     return 'Transaction date $tarih, change';
   }
+
+  @override
+  String get klavyeSonraki => 'Next';
+
+  @override
+  String get klavyeBitti => 'Done';
 }

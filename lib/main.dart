@@ -52,6 +52,7 @@ import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'widgets/premium_hediye_sayfasi.dart';
 import 'widgets/klavye_kapatici.dart';
+import 'widgets/sayi_klavyesi_cubugu.dart';
 import 'widgets/gizlilik_perdesi.dart';
 import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
@@ -503,6 +504,9 @@ class SandikApp extends ConsumerWidget {
       // karartma ve kart en üstte kalır (bkz. OnboardingTourHost).
       // `KlavyeKapatici` Navigator'ı sarar: hangi ekranda, hangi alt sayfada
       // olursa olsun boşluğa dokununca klavye kapanır (bkz. widget notu).
+      // `SayiKlavyesiKatmani` onun içinde: iOS sayı klavyesine "Sonraki /
+      // Bitti" çubuğu ekler; Navigator'ın üstünde olduğu için her alt sayfa
+      // ve diyalogdaki sayı alanı otomatik kapsanır (bkz. widget notu).
       // `SunucuKapisi` en dışta: zorunlu güncelleme / sunucu değişimi
       // ekranı her rotanın ve turun ÖNÜNE geçer (köprü sürümü, K1).
       // `YaziBoyutuKapsami` hepsinin dışında: kapı, tur ve her rota aynı
@@ -513,7 +517,8 @@ class SandikApp extends ConsumerWidget {
           child: GizlilikPerdesi(
               child: SunucuKapisi(
                   child: KlavyeKapatici(
-                      child: OnboardingTourHost(child: child!))))),
+                      child: SayiKlavyesiKatmani(
+                          child: OnboardingTourHost(child: child!)))))),
       home: const _AuthGate(),
     );
   }

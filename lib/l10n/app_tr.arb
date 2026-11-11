@@ -6469,5 +6469,9 @@
   "tarihCipiSonIsGunuSemantik": "{gun}, son işlem günü",
   "@tarihCipiSonIsGunuSemantik": {"placeholders": {"gun": {"type": "String"}}},
   "tarihCipiSeciliTarihSemantik": "İşlem tarihi {tarih}, değiştir",
-  "@tarihCipiSeciliTarihSemantik": {"placeholders": {"tarih": {"type": "String"}}}
+  "@tarihCipiSeciliTarihSemantik": {"placeholders": {"tarih": {"type": "String"}}},
+  "klavyeSonraki": "Sonraki",
+  "@klavyeSonraki": {"description": "iOS sayı klavyesi üstü çubuk: sonraki giriş alanına geç"},
+  "klavyeBitti": "Bitti",
+  "@klavyeBitti": {"description": "iOS sayı klavyesi üstü çubuk: klavyeyi kapat"}
 }
