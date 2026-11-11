@@ -49,12 +49,85 @@ bool islemNotuDuzenlenebilir(Asset a, {required String? benimId}) =>
     !a.isDeleteLog &&
     !a.isDeleted;
 
-/// Tüm Hareketler araması için — küçük harfe çevrilmiş [q] görünen notta
-/// geçiyor mu. Gizlenen kopya aramada da bulunmaz (görünmeyen bir şeyle
-/// eşleşen satır kullanıcıya "neden bu çıktı?" dedirtirdi).
+/// Tüm Hareketler araması için — [q] görünen notta geçiyor mu (büyük/küçük
+/// harf ve Türkçe i/ı duyarsız, bkz. [notAramaKatla]). Gizlenen kopya
+/// aramada da bulunmaz (görünmeyen bir şeyle eşleşen satır kullanıcıya
+/// "neden bu çıktı?" dedirtirdi).
 bool islemNotuEslesir(Asset a, Iterable<Asset> defter, String q) {
   final not = islemNotu(a, defter);
-  return not != null && not.toLowerCase().contains(q);
+  return not != null && notAramaKatla(not).contains(notAramaKatla(q));
+}
+
+/// Not aramasının karşılaştırma biçimi: küçük harf, ve `I`/`ı`/`İ`/`i`
+/// tek harf sayılır.
+///
+/// Neden (2026-11-11): düz `toLowerCase` Türkçe değil — "I" → "i" verir;
+/// notunda "IŞIK" yazan işlem "ışık" aramasında çıkmıyordu. Türkçe kural
+/// ("I" → "ı") da tek başına yetmez: İngilizce notta "INFO" "info"
+/// aramasında kaybolurdu. Dört harfi bir saymak ikisini de bulur; arama
+/// için fazladan eşleşme, kaçan eşleşmeden iyidir.
+///
+/// Harf harf çevrilir ve uzunluk korunur: [islemNotuParcasi] eşleşmenin
+/// yerini katlanmış metinden asıl metne aynı indeksle taşır.
+String notAramaKatla(String s) {
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    final c = s[i];
+    if (c == 'I' || c == 'ı' || c == 'İ') {
+      b.write('i');
+      continue;
+    }
+    final k = c.toLowerCase();
+    b.write(k.length == 1 ? k : c);
+  }
+  return b.toString();
+}
+
+/// Aramada yalnız notu yüzünden çıkan satırın altındaki not parçası:
+/// eşleşen yerin çevresi ("… maaştan ayırdım …").
+///
+/// Neden (2026-11-11): not satırda yalnız ikonla durur (bkz.
+/// `TransactionRow.not`); "maaş" arayan kullanıcı adında maaş geçmeyen
+/// THYAO satırını görünce neden çıktığını anlamıyordu. Parça yalnız
+/// arama sürerken ve eşleşme notta olduğunda yazılır; liste ritmi aramasız
+/// hâlde değişmez.
+///
+/// Tek satıra sığsın diye eşleşmenin önünde en çok [onBaglam], arkasında
+/// en çok [sonBaglam] karakter kalır; kesim kelime sınırına çekilir, kesilen
+/// uçta `basKesik`/`sonKesik` doğrudur (çizen "…" koyar). Satır sonları tek
+/// boşluğa iner. [q] boşsa ya da notta yoksa `null`.
+({String once, String eslesen, String sonra, bool basKesik, bool sonKesik})?
+    islemNotuParcasi(String not, String q,
+        {int onBaglam = 18, int sonBaglam = 48}) {
+  final n = not.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final kq = notAramaKatla(q.trim());
+  if (kq.isEmpty) return null;
+  final bas = notAramaKatla(n).indexOf(kq);
+  if (bas < 0) return null;
+  final son = bas + kq.length;
+
+  var p = bas - onBaglam;
+  if (p <= 0) {
+    p = 0;
+  } else {
+    // Kelimenin ortasından başlama: kesimden sonraki ilk boşluğa ilerle.
+    final bosluk = n.indexOf(' ', p);
+    if (bosluk >= 0 && bosluk < bas) p = bosluk + 1;
+  }
+  var r = son + sonBaglam;
+  if (r >= n.length) {
+    r = n.length;
+  } else {
+    final bosluk = n.lastIndexOf(' ', r);
+    if (bosluk > son) r = bosluk;
+  }
+  return (
+    once: n.substring(p, bas),
+    eslesen: n.substring(bas, son),
+    sonra: n.substring(son, r).trimRight(),
+    basKesik: p > 0,
+    sonKesik: r < n.length,
+  );
 }
 
 /// Bir pozisyonun notlu işlemleri, en yeni önce — Portföy kartının açılır

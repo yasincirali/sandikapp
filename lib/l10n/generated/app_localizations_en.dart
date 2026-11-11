@@ -430,7 +430,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get quickAmountNeedsPrice => 'A unit price is needed to enter an amount';
+  String get quickAmountNeedsPrice =>
+      'A unit price is needed to enter an amount';
 
   @override
   String get quickHolding => 'Holding';
@@ -965,6 +966,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String txOpenNoteWithNote(String name) {
     return '$name transaction, has a note, open note';
+  }
+
+  @override
+  String txNoteMatchSemantics(String note) {
+    return 'Found in note: $note';
   }
 
   @override
@@ -4447,6 +4453,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get adCrossedAboveCost => 'Crossed above your cost';
+
+  @override
+  String get adCrossedBelowCost => 'Fell below your cost';
+
+  @override
   String adInflationThrough(String month) {
     return 'through $month CPI';
   }
@@ -4953,6 +4965,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String ipoCalendarSubject(String kod) {
     return '$kod IPO dates';
   }
+
+  @override
+  String get addToCalendar => 'Add to calendar';
+
+  @override
+  String get calendarDepositMaturity => 'Time deposit maturity';
+
+  @override
+  String calendarCouponDay(String ad) {
+    return '$ad coupon day';
+  }
+
+  @override
+  String calendarDividendEstimated(String kod) {
+    return '$kod dividend date (estimated)';
+  }
+
+  @override
+  String get calendarDividendNote =>
+      'Anniversary of last year\'s record date. Not a date announced by the company.';
 
   @override
   String get ipoParticipate => 'I participated, add to portfolio';
@@ -10860,4 +10892,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get klavyeBitti => 'Done';
+
+  @override
+  String get aylikGetiriBaslik => 'Monthly returns';
+
+  @override
+  String get aylikGetiriKilitli =>
+      'See which months you gained and which you lost with Premium';
+
+  @override
+  String get aylikGetiriYil => 'Year';
+
+  @override
+  String get aylikGetiriBuAy => 'this month';
+
+  @override
+  String aylikGetiriKazanc(String deger) {
+    return '$deger gain';
+  }
+
+  @override
+  String aylikGetiriKayip(String deger) {
+    return '$deger loss';
+  }
+
+  @override
+  String get aylikGetiriVeriYok => 'no data';
+
+  @override
+  String aylikGetiriHucre(String ay, String deger) {
+    return '$ay: $deger';
+  }
+
+  @override
+  String get aylikGetiriDipnot =>
+      'Each month is measured the same way as the return in Summary: adding or withdrawing money during the month doesn\'t change the percentage. The year compounds the months.';
 }

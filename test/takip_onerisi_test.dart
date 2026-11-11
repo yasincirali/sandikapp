@@ -174,6 +174,20 @@ void main() {
     expect(find.text('Varlık Ekle'), findsNothing);
   });
 
+  // "Portföyüne dahil değildir" dipnotu (2026-11-11): yalnız boş durumda,
+  // bir kez; dolu listede ekranın altında sabit durmaz.
+  testWidgets('dipnot boş listede bir kez var', (tester) async {
+    await _pump(tester);
+    expect(find.text('Bu varlıklar portföyüne dahil değildir.'),
+        findsOneWidget);
+  });
+
+  testWidgets('dipnot dolu listede yok', (tester) async {
+    await _pump(tester, ilk: [_usd()]);
+    expect(find.text('Bu varlıklar portföyüne dahil değildir.'),
+        findsNothing);
+  });
+
   test('kaynak: neden kutusu ve anahtarları kalktı, demo kapısı çipte', () {
     final k = ekranKaynagiSync('lib/screens/watchlist_screen.dart');
     expect(k, isNot(contains('whyWatchlist')));

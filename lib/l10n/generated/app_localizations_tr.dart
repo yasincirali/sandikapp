@@ -954,6 +954,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String txNoteMatchSemantics(String note) {
+    return 'Notta geçiyor: $note';
+  }
+
+  @override
   String get noteSaved => 'Not kaydedildi';
 
   @override
@@ -4419,6 +4424,12 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get adCrossedAboveCost => 'Maliyetinin üstüne çıktı';
+
+  @override
+  String get adCrossedBelowCost => 'Maliyetinin altına indi';
+
+  @override
   String adInflationThrough(String month) {
     return '$month TÜFE\'sine kadar';
   }
@@ -4923,6 +4934,26 @@ class AppLocalizationsTr extends AppLocalizations {
   String ipoCalendarSubject(String kod) {
     return '$kod halka arz tarihleri';
   }
+
+  @override
+  String get addToCalendar => 'Takvime ekle';
+
+  @override
+  String get calendarDepositMaturity => 'Vadeli mevduat vade günü';
+
+  @override
+  String calendarCouponDay(String ad) {
+    return '$ad kupon günü';
+  }
+
+  @override
+  String calendarDividendEstimated(String kod) {
+    return '$kod temettü günü (tahmini)';
+  }
+
+  @override
+  String get calendarDividendNote =>
+      'Geçen yılın hak gününün yıl dönümü. Şirketin açıkladığı bir tarih değil.';
 
   @override
   String get ipoParticipate => 'Katıldım, portföye ekle';
@@ -10715,4 +10746,39 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get klavyeBitti => 'Bitti';
+
+  @override
+  String get aylikGetiriBaslik => 'Aylık getiri';
+
+  @override
+  String get aylikGetiriKilitli =>
+      'Hangi ay kazandığını, hangi ay kaybettiğini Premium\'la gör';
+
+  @override
+  String get aylikGetiriYil => 'Yıl';
+
+  @override
+  String get aylikGetiriBuAy => 'bu ay';
+
+  @override
+  String aylikGetiriKazanc(String deger) {
+    return '$deger kazanç';
+  }
+
+  @override
+  String aylikGetiriKayip(String deger) {
+    return '$deger kayıp';
+  }
+
+  @override
+  String get aylikGetiriVeriYok => 'veri yok';
+
+  @override
+  String aylikGetiriHucre(String ay, String deger) {
+    return '$ay: $deger';
+  }
+
+  @override
+  String get aylikGetiriDipnot =>
+      'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.';
 }

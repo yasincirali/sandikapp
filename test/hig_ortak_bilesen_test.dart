@@ -28,6 +28,8 @@ import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
 import 'package:portfoy_takip/widgets/sandik_icerik_sutunu.dart';
+import 'package:portfoy_takip/services/takvim_ics.dart';
+import 'package:portfoy_takip/widgets/takvime_ekle_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
 import 'package:portfoy_takip/widgets/sandik_paylas_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
@@ -331,6 +333,16 @@ void main() {
                 // Performans dipnotunun kısa biçimi (2026-11-07): "Ayrıntı"
                 // bağlantısı 44 pt ve etiketli olmalı.
                 const DisclaimerWidget(kisa: true),
+                const SizedBox(height: SandikSpace.md),
+                // "Takvime ekle" ikon düğmesi (2026-11-11): 44 pt, etiketli.
+                TakvimeEkleDugmesi(
+                  etkinlikler: [
+                    TakvimEtkinligi(
+                        uid: 'vitrin', gun: DateTime(2027, 1, 15), baslik: 'v'),
+                  ],
+                  dosyaAdi: 'vitrin',
+                  konu: 'v',
+                ),
                 const SizedBox(height: SandikSpace.md),
                 // Fiyat turu değişim parlaması (2026-11-11): dinlenme hâlinde
                 // tutar metni birebir; yazı ×2'de taşmaz, kontrast korunur.

@@ -237,6 +237,116 @@ String? hareketToplamMetni(
   return (aktif: aktif, silinen: birlesik);
 }
 
+/// Tüm Hareketler süzgeci: tür + tarih aralığı + arama, yeni → eski.
+///
+/// Arama ad, sembol, alt kategori ve görünen işlem notunda (küçük harfle)
+/// geçer. Saf fonksiyon: ekran, filtre sayfasının sayacı ve
+/// [HareketSuzmeOnbellegi] aynı kuralı buradan alır.
+List<Asset> hareketleriSuz(
+  List<Asset> defter, {
+  DateTime? from,
+  DateTime? to,
+  PortfoyGrubu? tur,
+  String sorgu = '',
+}) {
+  final q = sorgu.trim().toLowerCase();
+  final out = <Asset>[];
+  for (final a in defter) {
+    if (tur case final g? when !g.kapsar(a)) continue;
+    if (from != null && a.addedDate.isBefore(from)) continue;
+    if (to != null && a.addedDate.isAfter(to)) continue;
+    if (q.isNotEmpty) {
+      if (!hareketAdindaEslesir(a, q) &&
+          // Not da aranır (2026-09-29): "maaş" yazınca notunda maaş
+          // geçen alışlar bulunur — not, kullanıcının işlemini kendi
+          // cümlesiyle hatırladığı tek yer.
+          !islemNotuEslesir(a, defter, q)) {
+        continue;
+      }
+    }
+    out.add(a);
+  }
+  out.sort((a, b) => b.addedDate.compareTo(a.addedDate));
+  return out;
+}
+
+/// Arama ad, sembol ya da alt kategoride geçiyor mu ([q] kırpılmış, küçük
+/// harf). Süzgeç ve satırın not parçası aynı soruyu sorar: parça yalnız
+/// bu `false` iken (eşleşme notta) yazılır.
+bool hareketAdindaEslesir(Asset a, String q) =>
+    a.name.toLowerCase().contains(q) ||
+    a.ticker.toLowerCase().contains(q) ||
+    (a.subCategory ?? '').toLowerCase().contains(q);
+
+/// [hareketleriSuz] + [hareketleriAyir] sonucunu girdiler değişene kadar
+/// tutar.
+///
+/// ## Neden (2026-11-11)
+/// Ekran süzülmüş listeyi bir build'de iki kez (liste + sayfalama) ve her
+/// kaydırma olayında bir kez daha okuyordu; her okuma defterin tamamını
+/// not aramasıyla dolaşıp yeniden sıralıyordu. Sonuç yalnız girdilere
+/// bağlı: defter (öğe kimliği; not düzenlemesi yeni nesne üretir), dönem,
+/// tür ve sorgu. Süren/silinen görünümü iki kümeden birini seçer, anahtara
+/// girmez.
+///
+/// Göreli dönemler ("son 7 gün") `DateTime.now()`'dan türer; sınır her
+/// okumada mikro saniye kayar. Anahtar dakikaya yuvarlanır, yoksa o
+/// dönemlerde önbellek hiç tutmazdı. En fazla bir dakikalık bayatlık,
+/// tam 7 gün önceki o dakikada girilmiş bir kaydı etkiler.
+class HareketSuzmeOnbellegi {
+  List<Asset>? _defter;
+  int? _from;
+  int? _to;
+  PortfoyGrubu? _tur;
+  String? _sorgu;
+  ({List<Asset> aktif, List<Asset> silinen}) _sonuc =
+      (aktif: const [], silinen: const []);
+
+  /// Kaç kez gerçekten süzüldü — test ölçer.
+  @visibleForTesting
+  int hesapSayisi = 0;
+
+  ({List<Asset> aktif, List<Asset> silinen}) ayir(
+    List<Asset> defter, {
+    DateTime? from,
+    DateTime? to,
+    PortfoyGrubu? tur,
+    String sorgu = '',
+  }) {
+    final f = _dakika(from), t = _dakika(to);
+    final q = sorgu.trim().toLowerCase();
+    final onceki = _defter;
+    if (onceki != null &&
+        f == _from &&
+        t == _to &&
+        tur == _tur &&
+        q == _sorgu &&
+        _ayniNesneler(onceki, defter)) {
+      return _sonuc;
+    }
+    hesapSayisi++;
+    _defter = List.of(defter, growable: false);
+    _from = f;
+    _to = t;
+    _tur = tur;
+    _sorgu = q;
+    return _sonuc = hareketleriAyir(
+        hareketleriSuz(defter, from: from, to: to, tur: tur, sorgu: sorgu));
+  }
+
+  static int? _dakika(DateTime? d) =>
+      d == null ? null : d.millisecondsSinceEpoch ~/ Duration.millisecondsPerMinute;
+
+  static bool _ayniNesneler(List<Asset> a, List<Asset> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i], b[i])) return false;
+    }
+    return true;
+  }
+}
+
 /// Ana sayfa "Portföy Hareketleri" akışı: kayıtlar GİRİLDİĞİ ana göre, en
 /// yeni önce.
 ///
@@ -399,6 +509,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   /// eski alımlar listede yoktur ama bakiyeye girmeleri gerekir. Arama
   /// kutusuna her harf `build` tetikler; defter değişmedikçe önbellekten.
   final _bakiyeOnbellegi = HareketBakiyeOnbellegi();
+  final _suzmeOnbellegi = HareketSuzmeOnbellegi();
 
   @override
   void initState() {
@@ -543,46 +654,27 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     }
   }
 
-  List<Asset> get _filtered =>
-      _suz(_FiltreSecimi(_range, _customRange, _typeFilter));
-
-  /// Defteri [secim] + arama + görünümle süzer. Ekran ve filtre sayfası
+  /// Defteri [secim] + arama ile süzer. Ekran ve filtre sayfası
   /// ("N kaydı göster") AYNI yoldan sayar; iki kopya ayrışırsa düğme bir
   /// sayı söyleyip liste başka bir sayı gösterirdi.
   List<Asset> _suz(_FiltreSecimi secim) {
     final (from, to) = _sinirlar(secim.range, secim.customRange);
-    final q = _query.trim().toLowerCase();
-
-    final out = <Asset>[];
-    final ledger = _ledger;
-    for (final a in ledger) {
-      if (secim.tur case final g? when !g.kapsar(a)) continue;
-      if (from != null && a.addedDate.isBefore(from)) continue;
-      if (to != null && a.addedDate.isAfter(to)) continue;
-      if (q.isNotEmpty) {
-        final name = a.name.toLowerCase();
-        final ticker = a.ticker.toLowerCase();
-        final sub = (a.subCategory ?? '').toLowerCase();
-        if (!name.contains(q) &&
-            !ticker.contains(q) &&
-            !sub.contains(q) &&
-            // Not da aranır (2026-09-29): "maaş" yazınca notunda maaş
-            // geçen alışlar bulunur — not, kullanıcının işlemini kendi
-            // cümlesiyle hatırladığı tek yer.
-            !islemNotuEslesir(a, ledger, q)) {
-          continue;
-        }
-      }
-      out.add(a);
-    }
-    out.sort((a, b) => b.addedDate.compareTo(a.addedDate));
-    return out;
+    return hareketleriSuz(_ledger,
+        from: from, to: to, tur: secim.tur, sorgu: _query);
   }
 
   /// Filtrelenmiş defter, süren/silinen diye ayrılmış. Filtreler iki
   /// kümeye de uygulanır: "THYAO" araması silinmiş THYAO'yu da bulur.
-  ({List<Asset> aktif, List<Asset> silinen}) get _ayrim =>
-      hareketleriAyir(_filtered);
+  ///
+  /// Önbellekten (2026-11-11): build tek karede bunu iki kez, sayfalama
+  /// dinleyicisi her kaydırmada bir kez okuyordu ve her okuma tüm defteri
+  /// not aramasıyla yeniden süzüp sıralıyordu. Girdiler aynıysa sonuç
+  /// aynıdır; bkz. [HareketSuzmeOnbellegi].
+  ({List<Asset> aktif, List<Asset> silinen}) get _ayrim {
+    final (from, to) = _sinirlar(_range, _customRange);
+    return _suzmeOnbellegi.ayir(_ledger,
+        from: from, to: to, tur: _typeFilter, sorgu: _query);
+  }
 
   /// Görünen liste: filtreye göre süren ya da silinen kayıtlar.
   List<Asset> get _liste => _silinenler ? _ayrim.silinen : _ayrim.aktif;
@@ -674,6 +766,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     required Map<String, ({double once, double sonra})> portfoyDegerleri,
   }) {
     final not = islemNotu(a, defter);
+    // Arama sürerken satır yalnız notu yüzünden çıktıysa parçası görünür
+    // (2026-11-11); adda eşleşen ya da aramasız satır değişmez.
+    final q = _query.trim().toLowerCase();
+    final notParcasi = not == null || q.isEmpty || hareketAdindaEslesir(a, q)
+        ? null
+        : islemNotuParcasi(not, q);
     final benimId = ref.watch(authProvider).valueOrNull?.id;
     final acilir =
         not != null || islemNotuDuzenlenebilir(a, benimId: benimId);
@@ -685,6 +783,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       yilGoster: _silinenler,
       silinenGorunumu: _silinenler,
       not: not,
+      notParcasi: notParcasi,
       // Silinenler alanı "artık portföyde olmayan" kayıtları anlatır;
       // bakiye süren defterin hikâyesi, orada yazılmaz.
       bakiye: _silinenler ? null : bakiyeler[a.id],
@@ -773,6 +872,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 0),
             child: TextField(
               controller: _searchCtrl,
+              // Bekleme (debounce) YOK, bilerek (2026-11-11): 1500 işlemde
+              // bir süzme turu ~3 ms ölçüldü (eşik 8 ms,
+              // `hareket_suzme_test`); süzme artık tuş başına bir kez
+              // (`HareketSuzmeOnbellegi`). Bekleme yalnız gecikme eklerdi.
               onChanged: (v) => setState(() {
                 _query = v;
                 _resetPaging();
@@ -884,26 +987,32 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                     ],
                   ),
                 ),
+                // Flexible (2026-11-11): 2× yazıda İngilizce "Clear filters"
+                // sayaçla birlikte satıra sığmıyor, satır taşıyordu; artık
+                // gerekirse iki satıra kırılır.
                 if (_hasActiveFilter)
-                  SandikTappable(
-                    semanticLabel: context.l10n.clearFilters,
-                    onTap: () => setState(() {
-                      _silinenler = false;
-                      _typeFilter = null;
-                      _range = _DateRange.all;
-                      _customRange = null;
-                      _query = '';
-                      _searchCtrl.clear();
-                      _resetPaging();
-                    }),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: SandikSpace.smd),
-                      child: Text(
-                        context.l10n.clearFilters,
-                        style: context.t.bodySmall?.copyWith(
-                            color: context.c.amberText,
-                            fontWeight: FontWeight.w600),
+                  Flexible(
+                    child: SandikTappable(
+                      semanticLabel: context.l10n.clearFilters,
+                      onTap: () => setState(() {
+                        _silinenler = false;
+                        _typeFilter = null;
+                        _range = _DateRange.all;
+                        _customRange = null;
+                        _query = '';
+                        _searchCtrl.clear();
+                        _resetPaging();
+                      }),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: SandikSpace.smd),
+                        child: Text(
+                          context.l10n.clearFilters,
+                          style: context.t.bodySmall?.copyWith(
+                              color: context.c.amberText,
+                              fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.end,
+                        ),
                       ),
                     ),
                   ),

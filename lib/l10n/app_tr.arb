@@ -585,6 +585,15 @@
       }
     }
   },
+  "txNoteMatchSemantics": "Notta geçiyor: {note}",
+  "@txNoteMatchSemantics": {
+    "description": "Aramada notu yüzünden çıkan satırın ekran okuyucu etiketi; notun tamamı okunur.",
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
   "noteSaved": "Not kaydedildi",
   "noteRemoved": "Not silindi",
   "noteSaveFailed": "Not kaydedilemedi",
@@ -3012,6 +3021,8 @@
   "adPositionUpper": "Pozisyonun",
   "adPositionLine": "Pozisyonun: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "adCrossedAboveCost": "Maliyetinin üstüne çıktı",
+  "adCrossedBelowCost": "Maliyetinin altına indi",
   "adInflationThrough": "{month} TÜFE'sine kadar",
   "@adInflationThrough": {"description": "Varlık ekranı, enflasyon satırının penceresi; month = son açıklanan TÜFE ayı (ör. Eylül)", "placeholders": {"month": {"type": "String"}}},
   "chartOpenLabel": "Açılış · {time} · {value}",
@@ -3254,6 +3265,13 @@
   "@ipoCalendarFirstTrade": {"placeholders": {"kod": {"type": "String"}}},
   "ipoCalendarSubject": "{kod} halka arz tarihleri",
   "@ipoCalendarSubject": {"placeholders": {"kod": {"type": "String"}}},
+  "addToCalendar": "Takvime ekle",
+  "calendarDepositMaturity": "Vadeli mevduat vade günü",
+  "calendarCouponDay": "{ad} kupon günü",
+  "@calendarCouponDay": {"placeholders": {"ad": {"type": "String"}}},
+  "calendarDividendEstimated": "{kod} temettü günü (tahmini)",
+  "@calendarDividendEstimated": {"placeholders": {"kod": {"type": "String"}}},
+  "calendarDividendNote": "Geçen yılın hak gününün yıl dönümü. Şirketin açıkladığı bir tarih değil.",
   "ipoParticipate": "Katıldım, portföye ekle",
   "ipoParticipateHint": "Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.",
   "ipoParticipateHintTraded": "Sana düşen lot sayısını yaz; alış fiyatı (halka arz fiyatı) ve ilk işlem günü hazır gelir. Hisse portföyünde canlı fiyatıyla görünür.",
@@ -6473,5 +6491,23 @@
   "klavyeSonraki": "Sonraki",
   "@klavyeSonraki": {"description": "iOS sayı klavyesi üstü çubuk: sonraki giriş alanına geç"},
   "klavyeBitti": "Bitti",
-  "@klavyeBitti": {"description": "iOS sayı klavyesi üstü çubuk: klavyeyi kapat"}
+  "@klavyeBitti": {"description": "iOS sayı klavyesi üstü çubuk: klavyeyi kapat"},
+  "aylikGetiriBaslik": "Aylık getiri",
+  "@aylikGetiriBaslik": {"description": "Performans: yıl × ay getiri tablosu kartı başlığı"},
+  "aylikGetiriKilitli": "Hangi ay kazandığını, hangi ay kaybettiğini Premium'la gör",
+  "@aylikGetiriKilitli": {"description": "Aylık getiri tablosu kilit satırı"},
+  "aylikGetiriYil": "Yıl",
+  "@aylikGetiriYil": {"description": "Aylık getiri tablosu: yıl toplamı sütunu"},
+  "aylikGetiriBuAy": "bu ay",
+  "@aylikGetiriBuAy": {"description": "Aylık getiri tablosu: içinde bulunulan ayın etiketi (bugüne kadar)"},
+  "aylikGetiriKazanc": "{deger} kazanç",
+  "@aylikGetiriKazanc": {"description": "Ekran okuyucu: pozitif aylık getiri", "placeholders": {"deger": {"type": "String"}}},
+  "aylikGetiriKayip": "{deger} kayıp",
+  "@aylikGetiriKayip": {"description": "Ekran okuyucu: negatif aylık getiri", "placeholders": {"deger": {"type": "String"}}},
+  "aylikGetiriVeriYok": "veri yok",
+  "@aylikGetiriVeriYok": {"description": "Ekran okuyucu: ölçülemeyen ay (ekranda —)"},
+  "aylikGetiriHucre": "{ay}: {deger}",
+  "@aylikGetiriHucre": {"description": "Ekran okuyucu: ay adı ve getirisi", "placeholders": {"ay": {"type": "String"}, "deger": {"type": "String"}}},
+  "aylikGetiriDipnot": "Her ay, Özet'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.",
+  "@aylikGetiriDipnot": {"description": "Aylık getiri tablosu dipnotu"}
 }

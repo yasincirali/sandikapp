@@ -136,6 +136,7 @@ import '../widgets/tam_ekran/yan_cevirince_tam_ekran.dart';
 import 'tam_ekran_grafik_screen.dart';
 import '../services/mum_verisi.dart';
 import '../services/mum_yukleyici.dart';
+import '../utils/maliyet_kesisimi.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -350,6 +351,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Grafikte gezinen imlecin (fiyat, tarih) etiketi; başlıktaki büyük
   /// fiyat bunu dinler (bayrak `goz_alici`, varlık sayfasıyla aynı).
   final _imlec = ValueNotifier<(String, String)?>(null);
+
+  /// İmleç fiyatın maliyeti kestiği güne oturunca kısa satır ("Maliyetinin
+  /// üstüne çıktı"); başka günde `null`. [_imlec]'ten ayrı: tuple'ın tarih
+  /// alanına eklemek satırı her adımda yeniden kurardı, ayrı dinleyiciyle
+  /// yalnız bu parça solarak girip çıkar (2026-11-11).
+  final _imlecNotu = ValueNotifier<String?>(null);
 
   /// Mevduat tutar serisinin son girdisi ve sonucu — aynı birim seri ve
   /// aynı defterle her karede yeniden hesaplanmasın (`_mevduatTutarSerisi`,
@@ -777,6 +784,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   @override
   void dispose() {
     _imlec.dispose();
+    _imlecNotu.dispose();
     _baslikCubukta.dispose();
     _ozelGorunum.dispose();
     _ohlcYukleyici.kapat();
@@ -1498,6 +1506,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         isOwnAsset: isOwnAsset,
                         compareOn: compareOn,
                         logOn: logOn);
+                    // Fiyatın maliyeti kestiği günler (imleç titreşimi +
+                    // kısa satır). Mevduatta seri pozisyon TUTARI, maliyet
+                    // birim fiyat → ölçek farklı, kesişim anlamsız.
+                    final maliyetKesisim = imlecAcik && !mevduatTutari
+                        ? maliyetKesisimleri(activeSeg.spots,
+                            maliyet: grafikMaliyeti, acik: _canli.acik)
+                        : const <double, MaliyetKesisimi>{};
 
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
                     // ÜZERİNDE; gerçek işlem fiyatı crosshair'da yazılır
@@ -2450,6 +2465,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             imlecEtiketiBuilder: imlecAcik
                                 ? (c) {
                                     final x = geri(c);
+                                    // Maliyet kesişimi satırı: imlecin
+                                    // oturduğu noktanın günü kesişimse.
+                                    final ks = activeSeg.spots;
+                                    final yon = ks.isEmpty
+                                        ? null
+                                        : maliyetKesisim[
+                                            ks[nearestSpotIndex(ks, x)].x];
+                                    _imlecNotu.value = switch (yon) {
+                                      MaliyetKesisimi.yukari =>
+                                        context.l10n.adCrossedAboveCost,
+                                      MaliyetKesisimi.asagi =>
+                                        context.l10n.adCrossedBelowCost,
+                                      null => null,
+                                    };
                                     if (_imlectekiMum(ohlcMumlar, x)
                                         case final m?) {
                                       return (
@@ -2479,11 +2508,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   }
                                 : null,
                             // Dönemin zirvesi ve dibinde hafif titreşim (log
-                            // ölçek tekdüze: uçlar aynı noktalar).
+                            // ölçek tekdüze: uçlar aynı noktalar). Fiyatın
+                            // maliyeti kestiği günler de (2026-11-11,
+                            // `maliyetKesisimleri`): kişinin kâra/zarara
+                            // geçtiği an.
                             titresimNoktalari: imlecAcik
                                 ? {
                                     for (final x
                                         in donemUclariX(activeSeg.spots))
+                                      ileri(x),
+                                    for (final x in maliyetKesisim.keys)
                                       ileri(x),
                                   }
                                 : const {},

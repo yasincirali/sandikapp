@@ -567,6 +567,14 @@
       }
     }
   },
+  "txNoteMatchSemantics": "Found in note: {note}",
+  "@txNoteMatchSemantics": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
   "noteSaved": "Note saved",
   "noteRemoved": "Note removed",
   "noteSaveFailed": "Couldn't save the note",
@@ -2877,6 +2885,8 @@
   "adPositionUpper": "Your position",
   "adPositionLine": "Your position: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "adCrossedAboveCost": "Crossed above your cost",
+  "adCrossedBelowCost": "Fell below your cost",
   "adInflationThrough": "through {month} CPI",
   "@adInflationThrough": {"placeholders": {"month": {"type": "String"}}},
   "chartOpenLabel": "Open · {time} · {value}",
@@ -3094,6 +3104,13 @@
   "@ipoCalendarFirstTrade": {"placeholders": {"kod": {"type": "String"}}},
   "ipoCalendarSubject": "{kod} IPO dates",
   "@ipoCalendarSubject": {"placeholders": {"kod": {"type": "String"}}},
+  "addToCalendar": "Add to calendar",
+  "calendarDepositMaturity": "Time deposit maturity",
+  "calendarCouponDay": "{ad} coupon day",
+  "@calendarCouponDay": {"placeholders": {"ad": {"type": "String"}}},
+  "calendarDividendEstimated": "{kod} dividend date (estimated)",
+  "@calendarDividendEstimated": {"placeholders": {"kod": {"type": "String"}}},
+  "calendarDividendNote": "Anniversary of last year's record date. Not a date announced by the company.",
   "ipoParticipate": "I participated, add to portfolio",
   "ipoParticipateHint": "Enter the lots you were allocated; price and date are filled in. Until trading starts the stock shows at the offer price.",
   "ipoParticipateHintTraded": "Enter the lots you were allocated; the offer price and first trading day are filled in. The stock shows at its live price.",
@@ -5698,5 +5715,23 @@
   "klavyeSonraki": "Next",
   "@klavyeSonraki": {"description": "iOS sayı klavyesi üstü çubuk: sonraki giriş alanına geç"},
   "klavyeBitti": "Done",
-  "@klavyeBitti": {"description": "iOS sayı klavyesi üstü çubuk: klavyeyi kapat"}
+  "@klavyeBitti": {"description": "iOS sayı klavyesi üstü çubuk: klavyeyi kapat"},
+  "aylikGetiriBaslik": "Monthly returns",
+  "@aylikGetiriBaslik": {"description": "Performans: yıl × ay getiri tablosu kartı başlığı"},
+  "aylikGetiriKilitli": "See which months you gained and which you lost with Premium",
+  "@aylikGetiriKilitli": {"description": "Aylık getiri tablosu kilit satırı"},
+  "aylikGetiriYil": "Year",
+  "@aylikGetiriYil": {"description": "Aylık getiri tablosu: yıl toplamı sütunu"},
+  "aylikGetiriBuAy": "this month",
+  "@aylikGetiriBuAy": {"description": "Aylık getiri tablosu: içinde bulunulan ayın etiketi (bugüne kadar)"},
+  "aylikGetiriKazanc": "{deger} gain",
+  "@aylikGetiriKazanc": {"description": "Ekran okuyucu: pozitif aylık getiri", "placeholders": {"deger": {"type": "String"}}},
+  "aylikGetiriKayip": "{deger} loss",
+  "@aylikGetiriKayip": {"description": "Ekran okuyucu: negatif aylık getiri", "placeholders": {"deger": {"type": "String"}}},
+  "aylikGetiriVeriYok": "no data",
+  "@aylikGetiriVeriYok": {"description": "Ekran okuyucu: ölçülemeyen ay (ekranda —)"},
+  "aylikGetiriHucre": "{ay}: {deger}",
+  "@aylikGetiriHucre": {"description": "Ekran okuyucu: ay adı ve getirisi", "placeholders": {"ay": {"type": "String"}, "deger": {"type": "String"}}},
+  "aylikGetiriDipnot": "Each month is measured the same way as the return in Summary: adding or withdrawing money during the month doesn't change the percentage. The year compounds the months.",
+  "@aylikGetiriDipnot": {"description": "Aylık getiri tablosu dipnotu"}
 }

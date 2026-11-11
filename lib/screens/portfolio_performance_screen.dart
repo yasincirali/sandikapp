@@ -75,6 +75,8 @@ import '../services/remote_config_service.dart';
 import '../providers/secili_donem_provider.dart';
 import '../widgets/period_summary_view.dart';
 import '../widgets/portfoy_yorumu_karti.dart';
+import '../widgets/aylik_getiri_karti.dart';
+import '../providers/aylik_getiri_provider.dart' show AylikGetiriIstegi;
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
 import '../widgets/grafik_stili.dart';
@@ -123,6 +125,7 @@ part 'portfolio_performance/yardimci_widgetlar.dart';
 part 'portfolio_performance/tur_dokumu_karti.dart';
 part 'portfolio_performance/ozet_yan_veri.dart';
 part 'portfolio_performance/ozet_bellek.dart';
+part 'portfolio_performance/aylik_getiri_karti.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   /// Özet'in kanonik serisini çeken fonksiyonun test yerine geçeni

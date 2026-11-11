@@ -104,7 +104,10 @@ PaywallKarti? kaynaktanKart(String source) {
     'en_iyi_gun' ||
     // Portföy kart panelinde "Başa baş için %X yükselmeli" (Ar-Ge 11 Kas
     // #1): aynı soru, "zarardaki param gerçekte ne durumda".
-    'basa_bas' =>
+    'basa_bas' ||
+    // Performans'ta aylık getiri tablosu (2026-11-11): aynı analiz sorusu,
+    // "param hangi ay ne yaptı".
+    'aylik_getiri' =>
       PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,

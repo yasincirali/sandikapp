@@ -1718,6 +1718,12 @@ abstract class AppLocalizations {
   /// **'{name} işlemi, notu var, notu aç'**
   String txOpenNoteWithNote(String name);
 
+  /// Aramada notu yüzünden çıkan satırın ekran okuyucu etiketi; notun tamamı okunur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Notta geçiyor: {note}'**
+  String txNoteMatchSemantics(String note);
+
   /// No description provided for @noteSaved.
   ///
   /// In tr, this message translates to:
@@ -7383,6 +7389,18 @@ abstract class AppLocalizations {
   /// **'Pozisyonun: {amount} ({pct})'**
   String adPositionLine(String amount, String pct);
 
+  /// No description provided for @adCrossedAboveCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetinin üstüne çıktı'**
+  String get adCrossedAboveCost;
+
+  /// No description provided for @adCrossedBelowCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetinin altına indi'**
+  String get adCrossedBelowCost;
+
   /// Varlık ekranı, enflasyon satırının penceresi; month = son açıklanan TÜFE ayı (ör. Eylül)
   ///
   /// In tr, this message translates to:
@@ -8210,6 +8228,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{kod} halka arz tarihleri'**
   String ipoCalendarSubject(String kod);
+
+  /// No description provided for @addToCalendar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takvime ekle'**
+  String get addToCalendar;
+
+  /// No description provided for @calendarDepositMaturity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeli mevduat vade günü'**
+  String get calendarDepositMaturity;
+
+  /// No description provided for @calendarCouponDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} kupon günü'**
+  String calendarCouponDay(String ad);
+
+  /// No description provided for @calendarDividendEstimated.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} temettü günü (tahmini)'**
+  String calendarDividendEstimated(String kod);
+
+  /// No description provided for @calendarDividendNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen yılın hak gününün yıl dönümü. Şirketin açıkladığı bir tarih değil.'**
+  String get calendarDividendNote;
 
   /// No description provided for @ipoParticipate.
   ///
@@ -17538,6 +17586,60 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bitti'**
   String get klavyeBitti;
+
+  /// Performans: yıl × ay getiri tablosu kartı başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık getiri'**
+  String get aylikGetiriBaslik;
+
+  /// Aylık getiri tablosu kilit satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi ay kazandığını, hangi ay kaybettiğini Premium\'la gör'**
+  String get aylikGetiriKilitli;
+
+  /// Aylık getiri tablosu: yıl toplamı sütunu
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl'**
+  String get aylikGetiriYil;
+
+  /// Aylık getiri tablosu: içinde bulunulan ayın etiketi (bugüne kadar)
+  ///
+  /// In tr, this message translates to:
+  /// **'bu ay'**
+  String get aylikGetiriBuAy;
+
+  /// Ekran okuyucu: pozitif aylık getiri
+  ///
+  /// In tr, this message translates to:
+  /// **'{deger} kazanç'**
+  String aylikGetiriKazanc(String deger);
+
+  /// Ekran okuyucu: negatif aylık getiri
+  ///
+  /// In tr, this message translates to:
+  /// **'{deger} kayıp'**
+  String aylikGetiriKayip(String deger);
+
+  /// Ekran okuyucu: ölçülemeyen ay (ekranda —)
+  ///
+  /// In tr, this message translates to:
+  /// **'veri yok'**
+  String get aylikGetiriVeriYok;
+
+  /// Ekran okuyucu: ay adı ve getirisi
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}: {deger}'**
+  String aylikGetiriHucre(String ay, String deger);
+
+  /// Aylık getiri tablosu dipnotu
+  ///
+  /// In tr, this message translates to:
+  /// **'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.'**
+  String get aylikGetiriDipnot;
 }
 
 class _AppLocalizationsDelegate
