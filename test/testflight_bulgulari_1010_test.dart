@@ -355,7 +355,8 @@ void main() {
 
     test('her ekleme yolu duyurur; düzenleme ve sepet duyurmaz', () {
       final form = ekranKaynagiSync('lib/screens/add_asset_screen.dart');
-      final i = form.indexOf('void _kayitBitti(Object sonuc)');
+      // Ar-Ge 11 Kas 19:04 #3: ✓ evresi için `Future<void> ... async`.
+      final i = form.indexOf('Future<void> _kayitBitti(Object sonuc)');
       final govde = form.substring(i, form.indexOf('\n  }\n', i));
       expect(govde.contains('!_isEditing && !widget.cartMode'), isTrue);
       expect(govde.contains('VarlikEklendi.duyur('), isTrue);
