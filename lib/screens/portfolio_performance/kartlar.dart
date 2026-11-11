@@ -240,11 +240,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // yer tutsun ama büyük metin ölçeğinde (AX5) içerik taşmasın.
     Widget grafikAlaniHam() {
       if (_chartEmptyState(holdsSelectedType, chartAssets) case final empty?) {
+        _sonGrafik = null;
         return ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 300),
           child: empty,
         );
       } else if (!hasData && settled) {
+        _sonGrafik = null;
         return ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 300),
           child: _ChartPlaceholder(
@@ -255,8 +257,23 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ),
         );
       } else if (!hasData) {
+        // Yeni dönem/kapsam yükleniyor ama ekranda bir grafik vardı: o
+        // grafik soluk olarak yerinde kalır (bkz. `_sonGrafik`). Aynı
+        // AnimatedOpacity → aynı gövde nesnesi: Flutter öğeyi günceller,
+        // sökmez; seri gelince alttaki dal aynı yerde yeni veriyi çizer.
+        // Bekleme işareti zaten var: üstteki 2 pt'lik çubuk (`yuklemeCubugu`),
+        // yer kaplamaz.
+        if (_sonGrafik case final onceki?) {
+          return AnimatedOpacity(
+            opacity: 0.45,
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.enter,
+            child: onceki,
+          );
+        }
         // Grafik yüklenirken grafik biçimli iskelet (UX denetimi
-        // 2026-09-29): ortada dönen halka "bozuk" okunur.
+        // 2026-09-29): ortada dönen halka "bozuk" okunur. Yalnız ekranda
+        // hiç grafik yokken (ilk açılış).
         return const SandikSkeletonChart(height: 300);
       } else if (!isIntraday &&
           _portfoyDonemdenGenc(segments, cizimBaslangici)) {
@@ -270,6 +287,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // Pazar). Kapalı testteki HER yeni kullanıcı ilk gün bunu görür.
         // GÜNLÜK hariç: gün içi serisi bugünü kapsar, orada grafik doludur.
         // Karar `_portfoyDonemdenGenc`'te (neden nokta sayısı yetmedi).
+        _sonGrafik = null;
         return ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 300),
           child: _ChartPlaceholder(
@@ -279,28 +297,41 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ),
         );
       }
+      // Grafik tipi değişince YENİDEN çizilmeli. Notifier widget
+      // ağacının dışında yaşıyor (oturum durumu), bu yüzden
+      // dinleyici burada kuruluyor — `setState` yerine bu, yalnızca
+      // grafiği yeniler, tüm sayfayı değil.
+      final grafik = _sonGrafik = ValueListenableBuilder<GrafikTipi>(
+        valueListenable: grafikTipiNotifier,
+        builder: (context, _, __) => _buildChartContainer(
+            segments, cizimBaslangici, endDate, chartAssets,
+            intraday: isIntraday, allTargetAssets: targetAssets),
+      );
       return AnimatedOpacity(
         opacity: stale ? 0.45 : 1.0,
         duration: SandikMotion.stateOf(context),
         curve: SandikMotion.enter,
-        // Grafik tipi değişince YENİDEN çizilmeli. Notifier widget
-        // ağacının dışında yaşıyor (oturum durumu), bu yüzden
-        // dinleyici burada kuruluyor — `setState` yerine bu, yalnızca
-        // grafiği yeniler, tüm sayfayı değil.
-        child: ValueListenableBuilder<GrafikTipi>(
-          valueListenable: grafikTipiNotifier,
-          builder: (context, _, __) => _buildChartContainer(
-              segments, cizimBaslangici, endDate, chartAssets,
-              intraday: isIntraday, allTargetAssets: targetAssets),
-        ),
+        child: grafik,
       );
     }
 
     // İskelet → grafik geçişi çapraz solar (2026-10-14); boş durum ve hata dalları içerik tarafında kalır.
-    Widget grafikAlani() => SandikYuklemeGecisi(
-          yukleniyor: chartAssets.isNotEmpty && !hasData && !settled,
-          iskelet: const SandikSkeletonChart(height: 300),
-          icerik: (_) => grafikAlaniHam(),
+    //
+    // Anahtarlı: listede grafiğin ÖNÜNDEKİ satırlar dönemle değişebilir
+    // (simülasyonda Bugün'de rozet yok); anahtarsız orta çocuk Flutter'da
+    // yeniden kurulur, grafik sökülürdü (yasin 2026-11-11). Ekranda grafik
+    // varken (`_sonGrafik`) iskelet kapısı açılmaz: bekleme gövdenin içinde,
+    // eski grafik soluk.
+    Widget grafikAlani() => KeyedSubtree(
+          key: const ValueKey('performansGrafikAlani'),
+          child: SandikYuklemeGecisi(
+            yukleniyor: chartAssets.isNotEmpty &&
+                !hasData &&
+                !settled &&
+                _sonGrafik == null,
+            iskelet: const SandikSkeletonChart(height: 300),
+            icerik: (_) => grafikAlaniHam(),
+          ),
         );
 
     // Zirvedeki portföyler — Yarış ekranından buraya taşındı
@@ -1580,3 +1611,27 @@ class _SekmeSolmasi extends StatelessWidget {
         builder: (_, v, c) => v >= 1 ? c! : Opacity(opacity: v, child: c),
       );
 }
+
+/// Performans grafiğinin iki veri dalı (gün içi future'ı, dönem
+/// `ZoomDataController`'ı) AYNI widget zincirinden geçer: dinleyici →
+/// future → gövde.
+///
+/// Neden (yasin 2026-11-11 TestFlight, "dönem değişince grafik hopluyor,
+/// ekran baştan çiziliyor"): gün içi dalı `FutureBuilder`, dönem dalı
+/// `ListenableBuilder` döndürüyordu. Bugün ↔ 1 hf geçişinde kökteki tür
+/// değişince altındaki her şey — grafik dahil — sökülüp yeniden kuruluyor,
+/// `ZoomableChart` morf yerine soldan sağa ilk çizimi yeniden oynuyordu.
+/// Kullanılmayan halka boştur: gün içinde dinleyici hiç tetiklenmeyen
+/// [kAlwaysCompleteAnimation], dönem dalında future `null`.
+Widget _grafikKabugu({
+  Listenable? dinle,
+  required Future<PortfolioHistoryBreakdown>? future,
+  required AsyncWidgetBuilder<PortfolioHistoryBreakdown> builder,
+}) =>
+    ListenableBuilder(
+      listenable: dinle ?? kAlwaysCompleteAnimation,
+      builder: (context, _) => FutureBuilder<PortfolioHistoryBreakdown>(
+        future: future,
+        builder: builder,
+      ),
+    );

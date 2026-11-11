@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -354,11 +356,18 @@ class _ZoomableChartState extends State<ZoomableChart> {
   /// 103 günlük pencerede 0,003 gün ≈ 0,01 px). Göz görmez; morf ise
   /// 180 ms boyar. Eşik eksen aralığının binde biri (~0,35 px).
   bool _gorunurDegisti(LineChartData yeni) {
-    final eski = _oncekiCizilen;
+    final r = _karsilastir(_oncekiCizilen, yeni);
     _oncekiCizilen = yeni;
-    _yapiDegisti = false;
-    if (eski == null) return true;
-    if (identical(eski, yeni)) return false;
+    _yapiDegisti = r.yapi;
+    return r.degisti;
+  }
+
+  /// [_gorunurDegisti]'nin yan etkisiz çekirdeği: köprü sürerken hedefin
+  /// hâlâ aynı olup olmadığı da bununla sorulur.
+  static ({bool degisti, bool yapi}) _karsilastir(
+      LineChartData? eski, LineChartData yeni) {
+    if (eski == null) return (degisti: true, yapi: false);
+    if (identical(eski, yeni)) return (degisti: false, yapi: false);
     // Çubuk SAYISI değişti (gösterge, mum ya da karşılaştırma eklendi/
     // çıktı): morf YOK. fl_chart çubukları SIRA NUMARASIYLA eşler; başa
     // eklenen EMA, eski fiyat çizgisinin noktalarından kendi noktalarına
@@ -367,8 +376,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
     // "sadece gösterge değiştiyse grafik sabit kalıp EMA eklenip
     // çıkarılmalı"). Katman anında belirir/kaybolur, fiyat çizgisi kımıldamaz.
     if (eski.lineBarsData.length != yeni.lineBarsData.length) {
-      _yapiDegisti = true;
-      return true;
+      return (degisti: true, yapi: true);
     }
     final tx = (yeni.maxX - yeni.minX).abs() / 1000;
     final ty = (yeni.maxY - yeni.minY).abs() / 1000;
@@ -379,7 +387,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
         !yakin(eski.minY, yeni.minY, ty) ||
         !yakin(eski.maxY, yeni.maxY, ty) ||
         eski.lineBarsData.length != yeni.lineBarsData.length) {
-      return true;
+      return (degisti: true, yapi: false);
     }
     for (var i = 0; i < yeni.lineBarsData.length; i++) {
       final a = eski.lineBarsData[i];
@@ -390,17 +398,200 @@ class _ZoomableChartState extends State<ZoomableChart> {
           a.show != b.show ||
           !listEquals(a.dashArray, b.dashArray) ||
           a.spots.length != b.spots.length) {
-        return true;
+        return (degisti: true, yapi: false);
       }
       for (var j = 0; j < a.spots.length; j++) {
         final p = a.spots[j];
         final q = b.spots[j];
-        if (p.isNull() != q.isNull()) return true;
+        if (p.isNull() != q.isNull()) return (degisti: true, yapi: false);
         if (p.isNull()) continue;
-        if (!yakin(p.x, q.x, tx) || !yakin(p.y, q.y, ty)) return true;
+        if (!yakin(p.x, q.x, tx) || !yakin(p.y, q.y, ty)) return (degisti: true, yapi: false);
       }
     }
-    return false;
+    return (degisti: false, yapi: false);
+  }
+
+  // ── Dönem geçişi: yerinde morf (yasin 2026-11-11 TestFlight) ──────────
+  //
+  // "Tüm grafik sayfalarında zaman aralığı değişince grafik hopluyor, ekran
+  // baştan çiziliyor gibi." İki ayrı kusur vardı:
+  //
+  //  1. Nokta sayısı farklı iki seri (1 ay ≈ 32, 1 yıl ≈ 52, Bugün ≈ 160
+  //     nokta): fl_chart noktaları SIRA NUMARASIYLA eşler; eskide karşılığı
+  //     olmayan noktalar ilk karede SON yerinde belirir, ilk N nokta başka
+  //     günlerin yerinden kayar. Çizginin bir kısmı akarken kuyruğu sıçrar.
+  //     Çözüm köprü: iki seri de ortak (büyük olan) nokta sayısına
+  //     SIKLAŞTIRILIR — ara noktalar mevcut iki köşe arasına eklenir, çizgi
+  //     piksel piksel aynı kalır. Önce eski çizgi sıklaşmış hâliyle sıfır
+  //     sürede verilir (görünür değişiklik yok), sonra yeni çizginin
+  //     sıklaşmış hâline `swapDuration` ile akılır, akış bitince gerçek
+  //     seri sıfır sürede yerine konur (yine görünür değişiklik yok;
+  //     dokunma balonu gerçek noktaları okur).
+  //  2. Çubuk SAYISI değişen dönem geçişi (genç lot: 1 hf'de yalnız aktif
+  //     çizgi, 1 yıl'da alış öncesi gri parça + aktif): morf burada yanlış
+  //     çubukları eşler, gösterge kuralı ([_karsilastir]) anında değiştirir.
+  //     Gösterge aç/kapa için doğru olan bu, dönem değişiminde "hop" oldu.
+  //     Dönem değişiminde ([sifirlamaAnahtari] ya da viewport controller
+  //     değişti) eski çizim aynı kutuda üstte söner ([SandikMotion.state]);
+  //     yeni çizim altında tam hâliyle durur. Ağaç biçimi sabit: sönen
+  //     katman her zaman ağaçta (boşken `SizedBox.shrink`), LineChart'ın
+  //     State'i kımıldamaz.
+  //
+  // Hareketi azalt açıkken ikisi de kurulmaz: yeni çizim tek karede gelir.
+
+  /// Köprünün asıl hedefi (builder'ın verdiği seri); köprü yokken null.
+  LineChartData? _kopruHedef;
+
+  /// Köprü sürerken LineChart'a verilen sıklaşmış veri ve süresi.
+  LineChartData? _kopruCizim;
+  Duration _kopruSure = Duration.zero;
+  Timer? _kopruBitis;
+
+  /// Her yeni köprü bir öncekinin geç kalan geri çağrılarını geçersiz kılar.
+  int _kopruNo = 0;
+
+  /// Son dönem değişiminden beri görünür bir değişiklik çizildi mi. Dönem
+  /// sekmesi önbellekten değil ağdan geliyorsa anahtar ÖNCE, veri SONRA
+  /// değişir; sönme veri geldiği karede oynamalı.
+  bool _donemDegisti = false;
+
+  /// Sönen eski çizim (çubuk sayısı değişen dönem geçişi) ve kimliği.
+  LineChartData? _solan;
+  int _solmaNo = 0;
+
+  void _kopruyuBirak() {
+    _kopruBitis?.cancel();
+    _kopruBitis = null;
+    _kopruHedef = null;
+    _kopruCizim = null;
+    _kopruNo++;
+  }
+
+  /// Eski ve yeni seriyi ortak nokta sayısına sıklaştırır. Köprü
+  /// kurulamıyorsa (boşluklu seri, noktası gösterilen çubuk, tek nokta)
+  /// null: eski davranış (doğrudan morf) sürer.
+  static ({LineChartData eski, LineChartData yeni})? _kopruKur(
+      LineChartData eski, LineChartData yeni) {
+    var fark = false;
+    final eskiCubuklar = <LineChartBarData>[];
+    final yeniCubuklar = <LineChartBarData>[];
+    for (var i = 0; i < yeni.lineBarsData.length; i++) {
+      final a = eski.lineBarsData[i];
+      final b = yeni.lineBarsData[i];
+      final m = a.spots.length;
+      final n = b.spots.length;
+      if (m == n) {
+        eskiCubuklar.add(a);
+        yeniCubuklar.add(b);
+        continue;
+      }
+      // Ara nokta noktası gösterilen çubukta yeni bir nokta olarak
+      // görünürdü; boşluk (`nullSpot`) içeren seride "iki köşe arası"
+      // tanımsız. İkisinde de köprü yok.
+      if (m < 2 ||
+          n < 2 ||
+          a.dotData.show ||
+          b.dotData.show ||
+          a.spots.any((p) => p.isNull()) ||
+          b.spots.any((p) => p.isNull())) {
+        return null;
+      }
+      fark = true;
+      final k = m > n ? m : n;
+      eskiCubuklar.add(a.copyWith(spots: _siklastir(a.spots, k)));
+      yeniCubuklar.add(b.copyWith(spots: _siklastir(b.spots, k)));
+    }
+    if (!fark) return null;
+    return (
+      eski: eski.copyWith(lineBarsData: eskiCubuklar),
+      yeni: yeni.copyWith(lineBarsData: yeniCubuklar),
+    );
+  }
+
+  /// [s]'yi [k] noktaya çıkarır: her köşe yerinde kalır, eklenenler iki
+  /// komşu köşenin arasına eşit aralıkla düşer (çizgi aynı görünür).
+  /// Ekler parçalara eşit dağılır; morfta eski i. nokta yeni i. noktaya,
+  /// yani serinin aynı ORANINA gider — çizgi soldan sağa bütün olarak akar.
+  static List<FlSpot> _siklastir(List<FlSpot> s, int k) {
+    final m = s.length;
+    if (m >= k) return s;
+    final ek = k - m;
+    final parca = m - 1;
+    final sonuc = <FlSpot>[];
+    for (var j = 0; j < parca; j++) {
+      final a = s[j];
+      final b = s[j + 1];
+      sonuc.add(a);
+      final adet = ek ~/ parca + (j < ek % parca ? 1 : 0);
+      for (var q = 1; q <= adet; q++) {
+        final t = q / (adet + 1);
+        sonuc.add(FlSpot(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t));
+      }
+    }
+    sonuc.add(s.last);
+    return sonuc;
+  }
+
+  /// Bu karede LineChart'a ne, hangi sürede verilecek. [veri] builder'ın
+  /// verdiği seridir; köprü/sönme kararı burada, build'in geri kalanı
+  /// yalnız sonucu çizer.
+  ({LineChartData cizim, Duration sure}) _cizimSec(
+      BuildContext context, LineChartData veri) {
+    final hareketVar = !MediaQuery.disableAnimationsOf(context) &&
+        widget.swapDuration > Duration.zero;
+    // Süren köprü: hedef aynıysa ve parmak ekranda değilse devam.
+    final hedef = _kopruHedef;
+    if (hedef != null) {
+      if (!_interacting &&
+          hareketVar &&
+          !_karsilastir(hedef, veri).degisti) {
+        _oncekiCizilen = veri;
+        return (cizim: _kopruCizim!, sure: _kopruSure);
+      }
+      // Hedef değişti (yeni tik, başka dönem) ya da jest başladı: köprü
+      // bırakılır, karşılaştırma köprünün o an çizdiğinden yapılır.
+      _oncekiCizilen = _kopruCizim;
+      _kopruyuBirak();
+    }
+    final onceki = _oncekiCizilen;
+    final degisti = _gorunurDegisti(veri);
+    final donem = _donemDegisti && degisti;
+    if (degisti) _donemDegisti = false;
+    if (!degisti || _interacting || !hareketVar) {
+      return (cizim: veri, sure: Duration.zero);
+    }
+    // İlk kurulum: LineChart ilk karede zaten tween kurmaz; süre eskisi gibi
+    // token kalır (`chart_transition_continuity_test`).
+    if (onceki == null) return (cizim: veri, sure: widget.swapDuration);
+    if (_yapiDegisti) {
+      // Gösterge aç/kapa: anında (bkz. [_karsilastir]). Dönem değişimi:
+      // eski çizim üstte söner.
+      if (donem) {
+        _solan = onceki;
+        _solmaNo++;
+      }
+      return (cizim: veri, sure: Duration.zero);
+    }
+    final kopru = _kopruKur(onceki, veri);
+    if (kopru == null) return (cizim: veri, sure: widget.swapDuration);
+    _kopruHedef = veri;
+    _kopruCizim = kopru.eski;
+    _kopruSure = Duration.zero;
+    final no = ++_kopruNo;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || no != _kopruNo) return;
+      setState(() {
+        _kopruCizim = kopru.yeni;
+        _kopruSure = widget.swapDuration;
+      });
+      _kopruBitis = Timer(widget.swapDuration, () {
+        if (!mounted || no != _kopruNo) return;
+        // Köprü biter: bir sonraki kare gerçek seriyi sıfır sürede verir
+        // (`_oncekiCizilen` zaten o; sıklaşmış hâliyle aynı çizgi).
+        setState(_kopruyuBirak);
+      });
+    });
+    return (cizim: kopru.eski, sure: Duration.zero);
   }
 
   void _setInteracting(bool v) {
@@ -426,6 +617,13 @@ class _ZoomableChartState extends State<ZoomableChart> {
     if (oldWidget.viewportController != widget.viewportController) {
       oldWidget.viewportController?.removeListener(_onControllerChanged);
       widget.viewportController?.addListener(_onControllerChanged);
+    }
+    if (oldWidget.sifirlamaAnahtari != widget.sifirlamaAnahtari ||
+        oldWidget.viewportController != widget.viewportController) {
+      // Dönem/filtre değişimi: bir sonraki görünür değişiklik "dönem
+      // geçişi"dir (bkz. [_cizimSec]). Performans dönem değişiminde yeni
+      // viewport controller kurar, varlık ekranları anahtarı değiştirir.
+      _donemDegisti = true;
     }
     if (oldWidget.sifirlamaAnahtari != widget.sifirlamaAnahtari) {
       // Dönem/sıklık değişti: yakınlaştırma taşınmaz (bkz.
@@ -468,6 +666,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
 
   @override
   void dispose() {
+    _kopruBitis?.cancel();
     widget.viewportController?.removeListener(_onControllerChanged);
     super.dispose();
   }
@@ -730,8 +929,8 @@ class _ZoomableChartState extends State<ZoomableChart> {
       image: true,
       child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;
-      final veri = _grafikVerisi();
-      final gorunurDegisti = _gorunurDegisti(veri);
+      final secim = _cizimSec(context, _grafikVerisi());
+      final solan = _solan;
       return SizedBox(
         height: widget.height,
         child: Stack(
@@ -769,19 +968,38 @@ class _ZoomableChartState extends State<ZoomableChart> {
               child: _IlkCizim(
                 child: RepaintBoundary(
                 child: LineChart(
-                  veri,
+                  secim.cizim,
                   // Hareketi azalt açıkken morf da yok: `swapDuration`
                   // varsayılanı ham token, kendisi korumaz. Görünür bir şey
-                  // değişmediyse de yok (bkz. `_gorunurDegisti`).
-                  duration: _interacting ||
-                          !gorunurDegisti ||
-                          _yapiDegisti ||
-                          MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : widget.swapDuration,
+                  // değişmediyse, jest sürerken ya da çubuk sayısı
+                  // değiştiyse de yok; nokta sayısı değiştiyse köprüden
+                  // akar (hepsi `_cizimSec`'te).
+                  duration: secim.sure,
                   curve: widget.swapCurve,
                 ),
               ),
+              ),
+            ),
+
+            // Çubuk sayısı değişen dönem geçişinde eski çizim burada söner
+            // (bkz. `_cizimSec`). Katman HEP ağaçta: boşken yer tutmayan
+            // kutu, Stack'in çocuk sırası hiç değişmez.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: solan == null
+                    ? const SizedBox.shrink()
+                    : TweenAnimationBuilder<double>(
+                        key: ValueKey(_solmaNo),
+                        tween: Tween<double>(begin: 1, end: 0),
+                        duration: SandikMotion.stateOf(context),
+                        curve: SandikMotion.exit,
+                        onEnd: () {
+                          if (mounted) setState(() => _solan = null);
+                        },
+                        builder: (context, t, c) =>
+                            Opacity(opacity: t, child: c),
+                        child: LineChart(solan, duration: Duration.zero),
+                      ),
               ),
             ),
 
@@ -1106,6 +1324,11 @@ class _DashedLinePainter extends CustomPainter {
 /// oynar; dönem/filtre değişimi LineChart'ın kendi morfuyla akar, jest
 /// sırasında kutu dışına taşan bir şey yok.
 /// Hareketi azalt açıkken çocuk doğrudan döner.
+///
+/// Yalnız ilk kurulumda oynadığı için grafiği taşıyan ekranlar dönem
+/// değişiminde `ZoomableChart`'ı SÖKMEMELİ: sökülürse bu açılış her dönem
+/// dokunuşunda yeniden oynar ("ekran baştan çiziliyor", yasin 2026-11-11;
+/// kilit `grafik_aralik_gecisi_test`).
 class _IlkCizim extends StatelessWidget {
   const _IlkCizim({required this.child});
 

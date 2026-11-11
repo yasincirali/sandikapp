@@ -570,6 +570,14 @@ class _PortfolioPerformanceScreenState
   /// bir çizginin eski hâli bilgi taşır, yanlış bir RAKAM taşımaz.
   String? _lastIntradayKey;
 
+  /// Ekranda en son çizilen grafik gövdesi (bkz. `grafikAlaniHam`).
+  /// Yeni dönemin serisi beklenirken iskelet yerine bu, soluk olarak
+  /// AYNI yerde kalır: grafik sökülmez, boy değişmez, veri gelince
+  /// `ZoomableChart` yeni şekle akar (yasin 2026-11-11). Boş/hata/genç
+  /// portföy dalı çizildiğinde atılır — ekranda olmayan grafik geri
+  /// getirilmez.
+  Widget? _sonGrafik;
+
   // days=0 && intraday=true → günlük (24 saat, 5 dk çözünürlük).
   /// [ayGeri] dolu ise dönem başı TAKVİMDEN hesaplanır: "1 ay" 30 gün
   /// değil, bir önceki ayın AYNI günüdür.
@@ -1013,9 +1021,10 @@ class _PortfolioPerformanceScreenState
                         // OLDUĞU küme ile karşılaştırılır (`_lastIntradayKey`).
                         final intradayKey =
                             chartAssetsRenderable.map((a) => a.id).join(',');
-                        return FutureBuilder<PortfolioHistoryBreakdown>(
-                          // `key` ŞART — kök neden buydu (2026-09-22,
-                          // emülatör logu ile ölçüldü).
+                        return _grafikKabugu(
+                          // Eskiden burada `key: ValueKey(intradayKey)` vardı
+                          // — kök neden buydu (2026-09-22, emülatör logu ile
+                          // ölçüldü):
                           //
                           // `FutureBuilder` future'ı değiştiğinde
                           // `connectionState`'i `waiting`e çeker ama
@@ -1042,7 +1051,16 @@ class _PortfolioPerformanceScreenState
                           // iskelete düşer. Zoom yolunun filtre değişince
                           // yeni controller kurmasının birebir karşılığı —
                           // "sadece günlükte hatalı" bu yüzdendi.
-                          key: ValueKey(intradayKey),
+                          //
+                          // Anahtar 2026-11-11'de kalktı (yasin TestFlight:
+                          // "dönem değişince grafik hopluyor, baştan
+                          // çiziliyor"): anahtar ve iki dalın farklı widget
+                          // türü, Bugün ↔ diğer dönem geçişinde grafiği
+                          // söküp yeniden kuruyordu. Aynı koruma artık
+                          // aşağıda: beklerken `snapshot.data` (önceki
+                          // future'ın sonucu) HİÇ okunmaz, yalnız aynı
+                          // kümenin tohumu okunur. İki dal da
+                          // `_grafikKabugu` zincirinden geçer.
                           future: _intradayHistory(chartAssetsRenderable),
                           builder: (context, snapshot) {
                             final loading = snapshot.connectionState ==
@@ -1069,7 +1087,8 @@ class _PortfolioPerformanceScreenState
                             final tohum = _lastIntradayKey == intradayKey
                                 ? _lastIntradayData
                                 : null;
-                            final data = snapshot.data ?? tohum;
+                            final data =
+                                (loading ? null : snapshot.data) ?? tohum;
                             // X ekseni ÇİZİLEN günün 00:00'ına kurulur —
                             // bugün olmak zorunda değil. Hafta sonu ve
                             // tatilde son seans (ör. Cuma) çizilir; eksen
@@ -1111,8 +1130,9 @@ class _PortfolioPerformanceScreenState
                       }
 
                       final controller = _zoomController;
-                      return ListenableBuilder(
-                        listenable: controller ?? ValueNotifier<int>(0),
+                      return _grafikKabugu(
+                        dinle: controller,
+                        future: null,
                         builder: (context, _) {
                           final historyMap = controller?.data ?? const {};
                           final waiting = controller?.loading ?? false;

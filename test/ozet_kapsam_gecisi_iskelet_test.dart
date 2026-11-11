@@ -186,12 +186,13 @@ void main() {
     await tester.pump();
 
     // KÖK NEDENİN TESTİ: `FutureBuilder` future değişince `waiting`e geçer
-    // ama `snapshot.data`'yı KORUR. `key: ValueKey(intradayKey)` olmadan
-    // burada önceki kapsamın özeti duruyordu (emülatör logu 2026-09-22:
-    // `waiting=true nokta=195` — 195 nokta eski kapsamın sonucuydu).
+    // ama `snapshot.data`'yı KORUR. Koruma olmadan burada önceki kapsamın
+    // özeti duruyordu (emülatör logu 2026-09-22: `waiting=true nokta=195` —
+    // 195 nokta eski kapsamın sonucuydu). Koruma 2026-11-11'e dek builder'ı
+    // `ValueKey(intradayKey)` ile yeniden kurmaktı; anahtar grafiği de
+    // söktüğü için artık beklerken `snapshot.data` okunmuyor.
     expect(_ozetGovdesiVar(), isFalse,
-        reason: 'ValueKey builder state\'ini sıfırlamalı; '
-            'eski snapshot taşınmamalı');
+        reason: 'beklerken eski snapshot taşınmamalı');
     expect(_iskeletVar(), isTrue,
         reason: 'geçiş karesinde iskelet görünmeli');
     expect(tester.takeException(), isNull);
@@ -212,7 +213,13 @@ void main() {
             'final tohum = _lastIntradayKey == intradayKey ? _lastIntradayData : null;'),
         isTrue,
         reason: 'başka kapsamın verisi tohum olarak kullanılmamalı');
-    expect(src.contains('final data = snapshot.data ?? tohum;'), isTrue);
+    // Beklerken `snapshot.data` ÖNCEKİ future'ın sonucudur (FutureBuilder
+    // onu tutar); eskiden builder'ı anahtarla yeniden kurarak atılıyordu,
+    // 2026-11-11'den beri burada okunmaz (anahtar grafiği söküyordu).
+    expect(
+        src.contains(
+            'final data = (loading ? null : snapshot.data) ?? tohum;'),
+        isTrue);
     // Nesne varlığına değil NOKTA SAYISINA bakılmalı: seed dolu ama
     // ölçülmemiş bir seri de "veri" sayılırdı.
     expect(src.contains('hasData: (data?.total.isNotEmpty ?? false)'), isTrue,
