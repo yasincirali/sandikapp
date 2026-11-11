@@ -66,18 +66,31 @@ List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
     IconButton(
       icon: Icon(Icons.info_outline_rounded, color: context.c.text58, size: 22),
       tooltip: context.l10n.howReturnCalculated,
-      onPressed: () => showSandikSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (_) => const _RoiInfoSheet(),
-      ),
+      onPressed: () => _roiBilgiAc(context,
+          ortakli: ref.read(activePartnersProvider).isNotEmpty),
     ),
   ];
 }
+
+/// Yarış'ın TEK bilgi sayfası (Ar-Ge 2026-11-11_1704 #4).
+///
+/// Üst çubuktaki ⓘ ve sıralamanın altındaki "Nasıl ölçülür?" satırı aynı
+/// sayfayı açar. 10 Kas'ta dipnot kısalınca "Nasıl ölçülür?" ayrı bir alt
+/// sayfa (`_nasilOlculurAc`) açıyordu; o sayfa `everyoneMeasuredSameBody`
+/// ve `rankVsPortfolioNote`'u bu sayfayla birebir tekrar ediyordu, ilk
+/// cümlesi de `depositsDontChangeRankBody` ile aynı şeyi söylüyordu.
+/// Kullanıcı hangisinin tam anlattığını bilemiyordu; ikinci sayfa kalktı,
+/// ondan yalnız bu sayfada olmayan güven sözü (anonimlik) buraya taşındı.
+Future<void> _roiBilgiAc(BuildContext context, {required bool ortakli}) =>
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _RoiInfoSheet(ortakli: ortakli),
+    );
 
 /// Yarış ekranının gövdesi — katılım daveti ya da sıralama.
 ///
@@ -225,6 +238,9 @@ class YarisGovdesi extends ConsumerWidget {
 /// "herkes aynı ölçülür", "paranın getirisi farkı") bir dokunuşla alt
 /// sayfada, metinler DEĞİŞMEDEN.
 ///
+/// 2026-11-11: o alt sayfa ⓘ'nin `_RoiInfoSheet`'iyle birleşti (gerekçe
+/// `_roiBilgiAc`); satırın metni ve test anahtarı aynı kaldı.
+///
 /// Ortaklı sıralamada sıralama anonim değildir (ortaklar birbirini görür);
 /// güven cümlesi o dipnotun kendi sözüdür ("kimsenin varlık listesi
 /// görünmez").
@@ -255,7 +271,7 @@ class _YarisDipnotu extends StatelessWidget {
             key: const ValueKey('yaris_nasil_olculur'),
             haptic: SandikHaptic.none,
             semanticLabel: l.zirveNasilOlculur,
-            onTap: () => _nasilOlculurAc(context),
+            onTap: () => _roiBilgiAc(context, ortakli: ortakli),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: SandikTouch.min),
               child: Row(
@@ -278,37 +294,6 @@ class _YarisDipnotu extends StatelessWidget {
       ),
     );
   }
-
-  Future<void> _nasilOlculurAc(BuildContext context) => showSandikSheet<void>(
-        context: context,
-        baslik: context.l10n.zirveNasilOlculur,
-        isScrollControlled: true,
-        builder: (ctx) {
-          final l = ctx.l10n;
-          final stil = ctx.t.bodyMedium?.copyWith(color: ctx.c.text58);
-          return SafeArea(
-            top: false,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), 0,
-                  SandikSpace.screenH(ctx), SandikSpace.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(ortakli ? l.raceFooterPartners : l.raceFooterGlobal,
-                      style: stil),
-                  const SizedBox(height: SandikSpace.md),
-                  Text(
-                      l.everyoneMeasuredSameBody(
-                          LeaderboardService.instance.asgariGun),
-                      style: stil),
-                  const SizedBox(height: SandikSpace.md),
-                  Text(l.rankVsPortfolioNote, style: stil),
-                ],
-              ),
-            ),
-          );
-        },
-      );
 }
 
 /// Yarış dönemleri. Gün sayıları `ZirveDonem` ile BİREBİR (7 · 30 · 365):
@@ -405,7 +390,11 @@ class _ParaninGetirisiSatiriState extends State<_ParaninGetirisiSatiri> {
 /// Performans ekranındaki yüzdeden FARKLIDIR — o, paranın getirisidir
 /// (zamanlama dahil); bu sayfa farkı açıklar.
 class _RoiInfoSheet extends StatelessWidget {
-  const _RoiInfoSheet();
+  const _RoiInfoSheet({required this.ortakli});
+
+  /// Ortaklı sıralamada sıralama anonim değildir (ortaklar birbirini
+  /// görür); güven bloğu o yüzden ortaklı dipnotun kendi sözünü söyler.
+  final bool ortakli;
 
   @override
   Widget build(BuildContext context) {
@@ -471,6 +460,20 @@ class _RoiInfoSheet extends StatelessWidget {
               body: context.l10n
                   .everyoneMeasuredSameBody(LeaderboardService.instance.asgariGun),
             ),
+            const SizedBox(height: 12),
+            // Güven sözü: eski "Nasıl ölçülür?" sayfasının dipnotundan
+            // yalnız bu cümle buraya geldi (ilk cümlesi yukarıdaki "Para
+            // eklemek sıralamayı değiştirmez" bloğunun tekrarıydı). Metin
+            // dipnottaki güven cümlesiyle aynı anahtar: iki yer aynı sözü
+            // söyler.
+            _InfoBlock(
+              key: const ValueKey('yaris_bilgi_guven'),
+              icon: Icons.lock_outline_rounded,
+              title: context.l10n.raceWhatIsNeverShared,
+              body: ortakli
+                  ? context.l10n.zirveGuvenOrtaklar
+                  : context.l10n.zirveGuvenKuresel,
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(14),
@@ -519,6 +522,7 @@ class _InfoBlock extends StatelessWidget {
   final String title;
   final String body;
   const _InfoBlock({
+    super.key,
     required this.icon,
     required this.title,
     required this.body,

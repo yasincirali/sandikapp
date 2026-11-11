@@ -3848,8 +3848,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get raceFooterGlobal =>
-      'The ranking is the return on your picks: the assets you held each day are valued at market prices, and when money was added doesn\'t matter. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
+  String get raceWhatIsNeverShared => 'What is never shared';
 
   @override
   String get calculatingEllipsis => 'Calculating…';
@@ -3881,10 +3880,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toneRest => 'You can do better. Follow the 30D view';
-
-  @override
-  String get raceFooterPartners =>
-      'The ranking is the return on your picks in the selected period (%): when money was added doesn\'t matter. No one\'s asset list is visible.';
 
   @override
   String get recapYourPortfolio => 'Your portfolio';

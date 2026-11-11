@@ -2600,7 +2600,7 @@
       }
     }
   },
-  "raceFooterGlobal": "Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
+  "raceWhatIsNeverShared": "Neler paylaşılmaz?",
   "calculatingEllipsis": "Hesaplanıyor…",
   "nThousandPeople": "{n}K kişi",
   "@nThousandPeople": {
@@ -2624,7 +2624,6 @@
   "toneTop50": "Ortalamanın üstündesin",
   "toneTop75": "Ortalamaya yakınsın",
   "toneRest": "Daha iyisini yapabilirsin, 30G takip et",
-  "raceFooterPartners": "Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.",
   "recapYourPortfolio": "Portföyün",
   "recapGrewThisYear": "Bu yıl böyle büyüdün.",
   "recapToughYear": "Zor bir yıl oldu.",

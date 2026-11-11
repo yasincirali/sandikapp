@@ -2477,7 +2477,7 @@
       }
     }
   },
-  "raceFooterGlobal": "The ranking is the return on your picks: the assets you held each day are valued at market prices, and when money was added doesn't matter. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.",
+  "raceWhatIsNeverShared": "What is never shared",
   "calculatingEllipsis": "Calculating…",
   "nThousandPeople": "{n}K people",
   "@nThousandPeople": {
@@ -2501,7 +2501,6 @@
   "toneTop50": "Above average",
   "toneTop75": "Close to average",
   "toneRest": "You can do better. Follow the 30D view",
-  "raceFooterPartners": "The ranking is the return on your picks in the selected period (%): when money was added doesn't matter. No one's asset list is visible.",
   "recapYourPortfolio": "Your portfolio",
   "recapGrewThisYear": "This is how you grew this year.",
   "recapToughYear": "It was a tough year.",

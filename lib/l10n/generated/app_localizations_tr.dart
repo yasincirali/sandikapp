@@ -3822,8 +3822,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get raceFooterGlobal =>
-      'Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
+  String get raceWhatIsNeverShared => 'Neler paylaşılmaz?';
 
   @override
   String get calculatingEllipsis => 'Hesaplanıyor…';
@@ -3855,10 +3854,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get toneRest => 'Daha iyisini yapabilirsin, 30G takip et';
-
-  @override
-  String get raceFooterPartners =>
-      'Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.';
 
   @override
   String get recapYourPortfolio => 'Portföyün';

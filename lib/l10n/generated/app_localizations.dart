@@ -6356,11 +6356,11 @@ abstract class AppLocalizations {
   /// **'dönem içi satış {amount}'**
   String flowSellLower(String amount);
 
-  /// No description provided for @raceFooterGlobal.
+  /// No description provided for @raceWhatIsNeverShared.
   ///
   /// In tr, this message translates to:
-  /// **'Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.'**
-  String get raceFooterGlobal;
+  /// **'Neler paylaşılmaz?'**
+  String get raceWhatIsNeverShared;
 
   /// No description provided for @calculatingEllipsis.
   ///
@@ -6415,12 +6415,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Daha iyisini yapabilirsin, 30G takip et'**
   String get toneRest;
-
-  /// No description provided for @raceFooterPartners.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.'**
-  String get raceFooterPartners;
 
   /// No description provided for @recapYourPortfolio.
   ///

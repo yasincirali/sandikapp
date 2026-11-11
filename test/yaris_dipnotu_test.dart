@@ -1,5 +1,6 @@
 // Sıralama dipnotu (müşteri işi 10 Kas): görünen tek güven cümlesi +
-// "Nasıl ölçülür?" satırı; üç paragraf alt sayfada değişmeden.
+// "Nasıl ölçülür?" satırı. 2026-11-11 (Ar-Ge #4): satır ⓘ ile aynı bilgi
+// sayfasını (`_RoiInfoSheet`) açar; güven sözü orada ayrı blok.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -132,16 +133,12 @@ void main() {
     await initPreferencesCache();
   });
 
-  testWidgets('ortaklı: kısa güven cümlesi görünür, paragraflar sayfada',
+  testWidgets('ortaklı: kısa güven cümlesi görünür, ayrıntı bilgi sayfasında',
       (tester) async {
     await _pump(tester,
         assets: [_asset(ticker: 'THYAO.IS', name: 'Türk Hava Yolları')],
         partners: [_partner('p1', 'Ayşe')]);
-    final ortaklar = find.text('Ortaklarım');
-    if (ortaklar.evaluate().isNotEmpty) {
-      await tester.tap(ortaklar.first);
-      await tester.pumpAndSettle();
-    }
+    await _ortaklaraGec(tester);
     expect(find.byKey(const ValueKey('yaris_guven_cumlesi')), findsOneWidget);
     expect(find.text('Kimsenin varlık listesi görünmez.'), findsOneWidget);
     // Uzun dipnot artık listenin altında değil.
@@ -151,10 +148,62 @@ void main() {
     expect(tester.getSize(satir).height, greaterThanOrEqualTo(44));
     await tester.tap(satir);
     await tester.pumpAndSettle();
-    expect(find.text('Nasıl ölçülür?'), findsNWidgets(2));
-    expect(find.textContaining('para ekleme zamanı etkilemez'), findsOneWidget);
-    expect(find.textContaining('en az'), findsOneWidget);
-    expect(find.textContaining('Sıralama ise yalnız seçimlerini ölçer'),
-        findsOneWidget);
+    _tekBilgiSayfasi(guven: 'Kimsenin varlık listesi görünmez.');
   });
+
+  // Ar-Ge 2026-11-11_1704 #4: ⓘ ve "Nasıl ölçülür?" aynı sayfayı açar;
+  // eski ikinci sayfa (dipnotun üç paragrafı) yok.
+  testWidgets('ⓘ ve "Nasıl ölçülür?" aynı bilgi sayfasını açar',
+      (tester) async {
+    await _pump(tester,
+        assets: [_asset(ticker: 'THYAO.IS', name: 'Türk Hava Yolları')],
+        partners: [_partner('p1', 'Ayşe')]);
+    await _ortaklaraGec(tester);
+
+    await tester.tap(find.byKey(const ValueKey('yaris_nasil_olculur')));
+    await _yerles(tester);
+    _tekBilgiSayfasi(guven: 'Kimsenin varlık listesi görünmez.');
+    await tester.tap(find.bySemanticsLabel('Kapat'));
+    await _yerles(tester);
+    expect(find.byKey(const ValueKey('yaris_bilgi_guven')), findsNothing);
+
+    await tester.tap(find.byTooltip('Getiri nasıl hesaplanıyor?'));
+    await _yerles(tester);
+    _tekBilgiSayfasi(guven: 'Kimsenin varlık listesi görünmez.');
+  });
+}
+
+Future<void> _ortaklaraGec(WidgetTester tester) async {
+  final ortaklar = find.text('Ortaklarım');
+  if (ortaklar.evaluate().isNotEmpty) {
+    await tester.tap(ortaklar.first);
+    await _yerles(tester);
+  }
+}
+
+/// Açık sayfa `_RoiInfoSheet`: başlığı, ölçüm blokları ve güven bloğu var;
+/// eski "Nasıl ölçülür?" sayfasının tekrar eden ilk cümlesi yok.
+void _tekBilgiSayfasi({required String guven}) {
+  expect(find.text('Getiri nasıl hesaplanıyor?'), findsOneWidget);
+  expect(find.text('Para eklemek sıralamayı değiştirmez'), findsOneWidget);
+  expect(find.textContaining('en az'), findsOneWidget);
+  expect(find.textContaining('Sıralama ise yalnız seçimlerini ölçer'),
+      findsOneWidget);
+  final blok = find.byKey(const ValueKey('yaris_bilgi_guven'));
+  expect(blok, findsOneWidget);
+  expect(find.descendant(of: blok, matching: find.text('Neler paylaşılmaz?')),
+      findsOneWidget);
+  expect(find.descendant(of: blok, matching: find.text(guven)), findsOneWidget);
+  expect(find.textContaining('para ekleme zamanı etkilemez'), findsNothing);
+  // Tek sayfa: başlığı "Nasıl ölçülür?" olan ikinci sayfa açılmaz.
+  expect(find.text('Nasıl ölçülür?'), findsOneWidget);
+}
+
+/// pumpAndSettle yerine sabit adım: aynı dosyadaki ikinci testte ekranda
+/// süren bir animasyon pumpAndSettle'ı zaman aşımına düşürüyor; 1 sn sheet
+/// açılış/kapanış geçişine yeter.
+Future<void> _yerles(WidgetTester tester) async {
+  for (var i = 0; i < 10; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
