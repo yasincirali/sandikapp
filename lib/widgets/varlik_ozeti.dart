@@ -8,6 +8,7 @@ import '../models/asset_type.dart';
 import '../models/varlik_kimligi.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../utils/metin_olcusu.dart';
 import '../utils/tr_format.dart';
 import 'donem_istatistik.dart' show donemDuzMu;
 import 'varlik_baslik_hero.dart';
@@ -257,7 +258,17 @@ class VarlikFiyatBlogu extends StatelessWidget {
             ],
           ),
         const SizedBox(height: SandikSpace.xs),
-        FittedBox(
+        // Yuva fiyatın STİLİNDEN boylanır, içerikten değil (yasin
+        // 2026-11-11, "dönem değişince kâr/zarar yazısı ve grafik yer
+        // değiştiriyor"): uzun fiyat (₺123.456,78) büyük yazıda `FittedBox`
+        // ile küçülünce satır da kısalıyor, altındaki değişim satırı ve
+        // grafik yukarı kayıyordu (ölçüldü 2×: 35 pt). İmleç gezinirken
+        // (`imlec`) fiyat değişir; aynı kayma parmağın altında da oluyordu.
+        SizedBox(
+          height: tekSatirBoyu(context, context.t.numLarge),
+          child: Align(
+          alignment: Alignment.centerLeft,
+          child: FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
           // Bayrak `goz_alici`: değişen hane döner, ₺ ve kuruş geri çekilir
@@ -273,6 +284,8 @@ class VarlikFiyatBlogu extends StatelessWidget {
                   maxLines: 1,
                   style: context.t.numLarge.copyWith(color: fiyatRengi),
                 ),
+        ),
+          ),
         ),
         const SizedBox(height: SandikSpace.xs),
         Text(

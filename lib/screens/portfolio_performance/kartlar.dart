@@ -943,7 +943,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               // Üst bilgi: başlık solda, dönem aralığı sağda — ikisi de sessiz.
               // Başlık "1A birikim değişimi · simülasyon" gibi uzayabiliyor;
               // 320pt'de tek satıra sığmalı (taşma testi bunu kovalıyor).
-              Row(
+              //
+              // Satırın boyu dönemden bağımsız (yasin 2026-11-11, "dönem
+              // değişince kâr/zarar yazısı ve grafik yer değiştiriyor"):
+              // "Piyasa kapalı" rozeti (dolgulu, başlıktan uzun) yalnız bazı
+              // günlerde geliyor, satırı uzatıp altındaki rakamı ve grafiği
+              // itiyordu. Taban rozetin boyu; ölçü yazı ölçeğiyle büyür.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                    minHeight: math.max(
+                        tekSatirBoyu(context, context.t.titleSmall),
+                        tekSatirBoyu(context, _kapaliRozetStili(context)) +
+                            _kapaliRozetDolgusu.vertical)),
+                child: LayoutBuilder(builder: (context, satir) => Row(
                 children: [
                   Expanded(
                     child: Text(
@@ -961,8 +973,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   if (kapaliEtiketi != null) ...[
                     const SizedBox(width: SandikSpace.sm),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
+                      padding: _kapaliRozetDolgusu,
                       decoration: BoxDecoration(
                         color: context.c.text36.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(SandikRadius.sm),
@@ -974,20 +985,25 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         // `piyasaKapaliEtiketi`).
                         kapaliEtiketi,
                         maxLines: 1,
-                        style: context.t.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: context.c.text36,
-                        ),
+                        style: _kapaliRozetStili(context),
                       ),
                     ),
                   ],
                   if (aralik != null) ...[
                     const SizedBox(width: SandikSpace.sm),
-                    Text(
-                      aralik,
-                      maxLines: 1,
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text36),
+                    // En çok satırın yarısı: 2× yazıda tarih aralığı başlıkla
+                    // birlikte satırı taşırıyordu (ölçüldü 2026-11-11, 42 pt).
+                    // Başlık kısalmaz, tarih `…` ile kısalır.
+                    ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: satir.maxWidth / 2),
+                      child: Text(
+                        aralik,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.bodySmall
+                            ?.copyWith(color: context.c.text36),
+                      ),
                     ),
                   ],
                   // Son öğe; 44 pt kutunun boşluğu tarihe doğru kalır,
@@ -997,6 +1013,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         onPressed: paylas,
                         tooltip: context.l10n.shareSummary),
                 ],
+              )),
               ),
               SizedBox(
                   height: paylas == null
@@ -1013,38 +1030,22 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               // rozetleri getiri diye okunuyordu — yatırılan parayı da sayan
               // birikim değişimiydi. Birikim tutar olarak kalır (kullanıcı
               // kararı 2026-09-24), yüzde yalnızca piyasaya ait.
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // FittedBox: milyonluk portföyde dar ekranda taşmasın,
-                  // punto düşsün ama satır kırılmasın.
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        piyasaFlat && veriGelmedi
-                            ? context.l10n.todayNoDataYet
-                            : piyasaFlat
-                                ? context.l10n.noChange
-                                : '${piyasa >= 0 ? '+' : '−'}${tryFmt.format(piyasa.abs())}',
-                        maxLines: 1,
-                        // Veri yokken cümle rakam boyunda değil: durum bildirimi.
-                        style: piyasaFlat && veriGelmedi
-                            ? context.t.titleMedium
-                                ?.copyWith(color: context.c.text58)
-                            : (tekAkis
-                                    ? context.t.numLarge
-                                    : context.t.numMedium)
-                                .copyWith(color: piyasaColor),
-                      ),
-                    ),
-                  ),
-                  if (piyasaPct != null && !piyasaFlat) ...[
-                    const SizedBox(width: SandikSpace.sm),
-                    _YuzdeRozeti(pct: piyasaPct, renk: piyasaColor),
-                  ],
-                ],
+              // Kahraman satırı yerinden oynamaz — gerekçe `_KahramanSatiri`.
+              _KahramanSatiri(
+                metin: piyasaFlat && veriGelmedi
+                    ? context.l10n.todayNoDataYet
+                    : piyasaFlat
+                        ? context.l10n.noChange
+                        : '${piyasa >= 0 ? '+' : '−'}${tryFmt.format(piyasa.abs())}',
+                // Veri yokken cümle rakam boyunda değil: durum bildirimi.
+                stil: piyasaFlat && veriGelmedi
+                    ? context.t.titleMedium?.copyWith(color: context.c.text58)
+                    : (tekAkis ? context.t.numLarge : context.t.numMedium)
+                        .copyWith(color: piyasaColor),
+                boyStili: tekAkis ? context.t.numLarge : context.t.numMedium,
+                rozet: piyasaPct != null && !piyasaFlat
+                    ? _YuzdeRozeti(pct: piyasaPct, renk: piyasaColor)
+                    : null,
               ),
               // Alt kat: akış varsa ana rakam alımı/satışı İÇERİR ve "+%100
               // kazandım" yanılgısı doğar. Üç kalem bunu kapatır — Özet
@@ -1064,7 +1065,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               // taşır: bakiyenin ne kadar değiştiği ve bunun ne kadarının
               // kullanıcının kendi parası olduğu. Temettü kalemi köprüde ayrı
               // görünmediği için burada kalır (sıfırsa çizilmez).
-              if (tekAkis && akisVar) ...[
+              // Tek akışta (bayrak `performans_tek_akis`) cümle ve temettü
+              // satırı akışa bağlı kalır; gelip giderken boy tek karede
+              // değil, yumuşak değişir (hareketi azalt → anında). Bayrak
+              // kapalı düzende alt kat HER dönemde durur (aşağıda).
+              if (tekAkis)
+                AnimatedSize(
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.move,
+                  alignment: Alignment.topLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+              if (akisVar) ...[
                 if (performansBakiyeCumlesi(
                   context.l10n,
                   degisim: change,
@@ -1087,23 +1100,37 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                     renk: context.c.text58,
                   ),
                 ],
-              ] else if (akisVar) ...[
+              ],
+                    ],
+                  ),
+                )
+              // Alt kat dönemden bağımsız DURUR (yasin 2026-11-11: "dönem
+              // değişince grafik ve kâr/zarar yazısının yeri değişiyor").
+              // Eskiden yalnız akış (alım/satış/temettü) olan dönemde
+              // çiziliyordu: 1 ay → 3 ay geçişinde kart ~110 pt uzuyor,
+              // grafik o kadar aşağı atlıyordu (ölçüldü). Akış yoksa kalemler
+              // dürüst sıfırı yazar: "Yatırdığın ₺0", toplam değişim =
+              // manşet; denklem (katkın + piyasa = toplam) yine okunur.
+              // Simülasyonda akış tanımsız (miktar sabit): alt kat hiç yok,
+              // orada da dönemden bağımsız.
+              else if (!_simulate) ...[
                 const SizedBox(height: SandikSpace.smd),
                 Container(height: 1, color: context.c.hairline),
                 const SizedBox(height: SandikSpace.sm2),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (yatirilan.abs() > 0.5)
-                      Expanded(
-                        child: _DegisimKalemi(
-                          etiket: context.l10n.investedRow,
-                          deger: '${yatirilan > 0 ? '+' : '−'}'
-                              '${tryFmt.format(yatirilan.abs())}',
-                          renk: context.c.text58,
-                        ),
+                    Expanded(
+                      child: _DegisimKalemi(
+                        etiket: context.l10n.investedRow,
+                        deger: yatirilan.abs() <= 0.5
+                            ? tryFmt.format(0)
+                            : '${yatirilan > 0 ? '+' : '−'}'
+                                '${tryFmt.format(yatirilan.abs())}',
+                        renk: context.c.text58,
                       ),
-                    if (yatirilan.abs() > 0.5 && temettu.abs() > 0.5)
+                    ),
+                    if (temettu.abs() > 0.5)
                       const SizedBox(width: SandikSpace.md),
                     if (temettu.abs() > 0.5)
                       Expanded(
@@ -1412,7 +1439,99 @@ class _DegisimKalemi extends StatelessWidget {
 
 /// Yüzde rozeti — yön ikonu renge ek bir sinyal taşır, renk körlüğünde de
 /// okunur. Kahraman satırında (akış yokken) ve piyasa kaleminde aynı rozet.
+const _kapaliRozetDolgusu = EdgeInsets.symmetric(horizontal: 7, vertical: 2);
+
+TextStyle? _kapaliRozetStili(BuildContext context) =>
+    context.t.labelSmall?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: context.c.text36,
+    );
+
+/// Dönem kartının kahraman satırı: tutar + (varsa) yüzde rozeti.
+///
+/// Yer değiştirmez (yasin 2026-11-11, TestFlight: "dönem değişince kâr/zarar
+/// yazısının yeri değişiyor; fark olacaksa en az olsun"). Ölçülen nedenler:
+///  • Rozet genişleyince (1Y'de dört haneli yüzde) tutarın `FittedBox`'ı
+///    küçülüyordu: rakam 28 → 24 pt'ye inip kıpırdıyordu, 2× yazıda 10 pt'ye
+///    kadar eziliyordu. Şimdi önce ROZET küçülür; tutar ancak satırın
+///    %65'ini aşarsa (milyonluk portföy, dar ekran, büyük yazı).
+///  • Satırın boyu içeriğe göreydi ("veri gelmedi" cümlesi küçük puntoda,
+///    rozetli/rozetsiz hâl). Şimdi boy [boyStili]'nin satırı ile rozetin
+///    büyüğü — yazı ölçeğiyle büyür (`tekSatirBoyu`).
+///  • Sol başlangıç sabit (sola yaslı); rakamlar tabular (`numMedium`/
+///    `numLarge`), hane değişimi yalnız sağa doğru uzar.
+/// Değer değişince eski metin yerinde söner, yenisi aynı yerde belirir
+/// (`SandikMotion.state`; hareketi azalt → anında).
+class _KahramanSatiri extends StatelessWidget {
+  const _KahramanSatiri({
+    required this.metin,
+    required this.stil,
+    required this.boyStili,
+    this.rozet,
+  });
+
+  final String metin;
+  final TextStyle? stil;
+  final TextStyle boyStili;
+  final Widget? rozet;
+
+  @override
+  Widget build(BuildContext context) {
+    final boy = math.max(
+      tekSatirBoyu(context, boyStili),
+      // Rozet: numSmall + 4/4 dolgu (`_YuzdeRozeti`).
+      tekSatirBoyu(context, context.t.numSmall) + SandikSpace.sm,
+    );
+    final rozet = this.rozet;
+    return SizedBox(
+      height: boy,
+      child: LayoutBuilder(
+        builder: (context, kutu) => Row(
+          children: [
+            ConstrainedBox(
+              // Rozet varken tutar satırın en çok %65'i: rozetin okunur
+              // kalacağı yer ayrılır, tutar ancak bunu aşarsa küçülür.
+              constraints: BoxConstraints(
+                  maxWidth: rozet == null
+                      ? kutu.maxWidth
+                      : (kutu.maxWidth - SandikSpace.sm) * 0.65),
+              child: AnimatedSwitcher(
+                duration: SandikMotion.stateOf(context),
+                switchInCurve: SandikMotion.enter,
+                switchOutCurve: SandikMotion.exit,
+                // Sola yaslı yığın: eski ve yeni metin aynı başlangıçta,
+                // kesişirken satırın boyu ve rakamın yeri değişmez.
+                layoutBuilder: (simdiki, onceki) => Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [...onceki, if (simdiki != null) simdiki],
+                ),
+                child: FittedBox(
+                  key: ValueKey(metin),
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(metin, maxLines: 1, style: stil),
+                ),
+              ),
+            ),
+            if (rozet != null) ...[
+              const SizedBox(width: SandikSpace.sm),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: rozet,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _YuzdeRozeti extends StatelessWidget {
+
   const _YuzdeRozeti({required this.pct, required this.renk});
 
   final double pct;

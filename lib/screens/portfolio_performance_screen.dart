@@ -23,6 +23,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../utils/grafik_ozeti.dart';
+import '../utils/metin_olcusu.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
