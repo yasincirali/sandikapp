@@ -6445,5 +6445,16 @@
   "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}},
   "zirveGuvenKuresel": "Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
   "zirveGuvenOrtaklar": "Kimsenin varlık listesi görünmez.",
-  "zirveNasilOlculur": "Nasıl ölçülür?"
+  "zirveNasilOlculur": "Nasıl ölçülür?",
+  "bestToughestDayTitle": "Dönemin en iyi ve en zor günü",
+  "bestDayRow": "En iyi gün · {tarih}",
+  "@bestDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "leastDownDayRow": "En az düşen gün · {tarih}",
+  "@leastDownDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "toughestDayRow": "En zor gün · {tarih}",
+  "@toughestDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "leastUpDayRow": "En az yükselen gün · {tarih}",
+  "@leastUpDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "bestDayFootnote": "Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.",
+  "bestDayLocked": "Dönemin en iyi ve en zor gününü Premium'la gör"
 }

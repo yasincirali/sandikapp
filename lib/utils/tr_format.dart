@@ -463,6 +463,20 @@ String fmtTarih(DateTime t, {String dil = 'tr_TR', bool saat = false}) {
   return '$gun ${iki(y.hour)}:${iki(y.minute)}';
 }
 
+/// Gün + tam ay, rapor dilinde: "4 Kasım" / "November 4". Yıl [bugun]ün
+/// yılından farklıysa eklenir ("28 Aralık 2025"): 3A penceresi yıl
+/// başını aşabiliyor ve yılsız "28 Aralık" hangi yılın günü belli etmez.
+/// Performans'ın "en iyi / en zor gün" satırı (2026-11-11).
+String fmtGunAy(DateTime t, {String dil = 'tr_TR', DateTime? bugun}) {
+  final y = t.toLocal();
+  final yilli = y.year != (bugun ?? DateTime.now()).year;
+  final ay = _ayAdi(y.month, dil, false);
+  if (dil.startsWith('en')) {
+    return yilli ? '$ay ${y.day}, ${y.year}' : '$ay ${y.day}';
+  }
+  return yilli ? '${y.day} $ay ${y.year}' : '${y.day} $ay';
+}
+
 /// "… beri" cümlesinin tarih parçası: Türkçe "12 Eyl'den" (ayrılma hâli
 /// ekiyle), İngilizce "Sep 12". Yıl [bugun]ün yılından farklıysa eklenir:
 /// "12 Eyl 2025'ten" / "Sep 12, 2025".

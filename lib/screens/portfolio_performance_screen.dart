@@ -85,12 +85,15 @@ import '../widgets/grafik_arac_cubugu.dart' show MumAraligiMenusu;
 import '../services/mum_verisi.dart'
     show asgariMum, gecerliIcindenAralik, turetilmisAraliklar;
 import '../models/ohlc.dart';
+import '../providers/premium_provider.dart'
+    show premiumOzellikleriGorunurProvider;
 import '../providers/preferences_provider.dart'
     show
         balanceHiddenProvider,
         bugunkuPortfoyleProvider,
         leaderboardOptInProvider,
         mumAraligiSecimiProvider,
+        premiumKilitliProvider,
         secilenMumAraligi,
         seviyeGorunurlukProvider,
         yatirimciSeviyesiProvider;

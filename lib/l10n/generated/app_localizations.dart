@@ -17478,6 +17478,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Nasıl ölçülür?'**
   String get zirveNasilOlculur;
+
+  /// No description provided for @bestToughestDayTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönemin en iyi ve en zor günü'**
+  String get bestToughestDayTitle;
+
+  /// No description provided for @bestDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi gün · {tarih}'**
+  String bestDayRow(String tarih);
+
+  /// No description provided for @leastDownDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az düşen gün · {tarih}'**
+  String leastDownDayRow(String tarih);
+
+  /// No description provided for @toughestDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En zor gün · {tarih}'**
+  String toughestDayRow(String tarih);
+
+  /// No description provided for @leastUpDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az yükselen gün · {tarih}'**
+  String leastUpDayRow(String tarih);
+
+  /// No description provided for @bestDayFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.'**
+  String get bestDayFootnote;
+
+  /// No description provided for @bestDayLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönemin en iyi ve en zor gününü Premium\'la gör'**
+  String get bestDayLocked;
 }
 
 class _AppLocalizationsDelegate

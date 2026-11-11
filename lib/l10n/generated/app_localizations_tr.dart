@@ -10664,4 +10664,34 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get zirveNasilOlculur => 'Nasıl ölçülür?';
+
+  @override
+  String get bestToughestDayTitle => 'Dönemin en iyi ve en zor günü';
+
+  @override
+  String bestDayRow(String tarih) {
+    return 'En iyi gün · $tarih';
+  }
+
+  @override
+  String leastDownDayRow(String tarih) {
+    return 'En az düşen gün · $tarih';
+  }
+
+  @override
+  String toughestDayRow(String tarih) {
+    return 'En zor gün · $tarih';
+  }
+
+  @override
+  String leastUpDayRow(String tarih) {
+    return 'En az yükselen gün · $tarih';
+  }
+
+  @override
+  String get bestDayFootnote =>
+      'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.';
+
+  @override
+  String get bestDayLocked => 'Dönemin en iyi ve en zor gününü Premium\'la gör';
 }

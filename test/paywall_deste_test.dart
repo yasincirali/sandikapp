@@ -57,6 +57,8 @@ void main() {
         'kur_ayrismasi': PaywallKarti.xray,
         // Varlık detayında yıllık ortalama getiri (Ar-Ge 7 Kas 20:30 #6).
         'yillik_getiri': PaywallKarti.xray,
+        // Performans'ta en iyi / en zor gün (2026-11-11).
+        'en_iyi_gun': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
         // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
         // göreceği portföy → portföy kartı.
@@ -121,6 +123,8 @@ void main() {
         'lib/widgets/kur_ayrismasi_satiri.dart',
         // Geçmiş fiyat tablosu (2026-11-10).
         'lib/widgets/gecmis_fiyatlar.dart',
+        // En iyi / en zor gün (2026-11-11).
+        'lib/widgets/period_summary_view.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -137,6 +141,7 @@ void main() {
             'sinyal_gosterge',
             'gosterge_parametre',
             'kur_ayrismasi',
+            'en_iyi_gun',
           ]));
       // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
       // açmaz.

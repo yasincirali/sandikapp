@@ -5677,5 +5677,16 @@
   "@aramaOneriSemantik": {"placeholders": {"kod": {"type": "String"}, "ad": {"type": "String"}}},
   "zirveGuvenKuresel": "Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.",
   "zirveGuvenOrtaklar": "Nobody's asset list is visible.",
-  "zirveNasilOlculur": "How is it measured?"
+  "zirveNasilOlculur": "How is it measured?",
+  "bestToughestDayTitle": "Best and toughest day of the period",
+  "bestDayRow": "Best day · {tarih}",
+  "@bestDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "leastDownDayRow": "Smallest drop · {tarih}",
+  "@leastDownDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "toughestDayRow": "Toughest day · {tarih}",
+  "@toughestDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "leastUpDayRow": "Smallest gain · {tarih}",
+  "@leastUpDayRow": {"placeholders": {"tarih": {"type": "String"}}},
+  "bestDayFootnote": "Market moves only; money you added or withdrew is excluded.",
+  "bestDayLocked": "See the period's best and toughest day with Premium"
 }

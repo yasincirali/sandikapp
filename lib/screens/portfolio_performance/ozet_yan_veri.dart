@@ -694,6 +694,11 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       derinlikGorunur: ref.watch(seviyeGorunurlukProvider).derinlik,
       anaRakamGizli: widget.anaRakamGizli,
       nedenEki: widget.nedenEki,
+      // En iyi / en zor gün (Premium): Performans'ın Premium deseni —
+      // paywall kapalıyken (admin dışında) hiç görünmez, açıkken ücretsizde
+      // kilit satırı.
+      enIyiGunGorunur: ref.watch(premiumOzellikleriGorunurProvider),
+      enIyiGunKilitli: ref.watch(premiumKilitliProvider),
     );
   }
 
