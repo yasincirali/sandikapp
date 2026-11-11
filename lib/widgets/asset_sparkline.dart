@@ -60,6 +60,24 @@ class _AssetSparklineState extends State<AssetSparkline> {
     _series = SparklineService.instance.peek(widget.asset);
     _onbellektenGeldi = _series != null;
     if (_series == null) _load();
+    SparklineService.instance.tazeleme.addListener(_tazelendi);
+  }
+
+  @override
+  void dispose() {
+    SparklineService.instance.tazeleme.removeListener(_tazelendi);
+    super.dispose();
+  }
+
+  /// Diskteki kopyayla çizilen eğri ağdan tazelenip DEĞİŞTİYSE yeniden
+  /// çizilir (2026-11-11, bkz. `SparklineService._ilkYukleme`). Sayaç tüm
+  /// semboller için ortak; yalnız bu satırın serisi başka nesneyse
+  /// `setState`. Geçiş animasyonu yok: eğri zaten yerinde, şekli birkaç
+  /// piksel oynar; solma eklemek her tazelemede satırı yanıp söndürürdü.
+  void _tazelendi() {
+    final yeni = SparklineService.instance.peek(widget.asset);
+    if (!mounted || yeni == null || identical(yeni, _series)) return;
+    setState(() => _series = yeni);
   }
 
   @override

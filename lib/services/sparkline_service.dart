@@ -40,6 +40,16 @@ class SparklineService {
   /// aynı ticker birden çok pozisyonda geçebilir.
   final Map<String, Future<List<double>>> _inflight = {};
 
+  /// Önbellekteki bir seri arka plan tazelemesiyle DEĞİŞTİĞİNDE artar.
+  ///
+  /// Soğuk açılışta seri önce diskteki son iyi kopyadan gelir (bkz.
+  /// [seriesFor]); ağdan tazesi farklı çıkarsa çizili satır bunu dinleyip
+  /// eğrisini günceller (`AssetSparkline`). Sembol başına notifier değil tek
+  /// sayaç: satır kendi sembolünü [peek] ile yeniden okur ve yalnız nesne
+  /// değiştiyse yeniden çizer; 20 satırlık listede tek dinleyici türü yeter.
+  final ValueNotifier<int> _tazelemeSurumu = ValueNotifier<int>(0);
+  ValueListenable<int> get tazeleme => _tazelemeSurumu;
+
   /// Bu sembol için sparkline çizilebilir mi?
   ///
   /// Manuel fiyatlı varlıklar (kullanıcının elle girdiği "Ev", "Araba") ve
@@ -131,7 +141,7 @@ class SparklineService {
     final pending = _inflight[symbol];
     if (pending != null) return pending;
 
-    final future = _fetch(symbol);
+    final future = _ilkYukleme(symbol);
     _inflight[symbol] = future;
     try {
       return await future;
@@ -182,12 +192,72 @@ class SparklineService {
     }
   }
 
+  /// Bellekte olmayan sembolün ilk yüklemesi: önce diskteki son iyi kopya,
+  /// sonra ağ.
+  ///
+  /// ## Neden (soğuk açılış, 2026-11-11)
+  /// Önbellek yalnız bellekteydi; her soğuk açılışta Portföy ve Takip
+  /// satırlarındaki eğriler ağdan yeniden geliyor, satırda önce boş alan,
+  /// saniyeler sonra çizgi beliriyordu. Grafik kapısının diskteki son iyi
+  /// kopyası (`SeriDiskDepo`, `HistoryService.kaliciDepo`) zaten vardı ama
+  /// yalnız çekim DÜŞERSE okunuyordu. Şimdi kopya varsa milisaniyeler içinde
+  /// döner (eğri çizilir), ağ ARKA PLANDA bir kez sorulur ([_tazele]).
+  ///
+  /// ## Neden yeni depo/anahtar değil
+  /// Kopya `HistoryService.eldekiSeriyle` ile okunur: aynı hesap (altın
+  /// merdiveni dahil) ağa çıkmadan, kapının `${sembol}_1mo` disk kaydıyla
+  /// koşar. Böylece diskten gelen eğri ile ağdan gelen aynı kapıdan, aynı
+  /// ölçekte geçer (fiyat kaynağı sözleşmesi madde 1–2) ve her nokta
+  /// ölçülmüş veridir (madde 3). Tazeleme sonucu diske de kapı yazar
+  /// (`_sonIyiYaz`); bu servis diske ayrıca hiçbir şey yazmaz, yeni anahtar
+  /// ya da biçim yoktur. Kopya eksik bileşenliyse ya da çok eskiyse
+  /// (`bayatKullanilirMi`) hiç dönmez: eski davranış, doğrudan ağ.
+  Future<List<double>> _ilkYukleme(String symbol) async {
+    final eldeki = await _eldekiSeri(symbol);
+    if (eldeki.isEmpty) return _fetch(symbol);
+    _cache[symbol] = eldeki;
+    _tazele(symbol, eldeki);
+    return eldeki;
+  }
+
+  /// Diskteki son iyi kopyadan normalize seri; yoksa boş. Hata ana akışa
+  /// sızmaz (kopya bir kolaylık, yoksa ağ yolu bugünkü gibi çalışır).
+  Future<List<double>> _eldekiSeri(String symbol) async {
+    // Test kancası kapıyı tümden atlıyor; disk yolu o testlerde yok.
+    if (debugCekici != null) return const [];
+    try {
+      final r = await HistoryService.eldekiSeriyle(() => _hamSeri(symbol));
+      return r == null ? const [] : normalize(r.sonuc);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'sparkline_service.eldekiSeri');
+      return const [];
+    }
+  }
+
+  /// Diskten çizilen serinin ağdan bir kez tazelenmesi. Taze seri farklıysa
+  /// önbellek güncellenir ve [tazeleme] artar; aynıysa nesne korunur ki
+  /// satır gereksiz yeniden çizilmesin. Ağ düşerse (boş/hata) disk kopyası
+  /// önbellekte kalır — kapı zaten aynı kopyayı döndürür.
+  void _tazele(String symbol, List<double> eski) {
+    CrashReporter.arkaPlan(() async {
+      final yeni = await _normalizeCek(symbol);
+      if (yeni.isEmpty || listEquals(yeni, eski)) return;
+      // Bu arada `clear()` çağrıldıysa ya da başka yol yazdıysa ezme.
+      if (!identical(_cache[symbol], eski)) return;
+      _cache[symbol] = yeni;
+      _tazelemeSurumu.value++;
+    }(), reason: 'sparkline_service.tazele');
+  }
+
+  Future<List<(int, double)>> _hamSeri(String symbol) =>
+      symbol == _altinAnahtari ? _altinSerisi() : _cek(symbol);
+
+  Future<List<double>> _normalizeCek(String symbol) async =>
+      normalize(await _hamSeri(symbol));
+
   Future<List<double>> _fetch(String symbol) async {
     try {
-      final raw = symbol == _altinAnahtari
-          ? await _altinSerisi()
-          : await _cek(symbol);
-      final series = normalize(raw);
+      final series = await _normalizeCek(symbol);
       // Boş sonuç uygulama ömrü boyunca ÖNBELLEĞE ALINMAZ (2026-10-03).
       // Eskiden "404 veren sembol için her kaydırmada ağa çıkmayalım" diye
       // alınıyordu; ama boşluğun çoğu geçici (kripto-seri soğuk
