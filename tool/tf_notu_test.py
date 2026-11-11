@@ -24,6 +24,14 @@ class TfNotuTest(unittest.TestCase):
         self.assertIsNone(tf.pr_metni(1, "TF notu", "", d))
         self.assertIsNotNone(tf.pr_metni(1, "Widget", "", ["ios/Runner/Info.plist"]))
 
+    def test_asc_emoji_kabul_etmez(self):
+        g = "## TestFlight'ta test et\n- Düğmede ✓ görünmeli 🎉\n- Yanında ▲ ya da ▼"
+        m = tf.notu_kur([{"no": 1, "baslik": "x", "govde": g, "dosyalar": []}])
+        self.assertNotIn("✓", m)
+        self.assertNotIn("🎉", m)
+        self.assertIn("onay işareti", m)
+        self.assertIn("▲", m)
+
     def test_numara_yazilmaz(self):
         g = "## TestFlight'ta test et\n- Bir hisse sat"
         m = tf.notu_kur([{"no": 212, "baslik": "fix(0156): uuid", "govde": g, "dosyalar": []}])
