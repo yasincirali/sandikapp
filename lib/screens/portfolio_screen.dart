@@ -85,6 +85,7 @@ import '../services/varlik_eklendi.dart';
 import '../providers/veri_kalitesi_provider.dart';
 import '../widgets/ozellik_onerisi_karti.dart';
 import '../widgets/bes_fon_satiri.dart';
+import '../widgets/basa_bas_satiri.dart';
 
 part 'portfolio/bes_sozlesme_satiri.dart';
 
@@ -3517,6 +3518,17 @@ class _AssetDetailsPanel extends StatelessWidget {
     final dividendTRY = totalDividendTRY(position.lots);
     final gainLossTRY =
         currentValueTRY - position.totalCostTRY + dividendTRY;
+    // Başa baş satırı da AYNI üç sayıdan (temettü dahil): kâr/zarar artıya
+    // döndüğü anda satır da kaybolur, panel kendi içinde çelişmez.
+    final basaBasOrani = birimsiz
+        ? null
+        : basaBasIcinGerekenYukselis(position.totalCostTRY, currentValueTRY,
+            temettu: dividendTRY);
+    final temettuVar = dividendTRY.abs() >= 0.005;
+    final temettuSatiri = _DetailItem(
+      label: context.l10n.dividendReceived,
+      value: tryFmt2.format(dividendTRY),
+    );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -3601,6 +3613,30 @@ class _AssetDetailsPanel extends StatelessWidget {
             ],
           ),
           ],
+          // "Güncel tutar" satırı yalnız mevduatta kalır (Ar-Ge 2026-11-11
+          // #4): öteki varlıklarda kartın başındaki büyük tutarın AYNISIYDI
+          // (aynı `currentValueTRY`), göz iki kez aynı sayıyı okuyordu.
+          // Yerine zarardaysa "Başa baş için %X yükselmeli" (Premium),
+          // kârdaysa hiçbir şey: panel bir satır kısalır. Mevduatta panelin
+          // birimsiz düzeni (yukarıda) tutarı ayrı mantıkla taşır; dokunulmadı.
+          if (!birimsiz)
+            Consumer(builder: (context, ref, _) {
+              final basaBas = basaBasSatiriCizilir(ref, basaBasOrani);
+              if (!basaBas && !temettuVar) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (basaBas)
+                      Expanded(child: BasaBasSatiri(oran: basaBasOrani!)),
+                    // Temettü gerekçesi aşağıdaki mevduat satırında.
+                    if (temettuVar) Expanded(child: temettuSatiri),
+                  ],
+                ),
+              );
+            }),
+          if (birimsiz) ...[
           const SizedBox(height: 12),
           Row(
             children: [
@@ -3629,15 +3665,10 @@ class _AssetDetailsPanel extends StatelessWidget {
               //
               // Bu satırın toplamı üst karttaki `state.totalDividend` ile
               // TİKEL olarak tutar: ikisi de aynı fonksiyondan beslenir.
-              if (dividendTRY.abs() >= 0.005)
-                Expanded(
-                  child: _DetailItem(
-                    label: context.l10n.dividendReceived,
-                    value: tryFmt2.format(dividendTRY),
-                  ),
-                ),
+              if (temettuVar) Expanded(child: temettuSatiri),
             ],
           ),
+          ],
           if (position.lots.length > 1) ...[
             const SizedBox(height: 10),
             Text(

@@ -1115,6 +1115,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gecmisFiyatlarOncekiYok => 'no previous close';
 
   @override
+  String get basaBasIcin => 'To break even';
+
+  @override
+  String basaBasYukselmeli(String oran) {
+    return 'needs a $oran rise';
+  }
+
+  @override
+  String basaBasCumle(String oran) {
+    return 'Needs a $oran rise to break even';
+  }
+
+  @override
+  String get basaBasKilitli => 'Rise needed to break even is in Premium';
+
+  @override
   String get kopyalaKod => 'Copy code';
 
   @override

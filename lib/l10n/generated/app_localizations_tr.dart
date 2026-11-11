@@ -1100,6 +1100,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get gecmisFiyatlarOncekiYok => 'önceki kapanış yok';
 
   @override
+  String get basaBasIcin => 'Başa baş için';
+
+  @override
+  String basaBasYukselmeli(String oran) {
+    return '$oran yükselmeli';
+  }
+
+  @override
+  String basaBasCumle(String oran) {
+    return 'Başa baş için $oran yükselmeli';
+  }
+
+  @override
+  String get basaBasKilitli => 'Başa baş için gereken yükseliş Premium\'da';
+
+  @override
   String get kopyalaKod => 'Kodu kopyala';
 
   @override

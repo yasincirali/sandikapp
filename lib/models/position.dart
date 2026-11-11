@@ -473,6 +473,36 @@ double totalDividendTRY(Iterable<Asset> lots) {
   return total;
 }
 
+/// Zarardaki pozisyonun başa baş için ne kadar yükselmesi gerektiği
+/// (YÜZDE: %20 zarar → `25.0`); zararda değilse ya da girdi geçersizse
+/// `null` (Ar-Ge 2026-11-11 #1).
+///
+/// ## Neden ayrı bir sayı
+/// %20 zarardaki yatırımcı başa baş için %25 yükseliş gerektiğini çoğu
+/// zaman bilmiyor; "tutayım mı" sorusunun en sık yarısı bu asimetri. Zarar
+/// yüzdesi zaten kartta; bu ters yönü söyler. Formül
+/// `(maliyet − temettu) / guncelDeger − 1`.
+///
+/// ## Kaynak: panelin kâr/zararıyla aynı
+/// Portföy kartının panelindeki kâr/zarar `guncelDeger − maliyet + temettü`
+/// (temettü DAHİL, "tek kaynak" yorumu). Bu yüzden [temettu] maliyetten
+/// düşülür: kâr/zarar satırı artıdayken bu satır "zarardasın" diyemez,
+/// ikisi aynı eşikte döner. Çağıran üç sayıyı panelin kâr/zararını kuran
+/// değişkenlerden verir (TRY).
+///
+/// `null` döner: değer ≤ 0 (fiyatsız pozisyon, bölme anlamsız), net
+/// maliyet ≤ 0 (maliyeti bilinmeyen kayıt; uydurma yüzde yazılmaz), sayı
+/// sonlu değil, ya da pozisyon zararda değil (başa baş/kâr: satır hiç
+/// çizilmez, "%0 yükselmeli" yazmak bilgi değil gürültü).
+double? basaBasIcinGerekenYukselis(double maliyet, double guncelDeger,
+    {double temettu = 0}) {
+  final net = maliyet - temettu;
+  if (!net.isFinite || !guncelDeger.isFinite) return null;
+  if (guncelDeger <= 0 || net <= 0) return null;
+  if (net <= guncelDeger) return null;
+  return (net / guncelDeger - 1) * 100;
+}
+
 /// Bir sembolün oturumda görülmüş son canlı fiyatı — yoksa `null`.
 ///
 /// [ownerScopedTotalValue] bunu ENJEKTE alır; model katmanının servise

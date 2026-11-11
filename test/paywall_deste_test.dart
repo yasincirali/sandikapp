@@ -59,6 +59,8 @@ void main() {
         'yillik_getiri': PaywallKarti.xray,
         // Performans'ta en iyi / en zor gün (2026-11-11).
         'en_iyi_gun': PaywallKarti.xray,
+        // Portföy kart panelinde başa baş satırı (2026-11-11).
+        'basa_bas': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
         // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
         // göreceği portföy → portföy kartı.
@@ -125,6 +127,8 @@ void main() {
         'lib/widgets/gecmis_fiyatlar.dart',
         // En iyi / en zor gün (2026-11-11).
         'lib/widgets/period_summary_view.dart',
+        // Başa baş satırı (2026-11-11).
+        'lib/widgets/basa_bas_satiri.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -142,6 +146,7 @@ void main() {
             'gosterge_parametre',
             'kur_ayrismasi',
             'en_iyi_gun',
+            'basa_bas',
           ]));
       // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
       // açmaz.

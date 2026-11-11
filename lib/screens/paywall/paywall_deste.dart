@@ -101,7 +101,10 @@ PaywallKarti? kaynaktanKart(String source) {
     'yillik_getiri' ||
     // Performans'ta dönemin en iyi / en zor günü (2026-11-11): aynı analiz
     // sorusu, "param bu dönem hangi gün ne yaptı".
-    'en_iyi_gun' =>
+    'en_iyi_gun' ||
+    // Portföy kart panelinde "Başa baş için %X yükselmeli" (Ar-Ge 11 Kas
+    // #1): aynı soru, "zarardaki param gerçekte ne durumda".
+    'basa_bas' =>
       PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,

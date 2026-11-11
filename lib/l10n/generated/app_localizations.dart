@@ -1946,6 +1946,30 @@ abstract class AppLocalizations {
   /// **'önceki kapanış yok'**
   String get gecmisFiyatlarOncekiYok;
 
+  /// Portföy kart panelinde zarardaki pozisyonun satır etiketi; değer satırı basaBasYukselmeli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş için'**
+  String get basaBasIcin;
+
+  /// No description provided for @basaBasYukselmeli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{oran} yükselmeli'**
+  String basaBasYukselmeli(String oran);
+
+  /// No description provided for @basaBasCumle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş için {oran} yükselmeli'**
+  String basaBasCumle(String oran);
+
+  /// No description provided for @basaBasKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş için gereken yükseliş Premium\'da'**
+  String get basaBasKilitli;
+
   /// No description provided for @kopyalaKod.
   ///
   /// In tr, this message translates to:
