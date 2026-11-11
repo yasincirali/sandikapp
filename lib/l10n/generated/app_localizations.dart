@@ -1109,7 +1109,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteHistoryBody.
   ///
   /// In tr, this message translates to:
-  /// **'{count} bildirim KALICI olarak silinecek. Geri alınamaz.'**
+  /// **'{count} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.'**
   String deleteHistoryBody(int count);
 
   /// No description provided for @permanentDeleteUpper.
@@ -2525,7 +2525,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In tr, this message translates to:
-  /// **'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?'**
+  /// **'Bu işlem geri alınamaz.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?'**
   String get deleteAccountBody;
 
   /// No description provided for @continueAction.
@@ -3971,7 +3971,7 @@ abstract class AppLocalizations {
   /// No description provided for @xirrBody.
   ///
   /// In tr, this message translates to:
-  /// **'Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.'**
+  /// **'Yatırdığın paranın yıllık bileşik getirisi. Hesap, parayı hangi tarihlerde yatırdığını dikkate alır.'**
   String get xirrBody;
 
   /// No description provided for @periodMarketReturnLabel.
@@ -4511,7 +4511,7 @@ abstract class AppLocalizations {
   /// No description provided for @depositsDontChangeRankBody.
   ///
   /// In tr, this message translates to:
-  /// **'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.'**
+  /// **'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin bu oranı etkilemez; her şey piyasa fiyatıyla değerlenir.'**
   String get depositsDontChangeRankBody;
 
   /// No description provided for @everyoneMeasuredSameBody.

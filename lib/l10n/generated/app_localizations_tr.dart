@@ -565,7 +565,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String deleteHistoryBody(int count) {
-    return '$count bildirim KALICI olarak silinecek. Geri alınamaz.';
+    return '$count bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.';
   }
 
   @override
@@ -1424,7 +1424,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?';
+      'Bu işlem geri alınamaz.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?';
 
   @override
   String get continueAction => 'Devam et';
@@ -2259,7 +2259,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get xirrBody =>
-      'Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.';
+      'Yatırdığın paranın yıllık bileşik getirisi. Hesap, parayı hangi tarihlerde yatırdığını dikkate alır.';
 
   @override
   String get periodMarketReturnLabel => 'Seçili dönemin getirisi';
@@ -2592,7 +2592,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.';
+      'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin bu oranı etkilemez; her şey piyasa fiyatıyla değerlenir.';
 
   @override
   String everyoneMeasuredSameBody(int gun) {

@@ -566,7 +566,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deleteHistoryBody(int count) {
-    return '$count notifications will be deleted PERMANENTLY. This cannot be undone.';
+    return '$count notifications will be permanently deleted. This cannot be undone.';
   }
 
   @override
@@ -1441,7 +1441,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted immediately.\n\nDo you want to continue?';
+      'This cannot be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted immediately.\n\nDo you want to continue?';
 
   @override
   String get continueAction => 'Continue';
@@ -1510,7 +1510,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signalNotificationsSubtitle =>
-      'Get notified when a BUY/SELL indicator triggers';
+      'Get notified when a buy or sell indicator triggers';
 
   @override
   String get signalSettings => 'Signal settings';
@@ -1931,7 +1931,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get youngPortfolioBody =>
-      'Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today\'s move in the DAILY view.';
+      'Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today\'s move in the Daily view.';
 
   @override
   String get forceUpdateTitle => 'Update required';
@@ -2278,7 +2278,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get xirrBody =>
-      'The annual compound return of the money you invested, taking the DATES of your investments into account.';
+      'The annual compound return of the money you invested. The calculation takes into account the dates you invested on.';
 
   @override
   String get periodMarketReturnLabel => 'Selected period\'s return';
@@ -2614,7 +2614,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'What counts is which assets you held, on which days. When and how much money you added does NOT affect the ratio; everything is valued at market prices.';
+      'What counts is which assets you held, on which days. When and how much money you added does not affect this ratio; everything is valued at market prices.';
 
   @override
   String everyoneMeasuredSameBody(int gun) {

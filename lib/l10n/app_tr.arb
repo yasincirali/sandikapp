@@ -227,7 +227,7 @@
     }
   },
   "deleteHistoryTitle": "Geçmişi sil",
-  "deleteHistoryBody": "{count} bildirim KALICI olarak silinecek. Geri alınamaz.",
+  "deleteHistoryBody": "{count} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.",
   "@deleteHistoryBody": {
     "placeholders": {
       "count": {
@@ -860,7 +860,7 @@
   "searchTickerOrName": "Ticker veya isim ara…",
   "myPortfolioTab": "Portföyüm",
   "deleteAccountTitle": "Hesabını silmek üzeresin",
-  "deleteAccountBody": "Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?",
+  "deleteAccountBody": "Bu işlem geri alınamaz.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?",
   "continueAction": "Devam et",
   "verifyIdentityTitle": "Kimliğini doğrula",
   "verifyIdentityBody": "Hesabın Apple/Google ile açılmış. Silmeden önce aynı hesapla bir kez daha giriş yapman istenecek.",
@@ -1284,7 +1284,7 @@
   "volatilityBody": "Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil; daha çok inip çıktığı anlamına gelir.",
   "concentration": "Yoğunlaşma",
   "moneyReturnAnnual": "Başlangıçtan beri (yıllık)",
-  "xirrBody": "Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.",
+  "xirrBody": "Yatırdığın paranın yıllık bileşik getirisi. Hesap, parayı hangi tarihlerde yatırdığını dikkate alır.",
   "periodMarketReturnLabel": "Seçili dönemin getirisi",
   "xirrVsMarketBody": "İki sayı çelişmez: üstteki ilk alımından bugüne, alım zamanlarını da hesaba katarak ölçer; alttaki yalnızca seçili dönemde piyasanın hareketini ölçer.",
   "advancedMetricsYear": "İleri metrikler · son 1 yıl",
@@ -1516,7 +1516,7 @@
   },
   "topPortfolios": "Zirvedeki Portföyler",
   "selectedPeriodReturnBody": "Dönem günlere bölünür; getiri, varlıkları elinde tuttuğun günlerden hesaplanır. Dönem seçimi sonucu değiştirir.",
-  "depositsDontChangeRankBody": "Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.",
+  "depositsDontChangeRankBody": "Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin bu oranı etkilemez; her şey piyasa fiyatıyla değerlenir.",
   "everyoneMeasuredSameBody": "Herkes aynı formül ve aynı fiyatlarla ölçülür. Sıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmeli. Anonim sıralamalarda 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.",
   "@everyoneMeasuredSameBody": {
     "placeholders": {

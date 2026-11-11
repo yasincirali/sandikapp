@@ -214,7 +214,7 @@
     }
   },
   "deleteHistoryTitle": "Delete history",
-  "deleteHistoryBody": "{count} notifications will be deleted PERMANENTLY. This cannot be undone.",
+  "deleteHistoryBody": "{count} notifications will be permanently deleted. This cannot be undone.",
   "@deleteHistoryBody": {
     "placeholders": {
       "count": {
@@ -830,7 +830,7 @@
   "searchTickerOrName": "Search ticker or name…",
   "myPortfolioTab": "My Portfolio",
   "deleteAccountTitle": "You are about to delete your account",
-  "deleteAccountBody": "This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted immediately.\n\nDo you want to continue?",
+  "deleteAccountBody": "This cannot be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted immediately.\n\nDo you want to continue?",
   "continueAction": "Continue",
   "verifyIdentityTitle": "Verify your identity",
   "verifyIdentityBody": "Your account was created with Apple/Google. You will be asked to sign in once more with the same account before deletion.",
@@ -851,7 +851,7 @@
   "pushDiagnostics": "Push Diagnostics",
   "pushDiagnosticsSubtitle": "Where the notification chain is broken; device APNs/FCM token state",
   "signalNotifications": "Technical signal notifications",
-  "signalNotificationsSubtitle": "Get notified when a BUY/SELL indicator triggers",
+  "signalNotificationsSubtitle": "Get notified when a buy or sell indicator triggers",
   "signalSettings": "Signal settings",
   "priceAlerts": "Price alerts",
   "partnerInviteNotifications": "Partner invite notifications",
@@ -1056,7 +1056,7 @@
   "noAssetsOfTypeChartBody": "Add an asset of this type and its performance appears here. You can pick another type.",
   "noHistoryAllBody": "Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.",
   "youngPortfolioTitle": "No history for this period yet",
-  "youngPortfolioBody": "Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today's move in the DAILY view.",
+  "youngPortfolioBody": "Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today's move in the Daily view.",
   "forceUpdateTitle": "Update required",
   "forceUpdateBody": "This version of Sandık is no longer supported. Update the app to continue; your data is safe.",
   "forceUpdateButton": "Update",
@@ -1254,7 +1254,7 @@
   "volatilityBody": "This is how much your portfolio value swung on average over the year. High is neither good nor bad; it just means bigger ups and downs.",
   "concentration": "Concentration",
   "moneyReturnAnnual": "Since you started (annual)",
-  "xirrBody": "The annual compound return of the money you invested, taking the DATES of your investments into account.",
+  "xirrBody": "The annual compound return of the money you invested. The calculation takes into account the dates you invested on.",
   "periodMarketReturnLabel": "Selected period's return",
   "xirrVsMarketBody": "The two numbers do not contradict: the top one runs from your first buy to today and also accounts for when you bought; the bottom one measures only the market's move in the selected period.",
   "advancedMetricsYear": "Advanced metrics · last year",
@@ -1468,7 +1468,7 @@
   },
   "topPortfolios": "Top Portfolios",
   "selectedPeriodReturnBody": "The period is split into days; the return is calculated from the days you held each asset. The period choice changes the result.",
-  "depositsDontChangeRankBody": "What counts is which assets you held, on which days. When and how much money you added does NOT affect the ratio; everything is valued at market prices.",
+  "depositsDontChangeRankBody": "What counts is which assets you held, on which days. When and how much money you added does not affect this ratio; everything is valued at market prices.",
   "everyoneMeasuredSameBody": "Everyone is measured with the same formula and the same prices. To be ranked, at least {gun} days must have passed since you acquired your first asset. In anonymous rankings, the return of a buy or sell dated more than 3 days back is measured from the day it was entered.",
   "@everyoneMeasuredSameBody": {
     "placeholders": {
