@@ -425,6 +425,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String quickAmountQtyApprox(String miktar) {
+    return '≈ $miktar';
+  }
+
+  @override
+  String get quickAmountNeedsPrice => 'Tutarla girmek için birim fiyat gerekli';
+
+  @override
   String get quickHolding => 'Mevcut';
 
   @override

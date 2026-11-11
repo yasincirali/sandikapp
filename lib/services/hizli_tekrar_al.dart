@@ -38,11 +38,23 @@ bool tekrarAlinabilir(Asset islem, {required String? benimId}) =>
 /// sayı olmayan miktar `null` — çip ya da önden doldurma uydurulmaz.
 double? alimAlanDegeri(Asset alim) {
   if (!alim.isBuy) return null;
-  final v = alim.type == AssetType.mevduat
-      ? (alim.quantity * alim.purchasePrice * 100).round() / 100
-      : alim.quantity;
-  if (!v.isFinite || v <= 0) return null;
+  final v = alim.type == AssetType.mevduat ? alimTutari(alim) : alim.quantity;
+  if (v == null || !v.isFinite || v <= 0) return null;
   return v;
+}
+
+/// Bir alışın ödenen tutarı (miktar × birim fiyat, kuruşa yuvarlı), lot'un
+/// para biriminde. Mevduatın alan değeri ve Hızlı Al'ın Tutar kipindeki
+/// "Son alımın" çipi (2026-11-11) aynı hesabı kullanır: "geçen ay 5.000 TL'lik
+/// aldım" tutarıdır, komisyon girmez (Hızlı Al'da komisyon alanı yok).
+/// Sıfır/negatif ya da sayı olmayan sonuç `null` — çip uydurulmaz.
+double? alimTutari(Asset alim) {
+  if (!alim.isBuy) return null;
+  final ham = alim.quantity * alim.purchasePrice;
+  // `round()` sonsuz/NaN'da fırlatır; önce elenir.
+  if (!ham.isFinite || ham <= 0) return null;
+  final v = (ham * 100).round() / 100;
+  return v > 0 ? v : null;
 }
 
 /// [pozisyon]'un ham defterdeki SON alışı (işlem tarihine göre).

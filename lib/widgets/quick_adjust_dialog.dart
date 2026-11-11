@@ -7,7 +7,7 @@ import '../models/asset_type.dart';
 import '../models/kapanis_ozeti.dart';
 import '../models/position.dart' show positionKey;
 import '../providers/add_asset_form_provider.dart'
-    show addAssetPriceLookupProvider, fiyatBul;
+    show addAssetPriceLookupProvider, fiyatBul, tutardanAdet;
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/fiyat_kaynagi.dart' show FiyatKaynagi;
@@ -22,6 +22,7 @@ import 'kapanis_ozeti_sheet.dart';
 import 'portfoy_secim_sayfasi.dart';
 import 'sandik_acilir.dart';
 import 'sandik_async_button.dart';
+import 'sandik_segment.dart';
 import 'tarih_cipleri.dart';
 import '../l10n/l10n.dart';
 
@@ -35,6 +36,10 @@ import '../l10n/l10n.dart';
 ///
 /// Mevduat istisnadır: pay değil TL TUTARI girilir, birim fiyat alanı
 /// yoktur (bkz. [mevduatTutarIslemi]).
+///
+/// Al'da "Adet · Tutar" kipi (2026-11-11, Ar-Ge 11 Kas #2): tutar yazılır,
+/// adet = tutar ÷ birim fiyat (`tutardanAdet`, Varlık ekle formuyla aynı
+/// fonksiyon) canlı hesaplanır; kayıt yine adet + fiyattır.
 enum QuickAdjustMode { add, remove }
 
 /// Hızlı miktar çiplerinin SAYISAL önerileri — "Hepsi" çipi hariç.
@@ -261,6 +266,23 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   final _qtyCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
   final _hedefCtrl = TextEditingController();
+  final _tutarCtrl = TextEditingController();
+
+  // ── Adet · Tutar kipi (2026-11-11, Ar-Ge 11 Kas #2) ──────────────────────
+  //
+  // Fon/altın biriktiren kişi ikinci alımda da ödediği tutarı bilir
+  // ("5.000 TL'lik fon aldım"); Varlık ekle formunda tutardan adet vardı,
+  // Hızlı Al'da yalnız mevduatta. Hesap formla AYNI fonksiyondan
+  // (`tutardanAdet`) — ikinci formül yok. Bölünen fiyat fiyat alanındakidir:
+  // Bugün · Dün çipi alanı değiştirince adet de onu izler, kullanıcı fiyatı
+  // elle düzeltirse de. Varsayılan Adet: bugünkü kullanıcı diyaloğu
+  // değişmiş görmez. Yalnız Al'da: satışta kullanıcı elindeki ADEDİ bilir
+  // ("Hepsi" çipi, eldekini aşma kuralı adetle çalışır); tutarla satış
+  // ayrı bir soru (hangi fiyattan, kaç pay kalır) ve bu değişikliğin işi
+  // değil. Ücretsiz: temel kayıt akışı, formda da ücretsiz.
+
+  /// Tutar kipi seçili mi. Yalnız [_tutarKipiVar] iken anlamlı.
+  bool _tutarModu = false;
 
   /// "Hedef ortalama" alanı açık mı (Hızlı Al ters hesabı). Kapalı başlar:
   /// çoğu alım bu soruyu sormaz, sayfa iki alanla kalsın.
@@ -319,13 +341,60 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   /// "Son alımın" çipi. Yalnız alışta; alış yoksa `null` → çip yok.
   /// Diyalog açılışında bir kez okunur: açıkken defter değişmez (kayıt
   /// diyaloğu kapatır).
-  late final double? _sonAlim = () {
+  late final Asset? _sonAlimLot = () {
     if (!_isAdd) return null;
     final defter =
         widget.ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
-    final son = sonAlim(defter, widget.asset);
-    return son == null ? null : alimAlanDegeri(son);
+    return sonAlim(defter, widget.asset);
   }();
+
+  late final double? _sonAlim =
+      _sonAlimLot == null ? null : alimAlanDegeri(_sonAlimLot);
+
+  /// Tutar kipindeki "Son alımın" çipi: son alımın ödenen tutarı
+  /// (`alimTutari`; mevduatın alan değeriyle aynı hesap).
+  late final double? _sonAlimTutari =
+      _sonAlimLot == null ? null : alimTutari(_sonAlimLot);
+
+  /// "Adet · Tutar" seçicisi bu varlıkta var mı. Varlık ekle formunun
+  /// kuralıyla aynı: Eurobond hariç (fiyat temiz %, miktar nominal — bölme
+  /// anlamsız). Mevduat zaten tutarla girilir, kendi yolunda kalır.
+  bool get _tutarKipiVar =>
+      _isAdd &&
+      !_tutarla &&
+      widget.asset.type != AssetType.eurobond &&
+      !FiyatKaynagi.eurobondMu(widget.asset.ticker);
+
+  bool get _tutarKipinde => _tutarKipiVar && _tutarModu;
+
+  /// Tutarın bölüneceği birim fiyat: fiyat alanı (kaydedilecek olan).
+  /// Boş/0 ise `null` → Tutar seçeneği kapalı, adet yazılmaz (uydurma sayı
+  /// yasak).
+  double? get _birimFiyat {
+    final p = _parse(_priceCtrl.text);
+    return p != null && p > 0 && p.isFinite ? p : null;
+  }
+
+  /// Kayda girecek adet: Adet kipinde alan, Tutar kipinde hesap.
+  double? get _etkinAdet => _tutarKipinde
+      ? tutardanAdet(tutar: _parse(_tutarCtrl.text), birimFiyat: _birimFiyat)
+      : _parse(_qtyCtrl.text);
+
+  /// Tutar → Adet dönüşünde hesaplanan adet alana yazılır (formdaki gibi:
+  /// "bankadaki adet farklıysa düzelt" yolu). Adet → Tutar'da tutar alanı
+  /// olduğu gibi kalır.
+  void _miktarKipiniSec(int i) {
+    final tutar = i == 1;
+    if (tutar == _tutarModu) return;
+    setState(() {
+      if (!tutar) {
+        final adet = _etkinAdet;
+        if (adet != null) _qtyCtrl.text = _fmt(adet);
+      }
+      _tutarModu = tutar;
+      _error = null;
+    });
+  }
 
   @override
   void initState() {
@@ -400,6 +469,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     _qtyCtrl.dispose();
     _priceCtrl.dispose();
     _hedefCtrl.dispose();
+    _tutarCtrl.dispose();
     super.dispose();
   }
 
@@ -566,8 +636,11 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     : SandikTappable(
                         haptic: SandikHaptic.none,
                         semanticLabel: '$sonuc. ${l.quickTargetAvgFillHint}',
+                        // Sonuç ADET'tir: Tutar kipindeyse Adet'e dönülür,
+                        // yoksa sayı tutar alanına yazılmış olurdu.
                         onTap: () => setState(() {
                           _qtyCtrl.text = _fmt(adet);
+                          _tutarModu = false;
                           _error = null;
                         }),
                         child: ConstrainedBox(
@@ -599,9 +672,18 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
 
   Future<void> _submit() async {
     if (_tutarla) return _tutarlaKaydet();
-    final qty = _parse(_qtyCtrl.text);
+    if (_tutarKipinde) {
+      final t = _parse(_tutarCtrl.text);
+      if (t == null || t <= 0) {
+        setState(() => _error = context.l10n.enterValidAmount);
+        return;
+      }
+    }
+    final qty = _etkinAdet;
     if (qty == null || qty <= 0) {
-      setState(() => _error = context.l10n.enterValidQuantity);
+      setState(() => _error = _tutarKipinde
+          ? context.l10n.enterValidUnitPrice
+          : context.l10n.enterValidQuantity);
       return;
     }
 
@@ -762,7 +844,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     final asset = widget.asset;
     final numFmt = qtyFormatter(maxDigits: asset.azamiOndalik);
     final accent = _isAdd ? context.c.gain : context.c.loss;
-    final qty = _parse(_qtyCtrl.text) ?? 0;
+    final qty = _etkinAdet ?? 0;
     final price = _parse(_priceCtrl.text) ?? 0;
     // Satışta önizleme, KAYDEDİLECEK satış fiyatını kullanır (bkz.
     // `addSellTransaction` çağrısı). Eskiden "Satış değeri" etiketiyle alış
@@ -944,14 +1026,26 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               const SizedBox(height: SandikSpace.md),
             ],
 
+            // ── Adet · Tutar ──────────────────────────────────────────
+            if (_tutarKipiVar) ...[
+              _miktarKipiSegmenti(context),
+              const SizedBox(height: SandikSpace.md),
+            ],
+
             // ── Miktar ────────────────────────────────────────────────
-            Text(_tutarla ? context.l10n.depositAmountLabel : context.l10n.quantity,
+            Text(
+                _tutarla
+                    ? context.l10n.depositAmountLabel
+                    : _tutarKipinde
+                        ? context.l10n.tutarAlani
+                        : context.l10n.quantity,
                 style: context.t.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: context.c.text58)),
             const SizedBox(height: 6),
             TextField(
-              controller: _qtyCtrl,
+              // Kip değişince denetleyici değişir, alan (ve odak) aynı kalır.
+              controller: _tutarKipinde ? _tutarCtrl : _qtyCtrl,
               autofocus: true,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -967,12 +1061,14 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 hintText: '0',
                 hintStyle:
                     context.t.headlineSmall?.copyWith(color: context.c.text36),
-                suffixText: _tutarla ? _currencySymbol : _unitLabel,
+                suffixText:
+                    _tutarla || _tutarKipinde ? _currencySymbol : _unitLabel,
                 suffixStyle:
                     context.t.titleMedium?.copyWith(color: context.c.text58),
                 // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
               ),
             ),
+            if (_tutarKipinde) _tutardanAdetSatiri(context),
             const SizedBox(height: 8),
             _quickChips(),
 
@@ -1049,8 +1145,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             ],
 
             // ── Toplam önizleme ──────────────────────────────────────
-            // Mevduatta toplam yazılan tutarın kendisidir; tekrar etmez.
-            if (qty > 0 && !_tutarla) ...[
+            // Mevduatta ve Tutar kipinde toplam yazılan tutarın kendisidir;
+            // tekrar etmez.
+            if (qty > 0 && !_tutarla && !_tutarKipinde) ...[
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -1068,13 +1165,20 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                             ? context.l10n.quickTotalCost
                             : context.l10n.saleValue,
                         style: context.t.titleSmall?.copyWith(color: context.c.text58)),
-                    const Spacer(),
-                    Text(
-                      '${numFmt.format(total)} $_currencySymbol',
-                      style: context.t.numSmall.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: accent,
+                    const SizedBox(width: SandikSpace.sm),
+                    // Esnek + sağa yaslı (2026-11-11): kabuk 360 pt'de
+                    // sınırlı; dört haneli tutarda (ya da büyük yazıda) sabit
+                    // genişlikli değer satırı taşıyordu, testler bu yüzden
+                    // 600 pt yüzey kullanıyordu. Sığmazsa alta kırılır.
+                    Expanded(
+                      child: Text(
+                        '${numFmt.format(total)} $_currencySymbol',
+                        textAlign: TextAlign.end,
+                        style: context.t.numSmall.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: accent,
+                        ),
                       ),
                     ),
                   ],
@@ -1182,6 +1286,81 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       ? fmtTRY(v)
       : widget.asset.miktarMetni(v, (d, o) => fmtNum(d, digits: o));
 
+  /// Tutar metni: ₺'de `fmtTRY` (küsuratlıysa kuruşla — çip ₺5.000 deyip
+  /// alana 4.999,99 yazmasın), dövizli varlıkta kendi sembolüyle.
+  String _tutarMetni(double v) {
+    final tam = (v - v.roundToDouble()).abs() < 0.005;
+    if (_currencySymbol == '₺') return fmtTRY(v, digits: tam ? 0 : 2);
+    return '${qtyFormatter(maxDigits: 2).format(v)} $_currencySymbol';
+  }
+
+  /// "Adet · Tutar" seçicisi — ortak `SandikSegment` (TASARIM_DILI "mod
+  /// değiştiren seçici"). Seçili kip kayan zemin + kalın yazıyla, yalnız
+  /// renkle değil. Fiyat yokken Tutar kapalı ve nedeni altında yazılı.
+  Widget _miktarKipiSegmenti(BuildContext context) {
+    final l = context.l10n;
+    final etiketler = [l.miktarModuAdet, l.miktarModuTutar(_currencySymbol)];
+    final fiyatVar = _birimFiyat != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SandikSegment(
+          key: const ValueKey('hizli_miktar_kipi'),
+          adet: 2,
+          secili: _tutarModu ? 1 : 0,
+          onSec: _miktarKipiniSec,
+          etkin: (i) => i == 0 || fiyatVar,
+          semantik: (i) => l.miktarModuSemantik(etiketler[i]),
+          oge: (context, i, _) => Text(etiketler[i],
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        if (!fiyatVar && !_tutarModu)
+          Padding(
+            padding: const EdgeInsets.only(top: SandikSpace.xs),
+            child: Text(
+              l.quickAmountNeedsPrice,
+              key: const ValueKey('hizli_tutar_fiyat_yok'),
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Tutar kipinde hesaplanan adet: "≈ 2.500 pay", "≈ 49,98 pay" (birim ve
+  /// ondalık Son alımın çipiyle aynı: `miktarMetni`). Fiyat yoksa adet
+  /// yazılmaz, fiyat gerektiği söylenir. Ekran okuyucu "≈" yerine
+  /// "Hesaplanan miktar" cümlesini okur (formla aynı anahtar).
+  Widget _tutardanAdetSatiri(BuildContext context) {
+    final l = context.l10n;
+    final tutar = _parse(_tutarCtrl.text);
+    final adet = _etkinAdet;
+    final String? miktar = adet == null
+        ? null
+        : widget.asset
+            .miktarMetni(adet, (d, o) => fmtNum(d, digits: o));
+    if (miktar == null && (tutar == null || tutar <= 0)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: miktar == null
+          ? Text(l.tutardanAdetFiyatYok,
+              key: const ValueKey('hizli_tutardan_adet'),
+              style: context.t.bodySmall?.copyWith(color: context.c.text58))
+          : Semantics(
+              label: l.tutardanAdetSatiri(miktar),
+              excludeSemantics: true,
+              child: Text(
+                l.quickAmountQtyApprox(miktar),
+                key: const ValueKey('hizli_tutardan_adet'),
+                style: context.t.titleSmall?.copyWith(
+                    color: context.c.text90, fontWeight: FontWeight.w600),
+              ),
+            ),
+    );
+  }
+
   Widget _quickChips() {
     // Öneriler `hizliMiktarOnerileri`'nden (saf, testli). Alanın metni ve
     // çipin yazısı AYNI Türkçe biçimde (`_fmt`): eski '0.1' ham yazımı
@@ -1189,7 +1368,20 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     // Mevduatta alan tutar olduğu için çipler de bakiyeyle (₺) kurulur.
     final eldeki = _tutarla ? _bakiye : widget.asset.quantity;
     final son = _sonAlim;
-    final chips = <({String deger, String etiket, String? ses})>[
+    final sonTutar = _sonAlimTutari;
+    // Tutar kipinde adet önerileri (1, 10, 100) tutar olarak anlamsız; yalnız
+    // son alımın tutarı önerilir. Son alım yoksa çip satırı boş kalır.
+    final chips = _tutarKipinde
+        ? <({String deger, String etiket, String? ses})>[
+            if (sonTutar != null)
+              (
+                deger: _fmt(sonTutar),
+                etiket: context.l10n.quickLastBuyChip(_tutarMetni(sonTutar)),
+                ses: context.l10n
+                    .quickLastBuyChipSemantics(_tutarMetni(sonTutar)),
+              ),
+          ]
+        : <({String deger, String etiket, String? ses})>[
       // "Son alımın" BAŞTA (Ar-Ge 8 Kas #1); çip sayısı aynı kalır, bir
       // standart öneri düşer (bkz. `hizliMiktarOnerileri`). Rozet yok.
       if (son != null)
@@ -1231,7 +1423,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 haptic: SandikHaptic.none,
                 semanticLabel: chip.ses,
                 onTap: () => setState(() {
-                  _qtyCtrl.text = chip.deger;
+                  (_tutarKipinde ? _tutarCtrl : _qtyCtrl).text = chip.deger;
                   _error = null;
                 }),
                 child: ConstrainedBox(

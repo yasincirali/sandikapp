@@ -866,6 +866,18 @@ abstract class AppLocalizations {
   /// **'Son alımın, {miktar}'**
   String quickLastBuyChipSemantics(String miktar);
 
+  /// Hızlı Al Tutar kipi: tutardan hesaplanan miktar, birimiyle (≈ 2.500 pay).
+  ///
+  /// In tr, this message translates to:
+  /// **'≈ {miktar}'**
+  String quickAmountQtyApprox(String miktar);
+
+  /// Hızlı Al: fiyat bilinmezken Tutar seçeneğinin neden kapalı olduğu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutarla girmek için birim fiyat gerekli'**
+  String get quickAmountNeedsPrice;
+
   /// No description provided for @quickHolding.
   ///
   /// In tr, this message translates to:
