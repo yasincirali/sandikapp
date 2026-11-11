@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/sandik_yenile.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -354,7 +355,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                         ),
                 ),
                 Expanded(
-                  child: RefreshIndicator.adaptive(
+                  child: SandikYenile(
                     color: c.amberText,
                     onRefresh: _yenile,
                     child: ListView.separated(

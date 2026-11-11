@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/sandik_yenile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
@@ -915,7 +916,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
           Expanded(
             child: toplam == 0
                 ? _empty()
-                : RefreshIndicator.adaptive(
+                : SandikYenile(
                     color: context.c.amberText,
                     onRefresh: () => ref
                         .read(portfolioProvider.notifier)

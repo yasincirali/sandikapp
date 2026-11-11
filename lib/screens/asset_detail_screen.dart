@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../widgets/sandik_yenile.dart';
 import 'package:flutter/foundation.dart' show SynchronousFuture, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -989,7 +990,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
             SandikCam.acik ? MediaQuery.paddingOf(govdeBaglami).bottom : 0.0;
         return SafeArea(
         bottom: !SandikCam.acik,
-        child: RefreshIndicator.adaptive(
+        child: SandikYenile(
       color: context.c.amberText,
       onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(force: true),
       // Boy değişince (Dynamic Type, iskelet → içerik, döndürme) kaydırma

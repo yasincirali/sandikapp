@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/sandik_yenile.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -110,7 +111,7 @@ class _PartnershipRequestsScreenState
         title: context.l10n.partnershipApprovalTitle,
         transparent: true,
       ),
-      body: RefreshIndicator.adaptive(
+      body: SandikYenile(
         color: context.c.amberText,
         onRefresh: _load,
         child: ListView(

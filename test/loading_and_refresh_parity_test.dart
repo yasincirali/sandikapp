@@ -79,7 +79,9 @@ void main() {
     ];
     for (final p in dataScreens) {
       final src = ekranKaynagiSync(p);
-      expect(src.contains('RefreshIndicator.adaptive('), isTrue,
+      // Tek sarmalayıcı (2026-11-11): `SandikYenile` içte
+      // `RefreshIndicator.adaptive` + eşikte tık.
+      expect(src.contains('SandikYenile('), isTrue,
           reason: '$p: aşağı çekince yenileme yok');
     }
   });

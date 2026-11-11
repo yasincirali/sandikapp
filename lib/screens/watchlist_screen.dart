@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../widgets/sandik_yenile.dart';
 import '../demo/demo_modu.dart';
 import '../widgets/degisim_parlamasi.dart';
 import '../widgets/varlik_rozeti.dart';
@@ -13,8 +14,7 @@ import 'package:flutter/material.dart'
         Dismissible,
         DismissDirection,
         Material,
-        MaterialType,
-        RefreshIndicator;
+        MaterialType;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -248,7 +248,7 @@ class _List extends ConsumerWidget {
       );
     }
 
-    return RefreshIndicator.adaptive(
+    return SandikYenile(
       color: context.c.amberText,
       onRefresh: () async {
         ref.invalidate(watchlistChartProvider);

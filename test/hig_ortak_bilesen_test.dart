@@ -32,6 +32,7 @@ import 'package:portfoy_takip/widgets/sandik_ikon_gecisi.dart';
 import 'package:portfoy_takip/widgets/sandik_paylas_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/sandik_siralama_dugmesi.dart';
+import 'package:portfoy_takip/widgets/sandik_yenile.dart';
 import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
 import 'package:portfoy_takip/widgets/sozlesme_formu_ortak.dart';
 import 'package:portfoy_takip/widgets/tarih_cipleri.dart';
@@ -410,6 +411,20 @@ void main() {
                 ),
                 const SizedBox(height: SandikSpace.md),
                 SandikSectionHeader(title: 'Bölüm'),
+                // Tek çekip yenile sarmalayıcısı (2026-11-11): içindeki
+                // metin ×2'de taşmaz, kontrast temadan; dokunma hedefi yok.
+                SizedBox(
+                  height: 64,
+                  child: SandikYenile(
+                    onRefresh: () async {},
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        Text('Aşağı çekince liste yenilenir'),
+                      ],
+                    ),
+                  ),
+                ),
                 SizedBox(
                   height: 260,
                   child: SandikErrorView(
@@ -528,6 +543,49 @@ void main() {
   testWidgets('yazı ×2 (Dynamic Type) ortak bileşenleri taşırmıyor', (t) async {
     await t.pumpWidget(vitrin(parlaklik: Brightness.dark, yaziOlcegi: 2));
     await t.pump();
+    expect(t.takeException(), isNull);
+  });
+
+  // Vitrinin sonunda: tembel liste ilk karede oraya kadar çizmez, kaydırılır.
+  // ×2 yazı ayrı, yalın düzende: vitrinin dibindeki `SandikErrorView`
+  // (260 pt kutu) ×2'de zaten taşıyor ve bu bileşenin konusu değil.
+  testWidgets('çekip yenile (SandikYenile) vitrinde: etiket, kontrast',
+      (t) async {
+    final handle = t.ensureSemantics();
+    await t.pumpWidget(vitrin(parlaklik: Brightness.dark));
+    await t.pump();
+    await t.scrollUntilVisible(find.byType(SandikYenile), 300,
+        scrollable: find.byType(Scrollable).first);
+    await t.pumpAndSettle();
+    expect(find.byType(SandikYenile), findsOneWidget);
+    expect(t.takeException(), isNull);
+    await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(t, meetsGuideline(textContrastGuideline));
+    handle.dispose();
+  });
+
+  testWidgets('çekip yenile (SandikYenile) ×2 yazıda taşmıyor', (t) async {
+    final palet = SandikPalette.dark;
+    await t.pumpWidget(MaterialApp(
+      theme: SandikApp.buildTheme(palet, Brightness.dark),
+      home: MediaQuery(
+        data: const MediaQueryData(
+          size: Size(390, 844),
+          textScaler: TextScaler.linear(2),
+        ),
+        child: Scaffold(
+          body: SandikYenile(
+            onRefresh: () async {},
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [Text('Aşağı çekince liste yenilenir')],
+            ),
+          ),
+        ),
+      ),
+    ));
+    await t.drag(find.byType(ListView), const Offset(0, 300));
+    await t.pumpAndSettle();
     expect(t.takeException(), isNull);
   });
 

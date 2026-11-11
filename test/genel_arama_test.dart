@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:portfoy_takip/widgets/sandik_yenile.dart';
 import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
@@ -130,7 +131,7 @@ void main() {
       // 44pt dokunma yüksekliği.
       expect(t.getRect(ara).height, 44);
       // Yenileme aşağı çekmede kalır.
-      expect(find.byType(RefreshIndicator), findsOneWidget);
+      expect(find.byType(SandikYenile), findsOneWidget);
 
       await t.tap(ara);
       for (var i = 0; i < 10; i++) {

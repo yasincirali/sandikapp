@@ -75,6 +75,7 @@ Süre ve eğri **birlikte** seçilir:
 |---|---|
 | Sayfa geçişi | `pushGuarded(context, adaptiveRoute(...))` |
 | Alt sayfa | `showSandikSheet` |
+| Aşağı çekip yenile | `SandikYenile` (içte `RefreshIndicator.adaptive`; yenileme eşiği geçilince çekiş başına bir `SandikHaptic.selection`). Ekran `RefreshIndicator` yazmaz (kilit `sandik_yenile_test`) |
 | Onay / bilgi / hata diyaloğu | `showSandikConfirm`, `showSandikDialog`, `showAppError/Success/Info` |
 | Özel içerikli diyalog | `showSandikGecisli` (aynı geçiş) + `SandikDiyalogKabugu` (onay diyaloğuyla aynı kart, klavye payı); ham `AlertDialog`/`Dialog` yazılmaz |
 | Aç/kapa bölüm | `SandikAcilir` + `SandikAcilirOk` |

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/sandik_yenile.dart';
 import '../widgets/hedef_sheet.dart' show HedefProfilSatiri;
 import '../widgets/kilometre_tasi_seridi.dart';
 import '../widgets/sandik_cam.dart';
@@ -455,7 +456,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
                 // Body
-            govde: SandikKaydirmaBasligi.payIle((ustPay) => RefreshIndicator.adaptive(
+            govde: SandikKaydirmaBasligi.payIle((ustPay) => SandikYenile(
       color: context.c.amberText,
       edgeOffset: ustPay,
       onRefresh: () async {

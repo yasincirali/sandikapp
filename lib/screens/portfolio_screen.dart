@@ -1,4 +1,5 @@
 import 'dart:async' show FutureOr, unawaited;
+import '../widgets/sandik_yenile.dart';
 import '../widgets/degisim_parlamasi.dart';
 import '../widgets/bekleyen_fon_alimi_satiri.dart';
 import '../widgets/cevrimdisi_seridi.dart';
@@ -14,7 +15,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart'
     show
-        RefreshIndicator,
         Material,
         MaterialType;
 import 'package:flutter/material.dart' show Icons;
@@ -623,7 +623,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         error: e,
                         onRetry: () => ref.invalidate(portfolioProvider)),
                   ),
-                  data: (pState) => RefreshIndicator.adaptive(
+                  data: (pState) => SandikYenile(
                     color: context.c.amberText,
                     edgeOffset: ustPay,
                     // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
