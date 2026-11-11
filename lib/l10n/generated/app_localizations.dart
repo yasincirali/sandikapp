@@ -17520,6 +17520,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Dönemin en iyi ve en zor gününü Premium\'la gör'**
   String get bestDayLocked;
+
+  /// No description provided for @tarihCipiBugun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün'**
+  String get tarihCipiBugun;
+
+  /// No description provided for @tarihCipiDun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dün'**
+  String get tarihCipiDun;
+
+  /// No description provided for @tarihCipiBaskaTarih.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka tarih'**
+  String get tarihCipiBaskaTarih;
+
+  /// No description provided for @tarihCipiSonIsGunuSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun}, son işlem günü'**
+  String tarihCipiSonIsGunuSemantik(String gun);
+
+  /// No description provided for @tarihCipiSeciliTarihSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem tarihi {tarih}, değiştir'**
+  String tarihCipiSeciliTarihSemantik(String tarih);
 }
 
 class _AppLocalizationsDelegate

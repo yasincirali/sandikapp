@@ -33,6 +33,7 @@ import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/sandik_siralama_dugmesi.dart';
 import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
 import 'package:portfoy_takip/widgets/sozlesme_formu_ortak.dart';
+import 'package:portfoy_takip/widgets/tarih_cipleri.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 
 /// BES fon satırı (2026-10-29): Portföy sözleşme paneli + sözleşme kartı.
@@ -216,6 +217,15 @@ void main() {
                       onTap: () {},
                       ikon: Icons.show_chart_rounded),
                 ]),
+                const SizedBox(height: SandikSpace.md),
+                // Tarih hızlı seçim satırı (2026-11-11): Bugün · Dün · son
+                // iş günü · Başka tarih — her çip `SandikFiltreCipi`.
+                TarihCipleri(
+                  bugun: DateTime(2026, 11, 9),
+                  secili: DateTime(2026, 10, 1),
+                  onSecildi: (_) {},
+                  takvim: () async => null,
+                ),
                 const SizedBox(height: SandikSpace.md),
                 SandikTappable(
                   onTap: () {},

@@ -6456,5 +6456,12 @@
   "leastUpDayRow": "En az yükselen gün · {tarih}",
   "@leastUpDayRow": {"placeholders": {"tarih": {"type": "String"}}},
   "bestDayFootnote": "Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.",
-  "bestDayLocked": "Dönemin en iyi ve en zor gününü Premium'la gör"
+  "bestDayLocked": "Dönemin en iyi ve en zor gününü Premium'la gör",
+  "tarihCipiBugun": "Bugün",
+  "tarihCipiDun": "Dün",
+  "tarihCipiBaskaTarih": "Başka tarih",
+  "tarihCipiSonIsGunuSemantik": "{gun}, son işlem günü",
+  "@tarihCipiSonIsGunuSemantik": {"placeholders": {"gun": {"type": "String"}}},
+  "tarihCipiSeciliTarihSemantik": "İşlem tarihi {tarih}, değiştir",
+  "@tarihCipiSeciliTarihSemantik": {"placeholders": {"tarih": {"type": "String"}}}
 }

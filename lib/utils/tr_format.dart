@@ -455,9 +455,14 @@ String fmtTarihAraligi(DateTime bas, DateTime bit,
 /// Tek takvim günü, rapor dilinde: "6 Kasım 2026". [saat] verilirse
 /// "6 Kasım 2026 18:00" — "fiyatlar … itibarıyla" gibi veri anı satırları
 /// için; saat bilinmiyorsa ([saatBiliniyor]) yazılmaz, uydurma "00:00" yok.
-String fmtTarih(DateTime t, {String dil = 'tr_TR', bool saat = false}) {
+///
+/// [kisa] ay adını kısaltır ("6 Kas 2026"): dar çip ve satır (tarih hızlı
+/// seçim çipleri, 2026-11-11 — eski `DateFormat('d MMM yyyy','tr_TR')`
+/// kalıbının dil bilen karşılığı).
+String fmtTarih(DateTime t,
+    {String dil = 'tr_TR', bool saat = false, bool kisa = false}) {
   final y = t.toLocal();
-  final gun = '${y.day} ${_ayAdi(y.month, dil, false)} ${y.year}';
+  final gun = '${y.day} ${_ayAdi(y.month, dil, kisa)} ${y.year}';
   if (!saat || !saatBiliniyor(y)) return gun;
   String iki(int v) => v.toString().padLeft(2, '0');
   return '$gun ${iki(y.hour)}:${iki(y.minute)}';
@@ -536,6 +541,21 @@ const _ayEn = [
 const _ayEnKisa = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/// Haftanın günü, takvim dilinde: "Cuma" / "Friday". Ay adlarıyla aynı
+/// gerekçe: sabit tablo, `intl` yerel verisi yüklenmeden de çalışır
+/// (tarih hızlı seçim çipi "son iş günü"nü gün adıyla yazar, 2026-11-11).
+String gunAdi(DateTime t, {String dil = 'tr_TR'}) {
+  final en = dil.startsWith('en');
+  return (en ? _gunEn : _gunTr)[t.weekday - 1];
+}
+
+const _gunTr = [
+  'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar',
+];
+const _gunEn = [
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
 ];
 
 String _ayAdi(int ay, String dil, bool kisa) {

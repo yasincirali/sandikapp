@@ -10694,4 +10694,23 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get bestDayLocked => 'Dönemin en iyi ve en zor gününü Premium\'la gör';
+
+  @override
+  String get tarihCipiBugun => 'Bugün';
+
+  @override
+  String get tarihCipiDun => 'Dün';
+
+  @override
+  String get tarihCipiBaskaTarih => 'Başka tarih';
+
+  @override
+  String tarihCipiSonIsGunuSemantik(String gun) {
+    return '$gun, son işlem günü';
+  }
+
+  @override
+  String tarihCipiSeciliTarihSemantik(String tarih) {
+    return 'İşlem tarihi $tarih, değiştir';
+  }
 }

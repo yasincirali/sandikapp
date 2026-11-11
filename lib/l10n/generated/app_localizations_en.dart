@@ -10839,4 +10839,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bestDayLocked =>
       'See the period\'s best and toughest day with Premium';
+
+  @override
+  String get tarihCipiBugun => 'Today';
+
+  @override
+  String get tarihCipiDun => 'Yesterday';
+
+  @override
+  String get tarihCipiBaskaTarih => 'Other date';
+
+  @override
+  String tarihCipiSonIsGunuSemantik(String gun) {
+    return '$gun, last trading day';
+  }
+
+  @override
+  String tarihCipiSeciliTarihSemantik(String tarih) {
+    return 'Transaction date $tarih, change';
+  }
 }

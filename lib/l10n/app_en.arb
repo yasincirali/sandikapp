@@ -5688,5 +5688,12 @@
   "leastUpDayRow": "Smallest gain · {tarih}",
   "@leastUpDayRow": {"placeholders": {"tarih": {"type": "String"}}},
   "bestDayFootnote": "Market moves only; money you added or withdrew is excluded.",
-  "bestDayLocked": "See the period's best and toughest day with Premium"
+  "bestDayLocked": "See the period's best and toughest day with Premium",
+  "tarihCipiBugun": "Today",
+  "tarihCipiDun": "Yesterday",
+  "tarihCipiBaskaTarih": "Other date",
+  "tarihCipiSonIsGunuSemantik": "{gun}, last trading day",
+  "@tarihCipiSonIsGunuSemantik": {"placeholders": {"gun": {"type": "String"}}},
+  "tarihCipiSeciliTarihSemantik": "Transaction date {tarih}, change",
+  "@tarihCipiSeciliTarihSemantik": {"placeholders": {"tarih": {"type": "String"}}}
 }
