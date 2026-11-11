@@ -174,4 +174,44 @@ void main() {
     expect(await _kayitliSira(), ['3', '1', '2']);
     semantics.dispose();
   });
+
+  // Sıra kayması (FLIP, 2026-11-11): mod değişince satırlar eski yerinden
+  // yenisine kayar (sürüklenebilir liste → düz liste, sliver değişse de);
+  // "Benim sıram"da kullanıcının taşıması kaymaz (sürükleme kendi oturur).
+  testWidgets('mod değişince satırlar kayarak yer değiştirir',
+      (tester) async {
+    await _pump(tester);
+    await tester.pumpAndSettle(); // grafik kartı yerleşsin
+    double y(String ad) => tester.getTopLeft(find.text(ad)).dy;
+    final ilk = y('Akbank');
+    await tester.tap(find.text('Benim sıram'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('En çok düşen'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(SandikMotion.surface ~/ 2);
+    final ara = y('Akbank');
+    await tester.pumpAndSettle();
+    final son = y('Akbank');
+    expect(son, greaterThan(ilk + 1));
+    expect(ara, greaterThan(ilk + 1));
+    expect(ara, lessThan(son - 1));
+    expect(_sira(tester), ['Şişe Cam', 'Türk Hava Yolları', 'Akbank']);
+  });
+
+  testWidgets('"Benim sıram"da taşıma kaymaz, hemen yerinde',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    await _pump(tester);
+    await tester.pumpAndSettle(); // grafik kartı yerleşsin
+    tester.semantics.customAction(find.semantics.byLabel(RegExp('^Akbank, ')),
+        const CustomSemanticsAction(label: 'Aşağı taşı'));
+    await tester.pump();
+    await tester.pump();
+    expect(_sira(tester), ['Türk Hava Yolları', 'Akbank', 'Şişe Cam']);
+    final y = tester.getTopLeft(find.text('Akbank')).dy;
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('Akbank')).dy, y);
+    semantics.dispose();
+  });
 }

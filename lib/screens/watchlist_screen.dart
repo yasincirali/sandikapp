@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import '../widgets/sandik_yenile.dart';
+import '../widgets/sira_kaydirma.dart';
 import '../demo/demo_modu.dart';
 import '../widgets/degisim_parlamasi.dart';
 import '../widgets/varlik_rozeti.dart';
@@ -196,12 +197,23 @@ class _PeriodToggle extends ConsumerWidget {
   }
 }
 
-class _List extends ConsumerWidget {
+class _List extends ConsumerStatefulWidget {
   final List<WatchlistItem> items;
   const _List({required this.items});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_List> createState() => _ListState();
+}
+
+class _ListState extends ConsumerState<_List> {
+  /// Sıra değişince satırlar yerlerine kayar (FLIP, 2026-11-11; bkz.
+  /// [SiraKaydirmaDenetcisi]).
+  final _siraKaydirma = SiraKaydirmaDenetcisi();
+  TakipSiralama? _oncekiMod;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.items;
     final periodLabel = ref.watch(watchlistEklenmedenBeriProvider)
         ? context.l10n.watchlistPeriodSinceAdded
         : watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
@@ -212,6 +224,15 @@ class _List extends ConsumerWidget {
         ref.watch(siraliTakipListesiProvider).valueOrNull ?? items;
     final benim = mod == TakipSiralama.benim;
     final h = SandikSpace.screenH(context);
+    // "Benim sıram"da sıra yalnız kullanıcının elinden değişir (sürükle
+    // bırak, erişilebilirlik "yukarı/aşağı taşı"): sürüklenen satırı
+    // `SliverReorderableList` zaten yerine oturtur, üstüne kayma binmesin.
+    // Mod değişimi (benim ↔ fiyat sırası) ve fiyat turundaki yeniden
+    // diziliş kayar; sliver türü değişse de konumlar anahtarla eşleşir.
+    final oncekiMod = _oncekiMod;
+    _oncekiMod = mod;
+    _siraKaydirma.sira([for (final w in gorunen) w.id],
+        etkin: !(benim && oncekiMod == TakipSiralama.benim));
 
     // Satır çizgisinin serileri (Ar-Ge 11 Kas 19:04 #2): yalnız ekrandaki
     // sırayla İLK 5 sembol önden istenir (`prefetch` varsayılan sınırı);
@@ -238,8 +259,10 @@ class _List extends ConsumerWidget {
             ? (hedef) => takipSirasiniTasi(ref, gorunen, i, hedef)
             : null,
       );
-      return KeyedSubtree(
+      return SiraKaydirmaSatiri(
         key: ValueKey('takip-sira-${w.id}'),
+        denetci: _siraKaydirma,
+        anahtar: w.id,
         // Uzun basıp sürükle: satırın her yeri (tutamaç ayrıca anında).
         child: benim
             ? ReorderableDelayedDragStartListener(index: i, child: govde)
@@ -254,6 +277,8 @@ class _List extends ConsumerWidget {
         ref.invalidate(watchlistProvider);
         await ref.read(watchlistProvider.future);
       },
+      // Parmak listedeyken (kaydırma, sürükleme) sıra kayması başlamaz.
+      child: _siraKaydirma.dinle(
       child: CustomScrollView(
         // Segment geçişinde konum korunur (bkz. Portföy `PageStorageKey`).
         key: const PageStorageKey('portfoy-takip-listesi'),
@@ -317,7 +342,7 @@ class _List extends ConsumerWidget {
           ),
           ]),
         ],
-      ),
+      )),
     );
   }
 }

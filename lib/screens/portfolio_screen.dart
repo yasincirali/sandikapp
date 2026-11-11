@@ -76,6 +76,7 @@ import '../services/daily_summary.dart' show IntradaySeriesCache;
 import '../services/fiyat_kaynagi.dart';
 import '../models/portfoy_siralama.dart';
 import '../widgets/sandik_siralama_dugmesi.dart';
+import '../widgets/sira_kaydirma.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
 import '../widgets/varlik_guncelle.dart';
@@ -105,6 +106,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// dokununca başa döner (bkz. [SekmeBasaDon], animasyon denetimi
   /// 2026-10-01).
   final _kaydirma = ScrollController();
+
+  /// Sıra değişince kartlar yerlerine kayar (FLIP, 2026-11-11; bkz.
+  /// [SiraKaydirmaDenetcisi]). Liste sökülüp kurulsa da konumlar anahtarla
+  /// eşleşsin diye State'te.
+  final _siraKaydirma = SiraKaydirmaDenetcisi();
   late final VoidCallback _basaDonBirak;
 
   // ── Yeni eklenen varlık (animasyon denetimi 2026-10-01, özgün dokunuş) ──
@@ -634,6 +640,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     // Kaydırma paneli grubu listenin TAMAMINI sarar: kartlar
                     // artık doğrudan dış listenin çocukları (bkz. [_AssetList]).
                     child: SlidableAutoCloseBehavior(
+                    // Parmak listedeyken (kaydırma, Slidable çekme) sıra
+                    // kayması başlamaz (bkz. [SiraKaydirmaDenetcisi.dinle]).
+                    child: _siraKaydirma.dinle(
                     child: SandikIcerikSutunu.olc(builder: (context, kenar) => ListView(
                       // Varlıklarım ↔ Takip Listesi geçişinde liste sökülüp
                       // yeniden kuruluyor; anahtar konumu PageStorage'da
@@ -925,6 +934,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       vurguNo: _vurguNo,
                                       vurguAnahtari: _vurguAnahtari,
                                       positions: filteredPositions,
+                                      siraKaydirma: _siraKaydirma,
                                       pState: pState,
                                       baz: ref.watch(gosterimBazParaProvider),
                                       currentUserId: currentUserId,
@@ -983,7 +993,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
                       ],
-                    )),
+                    ))),
                     ),
                   ),
                 ),
@@ -2247,6 +2257,10 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 /// Kaydırma paneli grubu (`SlidableAutoCloseBehavior`) dış listeyi sarar.
 class _AssetList {
   final List<Position> positions;
+
+  /// Sıra değişiminde kartların kayması; kartlar [SiraKaydirmaSatiri]
+  /// ile sarılır, alt ağaç (`_ImzaliSatir`) yeniden kurulmaz.
+  final SiraKaydirmaDenetcisi siraKaydirma;
   final PortfolioState pState;
   final BazPara baz;
   final String? currentUserId;
@@ -2288,6 +2302,7 @@ class _AssetList {
     required this.vurguNo,
     required this.vurguAnahtari,
     required this.positions,
+    required this.siraKaydirma,
     required this.pState,
     required this.baz,
     required this.currentUserId,
@@ -2312,12 +2327,23 @@ class _AssetList {
     return p.representative.userId == currentUserId ? p : null;
   }
 
-  List<Widget> kartlar() => [
-        // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
-        // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
-        for (final position in positions)
-          _kart(position, _kendiParcasi(position)),
-      ];
+  List<Widget> kartlar() {
+    // Liste kurulurken (yerleşimden ÖNCE) sıra bildirilir: aynı kartlar
+    // yeni dizilişteyse eski konumlar ölçülür, kartlar oradan kayar.
+    siraKaydirma.sira([for (final p in positions) p.key]);
+    return [
+      // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
+      // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
+      // Anahtar en dıştaki sarmalayıcıda: sliver elemanı ona göre eşler.
+      for (final position in positions)
+        SiraKaydirmaSatiri(
+          key: ValueKey(position.key),
+          denetci: siraKaydirma,
+          anahtar: position.key,
+          child: _kart(position, _kendiParcasi(position)),
+        ),
+    ];
+  }
 
   Widget _kart(Position position, Position? kendi) {
     if (position is BesSozlesmePozisyonu) {
@@ -2326,7 +2352,6 @@ class _AssetList {
       final vurgu = position.key == vurgulanan ||
           position.fonlar.any((f) => f.key == vurgulanan);
       return _YeniVarlikParlamasi(
-        key: ValueKey(position.key),
         aktif: vurgu,
         tetik: vurguNo,
         child: _BesSozlesmeSatiri(
@@ -2377,7 +2402,6 @@ class _AssetList {
       position.key == vurgulanan, vurguNo,
     ]);
     return _ImzaliSatir(
-      key: ValueKey(position.key),
       imza: imza,
       kur: () => _YeniVarlikParlamasi(
         aktif: position.key == vurgulanan,
@@ -2434,7 +2458,7 @@ class _SatirImzasi {
 /// gibi miras alınan değişiklikler alt ağaca bağımlılık yoluyla yine ulaşır;
 /// [kur] bu yüzden `context` okumamalı (bkz. `_AssetList._kart`).
 class _ImzaliSatir extends StatefulWidget {
-  const _ImzaliSatir({super.key, required this.imza, required this.kur});
+  const _ImzaliSatir({required this.imza, required this.kur});
   final Object imza;
   final Widget Function() kur;
 
@@ -2471,7 +2495,6 @@ class _ImzaliSatirState extends State<_ImzaliSatir> {
 /// kimse görmeden biterdi.
 class _YeniVarlikParlamasi extends StatefulWidget {
   const _YeniVarlikParlamasi({
-    super.key,
     required this.aktif,
     this.tetik = 0,
     required this.child,
