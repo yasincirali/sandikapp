@@ -62,6 +62,7 @@ import '../providers/sembol_alarmlari_provider.dart';
 import '../models/price_alert.dart';
 import '../models/grafik_alarm_cizgisi.dart';
 import '../widgets/alarm_kur_sheet.dart';
+import '../widgets/alarm_caldi_bandi.dart';
 import '../widgets/alarm_seridi.dart';
 import '../models/varlik_kimligi.dart';
 import '../models/yillik_aralik.dart';
@@ -183,6 +184,12 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
   /// bayrak `varlik_hero_gecisi`). Satır verir; ekran kendisi uydurmaz.
   final Object? heroEtiketi;
 
+  /// Sayfayı açan fiyat alarmının kimliği (push / çan `alert_id`,
+  /// 2026-11-11). Verilirse sayfanın başında "Alarmın çaldı" bandı durur
+  /// ([AlarmCaldiBandi]); alarm bulunamazsa bant çıkmaz. `null` → sayfa
+  /// birebir eskisi gibi.
+  final String? gelenAlarmId;
+
   const AssetDetailScreen({
     super.key,
     required this.asset,
@@ -191,6 +198,7 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
     this.initialScrollOffset = 0,
     this.initialPeriodDays,
     this.heroEtiketi,
+    this.gelenAlarmId,
   });
 
   @override
@@ -956,12 +964,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 ref,
                 // Maliyet çipleri yalnız KENDİ açık pozisyonunda: ortağın
                 // maliyeti bu kullanıcının alarm sorusu değildir.
-                sabit: AlarmAdayi(
-                    _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice,
-                    maliyet: isOwnAsset && _canli.acik
-                        ? alarmMaliyeti(_canli.lots)
-                        : null,
-                    yil52: _alarmYil52),
+                sabit: _alarmAdayi(kendi: isOwnAsset),
               ),
             ),
           // "Varlığı güncelle" (`varlik_guncelle.dart`): kaydırmadaki
@@ -1013,6 +1016,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     alignment: Alignment.centerLeft,
                     child: _kopyalanir(pnl, _baslik())),
                 const SizedBox(height: SandikSpace.md),
+                // Alarmdan gelişte "Alarmın çaldı" bandı — grafik ve
+                // özetten önce, açılış kapısının DIŞINDA: sayfanın neden
+                // açıldığı içerik yüklenmeden söylenir. Alt boşluğunu
+                // kendi taşır; yoksa yer kaplamaz.
+                if (_alarmCaldiBandi(isOwnAsset) case final bant?) bant,
                 // Başlık yerelden gelir, hemen yazılır; geri kalan her şey
                 // açılış kapısı açılınca BİRLİKTE (bkz. `_acildi`).
                 // İskelet → ekran çapraz solar, boy farkı akar (2026-10-14): kapı açılınca içerik tek karede

@@ -263,6 +263,12 @@ bool alarmHedefiGuncelFiyatta(double hedef, double guncelFiyat) =>
 /// varlık ekranındaki zilden de kurulur. [sabit] verilirse sheet sembol
 /// seçtirmez (varlık ekranı: "bu varlık için"); [adaylar] verilirse liste
 /// sunar (alarmlar ekranı). Başarıda kurulan alarm döner, iptalde `null`.
+///
+/// [bilinmeyenFiyattaYon] (2026-11-11, alarmdan açılan varlık sayfasının
+/// "Yeniden kur"u): yön güncel fiyattan türetilir; fiyat bilinmiyorsa (0)
+/// türetilen yön her zaman "üstüne çıkınca" olurdu ve "altına inince"
+/// alarmı sessizce ters kurulurdu. Verilirse o durumda bu yön yazılır
+/// ([alarmDuzenleAkisi] ile aynı kural). Verilmezse eski davranış birebir.
 Future<PriceAlert?> alarmKurAkisi(
   BuildContext context,
   WidgetRef ref, {
@@ -271,7 +277,12 @@ Future<PriceAlert?> alarmKurAkisi(
   double? baslangicHedef,
   bool? odakla,
   bool cizgiAdi = false,
+  String? bilinmeyenFiyattaYon,
 }) async {
+  String yonu(AlarmKurulumu k) =>
+      k.aday.guncelFiyat > 0 || bilinmeyenFiyattaYon == null
+          ? k.yon
+          : bilinmeyenFiyattaYon;
   if (DemoModu.yazmaKapisi('alarm')) return null; // Demo: alarm hesap ister (F1).
   final liste = sabit != null ? [sabit] : adaylar;
   if (liste.isEmpty) {
@@ -333,7 +344,7 @@ Future<PriceAlert?> alarmKurAkisi(
           // Yatay çizgiden: "varlık · ad" (ad yoksa yalnız varlık, eskisi).
           label: cizgiAdi ? cizgiAlarmEtiketi(k.aday.ad, k.isim) : k.aday.ad,
           targetPrice: k.hedef,
-          direction: k.yon,
+          direction: yonu(k),
           enabled: true,
           createdAt: DateTime.now(),
           tekrar: k.tekrar,
@@ -397,7 +408,7 @@ Future<PriceAlert?> alarmKurAkisi(
     final ad = isim.isEmpty ? sonuc.aday.ad : '«$isim»';
     sandikSnack(
       context,
-      sonuc.yon == 'above'
+      yonu(sonuc) == 'above'
           ? context.l10n.alertSetAbove(
               ad, alarmFiyatMetni(sonuc.hedef, sonuc.aday.sembol))
           : context.l10n.alertSetBelow(

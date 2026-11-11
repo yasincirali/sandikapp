@@ -17,6 +17,23 @@ part of '../asset_detail_screen.dart';
 /// - Etiket çizim alanına girmez (2026-10-12): kartın üst boşluğunda, dönem
 ///   başı açıklamasıyla aynı satırın sağında (`GrafikStili.donemBasiUstte`).
 extension _AlarmCizgileri on _AssetDetailScreenState {
+  /// Bu varlığın alarm adayı — zil ve "Alarmın çaldı" bandının "Yeniden
+  /// kur"u AYNI adayla açar (aynı sayfa, aynı çipler). Maliyet çipleri
+  /// yalnız KENDİ açık pozisyonunda: ortağın maliyeti bu kullanıcının
+  /// alarm sorusu değildir. Yalnız [_alarmSembolu] doluyken çağrılır.
+  AlarmAdayi _alarmAdayi({required bool kendi}) => AlarmAdayi(
+      _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice,
+      maliyet: kendi && _canli.acik ? alarmMaliyeti(_canli.lots) : null,
+      yil52: _alarmYil52);
+
+  /// Alarmdan açılışta bant ([AssetDetailScreen.gelenAlarmId]); alarm
+  /// kurulamayan varlıkta (mevduat, BES) ya da kimliksiz açılışta `null`.
+  Widget? _alarmCaldiBandi(bool kendi) {
+    final id = widget.gelenAlarmId;
+    if (id == null || id.isEmpty || _alarmSembolu == null) return null;
+    return AlarmCaldiBandi(alarmId: id, aday: _alarmAdayi(kendi: kendi));
+  }
+
   /// Grafikte gösterilmeye aday fiyat alarmları — LOG/Karşılaştır'da ve
   /// alarm kurulamayan varlıkta (mevduat, BES; `_alarmSembolu`) boş.
   List<PriceAlert> _grafikAlarmAdaylari({

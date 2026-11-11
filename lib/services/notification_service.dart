@@ -935,8 +935,9 @@ class NotificationService {
     int deneme = 0,
     VoidCallback? onNotFound,
     int? initialPeriodDays,
+    String? gelenAlarmId,
   }) {
-    if (kilitKapisi.ertele(() => openAssetPerformance(assetId, onNotFound: onNotFound, initialPeriodDays: initialPeriodDays))) return;
+    if (kilitKapisi.ertele(() => openAssetPerformance(assetId, onNotFound: onNotFound, initialPeriodDays: initialPeriodDays, gelenAlarmId: gelenAlarmId))) return;
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
 
@@ -949,6 +950,7 @@ class NotificationService {
           deneme: deneme + 1,
           onNotFound: onNotFound,
           initialPeriodDays: initialPeriodDays,
+          gelenAlarmId: gelenAlarmId,
         ),
       );
       return;
@@ -975,6 +977,7 @@ class NotificationService {
           deneme: deneme + 1,
           onNotFound: onNotFound,
           initialPeriodDays: initialPeriodDays,
+          gelenAlarmId: gelenAlarmId,
         ),
       );
       return;
@@ -1013,6 +1016,7 @@ class NotificationService {
           showBackButton: true,
           lots: gorunum?.lots ?? [asset!],
           initialPeriodDays: initialPeriodDays,
+          gelenAlarmId: gelenAlarmId,
         ),
       ),
     );
@@ -1035,12 +1039,17 @@ class NotificationService {
   /// Aynı sembolde birden çok lot varsa ilki açılır: `openAssetPerformance`
   /// zaten `positionKey` ile tüm lot'ları toplayıp grafiğe marker basar,
   /// yani hangi lot'la girildiği ekranda fark yaratmaz.
+  ///
+  /// [alertId] (2026-11-11): bildirimin `alert_id`'si varlık ekranına
+  /// `gelenAlarmId` olarak geçer; ekran başında "Alarmın çaldı" bandı
+  /// durur. Yoksa (eski payload, yüzde/gösterge alarmı) ekran eskisi gibi.
   void openPriceAlertAsset(
     String symbol, {
     int deneme = 0,
     VoidCallback? onNotFound,
+    String? alertId,
   }) {
-    if (kilitKapisi.ertele(() => openPriceAlertAsset(symbol, onNotFound: onNotFound))) return;
+    if (kilitKapisi.ertele(() => openPriceAlertAsset(symbol, onNotFound: onNotFound, alertId: alertId))) return;
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
 
@@ -1052,6 +1061,7 @@ class NotificationService {
           symbol,
           deneme: deneme + 1,
           onNotFound: onNotFound,
+          alertId: alertId,
         ),
       );
       return;
@@ -1074,6 +1084,7 @@ class NotificationService {
           symbol,
           deneme: deneme + 1,
           onNotFound: onNotFound,
+          alertId: alertId,
         ),
       );
       return;
@@ -1102,6 +1113,7 @@ class NotificationService {
       // days: 0 → GÜNLÜK. Desteklenmiyorsa (elle fiyatlanan varlık) ekran
       // sessizce varsayılana düşer.
       initialPeriodDays: 0,
+      gelenAlarmId: alertId,
     );
   }
 
@@ -1147,7 +1159,9 @@ class NotificationService {
       return;
     }
     final container = ProviderScope.containerOf(context, listen: false);
-    void varligaDus() => openPriceAlertAsset(symbol, onNotFound: onNotFound);
+    // Varlığa düşüşte alarm kimliği taşınır: sayfa "Alarmın çaldı" der.
+    void varligaDus() =>
+        openPriceAlertAsset(symbol, onNotFound: onNotFound, alertId: alertId);
 
     var id = (cizimId ?? '').isEmpty ? null : cizimId;
     if (id == null && (cizimAlarmId ?? '').isNotEmpty) {
