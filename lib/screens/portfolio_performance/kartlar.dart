@@ -366,6 +366,33 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ],
         ];
 
+    // Dönem kartı (manşet + alt kat). Yeni dönemin serisi beklenirken
+    // (`!hasData && !settled`) kart boş döner; o anda ekranda grafik
+    // varsa (`_sonGrafik`) kartın son dolu hâli soluk olarak yerinde kalır
+    // — gerekçe `_sonDonemKarti`. Seri gelince aynı öğe yeni rakamlara
+    // geçer (`_KahramanSatiri` çapraz söner). Kesin boş sonuçta (settled)
+    // kart dürüstçe kalkar, eski rakam gösterilmez.
+    final eskiKartta = !hasData && !settled && _sonGrafik != null &&
+        _sonDonemKarti != null;
+    Widget donemKarti({bool tekAkis = false}) {
+      if (eskiKartta) return _sonDonemKarti!;
+      final kart = _buildPeriodChangeCard(
+        segments,
+        // Segmentlerle AYNI başlangıç: X ekseni bu tarihe göre
+        // yorumlanıyor, ayrışırsa kart yanlış günü anlatır.
+        cizimBaslangici,
+        endDate,
+        targetAssets,
+        intraday: isIntraday,
+        tekAkis: tekAkis,
+        veriGelmedi:
+            isIntraday && breakdown.gunIciVerisiYokTurler.isNotEmpty,
+      );
+      _sonDonemKarti = hasData ? kart : null;
+      return kart;
+    }
+
+
     // "Yeni çözünürlükte veri yükleniyor" göstergesi — zoom sırasında
     // eski veri ekranda kalır, üstte ince bir bar akıcı hisi verir.
     //
@@ -426,19 +453,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 const SizedBox(height: SandikSpace.md),
                 yuklemeCubugu(),
                 AnimatedOpacity(
-                  opacity: stale ? 0.45 : 1.0,
+                  opacity: stale || eskiKartta ? 0.45 : 1.0,
                   duration: SandikMotion.stateOf(context),
                   curve: SandikMotion.enter,
-                  child: _buildPeriodChangeCard(
-                    segments,
-                    cizimBaslangici,
-                    endDate,
-                    targetAssets,
-                    intraday: isIntraday,
-                    tekAkis: true,
-                    veriGelmedi: isIntraday &&
-                        breakdown.gunIciVerisiYokTurler.isNotEmpty,
-                  ),
+                  child: donemKarti(tekAkis: true),
                 ),
                 const SizedBox(height: SandikSpace.sm),
                 grafikAlani(),
@@ -604,20 +622,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   //     opaklığı düşer (layout zıplaması da olmaz).
                   //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
                   AnimatedOpacity(
-                    opacity: stale ? 0.45 : 1.0,
+                    opacity: stale || eskiKartta ? 0.45 : 1.0,
                     duration: SandikMotion.stateOf(context),
                     curve: SandikMotion.enter,
-                    child: _buildPeriodChangeCard(
-                      segments,
-                      // Segmentlerle AYNI başlangıç: X ekseni bu tarihe göre
-                      // yorumlanıyor, ayrışırsa kart yanlış günü anlatır.
-                      cizimBaslangici,
-                      endDate,
-                      targetAssets,
-                      intraday: isIntraday,
-                      veriGelmedi: isIntraday &&
-                          breakdown.gunIciVerisiYokTurler.isNotEmpty,
-                    ),
+                    child: donemKarti(),
                   ),
                   const SizedBox(height: SandikSpace.sm),
                   // Grafik alanı (boş / hata / iskelet / genç / grafik): `grafikAlani`.
