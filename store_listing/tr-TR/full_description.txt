@@ -24,8 +24,18 @@ NE TAKİP EDEBİLİRSİN
 • Altın ve gümüş
 • Altın ve dövizde "Bozdurursan / Alırsan" iki fiyat: kuyumcunun alış-satış farkını baştan gör
 • Emtia
+• Kripto para
+• Vadeli mevduat ve BES: faiz ve katkılar ayrı ayrı
 • Fiyatlar otomatik güncellenir; istersen kendi fiyatını girersin
 • "5 çeyrek kaç TL?" Aramaya yaz, canlı fiyattan gör
+
+TAKİP LİSTESİ, ALARM VE WIDGET
+
+• Takip listesi: almadığın hisse, fon ve kurları izle
+• Fiyat alarmı: hedef fiyata gelince bildirim
+• Altın, döviz ve kriptoda günlük yüzde alarmı
+• Halka arz takvimi
+• Ana ekran widget'ı ve tek varlık widget'ı: altın, dolar ya da istediğin fon
 
 GERÇEK KÂR/ZARAR
 
