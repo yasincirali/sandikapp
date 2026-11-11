@@ -139,7 +139,7 @@ void main() {
         expect(tasmalar, isEmpty);
         _gorunur(tester,
             find.text(mod == QuickAdjustMode.add ? 'Al' : 'Sat').last);
-        _gorunur(tester, find.text('İptal').last);
+        _gorunur(tester, find.text('Vazgeç').last);
       });
     }
   });

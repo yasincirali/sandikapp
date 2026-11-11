@@ -97,4 +97,12 @@ class SenMaterialLocalizationTr extends MaterialLocalizationTr {
       'Daha fazla ayrıntı için genişlet';
   @override
   String get expansionTileExpandedHint => 'daraltmak için iki kez dokun';
+
+  /// Hitap değil, "bir iş = bir kelime" (2026-11-11): uygulamanın her
+  /// vazgeçme düğmesi "Vazgeç" der, iOS'un Türkçe sistem diyalogları da
+  /// öyle. Flutter'ın "İptal"i yalnız kendi metnini vermeyen Material
+  /// diyaloglarında (saat seçici vb.) sızıyordu; kilit
+  /// `vazgec_tek_kelime_test`.
+  @override
+  String get cancelButtonLabel => 'Vazgeç';
 }

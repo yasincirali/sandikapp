@@ -17,6 +17,46 @@
 <meta name="twitter:image" content="https://yasincirali.github.io/sandikapp/img/og-ana.png">
 <meta name="twitter:image:alt" content="sandık logosu">
 <link rel="canonical" href="https://yasincirali.github.io/sandikapp/maliyet/">
+<!-- Yapılandırılmış veri (2026-11-11, Ar-Ge 2026-11-11_1704 #3): WebApplication.
+     Ad, sayfaların altındaki "Diğer hesaplayıcılar" satırıyla aynı.
+     FAQPage (2026-11-11, Ar-Ge 2026-11-11_1804 #5): yalnız sayfadaki görünür
+     SSS bölümünün sorusu, metni BİREBİR aynı (Google görünmeyen soruyu
+     işaretlemeyi kural dışı sayar). test/web_hesaplayici_baglanti_test.dart
+     iki metni karşılaştırır; uydurma soru yazılmaz. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Ortalama maliyet hesaplama",
+  "description": "Alışlarının adet ve fiyatını yaz, ortalama maliyetini gör. Ortalamayı istediğin seviyeye indirmek için bugünkü fiyattan kaç adet alman gerektiğini hesapla. Ücretsiz, kayıt yok, hiçbir şey gönderilmez.",
+  "url": "https://yasincirali.github.io/sandikapp/maliyet/",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "TRY"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Yüzde 30 zarardaki bir hisse başa baş için ne kadar yükselmeli?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yüzde 42,9 yükselmeli. 100 liralık hisse yüzde 30 düşünce 70 lira olur; 100 liraya dönmek için 30 lira, yani 70 liranın yüzde 42,9'u kadar artmalı. Genel formül: gereken yükseliş = 1 ÷ (1 − zarar) − 1."
+      }
+    }
+  ]
+}
+</script>
 <meta name="theme-color" content="#0A1E15">
 <meta name="apple-itunes-app" content="app-id=6786837699">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -43,6 +83,11 @@
   - Hesap tarayıcıda; analytics yok, harici kaynak yok, kişisel veri yok.
     Mağaza bağlantısı kampanya etiketli (utm_medium=maliyet).
   - Tavsiye dili yok: "almalısın" yazılmaz, yalnız hesap. Uzun tire yok.
+  - Zarardan başa baş (2026-11-11, Ar-Ge 2026-11-11_1804 #5): "yüzde 30
+    zarar ne kadar yükselmeli" ters sorusu. Gereken yükseliş =
+    1 / (1 − zarar) − 1; tek girişli hesap + %10/20/30/50 tablosu. Tablo
+    elle yazılı, test/maliyet_web_test.dart her satırı formülle yeniden
+    hesaplar. Uygulamadaki karşılığı Premium; metin "ücretsiz" demez.
 -->
 <style>
 @font-face { font-family: 'DM Sans'; src: url('../fonts/DMSans-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
@@ -216,6 +261,16 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
 .sil:focus-visible, .ekle:focus-visible { outline: 3px solid var(--altin); outline-offset: 3px; }
 .ozet-satir { margin-top: 10px; color: var(--soluk); }
 .alt-baslik { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; }
+/* Diğer hesaplayıcılar satırı: dört sayfada birebir aynı parça (2026-11-11). */
+.diger { margin-top: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 22px; }
+.diger h2 { flex-basis: 100%; font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.diger a { display: inline-flex; align-items: center; min-height: 44px; color: var(--soluk); }
+.diger a:hover { color: var(--metin); }
+.diger a:focus-visible { outline: 3px solid var(--altin); outline-offset: 4px; }
+.notlar-ust { margin: 0 0 16px; }
+.tablo-kap { margin-top: 18px; }
+.sss h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+.sss p { color: var(--soluk); }
 </style>
 </head>
 <body>
@@ -279,6 +334,42 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
     </section>
   </div>
 
+  <h2 class="bolum" id="basabas-baslik">Zarardan başa baş: gereken yükseliş</h2>
+  <div class="notlar notlar-ust">
+    <p>Yüzde 50 düşen bir hisse yüzde 50 yükselince geri dönmez: düşüş büyük tutardan, yükseliş küçülmüş tutardan hesaplanır. Başa baş için gereken yükseliş = 1 ÷ (1 − zarar) − 1.</p>
+  </div>
+  <div class="tepsi">
+    <form class="cekirdek" id="basabas-form" novalidate aria-labelledby="basabas-baslik">
+      <div class="alanlar">
+        <div class="alan">
+          <label for="zarar">Zarar</label>
+          <div class="girdi"><input id="zarar" name="zarar" inputmode="decimal" autocomplete="off" aria-describedby="zarar-not"><span aria-hidden="true">%</span></div>
+          <small id="zarar-not">Maliyetine göre yüzde kaç aşağıdasın, örneğin 30</small>
+        </div>
+        <div class="alan sonuc" aria-live="polite" aria-atomic="true">
+          <p class="etiket">Gereken yükseliş</p>
+          <p class="buyuk sayi" id="yukselis">&nbsp;</p>
+          <p class="aciklama bos" id="yukselis-aciklama">Zararı yüzde olarak yaz.</p>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="tablo-kap">
+    <table id="basabas-tablo">
+      <caption>Zarar ve başa baş için gereken yükseliş</caption>
+      <thead><tr><th scope="col">Zarar</th><th scope="col">Gereken yükseliş</th></tr></thead>
+      <tbody>
+        <tr data-zarar="10" data-yukselis="11,1"><th scope="row">%10</th><td>%11,1</td></tr>
+        <tr data-zarar="20" data-yukselis="25"><th scope="row">%20</th><td>%25</td></tr>
+        <tr data-zarar="30" data-yukselis="42,9"><th scope="row">%30</th><td>%42,9</td></tr>
+        <tr data-zarar="50" data-yukselis="100"><th scope="row">%50</th><td>%100</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="notlar notlar-ust">
+    <p>sandık Premium ile zarardaki varlığının kartında da bu oran yazar.</p>
+  </div>
+
   <section class="cagri" aria-labelledby="cagri-baslik">
     <h2 id="cagri-baslik">Ortalamanı her alışta sandık tutsun</h2>
     <p>Hisse, fon ve altın alışlarını sandık'a ekle; ortalama maliyetin, kâr ve zararın ve ortalamayı bir seviyeye çekmek için gereken adet her alışta kendiliğinden güncellenir.</p>
@@ -298,6 +389,17 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
     <p>Alım ortalamayı yalnız fiyata doğru çeker: hedef, bugünkü ortalamanın altında ve fiyatın üstünde olmalı.</p>
     <p>Komisyon ve vergi hesaba girmez. Fiyat gösterilmez. Hesap tarayıcında yapılır, hiçbir yere gönderilmez. Yatırım tavsiyesi değildir.</p>
   </div>
+  <section class="sss" aria-labelledby="sss-baslik">
+    <h2 class="bolum" id="sss-baslik">Sık sorulan soru</h2>
+    <h3>Yüzde 30 zarardaki bir hisse başa baş için ne kadar yükselmeli?</h3>
+    <p>Yüzde 42,9 yükselmeli. 100 liralık hisse yüzde 30 düşünce 70 lira olur; 100 liraya dönmek için 30 lira, yani 70 liranın yüzde 42,9'u kadar artmalı. Genel formül: gereken yükseliş = 1 ÷ (1 − zarar) − 1.</p>
+  </section>
+  <nav class="diger" aria-label="Diğer hesaplayıcılar">
+    <h2>Diğer hesaplayıcılar</h2>
+    <a href="../enflasyon/">Enflasyon hesaplayıcı</a>
+    <a href="../altin/">Altın gram hesaplayıcı</a>
+    <a href="../temettu/">Net temettü hesaplama</a>
+  </nav>
 </main>
 
 <footer>
@@ -321,6 +423,9 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
   var hedefEl = document.getElementById('hedef');
   var gerekenEl = document.getElementById('gereken');
   var tersAciklamaEl = document.getElementById('ters-aciklama');
+  var zararEl = document.getElementById('zarar');
+  var yukselisEl = document.getElementById('yukselis');
+  var yukselisAciklamaEl = document.getElementById('yukselis-aciklama');
   var sayac = 0;
 
   // Altın sayfasıyla aynı okuyucu: virgül ondalık, nokta binlik.
@@ -432,6 +537,26 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
     [p1, b1, p2].forEach(function (x) { tersAciklamaEl.appendChild(x); });
   }
 
+  // Zarardan başa baş: gereken yükseliş = 1 / (1 − z) − 1. Zarar %100
+  // ve üstünde anlamsız (değer sıfır), geri dönüş hiçbir yükselişle olmaz.
+  function basaBasCiz() {
+    var z = sayiOku(zararEl.value.replace(/%/g, ''));
+    zararEl.removeAttribute('aria-invalid');
+    yukselisEl.textContent = '\u00a0';
+    yukselisAciklamaEl.className = 'aciklama bos';
+    if (zararEl.value.trim() === '') { yukselisAciklamaEl.textContent = 'Zararı yüzde olarak yaz.'; return; }
+    if (!(z > 0) || z >= 100) {
+      zararEl.setAttribute('aria-invalid', 'true');
+      yukselisAciklamaEl.textContent = 'Zarar sıfırdan büyük, yüzde 100\'den küçük olmalı, örneğin 30.';
+      return;
+    }
+    var y = (1 / (1 - z / 100) - 1) * 100;
+    yukselisEl.textContent = '%' + new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(y);
+    yukselisAciklamaEl.className = 'aciklama';
+    yukselisAciklamaEl.textContent = '100 liralık değer yüzde ' + adet(z) + ' düşünce ' +
+      sayi(100 - z, 2) + ' lira olur; 100 liraya dönmek için bu kadar artmalı.';
+  }
+
   ekleEl.addEventListener('click', function () {
     var s = satirEkle();
     s.querySelector('.adet').focus();
@@ -440,6 +565,7 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
   satirlarEl.addEventListener('input', ciz);
   fiyatEl.addEventListener('input', ciz);
   hedefEl.addEventListener('input', ciz);
+  zararEl.addEventListener('input', basaBasCiz);
   satirEkle();
   satirEkle();
   ciz();

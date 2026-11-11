@@ -236,7 +236,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Güncelle'));
       await tester.pumpAndSettle();
       expect(find.text('3 hareket silinsin mi?'), findsOneWidget);
-      await tester.tap(find.text('İptal'));
+      await tester.tap(find.text('Vazgeç'));
       await tester.pumpAndSettle();
       expect(k.silinen, isNull);
       expect(k.ekleme, 0);

@@ -147,7 +147,8 @@ void main() {
       expect(trMetni('depositsDontChangeRank'), contains('sıralamayı değiştirmez'));
       // 3.20: metin sözlükte (`depositsDontChangeRankBody`).
       expect(ekran.contains('l10n.depositsDontChangeRankBody'), isTrue);
-      expect(trMetni('depositsDontChangeRankBody'), contains('ETKİLEMEZ'));
+      // Vurgu büyük harfle değil cümleyle (Ar-Ge 11 Kas #5); içerik aynı.
+      expect(trMetni('depositsDontChangeRankBody'), contains('oranı etkilemez'));
       // Hesabın kendisi yazılı olmalı.
       expect(trMetni('selectedPeriodReturnBody'), contains('günlere bölünür'),
           reason: 'hesabın kendisi kullanıcıya gösterilmeli');

@@ -866,6 +866,18 @@ abstract class AppLocalizations {
   /// **'Son alımın, {miktar}'**
   String quickLastBuyChipSemantics(String miktar);
 
+  /// Hızlı Al Tutar kipi: tutardan hesaplanan miktar, birimiyle (≈ 2.500 pay).
+  ///
+  /// In tr, this message translates to:
+  /// **'≈ {miktar}'**
+  String quickAmountQtyApprox(String miktar);
+
+  /// Hızlı Al: fiyat bilinmezken Tutar seçeneğinin neden kapalı olduğu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutarla girmek için birim fiyat gerekli'**
+  String get quickAmountNeedsPrice;
+
   /// No description provided for @quickHolding.
   ///
   /// In tr, this message translates to:
@@ -1109,7 +1121,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteHistoryBody.
   ///
   /// In tr, this message translates to:
-  /// **'{count} bildirim KALICI olarak silinecek. Geri alınamaz.'**
+  /// **'{count} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.'**
   String deleteHistoryBody(int count);
 
   /// No description provided for @permanentDeleteUpper.
@@ -1934,6 +1946,30 @@ abstract class AppLocalizations {
   /// **'önceki kapanış yok'**
   String get gecmisFiyatlarOncekiYok;
 
+  /// Portföy kart panelinde zarardaki pozisyonun satır etiketi; değer satırı basaBasYukselmeli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş için'**
+  String get basaBasIcin;
+
+  /// No description provided for @basaBasYukselmeli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{oran} yükselmeli'**
+  String basaBasYukselmeli(String oran);
+
+  /// No description provided for @basaBasCumle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş için {oran} yükselmeli'**
+  String basaBasCumle(String oran);
+
+  /// No description provided for @basaBasKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş için gereken yükseliş Premium\'da'**
+  String get basaBasKilitli;
+
   /// No description provided for @kopyalaKod.
   ///
   /// In tr, this message translates to:
@@ -2525,7 +2561,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In tr, this message translates to:
-  /// **'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?'**
+  /// **'Bu işlem geri alınamaz.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?'**
   String get deleteAccountBody;
 
   /// No description provided for @continueAction.
@@ -3193,12 +3229,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{name} onayı bekleniyor...'**
   String awaitingApproval(String name);
-
-  /// No description provided for @cancelWord.
-  ///
-  /// In tr, this message translates to:
-  /// **'İptal'**
-  String get cancelWord;
 
   /// No description provided for @removePartnerSemantics.
   ///
@@ -3977,7 +4007,7 @@ abstract class AppLocalizations {
   /// No description provided for @xirrBody.
   ///
   /// In tr, this message translates to:
-  /// **'Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.'**
+  /// **'Yatırdığın paranın yıllık bileşik getirisi. Hesap, parayı hangi tarihlerde yatırdığını dikkate alır.'**
   String get xirrBody;
 
   /// No description provided for @periodMarketReturnLabel.
@@ -4517,7 +4547,7 @@ abstract class AppLocalizations {
   /// No description provided for @depositsDontChangeRankBody.
   ///
   /// In tr, this message translates to:
-  /// **'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.'**
+  /// **'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin bu oranı etkilemez; her şey piyasa fiyatıyla değerlenir.'**
   String get depositsDontChangeRankBody;
 
   /// No description provided for @everyoneMeasuredSameBody.
@@ -5414,12 +5444,6 @@ abstract class AppLocalizations {
   /// **'Onaylıyorum'**
   String get importAiRizaKabul;
 
-  /// No description provided for @importAiRizaVazgec.
-  ///
-  /// In tr, this message translates to:
-  /// **'Vazgeç'**
-  String get importAiRizaVazgec;
-
   /// No description provided for @importAiRizaGeriCek.
   ///
   /// In tr, this message translates to:
@@ -5647,12 +5671,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{sigan} kalemi kaydet, kalanı sepette bırak'**
   String iktKotaSiganlar(int sigan);
-
-  /// No description provided for @iktKotaVazgec.
-  ///
-  /// In tr, this message translates to:
-  /// **'Vazgeç'**
-  String get iktKotaVazgec;
 
   /// No description provided for @someAssetsNotAdded.
   ///
@@ -6374,11 +6392,11 @@ abstract class AppLocalizations {
   /// **'dönem içi satış {amount}'**
   String flowSellLower(String amount);
 
-  /// No description provided for @raceFooterGlobal.
+  /// No description provided for @raceWhatIsNeverShared.
   ///
   /// In tr, this message translates to:
-  /// **'Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.'**
-  String get raceFooterGlobal;
+  /// **'Neler paylaşılmaz?'**
+  String get raceWhatIsNeverShared;
 
   /// No description provided for @calculatingEllipsis.
   ///
@@ -6433,12 +6451,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Daha iyisini yapabilirsin, 30G takip et'**
   String get toneRest;
-
-  /// No description provided for @raceFooterPartners.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.'**
-  String get raceFooterPartners;
 
   /// No description provided for @recapYourPortfolio.
   ///
@@ -7970,12 +7982,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Devam et'**
   String get kullaniciAdiDevam;
-
-  /// No description provided for @kullaniciAdiKaydet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaydet'**
-  String get kullaniciAdiKaydet;
 
   /// No description provided for @kullaniciAdiKaydedildi.
   ///
@@ -14621,12 +14627,6 @@ abstract class AppLocalizations {
   /// **'Kod yalnız telefonunda, kapalı bir yorumlayıcıda çalışır. İnternete, dosyalara ya da hesabına erişemez.'**
   String get ozgGuvenlik;
 
-  /// No description provided for @ozgKaydet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaydet'**
-  String get ozgKaydet;
-
   /// No description provided for @ozgSil.
   ///
   /// In tr, this message translates to:
@@ -14644,12 +14644,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad} kalıcı olarak silinir.'**
   String ozgSilMesaj(String ad);
-
-  /// No description provided for @ozgSilOnay.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sil'**
-  String get ozgSilOnay;
 
   /// No description provided for @ozgVazgecBaslik.
   ///
@@ -14800,12 +14794,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Varsayılana dön'**
   String get sgnParametreVarsayilan;
-
-  /// No description provided for @sgnParametreKaydet.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kaydet'**
-  String get sgnParametreKaydet;
 
   /// No description provided for @sgnParametreVarsayilanDeger.
   ///
@@ -15749,12 +15737,6 @@ abstract class AppLocalizations {
   /// **'Başka uygulamaya geçtim'**
   String get hsnBaskaUygulama;
 
-  /// No description provided for @hsnKapat.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kapat'**
-  String get hsnKapat;
-
   /// No description provided for @tegKapat.
   ///
   /// In tr, this message translates to:
@@ -15976,6 +15958,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hedef maliyetin {sign} yüzde {pct}'**
   String alertCostPctSemantics(String sign, int pct);
+
+  /// No description provided for @alertYil52Zirve.
+  ///
+  /// In tr, this message translates to:
+  /// **'52 hafta zirvesi {fiyat}'**
+  String alertYil52Zirve(String fiyat);
+
+  /// No description provided for @alertYil52Dip.
+  ///
+  /// In tr, this message translates to:
+  /// **'52 hafta dibi {fiyat}'**
+  String alertYil52Dip(String fiyat);
+
+  /// No description provided for @alertYil52ZirveSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefi 52 hafta zirvesine ayarla: {fiyat}'**
+  String alertYil52ZirveSemantics(String fiyat);
+
+  /// No description provided for @alertYil52DipSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefi 52 hafta dibine ayarla: {fiyat}'**
+  String alertYil52DipSemantics(String fiyat);
 
   /// No description provided for @alarmModFiyat.
   ///
@@ -17407,12 +17413,6 @@ abstract class AppLocalizations {
   /// **'Tamam'**
   String get kapanisTamam;
 
-  /// No description provided for @kapanisPaylas.
-  ///
-  /// In tr, this message translates to:
-  /// **'Paylaş'**
-  String get kapanisPaylas;
-
   /// No description provided for @kapanisPaylasEtiketi.
   ///
   /// In tr, this message translates to:
@@ -17454,6 +17454,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Nasıl ölçülür?'**
   String get zirveNasilOlculur;
+
+  /// No description provided for @bestToughestDayTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönemin en iyi ve en zor günü'**
+  String get bestToughestDayTitle;
+
+  /// No description provided for @bestDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi gün · {tarih}'**
+  String bestDayRow(String tarih);
+
+  /// No description provided for @leastDownDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az düşen gün · {tarih}'**
+  String leastDownDayRow(String tarih);
+
+  /// No description provided for @toughestDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En zor gün · {tarih}'**
+  String toughestDayRow(String tarih);
+
+  /// No description provided for @leastUpDayRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az yükselen gün · {tarih}'**
+  String leastUpDayRow(String tarih);
+
+  /// No description provided for @bestDayFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.'**
+  String get bestDayFootnote;
+
+  /// No description provided for @bestDayLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönemin en iyi ve en zor gününü Premium\'la gör'**
+  String get bestDayLocked;
+
+  /// No description provided for @tarihCipiBugun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün'**
+  String get tarihCipiBugun;
+
+  /// No description provided for @tarihCipiDun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dün'**
+  String get tarihCipiDun;
+
+  /// No description provided for @tarihCipiBaskaTarih.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka tarih'**
+  String get tarihCipiBaskaTarih;
+
+  /// No description provided for @tarihCipiSonIsGunuSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun}, son işlem günü'**
+  String tarihCipiSonIsGunuSemantik(String gun);
+
+  /// No description provided for @tarihCipiSeciliTarihSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem tarihi {tarih}, değiştir'**
+  String tarihCipiSeciliTarihSemantik(String tarih);
 }
 
 class _AppLocalizationsDelegate

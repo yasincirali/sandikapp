@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show RenderOffstage;
 import 'package:flutter/widgets.dart';
 
 /// Tanıtım turunun spot ışığı düşürdüğü gerçek ekran öğeleri.
@@ -136,6 +137,13 @@ abstract final class TourTargets {
     if (c == null) return null;
     final ro = c.findRenderObject();
     if (ro is! RenderBox || !ro.attached || !ro.hasSize) return null;
+    // Offstage sekmede (`SekmeYigini`) kutu yerleşmiş olabilir: Portföy
+    // boşta önceden kurulduğundan (Ar-Ge 11 Kas 18:04 #3) hedefi o sekme
+    // açılmadan da kayıtlı. Çizilmeyen kutunun dikdörtgeni spotu ana
+    // sayfanın üstünde boş bir yere koyardı; yok sayılır, tur bekler.
+    for (RenderObject? p = ro.parent; p != null; p = p.parent) {
+      if (p is RenderOffstage && p.offstage) return null;
+    }
     final sol = ro.localToGlobal(Offset.zero);
     return sol & ro.size;
   }

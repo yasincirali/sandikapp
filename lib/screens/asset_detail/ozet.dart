@@ -552,6 +552,24 @@ extension _DetayOzet on _AssetDetailScreenState {
           ? null
           : _yillikUclar?.bugunle(canliBirim);
 
+  /// Alarm sayfasının "52 hafta zirvesi / dibi" çipleri (Ar-Ge 2026-11-11,
+  /// ücretsiz): kartın 52 hafta satırıyla AYNI uçlar, yeni istek yok — 1Y
+  /// serisi henüz gelmediyse `null`, çip çıkmaz.
+  ///
+  /// Yalnız tam yılda (`ay == null`): "12 ay" satırının uçları "52 hafta"
+  /// diye satılmaz. Yalnız TL varlıkta: seri TL birim fiyattır, alarm ise
+  /// varlığın kendi para biriminde kurulur ([AlarmAdayi.guncelFiyat] =
+  /// `currentPrice`); ABD hissesinde geçmiş TL zirvesini bugünkü kurla
+  /// dolara çevirmek o günün dolar zirvesi DEĞİLDİR (uydurma sayı). Canlı
+  /// fiyat da alarmın gördüğü fiyat: uçlar onu kapsar ([YillikUclar.bugunle]).
+  ({double zirve, double dip})? get _alarmYil52 {
+    if (widget.asset.type == AssetType.mevduat) return null;
+    if (_canli.asset.currency != 'TRY') return null;
+    final a = _yillikUclar?.bugunle(_canli.asset.currentPrice);
+    if (a == null || a.ay != null) return null;
+    return (zirve: a.yuksek, dip: a.dusuk);
+  }
+
   /// "Aralık" kartı — dönem satırı [donem], 52 hafta satırı seriden.
   /// Biçim büyük fiyatla AYNI (`_birimBicimi`, canlı birim fiyat): ekrandaki
   /// fiyatla aynı ölçek ve aynı ondalık.

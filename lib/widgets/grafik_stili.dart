@@ -211,7 +211,13 @@ abstract final class GrafikStili {
   /// [grafik]'in üstüne, kartın üst dolgusuna ([kartDolgusu] üstü,
   /// [SandikSpace.lgs]) dönem başı açıklamasını koyar: kesikli çizgi
   /// işareti + [etiket]. Çizim alanına girmez; grafiğin boyu değişmez.
-  /// [etiket] boşsa grafik aynen döner.
+  /// [etiket] ve [sag] boşsa yazı katmanı boş kalır.
+  ///
+  /// Stack HER ZAMAN kurulur (yasin 2026-11-11, "dönem değişince grafik
+  /// hopluyor"): eskiden ikisi de boşken grafik doğrudan dönüyordu. Dönem
+  /// başı ya da maliyet/alarm etiketi bir dönemde var, ötekinde yokken
+  /// grafiğin ağaçtaki yeri değişiyor, `ZoomableChart` sökülüp yeniden
+  /// kuruluyordu: morf yerine soldan sağa ilk çizim yeniden oynuyordu.
   ///
   /// [sag]: aynı satırın SAĞ ucuna konan ikinci açıklama — fiyat alarmı
   /// etiketi ([alarmEtiketi], Ar-Ge 29 Eki 20:45 #2). Kartın üstünde tek
@@ -221,12 +227,12 @@ abstract final class GrafikStili {
   static Widget donemBasiUstte(BuildContext context,
       {required Widget grafik, String? etiket, Widget? sag}) {
     final donemVar = etiket != null && etiket.isNotEmpty;
-    if (!donemVar && sag == null) return grafik;
     final renk = context.c.text58;
     return Stack(
       clipBehavior: Clip.none,
       children: [
         grafik,
+        if (donemVar || sag != null)
         Positioned(
           top: -SandikSpace.lgs,
           left: SandikSpace.sm,

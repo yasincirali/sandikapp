@@ -173,12 +173,12 @@ void main() {
     });
   }
 
-  testWidgets('Sil onayında İptal: hiçbir şey silinmez', (t) async {
+  testWidgets('Sil onayında Vazgeç: hiçbir şey silinmez', (t) async {
     final p = await ac(t);
     await kaydir(t, 'THYAO');
     await t.tap(find.text('Sil'));
     await t.pumpAndSettle();
-    await t.tap(find.text('İptal'));
+    await t.tap(find.text('Vazgeç'));
     await t.pumpAndSettle();
     expect(p.silinen, isNull);
     expect(find.textContaining('THYAO'), findsWidgets);

@@ -1,5 +1,4 @@
-• NEW: Single-asset widget: gram gold, dollar or a fund on your home screen
-• Alerts: one-tap daily 2% alert, price alerts that fire on every cross, alert line on the chart
-• Quick math in search: type "5 quarter gold" or "100 dollars", see it in lira
-• Silver, platinum and palladium; upcoming rate decisions and dividend dates on Home
-• Notifications in one setting: Less, Balanced, More
+• When adding an asset, pick the trade date with the Today, Yesterday or last trading day chips. Quick buy and sell have Today and Yesterday chips too.
+• When setting an alert, the "52-week high" and "52-week low" chips fill in the target with one tap.
+• On an asset page, long-press the title or the price to copy the code or the price.
+• In Performance, the chart no longer redraws from scratch when you change the period; it flows into the new one.

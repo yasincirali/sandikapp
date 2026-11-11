@@ -105,6 +105,76 @@ class SurumNotu {
 /// bu yana çıkanlar"ı bu listeden baştan itibaren toplar.
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
+    surum: '1.1.9',
+    tarih: 'Kasım 2026',
+    // TestFlight hattı 10 Kas'ta sürümü 1.1.9'a çekti (479290a); not
+    // yazılmadığı için 1.1.9 kullanıcısı hiçbir şey görmüyordu (Ar-Ge 11 Kas
+    // 17:04 #1). Kapsam: o kesimden sonra main'e girenler + wt-e dalı.
+    // Yama sürümü: yalnız Ayarlar'da. Ücretsiz maddeler önce; Premium
+    // maddeleri `paywall_enabled` bayrağıyla, çünkü paywall kapalıyken iki
+    // kart da ekranda yok (premiumOzellikleriGorunurProvider).
+    // Bilerek dışarıda: PDF rapor sadeleşmesi (rapor zaten Premium, 1.1.8
+    // notu "raporuna özet" maddesiyle anlattı) ve tek "Vazgeç" (düğme adı
+    // birleşmesi, kullanıcının arayacağı bir şey değil). 6 madde sınırı.
+    yenilikler: [
+      // de5361a + 2f26b9a: ortak TarihCipleri. Hızlı Al'da yalnız Bugün ·
+      // Dün var; son iş günü çipi gün adıyla ("Cuma") görünür, bu yüzden
+      // metin "son iş günü" der, etiketi taklit etmez.
+      Yenilik(
+        baslik: 'Geçmiş tarihli işlem tek dokunuşla',
+        aciklama: 'Varlık eklerken işlem tarihini Bugün, Dün ya da son iş '
+            'günü çipiyle seçersin; takvim yalnız başka bir gün için açılır. '
+            'Hızlı alım ve satışta da Bugün ve Dün çipleri var. Dünü '
+            'seçersen fiyat o günün kapanışıyla dolar.',
+        ikon: YenilikIkonu.liste,
+      ),
+      // 72dee76: ücretsiz, bayraksız. Değer varlık sayfasının 52 hafta
+      // satırıyla aynı seriden; TL dışı varlıkta çip çıkmaz.
+      Yenilik(
+        baslik: 'Alarmı 52 haftanın zirvesine kur',
+        aciklama: 'Varlık sayfasından alarm kurarken "52 hafta zirvesi" ve '
+            '"52 hafta dibi" çipleri hedefi tek dokunuşla doldurur.',
+        ikon: YenilikIkonu.bildirim,
+      ),
+      // #346 "Varlık başlığı ve fiyatı: uzun bas → kodu/fiyatı kopyala".
+      // Görünür yeni öğe yok; hareketle açılan şey anlatılmazsa bulunmuyor
+      // (1.1.7 notunun gerekçesi).
+      Yenilik(
+        baslik: 'Kodu ve fiyatı kopyala',
+        aciklama: 'Varlık sayfasında başlığa ya da büyük fiyata uzun bas. '
+            'Kodu ya da fiyatı ekranda yazdığı gibi panoya alırsın.',
+      ),
+      // 782490a: yasin TestFlight 11 Kas "grafik hopluyor". Düzeltme ama
+      // her gün dokunulan yüzey; fark edilen bir değişiklik.
+      Yenilik(
+        baslik: 'Grafik dönem değişince yerinde kalır',
+        aciklama: 'Performans\'ta dönem değiştirdiğinde grafik baştan '
+            'çizilmez. Eski çizgi yeni döneme doğru akar.',
+        ikon: YenilikIkonu.grafik,
+      ),
+      // #346 geçmiş fiyatlar tablosu (Premium, 2026-11-10). Satır GÜNLÜK
+      // dönemde yok; metin "seçtiğin dönem" der, Bugün'ü vaat etmez.
+      Yenilik(
+        bayrak: 'paywall_enabled',
+        baslik: 'Geçmiş fiyatlar tablosu',
+        aciklama: 'Varlık grafiğinin altındaki "Tablo olarak gör" satırı '
+            'seçtiğin dönemin gün sonu kapanışlarını ve günlük değişimi '
+            'listeler. Premium ile.',
+        ikon: YenilikIkonu.liste,
+      ),
+      // 1d4f5d0: yalnız günlük çözünürlüklü dönemlerde (1H, 1A, 3A) çizilir;
+      // metin dönem adı saymaz, "kısa dönemler" der.
+      Yenilik(
+        bayrak: 'paywall_enabled',
+        baslik: 'Dönemin en iyi ve en zor günü',
+        aciklama: 'Performans › Özet\'te kısa dönemlerde portföyünün en çok '
+            'kazandığı ve en çok kaybettiği gün yazıyor. Para ekleyip '
+            'çektiğin günler hesabı bozmaz. Premium ile.',
+        ikon: YenilikIkonu.grafik,
+      ),
+    ],
+  ),
+  SurumNotu(
     surum: '1.1.8',
     tarih: 'Kasım 2026',
     // 1.1.7 paywall derlemesiyle kapandı; sonrası buraya (koordinatör,

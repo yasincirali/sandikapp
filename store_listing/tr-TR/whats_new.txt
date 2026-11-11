@@ -1,5 +1,4 @@
-• YENİ: Tek varlık widget'ı: gram altın, dolar ya da fonun ana ekranda
-• Alarmlar: tek dokunuşla günlük %2 alarmı, her geçişte çalan fiyat alarmı, grafikte alarm çizgisi
-• Aramada hızlı hesap: "5 çeyrek" ya da "100 dolar" yaz, TL'sini gör
-• Gümüş, platin ve paladyum; yaklaşan faiz kararı ve temettü günleri ana sayfada
-• Bildirimler tek ayarda: Az, Dengeli, Çok
+• Varlık eklerken işlem tarihini Bugün, Dün ya da son iş günü çipiyle seçersin. Hızlı alım ve satışta da Bugün ve Dün çipleri var.
+• Alarm kurarken "52 hafta zirvesi" ve "52 hafta dibi" çipleri hedefi tek dokunuşla doldurur.
+• Varlık sayfasında başlığa ya da fiyata uzun bas, kodu ya da fiyatı kopyala.
+• Performans'ta dönem değiştirdiğinde grafik baştan çizilmez, yeni döneme doğru akar.

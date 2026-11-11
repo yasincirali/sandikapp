@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/config/surum_notlari.dart';
 import 'package:portfoy_takip/services/surum_notu_service.dart';
@@ -109,6 +111,27 @@ void main() {
           expect(y.aciklama.trim(), isNotEmpty);
         }
       }
+    });
+
+    test('pubspec sürümünün notu yazılmış — yoksa kullanıcı hiçbir şey görmez',
+        () {
+      // Ar-Ge 11 Kas 17:04 #1: TestFlight hattı sürümü 1.1.9'a çekti, liste
+      // 1.1.8'de kaldı; 1.1.9 kullanıcısı Yenilikler'de hiçbir şey görmedi
+      // (kural 1: notu yazılmamış sürümde sus). Bot bump'ı `[skip ci]`
+      // olduğundan bu test bir SONRAKİ uygulama PR'ında kırılır; notu o PR
+      // yazar. Pubspec elle bump edilmez, test yalnız okur.
+      final satir = File('pubspec.yaml')
+          .readAsLinesSync()
+          .firstWhere((l) => l.startsWith('version:'));
+      final surum = satir.substring('version:'.length).trim().split('+').first;
+      expect(
+        surumNotlari.map((n) => n.surum),
+        contains(surum),
+        reason: 'pubspec.yaml sürümü $surum ama lib/config/surum_notlari.dart '
+            'içinde bu sürümün notu yok. Bu PR listenin BAŞINA '
+            "SurumNotu(surum: '$surum', ...) yazmalı; yoksa $surum kullanıcısı "
+            'Yenilikler\'de hiçbir şey görmez.',
+      );
     });
 
     test('sürüm numaraları x.y.z biçiminde — build numarası TAŞIMAZ', () {

@@ -79,7 +79,7 @@ Süre ve eğri **birlikte** seçilir:
 | Özel içerikli diyalog | `showSandikGecisli` (aynı geçiş) + `SandikDiyalogKabugu` (onay diyaloğuyla aynı kart, klavye payı); ham `AlertDialog`/`Dialog` yazılmaz |
 | Aç/kapa bölüm | `SandikAcilir` + `SandikAcilirOk` |
 | Satır kalkışı | `KapananSatir` |
-| Değer değişim vurgusu | `DegisimVurgusu` |
+| Değer değişim vurgusu | Tek büyük sayı (Ana toplam): `DegisimVurgusu` (metin rengi). Liste satırı tutarı/fiyatı: `DegisimParlamasi` (zemin tonu + tek seferlik ▲/▼; hareketi azalt → yalnız ok). Yakma kuralı ikisinde ortak: `degisimYonu` |
 | Büyük fiyat/tutar metni (hane döner, ₺ ve kuruş geri çekilir) | `ParaMetni` (bayrak `goz_alici`; Ana toplam kartında kullanılmaz) |
 | Grafik imleci → büyük fiyat | `ZoomableChart.imlecEtiketi` + `VarlikFiyatBlogu.imlec` (bayrak `goz_alici`; imleçte hane dönmez) |
 | Grafikte anlamlı nokta titreşimi | `ZoomableChart.titresimNoktalari` (zirve/dip); nokta başına titreşim yok |
@@ -127,6 +127,7 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Alt sayfa kabuğu (zemin, tutamaç, başlık, klavye payı) | `showSandikSheet` — zemin varsayılanı `surface2`, tutamaç kabukta (varsayılan açık; şeffaf zeminde kapalı), `baslik:` + en fazla bir satır `altMetin:`. Ekran `backgroundColor:`, `SandikTutamac`, kendi başlık stilini yazmaz. Başlığı duruma göre değişen sayfa (alarmda seçilen varlık) `SandikSheetBasligi`'ni içeride kullanır. İçerik yatay payı `SandikSpace.screenH`; birincil düğme en altta, klavye payı kabukta (`isScrollControlled` sayfada). Bilinçli istisnalar: şeffaf zeminli kendi şeklini çizen sayfalar (sinyaller, sembol arama, yenilikler, kilometre taşı, değerlendirme, widget kurulumu, demo kaydı, mod bilgisi), tam sayfa varlık görünümü ve anket (`background`), paywall kutlaması, ekleme seçicileri (`surface1`: satırdaki logo kutusu `surface2`), paylaşım kartı önizlemesi |
 | Sheet tutamacı | Kabuk çizer; `SandikTutamac` yalnız şeffaf zeminli sayfanın kendi şeklinin içinde |
 | Tarih seçici | `pickSandikDate` |
+| İşlem tarihi hızlı seçimi (Bugün · Dün · son iş günü · Başka tarih) | `TarihCipleri` — çipler `SandikFiltreCipi`, satır yatay kayar; son iş günü `BugunService.sonIslemGunu` (dünle aynıysa çıkmaz, takvim kapsamı dışında yok); "Başka tarih" `pickSandikDate` açar |
 | Giriş alanı | `context.inputDecoration(...)`; dolgu temadan, ekranda `fillColor` yok |
 | Sekme başlığı (içerik altından akar, kaydırınca kenar çizgisi + iOS'ta cam, başlık 0.88'e küçülür) | `SandikKaydirmaBasligi` (Portföy, Performans, Profil; bayrak `goz_alici`). Gövde payı `SandikKaydirmaBasligi.payIle` ile okunur — ekranın kendi `context`'i iskeletin üstündedir, pay 0 çıkar |
 | Ana sayfa `SliverAppBar` zemini (aynı cam) | `SandikCamCubukZemini` |
@@ -236,9 +237,10 @@ eklenir.
 6. ~~**Kalan ham `AlertDialog`/`Dialog`**~~ Yapıldı (Ar-Ge 5 Kas 22:40 #7):
    Ayarlar şifre adımı `showSandikConfirm(detail:)`; yasal uyarı, temettü ve
    hızlı al/sat `SandikDiyalogKabugu`.
-7. **Sayı değişimi hareketi.** Fiyat ve toplamlar anında değişiyor; yalnız
-   özet kartında renk vurgusu var. Öneri: canlı fiyat değişiminde
-   `DegisimVurgusu` her yerde.
+7. **Sayı değişimi hareketi.** Özet kartında renk vurgusu
+   (`DegisimVurgusu`); Portföy kart tutarı ve Takip satırı fiyatı
+   `DegisimParlamasi` (Ar-Ge 11 Kas 18:04 #2). Kalan: varlık sayfası
+   büyük fiyatı, piyasa şeridi.
 8. ~~**İskelet → içerik geçişi.**~~ Yapıldı: `SandikYuklemeGecisi` /
    `SandikIcerikGecisi` (~23 dosya); son büyük ada portföy yorumu kartıydı
    (2026-10-20). Yeni yüzey bunları kullanır.

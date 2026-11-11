@@ -425,6 +425,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String quickAmountQtyApprox(String miktar) {
+    return '≈ $miktar';
+  }
+
+  @override
+  String get quickAmountNeedsPrice => 'A unit price is needed to enter an amount';
+
+  @override
   String get quickHolding => 'Holding';
 
   @override
@@ -566,7 +574,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deleteHistoryBody(int count) {
-    return '$count notifications will be deleted PERMANENTLY. This cannot be undone.';
+    return '$count notifications will be permanently deleted. This cannot be undone.';
   }
 
   @override
@@ -1107,6 +1115,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gecmisFiyatlarOncekiYok => 'no previous close';
 
   @override
+  String get basaBasIcin => 'To break even';
+
+  @override
+  String basaBasYukselmeli(String oran) {
+    return 'needs a $oran rise';
+  }
+
+  @override
+  String basaBasCumle(String oran) {
+    return 'Needs a $oran rise to break even';
+  }
+
+  @override
+  String get basaBasKilitli => 'Rise needed to break even is in Premium';
+
+  @override
   String get kopyalaKod => 'Copy code';
 
   @override
@@ -1441,7 +1465,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted immediately.\n\nDo you want to continue?';
+      'This cannot be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted immediately.\n\nDo you want to continue?';
 
   @override
   String get continueAction => 'Continue';
@@ -1510,7 +1534,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signalNotificationsSubtitle =>
-      'Get notified when a BUY/SELL indicator triggers';
+      'Get notified when a buy or sell indicator triggers';
 
   @override
   String get signalSettings => 'Signal settings';
@@ -1828,9 +1852,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cancelWord => 'Cancel';
-
-  @override
   String get removePartnerSemantics => 'Remove partner';
 
   @override
@@ -1934,7 +1955,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get youngPortfolioBody =>
-      'Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today\'s move in the DAILY view.';
+      'Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today\'s move in the Daily view.';
 
   @override
   String get forceUpdateTitle => 'Update required';
@@ -2281,7 +2302,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get xirrBody =>
-      'The annual compound return of the money you invested, taking the DATES of your investments into account.';
+      'The annual compound return of the money you invested. The calculation takes into account the dates you invested on.';
 
   @override
   String get periodMarketReturnLabel => 'Selected period\'s return';
@@ -2617,7 +2638,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'What counts is which assets you held, on which days. When and how much money you added does NOT affect the ratio; everything is valued at market prices.';
+      'What counts is which assets you held, on which days. When and how much money you added does not affect this ratio; everything is valued at market prices.';
 
   @override
   String everyoneMeasuredSameBody(int gun) {
@@ -3206,9 +3227,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importAiRizaKabul => 'I agree';
 
   @override
-  String get importAiRizaVazgec => 'Cancel';
-
-  @override
   String get importAiRizaGeriCek => 'Withdraw AI consent';
 
   @override
@@ -3365,9 +3383,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String iktKotaSiganlar(int sigan) {
     return 'Save $sigan items, keep the rest in the cart';
   }
-
-  @override
-  String get iktKotaVazgec => 'Cancel';
 
   @override
   String get someAssetsNotAdded => 'Some Assets Could Not Be Added';
@@ -3857,8 +3872,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get raceFooterGlobal =>
-      'The ranking is the return on your picks: the assets you held each day are valued at market prices, and when money was added doesn\'t matter. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
+  String get raceWhatIsNeverShared => 'What is never shared';
 
   @override
   String get calculatingEllipsis => 'Calculating…';
@@ -3890,10 +3904,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toneRest => 'You can do better. Follow the 30D view';
-
-  @override
-  String get raceFooterPartners =>
-      'The ranking is the return on your picks in the selected period (%): when money was added doesn\'t matter. No one\'s asset list is visible.';
 
   @override
   String get recapYourPortfolio => 'Your portfolio';
@@ -4812,9 +4822,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kullaniciAdiDevam => 'Continue';
-
-  @override
-  String get kullaniciAdiKaydet => 'Save';
 
   @override
   String get kullaniciAdiKaydedildi => 'Your username was updated.';
@@ -8928,9 +8935,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The code runs only on your phone, in a closed interpreter. It cannot reach the internet, your files or your account.';
 
   @override
-  String get ozgKaydet => 'Save';
-
-  @override
   String get ozgSil => 'Delete indicator';
 
   @override
@@ -8940,9 +8944,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String ozgSilMesaj(String ad) {
     return '$ad will be deleted permanently.';
   }
-
-  @override
-  String get ozgSilOnay => 'Delete';
 
   @override
   String get ozgVazgecBaslik => 'Changes not saved';
@@ -9052,9 +9053,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnParametreVarsayilan => 'Reset to default';
-
-  @override
-  String get sgnParametreKaydet => 'Save';
 
   @override
   String sgnParametreVarsayilanDeger(int deger) {
@@ -9656,9 +9654,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hsnBaskaUygulama => 'I switched to another app';
 
   @override
-  String get hsnKapat => 'Close';
-
-  @override
   String get tegKapat => 'Exit full screen';
 
   @override
@@ -9793,6 +9788,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String alertCostPctSemantics(String sign, int pct) {
     return 'Target your cost $sign $pct percent';
+  }
+
+  @override
+  String alertYil52Zirve(String fiyat) {
+    return '52-week high $fiyat';
+  }
+
+  @override
+  String alertYil52Dip(String fiyat) {
+    return '52-week low $fiyat';
+  }
+
+  @override
+  String alertYil52ZirveSemantics(String fiyat) {
+    return 'Set target to the 52-week high: $fiyat';
+  }
+
+  @override
+  String alertYil52DipSemantics(String fiyat) {
+    return 'Set target to the 52-week low: $fiyat';
   }
 
   @override
@@ -10761,9 +10776,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kapanisTamam => 'OK';
 
   @override
-  String get kapanisPaylas => 'Share';
-
-  @override
   String get kapanisPaylasEtiketi => 'Realised return';
 
   @override
@@ -10788,4 +10800,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get zirveNasilOlculur => 'How is it measured?';
+
+  @override
+  String get bestToughestDayTitle => 'Best and toughest day of the period';
+
+  @override
+  String bestDayRow(String tarih) {
+    return 'Best day · $tarih';
+  }
+
+  @override
+  String leastDownDayRow(String tarih) {
+    return 'Smallest drop · $tarih';
+  }
+
+  @override
+  String toughestDayRow(String tarih) {
+    return 'Toughest day · $tarih';
+  }
+
+  @override
+  String leastUpDayRow(String tarih) {
+    return 'Smallest gain · $tarih';
+  }
+
+  @override
+  String get bestDayFootnote =>
+      'Market moves only; money you added or withdrew is excluded.';
+
+  @override
+  String get bestDayLocked =>
+      'See the period\'s best and toughest day with Premium';
+
+  @override
+  String get tarihCipiBugun => 'Today';
+
+  @override
+  String get tarihCipiDun => 'Yesterday';
+
+  @override
+  String get tarihCipiBaskaTarih => 'Other date';
+
+  @override
+  String tarihCipiSonIsGunuSemantik(String gun) {
+    return '$gun, last trading day';
+  }
+
+  @override
+  String tarihCipiSeciliTarihSemantik(String tarih) {
+    return 'Transaction date $tarih, change';
+  }
 }

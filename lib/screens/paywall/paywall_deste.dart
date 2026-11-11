@@ -98,7 +98,13 @@ PaywallKarti? kaynaktanKart(String source) {
     'kur_ayrismasi' ||
     // Yıllık ortalama getiri (varlık detayı, Ar-Ge 7 Kas 20:30 #6): aynı
     // soru, "kârım yılda ne ediyor".
-    'yillik_getiri' =>
+    'yillik_getiri' ||
+    // Performans'ta dönemin en iyi / en zor günü (2026-11-11): aynı analiz
+    // sorusu, "param bu dönem hangi gün ne yaptı".
+    'en_iyi_gun' ||
+    // Portföy kart panelinde "Başa baş için %X yükselmeli" (Ar-Ge 11 Kas
+    // #1): aynı soru, "zarardaki param gerçekte ne durumda".
+    'basa_bas' =>
       PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,

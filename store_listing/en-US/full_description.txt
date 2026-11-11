@@ -15,7 +15,12 @@ sandık is a personal portfolio tracker that lets you manage all your investment
 
 CORE FEATURES
 
-• Add stocks, mutual funds, currencies, gold, and commodities
+• Add stocks, mutual funds, currencies, gold, commodities and crypto
+• Time deposits and private pension (BES): interest and contributions shown separately
+• Watchlist: follow stocks, funds and currencies you don't own
+• Price alerts at your target, and daily percentage alerts for gold, currencies and crypto
+• IPO calendar for Borsa Istanbul
+• Home screen widget and single-holding widget
 • Prices update automatically; manual price entry supported
 • Two prices for gold and currencies, "Sell / Buy": see the jeweller's buy-sell spread up front
 • "How much is 100 dollars?" Type it in search, see it at the live price

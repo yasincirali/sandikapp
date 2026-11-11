@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import '../demo/demo_modu.dart';
+import '../widgets/degisim_parlamasi.dart';
 import '../widgets/varlik_rozeti.dart';
 import '../widgets/sandik_icerik_sutunu.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -927,12 +928,20 @@ class _Row extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            fiyatMetni,
-                            maxLines: 1,
-                            style: context.t.numSmall.copyWith(
-                                color: context.c.text90,
-                                fontWeight: FontWeight.w700),
+                          // Fiyat turu fiyatı değiştirince kısa ton + ▲/▼
+                          // (Ar-Ge 11 Kas 18:04 #2). Fiyat kişisel tutar
+                          // değil, gizlenmez; kimlik satırın kendisi.
+                          DegisimParlamasi(
+                            deger: item.currentPrice ?? 0,
+                            metin: fiyatMetni,
+                            kimlik: item.id,
+                            child: Text(
+                              fiyatMetni,
+                              maxLines: 1,
+                              style: context.t.numSmall.copyWith(
+                                  color: context.c.text90,
+                                  fontWeight: FontWeight.w700),
+                            ),
                           ),
                           Text(
                             isFlat ? '—' : fmtPctIsaretli(pct),

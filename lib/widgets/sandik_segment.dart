@@ -38,6 +38,7 @@ class SandikSegment extends StatelessWidget {
     this.metinStili,
     this.semantik,
     this.onSeciliDokunus,
+    this.etkin,
   });
 
   final int adet;
@@ -70,6 +71,14 @@ class SandikSegment extends StatelessWidget {
   /// "Ortaklar" segmenti seçiliyken de listeyi yeniden açabilmesi için
   /// (`OrtakSecici`, 2026-10-04); öteki segmentlerde verilmez.
   final ValueChanged<int>? onSeciliDokunus;
+
+  /// i. segment seçilebilir mi (`null`: hepsi). Seçilemeyen segment
+  /// dokunuşu yok sayar, ekran okuyucuya "devre dışı" söyler ve soluk
+  /// çizilir. Hızlı Al'ın "Tutar" kipi için (2026-11-11): fiyat bilinmezken
+  /// tutardan adet hesaplanamaz, seçenek görünür ama kapalı kalır — gizlemek
+  /// kipi "bazen var bazen yok" gösterirdi. Seçili segment her zaman etkin
+  /// sayılır (kullanıcının girdiği kip elinden alınmaz).
+  final bool Function(int i)? etkin;
 
   /// Seçili/seçisiz metin stili — segment dışı yerlerde de aynı tonda
   /// kalmak için.
@@ -157,8 +166,12 @@ class SandikSegment extends StatelessWidget {
                       flex: pay[i],
                       child: _Segment(
                         secili: i == secili,
+                        etkin: i == secili || (etkin?.call(i) ?? true),
                         semantik: semantik?.call(i),
                         onTap: () {
+                          if (i != secili && !(etkin?.call(i) ?? true)) {
+                            return;
+                          }
                           if (i == secili) {
                             onSeciliDokunus?.call(i);
                             return;
@@ -190,9 +203,11 @@ class _Segment extends StatelessWidget {
     required this.onTap,
     required this.child,
     this.semantik,
+    this.etkin = true,
   });
 
   final bool secili;
+  final bool etkin;
   final VoidCallback onTap;
   final Widget child;
   final String? semantik;
@@ -207,22 +222,27 @@ class _Segment extends StatelessWidget {
         child: Semantics(
           button: true,
           selected: secili,
+          enabled: etkin,
           label: semantik,
           excludeSemantics: semantik != null,
           // Dokunma eylemi AÇIKÇA: `excludeSemantics` alttaki düğmenin kendi
           // eylemini de siliyor, düğüm okunur ama TalkBack'te etkinleştirilemez
           // (2026-09-29 emülatör testi #28 — aynı tuzak `OrtakSecici`'de
           // düzeltilmişti). Etiket verilmeyince düğmenin eylemi zaten yerinde.
-          onTap: semantik != null ? onTap : null,
+          onTap: semantik != null && etkin ? onTap : null,
           child: CupertinoButton(
             minimumSize: SandikTouch.minSize,
             padding: EdgeInsets.zero,
-            onPressed: onTap,
+            // Kapalı segmentte `null` (düğüm "devre dışı" okunur) ve içerik
+            // soluk: seçisiz metin zaten text36 olduğundan kapalılık yalnız
+            // tonla değil, opaklıkla da ayrışır (yanındaki ipucu satırı
+            // nedenini yazar — çağıranın işi).
+            onPressed: etkin ? onTap : null,
             child: Container(
               height: double.infinity,
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-              child: child,
+              child: etkin ? child : Opacity(opacity: 0.45, child: child),
             ),
           ),
         ),

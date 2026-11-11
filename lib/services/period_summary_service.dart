@@ -134,6 +134,16 @@ enum SummaryPeriod {
       values[i.clamp(0, values.length - 1)];
 }
 
+/// Dönemin tek bir günü ve o günün akıştan arındırılmış getirisi — "en iyi /
+/// en zor gün" satırı (Premium, 2026-11-11).
+///
+/// [gun] serinin o günkü kapanış noktasının günüdür (00:00); [pct] yüzde.
+class DonemGunu {
+  final DateTime gun;
+  final double pct;
+  const DonemGunu(this.gun, this.pct);
+}
+
 /// Bir dönemin özeti.
 ///
 /// ## Alanların hepsi nullable — ve bu kasıtlı
@@ -296,6 +306,13 @@ class PeriodSummary {
   /// `null`.
   final ({int artida, int toplam})? gunSayimi;
 
+  /// Dönemin akıştan arındırılmış günlük getirisi en yüksek ve en düşük
+  /// günü ([PeriodSummaryService.enIyiEnZorGun]). Ölçülemeyen dönemde
+  /// (GÜNLÜK, haftalık çözünürlük, < [PeriodSummaryService.enIyiGunAsgari]
+  /// gün) `null`. Tek gün ölçülebildiyse ya da ikisi aynı günse `enZor`
+  /// `null`.
+  final ({DonemGunu enIyi, DonemGunu? enZor})? enIyiEnZorGun;
+
   /// Kapsamdaki İLK alımın tarihi. Dönem penceresi ([start]) bundan
   /// ESKİYSE ekran aralık çipini buradan başlatır (2026-10-01 emülatör
   /// testi: 5Y çipi "1 Eki 21 – bugün · Dönem başı ₺137.500" yazıyordu,
@@ -328,6 +345,7 @@ class PeriodSummary {
     this.dagilimSonu,
     this.sparkline = const [],
     this.gunSayimi,
+    this.enIyiEnZorGun,
   });
 
   /// Dönem kayıpta mı?
@@ -689,6 +707,128 @@ class PeriodSummaryService {
       if (gunSon[gunler[i]]! > gunSon[gunler[i - 1]]!) artida++;
     }
     return (artida: artida, toplam: gunler.length - 1);
+  }
+
+  /// "En iyi / en zor gün" için asgari ölçülmüş gün sayısı. Daha kısa bir
+  /// dönemde iki-üç günün en iyisi "dönemin en iyi günü" diye sunulacak
+  /// kadar bilgi taşımaz.
+  static const enIyiGunAsgari = 5;
+
+  /// Dönemin akıştan ARINDIRILMIŞ günlük getirisi en yüksek ve en düşük gün.
+  ///
+  /// ## Arındırma nereden
+  /// [gunSayimi] bilinçli olarak arındırmaz (ham "artıda kapandı mı"); bu
+  /// soru ise bir GETİRİ sorusu: alım yapılan gün değer zıplar ve o zıplama
+  /// "en iyi gün" sanılırdı. Kural `InsightMetricsService
+  /// .annualizedVolatility`'nin bar getirisiyle AYNI (2026-10-01):
+  /// `r_t = (V_t − F_t) / V_{t−1} − 1`, `F_t` = `(t−1, t]` damga aralığındaki
+  /// akış toplamı. Kapı [piyasaEtkisi] ile aynı: slottaki değer
+  /// `addedDate <= slot` lotlarını içerir
+  /// (`getPortfolioHistoryBreakdownAtResolution.signedQtyOnSlot`), akış o
+  /// slota yazılır. İkinci bir arındırma formülü yazılmadı.
+  ///
+  /// Akış GÜN ölçeğinin kuralıyla sayılır (`gunlukAkis`: alım +, satış −,
+  /// nakit temettü YOK). Dönem ölçeğindeki `getiriAkisi` temettüyü çıkış
+  /// sayar; tek günde bu, seri kıpırdamadığı hâlde ödeme gününü "+%0,8 en
+  /// iyi gün" yapardı. Gerekçe `gunlukAkis` notunda (ana sayfanın günlük
+  /// kartıyla aynı karar).
+  ///
+  /// ## Hangi günler aday
+  /// Gün başına SON ölçüm alınır ([gunSayimi] ile aynı). Bir gün yalnızca
+  /// bir önceki GERÇEK günle ardışıksa ölçülür:
+  ///  · pencerenin ilk günü (öncesi yok) ölçülmez;
+  ///  · arada eksik iş günü varsa (boşluk, `y <= 0` slot, haftalık
+  ///    çözünürlük) o fark birden çok günün hareketidir, tek gün sayılmaz.
+  ///    Aradaki Cumartesi/Pazar boşluk sayılmaz: saatlik ızgara hafta
+  ///    sonunu eler, Cuma → Pazartesi ardışıktır;
+  ///  · hiç oynamayan gün (hafta sonu/tatil taşıması, `|piyasa| < ₺0,005`)
+  ///    aday değildir ama ardışıklığı bozmaz — "en zor gün Cumartesi %0"
+  ///    yazmak bilgi değil;
+  ///  · [bugun] ve sonrası ölçülmez: gün kapanmadı, sayı akşama değişir;
+  ///  · oran pozitif değilse (veri defterle çelişiyor) gün atlanır.
+  /// Ölçülen gün [enIyiGunAsgari]'dan azsa `null` — sayı uydurulmaz.
+  ///
+  /// En iyi gün eksi olabilir (hiç artı gün yoksa); işaret olduğu gibi
+  /// taşınır, metin ekranda dürüst kalır. En iyi ile en zor aynı günse
+  /// (eşit oranlar) yalnız en iyi döner.
+  static ({DonemGunu enIyi, DonemGunu? enZor})? enIyiEnZorGun(
+    Map<int, double> total, {
+    required List<Asset> lotlar,
+    required int fromMs,
+    required int toMs,
+    required DateTime bugun,
+  }) {
+    if (total.isEmpty) return null;
+    final bugunMs = dayKey(bugun).millisecondsSinceEpoch;
+
+    // Gün → o günün son ölçümü (damgasıyla: akış kapısı damgaya bakar).
+    final gunSon = <int, ({int ts, double v})>{};
+    final keys = total.keys.toList()..sort();
+    for (final k in keys) {
+      if (k < fromMs || k > toMs) continue;
+      final v = total[k];
+      if (v == null || v <= 0) continue;
+      final g = dayKey(DateTime.fromMillisecondsSinceEpoch(k));
+      gunSon[g.millisecondsSinceEpoch] = (ts: k, v: v);
+    }
+    if (gunSon.length < 2) return null;
+    final gunler = gunSon.keys.toList()..sort();
+
+    final akislar = <({int ms, double f})>[
+      for (final l in lotlar)
+        if (gunlukAkis(l) != 0)
+          (ms: l.addedDate.millisecondsSinceEpoch, f: gunlukAkis(l)),
+    ]..sort((a, b) => a.ms.compareTo(b.ms));
+
+    final olculen = <DonemGunu>[];
+    for (var i = 1; i < gunler.length; i++) {
+      final gun = gunler[i];
+      if (gun >= bugunMs) break;
+      final onceki = gunSon[gunler[i - 1]]!;
+      final simdi = gunSon[gun]!;
+      if (!_ardisikGun(gunler[i - 1], gun)) continue;
+      var akis = 0.0;
+      for (final a in akislar) {
+        if (a.ms <= onceki.ts) continue;
+        if (a.ms > simdi.ts) break;
+        akis += a.f;
+      }
+      final piyasa = simdi.v - onceki.v - akis;
+      if (piyasa.abs() < 0.005) continue;
+      final oran = (simdi.v - akis) / onceki.v;
+      if (oran <= 0) continue;
+      olculen.add(DonemGunu(
+          DateTime.fromMillisecondsSinceEpoch(gun), (oran - 1) * 100));
+    }
+    if (olculen.length < enIyiGunAsgari) return null;
+
+    var enIyi = olculen.first;
+    var enZor = olculen.first;
+    for (final g in olculen) {
+      if (g.pct > enIyi.pct) enIyi = g;
+      if (g.pct < enZor.pct) enZor = g;
+    }
+    return (
+      enIyi: enIyi,
+      enZor: identical(enIyi, enZor) || enZor.pct == enIyi.pct ? null : enZor,
+    );
+  }
+
+  /// İki gün (00:00 damgası) arasında eksik İŞ günü yok mu? Aradaki
+  /// Cumartesi/Pazar boşluk sayılmaz (saatlik ızgara onları eler). Gün
+  /// farkı saatten değil takvimden: yaz saati geçişinde 23/25 saat olur.
+  static bool _ardisikGun(int oncekiMs, int sonrakiMs) {
+    final a = DateTime.fromMillisecondsSinceEpoch(oncekiMs);
+    final b = DateTime.fromMillisecondsSinceEpoch(sonrakiMs);
+    var d = DateTime(a.year, a.month, a.day + 1);
+    final hedef = dayKey(b);
+    while (d.isBefore(hedef)) {
+      if (d.weekday != DateTime.saturday && d.weekday != DateTime.sunday) {
+        return false;
+      }
+      d = DateTime(d.year, d.month, d.day + 1);
+    }
+    return true;
   }
 
   /// Bir değer serisinin dönem içi **piyasa etkisi** — "fiyat hareketi bu
@@ -1228,6 +1368,8 @@ class PeriodSummaryService {
           ? _dagilim(breakdown.byType, pe.sonTs)
           : (canliDagilim.isEmpty ? null : canliDagilim),
       gunSayimi: gunSayimi(breakdown.total, fromMs: fromMs, toMs: toMs),
+      enIyiEnZorGun: enIyiEnZorGun(breakdown.total,
+          lotlar: assets, fromMs: fromMs, toMs: toMs, bugun: now),
       sparkline: [
         ...donemEgrisi,
         if (donemEgrisi.isNotEmpty && donemEgrisi.last != pe.son) pe.son,

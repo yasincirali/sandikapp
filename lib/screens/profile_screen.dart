@@ -373,7 +373,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (!confirm) return;
 
     _poll?.cancel();
-    // Gösterge "İptal" düğmesinde ([SandikAsyncTap] bu Future'ı bekler).
+    // Gösterge "Vazgeç" düğmesinde ([SandikAsyncTap] bu Future'ı bekler).
     try {
       await ref.read(partnersProvider.notifier).rejectInvite(inviteId);
       if (mounted) {
@@ -875,7 +875,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Center(
                   widthFactor: 1,
-                  child: Text(context.l10n.cancelWord,
+                  child: Text(context.l10n.cancel,
                       style: context.t.bodyMedium
                           ?.copyWith(color: context.c.text36)),
                 ),

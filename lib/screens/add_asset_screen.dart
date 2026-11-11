@@ -38,6 +38,7 @@ import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/sandik_segment.dart';
+import '../widgets/tarih_cipleri.dart';
 import 'paywall_screen.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'bulk_add_asset_screen.dart';

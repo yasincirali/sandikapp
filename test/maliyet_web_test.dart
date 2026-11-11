@@ -70,6 +70,40 @@ void main() {
     expect(gorunen, isNot(contains('!')));
   });
 
+  // Zarardan başa baş (Ar-Ge 11 Kas 18:04 #5): tablo elle yazılı; her satır
+  // gereken yükseliş = 1 / (1 − zarar) − 1 ile yeniden hesaplanır, Türkçe
+  // ondalık virgül ve en çok bir ondalık.
+  test('başa baş tablosu formülle aynı', () {
+    final satirlar = RegExp(
+            r'<tr data-zarar="(\d+)" data-yukselis="([0-9,]+)">'
+            r'<th scope="row">%(\d+)</th><td>%([0-9,]+)</td></tr>')
+        .allMatches(html)
+        .toList();
+    expect(satirlar.map((m) => m.group(1)), ['10', '20', '30', '50']);
+    String bicim(double y) {
+      final r = (y * 10).round() / 10;
+      final t = r == r.roundToDouble()
+          ? r.round().toString()
+          : r.toStringAsFixed(1).replaceAll('.', ',');
+      return t;
+    }
+
+    for (final m in satirlar) {
+      final z = int.parse(m.group(1)!) / 100;
+      final beklenen = bicim((1 / (1 - z) - 1) * 100);
+      expect(m.group(2), beklenen, reason: '%${m.group(1)}');
+      expect(m.group(3), m.group(1));
+      expect(m.group(4), beklenen);
+    }
+    expect(satirlar.map((m) => m.group(2)), ['11,1', '25', '42,9', '100']);
+    expect(html, contains('var y = (1 / (1 - z / 100) - 1) * 100;'));
+    // Uygulamadaki karşılığı Premium: "ücretsiz" iddiası yok.
+    final bolum = html.substring(html.indexOf('id="basabas-baslik"'),
+        html.indexOf('<section class="cagri"'));
+    expect(bolum, contains('Premium'));
+    expect(bolum.toLowerCase(), isNot(contains('ücretsiz')));
+  });
+
   test('site haritasında', () {
     expect(File('docs/sitemap.xml').readAsStringSync(),
         contains('https://yasincirali.github.io/sandikapp/maliyet/'));

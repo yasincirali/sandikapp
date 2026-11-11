@@ -15,6 +15,7 @@ import '../services/tufe_koprusu.dart';
 import '../services/tuik_takvimi.dart';
 import '../theme/sandik.dart';
 import 'aralik_cipi.dart';
+import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_acilir.dart';
 import 'sandik_paylas_dugmesi.dart';
 import 'sandik_bos_durum.dart';
@@ -172,6 +173,16 @@ class PeriodSummaryView extends StatelessWidget {
   /// yerine oraya girer. `null` ise hiçbir şey eklenmez — eski düzen.
   final Widget? nedenEki;
 
+  /// "Dönemin en iyi ve en zor günü" satırı (Premium, 2026-11-11) çizilsin
+  /// mi. Çağıran `premiumOzellikleriGorunurProvider`'dan verir; view
+  /// `ProviderScope`'suz testlerde kurulabilsin diye provider okumaz.
+  /// Varsayılan `false`: eski çağıranlar ve testler kartı görmez.
+  final bool enIyiGunGorunur;
+
+  /// Satır kilitli mi (`premiumKilitliProvider`): kilitliyse kart yalnız
+  /// kilit satırını taşır, gün ve yüzde yazılmaz.
+  final bool enIyiGunKilitli;
+
   const PeriodSummaryView({
     super.key,
     required this.summary,
@@ -196,6 +207,8 @@ class PeriodSummaryView extends StatelessWidget {
     this.simdi,
     this.anaRakamGizli = false,
     this.nedenEki,
+    this.enIyiGunGorunur = false,
+    this.enIyiGunKilitli = false,
   });
 
   @override
@@ -444,6 +457,20 @@ class PeriodSummaryView extends StatelessWidget {
         if (enSabirli != null && enSabirliGun != null) {
           derinlik.add(_SabirKarti(varlik: enSabirli!, gun: enSabirliGun!));
         }
+    }
+
+    // En iyi / en zor gün: varlık uçlarının hemen ALTINDA (aynı "uçlar"
+    // sorusunun gün cevabı). Varlık kartı olmayan dönemde (1A) uçlar
+    // bölümünün başına. Ölçülemeyen dönemde (GÜNLÜK, haftalık çözünürlük,
+    // kısa dönem) alan null ve kilit satırı da çizilmez: içi boş bir şey
+    // satılmaz.
+    final gunler = summary.enIyiEnZorGun;
+    if (enIyiGunGorunur && gunler != null) {
+      final i = varliklar.indexWhere((w) => w is _VarlikKarti);
+      varliklar.insert(
+          i + 1,
+          _EnIyiGunKarti(
+              gunler: gunler, kilitli: enIyiGunKilitli, simdi: simdi));
     }
 
     final neden = <Widget>[
@@ -1133,6 +1160,117 @@ class _VarlikSatiri extends StatelessWidget {
           ),
         ],
       );
+}
+
+/// "Dönemin en iyi ve en zor günü" (Premium, 2026-11-11).
+///
+/// Satır deseni [_VarlikSatiri] ile aynı (ok + metin + işaretli yüzde), tek
+/// farkla: metin SARILIR (`maxLines` yok). Tarih kısaltılamaz ve Dynamic
+/// Type 3.1×'te "En az yükselen gün · 28 Aralık 2025" tek satıra sığmaz;
+/// varlık adı gibi üç noktayla kesmek günü yok ederdi.
+///
+/// Durum yalnız renkle verilmez: ok yönü, işaret (+/−) ve etiket metni de
+/// aynı şeyi söyler. Etiket dürüst kalır: en iyi gün de ekside ise ("hiç
+/// artı gün yok") "En az düşen gün", en zor gün de artıda ise "En az
+/// yükselen gün" yazar; kayıptaki günü "en iyi" diye kutlamak ekranın ton
+/// kuralına aykırı (`RETENTION_STRATEJISI.md` §8).
+///
+/// Grafikte o güne gitme bağlanmadı: grafiğin artı imleci yalnız dokunuşla
+/// kurulan iç durum (`ZoomableChart._crosshairX`), dışarıdan seçim API'si
+/// yok.
+class _EnIyiGunKarti extends StatelessWidget {
+  const _EnIyiGunKarti(
+      {required this.gunler, required this.kilitli, this.simdi});
+
+  final ({DonemGunu enIyi, DonemGunu? enZor}) gunler;
+  final bool kilitli;
+  final DateTime? simdi;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    if (kilitli) {
+      return _BaglamKarti(
+        baslik: l.bestToughestDayTitle,
+        child: KilitSatiri(
+          metin: l.bestDayLocked,
+          kaynak: 'en_iyi_gun',
+          ozellik: 'en_iyi_gun',
+          kilitEtiketi: l.goalDateLockedLabel,
+        ),
+      );
+    }
+    final dil = context.tarihDili;
+    final bugun = simdi ?? DateTime.now();
+    String tarih(DonemGunu g) => fmtGunAy(g.gun, dil: dil, bugun: bugun);
+    final enIyi = gunler.enIyi;
+    final enZor = gunler.enZor;
+    return _BaglamKarti(
+      baslik: l.bestToughestDayTitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _GunSatiri(
+            gun: enIyi,
+            metin: enIyi.pct < 0
+                ? l.leastDownDayRow(tarih(enIyi))
+                : l.bestDayRow(tarih(enIyi)),
+          ),
+          if (enZor != null) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _GunSatiri(
+              gun: enZor,
+              metin: enZor.pct > 0
+                  ? l.leastUpDayRow(tarih(enZor))
+                  : l.toughestDayRow(tarih(enZor)),
+            ),
+          ],
+          const SizedBox(height: SandikSpace.smd),
+          Text(
+            l.bestDayFootnote,
+            style: context.t.bodySmall?.copyWith(color: context.c.text58),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GunSatiri extends StatelessWidget {
+  const _GunSatiri({required this.gun, required this.metin});
+
+  final DonemGunu gun;
+  final String metin;
+
+  @override
+  Widget build(BuildContext context) {
+    // Renk ve ok YÖNDEN gelir (etiketten değil): "en iyi gün" ekside ise
+    // kırmızı aşağı ok + "−" — üç işaret aynı şeyi söyler.
+    final yukari = gun.pct >= 0;
+    final renk = yukari ? context.c.gain : context.c.loss;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          yukari ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+          size: SandikSpace.md2,
+          color: renk,
+        ),
+        const SizedBox(width: SandikSpace.sm),
+        Expanded(
+          child: Text(
+            metin,
+            style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+          ),
+        ),
+        const SizedBox(width: SandikSpace.sm),
+        Text(
+          fmtPctIsaretli(gun.pct, digits: 1),
+          style: context.t.numSmall.copyWith(color: renk),
+        ),
+      ],
+    );
+  }
 }
 
 /// "5 işlem gününün 3'ü artıda" — dönem dalgalılığı bağlamı.

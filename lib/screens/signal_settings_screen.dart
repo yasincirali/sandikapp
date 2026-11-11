@@ -557,7 +557,7 @@ class _ParametreSayfasiState extends State<_ParametreSayfasi> {
                         ? () => Navigator.pop<_ParametreSonucu>(
                             context, (ayar: _varsayilanMi ? null : {..._deger}))
                         : null,
-                    child: Text(l.sgnParametreKaydet),
+                    child: Text(l.save),
                   ),
                 ),
               ],

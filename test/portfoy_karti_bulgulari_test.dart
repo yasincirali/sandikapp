@@ -135,10 +135,12 @@ void main() {
         'Ort. maliyet',
         'Toplam maliyet',
         'İlk alış',
-        'Güncel tutar',
       ]) {
         expect(find.text(e), findsOneWidget, reason: e);
       }
+      // "Güncel tutar" kartın başındaki büyük tutarın tekrarıydı; mevduat
+      // dışında kalktı (Ar-Ge 2026-11-11 #4, `basa_bas_satiri_test`).
+      expect(find.text('Güncel tutar'), findsNothing);
       for (final yanlis in ['MIKTAR', 'ORT. MALIYET', 'TOPLAM MALIYET']) {
         expect(find.text(yanlis), findsNothing, reason: yanlis);
       }

@@ -718,76 +718,40 @@ extension _TutarAlanlari on _AddAssetScreenState {
     );
   }
 
-  // ── İşlem tarihi chip'i ────────────────────────────────────────────────────
+  // ── İşlem tarihi çipleri ───────────────────────────────────────────────
   //
   // Varsayılan: bugün. Kullanıcı geriye dönük bir tarih seçerse ve alış
   // fiyatı boşsa, kaydederken o tarihin kapanış fiyatı otomatik atanır.
-  // UX: küçük tek satır, dokununca native date picker açılır.
+  //
+  // 2026-11-11: tek "Bugün" çipi (dokununca takvim) yerine ortak
+  // [TarihCipleri] — Bugün · Dün · son iş günü · Başka tarih. Geçmiş tarihli
+  // kayıtların çoğu dün ya da son iş günüdür; takvim yalnız gerisi için.
+  // Seçim aynı yoldan yazılır (`setDate` + önizleme), davranış değişmez.
   Widget _dateChip(ColorScheme cs) {
-    final now = DateTime.now();
-    final isToday = _addedDate.year == now.year &&
-        _addedDate.month == now.month &&
-        _addedDate.day == now.day;
-    final label = isToday
-        ? 'Bugün'
-        : DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
-
-    return SandikTappable(
-      onTap: () async {
-        final picked = await pickSandikDate(
-          context,
-          initialDate: _addedDate,
-          helpText: context.l10n.transactionDate,
-        );
-        if (picked != null) {
-          _n.setDate(picked);
-          _schedulePricePreview();
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(
-            color: isToday
-                ? context.c.overlay
-                : context.c.amberFill.withValues(alpha: 0.35),
-            width: isToday ? 1 : 1.2,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel(context.l10n.transactionDate),
+        const SizedBox(height: SandikSpace.xs2),
+        TarihCipleri(
+          secili: _addedDate,
+          onSecildi: (gun) {
+            // Varsayılan tarih saatiyle gelir (`DateTime.now()`, hareket
+            // listesinde "· 14:32"). Aynı güne dokunmak saati silmesin;
+            // "Bugün"e dönüş de saati geri getirsin — eski tek çipte bugün
+            // hiç yeniden yazılmıyordu.
+            if (dayKey(gun) == dayKey(_addedDate)) return;
+            final simdi = DateTime.now();
+            _n.setDate(dayKey(gun) == dayKey(simdi) ? simdi : gun);
+            _schedulePricePreview();
+          },
+          takvim: () => pickSandikDate(
+            context,
+            initialDate: _addedDate,
+            helpText: context.l10n.transactionDate,
           ),
         ),
-        child: Row(
-          children: [
-            Icon(Icons.event_rounded,
-                size: 16,
-                color: isToday ? context.c.text58 : context.c.amberText),
-            const SizedBox(width: 10),
-            // Etiket ve tarih değeri ikisi de esnek olmalı: dar ekranda
-            // (320pt) "İşlem tarihi" + "14 Mart 2026" 38px taşıyordu.
-            // `Spacer` boşluğu doldurur ama kimseyi daraltmaz.
-            Flexible(
-              child: Text(context.l10n.transactionDate,
-                  style: context.t.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600, color: context.c.text90),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ),
-            const Spacer(),
-            Flexible(
-              child: Text(label,
-                  style: context.t.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: isToday ? context.c.text58 : context.c.amberText),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right_rounded,
-                size: 16,
-                color: isToday ? context.c.text36 : context.c.amberText),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }

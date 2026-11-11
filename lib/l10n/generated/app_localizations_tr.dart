@@ -425,6 +425,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String quickAmountQtyApprox(String miktar) {
+    return '≈ $miktar';
+  }
+
+  @override
+  String get quickAmountNeedsPrice => 'Tutarla girmek için birim fiyat gerekli';
+
+  @override
   String get quickHolding => 'Mevcut';
 
   @override
@@ -565,7 +573,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String deleteHistoryBody(int count) {
-    return '$count bildirim KALICI olarak silinecek. Geri alınamaz.';
+    return '$count bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.';
   }
 
   @override
@@ -1092,6 +1100,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get gecmisFiyatlarOncekiYok => 'önceki kapanış yok';
 
   @override
+  String get basaBasIcin => 'Başa baş için';
+
+  @override
+  String basaBasYukselmeli(String oran) {
+    return '$oran yükselmeli';
+  }
+
+  @override
+  String basaBasCumle(String oran) {
+    return 'Başa baş için $oran yükselmeli';
+  }
+
+  @override
+  String get basaBasKilitli => 'Başa baş için gereken yükseliş Premium\'da';
+
+  @override
   String get kopyalaKod => 'Kodu kopyala';
 
   @override
@@ -1424,7 +1448,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?';
+      'Bu işlem geri alınamaz.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?';
 
   @override
   String get continueAction => 'Devam et';
@@ -1809,9 +1833,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String awaitingApproval(String name) {
     return '$name onayı bekleniyor...';
   }
-
-  @override
-  String get cancelWord => 'İptal';
 
   @override
   String get removePartnerSemantics => 'Ortağı sil';
@@ -2262,7 +2283,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get xirrBody =>
-      'Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.';
+      'Yatırdığın paranın yıllık bileşik getirisi. Hesap, parayı hangi tarihlerde yatırdığını dikkate alır.';
 
   @override
   String get periodMarketReturnLabel => 'Seçili dönemin getirisi';
@@ -2595,7 +2616,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; her şey piyasa fiyatıyla değerlenir.';
+      'Ölçülen, hangi varlığı hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin bu oranı etkilemez; her şey piyasa fiyatıyla değerlenir.';
 
   @override
   String everyoneMeasuredSameBody(int gun) {
@@ -3180,9 +3201,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get importAiRizaKabul => 'Onaylıyorum';
 
   @override
-  String get importAiRizaVazgec => 'Vazgeç';
-
-  @override
   String get importAiRizaGeriCek => 'Yapay zekâ onayını geri çek';
 
   @override
@@ -3340,9 +3358,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String iktKotaSiganlar(int sigan) {
     return '$sigan kalemi kaydet, kalanı sepette bırak';
   }
-
-  @override
-  String get iktKotaVazgec => 'Vazgeç';
 
   @override
   String get someAssetsNotAdded => 'Bazı varlıklar eklenemedi';
@@ -3831,8 +3846,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get raceFooterGlobal =>
-      'Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
+  String get raceWhatIsNeverShared => 'Neler paylaşılmaz?';
 
   @override
   String get calculatingEllipsis => 'Hesaplanıyor…';
@@ -3864,10 +3878,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get toneRest => 'Daha iyisini yapabilirsin, 30G takip et';
-
-  @override
-  String get raceFooterPartners =>
-      'Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.';
 
   @override
   String get recapYourPortfolio => 'Portföyün';
@@ -4782,9 +4792,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get kullaniciAdiDevam => 'Devam et';
-
-  @override
-  String get kullaniciAdiKaydet => 'Kaydet';
 
   @override
   String get kullaniciAdiKaydedildi => 'Kullanıcı adın güncellendi.';
@@ -8834,9 +8841,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kod yalnız telefonunda, kapalı bir yorumlayıcıda çalışır. İnternete, dosyalara ya da hesabına erişemez.';
 
   @override
-  String get ozgKaydet => 'Kaydet';
-
-  @override
   String get ozgSil => 'Göstergeyi sil';
 
   @override
@@ -8846,9 +8850,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String ozgSilMesaj(String ad) {
     return '$ad kalıcı olarak silinir.';
   }
-
-  @override
-  String get ozgSilOnay => 'Sil';
 
   @override
   String get ozgVazgecBaslik => 'Değişiklikler kaydedilmedi';
@@ -8958,9 +8959,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sgnParametreVarsayilan => 'Varsayılana dön';
-
-  @override
-  String get sgnParametreKaydet => 'Kaydet';
 
   @override
   String sgnParametreVarsayilanDeger(int deger) {
@@ -9558,9 +9556,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get hsnBaskaUygulama => 'Başka uygulamaya geçtim';
 
   @override
-  String get hsnKapat => 'Kapat';
-
-  @override
   String get tegKapat => 'Tam ekrandan çık';
 
   @override
@@ -9684,6 +9679,26 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String alertCostPctSemantics(String sign, int pct) {
     return 'Hedef maliyetin $sign yüzde $pct';
+  }
+
+  @override
+  String alertYil52Zirve(String fiyat) {
+    return '52 hafta zirvesi $fiyat';
+  }
+
+  @override
+  String alertYil52Dip(String fiyat) {
+    return '52 hafta dibi $fiyat';
+  }
+
+  @override
+  String alertYil52ZirveSemantics(String fiyat) {
+    return 'Hedefi 52 hafta zirvesine ayarla: $fiyat';
+  }
+
+  @override
+  String alertYil52DipSemantics(String fiyat) {
+    return 'Hedefi 52 hafta dibine ayarla: $fiyat';
   }
 
   @override
@@ -10617,9 +10632,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kapanisTamam => 'Tamam';
 
   @override
-  String get kapanisPaylas => 'Paylaş';
-
-  @override
   String get kapanisPaylasEtiketi => 'Gerçekleşen getiri';
 
   @override
@@ -10644,4 +10656,53 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get zirveNasilOlculur => 'Nasıl ölçülür?';
+
+  @override
+  String get bestToughestDayTitle => 'Dönemin en iyi ve en zor günü';
+
+  @override
+  String bestDayRow(String tarih) {
+    return 'En iyi gün · $tarih';
+  }
+
+  @override
+  String leastDownDayRow(String tarih) {
+    return 'En az düşen gün · $tarih';
+  }
+
+  @override
+  String toughestDayRow(String tarih) {
+    return 'En zor gün · $tarih';
+  }
+
+  @override
+  String leastUpDayRow(String tarih) {
+    return 'En az yükselen gün · $tarih';
+  }
+
+  @override
+  String get bestDayFootnote =>
+      'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.';
+
+  @override
+  String get bestDayLocked => 'Dönemin en iyi ve en zor gününü Premium\'la gör';
+
+  @override
+  String get tarihCipiBugun => 'Bugün';
+
+  @override
+  String get tarihCipiDun => 'Dün';
+
+  @override
+  String get tarihCipiBaskaTarih => 'Başka tarih';
+
+  @override
+  String tarihCipiSonIsGunuSemantik(String gun) {
+    return '$gun, son işlem günü';
+  }
+
+  @override
+  String tarihCipiSeciliTarihSemantik(String tarih) {
+    return 'İşlem tarihi $tarih, değiştir';
+  }
 }

@@ -79,7 +79,7 @@ class IceAktarmaKotaSheet extends StatelessWidget {
                   minimumSize: const Size.fromHeight(SandikTouch.min)),
               onPressed: () =>
                   Navigator.of(context).pop(IceAktarmaKotaSecimi.vazgec),
-              child: Text(l.iktKotaVazgec),
+              child: Text(l.cancel),
             ),
           ],
         ),

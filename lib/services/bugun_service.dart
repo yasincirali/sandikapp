@@ -163,6 +163,25 @@ abstract final class BugunService {
   static bool islemGunuMu(DateTime t) =>
       t.weekday < DateTime.saturday && !BistTakvimi.tatilMi(t);
 
+  /// [bugun]den KESİN önceki son BIST işlem günü (gün başı) — tarih hızlı
+  /// seçim çiplerinin "son iş günü"sü (`TarihCipleri`, 2026-11-11).
+  ///
+  /// Bugün iş günü olsa da olmasa da bugünü saymaz: Cumartesi günü son iş
+  /// günü Cuma'dır, bugün değil. Bulunan günün yılı takvim kapsamı dışındaysa
+  /// ([BistTakvimi.yilKapsaniyor]) dinî bayramlar bilinmediği için gün
+  /// bilinemez → `null`; çağıran çipi göstermez, tahmini gün uydurulmaz.
+  /// Arama 15 günle sınırlı: en uzun kapanış (Kurban + hafta sonu) 6 gün.
+  static DateTime? sonIslemGunu(DateTime bugun) {
+    var gun = DateTime(bugun.year, bugun.month, bugun.day - 1);
+    for (var i = 0; i < 15; i++) {
+      if (islemGunuMu(gun)) {
+        return BistTakvimi.yilKapsaniyor(gun.year) ? gun : null;
+      }
+      gun = DateTime(gun.year, gun.month, gun.day - 1);
+    }
+    return null;
+  }
+
   /// Seans şu an açık mı? Cihaz saatinin TR olduğu varsayılır — uygulama
   /// Türkiye pazarına özel; yurt dışındaki kullanıcıda satır bir saat
   /// dilimi kadar kayar, yanlış sayı üretmez.
