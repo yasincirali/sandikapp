@@ -2314,8 +2314,43 @@ class _AssetList {
     // Etiket GÖSTERİLEN satırın anahtarından: tekil (`ValueKey` ile aynı),
     // açılan pozisyon ortak satırda farklı olsa da.
     final hero = heroAcik ? varlikHeroEtiketi(position.key) : null;
-    return _YeniVarlikParlamasi(
-        key: ValueKey(position.key),
+    // Fiyat turu tek varlığın fiyatını değiştirdiğinde tüm satırlar yeniden
+    // kuruluyordu (ölçüm 2026-11-11, 20 pozisyon, 390×844: görünen 10 kart,
+    // tur başına ~876 eleman). İmza satırın gösterdiği her girdiyi DEĞER
+    // olarak taşır; eşitse önceki kart nesnesi aynen döner ve Flutter alt
+    // ağaca inmez. Riverpod `select` yerine imza: satırın pozisyonu
+    // ortak/portföy kapsamı ve birleştirmeyle `build`'de türetiliyor; satır
+    // kendi dilimini sağlayıcıdan okusaydı bu türetmeyi her satırda tekrar
+    // etmek gerekirdi. Kapanışlar (`kendi`) imza eşitken eşdeğerdir: lot
+    // değerleri imzada, `Asset` nesneleri de turda yerinde güncellenir.
+    final imza = _SatirImzasi([
+      position.runtimeType,
+      position.key,
+      position.totalQuantity,
+      position.weightedPurchasePrice,
+      position.weightedFxRate,
+      position.latestAddedDate,
+      position.totalCommission,
+      position.totalDividend,
+      position.representative.degerImzasi,
+      for (final l in position.lots) l.degerImzasi,
+      // Kart yalnız `pState.toTRY` okur: satırın kendi para birimlerinin
+      // kuru. USD kuru oynayınca yalnız USD satırları yeniden kurulur.
+      for (final c in {for (final l in position.lots) l.currency})
+        (c, pState.toTRY(1, c)),
+      baz.birim, baz.kur, baz.gizli,
+      kendi != null, currentUserId, hero,
+      bugun?.hucre(position.key).bekleniyor,
+      bugun?.hucre(position.key).degisim?.degisimPct,
+      bugun?.hucre(position.key).degisim?.degisimTRY,
+      bugun?.hucre(position.key).degisim?.islemVar,
+      onTasi != null, onGuncelle != null,
+      position.key == vurgulanan, vurguNo,
+    ]);
+    return _ImzaliSatir(
+      key: ValueKey(position.key),
+      imza: imza,
+      kur: () => _YeniVarlikParlamasi(
         aktif: position.key == vurgulanan,
         tetik: vurguNo,
         child: _AssetCard(
@@ -2347,7 +2382,54 @@ class _AssetList {
               ? null
               : (_) => onGuncelle!(kendi),
         ),
-      );
+      ),
+    );
+  }
+}
+
+/// [_ImzaliSatir]'ın değer eşitliği: liste öğe öğe karşılaştırılır.
+class _SatirImzasi {
+  const _SatirImzasi(this.alanlar);
+  final List<Object?> alanlar;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _SatirImzasi && listEquals(other.alanlar, alanlar);
+
+  @override
+  int get hashCode => Object.hashAll(alanlar);
+}
+
+/// İmzası değişmeyen satırda önceki alt ağacı AYNI nesneyle döndürür:
+/// `Element.updateChild` özdeş widget'ta yeniden kurmaz. Tema/yazı boyutu
+/// gibi miras alınan değişiklikler alt ağaca bağımlılık yoluyla yine ulaşır;
+/// [kur] bu yüzden `context` okumamalı (bkz. `_AssetList._kart`).
+class _ImzaliSatir extends StatefulWidget {
+  const _ImzaliSatir({super.key, required this.imza, required this.kur});
+  final Object imza;
+  final Widget Function() kur;
+
+  @override
+  State<_ImzaliSatir> createState() => _ImzaliSatirState();
+}
+
+class _ImzaliSatirState extends State<_ImzaliSatir> {
+  Widget? _cocuk;
+  Object? _imza;
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    _cocuk = null; // sıcak yeniden yüklemede kod değişmiş olabilir
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_cocuk == null || _imza != widget.imza) {
+      _imza = widget.imza;
+      _cocuk = widget.kur();
+    }
+    return _cocuk!;
   }
 }
 
@@ -3352,11 +3434,17 @@ class _VeriEksigiEtiketi extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eksikler = pozisyonunEksikleri(
-      ref.watch(pozisyonEksikleriProvider),
-      position,
-      ref.watch(authProvider.select((u) => u.valueOrNull?.id)),
-    );
+    final uid = ref.watch(authProvider.select((u) => u.valueOrNull?.id));
+    // Yalnız bu satırın dilimi, değer olarak: eksik haritası her fiyat
+    // turunda yeniden kuruluyor; tüm haritayı izlemek her satırın etiketini
+    // her turda yeniden kuruyordu (ölçüm 2026-11-11, bkz. `_ImzaliSatir`).
+    final eksikler = ref
+        .watch(pozisyonEksikleriProvider.select((m) => _SatirImzasi([
+              for (final e in pozisyonunEksikleri(m, position, uid))
+                (tur: e.tur, gun: e.gun),
+            ])))
+        .alanlar
+        .cast<({VeriEksigiTuru tur, int? gun})>();
     if (eksikler.isEmpty) return const SizedBox.shrink();
     final l = context.l10n;
     final metin = [

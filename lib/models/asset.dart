@@ -319,6 +319,22 @@ class Asset {
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
 
+  /// Kaydın o anki DEĞERLERİNİN anlık görüntüsü (kayıt eşitliği yapısal).
+  ///
+  /// Neden: `Asset` değişken ve fiyat turu `currentPrice`'ı yerinde yazar;
+  /// kimlik karşılaştırması "değişti mi?" sorusunu yanıtlayamaz. Portföy
+  /// satırı bunu fiyat turunda yalnız değişen satırı yeniden kurmak için
+  /// kullanır (`_ImzaliSatir`, ölçüm 2026-11-11). Yeni alan eklersen BURAYA
+  /// da ekle: eksik alan, o alan değişince satırın eski hâlde kalması
+  /// demektir (`portfoy_satir_yeniden_kurulum_test` değişken alanları tarar).
+  Object get degerImzasi => (
+        id, userId, name, ticker, type, subCategory, unitType, quantity,
+        purchasePrice, currency, currentPrice, lastUpdated, addedDate, notes,
+        isManualPrice, purchaseFxRate, kind, refAssetId, sellPrice,
+        sellFxRate, commission, dividendAmount, deletedCount, deletedAt,
+        sozlesmeId, createdAt, portfoyId, maliyetBilinmiyor, portfoyKarisik,
+      );
+
   bool get isBuy => kind == AssetKind.buy;
   bool get isSell => kind == AssetKind.sell;
   bool get isDeleteLog => kind == AssetKind.deleteLog;
