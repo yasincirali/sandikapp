@@ -127,7 +127,10 @@ class WatchlistBody extends ConsumerWidget {
           ),
           ),
         ),
-        const _FooterNote(),
+        // "Portföyüne dahil değildir" dipnotu 2026-11-11'den beri yalnız
+        // boş durumda (`_EmptyState`): dolu listede her açılışta aynı cümle
+        // kaydırma dışında yer kaplıyordu; kullanıcı ayrımı ilk karşılaşmada
+        // öğreniyor, sonra satırlar kendini anlatıyor.
       ],
       ),
     );
@@ -1506,6 +1509,14 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
                       color: context.c.onStatus, fontWeight: FontWeight.w700)),
             ),
           ),
+          // Eskiden ekranın altında sabit dipnottu; artık yalnız burada,
+          // bir kez (2026-11-11).
+          const SizedBox(height: SandikSpace.md),
+          Text(
+            l.notInPortfolioNote,
+            textAlign: TextAlign.center,
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          ),
         ],
       ),
     );
@@ -1777,21 +1788,6 @@ class _KapasiteSeridi extends StatelessWidget {
       ),
     );
   }
-}
-
-class _FooterNote extends StatelessWidget {
-  const _FooterNote();
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 12),
-        child: Text(
-          context.l10n.notInPortfolioNote,
-          textAlign: TextAlign.center,
-          style: context.t.bodySmall
-              ?.copyWith(color: context.c.text36, fontSize: 11),
-        ),
-      );
 }
 
 /// Ekranda gösterilecek kısa etiket — grafikle AYNI kural
