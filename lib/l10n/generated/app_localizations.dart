@@ -7413,6 +7413,12 @@ abstract class AppLocalizations {
   /// **'Bugünkü değer'**
   String get posCurrentValue;
 
+  /// No description provided for @posPortfolioShare.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyündeki payı'**
+  String get posPortfolioShare;
+
   /// No description provided for @posTotalPnl.
   ///
   /// In tr, this message translates to:

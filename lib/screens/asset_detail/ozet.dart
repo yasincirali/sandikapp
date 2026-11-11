@@ -96,6 +96,30 @@ extension _DetayOzet on _AssetDetailScreenState {
     return sonuc;
   }
 
+  /// "Portföyündeki payı" (Ar-Ge 11 Kas 19:04 #7) — hesap `portfoyPayi`'de
+  /// (model katmanı, Portföy halkasıyla aynı toplam). Yalnız KENDİ açık
+  /// pozisyonunda: kapalı pozisyonun bugünkü payı yoktur, ortağın
+  /// pozisyonu bu kullanıcının portföyünün parçası değildir. Defter ya da
+  /// fiyat durumu değişmedikçe yeniden hesaplanmaz.
+  double? _portfoyPayi(
+      _PnlOzeti pnl, PortfolioState? pState, bool isOwnAsset) {
+    if (!isOwnAsset || pState == null || !_canli.acik) return null;
+    final defter = _canliDefter;
+    if (defter == null) return null;
+    final o = _portfoyPayiOnbellek;
+    if (o != null &&
+        identical(o.defter, defter) &&
+        identical(o.pState, pState) &&
+        o.deger == pnl.currentValueTRY) {
+      return o.pay;
+    }
+    final pay = portfoyPayi(
+        degerTRY: pnl.currentValueTRY, defter: defter, toTRY: pState.toTRY);
+    _portfoyPayiOnbellek =
+        (defter: defter, pState: pState, deger: pnl.currentValueTRY, pay: pay);
+    return pay;
+  }
+
   /// Para piyasası fonunda "Son 30 günde günde ortalama ~₺X" (müşteri raporu
   /// 7 Kas 22:30 #1, ücretsiz). Yalnız bugün açık pozisyonda ve TEFAS
   /// kategorisi bilinen para piyasası fonunda; kategori tahmin edilmez.

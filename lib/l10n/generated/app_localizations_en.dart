@@ -4466,6 +4466,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posCurrentValue => 'Value today';
 
   @override
+  String get posPortfolioShare => 'Share of your portfolio';
+
+  @override
   String get posTotalPnl => 'Total profit/loss';
 
   @override

@@ -12,7 +12,7 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 
 /// Varlık sayfası üst çubuk başlığı (Ar-Ge 11 Kas 19:04 #1): gövde başlığı
-/// çubuğun altına girince çubukta "THYAO · <canlı fiyat>" belirir; başlık
+/// çubuğun altına girince çubukta "THYAO · canlı fiyat" belirir; başlık
 /// görünürken çubuk boştur (iki kez yazılmaz). Hareketi azalt açıkken
 /// soluklaşma süresi sıfırdır.
 

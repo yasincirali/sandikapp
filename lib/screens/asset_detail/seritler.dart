@@ -30,7 +30,12 @@ class _PozisyonKarti extends StatelessWidget {
     required this.donem,
     this.birimGizli = false,
     this.kabuksuz = false,
+    this.portfoyPayi,
   });
+
+  /// Pozisyonun portföydeki payı (0–1, `portfoyPayi`); `null` → satır yok
+  /// (kapalı pozisyon, ortağın pozisyonu, toplam ≤ 0).
+  final double? portfoyPayi;
 
   /// Kart kabuğu (`SandikCard`) olmadan yalnız satırlar — katmanlı düzende
   /// (`varlik_detay_katmanli`) satırlar özet kartın "Ayrıntı" panelinde
@@ -76,6 +81,8 @@ class _PozisyonKarti extends StatelessWidget {
         _PozisyonSatiri(
             etiket: l.posCurrentValue,
             deger: tutar.format(pnl.currentValueTRY)),
+        // "Bugünkü değer"in hemen altında: aynı tutarın portföye oranı.
+        if (portfoyPayi case final pay?) _PortfoyPayiSatiri(pay: pay),
         _PozisyonSatiri.kazanc(
           etiket: l.posTotalPnl,
           tutar: pnl.totalPnlTRY,
@@ -198,6 +205,55 @@ class _PozisyonSatiri extends StatelessWidget {
 }
 
 enum _KazancRengi { gain, loss }
+
+/// "Portföyündeki payı %12" + 4 pt ince çubuk (Ar-Ge 11 Kas 19:04 #7).
+///
+/// Yüzde, Portföy halkasının ortasındaki dilim payıyla aynı biçimde
+/// (`fmtPct`, bir hane). Çubuk NÖTR (`hairline` yol, `text58` dolgu):
+/// büyük pay "kötü", küçük pay "iyi" demez — renk anlam taşımaz, oran
+/// metinde yazılıdır (HIG renk körlüğü). Çubuk süs sayılır, semantikten
+/// çıkar; VoiceOver satırı "Portföyündeki payı, %12,0" diye okur.
+class _PortfoyPayiSatiri extends StatelessWidget {
+  const _PortfoyPayiSatiri({required this.pay});
+
+  final double pay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PozisyonSatiri(
+          etiket: context.l10n.posPortfolioShare,
+          deger: fmtPct(pay * 100, digits: 1),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+          child: ExcludeSemantics(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(SandikRadius.sm),
+              child: SizedBox(
+                key: const ValueKey('portfoyPayiCubugu'),
+                height: SandikSpace.xs,
+                child: ColoredBox(
+                  color: context.c.hairline,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FractionallySizedBox(
+                      widthFactor: pay,
+                      heightFactor: 1,
+                      child: ColoredBox(color: context.c.text58),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 /// Pozisyon kartındaki kâr/zarar satırının metni ve yönü (`1` kâr, `-1`
 /// zarar, `0` nötr); tutar da yüzde de sıfıra yuvarlanıyorsa `null`

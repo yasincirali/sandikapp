@@ -4438,6 +4438,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get posCurrentValue => 'Bugünkü değer';
 
   @override
+  String get posPortfolioShare => 'Portföyündeki payı';
+
+  @override
   String get posTotalPnl => 'Toplam kâr/zarar';
 
   @override

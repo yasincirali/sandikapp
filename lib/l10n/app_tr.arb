@@ -3019,6 +3019,7 @@
   "posTodayPrice": "Bugünkü fiyat",
   "posTotalCost": "Ödediğin toplam",
   "posCurrentValue": "Bugünkü değer",
+  "posPortfolioShare": "Portföyündeki payı",
   "posTotalPnl": "Toplam kâr/zarar",
   "posPeriodPnl": "{period} kâr/zarar",
   "@posPeriodPnl": {

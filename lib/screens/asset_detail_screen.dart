@@ -14,6 +14,7 @@ import '../models/gunluk_getiri.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/kur_ayrismasi.dart';
 import '../models/portfoy.dart';
+import '../models/portfoy_payi.dart';
 import '../models/position.dart';
 import '../providers/portfoy_provider.dart';
 import '../providers/auth_provider.dart';
@@ -642,6 +643,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         : (asset: p.asDisplayAsset(), lots: p.lots, acik: true);
     _canliKendi = kendi;
     _canliOrtaklar = ortaklar;
+    _canliDefter = sahipLotlari;
     _canliOnbellek = sonuc;
     return sonuc;
   }
@@ -658,6 +660,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   ({List<Map<int, double>?> seriler, double deger, double birim, double? sonuc})?
       _gunlukGetiriOnbellek;
   List<Asset>? _canliKendi;
+
+  /// Sahibin (çoklu portföyde o portföyün) BÜTÜN ürünlerdeki ham defteri —
+  /// `_canli`'nin süzdüğü liste. "Portföyündeki payı"nın paydası buradan
+  /// (`_portfoyPayi`, ozet.dart): pozisyonla aynı kapsam, ayrı süzgeç yok.
+  List<Asset>? _canliDefter;
+
+  /// "Portföyündeki payı" hesabının son girdisi ve sonucu — aynı defter ve
+  /// aynı fiyat durumuyla her karede yeniden hesaplanmasın.
+  ({List<Asset> defter, PortfolioState pState, double deger, double? pay})?
+      _portfoyPayiOnbellek;
   Map<String, List<Asset>>? _canliOrtaklar;
 
   /// Ortak nabzın dinleyicisini kaldıran işlev (bkz. [_nabizGeldi]).
@@ -2556,6 +2568,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                           context.l10n, _periods[_selectedPeriodIdx].label),
                       donem: _donemDegisimi(period.days, startDate, endDate,
                           pnl.currentUnitTRY),
+                      portfoyPayi: _portfoyPayi(pnl, pState, isOwnAsset),
                     ),
                   )
                 else ...[
@@ -2585,6 +2598,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // eski dönemin rakamı yeni dönemin etiketiyle yazılmaz.
                   donem: _donemDegisimi(period.days, startDate, endDate,
                       pnl.currentUnitTRY),
+                  portfoyPayi: _portfoyPayi(pnl, pState, isOwnAsset),
                 ),
                 _eurobondKarti(),
                 const SizedBox(height: SandikSpace.lg),

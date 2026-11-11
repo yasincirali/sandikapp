@@ -2887,6 +2887,7 @@
   "posTodayPrice": "Today's price",
   "posTotalCost": "Total paid",
   "posCurrentValue": "Value today",
+  "posPortfolioShare": "Share of your portfolio",
   "posTotalPnl": "Total profit/loss",
   "posPeriodPnl": "{period} profit/loss",
   "@posPeriodPnl": {
