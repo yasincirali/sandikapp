@@ -7,10 +7,12 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/sozlesme_provider.dart';
 import '../services/mevduat_hesabi.dart';
+import '../services/takvim_ics.dart';
 import '../theme/sandik.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'sandik_skeleton.dart';
+import 'takvime_ekle_dugmesi.dart';
 
 /// Portföy kartının açılır panelinde mevduatın grafik yerine geçen şeridi.
 ///
@@ -118,8 +120,30 @@ class MevduatVadeSeridi extends ConsumerWidget {
                 style: context.t.bodySmall?.copyWith(
                     fontWeight: FontWeight.w700, color: context.c.text90),
               ),
-              Text(sagUst,
-                  style: ikincil?.copyWith(fontWeight: FontWeight.w600)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(sagUst,
+                        style: ikincil?.copyWith(fontWeight: FontWeight.w600)),
+                  ),
+                  // Vade günü takvime (2026-11-11). Dolmuş vadede geçmiş
+                  // bir günü hatırlatmanın anlamı yok; günlük faizli
+                  // hesapta vade yok → düğme yok (uydurma tarih yazılmaz).
+                  if (vade != null && !o.doldu)
+                    TakvimeEkleDugmesi(
+                      etkinlikler: [
+                        TakvimEtkinligi(
+                          uid: 'mevduat-$id-${takvimGunu(vade)}',
+                          gun: vade,
+                          baslik: l10n.calendarDepositMaturity,
+                        ),
+                      ],
+                      dosyaAdi: 'sandik-mevduat-vade',
+                      konu: l10n.calendarDepositMaturity,
+                    ),
+                ],
+              ),
             ],
           ),
           if (vade != null) ...[

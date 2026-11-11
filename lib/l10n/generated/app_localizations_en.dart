@@ -4955,6 +4955,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get addToCalendar => 'Add to calendar';
+
+  @override
+  String get calendarDepositMaturity => 'Time deposit maturity';
+
+  @override
+  String calendarCouponDay(String ad) {
+    return '$ad coupon day';
+  }
+
+  @override
+  String calendarDividendEstimated(String kod) {
+    return '$kod dividend date (estimated)';
+  }
+
+  @override
+  String get calendarDividendNote =>
+      'Anniversary of last year\'s record date. Not a date announced by the company.';
+
+  @override
   String get ipoParticipate => 'I participated, add to portfolio';
 
   @override

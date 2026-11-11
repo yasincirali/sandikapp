@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../providers/temettu_tahmini_provider.dart';
+import '../services/seni_ilgilendiren_gunler.dart' show temettuGunleri;
+import '../services/takvim_ics.dart';
 import '../services/temettu_tahmini.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -13,6 +15,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/takvime_ekle_dugmesi.dart';
 
 /// Önümüzdeki 12 ayın temettü tahmini (Premium, 2026-10-10).
 ///
@@ -211,8 +214,36 @@ class _Satir extends StatelessWidget {
           Text(fmtTRY(s.netTry ?? s.brutTry),
               style: context.t.numSmall
                   .copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+          // Beklenen temettü günü takvime (2026-11-11). Gün, ana sayfanın
+          // "Seni ilgilendiren günler" satırıyla aynı kuraldan gelir
+          // (geçen yılın hak gününün yıl dönümü, [temettuGunleri]); şirket
+          // kararı değil → başlıkta "tahmini", açıklamada kural. Geçen yıl
+          // hak günü yoksa düğme yok (uydurma tarih yazılmaz).
+          TakvimeEkleDugmesi(
+            etkinlikler: [
+              for (final g in temettuGunleri(
+                {s.sembol: s.hakGunleri},
+                bugun: _bugunUtc(),
+              ))
+                TakvimEtkinligi(
+                  uid: 'temettu-${g.kod}-${takvimGunu(g.gun)}',
+                  gun: g.gun,
+                  baslik: l.calendarDividendEstimated(g.kod ?? s.ad),
+                  aciklama: l.calendarDividendNote,
+                ),
+            ],
+            dosyaAdi: 'sandik-temettu-${s.sembol}',
+            konu: l.calendarDividendEstimated(s.ad),
+          ),
         ],
       ),
     );
   }
+}
+
+/// TR takvim günü, saatsiz (UTC gece yarısı) — [temettuGunleri] bu biçimi
+/// bekler.
+DateTime _bugunUtc() {
+  final n = DateTime.now();
+  return DateTime.utc(n.year, n.month, n.day);
 }

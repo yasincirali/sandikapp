@@ -140,4 +140,25 @@ void main() {
     expect(find.text('Özel sektör'), findsOneWidget);
     expect(find.textContaining('Stopaj %3'), findsOneWidget);
   });
+
+  // "Takvime ekle" (2026-11-11): bir sonraki kupon günü biliniyorsa düğme
+  // var; vadesi geçmiş tahvilde kupon yok → düğme yok (uydurma tarih yok).
+  testWidgets('kupon günü varken takvim düğmesi var', (tester) async {
+    await ciz(
+        tester,
+        eurobondOzeti(
+            sozlesme: _tr28, fiyat: null, nominal: 1000, simdi: _gun));
+    expect(find.byTooltip('Takvime ekle'), findsOneWidget);
+  });
+
+  testWidgets('kupon günü yokken takvim düğmesi yok', (tester) async {
+    await ciz(
+        tester,
+        eurobondOzeti(
+            sozlesme: _tr28,
+            fiyat: null,
+            nominal: 1000,
+            simdi: DateTime(2028, 2, 1)));
+    expect(find.byTooltip('Takvime ekle'), findsNothing);
+  });
 }

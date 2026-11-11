@@ -5,8 +5,10 @@ import '../l10n/l10n.dart';
 import '../models/eurobond.dart';
 import '../providers/eurobond_provider.dart';
 import '../services/eurobond_ozeti.dart';
+import '../services/takvim_ics.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'takvime_ekle_dugmesi.dart';
 
 /// Varlık ekranının "Tahvil bilgileri" kartı — yalnız eurobond lotunda
 /// (2026-10-08, yasin: "her varlık türü için detaycı olmalıyız").
@@ -118,9 +120,31 @@ class EurobondKarti extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(s.ad,
-                  style: context.t.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.text90)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(s.ad,
+                        style: context.t.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.c.text90)),
+                  ),
+                  // Bir sonraki kupon günü takvime (2026-11-11). Kupon
+                  // takvimi bilinmiyorsa düğme yok (uydurma tarih yok).
+                  if (o.sonrakiKupon != null)
+                    TakvimeEkleDugmesi(
+                      etkinlikler: [
+                        TakvimEtkinligi(
+                          uid: 'kupon-${s.isin}-${takvimGunu(o.sonrakiKupon!)}',
+                          gun: o.sonrakiKupon!,
+                          baslik: l.calendarCouponDay(s.ad),
+                          aciklama: s.isin,
+                        ),
+                      ],
+                      dosyaAdi: 'sandik-kupon-${s.isin}',
+                      konu: l.calendarCouponDay(s.ad),
+                    ),
+                ],
+              ),
               const SizedBox(height: SandikSpace.xxs),
               Text('${s.isin} · ${l.bondPerNominalNote}',
                   style:

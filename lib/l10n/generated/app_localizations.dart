@@ -8211,6 +8211,36 @@ abstract class AppLocalizations {
   /// **'{kod} halka arz tarihleri'**
   String ipoCalendarSubject(String kod);
 
+  /// No description provided for @addToCalendar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takvime ekle'**
+  String get addToCalendar;
+
+  /// No description provided for @calendarDepositMaturity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeli mevduat vade günü'**
+  String get calendarDepositMaturity;
+
+  /// No description provided for @calendarCouponDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} kupon günü'**
+  String calendarCouponDay(String ad);
+
+  /// No description provided for @calendarDividendEstimated.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kod} temettü günü (tahmini)'**
+  String calendarDividendEstimated(String kod);
+
+  /// No description provided for @calendarDividendNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen yılın hak gününün yıl dönümü. Şirketin açıkladığı bir tarih değil.'**
+  String get calendarDividendNote;
+
   /// No description provided for @ipoParticipate.
   ///
   /// In tr, this message translates to:

@@ -4925,6 +4925,26 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get addToCalendar => 'Takvime ekle';
+
+  @override
+  String get calendarDepositMaturity => 'Vadeli mevduat vade günü';
+
+  @override
+  String calendarCouponDay(String ad) {
+    return '$ad kupon günü';
+  }
+
+  @override
+  String calendarDividendEstimated(String kod) {
+    return '$kod temettü günü (tahmini)';
+  }
+
+  @override
+  String get calendarDividendNote =>
+      'Geçen yılın hak gününün yıl dönümü. Şirketin açıkladığı bir tarih değil.';
+
+  @override
   String get ipoParticipate => 'Katıldım, portföye ekle';
 
   @override
