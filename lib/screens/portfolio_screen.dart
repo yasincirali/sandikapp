@@ -1,4 +1,5 @@
 import 'dart:async' show FutureOr, unawaited;
+import '../widgets/degisim_parlamasi.dart';
 import '../widgets/bekleyen_fon_alimi_satiri.dart';
 import '../widgets/cevrimdisi_seridi.dart';
 import '../widgets/fon_fiyat_gunu_etiketi.dart';
@@ -2937,11 +2938,26 @@ class _AssetCardState extends State<_AssetCard>
                   // kullanıcıyı etkiler, varsayılan boyutta satır birebir eski.
                   final buyukYazi = MediaQuery.textScalerOf(context).scale(1) >
                       _ikiSutunMetinOlcegi;
-                  final tutarMetni = Text(
-                    tryFmt.format(pState.toTRY(a.totalValue, a.currency)),
+                  final tutarTRY = pState.toTRY(a.totalValue, a.currency);
+                  final tutarYazisi = tryFmt.format(tutarTRY);
+                  final tutarYazi = Text(
+                    tutarYazisi,
                     maxLines: 1,
                     style: context.t.numMedium.copyWith(
                         fontWeight: FontWeight.w700, color: context.c.text90),
+                  );
+                  // Fiyat turu tutarı değiştirince kısa ton + ▲/▼ (Ar-Ge
+                  // 11 Kas 18:04 #2). Kimlik adet ve gösterim birimini
+                  // taşır: alış/satış ya da ₺→$ kullanıcının eylemi,
+                  // fiyat hareketi değil — yakmaz. Gizli tutarda kapalı.
+                  final tutarMetni = DegisimParlamasi(
+                    deger: tutarTRY,
+                    metin: tutarYazisi,
+                    kimlik: (position.key, position.totalQuantity,
+                        widget.baz.birim),
+                    etkin: !widget.baz.gizli,
+                    okSonda: buyukYazi,
+                    child: tutarYazi,
                   );
                   final bugun = widget.bugun;
                   final karZarar = bugun != null

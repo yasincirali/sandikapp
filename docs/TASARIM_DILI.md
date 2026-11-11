@@ -79,7 +79,7 @@ Süre ve eğri **birlikte** seçilir:
 | Özel içerikli diyalog | `showSandikGecisli` (aynı geçiş) + `SandikDiyalogKabugu` (onay diyaloğuyla aynı kart, klavye payı); ham `AlertDialog`/`Dialog` yazılmaz |
 | Aç/kapa bölüm | `SandikAcilir` + `SandikAcilirOk` |
 | Satır kalkışı | `KapananSatir` |
-| Değer değişim vurgusu | `DegisimVurgusu` |
+| Değer değişim vurgusu | Tek büyük sayı (Ana toplam): `DegisimVurgusu` (metin rengi). Liste satırı tutarı/fiyatı: `DegisimParlamasi` (zemin tonu + tek seferlik ▲/▼; hareketi azalt → yalnız ok). Yakma kuralı ikisinde ortak: `degisimYonu` |
 | Büyük fiyat/tutar metni (hane döner, ₺ ve kuruş geri çekilir) | `ParaMetni` (bayrak `goz_alici`; Ana toplam kartında kullanılmaz) |
 | Grafik imleci → büyük fiyat | `ZoomableChart.imlecEtiketi` + `VarlikFiyatBlogu.imlec` (bayrak `goz_alici`; imleçte hane dönmez) |
 | Grafikte anlamlı nokta titreşimi | `ZoomableChart.titresimNoktalari` (zirve/dip); nokta başına titreşim yok |
@@ -237,9 +237,10 @@ eklenir.
 6. ~~**Kalan ham `AlertDialog`/`Dialog`**~~ Yapıldı (Ar-Ge 5 Kas 22:40 #7):
    Ayarlar şifre adımı `showSandikConfirm(detail:)`; yasal uyarı, temettü ve
    hızlı al/sat `SandikDiyalogKabugu`.
-7. **Sayı değişimi hareketi.** Fiyat ve toplamlar anında değişiyor; yalnız
-   özet kartında renk vurgusu var. Öneri: canlı fiyat değişiminde
-   `DegisimVurgusu` her yerde.
+7. **Sayı değişimi hareketi.** Özet kartında renk vurgusu
+   (`DegisimVurgusu`); Portföy kart tutarı ve Takip satırı fiyatı
+   `DegisimParlamasi` (Ar-Ge 11 Kas 18:04 #2). Kalan: varlık sayfası
+   büyük fiyatı, piyasa şeridi.
 8. ~~**İskelet → içerik geçişi.**~~ Yapıldı: `SandikYuklemeGecisi` /
    `SandikIcerikGecisi` (~23 dosya); son büyük ada portföy yorumu kartıydı
    (2026-10-20). Yeni yüzey bunları kullanır.

@@ -14,6 +14,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/bes_sozlesme_pozisyonu.dart';
 import 'package:portfoy_takip/models/position.dart';
+import 'package:portfoy_takip/widgets/degisim_parlamasi.dart';
 import 'package:portfoy_takip/widgets/disclaimer_widget.dart';
 import 'package:portfoy_takip/widgets/bes_fon_satiri.dart';
 import 'package:portfoy_takip/widgets/bildirim_izni_uyarisi.dart';
@@ -313,6 +314,18 @@ void main() {
                 // Performans dipnotunun kısa biçimi (2026-11-07): "Ayrıntı"
                 // bağlantısı 44 pt ve etiketli olmalı.
                 const DisclaimerWidget(kisa: true),
+                const SizedBox(height: SandikSpace.md),
+                // Fiyat turu değişim parlaması (2026-11-11): dinlenme hâlinde
+                // tutar metni birebir; yazı ×2'de taşmaz, kontrast korunur.
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: DegisimParlamasi(
+                    deger: 1240,
+                    metin: '₺1.240',
+                    kimlik: 'vitrin',
+                    child: Text('₺1.240'),
+                  ),
+                ),
                 const SizedBox(height: SandikSpace.md),
                 // Varlık sayfasının Al · Sat · Temettü çubuğu: şerit ve
                 // (bayrak `goz_alici`) yüzen cam kapsül.
