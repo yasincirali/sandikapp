@@ -228,16 +228,15 @@ class _List extends ConsumerWidget {
     // kendi payı ki sürüklenen öğeyle birlikte taşınsın.
     Widget satir(int i) {
       final w = gorunen[i];
-      final govde = Padding(
-        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
-        child: _Row(
-          item: w,
-          sira: benim ? i : null,
-          toplam: gorunen.length,
-          tasi: benim
-              ? (hedef) => takipSirasiniTasi(ref, gorunen, i, hedef)
-              : null,
-        ),
+      // Alt boşluk satırın İÇİNDE (`_Row`): çıkışta satırla birlikte
+      // daralsın, satır gidince 8 pt'lik bir sıçrama kalmasın.
+      final govde = _Row(
+        item: w,
+        sira: benim ? i : null,
+        toplam: gorunen.length,
+        tasi: benim
+            ? (hedef) => takipSirasiniTasi(ref, gorunen, i, hedef)
+            : null,
       );
       return KeyedSubtree(
         key: ValueKey('takip-sira-${w.id}'),
@@ -826,15 +825,20 @@ class _Row extends ConsumerWidget {
     // söylüyor); + düğmesi kendi `container` düğümünde, kendi etiketiyle.
     // Kaydırarak silme TalkBack'te çalışmadığı için aynı iş özel eylem
     // olarak da sunulur.
-    return Semantics(
+    return _TakipCikisi(
+      builder: (context, cikar) => Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: Semantics(
       container: true,
       button: true,
       label: semantic,
       // Sürükleme ekran okuyucuda yapılamaz; aynı iş "yukarı/aşağı taşı"
       // eylemleriyle (yalnız "Benim sıram"da, uçta olmayan yönde).
       customSemanticsActions: {
+        // Ekran okuyucu yolu jestsiz: satır solup daralarak gider
+        // ([_TakipCikisi]); kaydırma yolunda bu işi `Dismissible` yapar.
         CustomSemanticsAction(label: l10n.removeFromWatchlist): () =>
-            _remove(context, ref),
+            cikar(() => _remove(context, ref)),
         if (sira != null && tasi != null && sira! > 0)
           CustomSemanticsAction(label: l10n.watchlistMoveUp): () =>
               tasi!(sira! - 1),
@@ -889,6 +893,13 @@ class _Row extends ConsumerWidget {
             SandikHaptic.medium.perform();
             return true;
           },
+          // Kaydırma yolunun daralması `Dismissible`'ın kendi işi; süresi
+          // jestsiz çıkışla ([_TakipCikisi]) aynı token. Hareketi azalt
+          // açıkken `null`: daralma yok, satır hemen kalkar.
+          resizeDuration: SandikMotion.of(context, SandikMotion.state) ==
+                  Duration.zero
+              ? null
+              : SandikMotion.state,
           onDismissed: (_) => _remove(context, ref),
           child: SandikTappable(
             // Etiket YOK: satırın adı dıştaki `Semantics` cümlesi; buradaki
@@ -1106,6 +1117,8 @@ class _Row extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+      ),
     );
   }
 
@@ -1149,21 +1162,109 @@ class _Row extends ConsumerWidget {
   /// eklenebiliyor (silme gibi geçmiş kaybı yok — takip listesi yalnızca bir
   /// sembol kümesi). BAŞARISIZLIK yolu toast'ını KORUR: orada satır sessizce
   /// geri gelir ve bu hata gibi görünür.
-  Future<void> _remove(BuildContext context, WidgetRef ref) async {
+  ///
+  /// `true`: çıkarıldı. `false`: çıkarılamadı (demo ya da hata) — solan satır
+  /// ([_TakipCikisi]) geri açılır.
+  Future<bool> _remove(BuildContext context, WidgetRef ref) async {
     final notifier = ref.read(watchlistProvider.notifier);
     try {
       await notifier.remove(item.id);
+      return true;
     } on DemoYazmaEngeli {
       // Demo mesajı `DemoModu.yazmaEngeli` dinleyicisinden gösterildi;
       // "bağlantını kontrol et" burada yanlış olurdu.
-      return;
+      return false;
     } catch (_) {
-      if (!context.mounted) return;
+      if (!context.mounted) return false;
       // Provider state'i zaten geri aldı; burada SEBEBİ söylüyoruz — satırın
       // sessizce geri gelmesi kullanıcıya hata gibi görünürdü.
       sandikSnack(context, 'Takipten çıkarılamadı. Bağlantını kontrol et.',
           kind: SandikSnackKind.error);
+      return false;
     }
+  }
+}
+
+/// Takip satırının jestsiz çıkışı: satır solup daralarak gider, SONRA
+/// listeden kalkar (2026-11-11).
+///
+/// ## Neden
+/// Ekran okuyucunun "Takipten çıkar" eylemi satırı bir karede siliyordu;
+/// altındaki satırlar boşluğa ışınlanıyordu ve neyin gittiği okunmuyordu.
+/// Kaydırma yolunda bu işi `Dismissible` zaten yapıyor; burada aynı süre
+/// ([SandikMotion.state], ~180 ms) ve çıkış eğrisi ([SandikMotion.exit]).
+///
+/// ## Kararlar
+/// - Durum satırda yerel: sağlayıcıya "çıkıyor" durumu eklenmez; kaldırma
+///   (`notifier.remove`) animasyon BİTİNCE çağrılır, liste sırası ve
+///   anahtarlar (`takip-sira-<id>`) o ana dek değişmez — sürüklenebilir
+///   listenin indeksleri kaymaz.
+/// - Çift tetikleme: animasyon ya da istek sürerken ikinci çağrı yok sayılır.
+/// - Hata: satır geri açılır, hata mesajı `_remove`'da kalır.
+/// - Hareketi azalt: süre sıfır → animasyon yok, hemen kaldırılır.
+/// - "Geri al" toast'ı YOK (16 Eyl kararı, gerekçe `_Row._remove`).
+/// - Denetleyici ilk çıkışta kurulur: listedeki onlarca satır boşuna ticker
+///   taşımasın (`SandikTappable` ile aynı gerekçe). Kurulmadan önce sabit 1
+///   animasyonu verilir ki ağaç şekli değişmesin, alt durum (Dismissible,
+///   imleç) korunur.
+class _TakipCikisi extends StatefulWidget {
+  const _TakipCikisi({required this.builder});
+
+  final Widget Function(
+          BuildContext context, void Function(Future<bool> Function()) cikar)
+      builder;
+
+  @override
+  State<_TakipCikisi> createState() => _TakipCikisiState();
+}
+
+class _TakipCikisiState extends State<_TakipCikisi>
+    with SingleTickerProviderStateMixin {
+  static const _tam = AlwaysStoppedAnimation<double>(1);
+
+  AnimationController? _c;
+  bool _cikiyor = false;
+
+  Future<void> _cikar(Future<bool> Function() kaldir) async {
+    if (_cikiyor) return;
+    _cikiyor = true;
+    final sure = SandikMotion.stateOf(context);
+    if (sure > Duration.zero) {
+      final ilk = _c == null;
+      final c = _c ??= AnimationController(vsync: this, value: 1);
+      if (ilk) setState(() {});
+      try {
+        await c
+            .animateTo(0, duration: sure, curve: SandikMotion.exit)
+            .orCancel;
+      } on TickerCanceled {
+        // Satır animasyon sürerken ağaçtan çıktı (sekme değişti): kaldırma
+        // yapılmaz; kullanıcı işi bitmeden ekranı bıraktı.
+        return;
+      }
+    }
+    final tamam = await kaldir();
+    if (!mounted) return;
+    if (!tamam) {
+      _c?.animateTo(1, duration: sure, curve: SandikMotion.enter);
+      _cikiyor = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Animation<double> a = _c?.view ?? _tam;
+    return SizeTransition(
+      sizeFactor: a,
+      alignment: Alignment.topCenter,
+      child: FadeTransition(opacity: a, child: widget.builder(context, _cikar)),
+    );
   }
 }
 
