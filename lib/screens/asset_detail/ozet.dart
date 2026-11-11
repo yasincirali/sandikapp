@@ -376,6 +376,80 @@ extension _DetayOzet on _AssetDetailScreenState {
             context.l10n.assetPerformanceSemantics(widget.asset.name),
       );
 
+  /// Büyük fiyatın gövdede yazdığı dizge — [_fiyatBlogu] ile üst çubuk
+  /// başlığı ([_cubukBasligi]) AYNI dizgeyi yazsın diye tek yer: aynı canlı
+  /// birim fiyat (`pnl.currentUnitTRY`, `_canli.asset`'ten), aynı biçim
+  /// (`_birimBicimi`). Mevduatta kişisel bakiye (`baz.fmt`, "Bakiyeyi gizle"
+  /// açıkken maskeli). Fiyat yoksa `null` — uydurma sayı yazılmaz.
+  String? _buyukFiyatMetni(_PnlOzeti pnl, BazPara baz) {
+    if (widget.asset.type == AssetType.mevduat) {
+      return baz.fmt(pnl.currentValueTRY);
+    }
+    final canli = pnl.currentUnitTRY;
+    return canli > 0 ? _birimBicimi(canli).format(canli) : null;
+  }
+
+  /// Üst çubuk başlığı: "THYAO · ₺312,40" (Ar-Ge 11 Kas 19:04 #1).
+  ///
+  /// Yalnız gövdedeki başlık bloğu çubuğun altına girince görünür
+  /// (`_baslikCubukta`); görünürken başlık iki kez yazılmaz. Metin ekranın
+  /// kendi kurulumunda bir kez hazırlanır ve `child` olarak geçer:
+  /// kaydırmada yalnız saydamlık yeniden kurulur. Soluklaşma `state`
+  /// süresi (durum değişimi), hareketi azalt açıkken anında. Gizliyken
+  /// semantikten çıkar — VoiceOver varlık adını tek kez okur; görünürken
+  /// başlık (header) olarak okunur.
+  Widget _cubukBasligi(_PnlOzeti pnl, BazPara baz) {
+    final fiyat = _buyukFiyatMetni(pnl, baz);
+    final metin = Text(
+      fiyat == null ? _kimlik.kisaEtiket : '${_kimlik.kisaEtiket} · $fiyat',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.t.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: context.c.text90,
+      ),
+    );
+    return ValueListenableBuilder<bool>(
+      valueListenable: _baslikCubukta,
+      child: metin,
+      builder: (context, gorunur, child) => ExcludeSemantics(
+        excluding: !gorunur,
+        child: Semantics(
+          header: true,
+          child: AnimatedOpacity(
+            key: const ValueKey('varlikCubukBasligi'),
+            opacity: gorunur ? 1 : 0,
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.enter,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Gövde başlığının alt kenarı kaydırma alanının üst kenarını geçti mi —
+  /// geçtiyse başlık üst çubuğun altındadır. Eşik ÇİZİLMİŞ başlık bloğundan
+  /// ölçülür (sabit piksel değil): Dynamic Type, uzun ad, iPad sütunu
+  /// bloğun boyunu değiştirir. Aşağı çekip yenilemede (negatif kaydırma)
+  /// başlık görünür, çubuk boş kalır.
+  void _baslikEsiginiDenetle() {
+    if (!mounted) return;
+    final baslik = _baslikAnahtari.currentContext?.findRenderObject();
+    final alan = _kaydirmaAnahtari.currentContext?.findRenderObject();
+    if (baslik is! RenderBox ||
+        alan is! RenderBox ||
+        !baslik.attached ||
+        !baslik.hasSize ||
+        !alan.attached) {
+      return;
+    }
+    final alt = baslik
+        .localToGlobal(Offset(0, baslik.size.height), ancestor: alan)
+        .dy;
+    _baslikCubukta.value = alt <= 0;
+  }
+
   /// Başlık ve büyük fiyat uzun basınca kodu/fiyatı kopyalar
   /// ([KopyalaUzunBasma], 2026-11-10). Fiyat [_fiyatBlogu]'nun yazdığı
   /// dizgenin aynısı (aynı `_birimBicimi(canli)`). Mevduatta yok: kod
@@ -465,9 +539,8 @@ extension _DetayOzet on _AssetDetailScreenState {
                   ],
                 )
               : null,
-      fiyat: mevduat
-          ? baz.fmt(pnl.currentValueTRY)
-          : (canli > 0 ? bicim.format(canli) : '—'),
+      // Üst çubuk başlığıyla aynı dizge (`_buyukFiyatMetni`).
+      fiyat: _buyukFiyatMetni(pnl, baz) ?? '—',
       fiyatRengi: context.c.gold,
       degisim: degisim,
       // Grafikte gezinirken fiyat ve tarih imleçten (bayrak `goz_alici`).
