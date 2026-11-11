@@ -585,6 +585,15 @@
       }
     }
   },
+  "txNoteMatchSemantics": "Notta geçiyor: {note}",
+  "@txNoteMatchSemantics": {
+    "description": "Aramada notu yüzünden çıkan satırın ekran okuyucu etiketi; notun tamamı okunur.",
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
   "noteSaved": "Not kaydedildi",
   "noteRemoved": "Not silindi",
   "noteSaveFailed": "Not kaydedilemedi",

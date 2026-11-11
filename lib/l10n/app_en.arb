@@ -567,6 +567,14 @@
       }
     }
   },
+  "txNoteMatchSemantics": "Found in note: {note}",
+  "@txNoteMatchSemantics": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
   "noteSaved": "Note saved",
   "noteRemoved": "Note removed",
   "noteSaveFailed": "Couldn't save the note",

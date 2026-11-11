@@ -37,6 +37,7 @@ class TransactionRow extends StatelessWidget {
     this.yilGoster = true,
     this.silinenGorunumu = false,
     this.not,
+    this.notParcasi,
     this.bakiye,
     this.portfoyDegeri,
     this.onTap,
@@ -73,6 +74,19 @@ class TransactionRow extends StatelessWidget {
   /// bozulurdu. İkon satır yüksekliğini değiştirmez; metin dokununca açılan
   /// not sayfasında okunur.
   final String? not;
+
+  /// Aramada yalnız notu yüzünden eşleşen satırda notun eşleşen yeri
+  /// (`islemNotuParcasi`). Yukarıdaki "yalnızca ikon" kararının bilinçli
+  /// istisnası (2026-11-11): arama sürerken kullanıcı satırın NEDEN
+  /// çıktığını görmeli; liste zaten süzülmüş, ritim kaygısı aramasız
+  /// hâlin. `null` ise satır eskisi gibi.
+  final ({
+    String once,
+    String eslesen,
+    String sonra,
+    bool basKesik,
+    bool sonKesik
+  })? notParcasi;
 
   /// Bu işlemden hemen önce ve sonra pozisyonda tutulan miktar — çağıran
   /// `hareketBakiyeleri(...)` ile TÜM kapsam defterinden hesaplar (satır
@@ -293,6 +307,12 @@ class TransactionRow extends StatelessWidget {
           ),
         ],
       ),
+          if (notParcasi case final p?)
+            Padding(
+              padding: const EdgeInsets.only(
+                  left: avatarCap + avatarAraligi, top: SandikSpace.xxs),
+              child: _notParcasiSatiri(context, p),
+            ),
           if (portfoySatiri != null)
             Padding(
               padding: const EdgeInsets.only(
@@ -314,6 +334,38 @@ class TransactionRow extends StatelessWidget {
               asset.showTicker ? asset.displayTicker! : asset.name),
       onTap: onTap,
       child: gorunen,
+    );
+  }
+
+  /// Not parçası: tek satır, ikincil renk, eşleşen kelime w600 (tavan).
+  /// Ekran okuyucu "…" ve parçayı değil notun TAMAMINI okur — görsel kesim
+  /// yalnız yer darlığından.
+  Widget _notParcasiSatiri(
+      BuildContext context,
+      ({
+        String once,
+        String eslesen,
+        String sonra,
+        bool basKesik,
+        bool sonKesik
+      }) p) {
+    final stil = context.t.bodySmall?.copyWith(color: context.c.text58);
+    return Semantics(
+      label: context.l10n.txNoteMatchSemantics(not ?? p.eslesen),
+      excludeSemantics: true,
+      child: Text.rich(
+        TextSpan(children: [
+          TextSpan(text: '${p.basKesik ? '… ' : ''}${p.once}'),
+          TextSpan(
+            text: p.eslesen,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          TextSpan(text: '${p.sonra}${p.sonKesik ? ' …' : ''}'),
+        ]),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: stil,
+      ),
     );
   }
 

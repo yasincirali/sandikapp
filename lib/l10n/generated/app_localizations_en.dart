@@ -430,7 +430,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get quickAmountNeedsPrice => 'A unit price is needed to enter an amount';
+  String get quickAmountNeedsPrice =>
+      'A unit price is needed to enter an amount';
 
   @override
   String get quickHolding => 'Holding';
@@ -965,6 +966,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String txOpenNoteWithNote(String name) {
     return '$name transaction, has a note, open note';
+  }
+
+  @override
+  String txNoteMatchSemantics(String note) {
+    return 'Found in note: $note';
   }
 
   @override

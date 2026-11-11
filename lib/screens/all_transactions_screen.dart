@@ -256,12 +256,7 @@ List<Asset> hareketleriSuz(
     if (from != null && a.addedDate.isBefore(from)) continue;
     if (to != null && a.addedDate.isAfter(to)) continue;
     if (q.isNotEmpty) {
-      final name = a.name.toLowerCase();
-      final ticker = a.ticker.toLowerCase();
-      final sub = (a.subCategory ?? '').toLowerCase();
-      if (!name.contains(q) &&
-          !ticker.contains(q) &&
-          !sub.contains(q) &&
+      if (!hareketAdindaEslesir(a, q) &&
           // Not da aranır (2026-09-29): "maaş" yazınca notunda maaş
           // geçen alışlar bulunur — not, kullanıcının işlemini kendi
           // cümlesiyle hatırladığı tek yer.
@@ -274,6 +269,14 @@ List<Asset> hareketleriSuz(
   out.sort((a, b) => b.addedDate.compareTo(a.addedDate));
   return out;
 }
+
+/// Arama ad, sembol ya da alt kategoride geçiyor mu ([q] kırpılmış, küçük
+/// harf). Süzgeç ve satırın not parçası aynı soruyu sorar: parça yalnız
+/// bu `false` iken (eşleşme notta) yazılır.
+bool hareketAdindaEslesir(Asset a, String q) =>
+    a.name.toLowerCase().contains(q) ||
+    a.ticker.toLowerCase().contains(q) ||
+    (a.subCategory ?? '').toLowerCase().contains(q);
 
 /// [hareketleriSuz] + [hareketleriAyir] sonucunu girdiler değişene kadar
 /// tutar.
@@ -763,6 +766,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     required Map<String, ({double once, double sonra})> portfoyDegerleri,
   }) {
     final not = islemNotu(a, defter);
+    // Arama sürerken satır yalnız notu yüzünden çıktıysa parçası görünür
+    // (2026-11-11); adda eşleşen ya da aramasız satır değişmez.
+    final q = _query.trim().toLowerCase();
+    final notParcasi = not == null || q.isEmpty || hareketAdindaEslesir(a, q)
+        ? null
+        : islemNotuParcasi(not, q);
     final benimId = ref.watch(authProvider).valueOrNull?.id;
     final acilir =
         not != null || islemNotuDuzenlenebilir(a, benimId: benimId);
@@ -774,6 +783,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       yilGoster: _silinenler,
       silinenGorunumu: _silinenler,
       not: not,
+      notParcasi: notParcasi,
       // Silinenler alanı "artık portföyde olmayan" kayıtları anlatır;
       // bakiye süren defterin hikâyesi, orada yazılmaz.
       bakiye: _silinenler ? null : bakiyeler[a.id],
@@ -977,26 +987,32 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                     ],
                   ),
                 ),
+                // Flexible (2026-11-11): 2× yazıda İngilizce "Clear filters"
+                // sayaçla birlikte satıra sığmıyor, satır taşıyordu; artık
+                // gerekirse iki satıra kırılır.
                 if (_hasActiveFilter)
-                  SandikTappable(
-                    semanticLabel: context.l10n.clearFilters,
-                    onTap: () => setState(() {
-                      _silinenler = false;
-                      _typeFilter = null;
-                      _range = _DateRange.all;
-                      _customRange = null;
-                      _query = '';
-                      _searchCtrl.clear();
-                      _resetPaging();
-                    }),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: SandikSpace.smd),
-                      child: Text(
-                        context.l10n.clearFilters,
-                        style: context.t.bodySmall?.copyWith(
-                            color: context.c.amberText,
-                            fontWeight: FontWeight.w600),
+                  Flexible(
+                    child: SandikTappable(
+                      semanticLabel: context.l10n.clearFilters,
+                      onTap: () => setState(() {
+                        _silinenler = false;
+                        _typeFilter = null;
+                        _range = _DateRange.all;
+                        _customRange = null;
+                        _query = '';
+                        _searchCtrl.clear();
+                        _resetPaging();
+                      }),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: SandikSpace.smd),
+                        child: Text(
+                          context.l10n.clearFilters,
+                          style: context.t.bodySmall?.copyWith(
+                              color: context.c.amberText,
+                              fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.end,
+                        ),
                       ),
                     ),
                   ),

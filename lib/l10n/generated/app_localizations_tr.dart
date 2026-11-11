@@ -954,6 +954,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String txNoteMatchSemantics(String note) {
+    return 'Notta geçiyor: $note';
+  }
+
+  @override
   String get noteSaved => 'Not kaydedildi';
 
   @override

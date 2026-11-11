@@ -1718,6 +1718,12 @@ abstract class AppLocalizations {
   /// **'{name} işlemi, notu var, notu aç'**
   String txOpenNoteWithNote(String name);
 
+  /// Aramada notu yüzünden çıkan satırın ekran okuyucu etiketi; notun tamamı okunur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Notta geçiyor: {note}'**
+  String txNoteMatchSemantics(String note);
+
   /// No description provided for @noteSaved.
   ///
   /// In tr, this message translates to:
