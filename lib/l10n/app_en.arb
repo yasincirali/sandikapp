@@ -646,6 +646,7 @@
   },
   "dividendRecorded": "Recorded",
   "dividendRecordAction": "Record",
+  "dugmeBasarili": "Saved",
   "dividendSourceNote": "Source: Yahoo Finance · amounts are gross",
   "dividendSuggestionLine": "{ticker} · ex-date {date}",
   "@dividendSuggestionLine": {

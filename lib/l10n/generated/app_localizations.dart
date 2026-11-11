@@ -2018,6 +2018,12 @@ abstract class AppLocalizations {
   /// **'Kaydet'**
   String get dividendRecordAction;
 
+  /// No description provided for @dugmeBasarili.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedildi'**
+  String get dugmeBasarili;
+
   /// No description provided for @dividendSourceNote.
   ///
   /// In tr, this message translates to:

@@ -678,6 +678,7 @@
   },
   "dividendRecorded": "Kaydedildi",
   "dividendRecordAction": "Kaydet",
+  "dugmeBasarili": "Kaydedildi",
   "dividendSourceNote": "Kaynak: Yahoo Finance · tutarlar brüt",
   "dividendSuggestionLine": "{ticker} · hak tarihi {date}",
   "@dividendSuggestionLine": {

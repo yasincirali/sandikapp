@@ -1159,6 +1159,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dividendRecordAction => 'Record';
 
   @override
+  String get dugmeBasarili => 'Saved';
+
+  @override
   String get dividendSourceNote => 'Source: Yahoo Finance · amounts are gross';
 
   @override

@@ -687,7 +687,15 @@ enum SandikHaptic {
   medium,
 
   /// Yıkıcı işlem veya hata. Kullanıcı ekrana bakmıyorken bile fark edilir.
-  heavy;
+  heavy,
+
+  /// İş başarıyla bitti — düğmenin ✓ anı ([SandikBasariSinyali]) ve
+  /// kalkan "kaydedildi" snack'larının yerine geçen onay (Ar-Ge 11 Kas
+  /// 19:04 #3/#6). Basıştaki [medium]'dan sonra gelir; ondan HAFİF olmalı
+  /// ki ikinci bir "basış" değil, kapanış tıkırtısı gibi okunsun (iOS
+  /// başarı bildirimine Flutter'ın çekirdekte karşılığı yok, en yakını
+  /// hafif darbe).
+  basari;
 
   /// Platform çağrısına çevirir. [none] hiçbir şey yapmaz.
   void perform() {
@@ -700,6 +708,8 @@ enum SandikHaptic {
         HapticFeedback.mediumImpact();
       case SandikHaptic.heavy:
         HapticFeedback.heavyImpact();
+      case SandikHaptic.basari:
+        HapticFeedback.lightImpact();
     }
   }
 }

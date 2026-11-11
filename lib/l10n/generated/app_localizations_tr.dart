@@ -1144,6 +1144,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dividendRecordAction => 'Kaydet';
 
   @override
+  String get dugmeBasarili => 'Kaydedildi';
+
+  @override
   String get dividendSourceNote => 'Kaynak: Yahoo Finance · tutarlar brüt';
 
   @override

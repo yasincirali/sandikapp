@@ -39,14 +39,19 @@ class SandikIkonGecisi extends StatelessWidget {
       duration: SandikMotion.stateOf(context),
       switchInCurve: SandikMotion.enter,
       switchOutCurve: SandikMotion.exit,
-      transitionBuilder: (child, a) => FadeTransition(
+      transitionBuilder: gecis,
+      child: icon,
+    );
+  }
+
+  /// Geçişin kendisi (sönüm + 0.9→1 ölçek). Aynı yuvada ikon DEĞİL de
+  /// gösterge → ✓ değişen [SandikAsyncButton] başarı durumu da bunu
+  /// kullanır; iki yerde ayrı ölçek/eğri yazılmasın.
+  static Widget gecis(Widget child, Animation<double> a) => FadeTransition(
         opacity: a,
         child: ScaleTransition(
           scale: Tween<double>(begin: 0.9, end: 1).animate(a),
           child: child,
         ),
-      ),
-      child: icon,
-    );
-  }
+      );
 }

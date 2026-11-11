@@ -230,10 +230,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   /// Güncelleme onayı açık mı (görünüm durumu değil; `setState` gerekmez).
   bool _onaySoruluyor = false;
 
-  /// Kayıt başarıyla bitti: ekleme ise duyurulur (Portföy "Tümü"de açılır,
-  /// yeni satır parlar — `VarlikEklendi`), sonra form [sonuc] ile kapanır.
-  /// Düzenleme ve sepet modu yeni varlık eklemez, duyurmaz.
-  void _kayitBitti(Object sonuc) {
+  /// Kaydet düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3).
+  final _basari = SandikBasariSinyali();
+
+  /// Kayıt başarıyla bitti: düğme önce ✓ gösterir (başarı titreşimi,
+  /// `SandikMotion.modal` kadar), ekleme ise duyurulur (Portföy "Tümü"de
+  /// açılır, yeni satır parlar — `VarlikEklendi`), sonra form [sonuc] ile
+  /// kapanır. Düzenleme ve sepet modu yeni varlık eklemez, duyurmaz.
+  /// ✓ evresinde `saving` bayrağı açık kalır: form salt okunur, düğme kilitli.
+  Future<void> _kayitBitti(Object sonuc) async {
+    await _basari.goster();
+    if (!mounted) return;
     if (!_isEditing && !widget.cartMode) {
       VarlikEklendi.duyur(
           pozisyonAnahtari:
@@ -274,7 +281,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (tamam) {
       // Bayrak açık kalır: kapanış animasyonunda buton yeniden basılmasın
       // (genel `_save` ile aynı gerekçe).
-      _kayitBitti(true);
+      await _kayitBitti(true);
       return;
     }
     _n.setSaving(false);
@@ -1099,6 +1106,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           height: 54,
           onPressed: _sozlesmeFormuAcik ? _sozlesmeKaydet : _save,
           mesgul: _saving,
+          basari: _basari,
           style: FilledButton.styleFrom(
             backgroundColor: context.c.amberFill,
             foregroundColor: context.c.onAmber,

@@ -604,6 +604,10 @@ class AlarmKurSheet extends StatefulWidget {
 }
 
 class _AlarmKurSheetState extends State<AlarmKurSheet> {
+  /// Kaydet düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3); yalnız yazma
+  /// sayfanın içinde koştuğunda ([AlarmKurSheet.kur] verildiyse).
+  final _basari = SandikBasariSinyali();
+
   late AlarmAdayi _secili = widget.adaylar.first;
   final _controller = TextEditingController();
   final _isim = TextEditingController();
@@ -823,6 +827,10 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         return;
       }
       if (!mounted) return;
+      // Yazma bitti: düğmede ✓, sonra kapanış. `kur` yoksa kaydı çağıran
+      // sayfa kapandıktan SONRA yapar (başarısı burada bilinmez) → ✓ yok.
+      await _basari.goster();
+      if (!mounted) return;
     }
     Navigator.of(context).pop(kurulum);
   }
@@ -843,6 +851,10 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
         return;
       }
+      if (!mounted) return;
+      // Yazma bitti: düğmede ✓, sonra kapanış. `kur` yoksa kaydı çağıran
+      // sayfa kapandıktan SONRA yapar (başarısı burada bilinmez) → ✓ yok.
+      await _basari.goster();
       if (!mounted) return;
     }
     Navigator.of(context).pop(kurulum);
@@ -1021,6 +1033,10 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
         return;
       }
+      if (!mounted) return;
+      // Yazma bitti: düğmede ✓, sonra kapanış. `kur` yoksa kaydı çağıran
+      // sayfa kapandıktan SONRA yapar (başarısı burada bilinmez) → ✓ yok.
+      await _basari.goster();
       if (!mounted) return;
     }
     Navigator.of(context).pop(kurulum);
@@ -1303,6 +1319,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
             SizedBox(
               width: double.infinity,
               child: SandikAsyncButton.kompakt(
+                basari: _basari,
                 style: FilledButton.styleFrom(
                   backgroundColor: c.amberFill,
                   foregroundColor: c.onAmber,
