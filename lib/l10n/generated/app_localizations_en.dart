@@ -2412,6 +2412,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchlistRowFollowing => 'on your watchlist';
 
   @override
+  String get watchlistSparklineWindow => '1 mo';
+
+  @override
   String get watchlistPeriodSinceAdded => 'Since added';
 
   @override

@@ -137,10 +137,16 @@ class SandikSiralamaDugmesi<T> extends StatelessWidget {
           children: [
             Icon(Icons.sort_rounded, size: SandikSpace.md, color: c.text58),
             const SizedBox(width: SandikSpace.xs),
-            Text(
-              _seciliSecenek.baslik,
-              style: context.t.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w600, color: c.text58),
+            // Dar ekran + büyük yazıda (320 pt × 2×) etiket kısalır, satır
+            // taşmaz; seçeneğin tamamı açılan sayfada ve semantik etikette.
+            Flexible(
+              child: Text(
+                _seciliSecenek.baslik,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text58),
+              ),
             ),
           ],
         ),

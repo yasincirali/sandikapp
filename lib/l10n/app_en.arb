@@ -1338,6 +1338,7 @@
     }
   },
   "watchlistRowFollowing": "on your watchlist",
+  "watchlistSparklineWindow": "1 mo",
   "watchlistPeriodSinceAdded": "Since added",
   "watchlistSinceDate": "Since {tarih}",
   "watchlistRowSinceUp": "up {pct} since {tarih}",

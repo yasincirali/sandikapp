@@ -4184,6 +4184,12 @@ abstract class AppLocalizations {
   /// **'takip ediliyor'**
   String get watchlistRowFollowing;
 
+  /// Takip satırındaki mini çizginin penceresi; satırın yüzdesi seçili dönemi anlatır, çizgi hep son 1 ayı.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 ay'**
+  String get watchlistSparklineWindow;
+
   /// No description provided for @watchlistPeriodSinceAdded.
   ///
   /// In tr, this message translates to:

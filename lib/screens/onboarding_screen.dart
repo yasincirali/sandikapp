@@ -671,11 +671,15 @@ List<_Adim> _adimlariKur() {
       // 2026-10-26: alarm kurulu satırda çan + hedef fiyat; çan o varlığın
       // alarmlarını açar (tur metni arayüzle birlikte değişir).
       // 2026-11-08: dönem seçicinin son seçeneği "Eklediğimden beri".
+      // 2026-11-11: satırda son 1 ayın mini çizgisi; yüzde dönemi, çizgi
+      // hep 1 ayı anlatır — karışmasın diye tur da söyler.
       govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin; portföyünün '
           'toplamına karışmaz. Bir satıra dokununca grafiği, dönem '
           'getirileri ve istatistikleri açılır, oradan portföyüne de '
           'eklersin. Dönem seçicinin sonundaki "Eklediğimden beri" her '
-          'satırı eklediğin günden bugüne gösterir. Fiyat alarmı kurduğun '
+          'satırı eklediğin günden bugüne gösterir. Satırdaki yüzde '
+          'seçtiğin döneme göredir; yanındaki küçük çizgi hep son 1 ayı '
+          'gösterir. Fiyat alarmı kurduğun '
           'satırda çan ve hedef fiyat '
           'görünür; çana dokununca o varlığın alarmları açılır. Sayaç kaç '
           'yerin kaldığını gösterir.',

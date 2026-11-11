@@ -2392,6 +2392,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get watchlistRowFollowing => 'takip ediliyor';
 
   @override
+  String get watchlistSparklineWindow => '1 ay';
+
+  @override
   String get watchlistPeriodSinceAdded => 'Eklediğimden beri';
 
   @override
