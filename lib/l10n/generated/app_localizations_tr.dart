@@ -9687,6 +9687,26 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String alertYil52Zirve(String fiyat) {
+    return '52 hafta zirvesi $fiyat';
+  }
+
+  @override
+  String alertYil52Dip(String fiyat) {
+    return '52 hafta dibi $fiyat';
+  }
+
+  @override
+  String alertYil52ZirveSemantics(String fiyat) {
+    return 'Hedefi 52 hafta zirvesine ayarla: $fiyat';
+  }
+
+  @override
+  String alertYil52DipSemantics(String fiyat) {
+    return 'Hedefi 52 hafta dibine ayarla: $fiyat';
+  }
+
+  @override
   String get alarmModFiyat => 'Fiyat';
 
   @override

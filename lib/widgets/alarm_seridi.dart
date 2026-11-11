@@ -41,11 +41,16 @@ class AlarmSeridi extends ConsumerWidget {
   final String sembol;
   final String ad;
   final double guncelFiyat;
+
+  /// "+" ile açılan sayfanın 52 hafta çipleri ([AlarmAdayi.yil52]); zildeki
+  /// sayfayla aynı değer, yoksa çip yok.
+  final ({double zirve, double dip})? yil52;
   const AlarmSeridi({
     super.key,
     required this.sembol,
     required this.ad,
     required this.guncelFiyat,
+    this.yil52,
   });
 
   // Veri gelince yükseklik akarak belirir
@@ -176,7 +181,7 @@ class AlarmSeridi extends ConsumerWidget {
               // kur" butonuna dönerdi.
               _Cip(
                 onTap: () => alarmKurAkisi(context, ref,
-                    sabit: AlarmAdayi(sembol, ad, guncelFiyat)),
+                    sabit: AlarmAdayi(sembol, ad, guncelFiyat, yil52: yil52)),
                 renk: c.amberText,
                 zemin: c.amberFill.withValues(alpha: 0.12),
                 semanticLabel: context.l10n.setPriceAlert,

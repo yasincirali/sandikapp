@@ -924,7 +924,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice,
                     maliyet: isOwnAsset && _canli.acik
                         ? alarmMaliyeti(_canli.lots)
-                        : null),
+                        : null,
+                    yil52: _alarmYil52),
               ),
             ),
           // "Varlığı güncelle" (`varlik_guncelle.dart`): kaydırmadaki
@@ -1016,6 +1017,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     sembol: _alarmSembolu!,
                     ad: widget.asset.name,
                     guncelFiyat: _canli.asset.currentPrice,
+                    yil52: _alarmYil52,
                   ),
                 const SizedBox(height: SandikSpace.sm),
                 FutureBuilder<Map<int, double>>(

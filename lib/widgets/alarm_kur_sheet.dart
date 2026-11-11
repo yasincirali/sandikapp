@@ -50,7 +50,15 @@ class AlarmAdayi {
   /// ([alarmMaliyeti]); takip listesinden ya da ortağın varlığından gelen
   /// adayda `null`. Verilirse sheet "maliyetine göre" çiplerini gösterir.
   final double? maliyet;
-  const AlarmAdayi(this.sembol, this.ad, this.guncelFiyat, {this.maliyet});
+
+  /// Son 52 haftanın zirvesi ve dibi, [guncelFiyat] ile AYNI ölçekte
+  /// (varlık sayfasının "Aralık" kartındaki 52 hafta satırı, Ar-Ge
+  /// 2026-11-11). Verilirse sheet "52 hafta zirvesi / dibi" çiplerini
+  /// gösterir. `null`: seri yüklenmedi, bir yıl dolmadı ya da ölçek alarmla
+  /// aynı değil — çip çıkmaz, sheet bunun için istek ATMAZ (uydurma yok).
+  final ({double zirve, double dip})? yil52;
+  const AlarmAdayi(this.sembol, this.ad, this.guncelFiyat,
+      {this.maliyet, this.yil52});
 }
 
 /// Alarm için maliyet: [lots] (kullanıcının KENDİ, bu sembolün lot'ları)
@@ -679,7 +687,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   /// düşünce" der, rakam hesaplamak istemez.
   ///
   /// Sıra kullanıcının sorusuna göre: önce "maliyetime dönerse", sonra
-  /// yükseliş (güncelin +%5/+%10'u, maliyetin +%20'si), sonra düşüş. Yön
+  /// yükseliş (güncelin +%5/+%10'u, maliyetin +%20'si), sonra düşüş, en
+  /// sonda 52 hafta zirvesi/dibi (yalnız [AlarmAdayi.yil52] varsa). Yön
   /// yalnız renkle verilmez: işaret (+/−), ok ikonu ve alttaki cümle.
   /// Alandaki hedefe eşit çip SEÇİLİ görünür; eşitlik ekrandaki
   /// hassasiyette ([fmtTRYFiyat]), [alarmHedefiGuncelFiyatta] ile aynı kural.
@@ -714,6 +723,30 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
           yon: y.sign,
           hedef: g * (1 + y / 100),
         );
+    // 52 hafta zirvesi/dibi (Ar-Ge 2026-11-11, ücretsiz): satırın SONUNDA;
+    // yüzdeler kullanıcının kendi sorusu, bunlar piyasanın verdiği eşik.
+    // Zirve yalnız güncelin ÜSTÜNDE, dip yalnız ALTINDA çıkar: yön hedeften
+    // türetildiği için ([PriceAlert.suggestDirection]) aksi hâlde "zirve"
+    // çipi aşağı alarm kurardı; bugün yeni zirvedeyse hedef güncele eşittir
+    // ve alarm hemen çalardı ([alarmHedefiGuncelFiyatta]) — o çip hiç yok.
+    ({String ad, String semantik, int yon, double hedef})? yil52(int yon) {
+      final y = _secili.yil52;
+      if (y == null || g <= 0) return null;
+      final hedef = yon > 0 ? y.zirve : y.dip;
+      if (!hedef.isFinite || hedef <= 0) return null;
+      if (alarmHedefiGuncelFiyatta(hedef, g)) return null;
+      if (yon > 0 ? hedef <= g : hedef >= g) return null;
+      final tutar = alarmFiyatMetni(hedef, _secili.sembol);
+      return (
+        ad: yon > 0 ? l10n.alertYil52Zirve(tutar) : l10n.alertYil52Dip(tutar),
+        semantik: yon > 0
+            ? l10n.alertYil52ZirveSemantics(tutar)
+            : l10n.alertYil52DipSemantics(tutar),
+        yon: yon,
+        hedef: hedef,
+      );
+    }
+
     final cipler = [
       maliyet(0),
       guncel(5),
@@ -722,6 +755,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       guncel(-5),
       guncel(-10),
       maliyet(-10),
+      yil52(1),
+      yil52(-1),
     ].whereType<({String ad, String semantik, int yon, double hedef})>();
     return SingleChildScrollView(
       key: const ValueKey('alarmHizliCipler'),

@@ -15977,6 +15977,30 @@ abstract class AppLocalizations {
   /// **'Hedef maliyetin {sign} yüzde {pct}'**
   String alertCostPctSemantics(String sign, int pct);
 
+  /// No description provided for @alertYil52Zirve.
+  ///
+  /// In tr, this message translates to:
+  /// **'52 hafta zirvesi {fiyat}'**
+  String alertYil52Zirve(String fiyat);
+
+  /// No description provided for @alertYil52Dip.
+  ///
+  /// In tr, this message translates to:
+  /// **'52 hafta dibi {fiyat}'**
+  String alertYil52Dip(String fiyat);
+
+  /// No description provided for @alertYil52ZirveSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefi 52 hafta zirvesine ayarla: {fiyat}'**
+  String alertYil52ZirveSemantics(String fiyat);
+
+  /// No description provided for @alertYil52DipSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefi 52 hafta dibine ayarla: {fiyat}'**
+  String alertYil52DipSemantics(String fiyat);
+
   /// No description provided for @alarmModFiyat.
   ///
   /// In tr, this message translates to:
