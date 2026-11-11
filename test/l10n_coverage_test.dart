@@ -110,6 +110,7 @@ void main() {
     'lib/widgets/widget_install_sheet.dart': 0,
     'lib/widgets/zoom_data_controller.dart': 0,
     'lib/widgets/alarm_seridi.dart': 0,
+    'lib/widgets/sayi_klavyesi_cubugu.dart': 0,
     'lib/screens/all_transactions_screen.dart': 0,
     'lib/screens/asset_not_found_screen.dart': 1,
     'lib/screens/portfolio_performance/tur_dokumu_karti.dart': 0,

@@ -137,9 +137,9 @@ class _SeciciState extends ConsumerState<_Secici> {
           dokununca: () => Navigator.of(context).pop((banka: null, ad: q)),
         ),
       if (mevduat.isNotEmpty && katilim.isNotEmpty)
-        _Baslik(l10n.depositBankSectionDeposit),
+        _bolumBasligi(l10n.depositBankSectionDeposit),
       for (final b in mevduat) _bankaSatiri(context, b),
-      if (katilim.isNotEmpty) _Baslik(l10n.depositBankSectionParticipation),
+      if (katilim.isNotEmpty) _bolumBasligi(l10n.depositBankSectionParticipation),
       for (final b in katilim) _bankaSatiri(context, b),
     ];
     return ListView(
@@ -148,29 +148,21 @@ class _SeciciState extends ConsumerState<_Secici> {
     );
   }
 
+  /// Grup başlığı: ortak `SandikSectionHeader` (2026-11-11). Eskiden kendi
+  /// `_Baslik` klonu küçük/w700/soluk metin yazıyordu; arama ve takibe alma
+  /// ekranlarındaki başlıklarla aynı görünsün. Boşluk satırların yatay
+  /// hizasında kalır.
+  Widget _bolumBasligi(String metin) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+            SandikSpace.lgs, SandikSpace.md, SandikSpace.lgs, SandikSpace.xs),
+        child: SandikSectionHeader(title: metin),
+      );
+
   Widget _bankaSatiri(BuildContext context, MevduatBankasi b) => _Satir(
         rozet: b.rozet,
         ad: b.ad,
         secili: b.kod == widget.seciliKod,
         dokununca: () => Navigator.of(context).pop((banka: b, ad: b.ad)),
-      );
-}
-
-class _Baslik extends StatelessWidget {
-  const _Baslik(this.metin);
-  final String metin;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-            SandikSpace.lgs, SandikSpace.md, SandikSpace.lgs, SandikSpace.xs),
-        child: Text(
-          metin,
-          style: context.t.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: context.c.text36,
-          ),
-        ),
       );
 }
 

@@ -52,7 +52,9 @@ void main() {
     // 2026-10-30: PDF yazıcıları (kâğıt ölçeği) sayımdan çıktı → 106.
     // 2026-11-07: gerçek 97'ye inmişti (eşik güncellenmemişti); Ayarlar
     // "Gösterim aralığı" başlığı `titleMedium`'a geçti → 96.
-    expect(hits.length, lessThanOrEqualTo(96),
+    // 2026-11-11: gerçek 95; Portföy halkasının orta bloğu (18/16/22)
+    // ölçeğe geçti → 93.
+    expect(hits.length, lessThanOrEqualTo(93),
         reason: 'context.t.* kullan (ya da SandikTypography ölçeğine ekle):\n'
             '${hits.join('\n')}');
   });

@@ -33,6 +33,7 @@ import 'package:portfoy_takip/widgets/sandik_paylas_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/sandik_siralama_dugmesi.dart';
 import 'package:portfoy_takip/widgets/sandik_yenile.dart';
+import 'package:portfoy_takip/widgets/sayi_klavyesi_cubugu.dart';
 import 'package:portfoy_takip/widgets/seri_son_guncelleme.dart';
 import 'package:portfoy_takip/widgets/sozlesme_formu_ortak.dart';
 import 'package:portfoy_takip/widgets/tarih_cipleri.dart';
@@ -409,6 +410,10 @@ void main() {
                 const SandikIcerikSutunu(
                   child: Text('Okunabilir sütunda uzun bir açıklama satırı'),
                 ),
+                const SizedBox(height: SandikSpace.md),
+                // iOS sayı klavyesi çubuğu (2026-11-11): Sonraki/Bitti 44 pt,
+                // etiket düğme metni, ×2 yazıda çubuk büyür, taşmaz.
+                SayiKlavyesiCubugu(onSonraki: () {}, onBitti: () {}),
                 const SizedBox(height: SandikSpace.md),
                 SandikSectionHeader(title: 'Bölüm'),
                 // Tek çekip yenile sarmalayıcısı (2026-11-11): içindeki

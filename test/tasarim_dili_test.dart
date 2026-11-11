@@ -43,6 +43,25 @@ void main() {
         isEmpty);
   });
 
+  // Bölüm başlığı tek bileşen: SandikSectionHeader (2026-11-11). Arama,
+  // takibe alma ve banka seçicideki üç `_Baslik` klonu ona geçti (44pt
+  // satır `minHeight` parametresi oldu). Kalan iki ad bölüm başlığı değil:
+  // sözleşme kartının tür·kurum satırı ve paylaşım kartının marka satırı.
+  // Eşik bugünkü sayı ve YALNIZ azalır; yeni klon yerine parametre ekle.
+  test('bölüm başlığı klonu yok: _Baslik/_SectionTitle sayısı artmaz', () {
+    final desen = RegExp(r'^class _(Baslik|SectionTitle)\b', multiLine: true);
+    final klonlar = [
+      for (final f in Directory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart')))
+        for (final _ in desen.allMatches(f.readAsStringSync())) f.path,
+    ];
+    expect(klonlar.length, lessThanOrEqualTo(2),
+        reason: 'SandikSectionHeader kullan (gerekirse parametre ekle):\n'
+            '${klonlar.join('\n')}');
+  });
+
   test('düğme köşesi tek: tema = SandikRadius.md', () {
     final main = File('lib/main.dart').readAsStringSync();
     for (final tema in ['filledButtonTheme', 'outlinedButtonTheme']) {

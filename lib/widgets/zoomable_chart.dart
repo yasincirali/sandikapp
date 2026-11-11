@@ -1014,7 +1014,95 @@ class _ZoomableChartState extends State<ZoomableChart>
     }
   }
 
+  // ── Ekran okuyucuyla gün gün gezinme (erişilebilirlik, 2026-11-11) ──────
+  //
+  // Grafik VoiceOver/TalkBack'e yalnız özet veriyordu ("görünen aralıkta
+  // yüzde 4 arttı"); görmeyen kullanıcı tek bir günün fiyatını
+  // okuyamıyordu. Grafik artık ayarlanabilir öğe: yukarı/aşağı kaydırma
+  // imleci görünen penceredeki bir sonraki/önceki noktaya taşır, değer o
+  // noktanın imleç etiketiyle okunur ("12 Ağu 2026, ₺41,20"). Biçim
+  // [crosshairLabelBuilder]'ın kendisi — parmakla gezinen kullanıcının
+  // balonda gördüğü metin; birim/gizlilik kararı yine çağıranda kalır.
+  //
+  // Neden ortak bileşende: dört grafik yüzeyi (Performans, varlık detayı,
+  // fiyat grafiği, karşılaştırma) aynı davranışı ister
+  // (`chart_interaction_parity_test`); her ekran kendi gezinmesini kursaydı
+  // ayrışırdı. Görsel imleç de aynı noktaya oturur (az gören kullanıcı
+  // ekranda da izler); imleç seçilmemişken değer özet kalır.
+
+  /// Ekran okuyucu imlecinin X'i; `null` → özet okunur. Dokunma imleci
+  /// kalkınca ([_clearCrosshair]) o da bırakılır.
+  double? _okuyucuX;
+
+  /// Görünen penceredeki ilk çizginin nokta X'leri, sıralı. Ekran okuyucu
+  /// adımları buradan; pencere/veri değişmedikçe yeniden kurulmaz.
+  List<double> _okuyucuNoktalari() {
+    final veri = _grafikVerisi();
+    if (identical(veri, _noktaVerisi)) return _noktalar;
+    _noktaVerisi = veri;
+    final xs = <double>{};
+    for (final bar in veri.lineBarsData) {
+      if (bar.spots.isEmpty) continue;
+      for (final p in bar.spots) {
+        if (p.isNull() || p.x < _minX || p.x > _maxX) continue;
+        xs.add(p.x);
+      }
+      break;
+    }
+    return _noktalar = xs.toList()..sort();
+  }
+
+  Object? _noktaVerisi;
+  List<double> _noktalar = const [];
+
+  /// Noktanın sesli metni: imleç etiketinin tarih + değer satırı.
+  String? _noktaMetni(double x) {
+    final e = widget.crosshairLabelBuilder?.call(x);
+    if (e == null) return null;
+    return e.$2.isEmpty ? e.$1 : '${e.$2}, ${e.$1}';
+  }
+
+  /// [yon] +1 sonraki, -1 önceki noktanın sırası; imleç yokken ileri ilk,
+  /// geri son noktadan başlar. Uçta `null` (eylem sunulmaz).
+  int? _okuyucuKomsu(List<double> xs, int yon) {
+    if (xs.isEmpty) return null;
+    final x = _okuyucuX;
+    if (x == null) return yon > 0 ? 0 : xs.length - 1;
+    // Pencere kaydıysa imleç en yakın sıraya oturur.
+    var i = 0;
+    var enIyi = double.infinity;
+    for (var k = 0; k < xs.length; k++) {
+      final d = (xs[k] - x).abs();
+      if (d < enIyi) {
+        enIyi = d;
+        i = k;
+      }
+    }
+    final j = i + yon;
+    return j < 0 || j >= xs.length ? null : j;
+  }
+
+  void _okuyucuyaGit(double x) {
+    final span = _maxX - _minX;
+    final px = span > 0
+        ? (_plotLeft + (x - _minX) / span * _plotWidth)
+            .clamp(_plotLeft, _plotRight)
+        : _plotLeft;
+    setState(() {
+      _okuyucuX = x;
+      _crosshairX = x;
+      _crosshairPx = px;
+    });
+    final dinleyen = widget.imlecEtiketi;
+    if (dinleyen != null) {
+      dinleyen.value =
+          (widget.imlecEtiketiBuilder ?? widget.crosshairLabelBuilder)
+              ?.call(x);
+    }
+  }
+
   void _clearCrosshair() {
+    _okuyucuX = null;
     widget.imlecEtiketi?.value = null;
     if (_crosshairPx == null) return;
     setState(() {
@@ -1064,9 +1152,35 @@ class _ZoomableChartState extends State<ZoomableChart>
 
   @override
   Widget build(BuildContext context) {
+    // Etiket kurucusu yoksa okunacak nokta metni de yok: eylem sunulmaz.
+    final xs = widget.crosshairLabelBuilder == null
+        ? const <double>[]
+        : _okuyucuNoktalari();
+    final okuyucuX = _okuyucuX;
+    final deger = okuyucuX != null
+        ? _noktaMetni(okuyucuX)
+        : widget.semanticValueBuilder?.call(_minX, _maxX);
+    // Ayarlanabilir öğe hem şimdiki hem komşu değeri okutmak ZORUNDA
+    // (çerçeve, değeri boş eylemli düğümü reddeder). Özeti olmayan grafik
+    // (yalnız etiket) ya da metni kurulamayan nokta → eylem sunulmaz.
+    final degerVar = deger != null && deger.isNotEmpty;
+    String? komsuMetni(int? i) {
+      if (!degerVar || i == null) return null;
+      final m = _noktaMetni(xs[i]);
+      return m == null || m.isEmpty ? null : m;
+    }
+
+    final ileriI = _okuyucuKomsu(xs, 1);
+    final geriI = _okuyucuKomsu(xs, -1);
+    final ileri = komsuMetni(ileriI);
+    final geri = komsuMetni(geriI);
     return Semantics(
       label: widget.semanticLabel ?? context.l10n.chartPriceSemantics,
-      value: widget.semanticValueBuilder?.call(_minX, _maxX),
+      value: deger,
+      increasedValue: ileri,
+      decreasedValue: geri,
+      onIncrease: ileri == null ? null : () => _okuyucuyaGit(xs[ileriI!]),
+      onDecrease: geri == null ? null : () => _okuyucuyaGit(xs[geriI!]),
       image: true,
       child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;

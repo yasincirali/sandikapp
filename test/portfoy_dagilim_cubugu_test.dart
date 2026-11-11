@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -284,6 +285,65 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await _pump(tester, hareketiAzalt: true);
     expect(ilerleme(), 1);
+  });
+
+  // 2026-11-11: büyük halkada dilim seçimi tek seçim titreşimi verir,
+  // ortadaki blok kısa çapraz solar; hareketi azaltta ara kare yok.
+  Future<List<String>> hapticDinle(WidgetTester tester) async {
+    final kayit = <String>[];
+    tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (c) async {
+      if (c.method == 'HapticFeedback.vibrate') kayit.add('${c.arguments}');
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    return kayit;
+  }
+
+  Finder ortaBloklar() => find.descendant(
+      of: find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(AnimatedSwitcher)),
+      matching: find.byWidgetPredicate(
+          (w) => w is Column && w.key is ValueKey<String>));
+
+  Finder buyukLejant(String pct) => find.descendant(
+      of: find.byType(BottomSheet), matching: find.textContaining(pct));
+
+  testWidgets('büyük halka: seçim tek haptic, orta blok çapraz solar',
+      (tester) async {
+    await _pump(tester);
+    await tester.tap(_kucukHalka);
+    await tester.pumpAndSettle();
+    final kayit = await hapticDinle(tester);
+    expect(ortaBloklar(), findsOneWidget);
+
+    await tester.tap(buyukLejant('%25,0'));
+    await tester.pump();
+    expect(kayit, ['HapticFeedbackType.selectionClick']);
+    await tester.pump(SandikMotion.state ~/ 2);
+    expect(ortaBloklar(), findsNWidgets(2), reason: 'eski ve yeni solarken');
+    await tester.pumpAndSettle();
+    expect(ortaBloklar(), findsOneWidget);
+
+    // Başka dilim: yine tek tık (birikmez, çift gelmez).
+    await tester.tap(buyukLejant('%75,0').last);
+    await tester.pumpAndSettle();
+    expect(kayit, hasLength(2));
+  });
+
+  testWidgets('büyük halka: hareketi azaltta orta blok anında değişir',
+      (tester) async {
+    await _pump(tester, hareketiAzalt: true);
+    await tester.tap(_kucukHalka);
+    await tester.pumpAndSettle();
+    final kayit = await hapticDinle(tester);
+    await tester.tap(buyukLejant('%25,0'));
+    await tester.pump();
+    await tester.pump();
+    expect(ortaBloklar(), findsOneWidget, reason: 'ara kare yok');
+    expect(kayit, hasLength(1));
   });
 
   test('turDagilimi: büyükten küçüğe, paylar toplamı 1', () {

@@ -76,6 +76,7 @@ import '../services/daily_summary.dart' show IntradaySeriesCache;
 import '../services/fiyat_kaynagi.dart';
 import '../models/portfoy_siralama.dart';
 import '../widgets/sandik_siralama_dugmesi.dart';
+import '../widgets/sira_kaydirma.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
 import '../widgets/varlik_guncelle.dart';
@@ -105,6 +106,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// dokununca başa döner (bkz. [SekmeBasaDon], animasyon denetimi
   /// 2026-10-01).
   final _kaydirma = ScrollController();
+
+  /// Sıra değişince kartlar yerlerine kayar (FLIP, 2026-11-11; bkz.
+  /// [SiraKaydirmaDenetcisi]). Liste sökülüp kurulsa da konumlar anahtarla
+  /// eşleşsin diye State'te.
+  final _siraKaydirma = SiraKaydirmaDenetcisi();
   late final VoidCallback _basaDonBirak;
 
   // ── Yeni eklenen varlık (animasyon denetimi 2026-10-01, özgün dokunuş) ──
@@ -634,6 +640,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     // Kaydırma paneli grubu listenin TAMAMINI sarar: kartlar
                     // artık doğrudan dış listenin çocukları (bkz. [_AssetList]).
                     child: SlidableAutoCloseBehavior(
+                    // Parmak listedeyken (kaydırma, Slidable çekme) sıra
+                    // kayması başlamaz (bkz. [SiraKaydirmaDenetcisi.dinle]).
+                    child: _siraKaydirma.dinle(
                     child: SandikIcerikSutunu.olc(builder: (context, kenar) => ListView(
                       // Varlıklarım ↔ Takip Listesi geçişinde liste sökülüp
                       // yeniden kuruluyor; anahtar konumu PageStorage'da
@@ -925,6 +934,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       vurguNo: _vurguNo,
                                       vurguAnahtari: _vurguAnahtari,
                                       positions: filteredPositions,
+                                      siraKaydirma: _siraKaydirma,
                                       pState: pState,
                                       baz: ref.watch(gosterimBazParaProvider),
                                       currentUserId: currentUserId,
@@ -983,7 +993,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
                       ],
-                    )),
+                    ))),
                     ),
                   ),
                 ),
@@ -1994,6 +2004,20 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
     return false;
   }
 
+  /// Dilim seçimini uygular (halka dokunuşu ve lejant aynı yoldan).
+  ///
+  /// Haptic burada, seçim GERÇEKTEN değiştiğinde bir kez (2026-11-11):
+  /// dilim büyüyor ama parmak hiçbir şey hissetmiyordu. Lejant çipi
+  /// `SandikHaptic.none` ile susturulu; titreşim çipte değil seçimde
+  /// olduğu için iki yoldan da tek tık gelir, aynı seçime düşen dokunuş
+  /// (ör. seçili olmayan alana dokunup zaten boş kalan seçim) susar.
+  void _sec(int? newIdx, List<MapEntry<PortfoyGrubu, double>> sorted) {
+    if (newIdx == _touchedIndex) return;
+    SandikHaptic.selection.perform();
+    setState(() => _touchedIndex = newIdx);
+    widget.onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+  }
+
   String _formatTL(double val) {
     // Ana ekran hero'suyla birebir aynı format: ₺1.234.567 (baz birimde)
     return widget.baz.fmt(val);
@@ -2062,9 +2086,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                             (idx != null && idx >= 0 && idx < sorted.length)
                                 ? (_touchedIndex == idx ? null : idx)
                                 : null;
-                        setState(() => _touchedIndex = newIdx);
-                        widget.onTypeSelected(
-                            newIdx != null ? sorted[newIdx].key : null);
+                        _sec(newIdx, sorted);
                       }
                     },
                   ),
@@ -2083,41 +2105,61 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                 ),
               ),
               ),
+              // Orta blok seçim değişince kısa çapraz solar (2026-11-11):
+              // dilim büyürken etiket/tutar/yüzde anında değişiyordu, göz
+              // iki ayrı olay görüyordu. Anahtar SEÇİMİN etiketi — fiyat
+              // tiki tutarı değiştirse de solma olmaz, yalnız dilim
+              // değişince. Süre `stateOf`: hareketi azaltta sıfır, anlık.
+              // Boyutlar ölçekten (ham 18/16/22 → headlineSmall 18 /
+              // numMedium 16 / headlineMedium 20): Dynamic Type'a uyar;
+              // 22 → 20 bilinçli, ölçekte 22 yok ve FittedBox zaten
+              // uzun tutarı küçültüyor.
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (centerPct != null) ...[
-                        Text(
-                          centerPct,
-                          style: context.t.numLarge.copyWith(
-                            fontSize: 18,
-                            color: centerColor,
+                  child: AnimatedSwitcher(
+                    duration: SandikMotion.stateOf(context),
+                    switchInCurve: SandikMotion.enter,
+                    switchOutCurve: SandikMotion.enter,
+                    child: Column(
+                      key: ValueKey<String>(centerLabel),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (centerPct != null) ...[
+                          Text(
+                            centerPct,
+                            style: context.t.numLarge
+                                .merge(context.t.headlineSmall)
+                                .copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: centerColor,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                        ],
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            centerValue,
+                            style: (centerPct != null
+                                    ? context.t.numMedium
+                                    : context.t.numLarge
+                                        .merge(context.t.headlineMedium))
+                                .copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: centerColor,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 2),
-                      ],
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          centerValue,
-                          style: context.t.numLarge.copyWith(
-                            fontSize: centerPct != null ? 16 : 22,
-                            fontWeight: FontWeight.w600,
-                            color: centerColor,
+                        Text(
+                          centerLabel,
+                          style: context.t.titleSmall?.copyWith(
+                            color: context.c.text36,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        centerLabel,
-                        style: context.t.titleSmall?.copyWith(
-                          color: context.c.text36,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2148,10 +2190,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
               soluk: true,
               haptic: SandikHaptic.none,
               onTap: () {
-                final newIdx = _touchedIndex == e.key ? null : e.key;
-                setState(() => _touchedIndex = newIdx);
-                widget
-                    .onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+                _sec(_touchedIndex == e.key ? null : e.key, sorted);
               },
               child: AnimatedOpacity(
                 duration:
@@ -2218,6 +2257,10 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 /// Kaydırma paneli grubu (`SlidableAutoCloseBehavior`) dış listeyi sarar.
 class _AssetList {
   final List<Position> positions;
+
+  /// Sıra değişiminde kartların kayması; kartlar [SiraKaydirmaSatiri]
+  /// ile sarılır, alt ağaç (`_ImzaliSatir`) yeniden kurulmaz.
+  final SiraKaydirmaDenetcisi siraKaydirma;
   final PortfolioState pState;
   final BazPara baz;
   final String? currentUserId;
@@ -2259,6 +2302,7 @@ class _AssetList {
     required this.vurguNo,
     required this.vurguAnahtari,
     required this.positions,
+    required this.siraKaydirma,
     required this.pState,
     required this.baz,
     required this.currentUserId,
@@ -2283,12 +2327,23 @@ class _AssetList {
     return p.representative.userId == currentUserId ? p : null;
   }
 
-  List<Widget> kartlar() => [
-        // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
-        // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
-        for (final position in positions)
-          _kart(position, _kendiParcasi(position)),
-      ];
+  List<Widget> kartlar() {
+    // Liste kurulurken (yerleşimden ÖNCE) sıra bildirilir: aynı kartlar
+    // yeni dizilişteyse eski konumlar ölçülür, kartlar oradan kayar.
+    siraKaydirma.sira([for (final p in positions) p.key]);
+    return [
+      // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
+      // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
+      // Anahtar en dıştaki sarmalayıcıda: sliver elemanı ona göre eşler.
+      for (final position in positions)
+        SiraKaydirmaSatiri(
+          key: ValueKey(position.key),
+          denetci: siraKaydirma,
+          anahtar: position.key,
+          child: _kart(position, _kendiParcasi(position)),
+        ),
+    ];
+  }
 
   Widget _kart(Position position, Position? kendi) {
     if (position is BesSozlesmePozisyonu) {
@@ -2297,7 +2352,6 @@ class _AssetList {
       final vurgu = position.key == vurgulanan ||
           position.fonlar.any((f) => f.key == vurgulanan);
       return _YeniVarlikParlamasi(
-        key: ValueKey(position.key),
         aktif: vurgu,
         tetik: vurguNo,
         child: _BesSozlesmeSatiri(
@@ -2348,7 +2402,6 @@ class _AssetList {
       position.key == vurgulanan, vurguNo,
     ]);
     return _ImzaliSatir(
-      key: ValueKey(position.key),
       imza: imza,
       kur: () => _YeniVarlikParlamasi(
         aktif: position.key == vurgulanan,
@@ -2405,7 +2458,7 @@ class _SatirImzasi {
 /// gibi miras alınan değişiklikler alt ağaca bağımlılık yoluyla yine ulaşır;
 /// [kur] bu yüzden `context` okumamalı (bkz. `_AssetList._kart`).
 class _ImzaliSatir extends StatefulWidget {
-  const _ImzaliSatir({super.key, required this.imza, required this.kur});
+  const _ImzaliSatir({required this.imza, required this.kur});
   final Object imza;
   final Widget Function() kur;
 
@@ -2442,7 +2495,6 @@ class _ImzaliSatirState extends State<_ImzaliSatir> {
 /// kimse görmeden biterdi.
 class _YeniVarlikParlamasi extends StatefulWidget {
   const _YeniVarlikParlamasi({
-    super.key,
     required this.aktif,
     this.tetik = 0,
     required this.child,
