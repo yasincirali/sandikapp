@@ -183,6 +183,7 @@ class VarlikFiyatBlogu extends StatelessWidget {
     this.altSatir,
     this.kimlik,
     this.imlec,
+    this.imlecNotu,
   });
 
   final String etiket;
@@ -196,6 +197,13 @@ class VarlikFiyatBlogu extends StatelessWidget {
   /// tepesindeki büyük rakama gidiyor ve o rakam kıpırdamıyordu. Biçim
   /// aynı: hap ile büyük fiyat aynı biçimleyiciden gelir (`FiyatGrafigi.bicim`).
   final ValueListenable<(String, String)?>? imlec;
+
+  /// İmleç anlamlı bir güne oturunca tarihin yanına eklenen kısa söz
+  /// ("Maliyetinin üstüne çıktı", 2026-11-11); başka günde `null`. Yalnız
+  /// [imlec] doluyken okunur. Ayrı satır DEĞİL, tarih satırının devamı:
+  /// yuva boyu sabit kalsın (yukarıdaki kayma kararı). Anlam sözle verilir,
+  /// renkle değil; giriş/çıkış kısa solma (hareketi azaltta anlık).
+  final ValueListenable<String?>? imlecNotu;
 
   /// Fiyatın ait olduğu varlık; değişirse akan rakam dönmez (başka
   /// varlığın fiyatı "artış" değildir).
@@ -226,12 +234,14 @@ class VarlikFiyatBlogu extends StatelessWidget {
           // İmleçte rakam DÖNMEZ (her adımda yeni kimlik): parmak hızlı
           // gezerken dönen haneler parmağın gerisinde kalır, okunmaz.
           : _kur(context, v.$1, (metin: v.$2, renk: context.c.text58),
-              (kimlik, v)),
+              (kimlik, v),
+              not: imlecNotu),
     );
   }
 
   Widget _kur(BuildContext context, String fiyat, DonemDegisimSatiri degisim,
-      Object? kimlik) {
+      Object? kimlik,
+      {ValueListenable<String?>? not}) {
     final ust = Text(
       etiket,
       style: context.t.labelSmall?.copyWith(
@@ -240,6 +250,12 @@ class VarlikFiyatBlogu extends StatelessWidget {
     );
     final yan = etiketYani;
     final alt = altSatir;
+    final degisimMetni = Text(
+      degisim.metin,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.t.numSmall.copyWith(color: degisim.renk),
+    );
     final blok = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -288,12 +304,34 @@ class VarlikFiyatBlogu extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SandikSpace.xs),
-        Text(
-          degisim.metin,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.numSmall.copyWith(color: degisim.renk),
-        ),
+        if (not == null)
+          degisimMetni
+        else
+          Row(
+            children: [
+              Flexible(child: degisimMetni),
+              Flexible(
+                child: ValueListenableBuilder<String?>(
+                  valueListenable: not,
+                  builder: (context, metin, _) => AnimatedSwitcher(
+                    duration: SandikMotion.stateOf(context),
+                    child: metin == null
+                        ? const SizedBox.shrink()
+                        : Text(
+                            ' · $metin',
+                            key: ValueKey(metin),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            // Tarihle aynı stil ailesi: satır boyu değişmez.
+                            style: context.t.numSmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: context.c.text90),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         if (alt != null) ...[
           const SizedBox(height: SandikSpace.xs2),
           alt,

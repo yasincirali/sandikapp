@@ -2877,6 +2877,8 @@
   "adPositionUpper": "Your position",
   "adPositionLine": "Your position: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "adCrossedAboveCost": "Crossed above your cost",
+  "adCrossedBelowCost": "Fell below your cost",
   "adInflationThrough": "through {month} CPI",
   "@adInflationThrough": {"placeholders": {"month": {"type": "String"}}},
   "chartOpenLabel": "Open · {time} · {value}",

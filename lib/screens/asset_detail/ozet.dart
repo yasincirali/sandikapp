@@ -571,6 +571,8 @@ extension _DetayOzet on _AssetDetailScreenState {
       // Mevduatta başlık pozisyon değeri; grafik de toplam tutarı çizdiği
       // için (2026-10-26, `MevduatHesabi.tutarSerisi`) imleç aynı ölçekte.
       imlec: RemoteConfigService.instance.gozAlici ? _imlec : null,
+      // Maliyet kesişim günü sözü (2026-11-11), aynı bayrakla.
+      imlecNotu: RemoteConfigService.instance.gozAlici ? _imlecNotu : null,
       // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
       // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla — ve AYNI
       // biçimle (UX raporu 30 Eki §5, yasin "yap"): başlık "+₺36,0K",

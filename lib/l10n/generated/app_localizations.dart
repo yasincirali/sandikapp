@@ -7383,6 +7383,18 @@ abstract class AppLocalizations {
   /// **'Pozisyonun: {amount} ({pct})'**
   String adPositionLine(String amount, String pct);
 
+  /// No description provided for @adCrossedAboveCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetinin üstüne çıktı'**
+  String get adCrossedAboveCost;
+
+  /// No description provided for @adCrossedBelowCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetinin altına indi'**
+  String get adCrossedBelowCost;
+
   /// Varlık ekranı, enflasyon satırının penceresi; month = son açıklanan TÜFE ayı (ör. Eylül)
   ///
   /// In tr, this message translates to:

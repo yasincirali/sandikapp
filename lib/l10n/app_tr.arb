@@ -3012,6 +3012,8 @@
   "adPositionUpper": "Pozisyonun",
   "adPositionLine": "Pozisyonun: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "adCrossedAboveCost": "Maliyetinin üstüne çıktı",
+  "adCrossedBelowCost": "Maliyetinin altına indi",
   "adInflationThrough": "{month} TÜFE'sine kadar",
   "@adInflationThrough": {"description": "Varlık ekranı, enflasyon satırının penceresi; month = son açıklanan TÜFE ayı (ör. Eylül)", "placeholders": {"month": {"type": "String"}}},
   "chartOpenLabel": "Açılış · {time} · {value}",

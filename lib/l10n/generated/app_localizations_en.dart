@@ -4447,6 +4447,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get adCrossedAboveCost => 'Crossed above your cost';
+
+  @override
+  String get adCrossedBelowCost => 'Fell below your cost';
+
+  @override
   String adInflationThrough(String month) {
     return 'through $month CPI';
   }

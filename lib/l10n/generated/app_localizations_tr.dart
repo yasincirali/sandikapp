@@ -4419,6 +4419,12 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get adCrossedAboveCost => 'Maliyetinin üstüne çıktı';
+
+  @override
+  String get adCrossedBelowCost => 'Maliyetinin altına indi';
+
+  @override
   String adInflationThrough(String month) {
     return '$month TÜFE\'sine kadar';
   }
