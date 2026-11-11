@@ -12,12 +12,13 @@ import 'package:portfoy_takip/screens/add_asset_screen.dart';
 import 'package:portfoy_takip/services/bugun_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/tr_format.dart';
+import 'package:portfoy_takip/widgets/quick_adjust_dialog.dart';
 import 'package:portfoy_takip/widgets/tarih_cipleri.dart';
 import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// İşlem tarihi hızlı seçim çipleri (2026-11-11): ortak bileşen, Varlık
-/// ekle formu.
+/// ekle formu ve hızlı al/sat.
 
 typedef _Kayit = ({double fiyat, DateTime? tarih, bool satis});
 
@@ -273,6 +274,122 @@ void main() {
       expect(kapi.sorulanGunler.map(dayKey), contains(_dun()),
           reason: 'geçmiş tarih önizlemesi tetiklendi');
       await ekle(tester);
+      expect(portfoy.kayitlar.single.tarih, _dun());
+      expect(portfoy.kayitlar.single.fiyat, 90);
+    });
+  });
+
+  group('Hızlı Al/Sat', () {
+    Asset varlik() => Asset(
+          id: 'h1',
+          userId: 'u',
+          name: 'Deneme',
+          ticker: 'DENEM.IS',
+          type: AssetType.hisse,
+          quantity: 500,
+          purchasePrice: 100,
+          currency: 'TRY',
+          notes: '',
+          isManualPrice: false,
+          currentPrice: 100,
+          addedDate: DateTime(2026, 1, 1),
+        );
+
+    Future<_KaydedenPortfoy> ac(WidgetTester tester, QuickAdjustMode mod,
+        {double? kapanis}) async {
+      // 600 pt: test yazı tipinde (Ahem, her harf kare) diyaloğun mevcut
+      // "Toplam maliyet" satırı 390 pt'de 11 px taşıyor — bu değişiklikten
+      // önce de (doğrulandı); burada ölçülen şey tarih, satır değil.
+      tester.view.physicalSize = const Size(1800, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.reset);
+      final portfoy = _KaydedenPortfoy();
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          portfolioProvider.overrideWith(() => portfoy),
+          addAssetPriceLookupProvider
+              .overrideWithValue(_Kapi(kapanis: kapanis)),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Consumer(
+              builder: (context, ref, _) => TextButton(
+                onPressed: () => showQuickAdjustDialog(context, ref,
+                    asset: varlik(), mode: mod),
+                child: const Text('ac'),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('ac'));
+      await tester.pumpAndSettle();
+      return portfoy;
+    }
+
+    Future<void> onayla(WidgetTester tester, String etiket) async {
+      await tester.tap(find.widgetWithText(FilledButton, etiket));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+        'yalnız Bugün · Dün (takvim yok); varsayılan bugün, tarih '
+        'verilmez (eski davranış)', (tester) async {
+      final portfoy = await ac(tester, QuickAdjustMode.add, kapanis: 90);
+      expect(_cip('Bugün'), findsOneWidget);
+      expect(_cip('Dün'), findsOneWidget);
+      expect(find.text('Başka tarih'), findsNothing);
+      expect(find.byType(SandikFiltreCipi), findsNWidgets(2));
+      await tester.enterText(find.byType(TextField).first, '3');
+      await onayla(tester, 'Al');
+      expect(portfoy.kayitlar.single.tarih, isNull);
+      expect(portfoy.kayitlar.single.fiyat, 100);
+    });
+
+    testWidgets('Dün: fiyat dünün kapanışıyla dolar, kayıt dünün tarihiyle',
+        (tester) async {
+      final portfoy = await ac(tester, QuickAdjustMode.add, kapanis: 90);
+      await tester.tap(_cip('Dün'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, '90'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, '3');
+      await onayla(tester, 'Al');
+      expect(portfoy.kayitlar.single.tarih, _dun());
+      expect(portfoy.kayitlar.single.fiyat, 90);
+    });
+
+    testWidgets('kapanış gelmezse fiyat alanı dokunulmadan kalır',
+        (tester) async {
+      final portfoy = await ac(tester, QuickAdjustMode.add);
+      await tester.tap(_cip('Dün'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, '100'), findsOneWidget,
+          reason: 'güncel fiyat "dünün kapanışı" diye yazılmaz, alan aynı');
+      await tester.enterText(find.byType(TextField).first, '3');
+      await onayla(tester, 'Al');
+      expect(portfoy.kayitlar.single.tarih, _dun());
+      expect(portfoy.kayitlar.single.fiyat, 100);
+    });
+
+    testWidgets('elle yazılan fiyat Dün seçilince ezilmez', (tester) async {
+      final portfoy = await ac(tester, QuickAdjustMode.add, kapanis: 90);
+      await tester.enterText(find.byType(TextField).at(1), '95');
+      await tester.tap(_cip('Dün'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '3');
+      await onayla(tester, 'Al');
+      expect(portfoy.kayitlar.single.fiyat, 95);
+      expect(portfoy.kayitlar.single.tarih, _dun());
+    });
+
+    testWidgets('Satışta Dün: kayıt dünün tarihi ve kapanışıyla',
+        (tester) async {
+      final portfoy = await ac(tester, QuickAdjustMode.remove, kapanis: 90);
+      await tester.tap(_cip('Dün'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '10');
+      await onayla(tester, 'Sat');
+      expect(portfoy.kayitlar.single.satis, isTrue);
       expect(portfoy.kayitlar.single.tarih, _dun());
       expect(portfoy.kayitlar.single.fiyat, 90);
     });

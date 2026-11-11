@@ -6,8 +6,11 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/kapanis_ozeti.dart';
 import '../models/position.dart' show positionKey;
+import '../providers/add_asset_form_provider.dart'
+    show addAssetPriceLookupProvider, fiyatBul;
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../services/fiyat_kaynagi.dart' show FiyatKaynagi;
 import '../services/mevduat_hesabi.dart';
 import '../services/sozlesme_deposu.dart';
 import '../services/hizli_tekrar_al.dart';
@@ -19,6 +22,7 @@ import 'kapanis_ozeti_sheet.dart';
 import 'portfoy_secim_sayfasi.dart';
 import 'sandik_acilir.dart';
 import 'sandik_async_button.dart';
+import 'tarih_cipleri.dart';
 import '../l10n/l10n.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
@@ -264,6 +268,33 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   bool _saving = false;
   String? _error;
 
+  // ── İşlem günü (Bugün · Dün, 2026-11-11) ─────────────────────────────────
+  //
+  // Hızlı al/sat çoğu zaman "dün aldım"ı kaydetmek için açılıyordu; tarih
+  // seçilemediği için kayıt bugüne yazılıyor ya da kullanıcı tam formu
+  // açıyordu. Yalnız Bugün · Dün: takvim tam formun işi, hızlı diyalog iki
+  // dokunuşta kalsın.
+
+  /// Seçili geçmiş gün (gün başı); `null` = bugün. Bugünde kayda tarih
+  /// verilmez — sağlayıcı şimdiyi yazar, eski davranış birebir.
+  DateTime? _gecmisGun;
+
+  /// Seçili geçmiş günün kapanışı — Varlık ekle'nin geçmiş tarih fiyat
+  /// önizlemesiyle AYNI yol (`fiyatBul` + `addAssetPriceLookupProvider`).
+  /// Yalnız gerçekten o günün kapanışı bulunduysa dolu; güncel fiyata düşen
+  /// yedek burada kullanılmaz (dünün fiyatı diye bugünün fiyatı yazılmaz).
+  double? _gecmisFiyat;
+
+  /// Kullanıcı fiyat alanına yazdı mı? Yazdıysa gün değişince alan
+  /// ezilmez: bildiği fiyatı o yazmıştır.
+  bool _fiyatElle = false;
+
+  /// Açılıştaki fiyat metni — "Bugün"e dönüşte alan buna geri döner.
+  String _ilkFiyatMetni = '';
+
+  /// Geç gelen eski yanıt yeni seçimin fiyatını ezmesin.
+  int _fiyatIstegi = 0;
+
   bool get _isAdd => widget.mode == QuickAdjustMode.add;
 
   /// Mevduat TL tutarıyla girilir (bkz. [mevduatTutarIslemi]).
@@ -311,6 +342,57 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         _priceCtrl.text = _fmt(currentPrice);
       }
     }
+    _ilkFiyatMetni = _priceCtrl.text;
+  }
+
+  /// Satışta kaydedilecek birim fiyat: seçili geçmiş günün kapanışı
+  /// bulunduysa o, yoksa eski kural (güncel fiyat, o da yoksa maliyet).
+  double get _satisFiyati {
+    final a = widget.asset;
+    return _gecmisFiyat ??
+        (a.currentPrice > 0 ? a.currentPrice : a.purchasePrice);
+  }
+
+  Future<void> _gunSec(DateTime gun) async {
+    final bugun = dayKey(DateTime.now());
+    final gecmis = dayKey(gun).isBefore(bugun) ? dayKey(gun) : null;
+    if (gecmis == _gecmisGun) return;
+    final istek = ++_fiyatIstegi;
+    setState(() {
+      _gecmisGun = gecmis;
+      _gecmisFiyat = null;
+      _error = null;
+      if (gecmis == null && _isAdd && !_fiyatElle) {
+        _priceCtrl.text = _ilkFiyatMetni;
+      }
+    });
+    if (gecmis == null) return;
+    final fiyat = await _gecmisKapanis(gecmis);
+    if (!mounted || istek != _fiyatIstegi || fiyat == null) return;
+    setState(() {
+      _gecmisFiyat = fiyat;
+      if (_isAdd && !_fiyatElle) _priceCtrl.text = _fmt(fiyat);
+    });
+  }
+
+  /// [gun]ün kapanışı, Varlık ekle önizlemesinin yolundan. Elle fiyatlı
+  /// varlıkta ve eurobondda (form da tarihli önizleme vermez: kotasyon
+  /// birim değer, alan temiz %) sorulmaz. Sembol kanonik biçime çekilir —
+  /// sunucudan gelen lot zaten öyledir, form da bu biçimle kaydeder.
+  Future<double?> _gecmisKapanis(DateTime gun) async {
+    final a = widget.asset;
+    if (a.isManualPrice || FiyatKaynagi.eurobondMu(a.ticker)) return null;
+    final ticker = kanonikTicker(
+            type: a.type, ticker: a.ticker, isManualPrice: a.isManualPrice)
+        .trim();
+    if (ticker.isEmpty) return null;
+    final s = await fiyatBul(
+      lookup: widget.ref.read(addAssetPriceLookupProvider),
+      ticker: ticker,
+      date: gun,
+    );
+    final p = s.price;
+    return s.historical && p != null && p > 0 ? p : null;
   }
 
   @override
@@ -564,6 +646,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           sozlesmeId: asset.sozlesmeId,
           // Alış pozisyonun portföyüne (0133; bayrak kapalıyken yok sayılır).
           portfoyId: asset.portfoyId,
+          addedDate: _gecmisGun,
         );
       } else {
         final tumu = (qty - asset.quantity).abs() < 0.0001;
@@ -571,7 +654,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         await notifier.addSellTransaction(
           asset: asset,
           quantity: qty,
-          sellPrice: asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice,
+          sellPrice: _satisFiyati,
+          addedDate: _gecmisGun,
         );
         if (tumu) ozet = _kapanisOzeti(qty, baslangic);
       }
@@ -684,8 +768,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     // `addSellTransaction` çağrısı). Eskiden "Satış değeri" etiketiyle alış
     // maliyeti gösteriliyordu; kaydedilen tutar başkaydı (2026-09-23
     // denetimi F10).
-    final satisFiyati =
-        asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice;
+    final satisFiyati = _satisFiyati;
     final total = qty * (_isAdd ? price : satisFiyati);
     // Kâr önizlemesi yalnız satışta ve fiyatla girilen varlıkta (mevduatta
     // alan tutardır). Fiyat yedeksiz okunur; maliyeti "bilinmiyor" işaretli
@@ -694,7 +777,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         ? null
         : satisKarOnizleme(
             miktar: qty,
-            satisFiyati: asset.currentPrice,
+            satisFiyati: _gecmisFiyat ?? asset.currentPrice,
             ortalamaMaliyet: asset.purchasePrice,
           );
     // Alım önizlemesi: girilen birim fiyatla (kaydedilecek olan) yeni
@@ -849,6 +932,18 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             ),
             const SizedBox(height: 16),
 
+            // ── İşlem günü ────────────────────────────────────────────
+            // Mevduatta yok: birim değer güne göre sözleşmeden işler, geçmiş
+            // günün birimi bu diyalogun sorusu değil (tam form sorar).
+            if (!_tutarla) ...[
+              TarihCipleri(
+                secili: _gecmisGun ?? DateTime.now(),
+                onSecildi: _gunSec,
+                sonIsGunu: false,
+              ),
+              const SizedBox(height: SandikSpace.md),
+            ],
+
             // ── Miktar ────────────────────────────────────────────────
             Text(_tutarla ? context.l10n.depositAmountLabel : context.l10n.quantity,
                 style: context.t.titleSmall?.copyWith(
@@ -937,7 +1032,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 ],
                 style: context.t.numMedium.copyWith(
                     fontWeight: FontWeight.w500, color: context.c.text90),
-                onChanged: (_) => setState(() => _error = null),
+                onChanged: (_) => setState(() {
+                  _error = null;
+                  _fiyatElle = true;
+                }),
                 decoration: InputDecoration(
                   hintText: '0.00',
                   hintStyle:
