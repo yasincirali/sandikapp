@@ -306,7 +306,10 @@ void main() {
     expect(_duzenlenen.single.hedef, 5300);
     expect(_duzenlenen.single.yon, 'above');
     expect(_kurulan, isEmpty, reason: 'Yeni alarm kurulmaz.');
-    expect(find.text('Alarm güncellendi'), findsOneWidget);
+    // Başarı snack'ı yok (Ar-Ge 11 Kas 19:04 #6): yeni hedef satırda
+    // görünür; onay Kaydet düğmesinin ✓ durumu.
+    expect(find.text('Alarm güncellendi'), findsNothing);
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('düzenleme sayfasından sil: satır gider, geri al sunulur',

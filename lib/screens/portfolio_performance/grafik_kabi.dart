@@ -1012,7 +1012,21 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             },
           ),
           ),
-          if (showVolume) ...[
+          // İşlem hacmi paneli GRAFİĞİN ALTINDA gelir/gider: grafik yerinde
+          // kalır, yalnız kartın dibi uzar/kısalır — o da tek karede değil,
+          // yumuşak (yasin 2026-11-11, "dönem değişince grafik yer
+          // değiştiriyor"; ölçüldü: işlem olan döneme geçişte +98 pt).
+          // Hareketi azalt → anında. İşlemsiz dönemde panel boş yer
+          // tutmaz: gün içinde hacim hiç çizilmez, kalıcı boş kutu "veri
+          // gelmedi" diye okunurdu.
+          AnimatedSize(
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.move,
+            alignment: Alignment.topCenter,
+            child: !showVolume
+                ? const SizedBox(width: double.infinity)
+                : Column(
+                    children: [
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.only(left: 4, right: 4),
@@ -1106,7 +1120,9 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 },
               ),
             ),
-          ],
+                    ],
+                  ),
+          ),
           // Grafik tipi seçici — kabın DİBİNDE, etkilediği şeyin yanında.
           //
           // 2026-09-15'e kadar dönem satırının sağ ucundaydı; kullanıcı

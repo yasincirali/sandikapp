@@ -34,8 +34,10 @@ import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
+import '../services/sparkline_service.dart';
 import '../services/takip_sirasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu, yuzdeAlarmEtiketi;
+import '../widgets/asset_sparkline.dart';
 import '../config/magaza.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_paylas_dugmesi.dart';
@@ -211,6 +213,17 @@ class _List extends ConsumerWidget {
     final benim = mod == TakipSiralama.benim;
     final h = SandikSpace.screenH(context);
 
+    // Satır çizgisinin serileri (Ar-Ge 11 Kas 19:04 #2): yalnız ekrandaki
+    // sırayla İLK 5 sembol önden istenir (`prefetch` varsayılan sınırı);
+    // gerisi satır kurulunca (`AssetSparkline` → `seriesFor`). Sliver
+    // listesi yalnız görünen + önbellek payındaki satırları kurduğu için
+    // uzun Premium listesi açılışta 100 istek atmaz; ücretsiz 5'lik liste
+    // zaten sınırın içinde. Çizgi bu ekranda sığmıyorsa hiç istenmez.
+    if (takipCizgisiSigar(context)) {
+      SparklineService.instance
+          .prefetch(gorunen.map(SparklineService.takipAnahtari));
+    }
+
     // Satır + alt boşluk. Sürüklenebilir listede ayırıcı yok; boşluk satırın
     // kendi payı ki sürüklenen öğeyle birlikte taşınsın.
     Widget satir(int i) {
@@ -275,7 +288,9 @@ class _List extends ConsumerWidget {
                           color: context.c.text36),
                     ),
                   ),
-                  _SiralamaDugmesi(secili: mod),
+                  // Esnek: 320 pt × 2× yazıda sıralama etiketi kısalır,
+                  // başlık satırı taşmaz (2026-11-11 takip çizgisi testi).
+                  Flexible(child: _SiralamaDugmesi(secili: mod)),
                   const _TakipPaylasDugmesi(),
                 ],
               ),
@@ -679,6 +694,38 @@ class _ChartCard extends ConsumerWidget {
   }
 }
 
+/// Takip satırındaki mini çizginin ölçüsü (Ar-Ge 11 Kas 19:04 #2).
+///
+/// Portföy kartının eski satır içi eğrisi 56×24'tü; burada satırda + ve
+/// tutamaç da var, 44×18 + "1 ay" altyazısı fiyat sütunundan az yer alır.
+const double _cizgiGenisligi = 44;
+const double _cizgiYuksekligi = 18;
+
+/// Fiyat ve ad sütunlarının çizgi varken inebileceği en dar genişlik.
+/// Fiyat sütunu `FittedBox(scaleDown)` — bunun altında fiyat KÜÇÜLÜRDÜ;
+/// çizgi fiyatı sıkıştırmak için değil, yer artarsa gelir.
+const double _cizgiliSutunAlt = 64;
+
+/// Mini çizgi bu satıra sığar mı — sığmıyorsa hiç kurulmaz.
+///
+/// Üç koşul: ekran 360 pt'den geniş, yazı ölçeği 1,5×'in altında (büyük
+/// yazıda fiyat ve yüzde her pikseli ister) ve çizgi + boşluk çıkınca ad ve
+/// fiyat sütunlarının her biri [_cizgiliSutunAlt]'tan dar kalmıyor. Sabit
+/// parçalar `_Row` yerleşimiyle aynı: rozet + 10 + 8 + 4 + 44 (+ 44 tutamaç).
+/// Listenin ön yüklemesi de buna sorar: çizgi çizilmeyecekse seri istenmez.
+@visibleForTesting
+bool takipCizgisiSigar(BuildContext context,
+    {double? satirGenisligi, bool tutamacVar = true}) {
+  final mq = MediaQuery.of(context);
+  if (mq.size.width <= 360) return false;
+  if (mq.textScaler.scale(1) >= 1.5) return false;
+  if (satirGenisligi == null) return true;
+  final sabit = VarlikRozeti.cap + 10 + 8 + 4 + SandikTouch.min +
+      (tutamacVar ? SandikTouch.min : 0);
+  final kalan = satirGenisligi - sabit - (_cizgiGenisligi + 8);
+  return kalan >= 2 * _cizgiliSutunAlt;
+}
+
 class _Row extends ConsumerWidget {
   final WatchlistItem item;
 
@@ -869,7 +916,14 @@ class _Row extends ConsumerWidget {
                 border: Border.all(
                     color: context.c.amberFill.withValues(alpha: 0.30)),
               ),
-              child: Row(
+              child: LayoutBuilder(
+                builder: (context, kutu) {
+                final cizgi = takipCizgisiSigar(
+                  context,
+                  satirGenisligi: kutu.maxWidth,
+                  tutamacVar: sira != null,
+                );
+                return Row(
                 children: [
                   // Bayrak `goz_alici` açıkken sembol rozeti, kapalıyken
                   // birebir eski tür noktası.
@@ -915,6 +969,28 @@ class _Row extends ConsumerWidget {
                           ),
                   ),
                   const SizedBox(width: 8),
+                  // Son 1 ayın mini çizgisi (Ar-Ge 11 Kas 19:04 #2). Yer
+                  // varsa HER satırda ayrılır (seri yoksa / desteklenmeyen
+                  // varlıkta boş kutu): sütunlar satırdan satıra aynı x'te
+                  // kalır, veri gelince yerleşim zıplamaz. Ekran okuyucuda
+                  // yok: eğilimi yüzde cümlesi söylüyor, çizginin sesli
+                  // karşılığı gürültü olur. Sığmıyorsa (dar ekran, büyük
+                  // yazı) hiç kurulmaz — istek de atılmaz.
+                  if (cizgi) ...[
+                    ExcludeSemantics(
+                      child: SparklineService.supports(
+                              SparklineService.takipAnahtari(item))
+                          ? AssetSparkline(
+                              asset: SparklineService.takipAnahtari(item),
+                              isPositive: null,
+                              width: _cizgiGenisligi,
+                              height: _cizgiYuksekligi,
+                              altyazi: l10n.watchlistSparklineWindow,
+                            )
+                          : const SizedBox(width: _cizgiGenisligi),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   // Expanded (sıkı), Flexible (gevşek) DEĞİL: gevşek hâlde
                   // sütun fiyat metni kadar daralıyor, artan boşluk satırın
                   // SONUNA düşüyordu — + düğmesi fiyatın hemen ardına yapışıp
@@ -1016,6 +1092,8 @@ class _Row extends ConsumerWidget {
                       ),
                     ),
                 ],
+              );
+                },
               ),
             ),
           ),
@@ -1427,10 +1505,16 @@ class _AddHeader extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
                         children: [
-                          Text(context.l10n.watchlistInListLabel,
-                              style: context.t.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: c.text58)),
+                          // Esnek: büyük yazıda (2×) etiket kısalır, sayı
+                          // her zaman görünür kalır.
+                          Flexible(
+                            child: Text(context.l10n.watchlistInListLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.t.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: c.text58)),
+                          ),
                           const Spacer(),
                           Text.rich(
                             TextSpan(

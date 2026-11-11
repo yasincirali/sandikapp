@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/watchlist_item.dart';
 import 'history_service.dart';
 import 'crash_reporter.dart';
 
@@ -56,6 +57,31 @@ class SparklineService {
         // BES ve mevduat fon yolundan fiyatlanır (`fiyatlamaTuru`).
         a.type.fiyatlamaTuru == AssetType.fon;
   }
+
+  /// Takip listesi satırının seri anahtarı — miktarı/maliyeti SIFIR bir
+  /// [Asset] (Ar-Ge 11 Kas 19:04 #2, takip satırında 1 aylık çizgi).
+  ///
+  /// [WatchlistItem] bilerek `Asset` değil (bkz. o sınıfın belgesi: sahte
+  /// `Asset` bir toplama girerse portföyü bozar). Burada üretilen nesne
+  /// yalnız bu servisin sembol kararına girer ([supports], [_symbolFor],
+  /// `FiyatKaynagi.eurobondSerili`): kimlik alanları takip kaydının aynısı,
+  /// `quantity: 0` ve `purchasePrice: 0` ise yanlışlıkla bir toplama girse
+  /// bile tutara sıfır katar. Dönüşüm burada, çünkü sembolü seçen tek yer
+  /// bu servis (fiyat kaynağı sözleşmesi madde 1); satır kendi sembol
+  /// merdivenini kurmaz.
+  static Asset takipAnahtari(WatchlistItem w) => Asset(
+        id: 'takip-${w.id}',
+        userId: w.userId,
+        name: w.name,
+        ticker: w.ticker,
+        type: w.type,
+        subCategory: w.subCategory,
+        quantity: 0,
+        purchasePrice: 0,
+        currency: w.currency,
+        notes: '',
+        isManualPrice: false,
+      );
 
   /// Altın serisinin önbellek anahtarı — gerçek bir Yahoo sembolü değil.
   ///
@@ -182,7 +208,12 @@ class SparklineService {
   /// çağrıldığı için kapı `fetchHistory(symbol, _range)` ile aynı isteği
   /// atar; anahtar da grafiklerin 1A anahtarıyla aynıdır (tek çekim).
   Future<List<(int, double)>> _cek(String sym) =>
-      HistoryService.instance.seriCek(sym, _range);
+      debugCekici?.call(sym) ?? HistoryService.instance.seriCek(sym, _range);
+
+  /// Test kancası: ham seriyi ağ yerine verir. Üretimde hep `null`; satır
+  /// testleri (takip çizgisi) HTTP'ye çıkmadan "veri var / yok" kurar.
+  @visibleForTesting
+  Future<List<(int, double)>> Function(String sembol)? debugCekici;
 
   /// Altının gram22k TL serisi — uygulamanın geri kalanıyla AYNI merdiven.
   ///

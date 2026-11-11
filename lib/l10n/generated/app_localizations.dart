@@ -2018,6 +2018,12 @@ abstract class AppLocalizations {
   /// **'Kaydet'**
   String get dividendRecordAction;
 
+  /// No description provided for @dugmeBasarili.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedildi'**
+  String get dugmeBasarili;
+
   /// No description provided for @dividendSourceNote.
   ///
   /// In tr, this message translates to:
@@ -4183,6 +4189,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'takip ediliyor'**
   String get watchlistRowFollowing;
+
+  /// Takip satırındaki mini çizginin penceresi; satırın yüzdesi seçili dönemi anlatır, çizgi hep son 1 ayı.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 ay'**
+  String get watchlistSparklineWindow;
 
   /// No description provided for @watchlistPeriodSinceAdded.
   ///
@@ -7413,6 +7425,12 @@ abstract class AppLocalizations {
   /// **'Bugünkü değer'**
   String get posCurrentValue;
 
+  /// No description provided for @posPortfolioShare.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyündeki payı'**
+  String get posPortfolioShare;
+
   /// No description provided for @posTotalPnl.
   ///
   /// In tr, this message translates to:
@@ -7982,12 +8000,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Devam et'**
   String get kullaniciAdiDevam;
-
-  /// No description provided for @kullaniciAdiKaydedildi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kullanıcı adın güncellendi.'**
-  String get kullaniciAdiKaydedildi;
 
   /// No description provided for @kullaniciAdiSecilmedi.
   ///
@@ -8594,12 +8606,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Oranı güncelle'**
   String get depositRateUpdate;
-
-  /// No description provided for @depositRateSaved.
-  ///
-  /// In tr, this message translates to:
-  /// **'Oran güncellendi'**
-  String get depositRateSaved;
 
   /// No description provided for @depositWithdrawTitle.
   ///
@@ -14693,12 +14699,6 @@ abstract class AppLocalizations {
   /// **'{ad} göstergesi, ayrı panel'**
   String ozgPanelSemantik(String ad);
 
-  /// No description provided for @ozgKaydedildi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gösterge kaydedildi'**
-  String get ozgKaydedildi;
-
   /// No description provided for @ozgNotCizimNesnesi.
   ///
   /// In tr, this message translates to:
@@ -16451,12 +16451,6 @@ abstract class AppLocalizations {
   /// **'Grafikte aç'**
   String get cizgiyiGrafikteAc;
 
-  /// No description provided for @cizgiAlarmiAdlandi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alarmın adı kaydedildi'**
-  String get cizgiAlarmiAdlandi;
-
   /// No description provided for @tegAdliAlarmKurulduUst.
   ///
   /// In tr, this message translates to:
@@ -16666,12 +16660,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Alarmı sil'**
   String get alarmiSil;
-
-  /// No description provided for @alarmGuncellendi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alarm güncellendi'**
-  String get alarmGuncellendi;
 
   /// No description provided for @alarmKaldi.
   ///

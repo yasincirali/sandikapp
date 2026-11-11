@@ -78,14 +78,28 @@ class _CizgiAdiSayfasiState extends State<CizgiAdiSayfasi> {
     super.dispose();
   }
 
+  /// Kaydet düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3/#6): Alarmlarım'daki
+  /// "Alarmın adı kaydedildi" snack'ının yerini aldı — ad listede zaten
+  /// görünür, onay düğmenin kendisinde.
+  final _basari = SandikBasariSinyali();
+
+  /// Klavyedeki "Bitti" düğmeden geçmez, kilidi paylaşmaz: yazma ya da ✓
+  /// sürerken ikinci gönderim ikinci yazma ve ikinci `pop` olurdu.
+  bool _kaydediyor = false;
+
   Future<void> _kaydet() async {
+    if (_kaydediyor) return;
+    _kaydediyor = true;
     try {
       await widget.kaydet(_ctrl.text.trim());
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'CizgiAdiSayfasi.kaydet');
+      _kaydediyor = false;
       if (mounted) setState(() => _hata = friendlyError(e));
       return;
     }
+    if (!mounted) return;
+    await _basari.goster();
     if (mounted) Navigator.pop(context);
   }
 
@@ -130,6 +144,7 @@ class _CizgiAdiSayfasiState extends State<CizgiAdiSayfasi> {
             ? const Size(0, SandikTouch.min)
             : const Size.fromHeight(SandikTouch.min),
       ),
+      basari: _basari,
       onPressed: _kaydet,
       child: Text(widget.dugme),
     );

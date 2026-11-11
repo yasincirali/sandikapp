@@ -63,7 +63,7 @@ extension _Kayit on _AddAssetScreenState {
           }
           if (ctx.mounted) Navigator.pop(ctx);
           // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
-          if (kaydedildi && mounted) _kayitBitti(true);
+          if (kaydedildi && mounted) await _kayitBitti(true);
         },
       ),
     );
@@ -524,7 +524,7 @@ extension _Kayit on _AddAssetScreenState {
     // geldiyse ayrıca "Alarm kur" eylemli bir bildirim gösterir. Sonuçsuz
     // `pop` edilirse kullanıcı hangi sekmedeyse orada kalır ve eklediği
     // varlığı göremez.
-    _kayitBitti(alarmAdayi ?? true);
+    await _kayitBitti(alarmAdayi ?? true);
     return _KayitSonu.kapandi;
   }
 }

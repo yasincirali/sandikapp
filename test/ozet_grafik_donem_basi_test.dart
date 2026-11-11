@@ -290,7 +290,9 @@ void main() {
       expect(tek.contains('etiket: context.l10n.investedRow,'), isTrue);
       expect(tek.contains('etiket: context.l10n.dividendPocketRow,'), isTrue);
       expect(tek.contains('etiket: context.l10n.balanceChangeInclBuys,'), isTrue);
-      expect(tek.contains('if (piyasaPct != null && !piyasaFlat)'), isTrue,
+      // Rozet artık `_KahramanSatiri`'na parametre (2026-11-11, satır dönem
+      // değişince yer değiştirmesin); kapı aynı koşul.
+      expect(tek.contains('rozet: piyasaPct != null && !piyasaFlat'), isTrue,
           reason: 'kahraman rozeti paranın getirisi yüzdesi');
       expect(tek.contains('IncludedNote('), isFalse,
           reason: 'not satırı kalktı, kalemler anlatıyor');

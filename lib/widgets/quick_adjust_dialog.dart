@@ -263,6 +263,9 @@ class _QuickAdjustDialog extends StatefulWidget {
 }
 
 class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
+  /// Al/Sat düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3).
+  final _basari = SandikBasariSinyali();
+
   final _qtyCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
   final _hedefCtrl = TextEditingController();
@@ -747,6 +750,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       // varlığın miktarı arkadaki listede anında değişiyor — onay zaten
       // ekranda. Hata yolu sessiz değil; `_error` ile sheet içinde kalır.
       // Tümünü satışta kapanış özeti döner (`showQuickAdjustDialog` açar).
+      // Sessiz başarıya düğmede ✓ eklendi (Ar-Ge 11 Kas 19:04 #3): sayfa
+      // kapanmadan önce gösterge ✓'ye döner, başarı titreşimi gelir.
+      await _basari.goster();
+      if (!mounted) return;
       Navigator.pop(context, ozet);
     } catch (e) {
       if (!mounted) return;
@@ -828,6 +835,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           sellPrice: islem.birim,
         );
       }
+      if (!mounted) return;
+      // Düğmede ✓ (Ar-Ge 11 Kas 19:04 #3), sonra kapanış.
+      await _basari.goster();
       if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
@@ -1256,6 +1266,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   child: SandikAsyncButton.kompakt(
                     onPressed: _submit,
                     mesgul: _saving,
+                    basari: _basari,
                     style: FilledButton.styleFrom(
                       backgroundColor: accent,
                       padding: const EdgeInsets.symmetric(vertical: 14),

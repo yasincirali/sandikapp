@@ -678,6 +678,7 @@
   },
   "dividendRecorded": "Kaydedildi",
   "dividendRecordAction": "Kaydet",
+  "dugmeBasarili": "Kaydedildi",
   "dividendSourceNote": "Kaynak: Yahoo Finance · tutarlar brüt",
   "dividendSuggestionLine": "{ticker} · hak tarihi {date}",
   "@dividendSuggestionLine": {
@@ -1370,6 +1371,10 @@
     }
   },
   "watchlistRowFollowing": "takip ediliyor",
+  "watchlistSparklineWindow": "1 ay",
+  "@watchlistSparklineWindow": {
+    "description": "Takip satırındaki mini çizginin penceresi; satırın yüzdesi seçili dönemi anlatır, çizgi hep son 1 ayı."
+  },
   "watchlistPeriodSinceAdded": "Eklediğimden beri",
   "watchlistSinceDate": "{tarih} beri",
   "@watchlistSinceDate": {
@@ -3019,6 +3024,7 @@
   "posTodayPrice": "Bugünkü fiyat",
   "posTotalCost": "Ödediğin toplam",
   "posCurrentValue": "Bugünkü değer",
+  "posPortfolioShare": "Portföyündeki payı",
   "posTotalPnl": "Toplam kâr/zarar",
   "posPeriodPnl": "{period} kâr/zarar",
   "@posPeriodPnl": {
@@ -3182,7 +3188,6 @@
   "kullaniciAdiHataBilinmiyor": "Kaydedilemedi. Biraz sonra tekrar dene.",
   "kullaniciAdiUygun": "Bu ad kullanılabilir.",
   "kullaniciAdiDevam": "Devam et",
-  "kullaniciAdiKaydedildi": "Kullanıcı adın güncellendi.",
   "kullaniciAdiSecilmedi": "Henüz seçilmedi",
   "kullaniciAdiCikis": "Çıkış yap",
   "registerUsernameMissing": "Kullanıcı adı gir.",
@@ -3422,7 +3427,6 @@
   "depositRenewTitle": "Yeni dönem",
   "depositRenewSaved": "Yeni dönem başladı",
   "depositRateUpdate": "Oranı güncelle",
-  "depositRateSaved": "Oran güncellendi",
   "depositWithdrawTitle": "Parayı çektin mi?",
   "depositWithdrawBody": "Mevduat bugünkü değeriyle ({amount}) satılmış olarak kaydedilir.",
   "@depositWithdrawBody": {
@@ -5822,7 +5826,6 @@
   "@ozgGrafikteGoster": {"placeholders": {"ad": {"type": "String"}}},
   "ozgPanelSemantik": "{ad} göstergesi, ayrı panel",
   "@ozgPanelSemantik": {"placeholders": {"ad": {"type": "String"}}},
-  "ozgKaydedildi": "Gösterge kaydedildi",
   "ozgNotCizimNesnesi": "label, line, box ve table çizimleri gösterilmez; kodun geri kalanı çalışır.",
   "ozgNotBoyama": "bgcolor ve barcolor boyamaları gösterilmez.",
   "ozgNotStrateji": "Strateji emirleri (strategy.entry …) yürütülmez; yalnız çizimler gösterilir.",
@@ -6210,7 +6213,6 @@
   "cizgiAlarmiAdlandir": "Adlandır",
   "cizgiAlarmiAdlandirBaslik": "Çizgi alarmının adı",
   "cizgiyiGrafikteAc": "Grafikte aç",
-  "cizgiAlarmiAdlandi": "Alarmın adı kaydedildi",
   "tegAdliAlarmKurulduUst": "«{ad}» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz",
   "@tegAdliAlarmKurulduUst": {"placeholders": {"ad": {"type": "String"}}},
   "tegAdliAlarmKurulduAlt": "«{ad}» alarmı kuruldu: fiyat çizginin altına inince haber vereceğiz",
@@ -6262,7 +6264,6 @@
   "alarmSilindi": "Alarm silindi",
   "alarmiDuzenle": "Alarmı düzenle",
   "alarmiSil": "Alarmı sil",
-  "alarmGuncellendi": "Alarm güncellendi",
   "alarmKaldi": "{pct} kaldı",
   "@alarmKaldi": {"placeholders": {"pct": {"type": "String"}}},
   "alarmKaldiSemantik": "Hedefe {pct} kaldı",

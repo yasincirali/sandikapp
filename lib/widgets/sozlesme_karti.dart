@@ -354,9 +354,14 @@ class _MevduatGovdesi extends ConsumerWidget {
             vadeGun: sonuc.gun,
             baslangic: sonuc.bas);
       }
-      if (context.mounted) {
-        sandikSnack(context,
-            son.vadesiz ? l10n.depositRateSaved : l10n.depositRenewSaved,
+      // Vadesizde oran değişikliği kartın "Faiz" satırında hemen görünür:
+      // "Oran güncellendi" snack'ı kalktı, yerine başarı titreşimi (Ar-Ge
+      // 11 Kas 19:04 #6). Yeni dönem snack'ı bu turun listesinde değildi,
+      // ayrı karar (snack_basari_kurali_test izin listesi).
+      if (son.vadesiz) {
+        SandikHaptic.basari.perform();
+      } else if (context.mounted) {
+        sandikSnack(context, l10n.depositRenewSaved,
             kind: SandikSnackKind.success);
       }
     } catch (e, st) {
@@ -1037,6 +1042,10 @@ extension on _BesGovdesi {
             yeniTutar: sonuc.tutar,
             planiDa: sonuc.plan,
           );
+      // KALIR (Ar-Ge 11 Kas 19:04 #6 incelemesi): tutarı gösteren soru
+      // kutusu güncellemeyle karttan kalkar, yeni tutar kartta ayrıca
+      // yazılmaz (yalnız toplamın içinde). Bu satır yapılan işin tek görünür
+      // onayı (snack_basari_kurali_test izin listesi).
       if (context.mounted) {
         sandikSnack(context, l10n.pensionAutoUpdated,
             kind: SandikSnackKind.success);

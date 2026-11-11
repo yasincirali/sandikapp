@@ -138,10 +138,25 @@ void main() {
                   child: const Text('Kaydet'),
                 ),
                 const SizedBox(height: SandikSpace.md),
-                SandikAsyncButton.kompakt(
-                  onPressed: () async {},
-                  child: const Text('Onayla'),
-                ),
+                // Başarı durumu (Ar-Ge 11 Kas 19:04 #3) "Onayla"nın yanında:
+                // ayrı satır, tembel listede aşağıdakileri dışarı itiyordu.
+                // Ayrı testte basılıp ✓ hâli de ölçülür.
+                Row(children: [
+                  SandikAsyncButton.kompakt(
+                    onPressed: () async {},
+                    child: const Text('Onayla'),
+                  ),
+                  const SizedBox(width: SandikSpace.sm),
+                  Builder(builder: (context) {
+                    final sinyal = SandikBasariSinyali();
+                    return SandikAsyncButton.kompakt(
+                      key: const ValueKey('basari-vitrin'),
+                      basari: sinyal,
+                      onPressed: () => sinyal.goster(),
+                      child: const Text('Kaydet'),
+                    );
+                  }),
+                ]),
                 const SizedBox(height: SandikSpace.md),
                 const BildirimIzniUyarisi(),
                 // Grafik eski seriyle kaldığında (önce-eski-seri, 2026-10-24).
@@ -444,6 +459,26 @@ void main() {
         await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
         await expectLater(t, meetsGuideline(textContrastGuideline));
       }
+      handle.dispose();
+    });
+
+    testWidgets('başarı durumu: ✓ hâlinde boy aynı, etiketli ($ad)',
+        (t) async {
+      final handle = t.ensureSemantics();
+      await t.pumpWidget(vitrin(parlaklik: parlaklik));
+      await t.pump();
+      final dugme = find.byKey(const ValueKey('basari-vitrin'));
+      final boy = t.getSize(dugme);
+      await t.tap(find.descendant(of: dugme, matching: find.text('Kaydet')));
+      await t.pump();
+      await t.pump(SandikMotion.state);
+      expect(find.descendant(of: dugme, matching: find.byIcon(Icons.check_rounded)),
+          findsOneWidget);
+      expect(t.getSize(dugme), boy, reason: '✓ evresinde düğme zıplamaz');
+      expect(find.bySemanticsLabel('Kaydedildi'), findsOneWidget,
+          reason: '✓ yalnız ikonla değil, okunan etiketle');
+      expect(boy.height, greaterThanOrEqualTo(SandikTouch.min));
+      await t.pumpAndSettle();
       handle.dispose();
     });
 

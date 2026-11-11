@@ -14,6 +14,7 @@ import '../models/gunluk_getiri.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/kur_ayrismasi.dart';
 import '../models/portfoy.dart';
+import '../models/portfoy_payi.dart';
 import '../models/position.dart';
 import '../providers/portfoy_provider.dart';
 import '../providers/auth_provider.dart';
@@ -217,6 +218,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   static const _grafikYokAnahtari = ValueKey('varlikGrafikYok');
   late Future<Map<int, double>> _historyFuture;
   late ScrollController _scrollController;
+
+  /// Gövdedeki başlık bloğu ve kaydırma alanı — başlığın üst çubuğun altına
+  /// girip girmediği ikisinin ÇİZİLMİŞ konumundan ölçülür
+  /// (`_baslikEsiginiDenetle`). Sabit piksel eşiği yazılmaz: Dynamic Type
+  /// ×2'de, uzun adda ya da iPad sütununda başlık bloğunun boyu değişir.
+  final _baslikAnahtari = GlobalKey();
+  final _kaydirmaAnahtari = GlobalKey();
+
+  /// Başlık bloğu çubuğun altında mı — üst çubuktaki "THYAO · ₺312,40"
+  /// yalnız bunu dinler (Ar-Ge 11 Kas 19:04 #1). Kaydırmanın her karesinde
+  /// bütün ekran yeniden kurulmasın diye `setState` değil, yalnız bu bayrak.
+  final _baslikCubukta = ValueNotifier<bool>(false);
   // Compare mode: seçili karşılaştırma varlığı (kullanıcının portföyünden).
   // null = compare kapalı. Bu varlığın history serisi ana varlıkla aynı
   // periyotta fetch edilir, ilk nokta 100 kabul edilip % normalize edilir.
@@ -423,7 +436,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       reason: 'AssetDetail.acilis',
     );
     _scrollController =
-        ScrollController(initialScrollOffset: widget.initialScrollOffset);
+        ScrollController(initialScrollOffset: widget.initialScrollOffset)
+          ..addListener(_baslikEsiginiDenetle);
+    // Ekran kaydırılmış açılabilir (`initialScrollOffset`): ilk çizimden
+    // sonra bir kez ölç ki çubuk başlığı kaydırma beklemeden doğru dursun.
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _baslikEsiginiDenetle());
     _nabziBirak = TazelikRitmi.nabiz.dinle(_nabizGeldi);
   }
 
@@ -625,6 +643,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         : (asset: p.asDisplayAsset(), lots: p.lots, acik: true);
     _canliKendi = kendi;
     _canliOrtaklar = ortaklar;
+    _canliDefter = sahipLotlari;
     _canliOnbellek = sonuc;
     return sonuc;
   }
@@ -641,6 +660,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   ({List<Map<int, double>?> seriler, double deger, double birim, double? sonuc})?
       _gunlukGetiriOnbellek;
   List<Asset>? _canliKendi;
+
+  /// Sahibin (çoklu portföyde o portföyün) BÜTÜN ürünlerdeki ham defteri —
+  /// `_canli`'nin süzdüğü liste. "Portföyündeki payı"nın paydası buradan
+  /// (`_portfoyPayi`, ozet.dart): pozisyonla aynı kapsam, ayrı süzgeç yok.
+  List<Asset>? _canliDefter;
+
+  /// "Portföyündeki payı" hesabının son girdisi ve sonucu — aynı defter ve
+  /// aynı fiyat durumuyla her karede yeniden hesaplanmasın.
+  ({List<Asset> defter, PortfolioState pState, double deger, double? pay})?
+      _portfoyPayiOnbellek;
   Map<String, List<Asset>>? _canliOrtaklar;
 
   /// Ortak nabzın dinleyicisini kaldıran işlev (bkz. [_nabizGeldi]).
@@ -679,6 +708,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   @override
   void dispose() {
     _imlec.dispose();
+    _baslikCubukta.dispose();
     _ozelGorunum.dispose();
     _ohlcYukleyici.kapat();
     _nabziBirak?.call();
@@ -891,8 +921,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
-        // Başlık artık gövdede (kısa etiket + ad · tür, varlık sayfasıyla
-        // aynı); üst çubukta ikinci kez yazılmaz.
+        // Başlık gövdede (kısa etiket + ad · tür, varlık sayfasıyla aynı);
+        // gövde başlığı görünürken üst çubukta ikinci kez YAZILMAZ.
+        // Ar-Ge 11 Kas 19:04 #1: başlık bloğu kaydırılıp çubuğun altına
+        // girince çubukta kısa etiket + canlı fiyat soluklaşarak belirir
+        // (iOS büyük başlık kalıbı; Borsa, Midas aynı). Sayfa uzun — grafik,
+        // pozisyon, analiz — ve aşağıda "hangi varlık, fiyat ne" kayboluyordu.
+        // Aynı anda iki yerde görünmez: biri girerken öteki çubuğun altında.
+        titleWidget: _cubukBasligi(pnl, baz),
         transparent: true,
         showBack: widget.showBackButton,
         actions: [
@@ -953,7 +989,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         child: RefreshIndicator.adaptive(
       color: context.c.amberText,
       onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(force: true),
-      child: SingleChildScrollView(
+      // Boy değişince (Dynamic Type, iskelet → içerik, döndürme) kaydırma
+      // olmadan da yeniden ölç: başlık bloğunun yeri kaymış olabilir.
+      child: NotificationListener<ScrollMetricsNotification>(
+        onNotification: (_) {
+          _baslikEsiginiDenetle();
+          return false;
+        },
+        child: SingleChildScrollView(
+      key: _kaydirmaAnahtari,
       physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
           // iPad'de okunabilir sütun (Ar-Ge 2026-11-07 #3): kaydırma alanı
@@ -965,6 +1009,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               children: [
                 // Başlık + güncel fiyat + pozisyon satırı (A tasarımı).
                 Align(
+                    key: _baslikAnahtari,
                     alignment: Alignment.centerLeft,
                     child: _kopyalanir(pnl, _baslik())),
                 const SizedBox(height: SandikSpace.md),
@@ -2523,6 +2568,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                           context.l10n, _periods[_selectedPeriodIdx].label),
                       donem: _donemDegisimi(period.days, startDate, endDate,
                           pnl.currentUnitTRY),
+                      portfoyPayi: _portfoyPayi(pnl, pState, isOwnAsset),
                     ),
                   )
                 else ...[
@@ -2552,6 +2598,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // eski dönemin rakamı yeni dönemin etiketiyle yazılmaz.
                   donem: _donemDegisimi(period.days, startDate, endDate,
                       pnl.currentUnitTRY),
+                  portfoyPayi: _portfoyPayi(pnl, pState, isOwnAsset),
                 ),
                 _eurobondKarti(),
                 const SizedBox(height: SandikSpace.lg),
@@ -2590,7 +2637,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               ],
             ),
           )),
-        ),
+        )),
     ),
       );
       }),

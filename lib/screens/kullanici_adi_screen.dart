@@ -12,7 +12,6 @@ import '../providers/auth_provider.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
-import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
@@ -89,7 +88,14 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
           context.l10n.kullaniciAdiHataBilinmiyor,
       };
 
+  /// Kaydet düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3/#6).
+  final _basari = SandikBasariSinyali();
+
+  /// ✓ evresi sürüyor: klavyedeki "Bitti" düğme kilidinden geçmez.
+  bool _kapaniyor = false;
+
   Future<void> _kaydet() async {
+    if (_kapaniyor) return;
     final m = _metin;
     // `await`'ten ÖNCE okunur: zorunlu ekranda kayıt başarılı olunca kapı
     // bu ekranı ağaçtan söker; olay `mounted` denetiminden önce gitmeli.
@@ -105,8 +111,12 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
       if (!mounted) return;
       if (s == KullaniciAdiSonuc.uygun) {
         if (!widget.zorunlu) {
-          sandikSnack(context, context.l10n.kullaniciAdiKaydedildi,
-              kind: SandikSnackKind.success);
+          // "Kullanıcı adın güncellendi" snack'ı kalktı (Ar-Ge 11 Kas 19:04
+          // #6): sayfa Ayarlar'a döner, yeni ad satırda görünür; geri
+          // alınacak bir şey yok. Onay düğmede ✓ + başarı titreşimi.
+          _kapaniyor = true;
+          await _basari.goster();
+          if (!mounted) return;
           // Sayfa kapanışı beklenmez; `arkaPlan` lint'i susturmakla kalmaz,
           // olası hatayı non-fatal kaydeder (`arka_plan_hata_yutma_test`).
           CrashReporter.arkaPlan(Navigator.of(context).maybePop(),
@@ -260,6 +270,7 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
           ),
           const SizedBox(height: SandikSpace.lg),
           SandikAsyncButton(
+            basari: _basari,
             onPressed: _denetim.kaydedilebilir ? _kaydet : null,
             child: Text(zorunlu
                 ? context.l10n.kullaniciAdiDevam

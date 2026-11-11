@@ -92,6 +92,7 @@ Süre ve eğri **birlikte** seçilir:
 | İş | Bileşen |
 |---|---|
 | **İstek atan** her düğme | `SandikAsyncButton` (`tur`: `dolu` / `cerceve` / `metin`; diyalog ve kart içi `.kompakt`) |
+| İşi bitince sayfayı kapatan kaydet/onay düğmesi ("oldu" anı) | `SandikAsyncButton(basari: SandikBasariSinyali())` — çağıran başarı yolunda kapatmadan önce `await basari.goster()`: gösterge ✓'ye döner, başarı titreşimi, ✓ `modal` kadar görünür, sonra kapanış |
 | İstek atan ikon / satır | `SandikAsyncTap` |
 | İstek atmayan ana eylem | `FilledButton` (tema: amber, köşe 14, ~48 pt) |
 | İkincil | `OutlinedButton` |
@@ -107,6 +108,18 @@ geçmeden de başlayabiliyorsa (klavyede "Bitti", OTP 6. hane) ekran bayrağın�
 `showSandikConfirm(islem: …)`: gösterge onay düğmesinde döner, hata olursa
 diyalog açık kalır. Titreşim bileşenin varsayılanıdır (`medium`); çağıran
 ezmez.
+
+**Başarı durumu (Ar-Ge 11 Kas 19:04 #3).** Sayfayı kapatan akışta
+(Varlık ekle Kaydet, Hızlı Al/Sat, alarm kur/düzenle, hedef kaydet)
+düğme başarıda göstergeden ✓'ye döner (`SandikIkonGecisi.gecis`: `state`
+sönüm + 0.9→1 ölçek), `SandikHaptic.basari` titreşir, ✓ `SandikMotion.modal`
+kadar görünür ve sayfa ancak sonra kapanır. ✓ evresinde düğme kilitli
+(çift dokunma yok); hata yolunda ✓ yok. Hareketi azaltta ✓ geçişsiz belirir,
+görünme süresi kalır (bekleme hareket değil, okuma payı). Ekran okuyucu bir
+kez "Kaydedildi" duyar. Başarıyı yalnız çağıran bildiği için bayrak değil
+sinyal: ekran hatayı kendisi yakalayıp normal döndüğünde ✓ çıkmasın.
+Varsayılan kapalı; sayfası açık kalan düğmede kullanılmaz (sonuç zaten
+ekranda). Kilit `sandik_async_basari_test`, vitrin `hig_ortak_bilesen_test`.
 
 Bilinçli istisnalar: iyimser güncellemeler (anahtar, oy, kaydırarak silme;
 sonuç anında görünür, hata olursa geri alınır), hesap silme tam ekran
@@ -162,7 +175,7 @@ başlık küçülmesini kapatır.
 | Sandık çizimi | `SandikCizimi` (paywall, boş durum, kilometre taşı); zemin `amber`/`yuzey` |
 | Kart kart anlatım (hikâye) | `HikayeAkisi` + `HikayeSayfasi` (aylık hikâye ve yıllık özet; sayfa başına tek büyük öğe). |
 | Hata (eylem sonrası) | `showAppError` |
-| Kısa bilgi / geri al | `sandikSnack` |
+| Kısa bilgi / geri al | `sandikSnack` (başarı türü yalnız `onUndo:`/`action:` ile; §6/5) |
 | Kullanıcıya metin | `friendlyError(e)`; ham `$e` yok |
 
 ### Metin ve sayı
@@ -194,6 +207,8 @@ karede atlamaz (2026-10-20). Gezinti oku
 | Ortak bileşenlerde etiket, kontrast, yazı ×2; etiketsiz `IconButton` yok | `hig_ortak_bilesen_test` |
 | Çift dokunma koruması | `navigasyon_korumasi_test` |
 | Tek yükleniyor davranışı | `yukleniyor_tek_davranis_test` |
+| Düğme başarı durumu (✓, kilit, hareketi azalt) | `sandik_async_basari_test` |
+| Başarı snack'ı yalnız geri al / eylem düğmesiyle | `snack_basari_kurali_test` |
 | Tek sheet açıcı, platform diyaloğu yok, düğme köşesi, ölçek dışı süre yok | `tasarim_dili_test` |
 | Sheet kabuğu: çağrı yerinde zemin ve elle tutamaç yalnız azalır, `showDragHandle` yok | `sheet_standardi_test` |
 | Açık tema kontrastı | `acik_tema_*_kontrast_test` |
@@ -233,7 +248,14 @@ eklenir.
 5. **Hata kanalı kuralı.** Aynı tür hata bazen diyalog, bazen snack. Kural
    önerisi: kullanıcının girdiği form başarısızsa diyalog, arka plan / tek
    satır eylem başarısızsa snack. Başarı mesajı: yalnız geri alınabilir
-   eylemde snack, diğerlerinde sessiz.
+   eylemde snack, diğerlerinde sessiz. Sessizliğin "kaydetti mi?" kuşkusunu
+   sayfayı kapatan düğmede ✓ durumu giderir (`SandikAsyncButton(basari:)`,
+   Ar-Ge 11 Kas 19:04 #3; §4 Düğmeler). Başarı snack'ı yalnız `onUndo:` ya da
+   eylem düğmesiyle (`action:`); sonucu ekranda görünen geri alınamaz eylem
+   snack değil `SandikHaptic.basari` alır (Ar-Ge #6: alarm düzenleme,
+   özel gösterge, vadesiz oran, kullanıcı adı, çizgi alarmı adı kalktı).
+   Bilgi taşıyanlar ve henüz incelenmeyenler gerekçeli izin listesinde
+   (`snack_basari_kurali_test`, yalnız azalır).
 6. ~~**Kalan ham `AlertDialog`/`Dialog`**~~ Yapıldı (Ar-Ge 5 Kas 22:40 #7):
    Ayarlar şifre adımı `showSandikConfirm(detail:)`; yasal uyarı, temettü ve
    hızlı al/sat `SandikDiyalogKabugu`.

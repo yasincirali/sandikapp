@@ -28,6 +28,7 @@ import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'review_prompt_sheet.dart';
+import 'sandik_async_button.dart';
 import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../utils/tr_format.dart';
 
@@ -173,7 +174,15 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
     super.dispose();
   }
 
-  void _kaydet() {
+  /// Kaydet düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3).
+  final _basari = SandikBasariSinyali();
+
+  /// ✓ evresi sürüyor: klavyedeki "Bitti" düğmeden geçmez, kilidi o
+  /// paylaşmaz — ikinci gönderim ikinci `pop` olurdu.
+  bool _kapaniyor = false;
+
+  Future<void> _kaydet() async {
+    if (_kapaniyor) return;
     final v = parseTrNumber(_ctrl.text);
     if (v == null || v <= 0) {
       setState(() => _hata = context.l10n.goalInvalid);
@@ -182,6 +191,11 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
     // Ücretsizde ya da gizliyken tarih hiç değişmemiş sayılır: kilitli
     // satır bir şey kaydetmez.
     final acik = ref.read(hedefTarihiDurumuProvider) == OzellikDurumu.acik;
+    // Hedef bir tercih yazımı (istek yok, anında); ✓ yine de "kaydedildi"
+    // anını sayfa kapanmadan gösterir — eskiden sayfa sessizce kapanıyordu.
+    _kapaniyor = true;
+    await _basari.goster();
+    if (!mounted) return;
     Navigator.pop<_HedefSonucu>(context, (
       hedef: v.round(),
       tarih: _tarih,
@@ -283,7 +297,10 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
                 onTakvim: _takvimdenSec,
               ),
             const SizedBox(height: SandikSpace.md),
-            FilledButton(
+            // `SandikAsyncButton` (istek atmasa da): ✓ durumu ve ✓ evresinde
+            // çift dokunma kilidi tek bileşenden gelir.
+            SandikAsyncButton.kompakt(
+              basari: _basari,
               style: FilledButton.styleFrom(
                 backgroundColor: context.c.amberFill,
                 foregroundColor: context.c.onAmber,

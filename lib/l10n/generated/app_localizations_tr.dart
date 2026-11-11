@@ -1144,6 +1144,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dividendRecordAction => 'Kaydet';
 
   @override
+  String get dugmeBasarili => 'Kaydedildi';
+
+  @override
   String get dividendSourceNote => 'Kaynak: Yahoo Finance · tutarlar brüt';
 
   @override
@@ -2390,6 +2393,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get watchlistRowFollowing => 'takip ediliyor';
+
+  @override
+  String get watchlistSparklineWindow => '1 ay';
 
   @override
   String get watchlistPeriodSinceAdded => 'Eklediğimden beri';
@@ -4438,6 +4444,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get posCurrentValue => 'Bugünkü değer';
 
   @override
+  String get posPortfolioShare => 'Portföyündeki payı';
+
+  @override
   String get posTotalPnl => 'Toplam kâr/zarar';
 
   @override
@@ -4794,9 +4803,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kullaniciAdiDevam => 'Devam et';
 
   @override
-  String get kullaniciAdiKaydedildi => 'Kullanıcı adın güncellendi.';
-
-  @override
   String get kullaniciAdiSecilmedi => 'Henüz seçilmedi';
 
   @override
@@ -5150,9 +5156,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositRateUpdate => 'Oranı güncelle';
-
-  @override
-  String get depositRateSaved => 'Oran güncellendi';
 
   @override
   String get depositWithdrawTitle => 'Parayı çektin mi?';
@@ -8882,9 +8885,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get ozgKaydedildi => 'Gösterge kaydedildi';
-
-  @override
   String get ozgNotCizimNesnesi =>
       'label, line, box ve table çizimleri gösterilmez; kodun geri kalanı çalışır.';
 
@@ -10002,9 +10002,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cizgiyiGrafikteAc => 'Grafikte aç';
 
   @override
-  String get cizgiAlarmiAdlandi => 'Alarmın adı kaydedildi';
-
-  @override
   String tegAdliAlarmKurulduUst(String ad) {
     return '«$ad» alarmı kuruldu: fiyat çizginin üstüne çıkınca haber vereceğiz';
   }
@@ -10136,9 +10133,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get alarmiSil => 'Alarmı sil';
-
-  @override
-  String get alarmGuncellendi => 'Alarm güncellendi';
 
   @override
   String alarmKaldi(String pct) {

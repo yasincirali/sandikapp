@@ -896,23 +896,17 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       String label, Future<void> Function(String label) yaz) async {
     final l10n = context.l10n;
     final parca = cizgiEtiketiniAyir(label);
-    var kaydedildi = false;
+    // Başarı snack'ı YOK (Ar-Ge 11 Kas 19:04 #6): yeni ad bu listede satırın
+    // başlığında hemen görünür, geri alınacak bir şey de yok. Onay sayfanın
+    // Kaydet düğmesinde ✓ + başarı titreşimi.
     await showCizgiAdiSayfasi(
       context,
       baslik: l10n.cizgiAlarmiAdlandirBaslik,
       dugme: l10n.save,
       baslangic: parca.isim ?? '',
       odakla: true,
-      kaydet: (isim) async {
-        await yaz(cizgiAlarmEtiketi(parca.varlik, isim));
-        kaydedildi = true;
-      },
+      kaydet: (isim) => yaz(cizgiAlarmEtiketi(parca.varlik, isim)),
     );
-    if (kaydedildi && mounted) {
-      SandikHaptic.selection.perform();
-      sandikSnack(context, l10n.cizgiAlarmiAdlandi,
-          kind: SandikSnackKind.success);
-    }
   }
 
   /// Boş durum: zil ve açıklama, altında portföyündeki kapsam varlıkları

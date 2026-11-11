@@ -23,12 +23,23 @@ class AssetSparkline extends StatefulWidget {
     required this.isPositive,
     this.width = 56,
     this.height = 24,
+    this.altyazi,
   });
 
   final Asset asset;
 
   /// Satırdaki kâr/zarar yönü — eğrinin rengini belirler.
-  final bool isPositive;
+  ///
+  /// `null` = renk eğrinin KENDİ yönünden (son nokta ilk noktaya göre):
+  /// takip satırı (2026-11-11). Orada yüzde seçili dönemi, eğri sabit 1 ayı
+  /// anlatır; rengi yüzdeden alsaydı 1 Hafta'da düşen ama ay içinde yükselen
+  /// varlık kırmızı ve YUKARI giden bir çizgi olurdu. Eşitse nötr.
+  final bool? isPositive;
+
+  /// Eğrinin altındaki minik pencere etiketi ("1 ay"); yalnız eğri
+  /// çizildiğinde görünür. Satırın yüzdesi başka dönemi anlatıyorsa çizginin
+  /// penceresi görünür olmalı (takip satırı).
+  final String? altyazi;
 
   final double width;
   final double height;
@@ -83,9 +94,16 @@ class _AssetSparklineState extends State<AssetSparkline> {
       return SizedBox(width: widget.width, height: widget.height);
     }
 
-    final color = widget.isPositive ? context.c.gain : context.c.loss;
+    final yon = widget.isPositive;
+    final color = yon != null
+        ? (yon ? context.c.gain : context.c.loss)
+        : series.last > series.first
+            ? context.c.gain
+            : series.last < series.first
+                ? context.c.loss
+                : context.c.text36;
 
-    final egri = SizedBox(
+    Widget egri = SizedBox(
       width: widget.width,
       height: widget.height,
       child: RepaintBoundary(
@@ -97,6 +115,25 @@ class _AssetSparklineState extends State<AssetSparkline> {
         ),
       ),
     );
+    final altyazi = widget.altyazi;
+    if (altyazi != null) {
+      egri = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          egri,
+          SizedBox(
+            width: widget.width,
+            child: Text(
+              altyazi,
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              textAlign: TextAlign.center,
+              style: context.t.labelSmall?.copyWith(color: context.c.text36),
+            ),
+          ),
+        ],
+      );
+    }
     // Soğuk yüklemede seri bir kare sonra gelir: eğri boş kutuda birden
     // belirmesin diye kısa bir solmayla gelir (2026-10-14). Önbellekten ilk
     // karede gelen seri (kaydırıp geri dönülen satır) solmaz (2026-10-20);

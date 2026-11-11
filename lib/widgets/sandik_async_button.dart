@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import 'custom_loading_indicator.dart';
+import 'sandik_ikon_gecisi.dart';
 
 /// Asenkron bir işi tetikleyen butonlar için tek sarmalayıcı.
 ///
@@ -28,6 +30,36 @@ import 'custom_loading_indicator.dart';
 /// Kilit `test/yukleniyor_tek_davranis_test.dart`.
 enum SandikAsyncTur { dolu, cerceve, metin }
 
+/// Düğmenin "✓ oldu" anını çağırandan isteyen sinyal (Ar-Ge 11 Kas 19:04 #3).
+///
+/// ## Neden bool değil, sinyal
+/// Başarıyı yalnız çağıran bilir: ekranların `onPressed`'i hatayı çoğu
+/// zaman kendisi yakalar (alan altında `_hata`, snack) ve normal döner.
+/// "İş fırlatmadan bitti" = başarı saymak, yakalanmış hatada da ✓
+/// gösterirdi. Bu yüzden çağıran başarı yolunda, sayfayı kapatmadan hemen
+/// önce `await basari.goster()` der; ✓ evresi bitince kapanış onun
+/// elinde koşar. Hata yolunda çağrılmaz → ✓ yok, eski hata yolu aynen.
+///
+/// `goster()` [SandikAsyncButton.onPressed]'in İÇİNDE beklenir: düğme bu
+/// sürede de meşgul sayılır, çift dokunma kilidi ✓ evresinde sürer.
+/// Bağlı düğme yoksa (iş klavyedeki "Bitti"den başladı ve düğme ağaçta
+/// değil, ya da sinyal hiç bir düğmeye verilmedi) yalnız titreşim verir ve
+/// beklemeden döner — kapanış asla bu yüzden takılmaz.
+class SandikBasariSinyali {
+  _SandikAsyncButtonState? _dugme;
+
+  /// Düğmede ✓'yi gösterir, başarı titreşimini verir ve ✓ evresi bitince
+  /// döner. Çağıran döndükten sonra `mounted` bakıp sayfayı kapatır.
+  Future<void> goster() async {
+    final d = _dugme;
+    if (d == null || !d.mounted) {
+      SandikHaptic.basari.perform();
+      return;
+    }
+    await d._basariGoster();
+  }
+}
+
 class SandikAsyncButton extends StatefulWidget {
   const SandikAsyncButton({
     super.key,
@@ -40,6 +72,7 @@ class SandikAsyncButton extends StatefulWidget {
     this.tur = SandikAsyncTur.dolu,
     this.icon,
     this.mesgul = false,
+    this.basari,
   });
 
   /// Kompakt düğme (diyalog, kart içi eylem): boy ve genişlik içerikten.
@@ -53,6 +86,7 @@ class SandikAsyncButton extends StatefulWidget {
     this.tur = SandikAsyncTur.dolu,
     this.icon,
     this.mesgul = false,
+    this.basari,
   })  : expand = false,
         height = null;
 
@@ -68,6 +102,18 @@ class SandikAsyncButton extends StatefulWidget {
   /// 6. hane) ekranın bayrağı: düğme aynı göstergeyle kilitlenir. Ekran
   /// kendi göstergesini etikete koymaz — tek gösterge buradan çizilir.
   final bool mesgul;
+
+  /// İsteğe bağlı başarı durumu ([SandikBasariSinyali]). `null` (varsayılan)
+  /// → eski davranış birebir: ✓ yok, iş bitince etiket geri gelir.
+  ///
+  /// Verilirse ve çağıran başarıda `goster()` derse gösterge yerinde ✓'ye
+  /// döner (`state` sönüm + 0.9→1 ölçek, [SandikIkonGecisi.gecis]), başarı
+  /// titreşimi gelir, ✓ [SandikMotion.modal] kadar görünür, sonra
+  /// çağıranın kapanışı koşar. Hareketi azalt açıkken ✓ geçişsiz belirir
+  /// ama görünme süresi KALIR: bekleme hareket değil, okuma payıdır.
+  /// Yalnız işin ardından sayfanın kapandığı akışta kullanılır (TASARIM_DILI
+  /// §4 Düğmeler); sayfa açık kalıyorsa sonuç zaten ekranda görünür.
+  final SandikBasariSinyali? basari;
 
   /// Asenkron iş. Devam ederken buton kilitlidir.
   final Future<void> Function()? onPressed;
@@ -91,8 +137,51 @@ class SandikAsyncButton extends StatefulWidget {
   State<SandikAsyncButton> createState() => _SandikAsyncButtonState();
 }
 
-class _SandikAsyncButtonState extends State<SandikAsyncButton> {
+class _SandikAsyncButtonState extends State<SandikAsyncButton>
+    with SingleTickerProviderStateMixin {
   bool _busy = false;
+
+  /// ✓ evresi sürüyor (düğme hâlâ kilitli).
+  bool _basarili = false;
+
+  /// ✓'nin görünme süresinin saati. `Future.delayed` yerine denetleyici:
+  /// süre boyunca kare istenir, testte `pumpAndSettle` evreyi sonuna kadar
+  /// ilerletir (asılı kalan zamanlayıcı bırakmaz); düğme ağaçtan kalkarsa
+  /// `dispose` saati durdurur, bekleyen `goster()` hemen döner.
+  late final AnimationController _basariSaati =
+      AnimationController(vsync: this, duration: SandikMotion.modal);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.basari?._dugme = this;
+  }
+
+  @override
+  void didUpdateWidget(SandikAsyncButton old) {
+    super.didUpdateWidget(old);
+    if (old.basari != widget.basari) {
+      if (old.basari?._dugme == this) old.basari?._dugme = null;
+      widget.basari?._dugme = this;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.basari?._dugme == this) widget.basari?._dugme = null;
+    _basariSaati.dispose();
+    super.dispose();
+  }
+
+  Future<void> _basariGoster() async {
+    SandikHaptic.basari.perform();
+    setState(() => _basarili = true);
+    try {
+      await _basariSaati.forward(from: 0).orCancel;
+    } on TickerCanceled {
+      // Düğme evre bitmeden ağaçtan kalktı; çağıran `mounted` bakar.
+    }
+  }
 
   Future<void> _handleTap() async {
     // Kilit: ikinci dokunuş sessizce yok sayılır.
@@ -105,15 +194,46 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
       await widget.onPressed!();
     } finally {
       // İş bittiğinde/hata verdiğinde kilidi mutlaka aç. Widget ağaçtan
-      // kalkmışsa setState çağırma.
-      if (mounted) setState(() => _busy = false);
+      // kalkmışsa setState çağırma. ✓ de iner: sayfa kapanmadıysa (çağıran
+      // ✓'den sonra açık bıraktı) düğme eski hâline döner.
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _basarili = false;
+        });
+      }
     }
+  }
+
+  /// Etiketin üstündeki yuva: ✓ > gösterge > boş. Bileşenin kendi
+  /// göstergesi (ekranlarda elle meşgul hâli yasak; burası tek kaynak).
+  Widget _yuva(BuildContext context, bool mesgul) {
+    if (_basarili) {
+      return Semantics(
+        key: const ValueKey('basari'),
+        // Tek duyuru: ✓ belirdiğinde bir kez "Kaydedildi"; etiket görünmez
+        // olduğundan düğmenin tek metni bu.
+        liveRegion: true,
+        label: context.l10n.dugmeBasarili,
+        child: const ExcludeSemantics(
+          child: Icon(Icons.check_rounded, size: CustomLoadingIndicator.small),
+        ),
+      );
+    }
+    if (mesgul) {
+      return const CustomLoadingIndicator(
+        key: ValueKey('busy'),
+        size: CustomLoadingIndicator.small,
+      );
+    }
+    return const SizedBox.shrink(key: ValueKey('bos'));
   }
 
   @override
   Widget build(BuildContext context) {
     // Meşgulken null → Flutter'ın kendi pasif görünümü devreye girer.
-    final mesgul = _busy || widget.mesgul;
+    // ✓ evresi de meşgul sayılır: çift dokunma kilidi sürer.
+    final mesgul = _busy || widget.mesgul || _basarili;
     final basinca = widget.onPressed == null || mesgul ? null : _handleTap;
     final ikon = widget.icon;
     final etiket = ikon == null
@@ -134,11 +254,16 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
           curve: SandikMotion.enter,
           child: etiket,
         ),
-        if (mesgul)
-          const CustomLoadingIndicator(
-            key: ValueKey('busy'),
-            size: CustomLoadingIndicator.small,
-          ),
+        // Gösterge → ✓ aynı yuvada, aç/kapa ikonuyla aynı geçiş
+        // (`SandikIkonGecisi.gecis`). Hareketi azaltta süre sıfır: ✓
+        // ölçeksiz, sönümsüz yerine geçer.
+        AnimatedSwitcher(
+          duration: SandikMotion.stateOf(context),
+          switchInCurve: SandikMotion.enter,
+          switchOutCurve: SandikMotion.exit,
+          transitionBuilder: SandikIkonGecisi.gecis,
+          child: _yuva(context, mesgul),
+        ),
       ],
     );
     final Widget dugme = switch (widget.tur) {
