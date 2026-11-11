@@ -209,6 +209,13 @@ a { color: inherit; }
   max-width: 18ch;
 }
 .bolum .giris { margin-top: 18px; color: var(--soluk); max-width: 56ch; font-size: 1.1rem; }
+/* Dört hesaplayıcının listesi (2026-11-11): ana sayfa önceden yalnız
+   enflasyona bağlanıyordu; altın/maliyet/temettü buradan bulunamıyordu.
+   Sayfaların altındaki "Diğer hesaplayıcılar" satırıyla aynı ad ve sıra. */
+.hesaplayicilar { margin-top: 18px; color: var(--soluk); font-size: 1rem; }
+.hesaplayicilar ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0 22px; margin-top: 4px; padding: 0; }
+.hesaplayicilar a { display: inline-flex; align-items: center; min-height: 44px; color: var(--metin); }
+.hesaplayicilar a:focus-visible { outline: 3px solid var(--altin); outline-offset: 4px; }
 
 /* Hesaplayıcı */
 .hesap { margin-top: 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
@@ -504,6 +511,15 @@ footer p { margin-top: 22px; }
         <h2>Enflasyonu geçtin mi?</h2>
         <p class="giris">sandık her gün bu soruyu yanıtlar. Kendi rakamlarınla dene: yatırdığını, bugünkü değerini ve aynı dönemin enflasyonunu yaz.</p>
         <p class="giris"><a href="enflasyon/">Paran TÜFE'ye göre bugün kaç lira ediyor? Hesapla</a></p>
+        <nav class="hesaplayicilar" aria-label="Ücretsiz hesaplayıcılar">
+          <p>Ücretsiz hesaplayıcılar, kayıt gerekmez:</p>
+          <ul>
+            <li><a href="enflasyon/">Enflasyon hesaplayıcı</a></li>
+            <li><a href="altin/">Altın gram hesaplayıcı</a></li>
+            <li><a href="maliyet/">Ortalama maliyet hesaplama</a></li>
+            <li><a href="temettu/">Net temettü hesaplama</a></li>
+          </ul>
+        </nav>
       </div>
       <div class="hesap">
         <div class="tepsi belir">

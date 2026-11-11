@@ -17,6 +17,27 @@
 <meta name="twitter:image" content="https://yasincirali.github.io/sandikapp/img/og-ana.png">
 <meta name="twitter:image:alt" content="sandık logosu">
 <link rel="canonical" href="https://yasincirali.github.io/sandikapp/altin/">
+<!-- Yapılandırılmış veri (2026-11-11, Ar-Ge 2026-11-11_1704 #3): WebApplication.
+     FAQPage yok: sayfada soru-cevap (SSS) bölümü yok, uydurma soru yazılmaz.
+     Ad, sayfaların altındaki "Diğer hesaplayıcılar" satırıyla aynı. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Altın gram hesaplayıcı",
+  "description": "Çeyrek, yarım, tam, cumhuriyet, bilezik ya da gram altının kaç gram ettiğini ve 24 ayar (has) karşılığını hesapla. Ücretsiz, kayıt yok, hiçbir şey gönderilmez.",
+  "url": "https://yasincirali.github.io/sandikapp/altin/",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "TRY"
+  }
+}
+</script>
 <meta name="theme-color" content="#0A1E15">
 <meta name="apple-itunes-app" content="app-id=6786837699">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -219,6 +240,12 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
 }
 .formul .etiket { display: block; font-size: 14px; font-weight: 600; color: var(--soluk); margin-bottom: 4px; }
 .prim .cagri { margin-top: 24px; }
+/* Diğer hesaplayıcılar satırı: dört sayfada birebir aynı parça (2026-11-11). */
+.diger { margin-top: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 22px; }
+.diger h2 { flex-basis: 100%; font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.diger a { display: inline-flex; align-items: center; min-height: 44px; color: var(--soluk); }
+.diger a:hover { color: var(--metin); }
+.diger a:focus-visible { outline: 3px solid var(--altin); outline-offset: 4px; }
 </style>
 </head>
 <body>
@@ -337,6 +364,12 @@ h2.bolum { font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 700; letter-spaci
     <p>24 ayar karşılığı, altının içindeki saf altındır: 22 ayarda ağırlığın 22/24'ü, 18 ayarda 18/24'ü.</p>
     <p>Fiyat gösterilmez; prim formülü değişkenlerle anlatılır. Hesap tarayıcında yapılır, hiçbir yere gönderilmez. Yatırım tavsiyesi değildir.</p>
   </div>
+  <nav class="diger" aria-label="Diğer hesaplayıcılar">
+    <h2>Diğer hesaplayıcılar</h2>
+    <a href="../enflasyon/">Enflasyon hesaplayıcı</a>
+    <a href="../maliyet/">Ortalama maliyet hesaplama</a>
+    <a href="../temettu/">Net temettü hesaplama</a>
+  </nav>
 </main>
 
 <footer>
