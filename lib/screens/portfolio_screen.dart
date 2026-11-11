@@ -1994,6 +1994,20 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
     return false;
   }
 
+  /// Dilim seçimini uygular (halka dokunuşu ve lejant aynı yoldan).
+  ///
+  /// Haptic burada, seçim GERÇEKTEN değiştiğinde bir kez (2026-11-11):
+  /// dilim büyüyor ama parmak hiçbir şey hissetmiyordu. Lejant çipi
+  /// `SandikHaptic.none` ile susturulu; titreşim çipte değil seçimde
+  /// olduğu için iki yoldan da tek tık gelir, aynı seçime düşen dokunuş
+  /// (ör. seçili olmayan alana dokunup zaten boş kalan seçim) susar.
+  void _sec(int? newIdx, List<MapEntry<PortfoyGrubu, double>> sorted) {
+    if (newIdx == _touchedIndex) return;
+    SandikHaptic.selection.perform();
+    setState(() => _touchedIndex = newIdx);
+    widget.onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+  }
+
   String _formatTL(double val) {
     // Ana ekran hero'suyla birebir aynı format: ₺1.234.567 (baz birimde)
     return widget.baz.fmt(val);
@@ -2062,9 +2076,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                             (idx != null && idx >= 0 && idx < sorted.length)
                                 ? (_touchedIndex == idx ? null : idx)
                                 : null;
-                        setState(() => _touchedIndex = newIdx);
-                        widget.onTypeSelected(
-                            newIdx != null ? sorted[newIdx].key : null);
+                        _sec(newIdx, sorted);
                       }
                     },
                   ),
@@ -2083,41 +2095,61 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                 ),
               ),
               ),
+              // Orta blok seçim değişince kısa çapraz solar (2026-11-11):
+              // dilim büyürken etiket/tutar/yüzde anında değişiyordu, göz
+              // iki ayrı olay görüyordu. Anahtar SEÇİMİN etiketi — fiyat
+              // tiki tutarı değiştirse de solma olmaz, yalnız dilim
+              // değişince. Süre `stateOf`: hareketi azaltta sıfır, anlık.
+              // Boyutlar ölçekten (ham 18/16/22 → headlineSmall 18 /
+              // numMedium 16 / headlineMedium 20): Dynamic Type'a uyar;
+              // 22 → 20 bilinçli, ölçekte 22 yok ve FittedBox zaten
+              // uzun tutarı küçültüyor.
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (centerPct != null) ...[
-                        Text(
-                          centerPct,
-                          style: context.t.numLarge.copyWith(
-                            fontSize: 18,
-                            color: centerColor,
+                  child: AnimatedSwitcher(
+                    duration: SandikMotion.stateOf(context),
+                    switchInCurve: SandikMotion.enter,
+                    switchOutCurve: SandikMotion.enter,
+                    child: Column(
+                      key: ValueKey<String>(centerLabel),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (centerPct != null) ...[
+                          Text(
+                            centerPct,
+                            style: context.t.numLarge
+                                .merge(context.t.headlineSmall)
+                                .copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: centerColor,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                        ],
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            centerValue,
+                            style: (centerPct != null
+                                    ? context.t.numMedium
+                                    : context.t.numLarge
+                                        .merge(context.t.headlineMedium))
+                                .copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: centerColor,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 2),
-                      ],
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          centerValue,
-                          style: context.t.numLarge.copyWith(
-                            fontSize: centerPct != null ? 16 : 22,
-                            fontWeight: FontWeight.w600,
-                            color: centerColor,
+                        Text(
+                          centerLabel,
+                          style: context.t.titleSmall?.copyWith(
+                            color: context.c.text36,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        centerLabel,
-                        style: context.t.titleSmall?.copyWith(
-                          color: context.c.text36,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2148,10 +2180,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
               soluk: true,
               haptic: SandikHaptic.none,
               onTap: () {
-                final newIdx = _touchedIndex == e.key ? null : e.key;
-                setState(() => _touchedIndex = newIdx);
-                widget
-                    .onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+                _sec(_touchedIndex == e.key ? null : e.key, sorted);
               },
               child: AnimatedOpacity(
                 duration:
