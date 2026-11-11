@@ -17586,6 +17586,60 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bitti'**
   String get klavyeBitti;
+
+  /// Performans: yıl × ay getiri tablosu kartı başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık getiri'**
+  String get aylikGetiriBaslik;
+
+  /// Aylık getiri tablosu kilit satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi ay kazandığını, hangi ay kaybettiğini Premium\'la gör'**
+  String get aylikGetiriKilitli;
+
+  /// Aylık getiri tablosu: yıl toplamı sütunu
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl'**
+  String get aylikGetiriYil;
+
+  /// Aylık getiri tablosu: içinde bulunulan ayın etiketi (bugüne kadar)
+  ///
+  /// In tr, this message translates to:
+  /// **'bu ay'**
+  String get aylikGetiriBuAy;
+
+  /// Ekran okuyucu: pozitif aylık getiri
+  ///
+  /// In tr, this message translates to:
+  /// **'{deger} kazanç'**
+  String aylikGetiriKazanc(String deger);
+
+  /// Ekran okuyucu: negatif aylık getiri
+  ///
+  /// In tr, this message translates to:
+  /// **'{deger} kayıp'**
+  String aylikGetiriKayip(String deger);
+
+  /// Ekran okuyucu: ölçülemeyen ay (ekranda —)
+  ///
+  /// In tr, this message translates to:
+  /// **'veri yok'**
+  String get aylikGetiriVeriYok;
+
+  /// Ekran okuyucu: ay adı ve getirisi
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}: {deger}'**
+  String aylikGetiriHucre(String ay, String deger);
+
+  /// Aylık getiri tablosu dipnotu
+  ///
+  /// In tr, this message translates to:
+  /// **'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.'**
+  String get aylikGetiriDipnot;
 }
 
 class _AppLocalizationsDelegate

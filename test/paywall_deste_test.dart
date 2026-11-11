@@ -61,6 +61,8 @@ void main() {
         'en_iyi_gun': PaywallKarti.xray,
         // Portföy kart panelinde başa baş satırı (2026-11-11).
         'basa_bas': PaywallKarti.xray,
+        // Performans'ta aylık getiri tablosu (2026-11-11).
+        'aylik_getiri': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
         // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
         // göreceği portföy → portföy kartı.
@@ -129,6 +131,8 @@ void main() {
         'lib/widgets/period_summary_view.dart',
         // Başa baş satırı (2026-11-11).
         'lib/widgets/basa_bas_satiri.dart',
+        // Aylık getiri tablosu (2026-11-11).
+        'lib/widgets/aylik_getiri_karti.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -147,6 +151,7 @@ void main() {
             'kur_ayrismasi',
             'en_iyi_gun',
             'basa_bas',
+            'aylik_getiri',
           ]));
       // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
       // açmaz.

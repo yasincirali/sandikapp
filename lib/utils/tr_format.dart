@@ -558,6 +558,12 @@ const _gunEn = [
   'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
 ];
 
+/// Ay adı, takvim dilinde ("Oca" / "Ocak"; "Jan" / "January"). Tablo
+/// başlıkları (aylık getiri tablosu) tarihsiz ay adına ihtiyaç duyar;
+/// sabit tablo ay adlarıyla aynı gerekçe (yerel veri yüklenmeden çalışır).
+String ayAdi(int ay, {String dil = 'tr_TR', bool kisa = false}) =>
+    _ayAdi(ay, dil, kisa);
+
 String _ayAdi(int ay, String dil, bool kisa) {
   final en = dil.startsWith('en');
   final t = en ? (kisa ? _ayEnKisa : _ayEn) : (kisa ? _ayTrKisa : _ayTr);

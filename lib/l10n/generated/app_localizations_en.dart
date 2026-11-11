@@ -10892,4 +10892,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get klavyeBitti => 'Done';
+
+  @override
+  String get aylikGetiriBaslik => 'Monthly returns';
+
+  @override
+  String get aylikGetiriKilitli =>
+      'See which months you gained and which you lost with Premium';
+
+  @override
+  String get aylikGetiriYil => 'Year';
+
+  @override
+  String get aylikGetiriBuAy => 'this month';
+
+  @override
+  String aylikGetiriKazanc(String deger) {
+    return '$deger gain';
+  }
+
+  @override
+  String aylikGetiriKayip(String deger) {
+    return '$deger loss';
+  }
+
+  @override
+  String get aylikGetiriVeriYok => 'no data';
+
+  @override
+  String aylikGetiriHucre(String ay, String deger) {
+    return '$ay: $deger';
+  }
+
+  @override
+  String get aylikGetiriDipnot =>
+      'Each month is measured the same way as the return in Summary: adding or withdrawing money during the month doesn\'t change the percentage. The year compounds the months.';
 }

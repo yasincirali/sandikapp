@@ -483,6 +483,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   PortfoyYorumuKarti(
                       secili: SummaryPeriod.fromIndex(_selectedPeriodIdx)),
                 ],
+                ..._aylikGetiriBlogu(chartAssets, targetAssets),
                 ...zirveBlogu(),
                 const SizedBox(height: SandikSpace.smd),
                 const DisclaimerWidget(kisa: true),
@@ -601,6 +602,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                     PortfoyYorumuKarti(
                         secili: SummaryPeriod.fromIndex(_selectedPeriodIdx)),
                   ],
+                  ..._aylikGetiriBlogu(chartAssets, targetAssets),
                   const SizedBox(height: 12),
                   const DisclaimerWidget(kisa: true),
                   const SizedBox(height: 16),
