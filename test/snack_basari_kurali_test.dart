@@ -30,7 +30,7 @@ const _izin = <String, Map<String, String>>{
     'gostergeAlarmKuruldu': 'Kurulan koşulu sözle tekrarlar; sayfa kapanır, '
         'gösterge alarmı çağıran yüzeyde görünmez.',
     'yuzdeAlarmKuruldu': 'Aynı gerekçe (yüzde alarmı).',
-    'sonuc.yon': 'Kurulan fiyat alarmının yönü ve eşiği; kuran yüzeyde '
+    'yonu(sonuc)': 'Kurulan fiyat alarmının yönü ve eşiği; kuran yüzeyde '
         '(grafik, sembol arama) alarm listesi yok.',
     'alarm.isAbove': 'Çalmış alarmı yerinde yeniden kurma: şerit kalkar, '
         'eşik başka yerde yazmaz.',
