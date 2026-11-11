@@ -410,12 +410,14 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
                           ),
                         ),
                       if (varliklar.isNotEmpty) ...[
-                        _Baslik(context.l10n.s7VarliklarimUpper),
+                        SandikSectionHeader(
+                            title: context.l10n.s7VarliklarimUpper, minHeight: SandikTouch.min),
                         for (final p in varliklar) _varlikSatiri(context, p),
                         const SizedBox(height: SandikSpace.sm),
                       ],
                       if (!bos && (_piyasa.isNotEmpty || _loading)) ...[
-                        _Baslik(context.l10n.s7PiyasaUpper),
+                        SandikSectionHeader(
+                            title: context.l10n.s7PiyasaUpper, minHeight: SandikTouch.min),
                         if (_piyasa.isEmpty)
                           Padding(
                             padding:
@@ -438,7 +440,8 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
                               key: const ValueKey('genel-arama-son-bakilanlar'),
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _Baslik(context.l10n.searchRecentUpper),
+                                SandikSectionHeader(
+                                    title: context.l10n.searchRecentUpper, minHeight: SandikTouch.min),
                                 for (final c in gorunen)
                                   _sonBakilanSatiri(context, c),
                                 const SizedBox(height: SandikSpace.sm),
@@ -447,7 +450,8 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
                           },
                         ),
                       if (eylemler.isNotEmpty || duzen.kalan.isNotEmpty) ...[
-                        _Baslik(context.l10n.s7EylemlerUpper),
+                        SandikSectionHeader(
+                            title: context.l10n.s7EylemlerUpper, minHeight: SandikTouch.min),
                         for (final e in eylemler) _eylemSatiri(context, e),
                         if (duzen.kalan.isNotEmpty) ...[
                           _tumEylemlerSatiri(context),
@@ -874,21 +878,6 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
       adaptiveRoute<bool>(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
     );
   }
-}
-
-/// Bölüm başlığı — takibe alma ekranındaki gibi 44pt satır.
-class _Baslik extends StatelessWidget {
-  const _Baslik(this.metin);
-  final String metin;
-
-  @override
-  Widget build(BuildContext context) => ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: SandikSectionHeader(title: metin),
-        ),
-      );
 }
 
 /// Varlık ve eylem satırının ortak kabuğu: nokta ya da ikon, başlık,

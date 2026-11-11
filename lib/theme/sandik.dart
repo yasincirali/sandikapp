@@ -2027,9 +2027,19 @@ class SandikSectionHeader extends StatelessWidget {
     required this.title,
     this.count,
     this.trailing,
+    this.minHeight,
   });
 
   final String title;
+
+  /// Verilirse başlık satırı en az bu boyda (ör. `SandikTouch.min`).
+  ///
+  /// Neden (2026-11-11): arama, takibe alma ve banka seçicide üç ayrı
+  /// `_Baslik` klonu vardı; ikisi bu başlığı 44pt'lik kutuya sarıyordu
+  /// ("Tümü (n)" eylemli grupla eylemsiz grup arasında satır aralığı
+  /// zıplamasın), üçüncüsü kendi küçük/w700 metnini yazıyordu. Boy burada
+  /// parametre; klon yeniden doğmasın diye `tasarim_dili_test` sayar.
+  final double? minHeight;
 
   /// Verilirse başlığın yanında amber rozet gösterilir.
   final int? count;
@@ -2039,7 +2049,7 @@ class SandikSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final satir = Row(
       children: [
         // Sağda eylem varsa başlık kalan yeri DOLDURUR: eskiden `Flexible`
         // + `Spacer` alanı ikiye bölüyor, eylem satırın ortasında kalıyordu
@@ -2081,6 +2091,11 @@ class SandikSectionHeader extends StatelessWidget {
         if (trailing != null) trailing!,
       ],
     );
+    final h = minHeight;
+    return h == null
+        ? satir
+        : ConstrainedBox(
+            constraints: BoxConstraints(minHeight: h), child: satir);
   }
 }
 

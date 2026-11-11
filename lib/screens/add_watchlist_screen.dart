@@ -269,21 +269,23 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                               : Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    _Baslik(SandikSectionHeader(
+                                    SandikSectionHeader(
+                                      minHeight: SandikTouch.min,
                                       title: context.l10n.searchRecentUpper,
                                       trailing: _MetinDugmesi(
                                         metin: context.l10n.clearVerb,
                                         onTap: _sonBakilanlariTemizle,
                                       ),
-                                    )),
+                                    ),
                                     for (final c in son) satir(c),
                                     const SizedBox(height: SandikSpace.md),
                                   ],
                                 ),
                         ),
                         if (_results.isNotEmpty) ...[
-                          _Baslik(SandikSectionHeader(
-                              title: context.l10n.searchMarketsUpper)),
+                          SandikSectionHeader(
+                            minHeight: SandikTouch.min,
+                              title: context.l10n.searchMarketsUpper),
                           for (final c in _results) satir(c),
                         ],
                       ] else if (gruplar.isEmpty && !_loading) ...[
@@ -313,7 +315,8 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                       ]
                       else
                         for (final g in gruplar) ...[
-                          _Baslik(SandikSectionHeader(
+                          SandikSectionHeader(
+                            minHeight: SandikTouch.min,
                             title: g.tur.labelOf(context.l10n),
                             trailing: g.kisaltildi
                                 ? _MetinDugmesi(
@@ -321,7 +324,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                                     onTap: () => _turSec(g.tur),
                                   )
                                 : null,
-                          )),
+                          ),
                           for (final c in g.ogeler) satir(c),
                           const SizedBox(height: SandikSpace.sm),
                         ],
@@ -665,19 +668,6 @@ double? aramaGunlukYuzde(VarlikKimligi c, YahooQuote? q) {
     return null;
   }
   return p;
-}
-
-/// Bölüm başlığı satırı — eylemli ya da eylemsiz, hep 44pt: "Tümü (n)"
-/// olan grupla olmayan grup arasında satır aralığı zıplamasın.
-class _Baslik extends StatelessWidget {
-  const _Baslik(this.child);
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        child: Align(alignment: Alignment.centerLeft, child: child),
-      );
 }
 
 /// Bölüm başlığının sağındaki metin eylemi ("Temizle", "Tümü (n)").
