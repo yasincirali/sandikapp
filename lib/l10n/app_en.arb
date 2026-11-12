@@ -5830,5 +5830,8 @@
   "prmAylikKancaVe": "{bas} and {son}",
   "prmAylikKancaHareket": "In {ay} you have {liste}.",
   "prmAylikKancaNot": "{n, plural, =1{1 of your assets has its {ay} note ready.} other{{n} of your assets have their {ay} note ready.}}",
-  "prmAylikKancaIkisi": "In {ay} you have {liste}; {n, plural, =1{1 asset has its monthly note ready.} other{{n} assets have their monthly note ready.}}"
+  "prmAylikKancaIkisi": "In {ay} you have {liste}; {n, plural, =1{1 asset has its monthly note ready.} other{{n} assets have their monthly note ready.}}",
+  "prmKiyasEnIyi": "{arti, plural, =0{This month was the best of the last {n}.} other{This month was the best of the last {n}; you were up in {arti} of {n} months.}}",
+  "prmKiyasEnZayif": "{arti, plural, =0{This month was the weakest of the last {n}.} other{This month was the weakest of the last {n}; you were up in {arti} of {n} months.}}",
+  "prmKiyasOrta": "{arti, plural, =0{None of the last {n} months closed up; this month ranks {sira} of {n}.} other{You were up in {arti} of the last {n} months; this month ranks {sira} of {n}.}}"
 }

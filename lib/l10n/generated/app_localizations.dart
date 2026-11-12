@@ -17994,6 +17994,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ay} ayında {liste} var; {n} varlığının ay notu hazır.'**
   String prmAylikKancaIkisi(String ay, String liste, int n);
+
+  /// Aylık raporda ayın kullanıcının kendi son 12 ayı içindeki yeri; renk yok.
+  ///
+  /// In tr, this message translates to:
+  /// **'{arti, plural, =0{Bu ay son {n} ayın en iyisi.} other{Bu ay son {n} ayın en iyisi; {n} ayda {arti} ay artıdaydın.}}'**
+  String prmKiyasEnIyi(int arti, int n);
+
+  /// No description provided for @prmKiyasEnZayif.
+  ///
+  /// In tr, this message translates to:
+  /// **'{arti, plural, =0{Bu ay son {n} ayın en zayıfı.} other{Bu ay son {n} ayın en zayıfı; {n} ayda {arti} ay artıdaydın.}}'**
+  String prmKiyasEnZayif(int arti, int n);
+
+  /// No description provided for @prmKiyasOrta.
+  ///
+  /// In tr, this message translates to:
+  /// **'{arti, plural, =0{Son {n} ayda artıda kapanan ay olmadı; bu ay {n} ay içinde {sira}. sırada.} other{Son {n} ayda {arti} ay artıdaydın; bu ay {n} ay içinde {sira}. sırada.}}'**
+  String prmKiyasOrta(int arti, int n, int sira);
 }
 
 class _AppLocalizationsDelegate

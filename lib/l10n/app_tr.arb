@@ -6629,5 +6629,11 @@
   "prmAylikKancaNot": "{ay} ayı için {n} varlığının notu hazır.",
   "@prmAylikKancaNot": {"placeholders": {"ay": {"type": "String"}, "n": {"type": "int"}}},
   "prmAylikKancaIkisi": "{ay} ayında {liste} var; {n} varlığının ay notu hazır.",
-  "@prmAylikKancaIkisi": {"placeholders": {"ay": {"type": "String"}, "liste": {"type": "String"}, "n": {"type": "int"}}}
+  "@prmAylikKancaIkisi": {"placeholders": {"ay": {"type": "String"}, "liste": {"type": "String"}, "n": {"type": "int"}}},
+  "prmKiyasEnIyi": "{arti, plural, =0{Bu ay son {n} ayın en iyisi.} other{Bu ay son {n} ayın en iyisi; {n} ayda {arti} ay artıdaydın.}}",
+  "@prmKiyasEnIyi": {"description": "Aylık raporda ayın kullanıcının kendi son 12 ayı içindeki yeri; renk yok.", "placeholders": {"arti": {"type": "int"}, "n": {"type": "int"}}},
+  "prmKiyasEnZayif": "{arti, plural, =0{Bu ay son {n} ayın en zayıfı.} other{Bu ay son {n} ayın en zayıfı; {n} ayda {arti} ay artıdaydın.}}",
+  "@prmKiyasEnZayif": {"placeholders": {"arti": {"type": "int"}, "n": {"type": "int"}}},
+  "prmKiyasOrta": "{arti, plural, =0{Son {n} ayda artıda kapanan ay olmadı; bu ay {n} ay içinde {sira}. sırada.} other{Son {n} ayda {arti} ay artıdaydın; bu ay {n} ay içinde {sira}. sırada.}}",
+  "@prmKiyasOrta": {"placeholders": {"arti": {"type": "int"}, "n": {"type": "int"}, "sira": {"type": "int"}}}
 }

@@ -11249,4 +11249,41 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return 'In $ay you have $liste; $_temp0';
   }
+
+  @override
+  String prmKiyasEnIyi(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'This month was the best of the last $n; you were up in $arti of $n months.',
+      zero: 'This month was the best of the last $n.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasEnZayif(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'This month was the weakest of the last $n; you were up in $arti of $n months.',
+      zero: 'This month was the weakest of the last $n.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasOrta(int arti, int n, int sira) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'You were up in $arti of the last $n months; this month ranks $sira of $n.',
+      zero:
+          'None of the last $n months closed up; this month ranks $sira of $n.',
+    );
+    return '$_temp0';
+  }
 }

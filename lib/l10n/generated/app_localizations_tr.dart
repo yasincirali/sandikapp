@@ -11028,4 +11028,39 @@ class AppLocalizationsTr extends AppLocalizations {
   String prmAylikKancaIkisi(String ay, String liste, int n) {
     return '$ay ayında $liste var; $n varlığının ay notu hazır.';
   }
+
+  @override
+  String prmKiyasEnIyi(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other: 'Bu ay son $n ayın en iyisi; $n ayda $arti ay artıdaydın.',
+      zero: 'Bu ay son $n ayın en iyisi.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasEnZayif(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other: 'Bu ay son $n ayın en zayıfı; $n ayda $arti ay artıdaydın.',
+      zero: 'Bu ay son $n ayın en zayıfı.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasOrta(int arti, int n, int sira) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'Son $n ayda $arti ay artıdaydın; bu ay $n ay içinde $sira. sırada.',
+      zero:
+          'Son $n ayda artıda kapanan ay olmadı; bu ay $n ay içinde $sira. sırada.',
+    );
+    return '$_temp0';
+  }
 }
