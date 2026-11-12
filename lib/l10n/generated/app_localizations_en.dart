@@ -7330,6 +7330,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String prmDenemeIlkOdeme(String tarih, String magaza) {
+    return 'Free trial · first payment $tarih · $magaza';
+  }
+
+  @override
+  String prmDenemeIlkOdemeTutar(String tarih, String tutar, String magaza) {
+    return 'Free trial · first payment $tarih, $tutar · $magaza';
+  }
+
+  @override
   String prmBitis(String tarih) {
     return 'Ends on $tarih';
   }

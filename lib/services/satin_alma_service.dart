@@ -178,6 +178,30 @@ class SatinAlmaService {
     }
   }
 
+  /// Etkin Premium aboneliğinin dönemi (Ar-Ge 12 Kas #2): ücretsiz denemede
+  /// mi, ilk ödeme tutarı ne. Sunucu `periodType` saklamaz; SDK'nın
+  /// `CustomerInfo`'su bilir. Yapılandırılmamışsa, hak yoksa ya da mağaza
+  /// yanıt vermezse null: abonelik satırı eski metni ("Yenileme …") yazar.
+  ///
+  /// Yalnız `periodType` ve ürün kimliği okunur; kurulum kanalı (sandbox,
+  /// TestFlight) OKUNMAZ (mağaza incelemesi = mağaza kullanıcısı kuralı).
+  Future<AbonelikDonemi?> donem() async {
+    if (!_yapilandirildi) return null;
+    try {
+      final info = await Purchases.getCustomerInfo();
+      final hak = info.entitlements.active[premiumHak];
+      if (hak == null) return null;
+      final t = await teklif();
+      return abonelikDonemi(hak, [
+        t?.aylik?.storeProduct,
+        t?.yillik?.storeProduct,
+      ]);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SatinAlmaService.donem');
+      return null;
+    }
+  }
+
   /// Geri yükle (cihaz değişikliği, yeniden kurulum). true = hak bulundu.
   Future<bool?> geriYukle() async {
     if (!_yapilandirildi) return null;
@@ -199,6 +223,37 @@ class MagazaTeklifi {
   const MagazaTeklifi({this.aylik, this.yillik});
   final Package? aylik;
   final Package? yillik;
+}
+
+/// Etkin aboneliğin dönemi. [ilkOdemeTutari] yalnız denemede ve tutar
+/// mağazadan güvenilir biçimde biliniyorsa dolu.
+class AbonelikDonemi {
+  const AbonelikDonemi({required this.deneme, this.ilkOdemeTutari});
+  final bool deneme;
+  final String? ilkOdemeTutari;
+}
+
+/// Saf: hak + mevcut teklifin ürünlerinden dönem.
+///
+/// Tutar uydurulmaz: hakkın ürünü teklifte TEK bir ürünle eşleşmezse
+/// (iOS'ta kimlik aynı; Play'de `abonelik:temel_plan`) ya da üründe
+/// denemeden sonra indirimli bir giriş fazı varsa (ilk ödeme liste
+/// fiyatı olmaz) tutar null kalır, satır tarihi yine yazar.
+AbonelikDonemi abonelikDonemi(EntitlementInfo hak, List<StoreProduct?> urunler) {
+  final deneme = hak.periodType == PeriodType.trial;
+  if (!deneme) return const AbonelikDonemi(deneme: false);
+  final plan = hak.productPlanIdentifier;
+  final eslesen = urunler.nonNulls.where((u) =>
+      u.identifier == hak.productIdentifier ||
+      (plan != null && u.identifier == '${hak.productIdentifier}:$plan'));
+  if (eslesen.length != 1) return const AbonelikDonemi(deneme: true);
+  final urun = eslesen.single;
+  final ucretliGiris = (urun.introductoryPrice?.price ?? 0) > 0 ||
+      urun.defaultOption?.introPhase != null;
+  return AbonelikDonemi(
+    deneme: true,
+    ilkOdemeTutari: ucretliGiris ? null : urun.priceString,
+  );
 }
 
 /// Saf: ürünün ücretsiz deneme süresi (gün). Yoksa null.

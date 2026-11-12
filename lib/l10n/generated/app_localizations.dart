@@ -11921,6 +11921,18 @@ abstract class AppLocalizations {
   /// **'Yenileme {tarih} · {magaza}'**
   String prmYenileme(String tarih, String magaza);
 
+  /// No description provided for @prmDenemeIlkOdeme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz deneme · ilk ödeme {tarih} · {magaza}'**
+  String prmDenemeIlkOdeme(String tarih, String magaza);
+
+  /// No description provided for @prmDenemeIlkOdemeTutar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz deneme · ilk ödeme {tarih}, {tutar} · {magaza}'**
+  String prmDenemeIlkOdemeTutar(String tarih, String tutar, String magaza);
+
   /// No description provided for @prmBitis.
   ///
   /// In tr, this message translates to:

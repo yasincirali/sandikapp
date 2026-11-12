@@ -7231,6 +7231,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String prmDenemeIlkOdeme(String tarih, String magaza) {
+    return 'Ücretsiz deneme · ilk ödeme $tarih · $magaza';
+  }
+
+  @override
+  String prmDenemeIlkOdemeTutar(String tarih, String tutar, String magaza) {
+    return 'Ücretsiz deneme · ilk ödeme $tarih, $tutar · $magaza';
+  }
+
+  @override
   String prmBitis(String tarih) {
     return '$tarih tarihinde biter';
   }

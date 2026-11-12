@@ -11,7 +11,7 @@ import 'sandik_async_button.dart';
 import 'satin_alim_geri_yukleme.dart';
 
 /// Profil'de Premium hakkı satırı (S14-A, 2026-10-05): ne tür hak, ne zaman
-/// yenilenir/biter, ve iki eylem.
+/// yenilenir/biter (ücretsiz denemede ilk ödeme günü), ve iki eylem.
 ///
 /// - "Yönet" yalnız mağaza aboneliğinde: iptal/plan değişikliği mağazanın
 ///   kendi sayfasında yapılır (Apple/Google kuralı); uygulama aracı olamaz.
@@ -63,7 +63,18 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
     } else if (hak.kaynak == 'revenuecat' &&
         !hak.iptalEdildi &&
         magaza != null) {
-      alt = l10n.prmYenileme(bitis, magaza);
+      // Denemede "Yenileme" ilk ödemeyi saklıyordu (Ar-Ge 12 Kas #2):
+      // sürpriz ödeme hissi = iade isteği. Satır denemeyi ve ilk ödeme
+      // gününü düz cümleyle söyler; tutar yalnız mağazanın priceString'iyle
+      // biliniyorsa. Sayaç, geri sayım, uyarı rengi yok: bilgi, baskı değil.
+      // İptal edilmiş denemede ödeme olmayacağı için aşağıdaki "biter" kalır.
+      final donem = ref.watch(abonelikDonemiProvider).valueOrNull;
+      final tutar = donem?.ilkOdemeTutari;
+      alt = donem?.deneme != true
+          ? l10n.prmYenileme(bitis, magaza)
+          : tutar == null
+              ? l10n.prmDenemeIlkOdeme(bitis, magaza)
+              : l10n.prmDenemeIlkOdemeTutar(bitis, tutar, magaza);
     } else if (kalan != null) {
       alt = l10n.prmHediyeKalan(bitis, kalan);
     } else {

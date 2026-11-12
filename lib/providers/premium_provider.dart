@@ -195,6 +195,15 @@ final premiumHaklariProvider = FutureProvider<List<PremiumHakki>>((ref) async {
 final satinAlmaServisiProvider =
     Provider<SatinAlmaService>((_) => SatinAlmaService.instance);
 
+/// Etkin mağaza aboneliğinin dönemi (deneme mi, ilk ödeme tutarı). Abonelik
+/// satırı denemede "Yenileme" yerine "Ücretsiz deneme · ilk ödeme" yazar
+/// (Ar-Ge 12 Kas #2). Haklar tazelenince (geri yükleme, satın alma) bu da
+/// yeniden okunur. Mağaza yoksa null → eski metin.
+final abonelikDonemiProvider = FutureProvider<AbonelikDonemi?>((ref) async {
+  ref.watch(premiumHaklariProvider);
+  return ref.read(satinAlmaServisiProvider).donem();
+});
+
 /// Geçerli hak (abonelik önce, sonra hediye, sonra manuel); yoksa null.
 final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {
   final haklar = ref.watch(premiumHaklariProvider).valueOrNull ?? const [];

@@ -4495,6 +4495,21 @@
       "magaza": {"type": "String"}
     }
   },
+  "prmDenemeIlkOdeme": "Free trial · first payment {tarih} · {magaza}",
+  "@prmDenemeIlkOdeme": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "magaza": {"type": "String"}
+    }
+  },
+  "prmDenemeIlkOdemeTutar": "Free trial · first payment {tarih}, {tutar} · {magaza}",
+  "@prmDenemeIlkOdemeTutar": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"},
+      "magaza": {"type": "String"}
+    }
+  },
   "prmBitis": "Ends on {tarih}",
   "@prmBitis": {
     "placeholders": {

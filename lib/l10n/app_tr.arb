@@ -4970,6 +4970,21 @@
       "magaza": {"type": "String"}
     }
   },
+  "prmDenemeIlkOdeme": "Ücretsiz deneme · ilk ödeme {tarih} · {magaza}",
+  "@prmDenemeIlkOdeme": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "magaza": {"type": "String"}
+    }
+  },
+  "prmDenemeIlkOdemeTutar": "Ücretsiz deneme · ilk ödeme {tarih}, {tutar} · {magaza}",
+  "@prmDenemeIlkOdemeTutar": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"},
+      "magaza": {"type": "String"}
+    }
+  },
   "prmBitis": "{tarih} tarihinde biter",
   "@prmBitis": {
     "placeholders": {
