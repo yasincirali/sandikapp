@@ -10,12 +10,14 @@ import '../../models/grafik_cizimi.dart';
 import '../../models/price_alert.dart';
 import '../../models/seviye_alarmi.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/preferences_provider.dart' show premiumKilitliProvider;
+import '../../providers/preferences_provider.dart'
+    show premiumKilitliProvider, priceAlertLimitProvider;
 import '../../providers/price_alert_provider.dart';
 import '../../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../../providers/seviye_alarmi_provider.dart';
 import '../../screens/paywall_screen.dart' show PaywallScreen;
+import '../../services/alarm_siniri.dart';
 import '../../services/cizim_alarmi.dart';
 import '../../services/crash_reporter.dart';
 import '../../services/ozellik_olcumu.dart';
@@ -25,6 +27,7 @@ import '../../utils/friendly_error.dart' show showAppError;
 import '../alarm_kur_sheet.dart';
 import '../cizgi_adi_sayfasi.dart';
 import '../sandik_async_button.dart';
+import '../sinir_uyarisi.dart' show alarmSiniriUyarisi;
 import 'grafik_olcegi.dart';
 
 /// Yatay grafikte seçili çizimin üstündeki "Alarm kur" düğmesi (0170).
@@ -216,7 +219,8 @@ class CizimAlarmDugmesi extends ConsumerWidget {
         await PaywallScreen.show(context, source: 'cizim_alarmi');
         return;
       }
-      if (alarmSiniriDoluysaUyar(context, ref)) return;
+      if (await alarmSiniriDoluysaUyar(context, ref)) return;
+      if (!context.mounted) return;
       final simdi = DateTime.now();
       final sonuc = cizimAlarmDogrusu(cizim,
           indeks: olcek.zamanIndeksi,
@@ -239,31 +243,47 @@ class CizimAlarmDugmesi extends ConsumerWidget {
       // Ad isteğe bağlı: boş bırakılırsa alarm bugünkü gibi varlığın adıyla
       // kurulur. Yazma sayfanın düğmesinde koşar; hata sayfada söylenir.
       var kuruldu = false;
+      var tavanDolu = false;
       var verilenAd = '';
       await showCizgiAdiSayfasi(
         context,
         baslik: l10n.cizgiAlarmiBaslik,
         dugme: l10n.setAlert,
         kaydet: (isim) async {
-          await n.create(CizimAlarmi(
-            id: '',
-            userId: me.id,
-            symbol: sembol,
-            label: cizgiAlarmEtiketi(ad, isim),
-            cizimId: id,
-            cizimImzasi: cizimImzasi(cizim),
-            t1: d.t1,
-            p1: d.p1,
-            t2: d.t2,
-            p2: d.p2,
-            uzanir: d.uzanir,
-            yon: yon,
-            createdAt: simdi,
-          ));
+          // Ad sayfası açıkken tavan dolmuş olabilir: yazmadan hemen önce
+          // yeniden sayılır, sunucu reddi de aynı uyarıya bağlanır.
+          try {
+            await alarmYazimiTavanli(
+                ref,
+                () => n.create(CizimAlarmi(
+                      id: '',
+                      userId: me.id,
+                      symbol: sembol,
+                      label: cizgiAlarmEtiketi(ad, isim),
+                      cizimId: id,
+                      cizimImzasi: cizimImzasi(cizim),
+                      t1: d.t1,
+                      p1: d.p1,
+                      t2: d.t2,
+                      p2: d.p2,
+                      uzanir: d.uzanir,
+                      yon: yon,
+                      createdAt: simdi,
+                    )));
+          } on AlarmSiniriDolu {
+            tavanDolu = true;
+            rethrow; // Sayfa ✓'siz kapanır (CizgiAdiSayfasi).
+          }
           kuruldu = true;
           verilenAd = cizgiEtiketiniAyir(cizgiAlarmEtiketi(ad, isim)).isim ?? '';
         },
       );
+      if (tavanDolu) {
+        if (context.mounted) {
+          alarmSiniriUyarisi(context, ref, ref.read(priceAlertLimitProvider));
+        }
+        return;
+      }
       if (!kuruldu) return;
       OzellikOlcumu.say(Ozellik.cizimAlarm);
       // Onay adı söyler (e2e 2026-10-29): kullanıcı hangi çizgiyi

@@ -18,6 +18,7 @@ import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
 import '../services/alarm_onbellegi.dart';
+import '../services/alarm_siniri.dart';
 import '../services/analytics_service.dart';
 import '../services/cizim_alarmi.dart'
     show cizgiAlarmEtiketi, cizgiEtiketiniAyir, yatayAlarmCizimi;
@@ -40,6 +41,7 @@ import '../widgets/sandik_acilir.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/sinir_uyarisi.dart' show alarmSiniriUyarisi;
 import '../utils/tr_format.dart';
 import '../widgets/sandik_error_view.dart';
 import '../l10n/l10n.dart';
@@ -576,11 +578,20 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       onUndo: geriAl == null
           ? null
           : () => CrashReporter.arkaPlan(() async {
+                // "Geri al" de bir alarmı yeniden AKTİF yapar: tavana uyar
+                // (2026-11-12). Eskiden sil → başka alarm kur → geri al
+                // döngüsü ücretsiz tavanı sınırsızca aşıyordu.
                 try {
-                  await geriAl();
+                  await alarmYazimiTavanli(ref, geriAl);
                   SandikHaptic.selection.perform();
                 } catch (e) {
-                  if (mounted) showAppError(context, e);
+                  if (!mounted) return;
+                  if (alarmSiniriHatasiMi(e)) {
+                    alarmSiniriUyarisi(
+                        context, ref, ref.read(priceAlertLimitProvider));
+                  } else {
+                    showAppError(context, e);
+                  }
                 }
               }(), reason: 'alarmlarim.geriAl'),
     );
@@ -1257,7 +1268,9 @@ int alarmSayaciEsigi(int limit) => (limit * 3 / 4).ceil();
 /// Premium'a en yakın kullanıcı. Eşik altında hiç çizilmez (liste sade
 /// kalır). Paywall kapalıyken (Android) ve Premium'da
 /// [priceAlertLimitProvider] sınırsız döner, satır çıkmaz. Sayım duvarın
-/// saydığıyla aynı ([etkinAlarmSayisi]): sayaç 20 derken duvar 19 demesin.
+/// saydığıyla aynı ([etkinAlarmlariSay]): sayaç 20 derken duvar 19 demesin.
+/// Sayaç ekranda bilineni gösterir ([bilinenEtkinAlarmSayisi]); yazma
+/// kararı listeleri bekleyen [etkinAlarmSayisi]'dadır.
 class _AlarmSayaci extends ConsumerWidget {
   const _AlarmSayaci({required this.padding});
 
@@ -1272,7 +1285,7 @@ class _AlarmSayaci extends ConsumerWidget {
     ref.watch(gostergeAlarmlariProvider);
     ref.watch(cizimAlarmlariProvider);
     if (limit >= 1 << 20) return const SizedBox.shrink();
-    final sayi = etkinAlarmSayisi(ref);
+    final sayi = bilinenEtkinAlarmSayisi(ref);
     if (sayi < alarmSayaciEsigi(limit)) return const SizedBox.shrink();
     final c = context.c;
     final l10n = context.l10n;

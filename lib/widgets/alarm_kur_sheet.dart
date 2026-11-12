@@ -20,6 +20,7 @@ import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
 import '../screens/paywall_screen.dart' show PaywallScreen;
+import '../services/alarm_siniri.dart';
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/cizim_alarmi.dart'
@@ -291,7 +292,8 @@ Future<PriceAlert?> alarmKurAkisi(
     return null;
   }
 
-  if (alarmSiniriDoluysaUyar(context, ref)) return null;
+  if (await alarmSiniriDoluysaUyar(context, ref)) return null;
+  if (!context.mounted) return null;
 
   // Sunucuya yazma sayfanın "Alarm kur" düğmesinin İÇİNDE koşar (tek
   // yükleniyor davranışı, 2026-10-08): eskiden sayfa kapanıyor, `create`
@@ -319,53 +321,69 @@ Future<PriceAlert?> alarmKurAkisi(
       gostergeKilitli: ref.read(premiumKilitliProvider),
       onGostergeKilitli: (ctx) =>
           PaywallScreen.show(ctx, source: 'gosterge_alarmi'),
+      // Üç yazma da [alarmYazimiTavanli] içinden: sayfa açıkken başka
+      // yüzeyden kurulan alarm tavanı doldurmuş olabilir; açılıştaki tek
+      // kontrol yetmez (2026-11-12).
       kurGosterge: (k) async {
         final me = ref.read(authProvider).valueOrNull;
         if (me == null) return;
-        gostergeKayit = await ref
-            .read(gostergeAlarmlariProvider.notifier)
-            .create(GostergeAlarmi(
-              id: '',
-              userId: me.id,
-              symbol: k.aday.sembol,
-              label: k.aday.ad,
-              gosterge: k.gosterge,
-              yon: k.yon,
-              createdAt: DateTime.now(),
-            ));
+        gostergeKayit = await alarmYazimiTavanli(
+            ref,
+            () => ref
+                .read(gostergeAlarmlariProvider.notifier)
+                .create(GostergeAlarmi(
+                  id: '',
+                  userId: me.id,
+                  symbol: k.aday.sembol,
+                  label: k.aday.ad,
+                  gosterge: k.gosterge,
+                  yon: k.yon,
+                  createdAt: DateTime.now(),
+                )));
       },
       kur: (k) async {
         final me = ref.read(authProvider).valueOrNull;
         if (me == null) return;
-        kayit = await ref.read(priceAlertsProvider.notifier).create(PriceAlert(
-          id: '',
-          userId: me.id,
-          symbol: k.aday.sembol,
-          // Yatay çizgiden: "varlık · ad" (ad yoksa yalnız varlık, eskisi).
-          label: cizgiAdi ? cizgiAlarmEtiketi(k.aday.ad, k.isim) : k.aday.ad,
-          targetPrice: k.hedef,
-          direction: yonu(k),
-          enabled: true,
-          createdAt: DateTime.now(),
-          tekrar: k.tekrar,
-        ));
+        kayit = await alarmYazimiTavanli(
+            ref,
+            () => ref.read(priceAlertsProvider.notifier).create(PriceAlert(
+                  id: '',
+                  userId: me.id,
+                  symbol: k.aday.sembol,
+                  // Yatay çizgiden: "varlık · ad" (ad yoksa yalnız varlık).
+                  label: cizgiAdi ? cizgiAlarmEtiketi(k.aday.ad, k.isim) : k.aday.ad,
+                  targetPrice: k.hedef,
+                  direction: yonu(k),
+                  enabled: true,
+                  createdAt: DateTime.now(),
+                  tekrar: k.tekrar,
+                )));
       },
       kurYuzde: (k) async {
         final me = ref.read(authProvider).valueOrNull;
         if (me == null) return;
-        yuzdeKayit =
-            await ref.read(yuzdeAlarmlariProvider.notifier).create(YuzdeAlarmi(
-          id: '',
-          userId: me.id,
-          symbol: k.aday.sembol,
-          label: k.aday.ad,
-          esikPct: k.esik.toDouble(),
-          yon: k.yon,
-          createdAt: DateTime.now(),
-        ));
+        yuzdeKayit = await alarmYazimiTavanli(
+            ref,
+            () => ref.read(yuzdeAlarmlariProvider.notifier).create(YuzdeAlarmi(
+                  id: '',
+                  userId: me.id,
+                  symbol: k.aday.sembol,
+                  label: k.aday.ad,
+                  esikPct: k.esik.toDouble(),
+                  yon: k.yon,
+                  createdAt: DateTime.now(),
+                )));
       },
     ),
   );
+  // Sayfa tavanı yazarken öğrendiyse kapandı; uyarı (Premium yolu dahil)
+  // artık modalın altında kalmaz.
+  if (sonuc is AlarmSiniriDolu) {
+    if (context.mounted) {
+      alarmSiniriUyarisi(context, ref, ref.read(priceAlertLimitProvider));
+    }
+    return null;
+  }
   if (sonuc is GostergeAlarmKurulumu && gostergeKayit != null) {
     OzellikOlcumu.say(Ozellik.gostergeAlarm);
     if (context.mounted) {
@@ -462,8 +480,8 @@ Future<void> alarmiYenidenKur(
       if (yeni != null) await n.delete(alarm.id);
       return;
     }
-    if (alarmSiniriDoluysaUyar(context, ref)) return;
-    await n.rearm(alarm.id);
+    if (await alarmSiniriDoluysaUyar(context, ref)) return;
+    await alarmYazimiTavanli(ref, () => n.rearm(alarm.id));
     SandikHaptic.selection.perform();
     if (!context.mounted) return;
     final fiyat = alarmFiyatMetni(alarm.targetPrice, alarm.symbol);
@@ -475,7 +493,28 @@ Future<void> alarmiYenidenKur(
       kind: SandikSnackKind.success,
     );
   } catch (e) {
-    if (context.mounted) showAppError(context, e);
+    if (!context.mounted) return;
+    if (alarmSiniriHatasiMi(e)) {
+      alarmSiniriUyarisi(context, ref, ref.read(priceAlertLimitProvider));
+    } else {
+      showAppError(context, e);
+    }
+  }
+}
+
+/// Bir alarmı AKTİF yapacak yazma ([yaz]) — yeni kurma, yeniden kurma,
+/// "Geri al" — tavana uyarak koşar: yazmadan HEMEN önce yeniden sayar
+/// (açılıştaki kontrol ile yazma arasında tavan dolmuş olabilir) ve
+/// sunucunun tavan reddini (0181) aynı [AlarmSiniriDolu] türüne çevirir.
+/// Çağıran tek türü yakalar, ortak uyarıyı gösterir; ham hata görünmez.
+Future<T> alarmYazimiTavanli<T>(
+    WidgetRef ref, Future<T> Function() yaz) async {
+  if (await alarmSiniriDoluMu(ref)) throw const AlarmSiniriDolu();
+  try {
+    return await yaz();
+  } catch (e) {
+    if (alarmSiniriHatasiMi(e)) throw const AlarmSiniriDolu();
+    rethrow;
   }
 }
 
@@ -528,6 +567,12 @@ Future<bool> alarmDuzenleAkisi(
   );
   if (silinsin) {
     sil!();
+    return false;
+  }
+  if (sonuc is AlarmSiniriDolu) {
+    if (context.mounted) {
+      alarmSiniriUyarisi(context, ref, ref.read(priceAlertLimitProvider));
+    }
     return false;
   }
   // "Alarm güncellendi" snack'ı kalktı (Ar-Ge 11 Kas 19:04 #6): yeni hedef
@@ -804,6 +849,15 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
     );
   }
 
+  /// Tavan bir yazma hatası değil, Premium kapısı: alanın altına "Alarm
+  /// kurulamadı" yazmak yerine sayfa [AlarmSiniriDolu] ile kapanır, çağıran
+  /// ortak sınır uyarısını (Premium yolu dahil) gösterir.
+  bool _tavanDoluysaKapat(Object e) {
+    if (!alarmSiniriHatasiMi(e)) return false;
+    Navigator.of(context).pop(const AlarmSiniriDolu());
+    return true;
+  }
+
   Future<void> _kaydet() async {
     final hedef = _hedef;
     if (hedef == null) {
@@ -832,6 +886,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         await kur(kurulum);
       } catch (e) {
         if (!mounted) return;
+        if (_tavanDoluysaKapat(e)) return;
         // Snackbar modal sayfanın altında kalırdı; hata alanın altında.
         setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
         return;
@@ -858,6 +913,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         await kur(kurulum);
       } catch (e) {
         if (!mounted) return;
+        if (_tavanDoluysaKapat(e)) return;
         setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
         return;
       }
@@ -1040,6 +1096,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         await kur(kurulum);
       } catch (e) {
         if (!mounted) return;
+        if (_tavanDoluysaKapat(e)) return;
         setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
         return;
       }
@@ -1377,23 +1434,104 @@ enum _AlarmKipi { fiyat, yuzde, gosterge }
 /// alarm"; açık yüzde alarmı her gün nöbettedir, yani hep aktiftir.
 /// Gösterge ve çizgi alarmı (0170) da sayılır: Premium'a özgü olsalar da
 /// paywall kapalıyken (admin) ya da abonelik bitince tavan yine geçerli.
-bool alarmSiniriDoluysaUyar(BuildContext context, WidgetRef ref) {
+///
+/// 2026-11-12 (yasin: "sonsuz alarma gidebilecek bir bug var"): karar artık
+/// ASYNC. Eskiden dört listenin o anki değeri okunuyordu; yüzde/gösterge/
+/// çizim listeleri çoğunlukla yalnız Alarmlar ekranında izlendiği için
+/// varlık sayfasından, tek dokunuştan ya da çizim düğmesinden ilk girişte
+/// henüz yüklenmemişti ve 0 sayılıyordu — tavan atlanıyordu.
+Future<bool> alarmSiniriDoluysaUyar(
+    BuildContext context, WidgetRef ref) async {
   final limit = ref.read(priceAlertLimitProvider);
-  if (etkinAlarmSayisi(ref) < limit) return false;
-  alarmSiniriUyarisi(context, ref, limit);
+  if (!await alarmSiniriDoluMu(ref)) return false;
+  if (context.mounted) alarmSiniriUyarisi(context, ref, limit);
   return true;
 }
 
-/// Tavana sayılan alarm sayısı: aktif fiyat alarmları + açık yüzde
-/// alarmları. Yüklenmemiş liste 0 sayılır (bilinmeyen sayı yüzünden
-/// kimseyi durdurmayız — `ortakSiniriDoluProvider` ile aynı kural).
-int etkinAlarmSayisi(WidgetRef ref) {
-  final fiyat = ref.read(priceAlertsProvider).valueOrNull ?? const [];
-  final yuzde = ref.read(yuzdeAlarmlariProvider).valueOrNull ?? const [];
-  final gosterge = ref.read(gostergeAlarmlariProvider).valueOrNull ?? const [];
-  final cizim = ref.read(cizimAlarmlariProvider).valueOrNull ?? const [];
-  return fiyat.where((a) => a.isActive).length +
-      yuzde.where((a) => a.isActive).length +
-      gosterge.where((a) => a.isActive).length +
-      cizim.where((a) => a.isActive).length;
+/// Tavan dolu mu (uyarısız). Bütün giriş yolları (sayfa, sayfanın kendi
+/// yazması, tek dokunuş, çizim düğmesi, yeniden kur, Alarmlarım'daki
+/// "Geri al") bu tek karara bakar.
+///
+/// Sınırsız planda (paywall kapalı ya da Premium) hiçbir liste beklenmez:
+/// karar birebir eskisi, ağ beklemesi yok.
+Future<bool> alarmSiniriDoluMu(WidgetRef ref) async {
+  final limit = ref.read(priceAlertLimitProvider);
+  if (limit >= _sinirsizEsik) return false;
+  return await etkinAlarmSayisi(ref) >= limit;
 }
+
+/// `priceAlertLimitProvider` sınırsızı `1 << 30` ile temsil eder;
+/// Alarmlarım'daki sayaç da aynı eşiğe bakar (`_AlarmSayaci`).
+const int _sinirsizEsik = 1 << 20;
+
+/// Bir listeyi beklerken en fazla bu kadar durulur: yavaş ağda "Alarm kur"
+/// sonsuza kadar dönmesin. Süre dolarsa elde ne varsa o sayılır.
+const Duration _sayimBeklemesi = Duration(seconds: 8);
+
+/// Tavana sayılan alarm sayısı: aktif fiyat alarmları + açık yüzde
+/// alarmları + nöbetteki gösterge ve çizgi alarmları.
+///
+/// Dört sağlayıcının `.future`'ı BEKLENİR (yüklenmemiş liste artık 0
+/// sayılmaz; `refresh()`in yazdığı `AsyncLoading` de yeni okumayı bekletir).
+/// Okuma hata verir ya da süre dolarsa elde kalan kopya (disk/son durum)
+/// sayılır.
+///
+/// Karar (bilinmeyen sayı): bir liste hiç okunamadıysa o tür 0 sayılır ve
+/// yazmaya izin verilir. Engellemek, çevrimdışı ya da sunucu hıçkırığında
+/// sınırın altındaki kullanıcıyı haksız yere kilitlerdi (Premium'a
+/// zorlanmış hissi satın almayı değil güveni öldürür). Tavanın son
+/// bekçisi sunucudur (0181 tetikleyicisi): istemci eksik sayarsa yazma
+/// orada reddedilir ve aynı uyarı görünür (`alarmSiniriHatasiMi`).
+///
+/// `ref` yalnız ilk (eşzamanlı) adımda okunur: bekleme sırasında çağıran
+/// widget kapanırsa kapanmış `ref`e dokunulmaz.
+Future<int> etkinAlarmSayisi(WidgetRef ref) async {
+  final fiyat = _listeyiBekle(
+      ref.read(priceAlertsProvider), ref.read(priceAlertsProvider.future));
+  final yuzde = _listeyiBekle(ref.read(yuzdeAlarmlariProvider),
+      ref.read(yuzdeAlarmlariProvider.future));
+  final gosterge = _listeyiBekle(ref.read(gostergeAlarmlariProvider),
+      ref.read(gostergeAlarmlariProvider.future));
+  final cizim = _listeyiBekle(ref.read(cizimAlarmlariProvider),
+      ref.read(cizimAlarmlariProvider.future));
+  return etkinAlarmlariSay(
+    fiyat: await fiyat,
+    yuzde: await yuzde,
+    gosterge: await gosterge,
+    cizim: await cizim,
+  );
+}
+
+Future<List<T>> _listeyiBekle<T>(
+    AsyncValue<List<T>> mevcut, Future<List<T>> gelecek) async {
+  try {
+    return await gelecek.timeout(_sayimBeklemesi);
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'alarmSiniri.sayim');
+    return mevcut.valueOrNull ?? const [];
+  }
+}
+
+/// O an EKRANDA bilinen sayı (eşzamanlı): yalnız gösterim için
+/// (Alarmlarım'daki "Kurulu alarm: 16/20" sayacı listeleri zaten izler).
+/// Yazma kararı bunu kullanmaz; [etkinAlarmSayisi]'nı bekler.
+int bilinenEtkinAlarmSayisi(WidgetRef ref) => etkinAlarmlariSay(
+      fiyat: ref.read(priceAlertsProvider).valueOrNull ?? const [],
+      yuzde: ref.read(yuzdeAlarmlariProvider).valueOrNull ?? const [],
+      gosterge: ref.read(gostergeAlarmlariProvider).valueOrNull ?? const [],
+      cizim: ref.read(cizimAlarmlariProvider).valueOrNull ?? const [],
+    );
+
+/// Saf sayım — sunucudaki 0181 `alarm_tavani_denetim` ile aynı "aktif"
+/// tanımı (model `isActive`'leri): ikisi ayrışırsa sayaç 20 derken sunucu
+/// 19'da ya da 21'de keser.
+int etkinAlarmlariSay({
+  required List<PriceAlert> fiyat,
+  required List<YuzdeAlarmi> yuzde,
+  required List<GostergeAlarmi> gosterge,
+  required List<CizimAlarmi> cizim,
+}) =>
+    fiyat.where((a) => a.isActive).length +
+    yuzde.where((a) => a.isActive).length +
+    gosterge.where((a) => a.isActive).length +
+    cizim.where((a) => a.isActive).length;

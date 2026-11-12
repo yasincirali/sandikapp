@@ -256,7 +256,8 @@ void main() {
     final ekran = ekranKaynagiSync('lib/screens/price_alerts_screen.dart');
     expect(ekran, contains('yuzdeAlarmlariProvider'));
     final sheet = ekranKaynagiSync('lib/widgets/alarm_kur_sheet.dart');
-    final i = sheet.indexOf('int etkinAlarmSayisi(');
+    // Yazma kararı listeleri bekleyen async sayımdadır (2026-11-12).
+    final i = sheet.indexOf('Future<int> etkinAlarmSayisi(');
     expect(sheet.substring(i, sheet.indexOf('\n}', i)),
         contains('yuzdeAlarmlariProvider'),
         reason: 'ücretsiz tavan (20) iki türün toplamı');
