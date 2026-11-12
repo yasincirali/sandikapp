@@ -192,7 +192,7 @@ void main() {
     testWidgets('ücretsiz kullanıcı, paywall açık: kilit satırı', (tester) async {
       await _paneliAc(tester, [zararda], kilitli: true);
       expect(find.byType(KilitSatiri), findsOneWidget);
-      expect(find.text("Başa baş için gereken yükseliş Premium'da"),
+      expect(find.text("Bu pozisyonun başa baş için gereken yükselişi Premium'da"),
           findsOneWidget);
       expect(find.text('%25 yükselmeli'), findsNothing);
       final kilit = tester.widget<KilitSatiri>(find.byType(KilitSatiri));

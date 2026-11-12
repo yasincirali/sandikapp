@@ -191,11 +191,12 @@ void main() {
   });
 
   group('PeriodSummaryView — en iyi / en zor gün kartı', () {
-    final gunler = (
+    final varsayilan = (
       enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
       enZor: DonemGunu(DateTime(2026, 10, 23), -2.1),
     );
-    PeriodSummary ozet() => PeriodSummary(
+    PeriodSummary ozet(({DonemGunu enIyi, DonemGunu? enZor}) g) =>
+        PeriodSummary(
           period: SummaryPeriod.birAy,
           start: DateTime(2026, 10, 11),
           end: _bugun,
@@ -204,14 +205,15 @@ void main() {
           katkiTRY: 0,
           piyasaTRY: 3000,
           getiriPct: 3,
-          enIyiEnZorGun: gunler,
+          enIyiEnZorGun: g,
         );
 
     Future<void> kur(WidgetTester tester,
         {required bool gorunur,
         bool kilitli = false,
         double olcek = 1,
-        double genislik = 390}) async {
+        double genislik = 390,
+        ({DonemGunu enIyi, DonemGunu? enZor})? gunler}) async {
       tester.view.physicalSize = Size(genislik, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -225,7 +227,7 @@ void main() {
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: PeriodSummaryView(
-                summary: ozet(),
+                summary: ozet(gunler ?? varsayilan),
                 simdi: _bugun,
                 // Tek akış (Performans'ın bugünkü düzeni): ana rakam kartı
                 // grafiğin kartında. Ana rakam kartının kendi 3.1× davranışı
@@ -253,13 +255,33 @@ void main() {
       expect(find.byType(KilitSatiri), findsNothing);
     });
 
-    testWidgets('ücretsiz: kilit satırı, gün ve yüzde sızmaz', (tester) async {
+    testWidgets('ücretsiz: yalnız en iyi günün tarihi açık, yüzde sızmaz',
+        (tester) async {
       await kur(tester, gorunur: true, kilitli: true);
       expect(find.byType(KilitSatiri), findsOneWidget);
-      expect(find.text("Dönemin en iyi ve en zor gününü Premium'la gör"),
+      expect(find.text("En iyi günün 4 Kasım · ne kadar olduğu Premium'da"),
           findsOneWidget);
-      expect(find.textContaining('4 Kasım'), findsNothing);
-      expect(find.text('+%3,2'), findsNothing);
+      // En zor gün ve hiçbir yüzde açılmaz.
+      expect(find.textContaining('23 Ekim'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+      final kilit = tester.widget<KilitSatiri>(find.byType(KilitSatiri));
+      expect(kilit.kaynak, 'en_iyi_gun');
+    });
+
+    testWidgets('ücretsiz, hiç artı gün yok: "en az düşen gün" (kutlama yok)',
+        (tester) async {
+      await kur(tester,
+          gorunur: true,
+          kilitli: true,
+          gunler: (
+            enIyi: DonemGunu(DateTime(2026, 11, 4), -0.3),
+            enZor: DonemGunu(DateTime(2026, 10, 23), -2.1),
+          ));
+      expect(
+          find.text("En az düşen günün 4 Kasım · ne kadar olduğu Premium'da"),
+          findsOneWidget);
+      expect(find.textContaining('En iyi'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
     });
 
     testWidgets('görünür değilse (paywall kapalı) kart hiç yok',

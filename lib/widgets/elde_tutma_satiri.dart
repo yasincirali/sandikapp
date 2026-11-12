@@ -24,6 +24,13 @@ import 'para_akisi_karti.dart' show KilitSatiri;
 /// [KilitSatiri] (kaynak `yillik_getiri`); paywall kapalıyken yalnız admin.
 /// Kilit satırı da ancak hesaplanmış bir sayı varken çıkar.
 ///
+/// Kilitli satır yarı açıktır (2026-11-12): süre kullanıcının KENDİ
+/// defterinden (ilk alış günü) ücretsiz okunur, yalnız yıllık oran kilitli
+/// ("5 yıl 2 aydır tutuyorsun · yıllık ortalaman Premium'da"). Süre ile
+/// oran aynı [EldeTutma]'dan gelir; satır ancak o hesaplanmışken kurulur,
+/// yani süresiz bir "eski sabit cümle" yolu yok. Oran açılmaz: kilidin
+/// sattığı şey o.
+///
 /// Yön işaretle de yazılır (`fmtPctIsaretli`): renk tek başına anlam
 /// taşımaz. Bakiye gizliyken yüzde açık kalır (oran büyüklüğü ele vermez).
 class EldeTutmaSatiri extends ConsumerWidget {
@@ -45,7 +52,7 @@ class EldeTutmaSatiri extends ConsumerWidget {
     final Widget icerik;
     if (ref.watch(premiumKilitliProvider)) {
       icerik = KilitSatiri(
-        metin: l.eldeTutmaKilitli,
+        metin: l.eldeTutmaKilitli(sure(l, ozet)),
         kaynak: 'yillik_getiri',
         ozellik: 'yillik_getiri',
         kilitEtiketi: l.goalDateLockedLabel,

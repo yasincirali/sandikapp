@@ -1886,11 +1886,11 @@ abstract class AppLocalizations {
   /// **'Son 30 günde günde ortalama yaklaşık {tutar}.'**
   String gunlukGetiriA11y(String tutar);
 
-  /// No description provided for @eldeTutmaKilitli.
+  /// Ücretsiz kullanıcıda elde tutma satırı: süre kullanıcının kendi defterinden açık, yıllık oran kilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Yıllık ortalama getirin Premium\'da'**
-  String get eldeTutmaKilitli;
+  /// **'{sure}dır tutuyorsun · yıllık ortalaman Premium\'da'**
+  String eldeTutmaKilitli(String sure);
 
   /// No description provided for @fxSplitPrice.
   ///
@@ -2015,7 +2015,7 @@ abstract class AppLocalizations {
   /// No description provided for @basaBasKilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Başa baş için gereken yükseliş Premium\'da'**
+  /// **'Bu pozisyonun başa baş için gereken yükselişi Premium\'da'**
   String get basaBasKilitli;
 
   /// No description provided for @kopyalaKod.
@@ -17761,11 +17761,17 @@ abstract class AppLocalizations {
   /// **'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.'**
   String get bestDayFootnote;
 
-  /// No description provided for @bestDayLocked.
+  /// Ücretsiz kullanıcıda en iyi gün kartı: yalnız tarih açık, yüzde kilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Dönemin en iyi ve en zor gününü Premium\'la gör'**
-  String get bestDayLocked;
+  /// **'En iyi günün {tarih} · ne kadar olduğu Premium\'da'**
+  String bestDayLocked(String tarih);
+
+  /// bestDayLocked'un dönemde hiç artı gün yokken söylenişi (kayıp gün 'en iyi' diye kutlanmaz).
+  ///
+  /// In tr, this message translates to:
+  /// **'En az düşen günün {tarih} · ne kadar olduğu Premium\'da'**
+  String leastDownDayLocked(String tarih);
 
   /// No description provided for @tarihCipiBugun.
   ///

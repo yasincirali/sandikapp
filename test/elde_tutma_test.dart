@@ -229,11 +229,16 @@ void main() {
           findsOneWidget);
     });
 
-    testWidgets('ücretsiz (kilitli): kilit satırı, sayı yok, 44 pt',
+    testWidgets('ücretsiz (kilitli): süre açık, oran yok, 44 pt',
         (tester) async {
       await pump(tester, gorunur: true, kilitli: true);
       expect(find.byType(KilitSatiri), findsOneWidget);
+      // Yarı açık: süre kendi defterinden ücretsiz, yıllık oran kilitli.
+      expect(
+          find.text("2 yıl 3 aydır tutuyorsun · yıllık ortalaman Premium'da"),
+          findsOneWidget);
       expect(find.textContaining('31,2'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
       expect(tester.getSize(find.byType(KilitSatiri)).height,
           greaterThanOrEqualTo(SandikTouch.min));
     });

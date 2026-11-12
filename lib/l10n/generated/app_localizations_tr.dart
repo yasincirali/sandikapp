@@ -1066,7 +1066,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get eldeTutmaKilitli => 'Yıllık ortalama getirin Premium\'da';
+  String eldeTutmaKilitli(String sure) {
+    return '${sure}dır tutuyorsun · yıllık ortalaman Premium\'da';
+  }
 
   @override
   String get fxSplitPrice => 'Fiyattan';
@@ -1145,7 +1147,8 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get basaBasKilitli => 'Başa baş için gereken yükseliş Premium\'da';
+  String get basaBasKilitli =>
+      'Bu pozisyonun başa baş için gereken yükselişi Premium\'da';
 
   @override
   String get kopyalaKod => 'Kodu kopyala';
@@ -10889,7 +10892,14 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.';
 
   @override
-  String get bestDayLocked => 'Dönemin en iyi ve en zor gününü Premium\'la gör';
+  String bestDayLocked(String tarih) {
+    return 'En iyi günün $tarih · ne kadar olduğu Premium\'da';
+  }
+
+  @override
+  String leastDownDayLocked(String tarih) {
+    return 'En az düşen günün $tarih · ne kadar olduğu Premium\'da';
+  }
 
   @override
   String get tarihCipiBugun => 'Bugün';

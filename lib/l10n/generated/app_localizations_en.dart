@@ -1082,7 +1082,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eldeTutmaKilitli => 'Your average annual return is in Premium';
+  String eldeTutmaKilitli(String sure) {
+    return 'Held for $sure · your yearly average is in Premium';
+  }
 
   @override
   String get fxSplitPrice => 'From price';
@@ -1161,7 +1163,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get basaBasKilitli => 'Rise needed to break even is in Premium';
+  String get basaBasKilitli =>
+      'The rise this position needs to break even is in Premium';
 
   @override
   String get kopyalaKod => 'Copy code';
@@ -11063,8 +11066,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Market moves only; money you added or withdrew is excluded.';
 
   @override
-  String get bestDayLocked =>
-      'See the period\'s best and toughest day with Premium';
+  String bestDayLocked(String tarih) {
+    return 'Your best day was $tarih · how much is in Premium';
+  }
+
+  @override
+  String leastDownDayLocked(String tarih) {
+    return 'Your smallest drop was $tarih · how much is in Premium';
+  }
 
   @override
   String get tarihCipiBugun => 'Today';

@@ -1175,6 +1175,13 @@ class _VarlikSatiri extends StatelessWidget {
 /// yükselen gün" yazar; kayıptaki günü "en iyi" diye kutlamak ekranın ton
 /// kuralına aykırı (`RETENTION_STRATEJISI.md` §8).
 ///
+/// Kilitliyken kart yarı açıktır (2026-11-12): en iyi günün TARİHİ aynı
+/// hesaptan ([PeriodSummaryService.enIyiEnZorGun], Premium'un okuduğu
+/// alan) ücretsiz yazılır, yüzde ve en zor gün kilitli kalır. Etiket
+/// açık hâldeki dürüstlük kuralıyla aynı: en iyi gün de ekside ise "en az
+/// düşen gün". Kart ancak hesap varken kurulur; tarihsiz eski cümleye
+/// düşülecek bir yol yok.
+///
 /// Grafikte o güne gitme bağlanmadı: grafiğin artı imleci yalnız dokunuşla
 /// kurulan iç durum (`ZoomableChart._crosshairX`), dışarıdan seçim API'si
 /// yok.
@@ -1189,21 +1196,23 @@ class _EnIyiGunKarti extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final dil = context.tarihDili;
+    final bugun = simdi ?? DateTime.now();
+    String tarih(DonemGunu g) => fmtGunAy(g.gun, dil: dil, bugun: bugun);
+    final enIyi = gunler.enIyi;
     if (kilitli) {
       return _BaglamKarti(
         baslik: l.bestToughestDayTitle,
         child: KilitSatiri(
-          metin: l.bestDayLocked,
+          metin: enIyi.pct < 0
+              ? l.leastDownDayLocked(tarih(enIyi))
+              : l.bestDayLocked(tarih(enIyi)),
           kaynak: 'en_iyi_gun',
           ozellik: 'en_iyi_gun',
           kilitEtiketi: l.goalDateLockedLabel,
         ),
       );
     }
-    final dil = context.tarihDili;
-    final bugun = simdi ?? DateTime.now();
-    String tarih(DonemGunu g) => fmtGunAy(g.gun, dil: dil, bugun: bugun);
-    final enIyi = gunler.enIyi;
     final enZor = gunler.enZor;
     return _BaglamKarti(
       baslik: l.bestToughestDayTitle,
