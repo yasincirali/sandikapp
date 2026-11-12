@@ -10,6 +10,10 @@ import '../providers/add_asset_form_provider.dart'
     show addAssetPriceLookupProvider, fiyatBul, tutardanAdet;
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/premium_provider.dart'
+    show premiumOzellikleriGorunurProvider;
+import '../screens/paywall_screen.dart';
+import '../services/analytics_service.dart';
 import '../services/fiyat_kaynagi.dart' show FiyatKaynagi;
 import '../services/mevduat_hesabi.dart';
 import '../services/sozlesme_deposu.dart';
@@ -193,6 +197,11 @@ double? hedefOrtalamaIcinAdet({
   if (hedef == null || hedef <= 0) return null;
   if (!(fiyat < hedef && hedef < ortalama)) return null;
   final n = eldeki * (ortalama - hedef) / (hedef - fiyat);
+  return _yukariYuvarla(n, ondalik);
+}
+
+/// [n]'i [ondalik] haneye YUKARI yuvarlar (ters hesap ve anaparam ortak).
+double _yukariYuvarla(double n, int ondalik) {
   var olcek = 1;
   for (var i = 0; i < ondalik; i++) {
     olcek *= 10;
@@ -200,6 +209,40 @@ double? hedefOrtalamaIcinAdet({
   // Kayan nokta payı: tam 25 lotluk sonuç 25,0000000001 diye 26 olmasın.
   // Tam sayı adımla bölmek (× 0,0001 yerine / 10.000) gürültü bırakmaz.
   return (n * olcek - 1e-6).ceil() / olcek;
+}
+
+/// Hızlı Sat "Anaparam" çipi (Ar-Ge 2026-11-12 #1, Premium): kârdaki
+/// pozisyonda maliyetin kadarını geri almak için kaç birim satmak gerekir.
+///
+/// Toplam maliyet ([eldeki] × [ortalama]; hızlı işlem `asset`'i zaten
+/// `aktifLotlar` toplamı, `purchasePrice` onların ağırlıklı ortalaması) ÷
+/// [fiyat]. Kullanıcının bugün hesap makinesiyle bulduğu sayı; öneri değil,
+/// aritmetik (ekran "satarsan … eline geçer" der, "sat" demez).
+///
+/// [ondalik] haneye YUKARI yuvarlanır ([hedefOrtalamaOndaligi]: BIST tam
+/// lot, kesirli birimde alanın hassasiyeti): aşağı yuvarlamak maliyetin
+/// altında kalırdı, çipin sözü "maliyetin kadar" eline geçmesi.
+///
+/// `null` → çip yok:
+/// - zararda ya da başa başta (fiyat ≤ ortalama): maliyeti geri almak
+///   tümünü satmaktan fazlasını ister; "anaparam" sözü boş kalır;
+/// - fiyat ya da maliyet bilinmiyor/0 (uydurma sayı yasak);
+/// - yuvarlanmış sonuç eldekine ulaşıyor: o zaman "Hepsi" çipiyle aynı
+///   sayıdır (bulgu #9: aynı sayı iki çipte yazılmaz) ve kalan kâr
+///   pozisyonu olmaz — eldekini asla aşmaz.
+double? anaparamAdedi({
+  required double eldeki,
+  required double? ortalama,
+  required double? fiyat,
+  required int ondalik,
+}) {
+  if (eldeki <= 0 || ondalik < 0) return null;
+  if (ortalama == null || ortalama <= 0 || !ortalama.isFinite) return null;
+  if (fiyat == null || fiyat <= 0 || !fiyat.isFinite) return null;
+  if (fiyat <= ortalama) return null;
+  final n = _yukariYuvarla(eldeki * ortalama / fiyat, ondalik);
+  if (n <= 0 || n >= eldeki - 1e-9) return null;
+  return n;
 }
 
 /// Ters hesabın miktar hassasiyeti (ondalık hane): BIST hissesi tam lot
@@ -353,6 +396,36 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
 
   late final double? _sonAlim =
       _sonAlimLot == null ? null : alimAlanDegeri(_sonAlimLot);
+
+  /// "Anaparam" çipinin adedi (Ar-Ge 2026-11-12 #1): yalnız satışta, fiyatla
+  /// girilen ve maliyeti bilinen varlıkta. Satış fiyatı kâr önizlemesiyle
+  /// AYNI ve yedeksiz (`_gecmisFiyat ?? currentPrice`): maliyete düşen yedek
+  /// pozisyonu başa baş gösterir, çip zaten çıkmazdı; ama sayıyı o yedekten
+  /// kurmak uydurma olurdu.
+  double? get _anaparamAdedi {
+    final a = widget.asset;
+    if (_isAdd || _tutarla || a.maliyetBilinmiyor == true) return null;
+    return anaparamAdedi(
+      eldeki: a.quantity,
+      ortalama: a.purchasePrice,
+      fiyat: _gecmisFiyat ?? a.currentPrice,
+      ondalik: hedefOrtalamaOndaligi(a),
+    );
+  }
+
+  /// Çip görünür mü / kilitli mi (başa baş satırının deseni): paywall
+  /// kapalıyken (ve admin değilken) çip HİÇ yok — canlı kullanıcı bugünkü
+  /// çip satırını birebir görür; açıkken ücretsizde kilitli çip, dokununca
+  /// paywall (kaynak `anaparam`). Sağlayıcılar yalnız adet varken okunur
+  /// (kârdaki satış): öteki açılışlar Premium durumuna hiç sormaz.
+  bool get _anaparamGorunur =>
+      widget.ref.read(premiumOzellikleriGorunurProvider);
+  bool get _anaparamKilitli => widget.ref.read(premiumKilitliProvider);
+
+  void _anaparamPaywall() {
+    AnalyticsService.instance.logPremiumGateShown(feature: 'anaparam');
+    PaywallScreen.show(context, source: 'anaparam');
+  }
 
   /// Tutar kipindeki "Son alımın" çipi: son alımın ödenen tutarı
   /// (`alimTutari`; mevduatın alan değeriyle aynı hesap).
@@ -872,6 +945,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             satisFiyati: _gecmisFiyat ?? asset.currentPrice,
             ortalamaMaliyet: asset.purchasePrice,
           );
+    final anaparam =
+        karOnizleme == null ? null : _anaparamAdedi;
+    final anaparamKilitli = anaparam != null && _anaparamKilitli;
     // Alım önizlemesi: girilen birim fiyatla (kaydedilecek olan) yeni
     // ortalama. Satıştaki kâr satırıyla aynı maliyet kapısı.
     final ortalamaOnizleme =
@@ -1211,6 +1287,21 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             if (karOnizleme != null) ...[
               const SizedBox(height: SandikSpace.sm),
               _karSatiri(context, karOnizleme),
+              // Anaparam çipi seçiliyken (alan çipin sayısını taşıyor) tek
+              // satır aritmetik: kâr satırı gerçekleşen kârı zaten söyler,
+              // bu satır "eline geçen = maliyetin kadar" der. Renksiz,
+              // emir kipi yok (yatırım tavsiyesi gibi okunmasın).
+              if (anaparam != null &&
+                  !anaparamKilitli &&
+                  (qty - anaparam).abs() < 1e-9) ...[
+                const SizedBox(height: SandikSpace.xs),
+                Text(
+                  context.l10n.quickPrincipalNote(
+                      _paraMetni(anaparam * (_gecmisFiyat ?? asset.currentPrice))),
+                  key: const ValueKey('anaparam_aciklama'),
+                  style: context.t.bodySmall?.copyWith(color: context.c.text58),
+                ),
+              ],
               // Fon satışında kâr brüttür: stopaj fon türüne ve elde tutma
               // süresine göre değişir, oranı yazmak uydurma sayı olurdu
               // (fiyat kaynağı sözleşmesi ruhu). Yalnız uyarı.
@@ -1380,19 +1471,23 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     final eldeki = _tutarla ? _bakiye : widget.asset.quantity;
     final son = _sonAlim;
     final sonTutar = _sonAlimTutari;
+    final anaparam = _anaparamAdedi;
+    final anaparamCipi = anaparam != null && _anaparamGorunur;
+    final anaparamKilitli = anaparamCipi && _anaparamKilitli;
     // Tutar kipinde adet önerileri (1, 10, 100) tutar olarak anlamsız; yalnız
     // son alımın tutarı önerilir. Son alım yoksa çip satırı boş kalır.
     final chips = _tutarKipinde
-        ? <({String deger, String etiket, String? ses})>[
+        ? <_HizliCip>[
             if (sonTutar != null)
               (
                 deger: _fmt(sonTutar),
                 etiket: context.l10n.quickLastBuyChip(_tutarMetni(sonTutar)),
                 ses: context.l10n
                     .quickLastBuyChipSemantics(_tutarMetni(sonTutar)),
+                kilit: false,
               ),
           ]
-        : <({String deger, String etiket, String? ses})>[
+        : <_HizliCip>[
       // "Son alımın" BAŞTA (Ar-Ge 8 Kas #1); çip sayısı aynı kalır, bir
       // standart öneri düşer (bkz. `hizliMiktarOnerileri`). Rozet yok.
       if (son != null)
@@ -1401,7 +1496,27 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           etiket: context.l10n.quickLastBuyChip(_sonAlimMetni(son)),
           // "·" ekran okuyucuda okunmaz ya da "nokta" okunur; virgüllü cümle.
           ses: context.l10n.quickLastBuyChipSemantics(_sonAlimMetni(son)),
+          kilit: false,
         ),
+      // "Anaparam" (Ar-Ge 2026-11-12 #1, Premium): "Son alımın"dan sonra
+      // (satışta o çip yok, bu yüzden başta). Yalnız kârda (adet varken).
+      // Kilitliyken sayı yazılmaz: sayının kendisi Premium'un işi; çip adı
+      // + kilit ikonu, dokunuş paywall'a.
+      if (anaparamCipi)
+        anaparamKilitli
+            ? (
+                deger: '',
+                etiket: context.l10n.quickPrincipalChipLocked,
+                ses: context.l10n.quickPrincipalChipLockedSemantics,
+                kilit: true,
+              )
+            : (
+                deger: _fmt(anaparam),
+                etiket: context.l10n.quickPrincipalChip(_sonAlimMetni(anaparam)),
+                ses: context.l10n
+                    .quickPrincipalChipSemantics(_sonAlimMetni(anaparam)),
+                kilit: false,
+              ),
       for (final v in hizliMiktarOnerileri(
         tur: widget.asset.type,
         birimTuru: widget.asset.unitType,
@@ -1409,13 +1524,14 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         satis: !_isAdd,
         sonAlim: son,
       ))
-        (deger: _fmt(v), etiket: _fmt(v), ses: null),
+        (deger: _fmt(v), etiket: _fmt(v), ses: null, kilit: false),
       // Satışta TEK "Hepsi" — eldekinin tamamı (bkz. bulgu #9).
       if (!_isAdd && eldeki > 0)
         (
           deger: _fmt(eldeki),
           etiket: context.l10n.quickAllChip(_fmt(eldeki)),
           ses: null,
+          kilit: false,
         ),
     ];
 
@@ -1433,10 +1549,13 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 soluk: true,
                 haptic: SandikHaptic.none,
                 semanticLabel: chip.ses,
-                onTap: () => setState(() {
-                  (_tutarKipinde ? _tutarCtrl : _qtyCtrl).text = chip.deger;
-                  _error = null;
-                }),
+                onTap: chip.kilit
+                    ? _anaparamPaywall
+                    : () => setState(() {
+                          (_tutarKipinde ? _tutarCtrl : _qtyCtrl).text =
+                              chip.deger;
+                          _error = null;
+                        }),
                 child: ConstrainedBox(
                   constraints:
                       const BoxConstraints(minHeight: SandikTouch.min),
@@ -1451,7 +1570,17 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       ),
                       child: ExcludeSemantics(
                         excluding: chip.ses != null,
-                        child: Text(
+                        child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                        if (chip.kilit) ...[
+                          Icon(Icons.lock_outline_rounded,
+                              key: const ValueKey('anaparam_kilit'),
+                              size: SandikSpace.md,
+                              color: context.c.text58),
+                          const SizedBox(width: SandikSpace.xs),
+                        ],
+                        Text(
                         chip.etiket,
                         style: context.t.numSmall.copyWith(
                           fontSize: 12,
@@ -1459,6 +1588,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                           color: context.c.text90,
                         ),
                       ),
+                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -1470,3 +1601,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     );
   }
 }
+
+/// Hızlı miktar çipinin verisi. [kilit]: Premium kilidi (dokunuş paywall'a,
+/// [deger] kullanılmaz).
+typedef _HizliCip = ({String deger, String etiket, String? ses, bool kilit});

@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr')
+    Locale('tr'),
   ];
 
   /// No description provided for @appName.
@@ -865,6 +865,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Son alımın, {miktar}'**
   String quickLastBuyChipSemantics(String miktar);
+
+  /// Hızlı Sat: kârdaki pozisyonda maliyetin kadarını geri alacak miktarı seçen çip (ör. Anaparam · 37 pay). Premium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam · {miktar}'**
+  String quickPrincipalChip(String miktar);
+
+  /// Anaparam çipinin ekran okuyucu etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam, {miktar}'**
+  String quickPrincipalChipSemantics(String miktar);
+
+  /// Anaparam çipi, ücretsiz kullanıcıda kilitli (sayı yazılmaz, dokununca Premium).
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam'**
+  String get quickPrincipalChipLocked;
+
+  /// Kilitli Anaparam çipinin ekran okuyucu etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam, kilitli, Premium'**
+  String get quickPrincipalChipLockedSemantics;
+
+  /// Anaparam çipi seçiliyken tek satır nötr açıklama; tavsiye değil aritmetik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kadar satarsan maliyetin kadar {tutar} eline geçer'**
+  String quickPrincipalNote(String tutar);
 
   /// Hızlı Al Tutar kipi: tutardan hesaplanan miktar, birimiyle (≈ 2.500 pay).
   ///
@@ -6751,7 +6781,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis);
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  );
 
   /// No description provided for @whatsNewTitle.
   ///
@@ -9320,7 +9354,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi);
+    String date,
+    String end,
+    String change,
+    String cpi,
+  );
 
   /// No description provided for @savingsRose.
   ///
@@ -10659,7 +10697,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-      String amount, String times, String pct, String share);
+    String amount,
+    String times,
+    String pct,
+    String share,
+  );
 
   /// No description provided for @tekOnayGizlilikBaglanti.
   ///
@@ -16846,7 +16888,10 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-      String baslik, int yuzde, String kalan);
+    String baslik,
+    int yuzde,
+    String kalan,
+  );
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -17303,7 +17348,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-      String baslik, String dusuk, String yuksek, String bugun, String cumle);
+    String baslik,
+    String dusuk,
+    String yuksek,
+    String bugun,
+    String cumle,
+  );
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -17861,8 +17911,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

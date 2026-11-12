@@ -108,6 +108,9 @@ PaywallKarti? kaynaktanKart(String source) {
     // Portföy kart panelinde "Başa baş için %X yükselmeli" (Ar-Ge 11 Kas
     // #1): aynı soru, "zarardaki param gerçekte ne durumda".
     'basa_bas' ||
+    // Hızlı Sat'ta "Anaparam" çipi (Ar-Ge 12 Kas #1): başa başın kâr
+    // tarafı, "kârdaki param gerçekte ne durumda, maliyetim kaç lot".
+    'anaparam' ||
     // Performans'ta aylık getiri tablosu (2026-11-11): aynı analiz sorusu,
     // "param hangi ay ne yaptı".
     'aylik_getiri' =>
