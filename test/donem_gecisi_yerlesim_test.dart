@@ -19,6 +19,7 @@ import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
 import 'package:portfoy_takip/screens/varlik_sayfasi.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/widgets/donem_secici.dart';
 import 'package:portfoy_takip/widgets/katmanli_fiyat_grafigi.dart';
 import 'package:portfoy_takip/widgets/varlik_ozeti.dart';
@@ -252,12 +253,20 @@ void main() {
     kapi = _Kapi();
     HistoryService.seriCekici = kapi.cek;
   });
-  tearDown(
-      () => HistoryService.seriCekici = HistoryService.varsayilanSeriCekici);
+  tearDown(() {
+    HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
+    RemoteConfigService.testAcik = {};
+  });
 
   for (final olcek in [1.0, 2.0]) {
-    testWidgets('Performans (${olcek}x): grafik ve manşet yerinde',
+    // Tek akış (RC `performans_tek_akis`) TestFlight'ta açık; manşetin
+    // altındaki cümle ve paylaş simgesi orada dönemle gelip gidiyordu
+    // (yasin 2026-11-12). İki düzen de ölçülür.
+    for (final tek in [false, true]) {
+    final ad = tek ? ' · tek akış' : '';
+    testWidgets('Performans (${olcek}x$ad): grafik ve manşet yerinde',
         (tester) async {
+      if (tek) RemoteConfigService.testAcik = {'performans_tek_akis'};
       tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -286,7 +295,9 @@ void main() {
         () => find.byWidgetPredicate(
             (w) => w is Text && w.data != null && _manset.hasMatch(w.data!)),
       );
-      _ayniYerde(o, 'Performans', punto: olcek == 1.0);
+      // Tek akışta manşet `numLarge`: altı haneli tutar yüzde rozetiyle
+      // satıra sığmayınca küçülür (yeri sabit); punto yalnız eski düzende.
+      _ayniYerde(o, 'Performans', punto: olcek == 1.0 && !tek);
       // Kartın üstü de (grafik kutusunun dış çerçevesi) yerinde.
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
@@ -297,8 +308,9 @@ void main() {
     // "varlık detaydaki gibi seçimden sonra sabit kalmalı"). İlk kez açılan
     // Bugün'de seri beklenirken dönem kartı boşa düşüyor, grafik ~200 pt
     // yukarı kayıp seri gelince geri iniyordu; eski kodda kırmızı.
-    testWidgets('Performans (${olcek}x): bekleme karelerinde de yerinde',
+    testWidgets('Performans (${olcek}x$ad): bekleme karelerinde de yerinde',
         (tester) async {
+      if (tek) RemoteConfigService.testAcik = {'performans_tek_akis'};
       tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -353,6 +365,8 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await _yerles(tester, 12);
     });
+
+    }
 
     testWidgets('Varlık detayı (${olcek}x): grafik ve dönem değişimi yerinde',
         (tester) async {

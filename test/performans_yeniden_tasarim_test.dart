@@ -236,7 +236,17 @@ void main() {
           find.text(_tr.noChange).evaluate().isNotEmpty;
       expect(rakamYok, isTrue,
           reason: 'test düzeneğinde seri ağdan gelmez; manşet rakamsız');
-      expect(find.byType(SandikPaylasDugmesi), findsNothing);
+      // 2026-11-12: düğmenin YERİ hep ayrılı (gelip giderken manşet ve
+      // grafik kayıyordu); rakamsızken görünmez, dokunulmaz, ekran okuyucuya
+      // kapalı. Kural aynı: paylaşılamaz.
+      final dugme = find.byType(SandikPaylasDugmesi);
+      expect(dugme.hitTestable(), findsNothing);
+      for (final e in dugme.evaluate()) {
+        final opak = e.findAncestorWidgetOfExactType<AnimatedOpacity>();
+        expect(opak?.opacity, 0);
+        expect(e.findAncestorWidgetOfExactType<ExcludeSemantics>()?.excluding,
+            isTrue);
+      }
     });
 
     test('kural kaynakta: düz manşette paylaş geri çağrısı null', () {

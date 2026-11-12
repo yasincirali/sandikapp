@@ -8101,6 +8101,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s2FiltreYok => 'None';
 
   @override
+  String get s2AkisYok => 'No buys or sells in this period.';
+
+  @override
   String s2BakiyeArttiAlim(String tutar, String alim) {
     return 'Balance up $tutar; $alim of that is new buys.';
   }
