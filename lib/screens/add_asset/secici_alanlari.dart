@@ -75,82 +75,38 @@ extension _SeciciAlanlari on _AddAssetScreenState {
     );
   }
 
-  // ── Miktar preset chipleri (Sandik brand) ──────────────────────────────────
-
+  // ── Miktar önayar çipleri ──────────────────────────────────────────────────
+  //
+  // Ar-Ge 2026-11-12 #7: çipler kendi kabuğundaydı; görsel ~32 pt
+  // (dokunma 44'e tamamlanmıştı ama kalın parmak görsel kutuya nişan alır),
+  // her çipte "lot"/"gr" eki vardı ve seçim yalnız amber tonla okunuyordu.
+  // Artık tarih çipleriyle AYNI bileşen ([SandikFiltreCipi]: 44 pt görsel,
+  // seçiliyken amber dolgu + onay işareti — yalnız renkle anlam yok, sabit
+  // en). Birim eki kalktı: miktar alanının sonunda zaten yazıyor; satır
+  // daralır, "1000" sığar. Ekran okuyucu birimi yine duyar.
   Widget _quantityPresetsRow(ColorScheme cs) {
     final presets = _quantityPresets;
     return HScrollWithFade(
       fadeColor: context.c.background,
       child: Row(
-        children: presets.map((v) {
-          final selected = _quantity.text == v;
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: Semantics(
-              button: true,
-              selected: selected,
-              label: context.l10n.quantitySemantics(v),
-              child: SandikTappable(
-              soluk: true,
-              haptic: SandikHaptic.none,
-              onTap: () {
-                SandikHaptic.selection.perform();
-                _quantity.text = v;
-              },
-              child: ConstrainedBox(
-          // HIG 44 pt (seçici denetimi 2026-10-12): görsel çip aynı, dokunma
-          // alanı 44'e tamamlanır.
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          child: Center(widthFactor: 1, heightFactor: 1, child: AnimatedContainer(
-                duration:
-                    SandikMotion.stateOf(context),
-                curve: SandikMotion.enter,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? context.c.amberFill.withValues(alpha: 0.16)
-                      : context.c.surface1,
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(
-                    color: selected
-                        ? context.c.amberFill.withValues(alpha: 0.45)
-                        : context.c.overlay,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      v,
-                      style: context.t.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color:
-                            selected ? context.c.amberText : context.c.text58,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      // Miktar alanının son ekiyle AYNI birim (bulgu #22):
-                      // eski `UnitType.label` hisse/fonda "Adet" yazıyordu.
-                      _quantitySuffix,
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
-                        color: selected
-                            ? context.c.amberFill.withValues(alpha: 0.75)
-                            : context.c.text36,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ),
-            )),
-          );
-        }).toList(),
+        children: [
+          for (final v in presets)
+            Padding(
+              padding: const EdgeInsets.only(right: SandikSpace.sm),
+              child: SandikFiltreCipi(
+                key: ValueKey('miktar-cipi-$v'),
+                ad: v,
+                semantik: context.l10n
+                    .quantitySemantics('$v $_quantitySuffix'.trim()),
+                secili: _quantity.text == v,
+                onTap: () => _quantity.text = v,
+              ),
+            ),
+        ],
       ),
     );
   }
+
 
   // ── Hisse pazarı: BIST | ABD (bayrak `abd_hisse`) ───────────────────────────
   //
