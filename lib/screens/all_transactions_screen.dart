@@ -29,6 +29,11 @@ import '../services/remote_config_service.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../widgets/sandik_coklu_secim.dart';
+import '../demo/demo_modu.dart';
+import '../services/crash_reporter.dart';
+import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
 
 /// Portföy hareketleri — tam liste.
 ///
@@ -440,6 +445,14 @@ List<Asset> eskiMezarTaslariniBirlestir(List<Asset> silinen) {
   return out;
 }
 
+/// Toplu silmede seçilebilir mi (2026-11-12) — bugünkü tekil silmenin
+/// kuralı: yalnız KENDİ kaydın (Portföy'de kaydırarak sil de
+/// `representative.userId == currentUserId` sorar; ortağın satırını RLS de
+/// damgalatmaz). Mezar taşı (`deleteLog`, birleşik `mezar-grup:` dahil) ve
+/// zaten silinmiş kayıt seçilemez: silinecek bir şey yok.
+bool hareketSecilebilir(Asset a, {required String? benimId}) =>
+    benimId != null && a.userId == benimId && !a.isDeleteLog && !a.isDeleted;
+
 /// Silinen kaydın silinme anı: damga, yoksa (mezar taşı) kaydın kendisi.
 DateTime silinmeAni(Asset a) => a.deletedAt ?? a.addedDate;
 
@@ -501,6 +514,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
 
   int _visible = _pageSize;
 
+  /// Çoklu seçim (2026-11-12): `null` → kip kapalı; küme → seçili kayıt
+  /// kimlikleri (boş küme: kip açık, hiçbiri seçili değil). Ayrı bir bool
+  /// tutulmaz ki "kip kapalı ama seçim dolu" hâli olmasın. Süzgeç/görünüm
+  /// değişince kip kapanır ([_resetPaging]): görünmeyen satır silinmesin.
+  Set<String>? _secim;
+
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
@@ -557,6 +576,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   /// Tüm filtre değişiklikleri bu tek noktadan geçer.
   void _resetPaging() {
     _visible = _pageSize;
+    _secim = null;
     final sure = SandikMotion.stateOf(context);
     if (sure != Duration.zero) {
       _filtreGecisi
@@ -775,7 +795,14 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     final benimId = ref.watch(authProvider).valueOrNull?.id;
     final acilir =
         not != null || islemNotuDuzenlenebilir(a, benimId: benimId);
+    final secilebilir =
+        !_silinenler && hareketSecilebilir(a, benimId: benimId);
+    final secim = _secim;
     return TransactionRow(
+      secimKipi: secim != null,
+      secili: secim == null || !secilebilir ? null : secim.contains(a.id),
+      onLongPress:
+          secim == null && secilebilir ? () => _secimiBaslat(a) : null,
       baz: baz,
       asset: a,
       portfolioState: portfolioState,
@@ -790,12 +817,72 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       // Kapsamın TOPLAM portföyü (tür/arama süzgeci uygulanmaz): Performans
       // aynı kişi + portföy seçiminde bu sayıyı gösterir.
       portfoyDegeri: _silinenler ? null : portfoyDegerleri[a.id],
-      onTap: acilir
-          ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
-          : null,
+      onTap: secim != null
+          ? (secilebilir ? () => _secimiCevir(a) : null)
+          : acilir
+              ? () => showIslemNotuSheet(context, ref, asset: a, not: not)
+              : null,
     );
   }
 
+
+  bool get _secimKipi => _secim != null;
+
+  void _secimiBaslat(Asset a) => setState(() => _secim = {a.id});
+
+  void _secimiCevir(Asset a) => setState(() {
+        final s = _secim;
+        if (s == null) return;
+        if (!s.remove(a.id)) s.add(a.id);
+      });
+
+  void _secimiKapat() => setState(() => _secim = null);
+
+  /// Seçili ve HÂLÂ silinebilir kayıtlar (görünen kapsamdan). Defter seçim
+  /// sürerken tazelenmiş olabilir; kaybolan/silinmiş kimlik sayılmaz.
+  List<Asset> _seciliKayitlar(String? benimId) {
+    final s = _secim;
+    if (s == null || s.isEmpty) return const [];
+    return [
+      for (final a in _liste)
+        if (s.contains(a.id) && hareketSecilebilir(a, benimId: benimId)) a,
+    ];
+  }
+
+  /// "Sil": onay sorusu YOK (proje kuralı: silmeyi asla zorlaştırma); ağ
+  /// "N işlem silindi · Geri al" snack'ı (5 sn). Silme tekil silmenin yolu
+  /// ([PortfolioNotifier.hareketleriSil] → `deletePositionLots`); portföy,
+  /// bakiye ve Performans aynı state güncellemesiyle tazelenir.
+  Future<void> _seciliSil(String? benimId) async {
+    final kayitlar = _seciliKayitlar(benimId);
+    if (kayitlar.isEmpty) return;
+    if (DemoModu.yazmaKapisi('sil')) return; // Demo defteri silinmez (F1).
+    final notifier = ref.read(portfolioProvider.notifier);
+    final List<SilinenPozisyon> makbuzlar;
+    try {
+      makbuzlar = await notifier.hareketleriSil(kayitlar);
+    } catch (e) {
+      if (mounted) showAppError(context, e);
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _secim = null);
+    sandikSnack(
+      context,
+      context.l10n.hareketlerSilindi(kayitlar.length),
+      // Toplu silme tek dokunuşla çok satır götürür; tekil kaydırmanın 4
+      // sn'si yerine 5 sn düşünme payı (görev tanımı 2026-11-12).
+      duration: const Duration(seconds: 5),
+      onUndo: () => CrashReporter.arkaPlan(() async {
+        try {
+          await notifier.hareketleriGeriAl(makbuzlar);
+          SandikHaptic.selection.perform();
+        } catch (e) {
+          if (mounted) showAppError(context, e);
+        }
+      }(), reason: 'hareketler.topluGeriAl'),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -837,12 +924,32 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       gizli: hideBalance,
     );
 
-    return Scaffold(
-      backgroundColor: context.c.background,
-      appBar: SandikAppBar(
+    final benimId = ref.watch(authProvider).valueOrNull?.id;
+    final seciliSayi = _seciliKayitlar(benimId).length;
+    final PreferredSizeWidget cubuk;
+    if (_secimKipi) {
+      cubuk = SandikSecimCubugu(
+        sayi: seciliSayi,
+        onSil: seciliSayi == 0 ? null : () => _seciliSil(benimId),
+        onVazgec: _secimiKapat,
+      );
+    } else {
+      cubuk = SandikAppBar(
         title: context.l10n.portfolioActivityTitle,
         transparent: true,
-      ),
+      );
+    }
+
+    // Seçim kipinde geri tuşu/hareketi sayfayı değil kipi kapatır (iOS
+    // düzenleme kalıbı). Kip kapalıyken geri davranışı birebir eskisi.
+    return PopScope(
+      canPop: !_secimKipi,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _secimKipi) _secimiKapat();
+      },
+      child: Scaffold(
+      backgroundColor: context.c.background,
+      appBar: cubuk,
       body: Column(
         children: [
           if (activePartners.isNotEmpty)
@@ -1131,6 +1238,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
           ),
         ],
       ),
+    ),
     );
   }
 

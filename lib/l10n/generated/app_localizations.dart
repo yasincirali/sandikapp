@@ -17882,6 +17882,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Portföyün böyle kalırsa yıl {tarih} günü dolar.'**
   String zkHavlTarihi(String tarih);
+
+  /// Çoklu seçim kipinin üst çubuk başlığı (Hareketler).
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} seçili'**
+  String secimSayisi(int n);
+
+  /// Hareketler toplu silme sonrası snack; yanında Geri al.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} işlem silindi'**
+  String hareketlerSilindi(int n);
+
+  /// Ekran okuyucu: hareket satırında uzun basma eyleminin adı (seçim kipini açar).
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçmek için uzun bas'**
+  String get hareketSecimIpucu;
 }
 
 class _AppLocalizationsDelegate

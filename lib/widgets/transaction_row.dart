@@ -9,6 +9,7 @@ import '../utils/money_format.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
+import 'sandik_coklu_secim.dart';
 
 /// Portföy hareketleri listesindeki tek satır.
 ///
@@ -41,6 +42,9 @@ class TransactionRow extends StatelessWidget {
     this.bakiye,
     this.portfoyDegeri,
     this.onTap,
+    this.onLongPress,
+    this.secimKipi = false,
+    this.secili,
   });
 
   final Asset asset;
@@ -116,6 +120,20 @@ class TransactionRow extends StatelessWidget {
   /// Satıra dokununca — işlem notu sayfası. `null` ise satır eskisi gibi
   /// dokunulmaz (ör. ortak kaydının notu yoksa açılacak bir şey yok).
   final VoidCallback? onTap;
+
+  /// Uzun basma — Tüm Hareketler'de çoklu seçim kipini açar (2026-11-12).
+  /// Titreşimi `selection` (kip değişimi bir seçimdir, eylem değil).
+  final VoidCallback? onLongPress;
+
+  /// Çoklu seçim kipi açık mı ([SandikSecimIsareti] satır başına girer).
+  /// Kipte [onTap] seçimi çevirir; çağıran öyle verir.
+  final bool secimKipi;
+
+  /// Kipte bu satırın seçili olup olmadığı; `null` → seçilemez (ortağın
+  /// kaydı, silinmiş kayıt): işaret yerine aynı genişlikte boşluk, satır
+  /// soluk ve dokunulmaz. Seçili durum ikonla ve `Semantics.selected` ile
+  /// verilir, yalnız renkle değil.
+  final bool? secili;
 
   /// Avatar çapı. 36pt: 44pt dokunma hedefinden küçük (satır dokunulabilir
   /// değil), ikonun 18pt'i etrafında nefes payı bırakır. [HareketAyraci]
@@ -323,18 +341,52 @@ class TransactionRow extends StatelessWidget {
       ),
     );
 
-    final Widget gorunen =
-        isVoided ? Opacity(opacity: 0.55, child: row) : row;
-    if (onTap == null) return gorunen;
-    return SandikTappable(
-      semanticLabel: not != null
-          ? l10n.txOpenNoteWithNote(
-              asset.showTicker ? asset.displayTicker! : asset.name)
-          : l10n.txOpenNote(
-              asset.showTicker ? asset.displayTicker! : asset.name),
+    final secilemez = secimKipi && secili == null;
+    Widget icerik = row;
+    if (secimKipi) {
+      icerik = Row(children: [
+        const SizedBox(width: yatayBosluk),
+        secili == null
+            ? const SizedBox(width: SandikSecimIsareti.boyut)
+            : SandikSecimIsareti(secili: secili!),
+        Expanded(child: row),
+      ]);
+    }
+    final Widget gorunen = isVoided || secilemez
+        ? Opacity(opacity: 0.55, child: icerik)
+        : icerik;
+    final ad = asset.showTicker ? asset.displayTicker! : asset.name;
+    if (secimKipi) {
+      if (secilemez) return gorunen;
+      return SandikTappable(
+        semanticLabel: ad,
+        selected: secili,
+        onTap: onTap,
+        child: gorunen,
+      );
+    }
+    if (onTap == null && onLongPress == null) return gorunen;
+    if (onTap == null) {
+      return Semantics(
+        onLongPressHint: l10n.hareketSecimIpucu,
+        child: SandikTappable(
+          onLongPress: onLongPress,
+          uzunBasmaHaptic: SandikHaptic.selection,
+          child: gorunen,
+        ),
+      );
+    }
+    final tappable = SandikTappable(
+      semanticLabel:
+          not != null ? l10n.txOpenNoteWithNote(ad) : l10n.txOpenNote(ad),
       onTap: onTap,
+      onLongPress: onLongPress,
+      uzunBasmaHaptic: SandikHaptic.selection,
       child: gorunen,
     );
+    return onLongPress == null
+        ? tappable
+        : Semantics(onLongPressHint: l10n.hareketSecimIpucu, child: tappable);
   }
 
   /// Not parçası: tek satır, ikincil renk, eşleşen kelime w600 (tavan).

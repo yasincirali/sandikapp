@@ -1311,6 +1311,51 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     _gunIciSeriyiDusur();
   }
 
+  /// Tüm Hareketler toplu silme (2026-11-12): seçilen hareketler VARLIK
+  /// başına bölünür ([hareketleriVarligaBol]), her grup [deletePositionLots]
+  /// yolundan geçer — tekil silmeyle aynı yumuşak damga, aynı tek "Silindi"
+  /// satırı, aynı state güncellemesi ve gün içi serinin düşürülmesi. Yeni
+  /// sunucu yolu yok; RLS yalnız kendi satırını damgalatır.
+  ///
+  /// **Neden tek `softDeleteAssets` çağrısı değil:** mezar taşı varlık
+  /// başınadır (adı/miktarı tek varlığı anlatır); farklı varlıkları tek
+  /// çağrıda vermek tek varlığın adıyla toplam miktar yazardı (BES
+  /// sözleşmesinin fon başına silmesiyle aynı gerekçe).
+  ///
+  /// **Ya hepsi ya hiçbiri:** bir grup düşerse önceki gruplar geri alınır ve
+  /// hata fırlatılır; kullanıcı "silinemedi" görür, defter yarım kalmaz.
+  /// Geri alma da düşerse defter sunucudan tazelenir (ekran sunucuda
+  /// olmayan bir durumu göstermesin), hata Crashlytics'e gider.
+  Future<List<SilinenPozisyon>> hareketleriSil(List<Asset> hareketler) async {
+    final makbuzlar = <SilinenPozisyon>[];
+    try {
+      for (final grup in hareketleriVarligaBol(hareketler)) {
+        final m = await deletePositionLots(grup);
+        if (m != null) makbuzlar.add(m);
+      }
+    } catch (_) {
+      if (makbuzlar.isNotEmpty) {
+        try {
+          await hareketleriGeriAl(makbuzlar);
+        } catch (e, st) {
+          CrashReporter.report(e, st,
+              reason: 'PortfolioNotifier.hareketleriSil.geriAl');
+          ref.invalidateSelf();
+        }
+      }
+      rethrow;
+    }
+    return makbuzlar;
+  }
+
+  /// [hareketleriSil]'in "Geri al"ı: her makbuz [restorePositionLots]'tan
+  /// (damga temizlenir, mezar taşı silinir).
+  Future<void> hareketleriGeriAl(List<SilinenPozisyon> makbuzlar) async {
+    for (final m in makbuzlar) {
+      await restorePositionLots(m);
+    }
+  }
+
   /// "Varlığı güncelle" (`varlik_guncelle.dart`): pozisyonun lotları Sil
   /// gibi gider, yerine [yeniKayit] (bir [addAsset] çağrısı) tek kayıt yazar.
   ///
@@ -2030,6 +2075,19 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     }
     state = AsyncData(map);
   }
+}
+
+/// Toplu silinecek hareketleri varlık başına böler (sahip + pozisyon
+/// anahtarı + portföy); sıra ilk görülme sırasıdır. Mezar taşları ve zaten
+/// silinmiş kayıtlar düşer — tekil silme de onları yeniden silmez.
+List<List<Asset>> hareketleriVarligaBol(List<Asset> hareketler) {
+  final gruplar = <String, List<Asset>>{};
+  for (final a in hareketler) {
+    if (a.isDeleteLog || a.isDeleted) continue;
+    final anahtar = '${a.userId}|${positionKey(a)}|${a.portfoyId ?? ''}';
+    gruplar.putIfAbsent(anahtar, () => []).add(a);
+  }
+  return gruplar.values.toList();
 }
 
 /// [PortfolioNotifier.deletePositionLots]'un makbuzu — geri alma için

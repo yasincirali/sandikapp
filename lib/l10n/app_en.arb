@@ -5796,5 +5796,11 @@
   "zkHavlBekliyor": "Calculated once a year has passed.",
   "@zkHavlBekliyor": {"description": "Havl dolmamış sonucu"},
   "zkHavlTarihi": "If your portfolio stays as it is, the year completes on {tarih}.",
-  "@zkHavlTarihi": {"description": "Havlin dolacağı gün", "placeholders": {"tarih": {"type": "String"}}}
+  "@zkHavlTarihi": {"description": "Havlin dolacağı gün", "placeholders": {"tarih": {"type": "String"}}},
+  "secimSayisi": "{n} selected",
+  "@secimSayisi": {"description": "Çoklu seçim kipinin üst çubuk başlığı (Hareketler).", "placeholders": {"n": {"type": "int"}}},
+  "hareketlerSilindi": "{n, plural, =1{1 transaction deleted} other{{n} transactions deleted}}",
+  "@hareketlerSilindi": {"description": "Hareketler toplu silme sonrası snack; yanında Geri al.", "placeholders": {"n": {"type": "int"}}},
+  "hareketSecimIpucu": "Long press to select",
+  "@hareketSecimIpucu": {"description": "Ekran okuyucu: hareket satırında uzun basma eyleminin adı (seçim kipini açar)."}
 }

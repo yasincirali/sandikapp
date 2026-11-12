@@ -11082,4 +11082,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String zkHavlTarihi(String tarih) {
     return 'If your portfolio stays as it is, the year completes on $tarih.';
   }
+
+  @override
+  String secimSayisi(int n) {
+    return '$n selected';
+  }
+
+  @override
+  String hareketlerSilindi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n transactions deleted',
+      one: '1 transaction deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get hareketSecimIpucu => 'Long press to select';
 }

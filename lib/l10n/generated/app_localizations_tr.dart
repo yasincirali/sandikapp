@@ -10936,4 +10936,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String zkHavlTarihi(String tarih) {
     return 'Portföyün böyle kalırsa yıl $tarih günü dolar.';
   }
+
+  @override
+  String secimSayisi(int n) {
+    return '$n seçili';
+  }
+
+  @override
+  String hareketlerSilindi(int n) {
+    return '$n işlem silindi';
+  }
+
+  @override
+  String get hareketSecimIpucu => 'Seçmek için uzun bas';
 }
