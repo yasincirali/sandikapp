@@ -74,6 +74,17 @@ YARIŞ (isteğe bağlı)
 • Kimlik, tutar ve TL bilgisi asla paylaşılmaz
 • Tamamen opt-in — istediğin zaman kapat
 
+PREMIUM (isteğe bağlı abonelik)
+
+Takip ücretsiz. Premium, rakamların arkasındaki ayrıntıyı açar:
+• Aylık getiri tablosu ve aylık rapor (PDF)
+• Temettü tahmini ve yıllık temettü verimi
+• Başa baş fiyatı, en iyi ve en zor gün
+• Sattıkların: kapattığın pozisyonların gerçekleşen kârı
+• "Anaparam" ile maliyetini geri alacak adedi tek dokunuşla bul
+• Daha fazla varlık, takip listesi ve alarm
+• Yıllık planda 7 gün ücretsiz deneme; aboneliği Google Play'den istediğin an iptal edebilirsin
+
 GİZLİLİK
 
 • Verilerin şifreli olarak saklanır
