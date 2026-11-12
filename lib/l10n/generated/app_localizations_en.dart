@@ -11066,6 +11066,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Market moves only; money you added or withdrew is excluded.';
 
   @override
+  String toughestDaySince(String pct) {
+    return 'Since that day $pct';
+  }
+
+  @override
+  String toughestDaySinceA11y(String satir, String pct, String degisim) {
+    return '$satir, $pct. Change since that day $degisim.';
+  }
+
+  @override
   String bestDayLocked(String tarih) {
     return 'Your best day was $tarih · how much is in Premium';
   }

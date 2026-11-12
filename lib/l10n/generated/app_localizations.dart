@@ -17761,6 +17761,18 @@ abstract class AppLocalizations {
   /// **'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.'**
   String get bestDayFootnote;
 
+  /// En zor gün satırının altındaki gri satır: o günün kapanışından bugüne değişim (eklenen/çekilen para hariç).
+  ///
+  /// In tr, this message translates to:
+  /// **'O günden beri {pct}'**
+  String toughestDaySince(String pct);
+
+  /// No description provided for @toughestDaySinceA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{satir}, {pct}. O günden beri değişim {degisim}.'**
+  String toughestDaySinceA11y(String satir, String pct, String degisim);
+
   /// Ücretsiz kullanıcıda en iyi gün kartı: yalnız tarih açık, yüzde kilitli.
   ///
   /// In tr, this message translates to:

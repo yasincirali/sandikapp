@@ -1245,6 +1245,15 @@ class _EnIyiGunKarti extends StatelessWidget {
   }
 }
 
+/// Gün satırı. [DonemGunu.oGundenBeriPct] doluysa (yalnız en zor gün)
+/// etiketin altına tek gri satır: "O günden beri +%6,1" (sakinlik,
+/// 2026-11-12) — çıplak "−%4,2" o günün sonrasını da söylesin.
+///
+/// Alt satır bilerek RENKSİZ (ikincil metin rengi, kazanç/kayıp tonu yok):
+/// toparlanma kutlanmaz, toparlanmama da kırmızıyla vurgulanmaz; yön
+/// işaretle (+/−) okunur. Hesap serviste ([PeriodSummaryService
+/// .oGundenBeriPct]); burası yalnız biçimler. Ekran okuyucu satırı alt
+/// satırla birlikte tek cümle okur.
 class _GunSatiri extends StatelessWidget {
   const _GunSatiri({required this.gun, required this.metin});
 
@@ -1257,6 +1266,28 @@ class _GunSatiri extends StatelessWidget {
     // kırmızı aşağı ok + "−" — üç işaret aynı şeyi söyler.
     final yukari = gun.pct >= 0;
     final renk = yukari ? context.c.gain : context.c.loss;
+    final pct = fmtPctIsaretli(gun.pct, digits: 1);
+    final beri = gun.oGundenBeriPct;
+    if (beri == null) return _satir(context, renk, yukari, pct, null);
+    // |x| < 0,05 "+%0,0" değil düz "%0,0" (elde tutma satırının kuralı).
+    final degisim = beri.abs() < 0.05
+        ? fmtPct(0, digits: 1)
+        : fmtPctIsaretli(beri, digits: 1);
+    final l = context.l10n;
+    return Semantics(
+      container: true,
+      label: l.toughestDaySinceA11y(metin, pct, degisim),
+      excludeSemantics: true,
+      child: _satir(context, renk, yukari, pct, l.toughestDaySince(degisim)),
+    );
+  }
+
+  Widget _satir(
+      BuildContext context, Color renk, bool yukari, String pct, String? alt) {
+    final etiket = Text(
+      metin,
+      style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+    );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1267,14 +1298,24 @@ class _GunSatiri extends StatelessWidget {
         ),
         const SizedBox(width: SandikSpace.sm),
         Expanded(
-          child: Text(
-            metin,
-            style: context.t.bodyMedium?.copyWith(color: context.c.text90),
-          ),
+          child: alt == null
+              ? etiket
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    etiket,
+                    const SizedBox(height: SandikSpace.xs),
+                    Text(
+                      alt,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ],
+                ),
         ),
         const SizedBox(width: SandikSpace.sm),
         Text(
-          fmtPctIsaretli(gun.pct, digits: 1),
+          pct,
           style: context.t.numSmall.copyWith(color: renk),
         ),
       ],

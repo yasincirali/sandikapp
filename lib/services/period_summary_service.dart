@@ -141,7 +141,15 @@ enum SummaryPeriod {
 class DonemGunu {
   final DateTime gun;
   final double pct;
-  const DonemGunu(this.gun, this.pct);
+
+  /// Yalnız EN ZOR gün doldurur: o günün kapanışından serinin son
+  /// noktasına akıştan arındırılmış değişim, yüzde
+  /// ([PeriodSummaryService.oGundenBeriPct]). "−%4,2" çıplak durmasın,
+  /// sonrasını da söylesin (sakinlik, 2026-11-12). Ölçülemezse `null`
+  /// ve satır çizilmez.
+  final double? oGundenBeriPct;
+
+  const DonemGunu(this.gun, this.pct, {this.oGundenBeriPct});
 }
 
 /// Bir dönemin özeti.
@@ -808,10 +816,73 @@ class PeriodSummaryService {
       if (g.pct > enIyi.pct) enIyi = g;
       if (g.pct < enZor.pct) enZor = g;
     }
+    if (identical(enIyi, enZor) || enZor.pct == enIyi.pct) {
+      return (enIyi: enIyi, enZor: null);
+    }
     return (
       enIyi: enIyi,
-      enZor: identical(enIyi, enZor) || enZor.pct == enIyi.pct ? null : enZor,
+      enZor: DonemGunu(enZor.gun, enZor.pct,
+          oGundenBeriPct: oGundenBeriPct(total,
+              lotlar: lotlar, gun: enZor.gun, fromMs: fromMs, toMs: toMs)),
     );
+  }
+
+  /// [gun]'ün kapanışından ([total]'ın o günkü SON ölçümü) pencerenin son
+  /// ölçümüne kadar akıştan arındırılmış değişim, yüzde. "En zor gün"
+  /// satırının altındaki "O günden beri +%6,1" (sakinlik, 2026-11-12). Saf.
+  ///
+  /// ## Kaynak ve kural
+  /// Seri [enIyiEnZorGun]'ün okuduğu seriyle AYNI (`breakdown.total`, aynı
+  /// pencere, aynı `v > 0` kapısı); ikinci bir seri çekilmez. Getiri TEK
+  /// hesaptan: [paraAgirlikliGetiriPct] (Özet'in yüzdesi). Arada alım
+  /// yapıldıysa değer zıplaması "toparlandı" sanılmasın diye akış çıkarılır.
+  /// Akış DÖNEM ölçeğinin kuralıyla sayılır ([getiriAkisi], temettü dahil):
+  /// birden çok günü kapsayan bir getiri sorusu, temettü burada gerçek gelir
+  /// (`gunlukAkis` notu: tek gün ölçeğinde dışarıda kalma sebebi bu
+  /// pencerede yok). Ağırlık damgadan: akışın pencerede kaldığı süre payı.
+  ///
+  /// ## `null` — satır yok, sayı uydurulmaz
+  ///   · seri boş ya da [gun]'de pencere içinde ölçüm yok;
+  ///   · [gun] serinin son günü (sonrası yok: "o günden beri" boş söz);
+  ///   · getiri çözülemedi (ortalama sermaye ≤ 0) ya da sonlu değil.
+  static double? oGundenBeriPct(
+    Map<int, double> total, {
+    required List<Asset> lotlar,
+    required DateTime gun,
+    required int fromMs,
+    required int toMs,
+  }) {
+    final gunMs = dayKey(gun).millisecondsSinceEpoch;
+    ({int ts, double v})? bas;
+    ({int ts, double v})? son;
+    final keys = total.keys.toList()..sort();
+    for (final k in keys) {
+      if (k < fromMs || k > toMs) continue;
+      final v = total[k];
+      if (v == null || v <= 0) continue;
+      final g =
+          dayKey(DateTime.fromMillisecondsSinceEpoch(k)).millisecondsSinceEpoch;
+      if (g == gunMs) bas = (ts: k, v: v);
+      son = (ts: k, v: v);
+    }
+    if (bas == null || son == null) return null;
+    final sonGun = dayKey(DateTime.fromMillisecondsSinceEpoch(son.ts))
+        .millisecondsSinceEpoch;
+    if (sonGun <= gunMs) return null;
+
+    final sure = (son.ts - bas.ts).toDouble();
+    final akislar = <DonemAkisi>[
+      for (final l in lotlar)
+        if (getiriAkisi(l) != 0 &&
+            l.addedDate.millisecondsSinceEpoch > bas.ts &&
+            l.addedDate.millisecondsSinceEpoch <= son.ts)
+          (
+            f: getiriAkisi(l),
+            w: (son.ts - l.addedDate.millisecondsSinceEpoch) / sure,
+          ),
+    ];
+    final r = paraAgirlikliGetiriPct(bas: bas.v, son: son.v, akislar: akislar);
+    return (r == null || !r.isFinite) ? null : r;
   }
 
   /// İki gün (00:00 damgası) arasında eksik İŞ günü yok mu? Aradaki

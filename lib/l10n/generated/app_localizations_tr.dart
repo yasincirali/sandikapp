@@ -10892,6 +10892,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.';
 
   @override
+  String toughestDaySince(String pct) {
+    return 'O günden beri $pct';
+  }
+
+  @override
+  String toughestDaySinceA11y(String satir, String pct, String degisim) {
+    return '$satir, $pct. O günden beri değişim $degisim.';
+  }
+
+  @override
   String bestDayLocked(String tarih) {
     return 'En iyi günün $tarih · ne kadar olduğu Premium\'da';
   }

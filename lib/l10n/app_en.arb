@@ -5768,6 +5768,8 @@
   "leastUpDayRow": "Smallest gain · {tarih}",
   "@leastUpDayRow": {"placeholders": {"tarih": {"type": "String"}}},
   "bestDayFootnote": "Market moves only; money you added or withdrew is excluded.",
+  "toughestDaySince": "Since that day {pct}",
+  "toughestDaySinceA11y": "{satir}, {pct}. Change since that day {degisim}.",
   "bestDayLocked": "Your best day was {tarih} · how much is in Premium",
   "leastDownDayLocked": "Your smallest drop was {tarih} · how much is in Premium",
   "tarihCipiBugun": "Today",
