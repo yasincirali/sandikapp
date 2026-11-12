@@ -257,20 +257,131 @@ extension _DetayOzet on _AssetDetailScreenState {
     return true;
   }
 
-  /// Seçili dışındaki dönemleri paralel yükler — çip getirileri için.
-  Future<void> _digerDonemleriYukle() async {
-    // `_loadHistory` ile aynı sıra: süren fiyat turu `_canli` OKUNMADAN önce.
-    await ref
-        .read(portfolioProvider.notifier)
-        .fiyatTurunuBekle(enFazla: TazelikRitmi.gunIciSeriOmru);
-    if (!mounted) return;
+  /// Ölçeği canlı kura hizalanan varlıkta canlı kur henüz yoksa dönem
+  /// serileri de fiyat turunu bekler — gerekçe `_loadHistory` ve
+  /// `FiyatKaynagi.olcekCanliKuraBagli`.
+  bool get _olcekTuruBekler =>
+      FiyatKaynagi.olcekCanliKuraBagli(_canli.asset) &&
+      !HistoryService.canliKurBiliniyor;
+
+  /// [days] dönemini (gün içi DEĞİL) tur bitince yeni fiyatla yeniden
+  /// kurulacaklar arasına yazar. Birden çok dönem tek bekleyişte toplanır.
+  void _turSonrasiUcuYenile(int days, Future<void> tur) {
+    assert(days != 0); // gün içi seri turu bekler, burada yenilenmez
+    _turSonrasiDonemler.add(days);
+    if (_turSonrasiYenileme != null) return;
+    final yenileme = tur.then<void>((_) => _turSonrasiUclariYenile());
+    _turSonrasiYenileme = yenileme;
+    CrashReporter.arkaPlan(yenileme, reason: 'AssetDetail.turSonrasiUc');
+  }
+
+  /// Fiyat turu bitti: turu beklemeden çizilen dönem serileri yeni
+  /// `currentPrice` (uç) ve yeni ölçek hizasıyla yeniden kurulur. Tarihî
+  /// noktalar `HistoryService` önbelleğinden gelir, ağa çıkılmaz.
+  ///
+  /// TEK `setState`: seçili dönem ve çipler birlikte yazılır. Seçili
+  /// dönemin grafiği yalnız bu arada yeni bir yükleme başlamadıysa
+  /// (`_yuklemeSirasi`) değişir; çip önbelleği sıradan bağımsız (bkz.
+  /// `_loadHistory`). Başarısız ya da boş kurulum eldekini EZMEZ.
+  Future<void> _turSonrasiUclariYenile() async {
+    final donemler = _turSonrasiDonemler.toList();
+    _turSonrasiDonemler.clear();
+    _turSonrasiYenileme = null;
+    if (!mounted || donemler.isEmpty) return;
+    final sira = _yuklemeSirasi;
     final birim = FiyatKaynagi.birimVarlik(_canli.asset);
+    final sonuclar = await Future.wait([
+      for (final d in donemler)
+        _donemSerisi([birim], d).then<(int, PortfolioHistoryBreakdown)?>(
+            (b) => (d, b), onError: (Object e, StackTrace st) {
+          CrashReporter.report(e, st, reason: 'AssetDetail.turSonrasiUc');
+          return null;
+        }),
+    ]);
+    if (!mounted) return;
+    final gecerli = [
+      for (final s in sonuclar)
+        if (s != null && s.$2.total.length >= 2) s,
+    ];
+    if (gecerli.isEmpty) return;
+    AssetDetailScreen.debugTurSonrasiYenilemeler
+        .add([for (final (d, _) in gecerli) d]);
+    _guncelle(() {
+      for (final (d, b) in gecerli) {
+        _donemKaydet(d, b.total, b.seansGunu,
+            veriYok: b.gunIciVerisiYokTurler.isNotEmpty);
+        if (sira == _yuklemeSirasi &&
+            _periods[_selectedPeriodIdx].days == d) {
+          // `_eskiSeri` (bayat etiketi) dokunulmaz: yenileme aynı
+          // önbellekten kurulur, verinin tazeliği değişmedi.
+          _lastHistory = b.total;
+          _historyFuture = SynchronousFuture(b.total);
+        }
+      }
+    });
+  }
+
+  /// Seçili dışındaki dönemleri paralel yükler — çip getirileri için.
+  ///
+  /// `_loadHistory` ile aynı kural: gün içi çip süren fiyat turunu `_canli`
+  /// OKUNMADAN önce bekler; öteki dönemler beklemez, tur bitince uçları
+  /// yenilenir. Dönen Future (açılış kapısı bunu bekler) tur sürerken
+  /// gün içi çipi BEKLEMEZ: kapı turun süresi kadar kapalı kalmasın;
+  /// GÜNLÜK çipinin getirisi tur bitince kendi yerinde dolar (kapı
+  /// açıldıktan sonra `_guncelle` dalı).
+  Future<void> _digerDonemleriYukle() async {
+    final notifier = ref.read(portfolioProvider.notifier);
+    final turSuruyor = notifier.fiyatTuruSuruyor;
+    final tur =
+        notifier.fiyatTurunuBekle(enFazla: TazelikRitmi.gunIciSeriOmru);
+    if (!turSuruyor || _olcekTuruBekler) {
+      await tur;
+      if (!mounted) return;
+      await _donemleriYukle(gunIci: true, gunlukler: true);
+      return;
+    }
+    // Gün içi çip turdan sonra, arka planda.
+    CrashReporter.arkaPlan(
+      tur.then<void>((_) {
+        if (mounted) return _donemleriYukle(gunIci: true, gunlukler: false);
+      }),
+      reason: 'AssetDetail.digerDonemler',
+    );
+    var turBitti = false;
+    unawaited(tur.then<void>((_) => turBitti = true));
+    await _donemleriYukle(
+        gunIci: false, gunlukler: true, turBittiMi: () => turBitti, tur: tur);
+  }
+
+  /// [_digerDonemleriYukle]'nin gövdesi: seçili dışındaki dönemlerden
+  /// [gunIci] (days == 0) ve/veya [gunlukler] (öteki dönemler) yüklenir.
+  /// [tur] verilmişse dönemler süren turun ortasında kuruluyor demektir:
+  /// tur o arada bittiyse ([turBittiMi]) seri bir kez daha (önbellekten)
+  /// kurulur, bitmediyse dönem tur sonrası yenilemeye yazılır.
+  Future<void> _donemleriYukle({
+    required bool gunIci,
+    required bool gunlukler,
+    bool Function()? turBittiMi,
+    Future<void>? tur,
+  }) async {
     final secili = _periods[_selectedPeriodIdx].days;
     await Future.wait([
       for (final p in _periods)
-        if (p.days != secili && !_donemSerileri.containsKey(p.days))
-          _donemSerisi([birim], p.days).then((b) {
+        if (p.days != secili &&
+            !_donemSerileri.containsKey(p.days) &&
+            (p.days == 0 ? gunIci : gunlukler))
+          _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], p.days)
+              .then((b) async {
             if (!mounted) return;
+            if (tur != null) {
+              if (turBittiMi?.call() ?? false) {
+                b = await _donemSerisi(
+                    [FiyatKaynagi.birimVarlik(_canli.asset)], p.days);
+                if (!mounted) return;
+              } else {
+                _turSonrasiUcuYenile(p.days, tur);
+              }
+            }
             // Açılış kapısı henüz açılmadıysa yalnız kaydet: kapının tek
             // `setState`'i hepsini birlikte çizer. Eskiden altı dönemin her
             // biri ayrı tam ekran yeniden kurulum yapıyordu — sayfa kayarak

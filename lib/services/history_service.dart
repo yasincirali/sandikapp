@@ -1529,6 +1529,14 @@ class HistoryService {
   static double? Function() canliKur =
       () => PriceService.instance.sonBilinenFiyat(FiyatKaynagi.usdTry);
 
+  /// Canlı kur şu an biliniyor mu ([canliKur])? Bilinmiyorsa kur serisi
+  /// hizasız döner (`kurSerisiniHizala`); bkz. `FiyatKaynagi
+  /// .olcekCanliKuraBagli`.
+  static bool get canliKurBiliniyor {
+    final k = canliKur();
+    return k != null && k > 0;
+  }
+
   /// Intraday (gün-içi) çözünürlükte portföy değeri.
   /// Yahoo `1d/5m` interval'i kullanılır → 5 dakikalık noktalar. Bugünün 00:00
   /// ile 23:59 arasındaki her 5 dakikalık slot için toplam TRY değeri döner.

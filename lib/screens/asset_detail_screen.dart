@@ -1,7 +1,8 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 import '../widgets/sandik_yenile.dart';
 import 'package:flutter/foundation.dart'
-    show SynchronousFuture, debugPrint, kDebugMode, listEquals;
+    show SynchronousFuture, debugPrint, kDebugMode, listEquals, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -214,6 +215,11 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
   // tutması için ön istek ekranın ilk açılıştaki seçimini ve fonksiyonunu
   // KOPYALAMAZ, paylaşır: [ilkDonemGunu] ve [_donemSerisi] ekranın da
   // kullandığı tek yer. Sembol kararı yine `FiyatKaynagi.birimVarlik`'te.
+
+  /// Testler için: tur sonrası uç yenilemesinin her `setState`'inde
+  /// yazılan dönemler (bkz. `_turSonrasiUclariYenile`). Bir tur = bir kayıt.
+  @visibleForTesting
+  static final List<List<int>> debugTurSonrasiYenilemeler = [];
 
   /// Elle fiyatlanan varlığın ("Ev", "Araba") piyasa serisi yok — gerekçe
   /// `_AssetDetailScreenState._gunIciDestekli`.
@@ -568,6 +574,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// yenisinin alanlarını ezmesin (hızlı sekme değişimi).
   int _yuklemeSirasi = 0;
 
+  /// Fiyat turu sürerken turu BEKLEMEDEN kurulan dönemler — tur bitince
+  /// uçları yeni fiyatla tek `setState`'te yenilenir
+  /// ([_turSonrasiUcuYenile], ozet.dart). Seçili dönem ve çipler aynı
+  /// kümede birikir ki her biri ayrı tam ekran yeniden kurulum yapmasın.
+  final Set<int> _turSonrasiDonemler = {};
+  Future<void>? _turSonrasiYenileme;
+
   /// Dönemin BİRİM fiyat serisini yükler (grafik, yüzde VE kazanç tutarı).
   ///
   /// ## Neden birim seri (kullanıcı kararı, 2026-09-23)
@@ -590,18 +603,51 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // lot'un `currentPrice`'ından kurar; ekran açıldığı andaki kopya
     // (`widget.asset`) her nabızda bir tur daha bayatlardı.
     //
-    // Süren fiyat turu `_canli` OKUNMADAN önce beklenir (2026-09-24):
-    // bildirimden soğuk açılan ekran açılış turunun ortasına düşer ve
-    // `_canli` o anki (DB'den gelen) fiyatı taşır. `_canli` provider'ı
+    // GÜNLÜK'te süren fiyat turu `_canli` OKUNMADAN önce beklenir
+    // (2026-09-24): bildirimden soğuk açılan ekran açılış turunun ortasına
+    // düşer ve `_canli` o anki (DB'den gelen) fiyatı taşır; gün içi seri
+    // altın/döviz gün başı referansını o turda bulur. `_canli` provider'ı
     // doğrudan okuduğu için kare beklemeye gerek yok — gerekçe
     // `TazelikRitmi.turuBekle`.
-    await ref
-        .read(portfolioProvider.notifier)
+    //
+    // ## Öteki dönemler turu beklemez (Ar-Ge 12 Kas §3, ölçüldü)
+    // Günlük kapanış serisi canlı fiyata bağlı değil; canlı olan yalnız uç
+    // (bugünkü nokta `currentPrice`) ve ölçek hizası (altın kalibrasyonu,
+    // kur hizası). Eskiden 1H/1A/… da turu bekliyordu: sahte 2 sn'lik turla
+    // seri isteği ve ilk çizim 2,05 sn'de; şimdi ilk karede
+    // (`varlik_seri_tur_paralel_test`). Seri turdan önceki fiyatla kurulur
+    // — ekranın o anda gösterdiği fiyatla AYNI, yani ölçek sözleşmesi
+    // (fiyat_kaynagi.dart, madde 2) o karede de tutar; tur bitince uç ve
+    // ölçek tek `setState`'le yeni fiyata yenilenir
+    // ([_turSonrasiUcuYenile]). Ağ önbellekten, ikinci GET yok.
+    // İstisna: ölçeği CANLI KURA hizalanan tür (USD kote, altın) canlı kur
+    // henüz bilinmiyorken (soğuk açılışın ilk turu) bekler — yoksa hizasız
+    // seri çizilir ve tur bitince grafiğin seviyesi sıçrardı.
+    final notifier = ref.read(portfolioProvider.notifier);
+    final turSuruyor = notifier.fiyatTuruSuruyor;
+    final tur = notifier
         .fiyatTurunuBekle(enFazla: TazelikRitmi.gunIciSeriOmru);
+    final bekle = days == 0 || !turSuruyor || _olcekTuruBekler;
+    if (bekle) await tur;
     if (!mounted) return const {};
+    var turBitti = bekle;
+    if (!bekle) unawaited(tur.then<void>((_) => turBitti = true));
+    Future<({PortfolioHistoryBreakdown sonuc, DateTime? bayatZaman,
+            bool bosBilesen})> cek() =>
+        HistoryService.tazelikle(() =>
+            _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days));
     // `tazelikle`: dönen seri ağdan mı, son iyi kopyadan mı (ağ düştü)?
-    final r = await HistoryService.tazelikle(() =>
-        _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days));
+    var r = await cek();
+    if (!bekle) {
+      if (turBitti) {
+        // Tur hesap sürerken bitti: seri turdan ÖNCEKİ fiyatla kuruldu.
+        // Bir kez daha (önbellekten) — eski uçlu kare hiç çizilmez.
+        if (!mounted) return const {};
+        r = await cek();
+      } else {
+        _turSonrasiUcuYenile(days, tur);
+      }
+    }
     final birim = r.sonuc;
     var seri = birim.total;
     var seans = birim.seansGunu;
