@@ -56,7 +56,7 @@ import '../services/donem_ozeti_yukleyici.dart';
 import '../services/history_service.dart' show PortfolioHistoryBreakdown;
 import '../models/asset.dart' show Asset;
 import '../models/hedef_onerisi.dart';
-import '../models/hedef_tarihi.dart' show yilYonelmeEki;
+import '../models/hedef_tarihi.dart' show hedefGunuGecti, yilYonelmeEki;
 import '../services/period_summary_service.dart'
     show PeriodSummary, SummaryPeriod;
 import 'sandik_segment.dart';
@@ -1155,9 +1155,27 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final kalan =
         l10n.todayGoalLeftShort(gizli ? '••••' : fmtTRYCompactSade(s.kalan));
     // Hedefin günü (Premium, 2026-11-06): uzun yazımda "· Ara 2027'ye
-    // kadar", sığmazsa eski kısa satır. Premium değilse ya da gün geçtiyse
-    // yazılmaz; kayıtlı gün yine durur.
-    final gun = _hedefGunuMetni();
+    // kadar", sığmazsa eski kısa satır. Premium değilse yazılmaz; kayıtlı
+    // gün yine durur.
+    final tarih = _hedefGunu();
+    final now = BugunKarti.saat();
+    if (tarih != null && hedefGunuGecti(tarih, now)) {
+      // Gün geçti, hedefe ulaşılmadı (2026-11-12 hata): eskiden gün
+      // sessizce düşüyor, kart tarihsiz hedef gibi görünüyordu. Tek satır,
+      // ilerleme önde; dokununca sayfa açılır, "Ne zamana kadar?" orada.
+      return _EylemKutusu(
+        ikon: Icons.flag_outlined,
+        baslik: l10n.todayGoalProgressTitle((s.oran * 100).floor()),
+        alt: hedefGunuGectiMetinleri(l10n, tarih, s.oran),
+        oran: s.oran,
+        onTap: hedefAc,
+      );
+    }
+    final gun = tarih == null
+        ? null
+        : l10n.goalDateBy(
+            DateFormat.yMMM(context.tarihDili).format(tarih),
+            yilYonelmeEki(tarih.year));
     return _EylemKutusu(
       ikon: Icons.flag_outlined,
       baslik: l10n.todayGoalProgressTitle((s.oran * 100).floor()),
@@ -1173,18 +1191,14 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   String get _dil =>
       Localizations.localeOf(context).languageCode == 'en' ? 'en_US' : 'tr_TR';
 
-  /// Hedef satırındaki gün ("Ara 2027'ye kadar") ya da null: tarih yok,
-  /// özellik bu kullanıcıda açık değil ya da gün geçmiş.
-  String? _hedefGunuMetni() {
+  /// Hedefin kayıtlı günü ya da null: tarih yok ya da özellik bu
+  /// kullanıcıda açık değil. Geçmiş gün de döner — geçtiğini söylemek
+  /// çağıranın işi (2026-11-12'ye kadar burada sessizce düşürülüyordu).
+  DateTime? _hedefGunu() {
     if (ref.watch(hedefTarihiDurumuProvider) != OzellikDurumu.acik) {
       return null;
     }
-    final t = ref.watch(kapsamHedefTarihiProvider(widget.hedefKapsami));
-    if (t == null) return null;
-    final now = BugunKarti.saat();
-    if (t.isBefore(dayKey(now))) return null;
-    return context.l10n
-        .goalDateBy(DateFormat.yMMM(_dil).format(t), yilYonelmeEki(t.year));
+    return ref.watch(kapsamHedefTarihiProvider(widget.hedefKapsami));
   }
 
   /// Performans › Özet, verilen dönemde ([SummaryPeriod] indeksi — sayı

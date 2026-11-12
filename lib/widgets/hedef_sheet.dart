@@ -323,11 +323,36 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
   }
 }
 
+/// Günü geçmiş, ulaşılmamış hedefin satırı — uzundan kısaya
+/// ("Ara 2026 geçti · %82'ye ulaştın · yeni gün seç", "Ara 2026 geçti ·
+/// yeni gün seç"). Bugün kartı ve hedef sayfası AYNI metni yazar.
+///
+/// Dil nötr ve ilerleme önde (2026-11-12): gün geçti demek bir başarısızlık
+/// ilanı değil; ulaşılan yüzde ve tek eylem (yeni gün) yazılır. Yüzde
+/// kartın başlığıyla aynı aşağı yuvarlanmış oran ([HedefSatiri.oran]);
+/// ay/yıl hedefin günüyle aynı biçim (`goalDateBy`: "Ara 2027'ye kadar").
+/// Bakiye gizliyken de yazılır: oran tutar ele vermez (önizleme de öyle).
+/// Ayın dili metnin dilinden (`tarihDili` kuralı): Türkçe cümlede "Oct"
+/// yazmasın.
+List<String> hedefGunuGectiMetinleri(
+    AppLocalizations l10n, DateTime tarih, double oran) {
+  final dil = l10n.localeName == 'en' ? 'en_US' : 'tr_TR';
+  final ay = DateFormat.yMMM(dil).format(tarih);
+  final yuzde = (oran * 100).floor();
+  return [
+    l10n.goalDatePassed(
+        ay, fmtPct(yuzde.toDouble(), digits: 0), sayiYonelmeEki(yuzde)),
+    l10n.goalDatePassedShort(ay),
+  ];
+}
+
 /// "Ne zamana kadar?" çipleri ve aylık tutar satırı (Premium açık).
 ///
 /// Aylık satır yalnız gün seçili, gün geçmemiş ve kalan > 0 iken: hedefe
 /// ulaşıldıysa önizlemedeki "zaten geçtin" kazanır. Bakiye gizliyken tutar
-/// `••••` (Bugün kartının hedef satırıyla aynı).
+/// `••••` (Bugün kartının hedef satırıyla aynı). Gün geçmiş ve kalan > 0
+/// ise aylık satırın yerinde [hedefGunuGectiMetinleri] (2026-11-12: eskiden
+/// hiçbir şey yazılmıyordu).
 class _TarihBolumu extends StatelessWidget {
   const _TarihBolumu({
     required this.tarih,
@@ -355,6 +380,15 @@ class _TarihBolumu extends StatelessWidget {
     final aylik = (tarih == null || deger == null || hedef == null)
         ? null
         : hedefAylikTutar(kalan: hedef! - deger!, tarih: tarih!, bugun: bugun);
+    final gecti = (tarih != null &&
+            deger != null &&
+            hedef != null &&
+            hedef! > deger! &&
+            hedefGunuGecti(tarih!, bugun))
+        ? hedefGunuGectiMetinleri(l10n, tarih!,
+                HedefSatiri(hedefTRY: hedef!.round(), deger: deger!).oran)
+            .first
+        : null;
     return Padding(
       padding: const EdgeInsets.only(top: SandikSpace.md),
       child: Column(
@@ -401,6 +435,13 @@ class _TarihBolumu extends StatelessWidget {
               ),
             ],
           ),
+          if (gecti != null) ...[
+            const SizedBox(height: SandikSpace.sm),
+            Text(
+              gecti,
+              style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+            ),
+          ],
           if (aylik != null) ...[
             const SizedBox(height: SandikSpace.sm),
             Text(

@@ -88,6 +88,20 @@ void main() {
           HedefTarihSecenegi.ozel);
     });
 
+    test('gün geçti mi: yalnız bugünden önceki gün (bugün geçmedi)', () {
+      expect(hedefGunuGecti(DateTime(2026, 11, 5), bugun), isTrue);
+      expect(hedefGunuGecti(DateTime(2026, 11, 6), bugun), isFalse);
+      expect(hedefGunuGecti(DateTime(2026, 11, 7), bugun), isFalse);
+    });
+
+    test("yüzdenin yönelme eki (\"%82'ye ulaştın\")", () {
+      expect(sayiYonelmeEki(82), 'ye');
+      expect(sayiYonelmeEki(50), 'ye');
+      expect(sayiYonelmeEki(60), 'a');
+      expect(sayiYonelmeEki(99), 'a');
+      expect(sayiYonelmeEki(5), 'e');
+    });
+
     test("yılın yönelme eki (Ana sayfa: \"Ara 2027'ye kadar\")", () {
       expect(yilYonelmeEki(2027), 'ye');
       expect(yilYonelmeEki(2026), 'ya');

@@ -5638,6 +5638,8 @@
   "goalDateMonthly": "Add about {tutar} a month to make it",
   "goalDateNoReturn": "Excludes returns",
   "goalDateBy": "By {tarih}",
+  "goalDatePassed": "{tarih} has passed · you reached {pct} · pick a new date",
+  "goalDatePassedShort": "{tarih} has passed · pick a new date",
   "kiyasPaylasTooltip": "Share comparison",
   "kiyasPaylasKartBaslik": "{donem} comparison",
   "kiyasPaylasAlt": "Compared with sandık",
