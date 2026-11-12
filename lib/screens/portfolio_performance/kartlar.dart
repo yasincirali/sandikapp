@@ -823,7 +823,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 .millisecondsSinceEpoch,
           );
     final yatirilan = netInflow + temettu;
-    final akisVar = netInflow.abs() > 0.5 || temettu.abs() > 0.5;
+    final defterdeTemettuVar =
+        !_simulate && targetAssets.any((a) => a.isActive && a.isDividend);
     final piyasaColor = piyasaFlat
         ? context.c.text36
         : (piyasa >= 0 ? context.c.gain : context.c.loss);
@@ -1132,15 +1133,21 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   ),
                 ),
               ],
-              if (akisVar) ...[
-                if (temettu.abs() > 0.5) ...[
-                  const SizedBox(height: SandikSpace.sm2),
-                  _DegisimKalemi(
-                    etiket: context.l10n.dividendPocketRow,
-                    deger: '−${tryFmt.format(temettu.abs())}',
-                    renk: context.c.text58,
-                  ),
-                ],
+              // Temettü satırı: defterde HİÇ temettü varsa her dönemde durur,
+              // dönemde yoksa dürüst ₺0 (yasin'ın ekran kaydı 2026-11-13:
+              // 5 yıl/1 yıl/6 ay'da "Cebine aldığın temettü" satırı geliyor,
+              // 3 ay/1 ay'da gidiyordu; grafik her geçişte ~30 pt oynuyordu).
+              // Hiç temettüsü olmayan kullanıcıda satır hiç yok, o da
+              // dönemden bağımsız.
+              if (defterdeTemettuVar) ...[
+                const SizedBox(height: SandikSpace.sm2),
+                _DegisimKalemi(
+                  etiket: context.l10n.dividendPocketRow,
+                  deger: temettu.abs() > 0.5
+                      ? '−${tryFmt.format(temettu.abs())}'
+                      : tryFmt.format(0),
+                  renk: context.c.text58,
+                ),
               ],
                     ],
                   ),

@@ -59,6 +59,25 @@ Asset _lot({int gunOnce = 800, String id = 'lot-1', double adet = 10}) => Asset(
       addedDate: DateTime.now().subtract(Duration(days: gunOnce)),
     );
 
+/// 200 gün önce temettü: 6 ay ve üstünde dönem içinde, kısa dönemde değil
+/// (yasin'ın ekran kaydı 2026-11-13: temettü satırı dönemle gelip gidiyordu).
+Asset _temettu() => Asset(
+      id: 'tem-1',
+      userId: _uid,
+      name: 'THYAO',
+      ticker: 'THYAO.IS',
+      type: AssetType.hisse,
+      quantity: 0,
+      purchasePrice: 0,
+      currency: 'TRY',
+      notes: '',
+      isManualPrice: false,
+      currentPrice: 150,
+      kind: AssetKind.dividend,
+      dividendAmount: 25,
+      addedDate: DateTime.now().subtract(const Duration(days: 200)),
+    );
+
 class _FakeAuth extends AuthNotifier {
   @override
   Future<AppUser?> build() async => AppUser(
@@ -277,6 +296,7 @@ void main() {
                 _lot(),
                 // 60 gün önce büyük alım: 3 ay ve üstünde akış var.
                 _lot(gunOnce: 60, id: 'lot-2', adet: 900),
+                _temettu(),
               ])),
           partnersProvider.overrideWith(_FakePartners.new),
           allPartnerAssetsProvider.overrideWith(_FakePartnerAssets.new),
@@ -298,6 +318,23 @@ void main() {
       // Tek akışta manşet `numLarge`: altı haneli tutar yüzde rozetiyle
       // satıra sığmayınca küçülür (yeri sabit); punto yalnız eski düzende.
       _ayniYerde(o, 'Performans', punto: olcek == 1.0 && !tek);
+      // Grafik kartının DİBİ de yerinde: işlem hacmi paneli her dönemde
+      // durur (Bugün/1 hf'de yoktu, kart ~98 pt kısalıp altını çekiyordu).
+      final hacimYeri = <String, double>{};
+      for (final e in _etiketler(tester)) {
+        await tester.tap(find
+            .descendant(of: find.byType(DonemSecici), matching: find.text(e))
+            .first);
+        await _yerles(tester, 40);
+        final etiket = find.text('Alım · satış');
+        expect(etiket, findsOneWidget, reason: '$e: hacim paneli yok');
+        hacimYeri[e] = tester.getRect(etiket).top;
+      }
+      final ilkHacim = hacimYeri.values.first;
+      for (final x in hacimYeri.entries) {
+        expect((x.value - ilkHacim).abs(), lessThanOrEqualTo(0.5),
+            reason: 'hacim paneli kaydı: $hacimYeri');
+      }
       // Kartın üstü de (grafik kutusunun dış çerçevesi) yerinde.
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
@@ -320,6 +357,7 @@ void main() {
           portfolioProvider.overrideWith(() => _FakePortfolio([
                 _lot(),
                 _lot(gunOnce: 60, id: 'lot-2', adet: 900),
+                _temettu(),
               ])),
           partnersProvider.overrideWith(_FakePartners.new),
           allPartnerAssetsProvider.overrideWith(_FakePartnerAssets.new),

@@ -839,10 +839,13 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     // Volume verisi: gün-bazlı buy/sell TRY. Intraday'de bar chart mantıklı
     // değil (gün içi işlem yoğunluğu farklı bir metrik) → sadece intraday
     // olmayan periyotlarda çizilir.
-    final volumeBars = intraday
-        ? const <_VolumeBar>[]
-        : _computeVolumeBars(noktalar);
-    final showVolume = volumeBars.isNotEmpty;
+    // Panel HER dönemde durur (yasin'ın ekran kaydı 2026-11-13: Bugün ve
+    // 1 hf'de panel yoktu, 1 ay/3 ay'da vardı; grafik kartının boyu her
+    // geçişte ~98 pt değişip altındaki her şeyi itiyordu). İşlemsiz
+    // dönemde aynı boyda boş panel ve tek cümle. Gün içinde de bugünün
+    // işlemleri saatine çubuk olarak düşer (eskiden gün içinde hiç
+    // çizilmiyordu).
+    final volumeBars = _computeVolumeBars(noktalar);
 
     return Container(
       padding: GrafikStili.kartDolgusu,
@@ -1016,16 +1019,15 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           // kalır, yalnız kartın dibi uzar/kısalır — o da tek karede değil,
           // yumuşak (yasin 2026-11-11, "dönem değişince grafik yer
           // değiştiriyor"; ölçüldü: işlem olan döneme geçişte +98 pt).
-          // Hareketi azalt → anında. İşlemsiz dönemde panel boş yer
-          // tutmaz: gün içinde hacim hiç çizilmez, kalıcı boş kutu "veri
-          // gelmedi" diye okunurdu.
+          // Hareketi azalt → anında. 2026-11-13'ten beri panel her dönemde
+          // durur (gerekçe `volumeBars` notunda); işlemsiz dönemde boş kutu
+          // yerine "Bu dönemde alım ya da satış yok." yazar, "veri gelmedi"
+          // diye okunmaz.
           AnimatedSize(
             duration: SandikMotion.stateOf(context),
             curve: SandikMotion.move,
             alignment: Alignment.topCenter,
-            child: !showVolume
-                ? const SizedBox(width: double.infinity)
-                : Column(
+            child: Column(
                     children: [
             const SizedBox(height: 8),
             Padding(
@@ -1072,7 +1074,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                       belowBarData: BarAreaData(show: false),
                     ));
                   }
-                  return LineChart(
+                  final hacim = LineChart(
                     LineChartData(
                       minX: vp.minX,
                       maxX: vp.maxX,
@@ -1116,6 +1118,23 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                         ? Duration.zero
                         : SandikMotion.stateOf(context),
                     curve: SandikMotion.enter,
+                  );
+                  if (volumeBars.isNotEmpty) return hacim;
+                  // İşlemsiz dönem: panel aynı boyda, boş kutu yerine cümle.
+                  return Stack(
+                    children: [
+                      Positioned.fill(child: hacim),
+                      Center(
+                        child: Text(
+                          context.l10n.s2AkisYok,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text36),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
