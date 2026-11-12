@@ -33,10 +33,20 @@ extension _KimlikAlanlari on _AddAssetScreenState {
         tickerText: _ticker.text,
         muaf: _isEditing,
       )),
-      builder: (state) => Column(
+      // Önbellek gerekçesi `_kimlikOnbellek`te: Form her tuşta bu alanı da
+      // yeniden kurar; aynı örnek dönünce seçici ağacı dokunulmadan kalır.
+      builder: (state) {
+        if (_kimlikOnbellek == null || _kimlikOnbellekHata != state.hasError) {
+          _kimlikOnbellekHata = state.hasError;
+          _kimlikOnbellek = KeyedSubtree(
+            key: const ValueKey('kimlik-alani'),
+            child: _kimlikAlani(cs, hata: state.hasError),
+          );
+        }
+        return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _kimlikAlani(cs, hata: state.hasError),
+          _kimlikOnbellek!,
           if (state.hasError) ...[
             const SizedBox(height: SandikSpace.xs2),
             Padding(
@@ -48,7 +58,8 @@ extension _KimlikAlanlari on _AddAssetScreenState {
             ),
           ],
         ],
-      ),
+      );
+      },
     );
   }
 

@@ -597,11 +597,35 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         overflow: TextOverflow.ellipsis,
       );
 
-  /// Toplam maliyet, önizleme kartı, preset çipleri ve not rozeti metin
-  /// alanlarını okur; eski kod her tuş vuruşunda tüm ekranı yeniden kuruyordu.
-  /// Controller'lar zaten `Listenable`: tek dinleyiciyle aynı yeniden çizim.
+  /// Metin alanlarının toplu dinleyicisi: vazgeç onayının kirlilik ölçütü
+  /// ve alt çubuktaki toplam satırı.
+  ///
+  /// Dar dinleyici (Ar-Ge 2026-11-12 #4): bu birleşik dinleyici 6bb875b'ye
+  /// kadar BÜTÜN gövdeyi (GestureDetector → Form → sütun) saran tek bir
+  /// `ListenableBuilder`'daydı; yorum "eskiden tüm ekranı kuruyordu" diyordu
+  /// ama sarmalayıcı hâlâ her şeyi sarıyordu. Ölçüm
+  /// (`varlik_ekle_yeniden_kurulum_test`): miktar alanındaki tek tuş tür
+  /// ızgarasını, kimlik alanını ve portföy seçiciyi birer kez yeniden
+  /// kuruyordu. Artık metni okuyan her parça kendi dar dinleyicisinde
+  /// ([_metinle]): önayar çipleri, önizleme kartı, tutardan adet satırı,
+  /// eurobond faiz satırı, fiyat ipucu, ortalama maliyet satırı, not rozeti
+  /// ve alt çubuk toplamı. Ölçüm 1/1/1 → 0/0/0, testte kilitli. Yeni bir
+  /// parça metin okuyacaksa onu da [_metinle] ile sar; yoksa yazarken eski
+  /// değeri gösterir.
   late final Listenable _metinler =
       Listenable.merge([_quantity, _price, _commission, _notes, _tutar]);
+
+  /// [dinle] değiştikçe yalnız [kur]'un döndürdüğü parçayı yeniden kurar.
+  Widget _metinle(Listenable dinle, WidgetBuilder kur) =>
+      ListenableBuilder(listenable: dinle, builder: (context, _) => kur(context));
+
+  /// Kimlik alanının bu kurulumdaki önbelleği. Kimlik bir `FormField`; Flutter
+  /// `Form`'u herhangi bir alan değişince bütün alanlarını yeniden kurar
+  /// (`_FormScope` nesli). Builder aynı widget örneğini döndürünce altındaki
+  /// seçici ağacı güncellenmez. Ekran her kurulduğunda sıfırlanır: seçim
+  /// değişimi sağlayıcıdan geçer ve ekranı zaten yeniden kurar.
+  Widget? _kimlikOnbellek;
+  bool? _kimlikOnbellekHata;
 
   @override
   Widget build(BuildContext context) {
@@ -609,6 +633,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // Durum değişimi bu ekranı yeniden kurar; getter'lar `ref.read` ile aynı
     // değeri okur.
     ref.watch(addAssetFormProvider(_args));
+    _kimlikOnbellek = null;
 
     final saveLabel = widget.cartMode
         ? (widget.cartInitial != null ? context.l10n.save : 'Sepete Ekle')
@@ -655,9 +680,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ],
         ],
       ),
-      body: ListenableBuilder(
-        listenable: _metinler,
-        builder: (context, _) => GestureDetector(
+      body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _klavyeyiKapat,
         child: Form(
@@ -749,21 +772,24 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         Expanded(child: _priceBlock(cs)),
                       ],
                     ),
-                    _eurobondFaizSatiri(),
+                    _metinle(Listenable.merge([_quantity, _price]),
+                        (_) => _eurobondFaizSatiri()),
                     if (_tutarModu)
-                      _tutardanAdetSatiri()
+                      _metinle(Listenable.merge([_tutar, _price]),
+                          (_) => _tutardanAdetSatiri())
                     else ...[
                       const SizedBox(height: 10),
-                      _quantityPresetsRow(cs),
+                      _metinle(_quantity, (_) => _quantityPresetsRow(cs)),
                     ],
                     const SizedBox(height: 20),
 
                     // ── Toplam maliyet hero card ─────────────────────────
-                    _totalHero(cs),
+                    _metinle(_metinler, (_) => _totalHero(cs)),
                     const SizedBox(height: 10),
 
                     // ── Tahmini birim fiyat preview ──────────────────────
-                    _pricePreviewCard(cs),
+                    _metinle(Listenable.merge([_price, _quantity, _tutar]),
+                        (_) => _pricePreviewCard(cs)),
 
                     // ── İşlem tarihi (chip) ──────────────────────────────
                     _dateChip(cs),
@@ -822,7 +848,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             ],
           ),
         ),
-      ),
       ),
     );
     return ValueListenableBuilder<bool>(
@@ -997,7 +1022,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── Notlar collapsible ─────────────────────────────────────────────────────
   Widget _notesCollapsible(ColorScheme cs, {bool komisyonDahil = false}) {
-    final doluIcerik = _notes.text.isNotEmpty ||
+    bool doluIcerik() => _notes.text.isNotEmpty ||
         (komisyonDahil && _commission.text.isNotEmpty);
     return SandikCard(
       padding: EdgeInsets.zero,
@@ -1031,17 +1056,22 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                             fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
-                  if (doluIcerik && !_notesExpanded)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: context.c.amberFill,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                  if (!_notesExpanded)
+                    _metinle(
+                      Listenable.merge([_notes, _commission]),
+                      (_) => !doluIcerik()
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: context.c.amberFill,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
                     ),
                   // İkon değişmez, DÖNER — öteki katlanır bölümler gibi
                   // (animasyon denetimi 2026-10-01; eskiden iki ikon
