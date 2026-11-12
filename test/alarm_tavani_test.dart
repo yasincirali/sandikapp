@@ -23,6 +23,8 @@ import 'package:portfoy_takip/widgets/tek_dokunus_alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
+import 'helpers/kaynak.dart';
+
 /// Ücretsiz alarm tavanı her giriş yolunda tutar (yasin 2026-11-12:
 /// "alarm ekleme kısmında sonsuz alarma gidebilecek bir bug var").
 ///
@@ -292,5 +294,43 @@ void main() {
     await tester.pumpAndSettle();
     expect(_yazilan, isEmpty, reason: '21. aktif alarm yazılmamalı');
     expect(find.textContaining('20 aktif alarm'), findsOneWidget);
+  });
+
+  group('sunucu (0181) istemciyle aynı kuralı uygular', () {
+    final sql =
+        ekranKaynagiSync('supabase/migrations/0181_alarm_tavani_sunucuda.sql');
+
+    test('tavan sayısı istemcinin ücretsiz sınırıyla aynı', () {
+      final rc = ekranKaynagiSync('lib/services/remote_config_service.dart');
+      final istemci = RegExp(r"'free_price_alert_limit':\s*(\d+)")
+          .firstMatch(rc)!
+          .group(1);
+      final sunucu = RegExp(r'v_tavan constant integer := (\d+);')
+          .firstMatch(sql)!
+          .group(1);
+      expect(sunucu, istemci,
+          reason: 'sayaç 20 derken sunucu başka yerde kesmesin');
+    });
+
+    test('red mesajı istemcinin tanıdığı işareti taşır', () {
+      expect(sql, contains("raise exception '$alarmSiniriSunucuKodu:"));
+    });
+
+    test('kapılar: paywall kapısı, acil kapatma, Premium; servis muaf', () {
+      expect(sql, contains('a.kapi_acik'));
+      expect(sql, contains('a.acil_kapali'));
+      expect(sql, contains('premium_mi_kullanici(new.user_id)'));
+      expect(sql, contains('if v_uid is null then'));
+      expect(sql, contains('security definer'));
+      expect(sql, contains('set search_path = public, pg_temp'));
+      for (final t in [
+        'price_alerts',
+        'yuzde_alarmlari',
+        'gosterge_alarmlari',
+        'cizim_alarmlari',
+      ]) {
+        expect(sql, contains('before insert or update on public.$t'));
+      }
+    });
   });
 }

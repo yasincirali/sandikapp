@@ -12,6 +12,22 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-12 Ücretsiz alarm tavanı sunucuda (migration 0181)
+
+"Sonsuz alarm" hatası: istemci düzeltmesi tek başına çalışır (deploy
+beklemez); 0181 son bekçidir (eski build ya da istemci eksik sayarsa 21.
+aktif alarmı reddeder). Yalnız ekleme, eski sürümle uyumlu.
+
+- [ ] PR birleşince Actions › **Supabase deploy** (main, hedef `frankfurt`,
+      migrations: true; fonksiyon yok). Sen "Supabase deploy" deyince Claude
+      tetikler.
+- [ ] Bilinen kenar: tavan yalnız `kapi_acik` açık, aktif cihazı **iOS**,
+      Premium'suz hesapta işler. Paywall'ı RC'den kapalı alan **eski iOS
+      build'i (≤1.1.6)** kullanan, Premium'suz ve 20+ aktif alarmı olan biri
+      21.'yi kuramaz (genel "işlem yapılamadı" görür). Sorun çıkarsa acil
+      yol: `premium_ayar.acil_kapali = true` (tüm kilitleri askıya alır) ya da
+      tetikleyiciyi kaldıran düzeltme migration'ı.
+
 ## ⏳ 2026-11-10 Ocak etkinliği "2027 hedefini koy" (`sandik://hedef`)
 
 Yeni In-App Event taslağı `store_listing/ios/in_app_events/etkinlikler.json`
