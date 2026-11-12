@@ -58,7 +58,8 @@ class AylikGetiriTablosu {
   /// Getirisi ölçülen ay sayısı — kart en az 6 ayda görünür.
   final int olculenAySayisi;
 
-  const AylikGetiriTablosu({
+  // `const` değil: [ozet] tembel ve bir kez hesaplanır (aşağıda).
+  AylikGetiriTablosu({
     required this.aylar,
     required this.yilToplami,
     required this.ilkAy,
@@ -75,6 +76,86 @@ class AylikGetiriTablosu {
 
   /// Yıllar yeniden eskiye (en güncel yıl üstte).
   List<int> get yillar => aylar.keys.toList()..sort((a, b) => b - a);
+
+  /// Kartın alt cümlesi ve iki çerçeveli hücresi ([aylikGetiriOzeti]).
+  /// Tembel ve tablo başına bir kez: Performans her tick'te yeniden
+  /// çizilir, özet tablo değişmedikçe yeniden taranmaz (hesap `build`'de
+  /// değil, modelde).
+  late final AylikGetiriOzeti? ozet = aylikGetiriOzeti(this);
+}
+
+/// Tablodaki tek ay ve getirisi (yüzde).
+@immutable
+class AylikGetiriAyi {
+  const AylikGetiriAyi(this.yil, this.ay, this.deger);
+  final int yil;
+  final int ay;
+  final double deger;
+
+  bool ayni(int yil, int ay) => this.yil == yil && this.ay == ay;
+}
+
+/// Kartın alt cümlesi (2026-11-12): "20 ayın 14'ünü artıda kapattın. En
+/// iyi ay Tem 2026 ▲%6,4, en zor Eki 2025 ▼%6,1." ve çerçeveli iki hücre.
+///
+/// ## Neden kapanmış aylar
+/// İçinde bulunulan ay sayılmaz: ayın 3'ünde "bu ay"ın %−4'ü "en zor ay"
+/// ilan edilir, ay sonunda artıda kapanabilir. Cümle "kapattın" der, yalnız
+/// biten ayları sayar; tablo hücresi o ayı yine gösterir ("bu ay").
+///
+/// ## Neden `aylikKiyas` değil
+/// Aylık raporun kıyası TEK bir ayı son 12 ay içinde sıralar ("bu ay 9.
+/// sırada"); burada soru tablonun tamamı: kaç ay artı, uçlar hangisi.
+/// Aynı hücreleri okurlar; "artı" ikisinde de sıfırın üstü.
+@immutable
+class AylikGetiriOzeti {
+  const AylikGetiriOzeti({
+    required this.kapanan,
+    required this.arti,
+    required this.enIyi,
+    required this.enZor,
+  });
+
+  /// Getirisi ölçülmüş, kapanmış ay sayısı.
+  final int kapanan;
+
+  /// Sıfırın üstünde kapanan ay sayısı.
+  final int arti;
+
+  final AylikGetiriAyi enIyi;
+
+  /// `null`: tek ay var ya da bütün aylar eşit — "en zor" en iyiyle aynı
+  /// hücre olurdu.
+  final AylikGetiriAyi? enZor;
+}
+
+/// [tablo]'nun özeti; kapanmış ölçülü ay yoksa `null`. Eşit değerlerde
+/// en yeni ay seçilir (kullanıcının hatırladığı ay).
+AylikGetiriOzeti? aylikGetiriOzeti(AylikGetiriTablosu tablo) {
+  AylikGetiriAyi? iyi, zor;
+  var kapanan = 0, arti = 0;
+  final yillar = tablo.aylar.keys.toList()..sort();
+  for (final yil in yillar) {
+    final hucreler = tablo.aylar[yil]!;
+    for (var m = 1; m <= 12; m++) {
+      if (!tablo.aralikta(yil, m)) continue;
+      if (tablo.buAy.year == yil && tablo.buAy.month == m) continue;
+      final d = hucreler[m - 1];
+      if (d == null) continue;
+      kapanan++;
+      if (d > 0) arti++;
+      final a = AylikGetiriAyi(yil, m, d);
+      if (iyi == null || d >= iyi.deger) iyi = a;
+      if (zor == null || d <= zor.deger) zor = a;
+    }
+  }
+  if (iyi == null || zor == null) return null;
+  return AylikGetiriOzeti(
+    kapanan: kapanan,
+    arti: arti,
+    enIyi: iyi,
+    enZor: zor.deger == iyi.deger ? null : zor,
+  );
 }
 
 /// Kartın görünme eşiği: en az bu kadar ayın getirisi ölçülmüş olmalı.

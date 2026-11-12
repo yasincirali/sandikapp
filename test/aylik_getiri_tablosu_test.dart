@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -187,6 +189,8 @@ void main() {
       double genislik = 390,
       AylikGetiriIstegi? ist,
       Future<AylikGetiriTablosu?> Function()? saglayici,
+      bool hareketiAzalt = false,
+      bool yerles = true,
     }) async {
       tester.view.physicalSize = Size(genislik * 3, 2400 * 3);
       tester.view.devicePixelRatio = 3;
@@ -203,6 +207,7 @@ void main() {
           home: MediaQuery(
             data: MediaQueryData(
                 size: Size(genislik, 2400),
+                disableAnimations: hareketiAzalt,
                 textScaler: TextScaler.linear(olcek)),
             child: Scaffold(
               body: SingleChildScrollView(
@@ -213,7 +218,7 @@ void main() {
           ),
         ),
       ));
-      await tester.pumpAndSettle();
+      if (yerles) await tester.pumpAndSettle();
     }
 
     testWidgets('dar ekranda kart görünür: iki satır, ok + yüzde, yıl', (
@@ -315,9 +320,136 @@ void main() {
       expect(find.textContaining('xyz'), findsNothing);
     });
 
+    testWidgets('ton, çerçeve ve özet cümlesi', (tester) async {
+      await pump(tester);
+      final c = SandikPalette.light;
+      Iterable<Container> kutular() => tester
+          .widgetList<Container>(find.byType(Container))
+          .where((k) => k.decoration is BoxDecoration);
+      Color? zemin(Container k) => (k.decoration as BoxDecoration).color;
+      // Kazanç ve kayıp ayları düşük alfalı ton zemininde.
+      expect(kutular().where((k) => zemin(k) == c.gain.withValues(alpha: 0.12)),
+          isNotEmpty);
+      expect(kutular().where((k) => zemin(k) == c.loss.withValues(alpha: 0.12)),
+          isNotEmpty);
+      // Yalnız iki hücre çerçeveli (en iyi + en zor kapanmış ay).
+      expect(
+          tester
+              .widgetList<Container>(find.byType(Container))
+              .where((k) => k.foregroundDecoration != null),
+          hasLength(2));
+      // Kasım "bu ay" sayılmaz: Ocak–Ekim 10 ay, tekler artı (5).
+      expect(
+          find.text("10 ayın 5'ini artıda kapattın. En iyi ay Eyl 2025 "
+              '▲%2,3, en zor Eki 2025 ▼%1,5.'),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel("10 ayın 5'ini artıda kapattın. En iyi ay "
+              'Eylül 2025 yüzde 2,3 kazanç, en zor Ekim 2025 yüzde 1,5 '
+              'kayıp.'),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              'Ekim 2025: yüzde 1,5 kayıp, tablonun en zor ayı'),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              'Eylül 2025: yüzde 2,3 kazanç, tablonun en iyi ayı'),
+          findsOneWidget);
+      expect(find.bySemanticsLabel('Ocak 2025: yüzde 2,3 kazanç'),
+          findsOneWidget);
+      // Hücre ≥ 44 pt.
+      expect(
+          tester
+              .getSize(find.bySemanticsLabel('Ocak 2025: yüzde 2,3 kazanç'))
+              .height,
+          greaterThanOrEqualTo(SandikTouch.min));
+      // Yıl toplamı titleSmall w600.
+      final yilToplami = tester.widget<Text>(find.text('▲ %4,2'));
+      expect(yilToplami.style?.fontWeight, FontWeight.w600);
+    });
+
+    testWidgets('dipnot tek satır; dokununca yöntem açılır', (tester) async {
+      await pump(tester);
+      expect(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'),
+          findsOneWidget);
+      expect(find.textContaining('Yıl, ayların bileşiğidir'), findsNothing);
+      await tester.tap(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Yıl, ayların bileşiğidir'), findsOneWidget);
+    });
+
+    testWidgets('tablo: yazı ×3,1 ve 320 pt taşma yok', (tester) async {
+      await pump(tester, olcek: 3.1, genislik: 320);
+      await tester.tap(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('geniş ekran: 12 ay tek satır, taşma yok', (tester) async {
+      await pump(tester, genislik: 1024);
+      expect(tester.getTopLeft(find.text('Tem')).dy,
+          tester.getTopLeft(find.text('Oca')).dy);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('geç gelen kart: boy akar; hareketi azaltta anında', (
+        tester) async {
+      for (final azalt in [false, true]) {
+        final tamam = Completer<AylikGetiriTablosu?>();
+        await pump(tester,
+            saglayici: () => tamam.future,
+            hareketiAzalt: azalt,
+            yerles: false);
+        await tester.pump();
+        expect(find.text('Aylık getiri'), findsNothing);
+        tamam.complete(tablo());
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('Aylık getiri'), findsOneWidget);
+        expect(find.byType(AnimatedSize), azalt ? findsNothing : findsOneWidget);
+        await tester.pumpAndSettle();
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+
     testWidgets('Premium özellikleri görünmüyorsa kart yok', (tester) async {
       await pump(tester, gorunur: false);
       expect(find.text('Aylık getiri'), findsNothing);
+    });
+  });
+
+  group('aylikGetiriOzeti (saf)', () {
+    AylikGetiriTablosu t(List<double?> d, {int buAy = 12}) =>
+        AylikGetiriTablosu(
+          aylar: {2025: d},
+          yilToplami: const {2025: null},
+          ilkAy: DateTime(2025, 1),
+          buAy: DateTime(2025, buAy),
+          olculenAySayisi: d.whereType<double>().length,
+        );
+
+    test('bu ay sayılmaz; artı, en iyi ve en zor kapanmış aylardan', () {
+      final o = aylikGetiriOzeti(t(
+          [1, -2, 3, null, 0, -6.1, 6.4, 2, 1, 1, 1, -20],
+          buAy: 12))!;
+      expect(o.kapanan, 10); // null ve Aralık (bu ay) hariç
+      expect(o.arti, 7); // 0 artı değil
+      expect((o.enIyi.ay, o.enIyi.deger), (7, 6.4));
+      expect((o.enZor!.ay, o.enZor!.deger), (6, -6.1));
+    });
+
+    test('eşitlikte en yeni ay; bütün aylar eşitse en zor yok', () {
+      final o = aylikGetiriOzeti(
+          t([2, 2, 2, null, null, null, null, null, null, null, null, null],
+              buAy: 12))!;
+      expect(o.enIyi.ay, 3);
+      expect(o.enZor, isNull);
+    });
+
+    test('kapanmış ölçülü ay yoksa özet yok', () {
+      expect(
+          aylikGetiriOzeti(t(List<double?>.filled(12, null), buAy: 1)), isNull);
     });
   });
 

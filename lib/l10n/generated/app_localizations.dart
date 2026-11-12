@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr'),
+    Locale('tr')
   ];
 
   /// No description provided for @appName.
@@ -6835,11 +6835,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  );
+      String acilis, String yuksek, String dusuk, String kapanis);
 
   /// No description provided for @whatsNewTitle.
   ///
@@ -9408,11 +9404,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  );
+      String date, String end, String change, String cpi);
 
   /// No description provided for @savingsRose.
   ///
@@ -10751,11 +10743,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  );
+      String amount, String times, String pct, String share);
 
   /// No description provided for @tekOnayGizlilikBaglanti.
   ///
@@ -16960,10 +16948,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  );
+      String baslik, int yuzde, String kalan);
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -17480,12 +17465,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  );
+      String baslik, String dusuk, String yuksek, String bugun, String cumle);
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -17880,13 +17860,13 @@ abstract class AppLocalizations {
   /// Ekran okuyucu: pozitif aylık getiri
   ///
   /// In tr, this message translates to:
-  /// **'{deger} kazanç'**
+  /// **'yüzde {deger} kazanç'**
   String aylikGetiriKazanc(String deger);
 
   /// Ekran okuyucu: negatif aylık getiri
   ///
   /// In tr, this message translates to:
-  /// **'{deger} kayıp'**
+  /// **'yüzde {deger} kayıp'**
   String aylikGetiriKayip(String deger);
 
   /// Ekran okuyucu: ölçülemeyen ay (ekranda —)
@@ -17924,6 +17904,55 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tablo hesaplanamadı, yenileyince tekrar denenir.'**
   String get aylikGetiriHata;
+
+  /// Ekran okuyucu: sıfıra yuvarlanan aylık getiri (yönsüz)
+  ///
+  /// In tr, this message translates to:
+  /// **'yüzde {deger}'**
+  String aylikGetiriYuzde(String deger);
+
+  /// Ekran okuyucu: çerçeveli en iyi ay hücresi
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}: {deger}, tablonun en iyi ayı'**
+  String aylikGetiriHucreEnIyi(String ay, String deger);
+
+  /// Ekran okuyucu: çerçeveli en zor ay hücresi
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}: {deger}, tablonun en zor ayı'**
+  String aylikGetiriHucreEnZor(String ay, String deger);
+
+  /// Aylık getiri kartı alt cümlesi. artiEkli: sayı + iyelik/belirtme eki (14'ünü)
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ayın {artiEkli} artıda kapattın.'**
+  String aylikGetiriOzetArti(int n, String artiEkli);
+
+  /// Aylık getiri kartı alt cümlesi: hiç artı ay yok
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ayda artıda kapanan ay olmadı.'**
+  String aylikGetiriOzetArtiYok(int n);
+
+  /// Aylık getiri kartı: en iyi ve en zor ay
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi ay {iyiAy} {iyiDeger}, en zor {zorAy} {zorDeger}.'**
+  String aylikGetiriOzetUclar(
+      String iyiAy, String iyiDeger, String zorAy, String zorDeger);
+
+  /// Aylık getiri kartı: yalnız en iyi ay (aylar eşit)
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi ay {iyiAy} {iyiDeger}.'**
+  String aylikGetiriOzetEnIyi(String iyiAy, String iyiDeger);
+
+  /// Aylık getiri dipnotu, tek satır; dokununca ayrıntı açılır
+  ///
+  /// In tr, this message translates to:
+  /// **'Para ekleyip çekmen yüzdeyi değiştirmez.'**
+  String get aylikGetiriDipnotKisa;
 
   /// Profil satırı başlığı
   ///
@@ -18175,9 +18204,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
