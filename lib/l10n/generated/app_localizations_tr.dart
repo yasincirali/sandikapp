@@ -2673,11 +2673,52 @@ class AppLocalizationsTr extends AppLocalizations {
   String get premiumUnlocked => 'Premium açıldı';
 
   @override
-  String get premiumUnlockedBody =>
-      'Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.';
+  String get pwAcildiDon => 'Kaldığın yere dön';
 
   @override
-  String get greatWord => 'Harika';
+  String pwAcildiRapor(String ay) {
+    return '$ay raporun hazır';
+  }
+
+  @override
+  String pwAcildiRaporSes(String ay) {
+    return '$ay raporun hazır. Dokunursan rapor açılır.';
+  }
+
+  @override
+  String pwAcildiTemettu(int n) {
+    return 'Temettü tahmini: $n hisse';
+  }
+
+  @override
+  String pwAcildiTemettuSes(int n) {
+    return 'Temettü tahmini $n hissen için hazır. Dokunursan tahmin açılır.';
+  }
+
+  @override
+  String pwAcildiSattiklarin(int n) {
+    return 'Sattıkların: $n kapanmış pozisyon';
+  }
+
+  @override
+  String pwAcildiSattiklarinSes(int n) {
+    return 'Sattıkların listesinde $n kapanmış pozisyon var. Dokunursan liste açılır.';
+  }
+
+  @override
+  String pwAcildiAylikGetiri(int n) {
+    return 'Aylık getiri tablon: $n ay';
+  }
+
+  @override
+  String pwAcildiAylikGetiriSes(int n) {
+    return 'Aylık getiri tablon $n ayı kapsıyor. Dokunursan Performans sekmesi açılır.';
+  }
+
+  @override
+  String pwAcildiSinir(int n) {
+    return 'Varlık sınırı kalktı: $n varlık yerine sınırsız';
+  }
 
   @override
   String get sandikPremiumUpper => 'Sandık Premium';

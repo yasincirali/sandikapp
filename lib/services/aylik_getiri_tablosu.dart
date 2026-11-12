@@ -88,11 +88,18 @@ const int aylikGetiriAsgariAy = 6;
 /// defterden, ölçülen aydan değil. Seri delikli bir defterde önizleme
 /// görünüp açılınca kart eşiği tutmayabilir — kilit satırı bir vaat değil,
 /// özelliğin adıdır.
-bool aylikGetiriOnizlemesiGorunur(List<Asset> lotlar, DateTime simdi) {
+bool aylikGetiriOnizlemesiGorunur(List<Asset> lotlar, DateTime simdi) =>
+    aylikGetiriAralikAySayisi(lotlar, simdi) >= aylikGetiriAsgariAy;
+
+/// Tablonun aralığındaki ay sayısı: ilk alımın ayından bu aya, ikisi dahil
+/// (`AylikGetiriTablosu.aralikta` ile aynı aralık). Seri çekmeden,
+/// defterden. Satın alma sonrası sayfa "Aylık getiri tablon: n ay"
+/// satırını buradan yazar; beş yıllık seriyi o sayfa için indirmek
+/// sayfayı bekletirdi. İlk alım yoksa 0.
+int aylikGetiriAralikAySayisi(List<Asset> lotlar, DateTime simdi) {
   final ilk = PeriodSummaryService.ilkAlimTarihi(lotlar);
-  if (ilk == null) return false;
-  final ay = (simdi.year * 12 + simdi.month) - (ilk.year * 12 + ilk.month) + 1;
-  return ay >= aylikGetiriAsgariAy;
+  if (ilk == null) return 0;
+  return (simdi.year * 12 + simdi.month) - (ilk.year * 12 + ilk.month) + 1;
 }
 
 /// Saf hesap. [seri]: portföy toplam serisi (ts → TRY; Özet'in serisiyle

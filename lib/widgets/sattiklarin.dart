@@ -81,7 +81,15 @@ class SattiklarinSatiri extends ConsumerWidget {
 /// `showKapanisOzeti` ile aynı gerekçe). Paylaş kuralı özette aynen: yalnız
 /// kazançta, yalnız yüzde. Değerlendirme istemi sorulmaz (eski kapanış
 /// "mutlu an" değil).
-Future<void> showSattiklarin(BuildContext context, WidgetRef ref) async {
+Future<void> showSattiklarin(BuildContext context, WidgetRef ref) =>
+    showSattiklarinListesi(context,
+        tutarGizli: () => ref.read(balanceHiddenProvider));
+
+/// [showSattiklarin]'in `WidgetRef` istemeyen hâli. Satın alma sonrası
+/// sayfa listeyi paywall kapandıktan SONRA açar; o an paywall'ın `ref`'i
+/// ölmüştür, gizli tutar tercihi kapsayıcıdan okunur.
+Future<void> showSattiklarinListesi(BuildContext context,
+    {required bool Function() tutarGizli}) async {
   final l = context.l10n;
   final secim = await showSandikSheet<KapanmisPozisyon>(
     context: context,
@@ -91,7 +99,7 @@ Future<void> showSattiklarin(BuildContext context, WidgetRef ref) async {
   );
   if (secim == null || !context.mounted) return;
   await showKapanisOzeti(context, secim.ozet,
-      tutarGizli: ref.read(balanceHiddenProvider), degerlendirme: false);
+      tutarGizli: tutarGizli(), degerlendirme: false);
 }
 
 /// Kapanmış pozisyonların listesi: ad, tutma süresi, gerçekleşen kâr/zarar.

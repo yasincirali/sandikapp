@@ -4640,17 +4640,65 @@ abstract class AppLocalizations {
   /// **'Premium açıldı'**
   String get premiumUnlocked;
 
-  /// No description provided for @premiumUnlockedBody.
+  /// No description provided for @pwAcildiDon.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.'**
-  String get premiumUnlockedBody;
+  /// **'Kaldığın yere dön'**
+  String get pwAcildiDon;
 
-  /// No description provided for @greatWord.
+  /// No description provided for @pwAcildiRapor.
   ///
   /// In tr, this message translates to:
-  /// **'Harika'**
-  String get greatWord;
+  /// **'{ay} raporun hazır'**
+  String pwAcildiRapor(String ay);
+
+  /// No description provided for @pwAcildiRaporSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay} raporun hazır. Dokunursan rapor açılır.'**
+  String pwAcildiRaporSes(String ay);
+
+  /// No description provided for @pwAcildiTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü tahmini: {n} hisse'**
+  String pwAcildiTemettu(int n);
+
+  /// No description provided for @pwAcildiTemettuSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü tahmini {n} hissen için hazır. Dokunursan tahmin açılır.'**
+  String pwAcildiTemettuSes(int n);
+
+  /// No description provided for @pwAcildiSattiklarin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sattıkların: {n} kapanmış pozisyon'**
+  String pwAcildiSattiklarin(int n);
+
+  /// No description provided for @pwAcildiSattiklarinSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sattıkların listesinde {n} kapanmış pozisyon var. Dokunursan liste açılır.'**
+  String pwAcildiSattiklarinSes(int n);
+
+  /// No description provided for @pwAcildiAylikGetiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık getiri tablon: {n} ay'**
+  String pwAcildiAylikGetiri(int n);
+
+  /// No description provided for @pwAcildiAylikGetiriSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık getiri tablon {n} ayı kapsıyor. Dokunursan Performans sekmesi açılır.'**
+  String pwAcildiAylikGetiriSes(int n);
+
+  /// No description provided for @pwAcildiSinir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık sınırı kalktı: {n} varlık yerine sınırsız'**
+  String pwAcildiSinir(int n);
 
   /// No description provided for @sandikPremiumUpper.
   ///

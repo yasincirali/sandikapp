@@ -2696,11 +2696,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumUnlocked => 'Premium unlocked';
 
   @override
-  String get premiumUnlockedBody =>
-      'Unlimited assets, premium indicators and every Premium detail are now unlocked.';
+  String get pwAcildiDon => 'Back to where you were';
 
   @override
-  String get greatWord => 'Great';
+  String pwAcildiRapor(String ay) {
+    return 'Your $ay report is ready';
+  }
+
+  @override
+  String pwAcildiRaporSes(String ay) {
+    return 'Your $ay report is ready. Tap to open the report.';
+  }
+
+  @override
+  String pwAcildiTemettu(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n stocks',
+      one: '1 stock',
+    );
+    return 'Dividend forecast: $_temp0';
+  }
+
+  @override
+  String pwAcildiTemettuSes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n of your stocks',
+      one: '1 of your stocks',
+    );
+    return 'The dividend forecast is ready for $_temp0. Tap to open the forecast.';
+  }
+
+  @override
+  String pwAcildiSattiklarin(int n) {
+    return 'Closed positions: $n';
+  }
+
+  @override
+  String pwAcildiSattiklarinSes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n closed positions',
+      one: '1 closed position',
+    );
+    return 'You have $_temp0. Tap to open the list.';
+  }
+
+  @override
+  String pwAcildiAylikGetiri(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return 'Monthly returns table: $_temp0';
+  }
+
+  @override
+  String pwAcildiAylikGetiriSes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return 'Your monthly returns table covers $_temp0. Tap to open the Performance tab.';
+  }
+
+  @override
+  String pwAcildiSinir(int n) {
+    return 'Asset limit removed: unlimited instead of $n assets';
+  }
 
   @override
   String get sandikPremiumUpper => 'Sandık Premium';
