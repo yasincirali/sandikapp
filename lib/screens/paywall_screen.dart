@@ -27,6 +27,7 @@ import '../widgets/premium_acildi_sayfasi.dart'
     show premiumAcildiAkisi, premiumAcildiIsit;
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_cizimi.dart';
+import '../widgets/satin_alim_geri_yukleme.dart';
 import '../l10n/l10n.dart';
 import 'legal_doc_screen.dart' show belgeyiAc;
 
@@ -239,23 +240,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _geriYukle() async {
     if (_busy) return;
-    if (!SatinAlmaService.instance.yapilandirildi) {
-      sandikSnack(context, context.l10n.pwKullanilamaz);
-      return;
-    }
     setState(() => _busy = true);
     try {
-      final bulundu = await SatinAlmaService.instance.geriYukle();
+      // Ortak akış (Profil › Premium da aynısını kullanır): mağazaya sor,
+      // sonucu söyle, sunucu haklarını tazele.
+      final bulundu = await satinAlimlariGeriYukle(context, ref);
       if (!mounted) return;
-      final l = context.l10n;
-      sandikSnack(
-        context,
-        switch (bulundu) {
-          true => l.pwGeriYuklendi,
-          false => l.pwGeriYukBulunamadi,
-          null => l.pwGeriYukHata,
-        },
-      );
       if (bulundu == true) Navigator.of(context).pop(true);
     } finally {
       if (mounted) setState(() => _busy = false);

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/crash_reporter.dart';
+import '../services/satin_alma_service.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
@@ -187,6 +188,12 @@ final premiumHaklariProvider = FutureProvider<List<PremiumHakki>>((ref) async {
     return const [];
   }
 });
+
+/// Mağaza servisi (RevenueCat). Ekran tekil örneği doğrudan değil bu
+/// sağlayıcıdan okur ki geri yükleme akışı sahte servisle test edilebilsin
+/// (Ar-Ge 12 Kas #1); uygulamada her zaman [SatinAlmaService.instance].
+final satinAlmaServisiProvider =
+    Provider<SatinAlmaService>((_) => SatinAlmaService.instance);
 
 /// Geçerli hak (abonelik önce, sonra hediye, sonra manuel); yoksa null.
 final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {

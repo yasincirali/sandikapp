@@ -7,6 +7,8 @@ import '../providers/premium_provider.dart';
 import '../screens/paywall_screen.dart';
 import '../services/abonelik_yonetimi.dart';
 import '../theme/sandik.dart';
+import 'sandik_async_button.dart';
+import 'satin_alim_geri_yukleme.dart';
 
 /// Profil'de Premium hakkı satırı (S14-A, 2026-10-05): ne tür hak, ne zaman
 /// yenilenir/biter, ve iki eylem.
@@ -14,9 +16,11 @@ import '../theme/sandik.dart';
 /// - "Yönet" yalnız mağaza aboneliğinde: iptal/plan değişikliği mağazanın
 ///   kendi sayfasında yapılır (Apple/Google kuralı); uygulama aracı olamaz.
 ///   iOS'ta o sayfa uygulama içinde açılır (`AbonelikYonetimi`, 2026-10-23).
-/// - "Satın alımları geri yükle" hakları sunucudan yeniden okur. Abonelik
-///   durumu RevenueCat webhook'uyla sunucuya yazılır (0116); başka cihazda
-///   alınmış abonelik de böylece görünür.
+/// - "Satın alımları geri yükle" paywall ile aynı akıştır
+///   ([satinAlimlariGeriYukle]): mağazaya sorar, sonucu söyler, sonra hakları
+///   sunucudan yeniden okur. Önce yalnız sunucuyu tazeliyor ve hiçbir şey
+///   söylemiyordu (Ar-Ge 12 Kas #1). Abonelik durumu RevenueCat webhook'uyla
+///   sunucuya yazılır (0116); başka cihazda alınmış abonelik de görünür.
 /// - Sunucu hakkı henüz yoksa da (`hak == null`: mağaza alımı webhook'tan
 ///   önce, yönetici) satır açılır ve "Yönet" görünür (yasin 10 Kas: "premium
 ///   müşteri premium'u nasıl iptal ediyor?"). Abonelik yoksa mağaza sayfası
@@ -98,9 +102,12 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
             alignment: WrapAlignment.end,
             spacing: SandikSpace.xs,
             children: [
-              TextButton(
+              SandikAsyncButton.kompakt(
+                tur: SandikAsyncTur.metin,
                 style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
-                onPressed: () => ref.invalidate(premiumHaklariProvider),
+                onPressed: () async {
+                  await satinAlimlariGeriYukle(context, ref);
+                },
                 child: Text(l10n.prmGeriYukle),
               ),
               if (yonet)
