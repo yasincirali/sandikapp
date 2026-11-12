@@ -205,4 +205,100 @@ void main() {
       });
     }
   });
+
+  group('plandasın', () {
+    // ₺82.000'lik defter: Ocak 2025 girişi + Ağu/Eyl/Eki ayda ₺10.000.
+    List<Asset> ritimliDefter() => [
+          _lot('THYAO', 52000, DateTime(2025, 1, 10)),
+          _lot('ASELS', 10000, DateTime(2026, 8, 5)),
+          _lot('GARAN', 10000, DateTime(2026, 9, 5)),
+          _lot('KCHOL', 10000, DateTime(2026, 10, 5)),
+        ];
+    final birYil = DateTime(2027, 11, 12);
+
+    testWidgets('kart: kısa hâl, ekran okuyucu tam cümle', (tester) async {
+      _defter = ritimliDefter();
+      final h = tester.ensureSemantics();
+      // ₺18.000 kalan ÷ 12 ay = ₺1.500 gerekli; ayda ₺10.000 → plandasın.
+      await kur(tester, hedef: 100000, gun: birYil, genislik: 1200);
+      expect(tester.takeException(), isNull);
+      expect(siganIceren(" · Kas 2027'ye kadar · plandasın"), findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              RegExp(r'Son 3 ayda ayda ₺10\.000 ekledin · plandasın$')),
+          findsOneWidget);
+      h.dispose();
+    });
+
+    testWidgets('kart, dar ekran: yalnız "Plandasın"', (tester) async {
+      _defter = ritimliDefter();
+      await kur(tester, hedef: 100000, gun: birYil, genislik: 280);
+      expect(sigan('Plandasın'), findsOneWidget);
+    });
+
+    testWidgets('sayfa: aylık cümlenin altında tam satır', (tester) async {
+      _defter = ritimliDefter();
+      await kur(tester, hedef: 100000, gun: birYil);
+      await tester.tap(sigan('Hedefe %82'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      final aylik = find.textContaining('Ayda yaklaşık');
+      final ritim = find.text('Son 3 ayda ayda ₺10.000 ekledin · plandasın');
+      expect(aylik, findsOneWidget);
+      expect(ritim, findsOneWidget);
+      expect(tester.getTopLeft(ritim).dy,
+          greaterThan(tester.getTopLeft(aylik).dy));
+    });
+
+    testWidgets('gerisinde: ayda ₺Z daha gerek', (tester) async {
+      _defter = ritimliDefter();
+      // ₺418.000 ÷ 12 = ₺34.834 gerekli; ₺10.000 ekleniyor → ₺24.834 daha.
+      await kur(tester, hedef: 500000, gun: birYil, genislik: 1200);
+      expect(siganIceren('ayda ₺24'), findsOneWidget);
+      await tester.tap(siganIceren('ayda ₺24'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(
+          find.text(
+              'Son 3 ayda ayda ₺10.000 ekledin · ayda ₺24.834 daha gerek'),
+          findsOneWidget);
+    });
+
+    testWidgets('bakiye gizli: tutarlar ••••', (tester) async {
+      _defter = ritimliDefter();
+      await kur(tester, hedef: 500000, gun: birYil, gizli: true, genislik: 1200);
+      expect(siganIceren('ayda •••• daha gerek'), findsOneWidget);
+      await tester.tap(siganIceren('ayda ••••'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(
+          find.text('Son 3 ayda ayda •••• ekledin · ayda •••• daha gerek'),
+          findsOneWidget);
+    });
+
+    testWidgets('defter 3 tam aydan kısa: satır yok', (tester) async {
+      _defter = [_lot('THYAO', 82000, DateTime(2026, 9, 1))];
+      await kur(tester, hedef: 100000, gun: birYil, genislik: 1200);
+      expect(siganIceren('plandasın'), findsNothing);
+      expect(siganIceren('gerek'), findsNothing);
+    });
+
+    testWidgets('gün geçmiş: satır yok, geçti satırı', (tester) async {
+      _defter = ritimliDefter();
+      await kur(tester,
+          hedef: 100000, gun: DateTime(2026, 10, 31), genislik: 1200);
+      expect(siganIceren('plandasın'), findsNothing);
+      expect(siganIceren('geçti'), findsOneWidget);
+    });
+
+    for (final genislik in [390.0, 320.0]) {
+      testWidgets('${genislik.toInt()}pt, 3,1× yazı: taşma yok',
+          (tester) async {
+        _defter = ritimliDefter();
+        await kur(tester,
+            hedef: 500000,
+            gun: birYil,
+            genislik: genislik,
+            yaziOlcegi: 3.1);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
 }

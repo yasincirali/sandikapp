@@ -19,6 +19,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import '../services/tazelik_ritmi.dart';
+import '../services/hedef_ritmi.dart';
 import '../services/price_service.dart';
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
@@ -56,7 +57,8 @@ import '../services/donem_ozeti_yukleyici.dart';
 import '../services/history_service.dart' show PortfolioHistoryBreakdown;
 import '../models/asset.dart' show Asset;
 import '../models/hedef_onerisi.dart';
-import '../models/hedef_tarihi.dart' show hedefGunuGecti, yilYonelmeEki;
+import '../models/hedef_tarihi.dart'
+    show hedefAylikTutar, hedefGunuGecti, yilYonelmeEki;
 import '../services/period_summary_service.dart'
     show PeriodSummary, SummaryPeriod;
 import 'sandik_segment.dart';
@@ -1123,12 +1125,22 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
 
   Widget _hedefKutusu(HedefSatiri s, bool gizli) {
     final l10n = context.l10n;
+    final now = BugunKarti.saat();
+    // Son üç tam ayın hızı ("plandasın", Premium hedefe tarih, 2026-11-12).
+    // Kapsamın defteri — hedefin değeriyle aynı defter. Gün henüz yokken
+    // de hesaplanır: sayfada gün seçilince satır orada belirir.
+    final ortalama = !s.belirlenmedi &&
+            !s.ulasildi &&
+            ref.watch(hedefTarihiDurumuProvider) == OzellikDurumu.acik
+        ? HedefRitmiService.sonUcAyOrtalamasi(widget.state.assets, now: now)
+        : null;
     final hedefAc = _olcerek(
         s,
         () => showHedefSheet(context, ref,
             kapsam: widget.hedefKapsami,
             etiket: widget.etiket,
             deger: s.deger,
+            sonUcAyOrtalamasi: ortalama,
             gizli: gizli));
     if (s.belirlenmedi) {
       return _HedefBaglantisi(
@@ -1158,7 +1170,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     // kadar", sığmazsa eski kısa satır. Premium değilse yazılmaz; kayıtlı
     // gün yine durur.
     final tarih = _hedefGunu();
-    final now = BugunKarti.saat();
     if (tarih != null && hedefGunuGecti(tarih, now)) {
       // Gün geçti, hedefe ulaşılmadı (2026-11-12 hata): eskiden gün
       // sessizce düşüyor, kart tarihsiz hedef gibi görünüyordu. Tek satır,
@@ -1176,13 +1187,39 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         : l10n.goalDateBy(
             DateFormat.yMMM(context.tarihDili).format(tarih),
             yilYonelmeEki(tarih.year));
+    // "Plandasın" kısa hâli: yer azaldıkça önce gün, sonra kalan düşer;
+    // en dar yazım yalnız "Plandasın" / "Ayda ₺Z daha gerek".
+    final ritim = tarih == null
+        ? null
+        : HedefRitmi.kur(
+            ortalama: ortalama,
+            gereken: hedefAylikTutar(kalan: s.kalan, tarih: tarih, bugun: now));
+    final r = ritim == null
+        ? null
+        : hedefRitmiMetinleri(l10n, ritim,
+            gizli: gizli, tutar: fmtTRYCompactSade);
     return _EylemKutusu(
       ikon: Icons.flag_outlined,
       baslik: l10n.todayGoalProgressTitle((s.oran * 100).floor()),
-      alt: [
-        if (gun != null) '$kalan · $gun',
-        kalan,
-      ],
+      alt: r != null
+          ? [
+              if (gun != null) '$kalan · $gun · ${r.orta}',
+              '$kalan · ${r.orta}',
+              r.yalniz,
+            ]
+          : [
+              if (gun != null) '$kalan · $gun',
+              kalan,
+            ],
+      // Ekran okuyucu kısa hâli değil, sayfanın tam cümlesini duyar.
+      // Tutar sayfadaki gibi tam yazım (kısaltma okunurken anlaşılmaz).
+      etiket: ritim == null
+          ? null
+          : [
+              l10n.todayGoalProgressTitle((s.oran * 100).floor()),
+              gun != null ? '$kalan · $gun' : kalan,
+              hedefRitmiMetinleri(l10n, ritim, gizli: gizli).tam,
+            ].join('. '),
       oran: s.oran,
       onTap: hedefAc,
     );
@@ -2437,10 +2474,14 @@ class _EylemKutusu extends StatelessWidget {
     required this.alt,
     required this.onTap,
     this.oran,
+    this.etiket,
   });
 
   final IconData ikon;
   final String baslik;
+
+  /// Ekran okuyucu etiketi; yoksa "başlık. en uzun alt yazım".
+  final String? etiket;
 
   /// Uzun → kısa yazımlar; sığan ilki tam yazılır.
   final List<String> alt;
@@ -2455,7 +2496,7 @@ class _EylemKutusu extends StatelessWidget {
     return Semantics(
       button: true,
       onTap: onTap,
-      label: '$baslik. ${alt.first}',
+      label: etiket ?? '$baslik. ${alt.first}',
       excludeSemantics: true,
       child: Material(
         color: c.amberFill.withValues(alpha: 0.12),

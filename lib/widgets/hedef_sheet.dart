@@ -24,6 +24,7 @@ import '../models/hedef_tarihi.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/bugun_service.dart' show HedefSatiri;
+import '../services/hedef_ritmi.dart';
 import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
@@ -66,10 +67,16 @@ List<int> hazirHedefler(double? deger, {bool gizli = false}) {
 /// [deger]: kapsamın bugünkü toplamı (Bugün kartıyla aynı sayı). Verilirse
 /// çipler ona göre gelir ve yazılan hedefin önizlemesi görünür; [gizli]
 /// (bakiye gizli) ise önizlemede yalnız oran kalır.
+///
+/// [sonUcAyOrtalamasi]: kapsamın son üç tam ayının aylık net eklemesi
+/// (`HedefRitmiService.sonUcAyOrtalamasi`). Verilirse aylık cümlenin altında
+/// "plandasın" satırı çizilir; defter kısaysa ya da çağıran bilmiyorsa
+/// (Profil satırı) `null`, satır yok.
 Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
     {String kapsam = '',
     String? etiket,
     double? deger,
+    double? sonUcAyOrtalamasi,
     bool gizli = false}) async {
   // Demo: hedef bir tercih yazımı (F1).
   if (DemoModu.yazmaKapisi('hedef')) return;
@@ -88,6 +95,7 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
         mevcutTarih: ref.read(tarihSaglayici),
         etiket: etiket,
         deger: deger,
+        sonUcAyOrtalamasi: sonUcAyOrtalamasi,
         gizli: gizli),
   );
   if (sonuc == null) return;
@@ -119,11 +127,13 @@ class _HedefSheet extends ConsumerStatefulWidget {
       this.mevcutTarih,
       this.etiket,
       this.deger,
+      this.sonUcAyOrtalamasi,
       this.gizli = false});
   final int mevcut;
   final DateTime? mevcutTarih;
   final String? etiket;
   final double? deger;
+  final double? sonUcAyOrtalamasi;
   final bool gizli;
 
   @override
@@ -291,6 +301,7 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
               _TarihBolumu(
                 tarih: _tarih,
                 deger: widget.deger,
+                sonUcAyOrtalamasi: widget.sonUcAyOrtalamasi,
                 hedef: yazilan,
                 gizli: widget.gizli,
                 onSec: _tarihSec,
@@ -346,6 +357,41 @@ List<String> hedefGunuGectiMetinleri(
   ];
 }
 
+/// "Plandasın" satırının yazımları ([HedefRitmi]; hesap
+/// `services/hedef_ritmi.dart`). [tam]: sayfanın cümlesi; [orta]: başka
+/// bir parçanın ardından (" · ") gelen kısa hâl; [yalniz]: satırda tek
+/// başına kalan kısa hâl (cümle düzeni: büyük harfle başlar).
+///
+/// Bakiye gizliyken tutarlar `••••` ("plandasın" tutar taşımaz). [tutar]
+/// biçimleyici çağırandan: sayfa tam tutar ([fmtTRY]), kart kısa yazım.
+({String tam, String orta, String yalniz}) hedefRitmiMetinleri(
+  AppLocalizations l10n,
+  HedefRitmi r, {
+  required bool gizli,
+  String Function(double) tutar = fmtTRY,
+}) {
+  String b(int v) => gizli ? '••••' : tutar(v.toDouble());
+  if (r.plandasin) {
+    return (
+      tam: l10n.goalPaceOnTrack(b(r.ortalama)),
+      orta: l10n.goalPaceOnTrackShort,
+      yalniz: l10n.goalPaceOnTrackAlone,
+    );
+  }
+  if (r.eklemeYok) {
+    return (
+      tam: l10n.goalPaceNone(b(r.eksik)),
+      orta: l10n.goalPaceNoneShort(b(r.eksik)),
+      yalniz: l10n.goalPaceNoneAlone(b(r.eksik)),
+    );
+  }
+  return (
+    tam: l10n.goalPaceBehind(b(r.ortalama), b(r.eksik)),
+    orta: l10n.goalPaceBehindShort(b(r.eksik)),
+    yalniz: l10n.goalPaceBehindAlone(b(r.eksik)),
+  );
+}
+
 /// "Ne zamana kadar?" çipleri ve aylık tutar satırı (Premium açık).
 ///
 /// Aylık satır yalnız gün seçili, gün geçmemiş ve kalan > 0 iken: hedefe
@@ -353,10 +399,15 @@ List<String> hedefGunuGectiMetinleri(
 /// `••••` (Bugün kartının hedef satırıyla aynı). Gün geçmiş ve kalan > 0
 /// ise aylık satırın yerinde [hedefGunuGectiMetinleri] (2026-11-12: eskiden
 /// hiçbir şey yazılmıyordu).
+///
+/// Aylık satırın altında "plandasın" satırı (2026-11-12): son üç tam ayın
+/// hızı gerekenle kıyaslanır. Yalnız aylık satır varken (gün geçmemiş,
+/// ulaşılmamış) ve defter üç tam aydan uzunken.
 class _TarihBolumu extends StatelessWidget {
   const _TarihBolumu({
     required this.tarih,
     required this.deger,
+    required this.sonUcAyOrtalamasi,
     required this.hedef,
     required this.gizli,
     required this.onSec,
@@ -364,6 +415,7 @@ class _TarihBolumu extends StatelessWidget {
   });
   final DateTime? tarih;
   final double? deger;
+  final double? sonUcAyOrtalamasi;
   final double? hedef;
   final bool gizli;
   final ValueChanged<DateTime?> onSec;
@@ -389,6 +441,7 @@ class _TarihBolumu extends StatelessWidget {
                 HedefSatiri(hedefTRY: hedef!.round(), deger: deger!).oran)
             .first
         : null;
+    final ritim = HedefRitmi.kur(ortalama: sonUcAyOrtalamasi, gereken: aylik);
     return Padding(
       padding: const EdgeInsets.only(top: SandikSpace.md),
       child: Column(
@@ -452,6 +505,14 @@ class _TarihBolumu extends StatelessWidget {
               l10n.goalDateNoReturn,
               style: context.t.bodySmall?.copyWith(color: context.c.text58),
             ),
+            if (ritim != null) ...[
+              const SizedBox(height: SandikSpace.xs),
+              Text(
+                hedefRitmiMetinleri(l10n, ritim, gizli: gizli).tam,
+                style:
+                    context.t.bodyMedium?.copyWith(color: context.c.text90),
+              ),
+            ],
           ],
         ],
       ),
