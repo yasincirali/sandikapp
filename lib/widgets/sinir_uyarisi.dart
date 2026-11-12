@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart' show paywallVisibleProvider;
 import '../screens/paywall_screen.dart';
-import '../theme/sandik.dart';
+import '../services/crash_reporter.dart';
 import '../utils/sandik_snack.dart';
 
 /// Ücretsiz sınır dolunca tek uyarı (Premium seti netleştirme, 2026-10-10).
@@ -14,9 +14,18 @@ import '../utils/sandik_snack.dart';
 /// varlık sayfasındaki yıldız düz "birini çıkar". Fiyat alarmında da paywall
 /// açıkken bile düz bir uyarı çıkıyordu; kullanıcı sınırın neden var
 /// olduğunu ve çıkış yolunu göremiyordu. Tek kural:
-///  - Paywall açık (sınır satış kapısı): "ücretsiz planda N" + Premium.
+///  - Paywall açık (sınır satış kapısı): paywall DOĞRUDAN açılır, deste
+///    sınırlar kartında ([kaynak]). 2026-11-12 (yasin: "6. eklenmek
+///    istediğinde premiuma yönlendirecek"): önceden küçük bir uyarı +
+///    "Premium" düğmesi çıkıyordu; uyarı birkaç saniyede kayboluyor, düğme
+///    gözden kaçıyordu. Varlık sınırı (`asset_limit_*`) zaten paywall'u
+///    doğrudan açıyordu; takip ve alarm ona hizalandı. Paywall kapatılırsa
+///    [ucretsizMetin] uyarısı kalır ki kullanıcı neden eklenmediğini bilsin.
 ///  - Paywall kapalı (sınır ürün sınırı, ör. takipte 7): çıkış yolu
 ///    "birini çıkar / kapat"; satın alınamayan şey önerilmez.
+///
+/// Ateşle-unut: çağıranlar (catch blokları, dokunma geri çağrıları) paywall
+/// kapanmasını beklemez.
 void sinirUyarisi(
   BuildContext context,
   WidgetRef ref, {
@@ -24,19 +33,19 @@ void sinirUyarisi(
   required String urunMetni,
   required String kaynak,
 }) {
-  final paywallOn = ref.read(paywallVisibleProvider);
-  sandikSnack(
-    context,
-    paywallOn ? ucretsizMetin : urunMetni,
-    kind: SandikSnackKind.warning,
-    action: paywallOn
-        ? SnackBarAction(
-            label: 'Premium',
-            textColor: context.c.onAmber,
-            onPressed: () => PaywallScreen.show(context, source: kaynak),
-          )
-        : null,
-  );
+  if (!ref.read(paywallVisibleProvider)) {
+    sandikSnack(context, urunMetni, kind: SandikSnackKind.warning);
+    return;
+  }
+  CrashReporter.arkaPlan(_paywallAc(context, ucretsizMetin, kaynak),
+      reason: 'sinirUyarisi.paywall');
+}
+
+Future<void> _paywallAc(
+    BuildContext context, String ucretsizMetin, String kaynak) async {
+  final aldi = await PaywallScreen.show(context, source: kaynak);
+  if (aldi == true || !context.mounted) return;
+  sandikSnack(context, ucretsizMetin, kind: SandikSnackKind.warning);
 }
 
 /// Takip listesi sınırı (`WatchlistLimitException`).

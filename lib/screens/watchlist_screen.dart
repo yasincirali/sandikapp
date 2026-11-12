@@ -1958,11 +1958,9 @@ class _AddHeader extends ConsumerWidget {
                     ? context.l10n.watchlistLimitReached(limit)
                     : context.l10n.addToWatchlist,
                 onTap: dolu
-                    ? () => sandikSnack(
-                          context,
-                          context.l10n.watchlistLimitReached(limit),
-                          kind: SandikSnackKind.warning,
-                        )
+                    // Dolu kartta da tek kural (`sinir_uyarisi.dart`):
+                    // paywall açıksa doğrudan Premium'a götürür (2026-11-12).
+                    ? () => takipSiniriUyarisi(context, ref, limit)
                     : () => _ekle(context),
                 // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
                 // (taslak), 6 pt dikey pay.
