@@ -9,8 +9,7 @@ import '../providers/premium_provider.dart'
 import '../services/aylik_getiri_tablosu.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
-import '../utils/tr_iyelik.dart'
-    show trSayiIyelikBelirtmeEki, trSayiIyelikEki;
+import '../utils/tr_iyelik.dart' show trSayiIyelikBelirtmeEki, trSayiIyelikEki;
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_acilir.dart';
 import 'sandik_skeleton.dart' show SandikIcerikGecisi;
@@ -176,10 +175,7 @@ class AylikGetiriKarti extends ConsumerWidget {
                   for (final (i, yil) in tablo.yillar.indexed) ...[
                     if (i > 0) const SizedBox(height: SandikSpace.md),
                     _YilBlogu(
-                        tablo: tablo,
-                        ozet: ozet,
-                        yil: yil,
-                        yerlesim: yerlesim),
+                        tablo: tablo, ozet: ozet, yil: yil, yerlesim: yerlesim),
                   ],
                 ],
               );
@@ -189,7 +185,7 @@ class AylikGetiriKarti extends ConsumerWidget {
               _OzetCumlesi(ozet: ozet),
             ],
             const SizedBox(height: SandikSpace.xs),
-            const _Dipnot(),
+            _Dipnot(tufeKaynagi: tablo.yilReeli.isNotEmpty),
           ],
         ),
       ),
@@ -238,8 +234,8 @@ Color? _tonRengi(BuildContext context, int yon) =>
     yon == 0 ? null : (yon > 0 ? context.c.gain : context.c.loss);
 
 /// "▲ %2,1": ok ton renginde, sayı [stil]in renginde.
-InlineSpan _yuzdeSpan(BuildContext context,
-    ({String ok, String yuzde, String okunan, int yon}) p,
+InlineSpan _yuzdeSpan(
+    BuildContext context, ({String ok, String yuzde, String okunan, int yon}) p,
     {String arasi = ' '}) {
   final ton = _tonRengi(context, p.yon);
   return TextSpan(children: [
@@ -337,7 +333,8 @@ class _YilBlogu extends StatelessWidget {
                       ? _Vurgu.enZor
                       : _Vurgu.yok),
         );
-    final baslik = _YilSatiri(yil: yil, toplam: tablo.yilToplami[yil]);
+    final baslik = _YilSatiri(
+        yil: yil, toplam: tablo.yilToplami[yil], reel: tablo.yilReeli[yil]);
 
     switch (yerlesim) {
       case _Yerlesim.genis:
@@ -388,27 +385,38 @@ class _YilBlogu extends StatelessWidget {
   }
 }
 
-/// Yıl satırı: "2025 ▲ %12,4". Yıl toplamı `titleSmall` w600 — satırın
-/// cevabı odur, hücrelerden bir kademe büyük. [Wrap]: dar ekranda ve
-/// büyük yazıda parçalar alt satıra iner, taşmaz.
+/// Yıl satırı: "2025 ▲ %12,4 · TÜFE %31,0 · reel ▼ %14,2". Yıl toplamı
+/// `titleSmall` w600 — satırın cevabı odur, hücrelerden bir kademe büyük;
+/// TÜFE ve reel yan bilgi, `bodySmall`. TÜFE'si eksik yılda o parça hiç
+/// yok (`aylikGetiriYilReelleri`). [Wrap]: dar ekranda ve büyük yazıda
+/// parçalar alt satıra iner, taşmaz.
 class _YilSatiri extends StatelessWidget {
-  const _YilSatiri({required this.yil, required this.toplam});
+  const _YilSatiri({required this.yil, required this.toplam, this.reel});
 
   final int yil;
   final double? toplam;
+  final AylikGetiriYilReeli? reel;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final c = context.c;
-    final stil =
-        context.t.titleSmall?.copyWith(fontWeight: FontWeight.w600);
+    final stil = context.t.titleSmall?.copyWith(fontWeight: FontWeight.w600);
+    final yanStil = context.t.bodySmall?.copyWith(color: c.text58);
     final t = toplam;
     final p = t == null ? null : _yuzdeParcalari(l, t);
+    final r = p == null ? null : reel;
+    final rp = r == null ? null : _yuzdeParcalari(l, r.reel);
     final yilAdi = '${l.aylikGetiriYil} $yil';
+    final okunan = p == null
+        ? yilAdi
+        : (r == null || rp == null)
+            ? l.aylikGetiriHucre(yilAdi, p.okunan)
+            : l.aylikGetiriYilReelOkunan(
+                yilAdi, p.okunan, fmtNum(r.tufe, digits: 1), rp.okunan);
     return Semantics(
       container: true,
-      label: p == null ? yilAdi : l.aylikGetiriHucre(yilAdi, p.okunan),
+      label: okunan,
       excludeSemantics: true,
       child: Wrap(
         spacing: SandikSpace.sm,
@@ -419,6 +427,17 @@ class _YilSatiri extends StatelessWidget {
           if (p != null)
             Text.rich(_yuzdeSpan(context, p),
                 style: stil?.copyWith(color: c.text90)),
+          if (r != null && rp != null) ...[
+            Text('· ${l.aylikGetiriTufe} ${fmtPct(r.tufe, digits: 1)}',
+                style: yanStil),
+            Text.rich(
+              TextSpan(children: [
+                TextSpan(text: '· ${l.aylikGetiriReel} '),
+                _yuzdeSpan(context, rp),
+              ]),
+              style: yanStil,
+            ),
+          ],
         ],
       ),
     );
@@ -464,9 +483,8 @@ class _Hucre extends StatelessWidget {
     final d = deger;
     final p = (aralikta && d != null) ? _yuzdeParcalari(l, d) : null;
     final ton = p == null ? null : _tonRengi(context, p.yon);
-    final String okunan = !aralikta
-        ? ''
-        : (p == null ? l.aylikGetiriVeriYok : p.okunan);
+    final String okunan =
+        !aralikta ? '' : (p == null ? l.aylikGetiriVeriYok : p.okunan);
 
     final etiketStili = context.t.labelSmall?.copyWith(color: c.text58);
     final degerStili =
@@ -592,7 +610,10 @@ class _OzetCumlesi extends StatelessWidget {
 /// soru ("para eklemem yüzdeyi bozar mı") tek satırda cevaplanır, yöntem
 /// isteyen için açılır. Uygulamanın tek katlanır hareketi [SandikAcilir].
 class _Dipnot extends StatefulWidget {
-  const _Dipnot();
+  const _Dipnot({required this.tufeKaynagi});
+
+  /// Bir yıl satırı TÜFE/reel yazıyorsa ayrıntıda kaynağı da söyle.
+  final bool tufeKaynagi;
 
   @override
   State<_Dipnot> createState() => _DipnotState();
@@ -642,7 +663,9 @@ class _DipnotState extends State<_Dipnot> {
           child: Padding(
             padding: const EdgeInsets.only(bottom: SandikSpace.xs),
             child: Text(
-              l.aylikGetiriDipnot,
+              widget.tufeKaynagi
+                  ? '${l.aylikGetiriDipnot} ${l.aylikGetiriKaynak}'
+                  : l.aylikGetiriDipnot,
               style: context.t.bodySmall?.copyWith(color: c.text58),
             ),
           ),

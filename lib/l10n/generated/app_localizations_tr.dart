@@ -11042,6 +11042,22 @@ class AppLocalizationsTr extends AppLocalizations {
       'Para ekleyip çekmen yüzdeyi değiştirmez.';
 
   @override
+  String get aylikGetiriTufe => 'TÜFE';
+
+  @override
+  String get aylikGetiriReel => 'reel';
+
+  @override
+  String aylikGetiriYilReelOkunan(
+      String yil, String getiri, String tufe, String reel) {
+    return '$yil: $getiri. TÜFE yüzde $tufe, reel getiri $reel.';
+  }
+
+  @override
+  String get aylikGetiriKaynak =>
+      'Enflasyon: TÜİK TÜFE. Yılın TÜFE\'si tablodaki aynı aylardan zincirlenir; aylardan birinin TÜFE\'si açıklanmadıysa reel yazılmaz.';
+
+  @override
   String get zkSatirBaslik => 'Zekât hesabı';
 
   @override

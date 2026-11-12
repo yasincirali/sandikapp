@@ -11222,6 +11222,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Adding or withdrawing money doesn\'t change the percentage.';
 
   @override
+  String get aylikGetiriTufe => 'CPI';
+
+  @override
+  String get aylikGetiriReel => 'real';
+
+  @override
+  String aylikGetiriYilReelOkunan(
+      String yil, String getiri, String tufe, String reel) {
+    return '$yil: $getiri. CPI $tufe%, real return $reel.';
+  }
+
+  @override
+  String get aylikGetiriKaynak =>
+      'Inflation: TurkStat CPI. The year\'s CPI is chained over the same months as the table; if any month\'s CPI isn\'t published yet, no real return is shown.';
+
+  @override
   String get zkSatirBaslik => 'Zakat calculator';
 
   @override

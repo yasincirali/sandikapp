@@ -11,6 +11,7 @@ import 'package:portfoy_takip/providers/preferences_provider.dart'
 import 'package:portfoy_takip/providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import 'package:portfoy_takip/services/aylik_getiri_tablosu.dart';
+import 'package:portfoy_takip/services/inflation_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/aylik_getiri_karti.dart';
@@ -111,7 +112,8 @@ void main() {
       expect(mart, closeTo(beklenen, 1e-9));
     });
 
-    test('ölçümsüz ay null; yıl toplamı uydurulmaz; sonraki ay kendi '
+    test(
+        'ölçümsüz ay null; yıl toplamı uydurulmaz; sonraki ay kendi '
         'ilk ölçümünden başlar', () {
       final seri = <int, double>{};
       _ayEkle(seri, 2025, 1, 10000, 11000);
@@ -199,8 +201,8 @@ void main() {
         overrides: [
           premiumOzellikleriGorunurProvider.overrideWithValue(gorunur),
           premiumKilitliProvider.overrideWithValue(kilitli),
-          aylikGetiriProvider.overrideWith(
-              (ref, _) => saglayici != null ? saglayici() : Future.value(t ?? tablo())),
+          aylikGetiriProvider.overrideWith((ref, _) =>
+              saglayici != null ? saglayici() : Future.value(t ?? tablo())),
         ],
         child: MaterialApp(
           theme: ThemeData(extensions: const [SandikPalette.light]),
@@ -227,8 +229,8 @@ void main() {
           hesapLotlari: [_alim('a', 1, 1, ilk)],
         );
 
-    testWidgets('dar ekranda kart görünür: iki satır, ok + yüzde, yıl', (
-        tester) async {
+    testWidgets('dar ekranda kart görünür: iki satır, ok + yüzde, yıl',
+        (tester) async {
       await pump(tester);
       expect(find.text('Aylık getiri'), findsOneWidget);
       expect(find.text('Oca'), findsOneWidget);
@@ -248,16 +250,15 @@ void main() {
       // Liste yerleşiminde ay adı tam yazılır, her ay bir satır.
       expect(find.text('Ocak'), findsOneWidget);
       expect(find.text('Şubat'), findsOneWidget);
-      expect(
-          tester.getTopLeft(find.text('Şubat')).dy,
+      expect(tester.getTopLeft(find.text('Şubat')).dy,
           greaterThan(tester.getTopLeft(find.text('Ocak')).dy));
       expect(tester.getTopLeft(find.text('Şubat')).dx,
           tester.getTopLeft(find.text('Ocak')).dx);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('kilitli: Premium kilit satırı, kaynak aylik_getiri', (
-        tester) async {
+    testWidgets('kilitli: Premium kilit satırı, kaynak aylik_getiri',
+        (tester) async {
       await pump(tester, kilitli: true);
       final kilit = tester.widget<KilitSatiri>(find.byType(KilitSatiri));
       expect(kilit.kaynak, 'aylik_getiri');
@@ -268,13 +269,11 @@ void main() {
     testWidgets('kilitli: kişisel ay sayısı, seri çekilmez', (tester) async {
       var cagrildi = false;
       // Nisan 2024 → Kasım 2025 = 20 ay.
-      await pump(tester,
-          kilitli: true,
-          ist: kisaIstek(DateTime(2024, 4, 10)),
+      await pump(tester, kilitli: true, ist: kisaIstek(DateTime(2024, 4, 10)),
           saglayici: () async {
-            cagrildi = true;
-            return tablo();
-          });
+        cagrildi = true;
+        return tablo();
+      });
       expect(
           find.text('20 aylık geçmişin var. Hangi ayları artıda '
               "kapattığını Premium'la gör."),
@@ -283,20 +282,21 @@ void main() {
       expect(find.textContaining('%'), findsNothing);
     });
 
-    testWidgets('aralık ≥ 6 ama seri delikli (ölçülen < 6): kart yok', (tester) async {
+    testWidgets('aralık ≥ 6 ama seri delikli (ölçülen < 6): kart yok',
+        (tester) async {
       await pump(tester, t: tablo(ay: 5));
       expect(find.text('Aylık getiri'), findsNothing);
     });
 
-    testWidgets('kısa geçmiş: 6 bölmeli ilerleme + hazır olacağı ay; seri '
+    testWidgets(
+        'kısa geçmiş: 6 bölmeli ilerleme + hazır olacağı ay; seri '
         'çekilmez', (tester) async {
       var cagrildi = false;
-      await pump(tester,
-          ist: kisaIstek(DateTime(2025, 9, 3)),
+      await pump(tester, ist: kisaIstek(DateTime(2025, 9, 3)),
           saglayici: () async {
-            cagrildi = true;
-            return tablo();
-          });
+        cagrildi = true;
+        return tablo();
+      });
       expect(find.text('Aylık getiri'), findsOneWidget);
       // Eylül, Ekim, Kasım = 3 ay; 6. ay Şubat 2026.
       expect(
@@ -328,8 +328,8 @@ void main() {
       expect(find.text('Aylık getiri'), findsNothing);
     });
 
-    testWidgets('seri hatası: kart kalır, tek satır; ham hata yok', (
-        tester) async {
+    testWidgets('seri hatası: kart kalır, tek satır; ham hata yok',
+        (tester) async {
       await pump(tester,
           saglayici: () => Future.error(StateError('ag koptu xyz')));
       expect(find.text('Aylık getiri'), findsOneWidget);
@@ -374,8 +374,8 @@ void main() {
           find.bySemanticsLabel(
               'Eylül 2025: yüzde 2,3 kazanç, tablonun en iyi ayı'),
           findsOneWidget);
-      expect(find.bySemanticsLabel('Ocak 2025: yüzde 2,3 kazanç'),
-          findsOneWidget);
+      expect(
+          find.bySemanticsLabel('Ocak 2025: yüzde 2,3 kazanç'), findsOneWidget);
       // Hücre ≥ 44 pt.
       expect(
           tester
@@ -399,7 +399,10 @@ void main() {
 
     testWidgets('tablo: yazı ×3,1 ve 320 pt taşma yok', (tester) async {
       await pump(tester, olcek: 3.1, genislik: 320);
-      await tester.tap(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'));
+      final dipnot = find.text('Para ekleyip çekmen yüzdeyi değiştirmez.');
+      await tester.ensureVisible(dipnot);
+      await tester.pumpAndSettle();
+      await tester.tap(dipnot);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
@@ -411,29 +414,180 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('geç gelen kart: boy akar; hareketi azaltta anında', (
-        tester) async {
+    testWidgets('geç gelen kart: boy akar; hareketi azaltta anında',
+        (tester) async {
       for (final azalt in [false, true]) {
         final tamam = Completer<AylikGetiriTablosu?>();
         await pump(tester,
-            saglayici: () => tamam.future,
-            hareketiAzalt: azalt,
-            yerles: false);
+            saglayici: () => tamam.future, hareketiAzalt: azalt, yerles: false);
         await tester.pump();
         expect(find.text('Aylık getiri'), findsNothing);
         tamam.complete(tablo());
         await tester.pump();
         await tester.pump();
         expect(find.text('Aylık getiri'), findsOneWidget);
-        expect(find.byType(AnimatedSize), azalt ? findsNothing : findsOneWidget);
+        expect(
+            find.byType(AnimatedSize), azalt ? findsNothing : findsOneWidget);
         await tester.pumpAndSettle();
         await tester.pumpWidget(const SizedBox());
       }
     });
 
+    AylikGetiriTablosu reelli() => tablo().reelIle(const {
+          2025: AylikGetiriYilReeli(tufe: 31.0, reel: -14.2),
+        });
+
+    testWidgets('yıl satırı: getiri · TÜFE · reel; kaynak dipnotta',
+        (tester) async {
+      await pump(tester, t: reelli());
+      expect(find.text('· TÜFE %31,0'), findsOneWidget);
+      expect(find.text('· reel ▼ %14,2'), findsOneWidget);
+      expect(
+          find.bySemanticsLabel('Yıl 2025: yüzde 4,2 kazanç. TÜFE yüzde '
+              '31,0, reel getiri yüzde 14,2 kayıp.'),
+          findsOneWidget);
+      await tester.tap(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Enflasyon: TÜİK TÜFE.'), findsOneWidget);
+    });
+
+    testWidgets('TÜFE bilinmeyen yıl: yalnız getiri, kaynak notu yok',
+        (tester) async {
+      await pump(tester);
+      expect(find.textContaining('TÜFE'), findsNothing);
+      expect(find.textContaining('reel'), findsNothing);
+      await tester.tap(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Enflasyon'), findsNothing);
+    });
+
+    testWidgets(
+        'yıl satırı TÜFE ile: 320 pt ve ×3,1 taşma yok, alt satıra '
+        'iner', (tester) async {
+      await pump(tester, t: reelli(), genislik: 320, olcek: 1.9);
+      expect(tester.takeException(), isNull);
+      expect(tester.getTopLeft(find.text('· reel ▼ %14,2')).dy,
+          greaterThan(tester.getTopLeft(find.text('2025')).dy));
+      await pump(tester, t: reelli(), genislik: 320, olcek: 3.1);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('Premium özellikleri görünmüyorsa kart yok', (tester) async {
       await pump(tester, gorunur: false);
       expect(find.text('Aylık getiri'), findsNothing);
+    });
+  });
+
+  group('aylikGetiriYilReelleri (saf)', () {
+    // TÜFE endeksi: Aralık 2024 = 100, her ay ×1,0228 (≈ %31 yıllık);
+    // Ocak–Mayıs 2025 ayrıca yüksek, kısmi yıl onları okumamalı.
+    Map<DateTime, double> endeks() {
+      final e = <DateTime, double>{DateTime(2024, 12): 100};
+      var v = 100.0;
+      for (var m = 1; m <= 12; m++) {
+        v *= m <= 5 ? 1.05 : 1.0228;
+        e[DateTime(2025, m)] = v;
+      }
+      return e;
+    }
+
+    AylikGetiriTablosu t(
+            {required DateTime ilk, required double? toplam, int buAy = 2}) =>
+        AylikGetiriTablosu(
+          aylar: {
+            2025: List<double?>.filled(12, 1),
+            2026: [1, 1, ...List.filled(10, null)]
+          },
+          yilToplami: {2025: toplam, 2026: 2.01},
+          ilkAy: ilk,
+          buAy: DateTime(2026, buAy),
+          olculenAySayisi: 14,
+        );
+
+    double tufe(Map<DateTime, double> e, DateTime bas, DateTime son) =>
+        (e[son]! / e[bas]! - 1) * 100;
+
+    test('tam yıl: Aralık→Aralık zinciri; reel = (1+g)/(1+t) − 1, negatif', () {
+      final e = endeks();
+      final r =
+          aylikGetiriYilReelleri(t(ilk: DateTime(2025, 1), toplam: 12.4), e);
+      final beklenenTufe = tufe(e, DateTime(2024, 12), DateTime(2025, 12));
+      expect(r[2025]!.tufe, closeTo(beklenenTufe, 1e-9));
+      expect(r[2025]!.reel,
+          closeTo((1.124 / (1 + beklenenTufe / 100) - 1) * 100, 1e-9));
+      expect(r[2025]!.reel, lessThan(0));
+      // 2026: içinde bulunulan ay (ve Ocak) endekste yok → yazılmaz.
+      expect(r.containsKey(2026), isFalse);
+    });
+
+    test('kısmi yıl: yalnız ölçülen aylar (Haziran–Aralık)', () {
+      final e = endeks();
+      final r =
+          aylikGetiriYilReelleri(t(ilk: DateTime(2025, 6), toplam: 30), e);
+      expect(r[2025]!.tufe,
+          closeTo(tufe(e, DateTime(2025, 5), DateTime(2025, 12)), 1e-9));
+      // Takvim yılının TÜFE'si değil.
+      expect(r[2025]!.tufe,
+          isNot(closeTo(tufe(e, DateTime(2024, 12), DateTime(2025, 12)), 1)));
+      expect(r[2025]!.reel, greaterThan(0));
+    });
+
+    test('aylardan birinin TÜFE\'si yoksa yıl yazılmaz', () {
+      final e = endeks()..remove(DateTime(2025, 7));
+      expect(aylikGetiriYilReelleri(t(ilk: DateTime(2025, 1), toplam: 12.4), e),
+          isEmpty);
+      // Kısmi yılın taban ayı (Mayıs) eksikse de yok.
+      final e2 = endeks()..remove(DateTime(2025, 5));
+      expect(aylikGetiriYilReelleri(t(ilk: DateTime(2025, 6), toplam: 3), e2),
+          isEmpty);
+    });
+
+    test('yıl toplamı bilinmiyorsa ya da endeks boşsa yok', () {
+      expect(
+          aylikGetiriYilReelleri(
+              t(ilk: DateTime(2025, 1), toplam: null), endeks()),
+          isEmpty);
+      expect(
+          aylikGetiriYilReelleri(
+              t(ilk: DateTime(2025, 1), toplam: 12.4), const {}),
+          isEmpty);
+    });
+  });
+
+  group('aylikGetiriProvider', () {
+    final lot = _alim('a', 100, 100, DateTime(2025, 1, 1));
+    final istek = AylikGetiriIstegi(
+        anahtar: 'p', seriLotlari: [lot], hesapLotlari: [lot]);
+    tearDown(() {
+      aylikGetiriSeriTestCekici = null;
+      InflationService.instance.resetForTest();
+    });
+
+    test('tablo TÜFE endeksinden yıl reelini taşır', () async {
+      final seri = <int, double>{};
+      for (var m = 1; m <= 12; m++) {
+        _ayEkle(seri, 2025, m, 10000, 10000);
+      }
+      aylikGetiriSeriTestCekici = (_, __) async => seri;
+      InflationService.instance.seedForTest({
+        for (var m = 0; m <= 12; m++) DateTime(2025, m): 100.0 + m,
+      });
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final t = await c.read(aylikGetiriProvider(istek).future);
+      expect(t!.yilToplami[2025], closeTo(0, 1e-9));
+      expect(t.yilReeli[2025]!.tufe, closeTo(12, 1e-9));
+      expect(t.yilReeli[2025]!.reel, lessThan(0));
+    });
+
+    test('seri hatası taşınır (kart "hesaplanamadı" diyebilsin)', () async {
+      aylikGetiriSeriTestCekici = (_, __) async => throw StateError('x');
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final sub = c.listen(aylikGetiriProvider(istek), (_, __) {});
+      addTearDown(sub.close);
+      await expectLater(
+          c.read(aylikGetiriProvider(istek).future), throwsStateError);
     });
   });
 
@@ -448,9 +602,8 @@ void main() {
         );
 
     test('bu ay sayılmaz; artı, en iyi ve en zor kapanmış aylardan', () {
-      final o = aylikGetiriOzeti(t(
-          [1, -2, 3, null, 0, -6.1, 6.4, 2, 1, 1, 1, -20],
-          buAy: 12))!;
+      final o = aylikGetiriOzeti(
+          t([1, -2, 3, null, 0, -6.1, 6.4, 2, 1, 1, 1, -20], buAy: 12))!;
       expect(o.kapanan, 10); // null ve Aralık (bu ay) hariç
       expect(o.arti, 7); // 0 artı değil
       expect((o.enIyi.ay, o.enIyi.deger), (7, 6.4));
@@ -458,9 +611,9 @@ void main() {
     });
 
     test('eşitlikte en yeni ay; bütün aylar eşitse en zor yok', () {
-      final o = aylikGetiriOzeti(
-          t([2, 2, 2, null, null, null, null, null, null, null, null, null],
-              buAy: 12))!;
+      final o = aylikGetiriOzeti(t(
+          [2, 2, 2, null, null, null, null, null, null, null, null, null],
+          buAy: 12))!;
       expect(o.enIyi.ay, 3);
       expect(o.enZor, isNull);
     });
@@ -494,8 +647,7 @@ void main() {
       expect(ayBulunmaParcasi(DateTime(2026, 4), bugun: b), "Nisan'da");
       expect(ayBulunmaParcasi(DateTime(2026, 9), bugun: b), "Eylül'de");
       expect(ayBulunmaParcasi(DateTime(2027, 3), bugun: b), "Mart 2027'de");
-      expect(ayBulunmaParcasi(DateTime(2025, 12), bugun: b),
-          "Aralık 2025'te");
+      expect(ayBulunmaParcasi(DateTime(2025, 12), bugun: b), "Aralık 2025'te");
       expect(ayBulunmaParcasi(DateTime(2027, 3), dil: 'en_US', bugun: b),
           'March 2027');
     });

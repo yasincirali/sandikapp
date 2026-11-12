@@ -5,6 +5,7 @@ import '../models/asset.dart';
 import '../services/aylik_getiri_tablosu.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
+import '../services/inflation_service.dart';
 
 /// Aylık getiri tablosunun isteği. Eşitlik yalnız [anahtar]la: lot
 /// listeleri her build'de yeni nesne olarak gelir; anahtar (kapsam + defter
@@ -54,6 +55,10 @@ Future<Map<int, double>> Function(List<Asset> lotlar, DateTime simdi)?
 ///
 /// `null`: tablo yok (ilk alım yok ya da seri boş).
 ///
+/// ## TÜFE
+/// Yıl satırının "TÜFE · reel" parçası aynı provider'da eklenir
+/// (`aylikGetiriYilReelleri`); endeks hatası tabloyu düşürmez.
+///
 /// ## Hata: yutulmaz, taşınır (2026-11-12)
 /// Hata Crashlytics'e non-fatal gider ve YENİDEN fırlatılır. Eskiden
 /// `null`a çevriliyordu: Premium kullanıcının parasını verdiği kart seri
@@ -86,14 +91,28 @@ final aylikGetiriProvider = FutureProvider.autoDispose
           tier: ResolutionTier.daily,
         ),
       ]);
-      seri = uzunSeriyiBirlestir(
-          haftalik: sonuc[0].total, gunluk: sonuc[1].total);
+      seri =
+          uzunSeriyiBirlestir(haftalik: sonuc[0].total, gunluk: sonuc[1].total);
     }
     if (seri.isEmpty) return null;
-    return await aylikGetiriTablosuHesapla(
+    final tablo = await aylikGetiriTablosuHesapla(
         seri: seri, lotlar: istek.hesapLotlari, simdi: simdi);
+    if (tablo == null) return null;
+    return tablo.reelIle(aylikGetiriYilReelleri(tablo, await _tufeEndeksi()));
   } catch (e, st) {
     CrashReporter.report(e, st, reason: 'aylikGetiriProvider');
     rethrow;
   }
 });
+
+/// TÜFE endeksi — Özet'in reel kartıyla aynı kaynak ve 12 saatlik önbellek
+/// (`InflationService`; yeni ağ yok). Endeks okunamazsa tablo yine çizilir,
+/// yalnız yıl satırları reel yazmaz: TÜFE yan bilgi, tabloyu düşürmez.
+Future<Map<DateTime, double>> _tufeEndeksi() async {
+  try {
+    return await InflationService.instance.indexSeries();
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'aylikGetiriProvider.tufe');
+    return const {};
+  }
+}

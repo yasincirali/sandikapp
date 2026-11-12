@@ -17960,6 +17960,31 @@ abstract class AppLocalizations {
   /// **'Para ekleyip çekmen yüzdeyi değiştirmez.'**
   String get aylikGetiriDipnotKisa;
 
+  /// Aylık getiri yıl satırı: TÜFE etiketi (ardından o yılın aynı aylarının TÜFE yüzdesi)
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE'**
+  String get aylikGetiriTufe;
+
+  /// Aylık getiri yıl satırı: reel getiri etiketi (ardından ok + yüzde)
+  ///
+  /// In tr, this message translates to:
+  /// **'reel'**
+  String get aylikGetiriReel;
+
+  /// Ekran okuyucu: yıl satırı TÜFE ve reel getiriyle
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil}: {getiri}. TÜFE yüzde {tufe}, reel getiri {reel}.'**
+  String aylikGetiriYilReelOkunan(
+      String yil, String getiri, String tufe, String reel);
+
+  /// Aylık getiri dipnot ayrıntısı: enflasyon kaynağı
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyon: TÜİK TÜFE. Yılın TÜFE\'si tablodaki aynı aylardan zincirlenir; aylardan birinin TÜFE\'si açıklanmadıysa reel yazılmaz.'**
+  String get aylikGetiriKaynak;
+
   /// Profil satırı başlığı
   ///
   /// In tr, this message translates to:
