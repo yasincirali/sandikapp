@@ -24,6 +24,7 @@ class PremiumKilitKarti extends StatelessWidget {
     required this.govde,
     required this.kilitMetni,
     required this.kaynak,
+    this.kisisel,
   });
 
   final IconData ikon;
@@ -37,6 +38,14 @@ class PremiumKilitKarti extends StatelessWidget {
 
   /// Analitikte paywall'ın nereden açıldığı (`premium_upgrade_started`).
   final String kaynak;
+
+  /// Kullanıcının kendi verisinden tek satır (2026-11-12, Ar-Ge 12 Kas #3):
+  /// "Portföyündeki 3 hisse son 12 ayda temettü dağıttı: …". Kilitli
+  /// içeriği VERMEZ (tutar yok); paragraf "ne alırsın"ı genel söyler, bu
+  /// satır "senin için dolu mu"yu söyler, boşsa bunu da dürüstçe söyler.
+  /// `null` (veri yok, yükleniyor, okunamadı) → satır yok. Geç gelirse kart
+  /// zıplamasın diye boy değişimi yumuşak (hareketi azalt açıkken anlık).
+  final String? kisisel;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +69,24 @@ class PremiumKilitKarti extends StatelessWidget {
           Text(govde,
               style:
                   context.t.bodySmall?.copyWith(color: c.text58, height: 1.4)),
+          AnimatedSize(
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.move,
+            alignment: Alignment.topCenter,
+            child: kisisel == null
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: SandikSpace.sm),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Text(kisisel!,
+                          style: context.t.bodySmall?.copyWith(
+                              color: c.text90,
+                              fontWeight: FontWeight.w600,
+                              height: 1.4)),
+                    ),
+                  ),
+          ),
           const SizedBox(height: SandikSpace.sm),
           KilitSatiri(metin: kilitMetni, kaynak: kaynak),
         ],

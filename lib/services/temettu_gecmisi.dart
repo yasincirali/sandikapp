@@ -361,13 +361,23 @@ class TemettuGecmisiService {
 
   /// Aynı sembol için süren istek paylaşılır (ekran hızlı açılıp kapanınca
   /// ikinci istek çıkmasın).
-  final _suren = <String, Future<List<TemettuOlayi>>>{};
+  final _suren = <String, Future<List<TemettuOlayi>?>>{};
 
   /// [sembol]'ün son 12 aydaki gerçekleşmiş temettüleri, yeniden eskiye.
   ///
   /// Hata → boş liste: kart kendini gizler. Ağ hatası beklenen durumdur,
   /// Crashlytics'e yalnız ağ DIŞI hatalar (ayrıştırma vb.) gider.
-  Future<List<TemettuOlayi>> olaylariCek(String sembol, {DateTime? simdi}) {
+  Future<List<TemettuOlayi>> olaylariCek(String sembol, {DateTime? simdi}) =>
+      olaylariCekVeyaNull(sembol, simdi: simdi)
+          .then((o) => o ?? const <TemettuOlayi>[]);
+
+  /// [olaylariCek]'in hatayı ayırt eden hâli: okunamadıysa `null`, okundu
+  /// ve olay yoksa boş liste (2026-11-12). "Bu hisse temettü dağıtmadı"
+  /// demek isteyen yüzey (kilitli temettü tahmini kartının kişisel satırı)
+  /// ağ hatasını "dağıtmadı" diye okumasın; uydurma yok kuralının olumsuz
+  /// cümledeki karşılığı. Önbellek ve süren istek ikisiyle ortak.
+  Future<List<TemettuOlayi>?> olaylariCekVeyaNull(String sembol,
+      {DateTime? simdi}) {
     final an = simdi ?? DateTime.now();
     final kayit = _onbellek[sembol];
     if (kayit != null && an.difference(kayit.at) < _omur) {
@@ -378,7 +388,7 @@ class TemettuGecmisiService {
     });
   }
 
-  Future<List<TemettuOlayi>> _cek(String sembol, DateTime simdi) async {
+  Future<List<TemettuOlayi>?> _cek(String sembol, DateTime simdi) async {
     // `2y`: pencere 365 gün; `1y` aralığı Yahoo'da takvim sınırına
     // yuvarlandığında uçtaki olayı kaçırabiliyor. Fazlası saf katmanda
     // pencereyle kırpılır. `1mo`: yalnız olaylar gerekiyor, fiyat değil.
@@ -393,7 +403,7 @@ class TemettuGecmisiService {
         'User-Agent': _ua,
         'Accept': 'application/json',
       }).timeout(const Duration(seconds: 12));
-      if (res.statusCode != 200) return const [];
+      if (res.statusCode != 200) return null;
       final olaylar = TemettuGecmisi.olaylariAyristir(
         jsonDecode(res.body),
         simdi: simdi,
@@ -404,7 +414,7 @@ class TemettuGecmisiService {
       if (!CrashReporter.agHatasiMi(e)) {
         CrashReporter.report(e, st, reason: 'TemettuGecmisiService.olaylariCek');
       }
-      return const [];
+      return null;
     }
   }
 }

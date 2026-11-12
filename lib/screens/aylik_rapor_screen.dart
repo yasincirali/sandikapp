@@ -84,6 +84,17 @@ class AylikRaporScreen extends ConsumerWidget {
             govde: l10n.prmAylikKilitGovde,
             kilitMetni: l10n.prmAylikKilitSatir,
             kaynak: 'aylik_rapor',
+            // Kişisel satır (2026-11-12): o ayın kendi hareket ve not
+            // sayıları, tutar yok. Söylenecek bir şey yoksa satır yok.
+            kisisel: switch (
+                ref.watch(aylikRaporKancasiProvider(donem)).valueOrNull) {
+              final k? => aylikKancaCumlesi(
+                  l10n,
+                  DateFormat.MMMM(Localizations.localeOf(context).toString())
+                      .format(donem),
+                  k),
+              null => null,
+            },
           ),
         ),
       );

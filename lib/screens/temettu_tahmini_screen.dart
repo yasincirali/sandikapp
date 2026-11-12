@@ -38,6 +38,12 @@ class TemettuTahminiScreen extends ConsumerWidget {
             govde: l.ttKilitGovde,
             kilitMetni: l.ttKilitSatir,
             kaynak: 'temettu_tahmini',
+            // Kişisel satır (2026-11-12): kendi hisselerinden sayı + ad,
+            // tutar yok. Yüklenirken/okunamazsa satır yok.
+            kisisel: switch (ref.watch(temettuKancasiProvider).valueOrNull) {
+              final k? => temettuKancaCumlesi(l, k),
+              null => null,
+            },
           ),
         ),
       );
@@ -60,6 +66,17 @@ class TemettuTahminiScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Kilitli kartın kişisel satırı (2026-11-12). En çok üç kod yazılır,
+/// fazlası "+2" olur: satır tek bakışta okunur, uzun portföyde kartı
+/// şişirmez. Hiç yoksa dürüst cümle.
+String temettuKancaCumlesi(AppLocalizations l, TemettuKancasi k) {
+  if (k.bos) return l.ttKancaYok;
+  final ilk = k.kodlar.take(3).join(', ');
+  final kalan = k.kodlar.length - 3;
+  return l.ttKancaVar(
+      k.kodlar.length, kalan > 0 ? l.ttKancaFazla(ilk, kalan) : ilk);
 }
 
 class _Govde extends StatefulWidget {

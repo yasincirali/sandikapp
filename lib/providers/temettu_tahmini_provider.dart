@@ -43,3 +43,43 @@ final temettuTahminiProvider =
     simdi: DateTime.now(),
   );
 });
+
+/// Kilitli temettü tahmini kartının kişisel satırı için temettü dağıtan
+/// hisseler (2026-11-12). `null`: oturum/portföy yok ya da bir sembol
+/// okunamadı → satır yok.
+///
+/// ## Ağ maliyeti kararı
+/// Kilitli kullanıcı için de olaylar ÇEKİLİR, sembol başına bir Yahoo
+/// isteği; ama yalnız bu ekran açıkken (autoDispose) ve
+/// `TemettuGecmisiService`'in 6 saatlik oturum önbelleğinden (varlık
+/// sayfasının temettü kartı, Premium tahmin ve bu satır aynı kaydı
+/// paylaşır). Ekrana kullanıcı kendisi gelmiştir (Raporlar kapısı,
+/// paywall kaynağı) ve satır ancak tam okumayla doğru olur: "önbellekte
+/// olanı say" yarım sayı üretirdi. Fiyat turu yeniden ağa çıkarmasın diye
+/// defter yalnız sahip ve satır sayısı değişince yeniden okunur (aylık
+/// rapor sağlayıcısının deseni).
+final temettuKancasiProvider =
+    FutureProvider.autoDispose<TemettuKancasi?>((ref) async {
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  if (uid == null) return null;
+  ref.watch(portfolioProvider.select((v) => switch (v.valueOrNull) {
+        final d? => '${d.ownerId}|${d.assets.length}',
+        null => null,
+      }));
+  final durum = ref.read(portfolioProvider).valueOrNull;
+  if (durum == null) return null;
+  final pozisyonlar = aggregatePositions(
+      aktifLotlar(durum.assets.where((a) => a.userId == uid)).toList());
+  final semboller = <String>{
+    for (final p in pozisyonlar)
+      if (p.totalQuantity > 0)
+        if (FiyatKaynagi.temettuSembolu(p.representative) case final s?) s,
+  };
+  final girdiler = await Future.wait([
+    for (final s in semboller)
+      TemettuGecmisiService.instance
+          .olaylariCekVeyaNull(s)
+          .then((o) => (s.replaceFirst(RegExp(r'\.IS$'), ''), o)),
+  ]);
+  return temettuKancasi(girdiler, simdi: DateTime.now());
+});

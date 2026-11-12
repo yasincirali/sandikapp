@@ -342,3 +342,26 @@ class _Satir extends StatelessWidget {
         ),
       );
 }
+
+/// Kilitli aylık rapor kartının kişisel satırı (2026-11-12). Yalnız sayısı
+/// sıfırdan büyük parçalar yazılır; hiçbiri yoksa `null` (satır yok).
+/// [ay]: ayın adı ("Ekim").
+String? aylikKancaCumlesi(
+    AppLocalizations l, String ay, AylikRaporKancasi k) {
+  if (k.bos) return null;
+  final parcalar = [
+    if (k.alimSayisi > 0) l.prmAylikKancaAlim(k.alimSayisi),
+    if (k.satisSayisi > 0) l.prmAylikKancaSatis(k.satisSayisi),
+    if (k.temettuSayisi > 0) l.prmAylikKancaTemettu(k.temettuSayisi),
+  ];
+  final liste = switch (parcalar.length) {
+    0 => null,
+    1 => parcalar.first,
+    _ => l.prmAylikKancaVe(
+        parcalar.sublist(0, parcalar.length - 1).join(', '), parcalar.last),
+  };
+  if (liste == null) return l.prmAylikKancaNot(ay, k.notSayisi);
+  if (k.notSayisi == 0) return l.prmAylikKancaHareket(ay, liste);
+  return l.prmAylikKancaIkisi(ay, liste, k.notSayisi);
+}
+

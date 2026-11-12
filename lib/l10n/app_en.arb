@@ -5820,5 +5820,15 @@
   "hareketlerSilindi": "{n, plural, =1{1 transaction deleted} other{{n} transactions deleted}}",
   "@hareketlerSilindi": {"description": "Hareketler toplu silme sonrası snack; yanında Geri al.", "placeholders": {"n": {"type": "int"}}},
   "hareketSecimIpucu": "Long press to select",
-  "@hareketSecimIpucu": {"description": "Ekran okuyucu: hareket satırında uzun basma eyleminin adı (seçim kipini açar)."}
+  "@hareketSecimIpucu": {"description": "Ekran okuyucu: hareket satırında uzun basma eyleminin adı (seçim kipini açar)."},
+  "ttKancaVar": "{n, plural, =1{1 stock in your portfolio paid a dividend in the last 12 months: {adlar}} other{{n} stocks in your portfolio paid dividends in the last 12 months: {adlar}}}",
+  "ttKancaYok": "No BIST stock in your portfolio pays dividends right now",
+  "ttKancaFazla": "{adlar} +{n}",
+  "prmAylikKancaAlim": "{n, plural, =1{1 buy} other{{n} buys}}",
+  "prmAylikKancaSatis": "{n, plural, =1{1 sale} other{{n} sales}}",
+  "prmAylikKancaTemettu": "{n, plural, =1{1 dividend} other{{n} dividends}}",
+  "prmAylikKancaVe": "{bas} and {son}",
+  "prmAylikKancaHareket": "In {ay} you have {liste}.",
+  "prmAylikKancaNot": "{n, plural, =1{1 of your assets has its {ay} note ready.} other{{n} of your assets have their {ay} note ready.}}",
+  "prmAylikKancaIkisi": "In {ay} you have {liste}; {n, plural, =1{1 asset has its monthly note ready.} other{{n} assets have their monthly note ready.}}"
 }
