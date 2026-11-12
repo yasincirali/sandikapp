@@ -89,16 +89,25 @@ class AylikGetiriKarti extends ConsumerWidget {
     if (!ref.watch(premiumOzellikleriGorunurProvider)) return yok;
     final l = context.l10n;
     final bugun = simdi ?? DateTime.now();
+    final aySayisi = aylikGetiriAralikAySayisi(istek.hesapLotlari, bugun);
     if (ref.watch(premiumKilitliProvider)) {
       if (!aylikGetiriOnizlemesiGorunur(istek.hesapLotlari, bugun)) {
         return yok;
       }
+      // Kişisel kilit cümlesi (2026-11-12): "20 aylık geçmişin var…".
+      // Sayı defterden (aralık), SERİ ÇEKİLMEZ: kilitliyken tek bir
+      // getiri bile sızmaz, yalnız kullanıcının zaten bildiği şey
+      // (ne zamandır portföy tuttuğu) söylenir. Genel cümle yalnız
+      // sayı yoksa (önizleme eşiği yüzünden bugün ulaşılmaz; eşik
+      // değişirse sıfır ay cümlesi yazılmasın).
       return (
         'kilit',
         _kabuk(
           context,
           KilitSatiri(
-            metin: l.aylikGetiriKilitli,
+            metin: aySayisi < 1
+                ? l.aylikGetiriKilitli
+                : l.aylikGetiriKilitliKisisel(aySayisi),
             kaynak: 'aylik_getiri',
             ozellik: 'aylik_getiri',
             kilitEtiketi: l.goalDateLockedLabel,
@@ -112,7 +121,6 @@ class AylikGetiriKarti extends ConsumerWidget {
     // 0 ay (ilk alım yok / gelecekte) kart yok: ölçülecek bir şey yok ve
     // Performans'ın boş hâli zaten "ilk varlığını ekle" der; "0 ay
     // ölçüldü" o çağrının yanında ikinci, daha zayıf bir boş durum olurdu.
-    final aySayisi = aylikGetiriAralikAySayisi(istek.hesapLotlari, bugun);
     if (aySayisi <= 0) return yok;
     if (aySayisi < aylikGetiriAsgariAy) {
       return (

@@ -5788,6 +5788,8 @@
   "@aylikGetiriBaslik": {"description": "Performans: yıl × ay getiri tablosu kartı başlığı"},
   "aylikGetiriKilitli": "See which months you gained and which you lost with Premium",
   "@aylikGetiriKilitli": {"description": "Aylık getiri tablosu kilit satırı"},
+  "aylikGetiriKilitliKisisel": "{ay, plural, =1{You have 1 month of history. See which months you closed in the green with Premium.} other{You have {ay} months of history. See which months you closed in the green with Premium.}}",
+  "@aylikGetiriKilitliKisisel": {"description": "Monthly returns lock row with the user's month count", "placeholders": {"ay": {"type": "int"}}},
   "aylikGetiriYil": "Year",
   "@aylikGetiriYil": {"description": "Aylık getiri tablosu: yıl toplamı sütunu"},
   "aylikGetiriBuAy": "this month",

@@ -11121,6 +11121,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'See which months you gained and which you lost with Premium';
 
   @override
+  String aylikGetiriKilitliKisisel(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other:
+          'You have $ay months of history. See which months you closed in the green with Premium.',
+      one:
+          'You have 1 month of history. See which months you closed in the green with Premium.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get aylikGetiriYil => 'Year';
 
   @override

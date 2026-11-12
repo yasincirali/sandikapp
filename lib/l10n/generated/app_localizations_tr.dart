@@ -10947,6 +10947,19 @@ class AppLocalizationsTr extends AppLocalizations {
       'Hangi ay kazandığını, hangi ay kaybettiğini Premium\'la gör';
 
   @override
+  String aylikGetiriKilitliKisisel(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other:
+          '$ay aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.',
+      one:
+          '1 aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get aylikGetiriYil => 'Yıl';
 
   @override

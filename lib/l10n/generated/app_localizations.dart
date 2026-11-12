@@ -17845,6 +17845,12 @@ abstract class AppLocalizations {
   /// **'Hangi ay kazandığını, hangi ay kaybettiğini Premium\'la gör'**
   String get aylikGetiriKilitli;
 
+  /// Aylık getiri kilit satırı, kullanıcının defterindeki ay sayısıyla (seri çekilmez)
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay, plural, =1{1 aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.} other{{ay} aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.}}'**
+  String aylikGetiriKilitliKisisel(int ay);
+
   /// Aylık getiri tablosu: yıl toplamı sütunu
   ///
   /// In tr, this message translates to:

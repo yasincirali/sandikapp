@@ -6592,6 +6592,8 @@
   "@aylikGetiriBaslik": {"description": "Performans: yıl × ay getiri tablosu kartı başlığı"},
   "aylikGetiriKilitli": "Hangi ay kazandığını, hangi ay kaybettiğini Premium'la gör",
   "@aylikGetiriKilitli": {"description": "Aylık getiri tablosu kilit satırı"},
+  "aylikGetiriKilitliKisisel": "{ay, plural, =1{1 aylık geçmişin var. Hangi ayları artıda kapattığını Premium'la gör.} other{{ay} aylık geçmişin var. Hangi ayları artıda kapattığını Premium'la gör.}}",
+  "@aylikGetiriKilitliKisisel": {"description": "Aylık getiri kilit satırı, kullanıcının defterindeki ay sayısıyla (seri çekilmez)", "placeholders": {"ay": {"type": "int"}}},
   "aylikGetiriYil": "Yıl",
   "@aylikGetiriYil": {"description": "Aylık getiri tablosu: yıl toplamı sütunu"},
   "aylikGetiriBuAy": "bu ay",

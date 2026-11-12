@@ -221,6 +221,12 @@ void main() {
       if (yerles) await tester.pumpAndSettle();
     }
 
+    AylikGetiriIstegi kisaIstek(DateTime ilk) => AylikGetiriIstegi(
+          anahtar: 'kisa',
+          seriLotlari: [_alim('a', 1, 1, ilk)],
+          hesapLotlari: [_alim('a', 1, 1, ilk)],
+        );
+
     testWidgets('dar ekranda kart görünür: iki satır, ok + yüzde, yıl', (
         tester) async {
       await pump(tester);
@@ -259,16 +265,28 @@ void main() {
       expect(find.text('Oca'), findsNothing);
     });
 
+    testWidgets('kilitli: kişisel ay sayısı, seri çekilmez', (tester) async {
+      var cagrildi = false;
+      // Nisan 2024 → Kasım 2025 = 20 ay.
+      await pump(tester,
+          kilitli: true,
+          ist: kisaIstek(DateTime(2024, 4, 10)),
+          saglayici: () async {
+            cagrildi = true;
+            return tablo();
+          });
+      expect(
+          find.text('20 aylık geçmişin var. Hangi ayları artıda '
+              "kapattığını Premium'la gör."),
+          findsOneWidget);
+      expect(cagrildi, isFalse);
+      expect(find.textContaining('%'), findsNothing);
+    });
+
     testWidgets('aralık ≥ 6 ama seri delikli (ölçülen < 6): kart yok', (tester) async {
       await pump(tester, t: tablo(ay: 5));
       expect(find.text('Aylık getiri'), findsNothing);
     });
-
-    AylikGetiriIstegi kisaIstek(DateTime ilk) => AylikGetiriIstegi(
-          anahtar: 'kisa',
-          seriLotlari: [_alim('a', 1, 1, ilk)],
-          hesapLotlari: [_alim('a', 1, 1, ilk)],
-        );
 
     testWidgets('kısa geçmiş: 6 bölmeli ilerleme + hazır olacağı ay; seri '
         'çekilmez', (tester) async {
