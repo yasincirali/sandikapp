@@ -1,0 +1,31 @@
+# App Store haftalık satış özeti (yalnız adet; tool/asc_satis_raporu.py).
+#
+# Neden: yasin 2026-11-13, "satış istatistikleri" için ayrı Sales rollü anahtar
+# açtı (ASC_SATIS_*). Salt okunur. Repo herkese açık → logda gelir/tutar yok.
+name: ASC satış özeti
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 7 * * 1"  # Pazartesi 10:30 TR
+
+permissions:
+  contents: read
+
+jobs:
+  satis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pyjwt cryptography
+      - name: Özet
+        env:
+          ASC_SATIS_KEY_ID: ${{ secrets.ASC_SATIS_KEY_ID }}
+          ASC_SATIS_ISSUER_ID: ${{ secrets.ASC_SATIS_ISSUER_ID }}
+          ASC_SATIS_KEY_CONTENT: ${{ secrets.ASC_SATIS_KEY_CONTENT }}
+          ASC_VENDOR_NUMBER: "94523105"
+        run: python tool/asc_satis_raporu.py
