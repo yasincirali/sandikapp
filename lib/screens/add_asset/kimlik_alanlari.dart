@@ -33,10 +33,20 @@ extension _KimlikAlanlari on _AddAssetScreenState {
         tickerText: _ticker.text,
         muaf: _isEditing,
       )),
-      builder: (state) => Column(
+      // Önbellek gerekçesi `_kimlikOnbellek`te: Form her tuşta bu alanı da
+      // yeniden kurar; aynı örnek dönünce seçici ağacı dokunulmadan kalır.
+      builder: (state) {
+        if (_kimlikOnbellek == null || _kimlikOnbellekHata != state.hasError) {
+          _kimlikOnbellekHata = state.hasError;
+          _kimlikOnbellek = KeyedSubtree(
+            key: const ValueKey('kimlik-alani'),
+            child: _kimlikAlani(cs, hata: state.hasError),
+          );
+        }
+        return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _kimlikAlani(cs, hata: state.hasError),
+          _kimlikOnbellek!,
           if (state.hasError) ...[
             const SizedBox(height: SandikSpace.xs2),
             Padding(
@@ -48,7 +58,8 @@ extension _KimlikAlanlari on _AddAssetScreenState {
             ),
           ],
         ],
-      ),
+      );
+      },
     );
   }
 
@@ -176,7 +187,6 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                 hasError: hata,
                 badgeText: secili == null ? null : _emtiaBirimi(secili.birim),
                 mainText: ana,
-                color: AssetType.emtia.color,
                 trailingIcon: Icons.expand_more_rounded,
               ),
             ),
@@ -204,7 +214,7 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                   text: ad,
                   style: context.t.bodyMedium?.copyWith(
                       color: context.c.text90,
-                      fontWeight: secili ? FontWeight.w700 : FontWeight.w400),
+                      fontWeight: secili ? FontWeight.w600 : FontWeight.w400),
                 ),
                 if (birim != null)
                   TextSpan(
@@ -282,13 +292,15 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(
+                        // Nötr bağlantı (amber bütçesi, Ar-Ge 2026-11-12 #1):
+                        // ikincil yol; amber kaydet düğmesine kalır.
                         child: Text(context.l10n.notInListAddBySymbol,
                             style: context.t.bodyMedium?.copyWith(
-                                color: context.c.amberText,
+                                color: context.c.text58,
                                 fontWeight: FontWeight.w600)),
                       ),
                       Icon(Icons.chevron_right_rounded,
-                          size: 18, color: context.c.amberText),
+                          size: 18, color: context.c.text58),
                     ],
                   ),
                 ),
@@ -479,15 +491,7 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                   : (hata ? context.c.loss : context.c.overlay),
               width: selected ? 1.4 : 1,
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AssetType.altin.color.withValues(alpha: 0.25),
-                      blurRadius: 14,
-                      spreadRadius: -6,
-                    ),
-                  ]
-                : null,
+            // Parıltı kalktı (amber bütçesi, Ar-Ge 2026-11-12 #1).
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

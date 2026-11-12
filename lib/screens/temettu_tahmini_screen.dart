@@ -38,6 +38,12 @@ class TemettuTahminiScreen extends ConsumerWidget {
             govde: l.ttKilitGovde,
             kilitMetni: l.ttKilitSatir,
             kaynak: 'temettu_tahmini',
+            // Kişisel satır (2026-11-12): kendi hisselerinden sayı + ad,
+            // tutar yok. Yüklenirken/okunamazsa satır yok.
+            kisisel: switch (ref.watch(temettuKancasiProvider).valueOrNull) {
+              final k? => temettuKancaCumlesi(l, k),
+              null => null,
+            },
           ),
         ),
       );
@@ -49,7 +55,10 @@ class TemettuTahminiScreen extends ConsumerWidget {
         // Yükleme → içerik çapraz solar (2026-10-14).
         tamEkran: true,
         anahtar: SandikIcerikGecisi.hal([tahmin]),
+        // Defter değişince tahmin yeniden hesaplanırken eski içerik kalır;
+        // iskelet yalnız ilk yüklemede (Ar-Ge 12 Kas #6).
         child: tahmin.when(
+        skipLoadingOnReload: true,
         loading: () => const SandikSkeletonList(rows: 4),
         error: (e, _) => SandikErrorView(
             error: e, onRetry: () => ref.invalidate(temettuTahminiProvider)),
@@ -62,17 +71,52 @@ class TemettuTahminiScreen extends ConsumerWidget {
   }
 }
 
-class _Govde extends StatelessWidget {
+/// Kilitli kartın kişisel satırı (2026-11-12). En çok üç kod yazılır,
+/// fazlası "+2" olur: satır tek bakışta okunur, uzun portföyde kartı
+/// şişirmez. Hiç yoksa dürüst cümle.
+String temettuKancaCumlesi(AppLocalizations l, TemettuKancasi k) {
+  if (k.bos) return l.ttKancaYok;
+  final ilk = k.kodlar.take(3).join(', ');
+  final kalan = k.kodlar.length - 3;
+  return l.ttKancaVar(
+      k.kodlar.length, kalan > 0 ? l.ttKancaFazla(ilk, kalan) : ilk);
+}
+
+class _Govde extends StatefulWidget {
   const _Govde({required this.t});
 
   final TemettuTahmini t;
+
+  @override
+  State<_Govde> createState() => _GovdeState();
+}
+
+/// Aya dokun → süz (2026-11-12). Seçim yalnız bu ekranın anlık durumu;
+/// kalıcı değil (ekrana yeniden girişte tümü görünür).
+class _GovdeState extends State<_Govde> {
+  /// Seçili ay (1-12); `null` = tümü.
+  int? _ay;
+
+  void _sec(int ay) {
+    // Aynı çubuğa ikinci dokunuş seçimi kaldırır — ayrı bir "tümü"
+    // düğmesi yerine dokunulan yerin kendisi geri alır.
+    setState(() => _ay = _ay == ay ? null : ay);
+    SandikHaptic.selection.perform();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final c = context.c;
     final h = SandikSpace.screenH(context);
+    final t = widget.t;
     final net = t.netTry;
+    final ay = _ay;
+    final dil = Localizations.localeOf(context).toString();
+    // Süzme ayın beklenen ödeme aylarına göre (`TahminSatiri.aylar`).
+    final satirlar = ay == null
+        ? t.satirlar
+        : t.satirlar.where((s) => s.aylar.contains(ay)).toList();
     return ListView(
       padding: EdgeInsets.fromLTRB(h, SandikSpace.sm, h, SandikSpace.xl),
       children: [
@@ -80,21 +124,32 @@ class _Govde extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l.ttToplamEtiket,
+              // Seçili ay yalnız çubuğun renginden değil, buradaki ay adı
+              // ve tutardan da okunur (renk körlüğü, HIG).
+              Text(
+                  ay == null
+                      ? l.ttToplamEtiket
+                      : l.ttAyEtiket(
+                          DateFormat.MMMM(dil).format(DateTime(2000, ay))),
                   style: context.t.bodyMedium?.copyWith(color: c.text58)),
               const SizedBox(height: SandikSpace.xs),
-              Text(fmtTRY(net ?? t.brutTry),
+              Text(
+                  fmtTRY(ay == null ? (net ?? t.brutTry) : t.aylik[ay - 1]),
                   style: context.t.numLarge
                       .copyWith(fontWeight: FontWeight.w600, color: c.gold)),
               const SizedBox(height: SandikSpace.xxs),
               Text(
-                net == null
-                    ? l.ttBrutNot
-                    : l.ttNetNot(fmtTRY(t.brutTry)),
+                // Aylık dağılım brüt tutulur (`TemettuTahmini.aylik`); ay
+                // seçiliyken net iddia edilmez.
+                ay != null
+                    ? l.ttAyNot
+                    : net == null
+                        ? l.ttBrutNot
+                        : l.ttNetNot(fmtTRY(t.brutTry)),
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
               const SizedBox(height: SandikSpace.md),
-              _AyCubuklari(aylik: t.aylik),
+              _AyCubuklari(aylik: t.aylik, secili: ay, onSec: _sec),
             ],
           ),
         ),
@@ -104,9 +159,9 @@ class _Govde extends StatelessWidget {
         SandikCard(
           child: Column(
             children: [
-              for (var i = 0; i < t.satirlar.length; i++) ...[
+              for (var i = 0; i < satirlar.length; i++) ...[
                 if (i > 0) Divider(height: 1, color: c.hairline),
-                _Satir(s: t.satirlar[i]),
+                _Satir(key: ValueKey(satirlar[i].sembol), s: satirlar[i]),
               ],
             ],
           ),
@@ -121,67 +176,107 @@ class _Govde extends StatelessWidget {
 /// 12 ay, yan yana çubuk. Ölçek en büyük aya göre; boş ay ince taban
 /// çizgisi kalır (sıfır yüksekliğinde çubuk "veri yok" ile karışmasın diye
 /// taban her ayda çizilir). Ay adı cihaz dilinde, tek harfe kısalmaz.
+///
+/// Dokunma (2026-11-12): her sütun (çubuk + ay adı) tek dokunma hedefi;
+/// yükseklik en az [SandikTouch.min], genişlik sütunun tamamı — ince
+/// çubuğa isabet aranmaz. Boş ay seçilemez: süzecek satırı yoktur.
+///
+/// Giriş hareketi: çubuklar ilk açılışta tabandan BİR KEZ yükselir
+/// ([SandikMotion.flow] + [SandikMotion.enter]); süzmede yeniden oynamaz
+/// (`TweenAnimationBuilder` uç değeri değişmediği için yeniden başlamaz),
+/// hareketi azalt açıkken süre sıfır, son kare anında.
 class _AyCubuklari extends StatelessWidget {
-  const _AyCubuklari({required this.aylik});
+  const _AyCubuklari(
+      {required this.aylik, required this.secili, required this.onSec});
 
   final List<double> aylik;
+  final int? secili;
+  final ValueChanged<int> onSec;
 
   static const _yukseklik = 72.0;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final l = context.l10n;
     final dil = Localizations.localeOf(context).toString();
     final enBuyuk = aylik.fold(0.0, (m, v) => v > m ? v : m);
-    return Semantics(
-      label: [
-        for (var i = 0; i < 12; i++)
-          if (aylik[i] > 0)
-            '${DateFormat.MMMM(dil).format(DateTime(2000, i + 1))} ${fmtTRY(aylik[i])}',
-      ].join(', '),
-      child: ExcludeSemantics(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            for (var i = 0; i < 12; i++)
-              Expanded(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        height: enBuyuk <= 0
-                            ? 2
-                            : 2 + (_yukseklik - 2) * aylik[i] / enBuyuk,
-                        decoration: BoxDecoration(
-                          color: aylik[i] > 0 ? c.amberFill : c.hairline,
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(SandikSpace.xs)),
-                        ),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: SandikMotion.flowOf(context),
+      curve: SandikMotion.enter,
+      builder: (context, oran, _) => Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < 12; i++)
+            Expanded(
+              child: Semantics(
+                label: l.ttAySemantik(
+                    DateFormat.MMMM(dil).format(DateTime(2000, i + 1)),
+                    fmtTRY(aylik[i])),
+                button: aylik[i] > 0,
+                selected: secili == i + 1,
+                onTap: aylik[i] > 0 ? () => onSec(i + 1) : null,
+                excludeSemantics: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: aylik[i] > 0 ? () => onSec(i + 1) : null,
+                  child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(minHeight: SandikTouch.min),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: SandikSpace.xxs),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            height: enBuyuk <= 0
+                                ? 2
+                                : 2 +
+                                    (_yukseklik - 2) *
+                                        aylik[i] /
+                                        enBuyuk *
+                                        oran,
+                            decoration: BoxDecoration(
+                              color: aylik[i] <= 0
+                                  ? c.hairline
+                                  : secili == i + 1
+                                      ? c.gold
+                                      : c.amberFill,
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(SandikSpace.xs)),
+                            ),
+                          ),
+                          const SizedBox(height: SandikSpace.xs),
+                          FittedBox(
+                            child: Text(
+                              DateFormat.MMM(dil).format(DateTime(2000, i + 1)),
+                              // Seçili ay adı ağırlıkla da ayrılır — renk
+                              // tek ipucu olmasın.
+                              style: context.t.labelSmall?.copyWith(
+                                  color: secili == i + 1 ? c.text90 : c.text58,
+                                  fontWeight: secili == i + 1
+                                      ? FontWeight.w600
+                                      : null),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: SandikSpace.xs),
-                      FittedBox(
-                        child: Text(
-                          DateFormat.MMM(dil).format(DateTime(2000, i + 1)),
-                          style: context.t.labelSmall
-                              ?.copyWith(color: c.text58),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
 }
 
 class _Satir extends StatelessWidget {
-  const _Satir({required this.s});
+  const _Satir({super.key, required this.s});
 
   final TahminSatiri s;
 
@@ -213,7 +308,7 @@ class _Satir extends StatelessWidget {
           const SizedBox(width: SandikSpace.smd),
           Text(fmtTRY(s.netTry ?? s.brutTry),
               style: context.t.numSmall
-                  .copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                  .copyWith(fontWeight: FontWeight.w600, color: c.text90)),
           // Beklenen temettü günü takvime (2026-11-11). Gün, ana sayfanın
           // "Seni ilgilendiren günler" satırıyla aynı kuraldan gelir
           // (geçen yılın hak gününün yıl dönümü, [temettuGunleri]); şirket

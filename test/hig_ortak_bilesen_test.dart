@@ -26,6 +26,7 @@ import 'package:portfoy_takip/widgets/pozisyon_islemleri.dart';
 import 'package:portfoy_takip/widgets/sandik_baglam_menusu.dart';
 import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
+import 'package:portfoy_takip/widgets/sandik_coklu_secim.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
 import 'package:portfoy_takip/widgets/sandik_icerik_sutunu.dart';
 import 'package:portfoy_takip/services/takvim_ics.dart';
@@ -456,6 +457,49 @@ void main() {
       ),
     );
   }
+
+  // Çoklu seçim kipi (2026-11-12, Hareketler toplu silme). Vitrine değil
+  // kendi iskeletine: üst çubuk bileşeni, vitrinin çubuğu SandikAppBar'ı
+  // ölçüyor; tembel listeye eklemek de alttaki ölçülen öğeleri ekran
+  // dışına itiyordu.
+  Widget secimVitrini(Brightness parlaklik, {double yazi = 1}) {
+    final palet =
+        parlaklik == Brightness.dark ? SandikPalette.dark : SandikPalette.light;
+    return MaterialApp(
+      theme: SandikApp.buildTheme(palet, parlaklik),
+      home: MediaQuery(
+        data: MediaQueryData(
+            size: const Size(390, 844), textScaler: TextScaler.linear(yazi)),
+        child: Scaffold(
+          appBar: SandikSecimCubugu(
+              sayi: 12, onSil: () async {}, onVazgec: () {}),
+          body: const Row(children: [
+            SandikSecimIsareti(secili: true),
+            SandikSecimIsareti(secili: false),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  for (final parlaklik in Brightness.values) {
+    testWidgets('çoklu seçim çubuğu: 44 pt, etiket, kontrast (${parlaklik.name})',
+        (t) async {
+      final handle = t.ensureSemantics();
+      await t.pumpWidget(secimVitrini(parlaklik));
+      await t.pump();
+      await expectLater(t, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(t, meetsGuideline(textContrastGuideline));
+      handle.dispose();
+    });
+  }
+
+  testWidgets('çoklu seçim çubuğu ×2 yazıda taşmıyor', (t) async {
+    await t.pumpWidget(secimVitrini(Brightness.dark, yazi: 2));
+    await t.pump();
+    expect(t.takeException(), isNull);
+  });
 
   for (final parlaklik in Brightness.values) {
     final ad = parlaklik == Brightness.dark ? 'koyu' : 'açık';

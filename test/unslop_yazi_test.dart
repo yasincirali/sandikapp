@@ -113,6 +113,8 @@ void main() {
       'Ayarlar',
       'Apple',
       'Google',
+      // Kurum adı (Diyanet İşleri Başkanlığı; zekât hesabı, 2026-11-12).
+      'Diyanet',
     };
     const tavan = 0;
     final harf = RegExp(r'[^\W\d_]', unicode: true);
@@ -164,12 +166,17 @@ void main() {
   // ayarları satır/başlık etiketleri w600'e indi, 307 → 292; 2026-11-10:
   // sözleşme tarih alanının tarihi, 292 → 291; işlem notu Kaydet, 291 → 290;
   // 2026-11-11: numSmall token'ı + Portföy ve varlık sayfasındaki ham w700'ler
-  // w600'e, Yarış/Zirve'de token yerine açık w700 (istisna korunur), 290 → 269).
+  // w600'e, Yarış/Zirve'de token yerine açık w700 (istisna korunur), 290 → 269;
+  // 2026-11-12: temettü tahmini satır tutarı, 269 → 268; Takip ve
+  // Hareketler ekranlarının ham w700'leri w600'e, 268 → 254).
+  // 2026-11-12: Varlık Ekle ve seçici sayfaları (tür ızgarası, tutar alanları,
+  // seçici sayfaları, sözleşme seçicileri, başlık) w600'e, 268 → 240; ikisi birlikte 226).
+  // 2026-11-12: Hızlı Al/Sat diyaloğu (miktar alanı, İptal düğmesi), 226 → 224.
   // w800/w900 sayılmaz: yarış/düello sahneleri ve ana sayfa toplam kartı
   // istisnası yukarıdaki testte ayrıca kilitli. Tüm lib/ dizini tarandığı
   // için part dosyaları zaten dahil (`ekranKaynagiSync` tek ekran içindir).
   test('FontWeight.w700 sayısı artmaz (cırcır)', () {
-    const tavan = 269;
+    const tavan = 224;
     var sayi = 0;
     for (final f in Directory('lib')
         .listSync(recursive: true)

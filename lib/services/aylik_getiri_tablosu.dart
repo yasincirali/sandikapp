@@ -88,11 +88,18 @@ const int aylikGetiriAsgariAy = 6;
 /// defterden, ölçülen aydan değil. Seri delikli bir defterde önizleme
 /// görünüp açılınca kart eşiği tutmayabilir — kilit satırı bir vaat değil,
 /// özelliğin adıdır.
-bool aylikGetiriOnizlemesiGorunur(List<Asset> lotlar, DateTime simdi) {
+bool aylikGetiriOnizlemesiGorunur(List<Asset> lotlar, DateTime simdi) =>
+    aylikGetiriAralikAySayisi(lotlar, simdi) >= aylikGetiriAsgariAy;
+
+/// Tablonun aralığındaki ay sayısı: ilk alımın ayından bu aya, ikisi dahil
+/// (`AylikGetiriTablosu.aralikta` ile aynı aralık). Seri çekmeden,
+/// defterden. Satın alma sonrası sayfa "Aylık getiri tablon: n ay"
+/// satırını buradan yazar; beş yıllık seriyi o sayfa için indirmek
+/// sayfayı bekletirdi. İlk alım yoksa 0.
+int aylikGetiriAralikAySayisi(List<Asset> lotlar, DateTime simdi) {
   final ilk = PeriodSummaryService.ilkAlimTarihi(lotlar);
-  if (ilk == null) return false;
-  final ay = (simdi.year * 12 + simdi.month) - (ilk.year * 12 + ilk.month) + 1;
-  return ay >= aylikGetiriAsgariAy;
+  if (ilk == null) return 0;
+  return (simdi.year * 12 + simdi.month) - (ilk.year * 12 + ilk.month) + 1;
 }
 
 /// Saf hesap. [seri]: portföy toplam serisi (ts → TRY; Özet'in serisiyle
@@ -255,4 +262,69 @@ Map<int, double> uzunSeriyiBirlestir({
       if (e.key < sinir) e.key: e.value,
     ...gunluk,
   };
+}
+
+/// Aylık raporun kişisel kıyas satırı (2026-11-12, Ar-Ge 12 Kas #7):
+/// "Son 12 ayda 8 ay artıdaydın; bu ay 12 ay içinde 9. sırada".
+///
+/// ## Neden
+/// Rapor ayı tek başına anlatıyordu; düşüş ayında kullanıcı o ayı tek
+/// gerçek sanar. Kendi geçmişiyle bağlam (başkasıyla kıyas değil) kayıptan
+/// kaçınmayı yumuşatır, iyi ayda da ilerlemeyi gösterir. Satır renk
+/// taşımaz, cümle taşır.
+///
+/// ## Yeni formül YOK
+/// Hücreler [AylikGetiriTablosu]'nun (Performans'ın aylık getiri kartı)
+/// kendisi. Pencere: [donem] dahil geriye 12 takvim ayı; ölçülmeyen ay
+/// sayılmaz, cümlenin "son N ay"ı ölçülen ay sayısıdır.
+@immutable
+class AylikKiyas {
+  const AylikKiyas({
+    required this.olculen,
+    required this.arti,
+    required this.sira,
+    required this.enIyi,
+    required this.enZayif,
+  });
+
+  /// Penceredeki ölçülen ay sayısı (≤ 12).
+  final int olculen;
+
+  /// Getirisi sıfırın üstünde kapanan ay sayısı.
+  final int arti;
+
+  /// Bu ayın sırası: 1 + kendisinden yüksek ay sayısı (eşitler aynı sıra).
+  final int sira;
+  final bool enIyi;
+
+  /// Kendisinden düşük ay yok (ve en iyi değil).
+  final bool enZayif;
+}
+
+/// [tablo]'dan [donem]'in kıyası. `null`: ayın hücresi yok ya da penceredeki
+/// ölçülen ay [aylikGetiriAsgariAy]'dan az (kart eşiğiyle aynı; birkaç
+/// aylık sıra bir şey söylemez).
+AylikKiyas? aylikKiyas(AylikGetiriTablosu tablo, DateTime donem) {
+  double? hucre(DateTime a) {
+    if (!tablo.aralikta(a.year, a.month)) return null;
+    final yil = tablo.aylar[a.year];
+    return yil == null ? null : yil[a.month - 1];
+  }
+
+  final bu = hucre(donem);
+  if (bu == null) return null;
+  final degerler = <double>[
+    for (var i = 0; i < 12; i++)
+      if (hucre(DateTime(donem.year, donem.month - i)) case final v?) v,
+  ];
+  if (degerler.length < aylikGetiriAsgariAy) return null;
+  final yuksek = degerler.where((v) => v > bu).length;
+  final dusuk = degerler.where((v) => v < bu).length;
+  return AylikKiyas(
+    olculen: degerler.length,
+    arti: degerler.where((v) => v > 0).length,
+    sira: yuksek + 1,
+    enIyi: yuksek == 0,
+    enZayif: yuksek > 0 && dusuk == 0,
+  );
 }

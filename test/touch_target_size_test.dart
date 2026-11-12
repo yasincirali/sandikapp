@@ -1,6 +1,30 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
+import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/screens/add_asset_screen.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
+import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _BosPortfoy extends PortfolioNotifier {
+  @override
+  Future<PortfolioState> build() async => const PortfolioState(ownerId: 'ben');
+}
+
+class _FiyatsizKapi implements AddAssetPriceLookup {
+  @override
+  Future<double?> historicalClose(String ticker, DateTime date) async => null;
+  @override
+  Future<double?> spot(String ticker) async => null;
+  @override
+  Future<String?> companyName(String ticker) async => null;
+}
 
 /// Dokunma hedefi minimum boyutu — iOS HIG #37, **High severity**.
 ///
@@ -129,5 +153,57 @@ void main() {
     expect(offenders, isEmpty,
         reason: 'Sistem metin boyutu tercihi yok sayılmamalı.\n'
             '${offenders.join('\n')}');
+  });
+
+  // Varlık Ekle önayar ve tarih çipleri (Ar-Ge 2026-11-12 #7): görsel çip
+  // ~32 pt idi, "lot" eki taşıyordu, seçim yalnız tondu. Kaynak taraması
+  // görsel boyutu göremez; burada çizilmiş çip ölçülür.
+  testWidgets('Varlık Ekle: miktar ve tarih çipleri ≥44 pt, eksiz, '
+      'seçili çipte onay işareti', (tester) async {
+    RemoteConfigService.testAcik = {};
+    SharedPreferences.setMockInitialValues({});
+    await initializeDateFormatting('tr_TR');
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        portfolioProvider.overrideWith(_BosPortfoy.new),
+        addAssetPriceLookupProvider.overrideWithValue(_FiyatsizKapi()),
+      ],
+      child: MaterialApp(
+        theme: ThemeData.dark(),
+        home: const AddAssetScreen(
+            prefillTicker: 'AAPL', prefillType: AssetType.hisse),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    final cipler = find.byType(SandikFiltreCipi);
+    final miktar = find.byWidgetPredicate((w) =>
+        w is SandikFiltreCipi &&
+        (w.key as ValueKey<String>?)?.value.startsWith('miktar-cipi-') ==
+            true);
+    expect(miktar, findsWidgets);
+    expect(cipler.evaluate().length, greaterThan(miktar.evaluate().length),
+        reason: 'Tarih çipleri de aynı bileşen.');
+    for (final e in cipler.evaluate()) {
+      final boy = tester.getSize(find.byWidget(e.widget));
+      expect(boy.height, greaterThanOrEqualTo(44), reason: '${e.widget}');
+      expect(boy.width, greaterThanOrEqualTo(44), reason: '${e.widget}');
+    }
+    // Birim eki çipte yok: "lot" yalnız miktar alanının sonunda.
+    expect(
+        find.descendant(of: miktar, matching: find.textContaining('lot')),
+        findsNothing);
+
+    final on = find.byKey(const ValueKey('miktar-cipi-10'));
+    await tester.tap(on);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SandikFiltreCipi>(on).secili, isTrue);
+    expect(find.descendant(of: on, matching: find.byIcon(Icons.check_rounded)),
+        findsOneWidget,
+        reason: 'Seçim yalnız renkle anlatılmaz.');
   });
 }

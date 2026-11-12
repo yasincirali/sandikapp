@@ -422,3 +422,55 @@ List<AyinGelismesi> ayinGelismeleri({
 /// PDF aynı yazsın (köprü cümlesinin `isaretli`'siyle aynı kural).
 String isaretliTL(double v) =>
     v.abs() < 0.5 ? fmtTRY(0) : '${v > 0 ? '+' : '−'}${fmtTRY(v.abs())}';
+
+/// Kilitli aylık rapor kartının kişisel satırı (2026-11-12, Ar-Ge 12 Kas
+/// #3): o ayın kaç alım, satış ve temettüsü var, kaç varlığının ay notu
+/// yayımlandı. TUTAR YOK (kilitli içerik raporun kendisi); sayılar
+/// kullanıcının kendi defterinden ([ayinParaAkisi], raporla aynı pencere)
+/// ve ücretsiz katmanda zaten okunan not başlıklarından. Ağ yok, saf.
+class AylikRaporKancasi {
+  const AylikRaporKancasi({
+    this.alimSayisi = 0,
+    this.satisSayisi = 0,
+    this.temettuSayisi = 0,
+    this.notSayisi = 0,
+  });
+
+  final int alimSayisi;
+  final int satisSayisi;
+  final int temettuSayisi;
+
+  /// O ayın notu yayımlanmış (tutulan) varlık sayısı.
+  final int notSayisi;
+
+  bool get hareketYok =>
+      alimSayisi == 0 && satisSayisi == 0 && temettuSayisi == 0;
+
+  /// Söylenecek hiçbir şey yoksa satır çizilmez; "bu ay bir şey olmadı"
+  /// cümlesi rapora dair bilgi vermez, yalnız caydırırdı.
+  bool get bos => hareketYok && notSayisi == 0;
+}
+
+/// [lotlar]: sahibin etkin defter satırları (`aylikRaporLotlari`).
+/// [notlar]: tutulan varlıkların aylık not başlıkları (hangi ayın olduğu
+/// fark etmez; burada [donem]'e süzülür).
+AylikRaporKancasi aylikRaporKancasi({
+  required List<Asset> lotlar,
+  required DateTime donem,
+  required DateTime simdi,
+  Iterable<AnalizOzeti> notlar = const [],
+}) {
+  final (bas, bit, _) = AylikRaporOzeti.pencere(donem, simdi);
+  final akis = ayinParaAkisi(lotlar, bas, bit);
+  final ay = DateTime(donem.year, donem.month);
+  final notlu = {
+    for (final n in notlar)
+      if (n.donem.year == ay.year && n.donem.month == ay.month) n.ticker
+  };
+  return AylikRaporKancasi(
+    alimSayisi: akis.alimSayisi,
+    satisSayisi: akis.satisSayisi,
+    temettuSayisi: akis.temettuSayisi,
+    notSayisi: notlu.length,
+  );
+}

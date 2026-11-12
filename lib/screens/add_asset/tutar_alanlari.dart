@@ -134,6 +134,79 @@ extension _TutarAlanlari on _AddAssetScreenState {
         : l.kuyumcuFarkiDoviz(fark, tutar);
   }
 
+  // ── Bu alımla ortalama maliyet (Ar-Ge 2026-11-12 #5) ──────────────────────
+  //
+  // Hızlı Al "Yeni ortalama maliyetin X (şimdi Y)" satırını gösteriyordu ama
+  // portföydeki varlığa bu formdan alım eklenince aynı soru cevapsızdı. Aynı
+  // metin (`quickBuyAvgCost`), aynı hesap ([yeniOrtalamaMaliyet]: komisyon
+  // girmez, renksiz — yeni ortalama iyi ya da kötü değil, bilgi) ve aynı
+  // maliyet tabanı (aktif lotların ağırlıklı ortalaması,
+  // [eldekiPozisyonMaliyeti]). Gizli bakiyede tutar maskelenir (Hızlı Al
+  // gibi).
+  //
+  // Yok: yeni varlıkta (elde yok), düzenlemede/yeniden kurmada (alım değil),
+  // sepette (satış satırı olabilir, sepetteki öteki alımlar hesaba girmez),
+  // sözleşmeli türde, maliyeti bilinmeyen lotta, fiyat ya da miktar
+  // bilinmiyorken.
+
+  /// Seçili varlığın bugünkü pozisyonu; sağlayıcı izlemesi olduğu için
+  /// ekran kurulumunda çağrılır (her tuşta değil).
+  ({double adet, double maliyet})? _eldekiPozisyon() {
+    if (_isEditing || widget.cartMode || _type.sozlesmeli) return null;
+    final k = _s.resolveIdentity(nameText: _name.text, tickerText: _ticker.text);
+    if (k.ticker.isEmpty && k.name.isEmpty) return null;
+    final anahtar = positionKey(Asset(
+      id: '',
+      userId: '',
+      name: k.name,
+      ticker: k.ticker,
+      type: _type,
+      quantity: 0,
+      purchasePrice: 0,
+      currency: _currency,
+      notes: '',
+      subCategory: _subCategory,
+    ));
+    return ref.watch(eldekiPozisyonMaliyetiProvider(anahtar));
+  }
+
+  Widget? _ortalamaSatiri(
+      ({double adet, double maliyet})? eldeki, bool gizli) {
+    if (eldeki == null) return null;
+    final birim = _s.isEurobond
+        ? _s.eurobondBirimFiyati(_parse(_price.text))
+        : _tutarBirimFiyati;
+    final yeni = yeniOrtalamaMaliyet(
+      eskiAdet: eldeki.adet,
+      eskiMaliyet: eldeki.maliyet,
+      yeniAdet: _etkinAdet,
+      fiyat: birim,
+    );
+    if (yeni == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Text(
+        context.l10n.quickBuyAvgCost(
+            _birimMaliyetMetni(yeni, gizli), _birimMaliyetMetni(eldeki.maliyet, gizli)),
+        key: const ValueKey('form-ortalama-onizleme'),
+        style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+      ),
+    );
+  }
+
+  /// Birim maliyet biçimi Hızlı Al'daki gibi: ₺ varlıkta `fmtTRYFiyat`
+  /// (0 ondalık ₺41,23'ü ₺41 okuturdu), dövizde 4 haneye kadar.
+  String _birimMaliyetMetni(double v, bool gizli) {
+    if (_currency == 'TRY') {
+      // Maske Hızlı Al'daki lira maskesiyle aynı biçim. Baz para nesnesi
+      // burada kullanılmaz: form fiyat dosyasıdır, kote fiyat baz para
+      // birimine çevrilmez (`money_format_scope_test`).
+      return gizli ? '₺••••' : fmtTRYFiyat(v);
+    }
+    if (gizli) return '•••• $_currency';
+    return '${qtyFormatter(maxDigits: 4).format(v)} $_currency';
+  }
+
   // ── Miktar bloğu ───────────────────────────────────────────────────────────
   Widget _quantityBlock(ColorScheme cs) {
     return Column(
@@ -222,7 +295,34 @@ extension _TutarAlanlari on _AddAssetScreenState {
           onChanged: (_) => _schedulePricePreview(),
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
         ),
+        _metinle(_price, (_) => _fiyatBosIpucuSatiri()),
       ],
+    );
+  }
+
+  /// Boş fiyat alanının altındaki tek satır (Ar-Ge 2026-11-12 #6). Eskiden
+  /// miktar yazılınca formun ortasına amber çerçeveli bir bilgi kutusu
+  /// geliyordu ("Alış fiyatı boş. Kaydederken… otomatik atanacak", ham
+  /// literal); bilgi fiyat alanının kendisine ait ve tek satır yeter. "O
+  /// gün" seçili tarihtir: bugünse canlı fiyat, geçmişse o günün kapanışı —
+  /// cümle ikisini de doğru söyler, tarih değişince metin değişmez.
+  ///
+  /// Eurobondda yok (fiyat zorunlu). Düzenlemede yok: orada boş alan fiyat
+  /// atamaz (gerekçe [_fiyatIpucu]). Fiyat yazılınca yükseklikle kapanır.
+  Widget _fiyatBosIpucuSatiri() {
+    final goster =
+        !_s.isEurobond && !_isEditing && _price.text.trim().isEmpty;
+    return _Beliren(
+      child: !goster
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs2),
+              child: Text(
+                context.l10n.fiyatBosIpucu,
+                key: const ValueKey('fiyat-bos-ipucu'),
+                style: context.t.bodySmall?.copyWith(color: context.c.text58),
+              ),
+            ),
     );
   }
 
@@ -297,7 +397,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
             padding: const EdgeInsets.only(right: 12),
             child: Text(_currency,
                 style: context.t.titleSmall?.copyWith(
-                    color: context.c.text58, fontWeight: FontWeight.w700)),
+                    color: context.c.text58, fontWeight: FontWeight.w600)),
           ),
         ),
         const SizedBox(height: 6),
@@ -319,7 +419,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         message: context.l10n.eurobondCurrencyLocked,
         child: Text(_currency,
             style: context.t.titleSmall?.copyWith(
-                color: context.c.text58, fontWeight: FontWeight.w700)),
+                color: context.c.text58, fontWeight: FontWeight.w600)),
       );
     }
     if (_s.isAbd) {
@@ -327,7 +427,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         message: context.l10n.usStockCurrencyLocked,
         child: Text('USD',
             style: context.t.titleSmall?.copyWith(
-                color: context.c.text58, fontWeight: FontWeight.w700)),
+                color: context.c.text58, fontWeight: FontWeight.w600)),
       );
     }
     // Fon ve BIST hissesi her zaman TL (müşteri raporu 2 Kas 17:15 #2):
@@ -343,7 +443,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         message: context.l10n.tlCurrencyLocked,
         child: Text('TRY',
             style: context.t.titleSmall?.copyWith(
-                color: context.c.text58, fontWeight: FontWeight.w700)),
+                color: context.c.text58, fontWeight: FontWeight.w600)),
       );
     }
     // `DropdownButton` içeride kendi `Row`'unu kurar ve o Row daralamaz;
@@ -360,10 +460,12 @@ extension _TutarAlanlari on _AddAssetScreenState {
           value: _currency,
           isDense: true,
           dropdownColor: context.c.surface2,
+          // Nötr (amber bütçesi, Ar-Ge 2026-11-12 #1): açılır ok seçilebilir
+          // olduğunu söyler; amber kaydet düğmesine kalır.
           style: context.t.titleSmall?.copyWith(
-              color: context.c.amberText, fontWeight: FontWeight.w700),
+              color: context.c.text90, fontWeight: FontWeight.w600),
           icon:
-              Icon(Icons.arrow_drop_down_rounded, color: context.c.amberText, size: 18),
+              Icon(Icons.arrow_drop_down_rounded, color: context.c.text58, size: 18),
           items: _AddAssetScreenState._currencies
               .map((c) => DropdownMenuItem(
                     value: c,
@@ -376,173 +478,113 @@ extension _TutarAlanlari on _AddAssetScreenState {
     );
   }
 
-  // ── Toplam maliyet hero card ───────────────────────────────────────────────
-  Widget _totalHero(ColorScheme cs) {
+  // ── Toplam maliyet: alt çubukta, kaydet düğmesinin üstünde ────────────────
+  //
+  // Ar-Ge 2026-11-12 #2: toplam eskiden formun ortasında gradyanlı, amber
+  // parıltılı bir karttı. Tarih, komisyon, not girerken ekrandan çıkıyor ve
+  // komisyonu içermiyordu (`qty * price`). Banka emir ekranlarında olduğu
+  // gibi artık kaydet düğmesinin hemen üstünde sabit: kullanıcı fazladan
+  // sıfırı kayıttan HEMEN önce görür. Komisyon dahil ([formToplamMaliyeti]);
+  // yazılıysa dökümde "komisyon dahil" der. Gradyan, gölge ve çift çerçeve
+  // kalktı (unslop "Colored glows"); tutar nötr metin, tek vurgu kaydet.
+  //
+  // Birim fiyat: yazılan fiyat, boşsa kayıtta atanacak önizleme fiyatı
+  // ([_tutarBirimFiyati], önizleme kartının söylediği sayı). Önizleme
+  // yüklenirken ya da fiyat bilinmiyorken satır yok — uydurma tutar yazılmaz.
+  // Eurobond: alan temiz %; toplam nominal × kirli birim değer.
+  //
+  // Düzen (HIG Dynamic Type): `Wrap` — normal yazıda açıklama solda, tutar
+  // sağda; 2× yazıda tutar ikinci satıra iner, kırpılmaz; yine sığmazsa
+  // ölçeklenir (`FittedBox`), sayı kesilmez. Ekran okuyucu tek düğüm okur.
+  Widget? _toplamSatiri(double? tlKuru) {
+    if (_type.sozlesmeli) return null;
     final qty = _etkinAdet;
-    // Eurobond: alan temiz %; toplam nominal × kirli birim değerdir. Fiyat
-    // zorunlu olduğundan "boş fiyat otomatik atanır" kartı gösterilmez —
-    // çevrilemeyen fiyatta ipucu kartına düşülür.
-    final eurobond = _s.isEurobond;
-    final price = eurobond
+    final birim = _s.isEurobond
         ? _s.eurobondBirimFiyati(_parse(_price.text))
-        : _parse(_price.text);
-    final isPriceEmpty = !eurobond &&
-        (_price.text.trim().isEmpty || (price != null && price == 0));
+        : _tutarBirimFiyati;
+    final komisyon = _parse(_commission.text);
+    final toplam = formToplamMaliyeti(
+        adet: qty, birimFiyat: birim, komisyon: komisyon);
+    if (toplam == null || qty == null || birim == null) return null;
+    final l = context.l10n;
 
-    // Miktar yoksa hiçbir şey gösterme. 2026-10-31'e kadar burada "miktarı
-    // yaz, toplam burada görünsün" diyen BOŞ bir kart vardı (müşteri raporu
-    // 31 Eki 13:15 tasarım #7, yasin "yap"): yorumun kendisi "hiçbir şey
-    // gösterme" diyordu, kart ise formun ortasında içeriksiz bir kutu olarak
-    // ritmi bozuyordu. Toplam miktar yazılınca belirir.
-    if (qty == null || qty <= 0 || (eurobond && price == null)) {
-      return const SizedBox.shrink();
-    }
+    final tutar = _currency == 'TRY'
+        ? fmtTRY(toplam, digits: 2)
+        : '${qtyFormatter(maxDigits: 2).format(toplam)} $_currency';
+    final carpim = _s.isEurobond
+        ? l.eurobondTotalBreakdown(fmtNumFlex(qty, maxDigits: 2),
+            fmtNum(birim * 100, digits: 3))
+        : '${_fmt(qty)} × ${_fmt(birim)}';
+    final ayrinti = (komisyon ?? 0) > 0
+        ? '$carpim · ${l.toplamKomisyonDahil}'
+        : carpim;
+    // Dövizli alımın TL karşılığı: portföy toplamına giren maliyet budur
+    // (aynı kur kuralı, bkz. `tlKarsiligiKuru`). Kur bilinmiyorsa satır yok.
+    final tl = tlKuru == null
+        ? null
+        : l.totalCostTlEquivalent(fmtTRY(toplam * tlKuru, digits: 2),
+            _currency, fmtNum(tlKuru, digits: 4));
 
-    if (isPriceEmpty) {
-      final now = DateTime.now();
-      final isToday = _addedDate.year == now.year &&
-          _addedDate.month == now.month &&
-          _addedDate.day == now.day;
-      final msg = isToday
-          ? 'Alış fiyatı boş. Kaydederken güncel piyasa fiyatı otomatik atanacak.'
-          : 'Alış fiyatı boş. ${DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate)} '
-              'tarihli kapanış fiyatı otomatik atanacak.';
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.amberFill.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(
-              color: context.c.amberFill.withValues(alpha: 0.3), width: 1),
-        ),
-        child: Row(
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: [l.totalCostUpper, tutar, ayrinti, if (tl != null) tl].join(', '),
+      child: Padding(
+        key: const ValueKey('alt-cubuk-toplam'),
+        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: SandikSpace.sm,
+          runSpacing: SandikSpace.xxs,
           children: [
-            // Bilgi notu: "parıltı" simgesi yapay zekâ işi gibi okunuyordu
-            // (unslop 2026-11-05 #5); burada otomatik fiyat ataması anlatılıyor.
-            Icon(Icons.info_outline_rounded,
-                color: context.c.amberText, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                msg,
-                style: context.t.titleSmall
-                    ?.copyWith(color: context.c.text90, height: 1.35),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (price == null || price <= 0) return const SizedBox.shrink();
-
-    final total = qty * price;
-    final fmt = tryFormatter(digits: 2, symbol: _currency == 'TRY' ? '₺ ' : '');
-    final formatted = _currency == 'TRY'
-        ? fmt.format(total)
-        : '${qtyFormatter(maxDigits: 2).format(total)} $_currency';
-    final tlKuru = _tlKuru();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            context.c.amberFill.withValues(alpha: 0.16),
-            context.c.amberFill.withValues(alpha: 0.06),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(
-            color: context.c.amberFill.withValues(alpha: 0.4), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: context.c.amberFill.withValues(alpha: 0.16),
-            blurRadius: 24,
-            spreadRadius: -8,
-          ),
-        ],
-      ),
-      // İki taraf da ESNEK: eskiden sol kolon ve tutar sabit genişlikteydi,
-      // `add_asset_screen_overflow_test` düzenleme modunda 320pt'te 309px
-      // yatay taşma buldu (kesirli fon miktarı × NAV çarpımı + tutar).
-      // Sol taraf kısalır, tutar sığmazsa ÖLÇEKLENİR — sayı kırpılmaz.
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(context.l10n.totalCostUpper,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: context.c.amberText,
-                    )),
-                const SizedBox(height: 4),
-                Text(
-                    eurobond
-                        ? context.l10n.eurobondTotalBreakdown(
-                            fmtNumFlex(qty, maxDigits: 2),
-                            fmtNum(price * 100, digits: 3))
-                        : '${_fmt(qty)} × ${_fmt(price)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(l.totalCostUpper, style: _etiketStili),
+                Text(ayrinti,
                     style: context.t.bodySmall
                         ?.copyWith(color: context.c.text58)),
               ],
             ),
-          ),
-          const SizedBox(width: SandikSpace.md),
-          Flexible(
-            child: Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
                 FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
                   child: Text(
-                    formatted,
-                    // Form özeti toplam tutarı — tabular figür, yazarken
-                    // zıplamasın.
-                    style: context.t.numLarge.copyWith(
-                      fontSize: 22,
-                      color: context.c.gold,
-                      letterSpacing: -0.5,
+                    tutar,
+                    key: const ValueKey('alt-cubuk-toplam-tutar'),
+                    // Tabular figür (numMedium): yazarken rakamlar zıplamasın.
+                    // 20 pt (headlineMedium) + tabular: eski kartın ham
+                    // 22 pt ham boyutu yerine token; düğmenin yanında
+                    // okunur ama onunla yarışmaz (renk nötr, w600).
+                    style: (context.t.headlineMedium ?? const TextStyle())
+                        .copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: context.c.text90,
                     ),
                   ),
                 ),
-                // Dövizli alımın TL karşılığı: portföy toplamına giren
-                // maliyet budur (aynı kur kuralı, bkz. `tlKarsiligiKuru`).
-                // Kur bilinmiyorsa satır yok — uydurma tutar yazılmaz.
-                if (tlKuru != null)
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      context.l10n.totalCostTlEquivalent(
-                        fmtTRY(total * tlKuru, digits: 2),
-                        _currency,
-                        fmtNum(tlKuru, digits: 4),
-                      ),
-                      key: const ValueKey('toplam-tl-karsiligi'),
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text58),
-                    ),
+                if (tl != null)
+                  Text(
+                    tl,
+                    key: const ValueKey('toplam-tl-karsiligi'),
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58),
                   ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// Toplam kartındaki TL satırının kuru; TRY'de ya da kur bilinmiyorken
+  /// Alt çubuk toplamındaki TL satırının kuru; TRY'de ya da kur bilinmiyorken
   /// `null`. Geriye tarihli alımda alım günü kuru sorgulanır.
   double? _tlKuru() {
     if (_currency == 'TRY') return null;
@@ -609,8 +651,11 @@ extension _TutarAlanlari on _AddAssetScreenState {
       // Boş fiyatlı yeni altın/döviz, bugün: maliyet satıştan yazılacak
       // (`maliyetSatisFiyati`). Başlık atanacak fiyatı, satır farkı söyler.
       final satis = _s.previewSatis!;
-      color = context.c.amberText;
-      icon = Icons.auto_awesome_rounded;
+      // Nötr ton (amber bütçesi, Ar-Ge 2026-11-12 #1): bu bir uyarı değil,
+      // atanacak fiyatın bilgisi; yıldız/parıltı simgesi de "yapay zekâ"
+      // gibi okunuyordu (unslop 2026-11-05 #5).
+      color = context.c.text58;
+      icon = Icons.sell_outlined;
       title = context.l10n.fiyatBirimBasina(
           '${qtyFormatter(maxDigits: 2).format(satis)} $_currency');
       subtitle = _kuyumcuFarkiSatiri(alis: _previewPrice!, satis: satis);
@@ -693,7 +738,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
                   Text(
                     title,
                     style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
                     maxLines: 1,
@@ -752,6 +797,38 @@ extension _TutarAlanlari on _AddAssetScreenState {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Formda beliren/kaybolan satır (toplam, ortalama maliyet, fiyat ipucu):
+/// [child] varken yükseklikle açılır, `null` olunca kapanır (Ar-Ge
+/// 2026-11-12 #3). Eskiden satır `SizedBox.shrink()`'ten tek karede
+/// beliriyor, altındaki alanlar ~70 pt sıçrıyordu; yazarken odak kayıyordu.
+///
+/// Hareket uygulamanın tek katlanır bölüm hareketi [SandikAcilir]: süre ve
+/// eğri orada, hareketi azalt'ta anlık. Kapanırken SON içerik solarak
+/// kalır (boş kutu küçülmez — `SandikAcilir` gerekçesi). İlk kurulumda
+/// içerik varsa hareket yok: düzenleme formu açılırken toplam yerinde
+/// gelir, form zıplamaz.
+class _Beliren extends StatefulWidget {
+  const _Beliren({required this.child});
+
+  final Widget? child;
+
+  @override
+  State<_Beliren> createState() => _BelirenState();
+}
+
+class _BelirenState extends State<_Beliren> {
+  Widget? _son;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.child != null) _son = widget.child;
+    return SandikAcilir(
+      acik: widget.child != null,
+      child: _son ?? const SizedBox.shrink(),
     );
   }
 }

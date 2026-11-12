@@ -105,6 +105,18 @@ class FiyatKaynagi {
   static bool eurobondSerili(Asset a) =>
       a.type == AssetType.eurobond && usdKote(a);
 
+  /// Varlığın dönem serisi ölçeği CANLI kura mı hizalanıyor?
+  ///
+  /// Geçmiş değer yolları USD kote varlıkta ve altında (gram serisi XAU/USD
+  /// × USD/TRY'den de kurulabilir) kur serisini `kurSerisiniHizala` ile
+  /// canlı kura eşitler; canlı kur bilinmiyorsa seri hizasız kalır. Varlık
+  /// sayfası fiyat turunu beklemeden seri isterken (Ar-Ge 12 Kas §3) bu
+  /// türlerde canlı kur yoksa turu bekler: hizasız bir kare, tur bitince
+  /// grafiğin SEVİYESİNİ oynatırdı. Liste `getPortfolioHistoryBreakdown
+  /// AtResolution`'ın `needsUsd` koşuluyla aynı.
+  static bool olcekCanliKuraBagli(Asset a) =>
+      a.currency == 'USD' || a.type == AssetType.altin;
+
   /// Varlık 7/24 işlem görüyor mu? Hafta sonu gün içi ızgarası buna bakar
   /// (`HistoryService.gridSlotlari`).
   static bool yediGun(Asset a) => a.type == AssetType.kripto;

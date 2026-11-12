@@ -41,6 +41,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
+import '../widgets/zekat_sheet.dart';
 import '../widgets/sandik_paylas_dugmesi.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -497,6 +498,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Hedef sayfasının ikinci girişi: yalnız Bugün
                         // kartındaki öneri sönmüşken (Ar-Ge 5 Kas 19:00 #2).
                         const HedefProfilSatiri(),
+                        // Zekât hesabı (2026-11-12, ücretsiz): hep görünür;
+                        // neden Raporlar değil, `ZekatProfilSatiri` notunda.
+                        const ZekatProfilSatiri(),
                         const _PendingRequestsSection(),
                         // Tek satırın üstünde ek boşluk yok: üstteki satır
                         // (halka arz, hedef) alt boşluğunu kendisi taşır.

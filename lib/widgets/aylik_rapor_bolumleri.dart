@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
+import '../services/aylik_getiri_tablosu.dart' show AylikKiyas;
 import '../services/aylik_rapor_ozeti.dart';
 import '../theme/sandik.dart';
 import '../utils/pozisyon_etiketi.dart';
@@ -341,4 +342,35 @@ class _Satir extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Kilitli aylık rapor kartının kişisel satırı (2026-11-12). Yalnız sayısı
+/// sıfırdan büyük parçalar yazılır; hiçbiri yoksa `null` (satır yok).
+/// [ay]: ayın adı ("Ekim").
+String? aylikKancaCumlesi(
+    AppLocalizations l, String ay, AylikRaporKancasi k) {
+  if (k.bos) return null;
+  final parcalar = [
+    if (k.alimSayisi > 0) l.prmAylikKancaAlim(k.alimSayisi),
+    if (k.satisSayisi > 0) l.prmAylikKancaSatis(k.satisSayisi),
+    if (k.temettuSayisi > 0) l.prmAylikKancaTemettu(k.temettuSayisi),
+  ];
+  final liste = switch (parcalar.length) {
+    0 => null,
+    1 => parcalar.first,
+    _ => l.prmAylikKancaVe(
+        parcalar.sublist(0, parcalar.length - 1).join(', '), parcalar.last),
+  };
+  if (liste == null) return l.prmAylikKancaNot(ay, k.notSayisi);
+  if (k.notSayisi == 0) return l.prmAylikKancaHareket(ay, liste);
+  return l.prmAylikKancaIkisi(ay, liste, k.notSayisi);
+}
+
+/// Aylık raporun kişisel kıyas cümlesi (2026-11-12). Ekran ve PDF aynı
+/// cümleyi yazar. En iyi ay övülür, en zayıf ay yumuşak söylenir (artıda
+/// geçen aylar hemen ardından); arada sıra verilir. Renk yok.
+String aylikKiyasCumlesi(AppLocalizations l, AylikKiyas k) {
+  if (k.enIyi) return l.prmKiyasEnIyi(k.arti, k.olculen);
+  if (k.enZayif) return l.prmKiyasEnZayif(k.arti, k.olculen);
+  return l.prmKiyasOrta(k.arti, k.olculen, k.sira);
 }

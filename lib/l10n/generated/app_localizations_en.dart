@@ -425,6 +425,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String quickPrincipalChip(String miktar) {
+    return 'Principal · $miktar';
+  }
+
+  @override
+  String quickPrincipalChipSemantics(String miktar) {
+    return 'Principal, $miktar';
+  }
+
+  @override
+  String get quickPrincipalChipLocked => 'Principal';
+
+  @override
+  String get quickPrincipalChipLockedSemantics => 'Principal, locked, Premium';
+
+  @override
+  String quickPrincipalNote(String tutar) {
+    return 'Selling this much gets you $tutar, your cost back';
+  }
+
+  @override
   String quickAmountQtyApprox(String miktar) {
     return '≈ $miktar';
   }
@@ -455,6 +476,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String quickBuyAvgCost(String yeni, String simdi) {
     return 'Your new average cost $yeni (now $simdi)';
   }
+
+  @override
+  String get fiyatBosIpucu => 'Leave empty to use that day\'s price';
+
+  @override
+  String get toplamKomisyonDahil => 'incl. fees';
 
   @override
   String get quickTargetAvg => 'Target average';
@@ -2671,11 +2698,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumUnlocked => 'Premium unlocked';
 
   @override
-  String get premiumUnlockedBody =>
-      'Unlimited assets, premium indicators and every Premium detail are now unlocked.';
+  String get pwAcildiDon => 'Back to where you were';
 
   @override
-  String get greatWord => 'Great';
+  String pwAcildiRapor(String ay) {
+    return 'Your $ay report is ready';
+  }
+
+  @override
+  String pwAcildiRaporSes(String ay) {
+    return 'Your $ay report is ready. Tap to open the report.';
+  }
+
+  @override
+  String pwAcildiTemettu(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n stocks',
+      one: '1 stock',
+    );
+    return 'Dividend forecast: $_temp0';
+  }
+
+  @override
+  String pwAcildiTemettuSes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n of your stocks',
+      one: '1 of your stocks',
+    );
+    return 'The dividend forecast is ready for $_temp0. Tap to open the forecast.';
+  }
+
+  @override
+  String pwAcildiSattiklarin(int n) {
+    return 'Closed positions: $n';
+  }
+
+  @override
+  String pwAcildiSattiklarinSes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n closed positions',
+      one: '1 closed position',
+    );
+    return 'You have $_temp0. Tap to open the list.';
+  }
+
+  @override
+  String pwAcildiAylikGetiri(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return 'Monthly returns table: $_temp0';
+  }
+
+  @override
+  String pwAcildiAylikGetiriSes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return 'Your monthly returns table covers $_temp0. Tap to open the Performance tab.';
+  }
+
+  @override
+  String pwAcildiSinir(int n) {
+    return 'Asset limit removed: unlimited instead of $n assets';
+  }
 
   @override
   String get sandikPremiumUpper => 'Sandık Premium';
@@ -3470,6 +3568,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String saveAllCount(int n) {
     return 'Save All ($n)';
+  }
+
+  @override
+  String watchlistRowAdded(String ad) {
+    return '$ad added to the list';
   }
 
   @override
@@ -7227,6 +7330,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String prmDenemeIlkOdeme(String tarih, String magaza) {
+    return 'Free trial · first payment $tarih · $magaza';
+  }
+
+  @override
+  String prmDenemeIlkOdemeTutar(String tarih, String tutar, String magaza) {
+    return 'Free trial · first payment $tarih, $tutar · $magaza';
+  }
+
+  @override
   String prmBitis(String tarih) {
     return 'Ends on $tarih';
   }
@@ -8377,6 +8490,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ttBrutNot =>
       'Gross; net not calculated because the withholding rate is unknown.';
+
+  @override
+  String ttAyEtiket(String ay) {
+    return '$ay, estimated';
+  }
+
+  @override
+  String get ttAyNot =>
+      'Gross; assets expected to pay this month are listed below. Tap the bar again to see all.';
+
+  @override
+  String ttAySemantik(String ay, String tutar) {
+    return '$ay, $tutar';
+  }
 
   @override
   String ttNetNot(String brut) {
@@ -10809,6 +10936,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kapanisYillikRapor => 'See in yearly report';
 
   @override
+  String sattiklarinSatir(int count) {
+    return 'Closed positions ($count)';
+  }
+
+  @override
+  String get sattiklarinBaslik => 'Closed positions';
+
+  @override
+  String get sattiklarinAltMetin => 'Positions you sold in full, latest first';
+
+  @override
+  String get sattiklarinKilitli =>
+      'Closed positions and their realized gains are in Premium';
+
+  @override
+  String sattiklarinTuttun(String sure) {
+    return 'Held for $sure';
+  }
+
+  @override
+  String get sattiklarinMaliyetYok => 'Cost unknown';
+
+  @override
   String get kapanisTamam => 'OK';
 
   @override
@@ -10927,4 +11077,223 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aylikGetiriDipnot =>
       'Each month is measured the same way as the return in Summary: adding or withdrawing money during the month doesn\'t change the percentage. The year compounds the months.';
+
+  @override
+  String get zkSatirBaslik => 'Zakat calculator';
+
+  @override
+  String get zkSatirAlt =>
+      'An estimate from your portfolio, using the Diyanet measure';
+
+  @override
+  String get zkAciklama =>
+      'If you\'ve held at least the nisab for a lunar year (354 days), it\'s calculated from today\'s value of all your holdings, including those added during the year.';
+
+  @override
+  String get zkTabi => 'Held for a year';
+
+  @override
+  String get zkYeni => 'Added during the year';
+
+  @override
+  String get zkYeniAlt => 'Included';
+
+  @override
+  String get zkBorcEtiket => 'Debt to deduct (optional)';
+
+  @override
+  String get zkBorcIpucu => 'Not saved';
+
+  @override
+  String get zkBorcSatir => 'Debt deducted';
+
+  @override
+  String get zkMatrah => 'Amount counted';
+
+  @override
+  String get zkNisap => 'Nisab';
+
+  @override
+  String zkNisapAyrinti(String gram, String fiyat) {
+    return '$gram g gold × $fiyat (24k gram)';
+  }
+
+  @override
+  String get zkSonuc => 'Zakat due (2.5%)';
+
+  @override
+  String get zkNisapAlti =>
+      'The amount counted is below the nisab; by this estimate no zakat is due.';
+
+  @override
+  String zkFiyatsiz(int sayi) {
+    return '$sayi holdings had no price and weren\'t counted.';
+  }
+
+  @override
+  String zkHaric(String turler) {
+    return 'Types not counted: $turler';
+  }
+
+  @override
+  String get zkKurYok => 'Gold price unavailable right now';
+
+  @override
+  String get zkKurYokAlt =>
+      'The nisab is based on the gram gold price. The estimate appears here once the price arrives.';
+
+  @override
+  String get zkDipnot =>
+      'This is an estimate using the measure published by Diyanet; for a religious ruling, consult the mufti\'s office.';
+
+  @override
+  String get zkHavlBekliyor => 'Calculated once a year has passed.';
+
+  @override
+  String zkHavlTarihi(String tarih) {
+    return 'If your portfolio stays as it is, the year completes on $tarih.';
+  }
+
+  @override
+  String secimSayisi(int n) {
+    return '$n selected';
+  }
+
+  @override
+  String hareketlerSilindi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n transactions deleted',
+      one: '1 transaction deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get hareketSecimIpucu => 'Long press to select';
+
+  @override
+  String ttKancaVar(int n, String adlar) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other:
+          '$n stocks in your portfolio paid dividends in the last 12 months: $adlar',
+      one:
+          '1 stock in your portfolio paid a dividend in the last 12 months: $adlar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ttKancaYok =>
+      'No BIST stock in your portfolio pays dividends right now';
+
+  @override
+  String ttKancaFazla(String adlar, int n) {
+    return '$adlar +$n';
+  }
+
+  @override
+  String prmAylikKancaAlim(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n buys',
+      one: '1 buy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmAylikKancaSatis(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n sales',
+      one: '1 sale',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmAylikKancaTemettu(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n dividends',
+      one: '1 dividend',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmAylikKancaVe(String bas, String son) {
+    return '$bas and $son';
+  }
+
+  @override
+  String prmAylikKancaHareket(String ay, String liste) {
+    return 'In $ay you have $liste.';
+  }
+
+  @override
+  String prmAylikKancaNot(String ay, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n of your assets have their $ay note ready.',
+      one: '1 of your assets has its $ay note ready.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmAylikKancaIkisi(String ay, String liste, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n assets have their monthly note ready.',
+      one: '1 asset has its monthly note ready.',
+    );
+    return 'In $ay you have $liste; $_temp0';
+  }
+
+  @override
+  String prmKiyasEnIyi(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'This month was the best of the last $n; you were up in $arti of $n months.',
+      zero: 'This month was the best of the last $n.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasEnZayif(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'This month was the weakest of the last $n; you were up in $arti of $n months.',
+      zero: 'This month was the weakest of the last $n.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasOrta(int arti, int n, int sira) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'You were up in $arti of the last $n months; this month ranks $sira of $n.',
+      zero:
+          'None of the last $n months closed up; this month ranks $sira of $n.',
+    );
+    return '$_temp0';
+  }
 }

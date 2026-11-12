@@ -11,6 +11,7 @@ import 'package:portfoy_takip/providers/analiz_provider.dart';
 import 'package:portfoy_takip/providers/aylik_rapor_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/aylik_rapor_screen.dart';
+import 'package:portfoy_takip/services/aylik_getiri_tablosu.dart';
 import 'package:portfoy_takip/services/aylik_rapor_ozeti.dart';
 import 'package:portfoy_takip/services/varlik_analizi.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -381,6 +382,43 @@ void main() {
         find.bySemanticsLabel(l10n.anzAylikHaberSemKaynak('Anadolu Ajansı')),
         findsOneWidget,
       );
+    });
+  });
+
+  // Kişisel kıyas satırı (2026-11-12, Ar-Ge 12 Kas #7): açık raporda özet
+  // cümlesinin altında, cümleyle; veri yoksa satır yok; 2× yazıda taşmaz.
+  group('kişisel kıyas', () {
+    const k = AylikKiyas(
+        olculen: 12, arti: 8, sira: 9, enIyi: false, enZayif: false);
+    const cumle = 'Son 12 ayda 8 ay artıdaydın; bu ay 12 ay içinde 9. sırada.';
+
+    testWidgets('satır görünür, ekran okuyucu okur', (tester) async {
+      final h = tester.ensureSemantics();
+      await tester.pumpWidget(ekran(ozet: dolu, ek: [
+        aylikRaporKiyasProvider.overrideWith((ref, d) async => k),
+      ]));
+      await tester.pumpAndSettle();
+      expect(find.text(cumle), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(RegExp.escape(cumle))),
+          findsWidgets);
+      h.dispose();
+    });
+
+    testWidgets('kıyas yoksa satır yok', (tester) async {
+      await tester.pumpWidget(ekran(ozet: dolu, ek: [
+        aylikRaporKiyasProvider.overrideWith((ref, d) async => null),
+      ]));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('artıdaydın'), findsNothing);
+    });
+
+    testWidgets('2× yazı, 320 pt: taşma yok', (tester) async {
+      await tester.pumpWidget(ekran(ozet: dolu, yazi: 2, genislik: 320, ek: [
+        aylikRaporKiyasProvider.overrideWith((ref, d) async => k),
+      ]));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text(cumle), findsOneWidget);
     });
   });
 }

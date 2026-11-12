@@ -60,7 +60,9 @@ void main() {
     // Boşluk bırakılmadı — gevşek eşik cırcırı işlevsiz kılar.
     // Kalanlar: 3 (×14), 28 (×13), 18 (×9), 22, 36, 40, 44, 46, 1, 5.
     // 2026-10-30: PDF yazıcıları sayımdan çıktı → 40.
-    const esik = 40;
+    // 2026-11-12: gerçek 36'ya inmişti (eşik güncellenmemişti; Varlık Ekle
+    // turunda yeni ölçek dışı boşluk eklenmedi) → 36.
+    const esik = 36;
 
     final offenders = collect();
 

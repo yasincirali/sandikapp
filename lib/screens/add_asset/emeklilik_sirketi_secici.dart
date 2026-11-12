@@ -67,7 +67,7 @@ class _SeciciState extends ConsumerState<_Secici> {
                   Text(
                     l10n.pensionPickCompany,
                     style: context.t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700, color: context.c.text90),
+                        fontWeight: FontWeight.w600, color: context.c.text90),
                   ),
                   const SizedBox(height: SandikSpace.smd),
                   TextField(
@@ -187,7 +187,7 @@ class _Satir extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: context.t.bodyLarge?.copyWith(
                         color: context.c.text90,
-                        fontWeight: secili ? FontWeight.w700 : null)),
+                        fontWeight: secili ? FontWeight.w600 : null)),
               ),
               if (ek != null) ...[
                 const SizedBox(width: SandikSpace.sm),

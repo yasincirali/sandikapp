@@ -7,6 +7,7 @@ import '../models/yuzde_alarmi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
 import '../providers/yuzde_alarmi_provider.dart';
+import '../services/alarm_siniri.dart';
 import '../services/bildirim_izni.dart';
 import '../services/fiyat_kaynagi.dart';
 import '../services/ozellik_olcumu.dart';
@@ -14,7 +15,13 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import 'alarm_kur_sheet.dart'
-    show AlarmAdayi, alarmKurAkisi, etkinAlarmSayisi, yuzdeAlarmEtiketi;
+    show
+        AlarmAdayi,
+        alarmKurAkisi,
+        alarmSiniriDoluMu,
+        alarmYazimiTavanli,
+        yuzdeAlarmEtiketi;
+import 'sinir_uyarisi.dart' show alarmSiniriUyarisi;
 
 /// Kayıt anında tek dokunuşla günlük yüzde alarmı (Ar-Ge 29 Eki 12:45 #1).
 ///
@@ -39,8 +46,9 @@ bool yuzdeAlarmiOnerilsinMi(AlarmAdayi aday, List<YuzdeAlarmi> mevcut) =>
 Future<void> tekDokunusYuzdeAlarmiKur(
     BuildContext context, WidgetRef ref, AlarmAdayi aday) async {
   if (DemoModu.yazmaKapisi('alarm')) return;
-  final tavanDolu =
-      etkinAlarmSayisi(ref) >= ref.read(priceAlertLimitProvider);
+  // Sayım listeleri BEKLER (2026-11-12): kayıt anında yüzde alarm listesi
+  // çoğu zaman henüz yüklenmemiştir; eskiden 0 sayılıp tavan atlanıyordu.
+  final tavanDolu = await alarmSiniriDoluMu(ref);
   if (tavanDolu || await BildirimIzni.reddedildi()) {
     if (!context.mounted) return;
     await alarmKurAkisi(context, ref, sabit: aday);
@@ -49,17 +57,24 @@ Future<void> tekDokunusYuzdeAlarmiKur(
   final me = ref.read(authProvider).valueOrNull;
   if (me == null) return;
   try {
-    await ref.read(yuzdeAlarmlariProvider.notifier).create(YuzdeAlarmi(
-          id: '',
-          userId: me.id,
-          symbol: aday.sembol,
-          label: aday.ad,
-          esikPct: tekDokunusEsik,
-          yon: YuzdeYon.ikisi,
-          createdAt: DateTime.now(),
-        ));
+    await alarmYazimiTavanli(
+        ref,
+        () => ref.read(yuzdeAlarmlariProvider.notifier).create(YuzdeAlarmi(
+              id: '',
+              userId: me.id,
+              symbol: aday.sembol,
+              label: aday.ad,
+              esikPct: tekDokunusEsik,
+              yon: YuzdeYon.ikisi,
+              createdAt: DateTime.now(),
+            )));
   } catch (e) {
-    if (context.mounted) showAppError(context, e);
+    if (!context.mounted) return;
+    if (alarmSiniriHatasiMi(e)) {
+      alarmSiniriUyarisi(context, ref, ref.read(priceAlertLimitProvider));
+    } else {
+      showAppError(context, e);
+    }
     return;
   }
   OzellikOlcumu.say(Ozellik.yuzdeAlarm);

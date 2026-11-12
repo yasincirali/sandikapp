@@ -149,6 +149,7 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Hesap değiştirme (Profil kimlik kartında "ad ⌄", ok yalnız ≥2 hesapta) | `HesapBasligi` → `hesapMenusunuAc` (yüzen cam menü); kaldırma ve uzun basma `hesapSeciciniAc` alt sayfası |
 | Varlık sayfası Al/Sat/Temettü | `PozisyonIslemCubugu(yuzen: SandikCam.acik)` — yüzen cam kapsül |
 | Satıra uzun bas kısayolu (iOS sistem bağlam menüsü, Android alt sayfa) | `SandikBaglamMenusu` — aynı eylemler satırda/detayda da durur; yıkıcı eylem en sonda, kırmızı |
+| Listede çoklu seçim (uzun bas → kip; Hareketler toplu silme) | `SandikSecimCubugu` ("N seçili" · Sil · Vazgeç; Sil onaysız, ardından "Geri al" snack'ı) + satır başında `SandikSecimIsareti` (seçili hâl ikonla ve `Semantics.selected` ile); geri tuşu/hareketi kipi kapatır (`PopScope`) |
 
 **Seçici kuralı (2026-10-12).** "Birini seç" üç işe ayrılır ve her işin tek
 görünümü vardır: mod değiştirmek kayan segment, süzmek süzme çipi, çoklu

@@ -140,3 +140,41 @@ TemettuTahmini temettuTahmini(
   satirlar.sort((a, b) => b.brutTry.compareTo(a.brutTry));
   return TemettuTahmini(satirlar: satirlar, aylik: aylik);
 }
+
+/// Kilitli temettü tahmini kartının kişisel satırı (2026-11-12, Ar-Ge
+/// 12 Kas #3): portföyündeki hangi BIST hisseleri son 12 ayda temettü
+/// dağıttı. TUTAR YOK: tutar kilitli içeriğin kendisidir; satır yalnız
+/// "bu ekran benim için dolu mu" sorusunu kendi defterinle cevaplar.
+/// Hiçbiri dağıtmadıysa bunu da söyler (satış yerine dürüstlük: açınca
+/// boş durum görecek kullanıcıya "dolu" izlenimi verilmez).
+@immutable
+class TemettuKancasi {
+  const TemettuKancasi(this.kodlar);
+
+  /// Son 12 ayda temettü dağıtan hisselerin kısa kodları, alfabetik.
+  /// Sıra tutara göre DEĞİL: tutar sırası kilitli bilgiyi sızdırırdı.
+  final List<String> kodlar;
+
+  bool get bos => kodlar.isEmpty;
+}
+
+/// [girdiler]: (kısa kod, olaylar) — olaylar `null` ise o sembol
+/// okunamadı. Tek bir okuma düşerse `null` döner ve satır hiç çizilmez:
+/// eksik okumayla "3 hisse dağıttı" ya da "dağıtan yok" demek uydurma
+/// olurdu. Pencere ve olay eşiği [temettuTahmini] ile aynı (son
+/// `TemettuGecmisi.pencereGun` gün, pay başına > 0), iki yüzey aynı
+/// hisseleri sayar.
+TemettuKancasi? temettuKancasi(
+  List<(String, List<TemettuOlayi>?)> girdiler, {
+  required DateTime simdi,
+}) {
+  final esik = simdi.subtract(const Duration(days: TemettuGecmisi.pencereGun));
+  final kodlar = <String>{};
+  for (final (kod, olaylar) in girdiler) {
+    if (olaylar == null) return null;
+    if (olaylar.any((o) => o.hakTarihi.isAfter(esik) && o.tutarPay > 0)) {
+      kodlar.add(kod);
+    }
+  }
+  return TemettuKancasi(kodlar.toList()..sort());
+}

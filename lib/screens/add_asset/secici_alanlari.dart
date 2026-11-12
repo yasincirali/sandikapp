@@ -39,24 +39,17 @@ extension _SeciciAlanlari on _AddAssetScreenState {
                     color: selected ? AssetType.doviz.color : context.c.overlay,
                     width: selected ? 1.4 : 1,
                   ),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color:
-                                AssetType.doviz.color.withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            spreadRadius: -6,
-                          ),
-                        ]
-                      : null,
+                  // Seçili kutu parıltısı kalktı (amber bütçesi, Ar-Ge
+                  // 2026-11-12 #1): seçim dolgu + çerçeveyle okunur.
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       opt.symbol,
-                      style: context.t.headlineLarge?.copyWith(
-                        fontSize: 22,
+                      // Ham 22 pt yazı boyutu → `headlineMedium` (20) token'ı
+                      // (Ar-Ge 2026-11-12 #8).
+                      style: context.t.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: selected
                             ? AssetType.doviz.onSurface(context)
@@ -67,7 +60,7 @@ extension _SeciciAlanlari on _AddAssetScreenState {
                     Text(
                       opt.label,
                       style: context.t.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: selected
                             ? AssetType.doviz.onSurface(context)
                             : context.c.text58,
@@ -83,82 +76,38 @@ extension _SeciciAlanlari on _AddAssetScreenState {
     );
   }
 
-  // ── Miktar preset chipleri (Sandik brand) ──────────────────────────────────
-
+  // ── Miktar önayar çipleri ──────────────────────────────────────────────────
+  //
+  // Ar-Ge 2026-11-12 #7: çipler kendi kabuğundaydı; görsel ~32 pt
+  // (dokunma 44'e tamamlanmıştı ama kalın parmak görsel kutuya nişan alır),
+  // her çipte "lot"/"gr" eki vardı ve seçim yalnız amber tonla okunuyordu.
+  // Artık tarih çipleriyle AYNI bileşen ([SandikFiltreCipi]: 44 pt görsel,
+  // seçiliyken amber dolgu + onay işareti — yalnız renkle anlam yok, sabit
+  // en). Birim eki kalktı: miktar alanının sonunda zaten yazıyor; satır
+  // daralır, "1000" sığar. Ekran okuyucu birimi yine duyar.
   Widget _quantityPresetsRow(ColorScheme cs) {
     final presets = _quantityPresets;
     return HScrollWithFade(
       fadeColor: context.c.background,
       child: Row(
-        children: presets.map((v) {
-          final selected = _quantity.text == v;
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: Semantics(
-              button: true,
-              selected: selected,
-              label: context.l10n.quantitySemantics(v),
-              child: SandikTappable(
-              soluk: true,
-              haptic: SandikHaptic.none,
-              onTap: () {
-                SandikHaptic.selection.perform();
-                _quantity.text = v;
-              },
-              child: ConstrainedBox(
-          // HIG 44 pt (seçici denetimi 2026-10-12): görsel çip aynı, dokunma
-          // alanı 44'e tamamlanır.
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          child: Center(widthFactor: 1, heightFactor: 1, child: AnimatedContainer(
-                duration:
-                    SandikMotion.stateOf(context),
-                curve: SandikMotion.enter,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? context.c.amberFill.withValues(alpha: 0.16)
-                      : context.c.surface1,
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(
-                    color: selected
-                        ? context.c.amberFill.withValues(alpha: 0.45)
-                        : context.c.overlay,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      v,
-                      style: context.t.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color:
-                            selected ? context.c.amberText : context.c.text58,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      // Miktar alanının son ekiyle AYNI birim (bulgu #22):
-                      // eski `UnitType.label` hisse/fonda "Adet" yazıyordu.
-                      _quantitySuffix,
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
-                        color: selected
-                            ? context.c.amberFill.withValues(alpha: 0.75)
-                            : context.c.text36,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ),
-            )),
-          );
-        }).toList(),
+        children: [
+          for (final v in presets)
+            Padding(
+              padding: const EdgeInsets.only(right: SandikSpace.sm),
+              child: SandikFiltreCipi(
+                key: ValueKey('miktar-cipi-$v'),
+                ad: v,
+                semantik: context.l10n
+                    .quantitySemantics('$v $_quantitySuffix'.trim()),
+                secili: _quantity.text == v,
+                onTap: () => _quantity.text = v,
+              ),
+            ),
+        ],
       ),
     );
   }
+
 
   // ── Hisse pazarı: BIST | ABD (bayrak `abd_hisse`) ───────────────────────────
   //
@@ -202,7 +151,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: ad == null ? null : ticker,
           mainText: ad ?? context.l10n.pickUsStockTap,
-          color: AssetType.hisse.color,
         ),
       ),
     );
@@ -254,7 +202,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: ticker,
           mainText: selectedName ?? context.l10n.pickStockTap,
-          color: AssetType.hisse.color,
         ),
       ),
     );
@@ -310,7 +257,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: _selectedFund?.code,
           mainText: _selectedFund?.name ?? context.l10n.pickFundTap,
-          color: AssetType.fon.color,
         ),
       ),
     );
@@ -363,7 +309,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: kod,
           mainText: kod == null ? context.l10n.pickCryptoTap : (ad ?? kod),
-          color: AssetType.kripto.color,
         ),
       ),
     );
@@ -413,7 +358,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: s == null ? null : '${s.vade.year}',
           mainText: s?.ad ?? context.l10n.pickEurobondTap,
-          color: AssetType.eurobond.color,
         ),
       ),
     );
@@ -446,7 +390,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
     required bool hasError,
     required String? badgeText,
     required String mainText,
-    required Color color,
     IconData trailingIcon = Icons.search_rounded,
   }) {
     return Container(
@@ -458,43 +401,31 @@ extension _SeciciAlanlari on _AddAssetScreenState {
         // komşu alanlar şeffafken bu tek kutu dolu görünüyordu.
         color: context.inputFill,
         borderRadius: BorderRadius.circular(SandikRadius.md),
+        // Amber bütçesi (Ar-Ge 2026-11-12 #1, unslop "Colored glows",
+        // "Every element highlighted"): dolu seçici eskiden tür renginde
+        // kalın çerçeve + dış parıltı taşıyordu; hisse rengi amber olduğu
+        // için formda kaydet düğmesiyle yarışan yedi amber öğeden biriydi.
+        // Dolu olduğu metnin kendisinden okunur (ağırlık + text90), çerçeve
+        // öteki alanlarla aynı kıl çizgisi. Hata kırmızısı kalır.
         border: Border.all(
-          color: hasError
-              ? context.c.loss
-              : (hasValue ? color : context.c.hairline),
-          width: hasValue ? 1.4 : 1,
+          color: hasError ? context.c.loss : context.c.hairline,
         ),
-        // Parlama YALNIZ dışarıda (`BlurStyle.outer`). Flutter gölgeyi
-        // kutunun tamamı olarak çizer; eski opak `surface1` dolgu içini
-        // örtüyordu. Dolgu dark'ta şeffaf olunca (`inputFill`) gölge kutunun
-        // içini varlık rengine boyadı — düzeltilen "içi farklı renk" hatasının
-        // aynısı. `outer` negatif yayılmayla kullanılamaz (içeride bir şerit
-        // boyar), bu yüzden yayılma 0 ve bulanıklık kısaltıldı.
-        boxShadow: hasValue
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.20),
-                  blurRadius: 10,
-                  blurStyle: BlurStyle.outer,
-                ),
-              ]
-            : null,
       ),
       child: Row(
         children: [
           if (badgeText != null) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              // Sembol rozeti nötr yüzey (amber bütçesi, yukarıda): tür
+              // rengini taşıyınca hisse/altında ikinci bir amber leke oluyordu.
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.16),
+                color: context.c.surface2,
                 borderRadius: BorderRadius.circular(SandikRadius.sm),
               ),
-              // Rozet METNİ açık temada koyulaştırılmış ton (`metinTonu`);
-              // dolgu ham renkte kalır.
               child: Text(badgeText,
                   style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: color.metinTonu(context))),
+                      color: context.c.text90)),
             ),
             const SizedBox(width: 10),
           ],

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/crash_reporter.dart';
+import '../services/satin_alma_service.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
@@ -186,6 +187,21 @@ final premiumHaklariProvider = FutureProvider<List<PremiumHakki>>((ref) async {
     CrashReporter.report(e, st, reason: 'premiumHaklariProvider');
     return const [];
   }
+});
+
+/// Mağaza servisi (RevenueCat). Ekran tekil örneği doğrudan değil bu
+/// sağlayıcıdan okur ki geri yükleme akışı sahte servisle test edilebilsin
+/// (Ar-Ge 12 Kas #1); uygulamada her zaman [SatinAlmaService.instance].
+final satinAlmaServisiProvider =
+    Provider<SatinAlmaService>((_) => SatinAlmaService.instance);
+
+/// Etkin mağaza aboneliğinin dönemi (deneme mi, ilk ödeme tutarı). Abonelik
+/// satırı denemede "Yenileme" yerine "Ücretsiz deneme · ilk ödeme" yazar
+/// (Ar-Ge 12 Kas #2). Haklar tazelenince (geri yükleme, satın alma) bu da
+/// yeniden okunur. Mağaza yoksa null → eski metin.
+final abonelikDonemiProvider = FutureProvider<AbonelikDonemi?>((ref) async {
+  ref.watch(premiumHaklariProvider);
+  return ref.read(satinAlmaServisiProvider).donem();
 });
 
 /// Geçerli hak (abonelik önce, sonra hediye, sonra manuel); yoksa null.

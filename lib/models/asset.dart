@@ -335,6 +335,26 @@ class Asset {
         sozlesmeId, createdAt, portfoyId, maliyetBilinmiyor, portfoyKarisik,
       );
 
+  /// [degerImzasi]'nın FİYATTAN bağımsız hâli: defter içeriği (miktar,
+  /// maliyet, tür, silinmişlik…) değişince değişir, fiyat turunda
+  /// (`currentPrice`, `lastUpdated`) değişmez.
+  ///
+  /// Neden (Ar-Ge 12 Kas #6, ölçüm `temettu_tazeleme_iskelet_test`): fiyat
+  /// turu `assets` listesini her seferinde yeni nesne yazar; listenin
+  /// kimliğini izleyen fiyattan bağımsız hesaplar (temettü tahmini) her
+  /// turda yeniden koşup ekranı iskelete düşürüyordu. Satır sayısı imzası
+  /// (aylık rapor) miktar düzenlemesini kaçırır; bu imza kaçırmaz. Yeni alan
+  /// eklersen [degerImzasi] ile birlikte buraya da ekle (fiyat alanı hariç).
+  Object get defterImzasi => (
+        id, userId, name, ticker, type, subCategory, unitType, quantity,
+        purchasePrice, currency, addedDate, notes, isManualPrice,
+        // Elle fiyatlı lotta fiyat defter girdisidir (tur yazmaz).
+        isManualPrice ? currentPrice : null,
+        purchaseFxRate, kind, refAssetId, sellPrice, sellFxRate, commission,
+        dividendAmount, deletedCount, deletedAt, sozlesmeId, createdAt,
+        portfoyId, maliyetBilinmiyor, portfoyKarisik,
+      );
+
   bool get isBuy => kind == AssetKind.buy;
   bool get isSell => kind == AssetKind.sell;
   bool get isDeleteLog => kind == AssetKind.deleteLog;
@@ -734,4 +754,28 @@ class Asset {
         // Migration 0162 öncesi satırlarda sütun yok → null = işaret yok.
         maliyetBilinmiyor: m['maliyet_bilinmiyor'] as bool?,
       );
+}
+
+/// Bir lot listesinin [Asset.defterImzasi] dizisi, değer eşitlikli.
+/// Riverpod `select` `==` ile karşılaştırır; ham liste kimlikle eşitlenir.
+/// Fiyattan bağımsız hesabı izleyen sağlayıcılar bunu seçer.
+class DefterImzasi {
+  DefterImzasi(Iterable<Asset> lotlar)
+      : _imzalar = [for (final a in lotlar) a.defterImzasi];
+
+  final List<Object> _imzalar;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! DefterImzasi || other._imzalar.length != _imzalar.length) {
+      return false;
+    }
+    for (var i = 0; i < _imzalar.length; i++) {
+      if (other._imzalar[i] != _imzalar[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(_imzalar);
 }

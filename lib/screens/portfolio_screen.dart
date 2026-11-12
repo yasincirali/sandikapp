@@ -89,6 +89,7 @@ import '../providers/veri_kalitesi_provider.dart';
 import '../widgets/ozellik_onerisi_karti.dart';
 import '../widgets/bes_fon_satiri.dart';
 import '../widgets/basa_bas_satiri.dart';
+import '../widgets/sattiklarin.dart';
 
 part 'portfolio/bes_sozlesme_satiri.dart';
 
@@ -762,8 +763,20 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 _yeniSatiriBul(
                                     positions, portfoyKapsami.secim);
 
+                                // "Sattıkların" (Premium, 2026-11-12): liste
+                                // SONUNDA, yalnız "Ben"de (ortağın kapattığı
+                                // pozisyon kullanıcının satışı değil) ve sekme
+                                // görülünce (kapsam sağlayıcısı portföy
+                                // listesini çeker). Her şeyi satan kullanıcıda
+                                // boş durumun altında da: tam o kullanıcının
+                                // geri dönmek istediği yer. Görünürlük ve kilit
+                                // satırın içinde (`SattiklarinSatiri`).
+                                final sattiklarin = _view == '' && !onKurulum;
                                 if (positions.isEmpty) {
-                                  return const <Widget>[_EmptyState()];
+                                  return <Widget>[
+                                    const _EmptyState(),
+                                    if (sattiklarin) const SattiklarinSatiri(),
+                                  ];
                                 }
 
                                 final displayAssets = positions
@@ -990,6 +1003,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                               gorunum: p.asDisplayAsset(),
                                               lotlar: p.lots),
                                     ).kartlar(),
+                                    if (sattiklarin) const SattiklarinSatiri(),
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
                       ],

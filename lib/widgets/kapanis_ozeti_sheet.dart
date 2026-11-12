@@ -14,7 +14,8 @@ import 'review_prompt_sheet.dart';
 import 'share_card.dart';
 import 'tam_ekran/grafik_paylasimi.dart' show grafikPaylasimKisaBaglanti;
 
-/// Kapanış özeti sayfası ("Tümünü sat" kaydedildikten sonra, bir kez).
+/// Kapanış özeti sayfası ("Tümünü sat" kaydedildikten sonra; sonradan
+/// Portföy › Sattıkların listesinden, Premium).
 ///
 /// ## Kurallar (müşteri işi 10 Kas)
 /// - Kutlama yok: konfeti, rozet, "tebrikler" yok. Kazançta da zararda da
@@ -34,6 +35,7 @@ Future<void> showKapanisOzeti(
   BuildContext context,
   KapanisOzeti ozet, {
   bool tutarGizli = false,
+  bool degerlendirme = true,
 }) async {
   final l = context.l10n;
   final secim = await showSandikSheet<_Secim>(
@@ -69,7 +71,10 @@ Future<void> showKapanisOzeti(
   }
   // Kayda değer kazançla kapanan pozisyon "mutlu an"dır; karar ve sıklık
   // `ReviewPromptService`'te (erteleme, tavan, yeni kullanıcı kapısı).
-  if (ozet.kazanc &&
+  // "Sattıkların"dan yeniden açılan eski kapanış o an değildir
+  // ([degerlendirme] false): kullanıcı geçmişe bakıyor, yeni bir iş bitmedi.
+  if (degerlendirme &&
+      ozet.kazanc &&
       (ozet.karPct ?? 0) >= kapanisDegerlendirmeEsigiPct &&
       context.mounted) {
     await ReviewPromptSheet.belkiGoster(context, ReviewAni.kapanis);

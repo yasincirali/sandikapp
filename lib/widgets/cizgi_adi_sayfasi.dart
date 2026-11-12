@@ -4,6 +4,7 @@ import '../l10n/l10n.dart';
 import '../services/cizim_alarmi.dart' show kCizgiAdiAzami;
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
+import '../services/alarm_siniri.dart';
 import '../utils/friendly_error.dart' show friendlyError;
 import 'sandik_async_button.dart';
 
@@ -93,6 +94,13 @@ class _CizgiAdiSayfasiState extends State<CizgiAdiSayfasi> {
     try {
       await widget.kaydet(_ctrl.text.trim());
     } catch (e, st) {
+      // Alarm tavanı (2026-11-12) hata değil, Premium kapısı: alanın altına
+      // "işlem yapılamadı" yazılmaz; sayfa ✓'siz kapanır, çağıran ortak
+      // sınır uyarısını (Premium yolu dahil) modalın üstünde gösterir.
+      if (alarmSiniriHatasiMi(e)) {
+        if (mounted) Navigator.pop(context);
+        return;
+      }
       CrashReporter.report(e, st, reason: 'CizgiAdiSayfasi.kaydet');
       _kaydediyor = false;
       if (mounted) setState(() => _hata = friendlyError(e));

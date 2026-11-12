@@ -145,7 +145,7 @@ class _SeciciState extends State<_Secici> {
                         ? l10n.pensionPickGovFund
                         : l10n.pensionPickFund,
                     style: context.t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700, color: context.c.text90),
+                        fontWeight: FontWeight.w600, color: context.c.text90),
                   ),
                   const SizedBox(height: SandikSpace.smd),
                   TextField(

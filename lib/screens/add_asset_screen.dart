@@ -16,6 +16,9 @@ import '../models/secici_arama.dart';
 import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
+import '../models/position.dart' show positionKey;
+import '../providers/preferences_provider.dart' show balanceHiddenProvider;
+import '../widgets/quick_adjust_dialog.dart' show yeniOrtalamaMaliyet;
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bekleyen_fon_alimi_provider.dart';
 import '../providers/bulk_cart_provider.dart';
@@ -39,6 +42,7 @@ import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/sandik_segment.dart';
 import '../widgets/tarih_cipleri.dart';
+import '../widgets/tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import 'paywall_screen.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'bulk_add_asset_screen.dart';
@@ -575,13 +579,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  Widget _sectionLabel(String text) => Text(
-        text,
-        style: context.t.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: context.c.text58,
-        ),
+  /// Formun TEK etiket stili (Ar-Ge 2026-11-12 tasarım bölümü, apple-design
+  /// "Craft"): "Varlık türü" küçük gri kalın, "Miktar"/"İşlem tarihi" büyük
+  /// beyaz w600 idi; iki hiyerarşi aynı düzeyi anlatıyordu. Hepsi ikincil
+  /// etiket: küçük, gri, w600 (ağırlık tavanı 2026-11-05).
+  TextStyle? get _etiketStili => context.t.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: context.c.text58,
       );
+
+  Widget _sectionLabel(String text) => Text(text, style: _etiketStili);
 
   /// Alan etiketi. Tek satır + kısaltma **varsayılan**: bu etiketler dar
   /// kolonlarda (Miktar/Fiyat yan yana) ve büyük metin ayarında taşıyordu.
@@ -589,19 +596,40 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   /// verilmişse iş görür.
   Widget _fieldLabel(String text) => Text(
         text,
-        style: context.t.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: context.c.text90,
-        ),
+        style: _etiketStili,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
 
-  /// Toplam maliyet, önizleme kartı, preset çipleri ve not rozeti metin
-  /// alanlarını okur; eski kod her tuş vuruşunda tüm ekranı yeniden kuruyordu.
-  /// Controller'lar zaten `Listenable`: tek dinleyiciyle aynı yeniden çizim.
+  /// Metin alanlarının toplu dinleyicisi: vazgeç onayının kirlilik ölçütü
+  /// ve alt çubuktaki toplam satırı.
+  ///
+  /// Dar dinleyici (Ar-Ge 2026-11-12 #4): bu birleşik dinleyici 6bb875b'ye
+  /// kadar BÜTÜN gövdeyi (GestureDetector → Form → sütun) saran tek bir
+  /// `ListenableBuilder`'daydı; yorum "eskiden tüm ekranı kuruyordu" diyordu
+  /// ama sarmalayıcı hâlâ her şeyi sarıyordu. Ölçüm
+  /// (`varlik_ekle_yeniden_kurulum_test`): miktar alanındaki tek tuş tür
+  /// ızgarasını, kimlik alanını ve portföy seçiciyi birer kez yeniden
+  /// kuruyordu. Artık metni okuyan her parça kendi dar dinleyicisinde
+  /// ([_metinle]): önayar çipleri, önizleme kartı, tutardan adet satırı,
+  /// eurobond faiz satırı, fiyat ipucu, ortalama maliyet satırı, not rozeti
+  /// ve alt çubuk toplamı. Ölçüm 1/1/1 → 0/0/0, testte kilitli. Yeni bir
+  /// parça metin okuyacaksa onu da [_metinle] ile sar; yoksa yazarken eski
+  /// değeri gösterir.
   late final Listenable _metinler =
       Listenable.merge([_quantity, _price, _commission, _notes, _tutar]);
+
+  /// [dinle] değiştikçe yalnız [kur]'un döndürdüğü parçayı yeniden kurar.
+  Widget _metinle(Listenable dinle, WidgetBuilder kur) =>
+      ListenableBuilder(listenable: dinle, builder: (context, _) => kur(context));
+
+  /// Kimlik alanının bu kurulumdaki önbelleği. Kimlik bir `FormField`; Flutter
+  /// `Form`'u herhangi bir alan değişince bütün alanlarını yeniden kurar
+  /// (`_FormScope` nesli). Builder aynı widget örneğini döndürünce altındaki
+  /// seçici ağacı güncellenmez. Ekran her kurulduğunda sıfırlanır: seçim
+  /// değişimi sağlayıcıdan geçer ve ekranı zaten yeniden kurar.
+  Widget? _kimlikOnbellek;
+  bool? _kimlikOnbellekHata;
 
   @override
   Widget build(BuildContext context) {
@@ -609,6 +637,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // Durum değişimi bu ekranı yeniden kurar; getter'lar `ref.read` ile aynı
     // değeri okur.
     ref.watch(addAssetFormProvider(_args));
+    _kimlikOnbellek = null;
 
     final saveLabel = widget.cartMode
         ? (widget.cartInitial != null ? context.l10n.save : 'Sepete Ekle')
@@ -619,13 +648,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             ? context.l10n.varlikGuncelleBaslik
             : (_isEditing ? context.l10n.editAsset : context.l10n.addAssetTitle);
 
+    // Ortalama maliyet satırının tabanı ve gizlilik: sağlayıcı okumaları
+    // burada (ekran kurulumu), satırın kendisi metin dinleyicisinde.
+    final eldeki = _eldekiPozisyon();
+    final gizli = ref.watch(balanceHiddenProvider);
+
     final ekran = Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
         titleWidget: Text(
           title,
           style: context.t.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
+              ?.copyWith(fontWeight: FontWeight.w600, color: context.c.text90),
         ),
         actions: [
           if (!_isEditing && !widget.cartMode) ...[
@@ -655,9 +689,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ],
         ],
       ),
-      body: ListenableBuilder(
-        listenable: _metinler,
-        builder: (context, _) => GestureDetector(
+      body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _klavyeyiKapat,
         child: Form(
@@ -749,21 +781,25 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         Expanded(child: _priceBlock(cs)),
                       ],
                     ),
-                    _eurobondFaizSatiri(),
+                    _metinle(Listenable.merge([_quantity, _price]),
+                        (_) => _eurobondFaizSatiri()),
                     if (_tutarModu)
-                      _tutardanAdetSatiri()
+                      _metinle(Listenable.merge([_tutar, _price]),
+                          (_) => _tutardanAdetSatiri())
                     else ...[
                       const SizedBox(height: 10),
-                      _quantityPresetsRow(cs),
+                      _metinle(_quantity, (_) => _quantityPresetsRow(cs)),
                     ],
+                    // ── Bu alımla ortalama maliyet (Ar-Ge 2026-11-12 #5) ──
+                    _metinle(Listenable.merge([_quantity, _price, _tutar]),
+                        (_) => _Beliren(child: _ortalamaSatiri(eldeki, gizli))),
+                    // Toplam maliyet 2026-11-12'de alt çubuğa indi
+                    // (`_toplamSatiri`, kaydet düğmesinin üstünde).
                     const SizedBox(height: 20),
 
-                    // ── Toplam maliyet hero card ─────────────────────────
-                    _totalHero(cs),
-                    const SizedBox(height: 10),
-
                     // ── Tahmini birim fiyat preview ──────────────────────
-                    _pricePreviewCard(cs),
+                    _metinle(Listenable.merge([_price, _quantity, _tutar]),
+                        (_) => _pricePreviewCard(cs)),
 
                     // ── İşlem tarihi (chip) ──────────────────────────────
                     _dateChip(cs),
@@ -818,11 +854,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               // gösteremeyen bir kaydet düğmesi kafa karıştırırdı.
               if ((!_type.sozlesmeli || _sozlesmeFormuAcik) &&
                   !_s.turIzgarasiAcik)
-                _stickyBottomBar(saveLabel),
+                _stickyBottomBar(saveLabel, tlKuru: _tlKuru()),
             ],
           ),
         ),
-      ),
       ),
     );
     return ValueListenableBuilder<bool>(
@@ -997,7 +1032,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── Notlar collapsible ─────────────────────────────────────────────────────
   Widget _notesCollapsible(ColorScheme cs, {bool komisyonDahil = false}) {
-    final doluIcerik = _notes.text.isNotEmpty ||
+    bool doluIcerik() => _notes.text.isNotEmpty ||
         (komisyonDahil && _commission.text.isNotEmpty);
     return SandikCard(
       padding: EdgeInsets.zero,
@@ -1031,17 +1066,22 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                             fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
-                  if (doluIcerik && !_notesExpanded)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: context.c.amberFill,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                  if (!_notesExpanded)
+                    _metinle(
+                      Listenable.merge([_notes, _commission]),
+                      (_) => !doluIcerik()
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: context.c.amberFill,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
                     ),
                   // İkon değişmez, DÖNER — öteki katlanır bölümler gibi
                   // (animasyon denetimi 2026-10-01; eskiden iki ikon
@@ -1087,7 +1127,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   // ── Sticky bottom CTA ──────────────────────────────────────────────────────
-  Widget _stickyBottomBar(String saveLabel) {
+  Widget _stickyBottomBar(String saveLabel, {double? tlKuru}) {
     return SafeArea(
       top: false,
       child: Container(
@@ -1102,7 +1142,19 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // SandikAsyncButton'da. `saving` bayrağı KALIR — formu salt okunur
         // tutar; `mesgul:` ile başarıda ekran kapanırken ve hızlı giriş
         // partisi sürerken de aynı gösterge döner (bkz. `_save` F14 notu).
-        child: SandikAsyncButton(
+        //
+        // Toplam düğmenin üstünde (Ar-Ge 2026-11-12 #2, `_toplamSatiri`):
+        // yalnız o satır metin alanlarını dinler; düğme her tuşta kurulmaz.
+        // Çubuk `SafeArea` içinde; iOS sayı klavyesi çubuğu
+        // (`SayiKlavyesiKatmani`) içeriğin `viewInsets`'ini kendi boyu kadar
+        // büyüttüğü için Scaffold bu uzamış çubuğu klavye çubuğunun ÜSTÜNE
+        // taşır, çakışmaz.
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _metinle(_metinler, (_) => _Beliren(child: _toplamSatiri(tlKuru))),
+            SandikAsyncButton(
           height: 54,
           onPressed: _sozlesmeFormuAcik ? _sozlesmeKaydet : _save,
           mesgul: _saving,
@@ -1127,6 +1179,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 letterSpacing: 0.2,
                 color: context.c.onAmber),
           ),
+        ),
+          ],
         ),
       ),
     );

@@ -425,6 +425,27 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String quickPrincipalChip(String miktar) {
+    return 'Anaparam · $miktar';
+  }
+
+  @override
+  String quickPrincipalChipSemantics(String miktar) {
+    return 'Anaparam, $miktar';
+  }
+
+  @override
+  String get quickPrincipalChipLocked => 'Anaparam';
+
+  @override
+  String get quickPrincipalChipLockedSemantics => 'Anaparam, kilitli, Premium';
+
+  @override
+  String quickPrincipalNote(String tutar) {
+    return 'Bu kadar satarsan maliyetin kadar $tutar eline geçer';
+  }
+
+  @override
   String quickAmountQtyApprox(String miktar) {
     return '≈ $miktar';
   }
@@ -454,6 +475,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String quickBuyAvgCost(String yeni, String simdi) {
     return 'Yeni ortalama maliyetin $yeni (şimdi $simdi)';
   }
+
+  @override
+  String get fiyatBosIpucu => 'Boş bırakırsan o günün fiyatı yazılır';
+
+  @override
+  String get toplamKomisyonDahil => 'komisyon dahil';
 
   @override
   String get quickTargetAvg => 'Hedef ortalama';
@@ -2648,11 +2675,52 @@ class AppLocalizationsTr extends AppLocalizations {
   String get premiumUnlocked => 'Premium açıldı';
 
   @override
-  String get premiumUnlockedBody =>
-      'Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.';
+  String get pwAcildiDon => 'Kaldığın yere dön';
 
   @override
-  String get greatWord => 'Harika';
+  String pwAcildiRapor(String ay) {
+    return '$ay raporun hazır';
+  }
+
+  @override
+  String pwAcildiRaporSes(String ay) {
+    return '$ay raporun hazır. Dokunursan rapor açılır.';
+  }
+
+  @override
+  String pwAcildiTemettu(int n) {
+    return 'Temettü tahmini: $n hisse';
+  }
+
+  @override
+  String pwAcildiTemettuSes(int n) {
+    return 'Temettü tahmini $n hissen için hazır. Dokunursan tahmin açılır.';
+  }
+
+  @override
+  String pwAcildiSattiklarin(int n) {
+    return 'Sattıkların: $n kapanmış pozisyon';
+  }
+
+  @override
+  String pwAcildiSattiklarinSes(int n) {
+    return 'Sattıkların listesinde $n kapanmış pozisyon var. Dokunursan liste açılır.';
+  }
+
+  @override
+  String pwAcildiAylikGetiri(int n) {
+    return 'Aylık getiri tablon: $n ay';
+  }
+
+  @override
+  String pwAcildiAylikGetiriSes(int n) {
+    return 'Aylık getiri tablon $n ayı kapsıyor. Dokunursan Performans sekmesi açılır.';
+  }
+
+  @override
+  String pwAcildiSinir(int n) {
+    return 'Varlık sınırı kalktı: $n varlık yerine sınırsız';
+  }
 
   @override
   String get sandikPremiumUpper => 'Sandık Premium';
@@ -3444,6 +3512,11 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String saveAllCount(int n) {
     return 'Tümünü kaydet ($n)';
+  }
+
+  @override
+  String watchlistRowAdded(String ad) {
+    return '$ad listeye eklendi';
   }
 
   @override
@@ -7158,6 +7231,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String prmDenemeIlkOdeme(String tarih, String magaza) {
+    return 'Ücretsiz deneme · ilk ödeme $tarih · $magaza';
+  }
+
+  @override
+  String prmDenemeIlkOdemeTutar(String tarih, String tutar, String magaza) {
+    return 'Ücretsiz deneme · ilk ödeme $tarih, $tutar · $magaza';
+  }
+
+  @override
   String prmBitis(String tarih) {
     return '$tarih tarihinde biter';
   }
@@ -8289,6 +8372,20 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get ttBrutNot =>
       'Brüt; stopaj oranı bilinmediği için net hesaplanmadı.';
+
+  @override
+  String ttAyEtiket(String ay) {
+    return '$ay, tahmini';
+  }
+
+  @override
+  String get ttAyNot =>
+      'Brüt; bu ayda ödemesi beklenen varlıklar aşağıda. Tümü için çubuğa yeniden dokun.';
+
+  @override
+  String ttAySemantik(String ay, String tutar) {
+    return '$ay, $tutar';
+  }
 
   @override
   String ttNetNot(String brut) {
@@ -10664,6 +10761,30 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kapanisYillikRapor => 'Yıllık raporda gör';
 
   @override
+  String sattiklarinSatir(int count) {
+    return 'Sattıkların ($count)';
+  }
+
+  @override
+  String get sattiklarinBaslik => 'Sattıkların';
+
+  @override
+  String get sattiklarinAltMetin =>
+      'Tamamını sattığın pozisyonlar, son kapanan önde';
+
+  @override
+  String get sattiklarinKilitli =>
+      'Sattıkların ve gerçekleşen kârları Premium\'da';
+
+  @override
+  String sattiklarinTuttun(String sure) {
+    return '$sure tuttun';
+  }
+
+  @override
+  String get sattiklarinMaliyetYok => 'Maliyet bilinmiyor';
+
+  @override
   String get kapanisTamam => 'Tamam';
 
   @override
@@ -10781,4 +10902,175 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get aylikGetiriDipnot =>
       'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.';
+
+  @override
+  String get zkSatirBaslik => 'Zekât hesabı';
+
+  @override
+  String get zkSatirAlt => 'Portföyünden Diyanet ölçüsüyle tahmini hesap';
+
+  @override
+  String get zkAciklama =>
+      'Elinde bir kameri yıldır (354 gün) nisap kadar varlık varsa, yıl içinde eklenenler dahil tüm varlıklarının bugünkü değerinden hesaplanır.';
+
+  @override
+  String get zkTabi => 'Bir yılı dolan varlıklar';
+
+  @override
+  String get zkYeni => 'Yıl içinde eklenenler';
+
+  @override
+  String get zkYeniAlt => 'Hesaba dahil';
+
+  @override
+  String get zkBorcEtiket => 'Düşülecek borç (isteğe bağlı)';
+
+  @override
+  String get zkBorcIpucu => 'Kaydedilmez';
+
+  @override
+  String get zkBorcSatir => 'Düşülen borç';
+
+  @override
+  String get zkMatrah => 'Hesaba giren tutar';
+
+  @override
+  String get zkNisap => 'Nisap';
+
+  @override
+  String zkNisapAyrinti(String gram, String fiyat) {
+    return '$gram g altın × $fiyat (24 ayar gram)';
+  }
+
+  @override
+  String get zkSonuc => 'Verilecek zekât (%2,5)';
+
+  @override
+  String get zkNisapAlti =>
+      'Hesaba giren tutar nisabın altında; bu hesaba göre zekât düşmüyor.';
+
+  @override
+  String zkFiyatsiz(int sayi) {
+    return '$sayi varlığın fiyatı alınamadı, hesaba girmedi.';
+  }
+
+  @override
+  String zkHaric(String turler) {
+    return 'Hesaba girmeyen türler: $turler';
+  }
+
+  @override
+  String get zkKurYok => 'Altın fiyatı şu an alınamadı';
+
+  @override
+  String get zkKurYokAlt =>
+      'Nisap gram altın fiyatıyla hesaplanır. Fiyat gelince hesap burada görünür.';
+
+  @override
+  String get zkDipnot =>
+      'Diyanet\'in yayımladığı ölçüyle tahmini hesaptır; dini hüküm için müftülüğe danış.';
+
+  @override
+  String get zkHavlBekliyor => 'Bir yıl dolunca hesaplanır.';
+
+  @override
+  String zkHavlTarihi(String tarih) {
+    return 'Portföyün böyle kalırsa yıl $tarih günü dolar.';
+  }
+
+  @override
+  String secimSayisi(int n) {
+    return '$n seçili';
+  }
+
+  @override
+  String hareketlerSilindi(int n) {
+    return '$n işlem silindi';
+  }
+
+  @override
+  String get hareketSecimIpucu => 'Seçmek için uzun bas';
+
+  @override
+  String ttKancaVar(int n, String adlar) {
+    return 'Portföyündeki $n hisse son 12 ayda temettü dağıttı: $adlar';
+  }
+
+  @override
+  String get ttKancaYok => 'Portföyünde şu an temettü dağıtan BIST hissesi yok';
+
+  @override
+  String ttKancaFazla(String adlar, int n) {
+    return '$adlar +$n';
+  }
+
+  @override
+  String prmAylikKancaAlim(int n) {
+    return '$n alımın';
+  }
+
+  @override
+  String prmAylikKancaSatis(int n) {
+    return '$n satışın';
+  }
+
+  @override
+  String prmAylikKancaTemettu(int n) {
+    return '$n temettün';
+  }
+
+  @override
+  String prmAylikKancaVe(String bas, String son) {
+    return '$bas ve $son';
+  }
+
+  @override
+  String prmAylikKancaHareket(String ay, String liste) {
+    return '$ay ayında $liste var.';
+  }
+
+  @override
+  String prmAylikKancaNot(String ay, int n) {
+    return '$ay ayı için $n varlığının notu hazır.';
+  }
+
+  @override
+  String prmAylikKancaIkisi(String ay, String liste, int n) {
+    return '$ay ayında $liste var; $n varlığının ay notu hazır.';
+  }
+
+  @override
+  String prmKiyasEnIyi(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other: 'Bu ay son $n ayın en iyisi; $n ayda $arti ay artıdaydın.',
+      zero: 'Bu ay son $n ayın en iyisi.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasEnZayif(int arti, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other: 'Bu ay son $n ayın en zayıfı; $n ayda $arti ay artıdaydın.',
+      zero: 'Bu ay son $n ayın en zayıfı.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKiyasOrta(int arti, int n, int sira) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arti,
+      locale: localeName,
+      other:
+          'Son $n ayda $arti ay artıdaydın; bu ay $n ay içinde $sira. sırada.',
+      zero:
+          'Son $n ayda artıda kapanan ay olmadı; bu ay $n ay içinde $sira. sırada.',
+    );
+    return '$_temp0';
+  }
 }

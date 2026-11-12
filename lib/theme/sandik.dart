@@ -750,7 +750,16 @@ class SandikTappable extends StatefulWidget {
     this.haptic,
     this.soluk = false,
     this.onBasildi,
+    this.uzunBasmaHaptic,
   });
+
+  /// Uzun basmada verilecek titreşim. Verilmezse [SandikHaptic.medium]
+  /// (eşik geçildi hissi); [haptic] `none` ise sessiz.
+  ///
+  /// Neden (2026-11-12): Hareketler'de uzun basma bir eylem değil seçim
+  /// kipini açar; seçim değişimi HIG'de `selection` titreşimidir. Dokunuşun
+  /// titreşimini ([haptic]) değiştirmeden yalnız uzun basmayı ayarlar.
+  final SandikHaptic? uzunBasmaHaptic;
 
   /// Parmak değdiği an (`onTapDown`), dokunuş kesinleşmeden. Yalnız yüzey
   /// etkinken ([onTap]/[onLongPress] dolu) çağrılır.
@@ -986,7 +995,9 @@ class _SandikTappableState extends State<SandikTappable>
               // Uzun basma her zaman daha belirgin: kullanıcı bir eşiği
               // geçtiğini bilmeli, aksi halde ne zaman bırakacağını kestiremez.
               // İstisna: çağıran açıkça `SandikHaptic.none` dediyse sessiz.
-              if (!sessiz) SandikHaptic.medium.perform();
+              if (!sessiz) {
+                (widget.uzunBasmaHaptic ?? SandikHaptic.medium).perform();
+              }
               widget.onLongPress!();
             },
       // Düz yol eski davranışı birebir korur (dinleyici hep bağlı, `_set`

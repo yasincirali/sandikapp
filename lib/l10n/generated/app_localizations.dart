@@ -866,6 +866,36 @@ abstract class AppLocalizations {
   /// **'Son alımın, {miktar}'**
   String quickLastBuyChipSemantics(String miktar);
 
+  /// Hızlı Sat: kârdaki pozisyonda maliyetin kadarını geri alacak miktarı seçen çip (ör. Anaparam · 37 pay). Premium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam · {miktar}'**
+  String quickPrincipalChip(String miktar);
+
+  /// Anaparam çipinin ekran okuyucu etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam, {miktar}'**
+  String quickPrincipalChipSemantics(String miktar);
+
+  /// Anaparam çipi, ücretsiz kullanıcıda kilitli (sayı yazılmaz, dokununca Premium).
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam'**
+  String get quickPrincipalChipLocked;
+
+  /// Kilitli Anaparam çipinin ekran okuyucu etiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anaparam, kilitli, Premium'**
+  String get quickPrincipalChipLockedSemantics;
+
+  /// Anaparam çipi seçiliyken tek satır nötr açıklama; tavsiye değil aritmetik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kadar satarsan maliyetin kadar {tutar} eline geçer'**
+  String quickPrincipalNote(String tutar);
+
   /// Hızlı Al Tutar kipi: tutardan hesaplanan miktar, birimiyle (≈ 2.500 pay).
   ///
   /// In tr, this message translates to:
@@ -907,6 +937,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yeni ortalama maliyetin {yeni} (şimdi {simdi})'**
   String quickBuyAvgCost(String yeni, String simdi);
+
+  /// Varlık Ekle: alış fiyatı alanının altındaki tek satır ipucu; alan boşken kayıtta seçili günün fiyatı atanır.
+  ///
+  /// In tr, this message translates to:
+  /// **'Boş bırakırsan o günün fiyatı yazılır'**
+  String get fiyatBosIpucu;
+
+  /// Varlık Ekle alt çubuğu: toplam maliyet satırında komisyon/masraf yazılıysa döküme eklenen küçük ek.
+  ///
+  /// In tr, this message translates to:
+  /// **'komisyon dahil'**
+  String get toplamKomisyonDahil;
 
   /// No description provided for @quickTargetAvg.
   ///
@@ -4598,17 +4640,65 @@ abstract class AppLocalizations {
   /// **'Premium açıldı'**
   String get premiumUnlocked;
 
-  /// No description provided for @premiumUnlockedBody.
+  /// No description provided for @pwAcildiDon.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.'**
-  String get premiumUnlockedBody;
+  /// **'Kaldığın yere dön'**
+  String get pwAcildiDon;
 
-  /// No description provided for @greatWord.
+  /// No description provided for @pwAcildiRapor.
   ///
   /// In tr, this message translates to:
-  /// **'Harika'**
-  String get greatWord;
+  /// **'{ay} raporun hazır'**
+  String pwAcildiRapor(String ay);
+
+  /// No description provided for @pwAcildiRaporSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay} raporun hazır. Dokunursan rapor açılır.'**
+  String pwAcildiRaporSes(String ay);
+
+  /// No description provided for @pwAcildiTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü tahmini: {n} hisse'**
+  String pwAcildiTemettu(int n);
+
+  /// No description provided for @pwAcildiTemettuSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü tahmini {n} hissen için hazır. Dokunursan tahmin açılır.'**
+  String pwAcildiTemettuSes(int n);
+
+  /// No description provided for @pwAcildiSattiklarin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sattıkların: {n} kapanmış pozisyon'**
+  String pwAcildiSattiklarin(int n);
+
+  /// No description provided for @pwAcildiSattiklarinSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sattıkların listesinde {n} kapanmış pozisyon var. Dokunursan liste açılır.'**
+  String pwAcildiSattiklarinSes(int n);
+
+  /// No description provided for @pwAcildiAylikGetiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık getiri tablon: {n} ay'**
+  String pwAcildiAylikGetiri(int n);
+
+  /// No description provided for @pwAcildiAylikGetiriSes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık getiri tablon {n} ayı kapsıyor. Dokunursan Performans sekmesi açılır.'**
+  String pwAcildiAylikGetiriSes(int n);
+
+  /// No description provided for @pwAcildiSinir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık sınırı kalktı: {n} varlık yerine sınırsız'**
+  String pwAcildiSinir(int n);
 
   /// No description provided for @sandikPremiumUpper.
   ///
@@ -5803,6 +5893,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tümünü kaydet ({n})'**
   String saveAllCount(int n);
+
+  /// Takip listesine yeni eklenen satır göründüğünde ekran okuyucu duyurusu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} listeye eklendi'**
+  String watchlistRowAdded(String ad);
 
   /// No description provided for @removeFromWatchlist.
   ///
@@ -11825,6 +11921,18 @@ abstract class AppLocalizations {
   /// **'Yenileme {tarih} · {magaza}'**
   String prmYenileme(String tarih, String magaza);
 
+  /// No description provided for @prmDenemeIlkOdeme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz deneme · ilk ödeme {tarih} · {magaza}'**
+  String prmDenemeIlkOdeme(String tarih, String magaza);
+
+  /// No description provided for @prmDenemeIlkOdemeTutar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz deneme · ilk ödeme {tarih}, {tutar} · {magaza}'**
+  String prmDenemeIlkOdemeTutar(String tarih, String tutar, String magaza);
+
   /// No description provided for @prmBitis.
   ///
   /// In tr, this message translates to:
@@ -13720,6 +13828,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Brüt; stopaj oranı bilinmediği için net hesaplanmadı.'**
   String get ttBrutNot;
+
+  /// No description provided for @ttAyEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}, tahmini'**
+  String ttAyEtiket(String ay);
+
+  /// No description provided for @ttAyNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Brüt; bu ayda ödemesi beklenen varlıklar aşağıda. Tümü için çubuğa yeniden dokun.'**
+  String get ttAyNot;
+
+  /// No description provided for @ttAySemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}, {tutar}'**
+  String ttAySemantik(String ay, String tutar);
 
   /// No description provided for @ttNetNot.
   ///
@@ -17455,6 +17581,42 @@ abstract class AppLocalizations {
   /// **'Yıllık raporda gör'**
   String get kapanisYillikRapor;
 
+  /// No description provided for @sattiklarinSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sattıkların ({count})'**
+  String sattiklarinSatir(int count);
+
+  /// No description provided for @sattiklarinBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sattıkların'**
+  String get sattiklarinBaslik;
+
+  /// No description provided for @sattiklarinAltMetin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamamını sattığın pozisyonlar, son kapanan önde'**
+  String get sattiklarinAltMetin;
+
+  /// No description provided for @sattiklarinKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sattıkların ve gerçekleşen kârları Premium\'da'**
+  String get sattiklarinKilitli;
+
+  /// No description provided for @sattiklarinTuttun.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sure} tuttun'**
+  String sattiklarinTuttun(String sure);
+
+  /// No description provided for @sattiklarinMaliyetYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyet bilinmiyor'**
+  String get sattiklarinMaliyetYok;
+
   /// No description provided for @kapanisTamam.
   ///
   /// In tr, this message translates to:
@@ -17640,6 +17802,228 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.'**
   String get aylikGetiriDipnot;
+
+  /// Profil satırı başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Zekât hesabı'**
+  String get zkSatirBaslik;
+
+  /// Profil satırı alt metni
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyünden Diyanet ölçüsüyle tahmini hesap'**
+  String get zkSatirAlt;
+
+  /// Sheet açıklaması
+  ///
+  /// In tr, this message translates to:
+  /// **'Elinde bir kameri yıldır (354 gün) nisap kadar varlık varsa, yıl içinde eklenenler dahil tüm varlıklarının bugünkü değerinden hesaplanır.'**
+  String get zkAciklama;
+
+  /// Zekâta tabi tutar satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir yılı dolan varlıklar'**
+  String get zkTabi;
+
+  /// Havli dolmamış tutar satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl içinde eklenenler'**
+  String get zkYeni;
+
+  /// Havli dolmamış satır açıklaması
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaba dahil'**
+  String get zkYeniAlt;
+
+  /// Borç giriş alanı etiketi
+  ///
+  /// In tr, this message translates to:
+  /// **'Düşülecek borç (isteğe bağlı)'**
+  String get zkBorcEtiket;
+
+  /// Borç alanı yardım metni
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedilmez'**
+  String get zkBorcIpucu;
+
+  /// Borç satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Düşülen borç'**
+  String get zkBorcSatir;
+
+  /// Matrah satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaba giren tutar'**
+  String get zkMatrah;
+
+  /// Nisap satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Nisap'**
+  String get zkNisap;
+
+  /// Nisap gramı ve kullanılan gram fiyatı
+  ///
+  /// In tr, this message translates to:
+  /// **'{gram} g altın × {fiyat} (24 ayar gram)'**
+  String zkNisapAyrinti(String gram, String fiyat);
+
+  /// Sonuç başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilecek zekât (%2,5)'**
+  String get zkSonuc;
+
+  /// Nisap altı sonucu
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaba giren tutar nisabın altında; bu hesaba göre zekât düşmüyor.'**
+  String get zkNisapAlti;
+
+  /// Fiyatsız varlık notu
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} varlığın fiyatı alınamadı, hesaba girmedi.'**
+  String zkFiyatsiz(int sayi);
+
+  /// Kapsam dışı türler
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaba girmeyen türler: {turler}'**
+  String zkHaric(String turler);
+
+  /// Kur yok boş durumu
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın fiyatı şu an alınamadı'**
+  String get zkKurYok;
+
+  /// Kur yok boş durumu açıklaması
+  ///
+  /// In tr, this message translates to:
+  /// **'Nisap gram altın fiyatıyla hesaplanır. Fiyat gelince hesap burada görünür.'**
+  String get zkKurYokAlt;
+
+  /// Zekât dipnotu (tam metin)
+  ///
+  /// In tr, this message translates to:
+  /// **'Diyanet\'in yayımladığı ölçüyle tahmini hesaptır; dini hüküm için müftülüğe danış.'**
+  String get zkDipnot;
+
+  /// Havl dolmamış sonucu
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir yıl dolunca hesaplanır.'**
+  String get zkHavlBekliyor;
+
+  /// Havlin dolacağı gün
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün böyle kalırsa yıl {tarih} günü dolar.'**
+  String zkHavlTarihi(String tarih);
+
+  /// Çoklu seçim kipinin üst çubuk başlığı (Hareketler).
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} seçili'**
+  String secimSayisi(int n);
+
+  /// Hareketler toplu silme sonrası snack; yanında Geri al.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} işlem silindi'**
+  String hareketlerSilindi(int n);
+
+  /// Ekran okuyucu: hareket satırında uzun basma eyleminin adı (seçim kipini açar).
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçmek için uzun bas'**
+  String get hareketSecimIpucu;
+
+  /// Kilitli temettü tahmini kartında kullanıcının kendi hisselerinden tek satır; tutar yok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyündeki {n} hisse son 12 ayda temettü dağıttı: {adlar}'**
+  String ttKancaVar(int n, String adlar);
+
+  /// No description provided for @ttKancaYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyünde şu an temettü dağıtan BIST hissesi yok'**
+  String get ttKancaYok;
+
+  /// İlk üç kodun ardından kalan hisse sayısı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{adlar} +{n}'**
+  String ttKancaFazla(String adlar, int n);
+
+  /// No description provided for @prmAylikKancaAlim.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} alımın'**
+  String prmAylikKancaAlim(int n);
+
+  /// No description provided for @prmAylikKancaSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} satışın'**
+  String prmAylikKancaSatis(int n);
+
+  /// No description provided for @prmAylikKancaTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} temettün'**
+  String prmAylikKancaTemettu(int n);
+
+  /// Sayım listesinin son bağlacı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{bas} ve {son}'**
+  String prmAylikKancaVe(String bas, String son);
+
+  /// Kilitli aylık rapor kartında kullanıcının kendi defterinden tek satır; tutar yok.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay} ayında {liste} var.'**
+  String prmAylikKancaHareket(String ay, String liste);
+
+  /// No description provided for @prmAylikKancaNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay} ayı için {n} varlığının notu hazır.'**
+  String prmAylikKancaNot(String ay, int n);
+
+  /// No description provided for @prmAylikKancaIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay} ayında {liste} var; {n} varlığının ay notu hazır.'**
+  String prmAylikKancaIkisi(String ay, String liste, int n);
+
+  /// Aylık raporda ayın kullanıcının kendi son 12 ayı içindeki yeri; renk yok.
+  ///
+  /// In tr, this message translates to:
+  /// **'{arti, plural, =0{Bu ay son {n} ayın en iyisi.} other{Bu ay son {n} ayın en iyisi; {n} ayda {arti} ay artıdaydın.}}'**
+  String prmKiyasEnIyi(int arti, int n);
+
+  /// No description provided for @prmKiyasEnZayif.
+  ///
+  /// In tr, this message translates to:
+  /// **'{arti, plural, =0{Bu ay son {n} ayın en zayıfı.} other{Bu ay son {n} ayın en zayıfı; {n} ayda {arti} ay artıdaydın.}}'**
+  String prmKiyasEnZayif(int arti, int n);
+
+  /// No description provided for @prmKiyasOrta.
+  ///
+  /// In tr, this message translates to:
+  /// **'{arti, plural, =0{Son {n} ayda artıda kapanan ay olmadı; bu ay {n} ay içinde {sira}. sırada.} other{Son {n} ayda {arti} ay artıdaydın; bu ay {n} ay içinde {sira}. sırada.}}'**
+  String prmKiyasOrta(int arti, int n, int sira);
 }
 
 class _AppLocalizationsDelegate

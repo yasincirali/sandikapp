@@ -88,6 +88,7 @@ RaporBelgesi aylikRaporBelgesi({
   required String kim,
   required DateTime olusturma,
   double? getiriPct,
+  String? kiyasCumlesi,
   double? tufePct,
   AyinPortfoyu? portfoy,
   List<AylikRaporNotu> satirlar = const [],
@@ -143,6 +144,10 @@ RaporBelgesi aylikRaporBelgesi({
     ],
     oneCikanlar: [
       ozetCumlesi,
+      // Kişisel kıyas (2026-11-12): ekrandaki cümlenin aynısı, çağıran
+      // (`aylikKiyasCumlesi`) kurar. Getiri kutusu yoksa da yazılır: kıyas
+      // Performans'ın aylık tablosundan gelir, ayın kutusundan değil.
+      if (kiyasCumlesi != null) kiyasCumlesi,
       if (portfoy?.kopruCumlesi case final k?) k,
       if (portfoy?.enIyiCumlesi case final k?) k,
       if (hareketli.isNotEmpty) 'Belirgin hareket: ${hareketli.join(', ')}.',

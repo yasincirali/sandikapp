@@ -4,7 +4,9 @@ import '../l10n/generated/app_localizations_tr.dart';
 import '../models/asset_type.dart';
 import '../utils/pozisyon_etiketi.dart';
 import '../utils/tr_format.dart';
-import '../widgets/aylik_rapor_bolumleri.dart' show gelismeCumlesi;
+import '../widgets/aylik_rapor_bolumleri.dart'
+    show aylikKiyasCumlesi, gelismeCumlesi;
+import 'aylik_getiri_tablosu.dart' show AylikKiyas;
 import 'aylik_rapor_ozeti.dart';
 import 'aylik_rapor_kalemleri.dart';
 import '../providers/analiz_provider.dart' show notKodu;
@@ -27,7 +29,9 @@ import 'varlik_analizi.dart';
 ///     getiriyi kendi hesaplıyordu, ekranla iki yol olurdu). Getiri
 ///     Performans'ın aylık özetiyle aynı hesap (`PeriodSummaryService
 ///     .compute`, pencere ayın 1'inden ay sonuna ya da bugüne);
-///   - ayın TÜFE'si — endeksten tek bölme (`InflationService.changePct`).
+///   - ayın TÜFE'si — endeksten tek bölme (`InflationService.changePct`);
+///   - ayın son 12 ay içindeki yeri (2026-11-12) — ekranın elindeki
+///     `AylikKiyas`, cümle ekranla aynı (`aylikKiyasCumlesi`).
 ///
 /// Bir okuma düşerse o parça çıkmaz, belge yine yazılır: not maddesi yoksa
 /// yalnız öz cümle, getiri yoksa kutu yok. Hata Crashlytics'e gider,
@@ -44,6 +48,7 @@ class AylikRaporDisaAktarim {
     ({List<RaporKalemi> onemli, List<RaporKalemi> diger})? kalemler,
     required List<String> eksik,
     required AylikRaporOzeti? ozet,
+    AylikKiyas? kiyas,
     required String kim,
     DateTime? simdi,
   }) async {
@@ -137,6 +142,7 @@ class AylikRaporDisaAktarim {
       kim: kim,
       olusturma: now,
       getiriPct: ay?.getiriPct,
+      kiyasCumlesi: kiyas == null ? null : aylikKiyasCumlesi(tr, kiyas),
       tufePct: sonuclar[1] as double?,
       portfoy: ay == null
           ? null

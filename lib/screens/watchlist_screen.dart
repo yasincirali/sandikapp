@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import '../widgets/sandik_yenile.dart';
 import '../widgets/sira_kaydirma.dart';
 import '../demo/demo_modu.dart';
@@ -16,7 +17,9 @@ import 'package:flutter/material.dart'
         DismissDirection,
         Material,
         MaterialType;
-import 'package:flutter/semantics.dart' show CustomSemanticsAction;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
+import 'package:flutter/semantics.dart'
+    show CustomSemanticsAction, SemanticsService;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset_type.dart';
@@ -60,6 +63,7 @@ import 'add_watchlist_screen.dart';
 import 'price_alerts_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
+import '../services/crash_reporter.dart';
 
 /// Takip listesinin GÖVDESİ — dönem seçici · grafik · liste · dipnot.
 ///
@@ -214,6 +218,61 @@ class _ListState extends ConsumerState<_List> {
   final _siraKaydirma = SiraKaydirmaDenetcisi();
   TakipSiralama? _oncekiMod;
 
+  // ── Yeni satırın girişi (Ar-Ge 12 Kas §4) ────────────────────────────
+  // Ekleme ekranından dönünce yeni satır listede sessizce beliriyordu;
+  // uzun listede nereye eklendiği görünmüyordu. Çıkış animasyonu
+  // ([_TakipCikisi]) vardı, girişi yoktu. Ekleme ekranı kimlik döndürmez
+  // (eklemenin yolu da tek değil: ekleme ekranı, varlık sayfasındaki
+  // yıldız, boş durum çipi); yeni satır bu listenin ömründe HİÇ görülmemiş
+  // kimlikle bulunur. Küme yalnız büyür: çıkarılıp sunucu reddedince geri
+  // gelen satır "yeni" sayılmaz (yeniden takibe alınan sembol sunucuda
+  // yeni kimlik alır, o girer). İlk kurulumda ve liste baştan değişince
+  // (hesap/demo geçişi: eski kimliklerden hiçbiri kalmadı) giriş yok.
+
+  /// Bu listenin ömründe görülen takip kimlikleri; `null` = ilk kurulum.
+  Set<String>? _gorulen;
+
+  /// Girişi henüz başlamamış yeni satırlar. Satır kurulunca kendini düşer
+  /// (`girdi`): kaydırıp geri gelince giriş ikinci kez oynamaz.
+  final Set<String> _girecek = {};
+
+  /// Liste içindeki bir bağlam — kaydırılabilir alanı bulmak için. Takip
+  /// listesine `ScrollController` verilmez: iOS'ta durum çubuğuna dokunup
+  /// başa dönme (birincil kaydırma) kaybolurdu.
+  final _baslikAnahtari = GlobalKey();
+
+  /// Yeni satırları bulur; ilk yenisi henüz kurulmadıysa (tembel liste,
+  /// görünen alanın çok dışında) listeyi kabaca oraya kaydırır, gerisini
+  /// satır kendisi yapar (`_TakipCikisiState._gor`).
+  void _yeniSatirlariBul(List<WatchlistItem> gorunen) {
+    final kimlikler = [for (final w in gorunen) w.id];
+    final onceki = _gorulen;
+    if (onceki == null) {
+      _gorulen = kimlikler.toSet();
+      return;
+    }
+    final yeni = [for (final k in kimlikler) if (!onceki.contains(k)) k];
+    onceki.addAll(kimlikler);
+    if (yeni.isEmpty || yeni.length == kimlikler.length) return;
+    _girecek.addAll(yeni);
+    final ilk = yeni.first;
+    final sira = kimlikler.indexOf(ilk);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Satır kurulduysa (`girdi` kümeden düşürdü) kaydırma onun işi.
+      if (!mounted || !_girecek.contains(ilk)) return;
+      final c = _baslikAnahtari.currentContext;
+      final konum = c == null ? null : Scrollable.maybeOf(c)?.position;
+      if (konum == null || !konum.hasContentDimensions) return;
+      final oran = kimlikler.length < 2 ? 1.0 : sira / (kimlikler.length - 1);
+      konum.animateTo(
+        konum.minScrollExtent +
+            (konum.maxScrollExtent - konum.minScrollExtent) * oran,
+        duration: SandikMotion.surfaceOf(context),
+        curve: SandikMotion.move,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = widget.items;
@@ -236,6 +295,10 @@ class _ListState extends ConsumerState<_List> {
     _oncekiMod = mod;
     _siraKaydirma.sira([for (final w in gorunen) w.id],
         etkin: !(benim && oncekiMod == TakipSiralama.benim));
+    // Ekleme sıranın değişimi DEĞİL (küme değişti): FLIP kaydırması bu
+    // turda koşmaz (`SiraKaydirmaDenetcisi.sira`), yeni satır kendi
+    // girişini yapar; ikisi çakışmaz.
+    _yeniSatirlariBul(gorunen);
 
     // Satır çizgisinin serileri (Ar-Ge 11 Kas 19:04 #2): yalnız ekrandaki
     // sırayla İLK 5 sembol önden istenir (`prefetch` varsayılan sınırı);
@@ -256,6 +319,8 @@ class _ListState extends ConsumerState<_List> {
       // daralsın, satır gidince 8 pt'lik bir sıçrama kalmasın.
       final govde = _Row(
         item: w,
+        yeni: _girecek.contains(w.id),
+        girdi: () => _girecek.remove(w.id),
         sira: benim ? i : null,
         toplam: gorunen.length,
         tasi: benim
@@ -308,10 +373,11 @@ class _ListState extends ConsumerState<_List> {
               child: Row(
                 children: [
                   Expanded(
+                    key: _baslikAnahtari,
                     child: Text(
                       context.l10n.nAssetsPeriod(items.length, periodLabel),
                       style: context.t.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: context.c.text36),
                     ),
                   ),
@@ -589,7 +655,7 @@ class _ChartCard extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: context.c.text36),
                   ),
                 ),
@@ -763,7 +829,19 @@ class _Row extends ConsumerWidget {
   /// Satırı verilen konuma taşı (erişilebilirlik eylemleri); null = kapalı.
   final ValueChanged<int>? tasi;
 
-  const _Row({required this.item, this.sira, this.toplam = 0, this.tasi});
+  /// Satır bu listeye yeni eklendi: açılarak girer ve bir kez tonlanır
+  /// ([_TakipCikisi]). [girdi] giriş başlayınca listeye haber verir.
+  final bool yeni;
+  final VoidCallback? girdi;
+
+  const _Row({
+    required this.item,
+    this.sira,
+    this.toplam = 0,
+    this.tasi,
+    this.yeni = false,
+    this.girdi,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -854,6 +932,9 @@ class _Row extends ConsumerWidget {
     // Kaydırarak silme TalkBack'te çalışmadığı için aynı iş özel eylem
     // olarak da sunulur.
     return _TakipCikisi(
+      yeni: yeni,
+      girdi: girdi,
+      duyuru: l10n.watchlistRowAdded(item.name),
       builder: (context, cikar) => Padding(
       padding: const EdgeInsets.only(bottom: SandikSpace.sm),
       child: Semantics(
@@ -1063,7 +1144,7 @@ class _Row extends ConsumerWidget {
                               maxLines: 1,
                               style: context.t.numSmall.copyWith(
                                   color: context.c.text90,
-                                  fontWeight: FontWeight.w700),
+                                  fontWeight: FontWeight.w600),
                             ),
                           ),
                           Text(
@@ -1235,23 +1316,152 @@ class _Row extends ConsumerWidget {
 ///   taşımasın (`SandikTappable` ile aynı gerekçe). Kurulmadan önce sabit 1
 ///   animasyonu verilir ki ağaç şekli değişmesin, alt durum (Dismissible,
 ///   imleç) korunur.
+///
+/// ## Giriş: çıkışın aynası (Ar-Ge 12 Kas §4)
+/// Listeye yeni eklenen satır ([yeni]) yükseklikle açılarak girer (aynı
+/// [SandikMotion.state] süresi, [SandikMotion.enter] eğrisi) ve zemini bir
+/// kez amber ~%8'den sıfıra söner. Kararlar:
+/// - Denetleyiciler YALNIZ yeni satırda kurulur; eski satırlar sabit
+///   animasyonla kalır, ağaç şekli değişmez (`CustomPaint` boyacısız).
+/// - Giriş satır görünür olunca başlar: ekleme ekranı üstteyken
+///   (`TickerMode` kapalı) saat kimse görmeden akardı — Portföy'ün yeni
+///   satır parlamasıyla aynı bekleme (`_YeniVarlikParlamasi`).
+/// - Satır görünen alanda değilse önce ona kaydırılır (alanın üst
+///   üçte birine; açılma aşağı doğru yer bulsun), sonra açılır. Görünürse
+///   liste kımıldamaz.
+/// - Hareketi azalt: açılma anlık; ton yine kısa görünür. Ton konum/ölçek
+///   değil yalnız renk (bkz. `DegisimVurgusu`), ama tek başına anlam
+///   taşımaz: ekran okuyucuya "… listeye eklendi" duyurulur ([duyuru]).
 class _TakipCikisi extends StatefulWidget {
-  const _TakipCikisi({required this.builder});
+  const _TakipCikisi({
+    required this.builder,
+    this.yeni = false,
+    this.girdi,
+    this.duyuru,
+  });
 
   final Widget Function(
           BuildContext context, void Function(Future<bool> Function()) cikar)
       builder;
+
+  /// Satır listeye yeni eklendi — bkz. "Giriş" ([_TakipCikisi]).
+  final bool yeni;
+
+  /// Giriş başladı: liste satırı "girecekler"den düşer.
+  final VoidCallback? girdi;
+
+  /// Giriş başlarken ekran okuyucuya okunan cümle.
+  final String? duyuru;
 
   @override
   State<_TakipCikisi> createState() => _TakipCikisiState();
 }
 
 class _TakipCikisiState extends State<_TakipCikisi>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const _tam = AlwaysStoppedAnimation<double>(1);
+
+  /// Zemin tonunun başlangıç opaklığı (amber üstünde ~%8; satırın kendi
+  /// çerçevesi %30, ton onu bastırmaz).
+  static const _tonOpakligi = 0.08;
 
   AnimationController? _c;
   bool _cikiyor = false;
+
+  /// Yeni satırın zemin tonu (1 → 0). Yalnız yeni satırda.
+  AnimationController? _ton;
+  ValueListenable<TickerModeData>? _gorunurluk;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.yeni) {
+      // Değer 0'da başlar: satır ilk karede yer kaplamaz, liste görünür
+      // olunca açılır. Ton süresi hareket değil renk: hareketi azaltta da
+      // sıfırlanmaz (aşağıda yalnız kısalır).
+      _c = AnimationController(vsync: this, value: 0);
+      _ton = AnimationController(vsync: this, value: 1);
+      widget.girdi?.call();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _gorununceGir());
+    }
+  }
+
+  void _gorununceGir() {
+    if (!mounted) return;
+    final g = TickerMode.getValuesNotifier(context);
+    if (g.value.enabled) {
+      _gir();
+      return;
+    }
+    _gorunurluk = g..addListener(_gorunurlukDegisti);
+  }
+
+  void _gorunurlukDegisti() {
+    if (!mounted || !(_gorunurluk?.value.enabled ?? false)) return;
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    _gorunurluk = null;
+    // Ekleme ekranı iniyor: giriş onun ARDINDAN görünsün (Portföy'deki
+    // parlamayla aynı bekleme).
+    Future<void>.delayed(SandikMotion.of(context, SandikMotion.modal), _gir);
+  }
+
+  Future<void> _gir() async {
+    final c = _c;
+    final ton = _ton;
+    if (!mounted || c == null || ton == null || _cikiyor) return;
+    final duyuru = widget.duyuru;
+    if (duyuru != null) {
+      CrashReporter.arkaPlan(
+          SemanticsService.sendAnnouncement(
+              View.of(context), duyuru, Directionality.of(context)),
+          reason: 'takip_giris_duyurusu');
+    }
+    final azalt = SandikMotion.of(context, SandikMotion.state) == Duration.zero;
+    await _gor();
+    if (!mounted || _cikiyor) return;
+    final sure = SandikMotion.stateOf(context);
+    // Ticker future'ı hata üretmez (yalnız `orCancel` üretir) — beklenmez.
+    ton.animateTo(0,
+        duration: azalt ? SandikMotion.flow : SandikMotion.flow * 2,
+        curve: SandikMotion.move);
+    if (sure == Duration.zero) {
+      c.value = 1;
+    } else {
+      await c.animateTo(1, duration: sure, curve: SandikMotion.enter);
+    }
+    // Listenin sonuna eklenen satır açılınca alt kenarı görünen alanın
+    // dışında kalabilir (kaydırma 0 boylu satıra göre yapıldı, altında yer
+    // yoktu): yalnız taşıyorsa alt kenarı görünür kılınır.
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted || _cikiyor) return;
+    await Scrollable.ensureVisible(
+      context,
+      alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      duration: SandikMotion.surfaceOf(context),
+      curve: SandikMotion.move,
+    );
+  }
+
+  /// Satır görünen alanın dışındaysa ona kaydırır; içindeyse kımıldamaz.
+  /// Satır bu anda 0 yükseklikte: ölçü üst kenarına göre.
+  Future<void> _gor() async {
+    final ro = context.findRenderObject();
+    final konum = Scrollable.maybeOf(context)?.position;
+    if (ro == null || !ro.attached || konum == null) return;
+    final vp = RenderAbstractViewport.maybeOf(ro);
+    if (vp == null) return;
+    final ust = vp.getOffsetToReveal(ro, 0).offset;
+    final pay = SandikSpace.xl * 2; // açılan satıra alt kenarda yer
+    final gorunur = ust >= konum.pixels &&
+        ust <= konum.pixels + konum.viewportDimension - pay;
+    if (gorunur) return;
+    await Scrollable.ensureVisible(
+      context,
+      alignment: 0.3,
+      duration: SandikMotion.surfaceOf(context),
+      curve: SandikMotion.move,
+    );
+  }
 
   Future<void> _cikar(Future<bool> Function() kaldir) async {
     if (_cikiyor) return;
@@ -1281,19 +1491,76 @@ class _TakipCikisiState extends State<_TakipCikisi>
 
   @override
   void dispose() {
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
     _c?.dispose();
+    _ton?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final Animation<double> a = _c?.view ?? _tam;
+    final ton = _ton;
     return SizeTransition(
       sizeFactor: a,
       alignment: Alignment.topCenter,
-      child: FadeTransition(opacity: a, child: widget.builder(context, _cikar)),
+      child: FadeTransition(
+        opacity: a,
+        child: CustomPaint(
+          painter: ton == null
+              ? null
+              : _ZeminTonu(
+                  ton: ton,
+                  renk: context.c.amberFill,
+                  opaklik: _tonOpakligi,
+                  // Satırın alt boşluğu (`_Row`) tonlanmaz: ton kartın
+                  // kendisi kadar.
+                  alt: SandikSpace.sm,
+                  yaricap: SandikRadius.md,
+                ),
+          child: widget.builder(context, _cikar),
+        ),
+      ),
     );
   }
+}
+
+/// Yeni satırın zemin tonu: kartın yuvarlak dikdörtgeni, [ton] 1 → 0.
+/// Boyama katmanında; satırın alt ağacı karede bir kurulmaz.
+class _ZeminTonu extends CustomPainter {
+  _ZeminTonu({
+    required this.ton,
+    required this.renk,
+    required this.opaklik,
+    required this.alt,
+    required this.yaricap,
+  }) : super(repaint: ton);
+
+  final Animation<double> ton;
+  final Color renk;
+  final double opaklik;
+  final double alt;
+  final double yaricap;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final t = ton.value;
+    if (t <= 0 || size.height <= alt) return;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height - alt),
+          Radius.circular(yaricap)),
+      Paint()..color = renk.withValues(alpha: opaklik * t),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ZeminTonu old) =>
+      old.ton != ton ||
+      old.renk != renk ||
+      old.opaklik != opaklik ||
+      old.alt != alt ||
+      old.yaricap != yaricap;
 }
 
 /// Takip satırındaki alarm çanı: zil + fiyata en yakın hedef (+N).
@@ -1457,7 +1724,7 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
             context.l10n.noWatchlistYet,
             textAlign: TextAlign.center,
             style: context.t.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700, color: context.c.text90),
+                fontWeight: FontWeight.w600, color: context.c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
           Text(
@@ -1506,7 +1773,7 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
               ),
               child: Text('Varlık Ekle',
                   style: context.t.titleSmall?.copyWith(
-                      color: context.c.onStatus, fontWeight: FontWeight.w700)),
+                      color: context.c.onStatus, fontWeight: FontWeight.w600)),
             ),
           ),
           // Eskiden ekranın altında sabit dipnottu; artık yalnız burada,
@@ -1665,7 +1932,7 @@ class _AddHeader extends ConsumerWidget {
                             TextSpan(
                               text: '$n',
                               style: context.t.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                   color: dolu ? c.loss : c.text90),
                               children: [
                                 if (sinirli)
@@ -1727,7 +1994,7 @@ class _AddHeader extends ConsumerWidget {
                                 : context.l10n.watchlistAddShort,
                             style: context.t.titleSmall?.copyWith(
                                 color: dolu ? c.text58 : c.onStatus,
-                                fontWeight: FontWeight.w700),
+                                fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),

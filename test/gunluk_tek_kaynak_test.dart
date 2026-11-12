@@ -406,6 +406,14 @@ void main() {
       final vCanli = yukle.indexOf('_canli.asset');
       expect(vBekle, greaterThan(0));
       expect(vBekle, lessThan(vCanli), reason: 'defter turdan sonra okunmalı');
+      // Ar-Ge 12 Kas §3: öteki dönemler turu beklemez, GÜNLÜK bekler —
+      // bekleme `_canli` okunmadan önce ve gün içini kapsar.
+      final vKosul = yukle.indexOf('final bekle = days == 0 ||');
+      final vAwait = yukle.indexOf('if (bekle) await tur;');
+      expect(vKosul, greaterThan(vBekle));
+      expect(vAwait, greaterThan(vKosul));
+      expect(vAwait, lessThan(vCanli),
+          reason: 'GÜNLÜK defteri turdan sonra okunmalı');
     });
   });
 }

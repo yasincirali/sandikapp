@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/aylik_rapor_provider.dart';
 import '../services/aylik_rapor_disa_aktarim.dart';
 import '../services/crash_reporter.dart';
+import '../services/aylik_getiri_tablosu.dart' show AylikKiyas;
 import '../services/aylik_rapor_ozeti.dart';
 import '../models/asset_type.dart';
 import '../services/aylik_rapor_kalemleri.dart';
@@ -84,6 +85,17 @@ class AylikRaporScreen extends ConsumerWidget {
             govde: l10n.prmAylikKilitGovde,
             kilitMetni: l10n.prmAylikKilitSatir,
             kaynak: 'aylik_rapor',
+            // Kişisel satır (2026-11-12): o ayın kendi hareket ve not
+            // sayıları, tutar yok. Söylenecek bir şey yoksa satır yok.
+            kisisel: switch (
+                ref.watch(aylikRaporKancasiProvider(donem)).valueOrNull) {
+              final k? => aylikKancaCumlesi(
+                  l10n,
+                  DateFormat.MMMM(Localizations.localeOf(context).toString())
+                      .format(donem),
+                  k),
+              null => null,
+            },
           ),
         ),
       );
@@ -92,6 +104,9 @@ class AylikRaporScreen extends ConsumerWidget {
     final notlar =
         ref.watch(notOzetleriProvider(notKumesi(anahtarlar, 'aylik')));
     final ozetHal = ref.watch(aylikRaporOzetiProvider(donem));
+    // Kişisel kıyas (2026-11-12): ayın kendi son 12 ayı içindeki yeri.
+    // Gelmezse (kısa geçmiş, seri yok) satır yok; rapor beklemez.
+    final kiyas = ref.watch(aylikRaporKiyasProvider(donem)).valueOrNull;
     final dil = context.tarihDili;
 
     return Scaffold(
@@ -229,6 +244,17 @@ class AylikRaporScreen extends ConsumerWidget {
                                     fontWeight: FontWeight.w600,
                                     color: c.text90),
                               ),
+                              // Ekranda getiri kutusu yok (portföy getirisi
+                              // Performans'ta, yukarıdaki karar); kıyas
+                              // satırı bu yüzden özet cümlesinin altında.
+                              // PDF'te getiri kutularının altındaki öne
+                              // çıkanlarda aynı cümle.
+                              if (kiyas != null) ...[
+                                const SizedBox(height: SandikSpace.xxs),
+                                Text(aylikKiyasCumlesi(l10n, kiyas),
+                                    style: t.bodySmall
+                                        ?.copyWith(color: c.text58)),
+                              ],
                             ],
                           ),
                         ),
@@ -243,6 +269,7 @@ class AylikRaporScreen extends ConsumerWidget {
                               kalemler: kalemler,
                               eksik: eksik,
                               ozet: ozet,
+                              kiyas: kiyas,
                               kaynak: kaynak),
                         ),
                       ],
@@ -322,6 +349,7 @@ class AylikRaporScreen extends ConsumerWidget {
     required ({List<RaporKalemi> onemli, List<RaporKalemi> diger}) kalemler,
     required List<String> eksik,
     required AylikRaporOzeti? ozet,
+    AylikKiyas? kiyas,
     Rect? kaynak,
   }) async {
     final kullanici = ref.read(authProvider).valueOrNull;
@@ -332,6 +360,7 @@ class AylikRaporScreen extends ConsumerWidget {
         kalemler: kalemler,
         eksik: eksik,
         ozet: ozet,
+        kiyas: kiyas,
         kim: kullanici?.username ?? kullanici?.email ?? '',
       );
       await DisaAktarimService.instance.paylas(belge,

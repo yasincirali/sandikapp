@@ -23,8 +23,11 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart' show parseTrNumber;
 import '../widgets/kart_destesi.dart';
+import '../widgets/premium_acildi_sayfasi.dart'
+    show premiumAcildiAkisi, premiumAcildiIsit;
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_cizimi.dart';
+import '../widgets/satin_alim_geri_yukleme.dart';
 import '../l10n/l10n.dart';
 import 'legal_doc_screen.dart' show belgeyiAc;
 
@@ -202,6 +205,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       return;
     }
     setState(() => _busy = true);
+    // Mağaza diyaloğu sürerken başarı sayfasının sayıları hazırlansın
+    // (sayfa açılınca beklemesin); sonuç ne olursa olsun bırakılır.
+    final isitmayiBirak = premiumAcildiIsit(ref);
     try {
       final sonuc = await SatinAlmaService.instance.satinAl(paket);
       if (!mounted) return;
@@ -213,9 +219,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             deneme: denemeGunu(paket.storeProduct) != null,
           ));
           _satinAlindi = true;
-          await _showSuccessSheet();
-          if (!mounted) return;
-          Navigator.of(context).pop(true);
+          // Sayfa kapanınca paywall HER yolda `pop(true)` der (kilit
+          // satırları bu sonuca bakıyor); satır seçildiyse hedef ondan
+          // sonra açılır (`premiumAcildiAkisi`).
+          await premiumAcildiAkisi(context, kaynak: widget.source);
         case SatinAlmaSonucu.vazgecti:
           break;
         case SatinAlmaSonucu.beklemede:
@@ -226,100 +233,23 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           sandikSnack(context, context.l10n.pwKullanilamaz);
       }
     } finally {
+      isitmayiBirak();
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _geriYukle() async {
     if (_busy) return;
-    if (!SatinAlmaService.instance.yapilandirildi) {
-      sandikSnack(context, context.l10n.pwKullanilamaz);
-      return;
-    }
     setState(() => _busy = true);
     try {
-      final bulundu = await SatinAlmaService.instance.geriYukle();
+      // Ortak akış (Profil › Premium da aynısını kullanır): mağazaya sor,
+      // sonucu söyle, sunucu haklarını tazele.
+      final bulundu = await satinAlimlariGeriYukle(context, ref);
       if (!mounted) return;
-      final l = context.l10n;
-      sandikSnack(
-        context,
-        switch (bulundu) {
-          true => l.pwGeriYuklendi,
-          false => l.pwGeriYukBulunamadi,
-          null => l.pwGeriYukHata,
-        },
-      );
       if (bulundu == true) Navigator.of(context).pop(true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  Future<void> _showSuccessSheet() {
-    return showSandikSheet<void>(
-      context: context,
-      backgroundColor: context.c.background,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 20,
-              SandikSpace.screenH(context), 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: context.c.amberFill.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: context.c.amberFill.withValues(alpha: 0.45),
-                      width: 2),
-                ),
-                child: Icon(Icons.check_rounded,
-                    color: context.c.amberText, size: 40),
-              ),
-              const SizedBox(height: 16),
-              Text(context.l10n.premiumUnlocked,
-                  style: context.t.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w600, color: context.c.text90)),
-              const SizedBox(height: 8),
-              Text(
-                context.l10n.premiumUnlockedBody,
-                textAlign: TextAlign.center,
-                style: context.t.bodyMedium
-                    ?.copyWith(color: context.c.text58, height: 1.5),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: context.c.amberFill,
-                    foregroundColor: context.c.onAmber,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(SandikRadius.md)),
-                  ),
-                  // Renk açıkça `onAmber` — `text90` düğme rengini ezerdi
-                  // (açık tema denetimi 2026-10-08).
-                  child: Text(context.l10n.greatWord,
-                      style: context.t.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.c.onAmber)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

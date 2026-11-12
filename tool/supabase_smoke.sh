@@ -17,10 +17,13 @@
 set -euo pipefail
 
 if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_ANON_KEY:-}" ]]; then
-  eval "$(supabase status -o env 2>/dev/null | grep -E '^(API_URL|ANON_KEY)=')"
+  eval "$(supabase status -o env 2>/dev/null | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=')"
   SUPABASE_URL="${SUPABASE_URL:-$API_URL}"
   SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-$ANON_KEY}"
 fi
+# Yalnız yerel yığının kendi service anahtarı (0181 tavan adımı ayarı çevirir);
+# canlı anahtar buraya hiç verilmez.
+SUPABASE_SERVICE_KEY="${SUPABASE_SERVICE_KEY:-${SERVICE_ROLE_KEY:-}}"
 
 # seed.sql ile birebir.
 EMAIL='smoke@sandik.test'
@@ -236,6 +239,55 @@ HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/kr
 [[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "kripto_hacim_gunluk istemciden yazilabildi: HTTP $HTTP"; exit 1; }
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/akis_sapma" "${AUTH[@]}"   -d '{"p_gun":"2026-01-02"}')
 [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "akis_sapma istemciye acik: HTTP $HTTP"; exit 1; }
+
+echo "== 6e) Ücretsiz alarm tavanı (0181) — iOS cihazlı, Premium'suz hesapta 21. aktif alarm reddedilir"
+# Kapı (premium_ayar.kapi_acik) ve aktif iOS cihaz yalnız service rolüyle
+# yazılır; adım sonunda ikisi de geri alınır (aşağıdaki emülatör testi
+# kapı kapalı, cihazsız tohumla koşar). Service anahtarı yoksa adım atlanır.
+if [[ -n "$SUPABASE_SERVICE_KEY" ]]; then
+  SRV=(-H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" -H "Content-Type: application/json")
+  CIHAZ=$(python3 -c 'import secrets;print(secrets.token_hex(16))')
+  YANIT=$(mktemp)
+  alarm_yaz() {  # → HTTP kodu; gövde $YANIT'a
+    curl -sS -o "$YANIT" -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/price_alerts" "${AUTH[@]}" \
+      -d "{\"user_id\":\"$UID_SMOKE\",\"symbol\":\"ALTIN_GRAM\",\"label\":\"Duman\",\"target_price\":$1,\"direction\":\"above\"}"
+  }
+  tavan_geri_al() {
+    curl -sS -X DELETE "$SUPABASE_URL/rest/v1/price_alerts?user_id=eq.$UID_SMOKE&label=eq.Duman" "${AUTH[@]}" >/dev/null || true
+    curl -sS -X DELETE "$SUPABASE_URL/rest/v1/aktif_cihaz?user_id=eq.$UID_SMOKE" "${SRV[@]}" >/dev/null || true
+    curl -sS -X DELETE "$SUPABASE_URL/rest/v1/kayitli_cihazlar?user_id=eq.$UID_SMOKE&cihaz_id=eq.$CIHAZ" "${SRV[@]}" >/dev/null || true
+    curl -sS -X PATCH "$SUPABASE_URL/rest/v1/premium_ayar?tek=eq.true" "${SRV[@]}" -d '{"kapi_acik":false}' >/dev/null || true
+    rm -f "$YANIT"
+  }
+  trap tavan_geri_al EXIT
+  # Kapı kapalıyken (tohum) 21 alarm serbest: paywall kapalı = istemcide sınır yok.
+  for i in $(seq 1 21); do
+    HTTP=$(alarm_yaz "$((4000 + i))")
+    [[ "$HTTP" == "201" ]] || { echo "kapi kapaliyken $i. alarm reddedildi: HTTP $HTTP"; exit 1; }
+  done
+  curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/price_alerts?user_id=eq.$UID_SMOKE&label=eq.Duman" "${AUTH[@]}" >/dev/null
+  curl -sS -f -X PATCH "$SUPABASE_URL/rest/v1/premium_ayar?tek=eq.true" "${SRV[@]}" -d '{"kapi_acik":true}' >/dev/null
+  curl -sS -f -X POST "$SUPABASE_URL/rest/v1/kayitli_cihazlar" "${SRV[@]}" \
+    -d "{\"user_id\":\"$UID_SMOKE\",\"cihaz_id\":\"$CIHAZ\",\"ad\":\"Duman iPhone\",\"platform\":\"ios\"}" >/dev/null
+  curl -sS -f -X POST "$SUPABASE_URL/rest/v1/aktif_cihaz" "${SRV[@]}" -H "Prefer: resolution=merge-duplicates" \
+    -d "{\"user_id\":\"$UID_SMOKE\",\"cihaz_id\":\"$CIHAZ\"}" >/dev/null
+  for i in $(seq 1 20); do
+    HTTP=$(alarm_yaz "$((4000 + i))")
+    [[ "$HTTP" == "201" ]] || { echo "tavan altinda $i. alarm reddedildi: HTTP $HTTP"; exit 1; }
+  done
+  HTTP=$(alarm_yaz 4100)
+  [[ "$HTTP" != "201" ]] || { echo "21. aktif alarm yazildi (0181 tavani calismiyor)"; exit 1; }
+  grep -q 'alarm_siniri' "$YANIT" \
+    || { echo "21. alarm reddi alarm_siniri isaretini tasimiyor: $(cat "$YANIT")"; exit 1; }
+  # Service rolü (cron damgası / sunucu yazması) muaf.
+  HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/price_alerts" "${SRV[@]}" \
+    -d "{\"user_id\":\"$UID_SMOKE\",\"symbol\":\"ALTIN_GRAM\",\"label\":\"Duman\",\"target_price\":4200,\"direction\":\"above\"}")
+  [[ "$HTTP" == "201" ]] || { echo "service_role alarm yazamadi (muaf olmali): HTTP $HTTP"; exit 1; }
+  tavan_geri_al
+  trap - EXIT
+else
+  echo "   (SUPABASE_SERVICE_KEY yok — tavan adımı atlandı)"
+fi
 
 echo "== 7) Temizlik"
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/assets?id=eq.$ASSET_ID" "${AUTH[@]}" >/dev/null

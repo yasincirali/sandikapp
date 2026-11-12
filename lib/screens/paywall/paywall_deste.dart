@@ -85,7 +85,10 @@ PaywallKarti? kaynaktanKart(String source) {
     'yillik_rapor' ||
     'portfoy_disa_aktar' ||
     'aylik_rapor' ||
-    'gecmis_fiyatlar' =>
+    'gecmis_fiyatlar' ||
+    // Portföy › Sattıkların (2026-11-12): kapanmış pozisyonun gerçekleşen
+    // kârı yıllık raporun "bu yıl ne gerçekleşti" sorusunun satır satır hâli.
+    'sattiklarin' =>
       PaywallKarti.rapor,
     // Temettü kartındaki "maliyetine göre verim" kilidi (2026-11-07).
     'temettu_tahmini' || 'temettu_verimi' => PaywallKarti.temettu,
@@ -105,6 +108,9 @@ PaywallKarti? kaynaktanKart(String source) {
     // Portföy kart panelinde "Başa baş için %X yükselmeli" (Ar-Ge 11 Kas
     // #1): aynı soru, "zarardaki param gerçekte ne durumda".
     'basa_bas' ||
+    // Hızlı Sat'ta "Anaparam" çipi (Ar-Ge 12 Kas #1): başa başın kâr
+    // tarafı, "kârdaki param gerçekte ne durumda, maliyetim kaç lot".
+    'anaparam' ||
     // Performans'ta aylık getiri tablosu (2026-11-11): aynı analiz sorusu,
     // "param hangi ay ne yaptı".
     'aylik_getiri' =>

@@ -50,6 +50,8 @@ void main() {
         'aylik_rapor': PaywallKarti.rapor,
         // Varlık grafiğinin geçmiş fiyat tablosu (2026-11-10).
         'gecmis_fiyatlar': PaywallKarti.rapor,
+        // Portföy › Sattıkların (2026-11-12).
+        'sattiklarin': PaywallKarti.rapor,
         // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
         'fon_xray': PaywallKarti.xray,
         'portfoy_xray': PaywallKarti.xray,
@@ -61,6 +63,8 @@ void main() {
         'en_iyi_gun': PaywallKarti.xray,
         // Portföy kart panelinde başa baş satırı (2026-11-11).
         'basa_bas': PaywallKarti.xray,
+        // Hızlı Sat'ta Anaparam çipi (2026-11-12).
+        'anaparam': PaywallKarti.xray,
         // Performans'ta aylık getiri tablosu (2026-11-11).
         'aylik_getiri': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
@@ -131,8 +135,12 @@ void main() {
         'lib/widgets/period_summary_view.dart',
         // Başa baş satırı (2026-11-11).
         'lib/widgets/basa_bas_satiri.dart',
+        // Hızlı Sat Anaparam çipi (2026-11-12).
+        'lib/widgets/quick_adjust_dialog.dart',
         // Aylık getiri tablosu (2026-11-11).
         'lib/widgets/aylik_getiri_karti.dart',
+        // Sattıkların (2026-11-12).
+        'lib/widgets/sattiklarin.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -151,7 +159,9 @@ void main() {
             'kur_ayrismasi',
             'en_iyi_gun',
             'basa_bas',
+            'anaparam',
             'aylik_getiri',
+            'sattiklarin',
           ]));
       // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
       // açmaz.
