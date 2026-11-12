@@ -19,6 +19,7 @@ import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
 import 'package:portfoy_takip/screens/varlik_sayfasi.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/widgets/donem_secici.dart';
 import 'package:portfoy_takip/widgets/katmanli_fiyat_grafigi.dart';
 import 'package:portfoy_takip/widgets/varlik_ozeti.dart';
@@ -56,6 +57,25 @@ Asset _lot({int gunOnce = 800, String id = 'lot-1', double adet = 10}) => Asset(
       isManualPrice: false,
       currentPrice: 150,
       addedDate: DateTime.now().subtract(Duration(days: gunOnce)),
+    );
+
+/// 200 gün önce temettü: 6 ay ve üstünde dönem içinde, kısa dönemde değil
+/// (yasin'ın ekran kaydı 2026-11-13: temettü satırı dönemle gelip gidiyordu).
+Asset _temettu() => Asset(
+      id: 'tem-1',
+      userId: _uid,
+      name: 'THYAO',
+      ticker: 'THYAO.IS',
+      type: AssetType.hisse,
+      quantity: 0,
+      purchasePrice: 0,
+      currency: 'TRY',
+      notes: '',
+      isManualPrice: false,
+      currentPrice: 150,
+      kind: AssetKind.dividend,
+      dividendAmount: 25,
+      addedDate: DateTime.now().subtract(const Duration(days: 200)),
     );
 
 class _FakeAuth extends AuthNotifier {
@@ -252,12 +272,20 @@ void main() {
     kapi = _Kapi();
     HistoryService.seriCekici = kapi.cek;
   });
-  tearDown(
-      () => HistoryService.seriCekici = HistoryService.varsayilanSeriCekici);
+  tearDown(() {
+    HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
+    RemoteConfigService.testAcik = {};
+  });
 
   for (final olcek in [1.0, 2.0]) {
-    testWidgets('Performans (${olcek}x): grafik ve manşet yerinde',
+    // Tek akış (RC `performans_tek_akis`) TestFlight'ta açık; manşetin
+    // altındaki cümle ve paylaş simgesi orada dönemle gelip gidiyordu
+    // (yasin 2026-11-12). İki düzen de ölçülür.
+    for (final tek in [false, true]) {
+    final ad = tek ? ' · tek akış' : '';
+    testWidgets('Performans (${olcek}x$ad): grafik ve manşet yerinde',
         (tester) async {
+      if (tek) RemoteConfigService.testAcik = {'performans_tek_akis'};
       tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -268,6 +296,7 @@ void main() {
                 _lot(),
                 // 60 gün önce büyük alım: 3 ay ve üstünde akış var.
                 _lot(gunOnce: 60, id: 'lot-2', adet: 900),
+                _temettu(),
               ])),
           partnersProvider.overrideWith(_FakePartners.new),
           allPartnerAssetsProvider.overrideWith(_FakePartnerAssets.new),
@@ -286,7 +315,26 @@ void main() {
         () => find.byWidgetPredicate(
             (w) => w is Text && w.data != null && _manset.hasMatch(w.data!)),
       );
-      _ayniYerde(o, 'Performans', punto: olcek == 1.0);
+      // Tek akışta manşet `numLarge`: altı haneli tutar yüzde rozetiyle
+      // satıra sığmayınca küçülür (yeri sabit); punto yalnız eski düzende.
+      _ayniYerde(o, 'Performans', punto: olcek == 1.0 && !tek);
+      // Grafik kartının DİBİ de yerinde: işlem hacmi paneli her dönemde
+      // durur (Bugün/1 hf'de yoktu, kart ~98 pt kısalıp altını çekiyordu).
+      final hacimYeri = <String, double>{};
+      for (final e in _etiketler(tester)) {
+        await tester.tap(find
+            .descendant(of: find.byType(DonemSecici), matching: find.text(e))
+            .first);
+        await _yerles(tester, 40);
+        final etiket = find.text('Alım · satış');
+        expect(etiket, findsOneWidget, reason: '$e: hacim paneli yok');
+        hacimYeri[e] = tester.getRect(etiket).top;
+      }
+      final ilkHacim = hacimYeri.values.first;
+      for (final x in hacimYeri.entries) {
+        expect((x.value - ilkHacim).abs(), lessThanOrEqualTo(0.5),
+            reason: 'hacim paneli kaydı: $hacimYeri');
+      }
       // Kartın üstü de (grafik kutusunun dış çerçevesi) yerinde.
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
@@ -297,8 +345,9 @@ void main() {
     // "varlık detaydaki gibi seçimden sonra sabit kalmalı"). İlk kez açılan
     // Bugün'de seri beklenirken dönem kartı boşa düşüyor, grafik ~200 pt
     // yukarı kayıp seri gelince geri iniyordu; eski kodda kırmızı.
-    testWidgets('Performans (${olcek}x): bekleme karelerinde de yerinde',
+    testWidgets('Performans (${olcek}x$ad): bekleme karelerinde de yerinde',
         (tester) async {
+      if (tek) RemoteConfigService.testAcik = {'performans_tek_akis'};
       tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -308,6 +357,7 @@ void main() {
           portfolioProvider.overrideWith(() => _FakePortfolio([
                 _lot(),
                 _lot(gunOnce: 60, id: 'lot-2', adet: 900),
+                _temettu(),
               ])),
           partnersProvider.overrideWith(_FakePartners.new),
           allPartnerAssetsProvider.overrideWith(_FakePartnerAssets.new),
@@ -353,6 +403,8 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await _yerles(tester, 12);
     });
+
+    }
 
     testWidgets('Varlık detayı (${olcek}x): grafik ve dönem değişimi yerinde',
         (tester) async {

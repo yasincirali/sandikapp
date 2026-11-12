@@ -13181,6 +13181,12 @@ abstract class AppLocalizations {
   /// **'Yok'**
   String get s2FiltreYok;
 
+  /// No description provided for @s2AkisYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemde alım ya da satış yok.'**
+  String get s2AkisYok;
+
   /// No description provided for @s2BakiyeArttiAlim.
   ///
   /// In tr, this message translates to:

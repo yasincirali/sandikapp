@@ -221,7 +221,11 @@ class _Satir extends StatelessWidget {
             ),
           ),
           const SizedBox(width: SandikSpace.sm),
-          Column(
+          // Esnek: 2× yazıda "▲ 3,2 puan önündesin" sağ sütunu satırdan
+          // taşırıyordu (ölçüldü 2026-11-12, 164 pt); fark etiketi sağa yaslı
+          // alt satıra kırılır, etiket sütunu yine `…` ile kısalır.
+          Flexible(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
@@ -236,7 +240,7 @@ class _Satir extends StatelessWidget {
                 _FarkEtiketi(farkPuan: fark),
               ],
             ],
-          ),
+          )),
         ],
       ),
     );
@@ -265,6 +269,7 @@ class _FarkEtiketi extends StatelessWidget {
         : '${onde ? '▲' : '▼'} ${onde ? l.pointsAhead(puan) : l.pointsBehind(puan)}';
     return Text(
       metin,
+      textAlign: TextAlign.end,
       style: context.t.bodySmall?.copyWith(color: ton),
     );
   }

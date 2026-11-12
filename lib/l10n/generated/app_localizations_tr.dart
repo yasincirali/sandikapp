@@ -7996,6 +7996,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s2FiltreYok => 'Yok';
 
   @override
+  String get s2AkisYok => 'Bu dönemde alım ya da satış yok.';
+
+  @override
   String s2BakiyeArttiAlim(String tutar, String alim) {
     return 'Bakiye $tutar arttı; bunun $alim kadarı yeni alım.';
   }

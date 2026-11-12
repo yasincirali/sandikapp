@@ -4906,6 +4906,7 @@
   "s2FiltreSifirla": "Reset",
   "s2FiltreUygula": "Apply",
   "s2FiltreYok": "None",
+  "s2AkisYok": "No buys or sells in this period.",
   "s2BakiyeArttiAlim": "Balance up {tutar}; {alim} of that is new buys.",
   "s2BakiyeAzaldiAlim": "Balance down {tutar}; you bought {alim} in the period.",
   "s2BakiyeArttiSatis": "Balance up {tutar}; you sold {satis} in the period.",

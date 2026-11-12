@@ -823,7 +823,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 .millisecondsSinceEpoch,
           );
     final yatirilan = netInflow + temettu;
-    final akisVar = netInflow.abs() > 0.5 || temettu.abs() > 0.5;
+    final defterdeTemettuVar =
+        !_simulate && targetAssets.any((a) => a.isActive && a.isDividend);
     final piyasaColor = piyasaFlat
         ? context.c.text36
         : (piyasa >= 0 ? context.c.gain : context.c.loss);
@@ -931,16 +932,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // Paylaş varken başlık satırı 44 pt kutuyla uzar; üst dolgu ve satırın
     // altındaki boşluk o payı düşer (en fazla kendileri kadar).
     Widget kart(VoidCallback? paylas) => Container(
+          // Geometri paylaşın VARLIĞINDAN bağımsız (yasin 2026-11-12,
+          // TestFlight: "dönem değişince grafik hâlâ kayıyor", mağaza sürümü
+          // düzgün). Paylaş Özet hazır olunca gelip dönem değişince gidiyor;
+          // dolgu ve 44 pt satır onunla değişince manşet 8, grafik 10 pt
+          // inip çıkıyordu. Tek akışta yer hep ayrılı (aşağıda).
           padding: tekAkis
               ? EdgeInsets.fromLTRB(
                   SandikSpace.xs,
-                  paylas == null
-                      ? SandikSpace.xs
-                      : math.max(
-                          0,
-                          SandikSpace.xs -
-                              SandikPaylasDugmesi.satirPayi(
-                                  context, context.t.titleSmall)),
+                  math.max(
+                      0,
+                      SandikSpace.xs -
+                          SandikPaylasDugmesi.satirPayi(
+                              context, context.t.titleSmall)),
                   SandikSpace.xs,
                   SandikSpace.xs)
               : const EdgeInsets.fromLTRB(SandikSpace.md, SandikSpace.md2,
@@ -1018,15 +1022,28 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   ],
                   // Son öğe; 44 pt kutunun boşluğu tarihe doğru kalır,
                   // simge sağ kenara yaslanır.
-                  if (paylas != null)
-                    SandikPaylasDugmesi(
-                        onPressed: paylas,
-                        tooltip: context.l10n.shareSummary),
+                  if (tekAkis)
+                    // Rakam yokken görünmez ve dokunulmaz, ama yeri durur;
+                    // gelince aynı yerde belirir (hareketi azalt → anında).
+                    IgnorePointer(
+                      ignoring: paylas == null,
+                      child: ExcludeSemantics(
+                        excluding: paylas == null,
+                        child: AnimatedOpacity(
+                          opacity: paylas == null ? 0 : 1,
+                          duration: SandikMotion.stateOf(context),
+                          curve: SandikMotion.enter,
+                          child: SandikPaylasDugmesi(
+                              onPressed: paylas ?? () {},
+                              tooltip: context.l10n.shareSummary),
+                        ),
+                      ),
+                    ),
                 ],
               )),
               ),
               SizedBox(
-                  height: paylas == null
+                  height: !tekAkis
                       ? SandikSpace.sm2
                       : math.max(
                           0,
@@ -1087,29 +1104,50 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-              if (akisVar) ...[
-                if (performansBakiyeCumlesi(
-                  context.l10n,
-                  degisim: change,
-                  yatirilan: yatirilan,
-                  tutar: (v) => tryFmt.format(v.abs()),
-                )
-                    case final cumle?) ...[
-                  const SizedBox(height: SandikSpace.sm),
-                  Text(
-                    cumle,
+              // Cümle satırı akıştan bağımsız DURUR (yasin 2026-11-12): yalnız
+              // alım/satışlı dönemde yazılınca 1 ay → 3 ay geçişinde manşetin
+              // altı ~30 pt uzuyor, grafik o kadar kayıyordu. Akış yoksa dürüst
+              // cümle. Yer, akışlı cümlenin kapladığı satır sayısı: normal
+              // yazıda iki; genişlik sabitken büyük yazıda satır ölçekten hızlı
+              // artar (2× → beş satır, ölçüldü). Uzun cümle yeri aşarsa boy
+              // yumuşak değişir. Simülasyonda akış tanımsız: satır yok, orada
+              // da dönemden bağımsız.
+              if (!_simulate) ...[
+                const SizedBox(height: SandikSpace.sm),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                      minHeight: (3 * MediaQuery.textScalerOf(context).scale(1) - 1)
+                              .ceil()
+                              .clamp(2, 8) *
+                          tekSatirBoyu(context, context.t.bodySmall)),
+                  child: Text(
+                    performansBakiyeCumlesi(
+                          context.l10n,
+                          degisim: change,
+                          yatirilan: yatirilan,
+                          tutar: (v) => tryFmt.format(v.abs()),
+                        ) ??
+                        context.l10n.s2AkisYok,
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text58),
                   ),
-                ],
-                if (temettu.abs() > 0.5) ...[
-                  const SizedBox(height: SandikSpace.sm2),
-                  _DegisimKalemi(
-                    etiket: context.l10n.dividendPocketRow,
-                    deger: '−${tryFmt.format(temettu.abs())}',
-                    renk: context.c.text58,
-                  ),
-                ],
+                ),
+              ],
+              // Temettü satırı: defterde HİÇ temettü varsa her dönemde durur,
+              // dönemde yoksa dürüst ₺0 (yasin'ın ekran kaydı 2026-11-13:
+              // 5 yıl/1 yıl/6 ay'da "Cebine aldığın temettü" satırı geliyor,
+              // 3 ay/1 ay'da gidiyordu; grafik her geçişte ~30 pt oynuyordu).
+              // Hiç temettüsü olmayan kullanıcıda satır hiç yok, o da
+              // dönemden bağımsız.
+              if (defterdeTemettuVar) ...[
+                const SizedBox(height: SandikSpace.sm2),
+                _DegisimKalemi(
+                  etiket: context.l10n.dividendPocketRow,
+                  deger: temettu.abs() > 0.5
+                      ? '−${tryFmt.format(temettu.abs())}'
+                      : tryFmt.format(0),
+                  renk: context.c.text58,
+                ),
               ],
                     ],
                   ),
