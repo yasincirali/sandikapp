@@ -908,6 +908,18 @@ abstract class AppLocalizations {
   /// **'Yeni ortalama maliyetin {yeni} (şimdi {simdi})'**
   String quickBuyAvgCost(String yeni, String simdi);
 
+  /// Varlık Ekle: alış fiyatı alanının altındaki tek satır ipucu; alan boşken kayıtta seçili günün fiyatı atanır.
+  ///
+  /// In tr, this message translates to:
+  /// **'Boş bırakırsan o günün fiyatı yazılır'**
+  String get fiyatBosIpucu;
+
+  /// Varlık Ekle alt çubuğu: toplam maliyet satırında komisyon/masraf yazılıysa döküme eklenen küçük ek.
+  ///
+  /// In tr, this message translates to:
+  /// **'komisyon dahil'**
+  String get toplamKomisyonDahil;
+
   /// No description provided for @quickTargetAvg.
   ///
   /// In tr, this message translates to:

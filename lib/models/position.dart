@@ -956,3 +956,37 @@ Map<String, ({double once, double sonra})> hareketPortfoyDegerleri({
   }
   return out;
 }
+
+/// Bugün elde tutulan pozisyonun adedi ve ağırlıklı ortalama maliyeti;
+/// Varlık Ekle'deki "Bu alımla ortalama maliyetin" satırının tabanı (Ar-Ge
+/// 2026-11-12 #5).
+///
+/// Neden ayrı fonksiyon: Hızlı Al aynı soruyu `Position.asDisplayAsset`
+/// üzerinden cevaplıyor (`purchasePrice` = aktif lotların ağırlıklı
+/// ortalaması). Form bir pozisyondan açılmaz, elindeki yalnız seçilen
+/// varlığın kimliğidir; aynı yol buradan kurulur: sahibin lotları →
+/// [aktifLotlar] → [aggregatePositions] → [positionKey] eşleşmesi.
+/// Hesap ekranda değil burada (katmanlama kuralı).
+///
+/// Bütün portföyler birlikte sayılır: form yeni lotu hangi portföye
+/// yazarsa yazsın "şimdi" Tümü görünümündeki ortalamadır (çoğu kullanıcının
+/// tek portföyü var; çoklu portföyde ayrı ortalama göstermek ayrı karar).
+///
+/// `null` → satır çizilmez: elde yok (kapanmış pozisyon dahil), ortalama
+/// 0, ya da lotlardan biri "maliyet bilinmiyor" işaretli (0162; tahmini
+/// maliyetten ortalama uydurulmaz — Hızlı Al'daki kapıyla aynı).
+({double adet, double maliyet})? eldekiPozisyonMaliyeti(
+  Iterable<Asset> lotlar, {
+  required String sahip,
+  required String anahtar,
+}) {
+  final aktif = aktifLotlar(lotlar.where((a) => a.userId == sahip));
+  final ilgili = [for (final a in aktif) if (positionKey(a) == anahtar) a];
+  if (ilgili.isEmpty) return null;
+  if (ilgili.any((a) => a.maliyetBilinmiyor == true)) return null;
+  final p = aggregatePositions(ilgili).where((p) => p.key == anahtar);
+  if (p.isEmpty) return null;
+  final poz = p.first;
+  if (poz.totalQuantity <= 0 || poz.weightedPurchasePrice <= 0) return null;
+  return (adet: poz.totalQuantity, maliyet: poz.weightedPurchasePrice);
+}

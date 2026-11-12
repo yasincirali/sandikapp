@@ -575,13 +575,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  Widget _sectionLabel(String text) => Text(
-        text,
-        style: context.t.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: context.c.text58,
-        ),
+  /// Formun TEK etiket stili (Ar-Ge 2026-11-12 tasarım bölümü, apple-design
+  /// "Craft"): "Varlık türü" küçük gri w700, "Miktar"/"İşlem tarihi" büyük
+  /// beyaz w600 idi; iki hiyerarşi aynı düzeyi anlatıyordu. Hepsi ikincil
+  /// etiket: küçük, gri, w600 (ağırlık tavanı 2026-11-05).
+  TextStyle? get _etiketStili => context.t.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: context.c.text58,
       );
+
+  Widget _sectionLabel(String text) => Text(text, style: _etiketStili);
 
   /// Alan etiketi. Tek satır + kısaltma **varsayılan**: bu etiketler dar
   /// kolonlarda (Miktar/Fiyat yan yana) ve büyük metin ayarında taşıyordu.
@@ -589,10 +592,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   /// verilmişse iş görür.
   Widget _fieldLabel(String text) => Text(
         text,
-        style: context.t.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: context.c.text90,
-        ),
+        style: _etiketStili,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );

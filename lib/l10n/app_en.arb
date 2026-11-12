@@ -166,6 +166,8 @@
   "quickSaleGain": "Gain on this sale {tutar} · {yuzde}",
   "quickSaleLoss": "Loss on this sale {tutar} · {yuzde}",
   "quickBuyAvgCost": "Your new average cost {yeni} (now {simdi})",
+  "fiyatBosIpucu": "Leave empty to use that day's price",
+  "toplamKomisyonDahil": "incl. fees",
   "quickTargetAvg": "Target average",
   "quickTargetAvgField": "Target average cost",
   "quickTargetAvgResult": "To bring your average down to {hedef}: ~{adet} {birim}",

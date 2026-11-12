@@ -39,16 +39,8 @@ extension _SeciciAlanlari on _AddAssetScreenState {
                     color: selected ? AssetType.doviz.color : context.c.overlay,
                     width: selected ? 1.4 : 1,
                   ),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color:
-                                AssetType.doviz.color.withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            spreadRadius: -6,
-                          ),
-                        ]
-                      : null,
+                  // Seçili kutu parıltısı kalktı (amber bütçesi, Ar-Ge
+                  // 2026-11-12 #1): seçim dolgu + çerçeveyle okunur.
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -202,7 +194,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: ad == null ? null : ticker,
           mainText: ad ?? context.l10n.pickUsStockTap,
-          color: AssetType.hisse.color,
         ),
       ),
     );
@@ -254,7 +245,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: ticker,
           mainText: selectedName ?? context.l10n.pickStockTap,
-          color: AssetType.hisse.color,
         ),
       ),
     );
@@ -310,7 +300,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: _selectedFund?.code,
           mainText: _selectedFund?.name ?? context.l10n.pickFundTap,
-          color: AssetType.fon.color,
         ),
       ),
     );
@@ -363,7 +352,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: kod,
           mainText: kod == null ? context.l10n.pickCryptoTap : (ad ?? kod),
-          color: AssetType.kripto.color,
         ),
       ),
     );
@@ -413,7 +401,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
           hasError: hata,
           badgeText: s == null ? null : '${s.vade.year}',
           mainText: s?.ad ?? context.l10n.pickEurobondTap,
-          color: AssetType.eurobond.color,
         ),
       ),
     );
@@ -446,7 +433,6 @@ extension _SeciciAlanlari on _AddAssetScreenState {
     required bool hasError,
     required String? badgeText,
     required String mainText,
-    required Color color,
     IconData trailingIcon = Icons.search_rounded,
   }) {
     return Container(
@@ -458,43 +444,31 @@ extension _SeciciAlanlari on _AddAssetScreenState {
         // komşu alanlar şeffafken bu tek kutu dolu görünüyordu.
         color: context.inputFill,
         borderRadius: BorderRadius.circular(SandikRadius.md),
+        // Amber bütçesi (Ar-Ge 2026-11-12 #1, unslop "Colored glows",
+        // "Every element highlighted"): dolu seçici eskiden tür renginde
+        // kalın çerçeve + dış parıltı taşıyordu; hisse rengi amber olduğu
+        // için formda kaydet düğmesiyle yarışan yedi amber öğeden biriydi.
+        // Dolu olduğu metnin kendisinden okunur (ağırlık + text90), çerçeve
+        // öteki alanlarla aynı kıl çizgisi. Hata kırmızısı kalır.
         border: Border.all(
-          color: hasError
-              ? context.c.loss
-              : (hasValue ? color : context.c.hairline),
-          width: hasValue ? 1.4 : 1,
+          color: hasError ? context.c.loss : context.c.hairline,
         ),
-        // Parlama YALNIZ dışarıda (`BlurStyle.outer`). Flutter gölgeyi
-        // kutunun tamamı olarak çizer; eski opak `surface1` dolgu içini
-        // örtüyordu. Dolgu dark'ta şeffaf olunca (`inputFill`) gölge kutunun
-        // içini varlık rengine boyadı — düzeltilen "içi farklı renk" hatasının
-        // aynısı. `outer` negatif yayılmayla kullanılamaz (içeride bir şerit
-        // boyar), bu yüzden yayılma 0 ve bulanıklık kısaltıldı.
-        boxShadow: hasValue
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.20),
-                  blurRadius: 10,
-                  blurStyle: BlurStyle.outer,
-                ),
-              ]
-            : null,
       ),
       child: Row(
         children: [
           if (badgeText != null) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              // Sembol rozeti nötr yüzey (amber bütçesi, yukarıda): tür
+              // rengini taşıyınca hisse/altında ikinci bir amber leke oluyordu.
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.16),
+                color: context.c.surface2,
                 borderRadius: BorderRadius.circular(SandikRadius.sm),
               ),
-              // Rozet METNİ açık temada koyulaştırılmış ton (`metinTonu`);
-              // dolgu ham renkte kalır.
               child: Text(badgeText,
                   style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: color.metinTonu(context))),
+                      color: context.c.text90)),
             ),
             const SizedBox(width: 10),
           ],

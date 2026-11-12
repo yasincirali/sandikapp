@@ -611,10 +611,13 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
       constraints: const BoxConstraints(minHeight: SandikSpace.xxl),
       padding: const EdgeInsets.fromLTRB(
           SandikSpace.sm, SandikSpace.xs2, SandikSpace.xs, SandikSpace.xs2),
+      // Nötr satır (amber bütçesi, Ar-Ge 2026-11-12 #1): tür rengi yalnız
+      // ikon kutusunda. Hisse rengi amber olduğundan tür satırının dolgusu
+      // ve çerçevesi formdaki yedi amber öğeden ikisiydi.
       decoration: BoxDecoration(
-        color: renk.withValues(alpha: 0.10),
+        color: context.inputFill,
         borderRadius: SandikRadius.mdAll,
-        border: Border.all(color: renk.withValues(alpha: 0.6)),
+        border: Border.all(color: context.c.hairline),
       ),
       // Etiket ve "Değiştir" `Wrap`'ta: büyük metin ayarında düğme alt
       // satıra iner (320pt × 3.0'da tek satırda 111 px taşıyordu).
@@ -647,7 +650,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                     onPressed: widget.onDegistir,
                     style: TextButton.styleFrom(
                       minimumSize: const Size(SandikSpace.xxl, SandikSpace.xxl),
-                      foregroundColor: context.c.amberText,
+                      foregroundColor: context.c.text58,
                     ),
                     child: Text(l.typePickerChange,
                         maxLines: 1, overflow: TextOverflow.ellipsis),

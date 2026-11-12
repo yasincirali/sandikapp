@@ -187,7 +187,6 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                 hasError: hata,
                 badgeText: secili == null ? null : _emtiaBirimi(secili.birim),
                 mainText: ana,
-                color: AssetType.emtia.color,
                 trailingIcon: Icons.expand_more_rounded,
               ),
             ),
@@ -293,13 +292,15 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(
+                        // Nötr bağlantı (amber bütçesi, Ar-Ge 2026-11-12 #1):
+                        // ikincil yol; amber kaydet düğmesine kalır.
                         child: Text(context.l10n.notInListAddBySymbol,
                             style: context.t.bodyMedium?.copyWith(
-                                color: context.c.amberText,
+                                color: context.c.text58,
                                 fontWeight: FontWeight.w600)),
                       ),
                       Icon(Icons.chevron_right_rounded,
-                          size: 18, color: context.c.amberText),
+                          size: 18, color: context.c.text58),
                     ],
                   ),
                 ),
@@ -490,15 +491,7 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                   : (hata ? context.c.loss : context.c.overlay),
               width: selected ? 1.4 : 1,
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AssetType.altin.color.withValues(alpha: 0.25),
-                      blurRadius: 14,
-                      spreadRadius: -6,
-                    ),
-                  ]
-                : null,
+            // Parıltı kalktı (amber bütçesi, Ar-Ge 2026-11-12 #1).
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

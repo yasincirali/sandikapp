@@ -457,6 +457,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get fiyatBosIpucu => 'Leave empty to use that day\'s price';
+
+  @override
+  String get toplamKomisyonDahil => 'incl. fees';
+
+  @override
   String get quickTargetAvg => 'Target average';
 
   @override

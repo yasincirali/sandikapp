@@ -456,6 +456,12 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get fiyatBosIpucu => 'Boş bırakırsan o günün fiyatı yazılır';
+
+  @override
+  String get toplamKomisyonDahil => 'komisyon dahil';
+
+  @override
   String get quickTargetAvg => 'Hedef ortalama';
 
   @override

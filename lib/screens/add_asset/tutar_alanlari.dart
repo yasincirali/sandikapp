@@ -222,7 +222,34 @@ extension _TutarAlanlari on _AddAssetScreenState {
           onChanged: (_) => _schedulePricePreview(),
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
         ),
+        _metinle(_price, (_) => _fiyatBosIpucuSatiri()),
       ],
+    );
+  }
+
+  /// Boş fiyat alanının altındaki tek satır (Ar-Ge 2026-11-12 #6). Eskiden
+  /// miktar yazılınca formun ortasına amber çerçeveli bir bilgi kutusu
+  /// geliyordu ("Alış fiyatı boş. Kaydederken… otomatik atanacak", ham
+  /// literal); bilgi fiyat alanının kendisine ait ve tek satır yeter. "O
+  /// gün" seçili tarihtir: bugünse canlı fiyat, geçmişse o günün kapanışı —
+  /// cümle ikisini de doğru söyler, tarih değişince metin değişmez.
+  ///
+  /// Eurobondda yok (fiyat zorunlu). Düzenlemede yok: orada boş alan fiyat
+  /// atamaz (gerekçe [_fiyatIpucu]). Fiyat yazılınca yükseklikle kapanır.
+  Widget _fiyatBosIpucuSatiri() {
+    final goster =
+        !_s.isEurobond && !_isEditing && _price.text.trim().isEmpty;
+    return _Beliren(
+      child: !goster
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs2),
+              child: Text(
+                context.l10n.fiyatBosIpucu,
+                key: const ValueKey('fiyat-bos-ipucu'),
+                style: context.t.bodySmall?.copyWith(color: context.c.text58),
+              ),
+            ),
     );
   }
 
@@ -398,41 +425,9 @@ extension _TutarAlanlari on _AddAssetScreenState {
       return const SizedBox.shrink();
     }
 
-    if (isPriceEmpty) {
-      final now = DateTime.now();
-      final isToday = _addedDate.year == now.year &&
-          _addedDate.month == now.month &&
-          _addedDate.day == now.day;
-      final msg = isToday
-          ? 'Alış fiyatı boş. Kaydederken güncel piyasa fiyatı otomatik atanacak.'
-          : 'Alış fiyatı boş. ${DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate)} '
-              'tarihli kapanış fiyatı otomatik atanacak.';
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.amberFill.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(
-              color: context.c.amberFill.withValues(alpha: 0.3), width: 1),
-        ),
-        child: Row(
-          children: [
-            // Bilgi notu: "parıltı" simgesi yapay zekâ işi gibi okunuyordu
-            // (unslop 2026-11-05 #5); burada otomatik fiyat ataması anlatılıyor.
-            Icon(Icons.info_outline_rounded,
-                color: context.c.amberText, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                msg,
-                style: context.t.titleSmall
-                    ?.copyWith(color: context.c.text90, height: 1.35),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    // Boş fiyat: amber bilgi kutusu kalktı, ipucu fiyat alanının altında
+    // tek satır (`_fiyatBosIpucuSatiri`, Ar-Ge 2026-11-12 #6).
+    if (isPriceEmpty) return const SizedBox.shrink();
 
     if (price == null || price <= 0) return const SizedBox.shrink();
 
@@ -609,8 +604,11 @@ extension _TutarAlanlari on _AddAssetScreenState {
       // Boş fiyatlı yeni altın/döviz, bugün: maliyet satıştan yazılacak
       // (`maliyetSatisFiyati`). Başlık atanacak fiyatı, satır farkı söyler.
       final satis = _s.previewSatis!;
-      color = context.c.amberText;
-      icon = Icons.auto_awesome_rounded;
+      // Nötr ton (amber bütçesi, Ar-Ge 2026-11-12 #1): bu bir uyarı değil,
+      // atanacak fiyatın bilgisi; yıldız/parıltı simgesi de "yapay zekâ"
+      // gibi okunuyordu (unslop 2026-11-05 #5).
+      color = context.c.text58;
+      icon = Icons.sell_outlined;
       title = context.l10n.fiyatBirimBasina(
           '${qtyFormatter(maxDigits: 2).format(satis)} $_currency');
       subtitle = _kuyumcuFarkiSatiri(alis: _previewPrice!, satis: satis);
@@ -752,6 +750,38 @@ extension _TutarAlanlari on _AddAssetScreenState {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Formda beliren/kaybolan satır (toplam, ortalama maliyet, fiyat ipucu):
+/// [child] varken yükseklikle açılır, `null` olunca kapanır (Ar-Ge
+/// 2026-11-12 #3). Eskiden satır `SizedBox.shrink()`'ten tek karede
+/// beliriyor, altındaki alanlar ~70 pt sıçrıyordu; yazarken odak kayıyordu.
+///
+/// Hareket uygulamanın tek katlanır bölüm hareketi [SandikAcilir]: süre ve
+/// eğri orada, hareketi azalt'ta anlık. Kapanırken SON içerik solarak
+/// kalır (boş kutu küçülmez — `SandikAcilir` gerekçesi). İlk kurulumda
+/// içerik varsa hareket yok: düzenleme formu açılırken toplam yerinde
+/// gelir, form zıplamaz.
+class _Beliren extends StatefulWidget {
+  const _Beliren({required this.child});
+
+  final Widget? child;
+
+  @override
+  State<_Beliren> createState() => _BelirenState();
+}
+
+class _BelirenState extends State<_Beliren> {
+  Widget? _son;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.child != null) _son = widget.child;
+    return SandikAcilir(
+      acik: widget.child != null,
+      child: _son ?? const SizedBox.shrink(),
     );
   }
 }

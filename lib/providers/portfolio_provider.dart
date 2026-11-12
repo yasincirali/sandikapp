@@ -77,6 +77,17 @@ final kotaAnahtarlariProvider = Provider<Set<String>?>((ref) {
   return kotaAnahtarlari(lotlar, uid);
 });
 
+/// Varlık Ekle'deki ortalama maliyet satırının tabanı: [anahtar]
+/// (`positionKey`) pozisyonunun bugünkü adedi ve ortalaması. Hesap
+/// [eldekiPozisyonMaliyeti]'nde; form her tuşta değil, portföy ya da seçim
+/// değişince okur.
+final eldekiPozisyonMaliyetiProvider = Provider.autoDispose
+    .family<({double adet, double maliyet})?, String>((ref, anahtar) {
+  final s = ref.watch(portfolioProvider).valueOrNull;
+  if (s == null || s.ownerId.isEmpty) return null;
+  return eldekiPozisyonMaliyeti(s.assets, sahip: s.ownerId, anahtar: anahtar);
+});
+
 /// Saf: [yeni] pozisyonu eklemek kotayı aşıyor mu; aşıyorsa kullanılan
 /// sayı, aşmıyorsa null. [yazilan] = yazımı süren (henüz `state`'e girmemiş)
 /// eklemelerin anahtarları. Toplu Ekle alımları paralel başlatır; bunlar
