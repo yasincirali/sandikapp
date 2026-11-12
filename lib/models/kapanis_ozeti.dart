@@ -4,7 +4,7 @@ import '../services/yillik_rapor.dart' show yillikSatisSatiri;
 import '../utils/tr_format.dart' show dayKey;
 import 'asset.dart';
 import 'elde_tutma.dart';
-import 'position.dart' show positionKey;
+import 'position.dart' show aktifLotlar, positionKey;
 
 /// "Tümünü sat" sonrası kapanış özeti: ne kadar tuttun, ne gerçekleşti.
 ///
@@ -159,3 +159,70 @@ KapanisOzeti? kapanisOzeti({
 
 /// Ondalık miktar artığı (0,1 + 0,2 − 0,3): bunun altı "kapalı".
 const _kirinti = 1e-9;
+
+/// "Sattıkların" listesinin bir satırı: tamamı satılmış pozisyon ve onu
+/// kapatan satışın özeti.
+@immutable
+class KapanmisPozisyon {
+  const KapanmisPozisyon({
+    required this.anahtar,
+    required this.satis,
+    required this.ozet,
+  });
+
+  /// Sahip + `positionKey` (liste anahtarı).
+  final String anahtar;
+
+  /// Pozisyonu son kez kapatan satış satırı.
+  final Asset satis;
+
+  final KapanisOzeti ozet;
+}
+
+/// Ham defterden kapanmış pozisyonlar, en son kapanan önde.
+///
+/// ## Neden (Sattıkların, 2026-11-12)
+/// Kapanış özeti "Tümünü sat"ın hemen ardından bir kez açılıyordu; sayfa
+/// kapanınca kapatılan pozisyonun ne kazandırdığına bakmanın yolu yoktu.
+/// Liste aynı özeti ([kapanisOzeti]) yeniden kurar: ikinci formül yok,
+/// sayı kapanış anında görülenle aynı.
+///
+/// ## Kurallar
+/// - **Kapanmış = ham defterde satış var VE `aktifLotlar` boş** (CLAUDE.md
+///   "Kapanmış pozisyon"). Kısmi satış listeye girmez; kapanıp yeniden
+///   alınan pozisyon bugün açık olduğu için girmez.
+/// - Silinmiş pozisyon (lotları `deletedAt`lı) girmez: kullanıcı onu
+///   sildi, satmadı.
+/// - Sahip başına gruplanır: `positionKey` sahip taşımaz; durumda ortak
+///   lotları da bulunabilir.
+/// - Özet en SON kapanıştan: pozisyon iki kez açılıp kapandıysa son tur.
+///   Aynı anda kaydedilmiş birden çok satış varsa kapatanı bulunana kadar
+///   denenir.
+/// - Maliyet bilinmiyorsa özet yalnız süreyi taşır (uydurma sayı yok);
+///   alışı bulunamayan (yalnız satış satırı olan) pozisyon listeye girmez.
+List<KapanmisPozisyon> kapanmisPozisyonlar(Iterable<Asset> defter) {
+  final gruplar = <String, List<Asset>>{};
+  for (final a in defter) {
+    if (!a.isActive || !(a.isBuy || a.isSell || a.isDividend)) continue;
+    gruplar.putIfAbsent('${a.userId}|${positionKey(a)}', () => []).add(a);
+  }
+  final sonuc = <KapanmisPozisyon>[];
+  gruplar.forEach((anahtar, lotlar) {
+    final satislar = [
+      for (final a in lotlar)
+        if (a.isSell) a
+    ];
+    if (satislar.isEmpty || aktifLotlar(lotlar).isNotEmpty) return;
+    satislar.sort((x, y) => y.addedDate.compareTo(x.addedDate));
+    final son = satislar.first.addedDate;
+    for (final s in satislar.takeWhile((s) => s.addedDate == son)) {
+      final ozet = kapanisOzeti(defter: lotlar, satis: s);
+      if (ozet != null) {
+        sonuc.add(KapanmisPozisyon(anahtar: anahtar, satis: s, ozet: ozet));
+        return;
+      }
+    }
+  });
+  sonuc.sort((x, y) => y.satis.addedDate.compareTo(x.satis.addedDate));
+  return sonuc;
+}

@@ -85,7 +85,10 @@ PaywallKarti? kaynaktanKart(String source) {
     'yillik_rapor' ||
     'portfoy_disa_aktar' ||
     'aylik_rapor' ||
-    'gecmis_fiyatlar' =>
+    'gecmis_fiyatlar' ||
+    // Portföy › Sattıkların (2026-11-12): kapanmış pozisyonun gerçekleşen
+    // kârı yıllık raporun "bu yıl ne gerçekleşti" sorusunun satır satır hâli.
+    'sattiklarin' =>
       PaywallKarti.rapor,
     // Temettü kartındaki "maliyetine göre verim" kilidi (2026-11-07).
     'temettu_tahmini' || 'temettu_verimi' => PaywallKarti.temettu,

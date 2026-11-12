@@ -50,6 +50,8 @@ void main() {
         'aylik_rapor': PaywallKarti.rapor,
         // Varlık grafiğinin geçmiş fiyat tablosu (2026-11-10).
         'gecmis_fiyatlar': PaywallKarti.rapor,
+        // Portföy › Sattıkların (2026-11-12).
+        'sattiklarin': PaywallKarti.rapor,
         // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
         'fon_xray': PaywallKarti.xray,
         'portfoy_xray': PaywallKarti.xray,
@@ -133,6 +135,8 @@ void main() {
         'lib/widgets/basa_bas_satiri.dart',
         // Aylık getiri tablosu (2026-11-11).
         'lib/widgets/aylik_getiri_karti.dart',
+        // Sattıkların (2026-11-12).
+        'lib/widgets/sattiklarin.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -152,6 +156,7 @@ void main() {
             'en_iyi_gun',
             'basa_bas',
             'aylik_getiri',
+            'sattiklarin',
           ]));
       // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
       // açmaz.
